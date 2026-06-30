@@ -53,5 +53,5 @@
 - [x] 7.1 Add `scripts/flash-usb.sh` — `upgrade_tool ld` / `ul` / `uf`; multi-device `-s LocationID` (PDF §1.11); run from tool dir with `config.ini`
 - [x] 7.2 Makefile targets: `devices` (table: MODE / SERIAL / LocationID / USB), `bootloader` (`adb reboot loader`), `loader`, `upgrade`
 - [x] 7.3 Selection env: `SERIAL`, `USB_LOCATION`, `IMAGE=`; optional `LWS_HMI_AUTO_PULL=1` on macOS
-- [x] 7.4 Document in `README.md` and `make help`; default tool path `~/Downloads/upgrade_tool_v2.44_for_mac`
+- [x] 7.4 Document in `README.md` and `make help`; vendored at `tools/upgrade_tool/`
 - [ ] 7.5 Hardware acceptance: `make upgrade` with built `update.img` on ynh960 eMMC

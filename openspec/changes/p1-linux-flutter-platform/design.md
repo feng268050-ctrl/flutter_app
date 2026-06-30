@@ -101,7 +101,7 @@ RK_WIFIBT=y
 
 ### 9. USB firmware flash — Makefile + upgrade_tool (macOS host)
 
-**Choice:** Host-side `scripts/flash-usb.sh` invoked by Makefile targets; Rockchip **upgrade_tool** v2.44 for macOS (`~/Downloads/upgrade_tool_v2.44_for_mac`, overridable via `LWS_HMI_UPGRADE_TOOL_DIR`). Commands follow `命令行开发工具使用文档.pdf`:
+**Choice:** Host-side `scripts/flash-usb.sh` invoked by Makefile targets; Rockchip **upgrade_tool** v2.44 vendored under `tools/upgrade_tool/` (binary + `config.ini`). Commands follow `tools/upgrade_tool/命令行开发工具使用文档.pdf`:
 
 | Make target | upgrade_tool / adb | PDF |
 |-------------|-------------------|-----|

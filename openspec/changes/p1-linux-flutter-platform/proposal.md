@@ -34,6 +34,6 @@ _(none — no existing openspec specs in this repo)_
 - **Buildroot / SDK**: New defconfig, flutter-pi package, `lws_hmi_flutter.config`, board logo assets, ynh960 `RK_BUILDROOT_CFG` update.
 - **Overlay**: Rootfs overlay for `/opt/hmi` Hello World artifacts; possible U-Boot logo under `board/logo/`.
 - **App**: New `app/lws_hmi_app/` Flutter project and build scripts (host-side, not Buildroot-compiled).
-- **Host flash**: `scripts/flash-usb.sh`, Makefile `devices` / `bootloader` / `loader` / `upgrade`; requires macOS upgrade_tool bundle.
+- **Host flash**: `scripts/flash-usb.sh`, Makefile `devices` / `bootloader` / `loader` / `upgrade`; `tools/upgrade_tool/` (Rockchip upgrade_tool v2.44).
 - **Existing overlays reused**: `lws_hmi_{base,systemd,network,npu}.config`, `hmi.service`, `06-lws-hmi-systemd.sh`, LCD/MIPI display overlay.
 - **Downstream phases**: P2–P5 depend on P1 display stack, systemd boot chain, and `/opt/hmi` deployment pattern.

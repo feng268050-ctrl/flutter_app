@@ -39,7 +39,7 @@ Inside the container the SDK lives at `/work/sdk`. On Linux, it bind-mounts from
 
 ### USB flash (ynh960)
 
-Tool: `~/Downloads/upgrade_tool_v2.44_for_mac` (`命令行开发工具使用文档.pdf`: `ld` / `ul` / `uf`, multi-device `-s LocationID`).
+Tool: vendored at `tools/upgrade_tool/` (v2.44; see `命令行开发工具使用文档.pdf`: `ld` / `ul` / `uf`, multi-device `-s LocationID`).
 
 ```bash
 make devices

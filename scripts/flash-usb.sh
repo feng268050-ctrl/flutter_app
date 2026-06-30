@@ -12,8 +12,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ACTION="${1:-}"
 
-UPGRADE_TOOL_DIR="${LWS_HMI_UPGRADE_TOOL_DIR:-$HOME/Downloads/upgrade_tool_v2.44_for_mac}"
-UPGRADE_TOOL="${LWS_HMI_UPGRADE_TOOL:-$UPGRADE_TOOL_DIR/upgrade_tool}"
+UPGRADE_TOOL_DIR="$ROOT/tools/upgrade_tool"
+UPGRADE_TOOL="$UPGRADE_TOOL_DIR/upgrade_tool"
 SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print)"
 FIRMWARE_DIR="$SDK/output/firmware"
 UPDATE_IMG="${UPDATE_IMG:-${LWS_HMI_UPDATE_IMG:-$FIRMWARE_DIR/update.img}}"

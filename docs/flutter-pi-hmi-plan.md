@@ -1,0 +1,1317 @@
+# Flutter-pi HMI 规划（RK3566 基准 · ynh960 / RK3568 / RK3568B2）
+
+目标：在现有 **lws-hmi** Buildroot 基线上，用 **flutter-pi** 全屏跑 Flutter UI；按 **P1→P5** 增量交付：**P1** 镜像 + Hello World → **P2** Modbus/GPIO demo → **P3** `libai.so` → **P4** FrostUI + IME 子模块 → **P5** 全量业务。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块。
+
+**能力原则**：**lws-hmi 产品能力不少于 lws-ui**；Android/Java 栈整体替换为 **Linux Buildroot + flutter-pi + Dart/FFI**，算法、拓扑、模型与 API 契约尽量复用。逐项对照见 **§11.5**。
+
+**SoC 范围**：以 **RK3566 为基准 SoC**（与 lws-ui 产品一致），同一套 HMI 须兼兼容 **RK3568、RK3568B2**。SDK 共用 `rk3566_rk3568` 芯片目录与 `rockchip_rk3566_rk3568_*` Buildroot defconfig；**板级差异**（DTS、DDR、Wi‑Fi/BT 模组、屏参）通过 **`make lunch` 选 board defconfig** 区分。基准板为 **ynh960（3566）**，见 **§3.0**。
+
+---
+
+## 1. 目标与范围
+
+| 阶段 | 交付 | 不在本阶段 |
+|------|------|------------|
+| **P1 — 平台镜像 + Hello World** | Buildroot **Linux 镜像**（含后续所需的 **平台必须组件**）+ splash → **`flutter-pi` Hello World** | Modbus 业务、AI so、FrostUI、lws-ui 业务页 |
+| **P2 — Modbus + GPIO** | **libmodbus** / **sysfs GPIO** 迁移；App **demo**（设备信息、**三色状态灯**） | 视频、AI 推理 UI、FrostUI |
+| **P3 — AI 原生库** | 迁移 lws-ui **AI 代码库**；新工程打出 **`libai.so`**（+ RKNN/`config.yaml`） | Flutter 叠框产品 UI、FrostUI |
+| **P4 — FrostUI + IME（子模块）** | **`packages/frost_ui`** + **`packages/frost_ime`**（各为独立 git 子模块，对齐 lws-ui FrostUI / IME） | P5 业务页与全量 parity |
+| **P5 — 业务迁移** | 见 **§1.2**（P5.1～P5.7）；视频、网络 UI、AI 接入、本地/云服务、**lws-ui 实装业务页**、OTA 等 | 在板训练；Android 兼容层 |
+
+**lws-ui 对照**：算法/拓扑/模型复用；平台层 → Linux + flutter-pi；UI 按上表分阶段；**P5 子阶段 §1.2**；**openspec 非完整清单 §11.7**。
+
+当前 Rockchip 参考 defconfig 为 EVB 演示系统；替换为 **HMI 栈 + flutter-pi**，按 **P1→P5** 增量交付。
+
+### 1.1 各阶段任务一览
+
+```text
+P1  镜像 + Hello World
+    ├─ lws_hmi defconfig + 方案 A systemd（§3.6）
+    ├─ 裁剪 weston/chromium/camera/benchmark/adbd …
+    ├─ 平台必须组件：Mali、flutter-pi、LCD/splash、RKNPU2 运行时、Wi‑Fi/BT、powermanager …
+    ├─ hmi.service 自启；Hello World → /opt/hmi
+    └─ 验收：logo → 首页 ≤10 s（§14.2）
+
+P2  Modbus + GPIO demo
+    ├─ libmodbus + /dev/ttyS5；GPIO sysfs（替 YNHAPI）
+    └─ App demo：读设备信息；控制三色状态灯
+
+P3  AI → libai.so
+    ├─ 迁移 lensinspector（YOLO + 污点检测 + OpenCV + yaml-cpp）
+    ├─ Linux aarch64 交叉编译 libai.so；RKNN 模型（默认 rk3566）
+    └─ 板端 smoke：librknnrt + so 加载（业务叠框 UI 留 P5）
+
+P4  FrostUI + IME（git 子模块）
+    ├─ `packages/frost_ui` — FrostUI（§6.3：backdrop 默认 frozen；弹窗按需 liveWhileOpen）
+    ├─ `packages/frost_ime` — IME overlay + 字体（对齐 lws-ui `IME.md`）
+    └─ 主 App `pubspec` 依赖上述子模块；CI pin 版本
+
+P5  业务迁移（子阶段见 §1.2）
+    ├─ P5.1 视频 + MediaMTX
+    ├─ P5.2 网络 UI + 状态栏
+    ├─ P5.3 AI FFI + 告警链路
+    ├─ P5.4 本地 HTTP + 数据层
+    ├─ P5.5 云 + 远程
+    ├─ P5.6 业务页面（对照 lws-ui 实装，openspec 作参考）
+    └─ P5.7 量产收尾（录像、OTA、parity）
+```
+
+**依赖**：`P1 → P2 → P3` 建议顺序固定；**P4** 可与 P3 并行（依赖 P1 显示栈）；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（P5.1 为多数后续子阶段前置）。
+
+### 1.2 P5 子阶段（业务迁移）
+
+P5 体量大，拆为 **P5.1～P5.7** 增量交付。**不能**仅按 `openspec/specs/*` 列清单——openspec 记录不完整，且可能与当前 Android 实装不同步；**以 lws-ui 实际产品行为与源码为准**（§11.7），openspec 作交互细则与验收**补充**。
+
+| 子阶段 | 交付 | 主要对照（lws-ui **实装**） | 不在本阶段 |
+|--------|------|------------------------------|------------|
+| **P5.1 视频与 MediaMTX** | mediamtx、GStreamer/MPP、flutter-pi video；PR0/PR1 relay 与预览 smoke；`model.properties` / YAML 渲染 | `MediaMtxRelayCoordinator`、`MediaMtxConfigRenderer`；`docs/dual-stream-summary.md` | 完整 Monitor UI、AI 叠框 |
+| **P5.2 网络与状态栏** | `configure-camera-eth0.sh`；§7.0 异步配网 + **状态栏**；Wi‑Fi / 蓝牙设置页 | `CameraEth0Configurator`、`WifiActivity`、`BluetoothManagerActivity`；`docs/camera-eth0-topology.md` | 云 WS、:5580 业务 API |
+| **P5.3 AI 产品接入** | `libai.so` FFI；PR1 取流 + 预览叠框；镜片/零点/告警与 native 契约 | `AiManager`、`NativeBridge`；`docs/AI_VISION_*`、`native/lensinspector/docs/*` | 全量 Quick/Engineer 页 |
+| **P5.4 本地 HTTP 与数据** | **:5580** `shelf`；sqlite / 工艺库；Avahi；Modbus **量产**逻辑（扩 P2 demo） | NanoHTTPd 路由、`network-api-reference.md`；Room / 工艺库 XLSX | 云上传、OTA |
+| **P5.5 云与远程** | WebSocket；R2/S3 上传；远程锁/快照/视频列表等 | `docs/device-websocket-migration.md`、`docs/upload-summary.md` | 全部 Settings 子页 |
+| **P5.6 业务页面** | 首页、Quick Mode、Engineer、Monitor、Settings、告警/安全提示等 **按实装逐项** | `MainActivity`、`QuickModeActivity`、`EngineerModeActivity`、`DeviceMonitoringActivity`、`DeviceSettingActivity` 等；相关 `docs/*.md` + 可选 openspec | 一次性「全 spec 勾选」 |
+| **P5.7 量产收尾** | PR0 录像；OTA / oem；§7.7 sshd；**§11.5 全量 parity**；3568/3568B2 smoke | `UpgradeActivity`；`docs/ota-upgrade-flow.md` | 新业务能力 |
+
+**建议依赖**（可并行处标注）：
+
+```text
+P5.1 ──→ P5.3（AI 需 relay 取流）
+P5.1 ──→ P5.6 中依赖预览的页面
+P5.2 ──↗（与 P5.1 可并行启动；Monitor/云前需 eth0/wlan0 就绪）
+P5.3 + P5.4 ──→ P5.5（云常依赖本地 API / 数据层）
+P5.1～P5.5 ──→ P5.6（页面可分批，但开工前须有实装 inventory）
+P5.* ──→ P5.7
+```
+
+---
+
+## 2. 总体架构
+
+```mermaid
+flowchart TB
+  subgraph hw [硬件 — ynh960 基准板 RK3566]
+    IPC[IPC 192.168.1.100]
+    ETH[eth0 直连 IPC]
+    WIFI[wlan0 客户 Wi‑Fi]
+    BT[蓝牙]
+    LCD[MIPI 屏]
+  end
+
+  subgraph cam [IPC 仅 2 路 RTSP]
+    PR0["/PR0 主流"]
+    PR1["/PR1 子流"]
+  end
+
+  subgraph svc [系统服务 P5 起]
+    MTX[MediaMTX :8554]
+  end
+
+  subgraph consumers [多消费端 — 只连 MediaMTX]
+    FP[flutter-pi 预览 P5]
+    REC[录像 P5]
+    AI[P3 libai.so / P5 FFI UI]
+    LAN[Wi‑Fi 客户端 ffplay/VLC]
+  end
+
+  ETH --> IPC
+  IPC --> PR0
+  IPC --> PR1
+  PR0 -->|upstream| MTX
+  PR1 -->|upstream| MTX
+  MTX -->|127.0.0.1:8554/camera/pr0| FP
+  MTX -->|pr0| REC
+  MTX -->|pr1| AI
+  MTX -->|wlan0 IP :8554| LAN
+  WIFI --> LAN
+  LCD --> FP
+```
+
+**要点**：
+
+- IPC **只有 PR0 + PR1 两路**，是相机固件限制，与 lws-ui 一致。
+- **MediaMTX 为系统服务**（非 APK 子进程）：相机各拉 **一路** upstream，板端/局域网 **多读者** fan-out。
+- **禁止**多个模块各自 `rtsp://192.168.1.100/PR0`（会抢相机连接）；本机消费统一 `rtsp://127.0.0.1:8554/camera/pr0|pr1`。
+- flutter-pi 仍走 **DRM/KMS 直出**，不需要 Weston。
+
+---
+
+## 3. 组件清单（保留 / 移除 / 新增）
+
+### 3.0 SoC 与板级兼容（RK3566 基准 · RK3568 · RK3568B2）
+
+Rockchip SDK 将 **3566 与 3568 合并在同一芯片 profile**（路径 `device/rockchip/rk3566_rk3568`、Buildroot `rockchip_rk3566_rk3568_defconfig`）。**本规划以 RK3566 为基准 SoC**（lws-ui / ynh960 量产线）；**RK3568、RK3568B2** 为扩展兼容，用户态 HMI 栈相同（ARM64、Mali、MPP、RKNPU2、flutter-pi），差异主要在 **内核 DTS / DDR / 部分外设节点**。
+
+| 项 | 3566 / 3568 / 3568B2 关系 | lws-hmi 做法 |
+|----|---------------------------|--------------|
+| **基准** | **RK3566** + **ynh960** 板 | **P1～P5** 开发、全量 CI；RKNN **默认 platform** |
+| Buildroot defconfig | 共用 `rockchip_rk3566_rk3568_lws_hmi` | **一份**瘦身 defconfig + chip config |
+| U-Boot / 内核 | 同 `rk3566_rk3568` 构建目标，**DTS 按板选** | 基准：`make lunch` → `ynh960_defconfig` |
+| GPU / MPP / RKNPU2 | RK356x 通用 | `gpu.config`、`mpp.config`、`lws_hmi_npu.config`（`aarch64`） |
+| RKNN 模型 | 基准 **`rk3566`**；3568/B2 另导出 | 开发机默认 `RKNN_PLATFORM=rk3566`（lws-ui `convert-rknn.sh`）；3568/B2 增量出包 |
+| flutter-pi / MediaMTX / GStreamer | 与 SoC 无关，与 **Mali + MPP** 绑定 | 三颗 SoC **同一 rootfs** |
+| 3568 / 3568B2 板 | 扩展硬件 | **复用 rootfs**，换 board defconfig + DTS + 必要时 Wi‑Fi 模组 |
+
+**规划约定**：
+
+1. **不**为 3566 / 3568 / 3568B2 各做一套 Buildroot defconfig，除非实测某包 Kconfig 必须分叉（预期不需要）。
+2. **要**为每块量产板维护 **board defconfig**（`RK_KERNEL_DTS_NAME`、`RK_WIFIBT_*`、LCD 参数文件名等）。
+3. CI / 发布：**ynh960（3566 基准）全量回归**；3568、3568B2 各做 smoke（显示、eth0 双路、MediaMTX、NPU 推理）。
+
+当前仓库 **`board/ynh960_defconfig`** 即 **3566 基准板**；3568/3568B2 量产板在 `board/` 增加 defconfig 即可，**不修改** §4 的 `lws_hmi` Buildroot 命名。
+
+### 3.1 固件与 SDK 层（已基本具备 — lws-hmi）
+
+| 组件 | 状态 | 说明 |
+|------|------|------|
+| U-Boot `rk3566_rk3568` | **保留** | 现有 `make build` 流程 |
+| 内核 6.1 + 板级 DTS | **保留** | 显示、网口、MPP、**RKNPU**；**3566 / 3568 / 3568B2 各板独立 DTS** |
+| `ynh960_defconfig` | **保留（3566 基准板）** | FIT、`parameter-buildroot-fit.txt`；默认 `make lunch` 目标 |
+| LCD/MIPI 参数 overlay | **保留** | `960_lcd_param_rk356x.txt`、`lcd_mipi_param.txt` |
+| **Boot splash logo** | **P1 必需** | U-Boot / 内核 early logo（上电即显，见 §5.2） |
+| Recovery rootfs | **P1 可关** | 缩短编译；产品阶段再开 |
+
+### 3.2 Buildroot — 从参考 defconfig **移除**
+
+对应 `buildroot/configs/rockchip_rk3566_rk3568_defconfig` 中的 `#include`：
+
+| 移除的配置 | 原因 |
+|------------|------|
+| `gui/weston.config` | flutter-pi 不用 Wayland 合成器 |
+| `network/chromium.config` | 无浏览器壳 |
+| `multimedia/camera.config` | 无板载摄像头 |
+| `multimedia/gst/camera.config` | 同上 |
+| `tools/benchmark.config` | glmark2 / lmbench / unixbench 等压测演示 |
+| `tools/test.config` | Rockchip 测试包 |
+| `multimedia/gst/audio.config` | P1 无音频；P5 按需再加 |
+| `bus/can.config` / `bus/pci.config` | 按硬件裁剪 |
+| `fs/ntfs.config` / `fs/exfat.config` | U 盘场景不需要可删 |
+
+**量产 overlay 额外关闭**（`lws_hmi_base.config`，覆盖 `base/base.config` 默认）：
+
+| 关闭项 | 原因 |
+|--------|------|
+| `BR2_PACKAGE_ANDROID_ADBD` | 量产不用 USB adb；调试走 §7.7 SSH |
+| `BR2_TARGET_GENERIC_GETTY` | HMI 全屏，无串口登录需求（开发版可开） |
+| `input-event-daemon` / `usbmount` / `pm-utils` | 无对应硬件场景可关 |
+
+**P1 镜像暂不引入**（留待 **P5** 或 P3 前按需）：
+
+| 暂缓 | 原因 |
+|------|------|
+| `multimedia/gst/rtsp.config` 等 GStreamer | P5 视频栈 |
+| `multimedia/mpp.config`（若仅 P5 需要） | 与 GStreamer 同阶段 |
+| **mediamtx** | P5 |
+| **libmodbus** | **P2** |
+| FrostUI / 业务 App 代码 | **P4 / P5** |
+
+### 3.3 Buildroot — **保留**
+
+| 保留 | 原因 |
+|------|------|
+| `base/base.config` | busybox、ext4 rootfs、eudev、基础工具 |
+| `chips/rk3566_rk3568_aarch64.config` | 芯片相关（**3566 + 3568 + 3568B2 共用**） |
+| `gpu/gpu.config` → `BR2_PACKAGE_ROCKCHIP_MALI` | flutter-pi 需要 EGL/GLES |
+| `multimedia/mpp.config` | P5 RTSP 硬解 H.264/H.265（P1 defconfig 可注释） |
+| **`npu2.config`（运行时）** | **P3 YOLO**：`librknnrt.so`、`rknn_server`；见 §3.5 |
+| **`wifibt/wireless.config`** | **Wi‑Fi**：`wpa_supplicant`、`hostapd`（含 `network.config`） |
+| **`wifibt/bt.config`** | **蓝牙**：BlueZ5 + **`rkwifibt`**（固件/驱动，Rockchip 板级常用） |
+| `network/network.config` | chrony 等；**`openssh` 可装但默认 disable**（§7.7） |
+| `font/chinese.config` | 中文 UI（可选，体积不大） |
+| `powermanager.config` | 背光/电源（与 ynh960 屏参配合） |
+| `fs/vfat.config` | 可选，便于 SD 调试 |
+
+### 3.4 Buildroot — **新增 / 分阶段合入**
+
+| 组件 | P1 | P2 | P3 | P4 | P5 | 说明 |
+|------|----|----|----|----|-----|------|
+| **flutter-pi** + Mali/libdrm | ✓ | | | | | P1 Hello World |
+| **RKNPU2 运行时**（无 example） | ✓ | | ✓ | | | P1 编入 rootfs；P3 用 |
+| **wifibt** 栈 | ✓ | | | | ✓ | 驱动/daemon；业务配网 UI 在 P5 |
+| **libmodbus** | | ✓ | | | ✓ | P2 demo；P5 量产 Modbus |
+| **OpenCV / yaml-cpp** | | | ✓ | | | 链入 `libai.so` 或 static |
+| **GStreamer + MPP + mediamtx** | | | | | ✓ | P5 视频 |
+| **Avahi / sqlite 等** | | | | | ✓ | P5 产品化 |
+
+Hello World 与后续 App **不放进 Buildroot 编译**；开发机交叉编译后 overlay 或 **oem** 部署（见 §6）。
+
+### 3.5 NPU — 保留运行时，去掉演示
+
+上游 `npu2.config` 仅一行 `BR2_PACKAGE_RKNPU2=y`，但 merge 进完整 defconfig 后会默认带上 **`BR2_PACKAGE_RKNPU2_EXAMPLE=y`**（`rknn_common_test` + 示例 model，占空间且无产品价值）。
+
+建议在 lws-hmi 新增 `buildroot/configs/rockchip/chips/lws_hmi_npu.config`：
+
+```makefile
+# 运行时 — P1 起可编入 rootfs，P3 才真正使用
+BR2_PACKAGE_RKNPU2=y
+BR2_PACKAGE_RKNPU2_ARCH="aarch64"
+# 不要示例/demo
+# BR2_PACKAGE_RKNPU2_EXAMPLE is not set
+```
+
+| 组件 | 保留 | 说明 |
+|------|------|------|
+| 内核 RKNPU 驱动 | ✓ | 各板 DTS 中 RKNPU 节点（RK356x 通用） |
+| `librknnrt.so` | ✓ | Buildroot `rknpu2` 包，来自 SDK `external/rknpu2` |
+| `rknn_server` | ✓ | 同包安装到 `/usr/bin` |
+| `rknn_common_test`、示例 `.rknn` | ✗ | 关闭 `RKNPU2_EXAMPLE` |
+| RKNN-Toolkit2 | 开发机 | 模型转换（ONNX/PT → `.rknn`），**不打包进 rootfs** |
+
+**与 lws-ui 的关系**：Android 版已在 `lws-ui/native/lensinspector` 用 `librknnrt.so` 跑 RKNN YOLO；**P3** 迁移为 Linux aarch64 **`libai.so`**；**P5** 经 FFI 接入 Flutter 业务 UI。
+
+### 3.6 Init 与 systemd 极简（**方案 A**，量产默认）
+
+**结论**：保留 **systemd 作 PID 1** + **libsystemd**（flutter-pi 事件循环硬依赖），但 **不**按桌面发行版配全套 daemon；**MediaMTX 用 systemd 管理也不挡首屏**，前提是 **不进 `hmi.service` 的 critical chain**（见 §6.4）。
+
+#### 3.6.1 方案 A 原则
+
+| 原则 | 说明 |
+|------|------|
+| **flutter-pi 需要 libsystemd** | Buildroot `flutter-pi` 包 `depends on BR2_PACKAGE_SYSTEMD`；去掉 systemd **包** 需 fork embedder，**不在 P1～P5 范围** |
+| **init 仍用 systemd** | 用 **少量 unit** 管 `hmi` / 可选 `mediamtx`；不引入 Plymouth、networkd 等 |
+| **首屏 KPI 独立** | `hmi.service` **仅** `After=local-fs.target`；**禁止** `network-online` / `mediamtx` / `udev-settle` |
+| **MediaMTX 不挡 UI** | unit 可存在，但 **`After=hmi.service`** 或 **默认 `disable`** + App `systemctl start`（§6.4） |
+| **busybox init 替换** | 列为 **实验项**（方案 B），非量产默认 |
+
+#### 3.6.2 Buildroot：`lws_hmi_systemd.config`
+
+仓库路径：`overlay/buildroot/chips/lws_hmi_systemd.config`（合入 defconfig 时 `#include`）。
+
+| Kconfig | 量产 |
+|---------|------|
+| `BR2_INIT_SYSTEMD=y` | systemd 作 init |
+| `BR2_PACKAGE_SYSTEMD=y` | 含 **libsystemd** |
+| `BR2_PACKAGE_SYSTEMD_NETWORKD` | **关** — eth0 走 §7.1 脚本 |
+| `BR2_PACKAGE_SYSTEMD_RESOLVED` | **关** |
+| `BR2_PACKAGE_SYSTEMD_TIMESYNCD` | **关** — P5 云同步再按需 chrony |
+| `BR2_PACKAGE_SYSTEMD_LOGIND` | **关** |
+| `BR2_PACKAGE_SYSTEMD_POLKIT` | **关** |
+| `BR2_PACKAGE_SYSTEMD_ANALYZE` / `FIRSTBOOT` | **关** |
+| journald | **保留**；rootfs overlay **`Storage=volatile`**（不写 eMMC） |
+
+#### 3.6.3 网络包：`lws_hmi_network.config`
+
+覆盖 `network/network.config` 中 EVB 默认（dhcpcd、dnsmasq、dropbear 等 HMI 不需要项）：
+
+| 项 | 量产 |
+|----|------|
+| `wpa_supplicant` | **保留**（`wifibt/wireless.config`） |
+| `dhcpcd` / `dnsmasq` | **关** — eth0 不 DHCP |
+| `dropbear` | **关** — 用 `openssh`，默认 **disable**（§7.7） |
+| `chrony` | P1 可关；P5 云同步再开 |
+| `iproute2` / `ping` | **保留**（§7.1 / Camera Comm Status） |
+
+#### 3.6.4 rootfs overlay（systemd unit）
+
+路径：`overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/`（已由 `overlay/buildroot/rk3566_rk3568_lws.config` 挂载）。
+
+| 文件 | 作用 |
+|------|------|
+| `etc/systemd/system/hmi.service` | **P1** 启用；`After=local-fs.target` only |
+| `etc/systemd/system/mediamtx.service` | P5；**默认不 enable**；`After=hmi.service` |
+| `etc/systemd/journald.conf.d/00-lws-hmi-volatile.conf` | 日志仅内存 |
+| `usr/lib/lws-hmi/systemd-enable-hmi.sh` | post-build：**enable hmi**，**disable** mediamtx/sshd/bluetoothd（P1+ 蓝牙改 App 触发） |
+
+#### 3.6.5 方案 A 体积 / 启动收益（粗估，在 §3.2 瘦身之上）
+
+| 指标 | 参考 defconfig | + §3.2 | + **方案 A** |
+|------|----------------|--------|--------------|
+| P1 rootfs | ~1.5–2 GB | 250–450 MB | **220–400 MB** |
+| 上电→首页（eMMC 优化） | — | 8–15 s | **5–9 s**（再 **−0.5～1.5 s** systemd 链） |
+
+#### 3.6.6 验收
+
+```bash
+systemd-analyze
+systemd-analyze critical-chain hmi.service   # 不得含 mediamtx / network-online
+systemd-analyze blame
+ls /etc/systemd/system/multi-user.target.wants/  # 应有 hmi；量产无 mediamtx
+```
+
+---
+
+## 4. 建议的 Buildroot defconfig 结构
+
+在 lws-hmi 仓库新增（尚未实现，规划如下）：
+
+```
+# 骨架见 overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig
+buildroot/configs/rockchip_rk3566_rk3568_lws_hmi_defconfig
+  #include "base/base.config"
+  #include "chips/lws_hmi_base.config"        # 关 adbd/getty 等（§3.6）
+  #include "chips/lws_hmi_systemd.config"      # 方案 A 极简 systemd（§3.6.2）
+  #include "chips/rk3566_rk3568_aarch64.config"
+  #include "gpu/gpu.config"
+  #include "multimedia/mpp.config"          # P5；P1 可注释
+  #include "chips/lws_hmi_npu.config"       # RKNPU2 运行时，无 example
+  #include "chips/lws_hmi_network.config"   # 覆盖 network.config 臃肿项（§3.6.3）
+  #include "wifibt/wireless.config"       # Wi-Fi（仍含 wpa_supplicant）
+  #include "wifibt/bt.config"              # BlueZ + rkwifibt
+  #include "font/chinese.config"
+  #include "powermanager.config"
+  #include "fs/vfat.config"                 # 可选 SD 调试
+  #include "chips/lws_hmi_flutter.config"    # flutter-pi + libdrm 等
+  #include "chips/lws_hmi_mediamtx.config"    # P5：mediamtx 二进制
+  # P5: #include "chips/lws_hmi_gst_rtsp.config"
+  # rootfs overlay: overlay/buildroot/rk3566_rk3568_lws.config → lws-hmi-fs-overlay
+```
+
+SDK `output/.config` 中设置：
+
+```bash
+RK_ROOTFS_SYSTEM_BUILDROOT=y
+RK_BUILDROOT_CFG=rockchip_rk3566_rk3568_lws_hmi   # 新 defconfig 名
+RK_RECOVERY=n                                      # P1 关闭 recovery 编译
+RK_WIFIBT=y                                        # 与 wifibt/*.config 一致
+# 模组型号按 ynh960（3566 基准板）硬件在 lunch/menuconfig 里选（如 RK_WIFIBT_RTK_AP）
+```
+
+**预期 rootfs 体积**（粗估）：
+
+| 配置 | rootfs.ext4 |
+|------|-------------|
+| 当前参考 defconfig | ~1.5–2 GB |
+| P1 Hello World 瘦身 | ~250–450 MB（含 NPU 运行时 + Wi‑Fi/BT 栈，无 example） |
+| P1 + **方案 A**（§3.6） | **~220–400 MB** |
+| P5 + GStreamer/RTSP | ~450–750 MB |
+| P5 全产品栈 | **~500–800 MB** |
+| P3 + `.rknn` 模型文件 | 视模型大小 + 原生插件 so |
+
+---
+
+## 5. 显示栈（DRM，非 Wayland）
+
+| 层 | 组件 | 说明 |
+|----|------|------|
+| 内核 | DRM/KMS、MIPI DSI | 板级 DTS + LCD overlay（3566/3568/3568B2 屏参可能不同） |
+| 用户态 GPU | `rockchip-mali` | `gpu/gpu.config` |
+| 用户态显示 | **libdrm + libgbm + EGL/GLES** | flutter-pi 直接 scanout |
+| 不需要 | Weston、Wayland、X11、Chromium | 从 defconfig 删除 |
+
+**ynh960 屏参（3566 基准板）**（已在 `board/960_lcd_param_rk356x.txt`）：
+
+- 物理：800×1280 MIPI，`lcd0_rotation=90`
+- flutter-pi 启动时可对齐：`-o landscape_left` 或 `-r 90`（以实机为准）
+
+### 5.2 Boot splash logo（P1 必需）
+
+**必须**在上电后、flutter-pi 首页之前显示 **产品 logo**（对齐 lws-ui Android `windowBackground` / splash 体验；无 Weston 时靠 **U-Boot + 内核 early splash**）。
+
+| 层 | 做法 |
+|----|------|
+| **U-Boot** | Rockchip 常用 `logo.bmp` / resource 分区；`make lunch` 板级 logo 与 **MIPI 旋转/分辨率** 一致 |
+| **内核 early** | DRM/KMS 或 FB early logo（`CONFIG_LOGO` / Rockchip bootlogo 驱动）；**尽早**接管同一 MIPI 屏 |
+| ** handoff** | flutter-pi 起来后 **无缝接屏**（同分辨率/旋转）；避免黑屏闪一下 |
+| **资产** | `board/logo/` 或 overlay；与 Flutter 启动页可共用同一视觉（可选） |
+
+**与 KPI 关系**：
+
+- splash **从第一帧亮屏开始**即应可见（U-Boot 或内核阶段，通常上电 **<1～2 s** 内）
+- **不计入**「上电 → App 首页」10 s KPI 的终点，但 **是 P1 验收必测项**（禁止长时间黑屏）
+- 网络/MediaMTX 异步期间，用户 **一直看到 logo**，直到首页覆盖
+
+**不做**：Plymouth（依赖 systemd、偏重）；Weston 合成器 splash。
+
+**P1 验收**：上电 → **logo 立即出现** → 保持至 flutter-pi 首页 → 无异常闪屏/花屏。
+
+---
+
+## 6. Flutter 应用与 flutter-pi
+
+### 6.1 Hello World（P1）
+
+**开发机**（非板子上编译 Flutter）：
+
+```bash
+# 安装 flutter-pi 工具链（与目标 engine 版本匹配）
+# 创建工程
+flutter create --template=app lws_hmi_app
+cd lws_hmi_app
+
+# 配置为 flutter-pi 目标（具体以 flutter-pi 文档为准）
+# flutterpi_config / custom device
+
+# Release + AOT
+flutter build --release   # 产出 app.so + assets
+```
+
+**板子目录布局**（示例）：
+
+```
+/opt/hmi/
+  app.so          # AOT 编译产物
+  icudtl.dat
+  flutter_assets/
+```
+
+**运行**：
+
+```bash
+flutter-pi --release /opt/hmi
+```
+
+### 6.2 部署方式（三选一）
+
+| 方式 | 适用 |
+|------|------|
+| Buildroot **rootfs overlay** `board/.../lws-hmi-app/` | P1 固定 Hello World |
+| **oem** 分区挂载 `/oem/hmi` | 便于 OTA 只更新应用 |
+| 开发阶段 **adb push** / scp | 迭代最快 |
+
+### 6.3 Frost 渲染分场景策略（backdrop blur）
+
+P4 移植 lws-ui **FrostUI** 时，毛玻璃 **默认不用 live blur**；仅在组件/弹窗 **显式开启** 时，弹窗存续期间对下层 **动图** 做实时采样模糊。3566 / 3568 / 3568B2 **共用同一 API**，**不按 SoC 分叉**。
+
+#### 6.3.1 设计原则
+
+| 原则 | 说明 |
+|------|------|
+| **默认冻结** | 绝大多数 `FrostCard` / dialog / modal：**一次 capture + 冻结**（或静态 fake glass），对齐 lws-ui 首页 stat 卡、时钟、More Monitor 内静态壁纸 |
+| **按需 live** | 仅当弹窗 **盖在首页动图层**（`frost_blur_target` 等价：`RepaintBoundary` 内 GIF + 静态底图）且视觉需要 **随动图更新** 时，在 **该次 show** 上开启 |
+| **组件属性** | live 是 **`FrostDialog` / `FrostModal` / `FrostCard` 的可选参数**，不是全局开关；调用方 **每次 show 决定** |
+| **弹窗独占 GPU** | overlay 打开时 **冻结** 首页 sibling 卡片的 backdrop（等价 `freezePageBackdropDuringOverlay`）；live blur **仅 dialog 卡片**（+ 可选 scrim） |
+| **降级** | live 初始化失败或 profile 掉帧 → **半透明渐变 + 边框**（fake glass），禁止回退 CPU 全屏 stack blur |
+
+#### 6.3.2 API 草图（P4 Flutter）
+
+```dart
+/// 默认 [FrostBackdropBlurMode.frozen]；仅少数 modal 按需传 [liveWhileOpen]。
+enum FrostBackdropBlurMode {
+  /// 布局稳定后 capture → blur → 冻结（默认）
+  frozen,
+  /// 弹窗可见期间每帧更新 backdrop blur（仅小面积、少块数）
+  liveWhileOpen,
+}
+
+class FrostCard extends StatelessWidget {
+  const FrostCard({
+    this.backdropBlurMode = FrostBackdropBlurMode.frozen,
+    this.blurIntensity = FrostBlurIntensity.low,
+    // ...
+  });
+}
+
+Future<T?> showFrostDialog<T>({
+  required BuildContext context,
+  FrostBackdropBlurMode backdropBlurMode = FrostBackdropBlurMode.frozen,
+  // ...
+});
+
+class FrostModal extends StatelessWidget {
+  const FrostModal({
+    this.backdropBlurMode = FrostBackdropBlurMode.frozen,
+    // ...
+  });
+}
+```
+
+**命名约定**：文档与代码统一用 `backdropBlurMode`（或等价 `liveBackdropBlur: bool`，默认 `false`）；**禁止**在业务页散落裸 `BackdropFilter` 而不走 Frost 组件。
+
+#### 6.3.3 何时开启 `liveWhileOpen`（少数）
+
+| 场景 | `backdropBlurMode` | 说明 |
+|------|-------------------|------|
+| 首页 stat 卡 ×4、快捷入口、时钟 | **`frozen`（默认）** | 动图在旁/边缘；冻结 + 分钟级刷新即可 |
+| 设置 / Monitor / 工程师页 Frost 卡 | **`frozen`** | 无首页 GIF 或静态底图 |
+| More Monitor / `WorkStatusDialog` | **`frozen`** | 弹窗内 **本地静态壁纸** + 独立 capture root（对齐 lws-ui `frosted_glass_blur_target`） |
+| 普通 confirm / 告警 / Wi‑Fi 提示（盖首页） | **`frozen`（默认）** | 动图不明显时可不开 live |
+| **盖首页动图区的 prompt / 输入框** | **`liveWhileOpen`（按需）** | 产品唯一 **建议默认开启 live** 的路径；IME 抬起时优于 frozen 重采错位 |
+| 开机自检等 footer 动态增高 | **`frozen` + manual capture** | 对齐 lws-ui `MANUAL` policy，不用 live |
+
+**经验法则**：新增 dialog 时 **先 `frozen`**；设计稿明确要求「弹窗毛玻璃随两侧 GIF 流动」再设 `liveWhileOpen`。
+
+#### 6.3.4 实现要点（flutter-pi / Skia）
+
+```text
+Stack
+├── RepaintBoundary id=homeBackdrop   ← 静态底图 + GIF（对齐 BlurTarget）
+├── FrostCard …                       ← frozen（默认）
+└── FrostDialogHost
+    ├── scrim（可选；与卡片共享 blur 纹理，避免双 pass）
+    └── FrostDialogCard               ← backdropBlurMode 由 show 传入
+```
+
+| 项 | frozen（默认） | liveWhileOpen |
+|----|----------------|---------------|
+| 实现 | capture → downscale 2～3× → blur → `Image`/`Texture` | `BackdropFilter` 或 Frost 内等价 GPU pass |
+| 更新 | 布局/IME/分钟边界 **一次** | **仅 modal 可见期间** |
+| 关闭 | 缓存可复用 | **立即 dispose**，停止 GPU 更新 |
+| 强度 | `FrostBlurIntensity` 对齐 lws-ui（8～25 px） | 同左；多卡同屏 **共享一层 blur** |
+
+#### 6.3.5 验收（基准 **ynh960 / RK3566**）
+
+- 全 app **frozen 默认路径**：首页 stat + 时钟无 jank；弹窗开关无 flash（对齐 lws-ui 已修项）
+- **`liveWhileOpen` 用例**（至少 1 个盖 GIF 的 confirm + 1 个输入 dialog）：弹窗打开期间 **≥ 30 fps**；关闭后 GPU 占用回落
+- More Monitor（frozen + 本地壁纸）：**不得**误开 live
+- 与 P5 RTSP 预览 **同屏**时：dialog live 仍达标，否则该 dialog **降 frozen 或 fake glass**（不因 3568 自动开 live）
+
+参考：lws-ui `docs/frostui.md`、`docs/frostui-dialog-backdrop-fix-guide.md`、`FrostBlurViewSupport`（`BLUR_SCALE_FACTOR = 3`、freeze 语义）。
+
+### 6.4 开机自启与启动顺序（**方案 A** systemd，§3.6）
+
+**指标定义**：产品「开机时间」= **上电 → Flutter 首页 UI 首帧可见**；**不含** RTSP 预览、RKNN、Wi‑Fi 关联。**Boot splash logo** 为 **P1 必需**（§5.2），上电即显、填补至首页，**不替代** KPI 终点。
+
+**原则**：**首页 UI 不被任何网络就绪阻塞**（eth0 / wlan0 / MediaMTX / 云 WS 均为 **首屏之后** 异步或后台配置）；用户通过 **状态栏图标** 感知进度（类似手机 Wi‑Fi 连接中转圈），见 **§7.0**。
+
+**systemd 与首屏**：systemd **不会**故意挡 UI；仅当 unit 写错依赖（如 `hmi` `After=mediamtx` / `network-online`）才会拖慢。**MediaMTX 用 systemd 启动本身不挡首屏**，若 `After=hmi.service` 或默认 `disable` + App 触发（见下）。
+
+```ini
+# overlay/.../lws-hmi-fs-overlay/etc/systemd/system/hmi.service
+[Unit]
+Description=flutter-pi HMI
+DefaultDependencies=yes
+After=local-fs.target
+# 禁止: After=mediamtx.service network-online.target systemd-udev-settle.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/flutter-pi --release /opt/hmi
+Restart=on-failure
+RestartSec=2
+Environment=FLUTTER_PI=1
+# 可选实测: Nice=-5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```ini
+# mediamtx.service — P5；量产默认 disable（post-build）；启用时也 After=hmi
+[Unit]
+Description=MediaMTX RTSP relay (PR0/PR1)
+After=hmi.service
+# 禁止 Wants/After=network-online.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/lib/lws-hmi/render-mediamtx-config.sh
+ExecStart=/usr/bin/mediamtx /etc/mediamtx/mediamtx.yaml
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+| 组件 | 启动时机 | 是否阻塞首页 |
+|------|----------|--------------|
+| **boot splash logo** | U-Boot / 内核 early（§5.2） | **否**（**P1 必需**可见；不挡 flutter-pi 进程） |
+| **flutter-pi / 首页** | `local-fs` 后 **`hmi.service`** | —（**KPI 终点**） |
+| **eth0 动态配址** | 首页后 / 用摄像头前运行 `configure-camera-eth0.sh` | **否** |
+| **wpa_supplicant / wlan0** | 后台或 App 触发；**勿** bind `network-online` | **否** |
+| **mediamtx** | **`After=hmi`** 或 **disable** + 首页 onReady `systemctl start` | **否**（不进 `critical-chain hmi`） |
+| **RTSP 预览 / 录像** | 用户进入预览页或 App 内 `initState` 后连 relay | **否** |
+| **RKNN / libai** | 进入检测页或首页占位后再 FFI 初始化 | **否** |
+| **bluetoothd / sshd** | **disable**；SSH 见 §7.7 隐藏入口 | **否** |
+
+Flutter 侧重试：`127.0.0.1:8554` 未就绪时首页仍显示；预览区与状态栏展示「连接中」（§7.0）。
+
+---
+
+## 7. 网络、Wi‑Fi、蓝牙
+
+### 7.0 网络异步与 UI 状态（产品原则）
+
+开机链路里 **最大不确定因素** 是网络（Wi‑Fi 关联、eth0 动态选址、相机可达、MediaMTX、云 WS）。**全部允许在首屏可见之后** 再配置；**不得** 在 `main()` / 首页 build 路径上 `await` 这些步骤。
+
+| 能力 | 首屏前 | 首屏后（后台 / 异步） | UI 状态（示例） |
+|------|--------|------------------------|-----------------|
+| **wlan0 连 AP** | 不阻塞 UI；`wpa_supplicant` 可由系统先起或 App 触发 | 关联、重连、换 AP | Wi‑Fi 图标：**转圈/闪烁**=关联中；实心=已连；叉/灰=未连 |
+| **eth0 相机链** | 无 IP 亦可进首页 | `configure-camera-eth0.sh`（需时读 wlan0 IP） | 相机/链路图标：配置中 / 已通 / 离线（对齐 lws-ui Camera Comm Status） |
+| **MediaMTX** | 不启或 idle | 预览页或首页 onReady 后 `start` | 预览区占位 + 「视频连接中」 |
+| **云 WebSocket** | 不连 | Wi‑Fi 就绪后重试退避 | 云图标：连接中 / 在线 / 离线（P5） |
+| **蓝牙** | 不阻塞 | 设置页或按需扫描 | BT 图标（P5 设置页为主） |
+
+**Flutter 实现要点**：
+
+- 首页 **先渲染 shell**（导航 + 状态栏 + 占位内容）；网络任务放 **`WidgetsBinding.instance.addPostFrameCallback`** / `Isolate` / platform channel，**不阻塞首帧**。
+- 用 **`Stream` / `ChangeNotifier`** 驱动状态栏（如 `NetworkStatusController`），各子系统上报：`connecting` → `ready` → `error`。
+- 失败 **自动重试**（指数退避）；用户可进设置页手动重试（等价 lws-ui `WifiActivity`）。
+- **业务页**（预览、AI）在依赖项 `ready` 前显示 skeleton/提示，不 pop 阻塞对话框挡开机。
+
+**与 lws-ui 对齐**：Android 侧 `setCameraNetworkSegment` 已在 `Application` 线程池异步跑；Buildroot HMI 改为 **首屏 onReady 后** 同等编排，并用 Flutter 状态栏替代通知栏/设置页零散提示。
+
+### 7.1 以太网 eth0（有线，专链 IPC）
+
+**eth0 = 有线 RJ45**，与 IPC **网线直连**（不经过交换机）；**wlan0** 接客户 Wi‑Fi。拓扑见 lws-ui `docs/camera-eth0-topology.md`。
+
+#### 不是 Buildroot 静态 IP
+
+lws-ui **不在**系统启动时写死 eth0 地址，而是在 **App 初始化完成后**（及用摄像头前、Wi‑Fi 地址变化时）由 **`setCameraNetworkSegment()`** 动态配置：
+
+1. 读摄像头 IP（`CameraConfig` / `model.properties`，默认 `192.168.1.100`）
+2. 读当前 **wlan0** IPv4（未连 Wi‑Fi 可为 null）
+3. **`CameraEth0AddressPlanner`**：在摄像头 `/24` 内选平板 eth0 地址（如 `.234`），避开摄像头 IP 与 **同网段** 的 wlan0 IP
+4. **`CameraEth0Configurator`**：`ip link set eth0 up` → `ip addr replace …/24 dev eth0` → 摄像头网段路由 → 可选 `ping -I eth0`
+5. **Wi‑Fi DHCP 变化**：`CameraEth0WifiNetworkCallback` 重新执行上述逻辑
+
+Buildroot **不要**为 eth0 配 `systemd-networkd` 静态地址或 `dhcpcd`；与 lws-ui 旧版 `install-eth0-autofix.sh`（固定 `192.168.1.10`）**冲突**，勿装。
+
+#### lws-hmi 等价实现
+
+| 项 | 做法 |
+|----|------|
+| 脚本 | `/usr/lib/lws-hmi/configure-camera-eth0.sh`（移植 `CameraEth0Configurator` + `AddressPlanner`） |
+| 触发时机 | **首屏 onReady 后**后台；用摄像头 / MediaMTX 前 `ensure`；wlan0 变化时重跑 |
+| 是否阻塞 UI | **否**（与 lws-ui `LaserApplication` 线程池调 `systemParamsSetting` 一致） |
+
+#### 哪一阶段需要 eth0？
+
+| 阶段 | eth0 要求 |
+|------|-----------|
+| **P1～P2** | 无业务要求；P1 仅需内核驱动、`ip link` 能 up |
+| **P5** | 跑 **`configure-camera-eth0.sh`** 后再启 MediaMTX upstream / 探测 `/PR0` `/PR1` |
+
+| 组件 | 说明 |
+|------|------|
+| 内核 | 板级 DTS 以太网节点 |
+| 用户态 | **运行时** `ip` 配址（非 fstab/networkd 静态） |
+
+### 7.2 Wi‑Fi（保留）
+
+| Buildroot | 作用 |
+|-----------|------|
+| `wifibt/wireless.config` | `wpa_supplicant`、`hostapd`（AP 模式可选） |
+| `BR2_PACKAGE_RKWIFIBT` | Rockchip 打包 Wi‑Fi/BT **固件与 ko**（`bt.config`） |
+| SDK `RK_WIFIBT=y` | `./build.sh` 后处理会把对应模块装进 rootfs |
+
+**P1 验证**：`wpa_cli status`、`ping` 网关/IPC（若 IPC 走无线则测 RTSP URL）。
+
+Flutter 侧后续可用 **`wifi_iot`** 等插件或 **platform channel** 调 `wpa_supplicant`/`nmcli`（Buildroot 默认无 NetworkManager，需自研或用 shell/DBus 封 BlueZ/wpa）。
+
+### 7.3 蓝牙（保留）
+
+| Buildroot | 作用 |
+|-----------|------|
+| `BR2_PACKAGE_BLUEZ5_UTILS` | `bluetoothd`、`bluetoothctl` |
+| `BR2_PACKAGE_RKWIFIBT_APP` | Rockchip 配套用户态工具/脚本 |
+| `BR2_PACKAGE_BLUEZ_ALSA` | 蓝牙音频（若 HMI 要播 BT 音频则保留；纯数据 BLE 可后续再裁） |
+
+**P1 验证**：`hciconfig`、`bluetoothctl scan on`（需 `rkwifibt` 固件与 DTS 中 BT 节点正确）。
+
+### 7.4 相机双码流 PR0 / PR1（硬约束，对齐 lws-ui）
+
+IPC 通过 **eth0 直连**（见 lws-ui `docs/camera-eth0-topology.md`），出厂默认 **`192.168.1.100/24`**。相机**仅提供两路 RTSP**：
+
+| 码流 | IPC 路径 | 典型用途（与 lws-ui 一致） |
+|------|----------|---------------------------|
+| **主流 PR0** | `rtsp://192.168.1.100/PR0` | 录制、大屏预览、LAN 转发 |
+| **子流 PR1** | `rtsp://192.168.1.100/PR1` | 实时推理、低负载预览 |
+
+平板 eth0 须与 IPC 同网段且 **≠ 摄像头 IP**、**≠ wlan0 IP**（地址规划逻辑同 lws-ui `CameraEth0AddressPlanner`）。
+
+**P5 验证**：`scripts/device-network/probe-dual-stream.sh`（可自 lws-ui 移植）对 `/PR0`、`/PR1` 做 `DESCRIBE 200 OK`。
+
+### 7.5 MediaMTX 系统服务（P5 必需）
+
+lws-ui 把 MediaMTX 打进 APK 并由 `MediaMtxRelayCoordinator` 拉起；flutter-pi 版改为 **Buildroot 系统服务**，行为与 URL **与 lws-ui 对齐**。
+
+#### 角色
+
+- 相机 upstream：**每路只拉一次**（PR0 一条、PR1 一条）。
+- 板内多消费者（Flutter 预览、录像、RKNN 取帧、调试 `gst-launch`）均作为 **MediaMTX 下游读者**。
+- Wi‑Fi 侧手机/PC：`rtsp://<设备-wlan0-IP>:8554/camera/pr0`（**不要**让他们直连 `192.168.1.100`，eth0 与车间 Wi‑Fi 二层隔离）。
+
+#### 标准 URL（与 `MediaMtxRelayUrls` 一致）
+
+| 消费者 | URL |
+|--------|-----|
+| 本机 PR0 | `rtsp://127.0.0.1:8554/camera/pr0` |
+| 本机 PR1 | `rtsp://127.0.0.1:8554/camera/pr1` |
+| 局域网 PR0 | `rtsp://<wlan0-ip>:8554/camera/pr0` |
+| 局域网 PR1 | `rtsp://<wlan0-ip>:8554/camera/pr1` |
+| **仅 MediaMTX upstream** | `rtsp://192.168.1.100/PR0` 或 `/PR1` |
+
+#### 配置文件（对齐 `MediaMtxConfigRenderer`）
+
+建议路径：`/etc/mediamtx/mediamtx.yaml`（或 `/oem/mediamtx/mediamtx.yaml` + 符号链接）。
+
+```yaml
+logLevel: info
+logDestinations: [stdout]
+writeQueueSize: 32
+rtspAddress: :8554
+paths:
+  camera/pr0:
+    source: rtsp://192.168.1.100/PR0
+    rtspTransport: udp
+    sourceOnDemand: yes
+    sourceOnDemandStartTimeout: 15s
+    sourceOnDemandCloseAfter: 10s
+  camera/pr1:
+    source: rtsp://192.168.1.100/PR1
+    rtspTransport: udp
+    sourceOnDemand: yes
+    sourceOnDemandStartTimeout: 15s
+    sourceOnDemandCloseAfter: 10s
+```
+
+`camera_ip` 若由 `/system/etc/model.properties`（或 Buildroot 等价物）覆盖，启动前 **渲染 YAML**（同 lws-ui 动态 config）。
+
+#### systemd 单元（示例）
+
+见 **§6.4**（`hmi.service` 与 `mediamtx.service` **并行**，均不阻塞首页）。
+
+`hmi.service` **不得** `After=mediamtx.service`。Flutter 播流 **只连** `127.0.0.1:8554/...`，连接失败时在 UI 内重试。
+
+#### Buildroot 集成（待实现）
+
+| 项 | 说明 |
+|----|------|
+| 二进制 | 交叉编译 [bluenviron/mediamtx](https://github.com/bluenviron/mediamtx) **`GOOS=linux GOARCH=arm64`**（比 lws-ui Android 版简单） |
+| 版本 | 可与 lws-ui `tools/mediamtx/VERSION` 对齐（当前 v1.11.x） |
+| 打包 | `lws_hmi_mediamtx.config` 或 Buildroot package + rootfs overlay |
+| 构建脚本 | 参考 lws-ui `scripts/ci/build-mediamtx.sh`，改 `GOOS=linux` |
+| 防火墙 | 默认监听 `0.0.0.0:8554`；生产可仅 wlan0 暴露 |
+
+#### 与 lws-ui 差异
+
+| lws-ui | lws-hmi |
+|--------|---------|
+| MediaMTX 在 APK assets，`ProcessBuilder` 拉起 | **systemd 常驻服务** |
+| `startForLanPreview()` 随 App 生命周期 | 开机自启，与 flutter-pi 解耦 |
+| EasyPlayer 直连 IPC 或本地 relay | **统一只读 MediaMTX**（upstream 除外） |
+
+### 7.6 Flutter / GStreamer 消费（P5）
+
+**仍不需要**：`camera_engine_rkaiq`、V4L2 本地相机插件。
+
+| 组件 | 作用 |
+|------|------|
+| **MediaMTX** | 多路 fan-out 中枢（§7.5） |
+| GStreamer + MPP | 硬解；**输入 URL = MediaMTX 本地路径** |
+| flutter-pi video 插件 | 例如播 `rtsp://127.0.0.1:8554/camera/pr0` |
+| Flutter `video_player` | 同上 |
+
+**P5 最小 GStreamer 包**（`lws_hmi_gst_rtsp.config`）：
+
+- `gstreamer1` + `gst1-plugins-base`（tcp/udp/app）
+- `gst1-plugins-good`（rtsp、rtp）
+- `gst1-plugins-bad`（部分 codec，按 IPC 编码选）
+- Rockchip `gstreamer1-rockchip` / MPP 相关插件
+
+### 7.7 远程 SSH 调试（生产默认关闭，对齐 lws-ui ADB）
+
+lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `adbd`（`:5555`）。Buildroot HMI 用 **OpenSSH `sshd`** 作等价能力，**默认不运行、不监听**。
+
+| lws-ui（Android） | lws-hmi（Buildroot） |
+|-------------------|----------------------|
+| `adbd` 默认不监听 LAN | **`sshd` 默认 `disable --now`** |
+| **设置 → 设备信息 → 连续 5 次点击 System Version**（5 s 内，`SecretTapTracker`） | **同交互**：Flutter 设备信息页 → 系统版本 **5 连击** |
+| `AdbRemoteDebugHelper.enableRemoteDebugging()` | **`/usr/lib/lws-hmi/enable-ssh-debug.sh`** → `systemctl start sshd` |
+| **`POST /v1/adb`**（`:5580`，与 UI 同一路径） | **`POST /v1/ssh`**（P5 `:5580`，同一 helper） |
+
+**Buildroot**：
+
+- 可装 **`openssh`**（便于现场 `ssh`），overlay 默认 **`systemctl disable --now sshd`**
+- **不**装 `adbd`；开发阶段用串口 / 手动 `ssh` 或上述隐藏入口
+- 可选：仅监听 **wlan0**、禁用 root 密码登录、只允许公钥（P5 hardening）
+
+**开启后行为**（建议，可再定是否跨重启保持）：
+
+- 与 adb 类似：**按需 `start`**；**不**默认 `enable`（**重启后自动关闭**，比 `persist.adb.tcp.port` 更严）
+- UI Toast：「已开启 SSH 远程调试（端口 22），可使用 ssh 连接」
+- 日志记录开启事件（审计）
+
+**开发构建**（可选）：`LWS_HMI_DEV=1` overlay 允许 `sshd` 自启；**量产镜像不含**该 overlay。
+
+---
+
+## 8. AI / NPU（P3：`libai.so`；P5：FFI + 业务 UI）
+
+**P3 目标**：迁移 lws-ui **`lensinspector`**，在新工程交叉编译出 Linux aarch64 **`libai.so`**（RKNN YOLO + **污点检测** + OpenCV + yaml-cpp）；板端 smoke 验证 so 加载与推理，**不要求**完整 Flutter 产品 UI。
+
+**P5 目标**：对齐 lws-ui **`AiManager` / `NativeBridge`**——经 FFI 对 PR1 帧跑推理，在 Flutter 业务 UI 绘制框/标签/告警。
+
+### 8.1 板端栈（Buildroot 已有基础）
+
+| 层 | 组件 |
+|----|------|
+| 内核 | RKNPU2 驱动（**RK356x**：3566 / 3568 / 3568B2） |
+| 用户态 | `librknnrt.so`、`rknn_server`（`BR2_PACKAGE_RKNPU2`） |
+| 模型文件 | `/oem/models/*.rknn` 或随应用部署 |
+| 推理代码 | C/C++ **`libai.so`**（**P3** 交付） |
+| Flutter | **P5**：FFI / MethodChannel + `CustomPainter` 叠框 |
+
+### 8.2 开发机（不进 rootfs）
+
+| 工具 | 用途 |
+|------|------|
+| [RKNN-Toolkit2](https://github.com/airockchip/rknn-toolkit2) | PyTorch/ONNX → `.rknn`，量化 |
+| `lws-ui` `convert-rknn.sh` / `onnx_to_rknn.py` | 默认 **`RKNN_PLATFORM=rk3566`**（基准）；3568/B2 板增量出包 |
+
+### 8.3 建议数据流
+
+**P3（板端 smoke）**：独立测试程序或最小 harness 加载 `libai.so`，从文件/本地 RTSP 取帧验证 RKNN 输出。
+
+**P5（产品 UI）**：
+
+```mermaid
+flowchart LR
+  IPC[IPC /PR0 /PR1] --> MTX[MediaMTX P5]
+  MTX -->|pr0| GST1[GStreamer 预览]
+  MTX -->|pr1| GST2[GStreamer 推理取帧]
+  GST1 --> TEX[Flutter Texture]
+  GST2 -->|I420/RGB| NPU[libai.so P3]
+  NPU -->|boxes| DART[P5 CustomPainter]
+  TEX --> UI[同一界面]
+```
+
+### 8.4 明确不要
+
+- `tools/benchmark.config`（glmark2 等）
+- `BR2_PACKAGE_RKNPU2_EXAMPLE` / `rknn_common_test`
+- 在 rootfs 里装 RKNN-Toolkit2 / Python 训练环境
+
+---
+
+## 9. flutter-pi 在 RK356x 上的集成注意
+
+flutter-pi 官方主要验证 **树莓派**；**RK3566 / RK3568 / RK3568B2** 需额外工作（三颗 SoC 共用同一集成路径）：
+
+| 项 | 说明 |
+|----|------|
+| GPU | 使用 **Mali** 而非 Mesa VC4；Buildroot 选 `BR2_PACKAGE_ROCKCHIP_MALI` |
+| 编译 | 在 Buildroot 添加 `flutter-pi` package，或 SDK 外挂 `external/` |
+| Flutter Engine | 使用与 flutter-pi 匹配的 **engine 版本** 构建 `app.so` |
+| 触摸 | libinput；与各板 DTS input 节点确认 |
+| 调试 | 开发：串口 / 手动 ssh；量产：**§7.7 隐藏入口** 后再 `ssh` |
+
+建议 **P1** 在 Buildroot 中 **只打包 flutter-pi 二进制**，Hello World 在 CI/开发机交叉编译后 overlay 打入 rootfs。
+
+---
+
+## 10. 与当前 lws-hmi 仓库的映射
+
+**可复用 Dart/Flutter 包**以 **git submodule** 形式放在 **`packages/`** 目录下（P4 起：`frost_ui`、`frost_ime` 等）。
+
+| 已有 | 规划用途 |
+|------|----------|
+| `board/ynh960_defconfig` | **3566 基准板**，默认 `make lunch` |
+| LCD/MIPI fs-overlay | 内核/用户态显示参数 |
+| `overlay/.../05-lws-hmi-display.sh` | 保留 |
+| Docker volume 构建 | 继续用于 Buildroot 编译 |
+| **待增** `board/logo/` + U-Boot/内核 logo 打包 | P1 boot splash（§5.2） |
+| **待增** `overlay/buildroot/chips/lws_hmi_{base,systemd,network,npu}.config` | **方案 A** Kconfig（§3.6） |
+| **待增** `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig` | 瘦身 defconfig 骨架 |
+| **待增** `buildroot/configs/rockchip/rk3566_rk3568_lws_hmi_defconfig` | 合入 SDK 后生效 |
+| **待增** `buildroot/package/flutter-pi/` 或 external | flutter-pi 打包 |
+| **待增** `native/` 或独立 repo | **P3** `libai.so`（对齐 `lws-ui/native/lensinspector`） |
+| **待增** `app/` 或独立 repo | Flutter 工程（P1 Hello World → P2 demo → P5 业务） |
+| **待增** `packages/frost_ui/`（**git submodule**） | **P4** FrostUI（§6.3） |
+| **待增** `packages/frost_ime/`（**git submodule**） | **P4** IME（对齐 lws-ui `IME.md`） |
+| **待增** `buildroot/configs/rockchip/chips/lws_hmi_mediamtx.config` | **P5** mediamtx 二进制 |
+| **已有** `overlay/.../lws-hmi-fs-overlay/etc/systemd/system/hmi.service` | P1 enable（§3.6.4） |
+| **已有** `overlay/.../mediamtx.service` | P5；**默认 disable** |
+| **已有** `overlay/.../post-hooks/06-lws-hmi-systemd.sh` | enable hmi / disable 非关键 unit |
+| **待增** `scripts/configure-camera-eth0.sh` | **P5** 运行时 eth0 配址（自 lws-ui 移植） |
+| **待增** `scripts/build-mediamtx.sh` | **P5** linux/arm64 交叉编译 |
+| **待增** P2：`libmodbus` + GPIO demo | Modbus `/dev/ttyS5`、三色灯 |
+| **待增** `scripts/enable-ssh-debug.sh` | **P5** 隐藏入口 / `POST /v1/ssh` |
+| **待增** overlay：`sshd` disabled by default | 生产默认不监听 |
+| **待增** `docs/` 本文 | 规划 |
+
+---
+
+## 11. lws-ui 对照（Buildroot 补充 / 网络 / 阶段）
+
+**lws-ui** 为 Android priv-app（Java/Kotlin + JNI），**lws-hmi** 为 Buildroot + flutter-pi。不能搬 APK，而是：**复用算法、拓扑、模型流水线；替换 Android 平台层；Flutter 重写 UI 与服务**。命名与文案见 **§11.6**；**P5 范围与 openspec 边界**见 **§11.7**。
+
+### 11.1 Buildroot 补充包（相对 §3 已有栈）
+
+在 Mali、MPP、RKNPU2、Wi‑Fi/BT、flutter-pi、MediaMTX 之上，按 lws-ui 产品能力对齐：
+
+| 包/服务 | 用途 | 阶段 | 备注 |
+|---------|------|------|------|
+| **libmodbus** | Modbus RTU（`/dev/ttyS5`） | **P2** | P2 demo；P5 量产业务 |
+| **mediamtx** | LAN `rtsp://设备:8554/camera/pr0\|pr1` 转发 | **P5** | **systemd 系统服务**；见 §7.5 |
+| **OpenCV** | `lensinspector` 预处理 / ROI | P3 | 或 static 链进 `libai.so` |
+| **yaml-cpp** | 原生读 `config.yaml` | P3 | 或 FFI 只暴露已解析结构 |
+| **ping / iproute2** | 相机连通性 | P5 | P1 busybox 可能够用 |
+| **Avahi** | mDNS 发现 | P5 | |
+| **sqlite** | 本地告警 / 工艺库 | P5 | drift / isar |
+| **curl / ca-certificates** | 云同步、OTA | P5 | 一般 `base.config` 已有 |
+
+**仍不引入**（lws-ui 无等价需求或太臃肿）：Chromium、Weston、rkaiq、benchmark、`RKNPU2_EXAMPLE`；Android 专用 EasyDarwin AAR、YNHAPI JAR、Gradle 栈。
+
+**体积粗估**（在 §4 表基础上）：
+
+| 增量 | 影响 |
+|------|------|
+| OpenCV + `libai.so` | rootfs +30–80 MB |
+| mediamtx | 单一静态二进制，约数 MB |
+| GStreamer RTSP 集 | 见 §14.1 P5 体积行 |
+| 不引入 Chromium/Weston | 仍远小于参考 defconfig |
+
+### 11.2 网络架构硬约束（照抄 lws-ui）
+
+```text
+eth0  ←─网线─→  IPC (192.168.1.100, RTSP /PR0 /PR1)
+wlan0 ←─Wi‑Fi─→  客户路由（云 WebSocket、mDNS、LAN API :5580）
+```
+
+Buildroot **P1** 应保证：
+
+1. **eth0 / wlan0 / BT**：驱动与 daemon 可用（**P5** 再跑配网脚本与业务 UI）
+2. **Flutter 状态栏**：Wi‑Fi / 相机链路 **连接中动画** + 就绪/失败态（**P5** 产品 UI）
+
+**RTSP 规则**：
+
+- **upstream**（MediaMTX → IPC）走 **eth0**
+- **本机/ LAN 读者** 只连 MediaMTX relay（§7.5），Wi‑Fi 跑云 WS、mDNS、HTTP，**不让 LAN 客户端直连 `192.168.1.100`**
+
+P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-stream.sh`。
+
+### 11.3 阶段与 lws-ui 能力映射
+
+| 阶段 | lws-hmi 目标 | 对应 lws-ui |
+|------|--------------|-------------|
+| **P1** | Linux 镜像 + Hello World | Splash / 占位 UI / 平台栈 |
+| **P2** | Modbus + GPIO demo（设备信息、三色灯） | Modbus4j、YNHAPI GPIO、`LedIndicatorManager` |
+| **P3** | `libai.so` + RKNN/`config.yaml` | `NativeBridge` / `lensinspector` / `AiManager`（原生层） |
+| **P4** | **`frost_ui` + `frost_ime`** 子模块 | FrostUI、`IME.md` / frostui specs |
+| **P5** | 视频、网络 UI、云、:5580、**lws-ui 实装业务**、OTA | EasyPlayer、MediaMTX 协调器、Room、NanoHTTPd、各 Activity |
+
+### 11.4 可直接复用 vs 必须替换（摘要）
+
+| 可直接复用 | 必须替换 |
+|------------|----------|
+| RKNN 转换流水线（`scripts/make/convert-rknn.sh`）、`config.yaml`、`.rknn` 模型 | EasyDarwin / ExoPlayer → GStreamer + flutter-pi video |
+| eth0/wlan0 拓扑、PR0/PR1 分工、云 API 契约（`network-api-reference.md`） | 整个 Android UI → Flutter（**实装页面** + openspec 补充，§11.7） |
+| `native/lensinspector` C++（Linux aarch64 + FFI） | YNHAPI → sysfs GPIO；Modbus4j → libmodbus |
+| LCD/MIPI 参数（lws-hmi overlay **已有**） | NanoHTTPd → Dart `shelf`；JmDNS → Avahi |
+| `openspec/specs/*` | **参考** UI/交互验收；**非**完整迁移清单（§11.7） |
+| lws-ui `docs/*.md`（拓扑、API、AI、OTA 等） | APK OTA → oem 分区 / `update.img`；**adbd** → **sshd 按需开启**（§7.7） |
+| `model.properties`（相机 IP 等）→ `/oem/etc/model.properties` | —（布局复用；供 `configure-camera-eth0.sh` / mediamtx 渲染） |
+
+### 11.5 lws-ui 能力 parity 核对（仅据前文分析）
+
+下表确认：**lws-hmi 每一行 lws-ui 能力均有 Linux + flutter-pi 等价物**，无遗漏。
+
+| lws-ui 能力 | lws-hmi 等价 | 阶段 | 核对 |
+|-------------|--------------|------|------|
+| FrostUI / 全业务 HMI | Flutter UI（对照 lws-ui Activity/Fragment **实装**；openspec 作补充，§11.7） | **P5.6** 为主 | ✓ |
+| Frost 毛玻璃 / backdrop blur | **`FrostCard` / `FrostDialog` / `FrostModal`**（**`packages/frost_ui`**）；默认 **frozen**；盖首页动图弹窗按需 **`liveWhileOpen`**（§6.3） | **P4** | ✓ |
+| **IME** 软键盘 overlay | **`packages/frost_ime`**（对齐 lws-ui `IME.md`） | **P4** | ✓ |
+| 显示 / MIPI 旋转 + **boot splash** | flutter-pi DRM + LCD overlay + **U-Boot/内核 logo**（§5.2） | **P1** | ✓ |
+| eth0 直连 IPC、`/PR0` `/PR1` | 同拓扑 + `probe-dual-stream.sh` | **P5** | ✓ §7.4 |
+| eth0 动态配址 / 重配 | `configure-camera-eth0.sh`（等价 `setCameraNetworkSegment`） | **P5** | ✓ §7.1 |
+| Wi‑Fi 连客户 AP | `wpa_supplicant` + Flutter 设置页 | P1 栈 / **P5** UI | ✓ |
+| 蓝牙配对 / 管理 | BlueZ + `bluetoothctl` + Flutter 设置页 | P1 栈 / **P5** UI | ✓ |
+| 相机连通性状态 | ping / Camera Comm Status | **P5** | ✓ §11.1 |
+| RTSP 预览 | GStreamer + flutter-pi video → `127.0.0.1:8554/camera/pr0` | **P5** | ✓ |
+| **PR0 录像** | GStreamer 等从 relay 写文件（同 lws-ui 主流录制） | **P5** | ✓ §12 P5 |
+| **PR1 推理取流** | `127.0.0.1:8554/camera/pr1` → **`libai.so`** | P3 so / **P5** UI | ✓ |
+| MediaMTX LAN 转发 | **mediamtx.service** `:8554/camera/pr0\|pr1` | **P5** | ✓ §7.5 |
+| EasyDarwin / EasyPlayer | **删除** → GStreamer | — | ✓ 替换 |
+| ExoPlayer RTSP | flutter-pi `video_player` | **P5** | ✓ |
+| `NativeBridge` / `AiManager` | **`libai.so`（P3）** + FFI + Dart（**P5**） | P3 / **P5** | ✓ |
+| RKNN YOLO + **污点检测** | `lensinspector` 全量移植（非仅 demo YOLO） | **P3** | ✓ §8 |
+| `config.yaml` + `.rknn` | `/oem/models/` 同布局 | **P3** | ✓ |
+| RKNN 转换 Docker 流水线 | 开发机沿用 `convert-rknn.sh` | 开发机 | ✓ |
+| 云 WebSocket | Dart `web_socket_channel` 等 | **P5** | ✓ |
+| LAN HTTP **:5580** | Dart `shelf` / `HttpServer` | **P5** | ✓ |
+| mDNS 设备发现 | **Avahi** + Dart 或固定发现 | **P5** | ✓ |
+| Modbus RTU `/dev/ttyS5` | **libmodbus** + FFI | **P2** demo / **P5** 量产 | ✓ |
+| GPIO 指示灯 | sysfs GPIO（替代 YNHAPI） | **P2** demo / **P5** 量产 | ✓ |
+| Room 本地库 | **sqlite** + drift / isar | **P5** | ✓ |
+| AWS S3 / **R2 上传** | Dart REST + 签名 | **P5** | ✓ §12 P5 |
+| APK / priv-app OTA | oem 更新 `app.so` + 模型 / `update.img` | **P5** | ✓ |
+| `model.properties` 动态相机 IP | `/oem/etc/model.properties` + `render-mediamtx-config.sh` | **P5** | ✓ §7.5 |
+| 远程调试 | **sshd 按需**（5 连击 / `POST /v1/ssh`） | **P5** | ✓ §7.7 |
+| 背光 / 电源 | `powermanager.config`（Buildroot 保留） | **P1** | ✓ §3.3 |
+| Chromium / Weston / rkaiq | **不引入**（无 lws-ui 等价需求） | — | ✓ 有意省略 |
+
+**结论**：按前文 lws-ui 分析，**无能力缺口**；差异仅为 **实现栈**（Android → Linux + Flutter）与 **MediaMTX 部署方式**（APK 子进程 → systemd）。
+
+### 11.6 迁移 / 参考 lws-ui 时的命名与文案
+
+在从 **lws-ui** 移植代码、对照文档、复用 API 契约或 UI 文案时，遵守以下约定：
+
+| 情形 | 做法 |
+|------|------|
+| **明确的拼写 / 语法错误** | 在 **lws-hmi** 侧 **改正**（标识符、注释、用户可见字符串、文档引用等），**不要**原样复制错误 |
+| **不确定是否为错误** | **不得**擅自改名或改文案；**先询问澄清**（产品/原 lws-ui 维护者）：是历史 typo、有意保留的契约字段，还是对外已发布的 API/文案 |
+| **对外契约字段**（HTTP 路径、Modbus 寄存器名、云 API JSON key、`model.properties` key 等） | 即使看起来像 typo，也 **默认保持与 lws-ui 一致**，除非澄清后确认可改并同步上下游 |
+| **仅内部符号**（私有类名、日志 tag、未文档化的常量） | 可在澄清后修正；若该符号已被其他模块或脚本引用，仍须先确认 |
+
+**原则**：**能力对齐 lws-ui，代码质量优于机械复制**；任何可能影响互操作、OTA、脚本或客户文档的改名，**以澄清结果为准**，避免「静默修正」导致联调或回归失败。
+
+### 11.7 业务迁移范围：`openspec` vs lws-ui 实装
+
+**结论**：`lws-ui/openspec/specs/*` **不能**作为 P5 的唯一迁移清单或验收依据。openspec 偏 **UI 交互增量** 与变更归档，**覆盖不全**，且可能与当前 Android 产品 **不同步**（未归档行为、平台 glue、临时逻辑仍留在源码里）。
+
+| 来源 | 角色 | 典型内容 |
+|------|------|----------|
+| **lws-ui 源码（权威）** | **主清单** | `MainActivity`、`QuickModeActivity`、`EngineerModeActivity`、各 `*Manager`/Service；Modbus 轮询、告警状态机、MediaMTX 协调 |
+| **`lws-ui/docs/*.md`** | **主清单（补充）** | `network-api-reference.md`、`camera-eth0-topology.md`、`dual-stream-summary.md`、AI/OTA/WebSocket 集成说明 |
+| **`openspec/specs/*`** | **参考 / 验收补充** | Frost 控件细节、对话框交互、部分 Settings/Monitor 条目；**有则遵循，无则仍以实装为准** |
+| **本规划 §11.5** | parity 粗粒度核对 | 能力行级对照；P5.6 须再 **细化到页面/路由 inventory** |
+
+**openspec 常见缺口（须看实装）**：
+
+- 视频栈与 **MediaMTX / EasyPlayer 协调**、双码流消费分工
+- **Android 平台层**：Application 初始化顺序、线程池、`YNHAPI`、权限与系统 API
+- **JNI / NativeBridge** 与 HTTP `:5580` 路由的完整面
+- 部分 **Settings / Advanced / Engineer** 深层页与隐藏入口
+- **网络脚本**（eth0 动态配址）与 Buildroot 部署差异
+- 历史/兼容分支、debug 开关、未写入 spec 的边界行为
+
+**P5.6 推荐流程**（每个业务页或 Manager 一块）：
+
+1. 在 lws-ui 定位 **Activity / Fragment / Manager** 与入口路由  
+2. 对照 **`docs/`** 与相关 **`openspec/specs/<name>/spec.md`**（若存在）  
+3. 在 lws-hmi 建 **parity 子项**（行为 + API + 数据，非仅 UI 像素）  
+4. openspec 与实装 **冲突时**：以 **当前量产 Android 行为** 为准，差异记入迁移笔记并 **询问澄清**（§11.6）  
+5. 子项完成后再勾选 §11.5 / P5.7 回归
+
+**参考入口**：`lws-ui/docs/project-architecture-summary.md`、`docs/root-docs-index.md`；Activity 包 `com.lasercyber.lws.ui.activitys.*`。
+
+---
+
+## 12. 实施顺序（检查清单）
+
+各阶段任务树见 **§1.1**（P5 子阶段见 **§1.2**）；以下为可勾选验收项。
+
+### P1 — Linux 镜像 + Hello World
+
+- [ ] `rockchip_rk3566_rk3568_lws_hmi_defconfig` + **`lws_hmi_{base,systemd,network,npu}.config`**（方案 A §3.6）
+- [ ] 裁剪 weston/chromium/camera/benchmark/test；**关 adbd**；保留 wifibt、powermanager
+- [ ] Buildroot：**flutter-pi** + Mali + libdrm/gbm + fontconfig + **RKNPU2（无 example）**
+- [ ] overlay：`hmi.service` enable；journald volatile；mediamtx/sshd/bluetooth **disable**
+- [ ] **Boot splash logo**（§5.2）；LCD 参数与 ynh960 一致
+- [ ] 开发机 Flutter **Hello World** → `/opt/hmi`；`hmi.service` 自启验收
+- [ ] 上电 → logo → 首页 **≤10 s**（§14.2）；3568/3568B2 board smoke（可选）
+
+### P2 — Modbus + GPIO demo
+
+- [ ] Buildroot：**libmodbus**；文档化 `/dev/ttyS5` 与 lws-ui 寄存器契约
+- [ ] **GPIO sysfs** 三色灯引脚（替 YNHAPI；对齐板级 DTS/原理图）
+- [ ] App：**读设备信息**（Modbus 或等价寄存器块）
+- [ ] App：**三色状态灯 demo**（红/绿/蓝或产品定义）
+- [ ] 串口/日志验证 Modbus 时序与 lws-ui 一致
+
+### P3 — AI 代码库 → libai.so
+
+- [ ] 开发机 RKNN：`RKNN_PLATFORM=rk3566`（3568/B2 另出包）
+- [ ] 迁移 **`lensinspector` 全量** → Linux aarch64 **`libai.so`**
+- [ ] OpenCV / yaml-cpp 链入或 static；`config.yaml` + `.rknn` → `/oem/models/`
+- [ ] 板端：`librknnrt.so` + `rknn_server` + **so 加载 smoke**（无需完整 Flutter 业务 UI）
+- [ ] 文档：FFI 接口约定（供 P5 接入）
+
+### P4 — FrostUI + IME（git 子模块）
+
+- [ ] 创建 **`frost_ui`** 仓库 → **`packages/frost_ui`** submodule；实现 **§6.3**（`FrostCard` / `showFrostDialog` / `FrostModal`；默认 **frozen**；按需 **liveWhileOpen**）
+- [ ] 创建 **`frost_ime`** 仓库 → **`packages/frost_ime`** submodule；**IME** overlay + 字体（对齐 lws-ui **`IME.md`**）
+- [ ] 主 App `pubspec` 依赖 **`frost_ui`**、**`frost_ime`**；CI 对两子模块 pin 版本
+- [ ] **Frost 验收**：3566 frozen 全路径 + 至少 2 个 `liveWhileOpen` 用例
+- [ ] **IME 验收**：输入框 + 弹窗 + 键盘抬起/收起与 Frost 弹窗无错位（对齐 lws-ui 已修项）
+
+### P5 — 业务迁移（§1.2 子阶段）
+
+子阶段任务表见 **§1.2**；**P5.6 须按 lws-ui 实装建 inventory**（§11.7），勿仅扫 openspec。
+
+#### P5.1 — 视频与 MediaMTX
+
+- [ ] Buildroot：**mediamtx** + `lws_hmi_gst_rtsp.config` + MPP；`mediamtx.service`（默认 disable）
+- [ ] `/oem/etc/model.properties` + `render-mediamtx-config.sh`
+- [ ] upstream `/PR0`、`/PR1`；本机 `127.0.0.1:8554/camera/pr0|pr1`
+- [ ] flutter-pi **video** 插件；预览 smoke；`probe-dual-stream.sh`
+
+#### P5.2 — 网络与状态栏
+
+- [ ] **`configure-camera-eth0.sh`**（移植 lws-ui）；首屏后异步（§7.0）
+- [ ] **状态栏**：Wi‑Fi / eth0 相机链 / 云占位图标与动画
+- [ ] **WifiActivity** / **BluetoothManagerActivity** 等价设置页
+
+#### P5.3 — AI 产品接入
+
+- [ ] **`libai.so` FFI**；PR1 relay 取帧 + 预览 **CustomPainter** 叠框
+- [ ] 镜片/污点/零点/告警链路与 lws-ui `AiManager` 行为对齐（对照源码 + `docs/AI_VISION_*`）
+
+#### P5.4 — 本地 HTTP 与数据
+
+- [ ] **:5580** Dart `shelf`（契约 `network-api-reference.md`）
+- [ ] **sqlite** + 工艺库；**Avahi** mDNS
+- [ ] Modbus **量产**轮询/寄存器（扩 P2 demo）
+
+#### P5.5 — 云与远程
+
+- [ ] 云 **WebSocket**；**R2** 上传；远程锁/快照/视频列表等（对照 `device-websocket-migration.md`）
+
+#### P5.6 — 业务页面（实装驱动）
+
+- [ ] 维护 **页面/Manager inventory**（Activity 级 + 关键 Manager，§11.7）
+- [ ] 分批交付：**Main / Quick Mode / Engineer / Monitor / Settings / 告警与安全提示** …
+- [ ] 每项：实装行为 → Flutter 路由；openspec **有则对照**，无则不以 spec 代替实装
+
+#### P5.7 — 量产收尾
+
+- [ ] **PR0 录像**；**OTA** / oem 更新
+- [ ] **`sshd` 默认关** + §7.7 隐藏调试
+- [ ] 全量 **§11.5 parity**；3568/3568B2 smoke
+
+---
+
+## 13. 编译命令速查（P1）
+
+```bash
+# 1. 仍用 lws-hmi 环境
+make setup
+make docker-volume-init    # macOS 首次
+make lunch                 # 默认：rk3566_rk3568:ynh960_defconfig（3566 基准板）
+# 待 defconfig 就绪后改 RK_BUILDROOT_CFG 或新 lunch 目标
+
+# 2. 只编 rootfs（迭代最快）
+make build-rootfs
+
+# 3. 完整固件（需要 boot 时再跑）
+make build
+make docker-volume-pull
+```
+
+---
+
+## 14. 体积与开机（预估）
+
+> 首版 `lws_hmi` defconfig 编出 rootfs 后，用 `du -sh target` 与板端秒表/`systemd-analyze` 替换下表。
+
+### 14.1 rootfs 体积（不含 Flutter 业务 app）
+
+| 阶段 | rootfs.ext4 | 说明 |
+|------|-------------|------|
+| P1 | **220–400 MB** | 方案 A；Mali、flutter-pi、RKNPU2、Wi‑Fi/BT |
+| P5 + 视频/业务栈 | **500–800 MB** | + GStreamer、mediamtx、Avahi、sqlite 等 |
+
+**Flutter 应用目录**（`/opt/hmi` 或 `/oem/hmi`，单独部署）：Hello World **5–15 MB**；P5 全业务 UI **约 30–70 MB**（插件原生依赖已算在 rootfs）。
+
+**`update.img`**（`RK_RECOVERY=n`）：约 **650 MB–1.0 GB**（`boot.img` ~40 MB + rootfs + 可选 oem）。
+
+### 14.2 开机时间（仅到 **App 首页 UI**）
+
+**Boot splash**（§5.2）：上电 **<1～2 s** 内必须出现 logo，并持续至首页接替；**单独验收**，不替代下表 KPI 终点。
+
+**不计入 KPI 终点**：RTSP、RKNN、Wi‑Fi、MediaMTX upstream（同前）。
+
+**前提**：**方案 A**（§3.6）；`hmi.service` 仅 `After=local-fs.target`；**所有网络能力首屏后异步**（§7.0）。
+
+| 阶段 | 上电 → 首页首帧 | 主要耗时 |
+|------|-----------------|----------|
+| 内核 + systemd 到 multi-user | **4–9 s** | U-Boot、驱动（Mali/DRM）、**极简 systemd** |
+| flutter-pi 冷启到首页 | **2–5 s** | AOT `app.so`、Mali EGL、字体/asset |
+| **合计（eMMC，方案 A 目标）** | **≤ 10 s**（典型 **5–9 s**） | §14.3 |
+| **合计（eMMC，未优化）** | **8–15 s** | P5 全 UI 易超 10 s |
+| **合计（SD 卡）** | **10–18 s** | 难稳定 <10 s，量产应用 eMMC |
+
+后台并行（**不影响上述指标**）：
+
+- eth0 **动态配址**、wpa_supplicant 与 flutter-pi 并行；配址在 **首页后 / 用摄像头前**（§7.1）
+- 预览/AI：进入功能页后再连 `127.0.0.1:8554` / FFI。
+
+### 14.3 稳定 **≤10 s** 进首页的优化清单
+
+按收益排序；实施后用 `systemd-analyze` / `systemd-analyze blame` 与秒表在 **ynh960 eMMC** 上验收。
+
+#### A. 启动链（内核 / U-Boot）— 通常 **−1～3 s**
+
+| 项 | 做法 |
+|----|------|
+| U-Boot `bootdelay=0` | 去掉倒计时 |
+| 内核 `quiet loglevel=3` | 少串口 printk（开发版可保留） |
+| 裁内核 | 去掉 boot 不用驱动（USB 存储、多余 I2C/SPI、unused DRM connector） |
+| 模块改内置或去掉 | 首屏必需：DRM/MIPI、Mali、eMMC、eth0；**RKNPU/Wi‑Fi/BT 可 modprobe 延迟** |
+| 不用 `systemd-udev-settle` 阻塞 | 确认无 unit `After=systemd-udev-settle` |
+| eMMC 调优 | HS200/HS400、`noatime`；**量产勿用 SD 卡测 KPI** |
+
+#### B. systemd **方案 A**（§3.6）— 通常 **−1～2 s**，**−10～25 MB**
+
+| 项 | 做法 |
+|----|------|
+| **`lws_hmi_systemd.config`** | 关 networkd / resolved / timesyncd / logind / polkit / analyze / firstboot |
+| **journald volatile** | `overlay/.../journald.conf.d/00-lws-hmi-volatile.conf` |
+| **`lws_hmi_base.config`** | 关 **adbd**、**getty**、usbmount 等 |
+| **`lws_hmi_network.config`** | 关 dhcpcd、dnsmasq、dropbear；eth0 **无** networkd |
+| 生产 **enable 仅 `hmi.service`** | post-hook `06-lws-hmi-systemd.sh` |
+| **disable 默认** | **`mediamtx`**、**`sshd`**、**`bluetoothd`**（§7.7 / P1 Wi‑Fi 按需 start） |
+| 禁止 `network-online.target` | 任何 UI 相关 unit 不得 `Wants/After` 它 |
+| **`mediamtx` 若 enable** | **`After=hmi.service` only** — 不挡 KPI，最多并行抢 CPU **~0.3～1 s** |
+| 不用 `systemd-udev-settle` | 确认无 unit `After=systemd-udev-settle` |
+| 可选：`hmi.service` `Nice=-5` | 首页进程略提优先级（需实测） |
+
+**MediaMTX 推荐（量产 KPI）**：
+
+```ini
+# 首选：mediamtx.service 存在但 systemctl disable；App 首页 onReady 后 start
+# 次选：enable + After=hmi.service（不挡首屏，略抢 CPU）
+[Unit]
+After=hmi.service
+```
+
+#### C. flutter-pi / Flutter App — 通常 **−1～3 s**
+
+| 项 | 做法 |
+|----|------|
+| 仅 **Release AOT** | 无 debug/trace；`--split-debug-info` 仅开发机 |
+| **首页零重插件** | `main()` 不 `init` video_player、WebSocket、FFI/libai |
+| **懒加载 asset** | 大字体/图片不进首帧路径；FrostUI 级 UI 按路由 deferred import |
+| 减小 `app.so` | tree-shake；避免首页依赖整包 `http`/数据库 |
+| 首页 widget 树尽量浅 | 首屏占位 + 异步拉数据，重布局放 `addPostFrameCallback` |
+| `icudtl.dat` | 保留必需 locale，勿打包多余 ICU 数据 |
+
+#### D0. Boot splash（P1 必需，见 §5.2）
+
+| 项 | 做法 |
+|----|------|
+| **U-Boot + 内核 logo** | 上电 **<1～2 s** 内亮 logo；MIPI 旋转/分辨率与 ynh960 一致 |
+| **接屏** | flutter-pi 首页无缝接替，禁止长时间黑屏 |
+| **验收** | 与 KPI 分开测：上电即有 logo；KPI 仍只计到 App 首页 |
+
+#### D. 存储与部署 — 通常 **−0.5～1 s**
+
+| 项 | 做法 |
+|----|------|
+| App 放 **eMMC rootfs** 同分区 | 避免 oem 二次 mount 延迟（或 oem 在 fstab **noauto** + 首页后 mount） |
+| rootfs 精简 | P5 仍 **500–800 MB** 可接受；勿再塞 Chromium 级包 |
+| strip | target 二进制 `--strip`（Buildroot 默认） |
+
+#### E. 验收方法
+
+```bash
+systemd-analyze
+systemd-analyze blame
+systemd-analyze critical-chain hmi.service
+# 秒表：上电 → 首页首帧（与 KPI 一致）
+```
+
+** realistic 组合（eMMC + 上述 A+B+C 大部分）**：
+
+| 段 | 目标 |
+|----|------|
+| **U-Boot / 内核 splash** | 上电 **<1～2 s** 有 logo（**P1 必需**，§5.2） |
+| U-Boot + 内核（至 multi-user） | 2–4 s（含 splash 持续显示） |
+| systemd → hmi start | 1–2 s |
+| flutter-pi → 首页首帧 | 2–4 s |
+| **合计** | **6–10 s** |
+
+SD 卡或未延迟 mediamtx/rknn_server 同时抢资源时，**很难稳定 <10 s**。
+
+---
+
+## 15. 参考链接
+
+- [flutter-pi](https://github.com/ardera/flutter-pi) — KMS/EGL 直出，无 Wayland
+- [flutter-pi GStreamer video player](https://github.com/ardera/flutter-pi#GStreamer-video-player)
+- [RKNN-Toolkit2](https://github.com/airockchip/rknn-toolkit2) — 模型转换
+- lws-hmi `README.md` — ynh960 显示参数、Docker 构建
+- lws-ui `native/lensinspector` — RKNN YOLO 参考实现
+- lws-ui `openspec/specs/*` — UI/交互**参考**（非完整迁移清单，§11.7）
+- lws-ui `docs/project-architecture-summary.md`、`docs/root-docs-index.md` — 实装与文档索引
+- lws-ui `scripts/make/convert-rknn.sh` — RKNN 模型转换流水线
+- lws-ui `docs/camera-eth0-topology.md`、`docs/dual-stream-summary.md`、`docs/network-api-reference.md` — PR0/PR1 与 MediaMTX LAN URL
+- lws-ui `MediaMtxConfigRenderer.java` / `MediaMtxRelayUrls.java` — YAML 与 URL 规范
+- lws-ui `AdbRemoteDebugHelper.java` / `POST /v1/adb` — SSH 隐藏调试对标（§7.7）
+- lws-ui `docs/frostui.md`、`FrostBlurViewSupport.kt` — Frost 冻结/live 语义对照（§6.3）
+- Rockchip SDK `buildroot/configs/rockchip_rk3566_rk3568_defconfig` — 当前臃肿基线（对照用）
+
+---
+
+**总结**：**能力不少于 lws-ui**（§11.5）。**P1**：镜像 + Hello World + boot splash + **≤10 s 首页**（方案 A §3.6）。**P2～P4**：Modbus/GPIO → AI so → **`frost_ui` / `frost_ime`**。**P5**：按 **§1.2（P5.1～P5.7）** 迁移；**以 lws-ui 实装为准**，openspec 作补充（§11.7）。

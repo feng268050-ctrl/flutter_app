@@ -1,0 +1,27 @@
+# Local outputs / caches
+output/
+.cache/
+
+# SDK is symlinked, not vendored
+sdk
+
+# adb pull backups (regenerate with make pull-display-params)
+board/from-device/
+
+# U-Boot boot logo (generated from board/logo/splash_icon.png)
+board/logo/logo.bmp
+board/logo/logo_kernel.bmp
+
+# Flutter release bundle (run make build-flutter-app)
+overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/opt/hmi/
+
+# Local env (see .env.example)
+.env
+
+# Editor / IDE
+.DS_Store
+.idea/
+*.iml
+
+# Local Python venv for logo / tooling scripts
+.venv-tools/

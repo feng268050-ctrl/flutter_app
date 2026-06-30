@@ -1,0 +1,20 @@
+# lws-hmi Buildroot defconfig — copy via apply-overlay.sh into
+# buildroot/configs/rockchip_rk3566_rk3568_lws_hmi_defconfig
+
+#include "base/base.config"
+#include "chips/lws_hmi_base.config"
+#include "chips/lws_hmi_systemd.config"
+#include "chips/rk3566_rk3568_aarch64.config"
+#include "gpu/gpu.config"
+#include "chips/lws_hmi_npu.config"
+#include "wifibt/wireless.config"
+#include "wifibt/bt.config"
+#include "chips/lws_hmi_network.config"
+#include "font/chinese.config"
+#include "powermanager.config"
+#include "chips/lws_hmi_flutter.config"
+# BR2_ROOTFS_OVERLAY for lws-hmi-fs-overlay: see chips/rk3566_rk3568.config (apply-overlay)
+# #include "fs/vfat.config"
+# #include "multimedia/mpp.config"
+# #include "chips/lws_hmi_mediamtx.config"
+# #include "chips/lws_hmi_gst_rtsp.config"

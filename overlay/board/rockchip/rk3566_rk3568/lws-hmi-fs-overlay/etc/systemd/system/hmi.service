@@ -1,0 +1,15 @@
+[Unit]
+Description=flutter-pi HMI
+DefaultDependencies=yes
+After=local-fs.target
+# Do not wait for network or MediaMTX (KPI = first home frame).
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/flutter-pi --release -o landscape_left /opt/hmi
+Restart=on-failure
+RestartSec=2
+Environment=FLUTTER_PI=1
+
+[Install]
+WantedBy=multi-user.target

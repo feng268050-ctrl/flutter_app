@@ -5,3 +5,7 @@ disable sshd.service
 disable sshd.socket
 disable mediamtx.service
 disable bluetooth.service
+disable wifibt-init.service
+disable wpa_supplicant.service
+disable network.service
+disable log-guardian.service

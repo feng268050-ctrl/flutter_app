@@ -30,7 +30,7 @@ check_systemd_wants() {
 	fi
 	ls -la "$wants" 2>/dev/null || true
 
-	for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket; do
+	for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 		if unit_wants_link "$unit"; then
 			echo "FAIL: $unit still enabled in $label" >&2
 			missing=1
@@ -47,6 +47,18 @@ check_systemd_wants() {
 			missing=1
 		fi
 	done
+
+	local sysinit_wants="$root/etc/systemd/system/sysinit.target.wants"
+	if [[ -d "$sysinit_wants" ]]; then
+		for unit in lws-hmi-debug-boot.service wifibt-init.service log-guardian.service; do
+			if [[ -L "$sysinit_wants/$unit" || -f "$sysinit_wants/$unit" ]]; then
+				echo "FAIL: $unit still enabled in $label sysinit.target.wants" >&2
+				missing=1
+			else
+				echo "OK:  $unit not in $label sysinit.target.wants"
+			fi
+		done
+	fi
 
 	return "$missing"
 }

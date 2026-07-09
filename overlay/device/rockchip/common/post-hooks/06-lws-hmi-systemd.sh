@@ -19,6 +19,10 @@ DISABLE_AT_BOOT=(
 	sshd.service
 	sshd.socket
 	bluetooth.service
+	wifibt-init.service
+	wpa_supplicant.service
+	network.service
+	log-guardian.service
 )
 
 link_unit() {

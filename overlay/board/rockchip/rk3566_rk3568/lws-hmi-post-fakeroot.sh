@@ -26,7 +26,7 @@ link_unit() {
 	ln -sf "/etc/systemd/system/$unit" "$WANTS/$unit"
 }
 
-for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket bluetooth.service; do
+for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 	disable_unit "$unit"
 done
 

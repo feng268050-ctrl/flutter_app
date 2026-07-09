@@ -20,11 +20,19 @@ else
 	fail "missing $WANTS"
 fi
 
-for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket bluetooth.service; do
+for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 	if [ -e "$WANTS/$unit" ]; then
 		fail "$unit still enabled in multi-user.target.wants"
 	else
 		pass "$unit not in multi-user.target.wants"
+	fi
+done
+
+for unit in lws-hmi-debug-boot.service wifibt-init.service log-guardian.service; do
+	if [ -e /etc/systemd/system/sysinit.target.wants/$unit ]; then
+		fail "$unit still enabled in sysinit.target.wants"
+	else
+		pass "$unit not in sysinit.target.wants"
 	fi
 done
 
@@ -38,7 +46,7 @@ done
 
 echo ""
 echo "--- other *.wants (sshd.socket etc.) ---"
-for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket bluetooth.service; do
+for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 	found=""
 	for wants_dir in /etc/systemd/system/*.wants; do
 		[ -d "$wants_dir" ] || continue

@@ -51,9 +51,11 @@ systemd-analyze blame
 systemd-analyze critical-chain hmi.service
 ```
 
-**`boot-verify` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network` 未链接；22 未监听；`network-generator` masked；`flutter-pi` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
+**`boot-verify` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；22 未监听；`network-generator` masked；`flutter-pi` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
 
 **秒表**（填 §6 表格）：上电 → logo；上电 → multi-user；上电 → 首页首帧。
+
+**首帧时间（`loglevel=4`）**：内核 `Freeing drm_logo memory` 不在串口显示；刷机后用 `dmesg | grep -E 'drm_logo|Freeing'` 查看时间戳，或物理秒表看屏。
 
 ---
 
@@ -81,7 +83,7 @@ systemd-analyze critical-chain hmi.service
 | A-1 | U-Boot `bootdelay=0` | **pending** | 预编译 uboot 需确认能否改 env；**不编译 uboot** 除非 Innohi 同意 |
 | A-2 | 内核 `loglevel=7` → `4` 或 `3` | **done** | `loglevel=4`；板端串口日志已减少 |
 | A-3 | 裁内核无用驱动 | **pending** | 回归风险中；末阶段 |
-| A-4 | RKNPU / Wi‑Fi / BT 延迟至首屏后 | **repo** | disable `wifibt-init`/`wpa_supplicant`/`network.service`；待刷机 |
+| A-4 | RKNPU / Wi‑Fi / BT 延迟至首屏后 | **done** | disable `wifibt-init`/`wpa_supplicant`/`network.service`；板端已验证 |
 | A-5 | 确认无 `After=systemd-udev-settle`（尤其 `hmi`） | **done** | `hmi.service` 设计已禁止；板端 `critical-chain` 已验证 |
 | A-6 | eMMC `noatime` / HS200/HS400 | **done** | fstab + display-init；**勿**用 `rootflags=noatime`；HS400 沿用 SDK DTS |
 | A-7 | 默认去掉 `lws-hmi-debug-usb.config` | **done** | `ynh960_defconfig` |
@@ -105,6 +107,7 @@ systemd-analyze critical-chain hmi.service
 | B-6 | `hmi.service` `Nice=-5` | **done** | 板端已验证；首帧 ~1s 未缩短（见 §5 注） |
 | B-7 | sysinit 仅 `param-update`（显示） | **done** |
 | B-8 | `lws-hmi-performance.service`：CPU + DMC/GPU devfreq `performance` | **done** | governors 已生效；首帧 ~1s 未缩短（见 §5 注） |
+| B-9 | disable `log-guardian.service` @ boot | **repo** | sysinit 仅 `param-update` + `async-commit`；待刷机 |
 
 ### C — flutter-pi / App（通常 −1～3 s）
 
@@ -130,8 +133,8 @@ systemd-analyze critical-chain hmi.service
 P0（done）
   → B-6 + B-8（done；首帧 EGL 瓶颈确认，不再深挖）
   → A-2（done；loglevel=4）
-  → A-6（done；noatime via fstab）
-  → A-4（延迟 Wi‑Fi/BT/network，当前轮）
+  → A-4（done；延迟 Wi‑Fi/BT/network）
+  → B-9（disable log-guardian，当前轮）
   → D0-1 秒表验收 splash
   → A-1（U-Boot bootdelay，需 Innohi）
   → C / A-3（产品阶段）
@@ -143,7 +146,7 @@ P0（done）
 
 **A-6 注意**：`rootflags=noatime` 会致内核 panic（`ext4: Unknown parameter 'noatime'`）。`noatime` 须写在 fstab 第 4 列，由 `systemd-remount-fs` 生效。
 
-**当前轮**：**A-4**（`make build-rootfs` + `make build-img` + `make flash`）。
+**当前轮**：**B-9**（disable `log-guardian`；`make build-rootfs` + `make build-img` + `make flash`）。
 
 ---
 
@@ -156,7 +159,8 @@ P0（done）
 | 2026-07 | +B-6/B-8 performance | | ~8.6s | ~8.6s | PASS | governors OK；首帧仍 ~1s logo→UI |
 | 2026-07 | +A-2 loglevel=4 | | | | PASS | 串口日志减少 |
 | 2026-07 | +A-6 noatime | | | | PASS | mount 含 noatime；勿用 rootflags |
-| | +A-4 defer wifibt | | | | | 待刷机 |
+| 2026-07 | +A-4 defer wifibt | | | | PASS | 无 wpa/network @ boot |
+| | +B-9 log-guardian | | | | | 待刷机 |
 
 ---
 
@@ -178,4 +182,4 @@ P0（done）
 
 ---
 
-*最后更新：A-6 done；A-4 延迟 Wi‑Fi/BT/network 已入仓。*
+*最后更新：A-4 done；移除 boot-kpi service；B-9 log-guardian 已入仓。*

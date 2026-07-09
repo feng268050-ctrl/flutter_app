@@ -1,15 +1,27 @@
 # prebuilt/
 
-Git-tracked **compiled or vendored binaries** for lws-hmi. Clone this repo and run `make build-all-deps` — if artifacts here match the version pins, no recompile is needed.
+Runtime artifacts tracked in git (or produced by `make build-runtime-deps`). `make check-prebuilt` verifies these plus OpenCV sources under `.cache/opencv/`.
 
-| Path | Contents | Regenerate |
-|------|----------|------------|
-| `mediamtx/linux-arm64/` | MediaMTX static binary (P5) | `make rebuild-mediamtx` |
-| `rknn-rt/` | Linux aarch64 `librknnrt.so` + header (P3 dev) | `make rebuild-rknn-rt` |
-| `flutter-sdk/install/` | Host Flutter SDK + precache marker | `make rebuild-flutter-sdk` |
-| `flutter-engine/<ver>/arm64-release/` | `libflutter_engine.so`, `icudtl.dat`, `gen_snapshot` | `make build-prebuilt` after `make build-rootfs` |
-| `flutter-pi/<commit>/` | `/usr/bin/flutter-pi` install tree | `make build-prebuilt` after `make build-rootfs` |
+## Runtime (`make build-runtime-deps`)
 
-**Sources** (engine tarball, flutter-pi git, OpenCV tarballs, …) stay in gitignored `.cache/` and are only downloaded when prebuilt is missing or versions change.
+| Path | Board role | Regenerate |
+|------|------------|------------|
+| `flutter-engine/<ver>/arm64-release/` | HMI `libflutter_engine.so` | `make build-flutter-engine` |
+| `flutter-pi/<commit>/` | `/usr/bin/flutter-pi` | `make build-flutter-pi` |
+| `mediamtx/linux-arm64/` | RTSP relay + fs-overlay `usr/bin/` | `make build-mediamtx` |
+| `rknn-rt/` | aarch64 `librknnrt.so` for `libai.so` | `make fetch-rknn-rt` |
 
-Large files may use **Git LFS** (see repo `.gitattributes`). Maintainers: after bumping version pins, run `make build-all-deps` then `make build-prebuilt` (Flutter) and commit `prebuilt/`.
+OpenCV: `.cache/opencv/` (sources, not under `prebuilt/`) — `make fetch-opencv` + `fetch-opencv-ximgproc`.
+
+Rootfs also installs SDK `external/rknpu2` via Buildroot (`BR2_PACKAGE_RKNPU2`).
+
+## Dev host only (not in `check-prebuilt`)
+
+| Path | Role | Command |
+|------|------|---------|
+| *(external)* `FLUTTER_SDK/install/` | Cross-build Flutter app | `make fetch-flutter-sdk` |
+| `.cache/rknn-toolkit/` | ONNX→RKNN on x86 | `make fetch-rknn-toolkit` |
+
+Git LFS: see `.gitattributes`. Version bump → `make rebuild-deps`.
+
+| `gstreamer/` | MPP + GStreamer RTSP build stamp | `make build-gstreamer` |

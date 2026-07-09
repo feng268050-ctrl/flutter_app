@@ -1,9 +1,12 @@
 # Local outputs / caches
 output/
 .cache/
+overlay/buildroot/.generated/
 
 # SDK is symlinked, not vendored
 sdk
+flutter-sdk
+prebuilt/flutter-sdk/
 
 # adb pull backups (regenerate with make pull-display-params)
 board/from-device/

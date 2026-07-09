@@ -4,17 +4,16 @@
 #
 ################################################################################
 
-# Host SDK: `make build-flutter-sdk` → prebuilt/flutter-sdk/install/
-# Falls back to .cache/flutter-sdk/install/ when prebuilt is absent.
+# Host SDK for `make build-flutter-engine` (compile path). Not used by build-rootfs.
 FLUTTER_SDK_BIN_VERSION = 3.24.4
 
 LWS_HMI_ROOT ?= $(TOPDIR)/../..
-FLUTTER_SDK_BIN_PREBUILT = $(LWS_HMI_ROOT)/prebuilt/flutter-sdk/install
+FLUTTER_SDK_BIN_LINKED = $(LWS_HMI_ROOT)/flutter-sdk
 FLUTTER_SDK_BIN_CACHE = $(LWS_HMI_ROOT)/.cache/flutter-sdk/install
-ifeq ($(wildcard $(FLUTTER_SDK_BIN_PREBUILT)/.lws-precache-done),)
+ifeq ($(wildcard $(FLUTTER_SDK_BIN_LINKED)/.lws-precache-done),)
 FLUTTER_SDK_BIN_SITE = $(FLUTTER_SDK_BIN_CACHE)
 else
-FLUTTER_SDK_BIN_SITE = $(FLUTTER_SDK_BIN_PREBUILT)
+FLUTTER_SDK_BIN_SITE = $(FLUTTER_SDK_BIN_LINKED)
 endif
 FLUTTER_SDK_BIN_SITE_METHOD = local
 FLUTTER_SDK_BIN_LICENSE = BSD-3-Clause
@@ -45,17 +44,16 @@ define HOST_FLUTTER_SDK_BIN_ENSURE_LOCAL_TREE
 	if [ ! -f "$(FLUTTER_SDK_BIN_SITE)/.lws-precache-done" ]; then \
 		printf 'host-flutter-sdk-bin %s: missing %s\n' \
 			"$(FLUTTER_SDK_BIN_VERSION)" "$(FLUTTER_SDK_BIN_SITE)" 1>&2; \
-		printf 'Run from lws-hmi repo: make build-flutter-sdk\n' 1>&2; \
+		printf 'Run from lws-hmi repo: make fetch-flutter-sdk\n' 1>&2; \
 		exit 1; \
 	fi
 endef
 HOST_FLUTTER_SDK_BIN_POST_RSYNC_HOOKS += HOST_FLUTTER_SDK_BIN_ENSURE_LOCAL_TREE
 
 define HOST_FLUTTER_SDK_BIN_CONFIGURE_CMDS
-	$(foreach i,$(HOST_FLUTTER_SDK_BIN_CONF_OPTS),
-		$(HOST_FLUTTER_SDK_BIN_ENV) $(@D)/bin/flutter config $(i); \
-	)
-	$(HOST_FLUTTER_SDK_BIN_ENV) $(@D)/bin/dart --disable-analytics
+	# Install-only: tree comes from make fetch-flutter-sdk (tarball + precache, not a git clone).
+	# flutter config here fails with "not a clone of the GitHub project".
+	:
 endef
 
 define HOST_FLUTTER_SDK_BIN_BUILD_CMDS

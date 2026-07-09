@@ -1,18 +1,19 @@
 ################################################################################
 #
-# flutter-pi (lws-hmi overlay)
+# flutter-pi (lws-hmi overlay) — prebuilt install only
 #
 ################################################################################
 
-# Source fallback: .cache/flutter-pi/src/ (make build-flutter-pi)
-# Prebuilt: prebuilt/flutter-pi/<commit>/ (make build-prebuilt)
+# prebuilt/flutter-pi/<commit>/ must exist before build-rootfs.
+
 FLUTTER_PI_VERSION = 37bd9773c1938e5f76208bc4e8632fdbbb4190ff
+
+# Prebuilt-only: no download (see flutter-engine.mk).
+FLUTTER_PI_SITE =
+FLUTTER_PI_SOURCE =
 
 LWS_HMI_ROOT ?= $(TOPDIR)/../..
 FLUTTER_PI_PREBUILT_DIR = $(LWS_HMI_ROOT)/prebuilt/flutter-pi/$(FLUTTER_PI_VERSION)
-ifneq ($(wildcard $(FLUTTER_PI_PREBUILT_DIR)/.lws-prebuilt),)
-FLUTTER_PI_USE_PREBUILT = YES
-endif
 
 FLUTTER_PI_LICENSE = MIT
 FLUTTER_PI_LICENSE_FILES = LICENSE
@@ -22,13 +23,11 @@ FLUTTER_PI_DEPENDENCIES = \
 	libxkbcommon \
 	systemd
 
-ifeq ($(FLUTTER_PI_USE_PREBUILT),YES)
-
 define FLUTTER_PI_ENSURE_PREBUILT
 	if [ ! -f "$(FLUTTER_PI_PREBUILT_DIR)/.lws-prebuilt" ]; then \
 		printf 'flutter-pi %s: missing prebuilt %s\n' \
 			"$(FLUTTER_PI_VERSION)" "$(FLUTTER_PI_PREBUILT_DIR)" 1>&2; \
-		printf 'Run: make build-deps (clone) or make build-prebuilt (maintainer)\n' 1>&2; \
+		printf 'Run: make build-flutter-engine / make build-flutter-pi\n' 1>&2; \
 		exit 1; \
 	fi
 endef
@@ -52,101 +51,3 @@ define FLUTTER_PI_INSTALL_TARGET_CMDS
 endef
 
 $(eval $(generic-package))
-
-else # compile from local source
-
-FLUTTER_PI_SITE = $(LWS_HMI_ROOT)/.cache/flutter-pi/src
-FLUTTER_PI_SITE_METHOD = local
-
-define FLUTTER_PI_ENSURE_LOCAL_TREE
-	if [ ! -d "$(FLUTTER_PI_SITE)/.git" ]; then \
-		printf 'flutter-pi %s: missing %s\n' \
-			"$(FLUTTER_PI_VERSION)" "$(FLUTTER_PI_SITE)" 1>&2; \
-		printf 'Run from lws-hmi repo: make build-flutter-pi\n' 1>&2; \
-		exit 1; \
-	fi
-endef
-FLUTTER_PI_POST_RSYNC_HOOKS += FLUTTER_PI_ENSURE_LOCAL_TREE
-
-FLUTTER_PI_CONF_OPTS = \
-	-DDEBUG_DRM_PLANE_ALLOCATIONS=OFF \
-	-DDUMP_ENGINE_LAYERS=OFF \
-	-DENABLE_ASAN=OFF \
-	-DENABLE_MTRACE=OFF \
-	-DENABLE_SOFTWARE=OFF \
-	-DENABLE_TESTS=OFF \
-	-DENABLE_TSAN=OFF \
-	-DENABLE_UBSAN=OFF \
-	-DFILESYSTEM_LAYOUT=meta-flutter \
-	-DLINT_EGL_HEADERS=OFF \
-	-DTRY_BUILD_GSTREAMER_AUDIO_PLAYER_PLUGIN=OFF \
-	-DTRY_BUILD_GSTREAMER_VIDEO_PLAYER_PLUGIN=OFF \
-	-DTRY_ENABLE_OPENGL=OFF \
-	-DTRY_ENABLE_SESSION_SWITCHING=OFF \
-	-DTRY_ENABLE_VULKAN=OFF \
-	-DVULKAN_DEBUG="OFF" \
-	-DUSE_LEGACY_KMS=OFF \
-	-DWARN_MISSING_FIELD_INITIALIZERS=OFF \
-	-DBUILD_SENTRY_PLUGIN=OFF
-
-ifeq ($(BR2_ENABLE_LTO),y)
-FLUTTER_PI_CONF_OPTS += -DLTO=ON
-else
-FLUTTER_PI_CONF_OPTS += -DLTO=OFF
-endif
-
-ifeq ($(BR2_PACKAGE_FLUTTER_PI_CHARSET_CONVERTER_PLUGIN),y)
-FLUTTER_PI_CONF_OPTS += -DBUILD_CHARSET_CONVERTER_PLUGIN=ON
-else
-FLUTTER_PI_CONF_OPTS += -DBUILD_CHARSET_CONVERTER_PLUGIN=OFF
-endif
-
-ifeq ($(BR2_PACKAGE_FLUTTER_PI_GSTREAMER_AUDIO_PLAYER_PLUGIN),y)
-FLUTTER_PI_DEPENDENCIES += gstreamer1 gst1-plugins-base
-FLUTTER_PI_CONF_OPTS += -DBUILD_GSTREAMER_AUDIO_PLAYER_PLUGIN=ON
-else
-FLUTTER_PI_CONF_OPTS += -DBUILD_GSTREAMER_AUDIO_PLAYER_PLUGIN=OFF
-endif
-
-ifeq ($(BR2_PACKAGE_FLUTTER_PI_GSTREAMER_VIDEO_PLAYER_PLUGIN),y)
-FLUTTER_PI_DEPENDENCIES += gstreamer1 gst1-plugins-base
-FLUTTER_PI_CONF_OPTS += -DBUILD_GSTREAMER_VIDEO_PLAYER_PLUGIN=ON
-else
-FLUTTER_PI_CONF_OPTS += -DBUILD_GSTREAMER_VIDEO_PLAYER_PLUGIN=OFF
-endif
-
-ifeq ($(BR2_PACKAGE_FLUTTER_PI_RAW_KEYBOARD_PLUGIN),y)
-FLUTTER_PI_CONF_OPTS += -DBUILD_RAW_KEYBOARD_PLUGIN=ON
-else
-FLUTTER_PI_CONF_OPTS += -DBUILD_RAW_KEYBOARD_PLUGIN=OFF
-endif
-
-ifeq ($(BR2_PACKAGE_FLUTTER_PI_TEXT_INPUT_PLUGIN),y)
-FLUTTER_PI_DEPENDENCIES += libinput libxkbcommon
-FLUTTER_PI_CONF_OPTS += -DBUILD_TEXT_INPUT_PLUGIN=ON
-else
-FLUTTER_PI_CONF_OPTS += -DBUILD_TEXT_INPUT_PLUGIN=OFF
-endif
-
-ifeq ($(BR2_PACKAGE_MESA3D_VULKAN_DRIVER)$(BR2_PACKAGE_VULKAN_LOADER),yy)
-FLUTTER_PI_DEPENDENCIES += mesa3d vulkan-loader
-FLUTTER_PI_CONF_OPTS += -DENABLE_VULKAN=ON
-else
-FLUTTER_PI_CONF_OPTS += -DENABLE_VULKAN=OFF
-endif
-
-ifeq ($(BR2_PACKAGE_HAS_LIBGLES),y)
-FLUTTER_PI_CONF_OPTS += -DENABLE_OPENGL=ON
-else
-FLUTTER_PI_CONF_OPTS += -DENABLE_OPENGL=OFF
-endif
-
-ifeq ($(BR2_PACKAGE_SEATD),y)
-FLUTTER_PI_DEPENDENCIES += seatd
-FLUTTER_PI_CONF_OPTS += -DENABLE_SESSION_SWITCHING=ON
-else
-FLUTTER_PI_CONF_OPTS += -DENABLE_SESSION_SWITCHING=OFF
-endif
-
-$(eval $(cmake-package))
-endif

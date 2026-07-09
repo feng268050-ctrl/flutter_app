@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Copy exported prebuilt runtime trees into Buildroot fs-overlay paths (Phase 4).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT/scripts/prebuilt-common.sh"
+
+BR_BOARD="$ROOT/overlay/board/rockchip/rk3566_rk3568"
+GST_SRC="$ROOT/prebuilt/gstreamer/target"
+PLAT_SRC="$ROOT/prebuilt/platform-packages/target"
+GST_DEST="$BR_BOARD/lws-hmi-prebuilt-gstreamer"
+PLAT_DEST="$BR_BOARD/lws-hmi-prebuilt-platform"
+
+sync_tree() {
+  local label="$1" src="$2" dest="$3"
+  if ! prebuilt_ready "$src"; then
+    echo "sync-prebuilt-overlays: skip $label (no $src/.lws-prebuilt)"
+    return 0
+  fi
+  if [[ ! -d "$src/usr" ]]; then
+    echo "ERROR: $src missing usr/ — run: make build-gstreamer or make build-platform-packages" >&2
+    return 1
+  fi
+  mkdir -p "$dest"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete "$src/" "$dest/"
+  else
+    rm -rf "$dest"
+    mkdir -p "$dest"
+    cp -a "$src/." "$dest/"
+  fi
+  echo "sync-prebuilt-overlays: $label → $dest"
+}
+
+sync_tree "gstreamer" "$GST_SRC" "$GST_DEST"
+sync_tree "platform-packages" "$PLAT_SRC" "$PLAT_DEST"

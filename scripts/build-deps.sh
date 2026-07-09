@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# Download source + build versioned deps into prebuilt/ (Flutter stack).
+# Full dependency prep: host dev environment + runtime prebuilt/.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-bash "$ROOT/scripts/build-flutter-engine.sh"
-bash "$ROOT/scripts/build-flutter-sdk.sh"
-bash "$ROOT/scripts/build-flutter-pi.sh"
-bash "$ROOT/scripts/sync-prebuilt-manifest.sh"
+FORCE="${FORCE:-0}" bash "$ROOT/scripts/build-dev-deps.sh"
+FORCE="${FORCE:-0}" bash "$ROOT/scripts/build-runtime-deps.sh"
 
-echo "build-deps: done (prebuilt/ used when present; see prebuilt/README.md)"
+echo "build-deps: done (build-dev-deps + build-runtime-deps)"

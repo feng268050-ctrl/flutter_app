@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Vendor OpenCV contrib ximgproc EdgeDrawing sources (matches overlay/third-party/opencv.version).
+# ximgproc EdgeDrawing sources for board libai (runtime OpenCV stack).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -28,7 +28,7 @@ if [[ "$FORCE" == "1" ]]; then
 fi
 
 if [[ -f "$MARKER" ]]; then
-  echo "build-opencv-ximgproc: already present at $VENDOR_DIR"
+  echo "fetch-opencv-ximgproc: already present at $VENDOR_DIR"
   exit 0
 fi
 
@@ -38,7 +38,7 @@ fetch() {
   local rel="$1"
   local dest="$VENDOR_DIR/$rel"
   mkdir -p "$(dirname "$dest")"
-  echo "build-opencv-ximgproc: $rel"
+  echo "fetch-opencv-ximgproc: $rel"
   curl -fsSL "$BASE/$rel" -o "$dest"
 }
 
@@ -46,4 +46,4 @@ fetch "src/edge_drawing.cpp"
 fetch "src/edge_drawing_common.hpp"
 fetch "include/opencv2/ximgproc/edge_drawing.hpp"
 
-echo "build-opencv-ximgproc: installed under $VENDOR_DIR"
+echo "fetch-opencv-ximgproc: installed under $VENDOR_DIR"

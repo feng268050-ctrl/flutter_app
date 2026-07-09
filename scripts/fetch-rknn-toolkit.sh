@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Download RKNN-Toolkit2 wheel + requirements (P3 model conversion). Aligned with lws-ui.
+# Download RKNN-Toolkit2 wheel + requirements (host dev — ONNX→RKNN model convert).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -48,26 +48,26 @@ rknn_cache_ready() {
 }
 
 if rknn_cache_ready; then
-  echo "build-rknn-toolkit: RKNN-Toolkit2 ${VERSION} already cached at $CACHE_DIR"
+  echo "fetch-rknn-toolkit: RKNN-Toolkit2 ${VERSION} already cached at $CACHE_DIR"
   exit 0
 fi
 
 mkdir -p "$CACHE_DIR"
 
 if [[ ! -f "$WHEEL_PATH" ]]; then
-  echo "build-rknn-toolkit: downloading ${BASE_URL}/${WHEEL_NAME} ..."
+  echo "fetch-rknn-toolkit: downloading ${BASE_URL}/${WHEEL_NAME} ..."
   curl -fL --retry 3 --retry-delay 2 -o "$WHEEL_PATH" "${BASE_URL}/${WHEEL_NAME}"
 fi
 
 if [[ ! -f "$REQ_PATH" ]]; then
-  echo "build-rknn-toolkit: downloading ${BASE_URL}/${REQ_NAME} ..."
+  echo "fetch-rknn-toolkit: downloading ${BASE_URL}/${REQ_NAME} ..."
   curl -fL --retry 3 --retry-delay 2 -o "$REQ_PATH" "${BASE_URL}/${REQ_NAME}"
 fi
 
 if ! torch_wheel_ready; then
-  echo "build-rknn-toolkit: downloading CPU PyTorch wheel (resume-capable) ..."
+  echo "fetch-rknn-toolkit: downloading CPU PyTorch wheel (resume-capable) ..."
   if ! curl -fL --retry 5 --retry-delay 3 -C - -o "$TORCH_WHEEL_PATH" "$TORCH_URL"; then
-    echo "build-rknn-toolkit: retrying torch from fallback URL ..."
+    echo "fetch-rknn-toolkit: retrying torch from fallback URL ..."
     curl -fL --retry 5 --retry-delay 3 -C - -o "$TORCH_WHEEL_PATH" "$TORCH_URL_FALLBACK"
   fi
   if ! torch_wheel_ready; then
@@ -76,5 +76,5 @@ if ! torch_wheel_ready; then
   fi
 fi
 
-echo "build-rknn-toolkit: ready (RKNN-Toolkit2 ${VERSION}, x86_64 cp38 + torch cpu)"
+echo "fetch-rknn-toolkit: ready (RKNN-Toolkit2 ${VERSION}, x86_64 cp38 + torch cpu)"
 echo "  $CACHE_DIR"

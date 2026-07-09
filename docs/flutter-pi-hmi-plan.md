@@ -1066,6 +1066,21 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 **原则**：**能力对齐 lws-ui，代码质量优于机械复制**；任何可能影响互操作、OTA、脚本或客户文档的改名，**以澄清结果为准**，避免「静默修正」导致联调或回归失败。
 
+#### 11.6.1 资源迁移与 App 体积
+
+参考 **lws-ui** 实现 **lws-hmi** 界面、拷贝原项目资源时，默认做一次资源瘦身，不机械照搬 Android 资源目录：
+
+| 项 | 做法 |
+|----|------|
+| **PNG 位图** | 拷贝到 Flutter assets 前，优先转换为 **WebP**；照片/背景类用有损 WebP，透明 UI 贴图用无损 WebP 或确认视觉后有损 WebP |
+| **多 dpi 资源** | Android `drawable-*dpi` 同图多份时，只保留 Flutter 实际需要的 1 份或按目标屏幕保留少量规格，避免全量复制 |
+| **未使用资源** | 每迁移一个页面/Manager，只带入该页面实际引用的图片、动画、字体；阶段完成后跑一次 assets inventory 清理孤儿文件 |
+| **简单图标 / 纯色形状** | 优先改为 Flutter `Icon`、矢量 SVG、代码绘制或 FrostUI 组件样式，避免为小图标打包大位图 |
+| **字体** | 仅打包业务实际使用字体；中文字体若必须内置，优先做子集化或沿用系统字体，避免整包字体重复进 App |
+| **大背景 / 动画** | 背景图按 ynh960 目标分辨率预缩放；动画优先降帧、压缩或改静态/程序化效果，避免把 Android 原始大图逐帧复制进 App |
+
+**验收**：P5 业务页迁移时记录 assets inventory（来源、用途、格式、体积）；对比转换前后 `/opt/hmi` 或 `/oem/hmi` 目录大小，确保资源优化收益可见。
+
 ### 11.7 业务迁移范围：`openspec` vs lws-ui 实装
 
 **结论**：`lws-ui/openspec/specs/*` **不能**作为 P5 的唯一迁移清单或验收依据。openspec 偏 **UI 交互增量** 与变更归档，**覆盖不全**，且可能与当前 Android 产品 **不同步**（未归档行为、平台 glue、临时逻辑仍留在源码里）。
@@ -1171,6 +1186,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 #### P5.6 — 业务页面（实装驱动）
 
 - [ ] 维护 **页面/Manager inventory**（Activity 级 + 关键 Manager，§11.7）
+- [ ] 迁移页面资源时执行 **assets 瘦身**：PNG → WebP、清理未用资源、合并 dpi 重复图、字体子集化（§11.6.1）
 - [ ] 分批交付：**Main / Quick Mode / Engineer / Monitor / Settings / 告警与安全提示** …
 - [ ] 每项：实装行为 → Flutter 路由；openspec **有则对照**，无则不以 spec 代替实装
 

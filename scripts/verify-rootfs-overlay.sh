@@ -39,7 +39,7 @@ check_systemd_wants() {
 		fi
 	done
 
-	for unit in hmi.service mainserver.service; do
+	for unit in hmi.service mainserver.service lws-hmi-performance.service; do
 		if unit_wants_link "$unit"; then
 			echo "OK:  $unit enabled in $label"
 		else

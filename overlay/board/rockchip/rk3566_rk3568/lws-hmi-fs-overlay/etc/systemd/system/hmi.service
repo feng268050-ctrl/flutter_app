@@ -1,13 +1,14 @@
 [Unit]
 Description=flutter-pi HMI
 DefaultDependencies=yes
-After=local-fs.target
+After=local-fs.target lws-hmi-performance.service
 # Optional on lws_hmi images: param-update.service / mainserver.service
 # sdk-native: panel init is in kernel DTS (panel-init-sequence).
 # Do not wait for network or MediaMTX (KPI = first home frame).
 
 [Service]
 Type=simple
+Nice=-5
 ExecStart=/usr/bin/flutter-pi --release -o landscape_left /opt/hmi
 Restart=on-failure
 RestartSec=2

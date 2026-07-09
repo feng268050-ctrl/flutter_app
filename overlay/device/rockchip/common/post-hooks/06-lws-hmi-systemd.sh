@@ -52,6 +52,11 @@ if [ -f "$TARGET_DIR/etc/systemd/system/mainserver.service" ]; then
 	echo "lws-hmi-systemd: enabled mainserver.service"
 fi
 
+if [ -f "$TARGET_DIR/etc/systemd/system/lws-hmi-performance.service" ]; then
+	link_unit lws-hmi-performance.service
+	echo "lws-hmi-systemd: enabled lws-hmi-performance.service"
+fi
+
 if [ -f "$TARGET_DIR/etc/systemd/system/hmi.service" ]; then
 	link_unit hmi.service
 	echo "lws-hmi-systemd: enabled hmi.service"

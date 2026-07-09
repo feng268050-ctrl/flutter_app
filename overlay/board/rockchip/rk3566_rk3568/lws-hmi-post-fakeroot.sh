@@ -35,6 +35,7 @@ rm -f \
 	"$TARGET_DIR/usr/lib/lws-hmi/debug-boot.sh"
 
 link_unit mainserver.service
+link_unit lws-hmi-performance.service
 link_unit hmi.service
 
 ln -sf /dev/null "$SYSTEMD_DIR/systemd-network-generator.service"

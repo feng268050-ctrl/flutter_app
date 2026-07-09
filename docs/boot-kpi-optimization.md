@@ -51,7 +51,7 @@ systemd-analyze blame
 systemd-analyze critical-chain hmi.service
 ```
 
-**`boot-verify` 期望**：`hmi` + `mainserver` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth` 未链接；22 未监听；`network-generator` masked；`flutter-pi` running。
+**`boot-verify` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth` 未链接；22 未监听；`network-generator` masked；`flutter-pi` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
 
 **秒表**（填 §6 表格）：上电 → logo；上电 → multi-user；上电 → 首页首帧。
 
@@ -66,23 +66,23 @@ systemd-analyze critical-chain hmi.service
 | ID | 项 | 状态 | 仓库 / 操作 |
 |----|-----|------|-------------|
 | P0-1 | 移除 `lws-hmi-debug-boot`、内核 `ip=` | **done** | 已删 service/script；`lws-hmi-ynh960-linux-root.dtsi` |
-| P0-2 | post-hook 禁用 `sshd`+`sshd.socket`+`mediamtx`+`bluetooth`（扫全部 `*.wants`） | **repo** | `06-lws-hmi-systemd.sh` |
-| P0-3 | mask `systemd-network-generator` | **repo** | post-hook |
-| P0-4 | `boot-verify.sh` 进 rootfs + post-hook 安装 helper 脚本 | **repo** | overlay + post-hook |
-| P0-5 | `verify-rootfs-overlay` 正确路径 `output/<profile>/target` | **repo** | `scripts/verify-rootfs-overlay.sh` |
-| P0-6 | `build-img` / `build-kernel` 后自动 export firmware → host | **repo** | `docker-export-artifacts.sh` |
-| P0-7 | 刷机后 `boot-verify` 全 PASS | **pending** | 板端验证 |
-| P0-8 | 正常 `poweroff`（避免 EXT4 recovery） | **pending** | 运维 |
+| P0-2 | post-hook 禁用 `sshd`+`sshd.socket`+`mediamtx`+`bluetooth`（扫全部 `*.wants`） | **done** | `06-lws-hmi-systemd.sh` + `lws-hmi-post-fakeroot.sh` |
+| P0-3 | mask `systemd-network-generator` | **done** | post-hook + post-fakeroot |
+| P0-4 | `boot-verify.sh` 进 rootfs + post-hook 安装 helper 脚本 | **done** | overlay + post-hook |
+| P0-5 | `verify-rootfs-overlay` 正确路径 `output/<profile>/target` | **done** | `scripts/verify-rootfs-overlay.sh` |
+| P0-6 | `build-img` / `build-kernel` 后自动 export firmware → host | **done** | `docker-export-artifacts.sh` |
+| P0-7 | 刷机后 `boot-verify` 全 PASS | **done** | 板端已验证（sshd/mediamtx/debug-boot 已清除） |
+| P0-8 | 正常 `poweroff`（避免 EXT4 recovery） | **pending** | 运维；日志见 userdata/oem recovery |
 
 ### A — 内核 / U-Boot（通常 −1～3 s）
 
 | ID | 项 | 状态 | 说明 |
 |----|-----|------|------|
 | A-1 | U-Boot `bootdelay=0` | **pending** | 预编译 uboot 需确认能否改 env；**不编译 uboot** 除非 Innohi 同意 |
-| A-2 | 内核 `loglevel=7` → `4` 或 `3` | **pending** | 保留 `console=ttyFIQ0`；一次只改一项并秒表对比 |
+| A-2 | 内核 `loglevel=7` → `4` 或 `3` | **repo** | `lws-hmi-ynh960-linux-root.dtsi` → `loglevel=4`；待 `build-kernel` 刷机对比 |
 | A-3 | 裁内核无用驱动 | **pending** | 回归风险中；末阶段 |
 | A-4 | RKNPU / Wi‑Fi / BT 延迟 modprobe | **pending** | 末阶段 |
-| A-5 | 确认无 `After=systemd-udev-settle`（尤其 `hmi`） | **repo** | 设计已禁止；板端 `critical-chain` 验证 |
+| A-5 | 确认无 `After=systemd-udev-settle`（尤其 `hmi`） | **done** | `hmi.service` 设计已禁止；板端 `critical-chain` 已验证 |
 | A-6 | eMMC `noatime` / HS200/HS400 | **pending** | fstab / DTS |
 | A-7 | 默认去掉 `lws-hmi-debug-usb.config` | **done** | `ynh960_defconfig` |
 
@@ -90,8 +90,8 @@ systemd-analyze critical-chain hmi.service
 
 | ID | 项 | 状态 |
 |----|-----|------|
-| D0-1 | 上电 <1～2 s logo | **pending** 板端 |
-| D0-2 | logo 保持至 flutter-pi 首帧接替 | **pending** 板端 |
+| D0-1 | 上电 <1～2 s logo | **pending** 板端秒表 |
+| D0-2 | logo 保持至 flutter-pi 首帧接替 | **done** 板端确认：`Started flutter-pi` 后屏上仍为 boot logo，至 `Freeing drm_logo` |
 
 ### B — systemd 方案 A 瘦身（通常 −1～2 s）
 
@@ -101,9 +101,10 @@ systemd-analyze critical-chain hmi.service
 | B-2 | journald `Storage=volatile` | **done** overlay |
 | B-3 | `lws_hmi_base` 关 adbd / 虚拟 getty | **done** |
 | B-4 | `lws_hmi_network` 关 dhcpcd/dropbear 等 | **done** |
-| B-5 | 仅 enable `hmi` + `mainserver`；disable mediamtx/sshd/bt | **repo** post-hook |
-| B-6 | `hmi.service` `Nice=-5` | **skip** 待 P0 通过后实测 |
+| B-5 | 仅 enable `hmi` + `mainserver`；disable mediamtx/sshd/bt | **done** | post-hook + post-fakeroot |
+| B-6 | `hmi.service` `Nice=-5` | **done** | 板端已验证；首帧 ~1s 未缩短（见 §5 注） |
 | B-7 | sysinit 仅 `param-update`（显示） | **done** |
+| B-8 | `lws-hmi-performance.service`：CPU + DMC/GPU devfreq `performance` | **done** | governors 已生效；首帧 ~1s 未缩短（见 §5 注） |
 
 ### C — flutter-pi / App（通常 −1～3 s）
 
@@ -126,15 +127,19 @@ systemd-analyze critical-chain hmi.service
 ## 5. 推荐实施顺序
 
 ```
-P0（刷机 + boot-verify PASS）
-  → 记录 baseline 秒表（§6）
-  → A-2（仅 loglevel，刷机对比）
-  → D0 验收 splash
-  → B-6 等可选项（实测）
+P0（done）
+  → B-6 + B-8（done；首帧 EGL 瓶颈确认，不再深挖）
+  → A-2（loglevel=4，当前轮 — 刷机对比）
+  → D0-1 秒表验收 splash
+  → A-6 / A-1（eMMC、U-Boot，需板端或 Innohi）
   → C / A-3/A-4（产品阶段）
 ```
 
 **一次只改一类**，避免分不清收益来源。
+
+**首帧 ~1s 结论（B-6/B-8 板端）**：`lws-hmi-performance` 已 `Finished`，`Freeing drm_logo` 仍在 `Started flutter-pi` 后约 **1 s**（8.58 s vs 基线 8.67 s，收益可忽略）。屏上为 boot logo 保持，非黑屏。瓶颈在 **flutter-pi 进程内**（Mali EGL 初始化 + AOT 引擎 + 首帧 commit），**不强求**再压；KPI 余量充足（~9.7 s < 10 s）。
+
+**当前轮**：**A-2**（`loglevel=4`，`make build-kernel` + `make build-img` + `make flash`）。
 
 ---
 
@@ -142,9 +147,10 @@ P0（刷机 + boot-verify PASS）
 
 | 日期 | git 简述 | 上电→logo | 上电→multi-user | 上电→首帧 | boot-verify | 备注 |
 |------|----------|-----------|-----------------|-----------|-------------|------|
-| | baseline（优化前日志） | | ~8.7s | | FAIL sshd/mtx | |
-| | P0 重刷 | | | | | |
-| | +A-2 loglevel | | | | | |
+| 2026-07 | baseline（优化前日志） | | ~8.7s | ~9.7s | FAIL sshd/mtx | `Started flutter-pi` 后 ~1s 仍见 logo |
+| 2026-07 | P0 重刷 | | | | PASS | sshd/mediamtx/debug-boot 已清除 |
+| 2026-07 | +B-6/B-8 performance | | ~8.6s | ~8.6s | PASS | governors OK；首帧仍 ~1s logo→UI |
+| | +A-2 loglevel=4 | | | | | 待刷机 |
 
 ---
 
@@ -153,12 +159,17 @@ P0（刷机 + boot-verify PASS）
 | 路径 | 作用 |
 |------|------|
 | `overlay/.../06-lws-hmi-systemd.sh` | enable/disable unit、mask、安装 helper 脚本 |
+| `overlay/.../lws-hmi-fs-overlay/etc/systemd/system/lws-hmi-performance.service` | 首帧前拉满 CPU/DMC/GPU 频率 |
+| `overlay/.../lws-hmi-fs-overlay/usr/lib/lws-hmi/set-performance-mode.sh` | 写 cpufreq + devfreq governor |
+| `overlay/.../lws-hmi-fs-overlay/etc/systemd/system/hmi.service` | flutter-pi；`Nice=-5` |
 | `overlay/.../lws-hmi-fs-overlay/usr/lib/lws-hmi/boot-verify.sh` | 板端验收 |
+| `overlay/.../lws-hmi-post-fakeroot.sh` | preset-all 后重链 Plan A wants |
 | `scripts/verify-rootfs-overlay.sh` | 构建后 staging 检查 |
 | `scripts/docker-export-artifacts.sh` | macOS：volume → host firmware |
 | `docs/flutter-pi-hmi-plan.md` §3.6 / §14 | 设计详述 |
+| `overlay/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi` | 内核 cmdline（`loglevel=4`） |
 | `docs/build-optimization.md` | 日常构建命令 |
 
 ---
 
-*最后更新：与 P1 boot 优化讨论同步；改优化项时请更新 §4 状态列。*
+*最后更新：B-6/B-8 板端验证；首帧 EGL 瓶颈记录；A-2 loglevel=4 已入仓。*

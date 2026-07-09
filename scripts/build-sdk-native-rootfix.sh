@@ -25,7 +25,7 @@ if ! grep -q "$MARKER" "$DTSI"; then
 
 /* lws-hmi: sdk-native root=mmcblk0p11 — upgrade_tool often skips GPT PARTUUID on rootfs */
 &chosen {
-	bootargs = "earlycon=uart8250,mmio32,0xfe660000 console=ttyFIQ0 root=/dev/mmcblk0p11 rw rootfstype=ext4 rootwait loglevel=7";
+	bootargs = "earlycon=uart8250,mmio32,0xfe660000 console=ttyFIQ0 root=/dev/mmcblk0p11 rw rootfstype=ext4 rootwait loglevel=4";
 };
 EOF
 fi

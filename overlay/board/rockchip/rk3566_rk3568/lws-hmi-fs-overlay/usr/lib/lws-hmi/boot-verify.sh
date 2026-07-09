@@ -28,7 +28,7 @@ for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket
 	fi
 done
 
-for unit in hmi.service mainserver.service; do
+for unit in hmi.service mainserver.service lws-hmi-performance.service; do
 	if [ -e "$WANTS/$unit" ]; then
 		pass "$unit enabled"
 	else
@@ -117,6 +117,38 @@ if [ -L "$ng" ] && [ "$(readlink "$ng" 2>/dev/null)" = "/dev/null" ]; then
 	pass "systemd-network-generator masked"
 else
 	warn "systemd-network-generator not masked"
+fi
+
+echo ""
+echo "--- performance governors ---"
+if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
+	cpu_gov="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo unknown)"
+	if [ "$cpu_gov" = performance ]; then
+		pass "CPU cpufreq governor is performance"
+	else
+		warn "CPU cpufreq governor is $cpu_gov (expected performance)"
+	fi
+else
+	warn "CPU cpufreq sysfs missing — skip governor check"
+fi
+if [ -d /sys/class/devfreq ]; then
+	devfreq_ok=1
+	for gov in /sys/class/devfreq/*/governor; do
+		[ -f "$gov" ] || continue
+		name="$(basename "$(dirname "$gov")")"
+		cur="$(cat "$gov" 2>/dev/null || echo unknown)"
+		echo "devfreq/$name: $cur"
+		if [ "$cur" != performance ]; then
+			devfreq_ok=0
+		fi
+	done
+	if [ "$devfreq_ok" -eq 1 ]; then
+		pass "all devfreq governors are performance"
+	else
+		warn "some devfreq governors are not performance"
+	fi
+else
+	warn "devfreq sysfs missing — skip devfreq check"
 fi
 
 echo ""

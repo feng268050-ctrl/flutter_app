@@ -11,8 +11,8 @@
 
 - [x] 2.1 Use SDK in-tree `buildroot/package/flutter-pi/` (v37bd977) enabled via `lws_hmi_flutter.config` — no overlay package fork needed
 - [x] 2.2 Enable flutter-pi via defconfig fragment (`BR2_PACKAGE_FLUTTER_PI=y`); SDK `Config.in` already registers the package
-- [x] 2.3 Build Flutter stack deps: `make build-deps` (engine/sdk/pi → `prebuilt/`); Buildroot install-only when prebuilt present
-- [x] 2.4a Build P3/P5 dev deps: `build-opencv`, `build-rknn-*`, `build-mediamtx`
+- [x] 2.3 Require prebuilt Flutter stack: `make check-prebuilt`; Buildroot copies prebuilt only (no compile fallback)
+- [x] 2.4a P1 prep: `make build-all-deps` — runtime (incl. **GStreamer/MPP**) + dev-host
 - [ ] 2.4 Build rootfs iteratively until `/usr/bin/flutter-pi` appears in target (fix deps: systemd, Mali, libdrm) — **run `make build-rootfs` (first build: hours)**
 
 ## 3. Boot splash (ynh960)

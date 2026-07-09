@@ -1,0 +1,10 @@
+# ynh960: Linux on MuJia Android GPT — rootfs.img → super (kernel root=PARTUUID=614e0000-0000).
+# NAME	PATH
+package-file	package-file
+parameter	parameter.txt
+bootloader	MiniLoaderAll.bin
+uboot	uboot.img
+misc	misc.img
+boot	boot.img
+vbmeta	vbmeta.img
+super	rootfs.img

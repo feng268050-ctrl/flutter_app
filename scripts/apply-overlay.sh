@@ -15,12 +15,14 @@ CHIP_DIR="$SDK/device/rockchip/rk3566_rk3568"
 CHIPS_DIR="$SDK/device/rockchip/.chips/rk3566_rk3568"
 SCRIPTS_DIR="$SDK/device/rockchip/common/scripts"
 POST_HOOKS_DIR="$SDK/device/rockchip/common/post-hooks"
+HOOKS_DIR="$SDK/device/rockchip/common/build-hooks"
 BR_CONFIG="$SDK/buildroot/configs/rockchip/chips/rk3566_rk3568.config"
 BR_CHIPS_DIR="$SDK/buildroot/configs/rockchip/chips"
 BR_DEFCONFIGS="$SDK/buildroot/configs"
 BR_PKG_FLUTTER_ENGINE="$SDK/buildroot/package/flutter-engine"
 BR_PKG_FLUTTER_SDK="$SDK/buildroot/package/flutter-sdk-bin"
 BR_PKG_FLUTTER_PI="$SDK/buildroot/package/flutter-pi"
+BR_PKG_SOURCE_HAN_SANS_CN="$SDK/buildroot/package/source-han-sans/source-han-sans-cn"
 BR_OVERLAY_ROOT="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
 BR_OVERLAY="$BR_OVERLAY_ROOT/system/etc"
 OVERLAY_FS="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
@@ -33,17 +35,108 @@ install_file() {
   echo "overlay: $dst"
 }
 
+LWS_PREBUILT_PATCHES_DIR=".lws-prebuilt-patches-disabled"
+
+# Prebuilt-only .mk extracts an empty dir; SDK *.patch must not run (no engine sources).
+disable_br_package_patches() {
+  local pkg_dir="$1"
+  local label="$2"
+  local stash="$pkg_dir/$LWS_PREBUILT_PATCHES_DIR"
+  [[ -d "$pkg_dir" ]] || return 0
+  mkdir -p "$stash"
+  shopt -s nullglob
+  local moved=0
+  for p in "$pkg_dir"/*.patch; do
+    mv "$p" "$stash/"
+    moved=1
+  done
+  shopt -u nullglob
+  if [[ "$moved" == 1 ]]; then
+    echo "overlay: disabled upstream patches for ${label} (prebuilt install .mk)"
+  fi
+}
+
+restore_br_package_patches() {
+  local pkg_dir="$1"
+  local label="$2"
+  local stash="$pkg_dir/$LWS_PREBUILT_PATCHES_DIR"
+  [[ -d "$stash" ]] || return 0
+  shopt -s nullglob
+  local restored=0
+  for p in "$stash"/*.patch; do
+    mv "$p" "$pkg_dir/"
+    restored=1
+  done
+  shopt -u nullglob
+  rmdir "$stash" 2>/dev/null || true
+  if [[ "$restored" == 1 ]]; then
+    echo "overlay: restored upstream patches for ${label}"
+  fi
+}
+
 sync_fs_overlay() {
   if [[ ! -d "$OVERLAY_FS" ]]; then
     echo "WARNING: $OVERLAY_FS missing; skip fs-overlay sync" >&2
     return 0
   fi
   mkdir -p "$BR_OVERLAY_ROOT"
-  # Plan A systemd units + journald; keep system/etc from sync_display_params.
-  if [[ -d "$OVERLAY_FS/etc" ]]; then
-    mkdir -p "$BR_OVERLAY_ROOT/etc"
-    cp -a "$OVERLAY_FS/etc/." "$BR_OVERLAY_ROOT/etc/"
-    echo "overlay: synced $BR_OVERLAY_ROOT/etc"
+  # Plan A: etc/ (systemd) + usr/ (scripts, mediamtx). system/etc from sync_display_params; opt/hmi from sync_hmi_app_overlay.
+  for sub in etc usr; do
+    if [[ -d "$OVERLAY_FS/$sub" ]]; then
+      mkdir -p "$BR_OVERLAY_ROOT/$sub"
+      cp -a "$OVERLAY_FS/$sub/." "$BR_OVERLAY_ROOT/$sub/"
+      echo "overlay: synced $BR_OVERLAY_ROOT/$sub"
+    fi
+  done
+}
+
+sync_kernel_display_dts() {
+  local kernel_dts="$SDK/kernel/arch/arm64/boot/dts/rockchip"
+  local customer_dtsi="$kernel_dts/customer_board_ynh960.dtsi"
+  local lws_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-display.dtsi"
+  local panel_init_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-panel-init.dtsi"
+  local gen_script="$ROOT/scripts/gen-ynh960-panel-init-dtsi.sh"
+  local lws_root="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi"
+  local patch_script="$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-ynh960-dts.sh"
+
+  if [[ ! -d "$kernel_dts" ]]; then
+    kernel_dts="$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip"
+    customer_dtsi="$kernel_dts/customer_board_ynh960.dtsi"
+  fi
+  if [[ ! -f "$customer_dtsi" ]]; then
+    echo "WARNING: $customer_dtsi missing; skip ynh960 display DTS patch" >&2
+    return 0
+  fi
+  if [[ ! -f "$lws_dtsi" || ! -f "$lws_root" || ! -f "$patch_script" ]]; then
+    echo "WARNING: lws-hmi ynh960 DTS overlay missing; skip" >&2
+    return 0
+  fi
+  [[ -x "$gen_script" ]] || chmod +x "$gen_script"
+  bash "$gen_script"
+  if [[ ! -f "$customer_dtsi.orig" ]]; then
+    cp -a "$customer_dtsi" "$customer_dtsi.orig"
+  fi
+  cp -a "$customer_dtsi.orig" "$customer_dtsi"
+  bash "$patch_script" "$customer_dtsi" \
+    "$lws_dtsi" "lws-hmi-ynh960-display.dtsi" \
+    "$panel_init_dtsi" "lws-hmi-ynh960-panel-init.dtsi" \
+    "$lws_root" "lws-hmi-ynh960-linux-root.dtsi"
+}
+
+sync_kernel_display_config() {
+  local cfg="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-display.config"
+  local configs_dir="$SDK/kernel/arch/arm64/configs"
+  if [[ ! -d "$configs_dir" ]]; then
+    configs_dir="$SDK/kernel-6.1/arch/arm64/configs"
+  fi
+  if [[ ! -f "$cfg" || ! -d "$configs_dir" ]]; then
+    echo "WARNING: skip kernel display config fragment" >&2
+    return 0
+  fi
+  install_file "$cfg" "$configs_dir/lws-hmi-ynh960-display.config"
+  local usb_cfg="$OVERLAY/kernel/rockchip/lws-hmi-debug-usb.config"
+  if [[ -f "$usb_cfg" ]]; then
+    install_file "$usb_cfg" "$configs_dir/lws-hmi-debug-usb.config"
   fi
 }
 
@@ -57,9 +150,10 @@ sync_buildroot_chip_configs() {
     [[ -f "$f" ]] || continue
     install_file "$f" "$BR_CHIPS_DIR/$(basename "$f")"
   done
-  local def="$OVERLAY/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig"
-  if [[ -f "$def" ]]; then
-    install_file "$def" "$BR_DEFCONFIGS/rockchip_rk3566_rk3568_lws_hmi_defconfig"
+  bash "$ROOT/scripts/generate-lws-hmi-defconfig.sh"
+  local gen="$OVERLAY/buildroot/.generated/rockchip_rk3566_rk3568_lws_hmi_defconfig"
+  if [[ -f "$gen" ]]; then
+    install_file "$gen" "$BR_DEFCONFIGS/rockchip_rk3566_rk3568_lws_hmi_defconfig"
   fi
 }
 
@@ -73,6 +167,7 @@ sync_flutter_engine_package() {
       "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk.orig"
   fi
   install_file "$src" "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk"
+  disable_br_package_patches "$BR_PKG_FLUTTER_ENGINE" "flutter-engine"
 }
 
 sync_flutter_sdk_package() {
@@ -97,6 +192,70 @@ sync_flutter_pi_package() {
       "$BR_PKG_FLUTTER_PI/flutter-pi.mk.orig"
   fi
   install_file "$src" "$BR_PKG_FLUTTER_PI/flutter-pi.mk"
+  disable_br_package_patches "$BR_PKG_FLUTTER_PI" "flutter-pi"
+  patch_flutter_pi_config_prebuilt
+}
+
+patch_flutter_pi_config_prebuilt() {
+  local cfg="$BR_PKG_FLUTTER_PI/Config.in"
+  [[ -f "$cfg" ]] || return 0
+  if [[ ! -f "$cfg.lws-prebuilt.orig" ]]; then
+    cp -a "$cfg" "$cfg.lws-prebuilt.orig"
+  fi
+  if grep -q 'select BR2_PACKAGE_HOST_FLUTTER_SDK_BIN' "$cfg"; then
+    sed -i.bak '/select BR2_PACKAGE_HOST_FLUTTER_SDK_BIN/d' "$cfg"
+    rm -f "$cfg.bak"
+    echo "overlay: flutter-pi Config.in — drop select HOST_FLUTTER_SDK_BIN (prebuilt rootfs)"
+  fi
+}
+
+restore_flutter_pi_config() {
+  local cfg="$BR_PKG_FLUTTER_PI/Config.in"
+  if [[ -f "$cfg.lws-prebuilt.orig" ]]; then
+    mv -f "$cfg.lws-prebuilt.orig" "$cfg"
+    echo "overlay: restored upstream flutter-pi Config.in"
+  fi
+}
+
+sdk_realpath() {
+  python3 - "$1" <<'PY'
+import os, sys
+print(os.path.realpath(sys.argv[1]))
+PY
+}
+
+restore_sdk_script() {
+  local target="$1"
+  local real orig
+  real="$(sdk_realpath "$target")"
+  orig="${real}.orig"
+  if [[ -f "$orig" ]]; then
+    cp -a "$orig" "$real"
+    echo "restored upstream $(basename "$real")"
+  fi
+}
+
+backup_sdk_script() {
+  local target="$1"
+  local real orig
+  real="$(sdk_realpath "$target")"
+  orig="${real}.orig"
+  if [[ ! -f "$orig" ]]; then
+    cp -a "$real" "$orig"
+  fi
+  cp -a "$orig" "$real"
+}
+
+sync_source_han_sans_cn_package() {
+  local src="$OVERLAY/buildroot/package/source-han-sans-cn/source-han-sans-cn.mk"
+  if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  if [[ ! -f "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig" ]]; then
+    cp -a "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk" \
+      "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig"
+  fi
+  install_file "$src" "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk"
 }
 
 sync_boot_logo() {
@@ -132,19 +291,61 @@ sync_display_params() {
   fi
 }
 
+patch_mk_loader() {
+  local target="$SCRIPTS_DIR/mk-loader.sh"
+  local orig="$SCRIPTS_DIR/mk-loader.sh.orig"
+  if [[ ! -f "$target" ]]; then
+    echo "WARNING: $target missing; skip mk-loader restore" >&2
+    return 0
+  fi
+  if [[ ! -f "$orig" ]]; then
+    cp -a "$target" "$orig"
+  fi
+  cp -a "$orig" "$target"
+  echo "overlay: mk-loader.sh → Innohi prebuilt loader (sdk-native verified path)"
+}
+
+fix_innohi_scripts_buildroot_output_dir() {
+  local f
+  for f in "$SCRIPTS_DIR/mk-rootfs.sh" "$SCRIPTS_DIR/post-wifibt.sh"; do
+    [[ -f "$f" ]] || continue
+    if grep -q 'buildroot/output/rockchip_rk3566_rk3568/target' "$f"; then
+      sed -i.bak 's|buildroot/output/rockchip_rk3566_rk3568/target|buildroot/output/${RK_BUILDROOT_CFG}/target|g' "$f"
+      rm -f "$f.bak"
+      echo "overlay: fixed Buildroot output path in $(basename "$f")"
+    fi
+  done
+}
+
 patch_mk_rootfs() {
   local target="$SCRIPTS_DIR/mk-rootfs.sh"
   if [[ ! -f "$target" ]]; then
     echo "WARNING: $target missing; skip mk-rootfs patch" >&2
     return 0
   fi
-  if [[ ! -f "$target.orig" ]]; then
-    cp -a "$target" "$target.orig"
-  fi
-  cp -a "$target.orig" "$target"
+  backup_sdk_script "$target"
   bash "$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-mk-rootfs.sh" \
-    "$target"
-  echo "overlay: patched $target (CROOT / defconfig / lws_hmi Innohi skip)"
+    "$(sdk_realpath "$target")"
+  echo "overlay: patched $(basename "$(sdk_realpath "$target")") (CROOT / defconfig / lws_hmi Innohi skip)"
+}
+
+patch_30_rootfs() {
+  local target="$HOOKS_DIR/30-rootfs.sh"
+  local mk_real hook_real
+  if [[ ! -f "$target" ]]; then
+    echo "WARNING: $target missing; skip 30-rootfs patch" >&2
+    return 0
+  fi
+  mk_real="$(sdk_realpath "$SCRIPTS_DIR/mk-rootfs.sh")"
+  hook_real="$(sdk_realpath "$target")"
+  if [[ "$mk_real" == "$hook_real" ]]; then
+    echo "overlay: 30-rootfs.sh → mk-rootfs.sh (same file; Innohi skip via patch_mk_rootfs)"
+    return 0
+  fi
+  backup_sdk_script "$target"
+  bash "$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-30-rootfs.sh" \
+    "$hook_real"
+  echo "overlay: patched 30-rootfs.sh (lws_hmi Innohi MainServer skip)"
 }
 
 patch_post_wifibt() {
@@ -195,13 +396,25 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
     mv -f "$SCRIPTS_DIR/check-network.sh.orig" "$SCRIPTS_DIR/check-network.sh"
     echo "restored upstream check-network.sh"
   fi
+  if [[ -f "$SCRIPTS_DIR/check-loader.sh.orig" ]]; then
+    mv -f "$SCRIPTS_DIR/check-loader.sh.orig" "$SCRIPTS_DIR/check-loader.sh"
+    echo "restored upstream check-loader.sh"
+  fi
   if [[ -f "$SCRIPTS_DIR/check-network.sh.orig" ]]; then
     mv -f "$SCRIPTS_DIR/check-network.sh.orig" "$SCRIPTS_DIR/check-network.sh"
     echo "restored upstream check-network.sh"
   fi
-  if [[ -f "$SCRIPTS_DIR/mk-rootfs.sh.orig" ]]; then
-    mv -f "$SCRIPTS_DIR/mk-rootfs.sh.orig" "$SCRIPTS_DIR/mk-rootfs.sh"
-    echo "restored upstream mk-rootfs.sh"
+  restore_sdk_script "$SCRIPTS_DIR/mk-rootfs.sh"
+  if [[ -f "$(sdk_realpath "$HOOKS_DIR/30-rootfs.sh")" ]]; then
+    hook_real="$(sdk_realpath "$HOOKS_DIR/30-rootfs.sh")"
+    mk_real="$(sdk_realpath "$SCRIPTS_DIR/mk-rootfs.sh")"
+    if [[ "$hook_real" != "$mk_real" ]]; then
+      restore_sdk_script "$HOOKS_DIR/30-rootfs.sh"
+    fi
+  fi
+  if [[ -f "$SCRIPTS_DIR/mk-loader.sh.orig" ]]; then
+    mv -f "$SCRIPTS_DIR/mk-loader.sh.orig" "$SCRIPTS_DIR/mk-loader.sh"
+    echo "restored upstream mk-loader.sh"
   fi
   if [[ -f "$SCRIPTS_DIR/post-wifibt.sh.orig" ]]; then
     mv -f "$SCRIPTS_DIR/post-wifibt.sh.orig" "$SCRIPTS_DIR/post-wifibt.sh"
@@ -214,16 +427,20 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
   if [[ "$restore_all" == "1" ]]; then
     rm -f "$POST_HOOKS_DIR/05-lws-hmi-display.sh"
     rm -f "$POST_HOOKS_DIR/06-lws-hmi-systemd.sh"
+    rm -f "$POST_HOOKS_DIR/07-lws-hmi-innohi-display-bin.sh"
     rm -rf "$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
-    for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter.config; do
+    for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
       rm -f "$BR_CHIPS_DIR/$f"
     done
-    rm -f "$BR_DEFCONFIGS/rockchip_rk3566_rk3568_lws_hmi_defconfig"
+    for f in rockchip_rk3566_rk3568_lws_hmi_defconfig; do
+      rm -f "$BR_DEFCONFIGS/$f"
+    done
     if [[ -f "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk.orig" ]]; then
       mv -f "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk.orig" \
         "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk"
       echo "restored upstream flutter-engine.mk"
     fi
+    restore_br_package_patches "$BR_PKG_FLUTTER_ENGINE" "flutter-engine"
     if [[ -f "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk.orig" ]]; then
       mv -f "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk.orig" \
         "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk"
@@ -234,7 +451,24 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
         "$BR_PKG_FLUTTER_PI/flutter-pi.mk"
       echo "restored upstream flutter-pi.mk"
     fi
+    restore_br_package_patches "$BR_PKG_FLUTTER_PI" "flutter-pi"
+    restore_flutter_pi_config
+    if [[ -f "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig" ]]; then
+      mv -f "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig" \
+        "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk"
+      echo "restored upstream source-han-sans-cn.mk"
+    fi
     rm -f "$SDK/kernel/logo.bmp" "$SDK/kernel/logo_kernel.bmp"
+    for kernel_dts in "$SDK/kernel/arch/arm64/boot/dts/rockchip" \
+      "$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip"; do
+      if [[ -f "$kernel_dts/customer_board_ynh960.dtsi.orig" ]]; then
+        mv -f "$kernel_dts/customer_board_ynh960.dtsi.orig" \
+          "$kernel_dts/customer_board_ynh960.dtsi"
+        echo "restored upstream customer_board_ynh960.dtsi"
+      fi
+      rm -f "$kernel_dts/lws-hmi-ynh960-display.dtsi"
+      rm -f "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi"
+    done
     echo "removed lws-hmi buildroot overlay + post-hooks + chip configs"
   fi
   exit 0
@@ -244,6 +478,13 @@ install_file "$BOARD_DIR/ynh960_defconfig" "$CHIP_DIR/ynh960_defconfig"
 install_file "$BOARD_DIR/ynh960_defconfig" "$CHIPS_DIR/ynh960_defconfig"
 install_file "$BOARD_DIR/960_lcd_param_rk356x.txt" "$CHIP_DIR/960_lcd_param_rk356x.txt"
 install_file "$BOARD_DIR/960_lcd_param_rk356x.txt" "$CHIPS_DIR/960_lcd_param_rk356x.txt"
+install_file "$BOARD_DIR/parameter-buildroot-fit.txt" "$CHIP_DIR/parameter-buildroot-fit.txt"
+install_file "$BOARD_DIR/parameter-buildroot-fit.txt" "$CHIPS_DIR/parameter-buildroot-fit.txt"
+install_file "$BOARD_DIR/parameter-ynh960-android-gpt.txt" "$CHIP_DIR/parameter-ynh960-android-gpt.txt"
+install_file "$BOARD_DIR/parameter-ynh960-android-gpt.txt" "$CHIPS_DIR/parameter-ynh960-android-gpt.txt"
+install_file "$BOARD_DIR/parameter-ynh960-android-stock.txt" "$CHIP_DIR/parameter-ynh960-android-stock.txt"
+install_file "$BOARD_DIR/boot-slim.its" "$CHIP_DIR/boot-slim.its"
+install_file "$BOARD_DIR/boot-slim.its" "$CHIPS_DIR/boot-slim.its"
 
 if [[ ! -f "$SCRIPTS_DIR/check-sdk.sh.orig" ]]; then
   cp -a "$SCRIPTS_DIR/check-sdk.sh" "$SCRIPTS_DIR/check-sdk.sh.orig"
@@ -265,6 +506,13 @@ install_file "$OVERLAY/device/rockchip/common/scripts/check-network.sh" \
   "$SCRIPTS_DIR/check-network.sh"
 chmod +x "$SCRIPTS_DIR/check-network.sh"
 
+if [[ ! -f "$SCRIPTS_DIR/check-loader.sh.orig" ]]; then
+  cp -a "$SCRIPTS_DIR/check-loader.sh" "$SCRIPTS_DIR/check-loader.sh.orig"
+fi
+install_file "$OVERLAY/device/rockchip/common/scripts/check-loader.sh" \
+  "$SCRIPTS_DIR/check-loader.sh"
+chmod +x "$SCRIPTS_DIR/check-loader.sh"
+
 install_file "$OVERLAY/device/rockchip/common/post-hooks/05-lws-hmi-display.sh" \
   "$POST_HOOKS_DIR/05-lws-hmi-display.sh"
 chmod +x "$POST_HOOKS_DIR/05-lws-hmi-display.sh"
@@ -273,7 +521,13 @@ install_file "$OVERLAY/device/rockchip/common/post-hooks/06-lws-hmi-systemd.sh" 
   "$POST_HOOKS_DIR/06-lws-hmi-systemd.sh"
 chmod +x "$POST_HOOKS_DIR/06-lws-hmi-systemd.sh"
 
+install_file "$OVERLAY/device/rockchip/common/post-hooks/07-lws-hmi-innohi-display-bin.sh" \
+  "$POST_HOOKS_DIR/07-lws-hmi-innohi-display-bin.sh"
+chmod +x "$POST_HOOKS_DIR/07-lws-hmi-innohi-display-bin.sh"
+
 sync_fs_overlay
+sync_kernel_display_dts
+sync_kernel_display_config
 sync_display_params
 sync_boot_logo
 sync_hmi_app_overlay
@@ -281,9 +535,14 @@ sync_buildroot_chip_configs
 sync_flutter_engine_package
 sync_flutter_sdk_package
 sync_flutter_pi_package
+sync_source_han_sans_cn_package
 patch_buildroot_config
+patch_mk_loader
 patch_mk_rootfs
+patch_30_rootfs
 patch_post_wifibt
+fix_innohi_scripts_buildroot_output_dir
 bash "$ROOT/scripts/sync-innohi-board.sh"
+bash "$ROOT/scripts/sync-prebuilt-overlays.sh"
 
 echo "ynh960 board + display + Plan A systemd overlay applied to SDK"

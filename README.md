@@ -8,6 +8,7 @@ Buildroot + **ynh960** (Innohi RK3568) on the Rockchip Linux 6.1 SDK.
 ## Prerequisites
 
 - Extracted SDK at `~/Downloads/rk356x_linux6.1_20250730_1126/rk356x_linux6.1_20250730_1126` (override with `LINUX_SDK` in `.env`)
+- Host Flutter SDK at `~/Downloads/flutter-sdk-3.24.4/` (override with `FLUTTER_SDK` in `.env`; run `make fetch-flutter-sdk` to populate)
 - **Linux:** Ubuntu 22.04+ on ext4; Rockchip build deps (see `docker/Dockerfile` package list)
 - **macOS:** Docker Desktop (Apple Silicon: enable Rosetta for `linux/amd64`)
 
@@ -16,12 +17,18 @@ Buildroot + **ynh960** (Innohi RK3568) on the Rockchip Linux 6.1 SDK.
 ```bash
 cd ~/Workspace/lws-hmi
 make setup                 # link SDK + apply ynh960 overlay
-make build-deps              # Flutter stack → prebuilt/ (sources in .cache/)
-make lunch                 # rk3566_rk3568:ynh960 → lws_hmi Buildroot profile
-make build-boot-logo       # splash_icon.png → logo.bmp
-make build-flutter-app     # Hello World → fs-overlay /opt/hmi
-make build-rootfs          # Buildroot rootfs only (first run: long, needs network)
-# firmware: sdk/output/firmware/update.img
+make build-deps            # once: build-dev-deps + runtime prebuilt
+make build                 # overlay → lunch → logo → app → kernel → rootfs → update.img
+# macOS only: make flash
+```
+
+Granular stages (daily iteration):
+
+```bash
+make lunch && make build-rootfs    # rootfs only
+make build-kernel                  # kernel-only
+make build-flutter-app             # app-only (+ re-apply overlay)
+make build-img && make flash       # repack after kernel/rootfs change
 ```
 
 ## Quick start — macOS
@@ -30,67 +37,72 @@ make build-rootfs          # Buildroot rootfs only (first run: long, needs netwo
 cd ~/Workspace/lws-hmi
 make setup                 # link SDK + overlay + Docker image
 make docker-volume-init    # copy SDK into Docker volume (once; ~10–30 min)
-make build-deps              # Flutter stack → prebuilt/
-make lunch
-make build-boot-logo
-make build-flutter-app
-make build-rootfs
-make devices               # USB flash (macOS only)
-make bootloader            # adb reboot loader → RockUSB Loader
-make loader
-make upgrade               # auto-pulls output/ from volume before flash
-make upgrade IMAGE=/path/to/custom.img
+make build-deps            # once: build-dev-deps + runtime prebuilt
+make build                 # same pipeline as Linux (Docker volume)
+make docker-volume-pull    # if update.img missing on host after build
+make flash                 # USB flash (macOS only)
 ```
 
-## Dependencies (build vs prebuilt)
+## Dependencies (prebuilt-first)
 
-**Philosophy:** Heavy or version-pinned artifacts live in git-tracked **`prebuilt/`**. Sources stay in gitignored **`.cache/`**. `make build-*` downloads sources and builds into `prebuilt/` when needed; **`make build-rootfs`** installs from `prebuilt/` when present (no Flutter recompile for normal clones).
+**Two buckets:**
 
-### P1 — Flutter stack
+| Bucket | Command | What |
+|--------|---------|------|
+| **Runtime** (`build-runtime-deps`) | Board / `libai.so` stack | Flutter、**GStreamer/MPP**、MediaMTX、OpenCV、RKNN runtime |
+| **Dev host** (`build-dev-deps`) | x86 上编应用、转模型 | `FLUTTER_SDK`（交叉编 Dart）、RKNN-Toolkit（ONNX→`.rknn`） |
 
-| Target | Output | Buildroot |
-|--------|--------|-----------|
-| `make build-flutter-sdk` | `prebuilt/flutter-sdk/install/` | `host-flutter-sdk-bin` (copy only) |
-| `make build-flutter-engine` | `.cache/flutter-engine/*.tar.gz` (compile fallback) | skipped when `prebuilt/flutter-engine/` exists |
-| `make build-flutter-pi` | `.cache/flutter-pi/src/` (compile fallback) | skipped when `prebuilt/flutter-pi/` exists |
-| `make build-deps` | all of the above | — |
-| `make build-prebuilt` | `prebuilt/flutter-engine/` + `prebuilt/flutter-pi/` (+ SDK) | **After one `make build-rootfs`**; macOS reads Docker volume automatically |
+`make build-deps` = `build-dev-deps` + `build-runtime-deps`（engine 编译需要 host Flutter SDK）。
 
-When `prebuilt/flutter-engine/` and `prebuilt/flutter-pi/` are committed, **`build-rootfs` copies binaries only** (minutes, not hours).
+### Runtime — `make build-runtime-deps`
 
-Version pins: `overlay/buildroot/flutter-{engine,sdk,pi}.version`. Bump → `make rebuild-deps` → rebuild once → `make build-prebuilt` → commit `prebuilt/`.
+`make check-prebuilt` 在 `build-rootfs` 前校验下列项（缺一则失败）：
 
-### P1 — vendor SDK tree (no separate fetch)
+| 组件 | 产出位置 | 板上角色 |
+|------|----------|----------|
+| flutter-engine / flutter-pi | `prebuilt/flutter-*` | HMI 显示栈 |
+| mediamtx | `prebuilt/mediamtx/` + fs-overlay `usr/bin/` | RTSP 中继（服务默认 disable） |
+| **GStreamer + MPP** | Buildroot + `prebuilt/gstreamer/` | RTSP 预览/取帧 |
+| OpenCV + ximgproc | `.cache/opencv/` | 编进 `libai.so` |
+| RKNN runtime | `prebuilt/rknn-rt/` + SDK rknpu2 | NPU 推理 |
+| **P2/P3/P5 平台库** | `prebuilt/platform-packages/` | libmodbus、yaml-cpp、sqlite、avahi |
 
-| Component | Source | Notes |
-|-----------|--------|-------|
-| **RKNPU2 runtime** (`librknnrt.so`, `rknn_server`) | `sdk/external/rknpu2` | `SITE_METHOD=local`; ships with Rockchip SDK |
-| Kernel / U-Boot / Mali | SDK tree | compiled, not downloaded |
+另：rootfs 还通过 Buildroot `BR2_PACKAGE_RKNPU2` 从 SDK `external/rknpu2` 安装系统级 `librknnrt.so` + `rknn_server`（P1 已开）。`prebuilt/rknn-rt` 与 libai 构建版本对齐。
 
-### P1 — host-only (not Buildroot)
+| Target | 作用 |
+|--------|------|
+| `make build-runtime-deps` | 上表全部（含 GStreamer） |
+| `make build-platform-packages` | libmodbus + yaml-cpp + sqlite + avahi |
+| `make fetch-opencv` / `fetch-opencv-ximgproc` | OpenCV 源码 |
+| `make fetch-rknn-rt` | aarch64 `librknnrt.so` |
+| `make build-flutter-engine` / `build-flutter-pi` / `build-mediamtx` | 单项 |
+| `make check-prebuilt` | 校验 runtime（`build-rootfs` 自动） |
+| `make build-rootfs` | 装已接入 defconfig 的 prebuilt（Flutter 等） |
 
-| Component | Command | Notes |
-|-----------|---------|-------|
-| **Hello World app** | `make build-flutter-app` | Host Flutter + `flutterpi_tool`; not in rootfs build |
-| **Boot logo BMP** | `make build-boot-logo` | Generated from `board/logo/splash_icon.png` |
+### Dev host — `make build-dev-deps`
 
-### P3 / P5 — host-side deps (not in P1 defconfig)
+**不上板**，`check-prebuilt` 不检查：
 
-Version pins: `overlay/third-party/{opencv,rknn-toolkit,mediamtx}.version`.
+| Target | 产出 | 用途 |
+|--------|------|------|
+| `make fetch-flutter-sdk` | `FLUTTER_SDK/install/` | `make build-flutter-app`、engine 编译辅助 |
+| `make fetch-rknn-toolkit` | `.cache/rknn-toolkit/` | 开发机上 ONNX→RKNN 模型转换 |
 
-| Target | Output | Stage | Notes |
-|--------|--------|-------|-------|
-| `make build-opencv` | `.cache/opencv/*.tar.gz` | P3 | OpenCV + opencv_contrib **source** (4.5.5) |
-| `make build-opencv-ximgproc` | `.cache/opencv/ximgproc-ed/` | P3 | EdgeDrawing sources for libai |
-| `make build-rknn-toolkit` | `.cache/rknn-toolkit/` | P3 | RKNN-Toolkit2 wheel + torch (ONNX→RKNN) |
-| `make build-rknn-rt` | `prebuilt/rknn-rt/` | P3 | Linux **aarch64** `librknnrt.so` (dev libai) |
-| `make build-mediamtx` | `prebuilt/mediamtx/linux-arm64/` | P5 | Source in `.cache/`; binary in `prebuilt/` |
-| `make build-dev-deps` | all P3/P5 targets above | — | |
-| `make build-all-deps` | `build-deps` + `build-dev-deps` | — | |
+Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`。
 
-Board runtime `librknnrt.so` still comes from SDK `external/rknpu2` via Buildroot (`build-rknn-rt` is for **dev host** libai builds). MediaMTX defconfig line remains commented out until P5.
+### 分阶段对照（P1 备好依赖 vs 分阶段开功能）
 
-Force refresh after version bump: `make rebuild-dev-deps` or per-target `make rebuild-opencv`, etc.
+| 阶段 | 运行时依赖 | P1 `build-runtime-deps` | 仍在本阶段做的（不是装包） |
+|------|------------|-----------------|----------------------------|
+| P1 | flutter、RKNPU2、Wi‑Fi/BT、GPU | ✓ | Hello World、hmi 自启 |
+| P2 | libmodbus | ✓ platform-packages | Modbus/GPIO App demo |
+| P3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** 工程与 smoke |
+| P4 | — | — | frost_ui / frost_ime 子模块 |
+| P5 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云、OTA |
+
+Overlay 脚本 stub（可执行，待 P5 实装逻辑）：`render-mediamtx-config.sh`、`configure-camera-eth0.sh`、`enable-ssh-debug.sh`。
+
+仍待移植：**lensinspector 源码**、`probe-dual-stream.sh`、完整 mediamtx/eth0 渲染逻辑。
 
 ### Git LFS (recommended)
 
@@ -101,7 +113,7 @@ git lfs install
 git add .gitattributes prebuilt/
 ```
 
-Without LFS, `prebuilt/flutter-sdk/` (~1 GB) may be too heavy for plain git — prefer LFS or omit SDK from commits and let `make build-flutter-sdk` populate it locally.
+Without LFS, large binaries under `prebuilt/` may be too heavy for plain git. The **host Flutter SDK** (~1 GB) is kept **outside the repo** via `FLUTTER_SDK` (like `LINUX_SDK`); run `make fetch-flutter-sdk` to populate it locally.
 
 ### Buildroot `dl/` (generic packages)
 
@@ -112,7 +124,7 @@ Buildroot still downloads standard packages (gcc, systemd, wpa_supplicant, …) 
 After `make build` and flash: boot logo ≤2 s → Hello World auto-start → home frame ≤10 s. Confirm profile:
 
 ```bash
-make config                # or: bash scripts/docker-run.sh bash -lc 'grep RK_BUILDROOT output/.config'
+make show-config           # or: bash scripts/docker-run.sh bash -lc 'grep RK_BUILDROOT output/.config'
 ```
 
 On **macOS**, builds use a Docker volume for the SDK (not a bind mount from APFS). Bind-mounting during Buildroot often **crashes Docker Desktop** (`BUILD_BIND_MOUNT=1` to force, not recommended).
@@ -123,18 +135,47 @@ On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under
 
 Rockchip Innohi scripts reference **`sdk/innohi_board/`** (not in git; only **`sdk/innohi/`** ships). `make apply-overlay` syncs firmware + binaries and patches `post-wifibt.sh` / `mk-rootfs.sh`. **lws_hmi** skips Innohi **MainServer** autostart (Plan A uses systemd + `hmi.service`). If `build-rootfs` fails on `innohi_board` or `MainServer`, run `make apply-overlay` again (macOS: auto before each Docker build).
 
+### Innohi SDK-native Linux (`make build-sdk-native`)
+
+Innohi-confirmed path: SDK **`boot.its`** FIT (not `boot-slim.its`), prebuilt loader/uboot, `rockchip_rk3566_rk3568` Buildroot + MainServer.
+
+```bash
+make build-sdk-native      # first time (hours)
+make repack-sdk-native     # kernel + update.img only
+make audit-sdk-native
+make flash-sdk-native      # MaskROM
+```
+
+**Serial (UART2 / ttyFIQ0, 1500000):** GND + TX↔RX cross. `make serial-miniterm` (quit `Ctrl+]`). Self-test: short TTL TX–RX, type keys — should echo.
+
+**Login (SDK `rockchip_rk3566_rk3568` Buildroot):**
+
+| User | Password |
+|------|----------|
+| `root` | `rockchip` |
+
+From `buildroot/configs/rockchip/base/common.config` (`BR2_TARGET_GENERIC_ROOT_PASSWD`). Not empty.
+
+**Do not** `make build-uboot` on ynh960 unless Innohi instructs — wrong uboot bricks MaskROM recovery.
+
 ### USB flash (macOS only)
 
 Tool: vendored at `tools/upgrade_tool/` (macOS binary; v2.44).
 
+MaskROM recovery (device not visible after loader upload — loader reboot drops USB briefly):
+
+```bash
+make devices               # re-enter MaskROM if empty: power off, hold Recovery, USB via hub
+make flash                 # auto: ul if Maskrom, uf if Loader
+```
+
+Normal flash from Android:
+
 ```bash
 make devices
 SERIAL=... make bootloader   # adb reboot loader
-make loader                      # upgrade_tool ul
-make upgrade                     # upgrade_tool uf (IMAGE=... to override)
+make flash                     # uf only when already in Loader mode (IMAGE=... to override)
 ```
-
-MaskROM: power off, hold Recovery, USB via hub. Multi-device: set `SERIAL=` from `make devices`.
 
 ### macOS Docker Desktop tips
 
@@ -178,7 +219,7 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 
 3. **BR2_ROOTFS_OVERLAY** line appended to `buildroot/configs/rockchip/chips/rk3566_rk3568.config`.
 
-`MainServer` / `ParamUpdate` (from Innohi) expect paths under **`/system/etc/`**; the overlay creates that tree on Buildroot.
+`MainServer` / `ParamUpdate` (from Innohi) expect paths under **`/system/etc/`**; the overlay creates that tree on Buildroot. **P1** also installs `MountAll` + `param-update.service` to apply MIPI params before `hmi.service` (ynh960 DTS leaves `lcd0_x/y=0` until ParamUpdate runs).
 
 ## What this repo adds
 
@@ -205,10 +246,11 @@ The upstream SDK ships **ynh962** defconfig but **ynh960.dts** in kernel; this o
 
 ```bash
 export LINUX_SDK=~/Downloads/rk356x_linux6.1_20250730_1126/...   # ~ and $HOME both work
+export FLUTTER_SDK=~/Downloads/flutter-sdk-3.24.4                # host Flutter SDK (outside git)
 export BUILD_JOBS=4                                          # parallel make jobs (default 4 on macOS)
 export SERIAL=10.0.0.239:5555                            # for pull-display-params (adb over network)
 export REBUILD_IMAGE=1                                       # rebuild Docker image
-make build                                                   # full firmware (kernel + rootfs + images)
+make build                 # full firmware → output/firmware/update.img
 ```
 
 ## Notes

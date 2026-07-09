@@ -3,124 +3,121 @@
 
 from __future__ import annotations
 
+import re
 import shutil
-import struct
 import subprocess
 import sys
-import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "board/logo/splash_icon.png"
+LCD_PARAM = ROOT / "board/960_lcd_param_rk356x.txt"
 OUT = ROOT / "board/logo/logo.bmp"
 OUT_KERNEL = ROOT / "board/logo/logo_kernel.bmp"
 
-# ynh960 MIPI native timing (portrait); logo centered on black canvas.
-CANVAS_W = 800
-CANVAS_H = 1280
-ICON_SCALE = 0.55
+BG_COLOR = (255, 255, 255)
 
 
-def _png_size(path: Path) -> tuple[int, int]:
-    with path.open("rb") as f:
-        sig = f.read(8)
-        if sig != b"\x89PNG\r\n\x1a\n":
-            raise ValueError(f"not a PNG: {path}")
-        f.read(4)  # length
-        if f.read(4) != b"IHDR":
-            raise ValueError(f"PNG missing IHDR: {path}")
-        w, h = struct.unpack(">II", f.read(8))
-        return w, h
+def _read_lcd_param() -> tuple[int, int, int]:
+    """Return (lcd0_x, lcd0_y, lcd0_rotation) from board param file."""
+    lcd_x, lcd_y, rotation = 800, 1280, 90
+    if not LCD_PARAM.is_file():
+        return lcd_x, lcd_y, rotation
+
+    for line in LCD_PARAM.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("//") or line.startswith("#"):
+            continue
+        m = re.match(r"lcd0_x\s*=\s*(\d+)", line)
+        if m:
+            lcd_x = int(m.group(1))
+            continue
+        m = re.match(r"lcd0_y\s*=\s*(\d+)", line)
+        if m:
+            lcd_y = int(m.group(1))
+            continue
+        m = re.match(r"lcd0_rotation\s*=\s*(\d+)", line)
+        if m:
+            rotation = int(m.group(1))
+    return lcd_x, lcd_y, rotation
 
 
-def _write_bmp(path: Path, pixels: bytes, width: int, height: int) -> None:
-    row_bytes = width * 3
-    pad = (4 - (row_bytes % 4)) % 4
-    stride = row_bytes + pad
-    pixel_data = b"".join(
-        pixels[y * width * 3 : (y + 1) * width * 3] + b"\x00" * pad
-        for y in range(height - 1, -1, -1)
-    )
-    header = struct.pack(
-        "<2sIHHI",
-        b"BM",
-        14 + 40 + len(pixel_data),
-        0,
-        0,
-        14 + 40,
-    )
-    dib = struct.pack(
-        "<IIIHHIIIIII",
-        40,
-        width,
-        height,
-        1,
-        24,
-        0,
-        len(pixel_data),
-        0,
-        0,
-        0,
-        0,
-    )
-    path.write_bytes(header + dib + pixel_data)
+def _canvas_size(lcd_x: int, lcd_y: int, rotation: int) -> tuple[int, int, bool]:
+    """BMP size = MIPI video mode (lcd0_x × lcd0_y). Rotate icon when panel is landscape."""
+    rotate_icon = rotation in (90, 270)
+    return lcd_x, lcd_y, rotate_icon
 
 
-def _render_with_pillow() -> bytes:
+def _render_with_pillow(canvas_w: int, canvas_h: int, rotate_icon: bool):
     from PIL import Image
 
     icon = Image.open(SRC).convert("RGBA")
-    target = int(min(CANVAS_W, CANVAS_H) * ICON_SCALE)
-    icon.thumbnail((target, target), Image.Resampling.LANCZOS)
-    canvas = Image.new("RGB", (CANVAS_W, CANVAS_H), (0, 0, 0))
-    x = (CANVAS_W - icon.width) // 2
-    y = (CANVAS_H - icon.height) // 2
+    icon.thumbnail((canvas_w, canvas_h), Image.Resampling.LANCZOS)
+    if rotate_icon:
+        icon = icon.rotate(-90, expand=True, resample=Image.Resampling.BICUBIC)
+        icon.thumbnail((canvas_w, canvas_h), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGB", (canvas_w, canvas_h), BG_COLOR)
+    x = (canvas_w - icon.width) // 2
+    y = (canvas_h - icon.height) // 2
     canvas.paste(icon, (x, y), icon)
-    return canvas.tobytes()
+    return canvas
 
 
-def _render_with_magick() -> bytes:
+def _render_with_magick(canvas_w: int, canvas_h: int, rotate_icon: bool) -> None:
     tmp = OUT.with_suffix(".magick.bmp")
+    rotate_args = ["-rotate", "-90"] if rotate_icon else []
     for cmd in (
         [
             "magick",
             str(SRC),
             "-background",
-            "black",
+            "white",
             "-gravity",
             "center",
             "-resize",
-            f"{int(min(CANVAS_W, CANVAS_H) * ICON_SCALE)}x"
-            f"{int(min(CANVAS_W, CANVAS_H) * ICON_SCALE)}>",
+            f"{canvas_w}x{canvas_h}>",
+            *rotate_args,
+            "-resize",
+            f"{canvas_w}x{canvas_h}>",
             "-extent",
-            f"{CANVAS_W}x{CANVAS_H}",
+            f"{canvas_w}x{canvas_h}",
             str(tmp),
         ],
         [
             "convert",
             str(SRC),
             "-background",
-            "black",
+            "white",
             "-gravity",
             "center",
             "-resize",
-            f"{int(min(CANVAS_W, CANVAS_H) * ICON_SCALE)}x"
-            f"{int(min(CANVAS_W, CANVAS_H) * ICON_SCALE)}>",
+            f"{canvas_w}x{canvas_h}>",
+            *rotate_args,
+            "-resize",
+            f"{canvas_w}x{canvas_h}>",
             "-extent",
-            f"{CANVAS_W}x{CANVAS_H}",
+            f"{canvas_w}x{canvas_h}",
             str(tmp),
         ],
     ):
         try:
             subprocess.run(cmd, check=True, capture_output=True)
-            data = tmp.read_bytes()
-            tmp.unlink(missing_ok=True)
-            if len(data) < 54:
-                raise RuntimeError("magick produced empty BMP")
-            return data
+            shutil.move(str(tmp), OUT)
+            return
         except (FileNotFoundError, subprocess.CalledProcessError):
             continue
     raise RuntimeError("ImageMagick (magick/convert) not available")
+
+
+def _is_up_to_date() -> bool:
+    if not (OUT.is_file() and OUT_KERNEL.is_file()):
+        return False
+    out_mtime = OUT.stat().st_mtime
+    script_mtime = Path(__file__).stat().st_mtime
+    for dep in (SRC, LCD_PARAM):
+        if dep.is_file() and dep.stat().st_mtime > out_mtime:
+            return False
+    return out_mtime >= script_mtime
 
 
 def main() -> int:
@@ -128,25 +125,27 @@ def main() -> int:
         print(f"ERROR: missing {SRC}", file=sys.stderr)
         return 1
 
+    lcd_x, lcd_y, rotation = _read_lcd_param()
+    canvas_w, canvas_h, rotate_icon = _canvas_size(lcd_x, lcd_y, rotation)
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
 
-    if (
-        OUT.is_file()
-        and OUT_KERNEL.is_file()
-        and OUT.stat().st_mtime >= SRC.stat().st_mtime
-    ):
-        print(f"boot logo up to date: {OUT}")
+    if _is_up_to_date():
+        print(f"boot logo up to date: {OUT} ({canvas_w}x{canvas_h})")
         return 0
 
     try:
-        pixels = _render_with_pillow()
-        _write_bmp(OUT, pixels, CANVAS_W, CANVAS_H)
+        canvas = _render_with_pillow(canvas_w, canvas_h, rotate_icon)
+        # PIL BMP writer emits BGR; manual RGB bytes swap red/blue on the panel.
+        canvas.save(OUT, "BMP")
     except ImportError:
-        bmp = _render_with_magick()
-        OUT.write_bytes(bmp)
+        _render_with_magick(canvas_w, canvas_h, rotate_icon)
 
     shutil.copy2(OUT, OUT_KERNEL)
-    print(f"boot logo: {OUT} ({CANVAS_W}x{CANVAS_H})")
+    print(
+        f"boot logo: {OUT} ({canvas_w}x{canvas_h}, "
+        f"lcd0={lcd_x}x{lcd_y} rotation={rotation}°)"
+    )
     print(f"boot logo: {OUT_KERNEL} (copy)")
     return 0
 

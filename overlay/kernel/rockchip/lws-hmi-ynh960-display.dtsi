@@ -1,0 +1,39 @@
+// lws-hmi: ynh960 MIPI panel — rk3566-evb2 disables dsi0/route_dsi0; re-enable here
+// (included last from customer_board_ynh960.dtsi).
+#include "lws-hmi-ynh960-panel-init.dtsi"
+
+&dsi0 {
+	status = "okay";
+};
+
+&route_dsi0 {
+	status = "okay";
+	connect = <&vp1_out_dsi0>;
+};
+
+&lcd_param {
+	lcd0_x = <800>;
+	lcd0_y = <1280>;
+};
+
+// Innohi customer_board_ynh960.dtsi sets lcd0_x/y=0; evb2 panel timing is 600x1024.
+&dsi0_panel {
+	display-timings {
+		native-mode = <&ynh960_mipi_timing>;
+		ynh960_mipi_timing: timing {
+			clock-frequency = <68000000>;
+			hactive = <800>;
+			vactive = <1280>;
+			hback-porch = <20>;
+			hfront-porch = <72>;
+			hsync-len = <20>;
+			vback-porch = <12>;
+			vfront-porch = <30>;
+			vsync-len = <4>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			de-active = <0>;
+			pixelclk-active = <0>;
+		};
+	};
+};

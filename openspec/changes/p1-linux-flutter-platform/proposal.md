@@ -1,6 +1,6 @@
 ## Why
 
-lws-hmi must replace the Rockchip EVB reference rootfs (Weston, Chromium, camera demos) with a lean **Buildroot + flutter-pi** HMI platform before any product features (Modbus, AI, FrostUI, business pages) can land. **P1** establishes the minimum viable Linux image and a **Hello World** Flutter app on **ynh960 (RK3566 baseline)**, proving display, GPU, systemd boot chain, and flutter-pi end-to-end — aligned with `docs/flutter-pi-hmi-plan.md` §1 / §12.
+lws-hmi must replace the Rockchip EVB reference rootfs (Weston, Chromium, camera demos) with a lean **Buildroot + flutter-pi** HMI platform before any product features (Modbus, AI, FrostUI, business pages) can land. **P1** establishes the minimum viable Linux image and a **Hello World** Flutter app on **ynh960** (RK3566 baseline for dev/CI; RK3568/RK3568B2 on the same PCB share the same `update.img`), proving display, GPU, systemd boot chain, and flutter-pi end-to-end — aligned with `docs/flutter-pi-hmi-plan.md` §1 / §12.
 
 ## What Changes
 
@@ -12,7 +12,7 @@ lws-hmi must replace the Rockchip EVB reference rootfs (Weston, Chromium, camera
 - Enable **`hmi.service`** (already scaffolded) via post-build hook; keep mediamtx / sshd / bluetoothd **disabled**.
 - Set **`RK_BUILDROOT_CFG=rockchip_rk3566_rk3568_lws_hmi`** and **`RK_RECOVERY=n`** on ynh960 board config for P1 builds.
 - Create **`app/lws_hmi_app`** Flutter project with flutter-pi target configuration and CI/build script for cross-compiling AOT.
-- Add **host USB flash** Makefile targets (`devices`, `bootloader`, `loader`, `upgrade`) wrapping Rockchip **upgrade_tool** per `命令行开发工具使用文档.pdf`.
+- Add **P1 runtime dependency prep** via `make build-all-deps`: Flutter, **GStreamer/MPP**, MediaMTX, OpenCV, RKNN runtime (`prebuilt/` + Buildroot); host dev via `build-dev-deps` (Flutter SDK, RKNN-Toolkit only). Product **features** (libai UI, MediaMTX auto-start) still phased P3–P5.
 
 **Non-goals (P1)**: Modbus/GPIO (P2), libai.so (P3), FrostUI/IME (P4), MediaMTX/video/network UI (P5), eth0 camera scripting, business pages.
 

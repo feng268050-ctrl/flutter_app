@@ -9,6 +9,11 @@ The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the
 - **WHEN** developer runs `make lunch` and selects ynh960 defconfig
 - **THEN** SDK `.config` contains `RK_BUILDROOT_CFG=rockchip_rk3566_rk3568_lws_hmi`
 
+#### Scenario: single firmware for RK3566 RK3568 RK3568B2 on ynh960 PCB
+
+- **WHEN** P1 `update.img` is built via `make lunch` with `ynh960_defconfig` and flashed to ynh960 hardware
+- **THEN** the same image SHALL boot on ynh960 boards with RK3566, RK3568, or RK3568B2 silicon (same motherboard and screen; no per-SoC defconfig fork)
+
 #### Scenario: rootfs build succeeds with lws_hmi defconfig
 
 - **WHEN** developer runs `make build-rootfs` after overlay apply

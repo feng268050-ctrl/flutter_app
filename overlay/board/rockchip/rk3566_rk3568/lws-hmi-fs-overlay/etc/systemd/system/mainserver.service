@@ -1,0 +1,17 @@
+[Unit]
+Description=Innohi MainServer (ynh960 display param daemon)
+DefaultDependencies=yes
+After=param-update.service local-fs.target
+Wants=param-update.service
+Before=hmi.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/MainServer
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

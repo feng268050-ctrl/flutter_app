@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Rebuild SDK-native ynh960 kernel with root=/dev/mmcblk0p11 (PARTUUID often missing after uf flash).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+DTSI="$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip/customer_board_ynh960.dtsi"
+MARKER='lws-hmi: sdk-native root=mmcblk0p11'
+
+die() { echo "ERROR: $*" >&2; exit 1; }
+
+[[ -d "$SDK" ]] || die "SDK missing"
+
+bash "$ROOT/scripts/prepare-sdk-native.sh"
+
+if [[ ! -f "$DTSI.orig" && -f "$DTSI" ]]; then
+  cp -a "$DTSI" "$DTSI.orig"
+fi
+[[ -f "$DTSI.orig" ]] || die "missing $DTSI.orig"
+
+cp -a "$DTSI.orig" "$DTSI"
+
+if ! grep -q "$MARKER" "$DTSI"; then
+  cat >>"$DTSI" <<'EOF'
+
+/* lws-hmi: sdk-native root=mmcblk0p11 — upgrade_tool often skips GPT PARTUUID on rootfs */
+&chosen {
+	bootargs = "earlycon=uart8250,mmio32,0xfe660000 console=ttyFIQ0 root=/dev/mmcblk0p11 rw rootfstype=ext4 rootwait loglevel=7";
+};
+EOF
+fi
+
+cd "$SDK"
+./build.sh kernel
+./build.sh updateimg
+
+mkdir -p "$ROOT/output/firmware"
+cp -fL "$SDK/output/update/Image/update.img" "$ROOT/output/firmware/update.img" 2>/dev/null \
+  || cp -f "$SDK/output/firmware/update.img" "$ROOT/output/firmware/update.img"
+
+echo ""
+echo "=== sdk-native rootfix update.img ready ==="
+ls -lh "$ROOT/output/firmware/update.img"
+echo "MaskROM: make flash"

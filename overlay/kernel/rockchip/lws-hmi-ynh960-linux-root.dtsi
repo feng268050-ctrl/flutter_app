@@ -1,0 +1,5 @@
+// lws-hmi: rootfs on Buildroot GPT (parameter-buildroot-fit.txt).
+// Use /dev/mmcblk0p11 — PARTUUID from parameter.txt is often not written to eMMC by upgrade_tool.
+&chosen {
+	bootargs = "earlycon=uart8250,mmio32,0xfe660000 console=ttyFIQ0 root=/dev/mmcblk0p11 rw rootfstype=ext4 rootwait ip=10.0.0.240::255.255.255.0::eth0:off loglevel=7";
+};

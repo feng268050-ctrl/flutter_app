@@ -6,6 +6,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 LINUX_SDK ?= $(HOME)/Downloads/rk356x_linux6.1_20250730_1126/rk356x_linux6.1_20250730_1126
+FLUTTER_SDK ?= $(HOME)/Downloads/flutter-sdk-3.24.4
 
 DOCKER_IMAGE ?= lws-hmi-builder:22.04
 DOCKER_PLATFORM ?= linux/amd64
@@ -19,19 +20,20 @@ SERIAL ?=
 IMAGE ?=
 FLASH_ENV = SERIAL='$(SERIAL)' UPDATE_IMG='$(IMAGE)'
 
-.PHONY: help setup link-sdk apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-volume-status shell lunch config build build-rootfs build-boot-logo build-flutter-app build-deps build-flutter-engine rebuild-flutter-engine build-flutter-sdk rebuild-flutter-sdk build-flutter-pi rebuild-flutter-pi rebuild-deps build-dev-deps rebuild-dev-deps build-all-deps rebuild-all-deps build-opencv rebuild-opencv build-opencv-ximgproc build-rknn-toolkit rebuild-rknn-toolkit build-rknn-rt rebuild-rknn-rt build-mediamtx rebuild-mediamtx build-prebuilt rebuild-prebuilt pull-display-params devices bootloader loader upgrade
+.PHONY: help setup link-sdk link-flutter-sdk apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-volume-status shell lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-flutter-app check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices bootloader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
 define WITH_DOTENV
 bash -c 'set -euo pipefail; \
   __ENV_SERIAL="$${SERIAL-}"; __ENV_IMAGE="$${IMAGE-}"; \
-  __ENV_LINUX_SDK="$${LINUX_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
+  __ENV_LINUX_SDK="$${LINUX_SDK-}"; __ENV_FLUTTER_SDK="$${FLUTTER_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
   __ENV_BUILD_BIND_MOUNT="$${BUILD_BIND_MOUNT-}"; \
   set -a; [[ -f .env ]] && source .env; set +a; \
   [[ -n "$$__ENV_SERIAL" ]] && export SERIAL="$$__ENV_SERIAL"; \
   [[ -n "$$__ENV_IMAGE" ]] && export IMAGE="$$__ENV_IMAGE"; \
   [[ -n "$$__ENV_LINUX_SDK" ]] && export LINUX_SDK="$$__ENV_LINUX_SDK"; \
+  [[ -n "$$__ENV_FLUTTER_SDK" ]] && export FLUTTER_SDK="$$__ENV_FLUTTER_SDK"; \
   [[ -n "$$__ENV_BUILD_JOBS" ]] && export BUILD_JOBS="$$__ENV_BUILD_JOBS"; \
   [[ -n "$$__ENV_BUILD_BIND_MOUNT" ]] && export BUILD_BIND_MOUNT="$$__ENV_BUILD_BIND_MOUNT"; \
   $(1)'
@@ -43,6 +45,7 @@ help:
 	@echo "Setup:"
 	@echo "  make setup                 # link SDK + apply overlay (+ Docker image on macOS)"
 	@echo "  make link-sdk              # symlink sdk/ → Rockchip Linux SDK"
+	@echo "  make link-flutter-sdk      # symlink flutter-sdk/ → FLUTTER_SDK/install/"
 	@echo "  make apply-overlay         # patch SDK with lws-hmi board/buildroot overlay"
 	@echo "  make clean-overlay         # restore patched SDK files"
 	@echo ""
@@ -53,53 +56,73 @@ help:
 	@echo "  make docker-volume-pull    # copy output/ from volume back to host SDK"
 	@echo "  make docker-volume-status  # show volume mount and SDK tree status"
 	@echo ""
-	@echo "Build:"
+	@echo "Build (scope = active #include in overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig):"
+	@echo "  make build                 # full: check-prebuilt → overlay → lunch → … → update.img"
+	@echo "  make lunch                 # select ynh960 + lws_hmi Buildroot profile"
+	@echo "  make show-config           # show current SDK .config summary"
+	@echo "  make build-boot-logo       # splash_icon.png → logo.bmp (kernel FIT splash)"
+	@echo "  make build-flutter-app     # cross-build app → fs-overlay /opt/hmi"
+	@echo "  make build-kernel          # kernel + boot.img (DTS / logo changes)"
+	@echo "  make build-rootfs          # rootfs — builds only enabled defconfig fragments"
+	@echo "  make build-img             # pack update.img (vendor loader/uboot + FIT boot)"
 	@echo "  make shell                 # shell in SDK tree (Linux host / macOS container)"
-	@echo "  make lunch                 # select rk3566_rk3568:ynh960_defconfig in SDK"
-	@echo "  make config                # show current SDK .config summary"
-	@echo "  make build                 # full SDK build (long; needs network)"
-	@echo "  make build-rootfs          # Buildroot rootfs only"
-	@echo "  make build-boot-logo       # splash_icon.png → logo.bmp for U-Boot/kernel splash"
-	@echo "  make build-flutter-app     # cross-build Hello World → fs-overlay /opt/hmi"
-	@echo "  make build-deps            # Flutter stack → prebuilt/ (sources in .cache/)"
-	@echo "  make build-flutter-engine  # engine source tarball (skipped if prebuilt present)"
-	@echo "  make build-flutter-sdk     # host Flutter SDK → prebuilt/flutter-sdk/"
-	@echo "  make build-flutter-pi      # flutter-pi source (skipped if prebuilt present)"
-	@echo "  make build-prebuilt        # export Buildroot Flutter → prebuilt/ (macOS: from Docker volume)"
-	@echo "  make rebuild-deps          # FORCE=1 rebuild all P1 dependency targets"
+	@echo "  See docs/build-optimization.md"
 	@echo ""
-	@echo "Dependencies (P3/P5 dev — not in P1 defconfig yet):"
-	@echo "  make build-dev-deps        # opencv/rknn sources + prebuilt rknn-rt/mediamtx"
-	@echo "  make build-opencv          # OpenCV + opencv_contrib source tarballs"
-	@echo "  make build-opencv-ximgproc # ximgproc EdgeDrawing sources (libai)"
-	@echo "  make build-rknn-toolkit    # RKNN-Toolkit2 wheel + torch (model convert)"
-	@echo "  make build-rknn-rt         # Linux aarch64 librknnrt → prebuilt/rknn-rt/"
-	@echo "  make build-mediamtx        # MediaMTX source + binary → prebuilt/mediamtx/"
-	@echo "  make build-all-deps        # build-deps + build-dev-deps"
-	@echo "  make rebuild-dev-deps      # FORCE=1 rebuild P3/P5 targets"
+	@echo "Dependencies (prebuilt / fetch — run before first make build-rootfs):"
+	@echo "  make check-prebuilt        # verify prebuilt for enabled defconfig fragments"
+	@echo "  make build-deps            # build-dev-deps + build-runtime-deps"
+	@echo "  make build-dev-deps        # dev host: FLUTTER_SDK + RKNN-Toolkit"
+	@echo "  make build-runtime-deps    # runtime: flutter, gstreamer, mediamtx, opencv, rknn-rt"
+	@echo "  make build-gstreamer       # runtime: MPP + GStreamer → prebuilt/ (before build-rootfs)"
+	@echo "  make build-platform-packages # runtime: libmodbus, yaml-cpp, sqlite, avahi → prebuilt/"
+	@echo "  make build-flutter-engine  # runtime: compile engine → prebuilt/ (needs fetch first)"
+	@echo "  make fetch-flutter-engine  # runtime: engine sources → .cache/flutter-engine/"
+	@echo "  make build-flutter-pi      # runtime: flutter-pi → prebuilt/"
+	@echo "  make build-mediamtx        # runtime: mediamtx arm64 → prebuilt/"
+	@echo "  make fetch-opencv          # runtime: OpenCV sources → .cache/opencv/"
+	@echo "  make fetch-opencv-ximgproc # runtime: ximgproc EdgeDrawing → .cache/"
+	@echo "  make fetch-rknn-rt         # runtime: aarch64 librknnrt → prebuilt/rknn-rt/"
+	@echo "  make fetch-flutter-sdk     # dev: host Flutter SDK → FLUTTER_SDK/"
+	@echo "  make fetch-rknn-toolkit    # dev: RKNN-Toolkit2 + torch (ONNX→RKNN on x86)"
+	@echo "  make export-prebuilt       # re-export flutter + runtime (usually build-* already did)"
+	@echo "  rebuild-*                  # FORCE=1 refresh (e.g. make rebuild-runtime-deps)"
 	@echo ""
-	@echo "Board:"
-	@echo "  make pull-display-params   # adb pull LCD/MIPI tables from ynh960 → board/"
+	@echo "SDK-native (Innohi baseline, optional):"
+	@echo "  make build-sdk-native      # Innohi SDK-native ynh960 (boot.its, no lws_hmi)"
+	@echo "  make repack-sdk-native     # rebuild kernel+update.img only (after build-sdk-native)"
+	@echo "  make audit-sdk-native      # verify boot.its FIT + SDK loader"
+	@echo "  make flash-sdk-native      # MaskROM flash SDK-native update.img"
+	@echo "  make serial-miniterm       # TTL 1500000 (quit Ctrl+]) — preferred on macOS"
+	@echo "  make serial-console        # TTL via screen"
+	@echo ""
+	@echo "Misc (infrequent — board params, BR output maintenance):"
+	@echo "  make pull-display-params        # adb: ynh960 LCD/MIPI tables → board/ (+ apply-overlay)"
+	@echo "  make migrate-buildroot-output   # reuse legacy *_lws_hmi_p1 BR tree as lws_hmi"
+	@echo "  make fix-buildroot-host-rpaths  # fix stale paths in BR tree after migrate"
+	@echo "  make clean-buildroot-output     # delete active BR output dir (keeps dl/; full rootfs rebuild)"
+	@echo "  make export-buildroot-toolchain # tar.gz BR host+staging → prebuilt/ (team cache, not runtime)"
 	@echo ""
 	@echo "USB Flash (macOS only):"
-	@echo "  make devices               # list devices (android / Loader / Maskrom / …)"
-	@echo "  make bootloader            # adb reboot loader → RockUSB (upgrade_tool ld)"
-	@echo "  make loader                # flash MiniLoaderAll.bin via USB (MaskROM/Loader)"
-	@echo "  make upgrade               # flash update.img via USB (IMAGE=... to override)"
+	@echo "  make audit                 # pre-flight before make flash"
+	@echo "  make flash                 # uf update.img; ul loader when RockUSB is Maskrom"
+	@echo "  make flash-android         # optional: flash Android instead"
 	@echo ""
 	@echo "Common Env Vars:"
 	@echo "  LINUX_SDK=$(LINUX_SDK)"
+	@echo "  FLUTTER_SDK=$(FLUTTER_SDK)"
 	@echo "  BUILD_JOBS=4|8             # parallel jobs (default 4 macOS Docker, 8 Linux native)"
 	@echo "  BUILD_BIND_MOUNT=1         # macOS only: bind-mount SDK instead of Docker volume"
+	@echo "  LWS_HMI_CACHE_ROOT=...   # NAS mount for large .cache artifacts (see .env.example)"
+	@echo "  LWS_HMI_CACHE_URL=...      # optional HTTP mirror of the same layout"
 	@echo "  SERIAL=<serial>            # device serial (macOS USB flash)"
-	@echo "  IMAGE=<path>               # firmware image for make upgrade"
+	@echo "  IMAGE=<path>               # firmware image for make flash"
 	@echo "  DOCKER_IMAGE=$(DOCKER_IMAGE)"
 	@echo "  DOCKER_PLATFORM=$(DOCKER_PLATFORM)"
 	@echo ""
 	@echo "Notes:"
-	@echo "  - Run make build-deps before build-rootfs; prebuilt/ in git skips Flutter compile."
-	@echo "  - macOS: make setup → make docker-volume-init → make lunch → make build-rootfs."
-	@echo "  - macOS flash auto-pulls output/ from Docker volume before loader/upgrade."
+	@echo "  - Full firmware: make build (or granular build-* for iteration)."
+	@echo "  - MaskROM flash: make flash (macOS USB; auto ul when RockUSB is Maskrom)."
+	@echo "  - boot.img = SDK ynh960 kernel FIT (make build-kernel)."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
 
 # --- Setup ---
@@ -109,6 +132,9 @@ setup: link-sdk apply-overlay
 
 link-sdk:
 	@bash scripts/link-sdk.sh
+
+link-flutter-sdk:
+	@bash scripts/link-flutter-sdk.sh
 
 apply-overlay:
 	@bash scripts/apply-overlay.sh
@@ -140,15 +166,28 @@ shell:
 
 lunch:
 	@bash scripts/docker-run.sh ./build.sh $(CHIP):$(DEFCONFIG)
+	@bash scripts/docker-run.sh bash /work/lws-hmi/scripts/sync-lunch-config.sh
 
-config:
+show-config:
 	@bash scripts/docker-run.sh bash -lc 'test -r output/.config && grep -E "^RK_(CHIP|KERNEL_DTS|ROOTFS|DEFCONFIG|BUILDROOT)" output/.config || echo "No output/.config yet — run make lunch first"'
 
-build:
-	@bash scripts/docker-run.sh ./build.sh
+build: check-prebuilt apply-overlay lunch build-boot-logo build-flutter-app build-kernel build-rootfs build-img
+	@echo ""
+	@if [[ -r output/firmware/update.img ]]; then \
+		echo "Build complete:"; ls -lh output/firmware/update.img; \
+	else \
+		echo "Build finished — update.img not found at output/firmware/update.img"; \
+		echo "On macOS with Docker volume: make docker-volume-pull"; \
+	fi
 
-build-rootfs:
+build-kernel:
+	@bash scripts/docker-run.sh bash -lc 'bash /work/lws-hmi/scripts/sync-lunch-config.sh && ./build.sh kernel'
+
+build-rootfs: check-prebuilt
 	@bash scripts/docker-run.sh ./build.sh rootfs
+
+build-img:
+	@bash scripts/build-img.sh
 
 build-boot-logo:
 	@bash scripts/build-boot-logo.sh
@@ -157,23 +196,22 @@ build-flutter-app:
 	@bash scripts/build-flutter-app.sh
 	@bash scripts/apply-overlay.sh
 
-build-flutter-engine:
-	@bash scripts/build-flutter-engine.sh
+fetch-uboot:
+	@bash scripts/docker-run.sh bash /work/lws-hmi/scripts/fetch-uboot.sh
 
-rebuild-flutter-engine:
-	@FORCE=1 bash scripts/build-flutter-engine.sh
+build-uboot:
+	@bash scripts/build-uboot.sh
 
-build-flutter-sdk:
-	@bash scripts/build-flutter-sdk.sh
+# --- Dependencies ---
 
-rebuild-flutter-sdk:
-	@FORCE=1 bash scripts/build-flutter-sdk.sh
+check-prebuilt:
+	@bash scripts/check-prebuilt.sh
 
-build-flutter-pi:
-	@bash scripts/build-flutter-pi.sh
+build-runtime-deps:
+	@bash scripts/build-runtime-deps.sh
 
-rebuild-flutter-pi:
-	@FORCE=1 bash scripts/build-flutter-pi.sh
+rebuild-runtime-deps:
+	@FORCE=1 bash scripts/build-runtime-deps.sh
 
 build-deps:
 	@bash scripts/build-deps.sh
@@ -181,38 +219,59 @@ build-deps:
 rebuild-deps:
 	@FORCE=1 bash scripts/build-deps.sh
 
+build-flutter-engine:
+	@bash scripts/build-flutter-engine.sh
+
+rebuild-flutter-engine:
+	@FORCE=1 bash scripts/build-flutter-engine.sh
+
+fetch-flutter-engine:
+	@bash scripts/fetch-flutter-engine.sh
+
+refetch-flutter-engine:
+	@FORCE=1 bash scripts/fetch-flutter-engine.sh
+
+cache-publish-flutter-engine:
+	@bash scripts/cache-publish-flutter-engine.sh
+
+build-flutter-pi:
+	@bash scripts/build-flutter-pi.sh
+
+rebuild-flutter-pi:
+	@FORCE=1 bash scripts/build-flutter-pi.sh
+
+fetch-flutter-sdk:
+	@bash scripts/fetch-flutter-sdk.sh
+
+refetch-flutter-sdk:
+	@FORCE=1 bash scripts/fetch-flutter-sdk.sh
+
 build-dev-deps:
 	@bash scripts/build-dev-deps.sh
 
 rebuild-dev-deps:
 	@FORCE=1 bash scripts/build-dev-deps.sh
 
-build-all-deps:
-	@bash scripts/build-all-deps.sh
+fetch-opencv:
+	@bash scripts/fetch-opencv.sh
 
-rebuild-all-deps:
-	@FORCE=1 bash scripts/build-all-deps.sh
+refetch-opencv:
+	@FORCE=1 bash scripts/fetch-opencv.sh
 
-build-opencv:
-	@bash scripts/build-opencv.sh
+fetch-opencv-ximgproc:
+	@bash scripts/fetch-opencv-ximgproc.sh
 
-rebuild-opencv:
-	@FORCE=1 bash scripts/build-opencv.sh
+fetch-rknn-toolkit:
+	@bash scripts/fetch-rknn-toolkit.sh
 
-build-opencv-ximgproc:
-	@bash scripts/build-opencv-ximgproc.sh
+refetch-rknn-toolkit:
+	@FORCE=1 bash scripts/fetch-rknn-toolkit.sh
 
-build-rknn-toolkit:
-	@bash scripts/build-rknn-toolkit.sh
+fetch-rknn-rt:
+	@bash scripts/fetch-rknn-rt.sh
 
-rebuild-rknn-toolkit:
-	@FORCE=1 bash scripts/build-rknn-toolkit.sh
-
-build-rknn-rt:
-	@bash scripts/build-rknn-rt.sh
-
-rebuild-rknn-rt:
-	@FORCE=1 bash scripts/build-rknn-rt.sh
+refetch-rknn-rt:
+	@FORCE=1 bash scripts/fetch-rknn-rt.sh
 
 build-mediamtx:
 	@bash scripts/build-mediamtx.sh
@@ -220,17 +279,84 @@ build-mediamtx:
 rebuild-mediamtx:
 	@FORCE=1 bash scripts/build-mediamtx.sh
 
-build-prebuilt:
-	@bash scripts/build-prebuilt.sh
+build-gstreamer:
+	@bash scripts/build-gstreamer.sh
+
+rebuild-gstreamer:
+	@FORCE=1 bash scripts/build-gstreamer.sh
+
+build-platform-packages:
+	@bash scripts/build-platform-packages.sh
+
+rebuild-platform-packages:
+	@FORCE=1 bash scripts/build-platform-packages.sh
+
+export-prebuilt:
+	@bash scripts/export-prebuilt.sh
 
 rebuild-prebuilt:
-	@FORCE=1 bash scripts/build-prebuilt.sh
+	@FORCE=1 bash scripts/export-prebuilt.sh
 
-# --- Board ---
+# Aliases (flutter-only / runtime-only); prefer make export-prebuilt
+build-prebuilt:
+	@EXPORT_RUNTIME=0 bash scripts/export-prebuilt.sh
+
+export-prebuilt-runtime:
+	@EXPORT_FLUTTER=0 bash scripts/export-prebuilt.sh
+
+# --- SDK-native ---
+
+sdk-native-prepare:
+	@LWS_HMI_SKIP_OVERLAY=1 bash scripts/docker-run.sh bash /work/lws-hmi/scripts/prepare-sdk-native.sh
+
+build-sdk-native:
+	@LWS_HMI_SKIP_OVERLAY=1 BUILD_JOBS=1 LWS_HMI_NO_MAKEFLAGS=1 bash scripts/docker-run.sh bash /work/lws-hmi/scripts/build-sdk-native.sh
+
+repack-sdk-native:
+	@LWS_HMI_SKIP_OVERLAY=1 BUILD_JOBS=1 LWS_HMI_NO_MAKEFLAGS=1 bash scripts/docker-run.sh bash /work/lws-hmi/scripts/repack-sdk-native-img.sh
+
+audit-sdk-native:
+	@bash scripts/audit-sdk-native.sh
+
+serial-console:
+	@bash scripts/serial-console.sh
+
+serial-miniterm:
+	@bash scripts/serial-miniterm.sh
+
+serial-sniff:
+	@bash scripts/serial-sniff.sh
+
+serial-ports:
+	@bash scripts/serial-console.sh --list
+	@bash -c 'system_profiler SPUSBDataType 2>/dev/null | grep -A5 -iE "ch34|wch|cp210|ftdi|serial|uart" | head -25 || true'
+
+flash-sdk-native: audit-sdk-native
+	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh flash)
+
+sdk-native-rootfix:
+	@LWS_HMI_SKIP_OVERLAY=1 bash scripts/docker-run.sh bash /work/lws-hmi/scripts/build-sdk-native-rootfix.sh
+
+# --- Misc ---
 
 pull-display-params:
 	@$(call WITH_DOTENV,bash scripts/pull-display-params.sh)
 	@bash scripts/apply-overlay.sh
+
+clean-buildroot-output:
+	@bash scripts/clean-buildroot-output.sh
+
+migrate-buildroot-output:
+	@bash scripts/migrate-buildroot-output.sh
+
+fix-buildroot-host-rpaths:
+	@bash scripts/fix-buildroot-host-rpaths.sh
+
+export-buildroot-toolchain:
+	@bash scripts/export-buildroot-toolchain.sh
+
+audit:
+	@bash scripts/audit-firmware.sh
 
 # --- USB Flash ---
 
@@ -243,5 +369,13 @@ bootloader:
 loader:
 	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh loader)
 
-upgrade:
-	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh upgrade)
+flash:
+	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh flash)
+
+ANDROID_IMG ?= $(HOME)/Downloads/MuJia_960_rk356x_11.0_20260617_1047.img
+
+flash-android:
+	@$(call WITH_DOTENV,UPDATE_IMG='$(ANDROID_IMG)' bash scripts/flash-usb.sh flash)
+
+watch-maskrom:
+	@bash scripts/watch-maskrom.sh

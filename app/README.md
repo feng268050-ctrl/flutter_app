@@ -9,15 +9,17 @@ Buildroot builds **flutter-pi** + **flutter-engine** from the SDK in-tree packag
 
 Current pin: **Flutter 3.24.4**.
 
-### Prefetch / prebuilt (before `make build-rootfs`)
+### Prefetch (before `make build-rootfs`)
 
 ```bash
-make build-deps
+make build-deps        # build-dev-deps + runtime prebuilt
+# or clone with prebuilt/ committed:
+make check-prebuilt
 ```
 
-- **Binaries** in git-tracked `prebuilt/` (engine, flutter-pi, host SDK when committed)
-- **Sources** in `.cache/` only when compile fallback is needed
-- Maintainer after one full rootfs: `make build-prebuilt` → commit `prebuilt/`
+- **Runtime** (`make build-runtime-deps`): flutter-engine/pi, **gstreamer (MPP+RTSP)**, mediamtx, OpenCV sources, `prebuilt/rknn-rt`
+- **Dev host** (`make build-dev-deps`): `FLUTTER_SDK`, RKNN-Toolkit（仅 x86 转模型）
+- **`make build-rootfs`** 安装 defconfig 已接入的 prebuilt；`check-prebuilt` 校验全部 runtime 项
 
 Version pins in `overlay/buildroot/flutter-*.version`.
 

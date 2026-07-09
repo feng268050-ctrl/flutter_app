@@ -15,18 +15,22 @@ ACTION="${1:-}"
 UPGRADE_TOOL_DIR="$ROOT/tools/upgrade_tool"
 UPGRADE_TOOL="$UPGRADE_TOOL_DIR/upgrade_tool"
 SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print)"
-FIRMWARE_DIR="$SDK/output/firmware"
-UPDATE_IMG="${UPDATE_IMG:-${LWS_HMI_UPDATE_IMG:-$FIRMWARE_DIR/update.img}}"
+LWS_FIRMWARE_DIR="$ROOT/output/firmware"
+SDK_FIRMWARE_DIR="$SDK/output/firmware"
+UPDATE_IMG="${UPDATE_IMG:-${LWS_HMI_UPDATE_IMG:-${IMAGE:-$LWS_FIRMWARE_DIR/update.img}}}"
 if [[ "$ACTION" == upgrade || "$ACTION" == uf || "$ACTION" == update ]] && [[ -n "${2:-}" ]]; then
   UPDATE_IMG="$2"
 fi
-LOADER_BIN="${LWS_HMI_LOADER:-$FIRMWARE_DIR/MiniLoaderAll.bin}"
+LOADER_BIN="${LWS_HMI_LOADER:-}"
+LOADER_CACHE_DIR="$ROOT/output/firmware/.loader-cache"
 
 SERIAL="${SERIAL:-${LWS_HMI_SERIAL:-}}"
 LOADER_NORESET="${LOADER_NORESET:-}"
 UPGRADE_NORESET="${UPGRADE_NORESET:-}"
 BOOTLOADER_WAIT_SEC="${BOOTLOADER_WAIT_SEC:-60}"
+LOADER_WAIT_SEC="${LOADER_WAIT_SEC:-90}"
 UPGRADE_TOOL_LOCATION=""
+ROCKUSB_LIST_OUTPUT=""
 
 usage() {
   cat <<EOF
@@ -35,11 +39,53 @@ Usage: $0 {devices|bootloader|loader|upgrade}
   devices      List connected devices (mode column)
   bootloader   adb reboot loader
   loader       upgrade_tool ul <MiniLoaderAll.bin>  [LOADER_NORESET=1]
-  upgrade      upgrade_tool uf <update.img>        [UPGRADE_NORESET=1]
+  upgrade      upgrade_tool uf <update.img>        [UPGRADE_NORESET=1] (low-level; prefer flash)
+  flash        uf update.img; ul first when RockUSB mode is Maskrom
+  flash-android  flash with MuJia Android image (optional; not required before Linux)
 
 Selection: SERIAL
-Image:      make upgrade IMAGE=/path/to/update.img
+MaskROM Linux:  make flash
+RockUSB Loader: make flash (skips ul automatically)
+MaskROM Android: make flash-android
+Image override: make flash IMAGE=/path/to/update.img
 EOF
+}
+
+resolve_loader_bin() {
+  if [[ -n "$LOADER_BIN" && -r "$LOADER_BIN" ]]; then
+    return 0
+  fi
+
+  if [[ ! -r "$UPDATE_IMG" ]]; then
+    LOADER_BIN="$SDK_FIRMWARE_DIR/MiniLoaderAll.bin"
+    return 0
+  fi
+
+  local sfi line offset size skip count out hash
+  mkdir -p "$LOADER_CACHE_DIR"
+  hash="$(md5 -q "$UPDATE_IMG" 2>/dev/null || stat -f '%m-%z' "$UPDATE_IMG")"
+  out="$LOADER_CACHE_DIR/${hash}.MiniLoaderAll.bin"
+  if [[ -r "$out" ]]; then
+    LOADER_BIN="$out"
+    return 0
+  fi
+
+  sfi="$(cd "$UPGRADE_TOOL_DIR" && "$UPGRADE_TOOL" SFI "$UPDATE_IMG" 2>&1 | grep -v '^Using ')"
+  line="$(grep -i MiniLoaderAll <<<"$sfi" | head -1 || true)"
+  offset="$(grep -oE 'offset=0x[0-9a-fA-F]+' <<<"$line" | head -1 | cut -d= -f2)"
+  size="$(grep -oE 'size=0x[0-9a-fA-F]+' <<<"$line" | head -1 | cut -d= -f2)"
+  if [[ -z "$offset" || -z "$size" ]]; then
+    echo "WARNING: cannot parse MiniLoaderAll from update.img; using SDK loader" >&2
+    LOADER_BIN="$SDK_FIRMWARE_DIR/MiniLoaderAll.bin"
+    return 0
+  fi
+
+  skip=$((offset))
+  count=$((size))
+  dd if="$UPDATE_IMG" of="$out" bs=1 skip="$skip" count="$count" status=none 2>/dev/null \
+    || die "failed to extract MiniLoaderAll from $UPDATE_IMG"
+  LOADER_BIN="$out"
+  echo "Loader from update.img: $LOADER_BIN ($(wc -c <"$out" | tr -d ' ') bytes)"
 }
 
 die() {
@@ -65,8 +111,17 @@ maybe_pull_from_docker_volume() {
 
 ensure_readable() {
   local path="$1" label="$2"
-  maybe_pull_from_docker_volume
-  [[ -r "$path" ]] || die "$label not readable: $path"
+  if [[ "$path" == "$LWS_FIRMWARE_DIR/update.img" && ! -r "$path" ]]; then
+    maybe_pull_from_docker_volume
+    local sdk_img="$SDK_FIRMWARE_DIR/update.img"
+    if [[ -r "$sdk_img" ]]; then
+      mkdir -p "$LWS_FIRMWARE_DIR"
+      cp -fL "$(readlink -f "$sdk_img" 2>/dev/null || realpath "$sdk_img")" "$path"
+    fi
+  elif [[ ! -r "$path" ]]; then
+    maybe_pull_from_docker_volume
+  fi
+  [[ -r "$path" ]] || die "$label not readable: $path (run: make build-img)"
 }
 
 rockusb_list_output() {
@@ -113,6 +168,12 @@ device_table_print() {
     return 0
   fi
 
+  local has_maskrom=0
+  for row in "${DEVICE_TABLE_ROWS[@]}"; do
+    IFS="$DEVICE_TABLE_FS" read -r mode _ _ _ <<<"$row"
+    [[ "$mode" == Maskrom ]] && has_maskrom=1
+  done
+
   for row in "${DEVICE_TABLE_ROWS[@]}"; do
     IFS="$DEVICE_TABLE_FS" read -r mode serial loc usb <<<"$row"
     modes+=("$mode")
@@ -143,6 +204,10 @@ device_table_print() {
     printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_usb}s\n" \
       "${modes[$i]}" "${serials[$i]}" "${locs[$i]}" "${usbs[$i]}"
   done
+  if [[ "$has_maskrom" -eq 1 ]]; then
+    echo ""
+    echo "Maskrom: SERIAL is usually \"-\" (normal). Flash Linux: make flash"
+  fi
 }
 
 list_devices() {
@@ -183,7 +248,14 @@ list_devices() {
 resolve_upgrade_tool_location() {
   local out="$1" count line
   count="$(rockusb_connected_count "$out")"
+  ROCKUSB_COUNT="$count"
   [[ "$count" -gt 0 ]] || return 1
+
+  # upgrade_tool v2.44 segfaults on macOS when -s is used with a single device.
+  if [[ "$count" -eq 1 ]]; then
+    UPGRADE_TOOL_LOCATION=""
+    return 0
+  fi
 
   if [[ -n "$SERIAL" ]]; then
     while read -r line; do
@@ -195,21 +267,15 @@ resolve_upgrade_tool_location() {
     die "SERIAL=$SERIAL not found (make devices)"
   fi
 
-  if [[ "$count" -eq 1 ]]; then
-    line="$(grep -E 'DevNo=[0-9]+' <<<"$out" | head -1)"
-    parse_rockusb_line "$line"
-    UPGRADE_TOOL_LOCATION="$_LOCATION"
-    [[ -n "$UPGRADE_TOOL_LOCATION" ]] || UPGRADE_TOOL_LOCATION="$_DEVNO"
-    return 0
-  fi
-
   die "$count RockUSB devices — set SERIAL (make devices)"
 }
 
 upgrade_tool_cmd() {
   if [[ -n "$UPGRADE_TOOL_LOCATION" ]]; then
+    echo "upgrade_tool -s $UPGRADE_TOOL_LOCATION $*"
     (cd "$UPGRADE_TOOL_DIR" && "$UPGRADE_TOOL" -s "$UPGRADE_TOOL_LOCATION" "$@")
   else
+    echo "upgrade_tool $*"
     (cd "$UPGRADE_TOOL_DIR" && "$UPGRADE_TOOL" "$@")
   fi
 }
@@ -217,9 +283,38 @@ upgrade_tool_cmd() {
 require_rockusb_device() {
   local out count
   out="$(rockusb_list_output)"
+  ROCKUSB_LIST_OUTPUT="$out"
   count="$(rockusb_connected_count "$out")"
   [[ "$count" -gt 0 ]] || die "No RockUSB device (upgrade_tool ld). Use make bootloader or MaskROM."
   resolve_upgrade_tool_location "$out"
+}
+
+resolve_selected_rockusb_mode() {
+  local out="$1" count line
+  count="$(rockusb_connected_count "$out")"
+  while read -r line; do
+    parse_rockusb_line "$line"
+    [[ -n "$_DEVNO" ]] || continue
+    if [[ "$count" -gt 1 ]]; then
+      if [[ -n "$UPGRADE_TOOL_LOCATION" ]]; then
+        [[ "$_LOCATION" == "$UPGRADE_TOOL_LOCATION" ]] || continue
+      elif [[ -n "$SERIAL" ]]; then
+        [[ "$_SERIAL" == "$SERIAL" ]] || continue
+      else
+        die "$count RockUSB devices — set SERIAL (make devices)"
+      fi
+    fi
+    printf '%s\n' "${_MODE:-RockUSB}"
+    return 0
+  done < <(grep -E 'DevNo=[0-9]+' <<<"$out")
+  return 1
+}
+
+rockusb_mode_needs_loader() {
+  case "$1" in
+    Maskrom|maskrom) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 ensure_adb() {
@@ -251,13 +346,19 @@ reboot_to_rockusb_loader() {
 }
 
 wait_for_rockusb() {
-  local i count
-  for ((i = 1; i <= BOOTLOADER_WAIT_SEC; i++)); do
+  local i count max="${1:-$BOOTLOADER_WAIT_SEC}"
+  for ((i = 1; i <= max; i++)); do
     count="$(rockusb_connected_count "$(rockusb_list_output)")"
-    [[ "$count" -gt 0 ]] && return 0
+    if [[ "$count" -gt 0 ]]; then
+      echo "RockUSB ready (${count} device(s))."
+      return 0
+    fi
+    if (( i == 1 || i % 5 == 0 )); then
+      echo "Waiting for RockUSB... (${i}s)"
+    fi
     sleep 1
   done
-  die "Timed out waiting for RockUSB (upgrade_tool ld)"
+  die "Timed out waiting for RockUSB (upgrade_tool ld). Re-enter MaskROM or Loader, then retry."
 }
 
 run_bootloader() {
@@ -270,21 +371,58 @@ run_bootloader() {
 run_loader() {
   local -a args=(ul "$LOADER_BIN")
   ensure_upgrade_tool
+  resolve_loader_bin
   ensure_readable "$LOADER_BIN" "LOADER"
   require_rockusb_device
   [[ "$LOADER_NORESET" == 1 ]] && args+=(-noreset)
-  echo "upgrade_tool ${args[*]}"
   upgrade_tool_cmd "${args[@]}"
+  if [[ "$LOADER_NORESET" == 1 ]]; then
+    echo "Loader written (no reset)."
+    return 0
+  fi
+  echo "Loader written — device rebooting; waiting for RockUSB..."
+  sleep 3
+  wait_for_rockusb "$LOADER_WAIT_SEC"
 }
 
 run_upgrade() {
   local -a args=(uf "$UPDATE_IMG")
   ensure_upgrade_tool
   ensure_readable "$UPDATE_IMG" "UPDATE_IMG"
+  echo "UPDATE_IMG: $UPDATE_IMG"
   require_rockusb_device
   [[ "$UPGRADE_NORESET" == 1 ]] && args+=(-noreset)
-  echo "upgrade_tool ${args[*]}"
   upgrade_tool_cmd "${args[@]}"
+}
+
+upgrade_tool_reset_after_flash() {
+  # After uf/di the device often reboots and drops USB before rd completes.
+  if upgrade_tool_cmd rd; then
+    echo "Device reset."
+    return 0
+  fi
+  echo "NOTE: reset after flash failed (device may have already rebooted — check boot)."
+  return 0
+}
+
+run_flash() {
+  local mode
+  ensure_upgrade_tool
+  ensure_readable "$UPDATE_IMG" "UPDATE_IMG"
+  echo "UPDATE_IMG: $UPDATE_IMG"
+  require_rockusb_device
+  mode="$(resolve_selected_rockusb_mode "$ROCKUSB_LIST_OUTPUT")" \
+    || die "could not detect RockUSB mode (make devices)"
+
+  if rockusb_mode_needs_loader "$mode"; then
+    resolve_loader_bin
+    echo "RockUSB: $mode — flash loader + $(basename "$UPDATE_IMG")"
+    LOADER_NORESET=1 run_loader
+    run_upgrade
+  else
+    echo "RockUSB: $mode — flash $(basename "$UPDATE_IMG") only"
+    run_upgrade
+  fi
 }
 
 case "$ACTION" in
@@ -298,5 +436,6 @@ case "$ACTION" in
   bootloader|boot) run_bootloader ;;
   loader|ul) run_loader ;;
   upgrade|uf|update) run_upgrade ;;
+  flash) run_flash ;;
   *) die "Unknown action: $ACTION" ;;
 esac

@@ -4,7 +4,7 @@
 
 **能力原则**：**lws-hmi 产品能力不少于 lws-ui**；Android/Java 栈整体替换为 **Linux Buildroot + flutter-pi + Dart/FFI**，算法、拓扑、模型与 API 契约尽量复用。逐项对照见 **§11.5**。
 
-**SoC 范围**：以 **RK3566 为基准 SoC**（与 lws-ui 产品一致），同一套 HMI 须兼兼容 **RK3568、RK3568B2**。SDK 共用 `rk3566_rk3568` 芯片目录与 `rockchip_rk3566_rk3568_*` Buildroot defconfig；**板级差异**（DTS、DDR、Wi‑Fi/BT 模组、屏参）通过 **`make lunch` 选 board defconfig** 区分。基准板为 **ynh960（3566）**，见 **§3.0**。
+**SoC 范围**：以 **RK3566 为基准 SoC**（与 lws-ui 产品一致），量产 **ynh960 主板**在 **RK3566 / RK3568 / RK3568B2** 间混料时 **发同一份 Linux 固件**（与 Android 镜像一致）。SDK 共用 `rk3566_rk3568` 芯片目录与 `rockchip_rk3566_rk3568_*` Buildroot defconfig。**仅当 PCB 不同**（屏参、Wi‑Fi/BT 模组、外设拓扑、DTS 名）时才通过 **`make lunch` 换 board defconfig** 另出镜像。见 **§3.0**。
 
 ---
 
@@ -70,7 +70,7 @@ P5 体量大，拆为 **P5.1～P5.7** 增量交付。**不能**仅按 `openspec/
 | **P5.4 本地 HTTP 与数据** | **:5580** `shelf`；sqlite / 工艺库；Avahi；Modbus **量产**逻辑（扩 P2 demo） | NanoHTTPd 路由、`network-api-reference.md`；Room / 工艺库 XLSX | 云上传、OTA |
 | **P5.5 云与远程** | WebSocket；R2/S3 上传；远程锁/快照/视频列表等 | `docs/device-websocket-migration.md`、`docs/upload-summary.md` | 全部 Settings 子页 |
 | **P5.6 业务页面** | 首页、Quick Mode、Engineer、Monitor、Settings、告警/安全提示等 **按实装逐项** | `MainActivity`、`QuickModeActivity`、`EngineerModeActivity`、`DeviceMonitoringActivity`、`DeviceSettingActivity` 等；相关 `docs/*.md` + 可选 openspec | 一次性「全 spec 勾选」 |
-| **P5.7 量产收尾** | PR0 录像；OTA / oem；§7.7 sshd；**§11.5 全量 parity**；3568/3568B2 smoke | `UpgradeActivity`；`docs/ota-upgrade-flow.md` | 新业务能力 |
+| **P5.7 量产收尾** | PR0 录像；OTA / oem；§7.7 sshd；**§11.5 全量 parity**；同镜像 3568/3568B2 芯片 smoke | `UpgradeActivity`；`docs/ota-upgrade-flow.md` | 新业务能力 |
 
 **建议依赖**（可并行处标注）：
 
@@ -89,7 +89,7 @@ P5.* ──→ P5.7
 
 ```mermaid
 flowchart TB
-  subgraph hw [硬件 — ynh960 基准板 RK3566]
+  subgraph hw [硬件 — ynh960 PCB（RK3566/3568/3568B2）]
     IPC[IPC 192.168.1.100]
     ETH[eth0 直连 IPC]
     WIFI[wlan0 客户 Wi‑Fi]
@@ -139,33 +139,36 @@ flowchart TB
 
 ### 3.0 SoC 与板级兼容（RK3566 基准 · RK3568 · RK3568B2）
 
-Rockchip SDK 将 **3566 与 3568 合并在同一芯片 profile**（路径 `device/rockchip/rk3566_rk3568`、Buildroot `rockchip_rk3566_rk3568_defconfig`）。**本规划以 RK3566 为基准 SoC**（lws-ui / ynh960 量产线）；**RK3568、RK3568B2** 为扩展兼容，用户态 HMI 栈相同（ARM64、Mali、MPP、RKNPU2、flutter-pi），差异主要在 **内核 DTS / DDR / 部分外设节点**。
+**产品事实**：ynh960 为 **同一主板、同一屏幕**；量产批次可能贴 **RK3566、RK3568 或 RK3568B2**，与 lws-ui **Android 镜像通刷** 一致。Linux 亦 **一份 `update.img` 覆盖三颗 SoC**，**不**按芯片型号拆固件。
 
-| 项 | 3566 / 3568 / 3568B2 关系 | lws-hmi 做法 |
-|----|---------------------------|--------------|
-| **基准** | **RK3566** + **ynh960** 板 | **P1～P5** 开发、全量 CI；RKNN **默认 platform** |
-| Buildroot defconfig | 共用 `rockchip_rk3566_rk3568_lws_hmi` | **一份**瘦身 defconfig + chip config |
-| U-Boot / 内核 | 同 `rk3566_rk3568` 构建目标，**DTS 按板选** | 基准：`make lunch` → `ynh960_defconfig` |
-| GPU / MPP / RKNPU2 | RK356x 通用 | `gpu.config`、`mpp.config`、`lws_hmi_npu.config`（`aarch64`） |
-| RKNN 模型 | 基准 **`rk3566`**；3568/B2 另导出 | 开发机默认 `RKNN_PLATFORM=rk3566`（lws-ui `convert-rknn.sh`）；3568/B2 增量出包 |
-| flutter-pi / MediaMTX / GStreamer | 与 SoC 无关，与 **Mali + MPP** 绑定 | 三颗 SoC **同一 rootfs** |
-| 3568 / 3568B2 板 | 扩展硬件 | **复用 rootfs**，换 board defconfig + DTS + 必要时 Wi‑Fi 模组 |
+Rockchip SDK 将 3566/3568 合并在 **`rk3566_rk3568`** profile（`device/rockchip/rk3566_rk3568`、Buildroot `rockchip_rk3566_rk3568_*`）。内核以 **`CONFIG_CPU_RK3568`** 构建，运行时覆盖 RK356x；`ynh960.dts` 已按 Innohi 惯例合并 `rk3566-evb2-lp4x-v10.dtsi` + `rk3568-linux.dtsi` + `customer_board_ynh960.dtsi`，**同 PCB 不需按 SoC 再拆 DTS**。
+
+| 项 | 3566 / 3568 / 3568B2（同 ynh960 PCB） | lws-hmi 做法 |
+|----|----------------------------------------|--------------|
+| **量产固件** | 主板/屏相同，仅芯片不同 | **一份** `update.img`（U-Boot + boot + rootfs） |
+| **基准** | ynh960 + RK3566 开发样机 | **P1～P5** 开发、全量 CI；RKNN **默认 platform** |
+| Buildroot defconfig | 三颗 SoC 共用 | **一份** `rockchip_rk3566_rk3568_lws_hmi` |
+| U-Boot / 内核 / DTS | 同 PCB → DDR/外设相同 | `make lunch` → **`ynh960_defconfig`** + **`ynh960.dts`** 一份 |
+| GPU / MPP / RKNPU2 | RK356x 通用 | `gpu.config`、`mpp.config`、`lws_hmi_npu.config` |
+| RKNN 模型 | NPU 编译目标可能不同 | 默认 `RKNN_PLATFORM=rk3566`；3568/B2 另导出 `.rknn`（**可 OTA 模型包**，不必拆固件） |
+| flutter-pi / MediaMTX / GStreamer | 与 SoC 丝印无关 | **同一 rootfs** |
+| **不同 PCB**（非 ynh960） | 屏参 / Wi‑Fi / 外设 / DTS 名不同 | **另维护 board defconfig + DTS**，仍共用 `lws_hmi` Buildroot |
 
 **规划约定**：
 
-1. **不**为 3566 / 3568 / 3568B2 各做一套 Buildroot defconfig，除非实测某包 Kconfig 必须分叉（预期不需要）。
-2. **要**为每块量产板维护 **board defconfig**（`RK_KERNEL_DTS_NAME`、`RK_WIFIBT_*`、LCD 参数文件名等）。
-3. CI / 发布：**ynh960（3566 基准）全量回归**；3568、3568B2 各做 smoke（显示、eth0 双路、MediaMTX、NPU 推理）。
+1. **不**为 3566 / 3568 / 3568B2 各做一套 Buildroot 或整包固件（同 PCB 预期不需要）。
+2. **要**为 **不同 PCB 型号** 维护 board defconfig（`RK_KERNEL_DTS_NAME`、`RK_WIFIBT_*`、LCD 参数等）；**同 ynh960 PCB 混料芯片不新增 defconfig**。
+3. CI / 发布：**一份 ynh960 镜像全量回归**；在 **3568、3568B2 芯片** 的 ynh960 板上刷 **同一 `update.img`** 做 smoke（显示、eth0 双路、MediaMTX、NPU 推理）。
 
-当前仓库 **`board/ynh960_defconfig`** 即 **3566 基准板**；3568/3568B2 量产板在 `board/` 增加 defconfig 即可，**不修改** §4 的 `lws_hmi` Buildroot 命名。
+当前仓库 **`board/ynh960_defconfig`** 即 ynh960 PCB 的 **唯一** lunch 目标；**不修改** §4 的 `lws_hmi` Buildroot 命名。
 
 ### 3.1 固件与 SDK 层（已基本具备 — lws-hmi）
 
 | 组件 | 状态 | 说明 |
 |------|------|------|
 | U-Boot `rk3566_rk3568` | **保留** | 现有 `make build` 流程 |
-| 内核 6.1 + 板级 DTS | **保留** | 显示、网口、MPP、**RKNPU**；**3566 / 3568 / 3568B2 各板独立 DTS** |
-| `ynh960_defconfig` | **保留（3566 基准板）** | FIT、`parameter-buildroot-fit.txt`；默认 `make lunch` 目标 |
+| 内核 6.1 + 板级 DTS | **保留** | **`ynh960.dts` 一份**覆盖 ynh960 PCB 上 RK3566/3568/3568B2；**新 PCB** 才增 DTS |
+| `ynh960_defconfig` | **保留** | FIT、`parameter-buildroot-fit.txt`；ynh960 **唯一** `make lunch` 目标 |
 | LCD/MIPI 参数 overlay | **保留** | `960_lcd_param_rk356x.txt`、`lcd_mipi_param.txt` |
 | **Boot splash logo** | **P1 必需** | U-Boot / 内核 early logo（上电即显，见 §5.2） |
 | Recovery rootfs | **P1 可关** | 缩短编译；产品阶段再开 |
@@ -194,15 +197,17 @@ Rockchip SDK 将 **3566 与 3568 合并在同一芯片 profile**（路径 `devic
 | `BR2_TARGET_GENERIC_GETTY` | HMI 全屏，无串口登录需求（开发版可开） |
 | `input-event-daemon` / `usbmount` / `pm-utils` | 无对应硬件场景可关 |
 
-**P1 镜像暂不引入**（留待 **P5** 或 P3 前按需）：
+**P1 镜像暂不引入**（已改为 **P1 备好依赖 / 分阶段开功能** — 见 `README.md` Dependencies）：
 
-| 暂缓 | 原因 |
-|------|------|
-| `multimedia/gst/rtsp.config` 等 GStreamer | P5 视频栈 |
-| `multimedia/mpp.config`（若仅 P5 需要） | 与 GStreamer 同阶段 |
-| **mediamtx** | P5 |
-| **libmodbus** | **P2** |
-| FrostUI / 业务 App 代码 | **P4 / P5** |
+| 原「暂缓」 | 现 P1 `build-deps` |
+|------------|-------------------|
+| GStreamer / MPP | `make build-gstreamer` + defconfig `lws_hmi_gst_rtsp.config` |
+| mediamtx | `make build-mediamtx` + fs-overlay `usr/bin/` |
+| libmodbus | `make build-platform-packages` |
+| OpenCV / yaml-cpp | `fetch-opencv*` + platform `yaml-cpp` |
+| Avahi / sqlite | `build-platform-packages` |
+
+**仍按阶段交付的是 App/功能**：FrostUI、业务页、FFI 叠框、OTA 等（非 rootfs 包名）。
 
 ### 3.3 Buildroot — **保留**
 
@@ -227,10 +232,10 @@ Rockchip SDK 将 **3566 与 3568 合并在同一芯片 profile**（路径 `devic
 | **flutter-pi** + Mali/libdrm | ✓ | | | | | P1 Hello World |
 | **RKNPU2 运行时**（无 example） | ✓ | | ✓ | | | P1 编入 rootfs；P3 用 |
 | **wifibt** 栈 | ✓ | | | | ✓ | 驱动/daemon；业务配网 UI 在 P5 |
-| **libmodbus** | | ✓ | | | ✓ | P2 demo；P5 量产 Modbus |
-| **OpenCV / yaml-cpp** | | | ✓ | | | 链入 `libai.so` 或 static |
-| **GStreamer + MPP + mediamtx** | | | | | ✓ | P5 视频 |
-| **Avahi / sqlite 等** | | | | | ✓ | P5 产品化 |
+| **GStreamer + MPP + mediamtx** | ✓ prep | | | | ✓ use | P1 备好；P5.1 开预览/relay |
+| **libmodbus** | ✓ prep | ✓ use | | | ✓ | P1 `build-platform-packages` |
+| **OpenCV / yaml-cpp** | ✓ prep | | ✓ use | | | opencv `.cache/` + yaml-cpp BR |
+| **Avahi / sqlite 等** | ✓ prep | | | | ✓ use | P1 `build-platform-packages` |
 
 Hello World 与后续 App **不放进 Buildroot 编译**；开发机交叉编译后 overlay 或 **oem** 部署（见 §6）。
 
@@ -362,7 +367,7 @@ RK_ROOTFS_SYSTEM_BUILDROOT=y
 RK_BUILDROOT_CFG=rockchip_rk3566_rk3568_lws_hmi   # 新 defconfig 名
 RK_RECOVERY=n                                      # P1 关闭 recovery 编译
 RK_WIFIBT=y                                        # 与 wifibt/*.config 一致
-# 模组型号按 ynh960（3566 基准板）硬件在 lunch/menuconfig 里选（如 RK_WIFIBT_RTK_AP）
+# 模组型号按 ynh960 硬件在 lunch/menuconfig 里选（如 RK_WIFIBT_RTK_AP）
 ```
 
 **预期 rootfs 体积**（粗估）：
@@ -382,12 +387,12 @@ RK_WIFIBT=y                                        # 与 wifibt/*.config 一致
 
 | 层 | 组件 | 说明 |
 |----|------|------|
-| 内核 | DRM/KMS、MIPI DSI | 板级 DTS + LCD overlay（3566/3568/3568B2 屏参可能不同） |
+| 内核 | DRM/KMS、MIPI DSI | 板级 DTS + LCD overlay（**不同 PCB** 屏参可能不同；同 ynh960 PCB 与 SoC 丝印无关） |
 | 用户态 GPU | `rockchip-mali` | `gpu/gpu.config` |
 | 用户态显示 | **libdrm + libgbm + EGL/GLES** | flutter-pi 直接 scanout |
 | 不需要 | Weston、Wayland、X11、Chromium | 从 defconfig 删除 |
 
-**ynh960 屏参（3566 基准板）**（已在 `board/960_lcd_param_rk356x.txt`）：
+**ynh960 屏参**（已在 `board/960_lcd_param_rk356x.txt`）：
 
 - 物理：800×1280 MIPI，`lcd0_rotation=90`
 - flutter-pi 启动时可对齐：`-o landscape_left` 或 `-r 90`（以实机为准）
@@ -537,7 +542,7 @@ Stack
 | 关闭 | 缓存可复用 | **立即 dispose**，停止 GPU 更新 |
 | 强度 | `FrostBlurIntensity` 对齐 lws-ui（8～25 px） | 同左；多卡同屏 **共享一层 blur** |
 
-#### 6.3.5 验收（基准 **ynh960 / RK3566**）
+#### 6.3.5 验收（ynh960 PCB）
 
 - 全 app **frozen 默认路径**：首页 stat + 时钟无 jank；弹窗开关无 flash（对齐 lws-ui 已修项）
 - **`liveWhileOpen` 用例**（至少 1 个盖 GIF 的 confirm + 1 个输入 dialog）：弹窗打开期间 **≥ 30 fps**；关闭后 GPU 占用回落
@@ -886,7 +891,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK3566 / RK3568 / RK3568B2** 需
 
 | 已有 | 规划用途 |
 |------|----------|
-| `board/ynh960_defconfig` | **3566 基准板**，默认 `make lunch` |
+| `board/ynh960_defconfig` | **ynh960 PCB**，唯一 `make lunch` 目标（RK3566/3568/3568B2 共用固件） |
 | LCD/MIPI fs-overlay | 内核/用户态显示参数 |
 | `overlay/.../05-lws-hmi-display.sh` | 保留 |
 | Docker volume 构建 | 继续用于 Buildroot 编译 |
@@ -1080,7 +1085,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [ ] overlay：`hmi.service` enable；journald volatile；mediamtx/sshd/bluetooth **disable**
 - [ ] **Boot splash logo**（§5.2）；LCD 参数与 ynh960 一致
 - [ ] 开发机 Flutter **Hello World** → `/opt/hmi`；`hmi.service` 自启验收
-- [ ] 上电 → logo → 首页 **≤10 s**（§14.2）；3568/3568B2 board smoke（可选）
+- [ ] 上电 → logo → 首页 **≤10 s**（§14.2）；**同一份镜像**在 3568/3568B2 芯片 ynh960 板上 smoke（可选）
 
 ### P2 — Modbus + GPIO demo
 
@@ -1148,7 +1153,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 - [ ] **PR0 录像**；**OTA** / oem 更新
 - [ ] **`sshd` 默认关** + §7.7 隐藏调试
-- [ ] 全量 **§11.5 parity**；3568/3568B2 smoke
+- [ ] 全量 **§11.5 parity**；**同一份镜像**在 3568/3568B2 芯片上 smoke
 
 ---
 
@@ -1158,7 +1163,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 # 1. 仍用 lws-hmi 环境
 make setup
 make docker-volume-init    # macOS 首次
-make lunch                 # 默认：rk3566_rk3568:ynh960_defconfig（3566 基准板）
+make lunch                 # rk3566_rk3568:ynh960_defconfig（ynh960 PCB；RK3566/3568/3568B2 同镜像）
 # 待 defconfig 就绪后改 RK_BUILDROOT_CFG 或新 lunch 目标
 
 # 2. 只编 rootfs（迭代最快）

@@ -42,7 +42,7 @@ new_fw = """\tINNOHI_FW="${CROOT}/innohi_board/rootfs_board/system/etc/firmware"
 \tfi
 \tif [ -d "$INNOHI_FW" ] && ls "$INNOHI_FW"/* >/dev/null 2>&1; then
 \t\tcp -rf "$INNOHI_FW"/* \\
-\t\t\t${CROOT}/buildroot/output/rockchip_rk3566_rk3568/target/vendor/etc/firmware/
+\t\t\t${CROOT}/buildroot/output/${RK_BUILDROOT_CFG}/target/vendor/etc/firmware/
 \tfi
 """
 

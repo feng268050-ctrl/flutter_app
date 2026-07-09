@@ -1,9 +1,14 @@
 RK_KERNEL_VERSION="6.10"
 RK_KERNEL_DTS_NAME="ynh960"
+# Display: dsi0 + panel-init-sequence + boot logo (same kernel fragments as sdk-native bring-up).
+RK_KERNEL_CFG_FRAGMENTS="lws-hmi-ynh960-display.config lws-hmi-debug-usb.config"
 RK_PARAMETER="parameter-buildroot-fit.txt"
 RK_USE_FIT_IMG=y
+# SDK boot.its (kernel + dtb + resource.img with logo.bmp) — verified on ynh960 hardware.
+RK_BOOT_FIT_ITS_NAME="boot.its"
 DEFAULT_LCD_PARAM="960_lcd_param_rk356x.txt"
+# Docker/offline: skip hard-fail preflight to buildroot.net.
+RK_NETWORK_CHECK=n
 
 RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"
-# RK_RECOVERY is not set
 RK_WIFIBT=y

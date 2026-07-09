@@ -1,0 +1,15 @@
+[Unit]
+Description=ynh960 debug: eth0 static IP + sshd (no display needed)
+DefaultDependencies=no
+After=systemd-remount-fs.service
+Before=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/lws-hmi/debug-boot.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sysinit.target

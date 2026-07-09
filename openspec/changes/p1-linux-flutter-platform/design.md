@@ -7,7 +7,7 @@ The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.servic
 **Constraints:**
 - flutter-pi requires **libsystemd** (Buildroot `BR2_PACKAGE_SYSTEMD`); busybox-init replacement is out of scope.
 - Flutter app is **not** compiled inside Buildroot; host cross-compiles AOT and overlays into rootfs.
-- Baseline board: **ynh960 (RK3566)**, 800×1280 MIPI, `lcd0_rotation=90`.
+- Baseline board: **ynh960** (800×1280 MIPI, `lcd0_rotation=90`); RK3566 used for dev/CI and default RKNN platform; RK3568/RK3568B2 on the same PCB share the same firmware.
 - KPI: power-on → Flutter home first frame **≤ 10 s** on eMMC; boot splash visible before KPI end.
 
 ## Goals / Non-Goals
@@ -21,7 +21,7 @@ The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.servic
 
 **Non-Goals:**
 - Modbus, GPIO demo, AI (`libai.so`), FrostUI/IME, MediaMTX, GStreamer, eth0 camera scripts, cloud/network UI, OTA.
-- RK3568/RK3568B2 board defconfigs (optional smoke only).
+- Per-SoC firmware splits for ynh960 (3566/3568/3568B2 share one `update.img`; optional chip-variant smoke on same image).
 - Recovery partition (`RK_RECOVERY=n` for P1).
 
 ## Decisions
@@ -34,7 +34,7 @@ The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.servic
 
 **Alternatives considered:**
 - Fork entire upstream defconfig inline — rejected (merge pain on SDK updates).
-- Separate defconfig per SoC — rejected (3566/3568/3568B2 share one rootfs per plan §3.0).
+- Separate defconfig per SoC — rejected (3566/3568/3568B2 on same ynh960 PCB share one firmware per plan §3.0; board defconfig forks only for different PCB).
 
 ### 2. EVB package removal — omission, not negative Kconfig in fragments
 

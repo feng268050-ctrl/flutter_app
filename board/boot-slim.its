@@ -1,0 +1,46 @@
+/*
+ * lws-hmi: boot FIT without resource.img (~6 MiB smaller) — fits 64 MiB boot partition.
+ * No signature block (unsigned FIT — matches non-secure uboot).
+ */
+/dts-v1/;
+/ {
+    description = "U-Boot FIT source file for arm";
+
+    images {
+        fdt {
+            data = /incbin/("@KERNEL_DTB@");
+            type = "flat_dt";
+            arch = "arm64";
+            compression = "none";
+            load = <0xffffff00>;
+
+            hash {
+                algo = "sha256";
+            };
+        };
+
+        kernel {
+            data = /incbin/("@KERNEL_IMG@");
+            type = "kernel";
+            arch = "arm64";
+            os = "linux";
+            compression = "none";
+            entry = <0xffffff01>;
+            load = <0xffffff01>;
+
+            hash {
+                algo = "sha256";
+            };
+        };
+    };
+
+    configurations {
+        default = "conf";
+
+        conf {
+            rollback-index = <0x00>;
+            fdt = "fdt";
+            kernel = "kernel";
+        };
+    };
+};

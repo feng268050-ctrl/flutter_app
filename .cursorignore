@@ -1,0 +1,18 @@
+# Large prebuilt artifacts (2GB+, 15k+ files) — tracked in git but not for IDE indexing
+prebuilt/
+
+# SDK symlink target (Rockchip tree; tens of GB)
+sdk/
+
+# Host Flutter SDK (outside repo; symlink flutter-sdk/ → FLUTTER_SDK/install/)
+flutter-sdk/
+
+# Build outputs and download caches
+output/
+.cache/
+
+# Generated Flutter bundle in fs-overlay
+overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/opt/hmi/
+
+# Local tooling venv
+.venv-tools/

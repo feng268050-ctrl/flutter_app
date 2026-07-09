@@ -146,7 +146,7 @@ make audit-sdk-native
 make flash-sdk-native      # MaskROM
 ```
 
-**Serial (UART2 / ttyFIQ0, 1500000):** GND + TX↔RX cross. `make serial-miniterm` (quit `Ctrl+]`). Self-test: short TTL TX–RX, type keys — should echo.
+**Serial (UART2 / ttyFIQ0, 1500000):** GND + TX↔RX cross. `make serial-console` (quit `Ctrl+]`). Self-test: short TTL TX–RX, type keys — should echo.
 
 **Login (SDK `rockchip_rk3566_rk3568` Buildroot):**
 

@@ -56,7 +56,7 @@ for baud in (1500000, 115200, 921600, 57600):
     s.close()
     if got:
         print(f"\n>>> got {got} bytes at {baud}", flush=True)
-        print(f">>> use: SERIAL_PORT={port} SERIAL_BAUD={baud} make serial-miniterm", flush=True)
+        print(f">>> use: SERIAL_PORT={port} SERIAL_BAUD={baud} make serial-console", flush=True)
         sys.exit(0)
 print("\nNo data at any baud.", flush=True)
 sys.exit(1)
@@ -114,5 +114,5 @@ echo ""
 echo "No data at any baud."
 echo "  • Swap TX ↔ RX, confirm GND"
 echo "  • UART2 debug header on core board (ask Innohi)"
-echo "  • make serial-miniterm after wiring UART2 debug header"
+echo "  • make serial-console after wiring UART2 debug header"
 exit 1

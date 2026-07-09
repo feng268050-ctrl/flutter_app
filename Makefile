@@ -92,8 +92,7 @@ help:
 	@echo "  make repack-sdk-native     # rebuild kernel+update.img only (after build-sdk-native)"
 	@echo "  make audit-sdk-native      # verify boot.its FIT + SDK loader"
 	@echo "  make flash-sdk-native      # MaskROM flash SDK-native update.img"
-	@echo "  make serial-miniterm       # TTL 1500000 (quit Ctrl+]) — preferred on macOS"
-	@echo "  make serial-console        # TTL via screen"
+	@echo "  make serial-console        # TTL 1500000 (quit Ctrl+])"
 	@echo ""
 	@echo "Misc (infrequent — board params, BR output maintenance):"
 	@echo "  make pull-display-params        # adb: ynh960 LCD/MIPI tables → board/ (+ apply-overlay)"
@@ -320,9 +319,6 @@ audit-sdk-native:
 
 serial-console:
 	@bash scripts/serial-console.sh
-
-serial-miniterm:
-	@bash scripts/serial-miniterm.sh
 
 serial-sniff:
 	@bash scripts/serial-sniff.sh

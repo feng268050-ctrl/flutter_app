@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# ynh960 debug UART (UART2 / ttyFIQ0): 1500000 8N1 on macOS USB-TTL.
+# ynh960 debug UART (UART2 / ttyFIQ0): 1500000 8N1 via pyserial miniterm (quit: Ctrl+]).
 set -euo pipefail
 
-BAUD="${SERIAL_BAUD:-1500000}"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PORT="${SERIAL_PORT:-}"
+BAUD="${SERIAL_BAUD:-1500000}"
+PY="$("$ROOT/scripts/ensure-serial-venv.sh")"
 
 is_usb_uart() {
   case "$1" in
@@ -15,12 +17,11 @@ is_usb_uart() {
 
 pick_port() {
   local p
-  for p in /dev/cu.usbserial* /dev/cu.wchusbserial* /dev/cu.SLAB_USBtoUART* /dev/cu.usbmodem*; do
+  for p in /dev/cu.usbmodem* /dev/cu.usbserial* /dev/cu.wchusbserial* /dev/cu.SLAB_USBtoUART*; do
     [[ -e "$p" ]] || continue
     echo "$p"
     return 0
   done
-  # Any non-Bluetooth cu.* (user may pass uncommon driver name)
   for p in /dev/cu.*; do
     [[ -e "$p" ]] || continue
     is_usb_uart "$p" || continue
@@ -74,7 +75,7 @@ Usage: SERIAL_PORT=/dev/cu.usbserial-XXX make serial-console
 
   Baud: ${BAUD} (ynh960 earlycon=ttyFIQ0)
   List ports:  make serial-ports
-  Exit screen: Ctrl-A then K, confirm y
+  Quit:        Ctrl+]
 EOF
 }
 
@@ -93,25 +94,14 @@ fi
 [[ -e "$PORT" ]] || { echo "ERROR: $PORT not found" >&2; list_ports; exit 1; }
 
 if lsof "$PORT" >/dev/null 2>&1; then
-  echo "ERROR: $PORT is busy (another serial-console / screen / serial-sniff?)" >&2
-  echo "Holder:" >&2
+  echo "ERROR: $PORT is busy (another serial-console / serial-sniff?)" >&2
   lsof "$PORT" 2>/dev/null | sed 's/^/  /' >&2 || true
-  echo "" >&2
-  echo "Fix: kill stale screen —  screen -ls  then  screen -S <id> -X quit" >&2
-  echo "  or: pkill -f \"screen $PORT\"" >&2
   exit 1
 fi
 
-echo "Serial: $PORT @ ${BAUD} (quit: screen=Ctrl-A K then y; cu=Ctrl-\\ )"
-if command -v screen >/dev/null 2>&1; then
-  # macOS usbmodem + Cursor terminal: $TERM can be too long for screen.
-  export TERM=screen
-  exec screen "$PORT" "$BAUD"
+echo "serial-console $PORT @ $BAUD  (quit: Ctrl+])"
+# miniterm's default filter strips ESC/CSI (breaks ANSI colors from kernel/systemd).
+if [[ -z "${TERM:-}" || "${TERM}" == dumb ]]; then
+  export TERM=xterm-256color
 fi
-
-if command -v cu >/dev/null 2>&1; then
-  exec cu -l "$PORT" -s "$BAUD"
-fi
-
-echo "ERROR: install screen: brew install screen" >&2
-exit 1
+exec "$PY" -m serial.tools.miniterm -f direct "$PORT" "$BAUD"

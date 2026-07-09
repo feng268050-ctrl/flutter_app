@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Prefetch flutter-pi source into .cache/ (compile fallback).
-# Skipped when prebuilt/flutter-pi/<commit>/ is present.
+# Fetch flutter-pi sources (if needed), compile via Buildroot, export → prebuilt/flutter-pi/
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/prebuilt-common.sh"
 VERSION_FILE="$ROOT/overlay/buildroot/flutter-pi.version"
 REPO="${FLUTTER_PI_REPO:-https://github.com/ardera/flutter-pi.git}"
+FORCE="${FORCE:-0}"
 
 read_version() {
   if [[ -n "${FLUTTER_PI_VERSION:-}" ]]; then
@@ -29,15 +29,15 @@ fi
 
 PI_PREBUILT="$ROOT/prebuilt/flutter-pi/${VERSION}"
 SRC="$ROOT/.cache/flutter-pi/src"
-FORCE="${FORCE:-0}"
 
 if prebuilt_ready "$PI_PREBUILT" && [[ "$FORCE" != "1" ]]; then
-  echo "flutter-pi: prebuilt ready at $PI_PREBUILT (skipping source fetch)"
+  echo "flutter-pi: prebuilt ready at $PI_PREBUILT"
   exit 0
 fi
 
 if [[ "$FORCE" == "1" ]]; then
   rm -rf "$ROOT/.cache/flutter-pi"
+  rm -rf "$PI_PREBUILT"
 fi
 
 mkdir -p "$(dirname "$SRC")"
@@ -51,5 +51,18 @@ echo "flutter-pi: checkout $VERSION ..."
 git -C "$SRC" fetch origin
 git -C "$SRC" checkout -f "$VERSION"
 
-echo "flutter-pi: ready at $SRC ($(git -C "$SRC" rev-parse --short HEAD))"
-echo "  Tip: after make build-rootfs, run make build-prebuilt and commit prebuilt/."
+ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.24.4")"
+RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}"
+ENGINE_PREBUILT="$ROOT/prebuilt/flutter-engine/${ENGINE_VER}/arm64-${RUNTIME_MODE}"
+if ! prebuilt_ready "$ENGINE_PREBUILT"; then
+  echo "flutter-pi: requires prebuilt flutter-engine at $ENGINE_PREBUILT" >&2
+  echo "  Run: make build-flutter-engine" >&2
+  exit 1
+fi
+
+echo "flutter-pi: compiling in Buildroot ..."
+bash "$ROOT/scripts/br-compile-flutter.sh" flutter-pi
+
+PACK_ENGINE=0 PACK_FLUTTER_SDK=0 bash "$ROOT/scripts/build-prebuilt.sh"
+
+echo "flutter-pi: prebuilt at $PI_PREBUILT"

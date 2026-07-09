@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Download flutter-engine source tarball into .cache/ (gclient via depot_tools).
-# Skipped when prebuilt/flutter-engine/ is present (clone + build-rootfs uses prebuilt).
+# Compile flutter-engine via Buildroot and export → prebuilt/flutter-engine/
+# Requires: make fetch-flutter-engine (source tarball in .cache/).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/prebuilt-common.sh"
-SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print)"
-ENGINE_PKG="$SDK/buildroot/package/flutter-engine"
 VERSION_FILE="$ROOT/overlay/buildroot/flutter-engine.version"
+RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}"
+FORCE="${FORCE:-0}"
 
 read_version() {
   if [[ -n "${FLUTTER_ENGINE_VERSION:-}" ]]; then
@@ -24,59 +24,50 @@ if [[ -z "$VERSION" ]]; then
     | awk '{print $3}'
 fi
 
-RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}"
 ENGINE_PREBUILT="$ROOT/prebuilt/flutter-engine/${VERSION}/arm64-${RUNTIME_MODE}"
-FORCE="${FORCE:-0}"
+TARBALL="$ROOT/.cache/flutter-engine/flutter-${VERSION}.tar.gz"
 
 if prebuilt_ready "$ENGINE_PREBUILT" && [[ "$FORCE" != "1" ]]; then
-  echo "flutter-engine $VERSION: prebuilt ready at $ENGINE_PREBUILT (skipping gclient fetch)"
+  echo "flutter-engine $VERSION: prebuilt ready at $ENGINE_PREBUILT"
   exit 0
 fi
 
-CACHE_DIR="$ROOT/.cache/flutter-engine"
-TARBALL="$CACHE_DIR/flutter-${VERSION}.tar.gz"
-DEPOT="$ROOT/.cache/depot_tools"
-SCRATCH="$ROOT/.cache/flutter-engine/scratch"
-JOBS="${BUILD_JOBS:-8}"
+if [[ "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1" ]]; then
+  bash "$ROOT/scripts/fetch-flutter-sdk.sh"
+  exec bash "$ROOT/scripts/docker-run.sh" \
+    env LWS_HMI_DOCKER=1 \
+         FORCE="${FORCE}" \
+         FLUTTER_ENGINE_RUNTIME_MODE="${RUNTIME_MODE}" \
+         FLUTTER_ENGINE_VERSION="${FLUTTER_ENGINE_VERSION:-}" \
+         BUILD_JOBS="${BUILD_JOBS:-}" \
+    bash /work/lws-hmi/scripts/build-flutter-engine.sh
+fi
 
-if [[ ! -x "$ENGINE_PKG/gen-tarball" ]]; then
-  echo "ERROR: $ENGINE_PKG/gen-tarball not found (check LINUX_SDK / make link-sdk)" >&2
+if [[ "$FORCE" == "1" ]]; then
+  rm -rf "$ENGINE_PREBUILT"
+fi
+
+if [[ ! -f "$TARBALL" ]]; then
+  cat >&2 <<EOF
+ERROR: flutter-engine source tarball missing:
+  $TARBALL
+
+Download first:
+  make fetch-flutter-engine
+
+Or from team NAS cache (set LWS_HMI_CACHE_ROOT / LWS_HMI_CACHE_URL in .env).
+EOF
   exit 1
 fi
 
-ensure_depot_tools() {
-  if [[ -f "$DEPOT/gclient.py" ]]; then
-    return 0
-  fi
-  echo "Cloning depot_tools into $DEPOT ..."
-  mkdir -p "$(dirname "$DEPOT")"
-  git clone --depth 1 https://chromium.googlesource.com/chromium/tools/depot_tools.git "$DEPOT"
-}
+echo "flutter-engine $VERSION: using tarball $TARBALL"
 
-if [[ "$FORCE" == "1" ]]; then
-  rm -f "$TARBALL"
-  rm -rf "$SCRATCH"
-fi
+echo "flutter-engine $VERSION: host Flutter SDK (for gen_snapshot build) ..."
+bash "$ROOT/scripts/fetch-flutter-sdk.sh"
 
-if [[ -f "$TARBALL" ]]; then
-  echo "flutter-engine $VERSION: using existing $TARBALL"
-  exit 0
-fi
+echo "flutter-engine $VERSION: compiling in Buildroot ..."
+bash "$ROOT/scripts/br-compile-flutter.sh" flutter-engine
 
-mkdir -p "$CACHE_DIR"
-ensure_depot_tools
+PACK_PI=0 PACK_FLUTTER_SDK=0 bash "$ROOT/scripts/build-prebuilt.sh"
 
-export PATH="$DEPOT:${PATH}"
-export TAR="${TAR:-tar}"
-
-echo "flutter-engine $VERSION: downloading via gclient (this can take a long time) ..."
-echo "  Tip: after one make build-rootfs, run make build-prebuilt and commit prebuilt/."
-"$ENGINE_PKG/gen-tarball" \
-  --dot-gclient "$ENGINE_PKG/dot-gclient" \
-  --jobs "$JOBS" \
-  --scratch-dir "$SCRATCH" \
-  --tarball-dl-path "$TARBALL" \
-  --version "$VERSION"
-
-echo "Saved: $TARBALL"
-du -sh "$TARBALL"
+echo "flutter-engine $VERSION: prebuilt at $ENGINE_PREBUILT"

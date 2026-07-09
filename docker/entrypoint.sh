@@ -11,7 +11,10 @@ if [[ -f "$ROOT/scripts/build-env.sh" ]]; then
 else
   BUILD_JOBS="${BUILD_JOBS:-4}"
   export BUILD_JOBS
-  export MAKEFLAGS="-j${BUILD_JOBS} ${MAKEFLAGS:-}"
+  # Do not set MAKEFLAGS in Docker — see scripts/build-env.sh
+  if [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
+    export MAKEFLAGS="-j${BUILD_JOBS} ${MAKEFLAGS:-}"
+  fi
 fi
 
 if [[ -d /work/sdk ]]; then

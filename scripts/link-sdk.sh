@@ -31,6 +31,10 @@ resolve_sdk() {
 }
 
 if [[ "${1:-}" == "--print" ]]; then
+  if [[ -n "${LWS_HMI_SDK_DIR:-}" ]]; then
+    echo "$LWS_HMI_SDK_DIR"
+    exit 0
+  fi
   if [[ -L "$SDK_LINK" ]]; then
     readlink -f "$SDK_LINK" 2>/dev/null || realpath "$SDK_LINK"
   elif [[ -d "$SDK_LINK" ]]; then

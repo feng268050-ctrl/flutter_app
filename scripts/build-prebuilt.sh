@@ -1,15 +1,6 @@
 #!/usr/bin/env bash
-# Extract Flutter stack from Buildroot output into git-tracked prebuilt/.
-#
-# Reads buildroot/output/<profile>/ after make build-rootfs (engine + flutter-pi
-# must have been built at least once). On macOS with Docker volume, runs inside
-# the container against /work/sdk automatically.
-#
-# Usage:
-#   make build-prebuilt
-#   FORCE=1 make build-prebuilt
-#   PACK_FLUTTER_SDK=0 make build-prebuilt   # engine + flutter-pi only (~50 MB)
-#   BR_OUTPUT=rockchip_rk3566_rk3568_lws_hmi make build-prebuilt
+# Export compiled Flutter packages from Buildroot output → prebuilt/.
+# Called by scripts/export-prebuilt.sh (or directly with EXPORT_RUNTIME=0).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,7 +8,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # macOS Docker volume: artifacts live in the container, not host sdk/ symlink.
 if [[ "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1" ]]; then
   exec bash "$ROOT/scripts/docker-run.sh" \
-    bash -c 'export LWS_HMI_DOCKER=1 LWS_HMI_SDK_DIR=/work/sdk; exec bash /work/lws-hmi/scripts/build-prebuilt.sh'
+    env LWS_HMI_DOCKER=1 LWS_HMI_SDK_DIR=/work/sdk \
+        PACK_ENGINE="${PACK_ENGINE:-1}" \
+        PACK_PI="${PACK_PI:-1}" \
+        PACK_FLUTTER_SDK="${PACK_FLUTTER_SDK:-1}" \
+        FORCE="${FORCE:-0}" \
+        FLUTTER_ENGINE_RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}" \
+    bash /work/lws-hmi/scripts/build-prebuilt.sh
 fi
 
 source "$ROOT/scripts/prebuilt-common.sh"
@@ -25,6 +22,14 @@ source "$ROOT/scripts/prebuilt-common.sh"
 SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
 FORCE="${FORCE:-0}"
 PACK_FLUTTER_SDK="${PACK_FLUTTER_SDK:-1}"
+PACK_ENGINE="${PACK_ENGINE:-1}"
+PACK_PI="${PACK_PI:-1}"
+
+# Host Flutter SDK lives on the macOS filesystem; Docker bind-mounts it :ro.
+if [[ "${LWS_HMI_DOCKER:-}" == "1" && "${PACK_FLUTTER_SDK:-1}" == "1" ]]; then
+  echo "build-prebuilt: skipping flutter-sdk export inside Docker (use host: make fetch-flutter-sdk)"
+  PACK_FLUTTER_SDK=0
+fi
 ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.24.4")"
 SDK_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-sdk.version" "3.24.4")"
 PI_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-pi.version" "")"
@@ -51,14 +56,18 @@ resolve_br_out() {
     "$out_base/latest" \
     "$out_base"/rockchip_rk3566_*; do
     [[ -d "$dir" ]] || continue
-    if [[ -f "$dir/target/usr/lib/libflutter_engine.so" ]]; then
+    if [[ "${PACK_ENGINE:-1}" == "1" && -f "$dir/target/usr/lib/libflutter_engine.so" ]]; then
+      echo "$dir"
+      return 0
+    fi
+    if [[ "${PACK_PI:-1}" == "1" && -f "$dir/target/usr/bin/flutter-pi" ]]; then
       echo "$dir"
       return 0
     fi
   done
 
-  echo "ERROR: no Buildroot output with libflutter_engine.so under $out_base" >&2
-  echo "  Run: make lunch && make build-rootfs (flutter-engine + flutter-pi)" >&2
+  echo "ERROR: no suitable Buildroot output under $out_base" >&2
+  echo "  Run: make lunch && make build-flutter-engine / build-flutter-pi" >&2
   echo "  Or set BR_OUTPUT=<profile> if output dir name differs" >&2
   exit 1
 }
@@ -103,31 +112,45 @@ BUILD_DIR="$BR_OUT/build"
 
 ENGINE_PREBUILT="$ROOT/prebuilt/flutter-engine/${ENGINE_VER}/arm64-${RUNTIME_MODE}"
 PI_PREBUILT="$ROOT/prebuilt/flutter-pi/${PI_VER}"
-SDK_PREBUILT_ROOT="$ROOT/prebuilt/flutter-sdk"
-SDK_PREBUILT_INSTALL="$SDK_PREBUILT_ROOT/install"
+SDK_FLUTTER_ROOT="$(bash "$ROOT/scripts/link-flutter-sdk.sh" --print-root)"
+SDK_PREBUILT_INSTALL="$(bash "$ROOT/scripts/link-flutter-sdk.sh" --print)"
 
 echo "build-prebuilt: using Buildroot output $BR_OUT"
 
-require_path "Buildroot output" \
-  "$TARGET_DIR/usr/lib/libflutter_engine.so" \
-  "$TARGET_DIR/usr/bin/flutter-pi" \
-  "$HOST_DIR/bin/flutter_gen_snapshot"
-
-ENGINE_BUILD="$(find_engine_build_dir "$BUILD_DIR")"
-EMBEDDER_H="${STAGING_DIR}/usr/include/flutter_embedder.h"
-if [[ ! -f "$EMBEDDER_H" && -n "$ENGINE_BUILD" && -f "$ENGINE_BUILD/flutter_embedder.h" ]]; then
-  EMBEDDER_H="$ENGINE_BUILD/flutter_embedder.h"
+if [[ "$PACK_ENGINE" == "1" ]]; then
+  require_path "flutter-engine in Buildroot output" \
+    "$TARGET_DIR/usr/lib/libflutter_engine.so" \
+    "$HOST_DIR/bin/flutter_gen_snapshot"
 fi
-require_path "flutter_embedder.h" "$EMBEDDER_H"
+if [[ "$PACK_PI" == "1" ]]; then
+  require_path "flutter-pi in Buildroot output" \
+    "$TARGET_DIR/usr/bin/flutter-pi"
+fi
+
+ENGINE_BUILD=""
+EMBEDDER_H="${STAGING_DIR}/usr/include/flutter_embedder.h"
+if [[ "$PACK_ENGINE" == "1" ]]; then
+  ENGINE_BUILD="$(find_engine_build_dir "$BUILD_DIR")"
+  if [[ ! -f "$EMBEDDER_H" && -n "$ENGINE_BUILD" && -f "$ENGINE_BUILD/flutter_embedder.h" ]]; then
+    EMBEDDER_H="$ENGINE_BUILD/flutter_embedder.h"
+  fi
+  require_path "flutter_embedder.h" "$EMBEDDER_H"
+fi
 
 if [[ "$FORCE" == "1" ]]; then
-  rm -rf "$ENGINE_PREBUILT" "$PI_PREBUILT"
+  if [[ "$PACK_ENGINE" == "1" ]]; then
+    rm -rf "$ENGINE_PREBUILT"
+  fi
+  if [[ "$PACK_PI" == "1" ]]; then
+    rm -rf "$PI_PREBUILT"
+  fi
   if [[ "$PACK_FLUTTER_SDK" == "1" ]]; then
     rm -rf "$SDK_PREBUILT_INSTALL"
-    rm -f "$SDK_PREBUILT_ROOT/.lws-prebuilt"
+    rm -f "$SDK_FLUTTER_ROOT/.lws-prebuilt"
   fi
 fi
 
+if [[ "$PACK_ENGINE" == "1" ]]; then
 echo "build-prebuilt: flutter-engine → $ENGINE_PREBUILT"
 rm -rf "$ENGINE_PREBUILT"
 mkdir -p "$ENGINE_PREBUILT/target/usr/lib" \
@@ -151,33 +174,38 @@ install -m 0755 "$HOST_DIR/bin/flutter_gen_snapshot" \
   "$ENGINE_PREBUILT/host/bin/gen_snapshot"
 
 prebuilt_stamp "$ENGINE_PREBUILT" "${ENGINE_VER}-arm64-${RUNTIME_MODE}"
+fi
 
+if [[ "$PACK_PI" == "1" ]]; then
 echo "build-prebuilt: flutter-pi → $PI_PREBUILT"
 mkdir -p "$PI_PREBUILT/usr/bin"
 install -m 0755 "$TARGET_DIR/usr/bin/flutter-pi" "$PI_PREBUILT/usr/bin/flutter-pi"
 prebuilt_stamp "$PI_PREBUILT" "$PI_VER"
+fi
 
 if [[ "$PACK_FLUTTER_SDK" == "1" ]]; then
   HOST_SDK_SRC="$HOST_DIR/share/flutter/sdk"
   require_path "host Flutter SDK" "$HOST_SDK_SRC/bin/flutter"
   echo "build-prebuilt: flutter-sdk → $SDK_PREBUILT_INSTALL (large; may take a minute) ..."
-  mkdir -p "$SDK_PREBUILT_ROOT"
+  mkdir -p "$SDK_FLUTTER_ROOT"
   if command -v rsync >/dev/null 2>&1; then
-    rsync -a "$HOST_SDK_SRC/" "$SDK_PREBUILT_INSTALL/"
+    rsync -a --no-owner --no-group --no-perms --omit-dir-times \
+      "$HOST_SDK_SRC/" "$SDK_PREBUILT_INSTALL/"
   else
     rm -rf "$SDK_PREBUILT_INSTALL"
     mkdir -p "$SDK_PREBUILT_INSTALL"
     cp -a "$HOST_SDK_SRC/." "$SDK_PREBUILT_INSTALL/"
   fi
   touch "$SDK_PREBUILT_INSTALL/$MARKER"
-  prebuilt_stamp "$SDK_PREBUILT_ROOT" "$SDK_VER"
+  prebuilt_stamp "$SDK_FLUTTER_ROOT" "$SDK_VER"
+  bash "$ROOT/scripts/link-flutter-sdk.sh"
   du -sh "$SDK_PREBUILT_INSTALL"
 else
   echo "build-prebuilt: skipping flutter-sdk (PACK_FLUTTER_SDK=0)"
 fi
 
 bash "$ROOT/scripts/sync-prebuilt-manifest.sh"
-echo "build-prebuilt: done — commit prebuilt/ to skip Flutter recompile on clone"
+echo "build-prebuilt: done — commit prebuilt/ (engine + flutter-pi) to skip Flutter recompile on clone"
 echo "  engine: $ENGINE_PREBUILT"
 echo "  flutter-pi: $PI_PREBUILT"
 if [[ "$PACK_FLUTTER_SDK" == "1" ]]; then

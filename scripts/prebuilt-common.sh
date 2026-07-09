@@ -38,7 +38,7 @@ prebuilt_install_tree() {
   local version="$3"
   mkdir -p "$dest"
   if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete "$src"/ "$dest"/
+    rsync -a --delete --no-owner --no-group --no-perms --omit-dir-times "$src"/ "$dest"/
   else
     rm -rf "$dest"
     mkdir -p "$dest"

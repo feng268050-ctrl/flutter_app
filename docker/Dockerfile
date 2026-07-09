@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bc \
     binfmt-support \
     bison \
+    bsdmainutils \
     build-essential \
     ca-certificates \
     ccache \
@@ -20,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     imagemagick \
     device-tree-compiler \
     expect \
+    fakeroot \
     file \
     flex \
     g++ \
@@ -44,6 +46,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-dev \
     python3-pip \
+    python2 \
     python-is-python3 \
     qemu-user-static \
     rsync \
@@ -57,6 +60,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xz-utils \
     zip \
     zstd \
+    && pip3 install --no-cache-dir httplib2==0.22.0 pyparsing six \
     && rm -rf /var/lib/apt/lists/*
 
 # Passwordless sudo for rootfs image steps (mk-rootfs.sh uses sudo extensively).

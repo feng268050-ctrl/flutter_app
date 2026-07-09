@@ -40,8 +40,8 @@ mount_named_part() {
 		log "format $dev (ext4) for $mnt"
 		mkfs.ext4 -F -L "$name" "$dev" >/dev/null 2>&1 || true
 	fi
-	mount -t ext4 "$dev" "$mnt" 2>/dev/null \
-		|| mount "$dev" "$mnt" 2>/dev/null \
+	mount -t ext4 -o noatime "$dev" "$mnt" 2>/dev/null \
+		|| mount -o noatime "$dev" "$mnt" 2>/dev/null \
 		|| log "mount $dev -> $mnt failed"
 }
 

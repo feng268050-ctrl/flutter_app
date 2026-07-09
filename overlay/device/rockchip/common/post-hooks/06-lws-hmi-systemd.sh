@@ -104,3 +104,13 @@ install_lws_hmi_helper_scripts() {
 	done
 }
 install_lws_hmi_helper_scripts
+
+# A-6: noatime on ext4 mounts (root remount + oem/userdata via systemd-fstab-generator).
+FSTAB="$TARGET_DIR/etc/fstab"
+if [ -f "$FSTAB" ] && ! grep -q 'noatime' "$FSTAB"; then
+	sed -i \
+		-e 's|\(/ ext4 \)rw |\1rw,noatime |' \
+		-e 's|\( ext4 \)defaults |\1defaults,noatime |' \
+		"$FSTAB"
+	echo "lws-hmi-systemd: patched $FSTAB (noatime)"
+fi

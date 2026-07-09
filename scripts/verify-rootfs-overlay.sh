@@ -115,7 +115,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh ynh960-display-init.sh enable-ssh-debug.sh; do
+	for f in boot-verify.sh ynh960-display-init.sh set-performance-mode.sh; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else
@@ -133,9 +133,13 @@ run_check() {
 
 	for f in \
 		"$target/etc/systemd/system/lws-hmi-debug-boot.service" \
-		"$target/usr/lib/lws-hmi/debug-boot.sh"; do
+		"$target/etc/systemd/system/lws-hmi-boot-kpi.service" \
+		"$target/usr/lib/lws-hmi/debug-boot.sh" \
+		"$target/usr/lib/lws-hmi/boot-kpi-watch.sh" \
+		"$target/usr/lib/lws-hmi/configure-camera-eth0.sh" \
+		"$target/usr/lib/lws-hmi/enable-ssh-debug.sh"; do
 		if [[ -e "$f" ]]; then
-			echo "FAIL: retired debug-boot still in target: $f" >&2
+			echo "FAIL: retired artifact still in target: $f" >&2
 			missing=1
 		else
 			echo "OK:  $(basename "$f") absent from target"

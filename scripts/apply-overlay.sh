@@ -95,10 +95,14 @@ sync_fs_overlay() {
       echo "overlay: synced $BR_OVERLAY_ROOT/$sub"
     fi
   done
-  # Single-image policy: ensure retired debug-boot artifacts are gone even before next full rootfs rebuild.
+  # Single-image policy: ensure retired artifacts are gone even before next full rootfs rebuild.
   rm -f \
     "$BR_OVERLAY_ROOT/etc/systemd/system/lws-hmi-debug-boot.service" \
-    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/debug-boot.sh"
+    "$BR_OVERLAY_ROOT/etc/systemd/system/lws-hmi-boot-kpi.service" \
+    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/debug-boot.sh" \
+    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/boot-kpi-watch.sh" \
+    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/configure-camera-eth0.sh" \
+    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/enable-ssh-debug.sh"
 }
 
 sync_post_fakeroot_script() {
@@ -450,6 +454,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
     rm -f "$POST_HOOKS_DIR/05-lws-hmi-display.sh"
     rm -f "$POST_HOOKS_DIR/06-lws-hmi-systemd.sh"
     rm -f "$POST_HOOKS_DIR/07-lws-hmi-innohi-display-bin.sh"
+    rm -f "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
     rm -rf "$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
     for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
       rm -f "$BR_CHIPS_DIR/$f"
@@ -546,6 +551,10 @@ chmod +x "$POST_HOOKS_DIR/06-lws-hmi-systemd.sh"
 install_file "$OVERLAY/device/rockchip/common/post-hooks/07-lws-hmi-innohi-display-bin.sh" \
   "$POST_HOOKS_DIR/07-lws-hmi-innohi-display-bin.sh"
 chmod +x "$POST_HOOKS_DIR/07-lws-hmi-innohi-display-bin.sh"
+
+install_file "$OVERLAY/device/rockchip/common/post-hooks/08-lws-hmi-systemd-finalize.sh" \
+  "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
+chmod +x "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
 
 sync_fs_overlay
 sync_post_fakeroot_script

@@ -116,9 +116,9 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P4 | — | — | frost_ui / frost_ime 子模块 |
 | P5 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云、OTA |
 
-Overlay 脚本 stub（可执行，待 P5 实装逻辑）：`render-mediamtx-config.sh`、`configure-camera-eth0.sh`、`enable-ssh-debug.sh`。
+Overlay 脚本（P1 启动链）：`boot-verify.sh`、`ynh960-display-init.sh`、`set-performance-mode.sh`；P5 保留 `render-mediamtx-config.sh`（`mediamtx.service` ExecStartPre）。eth0 配网、SSH 调试、mediamtx 启停由 Flutter App 内 `Process.run` / platform channel 触发，不再打包 shell stub。
 
-仍待移植：**lensinspector 源码**、`probe-dual-stream.sh`、完整 mediamtx/eth0 渲染逻辑。
+仍待移植：**lensinspector 源码**、`probe-dual-stream.sh`、完整 mediamtx YAML 渲染逻辑、eth0 配网（Dart 移植 lws-ui `CameraEth0Configurator`）。
 
 ### Git LFS (recommended)
 

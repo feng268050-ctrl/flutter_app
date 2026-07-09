@@ -80,7 +80,7 @@ systemd-analyze critical-chain hmi.service
 
 | ID | 项 | 状态 | 说明 |
 |----|-----|------|------|
-| A-1 | U-Boot `bootdelay=0` | **pending** | 预编译 uboot 需确认能否改 env；**不编译 uboot** 除非 Innohi 同意 |
+| A-1 | U-Boot `bootdelay=0` | **skip** | 决定不再自编译 U-Boot；沿用 Innohi/SDK 预编译链 |
 | A-2 | 内核 `loglevel=7` → `4` 或 `3` | **done** | `loglevel=4`；板端串口日志已减少 |
 | A-3 | 裁内核无用驱动 | **pending** | 回归风险中；末阶段 |
 | A-4 | RKNPU / Wi‑Fi / BT 延迟至首屏后 | **done** | disable `wifibt-init`/`wpa_supplicant`/`network.service`；板端已验证 |
@@ -92,7 +92,7 @@ systemd-analyze critical-chain hmi.service
 
 | ID | 项 | 状态 |
 |----|-----|------|
-| D0-1 | 上电 <1～2 s logo | **pending** 板端秒表 |
+| D0-1 | 上电 <1～2 s logo | **done** 板端秒表约 2 s，基本无优化空间 |
 | D0-2 | logo 保持至 flutter-pi 首帧接替 | **done** 板端确认：`Started flutter-pi` 后屏上仍为 boot logo，至 `Freeing drm_logo` |
 
 ### B — systemd 方案 A 瘦身（通常 −1～2 s）
@@ -107,7 +107,7 @@ systemd-analyze critical-chain hmi.service
 | B-6 | `hmi.service` `Nice=-5` | **done** | 板端已验证；首帧 ~1s 未缩短（见 §5 注） |
 | B-7 | sysinit 仅 `param-update`（显示） | **done** |
 | B-8 | `lws-hmi-performance.service`：CPU + DMC/GPU devfreq `performance` | **done** | governors 已生效；首帧 ~1s 未缩短（见 §5 注） |
-| B-9 | disable `log-guardian.service` @ boot | **repo** | sysinit 仅 `param-update` + `async-commit`；待刷机 |
+| B-9 | disable `log-guardian.service` @ boot | **done** | 刷机验证通过；`08-lws-hmi-systemd-finalize.sh` 防止 SDK `07-log-guardian.sh` 重新 enable |
 
 ### C — flutter-pi / App（通常 −1～3 s）
 
@@ -134,9 +134,9 @@ P0（done）
   → B-6 + B-8（done；首帧 EGL 瓶颈确认，不再深挖）
   → A-2（done；loglevel=4）
   → A-4（done；延迟 Wi‑Fi/BT/network）
-  → B-9（disable log-guardian，当前轮）
-  → D0-1 秒表验收 splash
-  → A-1（U-Boot bootdelay，需 Innohi）
+  → B-9（done；disable log-guardian，刷机验证通过）
+  → D0-1（done；splash 约 2 s，基本无优化空间）
+  → A-1（skip；不再自编译 U-Boot）
   → C / A-3（产品阶段）
 ```
 
@@ -146,7 +146,7 @@ P0（done）
 
 **A-6 注意**：`rootflags=noatime` 会致内核 panic（`ext4: Unknown parameter 'noatime'`）。`noatime` 须写在 fstab 第 4 列，由 `systemd-remount-fs` 生效。
 
-**当前轮**：**B-9**（disable `log-guardian`；`make build-rootfs` + `make build-img` + `make flash`）。
+**当前状态**：B-9 / D0-1 已完成；A-1 不再自编译 U-Boot。后续优化只在产品阶段按需进入 C / A-3。
 
 ---
 
@@ -160,7 +160,7 @@ P0（done）
 | 2026-07 | +A-2 loglevel=4 | | | | PASS | 串口日志减少 |
 | 2026-07 | +A-6 noatime | | | | PASS | mount 含 noatime；勿用 rootflags |
 | 2026-07 | +A-4 defer wifibt | | | | PASS | 无 wpa/network @ boot |
-| | +B-9 log-guardian | | | | | 待刷机 |
+| 2026-07 | +B-9 log-guardian | ~2s | ~8.4s | ~8.4s | PASS | `log-guardian` 未自启；D0-1 splash 约 2s |
 
 ---
 
@@ -169,6 +169,7 @@ P0（done）
 | 路径 | 作用 |
 |------|------|
 | `overlay/.../06-lws-hmi-systemd.sh` | enable/disable unit、mask、fstab noatime |
+| `overlay/.../08-lws-hmi-systemd-finalize.sh` | 收尾清理 SDK post-hook 重新 enable 的 unit（如 `log-guardian`）和退役脚本 |
 | `overlay/.../99-lws-hmi.preset` | preset-all 后保持 Plan A disable 列表 |
 | `overlay/.../lws-hmi-performance.service` | 首帧前拉满 CPU/DMC/GPU 频率 |
 | `overlay/.../set-performance-mode.sh` | 写 cpufreq + devfreq governor |
@@ -182,4 +183,4 @@ P0（done）
 
 ---
 
-*最后更新：A-4 done；移除 boot-kpi service；B-9 log-guardian 已入仓。*
+*最后更新：B-9 done；D0-1 done（约 2 s）；A-1 skip（不再自编译 U-Boot）。*

@@ -1,6 +1,8 @@
 #!/bin/bash -e
 
 # Plan A: enable hmi.service only; disable non-critical units at image build time.
+# Note: SDK 07-log-guardian.sh runs after this hook and re-enables log-guardian;
+# 08-lws-hmi-systemd-finalize.sh undoes that for staging target/.
 
 source "${RK_POST_HELPER:-$(dirname "$(realpath "$0")")/post-helper}"
 
@@ -34,7 +36,9 @@ link_unit() {
 disable_boot_unit() {
 	local unit="$1"
 	local wants_dir link
-	for wants_dir in "$SYSTEMD_DIR"/*.wants; do
+	for wants_dir in "$SYSTEMD_DIR"/*.wants \
+		"$TARGET_DIR/usr/lib/systemd/system"/*.wants \
+		"$TARGET_DIR/lib/systemd/system"/*.wants; do
 		[ -d "$wants_dir" ] || continue
 		link="$wants_dir/$unit"
 		if [ -e "$link" ] || [ -L "$link" ]; then

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Configure Mac ethernet for direct attach to ynh960 debug (10.0.0.240).
+# Configure Mac ethernet after board has an IP (e.g. Wi‑Fi or §7.7 ssh enabled).
+# Not used at boot — single prod image has no kernel cmdline static eth0 IP.
 set -euo pipefail
 
 ADDR="${LWS_HMI_MAC_DEBUG_IP:-10.0.0.1}"

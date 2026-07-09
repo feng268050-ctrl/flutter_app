@@ -33,7 +33,7 @@ make build
 ```
 
 Runs in order: `check-prebuilt` → `apply-overlay` → `lunch` → `build-boot-logo` →
-`build-flutter-app` → `build-kernel` → `build-rootfs` → `build-img` → `output/firmware/update.img`.
+`build-flutter-app` → `build-kernel` → `build-rootfs` → `build-img` → **`output/firmware/update.img` on host** (macOS: auto-export from Docker volume after `build-img` / `build-kernel`).
 
 **Daily iteration** — run only the stage you changed:
 
@@ -52,11 +52,11 @@ Daily:
 
 | Change | Run |
 |--------|-----|
-| App | `make build-flutter-app` (+ `build-rootfs` if overlay must land in image) |
+| App | `make build-flutter-app` → `make build-rootfs` → `make build-img` → `make flash` |
 | Kernel / DTS / logo | `make build-kernel` → `make build-img` → `make flash` |
-| Defconfig / overlay | `make apply-overlay` → `make build-rootfs` |
+| Defconfig / overlay | `make apply-overlay` → `make build-rootfs` → `make build-img` → `make flash` |
 
-Use `make build-*` for iteration; use `make build` when you want the full pipeline end-to-end.
+See [`docs/boot-kpi-optimization.md`](boot-kpi-optimization.md) for boot KPI phased checklist.
 
 ---
 

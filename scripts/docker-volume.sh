@@ -191,19 +191,13 @@ cmd_sync() {
 }
 
 cmd_pull() {
-  require_docker
-  require_host_sdk
-  if ! docker volume inspect "$VOLUME" >/dev/null 2>&1; then
-    echo "Volume '$VOLUME' missing." >&2
-    exit 1
-  fi
-  mkdir -p "$HOST_SDK/output"
-  echo "Pulling output/ from volume to $HOST_SDK/output ..."
-  docker run --rm --platform "$PLATFORM" \
-    -v "$VOLUME:/work/sdk:ro" \
-    -v "$HOST_SDK/output:/dest" \
-    "$IMAGE" \
-    rsync -rlptD --no-xattrs --omit-dir-times --info=progress2 /work/sdk/output/ /dest/
+	# Legacy name — full output/ + firmware/ export to host.
+	bash "$ROOT/scripts/docker-export-artifacts.sh" output
+}
+
+cmd_export() {
+	local scope="${1:-firmware}"
+	bash "$ROOT/scripts/docker-export-artifacts.sh" "$scope"
 }
 
 cmd_status() {
@@ -260,10 +254,11 @@ case "${1:-}" in
   init) cmd_init ;;
   sync) cmd_sync ;;
   pull) cmd_pull ;;
+  export) cmd_export "${2:-firmware}" ;;
   status) cmd_status ;;
   ensure-ready) ensure_volume_ready ;;
   *)
-    echo "Usage: $0 {init|sync|pull|status|ensure-ready}" >&2
+    echo "Usage: $0 {init|sync|export|pull|status|ensure-ready}" >&2
     exit 1
     ;;
 esac

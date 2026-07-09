@@ -25,11 +25,22 @@ make build                 # overlay → lunch → logo → app → kernel → r
 Granular stages (daily iteration):
 
 ```bash
-make lunch && make build-rootfs    # rootfs only
+make lunch && make build-rootfs    # rootfs only (runs verify-rootfs-overlay)
 make build-kernel                  # kernel-only
 make build-flutter-app             # app-only (+ re-apply overlay)
-make build-img && make flash       # repack after kernel/rootfs change
+make build-img && make flash       # repack update.img + USB flash (required after rootfs/kernel change)
 ```
+
+**Rootfs / overlay change → device must get a new `update.img`:**
+
+```bash
+make apply-overlay
+make build-rootfs                  # PASS: verify-rootfs-overlay
+make build-img                     # pack update.img + auto-export firmware → host
+make flash
+```
+
+`make build-img` / `make build-kernel` export `output/firmware/` from the Docker volume to the host automatically. `make docker-volume-pull` remains an alias for full `sdk/output/` export (rare).
 
 ## Quick start — macOS
 
@@ -39,9 +50,14 @@ make setup                 # link SDK + overlay + Docker image
 make docker-volume-init    # copy SDK into Docker volume (once; ~10–30 min)
 make build-deps            # once: build-dev-deps + runtime prebuilt
 make build                 # same pipeline as Linux (Docker volume)
-make docker-volume-pull    # if update.img missing on host after build
-make flash                 # USB flash (macOS only)
+make flash                 # USB flash — uses host output/firmware/update.img
 ```
+
+**macOS Docker flow** (volume is ephemeral; host keeps inputs + exported outputs):
+
+1. `make docker-volume-init` — copy host SDK → volume (once)
+2. `make apply-overlay` / `make build-*` — repo bind-mounted into container; build in volume
+3. **`make build-img` / `make build-kernel`** — auto-export `output/firmware/` to host (`output/firmware/update.img` for `make flash`)
 
 ## Dependencies (prebuilt-first)
 
@@ -126,6 +142,14 @@ After `make build` and flash: boot logo ≤2 s → Hello World auto-start → ho
 ```bash
 make show-config           # or: bash scripts/docker-run.sh bash -lc 'grep RK_BUILDROOT output/.config'
 ```
+
+On device (serial shell or ssh after §7.7), after **`make build-img && make flash`**:
+
+```bash
+/usr/lib/lws-hmi/boot-verify.sh
+```
+
+Boot KPI 优化阶段与状态表：[`docs/boot-kpi-optimization.md`](docs/boot-kpi-optimization.md).
 
 On **macOS**, builds use a Docker volume for the SDK (not a bind mount from APFS). Bind-mounting during Buildroot often **crashes Docker Desktop** (`BUILD_BIND_MOUNT=1` to force, not recommended).
 

@@ -102,26 +102,9 @@ ensure_upgrade_tool() {
   [[ -x "$UPGRADE_TOOL" ]] || chmod +x "$UPGRADE_TOOL"
 }
 
-maybe_pull_from_docker_volume() {
-  [[ "$(uname -s)" == Darwin ]] || return 0
-  local volume="${LWS_HMI_DOCKER_VOLUME:-lws-hmi-sdk}"
-  docker volume inspect "$volume" >/dev/null 2>&1 || return 0
-  bash "$ROOT/scripts/docker-volume.sh" pull
-}
-
 ensure_readable() {
   local path="$1" label="$2"
-  if [[ "$path" == "$LWS_FIRMWARE_DIR/update.img" && ! -r "$path" ]]; then
-    maybe_pull_from_docker_volume
-    local sdk_img="$SDK_FIRMWARE_DIR/update.img"
-    if [[ -r "$sdk_img" ]]; then
-      mkdir -p "$LWS_FIRMWARE_DIR"
-      cp -fL "$(readlink -f "$sdk_img" 2>/dev/null || realpath "$sdk_img")" "$path"
-    fi
-  elif [[ ! -r "$path" ]]; then
-    maybe_pull_from_docker_volume
-  fi
-  [[ -r "$path" ]] || die "$label not readable: $path (run: make build-img)"
+  [[ -r "$path" ]] || die "$label not readable: $path (run: make build-img — exports firmware to host automatically on macOS Docker)"
 }
 
 rockusb_list_output() {

@@ -13,9 +13,35 @@ die() {
   exit 1
 }
 
+# Host output/firmware may hold broken symlinks from docker-export (SDK paths exist only in volume).
+sanitize_host_firmware_dir() {
+  local dir="$ROOT/output/firmware"
+  local f
+  mkdir -p "$dir"
+  for f in "$dir"/*; do
+    if [[ -L "$f" && ! -e "$f" ]]; then
+      rm -f "$f"
+    fi
+  done
+}
+
+install_file() {
+  local src="$1"
+  local dest="$2"
+  rm -f "$dest"
+  cp -f "$src" "$dest"
+}
+
+install_file_follow() {
+  local src="$1"
+  local dest="$2"
+  rm -f "$dest"
+  cp -Lf "$src" "$dest"
+}
+
 install_update_img() {
   local src="$1"
-  cp -f "$src" "$UPDATE_IMG"
+  install_file_follow "$src" "$UPDATE_IMG"
   ls -lh "$UPDATE_IMG"
   echo "update.img ready: $UPDATE_IMG"
 }
@@ -33,7 +59,7 @@ link_parameter() {
     "$sdk/device/rockchip/rk3566_rk3568/$parameter" \
     "$PARAM"; do
     if [[ -r "$param" ]]; then
-      cp -f "$param" "$firmware/parameter.txt"
+      install_file "$param" "$firmware/parameter.txt"
       return 0
     fi
   done
@@ -47,9 +73,9 @@ ensure_sdk_loader() {
 
   [[ -r "$loader" ]] || die "missing $loader (copy SDK MiniLoaderAll.bin into prebuilt/sdk-loader/)"
   mkdir -p "$sdk/u-boot" "$firmware" "$ROOT/output/firmware"
-  cp -f "$loader" "$firmware/MiniLoaderAll.bin"
-  cp -f "$loader" "$sdk/u-boot/rk356x_spl_loader_v1.23.114.bin"
-  cp -f "$loader" "$host"
+  install_file "$loader" "$firmware/MiniLoaderAll.bin"
+  install_file "$loader" "$sdk/u-boot/rk356x_spl_loader_v1.23.114.bin"
+  install_file "$loader" "$host"
   echo "MiniLoaderAll.bin: SDK prebuilt ($(wc -c <"$loader" | tr -d ' ') bytes — never use compiled loader)"
 }
 
@@ -65,8 +91,8 @@ ensure_sdk_uboot() {
   # ONLY unpatched vendor uboot. Do NOT binary-patch (env CRC → no backlight/maskrom).
   # Do NOT use LWS_HMI_COMPILED_UBOOT (ynh960 brick risk). Do NOT use MuJia uboot for Linux GPT.
   rm -f "$dest"
-  cp -f "$vendor" "$dest"
-  cp -f "$vendor" "$host"
+  install_file "$vendor" "$dest"
+  install_file "$vendor" "$host"
   echo "uboot.img: vendor SDK unmodified ($(wc -c <"$vendor" | tr -d ' ') bytes)"
   echo "NOTE: bootcmd=boot_android;boot_fit — Linux needs Innohi uboot or serial 'boot_fit'"
   strings "$dest" | grep '^bootcmd=' || true
@@ -100,9 +126,10 @@ pack_in_sdk() {
 
   bash "$ROOT/scripts/apply-overlay.sh" >/dev/null
   bash "$ROOT/scripts/sync-lunch-config.sh"
+  sanitize_host_firmware_dir
 
   rm -f "$firmware"/{vbmeta,dtbo,baseparameter}.img
-  cp -f "$PARAM" "$firmware/parameter.txt"
+  install_file "$PARAM" "$firmware/parameter.txt"
   ensure_sdk_loader "$sdk" "$firmware"
   ensure_sdk_uboot "$sdk" "$firmware"
   install_misc "$sdk" "$firmware"
@@ -140,7 +167,12 @@ export LWS_HMI_PACK_IMG=1
 bash "$ROOT/scripts/docker-run.sh" \
   bash -c 'export LWS_HMI_PACK_IMG=1; bash /work/lws-hmi/scripts/build-img.sh'
 
+bash "$ROOT/scripts/docker-export-artifacts.sh" firmware
+
 if [[ -r "$UPDATE_IMG" ]]; then
   echo ""
+  echo "Host firmware ready:"
   ls -lh "$UPDATE_IMG"
+else
+  die "update.img missing at $UPDATE_IMG after build-img + export"
 fi

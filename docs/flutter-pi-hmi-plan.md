@@ -265,17 +265,42 @@ BR2_PACKAGE_RKNPU2_ARCH="aarch64"
 
 ### 3.6 Init 与 systemd 极简（**方案 A**，量产默认）
 
-**结论**：保留 **systemd 作 PID 1** + **libsystemd**（flutter-pi 事件循环硬依赖），但 **不**按桌面发行版配全套 daemon；**MediaMTX 用 systemd 管理也不挡首屏**，前提是 **不进 `hmi.service` 的 critical chain**（见 §6.4）。
+**结论**：量产默认 **systemd 作 PID 1**，用 **少量 unit** 管启动链；**不**按桌面发行版配全套 daemon。**MediaMTX 用 systemd 管理也不挡首屏**，前提是 **不进 `hmi.service` 的 critical chain**（见 §6.4）。
+
+**`libsystemd` 与 systemd init 是两件事**（勿混用）：
+
+| | `libsystemd`（`libsystemd.so`） | systemd（PID 1） |
+|---|-------------------------------|------------------|
+| 是什么 | 用户态库，`sd_event` 等 API | init 进程 + unit/target 管理 |
+| flutter-pi | **链接依赖**：用 `sd_event` 作进程内事件循环 | **运行时不需要** PID 1 必须是 systemd |
+| 上游说明 | [flutter-pi README](https://github.com/ardera/flutter-pi)：`libsystemd` is not systemd | — |
+| lws-hmi 做法 | 经 Buildroot `BR2_PACKAGE_SYSTEMD=y` 提供 `.so` | **`BR2_INIT_SYSTEMD=y`**：SDK 惯例 + unit 编排 |
+
+Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不装 init），故 P1～P5 **沿用 systemd init**，而非因 flutter-pi **必须**有 PID 1 systemd。见 [flutter-pi #439](https://github.com/ardera/flutter-pi/issues/439)、[Buildroot #30](https://gitlab.com/buildroot.org/buildroot/-/issues/30)。
+
+#### 3.6.0 单一镜像（无 debug / prod 分叉）
+
+**原则**：开发与量产 **同一份** `update.img`、同一套启动链；避免「开发镜像」与「量产镜像」在 sysinit 网络、sshd 自启、内核 `ip=` 等处行为不一致。
+
+| 能力 | 单一镜像做法 |
+|------|----------------|
+| **工程调试** | **串口** `ttyFIQ0`（`console=` + Rockchip `serial-getty@ttyFIQ0`）；`make serial-console` |
+| **远程 SSH** | 包在 rootfs，**默认不监听**；§7.7 隐藏入口 / `enable-ssh-debug.sh` **按需** `start`（重启后仍默认关） |
+| **eth0** | **首屏后** `configure-camera-eth0.sh`（§7.1）；**禁止** sysinit 静态 IP、内核 `ip=` bootargs |
+| **mediamtx / bluetoothd** | 默认 **disable**；P5 由 App 或显式 enable |
+| **可选 USB ECM** | `lws-hmi-debug-usb.config` **不在**默认 `ynh960_defconfig`；需要时手动加 fragment |
+
+**禁止**：`lws-hmi-debug-boot` 类早期配网 unit、`LWS_HMI_DEV` 换 overlay、内核 cmdline 写死 `10.0.0.240` 等仅开发镜像行为。
 
 #### 3.6.1 方案 A 原则
 
 | 原则 | 说明 |
 |------|------|
-| **flutter-pi 需要 libsystemd** | Buildroot `flutter-pi` 包 `depends on BR2_PACKAGE_SYSTEMD`；去掉 systemd **包** 需 fork embedder，**不在 P1～P5 范围** |
-| **init 仍用 systemd** | 用 **少量 unit** 管 `hmi` / 可选 `mediamtx`；不引入 Plymouth、networkd 等 |
+| **flutter-pi 链接 libsystemd** | CMake `pkg_check_modules(libsystemd)`；`event_loop.c` 使用 `sd_event_*`。**不要求** systemd 当 init |
+| **init 用 systemd（工程选择）** | Buildroot 打包路径、Rockchip SDK 默认、少量 unit 管 `hmi` / 可选 `mediamtx`；不引入 Plymouth、networkd 等 |
 | **首屏 KPI 独立** | `hmi.service` **仅** `After=local-fs.target`；**禁止** `network-online` / `mediamtx` / `udev-settle` |
 | **MediaMTX 不挡 UI** | unit 可存在，但 **`After=hmi.service`** 或 **默认 `disable`** + App `systemctl start`（§6.4） |
-| **busybox init 替换** | 列为 **实验项**（方案 B），非量产默认 |
+| **busybox init 替换** | **方案 B（实验）**：需 Buildroot 只装 `libsystemd` 或 fork flutter-pi（如 libuv）；非 P1～P5 量产默认 |
 
 #### 3.6.2 Buildroot：`lws_hmi_systemd.config`
 
@@ -283,8 +308,8 @@ BR2_PACKAGE_RKNPU2_ARCH="aarch64"
 
 | Kconfig | 量产 |
 |---------|------|
-| `BR2_INIT_SYSTEMD=y` | systemd 作 init |
-| `BR2_PACKAGE_SYSTEMD=y` | 含 **libsystemd** |
+| `BR2_INIT_SYSTEMD=y` | systemd 作 PID 1（服务编排；与 flutter-pi 无运行时耦合） |
+| `BR2_PACKAGE_SYSTEMD=y` | systemd 用户态 + **`libsystemd.so`**（flutter-pi 链接用） |
 | `BR2_PACKAGE_SYSTEMD_NETWORKD` | **关** — eth0 走 §7.1 脚本 |
 | `BR2_PACKAGE_SYSTEMD_RESOLVED` | **关** |
 | `BR2_PACKAGE_SYSTEMD_TIMESYNCD` | **关** — P5 云同步再按需 chrony |
@@ -808,7 +833,7 @@ lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `
 **Buildroot**：
 
 - 可装 **`openssh`**（便于现场 `ssh`），overlay 默认 **`systemctl disable --now sshd`**
-- **不**装 `adbd`；开发阶段用串口 / 手动 `ssh` 或上述隐藏入口
+- **不**装 `adbd`；工程阶段用 **串口**（`ttyFIQ0`）；远程用 §7.7 隐藏入口后再 `ssh`
 - 可选：仅监听 **wlan0**、禁用 root 密码登录、只允许公钥（P5 hardening）
 
 **开启后行为**（建议，可再定是否跨重启保持）：
@@ -817,7 +842,7 @@ lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `
 - UI Toast：「已开启 SSH 远程调试（端口 22），可使用 ssh 连接」
 - 日志记录开启事件（审计）
 
-**开发构建**（可选）：`LWS_HMI_DEV=1` overlay 允许 `sshd` 自启；**量产镜像不含**该 overlay。
+**无单独开发镜像**：不维护 `LWS_HMI_DEV` overlay 或 sysinit 配网 unit；开发与量产共用 §3.6.0 单一镜像。
 
 ---
 
@@ -879,7 +904,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK3566 / RK3568 / RK3568B2** 需
 | 编译 | 在 Buildroot 添加 `flutter-pi` package，或 SDK 外挂 `external/` |
 | Flutter Engine | 使用与 flutter-pi 匹配的 **engine 版本** 构建 `app.so` |
 | 触摸 | libinput；与各板 DTS input 节点确认 |
-| 调试 | 开发：串口 / 手动 ssh；量产：**§7.7 隐藏入口** 后再 `ssh` |
+| 调试 | **串口** `ttyFIQ0`（默认）；远程 **§7.7** 隐藏入口后再 `ssh`（同一镜像） |
 
 建议 **P1** 在 Buildroot 中 **只打包 flutter-pi 二进制**，Hello World 在 CI/开发机交叉编译后 overlay 打入 rootfs。
 
@@ -1168,10 +1193,11 @@ make lunch                 # rk3566_rk3568:ynh960_defconfig（ynh960 PCB；RK356
 
 # 2. 只编 rootfs（迭代最快）
 make build-rootfs
+make build-img && make flash    # rootfs 变更必须 pack + 刷机
 
-# 3. 完整固件（需要 boot 时再跑）
+# 3. 完整固件
 make build
-make docker-volume-pull
+make flash
 ```
 
 ---
@@ -1214,32 +1240,52 @@ make docker-volume-pull
 
 ### 14.3 稳定 **≤10 s** 进首页的优化清单
 
-按收益排序；实施后用 `systemd-analyze` / `systemd-analyze blame` 与秒表在 **ynh960 eMMC** 上验收。
+> **追踪表（状态 / 构建流程 / KPI 记录）**：[`docs/boot-kpi-optimization.md`](boot-kpi-optimization.md) — 实施优化时 **先更新该文档 §4 状态**，避免改错或遗漏 `build-img` / `flash` 步骤。
+
+**KPI 终点**：上电 → Flutter **首页首帧**（不含 RTSP/RKNN/Wi‑Fi 关联完成）。**Boot splash** 单独验收（§5.2）。
+
+实施后用 `systemd-analyze` / `systemd-analyze blame` / `critical-chain hmi.service` 与秒表在 **ynh960 eMMC** 上验收。
+
+#### P0. 与方案 A / 单一镜像不符的实测项（先做）
+
+来自板端启动日志；不修则后续优化收益会被抵消。
+
+| 项 | 现象 | 做法 | 归属 |
+|----|------|------|------|
+| **sshd / mediamtx 自启** | 不应默认监听 22、不应跑 mediamtx | post-hook 扫全部 `*.wants`（含 `sshd.socket`）；刷机后 `boot-verify.sh` | **repo** — 见 boot-kpi-optimization §P0 |
+| **内核 / sysinit 早期配网** | 历史 `ip=` bootargs、`debug-boot` unit | **done** — 已移除 | 仓库 |
+| **systemd-network-generator FAILED** | 无 `ip=` 时无害但吵 | post-hook **mask** | **repo** |
+| **构建产物未到 host** | 只跑 `build-rootfs` 就刷机 | 必须 **`make build-img`**（自动 export）→ **`make flash`** | **repo** — `docker-export-artifacts.sh` |
+| **多分区 EXT4 recovery** | unclean shutdown | 正常 `poweroff` | 运维 |
 
 #### A. 启动链（内核 / U-Boot）— 通常 **−1～3 s**
 
 | 项 | 做法 |
 |----|------|
 | U-Boot `bootdelay=0` | 去掉倒计时 |
-| 内核 `quiet loglevel=3` | 少串口 printk（开发版可保留） |
+| 内核 `quiet loglevel=3` | 少串口 printk（**单一镜像**下仍保留 `console=ttyFIQ0`；verbose 仅影响 printk 量） |
 | 裁内核 | 去掉 boot 不用驱动（USB 存储、多余 I2C/SPI、unused DRM connector） |
 | 模块改内置或去掉 | 首屏必需：DRM/MIPI、Mali、eMMC、eth0；**RKNPU/Wi‑Fi/BT 可 modprobe 延迟** |
 | 不用 `systemd-udev-settle` 阻塞 | 确认无 unit `After=systemd-udev-settle` |
 | eMMC 调优 | HS200/HS400、`noatime`；**量产勿用 SD 卡测 KPI** |
 
-#### B. systemd **方案 A**（§3.6）— 通常 **−1～2 s**，**−10～25 MB**
+#### B. systemd init **方案 A 瘦身**（§3.6）— 通常 **−1～2 s**，**−10～25 MB**
+
+目标：在 **保留 systemd 作 PID 1** 的前提下，裁掉桌面级 daemon、减少 enable 的 unit 数量。**不是**为 flutter-pi 裁 systemd——flutter-pi 只依赖 **`libsystemd.so`**，与 init 选择解耦。
 
 | 项 | 做法 |
 |----|------|
 | **`lws_hmi_systemd.config`** | 关 networkd / resolved / timesyncd / logind / polkit / analyze / firstboot |
 | **journald volatile** | `overlay/.../journald.conf.d/00-lws-hmi-volatile.conf` |
-| **`lws_hmi_base.config`** | 关 **adbd**、**getty**、usbmount 等 |
+| **`lws_hmi_base.config`** | 关 **adbd**、虚拟 tty **getty**（保留 **serial-getty@ttyFIQ0**） |
 | **`lws_hmi_network.config`** | 关 dhcpcd、dnsmasq、dropbear；eth0 **无** networkd |
-| 生产 **enable 仅 `hmi.service`** | post-hook `06-lws-hmi-systemd.sh` |
+| **sysinit 仅早期显示** | `param-update.service` @ sysinit；网络不进 sysinit（§3.6.0） |
+| 生产 **enable 仅 `hmi.service`**（+ `mainserver`） | post-hook `06-lws-hmi-systemd.sh` |
 | **disable 默认** | **`mediamtx`**、**`sshd`**、**`bluetoothd`**（§7.7 / P1 Wi‑Fi 按需 start） |
 | 禁止 `network-online.target` | 任何 UI 相关 unit 不得 `Wants/After` 它 |
 | **`mediamtx` 若 enable** | **`After=hmi.service` only** — 不挡 KPI，最多并行抢 CPU **~0.3～1 s** |
-| 不用 `systemd-udev-settle` | 确认无 unit `After=systemd-udev-settle` |
+| 不用 `systemd-udev-settle` | 确认无 unit `After=systemd-udev-settle`（`hmi` 不得等） |
+| mask 无用 unit | `systemd-network-generator`（post-hook §P0） |
 | 可选：`hmi.service` `Nice=-5` | 首页进程略提优先级（需实测） |
 
 **MediaMTX 推荐（量产 KPI）**：
@@ -1284,20 +1330,23 @@ After=hmi.service
 systemd-analyze
 systemd-analyze blame
 systemd-analyze critical-chain hmi.service
+/usr/lib/lws-hmi/boot-verify.sh
 # 秒表：上电 → 首页首帧（与 KPI 一致）
 ```
 
-** realistic 组合（eMMC + 上述 A+B+C 大部分）**：
+**推荐实施顺序**：**P0**（对齐方案 A）→ **A + D0**（U-Boot/内核/splash）→ **B**（systemd 瘦身）→ **C**（flutter-pi/App）→ **D**（存储）。
 
-| 段 | 目标 |
-|----|------|
-| **U-Boot / 内核 splash** | 上电 **<1～2 s** 有 logo（**P1 必需**，§5.2） |
-| U-Boot + 内核（至 multi-user） | 2–4 s（含 splash 持续显示） |
-| systemd → hmi start | 1–2 s |
-| flutter-pi → 首页首帧 | 2–4 s |
-| **合计** | **6–10 s** |
+** realistic 组合（eMMC + P0 + A+B+C 大部分）**：
 
-SD 卡或未延迟 mediamtx/rknn_server 同时抢资源时，**很难稳定 <10 s**。
+| 段 | 目标 | 备注 |
+|----|------|------|
+| **U-Boot / 内核 splash** | 上电 **<1～2 s** 有 logo（**P1 必需**，§5.2） | 与 KPI 分开测 |
+| U-Boot + 内核（至 multi-user） | 2–4 s | `multi-user` = 应用可启，非「多用户登录」 |
+| systemd → `hmi.service` start | 1–2 s | `critical-chain` 不得含 network/mediamtx |
+| flutter-pi → 首页首帧 | 2–4 s | AOT + Mali EGL |
+| **合计** | **6–10 s** | ynh960 eMMC 典型 |
+
+SD 卡、未做 P0（sshd/mediamtx 误 enable）、或 mediamtx/rknn_server 与首屏抢 CPU 时，**很难稳定 <10 s**。
 
 ---
 

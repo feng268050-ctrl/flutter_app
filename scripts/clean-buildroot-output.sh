@@ -4,15 +4,13 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)"
-PROFILE="${BR_OUTPUT:-${1:-}}"
-
-if [[ -z "$PROFILE" && -r "${SDK}/output/.config" ]]; then
-  PROFILE="$(sed -n 's/^RK_BUILDROOT_BASE_CFG="\(.*\)"$/\1/p' "${SDK}/output/.config")"
-fi
-PROFILE="${PROFILE:-rockchip_rk3566_rk3568_lws_hmi}"
+source "$ROOT/scripts/prebuilt-common.sh"
 
 OUT_BASE="${SDK}/buildroot/output"
-TARGET="${OUT_BASE}/${PROFILE}"
+TARGET="$(resolve_br_output_dir "$SDK")"
+if [[ -n "${BR_OUTPUT:-${1:-}}" ]]; then
+  TARGET="${OUT_BASE}/${BR_OUTPUT:-$1}"
+fi
 
 if [[ ! -d "$OUT_BASE" ]]; then
   echo "clean-buildroot-output: no buildroot/output — nothing to do"

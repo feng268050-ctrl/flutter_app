@@ -20,7 +20,7 @@ SERIAL ?=
 IMAGE ?=
 FLASH_ENV = SERIAL='$(SERIAL)' UPDATE_IMG='$(IMAGE)'
 
-.PHONY: help setup link-sdk link-flutter-sdk apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-volume-status shell lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-flutter-app check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices bootloader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native
+.PHONY: help setup link-sdk link-flutter-sdk apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status shell lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-flutter-app check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices bootloader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -51,9 +51,10 @@ help:
 	@echo ""
 	@echo "Docker (macOS only):"
 	@echo "  make docker-image          # build lws-hmi-builder container image"
-	@echo "  make docker-volume-init    # copy SDK into Docker volume — run once before build"
-	@echo "  make docker-volume-sync    # refresh overlay into volume (auto before each build)"
-	@echo "  make docker-volume-pull    # copy output/ from volume back to host SDK"
+	@echo "  make docker-volume-init    # (1) copy host SDK → Docker volume — once"
+	@echo "  make docker-volume-sync    # refresh host SDK/overlay into volume before build"
+	@echo "  make docker-export-artifacts # (3) volume firmware → host (auto after build-img/kernel)"
+	@echo "  make docker-volume-pull    # alias: export full sdk/output/ (legacy)"
 	@echo "  make docker-volume-status  # show volume mount and SDK tree status"
 	@echo ""
 	@echo "Build (scope = active #include in overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig):"
@@ -119,9 +120,9 @@ help:
 	@echo "  DOCKER_PLATFORM=$(DOCKER_PLATFORM)"
 	@echo ""
 	@echo "Notes:"
-	@echo "  - Full firmware: make build (or granular build-* for iteration)."
-	@echo "  - MaskROM flash: make flash (macOS USB; auto ul when RockUSB is Maskrom)."
-	@echo "  - boot.img = SDK ynh960 kernel FIT (make build-kernel)."
+	@echo "  - macOS Docker: init volume → build in Docker → artifacts auto-export to host (see docker-export-artifacts)."
+	@echo "  - Full firmware: make build (or build-img after rootfs/kernel changes)."
+	@echo "  - MaskROM flash: make flash (uses output/firmware/update.img on host)."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
 
 # --- Setup ---
@@ -155,6 +156,9 @@ docker-volume-sync:
 docker-volume-pull:
 	@bash scripts/docker-volume.sh pull
 
+docker-export-artifacts:
+	@bash scripts/docker-export-artifacts.sh firmware
+
 docker-volume-status:
 	@bash scripts/docker-volume.sh status
 
@@ -175,15 +179,16 @@ build: check-prebuilt apply-overlay lunch build-boot-logo build-flutter-app buil
 	@if [[ -r output/firmware/update.img ]]; then \
 		echo "Build complete:"; ls -lh output/firmware/update.img; \
 	else \
-		echo "Build finished — update.img not found at output/firmware/update.img"; \
-		echo "On macOS with Docker volume: make docker-volume-pull"; \
+		echo "ERROR: output/firmware/update.img missing after build" >&2; exit 1; \
 	fi
 
 build-kernel:
 	@bash scripts/docker-run.sh bash -lc 'bash /work/lws-hmi/scripts/sync-lunch-config.sh && ./build.sh kernel'
+	@bash scripts/docker-export-artifacts.sh firmware
 
 build-rootfs: check-prebuilt
 	@bash scripts/docker-run.sh ./build.sh rootfs
+	@bash scripts/verify-rootfs-overlay.sh
 
 build-img:
 	@bash scripts/build-img.sh

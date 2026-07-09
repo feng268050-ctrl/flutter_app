@@ -81,13 +81,35 @@ sync_fs_overlay() {
   fi
   mkdir -p "$BR_OVERLAY_ROOT"
   # Plan A: etc/ (systemd) + usr/ (scripts, mediamtx). system/etc from sync_display_params; opt/hmi from sync_hmi_app_overlay.
+  # Use rsync --delete so removed overlay files (e.g. lws-hmi-debug-boot.service) do not linger in the SDK tree.
   for sub in etc usr; do
     if [[ -d "$OVERLAY_FS/$sub" ]]; then
       mkdir -p "$BR_OVERLAY_ROOT/$sub"
-      cp -a "$OVERLAY_FS/$sub/." "$BR_OVERLAY_ROOT/$sub/"
+      if command -v rsync >/dev/null 2>&1; then
+        rsync -a --delete "$OVERLAY_FS/$sub/" "$BR_OVERLAY_ROOT/$sub/"
+      else
+        rm -rf "$BR_OVERLAY_ROOT/$sub"
+        mkdir -p "$BR_OVERLAY_ROOT/$sub"
+        cp -a "$OVERLAY_FS/$sub/." "$BR_OVERLAY_ROOT/$sub/"
+      fi
       echo "overlay: synced $BR_OVERLAY_ROOT/$sub"
     fi
   done
+  # Single-image policy: ensure retired debug-boot artifacts are gone even before next full rootfs rebuild.
+  rm -f \
+    "$BR_OVERLAY_ROOT/etc/systemd/system/lws-hmi-debug-boot.service" \
+    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/debug-boot.sh"
+}
+
+sync_post_fakeroot_script() {
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-post-fakeroot.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-post-fakeroot.sh"
+  if [[ ! -f "$src" ]]; then
+    echo "WARNING: $src missing; skip post-fakeroot script" >&2
+    return 0
+  fi
+  install -m 0755 "$src" "$dest"
+  echo "overlay: $dest"
 }
 
 sync_kernel_display_dts() {
@@ -526,6 +548,7 @@ install_file "$OVERLAY/device/rockchip/common/post-hooks/07-lws-hmi-innohi-displ
 chmod +x "$POST_HOOKS_DIR/07-lws-hmi-innohi-display-bin.sh"
 
 sync_fs_overlay
+sync_post_fakeroot_script
 sync_kernel_display_dts
 sync_kernel_display_config
 sync_display_params

@@ -1,0 +1,7 @@
+# Processed by systemd preset-all during rootfs image build (after 80-buildroot.preset).
+# Keep sshd/mediamtx installable on demand; do not auto-start at boot (Plan A §3.6).
+disable lws-hmi-debug-boot.service
+disable sshd.service
+disable sshd.socket
+disable mediamtx.service
+disable bluetooth.service

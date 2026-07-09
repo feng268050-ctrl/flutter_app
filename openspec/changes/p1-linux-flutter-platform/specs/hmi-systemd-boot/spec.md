@@ -2,7 +2,7 @@
 
 ### Requirement: Plan A minimal systemd is PID 1
 
-The P1 image SHALL use systemd as init with libsystemd available, and MUST disable systemd-networkd, systemd-resolved, systemd-timesyncd, systemd-logind, and polkit packages per `lws_hmi_systemd.config`.
+The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL ship `libsystemd.so` for flutter-pi (`sd_event`); libsystemd availability does not by itself mandate systemd as init, but both are enabled via `lws_hmi_systemd.config`. The image MUST disable systemd-networkd, systemd-resolved, systemd-timesyncd, systemd-logind, and polkit packages per that config.
 
 #### Scenario: systemd is init
 

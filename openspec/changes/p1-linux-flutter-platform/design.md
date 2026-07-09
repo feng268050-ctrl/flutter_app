@@ -5,7 +5,7 @@ lws-hmi wraps the Rockchip RK3566/RK3568 SDK in Docker and applies ynh960 board 
 The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.service`, `06-lws-hmi-systemd.sh`), display overlays (LCD/MIPI params), and a defconfig skeleton (`overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig`). **P1** completes the wiring: enable flutter-pi in Buildroot, trim EVB packages, add boot splash, build Hello World on the host, and deploy to `/opt/hmi`.
 
 **Constraints:**
-- flutter-pi requires **libsystemd** (Buildroot `BR2_PACKAGE_SYSTEMD`); busybox-init replacement is out of scope.
+- flutter-pi links **`libsystemd.so`** (`sd_event` event loop); this does **not** require systemd as PID 1 at runtime. P1 ships **`BR2_INIT_SYSTEMD=y`** anyway (Buildroot packages libsystemd with the systemd recipe, Rockchip SDK path, unit-based service layout). Busybox-init + libsystemd-only is **方案 B** (experimental), out of P1～P5 scope.
 - Flutter app is **not** compiled inside Buildroot; host cross-compiles AOT and overlays into rootfs.
 - Baseline board: **ynh960** (800×1280 MIPI, `lcd0_rotation=90`); RK3566 used for dev/CI and default RKNN platform; RK3568/RK3568B2 on the same PCB share the same firmware.
 - KPI: power-on → Flutter home first frame **≤ 10 s** on eMMC; boot splash visible before KPI end.
@@ -77,9 +77,9 @@ board/logo/
 
 ### 6. systemd Plan A — reuse existing units and post-hook
 
-**Choice:** Keep `hmi.service` as-is (`After=local-fs.target` only). Post-hook enables hmi, disables mediamtx/sshd/bluetooth. journald volatile overlay already present.
+**Choice:** Keep `hmi.service` as-is (`After=local-fs.target` only). Post-hook enables hmi, disables mediamtx/sshd/bluetooth. journald volatile overlay already present. Use **systemd as PID 1** for init/service management; flutter-pi only needs **`libsystemd.so`** on disk (see plan §3.6).
 
-**Rationale:** Already implemented in repo; matches KPI requirements §6.4.
+**Rationale:** Already implemented in repo; matches KPI requirements §6.4. Init choice is engineering convenience on Buildroot/Rockchip, not a flutter-pi runtime requirement.
 
 ### 7. Board SDK config — extend ynh960_defconfig
 

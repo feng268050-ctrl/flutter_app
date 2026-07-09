@@ -56,3 +56,50 @@ read_version_file() {
   fi
   echo "$fallback"
 }
+
+# Resolve Buildroot O= directory: buildroot/output/<RK_BUILDROOT_CFG>/.
+# BASE_CFG (e.g. rk3566_rk3568_lws_hmi) is not the output folder name; SDK uses
+# RK_BUILDROOT_CFG (e.g. rockchip_rk3566_rk3568_lws_hmi). Override with BR_OUTPUT.
+resolve_br_output_dir() {
+  local sdk="$1"
+  local out_base="$sdk/buildroot/output"
+  local profile dir cfg="$sdk/output/.config"
+
+  if [[ -n "${BR_OUTPUT:-}" ]]; then
+    echo "$out_base/$BR_OUTPUT"
+    return 0
+  fi
+
+  if [[ -r "$cfg" ]]; then
+    profile="$(sed -n 's/^RK_BUILDROOT_CFG="\(.*\)"$/\1/p' "$cfg")"
+    local base
+    base="$(sed -n 's/^RK_BUILDROOT_BASE_CFG="\(.*\)"$/\1/p' "$cfg")"
+    if [[ -n "$profile" && "$profile" == *'${RK_BUILDROOT_BASE_CFG}'* && -n "$base" ]]; then
+      profile="${profile/\$\{RK_BUILDROOT_BASE_CFG\}/$base}"
+    fi
+    if [[ -z "$profile" && -n "$base" ]]; then
+      profile="rockchip_${base}"
+    fi
+  fi
+  profile="${profile:-rockchip_rk3566_rk3568_lws_hmi}"
+
+  if [[ -d "$out_base/$profile" ]]; then
+    echo "$out_base/$profile"
+    return 0
+  fi
+
+  for dir in \
+    "$out_base/rockchip_rk3566_rk3568_lws_hmi" \
+    "$out_base"/rockchip_*lws_hmi* \
+    "$out_base"/rockchip_rk3566_*; do
+    [[ -d "$dir/target" ]] || continue
+    echo "$dir"
+    return 0
+  done
+
+  echo "$out_base/$profile"
+}
+
+resolve_br_target() {
+  echo "$(resolve_br_output_dir "$1")/target"
+}

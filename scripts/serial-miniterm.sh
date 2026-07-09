@@ -29,4 +29,8 @@ if lsof "$PORT" >/dev/null 2>&1; then
 fi
 
 echo "miniterm $PORT @ $BAUD  (quit: Ctrl+])"
-exec "$PY" -m serial.tools.miniterm "$PORT" "$BAUD"
+# miniterm's default filter strips ESC/CSI (breaks ANSI colors from kernel/systemd).
+if [[ -z "${TERM:-}" || "${TERM}" == dumb ]]; then
+  export TERM=xterm-256color
+fi
+exec "$PY" -m serial.tools.miniterm -f direct "$PORT" "$BAUD"

@@ -66,6 +66,48 @@ if old_lcd not in text:
 else:
     text = text.replace(old_lcd, new_lcd, 1)
 
+innohi_block = """\t\t
+##############拷贝开机服务###############################################\t
+\tcd ${CROOT}/buildroot/output/rockchip_rk3566_rk3568/target
+\tsudo cp -rf ${CROOT}/innohi_board/rootfs/usr/bin/MainServer  usr/bin/
+\tsudo cp -rf ${CROOT}/innohi_board/rootfs/usr/bin/ParamUpdate  usr/bin/
+\tsudo echo "#! /bin/sh" > etc/init.d/S99-init.sh
+\techo "/usr/bin/rk_wifi_init /dev/ttyS1 &" >> etc/init.d/S99-init.sh
+\tsudo echo "/usr/bin/MainServer &" >> etc/init.d/S99-init.sh
+\tsudo chown $USER:$USER . -R
+\tcd -;
+\tcp -rf ${CROOT}/innohi_board/rootfs/usr/bin/*  ${CROOT}/buildroot/output/rockchip_rk3566_rk3568/target/usr/bin/
+\t
+\t####再编译一次，打包innohi rootfs#####
+\t"$RK_SCRIPTS_DIR/mk-buildroot.sh" $RK_BUILDROOT_CFG "$IMAGE_DIR"
+\t\t
+#############################################################"""
+
+innohi_guarded = """\t\t
+# lws-hmi: Plan A (systemd + flutter-pi) skips Innohi MainServer/S99-init rebuild.
+if [[ "${RK_BUILDROOT_CFG:-}" != *lws_hmi* ]]; then
+##############拷贝开机服务###############################################\t
+\tcd ${CROOT}/buildroot/output/rockchip_rk3566_rk3568/target
+\tsudo cp -rf ${CROOT}/innohi_board/rootfs/usr/bin/MainServer  usr/bin/
+\tsudo cp -rf ${CROOT}/innohi_board/rootfs/usr/bin/ParamUpdate  usr/bin/
+\tsudo echo "#! /bin/sh" > etc/init.d/S99-init.sh
+\techo "/usr/bin/rk_wifi_init /dev/ttyS1 &" >> etc/init.d/S99-init.sh
+\tsudo echo "/usr/bin/MainServer &" >> etc/init.d/S99-init.sh
+\tsudo chown $USER:$USER . -R
+\tcd -;
+\tcp -rf ${CROOT}/innohi_board/rootfs/usr/bin/*  ${CROOT}/buildroot/output/rockchip_rk3566_rk3568/target/usr/bin/
+\t
+\t####再编译一次，打包innohi rootfs#####
+\t"$RK_SCRIPTS_DIR/mk-buildroot.sh" $RK_BUILDROOT_CFG "$IMAGE_DIR"
+fi
+\t\t
+#############################################################"""
+
+if innohi_block in text:
+    text = text.replace(innohi_block, innohi_guarded, 1)
+else:
+    sys.stderr.write(f"WARNING: mk-rootfs Innohi MainServer block not found in {path}\n")
+
 with open(path, "w", encoding="utf-8") as f:
     f.write(text)
 PY

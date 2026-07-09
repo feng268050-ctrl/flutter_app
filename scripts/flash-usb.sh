@@ -23,7 +23,6 @@ fi
 LOADER_BIN="${LWS_HMI_LOADER:-$FIRMWARE_DIR/MiniLoaderAll.bin}"
 
 SERIAL="${SERIAL:-${LWS_HMI_SERIAL:-}}"
-USB_LOCATION="${USB_LOCATION:-${LWS_HMI_USB_LOCATION:-}}"
 LOADER_NORESET="${LOADER_NORESET:-}"
 UPGRADE_NORESET="${UPGRADE_NORESET:-}"
 BOOTLOADER_WAIT_SEC="${BOOTLOADER_WAIT_SEC:-60}"
@@ -38,7 +37,7 @@ Usage: $0 {devices|bootloader|loader|upgrade}
   loader       upgrade_tool ul <MiniLoaderAll.bin>  [LOADER_NORESET=1]
   upgrade      upgrade_tool uf <update.img>        [UPGRADE_NORESET=1]
 
-Selection: SERIAL  USB_LOCATION (-s, PDF §1.11)
+Selection: SERIAL
 Image:      make upgrade IMAGE=/path/to/update.img
 EOF
 }
@@ -48,13 +47,16 @@ die() {
   exit 1
 }
 
+require_macos() {
+  [[ "$(uname -s)" == Darwin ]] || die "USB flash is supported on macOS only"
+}
+
 ensure_upgrade_tool() {
   [[ -f "$UPGRADE_TOOL" ]] || die "upgrade_tool not found: $UPGRADE_TOOL"
   [[ -x "$UPGRADE_TOOL" ]] || chmod +x "$UPGRADE_TOOL"
 }
 
 maybe_pull_from_docker_volume() {
-  [[ "${LWS_HMI_AUTO_PULL:-}" == "1" ]] || return 0
   [[ "$(uname -s)" == Darwin ]] || return 0
   local volume="${LWS_HMI_DOCKER_VOLUME:-lws-hmi-sdk}"
   docker volume inspect "$volume" >/dev/null 2>&1 || return 0
@@ -183,16 +185,6 @@ resolve_upgrade_tool_location() {
   count="$(rockusb_connected_count "$out")"
   [[ "$count" -gt 0 ]] || return 1
 
-  if [[ -n "$USB_LOCATION" ]]; then
-    while read -r line; do
-      parse_rockusb_line "$line"
-      [[ "$_LOCATION" == "$USB_LOCATION" ]] || continue
-      UPGRADE_TOOL_LOCATION="$_LOCATION"
-      return 0
-    done < <(grep -E 'DevNo=[0-9]+' <<<"$out")
-    die "USB_LOCATION=$USB_LOCATION not found (make devices)"
-  fi
-
   if [[ -n "$SERIAL" ]]; then
     while read -r line; do
       parse_rockusb_line "$line"
@@ -211,7 +203,7 @@ resolve_upgrade_tool_location() {
     return 0
   fi
 
-  die "$count RockUSB devices — set SERIAL or USB_LOCATION (make devices)"
+  die "$count RockUSB devices — set SERIAL (make devices)"
 }
 
 upgrade_tool_cmd() {
@@ -296,10 +288,15 @@ run_upgrade() {
 }
 
 case "$ACTION" in
+  ""|-h|--help|help) usage; exit 0 ;;
+esac
+
+require_macos
+
+case "$ACTION" in
   devices|ld) list_devices ;;
   bootloader|boot) run_bootloader ;;
   loader|ul) run_loader ;;
   upgrade|uf|update) run_upgrade ;;
-  ""|-h|--help|help) usage; exit 0 ;;
   *) die "Unknown action: $ACTION" ;;
 esac

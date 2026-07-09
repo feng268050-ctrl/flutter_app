@@ -74,7 +74,7 @@ The repo SHALL provide `scripts/flash-usb.sh` and Makefile targets for ynh960 fi
 - `make loader` — `upgrade_tool ul` with default `output/firmware/MiniLoaderAll.bin`
 - `make upgrade` — `upgrade_tool uf` with default `output/firmware/update.img`; `IMAGE=` overrides the firmware path
 
-Multi-device selection SHALL use `SERIAL=` (table SERIAL column) or `USB_LOCATION=` (`upgrade_tool -s`, PDF §1.11). macOS Docker builds SHALL document `make docker-volume-pull` or `LWS_HMI_AUTO_PULL=1` before flash.
+Multi-device selection SHALL use `SERIAL=` (table SERIAL column; adb serial or RockUSB SerialNo). macOS Docker builds SHALL auto-pull `output/` from the Docker volume before `make loader` / `make upgrade`.
 
 #### Scenario: devices table lists RockUSB Loader
 
@@ -91,7 +91,7 @@ Multi-device selection SHALL use `SERIAL=` (table SERIAL column) or `USB_LOCATIO
 - **WHEN** RockUSB device is connected and `output/firmware/update.img` exists
 - **THEN** `make upgrade` invokes `upgrade_tool uf` on that image (or `make upgrade IMAGE=/path/to.img`)
 
-#### Scenario: multi-device requires SERIAL or USB_LOCATION
+#### Scenario: multi-device requires SERIAL
 
-- **WHEN** more than one RockUSB device is connected and neither `SERIAL` nor `USB_LOCATION` is set
+- **WHEN** more than one RockUSB device is connected and `SERIAL` is not set
 - **THEN** `make loader` or `make upgrade` fails with a message to run `make devices` and set selection

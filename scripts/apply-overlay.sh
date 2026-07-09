@@ -18,6 +18,9 @@ POST_HOOKS_DIR="$SDK/device/rockchip/common/post-hooks"
 BR_CONFIG="$SDK/buildroot/configs/rockchip/chips/rk3566_rk3568.config"
 BR_CHIPS_DIR="$SDK/buildroot/configs/rockchip/chips"
 BR_DEFCONFIGS="$SDK/buildroot/configs"
+BR_PKG_FLUTTER_ENGINE="$SDK/buildroot/package/flutter-engine"
+BR_PKG_FLUTTER_SDK="$SDK/buildroot/package/flutter-sdk-bin"
+BR_PKG_FLUTTER_PI="$SDK/buildroot/package/flutter-pi"
 BR_OVERLAY_ROOT="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
 BR_OVERLAY="$BR_OVERLAY_ROOT/system/etc"
 OVERLAY_FS="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
@@ -58,6 +61,42 @@ sync_buildroot_chip_configs() {
   if [[ -f "$def" ]]; then
     install_file "$def" "$BR_DEFCONFIGS/rockchip_rk3566_rk3568_lws_hmi_defconfig"
   fi
+}
+
+sync_flutter_engine_package() {
+  local src="$OVERLAY/buildroot/package/flutter-engine/flutter-engine.mk"
+  if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  if [[ ! -f "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk.orig" ]]; then
+    cp -a "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk" \
+      "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk.orig"
+  fi
+  install_file "$src" "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk"
+}
+
+sync_flutter_sdk_package() {
+  local src="$OVERLAY/buildroot/package/flutter-sdk-bin/flutter-sdk-bin.mk"
+  if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  if [[ ! -f "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk.orig" ]]; then
+    cp -a "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk" \
+      "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk.orig"
+  fi
+  install_file "$src" "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk"
+}
+
+sync_flutter_pi_package() {
+  local src="$OVERLAY/buildroot/package/flutter-pi/flutter-pi.mk"
+  if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  if [[ ! -f "$BR_PKG_FLUTTER_PI/flutter-pi.mk.orig" ]]; then
+    cp -a "$BR_PKG_FLUTTER_PI/flutter-pi.mk" \
+      "$BR_PKG_FLUTTER_PI/flutter-pi.mk.orig"
+  fi
+  install_file "$src" "$BR_PKG_FLUTTER_PI/flutter-pi.mk"
 }
 
 sync_boot_logo() {
@@ -105,7 +144,22 @@ patch_mk_rootfs() {
   cp -a "$target.orig" "$target"
   bash "$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-mk-rootfs.sh" \
     "$target"
-  echo "overlay: patched $target (CROOT / defconfig cat fix)"
+  echo "overlay: patched $target (CROOT / defconfig / lws_hmi Innohi skip)"
+}
+
+patch_post_wifibt() {
+  local target="$SCRIPTS_DIR/post-wifibt.sh"
+  if [[ ! -f "$target" ]]; then
+    echo "WARNING: $target missing; skip post-wifibt patch" >&2
+    return 0
+  fi
+  if [[ ! -f "$target.orig" ]]; then
+    cp -a "$target" "$target.orig"
+  fi
+  cp -a "$target.orig" "$target"
+  bash "$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-post-wifibt.sh" \
+    "$target"
+  echo "overlay: patched $target (CROOT + innohi firmware fallback)"
 }
 
 patch_buildroot_config() {
@@ -149,6 +203,10 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
     mv -f "$SCRIPTS_DIR/mk-rootfs.sh.orig" "$SCRIPTS_DIR/mk-rootfs.sh"
     echo "restored upstream mk-rootfs.sh"
   fi
+  if [[ -f "$SCRIPTS_DIR/post-wifibt.sh.orig" ]]; then
+    mv -f "$SCRIPTS_DIR/post-wifibt.sh.orig" "$SCRIPTS_DIR/post-wifibt.sh"
+    echo "restored upstream post-wifibt.sh"
+  fi
   if [[ "$restore_all" == "1" && -f "$BR_CONFIG.orig" ]]; then
     mv -f "$BR_CONFIG.orig" "$BR_CONFIG"
     echo "restored upstream $BR_CONFIG"
@@ -161,6 +219,21 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       rm -f "$BR_CHIPS_DIR/$f"
     done
     rm -f "$BR_DEFCONFIGS/rockchip_rk3566_rk3568_lws_hmi_defconfig"
+    if [[ -f "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk.orig" ]]; then
+      mv -f "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk.orig" \
+        "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk"
+      echo "restored upstream flutter-engine.mk"
+    fi
+    if [[ -f "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk.orig" ]]; then
+      mv -f "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk.orig" \
+        "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk"
+      echo "restored upstream flutter-sdk-bin.mk"
+    fi
+    if [[ -f "$BR_PKG_FLUTTER_PI/flutter-pi.mk.orig" ]]; then
+      mv -f "$BR_PKG_FLUTTER_PI/flutter-pi.mk.orig" \
+        "$BR_PKG_FLUTTER_PI/flutter-pi.mk"
+      echo "restored upstream flutter-pi.mk"
+    fi
     rm -f "$SDK/kernel/logo.bmp" "$SDK/kernel/logo_kernel.bmp"
     echo "removed lws-hmi buildroot overlay + post-hooks + chip configs"
   fi
@@ -205,7 +278,12 @@ sync_display_params
 sync_boot_logo
 sync_hmi_app_overlay
 sync_buildroot_chip_configs
+sync_flutter_engine_package
+sync_flutter_sdk_package
+sync_flutter_pi_package
 patch_buildroot_config
 patch_mk_rootfs
+patch_post_wifibt
+bash "$ROOT/scripts/sync-innohi-board.sh"
 
 echo "ynh960 board + display + Plan A systemd overlay applied to SDK"

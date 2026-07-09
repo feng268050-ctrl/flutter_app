@@ -11,7 +11,8 @@
 
 - [x] 2.1 Use SDK in-tree `buildroot/package/flutter-pi/` (v37bd977) enabled via `lws_hmi_flutter.config` — no overlay package fork needed
 - [x] 2.2 Enable flutter-pi via defconfig fragment (`BR2_PACKAGE_FLUTTER_PI=y`); SDK `Config.in` already registers the package
-- [x] 2.3 Document engine/flutter-pi version alignment in `app/README.md` (Flutter engine 3.24.4 / flutterpi_tool)
+- [x] 2.3 Build Flutter stack deps: `make build-deps` (engine/sdk/pi → `prebuilt/`); Buildroot install-only when prebuilt present
+- [x] 2.4a Build P3/P5 dev deps: `build-opencv`, `build-rknn-*`, `build-mediamtx`
 - [ ] 2.4 Build rootfs iteratively until `/usr/bin/flutter-pi` appears in target (fix deps: systemd, Mali, libdrm) — **run `make build-rootfs` (first build: hours)**
 
 ## 3. Boot splash (ynh960)
@@ -52,6 +53,6 @@
 
 - [x] 7.1 Add `scripts/flash-usb.sh` — `upgrade_tool ld` / `ul` / `uf`; multi-device `-s LocationID` (PDF §1.11); run from tool dir with `config.ini`
 - [x] 7.2 Makefile targets: `devices` (table: MODE / SERIAL / LocationID / USB), `bootloader` (`adb reboot loader`), `loader`, `upgrade`
-- [x] 7.3 Selection env: `SERIAL`, `USB_LOCATION`, `IMAGE=`; optional `LWS_HMI_AUTO_PULL=1` on macOS
+- [x] 7.3 Selection env: `SERIAL`, `IMAGE=`; macOS auto-pulls output/ before flash
 - [x] 7.4 Document in `README.md` and `make help`; vendored at `tools/upgrade_tool/`
 - [ ] 7.5 Hardware acceptance: `make upgrade` with built `update.img` on ynh960 eMMC

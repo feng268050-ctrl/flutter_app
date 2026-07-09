@@ -2,24 +2,22 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ "$(uname -s)" != Darwin ]]; then
+  exec bash "$ROOT/scripts/native-run.sh" "$@"
+fi
+
 IMAGE="${DOCKER_IMAGE:-lws-hmi-builder:22.04}"
 PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 SDK="$ROOT/sdk"
 VOLUME="${LWS_HMI_DOCKER_VOLUME:-lws-hmi-sdk}"
 
-# Limit parallel compiles inside Docker. Rockchip uses $(nproc)+1 for kernel;
-# Buildroot with BR2_JLEVEL=0 does the same. Default lower on macOS.
-if [[ -z "${LWS_HMI_JOBS:-}" ]]; then
-  if [[ "$(uname -s)" == Darwin ]]; then
-    LWS_HMI_JOBS=4
-  else
-    LWS_HMI_JOBS=8
-  fi
+if [[ -z "${BUILD_JOBS:-}" ]]; then
+  BUILD_JOBS=4
 fi
 
-# On macOS, keep the SDK on a Docker volume (see scripts/docker-volume.sh).
 USE_VOLUME=0
-if [[ "$(uname -s)" == Darwin && "${LWS_HMI_BIND_MOUNT:-}" != "1" ]]; then
+if [[ "${BUILD_BIND_MOUNT:-}" != "1" ]]; then
   USE_VOLUME=1
 fi
 
@@ -48,7 +46,7 @@ docker_args=(
   --shm-size=2g
   --ulimit "nofile=65536:65536"
   -e LWS_HMI_DOCKER=1
-  -e "LWS_HMI_JOBS=${LWS_HMI_JOBS}"
+  -e "BUILD_JOBS=${BUILD_JOBS}"
   -e LWS_HMI_ROOT=/work/lws-hmi
   -e LWS_HMI_SDK_DIR=/work/sdk
   -v "$ROOT:/work/lws-hmi"

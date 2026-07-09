@@ -3,17 +3,16 @@ set -euo pipefail
 
 export LWS_HMI_DOCKER=1
 
-# Rockchip SDK scripts call $(nproc) for -j flags. Cap parallelism to reduce
-# memory spikes (especially under linux/amd64 emulation on Apple Silicon).
-LWS_HMI_JOBS="${LWS_HMI_JOBS:-4}"
-mkdir -p /usr/local/lws-hmi-bin
-cat > /usr/local/lws-hmi-bin/nproc <<EOF
-#!/bin/sh
-echo ${LWS_HMI_JOBS}
-EOF
-chmod +x /usr/local/lws-hmi-bin/nproc
-export PATH="/usr/local/lws-hmi-bin:${PATH}"
-export MAKEFLAGS="-j${LWS_HMI_JOBS} ${MAKEFLAGS:-}"
+ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
+if [[ -f "$ROOT/scripts/build-env.sh" ]]; then
+  # shellcheck source=scripts/build-env.sh
+  source "$ROOT/scripts/build-env.sh"
+  setup_build_env
+else
+  BUILD_JOBS="${BUILD_JOBS:-4}"
+  export BUILD_JOBS
+  export MAKEFLAGS="-j${BUILD_JOBS} ${MAKEFLAGS:-}"
+fi
 
 if [[ -d /work/sdk ]]; then
   cd /work/sdk

@@ -5,6 +5,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+bash "$ROOT/scripts/require-macos.sh"
+
 IMAGE="${DOCKER_IMAGE:-lws-hmi-builder:22.04}"
 PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 VOLUME="${LWS_HMI_DOCKER_VOLUME:-lws-hmi-sdk}"
@@ -21,7 +23,7 @@ resolve_host_sdk() {
     readlink -f "$ROOT/sdk" 2>/dev/null || realpath "$ROOT/sdk"
     return 0
   fi
-  echo "${LWS_HMI_SDK:-$HOME/Downloads/rk356x_linux6.1_20250730_1126/rk356x_linux6.1_20250730_1126}"
+  echo "$(bash "$ROOT/scripts/expand-path.sh" "${LINUX_SDK:-$HOME/Downloads/rk356x_linux6.1_20250730_1126/rk356x_linux6.1_20250730_1126}")"
 }
 
 HOST_SDK="$(resolve_host_sdk)"

@@ -110,7 +110,7 @@ RK_WIFIBT=y
 | `make loader` | `ul MiniLoaderAll.bin` | §1.3 |
 | `make upgrade` | `uf update.img` | §1.6 |
 
-Multi-device: `upgrade_tool -s LocationID` (§1.11). Selection via `SERIAL=` (matches table column; adb + RockUSB SerialNo) or `USB_LOCATION=`. Optional `IMAGE=` overrides default `sdk/output/firmware/update.img`; macOS builds use `make docker-volume-pull` or `LWS_HMI_AUTO_PULL=1` before flash.
+Multi-device: `upgrade_tool -s LocationID` (§1.11), resolved internally from `SERIAL=` (adb serial or RockUSB SerialNo). Optional `IMAGE=` overrides default `sdk/output/firmware/update.img`; macOS auto-pulls `output/` from the Docker volume before flash.
 
 **Rationale:** Builds run in Docker; flash runs on host USB. Single `SERIAL` column aligns adb and RockUSB identity on ynh960.
 

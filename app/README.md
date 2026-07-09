@@ -2,9 +2,26 @@
 
 ## Engine alignment
 
-Buildroot ships in-tree **flutter-pi** and **flutter-engine** packages (see SDK `buildroot/package/flutter-pi/`). The pinned engine version in this SDK tree is **Flutter 3.24.4** (`FLUTTER_ENGINE_VERSION` in `flutter-engine.mk`).
+Buildroot builds **flutter-pi** + **flutter-engine** from the SDK in-tree packages. Engine version is pinned in:
 
-Host builds use **flutterpi_tool** (meta-flutter bundle layout, matching Buildroot `FILESYSTEM_LAYOUT=meta-flutter`):
+- `overlay/buildroot/flutter-engine.version`
+- `overlay/buildroot/package/flutter-engine/flutter-engine.mk` (`FLUTTER_ENGINE_VERSION`)
+
+Current pin: **Flutter 3.24.4**.
+
+### Prefetch / prebuilt (before `make build-rootfs`)
+
+```bash
+make build-deps
+```
+
+- **Binaries** in git-tracked `prebuilt/` (engine, flutter-pi, host SDK when committed)
+- **Sources** in `.cache/` only when compile fallback is needed
+- Maintainer after one full rootfs: `make build-prebuilt` → commit `prebuilt/`
+
+Version pins in `overlay/buildroot/flutter-*.version`.
+
+Host app builds use **flutterpi_tool** (meta-flutter layout, matching Buildroot `FILESYSTEM_LAYOUT=meta-flutter`):
 
 ```bash
 flutter pub global activate flutterpi_tool

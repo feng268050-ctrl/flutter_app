@@ -2,6 +2,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+bash "$ROOT/scripts/require-macos.sh"
+
 IMAGE="${DOCKER_IMAGE:-lws-hmi-builder:22.04}"
 PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 

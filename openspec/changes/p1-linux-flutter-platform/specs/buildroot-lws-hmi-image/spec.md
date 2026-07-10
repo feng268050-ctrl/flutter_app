@@ -9,10 +9,15 @@ The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the
 - **WHEN** developer runs `make lunch` and selects ynh960 defconfig
 - **THEN** SDK `.config` contains `RK_BUILDROOT_CFG=rockchip_rk3566_rk3568_lws_hmi`
 
-#### Scenario: single firmware for RK3566 RK3568 RK3568B2 on ynh960 PCB
+#### Scenario: product-line firmware boots on ynh960
 
-- **WHEN** P1 `update.img` is built via `make lunch` with `ynh960_defconfig` and flashed to ynh960 hardware
-- **THEN** the same image SHALL boot on ynh960 boards with RK3566, RK3568, or RK3568B2 silicon (same motherboard and screen; no per-SoC defconfig fork)
+- **WHEN** P1 `update.img` is built via `make lunch` with `ynh960_defconfig` and flashed to **ynh960 (RK3566)** hardware
+- **THEN** the image SHALL boot and reach the Hello World HMI on ynh960 (primary P1 acceptance target)
+
+#### Scenario: shared firmware goal across product line
+
+- **WHEN** the same P1 `update.img` is flashed to ynh961 (RK3568) or ynh962 (RK3568B2) boards on the same product line
+- **THEN** the image SHOULD boot without a per-SKU defconfig fork (cross-SKU smoke is optional in P1; not a blocker for ynh960-only CI)
 
 #### Scenario: rootfs build succeeds with lws_hmi defconfig
 

@@ -1,6 +1,8 @@
 # lws-hmi
 
-Buildroot + **ynh960** (Innohi RK3568) on the Rockchip Linux 6.1 SDK.
+Buildroot + **ynh960** (Innohi **RK3566**) on the Rockchip Linux 6.1 SDK.
+
+**Product line:** ynh960 → RK3566, ynh961 → RK3568, ynh962 → RK3568B2 — three tiers of the **same product line** (minor chip/interface differences, largely similar hardware). **One Linux firmware image** across the line is the design goal (aligned with lws-ui Android). **P1–P5 develop and validate on ynh960**; no per-SKU defconfig fork yet. SDK path `rk3566_rk3568` is Rockchip’s 3566/3568 family tooling profile.
 
 - **Linux (Ubuntu x64):** native build in `sdk/` (no Docker).
 - **macOS:** Docker `linux/amd64` builder + Docker volume for the SDK tree.
@@ -16,48 +18,204 @@ Buildroot + **ynh960** (Innohi RK3568) on the Rockchip Linux 6.1 SDK.
 
 ```bash
 cd ~/Workspace/lws-hmi
-make setup                 # link SDK + apply ynh960 overlay
-make build-deps            # once: build-dev-deps + runtime prebuilt
-make build                 # overlay → lunch → logo → app → kernel → rootfs → update.img
-# macOS only: make flash
+make setup
+make build-deps
+make build
+make show-config
 ```
 
-Granular stages (daily iteration):
-
-```bash
-make lunch && make build-rootfs    # rootfs only (runs verify-rootfs-overlay)
-make build-kernel                  # kernel-only
-make build-flutter-app             # app-only (+ re-apply overlay)
-make build-img && make flash       # repack update.img + USB flash (required after rootfs/kernel change)
-```
-
-**Rootfs / overlay change → device must get a new `update.img`:**
-
-```bash
-make apply-overlay
-make build-rootfs                  # PASS: verify-rootfs-overlay
-make build-img                     # pack update.img + auto-export firmware → host
-make flash
-```
-
-`make build-img` / `make build-kernel` export `output/firmware/` from the Docker volume to the host automatically. `make docker-volume-pull` remains an alias for full `sdk/output/` export (rare).
+On macOS, add `make flash` after `make build` (see below).
 
 ## Quick start — macOS
 
 ```bash
 cd ~/Workspace/lws-hmi
-make setup                 # link SDK + overlay + Docker image
-make docker-volume-init    # copy SDK into Docker volume (once; ~10–30 min)
-make build-deps            # once: build-dev-deps + runtime prebuilt
-make build                 # same pipeline as Linux (Docker volume)
-make flash                 # USB flash — uses host output/firmware/update.img
+make setup
+make docker-volume-init
+make build-deps
+make build
+make flash
 ```
 
 **macOS Docker flow** (volume is ephemeral; host keeps inputs + exported outputs):
 
 1. `make docker-volume-init` — copy host SDK → volume (once)
 2. `make apply-overlay` / `make build-*` — repo bind-mounted into container; build in volume
-3. **`make build-img` / `make build-kernel`** — auto-export `output/firmware/` to host (`output/firmware/update.img` for `make flash`)
+3. `make build-img` / `make build-kernel` — auto-export `output/firmware/` to host (`output/firmware/update.img` for `make flash`)
+
+---
+
+## Make commands
+
+Run `make help` for the full target list. Stages below are **one command per line** — run in order.
+
+### Setup (once per machine)
+
+```bash
+make setup
+make link-sdk
+make link-flutter-sdk
+make apply-overlay
+```
+
+macOS only, before the first build:
+
+```bash
+make docker-image
+make docker-volume-init
+```
+
+Refresh SDK in the Docker volume after overlay or SDK tree changes:
+
+```bash
+make docker-volume-sync
+```
+
+### Dependencies (before first `make build-rootfs`)
+
+```bash
+make build-deps
+make check-prebuilt
+```
+
+Individual buckets:
+
+```bash
+make build-dev-deps
+make build-runtime-deps
+make fetch-flutter-sdk
+make build-flutter-engine
+make build-flutter-pi
+make build-gstreamer
+make build-platform-packages
+make build-mediamtx
+```
+
+Force refresh a bucket: `make rebuild-deps`, `make rebuild-runtime-deps`, etc.
+
+### Full firmware
+
+`make build` runs: `check-prebuilt` → `apply-overlay` → `lunch` → `build-boot-logo` → `build-flutter-app` → `build-kernel` → `build-rootfs` → `build-img`.
+
+```bash
+make build
+make show-config
+```
+
+### Daily iteration — by what you changed
+
+**Flutter app** (`app/lws_hmi/`) — `/opt/hmi` is installed during rootfs build:
+
+```bash
+make build-flutter-app
+make build-rootfs
+make build-img
+make flash
+```
+
+**Boot splash** (`board/logo/`):
+
+```bash
+make build-boot-logo
+make build-kernel
+make build-img
+make flash
+```
+
+**Kernel / DTS / display DTS** (`overlay/kernel/`, related `board/`):
+
+```bash
+make apply-overlay
+make build-kernel
+make build-img
+make flash
+```
+
+**Rootfs overlay** — systemd units, `usr/lib/lws-hmi/*`, LCD params, anything under `overlay/.../lws-hmi-fs-overlay/` except the app bundle:
+
+```bash
+make apply-overlay
+make build-rootfs
+make build-img
+make flash
+```
+
+**Buildroot defconfig / Kconfig fragments** (`overlay/buildroot/`):
+
+```bash
+make apply-overlay
+make check-prebuilt
+make build-rootfs
+make build-img
+make flash
+```
+
+After a major defconfig or toolchain change, you may need `make clean-buildroot-output` before `make build-rootfs` (see [`docs/build-optimization.md`](docs/build-optimization.md)).
+
+**Runtime prebuilt only** (`prebuilt/`, flutter-engine, gstreamer, etc.):
+
+```bash
+make build-runtime-deps
+make apply-overlay
+make build-rootfs
+make build-img
+make flash
+```
+
+**Repack only** — rootfs and kernel already up to date; only rebundle `update.img`:
+
+```bash
+make build-img
+make flash
+```
+
+Linux hosts: firmware is under `sdk/output/firmware/` as well as `output/firmware/` after export steps.
+
+### Flash and device (macOS)
+
+```bash
+make audit
+make devices
+make flash
+```
+
+Loader path from Android:
+
+```bash
+make devices
+SERIAL=... make bootloader
+make flash
+```
+
+### Diagnostics
+
+```bash
+make show-config
+make docker-volume-status
+make check-prebuilt
+```
+
+On device after flash:
+
+```bash
+/usr/lib/lws-hmi/boot-verify.sh
+```
+
+### Maintenance (infrequent)
+
+```bash
+make pull-display-params
+make clean-overlay
+make apply-overlay
+make clean-buildroot-output
+make migrate-buildroot-output
+```
+
+Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
+
+`make build-img` / `make build-kernel` export `output/firmware/` from the Docker volume to the host automatically (macOS). `make docker-volume-pull` is a legacy alias for full `sdk/output/` export.
+
+---
 
 ## Dependencies (prebuilt-first)
 
@@ -143,7 +301,7 @@ After `make build` and flash: boot logo ≤2 s → Hello World auto-start → ho
 make show-config           # or: bash scripts/docker-run.sh bash -lc 'grep RK_BUILDROOT output/.config'
 ```
 
-On device (serial shell or ssh after §7.7), after **`make build-img && make flash`**:
+On device (serial shell or ssh), after `make build-img` and `make flash`:
 
 ```bash
 /usr/lib/lws-hmi/boot-verify.sh
@@ -256,7 +414,8 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 | `overlay/buildroot/chips/lws_hmi_*.config` | **方案 A** + flutter-pi Kconfig 片段 |
 | `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig` | 瘦身 Buildroot defconfig（无 Weston/Chromium） |
 | `board/logo/splash_icon.png` | Boot splash 源图 → `make build-boot-logo` |
-| `app/lws_hmi_app/` | P1 Hello World Flutter 工程 |
+| `app/lws_hmi/` | P1 Hello World Flutter 工程 |
+| `AGENTS.md` | AI agent 工作流 + 改动后的重新构建指引 |
 | `scripts/build-{boot-logo,flutter-app}.sh` | Logo / App 构建脚本 |
 | `overlay/.../lws-hmi-fs-overlay/etc/systemd/` | `hmi.service`、journald volatile 等 |
 | `overlay/.../06-lws-hmi-systemd.sh` | 镜像构建时 enable hmi / disable mediamtx·sshd |
@@ -264,7 +423,7 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 | `overlay/.../check-sdk.sh` | Skip ext4/WSL guards when `LWS_HMI_DOCKER=1` |
 | `docker/Dockerfile` | Ubuntu 22.04 + Rockchip build dependencies |
 
-The upstream SDK ships **ynh962** defconfig but **ynh960.dts** in kernel; this overlay adds the missing `ynh960_defconfig`.
+The upstream SDK ships **ynh962** board defconfig but **ynh960.dts** in kernel; this overlay adds the missing **`ynh960_defconfig`** for our RK3566 target. (SDK `ynh962` naming ≠ product ynh962 / RK3568B2 SKU — see [`docs/flutter-pi-hmi-plan.md`](docs/flutter-pi-hmi-plan.md) §3.0.)
 
 ## Environment
 

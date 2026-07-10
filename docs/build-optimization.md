@@ -40,12 +40,13 @@ Runs in order: `check-prebuilt` → `apply-overlay` → `lunch` → `build-boot-
 ```bash
 make apply-overlay
 make lunch
-make check-prebuilt          # validates only enabled fragments
+make check-prebuilt
 make build-boot-logo
 make build-flutter-app
 make build-rootfs
-make build-kernel            # if needed
-make build-img && make flash
+make build-kernel
+make build-img
+make flash
 ```
 
 Daily:
@@ -55,6 +56,8 @@ Daily:
 | App | `make build-flutter-app` → `make build-rootfs` → `make build-img` → `make flash` |
 | Kernel / DTS / logo | `make build-kernel` → `make build-img` → `make flash` |
 | Defconfig / overlay | `make apply-overlay` → `make build-rootfs` → `make build-img` → `make flash` |
+
+See [`AGENTS.md`](AGENTS.md) for the full path → command mapping for agents.
 
 See [`docs/boot-kpi-optimization.md`](boot-kpi-optimization.md) for boot KPI phased checklist.
 
@@ -106,6 +109,6 @@ Flutter/mediamtx follow the same rule: `make build-runtime-deps` (or granular `b
 ## Enabling a new feature (workflow)
 
 1. Merge code + uncomment the matching `#include` in `rockchip_rk3566_rk3568_lws_hmi_defconfig`
-2. `make apply-overlay && make lunch` (if Buildroot profile changed materially: `clean-buildroot-output` first)
+2. `make apply-overlay` then `make lunch` (if Buildroot profile changed materially: `make clean-buildroot-output` first)
 3. `make check-prebuilt` — tells you which `make build-*` / `fetch-*` to run
 4. `make build-rootfs`

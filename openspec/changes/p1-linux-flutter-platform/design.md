@@ -7,7 +7,7 @@ The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.servic
 **Constraints:**
 - flutter-pi links **`libsystemd.so`** (`sd_event` event loop); this does **not** require systemd as PID 1 at runtime. P1 ships **`BR2_INIT_SYSTEMD=y`** anyway (Buildroot packages libsystemd with the systemd recipe, Rockchip SDK path, unit-based service layout). Busybox-init + libsystemd-only is **方案 B** (experimental), out of P1～P5 scope.
 - Flutter app is **not** compiled inside Buildroot; host cross-compiles AOT and overlays into rootfs.
-- Baseline board: **ynh960** (800×1280 MIPI, `lcd0_rotation=90`); RK3566 used for dev/CI and default RKNN platform; RK3568/RK3568B2 on the same PCB share the same firmware.
+- Baseline board: **ynh960** (**RK3566**, 800×1280 MIPI, `lcd0_rotation=90`). Product line ynh960/961/962 shares **one firmware image** in principle; P1–P5 develop and validate on ynh960 with a single `ynh960_defconfig` lunch target.
 - KPI: power-on → Flutter home first frame **≤ 10 s** on eMMC; boot splash visible before KPI end.
 
 ## Goals / Non-Goals
@@ -21,7 +21,7 @@ The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.servic
 
 **Non-Goals:**
 - Modbus, GPIO demo, AI (`libai.so`), FrostUI/IME, MediaMTX, GStreamer, eth0 camera scripts, cloud/network UI, OTA.
-- Per-SoC firmware splits for ynh960 (3566/3568/3568B2 share one `update.img`; optional chip-variant smoke on same image).
+- Per-SKU firmware splits for ynh961/ynh962 (product line targets one shared image).
 - Recovery partition (`RK_RECOVERY=n` for P1).
 
 ## Decisions
@@ -34,7 +34,7 @@ The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.servic
 
 **Alternatives considered:**
 - Fork entire upstream defconfig inline — rejected (merge pain on SDK updates).
-- Separate defconfig per SoC — rejected (3566/3568/3568B2 on same ynh960 PCB share one firmware per plan §3.0; board defconfig forks only for different PCB).
+- Separate defconfig per board SKU — rejected for product line (ynh960/961/962 share one firmware; develop on ynh960 defconfig).
 
 ### 2. EVB package removal — omission, not negative Kconfig in fragments
 
@@ -93,7 +93,7 @@ RK_WIFIBT=y
 
 **Rationale:** Plan §4 / §13 compile flow.
 
-### 8. Flutter project layout — `app/lws_hmi_app`
+### 8. Flutter project layout — `app/lws_hmi`
 
 **Choice:** Standard `flutter create` app with flutter-pi custom device / `flutterpi_tool` per upstream docs. Minimal home: centered "Hello, lws-hmi" text, no plugins on first frame (KPI §14.3 C).
 

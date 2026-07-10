@@ -1,6 +1,6 @@
 ## Why
 
-lws-hmi must replace the Rockchip EVB reference rootfs (Weston, Chromium, camera demos) with a lean **Buildroot + flutter-pi** HMI platform before any product features (Modbus, AI, FrostUI, business pages) can land. **P1** establishes the minimum viable Linux image and a **Hello World** Flutter app on **ynh960** (RK3566 baseline for dev/CI; RK3568/RK3568B2 on the same PCB share the same `update.img`), proving display, GPU, systemd boot chain, and flutter-pi end-to-end — aligned with `docs/flutter-pi-hmi-plan.md` §1 / §12.
+lws-hmi must replace the Rockchip EVB reference rootfs (Weston, Chromium, camera demos) with a lean **Buildroot + flutter-pi** HMI platform before any product features (Modbus, AI, FrostUI, business pages) can land. **P1** establishes the minimum viable Linux image and a **Hello World** Flutter app on **ynh960** (**RK3566**), proving display, GPU, systemd boot chain, and flutter-pi end-to-end — aligned with `docs/flutter-pi-hmi-plan.md` §1 / §12. The ynh960/961/962 product line targets **one shared firmware image**; P1–P5 develop and validate on ynh960 without per-SKU defconfig forks.
 
 ## What Changes
 
@@ -11,7 +11,7 @@ lws-hmi must replace the Rockchip EVB reference rootfs (Weston, Chromium, camera
 - Deploy a **Flutter Hello World** release build (`app.so` + assets) to `/opt/hmi` via rootfs overlay.
 - Enable **`hmi.service`** (already scaffolded) via post-build hook; keep mediamtx / sshd / bluetoothd **disabled**.
 - Set **`RK_BUILDROOT_CFG=rockchip_rk3566_rk3568_lws_hmi`** and **`RK_RECOVERY=n`** on ynh960 board config for P1 builds.
-- Create **`app/lws_hmi_app`** Flutter project with flutter-pi target configuration and CI/build script for cross-compiling AOT.
+- Create **`app/lws_hmi`** Flutter project with flutter-pi target configuration and CI/build script for cross-compiling AOT.
 - Add **P1 runtime dependency prep** via `make build-all-deps`: Flutter, **GStreamer/MPP**, MediaMTX, OpenCV, RKNN runtime (`prebuilt/` + Buildroot); host dev via `build-dev-deps` (Flutter SDK, RKNN-Toolkit only). Product **features** (libai UI, MediaMTX auto-start) still phased P3–P5.
 
 **Non-goals (P1)**: Modbus/GPIO (P2), libai.so (P3), FrostUI/IME (P4), MediaMTX/video/network UI (P5), eth0 camera scripting, business pages.
@@ -33,7 +33,7 @@ _(none — no existing openspec specs in this repo)_
 
 - **Buildroot / SDK**: New defconfig, flutter-pi package, `lws_hmi_flutter.config`, board logo assets, ynh960 `RK_BUILDROOT_CFG` update.
 - **Overlay**: Rootfs overlay for `/opt/hmi` Hello World artifacts; possible U-Boot logo under `board/logo/`.
-- **App**: New `app/lws_hmi_app/` Flutter project and build scripts (host-side, not Buildroot-compiled).
+- **App**: New `app/lws_hmi/` Flutter project and build scripts (host-side, not Buildroot-compiled).
 - **Host flash**: `scripts/flash-usb.sh`, Makefile `devices` / `bootloader` / `loader` / `upgrade`; `tools/upgrade_tool/` (Rockchip upgrade_tool v2.44).
 - **Existing overlays reused**: `lws_hmi_{base,systemd,network,npu}.config`, `hmi.service`, `06-lws-hmi-systemd.sh`, LCD/MIPI display overlay.
 - **Downstream phases**: P2–P5 depend on P1 display stack, systemd boot chain, and `/opt/hmi` deployment pattern.

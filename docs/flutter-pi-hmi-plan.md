@@ -1,10 +1,10 @@
-# Flutter-pi HMI 规划（RK3566 基准 · ynh960 / RK3568 / RK3568B2）
+# Flutter-pi HMI 规划（ynh960 产品线 · RK3566 基准）
 
 目标：在现有 **lws-hmi** Buildroot 基线上，用 **flutter-pi** 全屏跑 Flutter UI；按 **P1→P5** 增量交付：**P1** 镜像 + Hello World → **P2** Modbus/GPIO demo → **P3** `libai.so` → **P4** FrostUI + IME 子模块 → **P5** 全量业务。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块。
 
 **能力原则**：**lws-hmi 产品能力不少于 lws-ui**；Android/Java 栈整体替换为 **Linux Buildroot + flutter-pi + Dart/FFI**，算法、拓扑、模型与 API 契约尽量复用。逐项对照见 **§11.5**。
 
-**SoC 范围**：以 **RK3566 为基准 SoC**（与 lws-ui 产品一致），量产 **ynh960 主板**在 **RK3566 / RK3568 / RK3568B2** 间混料时 **发同一份 Linux 固件**（与 Android 镜像一致）。SDK 共用 `rk3566_rk3568` 芯片目录与 `rockchip_rk3566_rk3568_*` Buildroot defconfig。**仅当 PCB 不同**（屏参、Wi‑Fi/BT 模组、外设拓扑、DTS 名）时才通过 **`make lunch` 换 board defconfig** 另出镜像。见 **§3.0**。
+**板级范围**：**ynh960 / ynh961 / ynh962** 为同一产品线的三档板型（芯片与接口有微小差异，大体硬件拓扑相近）；**理论上可共用一份 Linux 固件**（与 lws-ui Android 通刷思路一致）。**P1～P5 设计与验收以 ynh960（RK3566）为基准**，暂不按 SKU 拆 defconfig 或维护多套镜像。Rockchip SDK 目录 **`rk3566_rk3568`** / Buildroot **`rockchip_rk3566_rk3568_*`** 为 3566/3568 族工具链 profile。见 **§3.0**。
 
 ---
 
@@ -70,7 +70,7 @@ P5 体量大，拆为 **P5.1～P5.7** 增量交付。**不能**仅按 `openspec/
 | **P5.4 本地 HTTP 与数据** | **:5580** `shelf`；sqlite / 工艺库；Avahi；Modbus **量产**逻辑（扩 P2 demo） | NanoHTTPd 路由、`network-api-reference.md`；Room / 工艺库 XLSX | 云上传、OTA |
 | **P5.5 云与远程** | WebSocket；R2/S3 上传；远程锁/快照/视频列表等 | `docs/device-websocket-migration.md`、`docs/upload-summary.md` | 全部 Settings 子页 |
 | **P5.6 业务页面** | 首页、Quick Mode、Engineer、Monitor、Settings、告警/安全提示等 **按实装逐项** | `MainActivity`、`QuickModeActivity`、`EngineerModeActivity`、`DeviceMonitoringActivity`、`DeviceSettingActivity` 等；相关 `docs/*.md` + 可选 openspec | 一次性「全 spec 勾选」 |
-| **P5.7 量产收尾** | PR0 录像；OTA / oem；§7.7 sshd；**§11.5 全量 parity**；同镜像 3568/3568B2 芯片 smoke | `UpgradeActivity`；`docs/ota-upgrade-flow.md` | 新业务能力 |
+| **P5.7 量产收尾** | PR0 录像；OTA / oem；§7.7 sshd；**§11.5 全量 parity**；产品线跨 SKU smoke（可选） | `UpgradeActivity`；`docs/ota-upgrade-flow.md` | 按 SKU 拆固件 |
 
 **建议依赖**（可并行处标注）：
 
@@ -89,7 +89,7 @@ P5.* ──→ P5.7
 
 ```mermaid
 flowchart TB
-  subgraph hw [硬件 — ynh960 PCB（RK3566/3568/3568B2）]
+  subgraph hw [硬件 — ynh960/961/962 产品线]
     IPC[IPC 192.168.1.100]
     ETH[eth0 直连 IPC]
     WIFI[wlan0 客户 Wi‑Fi]
@@ -137,38 +137,35 @@ flowchart TB
 
 ## 3. 组件清单（保留 / 移除 / 新增）
 
-### 3.0 SoC 与板级兼容（RK3566 基准 · RK3568 · RK3568B2）
+### 3.0 板级型号与 SoC（ynh960 产品线）
 
-**产品事实**：ynh960 为 **同一主板、同一屏幕**；量产批次可能贴 **RK3566、RK3568 或 RK3568B2**，与 lws-ui **Android 镜像通刷** 一致。Linux 亦 **一份 `update.img` 覆盖三颗 SoC**，**不**按芯片型号拆固件。
+Innohi **同一产品线**三档板型，对应不同价位/档次；PCB 与外设拓扑**大体相近**，芯片与少量接口有微小差异：
 
-Rockchip SDK 将 3566/3568 合并在 **`rk3566_rk3568`** profile（`device/rockchip/rk3566_rk3568`、Buildroot `rockchip_rk3566_rk3568_*`）。内核以 **`CONFIG_CPU_RK3568`** 构建，运行时覆盖 RK356x；`ynh960.dts` 已按 Innohi 惯例合并 `rk3566-evb2-lp4x-v10.dtsi` + `rk3568-linux.dtsi` + `customer_board_ynh960.dtsi`，**同 PCB 不需按 SoC 再拆 DTS**。
+| 板级型号 | SoC | 说明 |
+|----------|-----|------|
+| **ynh960** | **RK3566** | **P1～P5 开发/验收基准**；`make lunch` → `ynh960_defconfig`；`ynh960.dts` |
+| ynh961 | RK3568 | 同产品线高档；暂不单独拆固件 |
+| ynh962 | RK3568B2 | 同产品线更高档；暂不单独拆固件 |
 
-| 项 | 3566 / 3568 / 3568B2（同 ynh960 PCB） | lws-hmi 做法 |
-|----|----------------------------------------|--------------|
-| **量产固件** | 主板/屏相同，仅芯片不同 | **一份** `update.img`（U-Boot + boot + rootfs） |
-| **基准** | ynh960 + RK3566 开发样机 | **P1～P5** 开发、全量 CI；RKNN **默认 platform** |
-| Buildroot defconfig | 三颗 SoC 共用 | **一份** `rockchip_rk3566_rk3568_lws_hmi` |
-| U-Boot / 内核 / DTS | 同 PCB → DDR/外设相同 | `make lunch` → **`ynh960_defconfig`** + **`ynh960.dts`** 一份 |
-| GPU / MPP / RKNPU2 | RK356x 通用 | `gpu.config`、`mpp.config`、`lws_hmi_npu.config` |
-| RKNN 模型 | NPU 编译目标可能不同 | 默认 `RKNN_PLATFORM=rk3566`；3568/B2 另导出 `.rknn`（**可 OTA 模型包**，不必拆固件） |
-| flutter-pi / MediaMTX / GStreamer | 与 SoC 丝印无关 | **同一 rootfs** |
-| **不同 PCB**（非 ynh960） | 屏参 / Wi‑Fi / 外设 / DTS 名不同 | **另维护 board defconfig + DTS**，仍共用 `lws_hmi` Buildroot |
+**固件策略**：
 
-**规划约定**：
+1. **目标：一份 `update.img` 覆盖 ynh960 / ynh961 / ynh962**（不按 SKU 拆 Buildroot 或整包固件）；与 lws-ui Android 通刷思路一致。
+2. **当前：设计与全量验收以 ynh960（RK3566）为主**；不为 ynh961/ynh962 另建 lunch 目标或独立 CI 线；跨 SKU smoke 可在 P5 后按需补测。
+3. Rockchip SDK **`rk3566_rk3568`** profile 覆盖 RK3566/3568 族；Buildroot 用 **一份** `rockchip_rk3566_rk3568_lws_hmi` defconfig。
+4. RKNN 默认 **`RKNN_PLATFORM=rk3566`**；3568/B2 所需 `.rknn` 可 **OTA 模型包** 增量交付，不必为此拆 rootfs。
+5. 上游 SDK 可能只带 **`ynh962_defconfig`** 文件名而内核用 **`ynh960.dts`**；本仓库 overlay 补 **`ynh960_defconfig`** 锁定开发基准（SDK 文件名 ≠ 产品 ynh962 SKU）。
 
-1. **不**为 3566 / 3568 / 3568B2 各做一套 Buildroot 或整包固件（同 PCB 预期不需要）。
-2. **要**为 **不同 PCB 型号** 维护 board defconfig（`RK_KERNEL_DTS_NAME`、`RK_WIFIBT_*`、LCD 参数等）；**同 ynh960 PCB 混料芯片不新增 defconfig**。
-3. CI / 发布：**一份 ynh960 镜像全量回归**；在 **3568、3568B2 芯片** 的 ynh960 板上刷 **同一 `update.img`** 做 smoke（显示、eth0 双路、MediaMTX、NPU 推理）。
+**注意**：三档是 **三个板级 SKU**，不是「一块 ynh960 板上混贴不同 SoC 丝印」。
 
-当前仓库 **`board/ynh960_defconfig`** 即 ynh960 PCB 的 **唯一** lunch 目标；**不修改** §4 的 `lws_hmi` Buildroot 命名。
+当前仓库 **`board/ynh960_defconfig`** 为 **唯一** `make lunch` 目标（产品线统一固件下的开发入口）。
 
 ### 3.1 固件与 SDK 层（已基本具备 — lws-hmi）
 
 | 组件 | 状态 | 说明 |
 |------|------|------|
 | U-Boot `rk3566_rk3568` | **保留** | 现有 `make build` 流程 |
-| 内核 6.1 + 板级 DTS | **保留** | **`ynh960.dts` 一份**覆盖 ynh960 PCB 上 RK3566/3568/3568B2；**新 PCB** 才增 DTS |
-| `ynh960_defconfig` | **保留** | FIT、`parameter-buildroot-fit.txt`；ynh960 **唯一** `make lunch` 目标 |
+| 内核 6.1 + 板级 DTS | **保留** | **`ynh960.dts`** 为当前基准；产品线统一固件下三档 SKU 共用启动链 |
+| `ynh960_defconfig` | **保留** | FIT、`parameter-buildroot-fit.txt`；**唯一** `make lunch` 目标 |
 | LCD/MIPI 参数 overlay | **保留** | `960_lcd_param_rk356x.txt`、`lcd_mipi_param.txt` |
 | **Boot splash logo** | **P1 必需** | U-Boot / 内核 early logo（上电即显，见 §5.2） |
 | Recovery rootfs | **P1 可关** | 缩短编译；产品阶段再开 |
@@ -412,7 +409,7 @@ RK_WIFIBT=y                                        # 与 wifibt/*.config 一致
 
 | 层 | 组件 | 说明 |
 |----|------|------|
-| 内核 | DRM/KMS、MIPI DSI | 板级 DTS + LCD overlay（**不同 PCB** 屏参可能不同；同 ynh960 PCB 与 SoC 丝印无关） |
+| 内核 | DRM/KMS、MIPI DSI | 板级 DTS + LCD overlay（ynh960 / RK3566；未来 ynh961/ynh962 或另屏参时再增） |
 | 用户态 GPU | `rockchip-mali` | `gpu/gpu.config` |
 | 用户态显示 | **libdrm + libgbm + EGL/GLES** | flutter-pi 直接 scanout |
 | 不需要 | Weston、Wayland、X11、Chromium | 从 defconfig 删除 |
@@ -454,8 +451,8 @@ RK_WIFIBT=y                                        # 与 wifibt/*.config 一致
 ```bash
 # 安装 flutter-pi 工具链（与目标 engine 版本匹配）
 # 创建工程
-flutter create --template=app lws_hmi_app
-cd lws_hmi_app
+flutter create --template=app lws_hmi
+cd lws_hmi
 
 # 配置为 flutter-pi 目标（具体以 flutter-pi 文档为准）
 # flutterpi_config / custom device
@@ -489,7 +486,7 @@ flutter-pi --release /opt/hmi
 
 ### 6.3 Frost 渲染分场景策略（backdrop blur）
 
-P4 移植 lws-ui **FrostUI** 时，毛玻璃 **默认不用 live blur**；仅在组件/弹窗 **显式开启** 时，弹窗存续期间对下层 **动图** 做实时采样模糊。3566 / 3568 / 3568B2 **共用同一 API**，**不按 SoC 分叉**。
+P4 移植 lws-ui **FrostUI** 时，毛玻璃 **默认不用 live blur**；仅在组件/弹窗 **显式开启** 时，弹窗存续期间对下层 **动图** 做实时采样模糊。RK356x 家族 **共用同一 API**，**不按板级 SKU 分叉**（当前仅实现/验收 ynh960）。
 
 #### 6.3.1 设计原则
 
@@ -867,7 +864,7 @@ lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `
 | 工具 | 用途 |
 |------|------|
 | [RKNN-Toolkit2](https://github.com/airockchip/rknn-toolkit2) | PyTorch/ONNX → `.rknn`，量化 |
-| `lws-ui` `convert-rknn.sh` / `onnx_to_rknn.py` | 默认 **`RKNN_PLATFORM=rk3566`**（基准）；3568/B2 板增量出包 |
+| `lws-ui` `convert-rknn.sh` / `onnx_to_rknn.py` | 默认 **`RKNN_PLATFORM=rk3566`**（基准）；3568/B2 可另出 `.rknn`（OTA 模型包，不必拆固件） |
 
 ### 8.3 建议数据流
 
@@ -896,7 +893,7 @@ flowchart LR
 
 ## 9. flutter-pi 在 RK356x 上的集成注意
 
-flutter-pi 官方主要验证 **树莓派**；**RK3566 / RK3568 / RK3568B2** 需额外工作（三颗 SoC 共用同一集成路径）：
+flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3566** 上验证）需额外工作：
 
 | 项 | 说明 |
 |----|------|
@@ -916,7 +913,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK3566 / RK3568 / RK3568B2** 需
 
 | 已有 | 规划用途 |
 |------|----------|
-| `board/ynh960_defconfig` | **ynh960 PCB**，唯一 `make lunch` 目标（RK3566/3568/3568B2 共用固件） |
+| `board/ynh960_defconfig` | **产品线统一固件**的开发/构建入口（基准板 ynh960 / RK3566） |
 | LCD/MIPI fs-overlay | 内核/用户态显示参数 |
 | `overlay/.../05-lws-hmi-display.sh` | 保留 |
 | Docker volume 构建 | 继续用于 Buildroot 编译 |
@@ -1125,7 +1122,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [ ] overlay：`hmi.service` enable；journald volatile；mediamtx/sshd/bluetooth **disable**
 - [ ] **Boot splash logo**（§5.2）；LCD 参数与 ynh960 一致
 - [ ] 开发机 Flutter **Hello World** → `/opt/hmi`；`hmi.service` 自启验收
-- [ ] 上电 → logo → 首页 **≤10 s**（§14.2）；**同一份镜像**在 3568/3568B2 芯片 ynh960 板上 smoke（可选）
+- [ ] 上电 → logo → 首页 **≤10 s**（§14.2）；ynh960（RK3566）全量验收；ynh961/ynh962 跨 SKU smoke 可选
 
 ### P2 — Modbus + GPIO demo
 
@@ -1137,7 +1134,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 ### P3 — AI 代码库 → libai.so
 
-- [ ] 开发机 RKNN：`RKNN_PLATFORM=rk3566`（3568/B2 另出包）
+- [ ] 开发机 RKNN：`RKNN_PLATFORM=rk3566`（基准；3568/B2 模型可 OTA 另包）
 - [ ] 迁移 **`lensinspector` 全量** → Linux aarch64 **`libai.so`**
 - [ ] OpenCV / yaml-cpp 链入或 static；`config.yaml` + `.rknn` → `/oem/models/`
 - [ ] 板端：`librknnrt.so` + `rknn_server` + **so 加载 smoke**（无需完整 Flutter 业务 UI）
@@ -1194,7 +1191,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 - [ ] **PR0 录像**；**OTA** / oem 更新
 - [ ] **`sshd` 默认关** + §7.7 隐藏调试
-- [ ] 全量 **§11.5 parity**；**同一份镜像**在 3568/3568B2 芯片上 smoke
+- [ ] 全量 **§11.5 parity**；ynh960 量产验收；**同一份镜像**在 ynh961/ynh962 上 smoke（可选）
 
 ---
 
@@ -1204,12 +1201,13 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 # 1. 仍用 lws-hmi 环境
 make setup
 make docker-volume-init    # macOS 首次
-make lunch                 # rk3566_rk3568:ynh960_defconfig（ynh960 PCB；RK3566/3568/3568B2 同镜像）
+make lunch                 # rk3566_rk3568:ynh960_defconfig（产品线统一固件；开发基准 ynh960/RK3566）
 # 待 defconfig 就绪后改 RK_BUILDROOT_CFG 或新 lunch 目标
 
 # 2. 只编 rootfs（迭代最快）
 make build-rootfs
-make build-img && make flash    # rootfs 变更必须 pack + 刷机
+make build-img
+make flash
 
 # 3. 完整固件
 make build

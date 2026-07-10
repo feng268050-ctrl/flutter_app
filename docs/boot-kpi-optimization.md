@@ -51,7 +51,7 @@ systemd-analyze blame
 systemd-analyze critical-chain hmi.service
 ```
 
-**`boot-verify` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；22 未监听；`network-generator` masked；`flutter-pi` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
+**`boot-verify` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` + `lws-hmi-pwrkey-poweroff` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；22 未监听；`network-generator` masked；pwrkey input 存在且服务 active；`flutter-pi` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
 
 **秒表**（填 §6 表格）：上电 → logo；上电 → multi-user；上电 → 首页首帧。
 
@@ -74,7 +74,7 @@ systemd-analyze critical-chain hmi.service
 | P0-5 | `verify-rootfs-overlay` 正确路径 `output/<profile>/target` | **done** | `scripts/verify-rootfs-overlay.sh` |
 | P0-6 | `build-img` / `build-kernel` 后自动 export firmware → host | **done** | `docker-export-artifacts.sh` |
 | P0-7 | 刷机后 `boot-verify` 全 PASS | **done** | 板端已验证（sshd/mediamtx/debug-boot 已清除） |
-| P0-8 | 正常 `poweroff`（避免 EXT4 recovery） | **skip** | 产品无电源键/电池，随设备总电源直接断电；无硬件保电前提下无法可靠 poweroff |
+| P0-8 | 稳定断电（避免 DRM/Mali teardown oops） | **done** | 不 stop `hmi`；`systemctl` wrapper + `shutdown.sh` 先 sync/remount-ro，再 SysRq poweroff |
 
 ### A — 内核 / U-Boot（通常 −1～3 s）
 
@@ -146,7 +146,9 @@ P0（done）
 
 **A-6 注意**：`rootflags=noatime` 会致内核 panic（`ext4: Unknown parameter 'noatime'`）。`noatime` 须写在 fstab 第 4 列，由 `systemd-remount-fs` 生效。
 
-**当前状态**：B-9 / D0-1 已完成；A-1 不再自编译 U-Boot；A-3 已接入 kernel trim fragment。首次刷机发现 `CONFIG_DEBUG_FS` 不可裁（systemd `sys-kernel-debug.mount` 会阻断 `local-fs.target`），已恢复 debugfs，待重新 build-kernel/build-img/flash 验证。
+**P0-8 注意**：继续保持 `systemd-logind` disabled。板端确认 `systemctl stop hmi.service` 本身也会偶发触发 Mali/DRM `drm_gem_object_release_handle` oops，因此不能依赖“先停 HMI”。当前策略是避开 systemd 的用户服务 teardown：`systemctl` wrapper / pwrkey 均进入 `shutdown.sh`，执行 `sync` + SysRq `s/u/o`（sync、remount readonly、poweroff），失败时才 fallback 到 `systemctl.real --force --force poweroff`。
+
+**当前状态**：P0-8 已按 SysRq poweroff 路径完成；B-9 / D0-1 已完成；A-1 不再自编译 U-Boot；A-3 已接入 kernel trim fragment。首次刷机发现 `CONFIG_DEBUG_FS` 不可裁（systemd `sys-kernel-debug.mount` 会阻断 `local-fs.target`），已恢复 debugfs，待重新 build-kernel/build-img/flash 验证。
 
 ---
 
@@ -162,6 +164,7 @@ P0（done）
 | 2026-07 | +A-4 defer wifibt | | | | PASS | 无 wpa/network @ boot |
 | 2026-07 | +B-9 log-guardian | ~2s | ~8.4s | ~8.4s | PASS | `log-guardian` 未自启；D0-1 splash 约 2s |
 | 2026-07 | +A-3 kernel trim | | | | | 待重刷；保留 HDMI/USB/音频/文件系统/蓝牙/debugfs |
+| 2026-07 | +P0-8 pwrkey poweroff | | | | PASS | 板端：stop hmi 仍会 DRM oops；改为 sync + SysRq remount-ro/poweroff |
 
 ---
 
@@ -174,6 +177,11 @@ P0（done）
 | `overlay/.../99-lws-hmi.preset` | preset-all 后保持 Plan A disable 列表 |
 | `overlay/.../lws-hmi-performance.service` | 首帧前拉满 CPU/DMC/GPU 频率 |
 | `overlay/.../set-performance-mode.sh` | 写 cpufreq + devfreq governor |
+| `overlay/.../lws-hmi-pwrkey-poweroff.service` | 板载 pwrkey 触发关机 |
+| `overlay/.../pwrkey-poweroff.sh` | 监听 `KEY_POWER` → `shutdown.sh poweroff` |
+| `overlay/.../shutdown.sh` | `pre-poweroff.sh` → SysRq `s/u/o`，fallback `systemctl.real --force --force poweroff` |
+| `overlay/.../systemctl-poweroff-wrapper.sh` | 拦截 `systemctl poweroff/halt/reboot` |
+| `overlay/.../pre-poweroff.sh` | 不停 HMI；仅 `sync`，避免触发 DRM teardown |
 | `overlay/.../hmi.service` | flutter-pi；`Nice=-5` |
 | `overlay/.../boot-verify.sh` | 板端验收 |
 | `overlay/.../lws-hmi-post-fakeroot.sh` | preset-all 后重链 Plan A wants |
@@ -185,4 +193,4 @@ P0（done）
 
 ---
 
-*最后更新：A-3 repo（恢复 debugfs，待重刷验证）；B-9 / D0-1 done；A-1 skip。*
+*最后更新：P0-8 done（pwrkey / systemctl poweroff 走 SysRq 稳定断电）；A-3 repo（恢复 debugfs，待重刷验证）；B-9 / D0-1 done；A-1 skip。*

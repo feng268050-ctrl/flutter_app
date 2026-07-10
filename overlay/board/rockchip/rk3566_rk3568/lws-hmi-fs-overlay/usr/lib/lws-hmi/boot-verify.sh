@@ -36,7 +36,7 @@ for unit in lws-hmi-debug-boot.service wifibt-init.service log-guardian.service;
 	fi
 done
 
-for unit in hmi.service mainserver.service lws-hmi-performance.service; do
+for unit in hmi.service mainserver.service lws-hmi-performance.service lws-hmi-pwrkey-poweroff.service; do
 	if [ -e "$WANTS/$unit" ]; then
 		pass "$unit enabled"
 	else
@@ -108,6 +108,60 @@ if [ -z "${SSH_CONNECTION:-}" ] && command -v systemctl >/dev/null 2>&1; then
 			;;
 		esac
 	done
+fi
+
+echo ""
+echo "--- pwrkey poweroff ---"
+pwrkey_found=0
+for name_file in /sys/class/input/event*/device/name; do
+	[ -r "$name_file" ] || continue
+	name="$(cat "$name_file" 2>/dev/null || echo unknown)"
+	name_lc="$(echo "$name" | tr '[:upper:]' '[:lower:]')"
+	case "$name_lc" in
+		*pwr*key*|*power*key*|*power\ button*|*gpio-keys*|*adc-keys*|*rk8*pwr*)
+			pass "power-key input device present: $name"
+			pwrkey_found=1
+			;;
+	esac
+done
+if [ "$pwrkey_found" -eq 0 ]; then
+	fail "no pwrkey/gpio-keys input device found"
+fi
+if command -v systemctl >/dev/null 2>&1; then
+	state="$(systemctl is-active lws-hmi-pwrkey-poweroff.service 2>/dev/null || echo inactive)"
+	case "$state" in
+	active)
+		pass "lws-hmi-pwrkey-poweroff.service active"
+		;;
+	*)
+		fail "lws-hmi-pwrkey-poweroff.service is $state"
+		;;
+	esac
+fi
+if [ -x /usr/lib/lws-hmi/pre-poweroff.sh ]; then
+	pass "pre-poweroff.sh present and executable"
+else
+	fail "pre-poweroff.sh missing or not executable"
+fi
+if [ -x /usr/lib/lws-hmi/shutdown.sh ]; then
+	pass "shutdown.sh present and executable"
+else
+	fail "shutdown.sh missing or not executable"
+fi
+if [ -x /usr/bin/systemctl.real ] && [ "$(readlink /usr/bin/systemctl 2>/dev/null)" = "/usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh" ]; then
+	pass "/usr/bin/systemctl wrapped for graceful poweroff"
+else
+	fail "/usr/bin/systemctl wrapper missing (expected systemctl.real + wrapper symlink)"
+fi
+if [ -f /etc/systemd/system/systemd-poweroff.service.d/50-lws-hmi-pre-poweroff.conf ]; then
+	fail "retired systemd-poweroff drop-in still present"
+else
+	pass "retired systemd-poweroff drop-in absent"
+fi
+if [ -e /etc/systemd/system/poweroff.target.wants/lws-hmi-pre-poweroff.service ]; then
+	fail "retired lws-hmi-pre-poweroff.service still linked in poweroff.target.wants"
+else
+	pass "retired lws-hmi-pre-poweroff.service not in poweroff.target.wants"
 fi
 
 echo ""

@@ -65,6 +65,11 @@ if [ -f "$TARGET_DIR/etc/systemd/system/lws-hmi-performance.service" ]; then
 	echo "lws-hmi-systemd: enabled lws-hmi-performance.service"
 fi
 
+if [ -f "$TARGET_DIR/etc/systemd/system/lws-hmi-pwrkey-poweroff.service" ]; then
+	link_unit lws-hmi-pwrkey-poweroff.service
+	echo "lws-hmi-systemd: enabled lws-hmi-pwrkey-poweroff.service"
+fi
+
 if [ -f "$TARGET_DIR/etc/systemd/system/hmi.service" ]; then
 	link_unit hmi.service
 	echo "lws-hmi-systemd: enabled hmi.service"
@@ -82,8 +87,19 @@ done
 # Retired single-image debug path — remove if stale overlay sync left files on disk.
 rm -f \
 	"$TARGET_DIR/etc/systemd/system/lws-hmi-debug-boot.service" \
-	"$TARGET_DIR/usr/lib/lws-hmi/debug-boot.sh"
+	"$TARGET_DIR/etc/systemd/system/lws-hmi-pre-poweroff.service" \
+	"$TARGET_DIR/usr/lib/lws-hmi/debug-boot.sh" \
+	"$TARGET_DIR/usr/lib/lws-hmi/stop-hmi.sh" \
+	"$TARGET_DIR/etc/systemd/system/systemd-poweroff.service.d/50-lws-hmi-pre-poweroff.conf" \
+	"$TARGET_DIR/etc/systemd/system/systemd-halt.service.d/50-lws-hmi-pre-poweroff.conf" \
+	"$TARGET_DIR/etc/systemd/system/systemd-reboot.service.d/50-lws-hmi-pre-poweroff.conf"
+rmdir \
+	"$TARGET_DIR/etc/systemd/system/systemd-poweroff.service.d" \
+	"$TARGET_DIR/etc/systemd/system/systemd-halt.service.d" \
+	"$TARGET_DIR/etc/systemd/system/systemd-reboot.service.d" \
+	2>/dev/null || true
 disable_boot_unit lws-hmi-debug-boot.service
+disable_boot_unit lws-hmi-pre-poweroff.service
 
 # Plan A: no kernel cmdline ip= and no networkd — mask noisy generator unit.
 if [ -d "$SYSTEMD_DIR" ]; then
@@ -111,7 +127,27 @@ install_lws_hmi_helper_scripts() {
 		echo "lws-hmi-systemd: installed /usr/lib/lws-hmi/$(basename "$script")"
 	done
 }
+
+wrap_systemctl_for_poweroff() {
+	local ctl="$TARGET_DIR/usr/bin/systemctl"
+	local real="$TARGET_DIR/usr/bin/systemctl.real"
+	local wrapper="$TARGET_DIR/usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh"
+
+	[ -f "$wrapper" ] || return 0
+	if [ -e "$real" ]; then
+		echo "lws-hmi-systemd: systemctl wrapper already installed"
+		return 0
+	fi
+	if [ ! -e "$ctl" ]; then
+		echo "lws-hmi-systemd: skip systemctl wrapper (missing $ctl)"
+		return 0
+	fi
+	mv "$ctl" "$real"
+	ln -sf /usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh "$ctl"
+	echo "lws-hmi-systemd: wrapped /usr/bin/systemctl for graceful poweroff"
+}
 install_lws_hmi_helper_scripts
+wrap_systemctl_for_poweroff
 
 # A-6: noatime on ext4 mounts (root remount + oem/userdata via systemd-fstab-generator).
 FSTAB="$TARGET_DIR/etc/fstab"

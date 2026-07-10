@@ -9,3 +9,4 @@ disable wifibt-init.service
 disable wpa_supplicant.service
 disable network.service
 disable log-guardian.service
+enable lws-hmi-pwrkey-poweroff.service

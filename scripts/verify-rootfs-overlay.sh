@@ -40,7 +40,7 @@ check_systemd_wants() {
 		fi
 	done
 
-	for unit in hmi.service mainserver.service lws-hmi-performance.service; do
+	for unit in hmi.service mainserver.service lws-hmi-performance.service lws-hmi-pwrkey-poweroff.service; do
 		if unit_wants_link "$unit"; then
 			echo "OK:  $unit enabled in $label"
 		else
@@ -59,6 +59,49 @@ check_systemd_wants() {
 				echo "OK:  $unit not in $label sysinit.target.wants"
 			fi
 		done
+	fi
+
+	return "$missing"
+}
+
+check_poweroff_hook() {
+	local root="$1"
+	local label="$2"
+	local missing=0
+
+	echo ""
+	echo "--- $label: graceful poweroff hook ---"
+	if [[ -x "$root/usr/lib/lws-hmi/pre-poweroff.sh" && \
+		-x "$root/usr/lib/lws-hmi/shutdown.sh" && \
+		-x "$root/usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh" ]]; then
+		echo "OK:  pre-poweroff/shutdown/systemctl wrapper scripts present in $label"
+	else
+		echo "FAIL: missing graceful poweroff helper scripts in $label" >&2
+		missing=1
+	fi
+
+	if [[ -x "$root/usr/bin/systemctl.real" && \
+		-L "$root/usr/bin/systemctl" && \
+		"$(readlink "$root/usr/bin/systemctl")" = "/usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh" ]]; then
+		echo "OK:  /usr/bin/systemctl wrapped via systemctl.real in $label"
+	else
+		echo "FAIL: /usr/bin/systemctl wrapper not installed in $label" >&2
+		missing=1
+	fi
+
+	if [[ -f "$root/etc/systemd/system/systemd-poweroff.service.d/50-lws-hmi-pre-poweroff.conf" ]]; then
+		echo "FAIL: retired systemd-poweroff drop-in still present in $label" >&2
+		missing=1
+	else
+		echo "OK:  retired systemd-poweroff drop-in absent in $label"
+	fi
+
+	if [[ -L "$root/etc/systemd/system/poweroff.target.wants/lws-hmi-pre-poweroff.service" || \
+		-f "$root/etc/systemd/system/poweroff.target.wants/lws-hmi-pre-poweroff.service" ]]; then
+		echo "FAIL: retired lws-hmi-pre-poweroff.service still linked in $label" >&2
+		missing=1
+	else
+		echo "OK:  retired lws-hmi-pre-poweroff.service not linked in $label"
 	fi
 
 	return "$missing"
@@ -90,6 +133,7 @@ check_rootfs_image() {
 
 	check_systemd_wants "$mnt" "rootfs.ext2 (flash image)"
 	local rc=$?
+	check_poweroff_hook "$mnt" "rootfs.ext2 (flash image)" || rc=1
 	umount "$mnt"
 	rmdir "$mnt"
 	return "$rc"
@@ -124,7 +168,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh ynh960-display-init.sh set-performance-mode.sh; do
+	for f in boot-verify.sh ynh960-display-init.sh set-performance-mode.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else
@@ -156,6 +200,7 @@ run_check() {
 	done
 
 	check_systemd_wants "$target" "staging target" || missing=1
+	check_poweroff_hook "$target" "staging target" || missing=1
 	check_rootfs_image "$out_dir" || missing=1
 
 	echo ""

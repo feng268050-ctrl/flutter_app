@@ -1,0 +1,13 @@
+[Unit]
+Description=LWS HMI power key poweroff handler
+After=systemd-udevd.service
+ConditionPathExists=/dev/input
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/lws-hmi/pwrkey-poweroff.sh
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

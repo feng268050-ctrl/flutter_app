@@ -116,6 +116,17 @@ sync_post_fakeroot_script() {
   echo "overlay: $dest"
 }
 
+sync_flutter_engine_script() {
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-sync-flutter-engine.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-sync-flutter-engine.sh"
+  if [[ ! -f "$src" ]]; then
+    echo "WARNING: $src missing; skip flutter engine sync script" >&2
+    return 0
+  fi
+  install -m 0755 "$src" "$dest"
+  echo "overlay: $dest"
+}
+
 sync_kernel_display_dts() {
   local kernel_dts="$SDK/kernel/arch/arm64/boot/dts/rockchip"
   local customer_dtsi="$kernel_dts/customer_board_ynh960.dtsi"
@@ -556,6 +567,7 @@ chmod +x "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
 
 sync_fs_overlay
 sync_post_fakeroot_script
+sync_flutter_engine_script
 sync_kernel_display_dts
 sync_kernel_config_fragments
 sync_display_params

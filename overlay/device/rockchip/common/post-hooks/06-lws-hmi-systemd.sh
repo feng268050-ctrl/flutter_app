@@ -149,6 +149,30 @@ wrap_systemctl_for_poweroff() {
 install_lws_hmi_helper_scripts
 wrap_systemctl_for_poweroff
 
+# Prebuilt flutter-engine: refresh /usr/lib on target/ (app bundle has no engine copy).
+sync_flutter_engine_prebuilt() {
+	local script sdk_dir
+	sdk_dir="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-}}"
+	if [ -z "$sdk_dir" ]; then
+		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
+	fi
+	script="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-sync-flutter-engine.sh"
+	if [ -f "$script" ]; then
+		sh "$script" "$TARGET_DIR"
+	else
+		echo "lws-hmi-systemd: skip flutter engine sync (missing $script — run make apply-overlay)"
+	fi
+}
+sync_flutter_engine_prebuilt
+
+# BlueZ 5.77 + systemd: daemon lives in libexec; compat symlink for scripts using /usr/sbin.
+if [ -x "$TARGET_DIR/usr/libexec/bluetooth/bluetoothd" ] && \
+	[ ! -e "$TARGET_DIR/usr/sbin/bluetoothd" ]; then
+	mkdir -p "$TARGET_DIR/usr/sbin"
+	ln -sf ../libexec/bluetooth/bluetoothd "$TARGET_DIR/usr/sbin/bluetoothd"
+	echo "lws-hmi-systemd: symlink /usr/sbin/bluetoothd → libexec"
+fi
+
 # A-6: noatime on ext4 mounts (root remount + oem/userdata via systemd-fstab-generator).
 FSTAB="$TARGET_DIR/etc/fstab"
 if [ -f "$FSTAB" ] && ! grep -q 'noatime' "$FSTAB"; then

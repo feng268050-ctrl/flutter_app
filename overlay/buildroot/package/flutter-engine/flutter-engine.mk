@@ -17,7 +17,17 @@ FLUTTER_ENGINE_LICENSE_FILES = LICENSE
 FLUTTER_ENGINE_INSTALL_STAGING = YES
 FLUTTER_ENGINE_DEPENDENCIES =
 
-LWS_HMI_ROOT ?= $(TOPDIR)/../..
+ifndef LWS_HMI_ROOT
+# Docker: /work/lws-hmi; native: sibling of SDK checkout.
+LWS_HMI_ROOT := $(shell \
+	if [ -d "$(TOPDIR)/../../lws-hmi/prebuilt/flutter-engine" ]; then \
+		echo "$(TOPDIR)/../../lws-hmi"; \
+	elif [ -d "$(TOPDIR)/../lws-hmi/prebuilt/flutter-engine" ]; then \
+		echo "$(TOPDIR)/../lws-hmi"; \
+	else \
+		echo "$(TOPDIR)/../.."; \
+	fi)
+endif
 
 ifeq ($(FLUTTER_ENGINE_RUNTIME_MODE_PROFILE),y)
 FLUTTER_ENGINE_RUNTIME_MODE=profile

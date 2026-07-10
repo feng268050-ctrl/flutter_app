@@ -13,6 +13,8 @@ ExecStart=/usr/bin/flutter-pi --release -o landscape_left /opt/hmi
 Restart=on-failure
 RestartSec=2
 Environment=FLUTTER_PI=1
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

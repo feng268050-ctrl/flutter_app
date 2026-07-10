@@ -10,7 +10,10 @@ WANTS="$SYSTEMD_DIR/multi-user.target.wants"
 
 disable_unit() {
 	unit="$1"
-	for wants_dir in "$SYSTEMD_DIR"/*.wants; do
+	local wants_dir link
+	for wants_dir in "$SYSTEMD_DIR"/*.wants \
+		"$TARGET_DIR/usr/lib/systemd/system"/*.wants \
+		"$TARGET_DIR/lib/systemd/system"/*.wants; do
 		[ -d "$wants_dir" ] || continue
 		link="$wants_dir/$unit"
 		if [ -e "$link" ] || [ -L "$link" ]; then
@@ -29,6 +32,13 @@ link_unit() {
 for unit in lws-hmi-debug-boot.service lws-hmi-pre-poweroff.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 	disable_unit "$unit"
 done
+
+# preset-all may re-link units with [Install]; explicit disable clears all wants.
+if command -v systemctl >/dev/null 2>&1; then
+	for unit in mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+		systemctl --root="$TARGET_DIR" disable "$unit" >/dev/null 2>&1 || true
+	done
+fi
 
 rm -f \
 	"$TARGET_DIR/etc/systemd/system/lws-hmi-debug-boot.service" \
@@ -50,6 +60,11 @@ link_unit lws-hmi-pwrkey-poweroff.service
 link_unit hmi.service
 
 ln -sf /dev/null "$SYSTEMD_DIR/systemd-network-generator.service"
+
+SYNC_ENGINE="$(dirname "$0")/lws-hmi-sync-flutter-engine.sh"
+if [ -f "$SYNC_ENGINE" ]; then
+	sh "$SYNC_ENGINE" "$TARGET_DIR"
+fi
 
 # RockUSB Loader reboot (RESTART2 loader) — see tools/reboot-rockusb-loader/
 LWS_HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"

@@ -168,7 +168,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh ynh960-display-init.sh set-performance-mode.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh; do
+	for f in boot-verify.sh ynh960-display-init.sh set-performance-mode.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-rockusb-loader; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else

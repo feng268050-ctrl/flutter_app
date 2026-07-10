@@ -50,3 +50,10 @@ link_unit lws-hmi-pwrkey-poweroff.service
 link_unit hmi.service
 
 ln -sf /dev/null "$SYSTEMD_DIR/systemd-network-generator.service"
+
+# RockUSB Loader reboot (RESTART2 loader) — see tools/reboot-rockusb-loader/
+LWS_HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
+BUILD_LOADER="$LWS_HMI_ROOT/scripts/build-reboot-rockusb-loader.sh"
+if [ -f "$BUILD_LOADER" ]; then
+	bash "$BUILD_LOADER" "$TARGET_DIR"
+fi

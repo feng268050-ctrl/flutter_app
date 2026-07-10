@@ -10,4 +10,4 @@ ExecStart=/usr/bin/mediamtx /etc/mediamtx/mediamtx.yaml
 Restart=on-failure
 RestartSec=3
 
-# No [Install] — start on demand (App / debug); not at boot.
+# No [Install] — on demand after IPC camera is reachable (ping); see docs/flutter-pi-hmi-plan.md §7.5.

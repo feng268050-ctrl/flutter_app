@@ -18,7 +18,7 @@
 # #include "fs/vfat.config"
 
 # --- enable when feature is merged (not a separate make target) ---
-# #include "chips/lws_hmi_npu.config"
+#include "chips/lws_hmi_npu.config"
 # #include "chips/lws_hmi_gst_rtsp.config"
 # #include "chips/lws_hmi_mediamtx.config"
 # #include "chips/lws_hmi_platform.config"

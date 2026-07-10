@@ -7,3 +7,4 @@ prebuilt/flutter-engine/**/libflutter_engine.so filter=lfs diff=lfs merge=lfs -t
 prebuilt/flutter-engine/**/gen_snapshot filter=lfs diff=lfs merge=lfs -text
 prebuilt/mediamtx/**/mediamtx filter=lfs diff=lfs merge=lfs -text
 prebuilt/rknn-rt/**/*.so filter=lfs diff=lfs merge=lfs -text
+prebuilt/rknn-rt/**/rknn_server filter=lfs diff=lfs merge=lfs -text

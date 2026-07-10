@@ -168,7 +168,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh ynh960-display-init.sh set-performance-mode.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-rockusb-loader; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-rockusb-loader; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else
@@ -181,6 +181,38 @@ run_check() {
 		echo "OK:  hmi.service in target"
 	else
 		echo "FAIL: hmi.service missing from target/etc/systemd/system" >&2
+		missing=1
+	fi
+
+	echo ""
+	echo "--- /opt/hmi (Flutter app bundle — no engine) ---"
+	for f in \
+		"$target/opt/hmi/lib/libapp.so" \
+		"$target/opt/hmi/data/flutter_assets/AssetManifest.bin"; do
+		if [[ -e "$f" ]]; then
+			echo "OK:  ${f#$target/}"
+		else
+			echo "FAIL: missing ${f#$target/} (run: make build-flutter-app && make apply-overlay && make build-rootfs)" >&2
+			missing=1
+		fi
+	done
+	if [[ -f "$target/opt/hmi/lib/libflutter_engine.so" ]]; then
+		echo "FAIL: opt/hmi/lib/libflutter_engine.so present (engine belongs in /usr/lib only)" >&2
+		missing=1
+	else
+		echo "OK:  opt/hmi/lib/libflutter_engine.so absent (system engine)"
+	fi
+	if [[ -f "$target/opt/hmi/data/icudtl.dat" ]]; then
+		echo "FAIL: opt/hmi/data/icudtl.dat present (use /usr/share/flutter on rootfs)" >&2
+		missing=1
+	else
+		echo "OK:  opt/hmi/data/icudtl.dat absent (system icu)"
+	fi
+	if [[ -f "$target/usr/lib/libflutter_engine.so" ]]; then
+		system_sz="$(stat -c%s "$target/usr/lib/libflutter_engine.so" 2>/dev/null || stat -f%z "$target/usr/lib/libflutter_engine.so")"
+		echo "OK:  usr/lib/libflutter_engine.so ($system_sz bytes)"
+	else
+		echo "FAIL: usr/lib/libflutter_engine.so missing (flutter-engine / post-hook sync)" >&2
 		missing=1
 	fi
 
@@ -201,6 +233,56 @@ run_check() {
 
 	check_systemd_wants "$target" "staging target" || missing=1
 	check_poweroff_hook "$target" "staging target" || missing=1
+
+	def="$ROOT/overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig"
+	gen="$ROOT/overlay/buildroot/.generated/rockchip_rk3566_rk3568_lws_hmi_defconfig"
+	[[ -f "$gen" ]] && def="$gen"
+	if grep -qF '#include "chips/lws_hmi_bt.config"' "$def" 2>/dev/null; then
+		echo ""
+		echo "--- BlueZ / wifibt (lws_hmi_bt.config) ---"
+		if [[ -x "$target/usr/libexec/bluetooth/bluetoothd" ]]; then
+			echo "OK:  usr/libexec/bluetooth/bluetoothd"
+		else
+			echo "FAIL: bluetoothd missing (BlueZ 5.77 installs to usr/libexec/bluetooth/)" >&2
+			echo "  Run: bash scripts/br-make-packages.sh bt bluez5_utils && make build-rootfs" >&2
+			missing=1
+		fi
+		if [[ -x "$target/usr/bin/bluetoothctl" ]]; then
+			echo "OK:  usr/bin/bluetoothctl"
+		else
+			echo "FAIL: bluetoothctl missing" >&2
+			missing=1
+		fi
+		if [[ -f "$target/usr/lib/systemd/system/bluetooth.service" ]]; then
+			echo "OK:  bluetooth.service unit"
+		else
+			echo "FAIL: bluetooth.service missing" >&2
+			missing=1
+		fi
+	fi
+	if grep -qF '#include "chips/lws_hmi_npu.config"' "$def" 2>/dev/null; then
+		echo ""
+		echo "--- RKNPU2 runtime (lws_hmi_npu.config) ---"
+		if [[ -f "$target/usr/lib/librknnrt.so" ]]; then
+			echo "OK:  usr/lib/librknnrt.so"
+		else
+			echo "FAIL: usr/lib/librknnrt.so missing (run: make fetch-rknn-rt && make apply-overlay && make build-rootfs)" >&2
+			missing=1
+		fi
+		if [[ -x "$target/usr/bin/rknn_server" ]]; then
+			echo "OK:  usr/bin/rknn_server"
+		else
+			echo "FAIL: usr/bin/rknn_server missing" >&2
+			missing=1
+		fi
+		if [[ -e "$target/usr/bin/rknn_common_test" ]]; then
+			echo "FAIL: rknn_common_test present (demo binary should be absent)" >&2
+			missing=1
+		else
+			echo "OK:  rknn_common_test absent"
+		fi
+	fi
+
 	check_rootfs_image "$out_dir" || missing=1
 
 	echo ""

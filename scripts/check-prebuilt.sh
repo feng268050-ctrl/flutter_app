@@ -71,9 +71,12 @@ fi
 if has_include "lws_hmi_npu.config"; then
   require_prebuilt "rknn-rt" "$RKNN_RT_DIR" \
     "make fetch-rknn-rt / make build-runtime-deps" || missing=1
-  require_file "opencv sources" "$OPENCV_TAR" "make fetch-opencv" || missing=1
-  require_file "opencv_contrib sources" "$CONTRIB_TAR" "make fetch-opencv" || missing=1
-  require_file "opencv ximgproc" "$XIMGPROC_MARKER" "make fetch-opencv-ximgproc" || missing=1
+  require_file "librknnrt.so overlay" \
+    "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/librknnrt.so" \
+    "make fetch-rknn-rt" || missing=1
+  require_file "rknn_server overlay" \
+    "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/bin/rknn_server" \
+    "make fetch-rknn-rt" || missing=1
 fi
 
 if has_include "lws_hmi_gst_rtsp.config" || has_include "lws_hmi_gst_prebuilt.config"; then

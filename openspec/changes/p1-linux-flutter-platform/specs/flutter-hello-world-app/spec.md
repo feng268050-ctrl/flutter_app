@@ -2,7 +2,7 @@
 
 ### Requirement: Flutter Hello World project exists in repository
 
-The repository SHALL contain a Flutter application at `app/lws_hmi/` configured for flutter-pi ARM64 release builds, with documentation for engine/flutter-pi version alignment.
+The repository SHALL contain a Flutter application at `app/lws_hmi/` configured for flutter-pi ARM64 release builds (meta-flutter layout), with documentation for engine/flutter-pi version alignment (Flutter 3.24.4 / flutter-pi 37bd977).
 
 #### Scenario: Project structure present
 
@@ -12,11 +12,11 @@ The repository SHALL contain a Flutter application at `app/lws_hmi/` configured 
 #### Scenario: Release build script documented
 
 - **WHEN** developer reads app build instructions
-- **THEN** steps to produce `app.so` and `flutter_assets/` for flutter-pi are documented
+- **THEN** steps to produce meta-flutter bundle (`lib/libapp.so`, `data/flutter_assets/`) via `flutterpi_tool` are documented
 
 ### Requirement: Hello World UI is minimal for boot KPI
 
-The P1 home screen SHALL display a simple full-screen greeting (e.g. "Hello, lws-hmi") with no video, WebSocket, FFI, or network initialization in `main()` before first frame.
+The P1 home screen SHALL display a simple full-screen greeting ("Hello, lws-hmi") with no video, WebSocket, FFI, or network initialization in `main()` before first frame.
 
 #### Scenario: First frame content
 
@@ -28,40 +28,50 @@ The P1 home screen SHALL display a simple full-screen greeting (e.g. "Hello, lws
 - **WHEN** app `main()` executes
 - **THEN** no video_player, WebSocket, or native AI libraries are initialized before `runApp`
 
-### Requirement: Release artifacts deploy to /opt/hmi
+### Requirement: Release artifacts deploy to /opt/hmi (meta-flutter layout)
 
 Cross-compiled release output SHALL be installed on target at:
 
 ```
-/opt/hmi/app.so
-/opt/hmi/icudtl.dat
-/opt/hmi/flutter_assets/
+/opt/hmi/lib/libapp.so
+/opt/hmi/lib/libflutter_engine.so
+/opt/hmi/data/icudtl.dat
+/opt/hmi/data/flutter_assets/
 ```
 
 #### Scenario: Bundle layout on device
 
 - **WHEN** P1 rootfs or overlay is deployed
-- **THEN** `/opt/hmi/app.so` and `/opt/hmi/flutter_assets/` exist
+- **THEN** `/opt/hmi/lib/libapp.so` and `/opt/hmi/data/flutter_assets/` exist
 
 #### Scenario: flutter-pi launches bundle
 
-- **WHEN** operator runs `flutter-pi --release /opt/hmi` on device
+- **WHEN** operator runs `flutter-pi --release -o landscape_left /opt/hmi` on device
 - **THEN** Hello World UI displays without missing asset errors
 
 ### Requirement: App integrated via rootfs overlay for P1
 
-P1 SHALL deploy Hello World artifacts via Buildroot rootfs overlay (not Buildroot-compiled Dart), updated by host build script or CI step before `make build-rootfs`.
+P1 SHALL deploy Hello World artifacts via Buildroot rootfs overlay (not Buildroot-compiled Dart), updated by `make build-flutter-app` (or `scripts/build-flutter-app.sh`) before `make build-rootfs`.
 
 #### Scenario: Overlay contains app artifacts
 
-- **WHEN** lws-hmi overlay is applied and rootfs built
-- **THEN** `opt/hmi/app.so` is present inside fs-overlay tree before build
+- **WHEN** lws-hmi overlay is applied and `make build-flutter-app` has run
+- **THEN** `opt/hmi/lib/libapp.so` is present inside fs-overlay tree before rootfs build
 
 ### Requirement: Display orientation compatible with ynh960
 
-The flutter-pi launch configuration (service flags or embedder config) SHALL support ynh960 landscape orientation (`landscape_left` or 90° rotation) consistent with LCD params.
+The flutter-pi launch configuration in `hmi.service` SHALL use `-o landscape_left` for ynh960 landscape orientation, consistent with LCD params (`lcd0_rotation=90`).
 
 #### Scenario: UI readable on ynh960 panel
 
 - **WHEN** Hello World runs on ynh960 via `hmi.service`
 - **THEN** text is readable in the intended physical orientation without manual rotation each boot
+
+### Requirement: Host build uses flutterpi_tool
+
+The host build script SHALL use `flutterpi_tool build --arch=arm64 --release` to produce the meta-flutter bundle matching Buildroot `FILESYSTEM_LAYOUT=meta-flutter`.
+
+#### Scenario: build-flutter-app produces meta-flutter bundle
+
+- **WHEN** developer runs `make build-flutter-app`
+- **THEN** `app/lws_hmi/build/flutter-pi/meta-flutter-aarch64-generic/lib/libapp.so` is copied to overlay `opt/hmi/`

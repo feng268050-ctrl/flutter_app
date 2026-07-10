@@ -4,7 +4,7 @@
 
 **能力原则**：**lws-hmi 产品能力不少于 lws-ui**；Android/Java 栈整体替换为 **Linux Buildroot + flutter-pi + Dart/FFI**，算法、拓扑、模型与 API 契约尽量复用。逐项对照见 **§11.5**。
 
-**板级范围**：**ynh960 / ynh961 / ynh962** 为同一产品线的三档板型（芯片与接口有微小差异，大体硬件拓扑相近）；**理论上可共用一份 Linux 固件**（与 lws-ui Android 通刷思路一致）。**P1～P5 设计与验收以 ynh960（RK3566）为基准**，暂不按 SKU 拆 defconfig 或维护多套镜像。Rockchip SDK 目录 **`rk3566_rk3568`** / Buildroot **`rockchip_rk3566_rk3568_*`** 为 3566/3568 族工具链 profile。见 **§3.0**。
+**板级范围**：**ynh960 / ynh962 / ynh961** 为同一产品线的三档板型（**入门 → 中档 → 高档**：RK3566 → RK3568B2 → RK3568；芯片与接口有微小差异，大体硬件拓扑相近）；**理论上可共用一份 Linux 固件**（与 lws-ui Android 通刷思路一致）。**P1～P5 设计与验收以 ynh960（RK3566）为基准**，暂不按 SKU 拆 defconfig 或维护多套镜像。Rockchip SDK 目录 **`rk3566_rk3568`** / Buildroot **`rockchip_rk3566_rk3568_*`** 为 3566/3568 族工具链 profile。见 **§3.0**。
 
 ---
 
@@ -15,6 +15,7 @@
 | **P1 — 平台镜像 + Hello World** | Buildroot **Linux 镜像**（含后续所需的 **平台必须组件**）+ splash → **`flutter-pi` Hello World** | Modbus 业务、AI so、FrostUI、lws-ui 业务页 |
 | **P2 — Modbus + GPIO** | **libmodbus** / **sysfs GPIO** 迁移；App **demo**（设备信息、**三色状态灯**） | 视频、AI 推理 UI、FrostUI |
 | **P3 — AI 原生库** | 迁移 lws-ui **AI 代码库**；新工程打出 **`libai.so`**（+ RKNN/`config.yaml`） | Flutter 叠框产品 UI、FrostUI |
+| **P3.5 — Flutter 平台升级（P4 前置）** | 将板端 **flutter-engine / SDK / flutter-pi** 从 P1 pin **升级到上游支持的 stable**（见 **§6.4**）；ynh960 全量回归 | FrostUI 子模块、P5 业务页 |
 | **P4 — FrostUI + IME（子模块）** | **`packages/frost_ui`** + **`packages/frost_ime`**（各为独立 git 子模块，对齐 lws-ui FrostUI / IME） | P5 业务页与全量 parity |
 | **P5 — 业务迁移** | 见 **§1.2**（P5.1～P5.7）；视频、网络 UI、AI 接入、本地/云服务、**lws-ui 实装业务页**、OTA 等 | 在板训练；Android 兼容层 |
 
@@ -41,6 +42,13 @@ P3  AI → libai.so
     ├─ Linux aarch64 交叉编译 libai.so；RKNN 模型（默认 rk3566）
     └─ 板端 smoke：librknnrt + so 加载（业务叠框 UI 留 P5）
 
+P3.5  Flutter 平台升级（P4 前置，§6.4）
+    ├─ 选定目标：flutter-pi + flutter-ci 已支持的 stable（如 3.41.x 一代）
+    ├─ 同步 bump：flutter-sdk / flutter-engine / flutter-pi 三件套 + prebuilt 重编
+    ├─ 宿主：fetch-flutter-sdk（macOS darwin / Linux linux）+ flutterpi_tool 对齐
+    ├─ 板端：meta-flutter 布局不变；engine 仍仅 /usr/lib（/opt/hmi 仅 libapp + assets）
+    └─ 验收：Hello World + P2 demo + P3 libai smoke + 启动 KPI（§14.2）回归
+
 P4  FrostUI + IME（git 子模块）
     ├─ `packages/frost_ui` — FrostUI（§6.3：backdrop 默认 frozen；弹窗按需 liveWhileOpen）
     ├─ `packages/frost_ime` — IME overlay + 字体（对齐 lws-ui `IME.md`）
@@ -56,7 +64,7 @@ P5  业务迁移（子阶段见 §1.2）
     └─ P5.7 量产收尾（录像、OTA、parity）
 ```
 
-**依赖**：`P1 → P2 → P3` 建议顺序固定；**P4** 可与 P3 并行（依赖 P1 显示栈）；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（P5.1 为多数后续子阶段前置）。
+**依赖**：`P1 → P2 → P3` 建议顺序固定；**P3.5** 在 P3 板端 smoke 通过后、**P4 开工前**完成（FrostUI/IME 子模块常需更高 Dart/Flutter）；**P4** 可与 P3 并行筹备子模块仓库，但 **合并主 App 前须完成 P3.5**；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（P5.1 为多数后续子阶段前置）。
 
 ### 1.2 P5 子阶段（业务迁移）
 
@@ -89,7 +97,7 @@ P5.* ──→ P5.7
 
 ```mermaid
 flowchart TB
-  subgraph hw [硬件 — ynh960/961/962 产品线]
+  subgraph hw [硬件 — ynh960/962/961 产品线]
     IPC[IPC 192.168.1.100]
     ETH[eth0 直连 IPC]
     WIFI[wlan0 客户 Wi‑Fi]
@@ -139,13 +147,15 @@ flowchart TB
 
 ### 3.0 板级型号与 SoC（ynh960 产品线）
 
-Innohi **同一产品线**三档板型，对应不同价位/档次；PCB 与外设拓扑**大体相近**，芯片与少量接口有微小差异：
+Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到高：ynh960 → ynh962 → ynh961**）；PCB 与外设拓扑**大体相近**，芯片与少量接口有微小差异：
 
-| 板级型号 | SoC | 说明 |
-|----------|-----|------|
-| **ynh960** | **RK3566** | **P1～P5 开发/验收基准**；`make lunch` → `ynh960_defconfig`；`ynh960.dts` |
-| ynh961 | RK3568 | 同产品线高档；暂不单独拆固件 |
-| ynh962 | RK3568B2 | 同产品线更高档；暂不单独拆固件 |
+| 板级型号 | SoC | 档位 | 说明 |
+|----------|-----|------|------|
+| **ynh960** | **RK3566** | 入门 | **P1～P5 开发/验收基准**；`make lunch` → `ynh960_defconfig`；`ynh960.dts` |
+| ynh962 | RK3568B2 | 中档 | **RK3568 精简版**（B2 为阉割版 3568）；暂不单独拆固件 |
+| ynh961 | RK3568 | 高档 | 完整 **RK3568**；暂不单独拆固件 |
+
+**SoC 关系**：RK3566（入门）< **RK3568B2**（3568 阉割）< **RK3568**（完整 3568）。勿将 ynh962 理解为高于 ynh961 的档位。
 
 **固件策略**：
 
@@ -226,7 +236,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次；PCB 与外�
 
 | 组件 | P1 | P2 | P3 | P4 | P5 | 说明 |
 |------|----|----|----|----|-----|------|
-| **flutter-pi** + Mali/libdrm | ✓ | | | | | P1 Hello World |
+| **flutter-pi** + Mali/libdrm | ✓ | | | | | P1 Hello World；**P3.5** engine/SDK/pi 三件套升级 |
 | **RKNPU2 运行时**（无 example） | ✓ | | ✓ | | | P1 编入 rootfs；P3 用 |
 | **wifibt** 栈 | ✓ | | | | ✓ | 驱动/daemon；业务配网 UI 在 P5 |
 | **GStreamer + MPP + mediamtx** | ✓ prep | | | | ✓ use | P1 备好；P5.1 开预览/relay |
@@ -284,7 +294,7 @@ Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不
 | **工程调试** | **串口** `ttyFIQ0`（`console=` + Rockchip `serial-getty@ttyFIQ0`）；`make serial-console` |
 | **远程 SSH** | 包在 rootfs，**默认不监听**；§7.7 隐藏入口 / `enable-ssh-debug.sh` **按需** `start`（重启后仍默认关） |
 | **eth0** | **首屏后** `configure-camera-eth0.sh`（§7.1）；**禁止** sysinit 静态 IP、内核 `ip=` bootargs |
-| **mediamtx / bluetoothd** | 默认 **disable**；P5 由 App 或显式 enable |
+| **mediamtx / bluetoothd** | 默认 **不进 multi-user wants**；**mediamtx** P5 由 App 在 **IPC 相机 ping 通后** `systemctl start`（§7.5）；蓝牙按需 |
 | **可选 USB ECM** | `lws-hmi-debug-usb.config` **不在**默认 `ynh960_defconfig`；需要时手动加 fragment |
 
 **禁止**：`lws-hmi-debug-boot` 类早期配网 unit、`LWS_HMI_DEV` 换 overlay、内核 cmdline 写死 `10.0.0.240` 等仅开发镜像行为。
@@ -296,7 +306,7 @@ Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不
 | **flutter-pi 链接 libsystemd** | CMake `pkg_check_modules(libsystemd)`；`event_loop.c` 使用 `sd_event_*`。**不要求** systemd 当 init |
 | **init 用 systemd（工程选择）** | Buildroot 打包路径、Rockchip SDK 默认、少量 unit 管 `hmi` / 可选 `mediamtx`；不引入 Plymouth、networkd 等 |
 | **首屏 KPI 独立** | `hmi.service` **仅** `After=local-fs.target`；**禁止** `network-online` / `mediamtx` / `udev-settle` |
-| **MediaMTX 不挡 UI** | unit 可存在，但 **`After=hmi.service`** 或 **默认 `disable`** + App `systemctl start`（§6.4） |
+| **MediaMTX 不挡 UI** | unit 可存在，但 **无 `[Install]` / 不在 wants**；**仅相机可达后**由 App `systemctl start`（§6.4、§7.5） |
 | **busybox init 替换** | **方案 B（实验）**：需 Buildroot 只装 `libsystemd` 或 fork flutter-pi（如 libuv）；非 P1～P5 量产默认 |
 
 #### 3.6.2 Buildroot：`lws_hmi_systemd.config`
@@ -334,7 +344,7 @@ Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不
 | 文件 | 作用 |
 |------|------|
 | `etc/systemd/system/hmi.service` | **P1** 启用；`After=local-fs.target` only |
-| `etc/systemd/system/mediamtx.service` | P5；**默认不 enable**；`After=hmi.service` |
+| `etc/systemd/system/mediamtx.service` | P5；**默认不 enable**（无 `[Install]`，`static`）；`After=hmi.service`；**相机 ping 通后** App `start` |
 | `etc/systemd/journald.conf.d/00-lws-hmi-volatile.conf` | 日志仅内存 |
 | `usr/lib/lws-hmi/systemd-enable-hmi.sh` | post-build：**enable hmi**，**disable** mediamtx/sshd/bluetoothd（P1+ 蓝牙改 App 触发） |
 
@@ -579,7 +589,7 @@ Stack
 
 **原则**：**首页 UI 不被任何网络就绪阻塞**（eth0 / wlan0 / MediaMTX / 云 WS 均为 **首屏之后** 异步或后台配置）；用户通过 **状态栏图标** 感知进度（类似手机 Wi‑Fi 连接中转圈），见 **§7.0**。
 
-**systemd 与首屏**：systemd **不会**故意挡 UI；仅当 unit 写错依赖（如 `hmi` `After=mediamtx` / `network-online`）才会拖慢。**MediaMTX 用 systemd 启动本身不挡首屏**，若 `After=hmi.service` 或默认 `disable` + App 触发（见下）。
+**systemd 与首屏**：systemd **不会**故意挡 UI；仅当 unit 写错依赖（如 `hmi` `After=mediamtx` / `network-online`）才会拖慢。**MediaMTX** 仅在 **IPC ping 通后** 由 App `systemctl start`（§7.5），不进 `hmi` critical chain。
 
 ```ini
 # overlay/.../lws-hmi-fs-overlay/etc/systemd/system/hmi.service
@@ -602,7 +612,7 @@ WantedBy=multi-user.target
 ```
 
 ```ini
-# mediamtx.service — P5；量产默认 disable（post-build）；启用时也 After=hmi
+# mediamtx.service — P5；量产不在 multi-user.wants；相机可达后 App systemctl start
 [Unit]
 Description=MediaMTX RTSP relay (PR0/PR1)
 After=hmi.service
@@ -615,8 +625,7 @@ ExecStart=/usr/bin/mediamtx /etc/mediamtx/mediamtx.yaml
 Restart=on-failure
 RestartSec=3
 
-[Install]
-WantedBy=multi-user.target
+# 无 [Install] — 按需启动；见 §7.5（IPC ping 通后才 start，相机离线则 stop/不启）
 ```
 
 | 组件 | 启动时机 | 是否阻塞首页 |
@@ -625,12 +634,40 @@ WantedBy=multi-user.target
 | **flutter-pi / 首页** | `local-fs` 后 **`hmi.service`** | —（**KPI 终点**） |
 | **eth0 动态配址** | 首页后 / 用摄像头前运行 `configure-camera-eth0.sh` | **否** |
 | **wpa_supplicant / wlan0** | 后台或 App 触发；**勿** bind `network-online` | **否** |
-| **mediamtx** | **`After=hmi`** 或 **disable** + 首页 onReady `systemctl start` | **否**（不进 `critical-chain hmi`） |
+| **mediamtx** | **IPC 相机 ping 通后**（eth0 已配）→ `MediaMtxRelayCoordinator` `systemctl start`；相机离线 **不启 / stop** | **否**（不进 `critical-chain hmi`） |
 | **RTSP 预览 / 录像** | 用户进入预览页或 App 内 `initState` 后连 relay | **否** |
 | **RKNN / libai** | 进入检测页或首页占位后再 FFI 初始化 | **否** |
 | **bluetoothd / sshd** | **disable**；SSH 见 §7.7 隐藏入口 | **否** |
 
 Flutter 侧重试：`127.0.0.1:8554` 未就绪时首页仍显示；预览区与状态栏展示「连接中」（§7.0）。
+
+### 6.5 Flutter Engine 版本策略与升级（**P3.5**）
+
+**P1～P3 不升级**：板端与宿主均 pin **同一套** Flutter 三件套，保证 AOT `libapp.so` 与 rootfs `libflutter_engine.so` 严格匹配。
+
+| 项 | P1～P3（当前） | P3.5 目标 |
+|----|----------------|-----------|
+| Flutter SDK | **3.24.4**（`overlay/buildroot/flutter-sdk.version`） | 上游 [flutter-pi](https://github.com/ardera/flutter-pi) / [flutter-ci](https://github.com/ardera/flutter-ci) **已支持的 stable**（升级时按当时 stable 选定，如 3.41.x 一代） |
+| flutter-engine | 同 SDK 版本；prebuilt `prebuilt/flutter-engine/<ver>/` | 与 SDK **同版本**；`make build-flutter-engine` 或团队 NAS 缓存 |
+| flutter-pi | commit pin（`overlay/buildroot/flutter-pi.version`，当前 **37bd977**） | 与目标 engine **兼容**的 flutter-pi commit |
+| 宿主构建 | macOS：**darwin** SDK + `flutterpi_tool`；Linux：**linux** SDK | 同上；**禁止** macOS 上误用 Linux SDK tarball（见 `app/README.md`） |
+| 板端布局 | meta-flutter：`/opt/hmi/lib/libapp.so` + `data/flutter_assets/`；engine **仅** `/usr/lib` + `/usr/share/flutter` | 布局不变；仍禁止 bundle 内第二份 engine |
+
+**为何 P1 不跟 host PATH 上的新 Flutter**：flutter-pi 在 **RK356x Mali** 上无树莓派级官方认证；P1 已在 ynh960 验收 **3.24.4 + 37bd977** 与启动 KPI。宿主 `flutter` 3.41.x 与板端 3.24.4 engine **AOT 不兼容** → splash 卡住、`flutter-pi` 秒退（`Invalid kernel binary` / 无 journal 错误）。
+
+**升级时机**：**P3 `libai.so` 板端 smoke 通过后、P4 FrostUI 子模块合入前**（§1.1）。FrostUI / IME 与较新 Dart 约束通常在 P4 需要；在 P4 前集中升级，避免 P2/P3 与平台迁移并行。
+
+**P3.5 迁移清单**（OpenSpec / 实施时勾选）：
+
+1. **选型**：查 flutter-pi release / flutter-ci engine 标签，确定目标 Flutter **x.y.z** 与 flutter-pi **commit**。
+2. **版本文件**：`flutter-sdk.version`、`flutter-engine.version`、`flutter-pi.version` 同步 bump。
+3. **Prebuilt**：`make build-flutter-engine`、`make build-flutter-pi`（或拉 NAS）；`make check-prebuilt`。
+4. **宿主 SDK**：`make fetch-flutter-sdk`（各 OS 正确包）→ `make build-flutter-app`（`build-flutter-app.sh` 版本 gate + `flutterpi_tool` 重装）。
+5. **Rootfs**：`make apply-overlay` → `make build-rootfs` → `make build-img`；`verify-rootfs-overlay.sh` 通过。
+6. **板端回归**：`/usr/lib/lws-hmi/diagnose-hmi.sh`、`env-verify.sh`；Hello World → P2 demo → P3 `libai` smoke；**§14.2** 启动 KPI；Mali 首帧 / splash handoff。
+7. **文档**：更新 `app/README.md`、`prebuilt/manifest.json`；CI 拒绝错误 Flutter 版本。
+
+**不在 P3.5 范围**：Impeller/Vulkan 开关实验、按 SKU 拆 engine、仅 OTA `libapp.so` 而不同步 rootfs engine（仍禁止）。
 
 ---
 
@@ -644,7 +681,7 @@ Flutter 侧重试：`127.0.0.1:8554` 未就绪时首页仍显示；预览区与�
 |------|--------|------------------------|-----------------|
 | **wlan0 连 AP** | 不阻塞 UI；`wpa_supplicant` 可由系统先起或 App 触发 | 关联、重连、换 AP | Wi‑Fi 图标：**转圈/闪烁**=关联中；实心=已连；叉/灰=未连 |
 | **eth0 相机链** | 无 IP 亦可进首页 | `configure-camera-eth0.sh`（需时读 wlan0 IP） | 相机/链路图标：配置中 / 已通 / 离线（对齐 lws-ui Camera Comm Status） |
-| **MediaMTX** | 不启或 idle | 预览页或首页 onReady 后 `start` | 预览区占位 + 「视频连接中」 |
+| **MediaMTX** | 不启 | **eth0 配好且 IPC ping 通后** `systemctl start`（§7.5） | 预览区占位 + 「视频连接中」；相机离线不启 relay |
 | **云 WebSocket** | 不连 | Wi‑Fi 就绪后重试退避 | 云图标：连接中 / 在线 / 离线（P5） |
 | **蓝牙** | 不阻塞 | 设置页或按需扫描 | BT 图标（P5 设置页为主） |
 
@@ -686,7 +723,7 @@ Buildroot **不要**为 eth0 配 `systemd-networkd` 静态地址或 `dhcpcd`；�
 | 阶段 | eth0 要求 |
 |------|-----------|
 | **P1～P2** | 无业务要求；P1 仅需内核驱动、`ip link` 能 up |
-| **P5** | 跑 **`configure-camera-eth0.sh`** 后再启 MediaMTX upstream / 探测 `/PR0` `/PR1` |
+| **P5** | 跑 **`configure-camera-eth0.sh`** → **`ping -I eth0 <camera_ip>` 成功** 后再 `systemctl start mediamtx.service`；探测 `/PR0` `/PR1` 经本地 relay |
 
 | 组件 | 说明 |
 |------|------|
@@ -730,13 +767,53 @@ IPC 通过 **eth0 直连**（见 lws-ui `docs/camera-eth0-topology.md`），出�
 
 ### 7.5 MediaMTX 系统服务（P5 必需）
 
-lws-ui 把 MediaMTX 打进 APK 并由 `MediaMtxRelayCoordinator` 拉起；flutter-pi 版改为 **Buildroot 系统服务**，行为与 URL **与 lws-ui 对齐**。
+lws-ui 把 MediaMTX 打进 APK 并由 `MediaMtxRelayCoordinator` 拉起；flutter-pi 版改为 **Buildroot 系统服务**（`mediamtx.service`），行为与 URL **与 lws-ui 对齐**。
 
 #### 角色
 
 - 相机 upstream：**每路只拉一次**（PR0 一条、PR1 一条）。
 - 板内多消费者（Flutter 预览、录像、RKNN 取帧、调试 `gst-launch`）均作为 **MediaMTX 下游读者**。
 - Wi‑Fi 侧手机/PC：`rtsp://<设备-wlan0-IP>:8554/camera/pr0`（**不要**让他们直连 `192.168.1.100`，eth0 与车间 Wi‑Fi 二层隔离）。
+
+**为何按需启动**：MediaMTX 的唯一职责是 **把 IPC 的 PR0/PR1 分流到本机 `:8554`**。相机未连通时启动只会空转、占用 CPU/端口，且 upstream 配置指向不可达地址——**无业务价值**。因此 **禁止** 在 `multi-user.target.wants` 里 enable；也 **禁止** 在首页 onReady 无条件 `start`。
+
+#### 按需启动（IPC 相机 ping 通后）
+
+由 Flutter **`MediaMtxRelayCoordinator`**（移植 lws-ui）编排，与 eth0 配网同一后台链路：
+
+```mermaid
+sequenceDiagram
+  participant HMI as hmi.service
+  participant App as MediaMtxRelayCoordinator
+  participant Eth as configure-camera-eth0.sh
+  participant IPC as IPC camera
+  participant MTX as mediamtx.service
+
+  HMI->>App: 首屏 onReady（不 await）
+  App->>Eth: ensure eth0 /24（异步）
+  Eth->>IPC: ping -I eth0 camera_ip
+  alt ping 成功
+    App->>MTX: render-mediamtx-config + systemctl start
+    MTX->>IPC: upstream PR0/PR1（各一路）
+    App->>App: 预览连 127.0.0.1:8554
+  else ping 失败 / 超时
+    App->>App: 不 start；状态栏「相机离线」；退避重试
+    App->>MTX: systemctl stop（若曾启动）
+  end
+```
+
+| 步骤 | 说明 |
+|------|------|
+| 1. eth0 | `configure-camera-eth0.sh`（§7.1）；相机 IP 来自 `model.properties`（默认 `192.168.1.100`） |
+| 2. 可达性 | **`ping -I eth0 <camera_ip>`**（或等价 `ping` platform channel）；**成功** 才进入下一步 |
+| 3. 配置 | `ExecStartPre`：`render-mediamtx-config.sh` 写 `/etc/mediamtx/mediamtx.yaml`（upstream URL 含相机 IP） |
+| 4. 启动 | `systemctl start mediamtx.service`（unit **无 `[Install]`**，`systemctl is-enabled` 为 `static`） |
+| 5. 停止 | 相机持续不可达、用户退出预览、或 eth0 重配导致网段变化 → **`systemctl stop mediamtx.service`** |
+| 6. 重试 | 与 lws-ui 一致：指数退避轮询 ping；**不在** `main()` / 首帧路径 `await` |
+
+P1 镜像可 **预置** `usr/bin/mediamtx` + unit 文件（`env-verify` 仅检查 **未自启、未运行**）；P5.1 再实现 Coordinator 与 YAML 渲染。
+
+**验收**：刷机后 `boot-verify` / `env-verify` — `mediamtx` **不在** `multi-user.target.wants`、进程未运行；接 IPC 网线且 ping 通后，App 触发 start，`127.0.0.1:8554` 可 DESCRIBE。
 
 #### 标准 URL（与 `MediaMtxRelayUrls` 一致）
 
@@ -794,8 +871,8 @@ paths:
 
 | lws-ui | lws-hmi |
 |--------|---------|
-| MediaMTX 在 APK assets，`ProcessBuilder` 拉起 | **systemd 常驻服务** |
-| `startForLanPreview()` 随 App 生命周期 | 开机自启，与 flutter-pi 解耦 |
+| MediaMTX 在 APK assets，`ProcessBuilder` 拉起 | **systemd** `mediamtx.service`；**相机 ping 通后** App `systemctl start` |
+| Coordinator 在相机可用时启动子进程 | 同上；相机离线 **不启 / stop** |
 | EasyPlayer 直连 IPC 或本地 relay | **统一只读 MediaMTX**（upstream 除外） |
 
 ### 7.6 Flutter / GStreamer 消费（P5）
@@ -899,7 +976,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 |----|------|
 | GPU | 使用 **Mali** 而非 Mesa VC4；Buildroot 选 `BR2_PACKAGE_ROCKCHIP_MALI` |
 | 编译 | 在 Buildroot 添加 `flutter-pi` package，或 SDK 外挂 `external/` |
-| Flutter Engine | 使用与 flutter-pi 匹配的 **engine 版本** 构建 `app.so` |
+| Flutter Engine | **P1～P3** pin **3.24.4**（与 SDK、flutter-pi commit 对齐）；**P3.5** 升至上游 supported stable（§6.5）；`libapp.so` 与 `libflutter_engine.so` **必须同版本** |
 | 触摸 | libinput；与各板 DTS input 节点确认 |
 | 调试 | **串口** `ttyFIQ0`（默认）；远程 **§7.7** 隐藏入口后再 `ssh`（同一镜像） |
 
@@ -936,6 +1013,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **待增** `scripts/enable-ssh-debug.sh` | **P5** 隐藏入口 / `POST /v1/ssh` |
 | **待增** overlay：`sshd` disabled by default | 生产默认不监听 |
 | **待增** `docs/` 本文 | 规划 |
+| **§6.5** Flutter engine 升级（P3.5） | P3 后、P4 前；三件套 + prebuilt + ynh960 回归 |
 
 ---
 
@@ -1140,6 +1218,15 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [ ] 板端：`librknnrt.so` + `rknn_server` + **so 加载 smoke**（无需完整 Flutter 业务 UI）
 - [ ] 文档：FFI 接口约定（供 P5 接入）
 
+### P3.5 — Flutter 平台升级（P4 前置，§6.5）
+
+- [ ] 选定目标 Flutter stable + flutter-pi commit（flutter-ci engine 产物可用）
+- [ ] Bump `overlay/buildroot/flutter-{sdk,engine,pi}.version`；`make build-flutter-engine` / `build-flutter-pi`；`check-prebuilt`
+- [ ] 宿主：`make fetch-flutter-sdk` + `make build-flutter-app`（禁止 PATH 上非 pin 版本）
+- [ ] Rootfs：`apply-overlay` → `build-rootfs` → `build-img`；`verify-rootfs-overlay.sh`
+- [ ] 板端：Hello World + P2 demo + P3 libai smoke；启动 KPI §14.2；`diagnose-hmi.sh` / `env-verify.sh`
+- [ ] `/opt/hmi` 无 bundle engine；`/usr/lib/libflutter_engine.so` 与 AOT 同版本
+
 ### P4 — FrostUI + IME（git 子模块）
 
 - [ ] 创建 **`frost_ui`** 仓库 → **`packages/frost_ui`** submodule；实现 **§6.3**（`FrostCard` / `showFrostDialog` / `FrostModal`；默认 **frozen**；按需 **liveWhileOpen**）
@@ -1305,11 +1392,14 @@ make flash
 **MediaMTX 推荐（量产 KPI）**：
 
 ```ini
-# 首选：mediamtx.service 存在但 systemctl disable；App 首页 onReady 后 start
-# 次选：enable + After=hmi.service（不挡首屏，略抢 CPU）
+# 首选（量产）：mediamtx.service 无 [Install]，不在 multi-user.wants；
+# MediaMtxRelayCoordinator：configure-camera-eth0 → ping IPC → start；离线 stop
 [Unit]
 After=hmi.service
+# 无 [Install]
 ```
+
+**禁止**：在 `multi-user.target.wants` enable mediamtx；在首页 onReady **无条件** `start`（相机未通无意义）。
 
 #### C. flutter-pi / Flutter App — 通常 **−1～3 s**
 

@@ -5,7 +5,7 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 ## Project overview
 
 - **What:** Buildroot firmware for Innohi **ynh960/961/962 product line** + Flutter-pi HMI (`app/lws_hmi/`).
-- **Board SKUs:** ynh960 → RK3566; ynh961 → RK3568; ynh962 → RK3568B2. Same product line (minor chip/interface differences); **one firmware image is the goal**. **P1–P5 develop and validate on ynh960 (RK3566)** — no per-SKU defconfig fork yet.
+- **Board SKUs:** ynh960 → RK3566 (entry); ynh962 → RK3568B2 (mid, cut-down 3568); ynh961 → RK3568 (high). Same product line (minor chip/interface differences); **one firmware image is the goal**. **P1–P5 develop and validate on ynh960 (RK3566)** — no per-SKU defconfig fork yet.
 - **Hosts:** Linux builds natively in `sdk/`; macOS uses Docker `linux/amd64` + a Docker volume for the SDK tree.
 - **Outputs:** `output/firmware/update.img` (macOS, after export); Linux also `sdk/output/firmware/`.
 - **Scope:** Active Buildroot packages follow `#include` lines in `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig`.
@@ -108,7 +108,7 @@ Before finishing implementation work:
 - Docs-only: no build required.
 - `app/lws_hmi/`: `flutter analyze` / tests under `app/lws_hmi/` when Dart changed.
 - Overlay/rootfs: `make build-rootfs` should pass `scripts/verify-rootfs-overlay.sh`.
-- After flash (device): `/usr/lib/lws-hmi/boot-verify.sh`.
+- After flash (device): `/usr/lib/lws-hmi/boot-verify.sh` (Plan A boot KPI); `/usr/lib/lws-hmi/env-verify.sh` (§3.4 platform stack).
 
 ## Documentation maintenance
 

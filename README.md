@@ -2,7 +2,7 @@
 
 Buildroot + **ynh960** (Innohi **RK3566**) on the Rockchip Linux 6.1 SDK.
 
-**Product line:** ynh960 → RK3566, ynh961 → RK3568, ynh962 → RK3568B2 — three tiers of the **same product line** (minor chip/interface differences, largely similar hardware). **One Linux firmware image** across the line is the design goal (aligned with lws-ui Android). **P1–P5 develop and validate on ynh960**; no per-SKU defconfig fork yet. SDK path `rk3566_rk3568` is Rockchip’s 3566/3568 family tooling profile.
+**Product line:** ynh960 → RK3566 (entry), ynh962 → RK3568B2 (mid, cut-down 3568), ynh961 → RK3568 (high) — three tiers of the **same product line** (minor chip/interface differences, largely similar hardware). **One Linux firmware image** across the line is the design goal (aligned with lws-ui Android). **P1–P5 develop and validate on ynh960**; no per-SKU defconfig fork yet. SDK path `rk3566_rk3568` is Rockchip’s 3566/3568 family tooling profile.
 
 - **Linux (Ubuntu x64):** native build in `sdk/` (no Docker).
 - **macOS:** Docker `linux/amd64` builder + Docker volume for the SDK tree.
@@ -199,6 +199,7 @@ On device after flash:
 
 ```bash
 /usr/lib/lws-hmi/boot-verify.sh
+/usr/lib/lws-hmi/env-verify.sh
 ```
 
 ### Maintenance (infrequent)
@@ -235,13 +236,13 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | 组件 | 产出位置 | 板上角色 |
 |------|----------|----------|
 | flutter-engine / flutter-pi | `prebuilt/flutter-*` | HMI 显示栈 |
-| mediamtx | `prebuilt/mediamtx/` + fs-overlay `usr/bin/` | RTSP 中继（服务默认 disable） |
+| mediamtx | `prebuilt/mediamtx/` + fs-overlay `usr/bin/` | RTSP 中继（**相机 ping 通后** App 启动；默认不在 wants） |
 | **GStreamer + MPP** | Buildroot + `prebuilt/gstreamer/` | RTSP 预览/取帧 |
 | OpenCV + ximgproc | `.cache/opencv/` | 编进 `libai.so` |
 | RKNN runtime | `prebuilt/rknn-rt/` + SDK rknpu2 | NPU 推理 |
 | **P2/P3/P5 平台库** | `prebuilt/platform-packages/` | libmodbus、yaml-cpp、sqlite、avahi |
 
-另：rootfs 还通过 Buildroot `BR2_PACKAGE_RKNPU2` 从 SDK `external/rknpu2` 安装系统级 `librknnrt.so` + `rknn_server`（P1 已开）。`prebuilt/rknn-rt` 与 libai 构建版本对齐。
+另：P1 通过 `make fetch-rknn-rt` 将 SDK `external/rknpu2` 的 `librknnrt.so` + `rknn_server` 同步进 fs-overlay（本 SDK 无 `BR2_PACKAGE_RKNPU2` 包）。`prebuilt/rknn-rt` 供 P3 `libai.so` 交叉链接。
 
 | Target | 作用 |
 |--------|------|
@@ -271,10 +272,11 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P1 | flutter、RKNPU2、Wi‑Fi/BT、GPU | ✓ | Hello World、hmi 自启 |
 | P2 | libmodbus | ✓ platform-packages | Modbus/GPIO App demo |
 | P3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** 工程与 smoke |
+| P3.5 | flutter SDK + engine + flutter-pi **三件套升级** | 重编 prebuilt | P4 前；见 [`docs/flutter-pi-hmi-plan.md` §6.5](docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p35) |
 | P4 | — | — | frost_ui / frost_ime 子模块 |
 | P5 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云、OTA |
 
-Overlay 脚本（P1 启动链）：`boot-verify.sh`、`ynh960-display-init.sh`、`set-performance-mode.sh`；P5 保留 `render-mediamtx-config.sh`（`mediamtx.service` ExecStartPre）。eth0 配网、SSH 调试、mediamtx 启停由 Flutter App 内 `Process.run` / platform channel 触发，不再打包 shell stub。
+Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`；P5 保留 `render-mediamtx-config.sh`（`mediamtx.service` ExecStartPre）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** `systemctl start`）由 Flutter App 内 `MediaMtxRelayCoordinator` / platform channel 触发，不再打包 shell stub。
 
 仍待移植：**lensinspector 源码**、`probe-dual-stream.sh`、完整 mediamtx YAML 渲染逻辑、eth0 配网（Dart 移植 lws-ui `CameraEth0Configurator`）。
 
@@ -304,7 +306,8 @@ make show-config           # or: bash scripts/docker-run.sh bash -lc 'grep RK_BU
 On device (serial shell or ssh), after `make build-img` and `make flash`:
 
 ```bash
-/usr/lib/lws-hmi/boot-verify.sh
+/usr/lib/lws-hmi/boot-verify.sh    # Plan A 启动链 / KPI
+/usr/lib/lws-hmi/env-verify.sh     # §3.4 平台栈（不含 flutter-pi）
 ```
 
 Boot KPI 优化阶段与状态表：[`docs/boot-kpi-optimization.md`](docs/boot-kpi-optimization.md).

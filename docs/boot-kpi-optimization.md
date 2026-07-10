@@ -49,6 +49,7 @@ Linux 原生构建：无 Docker volume，跳过 export；`output/firmware/` 直�
 systemd-analyze
 systemd-analyze blame
 systemd-analyze critical-chain hmi.service
+/usr/lib/lws-hmi/env-verify.sh    # §3.4 平台栈（RKNPU2 / wifibt / prep 组件）
 ```
 
 **`boot-verify` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` + `lws-hmi-pwrkey-poweroff` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；22 未监听；`network-generator` masked；pwrkey input 存在且服务 active；`flutter-pi` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
@@ -183,7 +184,8 @@ P0（done）
 | `overlay/.../systemctl-poweroff-wrapper.sh` | 拦截 `systemctl poweroff/halt/reboot` |
 | `overlay/.../pre-poweroff.sh` | 不停 HMI；仅 `sync`，避免触发 DRM teardown |
 | `overlay/.../hmi.service` | flutter-pi；`Nice=-5` |
-| `overlay/.../boot-verify.sh` | 板端验收 |
+| `overlay/.../boot-verify.sh` | 板端 Plan A / 启动 KPI 验收 |
+| `overlay/.../env-verify.sh` | 板端 §3.4 平台栈验收（不含 flutter-pi） |
 | `overlay/.../lws-hmi-post-fakeroot.sh` | preset-all 后重链 Plan A wants |
 | `scripts/verify-rootfs-overlay.sh` | 构建后 staging 检查 |
 | `overlay/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi` | 内核 cmdline（`loglevel=4`） |

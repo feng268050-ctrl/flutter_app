@@ -45,7 +45,7 @@
 - [x] 6.2 Build firmware and flash on ynh960: `make build` (or `make build-img` after incremental changes) → `make audit` → `make flash` (`SERIAL=` when multiple devices; Maskrom auto `ul`+`uf`, Loader `uf` only) — **done**
 - [x] 6.3 Verify auto-start: boot → splash → Hello World without manual `systemctl start hmi` — **done** on ynh960
 - [x] 6.4 Verify absent packages: no weston, chromium, adbd, rknn_common_test on target — **done**
-- [ ] 6.5 Verify present stack: flutter-pi, `librknnrt.so`, `rknn_server`, wpa_supplicant, LCD params under `/system/etc/` — flutter-pi / wpa / LCD **done**; RKNPU2 staged via `make fetch-rknn-rt` → rebuild rootfs + flash
+- [x] 6.5 Verify present stack: flutter-pi, `librknnrt.so`, `rknn_server`, wpa_supplicant, LCD params under `/system/etc/` — **done** on ynh960 (`env-verify.sh` / `boot-verify.sh`)
 - [x] 6.6 KPI: power-on to first home frame ≤ 10 s on eMMC — **done** (~8.4 s measured; see `docs/boot-kpi-optimization.md` §6)
 - [x] 6.7 Update `README.md` with P1 build/flash/verify commands referencing lws_hmi defconfig
 

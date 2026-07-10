@@ -176,6 +176,7 @@ _(All P1 open questions resolved during implementation.)_
 | `boot-verify.sh` | ALL PASS | PASS |
 | `verify-rootfs-overlay.sh` | PASS | PASS |
 | EVB packages absent | weston/chromium/adbd | confirmed |
+| Platform stack (§6.5) | flutter-pi, RKNPU runtime, wpa, LCD params | confirmed (`env-verify.sh`) |
 | Auto-start HMI | no manual systemctl | confirmed |
 
 Full KPI log: `docs/boot-kpi-optimization.md` §6.

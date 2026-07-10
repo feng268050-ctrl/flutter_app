@@ -1,4 +1,4 @@
-# lws_hmi_app — P1 Hello World (flutter-pi)
+# lws_hmi — P1 Hello World (flutter-pi)
 
 ## Engine alignment
 
@@ -27,7 +27,7 @@ Host app builds use **flutterpi_tool** (meta-flutter layout, matching Buildroot 
 
 ```bash
 flutter pub global activate flutterpi_tool
-cd app/lws_hmi_app
+cd app/lws_hmi
 flutter pub get
 flutterpi_tool build --arch=arm64 --release
 ```
@@ -36,6 +36,9 @@ Or from repo root:
 
 ```bash
 make build-flutter-app
+make build-rootfs
+make build-img
+make flash
 ```
 
 ## Deploy layout on device

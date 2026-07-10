@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="$ROOT/app/lws_hmi_app"
+APP_DIR="$ROOT/app/lws_hmi"
 DEST="$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/opt/hmi"
 
 if ! command -v flutter >/dev/null 2>&1; then

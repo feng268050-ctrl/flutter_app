@@ -2,12 +2,12 @@
 
 ### Requirement: Flutter Hello World project exists in repository
 
-The repository SHALL contain a Flutter application at `app/lws_hmi_app/` configured for flutter-pi ARM64 release builds, with documentation for engine/flutter-pi version alignment.
+The repository SHALL contain a Flutter application at `app/lws_hmi/` configured for flutter-pi ARM64 release builds, with documentation for engine/flutter-pi version alignment.
 
 #### Scenario: Project structure present
 
 - **WHEN** developer clones lws-hmi after P1 implementation
-- **THEN** `app/lws_hmi_app/pubspec.yaml` and `lib/main.dart` exist
+- **THEN** `app/lws_hmi/pubspec.yaml` and `lib/main.dart` exist
 
 #### Scenario: Release build script documented
 

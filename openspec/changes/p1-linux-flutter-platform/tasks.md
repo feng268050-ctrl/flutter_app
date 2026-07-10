@@ -25,7 +25,7 @@
 
 ## 4. Flutter Hello World app
 
-- [x] 4.1 Create `app/lws_hmi_app` with `flutter create`; minimal home screen ("Hello, lws-hmi")
+- [x] 4.1 Create `app/lws_hmi` with `flutter create`; minimal home screen ("Hello, lws-hmi")
 - [x] 4.2 Configure flutter-pi custom device / build tooling for ARM64 release AOT
 - [x] 4.3 Add `scripts/build-flutter-app.sh` (or Makefile target) producing meta-flutter bundle under `/opt/hmi`
 - [x] 4.4 Ensure `main()` has no video/WebSocket/FFI init before first frame (KPI)

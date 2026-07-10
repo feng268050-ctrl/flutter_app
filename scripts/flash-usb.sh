@@ -11,6 +11,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ACTION="${1:-}"
+SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 
 UPGRADE_TOOL_DIR="$ROOT/tools/upgrade_tool"
 UPGRADE_TOOL="$UPGRADE_TOOL_DIR/upgrade_tool"
@@ -85,7 +86,8 @@ resolve_loader_bin() {
   dd if="$UPDATE_IMG" of="$out" bs=1 skip="$skip" count="$count" status=none 2>/dev/null \
     || die "failed to extract MiniLoaderAll from $UPDATE_IMG"
   LOADER_BIN="$out"
-  echo "Loader from update.img: $LOADER_BIN ($(wc -c <"$out" | tr -d ' ') bytes)"
+  echo "Loader from update.img:"
+  bash "$SIZE_HELPER" "$LOADER_BIN"
 }
 
 die() {
@@ -356,6 +358,8 @@ run_loader() {
   ensure_upgrade_tool
   resolve_loader_bin
   ensure_readable "$LOADER_BIN" "LOADER"
+  echo "LOADER:"
+  bash "$SIZE_HELPER" "$LOADER_BIN"
   require_rockusb_device
   [[ "$LOADER_NORESET" == 1 ]] && args+=(-noreset)
   upgrade_tool_cmd "${args[@]}"
@@ -372,7 +376,8 @@ run_upgrade() {
   local -a args=(uf "$UPDATE_IMG")
   ensure_upgrade_tool
   ensure_readable "$UPDATE_IMG" "UPDATE_IMG"
-  echo "UPDATE_IMG: $UPDATE_IMG"
+  echo "UPDATE_IMG:"
+  bash "$SIZE_HELPER" "$UPDATE_IMG"
   require_rockusb_device
   [[ "$UPGRADE_NORESET" == 1 ]] && args+=(-noreset)
   upgrade_tool_cmd "${args[@]}"
@@ -392,7 +397,8 @@ run_flash() {
   local mode
   ensure_upgrade_tool
   ensure_readable "$UPDATE_IMG" "UPDATE_IMG"
-  echo "UPDATE_IMG: $UPDATE_IMG"
+  echo "UPDATE_IMG:"
+  bash "$SIZE_HELPER" "$UPDATE_IMG"
   require_rockusb_device
   mode="$(resolve_selected_rockusb_mode "$ROCKUSB_LIST_OUTPUT")" \
     || die "could not detect RockUSB mode (make devices)"

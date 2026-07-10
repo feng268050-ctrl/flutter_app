@@ -74,7 +74,7 @@ systemd-analyze critical-chain hmi.service
 | P0-5 | `verify-rootfs-overlay` 正确路径 `output/<profile>/target` | **done** | `scripts/verify-rootfs-overlay.sh` |
 | P0-6 | `build-img` / `build-kernel` 后自动 export firmware → host | **done** | `docker-export-artifacts.sh` |
 | P0-7 | 刷机后 `boot-verify` 全 PASS | **done** | 板端已验证（sshd/mediamtx/debug-boot 已清除） |
-| P0-8 | 正常 `poweroff`（避免 EXT4 recovery） | **pending** | 运维；日志见 userdata/oem recovery |
+| P0-8 | 正常 `poweroff`（避免 EXT4 recovery） | **skip** | 产品无电源键/电池，随设备总电源直接断电；无硬件保电前提下无法可靠 poweroff |
 
 ### A — 内核 / U-Boot（通常 −1～3 s）
 
@@ -82,7 +82,7 @@ systemd-analyze critical-chain hmi.service
 |----|-----|------|------|
 | A-1 | U-Boot `bootdelay=0` | **skip** | 决定不再自编译 U-Boot；沿用 Innohi/SDK 预编译链 |
 | A-2 | 内核 `loglevel=7` → `4` 或 `3` | **done** | `loglevel=4`；板端串口日志已减少 |
-| A-3 | 裁内核无用驱动 | **pending** | 回归风险中；末阶段 |
+| A-3 | 裁内核无用驱动 | **repo** | `lws-hmi-kernel-trim.config`：裁 CAN/PCIe/NVMe/SATA/UFS、本地 CSI/RKISP/CIF/HDMIRX/DVB/tuner、DP/LVDS/RGB/TVE、heavy debug/test；保留 HDMI/USB/音频/文件系统/BT/Wi‑Fi/eth0/RKNPU/MPP/debugfs |
 | A-4 | RKNPU / Wi‑Fi / BT 延迟至首屏后 | **done** | disable `wifibt-init`/`wpa_supplicant`/`network.service`；板端已验证 |
 | A-5 | 确认无 `After=systemd-udev-settle`（尤其 `hmi`） | **done** | `hmi.service` 设计已禁止；板端 `critical-chain` 已验证 |
 | A-6 | eMMC `noatime` / HS200/HS400 | **done** | fstab + display-init；**勿**用 `rootflags=noatime`；HS400 沿用 SDK DTS |
@@ -146,7 +146,7 @@ P0（done）
 
 **A-6 注意**：`rootflags=noatime` 会致内核 panic（`ext4: Unknown parameter 'noatime'`）。`noatime` 须写在 fstab 第 4 列，由 `systemd-remount-fs` 生效。
 
-**当前状态**：B-9 / D0-1 已完成；A-1 不再自编译 U-Boot。后续优化只在产品阶段按需进入 C / A-3。
+**当前状态**：B-9 / D0-1 已完成；A-1 不再自编译 U-Boot；A-3 已接入 kernel trim fragment。首次刷机发现 `CONFIG_DEBUG_FS` 不可裁（systemd `sys-kernel-debug.mount` 会阻断 `local-fs.target`），已恢复 debugfs，待重新 build-kernel/build-img/flash 验证。
 
 ---
 
@@ -161,6 +161,7 @@ P0（done）
 | 2026-07 | +A-6 noatime | | | | PASS | mount 含 noatime；勿用 rootflags |
 | 2026-07 | +A-4 defer wifibt | | | | PASS | 无 wpa/network @ boot |
 | 2026-07 | +B-9 log-guardian | ~2s | ~8.4s | ~8.4s | PASS | `log-guardian` 未自启；D0-1 splash 约 2s |
+| 2026-07 | +A-3 kernel trim | | | | | 待重刷；保留 HDMI/USB/音频/文件系统/蓝牙/debugfs |
 
 ---
 
@@ -178,9 +179,10 @@ P0（done）
 | `overlay/.../lws-hmi-post-fakeroot.sh` | preset-all 后重链 Plan A wants |
 | `scripts/verify-rootfs-overlay.sh` | 构建后 staging 检查 |
 | `overlay/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi` | 内核 cmdline（`loglevel=4`） |
+| `overlay/kernel/rockchip/lws-hmi-kernel-trim.config` | A-3 内核裁剪 fragment（保留 HDMI/USB/音频/文件系统/蓝牙/debugfs） |
 | `docs/flutter-pi-hmi-plan.md` §3.6 / §14 | 设计详述 |
 | `docs/build-optimization.md` | 日常构建命令 |
 
 ---
 
-*最后更新：B-9 done；D0-1 done（约 2 s）；A-1 skip（不再自编译 U-Boot）。*
+*最后更新：A-3 repo（恢复 debugfs，待重刷验证）；B-9 / D0-1 done；A-1 skip。*

@@ -4,6 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)"
+SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 source "$ROOT/scripts/prebuilt-common.sh"
 
 if [[ "$(uname -s)" == Darwin && "${1:-}" != "--inside-docker" ]]; then
@@ -76,6 +77,10 @@ check_rootfs_image() {
 		return 0
 	fi
 
+	echo ""
+	echo "--- rootfs flash image ---"
+	bash "$SIZE_HELPER" "$img"
+
 	if ! mount -o loop,ro "$img" "$mnt" 2>/dev/null; then
 		echo ""
 		echo "FAIL: could not mount $img for verification" >&2
@@ -105,6 +110,10 @@ run_check() {
 		echo "  (expected buildroot/output/<RK_BUILDROOT_CFG>/target, e.g. rockchip_rk3566_rk3568_lws_hmi)" >&2
 		exit 1
 	fi
+
+	echo ""
+	echo "--- Buildroot output size ---"
+	bash "$SIZE_HELPER" "$target" "$out_dir/images/rootfs.ext2" "$out_dir/images/rootfs.ext4"
 
 	if [[ ! -d "$helper" ]]; then
 		echo "FAIL: $helper missing — overlay not applied or wrong Buildroot profile" >&2

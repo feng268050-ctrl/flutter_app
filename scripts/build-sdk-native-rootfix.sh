@@ -4,6 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 DTSI="$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip/customer_board_ynh960.dtsi"
 MARKER='lws-hmi: sdk-native root=mmcblk0p11'
 
@@ -40,5 +41,5 @@ cp -fL "$SDK/output/update/Image/update.img" "$ROOT/output/firmware/update.img" 
 
 echo ""
 echo "=== sdk-native rootfix update.img ready ==="
-ls -lh "$ROOT/output/firmware/update.img"
+bash "$SIZE_HELPER" "$ROOT/output/firmware/update.img"
 echo "MaskROM: make flash"

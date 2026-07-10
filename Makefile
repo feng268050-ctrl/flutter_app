@@ -177,7 +177,7 @@ show-config:
 build: check-prebuilt apply-overlay lunch build-boot-logo build-flutter-app build-kernel build-rootfs build-img
 	@echo ""
 	@if [[ -r output/firmware/update.img ]]; then \
-		echo "Build complete:"; ls -lh output/firmware/update.img; \
+		echo "Build complete:"; bash scripts/artifact-size.sh output/firmware/update.img; \
 	else \
 		echo "ERROR: output/firmware/update.img missing after build" >&2; exit 1; \
 	fi

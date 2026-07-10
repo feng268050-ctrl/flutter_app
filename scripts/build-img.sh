@@ -6,6 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_FIRMWARE="$ROOT/output/firmware"
 UPDATE_IMG="$OUT_FIRMWARE/update.img"
 PARAM="$ROOT/board/parameter-buildroot-fit.txt"
+SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 LINUX_BOOT_MAX=$((64 * 1024 * 1024))
 
 die() {
@@ -42,8 +43,8 @@ install_file_follow() {
 install_update_img() {
   local src="$1"
   install_file_follow "$src" "$UPDATE_IMG"
-  ls -lh "$UPDATE_IMG"
   echo "update.img ready: $UPDATE_IMG"
+  bash "$SIZE_HELPER" "$UPDATE_IMG"
 }
 
 link_parameter() {
@@ -76,7 +77,8 @@ ensure_sdk_loader() {
   install_file "$loader" "$firmware/MiniLoaderAll.bin"
   install_file "$loader" "$sdk/u-boot/rk356x_spl_loader_v1.23.114.bin"
   install_file "$loader" "$host"
-  echo "MiniLoaderAll.bin: SDK prebuilt ($(wc -c <"$loader" | tr -d ' ') bytes — never use compiled loader)"
+  echo "MiniLoaderAll.bin: SDK prebuilt (never use compiled loader)"
+  bash "$SIZE_HELPER" "$loader"
 }
 
 ensure_sdk_uboot() {
@@ -93,7 +95,8 @@ ensure_sdk_uboot() {
   rm -f "$dest"
   install_file "$vendor" "$dest"
   install_file "$vendor" "$host"
-  echo "uboot.img: vendor SDK unmodified ($(wc -c <"$vendor" | tr -d ' ') bytes)"
+  echo "uboot.img: vendor SDK unmodified"
+  bash "$SIZE_HELPER" "$vendor"
   echo "NOTE: bootcmd=boot_android;boot_fit — Linux needs Innohi uboot or serial 'boot_fit'"
   strings "$dest" | grep '^bootcmd=' || true
 }
@@ -113,13 +116,14 @@ install_misc() {
     dd if=/dev/zero of="$dest" bs=4096 count=1024 status=none
   fi
   echo "misc.img: cleared (no boot-recovery — MuJia misc breaks Linux boot)"
+  bash "$SIZE_HELPER" "$dest"
 }
 
 pack_in_sdk() {
   local sdk="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
   local firmware="$sdk/output/firmware"
   local updateimg="$firmware/update.img"
-  local boot_bytes
+  local boot_bytes rootfs_img
 
   [[ -d "$sdk" ]] || die "SDK not found — run: make link-sdk"
   [[ -r "$sdk/output/.config" ]] || die "output/.config missing — run make lunch first"
@@ -135,11 +139,14 @@ pack_in_sdk() {
   install_misc "$sdk" "$firmware"
 
   [[ -r "$firmware/boot.img" ]] || die "boot.img missing — run make build-kernel"
-  [[ -r "$firmware/rootfs.img" || -n "$(find "$sdk/buildroot/output" -name 'rootfs.ext2' -print -quit 2>/dev/null)" ]] \
+  rootfs_img="$firmware/rootfs.img"
+  [[ -r "$rootfs_img" ]] || rootfs_img="$(find "$sdk/buildroot/output" -name 'rootfs.ext2' -print -quit 2>/dev/null || true)"
+  [[ -n "$rootfs_img" && -r "$rootfs_img" ]] \
     || die "rootfs missing — run make build-rootfs"
 
   boot_bytes="$(wc -c <"$firmware/boot.img" | tr -d ' ')"
-  echo "boot.img: $boot_bytes bytes"
+  echo "Firmware inputs:"
+  bash "$SIZE_HELPER" "$firmware/boot.img" "$rootfs_img" "$firmware/MiniLoaderAll.bin" "$firmware/uboot.img" "$firmware/misc.img"
   if [[ "$boot_bytes" -gt "$LINUX_BOOT_MAX" ]]; then
     die "boot.img is ${boot_bytes} bytes — Linux boot partition is 64 MiB"
   fi
@@ -172,7 +179,7 @@ bash "$ROOT/scripts/docker-export-artifacts.sh" firmware
 if [[ -r "$UPDATE_IMG" ]]; then
   echo ""
   echo "Host firmware ready:"
-  ls -lh "$UPDATE_IMG"
+  bash "$SIZE_HELPER" "$UPDATE_IMG"
 else
   die "update.img missing at $UPDATE_IMG after build-img + export"
 fi

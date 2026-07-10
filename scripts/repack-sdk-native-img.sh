@@ -5,6 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
 OUT="$ROOT/output/firmware"
+SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 DEFCONFIG="${SDK_NATIVE_DEFCONFIG:-ynh960_innohi_defconfig}"
 CHIP="${SDK_NATIVE_CHIP:-rk3566_rk3568}"
 LINUX_BOOT_MAX=$((64 * 1024 * 1024))
@@ -33,7 +34,8 @@ boot="$SDK/kernel-6.1/boot.img"
 [[ -r "$boot" ]] || die "boot.img missing after kernel build"
 
 boot_bytes="$(wc -c <"$boot" | tr -d ' ')"
-echo "boot.img: $boot_bytes bytes ($(("$boot_bytes" / 1024 / 1024)) MiB)"
+echo "boot.img:"
+bash "$SIZE_HELPER" "$boot"
 [[ "$boot_bytes" -le "$LINUX_BOOT_MAX" ]] || die "boot.img exceeds 64 MiB Linux boot partition"
 
 mkdir -p "$OUT"
@@ -45,5 +47,5 @@ bash "$ROOT/scripts/audit-sdk-native.sh" "$boot" "$OUT/update.img"
 
 echo ""
 echo "=== repack done ==="
-ls -lh "$OUT/update.img"
+bash "$SIZE_HELPER" "$OUT/update.img"
 echo "Flash: make flash"

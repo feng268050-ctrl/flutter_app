@@ -6,6 +6,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 IMAGE="${DOCKER_IMAGE:-lws-hmi-builder:22.04}"
 PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 VOLUME="${LWS_HMI_DOCKER_VOLUME:-lws-hmi-sdk}"
@@ -47,7 +48,7 @@ export_firmware_from_volume() {
 			rsync -a --delete /work/sdk/output/firmware/ /dest-lws-firmware/
 			# SDK firmware entries are often symlinks into the volume tree; dereference
 			# flash-critical files so the host bind mount is not left with broken links.
-			for f in update.img MiniLoaderAll.bin uboot.img misc.img parameter.txt; do
+			for f in update.img boot.img rootfs.img rootfs.ext2 rootfs.ext4 MiniLoaderAll.bin uboot.img misc.img parameter.txt; do
 				if [[ -e /work/sdk/output/firmware/$f ]]; then
 					rm -f "/dest-lws-firmware/$f"
 					cp -Lf "/work/sdk/output/firmware/$f" "/dest-lws-firmware/$f"
@@ -56,9 +57,9 @@ export_firmware_from_volume() {
 		'
 
 	echo "docker-export: host paths"
-	for f in update.img boot.img rootfs.img MiniLoaderAll.bin uboot.img parameter.txt; do
+	for f in update.img boot.img rootfs.img rootfs.ext2 rootfs.ext4 MiniLoaderAll.bin uboot.img misc.img parameter.txt; do
 		if [[ -r "$lws_fw/$f" ]]; then
-			ls -lh "$lws_fw/$f"
+			bash "$SIZE_HELPER" "$lws_fw/$f"
 		fi
 	done
 }

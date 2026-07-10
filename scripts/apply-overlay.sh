@@ -149,21 +149,19 @@ sync_kernel_display_dts() {
     "$lws_root" "lws-hmi-ynh960-linux-root.dtsi"
 }
 
-sync_kernel_display_config() {
-  local cfg="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-display.config"
+sync_kernel_config_fragments() {
   local configs_dir="$SDK/kernel/arch/arm64/configs"
   if [[ ! -d "$configs_dir" ]]; then
     configs_dir="$SDK/kernel-6.1/arch/arm64/configs"
   fi
-  if [[ ! -f "$cfg" || ! -d "$configs_dir" ]]; then
-    echo "WARNING: skip kernel display config fragment" >&2
+  if [[ ! -d "$configs_dir" ]]; then
+    echo "WARNING: skip kernel config fragments" >&2
     return 0
   fi
-  install_file "$cfg" "$configs_dir/lws-hmi-ynh960-display.config"
-  local usb_cfg="$OVERLAY/kernel/rockchip/lws-hmi-debug-usb.config"
-  if [[ -f "$usb_cfg" ]]; then
-    install_file "$usb_cfg" "$configs_dir/lws-hmi-debug-usb.config"
-  fi
+  for cfg in "$OVERLAY/kernel/rockchip"/lws-hmi-*.config; do
+    [[ -f "$cfg" ]] || continue
+    install_file "$cfg" "$configs_dir/$(basename "$cfg")"
+  done
 }
 
 sync_buildroot_chip_configs() {
@@ -559,7 +557,7 @@ chmod +x "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
 sync_fs_overlay
 sync_post_fakeroot_script
 sync_kernel_display_dts
-sync_kernel_display_config
+sync_kernel_config_fragments
 sync_display_params
 sync_boot_logo
 sync_hmi_app_overlay

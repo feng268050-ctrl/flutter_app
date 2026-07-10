@@ -5,6 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
 OUT="$ROOT/output/firmware"
+SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 DEFCONFIG="${SDK_NATIVE_DEFCONFIG:-ynh960_innohi_defconfig}"
 CHIP="${SDK_NATIVE_CHIP:-rk3566_rk3568}"
 
@@ -45,7 +46,7 @@ cp -f "$SDK/output/firmware/uboot.img" "$OUT/uboot.img" 2>/dev/null || true
 
 echo ""
 echo "=== SDK native build done ==="
-ls -lh "$OUT/update.img" "$SDK/output/firmware/update.img"
+bash "$SIZE_HELPER" "$OUT/update.img" "$SDK/output/firmware/update.img"
 echo ""
 echo "MaskROM flash:"
 echo "  make flash"

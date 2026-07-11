@@ -105,6 +105,17 @@ sync_fs_overlay() {
     "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/enable-ssh-debug.sh"
 }
 
+sync_post_build_script() {
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-post-build.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-post-build.sh"
+  if [[ ! -f "$src" ]]; then
+    echo "WARNING: $src missing; skip post-build script" >&2
+    return 0
+  fi
+  install -m 0755 "$src" "$dest"
+  echo "overlay: $dest"
+}
+
 sync_post_fakeroot_script() {
   local src="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-post-fakeroot.sh"
   local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-post-fakeroot.sh"
@@ -157,7 +168,8 @@ sync_kernel_display_dts() {
   bash "$patch_script" "$customer_dtsi" \
     "$lws_dtsi" "lws-hmi-ynh960-display.dtsi" \
     "$panel_init_dtsi" "lws-hmi-ynh960-panel-init.dtsi" \
-    "$lws_root" "lws-hmi-ynh960-linux-root.dtsi"
+    "$lws_root" "lws-hmi-ynh960-linux-root.dtsi" \
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-usb-gadget.dtsi" "lws-hmi-ynh960-usb-gadget.dtsi"
 }
 
 sync_kernel_config_fragments() {
@@ -310,7 +322,13 @@ sync_hmi_app_overlay() {
     return 0
   fi
   mkdir -p "$BR_OVERLAY_ROOT/opt/hmi"
-  cp -a "$src/." "$BR_OVERLAY_ROOT/opt/hmi/"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete "$src/" "$BR_OVERLAY_ROOT/opt/hmi/"
+  else
+    rm -rf "$BR_OVERLAY_ROOT/opt/hmi"
+    mkdir -p "$BR_OVERLAY_ROOT/opt/hmi"
+    cp -a "$src/." "$BR_OVERLAY_ROOT/opt/hmi/"
+  fi
   echo "overlay: synced $BR_OVERLAY_ROOT/opt/hmi"
 }
 
@@ -504,6 +522,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       fi
       rm -f "$kernel_dts/lws-hmi-ynh960-display.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi"
+      rm -f "$kernel_dts/lws-hmi-ynh960-usb-gadget.dtsi"
     done
     echo "removed lws-hmi buildroot overlay + post-hooks + chip configs"
   fi
@@ -566,6 +585,7 @@ install_file "$OVERLAY/device/rockchip/common/post-hooks/08-lws-hmi-systemd-fina
 chmod +x "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
 
 sync_fs_overlay
+sync_post_build_script
 sync_post_fakeroot_script
 sync_flutter_engine_script
 sync_kernel_display_dts

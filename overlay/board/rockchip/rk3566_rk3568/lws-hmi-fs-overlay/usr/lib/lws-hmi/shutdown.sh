@@ -53,10 +53,19 @@ reboot)
 	sleep 0.5
 	log "sysrq reboot"
 	if sysrq b; then
-		sleep 5
+		# Board should reset immediately; do not fall through to systemctl stop.
+		sleep 15
+		log "sysrq reboot did not reset"
 	fi
 	;;
 esac
+
+if [ "$mode" = reboot ]; then
+	if [ -x /sbin/reboot ]; then
+		log "fallback: /sbin/reboot -f"
+		exec /sbin/reboot -f
+	fi
+fi
 
 if [ ! -x /usr/bin/systemctl.real ]; then
 	log "missing /usr/bin/systemctl.real"

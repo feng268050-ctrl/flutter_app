@@ -31,7 +31,7 @@ check_systemd_wants() {
 	fi
 	ls -la "$wants" 2>/dev/null || true
 
-	for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+	for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 		if unit_wants_link "$unit"; then
 			echo "FAIL: $unit still enabled in $label" >&2
 			missing=1
@@ -51,7 +51,7 @@ check_systemd_wants() {
 
 	local sysinit_wants="$root/etc/systemd/system/sysinit.target.wants"
 	if [[ -d "$sysinit_wants" ]]; then
-		for unit in lws-hmi-debug-boot.service wifibt-init.service log-guardian.service; do
+		for unit in lws-hmi-debug-boot.service wifibt-init.service log-guardian.service usbdevice.service; do
 			if [[ -L "$sysinit_wants/$unit" || -f "$sysinit_wants/$unit" ]]; then
 				echo "FAIL: $unit still enabled in $label sysinit.target.wants" >&2
 				missing=1
@@ -134,6 +134,12 @@ check_rootfs_image() {
 	check_systemd_wants "$mnt" "rootfs.ext2 (flash image)"
 	local rc=$?
 	check_poweroff_hook "$mnt" "rootfs.ext2 (flash image)" || rc=1
+	if ls "$mnt/etc/ssh"/ssh_host_*_key >/dev/null 2>&1; then
+		echo "OK:  ssh host keys present in rootfs.ext2"
+	else
+		echo "FAIL: missing /etc/ssh/ssh_host_*_key in rootfs.ext2" >&2
+		rc=1
+	fi
 	umount "$mnt"
 	rmdir "$mnt"
 	return "$rc"
@@ -168,7 +174,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-rockusb-loader; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-rockusb-loader read-device-serial.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh push-app-apply-and-reboot.sh; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else
@@ -185,6 +191,55 @@ run_check() {
 	fi
 
 	echo ""
+	echo "--- Rockchip usbdevice (must not conflict with plug-ssh ECM) ---"
+	if [[ -x "$target/usr/bin/usbdevice" ]]; then
+		echo "FAIL: usr/bin/usbdevice still present" >&2
+		missing=1
+	else
+		echo "OK:  usr/bin/usbdevice absent"
+	fi
+	if [[ -L "$target/etc/systemd/system/usbdevice.service" && \
+		"$(readlink "$target/etc/systemd/system/usbdevice.service" 2>/dev/null)" == "/dev/null" ]]; then
+		echo "OK:  usbdevice.service masked"
+	elif [[ ! -e "$target/etc/systemd/system/usbdevice.service" && \
+		! -e "$target/usr/lib/systemd/system/usbdevice.service" ]]; then
+		echo "OK:  usbdevice.service absent"
+	else
+		echo "FAIL: usbdevice.service not masked/absent" >&2
+		missing=1
+	fi
+
+	echo ""
+	echo "--- USB plug-ssh debug ---"
+	for f in \
+		"$target/etc/systemd/system/lws-hmi-usb-plug-ssh.service" \
+		"$target/etc/systemd/system/lws-hmi-serial-stty.service" \
+		"$target/etc/udev/rules.d/99-lws-hmi-usb-plug-ssh.rules" \
+		"$target/etc/ssh/sshd_config.d/50-lws-hmi-usb-plug-ssh.conf" \
+		"$target/etc/profile.d/lws-hmi-serial-stty.sh" \
+		"$target/etc/issue.d/00-lws-hmi-terminal-resize.issue"; do
+		if [[ -e "$f" ]]; then
+			echo "OK:  ${f#$target/}"
+		else
+			echo "FAIL: missing ${f#$target/}" >&2
+			missing=1
+		fi
+	done
+	if grep -q 'ListenAddress 192.168.55.1' \
+		"$target/etc/ssh/sshd_config.d/50-lws-hmi-usb-plug-ssh.conf" 2>/dev/null; then
+		echo "OK:  sshd drop-in ListenAddress 192.168.55.1"
+	else
+		echo "FAIL: sshd drop-in missing ListenAddress 192.168.55.1" >&2
+		missing=1
+	fi
+	if ls "$target/etc/ssh"/ssh_host_*_key >/dev/null 2>&1; then
+		echo "OK:  ssh host keys present in etc/ssh"
+	else
+		echo "FAIL: missing /etc/ssh/ssh_host_*_key (ensure-sshd-hostkeys / post-fakeroot)" >&2
+		missing=1
+	fi
+
+	echo ""
 	echo "--- /opt/hmi (Flutter app bundle — no engine) ---"
 	for f in \
 		"$target/opt/hmi/lib/libapp.so" \
@@ -192,7 +247,7 @@ run_check() {
 		if [[ -e "$f" ]]; then
 			echo "OK:  ${f#$target/}"
 		else
-			echo "FAIL: missing ${f#$target/} (run: make build-flutter-app && make apply-overlay && make build-rootfs)" >&2
+			echo "FAIL: missing ${f#$target/} (run: make build-app && make apply-overlay && make build-rootfs)" >&2
 			missing=1
 		fi
 	done

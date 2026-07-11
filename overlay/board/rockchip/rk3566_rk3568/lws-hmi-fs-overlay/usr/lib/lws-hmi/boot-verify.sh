@@ -20,7 +20,7 @@ else
 	fail "missing $WANTS"
 fi
 
-for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 	if [ -e "$WANTS/$unit" ]; then
 		fail "$unit still enabled in multi-user.target.wants"
 	else
@@ -28,13 +28,32 @@ for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket
 	fi
 done
 
-for unit in lws-hmi-debug-boot.service wifibt-init.service log-guardian.service; do
+for unit in lws-hmi-debug-boot.service wifibt-init.service log-guardian.service usbdevice.service; do
 	if [ -e /etc/systemd/system/sysinit.target.wants/$unit ]; then
 		fail "$unit still enabled in sysinit.target.wants"
 	else
 		pass "$unit not in sysinit.target.wants"
 	fi
 done
+
+echo ""
+echo "--- Rockchip usbdevice (conflicts with USB plug-ssh ECM) ---"
+if [ -x /usr/bin/usbdevice ]; then
+	fail "/usr/bin/usbdevice still present"
+else
+	pass "/usr/bin/usbdevice absent"
+fi
+if [ -e /etc/systemd/system/usbdevice.service ] && \
+	[ "$(readlink /etc/systemd/system/usbdevice.service 2>/dev/null)" != "/dev/null" ]; then
+	fail "usbdevice.service not masked"
+else
+	pass "usbdevice.service masked or absent"
+fi
+if [ -d /sys/kernel/config/usb_gadget/rockchip ]; then
+	warn "configfs gadget rockchip still present (UDC may be busy until replug)"
+else
+	pass "no rockchip configfs gadget"
+fi
 
 for unit in hmi.service mainserver.service lws-hmi-performance.service lws-hmi-pwrkey-poweroff.service; do
 	if [ -e "$WANTS/$unit" ]; then
@@ -46,7 +65,7 @@ done
 
 echo ""
 echo "--- other *.wants (sshd.socket etc.) ---"
-for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 	found=""
 	for wants_dir in /etc/systemd/system/*.wants; do
 		[ -d "$wants_dir" ] || continue

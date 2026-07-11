@@ -24,11 +24,26 @@ disable_boot_unit() {
 	done
 }
 
-for unit in lws-hmi-debug-boot.service mediamtx.service sshd.service sshd.socket \
+for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket \
 	bluetooth.service wifibt-init.service wpa_supplicant.service network.service \
-	log-guardian.service lws-hmi-boot-kpi.service; do
+	log-guardian.service lws-hmi-boot-kpi.service usbdevice.service; do
 	disable_boot_unit "$unit"
 done
+
+# Rockchip usbdevice (RK_USB_GADGET) binds the same UDC as lws-hmi USB plug-ssh ECM.
+strip_rockchip_usbdevice() {
+	if [ -d "$SYSTEMD_DIR" ]; then
+		ln -sf /dev/null "$SYSTEMD_DIR/usbdevice.service"
+		echo "lws-hmi-systemd-finalize: masked usbdevice.service"
+	fi
+	rm -f \
+		"$TARGET_DIR/usr/bin/usbdevice" \
+		"$TARGET_DIR/lib/udev/rules.d/61-usbdevice.rules" \
+		"$TARGET_DIR/etc/profile.d/usbdevice.sh" \
+		"$TARGET_DIR/usr/lib/systemd/system/usbdevice.service" \
+		"$TARGET_DIR/lib/systemd/system/usbdevice.service"
+}
+strip_rockchip_usbdevice
 
 rm -f \
 	"$TARGET_DIR/etc/systemd/system/lws-hmi-boot-kpi.service" \

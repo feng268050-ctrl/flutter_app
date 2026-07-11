@@ -1,0 +1,41 @@
+// lws-hmi ynh960: OTG port as USB gadget (ECM + configfs) for plug-ssh debug.
+// Innohi customer_board_ynh960.dtsi only enables usbhost_dwc3 (host) — no UDC.
+// Single OTG connector → usbdrd (fcc00000) + u2phy0_otg; disable usbhost on same PHY.
+
+&usb2phy0 {
+	status = "okay";
+};
+
+&u2phy0_host {
+	status = "disabled";
+};
+
+&u2phy0_otg {
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	status = "okay";
+	dr_mode = "peripheral";
+	phys = <&u2phy0_otg>;
+	phy-names = "usb2-phy";
+	extcon = <&usb2phy0>;
+	maximum-speed = "high-speed";
+	snps,dis_u2_susphy_quirk;
+};
+
+&usbdrd30 {
+	status = "okay";
+};
+
+&usbhost_dwc3 {
+	status = "disabled";
+};
+
+&usbhost30 {
+	status = "disabled";
+};
+
+&combphy1_usq {
+	status = "disabled";
+};

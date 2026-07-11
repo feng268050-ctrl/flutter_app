@@ -1,0 +1,2 @@
+# VBUS attach/detach → USB ECM plug-ssh (Rockchip extcon state file, not ENV{USB}).
+ACTION=="add|change", SUBSYSTEM=="extcon", RUN+="/usr/lib/lws-hmi/usb-plug-ssh-vbus-check.sh"

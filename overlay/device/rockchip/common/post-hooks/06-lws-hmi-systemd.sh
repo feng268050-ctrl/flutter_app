@@ -65,6 +65,11 @@ if [ -f "$TARGET_DIR/etc/systemd/system/lws-hmi-performance.service" ]; then
 	echo "lws-hmi-systemd: enabled lws-hmi-performance.service"
 fi
 
+if [ -f "$TARGET_DIR/etc/systemd/system/lws-hmi-serial-stty.service" ]; then
+	link_unit lws-hmi-serial-stty.service
+	echo "lws-hmi-systemd: enabled lws-hmi-serial-stty.service"
+fi
+
 if [ -f "$TARGET_DIR/etc/systemd/system/lws-hmi-pwrkey-poweroff.service" ]; then
 	link_unit lws-hmi-pwrkey-poweroff.service
 	echo "lws-hmi-systemd: enabled lws-hmi-pwrkey-poweroff.service"

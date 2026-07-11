@@ -29,16 +29,25 @@ link_unit() {
 	ln -sf "/etc/systemd/system/$unit" "$WANTS/$unit"
 }
 
-for unit in lws-hmi-debug-boot.service lws-hmi-pre-poweroff.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+for unit in lws-hmi-debug-boot.service lws-hmi-pre-poweroff.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service usbdevice.service; do
 	disable_unit "$unit"
 done
 
 # preset-all may re-link units with [Install]; explicit disable clears all wants.
 if command -v systemctl >/dev/null 2>&1; then
-	for unit in mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+	for unit in mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service usbdevice.service; do
 		systemctl --root="$TARGET_DIR" disable "$unit" >/dev/null 2>&1 || true
 	done
+	systemctl --root="$TARGET_DIR" mask usbdevice.service >/dev/null 2>&1 || true
 fi
+
+ln -sf /dev/null "$SYSTEMD_DIR/usbdevice.service"
+rm -f \
+	"$TARGET_DIR/usr/bin/usbdevice" \
+	"$TARGET_DIR/lib/udev/rules.d/61-usbdevice.rules" \
+	"$TARGET_DIR/etc/profile.d/usbdevice.sh" \
+	"$TARGET_DIR/usr/lib/systemd/system/usbdevice.service" \
+	"$TARGET_DIR/lib/systemd/system/usbdevice.service"
 
 rm -f \
 	"$TARGET_DIR/etc/systemd/system/lws-hmi-debug-boot.service" \
@@ -56,6 +65,7 @@ rmdir \
 
 link_unit mainserver.service
 link_unit lws-hmi-performance.service
+link_unit lws-hmi-serial-stty.service
 link_unit lws-hmi-pwrkey-poweroff.service
 link_unit hmi.service
 
@@ -71,4 +81,12 @@ LWS_HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
 BUILD_LOADER="$LWS_HMI_ROOT/scripts/build-reboot-rockusb-loader.sh"
 if [ -f "$BUILD_LOADER" ]; then
 	bash "$BUILD_LOADER" "$TARGET_DIR"
+fi
+
+ENSURE_KEYS="$TARGET_DIR/usr/lib/lws-hmi/ensure-sshd-hostkeys.sh"
+if [ ! -f "$ENSURE_KEYS" ]; then
+	ENSURE_KEYS="$LWS_HMI_ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/ensure-sshd-hostkeys.sh"
+fi
+if [ -f "$ENSURE_KEYS" ]; then
+	sh "$ENSURE_KEYS" "$TARGET_DIR"
 fi

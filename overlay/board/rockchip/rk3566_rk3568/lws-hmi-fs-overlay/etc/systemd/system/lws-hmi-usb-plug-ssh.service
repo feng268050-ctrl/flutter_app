@@ -1,0 +1,12 @@
+[Unit]
+Description=LWS HMI USB plug SSH debug (ECM + sshd on usb0)
+DefaultDependencies=no
+After=hmi.service
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/lws-hmi/usb-plug-ssh-start.sh
+ExecStop=/usr/lib/lws-hmi/usb-plug-ssh-stop.sh
+TimeoutStartSec=60

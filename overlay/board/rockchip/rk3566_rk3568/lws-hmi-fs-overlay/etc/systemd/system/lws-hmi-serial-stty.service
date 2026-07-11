@@ -1,0 +1,13 @@
+[Unit]
+Description=lws-hmi serial console geometry (ttyFIQ0)
+DefaultDependencies=yes
+After=dev-ttyFIQ0.device serial-getty@ttyFIQ0.service
+Before=mainserver.service hmi.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/lws-hmi/serial-console-stty.sh
+
+[Install]
+WantedBy=multi-user.target

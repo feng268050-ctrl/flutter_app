@@ -94,7 +94,7 @@ setup_system_bin
 mount_named_part private1 /mnt/private1
 mount_named_part private /mnt/private
 mount_named_part oem /oem
-mount_named_part userdata1 /userdata
+mount_named_part userdata /userdata
 seed_private1_params
 run_mountall
 run_paramupdate

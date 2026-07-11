@@ -109,7 +109,7 @@ Multi-device selection SHALL use `SERIAL=` (table SERIAL column; adb serial or R
 
 #### Scenario: bootloader enters RockUSB from Android
 
-- **WHEN** device runs Android with adb connected and developer runs `SERIAL=… make bootloader`
+- **WHEN** device runs Android with adb connected and developer runs `SERIAL=… make reboot-loader`
 - **THEN** subsequent `make devices` shows a RockUSB Loader row visible to `upgrade_tool ld`
 
 #### Scenario: flash writes update.img

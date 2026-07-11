@@ -1,0 +1,31 @@
+// lws-hmi ynh960: disable EVB2 reference nodes not present on product hardware.
+// ynh960 uses RK817 (rk809@0x20 on i2c0) + eMMC rootfs; no FAN53555 bucks, no SFC SPI-NAND.
+// Do NOT disable fiq-debugger: bootargs use console=ttyFIQ0; disabling it stops serial
+// output after earlycon (~2 s) even though the system keeps booting. Probe errors are harmless.
+// Other EVB→product DT gaps: docs/kernel-evb-dts-deferred.md
+
+/* EVB lists alternate CPU bucks (fan53555-reg compat); none populated on ynh960. */
+&tcs4525 {
+	status = "disabled";
+};
+
+&tcs4526 {
+	status = "disabled";
+};
+
+&xz3215 {
+	status = "disabled";
+};
+
+&syr837 {
+	status = "disabled";
+};
+
+&syr838 {
+	status = "disabled";
+};
+
+/* No SPI-NAND on SFC; rootfs is eMMC (GPT rootfs partition). */
+&sfc {
+	status = "disabled";
+};

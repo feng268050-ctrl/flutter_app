@@ -18,6 +18,11 @@ fi
 
 sh "$ensure_script" "$TARGET_DIR"
 
+STRIP_FSTAB="$(dirname "$0")/lws-hmi-strip-fstab.sh"
+if [ -f "$STRIP_FSTAB" ]; then
+	bash "$STRIP_FSTAB" "$TARGET_DIR"
+fi
+
 SYNC_ENGINE="$(dirname "$0")/lws-hmi-sync-flutter-engine.sh"
 if [ -f "$SYNC_ENGINE" ]; then
 	sh "$SYNC_ENGINE" "$TARGET_DIR"

@@ -57,7 +57,7 @@ USB ECM debug and ssh on `usb0` MUST NOT be enabled solely by reaching multi-use
 
 ### Requirement: HMI remains running during ECM
 
-Starting USB ECM debug SHALL NOT stop `hmi.service` automatically. App file updates MAY require an explicit `systemctl restart hmi.service` after files are copied.
+Starting USB ECM debug SHALL NOT stop `hmi.service` automatically. **`make push-app`** SHALL install updated artifacts and trigger **sysrq reboot** to load them — not `systemctl restart hmi.service` (avoids Mali/DRM teardown hang).
 
 #### Scenario: Plug cable during normal operation
 

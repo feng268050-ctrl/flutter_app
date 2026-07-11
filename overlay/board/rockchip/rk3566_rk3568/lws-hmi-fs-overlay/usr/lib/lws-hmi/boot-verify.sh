@@ -95,24 +95,36 @@ fi
 
 echo ""
 echo "--- port 22 ---"
+USB_SSH_ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
 if [ -n "${SSH_CONNECTION:-}" ]; then
 	warn "SSH session active — skip port 22 check (use serial ttyFIQ0 for accurate boot KPI)"
 elif command -v ss >/dev/null 2>&1; then
-	if ss -lntp 2>/dev/null | grep -E '(:|\])22\s' | grep -q .; then
-		ss -lntp 2>/dev/null | grep -E '(:|\])22\s' || true
-		if pidof sshd >/dev/null 2>&1; then
-			fail "sshd listening on port 22"
-		else
-			fail "port 22 in use (see ss output above)"
-		fi
-	else
+	listeners="$(ss -lntp 2>/dev/null | grep -E '(:|\])22\s' || true)"
+	if [ -z "$listeners" ]; then
 		pass "port 22 not listening"
+	else
+		echo "$listeners"
+		if echo "$listeners" | grep -qE '0\.0\.0\.0:22|\*:22|\[::\]:22|127\.0\.0\.1:22'; then
+			fail "sshd listening on LAN/all interfaces (expected usb0-only or closed)"
+		elif echo "$listeners" | grep -qvE "${USB_SSH_ADDR}:22|${USB_SSH_ADDR}\]:22"; then
+			fail "sshd listening on port 22 outside USB plug-ssh (${USB_SSH_ADDR})"
+		else
+			pass "port 22 listening on USB plug-ssh only (${USB_SSH_ADDR})"
+		fi
 	fi
 elif command -v netstat >/dev/null 2>&1; then
-	if netstat -lntp 2>/dev/null | grep -E '(:|\])22\s' | grep -q .; then
-		fail "sshd listening on port 22"
-	else
+	listeners="$(netstat -lntp 2>/dev/null | grep -E '(:|\])22\s' || true)"
+	if [ -z "$listeners" ]; then
 		pass "port 22 not listening"
+	elif echo "$listeners" | grep -qE '0\.0\.0\.0:22|127\.0\.0\.1:22|\*:22'; then
+		echo "$listeners"
+		fail "sshd listening on LAN/all interfaces (expected usb0-only or closed)"
+	elif echo "$listeners" | grep -q "${USB_SSH_ADDR}:22"; then
+		echo "$listeners"
+		pass "port 22 listening on USB plug-ssh only (${USB_SSH_ADDR})"
+	else
+		echo "$listeners"
+		fail "port 22 in use (see netstat output above)"
 	fi
 else
 	warn "ss/netstat not available — skip port 22 check"

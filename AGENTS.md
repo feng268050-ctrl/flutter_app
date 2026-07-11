@@ -80,6 +80,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `overlay/buildroot/**` | `make apply-overlay`, `make check-prebuilt`, `make build-rootfs`, `make build-img`, `make flash` |
 | `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
 | `board/*.txt` LCD/MIPI params | `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
+| `board/parameter-buildroot-fit.txt` (GPT) | `make apply-overlay`, `make build-img`, `make flash` |
 | `fetch-*`, `build-dev-deps` only | no firmware rebuild; name the fetch/build-deps target |
 | Docs only | none |
 

@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# After build.sh rootfs: strip ynh960 fstab entries Buildroot may skip on incremental builds,
+# then refresh rootfs.ext2 so the flash image matches staging target/.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT/scripts/prebuilt-common.sh"
+
+if [[ "$(uname -s)" == Darwin && "${1:-}" != "--inside-docker" ]]; then
+	exec bash "$ROOT/scripts/docker-run.sh" bash -lc \
+		'bash /work/lws-hmi/scripts/lws-hmi-rootfs-postprocess.sh --inside-docker'
+fi
+
+SDK="${LWS_HMI_SDK_DIR:-${LINUX_SDK:-$ROOT/sdk}}"
+TARGET="$(resolve_br_target "$SDK")"
+OUT_DIR="$(dirname "$TARGET")"
+PROFILE="$(basename "$OUT_DIR")"
+STRIP="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-strip-fstab.sh"
+
+if [[ ! -d "$TARGET" ]]; then
+	echo "lws-hmi-rootfs-postprocess: skip (missing $TARGET)" >&2
+	exit 0
+fi
+
+if [[ ! -x "$STRIP" ]]; then
+	STRIP="$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-strip-fstab.sh"
+fi
+[[ -x "$STRIP" ]] || {
+	echo "ERROR: lws-hmi-strip-fstab.sh missing — run: make apply-overlay" >&2
+	exit 1
+}
+
+before="$(md5sum "$TARGET/etc/fstab" 2>/dev/null | awk '{print $1}' || true)"
+bash "$STRIP" "$TARGET"
+after="$(md5sum "$TARGET/etc/fstab" 2>/dev/null | awk '{print $1}' || true)"
+
+if [[ "$before" != "$after" ]]; then
+	echo "lws-hmi-rootfs-postprocess: fstab changed — repacking rootfs.ext2"
+	make -C "$SDK/buildroot" "O=$OUT_DIR" rootfs-ext2
+fi

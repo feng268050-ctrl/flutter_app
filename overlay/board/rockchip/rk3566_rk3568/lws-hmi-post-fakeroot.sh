@@ -90,3 +90,8 @@ fi
 if [ -f "$ENSURE_KEYS" ]; then
 	sh "$ENSURE_KEYS" "$TARGET_DIR"
 fi
+
+STRIP_FSTAB="$(dirname "$0")/lws-hmi-strip-fstab.sh"
+if [ -f "$STRIP_FSTAB" ]; then
+	bash "$STRIP_FSTAB" "$TARGET_DIR"
+fi

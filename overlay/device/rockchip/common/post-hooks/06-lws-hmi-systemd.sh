@@ -187,3 +187,5 @@ if [ -f "$FSTAB" ] && ! grep -q 'noatime' "$FSTAB"; then
 		"$FSTAB"
 	echo "lws-hmi-systemd: patched $FSTAB (noatime)"
 fi
+
+# Extra eMMC parts: stripped after 30-fstab.sh by 31-lws-hmi-strip-fstab.sh (and post-build/fakeroot).

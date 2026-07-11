@@ -898,7 +898,7 @@ paths:
 
 lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `adbd`（`:5555`）。Buildroot HMI 用 **OpenSSH `sshd`** 作等价能力，**默认不运行、不监听**。
 
-**P1 工程迭代（首选）**：OTG USB 插入主机 → **VBUS 触发** ECM + `usb0`（`192.168.55.1/24`）+ **仅 `usb0` 监听**的 sshd → 主机 **`make push-app`**（`scp` + `systemctl restart hmi`）。拔线自动 teardown；**不进** `multi-user.target.wants`。多板用 **`SERIAL=`**（gadget `iSerial`），与 `make flash` 一致。进入 RockUSB Loader：**`make bootloader`**（Linux 走 USB-SSH + `/usr/lib/lws-hmi/reboot-rockusb-loader`；Android 仍可用 adb）。
+**P1 工程迭代（首选）**：OTG USB 插入主机 → **VBUS 触发** ECM + `usb0`（`192.168.55.1/24`）+ **仅 `usb0` 监听**的 sshd → 主机 **`make push-app`**（`scp` + `systemctl restart hmi`）。拔线自动 teardown；**不进** `multi-user.target.wants`。多板用 **`SERIAL=`**（gadget `iSerial`），与 `make flash` 一致。进入 RockUSB Loader：**`make reboot-loader`**（Linux 走 USB-SSH + `/usr/lib/lws-hmi/reboot-rockusb-loader`；Android 仍可用 adb）。
 
 | lws-ui（Android） | lws-hmi（Buildroot） |
 |-------------------|----------------------|
@@ -935,7 +935,7 @@ lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `
 |----|------|
 | 内核 | RKNPU2 驱动（**RK356x**：3566 / 3568 / 3568B2） |
 | 用户态 | `librknnrt.so`、`rknn_server`（`BR2_PACKAGE_RKNPU2`） |
-| 模型文件 | `/oem/models/*.rknn` 或随应用部署 |
+| 模型文件 | **`/userdata/models/`**（见 [`docs/storage-layout.md`](storage-layout.md)） |
 | 推理代码 | C/C++ **`libai.so`**（**P3** 交付） |
 | Flutter | **P5**：FFI / MethodChannel + `CustomPainter` 叠框 |
 
@@ -1114,7 +1114,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | ExoPlayer RTSP | flutter-pi `video_player` | **P5** | ✓ |
 | `NativeBridge` / `AiManager` | **`libai.so`（P3）** + FFI + Dart（**P5**） | P3 / **P5** | ✓ |
 | RKNN YOLO + **污点检测** | `lensinspector` 全量移植（非仅 demo YOLO） | **P3** | ✓ §8 |
-| `config.yaml` + `.rknn` | `/oem/models/` 同布局 | **P3** | ✓ |
+| `config.yaml` + `.rknn` | **`/userdata/models/`** | **P3** | ✓ |
 | RKNN 转换 Docker 流水线 | 开发机沿用 `convert-rknn.sh` | 开发机 | ✓ |
 | 云 WebSocket | Dart `web_socket_channel` 等 | **P5** | ✓ |
 | LAN HTTP **:5580** | Dart `shelf` / `HttpServer` | **P5** | ✓ |
@@ -1217,7 +1217,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 - [ ] 开发机 RKNN：`RKNN_PLATFORM=rk3566`（基准；3568/B2 模型可 OTA 另包）
 - [ ] 迁移 **`lensinspector` 全量** → Linux aarch64 **`libai.so`**
-- [ ] OpenCV / yaml-cpp 链入或 static；`config.yaml` + `.rknn` → `/oem/models/`
+- [ ] OpenCV / yaml-cpp 链入或 static；`config.yaml` + `.rknn` → **`/userdata/models/`**
 - [ ] 板端：`librknnrt.so` + `rknn_server` + **so 加载 smoke**（无需完整 Flutter 业务 UI）
 - [ ] 文档：FFI 接口约定（供 P5 接入）
 
@@ -1317,7 +1317,9 @@ make flash
 | P1 | **220–400 MB** | 方案 A；Mali、flutter-pi、RKNPU2、Wi‑Fi/BT |
 | P5 + 视频/业务栈 | **500–800 MB** | + GStreamer、mediamtx、Avahi、sqlite 等 |
 
-**Flutter 应用目录**（`/opt/hmi` 或 `/oem/hmi`，单独部署）：Hello World **5–15 MB**；P5 全业务 UI **约 30–70 MB**（插件原生依赖已算在 rootfs）。
+**Flutter 应用目录**（`/opt/hmi` on rootfs；P5 OTA 可选 `/oem/hmi`）：Hello World **5–15 MB**；P5 全业务 UI **约 30–70 MB**（插件原生依赖已算在 rootfs）。
+
+**eMMC 分区**：rootfs **1 GiB 固定**；**userdata grow**（~27 GiB @ 32G 盘）。RKNN 模型 → **`/userdata/models/`**。详见 [`docs/storage-layout.md`](storage-layout.md)。
 
 **`update.img`**（`RK_RECOVERY=n`）：约 **650 MB–1.0 GB**（`boot.img` ~40 MB + rootfs + 可选 oem）。
 

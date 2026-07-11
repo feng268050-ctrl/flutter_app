@@ -326,7 +326,7 @@ usb_ssh_device_count() {
 select_usb_ssh_device() {
 	local serial="${SERIAL:-${LWS_HMI_SERIAL:-}}"
 	local pick_iface="${IFACE:-${LWS_HMI_USB_IFACE:-}}"
-	local -a rows=() row mode s loc iface addr usb
+	local -a rows=() row mode s loc iface addr usb fetched
 	while IFS="$USB_SSH_FS" read -r mode s loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
 		rows+=("${mode}${USB_SSH_FS}${s}${USB_SSH_FS}${loc}${USB_SSH_FS}${iface}${USB_SSH_FS}${addr}${USB_SSH_FS}${usb}")
@@ -350,10 +350,20 @@ select_usb_ssh_device() {
 	if [[ -n "$serial" && "$serial" != "-" ]]; then
 		for row in "${rows[@]}"; do
 			IFS="$USB_SSH_FS" read -r mode s loc iface addr usb <<<"$row"
-			[[ "$s" == "$serial" || "$loc" == "$serial" ]] || continue
-			configure_usb_ssh_host_addr "$iface" 2>/dev/null || true
-			printf '%s\n' "$loc" "$iface" "$addr"
-			return 0
+			if [[ "$s" == "$serial" || "$loc" == "$serial" ]]; then
+				configure_usb_ssh_host_addr "$iface" 2>/dev/null || true
+				printf '%s\n' "$loc" "$iface" "$addr"
+				return 0
+			fi
+			# Host USB iSerial is often "-" on macOS; board serial matches make devices (SSH).
+			if [[ "$iface" != "-" && -n "$iface" ]]; then
+				fetched="$(fetch_board_serial_via_ssh "$iface" || true)"
+				if [[ "$fetched" == "$serial" ]]; then
+					configure_usb_ssh_host_addr "$iface" 2>/dev/null || true
+					printf '%s\n' "$loc" "$iface" "$addr"
+					return 0
+				fi
+			fi
 		done
 		die "SERIAL=$serial not found in USB-SSH devices (make devices)"
 	fi
@@ -373,7 +383,10 @@ case "${1:-}" in
 	list_usb_ssh_devices
 	;;
 --select)
-	USB_SSH_SKIP_ENRICH=1
+	# When SERIAL is set, host USB iSerial is often "-" (macOS RNDIS); enrich via SSH like make devices.
+	if [[ -z "${SERIAL:-${LWS_HMI_SERIAL:-}}" ]]; then
+		USB_SSH_SKIP_ENRICH=1
+	fi
 	select_usb_ssh_device
 	;;
 *)

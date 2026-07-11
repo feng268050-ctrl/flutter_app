@@ -127,6 +127,17 @@ sync_post_fakeroot_script() {
   echo "overlay: $dest"
 }
 
+sync_strip_fstab_script() {
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-strip-fstab.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-strip-fstab.sh"
+  if [[ ! -f "$src" ]]; then
+    echo "WARNING: $src missing; skip strip-fstab script" >&2
+    return 0
+  fi
+  install -m 0755 "$src" "$dest"
+  echo "overlay: $dest"
+}
+
 sync_flutter_engine_script() {
   local src="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-sync-flutter-engine.sh"
   local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-sync-flutter-engine.sh"
@@ -169,7 +180,8 @@ sync_kernel_display_dts() {
     "$lws_dtsi" "lws-hmi-ynh960-display.dtsi" \
     "$panel_init_dtsi" "lws-hmi-ynh960-panel-init.dtsi" \
     "$lws_root" "lws-hmi-ynh960-linux-root.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-usb-gadget.dtsi" "lws-hmi-ynh960-usb-gadget.dtsi"
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-usb-gadget.dtsi" "lws-hmi-ynh960-usb-gadget.dtsi" \
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi" "lws-hmi-ynh960-evb-trim.dtsi"
 }
 
 sync_kernel_config_fragments() {
@@ -523,6 +535,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       rm -f "$kernel_dts/lws-hmi-ynh960-display.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-usb-gadget.dtsi"
+      rm -f "$kernel_dts/lws-hmi-ynh960-evb-trim.dtsi"
     done
     echo "removed lws-hmi buildroot overlay + post-hooks + chip configs"
   fi
@@ -584,9 +597,14 @@ install_file "$OVERLAY/device/rockchip/common/post-hooks/08-lws-hmi-systemd-fina
   "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
 chmod +x "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
 
+install_file "$OVERLAY/device/rockchip/common/post-hooks/31-lws-hmi-strip-fstab.sh" \
+  "$POST_HOOKS_DIR/31-lws-hmi-strip-fstab.sh"
+chmod +x "$POST_HOOKS_DIR/31-lws-hmi-strip-fstab.sh"
+
 sync_fs_overlay
 sync_post_build_script
 sync_post_fakeroot_script
+sync_strip_fstab_script
 sync_flutter_engine_script
 sync_kernel_display_dts
 sync_kernel_config_fragments

@@ -583,7 +583,7 @@ case "$ACTION" in
   reboot)
     run_reboot
     ;;
-  reboot-loader|boot-loader|bootloader|boot)
+  reboot-loader)
     run_reboot_loader
     ;;
   loader|ul)

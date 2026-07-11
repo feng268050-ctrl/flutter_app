@@ -16,7 +16,8 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 **Goals:**
 
 - **Plug USB cable (VBUS)** → board brings up **ECM gadget + `usb0` + sshd on `usb0` only** within a few seconds; **unplug** → teardown gadget and stop ssh on `usb0`.
-- Host **`make push-app`** pushes Flutter release artifacts and restarts `hmi.service` without `build-rootfs` / `flash`.
+- Host **`make push-app`** pushes Flutter release artifacts and triggers **sysrq reboot** to load the new app without `build-rootfs` / `flash` (does not wait for boot to complete).
+- Host **`make reboot`** / **`make reboot-loader`** for normal reset vs RockUSB Loader (Linux USB-SSH or adb fallback).
 - **`make devices`** lists connected **USB-SSH** boards with **`SERIAL`**, **`LocationID`**, host **`IFACE`**, and **`ADDR`** (`192.168.55.1`); **`SERIAL=`** selects target when multiple connected (same ergonomics as `make flash`).
 - Per-device identity via USB **`iSerial`** (stable hardware serial).
 - Password login **`root` / `rockchip`** acceptable for this debug channel.
@@ -45,7 +46,7 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 
 ### 2. Lifecycle: VBUS-triggered start/stop (plug-to-debug)
 
-**Choice:** **udev** rule (or **systemd path** unit) on OTG **VBUS attach** starts `lws-hmi-usb-plug-ssh.service`; **detach** stops it and runs teardown.
+**Choice:** **udev** rule on OTG **VBUS attach** starts `lws-hmi-usb-plug-ssh.service`; **detach** stops it. Unit has **`After=hmi.service`** only (no **`Wants=hmi.service`**) to avoid systemd deadlock with performance/plug-ssh ordering.
 
 **Rationale:** Matches adb USB debugging UX; **unplug closes attack surface** automatically; no forgotten debug session after a §7.7-style toggle.
 
@@ -80,21 +81,21 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 
 - **Key-only** — stronger but higher friction for `make` scripts; deferred as optional hardening.
 
-### 6. HMI during push: keep `hmi.service` running; restart after copy
+### 6. HMI during push: keep running; reload via sysrq reboot after copy
 
-**Choice:** Do **not** stop HMI when ECM comes up; **`make push-app`** runs **`systemctl restart hmi.service`** after `scp`.
+**Choice:** Do **not** stop HMI when ECM comes up or during file copy. **`make push-app`** stages artifacts, installs to `/opt/hmi`, then schedules **sysrq reboot** (`shutdown.sh reboot` or direct `/proc/sysrq-trigger`) in a background shell — **never** synchronous `systemctl stop` / `systemctl restart hmi.service` (Mali/DRM teardown on flutter-pi exit hangs SSH and can oops the kernel). Host does **not** wait for reboot to finish.
 
-**Rationale:** Unlike MSC, no exclusive mount; shorter maintenance window.
+**Rationale:** Linux allows overwriting `libapp.so` while mmapped; reboot loads new binaries cleanly. Matches existing **`shutdown.sh`** poweroff strategy (avoid user-service teardown).
 
 ### 7. Host scripts: parallel to `flash-usb.sh`
 
-**Choice:** Add **`scripts/usb-ssh-devices.sh`** and **`scripts/push-app.sh`**; extend **`make devices`** to merge RockUSB (`upgrade_tool ld`) and USB-SSH rows in one table with a **`MODE`** column; add Makefile target **`push-app`**. Extend **`run_bootloader`** in **`scripts/flash-usb.sh`** to support Linux boards.
+**Choice:** Add **`scripts/usb-ssh-devices.sh`**, **`scripts/usb-ssh-common.sh`**, and **`scripts/push-app.sh`**; extend **`make devices`** to merge RockUSB, USB-SSH, and adb Android rows in one table with a **`MODE`** column; add Makefile targets **`push-app`**, **`reboot`**, **`reboot-loader`**. Extend **`run_reboot`** / **`run_reboot_loader`** in **`scripts/flash-usb.sh`** to support Linux boards.
 
-**Rationale:** One device list for flash, push-app, and bootloader — same **`SERIAL=`** mental model as today; no separate `devices-usb-ssh` target.
+**Rationale:** One device list for flash, push-app, and Loader entry — same **`SERIAL=`** mental model as today; no separate `devices-usb-ssh` target.
 
-### 8. Linux bootloader: USB-SSH + `reboot-rockusb-loader`
+### 8. Linux Loader entry: USB-SSH + `reboot-rockusb-loader`
 
-**Choice:** When **`make bootloader`** runs and no RockUSB device is already connected, prefer **Linux USB-SSH** if a USB-SSH row exists in **`make devices`**: `ssh` to **`root@192.168.55.1`** (with **`BindInterface`** when `SERIAL=` is set) and execute **`/usr/lib/lws-hmi/reboot-rockusb-loader`**, then **`wait_for_rockusb`** (existing). If **adb** is available and no USB-SSH target is selected, fall back to **`adb reboot loader`** (Android / legacy). Do **not** use `busybox reboot loader` or `systemctl reboot` on the board.
+**Choice:** When **`make reboot-loader`** runs and no RockUSB device is already connected, prefer **Linux USB-SSH** if a USB-SSH row exists in **`make devices`**: schedule **`/usr/lib/lws-hmi/reboot-rockusb-loader`** over SSH (with **`BindInterface`** when `SERIAL=` is set), then **`wait_for_rockusb`**. If **adb** is available and no USB-SSH target is selected, fall back to **`adb reboot loader`**. **`make reboot`** uses sysrq reboot (Linux) or **`adb reboot`** (Android) without entering Loader.
 
 **Rationale:** P1 Linux image has no adbd; **`reboot-rockusb-loader`** (committed separately) uses kernel **`RESTART2`** with mode **`loader`** to enter RockUSB Loader — the same end state as **`adb reboot loader`**, enabling **`make flash`** without UART. Reuses USB ECM link from plug-ssh so UI developers need not run serial commands.
 
@@ -120,7 +121,9 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 | **[Risk] Host IP not configured on plug** | `push-app.sh` runs `ifconfig`/`ip addr add` on detected iface before `scp`. |
 | **[Risk] Accidental USB plug in field exposes ssh** | **usb0-only** listen; unplug teardown; document physical access threat model; optional future key-only. |
 | **[Risk] Gadget compose delays or breaks if cable already connected at boot** | udev **add** events at boot; `push-app` retries ping (adb wait-for-device pattern). |
-| **[Risk] Confusion with RockUSB Loader mode** | Different USB PID / mode column in `make devices`; flash still uses MaskROM/Loader, not Linux ECM; **`make bootloader`** explicitly transitions Linux → Loader before **`make flash`**. |
+| **[Risk] Confusion with RockUSB Loader mode** | Different USB PID / mode column in `make devices`; flash still uses MaskROM/Loader, not Linux ECM; **`make reboot-loader`** explicitly transitions Linux → Loader before **`make flash`**. |
+| **[Risk] Mali oops on HMI stop during push** | Never `systemctl stop hmi` from host; use sysrq reboot after install. |
+| **[Risk] sshpass missing on dev machine** | `require_sshpass` / `warn_sshpass_if_usb_ssh` with platform install hints. |
 | **[Risk] `sshd` accidentally enabled on LAN** | `boot-verify.sh` + `ListenAddress` drop-in; preset keeps `sshd.service` disabled. |
 
 ## Migration Plan

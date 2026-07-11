@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Rebuild SDK-native ynh960 kernel with root=/dev/mmcblk0p11 (PARTUUID often missing after uf flash).
+# Rebuild SDK-native ynh960 kernel with root=/dev/mmcblk0p6 (PARTUUID often missing after uf flash).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 DTSI="$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip/customer_board_ynh960.dtsi"
-MARKER='lws-hmi: sdk-native root=mmcblk0p11'
+MARKER='lws-hmi: sdk-native root=mmcblk0p6'
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
@@ -24,9 +24,9 @@ cp -a "$DTSI.orig" "$DTSI"
 if ! grep -q "$MARKER" "$DTSI"; then
   cat >>"$DTSI" <<'EOF'
 
-/* lws-hmi: sdk-native root=mmcblk0p11 — upgrade_tool often skips GPT PARTUUID on rootfs */
+/* lws-hmi: sdk-native root=mmcblk0p6 — upgrade_tool often skips GPT PARTUUID on rootfs */
 &chosen {
-	bootargs = "earlycon=uart8250,mmio32,0xfe660000 console=ttyFIQ0 root=/dev/mmcblk0p11 rw rootfstype=ext4 rootwait loglevel=4";
+	bootargs = "earlycon=uart8250,mmio32,0xfe660000 console=ttyFIQ0 root=/dev/mmcblk0p6 rw rootfstype=ext4 rootwait loglevel=4";
 };
 EOF
 fi

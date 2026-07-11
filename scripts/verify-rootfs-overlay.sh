@@ -240,6 +240,20 @@ run_check() {
 	fi
 
 	echo ""
+	echo "--- /etc/fstab (extra parts via ynh960-display-init, not local-fs) ---"
+	if [[ -f "$target/etc/fstab" ]]; then
+		if grep -qE '[[:space:]]/userdata[[:space:]]' "$target/etc/fstab" || \
+			grep -qE '^PARTLABEL=userdata[[:space:]]' "$target/etc/fstab"; then
+			echo "FAIL: /etc/fstab must not mount /userdata (ynh960-display-init mounts PARTLABEL=userdata with auto-mkfs)" >&2
+			missing=1
+		else
+			echo "OK:  /userdata not in fstab"
+		fi
+	else
+		echo "WARN: /etc/fstab missing"
+	fi
+
+	echo ""
 	echo "--- /opt/hmi (Flutter app bundle — no engine) ---"
 	for f in \
 		"$target/opt/hmi/lib/libapp.so" \

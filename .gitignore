@@ -15,7 +15,7 @@ board/from-device/
 board/logo/logo.bmp
 board/logo/logo_kernel.bmp
 
-# Flutter release bundle (run make build-flutter-app)
+# Flutter release bundle (run make build-app)
 overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/opt/hmi/
 
 # Local env (see .env.example)

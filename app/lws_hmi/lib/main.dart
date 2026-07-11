@@ -29,7 +29,7 @@ class HelloHomePage extends StatelessWidget {
       backgroundColor: Colors.black,
       body: Center(
         child: Text(
-          'Hello, lws-hmi',
+          'Hello, World!',
           style: TextStyle(
             color: Colors.white,
             fontSize: 36,

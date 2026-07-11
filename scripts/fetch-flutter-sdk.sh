@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Prefetch host Flutter SDK into FLUTTER_SDK (outside git) with .cache/ staging.
-# macOS: darwin SDK for make build-flutter-app; Linux: linux SDK for Docker engine compile.
+# macOS: darwin SDK for make build-app; Linux: linux SDK for Docker engine compile.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

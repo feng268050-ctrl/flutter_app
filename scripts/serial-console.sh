@@ -100,6 +100,7 @@ if lsof "$PORT" >/dev/null 2>&1; then
 fi
 
 echo "serial-console $PORT @ $BAUD  (quit: Ctrl+])"
+echo "  terminal: 206x50 (board sends xterm resize on login; widen host window if lines still wrap)"
 # miniterm's default filter strips ESC/CSI (breaks ANSI colors from kernel/systemd).
 if [[ -z "${TERM:-}" || "${TERM}" == dumb ]]; then
   export TERM=xterm-256color

@@ -36,7 +36,7 @@ _(none — no existing openspec specs in this repo)_
 
 - **Buildroot / SDK**: defconfig, prebuilt flutter-pi/engine overlay packages, `lws_hmi_flutter.config`, board logo assets, ynh960 `RK_BUILDROOT_BASE_CFG` update, kernel trim fragment.
 - **Overlay**: Rootfs overlay for `/opt/hmi` Hello World artifacts; U-Boot logo under `board/logo/`; systemd units and helper scripts under `usr/lib/lws-hmi/`.
-- **App**: `app/lws_hmi/` Flutter project and `scripts/build-flutter-app.sh` (host-side, not Buildroot-compiled).
+- **App**: `app/lws_hmi/` Flutter project and `scripts/build-app.sh` (host-side, not Buildroot-compiled).
 - **Host flash**: `scripts/flash-usb.sh`, Makefile `devices` / `bootloader` / `loader` / `upgrade` / `flash`; `tools/upgrade_tool/` (Rockchip upgrade_tool v2.44).
 - **Existing overlays reused**: `lws_hmi_{base,systemd,network}.config`, `hmi.service`, `06-lws-hmi-systemd.sh`, `08-lws-hmi-systemd-finalize.sh`, LCD/MIPI display overlay.
 - **Downstream phases**: P2–P5 depend on P1 display stack, systemd boot chain, and `/opt/hmi` deployment pattern. Uncomment defconfig `#include` lines as each phase lands.

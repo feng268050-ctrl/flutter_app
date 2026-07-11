@@ -295,7 +295,7 @@ Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不
 | **远程 SSH** | 包在 rootfs，**默认不监听**；§7.7 隐藏入口 / `enable-ssh-debug.sh` **按需** `start`（重启后仍默认关） |
 | **eth0** | **首屏后** `configure-camera-eth0.sh`（§7.1）；**禁止** sysinit 静态 IP、内核 `ip=` bootargs |
 | **mediamtx / bluetoothd** | 默认 **不进 multi-user wants**；**mediamtx** P5 由 App 在 **IPC 相机 ping 通后** `systemctl start`（§7.5）；蓝牙按需 |
-| **可选 USB ECM** | `lws-hmi-debug-usb.config` **不在**默认 `ynh960_defconfig`；需要时手动加 fragment |
+| **可选 USB ECM** | 默认 **`lws-hmi-usb-gadget.config`**（plug-to-ssh）；`make push-app` 迭代应用，无需 rootfs reflash |
 
 **禁止**：`lws-hmi-debug-boot` 类早期配网 unit、`LWS_HMI_DEV` 换 overlay、内核 cmdline 写死 `10.0.0.240` 等仅开发镜像行为。
 
@@ -492,7 +492,8 @@ flutter-pi --release /opt/hmi
 |------|------|
 | Buildroot **rootfs overlay** `board/.../lws-hmi-app/` | P1 固定 Hello World |
 | **oem** 分区挂载 `/oem/hmi` | 便于 OTA 只更新应用 |
-| 开发阶段 **adb push** / scp | 迭代最快 |
+| **`make push-app`**（USB ECM + ssh/scp） | **P1 首选**：插 USB → 推 `libapp.so` + assets → `systemctl restart hmi`，无需 reflash |
+| 开发阶段 adb push / scp | Android 或 LAN（§7.7） |
 
 ### 6.3 Frost 渲染分场景策略（backdrop blur）
 
@@ -662,7 +663,7 @@ Flutter 侧重试：`127.0.0.1:8554` 未就绪时首页仍显示；预览区与�
 1. **选型**：查 flutter-pi release / flutter-ci engine 标签，确定目标 Flutter **x.y.z** 与 flutter-pi **commit**。
 2. **版本文件**：`flutter-sdk.version`、`flutter-engine.version`、`flutter-pi.version` 同步 bump。
 3. **Prebuilt**：`make build-flutter-engine`、`make build-flutter-pi`（或拉 NAS）；`make check-prebuilt`。
-4. **宿主 SDK**：`make fetch-flutter-sdk`（各 OS 正确包）→ `make build-flutter-app`（`build-flutter-app.sh` 版本 gate + `flutterpi_tool` 重装）。
+4. **宿主 SDK**：`make fetch-flutter-sdk`（各 OS 正确包）→ `make build-app`（`build-app.sh` 版本 gate + `flutterpi_tool` 重装）。
 5. **Rootfs**：`make apply-overlay` → `make build-rootfs` → `make build-img`；`verify-rootfs-overlay.sh` 通过。
 6. **板端回归**：`/usr/lib/lws-hmi/diagnose-hmi.sh`、`env-verify.sh`；Hello World → P2 demo → P3 `libai` smoke；**§14.2** 启动 KPI；Mali 首帧 / splash handoff。
 7. **文档**：更新 `app/README.md`、`prebuilt/manifest.json`；CI 拒绝错误 Flutter 版本。
@@ -893,30 +894,32 @@ paths:
 - `gst1-plugins-bad`（部分 codec，按 IPC 编码选）
 - Rockchip `gstreamer1-rockchip` / MPP 相关插件
 
-### 7.7 远程 SSH 调试（生产默认关闭，对齐 lws-ui ADB）
+### 7.7 远程 SSH 调试（生产默认关闭；工程首选 USB plug-ssh）
 
 lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `adbd`（`:5555`）。Buildroot HMI 用 **OpenSSH `sshd`** 作等价能力，**默认不运行、不监听**。
+
+**P1 工程迭代（首选）**：OTG USB 插入主机 → **VBUS 触发** ECM + `usb0`（`192.168.55.1/24`）+ **仅 `usb0` 监听**的 sshd → 主机 **`make push-app`**（`scp` + `systemctl restart hmi`）。拔线自动 teardown；**不进** `multi-user.target.wants`。多板用 **`SERIAL=`**（gadget `iSerial`），与 `make flash` 一致。进入 RockUSB Loader：**`make bootloader`**（Linux 走 USB-SSH + `/usr/lib/lws-hmi/reboot-rockusb-loader`；Android 仍可用 adb）。
 
 | lws-ui（Android） | lws-hmi（Buildroot） |
 |-------------------|----------------------|
 | `adbd` 默认不监听 LAN | **`sshd` 默认 `disable --now`** |
-| **设置 → 设备信息 → 连续 5 次点击 System Version**（5 s 内，`SecretTapTracker`） | **同交互**：Flutter 设备信息页 → 系统版本 **5 连击** |
-| `AdbRemoteDebugHelper.enableRemoteDebugging()` | **`/usr/lib/lws-hmi/enable-ssh-debug.sh`** → `systemctl start sshd` |
+| USB 插线即 adb（开发） | **USB 插线即 ECM+ssh**（`lws-hmi-usb-plug-ssh`）；仅 `usb0` |
+| **设置 → 设备信息 → 连续 5 次点击 System Version**（5 s 内，`SecretTapTracker`） | **同交互**（P5）：Flutter 设备信息页 → 系统版本 **5 连击** → LAN ssh |
+| `AdbRemoteDebugHelper.enableRemoteDebugging()` | P5：`/usr/lib/lws-hmi/enable-ssh-debug.sh` → `systemctl start sshd`（LAN，非 P1 主路径） |
 | **`POST /v1/adb`**（`:5580`，与 UI 同一路径） | **`POST /v1/ssh`**（P5 `:5580`，同一 helper） |
 
 **Buildroot**：
 
 - 可装 **`openssh`**（便于现场 `ssh`），overlay 默认 **`systemctl disable --now sshd`**
-- **不**装 `adbd`；工程阶段用 **串口**（`ttyFIQ0`）；远程用 §7.7 隐藏入口后再 `ssh`
+- **不**装 `adbd`；工程阶段默认 **USB `make push-app`**；串口 `ttyFIQ0` 仍可用于 bring-up
 - 可选：仅监听 **wlan0**、禁用 root 密码登录、只允许公钥（P5 hardening）
 
-**开启后行为**（建议，可再定是否跨重启保持）：
+**开启后行为**（§7.7 LAN 隐藏入口，P5）：
 
-- 与 adb 类似：**按需 `start`**；**不**默认 `enable`（**重启后自动关闭**，比 `persist.adb.tcp.port` 更严）
-- UI Toast：「已开启 SSH 远程调试（端口 22），可使用 ssh 连接」
-- 日志记录开启事件（审计）
+- 与 adb 类似：**按需 `start`**；**不**默认 `enable`（**重启后自动关闭**）
+- USB plug-ssh：**拔线即关**，不依赖 UI 操作
 
-**无单独开发镜像**：不维护 `LWS_HMI_DEV` overlay 或 sysinit 配网 unit；开发与量产共用 §3.6.0 单一镜像。
+**无单独开发镜像**：不维护 `LWS_HMI_DEV` overlay；开发与量产共用 §3.6.0 单一镜像。
 
 ---
 
@@ -1222,7 +1225,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 - [ ] 选定目标 Flutter stable + flutter-pi commit（flutter-ci engine 产物可用）
 - [ ] Bump `overlay/buildroot/flutter-{sdk,engine,pi}.version`；`make build-flutter-engine` / `build-flutter-pi`；`check-prebuilt`
-- [ ] 宿主：`make fetch-flutter-sdk` + `make build-flutter-app`（禁止 PATH 上非 pin 版本）
+- [ ] 宿主：`make fetch-flutter-sdk` + `make build-app`（禁止 PATH 上非 pin 版本）
 - [ ] Rootfs：`apply-overlay` → `build-rootfs` → `build-img`；`verify-rootfs-overlay.sh`
 - [ ] 板端：Hello World + P2 demo + P3 libai smoke；启动 KPI §14.2；`diagnose-hmi.sh` / `env-verify.sh`
 - [ ] `/opt/hmi` 无 bundle engine；`/usr/lib/libflutter_engine.so` 与 AOT 同版本

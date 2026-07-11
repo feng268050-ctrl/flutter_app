@@ -10,6 +10,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/usb-ssh-common.sh
+source "$ROOT/scripts/usb-ssh-common.sh"
 ACTION="${1:-}"
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 
@@ -35,19 +37,22 @@ ROCKUSB_LIST_OUTPUT=""
 
 usage() {
   cat <<EOF
-Usage: $0 {devices|bootloader|loader|upgrade}
+Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash}
 
-  devices      List connected devices (mode column)
-  bootloader   adb reboot loader
-  loader       upgrade_tool ul <MiniLoaderAll.bin>  [LOADER_NORESET=1]
-  upgrade      upgrade_tool uf <update.img>        [UPGRADE_NORESET=1] (low-level; prefer flash)
-  flash        uf update.img; ul first when RockUSB mode is Maskrom
+  devices        List connected devices (RockUSB + USB-SSH; MODE column)
+  reboot         Linux board (USB-SSH) → reboot; Android → adb reboot
+  reboot-loader  Linux board (USB-SSH) → reboot-rockusb-loader; Android → adb reboot loader
+  loader         upgrade_tool ul <MiniLoaderAll.bin>  [LOADER_NORESET=1]  (macOS)
+  upgrade        upgrade_tool uf <update.img>        [UPGRADE_NORESET=1] (macOS)
+  flash          uf update.img; ul first when RockUSB mode is Maskrom (macOS)
   flash-android  flash with MuJia Android image (optional; not required before Linux)
 
-Selection: SERIAL
-MaskROM Linux:  make flash
-RockUSB Loader: make flash (skips ul automatically)
-MaskROM Android: make flash-android
+Selection: SERIAL / IFACE
+App deploy (no reflash): make build-app && make push-app
+Linux HMI → Loader: make reboot-loader
+MaskROM Linux:  make flash (macOS)
+RockUSB Loader: make flash (macOS; skips ul automatically)
+MaskROM Android: make flash-android (macOS)
 Image override: make flash IMAGE=/path/to/update.img
 EOF
 }
@@ -96,12 +101,42 @@ die() {
 }
 
 require_macos() {
-  [[ "$(uname -s)" == Darwin ]] || die "USB flash is supported on macOS only"
+  [[ "$(uname -s)" == Darwin ]] || die "USB flash is supported on macOS only (use make reboot-loader on Linux to enter RockUSB Loader)"
+}
+
+upgrade_tool_available() {
+  [[ -f "$UPGRADE_TOOL" ]] || return 1
+  [[ -x "$UPGRADE_TOOL" ]] || chmod +x "$UPGRADE_TOOL" 2>/dev/null || true
+  [[ -x "$UPGRADE_TOOL" ]] || return 1
+  case "$(uname -s)" in
+  Darwin) file "$UPGRADE_TOOL" 2>/dev/null | grep -q "Mach-O" ;;
+  Linux) file "$UPGRADE_TOOL" 2>/dev/null | grep -qE "ELF|executable" ;;
+  *) return 1 ;;
+  esac
+}
+
+linux_rockusb_usb_count() {
+  command -v lsusb >/dev/null 2>&1 || { echo 0; return; }
+  lsusb 2>/dev/null | grep -cE '2207:' || echo 0
+}
+
+host_rockusb_count() {
+  local out count
+  if upgrade_tool_available; then
+    out="$(rockusb_list_output)"
+    count="$(rockusb_connected_count "$out")"
+    echo "$count"
+    return 0
+  fi
+  if [[ "$(uname -s)" == Linux ]]; then
+    linux_rockusb_usb_count
+    return 0
+  fi
+  echo 0
 }
 
 ensure_upgrade_tool() {
-  [[ -f "$UPGRADE_TOOL" ]] || die "upgrade_tool not found: $UPGRADE_TOOL"
-  [[ -x "$UPGRADE_TOOL" ]] || chmod +x "$UPGRADE_TOOL"
+  upgrade_tool_available || die "upgrade_tool not found or wrong host OS: $UPGRADE_TOOL"
 }
 
 ensure_readable() {
@@ -110,6 +145,7 @@ ensure_readable() {
 }
 
 rockusb_list_output() {
+  upgrade_tool_available || return 0
   ensure_upgrade_tool
   (cd "$UPGRADE_TOOL_DIR" && "$UPGRADE_TOOL" ld) 2>&1 \
     | grep -v '^Using ' || true
@@ -134,69 +170,67 @@ parse_rockusb_line() {
   _SERIAL="$(sed -n 's/.*SerialNo=\([^[:space:]]*\).*/\1/p' <<<"$line")"
 }
 
-# Rows: MODE, SERIAL, LocationID, USB (fields separated by FS)
+# Rows: MODE, SERIAL, LocationID, IFACE, ADDR, USB (fields separated by FS)
 DEVICE_TABLE_FS=$'\t'
 declare -a DEVICE_TABLE_ROWS=()
 
 device_table_add() {
-  DEVICE_TABLE_ROWS+=("${1}${DEVICE_TABLE_FS}${2}${DEVICE_TABLE_FS}${3}${DEVICE_TABLE_FS}${4}")
+  DEVICE_TABLE_ROWS+=("${1}${DEVICE_TABLE_FS}${2}${DEVICE_TABLE_FS}${3}${DEVICE_TABLE_FS}${4}${DEVICE_TABLE_FS}${5}${DEVICE_TABLE_FS}${6}")
 }
 
 device_table_print() {
-  local w_mode=4 w_serial=6 w_loc=10 w_usb=3
-  local row mode serial loc usb
-  local -a modes=() serials=() locs=() usbs=()
+  local w_mode=4 w_serial=6 w_loc=10 w_iface=5 w_addr=4 w_usb=3
+  local row mode serial loc iface addr usb
+  local -a modes=() serials=() locs=() ifaces=() addrs=() usbs=()
 
   if [[ ${#DEVICE_TABLE_ROWS[@]} -eq 0 ]]; then
-    printf '%s\n' "MODE  SERIAL  LocationID  USB"
+    printf '%s\n' "MODE  SERIAL  LocationID  IFACE  ADDR  USB"
     printf '%s\n' "(none)"
     return 0
   fi
 
-  local has_maskrom=0
   for row in "${DEVICE_TABLE_ROWS[@]}"; do
-    IFS="$DEVICE_TABLE_FS" read -r mode _ _ _ <<<"$row"
-    [[ "$mode" == Maskrom ]] && has_maskrom=1
-  done
-
-  for row in "${DEVICE_TABLE_ROWS[@]}"; do
-    IFS="$DEVICE_TABLE_FS" read -r mode serial loc usb <<<"$row"
+    IFS="$DEVICE_TABLE_FS" read -r mode serial loc iface addr usb <<<"$row"
     modes+=("$mode")
     serials+=("$serial")
     locs+=("$loc")
+    ifaces+=("$iface")
+    addrs+=("$addr")
     usbs+=("$usb")
     (( ${#mode} > w_mode )) && w_mode=${#mode}
     (( ${#serial} > w_serial )) && w_serial=${#serial}
     (( ${#loc} > w_loc )) && w_loc=${#loc}
+    (( ${#iface} > w_iface )) && w_iface=${#iface}
+    (( ${#addr} > w_addr )) && w_addr=${#addr}
     (( ${#usb} > w_usb )) && w_usb=${#usb}
   done
   (( w_mode < 4 )) && w_mode=4
   (( w_serial < 6 )) && w_serial=6
   (( w_loc < 10 )) && w_loc=10
+  (( w_iface < 5 )) && w_iface=5
+  (( w_addr < 4 )) && w_addr=4
   (( w_usb < 3 )) && w_usb=3
 
-  local sep_mode sep_serial sep_loc sep_usb i
+  local sep_mode sep_serial sep_loc sep_iface sep_addr sep_usb i
   sep_mode="$(printf '%*s' "$w_mode" '' | tr ' ' '-')"
   sep_serial="$(printf '%*s' "$w_serial" '' | tr ' ' '-')"
   sep_loc="$(printf '%*s' "$w_loc" '' | tr ' ' '-')"
+  sep_iface="$(printf '%*s' "$w_iface" '' | tr ' ' '-')"
+  sep_addr="$(printf '%*s' "$w_addr" '' | tr ' ' '-')"
   sep_usb="$(printf '%*s' "$w_usb" '' | tr ' ' '-')"
 
-  printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_usb}s\n" \
-    MODE SERIAL LocationID USB
-  printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_usb}s\n" \
-    "$sep_mode" "$sep_serial" "$sep_loc" "$sep_usb"
+  printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_addr}s  %-${w_usb}s\n" \
+    MODE SERIAL LocationID IFACE ADDR USB
+  printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_addr}s  %-${w_usb}s\n" \
+    "$sep_mode" "$sep_serial" "$sep_loc" "$sep_iface" "$sep_addr" "$sep_usb"
   for i in "${!modes[@]}"; do
-    printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_usb}s\n" \
-      "${modes[$i]}" "${serials[$i]}" "${locs[$i]}" "${usbs[$i]}"
+    printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_addr}s  %-${w_usb}s\n" \
+      "${modes[$i]}" "${serials[$i]}" "${locs[$i]}" "${ifaces[$i]}" "${addrs[$i]}" "${usbs[$i]}"
   done
-  if [[ "$has_maskrom" -eq 1 ]]; then
-    echo ""
-    echo "Maskrom: SERIAL is usually \"-\" (normal). Flash Linux: make flash"
-  fi
 }
 
 list_devices() {
-  local out line mode serial loc usb state
+  local out line mode serial loc iface addr usb state row
 
   DEVICE_TABLE_ROWS=()
 
@@ -208,26 +242,34 @@ list_devices() {
         device) mode=android ;;
         *) mode="$state" ;;
       esac
-      device_table_add "$mode" "$serial" "-" "-"
+      device_table_add "$mode" "$serial" "-" "-" "-" "-"
     done < <(adb devices 2>/dev/null | awk 'NR>1 && NF {print $1, $2}')
   fi
 
-  out="$(rockusb_list_output)"
-  while read -r line; do
-    parse_rockusb_line "$line"
-    [[ -n "$_DEVNO" ]] || continue
-    mode="${_MODE:-RockUSB}"
-    serial="${_SERIAL:--}"
-    loc="${_LOCATION:--}"
-    if [[ -n "$_VID" && -n "$_PID" ]]; then
-      usb="0x${_VID}:0x${_PID}"
-    else
-      usb="-"
-    fi
-    device_table_add "$mode" "$serial" "$loc" "$usb"
-  done < <(grep -E 'DevNo=[0-9]+' <<<"$out" || true)
+  if upgrade_tool_available; then
+    out="$(rockusb_list_output)"
+    while read -r line; do
+      parse_rockusb_line "$line"
+      [[ -n "$_DEVNO" ]] || continue
+      mode="${_MODE:-RockUSB}"
+      serial="${_SERIAL:--}"
+      loc="${_LOCATION:--}"
+      if [[ -n "$_VID" && -n "$_PID" ]]; then
+        usb="0x${_VID}:0x${_PID}"
+      else
+        usb="-"
+      fi
+      device_table_add "$mode" "$serial" "$loc" "-" "-" "$usb"
+    done < <(grep -E 'DevNo=[0-9]+' <<<"$out" || true)
+  fi
+
+  while IFS=$'\t' read -r mode serial loc iface addr usb; do
+    [[ -n "$mode" ]] || continue
+    device_table_add "$mode" "$serial" "$loc" "$iface" "$addr" "$usb"
+  done < <(bash "$ROOT/scripts/usb-ssh-devices.sh" --tsv 2>/dev/null || true)
 
   device_table_print
+  warn_sshpass_if_usb_ssh "$(usb_ssh_device_count)"
 }
 
 resolve_upgrade_tool_location() {
@@ -270,7 +312,7 @@ require_rockusb_device() {
   out="$(rockusb_list_output)"
   ROCKUSB_LIST_OUTPUT="$out"
   count="$(rockusb_connected_count "$out")"
-  [[ "$count" -gt 0 ]] || die "No RockUSB device (upgrade_tool ld). Use make bootloader or MaskROM."
+  [[ "$count" -gt 0 ]] || die "No RockUSB device (upgrade_tool ld). Use make reboot-loader or MaskROM."
   resolve_upgrade_tool_location "$out"
 }
 
@@ -330,10 +372,135 @@ reboot_to_rockusb_loader() {
     || die "adb reboot loader failed"
 }
 
+rockusb_already_ready() {
+  local count line out
+  count="$(host_rockusb_count)"
+  [[ "$count" -gt 0 ]] || return 1
+  if [[ -z "$SERIAL" ]]; then
+    return 0
+  fi
+  if ! upgrade_tool_available; then
+    return 0
+  fi
+  out="$(rockusb_list_output)"
+  while read -r line; do
+    parse_rockusb_line "$line"
+    [[ -n "$_DEVNO" ]] || continue
+    [[ "$_SERIAL" == "$SERIAL" ]] && return 0
+  done < <(grep -E 'DevNo=[0-9]+' <<<"$out" || true)
+  return 1
+}
+
+reboot_to_adb() {
+  local serial="$1"
+  echo "adb -s $serial reboot"
+  adb -s "$serial" reboot 2>/dev/null \
+    || die "adb reboot failed"
+}
+
+adb_android_device_count() {
+  command -v adb >/dev/null 2>&1 || { echo 0; return; }
+  adb devices 2>/dev/null | awk 'NR>1 && $2=="device"{n++} END{print n+0}'
+}
+
+usb_ssh_device_count() {
+  bash "$ROOT/scripts/usb-ssh-devices.sh" --tsv 2>/dev/null \
+    | awk -F'\t' '$1=="USB-SSH"{n++} END{print n+0}'
+}
+
+usb_ssh_select_iface() {
+  local -a sel=() sel_out="" err_file
+  err_file="$(mktemp)"
+  # shellcheck disable=SC2064
+  trap "rm -f '$err_file'" RETURN
+
+  if ! sel_out="$(
+    SERIAL="$SERIAL" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
+      bash "$ROOT/scripts/usb-ssh-devices.sh" --select 2>"$err_file"
+  )"; then
+    [[ -s "$err_file" ]] && cat "$err_file" >&2
+    die "USB-SSH: could not select Linux board (run make devices)"
+  fi
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && sel+=("$line")
+  done <<<"$sel_out"
+  [[ ${#sel[@]} -eq 3 ]] || die "USB-SSH: bad device selection (${#sel[@]} fields, expected 3)"
+  printf '%s\n' "${sel[1]}"
+}
+
+run_usb_ssh_reboot() {
+  local iface
+  iface="$(usb_ssh_select_iface)"
+  echo "Linux board via USB-SSH (iface=$iface) → reboot"
+  usb_ssh_schedule_sysrq_reboot "$iface"
+  echo "Reboot triggered."
+}
+
+run_usb_ssh_reboot_loader() {
+  local iface
+  iface="$(usb_ssh_select_iface)"
+  echo "Linux board via USB-SSH (iface=$iface) → RockUSB Loader"
+  usb_ssh_schedule_remote "$iface" "exec /usr/lib/lws-hmi/reboot-rockusb-loader"
+  wait_for_rockusb
+  echo "RockUSB ready (via USB-SSH reboot-rockusb-loader)."
+}
+
+run_reboot() {
+  local n_ssh n_adb
+
+  n_ssh="$(usb_ssh_device_count)"
+  if [[ "$n_ssh" -gt 0 ]]; then
+    run_usb_ssh_reboot
+    return 0
+  fi
+
+  n_adb="$(adb_android_device_count)"
+  if [[ "$n_adb" -gt 0 ]]; then
+    ensure_adb
+    reboot_to_adb "$(resolve_adb_serial)"
+    return 0
+  fi
+
+  die "No device for reboot. Linux board: plug USB OTG, then make devices. Android: connect adb."
+}
+
+run_reboot_loader() {
+  local n_ssh n_adb
+
+  if rockusb_already_ready; then
+    echo "RockUSB Loader already connected."
+    wait_for_rockusb
+    return 0
+  fi
+
+  n_ssh="$(usb_ssh_device_count)"
+  if [[ "$n_ssh" -gt 0 ]]; then
+    run_usb_ssh_reboot_loader
+    return 0
+  fi
+
+  # Android board only — Linux HMI has no adbd.
+  n_adb="$(adb_android_device_count)"
+  if [[ "$n_adb" -gt 0 ]]; then
+    ensure_adb
+    reboot_to_rockusb_loader "$(resolve_adb_serial)"
+    wait_for_rockusb
+    echo "RockUSB ready (via adb reboot loader)."
+    return 0
+  fi
+
+  die "No device for reboot-loader. Linux board: plug USB OTG, then make devices. Android: connect adb. Or enter MaskROM/Loader manually."
+}
+
 wait_for_rockusb() {
-  local i count max="${1:-$BOOTLOADER_WAIT_SEC}"
+  local i count max="${1:-$BOOTLOADER_WAIT_SEC}" hint="RockUSB"
+  if upgrade_tool_available; then
+    hint="upgrade_tool ld"
+  elif [[ "$(uname -s)" == Linux ]]; then
+    hint="lsusb (Rockchip 2207)"
+  fi
   for ((i = 1; i <= max; i++)); do
-    count="$(rockusb_connected_count "$(rockusb_list_output)")"
+    count="$(host_rockusb_count)"
     if [[ "$count" -gt 0 ]]; then
       echo "RockUSB ready (${count} device(s))."
       return 0
@@ -343,14 +510,7 @@ wait_for_rockusb() {
     fi
     sleep 1
   done
-  die "Timed out waiting for RockUSB (upgrade_tool ld). Re-enter MaskROM or Loader, then retry."
-}
-
-run_bootloader() {
-  ensure_adb
-  reboot_to_rockusb_loader "$(resolve_adb_serial)"
-  wait_for_rockusb
-  echo "RockUSB ready."
+  die "Timed out waiting for RockUSB ($hint). Re-enter MaskROM or Loader, then retry."
 }
 
 run_loader() {
@@ -418,13 +578,25 @@ case "$ACTION" in
   ""|-h|--help|help) usage; exit 0 ;;
 esac
 
-require_macos
-
 case "$ACTION" in
   devices|ld) list_devices ;;
-  bootloader|boot) run_bootloader ;;
-  loader|ul) run_loader ;;
-  upgrade|uf|update) run_upgrade ;;
-  flash) run_flash ;;
+  reboot)
+    run_reboot
+    ;;
+  reboot-loader|boot-loader|bootloader|boot)
+    run_reboot_loader
+    ;;
+  loader|ul)
+    require_macos
+    run_loader
+    ;;
+  upgrade|uf|update)
+    require_macos
+    run_upgrade
+    ;;
+  flash)
+    require_macos
+    run_flash
+    ;;
   *) die "Unknown action: $ACTION" ;;
 esac

@@ -20,7 +20,7 @@ SERIAL ?=
 IMAGE ?=
 FLASH_ENV = SERIAL='$(SERIAL)' UPDATE_IMG='$(IMAGE)'
 
-.PHONY: help setup link-sdk link-flutter-sdk apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status shell lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-flutter-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices bootloader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native
+.PHONY: help setup link-sdk link-flutter-sdk apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status shell lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices push-app reboot reboot-loader boot-loader bootloader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -62,7 +62,7 @@ help:
 	@echo "  make lunch                 # select ynh960 + lws_hmi Buildroot profile"
 	@echo "  make show-config           # show current SDK .config summary"
 	@echo "  make build-boot-logo       # splash_icon.png → logo.bmp (kernel FIT splash)"
-	@echo "  make build-flutter-app     # cross-build app → fs-overlay /opt/hmi"
+	@echo "  make build-app     # cross-build app → fs-overlay /opt/hmi"
 	@echo "  make build-kernel          # kernel + boot.img (DTS / logo changes)"
 	@echo "  make build-rootfs          # rootfs — builds only enabled defconfig fragments"
 	@echo "  make build-img             # pack update.img (vendor loader/uboot + FIT boot)"
@@ -104,7 +104,11 @@ help:
 	@echo ""
 	@echo "USB Flash (macOS only):"
 	@echo "  make audit                 # pre-flight before make flash"
-	@echo "  make flash                 # uf update.img; ul loader when RockUSB is Maskrom"
+	@echo "  make devices               # RockUSB + USB-SSH (auto host IP on gadget NIC)"
+	@echo "  make push-app              # scp app over USB ECM SSH (no rootfs reflash)"
+	@echo "  make reboot                # Linux board → reboot via USB-SSH; Android → adb"
+	@echo "  make reboot-loader         # Linux board → RockUSB via USB-SSH; Android → adb"
+	@echo "  make flash                 # uf update.img; ul loader when RockUSB is Maskrom (macOS)"
 	@echo "  make flash-android         # optional: flash Android instead"
 	@echo ""
 	@echo "Common Env Vars:"
@@ -174,7 +178,7 @@ lunch:
 show-config:
 	@bash scripts/docker-run.sh bash -lc 'test -r output/.config && grep -E "^RK_(CHIP|KERNEL_DTS|ROOTFS|DEFCONFIG|BUILDROOT)" output/.config || echo "No output/.config yet — run make lunch first"'
 
-build: check-prebuilt apply-overlay lunch build-boot-logo build-flutter-app build-kernel build-rootfs build-img
+build: check-prebuilt apply-overlay lunch build-boot-logo build-app build-kernel build-rootfs build-img
 	@echo ""
 	@if [[ -r output/firmware/update.img ]]; then \
 		echo "Build complete:"; bash scripts/artifact-size.sh output/firmware/update.img; \
@@ -196,8 +200,8 @@ build-img:
 build-boot-logo:
 	@bash scripts/build-boot-logo.sh
 
-build-flutter-app:
-	@bash scripts/build-flutter-app.sh
+build-app:
+	@bash scripts/build-app.sh
 	@bash scripts/apply-overlay.sh
 
 build-reboot-rockusb-loader:
@@ -367,8 +371,21 @@ audit:
 devices:
 	@$(call WITH_DOTENV,bash scripts/flash-usb.sh devices)
 
-bootloader:
-	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh bootloader)
+usb-ssh-setup:
+	@bash scripts/usb-ssh-host-setup.sh
+
+push-app:
+	@$(call WITH_DOTENV,bash scripts/push-app.sh)
+
+reboot:
+	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh reboot)
+
+reboot-loader:
+	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh reboot-loader)
+
+boot-loader: reboot-loader
+
+bootloader: reboot-loader
 
 loader:
 	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh loader)

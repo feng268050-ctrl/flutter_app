@@ -40,7 +40,7 @@ if [[ "$flutter_version_line" != *"$PINNED_VER"* ]]; then
 
 Do not use system/PATH flutter (e.g. 3.41.x). Run:
   make fetch-flutter-sdk
-  make build-flutter-app"
+  make build-app"
 fi
 
 ensure_flutterpi_tool() {

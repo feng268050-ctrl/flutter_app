@@ -1,6 +1,6 @@
 ## Context
 
-lws-hmi P1 delivers a **single OTG USB port** on ynh960 used for **RockUSB** flashing in bootloader (MaskROM/Loader) and **no USB enumeration** during normal Linux runtime — `adbd` is explicitly disabled (`lws_hmi_base.config`). App deployment today follows **rootfs overlay** (`make build-flutter-app` → `build-rootfs` → `flash`) or ad-hoc serial access. The product plan (`docs/flutter-pi-hmi-plan.md` §6.2, §7.7) maps Android **adb** to **on-demand sshd** over the network; engineering discussion concluded that for **make-driven iteration**, **USB ECM + ssh/scp** is preferable to MSC/MTP or serial scripts, with **plug-to-enable** behavior (like adb) rather than a hidden screen tap before each session.
+lws-hmi P1 delivers a **single OTG USB port** on ynh960 used for **RockUSB** flashing in bootloader (MaskROM/Loader) and **no USB enumeration** during normal Linux runtime — `adbd` is explicitly disabled (`lws_hmi_base.config`). App deployment today follows **rootfs overlay** (`make build-app` → `build-rootfs` → `flash`) or ad-hoc serial access. The product plan (`docs/flutter-pi-hmi-plan.md` §6.2, §7.7) maps Android **adb** to **on-demand sshd** over the network; engineering discussion concluded that for **make-driven iteration**, **USB ECM + ssh/scp** is preferable to MSC/MTP or serial scripts, with **plug-to-enable** behavior (like adb) rather than a hidden screen tap before each session.
 
 An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + FunctionFS** but is **not** in default `ynh960_defconfig` and has **no userspace wiring**. Host flash tooling (`scripts/flash-usb.sh`) already standardizes **`SERIAL=`** selection for multi-device RockUSB and adb.
 
@@ -16,7 +16,7 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 **Goals:**
 
 - **Plug USB cable (VBUS)** → board brings up **ECM gadget + `usb0` + sshd on `usb0` only** within a few seconds; **unplug** → teardown gadget and stop ssh on `usb0`.
-- Host **`make push-hmi`** pushes Flutter release artifacts and restarts `hmi.service` without `build-rootfs` / `flash`.
+- Host **`make push-app`** pushes Flutter release artifacts and restarts `hmi.service` without `build-rootfs` / `flash`.
 - **`make devices`** lists connected **USB-SSH** boards with **`SERIAL`**, **`LocationID`**, host **`IFACE`**, and **`ADDR`** (`192.168.55.1`); **`SERIAL=`** selects target when multiple connected (same ergonomics as `make flash`).
 - Per-device identity via USB **`iSerial`** (stable hardware serial).
 - Password login **`root` / `rockchip`** acceptable for this debug channel.
@@ -58,7 +58,7 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 
 **Choice:** Device always **`192.168.55.1/24`** on `usb0`; host script assigns **`192.168.55.2/24`** on the **per-cable** interface (`en*` / `usb*`).
 
-**Rationale:** `make push-hmi` uses a constant target IP; multi-device disambiguation via **`ssh -o BindInterface=$IFACE`** (or route scoped to interface), not per-board IP allocation.
+**Rationale:** `make push-app` uses a constant target IP; multi-device disambiguation via **`ssh -o BindInterface=$IFACE`** (or route scoped to interface), not per-board IP allocation.
 
 **Alternatives considered:**
 
@@ -82,15 +82,15 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 
 ### 6. HMI during push: keep `hmi.service` running; restart after copy
 
-**Choice:** Do **not** stop HMI when ECM comes up; **`make push-hmi`** runs **`systemctl restart hmi.service`** after `scp`.
+**Choice:** Do **not** stop HMI when ECM comes up; **`make push-app`** runs **`systemctl restart hmi.service`** after `scp`.
 
 **Rationale:** Unlike MSC, no exclusive mount; shorter maintenance window.
 
 ### 7. Host scripts: parallel to `flash-usb.sh`
 
-**Choice:** Add **`scripts/usb-ssh-devices.sh`** and **`scripts/push-hmi.sh`**; extend **`make devices`** to merge RockUSB (`upgrade_tool ld`) and USB-SSH rows in one table with a **`MODE`** column; add Makefile target **`push-hmi`**. Extend **`run_bootloader`** in **`scripts/flash-usb.sh`** to support Linux boards.
+**Choice:** Add **`scripts/usb-ssh-devices.sh`** and **`scripts/push-app.sh`**; extend **`make devices`** to merge RockUSB (`upgrade_tool ld`) and USB-SSH rows in one table with a **`MODE`** column; add Makefile target **`push-app`**. Extend **`run_bootloader`** in **`scripts/flash-usb.sh`** to support Linux boards.
 
-**Rationale:** One device list for flash, push-hmi, and bootloader — same **`SERIAL=`** mental model as today; no separate `devices-usb-ssh` target.
+**Rationale:** One device list for flash, push-app, and bootloader — same **`SERIAL=`** mental model as today; no separate `devices-usb-ssh` target.
 
 ### 8. Linux bootloader: USB-SSH + `reboot-rockusb-loader`
 
@@ -117,9 +117,9 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 |------|------------|
 | **[Risk] Two boards → same `192.168.55.1` routing ambiguity** | Host **`BindInterface`**; require **`SERIAL=`** when count > 1; document in `make devices`. |
 | **[Risk] macOS interface naming changes (`en7` → `en8`)** | Resolve by USB **LocationID / iSerial**, not cached iface names. |
-| **[Risk] Host IP not configured on plug** | `push-hmi.sh` runs `ifconfig`/`ip addr add` on detected iface before `scp`. |
+| **[Risk] Host IP not configured on plug** | `push-app.sh` runs `ifconfig`/`ip addr add` on detected iface before `scp`. |
 | **[Risk] Accidental USB plug in field exposes ssh** | **usb0-only** listen; unplug teardown; document physical access threat model; optional future key-only. |
-| **[Risk] Gadget compose delays or breaks if cable already connected at boot** | udev **add** events at boot; `push-hmi` retries ping (adb wait-for-device pattern). |
+| **[Risk] Gadget compose delays or breaks if cable already connected at boot** | udev **add** events at boot; `push-app` retries ping (adb wait-for-device pattern). |
 | **[Risk] Confusion with RockUSB Loader mode** | Different USB PID / mode column in `make devices`; flash still uses MaskROM/Loader, not Linux ECM; **`make bootloader`** explicitly transitions Linux → Loader before **`make flash`**. |
 | **[Risk] `sshd` accidentally enabled on LAN** | `boot-verify.sh` + `ListenAddress` drop-in; preset keeps `sshd.service` disabled. |
 
@@ -127,7 +127,7 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 
 1. Land kernel fragment + rootfs overlay (udev/systemd, scripts, sshd drop-in).
 2. Rebuild firmware once: `make apply-overlay` → `make build-rootfs` → `make build-img` → `make flash`.
-3. Add host scripts to repo; developers `make build-flutter-app` then `make push-hmi` (no rootfs rebuild for app-only).
+3. Add host scripts to repo; developers `make build-app` then `make push-app` (no rootfs rebuild for app-only).
 4. Update `README.md`, `AGENTS.md` rebuild table, and `docs/flutter-pi-hmi-plan.md` §6.2 / §7.7.
 5. **Rollback:** Remove udev rules and kernel fragment; reflash previous `update.img`; no partition migration required.
 

@@ -39,7 +39,7 @@ Daily iteration examples (one command per line; run in order):
 
 ```bash
 # Flutter app (app/lws_hmi/)
-make build-flutter-app
+make build-app
 make build-rootfs
 make build-img
 make flash
@@ -61,7 +61,7 @@ More detail: [`docs/build-optimization.md`](docs/build-optimization.md), [`app/R
 
 **Pipeline rules (do not get wrong):**
 
-- `make build-flutter-app` updates overlay `/opt/hmi` and runs `apply-overlay`; it does **not** rebuild rootfs.
+- `make build-app` updates overlay `/opt/hmi` and runs `apply-overlay`; it does **not** rebuild rootfs.
 - `make build-rootfs` bakes fs-overlay (including `/opt/hmi`) into rootfs.
 - `make build-img` only repacks from existing kernel + rootfs outputs.
 
@@ -71,10 +71,12 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 
 | What changed | Commands |
 |--------------|----------|
-| `app/lws_hmi/**`, `scripts/build-flutter-app.sh` | `make build-flutter-app`, `make build-rootfs`, `make build-img`, `make flash` |
+| `app/lws_hmi/**`, `scripts/build-app.sh` | `make build-app`, `make build-rootfs`, `make build-img`, `make flash` |
 | `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make build-img`, `make flash` |
 | `overlay/kernel/**`, kernel DTS | `make apply-overlay`, `make build-kernel`, `make build-img`, `make flash` |
 | `overlay/.../lws-hmi-fs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
+| USB plug-ssh (`overlay/kernel/**` + fs-overlay scripts/units) | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make build-img`, `make flash` |
+| `scripts/push-app.sh` only (app already on device) | `make build-app`, `make push-app` |
 | `overlay/buildroot/**` | `make apply-overlay`, `make check-prebuilt`, `make build-rootfs`, `make build-img`, `make flash` |
 | `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
 | `board/*.txt` LCD/MIPI params | `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
@@ -85,7 +87,7 @@ Example:
 
 ```text
 重新构建（本次改动了 app）：
-make build-flutter-app
+make build-app
 make build-rootfs
 make build-img
 make flash

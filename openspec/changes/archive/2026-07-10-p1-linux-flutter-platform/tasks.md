@@ -27,7 +27,7 @@
 
 - [x] 4.1 Create `app/lws_hmi` with `flutter create`; minimal home screen ("Hello, lws-hmi") — renamed from `lws_hmi_app`
 - [x] 4.2 Configure flutter-pi custom device / build tooling for ARM64 release AOT (`flutterpi_tool`, Flutter 3.24.4 pin)
-- [x] 4.3 Add `scripts/build-flutter-app.sh` (or Makefile target) producing meta-flutter bundle under `/opt/hmi`
+- [x] 4.3 Add `scripts/build-app.sh` (or Makefile target) producing meta-flutter bundle under `/opt/hmi`
 - [x] 4.4 Ensure `main()` has no video/WebSocket/FFI init before first frame (KPI)
 - [x] 4.5 Copy release artifacts into `lws-hmi-fs-overlay/opt/hmi/` before rootfs build
 

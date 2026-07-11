@@ -64,11 +64,11 @@ Flutter engine and ICU data SHALL be on rootfs only (not duplicated in the app b
 
 ### Requirement: App integrated via rootfs overlay for P1
 
-P1 SHALL deploy Hello World artifacts via Buildroot rootfs overlay (not Buildroot-compiled Dart), updated by `make build-flutter-app` (or `scripts/build-flutter-app.sh`) before `make build-rootfs`.
+P1 SHALL deploy Hello World artifacts via Buildroot rootfs overlay (not Buildroot-compiled Dart), updated by `make build-app` (or `scripts/build-app.sh`) before `make build-rootfs`.
 
 #### Scenario: Overlay contains app artifacts
 
-- **WHEN** lws-hmi overlay is applied and `make build-flutter-app` has run
+- **WHEN** lws-hmi overlay is applied and `make build-app` has run
 - **THEN** `opt/hmi/lib/libapp.so` is present inside fs-overlay tree before rootfs build
 
 ### Requirement: Display orientation compatible with ynh960
@@ -84,8 +84,8 @@ The flutter-pi launch configuration in `hmi.service` SHALL use `-o landscape_lef
 
 The host build script SHALL use `flutterpi_tool build --arch=arm64 --release` to produce the meta-flutter bundle matching Buildroot `FILESYSTEM_LAYOUT=meta-flutter`.
 
-#### Scenario: build-flutter-app produces meta-flutter bundle
+#### Scenario: build-app produces meta-flutter bundle
 
-- **WHEN** developer runs `make build-flutter-app`
+- **WHEN** developer runs `make build-app`
 - **THEN** `lib/libapp.so` and `data/flutter_assets/` are installed under overlay `opt/hmi/` (assembled from `flutterpi_tool` output; engine not copied into bundle)
 

@@ -1,17 +1,17 @@
 ## ADDED Requirements
 
-### Requirement: make push-hmi deploys Flutter app over USB SSH
+### Requirement: make push-app deploys Flutter app over USB SSH
 
-The repository SHALL provide **`make push-hmi`** that deploys the current Flutter release artifacts to **`/opt/hmi/lib/libapp.so`** and **`/opt/hmi/data/flutter_assets/`** on the target via `scp` over the USB ECM link, then restarts **`hmi.service`** via `ssh`.
+The repository SHALL provide **`make push-app`** that deploys the current Flutter release artifacts to **`/opt/hmi/lib/libapp.so`** and **`/opt/hmi/data/flutter_assets/`** on the target via `scp` over the USB ECM link, then restarts **`hmi.service`** via `ssh`.
 
 #### Scenario: Single device connected
 
-- **WHEN** exactly one USB-SSH device is connected and the host runs `make build-flutter-app` followed by `make push-hmi`
+- **WHEN** exactly one USB-SSH device is connected and the host runs `make build-app` followed by `make push-app`
 - **THEN** the new `libapp.so` and `flutter_assets` are on the target and `hmi.service` is active after restart
 
 #### Scenario: Push without rootfs rebuild
 
-- **WHEN** only Dart/assets changed and `make push-hmi` succeeds
+- **WHEN** only Dart/assets changed and `make push-app` succeeds
 - **THEN** no `make build-rootfs` or `make flash` is required for the update to take effect
 
 ### Requirement: make devices lists RockUSB and USB-SSH targets
@@ -28,18 +28,18 @@ The repository SHALL extend **`make devices`** to list **both** RockUSB flash de
 - **WHEN** one board is in RockUSB Loader mode and another is running Linux with USB plug-ssh active
 - **THEN** `make devices` shows one row with `MODE` Loader (or Maskrom) and one row with `MODE` USB-SSH in the same table
 
-### Requirement: SERIAL selects target for push-hmi
+### Requirement: SERIAL selects target for push-app
 
-When more than one USB-SSH device is connected, **`make push-hmi`** SHALL require **`SERIAL=`** (or **`LWS_HMI_SERIAL=`**) matching the gadget `iSerial`, consistent with `scripts/flash-usb.sh` multi-device behavior.
+When more than one USB-SSH device is connected, **`make push-app`** SHALL require **`SERIAL=`** (or **`LWS_HMI_SERIAL=`**) matching the gadget `iSerial`, consistent with `scripts/flash-usb.sh` multi-device behavior.
 
 #### Scenario: Multiple devices without SERIAL
 
-- **WHEN** two USB-SSH devices are connected and the user runs `make push-hmi` without `SERIAL`
+- **WHEN** two USB-SSH devices are connected and the user runs `make push-app` without `SERIAL`
 - **THEN** the command fails with a message to run `make devices` and set `SERIAL`
 
 #### Scenario: Push with SERIAL
 
-- **WHEN** `SERIAL=<iSerial> make push-hmi` is run with multiple devices connected
+- **WHEN** `SERIAL=<iSerial> make push-app` is run with multiple devices connected
 - **THEN** artifacts are deployed only to the board matching that serial
 
 ### Requirement: Host routes SSH via correct interface
@@ -49,7 +49,7 @@ Host scripts SHALL connect to `192.168.55.1` using the network interface associa
 #### Scenario: BindInterface used for multi-device
 
 - **WHEN** two devices are connected and `SERIAL=` selects one device
-- **THEN** `scp` and `ssh` traffic for `push-hmi` egress only via that device's host interface
+- **THEN** `scp` and `ssh` traffic for `push-app` egress only via that device's host interface
 
 ### Requirement: Host configures link-local address
 
@@ -58,15 +58,15 @@ Before `scp`/`ssh`, host scripts SHALL assign **`192.168.55.2/24`** to the host 
 #### Scenario: First push after plug
 
 - **WHEN** the host interface for a device is up but has no address in `192.168.55.0/24`
-- **THEN** `push-hmi` configures `192.168.55.2/24` on that interface before connecting
+- **THEN** `push-app` configures `192.168.55.2/24` on that interface before connecting
 
-### Requirement: push-hmi waits for device readiness
+### Requirement: push-app waits for device readiness
 
-`make push-hmi` SHALL retry reachability to `192.168.55.1` on the selected interface for at least 30 seconds before failing, to tolerate gadget bring-up delay after plug.
+`make push-app` SHALL retry reachability to `192.168.55.1` on the selected interface for at least 30 seconds before failing, to tolerate gadget bring-up delay after plug.
 
 #### Scenario: Device not yet ready
 
-- **WHEN** the user runs `make push-hmi` immediately after plugging in USB
+- **WHEN** the user runs `make push-app` immediately after plugging in USB
 - **THEN** the script waits until the target responds or times out with an actionable error
 
 ### Requirement: make bootloader enters RockUSB Loader from Linux

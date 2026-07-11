@@ -56,7 +56,7 @@ The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.servic
 
 ### 4. Flutter app deployment — meta-flutter rootfs overlay
 
-**Choice:** Place release artifacts under `overlay/board/.../lws-hmi-fs-overlay/opt/hmi/` via `make build-flutter-app` (`flutterpi_tool build --arch=arm64 --release`). Layout:
+**Choice:** Place release artifacts under `overlay/board/.../lws-hmi-fs-overlay/opt/hmi/` via `make build-app` (`flutterpi_tool build --arch=arm64 --release`). Layout:
 
 ```
 /opt/hmi/lib/libapp.so
@@ -153,7 +153,7 @@ Multi-device: `upgrade_tool -s LocationID` (§1.11), resolved from `SERIAL=`. ma
 ## Migration Plan
 
 1. `make setup` — apply overlays (defconfig, flutter packages, board config).
-2. Build Hello World on host → `make build-flutter-app` → copy to fs-overlay `/opt/hmi`.
+2. Build Hello World on host → `make build-app` → copy to fs-overlay `/opt/hmi`.
 3. `make lunch` → ynh960 → `make build-rootfs` → `make build-img` (auto-export on macOS).
 4. **Flash (host USB):** `make devices` → `SERIAL=… make bootloader` → `make flash`.
 5. Verify: `/usr/lib/lws-hmi/boot-verify.sh`, splash, home frame, `systemd-analyze critical-chain hmi.service`.

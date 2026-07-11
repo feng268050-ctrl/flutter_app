@@ -33,7 +33,7 @@ make build
 ```
 
 Runs in order: `check-prebuilt` → `apply-overlay` → `lunch` → `build-boot-logo` →
-`build-flutter-app` → `build-kernel` → `build-rootfs` → `build-img` → **`output/firmware/update.img` on host** (macOS: auto-export from Docker volume after `build-img` / `build-kernel`).
+`build-app` → `build-kernel` → `build-rootfs` → `build-img` → **`output/firmware/update.img` on host** (macOS: auto-export from Docker volume after `build-img` / `build-kernel`).
 
 **Daily iteration** — run only the stage you changed:
 
@@ -42,7 +42,7 @@ make apply-overlay
 make lunch
 make check-prebuilt
 make build-boot-logo
-make build-flutter-app
+make build-app
 make build-rootfs
 make build-kernel
 make build-img
@@ -53,7 +53,7 @@ Daily:
 
 | Change | Run |
 |--------|-----|
-| App | `make build-flutter-app` → `make build-rootfs` → `make build-img` → `make flash` |
+| App | `make build-app` → `make build-rootfs` → `make build-img` → `make flash` |
 | Kernel / DTS / logo | `make build-kernel` → `make build-img` → `make flash` |
 | Defconfig / overlay | `make apply-overlay` → `make build-rootfs` → `make build-img` → `make flash` |
 

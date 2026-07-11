@@ -35,10 +35,10 @@ flutterpi_tool build --arch=arm64 --release
 Or from repo root:
 
 ```bash
-make build-flutter-app   # libapp.so + assets only → overlay /opt/hmi
+make build-app   # libapp.so + assets only → overlay /opt/hmi
 ```
 
-**Must use pinned Flutter `3.24.4`** (`make fetch-flutter-sdk`); `build-flutter-app.sh` refuses a mismatched SDK (e.g. host `flutter` 3.41.x). AOT `libapp.so` and rootfs `libflutter_engine.so` **must be the same engine version** or flutter-pi exits/hangs with little or no UI.
+**Must use pinned Flutter `3.24.4`** (`make fetch-flutter-sdk`); `build-app.sh` refuses a mismatched SDK (e.g. host `flutter` 3.41.x). AOT `libapp.so` and rootfs `libflutter_engine.so` **must be the same engine version** or flutter-pi exits/hangs with little or no UI.
 
 ```bash
 make build-rootfs        # installs flutter-engine to /usr/lib (prebuilt)
@@ -46,11 +46,11 @@ make build-img
 make flash
 ```
 
-`libflutter_engine.so` and `icudtl.dat` are **rootfs-only** (`/usr/lib`, `/usr/share/flutter`). flutter-pi loads the engine via `dlopen` when it is absent from the bundle. App updates (`build-flutter-app`) do not touch the engine.
+`libflutter_engine.so` and `icudtl.dat` are **rootfs-only** (`/usr/lib`, `/usr/share/flutter`). flutter-pi loads the engine via `dlopen` when it is absent from the bundle. App updates (`build-app`) do not touch the engine.
 
 ## Deploy layout on device
 
-App bundle (`/opt/hmi` — updated with `make build-flutter-app`):
+App bundle (`/opt/hmi` — updated with `make build-app`):
 
 ```
 /opt/hmi/lib/libapp.so
@@ -73,7 +73,7 @@ Started by `hmi.service`: `flutter-pi --release -o landscape_left /opt/hmi`
 2. Common cause: **`libapp.so` built with wrong host Flutter** (e.g. 3.41.x) while rootfs engine is **3.24.4**. Rebuild app with pinned SDK only:
    ```bash
    make fetch-flutter-sdk    # host; repopulates ~/Downloads/flutter-sdk-3.24.4/install
-   make build-flutter-app
+   make build-app
    make build-rootfs
    make build-img
    make flash

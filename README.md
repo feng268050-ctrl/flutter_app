@@ -95,7 +95,7 @@ Force refresh a bucket: `make rebuild-deps`, `make rebuild-runtime-deps`, etc.
 
 ### Full firmware
 
-`make build` runs: `check-prebuilt` → `apply-overlay` → `lunch` → `build-boot-logo` → `build-flutter-app` → `build-kernel` → `build-rootfs` → `build-img`.
+`make build` runs: `check-prebuilt` → `apply-overlay` → `lunch` → `build-boot-logo` → `build-app` → `build-kernel` → `build-rootfs` → `build-img`.
 
 ```bash
 make build
@@ -107,7 +107,7 @@ make show-config
 **Flutter app** (`app/lws_hmi/`) — `/opt/hmi` is installed during rootfs build:
 
 ```bash
-make build-flutter-app
+make build-app
 make build-rootfs
 make build-img
 make flash
@@ -183,11 +183,29 @@ Loader path from Android:
 
 ```bash
 make devices
-SERIAL=... make bootloader
+SERIAL=... make reboot-loader
 make flash
 ```
 
-### Diagnostics
+Loader path from Linux board (USB plug-ssh, no adb):
+
+```bash
+make devices                    # auto-discovers USB-SSH, configures host 192.168.55.2
+make reboot-loader                # USB-SSH → reboot-rockusb-loader (SERIAL= optional)
+make flash                      # macOS only
+```
+
+### App iteration (USB plug-ssh, no rootfs reflash)
+
+After one firmware flash with USB plug-ssh support:
+
+```bash
+make build-app
+make push-app                   # SERIAL=... when multiple boards
+```
+
+`make push-app` copies `libapp.so` + `flutter_assets` to the board over USB ECM SSH, then reboots via sysrq (`shutdown.sh`) so the new app loads without stopping `hmi.service` (Mali teardown hang). Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB and USB-SSH rows in one table.
+
 
 ```bash
 make show-config
@@ -260,7 +278,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 
 | Target | 产出 | 用途 |
 |--------|------|------|
-| `make fetch-flutter-sdk` | `FLUTTER_SDK/install/` | `make build-flutter-app`、engine 编译辅助 |
+| `make fetch-flutter-sdk` | `FLUTTER_SDK/install/` | `make build-app`、engine 编译辅助 |
 | `make fetch-rknn-toolkit` | `.cache/rknn-toolkit/` | 开发机上 ONNX→RKNN 模型转换 |
 
 Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`。
@@ -358,8 +376,23 @@ Normal flash from Android:
 
 ```bash
 make devices
-SERIAL=... make bootloader   # adb reboot loader
+SERIAL=... make reboot-loader   # adb reboot loader (Android)
 make flash                     # uf only when already in Loader mode (IMAGE=... to override)
+```
+
+Normal flash from Linux HMI (USB plug-ssh):
+
+```bash
+make devices
+make reboot-loader               # USB-SSH → reboot-rockusb-loader
+make flash                     # macOS host
+```
+
+App deploy without reflash:
+
+```bash
+make build-app
+make push-app                  # SERIAL=... when multiple USB-SSH devices
 ```
 
 ### macOS Docker Desktop tips

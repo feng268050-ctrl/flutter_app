@@ -1197,13 +1197,15 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 ### P1 — Linux 镜像 + Hello World
 
-- [ ] `rockchip_rk3566_rk3568_lws_hmi_defconfig` + **`lws_hmi_{base,systemd,network,npu}.config`**（方案 A §3.6）
-- [ ] 裁剪 weston/chromium/camera/benchmark/test；**关 adbd**；保留 wifibt、powermanager
-- [ ] Buildroot：**flutter-pi** + Mali + libdrm/gbm + fontconfig + **RKNPU2（无 example）**
-- [ ] overlay：`hmi.service` enable；journald volatile；mediamtx/sshd/bluetooth **disable**
-- [ ] **Boot splash logo**（§5.2）；LCD 参数与 ynh960 一致
-- [ ] 开发机 Flutter **Hello World** → `/opt/hmi`；`hmi.service` 自启验收
-- [ ] 上电 → logo → 首页 **≤10 s**（§14.2）；ynh960（RK3566）全量验收；ynh961/ynh962 跨 SKU smoke 可选
+**P1 封板（ynh960）：2026-07-11，`4c2b6dc` — OpenSpec `p1-linux-flutter-platform` + `usb-plug-ssh-push-hmi` 已归档；KPI 见 `docs/boot-kpi-optimization.md` §6。**
+
+- [x] `rockchip_rk3566_rk3568_lws_hmi_defconfig` + **`lws_hmi_{base,systemd,network,npu}.config`**（方案 A §3.6）
+- [x] 裁剪 weston/chromium/camera/benchmark/test；**关 adbd**；保留 wifibt、powermanager
+- [x] Buildroot：**flutter-pi** + Mali + libdrm/gbm + fontconfig + **RKNPU2（无 example）**
+- [x] overlay：`hmi.service` enable；journald volatile；mediamtx/sshd/bluetooth **disable**
+- [x] **Boot splash logo**（§5.2）；LCD 参数与 ynh960 一致
+- [x] 开发机 Flutter **Hello World** → `/opt/hmi`；`hmi.service` 自启验收
+- [x] 上电 → logo → 首页 **≤10 s**（§14.2）；ynh960（RK3566）全量验收；ynh961/ynh962 跨 SKU smoke 可选（**未做，不阻塞 P1**）
 
 ### P2 — Modbus + GPIO demo
 

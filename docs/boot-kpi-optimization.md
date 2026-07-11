@@ -164,8 +164,9 @@ P0（done）
 | 2026-07 | +A-6 noatime | | | | PASS | mount 含 noatime；勿用 rootflags |
 | 2026-07 | +A-4 defer wifibt | | | | PASS | 无 wpa/network @ boot |
 | 2026-07 | +B-9 log-guardian | ~2s | ~8.4s | ~8.4s | PASS | `log-guardian` 未自启；D0-1 splash 约 2s |
-| 2026-07 | +A-3 kernel trim | | | | | 待重刷；保留 HDMI/USB/音频/文件系统/蓝牙/debugfs |
+| 2026-07 | +A-3 kernel trim | | | | PASS | 随 P1 sign-off 重刷验证（保留 debugfs） |
 | 2026-07 | +P0-8 pwrkey poweroff | | | | PASS | 板端：stop hmi 仍会 DRM oops；改为 sync + SysRq remount-ro/poweroff |
+| **2026-07-11** | **P1 sign-off** `4c2b6dc` | ~2s | ~8.4s | ~8.4s | **PASS** | **P1 封板**：GPT 1GiB rootfs + userdata grow、`root=/dev/mmcblk0p6`、fstab/userdata 修复、evb-trim DTS、USB plug-ssh §7 硬件验收全 PASS；Hello World + HMI 自启；OpenSpec P1 + plug-ssh 归档 |
 
 ---
 
@@ -188,11 +189,14 @@ P0（done）
 | `overlay/.../env-verify.sh` | 板端 §3.4 平台栈验收（不含 flutter-pi） |
 | `overlay/.../lws-hmi-post-fakeroot.sh` | preset-all 后重链 Plan A wants |
 | `scripts/verify-rootfs-overlay.sh` | 构建后 staging 检查 |
-| `overlay/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi` | 内核 cmdline（`loglevel=4`） |
+| `overlay/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi` | 内核 cmdline（`root=/dev/mmcblk0p6`、`loglevel=4`） |
+| `overlay/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi` | EVB 节点 disable（FAN53555/SFC；保留 fiq-debugger 串口） |
 | `overlay/kernel/rockchip/lws-hmi-kernel-trim.config` | A-3 内核裁剪 fragment（保留 HDMI/USB/音频/文件系统/蓝牙/debugfs） |
+| `docs/storage-layout.md` | GPT 分区（1GiB rootfs + grow userdata） |
+| `docs/kernel-evb-dts-deferred.md` | 内核 dmesg 残留项追踪（P2/P3+） |
 | `docs/flutter-pi-hmi-plan.md` §3.6 / §14 | 设计详述 |
 | `docs/build-optimization.md` | 日常构建命令 |
 
 ---
 
-*最后更新：P0-8 done（pwrkey / systemctl poweroff 走 SysRq 稳定断电）；A-3 repo（恢复 debugfs，待重刷验证）；B-9 / D0-1 done；A-1 skip。*
+*最后更新：**P1 封板** 2026-07-11（`4c2b6dc`）；§6 KPI 表已记 sign-off 行；P0-8 / B-9 / D0-1 / A-3 done；A-1 skip。*

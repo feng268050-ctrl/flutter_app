@@ -168,6 +168,15 @@ if command -v systemctl >/dev/null 2>&1; then
 		fail "lws-hmi-pwrkey-poweroff.service is $state"
 		;;
 	esac
+	state="$(systemctl is-active input-event-daemon.service 2>/dev/null || echo inactive)"
+	case "$state" in
+	active|activating)
+		fail "input-event-daemon.service is $state (conflicts with pwrkey poweroff)"
+		;;
+	*)
+		pass "input-event-daemon.service inactive"
+		;;
+	esac
 fi
 if [ -x /usr/lib/lws-hmi/pre-poweroff.sh ]; then
 	pass "pre-poweroff.sh present and executable"

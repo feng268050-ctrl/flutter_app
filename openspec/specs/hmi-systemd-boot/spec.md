@@ -89,7 +89,7 @@ Post-build hook SHALL patch `/etc/fstab` to add `noatime` mount options on ext4 
 
 ### Requirement: Stable board poweroff without Mali DRM oops
 
-The image SHALL provide `lws-hmi-pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdown.sh`, and a `/usr/bin/systemctl` wrapper. Until repeated flutter-pi teardown is proven stable, poweroff, halt, and reboot SHALL avoid stopping `hmi.service`, sync storage, and use SysRq `s/u/o` or `s/u/b`.
+The image SHALL provide `lws-hmi-pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdown.sh`, and a `/usr/bin/systemctl` wrapper. The pwrkey handler SHALL request poweroff after the `KEY_POWER` release event. Rockchip `input-event-daemon.service` SHALL be disabled because its short-press release handler requests suspend and races the poweroff flow. Until repeated flutter-pi teardown is proven stable, poweroff, halt, and reboot SHALL avoid stopping `hmi.service`, sync storage, and use SysRq `s/u/o` or `s/u/b`.
 
 #### Scenario: pwrkey service active
 

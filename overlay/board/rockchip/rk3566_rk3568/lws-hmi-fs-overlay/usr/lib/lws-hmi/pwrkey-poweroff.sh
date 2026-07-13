@@ -31,7 +31,8 @@ is_power_key_device() {
 
 request_poweroff() {
 	if mkdir "$LOCK_DIR" 2>/dev/null; then
-		log "KEY_POWER pressed; requesting poweroff"
+		log "KEY_POWER released; requesting poweroff"
+		sleep 0.2
 		/usr/lib/lws-hmi/shutdown.sh poweroff
 	fi
 }
@@ -55,7 +56,7 @@ listen_event_device() {
 		value_2="$7"
 		value_3="$8"
 
-		if [ "$type_lo:$type_hi:$code_lo:$code_hi:$value_0:$value_1:$value_2:$value_3" = "01:00:74:00:01:00:00:00" ]; then
+		if [ "$type_lo:$type_hi:$code_lo:$code_hi:$value_0:$value_1:$value_2:$value_3" = "01:00:74:00:00:00:00:00" ]; then
 			request_poweroff
 		fi
 	done

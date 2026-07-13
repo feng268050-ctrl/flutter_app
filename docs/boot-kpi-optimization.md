@@ -147,7 +147,7 @@ P0（done）
 
 **A-6 注意**：`rootflags=noatime` 会致内核 panic（`ext4: Unknown parameter 'noatime'`）。`noatime` 须写在 fstab 第 4 列，由 `systemd-remount-fs` 生效。
 
-**P0-8 注意**：继续保持 `systemd-logind` disabled。板端在 `systemctl stop hmi.service` 时先后捕获 `drm_gem_object_release_handle+0x20` 的空 funcs，以及 `+0x3c` 通过非空坏指针跳入 ASCII 地址 `0x73752f6d726f6674`。后者证明问题还包含 funcs 指针损坏/UAF，而不只是 NULL。`overlay/kernel/patches/0001-drm-gem-handle-objects-without-funcs-on-release.patch` 保留空 object 防御，并为单一 GEM 类型驱动增加 canonical funcs table；Rockchip 对象在 release/free 前会恢复该不可变指针。完成重复 teardown 实机验证前，poweroff 直接使用 sync + SysRq，不进入 HMI teardown。
+**P0-8 注意**：继续保持 `systemd-logind` disabled。板端在 `systemctl stop hmi.service` 时先后捕获 `drm_gem_object_release_handle+0x20` 的空 funcs，以及 `+0x3c` 通过非空坏指针跳入 ASCII 地址 `0x73752f6d726f6674`。后者证明问题还包含 funcs 指针损坏/UAF，而不只是 NULL。`overlay/kernel/patches/0001-drm-gem-handle-objects-without-funcs-on-release.patch` 保留空 object 防御，并为单一 GEM 类型驱动增加 canonical funcs table；Rockchip 对象在 release/free 前会恢复该不可变指针。手动 stop/start/restart 已通过重复验证。pwrkey 等 `KEY_POWER` release 后再关机；同时必须禁用 Rockchip `input-event-daemon`，否则其 short-press release handler 会并发执行 `systemctl suspend`，抢在 SysRq poweroff 前进入 WFI。
 
 **当前状态**：P0-8 使用 sync + SysRq 避免关机触发 HMI teardown；B-9 / D0-1 已完成；A-1 不再自编译 U-Boot；A-3 已接入 kernel trim fragment。首次刷机发现 `CONFIG_DEBUG_FS` 不可裁（systemd `sys-kernel-debug.mount` 会阻断 `local-fs.target`），已恢复 debugfs。
 

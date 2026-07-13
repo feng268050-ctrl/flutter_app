@@ -512,7 +512,7 @@ flutter-pi --release /opt/hmi
 
 P1.5 不另建 debug 固件镜像，而是在 **现有 P1 镜像** 上提供设备侧调试启动能力：
 
-**前置修复**：Rockchip 6.1 BSP 在 flutter-pi 退出时暴露了 GEM funcs 指针损坏：既出现过空指针，也出现过非空但指向 slab/ASCII 数据的悬空指针。仓库通过 `overlay/kernel/patches/0001-drm-gem-handle-objects-without-funcs-on-release.patch` 防御空 object，并让 Rockchip 发布不可变的 canonical funcs table，在 release/free 前发现异常即恢复该指针。该二层修复完成重复 stop → start 验证前，poweroff 不停止 HMI，继续使用 sync + SysRq 安全路径；`make push-app` 保留 stop → 安装 → start 以供专项验证。
+**前置修复**：Rockchip 6.1 BSP 在 flutter-pi 退出时暴露了 GEM funcs 指针损坏：既出现过空指针，也出现过非空但指向 slab/ASCII 数据的悬空指针。仓库通过 `overlay/kernel/patches/0001-drm-gem-handle-objects-without-funcs-on-release.patch` 防御空 object，并让 Rockchip 发布不可变的 canonical funcs table，在 release/free 前发现异常即恢复该指针。手动 stop/start/restart 已通过重复验证；`make push-app` 先在 HMI 运行期间安装完整 payload，再执行 restart，并在启动失败时进行有限次数恢复。
 
 | 命令 | 预期行为 |
 |------|----------|
@@ -925,7 +925,7 @@ paths:
 
 lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `adbd`（`:5555`）。Buildroot HMI 用 **OpenSSH `sshd`** 作等价能力，**默认不运行、不监听**。
 
-**P1 工程迭代（首选）**：OTG USB 插入主机 → **VBUS 触发** ECM + `usb0`（`192.168.55.1/24`）+ **仅 `usb0` 监听**的 sshd → 主机 **`make push-app`**（`scp` staging + stop/install/start `hmi.service`，不重启整机）。拔线自动 teardown；**不进** `multi-user.target.wants`。多板用 **`SERIAL=`**（gadget `iSerial`），与 `make flash` 一致。进入 RockUSB Loader：**`make reboot-loader`**（Linux 走 USB-SSH + `/usr/lib/lws-hmi/reboot-rockusb-loader`；Android 仍可用 adb）。
+**P1 工程迭代（首选）**：OTG USB 插入主机 → **VBUS 触发** ECM + `usb0`（`192.168.55.1/24`）+ **仅 `usb0` 监听**的 sshd → 主机 **`make push-app`**（`scp` staging + 运行时安装 payload + restart/retry `hmi.service`，不重启整机）。拔线自动 teardown；**不进** `multi-user.target.wants`。多板用 **`SERIAL=`**（gadget `iSerial`），与 `make flash` 一致。进入 RockUSB Loader：**`make reboot-loader`**（Linux 走 USB-SSH + `/usr/lib/lws-hmi/reboot-rockusb-loader`；Android 仍可用 adb）。
 
 | lws-ui（Android） | lws-hmi（Buildroot） |
 |-------------------|----------------------|

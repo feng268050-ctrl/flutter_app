@@ -8,9 +8,9 @@ Host-side USB-SSH workflow for Flutter app iteration: `make push-app`, `make dev
 
 ### Requirement: make push-app deploys Flutter app over USB SSH
 
-The repository SHALL provide **`make push-app`** that deploys the current Flutter release artifacts to **`/opt/hmi/lib/libapp.so`** and **`/opt/hmi/data/flutter_assets/`** on the target via `scp` over the USB ECM link, then safely stops and starts `hmi.service` so the new app loads without rebooting the board. This behavior depends on the kernel DRM GEM teardown fix defined by `hmi-systemd-boot`.
+The repository SHALL provide **`make push-app`** that deploys the current Flutter release artifacts to **`/opt/hmi/lib/libapp.so`** and **`/opt/hmi/data/flutter_assets/`** on the target via `scp` over the USB ECM link, then restarts `hmi.service` so the new app loads without rebooting the board. This behavior depends on the kernel DRM GEM teardown fix defined by `hmi-systemd-boot`.
 
-Deployment SHALL stage files under **`/var/lib/lws-hmi/push-app-staging/`**, stop `hmi.service`, replace `/opt/hmi` app artifacts, sync storage, start `hmi.service`, and fail if the restarted service is not active.
+Deployment SHALL stage files under **`/var/lib/lws-hmi/push-app-staging/`**, replace `/opt/hmi` app artifacts while the current HMI remains running, sync storage, then restart `hmi.service`. If the restart does not leave flutter-pi active, the helper SHALL reset the systemd failure state and retry activation a bounded number of times.
 
 #### Scenario: Single device connected
 

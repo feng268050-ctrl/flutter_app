@@ -16,6 +16,7 @@ mkdir -p "$WANTS" "$SYSINIT_WANTS"
 # Units that must not auto-start at boot (§3.6.0 / §6.4). Include sshd.socket — OpenSSH
 # often enables socket activation instead of sshd.service.
 DISABLE_AT_BOOT=(
+	input-event-daemon.service
 	lws-hmi-debug-boot.service
 	mediamtx.service
 	sshd.service

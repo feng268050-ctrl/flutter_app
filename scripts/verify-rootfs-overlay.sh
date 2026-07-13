@@ -31,7 +31,7 @@ check_systemd_wants() {
 	fi
 	ls -la "$wants" 2>/dev/null || true
 
-	for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+	for unit in input-event-daemon.service lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 		if unit_wants_link "$unit"; then
 			echo "FAIL: $unit still enabled in $label" >&2
 			missing=1

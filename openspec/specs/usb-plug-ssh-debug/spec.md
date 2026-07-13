@@ -63,7 +63,7 @@ USB ECM debug and ssh on `usb0` MUST NOT be enabled solely by reaching multi-use
 
 ### Requirement: HMI remains running during ECM
 
-Starting USB ECM debug SHALL NOT stop `hmi.service` automatically. **`make push-app`** SHALL install updated artifacts and trigger **sysrq reboot** to load them — not `systemctl restart hmi.service` (avoids Mali/DRM teardown hang).
+Starting USB ECM debug SHALL NOT stop `hmi.service` automatically. **`make push-app`** SHALL stop `hmi.service` only after the complete payload is staged, install updated artifacts, and start the service again without rebooting the board. The kernel DRM GEM teardown fix SHALL be present before this in-place restart path is used.
 
 #### Scenario: Plug cable during normal operation
 

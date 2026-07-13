@@ -1,5 +1,5 @@
 #!/bin/sh
-# Avoid DRM/Mali teardown oops by powering off without stopping user services.
+# Avoid flutter-pi teardown during shutdown; use crash-safe SysRq first.
 set -eu
 
 mode="${1:-poweroff}"
@@ -29,47 +29,39 @@ sysrq() {
 	return 1
 }
 
+if [ ! -x /usr/bin/systemctl.real ]; then
+	log "missing /usr/bin/systemctl.real"
+	exit 1
+fi
+
+log "skipping hmi.service teardown; using SysRq $mode"
 /usr/lib/lws-hmi/pre-poweroff.sh
+
+log "sysrq sync"
+sysrq s || true
+sleep 0.5
+log "sysrq remount-readonly"
+sysrq u || true
+sleep 0.5
 
 case "$mode" in
 poweroff|halt)
-	log "sysrq sync"
-	sysrq s || true
-	sleep 0.5
-	log "sysrq remount-readonly"
-	sysrq u || true
-	sleep 0.5
 	log "sysrq poweroff"
 	if sysrq o; then
 		sleep 5
 	fi
 	;;
 reboot)
-	log "sysrq sync"
-	sysrq s || true
-	sleep 0.5
-	log "sysrq remount-readonly"
-	sysrq u || true
-	sleep 0.5
 	log "sysrq reboot"
 	if sysrq b; then
-		# Board should reset immediately; do not fall through to systemctl stop.
 		sleep 15
 		log "sysrq reboot did not reset"
 	fi
-	;;
-esac
-
-if [ "$mode" = reboot ]; then
 	if [ -x /sbin/reboot ]; then
 		log "fallback: /sbin/reboot -f"
 		exec /sbin/reboot -f
 	fi
-fi
-
-if [ ! -x /usr/bin/systemctl.real ]; then
-	log "missing /usr/bin/systemctl.real"
-	exit 1
-fi
+	;;
+esac
 
 exec /usr/bin/systemctl.real --force --force --no-ask-password "$mode" "$@"

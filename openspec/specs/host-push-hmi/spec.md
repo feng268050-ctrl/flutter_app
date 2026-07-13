@@ -8,19 +8,19 @@ Host-side USB-SSH workflow for Flutter app iteration: `make push-app`, `make dev
 
 ### Requirement: make push-app deploys Flutter app over USB SSH
 
-The repository SHALL provide **`make push-app`** that deploys the current Flutter release artifacts to **`/opt/hmi/lib/libapp.so`** and **`/opt/hmi/data/flutter_assets/`** on the target via `scp` over the USB ECM link, then triggers a **sysrq reboot** on the board so the new app loads **without** `systemctl stop` / `systemctl restart hmi.service` (Mali/DRM teardown on flutter-pi exit can hang SSH or oops the kernel).
+The repository SHALL provide **`make push-app`** that deploys the current Flutter release artifacts to **`/opt/hmi/lib/libapp.so`** and **`/opt/hmi/data/flutter_assets/`** on the target via `scp` over the USB ECM link, then safely stops and starts `hmi.service` so the new app loads without rebooting the board. This behavior depends on the kernel DRM GEM teardown fix defined by `hmi-systemd-boot`.
 
-Deployment SHALL stage files under **`/var/lib/lws-hmi/push-app-staging/`**, install to `/opt/hmi`, then schedule reboot via **`/usr/lib/lws-hmi/shutdown.sh reboot`** or direct **`/proc/sysrq-trigger`** (see `scripts/usb-ssh-common.sh`). The host script SHALL **not** wait for the board to finish rebooting.
+Deployment SHALL stage files under **`/var/lib/lws-hmi/push-app-staging/`**, stop `hmi.service`, replace `/opt/hmi` app artifacts, sync storage, start `hmi.service`, and fail if the restarted service is not active.
 
 #### Scenario: Single device connected
 
 - **WHEN** exactly one USB-SSH device is connected and the host runs `make build-app` followed by `make push-app`
-- **THEN** the new `libapp.so` and `flutter_assets` are installed on the target and a reboot is triggered
+- **THEN** the new `libapp.so` and `flutter_assets` are installed on the target and `hmi.service` is restarted successfully
 
 #### Scenario: Push without rootfs rebuild
 
 - **WHEN** only Dart/assets changed and `make push-app` succeeds
-- **THEN** no `make build-rootfs` or `make flash` is required for the update to take effect after the board reboots
+- **THEN** no `make build-rootfs`, `make build-img`, board reboot, or `make flash` is required for the update to take effect
 
 ### Requirement: make devices lists RockUSB and USB-SSH targets
 

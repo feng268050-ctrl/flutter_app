@@ -105,7 +105,7 @@ RK_WIFIBT=y
 
 **Rationale:** Plan §4 / §13 compile flow; kernel trim and display fragments applied at build time.
 
-### 8. Flutter project layout — `app/lws_hmi`
+### 8. Flutter project layout — `app/hmi`
 
 **Choice:** Standard `flutter create` app (renamed from `lws_hmi_app`) with `flutterpi_tool` per upstream docs. Minimal home: centered "Hello, lws-hmi" text, no plugins on first frame (KPI §14.3 C). Engine pin: Flutter **3.24.4**.
 

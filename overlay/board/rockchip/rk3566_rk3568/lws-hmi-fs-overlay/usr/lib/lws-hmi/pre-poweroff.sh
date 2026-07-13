@@ -1,5 +1,5 @@
 #!/bin/sh
-# Prepare storage for immediate poweroff without stopping flutter-pi.
+# Flush storage before immediate SysRq shutdown.
 set -u
 
 log() {
@@ -11,4 +11,4 @@ log() {
 sync
 sleep 0.2
 sync
-log "storage synced; ready for immediate poweroff"
+log "storage synced; ready for shutdown"

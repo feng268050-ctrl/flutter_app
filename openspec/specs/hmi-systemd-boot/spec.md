@@ -89,7 +89,7 @@ Post-build hook SHALL patch `/etc/fstab` to add `noatime` mount options on ext4 
 
 ### Requirement: Stable board poweroff without Mali DRM oops
 
-The image SHALL provide `lws-hmi-pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdown.sh`, and a `/usr/bin/systemctl` wrapper that routes `poweroff`/`halt`/`reboot` through SysRq `s/u/o` (sync, remount-ro, poweroff) without stopping `hmi.service` first.
+The image SHALL provide `lws-hmi-pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdown.sh`, and a `/usr/bin/systemctl` wrapper. Until repeated flutter-pi teardown is proven stable, poweroff, halt, and reboot SHALL avoid stopping `hmi.service`, sync storage, and use SysRq `s/u/o` or `s/u/b`.
 
 #### Scenario: pwrkey service active
 
@@ -100,6 +100,26 @@ The image SHALL provide `lws-hmi-pwrkey-poweroff.service`, `pwrkey-poweroff.sh`,
 
 - **WHEN** P1 rootfs is inspected
 - **THEN** `/usr/bin/systemctl` symlinks to `/usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh` and `/usr/bin/systemctl.real` exists
+
+#### Scenario: Poweroff avoids HMI teardown
+
+- **WHEN** the power key or `systemctl poweroff` requests shutdown
+- **THEN** storage is synced and shutdown uses SysRq without stopping flutter-pi
+
+#### Scenario: SysRq is unavailable
+
+- **WHEN** the requested SysRq action does not complete
+- **THEN** shutdown falls back to forced `systemctl.real` shutdown
+
+### Requirement: Flutter process teardown does not crash DRM GEM release
+
+The kernel SHALL tolerate transient `NULL` entries in a DRM file's GEM handle IDR. Because repeated teardown has also produced a non-NULL but corrupted `drm_gem_object.funcs` pointer, Rockchip SHALL publish its immutable GEM funcs table and the GEM core SHALL restore that canonical pointer before invoking release or free callbacks.
+
+#### Scenario: Stop flutter-pi while render threads are exiting
+
+- **WHEN** `hmi.service` is stopped and flutter-pi releases DRM/GEM handles
+- **THEN** the kernel does not oops in `drm_gem_object_release_handle`
+- **AND** the DRM device can be acquired by a subsequent flutter-pi process
 
 ### Requirement: Boot KPI to first home frame
 

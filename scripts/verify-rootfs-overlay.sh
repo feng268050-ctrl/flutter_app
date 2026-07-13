@@ -70,7 +70,7 @@ check_poweroff_hook() {
 	local missing=0
 
 	echo ""
-	echo "--- $label: graceful poweroff hook ---"
+	echo "--- $label: crash-safe poweroff hook ---"
 	if [[ -x "$root/usr/lib/lws-hmi/pre-poweroff.sh" && \
 		-x "$root/usr/lib/lws-hmi/shutdown.sh" && \
 		-x "$root/usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh" ]]; then
@@ -174,7 +174,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-rockusb-loader read-device-serial.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh push-app-apply-and-reboot.sh; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-rockusb-loader read-device-serial.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh push-app-apply-and-restart.sh; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else

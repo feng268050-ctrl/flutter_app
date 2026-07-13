@@ -104,7 +104,7 @@ make show-config
 
 ### Daily iteration — by what you changed
 
-**Flutter app** (`app/lws_hmi/`) — `/opt/hmi` is installed during rootfs build:
+**Flutter app** (`app/hmi/`) — `/opt/hmi` is installed during rootfs build:
 
 ```bash
 make build-app
@@ -204,7 +204,7 @@ make build-app
 make push-app                   # SERIAL=... when multiple boards
 ```
 
-`make push-app` copies `libapp.so` + `flutter_assets` to the board over USB ECM SSH, then reboots via sysrq (`shutdown.sh`) so the new app loads without stopping `hmi.service` (Mali teardown hang). Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB and USB-SSH rows in one table.
+`make push-app` stages `libapp.so` + `flutter_assets` on the board over USB ECM SSH, then stops `hmi.service`, installs the payload, and starts the service again without rebooting. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB and USB-SSH rows in one table.
 
 
 ```bash
@@ -450,7 +450,7 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 | `overlay/buildroot/chips/lws_hmi_*.config` | **方案 A** + flutter-pi Kconfig 片段 |
 | `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig` | 瘦身 Buildroot defconfig（无 Weston/Chromium） |
 | `board/logo/splash_icon.png` | Boot splash 源图 → `make build-boot-logo` |
-| `app/lws_hmi/` | P1 Hello World Flutter 工程 |
+| `app/hmi/` | P1 Hello World Flutter 工程 |
 | `AGENTS.md` | AI agent 工作流 + 改动后的重新构建指引 |
 | `scripts/build-{boot-logo,flutter-app}.sh` | Logo / App 构建脚本 |
 | `overlay/.../lws-hmi-fs-overlay/etc/systemd/` | `hmi.service`、journald volatile 等 |

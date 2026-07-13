@@ -75,7 +75,7 @@ systemd-analyze critical-chain hmi.service
 | P0-5 | `verify-rootfs-overlay` 正确路径 `output/<profile>/target` | **done** | `scripts/verify-rootfs-overlay.sh` |
 | P0-6 | `build-img` / `build-kernel` 后自动 export firmware → host | **done** | `docker-export-artifacts.sh` |
 | P0-7 | 刷机后 `boot-verify` 全 PASS | **done** | 板端已验证（sshd/mediamtx/debug-boot 已清除） |
-| P0-8 | 稳定断电（避免 DRM/Mali teardown oops） | **done** | 不 stop `hmi`；`systemctl` wrapper + `shutdown.sh` 先 sync/remount-ro，再 SysRq poweroff |
+| P0-8 | 稳定断电（避免 DRM/Mali teardown oops） | **done** | poweroff 跳过 HMI teardown，使用 sync + SysRq；GEM teardown 另行加固 |
 
 ### A — 内核 / U-Boot（通常 −1～3 s）
 
@@ -147,9 +147,9 @@ P0（done）
 
 **A-6 注意**：`rootflags=noatime` 会致内核 panic（`ext4: Unknown parameter 'noatime'`）。`noatime` 须写在 fstab 第 4 列，由 `systemd-remount-fs` 生效。
 
-**P0-8 注意**：继续保持 `systemd-logind` disabled。板端确认 `systemctl stop hmi.service` 本身也会偶发触发 Mali/DRM `drm_gem_object_release_handle` oops，因此不能依赖“先停 HMI”。当前策略是避开 systemd 的用户服务 teardown：`systemctl` wrapper / pwrkey 均进入 `shutdown.sh`，执行 `sync` + SysRq `s/u/o`（sync、remount readonly、poweroff），失败时才 fallback 到 `systemctl.real --force --force poweroff`。
+**P0-8 注意**：继续保持 `systemd-logind` disabled。板端在 `systemctl stop hmi.service` 时先后捕获 `drm_gem_object_release_handle+0x20` 的空 funcs，以及 `+0x3c` 通过非空坏指针跳入 ASCII 地址 `0x73752f6d726f6674`。后者证明问题还包含 funcs 指针损坏/UAF，而不只是 NULL。`overlay/kernel/patches/0001-drm-gem-handle-objects-without-funcs-on-release.patch` 保留空 object 防御，并为单一 GEM 类型驱动增加 canonical funcs table；Rockchip 对象在 release/free 前会恢复该不可变指针。完成重复 teardown 实机验证前，poweroff 直接使用 sync + SysRq，不进入 HMI teardown。
 
-**当前状态**：P0-8 已按 SysRq poweroff 路径完成；B-9 / D0-1 已完成；A-1 不再自编译 U-Boot；A-3 已接入 kernel trim fragment。首次刷机发现 `CONFIG_DEBUG_FS` 不可裁（systemd `sys-kernel-debug.mount` 会阻断 `local-fs.target`），已恢复 debugfs，待重新 build-kernel/build-img/flash 验证。
+**当前状态**：P0-8 使用 sync + SysRq 避免关机触发 HMI teardown；B-9 / D0-1 已完成；A-1 不再自编译 U-Boot；A-3 已接入 kernel trim fragment。首次刷机发现 `CONFIG_DEBUG_FS` 不可裁（systemd `sys-kernel-debug.mount` 会阻断 `local-fs.target`），已恢复 debugfs。
 
 ---
 
@@ -181,9 +181,9 @@ P0（done）
 | `overlay/.../set-performance-mode.sh` | 写 cpufreq + devfreq governor |
 | `overlay/.../lws-hmi-pwrkey-poweroff.service` | 板载 pwrkey 触发关机 |
 | `overlay/.../pwrkey-poweroff.sh` | 监听 `KEY_POWER` → `shutdown.sh poweroff` |
-| `overlay/.../shutdown.sh` | `pre-poweroff.sh` → SysRq `s/u/o`，fallback `systemctl.real --force --force poweroff` |
+| `overlay/.../shutdown.sh` | 跳过 HMI teardown；sync 后使用 SysRq `s/u/o` 或 `s/u/b` |
 | `overlay/.../systemctl-poweroff-wrapper.sh` | 拦截 `systemctl poweroff/halt/reboot` |
-| `overlay/.../pre-poweroff.sh` | 不停 HMI；仅 `sync`，避免触发 DRM teardown |
+| `overlay/.../pre-poweroff.sh` | 不停止 HMI；在 SysRq 关机前执行 storage sync |
 | `overlay/.../hmi.service` | flutter-pi；`Nice=-5` |
 | `overlay/.../boot-verify.sh` | 板端 Plan A / 启动 KPI 验收 |
 | `overlay/.../env-verify.sh` | 板端 §3.4 平台栈验收（不含 flutter-pi） |

@@ -199,6 +199,63 @@ sync_kernel_config_fragments() {
   done
 }
 
+kernel_source_dir() {
+  if [[ -d "$SDK/kernel/drivers/gpu/drm" ]]; then
+    echo "$SDK/kernel"
+  else
+    echo "$SDK/kernel-6.1"
+  fi
+}
+
+apply_kernel_patches() {
+  local kernel patch_dir relative target backup patch_file
+  local -a patched_files=(
+    "include/drm/drm_drv.h"
+    "drivers/gpu/drm/drm_gem.c"
+    "drivers/gpu/drm/rockchip/rockchip_drm_drv.c"
+  )
+  kernel="$(kernel_source_dir)"
+  patch_dir="$OVERLAY/kernel/patches"
+
+  [[ -d "$patch_dir" ]] || return 0
+  for relative in "${patched_files[@]}"; do
+    target="$kernel/$relative"
+    backup="$target.lws-hmi.orig"
+    if [[ ! -f "$target" ]]; then
+      echo "ERROR: missing kernel source: $target" >&2
+      return 1
+    fi
+    if [[ ! -f "$backup" ]]; then
+      cp -a "$target" "$backup"
+    fi
+    cp -a "$backup" "$target"
+  done
+
+  for patch_file in "$patch_dir"/*.patch; do
+    [[ -f "$patch_file" ]] || continue
+    patch --batch --forward -d "$kernel" -p1 < "$patch_file"
+    echo "overlay: applied kernel patch $(basename "$patch_file")"
+  done
+}
+
+restore_kernel_patches() {
+  local kernel relative target backup
+  local -a patched_files=(
+    "include/drm/drm_drv.h"
+    "drivers/gpu/drm/drm_gem.c"
+    "drivers/gpu/drm/rockchip/rockchip_drm_drv.c"
+  )
+  kernel="$(kernel_source_dir)"
+  for relative in "${patched_files[@]}"; do
+    target="$kernel/$relative"
+    backup="$target.lws-hmi.orig"
+    if [[ -f "$backup" ]]; then
+      mv -f "$backup" "$target"
+      echo "restored upstream kernel source: $relative"
+    fi
+  done
+}
+
 sync_buildroot_chip_configs() {
   local src_dir="$OVERLAY/buildroot/chips"
   if [[ ! -d "$src_dir" ]]; then
@@ -537,6 +594,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       rm -f "$kernel_dts/lws-hmi-ynh960-usb-gadget.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-evb-trim.dtsi"
     done
+    restore_kernel_patches
     echo "removed lws-hmi buildroot overlay + post-hooks + chip configs"
   fi
   exit 0
@@ -608,6 +666,7 @@ sync_strip_fstab_script
 sync_flutter_engine_script
 sync_kernel_display_dts
 sync_kernel_config_fragments
+apply_kernel_patches
 sync_display_params
 sync_boot_logo
 sync_hmi_app_overlay

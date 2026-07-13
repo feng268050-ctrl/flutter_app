@@ -54,6 +54,7 @@ rm -f \
 	"$TARGET_DIR/etc/systemd/system/lws-hmi-pre-poweroff.service" \
 	"$TARGET_DIR/usr/lib/lws-hmi/debug-boot.sh" \
 	"$TARGET_DIR/usr/lib/lws-hmi/stop-hmi.sh" \
+	"$TARGET_DIR/usr/lib/lws-hmi/push-app-apply-and-reboot.sh" \
 	"$TARGET_DIR/etc/systemd/system/systemd-poweroff.service.d/50-lws-hmi-pre-poweroff.conf" \
 	"$TARGET_DIR/etc/systemd/system/systemd-halt.service.d/50-lws-hmi-pre-poweroff.conf" \
 	"$TARGET_DIR/etc/systemd/system/systemd-reboot.service.d/50-lws-hmi-pre-poweroff.conf"

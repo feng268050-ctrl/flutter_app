@@ -4,7 +4,7 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 ## Project overview
 
-- **What:** Buildroot firmware for Innohi **ynh960/961/962 product line** + Flutter-pi HMI (`app/lws_hmi/`).
+- **What:** Buildroot firmware for Innohi **ynh960/961/962 product line** + Flutter-pi HMI (`app/hmi/`).
 - **Board SKUs:** ynh960 → RK3566 (entry); ynh962 → RK3568B2 (mid, cut-down 3568); ynh961 → RK3568 (high). Same product line (minor chip/interface differences); **one firmware image is the goal**. **P1–P5 develop and validate on ynh960 (RK3566)** — no per-SKU defconfig fork yet.
 - **Hosts:** Linux builds natively in `sdk/`; macOS uses Docker `linux/amd64` + a Docker volume for the SDK tree.
 - **Outputs:** `output/firmware/update.img` (macOS, after export); Linux also `sdk/output/firmware/`.
@@ -38,7 +38,7 @@ make check-prebuilt
 Daily iteration examples (one command per line; run in order):
 
 ```bash
-# Flutter app (app/lws_hmi/)
+# Flutter app (app/hmi/)
 make build-app
 make build-rootfs
 make build-img
@@ -71,7 +71,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 
 | What changed | Commands |
 |--------------|----------|
-| `app/lws_hmi/**`, `scripts/build-app.sh` | `make build-app`, `make build-rootfs`, `make build-img`, `make flash` |
+| `app/hmi/**`, `scripts/build-app.sh` | `make build-app`, `make build-rootfs`, `make build-img`, `make flash` |
 | `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make build-img`, `make flash` |
 | `overlay/kernel/**`, kernel DTS | `make apply-overlay`, `make build-kernel`, `make build-img`, `make flash` |
 | `overlay/.../lws-hmi-fs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
@@ -100,7 +100,7 @@ When unsure or on a clean tree: `make build`.
 
 - **Minimize scope** — smallest correct diff; no drive-by refactors.
 - **Match existing style** in touched files (shell, Dart, Buildroot `.mk`, overlay layout).
-- **Paths:** app → `app/lws_hmi/`; rootfs overlay → `overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/`; Buildroot fragments → `overlay/buildroot/`.
+- **Paths:** app → `app/hmi/`; rootfs overlay → `overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/`; Buildroot fragments → `overlay/buildroot/`.
 - **Do not** run `make build-uboot` on ynh960 unless Innohi instructs.
 - OpenSpec workflow: `.cursor/skills/openspec-*` when the user uses that flow.
 
@@ -109,7 +109,7 @@ When unsure or on a clean tree: `make build`.
 Before finishing implementation work:
 
 - Docs-only: no build required.
-- `app/lws_hmi/`: `flutter analyze` / tests under `app/lws_hmi/` when Dart changed.
+- `app/hmi/`: `flutter analyze` / tests under `app/hmi/` when Dart changed.
 - Overlay/rootfs: `make build-rootfs` should pass `scripts/verify-rootfs-overlay.sh`.
 - After flash (device): `/usr/lib/lws-hmi/boot-verify.sh` (Plan A boot KPI); `/usr/lib/lws-hmi/env-verify.sh` (§3.4 platform stack).
 
@@ -127,7 +127,7 @@ Keep long command examples in **README.md**; keep agent-only rules (rebuild bloc
 
 | Path | Role |
 |------|------|
-| `app/lws_hmi/` | Flutter HMI → `overlay/.../opt/hmi` |
+| `app/hmi/` | Flutter HMI → `overlay/.../opt/hmi` |
 | `overlay/.../lws-hmi-fs-overlay/` | Rootfs overlay (systemd, scripts, `/opt/hmi` staging) |
 | `overlay/buildroot/` | Defconfig fragments, package pins |
 | `overlay/kernel/` | DTS / kernel config |

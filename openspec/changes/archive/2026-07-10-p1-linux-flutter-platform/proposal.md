@@ -13,7 +13,7 @@ lws-hmi must replace the Rockchip EVB reference rootfs (Weston, Chromium, camera
 - Deploy a **Flutter Hello World** release build (meta-flutter layout: `lib/libapp.so` + assets) to `/opt/hmi` via rootfs overlay.
 - Enable **Plan A systemd boot chain**: `hmi.service` + Innohi `mainserver.service` + `lws-hmi-performance.service` + `lws-hmi-pwrkey-poweroff.service`; defer Wi‑Fi/BT/network at boot; keep mediamtx / sshd / bluetoothd **disabled**.
 - Set **`RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"`** on ynh960 board config for P1 builds (resolves to `rockchip_rk3566_rk3568_lws_hmi`).
-- Create **`app/lws_hmi`** Flutter project with `flutterpi_tool` for ARM64 release AOT (meta-flutter bundle).
+- Create **`app/hmi`** Flutter project with `flutterpi_tool` for ARM64 release AOT (meta-flutter bundle).
 - Add **P1 runtime dependency prep** via `make build-all-deps`: prebuilt Flutter, GStreamer/MPP, MediaMTX, OpenCV, RKNN runtime (`prebuilt/`); host dev via `build-dev-deps`. Product **features** still phased P2–P5; defconfig `#include` lines gate what actually enters rootfs.
 - Add **boot KPI optimization** overlay: `boot-verify.sh`, kernel trim, eMMC noatime, deferred networking, stable pwrkey poweroff.
 
@@ -26,7 +26,7 @@ lws-hmi must replace the Rockchip EVB reference rootfs (Weston, Chromium, camera
 - `buildroot-lws-hmi-image`: Lean Buildroot defconfig, chip Kconfig fragments, flutter-pi/Mali/Wi‑Fi/BT stack, prebuilt-first packages, SDK integration, EVB package removal, USB flash tooling.
 - `boot-splash-display`: U-Boot FIT + kernel early logo on ynh960 MIPI panel; seamless handoff to flutter-pi without prolonged black screen.
 - `hmi-systemd-boot`: Plan A minimal systemd, `hmi.service` auto-start, boot KPI services, journald volatile, post-hook unit enable/disable, boot-verify acceptance, boot KPI ≤10 s to first home frame.
-- `flutter-hello-world-app`: Flutter project (`app/lws_hmi`), flutter-pi meta-flutter release build, deployment layout under `/opt/hmi`, acceptance on target hardware.
+- `flutter-hello-world-app`: Flutter project (`app/hmi`), flutter-pi meta-flutter release build, deployment layout under `/opt/hmi`, acceptance on target hardware.
 
 ### Modified Capabilities
 
@@ -36,7 +36,7 @@ _(none — no existing openspec specs in this repo)_
 
 - **Buildroot / SDK**: defconfig, prebuilt flutter-pi/engine overlay packages, `lws_hmi_flutter.config`, board logo assets, ynh960 `RK_BUILDROOT_BASE_CFG` update, kernel trim fragment.
 - **Overlay**: Rootfs overlay for `/opt/hmi` Hello World artifacts; U-Boot logo under `board/logo/`; systemd units and helper scripts under `usr/lib/lws-hmi/`.
-- **App**: `app/lws_hmi/` Flutter project and `scripts/build-app.sh` (host-side, not Buildroot-compiled).
+- **App**: `app/hmi/` Flutter project and `scripts/build-app.sh` (host-side, not Buildroot-compiled).
 - **Host flash**: `scripts/flash-usb.sh`, Makefile `devices` / `bootloader` / `loader` / `upgrade` / `flash`; `tools/upgrade_tool/` (Rockchip upgrade_tool v2.44).
 - **Existing overlays reused**: `lws_hmi_{base,systemd,network}.config`, `hmi.service`, `06-lws-hmi-systemd.sh`, `08-lws-hmi-systemd-finalize.sh`, LCD/MIPI display overlay.
 - **Downstream phases**: P2–P5 depend on P1 display stack, systemd boot chain, and `/opt/hmi` deployment pattern. Uncomment defconfig `#include` lines as each phase lands.

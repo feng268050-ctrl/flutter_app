@@ -4,7 +4,7 @@
     {
       "label": "lws-hmi: debug setup",
       "type": "shell",
-      "command": "make usb-ssh-setup debug-setup build-app-debug",
+      "command": "make usb-ssh-setup debug-setup build-debug-app",
       "options": {
         "cwd": "${workspaceFolder}",
         "envFile": "${workspaceFolder}/.env"

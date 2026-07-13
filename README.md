@@ -201,6 +201,7 @@ After one firmware flash with USB plug-ssh support:
 
 ```bash
 make shell                      # interactive root shell; SERIAL=... when multiple boards
+make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL=1
 make build-app
 make push-app                   # SERIAL=... when multiple boards
 ```

@@ -19,7 +19,7 @@ SERIAL ?=
 IMAGE ?=
 FLASH_ENV = SERIAL='$(SERIAL)' UPDATE_IMG='$(IMAGE)'
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-app build-app-debug debug-setup debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices push-app reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-app build-debug-app debug-setup debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices push-app reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -54,18 +54,16 @@ help:
 	@echo "  make docker-volume-status  # show volume mount and SDK tree status"
 	@echo ""
 	@echo "Build (scope = active #include in overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig):"
-	@echo "  make build                 # full: check-prebuilt → overlay → lunch → … → update.img"
-	@echo "  make lunch                 # select ynh960 + lws_hmi Buildroot profile"
-	@echo "  make show-config           # show current SDK .config summary"
-	@echo "  make build-boot-logo       # splash_icon.png → logo.bmp (kernel FIT splash)"
-	@echo "  make build-app     # cross-build app → fs-overlay /opt/hmi"
-	@echo "  make build-app-debug  # cross-build debug bundle → .cache/debug-app-staging"
-	@echo "  make debug-setup  # Flutter Custom Device + IDE doctor (one-time host)"
-	@echo "  make debug-app     # flutter run -d lws-hmi over USB-SSH (debug + hot reload)"
-	@echo "  make build-kernel          # kernel + boot.img (DTS / logo changes)"
-	@echo "  make build-rootfs          # rootfs — builds only enabled defconfig fragments"
-	@echo "  make build-img             # pack update.img (vendor loader/uboot + FIT boot)"
-	@echo "  make sdk-shell             # shell in SDK tree (Linux host / macOS container)"
+	@echo "  make build                 # full image: prebuilt → overlay → lunch → logo → app → kernel → rootfs → img"
+	@echo "  make lunch                 # select ynh960 + lws_hmi Buildroot profile in SDK"
+	@echo "  make show-config           # print RK_* lines from output/.config"
+	@echo "  make build-boot-logo       # board/logo → logo.bmp (kernel FIT splash)"
+	@echo "  make build-app             # release app (AOT) → fs-overlay /opt/hmi + apply-overlay"
+	@echo "  make build-debug-app       # debug app bundle → .cache (make debug-app / IDE; rarely run alone)"
+	@echo "  make build-kernel          # kernel, DTB, boot.img (DTS / logo changes)"
+	@echo "  make build-rootfs          # rootfs.tar (enabled defconfig packages + fs-overlay)"
+	@echo "  make build-img             # pack update.img from loader + boot + rootfs"
+	@echo "  make sdk-shell             # interactive shell in linux-sdk (native Linux or macOS Docker)"
 	@echo "  See docs/build-optimization.md"
 	@echo ""
 	@echo "Dependencies (prebuilt / fetch — run before first make build-rootfs):"
@@ -87,12 +85,30 @@ help:
 	@echo "  make export-prebuilt       # re-export flutter + runtime (usually build-* already did)"
 	@echo "  rebuild-*                  # FORCE=1 refresh (e.g. make rebuild-runtime-deps)"
 	@echo ""
+	@echo "Debug (device / host — USB-SSH, Flutter, serial):"
+	@echo "  make usb-ssh-setup         # host ECM IP + sshpass doctor (macOS may sudo)"
+	@echo "  make devices               # RockUSB + USB-SSH (auto host IP on gadget NIC)"
+	@echo "  make shell                 # interactive device shell over USB-SSH"
+	@echo "  make logs                  # live journal over USB-SSH; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
+	@echo "  make push-app              # scp app over USB ECM SSH (no rootfs reflash)"
+	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
+	@echo "  make debug-app             # flutter run -d lws-hmi over USB-SSH (debug + hot reload)"
+	@echo "  make serial-console        # TTL UART ttyFIQ0 @ 1500000 (quit Ctrl+])"
+	@echo "  make serial-ports          # list host /dev/cu.* TTL ports"
+	@echo "  make serial-sniff          # auto-detect baud while power-cycling board"
+	@echo ""
+	@echo "USB Flash (macOS only):"
+	@echo "  make audit                 # pre-flight before make flash"
+	@echo "  make reboot                # Linux board → reboot via USB-SSH; Android → adb"
+	@echo "  make reboot-loader         # Linux board → RockUSB via USB-SSH; Android → adb"
+	@echo "  make flash                 # uf update.img; ul loader when RockUSB is Maskrom (macOS)"
+	@echo "  make flash-android         # optional: flash Android instead"
+	@echo ""
 	@echo "SDK-native (Innohi baseline, optional):"
 	@echo "  make build-sdk-native      # Innohi SDK-native ynh960 (boot.its, no lws_hmi)"
 	@echo "  make repack-sdk-native     # rebuild kernel+update.img only (after build-sdk-native)"
 	@echo "  make audit-sdk-native      # verify boot.its FIT + SDK loader"
 	@echo "  make flash-sdk-native      # MaskROM flash SDK-native update.img"
-	@echo "  make serial-console        # TTL 1500000 (quit Ctrl+])"
 	@echo ""
 	@echo "Misc (infrequent — board params, BR output maintenance):"
 	@echo "  make pull-display-params        # adb: ynh960 LCD/MIPI tables → board/ (+ apply-overlay)"
@@ -100,16 +116,6 @@ help:
 	@echo "  make fix-buildroot-host-rpaths  # fix stale paths in BR tree after migrate"
 	@echo "  make clean-buildroot-output     # delete active BR output dir (keeps dl/; full rootfs rebuild)"
 	@echo "  make export-buildroot-toolchain # tar.gz BR host+staging → prebuilt/ (team cache, not runtime)"
-	@echo ""
-	@echo "USB Flash (macOS only):"
-	@echo "  make audit                 # pre-flight before make flash"
-	@echo "  make devices               # RockUSB + USB-SSH (auto host IP on gadget NIC)"
-	@echo "  make shell                 # interactive device shell over USB-SSH"
-	@echo "  make push-app              # scp app over USB ECM SSH (no rootfs reflash)"
-	@echo "  make reboot                # Linux board → reboot via USB-SSH; Android → adb"
-	@echo "  make reboot-loader         # Linux board → RockUSB via USB-SSH; Android → adb"
-	@echo "  make flash                 # uf update.img; ul loader when RockUSB is Maskrom (macOS)"
-	@echo "  make flash-android         # optional: flash Android instead"
 	@echo ""
 	@echo "Common Env Vars:"
 	@echo "  FLUTTER_SDK=$(FLUTTER_SDK)"
@@ -198,8 +204,8 @@ build-app:
 	@bash scripts/build-app.sh
 	@bash scripts/apply-overlay.sh
 
-build-app-debug:
-	@bash scripts/build-app-debug.sh
+build-debug-app:
+	@bash scripts/build-debug-app.sh
 
 debug-setup:
 	@bash scripts/debug-setup.sh
@@ -379,6 +385,9 @@ devices:
 
 shell:
 	@$(call WITH_DOTENV,bash scripts/device-shell.sh)
+
+logs:
+	@$(call WITH_DOTENV,bash scripts/device-logs.sh)
 
 usb-ssh-setup:
 	@$(call WITH_DOTENV,bash scripts/usb-ssh-host-setup.sh)

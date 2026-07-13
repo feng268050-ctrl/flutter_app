@@ -81,7 +81,7 @@ make debug-setup
 Build debug staging (host):
 
 ```bash
-make build-app-debug
+make build-debug-app
 ```
 
 Run on a physical ynh960 over USB-SSH (board needs P1.5 overlay scripts from a rootfs rebuild):

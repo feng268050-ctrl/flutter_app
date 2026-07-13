@@ -26,7 +26,7 @@ assert_executable() {
 }
 
 assert_file "$ROOT/overlay/buildroot/flutterpi_tool.version"
-assert_executable "$ROOT/scripts/build-app-debug.sh"
+assert_executable "$ROOT/scripts/build-debug-app.sh"
 assert_executable "$ROOT/scripts/debug-app.sh"
 assert_executable "$ROOT/scripts/debug-setup.sh"
 assert_executable "$ROOT/scripts/debug-app-deploy.sh"
@@ -99,12 +99,12 @@ else
 	fail=1
 fi
 
-if bash "$ROOT/scripts/build-app-debug.sh" >/tmp/lws-hmi-build-app-debug.log 2>&1; then
-	echo "OK  build-app-debug"
+if bash "$ROOT/scripts/build-debug-app.sh" >/tmp/lws-hmi-build-debug-app.log 2>&1; then
+	echo "OK  build-debug-app"
 	assert_file "$ROOT/.cache/debug-app-staging/opt/hmi/data/flutter_assets/kernel_blob.bin"
 	assert_file "$ROOT/.cache/debug-app-staging/debug-runtime/3.24.4/manifest.json"
 else
-	echo "FAIL build-app-debug (see /tmp/lws-hmi-build-app-debug.log)" >&2
+	echo "FAIL build-debug-app (see /tmp/lws-hmi-build-debug-app.log)" >&2
 	fail=1
 fi
 

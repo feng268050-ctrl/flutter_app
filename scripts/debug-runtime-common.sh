@@ -114,7 +114,7 @@ Build the matching arm64-debug prebuilt:
   FLUTTER_ENGINE_RUNTIME_MODE=debug make build-flutter-engine
 
 Or run a debug app build first (uses flutterpi_tool cache):
-  make build-app-debug
+  make build-debug-app
 EOF
 	return 1
 }

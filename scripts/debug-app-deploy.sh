@@ -20,7 +20,7 @@ die() {
 	exit 1
 }
 
-[[ -d "$STAGING/opt/hmi/data/flutter_assets" ]] || die "missing debug staging (run: make build-app-debug)"
+[[ -d "$STAGING/opt/hmi/data/flutter_assets" ]] || die "missing debug staging (run: make build-debug-app)"
 
 usb_ssh_session_prepare "$ROOT"
 

@@ -21,7 +21,7 @@ export PATH="$FLUTTER_INSTALL/bin:${HOME}/.pub-cache/bin:$PATH"
 
 bash "$ROOT/scripts/usb-ssh-host-setup.sh"
 bash "$ROOT/scripts/debug-setup.sh"
-bash "$ROOT/scripts/build-app-debug.sh"
+bash "$ROOT/scripts/build-debug-app.sh"
 
 cd "$APP_DIR"
 echo "Starting Flutter debug on lws-hmi (Ctrl+C detaches IDE tunnel; app keeps running on device)..."

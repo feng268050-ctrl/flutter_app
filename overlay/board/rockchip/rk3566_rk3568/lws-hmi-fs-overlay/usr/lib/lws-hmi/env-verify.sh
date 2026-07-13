@@ -1,6 +1,6 @@
 #!/bin/sh
 # §3.4 platform stack verification on ynh960 device (excludes flutter-pi / hmi boot KPI).
-# Run after flash: /usr/lib/lws-hmi/env-verify.sh
+# Run after flash: verify-env
 # Canonical copy: overlay/.../lws-hmi-fs-overlay/usr/lib/lws-hmi/env-verify.sh
 set -u
 
@@ -11,7 +11,7 @@ prep_ok() { echo "PASS: $* (P1 prep-only — absent on rootfs is OK)"; }
 
 FAILED=0
 
-echo "=== lws-hmi env-verify (§3.4 platform stack, no flutter-pi) ==="
+echo "=== lws-hmi verify-env (§3.4 platform stack, no flutter-pi) ==="
 
 echo ""
 echo "--- RKNPU2 runtime (P1 rootfs) ---"
@@ -82,10 +82,10 @@ fi
 
 echo ""
 echo "--- RockUSB Loader reboot helper ---"
-if [ -x /usr/lib/lws-hmi/reboot-rockusb-loader ]; then
-	pass "reboot-rockusb-loader installed (RESTART2 loader — not busybox reboot)"
+if [ -x /usr/lib/lws-hmi/reboot-loader ] && [ -x /usr/bin/reboot-loader ]; then
+	pass "reboot-loader installed in PATH (RESTART2 loader — not busybox reboot)"
 else
-	fail "/usr/lib/lws-hmi/reboot-rockusb-loader missing"
+	fail "reboot-loader missing from /usr/lib/lws-hmi or /usr/bin"
 fi
 
 npu_sysfs=0
@@ -282,8 +282,8 @@ done
 
 echo ""
 if [ "$FAILED" -eq 0 ]; then
-	echo "=== env-verify: ALL PASS ==="
+	echo "=== verify-env: ALL PASS ==="
 	exit 0
 fi
-echo "=== env-verify: FAILED ==="
+echo "=== verify-env: FAILED ==="
 exit 1

@@ -10,7 +10,7 @@ warn() { echo "WARN: $*"; }
 FAILED=0
 WANTS=/etc/systemd/system/multi-user.target.wants
 
-echo "=== lws-hmi boot-verify (Plan A / single image) ==="
+echo "=== lws-hmi verify-boot (Plan A / single image) ==="
 
 echo ""
 echo "--- multi-user.target.wants ---"
@@ -143,8 +143,8 @@ fi
 
 echo ""
 if [ "$FAILED" -eq 0 ]; then
-	echo "=== boot-verify: ALL PASS ==="
+	echo "=== verify-boot: ALL PASS ==="
 	exit 0
 fi
-echo "=== boot-verify: FAILED ==="
+echo "=== verify-boot: FAILED ==="
 exit 1

@@ -77,13 +77,7 @@ if [ -f "$SYNC_ENGINE" ]; then
 	sh "$SYNC_ENGINE" "$TARGET_DIR"
 fi
 
-# RockUSB Loader reboot (RESTART2 loader) — see tools/reboot-rockusb-loader/
 LWS_HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
-BUILD_LOADER="$LWS_HMI_ROOT/scripts/build-reboot-rockusb-loader.sh"
-if [ -f "$BUILD_LOADER" ]; then
-	bash "$BUILD_LOADER" "$TARGET_DIR"
-fi
-
 ENSURE_KEYS="$TARGET_DIR/usr/lib/lws-hmi/ensure-sshd-hostkeys.sh"
 if [ ! -f "$ENSURE_KEYS" ]; then
 	ENSURE_KEYS="$LWS_HMI_ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/ensure-sshd-hostkeys.sh"

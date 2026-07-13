@@ -28,6 +28,30 @@ if [ -f "$SYNC_ENGINE" ]; then
 	sh "$SYNC_ENGINE" "$TARGET_DIR"
 fi
 
+# Install operator-facing device commands before rootfs image copies are made.
+BUILD_LOADER="$LWS_HMI_ROOT/scripts/build-reboot-rockusb-loader.sh"
+if [ ! -f "$BUILD_LOADER" ]; then
+	echo "lws-hmi-post-build: build-reboot-rockusb-loader.sh missing" >&2
+	exit 1
+fi
+bash "$BUILD_LOADER" "$TARGET_DIR"
+
+mkdir -p "$TARGET_DIR/usr/bin"
+ln -sf /usr/lib/lws-hmi/boot-verify.sh "$TARGET_DIR/usr/bin/verify-boot"
+ln -sf /usr/lib/lws-hmi/env-verify.sh "$TARGET_DIR/usr/bin/verify-env"
+ln -sf /usr/lib/lws-hmi/diagnose-hmi.sh "$TARGET_DIR/usr/bin/diagnose-hmi"
+ln -sf /usr/lib/lws-hmi/usb-plug-ssh-diag.sh "$TARGET_DIR/usr/bin/diagnose-usb-ssh"
+ln -sf /usr/lib/lws-hmi/read-device-serial.sh "$TARGET_DIR/usr/bin/read-serial"
+ln -sf /usr/lib/lws-hmi/usb-plug-ssh-start.sh "$TARGET_DIR/usr/bin/start-usb-ssh"
+ln -sf /usr/lib/lws-hmi/usb-plug-ssh-stop.sh "$TARGET_DIR/usr/bin/stop-usb-ssh"
+ln -sf /usr/lib/lws-hmi/usb-plug-ssh-recover.sh "$TARGET_DIR/usr/bin/recover-usb-ssh"
+ln -sf /usr/lib/lws-hmi/reboot-loader "$TARGET_DIR/usr/bin/reboot-loader"
+rm -f \
+	"$TARGET_DIR/usr/bin/boot-verify" \
+	"$TARGET_DIR/usr/bin/env-verify" \
+	"$TARGET_DIR/usr/bin/read-device-serial" \
+	"$TARGET_DIR/usr/bin/reboot-rockusb-loader"
+
 # App bundle must not ship engine/icu (system paths only).
 rm -f \
 	"$TARGET_DIR/opt/hmi/lib/libflutter_engine.so" \

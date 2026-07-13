@@ -10,7 +10,7 @@ prep_ok() { echo "PASS: $* (P1 prep-only — absent on rootfs is OK)"; }
 
 FAILED=0
 
-echo "=== lws-hmi env-verify (§3.4 platform stack, no flutter-pi) ==="
+echo "=== lws-hmi verify-env (§3.4 platform stack, no flutter-pi) ==="
 
 echo ""
 echo "--- RKNPU2 runtime (P1 rootfs) ---"
@@ -274,8 +274,8 @@ done
 
 echo ""
 if [ "$FAILED" -eq 0 ]; then
-	echo "=== env-verify: ALL PASS ==="
+	echo "=== verify-env: ALL PASS ==="
 	exit 0
 fi
-echo "=== env-verify: FAILED ==="
+echo "=== verify-env: FAILED ==="
 exit 1

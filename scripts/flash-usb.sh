@@ -41,7 +41,7 @@ Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash}
 
   devices        List connected devices (RockUSB + USB-SSH; MODE column)
   reboot         Linux board (USB-SSH) → reboot; Android → adb reboot
-  reboot-loader  Linux board (USB-SSH) → reboot-rockusb-loader; Android → adb reboot loader
+  reboot-loader  Linux board (USB-SSH) → reboot-loader; Android → adb reboot loader
   loader         upgrade_tool ul <MiniLoaderAll.bin>  [LOADER_NORESET=1]  (macOS)
   upgrade        upgrade_tool uf <update.img>        [UPGRADE_NORESET=1] (macOS)
   flash          uf update.img; ul first when RockUSB mode is Maskrom (macOS)
@@ -440,9 +440,9 @@ run_usb_ssh_reboot_loader() {
   local iface
   iface="$(usb_ssh_select_iface)"
   echo "Linux board via USB-SSH (iface=$iface) → RockUSB Loader"
-  usb_ssh_schedule_remote "$iface" "exec /usr/lib/lws-hmi/reboot-rockusb-loader"
+  usb_ssh_schedule_remote "$iface" "exec /usr/bin/reboot-loader"
   wait_for_rockusb
-  echo "RockUSB ready (via USB-SSH reboot-rockusb-loader)."
+  echo "RockUSB ready (via USB-SSH reboot-loader)."
 }
 
 run_reboot() {

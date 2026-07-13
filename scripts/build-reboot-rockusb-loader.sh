@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build reboot-rockusb-loader with the same Buildroot host toolchain as rootfs.
+# Build reboot-loader with the same Buildroot host toolchain as rootfs.
 # Intended to run from lws-hmi-post-fakeroot.sh during make build-rootfs (TARGET_DIR=.../target).
 set -euo pipefail
 
@@ -38,12 +38,12 @@ resolve_br_out() {
 
 TARGET_DIR="${1:-}"
 if [[ -n "$TARGET_DIR" ]]; then
-	OUT="$TARGET_DIR/usr/lib/lws-hmi/reboot-rockusb-loader"
+	OUT="$TARGET_DIR/usr/lib/lws-hmi/reboot-loader"
 	BR_OUT="$(resolve_br_out "$TARGET_DIR")"
 else
 	BR_OUT="$(resolve_br_out)"
 	TARGET_DIR="$BR_OUT/target"
-	OUT="$TARGET_DIR/usr/lib/lws-hmi/reboot-rockusb-loader"
+	OUT="$TARGET_DIR/usr/lib/lws-hmi/reboot-loader"
 fi
 
 HOST_BIN="$BR_OUT/host/bin"
@@ -62,7 +62,8 @@ SYSROOT="$BR_OUT/host/aarch64-buildroot-linux-gnu/sysroot"
 [[ -d "$SYSROOT" ]] || die "sysroot missing under $BR_OUT/host"
 
 mkdir -p "$(dirname "$OUT")"
-echo "build-reboot-rockusb-loader: $GCC (static, sysroot=$SYSROOT) -> $OUT"
+rm -f "$TARGET_DIR/usr/lib/lws-hmi/reboot-rockusb-loader"
+echo "build-reboot-loader: $GCC (static, sysroot=$SYSROOT) -> $OUT"
 "$GCC" --sysroot="$SYSROOT" -O2 -Wall -Wextra -static -o "$OUT" "$SRC"
 chmod 0755 "$OUT"
 file "$OUT"

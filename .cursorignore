@@ -4,7 +4,7 @@ prebuilt/
 # SDK symlink target (Rockchip tree; tens of GB)
 sdk/
 
-# Host Flutter SDK (outside repo; symlink flutter-sdk/ → FLUTTER_SDK/install/)
+# Host Flutter SDK at repo root (gitignored; make fetch-flutter-sdk)
 flutter-sdk/
 
 # Build outputs and download caches

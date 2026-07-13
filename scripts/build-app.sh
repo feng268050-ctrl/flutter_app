@@ -22,9 +22,8 @@ if [[ ! -x "$FLUTTER" ]]; then
 
 Run on host (not Docker):
   make fetch-flutter-sdk
-  make link-flutter-sdk
 
-Or set FLUTTER_SDK to a tree with install/bin/flutter (must match engine $ENGINE_VER)."
+Or set FLUTTER_SDK to the SDK root with bin/flutter (must match engine $ENGINE_VER)."
 fi
 
 export PATH="$FLUTTER_INSTALL/bin:${HOME}/.pub-cache/bin:$PATH"
@@ -93,6 +92,8 @@ install_meta_flutter_bundle() {
 		"$DEST/data/flutter_assets/flutter-pi"
 }
 install_meta_flutter_bundle
+
+printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >"$DEST/runtime-mode.json"
 
 echo "Installed HMI app bundle to $DEST (libapp.so + assets only; engine $ENGINE_VER on rootfs)"
 ls -la "$DEST" "$DEST/lib" "$DEST/data" 2>/dev/null || ls -la "$DEST"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prefetch host Flutter SDK into FLUTTER_SDK (outside git) with .cache/ staging.
+# Prefetch host Flutter SDK into repo-root flutter-sdk/ (gitignored) with .cache/ staging.
 # macOS: darwin SDK for make build-app; Linux: linux SDK for Docker engine compile.
 set -euo pipefail
 
@@ -10,7 +10,6 @@ VERSION_FILE="$ROOT/overlay/buildroot/flutter-sdk.version"
 VERSION="$(read_version_file "$VERSION_FILE" "3.24.4")"
 
 CACHE_DIR="$ROOT/.cache/flutter-sdk"
-FLUTTER_ROOT="$(bash "$ROOT/scripts/link-flutter-sdk.sh" --print-root)"
 FLUTTER_INSTALL="$(bash "$ROOT/scripts/link-flutter-sdk.sh" --print)"
 MARKER=".lws-precache-done"
 FORCE="${FORCE:-0}"
@@ -62,7 +61,7 @@ extract_archive() {
 	esac
 }
 
-# Inside Docker the host FLUTTER_SDK tree is bind-mounted read-only at flutter-sdk/.
+# Inside Docker the host flutter-sdk/ tree is bind-mounted read-only at /work/lws-hmi/flutter-sdk.
 if [[ "${LWS_HMI_DOCKER:-}" == "1" ]]; then
 	if flutter_sdk_usable "$DOCKER_INSTALL"; then
 		echo "flutter-sdk $VERSION: ready at $DOCKER_INSTALL (read-only mount)"
@@ -71,7 +70,7 @@ if [[ "${LWS_HMI_DOCKER:-}" == "1" ]]; then
 	cat >&2 <<EOF
 ERROR: host Flutter SDK not available in Docker.
 
-On macOS, install/precache on the host first (writes to FLUTTER_SDK outside the container):
+On macOS, install/precache on the host first (writes to flutter-sdk/ in the repo):
   make fetch-flutter-sdk
 
 Then retry:
@@ -81,7 +80,7 @@ EOF
 fi
 
 if flutter_sdk_usable "$FLUTTER_INSTALL" \
-	&& prebuilt_ready "$FLUTTER_ROOT" \
+	&& prebuilt_ready "$FLUTTER_INSTALL" \
 	&& [[ -f "$FLUTTER_INSTALL/$MARKER" ]] \
 	&& [[ "$FORCE" != "1" ]]; then
 	echo "flutter-sdk $VERSION: ready at $FLUTTER_INSTALL ($PLATFORM_TAG)"
@@ -92,18 +91,7 @@ fi
 if [[ "$FORCE" == "1" ]]; then
 	rm -f "$CACHE_INSTALL/$MARKER" "$FLUTTER_INSTALL/$MARKER"
 	rm -rf "$CACHE_INSTALL" "$FLUTTER_INSTALL"
-	rm -f "$FLUTTER_ROOT/.lws-prebuilt"
 fi
-
-migrate_legacy() {
-	local legacy="$ROOT/prebuilt/flutter-sdk"
-	if [[ -d "$legacy/install" && ! -d "$FLUTTER_INSTALL" ]]; then
-		echo "flutter-sdk $VERSION: migrating legacy prebuilt/flutter-sdk -> $FLUTTER_ROOT ..."
-		mkdir -p "$(dirname "$FLUTTER_ROOT")"
-		mv "$legacy" "$FLUTTER_ROOT"
-	fi
-}
-migrate_legacy
 
 mkdir -p "$CACHE_DIR"
 
@@ -135,7 +123,7 @@ if ! flutter_sdk_usable "$install_tree"; then
 fi
 
 echo "flutter-sdk $VERSION ($PLATFORM_TAG): syncing to $FLUTTER_INSTALL ..."
-mkdir -p "$FLUTTER_ROOT"
+mkdir -p "$(dirname "$FLUTTER_INSTALL")"
 if command -v rsync >/dev/null 2>&1; then
 	rsync -a --delete --no-owner --no-group --no-perms --omit-dir-times "$install_tree"/ "$FLUTTER_INSTALL"/
 else
@@ -143,7 +131,7 @@ else
 	mkdir -p "$FLUTTER_INSTALL"
 	cp -a "$install_tree"/. "$FLUTTER_INSTALL"/
 fi
-prebuilt_stamp "$FLUTTER_ROOT" "$VERSION"
+prebuilt_stamp "$FLUTTER_INSTALL" "$VERSION"
 bash "$ROOT/scripts/sync-prebuilt-manifest.sh"
 bash "$ROOT/scripts/link-flutter-sdk.sh"
 

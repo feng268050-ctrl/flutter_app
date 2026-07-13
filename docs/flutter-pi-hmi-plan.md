@@ -1,6 +1,6 @@
 # Flutter-pi HMI 规划（ynh960 产品线 · RK3566 基准）
 
-目标：在现有 **lws-hmi** Buildroot 基线上，用 **flutter-pi** 全屏跑 Flutter UI；按 **P1→P5** 增量交付：**P1** 镜像 + Hello World → **P1.5** 调试构建与快速 UI 迭代 → **P2** Modbus/GPIO demo（Linux + 旧 Android 产品兼容） → **P3** `libai.so` → **P4** FrostUI + IME 子模块 → **P5** 全量业务。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块。
+目标：在现有 **lws-hmi** Buildroot 基线上，用 **flutter-pi** 全屏跑 Flutter UI；按 **P1→P5** 增量交付：**P1** 镜像 + Hello World → **P1.5** 设备调试与快速 UI 迭代 → **P2** Modbus/GPIO demo（Linux + 旧 Android 产品兼容） → **P3** `libai.so` → **P4** FrostUI + IME 子模块 → **P5** 全量业务。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块。
 
 **能力原则**：**lws-hmi 产品能力不少于 lws-ui**；Linux 主线将 Android/Java 平台层替换为 **Buildroot + flutter-pi + Dart/FFI**，同时 P2 起保留旧 Android 产品兼容构建；算法、拓扑、模型与 API 契约尽量复用。逐项对照见 **§11.5**。
 
@@ -13,7 +13,7 @@
 | 阶段 | 交付 | 不在本阶段 |
 |------|------|------------|
 | **P1 — 平台镜像 + Hello World** | Buildroot **Linux 镜像**（含后续所需的 **平台必须组件**）+ splash → **`flutter-pi` Hello World** | Modbus 业务、AI so、FrostUI、lws-ui 业务页 |
-| **P1.5 — 调试构建 + 快速 UI 迭代** | `make build-debug*` 调试版本命令；`make sync-app` 冷重启更新 App；VSCode / Cursor Flutter 插件接入；Linux emulator 开发环 | Modbus/GPIO 业务迁移、AI so、FrostUI |
+| **P1.5 — 设备调试 + 快速 UI 迭代** | `make debug-app` 在设备上以调试模式启动 App；VSCode / Cursor Flutter 插件接入；Linux emulator 开发环 | Modbus/GPIO 业务迁移、AI so、FrostUI |
 | **P2 — Modbus + GPIO + Android 兼容** | Flutter App 同时构建 **Linux** 与 **Android**；Modbus 统一 `flutter_libserialport`；GPIO Linux 读写文件、Android MethodChannel 调 `YBHAPI.jar`；版本号与 APK 推送命令 | 视频、AI 推理 UI、FrostUI |
 | **P3 — AI 原生库** | 迁移 lws-ui **AI 代码库**；新工程打出 **`libai.so`**（+ RKNN/`config.yaml`） | Flutter 叠框产品 UI、FrostUI |
 | **P3.5 — Flutter 平台升级（P4 前置）** | 将板端 **flutter-engine / SDK / flutter-pi** 从 P1 pin **升级到上游支持的 stable**（见 **§6.4**）；ynh960 全量回归 | FrostUI 子模块、P5 业务页 |
@@ -34,9 +34,9 @@ P1  镜像 + Hello World
     ├─ hmi.service 自启；Hello World → /opt/hmi
     └─ 验收：logo → 首页 ≤10 s（§14.2）
 
-P1.5  调试构建 + 快速 UI 迭代
-    ├─ make build-debug / build-debug-app / build-debug-rootfs / build-debug-img
-    ├─ make sync-app：flutterpi_tool 冷重启更新 App，支持 VSCode / Cursor Flutter 插件
+P1.5  设备调试 + 快速 UI 迭代
+    ├─ make debug-app：在实体板或 Linux 虚拟机以调试模式启动 App
+    ├─ VSCode / Cursor Flutter 插件接入
     ├─ make emulator：构建并启动 Linux 虚拟机，加载 rootfs.img 跑 Linux App
     └─ make push-app：兼容实体板 USB-SSH 与 Linux 虚拟机
 
@@ -74,7 +74,7 @@ P5  业务迁移（子阶段见 §1.2）
     └─ P5.7 量产收尾（录像、OTA、parity）
 ```
 
-**依赖**：`P1 → P1.5 → P2 → P3` 建议顺序固定；**P1.5** 先把调试构建、快速同步、IDE 插件与 emulator 打通，降低后续 UI / 平台迁移成本；**P3.5** 在 P3 板端 smoke 通过后、**P4 开工前**完成（FrostUI/IME 子模块常需更高 Dart/Flutter）；**P4** 可与 P3 并行筹备子模块仓库，但 **合并主 App 前须完成 P3.5**；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（P5.1 为多数后续子阶段前置）。
+**依赖**：`P1 → P1.5 → P2 → P3` 建议顺序固定；**P1.5** 先把设备调试模式、IDE 插件与 emulator 打通，降低后续 UI / 平台迁移成本；**P3.5** 在 P3 板端 smoke 通过后、**P4 开工前**完成（FrostUI/IME 子模块常需更高 Dart/Flutter）；**P4** 可与 P3 并行筹备子模块仓库，但 **合并主 App 前须完成 P3.5**；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（P5.1 为多数后续子阶段前置）。
 
 ### 1.2 P5 子阶段（业务迁移）
 
@@ -503,26 +503,22 @@ flutter-pi --release /opt/hmi
 | Buildroot **rootfs overlay** `board/.../lws-hmi-app/` | P1 固定 Hello World |
 | **oem** 分区挂载 `/oem/hmi` | 便于 OTA 只更新应用 |
 | **`make push-app`**（USB ECM + ssh/scp） | **P1 首选**：插 USB → 推 `libapp.so` + assets → `systemctl restart hmi`，无需 reflash |
-| **`make sync-app`**（flutterpi_tool 冷重启） | **P1.5 UI 快速迭代**：配合 VSCode / Cursor Flutter 插件更新并冷重启 Linux App |
+| **`make debug-app`** | **P1.5 UI 调试**：在实体板或 Linux 虚拟机以调试模式启动 App，配合 VSCode / Cursor Flutter 插件 |
 | **`make push-app`**（Linux emulator） | **P1.5 虚拟机迭代**：向加载 `rootfs.img` 的 Linux VM 推送 App |
 | **`make push-apk`**（adb push + pm install） | **P2 旧 Android 产品兼容**：不安装到 `priv-app`，旧产品已预置系统应用位置 |
 | 开发阶段 adb push / scp | Android 或 LAN（§7.7） |
 
-#### 6.2.1 P1.5 调试构建与 IDE 插件
+#### 6.2.1 P1.5 设备调试与 IDE 插件
 
-P1.5 增加一组 **debug 版本** make 目标，目标是缩短 UI 开发闭环，而不是替代量产 `update.img`：
+P1.5 不另建 debug 固件镜像，而是在 **现有 P1 镜像** 上提供设备侧调试启动能力：
 
 | 命令 | 预期行为 |
 |------|----------|
-| `make build-debug` | 构建 debug Linux 固件链路（包含 debug App / rootfs / img 的组合入口） |
-| `make build-debug-app` | 构建 Flutter debug bundle，保留调试符号与 Flutter 工具链可识别的调试模式 |
-| `make build-debug-rootfs` | 将 debug App 与调试依赖同步进 rootfs |
-| `make build-debug-img` | 从 debug rootfs / kernel 产物重新打包 `update.img` |
-| `make sync-app` | 调用 `flutterpi_tool` 对实体板或 Linux emulator 执行 App 同步 + 冷重启 |
+| `make debug-app` | 在实体板或 Linux 虚拟机以 **调试模式** 启动 App（debug bundle + flutter-pi / VM 侧调试启动），供 IDE attach 与断点调试 |
 
-VSCode / Cursor Flutter 插件应能选择 lws-hmi 自定义设备；插件侧热重载能力以 `flutterpi_tool` 实际支持为准，计划中至少保证 **冷重启** 可用。调试命令应复用 repo `.env` / 环境变量（`FLUTTER_SDK`、`SERIAL`、Linux VM 地址等），避免开发者在 IDE、Makefile、脚本中维护多份配置。
+VSCode / Cursor Flutter 插件应能选择 lws-hmi 自定义设备，并通过 `make debug-app` 拉起调试会话。调试命令应复用 repo `.env` / 环境变量（`FLUTTER_SDK`、`SERIAL`、Linux VM 地址等），避免开发者在 IDE、Makefile、脚本中维护多份配置。
 
-P1.5 还增加 **`make emulator`**：构建并启动 Linux 虚拟机，加载 `rootfs.img` 并运行 Linux App，行为上对齐 Android 的 emulator 开发闭环。后续 `make push-app` 需要同时支持实体板 USB-SSH 与该 Linux VM。
+P1.5 还增加 **`make emulator`**：构建并启动 Linux 虚拟机，加载 `rootfs.img` 并运行 Linux App，行为上对齐 Android 的 emulator 开发闭环。`make push-app` 与 `make debug-app` 需同时支持实体板 USB-SSH 与该 Linux VM。
 
 ### 6.3 Frost 渲染分场景策略（backdrop blur）
 
@@ -948,7 +944,7 @@ lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `
 - 与 adb 类似：**按需 `start`**；**不**默认 `enable`（**重启后自动关闭**）
 - USB plug-ssh：**拔线即关**，不依赖 UI 操作
 
-**调试版本边界**：P1.5 可产出 debug 构建链路（`make build-debug*`），但不维护长期分叉的 `LWS_HMI_DEV` overlay；开发与量产仍共享同一套平台配置，差异集中在 App 构建模式、调试依赖与打包目标。
+**调试模式边界**：P1.5 通过 `make debug-app` 在设备上启动调试 App，**不**维护 debug 固件镜像或长期分叉的 `LWS_HMI_DEV` overlay；开发与量产共用 P1 平台镜像，差异仅在 App 调试启动方式。
 
 ---
 
@@ -1111,7 +1107,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | 阶段 | lws-hmi 目标 | 对应 lws-ui |
 |------|--------------|-------------|
 | **P1** | Linux 镜像 + Hello World | Splash / 占位 UI / 平台栈 |
-| **P1.5** | Debug 构建、`sync-app`、IDE 插件、Linux emulator | Android Studio / adb / emulator 的开发闭环 |
+| **P1.5** | `debug-app`、IDE 插件、Linux emulator | Android Studio / adb / emulator 的开发闭环 |
 | **P2** | Linux + Android 双目标 Modbus / GPIO demo（设备信息、三色灯） | Modbus4j、`YBHAPI.jar` GPIO、`LedIndicatorManager`、版本号与 APK 签名 |
 | **P3** | `libai.so` + RKNN/`config.yaml` | `NativeBridge` / `lensinspector` / `AiManager`（原生层） |
 | **P4** | **`frost_ui` + `frost_ime`** 子模块 | FrostUI、`IME.md` / frostui specs |
@@ -1245,13 +1241,12 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [x] 开发机 Flutter **Hello World** → `/opt/hmi`；`hmi.service` 自启验收
 - [x] 上电 → logo → 首页 **≤10 s**（§14.2）；ynh960（RK3566）全量验收；ynh961/ynh962 跨 SKU smoke 可选（**未做，不阻塞 P1**）
 
-### P1.5 — 调试构建 + 快速 UI 迭代
+### P1.5 — 设备调试 + 快速 UI 迭代
 
-- [ ] `make build-debug`、`make build-debug-app`、`make build-debug-rootfs`、`make build-debug-img`：debug Linux 构建链路
-- [ ] `make sync-app`：调用 `flutterpi_tool` 同步 App 并冷重启；支持实体板与 Linux emulator
-- [ ] VSCode / Cursor Flutter 插件：可选择 lws-hmi 自定义设备；至少冷重启调试闭环可用
+- [ ] `make debug-app`：在实体板或 Linux 虚拟机以调试模式启动 App
+- [ ] VSCode / Cursor Flutter 插件：可选择 lws-hmi 自定义设备；可 attach 调试会话
 - [ ] `make emulator`：构建并启动 Linux 虚拟机，加载 `rootfs.img` 并运行 Linux App
-- [ ] `make push-app`：支持实体板 USB-SSH 与 Linux 虚拟机目标
+- [ ] `make push-app` / `make debug-app`：支持实体板 USB-SSH 与 Linux 虚拟机目标
 
 ### P2 — Modbus + GPIO demo（Linux + Android）
 
@@ -1357,26 +1352,19 @@ make flash
 make build
 make flash
 
-# 4. P1.5 debug 版本
-make build-debug
-make build-debug-app
-make build-debug-rootfs
-make build-debug-img
-make flash
-
-# 5. P1.5 快速同步 App（实体板或 Linux emulator）
-make sync-app
+# 4. P1.5 设备调试（实体板或 Linux emulator）
+make debug-app
 make push-app
 
-# 6. P1.5 Linux emulator
+# 5. P1.5 Linux emulator
 make emulator
 
-# 7. P2 Android 兼容构建
+# 6. P2 Android 兼容构建
 make version
 make build-apk
 make push-apk
 
-# 8. P2 Android / 属性调试
+# 7. P2 Android / 属性调试
 make android-emulator
 make set-prop
 make del-prop

@@ -33,18 +33,18 @@
 
 - [x] 5.1 Add checked-in repo-root `.vscode/launch.json` Flutter configuration that launches the `lws-hmi` custom device from Run & Debug using the pinned SDK (workspace: `lws-hmi` root).
 - [x] 5.2 Add minimal workspace settings/tasks needed for Cursor and VS Code to resolve the pinned Flutter SDK and run setup/doctor without duplicating `.env` device configuration.
-- [ ] 5.3 Verify IDE start, source breakpoints, pause/step, hot reload, hot restart, log output, widget inspection, and Flutter DevTools against the physical ynh960.
-- [ ] 5.4 Verify IDE stop closes the SSH tunnel while the debug app continues running, and verify a later IDE session can reconnect or replace it.
+- [x] 5.3 Verify IDE start, source breakpoints, pause/step, hot reload, hot restart, log output, widget inspection, and Flutter DevTools against the physical ynh960.
+- [x] 5.4 Verify IDE stop closes the SSH tunnel while the debug app continues running, and verify a later IDE session can reconnect or replace it.
 
 ## 6. End-to-End Device Verification
 
-- [ ] 6.1 Verify first-session runtime upload and subsequent manifest cache hit on a flashed P1 ynh960.
-- [ ] 6.2 Run repeated release → debug → release cycles as regression coverage for the already-validated DRM GEM teardown fix and confirm the new path reuses the bounded restart behavior.
-- [ ] 6.3 Interrupt debug at app upload, runtime upload, launch, active session, and USB disconnect points; verify a pre-commit failure leaves the previously installed app unchanged and a post-launch disconnect leaves debug running.
-- [ ] 6.4 Reboot once with a debug payload and once with a release payload installed; verify the mode-aware launcher selects the matching engine and runtime mode.
-- [ ] 6.5 Connect multiple physical boards sharing `192.168.55.1` and verify `SERIAL` confines deployment, debug control, logs, and VM Service forwarding to the selected ECM interface.
-- [ ] 6.6 Run `verify-boot` and relevant rootfs-overlay verification after the final firmware change.
-- [ ] 6.7 Run `make push-app` after debugging and verify it replaces the debug payload and returns the device to the release app.
+- [x] 6.1 Verify first-session runtime upload and subsequent manifest cache hit on a flashed P1 ynh960.
+- [x] 6.2 Run repeated release → debug → release cycles as regression coverage for the already-validated DRM GEM teardown fix and confirm the new path reuses the bounded restart behavior.
+- [x] 6.3 Interrupt debug at app upload, runtime upload, launch, active session, and USB disconnect points; verify a pre-commit failure leaves the previously installed app unchanged and a post-launch disconnect leaves debug running.
+- [x] 6.4 Reboot once with a debug payload and once with a release payload installed; verify the mode-aware launcher selects the matching engine and runtime mode.
+- [x] 6.5 Connect multiple physical boards sharing `192.168.55.1` and verify `SERIAL` confines deployment, debug control, logs, and VM Service forwarding to the selected ECM interface.
+- [x] 6.6 Run `verify-boot` and relevant rootfs-overlay verification after the final firmware change.
+- [x] 6.7 Run `make push-app` after debugging and verify it replaces the debug payload and returns the device to the release app.
 
 ## 7. Documentation and Plan Alignment
 

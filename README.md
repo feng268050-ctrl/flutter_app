@@ -176,6 +176,7 @@ Linux hosts: firmware is under `sdk/output/firmware/` as well as `output/firmwar
 ```bash
 make audit
 make devices
+make shell
 make flash
 ```
 
@@ -200,11 +201,12 @@ make flash                      # macOS only
 After one firmware flash with USB plug-ssh support:
 
 ```bash
+make shell                      # interactive root shell; SERIAL=... when multiple boards
 make build-app
 make push-app                   # SERIAL=... when multiple boards
 ```
 
-`make push-app` stages `libapp.so` + `flutter_assets` on the board over USB ECM SSH, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB and USB-SSH rows in one table.
+`make shell` opens an interactive `root` terminal over USB ECM SSH, similar to `adb shell`. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB and USB-SSH rows in one table.
 
 
 ```bash

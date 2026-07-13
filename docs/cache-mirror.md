@@ -36,7 +36,7 @@ LWS_HMI_CACHE_ROOT=/Volumes/nas/lws-hmi-cache
 LWS_HMI_CACHE_PUBLISH=1
 ```
 
-Docker (`make shell`, `build-*` on macOS) mounts `LWS_HMI_CACHE_ROOT` into the container when the path exists.
+Docker (`make sdk-shell`, `build-*` on macOS) mounts `LWS_HMI_CACHE_ROOT` into the container when the path exists.
 
 ## Commands
 

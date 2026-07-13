@@ -65,22 +65,38 @@ usb_ssh_bind_pair() {
 configure_usb_ssh_host_addr() {
 	local iface="$1"
 	local host_addr="$USB_SSH_HOST_ADDR"
+	local hint="Run 'make usb-ssh-setup' in an interactive terminal first."
 	case "$(uname -s)" in
 	Darwin)
 		if ifconfig "$iface" 2>/dev/null | grep -qE "inet ${host_addr}[ /]"; then
 			return 0
 		fi
-		ifconfig "$iface" "$host_addr/24" up 2>/dev/null \
-			|| sudo ifconfig "$iface" "$host_addr/24" up
+		if ifconfig "$iface" "$host_addr/24" up 2>/dev/null; then
+			return 0
+		fi
+		if [[ -t 0 ]]; then
+			sudo ifconfig "$iface" "$host_addr/24" up
+		elif ! sudo -n ifconfig "$iface" "$host_addr/24" up 2>/dev/null; then
+			echo "ERROR: $iface needs host address $host_addr/24. $hint" >&2
+			return 1
+		fi
 		;;
 	Linux)
 		if ip -4 addr show dev "$iface" 2>/dev/null | grep -qE "inet ${host_addr}/"; then
 			return 0
 		fi
-		ip addr add "$host_addr/24" dev "$iface" 2>/dev/null \
-			|| sudo ip addr add "$host_addr/24" dev "$iface" 2>/dev/null \
-			|| sudo ip addr replace "$host_addr/24" dev "$iface"
-		ip link set "$iface" up 2>/dev/null || sudo ip link set "$iface" up
+		if ip addr add "$host_addr/24" dev "$iface" 2>/dev/null && \
+			ip link set "$iface" up 2>/dev/null; then
+			return 0
+		fi
+		if [[ -t 0 ]]; then
+			sudo ip addr replace "$host_addr/24" dev "$iface"
+			sudo ip link set "$iface" up
+		elif ! sudo -n ip addr replace "$host_addr/24" dev "$iface" 2>/dev/null || \
+			! sudo -n ip link set "$iface" up 2>/dev/null; then
+			echo "ERROR: $iface needs host address $host_addr/24. $hint" >&2
+			return 1
+		fi
 		;;
 	esac
 }

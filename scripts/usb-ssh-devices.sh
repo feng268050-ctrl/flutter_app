@@ -53,9 +53,6 @@ enrich_usb_ssh_rows() {
 	local row mode s loc iface addr usb fetched
 	while IFS=$'\t' read -r mode s loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
-		if [[ "$iface" != "-" && -n "$iface" ]]; then
-			configure_usb_ssh_host_addr "$iface" 2>/dev/null || true
-		fi
 		if [[ ( "$s" == "-" || -z "$s" ) && "$iface" != "-" && -n "$iface" ]]; then
 			fetched="$(fetch_board_serial_via_ssh "$iface" || true)"
 			[[ -n "$fetched" ]] && s="$fetched"
@@ -139,7 +136,7 @@ macos_list_usb_ssh() {
 	local python=python3
 	command -v "$python" >/dev/null 2>&1 || return 0
 	"$python" - "$GADGET_VID" "$GADGET_PID" "$USB_SSH_ADDR" "$USB_SSH_MODE" <<'PY'
-import re, subprocess, sys
+import hashlib, re, subprocess, sys
 
 vid_want = sys.argv[1].lower()
 pid_want = sys.argv[2].lower()
@@ -168,9 +165,29 @@ def networksetup_iface_for_port(port_substr: str) -> str:
             return line.split(":", 1)[1].strip()
     return "-"
 
+def iface_for_mac(mac: str) -> str:
+    try:
+        text = subprocess.check_output(
+            ["ifconfig", "-a"],
+            text=True,
+            errors="replace",
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return "-"
+    iface = ""
+    for line in text.splitlines():
+        m_iface = re.match(r"^([a-zA-Z0-9]+):", line)
+        if m_iface:
+            iface = m_iface.group(1)
+            continue
+        m_mac = re.match(r"^\s+ether\s+([0-9a-fA-F:]+)", line)
+        if iface and m_mac and m_mac.group(1).lower() == mac.lower():
+            return iface
+    return "-"
+
 def iter_gadget_chunks(text: str):
     for m in re.finditer(
-        r"\+\-o ([^\n]*(?:RNDIS[/_]Ethernet Gadget|LWS HMI)[^\n]*)\s+<class IOUSBHostDevice[^>]*>",
+        r"\+\-o ([^\n]*?)\s+<class IOUSBHostDevice[^>]*>",
         text,
     ):
         yield m.group(1), text[m.start() : m.start() + 3000]
@@ -192,7 +209,10 @@ def parse_vendor_product(chunk: str):
         m_pid = re.search(r'"idProduct"\s*=\s*(\d+)', chunk)
         if m_pid:
             pid = format(int(m_pid.group(1)), "x")
-    return vid, pid
+    return (
+        vid.zfill(4) if vid is not None else None,
+        pid.zfill(4) if pid is not None else None,
+    )
 
 def chunk_matches(name: str, chunk: str) -> bool:
     vid, pid = parse_vendor_product(chunk)
@@ -216,6 +236,13 @@ def iface_for_chunk(name: str, chunk: str, text: str) -> str:
     m_bsd = re.search(r'"BSD Name"\s*=\s*"(en[^"]+)"', chunk)
     if m_bsd:
         return m_bsd.group(1)
+    m_serial = re.search(r'"USB Serial Number"\s*=\s*"([^"]+)"', chunk)
+    if m_serial:
+        digest = hashlib.md5(m_serial.group(1).strip().encode()).hexdigest()
+        host_mac = "02:12:" + ":".join(digest[i : i + 2] for i in range(0, 8, 2))
+        iface = iface_for_mac(host_mac)
+        if iface != "-":
+            return iface
     m_loc = re.search(r'"locationID"\s*=\s*0x([0-9a-fA-F]+)', chunk)
     loc = m_loc.group(1).upper() if m_loc else ""
     if loc:
@@ -233,6 +260,10 @@ def iface_for_chunk(name: str, chunk: str, text: str) -> str:
         iface = networksetup_iface_for_port("LWS HMI")
         if iface != "-":
             return iface
+    if "LWS" in name:
+        iface = networksetup_iface_for_port("LWS")
+        if iface != "-":
+            return iface
     return "-"
 
 text = subprocess.check_output(["ioreg", "-p", "IOUSB", "-l", "-w", "0"], text=True, errors="replace")
@@ -245,12 +276,17 @@ for name, chunk in iter_gadget_chunks(text):
 if not gadget_blocks:
     sys.exit(0)
 
+seen = set()
 for name, chunk in gadget_blocks:
     m_serial = re.search(r'"USB Serial Number"\s*=\s*"([^"]+)"', chunk)
     m_loc = re.search(r'"locationID"\s*=\s*0x([0-9a-fA-F]+)', chunk)
     vid, pid = parse_vendor_product(chunk)
     serial = m_serial.group(1).strip() if m_serial and m_serial.group(1).strip() else "-"
     loc = m_loc.group(1).upper() if m_loc else "-"
+    identity = (serial, loc)
+    if identity in seen:
+        continue
+    seen.add(identity)
     usb = f"0x{vid}:0x{pid}" if vid and pid else "-"
     iface = iface_for_chunk(name, chunk, text)
     print(f"{mode}\t{serial}\t{loc}\t{iface}\t{addr}\t{usb}")
@@ -340,7 +376,6 @@ select_usb_ssh_device() {
 		for row in "${rows[@]}"; do
 			IFS="$USB_SSH_FS" read -r mode s loc iface addr usb <<<"$row"
 			[[ "$iface" == "$pick_iface" ]] || continue
-			configure_usb_ssh_host_addr "$iface" 2>/dev/null || true
 			printf '%s\n' "$loc" "$iface" "$addr"
 			return 0
 		done
@@ -351,7 +386,6 @@ select_usb_ssh_device() {
 		for row in "${rows[@]}"; do
 			IFS="$USB_SSH_FS" read -r mode s loc iface addr usb <<<"$row"
 			if [[ "$s" == "$serial" || "$loc" == "$serial" ]]; then
-				configure_usb_ssh_host_addr "$iface" 2>/dev/null || true
 				printf '%s\n' "$loc" "$iface" "$addr"
 				return 0
 			fi
@@ -359,7 +393,6 @@ select_usb_ssh_device() {
 			if [[ "$iface" != "-" && -n "$iface" ]]; then
 				fetched="$(fetch_board_serial_via_ssh "$iface" || true)"
 				if [[ "$fetched" == "$serial" ]]; then
-					configure_usb_ssh_host_addr "$iface" 2>/dev/null || true
 					printf '%s\n' "$loc" "$iface" "$addr"
 					return 0
 				fi
@@ -374,7 +407,6 @@ select_usb_ssh_device() {
 
 	IFS="$USB_SSH_FS" read -r mode s loc iface addr usb <<<"${rows[0]}"
 	[[ "$iface" != "-" && -n "$iface" ]] || die "USB-SSH: no host IFACE (plug USB OTG; board: /usr/lib/lws-hmi/usb-plug-ssh-start.sh)"
-	configure_usb_ssh_host_addr "$iface" 2>/dev/null || true
 	printf '%s\n' "$loc" "$iface" "$addr"
 }
 

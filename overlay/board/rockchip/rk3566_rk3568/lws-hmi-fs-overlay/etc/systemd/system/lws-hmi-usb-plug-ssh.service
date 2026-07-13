@@ -9,4 +9,5 @@ Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/lib/lws-hmi/usb-plug-ssh-start.sh
 ExecStop=/usr/lib/lws-hmi/usb-plug-ssh-stop.sh
-TimeoutStartSec=60
+TimeoutStartSec=15
+TimeoutStopSec=10

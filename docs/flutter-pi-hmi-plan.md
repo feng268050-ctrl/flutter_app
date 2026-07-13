@@ -1,28 +1,30 @@
 # Flutter-pi HMI 规划（ynh960 产品线 · RK3566 基准）
 
-目标：在现有 **lws-hmi** Buildroot 基线上，用 **flutter-pi** 全屏跑 Flutter UI；按 **P1→P5** 增量交付：**P1** 镜像 + Hello World → **P1.5** 设备调试与快速 UI 迭代 → **P2** Modbus/GPIO demo（Linux + 旧 Android 产品兼容） → **P3** `libai.so` → **P4** FrostUI + IME 子模块 → **P5** 全量业务。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块。
+目标：在现有 **lws-hmi** Buildroot 基线上，用 **flutter-pi** 全屏跑 Flutter UI；按 **P1→P6** 增量交付：**P1** 镜像 + Hello World → **P1.5** 设备调试与快速 UI 迭代 → **P2** Modbus/GPIO（Linux 真机） → **P2.5** 模拟器与 Android 兼容 → **P3** `libai.so` → **P4** FrostUI + IME 子模块 → **P5** 全量业务 → **P6** OTA。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块。
 
-**能力原则**：**lws-hmi 产品能力不少于 lws-ui**；Linux 主线将 Android/Java 平台层替换为 **Buildroot + flutter-pi + Dart/FFI**，同时 P2 起保留旧 Android 产品兼容构建；算法、拓扑、模型与 API 契约尽量复用。逐项对照见 **§11.5**。
+**能力原则**：**lws-hmi 产品能力不少于 lws-ui**；Linux 主线将 Android/Java 平台层替换为 **Buildroot + flutter-pi + Dart/FFI**，**P2.5** 起保留旧 Android 产品兼容构建；算法、拓扑、模型与 API 契约尽量复用。逐项对照见 **§11.5**。
 
-**板级范围**：**ynh960 / ynh962 / ynh961** 为同一产品线的三档板型（**入门 → 中档 → 高档**：RK3566 → RK3568B2 → RK3568；芯片与接口有微小差异，大体硬件拓扑相近）；**理论上可共用一份 Linux 固件**（与 lws-ui Android 通刷思路一致）。**P1～P5 设计与验收以 ynh960（RK3566）为基准**，暂不按 SKU 拆 defconfig 或维护多套镜像。Rockchip SDK 目录 **`rk3566_rk3568`** / Buildroot **`rockchip_rk3566_rk3568_*`** 为 3566/3568 族工具链 profile。见 **§3.0**。
+**板级范围**：**ynh960 / ynh962 / ynh961** 为同一产品线的三档板型（**入门 → 中档 → 高档**：RK3566 → RK3568B2 → RK3568；芯片与接口有微小差异，大体硬件拓扑相近）；**理论上可共用一份 Linux 固件**（与 lws-ui Android 通刷思路一致）。**P1～P6 设计与验收以 ynh960（RK3566）为基准**，暂不按 SKU 拆 defconfig 或维护多套镜像。Rockchip SDK 目录 **`rk3566_rk3568`** / Buildroot **`rockchip_rk3566_rk3568_*`** 为 3566/3568 族工具链 profile。见 **§3.0**。
 
 ---
 
 ## 1. 目标与范围
 
-| 阶段 | 交付 | 不在本阶段 |
-|------|------|------------|
-| **P1 — 平台镜像 + Hello World** | Buildroot **Linux 镜像**（含后续所需的 **平台必须组件**）+ splash → **`flutter-pi` Hello World** | Modbus 业务、AI so、FrostUI、lws-ui 业务页 |
-| **P1.5 — 设备调试 + 快速 UI 迭代** | `make debug-app` 在设备上以调试模式启动 App；VSCode / Cursor Flutter 插件接入；Linux emulator 开发环 | Modbus/GPIO 业务迁移、AI so、FrostUI |
-| **P2 — Modbus + GPIO + Android 兼容** | Flutter App 同时构建 **Linux** 与 **Android**；Modbus 统一 `flutter_libserialport`；GPIO Linux 读写文件、Android MethodChannel 调 `YBHAPI.jar`；版本号与 APK 推送命令 | 视频、AI 推理 UI、FrostUI |
-| **P3 — AI 原生库** | 迁移 lws-ui **AI 代码库**；新工程打出 **`libai.so`**（+ RKNN/`config.yaml`） | Flutter 叠框产品 UI、FrostUI |
-| **P3.5 — Flutter 平台升级（P4 前置）** | 将板端 **flutter-engine / SDK / flutter-pi** 从 P1 pin **升级到上游支持的 stable**（见 **§6.4**）；ynh960 全量回归 | FrostUI 子模块、P5 业务页 |
-| **P4 — FrostUI + IME（子模块）** | **`packages/frost_ui`** + **`packages/frost_ime`**（各为独立 git 子模块，对齐 lws-ui FrostUI / IME） | P5 业务页与全量 parity |
-| **P5 — 业务迁移** | 见 **§1.2**（P5.1～P5.7）；视频、网络 UI、AI 接入、本地/云服务、**lws-ui 实装业务页**、OTA 等 | 在板训练；按 SKU 拆固件 |
+| 阶段 | 交付 | 状态 |
+|------|------|------|
+| **P1 — 平台镜像 + Hello World** | Buildroot **Linux 镜像**（含后续所需的 **平台必须组件**）+ splash → **`flutter-pi` Hello World** | ✅ |
+| **P1.5 — 设备调试 + 快速 UI 迭代** | `make debug-app` 在**真机**上以调试模式启动 App；VSCode / Cursor Flutter 插件接入；为快速 UI 迭代铺路 | ✅ |
+| **P2 — Modbus + GPIO** | 迁移 **Modbus-MTU** 与 **GPIO 管理**；Linux 真机验证读设备与下位机信息、**三色指示灯**正常控制 | 🔲 |
+| **P2.5 — 模拟器与 Android 兼容** | **`make emulator`**（Linux HMI 模拟器）；**`make android-emulator`**（参考 lws-ui `make emulator`）；Modbus/GPIO **Android 兼容**；Flutter App 可打包 **APK** | 🔲 |
+| **P3 — AI 原生库** | 迁移 lws-ui **AI 代码库**；新工程打出 **`libai.so`**（+ RKNN/`config.yaml`） | 🔲 |
+| **P3.5 — Flutter 平台升级（P4 前置）** | 将板端 **flutter-engine / SDK / flutter-pi** 从 P1 pin **升级到上游支持的 stable**（见 **§6.4**）；ynh960 全量回归 | 🔲 |
+| **P4 — FrostUI + IME（子模块）** | **`packages/frost_ui`** + **`packages/frost_ime`**（各为独立 git 子模块，对齐 lws-ui FrostUI / IME） | 🔲 |
+| **P5 — 业务迁移** | 见 **§1.2**（P5.1～P5.7）；视频、网络 UI、AI 接入、本地/云服务、**lws-ui 实装业务页** 等 | 🔲 |
+| **P6 — OTA** | Linux：**A/B 分区** + **两级更新**（仅更新 app / 更新整个系统）；Android：保持兼容，延续 **app 更新**（`build-apk` / `push-apk`） | 🔲 |
 
-**lws-ui 对照**：算法/拓扑/模型复用；平台层 → Linux + flutter-pi；UI 按上表分阶段；**P5 子阶段 §1.2**；**openspec 非完整清单 §11.7**。
+**lws-ui 对照**：算法/拓扑/模型复用；平台层 → Linux + flutter-pi；UI 按上表分阶段；**P5 子阶段 §1.2**、**P6 OTA §1.3**；细则勾选 **§12**；**openspec 非完整清单 §11.7**。
 
-当前 Rockchip 参考 defconfig 为 EVB 演示系统；替换为 **HMI 栈 + flutter-pi**，按 **P1→P5** 增量交付。
+当前 Rockchip 参考 defconfig 为 EVB 演示系统；替换为 **HMI 栈 + flutter-pi**，按 **P1→P6** 增量交付。
 
 ### 1.1 各阶段任务一览
 
@@ -35,17 +37,23 @@ P1  镜像 + Hello World
     └─ 验收：logo → 首页 ≤10 s（§14.2）
 
 P1.5  设备调试 + 快速 UI 迭代
-    ├─ make debug-app：在实体板或 Linux 虚拟机以调试模式启动 App
+    ├─ make debug-app：在实体板以调试模式启动 App（断点、热重载、VM Service）
     ├─ VSCode / Cursor Flutter 插件接入
-    ├─ make emulator：构建并启动 Linux 虚拟机，加载 rootfs.img 跑 Linux App
-    └─ make push-app：兼容实体板 USB-SSH 与 Linux 虚拟机
+    └─ make push-app：实体板 USB-SSH 快速替换 release/debug bundle
 
-P2  Modbus + GPIO demo（Linux + Android）
-    ├─ Modbus：Flutter 统一 flutter_libserialport；Android 端注意 chmod 开放串口
-    ├─ GPIO：Linux 直接读写文件；Android 端 MethodChannel 调 YBHAPI.jar（从 lws-ui 拷贝）
+P2  Modbus + GPIO（Linux 真机）
+    ├─ 迁移 Modbus-MTU 与 GPIO 管理程序
+    ├─ Modbus：flutter_libserialport；Linux `/dev/ttyS5` 与 lws-ui 寄存器契约
+    ├─ GPIO：Linux 直接读写 sysfs / gpiod 文件
+    └─ App demo：读设备与下位机信息；控制三色状态灯
+
+P2.5  模拟器与 Android 兼容
+    ├─ make emulator：构建并启动 Linux 虚拟机，加载 rootfs.img 跑 Linux App
+    ├─ make android-emulator：参考 lws-ui make emulator 启动 Android 模拟器
+    ├─ Modbus/GPIO Android 兼容：MethodChannel 调 YBHAPI.jar；串口 chmod
     ├─ Flutter App 同时构建 Linux bundle 与 Android APK（系统应用 + platform 签名）
     ├─ make build-apk / push-apk；make version / version-bump；make set-prop / del-prop
-    └─ App demo：读设备信息；控制三色状态灯
+    └─ make push-app / make debug-app 兼容 Linux 虚拟机与实体板
 
 P3  AI → libai.so
     ├─ 迁移 lensinspector（YOLO + 污点检测 + OpenCV + yaml-cpp）
@@ -71,10 +79,14 @@ P5  业务迁移（子阶段见 §1.2）
     ├─ P5.4 本地 HTTP + 数据层
     ├─ P5.5 云 + 远程
     ├─ P5.6 业务页面（对照 lws-ui 实装，openspec 作参考）
-    └─ P5.7 量产收尾（录像、OTA、parity）
+    └─ P5.7 量产收尾（录像、parity）
+
+P6  OTA
+    ├─ Linux：A/B 分区 + 两级更新（仅 app / 全系统 update.img）
+    └─ Android：保持兼容；延续 app 更新（build-apk / push-apk）
 ```
 
-**依赖**：`P1 → P1.5 → P2 → P3` 建议顺序固定；**P1.5** 先把设备调试模式、IDE 插件与 emulator 打通，降低后续 UI / 平台迁移成本；**P3.5** 在 P3 板端 smoke 通过后、**P4 开工前**完成（FrostUI/IME 子模块常需更高 Dart/Flutter）；**P4** 可与 P3 并行筹备子模块仓库，但 **合并主 App 前须完成 P3.5**；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（P5.1 为多数后续子阶段前置）。
+**依赖**：`P1 → P1.5 → P2 → P2.5 → P3` 建议顺序固定；**P1.5** 先在真机打通调试模式与 IDE 插件，为快速 UI 迭代铺路；**P2** 在 Linux 真机验证 Modbus/GPIO；**P2.5** 再补模拟器与 Android 双目标；**P3.5** 在 P3 板端 smoke 通过后、**P4 开工前**完成（FrostUI/IME 子模块常需更高 Dart/Flutter）；**P4** 可与 P3 并行筹备子模块仓库，但 **合并主 App 前须完成 P3.5**；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（**P5.1 视频** 为多数后续子阶段前置）；**P6** 在 P5 业务基本就绪后交付量产 OTA（可与 P5 后期并行筹备分区与升级链路）。
 
 ### 1.2 P5 子阶段（业务迁移）
 
@@ -88,7 +100,7 @@ P5 体量大，拆为 **P5.1～P5.7** 增量交付。**不能**仅按 `openspec/
 | **P5.4 本地 HTTP 与数据** | **:5580** `shelf`；sqlite / 工艺库；Avahi；Modbus **量产**逻辑（扩 P2 demo） | NanoHTTPd 路由、`network-api-reference.md`；Room / 工艺库 XLSX | 云上传、OTA |
 | **P5.5 云与远程** | WebSocket；R2/S3 上传；远程锁/快照/视频列表等 | `docs/device-websocket-migration.md`、`docs/upload-summary.md` | 全部 Settings 子页 |
 | **P5.6 业务页面** | 首页、Quick Mode、Engineer、Monitor、Settings、告警/安全提示等 **按实装逐项** | `MainActivity`、`QuickModeActivity`、`EngineerModeActivity`、`DeviceMonitoringActivity`、`DeviceSettingActivity` 等；相关 `docs/*.md` + 可选 openspec | 一次性「全 spec 勾选」 |
-| **P5.7 量产收尾** | PR0 录像；OTA / oem；§7.7 sshd；**§11.5 全量 parity**；产品线跨 SKU smoke（可选） | `UpgradeActivity`；`docs/ota-upgrade-flow.md` | 按 SKU 拆固件 |
+| **P5.7 量产收尾** | PR0 录像；§7.7 sshd；**§11.5 全量 parity**；产品线跨 SKU smoke（可选） | 录像与量产验收项 | OTA、按 SKU 拆固件 |
 
 **建议依赖**（可并行处标注）：
 
@@ -98,8 +110,15 @@ P5.1 ──→ P5.6 中依赖预览的页面
 P5.2 ──↗（与 P5.1 可并行启动；Monitor/云前需 eth0/wlan0 就绪）
 P5.3 + P5.4 ──→ P5.5（云常依赖本地 API / 数据层）
 P5.1～P5.5 ──→ P5.6（页面可分批，但开工前须有实装 inventory）
-P5.* ──→ P5.7
+P5.* ──→ P5.7 ──→ P6
 ```
+
+### 1.3 P6 — OTA
+
+| 交付 | 主要对照（lws-ui **实装**） | 不在本阶段 |
+|------|------------------------------|------------|
+| Linux：**A/B 分区** + **两级更新**（仅更新 app / 更新整个系统） | `UpgradeActivity`；`docs/ota-upgrade-flow.md`；`docs/storage-layout.md` | 新业务页 |
+| Android：保持兼容，延续 **app 更新**（`build-apk` / `push-apk`） | 旧 Android 产品 `push-apk` 流程 | 全系统 Android OTA 重构 |
 
 ---
 
@@ -161,7 +180,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 
 | 板级型号 | SoC | 档位 | 说明 |
 |----------|-----|------|------|
-| **ynh960** | **RK3566** | 入门 | **P1～P5 开发/验收基准**；`make lunch` → `ynh960_defconfig`；`ynh960.dts` |
+| **ynh960** | **RK3566** | 入门 | **P1～P6 开发/验收基准**；`make lunch` → `ynh960_defconfig`；`ynh960.dts` |
 | ynh962 | RK3568B2 | 中档 | **RK3568 精简版**（B2 为阉割版 3568）；暂不单独拆固件 |
 | ynh961 | RK3568 | 高档 | 完整 **RK3568**；暂不单独拆固件 |
 
@@ -220,11 +239,11 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 |------------|-------------------|
 | GStreamer / MPP | `make build-gstreamer` + defconfig `lws_hmi_gst_rtsp.config` |
 | mediamtx | `make build-mediamtx` + fs-overlay `usr/bin/` |
-| 串口 / GPIO 平台适配 | P2 App 插件与平台层实现；Linux 端保留 `/dev/ttyS5` / GPIO 文件访问 |
+| 串口 / GPIO 平台适配 | P2 / P2.5 App 插件与平台层；Linux `/dev/ttyS5` / GPIO 文件访问；P2.5 Android `YBHAPI.jar` |
 | OpenCV / yaml-cpp | `fetch-opencv*` + platform `yaml-cpp` |
 | Avahi / sqlite | `build-platform-packages` |
 
-**仍按阶段交付的是 App/功能**：FrostUI、业务页、FFI 叠框、OTA 等（非 rootfs 包名）。
+**仍按阶段交付的是 App/功能**：FrostUI、业务页、FFI 叠框（**P5**）、OTA（**P6**）等（非 rootfs 包名）。
 
 ### 3.3 Buildroot — **保留**
 
@@ -250,7 +269,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 | **RKNPU2 运行时**（无 example） | ✓ | | ✓ | | | P1 编入 rootfs；P3 用 |
 | **wifibt** 栈 | ✓ | | | | ✓ | 驱动/daemon；业务配网 UI 在 P5 |
 | **GStreamer + MPP + mediamtx** | ✓ prep | | | | ✓ use | P1 备好；P5.1 开预览/relay |
-| **串口 / GPIO 平台适配** | | ✓ use | | | ✓ | P2：`flutter_libserialport` + GPIO adapter；P5 量产业务复用 |
+| **串口 / GPIO 平台适配** | | ✓ use | | | ✓ | P2：Linux Modbus/GPIO；P2.5：Android 兼容（App 层）；P5 量产业务复用 |
 | **OpenCV / yaml-cpp** | ✓ prep | | ✓ use | | | opencv `.cache/` + yaml-cpp BR |
 | **Avahi / sqlite 等** | ✓ prep | | | | ✓ use | P1 `build-platform-packages` |
 
@@ -293,7 +312,7 @@ BR2_PACKAGE_RKNPU2_ARCH="aarch64"
 | 上游说明 | [flutter-pi README](https://github.com/ardera/flutter-pi)：`libsystemd` is not systemd | — |
 | lws-hmi 做法 | 经 Buildroot `BR2_PACKAGE_SYSTEMD=y` 提供 `.so` | **`BR2_INIT_SYSTEMD=y`**：SDK 惯例 + unit 编排 |
 
-Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不装 init），故 P1～P5 **沿用 systemd init**，而非因 flutter-pi **必须**有 PID 1 systemd。见 [flutter-pi #439](https://github.com/ardera/flutter-pi/issues/439)、[Buildroot #30](https://gitlab.com/buildroot.org/buildroot/-/issues/30)。
+Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不装 init），故 P1～P6 **沿用 systemd init**，而非因 flutter-pi **必须**有 PID 1 systemd。见 [flutter-pi #439](https://github.com/ardera/flutter-pi/issues/439)、[Buildroot #30](https://gitlab.com/buildroot.org/buildroot/-/issues/30)。
 
 #### 3.6.0 单一镜像（无 debug / prod 分叉）
 
@@ -317,7 +336,7 @@ Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不
 | **init 用 systemd（工程选择）** | Buildroot 打包路径、Rockchip SDK 默认、少量 unit 管 `hmi` / 可选 `mediamtx`；不引入 Plymouth、networkd 等 |
 | **首屏 KPI 独立** | `hmi.service` **仅** `After=local-fs.target`；**禁止** `network-online` / `mediamtx` / `udev-settle` |
 | **MediaMTX 不挡 UI** | unit 可存在，但 **无 `[Install]` / 不在 wants**；**仅相机可达后**由 App `systemctl start`（§6.4、§7.5） |
-| **busybox init 替换** | **方案 B（实验）**：需 Buildroot 只装 `libsystemd` 或 fork flutter-pi（如 libuv）；非 P1～P5 量产默认 |
+| **busybox init 替换** | **方案 B（实验）**：需 Buildroot 只装 `libsystemd` 或 fork flutter-pi（如 libuv）；非 P1～P6 量产默认 |
 
 #### 3.6.2 Buildroot：`lws_hmi_systemd.config`
 
@@ -502,10 +521,10 @@ flutter-pi --release /opt/hmi
 |------|------|
 | Buildroot **rootfs overlay** `board/.../lws-hmi-app/` | P1 固定 Hello World |
 | **oem** 分区挂载 `/oem/hmi` | 便于 OTA 只更新应用 |
-| **`make push-app`**（USB ECM + ssh/scp） | **P1 首选**：插 USB → 推 `libapp.so` + assets → `systemctl restart hmi`，无需 reflash |
-| **`make debug-app`** | **P1.5 UI 调试**：在实体板或 Linux 虚拟机以调试模式启动 App，配合 VSCode / Cursor Flutter 插件 |
-| **`make push-app`**（Linux emulator） | **P1.5 虚拟机迭代**：向加载 `rootfs.img` 的 Linux VM 推送 App |
-| **`make push-apk`**（adb push + pm install） | **P2 旧 Android 产品兼容**：不安装到 `priv-app`，旧产品已预置系统应用位置 |
+| **`make debug-app`** | **P1.5 UI 调试**：在**实体板**以调试模式启动 App，配合 VSCode / Cursor Flutter 插件 |
+| **`make push-app`**（USB ECM + ssh/scp） | **P1.5 / P2**：插 USB → 推 `libapp.so` + assets → `systemctl restart hmi`，无需 reflash |
+| **`make push-app`**（Linux emulator） | **P2.5 虚拟机迭代**：向加载 `rootfs.img` 的 Linux VM 推送 App |
+| **`make push-apk`**（adb push + pm install） | **P2.5 旧 Android 产品兼容**：不安装到 `priv-app`，旧产品已预置系统应用位置 |
 | 开发阶段 adb push / scp | Android 或 LAN（§7.7） |
 
 #### 6.2.1 P1.5 设备调试与 IDE 插件
@@ -516,11 +535,11 @@ P1.5 不另建 debug 固件镜像，而是在 **现有 P1 镜像** 上提供设�
 
 | 命令 | 预期行为 |
 |------|----------|
-| `make debug-app` | 在实体板或 Linux 虚拟机以 **调试模式** 启动 App（debug bundle + flutter-pi / VM 侧调试启动），供 IDE attach 与断点调试 |
+| `make debug-app` | 在**实体板**以 **调试模式** 启动 App（debug bundle + flutter-pi 调试启动），供 IDE attach 与断点调试 |
 
-VSCode / Cursor Flutter 插件应能选择 lws-hmi 自定义设备，并通过 `make debug-app` 拉起调试会话。调试命令应复用 repo `.env` / 环境变量（`FLUTTER_SDK`、`SERIAL`、Linux VM 地址等），避免开发者在 IDE、Makefile、脚本中维护多份配置。
+VSCode / Cursor Flutter 插件应能选择 lws-hmi 自定义设备，并通过 `make debug-app` 拉起调试会话。调试命令应复用 repo `.env` / 环境变量（`FLUTTER_SDK`、`SERIAL` 等），避免开发者在 IDE、Makefile、脚本中维护多份配置。
 
-P1.5 还增加 **`make emulator`**：构建并启动 Linux 虚拟机，加载 `rootfs.img` 并运行 Linux App，行为上对齐 Android 的 emulator 开发闭环。`make push-app` 与 `make debug-app` 需同时支持实体板 USB-SSH 与该 Linux VM。
+**P2.5** 再增加 **`make emulator`**（Linux HMI 模拟器）与 **`make android-emulator`**（参考 lws-ui `make emulator`）：构建并启动 Linux 虚拟机，加载 `rootfs.img` 并运行 Linux App；`make push-app` 与 `make debug-app` 届时同时支持实体板 USB-SSH 与该 Linux VM。
 
 ### 6.3 Frost 渲染分场景策略（backdrop blur）
 
@@ -1039,7 +1058,8 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **已有** `overlay/.../post-hooks/06-lws-hmi-systemd.sh` | enable hmi / disable 非关键 unit |
 | **待增** `scripts/configure-camera-eth0.sh` | **P5** 运行时 eth0 配址（自 lws-ui 移植） |
 | **待增** `scripts/build-mediamtx.sh` | **P5** linux/arm64 交叉编译 |
-| **待增** P2：串口 + GPIO demo | `flutter_libserialport`、Linux `/dev/ttyS5`、Android `YBHAPI.jar`、三色灯 |
+| **待增** P2：串口 + GPIO demo | `flutter_libserialport`、Linux `/dev/ttyS5`、三色灯 |
+| **待增** P2.5：Android 兼容 | `YBHAPI.jar`、`make emulator` / `make android-emulator`、APK 构建 |
 | **待增** `scripts/enable-ssh-debug.sh` | **P5** 隐藏入口 / `POST /v1/ssh` |
 | **待增** overlay：`sshd` disabled by default | 生产默认不监听 |
 | **待增** `docs/` 本文 | 规划 |
@@ -1049,15 +1069,12 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 
 ## 11. lws-ui 对照（Buildroot 补充 / 网络 / 阶段）
 
-**lws-ui** 为 Android priv-app（Java/Kotlin + JNI），**lws-hmi** 主线为 Buildroot + flutter-pi，同时 **P2 起保留旧 Android 产品兼容构建**。主线不能搬 APK，而是：**复用算法、拓扑、模型流水线；替换 Linux 平台层；Flutter 重写 UI 与服务**。Android 兼容目标继续延续系统应用与 platform 签名，只用于旧产品支持。命名与文案见 **§11.6**；**P5 范围与 openspec 边界**见 **§11.7**。
+**lws-ui** 为 Android priv-app（Java/Kotlin + JNI），**lws-hmi** 主线为 Buildroot + flutter-pi，**P2.5** 起保留旧 Android 产品兼容构建。主线不能搬 APK，而是：**复用算法、拓扑、模型流水线；替换 Linux 平台层；Flutter 重写 UI 与服务**。Android 兼容目标继续延续系统应用与 platform 签名，只用于旧产品支持。命名与文案见 **§11.6**；**P5 范围与 openspec 边界**见 **§11.7**。
 
-**P2 双目标原则**：
+**P2 / P2.5 分工**：
 
-- Flutter App 同时构建 **Linux bundle** 与 **Android APK**；Android 版本延续 lws-ui 版本号与签名策略。
-- Modbus 统一走 **`flutter_libserialport`**，Android 端须处理串口节点 `chmod` / 权限开放。
-- GPIO 抽象保持同一 Dart API：Linux 端直接读写 sysfs / gpiod 文件；Android 端通过 MethodChannel 调用 **`YBHAPI.jar`**（从 lws-ui 拷贝）。
-- Makefile 迁移 `.env` 支持，并提供 `make version`、`make version-bump`、`make build-apk`、`make push-apk`、`make set-prop`、`make del-prop`、`make android-emulator`。
-- `model.properties` 的 key 兼容 lws-ui；Linux 存储目录可不同，优先以可写持久化位置为准（如 `/oem/etc/model.properties` 或后续确认的等价目录）。
+- **P2（Linux 真机）**：迁移 **Modbus-MTU** 与 **GPIO 管理**；`flutter_libserialport` + Linux sysfs/gpiod；验证读设备与下位机信息、三色指示灯。
+- **P2.5（模拟器 + Android）**：Flutter App 同时构建 **Linux bundle** 与 **Android APK**；`make emulator` / `make android-emulator`；Modbus/GPIO Android 兼容（串口 chmod、`YBHAPI.jar` MethodChannel）；`make version`、`make build-apk`、`make push-apk` 等。
 
 ### 11.1 Buildroot 补充包（相对 §3 已有栈）
 
@@ -1065,14 +1082,14 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 
 | 包/服务 | 用途 | 阶段 | 备注 |
 |---------|------|------|------|
-| **flutter_libserialport** | Modbus RTU（Linux `/dev/ttyS5`；Android 串口 chmod 后访问） | **P2** | Flutter 统一串口层；P2 demo；P5 量产业务 |
+| **flutter_libserialport** | Modbus RTU（Linux `/dev/ttyS5`；Android 串口 chmod 后访问） | **P2 / P2.5** | P2 Linux 验证；P2.5 Android 兼容；P5 量产业务 |
 | **mediamtx** | LAN `rtsp://设备:8554/camera/pr0\|pr1` 转发 | **P5** | **systemd 系统服务**；见 §7.5 |
 | **OpenCV** | `lensinspector` 预处理 / ROI | P3 | 或 static 链进 `libai.so` |
 | **yaml-cpp** | 原生读 `config.yaml` | P3 | 或 FFI 只暴露已解析结构 |
 | **ping / iproute2** | 相机连通性 | P5 | P1 busybox 可能够用 |
 | **Avahi** | mDNS 发现 | P5 | |
 | **sqlite** | 本地告警 / 工艺库 | P5 | drift / isar |
-| **curl / ca-certificates** | 云同步、OTA | P5 | 一般 `base.config` 已有 |
+| **curl / ca-certificates** | 云同步、OTA | **P5 / P6** | 一般 `base.config` 已有 |
 
 **Linux rootfs 仍不引入**（lws-ui 无等价需求或太臃肿）：Chromium、Weston、rkaiq、benchmark、`RKNPU2_EXAMPLE`；Android 专用 EasyDarwin AAR、Gradle 栈。`YBHAPI.jar` 仅进入 Android 兼容 APK，不进入 Buildroot rootfs。
 
@@ -1109,11 +1126,13 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | 阶段 | lws-hmi 目标 | 对应 lws-ui |
 |------|--------------|-------------|
 | **P1** | Linux 镜像 + Hello World | Splash / 占位 UI / 平台栈 |
-| **P1.5** | `debug-app`、IDE 插件、Linux emulator | Android Studio / adb / emulator 的开发闭环 |
-| **P2** | Linux + Android 双目标 Modbus / GPIO demo（设备信息、三色灯） | Modbus4j、`YBHAPI.jar` GPIO、`LedIndicatorManager`、版本号与 APK 签名 |
+| **P1.5** | `debug-app`、IDE 插件（真机调试） | 模拟器、Android Studio / adb 闭环 |
+| **P2** | Linux 真机 Modbus / GPIO demo（设备信息、三色灯） | Android APK、模拟器 |
+| **P2.5** | Linux + Android 双目标；`emulator` / `android-emulator`；APK 构建与推送 | Modbus4j、`YBHAPI.jar` GPIO、`LedIndicatorManager`、版本号与 APK 签名（lws-ui 对照） |
 | **P3** | `libai.so` + RKNN/`config.yaml` | `NativeBridge` / `lensinspector` / `AiManager`（原生层） |
 | **P4** | **`frost_ui` + `frost_ime`** 子模块 | FrostUI、`IME.md` / frostui specs |
-| **P5** | 视频、网络 UI、云、:5580、**lws-ui 实装业务**、OTA | EasyPlayer、MediaMTX 协调器、Room、NanoHTTPd、各 Activity |
+| **P5** | 视频、网络 UI、云、:5580、**lws-ui 实装业务** | EasyPlayer、MediaMTX 协调器、Room、NanoHTTPd、各 Activity |
+| **P6** | **OTA**（A/B 分区 + 两级更新；Android app 更新） | `UpgradeActivity`；`docs/ota-upgrade-flow.md` |
 
 ### 11.4 可直接复用 vs 必须替换（摘要）
 
@@ -1124,7 +1143,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | `native/lensinspector` C++（Linux aarch64 + FFI） | Modbus4j → `flutter_libserialport`；GPIO → Linux 文件 adapter / Android MethodChannel |
 | LCD/MIPI 参数（lws-hmi overlay **已有**） | NanoHTTPd → Dart `shelf`；JmDNS → Avahi |
 | `openspec/specs/*` | **参考** UI/交互验收；**非**完整迁移清单（§11.7） |
-| lws-ui `docs/*.md`（拓扑、API、AI、OTA 等） | Linux 量产 OTA → oem 分区 / `update.img`；旧 Android 产品继续 `build-apk` / `push-apk`；**adbd** → Linux **sshd 按需开启**（§7.7） |
+| lws-ui `docs/*.md`（拓扑、API、AI、OTA 等） | Linux 量产 OTA（**P6** A/B + 两级更新）→ oem / `update.img`；旧 Android 产品继续 `build-apk` / `push-apk`；**adbd** → Linux **sshd 按需开启**（§7.7） |
 | `model.properties`（相机 IP 等） | key 复用；Linux 目录可与 Android 不同（默认候选 `/oem/etc/model.properties`），供 `configure-camera-eth0.sh` / mediamtx 渲染 |
 
 ### 11.5 lws-ui 能力 parity 核对（仅据前文分析）
@@ -1155,17 +1174,17 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | 云 WebSocket | Dart `web_socket_channel` 等 | **P5** | ✓ |
 | LAN HTTP **:5580** | Dart `shelf` / `HttpServer` | **P5** | ✓ |
 | mDNS 设备发现 | **Avahi** + Dart 或固定发现 | **P5** | ✓ |
-| Modbus RTU `/dev/ttyS5` | **`flutter_libserialport`**；Linux `/dev/ttyS5`，Android chmod 后访问串口 | **P2** demo / **P5** 量产 | ✓ |
-| GPIO 指示灯 | Linux 文件读写；Android MethodChannel → `YBHAPI.jar` | **P2** demo / **P5** 量产 | ✓ |
+| Modbus RTU `/dev/ttyS5` | **`flutter_libserialport`**；Linux `/dev/ttyS5`，Android chmod 后访问串口 | **P2 / P2.5** demo / **P5** 量产 | ✓ |
+| GPIO 指示灯 | Linux 文件读写；Android MethodChannel → `YBHAPI.jar` | **P2 / P2.5** demo / **P5** 量产 | ✓ |
 | Room 本地库 | **sqlite** + drift / isar | **P5** | ✓ |
 | AWS S3 / **R2 上传** | Dart REST + 签名 | **P5** | ✓ §12 P5 |
-| APK / priv-app OTA | Linux：oem 更新 `app.so` + 模型 / `update.img`；旧 Android：沿用系统应用 + platform 签名，`push-apk` 只做 `pm install` | **P2 / P5** | ✓ |
+| APK / priv-app OTA | Linux（**P6**）：A/B 分区 + app-only / 全系统 `update.img`；旧 Android：沿用系统应用 + platform 签名，`push-apk` 只做 `pm install` | **P2.5 / P6** | ✓ |
 | `model.properties` 动态相机 IP | key 兼容 lws-ui；Linux 目录待实现确认（候选 `/oem/etc/model.properties`）+ `render-mediamtx-config.sh` | **P2 / P5** | ✓ §7.5 |
 | 远程调试 | **sshd 按需**（5 连击 / `POST /v1/ssh`） | **P5** | ✓ §7.7 |
 | 背光 / 电源 | `powermanager.config`（Buildroot 保留） | **P1** | ✓ §3.3 |
 | Chromium / Weston / rkaiq | **不引入**（无 lws-ui 等价需求） | — | ✓ 有意省略 |
 
-**结论**：按前文 lws-ui 分析，**无能力缺口**；主线差异为 **实现栈**（Android → Linux + Flutter）与 **MediaMTX 部署方式**（APK 子进程 → systemd），P2 另保留旧 Android 产品 APK 兼容构建。
+**结论**：按前文 lws-ui 分析，**无能力缺口**；主线差异为 **实现栈**（Android → Linux + Flutter）与 **MediaMTX 部署方式**（APK 子进程 → systemd），**P2.5** 另保留旧 Android 产品 APK 兼容构建。
 
 ### 11.6 迁移 / 参考 lws-ui 时的命名与文案
 
@@ -1221,7 +1240,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 2. 对照 **`docs/`** 与相关 **`openspec/specs/<name>/spec.md`**（若存在）  
 3. 在 lws-hmi 建 **parity 子项**（行为 + API + 数据，非仅 UI 像素）  
 4. openspec 与实装 **冲突时**：以 **当前量产 Android 行为** 为准，差异记入迁移笔记并 **询问澄清**（§11.6）  
-5. 子项完成后再勾选 §11.5 / P5.7 回归
+5. 子项完成后再勾选 §11.5 / P5.7 / P6 回归
 
 **参考入口**：`lws-ui/docs/project-architecture-summary.md`、`docs/root-docs-index.md`；Activity 包 `com.lasercyber.lws.ui.activitys.*`。
 
@@ -1229,7 +1248,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 ## 12. 实施顺序（检查清单）
 
-各阶段任务树见 **§1.1**（P5 子阶段见 **§1.2**）；以下为可勾选验收项。
+各阶段任务树见 **§1.1**（P5 子阶段见 **§1.2**，P6 见 **§1.3**）；以下为可勾选验收项。
 
 ### P1 — Linux 镜像 + Hello World
 
@@ -1245,24 +1264,33 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 ### P1.5 — 设备调试 + 快速 UI 迭代
 
-- [x] `make debug-app`：在实体板以调试模式启动 App（Linux 虚拟机不在本阶段）
+**P1.5 封板（ynh960 真机调试）：2026-07-13，`3d904ae` — OpenSpec `p1-5-device-flutter-debugging` 已归档；Linux 模拟器 deferred → P2.5。**
+
+- [x] `make debug-app`：在实体板以调试模式启动 App
 - [x] VSCode / Cursor Flutter 插件：可选择 lws-hmi 自定义设备；可 attach 调试会话
+- [x] `make push-app`：实体板 USB-SSH 目标（release 替换 debug 已验证路径）
+
+### P2 — Modbus + GPIO（Linux 真机）
+
+- [ ] 迁移 **Modbus-MTU** 与 **GPIO 管理**程序
+- [ ] Modbus：统一 **`flutter_libserialport`**；文档化 Linux `/dev/ttyS5` 与 lws-ui 寄存器契约
+- [ ] GPIO：Linux 端直接读写 sysfs / gpiod 文件
+- [ ] App：**读设备与下位机信息**（Modbus 或等价寄存器块）
+- [ ] App：**三色状态灯 demo**（红/绿/蓝或产品定义）
+- [ ] 串口/日志验证 Modbus 时序与 lws-ui 一致；Linux 真机 smoke
+
+### P2.5 — 模拟器与 Android 兼容
+
 - [ ] `make emulator`：构建并启动 Linux 虚拟机，加载 `rootfs.img` 并运行 Linux App
-- [x] `make push-app`：实体板 USB-SSH 目标（release 替换 debug 已验证路径；虚拟机 deferred）
-
-### P2 — Modbus + GPIO demo（Linux + Android）
-
+- [ ] `make android-emulator`：参考 lws-ui `make emulator` 启动 Android emulator
 - [ ] Flutter App 同时构建 Linux bundle 与 Android APK；Android 延续系统应用与 platform 签名
 - [ ] `make version` / `make version-bump`：延续 lws-ui 项目版本号规则
 - [ ] `make build-apk`；`make push-apk` = `adb push` + `adb shell pm install`（不安装到 `priv-app`）
-- [ ] `make android-emulator`：参考 lws-ui `make emulator` 启动 Android emulator
 - [ ] Makefile / 脚本 `.env` 支持迁移；`make set-prop` / `make del-prop` 可用
 - [ ] `model.properties` key 兼容 lws-ui；Linux 存储目录确认并文档化（可能不同于 Android）
-- [ ] Modbus：统一 **`flutter_libserialport`**；文档化 Linux `/dev/ttyS5` 与 lws-ui 寄存器契约；Android 端 chmod 开放串口
-- [ ] GPIO：Linux 端直接读写 sysfs / gpiod 文件；Android 端 MethodChannel 调 `YBHAPI.jar`（从 lws-ui 拷贝）
-- [ ] App：**读设备信息**（Modbus 或等价寄存器块）
-- [ ] App：**三色状态灯 demo**（红/绿/蓝或产品定义）
-- [ ] 串口/日志验证 Modbus 时序与 lws-ui 一致；Android / Linux 双目标 smoke
+- [ ] Modbus/GPIO **Android 兼容**：串口 chmod；GPIO MethodChannel 调 `YBHAPI.jar`（从 lws-ui 拷贝）
+- [ ] `make push-app` / `make debug-app` 兼容 Linux 虚拟机与实体板
+- [ ] Android / Linux 双目标 smoke
 
 ### P3 — AI 代码库 → libai.so
 
@@ -1330,13 +1358,20 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 #### P5.7 — 量产收尾
 
-- [ ] **PR0 录像**；**OTA** / oem 更新
+- [ ] **PR0 录像**
 - [ ] **`sshd` 默认关** + §7.7 隐藏调试
 - [ ] 全量 **§11.5 parity**；ynh960 量产验收；**同一份镜像**在 ynh961/ynh962 上 smoke（可选）
 
+### P6 — OTA
+
+- [ ] Linux：**A/B 分区**布局（`parameter` / `docs/storage-layout.md`）
+- [ ] Linux：**两级更新**——仅更新 app（`/oem/hmi` 或等价）/ 更新整个系统（`update.img`）
+- [ ] Android：保持兼容；延续 **app 更新**（`build-apk` / `push-apk`）
+- [ ] 对照 lws-ui `UpgradeActivity`、`docs/ota-upgrade-flow.md`
+
 ---
 
-## 13. 编译命令速查（P1 / P1.5 / P2）
+## 13. 编译命令速查（P1 / P1.5 / P2 / P2.5）
 
 ```bash
 # 1. 仍用 lws-hmi 环境
@@ -1354,19 +1389,20 @@ make flash
 make build
 make flash
 
-# 4. P1.5 设备调试（实体板或 Linux emulator）
+# 4. P1.5 设备调试（实体板）
 make debug-app
 make push-app
 
-# 5. P1.5 Linux emulator
+# 5. P2 Linux 真机 Modbus/GPIO 迭代
+make push-app
+
+# 6. P2.5 Linux emulator
 make emulator
 
-# 6. P2 Android 兼容构建
+# 7. P2.5 Android 兼容构建
 make version
 make build-apk
 make push-apk
-
-# 7. P2 Android / 属性调试
 make android-emulator
 make set-prop
 make del-prop
@@ -1385,7 +1421,7 @@ make del-prop
 | P1 | **220–400 MB** | 方案 A；Mali、flutter-pi、RKNPU2、Wi‑Fi/BT |
 | P5 + 视频/业务栈 | **500–800 MB** | + GStreamer、mediamtx、Avahi、sqlite 等 |
 
-**Flutter 应用目录**（`/opt/hmi` on rootfs；P5 OTA 可选 `/oem/hmi`）：Hello World **5–15 MB**；P5 全业务 UI **约 30–70 MB**（插件原生依赖已算在 rootfs）。
+**Flutter 应用目录**（`/opt/hmi` on rootfs；**P6** OTA 可选 `/oem/hmi`）：Hello World **5–15 MB**；P5 全业务 UI **约 30–70 MB**（插件原生依赖已算在 rootfs）。
 
 **eMMC 分区**：rootfs **1 GiB 固定**；**userdata grow**（~27 GiB @ 32G 盘）。RKNN 模型 → **`/userdata/models/`**。详见 [`docs/storage-layout.md`](storage-layout.md)。
 
@@ -1545,4 +1581,4 @@ SD 卡、未做 P0（sshd/mediamtx 误 enable）、或 mediamtx/rknn_server 与�
 
 ---
 
-**总结**：**能力不少于 lws-ui**（§11.5）。**P1**：镜像 + Hello World + boot splash + **≤10 s 首页**（方案 A §3.6）。**P2～P4**：Modbus/GPIO → AI so → **`frost_ui` / `frost_ime`**。**P5**：按 **§1.2（P5.1～P5.7）** 迁移；**以 lws-ui 实装为准**，openspec 作补充（§11.7）。
+**总结**：**能力不少于 lws-ui**（§11.5）。**P1**：镜像 + Hello World + boot splash + **≤10 s 首页**（方案 A §3.6）。**P1.5**：真机调试 + 快速 UI 迭代。**P2～P2.5**：Modbus/GPIO（Linux）→ 模拟器与 Android 兼容。**P3～P4**：AI so → **`frost_ui` / `frost_ime`**。**P5**：按 **§1.2（P5.1～P5.7）** 迁移业务；**P6**：OTA；**以 lws-ui 实装为准**，openspec 作补充（§11.7）。

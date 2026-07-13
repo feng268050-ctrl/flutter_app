@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 DTSI="$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip/customer_board_ynh960.dtsi"
 MARKER='lws-hmi: sdk-native root=mmcblk0p6'

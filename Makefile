@@ -5,7 +5,6 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
-LINUX_SDK ?= $(HOME)/Downloads/rk356x_linux6.1_20250730_1126/rk356x_linux6.1_20250730_1126
 FLUTTER_SDK ?= $(CURDIR)/flutter-sdk
 
 DOCKER_IMAGE ?= lws-hmi-builder:22.04
@@ -20,19 +19,18 @@ SERIAL ?=
 IMAGE ?=
 FLASH_ENV = SERIAL='$(SERIAL)' UPDATE_IMG='$(IMAGE)'
 
-.PHONY: help setup link-sdk apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-app build-app-debug debug-setup debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices push-app reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-app build-app-debug debug-setup debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices push-app reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
 define WITH_DOTENV
 bash -c 'set -euo pipefail; \
   __ENV_SERIAL="$${SERIAL-}"; __ENV_IMAGE="$${IMAGE-}"; \
-  __ENV_LINUX_SDK="$${LINUX_SDK-}"; __ENV_FLUTTER_SDK="$${FLUTTER_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
+  __ENV_FLUTTER_SDK="$${FLUTTER_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
   __ENV_BUILD_BIND_MOUNT="$${BUILD_BIND_MOUNT-}"; \
   set -a; [[ -f .env ]] && source .env; set +a; \
   [[ -n "$$__ENV_SERIAL" ]] && export SERIAL="$$__ENV_SERIAL"; \
   [[ -n "$$__ENV_IMAGE" ]] && export IMAGE="$$__ENV_IMAGE"; \
-  [[ -n "$$__ENV_LINUX_SDK" ]] && export LINUX_SDK="$$__ENV_LINUX_SDK"; \
   [[ -n "$$__ENV_FLUTTER_SDK" ]] && export FLUTTER_SDK="$$__ENV_FLUTTER_SDK"; \
   [[ -n "$$__ENV_BUILD_JOBS" ]] && export BUILD_JOBS="$$__ENV_BUILD_JOBS"; \
   [[ -n "$$__ENV_BUILD_BIND_MOUNT" ]] && export BUILD_BIND_MOUNT="$$__ENV_BUILD_BIND_MOUNT"; \
@@ -43,8 +41,7 @@ help:
 	@echo "lws-hmi — Buildroot + ynh960 (Linux: native build; macOS: Docker linux/amd64)"
 	@echo ""
 	@echo "Setup:"
-	@echo "  make setup                 # link SDK + apply overlay (+ Docker image on macOS)"
-	@echo "  make link-sdk              # symlink sdk/ → Rockchip Linux SDK"
+	@echo "  make setup                 # apply overlay (+ Docker image on macOS)"
 	@echo "  make apply-overlay         # patch SDK with lws-hmi board/buildroot overlay"
 	@echo "  make clean-overlay         # restore patched SDK files"
 	@echo ""
@@ -53,7 +50,7 @@ help:
 	@echo "  make docker-volume-init    # (1) copy host SDK → Docker volume — once"
 	@echo "  make docker-volume-sync    # refresh host SDK/overlay into volume before build"
 	@echo "  make docker-export-artifacts # (3) volume firmware → host (auto after build-img/kernel)"
-	@echo "  make docker-volume-pull    # alias: export full sdk/output/ (legacy)"
+	@echo "  make docker-volume-pull    # alias: export full linux-sdk/output/ (legacy)"
 	@echo "  make docker-volume-status  # show volume mount and SDK tree status"
 	@echo ""
 	@echo "Build (scope = active #include in overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig):"
@@ -115,7 +112,6 @@ help:
 	@echo "  make flash-android         # optional: flash Android instead"
 	@echo ""
 	@echo "Common Env Vars:"
-	@echo "  LINUX_SDK=$(LINUX_SDK)"
 	@echo "  FLUTTER_SDK=$(FLUTTER_SDK)"
 	@echo "  BUILD_JOBS=4|8             # parallel jobs (default 4 macOS Docker, 8 Linux native)"
 	@echo "  BUILD_BIND_MOUNT=1         # macOS only: bind-mount SDK instead of Docker volume"
@@ -134,11 +130,8 @@ help:
 
 # --- Setup ---
 
-setup: link-sdk apply-overlay
+setup: apply-overlay
 	@bash scripts/setup-host.sh
-
-link-sdk:
-	@bash scripts/link-sdk.sh
 
 apply-overlay:
 	@bash scripts/apply-overlay.sh

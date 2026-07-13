@@ -10,7 +10,7 @@ if [[ "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1" ]]; then
     bash -c 'export LWS_HMI_DOCKER=1; exec bash /work/lws-hmi/scripts/fix-buildroot-host-rpaths.sh'
 fi
 
-SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)}"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 OUT_BASE="${SDK}/buildroot/output"
 TARGET_NAME="${BR_OUTPUT:-rockchip_rk3566_rk3568_lws_hmi}"
 OUT_DIR="${OUT_BASE}/${TARGET_NAME}"

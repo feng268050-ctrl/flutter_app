@@ -16,7 +16,7 @@ resolve_host_sdk() {
 		echo "$LWS_HMI_SDK_DIR"
 		return 0
 	fi
-	bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true
+	echo "$ROOT/linux-sdk"
 }
 
 uses_docker_volume() {
@@ -92,7 +92,7 @@ main() {
 
 	host_sdk="$(resolve_host_sdk)"
 	if [[ -z "$host_sdk" || ! -d "$host_sdk" ]]; then
-		echo "ERROR: host SDK not found (run: make link-sdk)" >&2
+		echo "ERROR: host SDK not found at $ROOT/linux-sdk" >&2
 		exit 1
 	fi
 

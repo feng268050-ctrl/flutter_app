@@ -120,12 +120,12 @@ install_misc() {
 }
 
 pack_in_sdk() {
-  local sdk="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+  local sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
   local firmware="$sdk/output/firmware"
   local updateimg="$firmware/update.img"
   local boot_bytes rootfs_img
 
-  [[ -d "$sdk" ]] || die "SDK not found — run: make link-sdk"
+  [[ -d "$sdk" ]] || die "SDK not found at $sdk"
   [[ -r "$sdk/output/.config" ]] || die "output/.config missing — run make lunch first"
 
   bash "$ROOT/scripts/apply-overlay.sh" >/dev/null

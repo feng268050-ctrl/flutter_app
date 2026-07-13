@@ -19,7 +19,7 @@ fi
 
 source "$ROOT/scripts/prebuilt-common.sh"
 
-SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 PROFILE="${BR_OUTPUT:-rockchip_rk3566_rk3568_lws_hmi}"
 TARGET="$SDK/buildroot/output/${PROFILE}/target"
 

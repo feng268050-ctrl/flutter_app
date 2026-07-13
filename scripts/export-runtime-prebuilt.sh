@@ -25,7 +25,7 @@ case "$MODE" in
   *) echo "usage: export-runtime-prebuilt.sh [all|gstreamer|platform]" >&2; exit 1 ;;
 esac
 
-SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 PROFILE="${BR_OUTPUT:-rockchip_rk3566_rk3568_lws_hmi}"
 TARGET="$SDK/buildroot/output/${PROFILE}/target"
 GST_VER="$(read_version_file "$ROOT/overlay/third-party/gstreamer.version" "rockchip-mpp-gst-rtsp")"

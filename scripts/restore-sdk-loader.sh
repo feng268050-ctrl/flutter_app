@@ -4,13 +4,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-}"
-if [[ -z "$SDK" ]]; then
-  SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)"
-fi
-if [[ ! -d "$SDK" && -d /work/sdk ]]; then
-  SDK=/work/sdk
-fi
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 FIRMWARE="$SDK/output/firmware"
 ANDROID_MD5="5f9a0d36102d5cef31dadd1c21eda251"
 SDK_MIN_SIZE=470000
@@ -29,8 +23,7 @@ file_md5() {
 }
 
 find_host_sdk_loader() {
-  local host_sdk
-  host_sdk="$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)"
+  local host_sdk="$ROOT/linux-sdk"
   local candidate
   for candidate in \
     "$host_sdk/u-boot/rk356x_spl_loader_v1.23.114.bin" \

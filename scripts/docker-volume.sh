@@ -10,7 +10,7 @@ bash "$ROOT/scripts/require-macos.sh"
 IMAGE="${DOCKER_IMAGE:-lws-hmi-builder:22.04}"
 PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 VOLUME="${LWS_HMI_DOCKER_VOLUME:-lws-hmi-sdk}"
-HOST_SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)"
+HOST_SDK="$ROOT/linux-sdk"
 LOG_DIR="$ROOT/.cache"
 RSYNC_LOG="$LOG_DIR/docker-volume-rsync.log"
 
@@ -19,18 +19,14 @@ resolve_host_sdk() {
     echo "$HOST_SDK"
     return 0
   fi
-  if [[ -L "$ROOT/sdk" ]]; then
-    readlink -f "$ROOT/sdk" 2>/dev/null || realpath "$ROOT/sdk"
-    return 0
-  fi
-  echo "$(bash "$ROOT/scripts/expand-path.sh" "${LINUX_SDK:-$HOME/Downloads/rk356x_linux6.1_20250730_1126/rk356x_linux6.1_20250730_1126}")"
+  echo "$ROOT/linux-sdk"
 }
 
 HOST_SDK="$(resolve_host_sdk)"
 
 require_host_sdk() {
   if [[ ! -d "$HOST_SDK" ]]; then
-    echo "ERROR: host SDK not found at $HOST_SDK (run: make link-sdk)" >&2
+    echo "ERROR: host SDK not found at $HOST_SDK" >&2
     exit 1
   fi
 }

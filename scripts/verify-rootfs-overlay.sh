@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 source "$ROOT/scripts/prebuilt-common.sh"
 
@@ -416,7 +416,7 @@ if [[ "${1:-}" == "--inside-docker" ]]; then
 fi
 
 if [[ -z "$SDK" || ! -d "$SDK" ]]; then
-	echo "ERROR: SDK not linked. Run: make setup" >&2
+	echo "ERROR: SDK not found at $SDK. Copy it to repo-root linux-sdk/." >&2
 	exit 1
 fi
 

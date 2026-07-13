@@ -3,10 +3,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print)"
+SDK="$ROOT/linux-sdk"
 
 if [[ ! -d "$SDK" ]]; then
-  echo "ERROR: SDK not found at $SDK (run: make link-sdk)" >&2
+  echo "ERROR: SDK not found at $SDK" >&2
   exit 1
 fi
 

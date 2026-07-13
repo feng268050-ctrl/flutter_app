@@ -4,12 +4,12 @@ Buildroot + **ynh960** (Innohi **RK3566**) on the Rockchip Linux 6.1 SDK.
 
 **Product line:** ynh960 → RK3566 (entry), ynh962 → RK3568B2 (mid, cut-down 3568), ynh961 → RK3568 (high) — three tiers of the **same product line** (minor chip/interface differences, largely similar hardware). **One Linux firmware image** across the line is the design goal (aligned with lws-ui Android). **P1–P5 develop and validate on ynh960**; no per-SKU defconfig fork yet. SDK path `rk3566_rk3568` is Rockchip’s 3566/3568 family tooling profile.
 
-- **Linux (Ubuntu x64):** native build in `sdk/` (no Docker).
+- **Linux (Ubuntu x64):** native build in repo-root `linux-sdk/` (no Docker).
 - **macOS:** Docker `linux/amd64` builder + Docker volume for the SDK tree.
 
 ## Prerequisites
 
-- Extracted SDK at `~/Downloads/rk356x_linux6.1_20250730_1126/rk356x_linux6.1_20250730_1126` (override with `LINUX_SDK` in `.env`)
+- Rockchip Linux SDK copied to repo-root `linux-sdk/` (gitignored)
 - Host Flutter SDK at repo-root `flutter-sdk/` (gitignored; run `make fetch-flutter-sdk`; override with `FLUTTER_SDK` in `.env`)
 - **Linux:** Ubuntu 22.04+ on ext4; Rockchip build deps (see `docker/Dockerfile` package list)
 - **macOS:** Docker Desktop (Apple Silicon: enable Rosetta for `linux/amd64`)
@@ -53,7 +53,6 @@ Run `make help` for the full target list. Stages below are **one command per lin
 
 ```bash
 make setup
-make link-sdk
 make fetch-flutter-sdk
 make apply-overlay
 ```
@@ -169,7 +168,7 @@ make build-img
 make flash
 ```
 
-Linux hosts: firmware is under `sdk/output/firmware/` as well as `output/firmware/` after export steps.
+Linux hosts: firmware is under `linux-sdk/output/firmware/` as well as `output/firmware/` after export steps.
 
 ### Flash and device (macOS)
 
@@ -264,7 +263,7 @@ make migrate-buildroot-output
 
 Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 
-`make build-img` / `make build-kernel` export `output/firmware/` from the Docker volume to the host automatically (macOS). `make docker-volume-pull` is a legacy alias for full `sdk/output/` export.
+`make build-img` / `make build-kernel` export `output/firmware/` from the Docker volume to the host automatically (macOS). `make docker-volume-pull` is a legacy alias for full `linux-sdk/output/` export.
 
 ---
 
@@ -343,7 +342,7 @@ Without LFS, large binaries under `prebuilt/` may be too heavy for plain git. Th
 
 ### Buildroot `dl/` (generic packages)
 
-Buildroot still downloads standard packages (gcc, systemd, wpa_supplicant, …) into `sdk/buildroot/dl/` on first build. That is the normal Buildroot cache — not version-pinned product deps. Share or preserve `buildroot/dl/` to avoid re-downloading on clean output trees.
+Buildroot still downloads standard packages (gcc, systemd, wpa_supplicant, …) into `linux-sdk/buildroot/dl/` on first build. That is the normal Buildroot cache — not version-pinned product deps. Share or preserve `buildroot/dl/` to avoid re-downloading on clean output trees.
 
 ---
 
@@ -364,11 +363,11 @@ Boot KPI 优化阶段与状态表：[`docs/boot-kpi-optimization.md`](docs/boot-
 
 On **macOS**, builds use a Docker volume for the SDK (not a bind mount from APFS). Bind-mounting during Buildroot often **crashes Docker Desktop** (`BUILD_BIND_MOUNT=1` to force, not recommended).
 
-On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under `sdk/`; firmware lands in `sdk/output/`.
+On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under `linux-sdk/`; firmware lands in `linux-sdk/output/`.
 
 ### `innohi_board` / WiFi-BT firmware errors
 
-Rockchip Innohi scripts reference **`sdk/innohi_board/`** (not in git; only **`sdk/innohi/`** ships). `make apply-overlay` syncs firmware + binaries and patches `post-wifibt.sh` / `mk-rootfs.sh`. **lws_hmi** skips Innohi **MainServer** autostart (Plan A uses systemd + `hmi.service`). If `build-rootfs` fails on `innohi_board` or `MainServer`, run `make apply-overlay` again (macOS: auto before each Docker build).
+Rockchip Innohi scripts reference **`linux-sdk/innohi_board/`** (not in git; only **`linux-sdk/innohi/`** ships). `make apply-overlay` syncs firmware + binaries and patches `post-wifibt.sh` / `mk-rootfs.sh`. **lws_hmi** skips Innohi **MainServer** autostart (Plan A uses systemd + `hmi.service`). If `build-rootfs` fails on `innohi_board` or `MainServer`, run `make apply-overlay` again (macOS: auto before each Docker build).
 
 ### Innohi SDK-native Linux (`make build-sdk-native`)
 
@@ -496,7 +495,6 @@ The upstream SDK ships **ynh962** board defconfig but **ynh960.dts** in kernel; 
 ## Environment
 
 ```bash
-export LINUX_SDK=~/Downloads/rk356x_linux6.1_20250730_1126/...   # ~ and $HOME both work
 export FLUTTER_SDK=flutter-sdk                                        # host Flutter SDK (gitignored at repo root)
 export BUILD_JOBS=4                                          # parallel make jobs (default 4 on macOS)
 export SERIAL=10.0.0.239:5555                            # for pull-display-params (adb over network)

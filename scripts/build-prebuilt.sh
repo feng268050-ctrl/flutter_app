@@ -5,7 +5,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# macOS Docker volume: artifacts live in the container, not host sdk/ symlink.
+# macOS Docker volume: artifacts live in the container, not host linux-sdk/.
 if [[ "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1" ]]; then
   exec bash "$ROOT/scripts/docker-run.sh" \
     env LWS_HMI_DOCKER=1 LWS_HMI_SDK_DIR=/work/sdk \
@@ -19,7 +19,7 @@ fi
 
 source "$ROOT/scripts/prebuilt-common.sh"
 
-SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 FORCE="${FORCE:-0}"
 PACK_FLUTTER_SDK="${PACK_FLUTTER_SDK:-1}"
 PACK_ENGINE="${PACK_ENGINE:-1}"

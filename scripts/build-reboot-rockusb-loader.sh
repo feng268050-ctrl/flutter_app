@@ -32,7 +32,7 @@ resolve_br_out() {
 			dir="$(dirname "$dir")"
 		done
 	fi
-	local sdk="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+	local sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 	resolve_br_output_dir "$sdk"
 }
 

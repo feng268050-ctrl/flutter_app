@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 BOOT="${1:-$SDK/kernel-6.1/boot.img}"
 UPDATE="${2:-$ROOT/output/firmware/update.img}"
 SDK_LOADER=481728

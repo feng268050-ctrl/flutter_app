@@ -3,13 +3,11 @@ output/
 .cache/
 overlay/buildroot/.generated/
 
-# Host Flutter SDK (real dir at repo root; run make fetch-flutter-sdk)
+# Host SDKs (real dirs at repo root)
 flutter-sdk/
+linux-sdk/
 .host-deps/
 prebuilt/flutter-sdk/
-
-# Rockchip Linux SDK symlink
-sdk
 
 # adb pull backups (regenerate with make pull-display-params)
 board/from-device/

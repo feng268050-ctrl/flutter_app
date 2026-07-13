@@ -6,6 +6,7 @@ sdk/
 
 # Host Flutter SDK at repo root (gitignored; make fetch-flutter-sdk)
 flutter-sdk/
+linux-sdk/
 
 # Build outputs and download caches
 output/

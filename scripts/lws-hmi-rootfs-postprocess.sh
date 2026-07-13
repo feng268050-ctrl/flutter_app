@@ -11,7 +11,7 @@ if [[ "$(uname -s)" == Darwin && "${1:-}" != "--inside-docker" ]]; then
 		'bash /work/lws-hmi/scripts/lws-hmi-rootfs-postprocess.sh --inside-docker'
 fi
 
-SDK="${LWS_HMI_SDK_DIR:-${LINUX_SDK:-$ROOT/sdk}}"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 TARGET="$(resolve_br_target "$SDK")"
 OUT_DIR="$(dirname "$TARGET")"
 PROFILE="$(basename "$OUT_DIR")"

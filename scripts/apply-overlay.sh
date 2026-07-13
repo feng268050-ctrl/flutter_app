@@ -2,12 +2,12 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-$ROOT/sdk}"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 BOARD_DIR="$ROOT/board"
 OVERLAY="$ROOT/overlay"
 
 if [[ ! -d "$SDK" ]]; then
-  echo "ERROR: SDK symlink missing. Run: make link-sdk" >&2
+  echo "ERROR: Linux SDK missing at $SDK" >&2
   exit 1
 fi
 

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 VERSION_FILE="$ROOT/overlay/third-party/uboot.version"
 CACHE="$ROOT/.cache/rockchip-u-boot"
 REPO="${UBOOT_REPO:-https://github.com/rockchip-linux/u-boot.git}"
@@ -17,7 +17,7 @@ die() {
   exit 1
 }
 
-[[ -d "$SDK" ]] || die "SDK missing — run: make link-sdk"
+[[ -d "$SDK" ]] || die "SDK missing at $SDK"
 
 if [[ "$FORCE" == "1" ]]; then
   rm -f "$MARKER"

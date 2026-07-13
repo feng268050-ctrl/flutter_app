@@ -16,7 +16,7 @@ fi
 
 IMAGE="${DOCKER_IMAGE:-lws-hmi-builder:22.04}"
 PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
-SDK="$ROOT/sdk"
+SDK="$ROOT/linux-sdk"
 VOLUME="${LWS_HMI_DOCKER_VOLUME:-lws-hmi-sdk}"
 
 if [[ -z "${BUILD_JOBS:-}" ]]; then

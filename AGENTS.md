@@ -6,15 +6,15 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 - **What:** Buildroot firmware for Innohi **ynh960/961/962 product line** + Flutter-pi HMI (`app/hmi/`).
 - **Board SKUs:** ynh960 → RK3566 (entry); ynh962 → RK3568B2 (mid, cut-down 3568); ynh961 → RK3568 (high). Same product line (minor chip/interface differences); **one firmware image is the goal**. **P1–P5 develop and validate on ynh960 (RK3566)** — no per-SKU defconfig fork yet.
-- **Hosts:** Linux builds natively in `sdk/`; macOS uses Docker `linux/amd64` + a Docker volume for the SDK tree.
-- **Outputs:** `output/firmware/update.img` (macOS, after export); Linux also `sdk/output/firmware/`.
+- **Hosts:** Linux builds natively in `linux-sdk/`; macOS uses Docker `linux/amd64` + a Docker volume for the SDK tree.
+- **Outputs:** `output/firmware/update.img` (macOS, after export); Linux also `linux-sdk/output/firmware/`.
 - **Scope:** Active Buildroot packages follow `#include` lines in `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig`.
 
 ## Dev environment tips
 
 - Run `make help` for the authoritative Makefile target list.
 - First time: `make setup`, then `make build-deps`, then `make build` (macOS: `make docker-volume-init` before build).
-- Override paths via repo-root `.env` or env vars: `LINUX_SDK`, `FLUTTER_SDK` (default `flutter-sdk/`), `BUILD_JOBS`, `SERIAL`.
+- The Rockchip SDK is fixed at repo-root `linux-sdk/`; override the Flutter SDK via repo-root `.env` or `FLUTTER_SDK` (default: `flutter-sdk/`). Other common settings are `BUILD_JOBS` and `SERIAL`.
 - macOS: prefer Docker volume over `BUILD_BIND_MOUNT=1` (bind-mount often crashes Docker Desktop during Buildroot).
 - Flutter app work: host needs `flutter` + `flutterpi_tool` (`make fetch-flutter-sdk` / `make build-dev-deps`).
 - Do not commit unless the user explicitly asks.

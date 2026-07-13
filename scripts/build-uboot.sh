@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [[ "${LWS_HMI_BUILD_UBOOT:-}" == "1" ]]; then
-  SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+  SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
   [[ -d "$SDK" ]] || { echo "ERROR: SDK missing" >&2; exit 1; }
 
   bash "$ROOT/scripts/apply-overlay.sh" >/dev/null

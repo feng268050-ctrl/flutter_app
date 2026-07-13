@@ -24,7 +24,7 @@ read_version() {
 
 sdk_rknpu_root() {
   local sdk
-  sdk="$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)"
+  sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
   [[ -n "$sdk" && -d "$sdk/external/rknpu2" ]] || return 1
   printf '%s/external/rknpu2\n' "$sdk"
 }

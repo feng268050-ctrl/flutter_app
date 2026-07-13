@@ -9,7 +9,7 @@ source "$ROOT/scripts/prebuilt-common.sh"
 source "$ROOT/scripts/cache-mirror.sh"
 cache_mirror_load_env "$ROOT"
 
-SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 ENGINE_PKG="$SDK/buildroot/package/flutter-engine"
 VERSION_FILE="$ROOT/overlay/buildroot/flutter-engine.version"
 FORCE="${FORCE:-0}"
@@ -114,7 +114,7 @@ ensure_depot_tools() {
 
 if [[ ! -f "$TARBALL" ]]; then
   if [[ ! -f "$ENGINE_PKG/dot-gclient" ]]; then
-    echo "ERROR: $ENGINE_PKG/dot-gclient not found (check LINUX_SDK / make link-sdk)" >&2
+    echo "ERROR: $ENGINE_PKG/dot-gclient not found (check repo-root linux-sdk/)" >&2
     exit 1
   fi
   ensure_depot_tools

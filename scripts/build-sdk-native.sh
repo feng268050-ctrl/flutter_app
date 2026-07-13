@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 OUT="$ROOT/output/firmware"
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 DEFCONFIG="${SDK_NATIVE_DEFCONFIG:-ynh960_innohi_defconfig}"
@@ -11,7 +11,7 @@ CHIP="${SDK_NATIVE_CHIP:-rk3566_rk3568}"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
-[[ -d "$SDK" ]] || die "SDK missing — run: make link-sdk"
+[[ -d "$SDK" ]] || die "SDK missing at $SDK"
 
 bash "$ROOT/scripts/prepare-sdk-native.sh"
 

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 source "$ROOT/scripts/prebuilt-common.sh"
 
 OUT_BASE="${SDK}/buildroot/output"

@@ -5,13 +5,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="${LWS_HMI_SDK_DIR:-}"
-if [[ -z "$SDK" ]]; then
-  SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)"
-fi
-if [[ ! -d "$SDK" && -d /work/sdk ]]; then
-  SDK=/work/sdk
-fi
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 
 FIRMWARE="$SDK/output/firmware"
 ANDROID_BOOT="$ROOT/output/firmware/android-boot"

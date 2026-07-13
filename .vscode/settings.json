@@ -5,7 +5,7 @@
   "dart.analysisExcludedFolders": [
     "flutter-sdk",
     ".host-deps",
-    "sdk",
+    "linux-sdk",
     "prebuilt",
     ".cache",
     "output"
@@ -13,7 +13,7 @@
   "files.watcherExclude": {
     "**/prebuilt/**": true,
     "**/flutter-sdk/**": true,
-    "**/sdk/**": true,
+    "**/linux-sdk/**": true,
     "**/output/**": true,
     "**/.cache/**": true,
     "**/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/opt/hmi/**": true
@@ -21,7 +21,7 @@
   "search.exclude": {
     "**/prebuilt": true,
     "**/flutter-sdk": true,
-    "**/sdk": true,
+    "**/linux-sdk": true,
     "**/output": true,
     "**/.cache": true
   },
@@ -29,7 +29,7 @@
     "**/.cache/**",
     "**/.host-deps/**",
     "**/flutter-sdk/**",
-    "**/sdk/**",
+    "**/linux-sdk/**",
     "**/prebuilt/**",
     "**/output/**"
   ],
@@ -39,7 +39,7 @@
     "\\.cache",
     "\\.host-deps",
     "flutter-sdk",
-    "sdk",
+    "linux-sdk",
     "prebuilt",
     "output"
   ],

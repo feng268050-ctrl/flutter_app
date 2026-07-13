@@ -25,11 +25,11 @@ install_hybrid_img() {
 }
 
 pack_hybrid_in_sdk() {
-  local sdk="${LWS_HMI_SDK_DIR:-$(bash "$ROOT/scripts/link-sdk.sh" --print)}"
+  local sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
   local firmware="$sdk/output/firmware"
   local updateimg="$firmware/update.img"
 
-  [[ -d "$sdk" ]] || die "SDK not found — run: make link-sdk"
+  [[ -d "$sdk" ]] || die "SDK not found at $sdk"
   [[ -r "$sdk/output/.config" ]] || die "output/.config missing — run make lunch first"
   [[ -r "$ANDROID_BOOT/MiniLoaderAll.bin" && -r "$ANDROID_BOOT/uboot.img" ]] || \
     die "Android boot chain missing — run: bash scripts/extract-android-boot.sh"

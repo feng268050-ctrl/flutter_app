@@ -17,7 +17,7 @@ SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 
 UPGRADE_TOOL_DIR="$ROOT/tools/upgrade_tool"
 UPGRADE_TOOL="$UPGRADE_TOOL_DIR/upgrade_tool"
-SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print)"
+SDK="$ROOT/linux-sdk"
 LWS_FIRMWARE_DIR="$ROOT/output/firmware"
 SDK_FIRMWARE_DIR="$SDK/output/firmware"
 UPDATE_IMG="${UPDATE_IMG:-${LWS_HMI_UPDATE_IMG:-${IMAGE:-$LWS_FIRMWARE_DIR/update.img}}}"

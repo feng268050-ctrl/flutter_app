@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SDK="$(bash "$ROOT/scripts/link-sdk.sh" --print 2>/dev/null || true)"
+SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 UPGRADE="$ROOT/tools/upgrade_tool/upgrade_tool"
 FW_LWS="$ROOT/output/firmware"
 FW_SDK="$SDK/output/firmware"

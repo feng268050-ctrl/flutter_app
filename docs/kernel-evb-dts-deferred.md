@@ -51,7 +51,7 @@ dmesg | grep -E 'fan53555|spi-nand'
 # Still OK (until deferred row fixed):
 dmesg | grep -E 'fiq_debugger|vop2|dvfs info cpu0|RKNPU|own-gpio|stmmac-1'
 
-/usr/lib/lws-hmi/boot-verify.sh
+verify-boot
 ```
 
 ---

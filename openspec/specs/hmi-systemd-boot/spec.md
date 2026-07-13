@@ -26,9 +26,9 @@ The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/us
 - **WHEN** P1 rootfs is produced
 - **THEN** symlink exists at `etc/systemd/system/multi-user.target.wants/hmi.service`
 
-#### Scenario: boot-verify confirms Plan A boot chain
+#### Scenario: verify-boot confirms Plan A boot chain
 
-- **WHEN** operator runs `/usr/lib/lws-hmi/boot-verify.sh` on device after flash
+- **WHEN** operator runs `verify-boot` on device after flash
 - **THEN** output reports PASS for hmi/mainserver/performance/pwrkey enabled and mediamtx/sshd/wpa_supplicant/network not in multi-user wants
 
 #### Scenario: flutter-pi starts automatically
@@ -113,12 +113,17 @@ The image SHALL provide `lws-hmi-pwrkey-poweroff.service`, `pwrkey-poweroff.sh`,
 
 ### Requirement: Flutter process teardown does not crash DRM GEM release
 
-The kernel SHALL tolerate transient `NULL` entries in a DRM file's GEM handle IDR. Because repeated teardown has also produced a non-NULL but corrupted `drm_gem_object.funcs` pointer, Rockchip SHALL publish its immutable GEM funcs table and the GEM core SHALL restore that canonical pointer before invoking release or free callbacks.
+The kernel SHALL tolerate transient `NULL`/invalid object entries and an object whose `obj->dev` has become a non-kernel address in a DRM file's GEM handle IDR. Because repeated teardown has also produced a non-NULL but corrupted `drm_gem_object.funcs` pointer, Rockchip SHALL publish its immutable GEM funcs table and the GEM core SHALL restore that canonical pointer before invoking release or free callbacks.
 
 #### Scenario: Stop flutter-pi while render threads are exiting
 
 - **WHEN** `hmi.service` is stopped and flutter-pi releases DRM/GEM handles
 - **THEN** the kernel does not oops in `drm_gem_object_release_handle`
+
+#### Scenario: Switch between release and debug payloads
+
+- **WHEN** tooling replaces the active HMI payload
+- **THEN** it stops all service-managed and detached `flutter-pi` instances, waits for process and deferred DRM/Mali teardown, and only then starts one new instance
 - **AND** the DRM device can be acquired by a subsequent flutter-pi process
 
 ### Requirement: Boot KPI to first home frame
@@ -132,10 +137,19 @@ From power-on on eMMC storage, the Flutter Hello World home frame SHALL become v
 
 ### Requirement: Device boot verification script
 
-The image SHALL ship `/usr/lib/lws-hmi/boot-verify.sh` that validates Plan A unit enable/disable state, pwrkey poweroff setup, performance governors, flutter-pi running, and critical-chain expectations.
+The image SHALL ship `verify-boot` in the device command path; it validates Plan A unit enable/disable state, pwrkey poweroff setup, performance governors, flutter-pi running, and critical-chain expectations.
 
-#### Scenario: boot-verify passes on P1 device
+#### Scenario: verify-boot passes on P1 device
 
-- **WHEN** operator runs `/usr/lib/lws-hmi/boot-verify.sh` after flash
-- **THEN** script reports `=== boot-verify: ALL PASS ===` and exits 0
+- **WHEN** operator runs `verify-boot` after flash
+- **THEN** script reports `=== verify-boot: ALL PASS ===` and exits 0
+
+### Requirement: Device operator commands use verb-first names
+
+The image SHALL expose `verify-boot`, `verify-env`, and `diagnose-hmi` through `/usr/bin`, while keeping their implementation scripts under `/usr/lib/lws-hmi`.
+
+#### Scenario: Operator invokes verification without implementation paths
+
+- **WHEN** an operator opens a device shell after flash
+- **THEN** `verify-boot`, `verify-env`, and `diagnose-hmi` resolve from `PATH`
 

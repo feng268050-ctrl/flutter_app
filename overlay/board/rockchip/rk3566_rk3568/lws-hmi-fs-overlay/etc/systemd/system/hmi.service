@@ -9,7 +9,7 @@ After=local-fs.target lws-hmi-performance.service
 [Service]
 Type=simple
 Nice=-5
-ExecStart=/usr/bin/flutter-pi --release -o landscape_left /opt/hmi
+ExecStart=/usr/lib/lws-hmi/hmi-launch.sh
 Restart=on-failure
 RestartSec=2
 Environment=FLUTTER_PI=1

@@ -10,7 +10,7 @@ Buildroot + **ynh960** (Innohi **RK3566**) on the Rockchip Linux 6.1 SDK.
 ## Prerequisites
 
 - Extracted SDK at `~/Downloads/rk356x_linux6.1_20250730_1126/rk356x_linux6.1_20250730_1126` (override with `LINUX_SDK` in `.env`)
-- Host Flutter SDK at `~/Downloads/flutter-sdk-3.24.4/` (override with `FLUTTER_SDK` in `.env`; run `make fetch-flutter-sdk` to populate)
+- Host Flutter SDK at repo-root `flutter-sdk/` (gitignored; run `make fetch-flutter-sdk`; override with `FLUTTER_SDK` in `.env`)
 - **Linux:** Ubuntu 22.04+ on ext4; Rockchip build deps (see `docker/Dockerfile` package list)
 - **macOS:** Docker Desktop (Apple Silicon: enable Rosetta for `linux/amd64`)
 
@@ -54,7 +54,7 @@ Run `make help` for the full target list. Stages below are **one command per lin
 ```bash
 make setup
 make link-sdk
-make link-flutter-sdk
+make fetch-flutter-sdk
 make apply-overlay
 ```
 
@@ -192,7 +192,7 @@ Loader path from Linux board (USB plug-ssh, no adb):
 
 ```bash
 make devices                    # auto-discovers USB-SSH, configures host 192.168.55.2
-make reboot-loader                # USB-SSH → reboot-rockusb-loader (SERIAL= optional)
+make reboot-loader                # USB-SSH → device reboot-loader (SERIAL= optional)
 make flash                      # macOS only
 ```
 
@@ -206,8 +206,31 @@ make build-app
 make push-app                   # SERIAL=... when multiple boards
 ```
 
-`make shell` opens an interactive `root` terminal over USB ECM SSH, similar to `adb shell`. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB and USB-SSH rows in one table.
+`make shell` opens an interactive `root` terminal over USB ECM SSH, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB and USB-SSH rows in one table.
 
+### Debug iteration (USB plug-ssh, P1.5)
+
+First time on a host (pinned Flutter 3.24.4 + `sshpass`):
+
+```bash
+make debug-setup
+```
+
+After the board has a rootfs with the P1.5 debug overlay scripts (`hmi-launch.sh`, `debug-app-*`):
+
+```bash
+make debug-app                   # SERIAL=... when multiple boards
+```
+
+Or open `app/hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH debug)** from Run and Debug. Its pre-launch terminal configures the host USB interface first (macOS may request the `sudo` password), then builds and runs `flutter run -d lws-hmi`. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
+
+`make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/lws-hmi/debug-runtime/`), replaces `/opt/hmi`, and starts flutter-pi with VM Service over USB-SSH port forwarding. Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make push-app`.
+
+Host-only checks:
+
+```bash
+make test-debug-app
+```
 
 ```bash
 make show-config
@@ -218,8 +241,15 @@ make check-prebuilt
 On device after flash:
 
 ```bash
-/usr/lib/lws-hmi/boot-verify.sh
-/usr/lib/lws-hmi/env-verify.sh
+verify-boot          # Plan A boot chain / KPI
+verify-env           # Platform stack
+diagnose-hmi         # HMI service, journal, bundle, and engine
+diagnose-usb-ssh     # DWC3, VBUS, g_ether, usb0, and sshd
+read-serial          # Stable board serial
+start-usb-ssh        # Manually start g_ether + usb0 sshd
+stop-usb-ssh         # Stop usb0 sshd and unload g_ether
+recover-usb-ssh      # Restart USB-SSH; may disconnect this shell
+reboot-loader        # Enter RockUSB Loader mode
 ```
 
 ### Maintenance (infrequent)
@@ -280,7 +310,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 
 | Target | 产出 | 用途 |
 |--------|------|------|
-| `make fetch-flutter-sdk` | `FLUTTER_SDK/install/` | `make build-app`、engine 编译辅助 |
+| `make fetch-flutter-sdk` | `flutter-sdk/` | `make build-app`、engine 编译辅助 |
 | `make fetch-rknn-toolkit` | `.cache/rknn-toolkit/` | 开发机上 ONNX→RKNN 模型转换 |
 
 Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`。
@@ -309,7 +339,7 @@ git lfs install
 git add .gitattributes prebuilt/
 ```
 
-Without LFS, large binaries under `prebuilt/` may be too heavy for plain git. The **host Flutter SDK** (~1 GB) is kept **outside the repo** via `FLUTTER_SDK` (like `LINUX_SDK`); run `make fetch-flutter-sdk` to populate it locally.
+Without LFS, large binaries under `prebuilt/` may be too heavy for plain git. The **host Flutter SDK** (~1 GB) lives in gitignored `flutter-sdk/` at the repo root; run `make fetch-flutter-sdk` to populate it (override path with `FLUTTER_SDK` in `.env`).
 
 ### Buildroot `dl/` (generic packages)
 
@@ -326,8 +356,8 @@ make show-config           # or: bash scripts/docker-run.sh bash -lc 'grep RK_BU
 On device (serial shell or ssh), after `make build-img` and `make flash`:
 
 ```bash
-/usr/lib/lws-hmi/boot-verify.sh    # Plan A 启动链 / KPI
-/usr/lib/lws-hmi/env-verify.sh     # §3.4 平台栈（不含 flutter-pi）
+verify-boot                        # Plan A 启动链 / KPI
+verify-env                         # §3.4 平台栈（不含 flutter-pi）
 ```
 
 Boot KPI 优化阶段与状态表：[`docs/boot-kpi-optimization.md`](docs/boot-kpi-optimization.md).
@@ -386,7 +416,7 @@ Normal flash from Linux HMI (USB plug-ssh):
 
 ```bash
 make devices
-make reboot-loader               # USB-SSH → reboot-rockusb-loader
+make reboot-loader               # USB-SSH → device reboot-loader
 make flash                     # macOS host
 ```
 
@@ -467,7 +497,7 @@ The upstream SDK ships **ynh962** board defconfig but **ynh960.dts** in kernel; 
 
 ```bash
 export LINUX_SDK=~/Downloads/rk356x_linux6.1_20250730_1126/...   # ~ and $HOME both work
-export FLUTTER_SDK=~/Downloads/flutter-sdk-3.24.4                # host Flutter SDK (outside git)
+export FLUTTER_SDK=flutter-sdk                                        # host Flutter SDK (gitignored at repo root)
 export BUILD_JOBS=4                                          # parallel make jobs (default 4 on macOS)
 export SERIAL=10.0.0.239:5555                            # for pull-display-params (adb over network)
 export REBUILD_IMAGE=1                                       # rebuild Docker image

@@ -8,7 +8,8 @@ an invalid close address, observed as ASCII data in the program counter.
 
 Let drivers with one GEM object type publish a canonical funcs table.
 Repair Rockchip objects from that immutable table before release or free,
-and tolerate a transient NULL object_idr entry during handle deletion.
+and tolerate a transient NULL/invalid object or corrupted obj->dev pointer
+during handle deletion.
 
 --- a/include/drm/drm_drv.h
 +++ b/include/drm/drm_drv.h
@@ -38,10 +39,24 @@ and tolerate a transient NULL object_idr entry during handle deletion.
  	 *
 --- a/drivers/gpu/drm/drm_gem.c
 +++ b/drivers/gpu/drm/drm_gem.c
-@@ -228,18 +228,39 @@ drm_gem_object_handle_put_unlocked(struct drm_gem_object *obj)
+@@ -228,18 +228,56 @@ drm_gem_object_handle_put_unlocked(struct drm_gem_object *obj)
  		drm_gem_object_put(obj);
  }
  
++static bool drm_gem_object_has_valid_device(struct drm_gem_object *obj)
++{
++	struct drm_device *dev;
++
++	if (!obj || (unsigned long)obj < PAGE_OFFSET || !virt_addr_valid(obj))
++		return false;
++
++	dev = READ_ONCE(obj->dev);
++	if (!dev || (unsigned long)dev < PAGE_OFFSET || !virt_addr_valid(dev))
++		return false;
++
++	return true;
++}
++
 +static const struct drm_gem_object_funcs *
 +drm_gem_object_get_funcs(struct drm_gem_object *obj)
 +{
@@ -71,8 +86,11 @@ and tolerate a transient NULL object_idr entry during handle deletion.
  
 -	if (obj->funcs->close)
 -		obj->funcs->close(obj, file_priv);
-+	if (!obj)
++	if (!drm_gem_object_has_valid_device(obj)) {
++		pr_warn_ratelimited("drm: ignoring invalid GEM handle object/device %px\n",
++				    obj);
 +		return 0;
++	}
 +
 +	funcs = drm_gem_object_get_funcs(obj);
 +	if (funcs && funcs->close)
@@ -80,7 +98,7 @@ and tolerate a transient NULL object_idr entry during handle deletion.
  
  	drm_prime_remove_buf_handle(&file_priv->prime, id);
  	drm_vma_node_revoke(&obj->vma_node, file_priv);
-@@ -955,13 +976,15 @@ EXPORT_SYMBOL(drm_gem_object_release);
+@@ -955,13 +990,18 @@ EXPORT_SYMBOL(drm_gem_object_release);
  void
  drm_gem_object_free(struct kref *kref)
  {
@@ -88,6 +106,9 @@ and tolerate a transient NULL object_idr entry during handle deletion.
  	struct drm_gem_object *obj =
  		container_of(kref, struct drm_gem_object, refcount);
  
++	if (WARN_ON(!drm_gem_object_has_valid_device(obj)))
++		return;
++
 -	if (WARN_ON(!obj->funcs->free))
 +	funcs = drm_gem_object_get_funcs(obj);
 +	if (WARN_ON(!funcs || !funcs->free))

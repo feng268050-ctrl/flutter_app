@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Launch Flutter debug session on lws-hmi via Custom Devices (same path as IDE).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+APP_DIR="$ROOT/app/hmi"
+# shellcheck source=prebuilt-common.sh
+source "$ROOT/scripts/prebuilt-common.sh"
+
+PINNED_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-sdk.version" "3.24.4")"
+FLUTTER_INSTALL="$(bash "$ROOT/scripts/link-flutter-sdk.sh" --print)"
+FLUTTER="$FLUTTER_INSTALL/bin/flutter"
+
+die() {
+	echo "ERROR: $*" >&2
+	exit 1
+}
+
+[[ -x "$FLUTTER" ]] || die "pinned Flutter SDK missing (make fetch-flutter-sdk)"
+export PATH="$FLUTTER_INSTALL/bin:${HOME}/.pub-cache/bin:$PATH"
+
+bash "$ROOT/scripts/usb-ssh-host-setup.sh"
+bash "$ROOT/scripts/debug-setup.sh"
+bash "$ROOT/scripts/build-app-debug.sh"
+
+cd "$APP_DIR"
+echo "Starting Flutter debug on lws-hmi (Ctrl+C detaches IDE tunnel; app keeps running on device)..."
+exec "$FLUTTER" run -d lws-hmi --debug --no-pub --no-track-widget-creation

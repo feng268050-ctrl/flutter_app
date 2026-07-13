@@ -104,12 +104,12 @@ The repository SHALL provide **`make reboot`** that reboots a connected board **
 
 ### Requirement: make reboot-loader enters RockUSB Loader from Linux
 
-The repository SHALL provide **`make reboot-loader`** (`scripts/flash-usb.sh`) so a board running the **Linux HMI image** with **USB plug-ssh active** reboots into **RockUSB Loader** by running **`/usr/lib/lws-hmi/reboot-rockusb-loader`** on the target over the USB ECM SSH link, then waits until **`upgrade_tool ld`** reports a connected Loader device (existing `wait_for_rockusb` behavior).
+The repository SHALL provide **`make reboot-loader`** (`scripts/flash-usb.sh`) so a board running the **Linux HMI image** with **USB plug-ssh active** reboots into **RockUSB Loader** by running **`/usr/bin/reboot-loader`** on the target over the USB network SSH link, then waits until **`upgrade_tool ld`** reports a connected Loader device (existing `wait_for_rockusb` behavior).
 
 #### Scenario: Linux board over USB-SSH
 
 - **WHEN** the board is running Linux, USB debug is active (`192.168.55.1` reachable on `usb0`), and the host runs `make reboot-loader`
-- **THEN** the host executes `reboot-rockusb-loader` on the target via `ssh` and RockUSB Loader appears within the configured timeout
+- **THEN** the host executes `reboot-loader` on the target via `ssh` and RockUSB Loader appears within the configured timeout
 
 #### Scenario: SERIAL selects board for reboot-loader
 

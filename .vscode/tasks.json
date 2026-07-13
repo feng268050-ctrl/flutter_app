@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "lws-hmi: debug setup",
+      "type": "shell",
+      "command": "make usb-ssh-setup debug-setup build-app-debug",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "envFile": "${workspaceFolder}/.env"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

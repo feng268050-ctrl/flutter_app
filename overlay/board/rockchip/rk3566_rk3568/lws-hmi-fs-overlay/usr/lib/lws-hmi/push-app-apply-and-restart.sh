@@ -25,6 +25,8 @@ log() {
 }
 
 log "installing libapp.so and flutter_assets before restart"
+rm -f /var/lib/lws-hmi/debug-app.pid /var/lib/lws-hmi/debug-app.vm-service
+mkdir -p /opt/hmi/lib /opt/hmi/data/flutter_assets
 rm -rf "$NEXT_LIB" "$NEXT_ASSETS" "$OLD_ASSETS"
 install -D -m 0644 "$LIB" "$NEXT_LIB"
 mkdir -p "$NEXT_ASSETS"
@@ -41,17 +43,18 @@ if ! mv "$NEXT_ASSETS" "$ASSETS_DIR"; then
 	exit 1
 fi
 rm -rf "$OLD_ASSETS"
+
+ENGINE_VER="$(cat /etc/lws-hmi/flutter-engine.version 2>/dev/null || echo 3.24.4)"
+printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >/opt/hmi/runtime-mode.json
 sync
+
+/usr/lib/lws-hmi/hmi-stop-and-wait.sh
 
 attempt=1
 while [ "$attempt" -le "$MAX_START_ATTEMPTS" ]; do
 	log "restart attempt $attempt/$MAX_START_ATTEMPTS"
 	systemctl reset-failed hmi.service
-	if [ "$attempt" -eq 1 ]; then
-		systemctl restart hmi.service || true
-	else
-		systemctl start hmi.service || true
-	fi
+	systemctl start hmi.service || true
 	sleep 1
 	if systemctl is-active --quiet hmi.service && pidof flutter-pi >/dev/null 2>&1; then
 		log "restart complete"

@@ -8,7 +8,7 @@ Target-side USB ECM plug-to-debug: VBUS-triggered gadget, `usb0` at `192.168.55.
 
 ### Requirement: VBUS plug starts USB ECM debug
 
-The target SHALL bring up a USB **ECM** gadget and configure **`usb0`** with address **`192.168.55.1/24`** when the OTG port detects a USB host connection (VBUS attach) during Linux runtime.
+The target SHALL load the modular Linux **`g_ether`** driver in ECM mode and configure **`usb0`** with address **`192.168.55.1/24`** when the OTG port detects a USB host connection (VBUS attach) during Linux runtime. The implementation SHALL NOT create a competing configfs gadget or manually reset the DWC3 controller.
 
 #### Scenario: Cable connected after boot
 
@@ -22,16 +22,16 @@ The target SHALL bring up a USB **ECM** gadget and configure **`usb0`** with add
 
 ### Requirement: Unplug stops USB debug
 
-The target SHALL tear down the ECM gadget and stop SSH service on **`usb0`** when VBUS is removed.
+The target SHALL stop SSH service on **`usb0`** and unload the **`g_ether`** module when VBUS is removed.
 
 #### Scenario: Cable disconnected
 
 - **WHEN** the USB cable is unplugged from the OTG port
-- **THEN** the gadget is unbound from the UDC and sshd is no longer listening on `usb0`
+- **THEN** `g_ether` is unloaded, the UDC is released, and sshd is no longer listening on `usb0`
 
 ### Requirement: USB gadget serial identity
 
-Each board SHALL expose a stable USB **`iSerial`** string via the gadget descriptor, derived from hardware identity (Device Tree `serial-number` or SoC unique ID).
+Each board SHALL pass a stable USB **`iSerialNumber`** plus deterministic host/device MAC addresses to `g_ether`, derived from hardware identity (Device Tree `serial-number` or SoC unique ID).
 
 #### Scenario: Serial stable across reboots
 
@@ -72,9 +72,23 @@ Starting USB ECM debug SHALL NOT stop `hmi.service` automatically. **`make push-
 
 ### Requirement: Boot verification excludes USB debug from wants
 
-`boot-verify.sh` SHALL fail if USB plug-ssh units are enabled in `multi-user.target.wants` or if sshd is enabled for boot-time LAN listen as a side effect of this feature.
+`verify-boot` SHALL fail if USB plug-ssh units are enabled in `multi-user.target.wants` or if sshd is enabled for boot-time LAN listen as a side effect of this feature.
 
-#### Scenario: boot-verify on clean image
+#### Scenario: verify-boot on clean image
 
-- **WHEN** `/usr/lib/lws-hmi/boot-verify.sh` runs after flash
+- **WHEN** `verify-boot` runs after flash
 - **THEN** it reports PASS for USB debug not being in `multi-user.target.wants`
+
+### Requirement: USB debug diagnostics are available from PATH
+
+The image SHALL expose the safe, read-only `diagnose-usb-ssh` and `read-serial` commands through `/usr/bin`. It SHALL also expose the explicit lifecycle commands `start-usb-ssh`, `stop-usb-ssh`, and `recover-usb-ssh` for serial-console recovery.
+
+#### Scenario: Operator diagnoses USB networking
+
+- **WHEN** an operator runs `diagnose-usb-ssh` from a device shell
+- **THEN** it reports DWC3, VBUS, `g_ether`, `usb0`, and sshd state without changing device state
+
+#### Scenario: Operator recovers USB networking from serial console
+
+- **WHEN** diagnostics show a stale USB-SSH session
+- **THEN** the operator can run `recover-usb-ssh` without entering an implementation path

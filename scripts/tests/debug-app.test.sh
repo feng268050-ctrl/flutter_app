@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# Host-side static checks for debug-app tooling.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+fail=0
+
+assert_file() {
+	local path="$1"
+	if [[ -f "$path" ]]; then
+		echo "OK  $path"
+	else
+		echo "FAIL missing $path" >&2
+		fail=1
+	fi
+}
+
+assert_executable() {
+	local path="$1"
+	if [[ -x "$path" ]]; then
+		echo "OK  $path"
+	else
+		echo "FAIL not executable $path" >&2
+		fail=1
+	fi
+}
+
+assert_file "$ROOT/overlay/buildroot/flutterpi_tool.version"
+assert_executable "$ROOT/scripts/build-app-debug.sh"
+assert_executable "$ROOT/scripts/debug-app.sh"
+assert_executable "$ROOT/scripts/debug-setup.sh"
+assert_executable "$ROOT/scripts/debug-app-deploy.sh"
+assert_executable "$ROOT/scripts/debug-custom-device/install.sh"
+assert_executable "$ROOT/scripts/debug-custom-device/forward-port.sh"
+assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/hmi-launch.sh"
+assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/hmi-stop-and-wait.sh"
+assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/debug-app-apply.sh"
+assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/debug-app-run.sh"
+
+if grep -q '"--no-track-widget-creation"' "$ROOT/.vscode/launch.json" \
+	&& grep -q '"dart.flutterRunAdditionalArgs".*"--no-track-widget-creation"' "$ROOT/.vscode/settings.json" \
+	&& grep -q -- '--no-track-widget-creation' "$ROOT/scripts/debug-app.sh"; then
+	echo "OK  all IDE and CLI launches match flutterpi_tool widget tracking"
+else
+	echo "FAIL an IDE or CLI launch can differ from initial bundle widget tracking" >&2
+	fail=1
+fi
+
+if ! grep -q 'hmi-launch.sh' "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/etc/systemd/system/hmi.service"; then
+	echo "FAIL hmi.service does not use hmi-launch.sh" >&2
+	fail=1
+else
+	echo "OK  hmi.service uses hmi-launch.sh"
+fi
+
+if grep -q 'make emulator' "$ROOT/Makefile"; then
+	echo "FAIL Makefile introduces make emulator" >&2
+	fail=1
+else
+	echo "OK  no make emulator target"
+fi
+
+if grep -q 'exec usb_ssh_session_' "$ROOT/scripts/debug-custom-device/run-debug.sh"; then
+	echo "FAIL run-debug.sh tries to exec a shell function" >&2
+	fail=1
+else
+	echo "OK  run-debug.sh invokes sourced SSH helper"
+fi
+
+if grep -q '^local .*ssh_opts' "$ROOT/scripts/debug-custom-device/forward-port.sh"; then
+	echo "FAIL forward-port.sh uses local outside a function" >&2
+	fail=1
+else
+	echo "OK  forward-port.sh declares options at script scope"
+fi
+
+if grep -q 'USB-SSH SCP connection failed; retrying' "$ROOT/scripts/usb-ssh-session.sh"; then
+	echo "OK  USB-SSH SCP retries transient connection failures"
+else
+	echo "FAIL USB-SSH SCP has no transient connection retry" >&2
+	fail=1
+fi
+
+if grep -q 'Dart VM service is listening on' \
+	"$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/debug-app-run.sh"; then
+	echo "OK  debug-app-run matches Flutter 3.24 VM Service output"
+else
+	echo "FAIL debug-app-run misses Flutter 3.24 VM Service output" >&2
+	fail=1
+fi
+
+if grep -q 'start-stop-daemon -S -b -m' \
+	"$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/debug-app-run.sh" \
+	&& grep -q 'live_flutter_pids' \
+	"$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/hmi-stop-and-wait.sh"; then
+	echo "OK  debug process detaches cleanly and ignores zombies"
+else
+	echo "FAIL debug process lifecycle can retain flutter-pi zombies" >&2
+	fail=1
+fi
+
+if bash "$ROOT/scripts/build-app-debug.sh" >/tmp/lws-hmi-build-app-debug.log 2>&1; then
+	echo "OK  build-app-debug"
+	assert_file "$ROOT/.cache/debug-app-staging/opt/hmi/data/flutter_assets/kernel_blob.bin"
+	assert_file "$ROOT/.cache/debug-app-staging/debug-runtime/3.24.4/manifest.json"
+else
+	echo "FAIL build-app-debug (see /tmp/lws-hmi-build-app-debug.log)" >&2
+	fail=1
+fi
+
+if bash "$ROOT/scripts/debug-setup.sh" >/tmp/lws-hmi-debug-setup.log 2>&1; then
+	echo "OK  debug-setup"
+else
+	echo "FAIL debug-setup (see /tmp/lws-hmi-debug-setup.log)" >&2
+	fail=1
+fi
+
+exit "$fail"

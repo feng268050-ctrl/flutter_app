@@ -1,4 +1,15 @@
 {
+  "dart.flutterSdkPath": "flutter-sdk",
+  "dart.projectSearchPaths": ["app/hmi"],
+  "dart.flutterRunAdditionalArgs": ["--no-track-widget-creation"],
+  "dart.analysisExcludedFolders": [
+    "flutter-sdk",
+    ".host-deps",
+    "sdk",
+    "prebuilt",
+    ".cache",
+    "output"
+  ],
   "files.watcherExclude": {
     "**/prebuilt/**": true,
     "**/flutter-sdk/**": true,
@@ -14,5 +25,29 @@
     "**/output": true,
     "**/.cache": true
   },
-  "git.ignoreLimitWarning": true
+  "java.import.exclusions": [
+    "**/.cache/**",
+    "**/.host-deps/**",
+    "**/flutter-sdk/**",
+    "**/sdk/**",
+    "**/prebuilt/**",
+    "**/output/**"
+  ],
+  "java.project.resourceFilters": [
+    "node_modules",
+    "\\.git",
+    "\\.cache",
+    "\\.host-deps",
+    "flutter-sdk",
+    "sdk",
+    "prebuilt",
+    "output"
+  ],
+  "java.import.gradle.enabled": false,
+  "java.configuration.updateBuildConfiguration": "disabled",
+  "gradle.autoDetect": "off",
+  "gradle.nestedProjects": false,
+  "git.ignoreLimitWarning": true,
+  "java.compile.nullAnalysis.mode": "automatic",
+  "dart.showTodos": false
 }

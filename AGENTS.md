@@ -14,7 +14,7 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 - Run `make help` for the authoritative Makefile target list.
 - First time: `make setup`, then `make build-deps`, then `make build` (macOS: `make docker-volume-init` before build).
-- Override paths via repo-root `.env` or env vars: `LINUX_SDK`, `FLUTTER_SDK`, `BUILD_JOBS`, `SERIAL`.
+- Override paths via repo-root `.env` or env vars: `LINUX_SDK`, `FLUTTER_SDK` (default `flutter-sdk/`), `BUILD_JOBS`, `SERIAL`.
 - macOS: prefer Docker volume over `BUILD_BIND_MOUNT=1` (bind-mount often crashes Docker Desktop during Buildroot).
 - Flutter app work: host needs `flutter` + `flutterpi_tool` (`make fetch-flutter-sdk` / `make build-dev-deps`).
 - Do not commit unless the user explicitly asks.
@@ -77,6 +77,8 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `overlay/.../lws-hmi-fs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
 | USB plug-ssh (`overlay/kernel/**` + fs-overlay scripts/units) | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make build-img`, `make flash` |
 | `scripts/push-app.sh` only (app already on device) | `make build-app`, `make push-app` |
+| `scripts/debug-app*.sh`, `scripts/debug-custom-device/**`, `scripts/debug-setup.sh`, `scripts/build-app-debug.sh` (host only; board already has P1.5 overlay) | `make debug-setup`, `make debug-app` |
+| `overlay/.../lws-hmi-fs-overlay/**` debug scripts (`hmi-launch.sh`, `debug-app-*`, `hmi.service`) | `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
 | `overlay/buildroot/**` | `make apply-overlay`, `make check-prebuilt`, `make build-rootfs`, `make build-img`, `make flash` |
 | `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
 | `board/*.txt` LCD/MIPI params | `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
@@ -111,7 +113,7 @@ Before finishing implementation work:
 - Docs-only: no build required.
 - `app/hmi/`: `flutter analyze` / tests under `app/hmi/` when Dart changed.
 - Overlay/rootfs: `make build-rootfs` should pass `scripts/verify-rootfs-overlay.sh`.
-- After flash (device): `/usr/lib/lws-hmi/boot-verify.sh` (Plan A boot KPI); `/usr/lib/lws-hmi/env-verify.sh` (§3.4 platform stack).
+- After flash (device): `verify-boot` (Plan A boot KPI); `verify-env` (§3.4 platform stack).
 
 ## Documentation maintenance
 

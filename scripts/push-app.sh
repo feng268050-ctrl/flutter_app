@@ -3,16 +3,11 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=scripts/usb-ssh-common.sh
-source "$ROOT/scripts/usb-ssh-common.sh"
-SERIAL="${SERIAL:-${LWS_HMI_SERIAL:-}}"
-TARGET_ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
-TARGET_USER="${LWS_HMI_USB_SSH_USER:-root}"
-SSH_PASS="${LWS_HMI_USB_SSH_PASS:-rockchip}"
-WAIT_SEC="${PUSH_APP_WAIT_SEC:-30}"
+# shellcheck source=scripts/usb-ssh-session.sh
+source "$ROOT/scripts/usb-ssh-session.sh"
+
 STAGING="/var/lib/lws-hmi/push-app-staging"
 APPLY_SCRIPT="/usr/lib/lws-hmi/push-app-apply-and-restart.sh"
-
 OVERLAY_HMI="$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/opt/hmi"
 LIBAPP="$OVERLAY_HMI/lib/libapp.so"
 ASSETS="$OVERLAY_HMI/data/flutter_assets"
@@ -45,74 +40,25 @@ EOF
 [[ -f "$LIBAPP" ]] || die "missing $LIBAPP (run: make build-app)"
 [[ -d "$ASSETS" ]] || die "missing $ASSETS (run: make build-app)"
 
-sel=()
-while IFS= read -r line; do
-	sel+=("$line")
-done < <(SERIAL="$SERIAL" bash "$ROOT/scripts/usb-ssh-devices.sh" --select)
-[[ ${#sel[@]} -eq 3 ]] || die "could not select USB-SSH device"
-IFACE="${sel[1]}"
-[[ "$IFACE" != "-" && -n "$IFACE" ]] || die "no host interface for USB-SSH device (wait for ECM link)"
-
-wait_for_target() {
-	local i
-	for ((i = 1; i <= WAIT_SEC; i++)); do
-		if ping_usb_ssh_target "$IFACE" >/dev/null 2>&1; then
-			echo "Target reachable on $TARGET_ADDR via $IFACE (${i}s)."
-			return 0
-		fi
-		if (( i == 1 || i % 5 == 0 )); then
-			echo "Waiting for $TARGET_ADDR on $IFACE... (${i}s)"
-		fi
-		sleep 1
-	done
-	die "Timed out waiting for $TARGET_ADDR on $IFACE (plug USB, wait for ECM)"
-}
-
-ssh_base_opts=(
-	-o ConnectTimeout=5
-	-o StrictHostKeyChecking=accept-new
-	-o UserKnownHostsFile=/dev/null
-	-o LogLevel=ERROR
-)
-while IFS= read -r opt; do
-	[[ -n "$opt" ]] && ssh_base_opts+=("$opt")
-done < <(usb_ssh_bind_pair "$IFACE")
-
-run_ssh() {
-	require_sshpass
-	sshpass -p "$SSH_PASS" ssh "${ssh_base_opts[@]}" "$TARGET_USER@$TARGET_ADDR" "$@"
-}
-
-run_ssh_optional() {
-	command -v sshpass >/dev/null 2>&1 || return 1
-	sshpass -p "$SSH_PASS" ssh "${ssh_base_opts[@]}" "$TARGET_USER@$TARGET_ADDR" "$@" 2>/dev/null || return 1
-}
-
-run_scp() {
-	require_sshpass
-	sshpass -p "$SSH_PASS" scp "${ssh_base_opts[@]}" "$@"
-}
-
-apply_and_restart() {
-	echo "Installing staged app and restarting hmi.service..."
-	if run_ssh_optional "test -x $APPLY_SCRIPT"; then
-		run_ssh "$APPLY_SCRIPT"
-	else
-		die "$APPLY_SCRIPT not found on board (rebuild rootfs and flash the DRM teardown fix)"
-	fi
-}
+usb_ssh_session_load_env "$ROOT"
+usb_ssh_session_select "$ROOT"
 
 echo "USB-SSH push-app: iface=$IFACE target=$TARGET_USER@$TARGET_ADDR"
 configure_usb_ssh_host_addr "$IFACE"
-wait_for_target
+usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
 
 echo "Staging libapp.so..."
-run_ssh "rm -rf $STAGING && mkdir -p $STAGING/lib $STAGING/data/flutter_assets"
-run_scp "$LIBAPP" "$TARGET_USER@$TARGET_ADDR:$STAGING/lib/libapp.so"
+usb_ssh_session_run_ssh "$ROOT" "$IFACE" "rm -rf $STAGING && mkdir -p $STAGING/lib $STAGING/data/flutter_assets"
+usb_ssh_session_run_scp "$ROOT" "$IFACE" "$LIBAPP" "$TARGET_USER@$TARGET_ADDR:$STAGING/lib/libapp.so"
 
 echo "Staging flutter_assets..."
-run_scp -r "$ASSETS/." "$TARGET_USER@$TARGET_ADDR:$STAGING/data/flutter_assets/"
+usb_ssh_session_run_scp "$ROOT" "$IFACE" -r "$ASSETS/." "$TARGET_USER@$TARGET_ADDR:$STAGING/data/flutter_assets/"
 
-apply_and_restart
+echo "Installing staged app and restarting hmi.service..."
+if usb_ssh_session_run_ssh "$ROOT" "$IFACE" "test -x $APPLY_SCRIPT"; then
+	usb_ssh_session_run_ssh "$ROOT" "$IFACE" "$APPLY_SCRIPT"
+else
+	die "$APPLY_SCRIPT not found on board (rebuild rootfs and flash the DRM teardown fix)"
+fi
 
 echo "push-app: done (hmi.service restarted with the new app)."

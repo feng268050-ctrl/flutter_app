@@ -174,7 +174,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-rockusb-loader read-device-serial.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh push-app-apply-and-restart.sh; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh push-app-apply-and-restart.sh; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else
@@ -182,6 +182,40 @@ run_check() {
 			missing=1
 		fi
 	done
+
+	echo ""
+	echo "--- operator commands in /usr/bin ---"
+	while read -r cmd implementation; do
+		if [[ -L "$target/usr/bin/$cmd" && \
+			"$(readlink "$target/usr/bin/$cmd")" == "$implementation" ]]; then
+			echo "OK:  usr/bin/$cmd -> $implementation"
+		else
+			echo "FAIL: invalid or missing usr/bin/$cmd" >&2
+			missing=1
+		fi
+	done <<'EOF'
+verify-boot /usr/lib/lws-hmi/boot-verify.sh
+verify-env /usr/lib/lws-hmi/env-verify.sh
+diagnose-hmi /usr/lib/lws-hmi/diagnose-hmi.sh
+diagnose-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-diag.sh
+read-serial /usr/lib/lws-hmi/read-device-serial.sh
+start-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-start.sh
+stop-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-stop.sh
+recover-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-recover.sh
+reboot-loader /usr/lib/lws-hmi/reboot-loader
+EOF
+	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader; do
+		if [[ -e "$target/usr/bin/$retired" || -L "$target/usr/bin/$retired" ]]; then
+			echo "FAIL: retired usr/bin/$retired command still present" >&2
+			missing=1
+		else
+			echo "OK:  retired usr/bin/$retired command absent"
+		fi
+	done
+	if [[ -e "$target/usr/lib/lws-hmi/reboot-rockusb-loader" ]]; then
+		echo "FAIL: retired usr/lib/lws-hmi/reboot-rockusb-loader still present" >&2
+		missing=1
+	fi
 
 	if [[ -f "$target/etc/systemd/system/hmi.service" ]]; then
 		echo "OK:  hmi.service in target"
@@ -236,6 +270,19 @@ run_check() {
 		echo "OK:  ssh host keys present in etc/ssh"
 	else
 		echo "FAIL: missing /etc/ssh/ssh_host_*_key (ensure-sshd-hostkeys / post-fakeroot)" >&2
+		missing=1
+	fi
+	if grep -q 'modprobe g_ether' "$helper/usb-plug-ssh-start.sh" 2>/dev/null && \
+		! grep -q '/sys/kernel/config/usb_gadget/lws_hmi' "$helper/usb-plug-ssh-start.sh" 2>/dev/null; then
+		echo "OK:  USB plug-ssh uses g_ether without configfs UDC binding"
+	else
+		echo "FAIL: USB plug-ssh is not the g_ether implementation" >&2
+		missing=1
+	fi
+	if [[ -f "$target/system/lib/modules/g_ether.ko" ]]; then
+		echo "OK:  system/lib/modules/g_ether.ko"
+	else
+		echo "FAIL: g_ether.ko missing from rootfs" >&2
 		missing=1
 	fi
 

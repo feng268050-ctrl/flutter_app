@@ -45,14 +45,14 @@ Linux 原生构建：无 Docker volume，跳过 export；`output/firmware/` 直�
 ## 3. 板端验收（每轮刷机后）
 
 ```bash
-/usr/lib/lws-hmi/boot-verify.sh
+verify-boot
 systemd-analyze
 systemd-analyze blame
 systemd-analyze critical-chain hmi.service
-/usr/lib/lws-hmi/env-verify.sh    # §3.4 平台栈（RKNPU2 / wifibt / prep 组件）
+verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep 组件）
 ```
 
-**`boot-verify` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` + `lws-hmi-pwrkey-poweroff` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；22 未监听；`network-generator` masked；pwrkey input 存在且服务 active；`flutter-pi` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
+**`verify-boot` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` + `lws-hmi-pwrkey-poweroff` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；22 未监听；`network-generator` masked；pwrkey input 存在且服务 active；`flutter-pi` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
 
 **秒表**（填 §6 表格）：上电 → logo；上电 → multi-user；上电 → 首页首帧。
 
@@ -71,10 +71,10 @@ systemd-analyze critical-chain hmi.service
 | P0-1 | 移除 `lws-hmi-debug-boot`、内核 `ip=` | **done** | 已删 service/script；`lws-hmi-ynh960-linux-root.dtsi` |
 | P0-2 | post-hook 禁用 `sshd`+`sshd.socket`+`mediamtx`+`bluetooth`（扫全部 `*.wants`） | **done** | `06-lws-hmi-systemd.sh` + `lws-hmi-post-fakeroot.sh` |
 | P0-3 | mask `systemd-network-generator` | **done** | post-hook + post-fakeroot |
-| P0-4 | `boot-verify.sh` 进 rootfs + post-hook 安装 helper 脚本 | **done** | overlay + post-hook |
+| P0-4 | `verify-boot` 命令（`boot-verify.sh` 实现）进 rootfs | **done** | overlay + post-hook |
 | P0-5 | `verify-rootfs-overlay` 正确路径 `output/<profile>/target` | **done** | `scripts/verify-rootfs-overlay.sh` |
 | P0-6 | `build-img` / `build-kernel` 后自动 export firmware → host | **done** | `docker-export-artifacts.sh` |
-| P0-7 | 刷机后 `boot-verify` 全 PASS | **done** | 板端已验证（sshd/mediamtx/debug-boot 已清除） |
+| P0-7 | 刷机后 `verify-boot` 全 PASS | **done** | 板端已验证（sshd/mediamtx/debug-boot 已清除） |
 | P0-8 | 稳定断电（避免 DRM/Mali teardown oops） | **done** | poweroff 跳过 HMI teardown，使用 sync + SysRq；GEM teardown 另行加固 |
 
 ### A — 内核 / U-Boot（通常 −1～3 s）
@@ -147,7 +147,7 @@ P0（done）
 
 **A-6 注意**：`rootflags=noatime` 会致内核 panic（`ext4: Unknown parameter 'noatime'`）。`noatime` 须写在 fstab 第 4 列，由 `systemd-remount-fs` 生效。
 
-**P0-8 注意**：继续保持 `systemd-logind` disabled。板端在 `systemctl stop hmi.service` 时先后捕获 `drm_gem_object_release_handle+0x20` 的空 funcs，以及 `+0x3c` 通过非空坏指针跳入 ASCII 地址 `0x73752f6d726f6674`。后者证明问题还包含 funcs 指针损坏/UAF，而不只是 NULL。`overlay/kernel/patches/0001-drm-gem-handle-objects-without-funcs-on-release.patch` 保留空 object 防御，并为单一 GEM 类型驱动增加 canonical funcs table；Rockchip 对象在 release/free 前会恢复该不可变指针。手动 stop/start/restart 已通过重复验证。pwrkey 等 `KEY_POWER` release 后再关机；同时必须禁用 Rockchip `input-event-daemon`，否则其 short-press release handler 会并发执行 `systemctl suspend`，抢在 SysRq poweroff 前进入 WFI。
+**P0-8 注意**：继续保持 `systemd-logind` disabled。板端在 `systemctl stop hmi.service` 时先后捕获 `drm_gem_object_release_handle` 的空 funcs、损坏 funcs 指针，以及 GEM object 中变成非内核地址的 `obj->dev`。`overlay/kernel/patches/0001-drm-gem-handle-objects-without-funcs-on-release.patch` 会在访问 funcs/VMA/refcount 前验证 object 与 `obj->dev`，并为单一 GEM 类型驱动增加 canonical funcs table；Rockchip 对象在 release/free 前会恢复该不可变指针。pwrkey 等 `KEY_POWER` release 后再关机；同时必须禁用 Rockchip `input-event-daemon`，否则其 short-press release handler 会并发执行 `systemctl suspend`，抢在 SysRq poweroff 前进入 WFI。
 
 **当前状态**：P0-8 使用 sync + SysRq 避免关机触发 HMI teardown；B-9 / D0-1 已完成；A-1 不再自编译 U-Boot；A-3 已接入 kernel trim fragment。首次刷机发现 `CONFIG_DEBUG_FS` 不可裁（systemd `sys-kernel-debug.mount` 会阻断 `local-fs.target`），已恢复 debugfs。
 
@@ -155,7 +155,7 @@ P0（done）
 
 ## 6. KPI 记录表（每轮刷机填写）
 
-| 日期 | git 简述 | 上电→logo | 上电→multi-user | 上电→首帧 | boot-verify | 备注 |
+| 日期 | git 简述 | 上电→logo | 上电→multi-user | 上电→首帧 | verify-boot | 备注 |
 |------|----------|-----------|-----------------|-----------|-------------|------|
 | 2026-07 | baseline（优化前日志） | | ~8.7s | ~9.7s | FAIL sshd/mtx | `Started flutter-pi` 后 ~1s 仍见 logo |
 | 2026-07 | P0 重刷 | | | | PASS | sshd/mediamtx/debug-boot 已清除 |

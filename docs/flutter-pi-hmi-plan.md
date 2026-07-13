@@ -512,7 +512,7 @@ flutter-pi --release /opt/hmi
 
 P1.5 不另建 debug 固件镜像，而是在 **现有 P1 镜像** 上提供设备侧调试启动能力：
 
-**前置修复**：Rockchip 6.1 BSP 在 flutter-pi 退出时暴露了 GEM funcs 指针损坏：既出现过空指针，也出现过非空但指向 slab/ASCII 数据的悬空指针。仓库通过 `overlay/kernel/patches/0001-drm-gem-handle-objects-without-funcs-on-release.patch` 防御空 object，并让 Rockchip 发布不可变的 canonical funcs table，在 release/free 前发现异常即恢复该指针。手动 stop/start/restart 已通过重复验证；`make push-app` 先在 HMI 运行期间安装完整 payload，再执行 restart，并在启动失败时进行有限次数恢复。
+**前置修复**：Rockchip 6.1 BSP 在 flutter-pi 退出时暴露了 GEM object/funcs 指针损坏：既出现过空指针、非空但指向 slab/ASCII 数据的悬空 funcs，也出现过 object 有效但 `obj->dev` 变成非内核地址。仓库通过 `overlay/kernel/patches/0001-drm-gem-handle-objects-without-funcs-on-release.patch` 在访问 funcs/VMA/refcount 前验证 object 与 `obj->dev`，并让 Rockchip 发布不可变的 canonical funcs table，在 release/free 前发现异常即恢复 funcs。release/debug 切换统一调用 `hmi-stop-and-wait.sh`，确认所有 `flutter-pi` 及延迟 DRM/Mali task work 退出后才启动下一实例；`make push-app` 仍先安装完整 payload，再执行受控 stop/start，并在启动失败时进行有限次数恢复。
 
 | 命令 | 预期行为 |
 |------|----------|
@@ -692,7 +692,7 @@ Flutter 侧重试：`127.0.0.1:8554` 未就绪时首页仍显示；预览区与�
 3. **Prebuilt**：`make build-flutter-engine`、`make build-flutter-pi`（或拉 NAS）；`make check-prebuilt`。
 4. **宿主 SDK**：`make fetch-flutter-sdk`（各 OS 正确包）→ `make build-app`（`build-app.sh` 版本 gate + `flutterpi_tool` 重装）。
 5. **Rootfs**：`make apply-overlay` → `make build-rootfs` → `make build-img`；`verify-rootfs-overlay.sh` 通过。
-6. **板端回归**：`/usr/lib/lws-hmi/diagnose-hmi.sh`、`env-verify.sh`；Hello World → P2 demo → P3 `libai` smoke；**§14.2** 启动 KPI；Mali 首帧 / splash handoff。
+6. **板端回归**：`diagnose-hmi`、`verify-env`；Hello World → P2 demo → P3 `libai` smoke；**§14.2** 启动 KPI；Mali 首帧 / splash handoff。
 7. **文档**：更新 `app/README.md`、`prebuilt/manifest.json`；CI 拒绝错误 Flutter 版本。
 
 **不在 P3.5 范围**：Impeller/Vulkan 开关实验、按 SKU 拆 engine、仅 OTA `libapp.so` 而不同步 rootfs engine（仍禁止）。
@@ -839,9 +839,9 @@ sequenceDiagram
 | 5. 停止 | 相机持续不可达、用户退出预览、或 eth0 重配导致网段变化 → **`systemctl stop mediamtx.service`** |
 | 6. 重试 | 与 lws-ui 一致：指数退避轮询 ping；**不在** `main()` / 首帧路径 `await` |
 
-P1 镜像可 **预置** `usr/bin/mediamtx` + unit 文件（`env-verify` 仅检查 **未自启、未运行**）；P5.1 再实现 Coordinator 与 YAML 渲染。
+P1 镜像可 **预置** `usr/bin/mediamtx` + unit 文件（`verify-env` 仅检查 **未自启、未运行**）；P5.1 再实现 Coordinator 与 YAML 渲染。
 
-**验收**：刷机后 `boot-verify` / `env-verify` — `mediamtx` **不在** `multi-user.target.wants`、进程未运行；接 IPC 网线且 ping 通后，App 触发 start，`127.0.0.1:8554` 可 DESCRIBE。
+**验收**：刷机后 `verify-boot` / `verify-env` — `mediamtx` **不在** `multi-user.target.wants`、进程未运行；接 IPC 网线且 ping 通后，App 触发 start，`127.0.0.1:8554` 可 DESCRIBE。
 
 #### 标准 URL（与 `MediaMtxRelayUrls` 一致）
 
@@ -925,7 +925,7 @@ paths:
 
 lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `adbd`（`:5555`）。Buildroot HMI 用 **OpenSSH `sshd`** 作等价能力，**默认不运行、不监听**。
 
-**P1 工程迭代（首选）**：OTG USB 插入主机 → **VBUS 触发** ECM + `usb0`（`192.168.55.1/24`）+ **仅 `usb0` 监听**的 sshd → 主机 **`make push-app`**（`scp` staging + 运行时安装 payload + restart/retry `hmi.service`，不重启整机）。拔线自动 teardown；**不进** `multi-user.target.wants`。多板用 **`SERIAL=`**（gadget `iSerial`），与 `make flash` 一致。进入 RockUSB Loader：**`make reboot-loader`**（Linux 走 USB-SSH + `/usr/lib/lws-hmi/reboot-rockusb-loader`；Android 仍可用 adb）。
+**P1 工程迭代（首选）**：OTG USB 插入主机 → **VBUS 触发** ECM + `usb0`（`192.168.55.1/24`）+ **仅 `usb0` 监听**的 sshd → 主机 **`make push-app`**（`scp` staging + 运行时安装 payload + restart/retry `hmi.service`，不重启整机）。拔线自动 teardown；**不进** `multi-user.target.wants`。多板用 **`SERIAL=`**（gadget `iSerial`），与 `make flash` 一致。进入 RockUSB Loader：设备 shell 运行 **`reboot-loader`**，或主机运行 **`make reboot-loader`**；Android 仍可用 adb。
 
 | lws-ui（Android） | lws-hmi（Buildroot） |
 |-------------------|----------------------|
@@ -1245,10 +1245,10 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 ### P1.5 — 设备调试 + 快速 UI 迭代
 
-- [ ] `make debug-app`：在实体板或 Linux 虚拟机以调试模式启动 App
-- [ ] VSCode / Cursor Flutter 插件：可选择 lws-hmi 自定义设备；可 attach 调试会话
+- [x] `make debug-app`：在实体板以调试模式启动 App（Linux 虚拟机不在本阶段）
+- [x] VSCode / Cursor Flutter 插件：可选择 lws-hmi 自定义设备；可 attach 调试会话
 - [ ] `make emulator`：构建并启动 Linux 虚拟机，加载 `rootfs.img` 并运行 Linux App
-- [ ] `make push-app` / `make debug-app`：支持实体板 USB-SSH 与 Linux 虚拟机目标
+- [x] `make push-app`：实体板 USB-SSH 目标（release 替换 debug 已验证路径；虚拟机 deferred）
 
 ### P2 — Modbus + GPIO demo（Linux + Android）
 
@@ -1278,7 +1278,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [ ] Bump `overlay/buildroot/flutter-{sdk,engine,pi}.version`；`make build-flutter-engine` / `build-flutter-pi`；`check-prebuilt`
 - [ ] 宿主：`make fetch-flutter-sdk` + `make build-app`（禁止 PATH 上非 pin 版本）
 - [ ] Rootfs：`apply-overlay` → `build-rootfs` → `build-img`；`verify-rootfs-overlay.sh`
-- [ ] 板端：Hello World + P2 demo + P3 libai smoke；启动 KPI §14.2；`diagnose-hmi.sh` / `env-verify.sh`
+- [ ] 板端：Hello World + P2 demo + P3 libai smoke；启动 KPI §14.2；`diagnose-hmi` / `verify-env`
 - [ ] `/opt/hmi` 无 bundle engine；`/usr/lib/libflutter_engine.so` 与 AOT 同版本
 
 ### P4 — FrostUI + IME（git 子模块）
@@ -1426,7 +1426,7 @@ make del-prop
 
 | 项 | 现象 | 做法 | 归属 |
 |----|------|------|------|
-| **sshd / mediamtx 自启** | 不应默认监听 22、不应跑 mediamtx | post-hook 扫全部 `*.wants`（含 `sshd.socket`）；刷机后 `boot-verify.sh` | **repo** — 见 boot-kpi-optimization §P0 |
+| **sshd / mediamtx 自启** | 不应默认监听 22、不应跑 mediamtx | post-hook 扫全部 `*.wants`（含 `sshd.socket`）；刷机后 `verify-boot` | **repo** — 见 boot-kpi-optimization §P0 |
 | **内核 / sysinit 早期配网** | 历史 `ip=` bootargs、`debug-boot` unit | **done** — 已移除 | 仓库 |
 | **systemd-network-generator FAILED** | 无 `ip=` 时无害但吵 | post-hook **mask** | **repo** |
 | **构建产物未到 host** | 只跑 `build-rootfs` 就刷机 | 必须 **`make build-img`**（自动 export）→ **`make flash`** | **repo** — `docker-export-artifacts.sh` |
@@ -1507,7 +1507,7 @@ After=hmi.service
 systemd-analyze
 systemd-analyze blame
 systemd-analyze critical-chain hmi.service
-/usr/lib/lws-hmi/boot-verify.sh
+verify-boot
 # 秒表：上电 → 首页首帧（与 KPI 一致）
 ```
 

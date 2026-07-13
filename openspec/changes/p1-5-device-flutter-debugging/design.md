@@ -31,7 +31,7 @@ The pinned Flutter SDK's Custom Devices feature will be enabled and configured w
 
 The custom device's discovery, install, run, stop, and SSH port-forward commands will delegate to the same USB-SSH selection layer used by `make push-app`. `SERIAL` / `LWS_HMI_SERIAL` remains authoritative when multiple boards are attached, and all commands bind to the selected ECM interface even though boards share `192.168.55.1`.
 
-The repository will check in Flutter launch configuration under `app/hmi/.vscode/` (and workspace guidance where needed). Run & Debug launches the named custom device through the Flutter extension, so the extension owns the `flutter run` protocol and can expose normal debug actions and DevTools.
+The repository will check in Flutter launch configuration under repo-root `.vscode/` (workspace opened at `lws-hmi`, with `cwd` pointing at `app/hmi`). Run & Debug launches the named custom device through the Flutter extension, so the extension owns the `flutter run` protocol and can expose normal debug actions and DevTools.
 
 Alternative considered: start `flutterpi_tool run` as a generic pre-launch task and attach later. This leaves VM URI hand-off and debugger lifecycle outside the Flutter extension and makes a one-click Run & Debug flow fragile.
 

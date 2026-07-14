@@ -76,10 +76,16 @@ configure_host() {
 	Darwin)
 		if ifconfig "$iface" 2>/dev/null | grep -q "inet ${HOST_ADDR} "; then
 			echo "Host $iface already has $HOST_ADDR"
-			return 0
+		else
+			echo "sudo ifconfig $iface ${HOST_ADDR}/${MASK} up"
+			sudo ifconfig "$iface" "${HOST_ADDR}/${MASK}" up
 		fi
-		echo "sudo ifconfig $iface ${HOST_ADDR}/${MASK} up"
-		sudo ifconfig "$iface" "${HOST_ADDR}/${MASK}" up
+		# Never set a default gateway on the USB gadget NIC — a Router of
+		# 192.168.55.1 (board) steals the Mac default route and kills Wi‑Fi/
+		# LAN internet while the board is plugged in. Prefer ifconfig (no
+		# gateway). If System Settings / networksetup previously left a
+		# Router on the "LWS" / RNDIS service, clear it.
+		_usb_ssh_darwin_clear_gadget_gateway "$iface"
 		;;
 	Linux)
 		if ip -4 addr show dev "$iface" 2>/dev/null | grep -q "inet ${HOST_ADDR}/"; then
@@ -92,6 +98,34 @@ configure_host() {
 		sudo ip link set "$iface" up
 		;;
 	esac
+}
+
+# Darwin: clear IPv4 Router on the hardware port that owns $iface (LWS / RNDIS).
+_usb_ssh_darwin_clear_gadget_gateway() {
+	local iface="$1"
+	local port="" info router
+	[[ "$(uname -s)" == "Darwin" ]] || return 0
+	command -v networksetup >/dev/null 2>&1 || return 0
+	port="$(networksetup -listallhardwareports 2>/dev/null \
+		| awk -v d="$iface" '
+			/^Hardware Port:/ { p=$0; sub(/^Hardware Port: /,"",p) }
+			/^Device: / && $2==d { print p; exit }
+		')"
+	[[ -n "$port" ]] || return 0
+	info="$(networksetup -getinfo "$port" 2>/dev/null || true)"
+	router="$(printf '%s\n' "$info" | awk -F': ' '/^Router:/{print $2; exit}')"
+	# Empty / none / 0.0.0.0 are fine.
+	if [[ -z "$router" || "$router" == "none" || "$router" == "0.0.0.0" ]]; then
+		return 0
+	fi
+	echo "WARNING: clearing bogus Router=$router on \"$port\" (was stealing default route)"
+	# Keep current IP/mask if manual; force Router to 0.0.0.0.
+	local ip mask
+	ip="$(printf '%s\n' "$info" | awk -F': ' '/^IP address:/{print $2; exit}')"
+	mask="$(printf '%s\n' "$info" | awk -F': ' '/^Subnet mask:/{print $2; exit}')"
+	if [[ -n "$ip" && -n "$mask" && "$ip" != "none" ]]; then
+		sudo networksetup -setmanual "$port" "$ip" "$mask" 0.0.0.0 || true
+	fi
 }
 
 ping_target() {

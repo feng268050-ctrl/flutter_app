@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Flutter HMI app at `app/hmi/` for flutter-pi ARM64 (meta-flutter layout). P2 home is the device-info + RGB LED demo (`p2-device-demo-ui`); engine/ICU stay on rootfs.
+Flutter HMI app at `app/hmi/` for flutter-pi ARM64 (meta-flutter layout). P2/P2.1 home is the device-info + RGB LED + I/O demo (`p2-device-demo-ui`); engine/ICU stay on rootfs.
 
 ## Requirements
 
@@ -22,12 +22,12 @@ The repository SHALL contain a Flutter application at `app/hmi/` configured for 
 
 ### Requirement: Hello World UI is minimal for boot KPI
 
-The P2 home screen SHALL display the **device-info + RGB LED demo** (capability `p2-device-demo-ui`) instead of a static “Hello, World!” / “Hello, lws-hmi” greeting. The app SHALL still avoid initializing video, WebSocket, or native AI libraries in `main()` before first frame. Modbus I/O and GPIO setup MUST NOT block first-frame paint (see `linux-modbus-rtu`).
+The home screen SHALL display the **device-info + RGB LED + P2.1 I/O demo** (capability `p2-device-demo-ui`) instead of a static “Hello, World!” / “Hello, lws-hmi” greeting. The app SHALL still avoid initializing video, WebSocket, or native AI libraries in `main()` before first frame. Modbus I/O, GPIO setup, audio engine open, and backlight sysfs access MUST NOT block first-frame paint (see `linux-modbus-rtu`, `linux-media-audio`, `linux-backlight`).
 
 #### Scenario: First frame content
 
-- **WHEN** flutter-pi renders the app home route after P2
-- **THEN** the user sees the P2 device-information list and LED control rows (not a Hello World–only screen)
+- **WHEN** flutter-pi renders the app home route after this change
+- **THEN** the user sees the device-information list, LED control rows, and the audio / brightness / orientation demo controls (not a Hello World–only screen)
 
 #### Scenario: No heavy plugins on startup
 
@@ -76,12 +76,17 @@ P1 SHALL deploy Hello World artifacts via Buildroot rootfs overlay (not Buildroo
 
 ### Requirement: Display orientation compatible with ynh960
 
-The flutter-pi launch configuration in `hmi.service` SHALL use `-o landscape_left` for ynh960 landscape orientation, consistent with LCD params (`lcd0_rotation=90`).
+The flutter-pi launch configuration SHALL default to `-o landscape_left` for ynh960 landscape orientation, consistent with LCD params (`lcd0_rotation=90`), when no persisted orientation preference exists. When a persisted preference from the display-orientation platform module is present, `hmi-launch.sh` (or equivalent) SHALL pass the mapped `-o` (`landscape_left` or `portrait_up`) instead of a hardcoded landscape-only value.
 
-#### Scenario: UI readable on ynh960 panel
+#### Scenario: UI readable on ynh960 panel (default)
 
-- **WHEN** Hello World runs on ynh960 via `hmi.service`
-- **THEN** text is readable in the intended physical orientation without manual rotation each boot
+- **WHEN** the HMI runs on ynh960 via `hmi.service` with no orientation preference file
+- **THEN** text is readable in the intended landscape physical orientation without manual rotation each boot
+
+#### Scenario: Persisted portrait is honored at launch
+
+- **WHEN** the orientation preference is portrait and HMI is started via the normal launch path
+- **THEN** flutter-pi is invoked with `-o portrait_up`
 
 ### Requirement: Host build uses flutterpi_tool
 
@@ -92,3 +97,11 @@ The host build script SHALL use `flutterpi_tool build --arch=arm64 --release` to
 - **WHEN** developer runs `make build-app`
 - **THEN** `lib/libapp.so` and `data/flutter_assets/` are installed under overlay `opt/hmi/` (assembled from `flutterpi_tool` output; engine not copied into bundle)
 
+### Requirement: Shanghai tan test track is bundled as a Flutter asset
+
+The Flutter app SHALL ship `assets/audio/shanghai_tan.mp3` (sourced from lws-ui `res/raw/shanghai_tan.mp3`) in the flutter-pi bundle so the demo can play it offline on device.
+
+#### Scenario: Asset present in bundle
+
+- **WHEN** `make build-app` completes and the overlay `/opt/hmi` tree is inspected
+- **THEN** the shanghai tan mp3 is present under the bundled flutter assets path

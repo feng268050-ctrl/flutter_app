@@ -15,13 +15,15 @@
 | **P1 — 平台镜像 + Hello World** | Buildroot **Linux 镜像**（含后续所需的 **平台必须组件**）+ splash → **`flutter-pi` Hello World** | ✅ |
 | **P1.5 — 设备调试 + 快速 UI 迭代** | `make debug-app` 在**真机**上以调试模式启动 App；VSCode / Cursor Flutter 插件接入；为快速 UI 迭代铺路 | ✅ |
 | **P2 — Modbus + GPIO** | 迁移 **Modbus RTU** 与 **GPIO 管理**；Linux 真机验证读设备与下位机信息、**三色指示灯**（红/黄/绿）正常控制 | ✅ |
-| **P2.1 — 板级 I/O 与外设验证** | 喇叭 / Wi‑Fi / BT / IPC 相机链路等 **硬件 I/O 前置验证**；顺带收口触控、串口/引脚映射、背光等（见 **§1.1**）；**不做** 产品设置页 / MediaMTX / Flutter 预览（仍属 P5） | 🔲 |
+| **P2.1 — 板级 I/O 与外设验证** | 喇叭 / Wi‑Fi / BT / IPC 相机链路等 **硬件 I/O 前置验证**；顺带收口触控、串口/引脚映射、背光等（见 **§1.1**）；**不做** 产品设置页 / MediaMTX / Flutter 预览（仍属 P5） | 🔄 |
 | **P2.5 — 模拟器与 Android 兼容** | **`make emulator`**（Linux HMI 模拟器）；**`make android-emulator`**（参考 lws-ui `make emulator`）；Modbus Android 兼容；GPIO **共用** `gpio_innohi`（YNHAPI 仅降级，§11.0）；Flutter App 可打包 **APK** | 🔲 |
 | **P3 — AI 原生库** | 迁移 lws-ui **AI 代码库**；新工程打出 **`libai.so`**（+ RKNN/`config.yaml`） | 🔲 |
 | **P3.5 — Flutter 平台升级（P4 前置）** | 将板端 **flutter-engine / SDK / flutter-pi** 从 P1 pin **升级到上游支持的 stable**（见 **§6.4**）；ynh960 全量回归 | 🔲 |
 | **P4 — FrostUI + IME（子模块）** | **`packages/frost_ui`** + **`packages/frost_ime`**（各为独立 git 子模块，对齐 lws-ui FrostUI / IME） | 🔲 |
 | **P5 — 业务迁移** | 见 **§1.2**（P5.1～P5.7）；视频、网络 UI、AI 接入、本地/云服务、**lws-ui 实装业务页** 等 | 🔲 |
 | **P6 — OTA** | Linux：**A/B 分区** + **两级更新**（仅更新 app / 更新整个系统）；Android：保持兼容，延续 **app 更新**（`build-apk` / `push-apk`） | 🔲 |
+
+状态图例：✅ 完成 · 🔄 进行中 · 🔲 未开始
 
 **lws-ui 对照**：算法/拓扑/模型复用；平台层 → Linux + flutter-pi；UI 按上表分阶段；**P5 子阶段 §1.2**、**P6 OTA §1.3**；细则勾选 **§12**；**openspec 非完整清单 §11.7**。
 
@@ -30,14 +32,14 @@
 ### 1.1 各阶段任务一览
 
 ```text
-P1  镜像 + Hello World
+P1  镜像 + Hello World ✅
     ├─ lws_hmi defconfig + 方案 A systemd（§3.6）
     ├─ 裁剪 weston/chromium/camera/benchmark/adbd …
     ├─ 平台必须组件：Mali、flutter-pi、LCD/splash、RKNPU2 运行时、Wi‑Fi/BT、powermanager …
     ├─ hmi.service 自启；Hello World → /opt/hmi
     └─ 验收：logo → 首页 ≤10 s（§14.2）
 
-P1.5  设备调试 + 快速 UI 迭代
+P1.5  设备调试 + 快速 UI 迭代 ✅
     ├─ make debug-app：在实体板以调试模式启动 App（断点、热重载、VM Service）
     ├─ VSCode / Cursor Flutter 插件接入
     └─ make push-app：实体板 USB-SSH 快速替换 release/debug bundle
@@ -49,18 +51,19 @@ P2  Modbus + GPIO（Linux 真机）✅
     ├─ GPIO：直接读写 `/sys/class/gpio_innohi/GPIO_N/value`（不用 YNHAPI 0-based 下标当脚号）
     └─ App demo：读设备与下位机信息；控制三色状态灯（红/黄/绿）
 
-P2.1  板级 I/O 与外设验证（硬件前置）
+P2.1  板级 I/O 与外设验证（硬件前置）🔄
     ├─ 动机：P2 暴露串口/引脚对不上、触摸驱动 BUG、UART pinmux vs gmac 等；原计划散落在 P5 的外设先打通
-    ├─ 喇叭 / 本机音频：ALSA + codec + 功放；`aplay` / speaker-test 出声（Buildroot 开最小音频栈）
+    ├─ 喇叭 / 本机音频：ALSA + codec + 功放；`aplay` / speaker-test 出声（Buildroot 开最小音频栈）✅
     ├─ Wi‑Fi：模组固件 + `wpa_supplicant` 关联客户 AP；ping 网关（shell/`wpa_cli`，无设置页）
     ├─ 蓝牙：hci0 up + `bluetoothctl` scan / 按需配对 smoke（无设置页；bluetoothd 仍按需启）
     ├─ IPC 相机链路：`configure-camera-eth0.sh` → ping IPC → PR0/PR1 RTSP DESCRIBE smoke
     │     （不做 MediaMTX 编排、不做 Flutter 预览 — 仍属 P5.1）
     ├─ 触控：Goodix / libinput 稳定；坐标与屏旋转一致（收口 P2 期间已修项）
     ├─ 串口 / GPIO / pinmux 台账：固化 ttyS5、gpio_innohi 标签、own-gpio↔gmac 冲突结论
-    └─ 背光：powermanager / sysfs 亮度可调 smoke
+    └─ 背光：powermanager / sysfs 亮度可调 smoke ✅
+        （屏幕旋转 Demo 已通，见 §12）
 
-P2.5  模拟器与 Android 兼容
+P2.5  模拟器与 Android 兼容 🔲
     ├─ make emulator：构建并启动 Linux 虚拟机，加载 rootfs.img 跑 Linux App
     ├─ make android-emulator：参考 lws-ui make emulator 启动 Android 模拟器
     ├─ Modbus：Android 串口 chmod 后仍用 flutter_libserialport
@@ -69,24 +72,24 @@ P2.5  模拟器与 Android 兼容
     ├─ make build-apk / push-apk；make version / version-bump；make set-prop / del-prop
     └─ make push-app / make debug-app 兼容 Linux 虚拟机与实体板
 
-P3  AI → libai.so
+P3  AI → libai.so 🔲
     ├─ 迁移 lensinspector（YOLO + 污点检测 + OpenCV + yaml-cpp）
     ├─ Linux aarch64 交叉编译 libai.so；RKNN 模型（默认 rk3566）
     └─ 板端 smoke：librknnrt + so 加载（业务叠框 UI 留 P5）
 
-P3.5  Flutter 平台升级（P4 前置，§6.4）
+P3.5  Flutter 平台升级（P4 前置，§6.4）🔲
     ├─ 选定目标：flutter-pi + flutter-ci 已支持的 stable（如 3.41.x 一代）
     ├─ 同步 bump：flutter-sdk / flutter-engine / flutter-pi 三件套 + prebuilt 重编
     ├─ 宿主：fetch-flutter-sdk（macOS darwin / Linux linux）+ flutterpi_tool 对齐
     ├─ 板端：meta-flutter 布局不变；engine 仍仅 /usr/lib（/opt/hmi 仅 libapp + assets）
     └─ 验收：Hello World + P2 demo + P3 libai smoke + 启动 KPI（§14.2）回归
 
-P4  FrostUI + IME（git 子模块）
+P4  FrostUI + IME（git 子模块）🔲
     ├─ `packages/frost_ui` — FrostUI（§6.3：backdrop 默认 frozen；弹窗按需 liveWhileOpen）
     ├─ `packages/frost_ime` — IME overlay + 字体（对齐 lws-ui `IME.md`）
     └─ 主 App `pubspec` 依赖上述子模块；CI pin 版本
 
-P5  业务迁移（子阶段见 §1.2）
+P5  业务迁移（子阶段见 §1.2）🔲
     ├─ P5.1 视频 + MediaMTX
     ├─ P5.2 网络 UI + 状态栏
     ├─ P5.3 AI FFI + 告警链路
@@ -95,7 +98,7 @@ P5  业务迁移（子阶段见 §1.2）
     ├─ P5.6 业务页面（对照 lws-ui 实装，openspec 作参考）
     └─ P5.7 量产收尾（录像、parity）
 
-P6  OTA
+P6  OTA 🔲
     ├─ Linux：A/B 分区 + 两级更新（仅 app / 全系统 update.img）
     └─ Android：保持兼容；延续 app 更新（build-apk / push-apk）
 ```
@@ -1296,7 +1299,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 各阶段任务树见 **§1.1**（P5 子阶段见 **§1.2**，P6 见 **§1.3**）；以下为可勾选验收项。
 
-### P1 — Linux 镜像 + Hello World
+### P1 — Linux 镜像 + Hello World ✅
 
 **P1 封板（ynh960）：2026-07-11，`4c2b6dc` — OpenSpec `p1-linux-flutter-platform` + `usb-plug-ssh-push-hmi` 已归档；KPI 见 `docs/boot-kpi-optimization.md` §6。**
 
@@ -1308,7 +1311,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [x] 开发机 Flutter **Hello World** → `/opt/hmi`；`hmi.service` 自启验收
 - [x] 上电 → logo → 首页 **≤10 s**（§14.2）；ynh960（RK3566）全量验收；ynh961/ynh962 跨 SKU smoke 可选（**未做，不阻塞 P1**）
 
-### P1.5 — 设备调试 + 快速 UI 迭代
+### P1.5 — 设备调试 + 快速 UI 迭代 ✅
 
 **P1.5 封板（ynh960 真机调试）：2026-07-13，`3d904ae` — OpenSpec `p1-5-device-flutter-debugging` 已归档；Linux 模拟器 deferred → P2.5。**
 
@@ -1316,7 +1319,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [x] VSCode / Cursor Flutter 插件：可选择 lws-hmi 自定义设备；可 attach 调试会话
 - [x] `make push-app`：实体板 USB-SSH 目标（release 替换 debug 已验证路径）
 
-### P2 — Modbus + GPIO（Linux 真机）
+### P2 — Modbus + GPIO（Linux 真机）✅
 
 **P2 封板（ynh960）：2026-07-14，`996352a` — OpenSpec `p2-modbus-gpio` 已归档并同步主 specs；`openspec/changes/archive/2026-07-14-p2-modbus-gpio/`。**
 
@@ -1327,7 +1330,9 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [x] App：**三色状态灯 demo**（红/黄/绿；每色 Steady / Blink / Off 互斥）
 - [x] 串口/日志验证 Modbus 时序与 lws-ui 一致；Linux 真机 smoke
 
-### P2.1 — 板级 I/O 与外设验证（硬件前置）
+### P2.1 — 板级 I/O 与外设验证（硬件前置）🔄
+
+**进行中**：喇叭 / 背光 / 旋转已真机验收；Wi‑Fi / BT / IPC / 触控 / pinmux 台账仍待。
 
 **动机**：P2 联调暴露串口/引脚对不上、触摸驱动 BUG、UART pinmux 与 gmac 冲突等；原计划把喇叭 / Wi‑Fi / BT / IPC 等放到 P5 才做，风险过晚。本阶段先把 **设备输入输出与硬件相关能力** 在 Linux 真机上打通，再进入模拟器 / AI / 业务 UI。
 
@@ -1343,7 +1348,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [x] **屏幕旋转**：Portrait / Landscape → `/var/lib/lws-hmi/display-orientation` + `hmi-launch.sh` `-o`；Demo 按钮组（真机切换需 HMI 重启）
 - [ ] （可选）简单硬件 check 页或 shell 脚本束（`verify-io`），便于刷机后一键 smoke — **非** 产品业务 UI
 
-### P2.5 — 模拟器与 Android 兼容
+### P2.5 — 模拟器与 Android 兼容 🔲
 
 - [ ] `make emulator`：构建并启动 Linux 虚拟机，加载 `rootfs.img` 并运行 Linux App
 - [ ] `make android-emulator`：参考 lws-ui `make emulator` 启动 Android emulator
@@ -1358,7 +1363,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [ ] `make push-app` / `make debug-app` 兼容 Linux 虚拟机与实体板
 - [ ] Android / Linux 双目标 smoke（GPIO 脚号表只有标签一套）
 
-### P3 — AI 代码库 → libai.so
+### P3 — AI 代码库 → libai.so 🔲
 
 - [ ] 开发机 RKNN：`RKNN_PLATFORM=rk3566`（基准；3568/B2 模型可 OTA 另包）
 - [ ] 迁移 **`lensinspector` 全量** → Linux aarch64 **`libai.so`**
@@ -1366,7 +1371,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [ ] 板端：`librknnrt.so` + `rknn_server` + **so 加载 smoke**（无需完整 Flutter 业务 UI）
 - [ ] 文档：FFI 接口约定（供 P5 接入）
 
-### P3.5 — Flutter 平台升级（P4 前置，§6.5）
+### P3.5 — Flutter 平台升级（P4 前置，§6.5）🔲
 
 - [ ] 选定目标 Flutter stable + flutter-pi commit（flutter-ci engine 产物可用）
 - [ ] Bump `overlay/buildroot/flutter-{sdk,engine,pi}.version`；`make build-flutter-engine` / `build-flutter-pi`；`check-prebuilt`
@@ -1375,7 +1380,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [ ] 板端：Hello World + P2 demo + P3 libai smoke；启动 KPI §14.2；`diagnose-hmi` / `verify-env`
 - [ ] `/opt/hmi` 无 bundle engine；`/usr/lib/libflutter_engine.so` 与 AOT 同版本
 
-### P4 — FrostUI + IME（git 子模块）
+### P4 — FrostUI + IME（git 子模块）🔲
 
 - [ ] 创建 **`frost_ui`** 仓库 → **`packages/frost_ui`** submodule；实现 **§6.3**（`FrostCard` / `showFrostDialog` / `FrostModal`；默认 **frozen**；按需 **liveWhileOpen**）
 - [ ] 创建 **`frost_ime`** 仓库 → **`packages/frost_ime`** submodule；**IME** overlay + 字体（对齐 lws-ui **`IME.md`**）
@@ -1383,7 +1388,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [ ] **Frost 验收**：3566 frozen 全路径 + 至少 2 个 `liveWhileOpen` 用例
 - [ ] **IME 验收**：输入框 + 弹窗 + 键盘抬起/收起与 Frost 弹窗无错位（对齐 lws-ui 已修项）
 
-### P5 — 业务迁移（§1.2 子阶段）
+### P5 — 业务迁移（§1.2 子阶段）🔲
 
 子阶段任务表见 **§1.2**；**P5.6 须按 lws-ui 实装建 inventory**（§11.7），勿仅扫 openspec。
 
@@ -1428,7 +1433,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [ ] **`sshd` 默认关** + §7.7 隐藏调试
 - [ ] 全量 **§11.5 parity**；ynh960 量产验收；**同一份镜像**在 ynh961/ynh962 上 smoke（可选）
 
-### P6 — OTA
+### P6 — OTA 🔲
 
 - [ ] Linux：**A/B 分区**布局（`parameter` / `docs/storage-layout.md`）
 - [ ] Linux：**两级更新**——仅更新 app（`/oem/hmi` 或等价）/ 更新整个系统（`update.img`）

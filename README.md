@@ -321,7 +321,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 |------|------------|-----------------|----------------------------|
 | P1 | flutter、RKNPU2、Wi‑Fi/BT、GPU | ✓ | Hello World、hmi 自启 |
 | P2 | libmodbus | ✓ platform-packages | Modbus/GPIO App demo（✅ 已完成） |
-| P2.1 | ALSA/音频（按需）、eth0 脚本 | 音频包按需开 | 喇叭 / Wi‑Fi / BT / IPC / 触控 / 背光 **硬件 smoke** |
+| P2.1 | ALSA/音频（按需）、eth0 脚本 | 音频包按需开 | 喇叭 / Wi‑Fi / BT / IPC / 触控 / 背光 **硬件 smoke**（🔄 进行中：喇叭/背光/旋转已通） |
 | P3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** 工程与 smoke |
 | P3.5 | flutter SDK + engine + flutter-pi **三件套升级** | 重编 prebuilt | P4 前；见 [`docs/flutter-pi-hmi-plan.md` §6.5](docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p35) |
 | P4 | — | — | frost_ui / frost_ime 子模块 |

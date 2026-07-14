@@ -14,6 +14,16 @@ The system SHALL provide a reusable Dart `HttpClientController` (name may vary) 
 - **WHEN** proxy is disabled and a GET is issued to a reachable HTTPS URL over working wlan0
 - **THEN** the result includes an HTTP status code and a truncated body or empty body without crashing the HMI
 
+#### Scenario: HTTPS trust store present
+
+- **WHEN** the P2.1 rootfs is deployed
+- **THEN** `/etc/ssl/certs/ca-certificates.crt` (or equivalent CA bundle) is present on the filesystem so system TLS clients and Dart default roots have a CA source available
+
+#### Scenario: Wall clock sync before HTTPS
+
+- **WHEN** a GET is issued to a public HTTPS URL and the system year is before 2025
+- **THEN** the Linux HTTP controller SHALL attempt wall-clock sync (helper / `rdate` / HTTP Date) before the request so certificate validity windows are evaluated against a sane time
+
 #### Scenario: Request with proxy uses configured proxy
 
 - **WHEN** proxy is enabled with a reachable proxy and a GET is issued

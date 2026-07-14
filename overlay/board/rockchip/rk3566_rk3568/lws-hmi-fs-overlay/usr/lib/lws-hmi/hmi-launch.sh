@@ -15,6 +15,13 @@ if command -v amixer >/dev/null 2>&1; then
 	amixer -q sset 'Playback Path' 'RING_SPK_HP' 2>/dev/null || true
 fi
 
+# curl/OpenSSL tools. Dart HttpClient loads the same path explicitly in-app —
+# flutter-pi default SecurityContext does not reliably honor SSL_CERT_* alone.
+if [ -s /etc/ssl/certs/ca-certificates.crt ]; then
+	export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+	export SSL_CERT_DIR=/etc/ssl/certs
+fi
+
 read_json_field() {
 	file="$1"
 	key="$2"

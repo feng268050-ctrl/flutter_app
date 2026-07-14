@@ -174,7 +174,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else
@@ -213,6 +213,12 @@ run_check() {
 		echo "OK:  usr/bin/rk_wifi_init"
 	else
 		echo "WARN: usr/bin/rk_wifi_init missing (optional Innohi helper)" >&2
+	fi
+	if [[ -s "$target/etc/ssl/certs/ca-certificates.crt" ]]; then
+		echo "OK:  etc/ssl/certs/ca-certificates.crt"
+	else
+		echo "FAIL: etc/ssl/certs/ca-certificates.crt missing — enable BR2_PACKAGE_CA_CERTIFICATES" >&2
+		missing=1
 	fi
 
 	echo ""

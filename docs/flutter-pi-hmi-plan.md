@@ -1134,7 +1134,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **ping / iproute2** | 相机连通性 | **P2.1** / P5 | P1 busybox 可能够用 |
 | **Avahi** | mDNS 发现 | P5 | |
 | **sqlite** | 本地告警 / 工艺库 | P5 | drift / isar |
-| **curl / ca-certificates** | 云同步、OTA | **P5 / P6** | 一般 `base.config` 已有 |
+| **curl / ca-certificates** | 云同步、OTA；**P2.1 Demo HTTPS probe** | **P2.1** / P5 / P6 | `BR2_PACKAGE_CA_CERTIFICATES` in `lws_hmi_network.config`（Dart `HttpClient` 需要 `/etc/ssl/certs/ca-certificates.crt`） |
 | **ALSA / 本机音频** | 喇叭 smoke | **P2.1** | 最小音频栈；P5 业务音效再扩 |
 
 **Linux rootfs 仍不引入**（lws-ui 无等价需求或太臃肿）：Chromium、Weston、rkaiq、benchmark、`RKNPU2_EXAMPLE`；Android 专用 EasyDarwin AAR、Gradle 栈。**`YNHAPI.jar`（Innohi）** 仅进入 Android 兼容 APK，不进入 Buildroot rootfs；GPIO **不依赖** jar 进入 Linux。

@@ -79,10 +79,36 @@ Scan OK but Demo stuck on `obtainingIp`: preference for `clientid` over default
 `duid` (consumer APs often ignore DUID). `wlan0-dhcp.sh` waits for lease and
 falls back to `udhcpc`; Dart surfaces helper stderr on failure.
 
+### HTTP probe `CERTIFICATE_VERIFY_FAILED`
+
+Wi‑Fi + DHCP succeeded (UI shows IP; router sees the STA) but Demo HTTPS
+(`https://www.baidu.com/`) failed with:
+
+`HandshakeException … CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate`
+
+Layers (device-confirmed 2026-07-14):
+
+1. CA file should exist: `BR2_PACKAGE_CA_CERTIFICATES` → `/etc/ssl/certs/ca-certificates.crt`
+   (`verify-env` PASS). Bundle verifies Baidu with host `openssl s_client -CAfile`.
+2. **Root cause of the persistent failure:** board RTC stuck at **2024-01** (no NTP,
+   chrony disabled). Baidu leaf `notBefore=2025-07-09` → TLS verify fails while clock
+   is in the past. BusyBox `wget` is HTTP-only (no curl/openssl on image).
+3. Diagnostic (2026-07-14): dropped explicit Dart `setTrustedCertificatesBytes` and kept
+   only wall-clock sync + default `HttpClient()` — **confirmed**: HTTPS probe passes once
+   RTC is correct; time was the root cause. Task 6.3 accepted.
+
+Fix: `wlan0-time-sync.sh` after DHCP/static (RFC868 `rdate` then HTTP `Date:` via
+wget); Dart HTTPS path also syncs if `year < 2025`.
+
+Immediate check on device: `date -u` should be ~2026, not 2024. If stale:
+`/usr/lib/lws-hmi/wlan0-time-sync.sh` then re-run Demo Send request.
+
+`dhcpcd is not running` in the journal during connect is **benign**.
+
 
 After `apply-overlay` → **kernel** → **rootfs** → flash:
 
-1. `verify-env` — `aic8800_*.ko`, `rk_wifi_init`, AIC firmware
+1. `verify-env` — `aic8800_*.ko`, `rk_wifi_init`, AIC firmware, **CA bundle**
 2. Demo Wi‑Fi → `wlan0` + associate + HTTP
 3. Demo BT Discoverable → phone finds `lws-hmi` → pairs → **连接成功** + music on speaker
 4. `verify-boot` — wifibt still deferred at boot

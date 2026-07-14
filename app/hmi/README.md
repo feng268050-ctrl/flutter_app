@@ -23,7 +23,7 @@ Reusable modules live under `lib/platform/`:
 | `backlight/` | Prefer `/sys/class/backlight/backlight` | Skip broken `led-*-pwm` clones |
 | `display/` | preference file + `systemctl restart hmi` | `/var/lib/lws-hmi/display-orientation` → flutter-pi `-o` |
 | `wifi/` | helpers + `wpa_cli` | Hidden SSID; DHCP/static on **wlan0**; `WifiApList` / `WifiConnectedPanel` / `linkDetails()` for Settings reuse |
-| `http/` | Dart `HttpClient` (+ optional `curl`) | Proxy prefs `/var/lib/lws-hmi/http-proxy`; Demo GET probe |
+| `http/` | Dart `HttpClient` (+ optional `curl`) | Default `SecurityContext`; wall-clock sync before HTTPS; proxy prefs `/var/lib/lws-hmi/http-proxy`; Demo GET probe |
 | `bluetooth/` | helpers + `bluetoothctl` | **Discoverable peer**; opt-in A2DP Sink (bluealsa, **default off**); Pairable turns Discoverable on (180s); persistent `bt-pair-agent` |
 
 **Device smoke (after flash / push-app):**
@@ -31,12 +31,16 @@ Reusable modules live under `lib/platform/`:
 1. Play — hear shanghai tan; sweep Volume slider
 2. Sweep Brightness — panel dims/brightens
 3. Portrait / Landscape — HMI restarts; `ps`/`tr` confirms `-o portrait_up` or `landscape_left`
-4. Wi‑Fi — enable radio → Scan → Connect (or Hidden SSID) → DHCP or Static → `ping` gateway; Send request shows HTTP status/body
+4. Wi‑Fi — enable radio → Scan → Connect (or Hidden SSID) → DHCP or Static → `ping` gateway; Send request (default `https://www.baidu.com/`) shows HTTP status/body
 5. Proxy — enable proxy, Save, re-run Send request
 6. Bluetooth — enable adapter; turn on **Pairable** (also enables Discoverable 180s) or Discoverable; phone finds / pairs. Optional: enable **BT speaker (A2DP)** (off by default) → phone **连接成功** + music on speaker. Demo **Volume** also drives BlueALSA soft-volume while BT is streaming. Incoming peers lists remote; `verify-boot` still shows wifibt/wpa/bluetooth deferred at boot
 
 Helpers: `/usr/lib/lws-hmi/wifi-stack-*.sh`, `wlan0-dhcp.sh`, `wlan0-static.sh`, `bt-stack-*.sh`, `bt-a2dp-sink-*.sh`, `bt-a2dp-volume.sh`, `bt-pair-agent.sh`, `bt-audio-prepare.sh`; units `bluealsa.service` / `bluealsa-aplay.service` (started only when A2DP switch on).
 
+HTTPS needs a sane wall clock (`date -u` year ≥ 2025) more than custom CA loading —
+Dart default roots + system bundle on image are enough once RTC is correct. Board RTC
+often boots in 2024; after Wi‑Fi, `wlan0-time-sync.sh` (also from the HTTPS probe path)
+syncs via `rdate` / HTTP Date. Journal `dhcpcd is not running` during connect is benign.
 Reusable Wi‑Fi UI (beyond Demo): `lib/ui/wifi/wifi_network_views.dart` + `lib/platform/wifi/wifi_ap_list.dart`.
 
 On first ALSA bring-up, check amp enable and mixer control (`amixer scontrols`) if silent.

@@ -134,13 +134,32 @@ elif command -v udhcpc >/dev/null 2>&1; then
 else
 	fail "dhcpcd/udhcpc missing (enable BR2_PACKAGE_DHCPCD)"
 fi
-for helper in wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+if [ -f /etc/ssl/certs/ca-certificates.crt ] || [ -d /etc/ssl/certs ]; then
+	# Bundle preferred; hashed pem dir alone is also usable by some stacks.
+	if [ -s /etc/ssl/certs/ca-certificates.crt ]; then
+		pass "CA bundle /etc/ssl/certs/ca-certificates.crt"
+	else
+		warn "CA dir present but ca-certificates.crt missing (HTTPS may fail in Dart)"
+	fi
+else
+	fail "CA certificates missing (enable BR2_PACKAGE_CA_CERTIFICATES)"
+fi
+for helper in wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
 	if [ -x "/usr/lib/lws-hmi/$helper" ]; then
 		pass "helper $helper"
 	else
 		fail "helper $helper missing or not executable"
 	fi
 done
+year="$(date -u +%Y 2>/dev/null || echo 0)"
+case "$year" in
+2025|2026|2027|2028|2029|2030)
+	pass "wall clock year=$year"
+	;;
+*)
+	warn "wall clock year=$year (HTTPS certs may fail until wlan0-time-sync after Wi-Fi)"
+	;;
+esac
 # AIC8800D80 modules (kernel + post-wifibt copy into /vendor/lib/modules)
 aic_ko=""
 for dir in /vendor/lib/modules /system/lib/modules /lib/modules /usr/lib/modules; do

@@ -35,4 +35,4 @@
 
 - [x] 6.1 `app/hmi/README.md` smoke: visible+hidden Wi-Fi, DHCP+static, proxy on/off HTTP probe, phone discovers/pairs to HMI (A2DP Sink speaker)
 - [x] 6.2 Update `docs/flutter-pi-hmi-plan.md` §12 (and §1.1 BT wording) to match discoverable role + new Wi-Fi options when smoke passes
-- [ ] 6.3 Device acceptance: HTTP probe succeeds on associated wlan0; phone sees HMI when discoverable, connects as media remote, music on speaker; `verify-boot` still PASS for deferred units
+- [x] 6.3 Device acceptance: HTTP probe succeeds on associated wlan0; phone sees HMI when discoverable, connects as media remote, music on speaker; `verify-boot` still PASS for deferred units

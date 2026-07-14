@@ -58,3 +58,4 @@ if [ -n "$DNS" ]; then
 fi
 
 echo "wlan0-static: ${ADDR}/${PREFIX} on $IFACE"
+/usr/lib/lws-hmi/wlan0-time-sync.sh 2>/dev/null || true

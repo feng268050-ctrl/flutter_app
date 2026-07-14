@@ -52,16 +52,21 @@ wait_carrier() {
 }
 
 stop_dhcp() {
+	# Only dhcpcd -k when something is managing IFACE. Otherwise dhcpcd logs
+	# "dhcpcd is not running" to the journal even with stderr redirected.
+	managed=0
+	if [ -f "$PIDFILE" ] || pgrep -f "dhcpcd.*${IFACE}" >/dev/null 2>&1; then
+		managed=1
+	fi
+	if [ "$managed" = 1 ] && command -v dhcpcd >/dev/null 2>&1; then
+		dhcpcd -k "$IFACE" 2>/dev/null || true
+	fi
 	if [ -f "$PIDFILE" ]; then
 		kill "$(cat "$PIDFILE")" 2>/dev/null || true
 		rm -f "$PIDFILE"
 	fi
 	pkill -f "dhcpcd.*${IFACE}" 2>/dev/null || true
 	pkill -f "udhcpc.*${IFACE}" 2>/dev/null || true
-	# dhcpcd control socket stop (best-effort)
-	if command -v dhcpcd >/dev/null 2>&1; then
-		dhcpcd -k "$IFACE" 2>/dev/null || true
-	fi
 }
 
 case "$ACTION" in
@@ -102,6 +107,7 @@ if command -v dhcpcd >/dev/null 2>&1; then
 	rm -f "$DHCP_LOG"
 	if have_ipv4; then
 		log "dhcpcd OK on $IFACE"
+		/usr/lib/lws-hmi/wlan0-time-sync.sh 2>/dev/null || true
 		exit 0
 	fi
 	log "dhcpcd did not assign IPv4 — trying udhcpc"
@@ -116,6 +122,7 @@ if command -v udhcpc >/dev/null 2>&1; then
 	rm -f "$UDHCP_LOG"
 	if wait_ipv4; then
 		log "udhcpc OK on $IFACE"
+		/usr/lib/lws-hmi/wlan0-time-sync.sh 2>/dev/null || true
 		exit 0
 	fi
 fi

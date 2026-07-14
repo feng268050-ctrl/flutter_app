@@ -6,10 +6,21 @@ import 'package:lws_hmi/platform/http/http_client_controller.dart';
 import 'package:lws_hmi/platform/http/http_proxy_config.dart';
 import 'package:lws_hmi/platform/lws_trace.dart';
 
+/// System CA path used only for optional curl `--cacert` (not loaded into Dart).
+///
+/// P2.1 diagnostic: Dart relies on default [SecurityContext] after wall-clock
+/// sync — explicit `setTrustedCertificatesBytes` was removed to confirm HTTPS
+/// failures were due to stale RTC (not missing CA load).
+const String kSystemCaBundlePath = '/etc/ssl/certs/ca-certificates.crt';
+
 class LinuxHttpClientController implements HttpClientController {
-  LinuxHttpClientController({this.proxyPath = HttpProxyStore.defaultPath});
+  LinuxHttpClientController({
+    this.proxyPath = HttpProxyStore.defaultPath,
+    this.caBundlePath = kSystemCaBundlePath,
+  });
 
   final String proxyPath;
+  final String caBundlePath;
 
   @override
   Future<HttpProxyConfig> getProxy() async {
@@ -43,6 +54,10 @@ class LinuxHttpClientController implements HttpClientController {
     final proxy = await getProxy();
     HttpClient? client;
     try {
+      if (url.isScheme('https')) {
+        await _ensureWallClockForTls();
+      }
+      // Default SecurityContext only (no setTrustedCertificatesBytes).
       client = HttpClient();
       client.connectionTimeout = timeout;
       client.idleTimeout = timeout;
@@ -88,7 +103,6 @@ class LinuxHttpClientController implements HttpClientController {
     } catch (e) {
       sw.stop();
       lwsTrace('http: request failed: $e');
-      // Optional curl fallback when Dart TLS/proxy is awkward on-device.
       final curl = await _curlFallback(
         method: method,
         url: url,
@@ -99,13 +113,71 @@ class LinuxHttpClientController implements HttpClientController {
       if (curl != null) {
         return curl;
       }
+      final clock = DateTime.now().toUtc();
+      final hint = clock.year < 2025
+          ? ' [clock ${clock.toIso8601String()} UTC looks stale — TLS needs wall clock]'
+          : '';
       return HttpProbeResult(
         ok: false,
-        error: e.toString(),
+        error: '$e$hint',
         elapsedMs: sw.elapsedMilliseconds,
       );
     } finally {
       client?.close(force: true);
+    }
+  }
+
+  /// Board RTC often boots in 2024 without NTP; certs (e.g. Baidu notBefore
+  /// 2025-07) then fail handshake. Prefer overlay helper; else HTTP Date.
+  Future<void> _ensureWallClockForTls() async {
+    if (DateTime.now().toUtc().year >= 2025) {
+      return;
+    }
+    lwsTrace('http: wall clock stale (${DateTime.now().toUtc()}) — syncing');
+    final helper = '/usr/lib/lws-hmi/wlan0-time-sync.sh';
+    if (await File(helper).exists()) {
+      await Process.run(helper, []);
+      if (DateTime.now().toUtc().year >= 2025) {
+        return;
+      }
+    }
+    for (final host in ['time.nist.gov', 'time.windows.com']) {
+      final r = await Process.run('rdate', ['-s', host]);
+      if (r.exitCode == 0 && DateTime.now().toUtc().year >= 2025) {
+        await Process.run('hwclock', ['-w', '-u']);
+        return;
+      }
+    }
+    for (final url in [
+      'http://www.baidu.com/',
+      'http://connectivitycheck.gstatic.com/generate_204',
+    ]) {
+      final r = await Process.run('wget', [
+        '-S',
+        '-O',
+        '/dev/null',
+        '-T',
+        '8',
+        url,
+      ]);
+      final blob = '${r.stderr}\n${r.stdout}';
+      final m = RegExp(r'(?mi)^\s*Date:\s*(.+)$').firstMatch(blob);
+      if (m == null) {
+        continue;
+      }
+      final hdr = m.group(1)!.trim();
+      final set = await Process.run('date', [
+        '-u',
+        '-D',
+        '%a, %d %b %Y %H:%M:%S GMT',
+        '-s',
+        hdr,
+      ]);
+      if (set.exitCode == 0) {
+        await Process.run('hwclock', ['-w', '-u']);
+        lwsTrace('http: clock set from HTTP Date → ${DateTime.now().toUtc()}');
+        return;
+      }
     }
   }
 
@@ -132,6 +204,9 @@ class LinuxHttpClientController implements HttpClientController {
       '-o',
       '-',
     ];
+    if (await File(caBundlePath).exists()) {
+      args.addAll(['--cacert', caBundlePath]);
+    }
     if (proxy.enabled && proxy.host.isNotEmpty) {
       final auth = proxy.username.isNotEmpty
           ? '${proxy.username}:${proxy.password}@'

@@ -23,13 +23,21 @@ migrate_working_dir/
 
 # Flutter/Dart/Pub related
 **/doc/api/
-**/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
+
+# Not a mobile/desktop multi-target app (flutter-pi + linux stub only).
+# Rebuild platforms in P2.5+ if needed: flutter create --platforms=android .
+/android/
+/ios/
+/macos/
+/web/
+/windows/
 
 # Symbolication related
 app.*.symbols

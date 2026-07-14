@@ -1,17 +1,14 @@
-# lws_hmi
+# lws_hmi — flutter-pi HMI (embedded Linux)
 
-A new Flutter project.
+This tree targets **ynh960 / flutter-pi** via `flutterpi_tool` (`make build-app`).
+It is not a phone app: only the **`linux/`** platform stub is kept (plugin registrant /
+FFI helpers). `android/` / `ios/` / `macos/` / `web/` / `windows/` are intentionally absent.
 
-## Getting Started
+P2.5 can re-add a mobile target later, for example:
 
-This project is a starting point for a Flutter application.
+```bash
+cd app/hmi
+flutter create --platforms=android .
+```
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+See [`../README.md`](../README.md) for engine pins and deploy layout.

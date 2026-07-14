@@ -1,0 +1,48 @@
+// lws-hmi ynh960: fix own-gpio vs gmac1 (fe010000.ethernet) pinmux conflict.
+//
+// EVB enables gmac1 m1 RGMII; those pads include gpio4 A0/A1/A2 (txclk/rxd2/rxd3)
+// and gpio3 D7 (txd3). Innohi customer_board_ynh960 lists the same pads in
+// own-gpio-pins as USB_HOST_PWREN* / Relay-CTL. Pinctrl then fails the *entire*
+// own-gpio group (first hit: gpio4-0), so GPIO_3/4/6 never mux to GPIO and
+// side-panel LEDs stay stuck (DTS default-value "1" → often all-on).
+//
+// Drop eth-owned pads from own-gpio only; keep abstract GPIO_3/4/6 for P2 LEDs.
+// Default those indicators to off so boot is not full-bright.
+
+&pinctrl {
+	own_gpio {
+		own_gpio_pins: own-gpio-pins {
+			rockchip,pins =
+				/* USB_HOST_PWREN* removed: conflict gmac1m1 (gpio4 A0/A1/A2) */
+				<0 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>, /* GPIO-1 */
+				<0 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>, /* GPIO-2 */
+				<0 RK_PC7 RK_FUNC_GPIO &pcfg_pull_none>, /* GPIO-3 */
+				<3 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>, /* GPIO-4 yellow */
+				<3 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>, /* GPIO-5 red */
+				<0 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>, /* GPIO-6 */
+				<4 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>, /* GPIO-7 green */
+				<4 RK_PC6 RK_FUNC_GPIO &pcfg_pull_none>, /* GPIO-8 */
+				/* Relay-CTL (gpio3 D7) removed: conflict gmac1m1_txd3 */
+				<3 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>, /* Bell-CTL */
+				<0 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>, /* LED_RED */
+				<0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>; /* LED_BLUE */
+		};
+	};
+};
+
+&own_gpio {
+	/delete-node/ USB_HOST_PWREN1_H;
+	/delete-node/ USB_HOST_PWREN2_H;
+	/delete-node/ USB_HOST_PWREN3_H;
+	/delete-node/ Relay_CTL;
+
+	GPIO_4 {
+		default-value = "0";
+	};
+	GPIO_5 {
+		default-value = "0";
+	};
+	GPIO_7 {
+		default-value = "0";
+	};
+};

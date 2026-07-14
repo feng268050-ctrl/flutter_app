@@ -182,7 +182,8 @@ sync_kernel_display_dts() {
     "$lws_root" "lws-hmi-ynh960-linux-root.dtsi" \
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-usb-gadget.dtsi" "lws-hmi-ynh960-usb-gadget.dtsi" \
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi" "lws-hmi-ynh960-evb-trim.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.dtsi" "lws-hmi-ynh960-touch.dtsi"
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.dtsi" "lws-hmi-ynh960-touch.dtsi" \
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi" "lws-hmi-ynh960-own-gpio.dtsi"
 }
 
 sync_kernel_config_fragments() {
@@ -598,6 +599,9 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       rm -f "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-usb-gadget.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-evb-trim.dtsi"
+      rm -f "$kernel_dts/lws-hmi-ynh960-touch.dtsi"
+      rm -f "$kernel_dts/lws-hmi-ynh960-own-gpio.dtsi"
+      rm -f "$kernel_dts/lws-hmi-ynh960-panel-init.dtsi"
     done
     restore_kernel_patches
     echo "removed lws-hmi buildroot overlay + post-hooks + chip configs"

@@ -1,6 +1,6 @@
 ## Context
 
-P1 shipped flutter-pi + Hello World on ynh960; P1.5 added USB-SSH push/debug. Product I/O still lives in **lws-ui** (Android): Modbus RTU via `modbus4j` / serial, RGB side LEDs via **YNHAPI GPIO** (`GpioLedConfig` pins red=4, yellow=3, green=6; modes `STEADY_ON` / `BLINK` / `OFF` with 1 s on / 1 s off flash).
+P1 shipped flutter-pi + Hello World on ynh960; P1.5 added USB-SSH push/debug. Product I/O still lives in **lws-ui** (Android): Modbus RTU via `modbus4j` / serial, RGB side LEDs via **YNHAPI GPIO** (`GpioLedConfig` original pins red=5, yellow=4, green=7 — matches Linux `gpio_innohi`; modes `STEADY_ON` / `BLINK` / `OFF` with 1 s on / 1 s off flash).
 
 P2 ports the **Linux** half of that I/O into `app/hmi`, with a minimal demo UI for board bring-up. Wiring is owned by the integrator; software must match lws-ui logical pins and register contracts.
 
@@ -51,9 +51,13 @@ Known plan/doc errors corrected in this change: “Modbus-**MTU**” → **RTU**
 
 ### D5 — GPIO backend preference
 
-**Choice:** Prefer Innohi **own-gpio** (or vendor path) that accepts the **same pin indices 3/4/6** as Android YNHAPI. If that node is unavailable or conflicted (see `docs/kernel-evb-dts-deferred.md`), fall back to documented sysfs/`libgpiod` mapping behind a single `GpioLedController` interface — pin numbers in App config remain 4/3/6.
+**Choice:** Product pin identity is Innohi **`gpio_innohi` DTS labels** — red=`GPIO_5`, yellow=`GPIO_4`, green=`GPIO_7` (proven on ynh960 Linux). Drive them via `/sys/class/gpio_innohi/GPIO_N/value`. Do **not** treat YNHAPI’s 0-based integers (`GPIO_5=4`, etc.) as the App’s canonical numbers.
 
-**Why:** Product continuity with lws-ui; isolate SoC line-number churn behind one adapter.
+Classic `/sys/class/gpio` SoC lines (105/106/149) remain a rare fallback when `gpio_innohi` is absent; once `gpio_innohi` owns the pads, export fails (expected).
+
+**P2.5 / Android:** Prefer the **same** `gpio_innohi` file backend when the node exists. Fall back to `YNHAPI.setGpioState` only then, using **`YNHAPI.GPIO_N` constants** (or `label−1`) — never a second hand-maintained 4/3/6 table. Keep `YNHAPI.jar` for non-GPIO platform APIs (status bar, silent install, ethernet, …).
+
+**Why:** Avoids the historical off-by-one between label `N` and jar index `N−1`; one contract for Linux and Android.
 
 **Blink:** Match lws-ui: 1000 ms HIGH / 1000 ms LOW on a dedicated async task per color; cancel on mode change.
 
@@ -75,7 +79,7 @@ Known plan/doc errors corrected in this change: “Modbus-**MTU**” → **RTU**
 
 | Risk | Mitigation |
 |------|------------|
-| `own-gpio` pinmux conflict with Ethernet (`gpio4-0`) | Adapter fallback + kernel note; demo can still build; LED verify waits on wiring/kernel fix |
+| `own-gpio` / `gpio_innohi` pinmux conflict with Ethernet (`gpio4-0`) | Overlay drops eth-overlapping pads (`lws-hmi-ynh960-own-gpio.dtsi`); LED labels `GPIO_5/4/7` remain |
 | Modbus no slave during development | UI shows `-`; log serial/CRC errors; no crash |
 | `flutter_libserialport` + flutter-pi ABI quirks | Pin package versions to Flutter 3.24.4; smoke on device early |
 | Blink timers vs hot restart | Cancel timers in dispose; document `make push-app` restart behavior |
@@ -90,5 +94,5 @@ Known plan/doc errors corrected in this change: “Modbus-**MTU**” → **RTU**
 
 ## Open Questions
 
-1. Exact Linux device node for vendor GPIO (sysfs path vs char-dev) on current ynh960 DTS — resolve during implementation by probing hardware / Innohi docs; App pin API stays 4/3/6.
+1. ~~Exact Linux GPIO path / App pin numbers~~ — **Resolved:** `/sys/class/gpio_innohi/GPIO_{5,4,7}`; labels are the product contract (plan §11.0). Android: same file path first; `YNHAPI.GPIO_N` fallback only.
 2. Serial parameters (baud/parity/stop) — copy from lws-ui Modbus RTU config at implementation time; document in code comments next to port open.

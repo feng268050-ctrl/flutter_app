@@ -18,7 +18,7 @@
 
 ## 4. Linux GPIO RGB LED
 
-- [x] 4.1 Implement `GpioLedConfig` pins red=4, yellow=3, green=6 and `IndicatorMode` Steady / Blink / Off
+- [x] 4.1 Implement `GpioLedConfig` pins red=5, yellow=4, green=7 and `IndicatorMode` Steady / Blink / Off
 - [x] 4.2 Probe and bind vendor `own-gpio` (preferred) or sysfs/`libgpiod` fallback behind one controller API
 - [x] 4.3 Implement Blink as 1000 ms on / 1000 ms off with cancel-on-mode-change; colors independent
 - [x] 4.4 Ensure `hmi.service` / udev permissions can access serial + GPIO; add minimal overlay rules if required

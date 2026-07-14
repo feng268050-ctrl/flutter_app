@@ -15,7 +15,7 @@
 | **P1 — 平台镜像 + Hello World** | Buildroot **Linux 镜像**（含后续所需的 **平台必须组件**）+ splash → **`flutter-pi` Hello World** | ✅ |
 | **P1.5 — 设备调试 + 快速 UI 迭代** | `make debug-app` 在**真机**上以调试模式启动 App；VSCode / Cursor Flutter 插件接入；为快速 UI 迭代铺路 | ✅ |
 | **P2 — Modbus + GPIO** | 迁移 **Modbus RTU** 与 **GPIO 管理**；Linux 真机验证读设备与下位机信息、**三色指示灯**（红/黄/绿）正常控制 | 🔲 |
-| **P2.5 — 模拟器与 Android 兼容** | **`make emulator`**（Linux HMI 模拟器）；**`make android-emulator`**（参考 lws-ui `make emulator`）；Modbus/GPIO **Android 兼容**；Flutter App 可打包 **APK** | 🔲 |
+| **P2.5 — 模拟器与 Android 兼容** | **`make emulator`**（Linux HMI 模拟器）；**`make android-emulator`**（参考 lws-ui `make emulator`）；Modbus Android 兼容；GPIO **共用** `gpio_innohi`（YNHAPI 仅降级，§11.0）；Flutter App 可打包 **APK** | 🔲 |
 | **P3 — AI 原生库** | 迁移 lws-ui **AI 代码库**；新工程打出 **`libai.so`**（+ RKNN/`config.yaml`） | 🔲 |
 | **P3.5 — Flutter 平台升级（P4 前置）** | 将板端 **flutter-engine / SDK / flutter-pi** 从 P1 pin **升级到上游支持的 stable**（见 **§6.4**）；ynh960 全量回归 | 🔲 |
 | **P4 — FrostUI + IME（子模块）** | **`packages/frost_ui`** + **`packages/frost_ime`**（各为独立 git 子模块，对齐 lws-ui FrostUI / IME） | 🔲 |
@@ -44,13 +44,15 @@ P1.5  设备调试 + 快速 UI 迭代
 P2  Modbus + GPIO（Linux 真机）
     ├─ 迁移 Modbus RTU 与 GPIO 管理程序
     ├─ Modbus：flutter_libserialport；Linux `/dev/ttyS5` 与 lws-ui 寄存器契约
-    ├─ GPIO：Linux 直接读写 sysfs / gpiod 文件
+    ├─ GPIO：统一契约 = Innohi `gpio_innohi` 标签（红 GPIO_5 / 黄 GPIO_4 / 绿 GPIO_7）
+    ├─ GPIO：直接读写 `/sys/class/gpio_innohi/GPIO_N/value`（不用 YNHAPI 0-based 下标当脚号）
     └─ App demo：读设备与下位机信息；控制三色状态灯（红/黄/绿）
 
 P2.5  模拟器与 Android 兼容
     ├─ make emulator：构建并启动 Linux 虚拟机，加载 rootfs.img 跑 Linux App
     ├─ make android-emulator：参考 lws-ui make emulator 启动 Android 模拟器
-    ├─ Modbus/GPIO Android 兼容：MethodChannel 调 YBHAPI.jar；串口 chmod
+    ├─ Modbus：Android 串口 chmod 后仍用 flutter_libserialport
+    ├─ GPIO：**同一套** `gpio_innohi` 文件后端（Android 有 `/sys/class/gpio_innohi` 则直写）；YNHAPI `setGpioState` 仅作降级（入参用 `YNHAPI.GPIO_N`，勿裸写 4/3/6）
     ├─ Flutter App 同时构建 Linux bundle 与 Android APK（系统应用 + platform 签名）
     ├─ make build-apk / push-apk；make version / version-bump；make set-prop / del-prop
     └─ make push-app / make debug-app 兼容 Linux 虚拟机与实体板
@@ -239,7 +241,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 |------------|-------------------|
 | GStreamer / MPP | `make build-gstreamer` + defconfig `lws_hmi_gst_rtsp.config` |
 | mediamtx | `make build-mediamtx` + fs-overlay `usr/bin/` |
-| 串口 / GPIO 平台适配 | P2 / P2.5 App 插件与平台层；Linux `/dev/ttyS5` / GPIO 文件访问；P2.5 Android `YBHAPI.jar` |
+| 串口 / GPIO 平台适配 | P2 / P2.5 App 层；`/dev/ttyS5` + `gpio_innohi` 文件后端双端统一；P2.5 Android 其它平台能力可继续用 `YNHAPI.jar` |
 | OpenCV / yaml-cpp | `fetch-opencv*` + platform `yaml-cpp` |
 | Avahi / sqlite | `build-platform-packages` |
 
@@ -269,7 +271,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 | **RKNPU2 运行时**（无 example） | ✓ | | ✓ | | | P1 编入 rootfs；P3 用 |
 | **wifibt** 栈 | ✓ | | | | ✓ | 驱动/daemon；业务配网 UI 在 P5 |
 | **GStreamer + MPP + mediamtx** | ✓ prep | | | | ✓ use | P1 备好；P5.1 开预览/relay |
-| **串口 / GPIO 平台适配** | | ✓ use | | | ✓ | P2：Linux Modbus/GPIO；P2.5：Android 兼容（App 层）；P5 量产业务复用 |
+| **串口 / GPIO 平台适配** | | ✓ use | | | ✓ | P2：`ttyS5` + `gpio_innohi`；P2.5：双端同后端（§11.0）；P5 复用 |
 | **OpenCV / yaml-cpp** | ✓ prep | | ✓ use | | | opencv `.cache/` + yaml-cpp BR |
 | **Avahi / sqlite 等** | ✓ prep | | | | ✓ use | P1 `build-platform-packages` |
 
@@ -1058,8 +1060,8 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **已有** `overlay/.../post-hooks/06-lws-hmi-systemd.sh` | enable hmi / disable 非关键 unit |
 | **待增** `scripts/configure-camera-eth0.sh` | **P5** 运行时 eth0 配址（自 lws-ui 移植） |
 | **待增** `scripts/build-mediamtx.sh` | **P5** linux/arm64 交叉编译 |
-| **待增** P2：串口 + GPIO demo | `flutter_libserialport`、Linux `/dev/ttyS5`、三色灯 |
-| **待增** P2.5：Android 兼容 | `YBHAPI.jar`、`make emulator` / `make android-emulator`、APK 构建 |
+| **待增** P2：串口 + GPIO demo | `flutter_libserialport`、`/dev/ttyS5`、`gpio_innohi` 三色灯（`GPIO_5/4/7`，§11.0） |
+| **待增** P2.5：Android 兼容 | `gpio_innohi` 双端 GPIO、`YNHAPI.jar`（非 GPIO 平台能力）、`make emulator` / `make android-emulator`、APK 构建 |
 | **待增** `scripts/enable-ssh-debug.sh` | **P5** 隐藏入口 / `POST /v1/ssh` |
 | **待增** overlay：`sshd` disabled by default | 生产默认不监听 |
 | **待增** `docs/` 本文 | 规划 |
@@ -1073,8 +1075,28 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 
 **P2 / P2.5 分工**：
 
-- **P2（Linux 真机）**：迁移 **Modbus RTU** 与 **GPIO 管理**；`flutter_libserialport` + Linux sysfs/gpiod；验证读设备与下位机信息、三色指示灯（红/黄/绿）。
-- **P2.5（模拟器 + Android）**：Flutter App 同时构建 **Linux bundle** 与 **Android APK**；`make emulator` / `make android-emulator`；Modbus/GPIO Android 兼容（串口 chmod、`YBHAPI.jar` MethodChannel）；`make version`、`make build-apk`、`make push-apk` 等。
+- **P2（Linux 真机）**：迁移 **Modbus RTU** 与 **GPIO 管理**；`flutter_libserialport` + **`/sys/class/gpio_innohi/GPIO_N`**；验证读设备与下位机信息、三色指示灯（红=`GPIO_5` / 黄=`GPIO_4` / 绿=`GPIO_7`）。
+- **P2.5（模拟器 + Android）**：Flutter App 同时构建 **Linux bundle** 与 **Android APK**；`make emulator` / `make android-emulator`；Modbus Android 兼容（串口 chmod）；**GPIO 优先复用与 Linux 相同的 `gpio_innohi` 文件后端**（见下 **§11.0**）；`make version`、`make build-apk`、`make push-apk` 等。
+
+### 11.0 GPIO / YNHAPI 策略（P2 → P2.5）
+
+侧边三色灯等与 Innohi `own_gpio` 相关的 IO，以 **DTS/`gpio_innohi` 标签**为产品契约，**不以 YNHAPI 整数下标为真相源**。
+
+| 颜色 | `gpio_innohi` 标签（契约） | Linux 路径 | YNHAPI 常量（仅降级） | jar 入参实际值 |
+|------|---------------------------|------------|----------------------|----------------|
+| 红 | `GPIO_5` | `/sys/class/gpio_innohi/GPIO_5/value` | `YNHAPI.GPIO_5` | **4**（0-based） |
+| 黄 | `GPIO_4` | `…/GPIO_4/value` | `YNHAPI.GPIO_4` | **3** |
+| 绿 | `GPIO_7` | `…/GPIO_7/value` | `YNHAPI.GPIO_7` | **6** |
+
+**为何曾混脚号：** `YNHAPI.GPIO_N = N−1`。lws-ui 曾把标签号 **5/4/7** 与 jar 入参 **4/3/6** 当成同一套数；Linux 直写标签路径后暴露了该 off-by-one。jar 本身可用，但 **不是** Linux/Android 统一脚号的理想主键。
+
+**实现原则：**
+
+1. **Dart 配置只存标签语义**（红/黄/绿 → `5`/`4`/`7` 或显式 `GPIO_N` 字符串），两端共用。
+2. **主路径：直写 `/sys/class/gpio_innohi/GPIO_N/value`**（P2 Linux 已采；P2.5 Android 在节点存在且权限足够时走同一后端 → 双端统一、无映射负担）。
+3. **Android 降级：** 无 sysfs 时再调 `YNHAPI.setGpioState`，且必须用 **`YNHAPI.GPIO_N` 常量**（或 `label−1`），禁止再维护第二套裸数字表。
+4. **`YNHAPI.jar` 保留用途：** 状态栏/导航栏、静默安装、以太网开关、存储查询等 **非 GPIO** 平台能力；**不进** Buildroot rootfs，只进 Android 兼容 APK。
+5. **经典 `/sys/class/gpio/export`：** 仅作 `gpio_innohi` 不可用时的工程兜底；脚被 `gpio_innohi` 占用时 export 会失败（预期）。
 
 ### 11.1 Buildroot 补充包（相对 §3 已有栈）
 
@@ -1091,7 +1113,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **sqlite** | 本地告警 / 工艺库 | P5 | drift / isar |
 | **curl / ca-certificates** | 云同步、OTA | **P5 / P6** | 一般 `base.config` 已有 |
 
-**Linux rootfs 仍不引入**（lws-ui 无等价需求或太臃肿）：Chromium、Weston、rkaiq、benchmark、`RKNPU2_EXAMPLE`；Android 专用 EasyDarwin AAR、Gradle 栈。`YBHAPI.jar` 仅进入 Android 兼容 APK，不进入 Buildroot rootfs。
+**Linux rootfs 仍不引入**（lws-ui 无等价需求或太臃肿）：Chromium、Weston、rkaiq、benchmark、`RKNPU2_EXAMPLE`；Android 专用 EasyDarwin AAR、Gradle 栈。**`YNHAPI.jar`（Innohi）** 仅进入 Android 兼容 APK，不进入 Buildroot rootfs；GPIO **不依赖** jar 进入 Linux。
 
 **体积粗估**（在 §4 表基础上）：
 
@@ -1127,8 +1149,8 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 |------|--------------|-------------|
 | **P1** | Linux 镜像 + Hello World | Splash / 占位 UI / 平台栈 |
 | **P1.5** | `debug-app`、IDE 插件（真机调试） | 模拟器、Android Studio / adb 闭环 |
-| **P2** | Linux 真机 Modbus / GPIO demo（设备信息、三色灯） | Android APK、模拟器 |
-| **P2.5** | Linux + Android 双目标；`emulator` / `android-emulator`；APK 构建与推送 | Modbus4j、`YBHAPI.jar` GPIO、`LedIndicatorManager`、版本号与 APK 签名（lws-ui 对照） |
+| **P2** | Linux 真机 Modbus / GPIO demo（设备信息、三色灯 `GPIO_5/4/7`） | Android APK、模拟器 |
+| **P2.5** | Linux + Android 双目标；`emulator` / `android-emulator`；APK 构建与推送 | Modbus 串口 chmod；GPIO **共用** `gpio_innohi` 后端（YNHAPI GPIO 降级）；其它平台 API 可对照 `YNHAPI.jar` / `LedIndicatorManager`；版本号与 APK 签名 |
 | **P3** | `libai.so` + RKNN/`config.yaml` | `NativeBridge` / `lensinspector` / `AiManager`（原生层） |
 | **P4** | **`frost_ui` + `frost_ime`** 子模块 | FrostUI、`IME.md` / frostui specs |
 | **P5** | 视频、网络 UI、云、:5580、**lws-ui 实装业务** | EasyPlayer、MediaMTX 协调器、Room、NanoHTTPd、各 Activity |
@@ -1140,7 +1162,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 |------------|----------|
 | RKNN 转换流水线（`scripts/make/convert-rknn.sh`）、`config.yaml`、`.rknn` 模型 | EasyDarwin / ExoPlayer → GStreamer + flutter-pi video |
 | eth0/wlan0 拓扑、PR0/PR1 分工、云 API 契约（`network-api-reference.md`） | 整个 Android UI → Flutter（**实装页面** + openspec 补充，§11.7） |
-| `native/lensinspector` C++（Linux aarch64 + FFI） | Modbus4j → `flutter_libserialport`；GPIO → Linux 文件 adapter / Android MethodChannel |
+| `native/lensinspector` C++（Linux aarch64 + FFI） | Modbus4j → `flutter_libserialport`；GPIO → **共用** `gpio_innohi` 文件 adapter（Android YNHAPI GPIO 仅降级，§11.0） |
 | LCD/MIPI 参数（lws-hmi overlay **已有**） | NanoHTTPd → Dart `shelf`；JmDNS → Avahi |
 | `openspec/specs/*` | **参考** UI/交互验收；**非**完整迁移清单（§11.7） |
 | lws-ui `docs/*.md`（拓扑、API、AI、OTA 等） | Linux 量产 OTA（**P6** A/B + 两级更新）→ oem / `update.img`；旧 Android 产品继续 `build-apk` / `push-apk`；**adbd** → Linux **sshd 按需开启**（§7.7） |
@@ -1175,7 +1197,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | LAN HTTP **:5580** | Dart `shelf` / `HttpServer` | **P5** | ✓ |
 | mDNS 设备发现 | **Avahi** + Dart 或固定发现 | **P5** | ✓ |
 | Modbus RTU `/dev/ttyS5` | **`flutter_libserialport`**；Linux `/dev/ttyS5`，Android chmod 后访问串口 | **P2 / P2.5** demo / **P5** 量产 | ✓ |
-| GPIO 指示灯 | Linux 文件读写；Android MethodChannel → `YBHAPI.jar` | **P2 / P2.5** demo / **P5** 量产 | ✓ |
+| GPIO 指示灯 | **双端** `/sys/class/gpio_innohi/GPIO_{5,4,7}`；Android 无节点时才降级 `YNHAPI.GPIO_*`（§11.0） | **P2 / P2.5** demo / **P5** 量产 | ✓ |
 | Room 本地库 | **sqlite** + drift / isar | **P5** | ✓ |
 | AWS S3 / **R2 上传** | Dart REST + 签名 | **P5** | ✓ §12 P5 |
 | APK / priv-app OTA | Linux（**P6**）：A/B 分区 + app-only / 全系统 `update.img`；旧 Android：沿用系统应用 + platform 签名，`push-apk` 只做 `pm install` | **P2.5 / P6** | ✓ |
@@ -1228,7 +1250,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 **openspec 常见缺口（须看实装）**：
 
 - 视频栈与 **MediaMTX / EasyPlayer 协调**、双码流消费分工
-- **Android 平台层**：Application 初始化顺序、线程池、`YBHAPI.jar`、权限与系统 API
+- **Android 平台层**：Application 初始化顺序、线程池、`YNHAPI.jar`（非 GPIO 主路径，§11.0）、权限与系统 API
 - **JNI / NativeBridge** 与 HTTP `:5580` 路由的完整面
 - 部分 **Settings / Advanced / Engineer** 深层页与隐藏入口
 - **网络脚本**（eth0 动态配址）与 Buildroot 部署差异
@@ -1276,7 +1298,7 @@ OpenSpec change：[`openspec/changes/p2-modbus-gpio/`](../openspec/changes/p2-mo
 
 - [ ] 迁移 **Modbus RTU** 与 **GPIO 管理**程序（迁移时修正拼写，如 `Filed`→`Field`；计划旧称 “Modbus-MTU” 一律按 RTU）
 - [ ] Modbus：统一 **`flutter_libserialport`**；文档化 Linux `/dev/ttyS5` 与 lws-ui 寄存器契约
-- [ ] GPIO：Linux 端直接读写 sysfs / gpiod 文件（引脚对齐 lws-ui：红=4 / 黄=3 / 绿=6）
+- [ ] GPIO：直写 `/sys/class/gpio_innohi/GPIO_N`（契约红=`GPIO_5` / 黄=`GPIO_4` / 绿=`GPIO_7`；见 §11.0）
 - [ ] App：**读设备与下位机信息**（Device SN 来自 iSerial；其余来自 Modbus）
 - [ ] App：**三色状态灯 demo**（红/黄/绿；每色 Steady / Blink / Off 互斥）
 - [ ] 串口/日志验证 Modbus 时序与 lws-ui 一致；Linux 真机 smoke
@@ -1290,9 +1312,11 @@ OpenSpec change：[`openspec/changes/p2-modbus-gpio/`](../openspec/changes/p2-mo
 - [ ] `make build-apk`；`make push-apk` = `adb push` + `adb shell pm install`（不安装到 `priv-app`）
 - [ ] Makefile / 脚本 `.env` 支持迁移；`make set-prop` / `make del-prop` 可用
 - [ ] `model.properties` key 兼容 lws-ui；Linux 存储目录确认并文档化（可能不同于 Android）
-- [ ] Modbus/GPIO **Android 兼容**：串口 chmod；GPIO MethodChannel 调 `YBHAPI.jar`（从 lws-ui 拷贝）
+- [ ] Modbus **Android 兼容**：串口 chmod 后仍用 `flutter_libserialport`
+- [ ] GPIO **Android**：优先同一套 `gpio_innohi` 文件后端；否则降级 `YNHAPI.GPIO_N`（从 lws-ui 拷贝 jar，仅垫片，§11.0）
+- [ ] `YNHAPI.jar`：状态栏/安装/以太网等非 GPIO 平台能力按需 MethodChannel 封装
 - [ ] `make push-app` / `make debug-app` 兼容 Linux 虚拟机与实体板
-- [ ] Android / Linux 双目标 smoke
+- [ ] Android / Linux 双目标 smoke（GPIO 脚号表只有标签一套）
 
 ### P3 — AI 代码库 → libai.so
 
@@ -1583,4 +1607,4 @@ SD 卡、未做 P0（sshd/mediamtx 误 enable）、或 mediamtx/rknn_server 与�
 
 ---
 
-**总结**：**能力不少于 lws-ui**（§11.5）。**P1**：镜像 + Hello World + boot splash + **≤10 s 首页**（方案 A §3.6）。**P1.5**：真机调试 + 快速 UI 迭代。**P2～P2.5**：Modbus/GPIO（Linux）→ 模拟器与 Android 兼容。**P3～P4**：AI so → **`frost_ui` / `frost_ime`**。**P5**：按 **§1.2（P5.1～P5.7）** 迁移业务；**P6**：OTA；**以 lws-ui 实装为准**，openspec 作补充（§11.7）。
+**总结**：**能力不少于 lws-ui**（§11.5）。**P1**：镜像 + Hello World + boot splash + **≤10 s 首页**（方案 A §3.6）。**P1.5**：真机调试 + 快速 UI 迭代。**P2～P2.5**：Modbus + GPIO（契约 `GPIO_5/4/7`、直写 `gpio_innohi`，§11.0）→ 模拟器与 Android 兼容（GPIO 不绑 YNHAPI 主键）。**P3～P4**：AI so → **`frost_ui` / `frost_ime`**。**P5**：按 **§1.2（P5.1～P5.7）** 迁移业务；**P6**：OTA；**以 lws-ui 实装为准**，openspec 作补充（§11.7）。

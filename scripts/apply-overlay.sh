@@ -185,7 +185,8 @@ sync_kernel_display_dts() {
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi" "lws-hmi-ynh960-evb-trim.dtsi" \
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.dtsi" "lws-hmi-ynh960-touch.dtsi" \
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi" "lws-hmi-ynh960-own-gpio.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi" "lws-hmi-ynh960-uart5-gmac.dtsi"
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi" "lws-hmi-ynh960-uart5-gmac.dtsi" \
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-uart7-pwm.dtsi" "lws-hmi-ynh960-uart7-pwm.dtsi"
 }
 
 sync_kernel_config_fragments() {
@@ -617,6 +618,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       rm -f "$kernel_dts/lws-hmi-ynh960-touch.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-own-gpio.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-uart5-gmac.dtsi"
+      rm -f "$kernel_dts/lws-hmi-ynh960-uart7-pwm.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-panel-init.dtsi"
     done
     restore_kernel_patches

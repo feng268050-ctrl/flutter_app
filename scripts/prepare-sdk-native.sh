@@ -42,6 +42,7 @@ apply_display_dts() {
   touch_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.dtsi"
   own_gpio_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi"
   uart5_gmac_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi"
+  uart7_pwm_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-uart7-pwm.dtsi"
   patch_script="$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-ynh960-dts.sh"
   [[ -x "$gen_script" ]] || chmod +x "$gen_script"
   bash "$gen_script"
@@ -49,14 +50,15 @@ apply_display_dts() {
     "$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip"; do
     [[ -d "$kernel_dts" ]] || continue
     customer_dtsi="$kernel_dts/customer_board_ynh960.dtsi"
-    [[ -f "$customer_dtsi" && -f "$patch_script" && -f "$lws_dtsi" && -f "$panel_init_dtsi" && -f "$evb_trim_dtsi" && -f "$touch_dtsi" && -f "$own_gpio_dtsi" && -f "$uart5_gmac_dtsi" ]] || continue
+    [[ -f "$customer_dtsi" && -f "$patch_script" && -f "$lws_dtsi" && -f "$panel_init_dtsi" && -f "$evb_trim_dtsi" && -f "$touch_dtsi" && -f "$own_gpio_dtsi" && -f "$uart5_gmac_dtsi" && -f "$uart7_pwm_dtsi" ]] || continue
     bash "$patch_script" "$customer_dtsi" \
       "$lws_dtsi" "lws-hmi-ynh960-display.dtsi" \
       "$panel_init_dtsi" "lws-hmi-ynh960-panel-init.dtsi" \
       "$evb_trim_dtsi" "lws-hmi-ynh960-evb-trim.dtsi" \
       "$touch_dtsi" "lws-hmi-ynh960-touch.dtsi" \
       "$own_gpio_dtsi" "lws-hmi-ynh960-own-gpio.dtsi" \
-      "$uart5_gmac_dtsi" "lws-hmi-ynh960-uart5-gmac.dtsi"
+      "$uart5_gmac_dtsi" "lws-hmi-ynh960-uart5-gmac.dtsi" \
+      "$uart7_pwm_dtsi" "lws-hmi-ynh960-uart7-pwm.dtsi"
     echo "sdk-native: ynh960 MIPI dsi0 + panel-init-sequence in $customer_dtsi"
   done
 }

@@ -12,3 +12,21 @@ flutter create --platforms=android .
 ```
 
 See [`../README.md`](../README.md) for engine pins and deploy layout.
+
+## P2.1 platform I/O (speaker / backlight / orientation)
+
+Reusable modules live under `lib/platform/`:
+
+| Module | Linux backend | Notes |
+|--------|---------------|-------|
+| `audio/` | `mpg123`/`aplay` + `amixer` | Forces `Playback Path=RING_SPK_HP`; asset → `/var/lib/lws-hmi/audio/` |
+| `backlight/` | Prefer `/sys/class/backlight/backlight` | Skip broken `led-*-pwm` clones |
+| `display/` | preference file + `systemctl restart hmi` | `/var/lib/lws-hmi/display-orientation` → flutter-pi `-o` |
+
+**Device smoke (after flash / push-app):**
+
+1. Play — hear shanghai tan; sweep Volume slider
+2. Sweep Brightness — panel dims/brightens
+3. Portrait / Landscape — HMI restarts; `ps`/`tr` confirms `-o portrait_up` or `landscape_left`
+
+On first ALSA bring-up, check amp enable and mixer control (`amixer scontrols`) if silent.

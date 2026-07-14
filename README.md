@@ -320,7 +320,8 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | 阶段 | 运行时依赖 | P1 `build-runtime-deps` | 仍在本阶段做的（不是装包） |
 |------|------------|-----------------|----------------------------|
 | P1 | flutter、RKNPU2、Wi‑Fi/BT、GPU | ✓ | Hello World、hmi 自启 |
-| P2 | libmodbus | ✓ platform-packages | Modbus/GPIO App demo |
+| P2 | libmodbus | ✓ platform-packages | Modbus/GPIO App demo（✅ 已完成） |
+| P2.1 | ALSA/音频（按需）、eth0 脚本 | 音频包按需开 | 喇叭 / Wi‑Fi / BT / IPC / 触控 / 背光 **硬件 smoke** |
 | P3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** 工程与 smoke |
 | P3.5 | flutter SDK + engine + flutter-pi **三件套升级** | 重编 prebuilt | P4 前；见 [`docs/flutter-pi-hmi-plan.md` §6.5](docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p35) |
 | P4 | — | — | frost_ui / frost_ime 子模块 |
@@ -328,7 +329,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 
 Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`；P5 保留 `render-mediamtx-config.sh`（`mediamtx.service` ExecStartPre）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** `systemctl start`）由 Flutter App 内 `MediaMtxRelayCoordinator` / platform channel 触发，不再打包 shell stub。
 
-仍待移植：**lensinspector 源码**、`probe-dual-stream.sh`、完整 mediamtx YAML 渲染逻辑、eth0 配网（Dart 移植 lws-ui `CameraEth0Configurator`）。
+仍待移植：**lensinspector 源码**、`probe-dual-stream.sh`、完整 mediamtx YAML 渲染逻辑、eth0 配网（Dart/脚本移植 lws-ui `CameraEth0Configurator`，**P2.1** 优先脚本联调）。
 
 ### Git LFS (recommended)
 

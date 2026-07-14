@@ -52,6 +52,16 @@ void main() {
     expect(find.text('Steady'), findsWidgets);
     expect(find.text('Blink'), findsWidgets);
     expect(find.text('Off'), findsWidgets);
+
+    await tester.scrollUntilVisible(find.text('Speaker'), 200);
+    expect(find.text('Play'), findsOneWidget);
+    expect(find.textContaining('Volume:'), findsOneWidget);
+
+    await tester.scrollUntilVisible(find.text('Portrait'), 300);
+    expect(find.text('Portrait'), findsOneWidget);
+    expect(find.text('Landscape'), findsOneWidget);
+    expect(find.textContaining('Brightness:'), findsOneWidget);
+    expect(find.textContaining('Volume:'), findsWidgets);
   });
 
   testWidgets('app demo shows Device Information title', (WidgetTester tester) async {

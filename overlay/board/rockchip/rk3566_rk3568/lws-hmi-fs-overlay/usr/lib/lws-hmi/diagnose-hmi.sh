@@ -31,4 +31,5 @@ ls -la /usr/share/flutter/icudtl.dat /usr/share/flutter/release/data/icudtl.dat 
 echo ""
 echo "--- manual smoke (foreground, Ctrl+C to stop) ---"
 echo "  systemctl stop hmi.service"
-echo "  /usr/bin/flutter-pi --release -o landscape_left /opt/hmi"
+	echo "  /usr/bin/flutter-pi --release -o landscape_left /opt/hmi"
+	echo "  (or portrait_up if /var/lib/lws-hmi/display-orientation is portrait)"

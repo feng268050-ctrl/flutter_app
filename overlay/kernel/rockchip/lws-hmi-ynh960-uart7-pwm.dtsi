@@ -1,0 +1,8 @@
+// ynh960: EVB leaves uart7m1 on gpio3 PC4/PC5 (gpio3-20/21). Customer LED PWMs
+// pwm14/pwm15 use the same pads in m0 mode → pinctrl conflict:
+//   "pin gpio3-20 already requested by fe6b0000.serial; cannot claim for fe700020.pwm"
+// uart7 is unused by the HMI (Modbus is uart5 / ttyS5). Disable it so pwm14/15 can probe.
+// Panel backlight uses pwm4 (gpio0 PC3) and is unaffected by this conflict.
+&uart7 {
+	status = "disabled";
+};

@@ -1,6 +1,6 @@
 # Flutter-pi HMI 规划（ynh960 产品线 · RK3566 基准）
 
-目标：在现有 **lws-hmi** Buildroot 基线上，用 **flutter-pi** 全屏跑 Flutter UI；按 **P1→P6** 增量交付：**P1** 镜像 + Hello World → **P1.5** 设备调试与快速 UI 迭代 → **P2** Modbus/GPIO（Linux 真机） → **P2.5** 模拟器与 Android 兼容 → **P3** `libai.so` → **P4** FrostUI + IME 子模块 → **P5** 全量业务 → **P6** OTA。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块。
+目标：在现有 **lws-hmi** Buildroot 基线上，用 **flutter-pi** 全屏跑 Flutter UI；按 **P1→P6** 增量交付：**P1** 镜像 + Hello World → **P1.5** 设备调试与快速 UI 迭代 → **P2** Modbus/GPIO（Linux 真机） → **P2.1** 板级 I/O 与外设验证 → **P2.5** 模拟器与 Android 兼容 → **P3** `libai.so` → **P4** FrostUI + IME 子模块 → **P5** 全量业务 → **P6** OTA。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块。
 
 **能力原则**：**lws-hmi 产品能力不少于 lws-ui**；Linux 主线将 Android/Java 平台层替换为 **Buildroot + flutter-pi + Dart/FFI**，**P2.5** 起保留旧 Android 产品兼容构建；算法、拓扑、模型与 API 契约尽量复用。逐项对照见 **§11.5**。
 
@@ -14,7 +14,8 @@
 |------|------|------|
 | **P1 — 平台镜像 + Hello World** | Buildroot **Linux 镜像**（含后续所需的 **平台必须组件**）+ splash → **`flutter-pi` Hello World** | ✅ |
 | **P1.5 — 设备调试 + 快速 UI 迭代** | `make debug-app` 在**真机**上以调试模式启动 App；VSCode / Cursor Flutter 插件接入；为快速 UI 迭代铺路 | ✅ |
-| **P2 — Modbus + GPIO** | 迁移 **Modbus RTU** 与 **GPIO 管理**；Linux 真机验证读设备与下位机信息、**三色指示灯**（红/黄/绿）正常控制 | 🔲 |
+| **P2 — Modbus + GPIO** | 迁移 **Modbus RTU** 与 **GPIO 管理**；Linux 真机验证读设备与下位机信息、**三色指示灯**（红/黄/绿）正常控制 | ✅ |
+| **P2.1 — 板级 I/O 与外设验证** | 喇叭 / Wi‑Fi / BT / IPC 相机链路等 **硬件 I/O 前置验证**；顺带收口触控、串口/引脚映射、背光等（见 **§1.1**）；**不做** 产品设置页 / MediaMTX / Flutter 预览（仍属 P5） | 🔲 |
 | **P2.5 — 模拟器与 Android 兼容** | **`make emulator`**（Linux HMI 模拟器）；**`make android-emulator`**（参考 lws-ui `make emulator`）；Modbus Android 兼容；GPIO **共用** `gpio_innohi`（YNHAPI 仅降级，§11.0）；Flutter App 可打包 **APK** | 🔲 |
 | **P3 — AI 原生库** | 迁移 lws-ui **AI 代码库**；新工程打出 **`libai.so`**（+ RKNN/`config.yaml`） | 🔲 |
 | **P3.5 — Flutter 平台升级（P4 前置）** | 将板端 **flutter-engine / SDK / flutter-pi** 从 P1 pin **升级到上游支持的 stable**（见 **§6.4**）；ynh960 全量回归 | 🔲 |
@@ -41,12 +42,23 @@ P1.5  设备调试 + 快速 UI 迭代
     ├─ VSCode / Cursor Flutter 插件接入
     └─ make push-app：实体板 USB-SSH 快速替换 release/debug bundle
 
-P2  Modbus + GPIO（Linux 真机）
+P2  Modbus + GPIO（Linux 真机）✅
     ├─ 迁移 Modbus RTU 与 GPIO 管理程序
     ├─ Modbus：flutter_libserialport；Linux `/dev/ttyS5` 与 lws-ui 寄存器契约
     ├─ GPIO：统一契约 = Innohi `gpio_innohi` 标签（红 GPIO_5 / 黄 GPIO_4 / 绿 GPIO_7）
     ├─ GPIO：直接读写 `/sys/class/gpio_innohi/GPIO_N/value`（不用 YNHAPI 0-based 下标当脚号）
     └─ App demo：读设备与下位机信息；控制三色状态灯（红/黄/绿）
+
+P2.1  板级 I/O 与外设验证（硬件前置）
+    ├─ 动机：P2 暴露串口/引脚对不上、触摸驱动 BUG、UART pinmux vs gmac 等；原计划散落在 P5 的外设先打通
+    ├─ 喇叭 / 本机音频：ALSA + codec + 功放；`aplay` / speaker-test 出声（Buildroot 开最小音频栈）
+    ├─ Wi‑Fi：模组固件 + `wpa_supplicant` 关联客户 AP；ping 网关（shell/`wpa_cli`，无设置页）
+    ├─ 蓝牙：hci0 up + `bluetoothctl` scan / 按需配对 smoke（无设置页；bluetoothd 仍按需启）
+    ├─ IPC 相机链路：`configure-camera-eth0.sh` → ping IPC → PR0/PR1 RTSP DESCRIBE smoke
+    │     （不做 MediaMTX 编排、不做 Flutter 预览 — 仍属 P5.1）
+    ├─ 触控：Goodix / libinput 稳定；坐标与屏旋转一致（收口 P2 期间已修项）
+    ├─ 串口 / GPIO / pinmux 台账：固化 ttyS5、gpio_innohi 标签、own-gpio↔gmac 冲突结论
+    └─ 背光：powermanager / sysfs 亮度可调 smoke
 
 P2.5  模拟器与 Android 兼容
     ├─ make emulator：构建并启动 Linux 虚拟机，加载 rootfs.img 跑 Linux App
@@ -88,7 +100,7 @@ P6  OTA
     └─ Android：保持兼容；延续 app 更新（build-apk / push-apk）
 ```
 
-**依赖**：`P1 → P1.5 → P2 → P2.5 → P3` 建议顺序固定；**P1.5** 先在真机打通调试模式与 IDE 插件，为快速 UI 迭代铺路；**P2** 在 Linux 真机验证 Modbus/GPIO；**P2.5** 再补模拟器与 Android 双目标；**P3.5** 在 P3 板端 smoke 通过后、**P4 开工前**完成（FrostUI/IME 子模块常需更高 Dart/Flutter）；**P4** 可与 P3 并行筹备子模块仓库，但 **合并主 App 前须完成 P3.5**；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（**P5.1 视频** 为多数后续子阶段前置）；**P6** 在 P5 业务基本就绪后交付量产 OTA（可与 P5 后期并行筹备分区与升级链路）。
+**依赖**：`P1 → P1.5 → P2 → P2.1 → P2.5 → P3` 建议顺序固定；**P1.5** 先在真机打通调试模式与 IDE 插件；**P2** 验证 Modbus/GPIO；**P2.1** 把喇叭 / Wi‑Fi / BT / IPC / 触控等 **板级 I/O 先验证完**（避免硬件坑拖到 P5）；**P2.5** 再补模拟器与 Android 双目标；**P3.5** 在 P3 板端 smoke 通过后、**P4 开工前**完成（FrostUI/IME 子模块常需更高 Dart/Flutter）；**P4** 可与 P3 并行筹备子模块仓库，但 **合并主 App 前须完成 P3.5**；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（**P5.1 视频** 为多数后续子阶段前置，且假定 **P2.1** 已通 eth0↔IPC）；**P6** 在 P5 业务基本就绪后交付量产 OTA（可与 P5 后期并行筹备分区与升级链路）。
 
 ### 1.2 P5 子阶段（业务迁移）
 
@@ -96,8 +108,8 @@ P5 体量大，拆为 **P5.1～P5.7** 增量交付。**不能**仅按 `openspec/
 
 | 子阶段 | 交付 | 主要对照（lws-ui **实装**） | 不在本阶段 |
 |--------|------|------------------------------|------------|
-| **P5.1 视频与 MediaMTX** | mediamtx、GStreamer/MPP、flutter-pi video；PR0/PR1 relay 与预览 smoke；`model.properties` / YAML 渲染 | `MediaMtxRelayCoordinator`、`MediaMtxConfigRenderer`；`docs/dual-stream-summary.md` | 完整 Monitor UI、AI 叠框 |
-| **P5.2 网络与状态栏** | `configure-camera-eth0.sh`；§7.0 异步配网 + **状态栏**；Wi‑Fi / 蓝牙设置页 | `CameraEth0Configurator`、`WifiActivity`、`BluetoothManagerActivity`；`docs/camera-eth0-topology.md` | 云 WS、:5580 业务 API |
+| **P5.1 视频与 MediaMTX** | mediamtx、GStreamer/MPP、flutter-pi video；PR0/PR1 relay 与预览 smoke；`model.properties` / YAML 渲染 | `MediaMtxRelayCoordinator`、`MediaMtxConfigRenderer`；`docs/dual-stream-summary.md` | 完整 Monitor UI、AI 叠框；**eth0/IPC 硬件连通**（已在 **P2.1**） |
+| **P5.2 网络与状态栏** | §7.0 异步配网编排 + **状态栏**；Wi‑Fi / 蓝牙**设置页**（产品 UI） | `WifiActivity`、`BluetoothManagerActivity`；复用 **P2.1** 已验证的 wpa/BlueZ / eth0 脚本 | 云 WS、:5580 业务 API；**驱动/出声/关联 AP 本身**（已在 **P2.1**） |
 | **P5.3 AI 产品接入** | `libai.so` FFI；PR1 取流 + 预览叠框；镜片/零点/告警与 native 契约 | `AiManager`、`NativeBridge`；`docs/AI_VISION_*`、`native/lensinspector/docs/*` | 全量 Quick/Engineer 页 |
 | **P5.4 本地 HTTP 与数据** | **:5580** `shelf`；sqlite / 工艺库；Avahi；Modbus **量产**逻辑（扩 P2 demo） | NanoHTTPd 路由、`network-api-reference.md`；Room / 工艺库 XLSX | 云上传、OTA |
 | **P5.5 云与远程** | WebSocket；R2/S3 上传；远程锁/快照/视频列表等 | `docs/device-websocket-migration.md`、`docs/upload-summary.md` | 全部 Settings 子页 |
@@ -107,6 +119,8 @@ P5 体量大，拆为 **P5.1～P5.7** 增量交付。**不能**仅按 `openspec/
 **建议依赖**（可并行处标注）：
 
 ```text
+P2.1 ──→ P5.1（IPC eth0 / RTSP 硬件已通，再上 MediaMTX + 预览）
+P2.1 ──→ P5.2（wpa / BlueZ / eth0 脚本已通，再上设置页与状态栏）
 P5.1 ──→ P5.3（AI 需 relay 取流）
 P5.1 ──→ P5.6 中依赖预览的页面
 P5.2 ──↗（与 P5.1 可并行启动；Monitor/云前需 eth0/wlan0 就绪）
@@ -223,7 +237,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 | `multimedia/gst/camera.config` | 同上 |
 | `tools/benchmark.config` | glmark2 / lmbench / unixbench 等压测演示 |
 | `tools/test.config` | Rockchip 测试包 |
-| `multimedia/gst/audio.config` | P1 无音频；P5 按需再加 |
+| `multimedia/gst/audio.config` | P1 无音频；**P2.1** 开最小 ALSA / 喇叭验证；P5 再按业务扩展 |
 | `bus/can.config` / `bus/pci.config` | 按硬件裁剪 |
 | `fs/ntfs.config` / `fs/exfat.config` | U 盘场景不需要可删 |
 
@@ -241,7 +255,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 |------------|-------------------|
 | GStreamer / MPP | `make build-gstreamer` + defconfig `lws_hmi_gst_rtsp.config` |
 | mediamtx | `make build-mediamtx` + fs-overlay `usr/bin/` |
-| 串口 / GPIO 平台适配 | P2 / P2.5 App 层；`/dev/ttyS5` + `gpio_innohi` 文件后端双端统一；P2.5 Android 其它平台能力可继续用 `YNHAPI.jar` |
+| 串口 / GPIO 平台适配 | P2 / P2.1 / P2.5；`/dev/ttyS5` + `gpio_innohi`；P2.1 固化 pinmux 台账；P2.5 Android 非 GPIO 能力可继续用 `YNHAPI.jar` |
 | OpenCV / yaml-cpp | `fetch-opencv*` + platform `yaml-cpp` |
 | Avahi / sqlite | `build-platform-packages` |
 
@@ -265,15 +279,18 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 
 ### 3.4 Buildroot — **新增 / 分阶段合入**
 
-| 组件 | P1 | P2 | P3 | P4 | P5 | 说明 |
-|------|----|----|----|----|-----|------|
-| **flutter-pi** + Mali/libdrm | ✓ | | | | | P1 Hello World；**P3.5** engine/SDK/pi 三件套升级 |
-| **RKNPU2 运行时**（无 example） | ✓ | | ✓ | | | P1 编入 rootfs；P3 用 |
-| **wifibt** 栈 | ✓ | | | | ✓ | 驱动/daemon；业务配网 UI 在 P5 |
-| **GStreamer + MPP + mediamtx** | ✓ prep | | | | ✓ use | P1 备好；P5.1 开预览/relay |
-| **串口 / GPIO 平台适配** | | ✓ use | | | ✓ | P2：`ttyS5` + `gpio_innohi`；P2.5：双端同后端（§11.0）；P5 复用 |
-| **OpenCV / yaml-cpp** | ✓ prep | | ✓ use | | | opencv `.cache/` + yaml-cpp BR |
-| **Avahi / sqlite 等** | ✓ prep | | | | ✓ use | P1 `build-platform-packages` |
+| 组件 | P1 | P2 | P2.1 | P3 | P4 | P5 | 说明 |
+|------|----|----|------|----|----|-----|------|
+| **flutter-pi** + Mali/libdrm | ✓ | | | | | | P1 Hello World；**P3.5** engine/SDK/pi 三件套升级 |
+| **RKNPU2 运行时**（无 example） | ✓ | | | ✓ | | | P1 编入 rootfs；P3 用 |
+| **wifibt** 栈 | ✓ | | ✓ use | | | ✓ UI | 驱动/daemon；**P2.1** 关联/扫描 smoke；**P5.2** 设置页 |
+| **本机音频 / 喇叭** | | | ✓ | | | ✓ | **P2.1**：ALSA + codec 出声；P5 业务提示音/媒体 |
+| **触控 / libinput** | ✓ | | ✓ fix | | | | P1 起可用；**P2.1** 收口驱动与坐标 |
+| **GStreamer + MPP + mediamtx** | ✓ prep | | | | | ✓ use | P1 备好；**P2.1** 可仅用 RTSP DESCRIBE；P5.1 开预览/relay |
+| **eth0 ↔ IPC 配址** | | | ✓ | | | ✓ | **P2.1**：`configure-camera-eth0.sh` + ping；P5.1 再绑 MediaMTX |
+| **串口 / GPIO 平台适配** | | ✓ use | ✓ doc | | | ✓ | P2 demo；**P2.1** 台账/pinmux 收口；P2.5 双端；P5 量产 |
+| **OpenCV / yaml-cpp** | ✓ prep | | | ✓ use | | | opencv `.cache/` + yaml-cpp BR |
+| **Avahi / sqlite 等** | ✓ prep | | | | | ✓ use | P1 `build-platform-packages` |
 
 Hello World 与后续 App **不放进 Buildroot 编译**；开发机交叉编译后 overlay 或 **oem** 部署（见 §6）。
 
@@ -771,8 +788,9 @@ Buildroot **不要**为 eth0 配 `systemd-networkd` 静态地址或 `dhcpcd`；�
 
 | 阶段 | eth0 要求 |
 |------|-----------|
-| **P1～P2** | 无业务要求；P1 仅需内核驱动、`ip link` 能 up |
-| **P5** | 跑 **`configure-camera-eth0.sh`** → **`ping -I eth0 <camera_ip>` 成功** 后再 `systemctl start mediamtx.service`；探测 `/PR0` `/PR1` 经本地 relay |
+| **P1～P2** | 内核驱动、`ip link` 能 up；无业务配址要求 |
+| **P2.1** | 跑 **`configure-camera-eth0.sh`** → **`ping -I eth0 <camera_ip>`**；可选对 IPC `/PR0` `/PR1` 做 RTSP **DESCRIBE**（无 MediaMTX 亦可） |
+| **P5** | 复用 P2.1 脚本；**IPC ping 通** 后再 `systemctl start mediamtx.service`；经本地 relay 取流 |
 
 | 组件 | 说明 |
 |------|------|
@@ -787,7 +805,7 @@ Buildroot **不要**为 eth0 配 `systemd-networkd` 静态地址或 `dhcpcd`；�
 | `BR2_PACKAGE_RKWIFIBT` | Rockchip 打包 Wi‑Fi/BT **固件与 ko**（`bt.config`） |
 | SDK `RK_WIFIBT=y` | `./build.sh` 后处理会把对应模块装进 rootfs |
 
-**P1 验证**：`wpa_cli status`、`ping` 网关/IPC（若 IPC 走无线则测 RTSP URL）。
+**P1 验证（栈存在）**：`wpa_cli status` 能跑。**P2.1 验收（真机联调）**：选定模组固件 → 关联客户 AP → `ping` 网关；失败则查 DTS / `rkwifibt` / RF 天线后再进 P5 UI。
 
 Flutter 侧后续可用 **`wifi_iot`** 等插件或 **platform channel** 调 `wpa_supplicant`/`nmcli`（Buildroot 默认无 NetworkManager，需自研或用 shell/DBus 封 BlueZ/wpa）。
 
@@ -799,7 +817,7 @@ Flutter 侧后续可用 **`wifi_iot`** 等插件或 **platform channel** 调 `wp
 | `BR2_PACKAGE_RKWIFIBT_APP` | Rockchip 配套用户态工具/脚本 |
 | `BR2_PACKAGE_BLUEZ_ALSA` | 蓝牙音频（若 HMI 要播 BT 音频则保留；纯数据 BLE 可后续再裁） |
 
-**P1 验证**：`hciconfig`、`bluetoothctl scan on`（需 `rkwifibt` 固件与 DTS 中 BT 节点正确）。
+**P1 验证（栈存在）**：`hciconfig` / `bluetoothctl` 可用。**P2.1 验收（真机联调）**：`hci0` up → `bluetoothctl scan on`；按产品需要再测配对（功放/喇叭走本机 ALSA，与 BT 音频解耦）。
 
 ### 7.4 相机双码流 PR0 / PR1（硬约束，对齐 lws-ui）
 
@@ -812,7 +830,7 @@ IPC 通过 **eth0 直连**（见 lws-ui `docs/camera-eth0-topology.md`），出�
 
 平板 eth0 须与 IPC 同网段且 **≠ 摄像头 IP**、**≠ wlan0 IP**（地址规划逻辑同 lws-ui `CameraEth0AddressPlanner`）。
 
-**P5 验证**：`scripts/device-network/probe-dual-stream.sh`（可自 lws-ui 移植）对 `/PR0`、`/PR1` 做 `DESCRIBE 200 OK`。
+**阶段分工**：**P2.1** 先验证 eth0 配址 + ping +（可选）直连 IPC 的 RTSP DESCRIBE；**P5.1** 再上 MediaMTX relay 与 Flutter 预览。`scripts/device-network/probe-dual-stream.sh`（可自 lws-ui 移植）可先在 P2.1 对原始 IPC URL 或本地 relay 二选一探测。
 
 ### 7.5 MediaMTX 系统服务（P5 必需）
 
@@ -1028,7 +1046,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | GPU | 使用 **Mali** 而非 Mesa VC4；Buildroot 选 `BR2_PACKAGE_ROCKCHIP_MALI` |
 | 编译 | 在 Buildroot 添加 `flutter-pi` package，或 SDK 外挂 `external/` |
 | Flutter Engine | **P1～P3** pin **3.24.4**（与 SDK、flutter-pi commit 对齐）；**P3.5** 升至上游 supported stable（§6.5）；`libapp.so` 与 `libflutter_engine.so` **必须同版本** |
-| 触摸 | libinput；与各板 DTS input 节点确认 |
+| 触摸 | libinput；**P2.1** 与各板 DTS input 节点、旋转/坐标映射一并验收（P2 期间已见 Goodix 等问题） |
 | 调试 | **串口** `ttyFIQ0`（默认）；远程 **§7.7** 隐藏入口后再 `ssh`（同一镜像） |
 
 建议 **P1** 在 Buildroot 中 **只打包 flutter-pi 二进制**，Hello World 在 CI/开发机交叉编译后 overlay 打入 rootfs。
@@ -1051,17 +1069,18 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **待增** `buildroot/configs/rockchip/rk3566_rk3568_lws_hmi_defconfig` | 合入 SDK 后生效 |
 | **待增** `buildroot/package/flutter-pi/` 或 external | flutter-pi 打包 |
 | **待增** `native/` 或独立 repo | **P3** `libai.so`（对齐 `lws-ui/native/lensinspector`） |
-| **待增** `app/` 或独立 repo | Flutter 工程（P1 Hello World → P2 demo → P5 业务） |
+| **待增** `app/` 或独立 repo | Flutter 工程（P1 Hello World → P2 demo → P2.1 I/O smoke 辅助 → P5 业务） |
 | **待增** `packages/frost_ui/`（**git submodule**） | **P4** FrostUI（§6.3） |
 | **待增** `packages/frost_ime/`（**git submodule**） | **P4** IME（对齐 lws-ui `IME.md`） |
 | **待增** `buildroot/configs/rockchip/chips/lws_hmi_mediamtx.config` | **P5** mediamtx 二进制 |
 | **已有** `overlay/.../lws-hmi-fs-overlay/etc/systemd/system/hmi.service` | P1 enable（§3.6.4） |
 | **已有** `overlay/.../mediamtx.service` | P5；**默认 disable** |
 | **已有** `overlay/.../post-hooks/06-lws-hmi-systemd.sh` | enable hmi / disable 非关键 unit |
-| **待增** `scripts/configure-camera-eth0.sh` | **P5** 运行时 eth0 配址（自 lws-ui 移植） |
-| **待增** `scripts/build-mediamtx.sh` | **P5** linux/arm64 交叉编译 |
-| **待增** P2：串口 + GPIO demo | `flutter_libserialport`、`/dev/ttyS5`、`gpio_innohi` 三色灯（`GPIO_5/4/7`，§11.0） |
+| **已有** P2：串口 + GPIO demo | `flutter_libserialport`、`/dev/ttyS5`、`gpio_innohi` 三色灯（`GPIO_5/4/7`，§11.0）；OpenSpec 已归档 `2026-07-14-p2-modbus-gpio` |
+| **待增** P2.1：喇叭 / Wi‑Fi / BT / IPC / 触控 / 背光 smoke | 最小 ALSA；`configure-camera-eth0.sh`；wpa/BlueZ 联调；I/O 台账文档；**非** 产品 UI |
 | **待增** P2.5：Android 兼容 | `gpio_innohi` 双端 GPIO、`YNHAPI.jar`（非 GPIO 平台能力）、`make emulator` / `make android-emulator`、APK 构建 |
+| **待增** `scripts/configure-camera-eth0.sh` | **P2.1** 起 runtime eth0 配址（自 lws-ui 移植）；P5.1 复用 |
+| **待增** `scripts/build-mediamtx.sh` | **P5** linux/arm64 交叉编译 |
 | **待增** `scripts/enable-ssh-debug.sh` | **P5** 隐藏入口 / `POST /v1/ssh` |
 | **待增** overlay：`sshd` disabled by default | 生产默认不监听 |
 | **待增** `docs/` 本文 | 规划 |
@@ -1073,9 +1092,10 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 
 **lws-ui** 为 Android priv-app（Java/Kotlin + JNI），**lws-hmi** 主线为 Buildroot + flutter-pi，**P2.5** 起保留旧 Android 产品兼容构建。主线不能搬 APK，而是：**复用算法、拓扑、模型流水线；替换 Linux 平台层；Flutter 重写 UI 与服务**。Android 兼容目标继续延续系统应用与 platform 签名，只用于旧产品支持。命名与文案见 **§11.6**；**P5 范围与 openspec 边界**见 **§11.7**。
 
-**P2 / P2.5 分工**：
+**P2 / P2.1 / P2.5 分工**：
 
-- **P2（Linux 真机）**：迁移 **Modbus RTU** 与 **GPIO 管理**；`flutter_libserialport` + **`/sys/class/gpio_innohi/GPIO_N`**；验证读设备与下位机信息、三色指示灯（红=`GPIO_5` / 黄=`GPIO_4` / 绿=`GPIO_7`）。
+- **P2（Linux 真机，已完成）**：迁移 **Modbus RTU** 与 **GPIO 管理**；`flutter_libserialport` + **`/sys/class/gpio_innohi/GPIO_N`**；验证读设备与下位机信息、三色指示灯（红=`GPIO_5` / 黄=`GPIO_4` / 绿=`GPIO_7`）。
+- **P2.1（板级 I/O 前置）**：喇叭 / Wi‑Fi / BT / IPC eth0·RTSP / 触控 / 背光 等 **硬件联调与 smoke**；固化串口·GPIO·pinmux 台账。**不做** 产品设置页、MediaMTX 编排、Flutter 预览。
 - **P2.5（模拟器 + Android）**：Flutter App 同时构建 **Linux bundle** 与 **Android APK**；`make emulator` / `make android-emulator`；Modbus Android 兼容（串口 chmod）；**GPIO 优先复用与 Linux 相同的 `gpio_innohi` 文件后端**（见下 **§11.0**）；`make version`、`make build-apk`、`make push-apk` 等。
 
 ### 11.0 GPIO / YNHAPI 策略（P2 → P2.5）
@@ -1108,10 +1128,11 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **mediamtx** | LAN `rtsp://设备:8554/camera/pr0\|pr1` 转发 | **P5** | **systemd 系统服务**；见 §7.5 |
 | **OpenCV** | `lensinspector` 预处理 / ROI | P3 | 或 static 链进 `libai.so` |
 | **yaml-cpp** | 原生读 `config.yaml` | P3 | 或 FFI 只暴露已解析结构 |
-| **ping / iproute2** | 相机连通性 | P5 | P1 busybox 可能够用 |
+| **ping / iproute2** | 相机连通性 | **P2.1** / P5 | P1 busybox 可能够用 |
 | **Avahi** | mDNS 发现 | P5 | |
 | **sqlite** | 本地告警 / 工艺库 | P5 | drift / isar |
 | **curl / ca-certificates** | 云同步、OTA | **P5 / P6** | 一般 `base.config` 已有 |
+| **ALSA / 本机音频** | 喇叭 smoke | **P2.1** | 最小音频栈；P5 业务音效再扩 |
 
 **Linux rootfs 仍不引入**（lws-ui 无等价需求或太臃肿）：Chromium、Weston、rkaiq、benchmark、`RKNPU2_EXAMPLE`；Android 专用 EasyDarwin AAR、Gradle 栈。**`YNHAPI.jar`（Innohi）** 仅进入 Android 兼容 APK，不进入 Buildroot rootfs；GPIO **不依赖** jar 进入 Linux。
 
@@ -1133,7 +1154,7 @@ wlan0 ←─Wi‑Fi─→  客户路由（云 WebSocket、mDNS、LAN API :5580�
 
 Buildroot **P1** 应保证：
 
-1. **eth0 / wlan0 / BT**：驱动与 daemon 可用（**P5** 再跑配网脚本与业务 UI）
+1. **eth0 / wlan0 / BT**：驱动与 daemon **入镜像**（**P2.1** 真机联调；**P5.2** 产品设置页与状态栏）
 2. **Flutter 状态栏**：Wi‑Fi / 相机链路 **连接中动画** + 就绪/失败态（**P5** 产品 UI）
 
 **RTSP 规则**：
@@ -1149,7 +1170,8 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 |------|--------------|-------------|
 | **P1** | Linux 镜像 + Hello World | Splash / 占位 UI / 平台栈 |
 | **P1.5** | `debug-app`、IDE 插件（真机调试） | 模拟器、Android Studio / adb 闭环 |
-| **P2** | Linux 真机 Modbus / GPIO demo（设备信息、三色灯 `GPIO_5/4/7`） | Android APK、模拟器 |
+| **P2** | Linux 真机 Modbus / GPIO demo（设备信息、三色灯 `GPIO_5/4/7`） | Android APK 侧同能力 |
+| **P2.1** | 喇叭 / Wi‑Fi / BT / IPC eth0·RTSP / 触控 / 背光 **硬件 smoke** | Android 侧同硬件链路；**不含** 设置页 / EasyPlayer |
 | **P2.5** | Linux + Android 双目标；`emulator` / `android-emulator`；APK 构建与推送 | Modbus 串口 chmod；GPIO **共用** `gpio_innohi` 后端（YNHAPI GPIO 降级）；其它平台 API 可对照 `YNHAPI.jar` / `LedIndicatorManager`；版本号与 APK 签名 |
 | **P3** | `libai.so` + RKNN/`config.yaml` | `NativeBridge` / `lensinspector` / `AiManager`（原生层） |
 | **P4** | **`frost_ui` + `frost_ime`** 子模块 | FrostUI、`IME.md` / frostui specs |
@@ -1178,12 +1200,14 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | Frost 毛玻璃 / backdrop blur | **`FrostCard` / `FrostDialog` / `FrostModal`**（**`packages/frost_ui`**）；默认 **frozen**；盖首页动图弹窗按需 **`liveWhileOpen`**（§6.3） | **P4** | ✓ |
 | **IME** 软键盘 overlay | **`packages/frost_ime`**（对齐 lws-ui `IME.md`） | **P4** | ✓ |
 | 显示 / MIPI 旋转 + **boot splash** | flutter-pi DRM + LCD overlay + **U-Boot/内核 logo**（§5.2） | **P1** | ✓ |
-| eth0 直连 IPC、`/PR0` `/PR1` | 同拓扑 + `probe-dual-stream.sh` | **P5** | ✓ §7.4 |
-| eth0 动态配址 / 重配 | `configure-camera-eth0.sh`（等价 `setCameraNetworkSegment`） | **P5** | ✓ §7.1 |
-| Wi‑Fi 连客户 AP | `wpa_supplicant` + Flutter 设置页 | P1 栈 / **P5** UI | ✓ |
-| 蓝牙配对 / 管理 | BlueZ + `bluetoothctl` + Flutter 设置页 | P1 栈 / **P5** UI | ✓ |
-| 相机连通性状态 | ping / Camera Comm Status | **P5** | ✓ §11.1 |
-| RTSP 预览 | GStreamer + flutter-pi video → `127.0.0.1:8554/camera/pr0` | **P5** | ✓ |
+| eth0 直连 IPC、`/PR0` `/PR1` | 同拓扑 + `probe-dual-stream.sh` | **P2.1** 连通 / **P5.1** relay | ✓ §7.4 |
+| eth0 动态配址 / 重配 | `configure-camera-eth0.sh`（等价 `setCameraNetworkSegment`） | **P2.1** / P5 复用 | ✓ §7.1 |
+| Wi‑Fi 连客户 AP | `wpa_supplicant` + Flutter 设置页 | **P2.1** 关联 smoke / **P5.2** UI | ✓ |
+| 蓝牙配对 / 管理 | BlueZ + `bluetoothctl` + Flutter 设置页 | **P2.1** scan smoke / **P5.2** UI | ✓ |
+| 相机连通性状态 | ping / Camera Comm Status | **P2.1** ping / **P5** 状态栏 | ✓ §11.1 |
+| RTSP 预览 | GStreamer + flutter-pi video → `127.0.0.1:8554/camera/pr0` | **P5.1**（P2.1 可 DESCRIBE 原始 IPC） | ✓ |
+| 本机喇叭 / 提示音 | ALSA + codec | **P2.1** 出声 / **P5** 业务音效 | ✓ |
+| 触控 | libinput + 板级 DTS | **P2.1** 收口 | ✓ §9 |
 | **PR0 录像** | GStreamer 等从 relay 写文件（同 lws-ui 主流录制） | **P5** | ✓ §12 P5 |
 | **PR1 推理取流** | `127.0.0.1:8554/camera/pr1` → **`libai.so`** | P3 so / **P5** UI | ✓ |
 | MediaMTX LAN 转发 | **mediamtx.service** `:8554/camera/pr0\|pr1` | **P5** | ✓ §7.5 |
@@ -1201,9 +1225,9 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | Room 本地库 | **sqlite** + drift / isar | **P5** | ✓ |
 | AWS S3 / **R2 上传** | Dart REST + 签名 | **P5** | ✓ §12 P5 |
 | APK / priv-app OTA | Linux（**P6**）：A/B 分区 + app-only / 全系统 `update.img`；旧 Android：沿用系统应用 + platform 签名，`push-apk` 只做 `pm install` | **P2.5 / P6** | ✓ |
-| `model.properties` 动态相机 IP | key 兼容 lws-ui；Linux 目录待实现确认（候选 `/oem/etc/model.properties`）+ `render-mediamtx-config.sh` | **P2 / P5** | ✓ §7.5 |
+| `model.properties` 动态相机 IP | key 兼容 lws-ui；Linux 目录待实现确认（候选 `/oem/etc/model.properties`）+ `render-mediamtx-config.sh` | **P2.1** eth0 / **P5.1** mediamtx | ✓ §7.5 |
 | 远程调试 | **sshd 按需**（5 连击 / `POST /v1/ssh`） | **P5** | ✓ §7.7 |
-| 背光 / 电源 | `powermanager.config`（Buildroot 保留） | **P1** | ✓ §3.3 |
+| 背光 / 电源 | `powermanager.config`（Buildroot 保留） | **P1** 入栈 / **P2.1** 亮度 smoke | ✓ §3.3 |
 | Chromium / Weston / rkaiq | **不引入**（无 lws-ui 等价需求） | — | ✓ 有意省略 |
 
 **结论**：按前文 lws-ui 分析，**无能力缺口**；主线差异为 **实现栈**（Android → Linux + Flutter）与 **MediaMTX 部署方式**（APK 子进程 → systemd），**P2.5** 另保留旧 Android 产品 APK 兼容构建。
@@ -1294,14 +1318,30 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 ### P2 — Modbus + GPIO（Linux 真机）
 
-OpenSpec change：[`openspec/changes/p2-modbus-gpio/`](../openspec/changes/p2-modbus-gpio/)（proposal / design / specs / tasks）。
+**P2 封板（ynh960）：2026-07-14，`996352a` — OpenSpec `p2-modbus-gpio` 已归档并同步主 specs；`openspec/changes/archive/2026-07-14-p2-modbus-gpio/`。**
 
-- [ ] 迁移 **Modbus RTU** 与 **GPIO 管理**程序（迁移时修正拼写，如 `Filed`→`Field`；计划旧称 “Modbus-MTU” 一律按 RTU）
-- [ ] Modbus：统一 **`flutter_libserialport`**；文档化 Linux `/dev/ttyS5` 与 lws-ui 寄存器契约
-- [ ] GPIO：直写 `/sys/class/gpio_innohi/GPIO_N`（契约红=`GPIO_5` / 黄=`GPIO_4` / 绿=`GPIO_7`；见 §11.0）
-- [ ] App：**读设备与下位机信息**（Device SN 来自 iSerial；其余来自 Modbus）
-- [ ] App：**三色状态灯 demo**（红/黄/绿；每色 Steady / Blink / Off 互斥）
-- [ ] 串口/日志验证 Modbus 时序与 lws-ui 一致；Linux 真机 smoke
+- [x] 迁移 **Modbus RTU** 与 **GPIO 管理**程序（迁移时修正拼写，如 `Filed`→`Field`；计划旧称 “Modbus-MTU” 一律按 RTU）
+- [x] Modbus：统一 **`flutter_libserialport`**（Linux 实测可用等效后端）；文档化 Linux `/dev/ttyS5` 与 lws-ui 寄存器契约
+- [x] GPIO：直写 `/sys/class/gpio_innohi/GPIO_N`（契约红=`GPIO_5` / 黄=`GPIO_4` / 绿=`GPIO_7`；见 §11.0）
+- [x] App：**读设备与下位机信息**（Device SN 来自 iSerial；其余来自 Modbus）
+- [x] App：**三色状态灯 demo**（红/黄/绿；每色 Steady / Blink / Off 互斥）
+- [x] 串口/日志验证 Modbus 时序与 lws-ui 一致；Linux 真机 smoke
+
+### P2.1 — 板级 I/O 与外设验证（硬件前置）
+
+**动机**：P2 联调暴露串口/引脚对不上、触摸驱动 BUG、UART pinmux 与 gmac 冲突等；原计划把喇叭 / Wi‑Fi / BT / IPC 等放到 P5 才做，风险过晚。本阶段先把 **设备输入输出与硬件相关能力** 在 Linux 真机上打通，再进入模拟器 / AI / 业务 UI。
+
+**边界**：平台栈、DTS、脚本、命令行 smoke。**不做** Flutter 产品设置页、状态栏、MediaMTX 编排、GStreamer 预览（仍属 P5.1 / P5.2）。
+
+- [x] **喇叭 / 本机音频**：Buildroot 最小 ALSA + codec（mpg123/`amixer`）；Demo Play/`shanghai_tan` + volume slider 真机出声与调音量 OK（`openspec/changes/p2-1-audio-backlight-rotation`）
+- [ ] **Wi‑Fi**：确认 `rkwifibt` 模组型号与固件；`wpa_supplicant` 关联客户 AP；`ping` 网关
+- [ ] **蓝牙**：`hci0` up；`bluetoothctl` scan；按产品需要做一次配对 smoke（设置页仍属 P5.2）
+- [ ] **IPC 相机链路**：移植并验证 `configure-camera-eth0.sh`；`ping -I eth0` 相机 IP；对 `/PR0` `/PR1` 做 RTSP DESCRIBE（可直连 IPC，无需 MediaMTX）
+- [ ] **触控**：Goodix / libinput 稳定点击与滑动；与屏旋转坐标一致（收口 P2 期间驱动修复）
+- [ ] **串口 / GPIO / pinmux 台账**：文档化 `ttyS5`、gpio_innohi 标签、own-gpio↔gmac 等踩坑结论，供量产与跨 SKU 参考
+- [x] **背光**：powermanager / sysfs 亮度可调 smoke — Demo 亮度 slider（`LinuxSysfsBacklight`）；板端路径名以设备实测为准
+- [x] **屏幕旋转**：Portrait / Landscape → `/var/lib/lws-hmi/display-orientation` + `hmi-launch.sh` `-o`；Demo 按钮组（真机切换需 HMI 重启）
+- [ ] （可选）简单硬件 check 页或 shell 脚本束（`verify-io`），便于刷机后一键 smoke — **非** 产品业务 UI
 
 ### P2.5 — 模拟器与 Android 兼容
 
@@ -1351,14 +1391,14 @@ OpenSpec change：[`openspec/changes/p2-modbus-gpio/`](../openspec/changes/p2-mo
 
 - [ ] Buildroot：**mediamtx** + `lws_hmi_gst_rtsp.config` + MPP；`mediamtx.service`（默认 disable）
 - [ ] `/oem/etc/model.properties` + `render-mediamtx-config.sh`
-- [ ] upstream `/PR0`、`/PR1`；本机 `127.0.0.1:8554/camera/pr0|pr1`
+- [ ] upstream `/PR0`、`/PR1`；本机 `127.0.0.1:8554/camera/pr0|pr1`（假定 **P2.1** eth0↔IPC 已通）
 - [ ] flutter-pi **video** 插件；预览 smoke；`probe-dual-stream.sh`
 
 #### P5.2 — 网络与状态栏
 
-- [ ] **`configure-camera-eth0.sh`**（移植 lws-ui）；首屏后异步（§7.0）
+- [ ] 复用 **P2.1** 的 `configure-camera-eth0.sh`；首屏后异步编排（§7.0）
 - [ ] **状态栏**：Wi‑Fi / eth0 相机链 / 云占位图标与动画
-- [ ] **WifiActivity** / **BluetoothManagerActivity** 等价设置页
+- [ ] **WifiActivity** / **BluetoothManagerActivity** 等价设置页（底层 wpa/BlueZ 已在 **P2.1** 验证）
 
 #### P5.3 — AI 产品接入
 
@@ -1397,7 +1437,7 @@ OpenSpec change：[`openspec/changes/p2-modbus-gpio/`](../openspec/changes/p2-mo
 
 ---
 
-## 13. 编译命令速查（P1 / P1.5 / P2 / P2.5）
+## 13. 编译命令速查（P1 / P1.5 / P2 / P2.1 / P2.5）
 
 ```bash
 # 1. 仍用 lws-hmi 环境
@@ -1419,8 +1459,15 @@ make flash
 make debug-app
 make push-app
 
-# 5. P2 Linux 真机 Modbus/GPIO 迭代
+# 5. P2 Linux 真机 Modbus/GPIO 迭代（已封板；回归用）
 make push-app
+
+# 5b. P2.1 板级 I/O（DTS / ALSA / wifibt / eth0 脚本变更后）
+make apply-overlay
+make build-kernel          # 若改 DTS / 音频 / 触控
+make build-rootfs          # 若改 fs-overlay / Buildroot 音频包
+make build-img
+make flash
 
 # 6. P2.5 Linux emulator
 make emulator

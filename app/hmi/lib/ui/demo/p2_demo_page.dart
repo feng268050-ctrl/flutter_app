@@ -6,19 +6,31 @@ import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/gpio/gpio_led_config.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+import 'package:lws_hmi/platform/audio/linux_media_audio_controller.dart';
+import 'package:lws_hmi/platform/audio/media_audio_controller.dart';
+import 'package:lws_hmi/platform/backlight/backlight_controller.dart';
+import 'package:lws_hmi/platform/backlight/linux_sysfs_backlight.dart';
+import 'package:lws_hmi/platform/display/display_orientation.dart';
+import 'package:lws_hmi/platform/display/linux_flutter_pi_orientation.dart';
 
-/// P2 home demo: device information + alarm sensor temps + RGB LED mode rows.
+/// P2 / P2.1 demo: device info, LEDs, speaker, backlight, orientation.
 class P2DemoPage extends StatefulWidget {
   const P2DemoPage({
     super.key,
     this.deviceSnReader = const DeviceSnReader(),
     this.modbusClient,
     this.ledController,
+    this.audioController,
+    this.backlightController,
+    this.orientationController,
   });
 
   final DeviceSnReader deviceSnReader;
   final ModbusRtuClient? modbusClient;
   final GpioLedController? ledController;
+  final MediaAudioController? audioController;
+  final BacklightController? backlightController;
+  final DisplayOrientationController? orientationController;
 
   @override
   State<P2DemoPage> createState() => _P2DemoPageState();
@@ -27,6 +39,9 @@ class P2DemoPage extends StatefulWidget {
 class _P2DemoPageState extends State<P2DemoPage> {
   late final ModbusRtuClient _modbus;
   late final GpioLedController _leds;
+  late final MediaAudioController _audio;
+  late final BacklightController _backlight;
+  late final DisplayOrientationController _orientation;
 
   String _deviceSn = kUnavailableDisplay;
   String _gunheadSn = kUnavailableDisplay;
@@ -43,11 +58,32 @@ class _P2DemoPageState extends State<P2DemoPage> {
     for (final c in LedColor.values) c: IndicatorMode.off,
   };
 
+  bool _audioPlaying = false;
+  double _volumePercent = 80;
+  double _brightnessPercent = 80;
+  DisplayOrientationMode _orientationMode = DisplayOrientationMode.landscape;
+
+  StreamSubscription<bool>? _playingSub;
+
+  // Brightness: latest-wins coalesce (same idea as AudioManager / backlight HAL).
+  bool _brightnessBusy = false;
+  int? _queuedBrightness;
+
   @override
   void initState() {
     super.initState();
     _modbus = widget.modbusClient ?? ModbusRtuClient();
     _leds = widget.ledController ?? GpioLedController();
+    _audio = widget.audioController ?? LinuxMediaAudioController();
+    _backlight = widget.backlightController ?? LinuxSysfsBacklight();
+    _orientation =
+        widget.orientationController ?? LinuxFlutterPiOrientation();
+    _playingSub = _audio.playing.listen((playing) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _audioPlaying = playing);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_loadAfterFirstFrame());
     });
@@ -81,6 +117,23 @@ class _P2DemoPageState extends State<P2DemoPage> {
       _protectiveMirrorTemperature = temps.protectiveMirrorTemperature;
       _collimatorTemperature = temps.collimatorTemperature;
     });
+
+    // P2.1 platform I/O — after Modbus so first paint already happened.
+    try {
+      final vol = await _audio.getVolumePercent();
+      final bri = await _backlight.getBrightnessPercent();
+      final ori = await _orientation.getPreferred();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _volumePercent = vol.toDouble();
+        _brightnessPercent = bri.toDouble();
+        _orientationMode = ori;
+      });
+    } catch (_) {
+      // Non-fatal: sliders keep defaults.
+    }
   }
 
   Future<void> _onLedMode(LedColor color, IndicatorMode mode) async {
@@ -88,8 +141,60 @@ class _P2DemoPageState extends State<P2DemoPage> {
     await _leds.setMode(color, mode);
   }
 
+  Future<void> _toggleAudio() async {
+    if (_audio.isPlaying || _audioPlaying) {
+      await _audio.stop();
+      return;
+    }
+    await _audio.playAsset(MediaAudioController.shanghaiTanAsset);
+  }
+
+  /// Slider paint is local; hardware gets latest-wins apply (OS-style).
+  void _onVolumeUi(double value) {
+    _volumePercent = value;
+    unawaited(_audio.setVolumePercent(value.round()));
+  }
+
+  void _onBrightnessUi(double value) {
+    _brightnessPercent = value;
+    _queuedBrightness = value.round();
+    unawaited(_drainBrightness());
+  }
+
+  Future<void> _drainBrightness() async {
+    if (_brightnessBusy) {
+      return;
+    }
+    _brightnessBusy = true;
+    try {
+      while (_queuedBrightness != null) {
+        final v = _queuedBrightness!;
+        _queuedBrightness = null;
+        await _backlight.setBrightnessPercent(v);
+      }
+    } finally {
+      _brightnessBusy = false;
+      if (_queuedBrightness != null) {
+        unawaited(_drainBrightness());
+      }
+    }
+  }
+
+  Future<void> _onOrientation(DisplayOrientationMode mode) async {
+    setState(() => _orientationMode = mode);
+    await _orientation.setPreferred(mode);
+  }
+
   @override
   void dispose() {
+    unawaited(_playingSub?.cancel() ?? Future<void>.value());
+    final bri = _queuedBrightness;
+    if (bri != null) {
+      unawaited(_backlight.setBrightnessPercent(bri));
+    }
+    unawaited(_audio.dispose());
+    unawaited(_backlight.dispose());
+    unawaited(_orientation.dispose());
     unawaited(_leds.dispose());
     unawaited(_modbus.close());
     super.dispose();
@@ -164,6 +269,93 @@ class _P2DemoPageState extends State<P2DemoPage> {
                 selected: _ledModes[color]!,
                 onSelected: (mode) => unawaited(_onLedMode(color, mode)),
               ),
+            const SizedBox(height: 24),
+            const Text(
+              'Speaker',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Track: shanghai_tan.mp3 (ALSA / mpg123)',
+              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton(
+                onPressed: () => unawaited(_toggleAudio()),
+                child: Text(_audioPlaying ? 'Stop' : 'Play'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _PercentSlider(
+              label: 'Volume',
+              value: _volumePercent,
+              onChanged: _onVolumeUi,
+              onChangeEnd: (v) {
+                _volumePercent = v;
+                unawaited(_audio.setVolumePercent(v.round()));
+              },
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Backlight',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _PercentSlider(
+              label: 'Brightness',
+              value: _brightnessPercent,
+              onChanged: _onBrightnessUi,
+              onChangeEnd: (v) {
+                _brightnessPercent = v;
+                _queuedBrightness = v.round();
+                unawaited(_drainBrightness());
+              },
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Orientation',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Applies via HMI restart (flutter-pi -o)',
+              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            SegmentedButton<DisplayOrientationMode>(
+              segments: const [
+                ButtonSegment(
+                  value: DisplayOrientationMode.portrait,
+                  label: Text('Portrait'),
+                ),
+                ButtonSegment(
+                  value: DisplayOrientationMode.landscape,
+                  label: Text('Landscape'),
+                ),
+              ],
+              selected: {_orientationMode},
+              onSelectionChanged: (set) {
+                if (set.isEmpty) {
+                  return;
+                }
+                unawaited(_onOrientation(set.first));
+              },
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -185,6 +377,72 @@ class _InfoRow extends StatelessWidget {
         '$label: $value',
         style: const TextStyle(color: Colors.white, fontSize: 22),
       ),
+    );
+  }
+}
+
+class _PercentSlider extends StatefulWidget {
+  const _PercentSlider({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.onChangeEnd,
+  });
+
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+  final ValueChanged<double>? onChangeEnd;
+
+  @override
+  State<_PercentSlider> createState() => _PercentSliderState();
+}
+
+class _PercentSliderState extends State<_PercentSlider> {
+  late double _value;
+  bool _dragging = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _value = widget.value.clamp(0, 100);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PercentSlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Sync from parent (e.g. post-frame hardware read) only when not dragging.
+    if (!_dragging && (oldWidget.value - widget.value).abs() > 0.01) {
+      _value = widget.value.clamp(0, 100);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${widget.label}: ${_value.round()}%',
+          style: const TextStyle(color: Colors.white, fontSize: 20),
+        ),
+        Slider(
+          value: _value,
+          min: 0,
+          max: 100,
+          // Continuous (no divisions) → fewer rebuild snaps while dragging.
+          onChanged: (v) {
+            _dragging = true;
+            setState(() => _value = v);
+            widget.onChanged(v);
+          },
+          onChangeEnd: (v) {
+            _dragging = false;
+            setState(() => _value = v);
+            widget.onChangeEnd?.call(v);
+          },
+        ),
+      ],
     );
   }
 }

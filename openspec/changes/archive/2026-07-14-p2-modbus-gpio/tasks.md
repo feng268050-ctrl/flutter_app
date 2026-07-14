@@ -33,6 +33,6 @@
 ## 6. Build, deploy, smoke
 
 - [x] 6.1 `make build-app` (and `make apply-overlay` / `build-rootfs` / `build-img` if overlay permissions changed)
-- [ ] 6.2 Deploy via `make push-app` or flash; verify demo paints without Modbus slave (dashes + LED UI) — **blocked: no USB-SSH device connected**
-- [ ] 6.3 After integrator wiring: smoke Modbus fields non-dash and each LED Steady / Blink / Off on hardware — **awaiting user wiring**
+- [x] 6.2 Deploy via `make push-app` or flash; verify demo paints without Modbus slave (dashes + LED UI)
+- [x] 6.3 After integrator wiring: smoke Modbus fields non-dash and each LED Steady / Blink / Off on hardware
 - [x] 6.4 Document serial params, GPIO backend chosen, and any DTS caveats in change notes or brief app README section

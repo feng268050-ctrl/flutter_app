@@ -1,8 +1,11 @@
 # flutter-hello-world-app Specification
 
 ## Purpose
-TBD - created by archiving change p1-linux-flutter-platform. Update Purpose after archive.
+
+Flutter HMI app at `app/hmi/` for flutter-pi ARM64 (meta-flutter layout). P2 home is the device-info + RGB LED demo (`p2-device-demo-ui`); engine/ICU stay on rootfs.
+
 ## Requirements
+
 ### Requirement: Flutter Hello World project exists in repository
 
 The repository SHALL contain a Flutter application at `app/hmi/` configured for flutter-pi ARM64 release builds (meta-flutter layout), with documentation for engine/flutter-pi version alignment (Flutter 3.24.4 / flutter-pi 37bd977).
@@ -19,12 +22,12 @@ The repository SHALL contain a Flutter application at `app/hmi/` configured for 
 
 ### Requirement: Hello World UI is minimal for boot KPI
 
-The P1 home screen SHALL display a simple full-screen greeting ("Hello, lws-hmi") with no video, WebSocket, FFI, or network initialization in `main()` before first frame.
+The P2 home screen SHALL display the **device-info + RGB LED demo** (capability `p2-device-demo-ui`) instead of a static “Hello, World!” / “Hello, lws-hmi” greeting. The app SHALL still avoid initializing video, WebSocket, or native AI libraries in `main()` before first frame. Modbus I/O and GPIO setup MUST NOT block first-frame paint (see `linux-modbus-rtu`).
 
 #### Scenario: First frame content
 
-- **WHEN** flutter-pi renders the P1 app home route
-- **THEN** user-visible text confirms lws-hmi Hello World
+- **WHEN** flutter-pi renders the app home route after P2
+- **THEN** the user sees the P2 device-information list and LED control rows (not a Hello World–only screen)
 
 #### Scenario: No heavy plugins on startup
 
@@ -49,17 +52,17 @@ Flutter engine and ICU data SHALL be on rootfs only (not duplicated in the app b
 
 #### Scenario: Bundle layout on device
 
-- **WHEN** P1 rootfs or overlay is deployed
+- **WHEN** rootfs or overlay is deployed after P2 app build
 - **THEN** `/opt/hmi/lib/libapp.so` and `/opt/hmi/data/flutter_assets/` exist; `/opt/hmi/lib/libflutter_engine.so` is absent
 
 #### Scenario: flutter-pi launches bundle
 
 - **WHEN** operator runs `flutter-pi --release -o landscape_left /opt/hmi` on device
-- **THEN** Hello World UI displays without missing asset errors
+- **THEN** the P2 demo UI displays without missing asset errors
 
 #### Scenario: System engine on rootfs
 
-- **WHEN** P1 rootfs is deployed
+- **WHEN** rootfs is deployed
 - **THEN** `/usr/lib/libflutter_engine.so` exists and matches the Flutter SDK version used to build `libapp.so`
 
 ### Requirement: App integrated via rootfs overlay for P1

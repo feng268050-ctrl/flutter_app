@@ -30,3 +30,14 @@ Reusable modules live under `lib/platform/`:
 3. Portrait / Landscape — HMI restarts; `ps`/`tr` confirms `-o portrait_up` or `landscape_left`
 
 On first ALSA bring-up, check amp enable and mixer control (`amixer scontrols`) if silent.
+
+### Trace logging
+
+Hot-path `debugPrint` (Modbus TX/RX, backlight steps, audio chatter) is **off by default** — printing every slider tick / Modbus timeout slows debug mode over USB-gadget SSH.
+
+Enable when needed:
+
+```bash
+# example: flutterpi_tool / kernel compile with
+--dart-define=LWS_HMI_TRACE=true
+```

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart' as pkgffi;
 import 'package:flutter/foundation.dart';
+import 'package:lws_hmi/platform/lws_trace.dart';
 
 /// Minimal Linux serial I/O via libc + `stty` (avoids libserialport termiox/ENOTTY).
 ///
@@ -55,7 +56,7 @@ class PosixSerialPort {
       debugPrint('PosixSerialPort: open($path) failed errno=${_libc.errno}');
       return false;
     }
-    debugPrint('PosixSerialPort: opened $path fd=$_fd @ $baudRate 8N1');
+    lwsTrace('PosixSerialPort: opened $path fd=$_fd @ $baudRate 8N1');
     return true;
   }
 

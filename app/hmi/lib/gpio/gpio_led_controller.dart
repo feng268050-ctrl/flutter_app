@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/gpio/gpio_led_config.dart';
+import 'package:lws_hmi/platform/lws_trace.dart';
 
 /// Low-level GPIO writer for ynh960 side-panel LEDs.
 ///
@@ -33,7 +34,7 @@ class GpioLineBackend {
         _valuePaths[key] = path;
         _activeScheme ??= 'gpio_innohi(GPIO_${color.ynhApiPin})';
         await _trySetDirectionSibling(path, 'out');
-        debugPrint('GPIO ${color.name}: using $path');
+        lwsTrace('GPIO ${color.name}: using $path');
         return true;
       }
     }
@@ -61,7 +62,7 @@ class GpioLineBackend {
       }
       _valuePaths[key] = valuePath;
       _activeScheme ??= 'sysfs(linux=$linux)';
-      debugPrint('GPIO ${color.name}: using $valuePath '
+      lwsTrace('GPIO ${color.name}: using $valuePath '
           '(ynhApi=${color.ynhApiPin} → linux=$linux)');
       return true;
     }

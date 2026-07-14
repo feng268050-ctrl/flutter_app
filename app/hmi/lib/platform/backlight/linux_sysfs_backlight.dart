@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/platform/backlight/backlight_controller.dart';
+import 'package:lws_hmi/platform/lws_trace.dart';
 import 'package:lws_hmi/platform/percent.dart';
 
 /// Linux backlight via `/sys/class/backlight/*/brightness`.
@@ -82,7 +83,7 @@ class LinuxSysfsBacklight implements BacklightController {
       return false;
     }
     _brightnessPath = brightness.path;
-    debugPrint('backlight: using $_brightnessPath max=$_max');
+    lwsTrace('backlight: using $_brightnessPath max=$_max');
     return true;
   }
 
@@ -110,7 +111,7 @@ class LinuxSysfsBacklight implements BacklightController {
     final value = percentToDevice(percent, _max);
     try {
       await File(_brightnessPath!).writeAsString('$value\n', flush: true);
-      debugPrint('backlight: set $value / $_max (${clampPercent(percent)}%)');
+      lwsTrace('backlight: set $value / $_max (${clampPercent(percent)}%)');
     } catch (e) {
       debugPrint('backlight: set failed: $e');
     }

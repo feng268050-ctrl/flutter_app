@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:lws_hmi/platform/audio/media_audio_controller.dart';
+import 'package:lws_hmi/platform/lws_trace.dart';
 import 'package:lws_hmi/platform/percent.dart';
 
 /// Linux media: ALSA mixer volume (primary) + mpg123 remote for decode.
@@ -32,6 +33,7 @@ class LinuxMediaAudioController implements MediaAudioController {
   bool _pathRouted = false;
   String? _volumeControl;
   List<String>? _discoveredVolumeControls;
+  bool _mixerUnavailable = false;
   final Map<String, String> _extracted = <String, String>{};
 
   final StreamController<bool> _playingCtrl =
@@ -138,7 +140,7 @@ class LinuxMediaAudioController implements MediaAudioController {
         _setPlaying(true);
         unawaited(_listenProcess(_player!));
       }
-      debugPrint(
+      lwsTrace(
         'media-audio: play $path via $player remote=$_remoteMode '
         'volume=$_volumePercent% ctrl=${_volumeControl ?? "remote"}',
       );
@@ -198,7 +200,7 @@ class LinuxMediaAudioController implements MediaAudioController {
       _playerStdin = null;
       _remoteMode = false;
       _setPlaying(false);
-      debugPrint('media-audio: player exited code=$code');
+      lwsTrace('media-audio: player exited code=$code');
     }
   }
 
@@ -231,7 +233,7 @@ class LinuxMediaAudioController implements MediaAudioController {
           continue;
         }
         if (isStderr || t.startsWith('@')) {
-          debugPrint('media-audio: $t');
+          lwsTrace('media-audio: $t');
         }
       }
     } catch (_) {}
@@ -322,7 +324,7 @@ class LinuxMediaAudioController implements MediaAudioController {
       );
       if (result.exitCode == 0) {
         _pathRouted = true;
-        debugPrint(
+        lwsTrace(
           'media-audio: amixer "$_playbackPathControl" → $_playbackPathValue',
         );
       } else {
@@ -372,6 +374,9 @@ class LinuxMediaAudioController implements MediaAudioController {
   }
 
   Future<void> _applyMixerVolume(int percent) async {
+    if (_mixerUnavailable) {
+      return;
+    }
     if (_volumeControl != null) {
       if (await _ssetVolume(_volumeControl!, percent)) {
         return;
@@ -382,10 +387,11 @@ class LinuxMediaAudioController implements MediaAudioController {
     for (final control in await _volumeControlCandidates()) {
       if (await _ssetVolume(control, percent)) {
         _volumeControl = control;
-        debugPrint('media-audio: volume control → $control @ $percent%');
+        lwsTrace('media-audio: volume control → $control @ $percent%');
         return;
       }
     }
+    _mixerUnavailable = true;
     debugPrint('media-audio: no HW volume control; remote V only');
   }
 

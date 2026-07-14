@@ -9,6 +9,7 @@ import 'package:lws_hmi/modbus/modbus_crc.dart';
 import 'package:lws_hmi/modbus/modbus_format.dart';
 import 'package:lws_hmi/modbus/posix_serial_port.dart';
 import 'package:lws_hmi/modbus/register_address.dart';
+import 'package:lws_hmi/platform/lws_trace.dart';
 
 /// Serial parameters mirrored from lws-ui `SerialPortConfig` (8-N-1, 115200).
 class ModbusSerialConfig {
@@ -265,7 +266,7 @@ class ModbusRtuClient {
       debugPrint('Modbus: short write $written/${request.length}');
       return null;
     }
-    debugPrint(
+    lwsTrace(
       'Modbus: TX ${request.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
     );
 
@@ -283,18 +284,18 @@ class ModbusRtuClient {
       if (buffer.length >= 5 && (buffer[1] & 0x80) != 0) {
         // Exception response: addr, fc|0x80, ex, crc_lo, crc_hi
         if (buffer.length >= 5 && verifyModbusCrc(buffer.sublist(0, 5))) {
-          debugPrint('Modbus: exception response $buffer');
+          lwsTrace('Modbus: exception response $buffer');
           return null;
         }
       }
     }
 
     if (buffer.isNotEmpty) {
-      debugPrint(
+      lwsTrace(
         'Modbus: RX ${buffer.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
       );
     } else {
-      debugPrint('Modbus: RX <empty> (timeout)');
+      lwsTrace('Modbus: RX <empty> (timeout)');
     }
 
     if (buffer.length < expectedLen ||

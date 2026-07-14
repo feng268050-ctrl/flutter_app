@@ -174,7 +174,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh push-app-apply-and-restart.sh; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else
@@ -182,6 +182,38 @@ run_check() {
 			missing=1
 		fi
 	done
+
+	echo ""
+	echo "--- wifibt prefs under /var/lib/lws-hmi ---"
+	for f in wpa_supplicant.conf wlan0-ipv4 http-proxy; do
+		if [[ -f "$target/var/lib/lws-hmi/$f" ]]; then
+			echo "OK:  var/lib/lws-hmi/$f"
+		else
+			echo "FAIL: var/lib/lws-hmi/$f missing" >&2
+			missing=1
+		fi
+	done
+	if [[ -f "$target/etc/dbus-1/system.d/bluetooth.conf" ]]; then
+		echo "OK:  etc/dbus-1/system.d/bluetooth.conf"
+	else
+		echo "FAIL: etc/dbus-1/system.d/bluetooth.conf missing" >&2
+		missing=1
+	fi
+	if [[ -f "$target/vendor/lib/modules/aic8800_fdrv.ko" ]] || \
+		[[ -f "$target/system/lib/modules/aic8800_fdrv.ko" ]] || \
+		[[ -f "$target/lib/modules/aic8800_fdrv.ko" ]] || \
+		compgen -G "$target/lib/modules/*/aic8800_fdrv.ko" >/dev/null 2>&1 || \
+		compgen -G "$target/vendor/lib/modules/**/aic8800_fdrv.ko" >/dev/null 2>&1; then
+		echo "OK:  aic8800_fdrv.ko (AIC8800D80)"
+	else
+		echo "FAIL: aic8800_fdrv.ko missing — enable lws-hmi-ynh960-wifibt.config, rebuild kernel+rootfs" >&2
+		missing=1
+	fi
+	if [[ -x "$target/usr/bin/rk_wifi_init" ]]; then
+		echo "OK:  usr/bin/rk_wifi_init"
+	else
+		echo "WARN: usr/bin/rk_wifi_init missing (optional Innohi helper)" >&2
+	fi
 
 	echo ""
 	echo "--- operator commands in /usr/bin ---"

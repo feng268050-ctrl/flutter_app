@@ -1,0 +1,38 @@
+From: lws-hmi <devnull@localhost>
+Subject: [PATCH] softvol: skip AVRCP Absolute Volume sync on A2DP Sink
+
+When SoftVolume is enabled, upstream already skips MediaTransport Volume
+writes for A2DP Source / HF AG. For A2DP Sink, bluealsa still pushes volume
+to BlueZ; on AIC8800 that fails with ENOENT and spam:
+  bluetoothd: set_volume() Unable to set volume: No such file or directory (-2)
+  bluealsa: Couldn't set BT device volume: ... Failed ...
+
+Soft-volume scaling still works locally (HMI + phone Absolute Volume via
+PropertyChanged). Skip the broken Sink→AVRCP write.
+
+---
+ src/ba-transport.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/src/ba-transport.c b/src/ba-transport.c
+--- a/src/ba-transport.c
++++ b/src/ba-transport.c
+@@ -1744,11 +1744,14 @@
+ 
+ 	struct ba_transport *t = pcm->t;
+ 
+-	/* In case of A2DP Source or HSP/HFP Audio Gateway skip notifying Bluetooth
+-	 * device if we are using software volume control. This will prevent volume
+-	 * double scaling - firstly by us and then by Bluetooth headset/speaker. */
++	/* Skip notifying Bluetooth Absolute Volume when using software volume.
++	 * Upstream only skipped A2DP Source / AG; as A2DP Sink we also skip — on
++	 * AIC8800, MediaTransport Volume → avrcp_set_volume returns ENOENT and
++	 * floods journal while soft-volume already works. */
+ 	if (pcm->soft_volume && t->profile & (
+-				BA_TRANSPORT_PROFILE_A2DP_SOURCE | BA_TRANSPORT_PROFILE_MASK_AG))
++				BA_TRANSPORT_PROFILE_A2DP_SOURCE |
++				BA_TRANSPORT_PROFILE_A2DP_SINK |
++				BA_TRANSPORT_PROFILE_MASK_AG))
+ 		goto final;
+ 
+ 	if (t->profile & BA_TRANSPORT_PROFILE_MASK_A2DP) {

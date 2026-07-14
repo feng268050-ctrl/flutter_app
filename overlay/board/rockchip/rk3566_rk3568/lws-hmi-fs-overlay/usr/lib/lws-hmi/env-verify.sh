@@ -123,6 +123,65 @@ if command -v wpa_supplicant >/dev/null 2>&1; then
 else
 	fail "wpa_supplicant missing"
 fi
+if command -v wpa_cli >/dev/null 2>&1; then
+	pass "wpa_cli installed"
+else
+	fail "wpa_cli missing"
+fi
+if command -v dhcpcd >/dev/null 2>&1; then
+	pass "dhcpcd installed (wlan0 helper)"
+elif command -v udhcpc >/dev/null 2>&1; then
+	pass "udhcpc installed (wlan0 helper fallback)"
+else
+	fail "dhcpcd/udhcpc missing (enable BR2_PACKAGE_DHCPCD)"
+fi
+for helper in wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+	if [ -x "/usr/lib/lws-hmi/$helper" ]; then
+		pass "helper $helper"
+	else
+		fail "helper $helper missing or not executable"
+	fi
+done
+# AIC8800D80 modules (kernel + post-wifibt copy into /vendor/lib/modules)
+aic_ko=""
+for dir in /vendor/lib/modules /system/lib/modules /lib/modules /usr/lib/modules; do
+	[ -d "$dir" ] || continue
+	if [ -f "$dir/aic8800_fdrv.ko" ] || [ -f "$dir/aic8800_bsp.ko" ]; then
+		aic_ko=1
+		break
+	fi
+	if find "$dir" -maxdepth 3 -name 'aic8800_fdrv.ko' 2>/dev/null | grep -q .; then
+		aic_ko=1
+		break
+	fi
+done
+if [ -n "$aic_ko" ]; then
+	pass "aic8800_*.ko present"
+else
+	fail "aic8800_fdrv.ko missing (enable lws-hmi-ynh960-wifibt.config, rebuild kernel+rootfs)"
+fi
+if [ -x /usr/bin/rk_wifi_init ]; then
+	pass "rk_wifi_init installed"
+else
+	warn "rk_wifi_init missing (manual aic8800 insmod still used)"
+fi
+if command -v hciattach >/dev/null 2>&1; then
+	pass "hciattach installed"
+else
+	warn "hciattach missing (AIC BT UART attach may fail)"
+fi
+if [ -f /vendor/etc/firmware/fmacfw_8800d80_u02.bin ] || \
+	[ -f /system/etc/firmware/fmacfw_8800d80_u02.bin ] || \
+	[ -f /lib/firmware/fmacfw_8800d80_u02.bin ]; then
+	pass "AIC8800D80 firmware present"
+else
+	warn "fmacfw_8800d80_u02.bin not found under firmware dirs"
+fi
+if [ -f /var/lib/lws-hmi/wpa_supplicant.conf ]; then
+	pass "wpa_supplicant.conf seed present"
+else
+	warn "wpa_supplicant.conf seed missing (wifi-stack-up will create)"
+fi
 bt_daemon=""
 for cand in /usr/libexec/bluetooth/bluetoothd /usr/sbin/bluetoothd /usr/bin/bluetoothd; do
 	[ -x "$cand" ] && bt_daemon="$cand" && break
@@ -146,6 +205,12 @@ if [ -n "$bt_unit" ]; then
 else
 	fail "bluetooth.service missing (bluez5_utils not installed)"
 fi
+if [ -f /etc/dbus-1/system.d/bluetooth.conf ] || \
+	[ -f /usr/share/dbus-1/system.d/bluetooth.conf ]; then
+	pass "dbus bluetooth.conf present (org.bluez policy)"
+else
+	fail "dbus bluetooth.conf missing (bluetoothd cannot own org.bluez)"
+fi
 if [ -d /lib/firmware ] && ls /lib/firmware/brcm/ >/dev/null 2>&1; then
 	pass "Wi-Fi/BT firmware under /lib/firmware/brcm/"
 elif [ -d /lib/firmware ]; then
@@ -154,7 +219,7 @@ else
 	warn "/lib/firmware missing"
 fi
 if command -v systemctl >/dev/null 2>&1; then
-	for unit in wpa_supplicant.service network.service wifibt-init.service bluetooth.service; do
+	for unit in wpa_supplicant.service network.service wifibt-init.service bluetooth.service dhcpcd.service; do
 		unit_file=""
 		for f in "/etc/systemd/system/$unit" "/usr/lib/systemd/system/$unit" "/lib/systemd/system/$unit"; do
 			[ -f "$f" ] && unit_file="$f" && break
@@ -163,6 +228,9 @@ if command -v systemctl >/dev/null 2>&1; then
 			case "$unit" in
 			bluetooth.service)
 				fail "$unit unit file missing"
+				;;
+			dhcpcd.service)
+				warn "$unit unit file missing (ok if package has no unit)"
 				;;
 			*)
 				warn "$unit unit file missing"
@@ -193,6 +261,11 @@ if pidof bluetoothd >/dev/null 2>&1; then
 	warn "bluetoothd running @ check time"
 else
 	pass "bluetoothd not running"
+fi
+if pidof dhcpcd >/dev/null 2>&1; then
+	warn "dhcpcd running @ check time (may be user-started on wlan0)"
+else
+	pass "dhcpcd not running"
 fi
 
 echo ""

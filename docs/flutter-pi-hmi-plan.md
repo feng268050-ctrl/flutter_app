@@ -54,8 +54,8 @@ P2  Modbus + GPIO（Linux 真机）✅
 P2.1  板级 I/O 与外设验证（硬件前置）🔄
     ├─ 动机：P2 暴露串口/引脚对不上、触摸驱动 BUG、UART pinmux vs gmac 等；原计划散落在 P5 的外设先打通
     ├─ 喇叭 / 本机音频：ALSA + codec + 功放；`aplay` / speaker-test 出声（Buildroot 开最小音频栈）✅
-    ├─ Wi‑Fi：模组固件 + `wpa_supplicant` 关联客户 AP；ping 网关（shell/`wpa_cli`，无设置页）
-    ├─ 蓝牙：hci0 up + `bluetoothctl` scan / 按需配对 smoke（无设置页；bluetoothd 仍按需启）
+    ├─ Wi‑Fi：模组固件 + `wpa_supplicant` 关联（含隐藏 SSID）+ wlan0 DHCP/静态 IP + HTTP 代理与请求探测（Demo 管理；产品设置页仍属 P5.2）
+    ├─ 蓝牙：hci0 up + **可被手机/电脑发现并连接**（Discoverable/Pairable；非本机扫描外设；bluetoothd 仍按需启）
     ├─ IPC 相机链路：`configure-camera-eth0.sh` → ping IPC → PR0/PR1 RTSP DESCRIBE smoke
     │     （不做 MediaMTX 编排、不做 Flutter 预览 — 仍属 P5.1）
     ├─ 触控：Goodix / libinput 稳定；坐标与屏旋转一致（收口 P2 期间已修项）
@@ -286,7 +286,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 |------|----|----|------|----|----|-----|------|
 | **flutter-pi** + Mali/libdrm | ✓ | | | | | | P1 Hello World；**P3.5** engine/SDK/pi 三件套升级 |
 | **RKNPU2 运行时**（无 example） | ✓ | | | ✓ | | | P1 编入 rootfs；P3 用 |
-| **wifibt** 栈 | ✓ | | ✓ use | | | ✓ UI | 驱动/daemon；**P2.1** 关联/扫描 smoke；**P5.2** 设置页 |
+| **wifibt** 栈 | ✓ | | ✓ use | | | ✓ UI | 驱动/daemon；**P2.1** 关联/可发现 smoke；**P5.2** 设置页 |
 | **本机音频 / 喇叭** | | | ✓ | | | ✓ | **P2.1**：ALSA + codec 出声；P5 业务提示音/媒体 |
 | **触控 / libinput** | ✓ | | ✓ fix | | | | P1 起可用；**P2.1** 收口驱动与坐标 |
 | **GStreamer + MPP + mediamtx** | ✓ prep | | | | | ✓ use | P1 备好；**P2.1** 可仅用 RTSP DESCRIBE；P5.1 开预览/relay |
@@ -818,9 +818,9 @@ Flutter 侧后续可用 **`wifi_iot`** 等插件或 **platform channel** 调 `wp
 |-----------|------|
 | `BR2_PACKAGE_BLUEZ5_UTILS` | `bluetoothd`、`bluetoothctl` |
 | `BR2_PACKAGE_RKWIFIBT_APP` | Rockchip 配套用户态工具/脚本 |
-| `BR2_PACKAGE_BLUEZ_ALSA` | 蓝牙音频（若 HMI 要播 BT 音频则保留；纯数据 BLE 可后续再裁） |
+| `BR2_PACKAGE_BLUEZ_ALSA` | A2DP **Sink** 包（手机 → 板载喇叭；`bluealsa` + `bluealsa-aplay`；**默认不启**，Demo/API 开关打开） |
 
-**P1 验证（栈存在）**：`hciconfig` / `bluetoothctl` 可用。**P2.1 验收（真机联调）**：`hci0` up → `bluetoothctl scan on`；按产品需要再测配对（功放/喇叭走本机 ALSA，与 BT 音频解耦）。
+**P1 验证（栈存在）**：`hciconfig` / `bluetoothctl` 可用。**P2.1 验收（真机联调）**：`hci0` up → Discoverable → 配对；需要媒体连接时打开 **BT speaker (A2DP)** → 手机 **连接成功** 且播音乐出板载喇叭。功放通路仍为本机 ALSA（`RING_SPK_HP`）。日后 BLE GATT 配网与 A2DP Sink 可同适配器并存。
 
 ### 7.4 相机双码流 PR0 / PR1（硬约束，对齐 lws-ui）
 
@@ -1332,15 +1332,15 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 ### P2.1 — 板级 I/O 与外设验证（硬件前置）🔄
 
-**进行中**：喇叭 / 背光 / 旋转已真机验收；Wi‑Fi / BT / IPC / 触控 / pinmux 台账仍待。
+**进行中**：喇叭 / 背光 / 旋转已真机验收；Wi‑Fi / BT **Demo + 平台抽象已落地**（待板端 smoke）；IPC / 触控 / pinmux 台账仍待。
 
 **动机**：P2 联调暴露串口/引脚对不上、触摸驱动 BUG、UART pinmux 与 gmac 冲突等；原计划把喇叭 / Wi‑Fi / BT / IPC 等放到 P5 才做，风险过晚。本阶段先把 **设备输入输出与硬件相关能力** 在 Linux 真机上打通，再进入模拟器 / AI / 业务 UI。
 
-**边界**：平台栈、DTS、脚本、命令行 smoke。**不做** Flutter 产品设置页、状态栏、MediaMTX 编排、GStreamer 预览（仍属 P5.1 / P5.2）。
+**边界**：平台栈、DTS、脚本、命令行 / Demo smoke。**不做** Flutter 产品设置页、状态栏、MediaMTX 编排、GStreamer 预览（仍属 P5.1 / P5.2）。
 
 - [x] **喇叭 / 本机音频**：Buildroot 最小 ALSA + codec（mpg123/`amixer`）；Demo Play/`shanghai_tan` + volume slider 真机出声与调音量 OK（`openspec/changes/p2-1-audio-backlight-rotation`）
-- [ ] **Wi‑Fi**：确认 `rkwifibt` 模组型号与固件；`wpa_supplicant` 关联客户 AP；`ping` 网关
-- [ ] **蓝牙**：`hci0` up；`bluetoothctl` scan；按产品需要做一次配对 smoke（设置页仍属 P5.2）
+- [ ] **Wi‑Fi**：`rkwifibt` 固件；可见/隐藏 SSID 关联；wlan0 DHCP 或静态；HTTP 代理 + Demo「Send request」；`ping` 网关（`openspec/changes/p2-1-wifi-bluetooth` — 待板端勾选）
+- [ ] **蓝牙**：本机 Discoverable/Pairable；手机/电脑发现 `lws-hmi` 并配对连入；Incoming peers 列表（**非**本机扫描外设；设置页仍属 P5.2）
 - [ ] **IPC 相机链路**：移植并验证 `configure-camera-eth0.sh`；`ping -I eth0` 相机 IP；对 `/PR0` `/PR1` 做 RTSP DESCRIBE（可直连 IPC，无需 MediaMTX）
 - [ ] **触控**：Goodix / libinput 稳定点击与滑动；与屏旋转坐标一致（收口 P2 期间驱动修复）
 - [ ] **串口 / GPIO / pinmux 台账**：文档化 `ttyS5`、gpio_innohi 标签、own-gpio↔gmac 等踩坑结论，供量产与跨 SKU 参考

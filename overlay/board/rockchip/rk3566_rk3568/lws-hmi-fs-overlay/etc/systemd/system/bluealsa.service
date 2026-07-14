@@ -1,0 +1,23 @@
+[Unit]
+Description=BlueZ ALSA backend (A2DP Sink)
+Documentation=https://github.com/Arkq/bluez-alsa
+After=bluetooth.service dbus.service
+Requires=bluetooth.service
+# Deferred with bluetooth — started by bt-stack-up.sh, not WantedBy multi-user.
+
+[Service]
+Type=dbus
+BusName=org.bluealsa
+ExecStartPre=-/usr/lib/lws-hmi/bt-audio-prepare.sh
+# Soft-volume default (Demo changes via bt-a2dp-volume.sh).
+ExecStart=/usr/bin/bluealsa -p a2dp-sink --initial-volume=80
+Restart=on-failure
+RestartSec=2
+Nice=-10
+StandardOutput=journal
+StandardError=journal
+RuntimeDirectory=bluealsa
+StateDirectory=bluealsa
+
+[Install]
+# Intentionally empty — on-demand via bt-stack-up.sh

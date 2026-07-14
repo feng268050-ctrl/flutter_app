@@ -321,7 +321,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 |------|------------|-----------------|----------------------------|
 | P1 | flutter、RKNPU2、Wi‑Fi/BT、GPU | ✓ | Hello World、hmi 自启 |
 | P2 | libmodbus | ✓ platform-packages | Modbus/GPIO App demo（✅ 已完成） |
-| P2.1 | ALSA/音频（按需）、eth0 脚本 | 音频包按需开 | 喇叭 / Wi‑Fi / BT / IPC / 触控 / 背光 **硬件 smoke**（🔄 进行中：喇叭/背光/旋转已通） |
+| P2.1 | ALSA/音频（按需）、eth0 脚本、wlan0 DHCP | 音频包按需开；`BR2_PACKAGE_DHCPCD` | 喇叭 / Wi‑Fi / BT / IPC / 触控 / 背光 **硬件 smoke**（🔄：喇叭/背光/旋转已通；Wi‑Fi/BT Demo 已落地待板验） |
 | P3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** 工程与 smoke |
 | P3.5 | flutter SDK + engine + flutter-pi **三件套升级** | 重编 prebuilt | P4 前；见 [`docs/flutter-pi-hmi-plan.md` §6.5](docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p35) |
 | P4 | — | — | frost_ui / frost_ime 子模块 |
@@ -370,6 +370,8 @@ On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under
 ### `innohi_board` / WiFi-BT firmware errors
 
 Rockchip Innohi scripts reference **`linux-sdk/innohi_board/`** (not in git; only **`linux-sdk/innohi/`** ships). `make apply-overlay` syncs firmware + binaries and patches `post-wifibt.sh` / `mk-rootfs.sh`. **lws_hmi** skips Innohi **MainServer** autostart (Plan A uses systemd + `hmi.service`). If `build-rootfs` fails on `innohi_board` or `MainServer`, run `make apply-overlay` again (macOS: auto before each Docker build).
+
+**ynh960 Wi‑Fi/BT chip:** board SDIO is **AIC8800D80** (`c8a1:0082`), not AP6256. Keep `RK_WIFIBT_MODULES` non-empty so `post-wifibt` copies kernel `*.ko` + Innohi firmware; runtime uses `wifibt-bringup.sh` / `rk_wifi_init` (`aic8800_bsp`/`fdrv`/`btlpm`). Kernel fragment: `lws-hmi-ynh960-wifibt.config`.
 
 ### Innohi SDK-native Linux (`make build-sdk-native`)
 

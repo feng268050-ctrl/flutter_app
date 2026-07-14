@@ -56,3 +56,31 @@ rm -f \
 rm -f \
 	"$TARGET_DIR/opt/hmi/lib/libflutter_engine.so" \
 	"$TARGET_DIR/opt/hmi/data/icudtl.dat"
+
+# Rockchip bluez-alsa.mk uses --enable-debug; configure then links -lSegFault when
+# glibc's libSegFault.so is in the sysroot. Buildroot does not install that .so
+# on target → bluealsa exits 127 ("cannot open shared object file").
+# Copy from staging/sysroot until/unless the package is rebuilt without -lSegFault.
+if [ -x "$TARGET_DIR/usr/bin/bluealsa" ]; then
+	if [ ! -e "$TARGET_DIR/usr/lib/libSegFault.so" ] && \
+		[ ! -e "$TARGET_DIR/lib/libSegFault.so" ]; then
+		seg_src=""
+		for cand in \
+			"${STAGING_DIR:-}/usr/lib/libSegFault.so" \
+			"${STAGING_DIR:-}/lib/libSegFault.so" \
+			"$(dirname "$TARGET_DIR")/host/aarch64-buildroot-linux-gnu/sysroot/usr/lib/libSegFault.so"
+		do
+			if [ -f "$cand" ]; then
+				seg_src="$cand"
+				break
+			fi
+		done
+		if [ -n "$seg_src" ]; then
+			mkdir -p "$TARGET_DIR/usr/lib"
+			cp -a "$seg_src" "$TARGET_DIR/usr/lib/libSegFault.so"
+			echo "lws-hmi-post-build: installed usr/lib/libSegFault.so (bluealsa)"
+		else
+			echo "lws-hmi-post-build: WARN libSegFault.so not found — bluealsa may fail" >&2
+		fi
+	fi
+fi

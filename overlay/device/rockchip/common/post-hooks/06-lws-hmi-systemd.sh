@@ -25,6 +25,7 @@ DISABLE_AT_BOOT=(
 	wifibt-init.service
 	wpa_supplicant.service
 	network.service
+	dhcpcd.service
 	log-guardian.service
 )
 

@@ -81,9 +81,10 @@ sync_fs_overlay() {
     return 0
   fi
   mkdir -p "$BR_OVERLAY_ROOT"
-  # Plan A: etc/ (systemd) + usr/ (scripts, mediamtx). system/etc from sync_display_params; opt/hmi from sync_hmi_app_overlay.
+  # Plan A: etc/ (systemd) + usr/ (scripts) + var/ (persistent prefs, e.g. wpa/http-proxy).
+  # system/etc from sync_display_params; opt/hmi from sync_hmi_app_overlay.
   # Use rsync --delete so removed overlay files (e.g. lws-hmi-debug-boot.service) do not linger in the SDK tree.
-  for sub in etc usr; do
+  for sub in etc usr var; do
     if [[ -d "$OVERLAY_FS/$sub" ]]; then
       mkdir -p "$BR_OVERLAY_ROOT/$sub"
       if command -v rsync >/dev/null 2>&1; then
@@ -334,6 +335,40 @@ sync_libserialport_package() {
   install_file "$src" "$BR_PKG_LIBSERIALPORT/0002-dont-check-termiox.patch"
 }
 
+# bluez-alsa --enable-debug AC_CHECK_LIB(SegFault) → -lSegFault, but target lacks the .so.
+# Also install A2DP-Sink softvol patch (skip broken AVRCP Absolute Volume write).
+sync_bluez_alsa_package() {
+  local pkg="$SDK/buildroot/package/bluez-alsa"
+  local mk="$pkg/bluez-alsa.mk"
+  local vol_patch_src="$OVERLAY/buildroot/package/bluez-alsa/0002-lws-a2dp-sink-softvol-skip-avrcp.patch"
+  if [[ ! -f "$mk" ]]; then
+    echo "overlay: skip bluez-alsa.mk (package missing)" >&2
+    return 0
+  fi
+  if [[ ! -f "${mk}.lws-orig" ]]; then
+    cp -a "$mk" "${mk}.lws-orig"
+  fi
+  cp -a "${mk}.lws-orig" "$mk"
+  if grep -q -- '--enable-debug' "$mk"; then
+    sed -i.bak 's/--enable-debug/--disable-debug/' "$mk"
+    rm -f "$mk.bak"
+  fi
+  if ! grep -q 'ac_cv_lib_SegFault_backtrace=no' "$mk"; then
+    awk '
+      BEGIN { done = 0 }
+      /^BLUEZ_ALSA_CONF_OPTS/ && !done {
+        print "BLUEZ_ALSA_CONF_ENV = ac_cv_lib_SegFault_backtrace=no"
+        done = 1
+      }
+      { print }
+    ' "$mk" >"${mk}.tmp" && mv "${mk}.tmp" "$mk"
+  fi
+  echo "overlay: bluez-alsa.mk — disable-debug + no -lSegFault"
+  if [[ -f "$vol_patch_src" ]]; then
+    install_file "$vol_patch_src" "$pkg/0002-lws-a2dp-sink-softvol-skip-avrcp.patch"
+  fi
+}
+
 patch_flutter_pi_config_prebuilt() {
   local cfg="$BR_PKG_FLUTTER_PI/Config.in"
   [[ -f "$cfg" ]] || return 0
@@ -573,6 +608,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
     rm -f "$POST_HOOKS_DIR/06-lws-hmi-systemd.sh"
     rm -f "$POST_HOOKS_DIR/07-lws-hmi-innohi-display-bin.sh"
     rm -f "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
+    rm -f "$POST_HOOKS_DIR/09-lws-hmi-wifibt-innohi.sh"
     rm -rf "$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
     for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
       rm -f "$BR_CHIPS_DIR/$f"
@@ -682,6 +718,10 @@ install_file "$OVERLAY/device/rockchip/common/post-hooks/08-lws-hmi-systemd-fina
   "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
 chmod +x "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
 
+install_file "$OVERLAY/device/rockchip/common/post-hooks/09-lws-hmi-wifibt-innohi.sh" \
+  "$POST_HOOKS_DIR/09-lws-hmi-wifibt-innohi.sh"
+chmod +x "$POST_HOOKS_DIR/09-lws-hmi-wifibt-innohi.sh"
+
 install_file "$OVERLAY/device/rockchip/common/post-hooks/31-lws-hmi-strip-fstab.sh" \
   "$POST_HOOKS_DIR/31-lws-hmi-strip-fstab.sh"
 chmod +x "$POST_HOOKS_DIR/31-lws-hmi-strip-fstab.sh"
@@ -702,6 +742,7 @@ sync_flutter_engine_package
 sync_flutter_sdk_package
 sync_flutter_pi_package
 sync_libserialport_package
+sync_bluez_alsa_package
 sync_source_han_sans_cn_package
 patch_buildroot_config
 patch_mk_loader

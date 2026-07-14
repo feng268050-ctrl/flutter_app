@@ -10,10 +10,20 @@ import 'package:lws_hmi/platform/audio/linux_media_audio_controller.dart';
 import 'package:lws_hmi/platform/audio/media_audio_controller.dart';
 import 'package:lws_hmi/platform/backlight/backlight_controller.dart';
 import 'package:lws_hmi/platform/backlight/linux_sysfs_backlight.dart';
+import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
+import 'package:lws_hmi/platform/bluetooth/linux_bluez_bluetooth_controller.dart';
 import 'package:lws_hmi/platform/display/display_orientation.dart';
 import 'package:lws_hmi/platform/display/linux_flutter_pi_orientation.dart';
+import 'package:lws_hmi/platform/http/http_client_controller.dart';
+import 'package:lws_hmi/platform/http/linux_http_client_controller.dart';
+import 'package:lws_hmi/platform/wifi/linux_wpa_wifi_controller.dart';
+import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
+import 'package:lws_hmi/ui/demo/bluetooth_demo_section.dart';
+import 'package:lws_hmi/ui/demo/demo_scroll_interaction.dart';
+import 'package:lws_hmi/ui/demo/http_demo_section.dart';
+import 'package:lws_hmi/ui/demo/wifi_demo_section.dart';
 
-/// P2 / P2.1 demo: device info, LEDs, speaker, backlight, orientation.
+/// P2 / P2.1 demo: device info, LEDs, speaker, backlight, orientation, Wi-Fi / BT.
 class P2DemoPage extends StatefulWidget {
   const P2DemoPage({
     super.key,
@@ -23,6 +33,9 @@ class P2DemoPage extends StatefulWidget {
     this.audioController,
     this.backlightController,
     this.orientationController,
+    this.wifiController,
+    this.httpClientController,
+    this.bluetoothController,
   });
 
   final DeviceSnReader deviceSnReader;
@@ -31,6 +44,9 @@ class P2DemoPage extends StatefulWidget {
   final MediaAudioController? audioController;
   final BacklightController? backlightController;
   final DisplayOrientationController? orientationController;
+  final WifiController? wifiController;
+  final HttpClientController? httpClientController;
+  final BluetoothController? bluetoothController;
 
   @override
   State<P2DemoPage> createState() => _P2DemoPageState();
@@ -42,6 +58,10 @@ class _P2DemoPageState extends State<P2DemoPage> {
   late final MediaAudioController _audio;
   late final BacklightController _backlight;
   late final DisplayOrientationController _orientation;
+  late final WifiController _wifi;
+  late final HttpClientController _http;
+  late final BluetoothController _bluetooth;
+  bool _networkSectionsReady = false;
 
   String _deviceSn = kUnavailableDisplay;
   String _gunheadSn = kUnavailableDisplay;
@@ -68,6 +88,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
   // Brightness: latest-wins coalesce (same idea as AudioManager / backlight HAL).
   bool _brightnessBusy = false;
   int? _queuedBrightness;
+  bool _listScrolling = false;
 
   @override
   void initState() {
@@ -78,6 +99,9 @@ class _P2DemoPageState extends State<P2DemoPage> {
     _backlight = widget.backlightController ?? LinuxSysfsBacklight();
     _orientation =
         widget.orientationController ?? LinuxFlutterPiOrientation();
+    _wifi = widget.wifiController ?? LinuxWpaWifiController();
+    _http = widget.httpClientController ?? LinuxHttpClientController();
+    _bluetooth = widget.bluetoothController ?? LinuxBluezBluetoothController();
     _playingSub = _audio.playing.listen((playing) {
       if (!mounted) {
         return;
@@ -90,6 +114,11 @@ class _P2DemoPageState extends State<P2DemoPage> {
   }
 
   Future<void> _loadAfterFirstFrame() async {
+    // Mount network sections ASAP after first frame (do not wait for Modbus).
+    if (mounted) {
+      setState(() => _networkSectionsReady = true);
+    }
+
     final sn = await widget.deviceSnReader.read();
     if (!mounted) {
       return;
@@ -195,6 +224,9 @@ class _P2DemoPageState extends State<P2DemoPage> {
     unawaited(_audio.dispose());
     unawaited(_backlight.dispose());
     unawaited(_orientation.dispose());
+    unawaited(_wifi.dispose());
+    unawaited(_http.dispose());
+    unawaited(_bluetooth.dispose());
     unawaited(_leds.dispose());
     unawaited(_modbus.close());
     super.dispose();
@@ -205,17 +237,53 @@ class _P2DemoPageState extends State<P2DemoPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            const Text(
-              'Device Information',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+        child: DemoScrollInteraction(
+          scrolling: _listScrolling,
+          child: Listener(
+            onPointerMove: (event) {
+              // Claim "scrolling" before Switch wins a vertical drag that started on it.
+              if (event.delta.dy.abs() > 1.5 && !_listScrolling) {
+                setState(() => _listScrolling = true);
+              }
+            },
+            onPointerUp: (_) {
+              if (_listScrolling) {
+                setState(() => _listScrolling = false);
+              }
+            },
+            onPointerCancel: (_) {
+              if (_listScrolling) {
+                setState(() => _listScrolling = false);
+              }
+            },
+            child: NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              if (notification.depth != 0) {
+                return false;
+              }
+              if (notification is ScrollStartNotification ||
+                  notification is ScrollUpdateNotification) {
+                if (!_listScrolling) {
+                  setState(() => _listScrolling = true);
+                }
+              } else if (notification is ScrollEndNotification) {
+                if (_listScrolling) {
+                  setState(() => _listScrolling = false);
+                }
+              }
+              return false;
+            },
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                const Text(
+                  'Device Information',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
             const SizedBox(height: 16),
             _InfoRow(label: 'Device SN', value: _deviceSn),
             _InfoRow(label: 'Gunhead SN', value: _gunheadSn),
@@ -355,8 +423,19 @@ class _P2DemoPageState extends State<P2DemoPage> {
                 unawaited(_onOrientation(set.first));
               },
             ),
+            if (_networkSectionsReady) ...[
+              const SizedBox(height: 32),
+              WifiDemoSection(controller: _wifi),
+              const SizedBox(height: 32),
+              HttpDemoSection(controller: _http),
+              const SizedBox(height: 32),
+              BluetoothDemoSection(controller: _bluetooth),
+            ],
             const SizedBox(height: 24),
-          ],
+              ],
+            ),
+          ),
+          ),
         ),
       ),
     );

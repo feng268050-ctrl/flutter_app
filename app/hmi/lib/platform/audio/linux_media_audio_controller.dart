@@ -98,6 +98,8 @@ class LinuxMediaAudioController implements MediaAudioController {
         await _applyMixerVolume(v);
         // Soft volume for remote decoder — never restarts playback.
         await _applyRemoteVolume(v);
+        // BlueALSA A2DP sink soft-volume (HW mixer alone does not affect BT PCM).
+        await _applyA2dpVolume(v);
       }
     } finally {
       _volumeBusy = false;
@@ -409,5 +411,20 @@ class LinuxMediaAudioController implements MediaAudioController {
       } catch (_) {}
     }
     return false;
+  }
+
+  /// BlueALSA soft-volume for phone → speaker (ignore failures when BT off).
+  Future<void> _applyA2dpVolume(int percent) async {
+    try {
+      final r = await Process.run(
+        '/usr/lib/lws-hmi/bt-a2dp-volume.sh',
+        <String>['$percent'],
+      );
+      if (r.exitCode != 0) {
+        lwsTrace('media-audio: bt-a2dp-volume exit ${r.exitCode}');
+      }
+    } catch (e) {
+      lwsTrace('media-audio: bt-a2dp-volume soft-fail: $e');
+    }
   }
 }

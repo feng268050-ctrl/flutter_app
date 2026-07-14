@@ -1,0 +1,22 @@
+[Unit]
+Description=Play BlueZ-ALSA A2DP Sink audio on local ALSA
+After=bluealsa.service
+Requires=bluealsa.service
+BindsTo=bluealsa.service
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/lib/lws-hmi/bt-audio-prepare.sh
+# Larger ALSA buffer absorbs BT ACL jitter (Missing RTP / Unexpected start frame).
+# 00:00:00:00:00:00 = any connected A2DP source (phone).
+ExecStart=/usr/bin/bluealsa-aplay --profile-a2dp --pcm-buffer-time=1000000 --pcm-period-time=250000 00:00:00:00:00:00
+# Background: re-apply saved Demo volume once phone opens an A2DP PCM (non-blocking).
+ExecStartPost=-/bin/sh -c '/usr/lib/lws-hmi/bt-a2dp-volume-apply-loop.sh >/tmp/lws-bt-a2dp-vol.log 2>&1 &'
+Restart=on-failure
+RestartSec=2
+Nice=-10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+# Intentionally empty — on-demand via bt-stack-up.sh

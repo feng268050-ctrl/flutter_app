@@ -25,7 +25,7 @@ disable_boot_unit() {
 }
 
 for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket \
-	bluetooth.service wifibt-init.service wpa_supplicant.service network.service \
+	bluetooth.service wifibt-init.service wpa_supplicant.service network.service dhcpcd.service \
 	log-guardian.service lws-hmi-boot-kpi.service usbdevice.service; do
 	disable_boot_unit "$unit"
 done

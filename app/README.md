@@ -117,6 +117,7 @@ Home route is the P2 demo (`lib/ui/demo/p2_demo_page.dart`, `MaterialApp.home`).
 | Item | Value |
 |------|--------|
 | Serial | `/dev/ttyS5`, **115200 8-N-1**, slave `0x01`, FC **0x04** input registers |
+| Serial backend | Linux: **PosixSerialPort** (`stty` + libc). Buildroot `libserialport` 0.1.1 fails `sp_open` on kernel 6.1 (`termiox` → ENOTTY); patch `overlay/buildroot/package/libserialport/0002-dont-check-termiox.patch` for next rootfs rebuild |
 | Device SN | `/usr/bin/read-serial` (USB gadget iSerial source), not Modbus |
 | Firmware Version | register `0x0002` |
 | Laser / Wire / Gunhead SN | `0x0032`–`0x0033`, `0x0035`, `0x0038`–`0x0039` (lws-ui formatting) |

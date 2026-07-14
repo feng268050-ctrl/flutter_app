@@ -35,9 +35,11 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
-  # Modbus RTU on Linux /dev/ttyS5 (bundles libserialport via Flutter build;
-  # rootfs also ships BR2_PACKAGE_LIBSERIALPORT for flutter-pi).
+  # Modbus RTU: Linux prefers PosixSerialPort (stty+libc) because Buildroot
+  # libserialport 0.1.1 hits ENOTTY on kernel 6.1 (termiox); keep this for
+  # Android / fallback. Rootfs still ships BR2_PACKAGE_LIBSERIALPORT.
   flutter_libserialport: ^0.4.0
+  ffi: ^2.1.0
 
 dev_dependencies:
   flutter_test:

@@ -1,0 +1,19 @@
+// lws-hmi ynh960: free UART5 (Modbus /dev/ttyS5) from EVB gmac1 PHY reset.
+//
+// rk3566-evb2 enables &gmac1 with:
+//   snps,reset-gpio = <&gpio3 RK_PC2 GPIO_ACTIVE_LOW>;
+// That pad is UART5_TX_M1 (uart5m1-xfer). On probe, ethernet tries to switch the
+// mux to GPIO for PHY reset (dmesg: "pin 114 already requested by fe690000.serial;
+// switch mux 4 to GPIO"), which fights Modbus RTU on /dev/ttyS5.
+//
+// Android product images do not share this EVB reset pin with the Modbus UART;
+// Linux inherits EVB gmac1 and breaks half-duplex RX even when TX counts rise.
+//
+// Drop the EVB PHY reset GPIO here. eth0 / PHY bring-up remain a separate P2
+// task (see docs/kernel-evb-dts-deferred.md — MDIO addr / delays).
+
+&gmac1 {
+	/delete-property/ snps,reset-gpio;
+	/delete-property/ snps,reset-active-low;
+	/delete-property/ snps,reset-delays-us;
+};

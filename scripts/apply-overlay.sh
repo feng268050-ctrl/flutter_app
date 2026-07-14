@@ -22,6 +22,7 @@ BR_DEFCONFIGS="$SDK/buildroot/configs"
 BR_PKG_FLUTTER_ENGINE="$SDK/buildroot/package/flutter-engine"
 BR_PKG_FLUTTER_SDK="$SDK/buildroot/package/flutter-sdk-bin"
 BR_PKG_FLUTTER_PI="$SDK/buildroot/package/flutter-pi"
+BR_PKG_LIBSERIALPORT="$SDK/buildroot/package/libserialport"
 BR_PKG_SOURCE_HAN_SANS_CN="$SDK/buildroot/package/source-han-sans/source-han-sans-cn"
 BR_OVERLAY_ROOT="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
 BR_OVERLAY="$BR_OVERLAY_ROOT/system/etc"
@@ -183,7 +184,8 @@ sync_kernel_display_dts() {
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-usb-gadget.dtsi" "lws-hmi-ynh960-usb-gadget.dtsi" \
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi" "lws-hmi-ynh960-evb-trim.dtsi" \
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.dtsi" "lws-hmi-ynh960-touch.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi" "lws-hmi-ynh960-own-gpio.dtsi"
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi" "lws-hmi-ynh960-own-gpio.dtsi" \
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi" "lws-hmi-ynh960-uart5-gmac.dtsi"
 }
 
 sync_kernel_config_fragments() {
@@ -316,6 +318,19 @@ sync_flutter_pi_package() {
   install_file "$src" "$BR_PKG_FLUTTER_PI/flutter-pi.mk"
   disable_br_package_patches "$BR_PKG_FLUTTER_PI" "flutter-pi"
   patch_flutter_pi_config_prebuilt
+}
+
+# libserialport 0.1.1 probes removed Linux termiox → sp_open ENOTTY on kernel 6.1+.
+sync_libserialport_package() {
+  local src="$OVERLAY/buildroot/package/libserialport/0002-dont-check-termiox.patch"
+  if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  if [[ ! -d "$BR_PKG_LIBSERIALPORT" ]]; then
+    echo "overlay: skip libserialport patch (package dir missing)" >&2
+    return 0
+  fi
+  install_file "$src" "$BR_PKG_LIBSERIALPORT/0002-dont-check-termiox.patch"
 }
 
 patch_flutter_pi_config_prebuilt() {
@@ -601,6 +616,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       rm -f "$kernel_dts/lws-hmi-ynh960-evb-trim.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-touch.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-own-gpio.dtsi"
+      rm -f "$kernel_dts/lws-hmi-ynh960-uart5-gmac.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-panel-init.dtsi"
     done
     restore_kernel_patches
@@ -683,6 +699,7 @@ sync_buildroot_chip_configs
 sync_flutter_engine_package
 sync_flutter_sdk_package
 sync_flutter_pi_package
+sync_libserialport_package
 sync_source_han_sans_cn_package
 patch_buildroot_config
 patch_mk_loader

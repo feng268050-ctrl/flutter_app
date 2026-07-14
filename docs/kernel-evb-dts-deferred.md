@@ -33,10 +33,25 @@ Use this table when a feature lands and dmesg warnings become symptoms. **Sympto
 | `mpp_rkvdec2 … shared_niu_a/h is not found` | Missing NIU reset lines in DT for rkvdec2 | **P5** | HW decode may fail | Add reset/clock resources per Rockchip MPP binding for ynh960 |
 | `rockchip-dmc … failed to get vop pn to msch rl` | DMC ↔ VOP bandwidth coupling (follows VOP regulator) | P2/P5 | DMC fixed freq still works | Fix `vop-supply` first; then revisit DMC devfreq if bandwidth tuning needed |
 | `mdio_bus stmmac-1: MDIO device at address 0 is missing` | PHY not at MDIO addr 0 on ynh960 | **P2** (eth0 / IPC) | eth0 may not link if PHY addr wrong | Schematic → fix `&gmac1` PHY `reg`, reset GPIO, `tx_delay`/`rx_delay` |
+| `of_dma_request_slave_channel: dma-names … /serial@fe690000` | UART5 DT lacks DMA channel names | — | Harmless; UART falls back to IRQ mode (Modbus OK) | Optional: add `dmas`/`dma-names` later |
+| `pin 114 already requested by fe690000.serial; switch mux 4 to GPIO` | EVB `&gmac1` `snps,reset-gpio = gpio3 RK_PC2` == UART5_TX_M1 | **P2 fixed** | Was: `/dev/ttyS5` TX count↑ but **no Modbus RX** (Android OK) | [`lws-hmi-ynh960-uart5-gmac.dtsi`](../overlay/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi) deletes EVB PHY reset on that pad |
 | `own-gpio … pin gpio4-0 already requested by fe010000.ethernet` | `own-gpio` vs `gmac1` RGMII (gpio4 A0/A1/A2, gpio3 D7) | **P2 fixed** | Was: whole `own-gpio` group failed → side LEDs stuck | [`lws-hmi-ynh960-own-gpio.dtsi`](../overlay/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi) drops USB_HOST_PWREN*/Relay from `own-gpio-pins` |
 | `fiq_debugger … IRQ fiq/wakeup not found` | EVB FIQ wiring absent; partial probe on ynh960 | — | Harmless; **keep node enabled** (`console=ttyFIQ0`) | Do not disable in evb-trim — serial goes quiet after ~2 s earlycon if disabled |
 | `systemd[1]: Failed to find module 'autofs4'` | Kernel built without `CONFIG_AUTOFS_FS` | P5 / optional | Harmless warning at boot | Enable autofs in kernel **or** mask systemd unit that pulls it in |
 | `Machine model: … EVB2 …` | Product still uses EVB2 `.dts` skeleton | P5 polish | None | Optional: fork `rk3566-ynh960.dts` with correct `model` / `compatible` |
+
+### UART / tty audit (ynh960, after uart5-gmac fix)
+
+| Linux node | Pins (mux) | Role on this product | Conflict? |
+|------------|------------|----------------------|-----------|
+| `ttyS5` / `uart5m1` | gpio3 PC2/PC3 | **Modbus RTU** (app `/dev/ttyS5`) | Was EVB gmac1 PHY reset on PC2 — **fixed** |
+| `ttyS4` / uart4 | gpio3 PB1/PB2 | **disabled**; silk COM4 → `GPIO_5`/`GPIO_4` LEDs | Intentional: own-gpio owns pads; not a Modbus path |
+| `ttyS1` / uart1 | BT HCI | Bluetooth | OK |
+| `ttyS3` / uart3m1 | gpio3 PB7/PC0 | Customer enables for board UART | No overlap with Modbus/LED pads |
+| `ttyS7` / uart7m1 | gpio3 PC4/PC5 | EVB leftover, unused by HMI app | No overlap with LED green (`gpio4 PC5`) or Modbus |
+| `ttyFIQ0` / earlycon `fe660000` | FIQ console | Engineering serial | Keep enabled |
+
+No second Modbus-style “wrong UART” found for the P2 demo path.
 
 ---
 
@@ -62,6 +77,7 @@ verify-boot
 |------|------|
 | `overlay/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi` | P1 EVB node disable |
 | `overlay/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi` | P2: own-gpio pinmux fix vs gmac1 |
+| `overlay/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi` | P2: drop gmac1 PHY reset on UART5_TX (Modbus `/dev/ttyS5`) |
 | `overlay/kernel/rockchip/lws-hmi-ynh960-display.dtsi` | MIPI dsi0 + 800×1280 timing |
 | `overlay/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi` | `root=/dev/mmcblk0p6` |
 | `overlay/kernel/rockchip/lws-hmi-kernel-trim.config` | Kconfig driver trim (CAN/PCIe/CSI/…) |
@@ -74,5 +90,6 @@ verify-boot
 
 | Date | Change |
 |------|--------|
+| 2026-07-14 | P2: `lws-hmi-ynh960-uart5-gmac.dtsi` — EVB gmac1 PHY reset stole UART5_TX (Modbus); Android works, Linux RX empty |
 | 2026-07-14 | P2: `lws-hmi-ynh960-own-gpio.dtsi` — drop gmac1-overlapping pads so `own-gpio` probes; GPIO_3/4/6 default off |
 | 2026-07-11 | Initial tracker; `lws-hmi-ynh960-evb-trim.dtsi` for FAN53555/SFC (not fiq-debugger — breaks serial after earlycon) |

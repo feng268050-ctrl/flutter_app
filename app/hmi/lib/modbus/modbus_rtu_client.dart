@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/modbus/modbus_crc.dart';
 import 'package:lws_hmi/modbus/modbus_format.dart';
+import 'package:lws_hmi/modbus/posix_serial_port.dart';
 import 'package:lws_hmi/modbus/register_address.dart';
 
 /// Serial parameters mirrored from lws-ui `SerialPortConfig` (8-N-1, 115200).
@@ -63,6 +66,9 @@ class ModbusAlarmTemperaturesSnapshot {
 }
 
 /// Minimal Modbus RTU client for P2 device-info + alarm temperature reads.
+///
+/// Linux uses [PosixSerialPort] (libc + stty) because Buildroot's libserialport
+/// 0.1.1 fails `sp_open` on kernel 6.1+ with ENOTTY (removed termiox ioctls).
 class ModbusRtuClient {
   ModbusRtuClient({
     this.devicePath = ModbusSerialConfig.devicePath,
@@ -72,10 +78,12 @@ class ModbusRtuClient {
   final String devicePath;
   final int slaveAddress;
 
-  SerialPort? _port;
+  PosixSerialPort? _posix;
+  SerialPort? _libserial;
   bool _openFailed = false;
 
-  bool get isOpen => _port?.isOpen == true;
+  bool get isOpen =>
+      (_posix?.isOpen ?? false) || (_libserial?.isOpen == true);
 
   /// Soft-open: missing port or permissions set [isOpen] false without throwing.
   Future<bool> open() async {
@@ -85,9 +93,33 @@ class ModbusRtuClient {
     if (_openFailed) {
       return false;
     }
+
+    if (Platform.isLinux) {
+      final posix = PosixSerialPort(devicePath);
+      if (posix.open(
+        baudRate: ModbusSerialConfig.baudRate,
+        dataBits: ModbusSerialConfig.dataBits,
+        stopBits: ModbusSerialConfig.stopBits,
+      )) {
+        _posix = posix;
+        return true;
+      }
+      posix.close();
+      debugPrint(
+        'Modbus: PosixSerialPort open failed; trying flutter_libserialport',
+      );
+    }
+
     try {
+      debugPrint(
+        'Modbus: opening $devicePath via libserialport; '
+        'available=${SerialPort.availablePorts}',
+      );
       final port = SerialPort(devicePath);
       if (!port.openReadWrite()) {
+        debugPrint(
+          'Modbus: openReadWrite failed: ${SerialPort.lastError}',
+        );
         port.dispose();
         _openFailed = true;
         return false;
@@ -98,9 +130,14 @@ class ModbusRtuClient {
         ..stopBits = ModbusSerialConfig.stopBits
         ..parity = SerialPortParity.none
         ..setFlowControl(SerialPortFlowControl.none);
-      _port = port;
+      _libserial = port;
+      debugPrint(
+        'Modbus: opened $devicePath @ ${ModbusSerialConfig.baudRate} 8N1',
+      );
       return true;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('Modbus: open exception: $e\n$st');
+      debugPrint('Modbus: lastError=${SerialPort.lastError}');
       _openFailed = true;
       _disposePort();
       return false;
@@ -113,8 +150,12 @@ class ModbusRtuClient {
   }
 
   void _disposePort() {
-    final port = _port;
-    _port = null;
+    final posix = _posix;
+    _posix = null;
+    posix?.close();
+
+    final port = _libserial;
+    _libserial = null;
     if (port == null) {
       return;
     }
@@ -200,8 +241,7 @@ class ModbusRtuClient {
   }
 
   Future<List<int>?> _readInputRegisters(int startAddress, int count) async {
-    final port = _port;
-    if (port == null || !port.isOpen) {
+    if (!isOpen) {
       return null;
     }
 
@@ -215,21 +255,26 @@ class ModbusRtuClient {
     ]);
 
     // Drain stale RX briefly (ignore failures).
-    try {
-      port.read(256, timeout: 1);
-    } catch (_) {}
+    _readChunk(256, timeoutMs: 1);
 
-    final written = port.write(Uint8List.fromList(request), timeout: 200);
+    final written = _writeChunk(
+      Uint8List.fromList(request),
+      timeoutMs: 200,
+    );
     if (written != request.length) {
+      debugPrint('Modbus: short write $written/${request.length}');
       return null;
     }
+    debugPrint(
+      'Modbus: TX ${request.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+    );
 
     final expectedLen = 5 + count * 2; // addr + fc + byteCount + data + crc
     final buffer = <int>[];
     final deadline = DateTime.now().add(ModbusSerialConfig.responseTimeout);
 
     while (buffer.length < expectedLen && DateTime.now().isBefore(deadline)) {
-      final chunk = port.read(expectedLen - buffer.length, timeout: 50);
+      final chunk = _readChunk(expectedLen - buffer.length, timeoutMs: 50);
       if (chunk.isEmpty) {
         await Future<void>.delayed(const Duration(milliseconds: 10));
         continue;
@@ -238,9 +283,18 @@ class ModbusRtuClient {
       if (buffer.length >= 5 && (buffer[1] & 0x80) != 0) {
         // Exception response: addr, fc|0x80, ex, crc_lo, crc_hi
         if (buffer.length >= 5 && verifyModbusCrc(buffer.sublist(0, 5))) {
+          debugPrint('Modbus: exception response $buffer');
           return null;
         }
       }
+    }
+
+    if (buffer.isNotEmpty) {
+      debugPrint(
+        'Modbus: RX ${buffer.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+      );
+    } else {
+      debugPrint('Modbus: RX <empty> (timeout)');
     }
 
     if (buffer.length < expectedLen ||
@@ -262,5 +316,33 @@ class ModbusRtuClient {
       values.add((hi << 8) | lo);
     }
     return values;
+  }
+
+  int _writeChunk(Uint8List data, {required int timeoutMs}) {
+    final posix = _posix;
+    if (posix != null) {
+      return posix.write(data, timeoutMs: timeoutMs);
+    }
+    final port = _libserial;
+    if (port == null || !port.isOpen) {
+      return 0;
+    }
+    return port.write(data, timeout: timeoutMs);
+  }
+
+  Uint8List _readChunk(int maxBytes, {required int timeoutMs}) {
+    final posix = _posix;
+    if (posix != null) {
+      return posix.read(maxBytes, timeoutMs: timeoutMs);
+    }
+    final port = _libserial;
+    if (port == null || !port.isOpen) {
+      return Uint8List(0);
+    }
+    try {
+      return port.read(maxBytes, timeout: timeoutMs);
+    } catch (_) {
+      return Uint8List(0);
+    }
   }
 }

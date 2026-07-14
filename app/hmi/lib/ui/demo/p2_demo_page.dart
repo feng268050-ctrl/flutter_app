@@ -151,7 +151,10 @@ class _P2DemoPageState extends State<P2DemoPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Pins R/Y/G = ${GpioLedConfig.red}/${GpioLedConfig.yellow}/${GpioLedConfig.green}',
+              'Pins R/Y/G YNHAPI ${GpioLedConfig.redYnhApi}/'
+              '${GpioLedConfig.yellowYnhApi}/${GpioLedConfig.greenYnhApi} → '
+              'linux ${GpioLedConfig.redLinuxGpio}/'
+              '${GpioLedConfig.yellowLinuxGpio}/${GpioLedConfig.greenLinuxGpio}',
               style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
             ),
             const SizedBox(height: 16),

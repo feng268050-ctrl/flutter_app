@@ -121,8 +121,8 @@ Home route is the P2 demo (`lib/ui/demo/p2_demo_page.dart`, `MaterialApp.home`).
 | Firmware Version | register `0x0002` |
 | Laser / Wire / Gunhead SN | `0x0032`–`0x0033`, `0x0035`, `0x0038`–`0x0039` (lws-ui formatting) |
 | Alarm temps (Monitor) | Motor / Motor Driver / Protective Mirror / Collimator — `0x0061`–`0x0064`, raw×0.1 °C |
-| RGB pins | Red=**4**, Yellow=**3**, Green=**6** (same as lws-ui `GpioLedConfig`) |
-| GPIO backend | Prefer `own-gpio` sysfs paths; fallback classic `/sys/class/gpio` |
+| RGB pins | 契约 **GPIO_5 / GPIO_4 / GPIO_7**（红/黄/绿）；路径 `/sys/class/gpio_innohi/GPIO_N/value` |
+| GPIO backend | 优先 `gpio_innohi`；经典 `/sys/class/gpio` 仅兜底（脚被占用时 export 会失败） |
 | Rootfs | `BR2_PACKAGE_LIBSERIALPORT` via `overlay/buildroot/chips/lws_hmi_p2_io.config` |
 | Permissions | `hmi.service` runs as root (access to ttyS5 + GPIO) |
 

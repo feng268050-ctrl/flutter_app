@@ -1,9 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/gpio/gpio_led_config.dart';
 
-/// Low-level GPIO line writer: prefer Innohi own-gpio, else classic sysfs.
+/// Low-level GPIO writer for ynh960 side-panel LEDs.
+///
+/// Resolution order per [LedColor]:
+/// 1. Innohi `gpio_innohi` sysfs using DTS labels GPIO_5 / GPIO_4 / GPIO_7
+/// 2. Classic `/sys/class/gpio` using Linux SoC numbers (105 / 106 / 149)
 class GpioLineBackend {
   GpioLineBackend();
 
@@ -12,46 +17,59 @@ class GpioLineBackend {
 
   String? get activeScheme => _activeScheme;
 
-  Future<bool> ensureOutput(int pin) async {
-    if (_valuePaths.containsKey(pin)) {
+  Future<bool> ensureColor(LedColor color) async {
+    final key = color.ynhApiPin;
+    if (_valuePaths.containsKey(key)) {
       return true;
     }
 
-    final candidates = <String>[
-      '/sys/class/own-gpio/gpio$pin/value',
-      '/sys/class/own_gpio/gpio$pin/value',
-      '/sys/devices/platform/own-gpio/gpio$pin/value',
+    // Innohi gpio_innohi (compatible gpio-innohi): class uses DTS labels.
+    final ownCandidates = <String>[
+      '/sys/class/gpio_innohi/GPIO_${color.ynhApiPin}/value',
+      '/sys/class/gpio_innohi/gpio${color.ynhApiPin}/value',
     ];
-    for (final path in candidates) {
-      final file = File(path);
-      if (await file.exists()) {
-        _valuePaths[pin] = path;
-        _activeScheme ??= 'own-gpio';
+    for (final path in ownCandidates) {
+      if (await File(path).exists()) {
+        _valuePaths[key] = path;
+        _activeScheme ??= 'gpio_innohi(GPIO_${color.ynhApiPin})';
         await _trySetDirectionSibling(path, 'out');
+        debugPrint('GPIO ${color.name}: using $path');
         return true;
       }
     }
 
-    // Classic sysfs fallback (pin number remains the product abstract index).
+    // Classic sysfs with Linux global GPIO number from DTS pad mapping.
+    final linux = color.linuxGpio;
     final export = File('/sys/class/gpio/export');
-    final valuePath = '/sys/class/gpio/gpio$pin/value';
+    final valuePath = '/sys/class/gpio/gpio$linux/value';
     final valueFile = File(valuePath);
     if (!await valueFile.exists()) {
       try {
-        await export.writeAsString('$pin');
-      } catch (_) {
-        // May already be exported.
+        await export.writeAsString('$linux');
+        // export is async in the kernel; give the node a moment.
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      } catch (e) {
+        debugPrint('GPIO ${color.name}: export $linux failed: $e');
       }
     }
     if (await valueFile.exists()) {
-      final direction = File('/sys/class/gpio/gpio$pin/direction');
+      final direction = File('/sys/class/gpio/gpio$linux/direction');
       try {
         await direction.writeAsString('out');
-      } catch (_) {}
-      _valuePaths[pin] = valuePath;
-      _activeScheme ??= 'sysfs';
+      } catch (e) {
+        debugPrint('GPIO ${color.name}: direction out failed: $e');
+      }
+      _valuePaths[key] = valuePath;
+      _activeScheme ??= 'sysfs(linux=$linux)';
+      debugPrint('GPIO ${color.name}: using $valuePath '
+          '(ynhApi=${color.ynhApiPin} → linux=$linux)');
       return true;
     }
+
+    debugPrint(
+      'GPIO ${color.name}: no backend '
+      '(tried gpio_innohi GPIO_${color.ynhApiPin}, sysfs linux=$linux)',
+    );
     return false;
   }
 
@@ -65,15 +83,16 @@ class GpioLineBackend {
     }
   }
 
-  Future<bool> writeLevel(int pin, bool high) async {
-    if (!await ensureOutput(pin)) {
+  Future<bool> writeColor(LedColor color, bool high) async {
+    if (!await ensureColor(color)) {
       return false;
     }
-    final path = _valuePaths[pin]!;
+    final path = _valuePaths[color.ynhApiPin]!;
     try {
       await File(path).writeAsString(high ? '1' : '0');
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('GPIO ${color.name}: write $path failed: $e');
       return false;
     }
   }
@@ -104,12 +123,12 @@ class GpioLedController {
     _modes[color] = mode;
     switch (mode) {
       case IndicatorMode.off:
-        await _backend.writeLevel(color.pin, false);
+        await _backend.writeColor(color, false);
       case IndicatorMode.steadyOn:
-        await _backend.writeLevel(color.pin, true);
+        await _backend.writeColor(color, true);
       case IndicatorMode.blink:
         _blinkPhaseHigh[color] = true;
-        await _backend.writeLevel(color.pin, true);
+        await _backend.writeColor(color, true);
         _blinkTimers[color] = Timer.periodic(
           const Duration(milliseconds: GpioLedConfig.flashOnMs),
           (_) => _onBlinkTick(color),
@@ -123,7 +142,7 @@ class GpioLedController {
     }
     final next = !(_blinkPhaseHigh[color] ?? false);
     _blinkPhaseHigh[color] = next;
-    await _backend.writeLevel(color.pin, next);
+    await _backend.writeColor(color, next);
   }
 
   void _cancelBlink(LedColor color) {
@@ -134,7 +153,7 @@ class GpioLedController {
   Future<void> dispose() async {
     for (final color in LedColor.values) {
       _cancelBlink(color);
-      await _backend.writeLevel(color.pin, false);
+      await _backend.writeColor(color, false);
       _modes[color] = IndicatorMode.off;
     }
   }

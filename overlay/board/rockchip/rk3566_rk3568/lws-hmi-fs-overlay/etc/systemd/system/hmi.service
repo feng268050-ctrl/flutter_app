@@ -9,6 +9,7 @@ After=local-fs.target lws-hmi-performance.service
 [Service]
 Type=simple
 Nice=-5
+# Runs as root so /dev/ttyS5 (Modbus) and GPIO sysfs / own-gpio remain accessible for P2.
 ExecStart=/usr/lib/lws-hmi/hmi-launch.sh
 Restart=on-failure
 RestartSec=2

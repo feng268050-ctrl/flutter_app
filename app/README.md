@@ -110,6 +110,28 @@ Host smoke test (no device):
 make test-debug-app
 ```
 
+## P2 Modbus RTU + GPIO demo
+
+Home route is the P2 demo (`lib/ui/demo/p2_demo_page.dart`, `MaterialApp.home`).
+
+| Item | Value |
+|------|--------|
+| Serial | `/dev/ttyS5`, **115200 8-N-1**, slave `0x01`, FC **0x04** input registers |
+| Device SN | `/usr/bin/read-serial` (USB gadget iSerial source), not Modbus |
+| Firmware Version | register `0x0002` |
+| Laser / Wire / Gunhead SN | `0x0032`–`0x0033`, `0x0035`, `0x0038`–`0x0039` (lws-ui formatting) |
+| Alarm temps (Monitor) | Motor / Motor Driver / Protective Mirror / Collimator — `0x0061`–`0x0064`, raw×0.1 °C |
+| RGB pins | Red=**4**, Yellow=**3**, Green=**6** (same as lws-ui `GpioLedConfig`) |
+| GPIO backend | Prefer `own-gpio` sysfs paths; fallback classic `/sys/class/gpio` |
+| Rootfs | `BR2_PACKAGE_LIBSERIALPORT` via `overlay/buildroot/chips/lws_hmi_p2_io.config` |
+| Permissions | `hmi.service` runs as root (access to ttyS5 + GPIO) |
+
+Failed reads display `-`. LED rows default to **Off**; Steady / Blink (1 s on / 1 s off) / Off are mutually exclusive per color.
+
+Rebuild notes: app-only → `make build-app` (+ `push-app`). First image after enabling `lws_hmi_p2_io.config` also needs rootfs rebuild so `libserialport.so` is present.
+
+OpenSpec: `openspec/changes/p2-modbus-gpio/`.
+
 ## Troubleshooting (splash logo stuck)
 
 1. On device: `diagnose-hmi` — check `journalctl -u hmi` for engine/AOT errors.

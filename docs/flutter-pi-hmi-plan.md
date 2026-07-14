@@ -14,7 +14,7 @@
 |------|------|------|
 | **P1 — 平台镜像 + Hello World** | Buildroot **Linux 镜像**（含后续所需的 **平台必须组件**）+ splash → **`flutter-pi` Hello World** | ✅ |
 | **P1.5 — 设备调试 + 快速 UI 迭代** | `make debug-app` 在**真机**上以调试模式启动 App；VSCode / Cursor Flutter 插件接入；为快速 UI 迭代铺路 | ✅ |
-| **P2 — Modbus + GPIO** | 迁移 **Modbus-MTU** 与 **GPIO 管理**；Linux 真机验证读设备与下位机信息、**三色指示灯**正常控制 | 🔲 |
+| **P2 — Modbus + GPIO** | 迁移 **Modbus RTU** 与 **GPIO 管理**；Linux 真机验证读设备与下位机信息、**三色指示灯**（红/黄/绿）正常控制 | 🔲 |
 | **P2.5 — 模拟器与 Android 兼容** | **`make emulator`**（Linux HMI 模拟器）；**`make android-emulator`**（参考 lws-ui `make emulator`）；Modbus/GPIO **Android 兼容**；Flutter App 可打包 **APK** | 🔲 |
 | **P3 — AI 原生库** | 迁移 lws-ui **AI 代码库**；新工程打出 **`libai.so`**（+ RKNN/`config.yaml`） | 🔲 |
 | **P3.5 — Flutter 平台升级（P4 前置）** | 将板端 **flutter-engine / SDK / flutter-pi** 从 P1 pin **升级到上游支持的 stable**（见 **§6.4**）；ynh960 全量回归 | 🔲 |
@@ -42,10 +42,10 @@ P1.5  设备调试 + 快速 UI 迭代
     └─ make push-app：实体板 USB-SSH 快速替换 release/debug bundle
 
 P2  Modbus + GPIO（Linux 真机）
-    ├─ 迁移 Modbus-MTU 与 GPIO 管理程序
+    ├─ 迁移 Modbus RTU 与 GPIO 管理程序
     ├─ Modbus：flutter_libserialport；Linux `/dev/ttyS5` 与 lws-ui 寄存器契约
     ├─ GPIO：Linux 直接读写 sysfs / gpiod 文件
-    └─ App demo：读设备与下位机信息；控制三色状态灯
+    └─ App demo：读设备与下位机信息；控制三色状态灯（红/黄/绿）
 
 P2.5  模拟器与 Android 兼容
     ├─ make emulator：构建并启动 Linux 虚拟机，加载 rootfs.img 跑 Linux App
@@ -1073,7 +1073,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 
 **P2 / P2.5 分工**：
 
-- **P2（Linux 真机）**：迁移 **Modbus-MTU** 与 **GPIO 管理**；`flutter_libserialport` + Linux sysfs/gpiod；验证读设备与下位机信息、三色指示灯。
+- **P2（Linux 真机）**：迁移 **Modbus RTU** 与 **GPIO 管理**；`flutter_libserialport` + Linux sysfs/gpiod；验证读设备与下位机信息、三色指示灯（红/黄/绿）。
 - **P2.5（模拟器 + Android）**：Flutter App 同时构建 **Linux bundle** 与 **Android APK**；`make emulator` / `make android-emulator`；Modbus/GPIO Android 兼容（串口 chmod、`YBHAPI.jar` MethodChannel）；`make version`、`make build-apk`、`make push-apk` 等。
 
 ### 11.1 Buildroot 补充包（相对 §3 已有栈）
@@ -1272,11 +1272,13 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 ### P2 — Modbus + GPIO（Linux 真机）
 
-- [ ] 迁移 **Modbus-MTU** 与 **GPIO 管理**程序
+OpenSpec change：[`openspec/changes/p2-modbus-gpio/`](../openspec/changes/p2-modbus-gpio/)（proposal / design / specs / tasks）。
+
+- [ ] 迁移 **Modbus RTU** 与 **GPIO 管理**程序（迁移时修正拼写，如 `Filed`→`Field`；计划旧称 “Modbus-MTU” 一律按 RTU）
 - [ ] Modbus：统一 **`flutter_libserialport`**；文档化 Linux `/dev/ttyS5` 与 lws-ui 寄存器契约
-- [ ] GPIO：Linux 端直接读写 sysfs / gpiod 文件
-- [ ] App：**读设备与下位机信息**（Modbus 或等价寄存器块）
-- [ ] App：**三色状态灯 demo**（红/绿/蓝或产品定义）
+- [ ] GPIO：Linux 端直接读写 sysfs / gpiod 文件（引脚对齐 lws-ui：红=4 / 黄=3 / 绿=6）
+- [ ] App：**读设备与下位机信息**（Device SN 来自 iSerial；其余来自 Modbus）
+- [ ] App：**三色状态灯 demo**（红/黄/绿；每色 Steady / Blink / Off 互斥）
 - [ ] 串口/日志验证 Modbus 时序与 lws-ui 一致；Linux 真机 smoke
 
 ### P2.5 — 模拟器与 Android 兼容

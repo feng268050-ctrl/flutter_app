@@ -14,6 +14,7 @@
 #include "chips/lws_hmi_font.config"
 #include "powermanager.config"
 #include "chips/lws_hmi_flutter.config"
+#include "chips/lws_hmi_p2_io.config"
 # BR2_ROOTFS_OVERLAY for lws-hmi-fs-overlay: see chips/rk3566_rk3568.config (apply-overlay)
 # #include "fs/vfat.config"
 

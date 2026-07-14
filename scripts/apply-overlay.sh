@@ -181,7 +181,8 @@ sync_kernel_display_dts() {
     "$panel_init_dtsi" "lws-hmi-ynh960-panel-init.dtsi" \
     "$lws_root" "lws-hmi-ynh960-linux-root.dtsi" \
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-usb-gadget.dtsi" "lws-hmi-ynh960-usb-gadget.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi" "lws-hmi-ynh960-evb-trim.dtsi"
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi" "lws-hmi-ynh960-evb-trim.dtsi" \
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.dtsi" "lws-hmi-ynh960-touch.dtsi"
 }
 
 sync_kernel_config_fragments() {
@@ -213,6 +214,8 @@ apply_kernel_patches() {
     "include/drm/drm_drv.h"
     "drivers/gpu/drm/drm_gem.c"
     "drivers/gpu/drm/rockchip/rockchip_drm_drv.c"
+    "drivers/input/touchscreen/gt9xx/gt9xx.c"
+    "drivers/input/touchscreen/gt9xx/gt9xx.h"
   )
   kernel="$(kernel_source_dir)"
   patch_dir="$OVERLAY/kernel/patches"
@@ -244,6 +247,8 @@ restore_kernel_patches() {
     "include/drm/drm_drv.h"
     "drivers/gpu/drm/drm_gem.c"
     "drivers/gpu/drm/rockchip/rockchip_drm_drv.c"
+    "drivers/input/touchscreen/gt9xx/gt9xx.c"
+    "drivers/input/touchscreen/gt9xx/gt9xx.h"
   )
   kernel="$(kernel_source_dir)"
   for relative in "${patched_files[@]}"; do

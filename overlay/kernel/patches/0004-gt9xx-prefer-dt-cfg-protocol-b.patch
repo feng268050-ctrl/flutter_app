@@ -1,0 +1,97 @@
+From: lws-hmi <lws-hmi@local>
+Subject: [PATCH] input: gt9xx: prefer DT cfg, Protocol B, tighten send length
+
+ynh960 Goodix probes but tapping flutter-pi oopses in rockchip GEM alloc
+(slab freelist corruption). Board dmesg showed the Innohi "hwy" block
+replacing the product DT cfg-group (800x1280) with flash cfg version
+0x5a, then gtp_send_cfg blasted GTP_CONFIG_MAX_LENGTH bytes of junk.
+
+- Always keep DT goodix,cfg-group (drop chip-version override)
+- Send only gtp_cfg_len + addr bytes
+- Enable Protocol B (ICS slots) with INPUT_MT_DIRECT for libinput
+- Attach input_dev parent; clamp absurd abs ranges; silence GTP_DEBUG_ON
+
+--- a/drivers/input/touchscreen/gt9xx/gt9xx.h
++++ b/drivers/input/touchscreen/gt9xx/gt9xx.h
+@@ -57,7 +57,7 @@
+ #define GTP_DRIVER_SEND_CFG   1	   //driver send config
+ #define GTP_HAVE_TOUCH_KEY    0
+ #define GTP_POWER_CTRL_SLEEP  0    //power off when suspend
+-#define GTP_ICS_SLOT_REPORT   0    // slot protocol 
++#define GTP_ICS_SLOT_REPORT   1    // slot protocol 
+ 
+ #define GTP_AUTO_UPDATE       0    // auto update fw by .bin file as default
+ #define GTP_HEADER_FW_UPDATE  0    // auto update fw by gtp_default_FW in gt9xx_firmware.h, function together with GTP_AUTO_UPDATE
+@@ -73,7 +73,7 @@
+ 
+ #define GTP_GESTURE_WAKEUP    0    // gesture wakeup 
+ 
+-#define GTP_DEBUG_ON          1
++#define GTP_DEBUG_ON          0
+ #define GTP_DEBUG_ARRAY_ON    0
+ #define GTP_DEBUG_FUNC_ON     0
+ 
+--- a/drivers/input/touchscreen/gt9xx/gt9xx.c
++++ b/drivers/input/touchscreen/gt9xx/gt9xx.c
+@@ -307,7 +307,8 @@
+     GTP_INFO("Driver send config.");
+     for (retry = 0; retry < 5; retry++)
+     {
+-        ret = gtp_i2c_write(client, config , GTP_CONFIG_MAX_LENGTH + GTP_ADDR_LENGTH);
++        /* Write addr + DT cfg only; avoid sending garbage past gtp_cfg_len. */
++        ret = gtp_i2c_write(client, config, ts->gtp_cfg_len + GTP_ADDR_LENGTH);
+         if (ret > 0)
+         {
+             break;
+@@ -1444,21 +1445,8 @@
+ 		ts->pnl_init_error = 1;
+ 		return -1;
+ 	}
+-	//hwy 假设板子是空板，里面没有刷过TP参数，此时接刷过TP参数的TP，可能会导致判断固件里面的参数出现异常情况
+-	if(1)
+-	{
+-		char proc_data[GTP_CONFIG_MAX_LENGTH + 2] = {0x80,0x47};
+-		// read proc-config and compare dts-config
+-	    gtp_i2c_read(i2c_connect_client, proc_data, GTP_CONFIG_MAX_LENGTH + 2);
+-		printk("in %s +%d %s config[GTP_ADDR_LENGTH]=0x%x and proc_data[GTP_ADDR_LENGTH]=0x%x \n ", __FILE__, __LINE__, __func__, config[GTP_ADDR_LENGTH], proc_data[GTP_ADDR_LENGTH]);
+-		if(config[GTP_ADDR_LENGTH] < proc_data[GTP_ADDR_LENGTH]){
+-			memcpy(config,proc_data, (GTP_CONFIG_MAX_LENGTH + GTP_ADDR_LENGTH));
+-			printk("in %s +%d %s use orig proc_data as config \n ", __FILE__, __LINE__, __func__);
+-		}
+-	}
++	/* lws-hmi: always prefer DT goodix,cfg-group (product 800x1280). */
+ 
+-	//hwy
+-
+ 	if (of_property_read_u32(ts->client->dev.of_node, "swap-xy", &val)) {
+ 		GTP_ERROR("swap-xy not exist");
+ 		return -EINVAL;
+@@ -1635,6 +1623,14 @@
+ 	}
+ 
+ #endif
++        /* lws-hmi: panel is 800x1280; reject absurd abs from bad flash cfgs */
++        if (ts->abs_x_max < 100 || ts->abs_x_max > 4096 ||
++            ts->abs_y_max < 100 || ts->abs_y_max > 4096) {
++            GTP_ERROR("implausible abs %dx%d, forcing 800x1280",
++                      ts->abs_x_max, ts->abs_y_max);
++            ts->abs_x_max = 800;
++            ts->abs_y_max = 1280;
++        }
+         GTP_INFO("X_MAX: %d, Y_MAX: %d, TRIGGER: 0x%02x", ts->abs_x_max,ts->abs_y_max,ts->int_trigger_type);
+     }
+ 
+@@ -1926,11 +1922,12 @@
+ 
+     ts->input_dev->evbit[0] = BIT_MASK(EV_SYN) | BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS) ;
+ #if GTP_ICS_SLOT_REPORT
+-    input_mt_init_slots(ts->input_dev, 16);     // in case of "out of memory"
++    input_mt_init_slots(ts->input_dev, GTP_MAX_TOUCH, INPUT_MT_DIRECT);
+ #else
+     ts->input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
+ #endif
+     __set_bit(INPUT_PROP_DIRECT, ts->input_dev->propbit);
++    ts->input_dev->dev.parent = &ts->client->dev;
+ 
+ #if GTP_HAVE_TOUCH_KEY
+     for (index = 0; index < GTP_MAX_KEY_NUM; index++)

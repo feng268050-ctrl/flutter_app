@@ -34,11 +34,12 @@ restore_upstream_dtsi() {
 }
 
 apply_display_dts() {
-  local kernel_dts customer_dtsi patch_script lws_dtsi panel_init_dtsi evb_trim_dtsi gen_script
+  local kernel_dts customer_dtsi patch_script lws_dtsi panel_init_dtsi evb_trim_dtsi touch_dtsi gen_script
   gen_script="$ROOT/scripts/gen-ynh960-panel-init-dtsi.sh"
   lws_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-display.dtsi"
   panel_init_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-panel-init.dtsi"
   evb_trim_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi"
+  touch_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.dtsi"
   patch_script="$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-ynh960-dts.sh"
   [[ -x "$gen_script" ]] || chmod +x "$gen_script"
   bash "$gen_script"
@@ -46,22 +47,26 @@ apply_display_dts() {
     "$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip"; do
     [[ -d "$kernel_dts" ]] || continue
     customer_dtsi="$kernel_dts/customer_board_ynh960.dtsi"
-    [[ -f "$customer_dtsi" && -f "$patch_script" && -f "$lws_dtsi" && -f "$panel_init_dtsi" && -f "$evb_trim_dtsi" ]] || continue
+    [[ -f "$customer_dtsi" && -f "$patch_script" && -f "$lws_dtsi" && -f "$panel_init_dtsi" && -f "$evb_trim_dtsi" && -f "$touch_dtsi" ]] || continue
     bash "$patch_script" "$customer_dtsi" \
       "$lws_dtsi" "lws-hmi-ynh960-display.dtsi" \
       "$panel_init_dtsi" "lws-hmi-ynh960-panel-init.dtsi" \
-      "$evb_trim_dtsi" "lws-hmi-ynh960-evb-trim.dtsi"
+      "$evb_trim_dtsi" "lws-hmi-ynh960-evb-trim.dtsi" \
+      "$touch_dtsi" "lws-hmi-ynh960-touch.dtsi"
     echo "sdk-native: ynh960 MIPI dsi0 + panel-init-sequence in $customer_dtsi"
   done
 }
 
 apply_display_kernel_config() {
-  local cfg="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-display.config"
-  local configs_dir
-  for configs_dir in "$SDK/kernel/arch/arm64/configs" \
-    "$SDK/kernel-6.1/arch/arm64/configs"; do
-    [[ -f "$cfg" && -d "$configs_dir" ]] || continue
-    install_file "$cfg" "$configs_dir/lws-hmi-ynh960-display.config"
+  local cfg configs_dir
+  for cfg in \
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-display.config" \
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.config"; do
+    for configs_dir in "$SDK/kernel/arch/arm64/configs" \
+      "$SDK/kernel-6.1/arch/arm64/configs"; do
+      [[ -f "$cfg" && -d "$configs_dir" ]] || continue
+      install_file "$cfg" "$configs_dir/$(basename "$cfg")"
+    done
   done
 }
 

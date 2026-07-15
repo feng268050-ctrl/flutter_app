@@ -3,6 +3,7 @@
 ## Purpose
 TBD - created by archiving change p1-linux-flutter-platform. Update Purpose after archive.
 ## Requirements
+
 ### Requirement: Plan A minimal systemd is PID 1
 
 The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL ship `libsystemd.so` for flutter-pi (`sd_event`); libsystemd availability does not by itself mandate systemd as init, but both are enabled via `lws_hmi_systemd.config`. The image MUST disable systemd-networkd, systemd-resolved, systemd-timesyncd, systemd-logind, and polkit packages per that config.
@@ -181,3 +182,20 @@ Plan A SHALL continue to leave `network.service` and `dhcpcd.service` out of `mu
 - **WHEN** an operator or the HMI runs eth0 DHCP/static helpers after boot
 - **THEN** `hmi.service` unit dependencies still do not include `network-online.target` or eth0 readiness
 
+### Requirement: Settings restore unit at multi-user
+
+`lws-hmi-settings-restore.service` SHALL be enabled in `multi-user.target.wants`. On-demand Wi‑Fi/eth0 units (`lws-hmi-wpa`, `lws-hmi-wlan0-dhcp`, `lws-hmi-eth0`) MUST remain disabled at boot via preset and MUST NOT appear in `multi-user.target.wants` except as started by restore or Demo.
+
+#### Scenario: Preset disables on-demand radio units
+
+- **WHEN** the image is built
+- **THEN** preset disables `lws-hmi-wpa.service`, `lws-hmi-wlan0-dhcp.service`, and `lws-hmi-eth0.service`
+
+### Requirement: HMI does not own settings cgroup
+
+`hmi.service` MUST continue to start without `network-online.target`. Stopping `hmi.service` MUST NOT be the stop path for settings network units.
+
+#### Scenario: hmi has no network-online dependency
+
+- **WHEN** inspecting `hmi.service`
+- **THEN** it does not require `network-online.target`

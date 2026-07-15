@@ -6,6 +6,7 @@ Reusable percent-based backlight controller writing `/sys/class/backlight/*/brig
 
 ## Requirements
 
+
 ### Requirement: Backlight controller API is percent-based
 
 The HMI SHALL provide a reusable `BacklightController` that gets and sets display brightness as an integer **percent in 0–100** (clamped). Callers MUST NOT depend on Android `Settings.System` brightness integers.
@@ -37,3 +38,11 @@ The app SHALL NOT block `runApp` / first frame on a successful backlight open or
 
 - **WHEN** the app starts before backlight sysfs is readable
 - **THEN** the first home frame still renders; the brightness control may show a default until a later successful read
+### Requirement: Persist backlight brightness percent
+
+Setting backlight brightness from the HMI SHALL persist the clamped percent (0–100) to `/var/lib/lws-hmi/backlight-brightness` so boot restore can re-apply it without touching `hmi.service` lifecycle for network stacks.
+
+#### Scenario: Set writes preference
+
+- **WHEN** the operator sets backlight brightness to a valid percent
+- **THEN** `/var/lib/lws-hmi/backlight-brightness` contains that percent

@@ -3,6 +3,7 @@
 ## Purpose
 TBD - created by archiving change p1-linux-flutter-platform. Update Purpose after archive.
 ## Requirements
+
 ### Requirement: lws_hmi Buildroot defconfig is the default rootfs profile for ynh960
 
 The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the SDK Buildroot configs tree, composed from `base/base.config`, `lws_hmi_{base,systemd,network,flutter,bt,npu,font,build,toolchain_external}.config`, `rk3566_rk3568_aarch64.config`, `gpu/gpu.config`, `wifibt/wireless.config`, `wifibt/bt.config`, and `powermanager.config`. P1 SHALL `#include` `lws_hmi_npu.config` to gate RKNPU runtime overlay staging (`make fetch-rknn-rt`); P3+ fragments (`lws_hmi_gst_*`, `lws_hmi_mediamtx`, `lws_hmi_platform`) SHALL remain commented out until those phases are enabled. The ynh960 board configuration SHALL set `RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"` (resolving to `rockchip_rk3566_rk3568_lws_hmi`) and `RK_ROOTFS_SYSTEM_BUILDROOT=y`.
@@ -182,3 +183,11 @@ The lws_hmi rootfs SHALL include a minimal ALSA userland sufficient to play a lo
 - **WHEN** the chosen Linux media-audio backend relies on an external decoder/player
 - **THEN** that binary is present on the target rootfs and invocable by the HMI process
 
+### Requirement: Overlay includes settings isolation units
+
+The lws_hmi rootfs overlay SHALL include `lws-hmi-wpa.service`, `lws-hmi-wlan0-dhcp.service`, `lws-hmi-eth0.service`, `lws-hmi-settings-restore.service`, `lws-hmi-wpa-run.sh`, and `lws-hmi-settings-restore.sh`. `verify-rootfs-overlay` SHALL fail if `wifi-stack-up.sh` still starts `wpa_supplicant -B` directly instead of the dedicated unit.
+
+#### Scenario: verify catches in-cgroup wpa
+
+- **WHEN** `verify-rootfs-overlay.sh` runs against a staging target whose `wifi-stack-up.sh` still embeds `wpa_supplicant -B`
+- **THEN** verification fails

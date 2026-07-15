@@ -6,6 +6,7 @@ Linux eth0 (RJ45) client addressing for the HMI: on-demand link up, DHCP/static 
 
 ## Requirements
 
+
 ### Requirement: Abstract Ethernet controller API for Linux eth0
 
 The system SHALL provide a reusable Dart `EthernetController` abstraction that exposes eth0 interface enablement (admin up/down), link/carrier status streams, DHCP vs static IPv4 configuration, and link detail snapshots. Linux SHALL implement the abstraction using `iproute2` and eth0-scoped helpers without NetworkManager. Callers MUST depend on the abstract type, not the Linux concrete class.
@@ -52,3 +53,20 @@ Overlay helpers used for eth0 DHCP/static (and link if present) SHALL hard-refus
 
 - **WHEN** an eth0 static helper is invoked in a way that would configure wlan0
 - **THEN** the helper exits non-zero without changing wlan0 addresses
+### Requirement: Ethernet apply outside HMI cgroup
+
+Long-lived eth0 DHCP (or apply that leaves dhcpcd running) SHALL run under `lws-hmi-eth0.service` (or an equivalent unit) outside `hmi.service`'s cgroup so `systemctl stop hmi` does not remove eth0 addressing started from Demo.
+
+#### Scenario: HMI restart keeps eth0
+
+- **WHEN** eth0 has been applied with DHCP or static IPv4 and the operator restarts `hmi.service`
+- **THEN** eth0 retains its configured IPv4 addressing
+
+### Requirement: Wanted marker for eth0
+
+When eth0 is enabled/applied successfully, the system SHALL create `/var/lib/lws-hmi/eth0-wanted`. When eth0 is disabled, that file SHALL be removed.
+
+#### Scenario: Apply writes wanted
+
+- **WHEN** the operator enables eth0 and applies IPv4 successfully
+- **THEN** `/var/lib/lws-hmi/eth0-wanted` exists

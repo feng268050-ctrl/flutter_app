@@ -6,6 +6,7 @@ Linux Wi-Fi client stack for the HMI: on-demand wpa_supplicant, wlan0 DHCP/stati
 
 ## Requirements
 
+
 ### Requirement: Abstract Wi-Fi controller API for Linux client
 
 The system SHALL provide a reusable Dart `WifiController` abstraction that exposes radio enablement, scan of visible networks, connect/disconnect/forget (including hidden SSIDs), wlan0 IPv4 mode, and connection status streams. Linux SHALL implement the abstraction using on-demand wpa_supplicant control without NetworkManager. Callers MUST depend on the abstract type, not the Linux concrete class.
@@ -67,3 +68,25 @@ Saved networks SHALL persist in a wpa_supplicant configuration under `/var/lib/l
 
 - **WHEN** a network was saved via connect with save enabled and the HMI process restarts with Wi-Fi later enabled
 - **THEN** the saved SSID remains present in the persisted configuration
+### Requirement: Settings daemons outside HMI cgroup
+
+Long-lived Wi‑Fi and wlan0 DHCP processes SHALL run under dedicated systemd units (`lws-hmi-wpa.service`, `lws-hmi-wlan0-dhcp.service`) that are not part of `hmi.service`'s cgroup. Enabling Wi‑Fi from the HMI MUST start those units (or equivalent escaped helpers) and MUST NOT leave `wpa_supplicant` started solely as a child of the HMI process tree.
+
+#### Scenario: HMI restart keeps Wi-Fi
+
+- **WHEN** Wi‑Fi is associated with an address and the operator restarts `hmi.service`
+- **THEN** `wlan0` remains associated with an IPv4 address and LAN SSH to that address (if enabled) remains usable
+
+### Requirement: Wanted marker for Wi-Fi radio
+
+When Wi‑Fi radio is enabled successfully, the system SHALL create `/var/lib/lws-hmi/wifi-wanted`. When radio is disabled, that file SHALL be removed.
+
+#### Scenario: Enable writes wanted
+
+- **WHEN** the operator enables Wi‑Fi radio successfully
+- **THEN** `/var/lib/lws-hmi/wifi-wanted` exists
+
+#### Scenario: Disable clears wanted
+
+- **WHEN** the operator disables Wi‑Fi radio
+- **THEN** `/var/lib/lws-hmi/wifi-wanted` is absent and the Wi‑Fi stack is torn down

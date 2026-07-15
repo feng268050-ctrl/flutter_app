@@ -1,5 +1,7 @@
 # Kernel boot log — EVB DTS deferred fixes (ynh960)
 
+**产品 I/O 契约台账（串口 / GPIO / pinmux / 触控）** → [`ynh960-io-pinmux-ledger.md`](ynh960-io-pinmux-ledger.md)。本文跟踪 **仍可能出现的 EVB 杂讯与未修项**；已修复的 UART5↔gmac、own-gpio、uart7↔pwm、RMII 结论已收进台账。
+
 Base device tree is **Rockchip RK3566 EVB2** (`rk3566-evb2-lp4x-v10.dtsi` → `rk3566-evb.dtsi` → `rk3568-evb.dtsi`) plus Innohi `customer_board_ynh960.dtsi` and lws-hmi overlays.
 
 **Machine model** in dmesg still reads `Rockchip RK3566 EVB2 LP4X V10 Board` — expected until a dedicated ynh960 `.dts` is forked (cosmetic only).
@@ -54,6 +56,8 @@ Use this table when a feature lands and dmesg warnings become symptoms. **Sympto
 | `ttyFIQ0` / earlycon `fe660000` | FIQ console | Engineering serial | Keep enabled |
 
 No second Modbus-style “wrong UART” found for the P2 demo path.
+
+**External keyboard (USB HID):** not a board pinmux item — track under **P2.1** in [`flutter-pi-hmi-plan.md`](flutter-pi-hmi-plan.md) §12 once hardware arrives (same OTG port may conflict with USB-SSH gadget).
 
 ---
 

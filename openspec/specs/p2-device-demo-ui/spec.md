@@ -2,11 +2,8 @@
 
 ## Purpose
 
-P2 Flutter home demo: device-information rows (iSerial + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth discoverable sections, plus audio / brightness / orientation controls.
-
+P2 Flutter home demo: device-information rows (iSerial + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth discoverable sections, P2.2 Date & Time (manual / network), plus audio / brightness / orientation controls.
 ## Requirements
-
-
 ### Requirement: Home screen lists five device-info rows
 
 The P2 home (or primary demo) screen SHALL display exactly these rows as simple `label: value` text (English labels matching lws-ui Device Information naming):
@@ -190,6 +187,7 @@ The demo home SHALL provide a mutually exclusive Portrait / Landscape control gr
 
 - **WHEN** the demo screen first appears and the persisted preference is landscape
 - **THEN** the Landscape control is the selected mode
+
 ### Requirement: Demo exposes LAN SSH debug toggle after HTTP / Proxy
 
 The P2/P2.1 demo home SHALL include a LAN SSH debug section immediately **after** the HTTP / Proxy section. The section SHALL provide a toggle that enables or disables on-demand LAN/WLAN SSH debug via the platform SSH debug controller (backing `enable-ssh-debug.sh` / `disable-ssh-debug.sh`). Toggle I/O MUST NOT block first-frame paint.
@@ -208,3 +206,36 @@ The P2/P2.1 demo home SHALL include a LAN SSH debug section immediately **after*
 
 - **WHEN** the user scrolls the demo home after network sections are ready
 - **THEN** the LAN SSH debug section appears after the HTTP / Proxy section
+
+### Requirement: Demo exposes Date & Time section
+
+The P2 demo SHALL include a **Date & Time** section that:
+
+1. Displays the current wall clock (updating while the section is visible)
+2. Allows editing date and time for **manual** apply
+3. Allows selecting timezone from a curated list that includes at least `UTC` and `Asia/Shanghai`
+4. Offers **Manual** vs **Network** sync mode controls
+5. Offers **Apply** (manual set) and **Sync Now** (network sync) actions wired to `DateTimeController`
+
+Failures MUST show a non-fatal status/error string and MUST NOT crash the demo. Initialization of the section MUST NOT block first paint (post-frame / after network sections pattern is acceptable).
+
+#### Scenario: Section visible
+
+- **WHEN** the user scrolls to the Date & Time demo section after it has initialized
+- **THEN** current time, mode controls, timezone control, Apply, and Sync Now are visible
+
+#### Scenario: Apply sets manual time
+
+- **WHEN** the user enters a valid date/time and taps Apply
+- **THEN** the date/time controller is asked to set the wall clock (and mode becomes manual per platform rules)
+
+#### Scenario: Sync Now requests network sync
+
+- **WHEN** the user taps Sync Now
+- **THEN** the date/time controller is asked to sync from the network and the section shows success or a structured failure message
+
+#### Scenario: Mode toggle persists via controller
+
+- **WHEN** the user selects Network mode
+- **THEN** the date/time controller is asked to set sync mode to `network`
+

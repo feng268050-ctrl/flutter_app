@@ -12,6 +12,8 @@ import 'package:lws_hmi/platform/backlight/backlight_controller.dart';
 import 'package:lws_hmi/platform/backlight/linux_sysfs_backlight.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/linux_bluez_bluetooth_controller.dart';
+import 'package:lws_hmi/platform/datetime/date_time_controller.dart';
+import 'package:lws_hmi/platform/datetime/linux_date_time_controller.dart';
 import 'package:lws_hmi/platform/display/display_orientation.dart';
 import 'package:lws_hmi/platform/display/linux_flutter_pi_orientation.dart';
 import 'package:lws_hmi/platform/ethernet/ethernet_controller.dart';
@@ -23,6 +25,7 @@ import 'package:lws_hmi/platform/ssh/ssh_debug_controller.dart';
 import 'package:lws_hmi/platform/wifi/linux_wpa_wifi_controller.dart';
 import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
 import 'package:lws_hmi/ui/demo/bluetooth_demo_section.dart';
+import 'package:lws_hmi/ui/demo/date_time_demo_section.dart';
 import 'package:lws_hmi/ui/demo/demo_scroll_interaction.dart';
 import 'package:lws_hmi/ui/demo/ethernet_demo_section.dart';
 import 'package:lws_hmi/ui/demo/http_demo_section.dart';
@@ -30,7 +33,7 @@ import 'package:lws_hmi/ui/demo/keyboard_demo_section.dart';
 import 'package:lws_hmi/ui/demo/ssh_debug_demo_section.dart';
 import 'package:lws_hmi/ui/demo/wifi_demo_section.dart';
 
-/// P2 / P2.1 demo: device info, LEDs, I/O, network, LAN SSH debug.
+/// P2 / P2.1 / P2.2 demo: device info, LEDs, I/O, network, date/time.
 class P2DemoPage extends StatefulWidget {
   const P2DemoPage({
     super.key,
@@ -43,6 +46,7 @@ class P2DemoPage extends StatefulWidget {
     this.ethernetController,
     this.wifiController,
     this.httpClientController,
+    this.dateTimeController,
     this.sshDebugController,
     this.bluetoothController,
   });
@@ -56,6 +60,7 @@ class P2DemoPage extends StatefulWidget {
   final EthernetController? ethernetController;
   final WifiController? wifiController;
   final HttpClientController? httpClientController;
+  final DateTimeController? dateTimeController;
   final SshDebugController? sshDebugController;
   final BluetoothController? bluetoothController;
 
@@ -71,6 +76,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
   late final DisplayOrientationController _orientation;
   late final EthernetController _ethernet;
   late final WifiController _wifi;
+  late final DateTimeController _dateTime;
   late final HttpClientController _http;
   late final SshDebugController _sshDebug;
   late final BluetoothController _bluetooth;
@@ -114,7 +120,9 @@ class _P2DemoPageState extends State<P2DemoPage> {
         widget.orientationController ?? LinuxFlutterPiOrientation();
     _ethernet = widget.ethernetController ?? LinuxEthernetController();
     _wifi = widget.wifiController ?? LinuxWpaWifiController();
-    _http = widget.httpClientController ?? LinuxHttpClientController();
+    _dateTime = widget.dateTimeController ?? LinuxDateTimeController();
+    _http = widget.httpClientController ??
+        LinuxHttpClientController(dateTimeController: _dateTime);
     _sshDebug = widget.sshDebugController ?? LinuxSshDebugController();
     _bluetooth = widget.bluetoothController ?? LinuxBluezBluetoothController();
     _playingSub = _audio.playing.listen((playing) {
@@ -244,6 +252,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
     unawaited(_orientation.dispose());
     unawaited(_ethernet.dispose());
     unawaited(_wifi.dispose());
+    unawaited(_dateTime.dispose());
     unawaited(_http.dispose());
     unawaited(_bluetooth.dispose());
     unawaited(_leds.dispose());
@@ -443,6 +452,8 @@ class _P2DemoPageState extends State<P2DemoPage> {
               },
             ),
             if (_networkSectionsReady) ...[
+              const SizedBox(height: 32),
+              DateTimeDemoSection(controller: _dateTime),
               const SizedBox(height: 32),
               EthernetDemoSection(controller: _ethernet),
               const SizedBox(height: 32),

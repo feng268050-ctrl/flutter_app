@@ -1,5 +1,6 @@
 #!/bin/sh
-# Sync wall clock after wlan0 has IPv4. HTTPS cert verify fails when RTC is
+# Shared wall-clock sync (P2.2 DateTimeController / HTTPS TLS prep / Wi‑Fi helpers).
+# Sync wall clock after network has IPv4. HTTPS cert verify fails when RTC is
 # stuck in the past (common without battery-backed RTC / NTP on first boot).
 set -eu
 

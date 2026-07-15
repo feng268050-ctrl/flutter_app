@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:lws_hmi/platform/datetime/date_time_controller.dart';
+import 'package:lws_hmi/platform/datetime/linux_date_time_controller.dart';
 import 'package:lws_hmi/platform/http/http_client_controller.dart';
 import 'package:lws_hmi/platform/http/http_proxy_config.dart';
 import 'package:lws_hmi/platform/lws_trace.dart';
@@ -17,10 +19,12 @@ class LinuxHttpClientController implements HttpClientController {
   LinuxHttpClientController({
     this.proxyPath = HttpProxyStore.defaultPath,
     this.caBundlePath = kSystemCaBundlePath,
-  });
+    DateTimeController? dateTimeController,
+  }) : dateTimeController = dateTimeController ?? LinuxDateTimeController();
 
   final String proxyPath;
   final String caBundlePath;
+  final DateTimeController dateTimeController;
 
   @override
   Future<HttpProxyConfig> getProxy() async {
@@ -55,7 +59,7 @@ class LinuxHttpClientController implements HttpClientController {
     HttpClient? client;
     try {
       if (url.isScheme('https')) {
-        await _ensureWallClockForTls();
+        await dateTimeController.ensureSaneForTls();
       }
       // Default SecurityContext only (no setTrustedCertificatesBytes).
       client = HttpClient();
@@ -124,60 +128,6 @@ class LinuxHttpClientController implements HttpClientController {
       );
     } finally {
       client?.close(force: true);
-    }
-  }
-
-  /// Board RTC often boots in 2024 without NTP; certs (e.g. Baidu notBefore
-  /// 2025-07) then fail handshake. Prefer overlay helper; else HTTP Date.
-  Future<void> _ensureWallClockForTls() async {
-    if (DateTime.now().toUtc().year >= 2025) {
-      return;
-    }
-    lwsTrace('http: wall clock stale (${DateTime.now().toUtc()}) — syncing');
-    final helper = '/usr/lib/lws-hmi/wlan0-time-sync.sh';
-    if (await File(helper).exists()) {
-      await Process.run(helper, []);
-      if (DateTime.now().toUtc().year >= 2025) {
-        return;
-      }
-    }
-    for (final host in ['time.nist.gov', 'time.windows.com']) {
-      final r = await Process.run('rdate', ['-s', host]);
-      if (r.exitCode == 0 && DateTime.now().toUtc().year >= 2025) {
-        await Process.run('hwclock', ['-w', '-u']);
-        return;
-      }
-    }
-    for (final url in [
-      'http://www.baidu.com/',
-      'http://connectivitycheck.gstatic.com/generate_204',
-    ]) {
-      final r = await Process.run('wget', [
-        '-S',
-        '-O',
-        '/dev/null',
-        '-T',
-        '8',
-        url,
-      ]);
-      final blob = '${r.stderr}\n${r.stdout}';
-      final m = RegExp(r'(?mi)^\s*Date:\s*(.+)$').firstMatch(blob);
-      if (m == null) {
-        continue;
-      }
-      final hdr = m.group(1)!.trim();
-      final set = await Process.run('date', [
-        '-u',
-        '-D',
-        '%a, %d %b %Y %H:%M:%S GMT',
-        '-s',
-        hdr,
-      ]);
-      if (set.exitCode == 0) {
-        await Process.run('hwclock', ['-w', '-u']);
-        lwsTrace('http: clock set from HTTP Date → ${DateTime.now().toUtc()}');
-        return;
-      }
     }
   }
 

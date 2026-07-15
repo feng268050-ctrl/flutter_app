@@ -1,9 +1,5 @@
-# linux-http-client Specification
+## MODIFIED Requirements
 
-## Purpose
-
-Reusable Dart HTTP(S) client with optional proxy for Demo probe and later product cloud traffic; wall-clock sync before HTTPS when RTC is stale.
-## Requirements
 ### Requirement: Abstract HTTP client with proxy configuration
 
 The system SHALL provide a reusable Dart `HttpClientController` (name may vary) that persists HTTP(S) proxy settings (enabled, host, port, optional credentials) and performs outbound HTTP(S) requests that honor the proxy when enabled. Callers (Demo and later product HTTP) MUST depend on the abstract API. Proxy passwords MUST NOT be written to info-level logs.
@@ -39,4 +35,3 @@ When the UTC year is before 2025, the Linux HTTP controller SHALL attempt wall-c
 
 - **WHEN** DNS fails, TCP fails, or TLS fails
 - **THEN** the result reports an error string and MUST NOT terminate the Flutter process
-

@@ -17,7 +17,7 @@
 | **P1.5 — 设备调试 + 快速 UI 迭代**     | `make debug-app` 在**真机**上以调试模式启动 App；VSCode / Cursor Flutter 插件接入；为快速 UI 迭代铺路                                                                                                             | ✅   |
 | **P2 — Modbus + GPIO**         | 迁移 **Modbus RTU** 与 **GPIO 管理**；Linux 真机验证读设备与下位机信息、**三色指示灯**（红/黄/绿）正常控制                                                                                                                  | ✅   |
 | **P2.1 — 板级 I/O 与外设验证**        | 喇叭 / Wi‑Fi / BT / **以太网（RJ45 / eth0）** / **外接键盘（USB HID）** / **按需 LAN·WLAN sshd** 等 **硬件 I/O 前置验证**；顺带收口触控、串口/引脚映射、背光等（见 **§1.1**）；**不做** 产品设置页 / IPC 相机业务 / MediaMTX / Flutter 预览（仍属 P5） | 🔄  |
-| **P2.2 — 日期/时间设置（Demo）**      | Demo UI：**日期、时间（及时区）设置**；平台层抽象（`DateTimeController` 等），供 P5 产品设置页复用；**不做** 云 NTP 编排 / 产品 Settings 整页                                                                 | 🔄  |
+| **P2.2 — 日期/时间设置（Demo）**      | Demo UI：**日期、时间（及时区）设置**；平台层抽象（`DateTimeController` 等），供 P5 产品设置页复用；**不做** 云 NTP 编排 / 产品 Settings 整页                                                                 | ✅  |
 | **P2.3 — 硬件设置持久化**            | 将 **P2.1** Demo 已验证的硬件偏好（Wi‑Fi / eth0 / 背光 / 旋转 / 代理 / BT A2DP 等）在 **整机重启后自动恢复**；系统栈 **独立于 `hmi.service` cgroup**（push-app / HMI 重启不断网）；统一写盘路径与 boot 应用钩子 | ✅  |
 | **P2.4 — A/B 双分区 + 远程升级**     | Buildroot **A/B rootfs 双分区**；主机 `**make upgrade`** 经 **USB-SSH / LAN SSH** 推送并切换槽位，**无需进 bootloader 刷机**；为 P5 OTA 打底（见 **§1.3**）                                                   | 🔲  |
 | **P2.5 — 模拟器与 Android 兼容**     | `**make emulator`**（Linux HMI 模拟器）；`**make android-emulator**`（参考 lws-ui `make emulator`）；Modbus Android 兼容；GPIO **共用** `gpio_innohi`（YNHAPI 仅降级，§11.0）；Flutter App 可打包 **APK**           | 🔲  |
@@ -68,12 +68,12 @@ P2.1  板级 I/O 与外设验证（硬件前置）🔄
     ├─ 串口 / GPIO / pinmux 台账：`docs/ynh960-io-pinmux-ledger.md` ✅
     └─ 背光 / 屏幕旋转 smoke ✅
 
-P2.2  日期/时间设置（Demo）🔄
+P2.2  日期/时间设置（Demo）✅
     ├─ Demo UI：设置系统日期、时间、时区（手工；非产品 Settings 整页）
     ├─ 平台抽象：`DateTimeController`（get/set wall clock + timezone + sync mode）；Linux：`timedatectl` / `date` + RTC（`hwclock`）
     ├─ 联网自动：Network 模式 + Sync Now；复用 `wlan0-time-sync.sh`（rdate / HTTP Date）
     ├─ HTTPS TLS 经 `ensureSaneForTls`（与 HTTP Demo 共用）
-    └─ 待板端 smoke：手动设时 / Sync Now / 模式持久化
+    └─ 板端 smoke：手动设时 / Sync Now / 模式持久化
 
 P2.3  硬件设置持久化（整机重启）✅
     ├─ 动机：P2.1 多数偏好已写 `/var/lib/lws-hmi/*`，但重启后栈/接口未自动恢复
@@ -1508,18 +1508,18 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - **屏幕旋转**：Portrait / Landscape → `/var/lib/lws-hmi/display-orientation` + `hmi-launch.sh` `-o`；Demo 按钮组（真机切换需 HMI 重启）
 - ~~（可选）`verify-io` 一键 smoke~~ — **跳过**（非必要；板端按台账 §6 手工核对即可）
 
-### P2.2 — 日期/时间设置（Demo）🔄
+### P2.2 — 日期/时间设置（Demo）✅
 
-**动机**：板端 RTC 易停在旧年代（HTTPS/TLS 与日志依赖正确壁钟）；产品 Settings 时钟页也应有可复用的平台层，不宜拖到 P5 再首次抽象。
+**封板**：OpenSpec `p2-2-date-time-settings` 已归档 `openspec/changes/archive/2026-07-15-p2-2-date-time-settings/`。
 
-**进行中 / 本机已落地**：`DateTimeController` + Demo「Date & Time」；联网同步复用 `wlan0-time-sync.sh`；HTTPS 经 `ensureSaneForTls`。**待板端 smoke**：手动设时写入 RTC、Sync Now、模式持久化。
+**动机**：板端 RTC 易停在旧年代（HTTPS/TLS 与日志依赖正确壁钟）；产品 Settings 时钟页也应有可复用的平台层。
 
 **边界**：Demo UI + 平台 `DateTimeController`；**不做** 产品 Settings 整页、chrony / systemd-timesyncd（P5）。
 
-- [x] Demo：日期 / 时间 / 时区设置与当前时钟显示；Manual / Network；Apply / Sync Now
+- [x] Demo：日期 / 时间 / 时区设置与当前时钟显示；Manual / Network；Apply / Sync Now（置于以太网之前）
 - [x] 平台抽象：`DateTimeController`（get/set wall clock、timezone、sync mode）；Linux：`timedatectl` / `date` + `hwclock`
 - [x] 与 P2.1 HTTP TLS 对钟合一（`LinuxHttpClientController` → `ensureSaneForTls`）
-- [ ] 验收（板端）：Demo 改时 → 重启后 RTC/系统时间一致；Network Sync Now；HTTPS 在陈旧 RTC 下可恢复
+- [x] 验收（板端）：Demo 改时 → RTC/系统时间；Network Sync Now；HTTPS 在陈旧 RTC 下可恢复
 
 ### P2.3 — 硬件设置持久化（整机重启）✅
 

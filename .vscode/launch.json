@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "lws-hmi (USB-SSH debug)",
+      "name": "lws-hmi (USB-SSH / SSH debug)",
       "type": "dart",
       "request": "launch",
       "cwd": "${workspaceFolder}/app/hmi",

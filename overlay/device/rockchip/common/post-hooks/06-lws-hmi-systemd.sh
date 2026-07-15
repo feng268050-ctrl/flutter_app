@@ -21,6 +21,10 @@ DISABLE_AT_BOOT=(
 	mediamtx.service
 	sshd.service
 	sshd.socket
+	lws-hmi-lan-ssh.service
+	lws-hmi-wpa.service
+	lws-hmi-wlan0-dhcp.service
+	lws-hmi-eth0.service
 	bluetooth.service
 	wifibt-init.service
 	wpa_supplicant.service
@@ -80,6 +84,11 @@ fi
 if [ -f "$TARGET_DIR/etc/systemd/system/hmi.service" ]; then
 	link_unit hmi.service
 	echo "lws-hmi-systemd: enabled hmi.service"
+fi
+
+if [ -f "$TARGET_DIR/etc/systemd/system/lws-hmi-settings-restore.service" ]; then
+	link_unit lws-hmi-settings-restore.service
+	echo "lws-hmi-systemd: enabled lws-hmi-settings-restore.service"
 fi
 
 # Do not block boot KPI; start after home or from App (§6.4).

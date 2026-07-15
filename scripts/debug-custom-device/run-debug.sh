@@ -6,7 +6,7 @@ source "$ROOT/scripts/usb-ssh-session.sh"
 
 usb_ssh_session_load_env "$ROOT"
 usb_ssh_session_select "$ROOT"
-configure_usb_ssh_host_addr "$IFACE"
+usb_ssh_session_configure_link
 usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
 
 if ! usb_ssh_session_run_ssh "$ROOT" "$IFACE" "test -x /usr/lib/lws-hmi/debug-app-run.sh"; then

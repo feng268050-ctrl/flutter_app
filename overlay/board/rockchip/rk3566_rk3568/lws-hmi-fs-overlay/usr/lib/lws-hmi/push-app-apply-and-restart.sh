@@ -1,5 +1,7 @@
 #!/bin/sh
 # Apply make push-app staging payload while HMI runs, then restart it.
+# Host invokes this via setsid/nohup so the SSH channel need not survive hmi
+# stop (Wi-Fi lives in lws-hmi-wpa / lws-hmi-wlan0-dhcp, not the hmi cgroup).
 set -eu
 
 STAGE=/var/lib/lws-hmi/push-app-staging
@@ -9,20 +11,29 @@ NEXT_LIB=/opt/hmi/lib/.libapp.so.push-next
 ASSETS_DIR=/opt/hmi/data/flutter_assets
 NEXT_ASSETS=/opt/hmi/data/.flutter_assets.push-next
 OLD_ASSETS=/opt/hmi/data/.flutter_assets.push-old
+STATUS=/var/lib/lws-hmi/push-app-apply.status
 MAX_START_ATTEMPTS=3
 
 log() {
 	echo "lws-hmi-push-app: $*"
 }
 
-[ -f "$LIB" ] || {
-	log "missing $LIB"
+set_status() {
+	printf '%s\n' "$1" >"$STATUS"
+	sync
+}
+
+fail() {
+	log "$1"
+	set_status fail
 	exit 1
 }
-[ -d "$ASSETS" ] || {
-	log "missing $ASSETS"
-	exit 1
-}
+
+mkdir -p /var/lib/lws-hmi
+set_status running
+
+[ -f "$LIB" ] || fail "missing $LIB"
+[ -d "$ASSETS" ] || fail "missing $ASSETS"
 
 log "installing libapp.so and flutter_assets before restart"
 rm -f /var/lib/lws-hmi/debug-app.pid /var/lib/lws-hmi/debug-app.vm-service
@@ -39,8 +50,7 @@ if [ -d "$ASSETS_DIR" ]; then
 fi
 if ! mv "$NEXT_ASSETS" "$ASSETS_DIR"; then
 	[ ! -d "$OLD_ASSETS" ] || mv "$OLD_ASSETS" "$ASSETS_DIR"
-	log "failed to activate flutter_assets"
-	exit 1
+	fail "failed to activate flutter_assets"
 fi
 rm -rf "$OLD_ASSETS"
 
@@ -48,6 +58,7 @@ ENGINE_VER="$(cat /etc/lws-hmi/flutter-engine.version 2>/dev/null || echo 3.24.4
 printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >/opt/hmi/runtime-mode.json
 sync
 
+log "stopping hmi.service for restart"
 /usr/lib/lws-hmi/hmi-stop-and-wait.sh
 
 attempt=1
@@ -58,6 +69,7 @@ while [ "$attempt" -le "$MAX_START_ATTEMPTS" ]; do
 	sleep 1
 	if systemctl is-active --quiet hmi.service && pidof flutter-pi >/dev/null 2>&1; then
 		log "restart complete"
+		set_status ok
 		exit 0
 	fi
 	attempt=$((attempt + 1))
@@ -65,4 +77,5 @@ done
 
 log "hmi.service did not recover after $MAX_START_ATTEMPTS attempts"
 systemctl status hmi.service --no-pager -l || true
+set_status fail
 exit 1

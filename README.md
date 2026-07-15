@@ -195,7 +195,7 @@ make reboot-loader                # USB-SSH → device reboot-loader (SERIAL= op
 make flash                      # macOS only
 ```
 
-### App iteration (USB plug-ssh, no rootfs reflash)
+### App iteration (USB plug-ssh or remote SSH, no rootfs reflash)
 
 After one firmware flash with USB plug-ssh support:
 
@@ -206,9 +206,23 @@ make build-app
 make push-app                   # SERIAL=... when multiple boards
 ```
 
-`make shell` opens an interactive `root` terminal over USB ECM SSH, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB and USB-SSH rows in one table.
+Remote SSH (board LAN/WLAN sshd on — Demo **LAN SSH debug** or `enable-ssh-debug.sh`):
 
-### Debug iteration (USB plug-ssh, P1.5)
+```bash
+# On device (serial / USB-SSH / Demo toggle):
+#   /usr/lib/lws-hmi/enable-ssh-debug.sh
+make connect 192.168.1.50       # or: make connect IP=192.168.1.50
+make devices                    # MODE=SSH row
+IP=192.168.1.50 make shell
+IP=192.168.1.50 make push-app
+make disconnect 192.168.1.50
+```
+
+`IP=` selects **registered SSH only** (never USB-SSH). `SERIAL=` still selects by board serial for either mode. `make reboot` works over SSH; `make reboot-loader` remains USB-SSH / RockUSB / adb only.
+
+`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table.
+
+### Debug iteration (USB plug-ssh / remote SSH, P1.5)
 
 First time on a host (pinned Flutter 3.24.4 + `sshpass`):
 
@@ -219,12 +233,12 @@ make debug-setup
 After the board has a rootfs with the P1.5 debug overlay scripts (`hmi-launch.sh`, `debug-app-*`):
 
 ```bash
-make debug-app                   # SERIAL=... when multiple boards
+make debug-app                   # SERIAL=... or IP=... when multiple boards
 ```
 
-Or open `app/hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH debug)** from Run and Debug. Its pre-launch terminal configures the host USB interface first (macOS may request the `sudo` password), then builds and runs `flutter run -d lws-hmi`. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
+Or open `app/hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH / SSH debug)** from Run and Debug. Pre-launch runs `make debug-host-prepare`: for registered `IP=` / `MODE=SSH` it only checks reachability (no USB ECM); for USB-SSH it configures the host ECM interface (macOS may request `sudo`). Put `IP=` in `.env` so the IDE picks the SSH board. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
 
-`make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/lws-hmi/debug-runtime/`), replaces `/opt/hmi`, and starts flutter-pi with VM Service over USB-SSH port forwarding. Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make push-app`.
+`make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/lws-hmi/debug-runtime/`), replaces `/opt/hmi`, and starts flutter-pi with VM Service over SSH port forwarding (USB-SSH or registered IP). Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make push-app`.
 
 Host-only checks:
 
@@ -430,7 +444,7 @@ App deploy without reflash:
 
 ```bash
 make build-app
-make push-app                  # SERIAL=... when multiple USB-SSH devices
+make push-app                  # SERIAL=... or IP=... when multiple devices
 ```
 
 ### macOS Docker Desktop tips

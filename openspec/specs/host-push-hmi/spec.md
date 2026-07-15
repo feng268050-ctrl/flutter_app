@@ -24,7 +24,7 @@ Deployment SHALL stage files under **`/var/lib/lws-hmi/push-app-staging/`**, rep
 
 ### Requirement: make devices lists RockUSB and USB-SSH targets
 
-The repository SHALL extend **`make devices`** to list **RockUSB** flash devices (`upgrade_tool ld`), **USB-SSH** Linux boards, and **adb-connected Android** devices (`MODE` column: `Loader`, `Maskrom`, `USB-SSH`, `android`, etc.) in a **single merged table** with columns including **`SERIAL`**, **`LocationID`**, host **`IFACE`** (USB-SSH only), and target **`ADDR`** (`192.168.55.1` for USB-SSH). There SHALL NOT be a separate **`make devices-usb-ssh`** target.
+The repository SHALL extend **`make devices`** to list **RockUSB** flash devices (`upgrade_tool ld`), **USB-SSH** Linux boards, and **adb-connected Android** devices (`MODE` column: `Loader`, `Maskrom`, `USB-SSH`, `android`, etc.) in a **single merged table** with columns including **`SERIAL`**, **`LocationID`**, host **`IFACE`** (USB-SSH only), and target **`IP`** (`192.168.55.1` for USB-SSH). There SHALL NOT be a separate **`make devices-usb-ssh`** target.
 
 When USB-SSH device(s) are present and **`sshpass`** is not installed, the command SHALL print an install hint (push-app / reboot require sshpass).
 

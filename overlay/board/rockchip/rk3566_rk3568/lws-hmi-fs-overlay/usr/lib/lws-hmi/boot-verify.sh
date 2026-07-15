@@ -20,7 +20,7 @@ else
 	fail "missing $WANTS"
 fi
 
-for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket lws-hmi-lan-ssh.service lws-hmi-wpa.service lws-hmi-wlan0-dhcp.service lws-hmi-eth0.service bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 	if [ -e "$WANTS/$unit" ]; then
 		fail "$unit still enabled in multi-user.target.wants"
 	else
@@ -65,7 +65,7 @@ done
 
 echo ""
 echo "--- other *.wants (sshd.socket etc.) ---"
-for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service lws-hmi-wpa.service lws-hmi-wlan0-dhcp.service lws-hmi-eth0.service; do
 	found=""
 	for wants_dir in /etc/systemd/system/*.wants; do
 		[ -d "$wants_dir" ] || continue
@@ -96,10 +96,14 @@ fi
 echo ""
 echo "--- port 22 ---"
 USB_SSH_ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
-LAN_PID=/run/lws-hmi-lan-sshd.pid
 lan_debug_on=0
-if [ -f "$LAN_PID" ] && kill -0 "$(cat "$LAN_PID" 2>/dev/null)" 2>/dev/null; then
+if systemctl is-active --quiet lws-hmi-lan-ssh.service 2>/dev/null; then
 	lan_debug_on=1
+fi
+if [ -e /etc/systemd/system/multi-user.target.wants/lws-hmi-lan-ssh.service ]; then
+	fail "lws-hmi-lan-ssh.service enabled in multi-user.target.wants (must be on-demand only)"
+else
+	pass "lws-hmi-lan-ssh.service not in multi-user.target.wants"
 fi
 if [ -n "${SSH_CONNECTION:-}" ]; then
 	warn "SSH session active — skip port 22 check (use serial ttyFIQ0 for accurate boot KPI)"
@@ -110,7 +114,7 @@ elif command -v ss >/dev/null 2>&1; then
 	else
 		echo "$listeners"
 		if [ "$lan_debug_on" -eq 1 ]; then
-			warn "port 22 listening (LAN SSH debug enabled via enable-ssh-debug.sh)"
+			warn "port 22 listening (LAN SSH debug via lws-hmi-lan-ssh.service)"
 		elif echo "$listeners" | grep -qE '0\.0\.0\.0:22|\*:22|\[::\]:22|127\.0\.0\.1:22'; then
 			fail "sshd listening on LAN/all interfaces (expected usb0-only or closed; run disable-ssh-debug.sh)"
 		elif echo "$listeners" | grep -qvE "${USB_SSH_ADDR}:22|${USB_SSH_ADDR}\]:22"; then
@@ -125,7 +129,7 @@ elif command -v netstat >/dev/null 2>&1; then
 		pass "port 22 not listening"
 	elif [ "$lan_debug_on" -eq 1 ]; then
 		echo "$listeners"
-		warn "port 22 listening (LAN SSH debug enabled via enable-ssh-debug.sh)"
+		warn "port 22 listening (LAN SSH debug via lws-hmi-lan-ssh.service)"
 	elif echo "$listeners" | grep -qE '0\.0\.0\.0:22|127\.0\.0\.1:22|\*:22'; then
 		echo "$listeners"
 		fail "sshd listening on LAN/all interfaces (expected usb0-only or closed; run disable-ssh-debug.sh)"

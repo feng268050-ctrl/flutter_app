@@ -1,0 +1,33 @@
+#!/bin/sh
+# Foreground wpa_supplicant for lws-hmi-wpa.service (Type=simple).
+# iface written by wifi-stack-up.sh before systemctl start.
+set -eu
+
+IFACE_FILE=/run/lws-hmi-wlan.iface
+WPA_CONF="${LWS_WPA_CONF:-/var/lib/lws-hmi/wpa_supplicant.conf}"
+WPA_LOG=/var/lib/lws-hmi/wpa_supplicant.log
+
+IFACE="${LWS_WLAN_IFACE:-}"
+if [ -z "$IFACE" ] && [ -f "$IFACE_FILE" ]; then
+	IFACE="$(tr -d '[:space:]' <"$IFACE_FILE")"
+fi
+IFACE="${IFACE:-wlan0}"
+
+mkdir -p /var/lib/lws-hmi /var/run/wpa_supplicant
+if [ ! -f "$WPA_CONF" ]; then
+	cat >"$WPA_CONF" <<'EOF'
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=root
+update_config=1
+country=CN
+EOF
+	chmod 600 "$WPA_CONF"
+fi
+
+if [ ! -d "/sys/class/net/$IFACE" ]; then
+	echo "lws-hmi-wpa-run: $IFACE missing" >&2
+	exit 1
+fi
+
+ip link set "$IFACE" up 2>/dev/null || true
+echo "lws-hmi-wpa-run: starting wpa_supplicant on $IFACE" >&2
+exec /usr/sbin/wpa_supplicant -i "$IFACE" -c "$WPA_CONF" -D nl80211,wext -f "$WPA_LOG"

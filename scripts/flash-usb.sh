@@ -28,6 +28,7 @@ LOADER_BIN="${LWS_HMI_LOADER:-}"
 LOADER_CACHE_DIR="$ROOT/output/firmware/.loader-cache"
 
 SERIAL="${SERIAL:-${LWS_HMI_SERIAL:-}}"
+IP="${IP:-${LWS_HMI_IP:-}}"
 LOADER_NORESET="${LOADER_NORESET:-}"
 UPGRADE_NORESET="${UPGRADE_NORESET:-}"
 BOOTLOADER_WAIT_SEC="${BOOTLOADER_WAIT_SEC:-60}"
@@ -39,15 +40,15 @@ usage() {
   cat <<EOF
 Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash}
 
-  devices        List connected devices (RockUSB + USB-SSH; MODE column)
-  reboot         Linux board (USB-SSH) → reboot; Android → adb reboot
-  reboot-loader  Linux board (USB-SSH) → reboot-loader; Android → adb reboot loader
+  devices        List connected devices (RockUSB + USB-SSH + SSH; MODE column)
+  reboot         Linux board (USB-SSH or SSH) → reboot; Android → adb reboot
+  reboot-loader  Linux board (USB-SSH only) → reboot-loader; Android → adb reboot loader
   loader         upgrade_tool ul <MiniLoaderAll.bin>  [LOADER_NORESET=1]  (macOS)
   upgrade        upgrade_tool uf <update.img>        [UPGRADE_NORESET=1] (macOS)
   flash          uf update.img; ul first when RockUSB mode is Maskrom (macOS)
   flash-android  flash with MuJia Android image (optional; not required before Linux)
 
-Selection: SERIAL / IFACE
+Selection: SERIAL / IP (SSH registry only) / IFACE (USB-SSH)
 App deploy (no reflash): make build-app && make push-app
 Linux HMI → Loader: make reboot-loader
 MaskROM Linux:  make flash (macOS)
@@ -170,7 +171,7 @@ parse_rockusb_line() {
   _SERIAL="$(sed -n 's/.*SerialNo=\([^[:space:]]*\).*/\1/p' <<<"$line")"
 }
 
-# Rows: MODE, SERIAL, LocationID, IFACE, ADDR, USB (fields separated by FS)
+# Rows: MODE, SERIAL, LocationID, IFACE, IP, USB (fields separated by FS)
 DEVICE_TABLE_FS=$'\t'
 declare -a DEVICE_TABLE_ROWS=()
 
@@ -179,53 +180,53 @@ device_table_add() {
 }
 
 device_table_print() {
-  local w_mode=4 w_serial=6 w_loc=10 w_iface=5 w_addr=4 w_usb=3
-  local row mode serial loc iface addr usb
-  local -a modes=() serials=() locs=() ifaces=() addrs=() usbs=()
+  local w_mode=4 w_serial=6 w_loc=10 w_iface=5 w_ip=2 w_usb=3
+  local row mode serial loc iface ip usb
+  local -a modes=() serials=() locs=() ifaces=() ips=() usbs=()
 
   if [[ ${#DEVICE_TABLE_ROWS[@]} -eq 0 ]]; then
-    printf '%s\n' "MODE  SERIAL  LocationID  IFACE  ADDR  USB"
+    printf '%s\n' "MODE  SERIAL  LocationID  IFACE  IP  USB"
     printf '%s\n' "(none)"
     return 0
   fi
 
   for row in "${DEVICE_TABLE_ROWS[@]}"; do
-    IFS="$DEVICE_TABLE_FS" read -r mode serial loc iface addr usb <<<"$row"
+    IFS="$DEVICE_TABLE_FS" read -r mode serial loc iface ip usb <<<"$row"
     modes+=("$mode")
     serials+=("$serial")
     locs+=("$loc")
     ifaces+=("$iface")
-    addrs+=("$addr")
+    ips+=("$ip")
     usbs+=("$usb")
     (( ${#mode} > w_mode )) && w_mode=${#mode}
     (( ${#serial} > w_serial )) && w_serial=${#serial}
     (( ${#loc} > w_loc )) && w_loc=${#loc}
     (( ${#iface} > w_iface )) && w_iface=${#iface}
-    (( ${#addr} > w_addr )) && w_addr=${#addr}
+    (( ${#ip} > w_ip )) && w_ip=${#ip}
     (( ${#usb} > w_usb )) && w_usb=${#usb}
   done
   (( w_mode < 4 )) && w_mode=4
   (( w_serial < 6 )) && w_serial=6
   (( w_loc < 10 )) && w_loc=10
   (( w_iface < 5 )) && w_iface=5
-  (( w_addr < 4 )) && w_addr=4
+  (( w_ip < 2 )) && w_ip=2
   (( w_usb < 3 )) && w_usb=3
 
-  local sep_mode sep_serial sep_loc sep_iface sep_addr sep_usb i
+  local sep_mode sep_serial sep_loc sep_iface sep_ip sep_usb i
   sep_mode="$(printf '%*s' "$w_mode" '' | tr ' ' '-')"
   sep_serial="$(printf '%*s' "$w_serial" '' | tr ' ' '-')"
   sep_loc="$(printf '%*s' "$w_loc" '' | tr ' ' '-')"
   sep_iface="$(printf '%*s' "$w_iface" '' | tr ' ' '-')"
-  sep_addr="$(printf '%*s' "$w_addr" '' | tr ' ' '-')"
+  sep_ip="$(printf '%*s' "$w_ip" '' | tr ' ' '-')"
   sep_usb="$(printf '%*s' "$w_usb" '' | tr ' ' '-')"
 
-  printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_addr}s  %-${w_usb}s\n" \
-    MODE SERIAL LocationID IFACE ADDR USB
-  printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_addr}s  %-${w_usb}s\n" \
-    "$sep_mode" "$sep_serial" "$sep_loc" "$sep_iface" "$sep_addr" "$sep_usb"
+  printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_ip}s  %-${w_usb}s\n" \
+    MODE SERIAL LocationID IFACE IP USB
+  printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_ip}s  %-${w_usb}s\n" \
+    "$sep_mode" "$sep_serial" "$sep_loc" "$sep_iface" "$sep_ip" "$sep_usb"
   for i in "${!modes[@]}"; do
-    printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_addr}s  %-${w_usb}s\n" \
-      "${modes[$i]}" "${serials[$i]}" "${locs[$i]}" "${ifaces[$i]}" "${addrs[$i]}" "${usbs[$i]}"
+    printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_ip}s  %-${w_usb}s\n" \
+      "${modes[$i]}" "${serials[$i]}" "${locs[$i]}" "${ifaces[$i]}" "${ips[$i]}" "${usbs[$i]}"
   done
 }
 
@@ -268,8 +269,13 @@ list_devices() {
     device_table_add "$mode" "$serial" "$loc" "$iface" "$addr" "$usb"
   done < <(bash "$ROOT/scripts/usb-ssh-devices.sh" --tsv 2>/dev/null || true)
 
+  while IFS=$'\t' read -r mode serial loc iface addr usb; do
+    [[ -n "$mode" ]] || continue
+    device_table_add "$mode" "$serial" "$loc" "$iface" "$addr" "$usb"
+  done < <(bash "$ROOT/scripts/ssh-devices.sh" --tsv 2>/dev/null || true)
+
   device_table_print
-  warn_sshpass_if_usb_ssh "$(usb_ssh_device_count)"
+  warn_sshpass_if_usb_ssh "$(( $(usb_ssh_device_count) + $(ssh_registry_device_count) ))"
 }
 
 resolve_upgrade_tool_location() {
@@ -408,6 +414,32 @@ usb_ssh_device_count() {
     | awk -F'\t' '$1=="USB-SSH"{n++} END{print n+0}'
 }
 
+ssh_registry_device_count() {
+  bash "$ROOT/scripts/ssh-devices.sh" --tsv 2>/dev/null \
+    | awk -F'\t' '$1=="SSH"{n++} END{print n+0}'
+}
+
+# Select USB-SSH or registered SSH. Prints: TRANSPORT, IFACE, IP
+select_linux_ssh_target() {
+  local -a sel=() sel_out="" err_file
+  err_file="$(mktemp)"
+  # shellcheck disable=SC2064
+  trap "rm -f '$err_file'" RETURN
+
+  if ! sel_out="$(
+    SERIAL="$SERIAL" IP="$IP" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
+      bash "$ROOT/scripts/device-target.sh" --select 2>"$err_file"
+  )"; then
+    [[ -s "$err_file" ]] && cat "$err_file" >&2
+    die "could not select Linux board (run make devices)"
+  fi
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && sel+=("$line")
+  done <<<"$sel_out"
+  [[ ${#sel[@]} -eq 4 ]] || die "bad device selection (${#sel[@]} fields, expected 4)"
+  printf '%s\n' "${sel[0]}" "${sel[2]}" "${sel[3]}"
+}
+
 usb_ssh_select_iface() {
   local -a sel=() sel_out="" err_file
   err_file="$(mktemp)"
@@ -428,11 +460,29 @@ usb_ssh_select_iface() {
   printf '%s\n' "${sel[1]}"
 }
 
-run_usb_ssh_reboot() {
-  local iface
-  iface="$(usb_ssh_select_iface)"
-  echo "Linux board via USB-SSH (iface=$iface) → reboot"
-  usb_ssh_schedule_sysrq_reboot "$iface"
+run_linux_ssh_reboot() {
+  local -a sel=()
+  local transport iface addr
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && sel+=("$line")
+  done < <(select_linux_ssh_target)
+  [[ ${#sel[@]} -eq 3 ]] || die "bad reboot target selection"
+  transport="${sel[0]}"
+  iface="${sel[1]}"
+  addr="${sel[2]}"
+  case "$transport" in
+  usb-ssh)
+    echo "Linux board via USB-SSH (iface=$iface) → reboot"
+    usb_ssh_schedule_sysrq_reboot "$iface"
+    ;;
+  ssh)
+    echo "Linux board via SSH ($addr) → reboot"
+    remote_ssh_schedule_sysrq_reboot "$addr"
+    ;;
+  *)
+    die "unsupported transport for reboot: $transport"
+    ;;
+  esac
   echo "Reboot triggered."
 }
 
@@ -446,11 +496,12 @@ run_usb_ssh_reboot_loader() {
 }
 
 run_reboot() {
-  local n_ssh n_adb
+  local n_usb n_ssh n_adb
 
-  n_ssh="$(usb_ssh_device_count)"
-  if [[ "$n_ssh" -gt 0 ]]; then
-    run_usb_ssh_reboot
+  n_usb="$(usb_ssh_device_count)"
+  n_ssh="$(ssh_registry_device_count)"
+  if [[ "$n_usb" -gt 0 || "$n_ssh" -gt 0 ]]; then
+    run_linux_ssh_reboot
     return 0
   fi
 
@@ -461,11 +512,11 @@ run_reboot() {
     return 0
   fi
 
-  die "No device for reboot. Linux board: plug USB OTG, then make devices. Android: connect adb."
+  die "No device for reboot. Linux: plug USB OTG or make connect <ip>. Android: connect adb."
 }
 
 run_reboot_loader() {
-  local n_ssh n_adb
+  local n_ssh n_adb n_reg
 
   if rockusb_already_ready; then
     echo "RockUSB Loader already connected."
@@ -487,6 +538,11 @@ run_reboot_loader() {
     wait_for_rockusb
     echo "RockUSB ready (via adb reboot loader)."
     return 0
+  fi
+
+  n_reg="$(ssh_registry_device_count)"
+  if [[ "$n_reg" -gt 0 ]]; then
+    die "reboot-loader requires USB-SSH (not registered SSH). Plug OTG, or enter MaskROM/Loader manually."
   fi
 
   die "No device for reboot-loader. Linux board: plug USB OTG, then make devices. Android: connect adb. Or enter MaskROM/Loader manually."

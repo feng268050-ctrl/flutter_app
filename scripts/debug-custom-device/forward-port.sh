@@ -13,13 +13,13 @@ DEVICE_PORT="${2:-}"
 
 usb_ssh_session_load_env "$ROOT"
 usb_ssh_session_select "$ROOT"
-configure_usb_ssh_host_addr "$IFACE"
+usb_ssh_session_configure_link
 usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
 
-target_user="${LWS_HMI_USB_SSH_USER:-root}"
-target_addr="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
-ssh_pass="${LWS_HMI_USB_SSH_PASS:-rockchip}"
-control_path="$(usb_ssh_session_control_path "$IFACE")"
+target_user="${TARGET_USER:-${LWS_HMI_USB_SSH_USER:-root}}"
+target_addr="${TARGET_ADDR:-${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}}"
+ssh_pass="${SSH_PASS:-${LWS_HMI_USB_SSH_PASS:-rockchip}}"
+control_path="$(usb_ssh_session_control_path "$(usb_ssh_session_control_key "$IFACE")")"
 declare -a ssh_opts=(
 	-o ConnectTimeout=5
 	-o StrictHostKeyChecking=accept-new
@@ -36,9 +36,11 @@ declare -a ssh_opts=(
 	-o ServerAliveInterval=15
 	-L "127.0.0.1:${HOST_PORT}:127.0.0.1:${DEVICE_PORT}"
 )
-while IFS= read -r opt; do
-	[[ -n "$opt" ]] && ssh_opts+=("$opt")
-done < <(usb_ssh_bind_pair "$IFACE")
+if ! usb_ssh_session_is_remote; then
+	while IFS= read -r opt; do
+		[[ -n "$opt" ]] && ssh_opts+=("$opt")
+	done < <(usb_ssh_bind_pair "$IFACE")
+fi
 
 require_sshpass
 sshpass -p "$ssh_pass" ssh "${ssh_opts[@]}" -N "$target_user@$target_addr" &

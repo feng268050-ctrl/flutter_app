@@ -31,7 +31,7 @@ check_systemd_wants() {
 	fi
 	ls -la "$wants" 2>/dev/null || true
 
-	for unit in input-event-daemon.service lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+	for unit in input-event-daemon.service lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service lws-hmi-lan-ssh.service lws-hmi-wpa.service lws-hmi-wlan0-dhcp.service lws-hmi-eth0.service; do
 		if unit_wants_link "$unit"; then
 			echo "FAIL: $unit still enabled in $label" >&2
 			missing=1
@@ -174,7 +174,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh lws-hmi-wpa-run.sh lws-hmi-eth0-apply.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else
@@ -303,11 +303,11 @@ EOF
 		echo "FAIL: usb-plug-ssh-start missing ListenAddress=192.168.55.1 override" >&2
 		missing=1
 	fi
-	if grep -q 'lws-hmi-lan-sshd.pid' "$helper/usb-plug-ssh-start.sh" 2>/dev/null; then
-		echo "OK:  usb-plug-ssh-start tolerates LAN sshd"
-	else
-		echo "FAIL: usb-plug-ssh-start missing LAN sshd coexistence" >&2
+	if grep -q 'skip USB-only sshd' "$helper/usb-plug-ssh-start.sh" 2>/dev/null; then
+		echo "FAIL: usb-plug-ssh-start must not skip USB sshd when LAN is up" >&2
 		missing=1
+	else
+		echo "OK:  usb-plug-ssh-start always starts usb0-only sshd"
 	fi
 	legacy_sshd=""
 	for f in "$target/etc/ssh/sshd_config.d/"*.conf; do
@@ -411,6 +411,125 @@ EOF
 	else
 		echo "FAIL: missing enable-ssh-debug.sh or disable-ssh-debug.sh" >&2
 		missing=1
+	fi
+	if [[ -f "$target/etc/systemd/system/lws-hmi-wpa.service" ]] && \
+		grep -q 'lws-hmi-wpa-run.sh' \
+		"$target/etc/systemd/system/lws-hmi-wpa.service" 2>/dev/null; then
+		echo "OK:  lws-hmi-wpa.service"
+	else
+		echo "FAIL: missing lws-hmi-wpa.service (Wi-Fi must outlive hmi stop)" >&2
+		missing=1
+	fi
+	if [[ -f "$target/etc/systemd/system/lws-hmi-wlan0-dhcp.service" ]]; then
+		echo "OK:  lws-hmi-wlan0-dhcp.service"
+	else
+		echo "FAIL: missing lws-hmi-wlan0-dhcp.service" >&2
+		missing=1
+	fi
+	if grep -q 'lws-hmi-wpa.service' \
+		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null && \
+		grep -q 'lws-hmi-wlan0-dhcp.service' \
+		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null && \
+		grep -q 'lws-hmi-eth0.service' \
+		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null; then
+		echo "OK:  preset disables lws-hmi-wpa / wlan0-dhcp / eth0"
+	else
+		echo "FAIL: preset missing disable for settings network units" >&2
+		missing=1
+	fi
+	if grep -q 'lws-hmi-wpa.service' "$helper/wifi-stack-up.sh" 2>/dev/null && \
+		! grep -qE 'wpa_supplicant[[:space:]]+-B' "$helper/wifi-stack-up.sh" 2>/dev/null; then
+		echo "OK:  wifi-stack-up starts lws-hmi-wpa.service (not hmi-cgroup -B)"
+	else
+		echo "FAIL: wifi-stack-up must start lws-hmi-wpa.service instead of wpa -B" >&2
+		missing=1
+	fi
+	if grep -q 'WantedBy=' \
+		"$target/etc/systemd/system/lws-hmi-wpa.service" 2>/dev/null || \
+		grep -q 'WantedBy=' \
+		"$target/etc/systemd/system/lws-hmi-wlan0-dhcp.service" 2>/dev/null || \
+		grep -q 'WantedBy=' \
+		"$target/etc/systemd/system/lws-hmi-eth0.service" 2>/dev/null; then
+		echo "FAIL: on-demand settings units must not have [Install] WantedBy" >&2
+		missing=1
+	fi
+	if [[ -f "$target/etc/systemd/system/lws-hmi-eth0.service" ]] && \
+		[[ -x "$helper/lws-hmi-eth0-apply.sh" ]]; then
+		echo "OK:  lws-hmi-eth0.service + apply script"
+	else
+		echo "FAIL: missing lws-hmi-eth0.service / apply script" >&2
+		missing=1
+	fi
+	if grep -q 'enable' \
+		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null; then
+		echo "OK:  preset enables"
+	else
+		echo "FAIL: preset must enable" >&2
+		missing=1
+	fi
+
+	if [[ -f "$target/etc/systemd/system/lws-hmi-lan-ssh.service" ]]; then
+		echo "OK:  lws-hmi-lan-ssh.service"
+	else
+		echo "FAIL: missing lws-hmi-lan-ssh.service" >&2
+		missing=1
+	fi
+	if grep -q 'lws-hmi-lan-ssh.service' \
+		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null; then
+		echo "OK:  preset disables lws-hmi-lan-ssh.service"
+	else
+		echo "FAIL: preset missing disable lws-hmi-lan-ssh.service" >&2
+		missing=1
+	fi
+	if [[ -x "$target/usr/lib/lws-hmi/lan-ssh-run.sh" ]]; then
+		echo "OK:  lan-ssh-run.sh"
+	else
+		echo "FAIL: missing lan-ssh-run.sh" >&2
+		missing=1
+	fi
+	if grep -q 'Type=simple' \
+		"$target/etc/systemd/system/lws-hmi-lan-ssh.service" 2>/dev/null && \
+		grep -q 'lan-ssh-run.sh' \
+		"$target/etc/systemd/system/lws-hmi-lan-ssh.service" 2>/dev/null; then
+		echo "OK:  lws-hmi-lan-ssh.service uses Type=simple + lan-ssh-run.sh"
+	else
+		echo "FAIL: lws-hmi-lan-ssh.service must ExecStart lan-ssh-run.sh" >&2
+		missing=1
+	fi
+	if grep -qE 'ListenAddress=0\.0\.0\.0|ListenAddress=\*' \
+		"$target/usr/lib/lws-hmi/lan-ssh-run.sh" 2>/dev/null || \
+		grep -qE 'ListenAddress=0\.0\.0\.0|ListenAddress=\*' \
+		"$target/etc/systemd/system/lws-hmi-lan-ssh.service" 2>/dev/null; then
+		echo "FAIL: LAN SSH must not bind 0.0.0.0 (breaks coexistence with USB-SSH)" >&2
+		missing=1
+	fi
+	if grep -q 'WantedBy=' \
+		"$target/etc/systemd/system/lws-hmi-lan-ssh.service" 2>/dev/null; then
+		echo "FAIL: lws-hmi-lan-ssh.service must not have [Install] WantedBy" >&2
+		missing=1
+	else
+		echo "OK:  lws-hmi-lan-ssh.service has no boot Install"
+	fi
+	if grep -qiE '^PidFile=' \
+		"$target/etc/systemd/system/lws-hmi-lan-ssh.service" 2>/dev/null; then
+		echo "FAIL: lws-hmi-lan-ssh.service must not use PidFile=" >&2
+		missing=1
+	fi
+	if grep -qE 'eth0|wlan0' "$target/usr/lib/lws-hmi/lan-ssh-run.sh" 2>/dev/null && \
+		grep -q 'ListenAddress=' "$target/usr/lib/lws-hmi/lan-ssh-run.sh" 2>/dev/null && \
+		! grep -qE 'ListenAddress=0\.0\.0\.0|ListenAddress=\*' \
+			"$target/usr/lib/lws-hmi/lan-ssh-run.sh" 2>/dev/null; then
+		echo "OK:  lan-ssh-run binds eth0/wlan0 only (not 0.0.0.0)"
+	else
+		echo "FAIL: lan-ssh-run must bind eth0/wlan0 only, not 0.0.0.0" >&2
+		missing=1
+	fi
+	if grep -qE 'systemctl stop.*usb-plug|kill.*usb-plug-sshd|rm -f /run/lws-hmi-usb-plug-sshd' \
+		"$helper/enable-ssh-debug.sh" 2>/dev/null; then
+		echo "FAIL: enable-ssh-debug must not stop USB sshd" >&2
+		missing=1
+	else
+		echo "OK:  enable-ssh-debug leaves USB sshd alone"
 	fi
 
 	check_systemd_wants "$target" "staging target" || missing=1

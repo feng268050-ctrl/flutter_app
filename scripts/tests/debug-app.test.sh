@@ -67,6 +67,51 @@ else
 	echo "OK  run-debug.sh invokes sourced SSH helper"
 fi
 
+assert_executable "$ROOT/scripts/debug-host-prepare.sh"
+assert_executable "$ROOT/scripts/device-target.sh"
+assert_executable "$ROOT/scripts/ssh-devices.sh"
+
+if grep -q 'usb_ssh_session_try_select' "$ROOT/scripts/usb-ssh-session.sh" \
+	&& grep -q 'usb_ssh_session_try_select' "$ROOT/scripts/debug-host-prepare.sh"; then
+	echo "OK  debug-host-prepare soft-selects without silent exit"
+else
+	echo "FAIL debug-host-prepare can still exit silently on empty devices" >&2
+	fail=1
+fi
+
+if grep -q 'debug-host-prepare.sh' "$ROOT/scripts/debug-app.sh" \
+	&& ! grep -q 'usb-ssh-host-setup.sh' "$ROOT/scripts/debug-app.sh"; then
+	echo "OK  debug-app uses debug-host-prepare (not forced USB ECM)"
+else
+	echo "FAIL debug-app still forces USB host setup" >&2
+	fail=1
+fi
+
+if grep -q 'make debug-host-prepare debug-setup build-debug-app' "$ROOT/.vscode/tasks.json" \
+	&& ! grep -q 'make usb-ssh-setup debug-setup build-debug-app' "$ROOT/.vscode/tasks.json"; then
+	echo "OK  IDE preLaunchTask uses debug-host-prepare"
+else
+	echo "FAIL IDE preLaunchTask still forces usb-ssh-setup" >&2
+	fail=1
+fi
+
+if grep -q 'USB-SSH / SSH' "$ROOT/scripts/debug-setup.sh" \
+	&& grep -q 'USB-SSH / SSH' "$ROOT/.vscode/launch.json"; then
+	echo "OK  custom-device / launch labels mention SSH"
+else
+	echo "FAIL debug device labels still USB-SSH-only" >&2
+	fail=1
+fi
+
+if grep -q 'usb_ssh_session_is_remote' "$ROOT/scripts/debug-custom-device/ping.sh" \
+	&& grep -q 'ping_remote_ssh_target' "$ROOT/scripts/debug-custom-device/ping.sh" \
+	&& grep -q 'usb_ssh_session_is_remote' "$ROOT/scripts/debug-custom-device/forward-port.sh"; then
+	echo "OK  custom-device ping/forward handle remote SSH"
+else
+	echo "FAIL custom-device adapters missing remote SSH branches" >&2
+	fail=1
+fi
+
 if grep -q '^local .*ssh_opts' "$ROOT/scripts/debug-custom-device/forward-port.sh"; then
 	echo "FAIL forward-port.sh uses local outside a function" >&2
 	fail=1
@@ -74,10 +119,10 @@ else
 	echo "OK  forward-port.sh declares options at script scope"
 fi
 
-if grep -q 'USB-SSH SCP connection failed; retrying' "$ROOT/scripts/usb-ssh-session.sh"; then
-	echo "OK  USB-SSH SCP retries transient connection failures"
+if grep -q 'SSH SCP connection failed; retrying' "$ROOT/scripts/usb-ssh-session.sh"; then
+	echo "OK  SSH SCP retries transient connection failures"
 else
-	echo "FAIL USB-SSH SCP has no transient connection retry" >&2
+	echo "FAIL SSH SCP has no transient connection retry" >&2
 	fail=1
 fi
 

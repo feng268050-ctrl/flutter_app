@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # List USB-SSH (ECM gadget) devices for make devices / push-app / reboot / reboot-loader.
-# Output: TSV rows — MODE, SERIAL, LocationID, IFACE, ADDR, USB
+# Output: TSV rows — MODE, SERIAL, LocationID, IFACE, IP, USB
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

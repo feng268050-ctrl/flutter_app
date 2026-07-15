@@ -1,0 +1,17 @@
+[Unit]
+Description=LWS HMI on-demand eth0 apply (link + IPv4)
+Documentation=file:///usr/lib/lws-hmi/lws-hmi-eth0-apply.sh
+# Not linked from multi-user.target.wants — started only via eth0 helpers / restore / Demo.
+DefaultDependencies=no
+After=local-fs.target
+
+[Service]
+# Keep eth0 dhcpcd outside hmi.service cgroup.
+Type=oneshot
+RemainAfterExit=yes
+KillMode=none
+Environment=LWS_ETH_IN_UNIT=1
+ExecStart=/usr/lib/lws-hmi/lws-hmi-eth0-apply.sh
+ExecStop=/usr/lib/lws-hmi/eth0-link.sh down
+
+# No [Install] — must not auto-start at boot (restore starts when eth0-wanted).

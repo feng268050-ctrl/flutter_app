@@ -51,7 +51,7 @@ config_path, schema, ping, post_build, install, uninstall, run_debug, forward, f
 
 device = {
     "id": "lws-hmi",
-    "label": "lws-hmi (ynh960 USB-SSH)",
+    "label": "lws-hmi (USB-SSH / SSH)",
     "sdkNameAndVersion": f"flutter-pi / Flutter {flutter_ver}",
     "platform": "linux-arm64",
     "enabled": True,
@@ -74,3 +74,4 @@ PY
 echo "Custom device ready. Verify with:"
 echo "  $FLUTTER devices"
 echo "  $FLUTTER doctor"
+echo "Select board: SERIAL=... or IP=... (registered: make connect <ip>); put in .env for IDE."

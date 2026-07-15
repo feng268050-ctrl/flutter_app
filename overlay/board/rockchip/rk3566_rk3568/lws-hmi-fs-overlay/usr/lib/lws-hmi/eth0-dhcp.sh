@@ -69,11 +69,32 @@ stop_dhcp() {
 
 case "$ACTION" in
 stop)
+	if [ -z "${LWS_ETH_IN_UNIT:-}" ] && command -v systemctl >/dev/null 2>&1; then
+		systemctl stop lws-hmi-eth0.service 2>/dev/null || true
+		systemctl reset-failed lws-hmi-eth0.service 2>/dev/null || true
+	fi
 	stop_dhcp
 	log "stopped on $IFACE"
 	exit 0
 	;;
-start) ;;
+start)
+	# Demo Process.run would leave dhcpcd in hmi.service cgroup — use unit.
+	if [ -z "${LWS_ETH_IN_UNIT:-}" ] && command -v systemctl >/dev/null 2>&1 && \
+		[ -f /etc/systemd/system/lws-hmi-eth0.service ]; then
+		systemctl reset-failed lws-hmi-eth0.service 2>/dev/null || true
+		if systemctl start lws-hmi-eth0.service; then
+			if have_ipv4; then
+				log "ok via lws-hmi-eth0.service"
+				exit 0
+			fi
+			log "lws-hmi-eth0.service started but no IPv4 yet"
+		else
+			log "lws-hmi-eth0.service failed"
+			systemctl status lws-hmi-eth0.service --no-pager -l 2>/dev/null | head -30 >&2 || true
+		fi
+		exit 1
+	fi
+	;;
 *)
 	echo "usage: eth0-dhcp.sh [start|stop]" >&2
 	exit 2

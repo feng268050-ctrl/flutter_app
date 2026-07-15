@@ -78,7 +78,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | USB plug-ssh (`overlay/kernel/**` + fs-overlay scripts/units) | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make build-img`, `make flash` |
 | `scripts/push-app.sh` only (app already on device) | `make build-app`, `make push-app` |
 | `scripts/device-logs.sh` only (host log streaming) | none |
-| `scripts/debug-app*.sh`, `scripts/debug-custom-device/**`, `scripts/debug-setup.sh`, `scripts/build-debug-app.sh` (host only; board already has P1.5 overlay) | `make debug-setup`, `make debug-app` |
+| `scripts/debug-app*.sh`, `scripts/debug-host-prepare.sh`, `scripts/debug-custom-device/**`, `scripts/debug-setup.sh`, `scripts/build-debug-app.sh` (host only; board already has P1.5 overlay) | `make debug-setup`, `make debug-app` |
 | `overlay/.../lws-hmi-fs-overlay/**` debug scripts (`hmi-launch.sh`, `debug-app-*`, `hmi.service`) | `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
 | `overlay/buildroot/**` | `make apply-overlay`, `make check-prebuilt`, `make build-rootfs`, `make build-img`, `make flash` |
 | `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |

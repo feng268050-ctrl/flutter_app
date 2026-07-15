@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy debug app + runtime to the selected USB-SSH device.
+# Deploy debug app + runtime to the selected USB-SSH or registered SSH device.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -24,7 +24,11 @@ die() {
 
 usb_ssh_session_prepare "$ROOT"
 
-echo "debug-deploy: iface=$IFACE target=$TARGET_USER@$TARGET_ADDR"
+if usb_ssh_session_is_remote; then
+	echo "debug-deploy: SSH target=$TARGET_USER@$TARGET_ADDR"
+else
+	echo "debug-deploy: iface=$IFACE target=$TARGET_USER@$TARGET_ADDR"
+fi
 
 # Upload debug runtime when device cache is missing or manifest differs.
 local_manifest="$STAGING/debug-runtime/$ENGINE_VER/manifest.json"

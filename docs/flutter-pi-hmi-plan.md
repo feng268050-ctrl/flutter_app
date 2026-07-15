@@ -17,8 +17,8 @@
 | **P1.5 — 设备调试 + 快速 UI 迭代**     | `make debug-app` 在**真机**上以调试模式启动 App；VSCode / Cursor Flutter 插件接入；为快速 UI 迭代铺路                                                                                                             | ✅   |
 | **P2 — Modbus + GPIO**         | 迁移 **Modbus RTU** 与 **GPIO 管理**；Linux 真机验证读设备与下位机信息、**三色指示灯**（红/黄/绿）正常控制                                                                                                                  | ✅   |
 | **P2.1 — 板级 I/O 与外设验证**        | 喇叭 / Wi‑Fi / BT / **以太网（RJ45 / eth0）** / **外接键盘（USB HID）** / **按需 LAN·WLAN sshd** 等 **硬件 I/O 前置验证**；顺带收口触控、串口/引脚映射、背光等（见 **§1.1**）；**不做** 产品设置页 / IPC 相机业务 / MediaMTX / Flutter 预览（仍属 P5） | 🔄  |
-| **P2.2 — 日期/时间设置（Demo）**      | Demo UI：**日期、时间（及时区）设置**；平台层抽象（`DateTimeController` 等），供 P5 产品设置页复用；**不做** 云 NTP 编排 / 产品 Settings 整页                                                                 | 🔲  |
-| **P2.3 — 硬件设置持久化**            | 将 **P2.1** Demo 已验证的硬件偏好（Wi‑Fi / eth0 / 背光 / 旋转 / 代理 / BT A2DP 等）在 **整机重启后自动恢复**；统一写盘路径与 boot 应用钩子                                                                 | 🔲  |
+| **P2.2 — 日期/时间设置（Demo）**      | Demo UI：**日期、时间（及时区）设置**；平台层抽象（`DateTimeController` 等），供 P5 产品设置页复用；**不做** 云 NTP 编排 / 产品 Settings 整页                                                                 | 🔄  |
+| **P2.3 — 硬件设置持久化**            | 将 **P2.1** Demo 已验证的硬件偏好（Wi‑Fi / eth0 / 背光 / 旋转 / 代理 / BT A2DP 等）在 **整机重启后自动恢复**；系统栈 **独立于 `hmi.service` cgroup**（push-app / HMI 重启不断网）；统一写盘路径与 boot 应用钩子 | ✅  |
 | **P2.4 — A/B 双分区 + 远程升级**     | Buildroot **A/B rootfs 双分区**；主机 `**make upgrade`** 经 **USB-SSH / LAN SSH** 推送并切换槽位，**无需进 bootloader 刷机**；为 P5 OTA 打底（见 **§1.3**）                                                   | 🔲  |
 | **P2.5 — 模拟器与 Android 兼容**     | `**make emulator`**（Linux HMI 模拟器）；`**make android-emulator**`（参考 lws-ui `make emulator`）；Modbus Android 兼容；GPIO **共用** `gpio_innohi`（YNHAPI 仅降级，§11.0）；Flutter App 可打包 **APK**           | 🔲  |
 | **P3 — AI 原生库**                | 迁移 lws-ui **AI 代码库**；新工程打出 `**libai.so`**（+ RKNN/`config.yaml`）                                                                                                                           | 🔲  |
@@ -68,13 +68,14 @@ P2.1  板级 I/O 与外设验证（硬件前置）🔄
     ├─ 串口 / GPIO / pinmux 台账：`docs/ynh960-io-pinmux-ledger.md` ✅
     └─ 背光 / 屏幕旋转 smoke ✅
 
-P2.2  日期/时间设置（Demo）🔲
+P2.2  日期/时间设置（Demo）🔄
     ├─ Demo UI：设置系统日期、时间、时区（手工；非产品 Settings 整页）
-    ├─ 平台抽象：`DateTimeController`（get/set wall clock + timezone）；Linux：`timedatectl` / `date` + RTC（`hwclock`）
-    ├─ 与 P2.1 HTTP Date 临时对钟并存；P5 产品时钟页 / 云 NTP 复用同一 controller
-    └─ 验收：Demo 改时 → 重启后 RTC/系统时间一致（配合 P2.3 写盘语义）
+    ├─ 平台抽象：`DateTimeController`（get/set wall clock + timezone + sync mode）；Linux：`timedatectl` / `date` + RTC（`hwclock`）
+    ├─ 联网自动：Network 模式 + Sync Now；复用 `wlan0-time-sync.sh`（rdate / HTTP Date）
+    ├─ HTTPS TLS 经 `ensureSaneForTls`（与 HTTP Demo 共用）
+    └─ 待板端 smoke：手动设时 / Sync Now / 模式持久化
 
-P2.3  硬件设置持久化（整机重启）🔲
+P2.3  硬件设置持久化（整机重启）✅
     ├─ 动机：P2.1 多数偏好已写 `/var/lib/lws-hmi/*`，但重启后栈/接口未自动恢复
     ├─ boot 钩子（systemd oneshot / display-init 后）：按持久化偏好恢复 Wi‑Fi / eth0 / 代理 / 背光 / 旋转 / BT A2DP 等
     ├─ 统一路径与 schema 文档化；Demo Apply 与 boot 复用同一 restore 脚本
@@ -166,8 +167,8 @@ P2.4 + P5.7 ──→ P5.8（量产收尾后交付 OTA；可与 P5.7 后期并�
 | 交付 | 主要对照 | 不在本阶段 |
 | ---- | -------- | ---------- |
 | Linux：**A/B rootfs 双槽**（`parameter` / GPT；见 `docs/storage-layout.md`） | Rockchip Buildroot 双系统槽位惯例；misc/slot 标记 | 产品 OTA UI、云端下载编排（**P5.8**） |
-| 主机：`**make upgrade**` 经 **USB-SSH / LAN SSH** 推包、写 inactive 槽、切换、重启 | 对齐现有 `push-app` / `device-shell` 目标发现 | `make flash` / 进 bootloader（仍保留作产线初刷） |
-| 板端：校验、原子切换、失败回滚到上一槽 | — | Android 全系统 OTA 重构 |
+| 主机：`**make upgrade**` 经 **USB-SSH / LAN SSH** 推包、写 inactive 槽、切换、重启 | 对齐现有 `push-app` / `device-shell` 目标发现 | `make flash` / 进 bootloader（仍保留作产线初刷；**flash = 设置全清**） |
+| 板端：校验、原子切换、失败回滚到上一槽；**不碰 userdata / P2.3 偏好** | — | Android 全系统 OTA 重构 |
 | 预留：**仅更新 app** 路径（`/oem/hmi` 或等价） | lws-ui 两级更新中的 app-only | 完整产品两级 UI（**P5.8**） |
 
 
@@ -1087,13 +1088,13 @@ lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `
 
 **P1 工程迭代（首选）**：OTG USB 插入主机 → **VBUS 触发** ECM + `usb0`（`192.168.55.1/24`）+ **仅 `usb0` 监听**的 sshd → 主机 `**make push-app`**（`scp` staging + 运行时安装 payload + restart/retry `hmi.service`，不重启整机）。拔线自动 teardown；**不进** `multi-user.target.wants`。多板用 `**SERIAL=`**（gadget `iSerial`），与 `make flash` 一致。进入 RockUSB Loader：设备 shell 运行 `**reboot-loader**`，或主机运行 `**make reboot-loader**`；Android 仍可用 adb。
 
-**P2.1（LAN/WLAN 按需）**：板端 `**/usr/lib/lws-hmi/enable-ssh-debug.sh`**（及 `disable-ssh-debug.sh`）启动专用 LAN sshd（`ListenAddress=0.0.0.0`，PidFile `/run/lws-hmi-lan-sshd.pid`）；**不** `systemctl enable sshd`。P2 Demo「LAN SSH debug」开关调用同一脚本。主机 `**make connect <ip>`** 注册后可用 `push-app` / `shell` / `debug-app` / `reboot`（**不含** `reboot-loader`）。重启后自动关闭。
+**P2.1（LAN/WLAN 按需）**：板端 `**/usr/lib/lws-hmi/enable-ssh-debug.sh`**（及 `disable-ssh-debug.sh`）启动 `lws-hmi-lan-ssh.service` → `lan-ssh-run.sh`（仅在 **eth0/wlan0** 的 IPv4 上 `ListenAddress`，**不**绑 `0.0.0.0` / `192.168.55.1`）；与 USB-SSH **并存**。**不** `systemctl enable sshd`。P2 Demo「LAN SSH debug」开关调用同一脚本。主机 `**make connect <ip>`** 注册后可用 `push-app` / `shell` / `debug-app` / `reboot`（**不含** `reboot-loader`）。重启后自动关闭。
 
 
 | lws-ui（Android）                                                   | lws-hmi（Buildroot）                                                                     |
 | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | `adbd` 默认不监听 LAN                                                  | `**sshd` 默认 `disable --now`**                                                          |
-| USB 插线即 adb（开发）                                                   | **USB 插线即 ECM+ssh**（`lws-hmi-usb-plug-ssh`）；仅 `usb0`（LAN debug 开启时可复用 *:22）            |
+| USB 插线即 adb（开发）                                                   | **USB 插线即 ECM+ssh**（`lws-hmi-usb-plug-ssh`）；仅 `usb0`；LAN debug 另开 eth0/wlan0 监听，互不抢占 |
 | **设置 → 设备信息 → 连续 5 次点击 System Version**（5 s 内，`SecretTapTracker`） | **P2.1**：Demo 开关 + CLI；**P5**：Flutter 设备信息页 → 系统版本 **5 连击** → 同一 `enable-ssh-debug.sh` |
 | `AdbRemoteDebugHelper.enableRemoteDebugging()`                    | **P2.1+**：`/usr/lib/lws-hmi/enable-ssh-debug.sh`（专用 LAN sshd，非 boot `sshd.service`）    |
 | `**POST /v1/adb`**（`:5580`，与 UI 同一路径）                             | `**POST /v1/ssh**`（P5 `:5580`，同一 helper）                                               |
@@ -1507,27 +1508,36 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - **屏幕旋转**：Portrait / Landscape → `/var/lib/lws-hmi/display-orientation` + `hmi-launch.sh` `-o`；Demo 按钮组（真机切换需 HMI 重启）
 - ~~（可选）`verify-io` 一键 smoke~~ — **跳过**（非必要；板端按台账 §6 手工核对即可）
 
-### P2.2 — 日期/时间设置（Demo）🔲
+### P2.2 — 日期/时间设置（Demo）🔄
 
 **动机**：板端 RTC 易停在旧年代（HTTPS/TLS 与日志依赖正确壁钟）；产品 Settings 时钟页也应有可复用的平台层，不宜拖到 P5 再首次抽象。
 
-**边界**：Demo UI + 平台 `DateTimeController`；**不做** 产品 Settings 整页、云 NTP 策略编排（P5）。
+**进行中 / 本机已落地**：`DateTimeController` + Demo「Date & Time」；联网同步复用 `wlan0-time-sync.sh`；HTTPS 经 `ensureSaneForTls`。**待板端 smoke**：手动设时写入 RTC、Sync Now、模式持久化。
 
-- Demo：日期 / 时间 / 时区（或 UTC offset）设置与当前时钟显示
-- 平台抽象：`DateTimeController`（get/set wall clock、timezone）；Linux 后端：`timedatectl` / `date` + `hwclock` 写 RTC
-- 与 P2.1 HTTP `Date` 临时对钟兼容；失败语义可测
-- 验收：Demo 改时后 `date` 与 RTC 一致；抽象 API 可供 P5.2 设置页直接复用（不绑 Demo widget）
+**边界**：Demo UI + 平台 `DateTimeController`；**不做** 产品 Settings 整页、chrony / systemd-timesyncd（P5）。
 
-### P2.3 — 硬件设置持久化（整机重启）🔲
+- [x] Demo：日期 / 时间 / 时区设置与当前时钟显示；Manual / Network；Apply / Sync Now
+- [x] 平台抽象：`DateTimeController`（get/set wall clock、timezone、sync mode）；Linux：`timedatectl` / `date` + `hwclock`
+- [x] 与 P2.1 HTTP TLS 对钟合一（`LinuxHttpClientController` → `ensureSaneForTls`）
+- [ ] 验收（板端）：Demo 改时 → 重启后 RTC/系统时间一致；Network Sync Now；HTTPS 在陈旧 RTC 下可恢复
 
-**动机**：P2.1 多数偏好已落 `/var/lib/lws-hmi/*`，但断电/reboot 后 Wi‑Fi / eth0 / 代理等栈往往需再进 Demo 手动 Apply。
+### P2.3 — 硬件设置持久化（整机重启）✅
 
-**边界**：boot 恢复钩子 + 文档化 schema；**不**新增产品设置 UI。
+**动机**：P2.1 多数偏好已落 `/var/lib/lws-hmi/*`，但断电/reboot 后 Wi‑Fi / eth0 / 代理等栈往往需再进 Demo 手动 Apply；且 Demo `Process.run` 曾把 `wpa_supplicant`/`dhcpcd` 留在 **`hmi.service` cgroup**，导致 `push-app` / `systemctl restart hmi` 断网。
+
+**边界**：boot 恢复钩子 + 文档化 schema；系统栈独立 unit；**不**新增产品设置 UI。
+
+**不变式**：系统设置相关长期进程 **不得** 进入 `hmi.service` cgroup；`hmi` 重启不得拖垮 Wi‑Fi / eth0 / LAN SSH（LAN SSH 仍不随 reboot 恢复）。
 
 - 清单：Wi‑Fi 凭据与 wlan0 IPv4、eth0 IPv4、HTTP 代理、背光、屏幕旋转、BT A2DP Sink 偏好等（以 P2.1 已交付项为准）
-- systemd oneshot（或等价）：multi-user 早期按持久化文件 **restore**（复用现有 `*-up.sh` / `eth0-*.sh`）
-- Demo Apply 与 boot restore **同一实现**，避免两套语义
-- 验收：配置一次 → `reboot` → 无需触屏即可恢复网络/显示等；失败有 journal 可诊断
+- `lws-hmi-wpa` / `lws-hmi-wlan0-dhcp` / `lws-hmi-eth0`：on-demand；`lws-hmi-settings-restore.service`：**`After=hmi`**（UI 先起，再恢复网/BT；Nice/idle；Demo `starting` 跟手动开一致）
+- Demo Apply 与 boot restore **同一实现**（wanted 标记 `wifi-wanted` / `eth0-wanted`）
+- 偏好目录：**`/userdata/lws-hmi/`**（`/var/lib/lws-hmi` → symlink，`lws-hmi-prefs-bind.sh`）
+- **保留 / 清除策略**（详见 [`docs/storage-layout.md`](storage-layout.md) §Prefs）：
+  - **reboot / `push-app` / HMI restart** → 保留
+  - **`make upgrade`（P2.4 A/B，只换 rootfs 槽）** → **保留**（不得动 userdata）
+  - **`make flash`（产线全量）** → **必须清除**（工厂重置；实现待补 wipe，见 storage-layout）
+- 验收：配置一次 → `reboot` → 无需触屏即可恢复网络/显示等；`restart hmi` / `make push-app` 不断 Wi‑Fi；失败有 journal 可诊断
 
 ### P2.4 — A/B 双分区 + `make upgrade`🔲
 
@@ -1536,9 +1546,10 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - `board/parameter-buildroot-fit.txt`：rootfs **A/B** 双槽；更新 `docs/storage-layout.md` 与 kernel `root=` / slot 选择
 - 板端：写 inactive 槽 → 校验 → 切换 boot 标记 → reboot；失败可回滚到上一槽
 - 主机：`make upgrade` 经 **USB-SSH** 或 `make connect` **LAN SSH** 推送并触发（复用 `device-target` / `ssh-devices`）
+- **userdata 不变**：升级 **不得** 格式化 userdata 或删除 `/userdata/lws-hmi`（P2.3 设置随升级保留）；与 **`make flash` 全量重置** 相对
 - 预留 app-only（`/oem/hmi`）路径；全系统槽位更新先验收
 - **不做** Upgrade 业务页 / 云下载（**P5.8**）
-- 验收：SSH 可达时完成一次槽位切换并正常启动 HMI；坏包不破坏当前槽
+- 验收：SSH 可达时完成一次槽位切换并正常启动 HMI；坏包不破坏当前槽；升级前后 Wi‑Fi 等偏好仍在
 
 ### P2.5 — 模拟器与 Android 兼容 🔲
 

@@ -1,5 +1,6 @@
 #!/bin/sh
 # Bring up deferred Wi-Fi stack for HMI (not enabled at boot).
+# Starts lws-hmi-wpa.service so wpa_supplicant survives hmi.service stop/restart.
 # Usage: wifi-stack-up.sh
 set -eu
 
@@ -7,6 +8,8 @@ IFACE="${LWS_WLAN_IFACE:-}"
 WPA_CONF="${LWS_WPA_CONF:-/var/lib/lws-hmi/wpa_supplicant.conf}"
 CTRL_DIR=/var/run/wpa_supplicant
 LIB_DIR=/var/lib/lws-hmi
+UNIT=lws-hmi-wpa.service
+IFACE_FILE=/run/lws-hmi-wlan.iface
 
 log() {
 	echo "wifi-stack-up: $*" >&2
@@ -62,33 +65,45 @@ if [ ! -d "/sys/class/net/$IFACE" ]; then
 fi
 
 log "using iface $IFACE"
+printf '%s\n' "$IFACE" >"$IFACE_FILE"
 ip link set "$IFACE" up 2>/dev/null || true
 
-if wpa_cli -i "$IFACE" status >/dev/null 2>&1; then
-	log "wpa_supplicant already controlling $IFACE"
+if wpa_cli -i "$IFACE" status >/dev/null 2>&1 && \
+	systemctl is-active --quiet "$UNIT" 2>/dev/null; then
+	log "wpa_supplicant already controlling $IFACE ($UNIT active)"
+	mkdir -p /var/lib/lws-hmi
+	: >/var/lib/lws-hmi/wifi-wanted
 	exit 0
 fi
 
-WPA_LOG="$(mktemp /tmp/wpa-XXXXXX.log 2>/dev/null || echo /tmp/wpa-lws.log)"
-if ! wpa_supplicant -B -i "$IFACE" -c "$WPA_CONF" -D nl80211 -f "$WPA_LOG" 2>>"$WPA_LOG"; then
-	log "nl80211 failed; trying nl80211,wext (log $WPA_LOG)"
-	if ! wpa_supplicant -B -i "$IFACE" -c "$WPA_CONF" -D nl80211,wext -f "$WPA_LOG" 2>>"$WPA_LOG"; then
-		log "wpa_supplicant failed to start"
-		tail -40 "$WPA_LOG" >&2 || true
-		exit 1
-	fi
+# Escape hmi.service cgroup: never start wpa_supplicant as a child of Demo.
+systemctl reset-failed "$UNIT" 2>/dev/null || true
+if ! systemctl start "$UNIT"; then
+	log "$UNIT failed to start"
+	systemctl status "$UNIT" --no-pager -l 2>/dev/null | head -40 >&2 || true
+	tail -40 /var/lib/lws-hmi/wpa_supplicant.log 2>/dev/null || true
+	exit 1
 fi
 
 i=0
 while [ "$i" -lt 40 ]; do
 	if wpa_cli -i "$IFACE" status >/dev/null 2>&1; then
-		log "ok ($IFACE)"
+		log "ok ($IFACE via $UNIT)"
+		mkdir -p /var/lib/lws-hmi
+		: >/var/lib/lws-hmi/wifi-wanted
 		exit 0
+	fi
+	if systemctl is-failed --quiet "$UNIT" 2>/dev/null; then
+		log "$UNIT failed"
+		systemctl status "$UNIT" --no-pager -l 2>/dev/null | head -40 >&2 || true
+		tail -40 /var/lib/lws-hmi/wpa_supplicant.log 2>/dev/null || true
+		exit 1
 	fi
 	i=$((i + 1))
 	sleep 0.25
 done
 
 log "wpa_cli not ready on $IFACE"
-tail -40 "$WPA_LOG" >&2 || true
+systemctl status "$UNIT" --no-pager -l 2>/dev/null | head -40 >&2 || true
+tail -40 /var/lib/lws-hmi/wpa_supplicant.log 2>/dev/null || true
 exit 1

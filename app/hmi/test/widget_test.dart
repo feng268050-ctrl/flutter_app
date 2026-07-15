@@ -42,11 +42,13 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.textContaining('Device SN:'), findsOneWidget);
-    expect(find.textContaining('Gunhead SN: $kUnavailableDisplay'), findsOneWidget);
+    expect(find.text('Device SN'), findsOneWidget);
+    expect(find.text('Gunhead SN'), findsOneWidget);
+    expect(find.text(kUnavailableDisplay), findsWidgets);
     expect(find.text('Alarm Information'), findsOneWidget);
-    expect(find.textContaining('Motor Temperature:'), findsOneWidget);
-    expect(find.textContaining('Collimator Temperature:'), findsOneWidget);
+    expect(find.text('Motor Temperature'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Collimator Temperature'), 200);
+    expect(find.text('Collimator Temperature'), findsOneWidget);
 
     await tester.scrollUntilVisible(find.text('RGB LED'), 200);
     expect(find.text('Steady'), findsWidgets);
@@ -61,7 +63,6 @@ void main() {
     expect(find.text('Portrait'), findsOneWidget);
     expect(find.text('Landscape'), findsOneWidget);
     expect(find.textContaining('Brightness:'), findsOneWidget);
-    expect(find.textContaining('Volume:'), findsWidgets);
   });
 
   testWidgets('app demo shows Device Information title', (WidgetTester tester) async {

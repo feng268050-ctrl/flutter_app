@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Stream live device logs over USB-SSH (make logs). No boot-time / serial history.
+# Stream live device logs over USB-SSH or registered remote SSH (make logs).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=scripts/usb-ssh-common.sh
-source "$ROOT/scripts/usb-ssh-common.sh"
-SERIAL="${SERIAL:-${LWS_HMI_SERIAL:-}}"
+# shellcheck source=scripts/usb-ssh-session.sh
+source "$ROOT/scripts/usb-ssh-session.sh"
 
 die() {
 	echo "ERROR: $*" >&2
@@ -90,11 +89,12 @@ usage() {
 	cat <<EOF
 Usage: make logs [filters]
 
-Follow live journal output from the board over USB-SSH (no buffered history).
+Follow live journal output from the board over USB-SSH or registered SSH (no buffered history).
 Quit: Ctrl+C
 
 Device selection:
-  SERIAL / LWS_HMI_SERIAL        select board when multiple USB-SSH devices
+  SERIAL / LWS_HMI_SERIAL        select board when multiple devices
+  IP / LWS_HMI_IP                registered SSH only (make connect <ip>)
 
 Filters (optional; combine as needed):
   UNIT / LOGS_UNIT               systemd unit, comma-separated (e.g. hmi.service)
@@ -110,8 +110,9 @@ Examples:
   make logs PRIORITY=err
   make logs KERNEL=1
   make logs UNIT=hmi.service GREP=flutter
+  IP=192.168.1.50 make logs
 
-Early boot and serial-only output (before USB-SSH is up) are not included.
+Early boot and serial-only output (before SSH is up) are not included.
 Use make serial-console for UART bring-up.
 EOF
 }
@@ -120,26 +121,24 @@ EOF
 
 build_journal_args
 
-sel=()
-while IFS= read -r line; do
-	sel+=("$line")
-done < <(SERIAL="$SERIAL" bash "$ROOT/scripts/usb-ssh-devices.sh" --select)
-[[ ${#sel[@]} -eq 3 ]] || die "could not select USB-SSH device"
-IFACE="${sel[1]}"
-[[ "$IFACE" != "-" && -n "$IFACE" ]] || die "no host interface for USB-SSH device (wait for ECM link)"
-
+usb_ssh_session_load_env "$ROOT"
+usb_ssh_session_select "$ROOT"
+usb_ssh_session_configure_link
 require_sshpass
-configure_usb_ssh_host_addr "$IFACE"
-
-target_addr="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
-target_user="${LWS_HMI_USB_SSH_USER:-root}"
-ssh_pass="${LWS_HMI_USB_SSH_PASS:-rockchip}"
 
 if ((${#filter_parts[@]} > 0)); then
-	echo "Streaming live logs from ${target_user}@${target_addr} via $IFACE"
+	if usb_ssh_session_is_remote; then
+		echo "Streaming live logs from ${TARGET_USER}@${TARGET_ADDR} (SSH)"
+	else
+		echo "Streaming live logs from ${TARGET_USER}@${TARGET_ADDR} via $IFACE"
+	fi
 	echo "  filters: ${filter_parts[*]}"
 else
-	echo "Streaming live logs from ${target_user}@${target_addr} via $IFACE (all journal sources)"
+	if usb_ssh_session_is_remote; then
+		echo "Streaming live logs from ${TARGET_USER}@${TARGET_ADDR} (SSH; all journal sources)"
+	else
+		echo "Streaming live logs from ${TARGET_USER}@${TARGET_ADDR} via $IFACE (all journal sources)"
+	fi
 fi
 echo "  quit: Ctrl+C"
 
@@ -150,8 +149,10 @@ ssh_opts=(
 	-o UserKnownHostsFile=/dev/null
 	-o LogLevel=ERROR
 )
-while IFS= read -r opt; do
-	[[ -n "$opt" ]] && ssh_opts+=("$opt")
-done < <(usb_ssh_bind_pair "$IFACE")
+if ! usb_ssh_session_is_remote; then
+	while IFS= read -r opt; do
+		[[ -n "$opt" ]] && ssh_opts+=("$opt")
+	done < <(usb_ssh_bind_pair "$IFACE")
+fi
 
-exec sshpass -p "$ssh_pass" ssh "${ssh_opts[@]}" "$target_user@$target_addr" journalctl "${journal_args[@]}"
+exec sshpass -p "$SSH_PASS" ssh "${ssh_opts[@]}" "$TARGET_USER@$TARGET_ADDR" journalctl "${journal_args[@]}"

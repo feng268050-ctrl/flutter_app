@@ -100,11 +100,7 @@ start_sshd() {
 	if sshd_running; then
 		return 0
 	fi
-	# LAN debug already binds *:22 (covers usb0 once addressed).
-	if [ -f /run/lws-hmi-lan-sshd.pid ] && kill -0 "$(cat /run/lws-hmi-lan-sshd.pid)" 2>/dev/null; then
-		log "LAN sshd already listening — skip USB-only sshd"
-		return 0
-	fi
+	# Always bind usb0-only — LAN debug listens on eth0/wlan0 IPs separately.
 	/usr/lib/lws-hmi/ensure-sshd-hostkeys.sh
 	mkdir -p /run/sshd
 	chmod 0755 /run/sshd 2>/dev/null || true

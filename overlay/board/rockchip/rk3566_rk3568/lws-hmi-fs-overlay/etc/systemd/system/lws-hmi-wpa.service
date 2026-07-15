@@ -1,0 +1,15 @@
+[Unit]
+Description=LWS HMI on-demand wpa_supplicant (wlan0)
+Documentation=file:///usr/lib/lws-hmi/wifi-stack-up.sh
+# Not linked from multi-user.target.wants — started only via wifi-stack-up.sh / Demo.
+DefaultDependencies=no
+After=local-fs.target
+
+[Service]
+# Dedicated unit so wpa_supplicant is NOT in hmi.service's cgroup (Demo Process.run
+# would otherwise lose Wi-Fi on systemctl stop hmi → LAN SSH drops during push-app).
+Type=simple
+ExecStart=/usr/lib/lws-hmi/lws-hmi-wpa-run.sh
+Restart=no
+
+# No [Install] — must not auto-start at boot.

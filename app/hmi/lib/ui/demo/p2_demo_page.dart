@@ -18,6 +18,8 @@ import 'package:lws_hmi/platform/ethernet/ethernet_controller.dart';
 import 'package:lws_hmi/platform/ethernet/linux_ethernet_controller.dart';
 import 'package:lws_hmi/platform/http/http_client_controller.dart';
 import 'package:lws_hmi/platform/http/linux_http_client_controller.dart';
+import 'package:lws_hmi/platform/ssh/linux_ssh_debug_controller.dart';
+import 'package:lws_hmi/platform/ssh/ssh_debug_controller.dart';
 import 'package:lws_hmi/platform/wifi/linux_wpa_wifi_controller.dart';
 import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
 import 'package:lws_hmi/ui/demo/bluetooth_demo_section.dart';
@@ -25,9 +27,10 @@ import 'package:lws_hmi/ui/demo/demo_scroll_interaction.dart';
 import 'package:lws_hmi/ui/demo/ethernet_demo_section.dart';
 import 'package:lws_hmi/ui/demo/http_demo_section.dart';
 import 'package:lws_hmi/ui/demo/keyboard_demo_section.dart';
+import 'package:lws_hmi/ui/demo/ssh_debug_demo_section.dart';
 import 'package:lws_hmi/ui/demo/wifi_demo_section.dart';
 
-/// P2 / P2.1 demo: device info, LEDs, speaker, backlight, orientation, Ethernet / Wi‑Fi / BT / USB keyboard.
+/// P2 / P2.1 demo: device info, LEDs, I/O, network, LAN SSH debug.
 class P2DemoPage extends StatefulWidget {
   const P2DemoPage({
     super.key,
@@ -40,6 +43,7 @@ class P2DemoPage extends StatefulWidget {
     this.ethernetController,
     this.wifiController,
     this.httpClientController,
+    this.sshDebugController,
     this.bluetoothController,
   });
 
@@ -52,6 +56,7 @@ class P2DemoPage extends StatefulWidget {
   final EthernetController? ethernetController;
   final WifiController? wifiController;
   final HttpClientController? httpClientController;
+  final SshDebugController? sshDebugController;
   final BluetoothController? bluetoothController;
 
   @override
@@ -67,6 +72,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
   late final EthernetController _ethernet;
   late final WifiController _wifi;
   late final HttpClientController _http;
+  late final SshDebugController _sshDebug;
   late final BluetoothController _bluetooth;
   bool _networkSectionsReady = false;
 
@@ -109,6 +115,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
     _ethernet = widget.ethernetController ?? LinuxEthernetController();
     _wifi = widget.wifiController ?? LinuxWpaWifiController();
     _http = widget.httpClientController ?? LinuxHttpClientController();
+    _sshDebug = widget.sshDebugController ?? LinuxSshDebugController();
     _bluetooth = widget.bluetoothController ?? LinuxBluezBluetoothController();
     _playingSub = _audio.playing.listen((playing) {
       if (!mounted) {
@@ -157,6 +164,9 @@ class _P2DemoPageState extends State<P2DemoPage> {
 
     // P2.1 platform I/O — after Modbus so first paint already happened.
     try {
+      if (_backlight is LinuxSysfsBacklight) {
+        await (_backlight as LinuxSysfsBacklight).applyPersistedPreference();
+      }
       final vol = await _audio.getVolumePercent();
       final bri = await _backlight.getBrightnessPercent();
       final ori = await _orientation.getPreferred();
@@ -285,20 +295,20 @@ class _P2DemoPageState extends State<P2DemoPage> {
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                const Text(
-                  'Device Information',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-            const SizedBox(height: 16),
-            _InfoRow(label: 'Device SN', value: _deviceSn),
-            _InfoRow(label: 'Gunhead SN', value: _gunheadSn),
-            _InfoRow(label: 'Firmware Version', value: _firmwareVersion),
-            _InfoRow(label: 'Laser Version', value: _laserVersion),
-            _InfoRow(label: 'Wire Feeder Version', value: _wireFeederVersion),
+            const Text(
+              'Device Information',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _InfoTile(label: 'Device SN', value: _deviceSn),
+            _InfoTile(label: 'Gunhead SN', value: _gunheadSn),
+            _InfoTile(label: 'Firmware Version', value: _firmwareVersion),
+            _InfoTile(label: 'Laser Version', value: _laserVersion),
+            _InfoTile(label: 'Wire Feeder Version', value: _wireFeederVersion),
             const SizedBox(height: 32),
             const Text(
               'Alarm Information',
@@ -308,17 +318,17 @@ class _P2DemoPageState extends State<P2DemoPage> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 16),
-            _InfoRow(label: 'Motor Temperature', value: _motorTemperature),
-            _InfoRow(
+            const SizedBox(height: 8),
+            _InfoTile(label: 'Motor Temperature', value: _motorTemperature),
+            _InfoTile(
               label: 'Motor Driver Temperature',
               value: _motorDriverTemperature,
             ),
-            _InfoRow(
+            _InfoTile(
               label: 'Protective Mirror Temperature',
               value: _protectiveMirrorTemperature,
             ),
-            _InfoRow(
+            _InfoTile(
               label: 'Collimator Temperature',
               value: _collimatorTemperature,
             ),
@@ -442,6 +452,8 @@ class _P2DemoPageState extends State<P2DemoPage> {
               const SizedBox(height: 32),
               HttpDemoSection(controller: _http),
               const SizedBox(height: 32),
+              SshDebugDemoSection(controller: _sshDebug),
+              const SizedBox(height: 32),
               BluetoothDemoSection(controller: _bluetooth),
             ],
             const SizedBox(height: 24),
@@ -455,19 +467,26 @@ class _P2DemoPageState extends State<P2DemoPage> {
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({required this.label, required this.value});
 
   final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        '$label: $value',
-        style: const TextStyle(color: Colors.white, fontSize: 22),
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(
+        label,
+        style: const TextStyle(color: Colors.white, fontSize: 16),
+      ),
+      trailing: Text(
+        value,
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.85),
+          fontSize: 16,
+        ),
       ),
     );
   }

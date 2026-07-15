@@ -41,7 +41,7 @@ warn_sshpass_if_usb_ssh() {
 	command -v sshpass >/dev/null 2>&1 && return 0
 	{
 		echo ""
-		echo "NOTE: USB-SSH device(s) connected — install sshpass for SERIAL lookup, push-app, and reboot:"
+		echo "NOTE: USB-SSH/SSH device(s) present — install sshpass for SERIAL lookup, push-app, and reboot:"
 		sshpass_install_hint
 	} >&2
 }
@@ -112,6 +112,38 @@ ping_usb_ssh_target() {
 
 # Background sysrq reboot; remote shell exits immediately (for make reboot / push-app).
 USB_SSH_SYSRQ_REBOOT_CMD='sh -c "(sleep 1; sync; if [ -w /proc/sysrq-trigger ]; then echo 1 >/proc/sys/kernel/sysrq 2>/dev/null; echo b >/proc/sysrq-trigger; elif [ -x /usr/lib/lws-hmi/shutdown.sh ]; then /usr/lib/lws-hmi/shutdown.sh reboot; fi) >/dev/console 2>&1 & exit 0"'
+
+# Unbound TCP reachability for registered remote SSH (MODE=SSH).
+ping_remote_ssh_target() {
+	local addr="$1"
+	case "$(uname -s)" in
+	Darwin) ping -c 1 -t 2 "$addr" ;;
+	Linux) ping -c 1 -W 2 "$addr" ;;
+	*) ping -c 1 "$addr" ;;
+	esac
+}
+
+remote_ssh_run() {
+	local target_addr="$1"
+	shift
+	local target_user="${LWS_HMI_USB_SSH_USER:-root}"
+	local ssh_pass="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+	local -a ssh_opts=(
+		-o ConnectTimeout=5
+		-o StrictHostKeyChecking=accept-new
+		-o UserKnownHostsFile=/dev/null
+		-o LogLevel=ERROR
+	)
+
+	require_sshpass
+	sshpass -p "$ssh_pass" ssh "${ssh_opts[@]}" "$target_user@$target_addr" "$@"
+}
+
+remote_ssh_schedule_sysrq_reboot() {
+	local target_addr="$1"
+	echo "ssh ${LWS_HMI_USB_SSH_USER:-root}@${target_addr} sysrq reboot"
+	remote_ssh_run "$target_addr" "$USB_SSH_SYSRQ_REBOOT_CMD" || true
+}
 
 usb_ssh_run() {
 	local iface="$1"

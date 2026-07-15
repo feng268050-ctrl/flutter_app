@@ -103,8 +103,7 @@ sync_fs_overlay() {
     "$BR_OVERLAY_ROOT/etc/systemd/system/lws-hmi-boot-kpi.service" \
     "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/debug-boot.sh" \
     "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/boot-kpi-watch.sh" \
-    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/configure-camera-eth0.sh" \
-    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/enable-ssh-debug.sh"
+    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/configure-camera-eth0.sh"
 }
 
 sync_post_build_script() {

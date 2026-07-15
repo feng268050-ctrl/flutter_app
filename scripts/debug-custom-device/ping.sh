@@ -7,5 +7,9 @@ usb_ssh_session_load_env "$ROOT"
 if ! usb_ssh_session_select "$ROOT" 2>/dev/null; then
 	exit 1
 fi
-configure_usb_ssh_host_addr "$IFACE"
-ping_usb_ssh_target "$IFACE"
+usb_ssh_session_configure_link
+if usb_ssh_session_is_remote; then
+	ping_remote_ssh_target "$TARGET_ADDR"
+else
+	ping_usb_ssh_target "$IFACE"
+fi

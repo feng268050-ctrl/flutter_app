@@ -14,22 +14,33 @@ BOARD ?= ynh960
 CHIP ?= rk3566_rk3568
 DEFCONFIG ?= ynh960_defconfig
 
-# USB flash / adb (override when multiple devices connected)
+# USB flash / adb / remote SSH (override when multiple devices connected)
 SERIAL ?=
+IP ?=
 IMAGE ?=
-FLASH_ENV = SERIAL='$(SERIAL)' UPDATE_IMG='$(IMAGE)'
+FLASH_ENV = SERIAL='$(SERIAL)' IP='$(IP)' UPDATE_IMG='$(IMAGE)'
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-app build-debug-app debug-setup debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices push-app reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
+# Positional IP for: make connect <ip> / make disconnect <ip>
+ifneq ($(filter connect disconnect,$(firstword $(MAKECMDGOALS))),)
+  SSH_DEVICE_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  ifneq ($(SSH_DEVICE_ARGS),)
+$(SSH_DEVICE_ARGS):
+	@:
+  endif
+endif
+
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices connect disconnect push-app reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
 define WITH_DOTENV
 bash -c 'set -euo pipefail; \
-  __ENV_SERIAL="$${SERIAL-}"; __ENV_IMAGE="$${IMAGE-}"; \
+  __ENV_SERIAL="$${SERIAL-}"; __ENV_IP="$${IP-}"; __ENV_IMAGE="$${IMAGE-}"; \
   __ENV_FLUTTER_SDK="$${FLUTTER_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
   __ENV_BUILD_BIND_MOUNT="$${BUILD_BIND_MOUNT-}"; \
   set -a; [[ -f .env ]] && source .env; set +a; \
   [[ -n "$$__ENV_SERIAL" ]] && export SERIAL="$$__ENV_SERIAL"; \
+  [[ -n "$$__ENV_IP" ]] && export IP="$$__ENV_IP"; \
   [[ -n "$$__ENV_IMAGE" ]] && export IMAGE="$$__ENV_IMAGE"; \
   [[ -n "$$__ENV_FLUTTER_SDK" ]] && export FLUTTER_SDK="$$__ENV_FLUTTER_SDK"; \
   [[ -n "$$__ENV_BUILD_JOBS" ]] && export BUILD_JOBS="$$__ENV_BUILD_JOBS"; \
@@ -85,22 +96,25 @@ help:
 	@echo "  make export-prebuilt       # re-export flutter + runtime (usually build-* already did)"
 	@echo "  rebuild-*                  # FORCE=1 refresh (e.g. make rebuild-runtime-deps)"
 	@echo ""
-	@echo "Debug (device / host — USB-SSH, Flutter, serial):"
+	@echo "Debug (device / host — USB-SSH, remote SSH, Flutter, serial):"
 	@echo "  make usb-ssh-setup         # host ECM IP + sshpass doctor (macOS may sudo)"
-	@echo "  make devices               # RockUSB + USB-SSH (auto host IP on gadget NIC)"
-	@echo "  make shell                 # interactive device shell over USB-SSH"
-	@echo "  make logs                  # live journal over USB-SSH; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
-	@echo "  make push-app              # scp app over USB ECM SSH (no rootfs reflash)"
+	@echo "  make debug-host-prepare    # USB ECM or registered SSH reachability for debug-app/IDE"
+	@echo "  make connect <ip>          # register remote SSH board (MODE=SSH in make devices)"
+	@echo "  make disconnect <ip>       # remove registered remote SSH board"
+	@echo "  make devices               # RockUSB + USB-SSH + registered SSH"
+	@echo "  make shell                 # interactive device shell (USB-SSH or SSH)"
+	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
+	@echo "  make push-app              # scp app over SSH (USB-SSH or registered IP)"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
-	@echo "  make debug-app             # flutter run -d lws-hmi over USB-SSH (debug + hot reload)"
+	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
 	@echo "  make serial-console        # TTL UART ttyFIQ0 @ 1500000 (quit Ctrl+])"
 	@echo "  make serial-ports          # list host /dev/cu.* TTL ports"
 	@echo "  make serial-sniff          # auto-detect baud while power-cycling board"
 	@echo ""
 	@echo "USB Flash (macOS only):"
 	@echo "  make audit                 # pre-flight before make flash"
-	@echo "  make reboot                # Linux board → reboot via USB-SSH; Android → adb"
-	@echo "  make reboot-loader         # Linux board → RockUSB via USB-SSH; Android → adb"
+	@echo "  make reboot                # Linux → USB-SSH/SSH sysrq; Android → adb"
+	@echo "  make reboot-loader         # Linux → RockUSB via USB-SSH only; Android → adb"
 	@echo "  make flash                 # uf update.img; ul loader when RockUSB is Maskrom (macOS)"
 	@echo "  make flash-android         # optional: flash Android instead"
 	@echo ""
@@ -123,7 +137,8 @@ help:
 	@echo "  BUILD_BIND_MOUNT=1         # macOS only: bind-mount SDK instead of Docker volume"
 	@echo "  LWS_HMI_CACHE_ROOT=...   # NAS mount for large .cache artifacts (see .env.example)"
 	@echo "  LWS_HMI_CACHE_URL=...      # optional HTTP mirror of the same layout"
-	@echo "  SERIAL=<serial>            # device serial (macOS USB flash)"
+	@echo "  SERIAL=<serial>            # device serial (flash / USB-SSH / SSH)"
+	@echo "  IP=<addr>                  # registered SSH only (not USB-SSH); make connect first"
 	@echo "  IMAGE=<path>               # firmware image for make flash"
 	@echo "  DOCKER_IMAGE=$(DOCKER_IMAGE)"
 	@echo "  DOCKER_PLATFORM=$(DOCKER_PLATFORM)"
@@ -209,6 +224,9 @@ build-debug-app:
 
 debug-setup:
 	@bash scripts/debug-setup.sh
+
+debug-host-prepare:
+	@$(call WITH_DOTENV,bash scripts/debug-host-prepare.sh)
 
 debug-app:
 	@$(call WITH_DOTENV,bash scripts/debug-app.sh)
@@ -382,6 +400,12 @@ audit:
 
 devices:
 	@$(call WITH_DOTENV,bash scripts/flash-usb.sh devices)
+
+connect:
+	@$(call WITH_DOTENV,bash scripts/ssh-devices.sh connect $(IP) $(SSH_DEVICE_ARGS))
+
+disconnect:
+	@$(call WITH_DOTENV,bash scripts/ssh-devices.sh disconnect $(IP) $(SSH_DEVICE_ARGS))
 
 shell:
 	@$(call WITH_DOTENV,bash scripts/device-shell.sh)

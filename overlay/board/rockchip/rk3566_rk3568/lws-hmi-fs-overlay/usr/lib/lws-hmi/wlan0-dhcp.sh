@@ -71,11 +71,34 @@ stop_dhcp() {
 
 case "$ACTION" in
 stop)
+	# Prefer dedicated unit so any leftover dhcpcd stays out of hmi cgroup.
+	if [ -z "${LWS_DHCP_IN_UNIT:-}" ] && command -v systemctl >/dev/null 2>&1; then
+		systemctl stop lws-hmi-wlan0-dhcp.service 2>/dev/null || true
+		systemctl reset-failed lws-hmi-wlan0-dhcp.service 2>/dev/null || true
+	fi
 	stop_dhcp
 	log "stopped on $IFACE"
 	exit 0
 	;;
-start) ;;
+start)
+	# Demo Process.run → this script would leave dhcpcd in hmi.service cgroup;
+	# re-enter via oneshot unit so push-app (stop hmi) does not kill Wi-Fi IP.
+	if [ -z "${LWS_DHCP_IN_UNIT:-}" ] && command -v systemctl >/dev/null 2>&1 && \
+		[ -f /etc/systemd/system/lws-hmi-wlan0-dhcp.service ]; then
+		systemctl reset-failed lws-hmi-wlan0-dhcp.service 2>/dev/null || true
+		if systemctl start lws-hmi-wlan0-dhcp.service; then
+			if have_ipv4; then
+				log "ok via lws-hmi-wlan0-dhcp.service"
+				exit 0
+			fi
+			log "lws-hmi-wlan0-dhcp.service started but no IPv4 yet"
+		else
+			log "lws-hmi-wlan0-dhcp.service failed"
+			systemctl status lws-hmi-wlan0-dhcp.service --no-pager -l 2>/dev/null | head -30 >&2 || true
+		fi
+		exit 1
+	fi
+	;;
 *)
 	echo "usage: wlan0-dhcp.sh [start|stop]" >&2
 	exit 2

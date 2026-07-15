@@ -3,6 +3,10 @@
 disable lws-hmi-debug-boot.service
 disable sshd.service
 disable sshd.socket
+disable lws-hmi-lan-ssh.service
+disable lws-hmi-wpa.service
+disable lws-hmi-wlan0-dhcp.service
+disable lws-hmi-eth0.service
 disable mediamtx.service
 disable bluetooth.service
 disable wifibt-init.service

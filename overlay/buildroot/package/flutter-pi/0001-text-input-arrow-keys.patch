@@ -1,0 +1,46 @@
+From: lws-hmi <dev@lws>
+Date: Wed, 15 Jul 2026 20:00:00 +0800
+Subject: [PATCH] text_input: move caret on Left/Right (incl. keypad)
+
+flutter-pi leaves Left/Right as "handled inside of flutter", but
+on_key_event is NULL so Flutter never sees raw key events. Without
+this, TextField caret cannot move with arrow keys.
+
+diff --git a/src/plugins/text_input.c b/src/plugins/text_input.c
+index c57938c..25c1275 100644
+--- a/src/plugins/text_input.c
++++ b/src/plugins/text_input.c
+@@ -687,7 +687,7 @@ static bool model_move_cursor_to_end(void) {
+     return false;
+ }
+ 
+-UNUSED static bool model_move_cursor_forward(void) {
++static bool model_move_cursor_forward(void) {
+     if (text_input.selection_base != text_input.selection_extent) {
+         text_input.selection_base = text_input.selection_extent;
+         return true;
+@@ -702,7 +702,7 @@ UNUSED static bool model_move_cursor_forward(void) {
+     return false;
+ }
+ 
+-UNUSED static bool model_move_cursor_back(void) {
++static bool model_move_cursor_back(void) {
+     if (text_input.selection_base != text_input.selection_extent) {
+         text_input.selection_extent = text_input.selection_base;
+         return true;
+@@ -770,13 +770,11 @@ int textin_on_xkb_keysym(xkb_keysym_t keysym) {
+         case XKB_KEY_KP_Home: needs_sync = model_move_cursor_to_beginning(); break;
+         case XKB_KEY_Left:
+         case XKB_KEY_KP_Left:
+-            // handled inside of flutter
+-            // needs_sync = model_move_cursor_back();
++            needs_sync = model_move_cursor_back();
+             break;
+         case XKB_KEY_Right:
+         case XKB_KEY_KP_Right:
+-            // handled inside of flutter
+-            // needs_sync = model_move_cursor_forward();
++            needs_sync = model_move_cursor_forward();
+             break;
+         default: break;
+     }

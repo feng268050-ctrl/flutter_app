@@ -78,18 +78,36 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 
 Overlays：`lws-hmi-ynh960-usb-gadget.dtsi`（仅 OTG）、`lws-hmi-ynh960-usb-host.dtsi`（扩展 host）。
 
-**外接 USB 键盘（HID）**：1 mm host；P2.1 Demo「USB keyboard」。勿插到 Micro-USB（除非日后做 OTG dual-role）。
+**外接 USB 键盘（HID）**：1 mm host；P2.1 Demo「USB keyboard」。勿插到 Micro-USB（除非日后做 OTG dual-role）。无数字小键盘的键盘同样可用（主区字母/方向键/连发与小键盘无关）。
 
-Smoke：
+用户态依赖（缺一 flutter-pi 会禁用按键或行为异常）见下表。
+
+### 4.1.1 用户态踩坑（2026-07-15 真机）
+
+内核 HID 枚举与 libinput seat 正常 ≠ Flutter 能打字。问题均在 **flutter-pi / XKB**，换键盘或换 1 mm host 口一般仍有效；**不要**靠 `kbdrate` / usbhid quirks。
+
+| 现象 | 根因 | 固化位置 |
+|------|------|----------|
+| 完全打不出字 | 仅有 `libxkbcommon`，缺 `/usr/share/X11/xkb` 与 Compose | `BR2_PACKAGE_XKEYBOARD_CONFIG`；fs-overlay `usr/share/X11/locale/*` + `/etc/default/keyboard` |
+| 方向键不动光标 | `text_input` 把 Left/Right 让给 Flutter，但 `on_key_event==NULL` | `flutter-pi` `0001-text-input-arrow-keys.patch` |
+| 小键盘 NumLock「反了」 | 硬件 LED 亮着但 xkb Mod2 默认关（或不同步） | `0002-sync-keyboard-leds.patch`；`hmi-launch.sh` 启动前清 `input*::{num,caps,scroll}lock` |
+| 长按不连发 | libinput 不合成 repeat；flutter-pi 原无定时器 | `0003-key-repeat.patch`（660 ms 后约 25 Hz，只重发 utf8/keysym） |
+| `make rebuild-flutter-pi` 补丁未进包 | `SITE_METHOD=local` 跳过 Buildroot Patching | `flutter-pi.compile.mk` → `FLUTTER_PI_APPLY_PACKAGE_PATCHES` |
+
+Smoke（含连发 / 方向键）：
 
 ```bash
 lsusb
 ls -l /dev/input/by-id/*kbd* 2>/dev/null
 dmesg | grep -iE 'hid|usbhost|dwc3'
+test -f /usr/share/X11/xkb/rules/evdev && test -f /usr/share/X11/locale/C/Compose
+# Demo「USB keyboard」：打字、←→、长按连发；有小键盘再验 NumLock 灯与数字/导航
+# flutter-pi 启动日志不得出现: Could not initialize keyboard configuration
 ```
 
----
+重新编译 flutter-pi 补丁后还须进 rootfs（见 AGENTS / README Make）：`make rebuild-flutter-pi` → `apply-overlay` → `build-rootfs` → `build-img` → `flash`。
 
+---
 ## 5. Overlay 索引（改引脚时先看这些）
 
 | 文件 | 职责 |
@@ -132,5 +150,6 @@ dmesg | grep -iE 'goodix|focal|sitronix'
 
 | Date | Change |
 |------|--------|
+| 2026-07-15 | P2.1 USB 键盘用户态踩坑表 §4.1.1（XKB/Compose、方向键、NumLock LED、长按连发、local-site 补丁钩子） |
 | 2026-07-15 | P2.1：USB — Micro-USB OTG vs 1 mm host；恢复 PWREN；`usb-host` overlay |
 | 2026-07-15 | P2.1：从联调结论固化本台账（串口 / gpio_innohi / own-gpio↔gmac / 触控） |

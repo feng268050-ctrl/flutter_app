@@ -1,6 +1,7 @@
 #!/bin/sh
-# §3.4 platform stack verification — canonical copy in lws-hmi-fs-overlay/usr/lib/lws-hmi/.
-# This scripts/ copy is for editing; keep in sync with overlay before build-rootfs.
+# §3.4 platform stack verification on ynh960 device (excludes flutter-pi / hmi boot KPI).
+# Run after flash: verify-env
+# Canonical copy: overlay/.../lws-hmi-fs-overlay/usr/lib/lws-hmi/env-verify.sh
 set -u
 
 pass() { echo "PASS: $*"; }
@@ -80,6 +81,24 @@ else
 fi
 
 echo ""
+echo "--- flutter-pi keyboard runtime (xkb + Compose) ---"
+if [ -f /usr/share/X11/xkb/rules/evdev ]; then
+	pass "xkeyboard-config rules/evdev present"
+else
+	fail "/usr/share/X11/xkb/rules/evdev missing (enable BR2_PACKAGE_XKEYBOARD_CONFIG)"
+fi
+if [ -f /usr/share/X11/locale/C/Compose ] && [ -f /usr/share/X11/locale/compose.dir ]; then
+	pass "X11 locale Compose stubs present"
+else
+	fail "/usr/share/X11/locale Compose stubs missing (fs-overlay usr/share/X11/locale)"
+fi
+if [ -f /etc/default/keyboard ]; then
+	pass "/etc/default/keyboard present"
+else
+	warn "/etc/default/keyboard missing (flutter-pi uses built-in defaults)"
+fi
+
+echo ""
 echo "--- RockUSB Loader reboot helper ---"
 if [ -x /usr/lib/lws-hmi/reboot-loader ] && [ -x /usr/bin/reboot-loader ]; then
 	pass "reboot-loader installed in PATH (RESTART2 loader — not busybox reboot)"
@@ -144,7 +163,7 @@ if [ -f /etc/ssl/certs/ca-certificates.crt ] || [ -d /etc/ssl/certs ]; then
 else
 	fail "CA certificates missing (enable BR2_PACKAGE_CA_CERTIFICATES)"
 fi
-for helper in wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+for helper in wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh lws-hmi-eth0-apply.sh lws-hmi-settings-restore.sh lws-hmi-backlight-apply.sh lws-hmi-prefs-bind.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
 	if [ -x "/usr/lib/lws-hmi/$helper" ]; then
 		pass "helper $helper"
 	else

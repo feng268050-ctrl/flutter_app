@@ -54,11 +54,17 @@ class _KeyboardDemoSectionState extends State<KeyboardDemoSection>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('USB keyboard', style: theme.textTheme.titleLarge),
+        const Text(
+          'USB keyboard',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(
           '1 mm pin → USB host expansion (HID). '
@@ -68,7 +74,7 @@ class _KeyboardDemoSectionState extends State<KeyboardDemoSection>
         const SizedBox(height: 8),
         Text(
           _presence,
-          style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14),
+          style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 16),
         ),
         const SizedBox(height: 12),
         TextField(

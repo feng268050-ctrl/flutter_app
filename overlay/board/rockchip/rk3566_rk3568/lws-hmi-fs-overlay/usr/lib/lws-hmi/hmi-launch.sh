@@ -15,6 +15,14 @@ if command -v amixer >/dev/null 2>&1; then
 	amixer -q sset 'Playback Path' 'RING_SPK_HP' 2>/dev/null || true
 fi
 
+# Align lock LEDs with a fresh xkb_state (all clear) before flutter-pi opens input.
+# Stale LED-on + Mod2-off looks like an inverted keypad.
+for led in /sys/class/leds/input*::numlock /sys/class/leds/input*::capslock \
+	/sys/class/leds/input*::scrolllock; do
+	[ -w "$led/brightness" ] || continue
+	echo 0 >"$led/brightness" 2>/dev/null || true
+done
+
 # curl/OpenSSL tools. Dart HttpClient loads the same path explicitly in-app —
 # flutter-pi default SecurityContext does not reliably honor SSL_CERT_* alone.
 if [ -s /etc/ssl/certs/ca-certificates.crt ]; then

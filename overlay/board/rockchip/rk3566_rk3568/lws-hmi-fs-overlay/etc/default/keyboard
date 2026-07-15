@@ -1,0 +1,6 @@
+# Used by flutter-pi (libxkbcommon). Layout only; no X server.
+XKBMODEL="pc105"
+XKBLAYOUT="us"
+XKBVARIANT=""
+XKBOPTIONS=""
+BACKSPACE="guess"

@@ -453,11 +453,11 @@ class _P2DemoPageState extends State<P2DemoPage> {
             ),
             if (_networkSectionsReady) ...[
               const SizedBox(height: 32),
+              const KeyboardDemoSection(),
+              const SizedBox(height: 32),
               DateTimeDemoSection(controller: _dateTime),
               const SizedBox(height: 32),
               EthernetDemoSection(controller: _ethernet),
-              const SizedBox(height: 32),
-              const KeyboardDemoSection(),
               const SizedBox(height: 32),
               WifiDemoSection(controller: _wifi),
               const SizedBox(height: 32),

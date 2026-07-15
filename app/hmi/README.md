@@ -24,7 +24,7 @@ Reusable modules live under `lib/platform/`:
 | `display/` | preference file + `systemctl restart hmi` | `/var/lib/lws-hmi/display-orientation` → flutter-pi `-o` |
 | `datetime/` | `timedatectl`/`date` + `hwclock` + `wlan0-time-sync.sh` | Manual set / Network sync; prefs `/var/lib/lws-hmi/time-sync-mode` + `timezone`; HTTPS TLS uses `ensureSaneForTls` |
 | `ethernet/` | helpers + `ip` / sysfs | RJ45 `eth0`; DHCP/static via **`lws-hmi-eth0.service`** (outside HMI cgroup); `eth0-wanted` |
-| `input/` | `/dev/input/by-id` probe | USB HID keyboard presence; keys via flutter-pi/libinput (1 mm host, not Micro-USB OTG) |
+| `input/` | `/dev/input/by-id` probe | USB HID presence; keys via flutter-pi (needs xkeyboard-config + Compose stubs + patches 0001–0003; 1 mm host, not Micro-USB OTG) |
 | `wifi/` | helpers + `wpa_cli` | **`lws-hmi-wpa` / `lws-hmi-wlan0-dhcp`** units; `wifi-wanted`; Hidden SSID; DHCP/static on **wlan0** |
 | `http/` | Dart `HttpClient` (+ optional `curl`) | Default `SecurityContext`; wall-clock via `DateTimeController`; proxy prefs `/var/lib/lws-hmi/http-proxy`; Demo GET probe |
 | `bluetooth/` | helpers + `bluetoothctl` | Discoverable peer; `bt-wanted` + A2DP (`bt-a2dp-sink`); Demo `syncFromSystem()` after restore |
@@ -37,7 +37,7 @@ Reusable modules live under `lib/platform/`:
 2. Sweep Brightness — panel dims/brightens
 3. Portrait / Landscape — HMI restarts; `ps`/`tr` confirms `-o portrait_up` or `landscape_left`
 4. Ethernet — enable interface → DHCP or Static → link LED / `ping` peer PC (not IPC camera IP yet)
-5. USB keyboard — **1 mm pin → USB host** adapter + HID keyboard → Demo「USB keyboard」field (Micro-USB OTG remains plug-ssh)
+5. USB keyboard — **1 mm pin → USB host** + HID → Demo「USB keyboard」：type, arrow caret, hold-to-repeat; optional NumLock if present (Micro-USB OTG remains plug-ssh). Pitfalls: [`docs/ynh960-io-pinmux-ledger.md`](../../docs/ynh960-io-pinmux-ledger.md) §4.1.1
 6. Wi‑Fi — enable radio → Scan → Connect (or Hidden SSID) → DHCP or Static → `ping` gateway; Send request (default `https://www.baidu.com/`) shows HTTP status/body
 7. Proxy — enable proxy, Save, re-run Send request
 8. LAN SSH debug — toggle on → note eth0/wlan0 IP → host `make connect <ip>`

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-P2 Flutter home demo: device-information rows (iSerial + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth discoverable sections, P2.2 Date & Time (manual / network), plus audio / brightness / orientation controls.
+P2 Flutter home demo: device-information rows (iSerial + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth discoverable / USB keyboard sections, P2.2 Date & Time (manual / network), plus audio / brightness / orientation controls.
 ## Requirements
 ### Requirement: Home screen lists five device-info rows
 
@@ -238,4 +238,23 @@ Failures MUST show a non-fatal status/error string and MUST NOT crash the demo. 
 
 - **WHEN** the user selects Network mode
 - **THEN** the date/time controller is asked to set sync mode to `network`
+
+### Requirement: Demo home includes USB keyboard smoke section
+
+The P2/P2.1 demo home SHALL include a USB keyboard smoke section that: shows best-effort keyboard presence/status; provides a focusable text field for typing verification; and notes that this is hardware HID bring-up via the **1 mm USB host expansion** (not product soft IME; not the on-board Micro-USB OTG plug-ssh jack). Keyboard I/O MUST NOT block first-frame paint. On the demo home scroll order, the USB keyboard section SHALL appear **before** the Date & Time section.
+
+#### Scenario: Section visible after first frame
+
+- **WHEN** the user views the P2 demo home after first frame
+- **THEN** the USB keyboard smoke section is visible with a text field that can receive focus
+
+#### Scenario: Typing smoke
+
+- **WHEN** a USB HID keyboard is connected via the 1 mm host expansion and the Demo text field has focus
+- **THEN** characters typed on the keyboard appear in the field
+
+#### Scenario: Init failure non-fatal
+
+- **WHEN** keyboard presence detection fails or no keyboard is attached
+- **THEN** the Demo still paints and the section shows an unavailable / not-detected status without crashing the app
 

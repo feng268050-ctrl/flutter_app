@@ -2,7 +2,7 @@
 
 ### Requirement: Demo home includes USB keyboard smoke section
 
-The P2/P2.1 demo home SHALL include a USB keyboard smoke section that: shows best-effort keyboard presence/status; provides a focusable text field for typing verification; and notes that this is hardware HID bring-up via the **1 mm USB host expansion** (not product soft IME; not the on-board Micro-USB OTG plug-ssh jack). Keyboard I/O MUST NOT block first-frame paint.
+The P2/P2.1 demo home SHALL include a USB keyboard smoke section that: shows best-effort keyboard presence/status; provides a focusable text field for typing verification; and notes that this is hardware HID bring-up via the **1 mm USB host expansion** (not product soft IME; not the on-board Micro-USB OTG plug-ssh jack). Keyboard I/O MUST NOT block first-frame paint. On the demo home scroll order, the USB keyboard section SHALL appear **before** the Date & Time section.
 
 #### Scenario: Section visible after first frame
 

@@ -81,6 +81,24 @@ else
 fi
 
 echo ""
+echo "--- flutter-pi keyboard runtime (xkb + Compose) ---"
+if [ -f /usr/share/X11/xkb/rules/evdev ]; then
+	pass "xkeyboard-config rules/evdev present"
+else
+	fail "/usr/share/X11/xkb/rules/evdev missing (enable BR2_PACKAGE_XKEYBOARD_CONFIG)"
+fi
+if [ -f /usr/share/X11/locale/C/Compose ] && [ -f /usr/share/X11/locale/compose.dir ]; then
+	pass "X11 locale Compose stubs present"
+else
+	fail "/usr/share/X11/locale Compose stubs missing (fs-overlay usr/share/X11/locale)"
+fi
+if [ -f /etc/default/keyboard ]; then
+	pass "/etc/default/keyboard present"
+else
+	warn "/etc/default/keyboard missing (flutter-pi uses built-in defaults)"
+fi
+
+echo ""
 echo "--- RockUSB Loader reboot helper ---"
 if [ -x /usr/lib/lws-hmi/reboot-loader ] && [ -x /usr/bin/reboot-loader ]; then
 	pass "reboot-loader installed in PATH (RESTART2 loader — not busybox reboot)"

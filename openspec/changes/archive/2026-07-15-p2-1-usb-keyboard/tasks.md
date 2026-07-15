@@ -20,5 +20,5 @@
 
 - [x] 4.1 Update `docs/ynh960-io-pinmux-ledger.md` USB ports + smoke commands
 - [x] 4.2 Note bench adapter in `app/hmi/README.md`; §12 keyboard checkbox remains for operator smoke
-- [ ] 4.3 Device smoke: keyboard on 1 mm host path → enum → type into Demo (Micro-USB plug-ssh optional concurrent)
+- [x] 4.3 Device smoke: keyboard on 1 mm host path → enum → type into Demo (Micro-USB plug-ssh optional concurrent)
 - [x] 4.4 `flutter analyze` / unit test under `app/hmi/`

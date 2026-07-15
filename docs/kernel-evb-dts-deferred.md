@@ -57,7 +57,7 @@ Use this table when a feature lands and dmesg warnings become symptoms. **Sympto
 
 No second Modbus-style “wrong UART” found for the P2 demo path.
 
-**External keyboard (USB HID):** Micro-USB OTG = plug-ssh; keyboard via **1 mm pin → USB host** (`usbhost_dwc3` / `u2phy0_host`, VBUS `USB_HOST_PWREN*`). See [`ynh960-io-pinmux-ledger.md`](ynh960-io-pinmux-ledger.md) §4.1 and OpenSpec `p2-1-usb-keyboard`.
+**External keyboard (USB HID):** Micro-USB OTG = plug-ssh; keyboard via **1 mm pin → USB host** (`usbhost_dwc3` / `u2phy0_host`, VBUS `USB_HOST_PWREN*`). Userspace pitfalls (XKB/Compose, caret arrows, NumLock LED, key-repeat, local-site flutter-pi patches) are in [`ynh960-io-pinmux-ledger.md`](ynh960-io-pinmux-ledger.md) §4.1.1 and OpenSpec `p2-1-usb-keyboard` `notes.md`.
 
 ---
 
@@ -97,6 +97,7 @@ verify-boot
 
 | Date | Change |
 |------|--------|
+| 2026-07-15 | P2.1 USB keyboard userspace: xkeyboard-config + Compose stubs; flutter-pi patches 0001–0003 (arrows / NumLock LED / key-repeat); `FLUTTER_PI_APPLY_PACKAGE_PATCHES` for `SITE_METHOD=local` |
 | 2026-07-15 | P2.1 USB keyboard: re-enable `usbhost_dwc3` + `u2phy0_host` for 1 mm expansion; DWC3 dual-role; restore `USB_HOST_PWREN*` under RMII |
 | 2026-07-15 | P2.1: uart5-gmac — switch EVB RGMII → product **RMII** (sibling clocks/pinctrl); keep `gpio4 PB3` + `rgmii_phy1` @ MDIO `reg=<1>`; `eth0` via `10-lws-hmi-gmac.link` |
 | 2026-07-14 | P2.1: `lws-hmi-ynh960-uart7-pwm.dtsi` — disable EVB uart7 vs pwm14/15 on gpio3-20 |

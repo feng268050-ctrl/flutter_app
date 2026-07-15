@@ -13,3 +13,12 @@ The lws-hmi Buildroot/kernel configuration for ynh960 SHALL retain (or restore i
 
 - **WHEN** the change adds overlay helpers specific to host-expansion keyboard bring-up (if any)
 - **THEN** `scripts/verify-rootfs-overlay.sh` (and env-verify expectations if applicable) includes those helpers
+
+### Requirement: flutter-pi keyboard runtime data present
+
+The image SHALL ship the userspace data flutter-pi needs to enable text/raw keyboard input: **xkeyboard-config** files under `/usr/share/X11/xkb` (including `rules/evdev`) and enough X11 locale Compose mapping under `/usr/share/X11/locale` for locale `C` / `C.UTF-8`. Enabling `BR2_PACKAGE_LIBXKBCOMMON` alone is not sufficient. Full X.org (`BR2_PACKAGE_XORG7`) is not required when Compose stubs are provided via rootfs overlay.
+
+#### Scenario: flutter-pi initializes keyboard configuration
+
+- **WHEN** `flutter-pi` starts on a flashed image that includes the keyboard runtime data
+- **THEN** it MUST NOT log `Could not initialize keyboard configuration` / `Flutter-pi will run without text/raw keyboard input`

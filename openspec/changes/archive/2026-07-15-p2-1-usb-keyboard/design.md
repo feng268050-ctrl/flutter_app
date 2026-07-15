@@ -79,6 +79,7 @@ Wire near other I/O demos; failures non-fatal; post-frame init only.
 | Bench adapter / pinout wrong | Document pinout or photo silk; use Innohi/known harness |
 | HID events not reaching Flutter | Demo requests focus; `evtest` if Flutter silent |
 | libinput seat omits keyboard | Confirm flutter-pi includes keyboard devices |
+| flutter-pi disables keyboard (missing XKB/Compose) | Ship `BR2_PACKAGE_XKEYBOARD_CONFIG` + overlay Compose stubs; verify no `Could not initialize keyboard configuration` |
 
 ## Migration Plan
 

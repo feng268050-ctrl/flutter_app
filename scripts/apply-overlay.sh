@@ -310,6 +310,7 @@ sync_flutter_sdk_package() {
 
 sync_flutter_pi_package() {
   local src="$OVERLAY/buildroot/package/flutter-pi/flutter-pi.mk"
+  local patch_src patch_name
   if [[ ! -f "$src" ]]; then
     return 0
   fi
@@ -318,6 +319,14 @@ sync_flutter_pi_package() {
       "$BR_PKG_FLUTTER_PI/flutter-pi.mk.orig"
   fi
   install_file "$src" "$BR_PKG_FLUTTER_PI/flutter-pi.mk"
+  # Install overlay patches before stashing (prebuilt .mk); br-compile-flutter
+  # restores them when swapping to flutter-pi.compile.mk.
+  shopt -s nullglob
+  for patch_src in "$OVERLAY/buildroot/package/flutter-pi"/*.patch; do
+    patch_name="$(basename "$patch_src")"
+    install_file "$patch_src" "$BR_PKG_FLUTTER_PI/$patch_name"
+  done
+  shopt -u nullglob
   disable_br_package_patches "$BR_PKG_FLUTTER_PI" "flutter-pi"
   patch_flutter_pi_config_prebuilt
 }

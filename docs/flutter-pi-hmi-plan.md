@@ -64,7 +64,7 @@ P2.1  板级 I/O 与外设验证（硬件前置）🔄
     ├─ 以太网（RJ45 / eth0）：Demo + DHCP/静态（`EthernetController`）；DTS/PHY → link up → ping 对端 ✅
     │     （IPC 专链配址、ping 相机、RTSP / MediaMTX / 预览 — 仍属 P5.1 业务迁移）
     ├─ 触控：Goodix / libinput 稳定；坐标与屏旋转一致 ✅
-    ├─ 外接键盘（USB HID）：**1 mm pin → USB host** 转接 enum + 按键进 flutter-pi（非 P4 软键盘；板载 Micro-USB OTG 仍归 plug-ssh）
+    ├─ 外接键盘（USB HID）：**1 mm pin → USB host** 转接 enum + 按键进 flutter-pi（非 P4 软键盘；板载 Micro-USB OTG 仍归 plug-ssh）✅
     ├─ 串口 / GPIO / pinmux 台账：`docs/ynh960-io-pinmux-ledger.md` ✅
     └─ 背光 / 屏幕旋转 smoke ✅
 
@@ -1213,7 +1213,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **已有** `overlay/.../mediamtx.service`                                      | P5；**默认 disable**                                                                                                   |
 | **已有** `overlay/.../post-hooks/06-lws-hmi-systemd.sh`                      | enable hmi / disable 非关键 unit                                                                                       |
 | **已有** P2：串口 + GPIO demo                                                   | `flutter_libserialport`、`/dev/ttyS5`、`gpio_innohi` 三色灯（`GPIO_5/4/7`，§11.0）；OpenSpec 已归档 `2026-07-14-p2-modbus-gpio` |
-| **已有** P2.1：喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 smoke + pinmux 台账     | `[docs/ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`；**待** 外接 USB 键盘；**非** 产品 UI / IPC 相机业务              |
+| **已有** P2.1：喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 / **外接 USB 键盘** smoke + pinmux 台账 | `[docs/ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（含 §4.1.1 键盘用户态踩坑）；**非** 产品 UI / IPC 相机业务 |
 | **待增** P2.5：Android 兼容                                                     | `gpio_innohi` 双端 GPIO、`YNHAPI.jar`（非 GPIO 平台能力）、`make emulator` / `make android-emulator`、APK 构建                    |
 | **待增** `scripts/configure-camera-eth0.sh`                                  | **P5.1** runtime IPC 专链配址（自 lws-ui 移植；假定 **P2.1** eth0 RJ45 已通）                                                     |
 | **待增** `scripts/build-mediamtx.sh`                                         | **P5** linux/arm64 交叉编译                                                                                             |
@@ -1232,7 +1232,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 **P2 / P2.1～P2.5 分工**：
 
 - **P2（Linux 真机，已完成）**：迁移 **Modbus RTU** 与 **GPIO 管理**；`flutter_libserialport` + `**/sys/class/gpio_innohi/GPIO_N`**；验证读设备与下位机信息、三色指示灯（红=`GPIO_5` / 黄=`GPIO_4` / 绿=`GPIO_7`）。
-- **P2.1（板级 I/O 前置，进行中）**：喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 等 **硬件联调与 smoke**；**外接 USB 键盘**（HID）待硬件到位验收；pinmux 台账 `[ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`。**不做** 产品设置页、IPC 相机专链、MediaMTX、Flutter 预览。
+- **P2.1（板级 I/O 前置，进行中）**：喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 / **外接 USB 键盘** 等 **硬件联调与 smoke**；pinmux 台账 `[ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（§4.1.1 键盘用户态）。**不做** 产品设置页、IPC 相机专链、MediaMTX、Flutter 预览。
 - **P2.2**：Demo 日期/时间设置 + 可复用 `DateTimeController`（P5 产品时钟页复用）。
 - **P2.3**：P2.1 硬件偏好 **整机重启后自动恢复**（boot restore）。
 - **P2.4**：A/B 双分区 + `make upgrade`（SSH 远程，免 loader）；**P5.8** 产品 OTA 复用。
@@ -1490,7 +1490,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 ### P2.1 — 板级 I/O 与外设验证（硬件前置）🔄
 
-**进行中**：喇叭 / 背光 / 旋转 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / pinmux 台账已真机验收或文档固化；余下 **外接 USB 键盘（HID）** 待硬件到位。
+**进行中**：喇叭 / 背光 / 旋转 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / **外接 USB 键盘** / pinmux 台账已真机验收或文档固化。
 
 **动机**：P2 联调暴露串口/引脚对不上、触摸驱动 BUG、UART pinmux 与 gmac 冲突等；原计划把喇叭 / Wi‑Fi / BT / 以太网等放到 P5 才做，风险过晚。本阶段先把 **设备输入输出与硬件相关能力** 在 Linux 真机上打通，再进入模拟器 / AI / 业务 UI。
 
@@ -1501,9 +1501,9 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - **蓝牙**：本机 Discoverable/Pairable；手机发现 `lws-hmi` 并配对；Incoming peers；可选 A2DP Sink 出板载喇叭（**非**本机扫描外设；设置页仍属 P5.2）
 - **以太网（RJ45 / eth0）**：Demo + `EthernetController` + `eth0-*.sh`；板端 DTS（RMII / PHY）→ link up → DHCP/静态 ping（`archive/2026-07-15-p2-1-ethernet`；IPC 专链属 P5.1）
 - **触控**：Goodix / libinput 稳定点击与滑动；与屏旋转坐标一致（`[lws-hmi-ynh960-touch.dtsi](../overlay/kernel/rockchip/lws-hmi-ynh960-touch.dtsi)`）
-- **外接键盘（USB HID）**：**1 mm pin → USB host** 转接识别键盘；按键事件到达 flutter-pi / Demo（与触控并存；板载 **Micro-USB OTG** 仍为 plug-ssh；**非** P4 软键盘 `frost_ime`）
+- **外接键盘（USB HID）**：**1 mm pin → USB host** 枚举 + Demo 打字 / 方向键 / 长按连发 OK（`p2-1-usb-keyboard`；需 `xkeyboard-config` + Compose stub + flutter-pi 补丁 0001–0003；踩坑见 [`ynh960-io-pinmux-ledger.md`](ynh960-io-pinmux-ledger.md) §4.1.1；板载 **Micro-USB OTG** 仍为 plug-ssh；**非** P4 `frost_ime`）
 - **LAN/WLAN 按需 sshd**：`enable-ssh-debug.sh` + Demo「LAN SSH debug」；主机 `make connect <ip>`（§7.7；**非** boot enable；产品 5 连击仍属 P5）
-- **串口 / GPIO / pinmux 台账**：`[docs/ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（`ttyS5`、gpio_innohi、own-gpio↔gmac、触控）
+- **串口 / GPIO / pinmux 台账**：`[docs/ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（`ttyS5`、gpio_innohi、own-gpio↔gmac、触控、USB 键盘用户态）
 - **背光**：powermanager / sysfs 亮度可调 smoke — Demo 亮度 slider（`LinuxSysfsBacklight`）；板端路径名以设备实测为准
 - **屏幕旋转**：Portrait / Landscape → `/var/lib/lws-hmi/display-orientation` + `hmi-launch.sh` `-o`；Demo 按钮组（真机切换需 HMI 重启）
 - ~~（可选）`verify-io` 一键 smoke~~ — **跳过**（非必要；板端按台账 §6 手工核对即可）

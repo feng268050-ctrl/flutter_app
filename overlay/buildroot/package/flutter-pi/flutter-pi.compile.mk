@@ -21,6 +21,15 @@ define FLUTTER_PI_ENSURE_LOCAL_TREE
 endef
 FLUTTER_PI_POST_RSYNC_HOOKS += FLUTTER_PI_ENSURE_LOCAL_TREE
 
+# SITE_METHOD=local skips Buildroot's normal Patching step (configure depends
+# only on rsync). Apply package *.patch here so lws-hmi and upstream fixes bake
+# into prebuilt/ during `make build-flutter-pi` / `rebuild-flutter-pi`.
+define FLUTTER_PI_APPLY_PACKAGE_PATCHES
+	@$(call MESSAGE,"Applying package patches (local site)")
+	$(APPLY_PATCHES) $(@D) $(FLUTTER_PI_PKGDIR) \*.patch
+endef
+FLUTTER_PI_POST_RSYNC_HOOKS += FLUTTER_PI_APPLY_PACKAGE_PATCHES
+
 FLUTTER_PI_LICENSE = MIT
 FLUTTER_PI_LICENSE_FILES = LICENSE
 FLUTTER_PI_DEPENDENCIES = \

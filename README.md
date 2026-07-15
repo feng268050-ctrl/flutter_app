@@ -322,10 +322,13 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P1 | flutter、RKNPU2、Wi‑Fi/BT、GPU | ✓ | Hello World、hmi 自启 |
 | P2 | libmodbus | ✓ platform-packages | Modbus/GPIO App demo（✅ 已完成） |
 | P2.1 | ALSA/音频（按需）、wlan0 DHCP；eth0 驱动已入镜像 | 音频包按需开；`BR2_PACKAGE_DHCPCD` | 喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 **硬件 smoke**（🔄：喇叭/背光/旋转已通；Wi‑Fi/BT Demo 已落地待板验） |
+| P2.2 | timedatectl / RTC（`hwclock`） | 按需 | Demo 日期/时间 + `DateTimeController` 抽象 |
+| P2.3 | — | — | P2.1 硬件偏好 **重启后 restore** |
+| P2.4 | A/B rootfs 双槽 | `parameter` 改表 | `make upgrade`（SSH 远程，免 loader）；供 P5.8 OTA 复用 |
 | P3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** 工程与 smoke |
 | P3.5 | flutter SDK + engine + flutter-pi **三件套升级** | 重编 prebuilt | P4 前；见 [`docs/flutter-pi-hmi-plan.md` §6.5](docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p35) |
 | P4 | — | — | frost_ui / frost_ime 子模块 |
-| P5 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云、OTA |
+| P5 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云；**P5.8 OTA**（复用 P2.4） |
 
 Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`；P5 保留 `render-mediamtx-config.sh`（`mediamtx.service` ExecStartPre）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** `systemctl start`）由 Flutter App 内 `MediaMtxRelayCoordinator` / platform channel 触发，不再打包 shell stub。
 

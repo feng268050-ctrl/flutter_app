@@ -53,10 +53,11 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 
 `/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `ynh960-display-init.sh`, which mounts `PARTLABEL=userdata` → `/userdata` and formats on first boot after flash.
 
-## OTA (future)
+## OTA / remote upgrade
 
-- **Full `update.img`**: flash replaces **rootfs** partition contents; download staging on **`/userdata/ota/`** (~600 MiB file + margin).
-- **A/B system slots**: not in current parameter; would replace fixed 1 GiB rootfs with dual slots in a later parameter revision.
+- **P2.4 — A/B dual rootfs**: replace the single 1 GiB `rootfs` GPT slot with **A/B slots** in a later `parameter` revision; inactive-slot write + boot-flag switch + reboot (**no bootloader flash**). Host entry: **`make upgrade`** over USB-SSH or LAN SSH.
+- **P5.8 — product OTA**: UI / cloud (or local) package orchestration on top of the P2.4 slot machinery; two-level updates (app-only vs full system). Staging downloads under **`/userdata/ota/`**.
+- **Full `update.img` via `make flash`**: still used for factory / first GPT change; not the day-to-day upgrade path after P2.4.
 
 ## Changing layout
 

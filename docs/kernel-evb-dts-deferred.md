@@ -57,7 +57,7 @@ Use this table when a feature lands and dmesg warnings become symptoms. **Sympto
 
 No second Modbus-style “wrong UART” found for the P2 demo path.
 
-**External keyboard (USB HID):** not a board pinmux item — track under **P2.1** in [`flutter-pi-hmi-plan.md`](flutter-pi-hmi-plan.md) §12 once hardware arrives (same OTG port may conflict with USB-SSH gadget).
+**External keyboard (USB HID):** Micro-USB OTG = plug-ssh; keyboard via **1 mm pin → USB host** (`usbhost_dwc3` / `u2phy0_host`, VBUS `USB_HOST_PWREN*`). See [`ynh960-io-pinmux-ledger.md`](ynh960-io-pinmux-ledger.md) §4.1 and OpenSpec `p2-1-usb-keyboard`.
 
 ---
 
@@ -97,6 +97,7 @@ verify-boot
 
 | Date | Change |
 |------|--------|
+| 2026-07-15 | P2.1 USB keyboard: re-enable `usbhost_dwc3` + `u2phy0_host` for 1 mm expansion; DWC3 dual-role; restore `USB_HOST_PWREN*` under RMII |
 | 2026-07-15 | P2.1: uart5-gmac — switch EVB RGMII → product **RMII** (sibling clocks/pinctrl); keep `gpio4 PB3` + `rgmii_phy1` @ MDIO `reg=<1>`; `eth0` via `10-lws-hmi-gmac.link` |
 | 2026-07-14 | P2.1: `lws-hmi-ynh960-uart7-pwm.dtsi` — disable EVB uart7 vs pwm14/15 on gpio3-20 |
 | 2026-07-14 | P2: `lws-hmi-ynh960-uart5-gmac.dtsi` — EVB gmac1 PHY reset stole UART5_TX (Modbus); Android works, Linux RX empty |

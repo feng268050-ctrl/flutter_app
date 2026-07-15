@@ -183,6 +183,7 @@ sync_kernel_display_dts() {
     "$panel_init_dtsi" "lws-hmi-ynh960-panel-init.dtsi" \
     "$lws_root" "lws-hmi-ynh960-linux-root.dtsi" \
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-usb-gadget.dtsi" "lws-hmi-ynh960-usb-gadget.dtsi" \
+    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-usb-host.dtsi" "lws-hmi-ynh960-usb-host.dtsi" \
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi" "lws-hmi-ynh960-evb-trim.dtsi" \
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.dtsi" "lws-hmi-ynh960-touch.dtsi" \
     "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi" "lws-hmi-ynh960-own-gpio.dtsi" \
@@ -650,6 +651,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       rm -f "$kernel_dts/lws-hmi-ynh960-display.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-usb-gadget.dtsi"
+      rm -f "$kernel_dts/lws-hmi-ynh960-usb-host.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-evb-trim.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-touch.dtsi"
       rm -f "$kernel_dts/lws-hmi-ynh960-own-gpio.dtsi"

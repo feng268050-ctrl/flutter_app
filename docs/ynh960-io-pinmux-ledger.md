@@ -66,7 +66,27 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 
 用户态：flutter-pi + libinput。旋转偏好：`/var/lib/lws-hmi/display-orientation` → `hmi-launch.sh` `-o`。
 
-**外接 USB 键盘（HID）**：非板级 pinmux，归 **P2.1** 硬件 I/O 验收（见计划 §12）；与 OTG USB-SSH gadget 可能互斥。
+---
+
+## 4.1 USB 物理口（ynh960）
+
+| 路径 | 板载形态 | DT / 用途 |
+|------|----------|-----------|
+| **Micro-USB OTG** | 板子集成插座 | `usbdrd_dwc3` + `u2phy0_otg`，peripheral → **plug-ssh** |
+| **其它 USB** | **1 mm pin → 转接** | `usbhost_dwc3` + `u2phy0_host`（+ `combphy1` HS）→ **USB host / 键盘** |
+| VBUS | `USB_HOST_PWREN{1,2,3}` | gpio4 PA0/PA1/PA2，RMII 后已从 own-gpio 恢复（默认开） |
+
+Overlays：`lws-hmi-ynh960-usb-gadget.dtsi`（仅 OTG）、`lws-hmi-ynh960-usb-host.dtsi`（扩展 host）。
+
+**外接 USB 键盘（HID）**：1 mm host；P2.1 Demo「USB keyboard」。勿插到 Micro-USB（除非日后做 OTG dual-role）。
+
+Smoke：
+
+```bash
+lsusb
+ls -l /dev/input/by-id/*kbd* 2>/dev/null
+dmesg | grep -iE 'hid|usbhost|dwc3'
+```
 
 ---
 
@@ -74,7 +94,9 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 
 | 文件 | 职责 |
 |------|------|
-| `lws-hmi-ynh960-own-gpio.dtsi` | own-gpio vs eth pad；三色灯默认关 |
+| `lws-hmi-ynh960-own-gpio.dtsi` | own-gpio；恢复 USB_HOST_PWREN*（RMII 后）；三色灯默认关 |
+| `lws-hmi-ynh960-usb-gadget.dtsi` | Micro-USB OTG → plug-ssh peripheral |
+| `lws-hmi-ynh960-usb-host.dtsi` | 1 mm USB host expansion（键盘） |
 | `lws-hmi-ynh960-uart5-gmac.dtsi` | eth RMII/PHY；释放 UART5 |
 | `lws-hmi-ynh960-uart7-pwm.dtsi` | 禁用 uart7 → pwm14/15 |
 | `lws-hmi-ynh960-touch.dtsi` | Goodix only |
@@ -110,4 +132,5 @@ dmesg | grep -iE 'goodix|focal|sitronix'
 
 | Date | Change |
 |------|--------|
+| 2026-07-15 | P2.1：USB — Micro-USB OTG vs 1 mm host；恢复 PWREN；`usb-host` overlay |
 | 2026-07-15 | P2.1：从联调结论固化本台账（串口 / gpio_innohi / own-gpio↔gmac / 触控） |

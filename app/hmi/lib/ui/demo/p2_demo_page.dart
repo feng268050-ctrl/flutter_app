@@ -24,9 +24,10 @@ import 'package:lws_hmi/ui/demo/bluetooth_demo_section.dart';
 import 'package:lws_hmi/ui/demo/demo_scroll_interaction.dart';
 import 'package:lws_hmi/ui/demo/ethernet_demo_section.dart';
 import 'package:lws_hmi/ui/demo/http_demo_section.dart';
+import 'package:lws_hmi/ui/demo/keyboard_demo_section.dart';
 import 'package:lws_hmi/ui/demo/wifi_demo_section.dart';
 
-/// P2 / P2.1 demo: device info, LEDs, speaker, backlight, orientation, Ethernet / Wi-Fi / BT.
+/// P2 / P2.1 demo: device info, LEDs, speaker, backlight, orientation, Ethernet / Wi‑Fi / BT / USB keyboard.
 class P2DemoPage extends StatefulWidget {
   const P2DemoPage({
     super.key,
@@ -434,6 +435,8 @@ class _P2DemoPageState extends State<P2DemoPage> {
             if (_networkSectionsReady) ...[
               const SizedBox(height: 32),
               EthernetDemoSection(controller: _ethernet),
+              const SizedBox(height: 32),
+              const KeyboardDemoSection(),
               const SizedBox(height: 32),
               WifiDemoSection(controller: _wifi),
               const SizedBox(height: 32),

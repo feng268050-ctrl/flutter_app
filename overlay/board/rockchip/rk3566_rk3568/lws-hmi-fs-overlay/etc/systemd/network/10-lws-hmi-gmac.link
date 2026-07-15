@@ -1,0 +1,7 @@
+# Pin Rockchip GMAC (fe010000.ethernet) to classic eth0.
+# Without this, systemd NamingScheme v253 uses ID_NET_NAME_ONBOARD → end1.
+[Match]
+Path=platform-fe010000.ethernet
+
+[Link]
+Name=eth0

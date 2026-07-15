@@ -1,19 +1,49 @@
-// lws-hmi ynh960: free UART5 (Modbus /dev/ttyS5) from EVB gmac1 PHY reset.
+// lws-hmi ynh960: gmac PHY bring-up + free UART5 from EVB PHY reset.
 //
-// rk3566-evb2 enables &gmac1 with:
-//   snps,reset-gpio = <&gpio3 RK_PC2 GPIO_ACTIVE_LOW>;
-// That pad is UART5_TX_M1 (uart5m1-xfer). On probe, ethernet tries to switch the
-// mux to GPIO for PHY reset (dmesg: "pin 114 already requested by fe690000.serial;
-// switch mux 4 to GPIO"), which fights Modbus RTU on /dev/ttyS5.
+// rk3566-evb2 enables &gmac1 as RGMII with:
+//   snps,reset-gpio = <&gpio3 RK_PC2 GPIO_ACTIVE_LOW>;  // == UART5_TX_M1
+//   phy @ MDIO address 0
+// That EVB reset steals UART5_TX (Modbus). RGMII clocks/pinctrl also mismatch
+// product HW: with PHY fixed, open still fails ("Failed to reset the dma").
 //
-// Android product images do not share this EVB reset pin with the Modbus UART;
-// Linux inherits EVB gmac1 and breaks half-duplex RX even when TX counts rise.
-//
-// Drop the EVB PHY reset GPIO here. eth0 / PHY bring-up remain a separate P2
-// task (see docs/kernel-evb-dts-deferred.md — MDIO addr / delays).
+// Innohi siblings (ynh512/518/530_v2) use RMII + gpio4 PB3 reset + MDIO reg=1.
+// Match that for ynh960 (same SoC product line / PHY wiring).
 
 &gmac1 {
 	/delete-property/ snps,reset-gpio;
 	/delete-property/ snps,reset-active-low;
 	/delete-property/ snps,reset-delays-us;
+	/delete-property/ tx_delay;
+	/delete-property/ rx_delay;
+
+	phy-mode = "rmii";
+	clock_in_out = "output";
+
+	snps,reset-gpio = <&gpio4 RK_PB3 GPIO_ACTIVE_LOW>;
+	snps,reset-active-low;
+	/* Reset time is 20ms, 100ms for rtl8211f */
+	snps,reset-delays-us = <0 20000 100000>;
+
+	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>, <&cru SCLK_GMAC1>;
+	assigned-clock-parents = <&cru SCLK_GMAC1_RMII_SPEED>;
+	assigned-clock-rates = <0>, <50000000>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&gmac1m1_miim
+		     &gmac1m1_clkinout
+		     &gmac1m1_tx_bus2
+		     &gmac1m1_rx_bus2
+		     &gmac1m1_rx_er>;
+
+	phy-handle = <&rgmii_phy1>;
+	status = "okay";
+};
+
+&mdio1 {
+	/delete-node/ phy@0;
+
+	rgmii_phy1: phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x1>;
+	};
 };

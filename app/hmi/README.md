@@ -13,7 +13,7 @@ flutter create --platforms=android .
 
 See [`../README.md`](../README.md) for engine pins and deploy layout.
 
-## P2.1 platform I/O (speaker / backlight / orientation / Wi‑Fi / BT)
+## P2.1 platform I/O (speaker / backlight / orientation / Ethernet / Wi‑Fi / BT)
 
 Reusable modules live under `lib/platform/`:
 
@@ -22,6 +22,7 @@ Reusable modules live under `lib/platform/`:
 | `audio/` | `mpg123`/`aplay` + `amixer` | Forces `Playback Path=RING_SPK_HP`; asset → `/var/lib/lws-hmi/audio/` |
 | `backlight/` | Prefer `/sys/class/backlight/backlight` | Skip broken `led-*-pwm` clones |
 | `display/` | preference file + `systemctl restart hmi` | `/var/lib/lws-hmi/display-orientation` → flutter-pi `-o` |
+| `ethernet/` | helpers + `ip` / sysfs | RJ45 `eth0` (pinned via `10-lws-hmi-gmac.link`); DHCP/static; prefs `/var/lib/lws-hmi/eth0-ipv4` (IPC camera script is P5.1) |
 | `wifi/` | helpers + `wpa_cli` | Hidden SSID; DHCP/static on **wlan0**; `WifiApList` / `WifiConnectedPanel` / `linkDetails()` for Settings reuse |
 | `http/` | Dart `HttpClient` (+ optional `curl`) | Default `SecurityContext`; wall-clock sync before HTTPS; proxy prefs `/var/lib/lws-hmi/http-proxy`; Demo GET probe |
 | `bluetooth/` | helpers + `bluetoothctl` | **Discoverable peer**; opt-in A2DP Sink (bluealsa, **default off**); Pairable turns Discoverable on (180s); persistent `bt-pair-agent` |
@@ -31,11 +32,12 @@ Reusable modules live under `lib/platform/`:
 1. Play — hear shanghai tan; sweep Volume slider
 2. Sweep Brightness — panel dims/brightens
 3. Portrait / Landscape — HMI restarts; `ps`/`tr` confirms `-o portrait_up` or `landscape_left`
-4. Wi‑Fi — enable radio → Scan → Connect (or Hidden SSID) → DHCP or Static → `ping` gateway; Send request (default `https://www.baidu.com/`) shows HTTP status/body
-5. Proxy — enable proxy, Save, re-run Send request
-6. Bluetooth — enable adapter; turn on **Pairable** (also enables Discoverable 180s) or Discoverable; phone finds / pairs. Optional: enable **BT speaker (A2DP)** (off by default) → phone **连接成功** + music on speaker. Demo **Volume** also drives BlueALSA soft-volume while BT is streaming. Incoming peers lists remote; `verify-boot` still shows wifibt/wpa/bluetooth deferred at boot
+4. Ethernet — enable interface → DHCP or Static → link LED / `ping` peer PC (not IPC camera IP yet)
+5. Wi‑Fi — enable radio → Scan → Connect (or Hidden SSID) → DHCP or Static → `ping` gateway; Send request (default `https://www.baidu.com/`) shows HTTP status/body
+6. Proxy — enable proxy, Save, re-run Send request
+7. Bluetooth — enable adapter; turn on **Pairable** (also enables Discoverable 180s) or Discoverable; phone finds / pairs. Optional: enable **BT speaker (A2DP)** (off by default) → phone **连接成功** + music on speaker. Demo **Volume** also drives BlueALSA soft-volume while BT is streaming. Incoming peers lists remote; `verify-boot` still shows wifibt/wpa/bluetooth deferred at boot
 
-Helpers: `/usr/lib/lws-hmi/wifi-stack-*.sh`, `wlan0-dhcp.sh`, `wlan0-static.sh`, `bt-stack-*.sh`, `bt-a2dp-sink-*.sh`, `bt-a2dp-volume.sh`, `bt-pair-agent.sh`, `bt-audio-prepare.sh`; units `bluealsa.service` / `bluealsa-aplay.service` (started only when A2DP switch on).
+Helpers: `/usr/lib/lws-hmi/wifi-stack-*.sh`, `wlan0-dhcp.sh`, `wlan0-static.sh`, `eth0-link.sh`, `eth0-dhcp.sh`, `eth0-static.sh`, `bt-stack-*.sh`, `bt-a2dp-sink-*.sh`, `bt-a2dp-volume.sh`, `bt-pair-agent.sh`, `bt-audio-prepare.sh`; units `bluealsa.service` / `bluealsa-aplay.service` (started only when A2DP switch on).
 
 HTTPS needs a sane wall clock (`date -u` year ≥ 2025) more than custom CA loading —
 Dart default roots + system bundle on image are enough once RTC is correct. Board RTC

@@ -14,16 +14,19 @@ import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/linux_bluez_bluetooth_controller.dart';
 import 'package:lws_hmi/platform/display/display_orientation.dart';
 import 'package:lws_hmi/platform/display/linux_flutter_pi_orientation.dart';
+import 'package:lws_hmi/platform/ethernet/ethernet_controller.dart';
+import 'package:lws_hmi/platform/ethernet/linux_ethernet_controller.dart';
 import 'package:lws_hmi/platform/http/http_client_controller.dart';
 import 'package:lws_hmi/platform/http/linux_http_client_controller.dart';
 import 'package:lws_hmi/platform/wifi/linux_wpa_wifi_controller.dart';
 import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
 import 'package:lws_hmi/ui/demo/bluetooth_demo_section.dart';
 import 'package:lws_hmi/ui/demo/demo_scroll_interaction.dart';
+import 'package:lws_hmi/ui/demo/ethernet_demo_section.dart';
 import 'package:lws_hmi/ui/demo/http_demo_section.dart';
 import 'package:lws_hmi/ui/demo/wifi_demo_section.dart';
 
-/// P2 / P2.1 demo: device info, LEDs, speaker, backlight, orientation, Wi-Fi / BT.
+/// P2 / P2.1 demo: device info, LEDs, speaker, backlight, orientation, Ethernet / Wi-Fi / BT.
 class P2DemoPage extends StatefulWidget {
   const P2DemoPage({
     super.key,
@@ -33,6 +36,7 @@ class P2DemoPage extends StatefulWidget {
     this.audioController,
     this.backlightController,
     this.orientationController,
+    this.ethernetController,
     this.wifiController,
     this.httpClientController,
     this.bluetoothController,
@@ -44,6 +48,7 @@ class P2DemoPage extends StatefulWidget {
   final MediaAudioController? audioController;
   final BacklightController? backlightController;
   final DisplayOrientationController? orientationController;
+  final EthernetController? ethernetController;
   final WifiController? wifiController;
   final HttpClientController? httpClientController;
   final BluetoothController? bluetoothController;
@@ -58,6 +63,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
   late final MediaAudioController _audio;
   late final BacklightController _backlight;
   late final DisplayOrientationController _orientation;
+  late final EthernetController _ethernet;
   late final WifiController _wifi;
   late final HttpClientController _http;
   late final BluetoothController _bluetooth;
@@ -99,6 +105,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
     _backlight = widget.backlightController ?? LinuxSysfsBacklight();
     _orientation =
         widget.orientationController ?? LinuxFlutterPiOrientation();
+    _ethernet = widget.ethernetController ?? LinuxEthernetController();
     _wifi = widget.wifiController ?? LinuxWpaWifiController();
     _http = widget.httpClientController ?? LinuxHttpClientController();
     _bluetooth = widget.bluetoothController ?? LinuxBluezBluetoothController();
@@ -224,6 +231,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
     unawaited(_audio.dispose());
     unawaited(_backlight.dispose());
     unawaited(_orientation.dispose());
+    unawaited(_ethernet.dispose());
     unawaited(_wifi.dispose());
     unawaited(_http.dispose());
     unawaited(_bluetooth.dispose());
@@ -424,6 +432,8 @@ class _P2DemoPageState extends State<P2DemoPage> {
               },
             ),
             if (_networkSectionsReady) ...[
+              const SizedBox(height: 32),
+              EthernetDemoSection(controller: _ethernet),
               const SizedBox(height: 32),
               WifiDemoSection(controller: _wifi),
               const SizedBox(height: 32),

@@ -56,7 +56,7 @@ P2.1  板级 I/O 与外设验证（硬件前置）🔄
     ├─ 喇叭 / 本机音频：ALSA + codec + 功放；`aplay` / speaker-test 出声（Buildroot 开最小音频栈）✅
     ├─ Wi‑Fi：模组固件 + `wpa_supplicant` 关联（含隐藏 SSID）+ wlan0 DHCP/静态 IP + HTTP 代理与请求探测（Demo 管理；产品设置页仍属 P5.2）
     ├─ 蓝牙：hci0 up + **可被手机/电脑发现并连接**（Discoverable/Pairable；非本机扫描外设；bluetoothd 仍按需启）
-    ├─ 以太网（RJ45 / eth0）：DTS/PHY 正确；`ip link set eth0 up` → carrier / link LED；可选同网段 ping 对端（PC/交换机）
+    ├─ 以太网（RJ45 / eth0）：Demo + DHCP/静态（`EthernetController`）；板端：DTS/PHY → link up → ping 对端
     │     （IPC 专链配址、ping 相机、RTSP / MediaMTX / 预览 — 仍属 P5.1 业务迁移）
     ├─ 触控：Goodix / libinput 稳定；坐标与屏旋转一致（收口 P2 期间已修项）
     ├─ 串口 / GPIO / pinmux 台账：固化 ttyS5、gpio_innohi 标签、own-gpio↔gmac 冲突结论
@@ -1336,7 +1336,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 ### P2.1 — 板级 I/O 与外设验证（硬件前置）🔄
 
-**进行中**：喇叭 / 背光 / 旋转已真机验收；Wi‑Fi / BT **Demo + 平台抽象已落地**（待板端 smoke）；**以太网 RJ45** / 触控 / pinmux 台账仍待。
+**进行中**：喇叭 / 背光 / 旋转 / **以太网 RJ45** 已真机验收；Wi‑Fi / BT Demo 已落地；触控 / pinmux 台账仍待。
 
 **动机**：P2 联调暴露串口/引脚对不上、触摸驱动 BUG、UART pinmux 与 gmac 冲突等；原计划把喇叭 / Wi‑Fi / BT / 以太网等放到 P5 才做，风险过晚。本阶段先把 **设备输入输出与硬件相关能力** 在 Linux 真机上打通，再进入模拟器 / AI / 业务 UI。
 
@@ -1345,7 +1345,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [x] **喇叭 / 本机音频**：Buildroot 最小 ALSA + codec（mpg123/`amixer`）；Demo Play/`shanghai_tan` + volume slider 真机出声与调音量 OK（`openspec/changes/p2-1-audio-backlight-rotation`）
 - [ ] **Wi‑Fi**：`rkwifibt` 固件；可见/隐藏 SSID 关联；wlan0 DHCP 或静态；HTTP 代理 + Demo「Send request」；`ping` 网关（`openspec/changes/p2-1-wifi-bluetooth` — 待板端勾选）
 - [ ] **蓝牙**：本机 Discoverable/Pairable；手机/电脑发现 `lws-hmi` 并配对连入；Incoming peers 列表（**非**本机扫描外设；设置页仍属 P5.2）
-- [ ] **以太网（RJ45 / eth0）**：DTS/PHY 正确；`ip link set eth0 up` → carrier / link LED；可选临时配址 ping 对端 PC（**不依赖** IPC；专链配址 / ping 相机 / RTSP 属 P5.1）
+- [x] **以太网（RJ45 / eth0）**：Demo + `EthernetController` + `eth0-*.sh`；板端 DTS（RMII / PHY）→ link up → DHCP/静态 ping（`openspec/changes/p2-1-ethernet`；IPC 专链属 P5.1）
 - [ ] **触控**：Goodix / libinput 稳定点击与滑动；与屏旋转坐标一致（收口 P2 期间驱动修复）
 - [ ] **串口 / GPIO / pinmux 台账**：文档化 `ttyS5`、gpio_innohi 标签、own-gpio↔gmac 等踩坑结论，供量产与跨 SKU 参考
 - [x] **背光**：powermanager / sysfs 亮度可调 smoke — Demo 亮度 slider（`LinuxSysfsBacklight`）；板端路径名以设备实测为准

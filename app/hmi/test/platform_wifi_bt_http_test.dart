@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetoothctl_parse.dart';
+import 'package:lws_hmi/platform/ethernet/ethernet_models.dart';
 import 'package:lws_hmi/platform/http/http_proxy_config.dart';
 import 'package:lws_hmi/platform/wifi/wifi_ap_list.dart';
 import 'package:lws_hmi/platform/wifi/wifi_link_parse.dart';
@@ -80,6 +81,30 @@ network id / ssid / bssid / flags
       expect(back.prefixLength, 24);
       expect(back.gateway, '10.0.0.1');
       expect(back.dns, '1.1.1.1');
+    });
+  });
+
+  group('EthIpv4Store', () {
+    test('round-trips dhcp and static', () {
+      const dhcp = EthIpv4Config.dhcpDefault;
+      expect(
+        EthIpv4Store.parse(EthIpv4Store.serialize(dhcp)).mode,
+        EthIpv4Mode.dhcp,
+      );
+
+      const staticCfg = EthIpv4Config(
+        mode: EthIpv4Mode.staticMode,
+        address: '192.168.1.50',
+        prefixLength: 24,
+        gateway: '192.168.1.1',
+        dns: '8.8.8.8',
+      );
+      final back = EthIpv4Store.parse(EthIpv4Store.serialize(staticCfg));
+      expect(back.mode, EthIpv4Mode.staticMode);
+      expect(back.address, '192.168.1.50');
+      expect(back.prefixLength, 24);
+      expect(back.gateway, '192.168.1.1');
+      expect(back.dns, '8.8.8.8');
     });
   });
 

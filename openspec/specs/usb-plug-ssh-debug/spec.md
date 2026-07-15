@@ -6,6 +6,7 @@ Target-side USB ECM plug-to-debug: VBUS-triggered gadget, `usb0` at `192.168.55.
 
 ## Requirements
 
+
 ### Requirement: VBUS plug starts USB ECM debug
 
 The target SHALL load the modular Linux **`g_ether`** driver in ECM mode and configure **`usb0`** with address **`192.168.55.1/24`** when the OTG port detects a USB host connection (VBUS attach) during Linux runtime. The implementation SHALL NOT create a competing configfs gadget or manually reset the DWC3 controller.
@@ -101,3 +102,11 @@ The image SHALL expose the safe, read-only `diagnose-usb-ssh` and `read-serial` 
 
 - **WHEN** diagnostics show a stale USB-SSH session
 - **THEN** the operator can run `recover-usb-ssh` without entering an implementation path
+### Requirement: USB plug-ssh start keeps usb0-only sshd even when LAN debug is active
+
+When LAN/WLAN on-demand SSH debug is already active, USB plug-ssh start SHALL still bring up the ECM gadget, `usb0` addressing, and a usb0-only sshd listening on `192.168.55.1:22`.
+
+#### Scenario: Plug USB while LAN debug enabled
+
+- **WHEN** `enable-ssh-debug.sh` has started LAN sshd on eth0/wlan0 and the operator connects USB OTG
+- **THEN** `usb0` is configured with `192.168.55.1/24` and a USB-dedicated sshd accepts connections on that address

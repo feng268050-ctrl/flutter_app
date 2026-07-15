@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/platform/input/usb_hid_keyboard_probe.dart';
 
-/// P2.1 Demo: USB HID keyboard on 1 mm host expansion (not Micro-USB OTG).
+/// P2.1 Demo: USB HID keyboard on 1 mm host expansion and/or Micro-USB OTG host.
 class KeyboardDemoSection extends StatefulWidget {
   const KeyboardDemoSection({
     super.key,
@@ -67,8 +67,8 @@ class _KeyboardDemoSectionState extends State<KeyboardDemoSection>
         ),
         const SizedBox(height: 4),
         Text(
-          '1 mm pin → USB host expansion (HID). '
-          'Micro-USB OTG stays plug-ssh. Not soft IME (P4).',
+          'HID via 1 mm USB host, or Micro-USB when Debug over USB is OFF '
+          '(OTG adapter). Debug over USB ON = plug-ssh. Not soft IME (P4).',
           style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
         ),
         const SizedBox(height: 8),

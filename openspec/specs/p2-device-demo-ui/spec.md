@@ -190,22 +190,27 @@ The demo home SHALL provide a mutually exclusive Portrait / Landscape control gr
 
 ### Requirement: Demo exposes LAN SSH debug toggle after HTTP / Proxy
 
-The P2/P2.1 demo home SHALL include a LAN SSH debug section immediately **after** the HTTP / Proxy section. The section SHALL provide a toggle that enables or disables on-demand LAN/WLAN SSH debug via the platform SSH debug controller (backing `enable-ssh-debug.sh` / `disable-ssh-debug.sh`). Toggle I/O MUST NOT block first-frame paint.
+The P2/P2.1 demo home SHALL include a **Debug** group after the HTTP / Proxy section with two toggles: **Debug over USB** and **Debug over LAN**. Debug over USB SHALL control Micro-USB plug-ssh vs host via `UsbDebugController` (persisted, default on). Debug over LAN SHALL control on-demand LAN/WLAN SSH via `SshDebugController` (not persisted, default off). Toggle I/O MUST NOT block first-frame paint.
 
-#### Scenario: Toggle enables LAN SSH debug
+#### Scenario: Toggle enables Debug over LAN
 
-- **WHEN** the user turns the LAN SSH debug toggle on after first frame
+- **WHEN** the user turns Debug over LAN on after first frame
 - **THEN** the SSH debug controller is asked to enable LAN SSH debug
 
-#### Scenario: Toggle disables LAN SSH debug
+#### Scenario: Toggle disables Debug over LAN
 
-- **WHEN** the user turns the LAN SSH debug toggle off while it was on
+- **WHEN** the user turns Debug over LAN off while it was on
 - **THEN** the SSH debug controller is asked to disable LAN SSH debug
 
-#### Scenario: Section order
+#### Scenario: Toggle disables Debug over USB for keyboard
 
-- **WHEN** the user scrolls the demo home after network sections are ready
-- **THEN** the LAN SSH debug section appears after the HTTP / Proxy section
+- **WHEN** the user turns Debug over USB off after first frame
+- **THEN** the USB debug controller is asked to disable USB Debug (host mode)
+
+#### Scenario: Section placement
+
+- **WHEN** the user scrolls the Demo home past HTTP / Proxy
+- **THEN** the Debug group appears before Bluetooth
 
 ### Requirement: Demo exposes Date & Time section
 

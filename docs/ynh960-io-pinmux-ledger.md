@@ -72,13 +72,14 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 
 | 路径 | 板载形态 | DT / 用途 |
 |------|----------|-----------|
-| **Micro-USB OTG** | 板子集成插座 | `usbdrd_dwc3` + `u2phy0_otg`，peripheral → **plug-ssh** |
-| **其它 USB** | **1 mm pin → 转接** | `usbhost_dwc3` + `u2phy0_host`（+ `combphy1` HS）→ **USB host / 键盘** |
-| VBUS | `USB_HOST_PWREN{1,2,3}` | gpio4 PA0/PA1/PA2，RMII 后已从 own-gpio 恢复（默认开） |
+| **Micro-USB OTG** | 板子集成插座 | `usbdrd_dwc3` + `u2phy0_otg`，`dr_mode=otg`：**ID 接地** → host（键盘）；**ID 浮空** + PC VBUS → peripheral（**plug-ssh**） |
+| **其它 USB** | **1 mm pin → 转接** | `usbhost_dwc3` + `u2phy0_host`（+ `combphy1` HS）→ **USB host / 键盘**（与 OTG 角色独立） |
+| VBUS（扩展） | `USB_HOST_PWREN{1,2,3}` | gpio4 PA0/PA1/PA2，RMII 后已从 own-gpio 恢复（默认开） |
+| VBUS（OTG host） | PHY `USB_VBUS_EN`（extcon0） | 随 OTG host 角色由 `usb2phy0` 驱动 |
 
-Overlays：`lws-hmi-ynh960-usb-gadget.dtsi`（仅 OTG）、`lws-hmi-ynh960-usb-host.dtsi`（扩展 host）。
+Overlays：`lws-hmi-ynh960-usb-gadget.dtsi`（OTG dual-role）、`lws-hmi-ynh960-usb-host.dtsi`（扩展 host）。
 
-**外接 USB 键盘（HID）**：1 mm host；P2.1 Demo「USB keyboard」。勿插到 Micro-USB（除非日后做 OTG dual-role）。无数字小键盘的键盘同样可用（主区字母/方向键/连发与小键盘无关）。
+**外接 USB 键盘（HID）**：1 mm host，或 Micro-USB 在 **USB Debug OFF**（Demo Debug 组）时用 OTG 转接头。板上 Micro-USB **不依赖 ID 自动切角色**（转接头常不接地 ID）。**USB Debug ON**（默认，`/var/lib/lws-hmi/usb-debug`）→ plug-ssh；OFF → host/键盘。LAN Debug 默认关、不持久化。
 
 用户态依赖（缺一 flutter-pi 会禁用按键或行为异常）见下表。
 
@@ -113,7 +114,7 @@ test -f /usr/share/X11/xkb/rules/evdev && test -f /usr/share/X11/locale/C/Compos
 | 文件 | 职责 |
 |------|------|
 | `lws-hmi-ynh960-own-gpio.dtsi` | own-gpio；恢复 USB_HOST_PWREN*（RMII 后）；三色灯默认关 |
-| `lws-hmi-ynh960-usb-gadget.dtsi` | Micro-USB OTG → plug-ssh peripheral |
+| `lws-hmi-ynh960-usb-gadget.dtsi` | Micro-USB OTG dual-role（ID → host/peripheral；plug-ssh 仅 peripheral） |
 | `lws-hmi-ynh960-usb-host.dtsi` | 1 mm USB host expansion（键盘） |
 | `lws-hmi-ynh960-uart5-gmac.dtsi` | eth RMII/PHY；释放 UART5 |
 | `lws-hmi-ynh960-uart7-pwm.dtsi` | 禁用 uart7 → pwm14/15 |
@@ -150,6 +151,7 @@ dmesg | grep -iE 'goodix|focal|sitronix'
 
 | Date | Change |
 |------|--------|
+| 2026-07-15 | P2.1：Micro-USB OTG ID dual-role（`dr_mode=otg`；plug-ssh 门控 `USB-HOST=0`） |
 | 2026-07-15 | P2.1 USB 键盘用户态踩坑表 §4.1.1（XKB/Compose、方向键、NumLock LED、长按连发、local-site 补丁钩子） |
 | 2026-07-15 | P2.1：USB — Micro-USB OTG vs 1 mm host；恢复 PWREN；`usb-host` overlay |
 | 2026-07-15 | P2.1：从联调结论固化本台账（串口 / gpio_innohi / own-gpio↔gmac / 触控） |

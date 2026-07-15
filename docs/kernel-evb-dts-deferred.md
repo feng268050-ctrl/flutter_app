@@ -57,7 +57,7 @@ Use this table when a feature lands and dmesg warnings become symptoms. **Sympto
 
 No second Modbus-style “wrong UART” found for the P2 demo path.
 
-**External keyboard (USB HID):** Micro-USB OTG = plug-ssh; keyboard via **1 mm pin → USB host** (`usbhost_dwc3` / `u2phy0_host`, VBUS `USB_HOST_PWREN*`). Userspace pitfalls (XKB/Compose, caret arrows, NumLock LED, key-repeat, local-site flutter-pi patches) are in [`ynh960-io-pinmux-ledger.md`](ynh960-io-pinmux-ledger.md) §4.1.1 and OpenSpec `p2-1-usb-keyboard` `notes.md`.
+**External keyboard (USB HID):** **1 mm pin → USB host** (`usbhost_dwc3` / `u2phy0_host`, VBUS `USB_HOST_PWREN*`); Micro-USB OTG is **ID dual-role** (`dr_mode=otg`: host adapter → keyboard, PC cable → plug-ssh). Userspace pitfalls (XKB/Compose, caret arrows, NumLock LED, key-repeat, local-site flutter-pi patches) are in [`ynh960-io-pinmux-ledger.md`](ynh960-io-pinmux-ledger.md) §4.1.1 and OpenSpec `p2-1-usb-keyboard` / `p2-1-usb-otg-id-role` notes.
 
 ---
 

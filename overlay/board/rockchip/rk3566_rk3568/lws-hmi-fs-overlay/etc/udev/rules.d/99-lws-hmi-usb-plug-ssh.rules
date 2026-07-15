@@ -1,2 +1,3 @@
-# VBUS attach/detach → USB ECM plug-ssh (Rockchip extcon state file, not ENV{USB}).
-ACTION=="add|change", SUBSYSTEM=="extcon", RUN+="/usr/lib/lws-hmi/usb-plug-ssh-vbus-check.sh"
+# Apply USB Debug preference + VBUS plug-ssh when mode is peripheral.
+# Prefer systemd oneshot (not long RUN under udevd).
+ACTION=="add|change", SUBSYSTEM=="extcon", RUN+="/bin/systemctl start --no-block lws-hmi-usb-otg-role.service"

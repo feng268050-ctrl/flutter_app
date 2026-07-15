@@ -22,15 +22,17 @@ import 'package:lws_hmi/platform/http/http_client_controller.dart';
 import 'package:lws_hmi/platform/http/linux_http_client_controller.dart';
 import 'package:lws_hmi/platform/ssh/linux_ssh_debug_controller.dart';
 import 'package:lws_hmi/platform/ssh/ssh_debug_controller.dart';
+import 'package:lws_hmi/platform/usb/linux_usb_debug_controller.dart';
+import 'package:lws_hmi/platform/usb/usb_debug_controller.dart';
 import 'package:lws_hmi/platform/wifi/linux_wpa_wifi_controller.dart';
 import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
 import 'package:lws_hmi/ui/demo/bluetooth_demo_section.dart';
 import 'package:lws_hmi/ui/demo/date_time_demo_section.dart';
+import 'package:lws_hmi/ui/demo/debug_demo_section.dart';
 import 'package:lws_hmi/ui/demo/demo_scroll_interaction.dart';
 import 'package:lws_hmi/ui/demo/ethernet_demo_section.dart';
 import 'package:lws_hmi/ui/demo/http_demo_section.dart';
 import 'package:lws_hmi/ui/demo/keyboard_demo_section.dart';
-import 'package:lws_hmi/ui/demo/ssh_debug_demo_section.dart';
 import 'package:lws_hmi/ui/demo/wifi_demo_section.dart';
 
 /// P2 / P2.1 / P2.2 demo: device info, LEDs, I/O, network, date/time.
@@ -48,6 +50,7 @@ class P2DemoPage extends StatefulWidget {
     this.httpClientController,
     this.dateTimeController,
     this.sshDebugController,
+    this.usbDebugController,
     this.bluetoothController,
   });
 
@@ -62,6 +65,7 @@ class P2DemoPage extends StatefulWidget {
   final HttpClientController? httpClientController;
   final DateTimeController? dateTimeController;
   final SshDebugController? sshDebugController;
+  final UsbDebugController? usbDebugController;
   final BluetoothController? bluetoothController;
 
   @override
@@ -79,6 +83,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
   late final DateTimeController _dateTime;
   late final HttpClientController _http;
   late final SshDebugController _sshDebug;
+  late final UsbDebugController _usbDebug;
   late final BluetoothController _bluetooth;
   bool _networkSectionsReady = false;
 
@@ -124,6 +129,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
     _http = widget.httpClientController ??
         LinuxHttpClientController(dateTimeController: _dateTime);
     _sshDebug = widget.sshDebugController ?? LinuxSshDebugController();
+    _usbDebug = widget.usbDebugController ?? LinuxUsbDebugController();
     _bluetooth = widget.bluetoothController ?? LinuxBluezBluetoothController();
     _playingSub = _audio.playing.listen((playing) {
       if (!mounted) {
@@ -463,7 +469,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
               const SizedBox(height: 32),
               HttpDemoSection(controller: _http),
               const SizedBox(height: 32),
-              SshDebugDemoSection(controller: _sshDebug),
+              DebugDemoSection(usbDebug: _usbDebug, lanDebug: _sshDebug),
               const SizedBox(height: 32),
               BluetoothDemoSection(controller: _bluetooth),
             ],

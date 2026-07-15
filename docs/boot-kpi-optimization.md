@@ -109,6 +109,7 @@ verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep �
 | B-7 | sysinit 仅 `param-update`（显示） | **done** |
 | B-8 | `lws-hmi-performance.service`：CPU + DMC/GPU devfreq `performance` | **done** | governors 已生效；首帧 ~1s 未缩短（见 §5 注） |
 | B-9 | disable `log-guardian.service` @ boot | **done** | 刷机验证通过；`08-lws-hmi-systemd-finalize.sh` 防止 SDK `07-log-guardian.sh` 重新 enable |
+| B-10 | `lws-hmi-settings-restore` **`After=hmi`**（非并行）；Nice/idle；Demo 对 `*-wanted` 显示 starting | **repo** | UI 绝对优先；网/BT 在首帧后恢复 |
 
 ### C — flutter-pi / App（通常 −1～3 s）
 

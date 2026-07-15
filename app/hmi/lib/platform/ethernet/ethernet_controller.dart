@@ -23,5 +23,8 @@ abstract class EthernetController {
   /// Snapshot of carrier + IPv4 details (for Settings / status UI).
   Future<EthLinkState> linkDetails();
 
+  /// Align admin/link with the live system (after boot restore).
+  Future<void> syncFromSystem();
+
   Future<void> dispose();
 }

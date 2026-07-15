@@ -13,12 +13,16 @@ class LinuxSysfsBacklight implements BacklightController {
   LinuxSysfsBacklight({
     this.classDir = '/sys/class/backlight',
     this.preferredNames = const <String>['backlight', 'backlight1', 'backlight2'],
+    this.preferencePath = '/var/lib/lws-hmi/backlight-brightness',
   });
 
   final String classDir;
 
   /// Preferred sysfs directory basenames (tried in order).
   final List<String> preferredNames;
+
+  /// Persisted brightness percent (0–100) for P2.3 boot restore.
+  final String preferencePath;
 
   String? _brightnessPath;
   int _max = 255;
@@ -102,6 +106,24 @@ class LinuxSysfsBacklight implements BacklightController {
     }
   }
 
+  /// Re-apply `/var/lib/lws-hmi/backlight-brightness` (boot race / Demo load).
+  Future<void> applyPersistedPreference() async {
+    try {
+      final f = File(preferencePath);
+      if (!await f.exists()) {
+        return;
+      }
+      final raw = (await f.readAsString()).trim();
+      final pct = int.tryParse(raw);
+      if (pct == null) {
+        return;
+      }
+      await setBrightnessPercent(pct);
+    } catch (e) {
+      debugPrint('backlight: apply persisted failed: $e');
+    }
+  }
+
   @override
   Future<void> setBrightnessPercent(int percent) async {
     if (!await ensureDevice()) {
@@ -111,9 +133,21 @@ class LinuxSysfsBacklight implements BacklightController {
     final value = percentToDevice(percent, _max);
     try {
       await File(_brightnessPath!).writeAsString('$value\n', flush: true);
-      lwsTrace('backlight: set $value / $_max (${clampPercent(percent)}%)');
+      final clamped = clampPercent(percent);
+      lwsTrace('backlight: set $value / $_max ($clamped%)');
+      await _persistPercent(clamped);
     } catch (e) {
       debugPrint('backlight: set failed: $e');
+    }
+  }
+
+  Future<void> _persistPercent(int percent) async {
+    try {
+      final f = File(preferencePath);
+      await f.parent.create(recursive: true);
+      await f.writeAsString('$percent\n', flush: true);
+    } catch (e) {
+      debugPrint('backlight: persist failed: $e');
     }
   }
 

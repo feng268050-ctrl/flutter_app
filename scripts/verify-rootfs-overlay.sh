@@ -40,7 +40,7 @@ check_systemd_wants() {
 		fi
 	done
 
-	for unit in hmi.service mainserver.service lws-hmi-performance.service lws-hmi-pwrkey-poweroff.service; do
+	for unit in hmi.service mainserver.service lws-hmi-performance.service lws-hmi-pwrkey-poweroff.service lws-hmi-settings-restore.service; do
 		if unit_wants_link "$unit"; then
 			echo "OK:  $unit enabled in $label"
 		else
@@ -174,7 +174,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh lws-hmi-wpa-run.sh lws-hmi-eth0-apply.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh lws-hmi-wpa-run.sh lws-hmi-eth0-apply.sh lws-hmi-settings-restore.sh lws-hmi-backlight-apply.sh lws-hmi-prefs-bind.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else
@@ -460,11 +460,34 @@ EOF
 		echo "FAIL: missing lws-hmi-eth0.service / apply script" >&2
 		missing=1
 	fi
-	if grep -q 'enable' \
-		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null; then
-		echo "OK:  preset enables"
+	if [[ -f "$target/etc/systemd/system/lws-hmi-settings-restore.service" ]] && \
+		[[ -x "$helper/lws-hmi-settings-restore.sh" ]] && \
+		grep -q 'After=hmi.service' \
+		"$target/etc/systemd/system/lws-hmi-settings-restore.service" 2>/dev/null && \
+		! grep -q 'Before=hmi.service' \
+		"$target/etc/systemd/system/lws-hmi-settings-restore.service" 2>/dev/null && \
+		grep -q 'Nice=10' \
+		"$target/etc/systemd/system/lws-hmi-settings-restore.service" 2>/dev/null && \
+		grep -q 'Wants=lws-hmi-settings-restore.service' \
+		"$target/etc/systemd/system/hmi.service" 2>/dev/null; then
+		echo "OK:  lws-hmi-settings-restore After=hmi (UI-first; Nice/idle)"
 	else
-		echo "FAIL: preset must enable" >&2
+		echo "FAIL: settings-restore must After=hmi + Nice; hmi Wants=restore (UI-first)" >&2
+		missing=1
+	fi
+	if [[ -x "$helper/lws-hmi-prefs-bind.sh" ]] && \
+		grep -q 'lws-hmi-prefs-bind.sh' \
+		"$helper/ynh960-display-init.sh" 2>/dev/null; then
+		echo "OK:  prefs-bind (/var/lib/lws-hmi → /userdata/lws-hmi)"
+	else
+		echo "FAIL: missing lws-hmi-prefs-bind.sh wired into display-init" >&2
+		missing=1
+	fi
+	if grep -q 'enable lws-hmi-settings-restore.service' \
+		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null; then
+		echo "OK:  preset enables lws-hmi-settings-restore.service"
+	else
+		echo "FAIL: preset must enable lws-hmi-settings-restore.service" >&2
 		missing=1
 	fi
 

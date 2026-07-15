@@ -16,6 +16,7 @@ class LinuxEthernetController implements EthernetController {
     this.dhcpHelper = const ['/usr/lib/lws-hmi/eth0-dhcp.sh'],
     this.staticHelper = const ['/usr/lib/lws-hmi/eth0-static.sh'],
     this.ipv4Path = EthIpv4Store.defaultPath,
+    this.ethWantedPath = '/var/lib/lws-hmi/eth0-wanted',
   });
 
   final String iface;
@@ -23,6 +24,7 @@ class LinuxEthernetController implements EthernetController {
   final List<String> dhcpHelper;
   final List<String> staticHelper;
   final String ipv4Path;
+  final String ethWantedPath;
 
   @override
   String get interfaceName => iface;
@@ -33,6 +35,10 @@ class LinuxEthernetController implements EthernetController {
   EthAdminState _admin = EthAdminState.off;
   EthLinkState _link = EthLinkState.down;
   Timer? _poll;
+  Timer? _wantedWatch;
+  int _wantedTicks = 0;
+
+  static const _wantedWatchMaxTicks = 120;
 
   @override
   EthAdminState get currentAdmin => _admin;
@@ -94,6 +100,41 @@ class LinuxEthernetController implements EthernetController {
     });
   }
 
+  void _stopWantedWatch() {
+    _wantedWatch?.cancel();
+    _wantedWatch = null;
+    _wantedTicks = 0;
+  }
+
+  void _startWantedWatch() {
+    _stopWantedWatch();
+    _wantedWatch = Timer.periodic(const Duration(seconds: 1), (_) {
+      unawaited(_tickWantedWatch());
+    });
+  }
+
+  Future<void> _tickWantedWatch() async {
+    _wantedTicks++;
+    try {
+      if (await _isAdminUp()) {
+        _stopWantedWatch();
+        _emitAdmin(EthAdminState.on);
+        _startPoll();
+        await _refreshStatus();
+        return;
+      }
+      if (_admin == EthAdminState.starting) {
+        _emitLink(const EthLinkState(phase: EthLinkPhase.configuring));
+      }
+      if (_wantedTicks >= _wantedWatchMaxTicks) {
+        _stopWantedWatch();
+        await setInterfaceEnabled(true);
+      }
+    } catch (e) {
+      debugPrint('ethernet: wanted watch: $e');
+    }
+  }
+
   Future<void> _refreshStatus() async {
     final details = await linkDetails();
     _emitLink(details);
@@ -101,6 +142,7 @@ class LinuxEthernetController implements EthernetController {
 
   @override
   Future<void> setInterfaceEnabled(bool enabled) async {
+    _stopWantedWatch();
     if (enabled) {
       _emitAdmin(EthAdminState.starting);
       _emitLink(const EthLinkState(phase: EthLinkPhase.configuring));
@@ -132,14 +174,31 @@ class LinuxEthernetController implements EthernetController {
             message: apply.message,
           ),
         );
+      } else {
+        await _writeWanted(true);
       }
       await _refreshStatus();
     } else {
       _poll?.cancel();
       _poll = null;
       await _run([...linkHelper, 'down']);
+      await _writeWanted(false);
       _emitAdmin(EthAdminState.off);
       _emitLink(EthLinkState.down);
+    }
+  }
+
+  Future<void> _writeWanted(bool wanted) async {
+    try {
+      final f = File(ethWantedPath);
+      if (wanted) {
+        await f.parent.create(recursive: true);
+        await f.writeAsString('', flush: true);
+      } else if (await f.exists()) {
+        await f.delete();
+      }
+    } catch (e) {
+      debugPrint('ethernet: wanted marker failed: $e');
     }
   }
 
@@ -289,13 +348,38 @@ class LinuxEthernetController implements EthernetController {
             message: apply.message,
           ),
         );
+      } else {
+        await _writeWanted(true);
       }
       await _refreshStatus();
     }
   }
 
   @override
+  Future<void> syncFromSystem() async {
+    try {
+      final wanted = await File(ethWantedPath).exists();
+      final adminUp = await _isAdminUp();
+      if (adminUp) {
+        _stopWantedWatch();
+        _emitAdmin(EthAdminState.on);
+        _startPoll();
+        await _refreshStatus();
+        return;
+      }
+      if (wanted) {
+        _emitAdmin(EthAdminState.starting);
+        _emitLink(const EthLinkState(phase: EthLinkPhase.configuring));
+        _startWantedWatch();
+      }
+    } catch (e) {
+      debugPrint('ethernet: syncFromSystem failed: $e');
+    }
+  }
+
+  @override
   Future<void> dispose() async {
+    _stopWantedWatch();
     _poll?.cancel();
     await _adminCtrl.close();
     await _linkCtrl.close();

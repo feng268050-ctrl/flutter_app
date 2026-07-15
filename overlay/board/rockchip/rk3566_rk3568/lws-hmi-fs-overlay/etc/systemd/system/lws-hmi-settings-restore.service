@@ -1,0 +1,25 @@
+[Unit]
+Description=LWS HMI restore hardware settings from /var/lib/lws-hmi
+Documentation=file:///usr/lib/lws-hmi/lws-hmi-settings-restore.sh
+DefaultDependencies=no
+# Prefs need userdata (param-update). Network/BT restore MUST run only after HMI
+# is up — UI absolute priority (not parallel with flutter-pi first frame).
+After=hmi.service param-update.service
+Wants=param-update.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Yield CPU/IO so restore never starves the UI while bringing Wi‑Fi/BT up.
+Nice=10
+CPUWeight=1
+IOSchedulingClass=idle
+IOSchedulingPriority=7
+ExecStartPre=-/usr/lib/lws-hmi/lws-hmi-prefs-bind.sh
+# Let first home frame paint before SDIO / bluetooth / dhcpcd load the bus.
+ExecStartPre=/bin/sleep 3
+ExecStart=/usr/lib/lws-hmi/lws-hmi-settings-restore.sh
+TimeoutStartSec=180
+
+[Install]
+WantedBy=multi-user.target

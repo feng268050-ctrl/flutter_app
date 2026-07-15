@@ -10,6 +10,15 @@ import 'package:lws_hmi/platform/wifi/wpa_cli_parse.dart';
 
 /// Linux Wi-Fi via on-demand helpers + `wpa_cli`.
 class LinuxWpaWifiController implements WifiController {
+  final String iface;
+  final List<String> stackUp;
+  final List<String> stackDown;
+  final List<String> dhcpHelper;
+  final List<String> staticHelper;
+  final String ipv4Path;
+  final String wpaCliBin;
+  final String wifiWantedPath;
+
   LinuxWpaWifiController({
     this.iface = 'wlan0',
     this.stackUp = const ['/usr/lib/lws-hmi/wifi-stack-up.sh'],
@@ -18,15 +27,8 @@ class LinuxWpaWifiController implements WifiController {
     this.staticHelper = const ['/usr/lib/lws-hmi/wlan0-static.sh'],
     this.ipv4Path = WlanIpv4Store.defaultPath,
     this.wpaCliBin = 'wpa_cli',
+    this.wifiWantedPath = '/var/lib/lws-hmi/wifi-wanted',
   });
-
-  final String iface;
-  final List<String> stackUp;
-  final List<String> stackDown;
-  final List<String> dhcpHelper;
-  final List<String> staticHelper;
-  final String ipv4Path;
-  final String wpaCliBin;
 
   final _radioCtrl = StreamController<WifiRadioState>.broadcast();
   final _connCtrl = StreamController<WifiConnectionState>.broadcast();
@@ -34,6 +36,10 @@ class LinuxWpaWifiController implements WifiController {
   WifiRadioState _radio = WifiRadioState.off;
   WifiConnectionState _conn = WifiConnectionState.disconnected;
   Timer? _poll;
+  Timer? _wantedWatch;
+  int _wantedTicks = 0;
+
+  static const _wantedWatchMaxTicks = 120;
 
   @override
   WifiRadioState get currentRadio => _radio;
@@ -88,8 +94,64 @@ class LinuxWpaWifiController implements WifiController {
     return (r.stdout as String? ?? '').trim();
   }
 
+  Future<bool> _wpaLive() async {
+    try {
+      final raw = await _wpa(const ['status'], log: false);
+      final st = WpaCliParse.status(raw);
+      final wpaState = (st['wpa_state'] ?? '').toUpperCase();
+      return wpaState.isNotEmpty && wpaState != 'INTERFACE_DISABLED';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _stopWantedWatch() {
+    _wantedWatch?.cancel();
+    _wantedWatch = null;
+    _wantedTicks = 0;
+  }
+
+  /// Pref says radio should be on (boot restore after HMI) — mirror manual
+  /// enable: show [starting] / associating and poll until the stack is live.
+  /// Do not call [setRadioEnabled] immediately (restore owns bring-up).
+  void _startWantedWatch() {
+    _stopWantedWatch();
+    _wantedWatch = Timer.periodic(const Duration(seconds: 1), (_) {
+      unawaited(_tickWantedWatch());
+    });
+  }
+
+  Future<void> _tickWantedWatch() async {
+    _wantedTicks++;
+    try {
+      if (await _wpaLive()) {
+        _stopWantedWatch();
+        _emitRadio(WifiRadioState.on);
+        _startPoll();
+        await _refreshStatus();
+        return;
+      }
+      if (_radio == WifiRadioState.starting) {
+        _emitConn(
+          const WifiConnectionState(
+            phase: WifiConnectionPhase.associating,
+            message: 'Starting…',
+          ),
+        );
+      }
+      if (_wantedTicks >= _wantedWatchMaxTicks) {
+        _stopWantedWatch();
+        // Restore may have failed — same path as a manual toggle.
+        await setRadioEnabled(true);
+      }
+    } catch (e) {
+      debugPrint('wifi: wanted watch: $e');
+    }
+  }
+
   @override
   Future<void> setRadioEnabled(bool enabled) async {
+    _stopWantedWatch();
     if (enabled) {
       _emitRadio(WifiRadioState.starting);
       final r = await _run(stackUp);
@@ -107,14 +169,30 @@ class LinuxWpaWifiController implements WifiController {
         return;
       }
       _emitRadio(WifiRadioState.on);
+      await _writeWanted(true);
       _startPoll();
       await _refreshStatus();
     } else {
       _poll?.cancel();
       _poll = null;
       await _run(stackDown);
+      await _writeWanted(false);
       _emitRadio(WifiRadioState.off);
       _emitConn(WifiConnectionState.disconnected);
+    }
+  }
+
+  Future<void> _writeWanted(bool wanted) async {
+    try {
+      final f = File(wifiWantedPath);
+      if (wanted) {
+        await f.parent.create(recursive: true);
+        await f.writeAsString('', flush: true);
+      } else if (await f.exists()) {
+        await f.delete();
+      }
+    } catch (e) {
+      debugPrint('wifi: wanted marker failed: $e');
     }
   }
 
@@ -416,7 +494,35 @@ class LinuxWpaWifiController implements WifiController {
   }
 
   @override
+  Future<void> syncFromSystem() async {
+    try {
+      final wanted = await File(wifiWantedPath).exists();
+      if (await _wpaLive()) {
+        _stopWantedWatch();
+        _emitRadio(WifiRadioState.on);
+        _startPoll();
+        await _refreshStatus();
+        return;
+      }
+      if (wanted) {
+        // Boot restore brings the stack up after HMI — UI tracks like manual on.
+        _emitRadio(WifiRadioState.starting);
+        _emitConn(
+          const WifiConnectionState(
+            phase: WifiConnectionPhase.associating,
+            message: 'Starting…',
+          ),
+        );
+        _startWantedWatch();
+      }
+    } catch (e) {
+      debugPrint('wifi: syncFromSystem failed: $e');
+    }
+  }
+
+  @override
   Future<void> dispose() async {
+    _stopWantedWatch();
     _poll?.cancel();
     await _radioCtrl.close();
     await _connCtrl.close();

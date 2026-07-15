@@ -95,6 +95,10 @@ mount_named_part private1 /mnt/private1
 mount_named_part private /mnt/private
 mount_named_part oem /oem
 mount_named_part userdata /userdata
+# Persist prefs across rootfs flash (P2.3): /var/lib/lws-hmi → /userdata/lws-hmi
+if [ -x /usr/lib/lws-hmi/lws-hmi-prefs-bind.sh ]; then
+	/usr/lib/lws-hmi/lws-hmi-prefs-bind.sh || log "prefs-bind soft-fail"
+fi
 seed_private1_params
 run_mountall
 run_paramupdate

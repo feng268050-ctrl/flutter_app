@@ -34,6 +34,9 @@ abstract class BluetoothController {
 
   Future<void> removeRemote(String address);
 
+  /// Align adapter/A2DP UI with live stack (after boot restore).
+  Future<void> syncFromSystem();
+
   /// Last stack bring-up error when [adapterState] is error; otherwise null.
   String? get lastError;
 

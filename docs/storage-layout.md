@@ -49,15 +49,33 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | OEM / vendor drop-ins (optional) | `/oem/` | oem |
 | **RKNN models** (`*.rknn`, `config.yaml`) | **`/userdata/models/`** | userdata |
 | PR0 recording, sqlite, OTA download cache | `/userdata/…` | userdata |
+| App config / prefs (P2.3) | **`/userdata/lws-hmi/`** ( `/var/lib/lws-hmi` symlink ) | userdata |
 | App config / cache | `/userdata/cfg/` (convention) | userdata |
 
-`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `ynh960-display-init.sh`, which mounts `PARTLABEL=userdata` → `/userdata` and formats on first boot after flash.
+`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `ynh960-display-init.sh`, which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, then runs **`lws-hmi-prefs-bind.sh`** so `/var/lib/lws-hmi` → `/userdata/lws-hmi`.
+
+## Prefs: flash vs upgrade (P2.3 / P2.4)
+
+Hardware settings (Wi‑Fi, eth0, backlight, orientation, proxy, BT A2DP prefs, …) live under **`/userdata/lws-hmi/`**.
+
+| Operation | What changes | Settings (`/userdata/lws-hmi`) |
+|-----------|--------------|--------------------------------|
+| **Cold reboot** | nothing on disk | **Keep** — `lws-hmi-settings-restore` re-applies |
+| **`make push-app` / `systemctl restart hmi`** | `/opt/hmi` or HMI process only | **Keep** — stacks are outside `hmi.service` cgroup |
+| **`make upgrade` (P2.4 A/B)** | inactive **rootfs** slot only | **Keep** — must **not** wipe or rewrite userdata |
+| **`make flash`** (RockUSB `update.img`, factory / GPT) | full image path; product **factory reset** | **Must clear** — complete reset after flash |
+
+Notes:
+
+- Rockchip `uf update.img` often **does not** rewrite the grow **userdata** partition by itself. Product policy still requires a **flash-time wipe of prefs** (planned: wipe `/userdata/lws-hmi` and/or factory-reset userdata on first boot after flash). Until that lands, do not assume bare `make flash` already erased Wi‑Fi credentials.
+- **P2.4 `make upgrade`** must never format userdata or delete `/userdata/lws-hmi`; that is how OTA keeps operator settings while swapping rootfs A/B.
+- RTC clock time is hardware and is unrelated to this prefs tree.
 
 ## OTA / remote upgrade
 
-- **P2.4 — A/B dual rootfs**: replace the single 1 GiB `rootfs` GPT slot with **A/B slots** in a later `parameter` revision; inactive-slot write + boot-flag switch + reboot (**no bootloader flash**). Host entry: **`make upgrade`** over USB-SSH or LAN SSH.
+- **P2.4 — A/B dual rootfs**: replace the single 1 GiB `rootfs` GPT slot with **A/B slots** in a later `parameter` revision; inactive-slot write + boot-flag switch + reboot (**no bootloader flash**). Host entry: **`make upgrade`** over USB-SSH or LAN SSH. **userdata (incl. P2.3 prefs) preserved.**
 - **P5.8 — product OTA**: UI / cloud (or local) package orchestration on top of the P2.4 slot machinery; two-level updates (app-only vs full system). Staging downloads under **`/userdata/ota/`**.
-- **Full `update.img` via `make flash`**: still used for factory / first GPT change; not the day-to-day upgrade path after P2.4.
+- **Full `update.img` via `make flash`**: factory / first GPT change / intentional **full reset** (prefs cleared per policy above); not the day-to-day upgrade path after P2.4.
 
 ## Changing layout
 

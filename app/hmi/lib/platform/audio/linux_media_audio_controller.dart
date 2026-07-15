@@ -17,11 +17,13 @@ import 'package:lws_hmi/platform/percent.dart';
 class LinuxMediaAudioController implements MediaAudioController {
   LinuxMediaAudioController({
     this.cacheDir = '/var/lib/lws-hmi/audio',
+    this.volumePreferencePath = '/var/lib/lws-hmi/media-volume',
     this.playerBinary = 'mpg123',
     this.amixerBinary = 'amixer',
   });
 
   final String cacheDir;
+  final String volumePreferencePath;
   final String playerBinary;
   final String amixerBinary;
 
@@ -29,6 +31,7 @@ class LinuxMediaAudioController implements MediaAudioController {
   IOSink? _playerStdin;
   bool _remoteMode = false;
   int _volumePercent = 80;
+  bool _volumeLoaded = false;
   bool _playing = false;
   bool _pathRouted = false;
   String? _volumeControl;
@@ -75,13 +78,50 @@ class LinuxMediaAudioController implements MediaAudioController {
   }
 
   @override
-  Future<int> getVolumePercent() async => _volumePercent;
+  Future<int> getVolumePercent() async {
+    await _ensureVolumeLoaded();
+    return _volumePercent;
+  }
 
   @override
   Future<void> setVolumePercent(int percent) async {
     _volumePercent = clampPercent(percent);
+    _volumeLoaded = true;
+    _queuedVolume = _volumePercent;
+    await _persistVolume(_volumePercent);
+    await _drainVolumeQueue();
+  }
+
+  Future<void> _ensureVolumeLoaded() async {
+    if (_volumeLoaded) {
+      return;
+    }
+    _volumeLoaded = true;
+    try {
+      final f = File(volumePreferencePath);
+      if (await f.exists()) {
+        final raw = (await f.readAsString()).trim();
+        final n = int.tryParse(raw);
+        if (n != null) {
+          _volumePercent = clampPercent(n);
+        }
+      }
+    } catch (e) {
+      debugPrint('media-audio: volume load failed: $e');
+    }
+    // Apply saved (or default) so mixer matches UI after reboot.
     _queuedVolume = _volumePercent;
     await _drainVolumeQueue();
+  }
+
+  Future<void> _persistVolume(int percent) async {
+    try {
+      final f = File(volumePreferencePath);
+      await f.parent.create(recursive: true);
+      await f.writeAsString('$percent\n', flush: true);
+    } catch (e) {
+      debugPrint('media-audio: volume persist failed: $e');
+    }
   }
 
   /// Latest-wins: while a mixer write runs, keep only the newest target.
@@ -111,6 +151,7 @@ class LinuxMediaAudioController implements MediaAudioController {
 
   @override
   Future<void> playAsset(String assetKey) async {
+    await _ensureVolumeLoaded();
     await _ensurePlaybackPath();
     await _applyMixerVolume(_volumePercent);
 

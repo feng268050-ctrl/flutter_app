@@ -60,6 +60,7 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
         setState(() => _a2dp = v);
       }
     });
+    unawaited(widget.controller.syncFromSystem());
   }
 
   Future<void> _guard(String label, Future<void> Function() fn) async {

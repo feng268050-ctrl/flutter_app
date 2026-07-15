@@ -15,6 +15,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
     this.a2dpUp = const ['/usr/lib/lws-hmi/bt-a2dp-sink-up.sh'],
     this.a2dpDown = const ['/usr/lib/lws-hmi/bt-a2dp-sink-down.sh'],
     this.a2dpPrefPath = '/var/lib/lws-hmi/bt-a2dp-sink',
+    this.btWantedPath = '/var/lib/lws-hmi/bt-wanted',
     this.bluetoothctlBin = 'bluetoothctl',
   }) {
     unawaited(_loadA2dpPref());
@@ -25,6 +26,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
   final List<String> a2dpUp;
   final List<String> a2dpDown;
   final String a2dpPrefPath;
+  final String btWantedPath;
   final String bluetoothctlBin;
 
   final _stateCtrl = StreamController<BluetoothAdapterState>.broadcast();
@@ -39,6 +41,10 @@ class LinuxBluezBluetoothController implements BluetoothController {
   bool _a2dpSinkEnabled = false;
   String? _lastError;
   Timer? _poll;
+  Timer? _wantedWatch;
+  int _wantedTicks = 0;
+
+  static const _wantedWatchMaxTicks = 120;
 
   @override
   String? get lastError => _lastError;
@@ -122,6 +128,39 @@ class LinuxBluezBluetoothController implements BluetoothController {
     }
   }
 
+  Future<void> _writeWanted(bool wanted) async {
+    try {
+      final f = File(btWantedPath);
+      if (wanted) {
+        await f.parent.create(recursive: true);
+        await f.writeAsString('', flush: true);
+      } else if (await f.exists()) {
+        await f.delete();
+      }
+    } catch (e) {
+      debugPrint('bt: wanted marker failed: $e');
+    }
+  }
+
+  Future<bool> _bluetoothServiceActive() async {
+    try {
+      final r =
+          await _run(const ['systemctl', 'is-active', 'bluetooth.service']);
+      return (r.stdout as String? ?? '').trim() == 'active';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _hciPowered() async {
+    try {
+      final show = await _ctl(const ['show']);
+      return show.contains('Powered: yes');
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> _bluealsaActive() async {
     try {
       final r = await _run(const ['systemctl', 'is-active', 'bluealsa.service']);
@@ -143,6 +182,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
 
   @override
   Future<void> setAdapterEnabled(bool enabled) async {
+    _stopWantedWatch();
     if (enabled) {
       _emitState(BluetoothAdapterState.starting);
       final r = await _run(stackUp);
@@ -157,6 +197,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
         return;
       }
       _lastError = null;
+      await _writeWanted(true);
       _emitState(BluetoothAdapterState.on);
       _startPoll();
       await _run(const ['/usr/lib/lws-hmi/bt-ensure-agent.sh']);
@@ -168,11 +209,86 @@ class LinuxBluezBluetoothController implements BluetoothController {
       _poll = null;
       _lastError = null;
       await _run(stackDown);
+      await _writeWanted(false);
       _emitState(BluetoothAdapterState.off);
       _emitInfo(const BluetoothAdapterInfo());
       _emitDevices(const []);
       // Runtime stopped with stack; keep pref (reload wanted state).
       await _loadA2dpPref();
+    }
+  }
+
+  void _stopWantedWatch() {
+    _wantedWatch?.cancel();
+    _wantedWatch = null;
+    _wantedTicks = 0;
+  }
+
+  void _startWantedWatch() {
+    _stopWantedWatch();
+    _wantedWatch = Timer.periodic(const Duration(seconds: 1), (_) {
+      unawaited(_tickWantedWatch());
+    });
+  }
+
+  Future<void> _tickWantedWatch() async {
+    _wantedTicks++;
+    try {
+      final serviceUp = await _bluetoothServiceActive();
+      final powered = serviceUp && await _hciPowered();
+      if (powered) {
+        _stopWantedWatch();
+        _lastError = null;
+        _emitState(BluetoothAdapterState.on);
+        _startPoll();
+        await _run(const ['/usr/lib/lws-hmi/bt-ensure-agent.sh']);
+        await _run(const ['/usr/lib/lws-hmi/bt-set-alias.sh']);
+        await _refresh();
+        await _refreshA2dp();
+        return;
+      }
+      if (_wantedTicks >= _wantedWatchMaxTicks) {
+        _stopWantedWatch();
+        await setAdapterEnabled(true);
+      }
+    } catch (e) {
+      debugPrint('bt: wanted watch: $e');
+    }
+  }
+
+  @override
+  Future<void> syncFromSystem() async {
+    try {
+      final serviceUp = await _bluetoothServiceActive();
+      final powered = serviceUp && await _hciPowered();
+      final wanted = await File(btWantedPath).exists();
+      final a2dpPref = await File(a2dpPrefPath).exists()
+          ? (await File(a2dpPrefPath).readAsString()).trim()
+          : '';
+      final a2dpWanted = a2dpPref == '1' ||
+          a2dpPref.toLowerCase() == 'on' ||
+          a2dpPref.toLowerCase() == 'true';
+
+      if (powered) {
+        _stopWantedWatch();
+        _lastError = null;
+        _emitState(BluetoothAdapterState.on);
+        _startPoll();
+        await _run(const ['/usr/lib/lws-hmi/bt-ensure-agent.sh']);
+        await _run(const ['/usr/lib/lws-hmi/bt-set-alias.sh']);
+        await _refresh();
+        await _refreshA2dp();
+        return;
+      }
+
+      if (wanted || a2dpWanted) {
+        // Boot restore brings BT up after HMI — UI tracks like manual on.
+        _emitState(BluetoothAdapterState.starting);
+        await _loadA2dpPref();
+        _startWantedWatch();
+      }
+    } catch (e) {
+      debugPrint('bt: syncFromSystem failed: $e');
     }
   }
 
@@ -282,6 +398,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
 
   @override
   Future<void> dispose() async {
+    _stopWantedWatch();
     _poll?.cancel();
     await _stateCtrl.close();
     await _infoCtrl.close();

@@ -36,5 +36,8 @@ abstract class WifiController {
   /// Snapshot of association + IPv4 details (for Settings / status UI).
   Future<WifiConnectionState> linkDetails();
 
+  /// Align radio/connection with the live system (after boot restore).
+  Future<void> syncFromSystem();
+
   Future<void> dispose();
 }

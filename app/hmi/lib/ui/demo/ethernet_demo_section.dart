@@ -50,6 +50,7 @@ class _EthernetDemoSectionState extends State<EthernetDemoSection>
       }
     });
     unawaited(_loadIpv4());
+    unawaited(widget.controller.syncFromSystem());
   }
 
   Future<void> _loadIpv4() async {

@@ -19,11 +19,21 @@ if [ -d /sys/class/net/usb0 ]; then
 	ip link set usb0 down 2>/dev/null || true
 fi
 
+# Soft-disconnect before rmmod so the host drops the gadget cleanly.
+for udc in /sys/class/udc/*; do
+	[ -e "$udc" ] || continue
+	sf="$udc/soft_connect"
+	[ -w "$sf" ] || continue
+	printf '%s\n' disconnect >"$sf" 2>/dev/null || echo 0 >"$sf" 2>/dev/null || true
+done
+sleep 0.2
+
 if [ -d /sys/module/g_ether ]; then
 	if modprobe -r g_ether 2>/dev/null || rmmod g_ether 2>/dev/null; then
 		log "g_ether unloaded"
 	else
-		log "WARN: could not unload g_ether"
-		exit 1
+		# Do not exit 1: RemainAfterExit oneshot must become inactive so the
+		# next VBUS attach still runs ExecStart (which force-reloads).
+		log "WARN: could not unload g_ether (start will force-reload)"
 	fi
 fi

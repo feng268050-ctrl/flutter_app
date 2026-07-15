@@ -287,7 +287,7 @@ EOF
 		"$target/etc/systemd/system/lws-hmi-usb-plug-ssh.service" \
 		"$target/etc/systemd/system/lws-hmi-serial-stty.service" \
 		"$target/etc/udev/rules.d/99-lws-hmi-usb-plug-ssh.rules" \
-		"$target/etc/ssh/sshd_config.d/50-lws-hmi-usb-plug-ssh.conf" \
+		"$target/etc/ssh/sshd_config.d/50-lws-hmi-ssh-auth.conf" \
 		"$target/etc/profile.d/lws-hmi-serial-stty.sh" \
 		"$target/etc/issue.d/00-lws-hmi-terminal-resize.issue"; do
 		if [[ -e "$f" ]]; then
@@ -297,11 +297,33 @@ EOF
 			missing=1
 		fi
 	done
-	if grep -q 'ListenAddress 192.168.55.1' \
-		"$target/etc/ssh/sshd_config.d/50-lws-hmi-usb-plug-ssh.conf" 2>/dev/null; then
-		echo "OK:  sshd drop-in ListenAddress 192.168.55.1"
+	if grep -q 'ListenAddress=192.168.55.1' "$helper/usb-plug-ssh-start.sh" 2>/dev/null; then
+		echo "OK:  usb-plug-ssh-start binds ListenAddress=192.168.55.1"
 	else
-		echo "FAIL: sshd drop-in missing ListenAddress 192.168.55.1" >&2
+		echo "FAIL: usb-plug-ssh-start missing ListenAddress=192.168.55.1 override" >&2
+		missing=1
+	fi
+	if grep -q 'lws-hmi-lan-sshd.pid' "$helper/usb-plug-ssh-start.sh" 2>/dev/null; then
+		echo "OK:  usb-plug-ssh-start tolerates LAN sshd"
+	else
+		echo "FAIL: usb-plug-ssh-start missing LAN sshd coexistence" >&2
+		missing=1
+	fi
+	legacy_sshd=""
+	for f in "$target/etc/ssh/sshd_config.d/"*.conf; do
+		[[ -f "$f" ]] || continue
+		if grep -qE '^[[:space:]]*ListenAddress[[:space:]]+192\.168\.55\.1' "$f" 2>/dev/null; then
+			legacy_sshd="${legacy_sshd:+$legacy_sshd }${f#$target/}"
+		fi
+	done
+	if [[ -n "$legacy_sshd" ]]; then
+		echo "FAIL: global sshd_config.d still forces ListenAddress 192.168.55.1 ($legacy_sshd)" >&2
+		missing=1
+	else
+		echo "OK:  sshd_config.d does not force USB-only ListenAddress"
+	fi
+	if [[ -e "$target/etc/ssh/sshd_config.d/50-lws-hmi-usb-plug-ssh.conf" ]]; then
+		echo "FAIL: retired 50-lws-hmi-usb-plug-ssh.conf still present" >&2
 		missing=1
 	fi
 	if ls "$target/etc/ssh"/ssh_host_*_key >/dev/null 2>&1; then
@@ -375,8 +397,7 @@ EOF
 		"$target/etc/systemd/system/lws-hmi-boot-kpi.service" \
 		"$target/usr/lib/lws-hmi/debug-boot.sh" \
 		"$target/usr/lib/lws-hmi/boot-kpi-watch.sh" \
-		"$target/usr/lib/lws-hmi/configure-camera-eth0.sh" \
-		"$target/usr/lib/lws-hmi/enable-ssh-debug.sh"; do
+		"$target/usr/lib/lws-hmi/configure-camera-eth0.sh"; do
 		if [[ -e "$f" ]]; then
 			echo "FAIL: retired artifact still in target: $f" >&2
 			missing=1
@@ -384,6 +405,13 @@ EOF
 			echo "OK:  $(basename "$f") absent from target"
 		fi
 	done
+
+	if [[ -x "$target/usr/lib/lws-hmi/enable-ssh-debug.sh" && -x "$target/usr/lib/lws-hmi/disable-ssh-debug.sh" ]]; then
+		echo "OK:  enable-ssh-debug.sh / disable-ssh-debug.sh"
+	else
+		echo "FAIL: missing enable-ssh-debug.sh or disable-ssh-debug.sh" >&2
+		missing=1
+	fi
 
 	check_systemd_wants "$target" "staging target" || missing=1
 	check_poweroff_hook "$target" "staging target" || missing=1

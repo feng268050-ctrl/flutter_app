@@ -49,4 +49,4 @@ rm -f \
 	"$TARGET_DIR/etc/systemd/system/lws-hmi-boot-kpi.service" \
 	"$TARGET_DIR/usr/lib/lws-hmi/boot-kpi-watch.sh" \
 	"$TARGET_DIR/usr/lib/lws-hmi/configure-camera-eth0.sh" \
-	"$TARGET_DIR/usr/lib/lws-hmi/enable-ssh-debug.sh"
+	"$TARGET_DIR/etc/ssh/sshd_config.d/50-lws-hmi-usb-plug-ssh.conf"

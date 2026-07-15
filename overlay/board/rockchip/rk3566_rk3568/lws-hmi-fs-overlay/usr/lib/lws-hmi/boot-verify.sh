@@ -96,6 +96,11 @@ fi
 echo ""
 echo "--- port 22 ---"
 USB_SSH_ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
+LAN_PID=/run/lws-hmi-lan-sshd.pid
+lan_debug_on=0
+if [ -f "$LAN_PID" ] && kill -0 "$(cat "$LAN_PID" 2>/dev/null)" 2>/dev/null; then
+	lan_debug_on=1
+fi
 if [ -n "${SSH_CONNECTION:-}" ]; then
 	warn "SSH session active — skip port 22 check (use serial ttyFIQ0 for accurate boot KPI)"
 elif command -v ss >/dev/null 2>&1; then
@@ -104,8 +109,10 @@ elif command -v ss >/dev/null 2>&1; then
 		pass "port 22 not listening"
 	else
 		echo "$listeners"
-		if echo "$listeners" | grep -qE '0\.0\.0\.0:22|\*:22|\[::\]:22|127\.0\.0\.1:22'; then
-			fail "sshd listening on LAN/all interfaces (expected usb0-only or closed)"
+		if [ "$lan_debug_on" -eq 1 ]; then
+			warn "port 22 listening (LAN SSH debug enabled via enable-ssh-debug.sh)"
+		elif echo "$listeners" | grep -qE '0\.0\.0\.0:22|\*:22|\[::\]:22|127\.0\.0\.1:22'; then
+			fail "sshd listening on LAN/all interfaces (expected usb0-only or closed; run disable-ssh-debug.sh)"
 		elif echo "$listeners" | grep -qvE "${USB_SSH_ADDR}:22|${USB_SSH_ADDR}\]:22"; then
 			fail "sshd listening on port 22 outside USB plug-ssh (${USB_SSH_ADDR})"
 		else
@@ -116,9 +123,12 @@ elif command -v netstat >/dev/null 2>&1; then
 	listeners="$(netstat -lntp 2>/dev/null | grep -E '(:|\])22\s' || true)"
 	if [ -z "$listeners" ]; then
 		pass "port 22 not listening"
+	elif [ "$lan_debug_on" -eq 1 ]; then
+		echo "$listeners"
+		warn "port 22 listening (LAN SSH debug enabled via enable-ssh-debug.sh)"
 	elif echo "$listeners" | grep -qE '0\.0\.0\.0:22|127\.0\.0\.1:22|\*:22'; then
 		echo "$listeners"
-		fail "sshd listening on LAN/all interfaces (expected usb0-only or closed)"
+		fail "sshd listening on LAN/all interfaces (expected usb0-only or closed; run disable-ssh-debug.sh)"
 	elif echo "$listeners" | grep -q "${USB_SSH_ADDR}:22"; then
 		echo "$listeners"
 		pass "port 22 listening on USB plug-ssh only (${USB_SSH_ADDR})"

@@ -3,6 +3,7 @@
 set -eu
 
 LOCK_DIR=/run/lws-hmi-usb-plug-ssh-vbus.lock
+PENDING=/run/lws-hmi-usb-plug-ssh-vbus.pending
 
 otg_vbus_up() {
 	local state dir dev
@@ -29,16 +30,20 @@ reconcile_vbus() {
 	fi
 }
 
-# extcon emits clustered add/change events while the PHY settles. Let one
-# worker debounce and reconcile the final state instead of racing start/stop.
+# extcon emits clustered add/change events while the PHY settles. One worker
+# debounces; concurrent events set PENDING so a remplug during sleep is not lost.
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+	touch "$PENDING"
 	exit 0
 fi
 trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT HUP INT TERM
 
-sleep 1
-reconcile_vbus
-
-# Catch a final edge that arrived while systemd was starting/stopping the unit.
-sleep 0.2
-reconcile_vbus
+while true; do
+	rm -f "$PENDING"
+	sleep 1
+	reconcile_vbus
+	# Catch a final edge that arrived while systemd was starting/stopping.
+	sleep 0.2
+	reconcile_vbus
+	[ -f "$PENDING" ] || break
+done

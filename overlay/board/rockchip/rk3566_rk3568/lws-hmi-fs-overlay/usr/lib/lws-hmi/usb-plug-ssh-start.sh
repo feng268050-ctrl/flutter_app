@@ -24,10 +24,37 @@ mac_addresses() {
 	printf '02:13:%02x:%02x:%02x:%02x\n' "$h1" "$h2" "$h3" "$h4"
 }
 
+unload_g_ether() {
+	if [ -d /sys/class/net/usb0 ]; then
+		ip addr flush dev usb0 2>/dev/null || true
+		ip link set usb0 down 2>/dev/null || true
+	fi
+	# Soft-disconnect so the host drops the device before rmmod.
+	for udc in /sys/class/udc/*; do
+		[ -e "$udc" ] || continue
+		sf="$udc/soft_connect"
+		[ -w "$sf" ] || continue
+		printf '%s\n' disconnect >"$sf" 2>/dev/null || echo 0 >"$sf" 2>/dev/null || true
+	done
+	sleep 0.2
+	if [ -d /sys/module/g_ether ]; then
+		modprobe -r g_ether 2>/dev/null || rmmod g_ether 2>/dev/null || return 1
+	fi
+	return 0
+}
+
 load_g_ether() {
 	local serial="$1" host_mac dev_mac
+
+	# After unplug/replug, g_ether may still be loaded (failed stop or sticky
+	# UDC). Staying put skips USB re-enumeration — host then sees nothing.
 	if [ -d /sys/module/g_ether ]; then
-		return 0
+		log "g_ether already loaded — forcing reload for clean attach"
+		if ! unload_g_ether; then
+			log "WARN: could not unload sticky g_ether"
+			return 1
+		fi
+		sleep 0.3
 	fi
 
 	set -- $(mac_addresses "$serial")
@@ -71,6 +98,11 @@ setup_usb0() {
 
 start_sshd() {
 	if sshd_running; then
+		return 0
+	fi
+	# LAN debug already binds *:22 (covers usb0 once addressed).
+	if [ -f /run/lws-hmi-lan-sshd.pid ] && kill -0 "$(cat /run/lws-hmi-lan-sshd.pid)" 2>/dev/null; then
+		log "LAN sshd already listening — skip USB-only sshd"
 		return 0
 	fi
 	/usr/lib/lws-hmi/ensure-sshd-hostkeys.sh

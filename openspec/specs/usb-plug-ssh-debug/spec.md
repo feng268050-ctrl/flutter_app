@@ -29,6 +29,15 @@ The target SHALL stop SSH service on **`usb0`** and unload the **`g_ether`** mod
 - **WHEN** the USB cable is unplugged from the OTG port
 - **THEN** `g_ether` is unloaded, the UDC is released, and sshd is no longer listening on `usb0`
 
+### Requirement: Replug re-enumerates USB debug
+
+After VBUS detach, a subsequent VBUS attach SHALL force a clean `g_ether` reload (including when the module was still sticky) so the host re-enumerates the ECM gadget and `make devices` lists a USB-SSH row again. Concurrent VBUS extcon events during debounce MUST NOT drop the final plug state.
+
+#### Scenario: Unplug then replug
+
+- **WHEN** the OTG cable is unplugged and then replugged during Linux runtime
+- **THEN** within 15 seconds the host observes the gadget again and `make devices` shows a USB-SSH row
+
 ### Requirement: USB gadget serial identity
 
 Each board SHALL pass a stable USB **`iSerialNumber`** plus deterministic host/device MAC addresses to `g_ether`, derived from hardware identity (Device Tree `serial-number` or SoC unique ID).

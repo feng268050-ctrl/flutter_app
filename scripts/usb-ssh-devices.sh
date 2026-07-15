@@ -293,19 +293,50 @@ for name, chunk in gadget_blocks:
 PY
 }
 
+# After remplug, macOS often creates en* without 192.168.55.2 until setup.
+# Prefer already-addressed ifaces; else resolve RNDIS/LWS hardware ports.
+darwin_gadget_ifaces() {
+	local en port="" device=""
+	for en in $(ifconfig -l 2>/dev/null); do
+		[[ "$en" == en* ]] || continue
+		if ifconfig "$en" 2>/dev/null | grep -qE 'inet 192\.168\.55\.'; then
+			printf '%s\n' "$en"
+		fi
+	done
+	command -v networksetup >/dev/null 2>&1 || return 0
+	while IFS= read -r line; do
+		case "$line" in
+		"Hardware Port:"*)
+			port="${line#Hardware Port: }"
+			port="${port#"${port%%[![:space:]]*}"}"
+			;;
+		"Device:"*)
+			device="${line#Device: }"
+			device="${device#"${device%%[![:space:]]*}"}"
+			case "$port" in
+			*[Rr][Nn][Dd][Ii][Ss]* | *[Gg]adget* | *LWS* | *[Ii]nnohi*)
+				[[ -n "$device" ]] && printf '%s\n' "$device"
+				;;
+			esac
+			port=""
+			device=""
+			;;
+		esac
+	done < <(networksetup -listallhardwareports 2>/dev/null || true)
+}
+
 network_reachable_usb_ssh() {
-	local addr="$USB_SSH_ADDR" iface="" serial="-" pass loc="-"
+	local addr="$USB_SSH_ADDR" iface="" serial="-" pass loc="-" candid
 	case "$(uname -s)" in
 	Darwin)
-		local en
-		for en in $(ifconfig -l); do
-			[[ "$en" == en* ]] || continue
-			ifconfig "$en" 2>/dev/null | grep -qE 'inet 192\.168\.55\.' || continue
-			if ping -c 1 -t 1 -b "$en" "$addr" >/dev/null 2>&1; then
-				iface="$en"
+		while IFS= read -r candid; do
+			[[ -n "$candid" ]] || continue
+			configure_usb_ssh_host_addr "$candid" 2>/dev/null || true
+			if ping_usb_ssh_target "$candid" >/dev/null 2>&1; then
+				iface="$candid"
 				break
 			fi
-		done
+		done < <(darwin_gadget_ifaces | awk 'NF && !seen[$0]++')
 		;;
 	Linux)
 		local en

@@ -1,6 +1,7 @@
 # Local outputs / caches
 output/
 .cache/
+__pycache__/
 overlay/buildroot/.generated/
 
 # Local firmware images (e.g. Android update.img for make flash-android)

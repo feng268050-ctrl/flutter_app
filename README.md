@@ -229,7 +229,7 @@ make disconnect 192.168.1.50
 
 `IP=` selects **registered SSH only** (never USB-SSH). `SERIAL=` still selects by board serial for either mode. `make reboot` works over SSH; `make reboot-loader` remains USB-SSH / RockUSB / adb only.
 
-`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / future **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs.
+`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / future **`make upgrade`** (P2.4 full-system updates **boot+rootfs** letters); **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs.
 
 ### Debug iteration (USB plug-ssh / remote SSH, P1.5)
 
@@ -347,7 +347,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P2.1 | ALSA/音频（按需）、wlan0 DHCP；eth0 驱动已入镜像 | 音频包按需开；`BR2_PACKAGE_DHCPCD` | 喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 **硬件 smoke**（🔄：喇叭/背光/旋转已通；Wi‑Fi/BT Demo 已落地待板验） |
 | P2.2 | timedatectl / RTC（`hwclock`） | 按需 | Demo 日期/时间 + `DateTimeController` 抽象 |
 | P2.3 | — | — | P2.1 硬件偏好 **重启后 restore** |
-| P2.4 | A/B rootfs 双槽 | `parameter` 改表 | `make upgrade`（SSH 远程，免 loader）；供 P5.8 OTA 复用 |
+| P2.4 | A/B **boot+rootfs** 成对双槽 | `parameter` 改表 | `make upgrade`（SSH；**含内核/boot.img + rootfs**，免 loader）；供 P5.8 OTA 复用 |
 | P3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** 工程与 smoke |
 | P3.5 | flutter SDK + engine + flutter-pi **三件套升级** | 重编 prebuilt | P4 前；见 [`docs/flutter-pi-hmi-plan.md` §6.5](docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p35) |
 | P4 | — | — | frost_ui / frost_ime 子模块 |

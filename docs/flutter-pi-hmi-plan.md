@@ -19,7 +19,7 @@
 | **P2.1 — 板级 I/O 与外设验证**        | 喇叭 / Wi‑Fi / BT / **以太网（RJ45 / eth0）** / **外接键盘·鼠标（USB HID）** / **按需 LAN·WLAN sshd** 等 **硬件 I/O 前置验证**；顺带收口触控、串口/引脚映射、背光等（见 **§1.1**）；**不做** 产品设置页 / IPC 相机业务 / MediaMTX / Flutter 预览（仍属 P5） | ✅  |
 | **P2.2 — 日期/时间设置（Demo）**      | Demo UI：**日期、时间（及时区）设置**；平台层抽象（`DateTimeController` 等），供 P5 产品设置页复用；**不做** 云 NTP 编排 / 产品 Settings 整页                                                                 | ✅  |
 | **P2.3 — 硬件设置持久化**            | 将 **P2.1** Demo 已验证的硬件偏好（Wi‑Fi / eth0 / 背光 / 旋转 / 代理 / BT A2DP / **鼠标** 等）在 **整机重启后自动恢复**；系统栈 **独立于 `hmi.service` cgroup**（push-app / HMI 重启不断网）；统一写盘路径与 boot 应用钩子 | ✅  |
-| **P2.4 — A/B 双分区 + 远程升级**     | Buildroot **A/B rootfs 双分区**；主机 `**make upgrade`** 经 **USB-SSH / LAN SSH** 推送并切换槽位，**无需进 bootloader 刷机**；为 P5 OTA 打底（见 **§1.3**）                                                   | 🔲  |
+| **P2.4 — A/B 双分区 + 远程升级**     | Buildroot **A/B `boot`+`rootfs` 成对双槽**；主机 `**make upgrade**` 经 **USB-SSH / LAN SSH** 推送**接近 `make flash` 的固件包**（至少 **kernel/`boot.img` + rootfs**），切换字母槽，**无需进 bootloader**；为 P5 OTA 打底（见 **§1.3**） | 🔲  |
 | **P2.5 — 模拟器与 Android 兼容**     | `**make emulator`**（Linux HMI 模拟器）；`**make android-emulator**`（参考 lws-ui `make emulator`）；Modbus Android 兼容；GPIO **共用** `gpio_innohi`（YNHAPI 仅降级，§11.0）；Flutter App 可打包 **APK**           | 🔲  |
 | **P3 — AI 原生库**                | 迁移 lws-ui **AI 代码库**；新工程打出 `**libai.so`**（+ RKNN/`config.yaml`）                                                                                                                           | 🔲  |
 | **P3.5 — Flutter 平台升级（P4 前置）** | 将板端 **flutter-engine / SDK / flutter-pi** 从 P1 pin **升级到上游支持的 stable**（见 **§6.4**）；ynh960 全量回归                                                                                            | 🔲  |
@@ -83,10 +83,11 @@ P2.3  硬件设置持久化（整机重启）✅
     └─ 验收：断电/reboot 后无需再进 Demo 即可恢复上次硬件配置
 
 P2.4  A/B 双分区 + 远程升级（`make upgrade`）🔲
-    ├─ `parameter` / GPT：rootfs A/B 双槽（见 `docs/storage-layout.md`）；slot 标记与回滚策略
-    ├─ 板端：升级脚本写 inactive 槽 → 校验 → 切换 boot 标记 → reboot（**不进 loader 刷机**）
-    ├─ 主机：`make upgrade` 经 USB-SSH 或 `make connect` LAN 推送 rootfs/update 包并触发切换
-    ├─ 两级能力先打通「全系统槽位更新」；仅更新 app（`/oem/hmi`）可同链路预留
+    ├─ `parameter` / GPT：**boot_a/b + rootfs_a/b** 成对双槽（见 `docs/storage-layout.md`）；misc 字母槽标记与回滚
+    ├─ 全系统包：至少 **`boot.img`（内核 FIT）+ `rootfs.img`**；可选 oem；**不**远程写 U-Boot/MiniLoader、**不**改 GPT
+    ├─ 板端：写 inactive 字母的 boot+rootfs → 校验 → try-boot → reboot → 确认/回滚（**不进 loader**）
+    ├─ 主机：`make upgrade` 经 USB-SSH 或 `make connect` LAN 推送固件包并触发（能力接近 `make flash` 的可更新部分）
+    ├─ 两级：全系统字母槽更新先验收；仅更新 app（`/oem/hmi`）同链路预留
     └─ **不做** 产品 OTA UI / 云端升级编排（属 **P5.8**，复用本阶段槽位与脚本）
 
 P2.5  模拟器与 Android 兼容 🔲
@@ -126,7 +127,7 @@ P5  业务迁移（子阶段见 §1.2）🔲
     └─ P5.8 OTA（复用 P2.4 A/B + make upgrade；产品升级 UI / 两级更新）
 ```
 
-**依赖**：`P1 → P1.5 → P2 → P2.1 → P2.2 → P2.3 → P2.4 → P2.5 → P3` 建议顺序固定（**P2.2 / P2.3** 可与 P2.1 收尾并行筹备，但验收串在 P2.1 之后；**P2.4** 依赖稳定 rootfs/SSH 目标，宜在 P2.3 之后）；**P1.5** 先在真机打通调试模式与 IDE 插件；**P2** 验证 Modbus/GPIO；**P2.1** 把喇叭 / Wi‑Fi / BT / **以太网（RJ45）** / 触控 / **外接键盘** 等 **板级 I/O 先验证完**（避免硬件坑拖到 P5）；**P2.2** 补日期时间 Demo 抽象；**P2.3** 保证硬件偏好重启可恢复；**P2.4** 提前落地 A/B 与 `make upgrade`（免 loader 远程升级）；**P2.5** 再补模拟器与 Android 双目标；**P3.5** 在 P3 板端 smoke 通过后、**P4 开工前**完成（FrostUI/IME 子模块常需更高 Dart/Flutter）；**P4** 可与 P3 并行筹备子模块仓库，但 **合并主 App 前须完成 P3.5**；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（**P5.1 视频** 为多数后续子阶段前置，且假定 **P2.1** 已通 eth0 RJ45；IPC 专链与 RTSP 在 **P5.1** 完成；**P5.8 OTA** 复用 **P2.4** 双分区与升级脚本，不再另建分区方案）。
+**依赖**：`P1 → P1.5 → P2 → P2.1 → P2.2 → P2.3 → P2.4 → P2.5 → P3` 建议顺序固定（**P2.2 / P2.3** 可与 P2.1 收尾并行筹备，但验收串在 P2.1 之后；**P2.4** 依赖稳定 rootfs/SSH 目标，宜在 P2.3 之后）；**P1.5** 先在真机打通调试模式与 IDE 插件；**P2** 验证 Modbus/GPIO；**P2.1** 把喇叭 / Wi‑Fi / BT / **以太网（RJ45）** / 触控 / **外接键盘** 等 **板级 I/O 先验证完**（避免硬件坑拖到 P5）；**P2.2** 补日期时间 Demo 抽象；**P2.3** 保证硬件偏好重启可恢复；**P2.4** 提前落地 A/B（**boot+rootfs**）与 `make upgrade`（免 loader，接近 flash 可更新部分）；**P2.5** 再补模拟器与 Android 双目标；**P3.5** 在 P3 板端 smoke 通过后、**P4 开工前**完成（FrostUI/IME 子模块常需更高 Dart/Flutter）；**P4** 可与 P3 并行筹备子模块仓库，但 **合并主 App 前须完成 P3.5**；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（**P5.1 视频** 为多数后续子阶段前置，且假定 **P2.1** 已通 eth0 RJ45；IPC 专链与 RTSP 在 **P5.1** 完成；**P5.8 OTA** 复用 **P2.4** 双分区与升级脚本，不再另建分区方案）。
 
 ### 1.2 P5 子阶段（业务迁移）
 
@@ -167,9 +168,9 @@ P2.4 + P5.7 ──→ P5.8（量产收尾后交付 OTA；可与 P5.7 后期并�
 
 | 交付 | 主要对照 | 不在本阶段 |
 | ---- | -------- | ---------- |
-| Linux：**A/B rootfs 双槽**（`parameter` / GPT；见 `docs/storage-layout.md`） | Rockchip Buildroot 双系统槽位惯例；misc/slot 标记 | 产品 OTA UI、云端下载编排（**P5.8**） |
-| 主机：`**make upgrade**` 经 **USB-SSH / LAN SSH** 推包、写 inactive 槽、切换、重启 | 对齐现有 `push-app` / `device-shell` 目标发现 | `make flash` / 进 bootloader（仍保留作产线初刷；**flash = 设置全清**） |
-| 板端：校验、原子切换、失败回滚到上一槽；**不碰 userdata / P2.3 偏好** | — | Android 全系统 OTA 重构 |
+| Linux：**A/B `boot` + `rootfs` 成对双槽**（`boot_a/b`、`rootfs_a/b`；见 `docs/storage-layout.md`） | 字母槽 = 同字母 boot+rootfs；misc try-boot / 回滚 | 产品 OTA UI、云端下载编排（**P5.8**） |
+| 主机：`**make upgrade**` 经 **USB-SSH / LAN SSH** 推送**全系统固件包**（至少 **kernel/`boot.img` + rootfs**，可选 oem），写 inactive 字母、切换、重启 | 对齐 `push-app` / `device-shell` 目标发现；**能力接近 `make flash` 的可更新部分** | 进 bootloader；远程写 **U-Boot / MiniLoader**；改 **GPT/`parameter`**（仍用 `make flash`；**flash = 设置全清**） |
+| 板端：校验、**boot+rootfs 原子切换**、失败回滚到上一字母；**不碰 userdata / P2.3 偏好** | — | Android 全系统 OTA 重构 |
 | 预留：**仅更新 app** 路径（`/oem/hmi` 或等价） | lws-ui 两级更新中的 app-only | 完整产品两级 UI（**P5.8**） |
 
 
@@ -344,7 +345,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 | **以太网 eth0（RJ45）**             |        |       | ✓     |       |     | ✓     | **P2.1**：DTS/PHY + link up；**P2.3** 重启 restore；**P5.1**：IPC 专链 / MediaMTX               |
 | **串口 / GPIO 平台适配**             |        | ✓ use | ✓ doc |       |     | ✓     | P2 demo；**P2.1** 台账/pinmux 收口；P2.5 双端；P5 量产                                              |
 | **日期/时间 / RTC**                |        |       |       |       |     | ✓ UI  | **P2.2** Demo + `DateTimeController`；P5 设置页复用；云 NTP 可选                                  |
-| **A/B rootfs + upgrade**       |        |       |       |       |     | ✓ OTA | **P2.4** 双槽 + `make upgrade`；**P5.8** 产品 OTA 复用                                         |
+| **A/B boot+rootfs + upgrade**  |        |       |       |       |     | ✓ OTA | **P2.4** 成对双槽 + `make upgrade`（含内核）；**P5.8** 产品 OTA 复用                              |
 | **OpenCV / yaml-cpp**          | ✓ prep |       |       | ✓ use |     |       | opencv `.cache/` + yaml-cpp BR                                                           |
 | **Avahi / sqlite 等**           | ✓ prep |       |       |       |     | ✓ use | P1 `build-platform-packages`                                                             |
 
@@ -620,7 +621,7 @@ flutter-pi --release /opt/hmi
 | ----------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Buildroot **rootfs overlay** `board/.../lws-hmi-app/` | P1 固定 Hello World                                                                 |
 | **oem** 分区挂载 `/oem/hmi`                               | 便于 **P2.4 / P5.8** 只更新应用（app-only）                                              |
-| `**make upgrade**`（USB-SSH / LAN SSH）                 | **P2.4**：远程写 A/B inactive 槽并切换，**无需进 bootloader**；P5.8 产品 OTA 复用同一板端链路          |
+| `**make upgrade**`（USB-SSH / LAN SSH）                 | **P2.4**：远程写 A/B inactive **字母**（**boot+rootfs**，接近 flash 可更新部分），**无需进 bootloader**；P5.8 复用 |
 | `**make debug-app`**                                  | **P1.5 UI 调试**：在**实体板**以调试模式启动 App，配合 VSCode / Cursor Flutter 插件                  |
 | `**make push-app`**（USB ECM + ssh/scp）                | **P1.5 / P2**：插 USB → 推 `libapp.so` + assets → `systemctl restart hmi`，无需 reflash |
 | `**make push-app`**（Linux emulator）                   | **P2.5 虚拟机迭代**：向加载 `rootfs.img` 的 Linux VM 推送 App                                 |
@@ -1238,7 +1239,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 - **P2.1（板级 I/O 前置，已完成）**：喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 / **外接 USB 键盘·鼠标** / **按需 LAN SSH** 等 **硬件联调与 smoke**；pinmux 台账 `[ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（§4.1.1 键盘、§4.1.2 鼠标）。**不做** 产品设置页、IPC 相机专链、MediaMTX、Flutter 预览。
 - **P2.2**：Demo 日期/时间设置 + 可复用 `DateTimeController`（P5 产品时钟页复用）。
 - **P2.3**：P2.1 硬件偏好 **整机重启后自动恢复**（boot restore）。
-- **P2.4**：A/B 双分区 + `make upgrade`（SSH 远程，免 loader）；**P5.8** 产品 OTA 复用。
+- **P2.4**：A/B **boot+rootfs** + `make upgrade`（SSH 远程，免 loader；**含内核**）；**P5.8** 产品 OTA 复用。
 - **P2.5（模拟器 + Android）**：Flutter App 同时构建 **Linux bundle** 与 **Android APK**；`make emulator` / `make android-emulator`；Modbus Android 兼容（串口 chmod）；**GPIO 优先复用与 Linux 相同的 `gpio_innohi` 文件后端**（见下 **§11.0**）；`make version`、`make build-apk`、`make push-apk` 等。
 
 ### 11.0 GPIO / YNHAPI 策略（P2 → P2.5）
@@ -1324,7 +1325,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | **P2.1** | 喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / **外接键盘·鼠标** / 背光 / LAN SSH **硬件 smoke** | Android 侧同硬件链路；**不含** 设置页 / EasyPlayer / IPC 相机业务                                                                          |
 | **P2.2** | Demo 日期/时间设置 + `DateTimeController` 抽象                       | 产品时钟/时区设置页的平台层；手设壁钟（非完整 NTP 产品流）                                                                                            |
 | **P2.3** | P2.1 硬件偏好 **整机重启后恢复**                                      | 启动后自动恢复 Wi‑Fi / eth0 / 显示等；对齐「设置一次、重启仍有效」                                                                                     |
-| **P2.4** | A/B 双分区 + `make upgrade`（SSH 远程，免 loader）                   | 系统升级底层；对应 lws-ui OTA 中的槽位/刷写能力（无产品 UI）                                                                                         |
+| **P2.4** | A/B **boot+rootfs** + `make upgrade`（SSH 远程，免 loader；含内核） | 系统升级底层（接近 flash 可更新部分）；对应 lws-ui OTA 槽位/刷写（无产品 UI）                                                                      |
 | **P2.5** | Linux + Android 双目标；`emulator` / `android-emulator`；APK 构建与推送    | Modbus 串口 chmod；GPIO **共用** `gpio_innohi` 后端（YNHAPI GPIO 降级）；其它平台 API 可对照 `YNHAPI.jar` / `LedIndicatorManager`；版本号与 APK 签名 |
 | **P3**   | `libai.so` + RKNN/`config.yaml`                                  | `NativeBridge` / `lensinspector` / `AiManager`（原生层）                                                                        |
 | **P4**   | `**frost_ui` + `frost_ime`** 子模块                                 | FrostUI、`IME.md` / frostui specs                                                                                           |
@@ -1539,21 +1540,22 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - 偏好目录：**`/userdata/lws-hmi/`**（`/var/lib/lws-hmi` → symlink，`lws-hmi-prefs-bind.sh`）
 - **保留 / 清除策略**（详见 [`docs/storage-layout.md`](storage-layout.md) §Prefs）：
   - **reboot / `push-app` / HMI restart** → 保留
-  - **`make upgrade`（P2.4 A/B，只换 rootfs 槽）** → **保留**（不得动 userdata）
+  - **`make upgrade`（P2.4 A/B，换 inactive 字母的 boot+rootfs）** → **保留**（不得动 userdata）
   - **`make flash`（产线全量）** → **必须清除**（工厂重置；实现待补 wipe，见 storage-layout）
 - 验收：配置一次 → `reboot` → 无需触屏即可恢复网络/显示等；`restart hmi` / `make push-app` 不断 Wi‑Fi；失败有 journal 可诊断
 
 ### P2.4 — A/B 双分区 + `make upgrade`🔲
 
-**动机**：日常迭代与产线外升级不应依赖进 bootloader 的 `make flash`；产品 OTA（P5.8）只需复用本阶段槽位与脚本。
+**动机**：日常迭代与产线外升级不应依赖进 bootloader 的 `make flash`；远程升级须**尽量覆盖 flash 能更新的运行时固件**（含 **内核**），产品 OTA（P5.8）复用本阶段槽位与脚本。
 
-- `board/parameter-buildroot-fit.txt`：rootfs **A/B** 双槽；更新 `docs/storage-layout.md` 与 kernel `root=` / slot 选择
-- 板端：写 inactive 槽 → 校验 → 切换 boot 标记 → reboot；失败可回滚到上一槽
+- `board/parameter-buildroot-fit.txt`：**`boot_a`/`boot_b` + `rootfs_a`/`rootfs_b`** 成对双槽；更新 `docs/storage-layout.md` 与字母槽 boot/`root=` 选择
+- **全系统包**：至少 **`boot.img`（内核 FIT）+ `rootfs.img`**（+ digest）；可选 oem；**不**经 SSH 写 U-Boot/MiniLoader、**不**改 GPT
+- 板端：写 inactive **字母**的 boot+rootfs → 校验 → try-boot → reboot → 确认或回滚到上一字母
 - 主机：`make upgrade` 经 **USB-SSH** 或 `make connect` **LAN SSH** 推送并触发（复用 `device-target` / `ssh-devices`）
-- **userdata 不变**：升级 **不得** 格式化 userdata 或删除 `/userdata/lws-hmi`（P2.3 设置随升级保留）；与 **`make flash` 全量重置** 相对
-- 预留 app-only（`/oem/hmi`）路径；全系统槽位更新先验收
+- **userdata 不变**：升级 **不得** 格式化 userdata 或删除 `/userdata/lws-hmi`；与 **`make flash` 全量重置** 相对
+- 预留 app-only（`/oem/hmi`）路径；全系统（boot+rootfs）字母更新先验收
 - **不做** Upgrade 业务页 / 云下载（**P5.8**）
-- 验收：SSH 可达时完成一次槽位切换并正常启动 HMI；坏包不破坏当前槽；升级前后 Wi‑Fi 等偏好仍在
+- 验收：SSH 可达时完成一次**含内核**的字母切换并正常启动 HMI；坏包不破坏当前字母；升级前后 Wi‑Fi 等偏好仍在
 
 ### P2.5 — 模拟器与 Android 兼容 🔲
 
@@ -1698,7 +1700,7 @@ make apply-overlay
 make build-rootfs
 make build-img
 make flash                 # 产线/首次换 GPT；日常迭代用 upgrade
-make upgrade               # USB-SSH 或已 make connect 的 LAN 目标
+make upgrade               # USB-SSH 或已 make connect；全系统含 boot.img+rootfs.img
 
 # 6. P2.5 Linux emulator
 make emulator

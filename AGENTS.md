@@ -65,11 +65,11 @@ More detail: [`docs/build-optimization.md`](docs/build-optimization.md), [`app/R
 **Pipeline rules (do not get wrong):**
 
 - `make build-app` updates overlay `/opt/hmi` and runs `apply-overlay`; it does **not** rebuild rootfs.
-- `make build-kernel` builds two hash-valid FITs containing the same Linux kernel: `boot.img` selects `rootfs_a`; `boot_b.img` selects `rootfs_b`.
-- `make build-rootfs` bakes fs-overlay (including `/opt/hmi`) into rootfs.
+- `make build-kernel` builds two hash-valid FITs containing the same Linux kernel: `boot.img` selects `rootfs_a`; `boot_b.img` selects `rootfs_b`. Publishes them to `output/firmware/` (macOS Docker volume auto-export).
+- `make build-rootfs` bakes fs-overlay (including `/opt/hmi`) into rootfs and publishes `output/firmware/rootfs.img`.
 - `make build-img` does **not** compile kernel or rootfs; it packages existing loader/U-Boot/misc/dual-FIT/rootfs artifacts into factory `output/firmware/update.img`.
 - Full-system `make upgrade` does **not** send `update.img`; it transfers `boot.img`, `boot_b.img`, and `rootfs.img`, returns when board apply reports `apply.status=ok` (reboot requested) or SSH drops, and intentionally does not wait for post-reboot SSH or health.
-- Prefer `make upgrade` for daily iteration after the board has the P2.4 GPT/helpers. Always run `make build-img` when producing a release/factory artifact; use `make reboot-loader` then `make flash` when validating that artifact.
+- Prefer `make upgrade` for daily iteration after the board has the P2.4 GPT/helpers. Always run `make build-img` when producing a release/factory artifact; use `make reboot-loader` then `make flash` when validating that artifact. Do **not** require a manual `make docker-export-artifacts` after kernel/rootfs builds.
 
 ## Rebuild instructions for the user (required)
 

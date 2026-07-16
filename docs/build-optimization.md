@@ -33,7 +33,8 @@ make build
 ```
 
 Runs in order: `check-prebuilt` → `apply-overlay` → `lunch` → `build-boot-logo` →
-`build-app` → `build-kernel` → `build-rootfs` → `build-img` → **`output/firmware/update.img` on host** (macOS: auto-export from Docker volume after `build-img` / `build-kernel`).
+`build-app` → `build-kernel` → `build-rootfs` → `build-img` → **`output/firmware/update.img` on host**.
+`build-kernel` / `build-rootfs` / `build-img` each publish their own imgs (`boot` / `rootfs` / `update`); daily A/B uses `upgrade` without `build-img`.
 
 **Daily iteration** — run only the stage you changed:
 
@@ -45,17 +46,18 @@ make build-boot-logo
 make build-app
 make build-rootfs
 make build-kernel
-make build-img
-make flash
+make upgrade
 ```
+
+For factory USB flash instead of A/B OTA, end with `make build-img` then `make flash` (reuses existing boot/rootfs; does not rebuild them).
 
 Daily:
 
 | Change | Run |
 |--------|-----|
-| App | `make build-app` → `make build-rootfs` → `make build-img` → `make flash` |
-| Kernel / DTS / logo | `make build-kernel` → `make build-img` → `make flash` |
-| Defconfig / overlay | `make apply-overlay` → `make build-rootfs` → `make build-img` → `make flash` |
+| App | `make build-app` → `make build-rootfs` → `make upgrade` |
+| Kernel / DTS / logo | `make build-kernel` → `make upgrade` |
+| Defconfig / overlay | `make apply-overlay` → `make build-rootfs` → `make upgrade` |
 
 See [`AGENTS.md`](AGENTS.md) for the full path → command mapping for agents.
 

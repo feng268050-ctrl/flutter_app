@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Pack output/firmware/update.img — SDK ynh960 Linux (compiled uboot + zero misc).
+# Pack output/firmware/update.img from existing loader + dual FIT + rootfs.
+# Does NOT rebuild kernel or rootfs — run make build-kernel / build-rootfs first.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -157,12 +158,12 @@ pack_in_sdk() {
   ensure_sdk_uboot "$sdk" "$firmware"
   install_misc "$sdk" "$firmware"
 
-  [[ -r "$firmware/boot.img" ]] || die "boot.img (rootfs_a FIT) missing — run make build-kernel"
-  [[ -r "$firmware/boot_b.img" ]] || die "boot_b.img (rootfs_b FIT) missing — run make build-kernel"
+  [[ -r "$firmware/boot.img" ]] || die "boot.img (rootfs_a FIT) missing — run make build-kernel (does not rebuild here)"
+  [[ -r "$firmware/boot_b.img" ]] || die "boot_b.img (rootfs_b FIT) missing — run make build-kernel (does not rebuild here)"
   rootfs_img="$firmware/rootfs.img"
   [[ -r "$rootfs_img" ]] || rootfs_img="$(find "$sdk/buildroot/output" -name 'rootfs.ext2' -print -quit 2>/dev/null || true)"
   [[ -n "$rootfs_img" && -r "$rootfs_img" ]] \
-    || die "rootfs missing — run make build-rootfs"
+    || die "rootfs missing — run make build-rootfs (does not rebuild here)"
 
   boot_bytes="$(wc -c <"$firmware/boot.img" | tr -d ' ')"
   echo "Firmware inputs:"
@@ -196,7 +197,7 @@ export LWS_HMI_PACK_IMG=1
 bash "$ROOT/scripts/docker-run.sh" \
   bash -c 'export LWS_HMI_PACK_IMG=1; bash /work/lws-hmi/scripts/build-img.sh'
 
-bash "$ROOT/scripts/docker-export-artifacts.sh" firmware
+bash "$ROOT/scripts/docker-export-artifacts.sh" update
 
 if [[ -r "$UPDATE_IMG" ]]; then
   echo ""

@@ -53,7 +53,7 @@ make flash
 
 1. `make docker-volume-init` — copy host SDK → volume (once)
 2. `make apply-overlay` / `make build-*` — repo bind-mounted into container; build in volume
-3. `make build-kernel` / `make build-rootfs` / `make build-img` — auto-export firmware artifacts to host (`boot.img`, `boot_b.img`, `rootfs.img`, and factory `update.img`)
+3. `make build-kernel` / `make build-rootfs` / `make build-img` — each publishes its own artifacts to host `output/firmware/` (`boot.img`+`boot_b.img`, `rootfs.img`, and factory `update.img`). Daily `make upgrade` only needs kernel/rootfs builds — not `build-img` or a manual export.
 
 ---
 
@@ -119,8 +119,8 @@ make show-config
 
 Firmware stage outputs:
 
-- `make build-kernel` builds two independently hashed FIT images containing the same Linux kernel: `boot.img` selects `rootfs_a`, while `boot_b.img` selects `rootfs_b`.
-- `make build-rootfs` builds `rootfs.img`.
+- `make build-kernel` builds two independently hashed FIT images containing the same Linux kernel: `boot.img` selects `rootfs_a`, while `boot_b.img` selects `rootfs_b`. Publishes both to `output/firmware/`.
+- `make build-rootfs` builds `rootfs.img` and publishes it to `output/firmware/`.
 - `make build-img` does **not** compile the kernel or rootfs. It packages the existing loader, U-Boot, misc, both FIT images, and rootfs into `output/firmware/update.img` for `make flash`.
 - Full-system `make upgrade` does **not** transfer `update.img`. It transfers `boot.img`, `boot_b.img`, and `rootfs.img` plus the matching board apply helpers, writes the inactive A/B system, and returns when board apply reports `apply.status=ok` (reboot requested) or SSH disconnects. Staging the matching helpers lets safety fixes migrate without first modifying the active rootfs. The command then tells the operator to wait for the device to finish restarting before reconnecting.
 
@@ -312,7 +312,7 @@ make migrate-buildroot-output
 
 Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 
-`make build-img` / `make build-kernel` export `output/firmware/` from the Docker volume to the host automatically (macOS). `make docker-volume-pull` is a legacy alias for full `linux-sdk/output/` export.
+`make build-kernel` / `make build-rootfs` / `make build-img` each publish their matching files under `output/firmware/` from the Docker volume (macOS). Manual `make docker-export-artifacts` is legacy; prefer `SCOPE=boot|rootfs|update|firmware` only when debugging. `make docker-volume-pull` is a legacy alias for full `linux-sdk/output/` export.
 
 ---
 

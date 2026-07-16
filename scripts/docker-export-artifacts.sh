@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
-# macOS Docker volume: copy build artifacts from the ephemeral SDK volume → host.
+# Publish firmware artifacts to host output/firmware/ for make upgrade / flash.
 #
-# Principle: host inputs (repo, SDK tree) go into Docker; host-consumed outputs
-# (firmware/, flash images) are exported when a build step finishes — not on demand at flash time.
+# macOS Docker volume: copy selected files from the volume (dereferenced).
+# Linux / bind-mount: copy from linux-sdk/output/firmware to repo output/firmware.
+#
+# Scopes (avoid full-tree --delete so boot/rootfs exports do not clobber each other):
+#   boot     — boot.img + boot_b.img
+#   rootfs   — rootfs.img (+ rootfs.ext2 / rootfs.ext4 if present)
+#   update   — update.img (+ loader/uboot/misc/parameter when present)
+#   firmware — all known flash/upgrade inputs (legacy full sync)
+#   output   — full linux-sdk/output/ (legacy; still ends with firmware publish)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -25,18 +32,84 @@ uses_docker_volume() {
 	docker volume inspect "$VOLUME" >/dev/null 2>&1
 }
 
-export_firmware_from_volume() {
+# Space-separated basenames (bash 3.2-safe; no mapfile).
+files_for_scope() {
+	case "$1" in
+	boot) echo "boot.img boot_b.img" ;;
+	rootfs) echo "rootfs.img rootfs.ext2 rootfs.ext4" ;;
+	update) echo "update.img MiniLoaderAll.bin uboot.img misc.img parameter.txt" ;;
+	firmware)
+		echo "update.img boot.img boot_b.img rootfs.img rootfs.ext2 rootfs.ext4 MiniLoaderAll.bin uboot.img misc.img parameter.txt"
+		;;
+	*)
+		echo "ERROR: unknown export scope: $1" >&2
+		return 1
+		;;
+	esac
+}
+
+publish_sizes() {
+	local lws_fw="$ROOT/output/firmware"
+	local f
+	local any=0
+	for f in "$@"; do
+		if [[ -r "$lws_fw/$f" ]]; then
+			any=1
+			bash "$SIZE_HELPER" "$lws_fw/$f"
+		fi
+	done
+	[[ "$any" -eq 1 ]] || {
+		echo "ERROR: no exported files under $lws_fw for: $*" >&2
+		return 1
+	}
+}
+
+# Copy listed firmware basenames from SDK firmware dir → host paths (dereference).
+publish_from_host_sdk() {
 	local host_sdk="$1"
+	shift
+	local src_fw="$host_sdk/output/firmware"
+	local lws_fw="$ROOT/output/firmware"
+	local f src
+	local found=0
+
+	mkdir -p "$src_fw" "$lws_fw"
+	echo "firmware-export: $src_fw → $lws_fw (${*})"
+	for f in "$@"; do
+		src="$src_fw/$f"
+		if [[ -e "$src" ]]; then
+			found=1
+			rm -f "$lws_fw/$f"
+			cp -Lf "$src" "$lws_fw/$f"
+		fi
+	done
+	[[ "$found" -eq 1 ]] || {
+		echo "ERROR: none of [$*] found under $src_fw — build step incomplete?" >&2
+		return 1
+	}
+	publish_sizes "$@"
+}
+
+publish_from_volume() {
+	local host_sdk="$1"
+	shift
 	local host_fw="$host_sdk/output/firmware"
 	local lws_fw="$ROOT/output/firmware"
+	local list=""
+	local f
+
+	for f in "$@"; do
+		list="${list}${f}"$'\n'
+	done
 
 	mkdir -p "$host_fw" "$lws_fw"
+	echo "docker-export: volume:$VOLUME firmware → host (${*})"
 
-	echo "docker-export: volume:$VOLUME /work/sdk/output/firmware → host"
 	docker run --rm --platform "$PLATFORM" \
 		-v "$VOLUME:/work/sdk:ro" \
 		-v "$host_fw:/dest-sdk-firmware" \
 		-v "$lws_fw:/dest-lws-firmware" \
+		-e "EXPORT_FILES=$list" \
 		"$IMAGE" \
 		bash -c '
 			set -euo pipefail
@@ -44,24 +117,24 @@ export_firmware_from_volume() {
 				echo "docker-export: no /work/sdk/output/firmware in volume (build not run yet?)" >&2
 				exit 1
 			fi
-			rsync -a --delete /work/sdk/output/firmware/ /dest-sdk-firmware/
-			rsync -a --delete /work/sdk/output/firmware/ /dest-lws-firmware/
-			# SDK firmware entries are often symlinks into the volume tree; dereference
-			# flash-critical files so the host bind mount is not left with broken links.
-			for f in update.img boot.img boot_b.img rootfs.img rootfs.ext2 rootfs.ext4 MiniLoaderAll.bin uboot.img misc.img parameter.txt; do
+			found=0
+			while IFS= read -r f; do
+				[[ -n "$f" ]] || continue
 				if [[ -e /work/sdk/output/firmware/$f ]]; then
-					rm -f "/dest-lws-firmware/$f"
+					found=1
+					rm -f "/dest-sdk-firmware/$f" "/dest-lws-firmware/$f"
+					cp -Lf "/work/sdk/output/firmware/$f" "/dest-sdk-firmware/$f"
 					cp -Lf "/work/sdk/output/firmware/$f" "/dest-lws-firmware/$f"
 				fi
-			done
+			done <<< "$EXPORT_FILES"
+			if [[ "$found" -ne 1 ]]; then
+				echo "docker-export: none of the requested files exist in volume firmware/" >&2
+				echo "$EXPORT_FILES" >&2
+				exit 1
+			fi
 		'
 
-	echo "docker-export: host paths"
-	for f in update.img boot.img boot_b.img rootfs.img rootfs.ext2 rootfs.ext4 MiniLoaderAll.bin uboot.img misc.img parameter.txt; do
-		if [[ -r "$lws_fw/$f" ]]; then
-			bash "$SIZE_HELPER" "$lws_fw/$f"
-		fi
-	done
+	publish_sizes "$@"
 }
 
 export_output_from_volume() {
@@ -73,22 +146,13 @@ export_output_from_volume() {
 		-v "$host_sdk/output:/dest" \
 		"$IMAGE" \
 		rsync -rlptD --no-xattrs --omit-dir-times --info=progress2 /work/sdk/output/ /dest/
-	# Flash / audit default to lws-hmi/output/firmware — keep in sync.
-	export_firmware_from_volume "$host_sdk"
+	# shellcheck disable=SC2086
+	publish_from_volume "$host_sdk" $(files_for_scope firmware)
 }
 
 main() {
 	local scope="${1:-firmware}"
 	local host_sdk
-
-	if ! uses_docker_volume; then
-		exit 0
-	fi
-
-	if ! docker info >/dev/null 2>&1; then
-		echo "ERROR: Docker daemon is not running." >&2
-		exit 1
-	fi
 
 	host_sdk="$(resolve_host_sdk)"
 	if [[ -z "$host_sdk" || ! -d "$host_sdk" ]]; then
@@ -97,13 +161,36 @@ main() {
 	fi
 
 	case "$scope" in
-	firmware) export_firmware_from_volume "$host_sdk" ;;
-	output) export_output_from_volume "$host_sdk" ;;
+	output)
+		if uses_docker_volume; then
+			if ! docker info >/dev/null 2>&1; then
+				echo "ERROR: Docker daemon is not running." >&2
+				exit 1
+			fi
+			export_output_from_volume "$host_sdk"
+		else
+			echo "firmware-export: scope=output is a no-op without Docker volume"
+		fi
+		return 0
+		;;
+	boot | rootfs | update | firmware) ;;
 	*)
-		echo "Usage: $0 {firmware|output}" >&2
+		echo "Usage: $0 {boot|rootfs|update|firmware|output}" >&2
 		exit 1
 		;;
 	esac
+
+	if uses_docker_volume; then
+		if ! docker info >/dev/null 2>&1; then
+			echo "ERROR: Docker daemon is not running." >&2
+			exit 1
+		fi
+		# shellcheck disable=SC2086
+		publish_from_volume "$host_sdk" $(files_for_scope "$scope")
+	else
+		# shellcheck disable=SC2086
+		publish_from_host_sdk "$host_sdk" $(files_for_scope "$scope")
+	fi
 }
 
 main "$@"

@@ -69,7 +69,7 @@ help:
 	@echo "  make docker-image          # build lws-hmi-builder container image"
 	@echo "  make docker-volume-init    # (1) copy host SDK → Docker volume — once"
 	@echo "  make docker-volume-sync    # refresh host SDK/overlay into volume before build"
-	@echo "  make docker-export-artifacts # (3) volume firmware → host (auto after build-img/kernel)"
+	@echo "  make docker-export-artifacts # manual/legacy: SCOPE=boot|rootfs|update|firmware (auto after builds)"
 	@echo "  make docker-volume-pull    # alias: export full linux-sdk/output/ (legacy)"
 	@echo "  make docker-volume-status  # show volume mount and SDK tree status"
 	@echo ""
@@ -80,9 +80,9 @@ help:
 	@echo "  make build-boot-logo       # board/logo → logo.bmp (kernel FIT splash)"
 	@echo "  make build-app             # release app (AOT) → fs-overlay /opt/hmi + apply-overlay"
 	@echo "  make build-debug-app       # debug app bundle → .cache (make debug-app / IDE; rarely run alone)"
-	@echo "  make build-kernel          # kernel, DTB, boot.img (DTS / logo changes)"
-	@echo "  make build-rootfs          # rootfs.tar (enabled defconfig packages + fs-overlay)"
-	@echo "  make build-img             # pack update.img from loader + boot + rootfs"
+	@echo "  make build-kernel          # dual FIT → output/firmware/boot.img + boot_b.img (exports; for upgrade)"
+	@echo "  make build-rootfs          # rootfs → output/firmware/rootfs.img (exports; for upgrade)"
+	@echo "  make build-img             # pack update.img only (reuses existing boot/rootfs; no rebuild)"
 	@echo "  make sdk-shell             # interactive shell in linux-sdk (native Linux or macOS Docker)"
 	@echo "  See docs/build-optimization.md"
 	@echo ""
@@ -155,9 +155,9 @@ help:
 	@echo "  DOCKER_PLATFORM=$(DOCKER_PLATFORM)"
 	@echo ""
 	@echo "Notes:"
-	@echo "  - macOS Docker: init volume → build in Docker → artifacts auto-export to host (see docker-export-artifacts)."
-	@echo "  - Full firmware: make build (or build-img after rootfs/kernel changes)."
-	@echo "  - MaskROM flash: make flash (uses output/firmware/update.img on host)."
+	@echo "  - Daily A/B: make build-kernel and/or build-rootfs then make upgrade (no build-img)."
+	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ (no manual export)."
+	@echo "  - Factory flash: make build-img packs update.img from existing boot/rootfs; then make flash."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
 
 # --- Setup ---
@@ -186,7 +186,7 @@ docker-volume-pull:
 	@bash scripts/docker-volume.sh pull
 
 docker-export-artifacts:
-	@bash scripts/docker-export-artifacts.sh firmware
+	@bash scripts/docker-export-artifacts.sh $${SCOPE:-firmware}
 
 docker-volume-status:
 	@bash scripts/docker-volume.sh status
@@ -213,12 +213,13 @@ build: check-prebuilt apply-overlay lunch build-boot-logo build-app build-kernel
 
 build-kernel:
 	@bash scripts/docker-run.sh bash -lc 'bash /work/lws-hmi/scripts/sync-lunch-config.sh && bash /work/lws-hmi/scripts/build-kernel-ab.sh'
-	@bash scripts/docker-export-artifacts.sh firmware
+	@bash scripts/docker-export-artifacts.sh boot
 
 build-rootfs: check-prebuilt
 	@bash scripts/docker-run.sh ./build.sh rootfs
 	@bash scripts/lws-hmi-rootfs-postprocess.sh
 	@bash scripts/verify-rootfs-overlay.sh
+	@bash scripts/docker-export-artifacts.sh rootfs
 
 build-img:
 	@bash scripts/build-img.sh

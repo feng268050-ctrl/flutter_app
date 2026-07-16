@@ -88,14 +88,14 @@ fi
 BOOT_IMG="$FIRMWARE/boot.img"
 BOOT_B_IMG="$FIRMWARE/boot_b.img"
 ROOTFS_IMG="$FIRMWARE/rootfs.img"
-[[ -f "$BOOT_IMG" ]] || die "missing $BOOT_IMG — run: make build-img (or build-kernel)"
+[[ -f "$BOOT_IMG" ]] || die "missing $BOOT_IMG — run: make build-kernel"
 [[ -f "$BOOT_B_IMG" ]] || die "missing $BOOT_B_IMG — run: make build-kernel"
 [[ -f "$ROOTFS_IMG" ]] || {
 	# docker-export may leave rootfs only under SDK; try common alt
 	if [[ -f "$ROOT/output/firmware/rootfs.ext2" ]]; then
 		ROOTFS_IMG="$ROOT/output/firmware/rootfs.ext2"
 	else
-		die "missing $FIRMWARE/rootfs.img — run: make build-rootfs && make build-img"
+		die "missing $FIRMWARE/rootfs.img — run: make build-rootfs"
 	fi
 }
 

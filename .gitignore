@@ -6,6 +6,7 @@ overlay/buildroot/.generated/
 # Host SDKs (real dirs at repo root)
 flutter-sdk/
 linux-sdk/
+.linux-sdk.extracting.*/
 .host-deps/
 
 # adb pull backups (regenerate with make pull-display-params)

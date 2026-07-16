@@ -9,7 +9,14 @@ Buildroot + **ynh960** (Innohi **RK3566**) on the Rockchip Linux 6.1 SDK.
 
 ## Prerequisites
 
-- Rockchip Linux SDK copied to repo-root `linux-sdk/` (gitignored)
+- Rockchip Linux SDK under repo-root `linux-sdk/` (gitignored). From Innohi xz split volumes:
+
+```bash
+make extract-linux-sdk SRC=/path/to/rk356x_linux6.1_…
+# or: make extract-linux-sdk /path/to/rk356x_linux6.1_…
+# replace existing tree: FORCE=1 make extract-linux-sdk SRC=…
+```
+
 - Host Flutter SDK at repo-root `flutter-sdk/` (gitignored; run `make fetch-flutter-sdk`; override with `FLUTTER_SDK` in `.env`)
 - **Linux:** Ubuntu 22.04+ on ext4; Rockchip build deps (see `docker/Dockerfile` package list)
 - **macOS:** Docker Desktop (Apple Silicon: enable Rosetta for `linux/amd64`)
@@ -52,6 +59,7 @@ Run `make help` for the full target list. Stages below are **one command per lin
 ### Setup (once per machine)
 
 ```bash
+make extract-linux-sdk SRC=/path/to/rk356x_linux6.1_…
 make setup
 make fetch-flutter-sdk
 make apply-overlay
@@ -80,6 +88,7 @@ make check-prebuilt
 Individual buckets:
 
 ```bash
+make extract-linux-sdk SRC=/path/to/rk356x_linux6.1_…
 make build-dev-deps
 make build-runtime-deps
 make fetch-flutter-sdk

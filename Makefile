@@ -29,7 +29,16 @@ $(SSH_DEVICE_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt pull-display-params audit devices connect disconnect push-app reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
+# Positional path for: make extract-linux-sdk /path/to/sdk-volumes
+ifneq ($(filter extract-linux-sdk,$(firstword $(MAKECMDGOALS))),)
+  EXTRACT_LINUX_SDK_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  ifneq ($(EXTRACT_LINUX_SDK_ARGS),)
+$(EXTRACT_LINUX_SDK_ARGS):
+	@:
+  endif
+endif
+
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -78,6 +87,7 @@ help:
 	@echo "  See docs/build-optimization.md"
 	@echo ""
 	@echo "Dependencies (prebuilt / fetch — run before first make build-rootfs):"
+	@echo "  make extract-linux-sdk SRC=<dir>  # xz split volumes → linux-sdk/ (FORCE=1 to replace)"
 	@echo "  make check-prebuilt        # verify prebuilt for enabled defconfig fragments"
 	@echo "  make build-deps            # build-dev-deps + build-runtime-deps"
 	@echo "  make build-dev-deps        # dev host: FLUTTER_SDK + RKNN-Toolkit"
@@ -244,6 +254,11 @@ build-uboot:
 	@bash scripts/build-uboot.sh
 
 # --- Dependencies ---
+
+# SRC=/path/to/volumes or: make extract-linux-sdk /path/to/volumes
+# FORCE=1 replaces an existing linux-sdk/
+extract-linux-sdk:
+	@SRC='$(SRC)' FORCE='$(FORCE)' DEST='$(DEST)' bash scripts/extract-linux-sdk.sh $(EXTRACT_LINUX_SDK_ARGS)
 
 check-prebuilt:
 	@bash scripts/check-prebuilt.sh

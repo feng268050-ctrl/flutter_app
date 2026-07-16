@@ -18,6 +18,7 @@ make extract-linux-sdk SRC=/path/to/rk356x_linux6.1_…
 ```
 
 - Host Flutter SDK at repo-root `flutter-sdk/` (gitignored; run `make fetch-flutter-sdk`; override with `FLUTTER_SDK` in `.env`)
+- **Git LFS is required:** install it before cloning when possible (`brew install git-lfs` on macOS or `sudo apt install git-lfs` on Ubuntu), then run `git lfs install` and `git lfs pull` inside the repository
 - **Linux:** Ubuntu 22.04+ on ext4; Rockchip build deps (see `docker/Dockerfile` package list)
 - **macOS:** Docker Desktop (Apple Silicon: enable Rosetta for `linux/amd64`)
 
@@ -25,6 +26,8 @@ make extract-linux-sdk SRC=/path/to/rk356x_linux6.1_…
 
 ```bash
 cd ~/Workspace/lws-hmi
+git lfs install
+git lfs pull
 make setup
 make build-deps
 make build
@@ -37,6 +40,8 @@ On macOS, add `make flash` after `make build` (see below).
 
 ```bash
 cd ~/Workspace/lws-hmi
+git lfs install
+git lfs pull
 make setup
 make docker-volume-init
 make build-deps
@@ -59,6 +64,8 @@ Run `make help` for the full target list. Stages below are **one command per lin
 ### Setup (once per machine)
 
 ```bash
+git lfs install
+git lfs pull
 make extract-linux-sdk SRC=/path/to/rk356x_linux6.1_…
 make setup
 make fetch-flutter-sdk
@@ -375,16 +382,36 @@ Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 �
 
 仍待移植：**lensinspector 源码**、`probe-dual-stream.sh`、完整 mediamtx YAML 渲染逻辑、IPC 专链 eth0 配网（Dart/脚本移植 lws-ui `CameraEth0Configurator`，**P5.1**）。
 
-### Git LFS (recommended)
+### Git LFS (required)
 
-Large binaries under `prebuilt/` are listed in `.gitattributes` for Git LFS. Before the first commit of prebuilt artifacts:
+Large runtime binaries under `prebuilt/` are stored with Git LFS and are required to build a bootable HMI rootfs. Install Git LFS before cloning when possible:
 
 ```bash
+brew install git-lfs
+# Ubuntu: sudo apt install git-lfs
 git lfs install
-git add .gitattributes prebuilt/
+git lfs pull
 ```
 
-Without LFS, large binaries under `prebuilt/` may be too heavy for plain git. The **host Flutter SDK** (~1 GB) lives in gitignored `flutter-sdk/` at the repo root; run `make fetch-flutter-sdk` to populate it (override path with `FLUTTER_SDK` in `.env`).
+For an existing clone, install Git LFS and run the same `git lfs install` / `git lfs pull` commands in the repository. Verify the checkout with:
+
+```bash
+git lfs ls-files
+```
+
+Each listed file must have `*` before its path. Files such as `libflutter_engine.so` that are only about 130 bytes are LFS pointer text, not usable binaries. A build made from pointer files can produce an abnormally small `rootfs.img` / `update.img` and a system with no HMI, even if `make check-prebuilt` reports success. After repairing an already-built checkout, discard the contaminated Buildroot output and rebuild only rootfs and the factory image:
+
+```bash
+make clean-buildroot-output
+make apply-overlay
+make lunch
+make build-rootfs
+make build-img
+```
+
+`make build-img` reuses existing `boot.img` and `boot_b.img`; if either is missing, run `make build-kernel` before `make build-img`.
+
+The **host Flutter SDK** (~1 GB) is separate from Git LFS and lives in gitignored `flutter-sdk/` at the repo root; run `make fetch-flutter-sdk` to populate it (override path with `FLUTTER_SDK` in `.env`).
 
 ### Buildroot `dl/` (generic packages)
 

@@ -446,7 +446,7 @@ loader:
 flash:
 	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh flash)
 
-ANDROID_IMG ?= $(HOME)/Downloads/MuJia_960_rk356x_11.0_20260617_1047.img
+ANDROID_IMG ?= $(CURDIR)/images/android/update.img
 
 flash-android:
 	@$(call WITH_DOTENV,UPDATE_IMG='$(ANDROID_IMG)' bash scripts/flash-usb.sh flash)

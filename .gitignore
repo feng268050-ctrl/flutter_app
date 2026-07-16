@@ -3,6 +3,9 @@ output/
 .cache/
 overlay/buildroot/.generated/
 
+# Local firmware images (e.g. Android update.img for make flash-android)
+images/
+
 # Host SDKs (real dirs at repo root)
 flutter-sdk/
 linux-sdk/

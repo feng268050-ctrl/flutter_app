@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 UPGRADE_TOOL="$ROOT/tools/upgrade_tool/upgrade_tool"
-ANDROID_IMG="${ANDROID_UPDATE_IMG:-$HOME/Downloads/MuJia_960_rk356x_11.0_20260617_1047.img}"
+ANDROID_IMG="${ANDROID_UPDATE_IMG:-$ROOT/images/android/update.img}"
 OUT_DIR="$ROOT/output/firmware/android-boot"
 TMP_DIR="$(mktemp -d)"
 

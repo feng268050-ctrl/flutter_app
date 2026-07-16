@@ -40,11 +40,23 @@ install_file_follow() {
   cp -Lf "$src" "$dest"
 }
 
+install_images_linux() {
+  local dest_dir="$ROOT/images/linux"
+  local dest="$dest_dir/update.img"
+  mkdir -p "$dest_dir"
+  # Real file (not symlink) so Finder / cp -a copy the image bytes.
+  rm -f "$dest"
+  cp -fL "$UPDATE_IMG" "$dest"
+  echo "images/linux/update.img: real copy of output/firmware/update.img"
+  bash "$SIZE_HELPER" "$dest"
+}
+
 install_update_img() {
   local src="$1"
   install_file_follow "$src" "$UPDATE_IMG"
   echo "update.img ready: $UPDATE_IMG"
   bash "$SIZE_HELPER" "$UPDATE_IMG"
+  install_images_linux
 }
 
 link_parameter() {
@@ -180,6 +192,7 @@ if [[ -r "$UPDATE_IMG" ]]; then
   echo ""
   echo "Host firmware ready:"
   bash "$SIZE_HELPER" "$UPDATE_IMG"
+  install_images_linux
 else
   die "update.img missing at $UPDATE_IMG after build-img + export"
 fi

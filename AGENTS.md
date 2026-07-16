@@ -38,10 +38,9 @@ make check-prebuilt
 Daily iteration examples (one command per line; run in order):
 
 ```bash
-# Flutter app (app/hmi/)
+# Flutter app only (board already has a working rootfs)
 make build-app
-make build-rootfs
-make upgrade
+make push-app
 
 # Kernel / DTS / boot logo
 make build-boot-logo
@@ -65,11 +64,12 @@ More detail: [`docs/build-optimization.md`](docs/build-optimization.md), [`app/R
 **Pipeline rules (do not get wrong):**
 
 - `make build-app` updates overlay `/opt/hmi` and runs `apply-overlay`; it does **not** rebuild rootfs.
+- App-only daily iteration: `make build-app` then `make push-app` (SSH hot-swap `/opt/hmi`). Do **not** require `build-rootfs` / `upgrade` unless baking the app into a release image or the board lacks a pushable HMI.
 - `make build-kernel` builds two hash-valid FITs containing the same Linux kernel: `boot.img` selects `rootfs_a`; `boot_b.img` selects `rootfs_b`. Publishes them to `output/firmware/` (macOS Docker volume auto-export).
 - `make build-rootfs` bakes fs-overlay (including `/opt/hmi`) into rootfs and publishes `output/firmware/rootfs.img`.
 - `make build-img` does **not** compile kernel or rootfs; it packages existing loader/U-Boot/misc/dual-FIT/rootfs artifacts into factory `output/firmware/update.img`.
 - Full-system `make upgrade` does **not** send `update.img`; it transfers `boot.img`, `boot_b.img`, and `rootfs.img`, returns when board apply reports `apply.status=ok` (reboot requested) or SSH drops, and intentionally does not wait for post-reboot SSH or health.
-- Prefer `make upgrade` for daily iteration after the board has the P2.4 GPT/helpers. Always run `make build-img` when producing a release/factory artifact; use `make reboot-loader` then `make flash` when validating that artifact. Do **not** require a manual `make docker-export-artifacts` after kernel/rootfs builds.
+- Prefer `make upgrade` for rootfs/kernel daily iteration after the board has the P2.4 GPT/helpers. Always run `make build-img` when producing a release/factory artifact; use `make reboot-loader` then `make flash` when validating that artifact. Do **not** require a manual `make docker-export-artifacts` after kernel/rootfs builds.
 
 ## Rebuild instructions for the user (required)
 
@@ -77,12 +77,12 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 
 | What changed | Commands |
 |--------------|----------|
-| `app/hmi/**`, `scripts/build-app.sh` | `make build-app`, `make build-rootfs`, `make upgrade` |
+| `app/hmi/**`, `scripts/build-app.sh`, `scripts/push-app.sh` | `make build-app`, `make push-app` |
+| Bake app into rootfs / A/B image (release or no push path) | `make build-app`, `make build-rootfs`, `make upgrade` |
 | `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make upgrade` |
 | `overlay/kernel/**`, kernel DTS | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
 | `overlay/.../lws-hmi-fs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | USB plug-ssh (`overlay/kernel/**` + fs-overlay scripts/units) | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
-| `scripts/push-app.sh` only (app already on device) | `make build-app`, `make push-app` |
 | `scripts/device-logs.sh` only (host log streaming) | none |
 | `scripts/debug-app*.sh`, `scripts/debug-host-prepare.sh`, `scripts/debug-custom-device/**`, `scripts/debug-setup.sh`, `scripts/build-debug-app.sh` (host only; board already has P1.5 overlay) | `make debug-setup`, `make debug-app` |
 | `overlay/.../lws-hmi-fs-overlay/**` debug scripts (`hmi-launch.sh`, `debug-app-*`, `hmi.service`) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
@@ -102,8 +102,7 @@ Example:
 ```text
 重新构建（本次改动了 app）：
 make build-app
-make build-rootfs
-make upgrade
+make push-app
 ```
 
 When unsure or on a clean tree: `make build`.

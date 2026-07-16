@@ -233,9 +233,10 @@ After one firmware flash with USB plug-ssh support:
 make shell                      # interactive root shell; SERIAL=... when multiple boards
 make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL=1
 make build-app
-make push-app                   # SERIAL=... when multiple boards
-make upgrade                    # full-system A/B: boot.img + boot_b.img + rootfs.img over SSH
+make push-app                   # SERIAL=... when multiple boards; hot-swap /opt/hmi (no rootfs rebuild)
 ```
+
+Full-system A/B (kernel/rootfs, not app-only): `make upgrade` streams `boot.img` + `boot_b.img` + `rootfs.img`.
 
 Remote SSH (board LAN/WLAN sshd on — Demo **LAN SSH debug** or `enable-ssh-debug.sh`):
 

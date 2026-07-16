@@ -99,6 +99,11 @@ class BluetoothctlParse {
       paired: paired,
       trusted: trusted,
       connected: connected,
+      discovered: base.discovered,
+      rssi: base.rssi,
+      kind: base.kind,
+      uuids: base.uuids,
+      icon: base.icon,
     );
   }
 }

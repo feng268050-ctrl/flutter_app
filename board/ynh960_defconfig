@@ -1,7 +1,7 @@
 RK_KERNEL_VERSION="6.10"
 RK_KERNEL_DTS_NAME="ynh960"
 # Display: dsi0 + panel-init-sequence + boot logo; A-3 trim keeps HDMI/USB/audio/fs.
-RK_KERNEL_CFG_FRAGMENTS="lws-hmi-ynh960-display.config lws-hmi-ynh960-touch.config lws-hmi-kernel-trim.config lws-hmi-usb-gadget.config lws-hmi-ynh960-wifibt.config"
+RK_KERNEL_CFG_FRAGMENTS="lws-hmi-ynh960-display.config lws-hmi-ynh960-touch.config lws-hmi-kernel-trim.config lws-hmi-usb-gadget.config lws-hmi-ynh960-wifibt.config lws-hmi-bt-hid.config"
 RK_PARAMETER="parameter-buildroot-fit.txt"
 RK_USE_FIT_IMG=y
 # SDK boot.its (kernel + dtb + resource.img with logo.bmp) — verified on ynh960 hardware.

@@ -1,9 +1,19 @@
 #!/bin/sh
 # Ensure the headless pairing agent is running (idempotent).
+#
+# When the HMI owns Agent1 (marker file), skip the shell agent so only one
+# default agent is registered. Fallback: after HMI exit / adapter off, HMI
+# removes the marker and callers may invoke this again.
 set -eu
 
 AGENT="/usr/lib/lws-hmi/bt-pair-agent.sh"
 PIDFILE="/run/lws-hmi-bt-agent.pid"
+HMI_AGENT_MARKER="${LWS_BT_HMI_AGENT_MARKER:-/run/lws-hmi/bt-hmi-agent}"
+
+if [ -f "$HMI_AGENT_MARKER" ]; then
+	echo "bt-ensure-agent: HMI owns Agent1 ($HMI_AGENT_MARKER) — skip shell agent" >&2
+	exit 0
+fi
 
 if [ -f "$PIDFILE" ]; then
 	pid="$(cat "$PIDFILE" 2>/dev/null || true)"

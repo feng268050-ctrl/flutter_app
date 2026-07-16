@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetoothctl_parse.dart';
 import 'package:lws_hmi/platform/ethernet/ethernet_models.dart';
 import 'package:lws_hmi/platform/http/http_proxy_config.dart';
@@ -211,6 +212,41 @@ Device 11:22:33:44:55:66 (public)
       expect(merged.paired, isTrue);
       expect(merged.trusted, isTrue);
       expect(merged.connected, isTrue);
+    });
+  });
+
+  group('inferBluetoothDeviceKind', () {
+    test('keyboard from icon', () {
+      expect(
+        inferBluetoothDeviceKind(icon: 'input-keyboard'),
+        BluetoothDeviceKind.keyboard,
+      );
+    });
+
+    test('mouse from class of device peripheral', () {
+      // Major 5 (peripheral); minor pointing bit 0x20 in bits 2–7.
+      final cod = (5 << 8) | (0x20 << 2);
+      expect(
+        inferBluetoothDeviceKind(deviceClass: cod),
+        BluetoothDeviceKind.mouse,
+      );
+    });
+
+    test('HID UUID without CoD stays other', () {
+      expect(
+        inferBluetoothDeviceKind(
+          uuids: const ['00001124-0000-1000-8000-00805f9b34fb'],
+        ),
+        BluetoothDeviceKind.other,
+      );
+    });
+  });
+
+  group('BluetoothOperationException', () {
+    test('includes address when present', () {
+      final e = BluetoothOperationException('fail', address: 'AA:BB:CC:DD:EE:FF');
+      expect(e.toString(), contains('AA:BB:CC:DD:EE:FF'));
+      expect(e.toString(), contains('fail'));
     });
   });
 }

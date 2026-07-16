@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Extract MuJia Android images needed for ynh960 slice flash (no parameter/loader).
+# Extract Innohi Android images needed for ynh960 slice flash (no parameter/loader).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

@@ -1,4 +1,4 @@
-# ynh960 Linux pack (afptool requires parameter.txt — use exact MuJia extract at pack time).
+# ynh960 Linux pack (afptool requires parameter.txt — use exact Innohi extract at pack time).
 # For manual DI slices only; normal install uses make flash (uf update.img).
 # NAME	PATH
 package-file	package-file

@@ -94,7 +94,7 @@ cat <<'EOF'
     make audit
     make flash              # ul if Maskrom, uf if Loader
 
-  make flash-android        = optional MuJia Android image (you don't need this for Linux)
+  make flash-android        = optional Innohi Android image (you don't need this for Linux)
 EOF
 
 section "Result"

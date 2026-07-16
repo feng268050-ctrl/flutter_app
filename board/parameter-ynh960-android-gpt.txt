@@ -8,6 +8,6 @@ MACHINE: rk3568_r
 CHECK_MASK: 0x80
 PWR_HLD: 0,0,A,0,1
 TYPE: GPT
-# boot 0x17000 (46 MiB) for Linux FIT boot.img (~44 MiB); tail shifted +0x3000 vs MuJia Android.
+# boot 0x17000 (46 MiB) for Linux FIT boot.img (~44 MiB); tail shifted +0x3000 vs Innohi Android.
 CMDLINE:mtdparts=rk29xxnand:0x00002000@0x00002000(security),0x00002000@0x00004000(uboot),0x00002000@0x00006000(trust),0x00002000@0x00008000(misc),0x00002000@0x0000a000(dtbo),0x00000800@0x0000c000(vbmeta),0x00017000@0x0000c800(boot),0x00030000@0x00023800(recovery),0x000c0000@0x00053800(backup),0x000c0000@0x00113800(cache),0x00008000@0x001d3800(metadata),0x00000800@0x001db800(baseparameter),0x00611000@0x001dc000(super),0x00002000@0x007ed000(private),0x000c8000@0x007ef000(private1),-@0x008b7000(userdata:grow)
 uuid:super=614e0000-0000-4b53-8000-1d28000054a9

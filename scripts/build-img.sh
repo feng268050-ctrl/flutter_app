@@ -103,7 +103,7 @@ ensure_sdk_uboot() {
   mkdir -p "$firmware" "$ROOT/output/firmware"
 
   # ONLY unpatched vendor uboot. Do NOT binary-patch (env CRC → no backlight/maskrom).
-  # Do NOT use LWS_HMI_COMPILED_UBOOT (ynh960 brick risk). Do NOT use MuJia uboot for Linux GPT.
+  # Do NOT use LWS_HMI_COMPILED_UBOOT (ynh960 brick risk). Do NOT use Innohi uboot for Linux GPT.
   rm -f "$dest"
   install_file "$vendor" "$dest"
   install_file "$vendor" "$host"
@@ -127,7 +127,7 @@ install_misc() {
   else
     dd if=/dev/zero of="$dest" bs=4096 count=1024 status=none
   fi
-  echo "misc.img: cleared (no boot-recovery — MuJia misc breaks Linux boot)"
+  echo "misc.img: cleared (no boot-recovery — Innohi misc breaks Linux boot)"
   bash "$SIZE_HELPER" "$dest"
 }
 

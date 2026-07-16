@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Extract MuJia/Android boot chain (MiniLoaderAll + uboot) for hybrid Linux images.
+# Extract Innohi/Android boot chain (MiniLoaderAll + uboot) for hybrid Linux images.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

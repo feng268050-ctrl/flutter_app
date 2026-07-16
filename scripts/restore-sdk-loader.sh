@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Restore paired SDK MiniLoaderAll.bin (481728 B). Docker volume may have been
-# overwritten with MuJia loader (465344 B) by an earlier build-img run.
+# overwritten with Innohi loader (465344 B) by an earlier build-img run.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

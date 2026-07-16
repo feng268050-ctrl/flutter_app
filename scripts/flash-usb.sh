@@ -46,7 +46,7 @@ Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash}
   loader         upgrade_tool ul <MiniLoaderAll.bin>  [LOADER_NORESET=1]  (macOS)
   upgrade        upgrade_tool uf <update.img>        [UPGRADE_NORESET=1] (macOS)
   flash          uf update.img; ul first when RockUSB mode is Maskrom (macOS)
-  flash-android  flash with MuJia Android image (optional; not required before Linux)
+  flash-android  flash with Innohi Android image (optional; not required before Linux)
 
 Selection: SERIAL / IP (SSH registry only) / IFACE (USB-SSH)
 App deploy (no reflash): make build-app && make push-app

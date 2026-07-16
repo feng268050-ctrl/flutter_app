@@ -47,6 +47,13 @@ remote() {
 	usb_ssh_session_run_ssh "$ROOT" "$IFACE" "$@"
 }
 
+upload_with_progress() {
+	local src="$1"
+	local dest="$2"
+	python3 "$ROOT/scripts/stream-file-progress.py" "$src" |
+		remote "cat >'$dest'"
+}
+
 apply_ok() {
 	local st="$1" log="$2"
 	[[ "$st" == "ok" ]] && return 0
@@ -58,6 +65,14 @@ apply_fail() {
 	local st="$1" log="$2"
 	[[ "$st" == "fail" ]] && return 0
 	printf '%s\n' "$log" | grep -qE 'did not recover|failed to activate'
+}
+
+wait_line_rendered=0
+clear_wait_line() {
+	if [[ "$wait_line_rendered" -eq 1 ]]; then
+		printf '\r%-100s\r' ""
+		wait_line_rendered=0
+	fi
 }
 
 [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && usage && exit 0
@@ -76,12 +91,19 @@ fi
 usb_ssh_session_configure_link
 usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
 
-echo "Staging libapp.so..."
-remote "rm -rf $STAGING && mkdir -p $STAGING/lib $STAGING/data/flutter_assets"
-usb_ssh_session_run_scp "$ROOT" "$IFACE" "$LIBAPP" "$TARGET_USER@$TARGET_ADDR:$STAGING/lib/libapp.so"
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/lws-hmi-push-app.XXXXXX")"
+cleanup() { rm -rf "$STAGE"; }
+trap cleanup EXIT
 
-echo "Staging flutter_assets..."
-usb_ssh_session_run_scp "$ROOT" "$IFACE" -r "$ASSETS/." "$TARGET_USER@$TARGET_ADDR:$STAGING/data/flutter_assets/"
+echo "Transferring libapp.so..."
+remote "rm -rf $STAGING && mkdir -p $STAGING/lib $STAGING/data/flutter_assets"
+upload_with_progress "$LIBAPP" "$STAGING/lib/libapp.so"
+
+echo "Transferring flutter_assets..."
+ASSETS_TAR="$STAGE/flutter_assets.tar"
+tar -C "$ASSETS" -cf "$ASSETS_TAR" .
+upload_with_progress "$ASSETS_TAR" "$STAGING/flutter_assets.tar"
+remote "tar -xf '$STAGING/flutter_assets.tar' -C '$STAGING/data/flutter_assets' && rm -f '$STAGING/flutter_assets.tar'"
 
 echo "Installing staged app and restarting hmi.service..."
 if ! remote "test -x $APPLY_SCRIPT"; then
@@ -95,24 +117,48 @@ remote "rm -f $APPLY_LOG $APPLY_STATUS; \
 	echo PUSH_APP_APPLY_STARTED"
 
 echo "Waiting for board apply (max ${APPLY_WAIT_SEC}s)..."
-for ((i = 1; i <= APPLY_WAIT_SEC; i++)); do
-	st="$(remote "cat $APPLY_STATUS 2>/dev/null || true" | tr -d '\r' | head -n1 || true)"
-	log="$(remote "cat $APPLY_LOG 2>/dev/null || true" || true)"
-	if apply_ok "$st" "$log"; then
-		printf '%s\n' "$log"
-		echo "push-app: done (hmi.service restarted with the new app)."
-		exit 0
+deadline=$((SECONDS + APPLY_WAIT_SEC))
+spinner_frame=0
+status_poll_tick=0
+st=""
+log=""
+tail1=""
+while ((SECONDS < deadline)); do
+	spinner_frame=$((spinner_frame % 3 + 1))
+	case "$spinner_frame" in
+	1) dots=".  " ;;
+	2) dots=".. " ;;
+	3) dots="..." ;;
+	esac
+	elapsed=$((APPLY_WAIT_SEC - (deadline - SECONDS)))
+	detail=""
+	if [[ -n "$tail1" ]]; then
+		detail=" — ${tail1:0:60}"
 	fi
-	if apply_fail "$st" "$log"; then
-		printf '%s\n' "$log" >&2
-		die "board apply failed (see $APPLY_LOG on device)"
+	printf '\r%-100s' "  Waiting for board apply${dots} (${elapsed}s)${detail}"
+	wait_line_rendered=1
+
+	if [[ "$status_poll_tick" -eq 0 ]]; then
+		st="$(remote "cat $APPLY_STATUS 2>/dev/null || true" | tr -d '\r' | head -n1 || true)"
+		log="$(remote "cat $APPLY_LOG 2>/dev/null || true" || true)"
+		if apply_ok "$st" "$log"; then
+			clear_wait_line
+			printf '%s\n' "$log"
+			echo "push-app: done (hmi.service restarted with the new app)."
+			exit 0
+		fi
+		if apply_fail "$st" "$log"; then
+			clear_wait_line
+			printf '%s\n' "$log" >&2
+			die "board apply failed (see $APPLY_LOG on device)"
+		fi
+		tail1="$(printf '%s\n' "$log" | tail -n1 | tr -d '\r')"
 	fi
-	if ((i == 1 || i % 5 == 0)); then
-		tail1="$(printf '%s\n' "$log" | tail -n1)"
-		echo "  still applying... (${i}s)${tail1:+ — $tail1}"
-	fi
-	sleep 1
+
+	status_poll_tick=$(( (status_poll_tick + 1) % 4 ))
+	sleep 0.25
 done
 
+clear_wait_line
 printf '%s\n' "$(remote "cat $APPLY_LOG 2>/dev/null || true" || true)" >&2
 die "timed out waiting for board apply after ${APPLY_WAIT_SEC}s (see $APPLY_LOG on device)"

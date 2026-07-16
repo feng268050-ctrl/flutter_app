@@ -227,7 +227,8 @@ while ((SECONDS < deadline_down)); do
 	2) dots=".. " ;;
 	3) dots="..." ;;
 	esac
-	printf '\r  Waiting for device restart%s' "$dots"
+	elapsed=$((WAIT_REBOOT_SEC - (deadline_down - SECONDS)))
+	printf '\r%-100s' "  Waiting for device restart${dots} (${elapsed}s)"
 	wait_line_rendered=1
 
 	if [[ "$status_poll_tick" -eq 0 ]]; then

@@ -1,0 +1,68 @@
+From: lws-hmi <dev@lws>
+Date: Fri, 17 Jul 2026 00:00:00 +0800
+Subject: [PATCH] window: fallback when drmModeMoveCursor fails (Rockchip)
+
+ynh960 Rockchip returns EFAULT for every drmModeMoveCursor. Unthrottled
+LOG_ERROR floods the journal and stutters USB/BT pointer motion. Latch
+the failure once and move the cursor plane via atomic prefer_cursor
+composition push instead.
+
+--- a/src/window.c
++++ b/src/window.c
+@@ -173,6 +173,7 @@
+ 
+         const struct pointer_icon *pointer_icon;
+         struct cursor_buffer *cursor;
++        bool move_cursor_unsupported;
+     } kms;
+ 
+     /**
+@@ -1080,6 +1081,7 @@
+     window->kms.should_apply_mode = true;
+     window->kms.cursor = NULL;
+     window->kms.pointer_icon = NULL;
++    window->kms.move_cursor_unsupported = false;
+     window->renderer_type = renderer_type;
+     if (gl_renderer != NULL) {
+ #ifdef HAVE_EGL_GLES2
+@@ -1653,9 +1655,23 @@
+                 kms_window_push_composition_locked(window, window->composition);
+             }
+         } else if (has_pos) {
+-            // apply the new cursor position using drmModeMoveCursor
++            // Always keep logical position; Rockchip often rejects drmModeMoveCursor
++            // (EFAULT). Latch that once and fall back to atomic prefer_cursor via
++            // composition push (same path as icon change).
+             window->cursor_pos = pos;
+-            drmdev_move_cursor(window->kms.drmdev, window->kms.crtc->id, vec2i_sub(pos, window->kms.cursor->hotspot));
++            if (!window->kms.move_cursor_unsupported) {
++                int move_ok = drmdev_move_cursor(
++                    window->kms.drmdev,
++                    window->kms.crtc->id,
++                    vec2i_sub(pos, window->kms.cursor->hotspot)
++                );
++                if (move_ok != 0) {
++                    window->kms.move_cursor_unsupported = true;
++                }
++            }
++            if (window->kms.move_cursor_unsupported && window->composition != NULL) {
++                kms_window_push_composition_locked(window, window->composition);
++            }
+         }
+     } else {
+         if (window->kms.cursor != NULL) {
+--- a/src/modesetting.c
++++ b/src/modesetting.c
+@@ -1925,7 +1925,11 @@
+ int drmdev_move_cursor(struct drmdev *drmdev, uint32_t crtc_id, struct vec2i pos) {
+     int ok = drmModeMoveCursor(drmdev->master_fd, crtc_id, pos.x, pos.y);
+     if (ok < 0) {
+-        LOG_ERROR("Couldn't move mouse cursor. drmModeMoveCursor: %s\n", strerror(-ok));
++        static bool logged_once = false;
++        if (!logged_once) {
++            logged_once = true;
++            LOG_ERROR("Couldn't move mouse cursor. drmModeMoveCursor: %s\n", strerror(-ok));
++        }
+         return -ok;
+     }
+ 

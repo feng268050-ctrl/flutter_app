@@ -44,7 +44,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('USB mouse'), findsOneWidget);
+    expect(find.text('Mouse'), findsOneWidget);
     expect(find.text('detected: fake-mouse'), findsOneWidget);
     expect(find.text('Natural scrolling'), findsOneWidget);
 

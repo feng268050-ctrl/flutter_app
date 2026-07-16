@@ -95,7 +95,9 @@ Overlays：`lws-hmi-ynh960-usb-gadget.dtsi`（OTG dual-role）、`lws-hmi-ynh960
 | 长按不连发 | libinput 不合成 repeat；flutter-pi 原无定时器 | `0003-key-repeat.patch`（660 ms 后约 25 Hz，只重发 utf8/keysym） |
 | `make rebuild-flutter-pi` 补丁未进包 | `SITE_METHOD=local` 跳过 Buildroot Patching | `flutter-pi.compile.mk` → `FLUTTER_PI_APPLY_PACKAGE_PATCHES` |
 | USB 鼠标能动/滚但不能见指针 | Rockchip GBM cursor stride 常 pad；原逻辑要求 `stride == width*4` 直接放弃 HW cursor | `0004-cursor-stride-padded-gbm.patch` |
-| 鼠标滚轮速度 / 自然滚动等 OS 设置 | flutter-pi 硬编码 wheel scale；未调 libinput config | `0005-mouse-settings-prefs.patch` + `/var/lib/lws-hmi/mouse.conf`；Demo「USB mouse」；**mtime 轮询**重载（禁止 `kill -HUP`，会直接停掉 `hmi.service`） |
+| 鼠标移动 journal 刷屏 / 卡顿 | 每帧 `drmModeMoveCursor` 在 Rockchip 上 EFAULT（Bad address），未节流的 `LOG_ERROR` 拖垮 journal | `0010-cursor-movecursor-fallback.patch`（失败后 latch，走 atomic prefer_cursor composition） |
+| 鼠标滚轮速度 / 自然滚动等 OS 设置 | flutter-pi 硬编码 wheel scale；未调 libinput config | `0005-mouse-settings-prefs.patch` + `/var/lib/lws-hmi/mouse.conf`（含 `pointer_axes=auto|normal|swap`）；Demo「Mouse」；**mtime 轮询**重载（禁止 `kill -HUP`，会直接停掉 `hmi.service`）；BT 键盘触控板轴交换见 `0009` |
+| QM002 / BLE 键盘触控板 左右→下上 | 同一节点兼键盘+指针的 HOGP 仿品 REL 轴对调；USB 鼠标正常 | `0009-bt-kb-pointer-axis-swap.patch`（模式：`BT + KEYBOARD + POINTER`） |
 
 Smoke（含连发 / 方向键）：
 
@@ -104,7 +106,7 @@ lsusb
 ls -l /dev/input/by-id/*kbd* 2>/dev/null
 dmesg | grep -iE 'hid|usbhost|dwc3'
 test -f /usr/share/X11/xkb/rules/evdev && test -f /usr/share/X11/locale/C/Compose
-# Demo「USB keyboard」：打字、←→、长按连发；有小键盘再验 NumLock 灯与数字/导航
+# Demo「Keyboard」：打字、←→、长按连发；有小键盘再验 NumLock 灯与数字/导航
 # flutter-pi 启动日志不得出现: Could not initialize keyboard configuration
 ```
 
@@ -114,8 +116,9 @@ test -f /usr/share/X11/xkb/rules/evdev && test -f /usr/share/X11/locale/C/Compos
 
 ```bash
 ls -l /dev/input/by-id/*mouse* 2>/dev/null
-# Demo「USB mouse」：指针跟随；自然滚动 / 滚轮速度 / 指针速度 / 主按钮
+# Demo「Mouse」：指针跟随；自然滚动 / 滚轮速度 / 指针速度 / 主按钮 / 指针轴（Auto/Normal/Swap）
 # journal / flutter-pi 日志不应再刷 "unsupported framebuffer stride" 后无 cursor
+# 移动鼠标时 drmModeMoveCursor 错误至多一行（Bad address），不应刷屏
 cat /var/lib/lws-hmi/mouse.conf 2>/dev/null || true
 ```
 

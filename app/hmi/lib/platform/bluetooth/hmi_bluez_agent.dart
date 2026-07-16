@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:bluez/bluez.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
 
 typedef HmiBluezAgentAutoPolicy = bool Function();
@@ -120,14 +122,26 @@ class HmiBluezAgent extends BlueZAgent {
     int passkey,
     int entered,
   ) async {
-    final challenge = _make(
-      device: device,
+    debugPrint(
+      'bt-agent: DisplayPasskey ${device.address} passkey=$passkey entered=$entered',
+    );
+    stderr.writeln(
+      'bt-agent: DisplayPasskey ${device.address} passkey=$passkey entered=$entered',
+    );
+    // Same bonding session — update digits in place so the UI stays on one card.
+    final existing = _activeId;
+    final challenge = BluetoothPairingChallenge(
+      id: existing ??
+          '${device.address}-displayPasskey-${DateTime.now().microsecondsSinceEpoch}',
+      address: device.address.toUpperCase(),
+      name: device.alias.isNotEmpty ? device.alias : device.name,
       kind: BluetoothPairingChallengeKind.displayPasskey,
       passkey: passkey,
       enteredDigits: entered,
     );
+    _activeId = challenge.id;
     onChallenge(challenge);
-    // Keyboard types the code; no agent reply payload. Keep visible until Cancel.
+    // Keyboard types the code; empty D-Bus reply already sent by AgentObject.
   }
 
   @override
@@ -135,6 +149,7 @@ class HmiBluezAgent extends BlueZAgent {
     BlueZDevice device,
     String pinCode,
   ) async {
+    debugPrint('bt-agent: DisplayPinCode ${device.address}');
     final challenge = _make(
       device: device,
       kind: BluetoothPairingChallengeKind.displayPinCode,
@@ -149,6 +164,14 @@ class HmiBluezAgent extends BlueZAgent {
     BlueZDevice device,
     int passkey,
   ) async {
+    debugPrint(
+      'bt-agent: RequestConfirmation ${device.address} passkey=$passkey '
+      'auto=${shouldAutoConfirm()}',
+    );
+    stderr.writeln(
+      'bt-agent: RequestConfirmation ${device.address} passkey=$passkey '
+      'auto=${shouldAutoConfirm()}',
+    );
     if (shouldAutoConfirm()) {
       return BlueZAgentResponse.success();
     }
@@ -163,6 +186,12 @@ class HmiBluezAgent extends BlueZAgent {
 
   @override
   Future<BlueZAgentResponse> requestAuthorization(BlueZDevice device) async {
+    debugPrint(
+      'bt-agent: RequestAuthorization ${device.address} auto=${shouldAutoConfirm()}',
+    );
+    stderr.writeln(
+      'bt-agent: RequestAuthorization ${device.address} auto=${shouldAutoConfirm()}',
+    );
     if (shouldAutoConfirm()) {
       return BlueZAgentResponse.success();
     }
@@ -179,7 +208,13 @@ class HmiBluezAgent extends BlueZAgent {
     BlueZDevice device,
     BlueZUUID uuid,
   ) async {
-    if (shouldAutoConfirm()) {
+    final u = uuid.toString().toLowerCase();
+    final hid = u.contains('1812') || u.contains('1124');
+    debugPrint(
+      'bt-agent: AuthorizeService ${device.address} $uuid auto=${shouldAutoConfirm() || hid}',
+    );
+    // HOGP/HID profiles must not block behind a Demo confirm dialog mid-pair.
+    if (shouldAutoConfirm() || hid) {
       return BlueZAgentResponse.success();
     }
     return _awaitDecision(
@@ -193,6 +228,7 @@ class HmiBluezAgent extends BlueZAgent {
 
   @override
   Future<BlueZAgentPasskeyResponse> requestPasskey(BlueZDevice device) async {
+    debugPrint('bt-agent: RequestPasskey ${device.address}');
     final challenge = _make(
       device: device,
       kind: BluetoothPairingChallengeKind.requestPasskey,
@@ -213,6 +249,7 @@ class HmiBluezAgent extends BlueZAgent {
 
   @override
   Future<BlueZAgentPinCodeResponse> requestPinCode(BlueZDevice device) async {
+    debugPrint('bt-agent: RequestPinCode ${device.address}');
     final challenge = _make(
       device: device,
       kind: BluetoothPairingChallengeKind.requestPinCode,

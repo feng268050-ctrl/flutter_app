@@ -10,6 +10,7 @@ void main() {
     expect(s.pointerSpeedPercent, 50);
     expect(s.pointerSizePercent, 20);
     expect(s.primaryButton, MousePrimaryButton.left);
+    expect(s.pointerAxes, MousePointerAxes.auto);
   });
 
   test('parseMouseConf reads keys', () {
@@ -20,12 +21,14 @@ scroll_speed=80
 pointer_speed=10
 pointer_size=90
 primary_button=right
+pointer_axes=swap
 ''');
     expect(s.naturalScroll, isTrue);
     expect(s.scrollSpeedPercent, 80);
     expect(s.pointerSpeedPercent, 10);
     expect(s.pointerSizePercent, 90);
     expect(s.primaryButton, MousePrimaryButton.right);
+    expect(s.pointerAxes, MousePointerAxes.swap);
   });
 
   test('encodeMouseConf round-trip', () {
@@ -35,6 +38,7 @@ primary_button=right
       pointerSpeedPercent: 75,
       pointerSizePercent: 90,
       primaryButton: MousePrimaryButton.right,
+      pointerAxes: MousePointerAxes.normal,
     );
     final again = parseMouseConf(encodeMouseConf(original));
     expect(again.naturalScroll, original.naturalScroll);
@@ -42,6 +46,7 @@ primary_button=right
     expect(again.pointerSpeedPercent, original.pointerSpeedPercent);
     expect(again.pointerSizePercent, original.pointerSizePercent);
     expect(again.primaryButton, original.primaryButton);
+    expect(again.pointerAxes, original.pointerAxes);
   });
 
   test('pointerPercentToAccel maps mid to ~0', () {

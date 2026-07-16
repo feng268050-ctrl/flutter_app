@@ -37,6 +37,7 @@ class LinuxMouseSettingsController implements MouseSettingsController {
       pointerSpeedPercent: clampPercent(settings.pointerSpeedPercent),
       pointerSizePercent: clampPercent(settings.pointerSizePercent),
       primaryButton: settings.primaryButton,
+      pointerAxes: settings.pointerAxes,
     );
     try {
       final file = File(preferencePath);
@@ -60,6 +61,7 @@ MouseSettings parseMouseConf(String raw) {
   var pointer = 50;
   var size = 20;
   var primary = MousePrimaryButton.left;
+  var axes = MousePointerAxes.auto;
 
   for (final line in raw.split('\n')) {
     final trimmed = line.trim();
@@ -85,6 +87,12 @@ MouseSettings parseMouseConf(String raw) {
         primary = value == 'right'
             ? MousePrimaryButton.right
             : MousePrimaryButton.left;
+      case 'pointer_axes':
+        axes = switch (value.toLowerCase()) {
+          'normal' || 'native' || '0' => MousePointerAxes.normal,
+          'swap' || 'swap_xy' || '2' => MousePointerAxes.swap,
+          _ => MousePointerAxes.auto,
+        };
     }
   }
 
@@ -94,6 +102,7 @@ MouseSettings parseMouseConf(String raw) {
     pointerSpeedPercent: pointer,
     pointerSizePercent: size,
     primaryButton: primary,
+    pointerAxes: axes,
   );
 }
 
@@ -101,9 +110,15 @@ MouseSettings parseMouseConf(String raw) {
 String encodeMouseConf(MouseSettings s) {
   final primary =
       s.primaryButton == MousePrimaryButton.right ? 'right' : 'left';
+  final axes = switch (s.pointerAxes) {
+    MousePointerAxes.normal => 'normal',
+    MousePointerAxes.swap => 'swap',
+    MousePointerAxes.auto => 'auto',
+  };
   return 'natural_scroll=${s.naturalScroll ? 1 : 0}\n'
       'scroll_speed=${clampPercent(s.scrollSpeedPercent)}\n'
       'pointer_speed=${clampPercent(s.pointerSpeedPercent)}\n'
       'pointer_size=${clampPercent(s.pointerSizePercent)}\n'
-      'primary_button=$primary\n';
+      'primary_button=$primary\n'
+      'pointer_axes=$axes\n';
 }

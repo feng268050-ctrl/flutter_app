@@ -6,6 +6,16 @@ enum MousePrimaryButton {
   right,
 }
 
+/// Relative pointer X/Y handling (Linux flutter-pi).
+///
+/// [auto] swaps axes for Bluetooth keyboard+pointer combo devices (common
+/// HOGP trackpad clones). [normal] never swaps; [swap] always swaps.
+enum MousePointerAxes {
+  auto,
+  normal,
+  swap,
+}
+
 /// OS-common mouse preferences (Linux: `/var/lib/lws-hmi/mouse.conf`).
 class MouseSettings {
   const MouseSettings({
@@ -14,6 +24,7 @@ class MouseSettings {
     this.pointerSpeedPercent = 50,
     this.pointerSizePercent = 20,
     this.primaryButton = MousePrimaryButton.left,
+    this.pointerAxes = MousePointerAxes.auto,
   });
 
   final bool naturalScroll;
@@ -24,6 +35,7 @@ class MouseSettings {
   /// density (ceil + upscale for sparse hand/text assets).
   final int pointerSizePercent;
   final MousePrimaryButton primaryButton;
+  final MousePointerAxes pointerAxes;
 
   MouseSettings copyWith({
     bool? naturalScroll,
@@ -31,6 +43,7 @@ class MouseSettings {
     int? pointerSpeedPercent,
     int? pointerSizePercent,
     MousePrimaryButton? primaryButton,
+    MousePointerAxes? pointerAxes,
   }) {
     return MouseSettings(
       naturalScroll: naturalScroll ?? this.naturalScroll,
@@ -38,6 +51,7 @@ class MouseSettings {
       pointerSpeedPercent: pointerSpeedPercent ?? this.pointerSpeedPercent,
       pointerSizePercent: pointerSizePercent ?? this.pointerSizePercent,
       primaryButton: primaryButton ?? this.primaryButton,
+      pointerAxes: pointerAxes ?? this.pointerAxes,
     );
   }
 

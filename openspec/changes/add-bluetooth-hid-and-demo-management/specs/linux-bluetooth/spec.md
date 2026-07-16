@@ -48,6 +48,16 @@ The system SHALL provide one deterministic BlueZ `Agent1` path that supports exi
 - **WHEN** bluetoothd restarts while the HMI remains running
 - **THEN** the pairing agent re-registers or reports a recoverable unavailable state without crashing the Flutter process
 
+#### Scenario: Adapter toggle recovers after bluetoothd crash
+
+- **WHEN** bluetoothd aborts (e.g. heap corruption during HOGP teardown) and the user turns the adapter off then on
+- **THEN** the Linux implementation MUST tear down without blocking on dead D-Bus activation, restart `bluetooth.service`, and re-attach a fresh BlueZ client session
+
+#### Scenario: D-Bus can activate bluetoothd without enable
+
+- **WHEN** `org.bluez` is absent from the system bus and a client requests it
+- **THEN** systemd MUST resolve `dbus-org.bluez.service` to `bluetooth.service` even though Bluetooth remains boot-deferred (not in multi-user wants)
+
 ### Requirement: Bluetooth HID devices use the Linux input path
 
 The image SHALL include the BlueZ and kernel support required for supported Bluetooth Classic HID and BLE HOGP keyboards and mice to appear as Linux input devices. After successful connection, keyboard keys and mouse motion/buttons/wheel events SHALL flow through the standard Linux input/libinput/flutter-pi path without a custom Dart HID report decoder.

@@ -95,7 +95,15 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
       await fn();
     } catch (e) {
       if (mounted) {
-        setState(() => _error = '$e');
+        var msg = '$e';
+        msg = msg.replaceAll(
+          RegExp(r'org\.freedesktop\.DBus\.Error\.\w+:\s*'),
+          '',
+        );
+        if (msg.length > 220) {
+          msg = '${msg.substring(0, 220)}…';
+        }
+        setState(() => _error = msg);
       }
     } finally {
       if (mounted) {
@@ -110,9 +118,26 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
       .where((d) => d.paired || d.trusted || d.connected)
       .toList(growable: false);
 
-  List<BluetoothRemoteDevice> get _nearby => _devices
-      .where((d) => d.discovered && !d.paired && !d.connected)
-      .toList(growable: false);
+  List<BluetoothRemoteDevice> get _nearby {
+    final rows = _devices
+        .where(
+          (d) =>
+              d.discovered &&
+              !d.paired &&
+              !d.connected &&
+              isBluetoothNearbyCandidate(d),
+        )
+        .toList(growable: true);
+    rows.sort((a, b) {
+      final ar = a.rssi ?? -999;
+      final br = b.rssi ?? -999;
+      if (ar != br) {
+        return br.compareTo(ar);
+      }
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+    return rows;
+  }
 
   String _kindLabel(BluetoothDeviceKind k) {
     switch (k) {
@@ -218,7 +243,7 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Type this passkey on the keyboard for $label',
+                'Type this 6-digit passkey on the Bluetooth keyboard, then wait',
                 style: const TextStyle(color: Colors.white),
               ),
               const SizedBox(height: 8),
@@ -236,6 +261,10 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
                   'Entered digits: ${c.enteredDigits}',
                   style: TextStyle(color: Colors.white.withOpacity(0.6)),
                 ),
+              TextButton(
+                onPressed: () => unawaited(widget.controller.cancelPairing()),
+                child: const Text('Cancel pairing'),
+              ),
             ],
           ),
         );
@@ -252,8 +281,14 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Confirm passkey ${c.passkey?.toString().padLeft(6, '0')} for $label?',
-                style: const TextStyle(color: Colors.white),
+                '$label wants to pair'
+                '${c.passkey != null ? ' (code ${c.passkey!.toString().padLeft(6, '0')})' : ''}',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Accept to pair, like on iPhone/iPad',
+                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
               ),
               Row(
                 children: [
@@ -354,8 +389,15 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Authorize ${c.serviceUuid ?? 'pairing'} for $label?',
-                style: const TextStyle(color: Colors.white),
+                c.kind == BluetoothPairingChallengeKind.authorizeService
+                    ? 'Allow ${c.serviceUuid ?? 'service'} for $label?'
+                    : '$label wants to pair with this device',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Accept to pair, like on iPhone/iPad',
+                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
               ),
               Row(
                 children: [
@@ -417,7 +459,7 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
         const SizedBox(height: 8),
         Text(
           'Phone/PC can discover this HMI; optional A2DP Sink plays phone music.\n'
-          'Scan/Pair connects Bluetooth keyboards and mice (Linux input path).',
+          'Scan lists Settings-style pairing targets (HID / phone / audio) — not every LE beacon.',
           style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
         ),
         const SizedBox(height: 8),
@@ -434,11 +476,20 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
             widget.controller.lastError!,
             style: const TextStyle(color: Colors.redAccent, fontSize: 14),
           ),
-        if (_busy != null)
-          Text('Busy: $_busy', style: const TextStyle(color: Colors.amber)),
         if (_error != null)
-          Text('Error: $_error', style: const TextStyle(color: Colors.redAccent)),
+          SelectableText(
+            'Error: $_error',
+            style: const TextStyle(color: Colors.redAccent),
+          ),
         if (challenge != null) challenge,
+        if (_busy != null) ...[
+          Text('Busy: $_busy', style: const TextStyle(color: Colors.amber)),
+          if (_busy!.startsWith('pair'))
+            TextButton(
+              onPressed: () => unawaited(widget.controller.cancelPairing()),
+              child: const Text('Cancel pairing'),
+            ),
+        ],
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Adapter', style: TextStyle(color: Colors.white)),
@@ -561,8 +612,8 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
           Text(
             on
                 ? (_scanning
-                    ? '(scanning…)'
-                    : '(none — tap Scan; HID keyboards/mice appear when advertising)')
+                    ? '(scanning for keyboards, mice, phones…)'
+                    : '(none — put the keyboard in pairing mode, Scan, then Pair while still scanning)')
                 : '(adapter off)',
             style: TextStyle(color: Colors.white.withOpacity(0.5)),
           ),

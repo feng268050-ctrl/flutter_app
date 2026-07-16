@@ -50,6 +50,9 @@ abstract class BluetoothController {
   /// Pair (if needed), trust, and connect. Stops discovery first.
   Future<void> pairAndConnect(String address);
 
+  /// Abort an in-progress [pairAndConnect] / BlueZ Pair (does not take the op lock).
+  Future<void> cancelPairing();
+
   Future<void> disconnectRemote(String address);
 
   Future<void> removeRemote(String address);

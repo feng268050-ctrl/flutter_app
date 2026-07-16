@@ -58,7 +58,7 @@ class _KeyboardDemoSectionState extends State<KeyboardDemoSection>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text(
-          'USB keyboard',
+          'Keyboard',
           style: TextStyle(
             color: Colors.white,
             fontSize: 28,
@@ -67,7 +67,8 @@ class _KeyboardDemoSectionState extends State<KeyboardDemoSection>
         ),
         const SizedBox(height: 4),
         Text(
-          'HID via 1 mm USB host, or Micro-USB when Debug over USB is OFF '
+          'USB or Bluetooth HID. '
+          '1 mm USB host / Micro-USB when Debug over USB is OFF '
           '(OTG adapter). Debug over USB ON = plug-ssh. Not soft IME (P4).',
           style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
         ),

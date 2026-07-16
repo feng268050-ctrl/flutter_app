@@ -311,6 +311,9 @@ sync_flutter_sdk_package() {
 sync_flutter_pi_package() {
   local src="$OVERLAY/buildroot/package/flutter-pi/flutter-pi.mk"
   local patch_src patch_name
+  local mark="$BR_PKG_FLUTTER_PI/.lws-overlay-patches"
+  local stash="$BR_PKG_FLUTTER_PI/$LWS_PREBUILT_PATCHES_DIR"
+  local prev
   if [[ ! -f "$src" ]]; then
     return 0
   fi
@@ -319,14 +322,32 @@ sync_flutter_pi_package() {
       "$BR_PKG_FLUTTER_PI/flutter-pi.mk.orig"
   fi
   install_file "$src" "$BR_PKG_FLUTTER_PI/flutter-pi.mk"
-  # Install overlay patches before stashing (prebuilt .mk); br-compile-flutter
-  # restores them when swapping to flutter-pi.compile.mk.
+
+  # Drop retired LWS overlay patches (install is additive; stash otherwise keeps
+  # obsolete 0009-*.patch and breaks compile when two 0009s both apply).
+  if [[ -f "$mark" ]]; then
+    while IFS= read -r prev || [[ -n "${prev:-}" ]]; do
+      [[ -z "$prev" ]] && continue
+      rm -f "$BR_PKG_FLUTTER_PI/$prev" "$stash/$prev"
+    done <"$mark"
+  fi
+  # Known retired names (mark may be missing on older trees).
+  rm -f \
+    "$BR_PKG_FLUTTER_PI/0009-pointer-relative-display-axes.patch" \
+    "$stash/0009-pointer-relative-display-axes.patch" \
+    "$BR_PKG_FLUTTER_PI/0009-qm002-pointer-axis-swap.patch" \
+    "$stash/0009-qm002-pointer-axis-swap.patch"
+
+  : >"$mark"
   shopt -s nullglob
   for patch_src in "$OVERLAY/buildroot/package/flutter-pi"/*.patch; do
     patch_name="$(basename "$patch_src")"
     install_file "$patch_src" "$BR_PKG_FLUTTER_PI/$patch_name"
+    printf '%s\n' "$patch_name" >>"$mark"
   done
   shopt -u nullglob
+  # Install overlay patches before stashing (prebuilt .mk); br-compile-flutter
+  # restores them when swapping to flutter-pi.compile.mk.
   disable_br_package_patches "$BR_PKG_FLUTTER_PI" "flutter-pi"
   patch_flutter_pi_config_prebuilt
 }

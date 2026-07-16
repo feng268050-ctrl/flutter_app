@@ -37,8 +37,8 @@ Reusable modules live under `lib/platform/`:
 2. Sweep Brightness — panel dims/brightens
 3. Portrait / Landscape — HMI restarts; `ps`/`tr` confirms `-o portrait_up` or `landscape_left`
 4. Ethernet — enable interface → DHCP or Static → link LED / `ping` peer PC (not IPC camera IP yet)
-5. USB keyboard — **1 mm pin → USB host** and/or **Micro-USB OTG host** (OTG/ID adapter) + HID → Demo「USB keyboard」：type, arrow caret, hold-to-repeat; optional NumLock if present. Standard PC cable on Micro-USB → plug-ssh (not keyboard). Pitfalls: [`docs/ynh960-io-pinmux-ledger.md`](../../docs/ynh960-io-pinmux-ledger.md) §4.1 / §4.1.1
-6. USB mouse — same host paths → Demo「USB mouse」：visible pointer tracks; natural scroll / scroll speed / pointer speed / primary button; prefs in `/var/lib/lws-hmi/mouse.conf`. Pitfalls: ledger §4.1.2 (`0004`/`0005` flutter-pi patches)
+5. Keyboard — **1 mm pin → USB host** and/or **Micro-USB OTG host** (OTG/ID adapter) + HID / Bluetooth → Demo「Keyboard」：type, arrow caret, hold-to-repeat; optional NumLock if present. Standard PC cable on Micro-USB → plug-ssh (not keyboard). Pitfalls: [`docs/ynh960-io-pinmux-ledger.md`](../../docs/ynh960-io-pinmux-ledger.md) §4.1 / §4.1.1
+6. Mouse — same host paths / Bluetooth → Demo「Mouse」：visible pointer tracks; natural scroll / scroll speed / pointer speed / primary button / pointer axes (Auto/Normal/Swap); prefs in `/var/lib/lws-hmi/mouse.conf`. Pitfalls: ledger §4.1.2 (`0004`/`0005`/`0009` flutter-pi patches)
 7. Wi‑Fi — enable radio → Scan → Connect (or Hidden SSID) → DHCP or Static → `ping` gateway; Send request (default `https://www.baidu.com/`) shows HTTP status/body
 8. Proxy — enable proxy, Save, re-run Send request
 9. LAN SSH debug — toggle on → note eth0/wlan0 IP → host `make connect <ip>`

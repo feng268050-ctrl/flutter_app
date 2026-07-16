@@ -200,6 +200,17 @@ if [ -x "$TARGET_DIR/usr/libexec/bluetooth/bluetoothd" ] && \
 	echo "lws-hmi-systemd: symlink /usr/sbin/bluetoothd → libexec"
 fi
 
+# D-Bus activation alias (Alias= only appears after systemctl enable; BT stays boot-deferred).
+if [ -f "$TARGET_DIR/usr/lib/systemd/system/bluetooth.service" ]; then
+	mkdir -p "$TARGET_DIR/etc/systemd/system"
+	if [ ! -e "$TARGET_DIR/etc/systemd/system/dbus-org.bluez.service" ] && \
+		[ ! -L "$TARGET_DIR/etc/systemd/system/dbus-org.bluez.service" ]; then
+		ln -sfn ../../usr/lib/systemd/system/bluetooth.service \
+			"$TARGET_DIR/etc/systemd/system/dbus-org.bluez.service"
+		echo "lws-hmi-systemd: alias dbus-org.bluez.service → bluetooth.service"
+	fi
+fi
+
 # A-6: noatime on ext4 mounts (root remount + oem/userdata via systemd-fstab-generator).
 FSTAB="$TARGET_DIR/etc/fstab"
 if [ -f "$FSTAB" ] && ! grep -q 'noatime' "$FSTAB"; then

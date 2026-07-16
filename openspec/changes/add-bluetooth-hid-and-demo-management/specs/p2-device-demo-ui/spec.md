@@ -17,7 +17,17 @@ The demo home SHALL include a Bluetooth section that supports both existing loca
 #### Scenario: Scan shows nearby devices
 
 - **WHEN** the adapter is on and the user taps Scan
-- **THEN** the controller starts bounded discovery and the section updates from its scan/device streams with deduplicated nearby-device rows
+- **THEN** the controller starts bounded discovery and the section updates from its scan/device streams with deduplicated nearby-device rows that follow Settings-style filtering (HID / phone / computer / audio and named devices with relevant services — not anonymous MAC-only LE advertisers)
+
+#### Scenario: Scan hides anonymous LE spam
+
+- **WHEN** discovery reports devices whose alias/name is empty or equal to their address
+- **THEN** those devices MUST NOT appear in the Demo nearby list
+
+#### Scenario: Scan results persist after discovery stops
+
+- **WHEN** a bounded scan ends and BlueZ removes temporary Device1 objects
+- **THEN** Settings-relevant nearby rows from that scan session remain visible until the next Scan
 
 #### Scenario: User pairs and connects a scan result
 

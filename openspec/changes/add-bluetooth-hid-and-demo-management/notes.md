@@ -21,11 +21,63 @@ Board: USB-SSH `192.168.55.1`, adapter `B4:04:29:B0:5A:FA` (`lws-hmi`).
 | Adapter roles | `central` + `peripheral` |
 | `ReverseServiceDiscovery` | `false` (unchanged; phone A2DP path) |
 | Bounded discovery | Works via `bluetoothctl scan on` (~6s); many nearby LE devices appear |
-| Classic HID / BLE HOGP pair+connect | **Not exercised** — no known HID keyboard/mouse on the bench this session |
+| Classic HID / BLE HOGP pair+connect | **Blocked on HOGP attach** — see below. |
+
+**UHID on running image (2026-07-16 later):** `/dev/uhid` present, `CONFIG_UHID=y` (built-in). UHID is not the blocker.
+
+**QM002 HOGP attach (2026-07-16) — FIXED:** `Disconnect/Connect s "random"` → `ServicesResolved=true`; keyboard `event3=QM002` appears (typing + pointer work). `ConnectProfile` may still return `br-connection-page-timeout` but input-hog can already be up after LE Connect. Rockchip ADDR_TYPE: `random`/`public`=LE, `bredr`=Classic (do not map AddressType=public → Connect public for Classic HID), `auto`=bluetoothd bearer select.
+
+**Pointer axes (BT keyboard+trackpad):** QM002 reports **EV_REL + EV_ABS**; libinput may deliver REL and/or ABS. Fix must cover both (`0009`). Auto: udev `ID_BUS=bluetooth` + kb+pointer. Demo: Auto / Raw / Swap XY → `pointer_axes=` in mouse.conf; flutter-pi polls ns mtime and `LOG_ERROR` on axes change. Field note: board must run rebuilt flutter-pi (prebuilt md5); UI alone cannot fix an old binary. Retired: `0009-pointer-relative-display-axes`, `0009-qm002-pointer-axis-swap`.
+
+**QM002 trackpad gestures (2026-07-17):** HID report **does** include Digitizer Touch Pad (0x0D/0x05) with multi-finger collections, but default **`hid-apple`** only exposes REL mouse + keyboard → libinput `Tap-to-click: n/a`, scroll=`button`. Spikes: **`hid-magicmouse`** enables tap + two-finger scroll but drops libinput **keyboard** capability (typing broken); **`hid-multitouch`** keeps a separate Keyboard node but the Touchpad node fails sanity checks (no MT axes / not a real libinput touchpad). **No safe automatic rebind** today without breaking typing. Need kernel/`hid-apple` digitizer support or hidraw→uinput bridge for both. flutter-pi `0005` still enables tap/2fg **when** libinput reports them (forward-compatible). Product choice: **prefer typing** (stay on hid-apple).
+
+**HID keepalive field fix (2026-07-17):** After upgrade, keepalive Disconnect-looped zombies (`Connected=yes ServicesResolved=false`) and `_hidEvdevPresent` treated USB mice as HOGP success → no QM002 evdev + bluetoothd flooded `characteristic_get_notifying`. Fix: BT-only evdev match (uniq/uhid), keepalive never zombie-Disconnects, exponential backoff. Corrupt bonds may need one Remove → Scan → Pair.
+
+
+**Cursor stutter / MoveCursor EFAULT:** Every pointer move called `drmModeMoveCursor`, which fails with EFAULT on ynh960 Rockchip; unthrottled `LOG_ERROR` flooded journal and stuttered USB + BT. `0010-cursor-movecursor-fallback.patch` latches failure once, logs once, and repositions via atomic prefer_cursor composition push.
 
 **Still open for 1.2 / 2.3 / 5.4 / 7.3 / 7.4:** bring a Classic HID keyboard or mouse (and ideally a HOGP device), pair from Demo Scan, confirm `/dev/input` nodes, Demo typing/pointer, phone+A2DP coexistence, and whether AIC initiator SDP `ENOSYS` appears in `journalctl -u bluetooth` during Classic HID connect.
 
+## How OSes pair BLE keyboards vs why Demo hung (2026-07-16)
+
+**iPhone / iPad / Android Settings (typical BLE HOGP keyboard):**
+
+1. User selects the keyboard (or accepts “keyboard wants to pair”).
+2. Stack **Connects** (LE ATT / GATT).
+3. SMP bonding runs — often **Just Works** or a single **Accept** consent UI (not typing a passkey on the keyboard).
+4. HOGP profile comes up → Linux/`hid`/UHID input nodes (on phones: HID host stack).
+
+**Linux desktop (GNOME / `bluetoothctl`):** same idea — default Agent registered, then **connect** (pair as needed), trust.
+
+**What our logs showed:**
+
+```
+input-hog … unavailable → disconnected
+bt: connect … UnknownMethod: Method "Connect" … doesn't exist
+New incoming LE ATT connection
+Pairing timed out after connect
+```
+
+`Connect` “doesn't exist” here is BlueZ-speak for **the Device1 object is already gone** (same class of error as Bleak `UnknownObject`). We previously **stopped discovery before Pair**; for LE random-address keyboards BlueZ removes the cache entry → stale Dart handle → Connect fails → Pair hangs.
+
+**Mitigation in HMI:** keep discovery on; treat **bluetoothctl info/connect/pair/trust** as authoritative (Dart Device1 cache can be ghost); Demo Accept first then agent auto-confirm; show SelectableText errors.
+
 **AIC initiator SDP:** Prior phone/A2DP work documented `ENOSYS` on HMI-initiated SDP to phones. Outbound HID still requires a physical Classic keyboard/mouse spike before claiming Classic HID acceptance. BLE HOGP may differ; keep transport-neutral UI.
+
+## bluetoothd crash recovery (2026-07-16 field log)
+
+Observed on device during Demo scan:
+
+1. `input-hog` profile `disconnected -> unavailable` for an LE device
+2. `bluetoothd` aborted: `malloc(): mismatching next->prev_size (unsorted)` → `status=6/ABRT`
+3. Subsequent D-Bus calls failed with `Unit dbus-org.bluez.service not found` (Alias only exists after `systemctl enable`; we keep bluetooth boot-deferred)
+4. HMI adapter off/on could not recover because the BlueZ Dart client stayed on a dead session and `unregisterAgent` hit the missing activation unit
+
+Mitigations shipped:
+
+- Overlay alias `etc/systemd/system/dbus-org.bluez.service` → `bluetooth.service`
+- `Restart=on-abnormal` on `bluetooth.service`
+- `bt-stack-up/down` reset-failed / restart + HMI client reset on adapter toggle / adapterRemoved
 
 ## Acceptance device matrix (task 1.3)
 

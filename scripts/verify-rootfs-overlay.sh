@@ -652,6 +652,24 @@ EOF
 			echo "FAIL: bluetooth.service missing" >&2
 			missing=1
 		fi
+		# Alias= is only created by systemctl enable; we keep bluetooth boot-deferred,
+		# so the overlay must ship dbus-org.bluez.service for D-Bus activation.
+		# Use -L/-e carefully: absolute symlinks resolve against the host, not $target.
+		alias_unit="$target/etc/systemd/system/dbus-org.bluez.service"
+		alias_lib="$target/usr/lib/systemd/system/dbus-org.bluez.service"
+		if [[ -L "$alias_unit" || -e "$alias_unit" || -L "$alias_lib" || -e "$alias_lib" ]]; then
+			echo "OK:  dbus-org.bluez.service alias"
+		else
+			echo "FAIL: dbus-org.bluez.service alias missing (D-Bus cannot restart bluetoothd)" >&2
+			missing=1
+		fi
+		if grep -q 'Restart=on-abnormal' \
+			"$target/etc/systemd/system/bluetooth.service.d/lws-hmi.conf" 2>/dev/null; then
+			echo "OK:  bluetooth.service Restart=on-abnormal"
+		else
+			echo "FAIL: bluetooth.service.d missing Restart=on-abnormal" >&2
+			missing=1
+		fi
 	fi
 	if grep -qF '#include "chips/lws_hmi_npu.config"' "$def" 2>/dev/null; then
 		echo ""

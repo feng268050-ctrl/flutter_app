@@ -34,16 +34,48 @@ if command -v wifibt-init.sh >/dev/null 2>&1; then
 fi
 
 if command -v systemctl >/dev/null 2>&1; then
+	# D-Bus activation needs dbus-org.bluez.service (Alias only exists after enable;
+	# we keep bluetooth boot-deferred, so ship a relative alias symlink in the overlay).
+	if [ ! -e /etc/systemd/system/dbus-org.bluez.service ] && \
+		[ ! -L /etc/systemd/system/dbus-org.bluez.service ] && \
+		[ ! -e /usr/lib/systemd/system/dbus-org.bluez.service ] && \
+		[ ! -L /usr/lib/systemd/system/dbus-org.bluez.service ]; then
+		if [ -f /usr/lib/systemd/system/bluetooth.service ]; then
+			ln -sfn ../../usr/lib/systemd/system/bluetooth.service \
+				/etc/systemd/system/dbus-org.bluez.service 2>/dev/null || \
+			ln -sfn /usr/lib/systemd/system/bluetooth.service \
+				/etc/systemd/system/dbus-org.bluez.service 2>/dev/null || true
+			systemctl daemon-reload 2>/dev/null || true
+			log "installed dbus-org.bluez.service alias"
+		fi
+	fi
 	systemctl reset-failed bluetooth.service 2>/dev/null || true
-	if ! systemctl start bluetooth.service; then
-		log "bluetooth.service failed"
-		systemctl status bluetooth.service --no-pager -l 2>&1 | head -40 >&2 || true
-		exit 1
+	# Prefer restart when a previous bluetoothd core-dump left the unit dead.
+	if systemctl is-failed --quiet bluetooth.service 2>/dev/null || \
+		! systemctl is-active --quiet bluetooth.service 2>/dev/null; then
+		if ! systemctl restart bluetooth.service 2>/dev/null; then
+			if ! systemctl start bluetooth.service; then
+				log "bluetooth.service failed"
+				systemctl status bluetooth.service --no-pager -l 2>&1 | head -40 >&2 || true
+				exit 1
+			fi
+		fi
 	fi
 	if ! systemctl is-active --quiet bluetooth.service; then
 		log "bluetooth.service not active"
+		systemctl status bluetooth.service --no-pager -l 2>&1 | head -40 >&2 || true
 		exit 1
 	fi
+fi
+
+# HOGP keyboards/mice need /dev/uhid (CONFIG_UHID=y built-in, or =m + modprobe).
+if [ -e /dev/uhid ]; then
+	log "uhid ok (/dev/uhid present)"
+elif modprobe uhid 2>/dev/null; then
+	log "uhid module loaded"
+else
+	log "WARN: no /dev/uhid — BLE keyboard/mouse input will fail until kernel has CONFIG_UHID=y"
+	log "  run: /usr/lib/lws-hmi/bt-hid-check.sh"
 fi
 
 if ! command -v bluetoothctl >/dev/null 2>&1; then

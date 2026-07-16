@@ -96,7 +96,7 @@ class _MouseDemoSectionState extends State<MouseDemoSection>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text(
-          'USB mouse',
+          'Mouse',
           style: TextStyle(
             color: Colors.white,
             fontSize: 28,
@@ -105,8 +105,8 @@ class _MouseDemoSectionState extends State<MouseDemoSection>
         ),
         const SizedBox(height: 4),
         Text(
-          'HID via 1 mm USB host, or Micro-USB when Debug over USB is OFF. '
-          'Pointer should be visible when a mouse is attached. '
+          'USB or Bluetooth HID pointer. '
+          'Pointer should be visible when a mouse or keyboard trackpad is attached. '
           'Settings persist under /var/lib/lws-hmi/mouse.conf.',
           style: muted,
         ),
@@ -192,6 +192,38 @@ class _MouseDemoSectionState extends State<MouseDemoSection>
                 return;
               }
               unawaited(_apply(_settings.copyWith(primaryButton: set.first)));
+            },
+          ),
+          const SizedBox(height: 12),
+          Text('Pointer axes', style: muted),
+          const SizedBox(height: 4),
+          Text(
+            'Auto fixes Bluetooth keyboard+trackpad axis swap. '
+            'Raw = no fix. Swap XY = always swap. Takes effect within ~1s.',
+            style: muted.copyWith(fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          SegmentedButton<MousePointerAxes>(
+            segments: const [
+              ButtonSegment(
+                value: MousePointerAxes.auto,
+                label: Text('Auto'),
+              ),
+              ButtonSegment(
+                value: MousePointerAxes.normal,
+                label: Text('Raw'),
+              ),
+              ButtonSegment(
+                value: MousePointerAxes.swap,
+                label: Text('Swap XY'),
+              ),
+            ],
+            selected: {_settings.pointerAxes},
+            onSelectionChanged: (set) {
+              if (set.isEmpty) {
+                return;
+              }
+              unawaited(_apply(_settings.copyWith(pointerAxes: set.first)));
             },
           ),
         ],

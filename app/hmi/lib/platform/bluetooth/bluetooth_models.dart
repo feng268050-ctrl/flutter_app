@@ -189,3 +189,69 @@ BluetoothDeviceKind inferBluetoothDeviceKind({
 
   return BluetoothDeviceKind.unknown;
 }
+
+final _macAsName = RegExp(
+  r'^[0-9A-Fa-f]{2}([:\-])([0-9A-Fa-f]{2}\1){4}[0-9A-Fa-f]{2}$',
+);
+
+/// True when [name] is empty or is just a MAC (BlueZ often aliases unnamed LE).
+bool bluetoothNameIsPlaceholder(String name) {
+  final t = name.trim();
+  if (t.isEmpty) {
+    return true;
+  }
+  return _macAsName.hasMatch(t);
+}
+
+bool _uuidIsPairingInteresting(String uuid) {
+  final u = uuid.toLowerCase();
+  const interesting = <String>{
+    // Classic HID / HOGP
+    '00001124-0000-1000-8000-00805f9b34fb',
+    '00001812-0000-1000-8000-00805f9b34fb',
+    // Audio / A2DP / AVRCP / HFP (phones, speakers — Settings-relevant)
+    '0000110a-0000-1000-8000-00805f9b34fb',
+    '0000110b-0000-1000-8000-00805f9b34fb',
+    '0000110e-0000-1000-8000-00805f9b34fb',
+    '0000111e-0000-1000-8000-00805f9b34fb',
+    '0000110c-0000-1000-8000-00805f9b34fb',
+    // GATT Device Information often accompanies real peripherals
+    '0000180a-0000-1000-8000-00805f9b34fb',
+  };
+  return interesting.contains(u);
+}
+
+/// Settings-style "Available devices" filter (not raw LE advertiser dump).
+///
+/// Phones/Desktop hide anonymous MAC-only LE beacons and mesh junk; they keep
+/// input/audio/phone/computer classes and named devices with useful services.
+bool isBluetoothNearbyCandidate(BluetoothRemoteDevice d) {
+  switch (d.kind) {
+    case BluetoothDeviceKind.keyboard:
+    case BluetoothDeviceKind.mouse:
+    case BluetoothDeviceKind.phone:
+    case BluetoothDeviceKind.computer:
+    case BluetoothDeviceKind.audio:
+      return true;
+    case BluetoothDeviceKind.other:
+    case BluetoothDeviceKind.unknown:
+      break;
+  }
+
+  if (bluetoothNameIsPlaceholder(d.name)) {
+    return false;
+  }
+
+  if (d.uuids.any(_uuidIsPairingInteresting)) {
+    return true;
+  }
+
+  // Named + known BlueZ icon (not blank) — typically a real pairing target.
+  if (d.icon.isNotEmpty && d.icon != 'undefined') {
+    return true;
+  }
+
+  // Named Classic inquiry usually sets a non-empty CoD → kind != unknown.
+  // Remaining named unknown LE (smart lights, beacons): hide like Settings.
+  return false;
+}

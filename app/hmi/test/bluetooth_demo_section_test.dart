@@ -118,6 +118,9 @@ class _FakeBtController implements BluetoothController {
   Future<void> pairAndConnect(String address) async {}
 
   @override
+  Future<void> cancelPairing() async {}
+
+  @override
   Future<void> disconnectRemote(String address) async {}
 
   @override
@@ -176,10 +179,13 @@ void main() {
     );
     await tester.pump();
     expect(find.text('123456'), findsOneWidget);
-    expect(find.textContaining('Type this passkey'), findsOneWidget);
+    expect(find.textContaining('Type this 6-digit passkey'), findsOneWidget);
 
-    await tester.tap(find.text('Scan'));
+    final scan = find.text('Scan');
+    await tester.ensureVisible(scan);
+    await tester.tap(scan);
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Stop scan'), findsOneWidget);
   });
 

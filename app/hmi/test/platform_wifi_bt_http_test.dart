@@ -242,6 +242,78 @@ Device 11:22:33:44:55:66 (public)
     });
   });
 
+  group('isBluetoothNearbyCandidate', () {
+    test('hides MAC-only unnamed LE spam', () {
+      expect(
+        isBluetoothNearbyCandidate(
+          const BluetoothRemoteDevice(
+            address: 'AA:BB:CC:DD:EE:FF',
+            name: 'AA-BB-CC-DD-EE-FF',
+            discovered: true,
+          ),
+        ),
+        isFalse,
+      );
+      expect(
+        isBluetoothNearbyCandidate(
+          const BluetoothRemoteDevice(
+            address: 'AA:BB:CC:DD:EE:FF',
+            discovered: true,
+          ),
+        ),
+        isFalse,
+      );
+    });
+
+    test('keeps HID / phone / audio kinds', () {
+      expect(
+        isBluetoothNearbyCandidate(
+          const BluetoothRemoteDevice(
+            address: '11:22:33:44:55:66',
+            kind: BluetoothDeviceKind.keyboard,
+          ),
+        ),
+        isTrue,
+      );
+      expect(
+        isBluetoothNearbyCandidate(
+          const BluetoothRemoteDevice(
+            address: '11:22:33:44:55:66',
+            name: 'Pixel',
+            kind: BluetoothDeviceKind.phone,
+          ),
+        ),
+        isTrue,
+      );
+    });
+
+    test('hides named unknown LE without useful services', () {
+      expect(
+        isBluetoothNearbyCandidate(
+          const BluetoothRemoteDevice(
+            address: 'AC:8C:46:5D:3C:9F',
+            name: 'lemish.light.wy0d02',
+            discovered: true,
+          ),
+        ),
+        isFalse,
+      );
+    });
+
+    test('keeps named device with HID UUID', () {
+      expect(
+        isBluetoothNearbyCandidate(
+          const BluetoothRemoteDevice(
+            address: '11:22:33:44:55:66',
+            name: 'BT Keyboard',
+            uuids: ['00001124-0000-1000-8000-00805f9b34fb'],
+          ),
+        ),
+        isTrue,
+      );
+    });
+  });
+
   group('BluetoothOperationException', () {
     test('includes address when present', () {
       final e = BluetoothOperationException('fail', address: 'AA:BB:CC:DD:EE:FF');

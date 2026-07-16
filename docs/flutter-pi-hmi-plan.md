@@ -65,6 +65,7 @@ P2.1  板级 I/O 与外设验证（硬件前置）🔄
     │     （IPC 专链配址、ping 相机、RTSP / MediaMTX / 预览 — 仍属 P5.1 业务迁移）
     ├─ 触控：Goodix / libinput 稳定；坐标与屏旋转一致 ✅
     ├─ 外接键盘（USB HID）：**1 mm pin → USB host** 与/或 **Micro-USB OTG host（ID）** → enum + 按键进 flutter-pi（非 P4 软键盘；标准 PC 线仍为 plug-ssh）✅
+    ├─ 外接鼠标（USB HID）：同 host 路径 → **可见指针** + Demo 鼠标设置（自然滚动 / 速度 / 主按钮；`mouse.conf`）🔄
     ├─ 串口 / GPIO / pinmux 台账：`docs/ynh960-io-pinmux-ledger.md` ✅
     └─ 背光 / 屏幕旋转 smoke ✅
 
@@ -1502,8 +1503,9 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - **以太网（RJ45 / eth0）**：Demo + `EthernetController` + `eth0-*.sh`；板端 DTS（RMII / PHY）→ link up → DHCP/静态 ping（`archive/2026-07-15-p2-1-ethernet`；IPC 专链属 P5.1）
 - **触控**：Goodix / libinput 稳定点击与滑动；与屏旋转坐标一致（`[lws-hmi-ynh960-touch.dtsi](../overlay/kernel/rockchip/lws-hmi-ynh960-touch.dtsi)`）
 - **外接键盘（USB HID）**：**1 mm pin → USB host** 枚举 + Demo 打字 / 方向键 / 长按连发 OK（`p2-1-usb-keyboard`；需 `xkeyboard-config` + Compose stub + flutter-pi 补丁 0001–0003；踩坑见 [`ynh960-io-pinmux-ledger.md`](ynh960-io-pinmux-ledger.md) §4.1.1）；**Micro-USB OTG ID dual-role**（`p2-1-usb-otg-id-role`：OTG 转接 → 键盘；PC 线 → plug-ssh）；**非** P4 `frost_ime`
+- **外接鼠标（USB HID）**：同 host → 可见指针 + Demo 设置（`p2-1-usb-mouse`；flutter-pi `0004` stride / `0005` `mouse.conf`；台账 §4.1.2）— **待真机 rebuild + smoke**
 - **LAN/WLAN 按需 sshd**：`enable-ssh-debug.sh` + Demo「LAN SSH debug」；主机 `make connect <ip>`（§7.7；**非** boot enable；产品 5 连击仍属 P5）
-- **串口 / GPIO / pinmux 台账**：`[docs/ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（`ttyS5`、gpio_innohi、own-gpio↔gmac、触控、USB 键盘用户态）
+- **串口 / GPIO / pinmux 台账**：`[docs/ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（`ttyS5`、gpio_innohi、own-gpio↔gmac、触控、USB 键盘/鼠标用户态）
 - **背光**：powermanager / sysfs 亮度可调 smoke — Demo 亮度 slider（`LinuxSysfsBacklight`）；板端路径名以设备实测为准
 - **屏幕旋转**：Portrait / Landscape → `/var/lib/lws-hmi/display-orientation` + `hmi-launch.sh` `-o`；Demo 按钮组（真机切换需 HMI 重启）
 - ~~（可选）`verify-io` 一键 smoke~~ — **跳过**（非必要；板端按台账 §6 手工核对即可）

@@ -13,7 +13,7 @@ flutter create --platforms=android .
 
 See [`../README.md`](../README.md) for engine pins and deploy layout.
 
-## P2.1–P2.3 platform I/O (speaker / backlight / orientation / Ethernet / Wi‑Fi / BT / USB keyboard / date-time / persist)
+## P2.1–P2.3 platform I/O (speaker / backlight / orientation / Ethernet / Wi‑Fi / BT / USB keyboard·mouse / date-time / persist)
 
 Reusable modules live under `lib/platform/`:
 
@@ -24,7 +24,7 @@ Reusable modules live under `lib/platform/`:
 | `display/` | preference file + `systemctl restart hmi` | `/var/lib/lws-hmi/display-orientation` → flutter-pi `-o` |
 | `datetime/` | `timedatectl`/`date` + `hwclock` + `wlan0-time-sync.sh` | Manual set / Network sync; prefs `/var/lib/lws-hmi/time-sync-mode` + `timezone`; HTTPS TLS uses `ensureSaneForTls` |
 | `ethernet/` | helpers + `ip` / sysfs | RJ45 `eth0`; DHCP/static via **`lws-hmi-eth0.service`** (outside HMI cgroup); `eth0-wanted` |
-| `input/` | `/dev/input/by-id` probe | USB HID presence; keys via flutter-pi (needs xkeyboard-config + Compose stubs + patches 0001–0003; 1 mm host and/or Micro-USB OTG host via ID) |
+| `input/` | `/dev/input/by-id` probe + `MouseSettingsController` | USB HID keyboard/mouse presence; keys/pointer via flutter-pi (xkeyboard-config + Compose + patches 0001–0005); mouse prefs → `/var/lib/lws-hmi/mouse.conf` (flutter-pi mtime poll; no SIGHUP) |
 | `wifi/` | helpers + `wpa_cli` | **`lws-hmi-wpa` / `lws-hmi-wlan0-dhcp`** units; `wifi-wanted`; Hidden SSID; DHCP/static on **wlan0** |
 | `http/` | Dart `HttpClient` (+ optional `curl`) | Default `SecurityContext`; wall-clock via `DateTimeController`; proxy prefs `/var/lib/lws-hmi/http-proxy`; Demo GET probe |
 | `bluetooth/` | helpers + `bluetoothctl` | Discoverable peer; `bt-wanted` + A2DP (`bt-a2dp-sink`); Demo `syncFromSystem()` after restore |
@@ -38,11 +38,12 @@ Reusable modules live under `lib/platform/`:
 3. Portrait / Landscape — HMI restarts; `ps`/`tr` confirms `-o portrait_up` or `landscape_left`
 4. Ethernet — enable interface → DHCP or Static → link LED / `ping` peer PC (not IPC camera IP yet)
 5. USB keyboard — **1 mm pin → USB host** and/or **Micro-USB OTG host** (OTG/ID adapter) + HID → Demo「USB keyboard」：type, arrow caret, hold-to-repeat; optional NumLock if present. Standard PC cable on Micro-USB → plug-ssh (not keyboard). Pitfalls: [`docs/ynh960-io-pinmux-ledger.md`](../../docs/ynh960-io-pinmux-ledger.md) §4.1 / §4.1.1
-6. Wi‑Fi — enable radio → Scan → Connect (or Hidden SSID) → DHCP or Static → `ping` gateway; Send request (default `https://www.baidu.com/`) shows HTTP status/body
-7. Proxy — enable proxy, Save, re-run Send request
-8. LAN SSH debug — toggle on → note eth0/wlan0 IP → host `make connect <ip>`
-9. Date & Time — set mode Manual/Network; Apply local date/time; Sync Now with network up; HTTPS probe after forcing stale RTC
-10. Bluetooth — enable adapter; turn on **Pairable** (also enables Discoverable 180s) or Discoverable; phone finds / pairs. Optional: enable **BT speaker (A2DP)** (off by default) → phone **连接成功** + music on speaker. Demo **Volume** also drives BlueALSA soft-volume while BT is streaming. Incoming peers lists remote; `verify-boot` still shows wifibt/wpa/bluetooth deferred at boot
+6. USB mouse — same host paths → Demo「USB mouse」：visible pointer tracks; natural scroll / scroll speed / pointer speed / primary button; prefs in `/var/lib/lws-hmi/mouse.conf`. Pitfalls: ledger §4.1.2 (`0004`/`0005` flutter-pi patches)
+7. Wi‑Fi — enable radio → Scan → Connect (or Hidden SSID) → DHCP or Static → `ping` gateway; Send request (default `https://www.baidu.com/`) shows HTTP status/body
+8. Proxy — enable proxy, Save, re-run Send request
+9. LAN SSH debug — toggle on → note eth0/wlan0 IP → host `make connect <ip>`
+10. Date & Time — set mode Manual/Network; Apply local date/time; Sync Now with network up; HTTPS probe after forcing stale RTC
+11. Bluetooth — enable adapter; turn on **Pairable** (also enables Discoverable 180s) or Discoverable; phone finds / pairs. Optional: enable **BT speaker (A2DP)** (off by default) → phone **连接成功** + music on speaker. Demo **Volume** also drives BlueALSA soft-volume while BT is streaming. Incoming peers lists remote; `verify-boot` still shows wifibt/wpa/bluetooth deferred at boot
 
 Helpers: `/usr/lib/lws-hmi/wifi-stack-*.sh`, `wlan0-dhcp.sh`, `wlan0-static.sh`, `eth0-link.sh`, `eth0-dhcp.sh`, `eth0-static.sh`, `enable-ssh-debug.sh`, `disable-ssh-debug.sh`, `bt-stack-*.sh`, `bt-a2dp-sink-*.sh`, `bt-a2dp-volume.sh`, `bt-pair-agent.sh`, `bt-audio-prepare.sh`; units `bluealsa.service` / `bluealsa-aplay.service` (started only when A2DP switch on).
 

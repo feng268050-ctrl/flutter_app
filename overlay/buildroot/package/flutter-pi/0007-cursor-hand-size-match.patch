@@ -1,0 +1,228 @@
+From: lws-hmi <dev@lws>
+Date: Thu, 16 Jul 2026 10:40:00 +0800
+Subject: [PATCH] cursor: ceil density + upscale sparse hand/text icons
+
+Hand/text only ship mdpi+xhdpi; nearest match picked tiny mdpi while arrow
+had hdpi/xxhdpi. Prefer ceil density, then NN-upscale if still below target.
+
+---
+--- a/src/cursor.c
++++ b/src/cursor.c
+@@ -1451,23 +1451,33 @@
+ }
+ 
+ const struct pointer_icon *pointer_icon_for_details(enum pointer_kind kind, double pixel_ratio) {
+-    const struct pointer_icon *best;
++    const struct pointer_icon *best_ge = NULL;
++    const struct pointer_icon *best_any = NULL;
+ 
+-    best = NULL;
++    /*
++     * Prefer the smallest icon with pixel_ratio >= target (ceil). Sparse kinds
++     * (CLICK/TEXT only ship mdpi+xhdpi) otherwise snap down to a tiny mdpi
++     * while BASIC has hdpi/xxhdpi — hand looks much smaller than arrow.
++     */
+     for (int i = 0; i < ARRAY_SIZE(pointer_icons); i++) {
+         const struct pointer_icon *icon = pointer_icons[i];
+ 
+-        if (icon->kind == kind) {
+-            if (best == NULL) {
+-                best = icon;
+-                continue;
+-            } else if (fabs(pixel_ratio - icon->pixel_ratio) < fabs(pixel_ratio - best->pixel_ratio)) {
+-                best = icon;
+-                continue;
++        if (icon->kind != kind) {
++            continue;
++        }
++        if (best_any == NULL
++            || fabs(pixel_ratio - icon->pixel_ratio) < fabs(pixel_ratio - best_any->pixel_ratio)) {
++            best_any = icon;
++        }
++        if (icon->pixel_ratio + 0.001 >= pixel_ratio) {
++            if (best_ge == NULL || icon->pixel_ratio < best_ge->pixel_ratio) {
++                best_ge = icon;
+             }
+         }
+     }
+ 
++    const struct pointer_icon *best = best_ge != NULL ? best_ge : best_any;
++
+     if (best == NULL && kind != POINTER_KIND_BASIC) {
+         best = pointer_icon_for_details(POINTER_KIND_BASIC, pixel_ratio);
+     }
+--- a/src/window.c
++++ b/src/window.c
+@@ -566,17 +566,44 @@
+     }
+ }
+ 
+-static struct cursor_buffer *cursor_buffer_new(struct drmdev *drmdev, const struct pointer_icon *icon, drm_plane_transform_t rotation) {
++static struct cursor_buffer *cursor_buffer_new(
++    struct drmdev *drmdev,
++    const struct pointer_icon *icon,
++    drm_plane_transform_t rotation,
++    double target_pixel_ratio
++) {
+     struct cursor_buffer *b;
+     struct gbm_bo *bo;
+     uint32_t fb_id;
+-    struct vec2i size, rotated_size;
++    struct vec2i size, rotated_size, src_size, hotspot;
+     int ok;
++    int scale = 1;
+ 
+     ASSERT_NOT_NULL(drmdev);
+     assert(PLANE_TRANSFORM_IS_ONLY_ROTATION(rotation));
+ 
+-    size = pointer_icon_get_size(icon);
++    src_size = pointer_icon_get_size(icon);
++    hotspot = pointer_icon_get_hotspot(icon);
++
++    /* Upscale sparse icons (hand/text) when selected density is below target. */
++    {
++        double icon_ratio = pointer_icon_get_pixel_ratio(icon);
++        if (icon_ratio > 0.01 && target_pixel_ratio > icon_ratio * 1.05) {
++            scale = (int) round(target_pixel_ratio / icon_ratio);
++            if (scale < 1) {
++                scale = 1;
++            }
++            if (scale > 4) {
++                scale = 4;
++            }
++            while (scale > 1 && (src_size.x * scale > 128 || src_size.y * scale > 128)) {
++                scale--;
++            }
++        }
++    }
++
++    size = VEC2I(src_size.x * scale, src_size.y * scale);
++    hotspot = VEC2I(hotspot.x * scale, hotspot.y * scale);
+     rotated_size = size;
+ 
+     b = malloc(sizeof *b);
+@@ -631,15 +658,35 @@
+             goto fail_free_duped_pixel_data;
+         }
+ 
++        /* Nearest-neighbor scale source pixels into destination size. */
++        uint32_t *scaled = pixel_data;
++        uint32_t *scaled_owned = NULL;
++        if (scale > 1) {
++            scaled_owned = malloc((size_t) size.x * (size_t) size.y * 4u);
++            if (scaled_owned == NULL) {
++                free(upload);
++                goto fail_free_duped_pixel_data;
++            }
++            for (int y = 0; y < size.y; y++) {
++                for (int x = 0; x < size.x; x++) {
++                    int sx = x / scale;
++                    int sy = y / scale;
++                    scaled_owned[y * size.x + x] = pixel_data[sy * src_size.x + sx];
++                }
++            }
++            scaled = scaled_owned;
++        }
++
+         if (rotation.rotate_0) {
+             for (int y = 0; y < size.y; y++) {
+-                memcpy(upload + (size_t) y * stride, (uint8_t *) pixel_data + (size_t) y * (size_t) size.x * 4u, (size_t) size.x * 4u);
++                memcpy(upload + (size_t) y * stride, (uint8_t *) scaled + (size_t) y * (size_t) size.x * 4u, (size_t) size.x * 4u);
+             }
+         } else {
+             ASSUME(rotation.rotate_90 || rotation.rotate_180 || rotation.rotate_270);
+ 
+             uint32_t *rotated = malloc((size_t) size.x * (size_t) size.y * 4u);
+             if (rotated == NULL) {
++                free(scaled_owned);
+                 free(upload);
+                 goto fail_free_duped_pixel_data;
+             }
+@@ -662,7 +709,7 @@
+                     int buffer_offset = rotated_size.x * buffer_y + buffer_x;
+                     int cursor_offset = size.x * y + x;
+ 
+-                    rotated[buffer_offset] = pixel_data[cursor_offset];
++                    rotated[buffer_offset] = scaled[cursor_offset];
+                 }
+             }
+ 
+@@ -671,6 +718,7 @@
+             }
+             free(rotated);
+         }
++        free(scaled_owned);
+ 
+         ok = gbm_bo_write(bo, upload, bo_bytes);
+         free(upload);
+@@ -706,7 +754,16 @@
+     b->drmdev = drmdev_ref(drmdev);
+     b->drm_fb_id = fb_id;
+     b->bo = bo;
+-    b->hotspot = get_rotated_hotspot(icon, rotation);
++    if (rotation.rotate_0) {
++        b->hotspot = hotspot;
++    } else if (rotation.rotate_90) {
++        b->hotspot = VEC2I(size.y - hotspot.y - 1, hotspot.x);
++    } else if (rotation.rotate_180) {
++        b->hotspot = VEC2I(size.x - hotspot.x - 1, size.y - hotspot.y - 1);
++    } else {
++        ASSUME(rotation.rotate_270);
++        b->hotspot = VEC2I(hotspot.y, size.x - hotspot.x - 1);
++    }
+     return b;
+ 
+ fail_free_duped_pixel_data:
+@@ -1551,28 +1608,25 @@
+ ) {
+     const struct pointer_icon *icon;
+     struct cursor_buffer *cursor;
+-
+-    {
+-        double cursor_ratio = lws_mouse_cursor_select_pixel_ratio(window->pixel_ratio);
++    double cursor_ratio = lws_mouse_cursor_select_pixel_ratio(window->pixel_ratio);
+ 
+-        if (has_kind) {
+-            if (window->kms.pointer_icon == NULL || pointer_icon_get_kind(window->kms.pointer_icon) != kind
+-                || fabs(pointer_icon_get_pixel_ratio(window->kms.pointer_icon) - cursor_ratio) > 0.05) {
+-                window->kms.pointer_icon = pointer_icon_for_details(kind, cursor_ratio);
+-                ASSERT_NOT_NULL(window->kms.pointer_icon);
+-            }
++    if (has_kind) {
++        if (window->kms.pointer_icon == NULL || pointer_icon_get_kind(window->kms.pointer_icon) != kind
++            || fabs(pointer_icon_get_pixel_ratio(window->kms.pointer_icon) - cursor_ratio) > 0.05) {
++            window->kms.pointer_icon = pointer_icon_for_details(kind, cursor_ratio);
++            ASSERT_NOT_NULL(window->kms.pointer_icon);
+         }
++    }
+ 
+-        enabled = has_enabled ? enabled : window->cursor_enabled;
+-        icon = has_kind ? pointer_icon_for_details(kind, cursor_ratio) : window->kms.pointer_icon;
+-        pos = has_pos ? pos : window->cursor_pos;
+-        cursor = window->kms.cursor;
++    enabled = has_enabled ? enabled : window->cursor_enabled;
++    icon = has_kind ? pointer_icon_for_details(kind, cursor_ratio) : window->kms.pointer_icon;
++    pos = has_pos ? pos : window->cursor_pos;
++    cursor = window->kms.cursor;
+ 
+-        if (enabled && icon == NULL) {
+-            // default to the arrow icon.
+-            icon = pointer_icon_for_details(POINTER_KIND_BASIC, cursor_ratio);
+-            ASSERT_NOT_NULL(icon);
+-        }
++    if (enabled && icon == NULL) {
++        // default to the arrow icon.
++        icon = pointer_icon_for_details(POINTER_KIND_BASIC, cursor_ratio);
++        ASSERT_NOT_NULL(icon);
+     }
+ 
+     if (window->kms.pointer_icon != icon) {
+@@ -1581,7 +1635,7 @@
+ 
+     if (enabled) {
+         if (cursor == NULL || icon != cursor->icon) {
+-            cursor = cursor_buffer_new(window->kms.drmdev, window->kms.pointer_icon, window->rotation);
++            cursor = cursor_buffer_new(window->kms.drmdev, window->kms.pointer_icon, window->rotation, cursor_ratio);
+             if (cursor == NULL) {
+                 return EIO;
+             }

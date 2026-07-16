@@ -1,0 +1,137 @@
+From: lws-hmi <dev@lws>
+Date: Wed, 15 Jul 2026 22:50:00 +0800
+Subject: [PATCH] window: accept padded GBM cursor stride (Rockchip)
+
+---
+--- a/src/window.c
++++ b/src/window.c
+@@ -12,6 +12,7 @@
+ 
+ #include <errno.h>
+ #include <stdlib.h>
++#include <string.h>
+ 
+ #include <pthread.h>
+ 
+@@ -593,13 +594,27 @@
+         get_pixfmt_info(PIXFMT_ARGB8888)->gbm_format,
+         GBM_BO_USE_LINEAR | GBM_BO_USE_SCANOUT | GBM_BO_USE_WRITE | GBM_BO_USE_CURSOR
+     );
++    if (bo == NULL) {
++        /* Some Rockchip GBMs reject USE_CURSOR; retry without that flag. */
++        bo = gbm_bo_create(
++            drmdev_get_gbm_device(drmdev),
++            rotated_size.x,
++            rotated_size.y,
++            get_pixfmt_info(PIXFMT_ARGB8888)->gbm_format,
++            GBM_BO_USE_LINEAR | GBM_BO_USE_SCANOUT | GBM_BO_USE_WRITE
++        );
++    }
+     if (bo == NULL) {
+         LOG_ERROR("Could not create GBM buffer for uploading mouse cursor icon. gbm_bo_create: %s\n", strerror(errno));
+         goto fail_free_b;
+     }
+ 
+-    if (gbm_bo_get_stride(bo) != rotated_size.x * 4) {
+-        LOG_ERROR("GBM BO has unsupported framebuffer stride %u, expected was: %d\n", gbm_bo_get_stride(bo), size.x * 4);
++    /* Rockchip/Mali often pads cursor BO stride past width*4. Accept padding and
++     * upload row-by-row; rejecting non-tight stride drops the HW cursor silently. */
++    uint32_t stride = gbm_bo_get_stride(bo);
++    uint32_t min_stride = (uint32_t) rotated_size.x * 4u;
++    if (stride < min_stride) {
++        LOG_ERROR("GBM BO has unsupported framebuffer stride %u, expected at least: %u\n", stride, min_stride);
+         goto fail_destroy_bo;
+     }
+ 
+@@ -608,48 +623,58 @@
+         goto fail_destroy_bo;
+     }
+ 
+-    if (rotation.rotate_0) {
+-        ok = gbm_bo_write(bo, pixel_data, gbm_bo_get_stride(bo) * size.y);
+-        if (ok != 0) {
+-            LOG_ERROR("Couldn't write cursor icon to GBM BO. gbm_bo_write: %s\n", strerror(errno));
++    {
++        size_t bo_bytes = (size_t) stride * (size_t) rotated_size.y;
++        uint8_t *upload = calloc(1, bo_bytes);
++        if (upload == NULL) {
+             goto fail_free_duped_pixel_data;
+         }
+-    } else {
+-        ASSUME(rotation.rotate_90 || rotation.rotate_180 || rotation.rotate_270);
+ 
+-        uint32_t *rotated = malloc(size.x * size.y * 4);
+-        if (rotated == NULL) {
+-            goto fail_free_duped_pixel_data;
+-        }
++        if (rotation.rotate_0) {
++            for (int y = 0; y < size.y; y++) {
++                memcpy(upload + (size_t) y * stride, (uint8_t *) pixel_data + (size_t) y * (size_t) size.x * 4u, (size_t) size.x * 4u);
++            }
++        } else {
++            ASSUME(rotation.rotate_90 || rotation.rotate_180 || rotation.rotate_270);
+ 
+-        for (int y = 0; y < size.y; y++) {
+-            for (int x = 0; x < size.x; x++) {
+-                int buffer_x, buffer_y;
+-                if (rotation.rotate_90) {
+-                    buffer_x = size.y - y - 1;
+-                    buffer_y = x;
+-                } else if (rotation.rotate_180) {
+-                    buffer_x = size.y - y - 1;
+-                    buffer_y = size.x - x - 1;
+-                } else {
+-                    ASSUME(rotation.rotate_270);
+-                    buffer_x = y;
+-                    buffer_y = size.x - x - 1;
+-                }
+-
+-                int buffer_offset = rotated_size.x * buffer_y + buffer_x;
+-                int cursor_offset = size.x * y + x;
+-
+-                rotated[buffer_offset] = pixel_data[cursor_offset];
++            uint32_t *rotated = malloc((size_t) size.x * (size_t) size.y * 4u);
++            if (rotated == NULL) {
++                free(upload);
++                goto fail_free_duped_pixel_data;
+             }
+-        }
+ 
+-        ok = gbm_bo_write(bo, rotated, gbm_bo_get_stride(bo) * rotated_size.y);
++            for (int y = 0; y < size.y; y++) {
++                for (int x = 0; x < size.x; x++) {
++                    int buffer_x, buffer_y;
++                    if (rotation.rotate_90) {
++                        buffer_x = size.y - y - 1;
++                        buffer_y = x;
++                    } else if (rotation.rotate_180) {
++                        buffer_x = size.y - y - 1;
++                        buffer_y = size.x - x - 1;
++                    } else {
++                        ASSUME(rotation.rotate_270);
++                        buffer_x = y;
++                        buffer_y = size.x - x - 1;
++                    }
+ 
+-        free(rotated);
++                    int buffer_offset = rotated_size.x * buffer_y + buffer_x;
++                    int cursor_offset = size.x * y + x;
+ 
++                    rotated[buffer_offset] = pixel_data[cursor_offset];
++                }
++            }
++
++            for (int y = 0; y < rotated_size.y; y++) {
++                memcpy(upload + (size_t) y * stride, (uint8_t *) rotated + (size_t) y * (size_t) rotated_size.x * 4u, (size_t) rotated_size.x * 4u);
++            }
++            free(rotated);
++        }
++
++        ok = gbm_bo_write(bo, upload, bo_bytes);
++        free(upload);
+         if (ok != 0) {
+-            LOG_ERROR("Couldn't write rotated cursor icon to GBM BO. gbm_bo_write: %s\n", strerror(errno));
++            LOG_ERROR("Couldn't write cursor icon to GBM BO. gbm_bo_write: %s\n", strerror(errno));
+             goto fail_free_duped_pixel_data;
+         }
+     }

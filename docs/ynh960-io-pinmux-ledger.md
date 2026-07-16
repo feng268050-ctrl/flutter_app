@@ -73,7 +73,7 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 | 路径 | 板载形态 | DT / 用途 |
 |------|----------|-----------|
 | **Micro-USB OTG** | 板子集成插座 | `usbdrd_dwc3` + `u2phy0_otg`，`dr_mode=otg`：**ID 接地** → host（键盘）；**ID 浮空** + PC VBUS → peripheral（**plug-ssh**） |
-| **其它 USB** | **1 mm pin → 转接** | `usbhost_dwc3` + `u2phy0_host`（+ `combphy1` HS）→ **USB host / 键盘**（与 OTG 角色独立） |
+| **其它 USB** | **1 mm pin → 转接** | `usbhost_dwc3` + `u2phy0_host`（+ `combphy1` HS）→ **USB host / 键盘·鼠标**（与 OTG 角色独立） |
 | VBUS（扩展） | `USB_HOST_PWREN{1,2,3}` | gpio4 PA0/PA1/PA2，RMII 后已从 own-gpio 恢复（默认开） |
 | VBUS（OTG host） | PHY `USB_VBUS_EN`（extcon0） | 随 OTG host 角色由 `usb2phy0` 驱动 |
 
@@ -94,6 +94,8 @@ Overlays：`lws-hmi-ynh960-usb-gadget.dtsi`（OTG dual-role）、`lws-hmi-ynh960
 | 小键盘 NumLock「反了」 | 硬件 LED 亮着但 xkb Mod2 默认关（或不同步） | `0002-sync-keyboard-leds.patch`；`hmi-launch.sh` 启动前清 `input*::{num,caps,scroll}lock` |
 | 长按不连发 | libinput 不合成 repeat；flutter-pi 原无定时器 | `0003-key-repeat.patch`（660 ms 后约 25 Hz，只重发 utf8/keysym） |
 | `make rebuild-flutter-pi` 补丁未进包 | `SITE_METHOD=local` 跳过 Buildroot Patching | `flutter-pi.compile.mk` → `FLUTTER_PI_APPLY_PACKAGE_PATCHES` |
+| USB 鼠标能动/滚但不能见指针 | Rockchip GBM cursor stride 常 pad；原逻辑要求 `stride == width*4` 直接放弃 HW cursor | `0004-cursor-stride-padded-gbm.patch` |
+| 鼠标滚轮速度 / 自然滚动等 OS 设置 | flutter-pi 硬编码 wheel scale；未调 libinput config | `0005-mouse-settings-prefs.patch` + `/var/lib/lws-hmi/mouse.conf`；Demo「USB mouse」；**mtime 轮询**重载（禁止 `kill -HUP`，会直接停掉 `hmi.service`） |
 
 Smoke（含连发 / 方向键）：
 
@@ -106,6 +108,17 @@ test -f /usr/share/X11/xkb/rules/evdev && test -f /usr/share/X11/locale/C/Compos
 # flutter-pi 启动日志不得出现: Could not initialize keyboard configuration
 ```
 
+### 4.1.2 USB 鼠标（指针 + 设置）
+
+与键盘同 host 路径。枚举后应有**可见指针**；偏好写入 `mouse.conf`（`natural_scroll` / `scroll_speed` / `pointer_speed` / `pointer_size` / `primary_button`），flutter-pi 启动时加载并每秒检查文件 mtime 后应用。`pointer_size` 控制光标图标密度（默认 **20**；手型/文本缺密度档时 ceil + 放大以对齐箭头）。**不要**对 flutter-pi 发 `SIGHUP`。
+
+```bash
+ls -l /dev/input/by-id/*mouse* 2>/dev/null
+# Demo「USB mouse」：指针跟随；自然滚动 / 滚轮速度 / 指针速度 / 主按钮
+# journal / flutter-pi 日志不应再刷 "unsupported framebuffer stride" 后无 cursor
+cat /var/lib/lws-hmi/mouse.conf 2>/dev/null || true
+```
+
 重新编译 flutter-pi 补丁后还须进 rootfs（见 AGENTS / README Make）：`make rebuild-flutter-pi` → `apply-overlay` → `build-rootfs` → `build-img` → `flash`。
 
 ---
@@ -115,7 +128,7 @@ test -f /usr/share/X11/xkb/rules/evdev && test -f /usr/share/X11/locale/C/Compos
 |------|------|
 | `lws-hmi-ynh960-own-gpio.dtsi` | own-gpio；恢复 USB_HOST_PWREN*（RMII 后）；三色灯默认关 |
 | `lws-hmi-ynh960-usb-gadget.dtsi` | Micro-USB OTG dual-role（ID → host/peripheral；plug-ssh 仅 peripheral） |
-| `lws-hmi-ynh960-usb-host.dtsi` | 1 mm USB host expansion（键盘） |
+| `lws-hmi-ynh960-usb-host.dtsi` | 1 mm USB host expansion（键盘 / 鼠标） |
 | `lws-hmi-ynh960-uart5-gmac.dtsi` | eth RMII/PHY；释放 UART5 |
 | `lws-hmi-ynh960-uart7-pwm.dtsi` | 禁用 uart7 → pwm14/15 |
 | `lws-hmi-ynh960-touch.dtsi` | Goodix only |
@@ -151,6 +164,7 @@ dmesg | grep -iE 'goodix|focal|sitronix'
 
 | Date | Change |
 |------|--------|
+| 2026-07-15 | P2.1 USB 鼠标：可见指针（cursor stride pad）+ `mouse.conf` / Demo 设置；台账 §4.1.2 |
 | 2026-07-15 | P2.1：Micro-USB OTG ID dual-role（`dr_mode=otg`；plug-ssh 门控 `USB-HOST=0`） |
 | 2026-07-15 | P2.1 USB 键盘用户态踩坑表 §4.1.1（XKB/Compose、方向键、NumLock LED、长按连发、local-site 补丁钩子） |
 | 2026-07-15 | P2.1：USB — Micro-USB OTG vs 1 mm host；恢复 PWREN；`usb-host` overlay |

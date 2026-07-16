@@ -1,0 +1,68 @@
+From: lws-hmi <dev@lws>
+Date: Wed, 15 Jul 2026 23:20:00 +0800
+Subject: [PATCH] cursor: OS pointer_size selects icon density
+
+---
+--- a/src/cursor.h
++++ b/src/cursor.h
+@@ -68,4 +68,8 @@
+ 
+ void *pointer_icon_dup_pixels(const struct pointer_icon *icon);
+ 
++/* lws-hmi: OS mouse pointer size (0..100) → icon density for selection */
++void lws_mouse_set_pointer_size_percent(int percent);
++double lws_mouse_cursor_select_pixel_ratio(double window_pixel_ratio);
++
+ #endif  // _FLUTTERPI_SRC_CURSOR_H
+--- a/src/window.c
++++ b/src/window.c
+@@ -11,6 +11,7 @@
+ #include "window.h"
+ 
+ #include <errno.h>
++#include <math.h>
+ #include <stdlib.h>
+ #include <string.h>
+ 
+@@ -1551,22 +1552,27 @@
+     const struct pointer_icon *icon;
+     struct cursor_buffer *cursor;
+ 
+-    if (has_kind) {
+-        if (window->kms.pointer_icon == NULL || pointer_icon_get_kind(window->kms.pointer_icon) != kind) {
+-            window->kms.pointer_icon = pointer_icon_for_details(kind, window->pixel_ratio);
+-            ASSERT_NOT_NULL(window->kms.pointer_icon);
+-        }
+-    }
++    {
++        double cursor_ratio = lws_mouse_cursor_select_pixel_ratio(window->pixel_ratio);
+ 
+-    enabled = has_enabled ? enabled : window->cursor_enabled;
+-    icon = has_kind ? pointer_icon_for_details(kind, window->pixel_ratio) : window->kms.pointer_icon;
+-    pos = has_pos ? pos : window->cursor_pos;
+-    cursor = window->kms.cursor;
++        if (has_kind) {
++            if (window->kms.pointer_icon == NULL || pointer_icon_get_kind(window->kms.pointer_icon) != kind
++                || fabs(pointer_icon_get_pixel_ratio(window->kms.pointer_icon) - cursor_ratio) > 0.05) {
++                window->kms.pointer_icon = pointer_icon_for_details(kind, cursor_ratio);
++                ASSERT_NOT_NULL(window->kms.pointer_icon);
++            }
++        }
+ 
+-    if (enabled && icon == NULL) {
+-        // default to the arrow icon.
+-        icon = pointer_icon_for_details(POINTER_KIND_BASIC, window->pixel_ratio);
+-        ASSERT_NOT_NULL(icon);
++        enabled = has_enabled ? enabled : window->cursor_enabled;
++        icon = has_kind ? pointer_icon_for_details(kind, cursor_ratio) : window->kms.pointer_icon;
++        pos = has_pos ? pos : window->cursor_pos;
++        cursor = window->kms.cursor;
++
++        if (enabled && icon == NULL) {
++            // default to the arrow icon.
++            icon = pointer_icon_for_details(POINTER_KIND_BASIC, cursor_ratio);
++            ASSERT_NOT_NULL(icon);
++        }
+     }
+ 
+     if (window->kms.pointer_icon != icon) {

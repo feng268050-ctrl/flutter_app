@@ -33,6 +33,7 @@ import 'package:lws_hmi/ui/demo/demo_scroll_interaction.dart';
 import 'package:lws_hmi/ui/demo/ethernet_demo_section.dart';
 import 'package:lws_hmi/ui/demo/http_demo_section.dart';
 import 'package:lws_hmi/ui/demo/keyboard_demo_section.dart';
+import 'package:lws_hmi/ui/demo/mouse_demo_section.dart';
 import 'package:lws_hmi/ui/demo/wifi_demo_section.dart';
 
 /// P2 / P2.1 / P2.2 demo: device info, LEDs, I/O, network, date/time.
@@ -460,6 +461,8 @@ class _P2DemoPageState extends State<P2DemoPage> {
             if (_networkSectionsReady) ...[
               const SizedBox(height: 32),
               const KeyboardDemoSection(),
+              const SizedBox(height: 32),
+              const MouseDemoSection(),
               const SizedBox(height: 32),
               DateTimeDemoSection(controller: _dateTime),
               const SizedBox(height: 32),

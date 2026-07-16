@@ -110,7 +110,7 @@ test -f /usr/share/X11/xkb/rules/evdev && test -f /usr/share/X11/locale/C/Compos
 
 ### 4.1.2 USB 鼠标（指针 + 设置）
 
-与键盘同 host 路径。枚举后应有**可见指针**；偏好写入 `mouse.conf`（`natural_scroll` / `scroll_speed` / `pointer_speed` / `pointer_size` / `primary_button`），flutter-pi 启动时加载并每秒检查文件 mtime 后应用。`pointer_size` 控制光标图标密度（默认 **20**；手型/文本缺密度档时 ceil + 放大以对齐箭头）。**不要**对 flutter-pi 发 `SIGHUP`。
+与键盘同 host 路径。枚举后应有**可见指针**；偏好写入 `mouse.conf`（`natural_scroll` / `scroll_speed` / `pointer_speed` / `pointer_size` / `primary_button`），flutter-pi 启动时加载并每秒检查文件 mtime 后应用。`pointer_size` 控制光标图标密度（默认 **20**；手型/文本缺密度档时 ceil + 放大以对齐箭头）。HW 光标位置按 **display_size** 钳制（`0008`），与 `-o landscape_*` 下面板分辨率一致。**不要**对 flutter-pi 发 `SIGHUP`。
 
 ```bash
 ls -l /dev/input/by-id/*mouse* 2>/dev/null
@@ -164,6 +164,7 @@ dmesg | grep -iE 'goodix|focal|sitronix'
 
 | Date | Change |
 |------|--------|
+| 2026-07-16 | P2.1 USB 鼠标：光标可移动区按 display_size clamp（`0008`；landscape 下对齐面板分辨率） |
 | 2026-07-15 | P2.1 USB 鼠标：可见指针（cursor stride pad）+ `mouse.conf` / Demo 设置；台账 §4.1.2 |
 | 2026-07-15 | P2.1：Micro-USB OTG ID dual-role（`dr_mode=otg`；plug-ssh 门控 `USB-HOST=0`） |
 | 2026-07-15 | P2.1 USB 键盘用户态踩坑表 §4.1.1（XKB/Compose、方向键、NumLock LED、长按连发、local-site 补丁钩子） |

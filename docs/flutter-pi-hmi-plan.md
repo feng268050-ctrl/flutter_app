@@ -16,9 +16,9 @@
 | **P1 — 平台镜像 + Hello World**    | Buildroot **Linux 镜像**（含后续所需的 **平台必须组件**）+ splash → `**flutter-pi` Hello World**                                                                                                          | ✅   |
 | **P1.5 — 设备调试 + 快速 UI 迭代**     | `make debug-app` 在**真机**上以调试模式启动 App；VSCode / Cursor Flutter 插件接入；为快速 UI 迭代铺路                                                                                                             | ✅   |
 | **P2 — Modbus + GPIO**         | 迁移 **Modbus RTU** 与 **GPIO 管理**；Linux 真机验证读设备与下位机信息、**三色指示灯**（红/黄/绿）正常控制                                                                                                                  | ✅   |
-| **P2.1 — 板级 I/O 与外设验证**        | 喇叭 / Wi‑Fi / BT / **以太网（RJ45 / eth0）** / **外接键盘（USB HID）** / **按需 LAN·WLAN sshd** 等 **硬件 I/O 前置验证**；顺带收口触控、串口/引脚映射、背光等（见 **§1.1**）；**不做** 产品设置页 / IPC 相机业务 / MediaMTX / Flutter 预览（仍属 P5） | 🔄  |
+| **P2.1 — 板级 I/O 与外设验证**        | 喇叭 / Wi‑Fi / BT / **以太网（RJ45 / eth0）** / **外接键盘·鼠标（USB HID）** / **按需 LAN·WLAN sshd** 等 **硬件 I/O 前置验证**；顺带收口触控、串口/引脚映射、背光等（见 **§1.1**）；**不做** 产品设置页 / IPC 相机业务 / MediaMTX / Flutter 预览（仍属 P5） | ✅  |
 | **P2.2 — 日期/时间设置（Demo）**      | Demo UI：**日期、时间（及时区）设置**；平台层抽象（`DateTimeController` 等），供 P5 产品设置页复用；**不做** 云 NTP 编排 / 产品 Settings 整页                                                                 | ✅  |
-| **P2.3 — 硬件设置持久化**            | 将 **P2.1** Demo 已验证的硬件偏好（Wi‑Fi / eth0 / 背光 / 旋转 / 代理 / BT A2DP 等）在 **整机重启后自动恢复**；系统栈 **独立于 `hmi.service` cgroup**（push-app / HMI 重启不断网）；统一写盘路径与 boot 应用钩子 | ✅  |
+| **P2.3 — 硬件设置持久化**            | 将 **P2.1** Demo 已验证的硬件偏好（Wi‑Fi / eth0 / 背光 / 旋转 / 代理 / BT A2DP / **鼠标** 等）在 **整机重启后自动恢复**；系统栈 **独立于 `hmi.service` cgroup**（push-app / HMI 重启不断网）；统一写盘路径与 boot 应用钩子 | ✅  |
 | **P2.4 — A/B 双分区 + 远程升级**     | Buildroot **A/B rootfs 双分区**；主机 `**make upgrade`** 经 **USB-SSH / LAN SSH** 推送并切换槽位，**无需进 bootloader 刷机**；为 P5 OTA 打底（见 **§1.3**）                                                   | 🔲  |
 | **P2.5 — 模拟器与 Android 兼容**     | `**make emulator`**（Linux HMI 模拟器）；`**make android-emulator**`（参考 lws-ui `make emulator`）；Modbus Android 兼容；GPIO **共用** `gpio_innohi`（YNHAPI 仅降级，§11.0）；Flutter App 可打包 **APK**           | 🔲  |
 | **P3 — AI 原生库**                | 迁移 lws-ui **AI 代码库**；新工程打出 `**libai.so`**（+ RKNN/`config.yaml`）                                                                                                                           | 🔲  |
@@ -55,17 +55,17 @@ P2  Modbus + GPIO（Linux 真机）✅
     ├─ GPIO：直接读写 `/sys/class/gpio_innohi/GPIO_N/value`（不用 YNHAPI 0-based 下标当脚号）
     └─ App demo：读设备与下位机信息；控制三色状态灯（红/黄/绿）
 
-P2.1  板级 I/O 与外设验证（硬件前置）🔄
+P2.1  板级 I/O 与外设验证（硬件前置）✅
     ├─ 动机：P2 暴露串口/引脚对不上、触摸驱动 BUG、UART pinmux vs gmac 等；原计划散落在 P5 的外设先打通
     ├─ 喇叭 / 本机音频：ALSA + codec + 功放；`aplay` / speaker-test 出声（Buildroot 开最小音频栈）✅
     ├─ Wi‑Fi：模组固件 + `wpa_supplicant` 关联（含隐藏 SSID）+ wlan0 DHCP/静态 + HTTP 代理/探测（Demo；设置页属 P5.2）✅
-    ├─ **LAN/WLAN 按需 sshd**：`enable-ssh-debug.sh` + Demo 开关；主机 `make connect <ip>`（§7.7 提前到 P2.1；产品 5 连击属 P5）🔄
+    ├─ **LAN/WLAN 按需 sshd**：`enable-ssh-debug.sh` + Demo 开关；主机 `make connect <ip>`（§7.7 提前到 P2.1；产品 5 连击属 P5）✅
     ├─ 蓝牙：hci0 up + Discoverable/Pairable（可被手机发现配对；非本机扫描；A2DP Sink 可选）✅
     ├─ 以太网（RJ45 / eth0）：Demo + DHCP/静态（`EthernetController`）；DTS/PHY → link up → ping 对端 ✅
     │     （IPC 专链配址、ping 相机、RTSP / MediaMTX / 预览 — 仍属 P5.1 业务迁移）
     ├─ 触控：Goodix / libinput 稳定；坐标与屏旋转一致 ✅
     ├─ 外接键盘（USB HID）：**1 mm pin → USB host** 与/或 **Micro-USB OTG host（ID）** → enum + 按键进 flutter-pi（非 P4 软键盘；标准 PC 线仍为 plug-ssh）✅
-    ├─ 外接鼠标（USB HID）：同 host 路径 → **可见指针** + Demo 鼠标设置（自然滚动 / 速度 / 主按钮；`mouse.conf`）🔄
+    ├─ 外接鼠标（USB HID）：同 host → **可见指针** + Demo 设置（自然滚动 / 速度 / 主按钮；`mouse.conf`；光标可移动区对齐 display）✅
     ├─ 串口 / GPIO / pinmux 台账：`docs/ynh960-io-pinmux-ledger.md` ✅
     └─ 背光 / 屏幕旋转 smoke ✅
 
@@ -339,6 +339,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 | **本机音频 / 喇叭**                  |        |       | ✓     |       |     | ✓     | **P2.1**：ALSA + codec 出声；P5 业务提示音/媒体                                                     |
 | **触控 / libinput**              | ✓      |       | ✓ fix |       |     |       | P1 起可用；**P2.1** 收口驱动与坐标                                                                  |
 | **外接键盘（USB HID）**              |        |       | ✓     |       |     |       | **P2.1** 真机 smoke；非 P4 软键盘                                                               |
+| **外接鼠标（USB HID）**              |        |       | ✓     |       |     |       | **P2.1** 可见指针 + `mouse.conf` / Demo 设置；非产品 Settings 页                                      |
 | **GStreamer + MPP + mediamtx** | ✓ prep |       |       |       |     | ✓ use | P1 备好；**P5.1** 开预览/relay（含 IPC ping / RTSP）                                              |
 | **以太网 eth0（RJ45）**             |        |       | ✓     |       |     | ✓     | **P2.1**：DTS/PHY + link up；**P2.3** 重启 restore；**P5.1**：IPC 专链 / MediaMTX               |
 | **串口 / GPIO 平台适配**             |        | ✓ use | ✓ doc |       |     | ✓     | P2 demo；**P2.1** 台账/pinmux 收口；P2.5 双端；P5 量产                                              |
@@ -1182,6 +1183,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | Flutter Engine | **P1～P3** pin **3.24.4**（与 SDK、flutter-pi commit 对齐）；**P3.5** 升至上游 supported stable（§6.5）；`libapp.so` 与 `libflutter_engine.so` **必须同版本** |
 | 触摸             | libinput；**P2.1** 与各板 DTS input 节点、旋转/坐标映射一并验收（P2 期间已见 Goodix 等问题）                                                                       |
 | 外接键盘           | 独立 USB **host** 口 + HID + libinput；**P2.1** 真机 smoke（OTG 口仍为 plug-ssh）                                                                   |
+| 外接鼠标           | 同 host + 可见指针 + `mouse.conf`；**P2.1** 真机 smoke                                                                                          |
 | 调试             | **串口** `ttyFIQ0`（默认）；远程 **§7.7** 隐藏入口后再 `ssh`（同一镜像）                                                                                      |
 
 
@@ -1214,11 +1216,11 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **已有** `overlay/.../mediamtx.service`                                      | P5；**默认 disable**                                                                                                   |
 | **已有** `overlay/.../post-hooks/06-lws-hmi-systemd.sh`                      | enable hmi / disable 非关键 unit                                                                                       |
 | **已有** P2：串口 + GPIO demo                                                   | `flutter_libserialport`、`/dev/ttyS5`、`gpio_innohi` 三色灯（`GPIO_5/4/7`，§11.0）；OpenSpec 已归档 `2026-07-14-p2-modbus-gpio` |
-| **已有** P2.1：喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 / **外接 USB 键盘** smoke + pinmux 台账 | `[docs/ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（含 §4.1.1 键盘用户态踩坑）；**非** 产品 UI / IPC 相机业务 |
+| **已有** P2.1：喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 / **外接 USB 键盘·鼠标** / LAN SSH smoke + pinmux 台账 | `[docs/ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（§4.1.1 键盘、§4.1.2 鼠标）；**非** 产品 UI / IPC 相机业务 |
 | **待增** P2.5：Android 兼容                                                     | `gpio_innohi` 双端 GPIO、`YNHAPI.jar`（非 GPIO 平台能力）、`make emulator` / `make android-emulator`、APK 构建                    |
 | **待增** `scripts/configure-camera-eth0.sh`                                  | **P5.1** runtime IPC 专链配址（自 lws-ui 移植；假定 **P2.1** eth0 RJ45 已通）                                                     |
 | **待增** `scripts/build-mediamtx.sh`                                         | **P5** linux/arm64 交叉编译                                                                                             |
-| **待增** `scripts/enable-ssh-debug.sh`                                       | **P2.1**：板端 `/usr/lib/lws-hmi/enable-ssh-debug.sh` + Demo 开关；**P5** 隐藏入口 / `POST /v1/ssh` 复用                        |
+| **已有** `scripts/enable-ssh-debug.sh`（板端 `/usr/lib/lws-hmi/`） | **P2.1**：LAN SSH + Demo 开关；**P5** 隐藏入口 / `POST /v1/ssh` 复用                        |
 | **待增** overlay：`sshd` disabled by default                                  | 生产默认不监听                                                                                                             |
 | **待增** `docs/` 本文                                                          | 规划                                                                                                                  |
 | **§6.5** Flutter engine 升级（P3.5）                                           | P3 后、P4 前；三件套 + prebuilt + ynh960 回归                                                                                |
@@ -1233,7 +1235,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 **P2 / P2.1～P2.5 分工**：
 
 - **P2（Linux 真机，已完成）**：迁移 **Modbus RTU** 与 **GPIO 管理**；`flutter_libserialport` + `**/sys/class/gpio_innohi/GPIO_N`**；验证读设备与下位机信息、三色指示灯（红=`GPIO_5` / 黄=`GPIO_4` / 绿=`GPIO_7`）。
-- **P2.1（板级 I/O 前置，进行中）**：喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 / **外接 USB 键盘** 等 **硬件联调与 smoke**；pinmux 台账 `[ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（§4.1.1 键盘用户态）。**不做** 产品设置页、IPC 相机专链、MediaMTX、Flutter 预览。
+- **P2.1（板级 I/O 前置，已完成）**：喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 / **外接 USB 键盘·鼠标** / **按需 LAN SSH** 等 **硬件联调与 smoke**；pinmux 台账 `[ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（§4.1.1 键盘、§4.1.2 鼠标）。**不做** 产品设置页、IPC 相机专链、MediaMTX、Flutter 预览。
 - **P2.2**：Demo 日期/时间设置 + 可复用 `DateTimeController`（P5 产品时钟页复用）。
 - **P2.3**：P2.1 硬件偏好 **整机重启后自动恢复**（boot restore）。
 - **P2.4**：A/B 双分区 + `make upgrade`（SSH 远程，免 loader）；**P5.8** 产品 OTA 复用。
@@ -1319,7 +1321,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | **P1**   | Linux 镜像 + Hello World                                           | Splash / 占位 UI / 平台栈                                                                                                       |
 | **P1.5** | `debug-app`、IDE 插件（真机调试）                                         | 模拟器、Android Studio / adb 闭环                                                                                                |
 | **P2**   | Linux 真机 Modbus / GPIO demo（设备信息、三色灯 `GPIO_5/4/7`）               | Android APK 侧同能力                                                                                                           |
-| **P2.1** | 喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / **外接键盘** / 背光 **硬件 smoke** | Android 侧同硬件链路；**不含** 设置页 / EasyPlayer / IPC 相机业务                                                                          |
+| **P2.1** | 喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / **外接键盘·鼠标** / 背光 / LAN SSH **硬件 smoke** | Android 侧同硬件链路；**不含** 设置页 / EasyPlayer / IPC 相机业务                                                                          |
 | **P2.2** | Demo 日期/时间设置 + `DateTimeController` 抽象                       | 产品时钟/时区设置页的平台层；手设壁钟（非完整 NTP 产品流）                                                                                            |
 | **P2.3** | P2.1 硬件偏好 **整机重启后恢复**                                      | 启动后自动恢复 Wi‑Fi / eth0 / 显示等；对齐「设置一次、重启仍有效」                                                                                     |
 | **P2.4** | A/B 双分区 + `make upgrade`（SSH 远程，免 loader）                   | 系统升级底层；对应 lws-ui OTA 中的槽位/刷写能力（无产品 UI）                                                                                         |
@@ -1363,6 +1365,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | 本机喇叭 / 提示音                     | ALSA + codec                                                                                                              | **P2.1** 出声 / **P5** 业务音效                    | ✓        |
 | 触控                             | libinput + 板级 DTS                                                                                                         | **P2.1** 收口                                  | ✓ §9     |
 | 外接键盘（USB HID）                  | 独立 USB **host** 口 + libinput / flutter-pi                                                                                 | **P2.1** smoke                               | ✓        |
+| 外接鼠标（USB HID）                  | 同 host + 可见指针 + `mouse.conf` / Demo 设置                                                                                    | **P2.1** smoke                               | ✓        |
 | **PR0 录像**                     | GStreamer 等从 relay 写文件（同 lws-ui 主流录制）                                                                                     | **P5**                                       | ✓ §12 P5 |
 | **PR1 推理取流**                   | `127.0.0.1:8554/camera/pr1` → `**libai.so`**                                                                              | P3 so / **P5** UI                            | ✓        |
 | MediaMTX LAN 转发                | **mediamtx.service** `:8554/camera/pr0|pr1`                                                                               | **P5**                                       | ✓ §7.5   |
@@ -1489,25 +1492,24 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - App：**三色状态灯 demo**（红/黄/绿；每色 Steady / Blink / Off 互斥）
 - 串口/日志验证 Modbus 时序与 lws-ui 一致；Linux 真机 smoke
 
-### P2.1 — 板级 I/O 与外设验证（硬件前置）🔄
+### P2.1 — 板级 I/O 与外设验证（硬件前置）✅
 
-**进行中**：喇叭 / 背光 / 旋转 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / **外接 USB 键盘** / pinmux 台账已真机验收或文档固化。
+**封板**：板级 I/O 真机验收完成。相关 OpenSpec 已归档（含 `archive/2026-07-16-p2-1-usb-mouse/`；键盘 / OTG / 以太网 / Wi‑Fi·BT / 音频·背光·旋转 / host-remote-ssh 等同阶段归档见 `openspec/changes/archive/`）。
 
 **动机**：P2 联调暴露串口/引脚对不上、触摸驱动 BUG、UART pinmux 与 gmac 冲突等；原计划把喇叭 / Wi‑Fi / BT / 以太网等放到 P5 才做，风险过晚。本阶段先把 **设备输入输出与硬件相关能力** 在 Linux 真机上打通，再进入模拟器 / AI / 业务 UI。
 
 **边界**：平台栈、DTS、脚本、命令行 / Demo smoke。**不做** Flutter 产品设置页、状态栏、IPC 相机专链、MediaMTX 编排、GStreamer 预览（仍属 P5.1 / P5.2）。
 
-- **喇叭 / 本机音频**：Buildroot 最小 ALSA + codec（mpg123/`amixer`）；Demo Play/`shanghai_tan` + volume slider 真机出声与调音量 OK（`archive/2026-07-14-p2-1-audio-backlight-rotation`）
-- **Wi‑Fi**：AIC8800 固件栈；可见/隐藏 SSID 关联；wlan0 DHCP 或静态；HTTP 代理 + Demo「Send request」；板端 smoke OK（`archive/2026-07-14-p2-1-wifi-bluetooth`）
-- **蓝牙**：本机 Discoverable/Pairable；手机发现 `lws-hmi` 并配对；Incoming peers；可选 A2DP Sink 出板载喇叭（**非**本机扫描外设；设置页仍属 P5.2）
-- **以太网（RJ45 / eth0）**：Demo + `EthernetController` + `eth0-*.sh`；板端 DTS（RMII / PHY）→ link up → DHCP/静态 ping（`archive/2026-07-15-p2-1-ethernet`；IPC 专链属 P5.1）
-- **触控**：Goodix / libinput 稳定点击与滑动；与屏旋转坐标一致（`[lws-hmi-ynh960-touch.dtsi](../overlay/kernel/rockchip/lws-hmi-ynh960-touch.dtsi)`）
-- **外接键盘（USB HID）**：**1 mm pin → USB host** 枚举 + Demo 打字 / 方向键 / 长按连发 OK（`p2-1-usb-keyboard`；需 `xkeyboard-config` + Compose stub + flutter-pi 补丁 0001–0003；踩坑见 [`ynh960-io-pinmux-ledger.md`](ynh960-io-pinmux-ledger.md) §4.1.1）；**Micro-USB OTG ID dual-role**（`p2-1-usb-otg-id-role`：OTG 转接 → 键盘；PC 线 → plug-ssh）；**非** P4 `frost_ime`
-- **外接鼠标（USB HID）**：同 host → 可见指针 + Demo 设置（`p2-1-usb-mouse`；flutter-pi `0004` stride / `0005` `mouse.conf`；台账 §4.1.2）— **待真机 rebuild + smoke**
-- **LAN/WLAN 按需 sshd**：`enable-ssh-debug.sh` + Demo「LAN SSH debug」；主机 `make connect <ip>`（§7.7；**非** boot enable；产品 5 连击仍属 P5）
-- **串口 / GPIO / pinmux 台账**：`[docs/ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（`ttyS5`、gpio_innohi、own-gpio↔gmac、触控、USB 键盘/鼠标用户态）
-- **背光**：powermanager / sysfs 亮度可调 smoke — Demo 亮度 slider（`LinuxSysfsBacklight`）；板端路径名以设备实测为准
-- **屏幕旋转**：Portrait / Landscape → `/var/lib/lws-hmi/display-orientation` + `hmi-launch.sh` `-o`；Demo 按钮组（真机切换需 HMI 重启）
+- [x] **喇叭 / 本机音频**：Buildroot 最小 ALSA + codec（mpg123/`amixer`）；Demo Play/`shanghai_tan` + volume slider（`archive/2026-07-14-p2-1-audio-backlight-rotation`）
+- [x] **Wi‑Fi**：AIC8800；可见/隐藏 SSID；wlan0 DHCP/静态；HTTP 代理 + Demo「Send request」（`archive/2026-07-14-p2-1-wifi-bluetooth`）
+- [x] **蓝牙**：Discoverable/Pairable；手机配对 Incoming peers；可选 A2DP Sink（设置页仍属 P5.2）
+- [x] **以太网（RJ45 / eth0）**：Demo + `EthernetController`；DTS → link up → DHCP/静态 ping（`archive/2026-07-15-p2-1-ethernet`；IPC 专链属 P5.1）
+- [x] **触控**：Goodix / libinput；与屏旋转坐标一致（`lws-hmi-ynh960-touch.dtsi`）
+- [x] **外接键盘（USB HID）**：1 mm host + Micro-USB OTG host；Demo 打字 / 方向键 / 连发（`archive/2026-07-15-p2-1-usb-keyboard`、`…-usb-otg-id-role`；台账 §4.1.1）
+- [x] **外接鼠标（USB HID）**：可见指针 + Demo 设置（`archive/2026-07-16-p2-1-usb-mouse`；flutter-pi `0004`–`0008`；`mouse.conf`；台账 §4.1.2）
+- [x] **LAN/WLAN 按需 sshd**：`enable-ssh-debug.sh` + Demo；`make connect <ip>`（`archive/2026-07-15-host-remote-ssh`；产品 5 连击仍属 P5）
+- [x] **串口 / GPIO / pinmux 台账**：[`ynh960-io-pinmux-ledger.md`](ynh960-io-pinmux-ledger.md)
+- [x] **背光 / 屏幕旋转**：Demo slider + Portrait/Landscape 偏好（真机旋转需 HMI 重启）
 - ~~（可选）`verify-io` 一键 smoke~~ — **跳过**（非必要；板端按台账 §6 手工核对即可）
 
 ### P2.2 — 日期/时间设置（Demo）✅
@@ -1531,7 +1533,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 **不变式**：系统设置相关长期进程 **不得** 进入 `hmi.service` cgroup；`hmi` 重启不得拖垮 Wi‑Fi / eth0 / LAN SSH（LAN SSH 仍不随 reboot 恢复）。
 
-- 清单：Wi‑Fi 凭据与 wlan0 IPv4、eth0 IPv4、HTTP 代理、背光、屏幕旋转、BT A2DP Sink 偏好等（以 P2.1 已交付项为准）
+- 清单：Wi‑Fi 凭据与 wlan0 IPv4、eth0 IPv4、HTTP 代理、背光、屏幕旋转、BT A2DP Sink、**鼠标 `mouse.conf`** 等（以 P2.1 已交付项为准；鼠标偏好由 flutter-pi 启动时重载，无需独立 network-style oneshot）
 - `lws-hmi-wpa` / `lws-hmi-wlan0-dhcp` / `lws-hmi-eth0`：on-demand；`lws-hmi-settings-restore.service`：**`After=hmi`**（UI 先起，再恢复网/BT；Nice/idle；Demo `starting` 跟手动开一致）
 - Demo Apply 与 boot restore **同一实现**（wanted 标记 `wifi-wanted` / `eth0-wanted`）
 - 偏好目录：**`/userdata/lws-hmi/`**（`/var/lib/lws-hmi` → symlink，`lws-hmi-prefs-bind.sh`）

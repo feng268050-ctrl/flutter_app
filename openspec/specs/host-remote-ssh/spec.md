@@ -38,6 +38,20 @@ The repository SHALL provide **`make disconnect`** that removes a registered IP 
 - **WHEN** at least one IP is registered via `make connect`
 - **THEN** `make devices` shows a row with `MODE` SSH and `IP` equal to that address
 
+### Requirement: Restarting a board removes its SSH registration
+
+Host commands that intentionally restart a Linux board SHALL remove the matching persistent `MODE=SSH` registration so `make devices` does not retain a board whose session-only SSH service stops at reboot. This applies to full-system `make upgrade` and `make reboot`; when `make reboot-loader` selects a USB-SSH board, it SHALL remove a registered SSH row with the same cached board serial when available. Ephemeral USB-SSH discovery rows require no registry mutation.
+
+#### Scenario: Reboot unregisters a remote SSH board
+
+- **WHEN** a registered `MODE=SSH` board is selected and the user runs `make reboot`
+- **THEN** the reboot is triggered and subsequent `make devices` does not list its former registered SSH row
+
+#### Scenario: Full-system upgrade unregisters the board
+
+- **WHEN** a registered board starts rebooting after full-system `make upgrade`
+- **THEN** its persistent SSH registry row is removed without waiting for SSH to return
+
 ### Requirement: IP selects SSH mode only
 
 When **`IP=`** or **`LWS_HMI_IP=`** is set, host SSH interactive commands (`push-app`, `debug-app`, `shell`, `logs`, `reboot`) SHALL select the registered **`MODE=SSH`** device whose address matches and SHALL NOT select a **`USB-SSH`** row even if that row is present.

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Fail early if firmware images exceed Android-GPT partition sizes in parameter.
+# Fail early if firmware images exceed GPT partition sizes in parameter.
+# A/B: boot.img → boot, boot_b.img → boot_b; rootfs.img fits both rootfs slots.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -25,30 +26,43 @@ for m in re.finditer(r"0x([0-9a-fA-F]+)@0x([0-9a-fA-F]+)\(([^)]+)\)", cmd):
     size, off, name = int(m.group(1), 16), int(m.group(2), 16), m.group(3)
     parts.append((name.split(":")[0], off, size * 512))
 
-# Map package-file names to partition names
-images = {
-    "boot.img": "boot",
-    "rootfs.img": "rootfs",
-    "uboot.img": "uboot",
-    "misc.img": "misc",
-    "vbmeta.img": "vbmeta",
-}
 limits = {name: size for name, _off, size in parts}
 
+# Vendor U-Boot requires PARTNAME "boot" (letter A); letter B is boot_b.
+images = {
+    "boot.img": ["boot"],
+    "boot_b.img": ["boot_b"],
+    "rootfs.img": ["rootfs_a", "rootfs_b", "rootfs"],
+    "uboot.img": ["uboot"],
+    "misc.img": ["misc"],
+    "vbmeta.img": ["vbmeta"],
+}
+
 ok = True
-for img, part in images.items():
+for img, part_names in images.items():
     path = firmware / img
     if not path.is_file():
         continue
     need = path.stat().st_size
-    cap = limits.get(part)
-    if cap is None:
-        print(f"WARN: no partition entry for {part} ({img})")
+    matched = [p for p in part_names if p in limits]
+    if not matched:
+        print(f"WARN: no partition entry for {img} (tried {', '.join(part_names)})")
         continue
-    status = "OK" if need <= cap else "TOO LARGE"
-    print(f"{img:12} → {part:8}  {need/1024/1024:7.2f} MiB / {cap/1024/1024:7.2f} MiB  {status}")
-    if need > cap:
+    for part in matched:
+        cap = limits[part]
+        status = "OK" if need <= cap else "TOO LARGE"
+        print(f"{img:12} → {part:10}  {need/1024/1024:7.2f} MiB / {cap/1024/1024:7.2f} MiB  {status}")
+        if need > cap:
+            ok = False
+
+for required in ("boot", "boot_b", "rootfs_a", "rootfs_b"):
+    if required not in limits:
+        print(f"FAIL: parameter missing {required}")
         ok = False
+
+if "boot_a" in limits:
+    print("FAIL: parameter still has boot_a — vendor U-Boot needs PARTNAME=boot (see docs/ab-slot-misc.md)")
+    ok = False
 
 sys.exit(0 if ok else 1)
 PY

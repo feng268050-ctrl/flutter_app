@@ -91,6 +91,11 @@ if [ -f "$TARGET_DIR/etc/systemd/system/lws-hmi-settings-restore.service" ]; the
 	echo "lws-hmi-systemd: enabled lws-hmi-settings-restore.service"
 fi
 
+if [ -f "$TARGET_DIR/etc/systemd/system/lws-hmi-ab-boot-confirm.service" ]; then
+	link_unit lws-hmi-ab-boot-confirm.service
+	echo "lws-hmi-systemd: enabled lws-hmi-ab-boot-confirm.service"
+fi
+
 if [ -f "$TARGET_DIR/etc/systemd/system/lws-hmi-usb-otg-role-boot.service" ]; then
 	link_unit lws-hmi-usb-otg-role-boot.service
 	echo "lws-hmi-systemd: enabled lws-hmi-usb-otg-role-boot.service"

@@ -40,7 +40,7 @@ check_systemd_wants() {
 		fi
 	done
 
-	for unit in hmi.service mainserver.service lws-hmi-performance.service lws-hmi-pwrkey-poweroff.service lws-hmi-settings-restore.service lws-hmi-usb-otg-role-boot.service; do
+	for unit in hmi.service mainserver.service lws-hmi-performance.service lws-hmi-pwrkey-poweroff.service lws-hmi-settings-restore.service lws-hmi-usb-otg-role-boot.service lws-hmi-ab-boot-confirm.service; do
 		if unit_wants_link "$unit"; then
 			echo "OK:  $unit enabled in $label"
 		else
@@ -420,6 +420,15 @@ EOF
 		echo "FAIL: missing lws-hmi-wpa.service (Wi-Fi must outlive hmi stop)" >&2
 		missing=1
 	fi
+	if grep -q '^DefaultDependencies=no$' \
+		"$target/etc/systemd/system/lws-hmi-wpa.service" 2>/dev/null || \
+		! grep -q '^RequiresMountsFor=/userdata$' \
+			"$target/etc/systemd/system/lws-hmi-wpa.service" 2>/dev/null; then
+		echo "FAIL: lws-hmi-wpa.service needs normal deps + RequiresMountsFor=/userdata" >&2
+		missing=1
+	else
+		echo "OK:  lws-hmi-wpa.service has normal shutdown/umount ordering"
+	fi
 	if [[ -f "$target/etc/systemd/system/lws-hmi-wlan0-dhcp.service" ]]; then
 		echo "OK:  lws-hmi-wlan0-dhcp.service"
 	else
@@ -519,6 +528,66 @@ EOF
 		echo "FAIL: lws-hmi-lan-ssh.service must ExecStart lan-ssh-run.sh" >&2
 		missing=1
 	fi
+
+	echo ""
+	echo "--- A/B upgrade helpers (P2.4) ---"
+	for f in \
+		"$target/usr/lib/lws-hmi/ab-slot-lib.sh" \
+		"$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" \
+		"$target/usr/lib/lws-hmi/ab-boot-confirm.sh" \
+		"$target/etc/systemd/system/lws-hmi-ab-boot-confirm.service"; do
+		if [[ -e "$f" ]]; then
+			echo "OK:  ${f#$target/}"
+		else
+			echo "FAIL: missing ${f#$target/}" >&2
+			missing=1
+		fi
+	done
+	if [[ -e "$target/usr/lib/lws-hmi/ab-upgrade-app-only.sh" ]]; then
+		echo "FAIL: retired ab-upgrade-app-only.sh still present (use make push-app)" >&2
+		missing=1
+	else
+		echo "OK:  retired ab-upgrade-app-only.sh absent"
+	fi
+	if grep -q 'ab_current_root_dev' "$target/usr/lib/lws-hmi/ab-slot-lib.sh" 2>/dev/null && \
+		grep -q '^AB_MISC_OFFSET=1048576$' "$target/usr/lib/lws-hmi/ab-slot-lib.sh" 2>/dev/null && \
+		grep -q 'ab_slot_marker_valid' "$target/usr/lib/lws-hmi/ab-slot-lib.sh" 2>/dev/null && \
+		grep -q 'LWS_HMI_AB_LIB' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -q 'ab_same_block_device' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -q 'metadata_active' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -q 'disagrees with mounted root' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null; then
+		echo "OK:  A/B marker uses safe misc offset; apply derives mounted root and refuses self-overwrite"
+	else
+		echo "FAIL: A/B apply must protect the currently mounted root block device" >&2
+		missing=1
+	fi
+	if grep -q 'userdata' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -qE 'refuse|must NOT|ab_refuse' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null; then
+		echo "OK:  ab-upgrade-apply mentions userdata safety"
+	else
+		# Soft: apply sources ab-slot-lib refuse helper
+		if grep -q 'ab_refuse_userdata_wipe\|userdata' "$target/usr/lib/lws-hmi/ab-slot-lib.sh" 2>/dev/null; then
+			echo "OK:  ab-slot-lib userdata refuse helper present"
+		else
+			echo "FAIL: A/B helpers missing userdata safety checks" >&2
+			missing=1
+		fi
+	fi
+	if grep -qE 'uboot|MiniLoader' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -qiE 'refusing|must not|never' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null; then
+		echo "OK:  ab-upgrade-apply refuses uboot writes"
+	else
+		echo "FAIL: ab-upgrade-apply must refuse uboot writes" >&2
+		missing=1
+	fi
+	if grep -q 'enable lws-hmi-ab-boot-confirm.service' \
+		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null; then
+		echo "OK:  preset enables lws-hmi-ab-boot-confirm.service"
+	else
+		echo "FAIL: preset missing enable lws-hmi-ab-boot-confirm.service" >&2
+		missing=1
+	fi
+
 	if grep -qE 'ListenAddress=0\.0\.0\.0|ListenAddress=\*' \
 		"$target/usr/lib/lws-hmi/lan-ssh-run.sh" 2>/dev/null || \
 		grep -qE 'ListenAddress=0\.0\.0\.0|ListenAddress=\*' \

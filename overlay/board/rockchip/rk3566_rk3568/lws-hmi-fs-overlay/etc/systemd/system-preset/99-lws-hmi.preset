@@ -15,3 +15,4 @@ disable network.service
 disable log-guardian.service
 enable lws-hmi-pwrkey-poweroff.service
 enable lws-hmi-settings-restore.service
+enable lws-hmi-ab-boot-confirm.service

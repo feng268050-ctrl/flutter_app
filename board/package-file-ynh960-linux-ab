@@ -1,0 +1,11 @@
+# ynh960 lws-hmi factory image: hash-valid FIT per rootfs letter.
+# NAME	PATH
+package-file	package-file
+parameter	parameter.txt
+bootloader	MiniLoaderAll.bin
+uboot	uboot.img
+misc	misc.img
+boot	boot.img
+boot_b	boot_b.img
+rootfs_a	rootfs.img
+rootfs_b	rootfs.img

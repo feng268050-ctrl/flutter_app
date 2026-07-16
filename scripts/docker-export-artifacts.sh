@@ -48,7 +48,7 @@ export_firmware_from_volume() {
 			rsync -a --delete /work/sdk/output/firmware/ /dest-lws-firmware/
 			# SDK firmware entries are often symlinks into the volume tree; dereference
 			# flash-critical files so the host bind mount is not left with broken links.
-			for f in update.img boot.img rootfs.img rootfs.ext2 rootfs.ext4 MiniLoaderAll.bin uboot.img misc.img parameter.txt; do
+			for f in update.img boot.img boot_b.img rootfs.img rootfs.ext2 rootfs.ext4 MiniLoaderAll.bin uboot.img misc.img parameter.txt; do
 				if [[ -e /work/sdk/output/firmware/$f ]]; then
 					rm -f "/dest-lws-firmware/$f"
 					cp -Lf "/work/sdk/output/firmware/$f" "/dest-lws-firmware/$f"
@@ -57,7 +57,7 @@ export_firmware_from_volume() {
 		'
 
 	echo "docker-export: host paths"
-	for f in update.img boot.img rootfs.img rootfs.ext2 rootfs.ext4 MiniLoaderAll.bin uboot.img misc.img parameter.txt; do
+	for f in update.img boot.img boot_b.img rootfs.img rootfs.ext2 rootfs.ext4 MiniLoaderAll.bin uboot.img misc.img parameter.txt; do
 		if [[ -r "$lws_fw/$f" ]]; then
 			bash "$SIZE_HELPER" "$lws_fw/$f"
 		fi

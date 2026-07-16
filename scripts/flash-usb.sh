@@ -483,6 +483,8 @@ run_linux_ssh_reboot() {
     die "unsupported transport for reboot: $transport"
     ;;
   esac
+  bash "$ROOT/scripts/ssh-devices.sh" dismiss-target \
+    "$transport" "$iface" "$addr" || true
   echo "Reboot triggered."
 }
 
@@ -491,6 +493,8 @@ run_usb_ssh_reboot_loader() {
   iface="$(usb_ssh_select_iface)"
   echo "Linux board via USB-SSH (iface=$iface) → RockUSB Loader"
   usb_ssh_schedule_remote "$iface" "exec /usr/bin/reboot-loader"
+  bash "$ROOT/scripts/ssh-devices.sh" dismiss-target \
+    usb-ssh "$iface" "${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}" || true
   wait_for_rockusb
   echo "RockUSB ready (via USB-SSH reboot-loader)."
 }

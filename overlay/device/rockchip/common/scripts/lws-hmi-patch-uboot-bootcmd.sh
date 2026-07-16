@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 # Patch rockchip-common.h: Linux GPT boots FIT first (skip boot_android hang).
+#
+# P2.4 A/B note (docs/ab-slot-misc.md): product GPT uses boot + boot_b
+# (not boot_a — vendor boot_fit requires PARTNAME=boot).
+# Vendor prebuilt uboot.img must NOT be binary-patched (env CRC → brick risk).
+# If device acceptance shows boot_fit cannot resolve boot_${letter}, escalate
+# with Innohi approval to extend this source patch (ab_select / slot suffix)
+# and experimental make build-uboot — do not enable by default on ynh960.
 set -euo pipefail
 
 header="$1"

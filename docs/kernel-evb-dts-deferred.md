@@ -86,7 +86,7 @@ verify-boot
 | `overlay/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi` | P2.1: RMII + `gpio4 PB3` reset + MDIO addr 1 (drop EVB RGMII / UART5 reset) |
 | `overlay/kernel/rockchip/lws-hmi-ynh960-uart7-pwm.dtsi` | P2.1: disable unused uart7 so pwm14/15 can claim gpio3 PC4/PC5 |
 | `overlay/kernel/rockchip/lws-hmi-ynh960-display.dtsi` | MIPI dsi0 + 800×1280 timing |
-| `overlay/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi` | `root=/dev/mmcblk0p6` |
+| `overlay/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi` | `root=PARTLABEL=rootfs_a` (P2.4 A/B; letter B FITs use `rootfs_b`) |
 | `overlay/kernel/rockchip/lws-hmi-kernel-trim.config` | Kconfig driver trim (CAN/PCIe/CSI/…) |
 | `board/960_lcd_param_rk356x.txt` | ParamUpdate MIPI params |
 | `docs/boot-kpi-optimization.md` | Boot KPI / kernel trim A-3 |

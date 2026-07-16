@@ -7,7 +7,7 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 - **What:** Buildroot firmware for Innohi **ynh960/961/962 product line** + Flutter-pi HMI (`app/hmi/`).
 - **Board SKUs:** ynh960 → RK3566 (entry); ynh962 → RK3568B2 (mid, cut-down 3568); ynh961 → RK3568 (high). Same product line (minor chip/interface differences); **one firmware image is the goal**. **P1–P5 develop and validate on ynh960 (RK3566)** — no per-SKU defconfig fork yet.
 - **Hosts:** Linux builds natively in `linux-sdk/`; macOS uses Docker `linux/amd64` + a Docker volume for the SDK tree.
-- **Outputs:** `output/firmware/update.img` (macOS, after export); Linux also `linux-sdk/output/firmware/`.
+- **Outputs:** `output/firmware/boot.img` (FIT for `rootfs_a`), `boot_b.img` (same kernel, FIT for `rootfs_b`), `rootfs.img`, and factory `update.img`; Linux also has them under `linux-sdk/output/firmware/`.
 - **Scope:** Active Buildroot packages follow `#include` lines in `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig`.
 
 ## Dev environment tips
@@ -41,19 +41,22 @@ Daily iteration examples (one command per line; run in order):
 # Flutter app (app/hmi/)
 make build-app
 make build-rootfs
-make build-img
-make flash
+make upgrade
 
 # Kernel / DTS / boot logo
 make build-boot-logo
 make build-kernel
-make build-img
-make flash
+make build-rootfs
+make upgrade
 
 # Overlay / systemd / LCD params (not app bundle)
 make apply-overlay
 make build-rootfs
+make upgrade
+
+# Or, for factory/USB deployment after any sequence above:
 make build-img
+make reboot-loader
 make flash
 ```
 
@@ -62,8 +65,11 @@ More detail: [`docs/build-optimization.md`](docs/build-optimization.md), [`app/R
 **Pipeline rules (do not get wrong):**
 
 - `make build-app` updates overlay `/opt/hmi` and runs `apply-overlay`; it does **not** rebuild rootfs.
+- `make build-kernel` builds two hash-valid FITs containing the same Linux kernel: `boot.img` selects `rootfs_a`; `boot_b.img` selects `rootfs_b`.
 - `make build-rootfs` bakes fs-overlay (including `/opt/hmi`) into rootfs.
-- `make build-img` only repacks from existing kernel + rootfs outputs.
+- `make build-img` does **not** compile kernel or rootfs; it packages existing loader/U-Boot/misc/dual-FIT/rootfs artifacts into factory `output/firmware/update.img`.
+- Full-system `make upgrade` does **not** send `update.img`; it transfers `boot.img`, `boot_b.img`, and `rootfs.img`, returns when board apply reports `apply.status=ok` (reboot requested) or SSH drops, and intentionally does not wait for post-reboot SSH or health.
+- Prefer `make upgrade` for daily iteration after the board has the P2.4 GPT/helpers. Always run `make build-img` when producing a release/factory artifact; use `make reboot-loader` then `make flash` when validating that artifact.
 
 ## Rebuild instructions for the user (required)
 
@@ -71,19 +77,23 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 
 | What changed | Commands |
 |--------------|----------|
-| `app/hmi/**`, `scripts/build-app.sh` | `make build-app`, `make build-rootfs`, `make build-img`, `make flash` |
-| `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make build-img`, `make flash` |
-| `overlay/kernel/**`, kernel DTS | `make apply-overlay`, `make build-kernel`, `make build-img`, `make flash` |
-| `overlay/.../lws-hmi-fs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
-| USB plug-ssh (`overlay/kernel/**` + fs-overlay scripts/units) | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make build-img`, `make flash` |
+| `app/hmi/**`, `scripts/build-app.sh` | `make build-app`, `make build-rootfs`, `make upgrade` |
+| `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make upgrade` |
+| `overlay/kernel/**`, kernel DTS | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
+| `overlay/.../lws-hmi-fs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| USB plug-ssh (`overlay/kernel/**` + fs-overlay scripts/units) | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
 | `scripts/push-app.sh` only (app already on device) | `make build-app`, `make push-app` |
 | `scripts/device-logs.sh` only (host log streaming) | none |
 | `scripts/debug-app*.sh`, `scripts/debug-host-prepare.sh`, `scripts/debug-custom-device/**`, `scripts/debug-setup.sh`, `scripts/build-debug-app.sh` (host only; board already has P1.5 overlay) | `make debug-setup`, `make debug-app` |
-| `overlay/.../lws-hmi-fs-overlay/**` debug scripts (`hmi-launch.sh`, `debug-app-*`, `hmi.service`) | `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
-| `overlay/buildroot/**` | `make apply-overlay`, `make check-prebuilt`, `make build-rootfs`, `make build-img`, `make flash` |
-| `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
-| `board/*.txt` LCD/MIPI params | `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash` |
-| `board/parameter-buildroot-fit.txt` (GPT) | `make apply-overlay`, `make build-img`, `make flash` |
+| `overlay/.../lws-hmi-fs-overlay/**` debug scripts (`hmi-launch.sh`, `debug-app-*`, `hmi.service`) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `overlay/buildroot/**` | `make apply-overlay`, `make check-prebuilt`, `make build-rootfs`, `make upgrade` |
+| `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `board/*.txt` LCD/MIPI params | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `board/parameter-buildroot-fit.txt` (GPT / A/B) | `make apply-overlay`, `make build-img`, `make flash` (repartition once) |
+| A/B upgrade helpers (`overlay/.../ab-*.sh`, `lws-hmi-ab-boot-confirm.service`) | First adoption: `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash`; existing P2.4 board: `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `scripts/upgrade-remote.sh`, `scripts/stream-file-progress.py`, or Makefile `upgrade` only (board already has P2.4 overlay + A/B GPT) | `make upgrade` (no firmware rebuild unless image inputs are stale) |
+| Host device registry/reboot paths (`scripts/ssh-devices.sh`, `scripts/flash-usb.sh`) | no firmware rebuild; exercise the affected `make devices` / `make reboot` / `make reboot-loader` flow |
+| Release / factory artifact | Build all changed inputs, then `make build-img`; for hardware validation: `make reboot-loader`, `make flash` |
 | `fetch-*`, `extract-linux-sdk`, `build-dev-deps` only | no firmware rebuild; name the fetch/extract/build-deps target |
 | Docs only | none |
 
@@ -93,8 +103,7 @@ Example:
 重新构建（本次改动了 app）：
 make build-app
 make build-rootfs
-make build-img
-make flash
+make upgrade
 ```
 
 When unsure or on a clean tree: `make build`.

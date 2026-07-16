@@ -20,10 +20,12 @@ die() {
 
 usage() {
 	cat <<EOF
-Usage: $0 {connect|disconnect|list|--tsv|--select} [ip]
+Usage: $0 {connect|disconnect|dismiss-target|list|--tsv|--select} [args]
 
   connect <ip>       Verify SSH, persist registration (MODE=SSH)
   disconnect <ip>    Remove registration (board need not be online)
+  dismiss-target <transport> <iface> <addr>
+                     Quietly remove a rebooting board's SSH registration
   list / --tsv       Print registry rows as device-table TSV
   --select           Print: loc, iface (-), addr  (IP= or SERIAL=)
 
@@ -88,6 +90,21 @@ registry_remove() {
 	tmp="$(mktemp)"
 	awk -F'\t' -v ip="$ip" '$1!=ip {print}' "$REGISTRY_FILE" >"$tmp"
 	mv "$tmp" "$REGISTRY_FILE"
+}
+
+registry_dismiss_matching() {
+	local ip="$1" serial="$2" tmp before after
+	ensure_registry
+	before="$(wc -l <"$REGISTRY_FILE" | tr -d ' ')"
+	tmp="$(mktemp)"
+	awk -F'\t' -v ip="$ip" -v serial="$serial" '
+		!((ip != "" && $1 == ip) || (serial != "" && serial != "-" && $2 == serial))
+	' "$REGISTRY_FILE" >"$tmp"
+	after="$(wc -l <"$tmp" | tr -d ' ')"
+	mv "$tmp" "$REGISTRY_FILE"
+	if [[ "$after" -lt "$before" ]]; then
+		echo "Removed rebooting device from SSH registry."
+	fi
 }
 
 ssh_row() {
@@ -166,6 +183,29 @@ cmd_disconnect() {
 	echo "Disconnected SSH device: IP=$ip"
 }
 
+cmd_dismiss_target() {
+	local transport="${1:-}" iface="${2:-}" addr="${3:-}" serial="${4:-}"
+	case "$transport" in
+	ssh)
+		[[ -n "$addr" && "$addr" != "-" ]] || return 0
+		registry_dismiss_matching "$addr" ""
+		;;
+	usb-ssh)
+		[[ -n "$iface" && "$iface" != "-" ]] || return 0
+		if [[ -z "$serial" || "$serial" == "-" ]]; then
+			serial="$(
+				bash "$ROOT/scripts/usb-ssh-devices.sh" --tsv 2>/dev/null |
+					awk -F'\t' -v iface="$iface" \
+						'$1 == "USB-SSH" && $4 == iface {print $2; exit}' ||
+					true
+			)"
+		fi
+		[[ -n "$serial" && "$serial" != "-" ]] || return 0
+		registry_dismiss_matching "" "$serial"
+		;;
+	esac
+}
+
 select_ssh_device() {
 	local serial="${SERIAL:-${LWS_HMI_SERIAL:-}}"
 	local pick_ip="${IP:-${LWS_HMI_IP:-}}"
@@ -219,6 +259,10 @@ disconnect)
 	shift
 	cmd_disconnect "${1:-}"
 	;;
+dismiss-target)
+	shift
+	cmd_dismiss_target "${1:-}" "${2:-}" "${3:-}" "${4:-}"
+	;;
 list | --tsv | "")
 	list_ssh_devices
 	;;
@@ -229,6 +273,6 @@ list | --tsv | "")
 	usage
 	;;
 *)
-	die "usage: $0 {connect|disconnect|list|--tsv|--select} [ip]"
+	die "usage: $0 {connect|disconnect|dismiss-target|list|--tsv|--select} [args]"
 	;;
 esac

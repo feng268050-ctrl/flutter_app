@@ -48,7 +48,7 @@ make flash
 
 1. `make docker-volume-init` — copy host SDK → volume (once)
 2. `make apply-overlay` / `make build-*` — repo bind-mounted into container; build in volume
-3. `make build-img` / `make build-kernel` — auto-export `output/firmware/` to host (`output/firmware/update.img` for `make flash`)
+3. `make build-kernel` / `make build-rootfs` / `make build-img` — auto-export firmware artifacts to host (`boot.img`, `boot_b.img`, `rootfs.img`, and factory `update.img`)
 
 ---
 
@@ -110,15 +110,30 @@ make build
 make show-config
 ```
 
+Firmware stage outputs:
+
+- `make build-kernel` builds two independently hashed FIT images containing the same Linux kernel: `boot.img` selects `rootfs_a`, while `boot_b.img` selects `rootfs_b`.
+- `make build-rootfs` builds `rootfs.img`.
+- `make build-img` does **not** compile the kernel or rootfs. It packages the existing loader, U-Boot, misc, both FIT images, and rootfs into `output/firmware/update.img` for `make flash`.
+- Full-system `make upgrade` does **not** transfer `update.img`. It transfers `boot.img`, `boot_b.img`, and `rootfs.img` plus the matching board apply helpers, writes the inactive A/B system, and returns when board apply reports `apply.status=ok` (reboot requested) or SSH disconnects. Staging the matching helpers lets safety fixes migrate without first modifying the active rootfs. The command then tells the operator to wait for the device to finish restarting before reconnecting.
+
 ### Daily iteration — by what you changed
+
+The examples below prefer A/B OTA on a board already flashed with the P2.4 GPT and helpers. To use the factory/USB path instead, replace the final `make upgrade` with:
+
+```bash
+# Or: package update.img, enter Loader, and flash
+make build-img
+make reboot-loader
+make flash
+```
 
 **Flutter app** (`app/hmi/`) — `/opt/hmi` is installed during rootfs build:
 
 ```bash
 make build-app
 make build-rootfs
-make build-img
-make flash
+make upgrade
 ```
 
 **Boot splash** (`board/logo/`):
@@ -126,8 +141,7 @@ make flash
 ```bash
 make build-boot-logo
 make build-kernel
-make build-img
-make flash
+make upgrade
 ```
 
 **Kernel / DTS / display DTS** (`overlay/kernel/`, related `board/`):
@@ -135,8 +149,8 @@ make flash
 ```bash
 make apply-overlay
 make build-kernel
-make build-img
-make flash
+make build-rootfs
+make upgrade
 ```
 
 **Rootfs overlay** — systemd units, `usr/lib/lws-hmi/*`, LCD params, anything under `overlay/.../lws-hmi-fs-overlay/` except the app bundle:
@@ -144,8 +158,7 @@ make flash
 ```bash
 make apply-overlay
 make build-rootfs
-make build-img
-make flash
+make upgrade
 ```
 
 **Buildroot defconfig / Kconfig fragments** (`overlay/buildroot/`):
@@ -154,8 +167,7 @@ make flash
 make apply-overlay
 make check-prebuilt
 make build-rootfs
-make build-img
-make flash
+make upgrade
 ```
 
 After a major defconfig or toolchain change, you may need `make clean-buildroot-output` before `make build-rootfs` (see [`docs/build-optimization.md`](docs/build-optimization.md)).
@@ -166,16 +178,18 @@ After a major defconfig or toolchain change, you may need `make clean-buildroot-
 make build-runtime-deps
 make apply-overlay
 make build-rootfs
-make build-img
-make flash
+make upgrade
 ```
 
-**Repack only** — rootfs and kernel already up to date; only rebundle `update.img`:
+### Release / factory image
+
+A release or factory-flash artifact always requires `make build-img`, even if daily iteration used `make upgrade`. If the kernel and rootfs are already up to date:
 
 ```bash
 make build-img
-make flash
 ```
+
+This produces `output/firmware/update.img`. To test the release image on hardware, then run `make reboot-loader` and `make flash`.
 
 Linux hosts: firmware is under `linux-sdk/output/firmware/` as well as `output/firmware/` after export steps.
 
@@ -213,6 +227,7 @@ make shell                      # interactive root shell; SERIAL=... when multip
 make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL=1
 make build-app
 make push-app                   # SERIAL=... when multiple boards
+make upgrade                    # full-system A/B: boot.img + boot_b.img + rootfs.img over SSH
 ```
 
 Remote SSH (board LAN/WLAN sshd on — Demo **LAN SSH debug** or `enable-ssh-debug.sh`):
@@ -224,12 +239,15 @@ make connect 192.168.1.50       # or: make connect IP=192.168.1.50
 make devices                    # MODE=SSH row
 IP=192.168.1.50 make shell
 IP=192.168.1.50 make push-app
+IP=192.168.1.50 make upgrade    # both FIT variants + rootfs.img; not RockUSB
 make disconnect 192.168.1.50
 ```
 
 `IP=` selects **registered SSH only** (never USB-SSH). `SERIAL=` still selects by board serial for either mode. `make reboot` works over SSH; `make reboot-loader` remains USB-SSH / RockUSB / adb only.
 
-`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / future **`make upgrade`** (P2.4 full-system updates **boot+rootfs** letters); **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs.
+Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
+
+`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.4) streams **`boot.img` (FIT for rootfs A) + `boot_b.img` (FIT for rootfs B) + `rootfs.img`** with single-line transfer progress, writes the inactive A/B system, and reboots — **not** RockUSB/`upgrade_tool uf` (use **`make flash`** for GPT / U-Boot). Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
 
 ### Debug iteration (USB plug-ssh / remote SSH, P1.5)
 
@@ -347,7 +365,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P2.1 | ALSA/音频（按需）、wlan0 DHCP；eth0 驱动已入镜像 | 音频包按需开；`BR2_PACKAGE_DHCPCD` | 喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 **硬件 smoke**（🔄：喇叭/背光/旋转已通；Wi‑Fi/BT Demo 已落地待板验） |
 | P2.2 | timedatectl / RTC（`hwclock`） | 按需 | Demo 日期/时间 + `DateTimeController` 抽象 |
 | P2.3 | — | — | P2.1 硬件偏好 **重启后 restore** |
-| P2.4 | A/B **boot+rootfs** 成对双槽 | `parameter` 改表 | `make upgrade`（SSH；**含内核/boot.img + rootfs**，免 loader）；供 P5.8 OTA 复用 |
+| P2.4 | A/B **boot+rootfs** 成对双槽 | `parameter` 改表 | `make upgrade`（SSH；**含双 FIT `boot.img` / `boot_b.img` + `rootfs.img`**，免 loader）；供 P5.8 OTA 复用 |
 | P3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** 工程与 smoke |
 | P3.5 | flutter SDK + engine + flutter-pi **三件套升级** | 重编 prebuilt | P4 前；见 [`docs/flutter-pi-hmi-plan.md` §6.5](docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p35) |
 | P4 | — | — | frost_ui / frost_ime 子模块 |

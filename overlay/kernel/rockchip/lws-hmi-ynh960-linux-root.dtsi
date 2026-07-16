@@ -1,6 +1,7 @@
-// lws-hmi: rootfs on Buildroot GPT (parameter-buildroot-fit.txt).
-// rootfs is the 6th GPT entry (after uboot/misc/boot/recovery/backup) → mmcblk0p6.
-// PARTUUID from parameter.txt is often not written to eMMC by upgrade_tool.
+// lws-hmi: rootfs on Buildroot GPT (parameter-buildroot-fit.txt) — P2.4 A/B.
+// Prefer PARTLABEL over raw mmcblk0pN (partition indices shift with dual boot/rootfs).
+// Factory / letter A default. Letter B FITs must use root=PARTLABEL=rootfs_b (apply patches).
+// See docs/ab-slot-misc.md and docs/storage-layout.md.
 &chosen {
-	bootargs = "earlycon=uart8250,mmio32,0xfe660000 console=ttyFIQ0 root=/dev/mmcblk0p6 rw rootfstype=ext4 rootwait loglevel=4";
+	bootargs = "earlycon=uart8250,mmio32,0xfe660000 console=ttyFIQ0 root=PARTLABEL=rootfs_a rw rootfstype=ext4 rootwait loglevel=4";
 };

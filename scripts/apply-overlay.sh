@@ -684,6 +684,8 @@ install_file "$BOARD_DIR/parameter-ynh960-android-gpt.txt" "$CHIPS_DIR/parameter
 install_file "$BOARD_DIR/parameter-ynh960-android-stock.txt" "$CHIP_DIR/parameter-ynh960-android-stock.txt"
 install_file "$BOARD_DIR/boot-slim.its" "$CHIP_DIR/boot-slim.its"
 install_file "$BOARD_DIR/boot-slim.its" "$CHIPS_DIR/boot-slim.its"
+install_file "$BOARD_DIR/package-file-ynh960-linux-ab" "$CHIP_DIR/package-file-ynh960-linux-ab"
+install_file "$BOARD_DIR/package-file-ynh960-linux-ab" "$CHIPS_DIR/package-file-ynh960-linux-ab"
 
 if [[ ! -f "$SCRIPTS_DIR/check-sdk.sh.orig" ]]; then
   cp -a "$SCRIPTS_DIR/check-sdk.sh" "$SCRIPTS_DIR/check-sdk.sh.orig"

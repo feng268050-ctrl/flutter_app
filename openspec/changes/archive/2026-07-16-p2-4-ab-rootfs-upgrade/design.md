@@ -8,11 +8,11 @@ P2.4 must make **`make upgrade` approach `make flash` for updatable runtime firm
 
 **Goals:**
 
-- Paired A/B: **`boot_a`/`boot_b`** + **`rootfs_a`/`rootfs_b`** (same letter always used together).
+- Paired A/B: **`boot`/`boot_b`** FIT storage + **`rootfs_a`/`rootfs_b`** (same letter always used together; vendor U-Boot always loads the partition named `boot`).
 - Default **`make upgrade`** installs a **firmware bundle** ≥ `{boot.img, rootfs.img}` (+ digests); writes the **inactive letter** for both; arms try-boot; reboots; commits or rolls back.
 - Update **as many flashable runtime parts as safe**: boot + rootfs required; **oem** (and similar vendor images) when included in the bundle; skip only what must stay flash-only.
 - **userdata / P2.3 prefs untouched**.
-- App-only mode reserved (`/oem/hmi`).
+- App-only developer iteration remains `make push-app`; `make upgrade` has no mode switch.
 - One-time **`make flash`** after GPT change; thereafter kernel+rootfs iteration via upgrade.
 
 **Non-Goals:**
@@ -31,7 +31,7 @@ P2.4 must make **`make upgrade` approach `make flash` for updatable runtime firm
 | Part | Size (sectors) | Notes |
 |------|----------------|-------|
 | uboot, misc | unchanged | flash-only for uboot content |
-| **boot_a, boot_b** | each `0x00020000` (64 MiB) | replace single `boot` |
+| **boot, boot_b** | each `0x00020000` (64 MiB) | A/loading partition must remain named `boot` for vendor U-Boot |
 | recovery, backup | keep single (current sizes) | not A/B in P2.4; optional write if later needed |
 | **rootfs_a, rootfs_b** | each `0x00200000` (1 GiB) | replace single `rootfs` |
 | oem, private*, userdata:grow | shifted after dual rootfs | userdata preserved across upgrade |
@@ -42,7 +42,7 @@ P2.4 must make **`make upgrade` approach `make flash` for updatable runtime firm
 
 | Component | `make upgrade` (full-system) | `make flash` |
 |-----------|------------------------------|--------------|
-| `boot.img` (kernel FIT) | **Yes** → inactive `boot_*` | Yes |
+| `boot.img` / `boot_b.img` (slot-specific kernel FITs) | **Yes** → target FIT staged into `boot`; previous FIT backed up to `boot_b` | Yes |
 | `rootfs.img` | **Yes** → inactive `rootfs_*` | Yes |
 | `oem` (if in bundle) | **Yes** → single oem partition (no A/B) | Yes |
 | misc slot marker | Yes (board-managed) | Yes |
@@ -65,7 +65,7 @@ May be produced by `build-img` as a side artifact or assembled from `output/firm
 
 ### 4. Slot marker and boot selection
 
-**Choice:** Misc holds **active letter** (A|B), **try-boot letter**, **previous letter**, try counter. U-Boot (or smallest env overlay) loads **`boot_${letter}`** and sets **`root=PARTLABEL=rootfs_${letter}`** (or equivalent).
+**Choice:** Misc offset `0x100000` holds **active letter** (A|B), **try-boot letter**, **previous letter**, and try counter. The earlier `0x0800` candidate is vendor-owned boot-control data and is rewritten by ynh960 U-Boot. When the safe marker is absent, Linux initializes it from the rootfs block device actually mounted as `/`. Vendor U-Boot always loads PARTNAME `boot`; the board helper places the FIT for the selected letter there, and that FIT sets **`root=PARTLABEL=rootfs_${letter}`**.
 
 **Alternatives:** Independent boot vs rootfs letters (rejected — module/ABI skew); single boot with dual rootfs only (rejected — cannot remote-update kernel safely).
 
@@ -83,11 +83,11 @@ Fail any image verify → **do not arm** try-boot; leave active letter unchanged
 
 ### 6. Factory `update.img`
 
-**Choice:** Pack the same `boot.img` into **boot_a and boot_b**, same `rootfs.img` into **rootfs_a and rootfs_b**. Default active = **A**.
+**Choice:** Pack hash-valid slot-specific `boot.img` (`rootfs_a`) into **boot** and `boot_b.img` (`rootfs_b`) into **boot_b**, and the same `rootfs.img` into **rootfs_a and rootfs_b**. Default active = **A**.
 
 ### 7. Host `make upgrade`
 
-**Choice:** `scripts/upgrade-remote.sh` + Makefile `upgrade`. Reuse `SERIAL=` / `IP=`. Default = full-system bundle. `UPGRADE_MODE=app` = oem app path only. **Must not** call RockUSB `uf`.
+**Choice:** `scripts/upgrade-remote.sh` + Makefile `upgrade`. Reuse `SERIAL=` / `IP=`. It always applies the full-system A/B bundle and **must not** call RockUSB `uf`. App-only iteration uses `make push-app`.
 
 ### 8. Prefs invariant
 
@@ -98,8 +98,8 @@ Unchanged: upgrade scripts refuse userdata `mkfs` / prefs tree deletion.
 | Risk | Mitigation |
 |------|------------|
 | Dual boot eats ~64 MiB extra | Accept; document in storage-layout |
-| U-Boot cannot select boot_a/b without rebuild | Early spike; minimal env/script; escalate U-Boot only if needed |
-| oem is single-slot (no rollback) | oem optional; prefer non-critical drop-ins; app-only uses `/oem/hmi` carefully |
+| Vendor U-Boot only loads PARTNAME `boot` | Keep A storage named `boot`; apply backs it up to `boot_b` and writes the target slot FIT into `boot`; rollback swaps it back |
+| oem is single-slot (no rollback) | oem optional; prefer non-critical drop-ins |
 | Larger transfer (boot+rootfs) over SSH | Resume-friendly copy; digests before arm |
 | Mismatched partial write | Write both images before arming; single letter commit |
 
@@ -107,7 +107,7 @@ Unchanged: upgrade scripts refuse userdata `mkfs` / prefs tree deletion.
 
 1. Land GPT + docs + verify for boot+rootfs A/B; build factory image.
 2. **`make flash` once** (repartition).
-3. Confirm boot from A (both boot_a + rootfs_a); B holds twins.
+3. Confirm boot from A (`boot` FIT + `rootfs_a`); `boot_b` and `rootfs_b` hold the B pair.
 4. Land board apply/confirm + host upgrade.
 5. Accept: change kernel and/or rootfs → `make upgrade` → other letter → HMI up → prefs intact; bad bundle rejected.
 6. P5.8 reuses bundle + protocol.

@@ -3,7 +3,6 @@
 ## Purpose
 TBD - created by archiving change p1-linux-flutter-platform. Update Purpose after archive.
 ## Requirements
-
 ### Requirement: lws_hmi Buildroot defconfig is the default rootfs profile for ynh960
 
 The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the SDK Buildroot configs tree, composed from `base/base.config`, `lws_hmi_{base,systemd,network,flutter,bt,npu,font,build,toolchain_external}.config`, `rk3566_rk3568_aarch64.config`, `gpu/gpu.config`, `wifibt/wireless.config`, `wifibt/bt.config`, and `powermanager.config`. P1 SHALL `#include` `lws_hmi_npu.config` to gate RKNPU runtime overlay staging (`make fetch-rknn-rt`); P3+ fragments (`lws_hmi_gst_*`, `lws_hmi_mediamtx`, `lws_hmi_platform`) SHALL remain commented out until those phases are enabled. The ynh960 board configuration SHALL set `RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"` (resolving to `rockchip_rk3566_rk3568_lws_hmi`) and `RK_ROOTFS_SYSTEM_BUILDROOT=y`.
@@ -242,3 +241,41 @@ The Buildroot/lws-hmi image SHALL ship a flutter-pi build that: (1) shows a reli
 
 - **WHEN** `scripts/verify-rootfs-overlay.sh` runs against an overlay that documents or stages mouse preference defaults
 - **THEN** verification passes (or explicitly skips non-staged optional default files without failing the image)
+
+### Requirement: Firmware GPT and size gates cover boot and rootfs A/B
+
+The lws_hmi image build SHALL consume the A/B `parameter-buildroot-fit.txt` layout with **`boot`/`boot_b`** and **`rootfs_a`/`rootfs_b`**. `scripts/verify-firmware-partitions.sh` (or equivalent) SHALL fail the build if `boot.img` exceeds either boot slot or `rootfs.img` exceeds either rootfs slot. Factory packaging SHALL populate **both letters** with the same boot and rootfs images (or an equivalent documented first-boot clone policy).
+
+#### Scenario: Oversized rootfs fails verify
+
+- **WHEN** `rootfs.img` is larger than the `rootfs_a`/`rootfs_b` GPT size
+- **THEN** firmware partition verification fails before shipping `update.img`
+
+#### Scenario: Oversized boot fails verify
+
+- **WHEN** `boot.img` is larger than the `boot`/`boot_b` GPT size
+- **THEN** firmware partition verification fails before shipping `update.img`
+
+#### Scenario: Parameter overlay installs A/B table
+
+- **WHEN** developer runs `make apply-overlay` after this change
+- **THEN** the SDK board parameter file matches the repo A/B `parameter-buildroot-fit.txt`
+
+### Requirement: Rootfs overlay ships A/B upgrade helpers
+
+The lws_hmi rootfs overlay SHALL include the board full-system apply/confirm helpers (scripts and any systemd units required by `ab-firmware-slots`), including support for writing **boot and rootfs** on the inactive letter. `scripts/verify-rootfs-overlay.sh` SHALL fail if those helpers are missing from the staging target after `make build-rootfs`.
+
+#### Scenario: verify finds upgrade helpers
+
+- **WHEN** `make build-rootfs` completes successfully after this change
+- **THEN** `verify-rootfs-overlay.sh` reports PASS including A/B upgrade helper presence checks
+
+### Requirement: Kernel/boot selection matches A/B letter pairs
+
+The boot chain configuration used by the product image SHALL load the active letter’s FIT via the partition named **`boot`** (try-boot may swap with `boot_b`) and mount the matching `rootfs_*`. Hardcoded sole reliance on a pre-A/B single `root=/dev/mmcblk0p6` for product boots MUST NOT remain as the only mechanism after this change.
+
+#### Scenario: Bootargs or DTS documents paired slot root
+
+- **WHEN** a developer inspects the ynh960 Linux root DTS/bootargs overlay after this change
+- **THEN** root selection is expressed in terms of A/B letters (PARTLABEL or slot-resolved device) paired with the selected boot slot
+

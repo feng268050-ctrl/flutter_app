@@ -2,12 +2,12 @@
 
 ### Requirement: make upgrade performs remote full-system firmware upgrade over SSH
 
-The repository SHALL provide **`make upgrade`** that selects a Linux target the same way as **`make push-app`** (**USB-SSH** and/or registered **`MODE=SSH`** via `SERIAL=` / `IP=`), transfers a **full-system firmware bundle** that includes at least **`boot.img` and `rootfs.img`** (with digests) from the firmware output, invokes the board apply helper over SSH, and waits until the board returns to SSH after reboot. Default full-system mode MUST update the inactive **boot and rootfs** letter pair (kernel + rootfs). **`make upgrade` MUST NOT** enter RockUSB loader mode or invoke Rockchip `upgrade_tool uf` / `flash-usb.sh` upgrade.
+The repository SHALL provide **`make upgrade`** that selects a Linux target the same way as **`make push-app`** (**USB-SSH** and/or registered **`MODE=SSH`** via `SERIAL=` / `IP=`), transfers a **full-system firmware bundle** that includes at least **`boot.img` and `rootfs.img`** (with digests) from the firmware output, invokes the board apply helper over SSH, and returns successfully when board apply reports `apply.status=ok` (reboot requested) or SSH disconnects first. It SHALL NOT wait for post-reboot SSH or claim that boot health was verified. Default full-system mode MUST update the inactive **boot and rootfs** letter pair (kernel + rootfs). **`make upgrade` MUST NOT** enter RockUSB loader mode or invoke Rockchip `upgrade_tool uf` / `flash-usb.sh` upgrade.
 
 #### Scenario: Upgrade over USB-SSH updates kernel and rootfs
 
 - **WHEN** exactly one USB-SSH device is available and the host runs `make upgrade` after a successful `make build-img` that produced boot and rootfs images
-- **THEN** the inactive boot and rootfs partitions on that board are updated, the board reboots into the new letter, and SSH becomes reachable again without using RockUSB
+- **THEN** the inactive boot and rootfs partitions on that board are updated, the board requests reboot without using RockUSB, and the command returns on `apply.status=ok` or SSH disconnect without waiting for SSH to become reachable again
 
 #### Scenario: Upgrade over registered LAN SSH
 
@@ -41,15 +41,6 @@ If the board apply returns failure (bad digest, write error, refused userdata to
 
 - **WHEN** the host transfers a corrupt payload and the board apply rejects it
 - **THEN** `make upgrade` exits non-zero and the board remains on its previous active letter
-
-### Requirement: App-only host mode is available
-
-`make upgrade` SHALL support an app-only mode (e.g. `UPGRADE_MODE=app`) that deploys an application payload to the reserved oem app path without arming a boot/rootfs letter switch. Documentation SHALL distinguish app-only from full-system upgrade (boot+rootfs).
-
-#### Scenario: App-only flag skips letter switch
-
-- **WHEN** the user runs app-only `make upgrade` successfully
-- **THEN** the host does not require a boot/rootfs letter reboot cycle for that invocation
 
 ### Requirement: Documentation contrasts upgrade vs flash
 

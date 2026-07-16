@@ -63,7 +63,9 @@ if ! grep -q '^RK_BOOT_FIT_ITS_NAME=' "$DEF" 2>/dev/null; then
 fi
 apply_kv "RK_BOOT_FIT_ITS" '"$RK_CHIP_DIR/$RK_BOOT_FIT_ITS_NAME"'
 
-# ynh960: no Android slice package-file in full update.img packs.
-sed -i.bak '/^RK_PACKAGE_FILE_CUSTOM=y/d;/^RK_PACKAGE_FILE=/d' "$CFG" 2>/dev/null || true
+# ynh960 A/B: factory package must map each boot partition to its matching,
+# hash-valid FIT (boot.img=rootfs_a, boot_b.img=rootfs_b).
+apply_bool "RK_PACKAGE_FILE_CUSTOM" "y"
+apply_kv "RK_PACKAGE_FILE" '"package-file-ynh960-linux-ab"'
 
 echo "sync-lunch-config: applied $(basename "$DEF") → output/.config"

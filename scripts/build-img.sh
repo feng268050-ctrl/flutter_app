@@ -116,18 +116,25 @@ ensure_sdk_uboot() {
 install_misc() {
   local sdk="$1" firmware="$2"
   local dest="$firmware/misc.img"
-  local zero_misc="$firmware/misc-lws-zero.img"
-  local sdk_misc="$sdk/output/misc.img"
 
+  # 4 MiB misc: offset 0 zero (no Android boot-recovery BCB); LWS marker at
+  # 1 MiB, clear of vendor U-Boot boot-control data at 2 KiB.
+  # See docs/ab-slot-misc.md.
   rm -f "$dest"
-  if [[ -r "$zero_misc" ]]; then
-    cp -f "$zero_misc" "$dest"
-  elif [[ -r "$sdk_misc" ]]; then
-    cp -fL "$sdk_misc" "$dest" 2>/dev/null || cp -f "$sdk_misc" "$dest"
-  else
-    dd if=/dev/zero of="$dest" bs=4096 count=1024 status=none
-  fi
-  echo "misc.img: cleared (no boot-recovery — Innohi misc breaks Linux boot)"
+  dd if=/dev/zero of="$dest" bs=4096 count=1024 status=none
+  python3 - "$dest" <<'PY'
+import struct, sys, zlib
+path = sys.argv[1]
+magic = b"LWSAB\x00\x01\x00"
+# active=A, try=0, previous=A, tries=0
+body = magic + bytes([ord("A"), 0, ord("A"), 0])
+crc = zlib.crc32(body) & 0xffffffff
+blob = body + struct.pack("<I", crc) + bytes(48)
+with open(path, "r+b") as f:
+    f.seek(1024 * 1024)
+    f.write(blob[:64])
+PY
+  echo "misc.img: LWS A/B factory marker (active=A; no boot-recovery at offset 0)"
   bash "$SIZE_HELPER" "$dest"
 }
 
@@ -150,7 +157,8 @@ pack_in_sdk() {
   ensure_sdk_uboot "$sdk" "$firmware"
   install_misc "$sdk" "$firmware"
 
-  [[ -r "$firmware/boot.img" ]] || die "boot.img missing — run make build-kernel"
+  [[ -r "$firmware/boot.img" ]] || die "boot.img (rootfs_a FIT) missing — run make build-kernel"
+  [[ -r "$firmware/boot_b.img" ]] || die "boot_b.img (rootfs_b FIT) missing — run make build-kernel"
   rootfs_img="$firmware/rootfs.img"
   [[ -r "$rootfs_img" ]] || rootfs_img="$(find "$sdk/buildroot/output" -name 'rootfs.ext2' -print -quit 2>/dev/null || true)"
   [[ -n "$rootfs_img" && -r "$rootfs_img" ]] \
@@ -158,7 +166,7 @@ pack_in_sdk() {
 
   boot_bytes="$(wc -c <"$firmware/boot.img" | tr -d ' ')"
   echo "Firmware inputs:"
-  bash "$SIZE_HELPER" "$firmware/boot.img" "$rootfs_img" "$firmware/MiniLoaderAll.bin" "$firmware/uboot.img" "$firmware/misc.img"
+  bash "$SIZE_HELPER" "$firmware/boot.img" "$firmware/boot_b.img" "$rootfs_img" "$firmware/MiniLoaderAll.bin" "$firmware/uboot.img" "$firmware/misc.img"
   if [[ "$boot_bytes" -gt "$LINUX_BOOT_MAX" ]]; then
     die "boot.img is ${boot_bytes} bytes — Linux boot partition is 64 MiB"
   fi
@@ -166,8 +174,10 @@ pack_in_sdk() {
   bash "$ROOT/scripts/verify-firmware-partitions.sh" "$firmware" "$PARAM"
 
   echo ""
-  echo "Linux update.img: SDK loader + vendor uboot (unmodified) + ynh960 FIT boot.img"
-  echo "Flash: make flash"
+  echo "Linux update.img: SDK loader + vendor uboot + hash-valid A/B FITs"
+  echo "A/B GPT: boot←boot.img(rootfs_a), boot_b←boot_b.img(rootfs_b)"
+  echo "Flash: make flash (repartitions once); later: make upgrade (SSH, boot+rootfs)"
+  echo "Note: PARTNAME=boot required (vendor U-Boot); not boot_a — see docs/ab-slot-misc.md"
   echo ""
 
   cd "$sdk"

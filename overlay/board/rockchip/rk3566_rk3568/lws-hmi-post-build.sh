@@ -59,7 +59,9 @@ rm -f \
 
 # Retired USB-only ListenAddress drop-in (renamed to 50-lws-hmi-ssh-auth.conf).
 # Buildroot overlay copy does not delete removed files from incremental target/.
-rm -f "$TARGET_DIR/etc/ssh/sshd_config.d/50-lws-hmi-usb-plug-ssh.conf"
+rm -f \
+	"$TARGET_DIR/etc/ssh/sshd_config.d/50-lws-hmi-usb-plug-ssh.conf" \
+	"$TARGET_DIR/usr/lib/lws-hmi/ab-upgrade-app-only.sh"
 
 # Rockchip bluez-alsa.mk uses --enable-debug; configure then links -lSegFault when
 # glibc's libSegFault.so is in the sysroot. Buildroot does not install that .so

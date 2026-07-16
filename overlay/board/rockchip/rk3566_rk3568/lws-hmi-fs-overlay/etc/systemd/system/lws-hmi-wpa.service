@@ -2,8 +2,10 @@
 Description=LWS HMI on-demand wpa_supplicant (wlan0)
 Documentation=file:///usr/lib/lws-hmi/wifi-stack-up.sh
 # Not linked from multi-user.target.wants — started only via wifi-stack-up.sh / Demo.
-DefaultDependencies=no
 After=local-fs.target
+# wpa_supplicant keeps its log under /var/lib/lws-hmi → /userdata/lws-hmi.
+# This dependency also guarantees stop ordering before userdata is unmounted.
+RequiresMountsFor=/userdata
 
 [Service]
 # Dedicated unit so wpa_supplicant is NOT in hmi.service's cgroup (Demo Process.run

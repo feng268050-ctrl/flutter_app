@@ -2,7 +2,7 @@
 
 ### Requirement: Firmware GPT and size gates cover boot and rootfs A/B
 
-The lws_hmi image build SHALL consume the A/B `parameter-buildroot-fit.txt` layout with **`boot_a`/`boot_b`** and **`rootfs_a`/`rootfs_b`**. `scripts/verify-firmware-partitions.sh` (or equivalent) SHALL fail the build if `boot.img` exceeds either boot slot or `rootfs.img` exceeds either rootfs slot. Factory packaging SHALL populate **both letters** with the same boot and rootfs images (or an equivalent documented first-boot clone policy).
+The lws_hmi image build SHALL consume the A/B `parameter-buildroot-fit.txt` layout with **`boot`/`boot_b`** and **`rootfs_a`/`rootfs_b`**. `scripts/verify-firmware-partitions.sh` (or equivalent) SHALL fail the build if `boot.img` exceeds either boot slot or `rootfs.img` exceeds either rootfs slot. Factory packaging SHALL populate **both letters** with the same boot and rootfs images (or an equivalent documented first-boot clone policy).
 
 #### Scenario: Oversized rootfs fails verify
 
@@ -11,7 +11,7 @@ The lws_hmi image build SHALL consume the A/B `parameter-buildroot-fit.txt` layo
 
 #### Scenario: Oversized boot fails verify
 
-- **WHEN** `boot.img` is larger than the `boot_a`/`boot_b` GPT size
+- **WHEN** `boot.img` is larger than the `boot`/`boot_b` GPT size
 - **THEN** firmware partition verification fails before shipping `update.img`
 
 #### Scenario: Parameter overlay installs A/B table
@@ -30,7 +30,7 @@ The lws_hmi rootfs overlay SHALL include the board full-system apply/confirm hel
 
 ### Requirement: Kernel/boot selection matches A/B letter pairs
 
-The boot chain configuration used by the product image SHALL load the active letter’s `boot_*` FIT and mount the matching `rootfs_*`. Hardcoded sole reliance on a pre-A/B single `boot` partition and `root=/dev/mmcblk0p6` for product boots MUST NOT remain as the only mechanism after this change.
+The boot chain configuration used by the product image SHALL load the active letter’s FIT via the partition named **`boot`** (try-boot may swap with `boot_b`) and mount the matching `rootfs_*`. Hardcoded sole reliance on a pre-A/B single `root=/dev/mmcblk0p6` for product boots MUST NOT remain as the only mechanism after this change.
 
 #### Scenario: Bootargs or DTS documents paired slot root
 

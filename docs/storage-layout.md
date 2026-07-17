@@ -60,7 +60,7 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | App config / prefs (P2.3) | **`/userdata/lws-hmi/`** ( `/var/lib/lws-hmi` symlink ) | userdata |
 | App config / cache | `/userdata/cfg/` (convention) | userdata |
 
-`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `ynh960-display-init.sh`, which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, then runs **`lws-hmi-prefs-bind.sh`** so `/var/lib/lws-hmi` → `/userdata/lws-hmi`.
+`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `ynh960-display-init.sh`, which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, then runs **`bind-prefs.sh`** so `/var/lib/lws-hmi` → `/userdata/lws-hmi`.
 
 ## Prefs: flash vs upgrade (P2.3 / P2.4)
 

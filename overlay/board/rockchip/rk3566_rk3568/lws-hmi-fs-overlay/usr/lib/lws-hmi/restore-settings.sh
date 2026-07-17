@@ -7,7 +7,7 @@ set -eu
 LIB=/var/lib/lws-hmi
 
 log() {
-	echo "lws-hmi-settings-restore: $*"
+	echo "restore-settings: $*"
 }
 
 soft() {
@@ -22,9 +22,9 @@ soft() {
 # --- backlight / volume (cheap; HMI also re-applies) ---
 if [ -f "$LIB/backlight-brightness" ]; then
 	pct="$(tr -d '[:space:]' <"$LIB/backlight-brightness")"
-	if [ -n "$pct" ] && [ -x /usr/lib/lws-hmi/lws-hmi-backlight-apply.sh ]; then
+	if [ -n "$pct" ] && [ -x /usr/lib/lws-hmi/change-backlight.sh ]; then
 		log "backlight $pct%"
-		soft /usr/lib/lws-hmi/lws-hmi-backlight-apply.sh "$pct"
+		soft /usr/lib/lws-hmi/change-backlight.sh "$pct"
 	fi
 else
 	log "no backlight-brightness — skip backlight"
@@ -90,7 +90,7 @@ if [ -f "$LIB/eth0-wanted" ]; then
 		soft systemctl reset-failed lws-hmi-eth0.service
 		soft systemctl start lws-hmi-eth0.service
 	else
-		soft /usr/lib/lws-hmi/lws-hmi-eth0-apply.sh
+		soft /usr/lib/lws-hmi/apply-eth0.sh
 	fi
 else
 	log "no eth0-wanted — skip eth0"

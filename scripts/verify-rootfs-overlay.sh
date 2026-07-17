@@ -174,7 +174,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh lws-hmi-wpa-run.sh lws-hmi-eth0-apply.sh lws-hmi-settings-restore.sh lws-hmi-backlight-apply.sh lws-hmi-prefs-bind.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-stop-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh run-wpa.sh apply-eth0.sh restore-settings.sh change-backlight.sh bind-prefs.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-stop-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else
@@ -241,8 +241,14 @@ start-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-start.sh
 stop-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-stop.sh
 recover-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-recover.sh
 reboot-loader /usr/lib/lws-hmi/reboot-loader
+change-backlight /usr/lib/lws-hmi/change-backlight.sh
+enable-ssh-debug /usr/lib/lws-hmi/enable-ssh-debug.sh
+disable-ssh-debug /usr/lib/lws-hmi/disable-ssh-debug.sh
+usb-otg-mode /usr/lib/lws-hmi/usb-otg-mode.sh
+set-performance-mode /usr/lib/lws-hmi/set-performance-mode.sh
+sync-time /usr/lib/lws-hmi/wlan0-time-sync.sh
 EOF
-	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader; do
+	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader lws-hmi-backlight-apply; do
 		if [[ -e "$target/usr/bin/$retired" || -L "$target/usr/bin/$retired" ]]; then
 			echo "FAIL: retired usr/bin/$retired command still present" >&2
 			missing=1
@@ -413,7 +419,7 @@ EOF
 		missing=1
 	fi
 	if [[ -f "$target/etc/systemd/system/lws-hmi-wpa.service" ]] && \
-		grep -q 'lws-hmi-wpa-run.sh' \
+		grep -q 'run-wpa.sh' \
 		"$target/etc/systemd/system/lws-hmi-wpa.service" 2>/dev/null; then
 		echo "OK:  lws-hmi-wpa.service"
 	else
@@ -463,14 +469,14 @@ EOF
 		missing=1
 	fi
 	if [[ -f "$target/etc/systemd/system/lws-hmi-eth0.service" ]] && \
-		[[ -x "$helper/lws-hmi-eth0-apply.sh" ]]; then
-		echo "OK:  lws-hmi-eth0.service + apply script"
+		[[ -x "$helper/apply-eth0.sh" ]]; then
+		echo "OK:  lws-hmi-eth0.service + apply-eth0.sh"
 	else
-		echo "FAIL: missing lws-hmi-eth0.service / apply script" >&2
+		echo "FAIL: missing lws-hmi-eth0.service / apply-eth0.sh" >&2
 		missing=1
 	fi
 	if [[ -f "$target/etc/systemd/system/lws-hmi-settings-restore.service" ]] && \
-		[[ -x "$helper/lws-hmi-settings-restore.sh" ]] && \
+		[[ -x "$helper/restore-settings.sh" ]] && \
 		grep -q 'After=hmi.service' \
 		"$target/etc/systemd/system/lws-hmi-settings-restore.service" 2>/dev/null && \
 		! grep -q 'Before=hmi.service' \
@@ -484,12 +490,12 @@ EOF
 		echo "FAIL: settings-restore must After=hmi + Nice; hmi Wants=restore (UI-first)" >&2
 		missing=1
 	fi
-	if [[ -x "$helper/lws-hmi-prefs-bind.sh" ]] && \
-		grep -q 'lws-hmi-prefs-bind.sh' \
+	if [[ -x "$helper/bind-prefs.sh" ]] && \
+		grep -q 'bind-prefs.sh' \
 		"$helper/ynh960-display-init.sh" 2>/dev/null; then
-		echo "OK:  prefs-bind (/var/lib/lws-hmi → /userdata/lws-hmi)"
+		echo "OK:  bind-prefs (/var/lib/lws-hmi → /userdata/lws-hmi)"
 	else
-		echo "FAIL: missing lws-hmi-prefs-bind.sh wired into display-init" >&2
+		echo "FAIL: missing bind-prefs.sh wired into display-init" >&2
 		missing=1
 	fi
 	if grep -q 'enable lws-hmi-settings-restore.service' \

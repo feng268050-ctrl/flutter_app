@@ -1,12 +1,13 @@
 #!/bin/sh
 # Apply eth0 link + IPv4 from /var/lib/lws-hmi/eth0-ipv4 (for lws-hmi-eth0.service).
+# Usage: apply-eth0.sh
 set -eu
 
 IFACE="${LWS_ETH_IFACE:-eth0}"
 PREF="${LWS_ETH_IPV4_PREF:-/var/lib/lws-hmi/eth0-ipv4}"
 
 log() {
-	echo "lws-hmi-eth0-apply: $*" >&2
+	echo "apply-eth0: $*" >&2
 }
 
 case "$IFACE" in

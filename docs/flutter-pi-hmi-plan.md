@@ -1537,7 +1537,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - 清单：Wi‑Fi 凭据与 wlan0 IPv4、eth0 IPv4、HTTP 代理、背光、屏幕旋转、BT A2DP Sink、**鼠标 `mouse.conf`** 等（以 P2.1 已交付项为准；鼠标偏好由 flutter-pi 启动时重载，无需独立 network-style oneshot）
 - `lws-hmi-wpa` / `lws-hmi-wlan0-dhcp` / `lws-hmi-eth0`：on-demand；`lws-hmi-settings-restore.service`：**`After=hmi`**（UI 先起，再恢复网/BT；Nice/idle；Demo `starting` 跟手动开一致）
 - Demo Apply 与 boot restore **同一实现**（wanted 标记 `wifi-wanted` / `eth0-wanted`）
-- 偏好目录：**`/userdata/lws-hmi/`**（`/var/lib/lws-hmi` → symlink，`lws-hmi-prefs-bind.sh`）
+- 偏好目录：**`/userdata/lws-hmi/`**（`/var/lib/lws-hmi` → symlink，`bind-prefs.sh`）
 - **保留 / 清除策略**（详见 [`docs/storage-layout.md`](storage-layout.md) §Prefs）：
   - **reboot / `push-app` / HMI restart** → 保留
   - **`make upgrade`（P2.4 A/B，换 inactive 字母的 boot+rootfs）** → **保留**（不得动 userdata）

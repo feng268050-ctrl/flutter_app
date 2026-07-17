@@ -111,6 +111,7 @@ When unsure or on a clean tree: `make build`.
 
 - **Minimize scope** — smallest correct diff; no drive-by refactors.
 - **Match existing style** in touched files (shell, Dart, Buildroot `.mk`, overlay layout).
+- **Script / device-command naming** — prefer **verb + noun** (kebab-case), no `lws-hmi-` prefix on the script basename. Examples: `change-backlight.sh`, `apply-eth0.sh`, `run-wpa.sh`, `restore-settings.sh`, `bind-prefs.sh`, `enable-ssh-debug.sh`. Operator-facing commands get `/usr/bin/<verb-noun>` symlinks via `lws-hmi-post-build.sh` (no `.sh`); systemd-only helpers stay under `/usr/lib/lws-hmi/` only. systemd **unit** names may keep the `lws-hmi-` prefix (`lws-hmi-eth0.service`).
 - **Paths:** app → `app/hmi/`; rootfs overlay → `overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/`; Buildroot fragments → `overlay/buildroot/`.
 - **Do not** run `make build-uboot` on ynh960 unless Innohi instructs.
 - OpenSpec workflow: `.cursor/skills/openspec-*` when the user uses that flow.

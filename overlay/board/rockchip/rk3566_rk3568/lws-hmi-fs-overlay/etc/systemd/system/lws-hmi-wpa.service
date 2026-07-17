@@ -11,7 +11,7 @@ RequiresMountsFor=/userdata
 # Dedicated unit so wpa_supplicant is NOT in hmi.service's cgroup (Demo Process.run
 # would otherwise lose Wi-Fi on systemctl stop hmi → LAN SSH drops during push-app).
 Type=simple
-ExecStart=/usr/lib/lws-hmi/lws-hmi-wpa-run.sh
+ExecStart=/usr/lib/lws-hmi/run-wpa.sh
 Restart=no
 
 # No [Install] — must not auto-start at boot.

@@ -1,6 +1,6 @@
 #!/bin/sh
-# Apply persisted backlight percent (0–100) to sysfs.
-# Usage: lws-hmi-backlight-apply.sh <percent>
+# Apply backlight percent (0–100) to sysfs.
+# Usage: change-backlight <percent>
 set -eu
 
 PCT="${1:-}"
@@ -35,7 +35,7 @@ if [ -z "$pick" ]; then
 	done
 fi
 if [ -z "$pick" ] || [ ! -f "$pick/brightness" ]; then
-	echo "lws-hmi-backlight-apply: no backlight device" >&2
+	echo "change-backlight: no backlight device" >&2
 	exit 1
 fi
 
@@ -47,4 +47,4 @@ fi
 # percent → device value
 val=$((PCT * max / 100))
 printf '%s\n' "$val" >"$pick/brightness"
-echo "lws-hmi-backlight-apply: $PCT% → $val/$max ($pick)"
+echo "change-backlight: $PCT% → $val/$max ($pick)"

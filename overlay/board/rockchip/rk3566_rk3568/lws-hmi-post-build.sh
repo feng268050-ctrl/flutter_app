@@ -46,11 +46,18 @@ ln -sf /usr/lib/lws-hmi/usb-plug-ssh-start.sh "$TARGET_DIR/usr/bin/start-usb-ssh
 ln -sf /usr/lib/lws-hmi/usb-plug-ssh-stop.sh "$TARGET_DIR/usr/bin/stop-usb-ssh"
 ln -sf /usr/lib/lws-hmi/usb-plug-ssh-recover.sh "$TARGET_DIR/usr/bin/recover-usb-ssh"
 ln -sf /usr/lib/lws-hmi/reboot-loader "$TARGET_DIR/usr/bin/reboot-loader"
+ln -sf /usr/lib/lws-hmi/change-backlight.sh "$TARGET_DIR/usr/bin/change-backlight"
+ln -sf /usr/lib/lws-hmi/enable-ssh-debug.sh "$TARGET_DIR/usr/bin/enable-ssh-debug"
+ln -sf /usr/lib/lws-hmi/disable-ssh-debug.sh "$TARGET_DIR/usr/bin/disable-ssh-debug"
+ln -sf /usr/lib/lws-hmi/usb-otg-mode.sh "$TARGET_DIR/usr/bin/usb-otg-mode"
+ln -sf /usr/lib/lws-hmi/set-performance-mode.sh "$TARGET_DIR/usr/bin/set-performance-mode"
+ln -sf /usr/lib/lws-hmi/wlan0-time-sync.sh "$TARGET_DIR/usr/bin/sync-time"
 rm -f \
 	"$TARGET_DIR/usr/bin/boot-verify" \
 	"$TARGET_DIR/usr/bin/env-verify" \
 	"$TARGET_DIR/usr/bin/read-device-serial" \
-	"$TARGET_DIR/usr/bin/reboot-rockusb-loader"
+	"$TARGET_DIR/usr/bin/reboot-rockusb-loader" \
+	"$TARGET_DIR/usr/bin/lws-hmi-backlight-apply"
 
 # App bundle must not ship engine/icu (system paths only).
 rm -f \
@@ -61,7 +68,12 @@ rm -f \
 # Buildroot overlay copy does not delete removed files from incremental target/.
 rm -f \
 	"$TARGET_DIR/etc/ssh/sshd_config.d/50-lws-hmi-usb-plug-ssh.conf" \
-	"$TARGET_DIR/usr/lib/lws-hmi/ab-upgrade-app-only.sh"
+	"$TARGET_DIR/usr/lib/lws-hmi/ab-upgrade-app-only.sh" \
+	"$TARGET_DIR/usr/lib/lws-hmi/lws-hmi-backlight-apply.sh" \
+	"$TARGET_DIR/usr/lib/lws-hmi/lws-hmi-eth0-apply.sh" \
+	"$TARGET_DIR/usr/lib/lws-hmi/lws-hmi-wpa-run.sh" \
+	"$TARGET_DIR/usr/lib/lws-hmi/lws-hmi-settings-restore.sh" \
+	"$TARGET_DIR/usr/lib/lws-hmi/lws-hmi-prefs-bind.sh"
 
 # Rockchip bluez-alsa.mk uses --enable-debug; configure then links -lSegFault when
 # glibc's libSegFault.so is in the sysroot. Buildroot does not install that .so

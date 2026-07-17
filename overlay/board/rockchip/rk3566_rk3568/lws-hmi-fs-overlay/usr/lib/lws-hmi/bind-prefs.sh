@@ -7,7 +7,7 @@ USERDATA_PREFS=/userdata/lws-hmi
 VAR_PREFS=/var/lib/lws-hmi
 
 log() {
-	echo "lws-hmi-prefs-bind: $*"
+	echo "bind-prefs: $*"
 }
 
 if [ ! -d /userdata ]; then

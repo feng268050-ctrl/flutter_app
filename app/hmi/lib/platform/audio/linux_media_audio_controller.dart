@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:lws_hmi/platform/audio/media_audio_controller.dart';
+import 'package:lws_hmi/platform/board_helper.dart';
 import 'package:lws_hmi/platform/lws_trace.dart';
 import 'package:lws_hmi/platform/percent.dart';
 
@@ -14,18 +15,23 @@ import 'package:lws_hmi/platform/percent.dart';
 /// - Volume is a **mixer** property, never tied to restarting the decoder.
 /// - Playback state comes from the player (`@P` / process exit), not UI guesses.
 /// - Concurrent volume requests coalesce to the **latest** percent (no queue).
+/// - Persist + HW mixer apply go through `change-volume`.
 class LinuxMediaAudioController implements MediaAudioController {
   LinuxMediaAudioController({
     this.cacheDir = '/var/lib/lws-hmi/audio',
     this.volumePreferencePath = '/var/lib/lws-hmi/media-volume',
+    this.changeVolumeCommand = const <String>['change-volume'],
     this.playerBinary = 'mpg123',
     this.amixerBinary = 'amixer',
-  });
+    BoardHelperRunner? runHelper,
+  }) : runHelper = runHelper ?? defaultBoardHelperRunner;
 
   final String cacheDir;
   final String volumePreferencePath;
+  final List<String> changeVolumeCommand;
   final String playerBinary;
   final String amixerBinary;
+  final BoardHelperRunner runHelper;
 
   Process? _player;
   IOSink? _playerStdin;
@@ -87,8 +93,8 @@ class LinuxMediaAudioController implements MediaAudioController {
   Future<void> setVolumePercent(int percent) async {
     _volumePercent = clampPercent(percent);
     _volumeLoaded = true;
+    await _changeVolumeHelper(_volumePercent);
     _queuedVolume = _volumePercent;
-    await _persistVolume(_volumePercent);
     await _drainVolumeQueue();
   }
 
@@ -114,13 +120,19 @@ class LinuxMediaAudioController implements MediaAudioController {
     await _drainVolumeQueue();
   }
 
-  Future<void> _persistVolume(int percent) async {
-    try {
-      final f = File(volumePreferencePath);
-      await f.parent.create(recursive: true);
-      await f.writeAsString('$percent\n', flush: true);
-    } catch (e) {
-      debugPrint('media-audio: volume persist failed: $e');
+  Future<void> _changeVolumeHelper(int percent) async {
+    if (changeVolumeCommand.isEmpty) {
+      debugPrint('media-audio: change-volume skipped (empty command)');
+      return;
+    }
+    final exe = changeVolumeCommand.first;
+    final args = <String>[
+      ...changeVolumeCommand.sublist(1),
+      '$percent',
+    ];
+    final code = await runHelper(exe, args);
+    if (code != 0) {
+      debugPrint('media-audio: change-volume exit $code');
     }
   }
 

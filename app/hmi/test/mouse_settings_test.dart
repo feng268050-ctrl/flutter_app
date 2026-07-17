@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/platform/input/linux_mouse_settings.dart';
 import 'package:lws_hmi/platform/input/mouse_settings.dart';
@@ -54,5 +56,38 @@ pointer_axes=swap
     expect(pointerPercentToAccel(0), closeTo(-1.0, 1e-9));
     expect(pointerPercentToAccel(100), closeTo(1.0, 1e-9));
     expect(pointerAccelToPercent(0.0), 50);
+  });
+
+  test('setSettings persists via apply-mouse-settings helper', () async {
+    final tmp = await Directory.systemTemp.createTemp('lws-mouse-');
+    addTearDown(() => tmp.delete(recursive: true));
+    final pref = File('${tmp.path}/mouse.conf');
+
+    final ctl = LinuxMouseSettingsController(
+      preferencePath: pref.path,
+      applyMouseSettingsCommand: const <String>['apply-mouse-settings'],
+      runHelperWithStdin: (exe, args, stdin) async {
+        expect(exe, 'apply-mouse-settings');
+        expect(args, isEmpty);
+        await pref.writeAsString(stdin);
+        return 0;
+      },
+    );
+
+    await ctl.setSettings(
+      const MouseSettings(
+        naturalScroll: true,
+        scrollSpeedPercent: 70,
+        pointerSpeedPercent: 30,
+        pointerSizePercent: 40,
+        primaryButton: MousePrimaryButton.right,
+        pointerAxes: MousePointerAxes.swap,
+      ),
+    );
+    expect(await pref.exists(), isTrue);
+    final again = await ctl.getSettings();
+    expect(again.naturalScroll, isTrue);
+    expect(again.scrollSpeedPercent, 70);
+    expect(again.primaryButton, MousePrimaryButton.right);
   });
 }

@@ -1,19 +1,4 @@
-# linux-display-orientation Specification
-
-## Purpose
-
-Reusable display-orientation API (portrait / landscape) persisted for flutter-pi `-o` mapping on HMI restart.
-
-## Requirements
-
-### Requirement: Display orientation API exposes portrait and landscape
-
-The HMI SHALL provide a reusable display-orientation API with exactly two product modes: **portrait** and **landscape**. The API SHALL get the current preferred mode and set a new preferred mode. Default when unset SHALL be **landscape** (ynh960 production default).
-
-#### Scenario: Default is landscape
-
-- **WHEN** no persisted orientation preference exists
-- **THEN** get returns landscape
+## MODIFIED Requirements
 
 ### Requirement: Linux maps modes to flutter-pi launch orientation
 
@@ -33,12 +18,3 @@ On Linux, **landscape** SHALL map to flutter-pi `-o landscape_left` and **portra
 
 - **WHEN** `change-orientation portrait` succeeds
 - **THEN** `/var/lib/lws-hmi/display-orientation` contains `portrait`
-
-### Requirement: Applying orientation may restart HMI
-
-Setting orientation on Linux MAY restart the HMI process to apply flutter-pi `-o`. The operation SHALL NOT brick boot: if preference write fails, the previous orientation remains in effect.
-
-#### Scenario: Failed persist keeps previous orientation
-
-- **WHEN** preference write fails
-- **THEN** a subsequent HMI launch still uses the last successfully persisted mode (or landscape default)

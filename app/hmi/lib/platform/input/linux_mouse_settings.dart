@@ -1,19 +1,22 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:lws_hmi/platform/board_helper.dart';
 import 'package:lws_hmi/platform/input/mouse_settings.dart';
 import 'package:lws_hmi/platform/percent.dart';
 
-/// Linux: write `/var/lib/lws-hmi/mouse.conf` only.
-///
-/// flutter-pi polls mtime and reloads (do **not** SIGHUP — that exits the
-/// process and leaves `hmi.service` stopped with Restart=on-failure).
+/// Linux: persist via `apply-mouse-settings` (flutter-pi reloads on mtime).
 class LinuxMouseSettingsController implements MouseSettingsController {
   LinuxMouseSettingsController({
     this.preferencePath = '/var/lib/lws-hmi/mouse.conf',
+    this.applyMouseSettingsCommand = const <String>['apply-mouse-settings'],
+    this.runHelperWithStdin = defaultBoardHelperRunnerWithStdin,
   });
 
   final String preferencePath;
+  final List<String> applyMouseSettingsCommand;
+  final Future<int> Function(String executable, List<String> arguments, String stdin)
+      runHelperWithStdin;
 
   @override
   Future<MouseSettings> getSettings() async {
@@ -39,11 +42,20 @@ class LinuxMouseSettingsController implements MouseSettingsController {
       primaryButton: settings.primaryButton,
       pointerAxes: settings.pointerAxes,
     );
+    if (applyMouseSettingsCommand.isEmpty) {
+      debugPrint('mouse: set skipped (no apply-mouse-settings command)');
+      return;
+    }
+    final conf = encodeMouseConf(normalized);
+    final exe = applyMouseSettingsCommand.first;
+    final args = applyMouseSettingsCommand.sublist(1);
     try {
-      final file = File(preferencePath);
-      await file.parent.create(recursive: true);
-      await file.writeAsString(encodeMouseConf(normalized), flush: true);
-      debugPrint('mouse: persisted $preferencePath');
+      final code = await runHelperWithStdin(exe, args, conf);
+      if (code != 0) {
+        debugPrint('mouse: apply-mouse-settings exit $code');
+        return;
+      }
+      debugPrint('mouse: persisted via helper → $preferencePath');
     } catch (e) {
       debugPrint('mouse: persist failed: $e');
     }

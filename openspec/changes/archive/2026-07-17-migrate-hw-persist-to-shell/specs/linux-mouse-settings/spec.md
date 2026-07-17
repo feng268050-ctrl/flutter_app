@@ -1,10 +1,4 @@
-# linux-mouse-settings Specification
-
-## Purpose
-
-OS-common mouse preferences for the HMI: natural scrolling, scroll speed, pointer speed, and primary button. Linux set operations go through `apply-mouse-settings`; flutter-pi applies via libinput / wheel scale.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Mouse settings OS abstraction
 

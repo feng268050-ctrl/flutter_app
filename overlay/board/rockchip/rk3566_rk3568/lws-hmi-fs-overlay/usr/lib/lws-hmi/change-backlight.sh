@@ -1,5 +1,5 @@
 #!/bin/sh
-# Apply backlight percent (0–100) to sysfs.
+# Apply backlight percent (0–100) to sysfs and persist for boot restore.
 # Usage: change-backlight <percent>
 set -eu
 
@@ -47,4 +47,11 @@ fi
 # percent → device value
 val=$((PCT * max / 100))
 printf '%s\n' "$val" >"$pick/brightness"
-echo "change-backlight: $PCT% → $val/$max ($pick)"
+
+# Same path as LinuxSysfsBacklight / restore-settings.sh (userdata via bind-prefs).
+PREF_DIR=/var/lib/lws-hmi
+PREF="$PREF_DIR/backlight-brightness"
+mkdir -p "$PREF_DIR"
+printf '%s\n' "$PCT" >"$PREF"
+
+echo "change-backlight: $PCT% → $val/$max ($pick); persisted $PREF"

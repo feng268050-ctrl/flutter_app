@@ -18,6 +18,15 @@ The image SHALL document and use preference files under `/var/lib/lws-hmi/` for 
 - **WHEN** mouse preference files exist under `/var/lib/lws-hmi/` and `hmi.service` starts flutter-pi
 - **THEN** flutter-pi applies those mouse preferences for attached pointer devices without requiring the operator to open Demo
 
+### Requirement: Simple HW prefs written by shell apply helpers
+
+For backlight brightness, media volume, display orientation, and mouse settings, the preference files under `/var/lib/lws-hmi/` SHALL be written by the corresponding verb-noun shell helpers (`change-backlight`, `change-volume`, `change-orientation`, `apply-mouse-settings`). Boot restore and `hmi-launch.sh` MUST continue to consume the same file paths. The HMI app MAY invoke those helpers but MUST NOT rely on Dart-only writes as the persistence path for these four prefs.
+
+#### Scenario: Preference file updated only via helper contract
+
+- **WHEN** brightness, volume, orientation, or mouse settings are changed from Demo or SSH
+- **THEN** the matching shell helper performs the preference file update used by restore / launch
+
 ### Requirement: Boot restore oneshot
 
 The image SHALL provide `lws-hmi-settings-restore.service` (oneshot) linked from `multi-user.target.wants`, ordered **`After=hmi.service`** (and after `param-update.service`). It MUST NOT be ordered `Before=hmi.service`. Restore of Wi‑Fi / Ethernet / Bluetooth MUST start only after the HMI process is up, run at lowered scheduling priority (`Nice` / idle I/O), and MUST NOT compete with first-frame UI for boot CPU/IO. The HMI Demo / platform controllers SHALL observe `*-wanted` markers and present the same **starting / connecting** UI as a manual enable while restore completes (poll live state; do not block first paint waiting for association). Individual restore steps MAY soft-fail without failing `hmi.service`.

@@ -2,27 +2,35 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/platform/backlight/backlight_controller.dart';
+import 'package:lws_hmi/platform/board_helper.dart';
 import 'package:lws_hmi/platform/lws_trace.dart';
 import 'package:lws_hmi/platform/percent.dart';
 
-/// Linux backlight via `/sys/class/backlight/*/brightness`.
+/// Linux backlight via `change-backlight` (sysfs + persist).
 ///
-/// Prefer the panel node named `backlight` (MainServer / pwm4). Avoid picking
-/// broken LED PWM backlight clones (`led-*-pwm`) that share pins with uart7.
+/// Prefer the panel node named `backlight` (MainServer / pwm4) for get().
+/// Avoid picking broken LED PWM backlight clones (`led-*-pwm`).
 class LinuxSysfsBacklight implements BacklightController {
   LinuxSysfsBacklight({
     this.classDir = '/sys/class/backlight',
     this.preferredNames = const <String>['backlight', 'backlight1', 'backlight2'],
     this.preferencePath = '/var/lib/lws-hmi/backlight-brightness',
-  });
+    this.changeBacklightCommand = const <String>['change-backlight'],
+    BoardHelperRunner? runHelper,
+  }) : runHelper = runHelper ?? defaultBoardHelperRunner;
 
   final String classDir;
 
   /// Preferred sysfs directory basenames (tried in order).
   final List<String> preferredNames;
 
-  /// Persisted brightness percent (0–100) for P2.3 boot restore.
+  /// Persisted brightness percent path (read for apply/get fallback).
   final String preferencePath;
+
+  /// Verb-noun helper that applies sysfs and persists [preferencePath].
+  final List<String> changeBacklightCommand;
+
+  final BoardHelperRunner runHelper;
 
   String? _brightnessPath;
   int _max = 255;
@@ -106,7 +114,7 @@ class LinuxSysfsBacklight implements BacklightController {
     }
   }
 
-  /// Re-apply `/var/lib/lws-hmi/backlight-brightness` (boot race / Demo load).
+  /// Re-apply preference via [changeBacklightCommand].
   Future<void> applyPersistedPreference() async {
     try {
       final f = File(preferencePath);
@@ -126,29 +134,22 @@ class LinuxSysfsBacklight implements BacklightController {
 
   @override
   Future<void> setBrightnessPercent(int percent) async {
-    if (!await ensureDevice()) {
-      debugPrint('backlight: set skipped (no device)');
+    final clamped = clampPercent(percent);
+    if (changeBacklightCommand.isEmpty) {
+      debugPrint('backlight: set skipped (no change-backlight command)');
       return;
     }
-    final value = percentToDevice(percent, _max);
-    try {
-      await File(_brightnessPath!).writeAsString('$value\n', flush: true);
-      final clamped = clampPercent(percent);
-      lwsTrace('backlight: set $value / $_max ($clamped%)');
-      await _persistPercent(clamped);
-    } catch (e) {
-      debugPrint('backlight: set failed: $e');
+    final exe = changeBacklightCommand.first;
+    final args = <String>[
+      ...changeBacklightCommand.sublist(1),
+      '$clamped',
+    ];
+    final code = await runHelper(exe, args);
+    if (code != 0) {
+      debugPrint('backlight: change-backlight exit $code');
+      return;
     }
-  }
-
-  Future<void> _persistPercent(int percent) async {
-    try {
-      final f = File(preferencePath);
-      await f.parent.create(recursive: true);
-      await f.writeAsString('$percent\n', flush: true);
-    } catch (e) {
-      debugPrint('backlight: persist failed: $e');
-    }
+    lwsTrace('backlight: set via helper $clamped%');
   }
 
   @override

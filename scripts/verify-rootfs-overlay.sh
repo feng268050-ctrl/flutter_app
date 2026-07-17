@@ -174,7 +174,7 @@ run_check() {
 	echo "--- $helper ---"
 	ls -la "$helper" || true
 
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh run-wpa.sh apply-eth0.sh restore-settings.sh change-backlight.sh bind-prefs.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-stop-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh run-wpa.sh apply-eth0.sh restore-settings.sh change-backlight.sh change-volume.sh change-orientation.sh apply-mouse-settings.sh bind-prefs.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-stop-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
 		if [[ -x "$helper/$f" ]]; then
 			echo "OK:  $f"
 		else
@@ -242,6 +242,9 @@ stop-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-stop.sh
 recover-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-recover.sh
 reboot-loader /usr/lib/lws-hmi/reboot-loader
 change-backlight /usr/lib/lws-hmi/change-backlight.sh
+change-volume /usr/lib/lws-hmi/change-volume.sh
+change-orientation /usr/lib/lws-hmi/change-orientation.sh
+apply-mouse-settings /usr/lib/lws-hmi/apply-mouse-settings.sh
 enable-ssh-debug /usr/lib/lws-hmi/enable-ssh-debug.sh
 disable-ssh-debug /usr/lib/lws-hmi/disable-ssh-debug.sh
 usb-otg-mode /usr/lib/lws-hmi/usb-otg-mode.sh

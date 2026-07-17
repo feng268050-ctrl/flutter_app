@@ -32,7 +32,7 @@ fi
 
 # display-orientation is read by hmi-launch.sh — no action here.
 
-if [ -f "$LIB/media-volume" ] && command -v amixer >/dev/null 2>&1; then
+if [ -f "$LIB/media-volume" ]; then
 	vol="$(tr -d '[:space:]' <"$LIB/media-volume")"
 	case "$vol" in
 	''|*[!0-9]*) ;;
@@ -41,12 +41,18 @@ if [ -f "$LIB/media-volume" ] && command -v amixer >/dev/null 2>&1; then
 			vol=100
 		fi
 		log "media-volume $vol%"
-		amixer -q sset 'Playback Path' 'RING_SPK_HP' 2>/dev/null || true
-		amixer -q sset 'DAC Playback Volume' "${vol}%" 2>/dev/null || \
-			amixer -q sset 'Speaker Playback Volume' "${vol}%" 2>/dev/null || \
-			amixer -q sset 'Playback Volume' "${vol}%" 2>/dev/null || \
-			amixer -q sset 'Master' "${vol}%" 2>/dev/null || \
-			log "WARN: amixer volume soft-fail"
+		if [ -x /usr/lib/lws-hmi/change-volume.sh ]; then
+			soft /usr/lib/lws-hmi/change-volume.sh "$vol"
+		elif command -v amixer >/dev/null 2>&1; then
+			amixer -q sset 'Playback Path' 'RING_SPK_HP' 2>/dev/null || true
+			amixer -q sset 'DAC Playback Volume' "${vol}%" 2>/dev/null || \
+				amixer -q sset 'Speaker Playback Volume' "${vol}%" 2>/dev/null || \
+				amixer -q sset 'Playback Volume' "${vol}%" 2>/dev/null || \
+				amixer -q sset 'Master' "${vol}%" 2>/dev/null || \
+				log "WARN: amixer volume soft-fail"
+		else
+			log "WARN: change-volume/amixer missing"
+		fi
 		;;
 	esac
 fi

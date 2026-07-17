@@ -19,17 +19,17 @@ Reusable modules live under `lib/platform/`:
 
 | Module | Linux backend | Notes |
 |--------|---------------|-------|
-| `audio/` | `mpg123`/`aplay` + `amixer` | Forces `Playback Path=RING_SPK_HP`; asset → `/var/lib/lws-hmi/audio/`; volume → `media-volume` |
-| `backlight/` | Prefer `/sys/class/backlight/backlight` | Persist `%` → `/var/lib/lws-hmi/backlight-brightness` (P2.3 restore + HMI re-apply) |
-| `display/` | preference file + `systemctl restart hmi` | `/var/lib/lws-hmi/display-orientation` → flutter-pi `-o` |
+| `audio/` | `change-volume` + `mpg123`/`amixer` | Forces `Playback Path=RING_SPK_HP`; asset → `/var/lib/lws-hmi/audio/`; set volume via shell (persist `media-volume`) |
+| `backlight/` | `change-backlight` | Prefer panel sysfs for get; set via shell (persist `backlight-brightness`; restore + HMI re-apply) |
+| `display/` | `change-orientation` + `systemctl restart hmi` | Persist `display-orientation` via shell → flutter-pi `-o` |
 | `datetime/` | `timedatectl`/`date` + `hwclock` + `wlan0-time-sync.sh` | Manual set / Network sync; prefs `/var/lib/lws-hmi/time-sync-mode` + `timezone`; HTTPS TLS uses `ensureSaneForTls` |
 | `ethernet/` | helpers + `ip` / sysfs | RJ45 `eth0`; DHCP/static via **`lws-hmi-eth0.service`** (outside HMI cgroup); `eth0-wanted` |
-| `input/` | `/dev/input/by-id` probe + `MouseSettingsController` | USB HID keyboard/mouse presence; keys/pointer via flutter-pi (xkeyboard-config + Compose + patches 0001–0005); mouse prefs → `/var/lib/lws-hmi/mouse.conf` (flutter-pi mtime poll; no SIGHUP) |
+| `input/` | `/dev/input/by-id` probe + `MouseSettingsController` | USB HID keyboard/mouse presence; keys/pointer via flutter-pi; mouse prefs via **`apply-mouse-settings`** → `mouse.conf` (flutter-pi mtime poll; no SIGHUP) |
 | `wifi/` | helpers + `wpa_cli` | **`lws-hmi-wpa` / `lws-hmi-wlan0-dhcp`** units; `wifi-wanted`; Hidden SSID; DHCP/static on **wlan0** |
 | `http/` | Dart `HttpClient` (+ optional `curl`) | Default `SecurityContext`; wall-clock via `DateTimeController`; proxy prefs `/var/lib/lws-hmi/http-proxy`; Demo GET probe |
 | `bluetooth/` | BlueZ D-Bus (`bluez` pkg) + stack/A2DP helpers | Discoverable peer + central scan/pair; HMI Agent1; `bt-wanted` + A2DP; Demo `syncFromSystem()` |
 
-**P2.3:** Prefs under **`/userdata/lws-hmi/`** (`/var/lib/lws-hmi` symlink). Reboot / `push-app` / future **`make upgrade` keep** them; **`make flash` must reset** them (factory). See [`docs/storage-layout.md`](../../docs/storage-layout.md) §Prefs. Boot restore runs **`After=hmi`** (UI first); Demo `syncFromSystem()` shows **starting/connecting** while stacks come up (same as manual enable).
+**P2.3:** Prefs under **`/userdata/lws-hmi/`** (`/var/lib/lws-hmi` symlink). Simple HW knobs (backlight / volume / orientation / mouse) are **written by verb-noun shell helpers** (`change-backlight`, `change-volume`, `change-orientation`, `apply-mouse-settings`); Flutter calls those helpers rather than writing the files itself. Reboot / `push-app` / future **`make upgrade` keep** them; **`make flash` must reset** them (factory). See [`docs/storage-layout.md`](../../docs/storage-layout.md) §Prefs. Boot restore runs **`After=hmi`** (UI first); Demo `syncFromSystem()` shows **starting/connecting** while stacks come up (same as manual enable).
 
 **Device smoke (after flash / push-app):**
 

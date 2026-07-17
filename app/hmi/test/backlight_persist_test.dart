@@ -2,9 +2,10 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/platform/backlight/linux_sysfs_backlight.dart';
+import 'package:lws_hmi/platform/percent.dart';
 
 void main() {
-  test('setBrightnessPercent persists preference file', () async {
+  test('setBrightnessPercent persists via change-backlight helper', () async {
     final tmp = await Directory.systemTemp.createTemp('lws-bl-');
     addTearDown(() => tmp.delete(recursive: true));
 
@@ -18,6 +19,17 @@ void main() {
     final bl = LinuxSysfsBacklight(
       classDir: classDir.path,
       preferencePath: pref.path,
+      changeBacklightCommand: const <String>['change-backlight'],
+      runHelper: (exe, args) async {
+        expect(exe, 'change-backlight');
+        expect(args, ['40']);
+        final pct = clampPercent(int.parse(args.single));
+        final max = 100;
+        final val = pct * max ~/ 100;
+        await File('${device.path}/brightness').writeAsString('$val\n');
+        await pref.writeAsString('$pct\n');
+        return 0;
+      },
     );
 
     await bl.setBrightnessPercent(40);

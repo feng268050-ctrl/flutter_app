@@ -20,7 +20,7 @@ The demo home SHALL include a LAN SSH debug control that uses `SshDebugControlle
 
 #### Scenario: External LAN SSH stop visible in Demo
 
-- **WHEN** LAN SSH is on in the Demo and an operator runs `systemctl stop lws-hmi-lan-ssh.service`
+- **WHEN** LAN SSH is on in the Demo and an operator runs `systemctl stop ssh-debug-lan.service`
 - **THEN** the Demo shows disabled without a further Demo tap
 
 ### Requirement: Demo exposes USB keyboard presence from event monitor

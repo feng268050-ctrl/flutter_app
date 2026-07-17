@@ -13,7 +13,7 @@ output/
 .cache/
 
 # Generated Flutter bundle in fs-overlay
-overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/opt/hmi/
+overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi/
 
 # Local tooling venv
 .venv-tools/

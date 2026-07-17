@@ -9,7 +9,7 @@
 
 ## Hardware spike (task 1.2) — ynh960 2026-07-16
 
-Board: USB-SSH `192.168.55.1`, adapter `B4:04:29:B0:5A:FA` (`lws-hmi`).
+Board: USB-SSH `192.168.55.1`, adapter `B4:04:29:B0:5A:FA` (`hmi`).
 
 | Check | Result |
 |-------|--------|

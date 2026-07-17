@@ -16,7 +16,7 @@ The Linux `EthernetController` implementation SHALL observe eth0 admin, carrier/
 
 #### Scenario: Wanted restore without duplicate bring-up race
 
-- **WHEN** `/var/lib/lws-hmi/eth0-wanted` exists at Demo open and restore has not yet finished applying eth0
+- **WHEN** `/var/lib/network/eth0-wanted` exists at Demo open and restore has not yet finished applying eth0
 - **THEN** the controller MAY show starting/configuring and attach netlink when the iface exists, without requiring the Demo to re-toggle the interface
 
 ## MODIFIED Requirements

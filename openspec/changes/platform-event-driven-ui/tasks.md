@@ -13,9 +13,9 @@
 
 ## 3. P0 — SSH & keyboard (must)
 
-- [ ] 3.1 LAN SSH: systemd D-Bus watch on `lws-hmi-lan-ssh.service`; add enabled Stream to `SshDebugController`; Demo listens
+- [ ] 3.1 LAN SSH: systemd D-Bus watch on `ssh-debug-lan.service`; add enabled Stream to `SshDebugController`; Demo listens
 - [ ] 3.2 USB keyboard: udev monitor replaces Timer presence poll; Demo listens to Stream
-- [ ] 3.3 Device smoke: `systemctl stop lws-hmi-lan-ssh`; plug/unplug HID keyboard
+- [ ] 3.3 Device smoke: `systemctl stop ssh-debug-lan.service`; plug/unplug HID keyboard
 
 ## 4. P1 — Datetime / backlight / volume
 

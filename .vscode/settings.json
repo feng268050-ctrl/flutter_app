@@ -16,7 +16,7 @@
     "**/linux-sdk/**": true,
     "**/output/**": true,
     "**/.cache/**": true,
-    "**/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/opt/hmi/**": true
+    "**/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi/**": true
   },
   "search.exclude": {
     "**/prebuilt": true,

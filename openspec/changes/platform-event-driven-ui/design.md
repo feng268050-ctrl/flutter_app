@@ -44,12 +44,12 @@ Constraints unchanged: no NM; on-demand Wi‑Fi/BT/eth units; P2.3 restore After
 | **Ethernet** | Yes | **Netlink** RTM_NEWLINK / DELLINK / NEWADDR / DELADDR on `eth0` | `EthernetController` streams | Forbidden as primary |
 | **Wi‑Fi** | Yes | **wpa_supplicant ctrl** ATTACH + CTRL-EVENT-* | `WifiController` streams | Forbidden as primary |
 | **Bluetooth** adapter / peers / A2DP units | Yes | **BlueZ D-Bus** (`org.bluez`, ObjectManager + PropertiesChanged); bluealsa via systemd/D-Bus | `BluetoothController` streams | `bluetoothctl` Timer forbidden as primary |
-| **LAN SSH debug** | Yes | **systemd D-Bus** unit properties for `lws-hmi-lan-ssh.service` (or helper that only *starts/stops*, status via sd-bus) | `SshDebugController` → add Stream or change-notify | Forbidden: periodic `enable-ssh-debug.sh status` as primary |
+| **LAN SSH debug** | Yes | **systemd D-Bus** unit properties for `ssh-debug-lan.service` (or helper that only *starts/stops*, status via sd-bus) | `SshDebugController` → add Stream or change-notify | Forbidden: periodic `enable-ssh-debug.sh status` as primary |
 | **USB HID keyboard** presence | Yes | **udev** monitor (`SUBSYSTEM=input` / HID keyboard IDs) | New or extend probe → `Stream<KeyboardPresence>` | Forbidden: Timer `ls /dev/input` as primary |
 | **Date & time** timezone / sync mode | Partial | **timedate1** D-Bus when present; prefs files for our sync-mode; **wall clock display** may use UI `Timer` (1s) — that is presentation, not OS discovery | `DateTimeController` | Forbid shell `timedatectl` status poll as sole sync of timezone |
 | **Backlight** slider | Yes (if external write) | **inotify** (or equivalent) on sysfs `brightness` | `BacklightController` (+ optional Stream) | One-shot read OK; periodic Process N/A |
 | **Volume** slider | Yes (if external mixer set) | **ALSA** mixer elem notify / pollfd subscribe | `MediaAudioController` (+ optional Stream for volume) | Forbid periodic `amixer` get as primary |
-| **HTTP proxy** fields | Prefs | Optional **inotify** on `/var/lib/lws-hmi/http-proxy` if changed out-of-band | already file-backed | No status poll needed |
+| **HTTP proxy** fields | Prefs | Optional **inotify** on `/var/lib/hmi/http-proxy` if changed out-of-band | already file-backed | No status poll needed |
 | **Orientation** | Pref + restart | N/A mid-session | file Get on load | N/A |
 | **Audio playing** | Yes | Existing player stdout / process exit → `playing` Stream | already event-ish | Keep |
 | **RGB LEDs** | HMI-owned | N/A | GPIO API | N/A |
@@ -92,9 +92,9 @@ A2DP: subscribe `bluealsa.service` / unit active via systemd D-Bus or bluealsa A
 
 ### D4 — LAN SSH: systemd unit subscription
 
-**Choice:** Extend `SshDebugController` with `Stream<bool> enabled` (or status object). Observe `lws-hmi-lan-ssh.service` ActiveState via systemd D-Bus (`Subscribe` / PropertiesChanged). Enable/disable still call existing helpers (cgroup escape).
+**Choice:** Extend `SshDebugController` with `Stream<bool> enabled` (or status object). Observe `ssh-debug-lan.service` ActiveState via systemd D-Bus (`Subscribe` / PropertiesChanged). Enable/disable still call existing helpers (cgroup escape).
 
-**Shell example:** `systemctl stop lws-hmi-lan-ssh` → Demo toggle/state updates.
+**Shell example:** `systemctl stop ssh-debug-lan.service` → Demo toggle/state updates.
 
 ### D5 — USB keyboard: udev
 
@@ -158,7 +158,7 @@ Demo sections only `listen` Streams; no section-local status Timers except clock
 | `ip link set eth0 down` / unplug | Ethernet link/admin updates |
 | `wpa_cli disconnect` | Wi‑Fi phase updates |
 | `bluetoothctl power off` / phone disconnect | BT adapter/peers update |
-| `systemctl stop lws-hmi-lan-ssh` | LAN SSH shows off |
+| `systemctl stop ssh-debug-lan.service` | LAN SSH shows off |
 | unplug USB HID keyboard | Keyboard presence updates |
 
 ## Open Questions

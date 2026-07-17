@@ -11,7 +11,7 @@ The system SHALL provide a reusable Dart `DateTimeController` abstraction for re
 
 ### Requirement: System timezone changes are observable without CLI poll loops
 
-When `org.freedesktop.timedate1` (or equivalent) is available on the image, Linux SHALL observe Timezone (and NTP-related properties when used) via **D-Bus PropertiesChanged** (or equivalent subscription). Periodic `timedatectl` Process status on a fixed Timer MUST NOT be the primary way the HMI discovers timezone changes made outside the app. Project prefs under `/var/lib/lws-hmi/` for sync-mode MAY use file watches when helpers rewrite them.
+When `org.freedesktop.timedate1` (or equivalent) is available on the image, Linux SHALL observe Timezone (and NTP-related properties when used) via **D-Bus PropertiesChanged** (or equivalent subscription). Periodic `timedatectl` Process status on a fixed Timer MUST NOT be the primary way the HMI discovers timezone changes made outside the app. Project prefs under `/var/lib/hmi/` for sync-mode MAY use file watches when helpers rewrite them.
 
 #### Scenario: External timezone change visible to listeners
 

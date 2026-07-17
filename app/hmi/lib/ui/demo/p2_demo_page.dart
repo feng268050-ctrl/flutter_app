@@ -211,16 +211,13 @@ class _P2DemoPageState extends State<P2DemoPage> {
     await _audio.playAsset(MediaAudioController.shanghaiTanAsset);
   }
 
-  /// Slider paint is local; hardware gets latest-wins apply (OS-style).
+  /// Slider paint is local only; hardware apply runs on [onChangeEnd] (OS-style).
   void _onVolumeUi(double value) {
     _volumePercent = value;
-    unawaited(_audio.setVolumePercent(value.round()));
   }
 
   void _onBrightnessUi(double value) {
     _brightnessPercent = value;
-    _queuedBrightness = value.round();
-    unawaited(_drainBrightness());
   }
 
   Future<void> _drainBrightness() async {

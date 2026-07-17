@@ -25,7 +25,7 @@ The control-interface monitor SHALL attach when the ctrl socket for the WLAN ifa
 
 #### Scenario: Wanted before socket exists
 
-- **WHEN** `/var/lib/lws-hmi/wifi-wanted` exists at Demo open and wpa ctrl socket is not yet present
+- **WHEN** `/var/lib/wpa_supplicant/wifi-wanted` exists at Demo open and wpa ctrl socket is not yet present
 - **THEN** radio Stream reflects starting (or equivalent non-off) and later transitions to on when the monitor attaches and wpa reports a live interface state
 
 ## MODIFIED Requirements

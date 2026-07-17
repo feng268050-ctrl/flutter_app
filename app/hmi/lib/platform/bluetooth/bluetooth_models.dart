@@ -40,6 +40,7 @@ class BluetoothRemoteDevice {
     this.trusted = false,
     this.connected = false,
     this.discovered = false,
+    this.inputReady,
     this.rssi,
     this.kind = BluetoothDeviceKind.unknown,
     this.uuids = const [],
@@ -51,6 +52,10 @@ class BluetoothRemoteDevice {
   final bool paired;
   final bool trusted;
   final bool connected;
+
+  /// HID keyboards/mice only: Linux evdev node present and accepting input.
+  /// Null when not applicable (phones, audio, …).
+  final bool? inputReady;
 
   /// Seen during the current or recent discovery window.
   final bool discovered;
@@ -66,6 +71,8 @@ class BluetoothRemoteDevice {
     bool? trusted,
     bool? connected,
     bool? discovered,
+    bool? inputReady,
+    bool clearInputReady = false,
     int? rssi,
     bool clearRssi = false,
     BluetoothDeviceKind? kind,
@@ -79,6 +86,7 @@ class BluetoothRemoteDevice {
       trusted: trusted ?? this.trusted,
       connected: connected ?? this.connected,
       discovered: discovered ?? this.discovered,
+      inputReady: clearInputReady ? null : (inputReady ?? this.inputReady),
       rssi: clearRssi ? null : (rssi ?? this.rssi),
       kind: kind ?? this.kind,
       uuids: uuids ?? this.uuids,

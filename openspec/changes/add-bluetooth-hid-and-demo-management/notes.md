@@ -33,12 +33,31 @@ Board: USB-SSH `192.168.55.1`, adapter `B4:04:29:B0:5A:FA` (`hmi`).
 
 **HID reconnect (BlueZ-first, weak Timer) (2026-07-17):** Dropped the 8s periodic keepalive sweep. Primary path: `Trusted` + BlueZ `[Policy]` `ReconnectUUIDs`/`ReconnectIntervals`. App: on `PropertiesChanged` link loss, wait **15s** for policy, then host `Connect` only if still down; on connect/resolve edge, one-shot HOGP heal if BT evdev missing (backoff one-shot retries). User Disconnect still **Untrust + Disconnect** and blocks auto-reconnect until Connect/Pair.
 
-**HID keepalive field fix (2026-07-17):** After upgrade, keepalive Disconnect-looped zombies (`Connected=yes ServicesResolved=false`) and `_hidEvdevPresent` treated USB mice as HOGP success → no QM002 evdev + bluetoothd flooded `characteristic_get_notifying`. Fix: BT-only evdev match (uniq/uhid), never zombie-Disconnect in reconnect path, exponential backoff. Corrupt bonds may need one Remove → Scan → Pair.
+**HID heal (OS daemon, 2026-07-17):** In-process Flutter heal/reconnect removed.
+Primary reconnect remains BlueZ `[Policy]` + `Trusted`. Board backup is
+`bt-hid-heal.service` → `bt-hid-heal-loop.sh` → `bt-hid-heal.sh`. Status under
+`/run/bt-hid/<ADDR>`. HMI only observes status for Demo `input=ok|missing`.
+User Disconnect still **Untrust** so the daemon skips that bond until Connect/Pair.
 
-**User Disconnect release (2026-07-17):** Demo Disconnect alone does not free LE keyboards: `Trusted=yes` + BlueZ policy + keyboard inbound ATT re-connects in ~250ms. Fix: HID Disconnect **untrust then Disconnect** (bond kept); block app reconnect until Connect/Pair; Connect path trusts again. Verified: untrust+Disconnect holds; Connect alone restores without Remove.
+**Heal must not interrupt inbound ATT (2026-07-17 field):** Aggressive
+`Connected && !ServicesResolved` → immediate Disconnect fought the keyboard's
+inbound LE ATT (`gatt-database connect_cb`), then `ConnectProfile` hit
+`br-connection-page-timeout` / `Host is down (112)`. Fix: wait GATT grace
+(~15s) for ServicesResolved/evdev first; only then zombie refresh;
+**never ConnectProfile while ServicesResolved=no**; treat evdev as success
+even when ConnectProfile page-timeouts.
 
+**Zombie needs Untrust first (2026-07-17):** Plain Disconnect while
+`Trusted=yes` does not stick — keyboard inbound ATT keeps `Connected=yes`
+forever without GATT. Working recovery: `Untrust` → `Disconnect` (wait
+Connected=false) → `Trust` → `Connect s "random"` → ServicesResolved +
+input-hog (ConnectProfile may say profile-unavailable; evdev already up).
 
-**Cursor stutter / MoveCursor EFAULT:** Every pointer move called `drmModeMoveCursor`, which fails with EFAULT on ynh960 Rockchip; unthrottled `LOG_ERROR` flooded journal and stuttered USB + BT. `0010-cursor-movecursor-fallback.patch` latches failure once, logs once, and repositions via atomic prefer_cursor composition push.
+**HMI/heal race on Pair (2026-07-17):** After Remove→Pair, `bt-hid-heal`
+untrust/Disconnect fought HMI pair (~3s disconnect loops) → Connect failed
+UI + `characteristic_get_notifying` bursts on each ATT reconnect. Fix:
+`/run/bt-hid/hold` during HMI pair/disconnect/remove; heal loop skips while
+hold set; one-shot heal uses `LWS_BT_HID_FORCE=1`.
 
 **Still open for 1.2 / 2.3 / 5.4 / 7.3 / 7.4:** bring a Classic HID keyboard or mouse (and ideally a HOGP device), pair from Demo Scan, confirm `/dev/input` nodes, Demo typing/pointer, phone+A2DP coexistence, and whether AIC initiator SDP `ENOSYS` appears in `journalctl -u bluetooth` during Classic HID connect.
 

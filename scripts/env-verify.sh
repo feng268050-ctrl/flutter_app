@@ -177,7 +177,7 @@ for helper in eth0-dhcp.sh eth0-static.sh eth0-link.sh apply-eth0.sh; do
 		fail "helper $helper missing or not executable (/usr/libexec/network/)"
 	fi
 done
-for helper in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+for helper in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh bt-hid-heal.sh bt-hid-heal-loop.sh wifibt-bringup.sh; do
 	if [ -x "/usr/libexec/bluetooth/$helper" ]; then
 		pass "helper $helper"
 	else

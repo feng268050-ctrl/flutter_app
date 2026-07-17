@@ -307,7 +307,7 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/bluetooth ---"
-	for f in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-stop-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+	for f in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-stop-agent.sh bt-set-alias.sh bt-trust-paired.sh bt-hid-heal.sh bt-hid-heal-loop.sh wifibt-bringup.sh; do
 		if [[ -x "$libexec_bt/$f" ]]; then
 			echo "OK:  bluetooth/$f"
 		else
@@ -820,6 +820,12 @@ EOF
 			echo "OK:  bluetooth.service Restart=on-abnormal"
 		else
 			echo "FAIL: bluetooth.service.d missing Restart=on-abnormal" >&2
+			missing=1
+		fi
+		if [[ -f "$target/etc/systemd/system/bt-hid-heal.service" ]]; then
+			echo "OK:  bt-hid-heal.service unit"
+		else
+			echo "FAIL: bt-hid-heal.service missing" >&2
 			missing=1
 		fi
 	fi

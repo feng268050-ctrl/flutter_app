@@ -133,6 +133,14 @@ if command -v hciconfig >/dev/null 2>&1; then
 	hciconfig hci0 sspmode 1 >/dev/null 2>&1 || true
 fi
 
+# Trusted HID heal (zombie LE / missing input-hog) — OS-level backup for BlueZ Policy.
+if [ -f /etc/systemd/system/bt-hid-heal.service ] || \
+	[ -f /usr/lib/systemd/system/bt-hid-heal.service ]; then
+	systemctl reset-failed bt-hid-heal.service 2>/dev/null || true
+	systemctl start bt-hid-heal.service 2>/dev/null || \
+		log "bt-hid-heal start soft-fail"
+fi
+
 # A2DP Sink is opt-in (Demo switch / bt-a2dp-sink-up.sh). Default: leave off.
 # If preference file was previously set to 1, restore speaker mode after stack up.
 PREF="${LWS_BT_A2DP_PREF:-/var/lib/bluetooth/bt-a2dp-sink}"

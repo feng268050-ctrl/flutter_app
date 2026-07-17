@@ -16,6 +16,7 @@ if command -v bluetoothctl >/dev/null 2>&1; then
 fi
 
 if command -v systemctl >/dev/null 2>&1; then
+	systemctl stop bt-hid-heal.service 2>/dev/null || true
 	systemctl stop bluealsa-aplay.service 2>/dev/null || true
 	systemctl stop bluealsa.service 2>/dev/null || true
 	# Intentional stop — clear failed/coredump state so the next stack-up can start.

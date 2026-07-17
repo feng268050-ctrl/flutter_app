@@ -177,14 +177,25 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
   }) {
     final title = d.name.isEmpty ? d.address : d.name;
     final rssi = d.rssi != null ? ' · rssi=${d.rssi}' : '';
+    final inputNote = d.inputReady == null
+        ? ''
+        : d.inputReady!
+            ? ' · input=ok'
+            : ' · input=missing';
+    final staleLink = d.connected && d.inputReady == false;
     return ListTile(
       contentPadding: EdgeInsets.zero,
       dense: true,
       title: Text(title, style: const TextStyle(color: Colors.white)),
       subtitle: Text(
         '${d.address} · ${_kindLabel(d.kind)} · paired=${d.paired} · '
-        'trusted=${d.trusted} · connected=${d.connected}$rssi',
-        style: TextStyle(color: Colors.white.withOpacity(0.6)),
+        'trusted=${d.trusted} · connected=${d.connected}$inputNote$rssi'
+        '${staleLink ? '\nKeyboard/mouse link up but input is down — tap Connect or wait for auto-reconnect' : ''}',
+        style: TextStyle(
+          color: staleLink
+              ? Colors.amber.withOpacity(0.85)
+              : Colors.white.withOpacity(0.6),
+        ),
       ),
       trailing: Wrap(
         spacing: 4,
@@ -632,7 +643,10 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
           ),
         if (on)
           ..._bonded.map(
-            (d) => _deviceTile(d, showPair: !d.connected),
+            (d) => _deviceTile(
+              d,
+              showPair: !d.connected || d.inputReady == false,
+            ),
           ),
       ],
     );

@@ -80,7 +80,7 @@ The image SHALL include the BlueZ and kernel support required for supported Blue
 #### Scenario: Bonded HID reconnects
 
 - **WHEN** a trusted Bluetooth HID device that was previously paired becomes available after Bluetooth stack restore
-- **THEN** BlueZ reconnects it or the controller can reconnect it without repeating pairing, subject to the peripheral's normal reconnect behavior
+- **THEN** BlueZ Policy reconnects it when possible, and the image's `bt-hid-heal` service restores HOGP/HID input if the link is up but Linux input is missing, without requiring the Flutter HMI to heal the path
 
 ### Requirement: Bluetooth roles coexist on one adapter
 

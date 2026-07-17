@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:bluez/bluez.dart';
@@ -69,6 +70,10 @@ class LinuxBluezBluetoothController implements BluetoothController {
   bool _agentRegistered = false;
   bool _outboundPairActive = false;
   bool _outboundUserConsented = false;
+  /// Set by [cancelPairing]; pair/connect wait loops check and exit early.
+  bool _pairAbort = false;
+  /// In-flight `bluetoothctl` (pair/connect) so Cancel can kill it.
+  Process? _activeBtctl;
   String? _consentChallengeId;
   Completer<bool>? _consentWait;
   int _agentPathSeq = 0;
@@ -78,10 +83,11 @@ class LinuxBluezBluetoothController implements BluetoothController {
   final List<StreamSubscription<dynamic>> _subs = [];
   final Set<String> _devicePropWired = {};
   final Set<String> _adapterPropWired = {};
-  /// User tapped Disconnect — do not auto-reconnect until Pair/Connect again.
+  /// User tapped Disconnect — session UI force; durable hold is Untrust.
   final Set<String> _userDisconnectedHid = {};
+  /// Addresses confirmed bonded via bluetoothctl (survives LE Paired=false).
+  final Set<String> _ctlBondedAddrs = {};
   final Map<String, bool> _lastConnectedByAddr = {};
-  final Map<String, bool> _lastResolvedByAddr = {};
   /// Latest OS heal status / evdev probe per HID address (null = N/A).
   final Map<String, bool> _hidInputReadyByAddr = {};
   /// Observe `/run/bt-hid/*` written by bt-hid-heal.service (not heal itself).
@@ -213,6 +219,44 @@ class LinuxBluezBluetoothController implements BluetoothController {
     return Process.run(cmd.first, cmd.sublist(1));
   }
 
+  void _throwIfPairAbort([String? address]) {
+    if (_pairAbort) {
+      throw BluetoothOperationException('Pairing cancelled', address: address);
+    }
+  }
+
+  /// Killable bluetoothctl for Cancel during long pair/connect.
+  Future<ProcessResult> _runTracked(List<String> cmd) async {
+    lwsTrace('bt: ${cmd.join(' ')}');
+    final proc = await Process.start(cmd.first, cmd.sublist(1));
+    _activeBtctl = proc;
+    try {
+      final stdoutFut =
+          proc.stdout.transform(utf8.decoder).join();
+      final stderrFut =
+          proc.stderr.transform(utf8.decoder).join();
+      final code = await proc.exitCode;
+      final out = await stdoutFut;
+      final err = await stderrFut;
+      return ProcessResult(proc.pid, code, out, err);
+    } finally {
+      if (identical(_activeBtctl, proc)) {
+        _activeBtctl = null;
+      }
+    }
+  }
+
+  Future<void> _killActiveBtctl() async {
+    final p = _activeBtctl;
+    if (p == null) {
+      return;
+    }
+    _activeBtctl = null;
+    try {
+      p.kill(ProcessSignal.sigterm);
+    } catch (_) {}
+  }
+
   Future<void> _loadA2dpPref() async {
     try {
       final f = File(a2dpPrefPath);
@@ -290,9 +334,9 @@ class LinuxBluezBluetoothController implements BluetoothController {
       uuids: uuids,
     );
     final prev = _deviceMap[addr];
-    // LE often reports Bonded=yes while D-Bus Paired stays false briefly (or
-    // forever in some BlueZ builds). Once we know it's bonded, keep paired sticky.
-    final paired = d.paired || (prev?.paired ?? false);
+    // Live D-Bus Paired, plus addresses confirmed bonded via bluetoothctl sync
+    // (LE often leaves Device1.Paired=false while Bonded=yes). Cleared on Remove.
+    final paired = d.paired || _ctlBondedAddrs.contains(addr);
     final hidLike = kind == BluetoothDeviceKind.keyboard ||
         kind == BluetoothDeviceKind.mouse ||
         (prev != null && _isHidLikeRemote(prev));
@@ -338,6 +382,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
   void _removeDeviceAddress(String address) {
     final addr = BluetoothctlParse.normalizeAddress(address);
     _devicePropWired.remove(addr);
+    _ctlBondedAddrs.remove(addr);
     // Keep scan-session rows after BlueZ drops temporary LE Device1 objects.
     final cached = _scanSession[addr];
     if (cached != null &&
@@ -410,13 +455,11 @@ class LinuxBluezBluetoothController implements BluetoothController {
     }
     _devicePropWired.add(addr);
     _lastConnectedByAddr[addr] = d.connected;
-    _lastResolvedByAddr[addr] = d.servicesResolved;
     _subs.add(d.propertiesChanged.listen((_) {
       final wasConnected = _lastConnectedByAddr[addr] ?? false;
       _upsertDevice(d, markDiscovered: _scanning);
       final nowConnected = d.connected;
       _lastConnectedByAddr[addr] = nowConnected;
-      _lastResolvedByAddr[addr] = d.servicesResolved;
 
       final mapped = _deviceMap[addr];
       if (mapped == null || !_isHidLikeRemote(mapped)) {
@@ -488,41 +531,26 @@ class LinuxBluezBluetoothController implements BluetoothController {
     if (mapped == null || !_isHidLikeRemote(mapped)) {
       return;
     }
-    final fromOs = await _readOsHidStatus(addr);
-    if (fromOs != null) {
-      _setHidInputReady(addr, fromOs);
-      return;
-    }
+    // Stale uhid nodes often survive BlueZ Disconnect (QM002). Never report
+    // inputReady while the link is down — that skips Connect on reconnect.
     if (!mapped.connected) {
       _setHidInputReady(addr, false);
       return;
     }
-    _setHidInputReady(addr, await _hidEvdevPresent(addr));
-  }
-
-  /// Status files written by bt-hid-heal.sh: ready|missing|healing|idle.
-  Future<bool?> _readOsHidStatus(String addr) async {
+    // /run/bt-hid: only `ready` is authoritative when Connected.
     final bare = addr.toUpperCase().replaceAll(':', '_');
     try {
       final f = File('$_hidStatusDir/$bare');
-      if (!await f.exists()) {
-        return null;
+      if (await f.exists()) {
+        final v = (await f.readAsString()).trim().toLowerCase();
+        if (v == 'ready') {
+          _setHidInputReady(addr, true);
+          return;
+        }
       }
-      final v = (await f.readAsString()).trim().toLowerCase();
-      switch (v) {
-        case 'ready':
-          return true;
-        case 'missing':
-        case 'healing':
-          return false;
-        case 'idle':
-          return false;
-        default:
-          return null;
-      }
-    } catch (_) {
-      return null;
-    }
+    } catch (_) {}
+    final hasEvdev = await _hidEvdevPresent(addr);
+    _setHidInputReady(addr, hasEvdev);
   }
 
   bool _isHidLikeRemote(BluetoothRemoteDevice d) {
@@ -924,9 +952,9 @@ class LinuxBluezBluetoothController implements BluetoothController {
             _deviceMap.clear();
             _discoveredAddresses.clear();
             _userDisconnectedHid.clear();
+            _ctlBondedAddrs.clear();
             _hidInputReadyByAddr.clear();
             _lastConnectedByAddr.clear();
-            _lastResolvedByAddr.clear();
             _emitDevices();
             _emitState(BluetoothAdapterState.off);
             _emitInfo(const BluetoothAdapterInfo());
@@ -1138,8 +1166,15 @@ class LinuxBluezBluetoothController implements BluetoothController {
       if (i <= 0) {
         continue;
       }
-      map[t.substring(0, i).trim().toLowerCase()] =
-          t.substring(i + 1).trim();
+      final key = t.substring(0, i).trim().toLowerCase();
+      final value = t.substring(i + 1).trim();
+      // UUID appears once per line — append so ADDR_TYPE sees 1812 and 1124.
+      if (key == 'uuid' || key == 'uuids') {
+        final prev = map[key];
+        map[key] = prev == null || prev.isEmpty ? value : '$prev $value';
+      } else {
+        map[key] = value;
+      }
     }
     return map;
   }
@@ -1187,30 +1222,34 @@ class LinuxBluezBluetoothController implements BluetoothController {
     required String doneLabel,
     Duration timeout = const Duration(seconds: 40),
   }) async {
+    _throwIfPairAbort(addr);
     await _ensureDiscoveryRunning();
     final secs = timeout.inSeconds;
     stderr.writeln('bt: bluetoothctl --timeout $secs $action $addr');
-    var r = await _run([
+    var r = await _runTracked([
       'bluetoothctl',
       '--timeout',
       '$secs',
       action,
       addr,
     ]);
+    _throwIfPairAbort(addr);
     var out = '${r.stdout ?? ''}\n${r.stderr ?? ''}'.trim();
     if (out.toLowerCase().contains('unrecognized option') ||
         out.toLowerCase().contains('invalid option') ||
         out.contains('Unknown command')) {
       stderr.writeln('bt: --timeout unsupported, plain bluetoothctl $action');
-      r = await _run(['bluetoothctl', action, addr]);
+      r = await _runTracked(['bluetoothctl', action, addr]);
       out = '${r.stdout ?? ''}\n${r.stderr ?? ''}'.trim();
     }
+    _throwIfPairAbort(addr);
     stderr.writeln(
       'bt: bluetoothctl $action exit=${r.exitCode} ${out.replaceAll('\n', ' | ')}',
     );
 
     final deadline = DateTime.now().add(timeout);
     while (DateTime.now().isBefore(deadline)) {
+      _throwIfPairAbort(addr);
       if (!await _btctlDevicePresent(addr)) {
         await _ensureDiscoveryRunning();
       }
@@ -1267,10 +1306,17 @@ class LinuxBluezBluetoothController implements BluetoothController {
   /// - `bredr` → Classic BR/EDR (NOT the same as AddressType=public)
   /// - `auto` → keep bluetoothd's select_conn_bearer() choice
   Future<String> _rockchipAddrType(String addr) async {
-    final info = await _btctlInfoMap(addr);
-    final uuid = (info['uuid'] ?? info['uuids'] ?? '').toLowerCase();
-    final hasHogp = uuid.contains('1812');
-    final hasClassicHid = uuid.contains('1124');
+    final uuids = await _busctlGetUuids(addr);
+    final uuidBlob = uuids.join(' ').toLowerCase();
+    var hasHogp = uuidBlob.contains('1812');
+    var hasClassicHid = uuidBlob.contains('1124');
+    if (!hasHogp && !hasClassicHid) {
+      final info = await _btctlInfoMap(addr);
+      final fallback =
+          '${info['uuid'] ?? ''} ${info['uuids'] ?? ''}'.toLowerCase();
+      hasHogp = fallback.contains('1812');
+      hasClassicHid = fallback.contains('1124');
+    }
     final fromDbus = await _busctlGetString(addr, 'AddressType');
 
     // Classic HID → must use bredr. Mapping AddressType "public" to Connect
@@ -1282,6 +1328,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
       if (fromDbus == 'random' || fromDbus == 'public') {
         return fromDbus!;
       }
+      final info = await _btctlInfoMap(addr);
       final raw =
           '${info['device'] ?? ''} ${info['addresstype'] ?? ''}'.toLowerCase();
       if (raw.contains('random')) return 'random';
@@ -1415,7 +1462,86 @@ busctl get-property org.bluez "\$devpath" org.bluez.Device1 $prop 2>/dev/null
     return m?.group(1);
   }
 
-  /// Outbound HID: bluetoothctl while discovery stays on; poll info for success.
+  /// Full Device1.UUIDs list (avoids bluetoothctl info last-UUID-wins).
+  Future<List<String>> _busctlGetUuids(String addr) async {
+    final bare = addr.toUpperCase().replaceAll(':', '_');
+    final r = await _run([
+      'sh',
+      '-c',
+      '''
+devpath="/org/bluez/hci0/dev_$bare"
+if ! busctl get-property org.bluez "\$devpath" org.bluez.Device1 Address >/dev/null 2>&1; then
+  devpath=\$(busctl tree org.bluez --list 2>/dev/null | grep -E "/dev_$bare\$" | head -1)
+fi
+[ -n "\$devpath" ] || exit 1
+busctl get-property org.bluez "\$devpath" org.bluez.Device1 UUIDs 2>/dev/null
+''',
+    ]);
+    final out = '${r.stdout}'.trim();
+    return RegExp(r'"([^"]+)"')
+        .allMatches(out)
+        .map((m) => m.group(1)!)
+        .toList(growable: false);
+  }
+
+  /// Host Connect with Rockchip ADDR_TYPE; wait until Connected or BT evdev.
+  Future<void> _busctlConnectAndWait(
+    String addr, {
+    Duration timeout = const Duration(seconds: 25),
+  }) async {
+    _throwIfPairAbort(addr);
+    await _ensureDiscoveryRunning();
+    final addrType = await _rockchipAddrType(addr);
+    stderr.writeln('bt: Connect s "$addrType" $addr');
+    var r = await _busctlDeviceCall(addr, 'Connect', arg: addrType);
+    _throwIfPairAbort(addr);
+    var out = '${r.stdout}\n${r.stderr}';
+    if (out.contains('UnknownMethod') || out.contains("doesn't exist")) {
+      if (addrType != 'auto') {
+        stderr.writeln('bt: Connect $addrType UnknownMethod, retry auto');
+        r = await _busctlDeviceCall(addr, 'Connect', arg: 'auto');
+        out = '${r.stdout}\n${r.stderr}';
+      }
+    } else if (r.exitCode != 0 && addrType != 'auto') {
+      r = await _busctlDeviceCall(addr, 'Connect', arg: 'auto');
+      out = '${r.stdout}\n${r.stderr}';
+    }
+    // bluetoothctl connect as last host kick (exit codes unreliable).
+    if (r.exitCode != 0) {
+      stderr.writeln(
+        'bt: busctl Connect exit=${r.exitCode} — bluetoothctl connect fallback',
+      );
+      await _runTracked(['bluetoothctl', 'connect', addr]);
+    }
+    _throwIfPairAbort(addr);
+
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      _throwIfPairAbort(addr);
+      final info = await _btctlInfoMap(addr);
+      // Require Connected — stale uhid after Disconnect must not end the wait.
+      if (_infoFlagYes(info, 'connected')) {
+        stderr.writeln(
+          'bt: Connect ok connected=yes services=${info['servicesresolved']}',
+        );
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+    final info = await _btctlInfoMap(addr);
+    throw BluetoothOperationException(
+      'Connect timed out (connected=${info['connected']}, '
+      'services=${info['servicesresolved']}). '
+      'Wake the keyboard and tap Connect again.',
+      address: addr,
+    );
+  }
+
+  /// Outbound HID state machine (discovery stays on for LE Device1 lifetime):
+  /// 1) Pair if not bonded  2) Trust  3) Connect if link down  4) OS heal for HOGP/evdev
+  ///
+  /// User Disconnect keeps the bond and clears Trusted — reconnect must hit
+  /// step 3 explicitly. Relying only on heal skipped Connect when already paired.
   Future<void> _btctlPairConnectTrust(String addr) async {
     await _waitUntilBtctlSeesDevice(addr);
     await _ensureDiscoveryRunning();
@@ -1427,6 +1553,7 @@ busctl get-property org.bluez "\$devpath" org.bluez.Device1 $prop 2>/dev/null
       'trusted=${info['trusted']}',
     );
 
+    // 1) Bond once (fresh pair). Already-bonded reconnect skips this.
     if (!_infoBondedOrPaired(info)) {
       await _btctlKickAndWait(
         action: 'pair',
@@ -1437,23 +1564,46 @@ busctl get-property org.bluez "\$devpath" org.bluez.Device1 $prop 2>/dev/null
       info = await _btctlInfoMap(addr);
     }
 
+    // 2) Trusted so BlueZ Policy + bt-hid-heal may assist after we release hold.
     if (!_infoFlagYes(info, 'trusted')) {
       await _btctlTrust(addr);
       info = await _btctlInfoMap(addr);
     }
 
-    await _requestOsHidHeal(addr);
-    info = await _btctlInfoMap(addr);
+    // 3) User Disconnect leaves bonded=yes connected=no — must Connect here.
+    // Do NOT skip when stale uhid/evdev still exists (common after LE Disconnect).
+    if (!_infoFlagYes(info, 'connected')) {
+      await _busctlConnectAndWait(addr);
+      info = await _btctlInfoMap(addr);
+    }
 
-    if (!_infoBondedOrPaired(info) || !_infoFlagYes(info, 'connected')) {
+    // 4) HOGP attach / zombie recovery when link is up but input is missing.
+    if (_infoFlagYes(info, 'connected') && !await _hidEvdevPresent(addr)) {
+      await _requestOsHidHeal(addr);
+      info = await _btctlInfoMap(addr);
+    }
+
+    final bonded = _infoBondedOrPaired(info);
+    final connected = _infoFlagYes(info, 'connected');
+    final hasInput = connected && await _hidEvdevPresent(addr);
+    if (!bonded) {
       throw BluetoothOperationException(
-        'Still paired=${info['paired']} bonded=${info['bonded']} '
-        'connected=${info['connected']}. '
-        'Put keyboard in pairing mode, Scan, Pair again.',
+        'Still unpaired (paired=${info['paired']} bonded=${info['bonded']}). '
+        'Put keyboard in pairing mode, Scan, then Pair.',
         address: addr,
       );
     }
-    stderr.writeln('bt: bluetoothctl pair/connect/trust ok for $addr');
+    if (!connected) {
+      throw BluetoothOperationException(
+        'Connect failed (connected=${info['connected']}, '
+        'services=${info['servicesresolved']}). '
+        'Wake the keyboard and tap Connect again.',
+        address: addr,
+      );
+    }
+    stderr.writeln(
+      'bt: pair/connect/trust ok bonded=yes connected=yes input=$hasInput',
+    );
   }
 
   @override
@@ -1462,6 +1612,7 @@ busctl get-property org.bluez "\$devpath" org.bluez.Device1 $prop 2>/dev/null
       throw BluetoothOperationException('Bluetooth adapter is not on');
     }
     final addr = BluetoothctlParse.normalizeAddress(address);
+    _pairAbort = false;
 
     await _serialized(() async {
       if (!await _bluetoothServiceActive()) {
@@ -1492,81 +1643,105 @@ busctl get-property org.bluez "\$devpath" org.bluez.Device1 $prop 2>/dev/null
       final cached = _scanSession[addr] ?? _deviceMap[addr];
       final label =
           (cached != null && cached.name.isNotEmpty) ? cached.name : addr;
-      final accepted = await _awaitOutboundPairConsent(
-        address: addr,
-        name: label,
-      );
-      if (!accepted) {
-        throw BluetoothOperationException('Pairing cancelled', address: addr);
-      }
-      _outboundUserConsented = true;
-      stderr.writeln(
-        'bt: user accepted pair $addr — bluetoothctl path (ignore Dart Device1 cache)',
-      );
 
-      // Pause bt-hid-heal.service so it does not Untrust/Disconnect mid-pair.
-      await _setHidHealHold(true);
-      try {
-        await _btctlPairConnectTrust(addr);
-      } finally {
-        await _setHidHealHold(false);
-      }
-      await _stopScanLocked();
+      // Explicit user Connect/Pair clears the Disconnect hold immediately.
+      _userDisconnectedHid.remove(addr);
 
-      // Always take bonded/paired/trusted/connected from bluetoothctl — Dart
-      // Device1.Paired is often false for LE even when Bonded=yes.
-      _scanSession.remove(addr);
-      await _serialized(() async {
-        final info = await _btctlInfoMap(addr);
-        final live = _findLiveDevice(addr);
-        final name = info['name'] ??
-            info['alias'] ??
-            (live != null && (live.alias.isNotEmpty || live.name.isNotEmpty)
-                ? (live.alias.isNotEmpty ? live.alias : live.name)
-                : label);
-        final paired = _infoBondedOrPaired(info);
-        final trusted = _infoFlagYes(info, 'trusted');
-        final connected = _infoFlagYes(info, 'connected');
-        final kind = cached?.kind ??
-            (live != null
-                ? inferBluetoothDeviceKind(
-                    icon: live.icon,
-                    deviceClass: live.deviceClass,
-                    uuids: live.uuids.map((u) => u.toString()),
-                  )
-                : BluetoothDeviceKind.keyboard);
-        bool? inputReady;
-        if (kind == BluetoothDeviceKind.keyboard ||
-            kind == BluetoothDeviceKind.mouse) {
-          inputReady = connected ? await _hidEvdevPresent(addr) : false;
-          _setHidInputReady(addr, inputReady);
-        }
+      // Fresh Pair needs consent; already-bonded reconnect is just Connect.
+      // Consent stays outside the op lock so Cancel/Disconnect are not blocked
+      // while the dialog is open.
+      final prior = await _btctlInfoMap(addr);
+      final alreadyBonded =
+          _infoBondedOrPaired(prior) || (cached?.paired ?? false);
+      if (alreadyBonded) {
+        _outboundUserConsented = true;
         stderr.writeln(
-          'bt: UI sync paired=$paired bonded=${info['bonded']} '
-          'trusted=$trusted connected=$connected '
-          'services=${info['servicesresolved']} input=$inputReady',
+          'bt: reconnect bonded $addr — skip pair consent, Connect path',
         );
-        _deviceMap[addr] = BluetoothRemoteDevice(
+      } else {
+        final accepted = await _awaitOutboundPairConsent(
           address: addr,
-          name: name,
-          paired: paired,
-          trusted: trusted,
-          connected: connected,
-          inputReady: inputReady,
-          discovered: false,
-          kind: kind,
-          uuids: cached?.uuids ??
-              live?.uuids.map((u) => u.toString()).toList(growable: false) ??
-              const [],
-          icon: live?.icon ?? cached?.icon ?? '',
+          name: label,
         );
-        _userDisconnectedHid.remove(addr);
-        _lastConnectedByAddr[addr] = connected;
-        _lastResolvedByAddr[addr] =
-            live?.servicesResolved ?? _infoFlagYes(info, 'servicesresolved');
-        _emitDevices();
-        if (live != null) {
-          _wireDeviceProps(live);
+        if (!accepted) {
+          throw BluetoothOperationException('Pairing cancelled', address: addr);
+        }
+        _outboundUserConsented = true;
+        stderr.writeln(
+          'bt: user accepted pair $addr — bluetoothctl path (ignore Dart Device1 cache)',
+        );
+      }
+
+      _throwIfPairAbort(addr);
+
+      // Hold + Connect + UI sync under one lock — no Disconnect/Remove/Scan race.
+      await _serialized(() async {
+        _throwIfPairAbort(addr);
+        await _setHidHealHold(true);
+        try {
+          _throwIfPairAbort(addr);
+          await _btctlPairConnectTrust(addr);
+          await _stopScanLocked();
+          _scanSession.remove(addr);
+          await _clearOsHidStatus(addr);
+
+          final info = await _btctlInfoMap(addr);
+          final live = _findLiveDevice(addr);
+          final name = info['name'] ??
+              info['alias'] ??
+              (live != null && (live.alias.isNotEmpty || live.name.isNotEmpty)
+                  ? (live.alias.isNotEmpty ? live.alias : live.name)
+                  : label);
+          final paired = _infoBondedOrPaired(info);
+          final trusted = _infoFlagYes(info, 'trusted');
+          final connected = _infoFlagYes(info, 'connected');
+          final kind = cached?.kind ??
+              (live != null
+                  ? inferBluetoothDeviceKind(
+                      icon: live.icon,
+                      deviceClass: live.deviceClass,
+                      uuids: live.uuids.map((u) => u.toString()),
+                    )
+                  : BluetoothDeviceKind.keyboard);
+          bool? inputReady;
+          if (kind == BluetoothDeviceKind.keyboard ||
+              kind == BluetoothDeviceKind.mouse) {
+            // Require Connected — stale uhid after Disconnect is not ready.
+            inputReady = connected && await _hidEvdevPresent(addr);
+            _setHidInputReady(addr, inputReady);
+          }
+          stderr.writeln(
+            'bt: UI sync paired=$paired bonded=${info['bonded']} '
+            'trusted=$trusted connected=$connected '
+            'services=${info['servicesresolved']} input=$inputReady',
+          );
+          if (paired) {
+            _ctlBondedAddrs.add(addr);
+          } else {
+            _ctlBondedAddrs.remove(addr);
+          }
+          _deviceMap[addr] = BluetoothRemoteDevice(
+            address: addr,
+            name: name,
+            paired: paired,
+            trusted: trusted,
+            connected: connected,
+            inputReady: inputReady,
+            discovered: false,
+            kind: kind,
+            uuids: cached?.uuids ??
+                live?.uuids.map((u) => u.toString()).toList(growable: false) ??
+                const [],
+            icon: live?.icon ?? cached?.icon ?? '',
+          );
+          _userDisconnectedHid.remove(addr);
+          _lastConnectedByAddr[addr] = connected;
+          _emitDevices();
+          if (live != null) {
+            _wireDeviceProps(live);
+          }
+        } finally {
+          await _setHidHealHold(false);
         }
       });
     } catch (e) {
@@ -1580,15 +1755,20 @@ busctl get-property org.bluez "\$devpath" org.bluez.Device1 $prop 2>/dev/null
     } finally {
       _outboundPairActive = false;
       _outboundUserConsented = false;
+      _pairAbort = false;
+      await _setHidHealHold(false);
     }
   }
 
   @override
   Future<void> cancelPairing() async {
+    _pairAbort = true;
     final consent = _consentWait;
     if (consent != null && !consent.isCompleted) {
       consent.complete(false);
     }
+    await _killActiveBtctl();
+    await _setHidHealHold(false);
     try {
       await _agent?.cancel();
     } catch (_) {}
@@ -1747,7 +1927,7 @@ busctl get-property org.bluez "\$devpath" org.bluez.Device1 $prop 2>/dev/null
         _userDisconnectedHid.remove(addr);
         _hidInputReadyByAddr.remove(addr);
         _lastConnectedByAddr.remove(addr);
-        _lastResolvedByAddr.remove(addr);
+        _ctlBondedAddrs.remove(addr);
         await _clearOsHidStatus(addr);
 
         // Untrust + Disconnect first so LE inbound does not recreate the object

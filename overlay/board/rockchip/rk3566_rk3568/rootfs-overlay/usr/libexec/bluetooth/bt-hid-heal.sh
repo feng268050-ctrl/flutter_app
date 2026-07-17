@@ -112,12 +112,6 @@ finish_ready() {
 	exit 0
 }
 
-# Fast path: input already up — no bluetoothctl / no GATT walks.
-if evdev_present; then
-	write_status "ready"
-	exit 0
-fi
-
 # Poll until evdev appears or timeout (seconds). Returns 0 if ready.
 wait_evdev() {
 	secs="$1"
@@ -162,6 +156,25 @@ if ! has_uuid "$UUIDS" "1812" && ! has_uuid "$UUIDS" "1124"; then
 	esac
 fi
 
+get_bool() {
+	busctl get-property org.bluez "$PATH_OBJ" org.bluez.Device1 "$1" 2>/dev/null || true
+}
+
+refresh_path() {
+	PATH_OBJ=$(dev_path)
+}
+
+# Fast path: evdev only counts when the BlueZ link is Connected.
+# Stale uhid after Disconnect must not skip host Connect.
+CONN=$(get_bool Connected)
+case "$CONN" in
+*true*)
+	if evdev_present; then
+		finish_ready
+	fi
+	;;
+esac
+
 write_status "healing"
 log "heal $ADDR (Trusted HID, no BT evdev)"
 
@@ -185,14 +198,6 @@ addr_type() {
 
 ATYPE=$(addr_type)
 log "AddressType arg=$ATYPE"
-
-get_bool() {
-	busctl get-property org.bluez "$PATH_OBJ" org.bluez.Device1 "$1" 2>/dev/null || true
-}
-
-refresh_path() {
-	PATH_OBJ=$(dev_path)
-}
 
 CONN=$(get_bool Connected)
 SR=$(get_bool ServicesResolved)

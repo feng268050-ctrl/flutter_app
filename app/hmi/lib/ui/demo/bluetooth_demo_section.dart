@@ -124,6 +124,7 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
           (d) =>
               d.discovered &&
               !d.paired &&
+              !d.trusted &&
               !d.connected &&
               isBluetoothNearbyCandidate(d),
         )
@@ -212,7 +213,7 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
                       ),
               child: Text(d.paired ? 'Connect' : 'Pair'),
             ),
-          if (d.connected || d.paired)
+          if (d.connected)
             TextButton(
               onPressed: _busy != null
                   ? null

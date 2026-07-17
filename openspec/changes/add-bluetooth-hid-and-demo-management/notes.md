@@ -59,6 +59,26 @@ UI + `characteristic_get_notifying` bursts on each ATT reconnect. Fix:
 `/run/bt-hid/hold` during HMI pair/disconnect/remove; heal loop skips while
 hold set; one-shot heal uses `LWS_BT_HID_FORCE=1`.
 
+**Disconnect → Connect must Connect (2026-07-17):** User Disconnect keeps
+bond (`paired/bonded=yes`) and clears Trusted. Reconnect path used to skip
+`bluetoothctl pair` (already bonded) then only call OS heal — never host
+`Connect` — UI error `Still paired=yes bonded=yes`. Correct machine:
+Pair-if-needed → Trust → **Connect if link down** → heal for HOGP/evdev.
+Already-bonded Connect skips pair-consent dialog.
+
+**State management hardening (2026-07-17):**
+- Consent stays outside `_serialized`; hold + Connect + UI sync share one lock.
+- `cancelPairing` sets abort, kills in-flight bluetoothctl, clears `/run/bt-hid/hold`.
+- `inputReady`: `/run/bt-hid` `ready` is fast-path; `missing`/`idle`/`healing` fall
+  through to live sysfs evdev probe.
+- `bt-trust-paired.sh` skips HID/HOGP so phone pair cannot undo Disconnect Untrust.
+- ADDR_TYPE prefers full busctl `Device1.UUIDs`; ctl bond set replaces sticky OR.
+
+**Stale uhid skips Connect (2026-07-17):** After Disconnect, QM002 uhid often
+remains (`uniq=mac`, Connected=no). Code treated evdev as success and skipped
+host Connect → UI `connected=false input=true`. Fix: always Connect when
+`Connected=no`; `inputReady` requires Connected; heal fast-path same.
+
 **Still open for 1.2 / 2.3 / 5.4 / 7.3 / 7.4:** bring a Classic HID keyboard or mouse (and ideally a HOGP device), pair from Demo Scan, confirm `/dev/input` nodes, Demo typing/pointer, phone+A2DP coexistence, and whether AIC initiator SDP `ENOSYS` appears in `journalctl -u bluetooth` during Classic HID connect.
 
 ## How OSes pair BLE keyboards vs why Demo hung (2026-07-16)

@@ -1,5 +1,5 @@
 #!/bin/sh
-# After phone↔HMI pairing: Trust immediately.
+# After phone↔HMI pairing: Trust non-HID remotes immediately.
 #
 # IMPORTANT (A2DP Sink / speaker role):
 # Do NOT bluetoothctl-connect from the HMI after the phone pairs. That makes us
@@ -8,13 +8,25 @@
 # The phone must initiate A2DP Source → our Sink (bluealsa MediaEndpoint).
 # We only need Trust so AuthorizeService is quiet.
 #
+# IMPORTANT (HID / HOGP):
+# Do NOT trust Classic HID (UUID 1124) or BLE HOGP (UUID 1812) here.
+# User Disconnect clears Trusted so BlueZ Policy / bt-hid-heal do not re-attach.
+# HID Trust is owned by the HMI Connect/Pair path only.
+#
 # Usage:
-#   bt-trust-paired.sh           # trust paired remotes
+#   bt-trust-paired.sh           # trust paired non-HID remotes
 #   bt-trust-paired.sh --connect # same as trust (connect intentionally ignored)
 set -eu
 
 log() {
 	echo "bt-trust-paired: $*" >&2
+}
+
+is_hid_peripheral() {
+	info="$1"
+	echo "$info" | grep -qiE 'UUID:.*(Human Interface|00001124|00001812)' && return 0
+	echo "$info" | grep -qiE 'Icon:.*(keyboard|mouse|input-)' && return 0
+	return 1
 }
 
 if ! command -v bluetoothctl >/dev/null 2>&1; then
@@ -33,6 +45,10 @@ bluetoothctl devices Paired 2>/dev/null | while read -r _dev addr rest; do
 	*:*:*)
 		info="$(bluetoothctl info "$addr" 2>/dev/null || true)"
 		if ! echo "$info" | grep -qi 'Paired: yes'; then
+			continue
+		fi
+		if is_hid_peripheral "$info"; then
+			log "skip HID $addr (Trust owned by HMI Connect/Pair)"
 			continue
 		fi
 		if ! echo "$info" | grep -qi 'Trusted: yes'; then

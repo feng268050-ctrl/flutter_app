@@ -122,7 +122,7 @@ Firmware stage outputs:
 - `make build-kernel` builds two independently hashed FIT images containing the same Linux kernel: `boot.img` selects `rootfs_a`, while `boot_b.img` selects `rootfs_b`. Publishes both to `output/firmware/`.
 - `make build-rootfs` builds `rootfs.img` and publishes it to `output/firmware/`.
 - `make build-img` does **not** compile the kernel or rootfs. It packages the existing loader, U-Boot, misc, both FIT images, and rootfs into `output/firmware/update.img` for `make flash`.
-- Full-system `make upgrade` does **not** transfer `update.img`. It transfers `boot.img`, `boot_b.img`, and `rootfs.img` plus the matching board apply helpers, writes the inactive A/B system, and returns when board apply reports `apply.status=ok` (reboot requested) or SSH disconnects. Staging the matching helpers lets safety fixes migrate without first modifying the active rootfs. The command then tells the operator to wait for the device to finish restarting before reconnecting.
+- Full-system `make upgrade` does **not** transfer `update.img`. It **streams** `rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), arms try-boot, and returns when apply reports `apply.status=ok` (reboot requested) or SSH disconnects. Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). The command then tells the operator to wait for the device to finish restarting before reconnecting.
 
 ### Daily iteration — by what you changed
 
@@ -236,7 +236,7 @@ make build-app
 make push-app                   # SERIAL=... when multiple boards; hot-swap /opt/hmi (no rootfs rebuild)
 ```
 
-Full-system A/B (kernel/rootfs, not app-only): `make upgrade` streams `boot.img` + `boot_b.img` + `rootfs.img`.
+Full-system A/B (kernel/rootfs, not app-only): `make upgrade` streams `rootfs.img` + the inactive letter’s FIT into partitions (not userdata staging).
 
 Remote SSH (board LAN/WLAN sshd on — Demo **LAN SSH debug** or `enable-ssh-debug.sh`):
 
@@ -247,7 +247,7 @@ make connect 192.168.1.50       # or: make connect IP=192.168.1.50
 make devices                    # MODE=SSH row
 IP=192.168.1.50 make shell
 IP=192.168.1.50 make push-app
-IP=192.168.1.50 make upgrade    # both FIT variants + rootfs.img; not RockUSB
+IP=192.168.1.50 make upgrade    # stream-to-partition; not RockUSB / not online OTA staging
 make disconnect 192.168.1.50
 ```
 
@@ -255,7 +255,7 @@ make disconnect 192.168.1.50
 
 Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
 
-`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.4) streams **`boot.img` (FIT for rootfs A) + `boot_b.img` (FIT for rootfs B) + `rootfs.img`** with single-line transfer progress, writes the inactive A/B system, and reboots — **not** RockUSB/`upgrade_tool uf` (use **`make flash`** for GPT / U-Boot). Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
+`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) **streams** **`rootfs.img` + the inactive letter’s FIT** into partitions with single-line write progress, arms try-boot, and reboots — **not** RockUSB/`upgrade_tool uf` (use **`make flash`** for GPT / U-Boot) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
 
 ### Debug iteration (USB plug-ssh / remote SSH, P1.5)
 

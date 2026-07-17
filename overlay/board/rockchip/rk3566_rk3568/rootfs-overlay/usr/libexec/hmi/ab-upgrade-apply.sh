@@ -1,5 +1,7 @@
 #!/bin/sh
-# Full-system A/B apply: write inactive boot+rootfs (+ optional oem), arm try-boot, reboot.
+# Staged full-system A/B apply (online / product OTA): digest files under
+# /userdata/ota/, then dd to inactive boot+rootfs (+ optional oem), arm try-boot, reboot.
+# Developer make upgrade uses ab-upgrade-stream.sh (SSH stdin → partitions) instead.
 # Staging: /userdata/ota/ (boot.img + boot_b.img + rootfs.img [+ oem.img]).
 # Both FITs are built and hashed separately; never patch a FIT after build.
 # Vendor U-Boot loads PARTNAME=boot only — back up current FIT to boot_b,

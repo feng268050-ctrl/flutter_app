@@ -115,7 +115,7 @@ help:
 	@echo "  make shell                 # interactive device shell (USB-SSH or SSH)"
 	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
 	@echo "  make push-app              # scp app over SSH (USB-SSH or registered IP)"
-	@echo "  make upgrade               # SSH A/B: dual FIT + rootfs; reboot removes SSH registry row"
+	@echo "  make upgrade               # SSH A/B stream-to-partition (inactive FIT+rootfs); not OTA staging"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
 	@echo "  make serial-console        # TTL UART ttyFIQ0 @ 1500000 (quit Ctrl+])"

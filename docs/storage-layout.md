@@ -30,7 +30,7 @@ Mount: kernel uses `root=PARTLABEL=rootfs_a` or `rootfs_b`. Prefer PARTLABEL ove
 | Buildroot system + libs (P5) | `/` rootfs | **≤ ~500 MiB** in flash image |
 | Flutter `/opt/hmi` | `/` rootfs | **≤ ~800 MiB** worst case via `push-app` (typical P5 UI **30–70 MiB**) |
 | RKNN models | **`/userdata/models/`** | userdata (not rootfs) |
-| OTA download / upgrade staging | **`/userdata/ota/`** | userdata (not rootfs) |
+| Online OTA download / staged apply | **`/userdata/ota/`** | userdata (not rootfs); not used for full images by `make upgrade` |
 | PR0 录像 / sqlite | `/userdata/…` | userdata |
 
 **`update.img` whole package ≤ ~600 MiB** (boot + rootfs + misc…) ⇒ **`rootfs.ext2` ~430–550 MiB** today/P5 target.  
@@ -76,7 +76,7 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | LCD/MIPI params (seed) | `/mnt/private1/` | private1 |
 | OEM / vendor drop-ins (optional) | `/oem/` | oem |
 | **RKNN models** (`*.rknn`, `config.yaml`) | **`/userdata/models/`** | userdata |
-| PR0 recording, sqlite, OTA download / upgrade staging | `/userdata/…` (incl. **`/userdata/ota/`**) | userdata |
+| PR0 recording, sqlite, online OTA staging | `/userdata/…` (incl. **`/userdata/ota/`**) | userdata |
 | **Subsystem state (P2.3+)** | **`/userdata/{wpa_supplicant,network,bluetooth,hmi}/`** (symlinked from `/var/lib/*`) | userdata |
 | App config / cache | `/userdata/cfg/` (convention) | userdata |
 
@@ -106,20 +106,21 @@ Notes:
 
 ## OTA / remote upgrade
 
-### `make upgrade` vs `make flash`
+### `make upgrade` vs `make flash` vs online OTA
 
-| Component | `make upgrade` (full-system) | `make flash` |
-|-----------|------------------------------|--------------|
-| Kernel FIT (`boot.img`) | **Yes** → inactive `boot_*` | Yes |
-| Rootfs (`rootfs.img`) | **Yes** → inactive `rootfs_*` | Yes |
-| oem (if in bundle) | **Yes** (single partition) | Yes |
-| U-Boot / MiniLoader | **No** | Yes |
-| GPT / `parameter` | **No** | Yes |
-| userdata / prefs | **Never wipe** | Factory reset |
+| Component | `make upgrade` (dev SSH) | Online OTA (P4.8 / P5.8) | `make flash` |
+|-----------|--------------------------|--------------------------|--------------|
+| Kernel FIT | **Stream** inactive letter’s FIT → `boot` (after `boot`→`boot_b` backup) | Stage under `/userdata/ota/`, digest, then `dd` | Yes |
+| Rootfs | **Stream** → inactive `rootfs_*` | Stage, digest, then `dd` | Yes |
+| oem (optional) | **Stream** when packaged | Stage when packaged | Yes |
+| U-Boot / MiniLoader | **No** | **No** | Yes |
+| GPT / `parameter` | **No** | **No** | Yes |
+| userdata / prefs | **Never wipe** | **Never wipe** | Factory reset |
+| Full images under `/userdata/ota/` | **No** (helpers/status only) | **Yes** (download then apply) | N/A |
 
-- **P2.4 — paired A/B boot+rootfs**: inactive-letter write + try-boot + reboot (**no bootloader flash**). Host: **`make upgrade`** over USB-SSH or LAN SSH. Bundle ≥ **`boot.img` + `rootfs.img`**. **userdata preserved.**
-- **P5.8 — product OTA**: UI / cloud (or local) orchestration on top of the P2.4 full-system A/B protocol. Developer app-only iteration remains `make push-app`; staging is under **`/userdata/ota/`**.
-- **Full `update.img` via `make flash`**: factory / first GPT change / U-Boot / intentional **full reset**; not the day-to-day upgrade path after P2.4.
+- **P2.5 — paired A/B boot+rootfs**: **`make upgrade`** = **stream-to-partition** over USB-SSH or LAN SSH (one operator wait aligned with write progress). Host needs both FITs built locally; only the inactive letter’s FIT is transferred. **userdata preserved.**
+- **P4.8 / P5.8 — product OTA**: download (or local package) → **`/userdata/ota/`** → digest-verified **`ab-upgrade-apply.sh`** staged apply. Same A/B safety model; different transport UX. Developer app-only iteration remains `make push-app`.
+- **Full `update.img` via `make flash`**: factory / first GPT change / U-Boot / intentional **full reset**; not the day-to-day upgrade path after P2.5.
 
 ## Changing layout
 

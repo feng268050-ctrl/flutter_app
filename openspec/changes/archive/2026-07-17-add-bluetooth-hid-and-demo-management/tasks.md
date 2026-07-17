@@ -1,7 +1,7 @@
 ## 1. Foundations and feasibility
 
 - [x] 1.1 Rebase this change against `platform-event-driven-ui` Bluetooth D-Bus work (or its archived delta) so `linux-bluetooth` keeps ObjectManager/PropertiesChanged as the primary observation path
-- [ ] 1.2 On ynh960, spike one Classic HID keyboard/mouse and one BLE HOGP device with BlueZ; capture `bluetoothd`/kernel logs and record whether initiator SDP (`ENOSYS`) blocks Classic HID
+- [ ] 1.2 On ynh960, spike one Classic HID keyboard/mouse and one BLE HOGP device with BlueZ; capture `bluetoothd`/kernel logs and record whether initiator SDP (`ENOSYS`) blocks Classic HID — **DEFERRED regression** (see notes § Deferred regression)
 - [x] 1.3 Document the acceptance device matrix (Classic vs BLE, keyboard vs mouse) and any unavoidable transport limitation in `notes.md`
 
 ## 2. Kernel / Buildroot / BlueZ HID support
@@ -42,6 +42,6 @@
 
 - [x] 7.1 Host unit tests: discovery/device mapping fixtures, scan timeout → inactive, pair/connect failure mapping, agent challenge correlation
 - [x] 7.2 Widget/smoke tests for Bluetooth Demo scan list and passkey presentation (non-fatal error path)
-- [ ] 7.3 Device matrix: Bluetooth keyboard types into Demo text field; Bluetooth mouse pointer/click/scroll; reconnect after BT toggle or reboot
+- [ ] 7.3 Device matrix: Bluetooth keyboard types into Demo text field; Bluetooth mouse pointer/click/scroll; reconnect after BT toggle or reboot — **DEFERRED regression** (see notes § Deferred regression)
 - [x] 7.4 Coexistence: phone incoming pair/A2DP + HID bonds; bounded scan with Wi-Fi connected; USB keyboard/mouse unchanged
 - [x] 7.5 Update `app/hmi/README.md` Bluetooth smoke steps for scan/connect HID and coexistence checks

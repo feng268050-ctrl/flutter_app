@@ -2,7 +2,7 @@
 
 ## Purpose
 
-P2 Flutter home demo: device-information rows (iSerial + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth discoverable / USB keyboard / USB mouse sections, P2.2 Date & Time (manual / network), plus audio / brightness / orientation controls.
+P2 Flutter home demo: device-information rows (iSerial + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth (local adapter + central scan/HID) / USB keyboard / USB mouse sections, P2.2 Date & Time (manual / network), plus audio / brightness / orientation controls.
 ## Requirements
 ### Requirement: Home screen lists five device-info rows
 
@@ -132,9 +132,9 @@ The demo home SHALL expose HTTP(S) proxy fields (enable, host, port, optional cr
 - **WHEN** the user saves proxy settings
 - **THEN** the HTTP client controller is asked to persist those settings
 
-### Requirement: Demo exposes Bluetooth visibility and incoming peers
+### Requirement: Demo exposes Bluetooth visibility, scanning, and device management
 
-The demo home SHALL include a Bluetooth section for **being discovered/connected to**: adapter toggle; local name/address; discoverable and pairable controls; list of **incoming** paired/connected remotes with disconnect/remove. The demo MUST NOT present a central “scan for other Bluetooth devices” flow. Bluetooth I/O MUST NOT block first-frame paint.
+The demo home SHALL include a Bluetooth section that supports both existing local-adapter roles and outbound peripheral management: adapter toggle; local name/address; discoverable and pairable controls; opt-in A2DP Sink control; a unified list of paired/connected remotes with disconnect/remove; bounded scan/stop controls; nearby-device results; and pair/connect actions. The section SHALL display scan and per-device operation state, best-effort device type and signal strength when available, and pairing instructions or challenges required to complete keyboard/mouse pairing. Bluetooth I/O MUST NOT block first-frame paint, and failures MUST remain local to the section without crashing or disabling unrelated controls.
 
 #### Scenario: Toggle enables adapter via controller
 
@@ -146,10 +146,45 @@ The demo home SHALL include a Bluetooth section for **being discovered/connected
 - **WHEN** the user enables Discoverable
 - **THEN** the Bluetooth controller is asked to set discoverable true
 
-#### Scenario: Incoming remote actions invoke controller
+#### Scenario: Scan shows nearby devices
 
-- **WHEN** the user taps Disconnect or Remove on a listed incoming remote
+- **WHEN** the adapter is on and the user taps Scan
+- **THEN** the controller starts bounded discovery and the section updates from its scan/device streams with deduplicated nearby-device rows that follow Settings-style filtering (HID / phone / computer / audio and named devices with relevant services — not anonymous MAC-only LE advertisers)
+
+#### Scenario: Scan hides anonymous LE spam
+
+- **WHEN** discovery reports devices whose alias/name is empty or equal to their address
+- **THEN** those devices MUST NOT appear in the Demo nearby list
+
+#### Scenario: Scan results persist after discovery stops
+
+- **WHEN** a bounded scan ends and BlueZ removes temporary Device1 objects
+- **THEN** Settings-relevant nearby rows from that scan session remain visible until the next Scan
+
+#### Scenario: User pairs and connects a scan result
+
+- **WHEN** the user selects Pair or Connect for a nearby supported device
+- **THEN** the Bluetooth controller is asked to pair/connect that device and the row shows progress followed by connected state or a non-fatal error
+
+#### Scenario: Keyboard passkey instructions are visible
+
+- **WHEN** pairing a keyboard requires the user to type a displayed passkey on that keyboard
+- **THEN** the Bluetooth section shows the device identity, passkey, and completion instructions until the request completes or is cancelled
+
+#### Scenario: Existing remote actions invoke controller
+
+- **WHEN** the user taps Disconnect or Remove on a listed bonded or connected remote
 - **THEN** the Bluetooth controller is asked to disconnect or remove that address
+
+#### Scenario: Existing Bluetooth roles remain controllable
+
+- **WHEN** central scan/connect controls are present
+- **THEN** the same section still exposes discoverable, pairable, incoming-peer management, and opt-in A2DP Sink controls
+
+#### Scenario: Bluetooth failure does not block Demo
+
+- **WHEN** scanning, pairing, or connection fails
+- **THEN** the section shows an actionable error while the rest of the Demo remains painted and usable
 
 ### Requirement: Demo exposes audio play control and volume slider
 

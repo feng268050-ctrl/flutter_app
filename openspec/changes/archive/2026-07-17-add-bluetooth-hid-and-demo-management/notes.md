@@ -126,11 +126,29 @@ Mitigations shipped:
 
 | Class | Transport | Status |
 |-------|-----------|--------|
-| Keyboard | Classic HID | Pending on-device pair/connect + Demo text-field type |
-| Mouse | Classic HID | Pending on-device pair/connect + pointer/click/scroll |
-| Keyboard | BLE HOGP | Pending when a HOGP keyboard is available |
-| Mouse | BLE HOGP | Pending when a HOGP mouse is available |
-| Phone incoming + A2DP | BR/EDR Sink | Regression required after Agent1 ownership change |
+| Keyboard | Classic HID | **Deferred regression** (task 1.2 / 7.3) |
+| Mouse | Classic HID | **Deferred regression** (task 1.2 / 7.3) |
+| Keyboard | BLE HOGP | Field: QM002 pair/type/pointer + Disconnect→Connect heal (not full 7.3 sign-off) |
+| Mouse | BLE HOGP | Field: QM002 trackpad as pointer; dedicated BLE mouse TBD |
+| Phone incoming + A2DP | BR/EDR Sink | Agent coexistence exercised; re-check on Classic HID bring-up |
 | Scan + Wi-Fi up | Combo AIC | Bounded scan only; do not disable wlan |
 
-Until Classic/BLE HID rows pass, do not treat HID as product-complete; scan/pair UI may still ship for discovery and bonding attempts with structured errors.
+## Deferred regression (archive 2026-07-17)
+
+Archived with tasks **1.2** and **7.3** still open by product choice. Re-open or run as a follow-up change when Classic HID hardware (and optional dedicated BLE mouse) is available.
+
+### R1 — Task 1.2 Classic HID + SDP spike
+
+- On ynh960, pair one **Classic HID** keyboard and/or mouse via Demo Scan.
+- Capture `journalctl -u bluetooth` / kernel logs during connect.
+- Record whether AIC **initiator SDP `ENOSYS`** blocks Classic HID (vs BLE HOGP path).
+- Update this matrix Classic rows and `linux-bluetooth` Purpose deferred note when done.
+
+### R2 — Task 7.3 Device matrix acceptance
+
+- Bluetooth keyboard types into Demo text field (Classic and/or confirmed BLE).
+- Bluetooth mouse: pointer / click / scroll.
+- Reconnect after BT adapter toggle and after reboot (Policy + `bt-hid-heal`).
+- Do not claim product-complete HID until R1+R2 pass.
+
+Cross-ref: main spec `openspec/specs/linux-bluetooth/spec.md` Purpose → Deferred acceptance.

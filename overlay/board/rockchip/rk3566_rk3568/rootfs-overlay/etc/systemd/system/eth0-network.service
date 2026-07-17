@@ -1,6 +1,6 @@
 [Unit]
 Description=LWS HMI on-demand eth0 apply (link + IPv4)
-Documentation=file:///usr/lib/lws-hmi/apply-eth0.sh
+Documentation=file:///usr/libexec/network/apply-eth0.sh
 # Not linked from multi-user.target.wants — started only via eth0 helpers / restore / Demo.
 DefaultDependencies=no
 After=local-fs.target
@@ -11,7 +11,7 @@ Type=oneshot
 RemainAfterExit=yes
 KillMode=none
 Environment=LWS_ETH_IN_UNIT=1
-ExecStart=/usr/lib/lws-hmi/apply-eth0.sh
-ExecStop=/usr/lib/lws-hmi/eth0-link.sh down
+ExecStart=/usr/libexec/network/apply-eth0.sh
+ExecStop=/usr/libexec/network/eth0-link.sh down
 
 # No [Install] — must not auto-start at boot (restore starts when eth0-wanted).

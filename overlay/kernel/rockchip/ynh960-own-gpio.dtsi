@@ -1,4 +1,4 @@
-// lws-hmi ynh960: fix own-gpio vs gmac1 pinmux conflict; restore USB host VBUS.
+// ynh960: fix own-gpio vs gmac1 pinmux conflict; restore USB host VBUS.
 //
 // Under EVB RGMII, gmac1 stole gpio4 A0/A1/A2 (txclk/rxd2/rxd3) and gpio3 D7
 // (txd3) — same pads as Innohi USB_HOST_PWREN* / Relay-CTL. Pinctrl then failed

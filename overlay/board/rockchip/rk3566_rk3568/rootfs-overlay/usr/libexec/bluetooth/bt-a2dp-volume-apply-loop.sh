@@ -1,8 +1,8 @@
 #!/bin/sh
 # Retry applying saved A2DP soft-volume until a stream PCM appears (or timeout).
 set -eu
-vol_file=/var/lib/lws-hmi/bt-a2dp-volume
-helper=/usr/lib/lws-hmi/bt-a2dp-volume.sh
+vol_file=/var/lib/bluetooth/bt-a2dp-volume
+helper=/usr/libexec/bluetooth/bt-a2dp-volume.sh
 i=0
 while [ "$i" -lt 15 ]; do
 	if [ -f "$vol_file" ] && [ -x "$helper" ]; then

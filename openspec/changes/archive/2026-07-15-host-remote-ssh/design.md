@@ -22,7 +22,7 @@ USB plug-ssh starts a dedicated `sshd` with `ListenAddress=192.168.55.1` and a p
 
 ### 1. Dedicated LAN sshd via systemd unit (outside hmi cgroup)
 
-**Choice:** `lws-hmi-lan-ssh.service` with **`Type=simple`** and **`lan-ssh-run.sh` → `sshd -D`**. Listen addresses are **eth0/wlan0 global IPv4 only** (never `0.0.0.0`, never `192.168.55.1`). USB plug-ssh keeps its own sshd on `192.168.55.1`. No `[Install]` / not in `multi-user.target.wants`.
+**Choice:** `ssh-debug-lan.service` with **`Type=simple`** and **`lan-ssh-run.sh` → `sshd -D`**. Listen addresses are **eth0/wlan0 global IPv4 only** (never `0.0.0.0`, never `192.168.55.1`). USB plug-ssh keeps its own sshd on `192.168.55.1`. No `[Install]` / not in `multi-user.target.wants`.
 
 **Rationale:** Demo UI starts LAN SSH via Flutter `Process.run`, so sshd must live in a unit outside `hmi.service`'s cgroup. Binding only LAN IPs lets USB-SSH keep port 22 on the ECM address at the same time (two ListenAddress IPs, two sshd processes).
 
@@ -38,9 +38,9 @@ USB plug-ssh starts a dedicated `sshd` with `ListenAddress=192.168.55.1` and a p
 
 ### 3b. Wi-Fi outside hmi cgroup
 
-**Choice:** `wifi-stack-up.sh` starts **`lws-hmi-wpa.service`**; DHCP uses **`lws-hmi-wlan0-dhcp.service`**. Neither is in `multi-user.target.wants`.
+**Choice:** `wifi-stack-up.sh` starts **`wlan-wpa.service`**; DHCP uses **`wlan-dhcp.service`**. Neither is in `multi-user.target.wants`.
 
-**Rationale:** Demo `Process.run` previously left `wpa_supplicant`/`dhcpcd` in `hmi.service`'s cgroup; `make push-app` → `systemctl stop hmi` killed Wi-Fi and dropped LAN SSH. Same class of bug as LAN sshd before `lws-hmi-lan-ssh.service`.
+**Rationale:** Demo `Process.run` previously left `wpa_supplicant`/`dhcpcd` in `hmi.service`'s cgroup; `make push-app` → `systemctl stop hmi` killed Wi-Fi and dropped LAN SSH. Same class of bug as LAN sshd before `ssh-debug-lan.service`.
 
 ### 4. Demo toggle
 

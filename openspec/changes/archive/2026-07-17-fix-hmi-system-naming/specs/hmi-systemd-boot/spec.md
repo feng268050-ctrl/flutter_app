@@ -1,0 +1,62 @@
+## MODIFIED Requirements
+
+### Requirement: hmi.service auto-starts flutter-pi after local-fs only
+
+The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/usr/bin/flutter-pi --release -o landscape_left /opt/hmi` with `Nice=-5`, restart on failure, and MUST depend only on `local-fs.target` and `cpu-performance.service` — not on `network-online.target`, `mediamtx.service`, or `systemd-udev-settle.service`.
+
+#### Scenario: hmi enabled at image build
+
+- **WHEN** P1 rootfs is produced
+- **THEN** symlink exists at `etc/systemd/system/multi-user.target.wants/hmi.service`
+
+#### Scenario: verify-boot confirms Plan A boot chain
+
+- **WHEN** operator runs `verify-boot` on device after flash
+- **THEN** output reports PASS for hmi/mainserver/performance/pwrkey enabled and mediamtx/sshd/wpa_supplicant/network not in multi-user wants
+
+#### Scenario: flutter-pi starts automatically
+
+- **WHEN** device boots to multi-user without manual intervention
+- **THEN** `flutter-pi` process is running with `/opt/hmi` as bundle path
+
+### Requirement: Boot-supporting services enabled at image build
+
+Post-build hook SHALL enable `hmi.service`, `mainserver.service` (Innohi display daemon), `cpu-performance.service` (CPU/DMC/GPU governors), and `pwrkey-poweroff.service` in `multi-user.target.wants`. `param-update.service` SHALL be enabled in `sysinit.target.wants` for early display init.
+
+#### Scenario: mainserver enabled
+
+- **WHEN** P1 rootfs is produced
+- **THEN** symlink exists at `etc/systemd/system/multi-user.target.wants/mainserver.service`
+
+#### Scenario: performance service runs before hmi
+
+- **WHEN** device boots
+- **THEN** `cpu-performance.service` completes (`RemainAfterExit=yes`) before `hmi.service` starts
+
+### Requirement: Non-critical services disabled at image build
+
+Post-build hook SHALL disable `mediamtx.service`, `sshd.service`, `sshd.socket`, `bluetooth.service`, `wifibt-init.service`, `wpa_supplicant.service`, `network.service`, and `log-guardian.service` from all `*.wants` directories. `systemd-network-generator.service` SHALL be masked. `08-systemd-finalize.sh` SHALL undo SDK post-hook re-enables (e.g. `log-guardian`).
+
+#### Scenario: mediamtx not auto-started
+
+- **WHEN** P1 device boots
+- **THEN** `mediamtx` process is not running and unit is not in multi-user wants
+
+#### Scenario: sshd not listening by default
+
+- **WHEN** P1 device boots on LAN
+- **THEN** port 22 is not accepting connections until manually enabled
+
+#### Scenario: Wi-Fi/BT deferred at boot
+
+- **WHEN** P1 device reaches multi-user target
+- **THEN** `wifibt-init.service`, `wpa_supplicant.service`, and `network.service` are not in multi-user wants
+
+### Requirement: journald uses volatile storage
+
+journald configuration overlay SHALL set volatile storage so logs are not persisted to eMMC by default.
+
+#### Scenario: journald volatile config present
+
+- **WHEN** P1 rootfs is inspected
+- **THEN** `journald.conf.d/00-volatile-storage.conf` exists with Storage=volatile

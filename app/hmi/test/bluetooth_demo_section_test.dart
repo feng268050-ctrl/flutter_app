@@ -19,7 +19,7 @@ class _FakeBtController implements BluetoothController {
   BluetoothAdapterState _state = BluetoothAdapterState.on;
   BluetoothAdapterInfo _info = const BluetoothAdapterInfo(
     address: 'B4:04:29:B0:5A:FA',
-    name: 'lws-hmi',
+    name: 'hmi',
     powered: true,
     pairable: true,
   );

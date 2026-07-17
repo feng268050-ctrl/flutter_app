@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Append lws-hmi DTSI includes to Innohi customer_board_ynh960.dtsi (idempotent).
+# Append ynh960 DTSI includes to Innohi customer_board_ynh960.dtsi (idempotent).
 set -euo pipefail
 
 CUSTOMER_DTSI="${1:?customer_board_ynh960.dtsi path required}"
@@ -19,7 +19,7 @@ include_dtsi() {
   fi
   cat >>"$CUSTOMER_DTSI" <<EOF
 
-#include "$marker" /* lws-hmi ynh960 */
+#include "$marker" /* ynh960 overlay */
 EOF
   echo "overlay: patched $CUSTOMER_DTSI ($marker)"
 }

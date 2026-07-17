@@ -81,7 +81,7 @@ Same as before: helpers `wifi-stack-up/down.sh`, `wlan0-dhcp.sh`, `wlan0-static.
 | `dhcp` | `wlan0-dhcp.sh` — client on **wlan0 only** |
 | `static` | Apply `address` / `prefixLength` / optional `gateway` / optional `dns` via `ip addr` + route + resolv snippet **for wlan0 only** |
 
-Persist IPv4 mode + static fields under `/var/lib/lws-hmi/wlan0-ipv4` (or equivalent) so Demo/P5.2 share one file. Changing mode MUST NOT touch eth0.
+Persist IPv4 mode + static fields under `/var/lib/wpa_supplicant/wlan0-ipv4` (or equivalent) so Demo/P5.2 share one file. Changing mode MUST NOT touch eth0.
 
 **API:**
 
@@ -95,7 +95,7 @@ Persist IPv4 mode + static fields under `/var/lib/lws-hmi/wlan0-ipv4` (or equiva
 
 **Choice:** Separate small `HttpClientController`:
 
-- Persist proxy: `enabled`, `host`, `port`, optional user/password under `/var/lib/lws-hmi/http-proxy` (never log password).
+- Persist proxy: `enabled`, `host`, `port`, optional user/password under `/var/lib/hmi/http-proxy` (never log password).
 - Outbound requests use Dart `HttpClient` (or equivalent) honoring proxy when enabled; clear non-proxy path when disabled.
 - `Future<HttpProbeResult> request({required String method, required Uri url, ...})` → statusCode, reasonPhrase, truncated body, error message, elapsed.
 

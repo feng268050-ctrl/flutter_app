@@ -46,7 +46,7 @@ This capability MUST NOT require a Demo or API obligation to scan for or connect
 
 ### Requirement: Opt-in A2DP Sink for phone media (Bluetooth speaker)
 
-The system SHALL enable `BR2_PACKAGE_BLUEZ_ALSA` in the image and expose an **opt-in** A2DP Sink control (default **off**) via the Bluetooth platform API / Demo switch. Enabling starts bluealsa + bluealsa-aplay so phones can complete a media connection and play through the onboard speaker. `bt-stack-up.sh` MUST NOT start A2DP Sink unless preference `/var/lib/lws-hmi/bt-a2dp-sink` is already `1`. A2DP Source and HFP product roles remain out of scope. This MUST NOT preclude a later BLE GATT (or SPP) provisioning service on the same adapter.
+The system SHALL enable `BR2_PACKAGE_BLUEZ_ALSA` in the image and expose an **opt-in** A2DP Sink control (default **off**) via the Bluetooth platform API / Demo switch. Enabling starts bluealsa + bluealsa-aplay so phones can complete a media connection and play through the onboard speaker. `bt-stack-up.sh` MUST NOT start A2DP Sink unless preference `/var/lib/bluetooth/bt-a2dp-sink` is already `1`. A2DP Source and HFP product roles remain out of scope. This MUST NOT preclude a later BLE GATT (or SPP) provisioning service on the same adapter.
 
 #### Scenario: BlueZ-ALSA A2DP Sink is enabled in the fragment
 

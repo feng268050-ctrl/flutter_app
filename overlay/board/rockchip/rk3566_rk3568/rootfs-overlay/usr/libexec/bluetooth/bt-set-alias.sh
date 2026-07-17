@@ -3,7 +3,7 @@
 # Usage: bt-set-alias.sh [alias]
 set -eu
 
-ALIAS="${1:-${LWS_BT_ALIAS:-lws-hmi}}"
+ALIAS="${1:-${LWS_BT_ALIAS:-hmi}}"
 
 log() {
 	echo "bt-set-alias: $*" >&2

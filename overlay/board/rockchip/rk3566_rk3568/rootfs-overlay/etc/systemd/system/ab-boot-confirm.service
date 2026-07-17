@@ -1,6 +1,6 @@
 [Unit]
 Description=LWS HMI A/B try-boot confirm / rollback
-Documentation=file:///usr/lib/lws-hmi/ab-boot-confirm.sh
+Documentation=file:///usr/libexec/hmi/ab-boot-confirm.sh
 DefaultDependencies=no
 After=local-fs.target hmi.service
 Wants=hmi.service
@@ -9,7 +9,7 @@ Wants=hmi.service
 Type=oneshot
 RemainAfterExit=yes
 # Fresh boot (try_boot unset) exits 0 immediately; armed try waits for hmi.
-ExecStart=/usr/lib/lws-hmi/ab-boot-confirm.sh
+ExecStart=/usr/libexec/hmi/ab-boot-confirm.sh
 TimeoutStartSec=180
 # Do not block multi-user if confirm hits a transient misc read glitch.
 SuccessExitStatus=0

@@ -1,10 +1,10 @@
 #!/bin/sh
-# Foreground LAN/WLAN sshd for lws-hmi-lan-ssh.service (Type=simple).
+# Foreground LAN/WLAN sshd for ssh-debug-lan.service (Type=simple).
 # Listen only on eth0/wlan0 global IPv4 — never 0.0.0.0 — so USB plug-ssh can
 # keep its own sshd on 192.168.55.1:22 at the same time.
 set -eu
 
-ensure=/usr/lib/lws-hmi/ensure-sshd-hostkeys.sh
+ensure=/usr/libexec/hmi/ensure-sshd-hostkeys.sh
 [ -x "$ensure" ] && "$ensure"
 mkdir -p /run/sshd
 chmod 0755 /run/sshd 2>/dev/null || true

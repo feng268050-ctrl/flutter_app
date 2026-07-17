@@ -36,6 +36,26 @@ Mount: kernel uses `root=PARTLABEL=rootfs_a` or `rootfs_b`. Prefer PARTLABEL ove
 **`update.img` whole package ≤ ~600 MiB** (boot + rootfs + misc…) ⇒ **`rootfs.ext2` ~430–550 MiB** today/P5 target.  
 **1 GiB partition** ≈ 2× that budget — enough for ext4 metadata and a few `push-app` iterations without repartitioning.
 
+### ext4 image size (Buildroot / OTA)
+
+Rockchip `base.config` sets `BR2_TARGET_ROOTFS_EXT2_SIZE_AUTO=y`. Buildroot then:
+
+1. **`mkfs.ext4`** at `(du(target) + find|wc × blksz) × **110%** + **64 MiB**`
+2. **`resize2fs -M`** — shrink to minimum blocks
+
+The **110% / 64 MiB margin does not appear in the final `rootfs.img`** when shrink succeeds. What inflated past images (~502 MiB vs ~388 MiB payload) was mainly **`BR2_TARGET_ROOTFS_EXT2_INODES=0`** (auto ≈ one inode per 4 KiB → ~128k inodes / ~124k unused) plus **`resize2fs -M` hitting that inode-table floor**.
+
+lws-hmi overrides in `overlay/buildroot/chips/lws_hmi_rootfs.config`:
+
+| Option | Value | Effect |
+|--------|-------|--------|
+| `BR2_TARGET_ROOTFS_EXT2_SIZE_AUTO` | `n` | Fixed cap instead of auto formula |
+| `BR2_TARGET_ROOTFS_EXT2_SIZE` | `450M` | OTA artifact ~450 MiB; ~30 MiB free blocks inside FS for `push-app` |
+| `BR2_TARGET_ROOTFS_EXT2_INODES` | `10240` | ~5.7k free inodes; avoids inode-table bloat |
+| `BR2_TARGET_ROOTFS_EXT2_RESBLKS` | `0` | No 5% root-reserved pool (embedded appliance) |
+
+To change OTA size later: bump `450M` (still must pass `verify-firmware-partitions.sh` vs 1 GiB slot). Pure `SIZE_AUTO` + low `-N` shrinks the image further (~417 MiB) but leaves almost no grow room on `/` until repartition or a deliberate grow step — not used here.
+
 If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000` → `0x00300000` (1.5 GiB) in parameter and re-flash.
 
 ### Typical capacities
@@ -57,26 +77,31 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | OEM / vendor drop-ins (optional) | `/oem/` | oem |
 | **RKNN models** (`*.rknn`, `config.yaml`) | **`/userdata/models/`** | userdata |
 | PR0 recording, sqlite, OTA download / upgrade staging | `/userdata/…` (incl. **`/userdata/ota/`**) | userdata |
-| App config / prefs (P2.3) | **`/userdata/lws-hmi/`** ( `/var/lib/lws-hmi` symlink ) | userdata |
+| **Subsystem state (P2.3+)** | **`/userdata/{wpa_supplicant,network,bluetooth,hmi}/`** (symlinked from `/var/lib/*`) | userdata |
 | App config / cache | `/userdata/cfg/` (convention) | userdata |
 
-`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `ynh960-display-init.sh`, which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, then runs **`bind-prefs.sh`** so `/var/lib/lws-hmi` → `/userdata/lws-hmi`.
+`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `ynh960-display-init.sh`, which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, then runs **`bind-prefs.sh`** to symlink:
+
+- `/var/lib/wpa_supplicant` → `/userdata/wpa_supplicant`
+- `/var/lib/network` → `/userdata/network`
+- `/var/lib/bluetooth` → `/userdata/bluetooth`
+- `/var/lib/hmi` → `/userdata/hmi`
 
 ## Prefs: flash vs upgrade (P2.3 / P2.4)
 
-Hardware settings (Wi‑Fi, eth0, backlight, orientation, proxy, BT A2DP prefs, …) live under **`/userdata/lws-hmi/`**.
+Hardware settings are split by subsystem under the userdata trees above (Wi‑Fi under `wpa_supplicant/`, eth0 under `network/`, BT prefs under `bluetooth/`, UI/HW prefs under `hmi/`).
 
-| Operation | What changes | Settings (`/userdata/lws-hmi`) |
-|-----------|--------------|--------------------------------|
-| **Cold reboot** | nothing on disk | **Keep** — `lws-hmi-settings-restore` re-applies |
+| Operation | What changes | Settings (userdata subsystem trees) |
+|-----------|--------------|-------------------------------------|
+| **Cold reboot** | nothing on disk | **Keep** — `settings-restore.service` re-applies |
 | **`make push-app` / `systemctl restart hmi`** | `/opt/hmi` or HMI process only | **Keep** — stacks are outside `hmi.service` cgroup |
 | **`make upgrade` (full-system)** | inactive letter **`boot_*` + `rootfs_*`** (optional oem) | **Keep** — must **not** wipe or rewrite userdata |
 | **`make flash`** (RockUSB `update.img`, factory / GPT) | full image path; product **factory reset** | **Must clear** — complete reset after flash |
 
 Notes:
 
-- Rockchip `uf update.img` often **does not** rewrite the grow **userdata** partition by itself. Product policy still requires a **flash-time wipe of prefs** (planned: wipe `/userdata/lws-hmi` and/or factory-reset userdata on first boot after flash). Until that lands, do not assume bare `make flash` already erased Wi‑Fi credentials.
-- **`make upgrade`** must never format userdata or delete `/userdata/lws-hmi`; that is how OTA keeps operator settings while swapping firmware letters.
+- Rockchip `uf update.img` often **does not** rewrite the grow **userdata** partition by itself. Product policy still requires a **flash-time wipe of prefs** on factory flash. Until that lands, do not assume bare `make flash` already erased Wi‑Fi credentials.
+- **`make upgrade`** must never format userdata or delete subsystem userdata trees; that is how OTA keeps operator settings while swapping firmware letters.
 - RTC clock time is hardware and is unrelated to this prefs tree.
 
 ## OTA / remote upgrade

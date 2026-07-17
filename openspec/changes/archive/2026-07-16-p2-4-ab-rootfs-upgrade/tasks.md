@@ -11,7 +11,7 @@
 
 - [x] 2.1 Add overlay helpers to resolve inactive letter `by-partlabel` nodes and read/write misc letter + try-boot state
 - [x] 2.2 Implement full-system apply: stage `/userdata/ota/` bundle → write inactive **boot then rootfs** (+ optional oem) → verify digests → arm try-boot → reboot; refuse userdata wipe and uboot writes
-- [x] 2.3 Add `lws-hmi-ab-boot-confirm` oneshot/unit: commit letter on healthy boot or revert letter pair and reboot
+- [x] 2.3 Add `ab-boot-confirm.service` oneshot/unit: commit letter on healthy boot or revert letter pair and reboot
 - [x] 2.5 Wire helpers into fs-overlay; extend `verify-rootfs-overlay.sh` for helper presence and upgrade-path safety checks
 - [x] 2.6 Derive the active letter from the block device mounted as `/`; reject pending/stale misc state and hard-refuse any write to the mounted root device
 

@@ -1,7 +1,7 @@
 ## 1. Platform scaffolding
 
 - [x] 1.1 Create `app/hmi/lib/platform/datetime/` with abstract `DateTimeController`, `TimeSyncMode`, and `TimeSyncResult` per design D1/D4
-- [x] 1.2 Implement `LinuxDateTimeController`: prefs `/var/lib/lws-hmi/time-sync-mode` + `timezone`; default mode `network`
+- [x] 1.2 Implement `LinuxDateTimeController`: prefs `/var/lib/hmi/time-sync-mode` + `timezone`; default mode `network`
 - [x] 1.3 Implement manual `setWallClock` / `setTimezone` via `timedatectl` or BusyBox `date` + `hwclock -w -u`; applying wall clock sets mode to `manual`
 - [x] 1.4 Implement `syncFromNetwork` / `ensureSaneForTls` using `wlan0-time-sync.sh` then `rdate` / HTTP Date ladder (design D3)
 - [x] 1.5 Host unit tests: mode default/persist parsing, timezone token, stale-year window skip, manual set switches mode (fakes / file prefs under temp dir)

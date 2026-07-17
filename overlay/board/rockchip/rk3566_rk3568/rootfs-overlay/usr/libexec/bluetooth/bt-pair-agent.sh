@@ -11,8 +11,8 @@ set -eu
 
 CAPABILITY="${LWS_BT_AGENT_CAPABILITY:-DisplayYesNo}"
 LOG="${LWS_BT_AGENT_LOG:-/tmp/lws-bt-agent.log}"
-PIDFILE="${LWS_BT_AGENT_PIDFILE:-/run/lws-hmi-bt-agent.pid}"
-FIFO="${LWS_BT_AGENT_FIFO:-/run/lws-hmi-btctl.fifo}"
+PIDFILE="${LWS_BT_AGENT_PIDFILE:-/run/bt-agent.pid}"
+FIFO="${LWS_BT_AGENT_FIFO:-/run/btctl.fifo}"
 
 log() {
 	echo "bt-pair-agent: $*" >>"$LOG"
@@ -98,8 +98,8 @@ log "sent default-agent / pairable on"
 			last_paired="$paired_line"
 			log "paired detected — trust only (phone initiates A2DP)"
 			addr="$(grep -Eo '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}' "$LOG" 2>/dev/null | tail -1 || true)"
-			if [ -x /usr/lib/lws-hmi/bt-trust-paired.sh ]; then
-				/usr/lib/lws-hmi/bt-trust-paired.sh || true
+			if [ -x /usr/libexec/bluetooth/bt-trust-paired.sh ]; then
+				/usr/libexec/bluetooth/bt-trust-paired.sh || true
 			elif [ -n "$addr" ]; then
 				printf '%s\n' "trust $addr" >&3 || true
 			fi

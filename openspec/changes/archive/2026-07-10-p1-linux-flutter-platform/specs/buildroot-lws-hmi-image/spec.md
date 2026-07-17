@@ -40,7 +40,7 @@ The lws_hmi defconfig MUST NOT include Weston, Chromium, camera, benchmark, test
 
 ### Requirement: Platform stack packages are present
 
-The P1 rootfs SHALL include Rockchip Mali GPU, libdrm/libgbm, flutter-pi (prebuilt install), RKNPU2 runtime (`librknnrt.so`, `rknn_server`) without RKNPU2 example binaries, wpa_supplicant and BlueZ/rkwifibt userland (installed but boot-deferred), powermanager, and Chinese font support. RKNPU2 binaries SHALL be staged via `make fetch-rknn-rt` into `lws-hmi-fs-overlay` (this SDK has no `BR2_PACKAGE_RKNPU2` Buildroot package).
+The P1 rootfs SHALL include Rockchip Mali GPU, libdrm/libgbm, flutter-pi (prebuilt install), RKNPU2 runtime (`librknnrt.so`, `rknn_server`) without RKNPU2 example binaries, wpa_supplicant and BlueZ/rkwifibt userland (installed but boot-deferred), powermanager, and Chinese font support. RKNPU2 binaries SHALL be staged via `make fetch-rknn-rt` into `rootfs-overlay` (this SDK has no `BR2_PACKAGE_RKNPU2` Buildroot package).
 
 #### Scenario: flutter-pi binary on target
 
@@ -73,7 +73,7 @@ Buildroot overlay packages for flutter-pi and flutter-engine SHALL copy from `pr
 
 ### Requirement: Rootfs overlay and LCD display params are applied
 
-Buildroot SHALL mount `lws-hmi-fs-overlay` via `BR2_ROOTFS_OVERLAY` and install ynh960 LCD/MIPI parameter files under `/system/etc/` per existing lws-hmi display hooks.
+Buildroot SHALL mount `rootfs-overlay` via `BR2_ROOTFS_OVERLAY` and install ynh960 LCD/MIPI parameter files under `/system/etc/` per existing lws-hmi display hooks.
 
 #### Scenario: LCD params on target
 

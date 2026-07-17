@@ -70,5 +70,5 @@ Starting USB ECM debug SHALL NOT stop `hmi.service` automatically. **`make push-
 
 #### Scenario: boot-verify on clean image
 
-- **WHEN** `/usr/lib/lws-hmi/boot-verify.sh` runs after flash
+- **WHEN** `/usr/libexec/hmi/boot-verify.sh` runs after flash
 - **THEN** it reports PASS for USB debug not being in `multi-user.target.wants`

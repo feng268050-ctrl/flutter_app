@@ -2,7 +2,7 @@
 
 lws-hmi P1 delivers a **single OTG USB port** on ynh960 used for **RockUSB** flashing in bootloader (MaskROM/Loader) and **no USB enumeration** during normal Linux runtime — `adbd` is explicitly disabled (`lws_hmi_base.config`). App deployment today follows **rootfs overlay** (`make build-app` → `build-rootfs` → `flash`) or ad-hoc serial access. The product plan (`docs/flutter-pi-hmi-plan.md` §6.2, §7.7) maps Android **adb** to **on-demand sshd** over the network; engineering discussion concluded that for **make-driven iteration**, **USB ECM + ssh/scp** is preferable to MSC/MTP or serial scripts, with **plug-to-enable** behavior (like adb) rather than a hidden screen tap before each session.
 
-An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + FunctionFS** but is **not** in default `ynh960_defconfig` and has **no userspace wiring**. Host flash tooling (`scripts/flash-usb.sh`) already standardizes **`SERIAL=`** selection for multi-device RockUSB and adb.
+An optional kernel fragment `ynh960-usb-gadget.config` already enables **ECM + FunctionFS** but is **not** in default `ynh960_defconfig` and has **no userspace wiring**. Host flash tooling (`scripts/flash-usb.sh`) already standardizes **`SERIAL=`** selection for multi-device RockUSB and adb.
 
 **Constraints:**
 
@@ -46,7 +46,7 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 
 ### 2. Lifecycle: VBUS-triggered start/stop (plug-to-debug)
 
-**Choice:** **udev** rule on OTG **VBUS attach** starts `lws-hmi-usb-plug-ssh.service`; **detach** stops it. Unit has **`After=hmi.service`** only (no **`Wants=hmi.service`**) to avoid systemd deadlock with performance/plug-ssh ordering.
+**Choice:** **udev** rule on OTG **VBUS attach** starts `ssh-debug-usb.service`; **detach** stops it. Unit has **`After=hmi.service`** only (no **`Wants=hmi.service`**) to avoid systemd deadlock with performance/plug-ssh ordering.
 
 **Rationale:** Matches adb USB debugging UX; **unplug closes attack surface** automatically; no forgotten debug session after a §7.7-style toggle.
 
@@ -95,11 +95,11 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 
 ### 8. Linux Loader entry: USB-SSH + `reboot-rockusb-loader`
 
-**Choice:** When **`make reboot-loader`** runs and no RockUSB device is already connected, prefer **Linux USB-SSH** if a USB-SSH row exists in **`make devices`**: schedule **`/usr/lib/lws-hmi/reboot-rockusb-loader`** over SSH (with **`BindInterface`** when `SERIAL=` is set), then **`wait_for_rockusb`**. If **adb** is available and no USB-SSH target is selected, fall back to **`adb reboot loader`**. **`make reboot`** uses sysrq reboot (Linux) or **`adb reboot`** (Android) without entering Loader.
+**Choice:** When **`make reboot-loader`** runs and no RockUSB device is already connected, prefer **Linux USB-SSH** if a USB-SSH row exists in **`make devices`**: schedule **`/usr/libexec/hmi/reboot-rockusb-loader`** over SSH (with **`BindInterface`** when `SERIAL=` is set), then **`wait_for_rockusb`**. If **adb** is available and no USB-SSH target is selected, fall back to **`adb reboot loader`**. **`make reboot`** uses sysrq reboot (Linux) or **`adb reboot`** (Android) without entering Loader.
 
 **Rationale:** P1 Linux image has no adbd; **`reboot-rockusb-loader`** (committed separately) uses kernel **`RESTART2`** with mode **`loader`** to enter RockUSB Loader — the same end state as **`adb reboot loader`**, enabling **`make flash`** without UART. Reuses USB ECM link from plug-ssh so UI developers need not run serial commands.
 
-**Prerequisites:** Board image includes **`/usr/lib/lws-hmi/reboot-rockusb-loader`** (built during **`make build-rootfs`**); USB plug-ssh active (cable connected) for the SSH path.
+**Prerequisites:** Board image includes **`/usr/libexec/hmi/reboot-rockusb-loader`** (built during **`make build-rootfs`**); USB plug-ssh active (cable connected) for the SSH path.
 
 **Alternatives considered:**
 
@@ -108,7 +108,7 @@ An optional kernel fragment `lws-hmi-debug-usb.config` already enables **ECM + F
 
 ### 9. Kernel: enable ECM in default ynh960 defconfig
 
-**Choice:** New fragment **`lws-hmi-usb-gadget.config`** (ECM + configfs + dwc3 gadget) added to **`RK_KERNEL_CFG_FRAGMENTS`**; retire or subsume optional `lws-hmi-debug-usb.config` to avoid duplicate maintenance.
+**Choice:** New fragment **`ynh960-usb-gadget.config`** (ECM + configfs + dwc3 gadget) added to **`RK_KERNEL_CFG_FRAGMENTS`**; retire or subsume optional `ynh960-usb-gadget.config` to avoid duplicate maintenance.
 
 **Rationale:** Feature is part of standard developer image, not a manual fragment toggle.
 

@@ -6,12 +6,12 @@ case "${1:-}" in
 poweroff|halt|reboot)
 	mode="$1"
 	shift
-	exec /usr/lib/lws-hmi/shutdown.sh "$mode" "$@"
+	exec /usr/libexec/hmi/shutdown.sh "$mode" "$@"
 	;;
 esac
 
 if [ ! -x /usr/bin/systemctl.real ]; then
-	echo "lws-hmi-systemctl: missing /usr/bin/systemctl.real" >/dev/console 2>&1
+	echo "systemctl: missing /usr/bin/systemctl.real" >/dev/console 2>&1
 	exit 1
 fi
 

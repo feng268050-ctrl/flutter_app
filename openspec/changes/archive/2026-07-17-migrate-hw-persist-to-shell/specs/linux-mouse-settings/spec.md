@@ -2,17 +2,17 @@
 
 ### Requirement: Mouse settings OS abstraction
 
-The HMI app SHALL provide a reusable **`MouseSettingsController`** abstraction (Linux implementation in P2.1; Android MAY plug later) that gets and sets OS-common mouse preferences: **natural scrolling**, **scroll speed**, **pointer speed**, and **primary button** (left vs right / left-handed). On Linux, set operations MUST go through `apply-mouse-settings` / `apply-mouse-settings.sh`, which persists under `/var/lib/lws-hmi/mouse.conf` and is applied through the Linux input / flutter-pi path — not by re-decoding HID events in Dart and not by Dart being the sole writer of `mouse.conf`. Controls whose backend is unavailable on the device MUST NOT silently claim success (disable or report unsupported).
+The HMI app SHALL provide a reusable **`MouseSettingsController`** abstraction (Linux implementation in P2.1; Android MAY plug later) that gets and sets OS-common mouse preferences: **natural scrolling**, **scroll speed**, **pointer speed**, and **primary button** (left vs right / left-handed). On Linux, set operations MUST go through `apply-mouse-settings` / `apply-mouse-settings.sh`, which persists under `/var/lib/hmi/mouse.conf` and is applied through the Linux input / flutter-pi path — not by re-decoding HID events in Dart and not by Dart being the sole writer of `mouse.conf`. Controls whose backend is unavailable on the device MUST NOT silently claim success (disable or report unsupported).
 
 #### Scenario: Read defaults when no pref file
 
-- **WHEN** no mouse preference file exists under `/var/lib/lws-hmi/`
+- **WHEN** no mouse preference file exists under `/var/lib/hmi/`
 - **THEN** `getSettings` returns documented defaults (natural scroll off; mid scroll/pointer speed; primary button left)
 
 #### Scenario: Persist and apply natural scroll
 
 - **WHEN** the controller sets natural scrolling on
-- **THEN** `apply-mouse-settings` updates `/var/lib/lws-hmi/mouse.conf` and subsequent mouse wheel vertical motion is inverted at the platform input layer relative to natural scroll off
+- **THEN** `apply-mouse-settings` updates `/var/lib/hmi/mouse.conf` and subsequent mouse wheel vertical motion is inverted at the platform input layer relative to natural scroll off
 
 #### Scenario: Persist and apply scroll speed
 

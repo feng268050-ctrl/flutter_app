@@ -20,7 +20,7 @@ The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL shi
 
 ### Requirement: hmi.service auto-starts flutter-pi after local-fs only
 
-The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/usr/bin/flutter-pi --release -o landscape_left /opt/hmi` with `Nice=-5`, restart on failure, and MUST depend only on `local-fs.target` and `lws-hmi-performance.service` — not on `network-online.target`, `mediamtx.service`, or `systemd-udev-settle.service`.
+The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/usr/bin/flutter-pi --release -o landscape_left /opt/hmi` with `Nice=-5`, restart on failure, and MUST depend only on `local-fs.target` and `cpu-performance.service` — not on `network-online.target`, `mediamtx.service`, or `systemd-udev-settle.service`.
 
 #### Scenario: hmi enabled at image build
 
@@ -39,7 +39,7 @@ The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/us
 
 ### Requirement: Boot-supporting services enabled at image build
 
-Post-build hook SHALL enable `hmi.service`, `mainserver.service` (Innohi display daemon), `lws-hmi-performance.service` (CPU/DMC/GPU governors), and `lws-hmi-pwrkey-poweroff.service` in `multi-user.target.wants`. `param-update.service` SHALL be enabled in `sysinit.target.wants` for early display init.
+Post-build hook SHALL enable `hmi.service`, `mainserver.service` (Innohi display daemon), `cpu-performance.service` (CPU/DMC/GPU governors), and `pwrkey-poweroff.service` in `multi-user.target.wants`. `param-update.service` SHALL be enabled in `sysinit.target.wants` for early display init.
 
 #### Scenario: mainserver enabled
 
@@ -49,11 +49,11 @@ Post-build hook SHALL enable `hmi.service`, `mainserver.service` (Innohi display
 #### Scenario: performance service runs before hmi
 
 - **WHEN** device boots
-- **THEN** `lws-hmi-performance.service` completes (`RemainAfterExit=yes`) before `hmi.service` starts
+- **THEN** `cpu-performance.service` completes (`RemainAfterExit=yes`) before `hmi.service` starts
 
 ### Requirement: Non-critical services disabled at image build
 
-Post-build hook SHALL disable `mediamtx.service`, `sshd.service`, `sshd.socket`, `bluetooth.service`, `wifibt-init.service`, `wpa_supplicant.service`, `network.service`, and `log-guardian.service` from all `*.wants` directories. `systemd-network-generator.service` SHALL be masked. `08-lws-hmi-systemd-finalize.sh` SHALL undo SDK post-hook re-enables (e.g. `log-guardian`).
+Post-build hook SHALL disable `mediamtx.service`, `sshd.service`, `sshd.socket`, `bluetooth.service`, `wifibt-init.service`, `wpa_supplicant.service`, `network.service`, and `log-guardian.service` from all `*.wants` directories. `systemd-network-generator.service` SHALL be masked. `08-systemd-finalize.sh` SHALL undo SDK post-hook re-enables (e.g. `log-guardian`).
 
 #### Scenario: mediamtx not auto-started
 
@@ -77,7 +77,7 @@ journald configuration overlay SHALL set volatile storage so logs are not persis
 #### Scenario: journald volatile config present
 
 - **WHEN** P1 rootfs is inspected
-- **THEN** `journald.conf.d/00-lws-hmi-volatile.conf` exists with Storage=volatile
+- **THEN** `journald.conf.d/00-volatile-storage.conf` exists with Storage=volatile
 
 ### Requirement: eMMC noatime via fstab
 
@@ -90,17 +90,17 @@ Post-build hook SHALL patch `/etc/fstab` to add `noatime` mount options on ext4 
 
 ### Requirement: Stable board poweroff without Mali DRM oops
 
-The image SHALL provide `lws-hmi-pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdown.sh`, and a `/usr/bin/systemctl` wrapper. The pwrkey handler SHALL request poweroff after the `KEY_POWER` release event. Rockchip `input-event-daemon.service` SHALL be disabled because its short-press release handler requests suspend and races the poweroff flow. Until repeated flutter-pi teardown is proven stable, poweroff, halt, and reboot SHALL avoid stopping `hmi.service`, sync storage, and use SysRq `s/u/o` or `s/u/b`.
+The image SHALL provide `pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdown.sh`, and a `/usr/bin/systemctl` wrapper. The pwrkey handler SHALL request poweroff after the `KEY_POWER` release event. Rockchip `input-event-daemon.service` SHALL be disabled because its short-press release handler requests suspend and races the poweroff flow. Until repeated flutter-pi teardown is proven stable, poweroff, halt, and reboot SHALL avoid stopping `hmi.service`, sync storage, and use SysRq `s/u/o` or `s/u/b`.
 
 #### Scenario: pwrkey service active
 
 - **WHEN** P1 device boots with gpio-keys power input present
-- **THEN** `lws-hmi-pwrkey-poweroff.service` is active
+- **THEN** `pwrkey-poweroff.service` is active
 
 #### Scenario: systemctl wrapper installed
 
 - **WHEN** P1 rootfs is inspected
-- **THEN** `/usr/bin/systemctl` symlinks to `/usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh` and `/usr/bin/systemctl.real` exists
+- **THEN** `/usr/bin/systemctl` symlinks to `/usr/libexec/hmi/systemctl-poweroff-wrapper.sh` and `/usr/bin/systemctl.real` exists
 
 #### Scenario: Poweroff avoids HMI teardown
 
@@ -147,7 +147,7 @@ The image SHALL ship `verify-boot` in the device command path; it validates Plan
 
 ### Requirement: Device operator commands use verb-first names
 
-The image SHALL expose `verify-boot`, `verify-env`, and `diagnose-hmi` through `/usr/bin`, while keeping their implementation scripts under `/usr/lib/lws-hmi`.
+The image SHALL expose `verify-boot`, `verify-env`, and `diagnose-hmi` through `/usr/bin`, while keeping their implementation scripts under `/usr/libexec/hmi/`.
 
 #### Scenario: Operator invokes verification without implementation paths
 
@@ -184,12 +184,12 @@ Plan A SHALL continue to leave `network.service` and `dhcpcd.service` out of `mu
 
 ### Requirement: Settings restore unit at multi-user
 
-`lws-hmi-settings-restore.service` SHALL be enabled in `multi-user.target.wants`. On-demand Wi‑Fi/eth0 units (`lws-hmi-wpa`, `lws-hmi-wlan0-dhcp`, `lws-hmi-eth0`) MUST remain disabled at boot via preset and MUST NOT appear in `multi-user.target.wants` except as started by restore or Demo.
+`settings-restore.service` SHALL be enabled in `multi-user.target.wants`. On-demand Wi‑Fi/eth0 units (`wlan-wpa.service`, `wlan-dhcp.service`, `eth0-network.service`) MUST remain disabled at boot via preset and MUST NOT appear in `multi-user.target.wants` except as started by restore or Demo.
 
 #### Scenario: Preset disables on-demand radio units
 
 - **WHEN** the image is built
-- **THEN** preset disables `lws-hmi-wpa.service`, `lws-hmi-wlan0-dhcp.service`, and `lws-hmi-eth0.service`
+- **THEN** preset disables `wlan-wpa.service`, `wlan-dhcp.service`, and `eth0-network.service`
 
 ### Requirement: HMI does not own settings cgroup
 

@@ -15,7 +15,7 @@ if [ "$percent" -gt 100 ]; then
 	percent=100
 fi
 
-PREF_DIR=/var/lib/lws-hmi
+PREF_DIR=/var/lib/bluetooth
 mkdir -p "$PREF_DIR"
 echo "$percent" >"$PREF_DIR/bt-a2dp-volume"
 

@@ -14,7 +14,7 @@ esac
 shift
 
 log() {
-	msg="lws-hmi-shutdown: $*"
+	msg="shutdown: $*"
 	echo "$msg"
 	echo "$msg" >/dev/console 2>/dev/null || true
 }
@@ -35,7 +35,7 @@ if [ ! -x /usr/bin/systemctl.real ]; then
 fi
 
 log "skipping hmi.service teardown; using SysRq $mode"
-/usr/lib/lws-hmi/pre-poweroff.sh
+/usr/libexec/hmi/pre-poweroff.sh
 
 log "sysrq sync"
 sysrq s || true

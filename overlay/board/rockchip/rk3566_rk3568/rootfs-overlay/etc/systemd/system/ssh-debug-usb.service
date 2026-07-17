@@ -7,7 +7,7 @@ Conflicts=shutdown.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/lib/lws-hmi/usb-plug-ssh-start.sh
-ExecStop=/usr/lib/lws-hmi/usb-plug-ssh-stop.sh
+ExecStart=/usr/libexec/hmi/usb-plug-ssh-start.sh
+ExecStop=/usr/libexec/hmi/usb-plug-ssh-stop.sh
 TimeoutStartSec=15
 TimeoutStopSec=10

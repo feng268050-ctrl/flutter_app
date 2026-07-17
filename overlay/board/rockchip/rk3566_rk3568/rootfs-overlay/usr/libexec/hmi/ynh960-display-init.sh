@@ -95,9 +95,9 @@ mount_named_part private1 /mnt/private1
 mount_named_part private /mnt/private
 mount_named_part oem /oem
 mount_named_part userdata /userdata
-# Persist prefs across rootfs flash (P2.3): /var/lib/lws-hmi → /userdata/lws-hmi
-if [ -x /usr/lib/lws-hmi/bind-prefs.sh ]; then
-	/usr/lib/lws-hmi/bind-prefs.sh || log "prefs-bind soft-fail"
+# Persist prefs across rootfs flash (P2.3): /var/lib/* → /userdata/{wpa_supplicant,network,bluetooth,hmi}
+if [ -x /usr/libexec/hmi/bind-prefs.sh ]; then
+	/usr/libexec/hmi/bind-prefs.sh || log "prefs-bind soft-fail"
 fi
 seed_private1_params
 run_mountall

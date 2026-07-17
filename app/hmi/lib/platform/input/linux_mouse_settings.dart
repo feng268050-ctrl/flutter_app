@@ -8,7 +8,7 @@ import 'package:lws_hmi/platform/percent.dart';
 /// Linux: persist via `apply-mouse-settings` (flutter-pi reloads on mtime).
 class LinuxMouseSettingsController implements MouseSettingsController {
   LinuxMouseSettingsController({
-    this.preferencePath = '/var/lib/lws-hmi/mouse.conf',
+    this.preferencePath = '/var/lib/hmi/mouse.conf',
     this.applyMouseSettingsCommand = const <String>['apply-mouse-settings'],
     this.runHelperWithStdin = defaultBoardHelperRunnerWithStdin,
   });

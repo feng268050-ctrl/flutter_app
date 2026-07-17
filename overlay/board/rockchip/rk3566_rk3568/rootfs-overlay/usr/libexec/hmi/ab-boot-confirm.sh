@@ -3,14 +3,14 @@
 # Fresh factory boot (try_boot=0) exits 0 immediately.
 set -eu
 
-LIB=/usr/lib/lws-hmi/ab-slot-lib.sh
+LIB=/usr/libexec/hmi/ab-slot-lib.sh
 # shellcheck disable=SC1090
 . "$LIB"
 
 HMI_WAIT_SEC="${LWS_HMI_AB_HMI_WAIT_SEC:-120}"
-LOG=/var/lib/lws-hmi/ab-boot-confirm.log
+LOG=/var/lib/hmi/ab-boot-confirm.log
 
-mkdir -p /var/lib/lws-hmi
+mkdir -p /var/lib/hmi
 # Keep journal useful; also append a file when writable.
 touch "$LOG" 2>/dev/null || LOG=/dev/null
 exec >>"$LOG" 2>&1

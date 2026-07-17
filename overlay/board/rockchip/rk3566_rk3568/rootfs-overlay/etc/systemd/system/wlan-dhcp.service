@@ -1,18 +1,18 @@
 [Unit]
 Description=LWS HMI on-demand wlan0 DHCP
-Documentation=file:///usr/lib/lws-hmi/wlan0-dhcp.sh
+Documentation=file:///usr/libexec/wpa/wlan0-dhcp.sh
 # Not linked from multi-user.target.wants — started only via wlan0-dhcp.sh / Demo.
 DefaultDependencies=no
-After=local-fs.target lws-hmi-wpa.service
+After=local-fs.target wlan-wpa.service
 
 [Service]
-# Keep dhcpcd outside hmi.service cgroup (same as lws-hmi-wpa.service).
+# Keep dhcpcd outside hmi.service cgroup (same as wlan-wpa.service).
 # KillMode=none: leftover dhcpcd after ExecStart must not be reaped with the oneshot.
 Type=oneshot
 RemainAfterExit=yes
 KillMode=none
 Environment=LWS_DHCP_IN_UNIT=1
-ExecStart=/usr/lib/lws-hmi/wlan0-dhcp.sh start
-ExecStop=/usr/lib/lws-hmi/wlan0-dhcp.sh stop
+ExecStart=/usr/libexec/wpa/wlan0-dhcp.sh start
+ExecStop=/usr/libexec/wpa/wlan0-dhcp.sh stop
 
 # No [Install] — must not auto-start at boot.

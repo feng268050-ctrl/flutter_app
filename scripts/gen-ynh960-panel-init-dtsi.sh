@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="$ROOT/board/lcd_mipi_param.txt"
-OUT="$ROOT/overlay/kernel/rockchip/lws-hmi-ynh960-panel-init.dtsi"
+OUT="$ROOT/overlay/kernel/rockchip/ynh960-panel-init.dtsi"
 
 python3 - "$SRC" "$OUT" <<'PY'
 import re

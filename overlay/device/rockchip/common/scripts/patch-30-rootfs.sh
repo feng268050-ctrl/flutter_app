@@ -4,4 +4,4 @@ set -euo pipefail
 
 target="$1"
 ROOT_PATCH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec bash "$ROOT_PATCH/lws-hmi-patch-innohi-mainserver.sh" "$target"
+exec bash "$ROOT_PATCH/patch-innohi-mainserver.sh" "$target"

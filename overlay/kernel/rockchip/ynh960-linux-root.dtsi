@@ -1,4 +1,4 @@
-// lws-hmi: rootfs on Buildroot GPT (parameter-buildroot-fit.txt) — P2.4 A/B.
+// ynh960: rootfs on Buildroot GPT (parameter-buildroot-fit.txt) — P2.4 A/B.
 // Prefer PARTLABEL over raw mmcblk0pN (partition indices shift with dual boot/rootfs).
 // Factory / letter A default. Letter B FITs must use root=PARTLABEL=rootfs_b (apply patches).
 // See docs/ab-slot-misc.md and docs/storage-layout.md.

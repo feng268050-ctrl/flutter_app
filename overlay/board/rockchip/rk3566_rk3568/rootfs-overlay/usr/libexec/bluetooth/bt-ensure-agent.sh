@@ -6,9 +6,9 @@
 # removes the marker and callers may invoke this again.
 set -eu
 
-AGENT="/usr/lib/lws-hmi/bt-pair-agent.sh"
-PIDFILE="/run/lws-hmi-bt-agent.pid"
-HMI_AGENT_MARKER="${LWS_BT_HMI_AGENT_MARKER:-/run/lws-hmi/bt-hmi-agent}"
+AGENT="/usr/libexec/bluetooth/bt-pair-agent.sh"
+PIDFILE="/run/bt-agent.pid"
+HMI_AGENT_MARKER="${LWS_BT_HMI_AGENT_MARKER:-/run/bt-hmi-agent}"
 
 if [ -f "$HMI_AGENT_MARKER" ]; then
 	echo "bt-ensure-agent: HMI owns Agent1 ($HMI_AGENT_MARKER) — skip shell agent" >&2
@@ -29,8 +29,8 @@ if [ ! -x "$AGENT" ]; then
 fi
 
 # Kill stale fifo/agent shells from older implementations.
-pkill -f '/usr/lib/lws-hmi/bt-pair-agent.sh' 2>/dev/null || true
-rm -f /run/lws-hmi-btctl.fifo
+pkill -f '/usr/libexec/bluetooth/bt-pair-agent.sh' 2>/dev/null || true
+rm -f /run/btctl.fifo
 
 "$AGENT" >/tmp/lws-bt-agent.log 2>&1 &
 # Give it a moment to write the pidfile (bluetoothctl pid).

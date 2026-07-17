@@ -1,6 +1,6 @@
-// lws-hmi: ynh960 MIPI panel — rk3566-evb2 disables dsi0/route_dsi0; re-enable here
+// ynh960: MIPI panel — rk3566-evb2 disables dsi0/route_dsi0; re-enable here
 // (included last from customer_board_ynh960.dtsi).
-#include "lws-hmi-ynh960-panel-init.dtsi"
+#include "ynh960-panel-init.dtsi"
 
 &dsi0 {
 	status = "okay";

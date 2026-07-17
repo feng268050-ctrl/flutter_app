@@ -1,4 +1,4 @@
-// lws-hmi ynh960: product touch IC is Goodix GT9xx on i2c1 @0x5d.
+// ynh960: product touch IC is Goodix GT9xx on i2c1 @0x5d.
 // Focaltech @0x38 NACKs on hardware (dmesg: i2c_transfer ret=-6, then
 // "not focal IC, unregister driver"). Sitronix has no driver in this tree.
 // IRQ/RST GPIOs are shared (GPIO0_PB5 / GPIO0_PB6) — only one node may be okay.

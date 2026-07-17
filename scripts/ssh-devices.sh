@@ -139,7 +139,7 @@ fetch_serial_via_ssh() {
 		[[ -n "$opt" ]] && ssh_opts+=("$opt")
 	done < <(remote_ssh_opts)
 	sshpass -p "$pass" ssh "${ssh_opts[@]}" "$user@$addr" \
-		'/usr/lib/lws-hmi/read-device-serial.sh' 2>/dev/null || true
+		'/usr/libexec/hmi/read-device-serial.sh' 2>/dev/null || true
 }
 
 list_ssh_devices() {

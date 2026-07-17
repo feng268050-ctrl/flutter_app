@@ -7,13 +7,13 @@ fail() { echo "  [FAIL] $*"; }
 info() { echo "  [INFO] $*"; }
 
 echo "=== 1. USB Debug preference ==="
-if [ -x /usr/lib/lws-hmi/usb-otg-mode.sh ]; then
-	info "$(/usr/lib/lws-hmi/usb-otg-mode.sh status 2>&1 || true)"
+if [ -x /usr/libexec/hmi/usb-otg-mode.sh ]; then
+	info "$(/usr/libexec/hmi/usb-otg-mode.sh status 2>&1 || true)"
 else
 	fail "usb-otg-mode.sh missing"
 fi
-if [ -r /var/lib/lws-hmi/usb-debug ]; then
-	info "pref file: $(tr -d '\n' </var/lib/lws-hmi/usb-debug)"
+if [ -r /var/lib/hmi/usb-debug ]; then
+	info "pref file: $(tr -d '\n' </var/lib/hmi/usb-debug)"
 else
 	info "pref file missing (default USB Debug ON)"
 fi
@@ -61,10 +61,10 @@ if ip -br link show usb0 >/dev/null 2>&1; then
 else
 	info "usb0 missing"
 fi
-if systemctl is-active --quiet lws-hmi-usb-plug-ssh.service 2>/dev/null; then
-	pass "lws-hmi-usb-plug-ssh.service active"
+if systemctl is-active --quiet ssh-debug-usb.service 2>/dev/null; then
+	pass "ssh-debug-usb.service active"
 else
-	info "lws-hmi-usb-plug-ssh.service inactive"
+	info "ssh-debug-usb.service inactive"
 fi
 
 echo ""

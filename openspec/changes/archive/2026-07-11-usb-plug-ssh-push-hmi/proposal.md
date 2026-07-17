@@ -33,8 +33,8 @@ _(none — no archived specs under `openspec/specs/` yet; P1 change specs remain
 
 ## Impact
 
-- **Kernel**: `overlay/kernel/rockchip/lws-hmi-usb-gadget.config` (or extend debug fragment) added to `board/ynh960_defconfig` `RK_KERNEL_CFG_FRAGMENTS`; ECM + configfs mass_storage **not** required.
-- **Rootfs overlay**: `usr/lib/lws-hmi/usb-plug-ssh-*.sh`, udev rules or systemd units, optional `sshd_config.d` snippet for `ListenAddress usb0`.
+- **Kernel**: `overlay/kernel/rockchip/ynh960-usb-gadget.config` (or extend debug fragment) added to `board/ynh960_defconfig` `RK_KERNEL_CFG_FRAGMENTS`; ECM + configfs mass_storage **not** required.
+- **Rootfs overlay**: `usr/libexec/hmi/usb-plug-ssh-*.sh`, udev rules or systemd units, optional `sshd_config.d` snippet for `ListenAddress usb0`.
 - **Buildroot**: `openssh` already present; ensure `BR2_PACKAGE_OPENSSH_SERVER` and runtime dirs; **no** `BR2_PACKAGE_ANDROID_ADBD`.
 - **Host**: `scripts/push-app.sh`, `scripts/usb-ssh-common.sh`, `scripts/usb-ssh-devices.sh`, Makefile targets; extend `scripts/flash-usb.sh` **`reboot`** / **`reboot-loader`** for Linux USB-SSH path; README / AGENTS.md rebuild table row for overlay-only vs app-only.
 - **Boot KPI**: Must not add `After=` / `Wants=` USB debug into `hmi.service` critical chain; verify via `boot-verify.sh` extensions.

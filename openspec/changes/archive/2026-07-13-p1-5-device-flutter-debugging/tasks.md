@@ -16,7 +16,7 @@
 ## 3. Implement Persistent Debug Deployment Lifecycle
 
 - [x] 3.1 Add rootfs-overlay helpers and directories to stage and validate the debug app/runtime before stopping `hmi.service`.
-- [x] 3.2 Implement versioned debug engine/ICU caching under `/var/lib/lws-hmi/debug-runtime/` without overwriting release engine or ICU paths.
+- [x] 3.2 Implement versioned debug engine/ICU caching under `/var/lib/hmi/debug-runtime/` without overwriting release engine or ICU paths.
 - [x] 3.3 Implement atomic `/opt/hmi` replacement and a validated runtime-mode manifest for both debug and release payloads, without retaining an automatic backup of the previous app.
 - [x] 3.4 Add a mode-aware `hmi.service` launcher that selects release engine plus `--release` for release payloads and the matching cached debug engine for debug payloads.
 - [x] 3.5 Make IDE detach/stop close debugging and forwarding without terminating debug flutter-pi; make the next `debug-app` or `push-app` stop and replace the currently installed app.

@@ -47,7 +47,7 @@ Alternative considered: extend `scripts/build-app.sh` with a mode flag and make 
 
 ### 3. Provision the same-version debug runtime on demand
 
-The production rootfs continues to use `/usr/lib/libflutter_engine.so` as the release-runtime binary. A matching ARM64 debug-runtime binary built from the same Flutter version/source, plus ICU data, will be obtained through the existing pinned prebuilt/cache workflow and uploaded to a versioned directory under `/var/lib/lws-hmi/debug-runtime/`. The host compares a version/hash manifest and skips the runtime upload when the target already has the exact runtime.
+The production rootfs continues to use `/usr/lib/libflutter_engine.so` as the release-runtime binary. A matching ARM64 debug-runtime binary built from the same Flutter version/source, plus ICU data, will be obtained through the existing pinned prebuilt/cache workflow and uploaded to a versioned directory under `/var/lib/hmi/debug-runtime/`. The host compares a version/hash manifest and skips the runtime upload when the target already has the exact runtime.
 
 The debug launch adapter sets an isolated engine/library/data path for flutter-pi; it must never overwrite the release engine. If no matching local debug runtime can be obtained, `make debug-app` fails before stopping `hmi.service` and prints the exact dependency command.
 

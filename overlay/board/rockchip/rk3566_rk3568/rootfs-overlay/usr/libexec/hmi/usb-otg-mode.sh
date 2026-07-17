@@ -4,12 +4,12 @@
 #   debug (USB Debug ON)  → otg_mode=peripheral; VBUS starts plug-ssh
 #   host  (USB Debug OFF) → otg_mode=host; stop plug-ssh (keyboard on Micro-USB)
 #
-# Preference: /var/lib/lws-hmi/usb-debug  ("1"/"0"). Missing file = default ON.
+# Preference: /var/lib/hmi/usb-debug  ("1"/"0"). Missing file = default ON.
 set -eu
 
 PHY_OTG_MODE=/sys/devices/platform/fe8a0000.usb2-phy/otg_mode
-PREF=/var/lib/lws-hmi/usb-debug
-LOCK_DIR=/run/lws-hmi-usb-otg-mode.lock
+PREF=/var/lib/hmi/usb-debug
+LOCK_DIR=/run/usb-otg-mode.lock
 
 usage() {
 	echo "usage: $0 {debug|host|status|apply|help}" >&2
@@ -41,12 +41,12 @@ otg_set_mode() {
 
 go_debug() {
 	otg_set_mode peripheral
-	/usr/lib/lws-hmi/usb-plug-ssh-vbus-check.sh >/dev/null 2>&1 || true
+	/usr/libexec/hmi/usb-plug-ssh-vbus-check.sh >/dev/null 2>&1 || true
 }
 
 go_host() {
 	otg_set_mode host
-	systemctl stop lws-hmi-usb-plug-ssh.service 2>/dev/null || true
+	systemctl stop ssh-debug-usb.service 2>/dev/null || true
 }
 
 cmd_status() {
@@ -57,7 +57,7 @@ cmd_status() {
 		pref=off
 	fi
 	mode="$(tr -d ' \n' <"$PHY_OTG_MODE" 2>/dev/null || echo unknown)"
-	act="$(systemctl is-active lws-hmi-usb-plug-ssh.service 2>/dev/null || echo inactive)"
+	act="$(systemctl is-active ssh-debug-usb.service 2>/dev/null || echo inactive)"
 	echo "usb-debug=$pref otg_mode=$mode plug-ssh=$act"
 	[ "$pref" = on ]
 }

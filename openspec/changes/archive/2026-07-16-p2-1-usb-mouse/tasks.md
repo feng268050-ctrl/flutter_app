@@ -12,7 +12,7 @@
 
 ## 3. Mouse settings apply path (flutter-pi + prefs)
 
-- [x] 3.1 Define `/var/lib/lws-hmi/` mouse preference file format (document keys/defaults for natural scroll, scroll speed, pointer speed, primary button)
+- [x] 3.1 Define `/var/lib/hmi/` mouse preference file format (document keys/defaults for natural scroll, scroll speed, pointer speed, primary button)
 - [x] 3.2 Patch flutter-pi to read prefs at start and on pointer device-add; apply libinput natural scroll / accel / left-handed when available; replace hardcoded wheel scale with scroll-speed multiplier from prefs
 - [x] 3.3 Prefer live re-apply (e.g. SIGHUP or file re-read) so Demo can change settings without full process restart; fall back to documented restart only if required
 - [x] 3.4 Rebuild flutter-pi prebuilt and bake into rootfs path used by the image

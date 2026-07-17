@@ -16,7 +16,7 @@ if [[ ! -d "$BOARD_DIR" && -d "$(dirname "$0")/../../../../../../../lws-hmi/boar
 fi
 
 if [[ ! -f "$BOARD_DIR/960_lcd_param_rk356x.txt" ]]; then
-	echo "lws-hmi-display: skip (missing $BOARD_DIR/960_lcd_param_rk356x.txt)"
+	echo "post-display: skip (missing $BOARD_DIR/960_lcd_param_rk356x.txt)"
 	exit 0
 fi
 
@@ -33,4 +33,4 @@ if [[ -f "$BOARD_DIR/lcd_mipi_param.txt" ]]; then
 		"$DEST/lcd_mipi_param.txt"
 fi
 
-echo "lws-hmi-display: installed LCD/MIPI params under $DEST"
+echo "post-display: installed LCD/MIPI params under $DEST"

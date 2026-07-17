@@ -18,8 +18,8 @@ import 'package:lws_hmi/platform/percent.dart';
 /// - Persist + HW mixer apply go through `change-volume`.
 class LinuxMediaAudioController implements MediaAudioController {
   LinuxMediaAudioController({
-    this.cacheDir = '/var/lib/lws-hmi/audio',
-    this.volumePreferencePath = '/var/lib/lws-hmi/media-volume',
+    this.cacheDir = '/var/lib/hmi/audio',
+    this.volumePreferencePath = '/var/lib/hmi/media-volume',
     this.changeVolumeCommand = const <String>['change-volume'],
     this.playerBinary = 'mpg123',
     this.amixerBinary = 'amixer',
@@ -470,7 +470,7 @@ class LinuxMediaAudioController implements MediaAudioController {
   Future<void> _applyA2dpVolume(int percent) async {
     try {
       final r = await Process.run(
-        '/usr/lib/lws-hmi/bt-a2dp-volume.sh',
+        '/usr/libexec/bluetooth/bt-a2dp-volume.sh',
         <String>['$percent'],
       );
       if (r.exitCode != 0) {

@@ -1,6 +1,6 @@
 ## Context
 
-P2.1 Demo proves Wi‑Fi / eth0 / HTTP, but board RTC often boots in the past (see archive notes and `linux_http_client_controller.dart` `_ensureWallClockForTls`). Overlay already ships `/usr/lib/lws-hmi/wlan0-time-sync.sh` (`rdate` → HTTP `Date` → `hwclock -w -u`). Plan **P2.2** asks for Demo date/time with a reusable **`DateTimeController`**; the user also requires **manual set** and **network auto sync** in this phase—without waiting for P5 chrony / product Settings.
+P2.1 Demo proves Wi‑Fi / eth0 / HTTP, but board RTC often boots in the past (see archive notes and `linux_http_client_controller.dart` `_ensureWallClockForTls`). Overlay already ships `/usr/libexec/wpa/wlan0-time-sync.sh` (`rdate` → HTTP `Date` → `hwclock -w -u`). Plan **P2.2** asks for Demo date/time with a reusable **`DateTimeController`**; the user also requires **manual set** and **network auto sync** in this phase—without waiting for P5 chrony / product Settings.
 
 Constraints:
 
@@ -15,7 +15,7 @@ Constraints:
 - One Dart `DateTimeController` for wall clock, timezone, sync mode (**manual** | **network**), and network sync + RTC write.
 - Demo section: show clock, edit date/time (manual), timezone, mode toggle, Sync Now.
 - Network mode uses (and owns) the existing helper/`rdate`/HTTP Date ladder; HTTP HTTPS preflight calls the same API.
-- Persist sync mode + timezone under `/var/lib/lws-hmi/` across HMI restarts.
+- Persist sync mode + timezone under `/var/lib/hmi/` across HMI restarts.
 
 **Non-Goals:**
 
@@ -48,8 +48,8 @@ Demo and HTTP inject the abstract type; Linux impl constructed in `P2DemoPage` /
 
 Persist:
 
-- `/var/lib/lws-hmi/time-sync-mode` — single line `manual` \| `network` (default **`network`** so first-boot TLS is healed when wlan/eth has connectivity).
-- `/var/lib/lws-hmi/timezone` — IANA name when settable (e.g. `Asia/Shanghai`); if `timedatectl` / `/etc/localtime` unavailable, document fallback (fixed offset file or `TZ` file).
+- `/var/lib/hmi/time-sync-mode` — single line `manual` \| `network` (default **`network`** so first-boot TLS is healed when wlan/eth has connectivity).
+- `/var/lib/hmi/timezone` — IANA name when settable (e.g. `Asia/Shanghai`); if `timedatectl` / `/etc/localtime` unavailable, document fallback (fixed offset file or `TZ` file).
 
 **Why:** Matches user “手动 + 联网自动”; default network fixes TLS without forcing Demo intervention.
 
@@ -58,7 +58,7 @@ Persist:
 Order (same as `wlan0-time-sync.sh` / HTTP controller):
 
 1. If clock already “sane” (UTC year in 2025–2030 window, same as helper) → no-op success.
-2. Run `/usr/lib/lws-hmi/wlan0-time-sync.sh` if present (preferred single shell entry).
+2. Run `/usr/libexec/wpa/wlan0-time-sync.sh` if present (preferred single shell entry).
 3. Else Dart/Process: `rdate -s` known hosts → parse HTTP `Date` via `wget`/`date -s` → `hwclock -w -u`.
 
 Refactor `LinuxHttpClientController._ensureWallClockForTls` to:

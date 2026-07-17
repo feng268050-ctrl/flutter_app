@@ -7,14 +7,14 @@
 
 ## 2. Kernel / Device Tree / Kconfig
 
-- [x] 2.1 `dr_mode=otg` in `lws-hmi-ynh960-usb-gadget.dtsi`
+- [x] 2.1 `dr_mode=otg` in `ynh960-usb-gadget.dtsi`
 - [x] 2.2 DWC3 dual-role Kconfig retained
 - [x] 2.3 Expansion host overlay kept; no extra ID DT required for manual mode
 - [x] 2.4 Kernel/image rebuilt and flashed; PHYs OK
 
 ## 3. Plug-ssh + mode helper
 
-- [x] 3.1 `usb-otg-mode.sh` + `/var/lib/lws-hmi/usb-debug` (default on)
+- [x] 3.1 `usb-otg-mode.sh` + `/var/lib/hmi/usb-debug` (default on)
 - [x] 3.2 VBUS gate only when Debug over USB on; diag reports pref / mode
 - [x] 3.3 Smoke: Debug over USB ON → USB-SSH (`make devices`) — PASS
 - [x] 3.4 Smoke: Debug over USB OFF → `otg_mode=host`, plug-ssh stopped — PASS

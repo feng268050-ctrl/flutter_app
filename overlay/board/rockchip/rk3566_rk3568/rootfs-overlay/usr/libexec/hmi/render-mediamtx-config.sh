@@ -12,14 +12,14 @@ if [ -f "$OUT" ]; then
   exit 0
 fi
 
-if [ -f /usr/share/lws-hmi/mediamtx.yaml.default ]; then
-  cp /usr/share/lws-hmi/mediamtx.yaml.default "$OUT"
+if [ -f /usr/share/hmi/mediamtx.yaml.default ]; then
+  cp /usr/share/hmi/mediamtx.yaml.default "$OUT"
   exit 0
 fi
 
 # Minimal relay skeleton — replace via render from model.properties in P5.1.
 cat >"$OUT" <<'EOF'
-# lws-hmi default MediaMTX config (stub). Override via /oem/etc/model.properties.
+# Default MediaMTX config (stub). Override via /oem/etc/model.properties.
 paths: {}
 EOF
 

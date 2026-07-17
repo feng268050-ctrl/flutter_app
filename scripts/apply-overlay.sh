@@ -24,9 +24,9 @@ BR_PKG_FLUTTER_SDK="$SDK/buildroot/package/flutter-sdk-bin"
 BR_PKG_FLUTTER_PI="$SDK/buildroot/package/flutter-pi"
 BR_PKG_LIBSERIALPORT="$SDK/buildroot/package/libserialport"
 BR_PKG_SOURCE_HAN_SANS_CN="$SDK/buildroot/package/source-han-sans/source-han-sans-cn"
-BR_OVERLAY_ROOT="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
+BR_OVERLAY_ROOT="$SDK/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay"
 BR_OVERLAY="$BR_OVERLAY_ROOT/system/etc"
-OVERLAY_FS="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
+OVERLAY_FS="$OVERLAY/board/rockchip/rk3566_rk3568/rootfs-overlay"
 
 install_file() {
   local src="$1"
@@ -75,7 +75,28 @@ restore_br_package_patches() {
   fi
 }
 
+purge_legacy_fs_overlay() {
+  local legacy="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
+  if [[ -d "$legacy" ]]; then
+    rm -rf "$legacy"
+    echo "overlay: removed legacy $legacy (superseded by rootfs-overlay/)"
+  fi
+  local cfg
+  for cfg in \
+    "$BR_CONFIG" \
+    "$BR_CHIPS_DIR/rk3566_rk3568_lws.config" \
+    "$OVERLAY/buildroot/rk3566_rk3568_lws.config"; do
+    [[ -f "$cfg" ]] || continue
+    if grep -q 'lws-hmi-fs-overlay' "$cfg" 2>/dev/null; then
+      sed -i.bak '/lws-hmi-fs-overlay/d' "$cfg"
+      rm -f "$cfg.bak"
+      echo "overlay: purged lws-hmi-fs-overlay from ${cfg#$ROOT/}"
+    fi
+  done
+}
+
 sync_fs_overlay() {
+  purge_legacy_fs_overlay
   if [[ ! -d "$OVERLAY_FS" ]]; then
     echo "WARNING: $OVERLAY_FS missing; skip fs-overlay sync" >&2
     return 0
@@ -97,18 +118,43 @@ sync_fs_overlay() {
       echo "overlay: synced $BR_OVERLAY_ROOT/$sub"
     fi
   done
-  # Single-image policy: ensure retired artifacts are gone even before next full rootfs rebuild.
+  local purge_src="$OVERLAY/board/rockchip/rk3566_rk3568/purge-retired-rootfs-artifacts.sh"
+  if [[ -f "$purge_src" ]]; then
+    sh "$purge_src" "$BR_OVERLAY_ROOT"
+    echo "overlay: purged retired rootfs artifacts under $BR_OVERLAY_ROOT"
+  fi
+  # Single-image policy: ensure retired debug/kpi artifacts are gone.
   rm -f \
-    "$BR_OVERLAY_ROOT/etc/systemd/system/lws-hmi-debug-boot.service" \
-    "$BR_OVERLAY_ROOT/etc/systemd/system/lws-hmi-boot-kpi.service" \
-    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/debug-boot.sh" \
-    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/boot-kpi-watch.sh" \
-    "$BR_OVERLAY_ROOT/usr/lib/lws-hmi/configure-camera-eth0.sh"
+    "$BR_OVERLAY_ROOT/usr/libexec/hmi/debug-boot.sh" \
+    "$BR_OVERLAY_ROOT/usr/libexec/hmi/boot-kpi-watch.sh" \
+    "$BR_OVERLAY_ROOT/usr/libexec/hmi/configure-camera-eth0.sh"
+}
+
+sync_purge_retired_script() {
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/purge-retired-rootfs-artifacts.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/purge-retired-rootfs-artifacts.sh"
+  if [[ ! -f "$src" ]]; then
+    echo "WARNING: $src missing; skip purge script sync" >&2
+    return 0
+  fi
+  install -m 0755 "$src" "$dest"
+  echo "overlay: $dest"
+}
+
+sync_install_systemctl_wrapper_script() {
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh"
+  if [[ ! -f "$src" ]]; then
+    echo "WARNING: $src missing; skip install-systemctl-wrapper sync" >&2
+    return 0
+  fi
+  install -m 0755 "$src" "$dest"
+  echo "overlay: $dest"
 }
 
 sync_post_build_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-post-build.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-post-build.sh"
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/post-build.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/post-build.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip post-build script" >&2
     return 0
@@ -118,8 +164,8 @@ sync_post_build_script() {
 }
 
 sync_post_fakeroot_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-post-fakeroot.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-post-fakeroot.sh"
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/post-fakeroot.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/post-fakeroot.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip post-fakeroot script" >&2
     return 0
@@ -129,8 +175,8 @@ sync_post_fakeroot_script() {
 }
 
 sync_strip_fstab_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-strip-fstab.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-strip-fstab.sh"
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/strip-fstab.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/strip-fstab.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip strip-fstab script" >&2
     return 0
@@ -140,8 +186,8 @@ sync_strip_fstab_script() {
 }
 
 sync_flutter_engine_script() {
-  local src="$OVERLAY/board/rockchip/rk3566_rk3568/lws-hmi-sync-flutter-engine.sh"
-  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-sync-flutter-engine.sh"
+  local src="$OVERLAY/board/rockchip/rk3566_rk3568/sync-flutter-engine.sh"
+  local dest="$SDK/buildroot/board/rockchip/rk3566_rk3568/sync-flutter-engine.sh"
   if [[ ! -f "$src" ]]; then
     echo "WARNING: $src missing; skip flutter engine sync script" >&2
     return 0
@@ -153,11 +199,11 @@ sync_flutter_engine_script() {
 sync_kernel_display_dts() {
   local kernel_dts="$SDK/kernel/arch/arm64/boot/dts/rockchip"
   local customer_dtsi="$kernel_dts/customer_board_ynh960.dtsi"
-  local lws_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-display.dtsi"
-  local panel_init_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-panel-init.dtsi"
+  local display_dtsi="$OVERLAY/kernel/rockchip/ynh960-display.dtsi"
+  local panel_init_dtsi="$OVERLAY/kernel/rockchip/ynh960-panel-init.dtsi"
   local gen_script="$ROOT/scripts/gen-ynh960-panel-init-dtsi.sh"
-  local lws_root="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi"
-  local patch_script="$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-ynh960-dts.sh"
+  local linux_root_dtsi="$OVERLAY/kernel/rockchip/ynh960-linux-root.dtsi"
+  local patch_script="$OVERLAY/device/rockchip/common/scripts/patch-ynh960-dts.sh"
 
   if [[ ! -d "$kernel_dts" ]]; then
     kernel_dts="$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip"
@@ -167,10 +213,21 @@ sync_kernel_display_dts() {
     echo "WARNING: $customer_dtsi missing; skip ynh960 display DTS patch" >&2
     return 0
   fi
-  if [[ ! -f "$lws_dtsi" || ! -f "$lws_root" || ! -f "$patch_script" ]]; then
-    echo "WARNING: lws-hmi ynh960 DTS overlay missing; skip" >&2
+  if [[ ! -f "$display_dtsi" || ! -f "$linux_root_dtsi" || ! -f "$patch_script" ]]; then
+    echo "WARNING: ynh960 DTS overlay missing; skip" >&2
     return 0
   fi
+  rm -f \
+    "$kernel_dts/lws-hmi-ynh960-display.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-panel-init.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-usb-gadget.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-usb-host.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-evb-trim.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-touch.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-own-gpio.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-uart5-gmac.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-uart7-pwm.dtsi"
   [[ -x "$gen_script" ]] || chmod +x "$gen_script"
   bash "$gen_script"
   if [[ ! -f "$customer_dtsi.orig" ]]; then
@@ -178,16 +235,16 @@ sync_kernel_display_dts() {
   fi
   cp -a "$customer_dtsi.orig" "$customer_dtsi"
   bash "$patch_script" "$customer_dtsi" \
-    "$lws_dtsi" "lws-hmi-ynh960-display.dtsi" \
-    "$panel_init_dtsi" "lws-hmi-ynh960-panel-init.dtsi" \
-    "$lws_root" "lws-hmi-ynh960-linux-root.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-usb-gadget.dtsi" "lws-hmi-ynh960-usb-gadget.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-usb-host.dtsi" "lws-hmi-ynh960-usb-host.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi" "lws-hmi-ynh960-evb-trim.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.dtsi" "lws-hmi-ynh960-touch.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi" "lws-hmi-ynh960-own-gpio.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi" "lws-hmi-ynh960-uart5-gmac.dtsi" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-uart7-pwm.dtsi" "lws-hmi-ynh960-uart7-pwm.dtsi"
+    "$display_dtsi" "ynh960-display.dtsi" \
+    "$panel_init_dtsi" "ynh960-panel-init.dtsi" \
+    "$linux_root_dtsi" "ynh960-linux-root.dtsi" \
+    "$OVERLAY/kernel/rockchip/ynh960-usb-gadget.dtsi" "ynh960-usb-gadget.dtsi" \
+    "$OVERLAY/kernel/rockchip/ynh960-usb-host.dtsi" "ynh960-usb-host.dtsi" \
+    "$OVERLAY/kernel/rockchip/ynh960-evb-trim.dtsi" "ynh960-evb-trim.dtsi" \
+    "$OVERLAY/kernel/rockchip/ynh960-touch.dtsi" "ynh960-touch.dtsi" \
+    "$OVERLAY/kernel/rockchip/ynh960-own-gpio.dtsi" "ynh960-own-gpio.dtsi" \
+    "$OVERLAY/kernel/rockchip/ynh960-uart5-gmac.dtsi" "ynh960-uart5-gmac.dtsi" \
+    "$OVERLAY/kernel/rockchip/ynh960-uart7-pwm.dtsi" "ynh960-uart7-pwm.dtsi"
 }
 
 sync_kernel_config_fragments() {
@@ -199,7 +256,15 @@ sync_kernel_config_fragments() {
     echo "WARNING: skip kernel config fragments" >&2
     return 0
   fi
-  for cfg in "$OVERLAY/kernel/rockchip"/lws-hmi-*.config; do
+  rm -f \
+    "$configs_dir/lws-hmi-ynh960-display.config" \
+    "$configs_dir/lws-hmi-ynh960-touch.config" \
+    "$configs_dir/lws-hmi-ynh960-wifibt.config" \
+    "$configs_dir/lws-hmi-kernel-trim.config" \
+    "$configs_dir/lws-hmi-usb-gadget.config" \
+    "$configs_dir/lws-hmi-bt-hid.config" \
+    "$configs_dir/lws-hmi-debug-usb.config"
+  for cfg in "$OVERLAY/kernel/rockchip"/ynh960-*.config; do
     [[ -f "$cfg" ]] || continue
     install_file "$cfg" "$configs_dir/$(basename "$cfg")"
   done
@@ -533,7 +598,7 @@ patch_mk_rootfs() {
     return 0
   fi
   backup_sdk_script "$target"
-  bash "$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-mk-rootfs.sh" \
+  bash "$OVERLAY/device/rockchip/common/scripts/patch-mk-rootfs.sh" \
     "$(sdk_realpath "$target")"
   echo "overlay: patched $(basename "$(sdk_realpath "$target")") (CROOT / defconfig / lws_hmi Innohi skip)"
 }
@@ -552,7 +617,7 @@ patch_30_rootfs() {
     return 0
   fi
   backup_sdk_script "$target"
-  bash "$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-30-rootfs.sh" \
+  bash "$OVERLAY/device/rockchip/common/scripts/patch-30-rootfs.sh" \
     "$hook_real"
   echo "overlay: patched 30-rootfs.sh (lws_hmi Innohi MainServer skip)"
 }
@@ -567,21 +632,22 @@ patch_post_wifibt() {
     cp -a "$target" "$target.orig"
   fi
   cp -a "$target.orig" "$target"
-  bash "$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-post-wifibt.sh" \
+  bash "$OVERLAY/device/rockchip/common/scripts/patch-post-wifibt.sh" \
     "$target"
   echo "overlay: patched $target (CROOT + innohi firmware fallback)"
 }
 
 patch_buildroot_config() {
-  if grep -q 'lws-hmi-fs-overlay' "$BR_CONFIG" 2>/dev/null; then
+  purge_legacy_fs_overlay
+  if grep -q 'rootfs-overlay' "$BR_CONFIG" 2>/dev/null; then
     return 0
   fi
   if [[ ! -f "$BR_CONFIG.orig" ]]; then
     cp -a "$BR_CONFIG" "$BR_CONFIG.orig"
   fi
-  echo 'BR2_ROOTFS_OVERLAY+="board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/"' \
+  echo 'BR2_ROOTFS_OVERLAY+="board/rockchip/rk3566_rk3568/rootfs-overlay/"' \
     >> "$BR_CONFIG"
-  echo "overlay: appended lws-hmi BR2_ROOTFS_OVERLAY to $BR_CONFIG"
+  echo "overlay: appended rootfs-overlay BR2_ROOTFS_OVERLAY to $BR_CONFIG"
 }
 
 restore_check_sdk=0
@@ -634,12 +700,12 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
     echo "restored upstream $BR_CONFIG"
   fi
   if [[ "$restore_all" == "1" ]]; then
-    rm -f "$POST_HOOKS_DIR/05-lws-hmi-display.sh"
-    rm -f "$POST_HOOKS_DIR/06-lws-hmi-systemd.sh"
-    rm -f "$POST_HOOKS_DIR/07-lws-hmi-innohi-display-bin.sh"
-    rm -f "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
-    rm -f "$POST_HOOKS_DIR/09-lws-hmi-wifibt-innohi.sh"
-    rm -rf "$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay"
+    rm -f "$POST_HOOKS_DIR/05-display.sh"
+    rm -f "$POST_HOOKS_DIR/06-systemd.sh"
+    rm -f "$POST_HOOKS_DIR/07-innohi-display-bin.sh"
+    rm -f "$POST_HOOKS_DIR/08-systemd-finalize.sh"
+    rm -f "$POST_HOOKS_DIR/09-wifibt-innohi.sh"
+    rm -rf "$SDK/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay"
     for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
       rm -f "$BR_CHIPS_DIR/$f"
     done
@@ -677,16 +743,27 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
           "$kernel_dts/customer_board_ynh960.dtsi"
         echo "restored upstream customer_board_ynh960.dtsi"
       fi
-      rm -f "$kernel_dts/lws-hmi-ynh960-display.dtsi"
-      rm -f "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi"
-      rm -f "$kernel_dts/lws-hmi-ynh960-usb-gadget.dtsi"
-      rm -f "$kernel_dts/lws-hmi-ynh960-usb-host.dtsi"
-      rm -f "$kernel_dts/lws-hmi-ynh960-evb-trim.dtsi"
-      rm -f "$kernel_dts/lws-hmi-ynh960-touch.dtsi"
-      rm -f "$kernel_dts/lws-hmi-ynh960-own-gpio.dtsi"
-      rm -f "$kernel_dts/lws-hmi-ynh960-uart5-gmac.dtsi"
-      rm -f "$kernel_dts/lws-hmi-ynh960-uart7-pwm.dtsi"
-      rm -f "$kernel_dts/lws-hmi-ynh960-panel-init.dtsi"
+      rm -f \
+        "$kernel_dts/lws-hmi-ynh960-display.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-usb-gadget.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-usb-host.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-evb-trim.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-touch.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-own-gpio.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-uart5-gmac.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-uart7-pwm.dtsi" \
+        "$kernel_dts/lws-hmi-ynh960-panel-init.dtsi" \
+        "$kernel_dts/ynh960-display.dtsi" \
+        "$kernel_dts/ynh960-linux-root.dtsi" \
+        "$kernel_dts/ynh960-usb-gadget.dtsi" \
+        "$kernel_dts/ynh960-usb-host.dtsi" \
+        "$kernel_dts/ynh960-evb-trim.dtsi" \
+        "$kernel_dts/ynh960-touch.dtsi" \
+        "$kernel_dts/ynh960-own-gpio.dtsi" \
+        "$kernel_dts/ynh960-uart5-gmac.dtsi" \
+        "$kernel_dts/ynh960-uart7-pwm.dtsi" \
+        "$kernel_dts/ynh960-panel-init.dtsi"
     done
     restore_kernel_patches
     echo "removed lws-hmi buildroot overlay + post-hooks + chip configs"
@@ -735,31 +812,33 @@ install_file "$OVERLAY/device/rockchip/common/scripts/check-loader.sh" \
   "$SCRIPTS_DIR/check-loader.sh"
 chmod +x "$SCRIPTS_DIR/check-loader.sh"
 
-install_file "$OVERLAY/device/rockchip/common/post-hooks/05-lws-hmi-display.sh" \
-  "$POST_HOOKS_DIR/05-lws-hmi-display.sh"
-chmod +x "$POST_HOOKS_DIR/05-lws-hmi-display.sh"
+install_file "$OVERLAY/device/rockchip/common/post-hooks/05-display.sh" \
+  "$POST_HOOKS_DIR/05-display.sh"
+chmod +x "$POST_HOOKS_DIR/05-display.sh"
 
-install_file "$OVERLAY/device/rockchip/common/post-hooks/06-lws-hmi-systemd.sh" \
-  "$POST_HOOKS_DIR/06-lws-hmi-systemd.sh"
-chmod +x "$POST_HOOKS_DIR/06-lws-hmi-systemd.sh"
+install_file "$OVERLAY/device/rockchip/common/post-hooks/06-systemd.sh" \
+  "$POST_HOOKS_DIR/06-systemd.sh"
+chmod +x "$POST_HOOKS_DIR/06-systemd.sh"
 
-install_file "$OVERLAY/device/rockchip/common/post-hooks/07-lws-hmi-innohi-display-bin.sh" \
-  "$POST_HOOKS_DIR/07-lws-hmi-innohi-display-bin.sh"
-chmod +x "$POST_HOOKS_DIR/07-lws-hmi-innohi-display-bin.sh"
+install_file "$OVERLAY/device/rockchip/common/post-hooks/07-innohi-display-bin.sh" \
+  "$POST_HOOKS_DIR/07-innohi-display-bin.sh"
+chmod +x "$POST_HOOKS_DIR/07-innohi-display-bin.sh"
 
-install_file "$OVERLAY/device/rockchip/common/post-hooks/08-lws-hmi-systemd-finalize.sh" \
-  "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
-chmod +x "$POST_HOOKS_DIR/08-lws-hmi-systemd-finalize.sh"
+install_file "$OVERLAY/device/rockchip/common/post-hooks/08-systemd-finalize.sh" \
+  "$POST_HOOKS_DIR/08-systemd-finalize.sh"
+chmod +x "$POST_HOOKS_DIR/08-systemd-finalize.sh"
 
-install_file "$OVERLAY/device/rockchip/common/post-hooks/09-lws-hmi-wifibt-innohi.sh" \
-  "$POST_HOOKS_DIR/09-lws-hmi-wifibt-innohi.sh"
-chmod +x "$POST_HOOKS_DIR/09-lws-hmi-wifibt-innohi.sh"
+install_file "$OVERLAY/device/rockchip/common/post-hooks/09-wifibt-innohi.sh" \
+  "$POST_HOOKS_DIR/09-wifibt-innohi.sh"
+chmod +x "$POST_HOOKS_DIR/09-wifibt-innohi.sh"
 
-install_file "$OVERLAY/device/rockchip/common/post-hooks/31-lws-hmi-strip-fstab.sh" \
-  "$POST_HOOKS_DIR/31-lws-hmi-strip-fstab.sh"
-chmod +x "$POST_HOOKS_DIR/31-lws-hmi-strip-fstab.sh"
+install_file "$OVERLAY/device/rockchip/common/post-hooks/31-strip-fstab.sh" \
+  "$POST_HOOKS_DIR/31-strip-fstab.sh"
+chmod +x "$POST_HOOKS_DIR/31-strip-fstab.sh"
 
 sync_fs_overlay
+sync_purge_retired_script
+sync_install_systemctl_wrapper_script
 sync_post_build_script
 sync_post_fakeroot_script
 sync_strip_fstab_script

@@ -117,7 +117,7 @@ usb_ssh_session_wait_for_target() {
 
 usb_ssh_session_control_path() {
 	local key="$1"
-	local dir="/tmp/lws-hmi-ssh-${UID:-$(id -u)}"
+	local dir="/tmp/hmi-ssh-${UID:-$(id -u)}"
 	mkdir -p "$dir"
 	chmod 0700 "$dir"
 	key="${key//[^A-Za-z0-9._-]/_}"

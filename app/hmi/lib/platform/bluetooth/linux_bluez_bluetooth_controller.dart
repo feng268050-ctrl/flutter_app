@@ -13,16 +13,16 @@ import 'package:lws_hmi/platform/lws_trace.dart';
 /// BlueZ via D-Bus (`bluez` package) + stack/A2DP shell helpers.
 class LinuxBluezBluetoothController implements BluetoothController {
   LinuxBluezBluetoothController({
-    this.stackUp = const ['/usr/lib/lws-hmi/bt-stack-up.sh'],
-    this.stackDown = const ['/usr/lib/lws-hmi/bt-stack-down.sh'],
-    this.a2dpUp = const ['/usr/lib/lws-hmi/bt-a2dp-sink-up.sh'],
-    this.a2dpDown = const ['/usr/lib/lws-hmi/bt-a2dp-sink-down.sh'],
-    this.stopAgent = const ['/usr/lib/lws-hmi/bt-stop-agent.sh'],
-    this.ensureAgent = const ['/usr/lib/lws-hmi/bt-ensure-agent.sh'],
-    this.setAlias = const ['/usr/lib/lws-hmi/bt-set-alias.sh'],
-    this.a2dpPrefPath = '/var/lib/lws-hmi/bt-a2dp-sink',
-    this.btWantedPath = '/var/lib/lws-hmi/bt-wanted',
-    this.hmiAgentMarkerPath = '/run/lws-hmi/bt-hmi-agent',
+    this.stackUp = const ['/usr/libexec/bluetooth/bt-stack-up.sh'],
+    this.stackDown = const ['/usr/libexec/bluetooth/bt-stack-down.sh'],
+    this.a2dpUp = const ['/usr/libexec/bluetooth/bt-a2dp-sink-up.sh'],
+    this.a2dpDown = const ['/usr/libexec/bluetooth/bt-a2dp-sink-down.sh'],
+    this.stopAgent = const ['/usr/libexec/bluetooth/bt-stop-agent.sh'],
+    this.ensureAgent = const ['/usr/libexec/bluetooth/bt-ensure-agent.sh'],
+    this.setAlias = const ['/usr/libexec/bluetooth/bt-set-alias.sh'],
+    this.a2dpPrefPath = '/var/lib/bluetooth/bt-a2dp-sink',
+    this.btWantedPath = '/var/lib/bluetooth/bt-wanted',
+    this.hmiAgentMarkerPath = '/run/bt-hmi-agent',
     BlueZClient? client,
   }) : _ownedClient = client == null,
        _client = client ?? BlueZClient() {

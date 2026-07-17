@@ -63,9 +63,9 @@ class HttpProbeResult {
   }
 }
 
-/// Persist `/var/lib/lws-hmi/http-proxy` (password stored; never logged).
+/// Persist `/var/lib/hmi/http-proxy` (password stored; never logged).
 class HttpProxyStore {
-  static const defaultPath = '/var/lib/lws-hmi/http-proxy';
+  static const defaultPath = '/var/lib/hmi/http-proxy';
 
   static HttpProxyConfig parse(String text) {
     final map = <String, String>{};

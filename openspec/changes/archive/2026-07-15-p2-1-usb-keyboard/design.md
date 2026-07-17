@@ -6,7 +6,7 @@ ynh960 P2.1 has closed speaker, backlight, rotation, Wi‑Fi, BT, RJ45 eth0, tou
 
 | Path | Hardware | Role in P2.1 |
 |------|----------|----------------|
-| **On-board** | **Micro-USB OTG** only populated receptacle | **plug-ssh** gadget (`g_ether` / peripheral via `lws-hmi-ynh960-usb-gadget.dtsi`) |
+| **On-board** | **Micro-USB OTG** only populated receptacle | **plug-ssh** gadget (`g_ether` / peripheral via `ynh960-usb-gadget.dtsi`) |
 | **Expansion** | **1 mm pin-header** → external adapter / cabling for additional USB | **USB host** for HID keyboard (and any other host peripherals) |
 
 Keyboard smoke therefore uses the **1 mm pin → USB host** path, **not** the Micro-USB OTG jack. OTG and host can run concurrently in principle (different controllers / PHYs once host path is enabled).
@@ -54,7 +54,7 @@ Spike outcomes that drive DTS work:
 
 ### D3 — Kernel / image: HID + host controller for the expansion path
 
-**Choice:** Audit and, if needed, add a fragment (e.g. `lws-hmi-usb-hid.config`) for `CONFIG_USB_HID`, `CONFIG_HID`, `CONFIG_HID_GENERIC`, and enable the correct **usbhost** / PHY nodes for the 1 mm host expansion. Adjust `lws-hmi-ynh960-usb-gadget.dtsi` (or a sibling overlay) so Micro-USB OTG stays peripheral **without** leaving expansion host disabled.
+**Choice:** Audit and, if needed, add a fragment (e.g. `ynh960-kernel-trim.config` or sibling `ynh960-*.config`) for `CONFIG_USB_HID`, `CONFIG_HID`, `CONFIG_HID_GENERIC`, and enable the correct **usbhost** / PHY nodes for the 1 mm host expansion. Adjust `ynh960-usb-gadget.dtsi` (or a sibling overlay) so Micro-USB OTG stays peripheral **without** leaving expansion host disabled.
 
 ### D4 — Demo UI: Keyboard smoke section on P2 home
 

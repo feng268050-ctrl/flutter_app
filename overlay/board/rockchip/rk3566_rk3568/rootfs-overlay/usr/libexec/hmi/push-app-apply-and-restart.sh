@@ -1,21 +1,21 @@
 #!/bin/sh
 # Apply make push-app staging payload while HMI runs, then restart it.
 # Host invokes this via setsid/nohup so the SSH channel need not survive hmi
-# stop (Wi-Fi lives in lws-hmi-wpa / lws-hmi-wlan0-dhcp, not the hmi cgroup).
+# stop (Wi-Fi lives in wlan-wpa / wlan-dhcp, not the hmi cgroup).
 set -eu
 
-STAGE=/var/lib/lws-hmi/push-app-staging
+STAGE=/var/lib/hmi/push-app-staging
 LIB="$STAGE/lib/libapp.so"
 ASSETS="$STAGE/data/flutter_assets"
 NEXT_LIB=/opt/hmi/lib/.libapp.so.push-next
 ASSETS_DIR=/opt/hmi/data/flutter_assets
 NEXT_ASSETS=/opt/hmi/data/.flutter_assets.push-next
 OLD_ASSETS=/opt/hmi/data/.flutter_assets.push-old
-STATUS=/var/lib/lws-hmi/push-app-apply.status
+STATUS=/var/lib/hmi/push-app-apply.status
 MAX_START_ATTEMPTS=3
 
 log() {
-	echo "lws-hmi-push-app: $*"
+	echo "push-app: $*"
 }
 
 set_status() {
@@ -29,14 +29,14 @@ fail() {
 	exit 1
 }
 
-mkdir -p /var/lib/lws-hmi
+mkdir -p /var/lib/hmi
 set_status running
 
 [ -f "$LIB" ] || fail "missing $LIB"
 [ -d "$ASSETS" ] || fail "missing $ASSETS"
 
 log "installing libapp.so and flutter_assets before restart"
-rm -f /var/lib/lws-hmi/debug-app.pid /var/lib/lws-hmi/debug-app.vm-service
+rm -f /var/lib/hmi/debug-app.pid /var/lib/hmi/debug-app.vm-service
 mkdir -p /opt/hmi/lib /opt/hmi/data/flutter_assets
 rm -rf "$NEXT_LIB" "$NEXT_ASSETS" "$OLD_ASSETS"
 install -D -m 0644 "$LIB" "$NEXT_LIB"
@@ -54,12 +54,12 @@ if ! mv "$NEXT_ASSETS" "$ASSETS_DIR"; then
 fi
 rm -rf "$OLD_ASSETS"
 
-ENGINE_VER="$(cat /etc/lws-hmi/flutter-engine.version 2>/dev/null || echo 3.24.4)"
+ENGINE_VER="$(cat /etc/hmi/flutter-engine.version 2>/dev/null || echo 3.24.4)"
 printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >/opt/hmi/runtime-mode.json
 sync
 
 log "stopping hmi.service for restart"
-/usr/lib/lws-hmi/hmi-stop-and-wait.sh
+/usr/libexec/hmi/hmi-stop-and-wait.sh
 
 attempt=1
 while [ "$attempt" -le "$MAX_START_ATTEMPTS" ]; do

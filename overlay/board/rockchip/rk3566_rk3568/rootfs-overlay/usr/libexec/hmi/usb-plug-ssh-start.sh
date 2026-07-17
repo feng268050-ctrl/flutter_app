@@ -2,7 +2,7 @@
 # VBUS-triggered g_ether + usb0 @ 192.168.55.1/24 + sshd on usb0 only.
 set -eu
 
-SSHD_PID=/run/lws-hmi-usb-plug-sshd.pid
+SSHD_PID=/run/usb-plug-sshd.pid
 USB_ADDR=192.168.55.1/24
 
 log() {
@@ -101,7 +101,7 @@ start_sshd() {
 		return 0
 	fi
 	# Always bind usb0-only — LAN debug listens on eth0/wlan0 IPs separately.
-	/usr/lib/lws-hmi/ensure-sshd-hostkeys.sh
+	/usr/libexec/hmi/ensure-sshd-hostkeys.sh
 	mkdir -p /run/sshd
 	chmod 0755 /run/sshd 2>/dev/null || true
 	/usr/sbin/sshd \
@@ -112,7 +112,7 @@ start_sshd() {
 		-o "PidFile=$SSHD_PID"
 }
 
-SERIAL="$(/usr/lib/lws-hmi/read-device-serial.sh)"
+SERIAL="$(/usr/libexec/hmi/read-device-serial.sh)"
 load_g_ether "$SERIAL"
 setup_usb0
 start_sshd

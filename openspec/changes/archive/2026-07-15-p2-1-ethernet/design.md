@@ -16,7 +16,7 @@ Constraints (same as Wi‑Fi slice):
 **Goals:**
 
 - Reusable Dart **`EthernetController`** parallel to `WifiController`: admin link up/down, link/carrier status streams, DHCP|static IPv4 on **eth0**.
-- Overlay helpers for eth0 DHCP/static (+ minimal link up if needed); persist preference under `/var/lib/lws-hmi/eth0-ipv4`.
+- Overlay helpers for eth0 DHCP/static (+ minimal link up if needed); persist preference under `/var/lib/network/eth0-ipv4`.
 - Demo section **above Wi‑Fi**: interface toggle, link status (carrier, MAC, speed when known), IPv4 mode + fields, Apply.
 - Preserve Plan A boot: no eth0 DHCP at start; `hmi.service` unchanged.
 
@@ -65,7 +65,7 @@ No scan, connect-to-SSID, or forget — those stay Wi‑Fi-only.
 | `eth0-static.sh <addr> <prefix> [gw] [dns]` | replace addr + optional route/DNS snippet for eth0; stop eth0 DHCP first |
 | optional `eth0-link.sh up\|down` | thin wrapper around `ip link` if controller prefers one entrypoint |
 
-Persist `/var/lib/lws-hmi/eth0-ipv4` with the same key style as `wlan0-ipv4` (`mode=`, `address=`, `prefix=`, `gateway=`, `dns=`). On Demo Apply or App start **after first frame**, Linux controller may re-apply saved config when interface is enabled — MUST be async.
+Persist `/var/lib/network/eth0-ipv4` with the same key style as `wlan0-ipv4` (`mode=`, `address=`, `prefix=`, `gateway=`, `dns=`). On Demo Apply or App start **after first frame**, Linux controller may re-apply saved config when interface is enabled — MUST be async.
 
 **Default mode:** `dhcp` for RJ45 bring-up realism when a DHCP server is available (laptop share / lab switch); static remains first-class for shop floor.
 
@@ -97,7 +97,7 @@ Product IPC mode later uses `configure-camera-eth0.sh` to place eth0 on the came
 | eth0 DHCP fights USB gadget or wlan0 routes | Helpers hard-code `-i eth0` / refuse other ifaces; document default route collisions in Demo error text |
 | ynh960 PHY not link-up | Controller surfaces `noCarrier` / error; DTS fix remains kernel overlay work (`kernel-evb-dts-deferred`) |
 | P5.1 camera script overwrites Demo IPs | Out of scope here; later coordinator owns handoff |
-| dhcpcd concurrent on wlan0 + eth0 | Separate pidfiles (`/run/lws-hmi-dhcpcd-eth0.pid`); document both may run |
+| dhcpcd concurrent on wlan0 + eth0 | Separate pidfiles (`/run/dhcpcd-eth0.pid`); document both may run |
 | Operators expect camera auto-address in Demo | Demo copy says “Ethernet (RJ45)” — not “IPC camera” |
 
 ## Migration Plan

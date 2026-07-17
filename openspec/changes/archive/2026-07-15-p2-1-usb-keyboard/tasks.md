@@ -6,8 +6,8 @@
 
 ## 2. Kernel / image
 
-- [x] 2.1 `lws-hmi-usb-gadget.config`: DWC3 **dual-role** + `CONFIG_USB_HID` / `HID_GENERIC` (was gadget-only)
-- [x] 2.2 `lws-hmi-ynh960-usb-host.dtsi`; slim gadget dtsi; stop `patch_innohi_usbhost_off`; restore PWREN in own-gpio
+- [x] 2.1 `ynh960-usb-gadget.config`: DWC3 **dual-role** + `CONFIG_USB_HID` / `HID_GENERIC` (was gadget-only)
+- [x] 2.2 `ynh960-usb-host.dtsi`; slim gadget dtsi; stop `patch_innohi_usbhost_off`; restore PWREN in own-gpio
 - [x] 2.3 No new rootfs helpers — verify scripts unchanged
 
 ## 3. Demo UI

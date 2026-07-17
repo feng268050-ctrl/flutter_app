@@ -31,15 +31,15 @@ up)
 	;;
 down)
 	if command -v systemctl >/dev/null 2>&1; then
-		systemctl stop lws-hmi-eth0.service 2>/dev/null || true
-		systemctl reset-failed lws-hmi-eth0.service 2>/dev/null || true
+		systemctl stop eth0-network.service 2>/dev/null || true
+		systemctl reset-failed eth0-network.service 2>/dev/null || true
 	fi
-	if [ -x /usr/lib/lws-hmi/eth0-dhcp.sh ]; then
+	if [ -x /usr/libexec/network/eth0-dhcp.sh ]; then
 		LWS_ETH_IFACE="$IFACE" LWS_ETH_IN_UNIT=1 \
-			/usr/lib/lws-hmi/eth0-dhcp.sh stop 2>/dev/null || true
+			/usr/libexec/network/eth0-dhcp.sh stop 2>/dev/null || true
 	fi
 	ip link set "$IFACE" down 2>/dev/null || true
-	rm -f /var/lib/lws-hmi/eth0-wanted
+	rm -f /var/lib/network/eth0-wanted
 	echo "eth0-link: $IFACE down"
 	;;
 *)

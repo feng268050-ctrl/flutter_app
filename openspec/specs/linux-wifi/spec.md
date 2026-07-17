@@ -62,7 +62,7 @@ The Linux Wi-Fi path SHALL support selecting **DHCP** or **static** IPv4 configu
 
 ### Requirement: Wi-Fi credentials persist across HMI restarts
 
-Saved networks SHALL persist in a wpa_supplicant configuration under `/var/lib/lws-hmi/` (or an equivalent documented path) with `update_config` enabled so a later radio enable can reconnect without re-entering the PSK.
+Saved networks SHALL persist in a wpa_supplicant configuration under `/var/lib/hmi/` (or an equivalent documented path) with `update_config` enabled so a later radio enable can reconnect without re-entering the PSK.
 
 #### Scenario: Saved network survives app restart
 
@@ -70,7 +70,7 @@ Saved networks SHALL persist in a wpa_supplicant configuration under `/var/lib/l
 - **THEN** the saved SSID remains present in the persisted configuration
 ### Requirement: Settings daemons outside HMI cgroup
 
-Long-lived Wi‑Fi and wlan0 DHCP processes SHALL run under dedicated systemd units (`lws-hmi-wpa.service`, `lws-hmi-wlan0-dhcp.service`) that are not part of `hmi.service`'s cgroup. Enabling Wi‑Fi from the HMI MUST start those units (or equivalent escaped helpers) and MUST NOT leave `wpa_supplicant` started solely as a child of the HMI process tree.
+Long-lived Wi‑Fi and wlan0 DHCP processes SHALL run under dedicated systemd units (`wlan-wpa.service`, `wlan-dhcp.service`) that are not part of `hmi.service`'s cgroup. Enabling Wi‑Fi from the HMI MUST start those units (or equivalent escaped helpers) and MUST NOT leave `wpa_supplicant` started solely as a child of the HMI process tree.
 
 #### Scenario: HMI restart keeps Wi-Fi
 
@@ -79,14 +79,14 @@ Long-lived Wi‑Fi and wlan0 DHCP processes SHALL run under dedicated systemd un
 
 ### Requirement: Wanted marker for Wi-Fi radio
 
-When Wi‑Fi radio is enabled successfully, the system SHALL create `/var/lib/lws-hmi/wifi-wanted`. When radio is disabled, that file SHALL be removed.
+When Wi‑Fi radio is enabled successfully, the system SHALL create `/var/lib/wpa_supplicant/wifi-wanted`. When radio is disabled, that file SHALL be removed.
 
 #### Scenario: Enable writes wanted
 
 - **WHEN** the operator enables Wi‑Fi radio successfully
-- **THEN** `/var/lib/lws-hmi/wifi-wanted` exists
+- **THEN** `/var/lib/wpa_supplicant/wifi-wanted` exists
 
 #### Scenario: Disable clears wanted
 
 - **WHEN** the operator disables Wi‑Fi radio
-- **THEN** `/var/lib/lws-hmi/wifi-wanted` is absent and the Wi‑Fi stack is torn down
+- **THEN** `/var/lib/wpa_supplicant/wifi-wanted` is absent and the Wi‑Fi stack is torn down

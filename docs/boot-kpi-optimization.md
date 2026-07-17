@@ -68,8 +68,8 @@ verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep �
 
 | ID | 项 | 状态 | 仓库 / 操作 |
 |----|-----|------|-------------|
-| P0-1 | 移除 `lws-hmi-debug-boot`、内核 `ip=` | **done** | 已删 service/script；`lws-hmi-ynh960-linux-root.dtsi` |
-| P0-2 | post-hook 禁用 `sshd`+`sshd.socket`+`mediamtx`+`bluetooth`（扫全部 `*.wants`） | **done** | `06-lws-hmi-systemd.sh` + `lws-hmi-post-fakeroot.sh` |
+| P0-1 | 移除 `lws-hmi-debug-boot`、内核 `ip=` | **done** | 已删 service/script；`ynh960-linux-root.dtsi` |
+| P0-2 | post-hook 禁用 `sshd`+`sshd.socket`+`mediamtx`+`bluetooth`（扫全部 `*.wants`） | **done** | `06-systemd.sh` + `post-fakeroot.sh` |
 | P0-3 | mask `systemd-network-generator` | **done** | post-hook + post-fakeroot |
 | P0-4 | `verify-boot` 命令（`boot-verify.sh` 实现）进 rootfs | **done** | overlay + post-hook |
 | P0-5 | `verify-rootfs-overlay` 正确路径 `output/<profile>/target` | **done** | `scripts/verify-rootfs-overlay.sh` |
@@ -83,11 +83,11 @@ verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep �
 |----|-----|------|------|
 | A-1 | U-Boot `bootdelay=0` | **skip** | 决定不再自编译 U-Boot；沿用 Innohi/SDK 预编译链 |
 | A-2 | 内核 `loglevel=7` → `4` 或 `3` | **done** | `loglevel=4`；板端串口日志已减少 |
-| A-3 | 裁内核无用驱动 | **repo** | `lws-hmi-kernel-trim.config`：裁 CAN/PCIe/NVMe/SATA/UFS、本地 CSI/RKISP/CIF/HDMIRX/DVB/tuner、DP/LVDS/RGB/TVE、heavy debug/test；保留 HDMI/USB/音频/文件系统/BT/Wi‑Fi/eth0/RKNPU/MPP/debugfs；**DTS** `lws-hmi-ynh960-evb-trim.dtsi` 关 EVB 残留节点 — 见 [`docs/kernel-evb-dts-deferred.md`](kernel-evb-dts-deferred.md) |
+| A-3 | 裁内核无用驱动 | **repo** | `ynh960-kernel-trim.config`：裁 CAN/PCIe/NVMe/SATA/UFS、本地 CSI/RKISP/CIF/HDMIRX/DVB/tuner、DP/LVDS/RGB/TVE、heavy debug/test；保留 HDMI/USB/音频/文件系统/BT/Wi‑Fi/eth0/RKNPU/MPP/debugfs；**DTS** `ynh960-evb-trim.dtsi` 关 EVB 残留节点 — 见 [`docs/kernel-evb-dts-deferred.md`](kernel-evb-dts-deferred.md) |
 | A-4 | RKNPU / Wi‑Fi / BT 延迟至首屏后 | **done** | disable `wifibt-init`/`wpa_supplicant`/`network.service`；板端已验证 |
 | A-5 | 确认无 `After=systemd-udev-settle`（尤其 `hmi`） | **done** | `hmi.service` 设计已禁止；板端 `critical-chain` 已验证 |
 | A-6 | eMMC `noatime` / HS200/HS400 | **done** | fstab + display-init；**勿**用 `rootflags=noatime`；HS400 沿用 SDK DTS |
-| A-7 | 默认去掉 `lws-hmi-debug-usb.config` | **done** | `ynh960_defconfig` |
+| A-7 | 默认去掉 `ynh960-usb-gadget.config` | **done** | `ynh960_defconfig` |
 
 ### D0 — Boot splash（P1 必需，与 KPI 分开测）
 
@@ -107,8 +107,8 @@ verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep �
 | B-5 | 仅 enable `hmi` + `mainserver`；disable mediamtx/sshd/bt | **done** | post-hook + post-fakeroot |
 | B-6 | `hmi.service` `Nice=-5` | **done** | 板端已验证；首帧 ~1s 未缩短（见 §5 注） |
 | B-7 | sysinit 仅 `param-update`（显示） | **done** |
-| B-8 | `lws-hmi-performance.service`：CPU + DMC/GPU devfreq `performance` | **done** | governors 已生效；首帧 ~1s 未缩短（见 §5 注） |
-| B-9 | disable `log-guardian.service` @ boot | **done** | 刷机验证通过；`08-lws-hmi-systemd-finalize.sh` 防止 SDK `07-log-guardian.sh` 重新 enable |
+| B-8 | `cpu-performance.service`：CPU + DMC/GPU devfreq `performance` | **done** | governors 已生效；首帧 ~1s 未缩短（见 §5 注） |
+| B-9 | disable `log-guardian.service` @ boot | **done** | 刷机验证通过；`08-systemd-finalize.sh` 防止 SDK `07-log-guardian.sh` 重新 enable |
 | B-10 | `lws-hmi-settings-restore` **`After=hmi`**（非并行）；Nice/idle；Demo 对 `*-wanted` 显示 starting | **repo** | UI 绝对优先；网/BT 在首帧后恢复 |
 
 ### C — flutter-pi / App（通常 −1～3 s）
@@ -175,12 +175,12 @@ P0（done）
 
 | 路径 | 作用 |
 |------|------|
-| `overlay/.../06-lws-hmi-systemd.sh` | enable/disable unit、mask、fstab noatime |
-| `overlay/.../08-lws-hmi-systemd-finalize.sh` | 收尾清理 SDK post-hook 重新 enable 的 unit（如 `log-guardian`）和退役脚本 |
-| `overlay/.../99-lws-hmi.preset` | preset-all 后保持 Plan A disable 列表 |
-| `overlay/.../lws-hmi-performance.service` | 首帧前拉满 CPU/DMC/GPU 频率 |
+| `overlay/.../06-systemd.sh` | enable/disable unit、mask、fstab noatime |
+| `overlay/.../08-systemd-finalize.sh` | 收尾清理 SDK post-hook 重新 enable 的 unit（如 `log-guardian`）和退役脚本 |
+| `overlay/.../99-appliance.preset` | preset-all 后保持 Plan A disable 列表 |
+| `overlay/.../cpu-performance.service` | 首帧前拉满 CPU/DMC/GPU 频率 |
 | `overlay/.../set-performance-mode.sh` | 写 cpufreq + devfreq governor |
-| `overlay/.../lws-hmi-pwrkey-poweroff.service` | 板载 pwrkey 触发关机 |
+| `overlay/.../pwrkey-poweroff.service` | 板载 pwrkey 触发关机 |
 | `overlay/.../pwrkey-poweroff.sh` | 监听 `KEY_POWER` → `shutdown.sh poweroff` |
 | `overlay/.../shutdown.sh` | 跳过 HMI teardown；sync 后使用 SysRq `s/u/o` 或 `s/u/b` |
 | `overlay/.../systemctl-poweroff-wrapper.sh` | 拦截 `systemctl poweroff/halt/reboot` |
@@ -188,11 +188,11 @@ P0（done）
 | `overlay/.../hmi.service` | flutter-pi；`Nice=-5` |
 | `overlay/.../boot-verify.sh` | 板端 Plan A / 启动 KPI 验收 |
 | `overlay/.../env-verify.sh` | 板端 §3.4 平台栈验收（不含 flutter-pi） |
-| `overlay/.../lws-hmi-post-fakeroot.sh` | preset-all 后重链 Plan A wants |
+| `overlay/.../post-fakeroot.sh` | preset-all 后重链 Plan A wants |
 | `scripts/verify-rootfs-overlay.sh` | 构建后 staging 检查 |
-| `overlay/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi` | 内核 cmdline（`root=/dev/mmcblk0p6`、`loglevel=4`） |
-| `overlay/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi` | EVB 节点 disable（FAN53555/SFC；保留 fiq-debugger 串口） |
-| `overlay/kernel/rockchip/lws-hmi-kernel-trim.config` | A-3 内核裁剪 fragment（保留 HDMI/USB/音频/文件系统/蓝牙/debugfs） |
+| `overlay/kernel/rockchip/ynh960-linux-root.dtsi` | 内核 cmdline（`root=/dev/mmcblk0p6`、`loglevel=4`） |
+| `overlay/kernel/rockchip/ynh960-evb-trim.dtsi` | EVB 节点 disable（FAN53555/SFC；保留 fiq-debugger 串口） |
+| `overlay/kernel/rockchip/ynh960-kernel-trim.config` | A-3 内核裁剪 fragment（保留 HDMI/USB/音频/文件系统/蓝牙/debugfs） |
 | `docs/storage-layout.md` | GPT 分区（1GiB rootfs + grow userdata） |
 | `docs/kernel-evb-dts-deferred.md` | 内核 dmesg 残留项追踪（P2/P3+） |
 | `docs/flutter-pi-hmi-plan.md` §3.6 / §14 | 设计详述 |

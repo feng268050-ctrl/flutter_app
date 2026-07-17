@@ -2,13 +2,13 @@
 
 ## Purpose
 
-On-demand LAN/WLAN OpenSSH debug (`lws-hmi-lan-ssh.service`), default off, coexisting with USB plug-ssh.
+On-demand LAN/WLAN OpenSSH debug (`ssh-debug-lan.service`), default off, coexisting with USB plug-ssh.
 
 ## Requirements
 
 ### Requirement: On-demand LAN SSH debug scripts
 
-The image SHALL provide `/usr/lib/lws-hmi/enable-ssh-debug.sh` and `/usr/lib/lws-hmi/disable-ssh-debug.sh` that start and stop **`lws-hmi-lan-ssh.service`** (on-demand LAN/WLAN OpenSSH). The unit MUST NOT be linked in `multi-user.target.wants` and scripts MUST NOT `systemctl enable` it. After a board reboot with no further action, port 22 MUST NOT be listening for LAN/WLAN solely due to a prior enable. LAN sshd MUST run **outside** `hmi.service`'s cgroup so `systemctl stop hmi` during `make push-app` does not terminate the SSH session.
+The image SHALL provide `/usr/libexec/hmi/enable-ssh-debug.sh` and `/usr/libexec/hmi/disable-ssh-debug.sh` that start and stop **`ssh-debug-lan.service`** (on-demand LAN/WLAN OpenSSH). The unit MUST NOT be linked in `multi-user.target.wants` and scripts MUST NOT `systemctl enable` it. After a board reboot with no further action, port 22 MUST NOT be listening for LAN/WLAN solely due to a prior enable. LAN sshd MUST run **outside** `hmi.service`'s cgroup so `systemctl stop hmi` during `make push-app` does not terminate the SSH session.
 
 #### Scenario: Enable then SSH over eth0 or wlan0
 
@@ -18,12 +18,12 @@ The image SHALL provide `/usr/lib/lws-hmi/enable-ssh-debug.sh` and `/usr/lib/lws
 #### Scenario: Disable stops LAN listener
 
 - **WHEN** LAN SSH debug was enabled and the operator runs `disable-ssh-debug.sh`
-- **THEN** `lws-hmi-lan-ssh.service` is stopped and eth0/wlan0 no longer accept SSH solely from that debug path
+- **THEN** `ssh-debug-lan.service` is stopped and eth0/wlan0 no longer accept SSH solely from that debug path
 
 #### Scenario: Not enabled at boot
 
 - **WHEN** the board reaches multi-user after a cold boot without enabling LAN SSH debug
-- **THEN** `sshd.service` / `sshd.socket` / `lws-hmi-lan-ssh.service` are not in `multi-user.target.wants` and LAN SSH debug is off
+- **THEN** `sshd.service` / `sshd.socket` / `ssh-debug-lan.service` are not in `multi-user.target.wants` and LAN SSH debug is off
 
 #### Scenario: push-app does not kill LAN SSH
 

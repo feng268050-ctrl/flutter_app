@@ -7,11 +7,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/usb-ssh-session.sh
 source "$ROOT/scripts/usb-ssh-session.sh"
 
-STAGING="/var/lib/lws-hmi/push-app-staging"
-APPLY_SCRIPT="/usr/lib/lws-hmi/push-app-apply-and-restart.sh"
-APPLY_LOG="/var/lib/lws-hmi/push-app-restart.log"
-APPLY_STATUS="/var/lib/lws-hmi/push-app-apply.status"
-OVERLAY_HMI="$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/opt/hmi"
+STAGING="/var/lib/hmi/push-app-staging"
+APPLY_SCRIPT="/usr/libexec/hmi/push-app-apply-and-restart.sh"
+APPLY_LOG="/var/lib/hmi/push-app-restart.log"
+APPLY_STATUS="/var/lib/hmi/push-app-apply.status"
+OVERLAY_HMI="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi"
 LIBAPP="$OVERLAY_HMI/lib/libapp.so"
 ASSETS="$OVERLAY_HMI/data/flutter_assets"
 # Detach apply: LAN SSH over Wi-Fi must not hold the session through hmi stop
@@ -91,7 +91,7 @@ fi
 usb_ssh_session_configure_link
 usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
 
-STAGE="$(mktemp -d "${TMPDIR:-/tmp}/lws-hmi-push-app.XXXXXX")"
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/hmi-push-app.XXXXXX")"
 cleanup() { rm -rf "$STAGE"; }
 trap cleanup EXIT
 

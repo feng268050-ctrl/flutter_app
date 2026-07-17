@@ -1,6 +1,6 @@
 ## 1. Shell helpers (apply + persist)
 
-- [x] 1.1 Confirm `change-backlight.sh` persists `/var/lib/lws-hmi/backlight-brightness`; finish if incomplete
+- [x] 1.1 Confirm `change-backlight.sh` persists `/var/lib/hmi/backlight-brightness`; finish if incomplete
 - [x] 1.2 Add `change-volume.sh` (ALSA apply matching restore-settings + persist `media-volume`)
 - [x] 1.3 Add `change-orientation.sh` (persist `display-orientation`; optional apply/restart flag per design)
 - [x] 1.4 Add `apply-mouse-settings.sh` (write/update `mouse.conf` schema used by flutter-pi)
@@ -8,7 +8,7 @@
 
 ## 2. PATH + verify
 
-- [x] 2.1 Link `change-volume`, `change-orientation`, `apply-mouse-settings` in `lws-hmi-post-build.sh` (backlight already linked)
+- [x] 2.1 Link `change-volume`, `change-orientation`, `apply-mouse-settings` in `post-build.sh` (backlight already linked)
 - [x] 2.2 Extend `verify-rootfs-overlay.sh` / `env-verify.sh` helper and `/usr/bin` assertions
 - [x] 2.3 Clean retired dual-write-only paths in post-build if any
 

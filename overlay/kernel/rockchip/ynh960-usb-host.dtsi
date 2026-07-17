@@ -1,12 +1,12 @@
-// lws-hmi ynh960: USB host for 1 mm pin-header expansion (HID keyboard, etc.).
+// ynh960: USB host for 1 mm pin-header expansion (HID keyboard, etc.).
 //
 // Innohi customer_board_ynh960 enables usbhost_dwc3 on u2phy0_host + combphy1
 // (HS-only). Earlier plug-ssh work blanketed these nodes off so OTG gadget
 // alone owned usb2phy0 — incorrect once expansion USB is required.
 //
-// Micro-USB OTG dual-role (ID) is in lws-hmi-ynh960-usb-gadget.dtsi —
+// Micro-USB OTG dual-role (ID) is in ynh960-usb-gadget.dtsi —
 // independent of this expansion host controller.
-// USB_HOST_PWREN* VBUS GPIOs are restored in lws-hmi-ynh960-own-gpio.dtsi
+// USB_HOST_PWREN* VBUS GPIOs are restored in ynh960-own-gpio.dtsi
 // (gpio4 PA0/PA1/PA2 free under RMII; were stolen by EVB RGMII).
 
 &u2phy0_host {

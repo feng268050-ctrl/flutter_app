@@ -14,7 +14,7 @@ if [ "$PCT" -gt 100 ]; then
 	PCT=100
 fi
 
-PREF_DIR=/var/lib/lws-hmi
+PREF_DIR=/var/lib/hmi
 PREF="$PREF_DIR/media-volume"
 mkdir -p "$PREF_DIR"
 printf '%s\n' "$PCT" >"$PREF"

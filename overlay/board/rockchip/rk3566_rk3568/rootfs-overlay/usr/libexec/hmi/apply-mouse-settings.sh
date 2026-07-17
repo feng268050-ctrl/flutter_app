@@ -1,12 +1,12 @@
 #!/bin/sh
-# Write flutter-pi mouse.conf and persist under /var/lib/lws-hmi.
+# Write flutter-pi mouse.conf and persist under /var/lib/hmi.
 # Usage:
 #   apply-mouse-settings < conf-from-stdin
 #   apply-mouse-settings --file <path>
 #   apply-mouse-settings natural_scroll=0 scroll_speed=50 ...
 set -eu
 
-PREF_DIR=/var/lib/lws-hmi
+PREF_DIR=/var/lib/hmi
 PREF="$PREF_DIR/mouse.conf"
 TMP="$PREF.tmp.$$"
 mkdir -p "$PREF_DIR"

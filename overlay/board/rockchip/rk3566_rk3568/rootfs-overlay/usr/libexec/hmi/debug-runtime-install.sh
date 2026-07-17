@@ -1,12 +1,12 @@
 #!/bin/sh
-# Install cached debug engine + ICU under /var/lib/lws-hmi/debug-runtime/<version>/.
+# Install cached debug engine + ICU under /var/lib/hmi/debug-runtime/<version>/.
 set -eu
 
-STAGE=/var/lib/lws-hmi/debug-runtime-staging
-DEST_ROOT=/var/lib/lws-hmi/debug-runtime
+STAGE=/var/lib/hmi/debug-runtime-staging
+DEST_ROOT=/var/lib/hmi/debug-runtime
 
 log() {
-	echo "lws-hmi-debug-runtime: $*"
+	echo "debug-runtime: $*"
 }
 
 [ -f "$STAGE/manifest.json" ] || {

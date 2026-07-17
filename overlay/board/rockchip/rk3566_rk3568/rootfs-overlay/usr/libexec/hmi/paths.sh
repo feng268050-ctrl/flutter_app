@@ -1,0 +1,24 @@
+# FHS OS path layout — source from board helpers: . /usr/libexec/hmi/paths.sh
+VAR_WPA=/var/lib/wpa_supplicant
+VAR_NETWORK=/var/lib/network
+VAR_BLUETOOTH=/var/lib/bluetooth
+VAR_HMI=/var/lib/hmi
+LIBEXEC_WPA=/usr/libexec/wpa
+LIBEXEC_NETWORK=/usr/libexec/network
+LIBEXEC_BLUETOOTH=/usr/libexec/bluetooth
+LIBEXEC_HMI=/usr/libexec/hmi
+ETC_HMI=/etc/hmi
+USERDATA_WPA=/userdata/wpa_supplicant
+USERDATA_NETWORK=/userdata/network
+USERDATA_BLUETOOTH=/userdata/bluetooth
+USERDATA_HMI=/userdata/hmi
+SHARE_HMI=/usr/share/hmi
+RUN_USB_PLUG_SSHD_PID=/run/usb-plug-sshd.pid
+RUN_LAN_SSHD_PID=/run/lan-sshd.pid
+RUN_USB_PLUG_SSH_VBUS_LOCK=/run/usb-plug-ssh-vbus.lock
+RUN_USB_PLUG_SSH_VBUS_PENDING=/run/usb-plug-ssh-vbus.pending
+RUN_USB_OTG_MODE_LOCK=/run/usb-otg-mode.lock
+RUN_PWRKEY_POWEROFF_LOCK=/run/pwrkey-poweroff.lock
+RUN_BT_AGENT_PID=/run/bt-agent.pid
+RUN_BT_CTL_FIFO=/run/btctl.fifo
+RUN_BT_HMI_AGENT=/run/bt-hmi-agent

@@ -1,10 +1,10 @@
-// lws-hmi ynh960: Micro-USB OTG dual-role (ID pin).
+// ynh960: Micro-USB OTG dual-role (ID pin).
 //
 // ID grounded (OTG host adapter) → host → USB HID keyboard on this jack.
 // ID float (standard micro-B to PC) → peripheral → plug-ssh g_ether.
 //
 // Innohi enables usbhost_dwc3 on u2phy0_host for the 1 mm USB host expansion
-// (see lws-hmi-ynh960-usb-host.dtsi). Keep that path independent of OTG role.
+// (see ynh960-usb-host.dtsi). Keep that path independent of OTG role.
 // Userspace gates plug-ssh on extcon USB-HOST=0 + USB=1 (fe8a0000).
 
 &usb2phy0 {

@@ -32,10 +32,10 @@ assert_executable "$ROOT/scripts/debug-setup.sh"
 assert_executable "$ROOT/scripts/debug-app-deploy.sh"
 assert_executable "$ROOT/scripts/debug-custom-device/install.sh"
 assert_executable "$ROOT/scripts/debug-custom-device/forward-port.sh"
-assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/hmi-launch.sh"
-assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/hmi-stop-and-wait.sh"
-assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/debug-app-apply.sh"
-assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/debug-app-run.sh"
+assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh"
+assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh"
+assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"
+assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-run.sh"
 
 if grep -q '"--no-track-widget-creation"' "$ROOT/.vscode/launch.json" \
 	&& grep -q '"dart.flutterRunAdditionalArgs".*"--no-track-widget-creation"' "$ROOT/.vscode/settings.json" \
@@ -46,7 +46,7 @@ else
 	fail=1
 fi
 
-if ! grep -q 'hmi-launch.sh' "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/etc/systemd/system/hmi.service"; then
+if ! grep -q 'hmi-launch.sh' "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/etc/systemd/system/hmi.service"; then
 	echo "FAIL hmi.service does not use hmi-launch.sh" >&2
 	fail=1
 else
@@ -127,7 +127,7 @@ else
 fi
 
 if grep -q 'Dart VM service is listening on' \
-	"$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/debug-app-run.sh"; then
+	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-run.sh"; then
 	echo "OK  debug-app-run matches Flutter 3.24 VM Service output"
 else
 	echo "FAIL debug-app-run misses Flutter 3.24 VM Service output" >&2
@@ -135,28 +135,28 @@ else
 fi
 
 if grep -q 'start-stop-daemon -S -b -m' \
-	"$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/debug-app-run.sh" \
+	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-run.sh" \
 	&& grep -q 'live_flutter_pids' \
-	"$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/hmi-stop-and-wait.sh"; then
+	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh"; then
 	echo "OK  debug process detaches cleanly and ignores zombies"
 else
 	echo "FAIL debug process lifecycle can retain flutter-pi zombies" >&2
 	fail=1
 fi
 
-if bash "$ROOT/scripts/build-debug-app.sh" >/tmp/lws-hmi-build-debug-app.log 2>&1; then
+if bash "$ROOT/scripts/build-debug-app.sh" >/tmp/hmi-build-debug-app.log 2>&1; then
 	echo "OK  build-debug-app"
 	assert_file "$ROOT/.cache/debug-app-staging/opt/hmi/data/flutter_assets/kernel_blob.bin"
 	assert_file "$ROOT/.cache/debug-app-staging/debug-runtime/3.24.4/manifest.json"
 else
-	echo "FAIL build-debug-app (see /tmp/lws-hmi-build-debug-app.log)" >&2
+	echo "FAIL build-debug-app (see /tmp/hmi-build-debug-app.log)" >&2
 	fail=1
 fi
 
-if bash "$ROOT/scripts/debug-setup.sh" >/tmp/lws-hmi-debug-setup.log 2>&1; then
+if bash "$ROOT/scripts/debug-setup.sh" >/tmp/hmi-debug-setup.log 2>&1; then
 	echo "OK  debug-setup"
 else
-	echo "FAIL debug-setup (see /tmp/lws-hmi-debug-setup.log)" >&2
+	echo "FAIL debug-setup (see /tmp/hmi-debug-setup.log)" >&2
 	fail=1
 fi
 

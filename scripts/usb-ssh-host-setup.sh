@@ -20,7 +20,7 @@ and configure host $HOST_ADDR/$MASK for board $TARGET_ADDR.
 
 Do NOT type literal "enX" — run this script or see "Hardware Port" below.
 
-Prereq (board, serial): /usr/lib/lws-hmi/usb-plug-ssh-start.sh
+Prereq (board, serial): /usr/libexec/hmi/usb-plug-ssh-start.sh
 EOF
 }
 
@@ -141,7 +141,7 @@ echo "Looking for USB gadget ethernet (not Wi‑Fi en0) ..."
 IFACE="$(find_iface)" || die "No USB gadget NIC found.
 
 Plug OTG USB into Mac, then on board run:
-  /usr/lib/lws-hmi/usb-plug-ssh-start.sh
+  /usr/libexec/hmi/usb-plug-ssh-start.sh
 
 List ports manually:
   networksetup -listallhardwareports | grep -A1 -iE 'RNDIS|Gadget|LWS|Innohi'"

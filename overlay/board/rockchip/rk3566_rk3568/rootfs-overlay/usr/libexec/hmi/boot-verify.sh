@@ -1,6 +1,6 @@
 #!/bin/sh
 # Plan A boot KPI verification — run on ynh960 device (serial shell or ssh after §7.7).
-# Shipped via lws-hmi-fs-overlay (BR2_ROOTFS_OVERLAY).
+# Shipped via rootfs-overlay (BR2_ROOTFS_OVERLAY).
 set -u
 
 pass() { echo "PASS: $*"; }
@@ -10,7 +10,7 @@ warn() { echo "WARN: $*"; }
 FAILED=0
 WANTS=/etc/systemd/system/multi-user.target.wants
 
-echo "=== lws-hmi verify-boot (Plan A / single image) ==="
+echo "=== verify-boot (Plan A / single image) ==="
 
 echo ""
 echo "--- multi-user.target.wants ---"
@@ -20,7 +20,7 @@ else
 	fail "missing $WANTS"
 fi
 
-for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket lws-hmi-lan-ssh.service lws-hmi-wpa.service lws-hmi-wlan0-dhcp.service lws-hmi-eth0.service bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+for unit in lws-hmi-debug-boot.service ssh-debug-usb.service mediamtx.service sshd.service sshd.socket ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 	if [ -e "$WANTS/$unit" ]; then
 		fail "$unit still enabled in multi-user.target.wants"
 	else
@@ -55,7 +55,7 @@ else
 	pass "no rockchip configfs gadget"
 fi
 
-for unit in hmi.service mainserver.service lws-hmi-performance.service lws-hmi-pwrkey-poweroff.service lws-hmi-settings-restore.service; do
+for unit in hmi.service mainserver.service cpu-performance.service pwrkey-poweroff.service settings-restore.service; do
 	if [ -e "$WANTS/$unit" ]; then
 		pass "$unit enabled"
 	else
@@ -65,7 +65,7 @@ done
 
 echo ""
 echo "--- other *.wants (sshd.socket etc.) ---"
-for unit in lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service lws-hmi-wpa.service lws-hmi-wlan0-dhcp.service lws-hmi-eth0.service; do
+for unit in lws-hmi-debug-boot.service ssh-debug-usb.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
 	found=""
 	for wants_dir in /etc/systemd/system/*.wants; do
 		[ -d "$wants_dir" ] || continue
@@ -82,28 +82,28 @@ done
 
 echo ""
 echo "--- retired debug-boot ---"
-if [ -f /usr/lib/lws-hmi/debug-boot.sh ] || [ -f /etc/systemd/system/lws-hmi-debug-boot.service ]; then
-	fail "lws-hmi-debug-boot artifacts still present"
+if [ -f /usr/libexec/hmi/debug-boot.sh ] || [ -f /etc/systemd/system/lws-hmi-debug-boot.service ]; then
+	fail "debug-boot artifacts still present"
 else
-	pass "lws-hmi-debug-boot removed"
+	pass "debug-boot removed"
 fi
 if [ -e /etc/systemd/system/sysinit.target.wants/lws-hmi-debug-boot.service ]; then
-	fail "lws-hmi-debug-boot still enabled in sysinit.target.wants"
+	fail "debug-boot still enabled in sysinit.target.wants"
 else
-	pass "lws-hmi-debug-boot not in sysinit.target.wants"
+	pass "debug-boot not in sysinit.target.wants"
 fi
 
 echo ""
 echo "--- port 22 ---"
 USB_SSH_ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
 lan_debug_on=0
-if systemctl is-active --quiet lws-hmi-lan-ssh.service 2>/dev/null; then
+if systemctl is-active --quiet ssh-debug-lan.service 2>/dev/null; then
 	lan_debug_on=1
 fi
-if [ -e /etc/systemd/system/multi-user.target.wants/lws-hmi-lan-ssh.service ]; then
-	fail "lws-hmi-lan-ssh.service enabled in multi-user.target.wants (must be on-demand only)"
+if [ -e /etc/systemd/system/multi-user.target.wants/ssh-debug-lan.service ]; then
+	fail "ssh-debug-lan.service enabled in multi-user.target.wants (must be on-demand only)"
 else
-	pass "lws-hmi-lan-ssh.service not in multi-user.target.wants"
+	pass "ssh-debug-lan.service not in multi-user.target.wants"
 fi
 if [ -n "${SSH_CONNECTION:-}" ]; then
 	warn "SSH session active — skip port 22 check (use serial ttyFIQ0 for accurate boot KPI)"
@@ -114,7 +114,7 @@ elif command -v ss >/dev/null 2>&1; then
 	else
 		echo "$listeners"
 		if [ "$lan_debug_on" -eq 1 ]; then
-			warn "port 22 listening (LAN SSH debug via lws-hmi-lan-ssh.service)"
+			warn "port 22 listening (LAN SSH debug via ssh-debug-lan.service)"
 		elif echo "$listeners" | grep -qE '0\.0\.0\.0:22|\*:22|\[::\]:22|127\.0\.0\.1:22'; then
 			fail "sshd listening on LAN/all interfaces (expected usb0-only or closed; run disable-ssh-debug.sh)"
 		elif echo "$listeners" | grep -qvE "${USB_SSH_ADDR}:22|${USB_SSH_ADDR}\]:22"; then
@@ -129,7 +129,7 @@ elif command -v netstat >/dev/null 2>&1; then
 		pass "port 22 not listening"
 	elif [ "$lan_debug_on" -eq 1 ]; then
 		echo "$listeners"
-		warn "port 22 listening (LAN SSH debug via lws-hmi-lan-ssh.service)"
+		warn "port 22 listening (LAN SSH debug via ssh-debug-lan.service)"
 	elif echo "$listeners" | grep -qE '0\.0\.0\.0:22|127\.0\.0\.1:22|\*:22'; then
 		echo "$listeners"
 		fail "sshd listening on LAN/all interfaces (expected usb0-only or closed; run disable-ssh-debug.sh)"
@@ -173,13 +173,13 @@ if [ "$pwrkey_found" -eq 0 ]; then
 	fail "no pwrkey/gpio-keys input device found"
 fi
 if command -v systemctl >/dev/null 2>&1; then
-	state="$(systemctl is-active lws-hmi-pwrkey-poweroff.service 2>/dev/null || echo inactive)"
+	state="$(systemctl is-active pwrkey-poweroff.service 2>/dev/null || echo inactive)"
 	case "$state" in
 	active)
-		pass "lws-hmi-pwrkey-poweroff.service active"
+		pass "pwrkey-poweroff.service active"
 		;;
 	*)
-		fail "lws-hmi-pwrkey-poweroff.service is $state"
+		fail "pwrkey-poweroff.service is $state"
 		;;
 	esac
 	state="$(systemctl is-active input-event-daemon.service 2>/dev/null || echo inactive)"
@@ -192,17 +192,21 @@ if command -v systemctl >/dev/null 2>&1; then
 		;;
 	esac
 fi
-if [ -x /usr/lib/lws-hmi/pre-poweroff.sh ]; then
+if [ -x /usr/libexec/hmi/pre-poweroff.sh ]; then
 	pass "pre-poweroff.sh present and executable"
 else
 	fail "pre-poweroff.sh missing or not executable"
 fi
-if [ -x /usr/lib/lws-hmi/shutdown.sh ]; then
+if [ -x /usr/libexec/hmi/shutdown.sh ]; then
 	pass "shutdown.sh present and executable"
 else
 	fail "shutdown.sh missing or not executable"
 fi
-if [ -x /usr/bin/systemctl.real ] && [ "$(readlink /usr/bin/systemctl 2>/dev/null)" = "/usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh" ]; then
+case "$(readlink /usr/bin/systemctl 2>/dev/null)" in
+../libexec/hmi/systemctl-poweroff-wrapper.sh)
+	wrap_ok=1 ;;
+esac
+if [ -x /usr/bin/systemctl.real ] && [ "${wrap_ok:-0}" = 1 ] && [ -e /usr/bin/systemctl ]; then
 	pass "/usr/bin/systemctl wrapped for graceful poweroff"
 else
 	fail "/usr/bin/systemctl wrapper missing (expected systemctl.real + wrapper symlink)"
@@ -213,9 +217,9 @@ else
 	pass "retired systemd-poweroff drop-in absent"
 fi
 if [ -e /etc/systemd/system/poweroff.target.wants/lws-hmi-pre-poweroff.service ]; then
-	fail "retired lws-hmi-pre-poweroff.service still linked in poweroff.target.wants"
+	fail "retired pre-poweroff.service still linked in poweroff.target.wants"
 else
-	pass "retired lws-hmi-pre-poweroff.service not in poweroff.target.wants"
+	pass "retired pre-poweroff.service not in poweroff.target.wants"
 fi
 
 echo ""

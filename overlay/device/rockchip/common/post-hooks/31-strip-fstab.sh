@@ -10,12 +10,12 @@ sdk_dir="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-}}"
 if [ -z "$sdk_dir" ]; then
 	sdk_dir="$(cd "$(dirname "$0")/../../../.." && pwd)"
 fi
-SCRIPT="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-strip-fstab.sh"
+SCRIPT="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/strip-fstab.sh"
 if [ ! -f "$SCRIPT" ]; then
-	SCRIPT="${LWS_HMI_ROOT:-/work/lws-hmi}/overlay/board/rockchip/rk3566_rk3568/lws-hmi-strip-fstab.sh"
+	SCRIPT="${LWS_HMI_ROOT:-/work/lws-hmi}/overlay/board/rockchip/rk3566_rk3568/strip-fstab.sh"
 fi
 if [ ! -f "$SCRIPT" ]; then
-	echo "lws-hmi-strip-fstab: skip (missing lws-hmi-strip-fstab.sh — run make apply-overlay)"
+	echo "post-strip-fstab: skip (missing strip-fstab.sh — run make apply-overlay)"
 	exit 0
 fi
 

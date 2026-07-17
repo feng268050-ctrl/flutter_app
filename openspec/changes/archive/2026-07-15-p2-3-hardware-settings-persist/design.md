@@ -1,6 +1,6 @@
 ## Context
 
-P2.1 delivered on-demand Wi‑Fi / Ethernet / BT helpers and prefs files. Starting long-lived daemons from Flutter `Process.run` put them in `hmi.service`'s cgroup, so `push-app` → `systemctl stop hmi` killed Wi‑Fi. LAN SSH already uses `lws-hmi-lan-ssh.service` for the same class of bug. P2.3 extends that pattern to settings stacks and adds boot restore.
+P2.1 delivered on-demand Wi‑Fi / Ethernet / BT helpers and prefs files. Starting long-lived daemons from Flutter `Process.run` put them in `hmi.service`'s cgroup, so `push-app` → `systemctl stop hmi` killed Wi‑Fi. LAN SSH already uses `ssh-debug-lan.service` for the same class of bug. P2.3 extends that pattern to settings stacks and adds boot restore.
 
 ## Goals / Non-Goals
 
@@ -20,19 +20,19 @@ P2.1 delivered on-demand Wi‑Fi / Ethernet / BT helpers and prefs files. Starti
 
 ### 1. Isolation invariant
 
-**Choice:** Settings long-lived processes run only under dedicated units (`lws-hmi-wpa`, `lws-hmi-wlan0-dhcp`, `lws-hmi-eth0`, existing `bluetooth.service`). Helpers re-enter via `systemctl start` when not already `LWS_*_IN_UNIT`.
+**Choice:** Settings long-lived processes run only under dedicated units (`wlan-wpa.service`, `wlan-dhcp.service`, `eth0-network.service`, existing `bluetooth.service`). Helpers re-enter via `systemctl start` when not already `LWS_*_IN_UNIT`.
 
 **Rationale:** Same fix as LAN SSH; Demo stays a thin client.
 
 ### 2. Wanted markers
 
-**Choice:** `/var/lib/lws-hmi/wifi-wanted` and `eth0-wanted` (presence = restore). Cleared on radio/interface disable. Those paths resolve under **`/userdata/lws-hmi/`** via prefs-bind.
+**Choice:** `/var/lib/wpa_supplicant/wifi-wanted` and `eth0-wanted` (presence = restore). Cleared on radio/interface disable. Those paths resolve under **`/userdata/hmi/`** via prefs-bind.
 
 ### 2b. Prefs on userdata
 
-**Choice:** After `param-update` mounts userdata, `lws-hmi-prefs-bind.sh` migrates seed/runtime files and `ln -sfn /userdata/lws-hmi /var/lib/lws-hmi`. Existing helper/Dart paths keep `/var/lib/lws-hmi/...`.
+**Choice:** After `param-update` mounts userdata, `bind-prefs.sh` migrates seed/runtime files and `ln -sfn /userdata/{wpa_supplicant,network,bluetooth,hmi} /var/lib/hmi`. Existing helper/Dart paths keep `/var/lib/hmi/...`.
 
-**Rationale:** Separates **survives A/B upgrade** (userdata) from **factory reset on `make flash`** (must wipe `/userdata/lws-hmi` — tracked for implementation; see `docs/storage-layout.md` §Prefs).
+**Rationale:** Separates **survives A/B upgrade** (userdata) from **factory reset on `make flash`** (must wipe subsystem userdata trees under `/userdata/{wpa_supplicant,network,bluetooth,hmi}` — tracked for implementation; see `docs/storage-layout.md` §Prefs).
 
 **Policy:**
 
@@ -46,13 +46,13 @@ P2.1 delivered on-demand Wi‑Fi / Ethernet / BT helpers and prefs files. Starti
 
 ### 3. Boot restore oneshot
 
-**Choice:** `lws-hmi-settings-restore.service` Type=oneshot, `WantedBy=multi-user.target`, **`After=hmi.service`** (+ `param-update`), pulled via `hmi.service` `Wants=`. `Nice=10` + idle I/O + short post-HMI sleep. Restore runs **after** UI is up (not parallel). App `syncFromSystem()` watches `*-wanted` and shows `starting`/associating like a manual toggle while restore works.
+**Choice:** `settings-restore.service` Type=oneshot, `WantedBy=multi-user.target`, **`After=hmi.service`** (+ `param-update`), pulled via `hmi.service` `Wants=`. `Nice=10` + idle I/O + short post-HMI sleep. Restore runs **after** UI is up (not parallel). App `syncFromSystem()` watches `*-wanted` and shows `starting`/associating like a manual toggle while restore works.
 
 **Rationale:** UI absolute priority — first home frame and responsiveness beat network bring-up; operators still see live restore progress in Demo.
 
 ### 4. Backlight persist
 
-**Choice:** `/var/lib/lws-hmi/backlight-brightness` stores 0–100 percent; restore writes sysfs via small helper or inline in restore script.
+**Choice:** `/var/lib/hmi/backlight-brightness` stores 0–100 percent; restore writes sysfs via small helper or inline in restore script.
 
 ### 5. push-app
 

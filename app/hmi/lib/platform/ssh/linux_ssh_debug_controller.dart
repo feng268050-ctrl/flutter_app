@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:lws_hmi/platform/lws_trace.dart';
 import 'package:lws_hmi/platform/ssh/ssh_debug_controller.dart';
 
-/// Linux on-demand LAN/WLAN SSH via `/usr/lib/lws-hmi/enable-ssh-debug.sh`.
+/// Linux on-demand LAN/WLAN SSH via `/usr/libexec/hmi/enable-ssh-debug.sh`.
 class LinuxSshDebugController implements SshDebugController {
   LinuxSshDebugController({
-    this.enableHelper = const ['/usr/lib/lws-hmi/enable-ssh-debug.sh'],
+    this.enableHelper = const ['/usr/libexec/hmi/enable-ssh-debug.sh'],
   });
 
   final List<String> enableHelper;

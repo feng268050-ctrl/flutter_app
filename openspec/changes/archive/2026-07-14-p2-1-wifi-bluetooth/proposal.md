@@ -28,7 +28,7 @@ P2.1 already closed speaker / backlight / orientation on ynh960; **Wi‑Fi and B
 ## Impact
 
 - **App** (`app/hmi/`): `lib/platform/{wifi,http,bluetooth}/` (names per design); demo UI; unit tests; no secrets in logs.
-- **Rootfs / overlay**: stack/IP helpers, wpa conf under `/var/lib/lws-hmi/`, proxy prefs file, BlueZ discoverable policy defaults as needed.
+- **Rootfs / overlay**: stack/IP helpers, wpa conf under `/var/lib/hmi/`, proxy prefs file, BlueZ discoverable policy defaults as needed.
 - **Systemd**: units remain **disabled at boot**; App-triggered start only.
 - **Docs**: plan §12 + `app/hmi/README.md` smoke (Wi‑Fi connect + HTTP probe; phone discovers HMI BT).
 - **Non-goals**: Product Settings / status bar (P5.2); NetworkManager; SoftAP/hostapd product flow; A2DP **Source** / HFP headset/hands-free; HMI-as-central scanning other BT devices; eth0/IPC; MediaMTX; Android backends until P2.5.

@@ -26,9 +26,9 @@ class TimeSyncResult {
 
 /// Preference paths and pure helpers for Linux datetime prefs.
 class TimeSyncPrefs {
-  static const syncModePath = '/var/lib/lws-hmi/time-sync-mode';
-  static const timezonePath = '/var/lib/lws-hmi/timezone';
-  static const helperPath = '/usr/lib/lws-hmi/wlan0-time-sync.sh';
+  static const syncModePath = '/var/lib/hmi/time-sync-mode';
+  static const timezonePath = '/var/lib/hmi/timezone';
+  static const helperPath = '/usr/libexec/wpa/wlan0-time-sync.sh';
 
   /// Curated Demo / Settings list (extend later).
   static const curatedTimezones = <String>[

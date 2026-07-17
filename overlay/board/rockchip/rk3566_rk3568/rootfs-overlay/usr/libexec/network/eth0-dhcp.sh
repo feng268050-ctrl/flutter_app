@@ -4,7 +4,7 @@ set -eu
 
 IFACE="${LWS_ETH_IFACE:-eth0}"
 ACTION="${1:-start}"
-PIDFILE="/run/lws-hmi-dhcpcd-${IFACE}.pid"
+PIDFILE="/run/hmi-dhcpcd-${IFACE}.pid"
 TIMEOUT="${LWS_DHCP_TIMEOUT:-45}"
 
 log() {
@@ -70,8 +70,8 @@ stop_dhcp() {
 case "$ACTION" in
 stop)
 	if [ -z "${LWS_ETH_IN_UNIT:-}" ] && command -v systemctl >/dev/null 2>&1; then
-		systemctl stop lws-hmi-eth0.service 2>/dev/null || true
-		systemctl reset-failed lws-hmi-eth0.service 2>/dev/null || true
+		systemctl stop eth0-network.service 2>/dev/null || true
+		systemctl reset-failed eth0-network.service 2>/dev/null || true
 	fi
 	stop_dhcp
 	log "stopped on $IFACE"
@@ -80,17 +80,17 @@ stop)
 start)
 	# Demo Process.run would leave dhcpcd in hmi.service cgroup — use unit.
 	if [ -z "${LWS_ETH_IN_UNIT:-}" ] && command -v systemctl >/dev/null 2>&1 && \
-		[ -f /etc/systemd/system/lws-hmi-eth0.service ]; then
-		systemctl reset-failed lws-hmi-eth0.service 2>/dev/null || true
-		if systemctl start lws-hmi-eth0.service; then
+		[ -f /etc/systemd/system/eth0-network.service ]; then
+		systemctl reset-failed eth0-network.service 2>/dev/null || true
+		if systemctl start eth0-network.service; then
 			if have_ipv4; then
-				log "ok via lws-hmi-eth0.service"
+				log "ok via eth0-network.service"
 				exit 0
 			fi
-			log "lws-hmi-eth0.service started but no IPv4 yet"
+			log "eth0-network.service started but no IPv4 yet"
 		else
-			log "lws-hmi-eth0.service failed"
-			systemctl status lws-hmi-eth0.service --no-pager -l 2>/dev/null | head -30 >&2 || true
+			log "eth0-network.service failed"
+			systemctl status eth0-network.service --no-pager -l 2>/dev/null | head -30 >&2 || true
 		fi
 		exit 1
 	fi

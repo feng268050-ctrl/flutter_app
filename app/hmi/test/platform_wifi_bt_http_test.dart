@@ -180,14 +180,14 @@ network id / ssid / bssid / flags
       const raw = '''
 Controller AA:BB:CC:DD:EE:FF (public)
 	Name: BlueZ 5.77
-	Alias: lws-hmi
+	Alias: hmi
 	Powered: yes
 	Discoverable: yes
 	Pairable: yes
 ''';
       final info = BluetoothctlParse.parseShow(raw);
       expect(info.address, 'AA:BB:CC:DD:EE:FF');
-      expect(info.name, 'lws-hmi');
+      expect(info.name, 'hmi');
       expect(info.powered, isTrue);
       expect(info.discoverable, isTrue);
       expect(info.pairable, isTrue);

@@ -2,7 +2,7 @@
 # Stop the shell bluetoothctl pairing agent (for HMI Agent1 handoff).
 set -eu
 
-PIDFILE="${LWS_BT_AGENT_PIDFILE:-/run/lws-hmi-bt-agent.pid}"
+PIDFILE="${LWS_BT_AGENT_PIDFILE:-/run/bt-agent.pid}"
 
 if [ -f "$PIDFILE" ]; then
 	pid="$(cat "$PIDFILE" 2>/dev/null || true)"
@@ -19,6 +19,6 @@ if [ -f "$PIDFILE" ]; then
 	rm -f "$PIDFILE"
 fi
 
-pkill -f '/usr/lib/lws-hmi/bt-pair-agent.sh' 2>/dev/null || true
-rm -f /run/lws-hmi-btctl.fifo
+pkill -f '/usr/libexec/bluetooth/bt-pair-agent.sh' 2>/dev/null || true
+rm -f /run/btctl.fifo
 exit 0

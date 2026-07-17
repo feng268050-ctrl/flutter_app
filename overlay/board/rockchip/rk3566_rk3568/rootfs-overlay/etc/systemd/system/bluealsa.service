@@ -8,7 +8,7 @@ Requires=bluetooth.service
 [Service]
 Type=dbus
 BusName=org.bluealsa
-ExecStartPre=-/usr/lib/lws-hmi/bt-audio-prepare.sh
+ExecStartPre=-/usr/libexec/bluetooth/bt-audio-prepare.sh
 # Soft-volume default (Demo changes via bt-a2dp-volume.sh).
 ExecStart=/usr/bin/bluealsa -p a2dp-sink --initial-volume=80
 Restart=on-failure

@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:lws_hmi/platform/lws_trace.dart';
 import 'package:lws_hmi/platform/usb/usb_debug_controller.dart';
 
-/// Linux USB Debug via `/usr/lib/lws-hmi/usb-otg-mode.sh` (persisted preference).
+/// Linux USB Debug via `/usr/libexec/hmi/usb-otg-mode.sh` (persisted preference).
 class LinuxUsbDebugController implements UsbDebugController {
   LinuxUsbDebugController({
-    this.helper = const ['/usr/lib/lws-hmi/usb-otg-mode.sh'],
+    this.helper = const ['/usr/libexec/hmi/usb-otg-mode.sh'],
   });
 
   final List<String> helper;

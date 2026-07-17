@@ -1,44 +1,61 @@
 #!/bin/sh
-# Point /var/lib/lws-hmi at /userdata/lws-hmi so prefs survive rootfs flash.
-# Call after userdata is mounted (ynh960-display-init / param-update).
+# Bind FHS subsystem state dirs to userdata (P2.3+). Call after userdata mount.
 set -eu
 
-USERDATA_PREFS=/userdata/lws-hmi
-VAR_PREFS=/var/lib/lws-hmi
+. /usr/libexec/hmi/paths.sh
 
 log() {
 	echo "bind-prefs: $*"
 }
 
+bind_one() {
+	var_path=$1
+	userdata_path=$2
+	mkdir -p "$userdata_path"
+	if [ -d "$var_path" ] && [ ! -L "$var_path" ]; then
+		log "fold $var_path → $userdata_path"
+		cp -an "$var_path"/. "$userdata_path"/ 2>/dev/null || true
+		rm -rf "$var_path"
+	fi
+	if [ -L "$var_path" ]; then
+		target="$(readlink "$var_path" 2>/dev/null || true)"
+		if [ "$target" = "$userdata_path" ]; then
+			return 0
+		fi
+		rm -f "$var_path"
+	fi
+	if [ -d "$var_path" ]; then
+		cp -an "$var_path"/. "$userdata_path"/ 2>/dev/null || true
+		rm -rf "$var_path"
+	fi
+	ln -sfn "$userdata_path" "$var_path"
+	log "ok ($var_path → $userdata_path)"
+}
+
 if [ ! -d /userdata ]; then
-	log "WARN: /userdata missing — keep $VAR_PREFS on rootfs"
-	mkdir -p "$VAR_PREFS"
+	log "WARN: /userdata missing — keep state on rootfs"
+	mkdir -p "$VAR_WPA" "$VAR_NETWORK" "$VAR_BLUETOOTH" "$VAR_HMI"
 	exit 0
 fi
 
-mkdir -p "$USERDATA_PREFS"
+bind_one "$VAR_WPA" "$USERDATA_WPA"
+bind_one "$VAR_NETWORK" "$USERDATA_NETWORK"
+bind_one "$VAR_BLUETOOTH" "$USERDATA_BLUETOOTH"
+bind_one "$VAR_HMI" "$USERDATA_HMI"
 
-# Migrate one-shot from seed/runtime rootfs dir without clobbering userdata.
-if [ -d "$VAR_PREFS" ] && [ ! -L "$VAR_PREFS" ]; then
-	log "migrating $VAR_PREFS → $USERDATA_PREFS"
-	cp -an "$VAR_PREFS"/. "$USERDATA_PREFS"/ 2>/dev/null || true
-	rm -rf "$VAR_PREFS"
-fi
-
-if [ -L "$VAR_PREFS" ]; then
-	target="$(readlink "$VAR_PREFS" 2>/dev/null || true)"
-	if [ "$target" = "$USERDATA_PREFS" ]; then
-		log "ok ($VAR_PREFS → $USERDATA_PREFS)"
-		exit 0
+# One-time fold of pre-rename monolithic userdata (fix-hmi-system-naming).
+legacy_userdata=/userdata/lws-hmi
+if [ -d "$legacy_userdata" ] && [ ! -L "$legacy_userdata" ]; then
+	if [ -d "$USERDATA_HMI" ] && [ -n "$(ls -A "$USERDATA_HMI" 2>/dev/null)" ]; then
+		log "fold legacy $legacy_userdata snippets → $USERDATA_HMI"
+		cp -an "$legacy_userdata"/. "$USERDATA_HMI"/ 2>/dev/null || true
+	else
+		log "rename $legacy_userdata → $USERDATA_HMI"
+		mv "$legacy_userdata" "$USERDATA_HMI"
 	fi
-	rm -f "$VAR_PREFS"
+	if [ -d "$legacy_userdata" ]; then
+		rm -rf "$legacy_userdata"
+	fi
 fi
 
-# If a directory still exists (race), fold then replace.
-if [ -d "$VAR_PREFS" ]; then
-	cp -an "$VAR_PREFS"/. "$USERDATA_PREFS"/ 2>/dev/null || true
-	rm -rf "$VAR_PREFS"
-fi
-
-ln -sfn "$USERDATA_PREFS" "$VAR_PREFS"
-log "ok ($VAR_PREFS → $USERDATA_PREFS)"
+exit 0

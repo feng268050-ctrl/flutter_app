@@ -8,7 +8,7 @@ log() {
 	echo "bt-a2dp-sink-up: $*" >&2
 }
 
-PREF="${LWS_BT_A2DP_PREF:-/var/lib/lws-hmi/bt-a2dp-sink}"
+PREF="${LWS_BT_A2DP_PREF:-/var/lib/bluetooth/bt-a2dp-sink}"
 
 if ! command -v bluealsa >/dev/null 2>&1; then
 	log "bluealsa missing"
@@ -29,9 +29,9 @@ if command -v systemctl >/dev/null 2>&1; then
 	systemctl start bluealsa-aplay.service 2>/dev/null || \
 		log "bluealsa-aplay soft-fail (A2DP may be silent)"
 	# Apply last Demo/local volume if present.
-	if [ -x /usr/lib/lws-hmi/bt-a2dp-volume.sh ] && [ -f /var/lib/lws-hmi/bt-a2dp-volume ]; then
-		vol="$(tr -d '[:space:]' </var/lib/lws-hmi/bt-a2dp-volume 2>/dev/null || echo 80)"
-		/usr/lib/lws-hmi/bt-a2dp-volume.sh "$vol" || true
+	if [ -x /usr/libexec/bluetooth/bt-a2dp-volume.sh ] && [ -f /var/lib/bluetooth/bt-a2dp-volume ]; then
+		vol="$(tr -d '[:space:]' </var/lib/bluetooth/bt-a2dp-volume 2>/dev/null || echo 80)"
+		/usr/libexec/bluetooth/bt-a2dp-volume.sh "$vol" || true
 	fi
 else
 	log "systemctl missing"

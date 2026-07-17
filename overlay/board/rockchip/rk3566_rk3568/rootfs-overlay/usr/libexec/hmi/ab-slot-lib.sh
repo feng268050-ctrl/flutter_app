@@ -10,12 +10,12 @@ AB_MISC_OFFSET=1048576
 AB_DEFAULT_TRIES=3
 
 ab_die() {
-	echo "lws-hmi-ab: ERROR: $*" >&2
+	echo "ab: ERROR: $*" >&2
 	exit 1
 }
 
 ab_log() {
-	echo "lws-hmi-ab: $*"
+	echo "ab: $*"
 }
 
 ab_part_by_label() {
@@ -200,7 +200,7 @@ ab_slot_write() {
 
 ab_refuse_userdata_wipe() {
 	case "$*" in
-	*userdata*|*lws-hmi*)
+	*userdata*)
 		ab_die "refusing userdata / prefs path: $*"
 		;;
 	esac

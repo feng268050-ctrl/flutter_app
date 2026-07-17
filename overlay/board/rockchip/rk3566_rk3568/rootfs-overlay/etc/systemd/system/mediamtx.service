@@ -5,7 +5,7 @@ After=hmi.service
 
 [Service]
 Type=simple
-ExecStartPre=/usr/lib/lws-hmi/render-mediamtx-config.sh
+ExecStartPre=/usr/libexec/hmi/render-mediamtx-config.sh
 ExecStart=/usr/bin/mediamtx /etc/mediamtx/mediamtx.yaml
 Restart=on-failure
 RestartSec=3

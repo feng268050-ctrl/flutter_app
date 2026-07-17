@@ -79,7 +79,7 @@ Classic `/sys/class/gpio` SoC lines (105/106/149) remain a rare fallback when `g
 
 | Risk | Mitigation |
 |------|------------|
-| `own-gpio` / `gpio_innohi` pinmux conflict with Ethernet (`gpio4-0`) | Overlay drops eth-overlapping pads (`lws-hmi-ynh960-own-gpio.dtsi`); LED labels `GPIO_5/4/7` remain |
+| `own-gpio` / `gpio_innohi` pinmux conflict with Ethernet (`gpio4-0`) | Overlay drops eth-overlapping pads (`ynh960-own-gpio.dtsi`); LED labels `GPIO_5/4/7` remain |
 | Modbus no slave during development | UI shows `-`; log serial/CRC errors; no crash |
 | `flutter_libserialport` + flutter-pi ABI quirks | Pin package versions to Flutter 3.24.4; smoke on device early |
 | Blink timers vs hot restart | Cancel timers in dispose; document `make push-app` restart behavior |

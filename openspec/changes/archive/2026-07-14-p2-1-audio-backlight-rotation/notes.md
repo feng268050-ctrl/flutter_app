@@ -10,9 +10,9 @@
 | Volume | **ALSA mixer** (primary, OS-style) + mpg123 remote `V` soft gain; **latest-wins** coalesce; never restarts decode |
 | Playback state | mpg123 `@P` (0=stop / 2=play) + process exit → `Stream<bool> playing` drives Play/Stop button |
 | Backlight | Prefer `/sys/class/backlight/backlight/brightness` (panel pwm4 / MainServer). Skip `led-*-pwm`. |
-| Orientation | `/var/lib/lws-hmi/display-orientation` → flutter-pi `-o`; apply via `systemctl restart hmi` |
+| Orientation | `/var/lib/hmi/display-orientation` → flutter-pi `-o`; apply via `systemctl restart hmi` |
 | ALSA packages | `lws_hmi_p2_io.config`: alsa-lib, alsa-utils (amixer/aplay), mpg123 — **needs `make build-rootfs`**, not `push-app` alone |
-| uart7 vs pwm14 | Boot log `gpio3-20 already requested by fe6b0000.serial` — disable unused `&uart7` via `lws-hmi-ynh960-uart7-pwm.dtsi` (**needs `make build-kernel`**) |
+| uart7 vs pwm14 | Boot log `gpio3-20 already requested by fe6b0000.serial` — disable unused `&uart7` via `ynh960-uart7-pwm.dtsi` (**needs `make build-kernel`**) |
 
 ## Device smoke
 
@@ -28,7 +28,7 @@ echo 20 > /sys/class/backlight/backlight/brightness   # should dim
 which mpg123 amixer
 amixer scontrols
 amixer sset 'Playback Path' 'RING_SPK_HP'
-mpg123 /var/lib/lws-hmi/audio/shanghai_tan.mp3     # after App has extracted once
+mpg123 /var/lib/hmi/audio/shanghai_tan.mp3     # after App has extracted once
 
 # Confirm uart7 conflict gone after kernel rebuild
 dmesg | grep -E 'gpio3-20|fe700020|uart7' || echo 'no conflict'

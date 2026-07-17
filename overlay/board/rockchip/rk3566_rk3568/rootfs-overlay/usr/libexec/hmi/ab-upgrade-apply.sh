@@ -7,7 +7,7 @@
 # Must NOT wipe userdata, rewrite uboot, or overwrite the active letter without staging.
 set -eu
 
-LIB="${LWS_HMI_AB_LIB:-/usr/lib/lws-hmi/ab-slot-lib.sh}"
+LIB="${LWS_HMI_AB_LIB:-/usr/libexec/hmi/ab-slot-lib.sh}"
 # shellcheck disable=SC1090
 . "$LIB"
 
@@ -66,7 +66,7 @@ trap cleanup_status 0
 
 for f in "$BOOT_IMG" "$BOOT_B_IMG" "$ROOTFS_IMG"; do
 	case "$f" in
-	*uboot*|*userdata/lws-hmi*) fail "refusing path $f" ;;
+	*uboot*) fail "refusing path $f" ;;
 	esac
 done
 

@@ -2,7 +2,7 @@
 # Stop usb0-only sshd and release the g_ether gadget module.
 set -eu
 
-SSHD_PID=/run/lws-hmi-usb-plug-sshd.pid
+SSHD_PID=/run/usb-plug-sshd.pid
 
 log() {
 	echo "usb-plug-ssh-stop: $*"

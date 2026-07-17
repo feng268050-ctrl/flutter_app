@@ -4,6 +4,7 @@
 
 #include "base/base.config"
 #include "chips/lws_hmi_base.config"
+#include "chips/lws_hmi_rootfs.config"
 #include "chips/lws_hmi_systemd.config"
 #include "chips/rk3566_rk3568_aarch64.config"
 #include "gpu/gpu.config"
@@ -15,7 +16,7 @@
 #include "powermanager.config"
 #include "chips/lws_hmi_flutter.config"
 #include "chips/lws_hmi_p2_io.config"
-# BR2_ROOTFS_OVERLAY for lws-hmi-fs-overlay: see chips/rk3566_rk3568.config (apply-overlay)
+# BR2_ROOTFS_OVERLAY for rootfs-overlay: see chips/rk3566_rk3568.config (apply-overlay)
 # #include "fs/vfat.config"
 
 # --- enable when feature is merged (not a separate make target) ---

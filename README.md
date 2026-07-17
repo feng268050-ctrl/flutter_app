@@ -160,7 +160,7 @@ make build-rootfs
 make upgrade
 ```
 
-**Rootfs overlay** — systemd units, `usr/lib/lws-hmi/*`, LCD params, anything under `overlay/.../lws-hmi-fs-overlay/` except the app bundle:
+**Rootfs overlay** — systemd units, `usr/lib/lws-hmi/*`, LCD params, anything under `overlay/.../rootfs-overlay/` except the app bundle:
 
 ```bash
 make apply-overlay
@@ -242,7 +242,7 @@ Remote SSH (board LAN/WLAN sshd on — Demo **LAN SSH debug** or `enable-ssh-deb
 
 ```bash
 # On device (serial / USB-SSH / Demo toggle):
-#   /usr/lib/lws-hmi/enable-ssh-debug.sh
+#   /usr/libexec/hmi/enable-ssh-debug.sh
 make connect 192.168.1.50       # or: make connect IP=192.168.1.50
 make devices                    # MODE=SSH row
 IP=192.168.1.50 make shell
@@ -273,7 +273,7 @@ make debug-app                   # SERIAL=... or IP=... when multiple boards
 
 Or open `app/hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH / SSH debug)** from Run and Debug. Pre-launch runs `make debug-host-prepare`: for registered `IP=` / `MODE=SSH` it only checks reachability (no USB ECM); for USB-SSH it configures the host ECM interface (macOS may request `sudo`). Put `IP=` in `.env` so the IDE picks the SSH board. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
 
-`make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/lws-hmi/debug-runtime/`), replaces `/opt/hmi`, and starts flutter-pi with VM Service over SSH port forwarding (USB-SSH or registered IP). Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make push-app`.
+`make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/hmi/debug-runtime/`), replaces `/opt/hmi`, and starts flutter-pi with VM Service over SSH port forwarding (USB-SSH or registered IP). Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make push-app`.
 
 Host-only checks:
 
@@ -443,7 +443,7 @@ On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under
 
 Rockchip Innohi scripts reference **`linux-sdk/innohi_board/`** (not in git; only **`linux-sdk/innohi/`** ships). `make apply-overlay` syncs firmware + binaries and patches `post-wifibt.sh` / `mk-rootfs.sh`. **lws_hmi** skips Innohi **MainServer** autostart (Plan A uses systemd + `hmi.service`). If `build-rootfs` fails on `innohi_board` or `MainServer`, run `make apply-overlay` again (macOS: auto before each Docker build).
 
-**ynh960 Wi‑Fi/BT chip:** board SDIO is **AIC8800D80** (`c8a1:0082`), not AP6256. Keep `RK_WIFIBT_MODULES` non-empty so `post-wifibt` copies kernel `*.ko` + Innohi firmware; runtime uses `wifibt-bringup.sh` / `rk_wifi_init` (`aic8800_bsp`/`fdrv`/`btlpm`). Kernel fragment: `lws-hmi-ynh960-wifibt.config`.
+**ynh960 Wi‑Fi/BT chip:** board SDIO is **AIC8800D80** (`c8a1:0082`), not AP6256. Keep `RK_WIFIBT_MODULES` non-empty so `post-wifibt` copies kernel `*.ko` + Innohi firmware; runtime uses `wifibt-bringup.sh` / `rk_wifi_init` (`aic8800_bsp`/`fdrv`/`btlpm`). Kernel fragment: `ynh960-wifibt.config`.
 
 ### Innohi SDK-native Linux (`make build-sdk-native`)
 
@@ -535,12 +535,12 @@ make pull-display-params    # adb pull → board/ → re-apply SDK overlay
 
 Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Buildroot. We add:
 
-1. **Buildroot fs-overlay** — `buildroot/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/system/etc/`:
+1. **Buildroot fs-overlay** — `buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay/system/etc/`:
    - `960_lcd_param_rk356x.txt`
    - `lcd_mipi_param.txt`
    - `LCD_PARAM_RK356X_V11_0.txt` (same content as 960 file; legacy name for ParamUpdate)
 
-2. **post-rootfs hook** — `device/rockchip/common/post-hooks/05-lws-hmi-display.sh` (re-copy from `lws-hmi/board/` during `./build.sh rootfs`).
+2. **post-rootfs hook** — `device/rockchip/common/post-hooks/05-display.sh` (re-copy from `lws-hmi/board/` during `./build.sh rootfs`).
 
 3. **BR2_ROOTFS_OVERLAY** line appended to `buildroot/configs/rockchip/chips/rk3566_rk3568.config`.
 
@@ -560,9 +560,9 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 | `app/hmi/` | P1 Hello World Flutter 工程 |
 | `AGENTS.md` | AI agent 工作流 + 改动后的重新构建指引 |
 | `scripts/build-{boot-logo,flutter-app}.sh` | Logo / App 构建脚本 |
-| `overlay/.../lws-hmi-fs-overlay/etc/systemd/` | `hmi.service`、journald volatile 等 |
-| `overlay/.../06-lws-hmi-systemd.sh` | 镜像构建时 enable hmi / disable mediamtx·sshd |
-| `overlay/.../05-lws-hmi-display.sh` | Buildroot post-rootfs install hook |
+| `overlay/.../rootfs-overlay/etc/systemd/` | `hmi.service`、journald volatile 等 |
+| `overlay/.../06-systemd.sh` | 镜像构建时 enable hmi / disable mediamtx·sshd |
+| `overlay/.../05-display.sh` | Buildroot post-rootfs install hook |
 | `overlay/.../check-sdk.sh` | Skip ext4/WSL guards when `LWS_HMI_DOCKER=1` |
 | `docker/Dockerfile` | Ubuntu 22.04 + Rockchip build dependencies |
 

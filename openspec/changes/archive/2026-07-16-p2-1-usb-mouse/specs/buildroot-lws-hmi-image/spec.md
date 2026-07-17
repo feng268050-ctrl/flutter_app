@@ -2,7 +2,7 @@
 
 ### Requirement: flutter-pi cursor and mouse pref support in image
 
-The Buildroot/lws-hmi image SHALL ship a flutter-pi build that: (1) shows a reliable on-screen mouse pointer when a USB mouse is attached on ynh960; and (2) applies mouse preferences from `/var/lib/lws-hmi/` (natural scroll, scroll speed, pointer speed, primary button) at process start and when pointer devices are added. Any package patches required for cursor fallback or pref apply MUST be present under the repository flutter-pi package overlay and baked into the prebuilt used by rootfs.
+The Buildroot/lws-hmi image SHALL ship a flutter-pi build that: (1) shows a reliable on-screen mouse pointer when a USB mouse is attached on ynh960; and (2) applies mouse preferences from `/var/lib/hmi/` (natural scroll, scroll speed, pointer speed, primary button) at process start and when pointer devices are added. Any package patches required for cursor fallback or pref apply MUST be present under the repository flutter-pi package overlay and baked into the prebuilt used by rootfs.
 
 #### Scenario: Prebuilt includes mouse/cursor patches
 

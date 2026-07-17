@@ -1,7 +1,7 @@
 #!/bin/sh
 # §3.4 platform stack verification on ynh960 device (excludes flutter-pi / hmi boot KPI).
 # Run after flash: verify-env
-# Canonical copy: overlay/.../lws-hmi-fs-overlay/usr/lib/lws-hmi/env-verify.sh
+# Canonical copy: overlay/.../rootfs-overlay/usr/libexec/hmi/env-verify.sh
 set -u
 
 pass() { echo "PASS: $*"; }
@@ -11,7 +11,7 @@ prep_ok() { echo "PASS: $* (P1 prep-only — absent on rootfs is OK)"; }
 
 FAILED=0
 
-echo "=== lws-hmi verify-env (§3.4 platform stack, no flutter-pi) ==="
+echo "=== verify-env (§3.4 platform stack, no flutter-pi) ==="
 
 echo ""
 echo "--- RKNPU2 runtime (P1 rootfs) ---"
@@ -100,10 +100,10 @@ fi
 
 echo ""
 echo "--- RockUSB Loader reboot helper ---"
-if [ -x /usr/lib/lws-hmi/reboot-loader ] && [ -x /usr/bin/reboot-loader ]; then
+if [ -x /usr/libexec/hmi/reboot-loader ] && [ -x /usr/bin/reboot-loader ]; then
 	pass "reboot-loader installed in PATH (RESTART2 loader — not busybox reboot)"
 else
-	fail "reboot-loader missing from /usr/lib/lws-hmi or /usr/bin"
+	fail "reboot-loader missing from /usr/libexec/hmi or /usr/bin"
 fi
 
 npu_sysfs=0
@@ -163,11 +163,32 @@ if [ -f /etc/ssl/certs/ca-certificates.crt ] || [ -d /etc/ssl/certs ]; then
 else
 	fail "CA certificates missing (enable BR2_PACKAGE_CA_CERTIFICATES)"
 fi
-for helper in wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh apply-eth0.sh restore-settings.sh change-backlight.sh change-volume.sh change-orientation.sh apply-mouse-settings.sh bind-prefs.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
-	if [ -x "/usr/lib/lws-hmi/$helper" ]; then
+for helper in wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh; do
+	if [ -x "/usr/libexec/wpa/$helper" ]; then
 		pass "helper $helper"
 	else
-		fail "helper $helper missing or not executable"
+		fail "helper $helper missing or not executable (/usr/libexec/wpa/)"
+	fi
+done
+for helper in eth0-dhcp.sh eth0-static.sh eth0-link.sh apply-eth0.sh; do
+	if [ -x "/usr/libexec/network/$helper" ]; then
+		pass "helper $helper"
+	else
+		fail "helper $helper missing or not executable (/usr/libexec/network/)"
+	fi
+done
+for helper in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+	if [ -x "/usr/libexec/bluetooth/$helper" ]; then
+		pass "helper $helper"
+	else
+		fail "helper $helper missing or not executable (/usr/libexec/bluetooth/)"
+	fi
+done
+for helper in restore-settings.sh change-backlight.sh change-volume.sh change-orientation.sh apply-mouse-settings.sh bind-prefs.sh; do
+	if [ -x "/usr/libexec/hmi/$helper" ]; then
+		pass "helper $helper"
+	else
+		fail "helper $helper missing or not executable (/usr/libexec/hmi/)"
 	fi
 done
 year="$(date -u +%Y 2>/dev/null || echo 0)"
@@ -195,7 +216,7 @@ done
 if [ -n "$aic_ko" ]; then
 	pass "aic8800_*.ko present"
 else
-	fail "aic8800_fdrv.ko missing (enable lws-hmi-ynh960-wifibt.config, rebuild kernel+rootfs)"
+	fail "aic8800_fdrv.ko missing (enable ynh960 wifibt kernel config, rebuild kernel+rootfs)"
 fi
 if [ -x /usr/bin/rk_wifi_init ]; then
 	pass "rk_wifi_init installed"
@@ -214,7 +235,7 @@ if [ -f /vendor/etc/firmware/fmacfw_8800d80_u02.bin ] || \
 else
 	warn "fmacfw_8800d80_u02.bin not found under firmware dirs"
 fi
-if [ -f /var/lib/lws-hmi/wpa_supplicant.conf ]; then
+if [ -f /var/lib/wpa_supplicant/wpa_supplicant.conf ]; then
 	pass "wpa_supplicant.conf seed present"
 else
 	warn "wpa_supplicant.conf seed missing (wifi-stack-up will create)"

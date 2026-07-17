@@ -2,7 +2,7 @@
 
 ### Requirement: Linux maps modes to flutter-pi launch orientation
 
-On Linux, **landscape** SHALL map to flutter-pi `-o landscape_left` and **portrait** SHALL map to flutter-pi `-o portrait_up`. Setting the preferred mode SHALL go through `change-orientation` / `change-orientation.sh`, which MUST persist `/var/lib/lws-hmi/display-orientation` so `hmi-launch.sh` applies the matching `-o` on the next HMI start. The Linux Flutter orientation backend MUST NOT write that preference file directly.
+On Linux, **landscape** SHALL map to flutter-pi `-o landscape_left` and **portrait** SHALL map to flutter-pi `-o portrait_up`. Setting the preferred mode SHALL go through `change-orientation` / `change-orientation.sh`, which MUST persist `/var/lib/hmi/display-orientation` so `hmi-launch.sh` applies the matching `-o` on the next HMI start. The Linux Flutter orientation backend MUST NOT write that preference file directly.
 
 #### Scenario: Preference survives restart
 
@@ -17,4 +17,4 @@ On Linux, **landscape** SHALL map to flutter-pi `-o landscape_left` and **portra
 #### Scenario: Shell writes same file as launch reads
 
 - **WHEN** `change-orientation portrait` succeeds
-- **THEN** `/var/lib/lws-hmi/display-orientation` contains `portrait`
+- **THEN** `/var/lib/hmi/display-orientation` contains `portrait`

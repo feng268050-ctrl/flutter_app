@@ -6,7 +6,7 @@ Base device tree is **Rockchip RK3566 EVB2** (`rk3566-evb2-lp4x-v10.dtsi` → `r
 
 **Machine model** in dmesg still reads `Rockchip RK3566 EVB2 LP4X V10 Board` — expected until a dedicated ynh960 `.dts` is forked (cosmetic only).
 
-**P1 trim (applied):** [`overlay/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi`](../overlay/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi) disables EVB nodes with **no hardware** on ynh960:
+**P1 trim (applied):** [`overlay/kernel/rockchip/ynh960-evb-trim.dtsi`](../overlay/kernel/rockchip/ynh960-evb-trim.dtsi) disables EVB nodes with **no hardware** on ynh960:
 
 | Node | Boot log (before trim) |
 |------|------------------------|
@@ -27,19 +27,19 @@ Use this table when a feature lands and dmesg warnings become symptoms. **Sympto
 |--------------------|--------------|-------|-------------------|---------------|
 | `arm-scmi … protocol 17/22 not active` | TF-A does not expose optional SCMI protocols | — | None; CRU/PMIC path still works | Ignore unless using SCMI-based idle/DVFS |
 | `rockchip-vop2 … no regulator (vop)` | EVB OPP expects named `vop` rail; ynh960 uses RK817 | P1 polish / P3 | Display works; VOP OPP/dynamic voltage scaling missing | Add `&vop { vop-supply = <&vdd_logic>; };` (see `rk3566-rk817-tablet.dts`) |
-| `dw-mipi-dsi … failed to find panel: -517` | `EPROBE_DEFER` during early probe | P1 | Normal if panel lights after ParamUpdate | If panel stays black: check `lws-hmi-ynh960-display.dtsi`, `960_lcd_param_rk356x.txt`, ParamUpdate |
+| `dw-mipi-dsi … failed to find panel: -517` | `EPROBE_DEFER` during early probe | P1 | Normal if panel lights after ParamUpdate | If panel stays black: check `ynh960-display.dtsi`, `960_lcd_param_rk356x.txt`, ParamUpdate |
 | `Failed to initialize dvfs info cpu0` | No valid `vdd_cpu` regulator after EVB bucks removed; `&cpu0` only has `reg-name` | P2/P3 | CPU runs but fine-grained cpufreq/DVFS may be degraded | Map `&cpu0 { cpu-supply = <&…>; }` to actual CPU buck on ynh960 (schematic / Innohi); may be RK817 DCDC or external buck |
 | `rockchip,bus bus-npu … no regulator (pvtm)` / `failed to get OPP table` | NPU bus OPP / leakage tables tied to EVB PMIC naming | **P3** (RKNPU) | NPU DVFS incomplete | Align NPU `pvtm-supply` / OPP with RK817 (`vdd_npu` exists on rk809); reference `rk3566-rk817-tablet.dts` |
 | `RKNPU … can't request region` / `IRQ npu_irq not found` | RKNPU MMIO/IRQ node mismatch or conflict with EVB fragment | **P3** | RKNN runtime may fail probe | Verify `&rknpu` status, memory region, interrupts in board DTS; enable `lws_hmi_npu.config`; compare working RK3566 RKNPU dtsi |
 | `mpp_rkvenc … Failed to get leakage` | Encoder OPP/leakage from EVB tables | **P5** (RTSP/record) | HW encode may be limited | Innohi/MPP dtsi for ynh960; enable when mediamtx path needs encode |
 | `mpp_rkvdec2 … shared_niu_a/h is not found` | Missing NIU reset lines in DT for rkvdec2 | **P5** | HW decode may fail | Add reset/clock resources per Rockchip MPP binding for ynh960 |
 | `rockchip-dmc … failed to get vop pn to msch rl` | DMC ↔ VOP bandwidth coupling (follows VOP regulator) | P2/P5 | DMC fixed freq still works | Fix `vop-supply` first; then revisit DMC devfreq if bandwidth tuning needed |
-| `mdio_bus stmmac-1: MDIO device at address 0 is missing` / `__stmmac_open: Cannot attach to PHY` | EVB `phy@0` / wrong reset (UART5) | **P2.1** | `eth0` exists, cannot attach PHY | [`lws-hmi-ynh960-uart5-gmac.dtsi`](../overlay/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi): `gpio4 PB3` reset, `phy@1` `reg=<1>`; pin name with `10-lws-hmi-gmac.link` |
+| `mdio_bus stmmac-1: MDIO device at address 0 is missing` / `__stmmac_open: Cannot attach to PHY` | EVB `phy@0` / wrong reset (UART5) | **P2.1** | `eth0` exists, cannot attach PHY | [`ynh960-uart5-gmac.dtsi`](../overlay/kernel/rockchip/ynh960-uart5-gmac.dtsi): `gpio4 PB3` reset, `phy@1` `reg=<1>`; pin name with `10-gmac.link` |
 | `Failed to reset the dma` / `stmmac_hw_setup` after PHY `stmmac-1:01` OK | Still EVB **RGMII** (`init for RGMII`, 125 MHz); product is **RMII** like ynh512/518 | **P2.1** | PHY OK; `ip link set eth0 up` → Connection timed out | Same dtsi: `phy-mode="rmii"`, 50 MHz clocks, RMII pinctrl; drop `tx_delay`/`rx_delay` |
-| `pin gpio3-20 already requested by fe6b0000.serial; cannot claim for fe700020.pwm` | EVB `&uart7` (m1 on gpio3 PC4/PC5) vs customer LED `&pwm14`/`&pwm15` on same pads | **P2.1 fixed** | pwm14 probe failed (LED PWM only; panel BL is pwm4) | [`lws-hmi-ynh960-uart7-pwm.dtsi`](../overlay/kernel/rockchip/lws-hmi-ynh960-uart7-pwm.dtsi) disables unused `&uart7` |
+| `pin gpio3-20 already requested by fe6b0000.serial; cannot claim for fe700020.pwm` | EVB `&uart7` (m1 on gpio3 PC4/PC5) vs customer LED `&pwm14`/`&pwm15` on same pads | **P2.1 fixed** | pwm14 probe failed (LED PWM only; panel BL is pwm4) | [`ynh960-uart7-pwm.dtsi`](../overlay/kernel/rockchip/ynh960-uart7-pwm.dtsi) disables unused `&uart7` |
 | `of_dma_request_slave_channel: dma-names … /serial@fe690000` | UART5 DT lacks DMA channel names | — | Harmless; UART falls back to IRQ mode (Modbus OK) | Optional: add `dmas`/`dma-names` later |
 | `pin 114 already requested by fe690000.serial; switch mux 4 to GPIO` | EVB `&gmac1` `snps,reset-gpio = gpio3 RK_PC2` == UART5_TX_M1 | **P2.1 fixed** | Was: `/dev/ttyS5` TX count↑ but **no Modbus RX** (Android OK) | Same dtsi: drop EVB PC2 reset; use `gpio4 PB3` instead |
-| `own-gpio … pin gpio4-0 already requested by fe010000.ethernet` | `own-gpio` vs `gmac1` RGMII (gpio4 A0/A1/A2, gpio3 D7) | **P2 fixed** | Was: whole `own-gpio` group failed → side LEDs stuck | [`lws-hmi-ynh960-own-gpio.dtsi`](../overlay/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi) drops USB_HOST_PWREN*/Relay from `own-gpio-pins` |
+| `own-gpio … pin gpio4-0 already requested by fe010000.ethernet` | `own-gpio` vs `gmac1` RGMII (gpio4 A0/A1/A2, gpio3 D7) | **P2 fixed** | Was: whole `own-gpio` group failed → side LEDs stuck | [`ynh960-own-gpio.dtsi`](../overlay/kernel/rockchip/ynh960-own-gpio.dtsi) drops USB_HOST_PWREN*/Relay from `own-gpio-pins` |
 | `fiq_debugger … IRQ fiq/wakeup not found` | EVB FIQ wiring absent; partial probe on ynh960 | — | Harmless; **keep node enabled** (`console=ttyFIQ0`) | Do not disable in evb-trim — serial goes quiet after ~2 s earlycon if disabled |
 | `systemd[1]: Failed to find module 'autofs4'` | Kernel built without `CONFIG_AUTOFS_FS` | P5 / optional | Harmless warning at boot | Enable autofs in kernel **or** mask systemd unit that pulls it in |
 | `Machine model: … EVB2 …` | Product still uses EVB2 `.dts` skeleton | P5 polish | None | Optional: fork `rk3566-ynh960.dts` with correct `model` / `compatible` |
@@ -81,13 +81,13 @@ verify-boot
 
 | Path | Role |
 |------|------|
-| `overlay/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi` | P1 EVB node disable |
-| `overlay/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi` | P2: own-gpio pinmux fix vs gmac1 |
-| `overlay/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi` | P2.1: RMII + `gpio4 PB3` reset + MDIO addr 1 (drop EVB RGMII / UART5 reset) |
-| `overlay/kernel/rockchip/lws-hmi-ynh960-uart7-pwm.dtsi` | P2.1: disable unused uart7 so pwm14/15 can claim gpio3 PC4/PC5 |
-| `overlay/kernel/rockchip/lws-hmi-ynh960-display.dtsi` | MIPI dsi0 + 800×1280 timing |
-| `overlay/kernel/rockchip/lws-hmi-ynh960-linux-root.dtsi` | `root=PARTLABEL=rootfs_a` (P2.4 A/B; letter B FITs use `rootfs_b`) |
-| `overlay/kernel/rockchip/lws-hmi-kernel-trim.config` | Kconfig driver trim (CAN/PCIe/CSI/…) |
+| `overlay/kernel/rockchip/ynh960-evb-trim.dtsi` | P1 EVB node disable |
+| `overlay/kernel/rockchip/ynh960-own-gpio.dtsi` | P2: own-gpio pinmux fix vs gmac1 |
+| `overlay/kernel/rockchip/ynh960-uart5-gmac.dtsi` | P2.1: RMII + `gpio4 PB3` reset + MDIO addr 1 (drop EVB RGMII / UART5 reset) |
+| `overlay/kernel/rockchip/ynh960-uart7-pwm.dtsi` | P2.1: disable unused uart7 so pwm14/15 can claim gpio3 PC4/PC5 |
+| `overlay/kernel/rockchip/ynh960-display.dtsi` | MIPI dsi0 + 800×1280 timing |
+| `overlay/kernel/rockchip/ynh960-linux-root.dtsi` | `root=PARTLABEL=rootfs_a` (P2.4 A/B; letter B FITs use `rootfs_b`) |
+| `overlay/kernel/rockchip/ynh960-kernel-trim.config` | Kconfig driver trim (CAN/PCIe/CSI/…) |
 | `board/960_lcd_param_rk356x.txt` | ParamUpdate MIPI params |
 | `docs/boot-kpi-optimization.md` | Boot KPI / kernel trim A-3 |
 
@@ -99,8 +99,8 @@ verify-boot
 |------|--------|
 | 2026-07-15 | P2.1 USB keyboard userspace: xkeyboard-config + Compose stubs; flutter-pi patches 0001–0003 (arrows / NumLock LED / key-repeat); `FLUTTER_PI_APPLY_PACKAGE_PATCHES` for `SITE_METHOD=local` |
 | 2026-07-15 | P2.1 USB keyboard: re-enable `usbhost_dwc3` + `u2phy0_host` for 1 mm expansion; DWC3 dual-role; restore `USB_HOST_PWREN*` under RMII |
-| 2026-07-15 | P2.1: uart5-gmac — switch EVB RGMII → product **RMII** (sibling clocks/pinctrl); keep `gpio4 PB3` + `rgmii_phy1` @ MDIO `reg=<1>`; `eth0` via `10-lws-hmi-gmac.link` |
-| 2026-07-14 | P2.1: `lws-hmi-ynh960-uart7-pwm.dtsi` — disable EVB uart7 vs pwm14/15 on gpio3-20 |
-| 2026-07-14 | P2: `lws-hmi-ynh960-uart5-gmac.dtsi` — EVB gmac1 PHY reset stole UART5_TX (Modbus); Android works, Linux RX empty |
-| 2026-07-14 | P2: `lws-hmi-ynh960-own-gpio.dtsi` — drop gmac1-overlapping pads so `own-gpio` probes; GPIO_3/4/6 default off |
-| 2026-07-11 | Initial tracker; `lws-hmi-ynh960-evb-trim.dtsi` for FAN53555/SFC (not fiq-debugger — breaks serial after earlycon) |
+| 2026-07-15 | P2.1: uart5-gmac — switch EVB RGMII → product **RMII** (sibling clocks/pinctrl); keep `gpio4 PB3` + `rgmii_phy1` @ MDIO `reg=<1>`; `eth0` via `10-gmac.link` |
+| 2026-07-14 | P2.1: `ynh960-uart7-pwm.dtsi` — disable EVB uart7 vs pwm14/15 on gpio3-20 |
+| 2026-07-14 | P2: `ynh960-uart5-gmac.dtsi` — EVB gmac1 PHY reset stole UART5_TX (Modbus); Android works, Linux RX empty |
+| 2026-07-14 | P2: `ynh960-own-gpio.dtsi` — drop gmac1-overlapping pads so `own-gpio` probes; GPIO_3/4/6 default off |
+| 2026-07-11 | Initial tracker; `ynh960-evb-trim.dtsi` for FAN53555/SFC (not fiq-debugger — breaks serial after earlycon) |

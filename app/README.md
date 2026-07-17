@@ -65,7 +65,7 @@ System runtime (rootfs — updated with `make build-rootfs`):
 /usr/share/flutter/icudtl.dat   → release/data/icudtl.dat
 ```
 
-Started by `hmi.service`: `/usr/lib/lws-hmi/hmi-launch.sh` (release: `flutter-pi --release`; debug payload: matching debug engine via `LD_LIBRARY_PATH`).
+Started by `hmi.service`: `/usr/libexec/hmi/hmi-launch.sh` (release: `flutter-pi --release`; debug payload: matching debug engine via `LD_LIBRARY_PATH`).
 
 ## P1.5 device debugging (USB-SSH)
 
@@ -94,7 +94,7 @@ VS Code / Cursor: open repo root `lws-hmi`, Run and Debug → **lws-hmi (USB-SSH
 
 Behavior:
 
-- First debug session uploads the debug engine to `/var/lib/lws-hmi/debug-runtime/<version>/` (large; cached afterward).
+- First debug session uploads the debug engine to `/var/lib/hmi/debug-runtime/<version>/` (large; cached afterward).
 - `/opt/hmi` is replaced with the debug bundle (`kernel_blob.bin`); IDE stop keeps the debug app running.
 - Return to release: `make build-app` then `make push-app`.
 

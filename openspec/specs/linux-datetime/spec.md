@@ -39,7 +39,7 @@ The controller SHALL allow setting the system wall clock from a civil date/time 
 
 ### Requirement: Timezone get and set
 
-The controller SHALL get and set a timezone identifier. Linux SHOULD use IANA names when zoneinfo/`tzdata` is present (at least `UTC` and `Asia/Shanghai` for ynh960). The preferred timezone SHALL be persisted under `/var/lib/lws-hmi/` (or an equivalent documented path). If full zoneinfo is unavailable, the implementation MUST document the fallback and still accept the curated Demo identifiers without crashing.
+The controller SHALL get and set a timezone identifier. Linux SHOULD use IANA names when zoneinfo/`tzdata` is present (at least `UTC` and `Asia/Shanghai` for ynh960). The preferred timezone SHALL be persisted under `/var/lib/hmi/` (or an equivalent documented path). If full zoneinfo is unavailable, the implementation MUST document the fallback and still accept the curated Demo identifiers without crashing.
 
 #### Scenario: Timezone preference persists
 

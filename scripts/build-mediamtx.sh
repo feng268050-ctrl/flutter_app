@@ -23,7 +23,7 @@ read_tag() {
 TAG="$(read_tag)"
 TAG_NO_V="${TAG#v}"
 REPO="${MEDIAMTX_REPO:-https://github.com/bluenviron/mediamtx.git}"
-OVERLAY_BIN="$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/bin/mediamtx"
+OVERLAY_BIN="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/bin/mediamtx"
 RELEASE_URL="https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG_NO_V}_linux_arm64v8.tar.gz"
 CACHE_TAR="$SRC_ROOT/mediamtx_${TAG_NO_V}_linux_arm64v8.tar.gz"
 

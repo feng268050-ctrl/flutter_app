@@ -127,9 +127,9 @@ class WifiConnectionState {
   }
 }
 
-/// Persist / parse `/var/lib/lws-hmi/wlan0-ipv4`.
+/// Persist / parse `/var/lib/wpa_supplicant/wlan0-ipv4`.
 class WlanIpv4Store {
-  static const defaultPath = '/var/lib/lws-hmi/wlan0-ipv4';
+  static const defaultPath = '/var/lib/wpa_supplicant/wlan0-ipv4';
 
   static WlanIpv4Config parse(String text) {
     final map = <String, String>{};

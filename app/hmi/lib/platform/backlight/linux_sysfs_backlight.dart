@@ -14,7 +14,7 @@ class LinuxSysfsBacklight implements BacklightController {
   LinuxSysfsBacklight({
     this.classDir = '/sys/class/backlight',
     this.preferredNames = const <String>['backlight', 'backlight1', 'backlight2'],
-    this.preferencePath = '/var/lib/lws-hmi/backlight-brightness',
+    this.preferencePath = '/var/lib/hmi/backlight-brightness',
     this.changeBacklightCommand = const <String>['change-backlight'],
     BoardHelperRunner? runHelper,
   }) : runHelper = runHelper ?? defaultBoardHelperRunner;

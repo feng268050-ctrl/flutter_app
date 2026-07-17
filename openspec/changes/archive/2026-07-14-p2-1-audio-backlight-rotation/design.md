@@ -66,7 +66,7 @@ Demo depends only on abstract types; inject Linux impls in `main` / page constru
 **Linux implementation preference (apply-time spike, pick first that works on device):**
 
 1. **Preferred:** Flutter audio plugin that runs on flutter-pi ARM64 Linux and plays Flutter assets (e.g. `audioplayers` / equivalent).
-2. **Fallback:** Extract asset to a cache file under `/var/lib/lws-hmi/audio/` (or adjacent to bundle) and play with rootfs tools (`mpg123` or `ffplay`/`gst-play-1.0` if already present), control volume via `amixer` Softvol / PCM when available, else player gain.
+2. **Fallback:** Extract asset to a cache file under `/var/lib/hmi/audio/` (or adjacent to bundle) and play with rootfs tools (`mpg123` or `ffplay`/`gst-play-1.0` if already present), control volume via `amixer` Softvol / PCM when available, else player gain.
 
 **Why:** UI and product code stay on `MediaAudioController`; hardware bring-up can swap ALSA details without API churn.
 
@@ -97,7 +97,7 @@ Linux: discover first usable `/sys/class/backlight/*/brightness` (+ `max_brightn
 | `landscape` | `landscape_left` (current production default) |
 | `portrait`  | `portrait_up` |
 
-1. Persist choice under **`/var/lib/lws-hmi/display-orientation`** (single line: `landscape` \| `portrait`; default `landscape` if missing).
+1. Persist choice under **`/var/lib/hmi/display-orientation`** (single line: `landscape` \| `portrait`; default `landscape` if missing).
 2. `hmi-launch.sh` reads the file and passes the mapped `-o` (replace hardcoded `landscape_left`).
 3. Demo Portrait / Landscape buttons: write preference → request HMI restart (`systemctl restart hmi` via a small privileged helper or existing restart script pattern used by push-app).
 

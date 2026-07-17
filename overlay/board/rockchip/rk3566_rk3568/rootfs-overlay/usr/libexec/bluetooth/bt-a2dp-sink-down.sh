@@ -3,7 +3,7 @@
 # Usage: bt-a2dp-sink-down.sh
 set -eu
 
-PREF="${LWS_BT_A2DP_PREF:-/var/lib/lws-hmi/bt-a2dp-sink}"
+PREF="${LWS_BT_A2DP_PREF:-/var/lib/bluetooth/bt-a2dp-sink}"
 mkdir -p "$(dirname "$PREF")"
 echo 0 >"$PREF"
 

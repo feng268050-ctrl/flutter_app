@@ -26,8 +26,8 @@ if [ ! -d "/sys/class/net/$IFACE" ]; then
 	exit 1
 fi
 
-if [ -x /usr/lib/lws-hmi/eth0-dhcp.sh ]; then
-	LWS_ETH_IFACE="$IFACE" /usr/lib/lws-hmi/eth0-dhcp.sh stop 2>/dev/null || true
+if [ -x /usr/libexec/network/eth0-dhcp.sh ]; then
+	LWS_ETH_IFACE="$IFACE" /usr/libexec/network/eth0-dhcp.sh stop 2>/dev/null || true
 fi
 
 if ! ip link set "$IFACE" up 2>/tmp/lws-eth-static.err; then
@@ -46,8 +46,8 @@ if [ -n "$GATEWAY" ]; then
 fi
 
 if [ -n "$DNS" ]; then
-	mkdir -p /var/lib/lws-hmi
-	printf 'nameserver %s\n' "$DNS" >/var/lib/lws-hmi/eth0-resolv.conf
+	mkdir -p /var/lib/network
+	printf 'nameserver %s\n' "$DNS" >/var/lib/network/eth0-resolv.conf
 	if command -v resolvconf >/dev/null 2>&1; then
 		printf 'nameserver %s\n' "$DNS" | resolvconf -a "$IFACE" 2>/dev/null || true
 	else

@@ -4,12 +4,12 @@ set -eu
 
 BUNDLE=/opt/hmi
 MODE_FILE="$BUNDLE/runtime-mode.json"
-LOG=/var/lib/lws-hmi/debug-app.log
-PIDFILE=/var/lib/lws-hmi/debug-app.pid
-VM_LINE_FILE=/var/lib/lws-hmi/debug-app.vm-service
+LOG=/var/lib/hmi/debug-app.log
+PIDFILE=/var/lib/hmi/debug-app.pid
+VM_LINE_FILE=/var/lib/hmi/debug-app.vm-service
 
 log() {
-	echo "lws-hmi-debug-run: $*"
+	echo "debug-run: $*"
 }
 
 read_json_field() {
@@ -59,10 +59,10 @@ if [ -f "$PIDFILE" ] && pid_is_live "$(cat "$PIDFILE")"; then
 	exec tail -F "$LOG"
 fi
 
-/usr/lib/lws-hmi/hmi-stop-and-wait.sh
+/usr/libexec/hmi/hmi-stop-and-wait.sh
 : >"$LOG"
 start-stop-daemon -S -b -m -p "$PIDFILE" \
-	-x /bin/sh -- -c "exec /usr/lib/lws-hmi/hmi-launch.sh >>'$LOG' 2>&1"
+	-x /bin/sh -- -c "exec /usr/libexec/hmi/hmi-launch.sh >>'$LOG' 2>&1"
 
 i=0
 while [ "$i" -lt 60 ]; do

@@ -41,7 +41,7 @@ Operators want the **same Micro-USB jack** for either PC debug (USB-SSH) or a US
 
 ### D2 — Manual Debug over USB preference (primary)
 
-**Choice:** `/usr/lib/lws-hmi/usb-otg-mode.sh` + `/var/lib/lws-hmi/usb-debug` (`1`/`0`, missing → **on**).
+**Choice:** `/usr/libexec/hmi/usb-otg-mode.sh` + `/var/lib/hmi/usb-debug` (`1`/`0`, missing → **on**).
 
 | Preference | PHY | Plug-ssh | Micro-USB use |
 |------------|-----|----------|----------------|
@@ -54,11 +54,11 @@ Boot + extcon udev run `usb-otg-mode.sh apply` (systemd oneshot, not long `udev`
 
 ### D3 — Plug-ssh gated on preference + VBUS
 
-**Choice:** `usb-plug-ssh-vbus-check.sh` starts `lws-hmi-usb-plug-ssh.service` only when pref is debug-on **and** extcon `USB=1` (and not fighting host). Host mode always stops the unit.
+**Choice:** `usb-plug-ssh-vbus-check.sh` starts `ssh-debug-usb.service` only when pref is debug-on **and** extcon `USB=1` (and not fighting host). Host mode always stops the unit.
 
 ### D4 — Keyboard path unchanged at Flutter layer
 
-**Choice:** No Dart HID decode. Host mode + OTG adapter → `/dev/input` → flutter-pi. Demo keyboard copy points at Debug over USB OFF. 1 mm host overlay (`lws-hmi-ynh960-usb-host.dtsi`) stays enabled.
+**Choice:** No Dart HID decode. Host mode + OTG adapter → `/dev/input` → flutter-pi. Demo keyboard copy points at Debug over USB OFF. 1 mm host overlay (`ynh960-usb-host.dtsi`) stays enabled.
 
 ### D5 — Demo Debug group: USB + LAN
 
@@ -66,8 +66,8 @@ Boot + extcon udev run `usb-otg-mode.sh apply` (systemd oneshot, not long `udev`
 
 | Toggle | Default | Persist | Backend |
 |--------|---------|---------|---------|
-| **Debug over USB** | ON | `/var/lib/lws-hmi/usb-debug` (userdata via prefs-bind) | `usb-otg-mode.sh` |
-| **Debug over LAN** | OFF | No | existing `enable-ssh-debug.sh` / `lws-hmi-lan-ssh.service` |
+| **Debug over USB** | ON | `/var/lib/hmi/usb-debug` (userdata via prefs-bind) | `usb-otg-mode.sh` |
+| **Debug over LAN** | OFF | No | existing `enable-ssh-debug.sh` / `ssh-debug-lan.service` |
 
 ### D6 — Boot / flash unchanged
 
@@ -78,7 +78,7 @@ Boot + extcon udev run `usb-otg-mode.sh apply` (systemd oneshot, not long `udev`
 | Risk | Mitigation |
 |------|------------|
 | Operator leaves Debug over USB ON while plugging keyboard | Demo copy + status line; dial OFF before OTG keyboard |
-| Pref lost on flash without userdata | defaults ON (plug-ssh); prefs-bind to `/userdata/lws-hmi` |
+| Pref lost on flash without userdata | defaults ON (plug-ssh); prefs-bind to `/userdata/{wpa_supplicant,network,bluetooth,hmi}` |
 | udev kills long scripts | oneshot `systemctl start --no-block` |
 | Confused with ID-based OTG cables | Ledger: ID not used for product switch |
 

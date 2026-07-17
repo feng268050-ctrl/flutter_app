@@ -3,11 +3,11 @@
 # Usage: bt-stack-down.sh
 set -eu
 
-if [ -f /run/lws-hmi-bt-agent.pid ]; then
-	kill "$(cat /run/lws-hmi-bt-agent.pid)" 2>/dev/null || true
-	rm -f /run/lws-hmi-bt-agent.pid
+if [ -f /run/bt-agent.pid ]; then
+	kill "$(cat /run/bt-agent.pid)" 2>/dev/null || true
+	rm -f /run/bt-agent.pid
 fi
-pkill -f '/usr/lib/lws-hmi/bt-pair-agent.sh' 2>/dev/null || true
+pkill -f '/usr/libexec/bluetooth/bt-pair-agent.sh' 2>/dev/null || true
 
 if command -v bluetoothctl >/dev/null 2>&1; then
 	bluetoothctl discoverable off >/dev/null 2>&1 || true

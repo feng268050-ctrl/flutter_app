@@ -4,7 +4,7 @@
 
 The repository SHALL provide **`make push-app`** that deploys the current Flutter release artifacts to **`/opt/hmi/lib/libapp.so`** and **`/opt/hmi/data/flutter_assets/`** on the target via `scp` over the USB ECM link, then triggers a **sysrq reboot** on the board so the new app loads **without** `systemctl stop` / `systemctl restart hmi.service` (Mali/DRM teardown on flutter-pi exit can hang SSH or oops the kernel).
 
-Deployment SHALL stage files under **`/var/lib/lws-hmi/push-app-staging/`**, install to `/opt/hmi`, then schedule reboot via **`/usr/lib/lws-hmi/shutdown.sh reboot`** or direct **`/proc/sysrq-trigger`** (see `scripts/usb-ssh-common.sh`). The host script SHALL **not** wait for the board to finish rebooting.
+Deployment SHALL stage files under **`/var/lib/hmi/push-app-staging/`**, install to `/opt/hmi`, then schedule reboot via **`/usr/libexec/hmi/shutdown.sh reboot`** or direct **`/proc/sysrq-trigger`** (see `scripts/usb-ssh-common.sh`). The host script SHALL **not** wait for the board to finish rebooting.
 
 #### Scenario: Single device connected
 
@@ -98,7 +98,7 @@ The repository SHALL provide **`make reboot`** that reboots a connected board **
 
 ### Requirement: make reboot-loader enters RockUSB Loader from Linux
 
-The repository SHALL provide **`make reboot-loader`** (`scripts/flash-usb.sh`) so a board running the **Linux HMI image** with **USB plug-ssh active** reboots into **RockUSB Loader** by running **`/usr/lib/lws-hmi/reboot-rockusb-loader`** on the target over the USB ECM SSH link, then waits until **`upgrade_tool ld`** reports a connected Loader device (existing `wait_for_rockusb` behavior).
+The repository SHALL provide **`make reboot-loader`** (`scripts/flash-usb.sh`) so a board running the **Linux HMI image** with **USB plug-ssh active** reboots into **RockUSB Loader** by running **`/usr/libexec/hmi/reboot-rockusb-loader`** on the target over the USB ECM SSH link, then waits until **`upgrade_tool ld`** reports a connected Loader device (existing `wait_for_rockusb` behavior).
 
 #### Scenario: Linux board over USB-SSH
 

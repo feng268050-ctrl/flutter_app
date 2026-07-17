@@ -46,7 +46,7 @@ fetch_board_serial_via_ssh() {
 		[[ -n "$opt" ]] && ssh_opts+=("$opt")
 	done < <(usb_ssh_bind_pair "$iface")
 	sshpass -p "$pass" ssh "${ssh_opts[@]}" "root@${addr}" \
-		'/usr/lib/lws-hmi/read-device-serial.sh' 2>/dev/null
+		'/usr/libexec/hmi/read-device-serial.sh' 2>/dev/null
 }
 
 enrich_usb_ssh_rows() {
@@ -364,7 +364,7 @@ network_reachable_usb_ssh() {
 			[[ -n "$opt" ]] && ssh_opts+=("$opt")
 		done < <(usb_ssh_bind_pair "$iface")
 		serial="$(sshpass -p "$pass" ssh "${ssh_opts[@]}" \
-			"root@${addr}" '/usr/lib/lws-hmi/read-device-serial.sh' 2>/dev/null || echo "-")"
+			"root@${addr}" '/usr/libexec/hmi/read-device-serial.sh' 2>/dev/null || echo "-")"
 	fi
 	usb_ssh_row "$serial" "$loc" "$iface" "-"
 }
@@ -437,7 +437,7 @@ select_usb_ssh_device() {
 	fi
 
 	IFS="$USB_SSH_FS" read -r mode s loc iface addr usb <<<"${rows[0]}"
-	[[ "$iface" != "-" && -n "$iface" ]] || die "USB-SSH: no host IFACE (plug USB OTG; board: /usr/lib/lws-hmi/usb-plug-ssh-start.sh)"
+	[[ "$iface" != "-" && -n "$iface" ]] || die "USB-SSH: no host IFACE (plug USB OTG; board: /usr/libexec/hmi/usb-plug-ssh-start.sh)"
 	printf '%s\n' "$loc" "$iface" "$addr"
 }
 

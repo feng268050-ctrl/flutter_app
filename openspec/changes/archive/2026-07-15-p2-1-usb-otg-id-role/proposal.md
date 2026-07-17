@@ -6,7 +6,7 @@ P2.1 proved USB HID on the **1 mm host expansion**, while Micro-USB stayed plug-
 
 - Keep kernel **`dr_mode=otg`** so Micro-USB can be peripheral or host via `otg_mode`.
 - **Do not** auto-select role from IDDIG for Demo/product UX.
-- Add **`usb-otg-mode.sh`** + `/var/lib/lws-hmi/usb-debug` (default **on**): ON → peripheral + VBUS plug-ssh; OFF → host + stop plug-ssh (keyboard).
+- Add **`usb-otg-mode.sh`** + `/var/lib/hmi/usb-debug` (default **on**): ON → peripheral + VBUS plug-ssh; OFF → host + stop plug-ssh (keyboard).
 - Demo **Debug** group: **Debug over USB** (persisted) and **Debug over LAN** (default off, not persisted).
 - Gate plug-ssh on preference + VBUS; update diag / ledger / keyboard copy.
 - **Non-goals**: soft IME (P4); Bluetooth keyboards; replacing 1 mm host; RockUSB flash redesign; persisting LAN SSH.
@@ -26,7 +26,7 @@ P2.1 proved USB HID on the **1 mm host expansion**, while Micro-USB stayed plug-
 
 ## Impact
 
-- **Kernel / DTS:** `lws-hmi-ynh960-usb-gadget.dtsi` → `dr_mode=otg`.
+- **Kernel / DTS:** `ynh960-usb-gadget.dtsi` → `dr_mode=otg`.
 - **Userspace:** `usb-otg-mode.sh`, VBUS gate, boot/udev apply oneshots.
 - **App:** `DebugDemoSection`, `UsbDebugController`.
 - **Docs:** pinmux ledger §4.1; plan notes.

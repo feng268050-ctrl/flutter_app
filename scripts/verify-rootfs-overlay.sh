@@ -31,7 +31,7 @@ check_systemd_wants() {
 	fi
 	ls -la "$wants" 2>/dev/null || true
 
-	for unit in input-event-daemon.service lws-hmi-debug-boot.service lws-hmi-usb-plug-ssh.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service lws-hmi-lan-ssh.service lws-hmi-wpa.service lws-hmi-wlan0-dhcp.service lws-hmi-eth0.service; do
+	for unit in input-event-daemon.service lws-hmi-debug-boot.service ssh-debug-usb.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
 		if unit_wants_link "$unit"; then
 			echo "FAIL: $unit still enabled in $label" >&2
 			missing=1
@@ -40,7 +40,7 @@ check_systemd_wants() {
 		fi
 	done
 
-	for unit in hmi.service mainserver.service lws-hmi-performance.service lws-hmi-pwrkey-poweroff.service lws-hmi-settings-restore.service lws-hmi-usb-otg-role-boot.service lws-hmi-ab-boot-confirm.service; do
+	for unit in hmi.service mainserver.service cpu-performance.service pwrkey-poweroff.service settings-restore.service usb-otg-role-boot.service ab-boot-confirm.service; do
 		if unit_wants_link "$unit"; then
 			echo "OK:  $unit enabled in $label"
 		else
@@ -71,22 +71,44 @@ check_poweroff_hook() {
 
 	echo ""
 	echo "--- $label: crash-safe poweroff hook ---"
-	if [[ -x "$root/usr/lib/lws-hmi/pre-poweroff.sh" && \
-		-x "$root/usr/lib/lws-hmi/shutdown.sh" && \
-		-x "$root/usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh" ]]; then
+	if [[ -x "$root/usr/libexec/hmi/pre-poweroff.sh" && \
+		-x "$root/usr/libexec/hmi/shutdown.sh" && \
+		-x "$root/usr/libexec/hmi/systemctl-poweroff-wrapper.sh" ]]; then
 		echo "OK:  pre-poweroff/shutdown/systemctl wrapper scripts present in $label"
 	else
 		echo "FAIL: missing graceful poweroff helper scripts in $label" >&2
 		missing=1
 	fi
 
-	if [[ -x "$root/usr/bin/systemctl.real" && \
-		-L "$root/usr/bin/systemctl" && \
-		"$(readlink "$root/usr/bin/systemctl")" = "/usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh" ]]; then
-		echo "OK:  /usr/bin/systemctl wrapped via systemctl.real in $label"
-	else
-		echo "FAIL: /usr/bin/systemctl wrapper not installed in $label" >&2
+	if [[ ! -L "$root/usr/bin/systemctl" ]]; then
+		echo "FAIL: /usr/bin/systemctl not a symlink in $label" >&2
 		missing=1
+	elif [[ ! -x "$root/usr/bin/systemctl.real" ]]; then
+		echo "FAIL: /usr/bin/systemctl.real missing in $label" >&2
+		missing=1
+	else
+		case "$(readlink "$root/usr/bin/systemctl")" in
+		../libexec/hmi/systemctl-poweroff-wrapper.sh) ;;
+		*)
+			echo "FAIL: /usr/bin/systemctl not wrapped in $label (readlink=$(readlink "$root/usr/bin/systemctl" 2>/dev/null))" >&2
+			missing=1
+			;;
+		esac
+		if [[ "$missing" -eq 0 ]] && [[ ! -e "$root/usr/bin/systemctl" ]]; then
+			echo "FAIL: /usr/bin/systemctl symlink does not resolve in $label" >&2
+			missing=1
+		fi
+	fi
+	if [[ "$missing" -eq 0 ]]; then
+		if [[ -L "$root/bin" && "$(readlink "$root/bin")" == "usr/bin" ]]; then
+			echo "OK:  systemctl wrapper installed ($label: /bin merged into usr/bin)"
+		elif [[ ! -L "$root/bin/systemctl" ]] || \
+			[[ "$(readlink "$root/bin/systemctl")" != "../usr/bin/systemctl" ]]; then
+			echo "FAIL: /bin/systemctl must symlink ../usr/bin/systemctl in $label" >&2
+			missing=1
+		else
+			echo "OK:  systemctl wrapper + /bin symlink in $label"
+		fi
 	fi
 
 	if [[ -f "$root/etc/systemd/system/systemd-poweroff.service.d/50-lws-hmi-pre-poweroff.conf" ]]; then
@@ -98,10 +120,10 @@ check_poweroff_hook() {
 
 	if [[ -L "$root/etc/systemd/system/poweroff.target.wants/lws-hmi-pre-poweroff.service" || \
 		-f "$root/etc/systemd/system/poweroff.target.wants/lws-hmi-pre-poweroff.service" ]]; then
-		echo "FAIL: retired lws-hmi-pre-poweroff.service still linked in $label" >&2
+		echo "FAIL: retired pre-poweroff.service still linked in $label" >&2
 		missing=1
 	else
-		echo "OK:  retired lws-hmi-pre-poweroff.service not linked in $label"
+		echo "OK:  retired pre-poweroff.service not linked in $label"
 	fi
 
 	return "$missing"
@@ -133,6 +155,23 @@ check_rootfs_image() {
 
 	check_systemd_wants "$mnt" "rootfs.ext2 (flash image)"
 	local rc=$?
+	if [[ -d "$mnt/usr/lib/lws-hmi" || -d "$mnt/var/lib/lws-hmi" ]]; then
+		echo "FAIL: legacy monolithic lws-hmi paths still present in rootfs.ext2" >&2
+		rc=1
+	else
+		echo "OK:  no legacy usr/lib/lws-hmi or var/lib/lws-hmi in rootfs.ext2"
+	fi
+	stale_etc_names=""
+	while IFS= read -r f; do
+		[[ -n "$f" ]] || continue
+		stale_etc_names="${stale_etc_names:+$stale_etc_names }${f#$mnt/}"
+	done < <(find "$mnt/etc" -name '*lws-hmi*' 2>/dev/null || true)
+	if [[ -n "$stale_etc_names" ]]; then
+		echo "FAIL: rootfs.ext2 etc/ still has retired *lws-hmi* basenames: $stale_etc_names" >&2
+		rc=1
+	else
+		echo "OK:  rootfs.ext2 etc/ has no *lws-hmi* basenames"
+	fi
 	check_poweroff_hook "$mnt" "rootfs.ext2 (flash image)" || rc=1
 	if ls "$mnt/etc/ssh"/ssh_host_*_key >/dev/null 2>&1; then
 		echo "OK:  ssh host keys present in rootfs.ext2"
@@ -148,7 +187,10 @@ check_rootfs_image() {
 run_check() {
 	local target="$1"
 	local out_dir
-	local helper="$target/usr/lib/lws-hmi"
+	local libexec_hmi="$target/usr/libexec/hmi"
+	local libexec_wpa="$target/usr/libexec/wpa"
+	local libexec_net="$target/usr/libexec/network"
+	local libexec_bt="$target/usr/libexec/bluetooth"
 	local missing=0
 
 	out_dir="$(dirname "$target")"
@@ -165,34 +207,135 @@ run_check() {
 	echo "--- Buildroot output size ---"
 	bash "$SIZE_HELPER" "$target" "$out_dir/images/rootfs.ext2" "$out_dir/images/rootfs.ext4"
 
-	if [[ ! -d "$helper" ]]; then
-		echo "FAIL: $helper missing — overlay not applied or wrong Buildroot profile" >&2
-		exit 1
+	for tier in "$libexec_hmi" "$libexec_wpa" "$libexec_net" "$libexec_bt"; do
+		if [[ ! -d "$tier" ]]; then
+			echo "FAIL: $tier missing — overlay not applied or wrong Buildroot profile" >&2
+			missing=1
+		fi
+	done
+	if [[ -d "$target/usr/lib/lws-hmi" || -d "$target/var/lib/lws-hmi" ]]; then
+		echo "FAIL: legacy monolithic lws-hmi paths still present in staging target" >&2
+		[[ -d "$target/usr/lib/lws-hmi" ]] && echo "FAIL:   staging has usr/lib/lws-hmi" >&2
+		[[ -d "$target/var/lib/lws-hmi" ]] && echo "FAIL:   staging has var/lib/lws-hmi" >&2
+		missing=1
+	else
+		echo "OK:  no legacy usr/lib/lws-hmi or var/lib/lws-hmi in staging target"
+	fi
+	stale_etc="$(grep -r '/usr/lib/lws-hmi\|/var/lib/lws-hmi' "$target/etc" 2>/dev/null || true)"
+	if [[ -n "$stale_etc" ]]; then
+		echo "FAIL: etc/ still references removed monolithic lws-hmi paths (stale overlay layer?)" >&2
+		printf '%s\n' "$stale_etc" >&2
+		missing=1
+	else
+		echo "OK:  etc/ has no /usr/lib/lws-hmi or /var/lib/lws-hmi string refs"
+	fi
+	stale_etc_names=""
+	while IFS= read -r f; do
+		[[ -n "$f" ]] || continue
+		stale_etc_names="${stale_etc_names:+$stale_etc_names }${f#$target/}"
+	done < <(find "$target/etc" -name '*lws-hmi*' 2>/dev/null || true)
+	if [[ -n "$stale_etc_names" ]]; then
+		echo "FAIL: etc/ still has retired *lws-hmi* basenames: $stale_etc_names" >&2
+		missing=1
+	else
+		echo "OK:  etc/ has no *lws-hmi* basenames"
+	fi
+	retired_unit=""
+	for f in "$target/etc/systemd/system"/lws-hmi-*.service; do
+		[[ -e "$f" ]] || continue
+		retired_unit="${retired_unit:+$retired_unit }$(basename "$f")"
+	done
+	if [[ -n "$retired_unit" ]]; then
+		echo "FAIL: retired lws-hmi-*.service units still in etc/systemd/system ($retired_unit)" >&2
+		missing=1
+	else
+		echo "OK:  no retired lws-hmi-*.service units in etc/systemd/system"
+	fi
+	if [[ -f "$target/etc/profile.d/lws-hmi-serial-stty.sh" ]]; then
+		echo "FAIL: retired etc/profile.d/lws-hmi-serial-stty.sh still present" >&2
+		missing=1
+	else
+		echo "OK:  profile.d/lws-hmi-serial-stty.sh absent"
+	fi
+	if [[ -f "$target/etc/profile.d/serial-stty.sh" ]] && \
+		grep -q '/usr/libexec/hmi/serial-console-stty.sh' \
+		"$target/etc/profile.d/serial-stty.sh" 2>/dev/null; then
+		echo "OK:  profile.d/serial-stty.sh uses /usr/libexec/hmi/"
+	else
+		echo "FAIL: profile.d/serial-stty.sh missing or still points at /usr/lib/lws-hmi/" >&2
+		missing=1
 	fi
 
 	echo ""
-	echo "--- $helper ---"
-	ls -la "$helper" || true
-
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh run-wpa.sh apply-eth0.sh restore-settings.sh change-backlight.sh change-volume.sh change-orientation.sh apply-mouse-settings.sh bind-prefs.sh push-app-apply-and-restart.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-stop-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
-		if [[ -x "$helper/$f" ]]; then
-			echo "OK:  $f"
+	echo "--- usr/libexec/hmi ---"
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh restore-settings.sh change-backlight.sh change-volume.sh change-orientation.sh apply-mouse-settings.sh bind-prefs.sh push-app-apply-and-restart.sh hmi-launch.sh; do
+		if [[ -x "$libexec_hmi/$f" ]]; then
+			echo "OK:  hmi/$f"
 		else
-			echo "FAIL: $f missing or not executable" >&2
+			echo "FAIL: hmi/$f missing or not executable" >&2
+			missing=1
+		fi
+	done
+	if [[ -f "$libexec_hmi/paths.sh" ]]; then
+		echo "OK:  hmi/paths.sh"
+	else
+		echo "FAIL: hmi/paths.sh missing" >&2
+		missing=1
+	fi
+
+	echo ""
+	echo "--- usr/libexec/wpa ---"
+	for f in run-wpa.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh; do
+		if [[ -x "$libexec_wpa/$f" ]]; then
+			echo "OK:  wpa/$f"
+		else
+			echo "FAIL: wpa/$f missing or not executable" >&2
 			missing=1
 		fi
 	done
 
 	echo ""
-	echo "--- wifibt prefs under /var/lib/lws-hmi ---"
-	for f in wpa_supplicant.conf wlan0-ipv4 eth0-ipv4 http-proxy; do
-		if [[ -f "$target/var/lib/lws-hmi/$f" ]]; then
-			echo "OK:  var/lib/lws-hmi/$f"
+	echo "--- usr/libexec/network ---"
+	for f in apply-eth0.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh; do
+		if [[ -x "$libexec_net/$f" ]]; then
+			echo "OK:  network/$f"
 		else
-			echo "FAIL: var/lib/lws-hmi/$f missing" >&2
+			echo "FAIL: network/$f missing or not executable" >&2
 			missing=1
 		fi
 	done
+
+	echo ""
+	echo "--- usr/libexec/bluetooth ---"
+	for f in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-stop-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
+		if [[ -x "$libexec_bt/$f" ]]; then
+			echo "OK:  bluetooth/$f"
+		else
+			echo "FAIL: bluetooth/$f missing or not executable" >&2
+			missing=1
+		fi
+	done
+
+	echo ""
+	echo "--- subsystem state seed dirs ---"
+	if [[ -f "$target/var/lib/wpa_supplicant/wpa_supplicant.conf" ]]; then
+		echo "OK:  var/lib/wpa_supplicant/wpa_supplicant.conf"
+	else
+		echo "FAIL: var/lib/wpa_supplicant/wpa_supplicant.conf missing" >&2
+		missing=1
+	fi
+	if [[ -f "$target/var/lib/network/eth0-ipv4" ]]; then
+		echo "OK:  var/lib/network/eth0-ipv4"
+	else
+		echo "FAIL: var/lib/network/eth0-ipv4 missing" >&2
+		missing=1
+	fi
+	if [[ -f "$target/var/lib/hmi/http-proxy" ]]; then
+		echo "OK:  var/lib/hmi/http-proxy"
+	else
+		echo "FAIL: var/lib/hmi/http-proxy missing" >&2
+		missing=1
+	fi
 	if [[ -f "$target/etc/dbus-1/system.d/bluetooth.conf" ]]; then
 		echo "OK:  etc/dbus-1/system.d/bluetooth.conf"
 	else
@@ -206,7 +349,7 @@ run_check() {
 		compgen -G "$target/vendor/lib/modules/**/aic8800_fdrv.ko" >/dev/null 2>&1; then
 		echo "OK:  aic8800_fdrv.ko (AIC8800D80)"
 	else
-		echo "FAIL: aic8800_fdrv.ko missing — enable lws-hmi-ynh960-wifibt.config, rebuild kernel+rootfs" >&2
+		echo "FAIL: aic8800_fdrv.ko missing — enable ynh960 wifibt kernel config, rebuild kernel+rootfs" >&2
 		missing=1
 	fi
 	if [[ -x "$target/usr/bin/rk_wifi_init" ]]; then
@@ -232,24 +375,24 @@ run_check() {
 			missing=1
 		fi
 	done <<'EOF'
-verify-boot /usr/lib/lws-hmi/boot-verify.sh
-verify-env /usr/lib/lws-hmi/env-verify.sh
-diagnose-hmi /usr/lib/lws-hmi/diagnose-hmi.sh
-diagnose-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-diag.sh
-read-serial /usr/lib/lws-hmi/read-device-serial.sh
-start-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-start.sh
-stop-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-stop.sh
-recover-usb-ssh /usr/lib/lws-hmi/usb-plug-ssh-recover.sh
-reboot-loader /usr/lib/lws-hmi/reboot-loader
-change-backlight /usr/lib/lws-hmi/change-backlight.sh
-change-volume /usr/lib/lws-hmi/change-volume.sh
-change-orientation /usr/lib/lws-hmi/change-orientation.sh
-apply-mouse-settings /usr/lib/lws-hmi/apply-mouse-settings.sh
-enable-ssh-debug /usr/lib/lws-hmi/enable-ssh-debug.sh
-disable-ssh-debug /usr/lib/lws-hmi/disable-ssh-debug.sh
-usb-otg-mode /usr/lib/lws-hmi/usb-otg-mode.sh
-set-performance-mode /usr/lib/lws-hmi/set-performance-mode.sh
-sync-time /usr/lib/lws-hmi/wlan0-time-sync.sh
+verify-boot /usr/libexec/hmi/boot-verify.sh
+verify-env /usr/libexec/hmi/env-verify.sh
+diagnose-hmi /usr/libexec/hmi/diagnose-hmi.sh
+diagnose-usb-ssh /usr/libexec/hmi/usb-plug-ssh-diag.sh
+read-serial /usr/libexec/hmi/read-device-serial.sh
+start-usb-ssh /usr/libexec/hmi/usb-plug-ssh-start.sh
+stop-usb-ssh /usr/libexec/hmi/usb-plug-ssh-stop.sh
+recover-usb-ssh /usr/libexec/hmi/usb-plug-ssh-recover.sh
+reboot-loader /usr/libexec/hmi/reboot-loader
+change-backlight /usr/libexec/hmi/change-backlight.sh
+change-volume /usr/libexec/hmi/change-volume.sh
+change-orientation /usr/libexec/hmi/change-orientation.sh
+apply-mouse-settings /usr/libexec/hmi/apply-mouse-settings.sh
+enable-ssh-debug /usr/libexec/hmi/enable-ssh-debug.sh
+disable-ssh-debug /usr/libexec/hmi/disable-ssh-debug.sh
+usb-otg-mode /usr/libexec/hmi/usb-otg-mode.sh
+set-performance-mode /usr/libexec/hmi/set-performance-mode.sh
+sync-time /usr/libexec/wpa/wlan0-time-sync.sh
 EOF
 	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader lws-hmi-backlight-apply; do
 		if [[ -e "$target/usr/bin/$retired" || -L "$target/usr/bin/$retired" ]]; then
@@ -259,8 +402,8 @@ EOF
 			echo "OK:  retired usr/bin/$retired command absent"
 		fi
 	done
-	if [[ -e "$target/usr/lib/lws-hmi/reboot-rockusb-loader" ]]; then
-		echo "FAIL: retired usr/lib/lws-hmi/reboot-rockusb-loader still present" >&2
+	if [[ -e "$target/usr/libexec/hmi/reboot-rockusb-loader" ]]; then
+		echo "FAIL: retired usr/libexec/hmi/reboot-rockusb-loader still present" >&2
 		missing=1
 	fi
 
@@ -293,12 +436,12 @@ EOF
 	echo ""
 	echo "--- USB plug-ssh debug ---"
 	for f in \
-		"$target/etc/systemd/system/lws-hmi-usb-plug-ssh.service" \
-		"$target/etc/systemd/system/lws-hmi-serial-stty.service" \
-		"$target/etc/udev/rules.d/99-lws-hmi-usb-plug-ssh.rules" \
-		"$target/etc/ssh/sshd_config.d/50-lws-hmi-ssh-auth.conf" \
-		"$target/etc/profile.d/lws-hmi-serial-stty.sh" \
-		"$target/etc/issue.d/00-lws-hmi-terminal-resize.issue"; do
+		"$target/etc/systemd/system/ssh-debug-usb.service" \
+		"$target/etc/systemd/system/serial-stty.service" \
+		"$target/etc/udev/rules.d/99-usb-plug-ssh.rules" \
+		"$target/etc/ssh/sshd_config.d/50-ssh-auth.conf" \
+		"$target/etc/profile.d/serial-stty.sh" \
+		"$target/etc/issue.d/00-terminal-resize.issue"; do
 		if [[ -e "$f" ]]; then
 			echo "OK:  ${f#$target/}"
 		else
@@ -306,13 +449,13 @@ EOF
 			missing=1
 		fi
 	done
-	if grep -q 'ListenAddress=192.168.55.1' "$helper/usb-plug-ssh-start.sh" 2>/dev/null; then
+	if grep -q 'ListenAddress=192.168.55.1' "$libexec_hmi/usb-plug-ssh-start.sh" 2>/dev/null; then
 		echo "OK:  usb-plug-ssh-start binds ListenAddress=192.168.55.1"
 	else
 		echo "FAIL: usb-plug-ssh-start missing ListenAddress=192.168.55.1 override" >&2
 		missing=1
 	fi
-	if grep -q 'skip USB-only sshd' "$helper/usb-plug-ssh-start.sh" 2>/dev/null; then
+	if grep -q 'skip USB-only sshd' "$libexec_hmi/usb-plug-ssh-start.sh" 2>/dev/null; then
 		echo "FAIL: usb-plug-ssh-start must not skip USB sshd when LAN is up" >&2
 		missing=1
 	else
@@ -341,8 +484,8 @@ EOF
 		echo "FAIL: missing /etc/ssh/ssh_host_*_key (ensure-sshd-hostkeys / post-fakeroot)" >&2
 		missing=1
 	fi
-	if grep -q 'modprobe g_ether' "$helper/usb-plug-ssh-start.sh" 2>/dev/null && \
-		! grep -q '/sys/kernel/config/usb_gadget/lws_hmi' "$helper/usb-plug-ssh-start.sh" 2>/dev/null; then
+	if grep -q 'modprobe g_ether' "$libexec_hmi/usb-plug-ssh-start.sh" 2>/dev/null && \
+		! grep -q '/sys/kernel/config/usb_gadget/lws_hmi' "$libexec_hmi/usb-plug-ssh-start.sh" 2>/dev/null; then
 		echo "OK:  USB plug-ssh uses g_ether without configfs UDC binding"
 	else
 		echo "FAIL: USB plug-ssh is not the g_ether implementation" >&2
@@ -404,9 +547,9 @@ EOF
 	for f in \
 		"$target/etc/systemd/system/lws-hmi-debug-boot.service" \
 		"$target/etc/systemd/system/lws-hmi-boot-kpi.service" \
-		"$target/usr/lib/lws-hmi/debug-boot.sh" \
-		"$target/usr/lib/lws-hmi/boot-kpi-watch.sh" \
-		"$target/usr/lib/lws-hmi/configure-camera-eth0.sh"; do
+		"$target/usr/libexec/hmi/debug-boot.sh" \
+		"$target/usr/libexec/hmi/boot-kpi-watch.sh" \
+		"$target/usr/libexec/hmi/configure-camera-eth0.sh"; do
 		if [[ -e "$f" ]]; then
 			echo "FAIL: retired artifact still in target: $f" >&2
 			missing=1
@@ -415,136 +558,136 @@ EOF
 		fi
 	done
 
-	if [[ -x "$target/usr/lib/lws-hmi/enable-ssh-debug.sh" && -x "$target/usr/lib/lws-hmi/disable-ssh-debug.sh" ]]; then
+	if [[ -x "$target/usr/libexec/hmi/enable-ssh-debug.sh" && -x "$target/usr/libexec/hmi/disable-ssh-debug.sh" ]]; then
 		echo "OK:  enable-ssh-debug.sh / disable-ssh-debug.sh"
 	else
 		echo "FAIL: missing enable-ssh-debug.sh or disable-ssh-debug.sh" >&2
 		missing=1
 	fi
-	if [[ -f "$target/etc/systemd/system/lws-hmi-wpa.service" ]] && \
+	if [[ -f "$target/etc/systemd/system/wlan-wpa.service" ]] && \
 		grep -q 'run-wpa.sh' \
-		"$target/etc/systemd/system/lws-hmi-wpa.service" 2>/dev/null; then
-		echo "OK:  lws-hmi-wpa.service"
+		"$target/etc/systemd/system/wlan-wpa.service" 2>/dev/null; then
+		echo "OK:  wlan-wpa.service"
 	else
-		echo "FAIL: missing lws-hmi-wpa.service (Wi-Fi must outlive hmi stop)" >&2
+		echo "FAIL: missing wlan-wpa.service (Wi-Fi must outlive hmi stop)" >&2
 		missing=1
 	fi
 	if grep -q '^DefaultDependencies=no$' \
-		"$target/etc/systemd/system/lws-hmi-wpa.service" 2>/dev/null || \
-		! grep -q '^RequiresMountsFor=/userdata$' \
-			"$target/etc/systemd/system/lws-hmi-wpa.service" 2>/dev/null; then
-		echo "FAIL: lws-hmi-wpa.service needs normal deps + RequiresMountsFor=/userdata" >&2
+		"$target/etc/systemd/system/wlan-wpa.service" 2>/dev/null || \
+		! grep -q '^RequiresMountsFor=/var/lib/wpa_supplicant$' \
+			"$target/etc/systemd/system/wlan-wpa.service" 2>/dev/null; then
+		echo "FAIL: wlan-wpa.service needs normal deps + RequiresMountsFor=/var/lib/wpa_supplicant" >&2
 		missing=1
 	else
-		echo "OK:  lws-hmi-wpa.service has normal shutdown/umount ordering"
+		echo "OK:  wlan-wpa.service has normal shutdown/umount ordering"
 	fi
-	if [[ -f "$target/etc/systemd/system/lws-hmi-wlan0-dhcp.service" ]]; then
-		echo "OK:  lws-hmi-wlan0-dhcp.service"
+	if [[ -f "$target/etc/systemd/system/wlan-dhcp.service" ]]; then
+		echo "OK:  wlan-dhcp.service"
 	else
-		echo "FAIL: missing lws-hmi-wlan0-dhcp.service" >&2
+		echo "FAIL: missing wlan-dhcp.service" >&2
 		missing=1
 	fi
-	if grep -q 'lws-hmi-wpa.service' \
-		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null && \
-		grep -q 'lws-hmi-wlan0-dhcp.service' \
-		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null && \
-		grep -q 'lws-hmi-eth0.service' \
-		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null; then
-		echo "OK:  preset disables lws-hmi-wpa / wlan0-dhcp / eth0"
+	if grep -q 'wlan-wpa.service' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null && \
+		grep -q 'wlan-dhcp.service' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null && \
+		grep -q 'eth0-network.service' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
+		echo "OK:  preset disables wlan-wpa / wlan-dhcp / eth0"
 	else
 		echo "FAIL: preset missing disable for settings network units" >&2
 		missing=1
 	fi
-	if grep -q 'lws-hmi-wpa.service' "$helper/wifi-stack-up.sh" 2>/dev/null && \
-		! grep -qE 'wpa_supplicant[[:space:]]+-B' "$helper/wifi-stack-up.sh" 2>/dev/null; then
-		echo "OK:  wifi-stack-up starts lws-hmi-wpa.service (not hmi-cgroup -B)"
+	if grep -q 'wlan-wpa.service' "$libexec_wpa/wifi-stack-up.sh" 2>/dev/null && \
+		! grep -qE 'wpa_supplicant[[:space:]]+-B' "$libexec_wpa/wifi-stack-up.sh" 2>/dev/null; then
+		echo "OK:  wifi-stack-up starts wlan-wpa.service (not hmi-cgroup -B)"
 	else
-		echo "FAIL: wifi-stack-up must start lws-hmi-wpa.service instead of wpa -B" >&2
+		echo "FAIL: wifi-stack-up must start wlan-wpa.service instead of wpa -B" >&2
 		missing=1
 	fi
 	if grep -q 'WantedBy=' \
-		"$target/etc/systemd/system/lws-hmi-wpa.service" 2>/dev/null || \
+		"$target/etc/systemd/system/wlan-wpa.service" 2>/dev/null || \
 		grep -q 'WantedBy=' \
-		"$target/etc/systemd/system/lws-hmi-wlan0-dhcp.service" 2>/dev/null || \
+		"$target/etc/systemd/system/wlan-dhcp.service" 2>/dev/null || \
 		grep -q 'WantedBy=' \
-		"$target/etc/systemd/system/lws-hmi-eth0.service" 2>/dev/null; then
+		"$target/etc/systemd/system/eth0-network.service" 2>/dev/null; then
 		echo "FAIL: on-demand settings units must not have [Install] WantedBy" >&2
 		missing=1
 	fi
-	if [[ -f "$target/etc/systemd/system/lws-hmi-eth0.service" ]] && \
-		[[ -x "$helper/apply-eth0.sh" ]]; then
-		echo "OK:  lws-hmi-eth0.service + apply-eth0.sh"
+	if [[ -f "$target/etc/systemd/system/eth0-network.service" ]] && \
+		[[ -x "$libexec_net/apply-eth0.sh" ]]; then
+		echo "OK:  eth0-network.service + apply-eth0.sh"
 	else
-		echo "FAIL: missing lws-hmi-eth0.service / apply-eth0.sh" >&2
+		echo "FAIL: missing eth0-network.service / apply-eth0.sh" >&2
 		missing=1
 	fi
-	if [[ -f "$target/etc/systemd/system/lws-hmi-settings-restore.service" ]] && \
-		[[ -x "$helper/restore-settings.sh" ]] && \
+	if [[ -f "$target/etc/systemd/system/settings-restore.service" ]] && \
+		[[ -x "$libexec_hmi/restore-settings.sh" ]] && \
 		grep -q 'After=hmi.service' \
-		"$target/etc/systemd/system/lws-hmi-settings-restore.service" 2>/dev/null && \
+		"$target/etc/systemd/system/settings-restore.service" 2>/dev/null && \
 		! grep -q 'Before=hmi.service' \
-		"$target/etc/systemd/system/lws-hmi-settings-restore.service" 2>/dev/null && \
+		"$target/etc/systemd/system/settings-restore.service" 2>/dev/null && \
 		grep -q 'Nice=10' \
-		"$target/etc/systemd/system/lws-hmi-settings-restore.service" 2>/dev/null && \
-		grep -q 'Wants=lws-hmi-settings-restore.service' \
+		"$target/etc/systemd/system/settings-restore.service" 2>/dev/null && \
+		grep -q 'Wants=settings-restore.service' \
 		"$target/etc/systemd/system/hmi.service" 2>/dev/null; then
-		echo "OK:  lws-hmi-settings-restore After=hmi (UI-first; Nice/idle)"
+		echo "OK:  settings-restore After=hmi (UI-first; Nice/idle)"
 	else
 		echo "FAIL: settings-restore must After=hmi + Nice; hmi Wants=restore (UI-first)" >&2
 		missing=1
 	fi
-	if [[ -x "$helper/bind-prefs.sh" ]] && \
+	if [[ -x "$libexec_hmi/bind-prefs.sh" ]] && \
 		grep -q 'bind-prefs.sh' \
-		"$helper/ynh960-display-init.sh" 2>/dev/null; then
-		echo "OK:  bind-prefs (/var/lib/lws-hmi → /userdata/lws-hmi)"
+		"$libexec_hmi/ynh960-display-init.sh" 2>/dev/null; then
+		echo "OK:  bind-prefs (four /var/lib/* → /userdata/*)"
 	else
 		echo "FAIL: missing bind-prefs.sh wired into display-init" >&2
 		missing=1
 	fi
-	if grep -q 'enable lws-hmi-settings-restore.service' \
-		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null; then
-		echo "OK:  preset enables lws-hmi-settings-restore.service"
+	if grep -q 'enable settings-restore.service' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
+		echo "OK:  preset enables settings-restore.service"
 	else
-		echo "FAIL: preset must enable lws-hmi-settings-restore.service" >&2
+		echo "FAIL: preset must enable settings-restore.service" >&2
 		missing=1
 	fi
 
-	if [[ -f "$target/etc/systemd/system/lws-hmi-lan-ssh.service" ]]; then
-		echo "OK:  lws-hmi-lan-ssh.service"
+	if [[ -f "$target/etc/systemd/system/ssh-debug-lan.service" ]]; then
+		echo "OK:  ssh-debug-lan.service"
 	else
-		echo "FAIL: missing lws-hmi-lan-ssh.service" >&2
+		echo "FAIL: missing ssh-debug-lan.service" >&2
 		missing=1
 	fi
-	if grep -q 'lws-hmi-lan-ssh.service' \
-		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null; then
-		echo "OK:  preset disables lws-hmi-lan-ssh.service"
+	if grep -q 'ssh-debug-lan.service' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
+		echo "OK:  preset disables ssh-debug-lan.service"
 	else
-		echo "FAIL: preset missing disable lws-hmi-lan-ssh.service" >&2
+		echo "FAIL: preset missing disable ssh-debug-lan.service" >&2
 		missing=1
 	fi
-	if [[ -x "$target/usr/lib/lws-hmi/lan-ssh-run.sh" ]]; then
+	if [[ -x "$target/usr/libexec/hmi/lan-ssh-run.sh" ]]; then
 		echo "OK:  lan-ssh-run.sh"
 	else
 		echo "FAIL: missing lan-ssh-run.sh" >&2
 		missing=1
 	fi
 	if grep -q 'Type=simple' \
-		"$target/etc/systemd/system/lws-hmi-lan-ssh.service" 2>/dev/null && \
+		"$target/etc/systemd/system/ssh-debug-lan.service" 2>/dev/null && \
 		grep -q 'lan-ssh-run.sh' \
-		"$target/etc/systemd/system/lws-hmi-lan-ssh.service" 2>/dev/null; then
-		echo "OK:  lws-hmi-lan-ssh.service uses Type=simple + lan-ssh-run.sh"
+		"$target/etc/systemd/system/ssh-debug-lan.service" 2>/dev/null; then
+		echo "OK:  ssh-debug-lan.service uses Type=simple + lan-ssh-run.sh"
 	else
-		echo "FAIL: lws-hmi-lan-ssh.service must ExecStart lan-ssh-run.sh" >&2
+		echo "FAIL: ssh-debug-lan.service must ExecStart lan-ssh-run.sh" >&2
 		missing=1
 	fi
 
 	echo ""
 	echo "--- A/B upgrade helpers (P2.4) ---"
 	for f in \
-		"$target/usr/lib/lws-hmi/ab-slot-lib.sh" \
-		"$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" \
-		"$target/usr/lib/lws-hmi/ab-boot-confirm.sh" \
-		"$target/etc/systemd/system/lws-hmi-ab-boot-confirm.service"; do
+		"$target/usr/libexec/hmi/ab-slot-lib.sh" \
+		"$target/usr/libexec/hmi/ab-upgrade-apply.sh" \
+		"$target/usr/libexec/hmi/ab-boot-confirm.sh" \
+		"$target/etc/systemd/system/ab-boot-confirm.service"; do
 		if [[ -e "$f" ]]; then
 			echo "OK:  ${f#$target/}"
 		else
@@ -552,81 +695,81 @@ EOF
 			missing=1
 		fi
 	done
-	if [[ -e "$target/usr/lib/lws-hmi/ab-upgrade-app-only.sh" ]]; then
+	if [[ -e "$target/usr/libexec/hmi/ab-upgrade-app-only.sh" ]]; then
 		echo "FAIL: retired ab-upgrade-app-only.sh still present (use make push-app)" >&2
 		missing=1
 	else
 		echo "OK:  retired ab-upgrade-app-only.sh absent"
 	fi
-	if grep -q 'ab_current_root_dev' "$target/usr/lib/lws-hmi/ab-slot-lib.sh" 2>/dev/null && \
-		grep -q '^AB_MISC_OFFSET=1048576$' "$target/usr/lib/lws-hmi/ab-slot-lib.sh" 2>/dev/null && \
-		grep -q 'ab_slot_marker_valid' "$target/usr/lib/lws-hmi/ab-slot-lib.sh" 2>/dev/null && \
-		grep -q 'LWS_HMI_AB_LIB' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -q 'ab_same_block_device' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -q 'metadata_active' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -q 'disagrees with mounted root' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null; then
+	if grep -q 'ab_current_root_dev' "$target/usr/libexec/hmi/ab-slot-lib.sh" 2>/dev/null && \
+		grep -q '^AB_MISC_OFFSET=1048576$' "$target/usr/libexec/hmi/ab-slot-lib.sh" 2>/dev/null && \
+		grep -q 'ab_slot_marker_valid' "$target/usr/libexec/hmi/ab-slot-lib.sh" 2>/dev/null && \
+		grep -q 'LWS_HMI_AB_LIB' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -q 'ab_same_block_device' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -q 'metadata_active' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -q 'disagrees with mounted root' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null; then
 		echo "OK:  A/B marker uses safe misc offset; apply derives mounted root and refuses self-overwrite"
 	else
 		echo "FAIL: A/B apply must protect the currently mounted root block device" >&2
 		missing=1
 	fi
-	if grep -q 'userdata' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -qE 'refuse|must NOT|ab_refuse' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null; then
+	if grep -q 'userdata' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -qE 'refuse|must NOT|ab_refuse' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null; then
 		echo "OK:  ab-upgrade-apply mentions userdata safety"
 	else
 		# Soft: apply sources ab-slot-lib refuse helper
-		if grep -q 'ab_refuse_userdata_wipe\|userdata' "$target/usr/lib/lws-hmi/ab-slot-lib.sh" 2>/dev/null; then
+		if grep -q 'ab_refuse_userdata_wipe\|userdata' "$target/usr/libexec/hmi/ab-slot-lib.sh" 2>/dev/null; then
 			echo "OK:  ab-slot-lib userdata refuse helper present"
 		else
 			echo "FAIL: A/B helpers missing userdata safety checks" >&2
 			missing=1
 		fi
 	fi
-	if grep -qE 'uboot|MiniLoader' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -qiE 'refusing|must not|never' "$target/usr/lib/lws-hmi/ab-upgrade-apply.sh" 2>/dev/null; then
+	if grep -qE 'uboot|MiniLoader' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null && \
+		grep -qiE 'refusing|must not|never' "$target/usr/libexec/hmi/ab-upgrade-apply.sh" 2>/dev/null; then
 		echo "OK:  ab-upgrade-apply refuses uboot writes"
 	else
 		echo "FAIL: ab-upgrade-apply must refuse uboot writes" >&2
 		missing=1
 	fi
-	if grep -q 'enable lws-hmi-ab-boot-confirm.service' \
-		"$target/etc/systemd/system-preset/99-lws-hmi.preset" 2>/dev/null; then
-		echo "OK:  preset enables lws-hmi-ab-boot-confirm.service"
+	if grep -q 'enable ab-boot-confirm.service' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
+		echo "OK:  preset enables ab-boot-confirm.service"
 	else
-		echo "FAIL: preset missing enable lws-hmi-ab-boot-confirm.service" >&2
+		echo "FAIL: preset missing enable ab-boot-confirm.service" >&2
 		missing=1
 	fi
 
 	if grep -qE 'ListenAddress=0\.0\.0\.0|ListenAddress=\*' \
-		"$target/usr/lib/lws-hmi/lan-ssh-run.sh" 2>/dev/null || \
+		"$target/usr/libexec/hmi/lan-ssh-run.sh" 2>/dev/null || \
 		grep -qE 'ListenAddress=0\.0\.0\.0|ListenAddress=\*' \
-		"$target/etc/systemd/system/lws-hmi-lan-ssh.service" 2>/dev/null; then
+		"$target/etc/systemd/system/ssh-debug-lan.service" 2>/dev/null; then
 		echo "FAIL: LAN SSH must not bind 0.0.0.0 (breaks coexistence with USB-SSH)" >&2
 		missing=1
 	fi
 	if grep -q 'WantedBy=' \
-		"$target/etc/systemd/system/lws-hmi-lan-ssh.service" 2>/dev/null; then
-		echo "FAIL: lws-hmi-lan-ssh.service must not have [Install] WantedBy" >&2
+		"$target/etc/systemd/system/ssh-debug-lan.service" 2>/dev/null; then
+		echo "FAIL: ssh-debug-lan.service must not have [Install] WantedBy" >&2
 		missing=1
 	else
-		echo "OK:  lws-hmi-lan-ssh.service has no boot Install"
+		echo "OK:  ssh-debug-lan.service has no boot Install"
 	fi
 	if grep -qiE '^PidFile=' \
-		"$target/etc/systemd/system/lws-hmi-lan-ssh.service" 2>/dev/null; then
-		echo "FAIL: lws-hmi-lan-ssh.service must not use PidFile=" >&2
+		"$target/etc/systemd/system/ssh-debug-lan.service" 2>/dev/null; then
+		echo "FAIL: ssh-debug-lan.service must not use PidFile=" >&2
 		missing=1
 	fi
-	if grep -qE 'eth0|wlan0' "$target/usr/lib/lws-hmi/lan-ssh-run.sh" 2>/dev/null && \
-		grep -q 'ListenAddress=' "$target/usr/lib/lws-hmi/lan-ssh-run.sh" 2>/dev/null && \
+	if grep -qE 'eth0|wlan0' "$target/usr/libexec/hmi/lan-ssh-run.sh" 2>/dev/null && \
+		grep -q 'ListenAddress=' "$target/usr/libexec/hmi/lan-ssh-run.sh" 2>/dev/null && \
 		! grep -qE 'ListenAddress=0\.0\.0\.0|ListenAddress=\*' \
-			"$target/usr/lib/lws-hmi/lan-ssh-run.sh" 2>/dev/null; then
+			"$target/usr/libexec/hmi/lan-ssh-run.sh" 2>/dev/null; then
 		echo "OK:  lan-ssh-run binds eth0/wlan0 only (not 0.0.0.0)"
 	else
 		echo "FAIL: lan-ssh-run must bind eth0/wlan0 only, not 0.0.0.0" >&2
 		missing=1
 	fi
-	if grep -qE 'systemctl stop.*usb-plug|kill.*usb-plug-sshd|rm -f /run/lws-hmi-usb-plug-sshd' \
-		"$helper/enable-ssh-debug.sh" 2>/dev/null; then
+	if grep -qE 'systemctl stop.*usb-plug|kill.*usb-plug-sshd|rm -f /run/usb-plug-sshd' \
+		"$libexec_hmi/enable-ssh-debug.sh" 2>/dev/null; then
 		echo "FAIL: enable-ssh-debug must not stop USB sshd" >&2
 		missing=1
 	else
@@ -673,7 +816,7 @@ EOF
 			missing=1
 		fi
 		if grep -q 'Restart=on-abnormal' \
-			"$target/etc/systemd/system/bluetooth.service.d/lws-hmi.conf" 2>/dev/null; then
+			"$target/etc/systemd/system/bluetooth.service.d/appliance.conf" 2>/dev/null; then
 			echo "OK:  bluetooth.service Restart=on-abnormal"
 		else
 			echo "FAIL: bluetooth.service.d missing Restart=on-abnormal" >&2

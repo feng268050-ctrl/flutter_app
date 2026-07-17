@@ -28,8 +28,8 @@ if [ ! -d "/sys/class/net/$IFACE" ]; then
 fi
 
 # Stop DHCP so it cannot fight static.
-if [ -x /usr/lib/lws-hmi/wlan0-dhcp.sh ]; then
-	/usr/lib/lws-hmi/wlan0-dhcp.sh stop 2>/dev/null || true
+if [ -x /usr/libexec/wpa/wlan0-dhcp.sh ]; then
+	/usr/libexec/wpa/wlan0-dhcp.sh stop 2>/dev/null || true
 fi
 
 ip link set "$IFACE" up
@@ -42,8 +42,8 @@ if [ -n "$GATEWAY" ]; then
 fi
 
 if [ -n "$DNS" ]; then
-	mkdir -p /var/lib/lws-hmi
-	printf 'nameserver %s\n' "$DNS" >/var/lib/lws-hmi/wlan0-resolv.conf
+	mkdir -p /var/lib/wpa_supplicant
+	printf 'nameserver %s\n' "$DNS" >/var/lib/wpa_supplicant/wlan0-resolv.conf
 	# Prefer resolvconf if present; else merge carefully into /etc/resolv.conf
 	if command -v resolvconf >/dev/null 2>&1; then
 		printf 'nameserver %s\n' "$DNS" | resolvconf -a "$IFACE" 2>/dev/null || true
@@ -58,4 +58,4 @@ if [ -n "$DNS" ]; then
 fi
 
 echo "wlan0-static: ${ADDR}/${PREFIX} on $IFACE"
-/usr/lib/lws-hmi/wlan0-time-sync.sh 2>/dev/null || true
+/usr/libexec/wpa/wlan0-time-sync.sh 2>/dev/null || true

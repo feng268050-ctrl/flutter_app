@@ -11,13 +11,13 @@
 
 - Innohi already sets `&usbhost_dwc3 { phys = <&u2phy0_host>; status = "okay"; }` and `&combphy1_usq`.
 - Plug-ssh work had **force-disabled** those nodes + set `CONFIG_USB_DWC3_GADGET=y` (gadget-only), which blocks host.
-- Fix: dual-role Kconfig; `lws-hmi-ynh960-usb-host.dtsi`; stop blanketing host off in the patch script.
+- Fix: dual-role Kconfig; `ynh960-usb-host.dtsi`; stop blanketing host off in the patch script.
 
 ## VBUS / `USB_HOST_PWREN*`
 
 - Labels `USB_1` / `USB_2` / `USB_3` on gpio4 **PA0/PA1/PA2**, default high.
 - Previously dropped from `own-gpio` because EVB **RGMII** used the same pads.
-- Product **RMII** does **not** use PA0/PA1/PA2 → restored in `lws-hmi-ynh960-own-gpio.dtsi`.
+- Product **RMII** does **not** use PA0/PA1/PA2 → restored in `ynh960-own-gpio.dtsi`.
 
 ## Still need on device (task 4.3) — DONE 2026-07-15
 

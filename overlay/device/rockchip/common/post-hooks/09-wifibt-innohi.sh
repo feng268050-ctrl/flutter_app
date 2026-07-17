@@ -17,9 +17,9 @@ fi
 
 if [[ -x "$INNOHI_BIN/rk_wifi_init" ]]; then
 	install -m 0755 "$INNOHI_BIN/rk_wifi_init" "$TARGET_DIR/usr/bin/rk_wifi_init"
-	echo "lws-hmi-wifibt: installed /usr/bin/rk_wifi_init"
+	echo "post-wifibt: installed /usr/bin/rk_wifi_init"
 else
-	echo "lws-hmi-wifibt: rk_wifi_init missing under $INNOHI_BIN (optional)"
+	echo "post-wifibt: rk_wifi_init missing under $INNOHI_BIN (optional)"
 fi
 
 # Innohi tooling expects /system/lib/modules; post-wifibt deposits .ko under vendor/.
@@ -27,12 +27,12 @@ install -d "$TARGET_DIR/vendor/lib/modules"
 install -d "$TARGET_DIR/system/lib"
 if [[ ! -e "$TARGET_DIR/system/lib/modules" ]]; then
 	ln -sfn /vendor/lib/modules "$TARGET_DIR/system/lib/modules"
-	echo "lws-hmi-wifibt: linked /system/lib/modules → /vendor/lib/modules"
+	echo "post-wifibt: linked /system/lib/modules → /vendor/lib/modules"
 fi
 install -d "$TARGET_DIR/system/etc"
 if [[ ! -e "$TARGET_DIR/system/etc/firmware" ]]; then
 	ln -sfn /vendor/etc/firmware "$TARGET_DIR/system/etc/firmware"
-	echo "lws-hmi-wifibt: linked /system/etc/firmware → /vendor/etc/firmware"
+	echo "post-wifibt: linked /system/etc/firmware → /vendor/etc/firmware"
 fi
 
 # Rockchip wifibt-util does not list AIC IDs; document for bringup/debug.
@@ -43,4 +43,4 @@ AIC	AIC8800	c8a1:0082	aic8800_fdrv.ko
 AIC	AIC8800D80	c8a1:0082	aic8800_fdrv.ko
 AIC	AIC8800DC	c8a1:c08d	aic8800_fdrv.ko
 EOF
-echo "lws-hmi-wifibt: installed /etc/wifibt-chips.txt"
+echo "post-wifibt: installed /etc/wifibt-chips.txt"

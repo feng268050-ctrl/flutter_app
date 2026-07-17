@@ -55,7 +55,7 @@ The Linux Wi-Fi path SHALL support selecting **DHCP** or **static** IPv4 configu
 
 ### Requirement: Wi-Fi credentials persist across HMI restarts
 
-Saved networks SHALL persist in a wpa_supplicant configuration under `/var/lib/lws-hmi/` (or an equivalent documented path) with `update_config` enabled so a later radio enable can reconnect without re-entering the PSK.
+Saved networks SHALL persist in a wpa_supplicant configuration under `/var/lib/hmi/` (or an equivalent documented path) with `update_config` enabled so a later radio enable can reconnect without re-entering the PSK.
 
 #### Scenario: Saved network survives app restart
 

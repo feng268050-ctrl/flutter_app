@@ -1,11 +1,11 @@
 #!/bin/sh
-# Foreground wpa_supplicant for lws-hmi-wpa.service (Type=simple).
+# Foreground wpa_supplicant for wlan-wpa.service (Type=simple).
 # Usage: run-wpa.sh (started by the unit; iface from wifi-stack-up.sh).
 set -eu
 
-IFACE_FILE=/run/lws-hmi-wlan.iface
-WPA_CONF="${LWS_WPA_CONF:-/var/lib/lws-hmi/wpa_supplicant.conf}"
-WPA_LOG=/var/lib/lws-hmi/wpa_supplicant.log
+IFACE_FILE=/run/wpa-wlan.iface
+WPA_CONF="${LWS_WPA_CONF:-/var/lib/wpa_supplicant/wpa_supplicant.conf}"
+WPA_LOG=/var/lib/wpa_supplicant/wpa_supplicant.log
 
 IFACE="${LWS_WLAN_IFACE:-}"
 if [ -z "$IFACE" ] && [ -f "$IFACE_FILE" ]; then
@@ -13,7 +13,7 @@ if [ -z "$IFACE" ] && [ -f "$IFACE_FILE" ]; then
 fi
 IFACE="${IFACE:-wlan0}"
 
-mkdir -p /var/lib/lws-hmi /var/run/wpa_supplicant
+mkdir -p /var/lib/wpa_supplicant /var/run/wpa_supplicant
 if [ ! -f "$WPA_CONF" ]; then
 	cat >"$WPA_CONF" <<'EOF'
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=root

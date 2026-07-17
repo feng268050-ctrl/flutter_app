@@ -11,13 +11,13 @@ FSTAB="$TARGET_DIR/etc/fstab"
 for mp in /userdata /oem /mnt/private1 /mnt/private /mnt/userdata; do
 	if grep -qE "[[:space:]]${mp//\//\\\/}[[:space:]]" "$FSTAB"; then
 		sed -i "\|[[:space:]]${mp//\//\\\/}[[:space:]]|d" "$FSTAB"
-		echo "lws-hmi-strip-fstab: removed $mp from $FSTAB"
+		echo "post-strip-fstab: removed $mp from $FSTAB"
 	fi
 done
 
 for label in userdata oem private private1; do
 	if grep -qE "^PARTLABEL=${label}[[:space:]]" "$FSTAB"; then
 		sed -i "/^PARTLABEL=${label}[[:space:]]/d" "$FSTAB"
-		echo "lws-hmi-strip-fstab: removed PARTLABEL=${label} from $FSTAB"
+		echo "post-strip-fstab: removed PARTLABEL=${label} from $FSTAB"
 	fi
 done

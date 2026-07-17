@@ -2,12 +2,12 @@
 
 ### Requirement: eth0 DHCP/static helpers in rootfs overlay
 
-The lws_hmi rootfs SHALL include eth0-scoped helper scripts for DHCP and static IPv4 (e.g. `eth0-dhcp.sh`, `eth0-static.sh` under `/usr/lib/lws-hmi/`) usable from the HMI after boot. Eth0 DHCP MUST remain outside `dhcpcd.service` / `network.service` default boot enablement. Static IPv4 on eth0 SHALL use `iproute2` via those helpers (no requirement to enable systemd-networkd).
+The lws_hmi rootfs SHALL include eth0-scoped helper scripts for DHCP and static IPv4 (e.g. `eth0-dhcp.sh`, `eth0-static.sh` under `/usr/libexec/hmi/`) usable from the HMI after boot. Eth0 DHCP MUST remain outside `dhcpcd.service` / `network.service` default boot enablement. Static IPv4 on eth0 SHALL use `iproute2` via those helpers (no requirement to enable systemd-networkd).
 
 #### Scenario: eth0 helpers present
 
 - **WHEN** P2.1 rootfs is deployed to device after this change
-- **THEN** documented eth0 DHCP and static helper scripts exist and are executable under `/usr/lib/lws-hmi/`
+- **THEN** documented eth0 DHCP and static helper scripts exist and are executable under `/usr/libexec/hmi/`
 
 #### Scenario: Boot does not enable dhcpcd for eth0
 

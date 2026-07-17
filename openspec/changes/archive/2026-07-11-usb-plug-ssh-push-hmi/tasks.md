@@ -1,28 +1,28 @@
 ## 1. Kernel and defconfig
 
-- [x] 1.1 Add `overlay/kernel/rockchip/lws-hmi-usb-gadget.config` (ECM, configfs, dwc3 gadget) and append to `board/ynh960_defconfig` `RK_KERNEL_CFG_FRAGMENTS`
-- [x] 1.2 Retire or merge duplicate options from `lws-hmi-debug-usb.config`; document in fragment comment
+- [x] 1.1 Add `overlay/kernel/rockchip/ynh960-usb-gadget.config` (ECM, configfs, dwc3 gadget) and append to `board/ynh960_defconfig` `RK_KERNEL_CFG_FRAGMENTS`
+- [x] 1.2 Retire or merge duplicate options from `ynh960-usb-gadget.config`; document in fragment comment
 - [x] 1.3 Rebuild kernel on device smoke: `configfs` and `usb_f_ecm` (or module) present after flash — validated on ynh960 bench (USB-SSH + push-app)
 
 ## 2. Target rootfs — USB plug-ssh scripts
 
-- [x] 2.1 Add `/usr/lib/lws-hmi/usb-plug-ssh-start.sh` — compose ECM gadget, set `iSerial`, bring up `usb0` at `192.168.55.1/24`
-- [x] 2.2 Add `/usr/lib/lws-hmi/usb-plug-ssh-stop.sh` — unbind UDC, remove gadget, down `usb0`
-- [x] 2.3 Add `/usr/lib/lws-hmi/read-device-serial.sh` — stable serial from DT / SoC for `iSerial`
+- [x] 2.1 Add `/usr/libexec/hmi/usb-plug-ssh-start.sh` — compose ECM gadget, set `iSerial`, bring up `usb0` at `192.168.55.1/24`
+- [x] 2.2 Add `/usr/libexec/hmi/usb-plug-ssh-stop.sh` — unbind UDC, remove gadget, down `usb0`
+- [x] 2.3 Add `/usr/libexec/hmi/read-device-serial.sh` — stable serial from DT / SoC for `iSerial`
 - [x] 2.4 Add udev rule(s) or systemd path unit for VBUS attach → start, detach → stop
-- [x] 2.5 Add `lws-hmi-usb-plug-ssh.service` (no `[Install]` / not in multi-user wants; `After=hmi.service` only)
+- [x] 2.5 Add `ssh-debug-usb.service` (no `[Install]` / not in multi-user wants; `After=hmi.service` only)
 
 ## 3. Target rootfs — sshd usb0-only
 
 - [x] 3.1 Add `sshd_config.d` drop-in: `ListenAddress 192.168.55.1`, `PasswordAuthentication yes` (usb debug context)
 - [x] 3.2 Start sshd from plug-ssh service (instance or `sshd -D` listener on usb0 only); stop on unplug
-- [x] 3.3 Confirm `99-lws-hmi.preset` still disables boot-time `sshd.service`; plug path does not `systemctl enable sshd`
+- [x] 3.3 Confirm `99-appliance.preset` still disables boot-time `sshd.service`; plug path does not `systemctl enable sshd`
 
 ## 4. Boot verification
 
 - [x] 4.1 Extend `boot-verify.sh` — USB plug-ssh unit not in `multi-user.target.wants`
 - [x] 4.2 Extend `verify-rootfs-overlay.sh` — required scripts, udev rules, sshd drop-in present
-- [x] 4.3 Extend `08-lws-hmi-systemd-finalize.sh` if SDK re-enables unwanted units
+- [x] 4.3 Extend `08-systemd-appliance-finalize.sh` if SDK re-enables unwanted units
 
 ## 5. Host scripts and Makefile
 

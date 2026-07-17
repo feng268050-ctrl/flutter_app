@@ -3,7 +3,7 @@
 - [x] 1.1 Spike on device: confirm wlan0/hci0 after `wifibt-init`, `wpa_supplicant.service` flags, and `dhcpcd` vs `udhcpc`
 - [x] 1.2 Enable minimal wlan0 DHCP client in Buildroot without eth0 DHCP-at-boot
 - [x] 1.3 Add overlay helpers: `wifi-stack-up/down.sh`, `wlan0-dhcp.sh`, `wlan0-static.sh` (or unified `wlan0-ip.sh`), `bt-stack-up/down.sh`
-- [x] 1.4 Ensure wpa conf path under `/var/lib/lws-hmi/` with `ctrl_interface`, `update_config=1`; prefs dirs for IPv4 + HTTP proxy
+- [x] 1.4 Ensure wpa conf path under `/var/lib/hmi/` with `ctrl_interface`, `update_config=1`; prefs dirs for IPv4 + HTTP proxy
 - [x] 1.5 Confirm boot hooks still defer wifibt/wpa/network/bluetooth; extend `env-verify` for DHCP client if needed
 
 ## 2. Dart Wi-Fi platform module

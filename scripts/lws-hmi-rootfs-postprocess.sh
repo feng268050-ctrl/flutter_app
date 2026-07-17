@@ -15,18 +15,18 @@ SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
 TARGET="$(resolve_br_target "$SDK")"
 OUT_DIR="$(dirname "$TARGET")"
 PROFILE="$(basename "$OUT_DIR")"
-STRIP="$SDK/buildroot/board/rockchip/rk3566_rk3568/lws-hmi-strip-fstab.sh"
+STRIP="$SDK/buildroot/board/rockchip/rk3566_rk3568/strip-fstab.sh"
 
 if [[ ! -d "$TARGET" ]]; then
-	echo "lws-hmi-rootfs-postprocess: skip (missing $TARGET)" >&2
+	echo "rootfs-postprocess: skip (missing $TARGET)" >&2
 	exit 0
 fi
 
 if [[ ! -x "$STRIP" ]]; then
-	STRIP="$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-strip-fstab.sh"
+	STRIP="$ROOT/overlay/board/rockchip/rk3566_rk3568/strip-fstab.sh"
 fi
 [[ -x "$STRIP" ]] || {
-	echo "ERROR: lws-hmi-strip-fstab.sh missing — run: make apply-overlay" >&2
+	echo "ERROR: strip-fstab.sh missing — run: make apply-overlay" >&2
 	exit 1
 }
 
@@ -35,6 +35,21 @@ bash "$STRIP" "$TARGET"
 after="$(md5sum "$TARGET/etc/fstab" 2>/dev/null | awk '{print $1}' || true)"
 
 if [[ "$before" != "$after" ]]; then
-	echo "lws-hmi-rootfs-postprocess: fstab changed — repacking rootfs.ext2"
+	echo "rootfs-postprocess: fstab changed — repacking rootfs.ext2"
+	make -C "$SDK/buildroot" "O=$OUT_DIR" rootfs-ext2
+fi
+
+INSTALL="$SDK/buildroot/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh"
+[[ -x "$INSTALL" ]] || INSTALL="$ROOT/overlay/board/rockchip/rk3566_rk3568/install-systemctl-wrapper.sh"
+[[ -x "$INSTALL" ]] || {
+	echo "ERROR: install-systemctl-wrapper.sh missing — run: make apply-overlay" >&2
+	exit 1
+}
+export STAGING_DIR="$OUT_DIR/host/aarch64-buildroot-linux-gnu/sysroot"
+sh "$INSTALL" "$TARGET" rootfs-postprocess
+
+img="$OUT_DIR/images/rootfs.ext2"
+if [[ -f "$img" ]]; then
+	echo "rootfs-postprocess: refreshing rootfs.ext2 (sync flash image with target/)"
 	make -C "$SDK/buildroot" "O=$OUT_DIR" rootfs-ext2
 fi

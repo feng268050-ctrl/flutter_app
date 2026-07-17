@@ -3,11 +3,11 @@
 set -eu
 
 TIMEOUT="${1:-15}"
-PIDFILE=/var/lib/lws-hmi/debug-app.pid
-DEBUG_LOG=/var/lib/lws-hmi/debug-app.log
+PIDFILE=/var/lib/hmi/debug-app.pid
+DEBUG_LOG=/var/lib/hmi/debug-app.log
 
 log() {
-	echo "lws-hmi-stop: $*"
+	echo "hmi-stop: $*"
 }
 
 live_flutter_pids() {
@@ -85,7 +85,7 @@ if [ -n "$(live_flutter_pids)" ]; then
 	exit 1
 fi
 
-rm -f "$PIDFILE" /var/lib/lws-hmi/debug-app.vm-service
+rm -f "$PIDFILE" /var/lib/hmi/debug-app.vm-service
 # Let deferred DRM/Mali task_work complete before another instance opens DRM.
 sleep 1
 log "all flutter-pi processes stopped"

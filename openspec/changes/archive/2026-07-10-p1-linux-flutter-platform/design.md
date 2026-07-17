@@ -2,7 +2,7 @@
 
 lws-hmi wraps the Rockchip RK3566/RK3568 SDK in Docker and applies ynh960 board overlays. The upstream reference Buildroot defconfig (`rockchip_rk3566_rk3568_defconfig`) targets an EVB demo system (~1.5–2 GB rootfs) with Weston, Chromium, camera, and benchmark packages — unsuitable for a full-screen flutter-pi HMI.
 
-The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.service`, `06-lws-hmi-systemd.sh`), display overlays (LCD/MIPI params), and a defconfig skeleton (`overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig`). **P1** completed the wiring: enable flutter-pi in Buildroot, trim EVB packages, add boot splash, build Hello World on the host, deploy to `/opt/hmi`, and optimize boot KPI on ynh960 hardware.
+The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.service`, `06-systemd-appliance.sh`), display overlays (LCD/MIPI params), and a defconfig skeleton (`overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig`). **P1** completed the wiring: enable flutter-pi in Buildroot, trim EVB packages, add boot splash, build Hello World on the host, deploy to `/opt/hmi`, and optimize boot KPI on ynh960 hardware.
 
 **Constraints:**
 - flutter-pi links **`libsystemd.so`** (`sd_event` event loop); this does **not** require systemd as PID 1 at runtime. P1 ships **`BR2_INIT_SYSTEMD=y`** anyway (Buildroot packages libsystemd with the systemd recipe, Rockchip SDK path, unit-based service layout). Busybox-init + libsystemd-only is **方案 B** (experimental), out of P1～P5 scope.
@@ -56,7 +56,7 @@ The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.servic
 
 ### 4. Flutter app deployment — meta-flutter rootfs overlay
 
-**Choice:** Place release artifacts under `overlay/board/.../lws-hmi-fs-overlay/opt/hmi/` via `make build-app` (`flutterpi_tool build --arch=arm64 --release`). Layout:
+**Choice:** Place release artifacts under `overlay/board/.../rootfs-overlay/opt/hmi/` via `make build-app` (`flutterpi_tool build --arch=arm64 --release`). Layout:
 
 ```
 /opt/hmi/lib/libapp.so
@@ -75,20 +75,20 @@ The repo already scaffolds Plan A systemd (`lws_hmi_systemd.config`, `hmi.servic
 
 ### 5. Boot splash — SDK FIT boot.its + kernel early logo
 
-**Choice:** Use **`board/logo/splash_icon.png`** (512×512 PNG) as canonical source. `scripts/build-boot-logo.sh` converts to **`board/logo/logo.bmp`** for Rockchip resource partition. ynh960 uses SDK **`boot.its`** FIT (`RK_BOOT_FIT_ITS_NAME="boot.its"`), not self-compiled U-Boot. Kernel early logo via ynh960 DTS + `lws-hmi-ynh960-display.config`.
+**Choice:** Use **`board/logo/splash_icon.png`** (512×512 PNG) as canonical source. `scripts/build-boot-logo.sh` converts to **`board/logo/logo.bmp`** for Rockchip resource partition. ynh960 uses SDK **`boot.its`** FIT (`RK_BOOT_FIT_ITS_NAME="boot.its"`), not self-compiled U-Boot. Kernel early logo via ynh960 DTS + `ynh960-display.config`.
 
 **Rationale:** Innohi-confirmed path; U-Boot self-compile skipped (A-1). Logo holds until `Freeing drm_logo` at flutter-pi first frame.
 
 ### 6. systemd Plan A — extended boot chain beyond hmi.service
 
-**Choice:** Post-hook (`06-lws-hmi-systemd.sh`) enables:
+**Choice:** Post-hook (`06-systemd-appliance.sh`) enables:
 - `param-update.service` (sysinit — display params)
 - `mainserver.service` (Innohi MainServer display daemon, `Before=hmi.service`)
-- `lws-hmi-performance.service` (CPU/DMC/GPU `performance` governors, `Before=hmi.service`)
-- `lws-hmi-pwrkey-poweroff.service` (board power key → `shutdown.sh`)
-- `hmi.service` (`Nice=-5`, `After=lws-hmi-performance.service`)
+- `cpu-performance.service` (CPU/DMC/GPU `performance` governors, `Before=hmi.service`)
+- `pwrkey-poweroff.service` (board power key → `shutdown.sh`)
+- `hmi.service` (`Nice=-5`, `After=cpu-performance.service`)
 
-Disables at boot: mediamtx, sshd (+ socket), bluetooth, wifibt-init, wpa_supplicant, network, log-guardian. Masks `systemd-network-generator`. `08-lws-hmi-systemd-finalize.sh` undoes SDK post-hook re-enables.
+Disables at boot: mediamtx, sshd (+ socket), bluetooth, wifibt-init, wpa_supplicant, network, log-guardian. Masks `systemd-network-generator`. `08-systemd-appliance-finalize.sh` undoes SDK post-hook re-enables.
 
 **Rationale:** Boot KPI optimization on hardware showed network/Wi‑Fi at boot unnecessary for Hello World; performance governors and MainServer needed for stable display handoff. See `docs/boot-kpi-optimization.md`.
 
@@ -98,7 +98,7 @@ Disables at boot: mediamtx, sshd (+ socket), bluetooth, wifibt-init, wpa_supplic
 ```
 RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"
 RK_BOOT_FIT_ITS_NAME="boot.its"
-RK_KERNEL_CFG_FRAGMENTS="lws-hmi-ynh960-display.config lws-hmi-kernel-trim.config"
+RK_KERNEL_CFG_FRAGMENTS="ynh960-display.config ynh960-kernel-trim.config"
 RK_WIFIBT=y
 ```
 (`RK_BUILDROOT_CFG` resolves to `rockchip_rk3566_rk3568_lws_hmi` via SDK Kconfig.)
@@ -156,7 +156,7 @@ Multi-device: `upgrade_tool -s LocationID` (§1.11), resolved from `SERIAL=`. ma
 2. Build Hello World on host → `make build-app` → copy to fs-overlay `/opt/hmi`.
 3. `make lunch` → ynh960 → `make build-rootfs` → `make build-img` (auto-export on macOS).
 4. **Flash (host USB):** `make devices` → `SERIAL=… make bootloader` → `make flash`.
-5. Verify: `/usr/lib/lws-hmi/boot-verify.sh`, splash, home frame, `systemd-analyze critical-chain hmi.service`.
+5. Verify: `/usr/libexec/hmi/boot-verify.sh`, splash, home frame, `systemd-analyze critical-chain hmi.service`.
 6. Rollback: revert `RK_BUILDROOT_BASE_CFG` to upstream defconfig and rebuild.
 
 ## Open Questions

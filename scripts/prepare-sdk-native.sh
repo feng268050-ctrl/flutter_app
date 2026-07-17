@@ -29,36 +29,37 @@ restore_upstream_dtsi() {
       echo "sdk-native: restored $kernel_dts/customer_board_ynh960.dtsi (PARTUUID root)"
     fi
     # Keep linux-root DTSI out (sdk-native uses vendor chosen/bootargs); display DTSI is applied below.
-    rm -f "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi"
+    rm -f "$kernel_dts/ynh960-linux-root.dtsi" \
+      "$kernel_dts/lws-hmi-ynh960-linux-root.dtsi"
   done
 }
 
 apply_display_dts() {
-  local kernel_dts customer_dtsi patch_script lws_dtsi panel_init_dtsi evb_trim_dtsi touch_dtsi own_gpio_dtsi gen_script
+  local kernel_dts customer_dtsi patch_script display_dtsi panel_init_dtsi evb_trim_dtsi touch_dtsi own_gpio_dtsi gen_script
   gen_script="$ROOT/scripts/gen-ynh960-panel-init-dtsi.sh"
-  lws_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-display.dtsi"
-  panel_init_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-panel-init.dtsi"
-  evb_trim_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-evb-trim.dtsi"
-  touch_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.dtsi"
-  own_gpio_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi"
-  uart5_gmac_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi"
-  uart7_pwm_dtsi="$OVERLAY/kernel/rockchip/lws-hmi-ynh960-uart7-pwm.dtsi"
-  patch_script="$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-ynh960-dts.sh"
+  display_dtsi="$OVERLAY/kernel/rockchip/ynh960-display.dtsi"
+  panel_init_dtsi="$OVERLAY/kernel/rockchip/ynh960-panel-init.dtsi"
+  evb_trim_dtsi="$OVERLAY/kernel/rockchip/ynh960-evb-trim.dtsi"
+  touch_dtsi="$OVERLAY/kernel/rockchip/ynh960-touch.dtsi"
+  own_gpio_dtsi="$OVERLAY/kernel/rockchip/ynh960-own-gpio.dtsi"
+  uart5_gmac_dtsi="$OVERLAY/kernel/rockchip/ynh960-uart5-gmac.dtsi"
+  uart7_pwm_dtsi="$OVERLAY/kernel/rockchip/ynh960-uart7-pwm.dtsi"
+  patch_script="$OVERLAY/device/rockchip/common/scripts/patch-ynh960-dts.sh"
   [[ -x "$gen_script" ]] || chmod +x "$gen_script"
   bash "$gen_script"
   for kernel_dts in "$SDK/kernel/arch/arm64/boot/dts/rockchip" \
     "$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip"; do
     [[ -d "$kernel_dts" ]] || continue
     customer_dtsi="$kernel_dts/customer_board_ynh960.dtsi"
-    [[ -f "$customer_dtsi" && -f "$patch_script" && -f "$lws_dtsi" && -f "$panel_init_dtsi" && -f "$evb_trim_dtsi" && -f "$touch_dtsi" && -f "$own_gpio_dtsi" && -f "$uart5_gmac_dtsi" && -f "$uart7_pwm_dtsi" ]] || continue
+    [[ -f "$customer_dtsi" && -f "$patch_script" && -f "$display_dtsi" && -f "$panel_init_dtsi" && -f "$evb_trim_dtsi" && -f "$touch_dtsi" && -f "$own_gpio_dtsi" && -f "$uart5_gmac_dtsi" && -f "$uart7_pwm_dtsi" ]] || continue
     bash "$patch_script" "$customer_dtsi" \
-      "$lws_dtsi" "lws-hmi-ynh960-display.dtsi" \
-      "$panel_init_dtsi" "lws-hmi-ynh960-panel-init.dtsi" \
-      "$evb_trim_dtsi" "lws-hmi-ynh960-evb-trim.dtsi" \
-      "$touch_dtsi" "lws-hmi-ynh960-touch.dtsi" \
-      "$own_gpio_dtsi" "lws-hmi-ynh960-own-gpio.dtsi" \
-      "$uart5_gmac_dtsi" "lws-hmi-ynh960-uart5-gmac.dtsi" \
-      "$uart7_pwm_dtsi" "lws-hmi-ynh960-uart7-pwm.dtsi"
+      "$display_dtsi" "ynh960-display.dtsi" \
+      "$panel_init_dtsi" "ynh960-panel-init.dtsi" \
+      "$evb_trim_dtsi" "ynh960-evb-trim.dtsi" \
+      "$touch_dtsi" "ynh960-touch.dtsi" \
+      "$own_gpio_dtsi" "ynh960-own-gpio.dtsi" \
+      "$uart5_gmac_dtsi" "ynh960-uart5-gmac.dtsi" \
+      "$uart7_pwm_dtsi" "ynh960-uart7-pwm.dtsi"
     echo "sdk-native: ynh960 MIPI dsi0 + panel-init-sequence in $customer_dtsi"
   done
 }
@@ -66,8 +67,8 @@ apply_display_dts() {
 apply_display_kernel_config() {
   local cfg configs_dir
   for cfg in \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-display.config" \
-    "$OVERLAY/kernel/rockchip/lws-hmi-ynh960-touch.config"; do
+    "$OVERLAY/kernel/rockchip/ynh960-display.config" \
+    "$OVERLAY/kernel/rockchip/ynh960-touch.config"; do
     for configs_dir in "$SDK/kernel/arch/arm64/configs" \
       "$SDK/kernel-6.1/arch/arm64/configs"; do
       [[ -f "$cfg" && -d "$configs_dir" ]] || continue
@@ -101,8 +102,8 @@ restore_prebuilt_loader() {
 }
 
 apply_innohi_script_fixes() {
-  local patch_rootfs="$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-mk-rootfs.sh"
-  local patch_wifibt="$OVERLAY/device/rockchip/common/scripts/lws-hmi-patch-post-wifibt.sh"
+  local patch_rootfs="$OVERLAY/device/rockchip/common/scripts/patch-mk-rootfs.sh"
+  local patch_wifibt="$OVERLAY/device/rockchip/common/scripts/patch-post-wifibt.sh"
   [[ -x "$patch_rootfs" ]] || chmod +x "$patch_rootfs"
   [[ -x "$patch_wifibt" ]] || chmod +x "$patch_wifibt"
   bash "$patch_rootfs" "$SCRIPTS_DIR/mk-rootfs.sh"

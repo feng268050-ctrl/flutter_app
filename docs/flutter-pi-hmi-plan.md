@@ -77,7 +77,7 @@ P2.2  日期/时间设置（Demo）✅
     └─ 板端 smoke：手动设时 / Sync Now / 模式持久化
 
 P2.3  硬件设置持久化（整机重启）✅
-    ├─ 动机：P2.1 多数偏好已写 `/var/lib/lws-hmi/*`，但重启后栈/接口未自动恢复
+    ├─ 动机：P2.1 多数偏好已写 `/var/lib/hmi/*`，但重启后栈/接口未自动恢复
     ├─ boot 钩子（systemd oneshot / display-init 后）：按持久化偏好恢复 Wi‑Fi / eth0 / 代理 / 背光 / 旋转 / BT A2DP 等
     ├─ 统一路径与 schema 文档化；Demo Apply 与 boot 复用同一 restore 脚本
     └─ 验收：断电/reboot 后无需再进 Demo 即可恢复上次硬件配置
@@ -406,7 +406,7 @@ Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不
 | **远程 SSH**                | 包在 rootfs，**默认不监听**；**P2.1**：Demo / `enable-ssh-debug.sh` **按需** start（重启后仍默认关）；**P5**：产品隐藏入口复用同一脚本 |
 | **eth0**                  | **首屏后** `configure-camera-eth0.sh`（§7.1）；**禁止** sysinit 静态 IP、内核 `ip=` bootargs                     |
 | **mediamtx / bluetoothd** | 默认 **不进 multi-user wants**；**mediamtx** P5 由 App 在 **IPC 相机 ping 通后** `systemctl start`（§7.5）；蓝牙按需  |
-| **可选 USB ECM**            | 默认 `**lws-hmi-usb-gadget.config`**（plug-to-ssh）；`make push-app` 迭代应用，无需 rootfs reflash              |
+| **可选 USB ECM**            | 默认 `**ynh960-usb-gadget.config`**（plug-to-ssh）；`make push-app` 迭代应用，无需 rootfs reflash              |
 
 
 **禁止**：`lws-hmi-debug-boot` 类早期配网 unit、`LWS_HMI_DEV` 换 overlay、内核 cmdline 写死 `10.0.0.240` 等仅开发镜像行为。
@@ -457,14 +457,14 @@ Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不
 
 #### 3.6.4 rootfs overlay（systemd unit）
 
-路径：`overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/`（已由 `overlay/buildroot/rk3566_rk3568_lws.config` 挂载）。
+路径：`overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/`（已由 `overlay/buildroot/rk3566_rk3568_lws.config` 挂载）。
 
 
 | 文件                                                     | 作用                                                                                       |
 | ------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
 | `etc/systemd/system/hmi.service`                       | **P1** 启用；`After=local-fs.target` only                                                   |
 | `etc/systemd/system/mediamtx.service`                  | P5；**默认不 enable**（无 `[Install]`，`static`）；`After=hmi.service`；**相机 ping 通后** App `start` |
-| `etc/systemd/journald.conf.d/00-lws-hmi-volatile.conf` | 日志仅内存                                                                                    |
+| `etc/systemd/journald.conf.d/00-volatile-storage.conf` | 日志仅内存                                                                                    |
 | `usr/lib/lws-hmi/systemd-enable-hmi.sh`                | post-build：**enable hmi**，**disable** mediamtx/sshd/bluetoothd（P1+ 蓝牙改 App 触发）           |
 
 
@@ -511,7 +511,7 @@ buildroot/configs/rockchip_rk3566_rk3568_lws_hmi_defconfig
   #include "chips/lws_hmi_flutter.config"    # flutter-pi + libdrm 等
   #include "chips/lws_hmi_mediamtx.config"    # P5：mediamtx 二进制
   # P5: #include "chips/lws_hmi_gst_rtsp.config"
-  # rootfs overlay: overlay/buildroot/rk3566_rk3568_lws.config → lws-hmi-fs-overlay
+  # rootfs overlay: overlay/buildroot/rk3566_rk3568_lws.config → rootfs-overlay
 ```
 
 SDK `output/.config` 中设置：
@@ -749,7 +749,7 @@ Stack
 **systemd 与首屏**：systemd **不会**故意挡 UI；仅当 unit 写错依赖（如 `hmi` `After=mediamtx` / `network-online`）才会拖慢。**MediaMTX** 仅在 **IPC ping 通后** 由 App `systemctl start`（§7.5），不进 `hmi` critical chain。
 
 ```ini
-# overlay/.../lws-hmi-fs-overlay/etc/systemd/system/hmi.service
+# overlay/.../rootfs-overlay/etc/systemd/system/hmi.service
 [Unit]
 Description=flutter-pi HMI
 DefaultDependencies=yes
@@ -777,7 +777,7 @@ After=hmi.service
 
 [Service]
 Type=simple
-ExecStartPre=/usr/lib/lws-hmi/render-mediamtx-config.sh
+ExecStartPre=/usr/libexec/hmi/render-mediamtx-config.sh
 ExecStart=/usr/bin/mediamtx /etc/mediamtx/mediamtx.yaml
 Restart=on-failure
 RestartSec=3
@@ -880,7 +880,7 @@ Buildroot **不要**为 eth0 配 `systemd-networkd` 静态地址或 `dhcpcd`；�
 
 | 项       | 做法                                                                                          |
 | ------- | ------------------------------------------------------------------------------------------- |
-| 脚本      | `/usr/lib/lws-hmi/configure-camera-eth0.sh`（移植 `CameraEth0Configurator` + `AddressPlanner`） |
+| 脚本      | `/usr/libexec/hmi/configure-camera-eth0.sh`（移植 `CameraEth0Configurator` + `AddressPlanner`） |
 | 触发时机    | **首屏 onReady 后**后台；用摄像头 / MediaMTX 前 `ensure`；wlan0 变化时重跑                                   |
 | 是否阻塞 UI | **否**（与 lws-ui `LaserApplication` 线程池调 `systemParamsSetting` 一致）                            |
 | 前置      | **P2.1** 已验证 eth0 RJ45 link；本脚本只负责 IPC 专链网段                                                 |
@@ -1091,7 +1091,7 @@ lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `
 
 **P1 工程迭代（首选）**：OTG USB 插入主机 → **VBUS 触发** ECM + `usb0`（`192.168.55.1/24`）+ **仅 `usb0` 监听**的 sshd → 主机 `**make push-app`**（`scp` staging + 运行时安装 payload + restart/retry `hmi.service`，不重启整机）。拔线自动 teardown；**不进** `multi-user.target.wants`。多板用 `**SERIAL=`**（gadget `iSerial`），与 `make flash` 一致。进入 RockUSB Loader：设备 shell 运行 `**reboot-loader**`，或主机运行 `**make reboot-loader**`；Android 仍可用 adb。
 
-**P2.1（LAN/WLAN 按需）**：板端 `**/usr/lib/lws-hmi/enable-ssh-debug.sh`**（及 `disable-ssh-debug.sh`）启动 `lws-hmi-lan-ssh.service` → `lan-ssh-run.sh`（仅在 **eth0/wlan0** 的 IPv4 上 `ListenAddress`，**不**绑 `0.0.0.0` / `192.168.55.1`）；与 USB-SSH **并存**。**不** `systemctl enable sshd`。P2 Demo「LAN SSH debug」开关调用同一脚本。主机 `**make connect <ip>`** 注册后可用 `push-app` / `shell` / `debug-app` / `reboot`（**不含** `reboot-loader`）。重启后自动关闭。
+**P2.1（LAN/WLAN 按需）**：板端 `**/usr/libexec/hmi/enable-ssh-debug.sh`**（及 `disable-ssh-debug.sh`）启动 `ssh-debug-lan.service` → `lan-ssh-run.sh`（仅在 **eth0/wlan0** 的 IPv4 上 `ListenAddress`，**不**绑 `0.0.0.0` / `192.168.55.1`）；与 USB-SSH **并存**。**不** `systemctl enable sshd`。P2 Demo「LAN SSH debug」开关调用同一脚本。主机 `**make connect <ip>`** 注册后可用 `push-app` / `shell` / `debug-app` / `reboot`（**不含** `reboot-loader`）。重启后自动关闭。
 
 
 | lws-ui（Android）                                                   | lws-hmi（Buildroot）                                                                     |
@@ -1099,7 +1099,7 @@ lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `
 | `adbd` 默认不监听 LAN                                                  | `**sshd` 默认 `disable --now`**                                                          |
 | USB 插线即 adb（开发）                                                   | **USB 插线即 ECM+ssh**（`lws-hmi-usb-plug-ssh`）；仅 `usb0`；LAN debug 另开 eth0/wlan0 监听，互不抢占 |
 | **设置 → 设备信息 → 连续 5 次点击 System Version**（5 s 内，`SecretTapTracker`） | **P2.1**：Demo 开关 + CLI；**P5**：Flutter 设备信息页 → 系统版本 **5 连击** → 同一 `enable-ssh-debug.sh` |
-| `AdbRemoteDebugHelper.enableRemoteDebugging()`                    | **P2.1+**：`/usr/lib/lws-hmi/enable-ssh-debug.sh`（专用 LAN sshd，非 boot `sshd.service`）    |
+| `AdbRemoteDebugHelper.enableRemoteDebugging()`                    | **P2.1+**：`/usr/libexec/hmi/enable-ssh-debug.sh`（专用 LAN sshd，非 boot `sshd.service`）    |
 | `**POST /v1/adb`**（`:5580`，与 UI 同一路径）                             | `**POST /v1/ssh**`（P5 `:5580`，同一 helper）                                               |
 
 
@@ -1201,7 +1201,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `board/ynh960_defconfig`                                                   | **产品线统一固件**的开发/构建入口（基准板 ynh960 / RK3566）                                                                            |
 | LCD/MIPI fs-overlay                                                        | 内核/用户态显示参数                                                                                                          |
-| `overlay/.../05-lws-hmi-display.sh`                                        | 保留                                                                                                                  |
+| `overlay/.../05-display.sh`                                        | 保留                                                                                                                  |
 | Docker volume 构建                                                           | 继续用于 Buildroot 编译                                                                                                   |
 | **待增** `board/logo/` + U-Boot/内核 logo 打包                                   | P1 boot splash（§5.2）                                                                                                |
 | **待增** `overlay/buildroot/chips/lws_hmi_{base,systemd,network,npu}.config` | **方案 A** Kconfig（§3.6）                                                                                              |
@@ -1213,15 +1213,15 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **待增** `packages/frost_ui/`（**git submodule**）                             | **P4** FrostUI（§6.3）                                                                                                |
 | **待增** `packages/frost_ime/`（**git submodule**）                            | **P4** IME（对齐 lws-ui `IME.md`）                                                                                      |
 | **待增** `buildroot/configs/rockchip/chips/lws_hmi_mediamtx.config`          | **P5** mediamtx 二进制                                                                                                 |
-| **已有** `overlay/.../lws-hmi-fs-overlay/etc/systemd/system/hmi.service`     | P1 enable（§3.6.4）                                                                                                   |
+| **已有** `overlay/.../rootfs-overlay/etc/systemd/system/hmi.service`     | P1 enable（§3.6.4）                                                                                                   |
 | **已有** `overlay/.../mediamtx.service`                                      | P5；**默认 disable**                                                                                                   |
-| **已有** `overlay/.../post-hooks/06-lws-hmi-systemd.sh`                      | enable hmi / disable 非关键 unit                                                                                       |
+| **已有** `overlay/.../post-hooks/06-systemd.sh`                      | enable hmi / disable 非关键 unit                                                                                       |
 | **已有** P2：串口 + GPIO demo                                                   | `flutter_libserialport`、`/dev/ttyS5`、`gpio_innohi` 三色灯（`GPIO_5/4/7`，§11.0）；OpenSpec 已归档 `2026-07-14-p2-modbus-gpio` |
 | **已有** P2.1：喇叭 / Wi‑Fi / BT / **以太网 RJ45** / 触控 / 背光 / **外接 USB 键盘·鼠标** / LAN SSH smoke + pinmux 台账 | `[docs/ynh960-io-pinmux-ledger.md](ynh960-io-pinmux-ledger.md)`（§4.1.1 键盘、§4.1.2 鼠标）；**非** 产品 UI / IPC 相机业务 |
 | **待增** P2.5：Android 兼容                                                     | `gpio_innohi` 双端 GPIO、`YNHAPI.jar`（非 GPIO 平台能力）、`make emulator` / `make android-emulator`、APK 构建                    |
 | **待增** `scripts/configure-camera-eth0.sh`                                  | **P5.1** runtime IPC 专链配址（自 lws-ui 移植；假定 **P2.1** eth0 RJ45 已通）                                                     |
 | **待增** `scripts/build-mediamtx.sh`                                         | **P5** linux/arm64 交叉编译                                                                                             |
-| **已有** `scripts/enable-ssh-debug.sh`（板端 `/usr/lib/lws-hmi/`） | **P2.1**：LAN SSH + Demo 开关；**P5** 隐藏入口 / `POST /v1/ssh` 复用                        |
+| **已有** `scripts/enable-ssh-debug.sh`（板端 `/usr/libexec/hmi/`） | **P2.1**：LAN SSH + Demo 开关；**P5** 隐藏入口 / `POST /v1/ssh` 复用                        |
 | **待增** overlay：`sshd` disabled by default                                  | 生产默认不监听                                                                                                             |
 | **待增** `docs/` 本文                                                          | 规划                                                                                                                  |
 | **§6.5** Flutter engine 升级（P3.5）                                           | P3 后、P4 前；三件套 + prebuilt + ynh960 回归                                                                                |
@@ -1505,7 +1505,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - [x] **Wi‑Fi**：AIC8800；可见/隐藏 SSID；wlan0 DHCP/静态；HTTP 代理 + Demo「Send request」（`archive/2026-07-14-p2-1-wifi-bluetooth`）
 - [x] **蓝牙**：Discoverable/Pairable；手机配对 Incoming peers；可选 A2DP Sink（设置页仍属 P5.2）
 - [x] **以太网（RJ45 / eth0）**：Demo + `EthernetController`；DTS → link up → DHCP/静态 ping（`archive/2026-07-15-p2-1-ethernet`；IPC 专链属 P5.1）
-- [x] **触控**：Goodix / libinput；与屏旋转坐标一致（`lws-hmi-ynh960-touch.dtsi`）
+- [x] **触控**：Goodix / libinput；与屏旋转坐标一致（`ynh960-touch.dtsi`）
 - [x] **外接键盘（USB HID）**：1 mm host + Micro-USB OTG host；Demo 打字 / 方向键 / 连发（`archive/2026-07-15-p2-1-usb-keyboard`、`…-usb-otg-id-role`；台账 §4.1.1）
 - [x] **外接鼠标（USB HID）**：可见指针 + Demo 设置（`archive/2026-07-16-p2-1-usb-mouse`；flutter-pi `0004`–`0008`；`mouse.conf`；台账 §4.1.2）
 - [x] **LAN/WLAN 按需 sshd**：`enable-ssh-debug.sh` + Demo；`make connect <ip>`（`archive/2026-07-15-host-remote-ssh`；产品 5 连击仍属 P5）
@@ -1528,14 +1528,14 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 ### P2.3 — 硬件设置持久化（整机重启）✅
 
-**动机**：P2.1 多数偏好已落 `/var/lib/lws-hmi/*`，但断电/reboot 后 Wi‑Fi / eth0 / 代理等栈往往需再进 Demo 手动 Apply；且 Demo `Process.run` 曾把 `wpa_supplicant`/`dhcpcd` 留在 **`hmi.service` cgroup**，导致 `push-app` / `systemctl restart hmi` 断网。
+**动机**：P2.1 多数偏好已落 `/var/lib/hmi/*`，但断电/reboot 后 Wi‑Fi / eth0 / 代理等栈往往需再进 Demo 手动 Apply；且 Demo `Process.run` 曾把 `wpa_supplicant`/`dhcpcd` 留在 **`hmi.service` cgroup**，导致 `push-app` / `systemctl restart hmi` 断网。
 
 **边界**：boot 恢复钩子 + 文档化 schema；系统栈独立 unit；**不**新增产品设置 UI。
 
 **不变式**：系统设置相关长期进程 **不得** 进入 `hmi.service` cgroup；`hmi` 重启不得拖垮 Wi‑Fi / eth0 / LAN SSH（LAN SSH 仍不随 reboot 恢复）。
 
 - 清单：Wi‑Fi 凭据与 wlan0 IPv4、eth0 IPv4、HTTP 代理、背光、屏幕旋转、BT A2DP Sink、**鼠标 `mouse.conf`** 等（以 P2.1 已交付项为准；鼠标偏好由 flutter-pi 启动时重载，无需独立 network-style oneshot）
-- `lws-hmi-wpa` / `lws-hmi-wlan0-dhcp` / `lws-hmi-eth0`：on-demand；`lws-hmi-settings-restore.service`：**`After=hmi`**（UI 先起，再恢复网/BT；Nice/idle；Demo `starting` 跟手动开一致）
+- `lws-hmi-wpa` / `lws-hmi-wlan0-dhcp` / `lws-hmi-eth0`：on-demand；`settings-restore.service`：**`After=hmi`**（UI 先起，再恢复网/BT；Nice/idle；Demo `starting` 跟手动开一致）
 - Demo Apply 与 boot restore **同一实现**（wanted 标记 `wifi-wanted` / `eth0-wanted`）
 - 偏好目录：**`/userdata/lws-hmi/`**（`/var/lib/lws-hmi` → symlink，`bind-prefs.sh`）
 - **保留 / 清除策略**（详见 [`docs/storage-layout.md`](storage-layout.md) §Prefs）：
@@ -1802,11 +1802,11 @@ make del-prop
 | 项                                             | 做法                                                                        |
 | --------------------------------------------- | ------------------------------------------------------------------------- |
 | `**lws_hmi_systemd.config**`                  | 关 networkd / resolved / timesyncd / logind / polkit / analyze / firstboot |
-| **journald volatile**                         | `overlay/.../journald.conf.d/00-lws-hmi-volatile.conf`                    |
+| **journald volatile**                         | `overlay/.../journald.conf.d/00-volatile-storage.conf`                    |
 | `**lws_hmi_base.config`**                     | 关 **adbd**、虚拟 tty **getty**（保留 **serial-getty@ttyFIQ0**）                  |
 | `**lws_hmi_network.config`**                  | 关 dhcpcd、dnsmasq、dropbear；eth0 **无** networkd                             |
 | **sysinit 仅早期显示**                             | `param-update.service` @ sysinit；网络不进 sysinit（§3.6.0）                     |
-| 生产 **enable 仅 `hmi.service`**（+ `mainserver`） | post-hook `06-lws-hmi-systemd.sh`                                         |
+| 生产 **enable 仅 `hmi.service`**（+ `mainserver`） | post-hook `06-systemd.sh`                                         |
 | **disable 默认**                                | `**mediamtx`**、`**sshd**`、`**bluetoothd**`（§7.7 / P1 Wi‑Fi 按需 start）      |
 | 禁止 `network-online.target`                    | 任何 UI 相关 unit 不得 `Wants/After` 它                                          |
 | `**mediamtx` 若 enable**                       | `**After=hmi.service` only** — 不挡 KPI，最多并行抢 CPU **~0.3～1 s**              |

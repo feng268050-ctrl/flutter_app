@@ -19,7 +19,7 @@ Mouse “settings” are also not a product surface yet. flutter-pi hardcodes wh
 - USB HID mouse enumerates on existing host paths; motion / click / wheel reach Flutter.
 - A **visible** pointer tracks the mouse whenever a pointer device is attached.
 - Reusable `MouseSettingsController` (+ Linux impl) for OS-common prefs that spike confirms: **natural scroll**, **scroll speed**, **pointer speed (accel)**, **primary button (left/right)**.
-- Demo section: presence, pointer smoke, settings wired to the controller; prefs under `/var/lib/lws-hmi/`.
+- Demo section: presence, pointer smoke, settings wired to the controller; prefs under `/var/lib/hmi/`.
 - Prefs re-applied when flutter-pi / `hmi` starts (document in settings-persist schema).
 
 **Non-Goals:**
@@ -85,7 +85,7 @@ Unsupported after spike → keep API but document `UnsupportedError` / disabled 
 
 **Choice:**
 
-- Persist: `/var/lib/lws-hmi/mouse.conf` (or sibling one-file-per-key matching existing prefs style). Prefer a single structured file (key=value or JSON lines) documented in `linux-settings-persist`.
+- Persist: `/var/lib/hmi/mouse.conf` (or sibling one-file-per-key matching existing prefs style). Prefer a single structured file (key=value or JSON lines) documented in `linux-settings-persist`.
 - Apply: **flutter-pi patch** reads prefs at start, on pointer device-add, and via **1 Hz mtime poll** of `mouse.conf`. **Never** `kill -HUP` flutter-pi (default SIGHUP exits the process; `hmi.service` `Restart=on-failure` will not recover a clean stop).
 - Dart `LinuxMouseSettingsController` **only writes** the file; MUST NOT decode HID or signal flutter-pi.
 
@@ -132,4 +132,4 @@ Rollback: revert flutter-pi patches + Demo section; mouse still scrolls without 
 
 1. Does ynh960 DRM expose a usable cursor plane with correct buffer constraints, or is software cursor mandatory?
 2. Can libinput accel / natural scroll / left-handed be applied live on hot-plugged mice without restarting flutter-pi?
-3. Exact persist file format (single `mouse.conf` vs discrete files) — decide during implement to match neighbors under `/var/lib/lws-hmi/`.
+3. Exact persist file format (single `mouse.conf` vs discrete files) — decide during implement to match neighbors under `/var/lib/hmi/`.

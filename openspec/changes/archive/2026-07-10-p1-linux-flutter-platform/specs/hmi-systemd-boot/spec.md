@@ -16,7 +16,7 @@ The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL shi
 
 ### Requirement: hmi.service auto-starts flutter-pi after local-fs only
 
-The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/usr/bin/flutter-pi --release -o landscape_left /opt/hmi` with `Nice=-5`, restart on failure, and MUST depend only on `local-fs.target` and `lws-hmi-performance.service` — not on `network-online.target`, `mediamtx.service`, or `systemd-udev-settle.service`.
+The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/usr/bin/flutter-pi --release -o landscape_left /opt/hmi` with `Nice=-5`, restart on failure, and MUST depend only on `local-fs.target` and `cpu-performance.service` — not on `network-online.target`, `mediamtx.service`, or `systemd-udev-settle.service`.
 
 #### Scenario: hmi enabled at image build
 
@@ -25,7 +25,7 @@ The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/us
 
 #### Scenario: boot-verify confirms Plan A boot chain
 
-- **WHEN** operator runs `/usr/lib/lws-hmi/boot-verify.sh` on device after flash
+- **WHEN** operator runs `/usr/libexec/hmi/boot-verify.sh` on device after flash
 - **THEN** output reports PASS for hmi/mainserver/performance/pwrkey enabled and mediamtx/sshd/wpa_supplicant/network not in multi-user wants
 
 #### Scenario: flutter-pi starts automatically
@@ -35,7 +35,7 @@ The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/us
 
 ### Requirement: Boot-supporting services enabled at image build
 
-Post-build hook SHALL enable `hmi.service`, `mainserver.service` (Innohi display daemon), `lws-hmi-performance.service` (CPU/DMC/GPU governors), and `lws-hmi-pwrkey-poweroff.service` in `multi-user.target.wants`. `param-update.service` SHALL be enabled in `sysinit.target.wants` for early display init.
+Post-build hook SHALL enable `hmi.service`, `mainserver.service` (Innohi display daemon), `cpu-performance.service` (CPU/DMC/GPU governors), and `pwrkey-poweroff.service` in `multi-user.target.wants`. `param-update.service` SHALL be enabled in `sysinit.target.wants` for early display init.
 
 #### Scenario: mainserver enabled
 
@@ -45,11 +45,11 @@ Post-build hook SHALL enable `hmi.service`, `mainserver.service` (Innohi display
 #### Scenario: performance service runs before hmi
 
 - **WHEN** device boots
-- **THEN** `lws-hmi-performance.service` completes (`RemainAfterExit=yes`) before `hmi.service` starts
+- **THEN** `cpu-performance.service` completes (`RemainAfterExit=yes`) before `hmi.service` starts
 
 ### Requirement: Non-critical services disabled at image build
 
-Post-build hook SHALL disable `mediamtx.service`, `sshd.service`, `sshd.socket`, `bluetooth.service`, `wifibt-init.service`, `wpa_supplicant.service`, `network.service`, and `log-guardian.service` from all `*.wants` directories. `systemd-network-generator.service` SHALL be masked. `08-lws-hmi-systemd-finalize.sh` SHALL undo SDK post-hook re-enables (e.g. `log-guardian`).
+Post-build hook SHALL disable `mediamtx.service`, `sshd.service`, `sshd.socket`, `bluetooth.service`, `wifibt-init.service`, `wpa_supplicant.service`, `network.service`, and `log-guardian.service` from all `*.wants` directories. `systemd-network-generator.service` SHALL be masked. `08-systemd-appliance-finalize.sh` SHALL undo SDK post-hook re-enables (e.g. `log-guardian`).
 
 #### Scenario: mediamtx not auto-started
 
@@ -73,7 +73,7 @@ journald configuration overlay SHALL set volatile storage so logs are not persis
 #### Scenario: journald volatile config present
 
 - **WHEN** P1 rootfs is inspected
-- **THEN** `journald.conf.d/00-lws-hmi-volatile.conf` exists with Storage=volatile
+- **THEN** `journald.conf.d/00-volatile-journal.conf` exists with Storage=volatile
 
 ### Requirement: eMMC noatime via fstab
 
@@ -86,17 +86,17 @@ Post-build hook SHALL patch `/etc/fstab` to add `noatime` mount options on ext4 
 
 ### Requirement: Stable board poweroff without Mali DRM oops
 
-The image SHALL provide `lws-hmi-pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdown.sh`, and a `/usr/bin/systemctl` wrapper that routes `poweroff`/`halt`/`reboot` through SysRq `s/u/o` (sync, remount-ro, poweroff) without stopping `hmi.service` first.
+The image SHALL provide `pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdown.sh`, and a `/usr/bin/systemctl` wrapper that routes `poweroff`/`halt`/`reboot` through SysRq `s/u/o` (sync, remount-ro, poweroff) without stopping `hmi.service` first.
 
 #### Scenario: pwrkey service active
 
 - **WHEN** P1 device boots with gpio-keys power input present
-- **THEN** `lws-hmi-pwrkey-poweroff.service` is active
+- **THEN** `pwrkey-poweroff.service` is active
 
 #### Scenario: systemctl wrapper installed
 
 - **WHEN** P1 rootfs is inspected
-- **THEN** `/usr/bin/systemctl` symlinks to `/usr/lib/lws-hmi/systemctl-poweroff-wrapper.sh` and `/usr/bin/systemctl.real` exists
+- **THEN** `/usr/bin/systemctl` symlinks to `/usr/libexec/hmi/systemctl-poweroff-wrapper.sh` and `/usr/bin/systemctl.real` exists
 
 ### Requirement: Boot KPI to first home frame
 
@@ -109,9 +109,9 @@ From power-on on eMMC storage, the Flutter Hello World home frame SHALL become v
 
 ### Requirement: Device boot verification script
 
-The image SHALL ship `/usr/lib/lws-hmi/boot-verify.sh` that validates Plan A unit enable/disable state, pwrkey poweroff setup, performance governors, flutter-pi running, and critical-chain expectations.
+The image SHALL ship `/usr/libexec/hmi/boot-verify.sh` that validates Plan A unit enable/disable state, pwrkey poweroff setup, performance governors, flutter-pi running, and critical-chain expectations.
 
 #### Scenario: boot-verify passes on P1 device
 
-- **WHEN** operator runs `/usr/lib/lws-hmi/boot-verify.sh` after flash
+- **WHEN** operator runs `/usr/libexec/hmi/boot-verify.sh` after flash
 - **THEN** script reports `=== boot-verify: ALL PASS ===` and exits 0

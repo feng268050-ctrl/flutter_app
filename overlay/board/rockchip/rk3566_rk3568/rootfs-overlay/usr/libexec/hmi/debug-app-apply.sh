@@ -2,14 +2,14 @@
 # Atomically replace /opt/hmi with staged debug payload (no automatic restore).
 set -eu
 
-STAGE=/var/lib/lws-hmi/debug-app-staging
+STAGE=/var/lib/hmi/debug-app-staging
 DEST=/opt/hmi
 NEXT=/opt/hmi.debug-next
 KERNEL="$STAGE/data/flutter_assets/kernel_blob.bin"
 MODE_FILE="$STAGE/runtime-mode.json"
 
 log() {
-	echo "lws-hmi-debug-app: $*"
+	echo "debug-app: $*"
 }
 
 [ -f "$KERNEL" ] || {
@@ -22,7 +22,7 @@ log() {
 }
 
 log "stopping current HMI"
-/usr/lib/lws-hmi/hmi-stop-and-wait.sh
+/usr/libexec/hmi/hmi-stop-and-wait.sh
 
 rm -rf "$NEXT"
 mkdir -p "$NEXT/data"

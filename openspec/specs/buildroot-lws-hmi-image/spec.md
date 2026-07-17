@@ -43,7 +43,7 @@ The lws_hmi defconfig MUST NOT include Weston, Chromium, camera, benchmark, test
 
 ### Requirement: Platform stack packages are present
 
-The P1 rootfs SHALL include Rockchip Mali GPU, libdrm/libgbm, flutter-pi (prebuilt install), RKNPU2 runtime (`librknnrt.so`, `rknn_server`) without RKNPU2 example binaries, wpa_supplicant and BlueZ/rkwifibt userland (installed but boot-deferred), powermanager, and Chinese font support. RKNPU2 binaries SHALL be staged via `make fetch-rknn-rt` into `lws-hmi-fs-overlay` (this SDK has no `BR2_PACKAGE_RKNPU2` Buildroot package).
+The P1 rootfs SHALL include Rockchip Mali GPU, libdrm/libgbm, flutter-pi (prebuilt install), RKNPU2 runtime (`librknnrt.so`, `rknn_server`) without RKNPU2 example binaries, wpa_supplicant and BlueZ/rkwifibt userland (installed but boot-deferred), powermanager, and Chinese font support. RKNPU2 binaries SHALL be staged via `make fetch-rknn-rt` into `rootfs-overlay` (this SDK has no `BR2_PACKAGE_RKNPU2` Buildroot package).
 
 #### Scenario: flutter-pi binary on target
 
@@ -76,7 +76,7 @@ Buildroot overlay packages for flutter-pi and flutter-engine SHALL copy from `pr
 
 ### Requirement: Rootfs overlay and LCD display params are applied
 
-Buildroot SHALL mount `lws-hmi-fs-overlay` via `BR2_ROOTFS_OVERLAY` and install ynh960 LCD/MIPI parameter files under `/system/etc/` per existing lws-hmi display hooks.
+Buildroot SHALL mount `rootfs-overlay` via `BR2_ROOTFS_OVERLAY` and install ynh960 LCD/MIPI parameter files under `/system/etc/` per existing lws-hmi display hooks.
 
 #### Scenario: LCD params on target
 
@@ -147,12 +147,12 @@ The lws_hmi rootfs SHALL include a lightweight DHCP client usable for **wlan0** 
 
 ### Requirement: eth0 DHCP/static helpers in rootfs overlay
 
-The lws_hmi rootfs SHALL include eth0-scoped helper scripts for DHCP and static IPv4 (e.g. `eth0-dhcp.sh`, `eth0-static.sh` under `/usr/lib/lws-hmi/`) usable from the HMI after boot. Eth0 DHCP MUST remain outside `dhcpcd.service` / `network.service` default boot enablement. Static IPv4 on eth0 SHALL use `iproute2` via those helpers (no requirement to enable systemd-networkd).
+The lws_hmi rootfs SHALL include eth0-scoped helper scripts for DHCP and static IPv4 (e.g. `eth0-dhcp.sh`, `eth0-static.sh` under `/usr/libexec/hmi/`) usable from the HMI after boot. Eth0 DHCP MUST remain outside `dhcpcd.service` / `network.service` default boot enablement. Static IPv4 on eth0 SHALL use `iproute2` via those helpers (no requirement to enable systemd-networkd).
 
 #### Scenario: eth0 helpers present
 
 - **WHEN** P2.1 rootfs is deployed to device after this change
-- **THEN** documented eth0 DHCP and static helper scripts exist and are executable under `/usr/lib/lws-hmi/`
+- **THEN** documented eth0 DHCP and static helper scripts exist and are executable under `/usr/libexec/hmi/`
 
 #### Scenario: Boot does not enable dhcpcd for eth0
 
@@ -184,7 +184,7 @@ The lws_hmi rootfs SHALL include a minimal ALSA userland sufficient to play a lo
 
 ### Requirement: Overlay includes settings isolation units
 
-The lws_hmi rootfs overlay SHALL include `lws-hmi-wpa.service`, `lws-hmi-wlan0-dhcp.service`, `lws-hmi-eth0.service`, `lws-hmi-settings-restore.service`, `run-wpa.sh`, and `restore-settings.sh`. `verify-rootfs-overlay` SHALL fail if `wifi-stack-up.sh` still starts `wpa_supplicant -B` directly instead of the dedicated unit.
+The lws_hmi rootfs overlay SHALL include `wlan-wpa.service`, `wlan-dhcp.service`, `eth0-network.service`, `settings-restore.service`, `run-wpa.sh`, and `restore-settings.sh`. `verify-rootfs-overlay` SHALL fail if `wifi-stack-up.sh` still starts `wpa_supplicant -B` directly instead of the dedicated unit.
 
 #### Scenario: verify catches in-cgroup wpa
 
@@ -230,7 +230,7 @@ The image SHALL ship the userspace data flutter-pi needs to enable text/raw keyb
 
 ### Requirement: flutter-pi cursor and mouse pref support in image
 
-The Buildroot/lws-hmi image SHALL ship a flutter-pi build that: (1) shows a reliable on-screen mouse pointer when a USB mouse is attached on ynh960; and (2) applies mouse preferences from `/var/lib/lws-hmi/` (natural scroll, scroll speed, pointer speed, primary button) at process start and when pointer devices are added. Any package patches required for cursor fallback or pref apply MUST be present under the repository flutter-pi package overlay and baked into the prebuilt used by rootfs.
+The Buildroot/lws-hmi image SHALL ship a flutter-pi build that: (1) shows a reliable on-screen mouse pointer when a USB mouse is attached on ynh960; and (2) applies mouse preferences from `/var/lib/hmi/` (natural scroll, scroll speed, pointer speed, primary button) at process start and when pointer devices are added. Any package patches required for cursor fallback or pref apply MUST be present under the repository flutter-pi package overlay and baked into the prebuilt used by rootfs.
 
 #### Scenario: Prebuilt includes mouse/cursor patches
 

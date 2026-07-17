@@ -3,7 +3,7 @@
 # Usage: bt-stack-up.sh
 set -eu
 
-ALIAS="${LWS_BT_ALIAS:-lws-hmi}"
+ALIAS="${LWS_BT_ALIAS:-hmi}"
 
 log() {
 	echo "bt-stack-up: $*" >&2
@@ -24,8 +24,8 @@ if [ ! -f /etc/dbus-1/system.d/bluetooth.conf ] && \
 fi
 
 # Wi‑Fi+BT combo (AIC8800D80): SDIO wifi + UART hciattach first.
-if [ -x /usr/lib/lws-hmi/wifibt-bringup.sh ]; then
-	/usr/lib/lws-hmi/wifibt-bringup.sh || log "wifibt-bringup soft-fail (continue for BT)"
+if [ -x /usr/libexec/bluetooth/wifibt-bringup.sh ]; then
+	/usr/libexec/bluetooth/wifibt-bringup.sh || log "wifibt-bringup soft-fail (continue for BT)"
 fi
 
 # Non-AIC boards may still use Rockchip BT attach; harmless soft-fail on AIC.
@@ -75,7 +75,7 @@ elif modprobe uhid 2>/dev/null; then
 	log "uhid module loaded"
 else
 	log "WARN: no /dev/uhid — BLE keyboard/mouse input will fail until kernel has CONFIG_UHID=y"
-	log "  run: /usr/lib/lws-hmi/bt-hid-check.sh"
+	log "  run: /usr/libexec/bluetooth/bt-hid-check.sh"
 fi
 
 if ! command -v bluetoothctl >/dev/null 2>&1; then
@@ -103,8 +103,8 @@ fi
 bluetoothctl power on >/dev/null 2>&1 || true
 
 # Replace BlueZ's default "BlueZ 5.xx" with product alias (Alias is what phones see).
-if [ -x /usr/lib/lws-hmi/bt-set-alias.sh ]; then
-	/usr/lib/lws-hmi/bt-set-alias.sh "$ALIAS" || log "bt-set-alias failed (name may stay BlueZ 5.xx)"
+if [ -x /usr/libexec/bluetooth/bt-set-alias.sh ]; then
+	/usr/libexec/bluetooth/bt-set-alias.sh "$ALIAS" || log "bt-set-alias failed (name may stay BlueZ 5.xx)"
 else
 	bluetoothctl system-alias "$ALIAS" >/dev/null 2>&1 || \
 		bluetoothctl alias "$ALIAS" >/dev/null 2>&1 || true
@@ -116,11 +116,11 @@ bluetoothctl discoverable-timeout 180 >/dev/null 2>&1 || true
 bluetoothctl discoverable off >/dev/null 2>&1 || true
 
 # Persistent Agent1 (must stay registered or phones discover but cannot pair).
-if [ -x /usr/lib/lws-hmi/bt-ensure-agent.sh ]; then
-	/usr/lib/lws-hmi/bt-ensure-agent.sh || log "pair agent failed (pairing may fail)"
-elif [ -x /usr/lib/lws-hmi/bt-pair-agent.sh ]; then
-	pkill -f '/usr/lib/lws-hmi/bt-pair-agent.sh' 2>/dev/null || true
-	/usr/lib/lws-hmi/bt-pair-agent.sh >/tmp/lws-bt-agent.log 2>&1 &
+if [ -x /usr/libexec/bluetooth/bt-ensure-agent.sh ]; then
+	/usr/libexec/bluetooth/bt-ensure-agent.sh || log "pair agent failed (pairing may fail)"
+elif [ -x /usr/libexec/bluetooth/bt-pair-agent.sh ]; then
+	pkill -f '/usr/libexec/bluetooth/bt-pair-agent.sh' 2>/dev/null || true
+	/usr/libexec/bluetooth/bt-pair-agent.sh >/tmp/lws-bt-agent.log 2>&1 &
 	log "pair agent started (legacy)"
 fi
 
@@ -135,10 +135,10 @@ fi
 
 # A2DP Sink is opt-in (Demo switch / bt-a2dp-sink-up.sh). Default: leave off.
 # If preference file was previously set to 1, restore speaker mode after stack up.
-PREF="${LWS_BT_A2DP_PREF:-/var/lib/lws-hmi/bt-a2dp-sink}"
+PREF="${LWS_BT_A2DP_PREF:-/var/lib/bluetooth/bt-a2dp-sink}"
 if [ -f "$PREF" ] && [ "$(tr -d '[:space:]' <"$PREF" 2>/dev/null || true)" = "1" ]; then
-	if [ -x /usr/lib/lws-hmi/bt-a2dp-sink-up.sh ]; then
-		/usr/lib/lws-hmi/bt-a2dp-sink-up.sh || log "a2dp-sink restore soft-fail"
+	if [ -x /usr/libexec/bluetooth/bt-a2dp-sink-up.sh ]; then
+		/usr/libexec/bluetooth/bt-a2dp-sink-up.sh || log "a2dp-sink restore soft-fail"
 	fi
 else
 	log "a2dp-sink off (default; enable via Demo switch)"

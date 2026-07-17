@@ -43,7 +43,7 @@ Little-endian fields:
 
 **Factory default:** `active=A`, `try_boot=0`, `previous=A`, `tries_remaining=0`.
 
-Board helpers: `/usr/lib/lws-hmi/ab-slot-*.sh` (read/write this block via `PARTLABEL=misc`; **pure shell**, no python on rootfs).
+Board helpers: `/usr/libexec/hmi/ab-slot-*.sh` (read/write this block via `PARTLABEL=misc`; **pure shell**, no python on rootfs).
 
 If the marker is absent at `0x100000` (including migration from the retired, vendor-owned `0x0800` location), the board helper initializes `active` from the block device actually mounted as `/`. It never assumes A when deciding which rootfs partition is safe to overwrite.
 

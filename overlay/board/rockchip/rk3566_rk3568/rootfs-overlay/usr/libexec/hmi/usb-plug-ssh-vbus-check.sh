@@ -2,9 +2,9 @@
 # Start/stop USB plug-ssh when USB Debug is on and OTG reports VBUS (USB=1).
 set -eu
 
-LOCK_DIR=/run/lws-hmi-usb-plug-ssh-vbus.lock
-PENDING=/run/lws-hmi-usb-plug-ssh-vbus.pending
-PREF=/var/lib/lws-hmi/usb-debug
+LOCK_DIR=/run/usb-plug-ssh-vbus.lock
+PENDING=/run/usb-plug-ssh-vbus.pending
+PREF=/var/lib/hmi/usb-debug
 
 usb_debug_on() {
 	if [ ! -r "$PREF" ]; then
@@ -42,9 +42,9 @@ otg_peripheral_vbus_up() {
 
 reconcile_vbus() {
 	if otg_peripheral_vbus_up; then
-		systemctl start lws-hmi-usb-plug-ssh.service 2>/dev/null || true
+		systemctl start ssh-debug-usb.service 2>/dev/null || true
 	else
-		systemctl stop lws-hmi-usb-plug-ssh.service 2>/dev/null || true
+		systemctl stop ssh-debug-usb.service 2>/dev/null || true
 	fi
 }
 

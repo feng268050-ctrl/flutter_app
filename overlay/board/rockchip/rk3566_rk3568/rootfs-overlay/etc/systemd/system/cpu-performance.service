@@ -1,5 +1,5 @@
 [Unit]
-Description=lws-hmi CPU/DMC/GPU performance governors
+Description=CPU/DMC/GPU performance governors
 DefaultDependencies=yes
 After=local-fs.target
 Before=mainserver.service hmi.service
@@ -7,7 +7,7 @@ Before=mainserver.service hmi.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/lib/lws-hmi/set-performance-mode.sh
+ExecStart=/usr/libexec/hmi/set-performance-mode.sh
 
 [Install]
 WantedBy=multi-user.target

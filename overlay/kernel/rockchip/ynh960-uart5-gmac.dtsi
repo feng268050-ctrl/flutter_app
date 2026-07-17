@@ -1,4 +1,4 @@
-// lws-hmi ynh960: gmac PHY bring-up + free UART5 from EVB PHY reset.
+// ynh960: gmac PHY bring-up + free UART5 from EVB PHY reset.
 //
 // rk3566-evb2 enables &gmac1 as RGMII with:
 //   snps,reset-gpio = <&gpio3 RK_PC2 GPIO_ACTIVE_LOW>;  // == UART5_TX_M1

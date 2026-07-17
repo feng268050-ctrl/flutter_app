@@ -1,5 +1,5 @@
 #!/bin/sh
-# Plan A boot KPI verification — canonical copy in lws-hmi-fs-overlay/usr/lib/lws-hmi/.
+# Plan A boot KPI verification — canonical copy in rootfs-overlay/usr/libexec/hmi/.
 # This scripts/ copy is for editing; keep in sync with overlay before build-rootfs.
 set -u
 
@@ -10,7 +10,7 @@ warn() { echo "WARN: $*"; }
 FAILED=0
 WANTS=/etc/systemd/system/multi-user.target.wants
 
-echo "=== lws-hmi verify-boot (Plan A / single image) ==="
+echo "=== verify-boot (Plan A / single image) ==="
 
 echo ""
 echo "--- multi-user.target.wants ---"
@@ -55,15 +55,15 @@ done
 
 echo ""
 echo "--- retired debug-boot ---"
-if [ -f /usr/lib/lws-hmi/debug-boot.sh ] || [ -f /etc/systemd/system/lws-hmi-debug-boot.service ]; then
-	fail "lws-hmi-debug-boot artifacts still present"
+if [ -f /usr/libexec/hmi/debug-boot.sh ] || [ -f /etc/systemd/system/lws-hmi-debug-boot.service ]; then
+	fail "debug-boot artifacts still present"
 else
-	pass "lws-hmi-debug-boot removed"
+	pass "debug-boot removed"
 fi
 if [ -e /etc/systemd/system/sysinit.target.wants/lws-hmi-debug-boot.service ]; then
-	fail "lws-hmi-debug-boot still enabled in sysinit.target.wants"
+	fail "debug-boot still enabled in sysinit.target.wants"
 else
-	pass "lws-hmi-debug-boot not in sysinit.target.wants"
+	pass "debug-boot not in sysinit.target.wants"
 fi
 
 echo ""

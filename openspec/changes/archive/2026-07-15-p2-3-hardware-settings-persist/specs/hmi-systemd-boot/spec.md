@@ -2,12 +2,12 @@
 
 ### Requirement: Settings restore unit at multi-user
 
-`lws-hmi-settings-restore.service` SHALL be enabled in `multi-user.target.wants`. On-demand Wi‑Fi/eth0 units (`lws-hmi-wpa`, `lws-hmi-wlan0-dhcp`, `lws-hmi-eth0`) MUST remain disabled at boot via preset and MUST NOT appear in `multi-user.target.wants` except as started by restore or Demo.
+`settings-restore.service` SHALL be enabled in `multi-user.target.wants`. On-demand Wi‑Fi/eth0 units (`wlan-wpa.service`, `wlan-dhcp.service`, `eth0-network.service`) MUST remain disabled at boot via preset and MUST NOT appear in `multi-user.target.wants` except as started by restore or Demo.
 
 #### Scenario: Preset disables on-demand radio units
 
 - **WHEN** the image is built
-- **THEN** preset disables `lws-hmi-wpa.service`, `lws-hmi-wlan0-dhcp.service`, and `lws-hmi-eth0.service`
+- **THEN** preset disables `wlan-wpa.service`, `wlan-dhcp.service`, and `eth0-network.service`
 
 ### Requirement: HMI does not own settings cgroup
 

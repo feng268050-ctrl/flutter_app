@@ -1,9 +1,9 @@
 [Unit]
-Description=lws-hmi apply Micro-USB USB Debug preference
+Description=Apply Micro-USB USB Debug preference
 DefaultDependencies=no
 After=sysinit.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/lib/lws-hmi/usb-otg-mode.sh apply
+ExecStart=/usr/libexec/hmi/usb-otg-mode.sh apply
 RemainAfterExit=no

@@ -71,4 +71,4 @@ with open(path, "w", encoding="utf-8") as f:
 PY
 
 ROOT_PATCH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-bash "$ROOT_PATCH/lws-hmi-patch-innohi-mainserver.sh" "$target"
+bash "$ROOT_PATCH/patch-innohi-mainserver.sh" "$target"

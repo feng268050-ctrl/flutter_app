@@ -10,7 +10,7 @@ source "$ROOT/scripts/usb-ssh-session.sh"
 
 FIRMWARE="${LWS_HMI_FIRMWARE_DIR:-$ROOT/output/firmware}"
 OTA_DIR="/userdata/ota"
-HELPER_SRC_DIR="$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi"
+HELPER_SRC_DIR="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi"
 APPLY_SRC="$HELPER_SRC_DIR/ab-upgrade-apply.sh"
 LIB_SRC="$HELPER_SRC_DIR/ab-slot-lib.sh"
 APPLY="$OTA_DIR/ab-upgrade-apply.sh"
@@ -99,7 +99,7 @@ ROOTFS_IMG="$FIRMWARE/rootfs.img"
 	fi
 }
 
-STAGE="$(mktemp -d "${TMPDIR:-/tmp}/lws-hmi-upgrade.XXXXXX")"
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/hmi-upgrade.XXXXXX")"
 cleanup() { rm -rf "$STAGE"; }
 trap cleanup EXIT
 
@@ -162,11 +162,11 @@ if [[ -f "$STAGE/oem.img" ]]; then
 		"$TARGET_USER@$TARGET_ADDR:$OTA_DIR/"
 fi
 
-# Existing images may have lws-hmi-wpa.service without shutdown ordering while
-# wpa_supplicant holds /userdata/lws-hmi/wpa_supplicant.log. USB-SSH is
+# Existing images may have wlan-wpa.service without shutdown ordering while
+# wpa_supplicant may hold /userdata/wpa_supplicant/wpa_supplicant.log. USB-SSH is
 # independent of wlan0, so stop that unit before apply to release userdata now.
 if ! usb_ssh_session_is_remote; then
-	remote "/usr/bin/systemctl.real stop lws-hmi-wpa.service >/dev/null 2>&1 || true"
+	remote "/usr/bin/systemctl.real stop wlan-wpa.service >/dev/null 2>&1 || true"
 fi
 
 echo "Invoking board full-system apply (will reboot)..."

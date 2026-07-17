@@ -49,7 +49,7 @@ val=$((PCT * max / 100))
 printf '%s\n' "$val" >"$pick/brightness"
 
 # Same path as LinuxSysfsBacklight / restore-settings.sh (userdata via bind-prefs).
-PREF_DIR=/var/lib/lws-hmi
+PREF_DIR=/var/lib/hmi
 PREF="$PREF_DIR/backlight-brightness"
 mkdir -p "$PREF_DIR"
 printf '%s\n' "$PCT" >"$PREF"

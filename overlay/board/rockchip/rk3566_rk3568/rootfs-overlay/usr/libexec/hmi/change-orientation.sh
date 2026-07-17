@@ -13,7 +13,7 @@ portrait|landscape) ;;
 	;;
 esac
 
-PREF_DIR=/var/lib/lws-hmi
+PREF_DIR=/var/lib/hmi
 PREF="$PREF_DIR/display-orientation"
 mkdir -p "$PREF_DIR"
 printf '%s\n' "$MODE" >"$PREF"

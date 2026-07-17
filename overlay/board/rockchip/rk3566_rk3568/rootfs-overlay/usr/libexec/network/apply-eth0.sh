@@ -1,10 +1,10 @@
 #!/bin/sh
-# Apply eth0 link + IPv4 from /var/lib/lws-hmi/eth0-ipv4 (for lws-hmi-eth0.service).
+# Apply eth0 link + IPv4 from /var/lib/network/eth0-ipv4 (for eth0-network.service).
 # Usage: apply-eth0.sh
 set -eu
 
 IFACE="${LWS_ETH_IFACE:-eth0}"
-PREF="${LWS_ETH_IPV4_PREF:-/var/lib/lws-hmi/eth0-ipv4}"
+PREF="${LWS_ETH_IPV4_PREF:-/var/lib/network/eth0-ipv4}"
 
 log() {
 	echo "apply-eth0: $*" >&2
@@ -25,7 +25,7 @@ fi
 export LWS_ETH_IFACE="$IFACE"
 export LWS_ETH_IN_UNIT=1
 
-/usr/lib/lws-hmi/eth0-link.sh up
+/usr/libexec/network/eth0-link.sh up
 
 mode=dhcp
 address=
@@ -53,13 +53,13 @@ static)
 		log "static mode missing address"
 		exit 1
 	}
-	/usr/lib/lws-hmi/eth0-static.sh "$address" "${prefix:-24}" "${gateway:-}" "${dns:-}"
+	/usr/libexec/network/eth0-static.sh "$address" "${prefix:-24}" "${gateway:-}" "${dns:-}"
 	;;
 *)
-	/usr/lib/lws-hmi/eth0-dhcp.sh start
+	/usr/libexec/network/eth0-dhcp.sh start
 	;;
 esac
 
 log "ok ($mode on $IFACE)"
-mkdir -p /var/lib/lws-hmi
-: >/var/lib/lws-hmi/eth0-wanted
+mkdir -p /var/lib/network
+: >/var/lib/network/eth0-wanted

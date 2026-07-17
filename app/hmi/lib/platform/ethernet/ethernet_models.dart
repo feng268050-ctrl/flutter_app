@@ -93,9 +93,9 @@ class EthLinkState {
   }
 }
 
-/// Persist / parse `/var/lib/lws-hmi/eth0-ipv4`.
+/// Persist / parse `/var/lib/network/eth0-ipv4`.
 class EthIpv4Store {
-  static const defaultPath = '/var/lib/lws-hmi/eth0-ipv4';
+  static const defaultPath = '/var/lib/network/eth0-ipv4';
 
   static EthIpv4Config parse(String text) {
     final map = <String, String>{};

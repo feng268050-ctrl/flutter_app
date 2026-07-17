@@ -72,10 +72,10 @@ if has_include "lws_hmi_npu.config"; then
   require_prebuilt "rknn-rt" "$RKNN_RT_DIR" \
     "make fetch-rknn-rt / make build-runtime-deps" || missing=1
   require_file "librknnrt.so overlay" \
-    "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/librknnrt.so" \
+    "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/lib/librknnrt.so" \
     "make fetch-rknn-rt" || missing=1
   require_file "rknn_server overlay" \
-    "$ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/bin/rknn_server" \
+    "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/bin/rknn_server" \
     "make fetch-rknn-rt" || missing=1
 fi
 

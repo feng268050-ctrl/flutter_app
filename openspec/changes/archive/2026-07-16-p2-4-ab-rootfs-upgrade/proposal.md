@@ -5,7 +5,7 @@ Daily iteration and field upgrades must not require entering the Rockchip bootlo
 ## What Changes
 
 - **BREAKING (GPT):** Split product boot storage into **`boot` / `boot_b`** (vendor U-Boot requires the loaded partition to remain named `boot`) and **`rootfs_a` / `rootfs_b`** in `board/parameter-buildroot-fit.txt`; shift oem/private*/userdata; update `docs/storage-layout.md` and slot-aware boot selection. First adoption needs one **`make flash`** to repartition.
-- **Full-system remote upgrade** (default `make upgrade`): transfer a firmware bundle (**at least `boot.img` + `rootfs.img`**, digests; optional `oem` / other non-bootloader images when present) → write **inactive boot + inactive rootfs as one slot pair** → verify → arm try-boot → reboot → confirm or rollback. **Never** format userdata or delete `/userdata/lws-hmi`.
+- **Full-system remote upgrade** (default `make upgrade`): transfer a firmware bundle (**at least `boot.img` + `rootfs.img`**, digests; optional `oem` / other non-bootloader images when present) → write **inactive boot + inactive rootfs as one slot pair** → verify → arm try-boot → reboot → confirm or rollback. **Never** format userdata or delete `/userdata/{wpa_supplicant,network,bluetooth,hmi}`.
 - **Atomic slot pair:** slot A = the A FIT in `boot` + `rootfs_a`; slot B = the B FIT staged through `boot_b` + `rootfs_b`. Try-boot backs up `boot` to `boot_b` and places the target FIT in `boot`, because vendor U-Boot always loads `boot`. Never boot mismatched kernel/rootfs across letters.
 - Host: **`make upgrade`** over **USB-SSH / LAN SSH** (same target selection as `push-app`); **no loader / RockUSB**.
 - Keep app-only developer iteration in the existing **`make push-app`** workflow; `make upgrade` is full-system A/B only.
@@ -22,7 +22,7 @@ Daily iteration and field upgrades must not require entering the Rockchip bootlo
 ### Modified Capabilities
 
 - `buildroot-lws-hmi-image`: A/B parameter/GPT for boot+rootfs; packaging/`verify-firmware-partitions` for both slot pairs; factory `update.img` populates both letters; overlay ships board upgrade helpers.
-- `linux-settings-persist`: Full-system upgrade MUST NOT wipe `/userdata/lws-hmi` (flash = factory reset).
+- `linux-settings-persist`: Full-system upgrade MUST NOT wipe subsystem userdata trees under `/userdata/{wpa_supplicant,network,bluetooth,hmi}` (flash = factory reset).
 
 ## Impact
 

@@ -2,10 +2,10 @@
 # Watch the board power key without pulling systemd-logind into the boot path.
 set -u
 
-LOCK_DIR=/run/lws-hmi-pwrkey-poweroff.lock
+LOCK_DIR=/run/pwrkey-poweroff.lock
 
 log() {
-	echo "lws-hmi-pwrkey: $*"
+	echo "pwrkey: $*"
 }
 
 event_name() {
@@ -33,7 +33,7 @@ request_poweroff() {
 	if mkdir "$LOCK_DIR" 2>/dev/null; then
 		log "KEY_POWER released; requesting poweroff"
 		sleep 0.2
-		/usr/lib/lws-hmi/shutdown.sh poweroff
+		/usr/libexec/hmi/shutdown.sh poweroff
 	fi
 }
 

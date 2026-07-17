@@ -14,14 +14,14 @@ die() {
 }
 
 for candidate in \
-	"$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip/lws-hmi-ynh960-linux-root.dtsi" \
-	"$SDK/kernel/arch/arm64/boot/dts/rockchip/lws-hmi-ynh960-linux-root.dtsi"; do
+	"$SDK/kernel-6.1/arch/arm64/boot/dts/rockchip/ynh960-linux-root.dtsi" \
+	"$SDK/kernel/arch/arm64/boot/dts/rockchip/ynh960-linux-root.dtsi"; do
 	if [[ -f "$candidate" ]]; then
 		ROOT_DTSI="$candidate"
 		break
 	fi
 done
-[[ -n "$ROOT_DTSI" ]] || die "installed lws-hmi root DTSI not found (run make apply-overlay)"
+[[ -n "$ROOT_DTSI" ]] || die "installed ynh960 root DTSI not found (run make apply-overlay)"
 
 backup="$(mktemp)"
 cp -f "$ROOT_DTSI" "$backup"

@@ -21,13 +21,13 @@ class LinuxWpaWifiController implements WifiController {
 
   LinuxWpaWifiController({
     this.iface = 'wlan0',
-    this.stackUp = const ['/usr/lib/lws-hmi/wifi-stack-up.sh'],
-    this.stackDown = const ['/usr/lib/lws-hmi/wifi-stack-down.sh'],
-    this.dhcpHelper = const ['/usr/lib/lws-hmi/wlan0-dhcp.sh'],
-    this.staticHelper = const ['/usr/lib/lws-hmi/wlan0-static.sh'],
+    this.stackUp = const ['/usr/libexec/wpa/wifi-stack-up.sh'],
+    this.stackDown = const ['/usr/libexec/wpa/wifi-stack-down.sh'],
+    this.dhcpHelper = const ['/usr/libexec/wpa/wlan0-dhcp.sh'],
+    this.staticHelper = const ['/usr/libexec/wpa/wlan0-static.sh'],
     this.ipv4Path = WlanIpv4Store.defaultPath,
     this.wpaCliBin = 'wpa_cli',
-    this.wifiWantedPath = '/var/lib/lws-hmi/wifi-wanted',
+    this.wifiWantedPath = '/var/lib/wpa_supplicant/wifi-wanted',
   });
 
   final _radioCtrl = StreamController<WifiRadioState>.broadcast();
@@ -264,7 +264,7 @@ class LinuxWpaWifiController implements WifiController {
 
   Future<String?> _readDns() async {
     try {
-      final prefs = File('/var/lib/lws-hmi/wlan0-resolv.conf');
+      final prefs = File('/var/lib/wpa_supplicant/wlan0-resolv.conf');
       if (await prefs.exists()) {
         final dns = WifiLinkParse.primaryDns(await prefs.readAsString());
         if (dns != null) {

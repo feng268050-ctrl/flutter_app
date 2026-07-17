@@ -81,16 +81,16 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | Bake app into rootfs / A/B image (release or no push path) | `make build-app`, `make build-rootfs`, `make upgrade` |
 | `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make upgrade` |
 | `overlay/kernel/**`, kernel DTS | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
-| `overlay/.../lws-hmi-fs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `overlay/.../rootfs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | USB plug-ssh (`overlay/kernel/**` + fs-overlay scripts/units) | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
 | `scripts/device-logs.sh` only (host log streaming) | none |
 | `scripts/debug-app*.sh`, `scripts/debug-host-prepare.sh`, `scripts/debug-custom-device/**`, `scripts/debug-setup.sh`, `scripts/build-debug-app.sh` (host only; board already has P1.5 overlay) | `make debug-setup`, `make debug-app` |
-| `overlay/.../lws-hmi-fs-overlay/**` debug scripts (`hmi-launch.sh`, `debug-app-*`, `hmi.service`) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `overlay/.../rootfs-overlay/**` debug scripts (`hmi-launch.sh`, `debug-app-*`, `hmi.service`) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `overlay/buildroot/**` | `make apply-overlay`, `make check-prebuilt`, `make build-rootfs`, `make upgrade` |
 | `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `board/*.txt` LCD/MIPI params | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `board/parameter-buildroot-fit.txt` (GPT / A/B) | `make apply-overlay`, `make build-img`, `make flash` (repartition once) |
-| A/B upgrade helpers (`overlay/.../ab-*.sh`, `lws-hmi-ab-boot-confirm.service`) | First adoption: `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash`; existing P2.4 board: `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| A/B upgrade helpers (`overlay/.../ab-*.sh`, `ab-boot-confirm.service`) | First adoption: `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash`; existing P2.4 board: `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `scripts/upgrade-remote.sh`, `scripts/stream-file-progress.py`, or Makefile `upgrade` only (board already has P2.4 overlay + A/B GPT) | `make upgrade` (no firmware rebuild unless image inputs are stale) |
 | Host device registry/reboot paths (`scripts/ssh-devices.sh`, `scripts/flash-usb.sh`) | no firmware rebuild; exercise the affected `make devices` / `make reboot` / `make reboot-loader` flow |
 | Release / factory artifact | Build all changed inputs, then `make build-img`; for hardware validation: `make reboot-loader`, `make flash` |
@@ -111,8 +111,8 @@ When unsure or on a clean tree: `make build`.
 
 - **Minimize scope** — smallest correct diff; no drive-by refactors.
 - **Match existing style** in touched files (shell, Dart, Buildroot `.mk`, overlay layout).
-- **Script / device-command naming** — prefer **verb + noun** (kebab-case), no `lws-hmi-` prefix on the script basename. Examples: `change-backlight.sh`, `apply-eth0.sh`, `run-wpa.sh`, `restore-settings.sh`, `bind-prefs.sh`, `enable-ssh-debug.sh`. Operator-facing commands get `/usr/bin/<verb-noun>` symlinks via `lws-hmi-post-build.sh` (no `.sh`); systemd-only helpers stay under `/usr/lib/lws-hmi/` only. systemd **unit** names may keep the `lws-hmi-` prefix (`lws-hmi-eth0.service`).
-- **Paths:** app → `app/hmi/`; rootfs overlay → `overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/`; Buildroot fragments → `overlay/buildroot/`.
+- **Script / device-command naming** — prefer **verb + noun** (kebab-case), no product prefix on script basenames. Operator commands → `/usr/bin/<verb-noun>` via `post-build.sh`. Helpers → **`/usr/libexec/{wpa,network,bluetooth,hmi}/`**. State → **`/var/lib/{wpa_supplicant,network,bluetooth,hmi}/`**. systemd units use **functional** names (`wlan-wpa.service`, `settings-restore.service`); UI daemon only: `hmi.service`.
+- **Paths:** app → `app/hmi/`; rootfs overlay → `overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/`; Buildroot fragments → `overlay/buildroot/`.
 - **Do not** run `make build-uboot` on ynh960 unless Innohi instructs.
 - OpenSpec workflow: `.cursor/skills/openspec-*` when the user uses that flow.
 
@@ -140,7 +140,7 @@ Keep long command examples in **README.md**; keep agent-only rules (rebuild bloc
 | Path | Role |
 |------|------|
 | `app/hmi/` | Flutter HMI → `overlay/.../opt/hmi` |
-| `overlay/.../lws-hmi-fs-overlay/` | Rootfs overlay (systemd, scripts, `/opt/hmi` staging) |
+| `overlay/.../rootfs-overlay/` | Rootfs overlay (systemd, scripts, `/opt/hmi` staging) |
 | `overlay/buildroot/` | Defconfig fragments, package pins |
 | `overlay/kernel/` | DTS / kernel config |
 | `board/` | ynh960 defconfig, LCD params, boot logo |

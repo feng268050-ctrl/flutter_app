@@ -28,8 +28,8 @@ Extcon keys on `extcon0`: `USB`, `USB-HOST`, `USB_VBUS_EN`, `SDP`/`CDP`/`DCP`/`S
 | Piece | Role |
 |-------|------|
 | `usb-otg-mode.sh` | `debug` / `host` / `status` / `apply` |
-| `/var/lib/lws-hmi/usb-debug` | `1` = Debug over USB on (default if missing), `0` = host |
-| Boot + extcon udev | `systemctl start --no-block lws-hmi-usb-otg-role*.service` → `apply` |
+| `/var/lib/hmi/usb-debug` | `1` = Debug over USB on (default if missing), `0` = host |
+| Boot + extcon udev | `systemctl start --no-block usb-otg-role.service*.service` → `apply` |
 | `usb-plug-ssh-vbus-check.sh` | plug-ssh only if pref on + `USB=1` |
 | Demo | **Debug over USB** + **Debug over LAN** |
 

@@ -19,9 +19,9 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 | `ttyS7` / uart7m1 | gpio3 PC4/PC5 | **disabled** | 让出给 LED `pwm14`/`pwm15` |
 | `ttyFIQ0` | FIQ console | 工程串口（`console=ttyFIQ0`） | **保持 enabled**；关节点则 earlycon 后无串口输出 |
 
-**踩坑（Modbus）：** EVB `&gmac1` 曾设 `snps,reset-gpio = gpio3 RK_PC2`（= UART5_TX）。现象：TX 计数↑、**无 RX**（Android 正常）。修复：[`lws-hmi-ynh960-uart5-gmac.dtsi`](../overlay/kernel/rockchip/lws-hmi-ynh960-uart5-gmac.dtsi) — PHY reset 改 `gpio4 PB3`，`phy-mode=rmii`，MDIO `reg=<1>`。
+**踩坑（Modbus）：** EVB `&gmac1` 曾设 `snps,reset-gpio = gpio3 RK_PC2`（= UART5_TX）。现象：TX 计数↑、**无 RX**（Android 正常）。修复：[`ynh960-uart5-gmac.dtsi`](../overlay/kernel/rockchip/ynh960-uart5-gmac.dtsi) — PHY reset 改 `gpio4 PB3`，`phy-mode=rmii`，MDIO `reg=<1>`。
 
-**踩坑（LED PWM）：** EVB `&uart7` 占 gpio3 PC4/PC5 → `pwm14` 无法 probe。修复：[`lws-hmi-ynh960-uart7-pwm.dtsi`](../overlay/kernel/rockchip/lws-hmi-ynh960-uart7-pwm.dtsi) 禁用 uart7。面板背光是 **pwm4**，不受影响。
+**踩坑（LED PWM）：** EVB `&uart7` 占 gpio3 PC4/PC5 → `pwm14` 无法 probe。修复：[`ynh960-uart7-pwm.dtsi`](../overlay/kernel/rockchip/ynh960-uart7-pwm.dtsi) 禁用 uart7。面板背光是 **pwm4**，不受影响。
 
 ---
 
@@ -45,12 +45,12 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 
 | 现象 | 原因 | 修复 |
 |------|------|------|
-| 整组 `own-gpio` probe 失败 → 侧栏灯卡死（常全亮） | EVB gmac1 **RGMII** 占用 gpio4 A0/A1/A2、gpio3 D7；与 Innohi `USB_HOST_PWREN*` / `Relay-CTL` 同 pad | [`lws-hmi-ynh960-own-gpio.dtsi`](../overlay/kernel/rockchip/lws-hmi-ynh960-own-gpio.dtsi) 从 `own-gpio-pins` 删除冲突脚与对应节点 |
+| 整组 `own-gpio` probe 失败 → 侧栏灯卡死（常全亮） | EVB gmac1 **RGMII** 占用 gpio4 A0/A1/A2、gpio3 D7；与 Innohi `USB_HOST_PWREN*` / `Relay-CTL` 同 pad | [`ynh960-own-gpio.dtsi`](../overlay/kernel/rockchip/ynh960-own-gpio.dtsi) 从 `own-gpio-pins` 删除冲突脚与对应节点 |
 | eth0 无 carrier / DMA reset 超时 | EVB **RGMII** + 错误 PHY reset/地址 | 同上 `uart5-gmac` overlay：**RMII** + `gpio4 PB3` + MDIO addr 1 |
 
 当前 `own-gpio` **保留**的标签含：GPIO-1…8、Bell-CTL、LED_RED/BLUE 等（见该 dtsi）。**已删除**：`USB_HOST_PWREN{1,2,3}_H`、`Relay_CTL`（与以太网 pad 冲突；量产若需要这些功能，须改原理图或改 gmac 引脚方案，勿简单地加回 EVB 冲突脚）。
 
-用户态网口名：`10-lws-hmi-gmac.link` → **`eth0`**。
+用户态网口名：`10-gmac.link` → **`eth0`**。
 
 ---
 
@@ -61,10 +61,10 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 | IC | **Goodix GT9xx** @ `i2c1` **0x5d** |
 | 分辨率 | 800×1280（Innohi `goodix,cfg-group`） |
 | IRQ / RST | GPIO0_PB5 / GPIO0_PB6（与其它触摸节点共享 — **只允许一个 okay**） |
-| Overlay | [`lws-hmi-ynh960-touch.dtsi`](../overlay/kernel/rockchip/lws-hmi-ynh960-touch.dtsi)：启用 Goodix；禁用 Focaltech / Sitronix |
+| Overlay | [`ynh960-touch.dtsi`](../overlay/kernel/rockchip/ynh960-touch.dtsi)：启用 Goodix；禁用 Focaltech / Sitronix |
 | 验收（P2.1） | libinput 点击/滑动稳定；与屏旋转坐标一致 |
 
-用户态：flutter-pi + libinput。旋转偏好：`/var/lib/lws-hmi/display-orientation` → `hmi-launch.sh` `-o`。
+用户态：flutter-pi + libinput。旋转偏好：`/var/lib/hmi/display-orientation` → `hmi-launch.sh` `-o`。
 
 ---
 
@@ -77,9 +77,9 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 | VBUS（扩展） | `USB_HOST_PWREN{1,2,3}` | gpio4 PA0/PA1/PA2，RMII 后已从 own-gpio 恢复（默认开） |
 | VBUS（OTG host） | PHY `USB_VBUS_EN`（extcon0） | 随 OTG host 角色由 `usb2phy0` 驱动 |
 
-Overlays：`lws-hmi-ynh960-usb-gadget.dtsi`（OTG dual-role）、`lws-hmi-ynh960-usb-host.dtsi`（扩展 host）。
+Overlays：`ynh960-usb-gadget.dtsi`（OTG dual-role）、`ynh960-usb-host.dtsi`（扩展 host）。
 
-**外接 USB 键盘（HID）**：1 mm host，或 Micro-USB 在 **USB Debug OFF**（Demo Debug 组）时用 OTG 转接头。板上 Micro-USB **不依赖 ID 自动切角色**（转接头常不接地 ID）。**USB Debug ON**（默认，`/var/lib/lws-hmi/usb-debug`）→ plug-ssh；OFF → host/键盘。LAN Debug 默认关、不持久化。
+**外接 USB 键盘（HID）**：1 mm host，或 Micro-USB 在 **USB Debug OFF**（Demo Debug 组）时用 OTG 转接头。板上 Micro-USB **不依赖 ID 自动切角色**（转接头常不接地 ID）。**USB Debug ON**（默认，`/var/lib/hmi/usb-debug`）→ plug-ssh；OFF → host/键盘。LAN Debug 默认关、不持久化。
 
 用户态依赖（缺一 flutter-pi 会禁用按键或行为异常）见下表。
 
@@ -96,7 +96,7 @@ Overlays：`lws-hmi-ynh960-usb-gadget.dtsi`（OTG dual-role）、`lws-hmi-ynh960
 | `make rebuild-flutter-pi` 补丁未进包 | `SITE_METHOD=local` 跳过 Buildroot Patching | `flutter-pi.compile.mk` → `FLUTTER_PI_APPLY_PACKAGE_PATCHES` |
 | USB 鼠标能动/滚但不能见指针 | Rockchip GBM cursor stride 常 pad；原逻辑要求 `stride == width*4` 直接放弃 HW cursor | `0004-cursor-stride-padded-gbm.patch` |
 | 鼠标移动 journal 刷屏 / 卡顿 | 每帧 `drmModeMoveCursor` 在 Rockchip 上 EFAULT（Bad address），未节流的 `LOG_ERROR` 拖垮 journal | `0010-cursor-movecursor-fallback.patch`（失败后 latch，走 atomic prefer_cursor composition） |
-| 鼠标滚轮速度 / 自然滚动等 OS 设置 | flutter-pi 硬编码 wheel scale；未调 libinput config | `0005-mouse-settings-prefs.patch` + `/var/lib/lws-hmi/mouse.conf`（含 `pointer_axes=auto|normal|swap`）；Demo「Mouse」；**mtime 轮询**重载（禁止 `kill -HUP`，会直接停掉 `hmi.service`）；BT 键盘触控板轴交换见 `0009` |
+| 鼠标滚轮速度 / 自然滚动等 OS 设置 | flutter-pi 硬编码 wheel scale；未调 libinput config | `0005-mouse-settings-prefs.patch` + `/var/lib/hmi/mouse.conf`（含 `pointer_axes=auto|normal|swap`）；Demo「Mouse」；**mtime 轮询**重载（禁止 `kill -HUP`，会直接停掉 `hmi.service`）；BT 键盘触控板轴交换见 `0009` |
 | QM002 / BLE 键盘触控板 左右→下上 | 同一节点兼键盘+指针的 HOGP 仿品 REL 轴对调；USB 鼠标正常 | `0009-bt-kb-pointer-axis-swap.patch`（模式：`BT + KEYBOARD + POINTER`） |
 
 Smoke（含连发 / 方向键）：
@@ -119,7 +119,7 @@ ls -l /dev/input/by-id/*mouse* 2>/dev/null
 # Demo「Mouse」：指针跟随；自然滚动 / 滚轮速度 / 指针速度 / 主按钮 / 指针轴（Auto/Normal/Swap）
 # journal / flutter-pi 日志不应再刷 "unsupported framebuffer stride" 后无 cursor
 # 移动鼠标时 drmModeMoveCursor 错误至多一行（Bad address），不应刷屏
-cat /var/lib/lws-hmi/mouse.conf 2>/dev/null || true
+cat /var/lib/hmi/mouse.conf 2>/dev/null || true
 ```
 
 重新编译 flutter-pi 补丁后还须进 rootfs（见 AGENTS / README Make）：`make rebuild-flutter-pi` → `apply-overlay` → `build-rootfs` → `build-img` → `flash`。
@@ -129,14 +129,14 @@ cat /var/lib/lws-hmi/mouse.conf 2>/dev/null || true
 
 | 文件 | 职责 |
 |------|------|
-| `lws-hmi-ynh960-own-gpio.dtsi` | own-gpio；恢复 USB_HOST_PWREN*（RMII 后）；三色灯默认关 |
-| `lws-hmi-ynh960-usb-gadget.dtsi` | Micro-USB OTG dual-role（ID → host/peripheral；plug-ssh 仅 peripheral） |
-| `lws-hmi-ynh960-usb-host.dtsi` | 1 mm USB host expansion（键盘 / 鼠标） |
-| `lws-hmi-ynh960-uart5-gmac.dtsi` | eth RMII/PHY；释放 UART5 |
-| `lws-hmi-ynh960-uart7-pwm.dtsi` | 禁用 uart7 → pwm14/15 |
-| `lws-hmi-ynh960-touch.dtsi` | Goodix only |
-| `lws-hmi-ynh960-display.dtsi` | MIPI 面板 |
-| `lws-hmi-ynh960-evb-trim.dtsi` | 关掉板无件的 EVB 节点（**勿**关 fiq-debugger） |
+| `ynh960-own-gpio.dtsi` | own-gpio；恢复 USB_HOST_PWREN*（RMII 后）；三色灯默认关 |
+| `ynh960-usb-gadget.dtsi` | Micro-USB OTG dual-role（ID → host/peripheral；plug-ssh 仅 peripheral） |
+| `ynh960-usb-host.dtsi` | 1 mm USB host expansion（键盘 / 鼠标） |
+| `ynh960-uart5-gmac.dtsi` | eth RMII/PHY；释放 UART5 |
+| `ynh960-uart7-pwm.dtsi` | 禁用 uart7 → pwm14/15 |
+| `ynh960-touch.dtsi` | Goodix only |
+| `ynh960-display.dtsi` | MIPI 面板 |
+| `ynh960-evb-trim.dtsi` | 关掉板无件的 EVB 节点（**勿**关 fiq-debugger） |
 
 路径均在 `overlay/kernel/rockchip/`。
 

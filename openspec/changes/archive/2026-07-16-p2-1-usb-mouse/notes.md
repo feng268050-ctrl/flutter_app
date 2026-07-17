@@ -37,13 +37,13 @@ Rockchip/Mali typically **pads** GBM cursor/scanout stride (e.g. 64-byte align).
 | Software cursor only in Demo Flutter overlay | Reject as sole fix (not OS-shell chrome) |
 | Flutter soft-cursor fallback at app root | Keep as optional belt if stride fix insufficient on device |
 
-**Implement:** `0004` cursor stride-tolerant buffer upload; `0005` mouse prefs (`/var/lib/lws-hmi/mouse.conf`) + libinput apply + scroll scale + SIGHUP reload.
+**Implement:** `0004` cursor stride-tolerant buffer upload; `0005` mouse prefs (`/var/lib/hmi/mouse.conf`) + libinput apply + scroll scale + SIGHUP reload.
 
 Device tasks 2.3 / 6.3 still need operator smoke after `make rebuild-flutter-pi` + image flash.
 
 ## Pref file (task 3.1)
 
-Path: `/var/lib/lws-hmi/mouse.conf` (key=value, one per line):
+Path: `/var/lib/hmi/mouse.conf` (key=value, one per line):
 
 | Key | Default | Meaning |
 |-----|---------|---------|

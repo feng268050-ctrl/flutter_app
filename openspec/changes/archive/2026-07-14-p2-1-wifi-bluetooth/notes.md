@@ -19,9 +19,9 @@
 
 | Piece | Change |
 |-------|--------|
-| Kernel | `lws-hmi-ynh960-wifibt.config` — AIC WLAN + BTLPM modules, FW path `/vendor/etc/firmware` |
+| Kernel | `ynh960-wifibt.config` — AIC WLAN + BTLPM modules, FW path `/vendor/etc/firmware` |
 | Runtime | `wifibt-bringup.sh` — detect `c8a1`, prefer `rk_wifi_init`, else manual `insmod` + `hciattach` |
-| Rootfs hook | `09-lws-hmi-wifibt-innohi.sh` — install `rk_wifi_init`, `/system/lib/modules` → `/vendor/lib/modules` |
+| Rootfs hook | `09-wifibt-innohi.sh` — install `rk_wifi_init`, `/system/lib/modules` → `/vendor/lib/modules` |
 | Verify | expect `aic8800_fdrv.ko` + AIC firmware, not `bcmdhd` |
 
 ## BT pairing note
@@ -29,7 +29,7 @@
 Discoverable without a live **Agent1** → phone sees HMI but pairing fails
 (Authentication Failed). `bt-pair-agent.sh` must keep `bluetoothctl --agent=…`
 running and call `default-agent`. Verify: `cat /tmp/lws-bt-agent.log`,
-`kill -0 $(cat /run/lws-hmi-bt-agent.pid)`.
+`kill -0 $(cat /run/bt-agent.pid)`.
 
 ## A2DP Sink (Bluetooth speaker) — opt-in, default off
 
@@ -39,7 +39,7 @@ Phones often fail “连接” without a media profile. Product path is **opt-in
 |-------|------|
 | `BR2_PACKAGE_BLUEZ_ALSA` | bluealsa + aplay (in image) |
 | Demo **BT speaker (A2DP)** switch | default off; calls `setA2dpSinkEnabled` |
-| Pref `/var/lib/lws-hmi/bt-a2dp-sink` | `1` / `0`; stack-up restores only if `1` |
+| Pref `/var/lib/bluetooth/bt-a2dp-sink` | `1` / `0`; stack-up restores only if `1` |
 | `bt-a2dp-sink-up/down.sh` | start/stop bluealsa units |
 | `bluealsa.service` | `-p a2dp-sink` → MediaEndpoint |
 | `bluealsa-aplay.service` | PCM → board ALSA |
@@ -51,7 +51,7 @@ Phones often fail “连接” without a media profile. Product path is **opt-in
 
 ### bluealsa exit 127 / `libSegFault.so`
 
-Rockchip `bluez-alsa.mk` used `--enable-debug` → configure links `-lSegFault` (present in sysroot, **not** installed on target). Fix: `apply-overlay` forces `--disable-debug` + `ac_cv_lib_SegFault_backtrace=no`; `lws-hmi-post-build.sh` also copies `libSegFault.so` into target as a safety net for already-built binaries.
+Rockchip `bluez-alsa.mk` used `--enable-debug` → configure links `-lSegFault` (present in sysroot, **not** installed on target). Fix: `apply-overlay` forces `--disable-debug` + `ac_cv_lib_SegFault_backtrace=no`; `post-build.sh` also copies `libSegFault.so` into target as a safety net for already-built binaries.
 
 ### iPhone “连接失败” after PIN
 
@@ -101,7 +101,7 @@ Fix: `wlan0-time-sync.sh` after DHCP/static (RFC868 `rdate` then HTTP `Date:` vi
 wget); Dart HTTPS path also syncs if `year < 2025`.
 
 Immediate check on device: `date -u` should be ~2026, not 2024. If stale:
-`/usr/lib/lws-hmi/wlan0-time-sync.sh` then re-run Demo Send request.
+`/usr/libexec/wpa/wlan0-time-sync.sh` then re-run Demo Send request.
 
 `dhcpcd is not running` in the journal during connect is **benign**.
 
@@ -110,5 +110,5 @@ After `apply-overlay` → **kernel** → **rootfs** → flash:
 
 1. `verify-env` — `aic8800_*.ko`, `rk_wifi_init`, AIC firmware, **CA bundle**
 2. Demo Wi‑Fi → `wlan0` + associate + HTTP
-3. Demo BT Discoverable → phone finds `lws-hmi` → pairs → **连接成功** + music on speaker
+3. Demo BT Discoverable → phone finds `hmi` → pairs → **连接成功** + music on speaker
 4. `verify-boot` — wifibt still deferred at boot

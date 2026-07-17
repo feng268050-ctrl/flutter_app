@@ -1,6 +1,6 @@
 [Unit]
 Description=LWS HMI on-demand LAN/WLAN SSH debug
-Documentation=file:///usr/lib/lws-hmi/enable-ssh-debug.sh
+Documentation=file:///usr/libexec/hmi/enable-ssh-debug.sh
 # Not linked from multi-user.target.wants — started only via enable-ssh-debug.sh / Demo.
 DefaultDependencies=no
 After=local-fs.target
@@ -9,7 +9,7 @@ After=local-fs.target
 # Foreground sshd via lan-ssh-run.sh: listens only on eth0/wlan0 IPs so USB-SSH
 # can keep ListenAddress=192.168.55.1 on a separate process.
 Type=simple
-ExecStart=/usr/lib/lws-hmi/lan-ssh-run.sh
+ExecStart=/usr/libexec/hmi/lan-ssh-run.sh
 Restart=no
 
 # No [Install] — must not auto-start at boot.

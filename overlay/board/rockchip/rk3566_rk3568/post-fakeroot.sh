@@ -8,6 +8,11 @@ TARGET_DIR="${1:?TARGET_DIR required}"
 SYSTEMD_DIR="$TARGET_DIR/etc/systemd/system"
 WANTS="$SYSTEMD_DIR/multi-user.target.wants"
 
+PURGE="$(dirname "$0")/purge-retired-rootfs-artifacts.sh"
+if [ -f "$PURGE" ]; then
+	sh "$PURGE" "$TARGET_DIR"
+fi
+
 disable_unit() {
 	unit="$1"
 	local wants_dir link
@@ -29,13 +34,13 @@ link_unit() {
 	ln -sf "/etc/systemd/system/$unit" "$WANTS/$unit"
 }
 
-for unit in input-event-daemon.service lws-hmi-debug-boot.service lws-hmi-pre-poweroff.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service dhcpcd.service log-guardian.service usbdevice.service lws-hmi-lan-ssh.service lws-hmi-wpa.service lws-hmi-wlan0-dhcp.service lws-hmi-eth0.service; do
+for unit in input-event-daemon.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service dhcpcd.service log-guardian.service usbdevice.service ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
 	disable_unit "$unit"
 done
 
 # preset-all may re-link units with [Install]; explicit disable clears all wants.
 if command -v systemctl >/dev/null 2>&1; then
-	for unit in input-event-daemon.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service dhcpcd.service log-guardian.service usbdevice.service lws-hmi-lan-ssh.service lws-hmi-wpa.service lws-hmi-wlan0-dhcp.service lws-hmi-eth0.service; do
+	for unit in input-event-daemon.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service dhcpcd.service log-guardian.service usbdevice.service ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
 		systemctl --root="$TARGET_DIR" disable "$unit" >/dev/null 2>&1 || true
 	done
 	systemctl --root="$TARGET_DIR" mask usbdevice.service >/dev/null 2>&1 || true
@@ -50,14 +55,9 @@ rm -f \
 	"$TARGET_DIR/lib/systemd/system/usbdevice.service"
 
 rm -f \
-	"$TARGET_DIR/etc/systemd/system/lws-hmi-debug-boot.service" \
-	"$TARGET_DIR/etc/systemd/system/lws-hmi-pre-poweroff.service" \
-	"$TARGET_DIR/usr/lib/lws-hmi/debug-boot.sh" \
-	"$TARGET_DIR/usr/lib/lws-hmi/stop-hmi.sh" \
-	"$TARGET_DIR/usr/lib/lws-hmi/push-app-apply-and-reboot.sh" \
-	"$TARGET_DIR/etc/systemd/system/systemd-poweroff.service.d/50-lws-hmi-pre-poweroff.conf" \
-	"$TARGET_DIR/etc/systemd/system/systemd-halt.service.d/50-lws-hmi-pre-poweroff.conf" \
-	"$TARGET_DIR/etc/systemd/system/systemd-reboot.service.d/50-lws-hmi-pre-poweroff.conf"
+	"$TARGET_DIR/usr/libexec/hmi/debug-boot.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/stop-hmi.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/push-app-apply-and-reboot.sh"
 rmdir \
 	"$TARGET_DIR/etc/systemd/system/systemd-poweroff.service.d" \
 	"$TARGET_DIR/etc/systemd/system/systemd-halt.service.d" \
@@ -65,30 +65,32 @@ rmdir \
 	2>/dev/null || true
 
 link_unit mainserver.service
-link_unit lws-hmi-performance.service
-link_unit lws-hmi-serial-stty.service
-link_unit lws-hmi-pwrkey-poweroff.service
-link_unit lws-hmi-settings-restore.service
-link_unit lws-hmi-ab-boot-confirm.service
+link_unit cpu-performance.service
+link_unit serial-stty.service
+link_unit pwrkey-poweroff.service
+link_unit settings-restore.service
+link_unit ab-boot-confirm.service
 link_unit hmi.service
 
 ln -sf /dev/null "$SYSTEMD_DIR/systemd-network-generator.service"
 
-SYNC_ENGINE="$(dirname "$0")/lws-hmi-sync-flutter-engine.sh"
+SYNC_ENGINE="$(dirname "$0")/sync-flutter-engine.sh"
 if [ -f "$SYNC_ENGINE" ]; then
 	sh "$SYNC_ENGINE" "$TARGET_DIR"
 fi
 
 LWS_HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
-ENSURE_KEYS="$TARGET_DIR/usr/lib/lws-hmi/ensure-sshd-hostkeys.sh"
+ENSURE_KEYS="$TARGET_DIR/usr/libexec/hmi/ensure-sshd-hostkeys.sh"
 if [ ! -f "$ENSURE_KEYS" ]; then
-	ENSURE_KEYS="$LWS_HMI_ROOT/overlay/board/rockchip/rk3566_rk3568/lws-hmi-fs-overlay/usr/lib/lws-hmi/ensure-sshd-hostkeys.sh"
+	ENSURE_KEYS="$LWS_HMI_ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/ensure-sshd-hostkeys.sh"
 fi
 if [ -f "$ENSURE_KEYS" ]; then
 	sh "$ENSURE_KEYS" "$TARGET_DIR"
 fi
 
-STRIP_FSTAB="$(dirname "$0")/lws-hmi-strip-fstab.sh"
+STRIP_FSTAB="$(dirname "$0")/strip-fstab.sh"
 if [ -f "$STRIP_FSTAB" ]; then
 	bash "$STRIP_FSTAB" "$TARGET_DIR"
 fi
+
+sh "$(dirname "$0")/install-systemctl-wrapper.sh" "$TARGET_DIR" post-fakeroot

@@ -8,15 +8,15 @@ import 'package:lws_hmi/platform/lws_trace.dart';
 import 'package:lws_hmi/platform/wifi/wifi_link_parse.dart';
 
 /// Linux wired Ethernet via on-demand helpers + `ip` / sysfs.
-/// Product image pins GMAC to `eth0` (`10-lws-hmi-gmac.link`).
+/// Product image pins GMAC to `eth0` (`10-gmac.link`).
 class LinuxEthernetController implements EthernetController {
   LinuxEthernetController({
     this.iface = 'eth0',
-    this.linkHelper = const ['/usr/lib/lws-hmi/eth0-link.sh'],
-    this.dhcpHelper = const ['/usr/lib/lws-hmi/eth0-dhcp.sh'],
-    this.staticHelper = const ['/usr/lib/lws-hmi/eth0-static.sh'],
+    this.linkHelper = const ['/usr/libexec/network/eth0-link.sh'],
+    this.dhcpHelper = const ['/usr/libexec/network/eth0-dhcp.sh'],
+    this.staticHelper = const ['/usr/libexec/network/eth0-static.sh'],
     this.ipv4Path = EthIpv4Store.defaultPath,
-    this.ethWantedPath = '/var/lib/lws-hmi/eth0-wanted',
+    this.ethWantedPath = '/var/lib/network/eth0-wanted',
   });
 
   final String iface;

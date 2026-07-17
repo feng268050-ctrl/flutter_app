@@ -2,7 +2,7 @@
 
 ### Requirement: Overlay includes settings isolation units
 
-The lws_hmi rootfs overlay SHALL include `lws-hmi-wpa.service`, `lws-hmi-wlan0-dhcp.service`, `lws-hmi-eth0.service`, `lws-hmi-settings-restore.service`, `lws-hmi-wpa-run.sh`, and `lws-hmi-settings-restore.sh`. `verify-rootfs-overlay` SHALL fail if `wifi-stack-up.sh` still starts `wpa_supplicant -B` directly instead of the dedicated unit.
+The lws_hmi rootfs overlay SHALL include `wlan-wpa.service`, `wlan-dhcp.service`, `eth0-network.service`, `settings-restore.service`, `wlan-wpa.service-run.sh`, and `restore-settings.sh`. `verify-rootfs-overlay` SHALL fail if `wifi-stack-up.sh` still starts `wpa_supplicant -B` directly instead of the dedicated unit.
 
 #### Scenario: verify catches in-cgroup wpa
 

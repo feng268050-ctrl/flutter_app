@@ -1,4 +1,4 @@
-// lws-hmi ynh960: disable EVB2 reference nodes not present on product hardware.
+// ynh960: disable EVB2 reference nodes not present on product hardware.
 // ynh960 uses RK817 (rk809@0x20 on i2c0) + eMMC rootfs; no FAN53555 bucks, no SFC SPI-NAND.
 // Do NOT disable fiq-debugger: bootargs use console=ttyFIQ0; disabling it stops serial
 // output after earlycon (~2 s) even though the system keeps booting. Probe errors are harmless.

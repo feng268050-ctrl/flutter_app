@@ -1,6 +1,6 @@
 ## Context
 
-P2.3 introduced `/var/lib/lws-hmi/` (→ `/userdata/lws-hmi`) prefs plus `restore-settings.sh` after HMI. Simple knobs (backlight, media volume, display orientation, mouse) were persisted by Dart writing files, while apply/restore used shell. `change-backlight` without persist showed the split is user-visible: SSH apply ≠ reboot restore.
+P2.3 introduced `/var/lib/hmi/` (→ `/userdata/{wpa_supplicant,network,bluetooth,hmi}`) prefs plus `restore-settings.sh` after HMI. Simple knobs (backlight, media volume, display orientation, mouse) were persisted by Dart writing files, while apply/restore used shell. `change-backlight` without persist showed the split is user-visible: SSH apply ≠ reboot restore.
 
 Network/BT already mostly persist inside shell helpers / units. This change unifies the **simple HW knobs** on verb-noun shell commands.
 
@@ -28,7 +28,7 @@ Network/BT already mostly persist inside shell helpers / units. This change unif
 
 **Why:** Same pattern (percent or small conf → file → restore/launch). Network stacks already have helpers.
 
-**Alt:** Migrate every `/var/lib/lws-hmi` writer — deferred; larger surface, little SSH pain.
+**Alt:** Migrate every `/var/lib/hmi` writer — deferred; larger surface, little SSH pain.
 
 ### D2 — Script names (verb + noun)
 
@@ -45,7 +45,7 @@ Network/BT already mostly persist inside shell helpers / units. This change unif
 
 ### D3 — Flutter invokes shell, does not dual-write
 
-**Choice:** `set*` on Linux backends runs `/usr/bin/change-backlight` (etc.) or `/usr/lib/lws-hmi/*.sh` if PATH not guaranteed inside service. No second Dart `File.write` for the same pref.
+**Choice:** `set*` on Linux backends runs `/usr/bin/change-backlight` (etc.) or `/usr/libexec/hmi/*.sh` if PATH not guaranteed inside service. No second Dart `File.write` for the same pref.
 
 **Why:** Avoids race / divergence; SSH and Demo share code.
 
@@ -53,7 +53,7 @@ Network/BT already mostly persist inside shell helpers / units. This change unif
 
 ### D4 — PATH exposure
 
-**Choice:** Link `change-backlight`, `change-volume`, `change-orientation`, `apply-mouse-settings` in `lws-hmi-post-build.sh`; verify-rootfs asserts them.
+**Choice:** Link `change-backlight`, `change-volume`, `change-orientation`, `apply-mouse-settings` in `post-build.sh`; verify-rootfs asserts them.
 
 **Why:** Operators recover black screen / mute without full paths.
 

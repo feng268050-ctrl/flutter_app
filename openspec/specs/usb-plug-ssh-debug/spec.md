@@ -24,7 +24,7 @@ The target SHALL load the modular Linux **`g_ether`** driver in ECM mode and con
 #### Scenario: Debug over USB off does not start plug-ssh
 
 - **WHEN** Debug over USB is off (Micro-USB host mode)
-- **THEN** `lws-hmi-usb-plug-ssh.service` is not started from VBUS/extcon alone and `g_ether` is not left bound for debug SSH
+- **THEN** `ssh-debug-usb.service` is not started from VBUS/extcon alone and `g_ether` is not left bound for debug SSH
 
 ### Requirement: Turning Debug over USB off tears down USB ECM debug
 

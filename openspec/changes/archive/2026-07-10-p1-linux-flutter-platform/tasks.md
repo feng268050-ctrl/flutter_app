@@ -3,7 +3,7 @@
 - [x] 1.1 Copy `overlay/buildroot/chips/lws_hmi_*.config` into SDK `buildroot/configs/rockchip/chips/` via `apply-overlay.sh` (verify base, systemd, network, npu fragments)
 - [x] 1.2 Add `overlay/buildroot/chips/lws_hmi_flutter.config` enabling flutter-pi and GPU/display dependencies (Mali, libdrm, libgbm, fontconfig, libinput)
 - [x] 1.3 Finalize `rockchip_rk3566_rk3568_lws_hmi_defconfig`: enable `lws_hmi_flutter.config`, confirm EVB packages (weston/chromium/camera/benchmark/test) are not included
-- [x] 1.4 Install defconfig into SDK `buildroot/configs/rockchip_rk3566_rk3568_lws_hmi_defconfig` and wire `BR2_ROOTFS_OVERLAY` to `lws-hmi-fs-overlay`
+- [x] 1.4 Install defconfig into SDK `buildroot/configs/rockchip_rk3566_rk3568_lws_hmi_defconfig` and wire `BR2_ROOTFS_OVERLAY` to `rootfs-overlay`
 - [x] 1.5 Update `board/ynh960_defconfig` overlay with `RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"`, `# RK_RECOVERY is not set`, `RK_WIFIBT=y`
 - [x] 1.6 Run `make setup && make lunch` and confirm SDK `.config` picks up lws_hmi Buildroot profile (verify in Docker: `RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"`)
 
@@ -29,15 +29,15 @@
 - [x] 4.2 Configure flutter-pi custom device / build tooling for ARM64 release AOT (`flutterpi_tool`, Flutter 3.24.4 pin)
 - [x] 4.3 Add `scripts/build-app.sh` (or Makefile target) producing meta-flutter bundle under `/opt/hmi`
 - [x] 4.4 Ensure `main()` has no video/WebSocket/FFI init before first frame (KPI)
-- [x] 4.5 Copy release artifacts into `lws-hmi-fs-overlay/opt/hmi/` before rootfs build
+- [x] 4.5 Copy release artifacts into `rootfs-overlay/opt/hmi/` before rootfs build
 
 ## 5. systemd boot chain (Plan A)
 
-- [x] 5.1 Verify `hmi.service` ExecStart and `After=local-fs.target` only (no network/mediamtx deps); added `After=lws-hmi-performance.service`, `Nice=-5`
-- [x] 5.2 Confirm `06-lws-hmi-systemd.sh` post-hook enables hmi + mainserver + performance + pwrkey; disables mediamtx/sshd/bluetooth/wifibt-init/wpa_supplicant/network/log-guardian
+- [x] 5.1 Verify `hmi.service` ExecStart and `After=local-fs.target` only (no network/mediamtx deps); added `After=cpu-performance.service`, `Nice=-5`
+- [x] 5.2 Confirm `06-systemd-appliance.sh` post-hook enables hmi + mainserver + performance + pwrkey; disables mediamtx/sshd/bluetooth/wifibt-init/wpa_supplicant/network/log-guardian
 - [x] 5.3 Confirm journald volatile overlay is installed
 - [x] 5.4 Add flutter-pi rotation flags to `hmi.service` ExecStart (`-o landscape_left` on ynh960)
-- [x] 5.5 On device: `/usr/lib/lws-hmi/boot-verify.sh` — Plan A unit enable/disable (no network-online / mediamtx / udev-settle at boot) — **done**
+- [x] 5.5 On device: `/usr/libexec/hmi/boot-verify.sh` — Plan A unit enable/disable (no network-online / mediamtx / udev-settle at boot) — **done**
 
 ## 6. Integration build and acceptance
 
@@ -61,9 +61,9 @@
 
 - [x] 8.1 Single-image policy: remove `lws-hmi-debug-boot`, kernel `ip=` bootargs; no `LWS_HMI_DEV` split
 - [x] 8.2 Defer Wi‑Fi/BT/network at boot (`wifibt-init`, `wpa_supplicant`, `network.service` disabled in wants)
-- [x] 8.3 `lws-hmi-performance.service` — CPU/DMC/GPU `performance` governors before HMI start
-- [x] 8.4 `lws-hmi-pwrkey-poweroff.service` + `shutdown.sh` SysRq poweroff (avoid Mali DRM teardown oops)
+- [x] 8.3 `cpu-performance.service` — CPU/DMC/GPU `performance` governors before HMI start
+- [x] 8.4 `pwrkey-poweroff.service` + `shutdown.sh` SysRq poweroff (avoid Mali DRM teardown oops)
 - [x] 8.5 eMMC `noatime` via fstab (not `rootflags=noatime`)
-- [x] 8.6 Kernel `loglevel=4` + `lws-hmi-kernel-trim.config` fragment
+- [x] 8.6 Kernel `loglevel=4` + `ynh960-kernel-trim.config` fragment
 - [x] 8.7 `boot-verify.sh` on device + `verify-rootfs-overlay.sh` at build time
-- [x] 8.8 `08-lws-hmi-systemd-finalize.sh` — undo SDK `log-guardian` re-enable after post-hooks
+- [x] 8.8 `08-systemd-appliance-finalize.sh` — undo SDK `log-guardian` re-enable after post-hooks

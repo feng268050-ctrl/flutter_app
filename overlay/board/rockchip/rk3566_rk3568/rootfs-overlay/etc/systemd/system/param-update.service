@@ -7,7 +7,7 @@ Before=mainserver.service hmi.service sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/lib/lws-hmi/ynh960-display-init.sh
+ExecStart=/usr/libexec/hmi/ynh960-display-init.sh
 StandardOutput=journal
 StandardError=journal
 

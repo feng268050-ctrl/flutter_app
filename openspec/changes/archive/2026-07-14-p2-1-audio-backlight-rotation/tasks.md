@@ -8,7 +8,7 @@
 
 - [x] 2.1 Implement abstract `MediaAudioController` + Linux backend (ALSA plugin or Process helper); clamp volume 0–100; play/stop asset
 - [x] 2.2 Implement abstract `BacklightController` + Linux sysfs backend (`/sys/class/backlight/*/brightness`); clamp percent 0–100
-- [x] 2.3 Implement display orientation enum + persist file (`/var/lib/lws-hmi/display-orientation`) + apply/restart hook mapping landscape→`landscape_left`, portrait→`portrait_up`
+- [x] 2.3 Implement display orientation enum + persist file (`/var/lib/hmi/display-orientation`) + apply/restart hook mapping landscape→`landscape_left`, portrait→`portrait_up`
 - [x] 2.4 Unit tests on host: percent clamps, orientation mapping, default landscape when file missing
 
 ## 3. Launch path & rootfs

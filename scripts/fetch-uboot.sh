@@ -24,7 +24,7 @@ if [[ "$FORCE" == "1" ]]; then
 fi
 
 if [[ -f "$UBOOT_DIR/Makefile" && -f "$MARKER" ]]; then
-  bash "$ROOT/overlay/device/rockchip/common/scripts/lws-hmi-patch-uboot-bootcmd.sh" \
+  bash "$ROOT/overlay/device/rockchip/common/scripts/patch-uboot-bootcmd.sh" \
     "$UBOOT_DIR/include/configs/rockchip-common.h" 2>/dev/null || true
   echo "u-boot source ready: $UBOOT_DIR"
   exit 0
@@ -57,7 +57,7 @@ if [[ ! -e "$UBOOT_DIR/configs/rk3566_rk3568_defconfig" ]]; then
 fi
 
 touch "$MARKER"
-bash "$ROOT/overlay/device/rockchip/common/scripts/lws-hmi-patch-uboot-bootcmd.sh" \
+bash "$ROOT/overlay/device/rockchip/common/scripts/patch-uboot-bootcmd.sh" \
   "$UBOOT_DIR/include/configs/rockchip-common.h" || true
 
 echo "u-boot source installed ($(git -C "$CACHE" rev-parse --short HEAD))"

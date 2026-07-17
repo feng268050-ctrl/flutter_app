@@ -1,11 +1,11 @@
 #!/bin/sh
 # On-demand LAN/WLAN SSH debug (P2.1 / §7.7). Not enabled at boot.
-# Starts lws-hmi-lan-ssh.service (eth0/wlan0 only) without stopping USB-SSH.
+# Starts ssh-debug-lan.service (eth0/wlan0 only) without stopping USB-SSH.
 # Usage: enable-ssh-debug.sh [enable|disable|status|on|off]
 set -eu
 
-UNIT=lws-hmi-lan-ssh.service
-USB_PID=/run/lws-hmi-usb-plug-sshd.pid
+UNIT=ssh-debug-lan.service
+USB_PID=/run/usb-plug-sshd.pid
 
 log() {
 	echo "enable-ssh-debug: $*"
@@ -48,7 +48,7 @@ cmd_enable() {
 		return 1
 	fi
 	# Do NOT stop USB plug-ssh: LAN binds eth0/wlan0 only; USB keeps 192.168.55.1.
-	/usr/lib/lws-hmi/ensure-sshd-hostkeys.sh
+	/usr/libexec/hmi/ensure-sshd-hostkeys.sh
 	systemctl reset-failed "$UNIT" 2>/dev/null || true
 	systemctl start "$UNIT"
 	i=0
@@ -73,8 +73,8 @@ cmd_enable() {
 ensure_usb_sshd_if_needed() {
 	[ -d /sys/class/net/usb0 ] || return 0
 	usb_sshd_running && return 0
-	if [ -x /usr/lib/lws-hmi/usb-plug-ssh-start.sh ]; then
-		/usr/lib/lws-hmi/usb-plug-ssh-start.sh || true
+	if [ -x /usr/libexec/hmi/usb-plug-ssh-start.sh ]; then
+		/usr/libexec/hmi/usb-plug-ssh-start.sh || true
 	fi
 }
 
@@ -82,7 +82,7 @@ cmd_disable() {
 	systemctl reset-failed "$UNIT" 2>/dev/null || true
 	systemctl stop "$UNIT" 2>/dev/null || true
 	log "disabled"
-	rm -f /run/lws-hmi-lan-sshd.pid
+	rm -f /run/lan-sshd.pid
 	ensure_usb_sshd_if_needed
 }
 

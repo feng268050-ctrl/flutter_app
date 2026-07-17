@@ -16,7 +16,7 @@ abstract class DisplayOrientationController {
 
 /// Map product mode ↔ flutter-pi `-o` argument and preference file token.
 class DisplayOrientationMapping {
-  static const preferencePath = '/var/lib/lws-hmi/display-orientation';
+  static const preferencePath = '/var/lib/hmi/display-orientation';
 
   static String toPreferenceToken(DisplayOrientationMode mode) {
     switch (mode) {

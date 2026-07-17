@@ -1,37 +1,36 @@
-# Flutter-pi HMI 规划（ynh960 产品线 · RK3566 基准）
+# Flutter-pi HMI 规划（通用嵌入式 OS 方向 · ynh960 基准）
 
-目标：在现有 **lws-hmi** Buildroot 基线上，用 **flutter-pi** 全屏跑 Flutter UI；按 **P1→P5** 增量交付：**P1** 镜像 + Hello World → **P1.5** 设备调试与快速 UI 迭代 → **P2** Modbus/GPIO（Linux 真机） → **P2.1** 板级 I/O → **P2.2** 日期/时间 Demo → **P2.3** 硬件设置持久化 → **P2.4** A/B 双分区与 `make upgrade` → **P2.5** 模拟器与 Android 兼容 → **P3** `libai.so` → **P4** FrostUI + IME 子模块 → **P5** 全量业务（含 OTA，复用 P2.4）。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块。
+目标：在 **lws-hmi** Buildroot 基线上，用 **flutter-pi**（量产）/ **flutter-embedded-linux**（模拟器）跑 Flutter UI；建设可复用的 **嵌入式 OS**：共用 **CyberUI** 框架与 **Rust HAL**，主板/屏幕以 **board·screen pack** 插拔，**产品顶层 App 可分叉**。按 **P1→P5** 增量交付（见下表）。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块（模拟器 P3.2 另行引入 Weston）。
 
-**能力原则**：**lws-hmi 产品能力不少于 lws-ui**；Linux 主线将 Android/Java 平台层替换为 **Buildroot + flutter-pi + Dart/FFI**，**P2.5** 起保留旧 Android 产品兼容构建；算法、拓扑、模型与 API 契约尽量复用。逐项对照见 **§11.5**。
+**能力原则**：**产品能力不少于 lws-ui**；平台层长期为 **Buildroot + Rust HAL + Dart 薄客户端**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**P5.0** 保留 Android 兼容构建；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`rust-hal-and-phase-realign`](../openspec/changes/rust-hal-and-phase-realign/design.md)。
 
-**板级范围**：**ynh960 / ynh962 / ynh961** 为同一产品线的三档板型（**入门 → 中档 → 高档**：RK3566 → RK3568B2 → RK3568；芯片与接口有微小差异，大体硬件拓扑相近）；**理论上可共用一份 Linux 固件**（与 lws-ui Android 通刷思路一致）。**P1～P5 设计与验收以 ynh960（RK3566）为基准**，暂不按 SKU 拆 defconfig 或维护多套镜像。Rockchip SDK 目录 `**rk3566_rk3568`** / Buildroot `**rockchip_rk3566_rk3568_***` 为 3566/3568 族工具链 profile。见 **§3.0**。
+**板级范围（当前）**：**ynh960 / ynh962 / ynh961** 同产品线三档（RK3566 → RK3568B2 → RK3568）；**P1～P4 以 ynh960 验收**。中长期目标是 **少量不同主板 + 不同屏幕** 共用 OS 契约与 CyberUI，而非每产品从零开始。Rockchip SDK `**rk3566_rk3568`** profile 见 **§3.0**。
 
 ---
 
 ## 1. 目标与范围
 
 
-| 阶段                             | 交付                                                                                                                                                                                        | 状态  |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| **P1 — 平台镜像 + Hello World**    | Buildroot **Linux 镜像**（含后续所需的 **平台必须组件**）+ splash → `**flutter-pi` Hello World**                                                                                                          | ✅   |
-| **P1.5 — 设备调试 + 快速 UI 迭代**     | `make debug-app` 在**真机**上以调试模式启动 App；VSCode / Cursor Flutter 插件接入；为快速 UI 迭代铺路                                                                                                             | ✅   |
-| **P2 — Modbus + GPIO**         | 迁移 **Modbus RTU** 与 **GPIO 管理**；Linux 真机验证读设备与下位机信息、**三色指示灯**（红/黄/绿）正常控制                                                                                                                  | ✅   |
-| **P2.1 — 板级 I/O 与外设验证**        | 喇叭 / Wi‑Fi / BT / **以太网（RJ45 / eth0）** / **外接键盘·鼠标（USB HID）** / **按需 LAN·WLAN sshd** 等 **硬件 I/O 前置验证**；顺带收口触控、串口/引脚映射、背光等（见 **§1.1**）；**不做** 产品设置页 / IPC 相机业务 / MediaMTX / Flutter 预览（仍属 P5） | ✅  |
-| **P2.2 — 日期/时间设置（Demo）**      | Demo UI：**日期、时间（及时区）设置**；平台层抽象（`DateTimeController` 等），供 P5 产品设置页复用；**不做** 云 NTP 编排 / 产品 Settings 整页                                                                 | ✅  |
-| **P2.3 — 硬件设置持久化**            | 将 **P2.1** Demo 已验证的硬件偏好（Wi‑Fi / eth0 / 背光 / 旋转 / 代理 / BT A2DP / **鼠标** 等）在 **整机重启后自动恢复**；系统栈 **独立于 `hmi.service` cgroup**（push-app / HMI 重启不断网）；统一写盘路径与 boot 应用钩子 | ✅  |
-| **P2.4 — A/B 双分区 + 远程升级**     | Buildroot **A/B `boot`+`rootfs` 成对双槽**；主机 `**make upgrade**` 经 **USB-SSH / LAN SSH** 推送**接近 `make flash` 的固件包**（至少 **kernel/`boot.img` + rootfs**），切换字母槽，**无需进 bootloader**；为 P5 OTA 打底（见 **§1.3**） | ✅ |
-| **P2.5 — 模拟器与 Android 兼容**     | `**make emulator`**（Linux HMI 模拟器）；`**make android-emulator**`（参考 lws-ui `make emulator`）；Modbus Android 兼容；GPIO **共用** `gpio_innohi`（YNHAPI 仅降级，§11.0）；Flutter App 可打包 **APK**           | 🔲  |
-| **P3 — AI 原生库**                | 迁移 lws-ui **AI 代码库**；新工程打出 `**libai.so`**（+ RKNN/`config.yaml`）                                                                                                                           | 🔲  |
-| **P3.5 — Flutter 平台升级（P4 前置）** | 将板端 **flutter-engine / SDK / flutter-pi** 从 P1 pin **升级到上游支持的 stable**（见 **§6.4**）；ynh960 全量回归                                                                                            | 🔲  |
-| **P4 — FrostUI + IME（子模块）**    | `**packages/frost_ui`** + `**packages/frost_ime**`（各为独立 git 子模块，对齐 lws-ui FrostUI / IME）                                                                                                  | 🔲  |
-| **P5 — 业务迁移（含 OTA）**          | 见 **§1.2**（P5.1～P5.8）；视频、网络 UI、AI 接入、本地/云服务、**lws-ui 实装业务页**；**P5.8 OTA** 复用 **P2.4** 双分区与 `make upgrade` 链路                                                                             | 🔲  |
+| 阶段 | 交付 | 状态 |
+| ---- | ---- | --- |
+| **Linux P1 — 平台镜像 + Hello World** | Linux 镜像开机/关机稳定；简单 Flutter **Hello, World!** | ✅ |
+| **Linux P1.5 — 设备调试 + 快速 UI 迭代** | 真机调试模式跑 Flutter App；为快速 UI 迭代铺路 | ✅ |
+| **Linux P2 — 硬件设施准备** | Modbus / 三色 LED / 喇叭 / 以太网 / Wi‑Fi / BT / 键盘 / 鼠标等硬件 I/O 接入与前置验证（含原 P2.1～P2.3：板级外设、日期时间 Demo、硬件偏好持久化） | ✅ |
+| **Linux P2.5 — 双分区刷机** | A/B 双分区；经 Wi‑Fi / USB 的 `make upgrade`；加快硬件开发并为 OTA 打底（原 P2.4） | ✅ |
+| **Linux P3.0 — UI 框架 + IME 子模块** | Flutter 重写 UI 框架与 IME：**CyberUI** + **CyberIME**（子模块；初期 Frosted Glass，API 面向可换设计） | 🔲 |
+| **Linux P3.1 — HAL 硬件抽象层** | **Rust** 标准化嵌入式 OS HAL；Flutter App 不直接绑死主板；Dart 薄客户端；与当前项目并行推进（子模块/子包） | 🔲 |
+| **Linux P3.2 — Linux 模拟器** | UTM + Weston (Wayland) + flutter-embedded-linux + HAL；迭代 UI；支持与下位机通讯 | 🔲 |
+| **Linux P3.3 — AI 库迁移** | 迁入 `libai.so` + RKNN 配置；**预计 2026-07-22** | 🔲 |
+| **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务等（原 P5 业务；子阶段见 **§1.2**） | 🔲 |
+| **Linux P5.0 — Android 兼容** | Modbus / GPIO LED / Wi‑Fi / BT 兼容 Android；Flutter App 可打 **APK** | 🔲 |
+| **Linux P5.1 — 升级 Flutter Engine** | flutter-engine / SDK / flutter-pi：**3.24 → 3.41**（2026 代） | 🔲 |
 
 
 状态图例：✅ 完成 · 🔄 进行中 · 🔲 未开始
 
-**lws-ui 对照**：算法/拓扑/模型复用；平台层 → Linux + flutter-pi；UI 按上表分阶段；**P5 子阶段 §1.2**、**P2.4 双分区升级 §1.3**；细则勾选 **§12**；**openspec 非完整清单 §11.7**。
+**lws-ui 对照**：算法/拓扑/模型复用；平台层 → Linux + HAL；UI = CyberUI；**P4 业务子阶段 §1.2**、**P2.5 双分区 §1.3**；旧阶段号映射 **§1.4**；细则 **§12**；openspec **§11.7**。
 
-当前 Rockchip 参考 defconfig 为 EVB 演示系统；替换为 **HMI 栈 + flutter-pi**，按 **P1→P5** 增量交付。
+当前 Rockchip 参考 defconfig 为 EVB 演示系统；替换为 **HMI 栈 + flutter-pi + HAL**，按上表增量交付。
 
 ### 1.1 各阶段任务一览
 
@@ -44,135 +43,113 @@ P1  镜像 + Hello World ✅
     └─ 验收：logo → 首页 ≤10 s（§14.2）
 
 P1.5  设备调试 + 快速 UI 迭代 ✅
-    ├─ make debug-app：在实体板以调试模式启动 App（断点、热重载、VM Service）
+    ├─ make debug-app：真机调试模式（断点、热重载、VM Service）
     ├─ VSCode / Cursor Flutter 插件接入
-    └─ make push-app：实体板 USB-SSH 快速替换 release/debug bundle
+    └─ make push-app：USB-SSH 快速替换 release/debug bundle
 
-P2  Modbus + GPIO（Linux 真机）✅
-    ├─ 迁移 Modbus RTU 与 GPIO 管理程序
-    ├─ Modbus：flutter_libserialport；Linux `/dev/ttyS5` 与 lws-ui 寄存器契约
-    ├─ GPIO：统一契约 = Innohi `gpio_innohi` 标签（红 GPIO_5 / 黄 GPIO_4 / 绿 GPIO_7）
-    ├─ GPIO：直接读写 `/sys/class/gpio_innohi/GPIO_N/value`（不用 YNHAPI 0-based 下标当脚号）
-    └─ App demo：读设备与下位机信息；控制三色状态灯（红/黄/绿）
+P2  硬件设施准备 ✅（含原 P2 / P2.1 / P2.2 / P2.3）
+    ├─ Modbus RTU + GPIO 三色灯（gpio_innohi）；Demo 读设备/控灯
+    ├─ 喇叭 / Wi‑Fi / BT / eth0 / 触控 / USB HID 键盘·鼠标 / 背光·旋转
+    ├─ 按需 LAN/WLAN sshd；pinmux 台账 docs/ynh960-io-pinmux-ledger.md
+    ├─ 日期/时间 Demo（DateTimeController）
+    └─ 硬件偏好持久化 + settings-restore（独立于 hmi.service cgroup）
 
-P2.1  板级 I/O 与外设验证（硬件前置）✅
-    ├─ 动机：P2 暴露串口/引脚对不上、触摸驱动 BUG、UART pinmux vs gmac 等；原计划散落在 P5 的外设先打通
-    ├─ 喇叭 / 本机音频：ALSA + codec + 功放；`aplay` / speaker-test 出声（Buildroot 开最小音频栈）✅
-    ├─ Wi‑Fi：模组固件 + `wpa_supplicant` 关联（含隐藏 SSID）+ wlan0 DHCP/静态 + HTTP 代理/探测（Demo；设置页属 P5.2）✅
-    ├─ **LAN/WLAN 按需 sshd**：`enable-ssh-debug.sh` + Demo 开关；主机 `make connect <ip>`（§7.7 提前到 P2.1；产品 5 连击属 P5）✅
-    ├─ 蓝牙：hci0 up + Discoverable/Pairable（可被手机发现配对；非本机扫描；A2DP Sink 可选）✅
-    ├─ 以太网（RJ45 / eth0）：Demo + DHCP/静态（`EthernetController`）；DTS/PHY → link up → ping 对端 ✅
-    │     （IPC 专链配址、ping 相机、RTSP / MediaMTX / 预览 — 仍属 P5.1 业务迁移）
-    ├─ 触控：Goodix / libinput 稳定；坐标与屏旋转一致 ✅
-    ├─ 外接键盘（USB HID）：**1 mm pin → USB host** 与/或 **Micro-USB OTG host（ID）** → enum + 按键进 flutter-pi（非 P4 软键盘；标准 PC 线仍为 plug-ssh）✅
-    ├─ 外接鼠标（USB HID）：同 host → **可见指针** + Demo 设置（自然滚动 / 速度 / 主按钮；`mouse.conf`；光标可移动区对齐 display）✅
-    ├─ 串口 / GPIO / pinmux 台账：`docs/ynh960-io-pinmux-ledger.md` ✅
-    └─ 背光 / 屏幕旋转 smoke ✅
+P2.5  A/B 双分区 + make upgrade ✅（原 P2.4）
+    ├─ boot/boot_b + rootfs_a/rootfs_b；misc try-boot / 回滚
+    ├─ 主机 make upgrade（USB-SSH / LAN）；不进 loader
+    └─ 产品 OTA UI 仍属 P4（业务迁移内的 OTA 子阶段）
 
-P2.2  日期/时间设置（Demo）✅
-    ├─ Demo UI：设置系统日期、时间、时区（手工；非产品 Settings 整页）
-    ├─ 平台抽象：`DateTimeController`（get/set wall clock + timezone + sync mode）；Linux：`timedatectl` / `date` + RTC（`hwclock`）
-    ├─ 联网自动：Network 模式 + Sync Now；复用 `wlan0-time-sync.sh`（rdate / HTTP Date）
-    ├─ HTTPS TLS 经 `ensureSaneForTls`（与 HTTP Demo 共用）
-    └─ 板端 smoke：手动设时 / Sync Now / 模式持久化
+P3.0  CyberUI + CyberIME（git 子模块）🔲
+    ├─ packages/cyber_ui — CyberUI（初期 Frosted Glass；§6.3）
+    ├─ packages/cyber_ime — IME overlay + 字体
+    └─ 主 App pubspec 依赖子模块；设计可换，API 用 Cyber* 前缀
 
-P2.3  硬件设置持久化（整机重启）✅
-    ├─ 动机：P2.1 多数偏好已写 `/var/lib/hmi/*`，但重启后栈/接口未自动恢复
-    ├─ boot 钩子（systemd oneshot / display-init 后）：按持久化偏好恢复 Wi‑Fi / eth0 / 代理 / 背光 / 旋转 / BT A2DP 等
-    ├─ 统一路径与 schema 文档化；Demo Apply 与 boot 复用同一 restore 脚本
-    └─ 验收：断电/reboot 后无需再进 Demo 即可恢复上次硬件配置
+P3.1  Rust HAL（子模块/子包，与现网并行）🔲
+    ├─ hal/：hald + crates；boards/ynh960 profile
+    ├─ Dart 薄客户端；Demo 按能力从 Linux*Controller 切到 HAL
+    ├─ 事件优先（netlink / D-Bus / inotify…）；shell persist 共存至 cutover
+    └─ 设计：openspec/changes/rust-hal-and-phase-realign/design.md
 
-P2.4  A/B 双分区 + 远程升级（`make upgrade`）✅
-    ├─ `parameter` / GPT：**boot/boot_b + rootfs_a/rootfs_b** 成对双槽（见 `docs/storage-layout.md`）；misc 字母槽标记与回滚
-    ├─ 全系统包：至少 **`boot.img`（内核 FIT）+ `rootfs.img`**；可选 oem；**不**远程写 U-Boot/MiniLoader、**不**改 GPT
-    ├─ 板端：写 inactive 字母的 boot+rootfs → 校验 → try-boot → reboot → 确认/回滚（**不进 loader**）
-    ├─ 主机：`make upgrade` 经 USB-SSH 或 `make connect` LAN 推送固件包并触发（能力接近 `make flash` 的可更新部分）
-    ├─ App 单独迭代：继续使用 `make push-app`，不进入 A/B 固件升级协议
-    └─ **不做** 产品 OTA UI / 云端升级编排（属 **P5.8**，复用本阶段槽位与脚本）
+P3.2  Linux 模拟器 🔲
+    ├─ UTM + Weston (Wayland) + flutter-embedded-linux + HAL
+    ├─ sim/host board pack；可连下位机（Modbus 等）
+    └─ 量产显示栈仍为设备侧 flutter-pi + DRM
 
-P2.5  模拟器与 Android 兼容 🔲
-    ├─ make emulator：构建并启动 Linux 虚拟机，加载 rootfs.img 跑 Linux App
-    ├─ make android-emulator：参考 lws-ui make emulator 启动 Android 模拟器
-    ├─ Modbus：Android 串口 chmod 后仍用 flutter_libserialport
-    ├─ GPIO：**同一套** `gpio_innohi` 文件后端（Android 有 `/sys/class/gpio_innohi` 则直写）；YNHAPI `setGpioState` 仅作降级（入参用 `YNHAPI.GPIO_N`，勿裸写 4/3/6）
-    ├─ Flutter App 同时构建 Linux bundle 与 Android APK（系统应用 + platform 签名）
-    ├─ make build-apk / push-apk；make version / version-bump；make set-prop / del-prop
-    └─ make push-app / make debug-app 兼容 Linux 虚拟机与实体板
+P3.3  AI → libai.so 🔲（目标 ~2026-07-22）
+    ├─ 迁移 lensinspector；Linux aarch64 libai.so + RKNN
+    └─ 板端 smoke；业务叠框 UI 在 P4
 
-P3  AI → libai.so 🔲
-    ├─ 迁移 lensinspector（YOLO + 污点检测 + OpenCV + yaml-cpp）
-    ├─ Linux aarch64 交叉编译 libai.so；RKNN 模型（默认 rk3566）
-    └─ 板端 smoke：librknnrt + so 加载（业务叠框 UI 留 P5）
+P4  业务迁移（子阶段见 §1.2）🔲
+    ├─ 焊机 App 各页 + 告警 / 录像 / AI / 云 / OTA UI 等
+    └─ 依赖 CyberUI + HAL（设置/硬件页）
 
-P3.5  Flutter 平台升级（P4 前置，§6.4）🔲
-    ├─ 选定目标：flutter-pi + flutter-ci 已支持的 stable（如 3.41.x 一代）
-    ├─ 同步 bump：flutter-sdk / flutter-engine / flutter-pi 三件套 + prebuilt 重编
-    ├─ 宿主：fetch-flutter-sdk（macOS darwin / Linux linux）+ flutterpi_tool 对齐
-    ├─ 板端：meta-flutter 布局不变；engine 仍仅 /usr/lib（/opt/hmi 仅 libapp + assets）
-    └─ 验收：Hello World + P2 demo + P3 libai smoke + 启动 KPI（§14.2）回归
+P5.0  Android 兼容 🔲
+    ├─ Modbus / GPIO LED / Wi‑Fi / BT Android 后端
+    └─ APK；make build-apk / push-apk
 
-P4  FrostUI + IME（git 子模块）🔲
-    ├─ `packages/frost_ui` — FrostUI（§6.3：backdrop 默认 frozen；弹窗按需 liveWhileOpen）
-    ├─ `packages/frost_ime` — IME overlay + 字体（对齐 lws-ui `IME.md`）
-    └─ 主 App `pubspec` 依赖上述子模块；CI pin 版本
-
-P5  业务迁移（子阶段见 §1.2）🔲
-    ├─ P5.1 视频 + MediaMTX
-    ├─ P5.2 网络 UI + 状态栏
-    ├─ P5.3 AI FFI + 告警链路
-    ├─ P5.4 本地 HTTP + 数据层
-    ├─ P5.5 云 + 远程
-    ├─ P5.6 业务页面（对照 lws-ui 实装，openspec 作参考）
-    ├─ P5.7 量产收尾（录像、parity）
-    └─ P5.8 OTA（复用 P2.4 A/B + make upgrade；产品升级 UI / 两级更新）
+P5.1  Flutter Engine / SDK / flutter-pi 升级 🔲
+    ├─ 3.24 → 3.41 代；三件套 + prebuilt
+    └─ 回归：Hello World + Demo/HAL + CyberUI + 启动 KPI
 ```
 
-**依赖**：`P1 → P1.5 → P2 → P2.1 → P2.2 → P2.3 → P2.4 → P2.5 → P3` 建议顺序固定（**P2.2 / P2.3** 可与 P2.1 收尾并行筹备，但验收串在 P2.1 之后；**P2.4** 依赖稳定 rootfs/SSH 目标，宜在 P2.3 之后）；**P1.5** 先在真机打通调试模式与 IDE 插件；**P2** 验证 Modbus/GPIO；**P2.1** 把喇叭 / Wi‑Fi / BT / **以太网（RJ45）** / 触控 / **外接键盘** 等 **板级 I/O 先验证完**（避免硬件坑拖到 P5）；**P2.2** 补日期时间 Demo 抽象；**P2.3** 保证硬件偏好重启可恢复；**P2.4** 提前落地 A/B（**boot+rootfs**）与 `make upgrade`（免 loader，接近 flash 可更新部分）；**P2.5** 再补模拟器与 Android 双目标；**P3.5** 在 P3 板端 smoke 通过后、**P4 开工前**完成（FrostUI/IME 子模块常需更高 Dart/Flutter）；**P4** 可与 P3 并行筹备子模块仓库，但 **合并主 App 前须完成 P3.5**；**P5** 在 P1～P4 就绪后按 **§1.2** 分子阶段交付（**P5.1 视频** 为多数后续子阶段前置，且假定 **P2.1** 已通 eth0 RJ45；IPC 专链与 RTSP 在 **P5.1** 完成；**P5.8 OTA** 复用 **P2.4** 双分区与升级脚本，不再另建分区方案）。
+**依赖**：`P1 → P1.5 → P2 → P2.5` 已完成。其后 **P3.0（CyberUI）与 P3.1（HAL）可并行**；**P3.2** 需要可用的 HAL 客户端/stub；**P3.3** 可与 UI/HAL 并行；**P4** 宜在 CyberUI + 关键 HAL 能力就绪后开业务页；**P5.0** 在 Linux App 形态稳定后；**P5.1** 可在 CyberUI/IME 需要新 Dart 时提前，否则在 P4 中后期集中升级。
 
-### 1.2 P5 子阶段（业务迁移）
+### 1.2 P4 子阶段（业务迁移）
 
-P5 体量大，拆为 **P5.1～P5.8** 增量交付。**不能**仅按 `openspec/specs/`* 列清单——openspec 记录不完整，且可能与当前 Android 实装不同步；**以 lws-ui 实际产品行为与源码为准**（§11.7），openspec 作交互细则与验收**补充**。
+P4 体量大，拆为 **P4.1～P4.8** 增量交付（编号承接原文档 P5.1～P5.8）。**不能**仅按 `openspec/specs/`* 列清单——以 lws-ui 实际产品行为与源码为准（§11.7），openspec 作补充。
 
 
-| 子阶段                   | 交付                                                                                                                                         | 主要对照（lws-ui **实装**）                                                                                                                         | 不在本阶段                                               |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| **P5.1 视频与 MediaMTX** | IPC 专链配址（`configure-camera-eth0.sh`）+ ping 相机；mediamtx、GStreamer/MPP、flutter-pi video；PR0/PR1 relay 与预览 smoke；`model.properties` / YAML 渲染 | `CameraEth0Configurator`、`MediaMtxRelayCoordinator`、`MediaMtxConfigRenderer`；`docs/dual-stream-summary.md`                                  | 完整 Monitor UI、AI 叠框；**eth0 RJ45 物理链路**（已在 **P2.1**） |
-| **P5.2 网络与状态栏**       | §7.0 异步配网编排 + **状态栏**；Wi‑Fi / 蓝牙**设置页**（产品 UI）；日期/时间设置页复用 **P2.2** `DateTimeController`                                                                                             | `WifiActivity`、`BluetoothManagerActivity`；复用 **P2.1** 已验证的 wpa/BlueZ / eth0 RJ45                                                            | 云 WS、:5580 业务 API；**驱动/出声/关联 AP 本身**（已在 **P2.1**）   |
-| **P5.3 AI 产品接入**      | `libai.so` FFI；PR1 取流 + 预览叠框；镜片/零点/告警与 native 契约                                                                                           | `AiManager`、`NativeBridge`；`docs/AI_VISION_`*、`native/lensinspector/docs/*`                                                                 | 全量 Quick/Engineer 页                                 |
-| **P5.4 本地 HTTP 与数据**  | **:5580** `shelf`；sqlite / 工艺库；Avahi；Modbus **量产**逻辑（扩 P2 demo）                                                                            | NanoHTTPd 路由、`network-api-reference.md`；Room / 工艺库 XLSX                                                                                     | 云上传；OTA UI（**P5.8**）                                |
-| **P5.5 云与远程**         | WebSocket；R2/S3 上传；远程锁/快照/视频列表等                                                                                                            | `docs/device-websocket-migration.md`、`docs/upload-summary.md`                                                                               | 全部 Settings 子页；OTA 业务编排（**P5.8**）                   |
-| **P5.6 业务页面**         | 首页、Quick Mode、Engineer、Monitor、Settings、告警/安全提示等 **按实装逐项**                                                                                 | `MainActivity`、`QuickModeActivity`、`EngineerModeActivity`、`DeviceMonitoringActivity`、`DeviceSettingActivity` 等；相关 `docs/*.md` + 可选 openspec | 一次性「全 spec 勾选」                                      |
-| **P5.7 量产收尾**         | PR0 录像；**§7.7 产品隐藏入口**（5 连击 / `POST /v1/ssh`，复用 P2.1 已有 `enable-ssh-debug.sh`）；**§11.5 全量 parity**；产品线跨 SKU smoke（可选）                      | 录像与量产验收项                                                                                                                                    | 按 SKU 拆固件；OTA 产品交付放 **P5.8**                        |
-| **P5.8 OTA**          | 产品 OTA：**两级更新**（仅 app / 全系统）；复用 **P2.4** A/B 槽位与板端升级脚本；云/本地触发与 UI；Android 兼容继续 `build-apk` / `push-apk`                                         | `UpgradeActivity`；`docs/ota-upgrade-flow.md`；`docs/storage-layout.md`                                                                       | 新业务页；**不重做** 双分区（已在 **P2.4**）                       |
+| 子阶段 | 交付 | 主要对照（lws-ui **实装**） | 不在本阶段 |
+| ----- | ---- | ------------------------ | -------- |
+| **P4.1 视频与 MediaMTX** | IPC 专链配址 + ping 相机；mediamtx、GStreamer/MPP、预览 smoke | `CameraEth0Configurator`、`MediaMtxRelayCoordinator` 等 | 完整 Monitor UI、AI 叠框；eth0 物理链路（已在 **P2**） |
+| **P4.2 网络与状态栏** | 异步配网 + 状态栏；Wi‑Fi / 蓝牙设置页；日期时间页复用 P2 `DateTimeController` / HAL | `WifiActivity`、`BluetoothManagerActivity` | 驱动/出声本身（已在 **P2**） |
+| **P4.3 AI 产品接入** | `libai.so` FFI；PR1 取流 + 叠框；告警契约 | `AiManager`、`NativeBridge` | 全量 Quick/Engineer 页 |
+| **P4.4 本地 HTTP 与数据** | `:5580` shelf；sqlite / 工艺库；Avahi；Modbus 量产逻辑 | NanoHTTPd 路由；Room / 工艺库 | 云上传；OTA UI（**P4.8**） |
+| **P4.5 云与远程** | WebSocket；R2/S3；远程锁/快照等 | device-websocket / upload docs | OTA 业务编排（**P4.8**） |
+| **P4.6 业务页面** | 首页、Quick、Engineer、Monitor、Settings、告警等 | 各 Activity + docs | 一次性全 spec 勾选 |
+| **P4.7 量产收尾** | PR0 录像；产品隐藏 SSH 入口；parity；可选跨 SKU smoke | 录像与量产项 | 按 SKU 拆固件；OTA 放 **P4.8** |
+| **P4.8 OTA** | 两级更新（仅 app / 全系统）；复用 **P2.5** A/B + `make upgrade`；云/本地 UI | `UpgradeActivity`；storage-layout | **不重做** 双分区 |
 
 
 **建议依赖**（可并行处标注）：
 
 ```text
-P2.1 ──→ P5.1（eth0 RJ45 已通，再上 IPC 专链配址 + MediaMTX + 预览）
-P2.1 ──→ P5.2（wpa / BlueZ / eth0 链路已通，再上设置页与状态栏）
-P2.2 ──→ P5.2（日期/时间 controller 复用）
-P2.3 ──→ P5.2（重启可恢复的网络/显示偏好）
-P2.4 ──→ P5.8（A/B + make upgrade 已通，再上产品 OTA UI / 云编排）
-P5.1 ──→ P5.3（AI 需 relay 取流）
-P5.1 ──→ P5.6 中依赖预览的页面
-P5.2 ──↗（与 P5.1 可并行启动；Monitor/云前需 eth0/wlan0 就绪）
-P5.3 + P5.4 ──→ P5.5（云常依赖本地 API / 数据层）
-P5.1～P5.5 ──→ P5.6（页面可分批，但开工前须有实装 inventory）
-P5.* ──→ P5.7
-P2.4 + P5.7 ──→ P5.8（量产收尾后交付 OTA；可与 P5.7 后期并行）
+P2    ──→ P4.1（eth0 RJ45 已通，再上 IPC 专链 + MediaMTX）
+P2    ──→ P4.2（wpa / BlueZ / eth0 已通）
+P2.5  ──→ P4.8（A/B + make upgrade）
+P3.0  ──→ P4.*（CyberUI）
+P3.1  ──→ P4.2（设置/硬件优先走 HAL）
+P3.3  ──→ P4.3（libai.so）
+P4.1  ──→ P4.3（AI 需 relay）
+P4.1～P4.5 ──→ P4.6
+P4.*  ──→ P4.7
+P2.5 + P4.7 ──→ P4.8
 ```
 
-### 1.3 P2.4 — A/B 双分区与 `make upgrade`
+### 1.3 P2.5 — A/B 双分区与 `make upgrade`
 
 
 | 交付 | 主要对照 | 不在本阶段 |
 | ---- | -------- | ---------- |
-| Linux：**A/B `boot` + `rootfs` 成对双槽**（`boot`/`boot_b`、`rootfs_a`/`rootfs_b`；见 `docs/storage-layout.md`） | 字母槽 = 配套 FIT + rootfs；misc try-boot / 回滚；厂商 U-Boot 始终加载 `boot` | 产品 OTA UI、云端下载编排（**P5.8**） |
-| 主机：`**make upgrade**` 经 **USB-SSH / LAN SSH** 推送**全系统固件包**（至少 **kernel/`boot.img` + rootfs**，可选 oem），写 inactive 字母、切换、重启 | 对齐 `push-app` / `device-shell` 目标发现；**能力接近 `make flash` 的可更新部分** | 进 bootloader；远程写 **U-Boot / MiniLoader**；改 **GPT/`parameter`**（仍用 `make flash`；**flash = 设置全清**） |
-| 板端：校验、**boot+rootfs 原子切换**、失败回滚到上一字母；**不碰 userdata / P2.3 偏好** | — | Android 全系统 OTA 重构 |
-| App 单独迭代继续使用 `make push-app` | 不进入 A/B 固件升级协议 | 产品 OTA UI / 云编排（**P5.8**） |
+| Linux：**A/B `boot` + `rootfs` 成对双槽**（见 `docs/storage-layout.md`） | 字母槽 = 配套 FIT + rootfs；misc try-boot / 回滚 | 产品 OTA UI、云端编排（**P4.8**） |
+| 主机：`**make upgrade**` 经 **USB-SSH / LAN SSH** 推送全系统包（至少 **boot.img + rootfs**） | 接近 `make flash` 的可更新部分；**不进 bootloader** | 远程写 U-Boot/MiniLoader；改 GPT（仍用 `make flash`） |
+| 板端：校验、原子切换、失败回滚；**不碰 userdata / 硬件偏好** | — | Android 全系统 OTA 重构 |
+| App 迭代继续 `make push-app` | 不进入 A/B 固件升级协议 | 产品 OTA UI（**P4.8**） |
 
+### 1.4 旧阶段号 / 命名映射
+
+| 旧称呼 | 新称呼 |
+| ------ | ------ |
+| P2 + P2.1 + P2.2 + P2.3 | **P2**（硬件设施准备，已完成） |
+| P2.4 A/B | **P2.5** |
+| P2.5 模拟器 + Android | 拆为 **P3.2**（Linux 模拟器）与 **P5.0**（Android） |
+| P3 `libai.so` | **P3.3** |
+| P3.5 Engine 升级 | **P5.1** |
+| P4 FrostUI + IME | **P3.0 CyberUI + CyberIME** |
+| P5 / P5.1～P5.8 业务 | **P4 / P4.1～P4.8** |
+| FrostUI | **CyberUI**（初期仍 Frosted Glass Design） |
+
+**层级约定（摘要）**：Product App → CyberUI → `HalClient` → Rust HAL → board/screen pack → 内核/BlueZ/sysfs。命名用系统服务风格（`NetworkManager` / `NetworkDevice`、`AudioManager`、`TimeService`、`Capabilities`…）；能力可选；网络 role→iface；产品三色灯不进 HAL。详见 [`design.md`](../openspec/changes/rust-hal-and-phase-realign/design.md) **D9–D12**。
 
 ---
 
@@ -180,7 +157,26 @@ P2.4 + P5.7 ──→ P5.8（量产收尾后交付 OTA；可与 P5.7 后期并�
 
 ```mermaid
 flowchart TB
-  subgraph hw [硬件 — ynh960/962/961 产品线]
+  subgraph apps [产品 App — 可分叉]
+    AppA[当前焊机 HMI]
+    AppB[下一代产品 UI]
+  end
+  subgraph ui [共用]
+    CyberUI[CyberUI + CyberIME]
+    HalClient[Dart HAL client]
+  end
+  subgraph hal [共用 OS HAL — P3.1]
+    Hald[Rust hald / libhal]
+    Pack[Board + Screen pack]
+  end
+  AppA --> CyberUI
+  AppB --> CyberUI
+  AppA --> HalClient
+  AppB --> HalClient
+  CyberUI --> HalClient
+  HalClient --> Hald
+  Hald --> Pack
+  subgraph hw [硬件 — ynh960 基准；未来多主板]
     IPC[IPC 192.168.1.100]
     ETH[eth0 直连 IPC]
     WIFI[wlan0 客户 Wi‑Fi]
@@ -193,14 +189,18 @@ flowchart TB
     PR1["/PR1 子流"]
   end
 
-  subgraph svc [系统服务 P5 起]
+  Pack -.-> WIFI
+  Pack -.-> BT
+  Pack -.-> LCD
+
+  subgraph svc [系统服务 P4 起]
     MTX[MediaMTX :8554]
   end
 
   subgraph consumers [多消费端 — 只连 MediaMTX]
-    FP[flutter-pi 预览 P5]
-    REC[录像 P5]
-    AI[P3 libai.so / P5 FFI UI]
+    FP[flutter-pi 预览 P4]
+    REC[录像 P4]
+    AI[P3.3 libai.so / P4 FFI UI]
     LAN[Wi‑Fi 客户端 ffplay/VLC]
   end
 
@@ -309,7 +309,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 | Avahi / sqlite    | `build-platform-packages`                                                                               |
 
 
-**仍按阶段交付的是 App/功能**：FrostUI、业务页、FFI 叠框（**P5**）、OTA 业务（**P5.8**，底层 A/B 在 **P2.4**）等（非 rootfs 包名）。
+**仍按阶段交付的是 App/功能**：CyberUI、业务页、FFI 叠框（**P4**）、OTA 业务（**P4.8**，底层 A/B 在 **P2.5**）、**Rust HAL（P3.1）** 等（非 rootfs 包名）。
 
 ### 3.3 Buildroot — **保留**
 
@@ -334,7 +334,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 
 | 组件                             | P1     | P2    | P2.1  | P3    | P4  | P5    | 说明                                                                                       |
 | ------------------------------ | ------ | ----- | ----- | ----- | --- | ----- | ---------------------------------------------------------------------------------------- |
-| **flutter-pi** + Mali/libdrm   | ✓      |       |       |       |     |       | P1 Hello World；**P3.5** engine/SDK/pi 三件套升级                                              |
+| **flutter-pi** + Mali/libdrm   | ✓      |       |       |       |     |       | P1 Hello World；**P5.1** engine/SDK/pi 三件套升级                                              |
 | **RKNPU2 运行时**（无 example）      | ✓      |       |       | ✓     |     |       | P1 编入 rootfs；P3 用                                                                        |
 | **wifibt** 栈                   | ✓      |       | ✓ use |       |     | ✓ UI  | 驱动/daemon；**P2.1** 关联/可发现 smoke；**P2.3** 重启 restore；**P5.2** 设置页                      |
 | **本机音频 / 喇叭**                  |        |       | ✓     |       |     | ✓     | **P2.1**：ALSA + codec 出声；P5 业务提示音/媒体                                                     |
@@ -645,9 +645,9 @@ VSCode / Cursor Flutter 插件应能选择 lws-hmi 自定义设备，并通过 `
 
 **P2.5** 再增加 `**make emulator`**（Linux HMI 模拟器）与 `**make android-emulator**`（参考 lws-ui `make emulator`）：构建并启动 Linux 虚拟机，加载 `rootfs.img` 并运行 Linux App；`make push-app` 与 `make debug-app` 届时同时支持实体板 USB-SSH 与该 Linux VM。
 
-### 6.3 Frost 渲染分场景策略（backdrop blur）
+### 6.3 CyberUI 渲染分场景策略（backdrop blur）
 
-P4 移植 lws-ui **FrostUI** 时，毛玻璃 **默认不用 live blur**；仅在组件/弹窗 **显式开启** 时，弹窗存续期间对下层 **动图** 做实时采样模糊。RK356x 家族 **共用同一 API**，**不按板级 SKU 分叉**（当前仅实现/验收 ynh960）。
+**P3.0** 引入 **CyberUI**（初期实现 lws-ui **Frosted Glass** 设计；未来可换外观，类似 SwiftUI 换设计语言而保留结构 API）。毛玻璃 **默认不用 live blur**；仅在组件/弹窗 **显式开启** 时，弹窗存续期间对下层 **动图** 做实时采样模糊。产品页依赖 **Cyber\*** 组件名，不依赖 `Frost*` 作为长期公开 API。RK356x 家族 **共用同一 API**，**不按板级 SKU 分叉**（当前仅实现/验收 ynh960）。
 
 #### 6.3.1 设计原则
 
@@ -661,40 +661,40 @@ P4 移植 lws-ui **FrostUI** 时，毛玻璃 **默认不用 live blur**；仅在
 | **降级**       | live 初始化失败或 profile 掉帧 → **半透明渐变 + 边框**（fake glass），禁止回退 CPU 全屏 stack blur                                             |
 
 
-#### 6.3.2 API 草图（P4 Flutter）
+#### 6.3.2 API 草图（P3.0 Flutter / CyberUI）
 
 ```dart
-/// 默认 [FrostBackdropBlurMode.frozen]；仅少数 modal 按需传 [liveWhileOpen]。
-enum FrostBackdropBlurMode {
+/// 默认 [CyberBackdropBlurMode.frozen]；仅少数 modal 按需传 [liveWhileOpen]。
+enum CyberBackdropBlurMode {
   /// 布局稳定后 capture → blur → 冻结（默认）
   frozen,
   /// 弹窗可见期间每帧更新 backdrop blur（仅小面积、少块数）
   liveWhileOpen,
 }
 
-class FrostCard extends StatelessWidget {
-  const FrostCard({
-    this.backdropBlurMode = FrostBackdropBlurMode.frozen,
-    this.blurIntensity = FrostBlurIntensity.low,
+class CyberCard extends StatelessWidget {
+  const CyberCard({
+    this.backdropBlurMode = CyberBackdropBlurMode.frozen,
+    this.blurIntensity = CyberBlurIntensity.low,
     // ...
   });
 }
 
-Future<T?> showFrostDialog<T>({
+Future<T?> showCyberDialog<T>({
   required BuildContext context,
-  FrostBackdropBlurMode backdropBlurMode = FrostBackdropBlurMode.frozen,
+  CyberBackdropBlurMode backdropBlurMode = CyberBackdropBlurMode.frozen,
   // ...
 });
 
-class FrostModal extends StatelessWidget {
-  const FrostModal({
-    this.backdropBlurMode = FrostBackdropBlurMode.frozen,
+class CyberModal extends StatelessWidget {
+  const CyberModal({
+    this.backdropBlurMode = CyberBackdropBlurMode.frozen,
     // ...
   });
 }
 ```
 
-**命名约定**：文档与代码统一用 `backdropBlurMode`（或等价 `liveBackdropBlur: bool`，默认 `false`）；**禁止**在业务页散落裸 `BackdropFilter` 而不走 Frost 组件。
+**命名约定**：公开 API 用 `Cyber*`；内部可保留 Frosted Glass renderer。统一用 `backdropBlurMode`（或等价 `liveBackdropBlur: bool`，默认 `false`）；**禁止**在业务页散落裸 `BackdropFilter` 而不走 CyberUI 组件。
 
 #### 6.3.3 何时开启 `liveWhileOpen`（少数）
 
@@ -800,12 +800,12 @@ RestartSec=3
 
 Flutter 侧重试：`127.0.0.1:8554` 未就绪时首页仍显示；预览区与状态栏展示「连接中」（§7.0）。
 
-### 6.5 Flutter Engine 版本策略与升级（**P3.5**）
+### 6.5 Flutter Engine 版本策略与升级（**P5.1**）
 
 **P1～P3 不升级**：板端与宿主均 pin **同一套** Flutter 三件套，保证 AOT `libapp.so` 与 rootfs `libflutter_engine.so` 严格匹配。
 
 
-| 项              | P1～P3（当前）                                                                                                     | P3.5 目标                                                                                                                                                  |
+| 项              | P1～P3.3（当前 pin）                                                                                               | P5.1 目标                                                                                                                                                  |
 | -------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Flutter SDK    | **3.24.4**（`overlay/buildroot/flutter-sdk.version`）                                                           | 上游 [flutter-pi](https://github.com/ardera/flutter-pi) / [flutter-ci](https://github.com/ardera/flutter-ci) **已支持的 stable**（升级时按当时 stable 选定，如 3.41.x 一代） |
 | flutter-engine | 同 SDK 版本；prebuilt `prebuilt/flutter-engine/<ver>/`                                                            | 与 SDK **同版本**；`make build-flutter-engine` 或团队 NAS 缓存                                                                                                     |
@@ -816,9 +816,9 @@ Flutter 侧重试：`127.0.0.1:8554` 未就绪时首页仍显示；预览区与�
 
 **为何 P1 不跟 host PATH 上的新 Flutter**：flutter-pi 在 **RK356x Mali** 上无树莓派级官方认证；P1 已在 ynh960 验收 **3.24.4 + 37bd977** 与启动 KPI。宿主 `flutter` 3.41.x 与板端 3.24.4 engine **AOT 不兼容** → splash 卡住、`flutter-pi` 秒退（`Invalid kernel binary` / 无 journal 错误）。
 
-**升级时机**：**P3 `libai.so` 板端 smoke 通过后、P4 FrostUI 子模块合入前**（§1.1）。FrostUI / IME 与较新 Dart 约束通常在 P4 需要；在 P4 前集中升级，避免 P2/P3 与平台迁移并行。
+**升级时机（P5.1）**：默认可在 **P4 业务中后期** 或当 **CyberUI/IME 需要更高 Dart** 时提前；不必阻塞 P3.0 用当前 3.24 起步的原型。与 **P3.3 libai** 无强绑定。
 
-**P3.5 迁移清单**（OpenSpec / 实施时勾选）：
+**P5.1 迁移清单**（OpenSpec / 实施时勾选）：
 
 1. **选型**：查 flutter-pi release / flutter-ci engine 标签，确定目标 Flutter **x.y.z** 与 flutter-pi **commit**。
 2. **版本文件**：`flutter-sdk.version`、`flutter-engine.version`、`flutter-pi.version` 同步 bump。
@@ -828,7 +828,7 @@ Flutter 侧重试：`127.0.0.1:8554` 未就绪时首页仍显示；预览区与�
 6. **板端回归**：`diagnose-hmi`、`verify-env`；Hello World → P2 demo → P3 `libai` smoke；**§14.2** 启动 KPI；Mali 首帧 / splash handoff。
 7. **文档**：更新 `app/README.md`、`prebuilt/manifest.json`；CI 拒绝错误 Flutter 版本。
 
-**不在 P3.5 范围**：Impeller/Vulkan 开关实验、按 SKU 拆 engine、仅 OTA `libapp.so` 而不同步 rootfs engine（仍禁止）。
+**不在 P5.1 范围**：Impeller/Vulkan 开关实验、按 SKU 拆 engine、仅 OTA `libapp.so` 而不同步 rootfs engine（仍禁止）。
 
 ---
 
@@ -1181,7 +1181,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | GPU            | 使用 **Mali** 而非 Mesa VC4；Buildroot 选 `BR2_PACKAGE_ROCKCHIP_MALI`                                                                          |
 | 编译             | 在 Buildroot 添加 `flutter-pi` package，或 SDK 外挂 `external/`                                                                                 |
-| Flutter Engine | **P1～P3** pin **3.24.4**（与 SDK、flutter-pi commit 对齐）；**P3.5** 升至上游 supported stable（§6.5）；`libapp.so` 与 `libflutter_engine.so` **必须同版本** |
+| Flutter Engine | **P1～P3.x** pin **3.24.4**（与 SDK、flutter-pi commit 对齐）；**P5.1** 升至上游 supported stable（§6.5）；`libapp.so` 与 `libflutter_engine.so` **必须同版本** |
 | 触摸             | libinput；**P2.1** 与各板 DTS input 节点、旋转/坐标映射一并验收（P2 期间已见 Goodix 等问题）                                                                       |
 | 外接键盘           | 独立 USB **host** 口 + HID + libinput；**P2.1** 真机 smoke（OTG 口仍为 plug-ssh）                                                                   |
 | 外接鼠标           | 同 host + 可见指针 + `mouse.conf`；**P2.1** 真机 smoke                                                                                          |
@@ -1194,7 +1194,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 
 ## 10. 与当前 lws-hmi 仓库的映射
 
-**可复用 Dart/Flutter 包**以 **git submodule** 形式放在 `**packages/`** 目录下（P4 起：`frost_ui`、`frost_ime` 等）。
+**可复用 Dart/Flutter 包**以 **git submodule** 形式放在 `**packages/`** 目录下（P3.0：`cyber_ui`、`cyber_ime`；HAL Dart client 可同级或随 `hal/`）。Rust HAL 在 `**hal/**`（子模块或子包，P3.1）。
 
 
 | 已有                                                                         | 规划用途                                                                                                                |
@@ -1210,7 +1210,9 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **待增** `buildroot/package/flutter-pi/` 或 external                          | flutter-pi 打包                                                                                                       |
 | **待增** `native/` 或独立 repo                                                  | **P3** `libai.so`（对齐 `lws-ui/native/lensinspector`）                                                                 |
 | **待增** `app/` 或独立 repo                                                     | Flutter 工程（P1 Hello World → P2 demo → P2.1 I/O smoke 辅助 → P5 业务）                                                    |
-| **待增** `packages/frost_ui/`（**git submodule**）                             | **P4** FrostUI（§6.3）                                                                                                |
+| **待增** `packages/cyber_ui/`（**git submodule**）                             | **P3.0** CyberUI（§6.3；初期 Frosted Glass）                                                                              |
+| **待增** `packages/cyber_ime/`（**git submodule**）                            | **P3.0** CyberIME                                                                                                      |
+| **待增** `hal/`（**git submodule / 子包**）                                    | **P3.1** Rust HAL + ynh960 board profile                                                                               |
 | **待增** `packages/frost_ime/`（**git submodule**）                            | **P4** IME（对齐 lws-ui `IME.md`）                                                                                      |
 | **待增** `buildroot/configs/rockchip/chips/lws_hmi_mediamtx.config`          | **P5** mediamtx 二进制                                                                                                 |
 | **已有** `overlay/.../rootfs-overlay/etc/systemd/system/hmi.service`     | P1 enable（§3.6.4）                                                                                                   |
@@ -1328,7 +1330,8 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | **P2.4** | A/B **boot+rootfs** + `make upgrade`（SSH 远程，免 loader；含内核） | 系统升级底层（接近 flash 可更新部分）；对应 lws-ui OTA 槽位/刷写（无产品 UI）                                                                      |
 | **P2.5** | Linux + Android 双目标；`emulator` / `android-emulator`；APK 构建与推送    | Modbus 串口 chmod；GPIO **共用** `gpio_innohi` 后端（YNHAPI GPIO 降级）；其它平台 API 可对照 `YNHAPI.jar` / `LedIndicatorManager`；版本号与 APK 签名 |
 | **P3**   | `libai.so` + RKNN/`config.yaml`                                  | `NativeBridge` / `lensinspector` / `AiManager`（原生层）                                                                        |
-| **P4**   | `**frost_ui` + `frost_ime`** 子模块                                 | FrostUI、`IME.md` / frostui specs                                                                                           |
+| **P3.0** | `**cyber_ui` + `cyber_ime`** 子模块 | CyberUI（Frosted Glass）、`IME.md` |
+| **P3.1** | `**hal/**` Rust + Dart client | Platform API / board pack |
 | **P5**   | 视频、网络 UI、云、:5580、**lws-ui 实装业务**；**P5.8 OTA**（复用 P2.4）         | EasyPlayer、MediaMTX 协调器、Room、NanoHTTPd、各 Activity；`UpgradeActivity`                                                           |
 
 
@@ -1353,8 +1356,8 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 | lws-ui 能力                      | lws-hmi 等价                                                                                                                | 阶段                                           | 核对       |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | -------- |
-| FrostUI / 全业务 HMI              | Flutter UI（对照 lws-ui Activity/Fragment **实装**；openspec 作补充，§11.7）                                                         | **P5.6** 为主                                  | ✓        |
-| Frost 毛玻璃 / backdrop blur      | `**FrostCard` / `FrostDialog` / `FrostModal`**（`**packages/frost_ui**`）；默认 **frozen**；盖首页动图弹窗按需 `**liveWhileOpen`**（§6.3） | **P4**                                       | ✓        |
+| FrostUI / 全业务 HMI              | Flutter UI（对照 lws-ui；**CyberUI**）；openspec 作补充，§11.7                                                         | **P4.6** 为主                                  | ✓        |
+| CyberUI 毛玻璃 / backdrop blur | `**CyberCard` / `CyberDialog` / `CyberModal`**（`**packages/cyber_ui**`）；默认 **frozen**；盖首页动图弹窗按需 `**liveWhileOpen`**（§6.3） | **P3.0** | ✓ |
 | **IME** 软键盘 overlay            | `**packages/frost_ime`**（对齐 lws-ui `IME.md`）                                                                              | **P4**                                       | ✓        |
 | 显示 / MIPI 旋转 + **boot splash** | flutter-pi DRM + LCD overlay + **U-Boot/内核 logo**（§5.2）                                                                   | **P1**                                       | ✓        |
 | eth0 直连 IPC、`/PR0` `/PR1`      | 同拓扑 + `probe-dual-stream.sh`                                                                                              | **P2.1** RJ45 link / **P5.1** 专链 + relay     | ✓ §7.4   |
@@ -1417,7 +1420,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | **PNG 位图**      | 拷贝到 Flutter assets 前，优先转换为 **WebP**；照片/背景类用有损 WebP，透明 UI 贴图用无损 WebP 或确认视觉后有损 WebP |
 | **多 dpi 资源**    | Android `drawable-*dpi` 同图多份时，只保留 Flutter 实际需要的 1 份或按目标屏幕保留少量规格，避免全量复制            |
 | **未使用资源**       | 每迁移一个页面/Manager，只带入该页面实际引用的图片、动画、字体；阶段完成后跑一次 assets inventory 清理孤儿文件              |
-| **简单图标 / 纯色形状** | 优先改为 Flutter `Icon`、矢量 SVG、代码绘制或 FrostUI 组件样式，避免为小图标打包大位图                         |
+| **简单图标 / 纯色形状** | 优先改为 Flutter `Icon`、矢量 SVG、代码绘制或 CyberUI 组件样式，避免为小图标打包大位图                         |
 | **字体**          | 仅打包业务实际使用字体；中文字体若必须内置，优先做子集化或沿用系统字体，避免整包字体重复进 App                                 |
 | **大背景 / 动画**    | 背景图按 ynh960 目标分辨率预缩放；动画优先降帧、压缩或改静态/程序化效果，避免把 Android 原始大图逐帧复制进 App                |
 
@@ -1544,9 +1547,9 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
   - **`make flash`（产线全量）** → **必须清除**（工厂重置；实现待补 wipe，见 storage-layout）
 - 验收：配置一次 → `reboot` → 无需触屏即可恢复网络/显示等；`restart hmi` / `make push-app` 不断 Wi‑Fi；失败有 journal 可诊断
 
-### P2.4 — A/B 双分区 + `make upgrade` ✅
+### P2.5 — A/B 双分区 + `make upgrade` ✅
 
-**动机**：日常迭代与产线外升级不应依赖进 bootloader 的 `make flash`；远程升级须**尽量覆盖 flash 能更新的运行时固件**（含 **内核**），产品 OTA（P5.8）复用本阶段槽位与脚本。
+**动机**：日常迭代与产线外升级不应依赖进 bootloader 的 `make flash`；远程升级须**尽量覆盖 flash 能更新的运行时固件**（含 **内核**），产品 OTA（P4.8）复用本阶段槽位与脚本。
 
 - `board/parameter-buildroot-fit.txt`：厂商 U-Boot 兼容的 **`boot`/`boot_b` + `rootfs_a`/`rootfs_b`** 成对双槽；U-Boot 固定加载 `boot`，板端通过备份/暂存 FIT 完成字母槽切换
 - **全系统包**：至少 **`boot.img`（内核 FIT）+ `rootfs.img`**（+ digest）；可选 oem；**不**经 SSH 写 U-Boot/MiniLoader、**不**改 GPT
@@ -1554,104 +1557,108 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - 主机：`make upgrade` 经 **USB-SSH** 或 `make connect` **LAN SSH** 推送并触发（复用 `device-target` / `ssh-devices`）
 - **userdata 不变**：升级 **不得** 格式化 userdata 或删除 `/userdata/lws-hmi`；与 **`make flash` 全量重置** 相对
 - App 单独迭代使用 `make push-app`；`make upgrade` 仅执行全系统（boot+rootfs）字母更新
-- **不做** Upgrade 业务页 / 云下载（**P5.8**）
+- **不做** Upgrade 业务页 / 云下载（**P4.8**）
 - 验收：SSH 可达时完成一次**含内核**的字母切换并正常启动 HMI；坏包不破坏当前字母；升级前后 Wi‑Fi 等偏好仍在 — 步骤见 [`docs/ab-upgrade-acceptance.md`](ab-upgrade-acceptance.md)
 - misc 布局：[`docs/ab-slot-misc.md`](ab-slot-misc.md)
 
-### P2.5 — 模拟器与 Android 兼容 🔲
+### P3.0 — CyberUI + CyberIME（git 子模块）🔲
 
-- `make emulator`：构建并启动 Linux 虚拟机，加载 `rootfs.img` 并运行 Linux App
-- `make android-emulator`：参考 lws-ui `make emulator` 启动 Android emulator
-- Flutter App 同时构建 Linux bundle 与 Android APK；Android 延续系统应用与 platform 签名
-- `make version` / `make version-bump`：延续 lws-ui 项目版本号规则
-- `make build-apk`；`make push-apk` = `adb push` + `adb shell pm install`（不安装到 `priv-app`）
-- Makefile / 脚本 `.env` 支持迁移；`make set-prop` / `make del-prop` 可用
-- `model.properties` key 兼容 lws-ui；Linux 存储目录确认并文档化（可能不同于 Android）
-- Modbus **Android 兼容**：串口 chmod 后仍用 `flutter_libserialport`
-- GPIO **Android**：优先同一套 `gpio_innohi` 文件后端；否则降级 `YNHAPI.GPIO_N`（从 lws-ui 拷贝 jar，仅垫片，§11.0）
-- `YNHAPI.jar`：状态栏/安装/以太网等非 GPIO 平台能力按需 MethodChannel 封装
-- `make push-app` / `make debug-app` 兼容 Linux 虚拟机与实体板
-- Android / Linux 双目标 smoke（GPIO 脚号表只有标签一套）
+- 创建 **cyber_ui** 仓库 → **packages/cyber_ui** submodule；实现 **§6.3**（`CyberCard` / `showCyberDialog` / `CyberModal`；默认 **frozen**；按需 **liveWhileOpen**；初期 Frosted Glass）
+- 创建 **cyber_ime** 仓库 → **packages/cyber_ime** submodule；IME overlay + 字体（对齐 lws-ui **IME.md**）
+- 主 App `pubspec` 依赖 **cyber_ui**、**cyber_ime**；CI pin 版本
+- **CyberUI 验收**：3566 frozen 全路径 + 至少 2 个 `liveWhileOpen` 用例
+- **IME 验收**：输入框 + 弹窗 + 键盘抬起/收起与 Cyber 弹窗无错位
 
-### P3 — AI 代码库 → libai.so 🔲
+### P3.1 — Rust HAL 🔲
+
+- 建立 `hal/`（或 submodule）Rust workspace：`hald` + api/core/linux crates
+- `boards/ynh960` profile（GPIO / Modbus tty / 默认旋转等）
+- Dart HAL 客户端；Demo 按能力从 `Linux*Controller` 迁移
+- 与 shell `/usr/libexec` + `/var/lib` persist 共存至 cutover
+- 设计与验收：`openspec/changes/rust-hal-and-phase-realign/`
+
+### P3.2 — Linux 模拟器 🔲
+
+- UTM + Weston + flutter-embedded-linux + HAL（sim/host pack）
+- 支持与下位机通讯（Modbus 等）
+- `make emulator`（或等价）文档化
+
+### P3.3 — AI 代码库 → libai.so 🔲（目标 ~2026-07-22）
 
 - 开发机 RKNN：`RKNN_PLATFORM=rk3566`（基准；3568/B2 模型可 OTA 另包）
 - 迁移 `**lensinspector` 全量** → Linux aarch64 `**libai.so`**
 - OpenCV / yaml-cpp 链入或 static；`config.yaml` + `.rknn` → `**/userdata/models/**`
 - 板端：`librknnrt.so` + `rknn_server` + **so 加载 smoke**（无需完整 Flutter 业务 UI）
-- 文档：FFI 接口约定（供 P5 接入）
+- 文档：FFI 接口约定（供 P4 接入）
 
-### P3.5 — Flutter 平台升级（P4 前置，§6.5）🔲
+### P4 — 业务迁移（§1.2 子阶段）🔲
 
-- 选定目标 Flutter stable + flutter-pi commit（flutter-ci engine 产物可用）
-- Bump `overlay/buildroot/flutter-{sdk,engine,pi}.version`；`make build-flutter-engine` / `build-flutter-pi`；`check-prebuilt`
-- 宿主：`make fetch-flutter-sdk` + `make build-app`（禁止 PATH 上非 pin 版本）
-- Rootfs：`apply-overlay` → `build-rootfs` → `build-img`；`verify-rootfs-overlay.sh`
-- 板端：Hello World + P2 demo + P3 libai smoke；启动 KPI §14.2；`diagnose-hmi` / `verify-env`
-- `/opt/hmi` 无 bundle engine；`/usr/lib/libflutter_engine.so` 与 AOT 同版本
+子阶段任务表见 **§1.2**；**P4.6 须按 lws-ui 实装建 inventory**（§11.7），勿仅扫 openspec。**P4.8 OTA** 复用 **P2.5**，不另建分区方案。
 
-### P4 — FrostUI + IME（git 子模块）🔲
+#### P4.1 — 视频与 MediaMTX
 
-- 创建 `**frost_ui`** 仓库 → `**packages/frost_ui**` submodule；实现 **§6.3**（`FrostCard` / `showFrostDialog` / `FrostModal`；默认 **frozen**；按需 **liveWhileOpen**）
-- 创建 `**frost_ime`** 仓库 → `**packages/frost_ime**` submodule；**IME** overlay + 字体（对齐 lws-ui `**IME.md`**）
-- 主 App `pubspec` 依赖 `**frost_ui**`、`**frost_ime**`；CI 对两子模块 pin 版本
-- **Frost 验收**：3566 frozen 全路径 + 至少 2 个 `liveWhileOpen` 用例
-- **IME 验收**：输入框 + 弹窗 + 键盘抬起/收起与 Frost 弹窗无错位（对齐 lws-ui 已修项）
-
-### P5 — 业务迁移（§1.2 子阶段）🔲
-
-子阶段任务表见 **§1.2**；**P5.6 须按 lws-ui 实装建 inventory**（§11.7），勿仅扫 openspec。**P5.8 OTA** 复用 **P2.4**，不另建分区方案。
-
-#### P5.1 — 视频与 MediaMTX
-
-- 移植并验证 `configure-camera-eth0.sh`；`ping -I eth0` 相机 IP（假定 **P2.1** eth0 RJ45 已通）
+- 移植并验证 `configure-camera-eth0.sh`；`ping -I eth0` 相机 IP（假定 **P2** eth0 RJ45 已通）
 - 对 IPC `/PR0` `/PR1` 做 RTSP DESCRIBE（可直连 IPC，或经本地 relay）
 - Buildroot：**mediamtx** + `lws_hmi_gst_rtsp.config` + MPP；`mediamtx.service`（默认 disable）
 - `/oem/etc/model.properties` + `render-mediamtx-config.sh`
 - upstream `/PR0`、`/PR1`；本机 `127.0.0.1:8554/camera/pr0|pr1`
 - flutter-pi **video** 插件；预览 smoke；`probe-dual-stream.sh`
 
-#### P5.2 — 网络与状态栏
+#### P4.2 — 网络与状态栏
 
-- 复用 **P5.1** 的 `configure-camera-eth0.sh`；首屏后异步编排（§7.0）；**P2.1** 已通 eth0 RJ45 / wpa / BlueZ；**P2.3** 重启可恢复偏好
+- 复用 **P4.1** 的 `configure-camera-eth0.sh`；首屏后异步编排（§7.0）；**P2** 已通 eth0 / wpa / BlueZ 与重启 restore
 - **状态栏**：Wi‑Fi / eth0 相机链 / 云占位图标与动画
-- **WifiActivity** / **BluetoothManagerActivity** 等价设置页（底层 wpa/BlueZ 已在 **P2.1** 验证）
-- 日期/时间设置页复用 **P2.2** `DateTimeController`（可补产品 NTP）
+- Wi‑Fi / 蓝牙设置页；硬件控制优先走 **HAL**（P3.1）
+- 日期/时间设置页复用 P2 `DateTimeController` / HAL
 
-#### P5.3 — AI 产品接入
+#### P4.3 — AI 产品接入
 
 - `**libai.so` FFI**；PR1 relay 取帧 + 预览 **CustomPainter** 叠框
-- 镜片/污点/零点/告警链路与 lws-ui `AiManager` 行为对齐（对照源码 + `docs/AI_VISION_`*）
+- 镜片/污点/零点/告警链路与 lws-ui `AiManager` 行为对齐
 
-#### P5.4 — 本地 HTTP 与数据
+#### P4.4 — 本地 HTTP 与数据
 
-- **:5580** Dart `shelf`（契约 `network-api-reference.md`）
-- **sqlite** + 工艺库；**Avahi** mDNS
-- Modbus **量产**轮询/寄存器（扩 P2 demo）
+- **:5580** Dart `shelf`；**sqlite** + 工艺库；**Avahi** mDNS
+- Modbus **量产**轮询/寄存器（扩 P2 demo / HAL）
 
-#### P5.5 — 云与远程
+#### P4.5 — 云与远程
 
-- 云 **WebSocket**；**R2** 上传；远程锁/快照/视频列表等（对照 `device-websocket-migration.md`）
+- 云 **WebSocket**；**R2** 上传；远程锁/快照/视频列表等
 
-#### P5.6 — 业务页面（实装驱动）
+#### P4.6 — 业务页面（实装驱动）
 
-- 维护 **页面/Manager inventory**（Activity 级 + 关键 Manager，§11.7）
-- 迁移页面资源时执行 **assets 瘦身**：PNG → WebP、清理未用资源、合并 dpi 重复图、字体子集化（§11.6.1）
-- 分批交付：**Main / Quick Mode / Engineer / Monitor / Settings / 告警与安全提示** …
-- 每项：实装行为 → Flutter 路由；openspec **有则对照**，无则不以 spec 代替实装
+- 维护 **页面/Manager inventory**（§11.7）
+- 迁移页面资源时 **assets 瘦身**（§11.6.1）
+- 分批交付：Main / Quick Mode / Engineer / Monitor / Settings / 告警 …
 
-#### P5.7 — 量产收尾
+#### P4.7 — 量产收尾
 
-- **PR0 录像**
-- `**sshd` 默认关** + §7.7 **产品隐藏调试**（复用 P2.1 `enable-ssh-debug.sh`）
-- 全量 **§11.5 parity**；ynh960 量产验收；**同一份镜像**在 ynh961/ynh962 上 smoke（可选）
+- **PR0 录像**；产品隐藏 SSH（复用 P2 `enable-ssh-debug.sh`）
+- 全量 **§11.5 parity**；可选 ynh961/ynh962 smoke
 
-#### P5.8 — OTA（复用 P2.4）🔲
+#### P4.8 — OTA（复用 P2.5）🔲
 
-- 产品 **两级更新**：仅更新 app（`/oem/hmi`）/ 更新整个系统（写 A/B inactive 槽）
-- **复用 P2.4**：A/B 布局、板端切换脚本、`make upgrade` SSH 链路；本阶段补 UI / 云或本地包源编排
-- Android：保持兼容；延续 **app 更新**（`build-apk` / `push-apk`）
+- 产品 **两级更新**：仅 app / 全系统
+- **复用 P2.5**：A/B、`make upgrade`；本阶段补 UI / 云或本地包源
+- Android：延续 `build-apk` / `push-apk`（与 **P5.0** 协同）
 - 对照 lws-ui `UpgradeActivity`、`docs/ota-upgrade-flow.md`
+
+### P5.0 — Android 兼容 🔲
+
+- Flutter App 同时构建 Linux bundle 与 Android APK；Android 延续系统应用与 platform 签名
+- `make version` / `make version-bump`；`make build-apk` / `make push-apk`
+- Modbus / GPIO LED / Wi‑Fi / BT **Android** 后端（GPIO 优先 `gpio_innohi`；YNHAPI 仅降级，§11.0）
+- `YNHAPI.jar`：非 GPIO 平台能力按需 MethodChannel
+- Android / Linux 双目标 smoke
+
+### P5.1 — Flutter 平台升级（§6.5）🔲
+
+- 选定目标 Flutter stable + flutter-pi commit（flutter-ci engine 产物可用）
+- Bump `overlay/buildroot/flutter-{sdk,engine,pi}.version`；`make build-flutter-engine` / `build-flutter-pi`；`check-prebuilt`
+- 宿主：`make fetch-flutter-sdk` + `make build-app`（禁止 PATH 上非 pin 版本）
+- Rootfs：`apply-overlay` → `build-rootfs` → `build-img`；`verify-rootfs-overlay.sh`
+- 板端：Hello World + Demo/HAL + CyberUI + libai smoke；启动 KPI §14.2
+- `/opt/hmi` 无 bundle engine；`/usr/lib/libflutter_engine.so` 与 AOT 同版本
 
 ---
 
@@ -1834,7 +1841,7 @@ After=hmi.service
 | ----------------- | -------------------------------------------------- |
 | 仅 **Release AOT** | 无 debug/trace；`--split-debug-info` 仅开发机            |
 | **首页零重插件**        | `main()` 不 `init` video_player、WebSocket、FFI/libai |
-| **懒加载 asset**     | 大字体/图片不进首帧路径；FrostUI 级 UI 按路由 deferred import      |
+| **懒加载 asset**     | 大字体/图片不进首帧路径；CyberUI 级 UI 按路由 deferred import      |
 | 减小 `app.so`       | tree-shake；避免首页依赖整包 `http`/数据库                     |
 | 首页 widget 树尽量浅    | 首屏占位 + 异步拉数据，重布局放 `addPostFrameCallback`           |
 | `icudtl.dat`      | 保留必需 locale，勿打包多余 ICU 数据                           |
@@ -1906,4 +1913,4 @@ SD 卡、未做 P0（sshd/mediamtx 误 enable）、或 mediamtx/rknn_server 与�
 
 ---
 
-**总结**：**能力不少于 lws-ui**（§11.5）。**P1**：镜像 + Hello World + boot splash + **≤10 s 首页**（方案 A §3.6）。**P1.5**：真机调试 + 快速 UI 迭代。**P2～P2.5**：Modbus + GPIO（契约 `GPIO_5/4/7`、直写 `gpio_innohi`，§11.0）→ 板级 I/O → 日期时间 Demo → 设置持久化 → **A/B + `make upgrade`** → 模拟器与 Android 兼容。**P3～P4**：AI so → `**frost_ui` / `frost_ime`**。**P5**：按 **§1.2（P5.1～P5.8）** 迁移业务（**P5.8 OTA** 复用 **P2.4**）；**以 lws-ui 实装为准**，openspec 作补充（§11.7）。
+**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 已完成**（镜像、调试、硬件设施、A/B `make upgrade`）。其后：**P3.0 CyberUI**、**P3.1 Rust HAL**（并行）、**P3.2 模拟器**、**P3.3 libai**、**P4 业务**、**P5.0 Android**、**P5.1 Engine 升级**。平台层长期为语言无关 HAL；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。

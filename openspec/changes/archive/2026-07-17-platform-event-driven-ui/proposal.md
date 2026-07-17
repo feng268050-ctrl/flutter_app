@@ -1,6 +1,8 @@
 ## Why
 
-P2 Demo already exposes Ethernet, Wi‑Fi, Bluetooth, LAN SSH, USB keyboard, date/time, audio, backlight, and more—but several Linux backends still discover state by **Timer + `Process.run` polling** (`wpa_cli`, `ip`, `bluetoothctl`, directory scans). That is not OS-grade: it cannot be the reusable Settings stack for P5, and external shell/udev/systemd changes do not reliably appear in the UI. Demo must be designed to **operating-system standards** (event source → in-memory snapshot → Streams), with abstract controllers unchanged for business reuse.
+> **SUPERSEDED** by [`rust-hal-and-phase-realign`](../../rust-hal-and-phase-realign/). See [`SUPERSEDED.md`](./SUPERSEDED.md). Do not implement this change standalone.
+
+P2 Demo already exposes Ethernet, Wi‑Fi, Bluetooth, LAN SSH, USB keyboard, date/time, audio, backlight, and more—but several Linux backends still discover state by **Timer + `Process.run` polling**. That requirement remains valid, but the implementation home is now the **Rust HAL**, not Dart `Linux*` controllers.
 
 ## What Changes
 

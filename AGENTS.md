@@ -4,8 +4,9 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 ## Project overview
 
-- **What:** Buildroot firmware for Innohi **ynh960/961/962 product line** + Flutter-pi HMI (`app/hmi/`).
-- **Board SKUs:** ynh960 → RK3566 (entry); ynh962 → RK3568B2 (mid, cut-down 3568); ynh961 → RK3568 (high). Same product line (minor chip/interface differences); **one firmware image is the goal**. **P1–P5 develop and validate on ynh960 (RK3566)** — no per-SKU defconfig fork yet.
+- **What:** Buildroot-based **embedded appliance OS** for Innohi boards (benchmark: **ynh960/961/962**) + Flutter HMI (`app/hmi/`). Direction: shared **CyberUI** + **Rust HAL** (submodules), per-product Apps, board/screen packs for new motherboards/panels.
+- **Board SKUs (current line):** ynh960 → RK3566 (entry); ynh962 → RK3568B2 (mid); ynh961 → RK3568 (high). Same product line; **one firmware image is the near-term goal** for this line. **Validate on ynh960** — no per-SKU defconfig fork yet. Future products may use different boards/screens via packs + HAL.
+- **Phase roadmap:** See `docs/flutter-pi-hmi-plan.md` §1 (P1–P2.5 done; next P3.0 CyberUI, P3.1 HAL, P3.2 emulator, P3.3 AI, P4 business, P5.0 Android, P5.1 engine). HAL design: `openspec/changes/rust-hal-and-phase-realign/`.
 - **Hosts:** Linux builds natively in `linux-sdk/`; macOS uses Docker `linux/amd64` + a Docker volume for the SDK tree.
 - **Outputs:** `output/firmware/boot.img` (FIT for `rootfs_a`), `boot_b.img` (same kernel, FIT for `rootfs_b`), `rootfs.img`, and factory `update.img`; Linux also has them under `linux-sdk/output/firmware/`.
 - **Scope:** Active Buildroot packages follow `#include` lines in `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig`.

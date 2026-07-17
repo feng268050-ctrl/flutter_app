@@ -117,6 +117,9 @@ case "$*" in
 esac
 
 usb_ssh_session_load_env "$ROOT"
+if is_android_emulator_serial "${SERIAL:-}"; then
+	die "Android emulator ($SERIAL) is not supported for upgrade (physical board only; see make devices)"
+fi
 usb_ssh_session_select "$ROOT"
 
 if usb_ssh_session_is_remote; then

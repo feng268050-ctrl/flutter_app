@@ -111,7 +111,7 @@ help:
 	@echo "  make debug-host-prepare    # USB ECM or registered SSH reachability for debug-app/IDE"
 	@echo "  make connect <ip>          # register remote SSH board (MODE=SSH in make devices)"
 	@echo "  make disconnect <ip>       # remove registered remote SSH board"
-	@echo "  make devices               # RockUSB + USB-SSH + registered SSH"
+	@echo "  make devices               # RockUSB + USB-SSH + SSH (no Android emulators)"
 	@echo "  make shell                 # interactive device shell (USB-SSH or SSH)"
 	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
 	@echo "  make push-app              # scp app over SSH (USB-SSH or registered IP)"

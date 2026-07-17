@@ -41,12 +41,16 @@ usage() {
 Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash}
 
   devices        List connected devices (RockUSB + USB-SSH + SSH; MODE column)
+                 (Android emulators omitted)
   reboot         Linux board (USB-SSH or SSH) → reboot; Android → adb reboot
   reboot-loader  Linux board (USB-SSH only) → reboot-loader; Android → adb reboot loader
+                 (Android emulator not supported)
   loader         upgrade_tool ul <MiniLoaderAll.bin>  [LOADER_NORESET=1]  (macOS)
   upgrade        upgrade_tool uf <update.img>        [UPGRADE_NORESET=1] (macOS)
   flash          uf update.img; ul first when RockUSB mode is Maskrom (macOS)
+                 (Android emulator not supported)
   flash-android  flash with Innohi Android image (optional; not required before Linux)
+                 (Android emulator not supported)
 
 Selection: SERIAL / IP (SSH registry only) / IFACE (USB-SSH)
 App deploy (no reflash): make build-app && make push-app
@@ -99,6 +103,15 @@ resolve_loader_bin() {
 die() {
   echo "ERROR: $*" >&2
   exit 1
+}
+
+# Reject SERIAL=emulator-* for flash / reboot-loader (physical board only).
+reject_android_emulator_target() {
+  local action="$1"
+  local serial="${SERIAL:-}"
+  if [[ -n "$serial" ]] && is_android_emulator_serial "$serial"; then
+    die "Android emulator ($serial) is not supported for $action (physical board only; see make devices)"
+  fi
 }
 
 require_macos() {
@@ -236,9 +249,12 @@ list_devices() {
   DEVICE_TABLE_ROWS=()
 
   if command -v adb >/dev/null 2>&1; then
-    [[ -n "$SERIAL" ]] && adb connect "$SERIAL" >/dev/null 2>&1 || true
+    if [[ -n "$SERIAL" ]] && ! is_android_emulator_serial "$SERIAL"; then
+      adb connect "$SERIAL" >/dev/null 2>&1 || true
+    fi
     while read -r serial state _; do
       [[ -z "$serial" ]] && continue
+      is_android_emulator_serial "$serial" && continue
       case "$state" in
         device) mode=android ;;
         *) mode="$state" ;;
@@ -355,14 +371,16 @@ ensure_adb() {
 }
 
 resolve_adb_serial() {
-  local lines=() count
+  local lines=() count serial
   if [[ -n "$SERIAL" ]]; then
     adb connect "$SERIAL" >/dev/null 2>&1 || true
     echo "$SERIAL"
     return 0
   fi
   while IFS= read -r serial; do
-    [[ -n "$serial" ]] && lines+=("$serial")
+    [[ -n "$serial" ]] || continue
+    is_android_emulator_serial "$serial" && continue
+    lines+=("$serial")
   done < <(adb devices | awk 'NR>1 && $2=="device" {print $1}')
   count="${#lines[@]}"
   [[ "$count" -gt 0 ]] || die "No adb device (set SERIAL)"
@@ -405,8 +423,16 @@ reboot_to_adb() {
 }
 
 adb_android_device_count() {
+  # Physical adb only — Android emulators (emulator-*) are excluded.
   command -v adb >/dev/null 2>&1 || { echo 0; return; }
-  adb devices 2>/dev/null | awk 'NR>1 && $2=="device"{n++} END{print n+0}'
+  adb devices 2>/dev/null |
+    awk 'NR>1 && $2=="device" && $1 !~ /^emulator-/ {n++} END{print n+0}'
+}
+
+adb_emulator_device_count() {
+  command -v adb >/dev/null 2>&1 || { echo 0; return; }
+  adb devices 2>/dev/null |
+    awk 'NR>1 && $2=="device" && $1 ~ /^emulator-/ {n++} END{print n+0}'
 }
 
 usb_ssh_device_count() {
@@ -520,7 +546,9 @@ run_reboot() {
 }
 
 run_reboot_loader() {
-  local n_ssh n_adb n_reg
+  local n_ssh n_adb n_reg n_emu
+
+  reject_android_emulator_target "reboot-loader"
 
   if rockusb_already_ready; then
     echo "RockUSB Loader already connected."
@@ -534,7 +562,7 @@ run_reboot_loader() {
     return 0
   fi
 
-  # Android board only — Linux HMI has no adbd.
+  # Android board only — Linux HMI has no adbd. Emulators are not supported.
   n_adb="$(adb_android_device_count)"
   if [[ "$n_adb" -gt 0 ]]; then
     ensure_adb
@@ -542,6 +570,11 @@ run_reboot_loader() {
     wait_for_rockusb
     echo "RockUSB ready (via adb reboot loader)."
     return 0
+  fi
+
+  n_emu="$(adb_emulator_device_count)"
+  if [[ "$n_emu" -gt 0 ]]; then
+    die "Android emulator is not supported for reboot-loader (physical board only; see make devices)"
   fi
 
   n_reg="$(ssh_registry_device_count)"
@@ -614,11 +647,19 @@ upgrade_tool_reset_after_flash() {
 }
 
 run_flash() {
-  local mode
+  local mode rock_n emu_n
+  reject_android_emulator_target "flash"
   ensure_upgrade_tool
   ensure_readable "$UPDATE_IMG" "UPDATE_IMG"
   echo "UPDATE_IMG:"
   bash "$SIZE_HELPER" "$UPDATE_IMG"
+  rock_n="$(host_rockusb_count)"
+  if [[ "$rock_n" -eq 0 ]]; then
+    emu_n="$(adb_emulator_device_count)"
+    if [[ "$emu_n" -gt 0 ]]; then
+      die "Android emulator is not supported for flash (physical RockUSB board only; see make devices)"
+    fi
+  fi
   require_rockusb_device
   mode="$(resolve_selected_rockusb_mode "$ROCKUSB_LIST_OUTPUT")" \
     || die "could not detect RockUSB mode (make devices)"

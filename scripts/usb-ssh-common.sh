@@ -23,6 +23,14 @@ sshpass_install_hint() {
 	esac
 }
 
+# Android AVD serials look like emulator-5554 (not physical adb / RockUSB boards).
+is_android_emulator_serial() {
+	case "${1:-}" in
+	emulator-*) return 0 ;;
+	*) return 1 ;;
+	esac
+}
+
 require_sshpass() {
 	if command -v sshpass >/dev/null 2>&1; then
 		return 0

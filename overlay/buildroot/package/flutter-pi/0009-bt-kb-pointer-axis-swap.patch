@@ -2,43 +2,27 @@ From: lws-hmi <dev@lws>
 Date: Thu, 16 Jul 2026 23:15:00 +0800
 Subject: [PATCH] user_input: pointer_axes auto/normal/swap for REL+ABS motion
 
-Cheap BLE HOGP keyboards with a trackpad often expose keyboard+pointer on
-one evdev node (e.g. hid-apple "Wireless Keyboard clone"). Their REL_X/Y
-(and ABS axes on devices like QM002) are swapped vs a normal USB mouse:
-physical left/right moves the cursor down/up.
+BLE HOGP keyboard+trackpad combos may report swapped REL/ABS axes.
+Current QM002 / stock BlueZ HOGP on ynh960 reports native axes.
 
-Default mouse.conf pointer_axes=auto:
-  udev ID_BUS=bluetooth
-  AND LIBINPUT_DEVICE_CAP_KEYBOARD
-  AND LIBINPUT_DEVICE_CAP_POINTER
+mouse.conf pointer_axes:
+  auto   → same as normal (no automatic swap; former BT+kb+pointer heuristic
+           inverted correctly-oriented pads like QM002)
+  normal → never swap
+  swap   → always swap XY on pointer motion (REL and ABS)
 
-(libinput 1.23 has no libinput_device_get_id_bustype; use udev.)
-
-Manual override (Demo Mouse settings):
-  pointer_axes=normal → never swap
-  pointer_axes=swap   → always swap XY on pointer motion (REL and ABS)
-
-Pure USB/BT mice are pointer-only and are unaffected under auto.
+Use Swap XY only when a given pad is inverted.
 ---
 --- a/src/user_input.c
 +++ b/src/user_input.c
-@@ -17,6 +17,7 @@
- 
- #include <libinput.h>
- #include <linux/input-event-codes.h>
-+#include <libudev.h>
- #include <memory.h>
- #include <systemd/sd-event.h>
- 
-@@ -1330,6 +1331,36 @@
+@@ -1330,6 +1330,21 @@
      return 0;
  }
  
 +
 +/* REL/ABS axis policy from mouse.conf pointer_axes (0=auto, 1=normal, 2=swap). */
 +static bool lws_pointer_needs_axis_swap(struct user_input *input, struct libinput_device *device) {
-+    struct udev_device *udev_dev;
-+    const char *id_bus;
++    (void) device;
 +
 +    if (input->mouse_pointer_axes == 1) {
 +        return false;
@@ -46,28 +30,14 @@ Pure USB/BT mice are pointer-only and are unaffected under auto.
 +    if (input->mouse_pointer_axes == 2) {
 +        return true;
 +    }
-+    /* auto: BLE keyboard+trackpad on one node (libinput 1.23: udev ID_BUS) */
-+    udev_dev = libinput_device_get_udev_device(device);
-+    if (udev_dev == NULL) {
-+        return false;
-+    }
-+    id_bus = udev_device_get_property_value(udev_dev, "ID_BUS");
-+    if (id_bus == NULL || strcmp(id_bus, "bluetooth") != 0) {
-+        return false;
-+    }
-+    if (!libinput_device_has_capability(device, LIBINPUT_DEVICE_CAP_POINTER)) {
-+        return false;
-+    }
-+    if (!libinput_device_has_capability(device, LIBINPUT_DEVICE_CAP_KEYBOARD)) {
-+        return false;
-+    }
-+    return true;
++    /* auto (== normal): do not guess — BT+kb+pointer heuristic broke QM002. */
++    return false;
 +}
 +
  static int on_mouse_motion_event(struct user_input *input, struct libinput_event *event) {
      struct libinput_event_pointer *pointer_event;
      struct input_device_data *data;
-@@ -1347,10 +1378,19 @@
+@@ -1347,10 +1362,19 @@
  
      data->timestamp = timestamp;
  
@@ -91,7 +61,7 @@ Pure USB/BT mice are pointer-only and are unaffected under auto.
  
      pos_display = VEC2F(input->cursor_x + delta.x, input->cursor_y + delta.y);
  
-@@ -1412,10 +1452,17 @@
+@@ -1412,10 +1436,17 @@
      timestamp = libinput_event_pointer_get_time_usec(pointer_event);
  
      // get the new mouse position in display coordinates

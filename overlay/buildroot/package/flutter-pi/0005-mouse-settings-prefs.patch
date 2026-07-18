@@ -72,7 +72,7 @@ release journal).
 +    int mouse_pointer_speed;
 +    int mouse_pointer_size;
 +    bool mouse_left_handed;
-+    /* 0=auto (BT kb+pointer), 1=normal, 2=swap XY */
++    /* 0=auto (== normal), 1=normal, 2=swap XY — see 0009 */
 +    int mouse_pointer_axes;
 +    struct libinput_device *mouse_pointer_devices[LWS_MOUSE_MAX_POINTER_DEVICES];
 +    size_t n_mouse_pointer_devices;

@@ -18,7 +18,7 @@
 | **Linux P2 — 硬件设施准备** | Modbus / 三色 LED / 喇叭 / 以太网 / Wi‑Fi / BT / 键盘 / 鼠标等硬件 I/O 接入与前置验证（含原 P2.1～P2.3：板级外设、日期时间 Demo、硬件偏好持久化） | ✅ |
 | **Linux P2.5 — 双分区刷机** | A/B 双分区；经 Wi‑Fi / USB 的 `make upgrade`；加快硬件开发并为 OTA 打底（原 P2.4） | ✅ |
 | **Linux P3.0 — UI 框架 + IME 子模块** | Flutter 重写 UI 框架与 IME：**CyberUI** + **CyberIME**（子模块；初期 Frosted Glass，API 面向可换设计） | 🔲 |
-| **Linux P3.1 — HAL 硬件抽象层** | **Rust** 标准化嵌入式 OS HAL；Flutter App 不直接绑死主板；Dart 薄客户端；与当前项目并行推进（子模块/子包） | 🔲 |
+| **Linux P3.1 — HAL 硬件抽象层** | **Dart HAL 子包** + **systemd-networkd 网络栈切换**（wpa D-Bus + networkd L3；无 Rust/`hald`）。设计：[`dart-hal-package`](../openspec/changes/dart-hal-package/design.md) | 🔲 |
 | **Linux P3.2 — Linux 模拟器** | UTM + Weston (Wayland) + flutter-embedded-linux + HAL；迭代 UI；支持与下位机通讯 | 🔲 |
 | **Linux P3.3 — AI 库迁移** | 迁入 `libai.so` + RKNN 配置；**预计 2026-07-22** | 🔲 |
 | **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务等（原 P5 业务；子阶段见 **§1.2**） | 🔲 |
@@ -64,11 +64,12 @@ P3.0  CyberUI + CyberIME（git 子模块）🔲
     ├─ packages/cyber_ime — IME overlay + 字体
     └─ 主 App pubspec 依赖子模块；设计可换，API 用 Cyber* 前缀
 
-P3.1  Rust HAL（子模块/子包，与现网并行）🔲
-    ├─ hal/：hald + crates；boards/ynh960 profile
-    ├─ Dart 薄客户端；Demo 按能力从 Linux*Controller 切到 HAL
-    ├─ 事件优先（netlink / D-Bus / inotify…）；shell persist 共存至 cutover
-    └─ 设计：openspec/changes/rust-hal-and-phase-realign/design.md
+P3.1  Dart HAL 子包 + 网络栈切换 🔲
+    ├─ packages/<hal_name>/：hal/ethernet|wifi|bluetooth|… 按需 import
+    ├─ **启用 systemd-networkd**（L3）+ wpa D-Bus（L2）；旧 L3 脚本删除或改为 networkd 封装
+    ├─ restore/persist 按新栈重做；相机 eth0 动态配址改为重配 networkd
+    ├─ backlight/volume/gpio/modbus… 配置/路径注入
+    └─ 设计：openspec/changes/dart-hal-package/design.md（D11）
 
 P3.2  Linux 模拟器 🔲
     ├─ UTM + Weston (Wayland) + flutter-embedded-linux + HAL
@@ -149,7 +150,7 @@ P2.5 + P4.7 ──→ P4.8
 | P5 / P5.1～P5.8 业务 | **P4 / P4.1～P4.8** |
 | FrostUI | **CyberUI**（初期仍 Frosted Glass Design） |
 
-**层级约定（摘要）**：Product App → CyberUI → `HalClient` → Rust HAL → board/screen pack → 内核/BlueZ/sysfs。命名用系统服务风格（`NetworkManager` / `NetworkDevice`、`AudioManager`、`TimeService`、`Capabilities`…）；能力可选；网络 role→iface；产品三色灯不进 HAL。详见 [`design.md`](../openspec/changes/rust-hal-and-phase-realign/design.md) **D9–D12**。
+**层级约定（摘要）**：Product App → CyberUI → **Dart HAL 包**（按需 import）→ libexec/sysfs/BlueZ/serial；boot restore 仍可用 shell。能力可选；网络 role→iface；产品三色灯不进 HAL。**已废弃** Rust/`hald` 方案。详见 [`dart-hal-package/design.md`](../openspec/changes/dart-hal-package/design.md)。
 
 ---
 
@@ -417,7 +418,7 @@ Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不
 | 原则                           | 说明                                                                                               |
 | ---------------------------- | ------------------------------------------------------------------------------------------------ |
 | **flutter-pi 链接 libsystemd** | CMake `pkg_check_modules(libsystemd)`；`event_loop.c` 使用 `sd_event_*`。**不要求** systemd 当 init      |
-| **init 用 systemd（工程选择）**     | Buildroot 打包路径、Rockchip SDK 默认、少量 unit 管 `hmi` / 可选 `mediamtx`；不引入 Plymouth、networkd 等           |
+| **init 用 systemd（工程选择）**     | Buildroot 打包路径、Rockchip SDK 默认、少量 unit 管 `hmi` / 可选 `mediamtx`；**P3.1 起启用 networkd 管 L3**（取代自研 eth0/wlan0 IP 脚本为长期方案） |
 | **首屏 KPI 独立**                | `hmi.service` **仅** `After=local-fs.target`；**禁止** `network-online` / `mediamtx` / `udev-settle` |
 | **MediaMTX 不挡 UI**           | unit 可存在，但 **无 `[Install]` / 不在 wants**；**仅相机可达后**由 App `systemctl start`（§6.4、§7.5）             |
 | **busybox init 替换**          | **方案 B（实验）**：需 Buildroot 只装 `libsystemd` 或 fork flutter-pi（如 libuv）；非 P1～P5 量产默认                 |
@@ -432,7 +433,7 @@ Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不
 | ------------------------------------------- | ----------------------------------------------------- |
 | `BR2_INIT_SYSTEMD=y`                        | systemd 作 PID 1（服务编排；与 flutter-pi 无运行时耦合）             |
 | `BR2_PACKAGE_SYSTEMD=y`                     | systemd 用户态 + `**libsystemd.so`**（flutter-pi 链接用）     |
-| `BR2_PACKAGE_SYSTEMD_NETWORKD`              | **关** — eth0 走 §7.1 脚本                                |
+| `BR2_PACKAGE_SYSTEMD_NETWORKD`              | **开（P3.1 网络栈切换）** — L3 归 networkd；旧 eth0/wlan0 L3 脚本删除或改为 networkd 封装 |
 | `BR2_PACKAGE_SYSTEMD_RESOLVED`              | **关**                                                 |
 | `BR2_PACKAGE_SYSTEMD_TIMESYNCD`             | **关** — **P2.2** Demo 用手设 / RTC；P5 云 NTP 再按需 chrony   |
 | `BR2_PACKAGE_SYSTEMD_LOGIND`                | **关**                                                 |
@@ -873,7 +874,7 @@ lws-ui **不在**系统启动时写死 eth0 地址，而是在 **App 初始化�
 4. `**CameraEth0Configurator`**：`ip link set eth0 up` → `ip addr replace …/24 dev eth0` → 摄像头网段路由 → 可选 `ping -I eth0`
 5. **Wi‑Fi DHCP 变化**：`CameraEth0WifiNetworkCallback` 重新执行上述逻辑
 
-Buildroot **不要**为 eth0 配 `systemd-networkd` 静态地址或 `dhcpcd`；与 lws-ui 旧版 `install-eth0-autofix.sh`（固定 `192.168.1.10`）**冲突**，勿装。
+Buildroot **P3.1 起**以 **systemd-networkd** 作为 eth0/wlan0 的 L3 所有者（HAL `hal/ethernet` / `hal/wifi`）。现有 L3 脚本（`eth0-*.sh`、`wlan0-dhcp.sh` 等）须 **删除**，或 **改写成只驱动 networkd**（D-Bus / `networkctl` / drop-in），**禁止**再用裸 `ip addr`/dhcpcd 与 networkd 抢同一接口。相机专链动态选址同样经 networkd 重配。旧版 lws-ui 固定 `192.168.1.10` 的 autofix **仍勿**作为开机静态方案。
 
 #### lws-hmi 等价实现（P5.1）
 
@@ -901,7 +902,7 @@ Buildroot **不要**为 eth0 配 `systemd-networkd` 静态地址或 `dhcpcd`；�
 | --------- | --------------------------------------------------------------------------------------- |
 | 内核        | 板级 DTS 以太网节点（PHY `reg`、reset、`tx_delay`/`rx_delay`；见 `docs/kernel-evb-dts-deferred.md`） |
 | 用户态（P2.1） | `ip link` / carrier；临时配址 smoke 即可                                                       |
-| 用户态（P5）   | **运行时** `configure-camera-eth0.sh` 动态配址（非 fstab/networkd 静态）                            |
+| 用户态（P5）   | **运行时**经 networkd 动态配址（planner 逻辑保留；实现改为 networkd，非裸 `ip addr` 对抗托管） |
 
 
 ### 7.2 Wi‑Fi（保留）
@@ -1808,10 +1809,10 @@ make del-prop
 
 | 项                                             | 做法                                                                        |
 | --------------------------------------------- | ------------------------------------------------------------------------- |
-| `**lws_hmi_systemd.config**`                  | 关 networkd / resolved / timesyncd / logind / polkit / analyze / firstboot |
+| `**lws_hmi_systemd.config**`                  | **P3.1 起开 networkd**（L3）；resolved/timesyncd/logind 等仍按精简策略评估 |
 | **journald volatile**                         | `overlay/.../journald.conf.d/00-volatile-storage.conf`                    |
 | `**lws_hmi_base.config`**                     | 关 **adbd**、虚拟 tty **getty**（保留 **serial-getty@ttyFIQ0**）                  |
-| `**lws_hmi_network.config`**                  | 关 dhcpcd、dnsmasq、dropbear；eth0 **无** networkd                             |
+| `**lws_hmi_network.config**`                  | 迁 networkd 后停用 eth0/wlan0 脚本双管；dhcpcd 不再作 wlan0 主 DHCP |
 | **sysinit 仅早期显示**                             | `param-update.service` @ sysinit；网络不进 sysinit（§3.6.0）                     |
 | 生产 **enable 仅 `hmi.service`**（+ `mainserver`） | post-hook `06-systemd.sh`                                         |
 | **disable 默认**                                | `**mediamtx`**、`**sshd**`、`**bluetoothd**`（§7.7 / P1 Wi‑Fi 按需 start）      |

@@ -7,7 +7,7 @@ Buildroot builds **flutter-pi** + **flutter-engine** from the SDK in-tree packag
 - `overlay/buildroot/flutter-engine.version`
 - `overlay/buildroot/package/flutter-engine/flutter-engine.mk` (`FLUTTER_ENGINE_VERSION`)
 
-Current pin: **Flutter 3.24.4** (through P3.x). **P5.1** upgrades SDK + engine + flutter-pi together per [`docs/flutter-pi-hmi-plan.md` §6.5](../docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p51). UI kit: **CyberUI** (P3.0); platform: **Rust HAL** (P3.1).
+Current pin: **Flutter 3.24.4** (through P3.x). **P5.1** upgrades SDK + engine + flutter-pi together per [`docs/flutter-pi-hmi-plan.md` §6.5](../docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p51). UI kit: **CyberUI** (P3.0); platform: **Dart HAL package** (P3.1).
 
 ### Prefetch (before `make build-rootfs`)
 

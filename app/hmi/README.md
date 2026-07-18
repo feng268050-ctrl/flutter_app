@@ -13,7 +13,7 @@ flutter create --platforms=android .
 
 See [`../README.md`](../README.md) for engine pins and deploy layout.
 
-## P2.1–P2.3 platform I/O (speaker / backlight / orientation / Ethernet / Wi‑Fi / BT / USB keyboard·mouse / date-time / persist)
+## P2.1–P2.3 platform I/O (speaker / backlight / Ethernet / Wi‑Fi / BT / USB keyboard·mouse / date-time / persist)
 
 Reusable modules live under `lib/platform/`:
 
@@ -21,7 +21,7 @@ Reusable modules live under `lib/platform/`:
 |--------|---------------|-------|
 | `audio/` | `change-volume` + `mpg123`/`amixer` | Forces `Playback Path=RING_SPK_HP`; asset → `/var/lib/hmi/audio/`; set volume via shell (persist `media-volume`) |
 | `backlight/` | `change-backlight` | Prefer panel sysfs for get; set via shell (persist `backlight-brightness`; restore + HMI re-apply) |
-| `display/` | `change-orientation` + `systemctl restart hmi` | Persist `display-orientation` via shell → flutter-pi `-o` |
+| `display/` | launch-only `display-orientation` → flutter-pi `-o` | **Not** a Demo/HAL setting; fixed panel orientation at launch |
 | `datetime/` | `timedatectl`/`date` + `hwclock` + `wlan0-time-sync.sh` | Manual set / Network sync; prefs `/var/lib/hmi/time-sync-mode` + `timezone`; HTTPS TLS uses `ensureSaneForTls` |
 | `ethernet/` | helpers + `ip` / sysfs | RJ45 `eth0`; DHCP/static via **`eth0-network.service`** (outside HMI cgroup); `eth0-wanted` |
 | `input/` | `/dev/input/by-id` probe + `MouseSettingsController` | USB HID keyboard/mouse presence; keys/pointer via flutter-pi; mouse prefs via **`apply-mouse-settings`** → `mouse.conf` (flutter-pi mtime poll; no SIGHUP) |
@@ -35,7 +35,7 @@ Reusable modules live under `lib/platform/`:
 
 1. Play — hear shanghai tan; sweep Volume slider
 2. Sweep Brightness — panel dims/brightens
-3. Portrait / Landscape — HMI restarts; `ps`/`tr` confirms `-o portrait_up` or `landscape_left`
+3. Orientation — **no Demo control**; confirm launch `-o` matches board default (video layout flips are App UI later)
 4. Ethernet — enable interface → DHCP or Static → link LED / `ping` peer PC (not IPC camera IP yet)
 5. Keyboard — **1 mm pin → USB host** and/or **Micro-USB OTG host** (OTG/ID adapter) + HID / Bluetooth → Demo「Keyboard」：type, arrow caret, hold-to-repeat; optional NumLock if present. Standard PC cable on Micro-USB → plug-ssh (not keyboard). Pitfalls: [`docs/ynh960-io-pinmux-ledger.md`](../../docs/ynh960-io-pinmux-ledger.md) §4.1 / §4.1.1
 6. Mouse — same host paths / Bluetooth → Demo「Mouse」：visible pointer tracks; natural scroll / scroll speed / pointer speed / primary button / pointer axes (Auto/Normal/Swap); prefs in `/var/lib/hmi/mouse.conf`. Pitfalls: ledger §4.1.2 (`0004`/`0005`/`0009` flutter-pi patches)

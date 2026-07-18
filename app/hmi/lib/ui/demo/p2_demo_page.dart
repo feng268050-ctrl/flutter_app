@@ -14,8 +14,6 @@ import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/linux_bluez_bluetooth_controller.dart';
 import 'package:lws_hmi/platform/datetime/date_time_controller.dart';
 import 'package:lws_hmi/platform/datetime/linux_date_time_controller.dart';
-import 'package:lws_hmi/platform/display/display_orientation.dart';
-import 'package:lws_hmi/platform/display/linux_flutter_pi_orientation.dart';
 import 'package:lws_hmi/platform/ethernet/ethernet_controller.dart';
 import 'package:lws_hmi/platform/ethernet/linux_ethernet_controller.dart';
 import 'package:lws_hmi/platform/http/http_client_controller.dart';
@@ -45,7 +43,6 @@ class P2DemoPage extends StatefulWidget {
     this.ledController,
     this.audioController,
     this.backlightController,
-    this.orientationController,
     this.ethernetController,
     this.wifiController,
     this.httpClientController,
@@ -60,7 +57,6 @@ class P2DemoPage extends StatefulWidget {
   final GpioLedController? ledController;
   final MediaAudioController? audioController;
   final BacklightController? backlightController;
-  final DisplayOrientationController? orientationController;
   final EthernetController? ethernetController;
   final WifiController? wifiController;
   final HttpClientController? httpClientController;
@@ -78,7 +74,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
   late final GpioLedController _leds;
   late final MediaAudioController _audio;
   late final BacklightController _backlight;
-  late final DisplayOrientationController _orientation;
   late final EthernetController _ethernet;
   late final WifiController _wifi;
   late final DateTimeController _dateTime;
@@ -106,7 +101,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
   bool _audioPlaying = false;
   double _volumePercent = 80;
   double _brightnessPercent = 80;
-  DisplayOrientationMode _orientationMode = DisplayOrientationMode.landscape;
 
   StreamSubscription<bool>? _playingSub;
 
@@ -122,8 +116,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
     _leds = widget.ledController ?? GpioLedController();
     _audio = widget.audioController ?? LinuxMediaAudioController();
     _backlight = widget.backlightController ?? LinuxSysfsBacklight();
-    _orientation =
-        widget.orientationController ?? LinuxFlutterPiOrientation();
     _ethernet = widget.ethernetController ?? LinuxEthernetController();
     _wifi = widget.wifiController ?? LinuxWpaWifiController();
     _dateTime = widget.dateTimeController ?? LinuxDateTimeController();
@@ -184,14 +176,12 @@ class _P2DemoPageState extends State<P2DemoPage> {
       }
       final vol = await _audio.getVolumePercent();
       final bri = await _backlight.getBrightnessPercent();
-      final ori = await _orientation.getPreferred();
       if (!mounted) {
         return;
       }
       setState(() {
         _volumePercent = vol.toDouble();
         _brightnessPercent = bri.toDouble();
-        _orientationMode = ori;
       });
     } catch (_) {
       // Non-fatal: sliders keep defaults.
@@ -239,11 +229,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
     }
   }
 
-  Future<void> _onOrientation(DisplayOrientationMode mode) async {
-    setState(() => _orientationMode = mode);
-    await _orientation.setPreferred(mode);
-  }
-
   @override
   void dispose() {
     unawaited(_playingSub?.cancel() ?? Future<void>.value());
@@ -253,7 +238,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
     }
     unawaited(_audio.dispose());
     unawaited(_backlight.dispose());
-    unawaited(_orientation.dispose());
     unawaited(_ethernet.dispose());
     unawaited(_wifi.dispose());
     unawaited(_dateTime.dispose());
@@ -419,40 +403,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
                 _brightnessPercent = v;
                 _queuedBrightness = v.round();
                 unawaited(_drainBrightness());
-              },
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Orientation',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Applies via HMI restart (flutter-pi -o)',
-              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
-            ),
-            const SizedBox(height: 12),
-            SegmentedButton<DisplayOrientationMode>(
-              segments: const [
-                ButtonSegment(
-                  value: DisplayOrientationMode.portrait,
-                  label: Text('Portrait'),
-                ),
-                ButtonSegment(
-                  value: DisplayOrientationMode.landscape,
-                  label: Text('Landscape'),
-                ),
-              ],
-              selected: {_orientationMode},
-              onSelectionChanged: (set) {
-                if (set.isEmpty) {
-                  return;
-                }
-                unawaited(_onOrientation(set.first));
               },
             ),
             if (_networkSectionsReady) ...[

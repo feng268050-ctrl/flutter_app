@@ -2,7 +2,7 @@
 
 ## Purpose
 
-P2 Flutter home demo: device-information rows (iSerial + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth (local adapter + central scan/HID) / USB keyboard / USB mouse sections, P2.2 Date & Time (manual / network), plus audio / brightness / orientation controls.
+P2 Flutter home demo: device-information rows (iSerial + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth (local adapter + central scan/HID) / USB keyboard / USB mouse sections, P2.2 Date & Time (manual / network), plus audio / brightness controls. Display orientation is **not** a Demo setting (fixed at flutter-pi launch / board default; in-app video rotation stays App-layer).
 ## Requirements
 ### Requirement: Home screen lists five device-info rows
 
@@ -209,19 +209,13 @@ The demo home SHALL include a brightness slider spanning 0–100 that calls the 
 - **WHEN** the user moves the brightness slider to 25
 - **THEN** the backlight controller is asked to set brightness percent 25
 
-### Requirement: Demo exposes exclusive portrait/landscape controls
+### Requirement: Demo does not expose display orientation controls
 
-The demo home SHALL provide a mutually exclusive Portrait / Landscape control group. Selecting one MUST deselect the other. Selecting a mode SHALL call the display-orientation API for that mode.
+The demo home MUST NOT provide Portrait / Landscape (or equivalent) controls that change flutter-pi `-o` / HMI restart orientation. Panel orientation is fixed by image/board launch configuration. Any temporary layout change for media (e.g. video landscape while chrome is portrait) SHALL be product App UI work, not a Demo platform setting.
 
-#### Scenario: Exclusive orientation selection
-
-- **WHEN** the user selects Portrait while Landscape was selected
-- **THEN** Portrait is selected (not Landscape) and the orientation API is asked to set portrait
-
-#### Scenario: Initial selection matches preference
-
-- **WHEN** the demo screen first appears and the persisted preference is landscape
-- **THEN** the Landscape control is the selected mode
+#### Scenario: No orientation segmented control
+- **WHEN** the operator opens the P2 demo home
+- **THEN** there is no Demo control whose purpose is to switch system display orientation between portrait and landscape
 
 ### Requirement: Demo exposes LAN SSH debug toggle after HTTP / Proxy
 

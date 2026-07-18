@@ -4,22 +4,24 @@
 
 P2 Flutter home demo: device-information rows (iSerial + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth (local adapter + central scan/HID) / USB keyboard / USB mouse sections, P2.2 Date & Time (manual / network), plus audio / brightness controls. Display orientation is **not** a Demo setting (fixed at flutter-pi launch / board default; in-app video rotation stays App-layer).
 ## Requirements
-### Requirement: Home screen lists five device-info rows
+### Requirement: Home screen lists device-info rows
 
-The P2 home (or primary demo) screen SHALL display exactly these rows as simple `label: value` text (English labels matching lws-ui Device Information naming):
+The P2 home (or primary demo) screen SHALL display device-information rows as simple `label: value` text (English labels matching lws-ui Device Information naming where applicable), including at least:
 
 1. Device SN
 2. Gunhead SN
-3. Firmware Version
-4. Laser Version
-5. Wire Feeder Version
+3. System Version (Flutter app `versionName`)
+4. Kernel Version
+5. Control Card Version (Modbus attribute `device.control_card_version`; not “firmware” — that word is reserved for the packaged appliance image)
+6. Laser Version
+7. Wire Feeder Version
 
 A missing or failed value SHALL display exactly `-`.
 
 #### Scenario: All rows visible
 
 - **WHEN** the user views the P2 demo home after first frame
-- **THEN** all five labels are visible with a value string (possibly `-`)
+- **THEN** the listed labels are visible with a value string (possibly `-`)
 
 #### Scenario: Device SN from iSerial identity
 
@@ -31,21 +33,19 @@ A missing or failed value SHALL display exactly `-`.
 - **WHEN** iSerial / `read-serial` identity cannot be obtained
 - **THEN** Device SN displays `-`
 
-### Requirement: Home screen lists four Alarm Information temperatures
+### Requirement: Home screen lists Alarm Information status and temperatures
 
-The P2 demo SHALL also list the four welding-gun sensor temperatures from lws-ui Monitor → **Alarm Information**, as simple `label: value` rows:
+The P2 demo SHALL list Alarm Information rows including comm status and temperatures. Host SoC/GPU temperatures (from `hal/sys_info` watch) SHALL appear before welding-gun Modbus temperatures:
 
-1. Motor Temperature
-2. Motor Driver Temperature
-3. Protective Mirror Temperature
-4. Collimator Temperature
+1. Pump / Gun / Feeder Comm Status (as applicable)
+2. SoC Temperature
+3. GPU Temperature
+4. Motor Temperature
+5. Motor Driver Temperature
+6. Protective Mirror Temperature
+7. Collimator Temperature
 
-Values SHALL use lws-ui scaling (signed register ÷ 10, one decimal, `°C`). Unconnected / error readings (`raw <= -999`) and Modbus failures SHALL display exactly `-`.
-
-#### Scenario: Alarm temperature rows visible
-
-- **WHEN** the user views the P2 demo home after first frame
-- **THEN** all four Alarm Information temperature labels are visible with a value string (possibly `-`)
+Welding-gun values SHALL use lws-ui scaling (signed register ÷ 10, one decimal, `°C`). Unconnected / error readings (`raw <= -999`) and Modbus failures SHALL display exactly `-`. Host thermal SHALL update via `SysInfo.watch` (change-only).
 
 ### Requirement: Three exclusive LED mode rows
 
@@ -73,7 +73,7 @@ Tapping Steady / Blink / Off SHALL invoke the Linux GPIO RGB LED API for that co
 #### Scenario: Modbus fields refresh without crash
 
 - **WHEN** Modbus is offline
-- **THEN** Gunhead SN, Firmware Version, Laser Version, and Wire Feeder Version show `-` and the LED controls remain usable
+- **THEN** Gunhead SN, Control Card Version, Laser Version, and Wire Feeder Version show `-` and the LED controls remain usable
 
 ### Requirement: Demo exposes Ethernet management section above Wi-Fi
 

@@ -12,11 +12,13 @@ The prior Rust `hald` design over-complicated a stack that already works as Dart
   - **D-Bus:** bluetooth (now); `hal/network` ethernet + wifi L2/L3 **after** stack switch (networkd + wpa)
   - **OS component / CLI helper:** volume (`amixer`), playback (`mpg123`), mouse settings, datetime, **`hal/debug`** (SSH/USB helpers), **network proxy apply**—not “write a volume device node”
 - **BREAKING (OS):** Enable **systemd-networkd** for L3; **wpa_supplicant D-Bus** for Wi‑Fi L2. Legacy eth0/wlan0 L3 scripts are **deleted** or **rewritten as networkd-only wrappers**. Camera eth0 dynamic addressing reconfigures networkd.
+- **BREAKING (HAL portability — D11b):** `hal/network` MUST NOT hard-depend on ynh960 `/usr/libexec/{network,wpa}/eth0-*|wlan0-*|wifi-stack-*` as the default apply path. **L3 apply** and **Wi‑Fi L2 commands** live in the Dart package (networkd drop-ins + D-Bus / `networkctl`; wpa D-Bus Scan/AddNetwork). Board packs inject only **radio bring-up**, `NetRole`→iface, route-metric policy, and pref roots. Demo MUST consume `package:cyber_hal/network` (no parallel script controllers as the product path). No HTTP connectivity probe; dual-default prefers Wi‑Fi via metrics.
+- **BREAKING (HAL portability — D22):** Same reuse bar for **non-network** modules. `BoardProfile` (or equivalent injectors) MUST wire Linux backends — not only exist in tests. **Bluetooth** stack/A2DP/agent/HID-heal defaults MUST NOT hard-require `/usr/libexec/bluetooth/bt-*` as non-injectable paths (inject `BtStack` / heal ports; BlueZ D-Bus stays portable core). Rename/remove iface-named defaults (e.g. `wlan0-time-sync.sh`). Volume A2DP helper and USB OTG PHY paths injectable; USB debug SHOULD prefer sysfs (kind A) where possible. gpio/modbus remain config-OK; Demo already on HAL for these.
 - **Three-layer config:**
   1. **Board profile** — capabilities + net roles → iface + pointers to gpio/modbus files
   2. **gpio config** — named lines (product LEDs = lines with roles); constructor-bound
-  3. **modbus config** — RTU transport + attribute/register catalog; App uses attribute ids
-- **Binding style:** backlight injects **sysfs/pref paths**; volume injects **ALSA card/control + pref path**; network uses roles + board profile; proxy uses system-wide env contract (D18).
+  3. **modbus config** — RTU transport + **poll groups** + attribute catalog (regs + **alarm bits → readable ids**); App uses attribute ids + HAL watch (change-only)
+- **Modbus dynamic layer (D14, revised):** HAL owns poll/`watchAttributes` (config interval, default 100 ms), contiguous group reads, command gate, exclusive sessions, and dirty-attribute callbacks; App owns alarm dialogs/episodes, not poll timers.- **Binding style:** backlight injects **sysfs/pref paths**; volume injects **ALSA card/control + pref path**; network uses roles + board profile; proxy uses system-wide env contract (D18).
 - **Physical keyboard layout (D15):** XKB via `/etc/default/keyboard` (and/or `keyboard.conf`); **v1 apply = restart hmi** (no flutter-pi hot-reload patch required); CyberIME owns soft layouts only.
 - **Mouse (D16):** formalize P2.1 contract — `/var/lib/hmi/mouse.conf` + `apply-mouse-settings` + flutter-pi mtime poll; presence via `/dev/input/by-id`; no new pi protocol.
 - **Sys info (D17):** `hal/sys_info` host inventory — SN, board/DT model, kernel/image/app versions, CPU cores/freq, RAM, flash capacity/free, thermal zones, uptime/load — **not** Modbus fields; **no** `hal/http` or `hal/device_info`.
@@ -47,8 +49,10 @@ The prior Rust `hald` design over-complicated a stack that already works as Dart
 - **Supersedes:** Rust/`hald` approach in `rust-hal-and-phase-realign` (CyberUI + phase table in docs remain).
 - **New package:** **`cyber_hal`** (`packages/cyber_hal/`, parallel naming to CyberUI).
 - **App:** consumer of HAL modules; hard-coded pin/register maps leave App where possible; Demo HTTP *probe* may call `curl` (inherits proxy) instead of a private Dart-only proxy.
-- **Rootfs:** enable networkd; wpa D-Bus; rewrite/remove L3 scripts; restore-settings for new network world; **proxy apply helper** + profile.d / environment / systemd DefaultEnvironment; no `hald`.
+- **Rootfs:** enable networkd + resolved; wpa D-Bus; thin board radio bring-up only (delete iface-named L3 wrappers once HAL apply lands); restore-settings; **proxy apply helper** (injectable path); no `hald`.
+- **HAL reuse:** another product with stock networkd + wpa `-u` SHALL be able to use `cyber_hal` network modules by supplying a board profile + optional `WifiRadio` injector — without shipping this repo’s `eth0-dhcp.sh` / `wlan0-dhcp.sh` / `wifi-stack-up.sh` stack. Non-network modules likewise: BlueZ D-Bus + config-driven gpio/modbus + injectable helpers — without a mandatory full `bt-*` / RK-only tree as non-overridable defaults.
 - **Deps:** add `modbus_client` (validate on aarch64/flutter-pi); keep `bluez`/`dbus`.
 - **Docs:** plan §7.1 / P3.1; this change’s design D11–D21.
 - **flutter-pi:** no new keyboard patch for D15 v1; optional later hot-reload. Mouse prefs already covered by existing patches (D16).
-- **App retains:** URL probe UI / optional Dart HttpClient; Modbus “device info” UI fields via `hal/modbus` attributes. **Proxy policy moves to HAL.**
+- **App retains:** URL probe UI / optional Dart HttpClient; Modbus attribute **presentation** (alarm dialogs/episodes) via `hal/modbus` watch values — **not** App-owned poll loops. **Proxy policy moves to HAL.**
+- **Modbus:** HAL owns poll groups + change-only `watchAttributes`; bit alarms are config-mapped readable attributes (see design D14).

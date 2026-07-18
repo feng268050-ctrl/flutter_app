@@ -6,17 +6,17 @@ TBD - created by archiving change p1-linux-flutter-platform. Update Purpose afte
 
 ### Requirement: Plan A minimal systemd is PID 1
 
-The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL ship `libsystemd.so` for flutter-pi (`sd_event`); libsystemd availability does not by itself mandate systemd as init, but both are enabled via `lws_hmi_systemd.config`. The image MUST disable systemd-networkd, systemd-resolved, systemd-timesyncd, systemd-logind, and polkit packages per that config.
+The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL ship `libsystemd.so` for flutter-pi (`sd_event`); libsystemd availability does not by itself mandate systemd as init, but both are enabled via `lws_hmi_systemd.config`. **P3.1 / D11:** the image SHALL enable **systemd-networkd** and **systemd-resolved**. It MUST keep systemd-timesyncd, systemd-logind, and polkit packages disabled per that config.
 
 #### Scenario: systemd is init
 
 - **WHEN** P1 device boots
 - **THEN** `ps -p 1` shows systemd as PID 1
 
-#### Scenario: networkd not active
+#### Scenario: networkd and resolved enabled (P3.1)
 
-- **WHEN** P1 device reaches multi-user target
-- **THEN** `systemd-networkd` is not running
+- **WHEN** the appliance image reaches multi-user target after the D11 network cutover
+- **THEN** `systemd-networkd` and `systemd-resolved` are enabled (preset) and provide L3 addressing and DNS
 
 ### Requirement: hmi.service auto-starts flutter-pi after local-fs only
 

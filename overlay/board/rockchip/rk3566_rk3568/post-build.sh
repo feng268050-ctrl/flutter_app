@@ -54,15 +54,12 @@ ln -sf /usr/libexec/hmi/usb-plug-ssh-start.sh "$TARGET_DIR/usr/bin/start-usb-ssh
 ln -sf /usr/libexec/hmi/usb-plug-ssh-stop.sh "$TARGET_DIR/usr/bin/stop-usb-ssh"
 ln -sf /usr/libexec/hmi/usb-plug-ssh-recover.sh "$TARGET_DIR/usr/bin/recover-usb-ssh"
 ln -sf /usr/libexec/hmi/reboot-loader "$TARGET_DIR/usr/bin/reboot-loader"
-ln -sf /usr/libexec/hmi/change-backlight.sh "$TARGET_DIR/usr/bin/change-backlight"
-ln -sf /usr/libexec/hmi/change-volume.sh "$TARGET_DIR/usr/bin/change-volume"
 ln -sf /usr/libexec/hmi/change-orientation.sh "$TARGET_DIR/usr/bin/change-orientation"
-ln -sf /usr/libexec/hmi/apply-mouse-settings.sh "$TARGET_DIR/usr/bin/apply-mouse-settings"
 ln -sf /usr/libexec/hmi/enable-ssh-debug.sh "$TARGET_DIR/usr/bin/enable-ssh-debug"
 ln -sf /usr/libexec/hmi/disable-ssh-debug.sh "$TARGET_DIR/usr/bin/disable-ssh-debug"
 ln -sf /usr/libexec/hmi/usb-otg-mode.sh "$TARGET_DIR/usr/bin/usb-otg-mode"
 ln -sf /usr/libexec/hmi/set-performance-mode.sh "$TARGET_DIR/usr/bin/set-performance-mode"
-ln -sf /usr/libexec/wpa/wlan0-time-sync.sh "$TARGET_DIR/usr/bin/sync-time"
+# Deprecated iface-named path (half-upgraded boards / old callers).
 rm -f \
 	"$TARGET_DIR/usr/bin/boot-verify" \
 	"$TARGET_DIR/usr/bin/env-verify" \
@@ -74,6 +71,24 @@ rm -f \
 rm -f \
 	"$TARGET_DIR/opt/hmi/lib/libflutter_engine.so" \
 	"$TARGET_DIR/opt/hmi/data/icudtl.dat"
+
+
+# Retired Kind C helpers — HAL owns persist/restore (no SSH ops scripts).
+rm -f \
+	"$TARGET_DIR/usr/bin/change-backlight" \
+	"$TARGET_DIR/usr/bin/change-volume" \
+	"$TARGET_DIR/usr/bin/apply-mouse-settings" \
+	"$TARGET_DIR/usr/bin/apply-proxy" \
+	"$TARGET_DIR/usr/bin/sync-time" \
+	"$TARGET_DIR/usr/libexec/hmi/restore-settings.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/change-backlight.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/change-volume.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/apply-mouse-settings.sh" \
+	"$TARGET_DIR/usr/libexec/hmi/time-sync.sh" \
+	"$TARGET_DIR/usr/libexec/wpa/wlan0-time-sync.sh" \
+	"$TARGET_DIR/usr/libexec/network/apply-proxy.sh" \
+	"$TARGET_DIR/etc/systemd/system/settings-restore.service" \
+	"$TARGET_DIR/etc/systemd/system/multi-user.target.wants/settings-restore.service"
 
 # Retired helper scripts (Buildroot overlay copy does not delete removed files).
 rm -f \

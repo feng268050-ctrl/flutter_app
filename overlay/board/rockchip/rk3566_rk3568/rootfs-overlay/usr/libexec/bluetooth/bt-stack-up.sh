@@ -3,7 +3,17 @@
 # Usage: bt-stack-up.sh
 set -eu
 
-ALIAS="${LWS_BT_ALIAS:-hmi}"
+# Same resolve order as bt-set-alias.sh (arg N/A here).
+ALIAS_FILE=/var/lib/bluetooth/adapter-alias
+DEFAULT_ALIAS=lws-hmi
+if [ -n "${LWS_BT_ALIAS:-}" ]; then
+	ALIAS="$LWS_BT_ALIAS"
+elif [ -f "$ALIAS_FILE" ]; then
+	ALIAS="$(tr -d '\r' <"$ALIAS_FILE" | sed -n '1p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+	[ -n "$ALIAS" ] || ALIAS="$DEFAULT_ALIAS"
+else
+	ALIAS="$DEFAULT_ALIAS"
+fi
 
 log() {
 	echo "bt-stack-up: $*" >&2
@@ -133,15 +143,8 @@ if command -v hciconfig >/dev/null 2>&1; then
 	hciconfig hci0 sspmode 1 >/dev/null 2>&1 || true
 fi
 
-# Trusted HID heal (zombie LE / missing input-hog) — OS-level backup for BlueZ Policy.
-if [ -f /etc/systemd/system/bt-hid-heal.service ] || \
-	[ -f /usr/lib/systemd/system/bt-hid-heal.service ]; then
-	systemctl reset-failed bt-hid-heal.service 2>/dev/null || true
-	systemctl start bt-hid-heal.service 2>/dev/null || \
-		log "bt-hid-heal start soft-fail"
-fi
-
 # A2DP Sink is opt-in (Demo switch / bt-a2dp-sink-up.sh). Default: leave off.
+# HOGP/evdev attach is in-HAL when Connected (cyber_hal); link reconnect is BlueZ Policy.
 # If preference file was previously set to 1, restore speaker mode after stack up.
 PREF="${LWS_BT_A2DP_PREF:-/var/lib/bluetooth/bt-a2dp-sink}"
 if [ -f "$PREF" ] && [ "$(tr -d '[:space:]' <"$PREF" 2>/dev/null || true)" = "1" ]; then

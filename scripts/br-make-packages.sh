@@ -26,5 +26,9 @@ bash "$ROOT/scripts/docker-run.sh" bash -lc "
     exit 1
   fi
   make O=\"\$OUT\" rockchip_rk3566_rk3568_lws_hmi_defconfig
+  # Option flips (e.g. WPA_SUPPLICANT_DBUS) do not invalidate stamps — dirclean first.
+  for pkg in ${PKG_LIST}; do
+    make O=\"\$OUT\" \"\${pkg}-dirclean\" || true
+  done
   make O=\"\$OUT\" -j${JOBS} ${PKG_LIST}
 "

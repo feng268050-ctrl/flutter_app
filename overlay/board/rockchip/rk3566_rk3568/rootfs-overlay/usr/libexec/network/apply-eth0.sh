@@ -1,6 +1,6 @@
 #!/bin/sh
-# Apply eth0 link + IPv4 from /var/lib/network/eth0-ipv4 (for eth0-network.service).
-# Usage: apply-eth0.sh
+# Apply eth0 link + IPv4 via systemd-networkd (D11).
+# Pref: /var/lib/network/eth0-ipv4
 set -eu
 
 IFACE="${LWS_ETH_IFACE:-eth0}"
@@ -22,44 +22,14 @@ if [ ! -d "/sys/class/net/$IFACE" ]; then
 	exit 1
 fi
 
-export LWS_ETH_IFACE="$IFACE"
-export LWS_ETH_IN_UNIT=1
-
-/usr/libexec/network/eth0-link.sh up
-
-mode=dhcp
-address=
-prefix=24
-gateway=
-dns=
-if [ -f "$PREF" ]; then
-	# shellcheck disable=SC2162
-	while IFS='=' read key val; do
-		key="$(echo "$key" | tr -d '[:space:]')"
-		val="$(echo "$val" | tr -d '\r')"
-		case "$key" in
-		mode) mode="$(echo "$val" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')" ;;
-		address) address="$(echo "$val" | tr -d '[:space:]')" ;;
-		prefix) prefix="$(echo "$val" | tr -d '[:space:]')" ;;
-		gateway) gateway="$(echo "$val" | tr -d '[:space:]')" ;;
-		dns) dns="$(echo "$val" | tr -d '[:space:]')" ;;
-		esac
-	done <"$PREF"
+# Ensure a pref file exists (default DHCP).
+if [ ! -f "$PREF" ]; then
+	mkdir -p "$(dirname "$PREF")"
+	printf 'mode=dhcp\n' >"$PREF"
 fi
 
-case "$mode" in
-static)
-	[ -n "$address" ] || {
-		log "static mode missing address"
-		exit 1
-	}
-	/usr/libexec/network/eth0-static.sh "$address" "${prefix:-24}" "${gateway:-}" "${dns:-}"
-	;;
-*)
-	/usr/libexec/network/eth0-dhcp.sh start
-	;;
-esac
+/usr/libexec/network/networkd-apply-ipv4.sh "$IFACE" "$PREF"
 
-log "ok ($mode on $IFACE)"
 mkdir -p /var/lib/network
 : >/var/lib/network/eth0-wanted
+log "ok"

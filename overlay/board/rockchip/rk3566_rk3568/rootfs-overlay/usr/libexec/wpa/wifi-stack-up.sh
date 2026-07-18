@@ -77,6 +77,10 @@ if wpa_cli -i "$IFACE" status >/dev/null 2>&1 && \
 fi
 
 # Escape hmi.service cgroup: never start wpa_supplicant as a child of Demo.
+# Stop D-Bus-activated stock daemon first (empty `wpa_supplicant -u`); it owns
+# fi.w1.wpa_supplicant1 and blocks our -u -i instance. Unit is also masked in
+# image build; stop remains for boards that still have an unmasked unit.
+systemctl stop wpa_supplicant.service 2>/dev/null || true
 systemctl reset-failed "$UNIT" 2>/dev/null || true
 if ! systemctl start "$UNIT"; then
 	log "$UNIT failed to start"

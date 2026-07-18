@@ -1,9 +1,23 @@
 #!/bin/sh
 # Set local adapter identity so phones do not see the default "BlueZ 5.xx".
 # Usage: bt-set-alias.sh [alias]
+#
+# Resolve order: arg → LWS_BT_ALIAS → /var/lib/bluetooth/adapter-alias → lws-hmi
 set -eu
 
-ALIAS="${1:-${LWS_BT_ALIAS:-hmi}}"
+ALIAS_FILE=/var/lib/bluetooth/adapter-alias
+DEFAULT_ALIAS=lws-hmi
+
+if [ -n "${1:-}" ]; then
+	ALIAS="$1"
+elif [ -n "${LWS_BT_ALIAS:-}" ]; then
+	ALIAS="$LWS_BT_ALIAS"
+elif [ -f "$ALIAS_FILE" ]; then
+	ALIAS="$(tr -d '\r' <"$ALIAS_FILE" | sed -n '1p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+	[ -n "$ALIAS" ] || ALIAS="$DEFAULT_ALIAS"
+else
+	ALIAS="$DEFAULT_ALIAS"
+fi
 
 log() {
 	echo "bt-set-alias: $*" >&2

@@ -55,7 +55,7 @@ else
 	pass "no rockchip configfs gadget"
 fi
 
-for unit in hmi.service mainserver.service cpu-performance.service pwrkey-poweroff.service settings-restore.service; do
+for unit in hmi.service mainserver.service cpu-performance.service pwrkey-poweroff.service ; do
 	if [ -e "$WANTS/$unit" ]; then
 		pass "$unit enabled"
 	else

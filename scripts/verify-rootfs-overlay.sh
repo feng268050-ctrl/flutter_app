@@ -40,7 +40,7 @@ check_systemd_wants() {
 		fi
 	done
 
-	for unit in hmi.service mainserver.service cpu-performance.service pwrkey-poweroff.service settings-restore.service usb-otg-role-boot.service ab-boot-confirm.service; do
+	for unit in hmi.service mainserver.service cpu-performance.service pwrkey-poweroff.service usb-otg-role-boot.service ab-boot-confirm.service; do
 		if unit_wants_link "$unit"; then
 			echo "OK:  $unit enabled in $label"
 		else
@@ -268,7 +268,7 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/hmi ---"
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh restore-settings.sh change-backlight.sh change-volume.sh change-orientation.sh apply-mouse-settings.sh bind-prefs.sh push-app-apply-and-restart.sh hmi-launch.sh; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh change-orientation.sh bind-prefs.sh push-app-apply-and-restart.sh hmi-launch.sh; do
 		if [[ -x "$libexec_hmi/$f" ]]; then
 			echo "OK:  hmi/$f"
 		else
@@ -285,7 +285,7 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/wpa ---"
-	for f in run-wpa.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh; do
+	for f in run-wpa.sh wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh; do
 		if [[ -x "$libexec_wpa/$f" ]]; then
 			echo "OK:  wpa/$f"
 		else
@@ -293,10 +293,12 @@ run_check() {
 			missing=1
 		fi
 	done
+	# time-sync.sh retired — HAL LinuxDateTimeController owns clock sync.
+	echo "OK:  time-sync via HAL (no hmi/time-sync.sh)"
 
 	echo ""
 	echo "--- usr/libexec/network ---"
-	for f in apply-eth0.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh; do
+	for f in apply-eth0.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh networkd-apply-ipv4.sh; do
 		if [[ -x "$libexec_net/$f" ]]; then
 			echo "OK:  network/$f"
 		else
@@ -307,12 +309,20 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/bluetooth ---"
-	for f in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-stop-agent.sh bt-set-alias.sh bt-trust-paired.sh bt-hid-heal.sh bt-hid-heal-loop.sh wifibt-bringup.sh; do
+	for f in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-stop-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh bt-hid-check.sh; do
 		if [[ -x "$libexec_bt/$f" ]]; then
 			echo "OK:  bluetooth/$f"
 		else
 			echo "FAIL: bluetooth/$f missing or not executable" >&2
 			missing=1
+		fi
+	done
+	for retired in bt-hid-heal.sh bt-hid-heal-loop.sh; do
+		if [[ -e "$libexec_bt/$retired" ]]; then
+			echo "FAIL: bluetooth/$retired must be retired" >&2
+			missing=1
+		else
+			echo "OK:  bluetooth/$retired absent (HAL heal)"
 		fi
 	done
 
@@ -331,9 +341,14 @@ run_check() {
 		missing=1
 	fi
 	if [[ -f "$target/var/lib/hmi/http-proxy" ]]; then
-		echo "OK:  var/lib/hmi/http-proxy"
+		echo "OK:  var/lib/hmi/http-proxy (legacy; apply-proxy migrates)"
 	else
-		echo "FAIL: var/lib/hmi/http-proxy missing" >&2
+		echo "WARN: var/lib/hmi/http-proxy missing (optional after migrate)"
+	fi
+	if [[ -f "$target/var/lib/network/proxy.conf" ]]; then
+		echo "OK:  var/lib/network/proxy.conf"
+	else
+		echo "FAIL: var/lib/network/proxy.conf missing" >&2
 		missing=1
 	fi
 	if [[ -f "$target/etc/dbus-1/system.d/bluetooth.conf" ]]; then
@@ -384,17 +399,13 @@ start-usb-ssh /usr/libexec/hmi/usb-plug-ssh-start.sh
 stop-usb-ssh /usr/libexec/hmi/usb-plug-ssh-stop.sh
 recover-usb-ssh /usr/libexec/hmi/usb-plug-ssh-recover.sh
 reboot-loader /usr/libexec/hmi/reboot-loader
-change-backlight /usr/libexec/hmi/change-backlight.sh
-change-volume /usr/libexec/hmi/change-volume.sh
 change-orientation /usr/libexec/hmi/change-orientation.sh
-apply-mouse-settings /usr/libexec/hmi/apply-mouse-settings.sh
 enable-ssh-debug /usr/libexec/hmi/enable-ssh-debug.sh
 disable-ssh-debug /usr/libexec/hmi/disable-ssh-debug.sh
 usb-otg-mode /usr/libexec/hmi/usb-otg-mode.sh
 set-performance-mode /usr/libexec/hmi/set-performance-mode.sh
-sync-time /usr/libexec/wpa/wlan0-time-sync.sh
 EOF
-	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader lws-hmi-backlight-apply; do
+	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader lws-hmi-backlight-apply change-backlight change-volume apply-mouse-settings apply-proxy sync-time; do
 		if [[ -e "$target/usr/bin/$retired" || -L "$target/usr/bin/$retired" ]]; then
 			echo "FAIL: retired usr/bin/$retired command still present" >&2
 			missing=1
@@ -598,6 +609,149 @@ EOF
 		echo "FAIL: preset missing disable for settings network units" >&2
 		missing=1
 	fi
+	if grep -qE '^enable[[:space:]]+systemd-networkd\.service' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
+		echo "OK:  preset enables systemd-networkd.service"
+	else
+		echo "FAIL: preset must enable systemd-networkd.service (D11)" >&2
+		missing=1
+	fi
+	if grep -qE '^enable[[:space:]]+systemd-resolved\.service' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
+		echo "OK:  preset enables systemd-resolved.service"
+	else
+		echo "FAIL: preset must enable systemd-resolved.service (D11 DNS)" >&2
+		missing=1
+	fi
+
+	echo ""
+	echo "--- D11 networkd + resolved + wpa D-Bus (no legacy L3) ---"
+	netd_bin=""
+	for p in "$target/lib/systemd/systemd-networkd" \
+		"$target/usr/lib/systemd/systemd-networkd"; do
+		if [[ -x "$p" ]]; then
+			netd_bin=$p
+			break
+		fi
+	done
+	if [[ -n "$netd_bin" ]]; then
+		echo "OK:  systemd-networkd binary (${netd_bin#$target})"
+	else
+		echo "FAIL: systemd-networkd binary missing (br-make-packages systemd systemd)" >&2
+		missing=1
+	fi
+	resolved_bin=""
+	for p in "$target/lib/systemd/systemd-resolved" \
+		"$target/usr/lib/systemd/systemd-resolved"; do
+		if [[ -x "$p" ]]; then
+			resolved_bin=$p
+			break
+		fi
+	done
+	if [[ -n "$resolved_bin" ]]; then
+		echo "OK:  systemd-resolved binary (${resolved_bin#$target})"
+	else
+		echo "FAIL: systemd-resolved binary missing (br-make-packages systemd systemd)" >&2
+		missing=1
+	fi
+	if [[ -x "$target/usr/bin/networkctl" ]] || [[ -x "$target/bin/networkctl" ]]; then
+		echo "OK:  networkctl present"
+	else
+		echo "FAIL: networkctl missing in staging target" >&2
+		missing=1
+	fi
+	if [[ -f "$target/lib/systemd/system/systemd-networkd.service" ]] || \
+		[[ -f "$target/usr/lib/systemd/system/systemd-networkd.service" ]]; then
+		echo "OK:  systemd-networkd.service unit"
+	else
+		echo "FAIL: systemd-networkd.service unit missing" >&2
+		missing=1
+	fi
+	if [[ -f "$target/lib/systemd/system/systemd-resolved.service" ]] || \
+		[[ -f "$target/usr/lib/systemd/system/systemd-resolved.service" ]]; then
+		echo "OK:  systemd-resolved.service unit"
+	else
+		echo "FAIL: systemd-resolved.service unit missing" >&2
+		missing=1
+	fi
+	if [[ -L "$target/etc/resolv.conf" ]]; then
+		_rl="$(readlink "$target/etc/resolv.conf")"
+		case "$_rl" in
+		*systemd/resolve/*)
+			echo "OK:  /etc/resolv.conf → resolved ($_rl)"
+			;;
+		*)
+			echo "FAIL: /etc/resolv.conf must point at systemd-resolved (got $_rl)" >&2
+			missing=1
+			;;
+		esac
+	else
+		echo "FAIL: /etc/resolv.conf must be symlink to systemd-resolved" >&2
+		missing=1
+	fi
+	if [[ -f "$target/etc/systemd/resolved.conf.d/10-appliance.conf" ]]; then
+		echo "OK:  resolved.conf.d/10-appliance.conf present"
+	else
+		echo "FAIL: resolved.conf.d/10-appliance.conf missing" >&2
+		missing=1
+	fi
+	if [[ -x "$target/usr/sbin/wpa_supplicant" ]] && \
+		strings "$target/usr/sbin/wpa_supplicant" 2>/dev/null | grep -q 'dbus_bus_request_name'; then
+		echo "OK:  wpa_supplicant linked with D-Bus"
+	elif [[ -x "$target/usr/sbin/wpa_supplicant" ]]; then
+		# strings may miss; require help text after qemu — check overlay run-wpa contract instead
+		echo "WARN: could not confirm wpa D-Bus symbols via strings"
+	else
+		echo "FAIL: wpa_supplicant missing" >&2
+		missing=1
+	fi
+	if grep -qE '(^|[[:space:]])udhcpc([[:space:]]|$)|apply_legacy|legacy_dhcp|sync_resolv' \
+		"$libexec_net/networkd-apply-ipv4.sh" 2>/dev/null; then
+		echo "FAIL: networkd-apply-ipv4.sh must not contain legacy DHCP or resolv sync (D11)" >&2
+		missing=1
+	else
+		echo "OK:  networkd-apply-ipv4.sh is networkd-only (DNS via resolved)"
+	fi
+	if grep -q 'networkctl missing' "$libexec_net/networkd-apply-ipv4.sh" 2>/dev/null && \
+		grep -q 'FATAL' "$libexec_net/networkd-apply-ipv4.sh" 2>/dev/null; then
+		echo "OK:  networkd-apply-ipv4.sh fails hard without networkctl"
+	else
+		echo "FAIL: networkd-apply-ipv4.sh must FATAL without networkctl" >&2
+		missing=1
+	fi
+	if grep -qE 'FATAL:.*-u|has no -u' "$libexec_wpa/run-wpa.sh" 2>/dev/null; then
+		echo "OK:  run-wpa.sh requires wpa -u"
+	else
+		echo "FAIL: run-wpa.sh must require D-Bus -u" >&2
+		missing=1
+	fi
+	if [[ -e "$target/usr/sbin/dhcpcd" ]] || [[ -e "$target/sbin/dhcpcd" ]]; then
+		echo "FAIL: dhcpcd still in target — L3 is networkd only (D11)" >&2
+		missing=1
+	else
+		echo "OK:  dhcpcd absent from target"
+	fi
+	if grep -q 'BR2_PACKAGE_SYSTEMD_NETWORKD=y' \
+		"$ROOT/overlay/buildroot/chips/lws_hmi_systemd.config" 2>/dev/null; then
+		echo "OK:  chips/lws_hmi_systemd.config enables NETWORKD"
+	else
+		echo "FAIL: chips/lws_hmi_systemd.config missing BR2_PACKAGE_SYSTEMD_NETWORKD=y" >&2
+		missing=1
+	fi
+	if grep -q 'BR2_PACKAGE_SYSTEMD_RESOLVED=y' \
+		"$ROOT/overlay/buildroot/chips/lws_hmi_systemd.config" 2>/dev/null; then
+		echo "OK:  chips/lws_hmi_systemd.config enables RESOLVED"
+	else
+		echo "FAIL: chips/lws_hmi_systemd.config missing BR2_PACKAGE_SYSTEMD_RESOLVED=y" >&2
+		missing=1
+	fi
+	if grep -q 'BR2_PACKAGE_WPA_SUPPLICANT_DBUS=y' \
+		"$ROOT/overlay/buildroot/chips/lws_hmi_network.config" 2>/dev/null; then
+		echo "OK:  chips/lws_hmi_network.config enables WPA_SUPPLICANT_DBUS"
+	else
+		echo "FAIL: chips/lws_hmi_network.config missing BR2_PACKAGE_WPA_SUPPLICANT_DBUS=y" >&2
+		missing=1
+	fi
 	if grep -q 'wlan-wpa.service' "$libexec_wpa/wifi-stack-up.sh" 2>/dev/null && \
 		! grep -qE 'wpa_supplicant[[:space:]]+-B' "$libexec_wpa/wifi-stack-up.sh" 2>/dev/null; then
 		echo "OK:  wifi-stack-up starts wlan-wpa.service (not hmi-cgroup -B)"
@@ -621,20 +775,12 @@ EOF
 		echo "FAIL: missing eth0-network.service / apply-eth0.sh" >&2
 		missing=1
 	fi
-	if [[ -f "$target/etc/systemd/system/settings-restore.service" ]] && \
-		[[ -x "$libexec_hmi/restore-settings.sh" ]] && \
-		grep -q 'After=hmi.service' \
-		"$target/etc/systemd/system/settings-restore.service" 2>/dev/null && \
-		! grep -q 'Before=hmi.service' \
-		"$target/etc/systemd/system/settings-restore.service" 2>/dev/null && \
-		grep -q 'Nice=10' \
-		"$target/etc/systemd/system/settings-restore.service" 2>/dev/null && \
-		grep -q 'Wants=settings-restore.service' \
-		"$target/etc/systemd/system/hmi.service" 2>/dev/null; then
-		echo "OK:  settings-restore After=hmi (UI-first; Nice/idle)"
-	else
-		echo "FAIL: settings-restore must After=hmi + Nice; hmi Wants=restore (UI-first)" >&2
+	if [[ -e "$target/etc/systemd/system/settings-restore.service" ]] || \
+		[[ -e "$libexec_hmi/restore-settings.sh" ]]; then
+		echo "FAIL: settings-restore retired — HAL BoardBindings.restorePersistedSettings" >&2
 		missing=1
+	else
+		echo "OK:  settings-restore retired (HAL-owned restore)"
 	fi
 	if [[ -x "$libexec_hmi/bind-prefs.sh" ]] && \
 		grep -q 'bind-prefs.sh' \
@@ -644,12 +790,19 @@ EOF
 		echo "FAIL: missing bind-prefs.sh wired into display-init" >&2
 		missing=1
 	fi
-	if grep -q 'enable settings-restore.service' \
+	if grep -q 'enable hmi.service' \
 		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
-		echo "OK:  preset enables settings-restore.service"
+		echo "OK:  preset enables hmi.service"
 	else
-		echo "FAIL: preset must enable settings-restore.service" >&2
+		echo "FAIL: preset must enable hmi.service" >&2
 		missing=1
+	fi
+	if grep -q 'settings-restore' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
+		echo "FAIL: preset must not enable settings-restore.service" >&2
+		missing=1
+	else
+		echo "OK:  preset has no settings-restore"
 	fi
 
 	if [[ -f "$target/etc/systemd/system/ssh-debug-lan.service" ]]; then
@@ -822,11 +975,12 @@ EOF
 			echo "FAIL: bluetooth.service.d missing Restart=on-abnormal" >&2
 			missing=1
 		fi
-		if [[ -f "$target/etc/systemd/system/bt-hid-heal.service" ]]; then
-			echo "OK:  bt-hid-heal.service unit"
-		else
-			echo "FAIL: bt-hid-heal.service missing" >&2
+		if [[ -e "$target/etc/systemd/system/bt-hid-heal.service" ]] || \
+			[[ -e "$target/usr/lib/systemd/system/bt-hid-heal.service" ]]; then
+			echo "FAIL: bt-hid-heal.service must be retired (HAL in-process heal)" >&2
 			missing=1
+		else
+			echo "OK:  bt-hid-heal.service absent"
 		fi
 	fi
 	if grep -qF '#include "chips/lws_hmi_npu.config"' "$def" 2>/dev/null; then

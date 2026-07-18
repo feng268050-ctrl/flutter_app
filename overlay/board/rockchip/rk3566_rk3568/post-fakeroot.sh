@@ -44,15 +44,33 @@ if command -v systemctl >/dev/null 2>&1; then
 		systemctl --root="$TARGET_DIR" disable "$unit" >/dev/null 2>&1 || true
 	done
 	systemctl --root="$TARGET_DIR" mask usbdevice.service >/dev/null 2>&1 || true
+	systemctl --root="$TARGET_DIR" mask wpa_supplicant.service >/dev/null 2>&1 || true
 fi
 
 ln -sf /dev/null "$SYSTEMD_DIR/usbdevice.service"
+# Keep stock D-Bus wpa masked across preset-all (see 06-systemd.sh).
+ln -sf /dev/null "$SYSTEMD_DIR/wpa_supplicant.service"
 rm -f \
 	"$TARGET_DIR/usr/bin/usbdevice" \
 	"$TARGET_DIR/lib/udev/rules.d/61-usbdevice.rules" \
 	"$TARGET_DIR/etc/profile.d/usbdevice.sh" \
 	"$TARGET_DIR/usr/lib/systemd/system/usbdevice.service" \
 	"$TARGET_DIR/lib/systemd/system/usbdevice.service"
+
+# D11: L3 is networkd-only — purge leftover dhcpcd from older builds.
+rm -f \
+	"$TARGET_DIR/usr/sbin/dhcpcd" \
+	"$TARGET_DIR/sbin/dhcpcd" \
+	"$TARGET_DIR/etc/dhcpcd.conf" \
+	"$TARGET_DIR/usr/lib/systemd/system/dhcpcd.service" \
+	"$TARGET_DIR/lib/systemd/system/dhcpcd.service" \
+	"$TARGET_DIR/etc/systemd/system/dhcpcd.service"
+rm -rf \
+	"$TARGET_DIR/usr/share/dhcpcd" \
+	"$TARGET_DIR/var/db/dhcpcd" \
+	"$TARGET_DIR/etc/systemd/system/dhcpcd.service.d" \
+	2>/dev/null || true
+
 
 rm -f \
 	"$TARGET_DIR/usr/libexec/hmi/debug-boot.sh" \
@@ -68,11 +86,14 @@ link_unit mainserver.service
 link_unit cpu-performance.service
 link_unit serial-stty.service
 link_unit pwrkey-poweroff.service
-link_unit settings-restore.service
 link_unit ab-boot-confirm.service
 link_unit hmi.service
 
 ln -sf /dev/null "$SYSTEMD_DIR/systemd-network-generator.service"
+
+# D11: glibc DNS via systemd-resolved (Buildroot systemd also sets this when
+# BR2_PACKAGE_SYSTEMD_RESOLVED=y; reinforce after overlay / preset-all).
+ln -sfn ../run/systemd/resolve/resolv.conf "$TARGET_DIR/etc/resolv.conf"
 
 SYNC_ENGINE="$(dirname "$0")/sync-flutter-engine.sh"
 if [ -f "$SYNC_ENGINE" ]; then

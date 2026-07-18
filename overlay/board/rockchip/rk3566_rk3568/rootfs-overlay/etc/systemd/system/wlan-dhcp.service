@@ -6,8 +6,7 @@ DefaultDependencies=no
 After=local-fs.target wlan-wpa.service
 
 [Service]
-# Keep dhcpcd outside hmi.service cgroup (same as wlan-wpa.service).
-# KillMode=none: leftover dhcpcd after ExecStart must not be reaped with the oneshot.
+# Keep networkd apply outside hmi.service cgroup.
 Type=oneshot
 RemainAfterExit=yes
 KillMode=none

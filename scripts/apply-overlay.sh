@@ -23,7 +23,9 @@ BR_PKG_FLUTTER_ENGINE="$SDK/buildroot/package/flutter-engine"
 BR_PKG_FLUTTER_SDK="$SDK/buildroot/package/flutter-sdk-bin"
 BR_PKG_FLUTTER_PI="$SDK/buildroot/package/flutter-pi"
 BR_PKG_LIBSERIALPORT="$SDK/buildroot/package/libserialport"
+BR_PKG_BLUEZ5_UTILS="$SDK/buildroot/package/bluez5_utils"
 BR_PKG_SOURCE_HAN_SANS_CN="$SDK/buildroot/package/source-han-sans/source-han-sans-cn"
+LWS_ROCKCHIP_BLUEZ_PATCH_STASH=".lws-rockchip-bluez-patch-disabled"
 BR_OVERLAY_ROOT="$SDK/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay"
 BR_OVERLAY="$BR_OVERLAY_ROOT/system/etc"
 OVERLAY_FS="$OVERLAY/board/rockchip/rk3566_rk3568/rootfs-overlay"
@@ -430,6 +432,38 @@ sync_libserialport_package() {
   install_file "$src" "$BR_PKG_LIBSERIALPORT/0002-dont-check-termiox.patch"
 }
 
+# Upstream BlueZ Device1.Connect/Disconnect are empty-arg. Rockchip's
+# 0001-bluez-modified-only-for-rockchip.patch breaks that D-Bus contract
+# (Connect(s ADDR_TYPE)). Stash it so the product image builds stock 5.77.
+sync_bluez5_utils_stock() {
+  local pkg="$BR_PKG_BLUEZ5_UTILS"
+  local patch="$pkg/0001-bluez-modified-only-for-rockchip.patch"
+  local stash="$pkg/$LWS_ROCKCHIP_BLUEZ_PATCH_STASH"
+  [[ -d "$pkg" ]] || {
+    echo "overlay: skip bluez5_utils stock (package missing)" >&2
+    return 0
+  }
+  if [[ -f "$patch" ]]; then
+    mkdir -p "$stash"
+    mv -f "$patch" "$stash/"
+    echo "overlay: disabled Rockchip BlueZ patch (stock Device1 Connect/Disconnect)"
+  elif [[ -f "$stash/0001-bluez-modified-only-for-rockchip.patch" ]]; then
+    echo "overlay: Rockchip BlueZ patch already stashed (stock BlueZ)"
+  else
+    echo "overlay: no Rockchip BlueZ patch present (already stock)"
+  fi
+}
+
+restore_bluez5_utils_rockchip_patch() {
+  local pkg="$BR_PKG_BLUEZ5_UTILS"
+  local stash="$pkg/$LWS_ROCKCHIP_BLUEZ_PATCH_STASH"
+  local stashed="$stash/0001-bluez-modified-only-for-rockchip.patch"
+  [[ -f "$stashed" ]] || return 0
+  mv -f "$stashed" "$pkg/"
+  rmdir "$stash" 2>/dev/null || true
+  echo "overlay: restored Rockchip BlueZ patch for bluez5_utils"
+}
+
 # bluez-alsa --enable-debug AC_CHECK_LIB(SegFault) → -lSegFault, but target lacks the .so.
 # Also install A2DP-Sink softvol patch (skip broken AVRCP Absolute Volume write).
 sync_bluez_alsa_package() {
@@ -729,6 +763,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       echo "restored upstream flutter-pi.mk"
     fi
     restore_br_package_patches "$BR_PKG_FLUTTER_PI" "flutter-pi"
+    restore_bluez5_utils_rockchip_patch
     restore_flutter_pi_config
     if [[ -f "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig" ]]; then
       mv -f "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig" \
@@ -854,6 +889,7 @@ sync_flutter_engine_package
 sync_flutter_sdk_package
 sync_flutter_pi_package
 sync_libserialport_package
+sync_bluez5_utils_stock
 sync_bluez_alsa_package
 sync_source_han_sans_cn_package
 patch_buildroot_config

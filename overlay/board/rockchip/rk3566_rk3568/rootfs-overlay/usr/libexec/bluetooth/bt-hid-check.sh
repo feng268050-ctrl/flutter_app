@@ -58,19 +58,19 @@ if [ -n "$ADDR" ] && command -v bluetoothctl >/dev/null 2>&1; then
 			grep -E 'org\.bluez\.(Device1|Input1|Battery1)' || true
 
 		# Zombie LE (Connected without ServicesResolved) → ConnectProfile page-timeouts.
-		# Rockchip BlueZ: Connect/Disconnect require ADDR_TYPE (random|public|bredr|auto).
+		# Policy keeps Trusted Connected sticky — Untrust so Disconnect sticks.
 		SR=$(busctl get-property org.bluez "$PATH_OBJ" org.bluez.Device1 ServicesResolved 2>/dev/null || true)
 		CONN=$(busctl get-property org.bluez "$PATH_OBJ" org.bluez.Device1 Connected 2>/dev/null || true)
 		ATYPE=$(busctl get-property org.bluez "$PATH_OBJ" org.bluez.Device1 AddressType 2>/dev/null | sed -n 's/.*"\([^"]*\)".*/\1/p')
-		[ -n "$ATYPE" ] || ATYPE=random
-		log "AddressType=$ATYPE"
+		log "AddressType=$ATYPE (info only)"
 		case "$CONN" in *true*)
 			case "$SR" in *false*|"")
-				log "zombie LE: Disconnect/Connect s \"$ATYPE\" to force GATT…"
-				busctl call org.bluez "$PATH_OBJ" org.bluez.Device1 Disconnect s "$ATYPE" 2>&1 || true
+				log "zombie LE: Untrust/Disconnect/Trust/Connect to force GATT…"
+				busctl set-property org.bluez "$PATH_OBJ" org.bluez.Device1 Trusted b false 2>&1 || true
+				busctl call org.bluez "$PATH_OBJ" org.bluez.Device1 Disconnect 2>&1 || true
 				sleep 2
-				busctl call org.bluez "$PATH_OBJ" org.bluez.Device1 Connect s "$ATYPE" 2>&1 || \
-					busctl call org.bluez "$PATH_OBJ" org.bluez.Device1 Connect s "auto" 2>&1 || true
+				busctl set-property org.bluez "$PATH_OBJ" org.bluez.Device1 Trusted b true 2>&1 || true
+				busctl call org.bluez "$PATH_OBJ" org.bluez.Device1 Connect 2>&1 || true
 				i=0
 				while [ "$i" -lt 20 ]; do
 					SR=$(busctl get-property org.bluez "$PATH_OBJ" org.bluez.Device1 ServicesResolved 2>/dev/null || true)

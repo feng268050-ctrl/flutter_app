@@ -47,6 +47,21 @@ strip_rockchip_usbdevice() {
 }
 strip_rockchip_usbdevice
 
+# D11: purge leftover dhcpcd (Buildroot does not always remove disabled pkgs).
+rm -f \
+	"$TARGET_DIR/usr/sbin/dhcpcd" \
+	"$TARGET_DIR/sbin/dhcpcd" \
+	"$TARGET_DIR/etc/dhcpcd.conf" \
+	"$TARGET_DIR/usr/lib/systemd/system/dhcpcd.service" \
+	"$TARGET_DIR/lib/systemd/system/dhcpcd.service" \
+	"$TARGET_DIR/etc/systemd/system/dhcpcd.service"
+rm -rf \
+	"$TARGET_DIR/usr/share/dhcpcd" \
+	"$TARGET_DIR/var/db/dhcpcd" \
+	"$TARGET_DIR/etc/systemd/system/dhcpcd.service.d" \
+	2>/dev/null || true
+echo "post-systemd-finalize: purged dhcpcd (networkd-only L3)"
+
 rm -f \
 	"$TARGET_DIR/etc/systemd/system/lws-hmi-boot-kpi.service" \
 	"$TARGET_DIR/usr/libexec/hmi/boot-kpi-watch.sh" \

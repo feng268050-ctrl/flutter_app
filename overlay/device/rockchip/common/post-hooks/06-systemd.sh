@@ -22,7 +22,6 @@ DISABLE_AT_BOOT=(
 	lws-hmi-performance.service
 	lws-hmi-pwrkey-poweroff.service
 	lws-hmi-serial-stty.service
-	lws-hmi-settings-restore.service
 	lws-hmi-usb-otg-role-boot.service
 	mediamtx.service
 	sshd.service
@@ -92,11 +91,6 @@ if [ -f "$TARGET_DIR/etc/systemd/system/hmi.service" ]; then
 	echo "post-systemd: enabled hmi.service"
 fi
 
-if [ -f "$TARGET_DIR/etc/systemd/system/settings-restore.service" ]; then
-	link_unit settings-restore.service
-	echo "post-systemd: enabled settings-restore.service"
-fi
-
 if [ -f "$TARGET_DIR/etc/systemd/system/ab-boot-confirm.service" ]; then
 	link_unit ab-boot-confirm.service
 	echo "post-systemd: enabled ab-boot-confirm.service"
@@ -146,6 +140,31 @@ if [ -d "$SYSTEMD_DIR" ]; then
 	ln -sf /dev/null "$SYSTEMD_DIR/systemd-network-generator.service"
 	echo "post-systemd: masked systemd-network-generator.service"
 fi
+
+# Mask stock D-Bus-activated `wpa_supplicant -u` (no iface). HMI opens
+# fi.w1.wpa_supplicant1 at boot; without a mask that activates the stock unit and
+# blocks on-demand wlan-wpa.service (second -u → Failed to initialize).
+# Wi‑Fi L2 is only via wlan-wpa.service → run-wpa.sh (-u -i wlan0).
+if [ -d "$SYSTEMD_DIR" ]; then
+	ln -sf /dev/null "$SYSTEMD_DIR/wpa_supplicant.service"
+	echo "post-systemd: masked wpa_supplicant.service (use wlan-wpa.service)"
+fi
+
+# D11: purge leftover dhcpcd from older builds (config has it unset; Buildroot
+# does not always remove files from target/ when a package is disabled).
+rm -f \
+	"$TARGET_DIR/usr/sbin/dhcpcd" \
+	"$TARGET_DIR/sbin/dhcpcd" \
+	"$TARGET_DIR/etc/dhcpcd.conf" \
+	"$TARGET_DIR/usr/lib/systemd/system/dhcpcd.service" \
+	"$TARGET_DIR/lib/systemd/system/dhcpcd.service" \
+	"$TARGET_DIR/etc/systemd/system/dhcpcd.service"
+rm -rf \
+	"$TARGET_DIR/usr/share/dhcpcd" \
+	"$TARGET_DIR/var/db/dhcpcd" \
+	"$TARGET_DIR/etc/systemd/system/dhcpcd.service.d" \
+	2>/dev/null || true
+echo "post-systemd: purged dhcpcd (networkd-only L3)"
 
 # Install helper scripts from SDK buildroot board overlay (synced by apply-overlay).
 # Do not rely on LWS_HMI_ROOT — Rockchip post-hooks may not inherit it from docker-run.

@@ -68,11 +68,27 @@ apply_fail() {
 }
 
 wait_line_rendered=0
+# Same single-line progress style as stream-file-progress.py (stderr + \r).
+# Do not pad to a fixed width: %-100s wraps on narrow terminals and \r cannot
+# rewind past the wrap, so each tick looks like a new line.
 clear_wait_line() {
 	if [[ "$wait_line_rendered" -eq 1 ]]; then
-		printf '\r%-100s\r' ""
+		printf '\r\033[K' >&2
 		wait_line_rendered=0
 	fi
+}
+
+render_wait_line() {
+	local msg="$1"
+	local cols
+	cols="$(tput cols 2>/dev/null || echo 80)"
+	[[ "$cols" =~ ^[0-9]+$ ]] || cols=80
+	((cols < 20)) && cols=20
+	if ((${#msg} >= cols)); then
+		msg="${msg:0:$((cols - 1))}"
+	fi
+	printf '\r\033[K%s' "$msg" >&2
+	wait_line_rendered=1
 }
 
 [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && usage && exit 0
@@ -135,12 +151,12 @@ while ((SECONDS < deadline)); do
 	if [[ -n "$tail1" ]]; then
 		detail=" — ${tail1:0:60}"
 	fi
-	printf '\r%-100s' "  Waiting for board apply${dots} (${elapsed}s)${detail}"
-	wait_line_rendered=1
+	render_wait_line "  Waiting for board apply${dots} (${elapsed}s)${detail}"
 
 	if [[ "$status_poll_tick" -eq 0 ]]; then
-		st="$(remote "cat $APPLY_STATUS 2>/dev/null || true" | tr -d '\r' | head -n1 || true)"
-		log="$(remote "cat $APPLY_LOG 2>/dev/null || true" || true)"
+		# Silence ssh client stderr so host warnings do not break the \r line.
+		st="$(remote "cat $APPLY_STATUS 2>/dev/null || true" 2>/dev/null | tr -d '\r' | head -n1 || true)"
+		log="$(remote "cat $APPLY_LOG 2>/dev/null || true" 2>/dev/null || true)"
 		if apply_ok "$st" "$log"; then
 			clear_wait_line
 			printf '%s\n' "$log"

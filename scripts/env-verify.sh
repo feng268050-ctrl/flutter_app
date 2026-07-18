@@ -135,23 +135,125 @@ else
 fi
 
 echo ""
-echo "--- wifibt stack (P1 rootfs; boot-deferred) ---"
+echo "--- network stack (D11: networkd L3 + wpa D-Bus L2) ---"
 if command -v wpa_supplicant >/dev/null 2>&1; then
 	pass "wpa_supplicant installed"
 else
 	fail "wpa_supplicant missing"
+fi
+if ! /usr/sbin/wpa_supplicant -h 2>&1 | grep -q -- '[[:space:]]-u[[:space:]]'; then
+	fail "wpa_supplicant missing -u (BR2_PACKAGE_WPA_SUPPLICANT_DBUS; br-make-packages wpa wpa_supplicant)"
+else
+	pass "wpa_supplicant has D-Bus (-u)"
 fi
 if command -v wpa_cli >/dev/null 2>&1; then
 	pass "wpa_cli installed"
 else
 	fail "wpa_cli missing"
 fi
-if command -v dhcpcd >/dev/null 2>&1; then
-	pass "dhcpcd installed (wlan0 helper)"
-elif command -v udhcpc >/dev/null 2>&1; then
-	pass "udhcpc installed (wlan0 helper fallback)"
+if command -v networkctl >/dev/null 2>&1; then
+	pass "networkctl installed (systemd-networkd)"
 else
-	fail "dhcpcd/udhcpc missing (enable BR2_PACKAGE_DHCPCD)"
+	fail "networkctl missing (BR2_PACKAGE_SYSTEMD_NETWORKD; br-make-packages systemd systemd)"
+fi
+netd_bin=""
+for p in /lib/systemd/systemd-networkd /usr/lib/systemd/systemd-networkd; do
+	if [ -x "$p" ]; then
+		netd_bin=$p
+		break
+	fi
+done
+if [ -n "$netd_bin" ]; then
+	pass "systemd-networkd binary ($netd_bin)"
+else
+	fail "systemd-networkd binary missing"
+fi
+if systemctl cat systemd-networkd.service >/dev/null 2>&1; then
+	pass "systemd-networkd.service unit present"
+else
+	fail "systemd-networkd.service unit missing"
+fi
+if systemctl is-enabled systemd-networkd.service >/dev/null 2>&1; then
+	pass "systemd-networkd.service enabled"
+else
+	fail "systemd-networkd.service not enabled (preset 99-appliance)"
+fi
+resolved_bin=""
+for p in /lib/systemd/systemd-resolved /usr/lib/systemd/systemd-resolved; do
+	if [ -x "$p" ]; then
+		resolved_bin=$p
+		break
+	fi
+done
+if [ -n "$resolved_bin" ]; then
+	pass "systemd-resolved binary ($resolved_bin)"
+else
+	fail "systemd-resolved binary missing (BR2_PACKAGE_SYSTEMD_RESOLVED; br-make-packages systemd systemd)"
+fi
+if systemctl cat systemd-resolved.service >/dev/null 2>&1; then
+	pass "systemd-resolved.service unit present"
+else
+	fail "systemd-resolved.service unit missing"
+fi
+if systemctl is-enabled systemd-resolved.service >/dev/null 2>&1; then
+	pass "systemd-resolved.service enabled"
+else
+	fail "systemd-resolved.service not enabled (preset 99-appliance)"
+fi
+if [ -L /etc/resolv.conf ]; then
+	_resolv_link="$(readlink /etc/resolv.conf)"
+	case "$_resolv_link" in
+	*systemd/resolve/*)
+		pass "/etc/resolv.conf → resolved ($_resolv_link)"
+		;;
+	*)
+		fail "/etc/resolv.conf must point at systemd-resolved (got $_resolv_link)"
+		;;
+	esac
+else
+	fail "/etc/resolv.conf must be a symlink to systemd-resolved"
+fi
+if grep -qE 'sync_resolv|wrote DNS to' /usr/libexec/network/networkd-apply-ipv4.sh 2>/dev/null; then
+	fail "networkd-apply-ipv4.sh must not hand-write resolv.conf (use systemd-resolved)"
+else
+	pass "networkd-apply-ipv4.sh does not write resolv.conf"
+fi
+if systemctl is-active dbus.service >/dev/null 2>&1 || \
+	systemctl is-active dbus.socket >/dev/null 2>&1; then
+	pass "dbus active"
+else
+	fail "dbus not active (required for wpa/networkd D-Bus)"
+fi
+# Soft: name may be absent until Wi‑Fi/networkd started — unit/binary checks above are hard.
+if busctl status org.freedesktop.network1 >/dev/null 2>&1; then
+	pass "org.freedesktop.network1 on bus"
+else
+	# networkd may be idle until first apply; still require the unit to be startable.
+	if systemctl start systemd-networkd.service >/dev/null 2>&1 && \
+		busctl status org.freedesktop.network1 >/dev/null 2>&1; then
+		pass "org.freedesktop.network1 on bus (after start)"
+	else
+		fail "org.freedesktop.network1 unavailable (networkd D-Bus)"
+	fi
+fi
+if busctl status org.freedesktop.resolve1 >/dev/null 2>&1; then
+	pass "org.freedesktop.resolve1 on bus"
+else
+	if systemctl start systemd-resolved.service >/dev/null 2>&1 && \
+		busctl status org.freedesktop.resolve1 >/dev/null 2>&1; then
+		pass "org.freedesktop.resolve1 on bus (after start)"
+	else
+		fail "org.freedesktop.resolve1 unavailable (systemd-resolved D-Bus)"
+	fi
+fi
+if command -v dhcpcd >/dev/null 2>&1; then
+	fail "dhcpcd present — L3 must be networkd only (unset BR2_PACKAGE_DHCPCD, rebuild rootfs)"
+fi
+if grep -qE '(^|[[:space:]])udhcpc([[:space:]]|$)|apply_legacy|legacy_dhcp' \
+	/usr/libexec/network/networkd-apply-ipv4.sh 2>/dev/null; then
+	fail "networkd-apply-ipv4.sh still has legacy DHCP fallback (D11)"
+else
+	pass "networkd-apply-ipv4.sh is networkd-only"
 fi
 if [ -f /etc/ssl/certs/ca-certificates.crt ] || [ -d /etc/ssl/certs ]; then
 	# Bundle preferred; hashed pem dir alone is also usable by some stacks.
@@ -163,28 +265,30 @@ if [ -f /etc/ssl/certs/ca-certificates.crt ] || [ -d /etc/ssl/certs ]; then
 else
 	fail "CA certificates missing (enable BR2_PACKAGE_CA_CERTIFICATES)"
 fi
-for helper in wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh wlan0-time-sync.sh; do
+for helper in wifi-stack-up.sh wifi-stack-down.sh wlan0-dhcp.sh wlan0-static.sh run-wpa.sh; do
 	if [ -x "/usr/libexec/wpa/$helper" ]; then
 		pass "helper $helper"
 	else
 		fail "helper $helper missing or not executable (/usr/libexec/wpa/)"
 	fi
 done
-for helper in eth0-dhcp.sh eth0-static.sh eth0-link.sh apply-eth0.sh; do
+# time-sync script retired — HAL LinuxDateTimeController owns network clock ladder
+pass "helper time-sync (HAL inline; no /usr/bin/sync-time)"
+for helper in eth0-dhcp.sh eth0-static.sh eth0-link.sh apply-eth0.sh networkd-apply-ipv4.sh; do
 	if [ -x "/usr/libexec/network/$helper" ]; then
 		pass "helper $helper"
 	else
 		fail "helper $helper missing or not executable (/usr/libexec/network/)"
 	fi
 done
-for helper in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh bt-hid-heal.sh bt-hid-heal-loop.sh wifibt-bringup.sh; do
+for helper in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.sh bt-set-alias.sh bt-trust-paired.sh wifibt-bringup.sh; do
 	if [ -x "/usr/libexec/bluetooth/$helper" ]; then
 		pass "helper $helper"
 	else
 		fail "helper $helper missing or not executable (/usr/libexec/bluetooth/)"
 	fi
 done
-for helper in restore-settings.sh change-backlight.sh change-volume.sh change-orientation.sh apply-mouse-settings.sh bind-prefs.sh; do
+for helper in change-orientation.sh bind-prefs.sh; do
 	if [ -x "/usr/libexec/hmi/$helper" ]; then
 		pass "helper $helper"
 	else
@@ -197,7 +301,7 @@ case "$year" in
 	pass "wall clock year=$year"
 	;;
 *)
-	warn "wall clock year=$year (HTTPS certs may fail until wlan0-time-sync after Wi-Fi)"
+	warn "wall clock year=$year (HTTPS certs may fail until HAL time sync after network)"
 	;;
 esac
 # AIC8800D80 modules (kernel + post-wifibt copy into /vendor/lib/modules)
@@ -277,18 +381,15 @@ else
 	warn "/lib/firmware missing"
 fi
 if command -v systemctl >/dev/null 2>&1; then
-	for unit in wpa_supplicant.service network.service wifibt-init.service bluetooth.service dhcpcd.service; do
+	for unit in wpa_supplicant.service network.service wifibt-init.service bluetooth.service; do
 		unit_file=""
 		for f in "/etc/systemd/system/$unit" "/usr/lib/systemd/system/$unit" "/lib/systemd/system/$unit"; do
-			[ -f "$f" ] && unit_file="$f" && break
+			[ -e "$f" ] && unit_file="$f" && break
 		done
 		if [ -z "$unit_file" ]; then
 			case "$unit" in
 			bluetooth.service)
 				fail "$unit unit file missing"
-				;;
-			dhcpcd.service)
-				warn "$unit unit file missing (ok if package has no unit)"
 				;;
 			*)
 				warn "$unit unit file missing"
@@ -296,10 +397,37 @@ if command -v systemctl >/dev/null 2>&1; then
 			esac
 			continue
 		fi
+		# Masked units are symlinks to /dev/null — treat as correctly suppressed.
+		if [ -L "$unit_file" ] && [ "$(readlink -f "$unit_file" 2>/dev/null)" = "/dev/null" ]; then
+			pass "$unit masked (D11: use wlan-wpa.service for Wi‑Fi)"
+			continue
+		fi
+		[ -f "$unit_file" ] || { warn "$unit unit file missing"; continue; }
 		state="$(systemctl is-enabled "$unit" 2>/dev/null || echo disabled)"
 		case "$state" in
 		enabled|enabled-runtime)
-			fail "$unit is enabled (should be boot-deferred)"
+			# bluetooth.service: Alias=dbus-org.bluez.service makes is-enabled=enabled
+			# even when boot-deferred (no *.wants link). That alias is intentional.
+			if [ "$unit" = "bluetooth.service" ]; then
+				wants_link=""
+				for wants_dir in /etc/systemd/system/*.wants /usr/lib/systemd/system/*.wants; do
+					[ -d "$wants_dir" ] || continue
+					if [ -e "$wants_dir/$unit" ]; then
+						wants_link="$wants_dir/$unit"
+						break
+					fi
+				done
+				if [ -n "$wants_link" ]; then
+					fail "$unit linked at boot ($wants_link)"
+				else
+					pass "$unit boot-deferred (is-enabled=alias-only for dbus-org.bluez)"
+				fi
+			else
+				fail "$unit is enabled (should be boot-deferred or masked)"
+			fi
+			;;
+		masked)
+			pass "$unit masked"
 			;;
 		static)
 			pass "$unit static (on-demand; not in multi-user wants)"
@@ -309,6 +437,13 @@ if command -v systemctl >/dev/null 2>&1; then
 			;;
 		esac
 	done
+	if [ -f /etc/systemd/system/dhcpcd.service ] || \
+		[ -f /usr/lib/systemd/system/dhcpcd.service ] || \
+		[ -f /lib/systemd/system/dhcpcd.service ]; then
+		fail "dhcpcd.service unit present — remove dhcpcd from image (D11)"
+	else
+		pass "dhcpcd.service absent"
+	fi
 fi
 if pidof wpa_supplicant >/dev/null 2>&1; then
 	warn "wpa_supplicant running @ check time (may be user-started)"
@@ -321,7 +456,7 @@ else
 	pass "bluetoothd not running"
 fi
 if pidof dhcpcd >/dev/null 2>&1; then
-	warn "dhcpcd running @ check time (may be user-started on wlan0)"
+	fail "dhcpcd running — L3 must be networkd only (D11)"
 else
 	pass "dhcpcd not running"
 fi

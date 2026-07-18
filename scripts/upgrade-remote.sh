@@ -244,11 +244,27 @@ set -e
 [[ "$arm_rc" -eq 0 ]] || die "failed to start arm-reboot"
 
 wait_line_rendered=0
+# Same single-line progress style as stream-file-progress.py (stderr + \r).
+# Do not pad to a fixed width: %-100s wraps on narrow terminals and \r cannot
+# rewind past the wrap, so each tick looks like a new line.
 clear_wait_line() {
 	if [[ "$wait_line_rendered" -eq 1 ]]; then
-		printf '\r%-100s\r' ""
+		printf '\r\033[K' >&2
 		wait_line_rendered=0
 	fi
+}
+
+render_wait_line() {
+	local msg="$1"
+	local cols
+	cols="$(tput cols 2>/dev/null || echo 80)"
+	[[ "$cols" =~ ^[0-9]+$ ]] || cols=80
+	((cols < 20)) && cols=20
+	if ((${#msg} >= cols)); then
+		msg="${msg:0:$((cols - 1))}"
+	fi
+	printf '\r\033[K%s' "$msg" >&2
+	wait_line_rendered=1
 }
 
 upgrade_complete() {
@@ -272,15 +288,14 @@ while ((SECONDS < deadline_down)); do
 	3) dots="..." ;;
 	esac
 	elapsed=$((WAIT_REBOOT_SEC - (deadline_down - SECONDS)))
-	printf '\r%-100s' "  Waiting for device restart${dots} (${elapsed}s)"
-	wait_line_rendered=1
+	render_wait_line "  Waiting for device restart${dots} (${elapsed}s)"
 
 	if [[ "$status_poll_tick" -eq 0 ]]; then
 		if ! usb_ssh_session_run_ssh "$ROOT" "$IFACE" "true" >/dev/null 2>&1; then
 			upgrade_complete
 		fi
 
-		apply_status="$(remote "cat $OTA_DIR/apply.status 2>/dev/null || true" | tr -d '\r' | head -n1 || true)"
+		apply_status="$(remote "cat $OTA_DIR/apply.status 2>/dev/null || true" 2>/dev/null | tr -d '\r' | head -n1 || true)"
 		if [[ "$apply_status" == "fail" ]]; then
 			clear_wait_line
 			remote "tail -n 120 $OTA_DIR/apply.log 2>/dev/null || true" >&2 || true

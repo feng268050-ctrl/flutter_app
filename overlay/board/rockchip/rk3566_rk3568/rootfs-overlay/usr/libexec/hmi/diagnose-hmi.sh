@@ -57,7 +57,7 @@ done
 
 echo ""
 echo "--- operator commands ---"
-for cmd in change-backlight change-volume verify-env start-usb-ssh; do
+for cmd in verify-env start-usb-ssh; do
 	if [ -x "/usr/bin/$cmd" ]; then
 		ok "/usr/bin/$cmd"
 	else

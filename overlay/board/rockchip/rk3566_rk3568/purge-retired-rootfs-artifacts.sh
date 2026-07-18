@@ -80,3 +80,12 @@ rm -f \
 	"$TARGET_DIR/etc/udev/rules.d/99-lws-hmi-usb-plug-ssh.rules"
 
 rm -rf "$TARGET_DIR/usr/lib/lws-hmi" "$TARGET_DIR/var/lib/lws-hmi"
+
+# In-HAL HOGP/evdev heal (retired board service + helpers).
+disable_unit "bt-hid-heal.service"
+rm -f \
+	"$SYSTEMD_DIR/bt-hid-heal.service" \
+	"$TARGET_DIR/usr/lib/systemd/system/bt-hid-heal.service" \
+	"$TARGET_DIR/usr/libexec/bluetooth/bt-hid-heal.sh" \
+	"$TARGET_DIR/usr/libexec/bluetooth/bt-hid-heal-loop.sh"
+rm -rf "$TARGET_DIR/run/bt-hid" "$TARGET_DIR/var/run/bt-hid"

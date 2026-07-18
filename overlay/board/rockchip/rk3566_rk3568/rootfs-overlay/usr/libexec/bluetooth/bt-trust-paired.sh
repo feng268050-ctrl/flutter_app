@@ -10,8 +10,9 @@
 #
 # IMPORTANT (HID / HOGP):
 # Do NOT trust Classic HID (UUID 1124) or BLE HOGP (UUID 1812) here.
-# User Disconnect clears Trusted so BlueZ Policy / bt-hid-heal do not re-attach.
-# HID Trust is owned by the HMI Connect/Pair path only.
+# HID Trust is owned by the HMI Pair/Connect path so AuthorizeService and BlueZ
+# Policy ReconnectUUIDs apply after the user has paired once. Phone-pair Trust
+# must not touch keyboards/mice (A2DP phone path stays non-initiator).
 #
 # Usage:
 #   bt-trust-paired.sh           # trust paired non-HID remotes

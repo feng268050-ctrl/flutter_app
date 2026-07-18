@@ -13,6 +13,8 @@ disable wifibt-init.service
 disable wpa_supplicant.service
 disable network.service
 disable log-guardian.service
+enable systemd-networkd.service
+enable systemd-resolved.service
+enable hmi.service
 enable pwrkey-poweroff.service
-enable settings-restore.service
 enable ab-boot-confirm.service

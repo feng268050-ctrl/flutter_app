@@ -135,6 +135,11 @@ bt_tty() {
 }
 
 start_aic_bt() {
+	if [ -d /sys/class/bluetooth/hci0 ] || \
+		hciconfig 2>/dev/null | grep -q hci0; then
+		log "hci0 already present"
+		return 0
+	fi
 	tty="$(bt_tty)" || {
 		log "no BT UART tty"
 		return 1
@@ -161,6 +166,8 @@ bringup_aic() {
 		/usr/bin/rk_wifi_init "$tty" >/dev/null 2>&1 &
 		if iface="$(wait_wlan)"; then
 			log "wlan ready via rk_wifi_init: $iface"
+			# rk_wifi_init may attach HCI; if not, fall through to hciattach.
+			start_aic_bt || true
 			return 0
 		fi
 		log "rk_wifi_init did not bring wlan; falling back to manual insmod"
@@ -189,10 +196,14 @@ fi
 ensure_firmware_links
 dump_sdio
 
+# Wi‑Fi often comes up at boot before deferred BT. Do not skip HCI attach.
 for d in /sys/class/net/*; do
 	[ -e "$d" ] || continue
 	if [ -d "$d/wireless" ] || [ -d "$d/phy80211" ]; then
 		log "wlan already up: $(basename "$d")"
+		if is_aic_sdio; then
+			start_aic_bt || log "AIC BT attach soft-fail (wlan already up)"
+		fi
 		exit 0
 	fi
 done

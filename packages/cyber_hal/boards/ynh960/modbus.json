@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "transport": {
+    "type": "rtu",
+    "device": "/dev/ttyS5",
+    "baud": 115200,
+    "data_bits": 8,
+    "parity": "none",
+    "stop_bits": 1,
+    "unit_id": 1,
+    "timeout_ms": 500,
+    "command_interval_ms": 50
+  },
+  "poll": {
+    "interval_ms": 100,
+    "discard_if_busy": true,
+    "health": {
+      "window_size": 5,
+      "failure_threshold": 3,
+      "mode": "slide_window"
+    },
+    "alarm_remind": {
+      "enabled": false,
+      "default_interval_ms": 30000
+    }
+  },
+  "capabilities": {
+    "read_holding": false,
+    "read_input": true,
+    "write_single": false,
+    "write_multiple": true
+  },
+  "groups": {
+    "status": {
+      "space": "input",
+      "start": "0x0000",
+      "count": 23,
+      "mode": "continuous",
+      "chain": "data"
+    },
+    "data": {
+      "space": "input",
+      "start": "0x0060",
+      "count": 19,
+      "mode": "continuous"
+    },
+    "info": {
+      "space": "input",
+      "start": "0x0030",
+      "count": 10,
+      "mode": "on_demand"
+    }
+  },
+  "attributes": [
+    {
+      "id": "device.control_card_version",
+      "access": "r",
+      "group": "status",
+      "register": { "space": "input", "address": "0x0002", "count": 1 },
+      "decode": { "type": "u16" },
+      "meta": { "label": "Control card version" }
+    },
+    {
+      "id": "alarm.gun_comm",
+      "access": "r",
+      "group": "status",
+      "register": { "space": "input", "address": "0x0009", "count": 1 },
+      "decode": { "type": "bit", "bit": 0, "active_high": true },
+      "meta": { "alarm_code": "H001", "label": "Gun head communication" }
+    },
+    {
+      "id": "alarm.gun_motor_over_temp",
+      "access": "r",
+      "group": "status",
+      "register": { "space": "input", "address": "0x000B", "count": 1 },
+      "decode": { "type": "bit", "bit": 0, "active_high": true },
+      "meta": { "label": "Gun motor over-temperature" }
+    },
+    {
+      "id": "alarm.driver_over_temp",
+      "access": "r",
+      "group": "status",
+      "register": { "space": "input", "address": "0x000B", "count": 1 },
+      "decode": { "type": "bit", "bit": 1, "active_high": true },
+      "meta": { "label": "Motor driver over-temperature" }
+    },
+    {
+      "id": "alarm.protective_mirror_over_temp",
+      "access": "r",
+      "group": "status",
+      "register": { "space": "input", "address": "0x000B", "count": 1 },
+      "decode": { "type": "bit", "bit": 2, "active_high": true },
+      "meta": { "label": "Protective mirror over-temperature" }
+    },
+    {
+      "id": "alarm.collimator_over_temp",
+      "access": "r",
+      "group": "status",
+      "register": { "space": "input", "address": "0x000B", "count": 1 },
+      "decode": { "type": "bit", "bit": 3, "active_high": true },
+      "meta": { "label": "Collimator over-temperature" }
+    },
+    {
+      "id": "alarm.laser_comm",
+      "access": "r",
+      "group": "status",
+      "register": { "space": "input", "address": "0x000D", "count": 1 },
+      "decode": { "type": "bit", "bit": 0, "active_high": true },
+      "meta": { "label": "Pump / laser communication" }
+    },
+    {
+      "id": "alarm.wire_feeder_comm",
+      "access": "r",
+      "group": "status",
+      "register": { "space": "input", "address": "0x0011", "count": 1 },
+      "decode": { "type": "bit", "bit": 0, "active_high": true },
+      "meta": { "label": "Wire feeder communication" }
+    },
+    {
+      "id": "alarm.shielding_gas",
+      "access": "r",
+      "group": "status",
+      "register": { "space": "input", "address": "0x0013", "count": 1 },
+      "decode": { "type": "bit", "bit": 0, "active_high": true },
+      "meta": { "alarm_code": "A001", "label": "Shielding gas (blow pressure)" }
+    },
+    {
+      "id": "device.laser_hw_version",
+      "access": "r",
+      "group": "info",
+      "register": { "space": "input", "address": "0x0030", "count": 2 },
+      "decode": { "type": "u16_pair_be" }
+    },
+    {
+      "id": "device.laser_sw_version",
+      "access": "r",
+      "group": "info",
+      "register": { "space": "input", "address": "0x0032", "count": 2 },
+      "decode": { "type": "u16_pair_be" }
+    },
+    {
+      "id": "device.wire_feeder_hw_version",
+      "access": "r",
+      "group": "info",
+      "register": { "space": "input", "address": "0x0034", "count": 1 },
+      "decode": { "type": "u16" }
+    },
+    {
+      "id": "device.wire_feeder_sw_version",
+      "access": "r",
+      "group": "info",
+      "register": { "space": "input", "address": "0x0035", "count": 1 },
+      "decode": { "type": "u16" }
+    },
+    {
+      "id": "device.gun_head_hw_version",
+      "access": "r",
+      "group": "info",
+      "register": { "space": "input", "address": "0x0036", "count": 1 },
+      "decode": { "type": "u16" }
+    },
+    {
+      "id": "device.gun_head_sw_version",
+      "access": "r",
+      "group": "info",
+      "register": { "space": "input", "address": "0x0037", "count": 1 },
+      "decode": { "type": "u16" }
+    },
+    {
+      "id": "device.gun_head_sn",
+      "access": "r",
+      "group": "info",
+      "register": { "space": "input", "address": "0x0038", "count": 2 },
+      "decode": { "type": "u16_pair_be" }
+    },
+    {
+      "id": "alarm.gun_motor_temp",
+      "access": "r",
+      "group": "data",
+      "register": { "space": "input", "address": "0x0061", "count": 1 },
+      "decode": { "type": "s16", "scale": 0.1, "unit": "C" }
+    },
+    {
+      "id": "alarm.gun_motor_drive_temp",
+      "access": "r",
+      "group": "data",
+      "register": { "space": "input", "address": "0x0062", "count": 1 },
+      "decode": { "type": "s16", "scale": 0.1, "unit": "C" }
+    },
+    {
+      "id": "alarm.protective_cover_temp",
+      "access": "r",
+      "group": "data",
+      "register": { "space": "input", "address": "0x0063", "count": 1 },
+      "decode": { "type": "s16", "scale": 0.1, "unit": "C" }
+    },
+    {
+      "id": "alarm.collimator_temp",
+      "access": "r",
+      "group": "data",
+      "register": { "space": "input", "address": "0x0064", "count": 1 },
+      "decode": { "type": "s16", "scale": 0.1, "unit": "C" }
+    }
+  ]
+}

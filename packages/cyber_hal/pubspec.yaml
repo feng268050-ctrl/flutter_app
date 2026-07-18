@@ -1,0 +1,33 @@
+name: cyber_hal
+description: >
+  Portable Dart HAL for LWS appliance HMIs — board profiles, Linux backends,
+  and optional modules (network, output, input, gpio, modbus, bluetooth,
+  sys_info, datetime, debug). No Rust hald / IPC daemon.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Optional SerialPort fallback; Linux RTU prefers PosixSerialPort (stty+libc)
+  # because Buildroot libserialport 0.1.1 hits ENOTTY on kernel 6.1+.
+  flutter_libserialport: ^0.4.0
+  ffi: ^2.1.0
+  bluez: ^0.8.3
+  dbus: ^0.7.12
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  assets:
+    - boards/ynh960.json
+    - boards/ynh960/gpio.json
+    - boards/ynh960/modbus.json
+    - boards/sim.json
+    - boards/portable-smoke.json

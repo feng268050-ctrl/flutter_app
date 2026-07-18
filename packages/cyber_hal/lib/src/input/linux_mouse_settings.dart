@@ -1,22 +1,30 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:lws_hmi/platform/board_helper.dart';
-import 'package:lws_hmi/platform/input/mouse_settings.dart';
-import 'package:lws_hmi/platform/percent.dart';
+import 'package:cyber_hal/input/mouse.dart';
+import 'package:cyber_hal/src/linux/board_helper.dart';
+import 'package:cyber_hal/src/linux/percent.dart';
 
-/// Linux: persist via `apply-mouse-settings` (flutter-pi reloads on mtime).
-class LinuxMouseSettingsController implements MouseSettingsController {
+/// Linux: persist `mouse.conf` (flutter-pi reloads on mtime); helper optional.
+class LinuxMouseSettingsController implements Mouse {
   LinuxMouseSettingsController({
     this.preferencePath = '/var/lib/hmi/mouse.conf',
-    this.applyMouseSettingsCommand = const <String>['apply-mouse-settings'],
+    this.applyMouseSettingsCommand = const <String>[],
     this.runHelperWithStdin = defaultBoardHelperRunnerWithStdin,
+    this.probe = const UsbHidMouseProbe(),
   });
 
   final String preferencePath;
   final List<String> applyMouseSettingsCommand;
   final Future<int> Function(String executable, List<String> arguments, String stdin)
       runHelperWithStdin;
+  final UsbHidMouseProbe probe;
+
+  @override
+  Future<bool> isPresent() async {
+    final line = await probe.statusLine();
+    return line.startsWith('detected:');
+  }
 
   @override
   Future<MouseSettings> getSettings() async {
@@ -42,20 +50,27 @@ class LinuxMouseSettingsController implements MouseSettingsController {
       primaryButton: settings.primaryButton,
       pointerAxes: settings.pointerAxes,
     );
-    if (applyMouseSettingsCommand.isEmpty) {
-      debugPrint('mouse: set skipped (no apply-mouse-settings command)');
+    final conf = encodeMouseConf(normalized);
+    if (applyMouseSettingsCommand.isNotEmpty) {
+      final exe = applyMouseSettingsCommand.first;
+      final args = applyMouseSettingsCommand.sublist(1);
+      try {
+        final code = await runHelperWithStdin(exe, args, conf);
+        if (code != 0) {
+          debugPrint('mouse: apply-mouse-settings exit $code');
+          return;
+        }
+        debugPrint('mouse: persisted via helper → $preferencePath');
+      } catch (e) {
+        debugPrint('mouse: persist failed: $e');
+      }
       return;
     }
-    final conf = encodeMouseConf(normalized);
-    final exe = applyMouseSettingsCommand.first;
-    final args = applyMouseSettingsCommand.sublist(1);
     try {
-      final code = await runHelperWithStdin(exe, args, conf);
-      if (code != 0) {
-        debugPrint('mouse: apply-mouse-settings exit $code');
-        return;
-      }
-      debugPrint('mouse: persisted via helper → $preferencePath');
+      final f = File(preferencePath);
+      await f.parent.create(recursive: true);
+      await f.writeAsString(conf, flush: true);
+      debugPrint('mouse: persisted → $preferencePath');
     } catch (e) {
       debugPrint('mouse: persist failed: $e');
     }

@@ -1,21 +1,21 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:lws_hmi/platform/backlight/backlight_controller.dart';
-import 'package:lws_hmi/platform/board_helper.dart';
-import 'package:lws_hmi/platform/lws_trace.dart';
-import 'package:lws_hmi/platform/percent.dart';
+import 'package:cyber_hal/output/backlight.dart';
+import 'package:cyber_hal/src/linux/board_helper.dart';
+import 'package:cyber_hal/src/linux/lws_trace.dart';
+import 'package:cyber_hal/src/linux/percent.dart';
 
 /// Linux backlight via `change-backlight` (sysfs + persist).
 ///
 /// Prefer the panel node named `backlight` (MainServer / pwm4) for get().
 /// Avoid picking broken LED PWM backlight clones (`led-*-pwm`).
-class LinuxSysfsBacklight implements BacklightController {
+class LinuxSysfsBacklight implements Backlight {
   LinuxSysfsBacklight({
     this.classDir = '/sys/class/backlight',
     this.preferredNames = const <String>['backlight', 'backlight1', 'backlight2'],
     this.preferencePath = '/var/lib/hmi/backlight-brightness',
-    this.changeBacklightCommand = const <String>['change-backlight'],
+    this.changeBacklightCommand = const <String>[],
     BoardHelperRunner? runHelper,
   }) : runHelper = runHelper ?? defaultBoardHelperRunner;
 
@@ -135,21 +135,31 @@ class LinuxSysfsBacklight implements BacklightController {
   @override
   Future<void> setBrightnessPercent(int percent) async {
     final clamped = clampPercent(percent);
-    if (changeBacklightCommand.isEmpty) {
-      debugPrint('backlight: set skipped (no change-backlight command)');
+    if (changeBacklightCommand.isNotEmpty) {
+      final exe = changeBacklightCommand.first;
+      final args = <String>[
+        ...changeBacklightCommand.sublist(1),
+        '$clamped',
+      ];
+      final code = await runHelper(exe, args);
+      if (code != 0) {
+        debugPrint('backlight: change-backlight exit $code');
+        return;
+      }
+      lwsTrace('backlight: set via helper $clamped%');
       return;
     }
-    final exe = changeBacklightCommand.first;
-    final args = <String>[
-      ...changeBacklightCommand.sublist(1),
-      '$clamped',
-    ];
-    final code = await runHelper(exe, args);
-    if (code != 0) {
-      debugPrint('backlight: change-backlight exit $code');
+    // Default: write sysfs + preference (no board helper).
+    if (!await ensureDevice()) {
+      debugPrint('backlight: set skipped (no device)');
       return;
     }
-    lwsTrace('backlight: set via helper $clamped%');
+    final val = (clamped * _max / 100).round().clamp(0, _max);
+    await File(_brightnessPath!).writeAsString('$val\n', flush: true);
+    final pref = File(preferencePath);
+    await pref.parent.create(recursive: true);
+    await pref.writeAsString('$clamped\n', flush: true);
+    lwsTrace('backlight: set $clamped% → $_brightnessPath ($val/$_max)');
   }
 
   @override

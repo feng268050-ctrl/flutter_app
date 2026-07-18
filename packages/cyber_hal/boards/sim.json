@@ -1,0 +1,16 @@
+{
+  "board_id": "sim",
+  "display_name": "Host / P3.2 emulator",
+  "model_hint": "stub",
+  "capabilities": [
+    "backlight",
+    "volume",
+    "keyboard",
+    "mouse",
+    "sysInfo",
+    "datetime"
+  ],
+  "net_roles": {},
+  "configs": {},
+  "storage_mounts": ["/"]
+}

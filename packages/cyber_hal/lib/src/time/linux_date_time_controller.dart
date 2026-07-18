@@ -1,19 +1,19 @@
 import 'dart:io';
 
-import 'package:lws_hmi/platform/datetime/date_time_controller.dart';
-import 'package:lws_hmi/platform/lws_trace.dart';
+import 'package:cyber_hal/src/time/time_service.dart';
+import 'package:cyber_hal/src/linux/lws_trace.dart';
 
 typedef DateTimeProcessRunner = Future<ProcessResult> Function(
   String executable,
   List<String> arguments,
 );
 
-/// Linux: BusyBox/`timedatectl` + `hwclock` + `wlan0-time-sync.sh` ladder.
+/// Linux: BusyBox/`timedatectl` + `hwclock` + `/usr/bin/sync-time` ladder.
 class LinuxDateTimeController implements DateTimeController {
   LinuxDateTimeController({
     this.syncModePath = TimeSyncPrefs.syncModePath,
     this.timezonePath = TimeSyncPrefs.timezonePath,
-    this.helperPath = TimeSyncPrefs.helperPath,
+    this.helperPath = '',
     DateTimeProcessRunner? runProcess,
   }) : _run = runProcess ?? ((exe, args) => Process.run(exe, args));
 
@@ -155,7 +155,7 @@ class LinuxDateTimeController implements DateTimeController {
   }
 
   Future<TimeSyncResult> _runNetworkLadder({required String reason}) async {
-    if (await File(helperPath).exists()) {
+    if (helperPath.isNotEmpty && await File(helperPath).exists()) {
       final r = await _run(helperPath, []);
       if (TimeSyncPrefs.isSaneUtcYear(DateTime.now().toUtc().year)) {
         final rtc = await _writeRtc();
@@ -193,7 +193,7 @@ class LinuxDateTimeController implements DateTimeController {
         url,
       ]);
       final blob = '${r.stderr}\n${r.stdout}';
-      final m = RegExp(r'(?mi)^\s*Date:\s*(.+)$').firstMatch(blob);
+      final m = RegExp(r'^\s*Date:\s*(.+)$', multiLine: true, caseSensitive: false).firstMatch(blob);
       if (m == null) {
         continue;
       }

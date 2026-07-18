@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cyber_hal/output/volume.dart';
+import 'package:cyber_hal/src/linux/board_helper.dart';
+import 'package:cyber_hal/src/linux/lws_trace.dart';
+import 'package:cyber_hal/src/linux/percent.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:lws_hmi/platform/audio/media_audio_controller.dart';
-import 'package:lws_hmi/platform/board_helper.dart';
-import 'package:lws_hmi/platform/lws_trace.dart';
-import 'package:lws_hmi/platform/percent.dart';
 
 /// Linux media: ALSA mixer volume (primary) + mpg123 remote for decode.
 ///
@@ -16,21 +16,34 @@ import 'package:lws_hmi/platform/percent.dart';
 /// - Playback state comes from the player (`@P` / process exit), not UI guesses.
 /// - Concurrent volume requests coalesce to the **latest** percent (no queue).
 /// - Persist + HW mixer apply go through `change-volume`.
-class LinuxMediaAudioController implements MediaAudioController {
+class LinuxMediaAudioController implements MediaAudioController, Volume {
   LinuxMediaAudioController({
     this.cacheDir = '/var/lib/hmi/audio',
     this.volumePreferencePath = '/var/lib/hmi/media-volume',
-    this.changeVolumeCommand = const <String>['change-volume'],
+    this.changeVolumeCommand = const <String>[],
     this.playerBinary = 'mpg123',
     this.amixerBinary = 'amixer',
+    this.a2dpVolumeCommand = const <String>[],
+    List<String>? preferredVolumeControls,
+    this.playbackPathControl = '',
+    this.playbackPathValue = '',
     BoardHelperRunner? runHelper,
-  }) : runHelper = runHelper ?? defaultBoardHelperRunner;
+  })  : preferredVolumeControls =
+            preferredVolumeControls ?? _defaultPreferredVolumeControls,
+        runHelper = runHelper ?? defaultBoardHelperRunner;
 
   final String cacheDir;
   final String volumePreferencePath;
   final List<String> changeVolumeCommand;
   final String playerBinary;
   final String amixerBinary;
+  final List<String> a2dpVolumeCommand;
+  /// BoardProfile-injected ALSA control preference order.
+  final List<String> preferredVolumeControls;
+  /// Optional Rockchip-style route enum (e.g. `Playback Path` / `RING_SPK_HP`).
+  /// Empty → skip amixer path routing (portable default).
+  final String playbackPathControl;
+  final String playbackPathValue;
   final BoardHelperRunner runHelper;
 
   Process? _player;
@@ -52,10 +65,7 @@ class LinuxMediaAudioController implements MediaAudioController {
   bool _volumeBusy = false;
   int? _queuedVolume;
 
-  static const _playbackPathControl = 'Playback Path';
-  static const _playbackPathValue = 'RING_SPK_HP';
-
-  static const _preferredVolumeControls = <String>[
+  static const _defaultPreferredVolumeControls = <String>[
     'DAC Playback Volume',
     'Speaker Playback Volume',
     'Headphone Playback Volume',
@@ -121,18 +131,25 @@ class LinuxMediaAudioController implements MediaAudioController {
   }
 
   Future<void> _changeVolumeHelper(int percent) async {
-    if (changeVolumeCommand.isEmpty) {
-      debugPrint('media-audio: change-volume skipped (empty command)');
+    if (changeVolumeCommand.isNotEmpty) {
+      final exe = changeVolumeCommand.first;
+      final args = <String>[
+        ...changeVolumeCommand.sublist(1),
+        '$percent',
+      ];
+      final code = await runHelper(exe, args);
+      if (code != 0) {
+        debugPrint('media-audio: change-volume exit $code');
+      }
       return;
     }
-    final exe = changeVolumeCommand.first;
-    final args = <String>[
-      ...changeVolumeCommand.sublist(1),
-      '$percent',
-    ];
-    final code = await runHelper(exe, args);
-    if (code != 0) {
-      debugPrint('media-audio: change-volume exit $code');
+    // Default: persist preference; mixer apply is via amixer in _drainVolumeQueue.
+    try {
+      final f = File(volumePreferencePath);
+      await f.parent.create(recursive: true);
+      await f.writeAsString('$percent\n', flush: true);
+    } catch (e) {
+      debugPrint('media-audio: persist volume failed: $e');
     }
   }
 
@@ -330,6 +347,14 @@ class LinuxMediaAudioController implements MediaAudioController {
   }
 
   @override
+  Future<bool> isMuted() async => false;
+
+  @override
+  Future<void> setMuted(bool muted) async {
+    // ALSA mute control not wired in v1; volume percent remains the API.
+  }
+
+  @override
   Future<void> dispose() async {
     final p = _player;
     final sink = _playerStdin;
@@ -372,19 +397,23 @@ class LinuxMediaAudioController implements MediaAudioController {
     if (_pathRouted) {
       return;
     }
+    final control = playbackPathControl.trim();
+    final value = playbackPathValue.trim();
+    if (control.isEmpty || value.isEmpty) {
+      _pathRouted = true;
+      return;
+    }
     try {
       final result = await Process.run(
         amixerBinary,
-        <String>['sset', _playbackPathControl, _playbackPathValue],
+        <String>['sset', control, value],
       );
       if (result.exitCode == 0) {
         _pathRouted = true;
-        lwsTrace(
-          'media-audio: amixer "$_playbackPathControl" → $_playbackPathValue',
-        );
+        lwsTrace('media-audio: amixer "$control" → $value');
       } else {
         debugPrint(
-          'media-audio: Playback Path set failed '
+          'media-audio: playback path set failed '
           '(exit ${result.exitCode}): ${result.stderr}',
         );
       }
@@ -405,7 +434,9 @@ class LinuxMediaAudioController implements MediaAudioController {
         final re = RegExp(r"Simple mixer control '([^']+)'");
         for (final match in re.allMatches(result.stdout as String)) {
           final name = match.group(1);
-          if (name == null || name == _playbackPathControl) {
+          if (name == null ||
+              (playbackPathControl.isNotEmpty &&
+                  name == playbackPathControl)) {
             continue;
           }
           final lower = name.toLowerCase();
@@ -421,8 +452,8 @@ class LinuxMediaAudioController implements MediaAudioController {
     } catch (_) {}
 
     final ordered = <String>[
-      ..._preferredVolumeControls,
-      ...fromDevice.where((n) => !_preferredVolumeControls.contains(n)),
+      ...preferredVolumeControls,
+      ...fromDevice.where((n) => !preferredVolumeControls.contains(n)),
     ];
     _discoveredVolumeControls = ordered;
     return ordered;
@@ -468,10 +499,13 @@ class LinuxMediaAudioController implements MediaAudioController {
 
   /// BlueALSA soft-volume for phone → speaker (ignore failures when BT off).
   Future<void> _applyA2dpVolume(int percent) async {
+    if (a2dpVolumeCommand.isEmpty) {
+      return;
+    }
     try {
       final r = await Process.run(
-        '/usr/libexec/bluetooth/bt-a2dp-volume.sh',
-        <String>['$percent'],
+        a2dpVolumeCommand.first,
+        <String>[...a2dpVolumeCommand.sublist(1), '$percent'],
       );
       if (r.exitCode != 0) {
         lwsTrace('media-audio: bt-a2dp-volume exit ${r.exitCode}');

@@ -28,7 +28,7 @@ class TimeSyncResult {
 class TimeSyncPrefs {
   static const syncModePath = '/var/lib/hmi/time-sync-mode';
   static const timezonePath = '/var/lib/hmi/timezone';
-  static const helperPath = '/usr/libexec/wpa/wlan0-time-sync.sh';
+  static const helperPath = ''; // optional board override only
 
   /// Curated Demo / Settings list (extend later).
   static const curatedTimezones = <String>[
@@ -55,7 +55,7 @@ class TimeSyncPrefs {
     }
   }
 
-  /// Same window as `wlan0-time-sync.sh` (2025–2030).
+  /// Same window as `/usr/bin/sync-time` / `time-sync.sh` (2025–2030).
   static bool isSaneUtcYear(int year) => year >= 2025 && year <= 2030;
 
   static String normalizeTimezone(String? raw) {
@@ -90,3 +90,7 @@ abstract class DateTimeController {
 
   Future<void> dispose();
 }
+
+
+/// HAL name for [DateTimeController].
+typedef TimeService = DateTimeController;

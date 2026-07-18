@@ -1,4 +1,4 @@
-import 'package:lws_hmi/platform/percent.dart';
+import 'package:cyber_hal/src/linux/percent.dart';
 
 /// Which physical button acts as Flutter primary (left-click).
 enum MousePrimaryButton {
@@ -67,12 +67,3 @@ int pointerAccelToPercent(double accel) {
   return (((clamped + 1.0) / 2.0) * 100.0).round().clamp(0, 100);
 }
 
-/// Reusable mouse settings API (Linux now; Android later).
-abstract class MouseSettingsController {
-  Future<MouseSettings> getSettings();
-
-  /// Persist [settings] (Linux: write prefs; flutter-pi picks up via mtime poll).
-  Future<void> setSettings(MouseSettings settings);
-
-  Future<void> dispose();
-}

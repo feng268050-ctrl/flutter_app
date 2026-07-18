@@ -1,0 +1,33 @@
+{
+  "board_id": "portable-smoke",
+  "display_name": "Portability smoke (no ynh960 paths)",
+  "model_hint": "doc-only",
+  "capabilities": [
+    "ethernet",
+    "wifi",
+    "bluetooth",
+    "datetime",
+    "sshDebug",
+    "usbDebug",
+    "volume",
+    "sysInfo"
+  ],
+  "net_roles": {
+    "ethernet.primary": "enp1s0",
+    "wifi.station": "wlp2s0"
+  },
+  "configs": {},
+  "storage_mounts": [
+    "/"
+  ],
+  "route_metrics": {
+    "wlp2s0": 50,
+    "enp1s0": 5000
+  },
+  "helpers": {
+    "wifi_wlan_unit": "wlan-wpa.service",
+    "bt_bluetooth_unit": "bluetooth.service",
+    "backlight_preferred_names": "backlight",
+    "alsa_volume_controls": "Master,PCM"
+  }
+}

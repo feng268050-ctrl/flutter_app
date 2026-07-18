@@ -1,5 +1,5 @@
-# Local outputs / caches
-output/
+# Local outputs / caches (repo-root firmware/artifacts only)
+/output/
 .cache/
 __pycache__/
 overlay/buildroot/.generated/

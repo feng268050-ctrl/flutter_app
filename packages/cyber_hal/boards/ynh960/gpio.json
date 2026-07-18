@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "backend": "sysfs_innohi",
+  "defaults": {
+    "active_low": false,
+    "blink_on_ms": 1000,
+    "blink_off_ms": 1000
+  },
+  "lines": [
+    {
+      "id": "led_red",
+      "label": "GPIO_5",
+      "path": "/sys/class/gpio_innohi/GPIO_5/value",
+      "fallback_linux_gpio": 105,
+      "roles": ["indicator", "alarm"]
+    },
+    {
+      "id": "led_yellow",
+      "label": "GPIO_4",
+      "path": "/sys/class/gpio_innohi/GPIO_4/value",
+      "fallback_linux_gpio": 106,
+      "roles": ["indicator"]
+    },
+    {
+      "id": "led_green",
+      "label": "GPIO_7",
+      "path": "/sys/class/gpio_innohi/GPIO_7/value",
+      "fallback_linux_gpio": 149,
+      "roles": ["indicator"]
+    }
+  ],
+  "capabilities": {
+    "set_level": true,
+    "blink": true,
+    "read_level": true
+  }
+}

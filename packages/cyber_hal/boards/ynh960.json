@@ -1,0 +1,51 @@
+{
+  "board_id": "ynh960",
+  "display_name": "Innohi ynh960",
+  "model_hint": "RK3566",
+  "capabilities": [
+    "ethernet",
+    "wifi",
+    "proxy",
+    "bluetooth",
+    "backlight",
+    "volume",
+    "keyboard",
+    "mouse",
+    "gpio",
+    "modbus",
+    "sysInfo",
+    "datetime",
+    "sshDebug",
+    "usbDebug"
+  ],
+  "net_roles": {
+    "ethernet.primary": "eth0",
+    "wifi.station": "wlan0"
+  },
+  "configs": {
+    "gpio": "boards/ynh960/gpio.json",
+    "modbus": "boards/ynh960/modbus.json"
+  },
+  "storage_mounts": [
+    "/",
+    "/userdata"
+  ],
+  "route_metrics": {
+    "wlan0": 100,
+    "eth0": 2000
+  },
+  "helpers": {
+    "usb_otg_mode": "/usr/libexec/hmi/usb-otg-mode.sh",
+    "otg_mode_sysfs": "/sys/devices/platform/fe8a0000.usb2-phy/otg_mode",
+    "ssh_debug": "/usr/libexec/hmi/enable-ssh-debug.sh",
+    "wifi_modem": "/usr/libexec/bluetooth/wifibt-bringup.sh",
+    "bt_modem": "/usr/libexec/bluetooth/wifibt-bringup.sh",
+    "bt_a2dp_volume": "/usr/libexec/bluetooth/bt-a2dp-volume.sh",
+    "bt_a2dp_up": "/usr/libexec/bluetooth/bt-a2dp-sink-up.sh",
+    "bt_a2dp_down": "/usr/libexec/bluetooth/bt-a2dp-sink-down.sh",
+    "backlight_preferred_names": "backlight,backlight1,backlight2",
+    "alsa_volume_controls": "DAC Playback Volume,Speaker Playback Volume,Headphone Playback Volume,Playback Volume,Master Playback Volume,Master,PCM,Speaker,Playback",
+    "alsa_playback_path_control": "Playback Path",
+    "alsa_playback_path_value": "RING_SPK_HP"
+  }
+}

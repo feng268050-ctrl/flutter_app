@@ -1,8 +1,8 @@
 # Flutter-pi HMI 规划（通用嵌入式 OS 方向 · ynh960 基准）
 
-目标：在 **lws-hmi** Buildroot 基线上，用 **flutter-pi**（量产）/ **flutter-embedded-linux**（模拟器）跑 Flutter UI；建设可复用的 **嵌入式 OS**：共用 **CyberUI** 框架与 **Rust HAL**，主板/屏幕以 **board·screen pack** 插拔，**产品顶层 App 可分叉**。按 **P1→P5** 增量交付（见下表）。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块（模拟器 P3.2 另行引入 Weston）。
+目标：在 **lws-hmi** Buildroot 基线上，用 **flutter-pi**（量产）/ **flutter-embedded-linux**（模拟器）跑 Flutter UI；建设可复用的 **嵌入式 OS**：共用 **CyberUI** 框架与 **Dart HAL（`cyber_hal`）**，主板/屏幕以 **board·screen pack** 插拔，**产品顶层 App 可分叉**。按 **P1→P5** 增量交付（见下表）。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块（模拟器 P3.2 另行引入 Weston）。
 
-**能力原则**：**产品能力不少于 lws-ui**；平台层长期为 **Buildroot + Rust HAL + Dart 薄客户端**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**P5.0** 保留 Android 兼容构建；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`rust-hal-and-phase-realign`](../openspec/changes/rust-hal-and-phase-realign/design.md)。
+**能力原则**：**产品能力不少于 lws-ui**；平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**P5.0** 保留 Android 兼容构建；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/dart-hal-package/design.md)。
 
 **板级范围（当前）**：**ynh960 / ynh962 / ynh961** 同产品线三档（RK3566 → RK3568B2 → RK3568）；**P1～P4 以 ynh960 验收**。中长期目标是 **少量不同主板 + 不同屏幕** 共用 OS 契约与 CyberUI，而非每产品从零开始。Rockchip SDK `**rk3566_rk3568`** profile 见 **§3.0**。
 
@@ -164,19 +164,17 @@ flowchart TB
   end
   subgraph ui [共用]
     CyberUI[CyberUI + CyberIME]
-    HalClient[Dart HAL client]
+    CyberHal[cyber_hal Dart package]
   end
-  subgraph hal [共用 OS HAL — P3.1]
-    Hald[Rust hald / libhal]
-    Pack[Board + Screen pack]
+  subgraph packs [Board / Screen — P3.1]
+    Pack[Board + Screen pack / profiles]
   end
   AppA --> CyberUI
   AppB --> CyberUI
-  AppA --> HalClient
-  AppB --> HalClient
-  CyberUI --> HalClient
-  HalClient --> Hald
-  Hald --> Pack
+  AppA --> CyberHal
+  AppB --> CyberHal
+  CyberUI --> CyberHal
+  CyberHal --> Pack
   subgraph hw [硬件 — ynh960 基准；未来多主板]
     IPC[IPC 192.168.1.100]
     ETH[eth0 直连 IPC]
@@ -310,7 +308,7 @@ Innohi **同一产品线**三档板型，对应不同价位/档次（**由低到
 | Avahi / sqlite    | `build-platform-packages`                                                                               |
 
 
-**仍按阶段交付的是 App/功能**：CyberUI、业务页、FFI 叠框（**P4**）、OTA 业务（**P4.8**，底层 A/B 在 **P2.5**）、**Rust HAL（P3.1）** 等（非 rootfs 包名）。
+**仍按阶段交付的是 App/功能**：CyberUI、业务页、FFI 叠框（**P4**）、OTA 业务（**P4.8**，底层 A/B 在 **P2.5**）、**Dart HAL / `cyber_hal`（P3.1）** 等（非 rootfs 包名）。
 
 ### 3.3 Buildroot — **保留**
 
@@ -1195,7 +1193,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 
 ## 10. 与当前 lws-hmi 仓库的映射
 
-**可复用 Dart/Flutter 包**以 **git submodule** 形式放在 `**packages/`** 目录下（P3.0：`cyber_ui`、`cyber_ime`；HAL Dart client 可同级或随 `hal/`）。Rust HAL 在 `**hal/**`（子模块或子包，P3.1）。
+**可复用 Dart/Flutter 包**以 **git submodule**（或同级 package）形式放在 `**packages/`** 下（P3.0：`cyber_ui`、`cyber_ime`；P3.1：`cyber_hal`）。Board profile / gpio·modbus 配置随 HAL 或 overlay，**无**独立 Rust `hal/` / `hald`。
 
 
 | 已有                                                                         | 规划用途                                                                                                                |
@@ -1213,7 +1211,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **待增** `app/` 或独立 repo                                                     | Flutter 工程（P1 Hello World → P2 demo → P2.1 I/O smoke 辅助 → P5 业务）                                                    |
 | **待增** `packages/cyber_ui/`（**git submodule**）                             | **P3.0** CyberUI（§6.3；初期 Frosted Glass）                                                                              |
 | **待增** `packages/cyber_ime/`（**git submodule**）                            | **P3.0** CyberIME                                                                                                      |
-| **待增** `hal/`（**git submodule / 子包**）                                    | **P3.1** Rust HAL + ynh960 board profile                                                                               |
+| **待增** `packages/cyber_hal/`（**包 / 可选 submodule**）                      | **P3.1** Dart HAL（`cyber_hal`）+ board profile                                                                         |
 | **待增** `packages/frost_ime/`（**git submodule**）                            | **P4** IME（对齐 lws-ui `IME.md`）                                                                                      |
 | **待增** `buildroot/configs/rockchip/chips/lws_hmi_mediamtx.config`          | **P5** mediamtx 二进制                                                                                                 |
 | **已有** `overlay/.../rootfs-overlay/etc/systemd/system/hmi.service`     | P1 enable（§3.6.4）                                                                                                   |
@@ -1570,13 +1568,12 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - **CyberUI 验收**：3566 frozen 全路径 + 至少 2 个 `liveWhileOpen` 用例
 - **IME 验收**：输入框 + 弹窗 + 键盘抬起/收起与 Cyber 弹窗无错位
 
-### P3.1 — Rust HAL 🔲
+### P3.1 — Dart HAL（`cyber_hal`）+ 网络栈切换 🔲
 
-- 建立 `hal/`（或 submodule）Rust workspace：`hald` + api/core/linux crates
-- `boards/ynh960` profile（GPIO / Modbus tty / 默认旋转等）
-- Dart HAL 客户端；Demo 按能力从 `Linux*Controller` 迁移
-- 与 shell `/usr/libexec` + `/var/lib` persist 共存至 cutover
-- 设计与验收：`openspec/changes/rust-hal-and-phase-realign/`
+- 建立 `packages/cyber_hal/`（或 submodule）；按需 import（network / output / input / …）
+- `boards/ynh960` profile + gpio/modbus 配置；Demo 从 `Linux*Controller` 迁入
+- **systemd-networkd** L3 + wpa D-Bus（易做模块先落地，network 后置）
+- 设计与验收：`openspec/changes/dart-hal-package/`（Rust/`hald` 方案已归档）
 
 ### P3.2 — Linux 模拟器 🔲
 
@@ -1914,4 +1911,4 @@ SD 卡、未做 P0（sshd/mediamtx 误 enable）、或 mediamtx/rknn_server 与�
 
 ---
 
-**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 已完成**（镜像、调试、硬件设施、A/B `make upgrade`）。其后：**P3.0 CyberUI**、**P3.1 Rust HAL**（并行）、**P3.2 模拟器**、**P3.3 libai**、**P4 业务**、**P5.0 Android**、**P5.1 Engine 升级**。平台层长期为语言无关 HAL；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。
+**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 已完成**（镜像、调试、硬件设施、A/B `make upgrade`）。其后：**P3.0 CyberUI**、**P3.1 Dart HAL（`cyber_hal`）**（可并行）、**P3.2 模拟器**、**P3.3 libai**、**P4 业务**、**P5.0 Android**、**P5.1 Engine 升级**。平台层长期为 **`cyber_hal` + Buildroot**；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。

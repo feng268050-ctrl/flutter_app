@@ -1,6 +1,6 @@
 # SUPERSEDED (HAL architecture)
 
-The **Rust `hald` / IPC Platform API** approach in this change is **superseded** by [`dart-hal-package`](../dart-hal-package/).
+The **Rust `hald` / IPC Platform API** approach in this change is **superseded** by [`dart-hal-package`](../../dart-hal-package/).
 
 **Still valid from work already merged to docs (do not revert blindly):**
 
@@ -13,4 +13,6 @@ The **Rust `hald` / IPC Platform API** approach in this change is **superseded**
 - Rust workspace / `hald` / protobuf daemon as HAL truth
 - Tasks that scaffold `hal/` Rust crates as the Platform API
 
-See `../dart-hal-package/design.md`.
+See `../../dart-hal-package/design.md`.
+
+**Archive note:** Moved to `openspec/changes/archive/2026-07-18-rust-hal-and-phase-realign/` (design superseded; do not sync Rust HAL delta specs into `openspec/specs/`).

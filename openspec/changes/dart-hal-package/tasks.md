@@ -64,7 +64,7 @@ OS cutover first, then Dart modules against the new stack. Until then Demo may k
 ## 7. Follow-ons
 
 - [ ] 7.1 Stub/sim profile for P3.2 emulator
-- [ ] 7.2 Archive superseded `rust-hal-and-phase-realign` when convenient
+- [x] 7.2 Archive superseded `rust-hal-and-phase-realign` → `openspec/changes/archive/2026-07-18-rust-hal-and-phase-realign/`
 - [ ] 7.3 Decide config install path: Flutter assets only vs also `/usr/share/cyber_hal/`
 - [ ] 7.4 Product list of layout ids to ship beyond `us` / `ru`
 - [ ] 7.5 Optional: flutter-pi keyboard.conf mtime hot-reload (no HMI restart)

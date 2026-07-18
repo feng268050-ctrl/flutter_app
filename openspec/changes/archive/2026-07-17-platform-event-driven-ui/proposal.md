@@ -1,8 +1,8 @@
 ## Why
 
-> **SUPERSEDED** by [`rust-hal-and-phase-realign`](../../rust-hal-and-phase-realign/). See [`SUPERSEDED.md`](./SUPERSEDED.md). Do not implement this change standalone.
+> **SUPERSEDED** — first folded into [`rust-hal-and-phase-realign`](../2026-07-18-rust-hal-and-phase-realign/); HAL Platform API is now [`dart-hal-package`](../../dart-hal-package/). See [`SUPERSEDED.md`](./SUPERSEDED.md). Do not implement this change standalone.
 
-P2 Demo already exposes Ethernet, Wi‑Fi, Bluetooth, LAN SSH, USB keyboard, date/time, audio, backlight, and more—but several Linux backends still discover state by **Timer + `Process.run` polling**. That requirement remains valid, but the implementation home is now the **Rust HAL**, not Dart `Linux*` controllers.
+P2 Demo already exposes Ethernet, Wi‑Fi, Bluetooth, LAN SSH, USB keyboard, date/time, audio, backlight, and more—but several Linux backends still discover state by **Timer + `Process.run` polling**. That requirement remains valid; observation improvements land with the **Dart HAL** package over time, not this standalone change.
 
 ## What Changes
 

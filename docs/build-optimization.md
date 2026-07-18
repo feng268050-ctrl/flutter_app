@@ -80,6 +80,15 @@ make lunch
 make build-rootfs
 ```
 
+**Package option change without wipe:** `make build-rootfs` reuses already-built packages. If you only flipped a Kconfig bit on an existing package (e.g. enable `BR2_PACKAGE_WPA_SUPPLICANT_DBUS` or `BR2_PACKAGE_SYSTEMD_NETWORKD`), re-apply defconfig and rebuild that package before rootfs:
+
+```bash
+make apply-overlay
+bash scripts/br-make-packages.sh wpa wpa_supplicant
+bash scripts/br-make-packages.sh systemd systemd
+make build-rootfs
+```
+
 Only wipe when intentionally starting over:
 
 ```bash

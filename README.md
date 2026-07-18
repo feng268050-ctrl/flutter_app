@@ -170,6 +170,8 @@ make upgrade
 
 **Buildroot defconfig / Kconfig fragments** (`overlay/buildroot/`):
 
+Overlay-only or new `#include` wiring (no change to how an already-built package is compiled):
+
 ```bash
 make apply-overlay
 make check-prebuilt
@@ -177,7 +179,17 @@ make build-rootfs
 make upgrade
 ```
 
-After a major defconfig or toolchain change, you may need `make clean-buildroot-output` before `make build-rootfs` (see [`docs/build-optimization.md`](docs/build-optimization.md)).
+**Changing compile options on an existing package** (classic trap): Rockchip `./build.sh rootfs` / `make build-rootfs` **incrementally reuses** packages already present under `buildroot/output/…`. Updating a chip fragment (example: `BR2_PACKAGE_WPA_SUPPLICANT_DBUS=y` in `chips/lws_hmi_network.config`) + `apply-overlay` refreshes defconfig / `.config`, but **does not rebuild** that package — the staged binary can stay feature-incomplete (e.g. `wpa_supplicant` without `-u`). Force a package rebuild, then rootfs:
+
+```bash
+make apply-overlay
+bash scripts/br-make-packages.sh wpa wpa_supplicant
+make check-prebuilt
+make build-rootfs
+make upgrade
+```
+
+`br-make-packages.sh` re-applies `rockchip_rk3566_rk3568_lws_hmi_defconfig` then runs `make <pkg>` in the lws_hmi Buildroot output. This is **userspace only** — not `make build-kernel`. After a major defconfig or toolchain change you may still need `make clean-buildroot-output` before `make lunch` / `make build-rootfs` (see [`docs/build-optimization.md`](docs/build-optimization.md)).
 
 **Runtime prebuilt only** (`prebuilt/`, flutter-engine, gstreamer, etc.):
 

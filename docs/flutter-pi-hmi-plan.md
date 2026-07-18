@@ -432,7 +432,7 @@ Buildroot 将 `libsystemd` 与 `systemd` 包绑在一起（难以只装库、不
 | `BR2_INIT_SYSTEMD=y`                        | systemd 作 PID 1（服务编排；与 flutter-pi 无运行时耦合）             |
 | `BR2_PACKAGE_SYSTEMD=y`                     | systemd 用户态 + `**libsystemd.so`**（flutter-pi 链接用）     |
 | `BR2_PACKAGE_SYSTEMD_NETWORKD`              | **开（P3.1 网络栈切换）** — L3 归 networkd；旧 eth0/wlan0 L3 脚本删除或改为 networkd 封装 |
-| `BR2_PACKAGE_SYSTEMD_RESOLVED`              | **关**                                                 |
+| `BR2_PACKAGE_SYSTEMD_RESOLVED`              | **开（P3.1）** — DNS 归 resolved；与 networkd 配套；禁止 helpers 手写 resolv.conf |
 | `BR2_PACKAGE_SYSTEMD_TIMESYNCD`             | **关** — **P2.2** Demo 用手设 / RTC；P5 云 NTP 再按需 chrony   |
 | `BR2_PACKAGE_SYSTEMD_LOGIND`                | **关**                                                 |
 | `BR2_PACKAGE_SYSTEMD_POLKIT`                | **关**                                                 |
@@ -1806,7 +1806,7 @@ make del-prop
 
 | 项                                             | 做法                                                                        |
 | --------------------------------------------- | ------------------------------------------------------------------------- |
-| `**lws_hmi_systemd.config**`                  | **P3.1 起开 networkd**（L3）；resolved/timesyncd/logind 等仍按精简策略评估 |
+| `**lws_hmi_systemd.config**`                  | **P3.1 起开 networkd + resolved**（L3 + DNS）；timesyncd/logind 等仍按精简策略评估 |
 | **journald volatile**                         | `overlay/.../journald.conf.d/00-volatile-storage.conf`                    |
 | `**lws_hmi_base.config`**                     | 关 **adbd**、虚拟 tty **getty**（保留 **serial-getty@ttyFIQ0**）                  |
 | `**lws_hmi_network.config**`                  | 迁 networkd 后停用 eth0/wlan0 脚本双管；dhcpcd 不再作 wlan0 主 DHCP |

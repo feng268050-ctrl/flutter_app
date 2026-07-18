@@ -4,7 +4,7 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 ## Project overview
 
-- **What:** Buildroot-based **embedded appliance OS** for Innohi boards (benchmark: **ynh960/961/962**) + Flutter HMI (`app/hmi/`). Direction: shared **CyberUI** + **Dart HAL package** (submodule/packages), per-product Apps, board profiles for new motherboards/panels. **No** Rust `hald` Platform API.
+- **What:** Buildroot-based **embedded appliance OS** for Innohi boards (benchmark: **ynh960/961/962**) + Flutter HMI (`app/hmi/`). Direction: shared **CyberUI** + **`cyber_hal`** Dart package (submodule/packages), per-product Apps, board profiles for new motherboards/panels. **No** Rust `hald` Platform API.
 - **Board SKUs (current line):** ynh960 → RK3566 (entry); ynh962 → RK3568B2 (mid); ynh961 → RK3568 (high). Same product line; **one firmware image is the near-term goal** for this line. **Validate on ynh960** — no per-SKU defconfig fork yet. Future products may use different boards/screens via packs + HAL package.
 - **Phase roadmap:** See `docs/flutter-pi-hmi-plan.md` §1 (P1–P2.5 done; next P3.0 CyberUI, **P3.1 Dart HAL**, P3.2 emulator, P3.3 AI, P4 business, P5.0 Android, P5.1 engine). HAL design: `openspec/changes/dart-hal-package/`.
 - **Hosts:** Linux builds natively in `linux-sdk/`; macOS uses Docker `linux/amd64` + a Docker volume for the SDK tree.

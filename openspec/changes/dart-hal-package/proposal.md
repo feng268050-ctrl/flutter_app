@@ -17,14 +17,14 @@ The prior Rust `hald` design over-complicated a stack that already works as Dart
   2. **gpio config** — named lines (product LEDs = lines with roles); constructor-bound
   3. **modbus config** — RTU transport + attribute/register catalog; App uses attribute ids
 - **Binding style:** backlight injects **sysfs/pref paths**; volume injects **ALSA card/control + pref path**; network uses roles + board profile; proxy uses system-wide env contract (D18).
-- **Physical keyboard layout (D15):** flutter-pi / libxkbcommon XKB; runtime pref `/var/lib/hmi/keyboard.conf` with hot-reload (mouse.conf pattern); CyberIME owns soft layouts only.
+- **Physical keyboard layout (D15):** XKB via `/etc/default/keyboard` (and/or `keyboard.conf`); **v1 apply = restart hmi** (no flutter-pi hot-reload patch required); CyberIME owns soft layouts only.
 - **Mouse (D16):** formalize P2.1 contract — `/var/lib/hmi/mouse.conf` + `apply-mouse-settings` + flutter-pi mtime poll; presence via `/dev/input/by-id`; no new pi protocol.
 - **Sys info (D17):** `hal/sys_info` host inventory — SN, board/DT model, kernel/image/app versions, CPU cores/freq, RAM, flash capacity/free, thermal zones, uptime/load — **not** Modbus fields; **no** `hal/http` or `hal/device_info`.
 - **Network (D18):** single `hal/network` entry with ethernet / wifi / proxy subpackages; proxy is multi-scheme and system-wide (curl-visible).
 - **No orientation HAL (D19):** drop `hal/orientation`; Demo has no orientation settings; launch `-o` is board/image fixed; video layout flips are App UI.
 - **Debug (D20):** merge LAN SSH + USB OTG debug into one **`hal/debug`** package (optional ssh/usb entrypoints).
 - **Grouped domains (D21):** `hal/output` {backlight, volume} (human-facing levels, paired with `hal/input`); `hal/input` {keyboard, mouse}. **GPIO and Modbus stay separate top-level** modules (`hal/gpio`, `hal/modbus`) — no forced `io`/`field` umbrella when naming does not fit.
-- P3.1 = Dart HAL package + network stack migration.
+- P3.1 = Dart HAL package + network stack migration (**implement easy HAL modules first; networkd/`hal/network` last** — see tasks §2–§7).
 
 ## Capabilities
 
@@ -45,10 +45,10 @@ The prior Rust `hald` design over-complicated a stack that already works as Dart
 ## Impact
 
 - **Supersedes:** Rust/`hald` approach in `rust-hal-and-phase-realign` (CyberUI + phase table in docs remain).
-- **New package:** name TBD (`lws_hal` / `cyber_hal` / …).
+- **New package:** **`cyber_hal`** (`packages/cyber_hal/`, parallel naming to CyberUI).
 - **App:** consumer of HAL modules; hard-coded pin/register maps leave App where possible; Demo HTTP *probe* may call `curl` (inherits proxy) instead of a private Dart-only proxy.
 - **Rootfs:** enable networkd; wpa D-Bus; rewrite/remove L3 scripts; restore-settings for new network world; **proxy apply helper** + profile.d / environment / systemd DefaultEnvironment; no `hald`.
 - **Deps:** add `modbus_client` (validate on aarch64/flutter-pi); keep `bluez`/`dbus`.
 - **Docs:** plan §7.1 / P3.1; this change’s design D11–D21.
-- **flutter-pi:** new package patch for `keyboard.conf` XKB reload (alongside existing mouse prefs; D16 needs no new mouse patch).
+- **flutter-pi:** no new keyboard patch for D15 v1; optional later hot-reload. Mouse prefs already covered by existing patches (D16).
 - **App retains:** URL probe UI / optional Dart HttpClient; Modbus “device info” UI fields via `hal/modbus` attributes. **Proxy policy moves to HAL.**

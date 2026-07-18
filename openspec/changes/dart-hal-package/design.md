@@ -42,7 +42,7 @@ Product App                    CyberUI (separate package)
     │ import
     ▼
 ┌─────────────────────────────────────────┐
-│  packages/<hal_name>/   (Dart HAL)      │
+│  packages/cyber_hal/   (Dart HAL)       │
 │  public: Managers / Device / Capabilities│
 │  internal: Linux backends, profile,      │
 │            persist helpers, observers    │
@@ -58,12 +58,14 @@ Product App                    CyberUI (separate package)
 
 ### D2 — Package layout (normative intent)
 
+**Package name (decided):** `cyber_hal`.
+
 ```
-packages/<hal_name>/          # name TBD: lws_hal | cyber_hal | …
+packages/cyber_hal/
   lib/
-    <hal_name>.dart           # barrel: export discovery + optional show
+    cyber_hal.dart            # barrel: export discovery + optional show
     src/
-      core/                   # HalClient? or PlatformContext, Capabilities, BoardInfo, errors
+      core/                   # Capabilities, BoardInfo, errors
       profile/                # BoardProfile load (asset or /etc path)
       network/                # barrel + ethernet / wifi / proxy (D18)
         ethernet.dart
@@ -98,17 +100,17 @@ App `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  <hal_name>:
-    path: ../packages/<hal_name>   # or git submodule
+  cyber_hal:
+    path: ../packages/cyber_hal   # or git submodule
 ```
 
 Import style:
 
 ```dart
-import 'package:<hal_name>/hal/network.dart';
-import 'package:<hal_name>/hal/network/wifi.dart';
-import 'package:<hal_name>/hal/network/proxy.dart';
-// not required: bluetooth, audio, …
+import 'package:cyber_hal/hal/network.dart';
+import 'package:cyber_hal/hal/network/wifi.dart';
+import 'package:cyber_hal/hal/network/proxy.dart';
+// not required: bluetooth, output, …
 ```
 
 ### D3 — Public naming (keep industry style)
@@ -317,20 +319,24 @@ Prefs under `/var/lib/hmi/*` are **not** device files—they store last-applied 
 
 **API shape:** `readAttribute(id)` / `writeAttribute(id, value)` / `listAttributes()`; optional `readRaw(address, count)` for debug. Product register maps live in **config**, not Dart constants. Host/sim profile can point `device` at a PTY or mock.
 
-### D15 — Physical keyboard layout: flutter-pi XKB + pref hot-reload
+### D15 — Physical keyboard layout: XKB pref + HMI restart (v1)
 
-**Decision (2026-07-18):** USB/BT HID layout switching (e.g. US → Russian) is **XKB inside flutter-pi** (`libxkbcommon` + `xkeyboard-config`), not a Dart character remap and not CyberIME.
+**Decision (2026-07-18, revised):** USB/BT HID layout switching (e.g. US → Russian) is **XKB inside flutter-pi** (`libxkbcommon` + `xkeyboard-config`), not a Dart character remap and not CyberIME.
 
 **Why:** HID only delivers scancodes; characters come from XKB. The image already depends on this path (`/etc/default/keyboard`, `/usr/share/X11/xkb`). Soft-keyboard layouts stay in **CyberIME** (P3.0)—separate from physical HID.
 
-**Runtime preference (same pattern as mouse):**
+**v1 apply (simple):** write preference → **restart flutter-pi / `hmi.service`** so XKB is re-read at keyboard init. **No** new flutter-pi hot-reload patch required for v1.
+
+**UX (acceptable):** the screen may flash briefly on restart. Product App / Demo SHALL **restore navigation to the previous route/page** after relaunch (e.g. persist last route and open it on startup) so operators are not dumped on home. Most appliances rarely change layout and often have no keyboard attached—this is fine vs mid-session XKB reload complexity.
+
+(Unlike fixed panel orientation, layout switching remains a supported Settings/Demo action.)
 
 | File | Role |
 |------|------|
-| `/etc/default/keyboard` | Factory / image default (`XKBLAYOUT`, `XKBVARIANT`, `XKBOPTIONS`, `XKBMODEL`) |
-| `/var/lib/hmi/keyboard.conf` | Mid-session + restored preference; **authoritative while HMI runs** |
+| `/etc/default/keyboard` | Factory / image default; also what flutter-pi reads today at start |
+| `/var/lib/hmi/keyboard.conf` | Optional runtime pref (same keys as below); `hmi-launch` / restore MAY sync into `/etc/default/keyboard` before start |
 
-Example `keyboard.conf` (key=value, mouse.conf style):
+Example (or keep Debian-style `XKBLAYOUT=` in `/etc/default/keyboard`):
 
 ```text
 layout=ru
@@ -339,36 +345,31 @@ options=
 model=pc105
 ```
 
-Dual layout with physical toggle (optional product mode):
+Dual layout with physical toggle (optional):
 
 ```text
 layout=us,ru
-variant=,
 options=grp:alt_shift_toggle
-model=pc105
 ```
 
-**Apply path:**
+**Apply path (v1):**
 
-1. `hal/keyboard.setLayout(...)` writes `/var/lib/hmi/keyboard.conf` (and MAY mirror fields into `/etc/default/keyboard` for boot consistency, or leave that to restore).
-2. flutter-pi **mtime-polls** the pref (same discipline as `mouse.conf`) and rebuilds `xkb_keymap` / `xkb_state` **without** restarting `hmi.service` and **without** `SIGHUP`.
-3. Boot: `settings-restore` / `hmi-launch` ensure the active layout matches the pref before or as flutter-pi starts.
+1. `hal/input/keyboard.setLayout(...)` writes pref (and/or `/etc/default/keyboard`).
+2. Restart flutter-pi / `hmi.service` so XKB rebuilds at init.
+3. App restores the **previous page/route** after restart (HAL may only signal “restart required”; route restore is App responsibility, or a tiny shared helper in the App shell).
+4. Boot: launch already picks up `/etc/default/keyboard` — no mid-session machinery.
 
-**HAL API (`hal/keyboard`):**
+**HAL API:** presence (by-id) + `getLayout` / `setLayout` / `listLayouts()`; `setLayout` documents that apply restarts flutter-pi and that the **App** should restore the prior route after relaunch.
 
-- Presence: existing `/dev/input/by-id` (later udev) — backend kind **A**
-- Layout: `getLayout` / `setLayout(layout, {variant, options, model})` / `listLayouts()` (ids present on image) — backend kind **C** (pref file + flutter-pi)
-- Public types: extend Input surface with `KeyboardLayout` (or fields on `InputManager`); keep `KeyboardPresence`
+**Non-goals / forbidden (v1):**
 
-**Non-goals / forbidden:**
+- Dart remapping of HID scancodes
+- `SIGHUP` to flutter-pi (unsafe with current service)
+- Folding CyberIME soft layouts into this pref
 
-- Remapping printable characters only inside Flutter/Dart for physical HID
-- Requiring `systemctl restart hmi` or `kill -HUP` to apply layout
-- Folding CyberIME soft layouts into this XKB pref (shared “input language” UX MAY read both, implementations MUST stay separate)
+**Follow-on (optional, not blocking):** mouse.conf-style mtime hot-reload inside flutter-pi so layout changes without HMI restart — same class of patch as `0005-mouse-settings-prefs`, defer until product asks.
 
-**Image deps:** keep `BR2_PACKAGE_XKEYBOARD_CONFIG` so layouts such as `ru` exist under `/usr/share/X11/xkb`.
-
-**Implementation note:** flutter-pi today reads `/etc/default/keyboard` at keyboard init; D15 requires a **new patch** (parallel to `0005-mouse-settings-prefs`) to watch `/var/lib/hmi/keyboard.conf` and reload XKB.
+**Image deps:** keep `BR2_PACKAGE_XKEYBOARD_CONFIG` so `ru` (etc.) exist under `/usr/share/X11/xkb`.
 
 ### D16 — `hal/mouse`: formalize existing pref contract
 
@@ -561,7 +562,7 @@ Import examples: `hal/output/volume.dart`, `hal/input/keyboard.dart`, `hal/gpio.
 | **hal/bluetooth** | — | B | BlueZ (+ keyboard battery keepalive) |
 | **hal/output** | backlight | A | sysfs + pref |
 | | volume | C | amixer + pref |
-| **hal/input** | keyboard | A+C | by-id + `keyboard.conf` / XKB (D15) |
+| **hal/input** | keyboard | A+C | by-id + XKB pref; **v1 apply = restart hmi** (D15) |
 | | mouse | A+C | by-id + `mouse.conf` (D16) |
 | **hal/gpio** | — | A | `gpio.json` (D13) |
 | **hal/modbus** | — | A | `modbus.json` + `modbus_client` (D14) |
@@ -574,34 +575,36 @@ Import examples: `hal/output/volume.dart`, `hal/input/keyboard.dart`, `hal/gpio.
 
 ### Interim implementation order
 
-1. OS: networkd + wpa D-Bus + script delete/rewrite + restore.
-2. **Proxy apply helper** (D18) + migrate off `http-proxy`; curl smoke.
-3. HAL package scaffold with **D21** (`output`/`input`) + top-level gpio/modbus; ship configs.
-4. `hal/network` ethernet/wifi on new stack.
-5. Camera eth0 → networkd reconfigure when P4/P5 needs it.
+**Principle:** ship easy lifts first; leave **networkd + `hal/network`** (largest churn) for last.
+
+1. Package scaffold (`packages/cyber_hal/`, ynh960 profile + gpio/modbus JSON stubs).
+2. Lift low-churn modules: `hal/output`, `hal/input` (mouse + **keyboard layout via pref + HMI restart**), `hal/debug`, `hal/datetime`, `hal/sys_info` (+ Demo cutover).
+3. Config-driven `hal/gpio` + `hal/modbus`; validate `modbus_client` on device.
+4. `hal/bluetooth` move + battery keepalive.
+5. **Last:** OS networkd/wpa cutover + `apply-proxy` + `hal/network` {ethernet, wifi, proxy}.
+6. Camera eth0 → networkd reconfigure when P4/P5 needs it (after network wave).
+7. Optional follow-on: keyboard layout hot-reload without HMI restart (flutter-pi patch).
 
 ## Risks / Trade-offs
 
 - [Flutter owns mid-session I/O] → OK for single-UI appliance; boot restore outside HMI cgroup.
-- [networkd migration cost] → Accepted (D11); do not soft-pedal dual stack.
-- [modbus_client on aarch64] → Validate early; keep Posix fallback only if blocked.
+- [networkd migration cost] → Accepted (D11); **scheduled last** so other HAL modules land without waiting on L3 rewrite.
+- [modbus_client on aarch64] → Validate in gpio/modbus wave; keep Posix fallback only if blocked.
 - [Config file drift vs lws-ui registers] → Version field + golden tests against known maps.
-- [flutter-pi keyboard.conf patch] → Required for D15 hot-reload; ship with flutter-pi package patches + rootfs (same pipeline as mouse prefs).
-- [Proxy env vs already-running processes] → New shells/services see apply; document that long-lived processes may need restart or EnvironmentFile reload; hmi.service SHOULD use EnvironmentFile=proxy.env and restart or re-exec only when product requires in-process Dart to inherit (curl probe does not need HMI restart).
+- [flutter-pi keyboard hot-reload] → **Not required for v1** (D15 uses HMI restart); optional follow-on only.
+- [Dual network stacks during interim] → Until network wave, Demo may keep legacy eth/wifi/proxy; do not start networkd cutover halfway through early waves.
 
 ## Migration Plan
 
-1. Finalize this OpenSpec (taxonomy + config schemas + D15–D21).
-2. Network OS milestone (tasks §2) including **D18 proxy apply**.
-3. Scaffold package with **D21** (`hal/output`, `hal/input`) + top-level `hal/gpio` / `hal/modbus`; ship ynh960 configs.
-4. Move platform code; **no orientation HAL**; Demo without orientation settings.
-5. ethernet/wifi HAL after OS cutover.
-6. flutter-pi `keyboard.conf` reload patch + `hal/input/keyboard` layout API (D15).
+1. Finalize this OpenSpec (taxonomy + config schemas + D15–D21). ✅
+2. Scaffold HAL package; lift easy modules (output / input incl. keyboard layout+restart / debug / datetime / sys_info).
+3. gpio + modbus config cutover; bluetooth.
+4. **Then** network OS milestone (networkd + wpa D-Bus + apply-proxy) and `hal/network`.
+5. Optional: keyboard XKB hot-reload without restart; P3.2 stubs / archive rust-hal / open questions.
 
 ## Open Questions
 
-1. Package name: `lws_hal` vs `cyber_hal` vs `platform_hal`?
+1. Board/gpio/modbus configs: Flutter assets only vs also `/usr/share/cyber_hal/`?
 2. Exact pub.dev (or fork) identity of `modbus_client`?
-3. Board/gpio/modbus configs: Flutter assets only vs also `/usr/share/<hal>/`?
-4. `systemd-resolved` with networkd for v1, or keep file-based resolv?
-5. D15: which layout ids to ship/list in Demo v1 beyond `us` / `ru` (product SKU list)?
+3. `systemd-resolved` with networkd for v1, or keep file-based resolv?
+4. D15: which layout ids to ship/list in Demo v1 beyond `us` / `ru` (product SKU list)?

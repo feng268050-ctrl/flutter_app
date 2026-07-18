@@ -65,7 +65,7 @@ P3.0  CyberUI + CyberIME（git 子模块）🔲
     └─ 主 App pubspec 依赖子模块；设计可换，API 用 Cyber* 前缀
 
 P3.1  Dart HAL 子包 + 网络栈切换 🔲
-    ├─ packages/<hal_name>/：hal/ethernet|wifi|bluetooth|… 按需 import
+    ├─ packages/cyber_hal/：hal/network|output|input|… 按需 import
     ├─ **启用 systemd-networkd**（L3）+ wpa D-Bus（L2）；旧 L3 脚本删除或改为 networkd 封装
     ├─ restore/persist 按新栈重做；相机 eth0 动态配址改为重配 networkd
     ├─ backlight/volume/gpio/modbus… 配置/路径注入

@@ -172,26 +172,31 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
     super.dispose();
   }
 
-  Widget _deviceTile(
-    BluetoothRemoteDevice d, {
-    required bool showPair,
-  }) {
+  Widget _deviceTile(BluetoothRemoteDevice d) {
     final title = d.name.isEmpty ? d.address : d.name;
     final rssi = d.rssi != null ? ' · rssi=${d.rssi}' : '';
+    final batt =
+        d.batteryPercent != null ? ' · battery=${d.batteryPercent}%' : '';
     final inputNote = d.inputReady == null
         ? ''
         : d.inputReady!
             ? ' · input=ok'
             : ' · input=missing';
+    // HID link up but no evdev — offer Reconnect only (never with Disconnect).
     final staleLink = d.connected && d.inputReady == false;
+    final showDisconnect = d.connected && !staleLink;
+    final showConnectOrPair = !d.connected || staleLink;
+    final pairLabel = !d.paired && !d.connected
+        ? 'Pair'
+        : (staleLink ? 'Reconnect' : 'Connect');
     return ListTile(
       contentPadding: EdgeInsets.zero,
       dense: true,
       title: Text(title, style: const TextStyle(color: Colors.white)),
       subtitle: Text(
         '${d.address} · ${_kindLabel(d.kind)} · paired=${d.paired} · '
-        'trusted=${d.trusted} · connected=${d.connected}$inputNote$rssi'
-        '${staleLink ? '\nKeyboard/mouse link up but input is down — tap Connect or wait for auto-reconnect' : ''}',
+        'trusted=${d.trusted} · connected=${d.connected}$inputNote$rssi$batt'
+        '${staleLink ? '\nKeyboard/mouse link up but input is down — tap Reconnect' : ''}',
         style: TextStyle(
           color: staleLink
               ? Colors.amber.withOpacity(0.85)
@@ -201,7 +206,7 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
       trailing: Wrap(
         spacing: 4,
         children: [
-          if (showPair)
+          if (showConnectOrPair)
             TextButton(
               onPressed: _busy != null
                   ? null
@@ -211,9 +216,9 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
                           () => widget.controller.pairAndConnect(d.address),
                         ),
                       ),
-              child: Text(d.paired ? 'Connect' : 'Pair'),
+              child: Text(pairLabel),
             ),
-          if (d.connected)
+          if (showDisconnect)
             TextButton(
               onPressed: _busy != null
                   ? null
@@ -629,7 +634,7 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
                 : '(adapter off)',
             style: TextStyle(color: Colors.white.withOpacity(0.5)),
           ),
-        if (on) ..._nearby.map((d) => _deviceTile(d, showPair: true)),
+        if (on) ..._nearby.map(_deviceTile),
         const SizedBox(height: 12),
         const Text(
           'Paired / connected',
@@ -642,13 +647,7 @@ class _BluetoothDemoSectionState extends State<BluetoothDemoSection>
                 : '(adapter off)',
             style: TextStyle(color: Colors.white.withOpacity(0.5)),
           ),
-        if (on)
-          ..._bonded.map(
-            (d) => _deviceTile(
-              d,
-              showPair: !d.connected || d.inputReady == false,
-            ),
-          ),
+        if (on) ..._bonded.map(_deviceTile),
       ],
     );
   }

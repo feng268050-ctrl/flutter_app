@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/platform/datetime/date_time_controller.dart';
+import 'package:cyber_hal/datetime.dart';
 
 /// P2.2 Demo: date / time / timezone + Manual vs Network sync.
 class DateTimeDemoSection extends StatefulWidget {

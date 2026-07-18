@@ -1,11 +1,10 @@
 import 'dart:async';
 
+import 'package:cyber_hal/network.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/platform/ethernet/ethernet_controller.dart';
-import 'package:lws_hmi/platform/ethernet/ethernet_models.dart';
 import 'package:lws_hmi/ui/demo/demo_scroll_interaction.dart';
 
-/// P2.1 Demo: Ethernet RJ45 (eth0) link + DHCP/static.
+/// P2.1 Demo: Ethernet RJ45 link + DHCP/static.
 class EthernetDemoSection extends StatefulWidget {
   const EthernetDemoSection({super.key, required this.controller});
 
@@ -172,9 +171,9 @@ class _EthernetDemoSectionState extends State<EthernetDemoSection>
                 },
         ),
         const SizedBox(height: 8),
-        const Text(
-          'IPv4 mode (eth0)',
-          style: TextStyle(color: Colors.white, fontSize: 18),
+        Text(
+          'IPv4 mode (${widget.controller.interfaceName})',
+          style: const TextStyle(color: Colors.white, fontSize: 18),
         ),
         SegmentedButton<EthIpv4Mode>(
           segments: const [
@@ -198,20 +197,32 @@ class _EthernetDemoSectionState extends State<EthernetDemoSection>
           _field(_staticGw, 'Gateway'),
           _field(_staticDns, 'DNS'),
         ],
+        if (!ifaceOn)
+          Text(
+            'Enable the interface before Apply IPv4 takes effect on the link.',
+            style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 13),
+          ),
         FilledButton(
-          onPressed: _busy != null
+          onPressed: _busy != null || !ifaceOn
               ? null
               : () => unawaited(_guard('ipv4', () async {
                     final cfg = _ipv4.mode == EthIpv4Mode.dhcp
                         ? EthIpv4Config.dhcpDefault
-                        : EthIpv4Config(
-                            mode: EthIpv4Mode.staticMode,
-                            address: _staticAddr.text.trim(),
-                            prefixLength:
-                                int.tryParse(_staticPrefix.text.trim()) ?? 24,
-                            gateway: _staticGw.text.trim(),
-                            dns: _staticDns.text.trim(),
-                          );
+                        : () {
+                            final addr = _staticAddr.text.trim();
+                            final prefixText = _staticPrefix.text.trim();
+                            _validateStaticIpv4(
+                              address: addr,
+                              prefixText: prefixText,
+                            );
+                            return EthIpv4Config(
+                              mode: EthIpv4Mode.staticMode,
+                              address: addr,
+                              prefixLength: int.parse(prefixText),
+                              gateway: _staticGw.text.trim(),
+                              dns: _staticDns.text.trim(),
+                            );
+                          }();
                     await widget.controller.setIpv4Config(cfg);
                     setState(() => _ipv4 = cfg);
                   })),
@@ -219,6 +230,19 @@ class _EthernetDemoSectionState extends State<EthernetDemoSection>
         ),
       ],
     );
+  }
+
+  static void _validateStaticIpv4({
+    required String address,
+    required String prefixText,
+  }) {
+    if (address.isEmpty) {
+      throw StateError('static address is empty');
+    }
+    final p = int.tryParse(prefixText.trim());
+    if (p == null || p < 0 || p > 32) {
+      throw StateError('prefix must be 0–32');
+    }
   }
 
   Widget _field(TextEditingController c, String label) {

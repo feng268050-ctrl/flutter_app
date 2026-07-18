@@ -16,7 +16,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+# System Version continues lws-ui (last Android: 1.0.37+1037). See lib/app_version.dart.
+version: 1.0.38+1038
 
 environment:
   sdk: ^3.5.0
@@ -30,6 +31,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # Portable Dart HAL (board profiles, Linux backends). Path dep until published.
+  cyber_hal:
+    path: ../../packages/cyber_hal
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

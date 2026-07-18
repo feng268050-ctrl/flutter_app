@@ -222,6 +222,74 @@ void main() {
     await tester.pump();
     expect(find.textContaining('Error:'), findsOneWidget);
   });
+
+  testWidgets('stale HID link shows Reconnect only (not Disconnect)', (
+    tester,
+  ) async {
+    final ctrl = _FakeBtController()
+      .._devices = const [
+        BluetoothRemoteDevice(
+          address: 'E9:6E:F0:DC:B3:00',
+          name: 'QM002',
+          paired: true,
+          trusted: true,
+          connected: true,
+          inputReady: false,
+          kind: BluetoothDeviceKind.keyboard,
+        ),
+      ];
+    addTearDown(ctrl.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: BluetoothDemoSection(controller: ctrl),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('QM002'), findsOneWidget);
+    expect(find.text('Reconnect'), findsOneWidget);
+    expect(find.text('Connect'), findsNothing);
+    expect(find.text('Disconnect'), findsNothing);
+    expect(find.text('Remove'), findsOneWidget);
+  });
+
+  testWidgets('healthy connected HID shows Disconnect only (not Connect)', (
+    tester,
+  ) async {
+    final ctrl = _FakeBtController()
+      .._devices = const [
+        BluetoothRemoteDevice(
+          address: 'E9:6E:F0:DC:B3:00',
+          name: 'QM002',
+          paired: true,
+          trusted: true,
+          connected: true,
+          inputReady: true,
+          kind: BluetoothDeviceKind.keyboard,
+        ),
+      ];
+    addTearDown(ctrl.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: BluetoothDemoSection(controller: ctrl),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Disconnect'), findsOneWidget);
+    expect(find.text('Connect'), findsNothing);
+    expect(find.text('Reconnect'), findsNothing);
+  });
 }
 
 class _ThrowingScanController extends _FakeBtController {

@@ -119,7 +119,7 @@ Home route is the P2 demo (`lib/ui/demo/p2_demo_page.dart`, `MaterialApp.home`).
 | Serial | `/dev/ttyS5`, **115200 8-N-1**, slave `0x01`, FC **0x04** input registers |
 | Serial backend | Linux: **PosixSerialPort** (`stty` + libc). Buildroot `libserialport` 0.1.1 fails `sp_open` on kernel 6.1 (`termiox` → ENOTTY); patch `overlay/buildroot/package/libserialport/0002-dont-check-termiox.patch` for next rootfs rebuild |
 | Device SN | `/usr/bin/read-serial` (USB gadget iSerial source), not Modbus |
-| Firmware Version | register `0x0002` |
+| Control Card Version | attribute `device.control_card_version` (input `0x0002`) |
 | Laser / Wire / Gunhead SN | `0x0032`–`0x0033`, `0x0035`, `0x0038`–`0x0039` (lws-ui formatting) |
 | Alarm temps (Monitor) | Motor / Motor Driver / Protective Mirror / Collimator — `0x0061`–`0x0064`, raw×0.1 °C |
 | RGB pins | 契约 **GPIO_5 / GPIO_4 / GPIO_7**（红/黄/绿）；路径 `/sys/class/gpio_innohi/GPIO_N/value` |

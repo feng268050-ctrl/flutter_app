@@ -90,10 +90,14 @@ class _HttpDemoSectionState extends State<HttpDemoSection> {
               : () => unawaited(() async {
                     setState(() => _busy = true);
                     try {
+                      final host = _host.text.trim();
+                      if (_proxyEnabled && host.isEmpty) {
+                        throw StateError('proxy host is empty');
+                      }
                       await widget.controller.setProxy(
                         HttpProxyConfig(
                           enabled: _proxyEnabled,
-                          host: _host.text.trim(),
+                          host: host,
                           port: int.tryParse(_port.text.trim()) ?? 8080,
                           username: _user.text.trim(),
                           password: _pass.text,

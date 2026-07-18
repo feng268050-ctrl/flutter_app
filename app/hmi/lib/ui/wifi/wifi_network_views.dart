@@ -1,5 +1,5 @@
+import 'package:cyber_hal/network.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/platform/wifi/wifi_models.dart';
 
 /// Reusable “current network” panel for Demo / Settings.
 class WifiConnectedPanel extends StatelessWidget {
@@ -49,11 +49,17 @@ class WifiConnectedPanel extends StatelessWidget {
           Text('Frequency: ${connection.frequencyMhz} MHz', style: muted),
         if (connection.signalDbm != null)
           Text('Signal: ${connection.signalDbm} dBm', style: muted),
-        if (connection.message != null && connection.message!.isNotEmpty)
+        if (connection.phase == WifiConnectionPhase.failed &&
+            connection.message != null &&
+            connection.message!.isNotEmpty)
           Text(
             connection.message!,
             style: const TextStyle(color: Colors.redAccent, fontSize: 14),
-          ),
+          )
+        else if (connection.message != null &&
+            connection.message!.isNotEmpty &&
+            connection.phase == WifiConnectionPhase.associating)
+          Text(connection.message!, style: muted),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,

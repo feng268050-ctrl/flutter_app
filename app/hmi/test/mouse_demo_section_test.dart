@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/platform/input/mouse_settings.dart';
-import 'package:lws_hmi/platform/input/usb_hid_mouse_probe.dart';
 import 'package:lws_hmi/ui/demo/mouse_demo_section.dart';
 
 class _FakeMouseSettings implements MouseSettingsController {

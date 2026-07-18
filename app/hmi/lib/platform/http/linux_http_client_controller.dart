@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cyber_hal/network.dart';
 import 'package:lws_hmi/platform/datetime/date_time_controller.dart';
 import 'package:lws_hmi/platform/datetime/linux_date_time_controller.dart';
 import 'package:lws_hmi/platform/http/http_client_controller.dart';
@@ -17,23 +18,20 @@ const String kSystemCaBundlePath = '/etc/ssl/certs/ca-certificates.crt';
 
 class LinuxHttpClientController implements HttpClientController {
   LinuxHttpClientController({
-    this.proxyPath = HttpProxyStore.defaultPath,
+    Proxy? proxy,
     this.caBundlePath = kSystemCaBundlePath,
     DateTimeController? dateTimeController,
-  }) : dateTimeController = dateTimeController ?? LinuxDateTimeController();
+  })  : _proxy = proxy ?? LinuxProxy(),
+        dateTimeController = dateTimeController ?? LinuxDateTimeController();
 
-  final String proxyPath;
+  final Proxy _proxy;
   final String caBundlePath;
   final DateTimeController dateTimeController;
 
   @override
   Future<HttpProxyConfig> getProxy() async {
     try {
-      final f = File(proxyPath);
-      if (!await f.exists()) {
-        return HttpProxyConfig.disabled;
-      }
-      return HttpProxyStore.parse(await f.readAsString());
+      return _fromProxySettings(await _proxy.getSettings());
     } catch (_) {
       return HttpProxyConfig.disabled;
     }
@@ -41,10 +39,45 @@ class LinuxHttpClientController implements HttpClientController {
 
   @override
   Future<void> setProxy(HttpProxyConfig config) async {
-    final f = File(proxyPath);
-    await f.parent.create(recursive: true);
-    await f.writeAsString(HttpProxyStore.serialize(config), flush: true);
+    if (config.enabled && config.host.trim().isEmpty) {
+      throw ArgumentError('proxy host is empty');
+    }
+    await _proxy.setSettings(_toProxySettings(config));
     lwsTrace('http: proxy saved ${config.toString()}');
+  }
+
+  /// Demo maps a single host:port onto both http and https schemes.
+  static ProxySettings _toProxySettings(HttpProxyConfig c) {
+    if (!c.enabled || c.host.isEmpty) {
+      return const ProxySettings();
+    }
+    final uri = ProxyUri(
+      scheme: ProxyScheme.http,
+      host: c.host,
+      port: c.port,
+      username: c.username.isEmpty ? null : c.username,
+      password: c.password.isEmpty ? null : c.password,
+    );
+    return ProxySettings(
+      enabled: true,
+      httpProxy: uri,
+      httpsProxy: uri,
+      noProxy: const ['localhost', '127.0.0.1'],
+    );
+  }
+
+  static HttpProxyConfig _fromProxySettings(ProxySettings s) {
+    final u = s.httpProxy ?? s.httpsProxy ?? s.allProxy;
+    if (!s.enabled || u == null || u.host.isEmpty) {
+      return HttpProxyConfig.disabled;
+    }
+    return HttpProxyConfig(
+      enabled: true,
+      host: u.host,
+      port: u.port,
+      username: u.username ?? '',
+      password: u.password ?? '',
+    );
   }
 
   @override

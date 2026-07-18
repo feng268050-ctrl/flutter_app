@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/platform/ssh/ssh_debug_controller.dart';
+import 'package:cyber_hal/debug.dart';
 
 /// P2.1 Demo: on-demand LAN/WLAN SSH debug toggle.
 class SshDebugDemoSection extends StatefulWidget {
@@ -83,7 +83,7 @@ class _SshDebugDemoSectionState extends State<SshDebugDemoSection> {
         ),
         const SizedBox(height: 8),
         Text(
-          'On-demand sshd on eth0 / wlan0 only (USB-SSH on 192.168.55.1 stays up). '
+          'On-demand sshd on LAN / WLAN only (USB-SSH on 192.168.55.1 stays up). '
           'Use make connect <ip> on the host after enabling.',
           style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
         ),

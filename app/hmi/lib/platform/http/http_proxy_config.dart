@@ -63,9 +63,12 @@ class HttpProbeResult {
   }
 }
 
-/// Persist `/var/lib/hmi/http-proxy` (password stored; never logged).
+/// Legacy Demo parser for key=value proxy files (password stored; never logged).
+///
+/// Live system proxy is `/var/lib/network/proxy.conf` via `LinuxProxy` +
+/// `apply-proxy`. This store remains for unit tests of the older flat format.
 class HttpProxyStore {
-  static const defaultPath = '/var/lib/hmi/http-proxy';
+  static const defaultPath = '/var/lib/network/proxy.conf';
 
   static HttpProxyConfig parse(String text) {
     final map = <String, String>{};

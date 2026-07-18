@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/platform/ssh/ssh_debug_controller.dart';
-import 'package:lws_hmi/platform/usb/usb_debug_controller.dart';
+import 'package:cyber_hal/debug.dart';
 
 /// P2 Demo: Debug group — USB Debug (persisted) + LAN Debug (session only).
 class DebugDemoSection extends StatefulWidget {
@@ -163,7 +162,7 @@ class _DebugDemoSectionState extends State<DebugDemoSection> {
             style: TextStyle(color: Colors.white),
           ),
           subtitle: Text(
-            'sshd on eth0 / wlan0; not restored after reboot',
+            'sshd on LAN / WLAN ifaces; not restored after reboot',
             style: hint,
           ),
           value: _lanOn,

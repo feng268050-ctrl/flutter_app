@@ -1,9 +1,7 @@
 import 'dart:async';
 
+import 'package:cyber_hal/network.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/platform/wifi/wifi_ap_list.dart';
-import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
-import 'package:lws_hmi/platform/wifi/wifi_models.dart';
 import 'package:lws_hmi/ui/demo/demo_scroll_interaction.dart';
 import 'package:lws_hmi/ui/wifi/wifi_network_views.dart';
 
@@ -32,7 +30,6 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
   final _staticPrefix = TextEditingController(text: '24');
   final _staticGw = TextEditingController();
   final _staticDns = TextEditingController();
-  final _connectPsk = TextEditingController();
 
   StreamSubscription<WifiRadioState>? _radioSub;
   StreamSubscription<WifiConnectionState>? _connSub;
@@ -44,6 +41,32 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
             : null,
       );
 
+  /// Session strip: associating / obtainingIp / connected / failed with SSID.
+  bool get _showSessionPanel {
+    if (_radio != WifiRadioState.on) {
+      return false;
+    }
+    final ssid = _conn.ssid;
+    if (ssid == null || ssid.isEmpty) {
+      return false;
+    }
+    switch (_conn.phase) {
+      case WifiConnectionPhase.associating:
+      case WifiConnectionPhase.obtainingIp:
+      case WifiConnectionPhase.connected:
+      case WifiConnectionPhase.failed:
+        return true;
+      case WifiConnectionPhase.disconnected:
+        return false;
+    }
+  }
+
+  bool get _canApplyIpv4 =>
+      _busy == null &&
+      _radio == WifiRadioState.on &&
+      (_conn.phase == WifiConnectionPhase.connected ||
+          _conn.phase == WifiConnectionPhase.obtainingIp);
+
   @override
   bool get wantKeepAlive => true;
 
@@ -53,9 +76,16 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
     _radio = widget.controller.currentRadio;
     _conn = widget.controller.currentConnection;
     _radioSub = widget.controller.radio.listen((s) {
-      if (mounted) {
-        setState(() => _radio = s);
+      if (!mounted) {
+        return;
       }
+      setState(() {
+        _radio = s;
+        // Stale scan rows after radio-off confuse reconnect UX.
+        if (s != WifiRadioState.on && s != WifiRadioState.starting) {
+          _scanned = const [];
+        }
+      });
     });
     _connSub = widget.controller.connection.listen((s) {
       if (mounted) {
@@ -104,6 +134,19 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
     }
   }
 
+  static void _validateStaticIpv4({
+    required String address,
+    required String prefixText,
+  }) {
+    if (address.isEmpty) {
+      throw StateError('static address is empty');
+    }
+    final p = int.tryParse(prefixText.trim());
+    if (p == null || p < 0 || p > 32) {
+      throw StateError('prefix must be 0–32');
+    }
+  }
+
   @override
   void dispose() {
     unawaited(_radioSub?.cancel() ?? Future<void>.value());
@@ -114,7 +157,6 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
     _staticPrefix.dispose();
     _staticGw.dispose();
     _staticDns.dispose();
-    _connectPsk.dispose();
     super.dispose();
   }
 
@@ -122,8 +164,12 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
   Widget build(BuildContext context) {
     super.build(context);
     final radioOn = _radio == WifiRadioState.on;
-    final showConnected = radioOn &&
+    final canForget = radioOn &&
+        _busy == null &&
+        _conn.ssid != null &&
+        _conn.ssid!.isNotEmpty &&
         (_conn.isAssociated || _conn.phase == WifiConnectionPhase.failed);
+    final canDisconnect = radioOn && _busy == null && _conn.isAssociated;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -160,23 +206,24 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
                   );
                 },
         ),
-        if (showConnected) ...[
-          const Text(
-            'Connected',
-            style: TextStyle(color: Colors.white, fontSize: 18),
+        if (_showSessionPanel) ...[
+          Text(
+            _conn.phase == WifiConnectionPhase.failed
+                ? 'Session'
+                : _conn.isAssociated
+                    ? 'Connected'
+                    : 'Connecting',
+            style: const TextStyle(color: Colors.white, fontSize: 18),
           ),
           const SizedBox(height: 4),
           WifiConnectedPanel(
             connection: _conn,
-            onDisconnect: !radioOn || _busy != null
+            onDisconnect: !canDisconnect
                 ? null
                 : () => unawaited(
                       _guard('disconnect', widget.controller.disconnect),
                     ),
-            onForget: !radioOn ||
-                    _busy != null ||
-                    _conn.ssid == null ||
-                    _conn.ssid!.isEmpty
+            onForget: !canForget
                 ? null
                 : () => unawaited(
                       _guard(
@@ -209,8 +256,9 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
         ),
         const SizedBox(height: 4),
         WifiAvailableList(
-          accessPoints: _available.take(16).toList(),
-          onConnect: _busy != null ? null : _connectVisible,
+          accessPoints: radioOn ? _available.take(16).toList() : const [],
+          onConnect: !radioOn || _busy != null ? null : _connectVisible,
+          emptyLabel: radioOn ? '(no networks — Scan)' : '(radio off)',
         ),
         const SizedBox(height: 12),
         const Text(
@@ -223,18 +271,24 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
           onPressed: !radioOn || _busy != null
               ? null
               : () => unawaited(_guard('hidden', () async {
+                    final ssid = _hiddenSsid.text.trim();
+                    if (ssid.isEmpty) {
+                      throw StateError('hidden SSID is empty');
+                    }
+                    final psk = _hiddenPsk.text;
+                    // Open hidden (empty PSK) is allowed; PSK path when typed.
                     await widget.controller.connect(
-                      ssid: _hiddenSsid.text.trim(),
-                      psk: _hiddenPsk.text,
+                      ssid: ssid,
+                      psk: psk.isEmpty ? null : psk,
                       hidden: true,
                     );
                   })),
           child: const Text('Connect hidden'),
         ),
         const SizedBox(height: 16),
-        const Text(
-          'IPv4 mode (wlan0)',
-          style: TextStyle(color: Colors.white, fontSize: 18),
+        Text(
+          'IPv4 mode (${widget.controller.interfaceName})',
+          style: const TextStyle(color: Colors.white, fontSize: 18),
         ),
         SegmentedButton<WlanIpv4Mode>(
           segments: const [
@@ -258,20 +312,32 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
           _field(_staticGw, 'Gateway'),
           _field(_staticDns, 'DNS'),
         ],
+        if (!_canApplyIpv4)
+          Text(
+            'Connect to a network before Apply IPv4 takes effect on the link.',
+            style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 13),
+          ),
         FilledButton(
-          onPressed: _busy != null
+          onPressed: !_canApplyIpv4
               ? null
               : () => unawaited(_guard('ipv4', () async {
                     final cfg = _ipv4.mode == WlanIpv4Mode.dhcp
                         ? WlanIpv4Config.dhcpDefault
-                        : WlanIpv4Config(
-                            mode: WlanIpv4Mode.staticMode,
-                            address: _staticAddr.text.trim(),
-                            prefixLength:
-                                int.tryParse(_staticPrefix.text.trim()) ?? 24,
-                            gateway: _staticGw.text.trim(),
-                            dns: _staticDns.text.trim(),
-                          );
+                        : () {
+                            final addr = _staticAddr.text.trim();
+                            final prefixText = _staticPrefix.text.trim();
+                            _validateStaticIpv4(
+                              address: addr,
+                              prefixText: prefixText,
+                            );
+                            return WlanIpv4Config(
+                              mode: WlanIpv4Mode.staticMode,
+                              address: addr,
+                              prefixLength: int.parse(prefixText),
+                              gateway: _staticGw.text.trim(),
+                              dns: _staticDns.text.trim(),
+                            );
+                          }();
                     await widget.controller.setIpv4Config(cfg);
                     setState(() => _ipv4 = cfg);
                   })),
@@ -284,36 +350,51 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
   Future<void> _connectVisible(WifiAccessPoint ap) async {
     var psk = '';
     if (!ap.isOpen) {
-      final ok = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text('Password for ${ap.ssid}'),
-          content: TextField(
-            controller: _connectPsk,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'PSK'),
+      // Fresh controller per dialog — never reuse prior network's PSK text.
+      final pskCtrl = TextEditingController();
+      try {
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text('Password for ${ap.ssid}'),
+            content: TextField(
+              controller: pskCtrl,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'PSK'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Connect'),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Connect'),
-            ),
-          ],
-        ),
-      );
-      if (ok != true) {
+        );
+        if (ok != true) {
+          return;
+        }
+        psk = pskCtrl.text;
+      } finally {
+        pskCtrl.dispose();
+      }
+      if (psk.isEmpty) {
+        if (mounted) {
+          setState(() => _error = 'password required for ${ap.ssid}');
+        }
         return;
       }
-      psk = _connectPsk.text;
     }
     await _guard('connect', () async {
+      // Do not pin BSSID — same SSID may roam across APs.
       await widget.controller.connect(
         ssid: ap.ssid,
         psk: psk.isEmpty ? null : psk,
+        requiresPsk: !ap.isOpen,
       );
     });
   }

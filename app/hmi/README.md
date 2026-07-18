@@ -22,11 +22,11 @@ Reusable modules live under `lib/platform/`:
 | `audio/` | `change-volume` + `mpg123`/`amixer` | Forces `Playback Path=RING_SPK_HP`; asset → `/var/lib/hmi/audio/`; set volume via shell (persist `media-volume`) |
 | `backlight/` | `change-backlight` | Prefer panel sysfs for get; set via shell (persist `backlight-brightness`; restore + HMI re-apply) |
 | `display/` | launch-only `display-orientation` → flutter-pi `-o` | **Not** a Demo/HAL setting; fixed panel orientation at launch |
-| `datetime/` | `timedatectl`/`date` + `hwclock` + `wlan0-time-sync.sh` | Manual set / Network sync; prefs `/var/lib/hmi/time-sync-mode` + `timezone`; HTTPS TLS uses `ensureSaneForTls` |
+| `datetime/` | `timedatectl`/`date` + `hwclock` + `/usr/bin/sync-time` | Manual set / Network sync; prefs `/var/lib/hmi/time-sync-mode` + `timezone`; HTTPS TLS uses `ensureSaneForTls` |
 | `ethernet/` | helpers + `ip` / sysfs | RJ45 `eth0`; DHCP/static via **`eth0-network.service`** (outside HMI cgroup); `eth0-wanted` |
 | `input/` | `/dev/input/by-id` probe + `MouseSettingsController` | USB HID keyboard/mouse presence; keys/pointer via flutter-pi; mouse prefs via **`apply-mouse-settings`** → `mouse.conf` (flutter-pi mtime poll; no SIGHUP) |
-| `wifi/` | helpers + `wpa_cli` | **`wlan-wpa` / `wlan-dhcp`** units; state `/var/lib/wpa_supplicant/`; `wifi-wanted`; Hidden SSID; DHCP/static on **wlan0** |
-| `http/` | Dart `HttpClient` (+ optional `curl`) | Default `SecurityContext`; wall-clock via `DateTimeController`; proxy prefs `/var/lib/hmi/http-proxy`; Demo GET probe |
+| `wifi/` | helpers + **D-Bus status** (`fi.w1.wpa_supplicant1`); `wpa_cli` for scan/connect | **`wlan-wpa`** requires `wpa -u`; L3 via networkd D-Bus |
+| `http/` | Dart `HttpClient` (+ optional `curl`) | Default `SecurityContext`; wall-clock via `DateTimeController`; system proxy via `LinuxProxy` → `/var/lib/network/proxy.conf` + `apply-proxy`; Demo GET probe |
 | `bluetooth/` | BlueZ D-Bus (`bluez` pkg) + stack/A2DP helpers | Discoverable peer + central scan/pair; HMI Agent1; `bt-wanted` + A2DP; Demo `syncFromSystem()` |
 
 **P2.3:** Prefs split under **`/userdata/{wpa_supplicant,network,bluetooth,hmi}/`** (symlinked from `/var/lib/*`). Simple HW knobs use verb-noun shell helpers; Flutter calls those helpers rather than writing files directly.
@@ -43,14 +43,14 @@ Reusable modules live under `lib/platform/`:
 8. Proxy — enable proxy, Save, re-run Send request
 9. LAN SSH debug — toggle on → note eth0/wlan0 IP → host `make connect <ip>`
 10. Date & Time — set mode Manual/Network; Apply local date/time; Sync Now with network up; HTTPS probe after forcing stale RTC
-11. Bluetooth — enable adapter; turn on **Pairable** (also enables Discoverable 180s) or Discoverable; phone finds / pairs. Optional: enable **BT speaker (A2DP)** (off by default) → phone **连接成功** + music on speaker. Demo **Volume** also drives BlueALSA soft-volume while BT is streaming. **Scan** → nearby list → **Pair/Connect** a Bluetooth keyboard/mouse; type in Keyboard Demo / move pointer; passkey UI when the keyboard requires a displayed code. Paired/connected list keeps Disconnect/Remove (`input=ok|missing` reflects OS heal status). Long-lived HID heal is `bt-hid-heal.service` (not the Flutter app). Coexistence: phone bond + HID bond + Wi‑Fi up during a bounded scan. `verify-boot` still shows wifibt/wpa/bluetooth deferred at boot
+11. Bluetooth — enable adapter; turn on **Pairable** (also enables Discoverable 180s) or Discoverable; phone finds / pairs. Optional: enable **BT speaker (A2DP)** (off by default) → phone **连接成功** + music on speaker. Demo **Volume** also drives BlueALSA soft-volume while BT is streaming. **Scan** → nearby list → **Pair/Connect** a Bluetooth keyboard/mouse; type in Keyboard Demo / move pointer; passkey UI when the keyboard requires a displayed code. Paired/connected list keeps Disconnect/Remove (`input=ok|missing` from Dart sysfs/evdev probe). Disconnect = Untrust + Disconnect (sticky); Connect = Trust + Connect (Policy auto-reconnect after link loss while Trusted). HAL attaches HOGP/evdev when Connected (no periodic heal). Coexistence: phone bond + HID bond + Wi‑Fi up during a bounded scan. `verify-boot` still shows wifibt/wpa/bluetooth deferred at boot
 12. (Regression) USB keyboard/mouse still work after BT HID pairing
 
 Helpers: `/usr/libexec/hmi/wifi-stack-*.sh`, `wlan0-dhcp.sh`, `wlan0-static.sh`, `eth0-link.sh`, `eth0-dhcp.sh`, `eth0-static.sh`, `enable-ssh-debug.sh`, `disable-ssh-debug.sh`, `bt-stack-*.sh`, `bt-a2dp-sink-*.sh`, `bt-a2dp-volume.sh`, `bt-pair-agent.sh`, `bt-ensure-agent.sh`, `bt-stop-agent.sh`, `bt-audio-prepare.sh`; units `bluealsa.service` / `bluealsa-aplay.service` (started only when A2DP switch on).
 
 HTTPS needs a sane wall clock (`date -u` year ≥ 2025) more than custom CA loading —
 Dart default roots + system bundle on image are enough once RTC is correct. Board RTC
-often boots in 2024; after Wi‑Fi, `wlan0-time-sync.sh` (also from `DateTimeController` /
+often boots in 2024; after network is up, `/usr/bin/sync-time` (also from `DateTimeController` /
 HTTPS probe) syncs via `rdate` / HTTP Date. Demo **Date & Time** supports Manual Apply
 and Network Sync Now. Journal `dhcpcd is not running` during connect is benign.
 Reusable Wi‑Fi UI (beyond Demo): `lib/ui/wifi/wifi_network_views.dart` + `lib/platform/wifi/wifi_ap_list.dart`.

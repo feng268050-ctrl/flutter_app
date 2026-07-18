@@ -1,9 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/platform/input/linux_mouse_settings.dart';
-import 'package:lws_hmi/platform/input/mouse_settings.dart';
-import 'package:lws_hmi/platform/input/usb_hid_mouse_probe.dart';
+import 'package:cyber_hal/input.dart';
 
 /// P2.1 Demo: USB HID mouse presence, pointer smoke note, OS mouse settings.
 class MouseDemoSection extends StatefulWidget {
@@ -198,8 +196,8 @@ class _MouseDemoSectionState extends State<MouseDemoSection>
           Text('Pointer axes', style: muted),
           const SizedBox(height: 4),
           Text(
-            'Auto fixes Bluetooth keyboard+trackpad axis swap. '
-            'Raw = no fix. Swap XY = always swap. Takes effect within ~1s.',
+            'Auto = Raw (native axes). Use Swap XY only if left/right moves '
+            'the pointer up/down. Takes effect within ~1s.',
             style: muted.copyWith(fontSize: 12),
           ),
           const SizedBox(height: 4),

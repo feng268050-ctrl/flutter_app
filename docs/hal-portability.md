@@ -46,7 +46,8 @@ names work if the profile and `route_metrics` match.
 ## Per-module contract
 
 Legend: **OS** = required on image; **Profile** = declare in `BoardProfile`;
-**Helper** = optional `helpers.*` inject; **Asset** = Flutter package JSON.
+**Helper** = optional `helpers.*` inject; **Asset** = Flutter JSON owned by the
+**product App** (or pack), not by motherboard name inside `cyber_hal`.
 
 ### `hal/network` — ethernet / wifi / proxy
 
@@ -120,14 +121,14 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 
 | Need | Detail |
 |------|--------|
-| **Asset** | Board `gpio.json` (named lines + sysfs chips); declare in `configs.gpio` |
+| **Asset** | Product `gpio.json` (named lines + sysfs chips); declare in `configs.gpio` (App asset, e.g. `assets/hal/gpio.json`) |
 | **OS** | Kernel GPIO / LED sysfs matching the JSON |
 
 ### `hal/modbus`
 
 | Need | Detail |
 |------|--------|
-| **Asset** | Board `modbus.json` (RTU transport path/baud + attribute catalog); `configs.modbus` |
+| **Asset** | Product `modbus.json` (RTU transport path/baud + attribute catalog); `configs.modbus` (App asset, e.g. `assets/hal/modbus.json`) |
 | **OS** | Serial device node (e.g. `/dev/ttyS…` / USB ACM) usable by Posix `stty` transport |
 
 ### `hal/debug` — SSH / USB
@@ -168,10 +169,10 @@ New products that expose Demo Debug **must** ship helpers and declare these keys
 2. **networkd + resolved + wpa `-u`** unit; optional **`wifi_modem`** if netdev is not hot at boot ([case study](network-stack.md#modem-bring-up-wifibt)).
 3. **BlueZ** if BT; optional **`bt_modem`** for combo chips.
 4. **Backlight sysfs** + **ALSA** controls; list preferred mixer names in profile. Add `alsa_playback_path_*` only if the codec needs an enum route (Rockchip-style).
-5. **gpio.json / modbus.json** assets if those capabilities are advertised.
+5. **Product `gpio.json` / `modbus.json`** App assets if those capabilities are advertised (not under `packages/cyber_hal/boards/<board>/`).
 6. **SSH/USB** helpers + profile keys **only if** Debug is a product feature.
 7. Call **`BoardBindings.restorePersistedSettings`** once after App/HAL start (Demo does this).
-8. Prove empty-script construction with a second profile like `boards/portable-smoke.json`.
+8. Prove empty-script construction with a second profile like `packages/cyber_hal/boards/portable-smoke.json`.
 
 ---
 
@@ -191,5 +192,6 @@ Test: `packages/cyber_hal/test/board_bindings_portability_test.dart`.
 
 ## Demo wiring
 
-`main.dart` loads `BoardProfile.ynh960Asset` → `P2DemoPage` → `BoardBindings` +
-`restorePersistedSettings` after first frame.
+`main.dart` loads `HmiHalAssets.boardProfile` (`assets/hal/board_profile.json`) →
+`P2DemoPage` → `BoardBindings` + `restorePersistedSettings` after first frame.
+Product gpio/modbus catalogs are `assets/hal/gpio.json` and `assets/hal/modbus.json`.

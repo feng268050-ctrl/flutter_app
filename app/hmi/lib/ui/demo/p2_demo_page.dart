@@ -312,21 +312,25 @@ class _P2DemoPageState extends State<P2DemoPage> {
           case 'device.gun_head_sn':
             _gunheadSn =
                 modbusDisplayOrDash(modbusVersionStringDisplay(c.value));
+          case 'telemetry.gun_motor_temp':
           case 'alarm.gun_motor_temp':
             _motorTemp.setCelsius(
               _modbusTempCelsius(c.value),
               overTemp: _gunMotorOverTemp,
             );
+          case 'telemetry.gun_motor_drive_temp':
           case 'alarm.gun_motor_drive_temp':
             _motorDriverTemp.setCelsius(
               _modbusTempCelsius(c.value),
               overTemp: _driverOverTemp,
             );
+          case 'telemetry.protective_cover_temp':
           case 'alarm.protective_cover_temp':
             _protectiveMirrorTemp.setCelsius(
               _modbusTempCelsius(c.value),
               overTemp: _protectiveMirrorOverTemp,
             );
+          case 'telemetry.collimator_temp':
           case 'alarm.collimator_temp':
             _collimatorTemp.setCelsius(
               _modbusTempCelsius(c.value),

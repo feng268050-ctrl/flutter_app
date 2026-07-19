@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
@@ -8,7 +9,7 @@ import 'package:cyber_hal/src/modbus/modbus_config.dart';
 import 'package:cyber_hal/src/modbus/modbus_crc.dart';
 import 'package:cyber_hal/src/modbus/posix_serial_port.dart';
 
-/// Low-level Modbus RTU transport (FC 0x03 / 0x04 / 0x06).
+/// Low-level Modbus RTU transport (FC 0x03 / 0x04 / 0x06 / 0x10).
 ///
 /// Linux prefers [PosixSerialPort] because Buildroot libserialport 0.1.1 hits
 /// ENOTTY on kernel 6.1+; [SerialPort] remains a non-Linux / fallback path.
@@ -153,6 +154,67 @@ class ModbusRtuTransport {
       return false;
     }
     return buffer[0] == unit && buffer[1] == 0x06;
+  }
+
+  /// FC 0x10 — write one or more contiguous holding registers.
+  Future<bool> writeMultipleRegisters(int startAddress, List<int> values) async {
+    if (values.isEmpty) {
+      return false;
+    }
+    if (!isOpen && !await open()) {
+      return false;
+    }
+    final unit = transport.unitId & 0xFF;
+    final count = values.length;
+    final byteCount = count * 2;
+    final frame = <int>[
+      unit,
+      0x10,
+      (startAddress >> 8) & 0xFF,
+      startAddress & 0xFF,
+      (count >> 8) & 0xFF,
+      count & 0xFF,
+      byteCount & 0xFF,
+    ];
+    for (final v in values) {
+      final word = v & 0xFFFF;
+      frame.add((word >> 8) & 0xFF);
+      frame.add(word & 0xFF);
+    }
+    final request = appendModbusCrc(frame);
+    _readChunk(256, timeoutMs: 1);
+    final written = _writeChunk(Uint8List.fromList(request), timeoutMs: 200);
+    if (written != request.length) {
+      return false;
+    }
+    // Normal response: unit, FC, start hi/lo, count hi/lo, CRC → 8 bytes.
+    const expectedLen = 8;
+    final buffer = <int>[];
+    final deadline =
+        DateTime.now().add(Duration(milliseconds: transport.timeoutMs));
+    while (buffer.length < expectedLen && DateTime.now().isBefore(deadline)) {
+      final chunk = _readChunk(expectedLen - buffer.length, timeoutMs: 50);
+      if (chunk.isEmpty) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        continue;
+      }
+      buffer.addAll(chunk);
+      if (buffer.length >= 5 && (buffer[1] & 0x80) != 0) {
+        if (buffer.length >= 5 && verifyModbusCrc(buffer.sublist(0, 5))) {
+          return false;
+        }
+      }
+    }
+    if (buffer.length < expectedLen ||
+        !verifyModbusCrc(buffer.sublist(0, expectedLen))) {
+      return false;
+    }
+    if (buffer[0] != unit || buffer[1] != 0x10) {
+      return false;
+    }
+    final respStart = (buffer[2] << 8) | buffer[3];
+    final respCount = (buffer[4] << 8) | buffer[5];
+    return respStart == startAddress && respCount == count;
   }
 
   Future<List<int>?> _readRegisters({

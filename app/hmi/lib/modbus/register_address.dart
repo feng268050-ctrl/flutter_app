@@ -1,4 +1,4 @@
-/// Stable Modbus attribute ids from `boards/ynh960/modbus.json`.
+/// Stable Modbus attribute ids from [HmiHalAssets.modbus] (`assets/hal/modbus.json`).
 ///
 /// Prefer these over hard-coded register addresses.
 class ModbusAttributeId {
@@ -15,10 +15,12 @@ class ModbusAttributeId {
   static const String deviceGunHeadSwVersion = 'device.gun_head_sw_version';
   static const String deviceGunHeadSn = 'device.gun_head_sn';
 
-  static const String alarmGunMotorTemp = 'alarm.gun_motor_temp';
-  static const String alarmGunMotorDriveTemp = 'alarm.gun_motor_drive_temp';
-  static const String alarmProtectiveCoverTemp = 'alarm.protective_cover_temp';
-  static const String alarmCollimatorTemp = 'alarm.collimator_temp';
+  static const String telemetryGunMotorTemp = 'telemetry.gun_motor_temp';
+  static const String telemetryGunMotorDriveTemp =
+      'telemetry.gun_motor_drive_temp';
+  static const String telemetryProtectiveCoverTemp =
+      'telemetry.protective_cover_temp';
+  static const String telemetryCollimatorTemp = 'telemetry.collimator_temp';
 
   static const String alarmLaserComm = 'alarm.laser_comm';
   static const String alarmGunComm = 'alarm.gun_comm';
@@ -28,5 +30,6 @@ class ModbusAttributeId {
       'alarm.protective_mirror_over_temp';
   static const String alarmCollimatorOverTemp = 'alarm.collimator_over_temp';
   static const String alarmWireFeederComm = 'alarm.wire_feeder_comm';
-  static const String alarmShieldingGas = 'alarm.shielding_gas';
+  static const String alarmShieldingGasBlowPressure =
+      'alarm.shielding_gas_blow_pressure';
 }

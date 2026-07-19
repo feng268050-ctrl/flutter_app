@@ -37,15 +37,14 @@ Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/volume
 
 | File | Role |
 |------|------|
-| `boards/ynh960.json` | Capability flags, net roles → iface, helpers, pointers to configs |
-| `boards/ynh960/gpio.json` | Named lines (LEDs = lines with roles) |
-| `boards/ynh960/modbus.json` | RTU transport + attribute/register catalog |
 | `boards/sim.json` | Limited host/emulator profile (no gpio/modbus/network/BT) |
 | `boards/portable-smoke.json` | D22 accept: non-default ifaces / unit names; no libexec required |
 
+**Product** board profile + `gpio.json` + `modbus.json` live in the **App** (this repo: `app/hmi/assets/hal/`), not under `boards/<board_id>/` in this package. The same motherboard may ship different catalogs in other products. `BoardProfile.configs.gpio` / `configs.modbus` point at Flutter asset URIs (`assets/hal/…`); `assets/…` and `packages/…` resolve as-is.
+
 ### Config install path (v1)
 
-**v1 ships board JSON as Flutter package assets only** (`boards/**` via `AssetBundle` / `BoardProfile.loadAsset`). Installing under `/usr/share/cyber_hal/` is deferred until a product needs non-Flutter consumers.
+**Example / smoke profiles** ship as Flutter package assets (`boards/sim.json`, `boards/portable-smoke.json`). **Product** gpio/modbus/profile JSON ship as **App** assets. Installing under `/usr/share/cyber_hal/` is deferred until a product needs non-Flutter consumers.
 
 ## Stub / sim backends (P3.2)
 
@@ -93,6 +92,6 @@ OpenSpec `dart-hal-package`: output, input, debug, datetime, sys_info, **gpio**,
 
 ## Modbus
 
-RTU uses the in-tree Posix (`stty` + libc) transport plus attribute catalog from `boards/*/modbus.json`. A pub.dev `modbus_client` / `modbus_client_serial` dependency was evaluated but not adopted for v1: those packages route through libserialport, which fails `sp_open` with ENOTTY on this board’s kernel 6.1 + Buildroot libserialport 0.1.1. Package identity may be revisited once a suitable aarch64-friendly serial backend is confirmed.
+RTU uses the in-tree Posix (`stty` + libc) transport plus an attribute catalog from the **product App’s** `modbus.json` (profile `configs.modbus`). A pub.dev `modbus_client` / `modbus_client_serial` dependency was evaluated but not adopted for v1: those packages route through libserialport, which fails `sp_open` with ENOTTY on this board’s kernel 6.1 + Buildroot libserialport 0.1.1. Package identity may be revisited once a suitable aarch64-friendly serial backend is confirmed.
 
 **Device validation on aarch64/flutter-pi still required (task 4.4).**

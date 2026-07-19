@@ -111,7 +111,7 @@ HAL mid-session writes SHALL use the existing `/var/lib/{wpa_supplicant,network,
 - **THEN** existing restore hooks SHALL still bring the stack back when `wifi-wanted` (or equivalent) is set
 
 ### Requirement: Config-driven GPIO and Modbus
-`hal/gpio` and `hal/modbus` SHALL be constructed from a versioned config file (or parsed config object). Product indicator LEDs SHALL be expressed as named gpio lines in gpio config. Modbus register maps SHALL be expressed as named attributes in modbus config (including bitfield alarms as human-readable attribute ids). Product Apps MUST NOT hard-code ynh960 pin numbers or Modbus addresses/bitmasks as the long-term pattern after cutover. GPIO and Modbus SHALL remain separate top-level modules (not under `hal/io`).
+`hal/gpio` and `hal/modbus` SHALL be constructed from a versioned config file (or parsed config object). Product indicator LEDs SHALL be expressed as named gpio lines in gpio config. Modbus register maps SHALL be expressed as named attributes in modbus config (including bitfield alarms as human-readable attribute ids). Product Apps MUST NOT hard-code ynh960 pin numbers or Modbus addresses/bitmasks as the long-term pattern after cutover. GPIO and Modbus SHALL remain separate top-level modules (not under `hal/io`). **Product** `gpio.json` / `modbus.json` catalogs SHALL be owned by the product App (or pack) and referenced from `BoardProfile.configs`; they MUST NOT be shipped under `packages/cyber_hal/boards/<board_id>/` as the sole product map (the same motherboard may serve multiple products).
 
 #### Scenario: Demo LEDs via gpio config
 - **WHEN** the Demo toggles panel LEDs after gpio cutover
@@ -207,7 +207,7 @@ Linux backends outside `hal/network` SHALL meet the same reuse bar as D11b: boar
 - **`hal/bluetooth`:** device/adapter APIs SHALL use BlueZ D-Bus as the portable core. Stack bring-up, A2DP sink orchestration, pairing agent ensure, and HID heal SHALL go through an injected board port (`BtStack` or equivalent). HAL MUST NOT leave heal or A2DP helper paths as non-overridable private constants.
 - **Kind C helpers** (`hal/datetime` sync, `hal/debug/ssh`, backlight/volume/mouse apply, volume A2DP): every default argv/path MUST be overridable. HAL default names SHOULD avoid iface prefixes (e.g. prefer `sync-time` over `wlan0-time-sync.sh`).
 - **`hal/debug/usb`:** SHOULD prefer OTG role via injectable sysfs (kind A); an optional helper MAY remain as fallback.
-- **`hal/gpio` / `hal/modbus` / `hal/sys_info`:** remain config/`/proc`-driven; Demo/App SHOULD resolve gpio/modbus assets and storage mounts from the board profile when present.
+- **`hal/gpio` / `hal/modbus` / `hal/sys_info`:** remain config/`/proc`-driven; Demo/App SHALL resolve gpio/modbus assets and storage mounts from the board profile when present. Product catalogs are App assets (e.g. `assets/hal/gpio.json`), not board-named files inside `cyber_hal`.
 
 #### Scenario: Other product without bt-* tree
 - **WHEN** a product provides BlueZ and a `BtStack` implementation (or no-op where radio is absent)
@@ -223,7 +223,7 @@ Linux backends outside `hal/network` SHALL meet the same reuse bar as D11b: boar
 
 #### Scenario: Profile wires gpio asset
 - **WHEN** Demo constructs gpio HAL with a loaded `BoardProfile`
-- **THEN** it SHALL prefer the profile’s gpio config asset pointer over a hard-coded ynh960-only constant when the pointer is set
+- **THEN** it SHALL use the profile’s gpio config asset pointer (App-owned `assets/…` URI) and MUST NOT fall back to a hard-coded `packages/cyber_hal/boards/<board>/gpio.json` constant
 
 ### Requirement: Migration from in-app platform
 Existing `app/hmi/lib/platform/**` Linux backends SHALL be movable into the HAL package with App dependency cutover. After cutover, product App code SHALL NOT construct `LinuxWpaWifiController` (etc.) as the long-term pattern.

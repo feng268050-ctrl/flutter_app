@@ -48,7 +48,7 @@ boot (typical PCIe / built-in MAC).
 ### Case study: ynh960 `wifibt-bringup.sh`
 
 Path: `overlay/.../usr/libexec/bluetooth/wifibt-bringup.sh`  
-Profile (`boards/ynh960.json`):
+Profile (`app/hmi/assets/hal/board_profile.json`):
 
 ```json
 "wifi_modem": "/usr/libexec/bluetooth/wifibt-bringup.sh",

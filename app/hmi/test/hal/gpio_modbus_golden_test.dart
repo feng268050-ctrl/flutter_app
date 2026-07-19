@@ -7,15 +7,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Golden-style assertions: ynh960 gpio/modbus JSON vs former Demo maps.
 void main() {
-  final boardsRoot = Directory.current.path.endsWith('cyber_hal')
-      ? 'boards'
-      : 'packages/cyber_hal/boards';
+  final halRoot = Directory.current.path.endsWith('hmi')
+      ? 'assets/hal'
+      : 'app/hmi/assets/hal';
 
-  group('ynh960 gpio.json golden', () {
+  group('app gpio.json golden', () {
     late GpioConfig config;
 
     setUp(() {
-      final json = File('$boardsRoot/ynh960/gpio.json').readAsStringSync();
+      final json = File('$halRoot/gpio.json').readAsStringSync();
       config = GpioConfig.fromJsonString(json);
     });
 
@@ -50,11 +50,11 @@ void main() {
     });
   });
 
-  group('ynh960 modbus.json golden', () {
+  group('app modbus.json golden', () {
     late ModbusConfig config;
 
     setUp(() {
-      final json = File('$boardsRoot/ynh960/modbus.json').readAsStringSync();
+      final json = File('$halRoot/modbus.json').readAsStringSync();
       config = ModbusConfig.fromJsonString(json);
     });
 
@@ -65,9 +65,23 @@ void main() {
       expect(config.poll.health?.windowSize, 5);
       expect(config.poll.health?.failureThreshold, 3);
       expect(config.poll.health?.mode, 'slide_window');
+      expect(config.capabilities.readHolding, isTrue);
+      expect(config.capabilities.readInput, isTrue);
+      expect(config.capabilities.writeSingle, isFalse);
       expect(config.capabilities.writeMultiple, isTrue);
 
-      expect(config.groups.keys, containsAll(['status', 'data', 'info']));
+      expect(
+        config.groups.keys,
+        containsAll([
+          'status',
+          'data',
+          'info',
+          'control',
+          'process',
+          'settings',
+          'upgrade',
+        ]),
+      );
       final status = config.groupById('status')!;
       expect(status.start, 0x0000);
       expect(status.count, 23);
@@ -84,15 +98,37 @@ void main() {
       expect(info.start, 0x0030);
       expect(info.count, 10);
       expect(info.mode, 'on_demand');
+
+      final control = config.groupById('control')!;
+      expect(control.space, 'holding');
+      expect(control.start, 0x0050);
+      expect(control.count, 9);
+      expect(control.mode, 'on_demand');
+
+      final process = config.groupById('process')!;
+      expect(process.space, 'holding');
+      expect(process.start, 0x0060);
+      expect(process.count, 23);
+
+      final settings = config.groupById('settings')!;
+      expect(settings.start, 0x0090);
+      expect(settings.count, 16);
+
+      final upgrade = config.groupById('upgrade')!;
+      expect(upgrade.start, 0x0000);
+      expect(upgrade.count, 80);
     });
 
-    test('matches former *RegisterAddress map + bit alarms', () {
+    test('full lws-ui catalog size + sampled bindings', () {
       expect(config.transport.device, '/dev/ttyS5');
       expect(config.transport.baud, 115200);
       expect(config.transport.unitId, 1);
       expect(config.transport.timeoutMs, 500);
 
-      final expected = <String, (String space, int address, int count, String type, String? group)>{
+      // Full product catalog (alarms + machine + telemetry + holdings).
+      expect(config.attributes.length, 155);
+
+      final samples = <String, (String space, int address, int count, String type, String? group)>{
         'device.control_card_version': ('input', 0x0002, 1, 'u16', 'status'),
         'alarm.gun_comm': ('input', 0x0009, 1, 'bit', 'status'),
         'alarm.gun_motor_over_temp': ('input', 0x000B, 1, 'bit', 'status'),
@@ -100,8 +136,11 @@ void main() {
         'alarm.protective_mirror_over_temp': ('input', 0x000B, 1, 'bit', 'status'),
         'alarm.collimator_over_temp': ('input', 0x000B, 1, 'bit', 'status'),
         'alarm.laser_comm': ('input', 0x000D, 1, 'bit', 'status'),
+        'alarm.env_temperature': ('input', 0x000F, 1, 'bit', 'status'),
         'alarm.wire_feeder_comm': ('input', 0x0011, 1, 'bit', 'status'),
-        'alarm.shielding_gas': ('input', 0x0013, 1, 'bit', 'status'),
+        'alarm.shielding_gas_blow_pressure': ('input', 0x0013, 1, 'bit', 'status'),
+        'machine.laser_on': ('input', 0x0015, 1, 'bit', 'status'),
+        'machine.cnc_connected': ('input', 0x0015, 1, 'bit', 'status'),
         'device.laser_hw_version': ('input', 0x0030, 2, 'u16_pair_be', 'info'),
         'device.laser_sw_version': ('input', 0x0032, 2, 'u16_pair_be', 'info'),
         'device.wire_feeder_hw_version': ('input', 0x0034, 1, 'u16', 'info'),
@@ -109,16 +148,23 @@ void main() {
         'device.gun_head_hw_version': ('input', 0x0036, 1, 'u16', 'info'),
         'device.gun_head_sw_version': ('input', 0x0037, 1, 'u16', 'info'),
         'device.gun_head_sn': ('input', 0x0038, 2, 'u16_pair_be', 'info'),
-        'alarm.gun_motor_temp': ('input', 0x0061, 1, 's16', 'data'),
-        'alarm.gun_motor_drive_temp': ('input', 0x0062, 1, 's16', 'data'),
-        'alarm.protective_cover_temp': ('input', 0x0063, 1, 's16', 'data'),
-        'alarm.collimator_temp': ('input', 0x0064, 1, 's16', 'data'),
+        'telemetry.gun_motor_temp': ('input', 0x0061, 1, 's16', 'data'),
+        'telemetry.gun_motor_drive_temp': ('input', 0x0062, 1, 's16', 'data'),
+        'telemetry.protective_cover_temp': ('input', 0x0063, 1, 's16', 'data'),
+        'telemetry.collimator_temp': ('input', 0x0064, 1, 's16', 'data'),
+        'telemetry.blow_pressure': ('input', 0x0060, 1, 'u16', 'data'),
+        'control.laser_enable': ('holding', 0x0058, 1, 'bit', 'control'),
+        'process.laser_power': ('holding', 0x0060, 1, 'u16', 'process'),
+        'process.swing_width': ('holding', 0x0067, 1, 'u16', 'process'),
+        'setting.motor_temp_alarm_threshold': ('holding', 0x009E, 1, 'u16', 'settings'),
+        'upgrade.fw_command': ('holding', 0x0009, 1, 'u16', 'upgrade'),
+        'upgrade.data': ('holding', 0x0010, 64, 'u16_array', 'upgrade'),
       };
 
-      expect(config.attributes.length, expected.length);
-      for (final entry in expected.entries) {
-        final attr = config.attributeById(entry.key)!;
-        expect(attr.register.space, entry.value.$1, reason: entry.key);
+      for (final entry in samples.entries) {
+        final attr = config.attributeById(entry.key);
+        expect(attr, isNotNull, reason: entry.key);
+        expect(attr!.register.space, entry.value.$1, reason: entry.key);
         expect(attr.register.address, entry.value.$2, reason: entry.key);
         expect(attr.register.count, entry.value.$3, reason: entry.key);
         expect(attr.decode.type, entry.value.$4, reason: entry.key);
@@ -130,20 +176,25 @@ void main() {
       expect(gunComm.decode.activeHigh, isTrue);
       expect(gunComm.meta?.alarmCode, 'H001');
 
-      final gas = config.attributeById('alarm.shielding_gas')!;
+      final gas = config.attributeById('alarm.shielding_gas_blow_pressure')!;
       expect(gas.decode.bit, 0);
       expect(gas.meta?.alarmCode, 'A001');
 
-      final laser = config.attributeById('alarm.laser_comm')!;
-      expect(laser.decode.bit, 0);
-      expect(laser.register.address, 0x000D);
+      final env = config.attributeById('alarm.env_temperature')!;
+      expect(env.decode.bit, 3);
+      expect(env.meta?.alarmCode, 'H033');
 
-      final motorOt = config.attributeById('alarm.gun_motor_over_temp')!;
-      expect(motorOt.decode.bit, 0);
-      expect(motorOt.register.address, 0x000B);
-
-      final motor = config.attributeById('alarm.gun_motor_temp')!;
+      final motor = config.attributeById('telemetry.gun_motor_temp')!;
       expect(motor.decode.scale, 0.1);
+      expect(motor.access, 'r');
+
+      final swing = config.attributeById('process.swing_width')!;
+      expect(swing.decode.scale, 0.1);
+      expect(swing.access, 'rw');
+
+      final laserEnable = config.attributeById('control.laser_enable')!;
+      expect(laserEnable.decode.bit, 0);
+      expect(laserEnable.access, 'rw');
     });
 
     test('ModbusHal listAttributes + unknown id', () async {

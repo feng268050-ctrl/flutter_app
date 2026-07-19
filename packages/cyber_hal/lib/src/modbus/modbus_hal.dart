@@ -8,9 +8,6 @@ import 'package:cyber_hal/src/modbus/modbus_format.dart';
 import 'package:cyber_hal/src/modbus/modbus_rtu_transport.dart';
 import 'package:cyber_hal/src/profile/board_profile.dart';
 
-/// Default Flutter asset path for ynh960 modbus config (package asset).
-const String kYnh960ModbusAsset = 'packages/cyber_hal/boards/ynh960/modbus.json';
-
 /// One attribute whose decoded value changed, was primed, or is a timed reminder.
 final class ModbusAttributeChange {
   const ModbusAttributeChange({
@@ -79,6 +76,12 @@ abstract class ModbusHal {
   /// Decoded attribute id → value for attributes in [groupId].
   Future<Map<String, Object?>> readGroup(String groupId);
 
+  /// Encode [values] (attribute id → decoded value) into the group word map and
+  /// write contiguous holding registers (FC16). Unspecified attributes keep
+  /// last-read / zero-filled words when a prior group cache exists or a read
+  /// succeeds; otherwise unset words are written as `0`.
+  Future<void> writeGroup(String groupId, Map<String, Object?> values);
+
   Future<void> startPolling({Iterable<String>? groupIds});
 
   Future<void> stopPolling();
@@ -109,8 +112,9 @@ abstract class ModbusHal {
     return ModbusHal.fromConfig(ModbusConfig.fromJsonString(source));
   }
 
+  /// Load JSON from a Flutter asset (product App typically owns `modbus.json`).
   static Future<ModbusHal> fromAsset({
-    String asset = kYnh960ModbusAsset,
+    required String asset,
     AssetBundle? bundle,
   }) async {
     final source = await (bundle ?? rootBundle).loadString(asset);
@@ -122,10 +126,13 @@ abstract class ModbusHal {
     BoardProfile profile, {
     AssetBundle? bundle,
   }) {
-    return fromAsset(
-      asset: profile.resolvedModbusAsset ?? kYnh960ModbusAsset,
-      bundle: bundle,
-    );
+    final asset = profile.resolvedModbusAsset;
+    if (asset == null || asset.isEmpty) {
+      throw const HalIoException(
+        'board profile missing configs.modbus asset path',
+      );
+    }
+    return fromAsset(asset: asset, bundle: bundle);
   }
 }
 
@@ -198,10 +205,10 @@ extension Ynh960ModbusReads on ModbusHal {
 
   Future<ModbusAlarmTemperaturesSnapshot> readAlarmTemperatures() async {
     try {
-      final motor = await readAttribute('alarm.gun_motor_temp');
-      final drive = await readAttribute('alarm.gun_motor_drive_temp');
-      final cover = await readAttribute('alarm.protective_cover_temp');
-      final collimator = await readAttribute('alarm.collimator_temp');
+      final motor = await readAttribute('telemetry.gun_motor_temp');
+      final drive = await readAttribute('telemetry.gun_motor_drive_temp');
+      final cover = await readAttribute('telemetry.protective_cover_temp');
+      final collimator = await readAttribute('telemetry.collimator_temp');
       if (motor == null || drive == null || cover == null || collimator == null) {
         return ModbusAlarmTemperaturesSnapshot.unavailable;
       }
@@ -314,25 +321,112 @@ final class _LinuxModbusHal implements ModbusHal {
     if (attr.access != 'w' && attr.access != 'rw') {
       throw HalUnsupportedException('modbus attribute $id is not writable');
     }
-    if (!config.capabilities.writeSingle) {
-      throw const HalUnsupportedException('modbus write_single not advertised');
-    }
     if (attr.register.space.toLowerCase() != 'holding') {
       throw const HalUnsupportedException(
         'modbus write only supported for holding registers',
       );
     }
-    final intWord = switch (value) {
-      int v => v & 0xFFFF,
-      num v => v.toInt() & 0xFFFF,
-      _ => throw HalIoException('modbus write expects int, got $value'),
-    };
+    final canSingle = config.capabilities.writeSingle;
+    final canMultiple = config.capabilities.writeMultiple == true;
+    if (!canSingle && !canMultiple) {
+      throw const HalUnsupportedException(
+        'modbus write_single/write_multiple not advertised',
+      );
+    }
+
+    final words = await _encodeAttributeWords(attr, value);
     _commandBusy = true;
     try {
-      final ok = await _rtu.writeSingleRegister(attr.register.address, intWord);
+      final ok = await _writeHolding(attr.register.address, words);
       if (!ok) {
         throw const HalIoException('modbus write failed');
       }
+      _attrCache[id] = _AttrCacheEntry(value);
+      _patchGroupCache(attr, words);
+    } finally {
+      _commandBusy = false;
+    }
+  }
+
+  @override
+  Future<void> writeGroup(String groupId, Map<String, Object?> values) async {
+    final group = config.groupById(groupId);
+    if (group == null) {
+      throw HalNotFoundException('modbus group not found: $groupId');
+    }
+    if (group.space.toLowerCase() != 'holding') {
+      throw const HalUnsupportedException(
+        'modbus writeGroup only supported for holding groups',
+      );
+    }
+    if (config.capabilities.writeMultiple != true) {
+      throw const HalUnsupportedException(
+        'modbus write_multiple not advertised',
+      );
+    }
+    if (values.isEmpty) {
+      return;
+    }
+
+    var base = List<int>.filled(group.count, 0);
+    final cached = _groupWords[groupId];
+    if (cached != null && cached.words.length >= group.count) {
+      base = List<int>.from(cached.words.take(group.count));
+    } else if (config.capabilities.readHolding) {
+      final read = await _readRegisters(
+        space: group.space,
+        start: group.start,
+        count: group.count,
+      );
+      if (read != null && read.length >= group.count) {
+        base = List<int>.from(read.take(group.count));
+      }
+    }
+
+    for (final entry in values.entries) {
+      final attr = config.attributeById(entry.key);
+      if (attr == null) {
+        throw HalNotFoundException('modbus attribute not found: ${entry.key}');
+      }
+      if (attr.access != 'w' && attr.access != 'rw') {
+        throw HalUnsupportedException(
+          'modbus attribute ${entry.key} is not writable',
+        );
+      }
+      if (attr.group != null && attr.group != groupId) {
+        throw HalIoException(
+          'modbus attribute ${entry.key} is not in group $groupId',
+        );
+      }
+      if (attr.register.space.toLowerCase() != group.space.toLowerCase()) {
+        throw HalIoException(
+          'modbus attribute ${entry.key} space mismatch for group $groupId',
+        );
+      }
+      final offset = attr.register.address - group.start;
+      if (offset < 0 || offset + attr.register.count > group.count) {
+        throw HalIoException(
+          'modbus attribute ${entry.key} outside group $groupId range',
+        );
+      }
+      final encoded = await _encodeAttributeWords(
+        attr,
+        entry.value,
+        baseWord: base[offset],
+      );
+      for (var i = 0; i < encoded.length; i++) {
+        base[offset + i] = encoded[i];
+      }
+      _attrCache[attr.id] = _AttrCacheEntry(entry.value);
+    }
+
+    _commandBusy = true;
+    try {
+      final ok = await _writeHolding(group.start, base);
+      if (!ok) {
+        throw const HalIoException('modbus writeGroup failed');
+      }
+      _groupWords[groupId] = _GroupWordCache(start: group.start, words: base);
     } finally {
       _commandBusy = false;
     }
@@ -767,6 +861,153 @@ final class _LinuxModbusHal implements ModbusHal {
     }
   }
 
+  Future<bool> _writeHolding(int address, List<int> words) async {
+    if (words.isEmpty) {
+      return false;
+    }
+    final canSingle = config.capabilities.writeSingle;
+    final canMultiple = config.capabilities.writeMultiple == true;
+    if (words.length == 1 && canSingle && !canMultiple) {
+      return _rtu.writeSingleRegister(address, words.first);
+    }
+    if (canMultiple) {
+      return _rtu.writeMultipleRegisters(address, words);
+    }
+    if (canSingle && words.length == 1) {
+      return _rtu.writeSingleRegister(address, words.first);
+    }
+    throw const HalUnsupportedException(
+      'modbus write_multiple required for multi-register write',
+    );
+  }
+
+  void _patchGroupCache(ModbusAttributeConfig attr, List<int> words) {
+    final groupId = attr.group;
+    if (groupId == null) return;
+    final group = config.groupById(groupId);
+    final cached = _groupWords[groupId];
+    if (group == null || cached == null) return;
+    final offset = attr.register.address - cached.start;
+    if (offset < 0 || offset + words.length > cached.words.length) return;
+    for (var i = 0; i < words.length; i++) {
+      cached.words[i + offset] = words[i];
+    }
+  }
+
+  /// Encode a decoded attribute value into register word(s).
+  ///
+  /// For [bit] types, [baseWord] (or a fresh holding read) is RMW'd.
+  Future<List<int>> _encodeAttributeWords(
+    ModbusAttributeConfig attr,
+    Object? value, {
+    int? baseWord,
+  }) async {
+    final type = attr.decode.type.toLowerCase();
+    switch (type) {
+      case 'u16':
+        return [_encodeScaledUnsigned(value, attr.decode.scale)];
+      case 's16':
+        return [_encodeScaledSigned(value, attr.decode.scale)];
+      case 'u16_pair_be':
+        if (value is! String) {
+          throw HalIoException(
+            'modbus u16_pair_be write expects hex string, got $value',
+          );
+        }
+        return _encodeHexPair(value);
+      case 'u16_array':
+        if (value is! List) {
+          throw HalIoException(
+            'modbus u16_array write expects List<int>, got $value',
+          );
+        }
+        if (value.length != attr.register.count) {
+          throw HalIoException(
+            'modbus u16_array length ${value.length} != ${attr.register.count}',
+          );
+        }
+        return [
+          for (final v in value)
+            switch (v) {
+              int i => i & 0xFFFF,
+              num n => n.toInt() & 0xFFFF,
+              _ => throw HalIoException('modbus u16_array element not int: $v'),
+            },
+        ];
+      case 'bit':
+        final bit = attr.decode.bit ?? 0;
+        final active = switch (value) {
+          bool b => b,
+          int i => i != 0,
+          num n => n != 0,
+          _ => throw HalIoException(
+              'modbus bit write expects bool, got $value',
+            ),
+        };
+        final wantSet = attr.decode.activeHigh ? active : !active;
+        var word = baseWord;
+        if (word == null) {
+          final cached = _wordsForAttribute(attr);
+          if (cached != null && cached.isNotEmpty) {
+            word = cached.first;
+          } else {
+            final read = await _readRegisters(
+              space: attr.register.space,
+              start: attr.register.address,
+              count: 1,
+            );
+            word = (read != null && read.isNotEmpty) ? read.first : 0;
+          }
+        }
+        final mask = 1 << bit;
+        final next = wantSet ? (word | mask) : (word & ~mask);
+        return [next & 0xFFFF];
+      default:
+        throw HalUnsupportedException(
+          'modbus encode type not supported: $type',
+        );
+    }
+  }
+
+  int _encodeScaledUnsigned(Object? value, num? scale) {
+    final raw = _unscaleToInt(value, scale);
+    if (raw < 0 || raw > 0xFFFF) {
+      throw HalIoException('modbus u16 encode out of range: $raw');
+    }
+    return raw & 0xFFFF;
+  }
+
+  int _encodeScaledSigned(Object? value, num? scale) {
+    final raw = _unscaleToInt(value, scale);
+    if (raw < -32768 || raw > 32767) {
+      throw HalIoException('modbus s16 encode out of range: $raw');
+    }
+    return raw & 0xFFFF;
+  }
+
+  int _unscaleToInt(Object? value, num? scale) {
+    final num n = switch (value) {
+      int v => v,
+      num v => v,
+      _ => throw HalIoException('modbus encode expects num, got $value'),
+    };
+    if (scale == null || scale == 0 || scale == 1) {
+      return n.round();
+    }
+    return (n / scale).round();
+  }
+
+  List<int> _encodeHexPair(String hex) {
+    final cleaned = hex.trim().toLowerCase().replaceFirst(RegExp(r'^0x'), '');
+    if (cleaned.isEmpty || cleaned.length > 8) {
+      throw HalIoException('modbus u16_pair_be invalid hex: $hex');
+    }
+    final padded = cleaned.padLeft(8, '0');
+    final high = int.parse(padded.substring(0, 4), radix: 16);
+    final low = int.parse(padded.substring(4, 8), radix: 16);
+    return [high & 0xFFFF, low & 0xFFFF];
+  }
+
   void _recordHealthFailure(bool failed) {
     final window = config.poll.health;
     if (window == null) return;
@@ -805,6 +1046,8 @@ final class _LinuxModbusHal implements ModbusHal {
           throw const HalIoException('modbus u16_pair_be needs 2 registers');
         }
         return hexConcatRegisters(words[0], words[1]);
+      case 'u16_array':
+        return [for (final w in words) w & 0xFFFF];
       case 'bit':
         final bit = attr.decode.bit ?? 0;
         final word = words.first & 0xFFFF;

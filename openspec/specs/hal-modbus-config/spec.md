@@ -6,8 +6,8 @@ TBD - created by archiving change dart-hal-package. Update Purpose after archive
 ### Requirement: Modbus config schema
 `hal/modbus` SHALL load a versioned config document (JSON preferred) that declares at least: `version`, `transport` (RTU device path, baud, framing, `unit_id`, timeout), and an `attributes[]` catalog. Config SHALL support a `groups` object describing contiguous register segments and a `poll` object for scheduler defaults. Each attribute SHALL have a stable string `id`, `access` (`r` / `w` / `rw`), a `register` binding (`space`, `address`, `count`), and a `decode` description. Attributes MAY reference a `group` id. The config MAY include a top-level `capabilities` object (e.g. which function codes / spaces are allowed).
 
-#### Scenario: Transport for ynh960 welder link
-- **WHEN** loading the shipped ynh960 modbus config
+#### Scenario: Transport for product welder link
+- **WHEN** loading the product App’s modbus config (e.g. `assets/hal/modbus.json`)
 - **THEN** transport SHALL open the product UART (e.g. `/dev/ttyS5` at the product baud) via the package RTU transport (Posix or documented equivalent)
 
 #### Scenario: Poll interval from config
@@ -75,9 +75,9 @@ HAL SHALL support pausing continuous poll for an exclusive bus session (OTA-clas
 - **THEN** continuous group polling SHALL pause until the session is released, and batch/holding writes issued in that session SHALL still honor `command_interval_ms`
 
 ### Requirement: Register maps live in config
-Numeric Modbus addresses and bit indices used by product UIs SHALL live in the modbus config (or an explicit product overlay config), not as long-lived Dart `static const` maps inside the App after cutover. Config `version` SHALL allow golden tests against known lws-ui / Demo register sets.
+Numeric Modbus addresses and bit indices used by product UIs SHALL live in the **product App’s** modbus config asset (or an explicit product overlay config), not as long-lived Dart `static const` maps inside the App after cutover, and NOT as a board-named file inside `packages/cyber_hal/`. Config `version` SHALL allow golden tests against known lws-ui / Demo register sets. The same motherboard MAY use different attribute catalogs across products.
 
 #### Scenario: Temperature map migration
 - **WHEN** migrating gun-motor temperature from App constants
-- **THEN** the attribute (e.g. `telemetry.gun_motor_temp` → input `0x0061`) SHALL appear in modbus config and App code SHALL reference the attribute id
+- **THEN** the attribute (e.g. `telemetry.gun_motor_temp` → input `0x0061`) SHALL appear in the App modbus config and App code SHALL reference the attribute id
 

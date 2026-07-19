@@ -73,6 +73,10 @@ flutter:
   assets:
     # P2.1 speaker smoke track (from lws-ui res/raw/shanghai_tan.mp3).
     - assets/audio/shanghai_tan.mp3
+    # Product HAL pack (board profile + gpio/modbus catalogs).
+    - assets/hal/board_profile.json
+    - assets/hal/gpio.json
+    - assets/hal/modbus.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

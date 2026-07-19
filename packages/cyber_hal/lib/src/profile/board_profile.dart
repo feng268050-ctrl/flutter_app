@@ -101,23 +101,27 @@ final class BoardProfile {
     return parts.isEmpty ? null : parts;
   }
 
-  /// Flutter asset URI for [gpioConfigAsset] (adds `packages/cyber_hal/` when needed).
-  String? get resolvedGpioAsset => _resolvePackageAsset(gpioConfigAsset);
+  /// Flutter asset URI for [gpioConfigAsset].
+  ///
+  /// Absolute app/package paths (`assets/…`, `packages/…`) are kept as-is.
+  /// Relative paths resolve under `packages/cyber_hal/` (example profiles only).
+  String? get resolvedGpioAsset => _resolveConfigAsset(gpioConfigAsset);
 
   /// Flutter asset URI for [modbusConfigAsset].
-  String? get resolvedModbusAsset => _resolvePackageAsset(modbusConfigAsset);
+  String? get resolvedModbusAsset => _resolveConfigAsset(modbusConfigAsset);
 
-  static String? _resolvePackageAsset(String? path) {
+  static String? _resolveConfigAsset(String? path) {
     if (path == null || path.isEmpty) {
       return null;
     }
-    if (path.startsWith('packages/')) {
+    if (path.startsWith('packages/') || path.startsWith('assets/')) {
       return path;
     }
     return 'packages/cyber_hal/$path';
   }
 
-  /// Load a profile JSON asset (e.g. `boards/sim.json`, `boards/ynh960.json`).
+  /// Load a profile JSON asset (e.g. app `assets/hal/board_profile.json` or
+  /// package `packages/cyber_hal/boards/sim.json`).
   static Future<BoardProfile> loadAsset(
     String assetPath, {
     AssetBundle? bundle,
@@ -125,9 +129,6 @@ final class BoardProfile {
     final source = await (bundle ?? rootBundle).loadString(assetPath);
     return BoardProfile.fromJsonString(source);
   }
-
-  /// Default ynh960 package asset used by Demo / appliance image.
-  static const ynh960Asset = 'packages/cyber_hal/boards/ynh960.json';
 
   factory BoardProfile.fromJson(Map<String, dynamic> json) {
     final boardId = json['board_id'] as String?;

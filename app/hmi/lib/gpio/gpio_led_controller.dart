@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:cyber_hal/gpio.dart';
 import 'package:cyber_hal/cyber_hal.dart' show BoardProfile;
 import 'package:flutter/foundation.dart';
+import 'package:lws_hmi/hal/hal_assets.dart';
 
 /// Side-panel RGB indicators — product names mapped to HAL line ids.
 ///
-/// Pin numbers live in `boards/ynh960/gpio.json`, not here.
+/// Pin numbers live in [HmiHalAssets.gpio], not here.
 enum LedColor {
   red(lineId: 'led_red'),
   yellow(lineId: 'led_yellow'),
@@ -59,7 +60,7 @@ class GpioLedController {
     final profile = _profile;
     return _loading ??= (profile != null
             ? GpioHal.fromProfile(profile)
-            : GpioHal.fromAsset())
+            : GpioHal.fromAsset(asset: HmiHalAssets.gpio))
         .then((h) {
       _hal = h;
       return h;

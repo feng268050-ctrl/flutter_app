@@ -1571,7 +1571,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 ### P3.1 — Dart HAL（`cyber_hal`）+ 网络栈切换 🔲
 
 - 建立 `packages/cyber_hal/`（或 submodule）；按需 import（network / output / input / …）
-- `boards/ynh960` profile + gpio/modbus 配置；Demo 从 `Linux*Controller` 迁入
+- App-owned HAL pack (`assets/hal/` board profile + gpio/modbus); Demo from `Linux*Controller` 迁入
 - **systemd-networkd** L3 + wpa D-Bus（易做模块先落地，network 后置）
 - 设计与验收：`openspec/changes/dart-hal-package/`（Rust/`hald` 方案已归档）
 

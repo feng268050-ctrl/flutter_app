@@ -1,10 +1,11 @@
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/hal/hal_assets.dart';
 import 'package:lws_hmi/ui/demo/p2_demo_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final profile = await BoardProfile.loadAsset(BoardProfile.ynh960Asset);
+  final profile = await BoardProfile.loadAsset(HmiHalAssets.boardProfile);
   runApp(LwsHmiApp(boardProfile: profile));
 }
 

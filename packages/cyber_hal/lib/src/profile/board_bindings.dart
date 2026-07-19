@@ -6,6 +6,7 @@ import 'package:cyber_hal/input.dart';
 import 'package:cyber_hal/modbus.dart';
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_hal/output.dart';
+import 'package:cyber_hal/src/core/errors.dart';
 import 'package:cyber_hal/src/profile/board_profile.dart';
 import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/foundation.dart';
@@ -257,16 +258,22 @@ final class BoardBindings {
   }
 
   Future<GpioHal> gpio({AssetBundle? bundle}) {
-    return GpioHal.fromAsset(
-      asset: profile.resolvedGpioAsset ?? kYnh960GpioAsset,
-      bundle: bundle,
-    );
+    final asset = profile.resolvedGpioAsset;
+    if (asset == null || asset.isEmpty) {
+      throw const HalIoException(
+        'board profile missing configs.gpio asset path',
+      );
+    }
+    return GpioHal.fromAsset(asset: asset, bundle: bundle);
   }
 
   Future<ModbusHal> modbus({AssetBundle? bundle}) {
-    return ModbusHal.fromAsset(
-      asset: profile.resolvedModbusAsset ?? kYnh960ModbusAsset,
-      bundle: bundle,
-    );
+    final asset = profile.resolvedModbusAsset;
+    if (asset == null || asset.isEmpty) {
+      throw const HalIoException(
+        'board profile missing configs.modbus asset path',
+      );
+    }
+    return ModbusHal.fromAsset(asset: asset, bundle: bundle);
   }
 }

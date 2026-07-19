@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cyber_hal/cyber_hal.dart' show BoardProfile;
 import 'package:cyber_hal/modbus.dart';
 import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/hal/hal_assets.dart';
 
 export 'package:cyber_hal/modbus.dart'
     show
@@ -15,8 +16,7 @@ export 'package:cyber_hal/modbus.dart'
         Ynh960ModbusReads,
         decimalRegister,
         formatTemperatureDisplay,
-        kModbusUnavailableDisplay,
-        kYnh960ModbusAsset;
+        kModbusUnavailableDisplay;
 
 /// Attribute ids the P2 Demo watches for live updates (HAL poll/watch).
 ///
@@ -25,10 +25,10 @@ const kDemoModbusWatchIds = <String>[
   'device.control_card_version',
   'alarm.laser_comm',
   'alarm.gun_comm',
-  'alarm.gun_motor_temp',
-  'alarm.gun_motor_drive_temp',
-  'alarm.protective_cover_temp',
-  'alarm.collimator_temp',
+  'telemetry.gun_motor_temp',
+  'telemetry.gun_motor_drive_temp',
+  'telemetry.protective_cover_temp',
+  'telemetry.collimator_temp',
   'alarm.gun_motor_over_temp',
   'alarm.driver_over_temp',
   'alarm.protective_mirror_over_temp',
@@ -68,7 +68,7 @@ class ModbusRtuClient {
     final profile = _profile;
     return _loading ??= (profile != null
             ? ModbusHal.fromProfile(profile)
-            : ModbusHal.fromAsset())
+            : ModbusHal.fromAsset(asset: HmiHalAssets.modbus))
         .then((h) {
       _hal = h;
       return h;

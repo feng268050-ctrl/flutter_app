@@ -8,9 +8,6 @@ import 'package:cyber_hal/src/gpio/gpio_config.dart';
 import 'package:cyber_hal/src/linux/lws_trace.dart';
 import 'package:cyber_hal/src/profile/board_profile.dart';
 
-/// Default Flutter asset path for ynh960 gpio config (package asset).
-const String kYnh960GpioAsset = 'packages/cyber_hal/boards/ynh960/gpio.json';
-
 /// Config-driven GPIO HAL (sysfs / gpio_innohi).
 abstract class GpioHal {
   GpioConfig get config;
@@ -29,9 +26,9 @@ abstract class GpioHal {
     return GpioHal.fromConfig(GpioConfig.fromJsonString(source));
   }
 
-  /// Load JSON from a Flutter asset (e.g. [kYnh960GpioAsset]).
+  /// Load JSON from a Flutter asset (product App typically owns `gpio.json`).
   static Future<GpioHal> fromAsset({
-    String asset = kYnh960GpioAsset,
+    required String asset,
     AssetBundle? bundle,
   }) async {
     final source = await (bundle ?? rootBundle).loadString(asset);
@@ -43,10 +40,13 @@ abstract class GpioHal {
     BoardProfile profile, {
     AssetBundle? bundle,
   }) {
-    return fromAsset(
-      asset: profile.resolvedGpioAsset ?? kYnh960GpioAsset,
-      bundle: bundle,
-    );
+    final asset = profile.resolvedGpioAsset;
+    if (asset == null || asset.isEmpty) {
+      throw const HalIoException(
+        'board profile missing configs.gpio asset path',
+      );
+    }
+    return fromAsset(asset: asset, bundle: bundle);
   }
 }
 

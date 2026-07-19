@@ -26,8 +26,5 @@ dev_dependencies:
 
 flutter:
   assets:
-    - boards/ynh960.json
-    - boards/ynh960/gpio.json
-    - boards/ynh960/modbus.json
     - boards/sim.json
     - boards/portable-smoke.json

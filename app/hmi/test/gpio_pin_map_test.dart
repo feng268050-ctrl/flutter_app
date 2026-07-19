@@ -5,12 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 
 void main() {
-  final boardsRoot = Directory.current.path.endsWith('hmi')
-      ? '../../packages/cyber_hal/boards'
-      : 'packages/cyber_hal/boards';
+  final halRoot = Directory.current.path.endsWith('hmi')
+      ? 'assets/hal'
+      : 'app/hmi/assets/hal';
 
-  test('RGB line ids match ynh960 gpio.json (5/4/7 → 105/106/149)', () {
-    final json = File('$boardsRoot/ynh960/gpio.json').readAsStringSync();
+  test('RGB line ids match product gpio.json (5/4/7 → 105/106/149)', () {
+    final json = File('$halRoot/gpio.json').readAsStringSync();
     final config = GpioConfig.fromJsonString(json);
 
     expect(LedColor.red.lineId, 'led_red');

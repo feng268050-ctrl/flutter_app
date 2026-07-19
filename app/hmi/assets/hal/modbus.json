@@ -1,0 +1,2782 @@
+{
+  "version": 1,
+  "transport": {
+    "type": "rtu",
+    "device": "/dev/ttyS5",
+    "baud": 115200,
+    "data_bits": 8,
+    "parity": "none",
+    "stop_bits": 1,
+    "unit_id": 1,
+    "timeout_ms": 500,
+    "command_interval_ms": 50
+  },
+  "poll": {
+    "interval_ms": 100,
+    "discard_if_busy": true,
+    "health": {
+      "window_size": 5,
+      "failure_threshold": 3,
+      "mode": "slide_window"
+    },
+    "alarm_remind": {
+      "enabled": false,
+      "default_interval_ms": 30000
+    }
+  },
+  "capabilities": {
+    "read_holding": true,
+    "read_input": true,
+    "write_single": false,
+    "write_multiple": true
+  },
+  "groups": {
+    "status": {
+      "space": "input",
+      "start": "0x0000",
+      "count": 23,
+      "mode": "continuous",
+      "chain": "data"
+    },
+    "data": {
+      "space": "input",
+      "start": "0x0060",
+      "count": 19,
+      "mode": "continuous"
+    },
+    "info": {
+      "space": "input",
+      "start": "0x0030",
+      "count": 10,
+      "mode": "on_demand"
+    },
+    "control": {
+      "space": "holding",
+      "start": "0x0050",
+      "count": 9,
+      "mode": "on_demand"
+    },
+    "process": {
+      "space": "holding",
+      "start": "0x0060",
+      "count": 23,
+      "mode": "on_demand"
+    },
+    "settings": {
+      "space": "holding",
+      "start": "0x0090",
+      "count": 16,
+      "mode": "on_demand"
+    },
+    "upgrade": {
+      "space": "holding",
+      "start": "0x0000",
+      "count": 80,
+      "mode": "on_demand"
+    }
+  },
+  "attributes": [
+    {
+      "id": "device.type",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0000",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Device type"
+      }
+    },
+    {
+      "id": "device.control_hw_version",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0001",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Control card HW version"
+      }
+    },
+    {
+      "id": "device.control_card_version",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0002",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Control card version"
+      }
+    },
+    {
+      "id": "device.ota_request_command",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0003",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA request command"
+      }
+    },
+    {
+      "id": "device.ota_request_fw_hw_version",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0004",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA request FW HW version"
+      }
+    },
+    {
+      "id": "device.ota_request_fw_sw_version",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0005",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA request FW SW version"
+      }
+    },
+    {
+      "id": "device.ota_request_offset_high",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0006",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA request offset high"
+      }
+    },
+    {
+      "id": "device.ota_request_offset_low",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0007",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA request offset low"
+      }
+    },
+    {
+      "id": "device.ota_request_data_length",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0008",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA request data length"
+      }
+    },
+    {
+      "id": "alarm.gun_comm",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0009",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 0,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H001",
+        "label": "Gun head communication"
+      }
+    },
+    {
+      "id": "alarm.sensor_channel_diff",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000A",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 0,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H002",
+        "label": "Sensor channel deviation"
+      }
+    },
+    {
+      "id": "alarm.static_current_abnormal",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000A",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 1,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H003",
+        "label": "Static / quiescent current abnormal"
+      }
+    },
+    {
+      "id": "alarm.motor_wire_open",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000A",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 2,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H004",
+        "label": "Motor cable open circuit"
+      }
+    },
+    {
+      "id": "alarm.sensor_abnormal",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000A",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 3,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H005",
+        "label": "Sensor abnormal"
+      }
+    },
+    {
+      "id": "alarm.flash_error",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000A",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 4,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H006",
+        "label": "FLASH error"
+      }
+    },
+    {
+      "id": "alarm.flash_unencrypted",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000A",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 5,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H007",
+        "label": "FLASH unencrypted"
+      }
+    },
+    {
+      "id": "alarm.gun_motor_over_temp",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000B",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 0,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H008",
+        "label": "Gun motor over-temperature"
+      }
+    },
+    {
+      "id": "alarm.driver_over_temp",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000B",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 1,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H009",
+        "label": "Driver over-temperature"
+      }
+    },
+    {
+      "id": "alarm.protective_mirror_over_temp",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000B",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 2,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H010",
+        "label": "Protective lens over-temperature"
+      }
+    },
+    {
+      "id": "alarm.collimator_over_temp",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000B",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 3,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H011",
+        "label": "Collimator / focus lens over-temperature"
+      }
+    },
+    {
+      "id": "alarm.undervoltage_24v",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000B",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 4,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H012",
+        "label": "24V undervoltage"
+      }
+    },
+    {
+      "id": "alarm.driver_over_current",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000B",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 5,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H013",
+        "label": "Galvo motor overcurrent"
+      }
+    },
+    {
+      "id": "alarm.motor_track_abnormal",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000B",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 6,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H014",
+        "label": "Galvo motor trajectory abnormal"
+      }
+    },
+    {
+      "id": "alarm.motor_stall",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000B",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 7,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H015",
+        "label": "Galvo motor stall"
+      }
+    },
+    {
+      "id": "alarm.mmi_oscillator",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000C",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 0,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H016",
+        "label": "MMI oscillator abnormal"
+      }
+    },
+    {
+      "id": "alarm.hardware_bus_error",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000C",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 1,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H017",
+        "label": "Hardware bus error"
+      }
+    },
+    {
+      "id": "alarm.memory_management",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000C",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 2,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H018",
+        "label": "Memory management abnormal"
+      }
+    },
+    {
+      "id": "alarm.memory_access",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000C",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 3,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H019",
+        "label": "Memory access error"
+      }
+    },
+    {
+      "id": "alarm.illegal_instruction",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000C",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 4,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H020",
+        "label": "Illegal instruction"
+      }
+    },
+    {
+      "id": "alarm.watchdog_reset",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000C",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 5,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H021",
+        "label": "Watchdog reset"
+      }
+    },
+    {
+      "id": "alarm.laser_comm",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000D",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 0,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H022",
+        "label": "Laser communication"
+      }
+    },
+    {
+      "id": "alarm.pump_board_over_temp",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000D",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 1,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "E006",
+        "label": "Pump board over-temperature"
+      }
+    },
+    {
+      "id": "alarm.pump_source_temp",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000D",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 2,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "E014",
+        "label": "Pump source temperature"
+      }
+    },
+    {
+      "id": "alarm.laser_current",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000D",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 3,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H023",
+        "label": "Laser current"
+      }
+    },
+    {
+      "id": "alarm.red_light_current",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000D",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 4,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H024",
+        "label": "Red-light current"
+      }
+    },
+    {
+      "id": "alarm.pump_voltage",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000D",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 5,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H025",
+        "label": "Pump source voltage"
+      }
+    },
+    {
+      "id": "alarm.laser_driver1_comm",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 0,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H026",
+        "label": "Laser driver 1 communication"
+      }
+    },
+    {
+      "id": "alarm.laser_driver2_comm",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 1,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H026",
+        "label": "Laser driver 2 communication"
+      }
+    },
+    {
+      "id": "alarm.laser_driver3_comm",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 2,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H026",
+        "label": "Laser driver 3 communication"
+      }
+    },
+    {
+      "id": "alarm.laser_driver4_comm",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 3,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H026",
+        "label": "Laser driver 4 communication"
+      }
+    },
+    {
+      "id": "alarm.ad_feedback_comm",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 4,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H027",
+        "label": "AD feedback communication"
+      }
+    },
+    {
+      "id": "alarm.pump_module_over_temp",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 5,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "E006",
+        "label": "Pump module over-temperature"
+      }
+    },
+    {
+      "id": "alarm.driver_module_over_temp",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 6,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "E015",
+        "label": "Driver module over-temperature"
+      }
+    },
+    {
+      "id": "alarm.water_temp_over_limit",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 7,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "E008",
+        "label": "Water temperature over limit"
+      }
+    },
+    {
+      "id": "alarm.fiber_temp_over_limit",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 8,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "E009",
+        "label": "Fiber temperature over upper limit"
+      }
+    },
+    {
+      "id": "alarm.laser_reflection_energy_over",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 9,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "E010",
+        "label": "Laser reflection energy over upper limit"
+      }
+    },
+    {
+      "id": "alarm.laser_output_energy_under",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 10,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "E011",
+        "label": "Laser output energy under lower limit"
+      }
+    },
+    {
+      "id": "alarm.diode_short_circuit",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 11,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "E012",
+        "label": "Diode short-circuit fault"
+      }
+    },
+    {
+      "id": "alarm.fiber_disconnected",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 12,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "E013",
+        "label": "Fiber disconnected"
+      }
+    },
+    {
+      "id": "alarm.internal_humidity_over",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 13,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "E016",
+        "label": "Internal humidity over upper limit"
+      }
+    },
+    {
+      "id": "alarm.cold_water_interlock",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 14,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H028",
+        "label": "Cold-water interlock"
+      }
+    },
+    {
+      "id": "alarm.laser_emergency_stop",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000E",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 15,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H029",
+        "label": "Laser emergency stop"
+      }
+    },
+    {
+      "id": "alarm.positioning_light_fault",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000F",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 0,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H030",
+        "label": "Positioning light fault"
+      }
+    },
+    {
+      "id": "alarm.narrow_pulse_protection",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000F",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 1,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H031",
+        "label": "Narrow-pulse protection"
+      }
+    },
+    {
+      "id": "alarm.driver_board_overvoltage",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000F",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 2,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H032",
+        "label": "Driver board overvoltage"
+      }
+    },
+    {
+      "id": "alarm.env_temperature",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x000F",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 3,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "H033",
+        "label": "Environment temperature"
+      }
+    },
+    {
+      "id": "alarm.wire_feeder_comm",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0011",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 0,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "W001",
+        "label": "Wire feeder communication"
+      }
+    },
+    {
+      "id": "alarm.wire_feeder_current",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0011",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 1,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "W002",
+        "label": "Wire feeder current"
+      }
+    },
+    {
+      "id": "alarm.shielding_gas_blow_pressure",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0013",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 0,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "A001",
+        "label": "Blow / outlet gas pressure"
+      }
+    },
+    {
+      "id": "alarm.shielding_gas_inlet_pressure",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0013",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 1,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "A001",
+        "label": "Inlet gas pressure"
+      }
+    },
+    {
+      "id": "alarm.pressure_sensor_comm",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0013",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 2,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "A001",
+        "label": "Pressure sensor communication"
+      }
+    },
+    {
+      "id": "alarm.control_card_ext_flash",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0013",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 3,
+        "active_high": true
+      },
+      "meta": {
+        "alarm_code": "A001",
+        "label": "Control-card external Flash"
+      }
+    },
+    {
+      "id": "machine.laser_on",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0015",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 0,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Laser emission on"
+      }
+    },
+    {
+      "id": "machine.gun_status",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0015",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 1,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Gun status"
+      }
+    },
+    {
+      "id": "machine.wire_feeding_on",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0015",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 2,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Wire feeding on"
+      }
+    },
+    {
+      "id": "machine.red_light_on",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0015",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 3,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Red light on"
+      }
+    },
+    {
+      "id": "machine.air_valve_on",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0015",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 4,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Air valve on"
+      }
+    },
+    {
+      "id": "machine.safety_ground_lock",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0015",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 5,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Safety ground lock locked"
+      }
+    },
+    {
+      "id": "machine.key_switch_on",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0015",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 6,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Key switch on"
+      }
+    },
+    {
+      "id": "machine.emergency_stop",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0015",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 7,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Emergency stop triggered"
+      }
+    },
+    {
+      "id": "machine.safety_door_closed",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0015",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 8,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Safety door closed"
+      }
+    },
+    {
+      "id": "machine.gun_switch_on",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0015",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 9,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Gun switch on"
+      }
+    },
+    {
+      "id": "machine.cnc_connected",
+      "access": "r",
+      "group": "status",
+      "register": {
+        "space": "input",
+        "address": "0x0015",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 10,
+        "active_high": true
+      },
+      "meta": {
+        "label": "CNC connected"
+      }
+    },
+    {
+      "id": "device.laser_hw_version",
+      "access": "r",
+      "group": "info",
+      "register": {
+        "space": "input",
+        "address": "0x0030",
+        "count": 2
+      },
+      "decode": {
+        "type": "u16_pair_be"
+      }
+    },
+    {
+      "id": "device.laser_sw_version",
+      "access": "r",
+      "group": "info",
+      "register": {
+        "space": "input",
+        "address": "0x0032",
+        "count": 2
+      },
+      "decode": {
+        "type": "u16_pair_be"
+      }
+    },
+    {
+      "id": "device.wire_feeder_hw_version",
+      "access": "r",
+      "group": "info",
+      "register": {
+        "space": "input",
+        "address": "0x0034",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      }
+    },
+    {
+      "id": "device.wire_feeder_sw_version",
+      "access": "r",
+      "group": "info",
+      "register": {
+        "space": "input",
+        "address": "0x0035",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      }
+    },
+    {
+      "id": "device.gun_head_hw_version",
+      "access": "r",
+      "group": "info",
+      "register": {
+        "space": "input",
+        "address": "0x0036",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      }
+    },
+    {
+      "id": "device.gun_head_sw_version",
+      "access": "r",
+      "group": "info",
+      "register": {
+        "space": "input",
+        "address": "0x0037",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      }
+    },
+    {
+      "id": "device.gun_head_sn",
+      "access": "r",
+      "group": "info",
+      "register": {
+        "space": "input",
+        "address": "0x0038",
+        "count": 2
+      },
+      "decode": {
+        "type": "u16_pair_be"
+      }
+    },
+    {
+      "id": "telemetry.blow_pressure",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x0060",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "kPa"
+      },
+      "meta": {
+        "label": "Blow pressure"
+      }
+    },
+    {
+      "id": "telemetry.gun_motor_temp",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x0061",
+        "count": 1
+      },
+      "decode": {
+        "type": "s16",
+        "scale": 0.1,
+        "unit": "C"
+      },
+      "meta": {
+        "label": "Gun motor temperature"
+      }
+    },
+    {
+      "id": "telemetry.gun_motor_drive_temp",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x0062",
+        "count": 1
+      },
+      "decode": {
+        "type": "s16",
+        "scale": 0.1,
+        "unit": "C"
+      },
+      "meta": {
+        "label": "Gun motor drive temperature"
+      }
+    },
+    {
+      "id": "telemetry.protective_cover_temp",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x0063",
+        "count": 1
+      },
+      "decode": {
+        "type": "s16",
+        "scale": 0.1,
+        "unit": "C"
+      },
+      "meta": {
+        "label": "Protective cover temperature"
+      }
+    },
+    {
+      "id": "telemetry.collimator_temp",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x0064",
+        "count": 1
+      },
+      "decode": {
+        "type": "s16",
+        "scale": 0.1,
+        "unit": "C"
+      },
+      "meta": {
+        "label": "Collimator temperature"
+      }
+    },
+    {
+      "id": "telemetry.gun_24v_voltage",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x0065",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "V"
+      },
+      "meta": {
+        "label": "Gun 24V voltage"
+      }
+    },
+    {
+      "id": "telemetry.gun_24v_current",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x0066",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "mA"
+      },
+      "meta": {
+        "label": "Gun 24V current"
+      }
+    },
+    {
+      "id": "telemetry.laser_feedback_power",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x006C",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "scale": 0.1,
+        "unit": "W"
+      },
+      "meta": {
+        "label": "Laser feedback power"
+      }
+    },
+    {
+      "id": "telemetry.pump_board_temp",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x006D",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Pump board temperature"
+      }
+    },
+    {
+      "id": "telemetry.pump_source_temp",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x006E",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Pump source temperature"
+      }
+    },
+    {
+      "id": "telemetry.laser_current",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x006F",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Laser current"
+      }
+    },
+    {
+      "id": "telemetry.laser_red_current",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x0070",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Laser red-light current"
+      }
+    },
+    {
+      "id": "telemetry.ambient_temp",
+      "access": "r",
+      "group": "data",
+      "register": {
+        "space": "input",
+        "address": "0x0072",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Ambient temperature"
+      }
+    },
+    {
+      "id": "control.accessory_model_1",
+      "access": "rw",
+      "group": "control",
+      "register": {
+        "space": "holding",
+        "address": "0x0050",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Accessory model field 1"
+      }
+    },
+    {
+      "id": "control.accessory_model_2",
+      "access": "rw",
+      "group": "control",
+      "register": {
+        "space": "holding",
+        "address": "0x0051",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Accessory model field 2"
+      }
+    },
+    {
+      "id": "control.gun_drive_type",
+      "access": "rw",
+      "group": "control",
+      "register": {
+        "space": "holding",
+        "address": "0x0052",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Gun drive type"
+      }
+    },
+    {
+      "id": "control.gun_swing_range_mode",
+      "access": "rw",
+      "group": "control",
+      "register": {
+        "space": "holding",
+        "address": "0x0053",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Gun swing range mode"
+      }
+    },
+    {
+      "id": "control.process_type",
+      "access": "rw",
+      "group": "control",
+      "register": {
+        "space": "holding",
+        "address": "0x0054",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Process type"
+      }
+    },
+    {
+      "id": "control.field_1",
+      "access": "rw",
+      "group": "control",
+      "register": {
+        "space": "holding",
+        "address": "0x0058",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Control field 1"
+      }
+    },
+    {
+      "id": "control.laser_enable",
+      "access": "rw",
+      "group": "control",
+      "register": {
+        "space": "holding",
+        "address": "0x0058",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 0,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Laser enable"
+      }
+    },
+    {
+      "id": "control.manual_gas",
+      "access": "rw",
+      "group": "control",
+      "register": {
+        "space": "holding",
+        "address": "0x0058",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 1,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Manual gas"
+      }
+    },
+    {
+      "id": "control.wire_work",
+      "access": "rw",
+      "group": "control",
+      "register": {
+        "space": "holding",
+        "address": "0x0058",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 2,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Manual wire work"
+      }
+    },
+    {
+      "id": "control.wire_direction",
+      "access": "rw",
+      "group": "control",
+      "register": {
+        "space": "holding",
+        "address": "0x0058",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 3,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Wire direction (1=retract)"
+      }
+    },
+    {
+      "id": "control.wire_manual_mode",
+      "access": "rw",
+      "group": "control",
+      "register": {
+        "space": "holding",
+        "address": "0x0058",
+        "count": 1
+      },
+      "decode": {
+        "type": "bit",
+        "bit": 4,
+        "active_high": true
+      },
+      "meta": {
+        "label": "Wire control mode (1=manual)"
+      }
+    },
+    {
+      "id": "process.laser_power",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0060",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "%"
+      },
+      "meta": {
+        "label": "Laser power"
+      }
+    },
+    {
+      "id": "process.laser_duty_cycle",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0061",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "%"
+      },
+      "meta": {
+        "label": "Laser duty cycle"
+      }
+    },
+    {
+      "id": "process.laser_frequency",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0062",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "Hz"
+      },
+      "meta": {
+        "label": "Laser frequency"
+      }
+    },
+    {
+      "id": "process.piercing_power",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0063",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "%"
+      },
+      "meta": {
+        "label": "Piercing power"
+      }
+    },
+    {
+      "id": "process.piercing_frequency",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0064",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "Hz"
+      },
+      "meta": {
+        "label": "Piercing frequency"
+      }
+    },
+    {
+      "id": "process.piercing_duty_cycle",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0065",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "%"
+      },
+      "meta": {
+        "label": "Piercing duty cycle"
+      }
+    },
+    {
+      "id": "process.swing_frequency",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0066",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "Hz"
+      },
+      "meta": {
+        "label": "Swing frequency"
+      }
+    },
+    {
+      "id": "process.swing_width",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0067",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "scale": 0.1,
+        "unit": "mm"
+      },
+      "meta": {
+        "label": "Swing width"
+      }
+    },
+    {
+      "id": "process.wire_feeding_speed",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0068",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "mm/s"
+      },
+      "meta": {
+        "label": "Wire feeding speed"
+      }
+    },
+    {
+      "id": "process.back_draw_length",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0069",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "mm"
+      },
+      "meta": {
+        "label": "Back draw length"
+      }
+    },
+    {
+      "id": "process.back_draw_speed",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x006A",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "mm/s"
+      },
+      "meta": {
+        "label": "Back draw speed"
+      }
+    },
+    {
+      "id": "process.wire_filling_length",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x006B",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "mm"
+      },
+      "meta": {
+        "label": "Wire filling length"
+      }
+    },
+    {
+      "id": "process.wire_filling_delay",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x006C",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "ms"
+      },
+      "meta": {
+        "label": "Wire filling delay"
+      }
+    },
+    {
+      "id": "process.wire_feeding_delay",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x006D",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "ms"
+      },
+      "meta": {
+        "label": "Wire feeding delay"
+      }
+    },
+    {
+      "id": "process.blowing_delay",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x006E",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "ms"
+      },
+      "meta": {
+        "label": "Blowing delay"
+      }
+    },
+    {
+      "id": "process.gas_off_delay",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x006F",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "ms"
+      },
+      "meta": {
+        "label": "Gas off delay"
+      }
+    },
+    {
+      "id": "process.light_off_delay",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0070",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "ms"
+      },
+      "meta": {
+        "label": "Light off delay"
+      }
+    },
+    {
+      "id": "process.power_ramp_up_duration",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0071",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "ms"
+      },
+      "meta": {
+        "label": "Power ramp-up duration"
+      }
+    },
+    {
+      "id": "process.power_ramp_down_duration",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0072",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "ms"
+      },
+      "meta": {
+        "label": "Power ramp-down duration"
+      }
+    },
+    {
+      "id": "process.spot_welding_duration",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0073",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "ms"
+      },
+      "meta": {
+        "label": "Spot welding duration"
+      }
+    },
+    {
+      "id": "process.spot_welding_interval",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0074",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "ms"
+      },
+      "meta": {
+        "label": "Spot welding interval"
+      }
+    },
+    {
+      "id": "process.piercing_duration",
+      "access": "rw",
+      "group": "process",
+      "register": {
+        "space": "holding",
+        "address": "0x0075",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "ms"
+      },
+      "meta": {
+        "label": "Piercing duration"
+      }
+    },
+    {
+      "id": "setting.zero_point_correction",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x0090",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Zero point correction"
+      }
+    },
+    {
+      "id": "setting.swing_width_correction",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x0091",
+        "count": 1
+      },
+      "decode": {
+        "type": "s16"
+      },
+      "meta": {
+        "label": "Swing width correction"
+      }
+    },
+    {
+      "id": "setting.laser_start_power",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x0092",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "%"
+      },
+      "meta": {
+        "label": "Laser start power"
+      }
+    },
+    {
+      "id": "setting.laser_end_power",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x0093",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "%"
+      },
+      "meta": {
+        "label": "Laser end power"
+      }
+    },
+    {
+      "id": "setting.blowing_pressure_threshold",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x0094",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "kPa"
+      },
+      "meta": {
+        "label": "Blowing pressure threshold"
+      }
+    },
+    {
+      "id": "setting.red_light_offset",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x0095",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Red light offset"
+      }
+    },
+    {
+      "id": "setting.swing_speed_upper_limit",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x0096",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Swing speed upper limit"
+      }
+    },
+    {
+      "id": "setting.swing_speed_lower_limit",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x0097",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "Swing speed lower limit"
+      }
+    },
+    {
+      "id": "setting.manual_wire_feed_speed",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x0098",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "mm/s"
+      },
+      "meta": {
+        "label": "Manual wire feed speed"
+      }
+    },
+    {
+      "id": "setting.manual_draw_string_speed",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x0099",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "mm/s"
+      },
+      "meta": {
+        "label": "Manual draw string speed"
+      }
+    },
+    {
+      "id": "setting.inlet_gas_pressure_threshold",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x009A",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "unit": "kPa"
+      },
+      "meta": {
+        "label": "Inlet gas pressure threshold"
+      }
+    },
+    {
+      "id": "setting.driver_temp_alarm_threshold",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x009B",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "scale": 0.1,
+        "unit": "C"
+      },
+      "meta": {
+        "label": "Driver temperature alarm threshold"
+      }
+    },
+    {
+      "id": "setting.protective_lens_temp_alarm_threshold",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x009C",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "scale": 0.1,
+        "unit": "C"
+      },
+      "meta": {
+        "label": "Protective lens temperature alarm threshold"
+      }
+    },
+    {
+      "id": "setting.collimating_lens_temp_alarm_threshold",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x009D",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "scale": 0.1,
+        "unit": "C"
+      },
+      "meta": {
+        "label": "Collimating lens temperature alarm threshold"
+      }
+    },
+    {
+      "id": "setting.motor_temp_alarm_threshold",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x009E",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "scale": 0.1,
+        "unit": "C"
+      },
+      "meta": {
+        "label": "Motor temperature alarm threshold"
+      }
+    },
+    {
+      "id": "setting.temp_alarm_recovery_interval",
+      "access": "rw",
+      "group": "settings",
+      "register": {
+        "space": "holding",
+        "address": "0x009F",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16",
+        "scale": 0.1,
+        "unit": "C"
+      },
+      "meta": {
+        "label": "Temperature alarm recovery interval"
+      }
+    },
+    {
+      "id": "upgrade.fw_hw_version",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x0000",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA firmware HW version"
+      }
+    },
+    {
+      "id": "upgrade.fw_sw_version",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x0001",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA firmware SW version"
+      }
+    },
+    {
+      "id": "upgrade.fw_size_high",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x0002",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA firmware size high"
+      }
+    },
+    {
+      "id": "upgrade.fw_size_low",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x0003",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA firmware size low"
+      }
+    },
+    {
+      "id": "upgrade.fw_check_high",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x0004",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA firmware check high"
+      }
+    },
+    {
+      "id": "upgrade.fw_check_low",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x0005",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA firmware check low"
+      }
+    },
+    {
+      "id": "upgrade.fw_offset_high",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x0006",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA firmware offset high"
+      }
+    },
+    {
+      "id": "upgrade.fw_offset_low",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x0007",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA firmware offset low"
+      }
+    },
+    {
+      "id": "upgrade.fw_byte_count",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x0008",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA firmware byte count"
+      }
+    },
+    {
+      "id": "upgrade.fw_command",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x0009",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA firmware command"
+      }
+    },
+    {
+      "id": "upgrade.packet_crc_high",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x000A",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA packet CRC high"
+      }
+    },
+    {
+      "id": "upgrade.packet_crc_low",
+      "access": "rw",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x000B",
+        "count": 1
+      },
+      "decode": {
+        "type": "u16"
+      },
+      "meta": {
+        "label": "OTA packet CRC low"
+      }
+    },
+    {
+      "id": "upgrade.data",
+      "access": "w",
+      "group": "upgrade",
+      "register": {
+        "space": "holding",
+        "address": "0x0010",
+        "count": 64
+      },
+      "decode": {
+        "type": "u16_array"
+      },
+      "meta": {
+        "label": "OTA firmware data window"
+      }
+    }
+  ]
+}

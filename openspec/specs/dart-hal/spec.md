@@ -1,10 +1,11 @@
 # dart-hal Specification
 
 ## Purpose
-TBD - created by archiving change dart-hal-package. Update Purpose after archive.
+Portable Dart HAL (`cyber_hal`) for Buildroot / flutter-pi **Linux** appliances. Product Apps import modules on demand. Scope is Linux backends (`Linux*`) plus stub/sim — **not** Android platform adapters (P5.0 APK uses App-side Android / `YNHAPI`; Android already has its own HAL).
+
 ## Requirements
 ### Requirement: Dart HAL package
-The system SHALL provide a Dart HAL package (git submodule or `packages/` tree), independent of any single product App and parallel to CyberUI, that exposes portable hardware/platform APIs. Product Apps SHALL depend on this package rather than embedding board-specific Linux paths or Process helpers for migrated capabilities. The package SHALL NOT require a Rust `hald` or equivalent IPC daemon as the Platform API.
+The system SHALL provide a Dart HAL package (git submodule or `packages/` tree), independent of any single product App and parallel to CyberUI, that exposes portable hardware/platform APIs for the **Linux** appliance image. Product Apps on Linux SHALL depend on this package rather than embedding board-specific Linux paths or Process helpers for migrated capabilities. The package SHALL NOT require a Rust `hald` or equivalent IPC daemon as the Platform API. The package SHALL NOT implement Android-specific backends; Android product compatibility remains App-layer.
 
 #### Scenario: App imports network module only
 - **WHEN** a product App needs Wi‑Fi/ethernet APIs

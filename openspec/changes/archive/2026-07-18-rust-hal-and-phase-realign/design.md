@@ -26,7 +26,7 @@ Constraints:
 - Replacing systemd, A/B upgrade, or flutter-pi with a Rust init.
 - One runtime image that auto-detects arbitrary motherboards (compile-time board pack is enough for a small board set).
 - Moving CyberUI visual design off Frosted Glass in P3.0 (API named for longevity; look may change later).
-- Completing Android HAL backends in P3.1 (P5.0).
+- Android product APK / `YNHAPI` adaptation (P5.0; App-layer — not HAL `Android*` backends).
 - **Product RGB / indicator LEDs** in the portable HAL (product-/vendor-specific; stay in App).
 - Requiring every product to ship display, audio, or any network stack.
 

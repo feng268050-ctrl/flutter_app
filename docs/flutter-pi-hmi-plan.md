@@ -2,7 +2,7 @@
 
 目标：在 **lws-hmi** Buildroot 基线上，用 **flutter-pi**（量产）/ **flutter-embedded-linux**（模拟器）跑 Flutter UI；建设可复用的 **嵌入式 OS**：共用 **CyberUI** 框架与 **Dart HAL（`cyber_hal`）**，主板/屏幕以 **board·screen pack** 插拔，**产品顶层 App 可分叉**。按 **P1→P5** 增量交付（见下表）。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块（模拟器 P3.2 另行引入 Weston）。
 
-**能力原则**：**产品能力不少于 lws-ui**；平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**P5.0** 保留 Android 兼容构建；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/dart-hal-package/design.md)。
+**能力原则**：**产品能力不少于 lws-ui**；**Linux** 平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**P5.0** 保留 Android 兼容构建（**App/APK + YNHAPI**，不扩展 `cyber_hal`）；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/dart-hal-package/design.md)。
 
 **板级范围（当前）**：**ynh960 / ynh962 / ynh961** 同产品线三档（RK3566 → RK3568B2 → RK3568）；**P1～P4 以 ynh960 验收**。中长期目标是 **少量不同主板 + 不同屏幕** 共用 OS 契约与 CyberUI，而非每产品从零开始。Rockchip SDK `**rk3566_rk3568`** profile 见 **§3.0**。
 
@@ -22,7 +22,7 @@
 | **Linux P3.2 — Linux 模拟器** | UTM + Weston (Wayland) + flutter-embedded-linux + HAL；迭代 UI；支持与下位机通讯 | 🔲 |
 | **Linux P3.3 — AI 库迁移** | 迁入 `libai.so` + RKNN 配置；**预计 2026-07-22** | 🔲 |
 | **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务等（原 P5 业务；子阶段见 **§1.2**） | 🔲 |
-| **Linux P5.0 — Android 兼容** | Modbus / GPIO LED / Wi‑Fi / BT 兼容 Android；Flutter App 可打 **APK** | 🔲 |
+| **Linux P5.0 — Android 兼容** | Flutter App 打 **APK**；Modbus / GPIO / Wi‑Fi / BT 等在 **App 侧**接 Android / `YNHAPI`（**不**往 `cyber_hal` 加 Android 后端） | 🔲 |
 | **Linux P5.1 — 升级 Flutter Engine** | flutter-engine / SDK / flutter-pi：**3.24 → 3.41**（2026 代） | 🔲 |
 
 
@@ -85,8 +85,8 @@ P4  业务迁移（子阶段见 §1.2）🔲
     └─ 依赖 CyberUI + HAL（设置/硬件页）
 
 P5.0  Android 兼容 🔲
-    ├─ Modbus / GPIO LED / Wi‑Fi / BT Android 后端
-    └─ APK；make build-apk / push-apk
+    ├─ Flutter App 双目标 APK；平台能力走 Android / YNHAPI（非 cyber_hal）
+    └─ Modbus / GPIO / Wi‑Fi / BT 等 App 侧适配；make build-apk / push-apk
 
 P5.1  Flutter Engine / SDK / flutter-pi 升级 🔲
     ├─ 3.24 → 3.41 代；三件套 + prebuilt
@@ -1232,7 +1232,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 
 ## 11. lws-ui 对照（Buildroot 补充 / 网络 / 阶段）
 
-**lws-ui** 为 Android priv-app（Java/Kotlin + JNI），**lws-hmi** 主线为 Buildroot + flutter-pi，**P2.5** 起保留旧 Android 产品兼容构建。主线不能搬 APK，而是：**复用算法、拓扑、模型流水线；替换 Linux 平台层；Flutter 重写 UI 与服务**。Android 兼容目标继续延续系统应用与 platform 签名，只用于旧产品支持。命名与文案见 **§11.6**；**P5 范围与 openspec 边界**见 **§11.7**。
+**lws-ui** 为 Android priv-app（Java/Kotlin + JNI），**lws-hmi** 主线为 Buildroot + flutter-pi，**P2.5** 起保留旧 Android 产品兼容构建。主线不能搬 APK，而是：**复用算法、拓扑、模型流水线；替换 Linux 平台层（`cyber_hal`）；Flutter 重写 UI 与服务**。Android 兼容目标继续延续系统应用与 platform 签名，只用于旧产品支持——平台能力走 **App + YNHAPI / Android 系统 API**，**不**把 `cyber_hal` 扩成双端 HAL。命名与文案见 **§11.6**；**P5 范围与 openspec 边界**见 **§11.7**。
 
 **P2 / P2.1～P2.5 分工**：
 
@@ -1645,8 +1645,9 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 - Flutter App 同时构建 Linux bundle 与 Android APK；Android 延续系统应用与 platform 签名
 - `make version` / `make version-bump`；`make build-apk` / `make push-apk`
-- Modbus / GPIO LED / Wi‑Fi / BT **Android** 后端（GPIO 优先 `gpio_innohi`；YNHAPI 仅降级，§11.0）
-- `YNHAPI.jar`：非 GPIO 平台能力按需 MethodChannel
+- **平台层边界：** Linux 真机继续用 `cyber_hal`（`Linux*` = 本包 Linux 后端）。Android **不**扩展 `cyber_hal`（无 `Android*` HAL）——Android 自带平台 HAL / 系统 API；旧产品能力在 **App** 侧经 MethodChannel / `YNHAPI.jar` 等适配
+- Modbus / GPIO LED / Wi‑Fi / BT：**App 侧** Android 适配（GPIO 优先 `gpio_innohi`；YNHAPI 仅降级，§11.0）
+- `YNHAPI.jar`：非 GPIO 平台能力按需 MethodChannel（仅进 Android APK，不进 Buildroot rootfs）
 - Android / Linux 双目标 smoke
 
 ### P5.1 — Flutter 平台升级（§6.5）🔲
@@ -1911,4 +1912,4 @@ SD 卡、未做 P0（sshd/mediamtx 误 enable）、或 mediamtx/rknn_server 与�
 
 ---
 
-**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 已完成**（镜像、调试、硬件设施、A/B `make upgrade`）。其后：**P3.0 CyberUI**、**P3.1 Dart HAL（`cyber_hal`）**（可并行）、**P3.2 模拟器**、**P3.3 libai**、**P4 业务**、**P5.0 Android**、**P5.1 Engine 升级**。平台层长期为 **`cyber_hal` + Buildroot**；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。
+**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 已完成**（镜像、调试、硬件设施、A/B `make upgrade`）。其后：**P3.0 CyberUI**、**P3.1 Dart HAL（`cyber_hal`）**（可并行）、**P3.2 模拟器**、**P3.3 libai**、**P4 业务**、**P5.0 Android（App/APK + YNHAPI，非 `cyber_hal`）**、**P5.1 Engine 升级**。Linux 平台层长期为 **`cyber_hal` + Buildroot**；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。

@@ -10,13 +10,16 @@ Related: [`network-stack.md`](network-stack.md) (OS network ownership + modem br
 
 ## Principles
 
-1. **Portable core in HAL** — D-Bus / sysfs / `systemctl` / `ip` / `amixer` / file prefs.
+1. **Linux appliance only** — `cyber_hal` targets Buildroot / flutter-pi. It does **not**
+   ship Android backends; P5.0 APK work uses App-side Android / `YNHAPI` adapters.
+   `Linux*` names mark Linux implementations vs abstract APIs / `Stub*`.
+2. **Portable core in HAL** — D-Bus / sysfs / `systemctl` / `ip` / `amixer` / file prefs.
    Constructor defaults **MUST NOT** hard-code `/usr/libexec/...`.
-2. **Board pack** — `BoardProfile` + `BoardBindings(profile)` declare ifaces, metrics,
+3. **Board pack** — `BoardProfile` + `BoardBindings(profile)` declare ifaces, metrics,
    config assets, and **only** board-specific helpers.
-3. **Missing portable semantic → explicit failure** — e.g. SSH/USB without inject →
+4. **Missing portable semantic → explicit failure** — e.g. SSH/USB without inject →
    `HalUnsupportedException`, not a silent ynh960 script path.
-4. **Persist + restore are HAL-owned** — `BoardBindings.restorePersistedSettings`
+5. **Persist + restore are HAL-owned** — `BoardBindings.restorePersistedSettings`
    (+ session `syncFromSystem`). Kind C ops scripts (`change-backlight`,
    `apply-proxy`, `restore-settings.service`, …) are **retired**.
 

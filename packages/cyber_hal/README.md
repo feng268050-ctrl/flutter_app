@@ -26,6 +26,8 @@ Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/volume
 **Full new-product contract (all modules):** [`docs/hal-portability.md`](../../docs/hal-portability.md).  
 **Network OS + modem bring-up case study:** [`docs/network-stack.md`](../../docs/network-stack.md).
 
+**Scope:** Buildroot / flutter-pi **Linux** appliance (+ `Stub*` for host/sim). `Linux*` types are Linux backends of the abstract APIs — **not** a foreshadowing of `Android*` in this package. P5.0 Android APK compatibility is **App-layer** (Android platform APIs / `YNHAPI`); Android already has its own HAL.
+
 - **Portable core:** D-Bus (networkd, wpa, BlueZ), config-driven gpio/modbus, `/proc`/`/sys` inventory.
 - **Board pack:** `BoardBindings(profile)` wires helpers / ifaces / mounts / gpio+modbus assets from `BoardProfile.helpers`. Inject modem / SSH-USB / A2DP only when needed.
 - **Recommended ifaces:** `eth0` + `wlan0` (HAL allows others via `net_roles`).

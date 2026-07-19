@@ -388,7 +388,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P3.2 | UTM、Weston、flutter-embedded-linux | 按需 | Linux 模拟器 + HAL |
 | P3.3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so**（目标 ~2026-07-22） |
 | P4 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云；**P4.8 OTA** |
-| P5.0 | — | — | Android 兼容 / APK |
+| P5.0 | — | — | Android 兼容 / APK（App + YNHAPI；非 `cyber_hal`） |
 | P5.1 | flutter SDK + engine + flutter-pi **三件套升级** | 重编 prebuilt | 3.24 → 3.41；见 [`docs/flutter-pi-hmi-plan.md` §6.5](docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p51) |
 
 权威阶段表与旧号映射：[`docs/flutter-pi-hmi-plan.md` §1](docs/flutter-pi-hmi-plan.md)。HAL 设计：[`openspec/changes/dart-hal-package/`](openspec/changes/dart-hal-package/)。

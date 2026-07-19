@@ -98,6 +98,8 @@ class LinuxHttpClientController implements HttpClientController {
       client = HttpClient();
       client.connectionTimeout = timeout;
       client.idleTimeout = timeout;
+      // HAL proxy off ⇒ DIRECT. Do not consult process env: systemd may still
+      // hold http_proxy after files were cleared (stale manager environment).
       if (proxy.enabled && proxy.host.isNotEmpty) {
         client.findProxy = (_) => 'PROXY ${proxy.host}:${proxy.port}';
         if (proxy.username.isNotEmpty) {
@@ -109,7 +111,7 @@ class LinuxHttpClientController implements HttpClientController {
           );
         }
       } else {
-        client.findProxy = (_) => HttpClient.findProxyFromEnvironment(url);
+        client.findProxy = (_) => 'DIRECT';
       }
 
       final req = await client.openUrl(method.toUpperCase(), url).timeout(timeout);
@@ -195,6 +197,9 @@ class LinuxHttpClientController implements HttpClientController {
           ? '${proxy.username}:${proxy.password}@'
           : '';
       args.addAll(['-x', 'http://$auth${proxy.host}:${proxy.port}']);
+    } else {
+      // curl inherits process env; ignore stale http_proxy when HAL is off.
+      args.addAll(['--noproxy', '*']);
     }
     args.add(url.toString());
     try {

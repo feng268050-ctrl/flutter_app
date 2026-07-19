@@ -116,6 +116,29 @@ class LinuxProxy implements Proxy {
       } catch (_) {}
     }
     await _stripEtcEnvironment();
+    // Deleting the DefaultEnvironment drop-in does not clear the running
+    // manager env. On this Buildroot systemd, unset-environment alone leaves
+    // stale http_proxy in place; set-environment with empty values overrides
+    // it. Do not unset afterwards — that can drop the override and reveal the
+    // old DefaultEnvironment values again.
+    const keys = <String>[
+      'http_proxy',
+      'https_proxy',
+      'ftp_proxy',
+      'all_proxy',
+      'no_proxy',
+      'HTTP_PROXY',
+      'HTTPS_PROXY',
+      'FTP_PROXY',
+      'ALL_PROXY',
+      'NO_PROXY',
+    ];
+    try {
+      await Process.run('systemctl', [
+        'set-environment',
+        ...keys.map((k) => '$k='),
+      ]);
+    } catch (_) {}
   }
 
   Future<void> _writeExports(ProxySettings s) async {

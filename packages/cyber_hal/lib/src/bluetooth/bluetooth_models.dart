@@ -54,7 +54,7 @@ class BluetoothRemoteDevice {
   final bool trusted;
   final bool connected;
 
-  /// HID keyboards/mice only: Linux evdev node present and accepting input.
+  /// HID keyboards/mice only: link ready for input (see [isBluetoothHidInputReady]).
   /// Null when not applicable (phones, audio, …).
   final bool? inputReady;
 
@@ -103,6 +103,19 @@ class BluetoothRemoteDevice {
       icon: icon ?? this.icon,
     );
   }
+}
+
+/// True when a HID remote is safe to treat as `input=ok`.
+///
+/// Requires BlueZ Connected **and** ServicesResolved **and** a matching Linux
+/// evdev/uhid node. Evdev alone is not enough — stale uhid often survives a
+/// dead LE/HOGP session (false-healthy UI).
+bool isBluetoothHidInputReady({
+  required bool connected,
+  required bool servicesResolved,
+  required bool hasEvdev,
+}) {
+  return connected && servicesResolved && hasEvdev;
 }
 
 class BluetoothAdapterInfo {

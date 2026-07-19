@@ -256,6 +256,11 @@ void main() {
     expect(find.text('Connect'), findsNothing);
     expect(find.text('Disconnect'), findsNothing);
     expect(find.text('Remove'), findsOneWidget);
+    expect(find.textContaining('input=missing'), findsOneWidget);
+    expect(
+      find.textContaining('Keyboard/mouse link up but input is down'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('healthy connected HID shows Disconnect only (not Connect)', (

@@ -117,7 +117,7 @@ The image SHALL include the BlueZ and kernel support required for supported Blue
 #### Scenario: Bonded HID reconnects
 
 - **WHEN** a trusted Bluetooth HID device that was previously paired becomes available after Bluetooth stack restore
-- **THEN** BlueZ Policy reconnects it when Trusted (user Disconnect clears Trusted so Policy does not immediately re-attach; Connect restores Trusted), and when Connected the HAL attaches HOGP/HID input if Linux evdev is missing — including a brief Untrust→Disconnect→Trust→Connect refresh for sticky LE (no image `bt-hid-heal` service; no periodic heal timer)
+- **THEN** BlueZ Policy reconnects it when Trusted (user Disconnect clears Trusted so Policy does not immediately re-attach; Connect restores Trusted), and when Connected the HAL attaches HOGP/HID input if Linux evdev is missing or ServicesResolved is false — including a brief Untrust→Disconnect→Trust→Connect refresh for sticky LE. `inputReady` requires Connected and ServicesResolved and matching evdev. A ~15s health tick auto-ensures Connected-but-not-ready remotes (45s cooldown); Demo Reconnect is fallback only (no image `bt-hid-heal` service)
 
 ### Requirement: Bluetooth roles coexist on one adapter
 

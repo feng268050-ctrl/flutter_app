@@ -88,12 +88,20 @@ class LinuxBluezBluetoothController implements BluetoothController {
   /// Explicit Remove in flight — do not keep a bonded UI stub on Device1 drop.
   final Set<String> _forgettingAddrs = {};
   bool _hidEnsureInFlight = false;
-  final KeyboardBatteryKeepalive _batteryKeepalive = KeyboardBatteryKeepalive();
+  /// Last auto `_ensureHidInput` attempt per addr (battery-tick cooldown).
+  final Map<String, DateTime> _hidAutoEnsureLastByAddr = {};
+  final KeyboardBatteryKeepalive _batteryKeepalive = KeyboardBatteryKeepalive(
+    // HID health + battery share this tick; keep short so zombie links heal
+    // without waiting a full minute (Reconnect UI is fallback only).
+    interval: const Duration(seconds: 15),
+  );
   HmiBluezAgent? _agent;
 
   static const _wantedWatchMaxTicks = 120;
   static const _gattGrace = Duration(seconds: 15);
   static const _hogSettle = Duration(seconds: 8);
+  /// Min gap between auto GATT-refresh attempts for one address.
+  static const _hidAutoEnsureCooldown = Duration(seconds: 45);
   static final _hogpUuid =
       BlueZUUID.fromString('00001812-0000-1000-8000-00805f9b34fb');
   static final _classicHidUuid =
@@ -497,14 +505,19 @@ class LinuxBluezBluetoothController implements BluetoothController {
     }
   }
 
-  /// Keyboard battery keepalive only. HID inputReady is refreshed on
-  /// Connected edge / PropertiesChanged / Pair-Connect — not on a timer.
+  /// Battery % + HID health recheck. Connected-but-not-ready triggers cooled
+  /// `_ensureHidInput` (GATT refresh) — not a separate heal service.
   void _startHidStatusWatch() {
-    _batteryKeepalive.start(_refreshKeyboardBatteries);
+    _batteryKeepalive.start(_hidStatusWatchTick);
   }
 
   void _stopHidStatusWatch() {
     _batteryKeepalive.stop();
+  }
+
+  Future<void> _hidStatusWatchTick() async {
+    await _refreshKeyboardBatteries();
+    await _refreshConnectedHidHealth();
   }
 
   /// Poll BlueZ Battery1 for connected keyboards (keepalive + UI %).
@@ -536,6 +549,24 @@ class LinuxBluezBluetoothController implements BluetoothController {
     }
   }
 
+  /// Re-probe Connected HID readiness; auto-ensure when stale (cooled).
+  Future<void> _refreshConnectedHidHealth() async {
+    if (_state != BluetoothAdapterState.on || !_clientConnected) {
+      return;
+    }
+    for (final d in _deviceMap.values.toList(growable: false)) {
+      if (!_isHidLikeRemote(d)) {
+        continue;
+      }
+      final addr = BluetoothctlParse.normalizeAddress(d.address);
+      if (_stickyUntrustAddrs.contains(addr)) {
+        continue;
+      }
+      await _refreshHidInputStatus(addr);
+      await _tryAutoEnsureHid(addr);
+    }
+  }
+
   Future<void> _refreshAllHidInputStatus() async {
     if (_state != BluetoothAdapterState.on) {
       return;
@@ -555,13 +586,58 @@ class LinuxBluezBluetoothController implements BluetoothController {
       return;
     }
     // Stale uhid nodes often survive BlueZ Disconnect (QM002). Never report
-    // inputReady while the link is down.
+    // inputReady while the link is down or GATT is unresolved.
     if (!mapped.connected) {
       _setHidInputReady(addr, false);
       return;
     }
+    _setHidInputReady(addr, await _probeHidInputReady(addr));
+  }
+
+  /// Auto-heal Connected-but-not-ready HID (GATT refresh). Skips sticky
+  /// user Disconnect and respects [_hidAutoEnsureCooldown].
+  Future<void> _tryAutoEnsureHid(String address) async {
+    final addr = BluetoothctlParse.normalizeAddress(address);
+    if (_stickyUntrustAddrs.contains(addr)) {
+      return;
+    }
+    final mapped = _deviceMap[addr];
+    if (mapped == null ||
+        !_isHidLikeRemote(mapped) ||
+        !mapped.connected ||
+        mapped.inputReady == true) {
+      return;
+    }
+    final last = _hidAutoEnsureLastByAddr[addr];
+    final now = DateTime.now();
+    if (last != null && now.difference(last) < _hidAutoEnsureCooldown) {
+      return;
+    }
+    _hidAutoEnsureLastByAddr[addr] = now;
+    stderr.writeln(
+      'bt: HID auto-ensure (connected, input not ready) $addr',
+    );
+    await _serialized(() async {
+      if (_stickyUntrustAddrs.contains(addr)) {
+        return;
+      }
+      final live = _findLiveDevice(addr);
+      if (live == null || !live.connected) {
+        return;
+      }
+      await _ensureHidInput(addr);
+    });
+  }
+
+  /// Connected + ServicesResolved + evdev (see [isBluetoothHidInputReady]).
+  Future<bool> _probeHidInputReady(String addr) async {
+    final info = _deviceInfoMapFor(addr);
     final hasEvdev = await _hidEvdevPresent(addr);
-    _setHidInputReady(addr, hasEvdev);
+    return isBluetoothHidInputReady(
+      connected: _infoFlagYes(info, 'connected'),
+      servicesResolved: _infoFlagYes(info, 'servicesresolved'),
+      hasEvdev: hasEvdev,
+    );
   }
 
   bool _isHidLikeRemote(BluetoothRemoteDevice d) {
@@ -635,18 +711,18 @@ class LinuxBluezBluetoothController implements BluetoothController {
         return;
       }
 
-      Future<bool> waitEvdev(Duration d) async {
+      Future<bool> waitReady(Duration d) async {
         final deadline = DateTime.now().add(d);
         while (DateTime.now().isBefore(deadline)) {
           if (_ensureShouldAbort(epoch)) {
             return false;
           }
-          if (await _hidEvdevPresent(addr)) {
+          if (await _probeHidInputReady(addr)) {
             return true;
           }
           await Future<void>.delayed(const Duration(seconds: 1));
         }
-        return _hidEvdevPresent(addr);
+        return _probeHidInputReady(addr);
       }
 
       Future<void> tryConnectProfiles() async {
@@ -726,7 +802,8 @@ class LinuxBluezBluetoothController implements BluetoothController {
         _setHidInputReady(addr, false);
         return;
       }
-      if (await _hidEvdevPresent(addr)) {
+      // Connected + SR + evdev only — stale uhid without SR is not ready.
+      if (await _probeHidInputReady(addr)) {
         _setHidInputReady(addr, true);
         return;
       }
@@ -741,7 +818,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
             stderr.writeln('bt: HID ensure aborted during grace $addr');
             return;
           }
-          if (await _hidEvdevPresent(addr)) {
+          if (await _probeHidInputReady(addr)) {
             _setHidInputReady(addr, true);
             return;
           }
@@ -765,18 +842,13 @@ class LinuxBluezBluetoothController implements BluetoothController {
 
       if (_infoFlagYes(info, 'connected') &&
           _infoFlagYes(info, 'servicesresolved')) {
-        if (await waitEvdev(_hogSettle)) {
+        if (await waitReady(_hogSettle)) {
           _setHidInputReady(addr, true);
           return;
         }
       }
 
       if (_ensureShouldAbort(epoch)) {
-        return;
-      }
-
-      if (await _hidEvdevPresent(addr)) {
-        _setHidInputReady(addr, true);
         return;
       }
 
@@ -787,15 +859,16 @@ class LinuxBluezBluetoothController implements BluetoothController {
         if (_ensureShouldAbort(epoch)) {
           return;
         }
-        if (await waitEvdev(const Duration(seconds: 5))) {
+        if (await waitReady(const Duration(seconds: 5))) {
           _setHidInputReady(addr, true);
           return;
         }
       }
 
-      // Zombie LE: Connected + no SR / no evdev — Untrust so Disconnect sticks.
+      // Zombie LE: Connected but not ready (no SR and/or no live evdev).
       info = _deviceInfoMapFor(addr);
-      if (_infoFlagYes(info, 'connected') && !await _hidEvdevPresent(addr)) {
+      if (_infoFlagYes(info, 'connected') &&
+          !await _probeHidInputReady(addr)) {
         await refreshGattLink();
         if (_ensureShouldAbort(epoch)) {
           return;
@@ -803,7 +876,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
         info = _deviceInfoMapFor(addr);
         if (_infoFlagYes(info, 'connected')) {
           if (_infoFlagYes(info, 'servicesresolved')) {
-            if (await waitEvdev(_hogSettle)) {
+            if (await waitReady(_hogSettle)) {
               _setHidInputReady(addr, true);
               return;
             }
@@ -812,7 +885,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
           if (_ensureShouldAbort(epoch)) {
             return;
           }
-          if (await waitEvdev(const Duration(seconds: 5))) {
+          if (await waitReady(const Duration(seconds: 5))) {
             _setHidInputReady(addr, true);
             return;
           }
@@ -822,13 +895,16 @@ class LinuxBluezBluetoothController implements BluetoothController {
       if (_ensureShouldAbort(epoch)) {
         return;
       }
-      final ok = await _hidEvdevPresent(addr);
-      _setHidInputReady(
-        addr,
-        ok && _infoFlagYes(_deviceInfoMapFor(addr), 'connected'),
-      );
-      if (!ok) {
-        stderr.writeln('bt: HID ensure still no evdev $addr');
+      final ready = await _probeHidInputReady(addr);
+      _setHidInputReady(addr, ready);
+      if (!ready) {
+        final after = _deviceInfoMapFor(addr);
+        stderr.writeln(
+          'bt: HID ensure still not ready $addr '
+          'connected=${after['connected']} '
+          'services=${after['servicesresolved']} '
+          'evdev=${await _hidEvdevPresent(addr)}',
+        );
       }
     } on BluetoothOperationException catch (e) {
       if (_isPairCancelledError(e)) {
@@ -1120,7 +1196,14 @@ class LinuxBluezBluetoothController implements BluetoothController {
     await _registerHmiAgent();
     await _refreshA2dp();
     _startHidStatusWatch();
-    unawaited(_refreshAllHidInputStatus());
+    unawaited(() async {
+      await _refreshAllHidInputStatus();
+      for (final d in _deviceMap.values.toList(growable: false)) {
+        if (_isHidLikeRemote(d)) {
+          await _tryAutoEnsureHid(d.address);
+        }
+      }
+    }());
     unawaited(_serialized(_reconcilePairedConnectedTrust));
   }
 
@@ -1187,6 +1270,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
             _deviceMap.clear();
             _discoveredAddresses.clear();
             _hidInputReadyByAddr.clear();
+            _hidAutoEnsureLastByAddr.clear();
             _lastConnectedByAddr.clear();
             _emitDevices();
             _emitState(BluetoothAdapterState.off);
@@ -1742,15 +1826,16 @@ class LinuxBluezBluetoothController implements BluetoothController {
       info = _deviceInfoMapFor(addr);
     }
 
-    // 4) Attach HOGP/evdev when Connected but Linux input is missing.
-    if (_infoFlagYes(info, 'connected') && !await _hidEvdevPresent(addr)) {
+    // 4) Attach HOGP/evdev when Connected but HID not fully ready
+    // (needs ServicesResolved + evdev — stale uhid alone is not enough).
+    if (_infoFlagYes(info, 'connected') && !await _probeHidInputReady(addr)) {
       await _ensureHidInput(addr);
       info = _deviceInfoMapFor(addr);
     }
 
     final bonded = _infoBondedOrPaired(info);
     final connected = _infoFlagYes(info, 'connected');
-    final hasInput = connected && await _hidEvdevPresent(addr);
+    final hasInput = await _probeHidInputReady(addr);
     if (!bonded) {
       throw BluetoothOperationException(
         'Still unpaired (paired=${info['paired']} bonded=${info['bonded']}). '
@@ -1864,8 +1949,8 @@ class LinuxBluezBluetoothController implements BluetoothController {
         bool? inputReady;
         if (kind == BluetoothDeviceKind.keyboard ||
             kind == BluetoothDeviceKind.mouse) {
-          // Require Connected — stale uhid after Disconnect is not ready.
-          inputReady = connected && await _hidEvdevPresent(addr);
+          // Connected + ServicesResolved + evdev — not stale uhid alone.
+          inputReady = await _probeHidInputReady(addr);
           _setHidInputReady(addr, inputReady);
         }
         stderr.writeln(
@@ -2026,10 +2111,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
             'bt: Disconnect returned with Connected=yes '
             'trusted=${after['trusted']}',
           );
-          _setHidInputReady(
-            addr,
-            await _hidEvdevPresent(addr),
-          );
+          _setHidInputReady(addr, await _probeHidInputReady(addr));
           return;
         }
         _setHidInputReady(addr, false);
@@ -2049,6 +2131,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
           throw BluetoothOperationException('No Bluetooth adapter');
         }
         _hidInputReadyByAddr.remove(addr);
+        _hidAutoEnsureLastByAddr.remove(addr);
         _lastConnectedByAddr.remove(addr);
         _stickyUntrustAddrs.remove(addr);
         _forgettingAddrs.add(addr);

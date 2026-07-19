@@ -1,10 +1,4 @@
-# shell-hw-persist Specification
-
-## Purpose
-
-Verb-noun board helpers that apply simple hardware settings and persist the canonical `/var/lib/hmi/` preference files consumed by boot restore and HMI launch.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Simple hardware knobs persist via verb-noun shell helpers
 

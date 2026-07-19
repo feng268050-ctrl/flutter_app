@@ -107,7 +107,7 @@ class LinuxSysfsBacklight implements Backlight {
     try {
       final raw = (await File(_brightnessPath!).readAsString()).trim();
       final value = int.tryParse(raw) ?? 0;
-      return deviceToPercent(value, _max);
+      return backlightDeviceToPercent(value, _max);
     } catch (e) {
       debugPrint('backlight: get failed: $e');
       return 0;
@@ -154,7 +154,7 @@ class LinuxSysfsBacklight implements Backlight {
       debugPrint('backlight: set skipped (no device)');
       return;
     }
-    final val = (clamped * _max / 100).round().clamp(0, _max);
+    final val = backlightPercentToDevice(clamped, _max);
     await File(_brightnessPath!).writeAsString('$val\n', flush: true);
     final pref = File(preferencePath);
     await pref.parent.create(recursive: true);

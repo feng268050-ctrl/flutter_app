@@ -1,10 +1,4 @@
-# linux-backlight Specification
-
-## Purpose
-
-Reusable percent-based backlight controller writing `/sys/class/backlight/*/brightness` on Linux, without blocking first frame.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Backlight controller API is percent-based
 
@@ -44,15 +38,6 @@ On Linux, the backlight implementation SHALL read/write a `/sys/class/backlight/
 - **WHEN** sysfs brightness equals the hardware floor after a HAL set of 0
 - **THEN** `getBrightnessPercent` returns 0
 
-### Requirement: Backlight init stays off the critical first-frame path
-
-The app SHALL NOT block `runApp` / first frame on a successful backlight open or read.
-
-#### Scenario: First frame without backlight ready
-
-- **WHEN** the app starts before backlight sysfs is readable
-- **THEN** the first home frame still renders; the brightness control may show a default until a later successful read
-
 ### Requirement: Persist backlight brightness percent
 
 Setting backlight brightness from the HMI SHALL apply via the Linux HAL backlight backend, which MUST write remapped sysfs values and persist the **logical** clamped percent (0–100, including 0) to `/var/lib/hmi/backlight-brightness`. Restoring a persisted `0` MUST re-apply the hardware floor (not absolute zero).
@@ -66,6 +51,8 @@ Setting backlight brightness from the HMI SHALL apply via the Linux HAL backligh
 
 - **WHEN** brightness is set to 60 via HAL and later the Demo reads brightness
 - **THEN** get returns approximately 60 and the preference file still contains `60`
+
+## ADDED Requirements
 
 ### Requirement: Demo brightness UI allows logical zero
 

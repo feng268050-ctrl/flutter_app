@@ -753,10 +753,12 @@ class _PercentSlider extends StatefulWidget {
     required this.value,
     required this.onChanged,
     this.onChangeEnd,
+    this.min = 0,
   });
 
   final String label;
   final double value;
+  final double min;
   final ValueChanged<double> onChanged;
   final ValueChanged<double>? onChangeEnd;
 
@@ -771,7 +773,7 @@ class _PercentSliderState extends State<_PercentSlider> {
   @override
   void initState() {
     super.initState();
-    _value = widget.value.clamp(0, 100);
+    _value = widget.value.clamp(widget.min, 100);
   }
 
   @override
@@ -779,7 +781,7 @@ class _PercentSliderState extends State<_PercentSlider> {
     super.didUpdateWidget(oldWidget);
     // Sync from parent (e.g. post-frame hardware read) only when not dragging.
     if (!_dragging && (oldWidget.value - widget.value).abs() > 0.01) {
-      _value = widget.value.clamp(0, 100);
+      _value = widget.value.clamp(widget.min, 100);
     }
   }
 
@@ -794,7 +796,7 @@ class _PercentSliderState extends State<_PercentSlider> {
         ),
         Slider(
           value: _value,
-          min: 0,
+          min: widget.min,
           max: 100,
           // Continuous (no divisions) → fewer rebuild snaps while dragging.
           onChanged: (v) {

@@ -4,7 +4,16 @@
 /// Concrete Linux type: [LinuxSysfsBacklight] (exported from `hal/output.dart`).
 library;
 
-/// Portable backlight API (0–100 percent).
+export 'package:cyber_hal/src/linux/percent.dart'
+    show
+        backlightDeviceToPercent,
+        backlightPercentToDevice,
+        kBacklightHwFloorPercent;
+
+/// Portable backlight API (logical 0–100 percent).
+///
+/// Logical 0 means dimmest usable level; Linux backends remap onto a non-zero
+/// hardware floor so the panel is never extinguished via absolute sysfs 0.
 abstract class Backlight {
   Future<int> getBrightnessPercent();
 

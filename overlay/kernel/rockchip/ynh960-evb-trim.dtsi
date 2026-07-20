@@ -4,16 +4,21 @@
 // output after earlycon (~2 s) even though the system keeps booting. Probe errors are harmless.
 // Other EVB→product DT gaps: docs/kernel-evb-dts-deferred.md
 
-/* EVB lists alternate CPU bucks (fan53555-reg compat); none populated on ynh960. */
+/*
+ * CPU DVFS supply. The EVB base lists several alternate CPU bucks; on ynh960
+ * the populated one is the xz3216 at i2c0@0x60 (confirmed by i2cdetect: 0x60
+ * ACKs, 0x1c/0x40/0x41 do not). Its inner regulator is labelled vdd_cpu_1
+ * (regulator-name "vdd_cpu"). The base leaves &cpu0 cpu-supply commented out,
+ * so without wiring it here rockchip-cpufreq aborts with
+ * "Failed to initialize dvfs info cpu0" and the CPU stays pinned at the
+ * 1104 MHz boot OPP (no cpufreq node), starving the single-threaded UI build.
+ * Enable xz3215 and point cpu-supply at it so DVFS scales up to 1.8 GHz.
+ */
 &tcs4525 {
 	status = "disabled";
 };
 
 &tcs4526 {
-	status = "disabled";
-};
-
-&xz3215 {
 	status = "disabled";
 };
 
@@ -23,6 +28,14 @@
 
 &syr838 {
 	status = "disabled";
+};
+
+&xz3215 {
+	status = "okay";
+};
+
+&cpu0 {
+	cpu-supply = <&vdd_cpu_1>;
 };
 
 /* No SPI-NAND on SFC; rootfs is eMMC (GPT rootfs partition). */

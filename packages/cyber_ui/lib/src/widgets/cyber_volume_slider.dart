@@ -1,9 +1,9 @@
-import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
+import 'package:cyber_ui/src/theme/cyber_colors.dart';
+import 'package:cyber_ui/src/widgets/cyber_slider.dart';
+
 /// Icon-flanked progress slider (lws-ui `FrostIconFlankedSlider` stand-in).
-///
-/// Presentation only — App supplies [progress] and [onProgressChange].
 class CyberIconFlankedSlider extends StatelessWidget {
   const CyberIconFlankedSlider({
     super.key,
@@ -28,7 +28,6 @@ class CyberIconFlankedSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clamped = progress.clamp(min, max).toDouble();
     return Row(
       children: [
         if (leading != null) ...[
@@ -36,17 +35,16 @@ class CyberIconFlankedSlider extends StatelessWidget {
           const SizedBox(width: 12),
         ],
         Expanded(
-          child: Slider(
-            value: clamped,
+          child: CyberSlider(
+            value: progress.toDouble(),
             min: min.toDouble(),
             max: max.toDouble(),
             divisions: max > min ? (max - min) : null,
-            onChanged: enabled
-                ? (v) => onProgressChange(v.round())
-                : null,
-            onChangeEnd: enabled && onChangeEnd != null
-                ? (v) => onChangeEnd!(v.round())
-                : null,
+            enabled: enabled,
+            onChanged: (v) => onProgressChange(v.round()),
+            onChangeEnd: onChangeEnd == null
+                ? null
+                : (v) => onChangeEnd!(v.round()),
           ),
         ),
         if (trailing != null) ...[
@@ -75,7 +73,7 @@ class CyberVolumeSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.onSurface.withOpacity(0.85);
+    final color = CyberColors.textPrimary.withOpacity(0.85);
     return CyberIconFlankedSlider(
       progress: percent,
       onProgressChange: onChanged,

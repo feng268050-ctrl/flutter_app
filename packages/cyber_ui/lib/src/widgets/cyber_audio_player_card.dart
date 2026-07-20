@@ -23,6 +23,9 @@ class CyberAudioPlayerCard extends StatelessWidget {
     this.onSeek,
     this.seekEnabled = false,
     this.enabled = true,
+    /// UI click SFX. Default false — short mpg123 clicks fight the media
+    /// player session (ALSA / remote mpg123) and can block play-test.
+    this.clickSoundEnabled = false,
   });
 
   final bool isPlaying;
@@ -34,6 +37,7 @@ class CyberAudioPlayerCard extends StatelessWidget {
   final ValueChanged<Duration>? onSeek;
   final bool seekEnabled;
   final bool enabled;
+  final bool clickSoundEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +63,9 @@ class CyberAudioPlayerCard extends StatelessWidget {
               IconButton(
                 onPressed: enabled
                     ? () {
-                        CyberClickSoundRegistry.playClick();
+                        if (clickSoundEnabled) {
+                          CyberClickSoundRegistry.playClick();
+                        }
                         onPlayPause();
                       }
                     : null,

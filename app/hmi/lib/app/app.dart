@@ -9,8 +9,10 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/app_theme.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
+import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
+import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
-import 'package:lws_hmi/ui/cyber/app_media_click_sound.dart';
+import 'package:lws_hmi/ui/cyber/app_indexed_click_sound.dart';
 import 'package:lws_hmi/ui/demo/p2_demo_page.dart';
 
 /// Root MaterialApp: Home launcher, Settings, Monitor, hidden Demo.
@@ -19,12 +21,16 @@ class LwsHmiApp extends StatefulWidget {
     super.key,
     required this.boardProfile,
     this.services,
+    this.soundEffectStore,
   });
 
   final BoardProfile boardProfile;
 
   /// Optional override for tests (inject fakes).
   final AppServices? services;
+
+  /// Optional override for tests (inject fake prefs path / store).
+  final SoundEffectStore? soundEffectStore;
 
   @override
   State<LwsHmiApp> createState() => _LwsHmiAppState();
@@ -34,12 +40,21 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   late final AppServices _services =
       widget.services ?? AppServices(boardProfile: widget.boardProfile);
 
-  late final AppMediaClickSound _clickSound = AppMediaClickSound();
+  late final SoundEffectStore _soundEffectStore =
+      widget.soundEffectStore ?? SoundEffectStore();
+
+  late final AppIndexedClickSound _clickSound = AppIndexedClickSound(
+    _soundEffectStore,
+    mediaAudio: _services.audio,
+  );
 
   @override
   void initState() {
     super.initState();
+    _soundEffectStore.warmRead();
     CyberClickSoundRegistry.register(_clickSound);
+    // Prime ALSA + sticky mpg123 so the first UI click is not cold-start.
+    unawaited(_services.audio.warmClickSession());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Settings restore only — do not start Modbus here. Home / Demo pull it
       // when needed so the first Home frames are not fighting RTU poll.
@@ -77,26 +92,30 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   Widget build(BuildContext context) {
     return AppScope(
       services: _services,
-      child: MaterialApp(
-        title: 'HMI',
-        theme: buildAppTheme(),
-        scrollBehavior: const AppScrollBehavior(),
-        initialRoute: AppRoutes.home,
-        onGenerateRoute: (settings) {
-          final Widget page;
-          switch (settings.name) {
-            case AppRoutes.settings:
-              page = const SettingsPage();
-            case AppRoutes.monitor:
-              page = const MonitorPage();
-            case AppRoutes.demo:
-              page = _demoPage();
-            case AppRoutes.home:
-            default:
-              page = const HomePage();
-          }
-          return buildAppPageRoute(settings: settings, child: page);
-        },
+      child: SoundEffectScope(
+        store: _soundEffectStore,
+        clickSound: _clickSound,
+        child: MaterialApp(
+          title: 'HMI',
+          theme: buildAppTheme(),
+          scrollBehavior: const AppScrollBehavior(),
+          initialRoute: AppRoutes.home,
+          onGenerateRoute: (settings) {
+            final Widget page;
+            switch (settings.name) {
+              case AppRoutes.settings:
+                page = const SettingsPage();
+              case AppRoutes.monitor:
+                page = const MonitorPage();
+              case AppRoutes.demo:
+                page = _demoPage();
+              case AppRoutes.home:
+              default:
+                page = const HomePage();
+            }
+            return buildAppPageRoute(settings: settings, child: page);
+          },
+        ),
       ),
     );
   }

@@ -75,8 +75,10 @@ flutter:
   uses-material-design: true
 
   assets:
-    # UI click SFX (from lws-ui res/raw/click_mp3.mp3) for CyberClickSound.
-    - assets/audio/click.mp3
+    # UI click SFX (lws-ui click_mp3_2 / click_mp3 / click_mp3_1 → Effect 1/2/3).
+    - assets/audio/click_effect_1.mp3
+    - assets/audio/click_effect_2.mp3
+    - assets/audio/click_effect_3.mp3
     # P2.1 speaker smoke track (from lws-ui res/raw/shanghai_tan.mp3).
     - assets/audio/shanghai_tan.mp3
     # Product HAL pack (board profile + gpio/modbus catalogs).

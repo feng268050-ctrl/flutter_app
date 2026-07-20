@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cyber_hal/output.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -15,17 +16,44 @@ class VolumeSettingsPage extends StatefulWidget {
 }
 
 class _VolumeSettingsPageState extends State<VolumeSettingsPage> {
-  double _volume = 80;
+  int _volume = 80;
+  bool _playing = false;
+  StreamSubscription<bool>? _playingSub;
+
+  MediaAudioController get _audio => widget.services.audio;
 
   @override
   void initState() {
     super.initState();
+    _playing = _audio.isPlaying;
+    _playingSub = _audio.playing.listen((v) {
+      if (mounted) setState(() => _playing = v);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-        final v = await widget.services.audio.getVolumePercent();
-        if (mounted) setState(() => _volume = v.toDouble());
+        final v = await _audio.getVolumePercent();
+        if (mounted) setState(() => _volume = v);
       } catch (_) {}
     });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_playingSub?.cancel() ?? Future<void>.value());
+    super.dispose();
+  }
+
+  Future<void> _togglePlay() async {
+    try {
+      if (_audio.isPlaying || _playing) {
+        await _audio.stop();
+      } else {
+        await _audio.playAsset(MediaAudioController.shanghaiTanAsset);
+      }
+    } catch (e, st) {
+      debugPrint('volume-settings: play/stop failed: $e\n$st');
+    }
+    if (mounted) setState(() => _playing = _audio.isPlaying);
   }
 
   @override
@@ -39,39 +67,37 @@ class _VolumeSettingsPageState extends State<VolumeSettingsPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: Text('${_volume.round()}%'),
+                child: Text('$_volume%'),
               ),
-              Slider(
-                value: _volume.clamp(0, 100),
-                min: 0,
-                max: 100,
-                onChanged: (v) => setState(() => _volume = v),
-                onChangeEnd: (v) {
-                  unawaited(
-                    widget.services.audio.setVolumePercent(v.round()),
-                  );
-                },
-              ),
-              ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                title: Text(
-                  widget.services.audio.isPlaying
-                      ? 'Stop Test Tone'
-                      : 'Play Test Tone',
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                child: CyberVolumeSlider(
+                  percent: _volume,
+                  onChanged: (v) => setState(() => _volume = v),
+                  onChangeEnd: (v) {
+                    unawaited(_audio.setVolumePercent(v));
+                  },
                 ),
-                trailing: const Icon(Icons.play_arrow),
-                onTap: () async {
-                  final audio = widget.services.audio;
-                  if (audio.isPlaying) {
-                    await audio.stop();
-                  } else {
-                    await audio.playAsset(
-                      MediaAudioController.shanghaiTanAsset,
-                    );
-                  }
-                  if (mounted) setState(() {});
+              ),
+            ],
+          ),
+          const SettingsSectionHeader('Play Test'),
+          SettingsGroup(
+            children: [
+              CyberAudioPlayerCard(
+                isPlaying: _playing,
+                position: Duration.zero,
+                duration: Duration.zero,
+                seekEnabled: false,
+                onPlayPause: () {
+                  unawaited(_togglePlay());
                 },
+                onRewind: _playing
+                    ? () {
+                        unawaited(_audio.stop().then((_) => _togglePlay()));
+                      }
+                    : null,
+                onFastForward: null,
               ),
             ],
           ),

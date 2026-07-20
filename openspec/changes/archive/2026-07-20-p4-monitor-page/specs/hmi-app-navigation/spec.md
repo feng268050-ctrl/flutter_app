@@ -1,8 +1,5 @@
-# hmi-app-navigation Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change home-settings-ui. Update Purpose after archive.
-## Requirements
 ### Requirement: App defines named routes for Home, Settings, and Demo
 
 The HMI app SHALL register named routes (or equivalent declarative path matching) for at least:
@@ -33,13 +30,3 @@ Navigation SHALL use Flutter Navigator APIs or a small router wrapper; CyberUI i
 
 - **WHEN** navigation targets `/demo`
 - **THEN** the trimmed P2 Demo screen is displayed
-
-### Requirement: Demo is not linked from product Home chrome
-
-Product Home MUST NOT present a primary visible navigation control that opens Demo. Demo remains reachable by named route for engineering use.
-
-#### Scenario: Home has no Demo primary entry
-
-- **WHEN** the user views product Home
-- **THEN** there is no primary Home button/label whose sole purpose is to open the P2 Demo
-

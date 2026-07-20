@@ -88,6 +88,14 @@ flutter:
     - assets/home/home_fast_text_en.webp
     - assets/home/home_engine_text_en.webp
     - assets/home/home_settings.webp
+    - assets/home/home_monitor.webp
+    - assets/home/ai_vision_home.webp
+    # Monitor tab icons (from lws-ui DeviceMonitoring mipmaps).
+    - assets/monitor/job_icon1.webp
+    - assets/monitor/job_icon2.webp
+    - assets/monitor/job_icon3.webp
+    - assets/monitor/videos_icon.webp
+    - assets/monitor/ai_vision_tab.webp
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

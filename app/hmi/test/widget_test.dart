@@ -49,7 +49,7 @@ class _OfflineModbus extends ModbusRtuClient {
   Future<void> startLiveDemo({
     required void Function(List<ModbusAttributeChange> changes) onAttributeChanges,
     void Function(ModbusHealth health)? onHealth,
-    Iterable<String> watchIds = kDemoModbusWatchIds,
+    Iterable<String>? watchIds,
   }) async {
     // Host widget tests: no serial — leave Demo tiles at `-`.
   }
@@ -196,7 +196,7 @@ void main() {
     expect(_textAnywhere('Pump Comm Status'), findsOneWidget);
     expect(_textAnywhere('Gun Comm Status'), findsOneWidget);
     expect(_textAnywhere('Feeder Comm Status'), findsOneWidget);
-    // Temperatures moved to Home translucent card.
+    // Temperatures live on Monitor → Alarm Information.
     expect(find.text('SoC Temperature', skipOffstage: false), findsNothing);
     expect(find.text('GPU Temperature', skipOffstage: false), findsNothing);
 

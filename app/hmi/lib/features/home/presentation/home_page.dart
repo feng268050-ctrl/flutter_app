@@ -1,13 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
-import 'package:lws_hmi/features/home/presentation/home_temperature_card.dart';
+import 'package:lws_hmi/features/home/presentation/home_clock.dart';
+import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
+import 'package:lws_hmi/ui/cyber/cyber_blur_backdrop_scope.dart';
+import 'package:lws_hmi/ui/cyber/cyber_blur_sample_mode.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
 const double _kDesignW = 1280;
 const double _kDesignH = 800;
 
-/// Product Home: backdrop, animated plates, Quick/Engineer heroes, Settings.
+/// lws-ui `home_quick_action_*` dimens (design dp on 1280×800).
+const double _kQaEdgeInset = 28;
+const double _kQaPairGap = 28;
+const double _kQaInner = 108;
+const double _kQaIcon = 60;
+const double _kQaWideInner = 244;
+const double _kQaIconStartPad = 24;
+const double _kQaIconTextGap = 8;
+const double _kQaLabelMarginTop = 10;
+const double _kQaCorner = 18;
+const double _kQaCardText = 20;
+
+/// Product Home: backdrop, animated plates, Quick/Engineer, bottom quick actions.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -20,40 +35,61 @@ class HomePage extends StatelessWidget {
           final h = constraints.maxHeight;
           final sx = w / _kDesignW;
           final sy = h / _kDesignH;
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              const _HomeBackdrop(),
-              _HomeAnimatedPlate(
-                asset: HomeAssets.leftAnimated,
-                fallback: HomeAssets.leftStatic,
-                left: -60 * sx,
-                top: -90 * sy,
-                width: 600 * sx,
-                height: 600 * sy,
-              ),
-              _HomeAnimatedPlate(
-                asset: HomeAssets.rightAnimated,
-                fallback: HomeAssets.rightStatic,
-                left: 740 * sx,
-                top: -90 * sy,
-                width: 600 * sx,
-                height: 600 * sy,
-              ),
-              _PositionedAsset(
-                asset: HomeAssets.leftStatic,
-                left: 53 * sx,
-                top: 55 * sy,
-                width: 375 * sx,
-                height: 280 * sy,
-              ),
-              _PositionedAsset(
-                asset: HomeAssets.rightStatic,
-                left: 853 * sx,
-                top: 55 * sy,
-                width: 375 * sx,
-                height: 280 * sy,
-              ),
+          return CyberBlurBackdropScope(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CyberBlurBackdropTarget(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      const _HomeBackdrop(),
+                      _HomeAnimatedPlate(
+                        asset: HomeAssets.leftAnimated,
+                        fallback: HomeAssets.leftStatic,
+                        left: -60 * sx,
+                        top: -90 * sy,
+                        width: 600 * sx,
+                        height: 600 * sy,
+                      ),
+                      _HomeAnimatedPlate(
+                        asset: HomeAssets.rightAnimated,
+                        fallback: HomeAssets.rightStatic,
+                        left: 740 * sx,
+                        top: -90 * sy,
+                        width: 600 * sx,
+                        height: 600 * sy,
+                      ),
+                      _PositionedAsset(
+                        asset: HomeAssets.leftStatic,
+                        left: 53 * sx,
+                        top: 55 * sy,
+                        width: 375 * sx,
+                        height: 280 * sy,
+                      ),
+                      _PositionedAsset(
+                        asset: HomeAssets.rightStatic,
+                        left: 853 * sx,
+                        top: 55 * sy,
+                        width: 375 * sx,
+                        height: 280 * sy,
+                      ),
+                    ],
+                  ),
+                ),
+                // Top-center clock — lws-ui `home_real_time` (150sp design).
+                Positioned(
+                  left: 440 * sx,
+                  top: 12 * sy,
+                  width: 400 * sx,
+                  height: 300 * sy,
+                  child: Center(
+                    child: HomeClock(
+                      fontSize: 120 * sx,
+                      sampleMode: CyberBlurSampleMode.realtime,
+                    ),
+                  ),
+                ),
               _ModeEntry(
                 left: 53 * sx,
                 top: 55 * sy,
@@ -88,27 +124,54 @@ class HomePage extends StatelessWidget {
                   );
                 },
               ),
+              // Bottom-left: Monitor | Settings (lws-ui box_quick_actions_row).
               Positioned(
-                left: 72 * sx,
-                right: 72 * sx,
-                top: 360 * sy,
-                child: const HomeTemperatureCard(),
+                left: _kQaEdgeInset * sx,
+                bottom: _kQaEdgeInset * sy,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _HomeQuickActionSquare(
+                      scaleX: sx,
+                      scaleY: sy,
+                      iconAsset: HomeAssets.monitorIcon,
+                      label: 'Monitor',
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(AppRoutes.monitor);
+                      },
+                    ),
+                    SizedBox(width: _kQaPairGap * sx),
+                    _HomeQuickActionSquare(
+                      scaleX: sx,
+                      scaleY: sy,
+                      iconAsset: HomeAssets.settingsIcon,
+                      label: 'Settings',
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(AppRoutes.settings);
+                      },
+                    ),
+                  ],
+                ),
               ),
+              // Bottom-right: AI Vision wide card (lws-ui box_buttons_ai_vision).
               Positioned(
-                left: 0,
-                right: 0,
-                bottom: 40 * sy,
-                child: Center(
-                  child: _SettingsEntry(
-                    iconAsset: HomeAssets.settingsIcon,
-                    onPressed: () {
-                      Navigator.of(context).pushNamed(AppRoutes.settings);
-                    },
-                  ),
+                right: _kQaEdgeInset * sx,
+                bottom: _kQaEdgeInset * sy,
+                child: _HomeQuickActionAiVision(
+                  scaleX: sx,
+                  scaleY: sy,
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('AI Vision — coming soon'),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
-          );
+          ),
+        );
         },
       ),
     );
@@ -295,50 +358,134 @@ class _ModeEntry extends StatelessWidget {
   }
 }
 
-class _SettingsEntry extends StatelessWidget {
-  const _SettingsEntry({required this.onPressed, this.iconAsset});
+class _HomeQuickActionSquare extends StatelessWidget {
+  const _HomeQuickActionSquare({
+    required this.scaleX,
+    required this.scaleY,
+    required this.iconAsset,
+    required this.label,
+    required this.onPressed,
+  });
 
+  final double scaleX;
+  final double scaleY;
+  final String iconAsset;
+  final String label;
   final VoidCallback onPressed;
-  final String? iconAsset;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black.withOpacity(0.45),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (iconAsset != null)
-                Image.asset(
-                  iconAsset!,
-                  width: 32,
-                  height: 32,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.settings,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                )
-              else
-                const Icon(Icons.settings, color: Colors.white, size: 28),
-              const SizedBox(width: 12),
-              const Text(
-                'Settings',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+    final s = (scaleX + scaleY) / 2;
+    final card = _kQaInner * s;
+    final icon = _kQaIcon * s;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    return HomeQuickAction(
+      cardWidth: card,
+      cardHeight: card,
+      cornerRadius: _kQaCorner * s,
+      labelMarginTop: _kQaLabelMarginTop * scaleY,
+      sampleMode: CyberBlurSampleMode.realtime,
+      label: label,
+      onPressed: onPressed,
+      child: Center(
+        child: Image.asset(
+          iconAsset,
+          width: icon,
+          height: icon,
+          fit: BoxFit.contain,
+          cacheWidth: (icon * dpr).round().clamp(48, 240),
+          cacheHeight: (icon * dpr).round().clamp(48, 240),
+          errorBuilder: (_, __, ___) => Icon(
+            Icons.touch_app,
+            color: Colors.white70,
+            size: icon * 0.7,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _HomeQuickActionAiVision extends StatelessWidget {
+  const _HomeQuickActionAiVision({
+    required this.scaleX,
+    required this.scaleY,
+    required this.onPressed,
+  });
+
+  final double scaleX;
+  final double scaleY;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = (scaleX + scaleY) / 2;
+    final width = _kQaWideInner * scaleX;
+    final height = _kQaInner * s;
+    final icon = _kQaIcon * s;
+    final padStart = _kQaIconStartPad * scaleX;
+    final gap = _kQaIconTextGap * scaleX;
+    final textSize = (_kQaCardText * s).clamp(14.0, 22.0);
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    return HomeQuickAction(
+      cardWidth: width,
+      cardHeight: height,
+      labelWidth: width,
+      cornerRadius: _kQaCorner * s,
+      labelMarginTop: _kQaLabelMarginTop * scaleY,
+      sampleMode: CyberBlurSampleMode.realtime,
+      label: 'AI Vision',
+      onPressed: onPressed,
+      child: Row(
+        children: [
+          SizedBox(width: padStart),
+          Image.asset(
+            HomeAssets.aiVisionIcon,
+            width: icon,
+            height: icon,
+            fit: BoxFit.contain,
+            cacheWidth: (icon * dpr).round().clamp(48, 240),
+            cacheHeight: (icon * dpr).round().clamp(48, 240),
+            errorBuilder: (_, __, ___) => Icon(
+              Icons.visibility,
+              color: Colors.white70,
+              size: icon * 0.7,
+            ),
+          ),
+          SizedBox(width: gap),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'AI Detection',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: textSize,
+                    height: 1.1,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 2 * scaleY),
+                Text(
+                  'Visualized',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: textSize,
+                    height: 1.1,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 12 * scaleX),
+        ],
       ),
     );
   }

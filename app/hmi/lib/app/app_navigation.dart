@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -22,24 +21,50 @@ class AppScrollBehavior extends MaterialScrollBehavior {
   }
 }
 
-/// Cupertino-style slide for all platforms (Material stand-in until CyberUI).
+/// Fade transitions for named routes (Home → Monitor / Settings / …).
 const PageTransitionsTheme kAppPageTransitionsTheme = PageTransitionsTheme(
   builders: {
-    TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-    TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
-    TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-    TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
-    TargetPlatform.fuchsia: CupertinoPageTransitionsBuilder(),
+    TargetPlatform.android: _FadePageTransitionsBuilder(),
+    TargetPlatform.iOS: _FadePageTransitionsBuilder(),
+    TargetPlatform.linux: _FadePageTransitionsBuilder(),
+    TargetPlatform.macOS: _FadePageTransitionsBuilder(),
+    TargetPlatform.windows: _FadePageTransitionsBuilder(),
+    TargetPlatform.fuchsia: _FadePageTransitionsBuilder(),
   },
 );
+
+class _FadePageTransitionsBuilder extends PageTransitionsBuilder {
+  const _FadePageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return FadeTransition(
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+      child: child,
+    );
+  }
+}
 
 Route<dynamic> buildAppPageRoute({
   required RouteSettings settings,
   required Widget child,
 }) {
-  return CupertinoPageRoute<dynamic>(
+  return PageRouteBuilder<dynamic>(
     settings: settings,
-    builder: (_) => child,
+    transitionDuration: const Duration(milliseconds: 280),
+    reverseTransitionDuration: const Duration(milliseconds: 240),
+    pageBuilder: (context, animation, secondaryAnimation) => child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+        child: child,
+      );
+    },
   );
 }

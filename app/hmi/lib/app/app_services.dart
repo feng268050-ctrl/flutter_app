@@ -102,19 +102,23 @@ final class AppServices {
 
   Stream<ModbusHealth> get modbusHealthChanges => _modbusHealth.stream;
 
-  /// Start Modbus live poll once; fans out to [modbusAttributeChanges].
-  Future<void> ensureModbusLive() async {
-    if (_modbusLiveStarted) {
-      return;
-    }
-    _modbusLiveStarted = true;
+  /// Start Modbus live poll; fans out to [modbusAttributeChanges].
+  ///
+  /// Optional [watchIds] widen the HAL watch allowlist (e.g. Monitor alarms).
+  /// Safe to call again after the first start to expand ids without stopping
+  /// poll.
+  Future<void> ensureModbusLive({Iterable<String>? watchIds}) async {
     try {
       await modbus.startLiveDemo(
         onAttributeChanges: _modbusChanges.add,
         onHealth: _modbusHealth.add,
+        watchIds: watchIds,
       );
+      _modbusLiveStarted = true;
     } catch (_) {
-      _modbusLiveStarted = false;
+      if (!_modbusLiveStarted) {
+        // leave false so a later retry can succeed
+      }
     }
   }
 

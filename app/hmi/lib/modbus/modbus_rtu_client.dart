@@ -9,6 +9,8 @@ export 'package:cyber_hal/modbus.dart'
     show
         ModbusAlarmTemperaturesSnapshot,
         ModbusAttributeChange,
+        ModbusAttributeConfig,
+        ModbusAttributeMeta,
         ModbusChangeKind,
         ModbusDeviceInfoSnapshot,
         ModbusHal,
@@ -21,6 +23,8 @@ export 'package:cyber_hal/modbus.dart'
 /// Attribute ids the P2 Demo watches for live updates (HAL poll/watch).
 ///
 /// Alarm Information mirrors lws-ui `fragment_warn_info` minus Camera Comm.
+/// Product live poll also unions catalog `alarm.*` with `meta.alarm_code`
+/// via [defaultLiveWatchIds].
 const kDemoModbusWatchIds = <String>[
   'device.control_card_version',
   'alarm.laser_comm',
@@ -35,6 +39,15 @@ const kDemoModbusWatchIds = <String>[
   'alarm.collimator_over_temp',
   'alarm.wire_feeder_comm',
 ];
+
+/// Demo ids plus every config attribute that has `meta.alarm_code`.
+List<String> defaultLiveWatchIds(ModbusHal hal) {
+  final alarmIds = hal
+      .listAttributes()
+      .where((a) => a.meta?.alarmCode != null)
+      .map((a) => a.id);
+  return <String>{...kDemoModbusWatchIds, ...alarmIds}.toList(growable: false);
+}
 
 /// App façade over [ModbusHal] — attribute ids from `modbus.json`, not addresses.
 ///
@@ -90,39 +103,51 @@ class ModbusRtuClient {
     await _hal?.close();
   }
 
-  /// Start continuous poll + change-only watch for Demo attribute ids.
+  /// Catalog attributes (for Monitor alarm meta / watch allowlists).
+  Future<List<ModbusAttributeConfig>> listAttributes() async {
+    final hal = await _ensureHal();
+    return hal.listAttributes();
+  }
+
+  /// Start continuous poll + change-only watch for product/Demo attribute ids.
   ///
   /// Also performs a one-shot `info` group read (gunhead / laser / wire) which
   /// is on-demand in config. Invokes [onAttributeChanges] for primes and diffs.
+  ///
+  /// When [watchIds] is omitted, watches [defaultLiveWatchIds] (Demo set ∪
+  /// catalog alarms with `alarm_code`). If already live, a later call with a
+  /// wider [watchIds] replaces the watch subscription without stopping poll.
   Future<void> startLiveDemo({
     required void Function(List<ModbusAttributeChange> changes) onAttributeChanges,
     void Function(ModbusHealth health)? onHealth,
-    Iterable<String> watchIds = kDemoModbusWatchIds,
+    Iterable<String>? watchIds,
   }) async {
-    if (_live) {
-      return;
-    }
     final hal = await _ensureHal();
-    _live = true;
+    final ids = watchIds?.toList(growable: false) ?? defaultLiveWatchIds(hal);
 
-    await hal.startPolling();
+    if (!_live) {
+      _live = true;
+      await hal.startPolling();
 
-    // On-demand info block (not in continuous poll).
-    try {
-      final info = await hal.readGroup('info');
-      final changes = <ModbusAttributeChange>[];
-      for (final e in info.entries) {
-        changes.add(ModbusAttributeChange(id: e.key, value: e.value));
+      // On-demand info block (not in continuous poll).
+      try {
+        final info = await hal.readGroup('info');
+        final changes = <ModbusAttributeChange>[];
+        for (final e in info.entries) {
+          changes.add(ModbusAttributeChange(id: e.key, value: e.value));
+        }
+        if (changes.isNotEmpty) {
+          onAttributeChanges(changes);
+        }
+      } catch (_) {
+        // Soft-fail: Demo keeps `-` for info fields.
       }
-      if (changes.isNotEmpty) {
-        onAttributeChanges(changes);
-      }
-    } catch (_) {
-      // Soft-fail: Demo keeps `-` for info fields.
     }
 
-    _watchSub = hal.watchAttributes(ids: watchIds).listen(onAttributeChanges);
+    await _watchSub?.cancel();
+    _watchSub = hal.watchAttributes(ids: ids).listen(onAttributeChanges);
     if (onHealth != null) {
+      await _healthSub?.cancel();
       _healthSub = hal.watchHealth().listen(onHealth);
     }
   }

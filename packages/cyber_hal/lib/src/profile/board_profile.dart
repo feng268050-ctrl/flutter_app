@@ -38,6 +38,8 @@ abstract final class BoardHelperKeys {
   static const alsaPlaybackPathControl = 'alsa_playback_path_control';
   /// Value for [alsaPlaybackPathControl] (e.g. Rockchip `RING_SPK_HP`).
   static const alsaPlaybackPathValue = 'alsa_playback_path_value';
+  /// Explicit mpg123 ALSA PCM (`-a`), e.g. plughw:0,0.
+  static const alsaOutputDevice = 'alsa_output_device';
 }
 
 /// Board profile: capabilities, net role→iface, pointers to gpio/modbus configs.

@@ -10,6 +10,12 @@ abstract class MediaAudioController {
 
   Future<void> playAsset(String assetKey);
 
+  /// Short UI SFX (click). Uses a sticky mpg123 remote session when available.
+  Future<void> playOneShotAsset(String assetKey);
+
+  /// Open ALSA route + sticky mpg123 early so the first UI click is low-latency.
+  Future<void> warmClickSession();
+
   Future<void> stop();
 
   Future<void> setVolumePercent(int percent);

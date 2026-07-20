@@ -27,6 +27,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     List<String>? preferredVolumeControls,
     this.playbackPathControl = '',
     this.playbackPathValue = '',
+    this.alsaOutputDevice = '',
     BoardHelperRunner? runHelper,
   })  : preferredVolumeControls =
             preferredVolumeControls ?? _defaultPreferredVolumeControls,
@@ -44,6 +45,9 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   /// Empty → skip amixer path routing (portable default).
   final String playbackPathControl;
   final String playbackPathValue;
+  /// Explicit ALSA PCM for mpg123 (`-a`), e.g. `plughw:0,0`. Empty → mpg123 default.
+  /// Prefer this when `default` is broken by bluealsa / missing BT sink.
+  final String alsaOutputDevice;
   final BoardHelperRunner runHelper;
 
   Process? _player;
@@ -66,6 +70,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   int? _queuedVolume;
 
   static const _defaultPreferredVolumeControls = <String>[
+    'DAC',
     'DAC Playback Volume',
     'Speaker Playback Volume',
     'Headphone Playback Volume',
@@ -96,6 +101,12 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   @override
   Future<int> getVolumePercent() async {
     await _ensureVolumeLoaded();
+    // If restore hit rk809 `DAC 100%` (or no control yet), retry apply so a
+    // later UI read / click prime can recover HW gain without restart.
+    if (_mixerUnavailable || _volumeControl == null) {
+      _queuedVolume = _volumePercent;
+      await _drainVolumeQueue();
+    }
     return _volumePercent;
   }
 
@@ -200,13 +211,16 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
           await _startRemoteMpg123(player);
         }
         _playerStdin!.writeln('LOAD $path');
-        _playerStdin!.writeln('V $_volumePercent');
         await _playerStdin!.flush();
+        await _applyRemoteVolume(_volumePercent);
         // @P 2 will confirm; optimistically mark playing for responsive UI.
         _setPlaying(true);
       } else {
         await stop();
-        _player = await Process.start(player, <String>[path]);
+        final args = useMpg123
+            ? <String>[..._mpg123Args(remote: false), path]
+            : <String>[path];
+        _player = await Process.start(player, args);
         _playerStdin = null;
         _remoteMode = false;
         _setPlaying(true);
@@ -222,9 +236,21 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     }
   }
 
+  List<String> _mpg123Args({required bool remote}) {
+    final args = <String>[];
+    final dev = alsaOutputDevice.trim();
+    if (dev.isNotEmpty) {
+      args.addAll(<String>['-a', dev]);
+    }
+    if (remote) {
+      // Do not use -q: we need @P status lines for accurate play/stop state.
+      args.add('-R');
+    }
+    return args;
+  }
+
   Future<void> _startRemoteMpg123(String player) async {
-    // Do not use -q: we need @P status lines for accurate play/stop state.
-    _player = await Process.start(player, <String>['-R']);
+    _player = await Process.start(player, _mpg123Args(remote: true));
     _playerStdin = _player!.stdin;
     _remoteMode = true;
     unawaited(_listenProcess(_player!));
@@ -256,7 +282,10 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
       return;
     }
     try {
-      sink.writeln('V $percent');
+      // When ALSA mixer is bound, it owns loudness — keep decoder at full scale
+      // so UI 70% is not attenuated twice (DAC + mpg123 V).
+      final v = _volumeControl != null ? 100 : percent;
+      sink.writeln('V $v');
       await sink.flush();
     } catch (e) {
       debugPrint('media-audio: remote volume failed: $e');
@@ -311,38 +340,67 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     } catch (_) {}
   }
 
+
   @override
-  Future<void> stop() async {
-    final p = _player;
-    final sink = _playerStdin;
-    if (p == null) {
-      _setPlaying(false);
+  Future<void> warmClickSession() async {
+    await _ensureVolumeLoaded();
+    await _ensurePlaybackPath();
+    await _applyMixerVolume(_volumePercent);
+    final player = await _resolvePlayerBinary();
+    if (player == null || !_isMpg123(player)) {
       return;
     }
-    try {
-      if (sink != null && _remoteMode) {
-        // STOP keeps the remote session for the next LOAD (OS decoder lifecycle).
-        sink.writeln('STOP');
-        await sink.flush();
-        _setPlaying(false);
-        return;
-      }
-    } catch (_) {}
+    if (!_remoteMode || _playerStdin == null || _player == null) {
+      await _startRemoteMpg123(player);
+    }
+    await _applyRemoteVolume(100);
+    lwsTrace('media-audio: click session warm');
+  }
 
-    _player = null;
-    _playerStdin = null;
-    _remoteMode = false;
-    _setPlaying(false);
+  @override
+  Future<void> playOneShotAsset(String assetKey) async {
+    // Fast path: do not re-run amixer on every tap (was ~tens of ms of latency).
+    await _ensureVolumeLoaded();
+    await _ensurePlaybackPath();
+
+    final path = await _ensureExtracted(assetKey);
+    final player = await _resolvePlayerBinary();
+    if (player == null) {
+      debugPrint('media-audio: oneshot no player binary');
+      return;
+    }
+
     try {
-      if (sink != null) {
-        sink.writeln('QUIT');
-        await sink.flush();
+      if (!_remoteMode || _playerStdin == null || _player == null) {
+        if (!_isMpg123(player)) {
+          debugPrint('media-audio: oneshot needs mpg123 for remote LOAD');
+          return;
+        }
+        await _startRemoteMpg123(player);
+        await _applyRemoteVolume(100);
       }
-    } catch (_) {}
-    try {
-      p.kill(ProcessSignal.sigterm);
+      _playerStdin!.writeln('LOAD $path');
+      await _playerStdin!.flush();
+      lwsTrace('media-audio: oneshot LOAD $path (remote)');
     } catch (e) {
-      debugPrint('media-audio: kill failed: $e');
+      debugPrint('media-audio: oneshot remote failed: $e');
+    }
+  }
+
+  @override
+  Future<void> stop() async {
+    final sink = _playerStdin;
+    _setPlaying(false);
+    if (sink == null) {
+      return;
+    }
+    // Keep mpg123 -R alive so UI click oneshots can LOAD without fighting
+    // exclusive plughw (a second mpg123 process exits 255 / is silent).
+    try {
+      sink.writeln('STOP');
+      await sink.flush();
+    } catch (e) {
+      debugPrint('media-audio: stop failed: $e');
     }
   }
 
@@ -375,26 +433,24 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   }
 
   Future<String> _ensureExtracted(String assetKey) async {
-    final cached = _extracted[assetKey];
-    if (cached != null && await File(cached).exists()) {
-      return cached;
-    }
-
     final dir = Directory(cacheDir);
     await dir.create(recursive: true);
     final name = assetKey.split('/').last;
     final out = File('${dir.path}/$name');
     final data = await rootBundle.load(assetKey);
-    await out.writeAsBytes(
-      data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
-      flush: true,
-    );
+    final bytes =
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    // Always refresh from the asset bundle so push-app asset updates are not
+    // masked by a stale /var/lib/hmi/audio/*.mp3 cache.
+    if (!await out.exists() || await out.length() != bytes.length) {
+      await out.writeAsBytes(bytes, flush: true);
+    }
     _extracted[assetKey] = out.path;
     return out.path;
   }
 
-  Future<void> _ensurePlaybackPath() async {
-    if (_pathRouted) {
+  Future<void> _ensurePlaybackPath({bool force = false}) async {
+    if (_pathRouted && !force) {
       return;
     }
     final control = playbackPathControl.trim();
@@ -444,7 +500,8 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
               lower == 'master' ||
               lower == 'pcm' ||
               lower == 'speaker' ||
-              lower == 'playback') {
+              lower == 'playback' ||
+              lower == 'dac') {
             fromDevice.add(name);
           }
         }
@@ -460,11 +517,11 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   }
 
   Future<void> _applyMixerVolume(int percent) async {
-    if (_mixerUnavailable) {
-      return;
-    }
+    // Re-probe each apply: a prior 100% / missing-control failure must not
+    // permanently mute the session after prefs/route become valid.
     if (_volumeControl != null) {
       if (await _ssetVolume(_volumeControl!, percent)) {
+        _mixerUnavailable = false;
         return;
       }
       _volumeControl = null;
@@ -473,6 +530,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     for (final control in await _volumeControlCandidates()) {
       if (await _ssetVolume(control, percent)) {
         _volumeControl = control;
+        _mixerUnavailable = false;
         lwsTrace('media-audio: volume control → $control @ $percent%');
         return;
       }
@@ -481,10 +539,22 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     debugPrint('media-audio: no HW volume control; remote V only');
   }
 
+  /// rk809 `DAC` rejects `amixer sset … 100%` / raw 255 (`Invalid command!`).
+  /// Clamp HW percent to 0–99 so UI 100 still drives near-max gain.
+  @visibleForTesting
+  static int amixerHwPercent(int percent) {
+    final p = percent < 0 ? 0 : percent;
+    if (p >= 100) {
+      return 99;
+    }
+    return p;
+  }
+
   Future<bool> _ssetVolume(String control, int percent) async {
+    final hw = amixerHwPercent(percent);
     final attempts = <List<String>>[
-      <String>['sset', control, '$percent%'],
-      <String>['sset', control, '$percent%,$percent%'],
+      <String>['sset', control, '$hw%'],
+      <String>['sset', control, '$hw%,$hw%'],
     ];
     for (final args in attempts) {
       try {

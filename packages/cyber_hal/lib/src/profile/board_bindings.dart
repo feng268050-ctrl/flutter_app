@@ -69,6 +69,8 @@ final class BoardBindings {
           profile.helper(BoardHelperKeys.alsaPlaybackPathControl) ?? '',
       playbackPathValue:
           profile.helper(BoardHelperKeys.alsaPlaybackPathValue) ?? '',
+      alsaOutputDevice:
+          profile.helper(BoardHelperKeys.alsaOutputDevice) ?? '',
     );
   }
 

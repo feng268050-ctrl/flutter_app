@@ -6,6 +6,8 @@ import 'package:cyber_ui/src/blur/cyber_blur_sample_mode.dart';
 import 'package:cyber_ui/src/blur/cyber_blur_tint.dart';
 import 'package:cyber_ui/src/sound/cyber_click_sound.dart';
 import 'package:cyber_ui/src/theme/cyber_glass_theme.dart';
+import 'package:cyber_ui/src/theme/cyber_panel_border.dart';
+import 'package:cyber_ui/src/theme/cyber_tone.dart';
 
 /// Clip + [CyberBackdropBlur] chrome card (Home quick actions, panels).
 ///
@@ -20,6 +22,7 @@ class CyberCard extends StatelessWidget {
     this.sampleMode = CyberBlurSampleMode.realtime,
     this.intensity,
     this.blurTint,
+    this.tone,
     this.borderRadius,
     this.borderColor,
     this.borderWidth,
@@ -33,6 +36,7 @@ class CyberCard extends StatelessWidget {
   final CyberBlurSampleMode sampleMode;
   final CyberBlurIntensity? intensity;
   final CyberBlurTint? blurTint;
+  final CyberTone? tone;
   final BorderRadius? borderRadius;
   final Color? borderColor;
   final double? borderWidth;
@@ -42,11 +46,16 @@ class CyberCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = CyberGlassTheme.of(context);
-    final radius =
-        borderRadius ?? BorderRadius.circular(theme.cornerRadius);
-    final border = Border.all(
-      color: borderColor ?? theme.borderColor,
+    final resolvedTone = tone ?? theme.tone;
+    final panel = CyberPanelBorder(
+      tone: resolvedTone,
       width: borderWidth ?? theme.borderWidth,
+      cornerRadius: theme.cornerRadius,
+    );
+    final radius = borderRadius ?? panel.borderRadius;
+    final border = Border.all(
+      color: borderColor ?? panel.flatBorderColor,
+      width: borderWidth ?? panel.width,
     );
 
     Widget body = ClipRRect(
@@ -58,8 +67,8 @@ class CyberCard extends StatelessWidget {
         ),
         child: CyberBackdropBlur(
           sampleMode: sampleMode,
-          intensity: intensity ?? theme.defaultIntensity,
-          blurTint: blurTint ?? theme.defaultTint,
+          intensity: intensity ?? resolvedTone.blurIntensity,
+          blurTint: blurTint ?? resolvedTone.blurTint,
           child: SizedBox(
             width: width,
             height: height,
@@ -70,7 +79,6 @@ class CyberCard extends StatelessWidget {
     );
 
     if (onTap != null) {
-      // Clip splash to the card chrome (rounded rect), not siblings/labels.
       body = Material(
         color: Colors.transparent,
         borderRadius: radius,

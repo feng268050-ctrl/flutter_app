@@ -1,12 +1,12 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/ui/cyber/cyber_backdrop_blur_controller.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_backdrop_scope.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_intensity.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_overlay.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_sample_mode.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_tint.dart';
+import 'package:cyber_ui/src/blur/cyber_backdrop_blur_controller.dart';
+import 'package:cyber_ui/src/blur/cyber_blur_backdrop_scope.dart';
+import 'package:cyber_ui/src/blur/cyber_blur_intensity.dart';
+import 'package:cyber_ui/src/blur/cyber_blur_overlay.dart';
+import 'package:cyber_ui/src/blur/cyber_blur_sample_mode.dart';
+import 'package:cyber_ui/src/blur/cyber_blur_tint.dart';
 
 /// Soft frosted fill used when capture is unavailable (no scope / failure).
 const Color kCyberFakeGlassFill = Color(0x33FFFFFF);

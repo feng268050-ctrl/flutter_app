@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cyber_hal/cyber_hal.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
 import 'package:lws_hmi/app/app_routes.dart';
@@ -9,6 +10,7 @@ import 'package:lws_hmi/app/app_theme.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
+import 'package:lws_hmi/ui/cyber/app_media_click_sound.dart';
 import 'package:lws_hmi/ui/demo/p2_demo_page.dart';
 
 /// Root MaterialApp: Home launcher, Settings, Monitor, hidden Demo.
@@ -32,14 +34,23 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   late final AppServices _services =
       widget.services ?? AppServices(boardProfile: widget.boardProfile);
 
+  late final AppMediaClickSound _clickSound = AppMediaClickSound();
+
   @override
   void initState() {
     super.initState();
+    CyberClickSoundRegistry.register(_clickSound);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Settings restore only — do not start Modbus here. Home / Demo pull it
       // when needed so the first Home frames are not fighting RTU poll.
       unawaited(_services.restorePersistedSettingsOnce());
     });
+  }
+
+  @override
+  void dispose() {
+    CyberClickSoundRegistry.register(null);
+    super.dispose();
   }
 
   Widget _demoPage() {

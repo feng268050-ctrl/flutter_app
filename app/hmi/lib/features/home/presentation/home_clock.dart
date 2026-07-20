@@ -2,12 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/ui/cyber/cyber_backdrop_blur.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_backdrop_scope.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_intensity.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_overlay.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_sample_mode.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_tint.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 
 /// Design tokens from lws-ui `FrostClockAppearance` / `frostui_clock_colors.xml`.
 abstract final class HomeClockTokens {
@@ -28,6 +23,9 @@ abstract final class HomeClockTokens {
 ///
 /// Sampling uses the shared [CyberBlurSampleMode] API (default
 /// [CyberBlurSampleMode.realtime] via [CyberBackdropBlur] / `BackdropFilter`).
+///
+/// Glyph-clip frost remains an **App / HomeClock** composition concern until a
+/// stable Cyber clock API exists; this widget consumes cyber_ui blur tokens.
 /// Glyph chrome (vertical scale, milk overlay, edge stroke) follows lws-ui;
 /// font is system bold (not Roboto Bold).
 class HomeClock extends StatefulWidget {

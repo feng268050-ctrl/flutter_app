@@ -1,15 +1,12 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/ui/cyber/cyber_backdrop_blur.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_intensity.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_sample_mode.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_tint.dart';
 
 /// Design tokens from lws-ui `home_quick_action_*` / `home_stat_card_corner_radius`.
 const double kHomeQuickActionCorner = 18;
 const double kHomeQuickActionLabelMarginTop = 10;
 
 /// Home quick-action tile — Material stand-in for lws-ui
-/// `FrostQuickActionEntry` + nested `FrostCardView`.
+/// `FrostQuickActionEntry` + nested `FrostCardView`, via [CyberCard].
 ///
 /// lws-ui XML uses live frost with `frostedGlassBlurIntensity=extreme` and
 /// `frostedGlassBlurTint=warm` (white mist, not black).
@@ -27,6 +24,7 @@ class HomeQuickAction extends StatelessWidget {
     this.sampleMode = CyberBlurSampleMode.realtime,
     this.blurIntensity = CyberBlurIntensity.extreme,
     this.blurTint = CyberBlurTint.warm,
+    this.clickSoundEnabled = true,
   });
 
   final double cardWidth;
@@ -43,40 +41,36 @@ class HomeQuickAction extends StatelessWidget {
   final CyberBlurSampleMode sampleMode;
   final CyberBlurIntensity blurIntensity;
   final CyberBlurTint blurTint;
+  final bool clickSoundEnabled;
+
+  void _activate() {
+    if (clickSoundEnabled) {
+      CyberClickSoundRegistry.playClick();
+    }
+    onPressed();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(cornerRadius);
     final captionWidth = labelWidth ?? cardWidth;
+    final radius = BorderRadius.circular(cornerRadius);
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onPressed,
+        onTap: _activate,
         borderRadius: radius,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClipRRect(
+            CyberCard(
+              width: cardWidth,
+              height: cardHeight,
+              sampleMode: sampleMode,
+              intensity: blurIntensity,
+              blurTint: blurTint,
               borderRadius: radius,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: radius,
-                  border: Border.all(
-                    color: const Color(0x55FFFFFF),
-                    width: 1,
-                  ),
-                ),
-                child: CyberBackdropBlur(
-                  sampleMode: sampleMode,
-                  intensity: blurIntensity,
-                  blurTint: blurTint,
-                  child: SizedBox(
-                    width: cardWidth,
-                    height: cardHeight,
-                    child: child,
-                  ),
-                ),
-              ),
+              // Tap handled by outer InkWell (label is also hit-testable).
+              child: child,
             ),
             SizedBox(height: labelMarginTop),
             SizedBox(

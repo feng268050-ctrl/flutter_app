@@ -1,11 +1,5 @@
-/// CyberUI Material stand-ins (until `packages/cyber_ui` lands).
+/// Thin re-export during App → `cyber_ui` migration. Prefer
+/// `import 'package:cyber_ui/cyber_ui.dart';` in new code.
 library;
 
-export 'cyber_backdrop_blur.dart';
-export 'cyber_backdrop_blur_controller.dart';
-export 'cyber_blur_backdrop_scope.dart';
-export 'cyber_blur_intensity.dart';
-export 'cyber_blur_overlay.dart';
-export 'cyber_blur_sample_mode.dart';
-export 'cyber_blur_tint.dart';
-export 'cyber_status_indicator.dart';
+export 'package:cyber_ui/cyber_ui.dart';

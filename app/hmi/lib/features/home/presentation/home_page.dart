@@ -3,8 +3,7 @@ import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_backdrop_scope.dart';
-import 'package:lws_hmi/ui/cyber/cyber_blur_sample_mode.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
 const double _kDesignW = 1280;
@@ -35,6 +34,7 @@ class HomePage extends StatelessWidget {
           final h = constraints.maxHeight;
           final sx = w / _kDesignW;
           final sy = h / _kDesignH;
+          // Wallpaper/GIF stack stays inside CyberBlurBackdropTarget (sibling capture).
           return CyberBlurBackdropScope(
             child: Stack(
               fit: StackFit.expand,
@@ -77,13 +77,14 @@ class HomePage extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Top-center clock — lws-ui `home_real_time` (150sp design).
+                // Top clock — slightly below vertical center of the design frame.
                 Positioned(
                   left: 440 * sx,
                   top: 12 * sy,
                   width: 400 * sx,
                   height: 300 * sy,
-                  child: Center(
+                  child: Align(
+                    alignment: const Alignment(0, 0.35),
                     child: HomeClock(
                       fontSize: 120 * sx,
                       sampleMode: CyberBlurSampleMode.realtime,

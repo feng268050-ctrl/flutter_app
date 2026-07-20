@@ -646,6 +646,8 @@ VSCode / Cursor Flutter 插件应能选择 lws-hmi 自定义设备，并通过 `
 
 ### 6.3 CyberUI 渲染分场景策略（backdrop blur）
 
+> **OpenSpec `p3-0-cyber-ui` 对齐**：实现以 `packages/cyber_ui` 为准——chrome（`CyberCard` 等）默认 **`CyberBlurSampleMode.realtime`**；dialogs/`CyberModal` 默认 **`firstFrame`**（可按需 live）。下文「默认冻结 / liveWhileOpen」为早期草图，消费规则见 `packages/cyber_ui/README.md`。
+
 **P3.0** 引入 **CyberUI**（初期实现 lws-ui **Frosted Glass** 设计；未来可换外观，类似 SwiftUI 换设计语言而保留结构 API）。毛玻璃 **默认不用 live blur**；仅在组件/弹窗 **显式开启** 时，弹窗存续期间对下层 **动图** 做实时采样模糊。产品页依赖 **Cyber\*** 组件名，不依赖 `Frost*` 作为长期公开 API。RK356x 家族 **共用同一 API**，**不按板级 SKU 分叉**（当前仅实现/验收 ynh960）。
 
 #### 6.3.1 设计原则

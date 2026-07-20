@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
 import 'package:lws_hmi/features/monitor/domain/active_alarm.dart';
-import 'package:lws_hmi/ui/cyber/cyber_status_indicator.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 
 /// Design tokens aligned with lws-ui Monitor / Frost glass stand-ins.
 abstract final class MonitorDimens {

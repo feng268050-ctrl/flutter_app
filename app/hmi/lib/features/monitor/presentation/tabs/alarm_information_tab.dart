@@ -2,11 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/features/home/application/temp_series.dart';
 import 'package:lws_hmi/features/monitor/application/gun_alarm_telemetry.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 
-/// lws-ui Monitor → Alarm Information (HAL Modbus live slice).
+/// lws-ui `fragment_warn_info` — left status/temps + right alarm log.
 class AlarmInformationTab extends StatefulWidget {
   const AlarmInformationTab({super.key});
 
@@ -28,6 +27,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
       unawaited(
         _telemetry.start(
           services,
+          startDelay: const Duration(milliseconds: 200),
           onUpdate: () {
             if (mounted) {
               setState(() {});
@@ -44,75 +44,201 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
     super.dispose();
   }
 
+  MonitorIndicatorKind _commKind(bool? fault) {
+    // Idle (gray) until primed; then Success / Failure — never "?".
+    if (fault == null) {
+      return MonitorIndicatorKind.idle;
+    }
+    return fault ? MonitorIndicatorKind.failure : MonitorIndicatorKind.success;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final temps = <(String, TempSeries)>[
-      ('Motor', _telemetry.motor),
-      ('Motor Driver', _telemetry.motorDriver),
-      ('Protective Mirror', _telemetry.protectiveMirror),
-      ('Collimator', _telemetry.collimator),
-    ];
     final alarms = _telemetry.activeAlarms;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      children: [
-        if (!_telemetry.healthOk) ...[
-          MonitorHealthBanner(message: _telemetry.healthMessage),
-          const SizedBox(height: 12),
-        ],
-        Text(
-          'Temperatures',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        MonitorSectionCard(
-          child: Column(
-            children: [
-              for (var i = 0; i < temps.length; i++) ...[
-                if (i > 0)
-                  Divider(height: 1, color: Colors.white.withOpacity(0.12)),
-                MonitorTempRow(label: temps[i].$1, series: temps[i].$2),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Active Alarms',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        MonitorSectionCard(
-          child: alarms.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Text(
-                    'No active alarms',
-                    style: TextStyle(color: Colors.white70, fontSize: 15),
-                  ),
-                )
-              : Column(
-                  children: [
-                    for (var i = 0; i < alarms.length; i++) ...[
-                      if (i > 0)
-                        Divider(
-                          height: 1,
-                          color: Colors.white.withOpacity(0.12),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+      child: Column(
+        children: [
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  flex: 740,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        MonitorGlassCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const MonitorSectionHeader('Laser Device'),
+                              MonitorCommCard(
+                                label: 'Pump Comm Status',
+                                kind: _commKind(_telemetry.laserCommFault),
+                              ),
+                            ],
+                          ),
                         ),
-                      MonitorAlarmRow(alarm: alarms[i]),
-                    ],
-                  ],
+                        const SizedBox(height: 24),
+                        MonitorGlassCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const MonitorSectionHeader('Welding Gun'),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: MonitorCommCard(
+                                      label: 'Gun Comm Status',
+                                      kind: _commKind(_telemetry.gunCommFault),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  const Expanded(
+                                    child: MonitorCommCard(
+                                      label: 'Camera Comm Status',
+                                      kind: MonitorIndicatorKind.idle,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: MonitorTempMetricCard(
+                                      series: _telemetry.motor,
+                                      label: 'Motor Temperature',
+                                      overTemp: _telemetry.gunMotorOverTemp,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  Expanded(
+                                    child: MonitorTempMetricCard(
+                                      series: _telemetry.motorDriver,
+                                      label: 'Motor Driver Temperature',
+                                      overTemp: _telemetry.driverOverTemp,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: MonitorTempMetricCard(
+                                      series: _telemetry.protectiveMirror,
+                                      label: 'Protective Mirror Temperature',
+                                      overTemp:
+                                          _telemetry.protectiveMirrorOverTemp,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  Expanded(
+                                    child: MonitorTempMetricCard(
+                                      series: _telemetry.collimator,
+                                      label: 'Collimator Temperature',
+                                      overTemp: _telemetry.collimatorOverTemp,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        MonitorGlassCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const MonitorSectionHeader('Wire Feeder'),
+                              MonitorCommCard(
+                                label: 'Wire Feeder Comm Status',
+                                kind: _commKind(_telemetry.wireFeederCommFault),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-        ),
-      ],
+                const SizedBox(width: 24),
+                Expanded(
+                  flex: 468,
+                  child: MonitorGlassCard(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: Text(
+                                'Alarm Logs',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: MonitorDimens.sectionTitleSize,
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: alarms.isEmpty
+                                  ? null
+                                  : () {
+                                      // Clear is product-policy later; soft stub.
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Clear alarm log — coming soon',
+                                          ),
+                                        ),
+                                      );
+                                    },
+                              child: const Text('Clear'),
+                            ),
+                          ],
+                        ),
+                        const Divider(color: Colors.white24),
+                        Expanded(
+                          child: alarms.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    'No active alarms',
+                                    style: TextStyle(
+                                      color: Colors.white54,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                )
+                              : ListView.separated(
+                                  itemCount: alarms.length,
+                                  separatorBuilder: (_, __) => Divider(
+                                    height: 1,
+                                    color: Colors.white.withOpacity(0.1),
+                                  ),
+                                  itemBuilder: (context, i) {
+                                    return MonitorAlarmLogRow(
+                                      alarm: alarms[i],
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

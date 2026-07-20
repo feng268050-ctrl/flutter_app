@@ -10,7 +10,7 @@ import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 /// Shared gun temperature + active-alarm state driven by HAL attribute watches.
 ///
-/// Used by Home temperature card and Monitor. Call [start] after first frame
+/// Used by Monitor → Alarm Information. Call [start] after first frame
 /// (optionally delayed); dispose with [dispose].
 final class GunAlarmTelemetry {
   GunAlarmTelemetry();
@@ -24,6 +24,11 @@ final class GunAlarmTelemetry {
   bool driverOverTemp = false;
   bool protectiveMirrorOverTemp = false;
   bool collimatorOverTemp = false;
+
+  /// Comm faults (`true` = alarm active). `null` = not yet primed.
+  bool? laserCommFault;
+  bool? gunCommFault;
+  bool? wireFeederCommFault;
 
   /// Active alarms keyed by attribute id (stable order via [activeAlarms]).
   final Map<String, ActiveAlarm> _active = {};
@@ -90,6 +95,15 @@ final class GunAlarmTelemetry {
         case MonitorModbusIds.collimatorOverTemp:
           collimatorOverTemp = c.value == true;
           collimator.setOverTemp(collimatorOverTemp);
+        case 'alarm.laser_comm':
+          laserCommFault = c.value == true;
+          _applyAlarmChange(c);
+        case 'alarm.gun_comm':
+          gunCommFault = c.value == true;
+          _applyAlarmChange(c);
+        case 'alarm.wire_feeder_comm':
+          wireFeederCommFault = c.value == true;
+          _applyAlarmChange(c);
         default:
           _applyAlarmChange(c);
       }

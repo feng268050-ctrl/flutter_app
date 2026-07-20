@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
-import 'package:lws_hmi/features/home/presentation/home_temperature_card.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
 const double _kDesignW = 1280;
@@ -99,12 +98,6 @@ class HomePage extends StatelessWidget {
                     ),
                   );
                 },
-              ),
-              Positioned(
-                left: 72 * sx,
-                right: 72 * sx,
-                top: 360 * sy,
-                child: const HomeTemperatureCard(),
               ),
               // Bottom-left: Monitor | Settings (lws-ui box_quick_actions_row).
               Positioned(

@@ -186,7 +186,8 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Monitor'), findsOneWidget);
     expect(find.text('AI Vision'), findsOneWidget);
-    expect(find.text('Temperatures'), findsOneWidget);
+    // Temperatures live on Monitor → Alarm Information (not Home).
+    expect(find.text('Temperatures'), findsNothing);
     // No primary Demo entry on Home.
     expect(find.text('Demo'), findsNothing);
     expect(find.text('Device Information'), findsNothing);
@@ -214,9 +215,9 @@ void main() {
 
     await _openMonitorAlarmTab(tester);
 
-    expect(find.text('Temperatures'), findsWidgets);
-    expect(find.text('Active Alarms'), findsOneWidget);
-    expect(find.text('Motor'), findsOneWidget);
+    expect(find.text('Motor Temperature'), findsOneWidget);
+    expect(find.text('Alarm Logs'), findsOneWidget);
+    expect(find.text('Welding Gun'), findsOneWidget);
   });
 
   testWidgets('named /monitor route resolves', (tester) async {
@@ -234,9 +235,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Work Information'), findsWidgets);
+    expect(find.text('Weld Time Ratio'), findsOneWidget);
     await _openMonitorAlarmTab(tester);
 
-    expect(find.text('Temperatures'), findsOneWidget);
+    expect(find.text('Motor Temperature'), findsOneWidget);
   });
 
   testWidgets('Settings route shows four tabs and Bluetooth entry', (tester) async {

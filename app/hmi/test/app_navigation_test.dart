@@ -183,6 +183,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.byType(HomePage), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-clock-text')), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Monitor'), findsOneWidget);
     expect(find.text('AI Vision'), findsOneWidget);

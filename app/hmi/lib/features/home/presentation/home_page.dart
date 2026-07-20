@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
+import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
 import 'package:lws_hmi/ui/cyber/cyber_blur_backdrop_scope.dart';
 import 'package:lws_hmi/ui/cyber/cyber_blur_sample_mode.dart';
@@ -74,6 +75,19 @@ class HomePage extends StatelessWidget {
                         height: 280 * sy,
                       ),
                     ],
+                  ),
+                ),
+                // Top-center clock — lws-ui `home_real_time` (150sp design).
+                Positioned(
+                  left: 440 * sx,
+                  top: 12 * sy,
+                  width: 400 * sx,
+                  height: 300 * sy,
+                  child: Center(
+                    child: HomeClock(
+                      fontSize: 120 * sx,
+                      sampleMode: CyberBlurSampleMode.realtime,
+                    ),
                   ),
                 ),
               _ModeEntry(

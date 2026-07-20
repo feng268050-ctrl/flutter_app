@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ffi' as ffi;
 import 'dart:io';
 
@@ -10,6 +11,10 @@ import 'package:cyber_hal/src/linux/lws_trace.dart';
 /// Buildroot ships libserialport 0.1.1, which fails `sp_open` on kernel 6.1+
 /// with errno 25 (`Inappropriate ioctl for device`) because it probes removed
 /// `struct termiox` ioctls.
+///
+/// The fd is opened `O_NONBLOCK`. Read/write never call [sleep] — waits use
+/// [Future.delayed] so the Flutter UI isolate can schedule frames during RTU
+/// poll (Home animations must not stall when Modbus is live).
 class PosixSerialPort {
   PosixSerialPort(this.path);
 
@@ -19,12 +24,12 @@ class PosixSerialPort {
   bool get isOpen => _fd >= 0;
 
   /// Opens [path] for read/write and configures 8N1 via `stty`.
-  bool open({
+  Future<bool> open({
     int baudRate = 115200,
     int dataBits = 8,
     int stopBits = 1,
     bool parity = false,
-  }) {
+  }) async {
     if (isOpen) {
       return true;
     }
@@ -32,7 +37,7 @@ class PosixSerialPort {
       debugPrint('PosixSerialPort: only supported on Linux');
       return false;
     }
-    if (!_configureViaStty(
+    if (!await _configureViaStty(
       baudRate: baudRate,
       dataBits: dataBits,
       stopBits: stopBits,
@@ -68,7 +73,9 @@ class PosixSerialPort {
   }
 
   /// Writes [data]; returns bytes written (may be short).
-  int write(Uint8List data, {int timeoutMs = 200}) {
+  ///
+  /// On `EAGAIN`, yields with [Future.delayed] instead of blocking the isolate.
+  Future<int> write(Uint8List data, {int timeoutMs = 200}) async {
     if (!isOpen || data.isEmpty) {
       return 0;
     }
@@ -88,7 +95,7 @@ class PosixSerialPort {
           continue;
         }
         if (n < 0 && _libc.errno == eAgain) {
-          sleep(const Duration(milliseconds: 5));
+          await Future<void>.delayed(const Duration(milliseconds: 5));
           continue;
         }
         break;
@@ -99,40 +106,32 @@ class PosixSerialPort {
     return offset;
   }
 
-  /// Non-blocking read of up to [maxBytes]. [timeoutMs] kept for API parity;
-  /// caller polls with async delays for Modbus framing.
+  /// One-shot non-blocking read of up to [maxBytes].
+  ///
+  /// [timeoutMs] is unused (API parity with libserialport). Callers that need
+  /// framing waits must [Future.delayed] themselves — never busy-wait here.
   Uint8List read(int maxBytes, {int timeoutMs = 50}) {
     if (!isOpen || maxBytes <= 0) {
       return Uint8List(0);
     }
     final buf = pkgffi.malloc<ffi.Uint8>(maxBytes);
     try {
-      final deadline = DateTime.now().add(Duration(milliseconds: timeoutMs));
-      do {
-        final n = _libc.read(_fd, buf.cast<ffi.Void>(), maxBytes);
-        if (n > 0) {
-          return Uint8List.fromList(buf.asTypedList(n));
-        }
-        if (n < 0 && _libc.errno != eAgain) {
-          break;
-        }
-        if (!DateTime.now().isBefore(deadline)) {
-          break;
-        }
-        sleep(const Duration(milliseconds: 5));
-      } while (true);
+      final n = _libc.read(_fd, buf.cast<ffi.Void>(), maxBytes);
+      if (n > 0) {
+        return Uint8List.fromList(buf.asTypedList(n));
+      }
       return Uint8List(0);
     } finally {
       pkgffi.malloc.free(buf);
     }
   }
 
-  bool _configureViaStty({
+  Future<bool> _configureViaStty({
     required int baudRate,
     required int dataBits,
     required int stopBits,
     required bool parity,
-  }) {
+  }) async {
     final bits = switch (dataBits) {
       5 => 'cs5',
       6 => 'cs6',
@@ -158,7 +157,7 @@ class PosixSerialPort {
       '1',
     ];
     try {
-      final r = Process.runSync('stty', args);
+      final r = await Process.run('stty', args);
       if (r.exitCode != 0) {
         debugPrint(
           'PosixSerialPort: stty exit=${r.exitCode} stderr=${r.stderr}',

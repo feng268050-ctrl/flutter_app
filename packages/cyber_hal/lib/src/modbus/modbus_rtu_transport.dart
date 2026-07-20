@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
@@ -41,7 +40,7 @@ class ModbusRtuTransport {
 
     if (Platform.isLinux) {
       final posix = PosixSerialPort(path);
-      if (posix.open(
+      if (await posix.open(
         baudRate: baud,
         dataBits: dataBits,
         stopBits: stopBits,
@@ -51,9 +50,14 @@ class ModbusRtuTransport {
         return true;
       }
       posix.close();
+      // Do not fall back to libserialport on Linux: its timed read/write can
+      // block the UI isolate. Posix O_NONBLOCK + await is the appliance path.
       debugPrint(
-        'Modbus: PosixSerialPort open failed; trying flutter_libserialport',
+        'Modbus: PosixSerialPort open failed for $path; '
+        'not using libserialport on Linux',
       );
+      _openFailed = true;
+      return false;
     }
 
     try {
@@ -132,8 +136,9 @@ class ModbusRtuTransport {
       (value >> 8) & 0xFF,
       value & 0xFF,
     ]);
-    _readChunk(256, timeoutMs: 1);
-    final written = _writeChunk(Uint8List.fromList(request), timeoutMs: 200);
+    await _readChunk(256, timeoutMs: 1);
+    final written =
+        await _writeChunk(Uint8List.fromList(request), timeoutMs: 200);
     if (written != request.length) {
       return false;
     }
@@ -142,7 +147,8 @@ class ModbusRtuTransport {
     final deadline =
         DateTime.now().add(Duration(milliseconds: transport.timeoutMs));
     while (buffer.length < expectedLen && DateTime.now().isBefore(deadline)) {
-      final chunk = _readChunk(expectedLen - buffer.length, timeoutMs: 50);
+      final chunk =
+          await _readChunk(expectedLen - buffer.length, timeoutMs: 50);
       if (chunk.isEmpty) {
         await Future<void>.delayed(const Duration(milliseconds: 10));
         continue;
@@ -182,8 +188,9 @@ class ModbusRtuTransport {
       frame.add(word & 0xFF);
     }
     final request = appendModbusCrc(frame);
-    _readChunk(256, timeoutMs: 1);
-    final written = _writeChunk(Uint8List.fromList(request), timeoutMs: 200);
+    await _readChunk(256, timeoutMs: 1);
+    final written =
+        await _writeChunk(Uint8List.fromList(request), timeoutMs: 200);
     if (written != request.length) {
       return false;
     }
@@ -193,7 +200,8 @@ class ModbusRtuTransport {
     final deadline =
         DateTime.now().add(Duration(milliseconds: transport.timeoutMs));
     while (buffer.length < expectedLen && DateTime.now().isBefore(deadline)) {
-      final chunk = _readChunk(expectedLen - buffer.length, timeoutMs: 50);
+      final chunk =
+          await _readChunk(expectedLen - buffer.length, timeoutMs: 50);
       if (chunk.isEmpty) {
         await Future<void>.delayed(const Duration(milliseconds: 10));
         continue;
@@ -236,9 +244,9 @@ class ModbusRtuTransport {
       count & 0xFF,
     ]);
 
-    _readChunk(256, timeoutMs: 1);
+    await _readChunk(256, timeoutMs: 1);
 
-    final written = _writeChunk(
+    final written = await _writeChunk(
       Uint8List.fromList(request),
       timeoutMs: 200,
     );
@@ -256,7 +264,8 @@ class ModbusRtuTransport {
         DateTime.now().add(Duration(milliseconds: transport.timeoutMs));
 
     while (buffer.length < expectedLen && DateTime.now().isBefore(deadline)) {
-      final chunk = _readChunk(expectedLen - buffer.length, timeoutMs: 50);
+      final chunk =
+          await _readChunk(expectedLen - buffer.length, timeoutMs: 50);
       if (chunk.isEmpty) {
         await Future<void>.delayed(const Duration(milliseconds: 10));
         continue;
@@ -299,7 +308,7 @@ class ModbusRtuTransport {
     return values;
   }
 
-  int _writeChunk(Uint8List data, {required int timeoutMs}) {
+  Future<int> _writeChunk(Uint8List data, {required int timeoutMs}) async {
     final posix = _posix;
     if (posix != null) {
       return posix.write(data, timeoutMs: timeoutMs);
@@ -308,12 +317,14 @@ class ModbusRtuTransport {
     if (port == null || !port.isOpen) {
       return 0;
     }
+    // Fallback only (non-Linux / Posix open failed). Prefer Posix on device.
     return port.write(data, timeout: timeoutMs);
   }
 
-  Uint8List _readChunk(int maxBytes, {required int timeoutMs}) {
+  Future<Uint8List> _readChunk(int maxBytes, {required int timeoutMs}) async {
     final posix = _posix;
     if (posix != null) {
+      // One-shot O_NONBLOCK — framing waits are await Future.delayed above.
       return posix.read(maxBytes, timeoutMs: timeoutMs);
     }
     final port = _libserial;

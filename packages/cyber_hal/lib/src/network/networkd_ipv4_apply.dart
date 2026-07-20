@@ -126,7 +126,7 @@ final class NetworkdIpv4Apply {
     }
 
     final out = Directory(networkDir);
-    if (!out.existsSync()) {
+    if (!await out.exists()) {
       await out.create(recursive: true);
     }
     final file = File('$networkDir/50-hmi-$iface.network');

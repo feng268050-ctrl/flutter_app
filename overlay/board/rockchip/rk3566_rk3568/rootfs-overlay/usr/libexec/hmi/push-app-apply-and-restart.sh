@@ -29,6 +29,13 @@ fail() {
 	exit 1
 }
 
+# flutter-pi (default image) or flutter-wayland-client (Weston image).
+hmi_embedder_running() {
+	pidof flutter-pi >/dev/null 2>&1 && return 0
+	pidof flutter-wayland-client >/dev/null 2>&1 && return 0
+	return 1
+}
+
 mkdir -p /var/lib/hmi
 set_status running
 
@@ -66,8 +73,9 @@ while [ "$attempt" -le "$MAX_START_ATTEMPTS" ]; do
 	log "restart attempt $attempt/$MAX_START_ATTEMPTS"
 	systemctl reset-failed hmi.service
 	systemctl start hmi.service || true
-	sleep 1
-	if systemctl is-active --quiet hmi.service && pidof flutter-pi >/dev/null 2>&1; then
+	# Weston path needs a bit longer (compositor + client) than flutter-pi.
+	sleep 2
+	if systemctl is-active --quiet hmi.service && hmi_embedder_running; then
 		log "restart complete"
 		set_status ok
 		exit 0

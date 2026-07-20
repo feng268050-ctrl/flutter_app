@@ -9,6 +9,7 @@ source "$ROOT/scripts/usb-ssh-session.sh"
 
 STAGING="/var/lib/hmi/push-app-staging"
 APPLY_SCRIPT="/usr/libexec/hmi/push-app-apply-and-restart.sh"
+APPLY_SCRIPT_HOST="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/push-app-apply-and-restart.sh"
 APPLY_LOG="/var/lib/hmi/push-app-restart.log"
 APPLY_STATUS="/var/lib/hmi/push-app-apply.status"
 OVERLAY_HMI="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi"
@@ -122,6 +123,14 @@ upload_with_progress "$ASSETS_TAR" "$STAGING/flutter_assets.tar"
 remote "tar -xf '$STAGING/flutter_assets.tar' -C '$STAGING/data/flutter_assets' && rm -f '$STAGING/flutter_assets.tar'"
 
 echo "Installing staged app and restarting hmi.service..."
+if [[ ! -f "$APPLY_SCRIPT_HOST" ]]; then
+	die "missing host apply script: $APPLY_SCRIPT_HOST"
+fi
+# Refresh board helper each push so Weston/flutter-pi recovery checks stay current
+# without requiring a full rootfs rebuild for script-only fixes.
+upload_with_progress "$APPLY_SCRIPT_HOST" "$APPLY_SCRIPT"
+remote "chmod 0755 '$APPLY_SCRIPT'"
+
 if ! remote "test -x $APPLY_SCRIPT"; then
 	die "$APPLY_SCRIPT not found on board (rebuild rootfs and flash the DRM teardown fix)"
 fi

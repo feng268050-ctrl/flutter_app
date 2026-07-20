@@ -76,6 +76,8 @@ extension DisplayStackMouse on DisplayStack {
 }
 
 /// Resolves [DisplayStack] from runtime/image stamps and/or Wayland env.
+///
+/// Always async — stamp reads must not use `*Sync` on the UI isolate.
 final class DisplayStackProbe {
   const DisplayStackProbe({
     this.runtimeStampPath = defaultRuntimeStampPath,
@@ -94,21 +96,24 @@ final class DisplayStackProbe {
   final String runtimeStampPath;
   final String imageStampPath;
   final Map<String, String>? environment;
-  final bool Function(String path)? fileExists;
-  final String Function(String path)? readFile;
 
-  DisplayStack detect() {
-    final exists = fileExists ?? FileSystemEntity.isFileSync;
-    final read = readFile ??
-        ((path) => File(path).readAsStringSync());
+  /// Test inject; default is async [File.exists].
+  final Future<bool> Function(String path)? fileExists;
+
+  /// Test inject; default is async [File.readAsString].
+  final Future<String> Function(String path)? readFile;
+
+  Future<DisplayStack> detect() async {
+    final exists = fileExists ?? ((path) => File(path).exists());
+    final read = readFile ?? ((path) => File(path).readAsString());
     final env = environment ?? Platform.environment;
 
     for (final path in <String>[runtimeStampPath, imageStampPath]) {
-      if (!exists(path)) {
+      if (!await exists(path)) {
         continue;
       }
       try {
-        final parsed = _parseToken(read(path).trim().toLowerCase());
+        final parsed = _parseToken((await read(path)).trim().toLowerCase());
         if (parsed != null) {
           return parsed;
         }

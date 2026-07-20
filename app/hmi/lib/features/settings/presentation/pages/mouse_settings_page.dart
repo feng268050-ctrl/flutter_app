@@ -32,6 +32,7 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
 
   Future<void> _load() async {
     try {
+      await widget.services.ensureDisplayStack();
       final s = await widget.services.mouse.getSettings();
       if (mounted) setState(() => _settings = s);
     } catch (e) {

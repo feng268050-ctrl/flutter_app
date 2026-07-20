@@ -107,9 +107,16 @@ abstract class ModbusHal {
     ModbusRtuTransport? transport,
   }) = _LinuxModbusHal;
 
-  factory ModbusHal.fromConfigFile(String path) {
-    final source = File(path).readAsStringSync();
-    return ModbusHal.fromConfig(ModbusConfig.fromJsonString(source));
+  /// Load JSON from a filesystem path (async — no `readAsStringSync`).
+  static Future<ModbusHal> fromConfigFile(
+    String path, {
+    ModbusRtuTransport? transport,
+  }) async {
+    final source = await File(path).readAsString();
+    return ModbusHal.fromConfig(
+      ModbusConfig.fromJsonString(source),
+      transport: transport,
+    );
   }
 
   /// Load JSON from a Flutter asset (product App typically owns `modbus.json`).

@@ -20,9 +20,9 @@ abstract class GpioHal {
 
   factory GpioHal.fromConfig(GpioConfig config) = _LinuxGpioHal;
 
-  /// Load JSON from a filesystem path.
-  factory GpioHal.fromConfigFile(String path) {
-    final source = File(path).readAsStringSync();
+  /// Load JSON from a filesystem path (async — no `readAsStringSync`).
+  static Future<GpioHal> fromConfigFile(String path) async {
+    final source = await File(path).readAsString();
     return GpioHal.fromConfig(GpioConfig.fromJsonString(source));
   }
 

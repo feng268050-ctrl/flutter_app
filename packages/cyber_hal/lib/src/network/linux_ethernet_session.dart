@@ -185,7 +185,7 @@ class LinuxEthernetSession implements EthernetController {
     if (enabled) {
       _emitAdmin(EthAdminState.starting);
       _emitLink(const EthLinkState(phase: EthLinkPhase.configuring));
-      if (!Directory('/sys/class/net/$iface').existsSync()) {
+      if (!await Directory('/sys/class/net/$iface').exists()) {
         final msg =
             '$iface missing (expected RJ45 netdev; PHY/gmac may not have probed)';
         debugPrint('ethernet: $msg');
@@ -347,7 +347,7 @@ class LinuxEthernetSession implements EthernetController {
 
   @override
   Future<EthLinkState> linkDetails() async {
-    if (!Directory('/sys/class/net/$iface').existsSync()) {
+    if (!await Directory('/sys/class/net/$iface').exists()) {
       return EthLinkState(
         phase: EthLinkPhase.error,
         message: '$iface missing',

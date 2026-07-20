@@ -40,6 +40,11 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
   Future<void> _start() async {
     try {
+      await widget.services.ensureDisplayStack();
+      if (mounted) setState(() {});
+    } catch (_) {}
+
+    try {
       _sysSub = widget.services.sysInfo
           .watch(interval: const Duration(seconds: 2))
           .listen(_onSys, onError: (_) {});

@@ -98,7 +98,9 @@ final class BoardBindings {
   }
 
   /// Active embedder (flutter-pi vs Weston). Inject [probe] in tests.
-  DisplayStack displayStack({DisplayStackProbe probe = const DisplayStackProbe()}) {
+  Future<DisplayStack> displayStack({
+    DisplayStackProbe probe = const DisplayStackProbe(),
+  }) {
     return probe.detect();
   }
 

@@ -71,11 +71,13 @@ class _VolumeSettingsPageState extends State<VolumeSettingsPage> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                child: CyberVolumeSlider(
-                  percent: _volume,
-                  onChanged: (v) => setState(() => _volume = v),
+                child: Slider(
+                  value: _volume.toDouble().clamp(0, 100),
+                  min: 0,
+                  max: 100,
+                  onChanged: (v) => setState(() => _volume = v.round()),
                   onChangeEnd: (v) {
-                    unawaited(_audio.setVolumePercent(v));
+                    unawaited(_audio.setVolumePercent(v.round()));
                   },
                 ),
               ),

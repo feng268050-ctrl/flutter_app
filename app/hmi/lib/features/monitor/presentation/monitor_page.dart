@@ -67,24 +67,36 @@ class MonitorPage extends StatelessWidget {
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white60,
             indicatorColor: Colors.white70,
+            labelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              height: 1.0,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              height: 1.0,
+            ),
             onTap: (_) => CyberClickSoundRegistry.playClick(),
             tabs: [
               for (final tab in _tabs)
                 Tab(
                   key: tab.key,
+                  height: 46,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Image.asset(
                         tab.iconAsset,
-                        width: 24,
-                        height: 24,
+                        width: 18,
+                        height: 18,
                         color: Colors.white,
                         colorBlendMode: BlendMode.srcIn,
                         errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.circle, size: 22),
+                            const Icon(Icons.circle, size: 16),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Text(tab.label),
                     ],
                   ),

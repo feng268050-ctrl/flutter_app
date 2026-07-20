@@ -2,10 +2,8 @@
 
 ## Purpose
 
-Flutter HMI app at `app/hmi/` for flutter-pi ARM64 (meta-flutter layout). P2/P2.1 home is the device-info + RGB LED + I/O demo (`p2-device-demo-ui`); engine/ICU stay on rootfs.
-
+Flutter HMI app at `app/hmi/` for flutter-pi ARM64 (meta-flutter layout). Launcher is product Home (`product-home-ui`); Settings and trimmed P2 Demo are named routes; engine/ICU stay on rootfs.
 ## Requirements
-
 ### Requirement: Flutter Hello World project exists in repository
 
 The repository SHALL contain a Flutter application at `app/hmi/` configured for flutter-pi ARM64 release builds (meta-flutter layout), with documentation for engine/flutter-pi version alignment (Flutter 3.24.4 / flutter-pi 37bd977).
@@ -22,12 +20,12 @@ The repository SHALL contain a Flutter application at `app/hmi/` configured for 
 
 ### Requirement: Hello World UI is minimal for boot KPI
 
-The home screen SHALL display the **device-info + RGB LED + P2.1 I/O demo** (capability `p2-device-demo-ui`) instead of a static “Hello, World!” / “Hello, lws-hmi” greeting. The app SHALL still avoid initializing video, WebSocket, or native AI libraries in `main()` before first frame. Modbus I/O, GPIO setup, audio engine open, and backlight sysfs access MUST NOT block first-frame paint (see `linux-modbus-rtu`, `linux-media-audio`, `linux-backlight`).
+The home screen SHALL display the **product Home** (capability `product-home-ui`) instead of a static “Hello, World!” greeting and instead of the P2 Demo scroll as the launcher. The app SHALL still avoid initializing video, WebSocket, or native AI libraries in `main()` before first frame. Modbus I/O, GPIO setup, audio engine open, and backlight sysfs access MUST NOT block first-frame paint (see `linux-modbus-rtu`, `linux-media-audio`, `linux-backlight`).
 
 #### Scenario: First frame content
 
 - **WHEN** flutter-pi renders the app home route after this change
-- **THEN** the user sees the device-information list, LED control rows, and the audio / brightness / orientation demo controls (not a Hello World–only screen)
+- **THEN** the user sees the product Home backdrop and Settings entry (not a Hello World–only screen and not the P2 Demo as the launcher)
 
 #### Scenario: No heavy plugins on startup
 
@@ -58,7 +56,7 @@ Flutter engine and ICU data SHALL be on rootfs only (not duplicated in the app b
 #### Scenario: flutter-pi launches bundle
 
 - **WHEN** operator runs `flutter-pi --release -o landscape_left /opt/hmi` on device
-- **THEN** the P2 demo UI displays without missing asset errors
+- **THEN** the product Home UI displays without missing required Home asset errors
 
 #### Scenario: System engine on rootfs
 
@@ -105,3 +103,4 @@ The Flutter app SHALL ship `assets/audio/shanghai_tan.mp3` (sourced from lws-ui 
 
 - **WHEN** `make build-app` completes and the overlay `/opt/hmi` tree is inspected
 - **THEN** the shanghai tan mp3 is present under the bundled flutter assets path
+

@@ -1,0 +1,56 @@
+# product-home-ui Specification
+
+## Purpose
+TBD - created by archiving change home-settings-ui. Update Purpose after archive.
+## Requirements
+### Requirement: Product Home is the launcher screen
+
+The Flutter HMI app SHALL present a product Home screen as the initial route after `runApp`. The Home screen SHALL visually reference lws-ui Home composition for the in-scope elements only: full-screen static backdrop, dual animated hero overlays, and a Settings entry. Home MUST NOT require Modbus, GPIO, audio engine, or backlight I/O before first paint.
+
+#### Scenario: Launcher shows product Home
+
+- **WHEN** flutter-pi renders the app initial route
+- **THEN** the user sees the product Home backdrop (not the P2 Demo scroll as the primary home)
+
+#### Scenario: First paint is not blocked by platform I/O
+
+- **WHEN** Home builds its first frame
+- **THEN** Modbus, GPIO LED setup, media audio open, and backlight sysfs access have not been required to complete before that frame
+
+### Requirement: Home shows static backdrop and dual animated overlays
+
+The Home screen SHALL display a full-screen static background image and left/right animated WebP (or equivalent multi-frame) overlays sourced from bundled assets aligned with lws-ui `home_back` / `home_left_400` / `home_right_400`. Decode SHOULD target the asset canvas size (200×200) rather than the layout size. If animation decode fails on device, the screen SHALL still show the static backdrop (and static frames if available) without crashing.
+
+#### Scenario: Backdrop and overlays visible
+
+- **WHEN** the user views Home after assets load
+- **THEN** the static backdrop and left/right animated overlays are visible in a layout consistent with lws-ui Home layering
+
+#### Scenario: Animation failure is non-fatal
+
+- **WHEN** animated overlay decode fails
+- **THEN** Home remains usable and the Settings entry stays available
+
+### Requirement: Home provides Settings entry
+
+The Home screen SHALL provide a visible Settings affordance that navigates to the product Settings route. Home MUST NOT, in this capability, require Quick Mode, Engineer Mode, Monitor, AI Vision, metric stat cards, or status-bar chrome.
+
+#### Scenario: Settings entry navigates
+
+- **WHEN** the user activates the Settings entry on Home
+- **THEN** the app navigates to the Settings route
+
+#### Scenario: Deferred home chrome absent
+
+- **WHEN** the user views Home after this change
+- **THEN** Quick Mode, Engineer Mode, Monitor, AI Vision, and the four customizable stat cards are not required to be present as full product flows (display-only stubs MAY exist)
+
+### Requirement: Home shows temperature readings
+
+Product Home SHALL present temperature readings (SoC, GPU, and welding-gun temperatures when available) without requiring the Demo route. Missing values SHALL show `-`. Temperature I/O MUST NOT block first-frame paint.
+
+#### Scenario: Temperature card visible on Home
+
+- **WHEN** the user views product Home after assets load
+- **THEN** a Temperatures section or card is visible with per-sensor rows
+

@@ -8,10 +8,9 @@ import 'package:cyber_hal/network.dart';
 import 'package:cyber_hal/output.dart';
 import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/device/display_value.dart';
-import 'package:lws_hmi/gpio/gpio_led_config.dart';
-import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/linux_bluez_bluetooth_controller.dart';
@@ -27,7 +26,10 @@ import 'package:lws_hmi/ui/demo/keyboard_demo_section.dart';
 import 'package:lws_hmi/ui/demo/mouse_demo_section.dart';
 import 'package:lws_hmi/ui/demo/wifi_demo_section.dart';
 
-/// P2 / P2.1 / P2.2 demo: device info, LEDs, I/O, network, date/time.
+/// P2 demo: device info, alarms, and Debug smoke.
+///
+/// Platform settings (network, input, date/time, audio, backlight, RGB LED)
+/// live under product Settings. Pass [skipPlatformSections] when hosted on `/demo`.
 class P2DemoPage extends StatefulWidget {
   const P2DemoPage({
     super.key,
@@ -35,7 +37,6 @@ class P2DemoPage extends StatefulWidget {
     this.deviceSnReader = const DeviceSnReader(),
     this.sysInfo,
     this.modbusClient,
-    this.ledController,
     this.audioController,
     this.backlightController,
     this.ethernetController,
@@ -45,6 +46,8 @@ class P2DemoPage extends StatefulWidget {
     this.sshDebugController,
     this.usbDebugController,
     this.bluetoothController,
+    this.skipPlatformSections = true,
+    this.skipSettingsRestore = false,
   });
 
   /// Live board wiring (D22). When null, Demo falls back to package defaults.
@@ -55,7 +58,6 @@ class P2DemoPage extends StatefulWidget {
   /// Host inventory (`package:cyber_hal/sys_info`). Defaults via [BoardBindings].
   final SysInfo? sysInfo;
   final ModbusRtuClient? modbusClient;
-  final GpioLedController? ledController;
   final MediaAudioController? audioController;
   final BacklightController? backlightController;
   final EthernetController? ethernetController;
@@ -66,6 +68,12 @@ class P2DemoPage extends StatefulWidget {
   final UsbDebugController? usbDebugController;
   final BluetoothController? bluetoothController;
 
+  /// When true (default), omit Settings-owned sections; keep Debug.
+  final bool skipPlatformSections;
+
+  /// When true, skip HAL restore (app already restored via [AppServices]).
+  final bool skipSettingsRestore;
+
   @override
   State<P2DemoPage> createState() => _P2DemoPageState();
 }
@@ -73,7 +81,6 @@ class P2DemoPage extends StatefulWidget {
 class _P2DemoPageState extends State<P2DemoPage> {
   late final SysInfo _sysInfo;
   late final ModbusRtuClient _modbus;
-  late final GpioLedController _leds;
   late final MediaAudioController _audio;
   late final BacklightController _backlight;
   late final EthernetController _ethernet;
@@ -95,26 +102,10 @@ class _P2DemoPageState extends State<P2DemoPage> {
   String _kernelVersion = kUnavailableDisplay;
   String _systemVersion = kUnavailableDisplay;
 
-  final _TempSeries _socTemp = _TempSeries();
-  final _TempSeries _gpuTemp = _TempSeries();
-  final _TempSeries _motorTemp = _TempSeries();
-  final _TempSeries _motorDriverTemp = _TempSeries();
-  final _TempSeries _protectiveMirrorTemp = _TempSeries();
-  final _TempSeries _collimatorTemp = _TempSeries();
-
   String _pumpCommStatus = kUnavailableDisplay;
   String _gunCommAlarm = kUnavailableDisplay;
   String _feederCommStatus = kUnavailableDisplay;
-  bool _gunMotorOverTemp = false;
-  bool _driverOverTemp = false;
-  bool _protectiveMirrorOverTemp = false;
-  bool _collimatorOverTemp = false;
   String _modbusLink = kUnavailableDisplay;
-
-  final Map<LedColor, IndicatorMode> _ledModes = {
-    for (final c in LedColor.values) c: IndicatorMode.off,
-  };
-  String _ledPinCaption = 'Pins R/Y/G (loading gpio.json…)';
 
   bool _audioPlaying = false;
   double _volumePercent = 80;
@@ -122,6 +113,8 @@ class _P2DemoPageState extends State<P2DemoPage> {
 
   StreamSubscription<bool>? _playingSub;
   StreamSubscription<SysInfoUpdate>? _sysInfoSub;
+  StreamSubscription<List<ModbusAttributeChange>>? _modbusAttrSub;
+  StreamSubscription<ModbusHealth>? _modbusHealthSub;
   BoardBindings? _bindings;
 
   // Brightness: latest-wins coalesce (same idea as AudioManager / backlight HAL).
@@ -148,11 +141,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
         ModbusRtuClient(
           profile: profile,
           halFuture: bindings?.modbus(),
-        );
-    _leds = widget.ledController ??
-        GpioLedController(
-          profile: profile,
-          halFuture: bindings?.gpio(),
         );
     _audio = widget.audioController ??
         bindings?.mediaAudio() ??
@@ -207,26 +195,30 @@ class _P2DemoPageState extends State<P2DemoPage> {
       // Soft-fail: tiles stay at `-`.
     }
 
-    try {
-      final gpioCfg = await _leds.config;
-      if (mounted) {
-        setState(() => _ledPinCaption = gpioLedPinCaption(gpioCfg));
+    // Prefer app-scoped Modbus fan-out when under AppScope (Home owns live start).
+    final app = AppScope.maybeOf(context);
+    if (app != null) {
+      try {
+        await app.ensureModbusLive();
+        _modbusAttrSub =
+            app.modbusAttributeChanges.listen(_onModbusAttributeChanges);
+        _modbusHealthSub = app.modbusHealthChanges.listen(_onModbusHealth);
+      } catch (_) {}
+    } else {
+      try {
+        await _modbus.startLiveDemo(
+          onAttributeChanges: _onModbusAttributeChanges,
+          onHealth: _onModbusHealth,
+        );
+      } catch (_) {
+        // Soft-fail: tiles stay at `-`.
       }
-    } catch (_) {
-      // Caption stays at placeholder when asset/config missing.
     }
 
-    // Live Modbus: HAL owns poll + change-only watch (no App Timer).
-    try {
-      await _modbus.startLiveDemo(
-        onAttributeChanges: _onModbusAttributeChanges,
-        onHealth: _onModbusHealth,
-      );
-    } catch (_) {
-      // Soft-fail: tiles stay at `-`.
+    // HAL-owned settings restore (skipped when AppServices already restored).
+    if (widget.skipSettingsRestore) {
+      return;
     }
-
-    // HAL-owned settings restore (replaces overlay restore-settings.service).
     try {
       final b = _bindings;
       if (b != null) {
@@ -248,6 +240,9 @@ class _P2DemoPageState extends State<P2DemoPage> {
         );
       } else if (_backlight is LinuxSysfsBacklight) {
         await _backlight.applyPersistedPreference();
+      }
+      if (widget.skipPlatformSections) {
+        return;
       }
       final vol = await _audio.getVolumePercent();
       final bri = await _backlight.getBrightnessPercent();
@@ -272,8 +267,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
       _deviceSn = snap.serialNumber ?? kUnavailableDisplay;
       _kernelVersion = snap.kernelRelease ?? kUnavailableDisplay;
       _systemVersion = snap.appVersion ?? kUnavailableDisplay;
-      _socTemp.setCelsius(snap.socThermal?.temperatureCelsius);
-      _gpuTemp.setCelsius(snap.gpuThermal?.temperatureCelsius);
     });
   }
 
@@ -312,42 +305,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
           case 'device.gun_head_sn':
             _gunheadSn =
                 modbusDisplayOrDash(modbusVersionStringDisplay(c.value));
-          case 'telemetry.gun_motor_temp':
-          case 'alarm.gun_motor_temp':
-            _motorTemp.setCelsius(
-              _modbusTempCelsius(c.value),
-              overTemp: _gunMotorOverTemp,
-            );
-          case 'telemetry.gun_motor_drive_temp':
-          case 'alarm.gun_motor_drive_temp':
-            _motorDriverTemp.setCelsius(
-              _modbusTempCelsius(c.value),
-              overTemp: _driverOverTemp,
-            );
-          case 'telemetry.protective_cover_temp':
-          case 'alarm.protective_cover_temp':
-            _protectiveMirrorTemp.setCelsius(
-              _modbusTempCelsius(c.value),
-              overTemp: _protectiveMirrorOverTemp,
-            );
-          case 'telemetry.collimator_temp':
-          case 'alarm.collimator_temp':
-            _collimatorTemp.setCelsius(
-              _modbusTempCelsius(c.value),
-              overTemp: _collimatorOverTemp,
-            );
-          case 'alarm.gun_motor_over_temp':
-            _gunMotorOverTemp = c.value == true;
-            _motorTemp.setOverTemp(_gunMotorOverTemp);
-          case 'alarm.driver_over_temp':
-            _driverOverTemp = c.value == true;
-            _motorDriverTemp.setOverTemp(_driverOverTemp);
-          case 'alarm.protective_mirror_over_temp':
-            _protectiveMirrorOverTemp = c.value == true;
-            _protectiveMirrorTemp.setOverTemp(_protectiveMirrorOverTemp);
-          case 'alarm.collimator_over_temp':
-            _collimatorOverTemp = c.value == true;
-            _collimatorTemp.setOverTemp(_collimatorOverTemp);
           case 'alarm.laser_comm':
             _pumpCommStatus = _alarmDisplay(c);
           case 'alarm.gun_comm':
@@ -365,28 +322,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
       return 'ALARM (remind)';
     }
     return base;
-  }
-
-  /// Decoded Modbus temp → °C for trend tracking (`null` = unavailable).
-  double? _modbusTempCelsius(Object? value) {
-    if (value is int) {
-      if (value <= -999) {
-        return null;
-      }
-      return value / 10.0;
-    }
-    if (value is num) {
-      if (value <= -99.9) {
-        return null;
-      }
-      return value.toDouble();
-    }
-    return null;
-  }
-
-  Future<void> _onLedMode(LedColor color, IndicatorMode mode) async {
-    setState(() => _ledModes[color] = mode);
-    await _leds.setMode(color, mode);
   }
 
   Future<void> _toggleAudio() async {
@@ -428,6 +363,8 @@ class _P2DemoPageState extends State<P2DemoPage> {
   @override
   void dispose() {
     unawaited(_sysInfoSub?.cancel() ?? Future<void>.value());
+    unawaited(_modbusAttrSub?.cancel() ?? Future<void>.value());
+    unawaited(_modbusHealthSub?.cancel() ?? Future<void>.value());
     unawaited(_sysInfo.close());
     unawaited(_playingSub?.cancel() ?? Future<void>.value());
     final bri = _queuedBrightness;
@@ -441,7 +378,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
     unawaited(_dateTime.dispose());
     unawaited(_http.dispose());
     unawaited(_bluetooth.dispose());
-    unawaited(_leds.dispose());
     unawaited(_modbus.close());
     super.dispose();
   }
@@ -525,111 +461,82 @@ class _P2DemoPageState extends State<P2DemoPage> {
             _InfoTile(label: 'Pump Comm Status', value: _pumpCommStatus),
             _InfoTile(label: 'Gun Comm Status', value: _gunCommAlarm),
             _InfoTile(label: 'Feeder Comm Status', value: _feederCommStatus),
-            _TempInfoTile(label: 'SoC Temperature', series: _socTemp),
-            _TempInfoTile(label: 'GPU Temperature', series: _gpuTemp),
-            _TempInfoTile(label: 'Motor Temperature', series: _motorTemp),
-            _TempInfoTile(
-              label: 'Motor Driver Temperature',
-              series: _motorDriverTemp,
-            ),
-            _TempInfoTile(
-              label: 'Protective Mirror Temperature',
-              series: _protectiveMirrorTemp,
-            ),
-            _TempInfoTile(
-              label: 'Collimator Temperature',
-              series: _collimatorTemp,
-            ),
-            const SizedBox(height: 32),
-            const Text(
-              'RGB LED',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.w600,
+            if (!widget.skipPlatformSections) ...[
+              const SizedBox(height: 24),
+              const Text(
+                'Speaker',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _ledPinCaption,
-              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            for (final color in LedColor.values)
-              _LedModeRow(
-                color: color,
-                selected: _ledModes[color]!,
-                onSelected: (mode) => unawaited(_onLedMode(color, mode)),
+              const SizedBox(height: 8),
+              Text(
+                'Track: shanghai_tan.mp3 (ALSA / mpg123)',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 14,
+                ),
               ),
-            const SizedBox(height: 24),
-            const Text(
-              'Speaker',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.w600,
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton(
+                  onPressed: () => unawaited(_toggleAudio()),
+                  child: Text(_audioPlaying ? 'Stop' : 'Play'),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Track: shanghai_tan.mp3 (ALSA / mpg123)',
-              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
-            ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton(
-                onPressed: () => unawaited(_toggleAudio()),
-                child: Text(_audioPlaying ? 'Stop' : 'Play'),
+              const SizedBox(height: 8),
+              _PercentSlider(
+                label: 'Volume',
+                value: _volumePercent,
+                onChanged: _onVolumeUi,
+                onChangeEnd: (v) {
+                  _volumePercent = v;
+                  unawaited(_audio.setVolumePercent(v.round()));
+                },
               ),
-            ),
-            const SizedBox(height: 8),
-            _PercentSlider(
-              label: 'Volume',
-              value: _volumePercent,
-              onChanged: _onVolumeUi,
-              onChangeEnd: (v) {
-                _volumePercent = v;
-                unawaited(_audio.setVolumePercent(v.round()));
-              },
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Backlight',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.w600,
+              const SizedBox(height: 24),
+              const Text(
+                'Backlight',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            _PercentSlider(
-              label: 'Brightness',
-              value: _brightnessPercent,
-              onChanged: _onBrightnessUi,
-              onChangeEnd: (v) {
-                _brightnessPercent = v;
-                _queuedBrightness = v.round();
-                unawaited(_drainBrightness());
-              },
-            ),
+              const SizedBox(height: 8),
+              _PercentSlider(
+                label: 'Brightness',
+                value: _brightnessPercent,
+                onChanged: _onBrightnessUi,
+                onChangeEnd: (v) {
+                  _brightnessPercent = v;
+                  _queuedBrightness = v.round();
+                  unawaited(_drainBrightness());
+                },
+              ),
+              if (_networkSectionsReady) ...[
+                const SizedBox(height: 32),
+                KeyboardDemoSection(keyboard: _keyboard),
+                const SizedBox(height: 32),
+                MouseDemoSection(controller: _mouse),
+                const SizedBox(height: 32),
+                DateTimeDemoSection(controller: _dateTime),
+                const SizedBox(height: 32),
+                EthernetDemoSection(controller: _ethernet),
+                const SizedBox(height: 32),
+                WifiDemoSection(controller: _wifi),
+                const SizedBox(height: 32),
+                HttpDemoSection(controller: _http),
+                const SizedBox(height: 32),
+                BluetoothDemoSection(controller: _bluetooth),
+              ],
+            ],
             if (_networkSectionsReady) ...[
               const SizedBox(height: 32),
-              KeyboardDemoSection(keyboard: _keyboard),
-              const SizedBox(height: 32),
-              MouseDemoSection(controller: _mouse),
-              const SizedBox(height: 32),
-              DateTimeDemoSection(controller: _dateTime),
-              const SizedBox(height: 32),
-              EthernetDemoSection(controller: _ethernet),
-              const SizedBox(height: 32),
-              WifiDemoSection(controller: _wifi),
-              const SizedBox(height: 32),
-              HttpDemoSection(controller: _http),
-              const SizedBox(height: 32),
               DebugDemoSection(usbDebug: _usbDebug, lanDebug: _sshDebug),
-              const SizedBox(height: 32),
-              BluetoothDemoSection(controller: _bluetooth),
             ],
             const SizedBox(height: 24),
               ],
@@ -662,90 +569,6 @@ class _InfoTile extends StatelessWidget {
           color: Colors.white.withOpacity(0.85),
           fontSize: 16,
         ),
-      ),
-    );
-  }
-}
-
-enum _TempTrend { none, up, down }
-
-/// Tracks last Celsius sample and rise/fall for Demo temperature rows.
-class _TempSeries {
-  double? _last;
-  bool _overTemp = false;
-
-  _TempTrend trend = _TempTrend.none;
-  String display = kUnavailableDisplay;
-
-  void setCelsius(double? celsius, {bool? overTemp}) {
-    if (overTemp != null) {
-      _overTemp = overTemp;
-    }
-    if (celsius == null) {
-      trend = _TempTrend.none;
-      _last = null;
-      display = _overTemp ? 'OVER TEMP' : kUnavailableDisplay;
-      return;
-    }
-    if (_last != null) {
-      if (celsius > _last!) {
-        trend = _TempTrend.up;
-      } else if (celsius < _last!) {
-        trend = _TempTrend.down;
-      } else {
-        trend = _TempTrend.none;
-      }
-    }
-    _last = celsius;
-    final text = '${celsius.toStringAsFixed(1)} °C';
-    display = _overTemp ? '$text · OVER TEMP' : text;
-  }
-
-  void setOverTemp(bool overTemp) {
-    _overTemp = overTemp;
-    if (_last == null) {
-      display = overTemp ? 'OVER TEMP' : kUnavailableDisplay;
-      return;
-    }
-    final text = '${_last!.toStringAsFixed(1)} °C';
-    display = overTemp ? '$text · OVER TEMP' : text;
-  }
-}
-
-class _TempInfoTile extends StatelessWidget {
-  const _TempInfoTile({required this.label, required this.series});
-
-  final String label;
-  final _TempSeries series;
-
-  @override
-  Widget build(BuildContext context) {
-    final trend = series.trend;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(
-        label,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (trend == _TempTrend.up)
-            const Icon(Icons.arrow_drop_up, color: Color(0xFFE53935), size: 28)
-          else if (trend == _TempTrend.down)
-            const Icon(
-              Icons.arrow_drop_down,
-              color: Color(0xFF43A047),
-              size: 28,
-            ),
-          Text(
-            series.display,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.85),
-              fontSize: 16,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -815,60 +638,6 @@ class _PercentSliderState extends State<_PercentSlider> {
           },
         ),
       ],
-    );
-  }
-}
-
-class _LedModeRow extends StatelessWidget {
-  const _LedModeRow({
-    required this.color,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  final LedColor color;
-  final IndicatorMode selected;
-  final ValueChanged<IndicatorMode> onSelected;
-
-  String get _title {
-    switch (color) {
-      case LedColor.red:
-        return 'Red';
-      case LedColor.yellow:
-        return 'Yellow';
-      case LedColor.green:
-        return 'Green';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _title,
-            style: const TextStyle(color: Colors.white, fontSize: 20),
-          ),
-          const SizedBox(height: 8),
-          SegmentedButton<IndicatorMode>(
-            segments: const [
-              ButtonSegment(value: IndicatorMode.steadyOn, label: Text('Steady')),
-              ButtonSegment(value: IndicatorMode.blink, label: Text('Blink')),
-              ButtonSegment(value: IndicatorMode.off, label: Text('Off')),
-            ],
-            selected: {selected},
-            onSelectionChanged: (set) {
-              if (set.isEmpty) {
-                return;
-              }
-              onSelected(set.first);
-            },
-          ),
-        ],
-      ),
     );
   }
 }

@@ -77,6 +77,17 @@ flutter:
     - assets/hal/board_profile.json
     - assets/hal/gpio.json
     - assets/hal/modbus.json
+    # Product Home backdrop / heroes (from lws-ui mipmap-mdpi).
+    - assets/home/home_back.webp
+    - assets/home/home_left_400.webp
+    - assets/home/home_right_400.webp
+    - assets/home/home_left_img.webp
+    - assets/home/home_right_img.webp
+    - assets/home/home_fast.webp
+    - assets/home/home_engine.webp
+    - assets/home/home_fast_text_en.webp
+    - assets/home/home_engine_text_en.webp
+    - assets/home/home_settings.webp
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

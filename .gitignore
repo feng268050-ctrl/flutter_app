@@ -33,3 +33,4 @@ overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi/
 
 # Local Python venv for logo / tooling scripts
 .venv-tools/
+.cursor/*.log

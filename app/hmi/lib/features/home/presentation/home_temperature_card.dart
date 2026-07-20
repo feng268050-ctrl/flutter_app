@@ -4,9 +4,9 @@ import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
-import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+import 'package:lws_hmi/features/monitor/application/gun_alarm_telemetry.dart';
 
-/// Semi-transparent Home card: SoC / GPU / gun temperatures from Demo.
+/// Semi-transparent Home card: SoC / GPU / gun temperatures.
 class HomeTemperatureCard extends StatefulWidget {
   const HomeTemperatureCard({super.key});
 
@@ -17,21 +17,9 @@ class HomeTemperatureCard extends StatefulWidget {
 class _HomeTemperatureCardState extends State<HomeTemperatureCard> {
   final TempSeries _soc = TempSeries();
   final TempSeries _gpu = TempSeries();
-  final TempSeries _motor = TempSeries();
-  final TempSeries _motorDriver = TempSeries();
-  final TempSeries _protectiveMirror = TempSeries();
-  final TempSeries _collimator = TempSeries();
-
-  bool _gunMotorOverTemp = false;
-  bool _driverOverTemp = false;
-  bool _protectiveMirrorOverTemp = false;
-  bool _collimatorOverTemp = false;
+  final GunAlarmTelemetry _gun = GunAlarmTelemetry();
 
   StreamSubscription<SysInfoUpdate>? _sysSub;
-  StreamSubscription<List<ModbusAttributeChange>>? _modbusSub;
-  Timer? _modbusStartDelay;
-  Timer? _modbusUiGate;
-  bool _modbusDirty = false;
 
   @override
   void initState() {
@@ -60,77 +48,20 @@ class _HomeTemperatureCardState extends State<HomeTemperatureCard> {
       }, onError: (_) {});
     } catch (_) {}
 
-    // Let Home finish first paint + WebP decode before serial Modbus work.
-    _modbusStartDelay = Timer(const Duration(milliseconds: 1200), () {
-      unawaited(_startModbus(services));
-    });
-  }
-
-  Future<void> _startModbus(AppServices services) async {
-    if (!mounted) return;
-    try {
-      await services.ensureModbusLive();
-      if (!mounted) return;
-      _modbusSub = services.modbusAttributeChanges.listen(_onModbus);
-      _modbusUiGate = Timer.periodic(const Duration(milliseconds: 500), (_) {
-        if (!mounted || !_modbusDirty) return;
-        _modbusDirty = false;
-        setState(() {});
-      });
-    } catch (_) {}
-  }
-
-  void _onModbus(List<ModbusAttributeChange> changes) {
-    if (!mounted || changes.isEmpty) return;
-    for (final c in changes) {
-      switch (c.id) {
-        case 'telemetry.gun_motor_temp':
-        case 'alarm.gun_motor_temp':
-          _motor.setCelsius(
-            modbusTempCelsius(c.value),
-            overTemp: _gunMotorOverTemp,
-          );
-        case 'telemetry.gun_motor_drive_temp':
-        case 'alarm.gun_motor_drive_temp':
-          _motorDriver.setCelsius(
-            modbusTempCelsius(c.value),
-            overTemp: _driverOverTemp,
-          );
-        case 'telemetry.protective_cover_temp':
-        case 'alarm.protective_cover_temp':
-          _protectiveMirror.setCelsius(
-            modbusTempCelsius(c.value),
-            overTemp: _protectiveMirrorOverTemp,
-          );
-        case 'telemetry.collimator_temp':
-        case 'alarm.collimator_temp':
-          _collimator.setCelsius(
-            modbusTempCelsius(c.value),
-            overTemp: _collimatorOverTemp,
-          );
-        case 'alarm.gun_motor_over_temp':
-          _gunMotorOverTemp = c.value == true;
-          _motor.setOverTemp(_gunMotorOverTemp);
-        case 'alarm.driver_over_temp':
-          _driverOverTemp = c.value == true;
-          _motorDriver.setOverTemp(_driverOverTemp);
-        case 'alarm.protective_mirror_over_temp':
-          _protectiveMirrorOverTemp = c.value == true;
-          _protectiveMirror.setOverTemp(_protectiveMirrorOverTemp);
-        case 'alarm.collimator_over_temp':
-          _collimatorOverTemp = c.value == true;
-          _collimator.setOverTemp(_collimatorOverTemp);
-      }
-    }
-    _modbusDirty = true;
+    await _gun.start(
+      services,
+      onUpdate: () {
+        if (mounted) {
+          setState(() {});
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
-    _modbusStartDelay?.cancel();
-    _modbusUiGate?.cancel();
     unawaited(_sysSub?.cancel() ?? Future<void>.value());
-    unawaited(_modbusSub?.cancel() ?? Future<void>.value());
+    unawaited(_gun.dispose());
     super.dispose();
   }
 
@@ -139,10 +70,10 @@ class _HomeTemperatureCardState extends State<HomeTemperatureCard> {
     final rows = <(String, TempSeries)>[
       ('SoC Temperature', _soc),
       ('GPU Temperature', _gpu),
-      ('Motor Temperature', _motor),
-      ('Motor Driver Temperature', _motorDriver),
-      ('Protective Mirror Temperature', _protectiveMirror),
-      ('Collimator Temperature', _collimator),
+      ('Motor Temperature', _gun.motor),
+      ('Motor Driver Temperature', _gun.motorDriver),
+      ('Protective Mirror Temperature', _gun.protectiveMirror),
+      ('Collimator Temperature', _gun.collimator),
     ];
 
     return Material(

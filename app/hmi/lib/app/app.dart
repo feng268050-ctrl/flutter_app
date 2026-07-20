@@ -7,10 +7,11 @@ import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/app_theme.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
+import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
 import 'package:lws_hmi/ui/demo/p2_demo_page.dart';
 
-/// Root MaterialApp: Home launcher, named Settings + hidden Demo.
+/// Root MaterialApp: Home launcher, Settings, Monitor, hidden Demo.
 class LwsHmiApp extends StatefulWidget {
   const LwsHmiApp({
     super.key,
@@ -75,6 +76,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
           switch (settings.name) {
             case AppRoutes.settings:
               page = const SettingsPage();
+            case AppRoutes.monitor:
+              page = const MonitorPage();
             case AppRoutes.demo:
               page = _demoPage();
             case AppRoutes.home:

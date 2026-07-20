@@ -34,7 +34,7 @@ class _OfflineModbus extends ModbusRtuClient {
     required void Function(List<ModbusAttributeChange> changes)
         onAttributeChanges,
     void Function(ModbusHealth health)? onHealth,
-    Iterable<String> watchIds = kDemoModbusWatchIds,
+    Iterable<String>? watchIds,
   }) async {}
 }
 
@@ -163,6 +163,14 @@ AppServices _testServices() {
   );
 }
 
+Future<void> _openMonitorAlarmTab(WidgetTester tester) async {
+  await tester.drag(find.byType(TabBar), const Offset(-320, 0));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('monitor-tab-alarm-information')));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 50));
+}
+
 void main() {
   testWidgets('initial route is product Home with Settings entry', (tester) async {
     await tester.pumpWidget(
@@ -176,10 +184,59 @@ void main() {
 
     expect(find.byType(HomePage), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Monitor'), findsOneWidget);
+    expect(find.text('AI Vision'), findsOneWidget);
     expect(find.text('Temperatures'), findsOneWidget);
     // No primary Demo entry on Home.
     expect(find.text('Demo'), findsNothing);
     expect(find.text('Device Information'), findsNothing);
+  });
+
+  testWidgets('Monitor entry navigates to Monitor page', (tester) async {
+    await tester.pumpWidget(
+      LwsHmiApp(
+        boardProfile: _testProfile(),
+        services: _testServices(),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.tap(find.text('Monitor'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Work Information'), findsWidgets);
+    expect(find.text('Machine Status'), findsWidgets);
+    expect(find.text('Alarm Information'), findsWidgets);
+    expect(find.text('Videos'), findsWidgets);
+    expect(find.text('AI Vision'), findsWidgets);
+
+    await _openMonitorAlarmTab(tester);
+
+    expect(find.text('Temperatures'), findsWidgets);
+    expect(find.text('Active Alarms'), findsOneWidget);
+    expect(find.text('Motor'), findsOneWidget);
+  });
+
+  testWidgets('named /monitor route resolves', (tester) async {
+    await tester.pumpWidget(
+      LwsHmiApp(
+        boardProfile: _testProfile(),
+        services: _testServices(),
+      ),
+    );
+    await tester.pump();
+
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    unawaited(navigator.pushNamed(AppRoutes.monitor));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Work Information'), findsWidgets);
+    await _openMonitorAlarmTab(tester);
+
+    expect(find.text('Temperatures'), findsOneWidget);
   });
 
   testWidgets('Settings route shows four tabs and Bluetooth entry', (tester) async {

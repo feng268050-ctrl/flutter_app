@@ -49,7 +49,7 @@ class _OfflineModbus extends ModbusRtuClient {
   Future<void> startLiveDemo({
     required void Function(List<ModbusAttributeChange> changes) onAttributeChanges,
     void Function(ModbusHealth health)? onHealth,
-    Iterable<String> watchIds = kDemoModbusWatchIds,
+    Iterable<String>? watchIds,
   }) async {
     // Host widget tests: no serial — leave Demo tiles at `-`.
   }

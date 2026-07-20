@@ -1,4 +1,4 @@
-/// Bundled Home backdrop / hero assets (from lws-ui mipmap-mdpi).
+/// Bundled Home backdrop / hero / quick-action assets (from lws-ui, WebP).
 abstract final class HomeAssets {
   static const backdrop = 'assets/home/home_back.webp';
   static const leftAnimated = 'assets/home/home_left_400.webp';
@@ -10,4 +10,6 @@ abstract final class HomeAssets {
   static const quickModeTextEn = 'assets/home/home_fast_text_en.webp';
   static const engineerModeTextEn = 'assets/home/home_engine_text_en.webp';
   static const settingsIcon = 'assets/home/home_settings.webp';
+  static const monitorIcon = 'assets/home/home_monitor.webp';
+  static const aiVisionIcon = 'assets/home/ai_vision_home.webp';
 }

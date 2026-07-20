@@ -70,8 +70,11 @@ class CyberCard extends StatelessWidget {
     );
 
     if (onTap != null) {
+      // Clip splash to the card chrome (rounded rect), not siblings/labels.
       body = Material(
         color: Colors.transparent,
+        borderRadius: radius,
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
             if (clickSoundEnabled) {

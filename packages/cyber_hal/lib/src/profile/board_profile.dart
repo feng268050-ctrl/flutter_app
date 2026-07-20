@@ -40,6 +40,8 @@ abstract final class BoardHelperKeys {
   static const alsaPlaybackPathValue = 'alsa_playback_path_value';
   /// Explicit mpg123 ALSA PCM (`-a`), e.g. plughw:0,0.
   static const alsaOutputDevice = 'alsa_output_device';
+  /// Optional IPC / camera host for boot self-check ICMP (e.g. `192.168.1.100`).
+  static const cameraIp = 'camera_ip';
 }
 
 /// Board profile: capabilities, net role→iface, pointers to gpio/modbus configs.

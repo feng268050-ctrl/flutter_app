@@ -1,9 +1,14 @@
+import 'dart:async';
+
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
+import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coordinator.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
-import 'package:cyber_ui/cyber_ui.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
 const double _kDesignW = 1280;
@@ -22,8 +27,40 @@ const double _kQaCorner = 18;
 const double _kQaCardText = 20;
 
 /// Product Home: backdrop, animated plates, Quick/Engineer, bottom quick actions.
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool _selfCheckStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeStartSelfCheck());
+  }
+
+  void _maybeStartSelfCheck() {
+    if (!mounted || _selfCheckStarted) {
+      return;
+    }
+    _selfCheckStarted = true;
+    final settings = BootSelfCheckScope.maybeOf(context)?.settings;
+    final services = AppScope.maybeOf(context);
+    if (settings == null || services == null) {
+      return;
+    }
+    unawaited(
+      BootSelfCheckCoordinator.startWhenHomeEntered(
+        context: context,
+        services: services,
+        settings: settings,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

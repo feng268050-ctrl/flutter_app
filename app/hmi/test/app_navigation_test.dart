@@ -10,6 +10,8 @@ import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/device/device_sn_reader.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coordinator.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
@@ -36,6 +38,9 @@ class _OfflineModbus extends ModbusRtuClient {
     void Function(ModbusHealth health)? onHealth,
     Iterable<String>? watchIds,
   }) async {}
+
+  @override
+  Future<Object?> readAttribute(String id) async => null;
 }
 
 class _NoopBluetooth implements BluetoothController {
@@ -172,11 +177,19 @@ Future<void> _openMonitorAlarmTab(WidgetTester tester) async {
 }
 
 void main() {
+  setUp(() {
+    BootSelfCheckCoordinator.resetForTest();
+  });
+
+  BootSelfCheckSettings disabledBootCheck() =>
+      BootSelfCheckSettings(enabledOverrideForTest: false);
+
   testWidgets('initial route is product Home with Settings entry', (tester) async {
     await tester.pumpWidget(
       LwsHmiApp(
         boardProfile: _testProfile(),
         services: _testServices(),
+        bootSelfCheckSettings: disabledBootCheck(),
       ),
     );
     await tester.pump();
@@ -192,6 +205,8 @@ void main() {
     // No primary Demo entry on Home.
     expect(find.text('Demo'), findsNothing);
     expect(find.text('Device Information'), findsNothing);
+    // Self-check is an overlay, not a named initial route.
+    expect(find.text('Startup Self-Check'), findsNothing);
   });
 
   testWidgets('Monitor entry navigates to Monitor page', (tester) async {
@@ -199,6 +214,7 @@ void main() {
       LwsHmiApp(
         boardProfile: _testProfile(),
         services: _testServices(),
+        bootSelfCheckSettings: disabledBootCheck(),
       ),
     );
     await tester.pump();
@@ -226,6 +242,7 @@ void main() {
       LwsHmiApp(
         boardProfile: _testProfile(),
         services: _testServices(),
+        bootSelfCheckSettings: disabledBootCheck(),
       ),
     );
     await tester.pump();
@@ -277,6 +294,7 @@ void main() {
       LwsHmiApp(
         boardProfile: _testProfile(),
         services: _testServices(),
+        bootSelfCheckSettings: disabledBootCheck(),
       ),
     );
     await tester.pump();
@@ -289,5 +307,29 @@ void main() {
     expect(find.text('Device Information'), findsOneWidget);
     expect(find.text('RGB LED', skipOffstage: false), findsNothing);
     expect(find.text('Debug', skipOffstage: false), findsOneWidget);
+  });
+
+  testWidgets('Home paints with self-check overlay when enabled', (tester) async {
+    await tester.pumpWidget(
+      LwsHmiApp(
+        boardProfile: _testProfile(),
+        services: _testServices(),
+        bootSelfCheckSettings: BootSelfCheckSettings(
+          enabledOverrideForTest: true,
+        ),
+      ),
+    );
+    await tester.pump();
+    // Pipeline: 9 items × ≥280ms dwell + Modbus soft-fail.
+    await tester.pump(const Duration(seconds: 4));
+
+    expect(find.byType(HomePage), findsOneWidget);
+    expect(find.text('Startup Self-Check'), findsOneWidget);
+    // Footer appears after all items reach a terminal status.
+    expect(find.text('Don’t show again'), findsOneWidget);
+
+    // Drain auto-dismiss timer so the binding ends clean.
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump();
   });
 }

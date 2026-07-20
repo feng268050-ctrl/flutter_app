@@ -184,6 +184,16 @@ class ModbusRtuClient {
       return ModbusAlarmTemperaturesSnapshot.unavailable;
     }
   }
+
+  /// One-shot attribute read (boot self-check / on-demand). Soft-fails → null.
+  Future<Object?> readAttribute(String id) async {
+    try {
+      final hal = await _ensureHal();
+      return await hal.readAttribute(id);
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 /// Map HAL unavailable token to App display constant (same glyph today).

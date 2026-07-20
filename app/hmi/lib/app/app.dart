@@ -7,6 +7,8 @@ import 'package:lws_hmi/app/app_navigation.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/app_theme.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
@@ -22,6 +24,7 @@ class LwsHmiApp extends StatefulWidget {
     required this.boardProfile,
     this.services,
     this.soundEffectStore,
+    this.bootSelfCheckSettings,
   });
 
   final BoardProfile boardProfile;
@@ -31,6 +34,9 @@ class LwsHmiApp extends StatefulWidget {
 
   /// Optional override for tests (inject fake prefs path / store).
   final SoundEffectStore? soundEffectStore;
+
+  /// Optional override for tests (disable overlay / fake prefs path).
+  final BootSelfCheckSettings? bootSelfCheckSettings;
 
   @override
   State<LwsHmiApp> createState() => _LwsHmiAppState();
@@ -43,6 +49,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   late final SoundEffectStore _soundEffectStore =
       widget.soundEffectStore ?? SoundEffectStore();
 
+  late final BootSelfCheckSettings _bootSelfCheckSettings =
+      widget.bootSelfCheckSettings ?? BootSelfCheckSettings();
+
   late final AppIndexedClickSound _clickSound = AppIndexedClickSound(
     _soundEffectStore,
     mediaAudio: _services.audio,
@@ -52,6 +61,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   void initState() {
     super.initState();
     _soundEffectStore.warmRead();
+    _bootSelfCheckSettings.warmRead();
     CyberClickSoundRegistry.register(_clickSound);
     // Prime ALSA + sticky mpg123 so the first UI click is not cold-start.
     unawaited(_services.audio.warmClickSession());
@@ -92,29 +102,32 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   Widget build(BuildContext context) {
     return AppScope(
       services: _services,
-      child: SoundEffectScope(
-        store: _soundEffectStore,
-        clickSound: _clickSound,
-        child: MaterialApp(
-          title: 'HMI',
-          theme: buildAppTheme(),
-          scrollBehavior: const AppScrollBehavior(),
-          initialRoute: AppRoutes.home,
-          onGenerateRoute: (settings) {
-            final Widget page;
-            switch (settings.name) {
-              case AppRoutes.settings:
-                page = const SettingsPage();
-              case AppRoutes.monitor:
-                page = const MonitorPage();
-              case AppRoutes.demo:
-                page = _demoPage();
-              case AppRoutes.home:
-              default:
-                page = const HomePage();
-            }
-            return buildAppPageRoute(settings: settings, child: page);
-          },
+      child: BootSelfCheckScope(
+        settings: _bootSelfCheckSettings,
+        child: SoundEffectScope(
+          store: _soundEffectStore,
+          clickSound: _clickSound,
+          child: MaterialApp(
+            title: 'HMI',
+            theme: buildAppTheme(),
+            scrollBehavior: const AppScrollBehavior(),
+            initialRoute: AppRoutes.home,
+            onGenerateRoute: (settings) {
+              final Widget page;
+              switch (settings.name) {
+                case AppRoutes.settings:
+                  page = const SettingsPage();
+                case AppRoutes.monitor:
+                  page = const MonitorPage();
+                case AppRoutes.demo:
+                  page = _demoPage();
+                case AppRoutes.home:
+                default:
+                  page = const HomePage();
+              }
+              return buildAppPageRoute(settings: settings, child: page);
+            },
+          ),
         ),
       ),
     );

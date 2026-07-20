@@ -63,6 +63,9 @@ class _OfflineModbus extends ModbusRtuClient {
   Future<ModbusAlarmTemperaturesSnapshot> readAlarmTemperatures() async {
     return ModbusAlarmTemperaturesSnapshot.unavailable;
   }
+
+  @override
+  Future<Object?> readAttribute(String id) async => null;
 }
 
 /// Avoid LinuxBluez dispose → Process.run timers under fake_async.

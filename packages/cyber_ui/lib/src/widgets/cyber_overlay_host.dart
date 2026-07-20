@@ -12,6 +12,16 @@ import 'package:cyber_ui/src/widgets/cyber_dialog.dart';
 
 /// Overlay host for Cyber dialogs (lws-ui `FrostOverlayHost` stand-in).
 ///
+/// Panel chrome matches [CyberCard]: **border only** around [CyberModal] blur.
+/// An opaque fill behind the blur would make BackdropFilter sample the fill
+/// instead of the page (no visible Gaussian frost).
+///
+/// **Barrier:** default is [Colors.transparent]. A dark [barrierColor] sits
+/// under the panel in the dialog route, so realtime [BackdropFilter] would
+/// blur the scrim instead of Home — killing background透视. Dim the page
+/// via a punched-hole scrim later if needed; do not put a full-screen opaque
+/// barrier under frosted panels.
+///
 /// When [freezePageBackdrop] is true and a [CyberBackdropBlurController] is
 /// provided, bumps generation so onChange consumers can freeze/re-sample.
 abstract final class CyberOverlayHost {
@@ -24,6 +34,8 @@ abstract final class CyberOverlayHost {
     CyberTone tone = CyberTone.dark,
     bool useFakeGlass = false,
     bool barrierDismissible = true,
+    /// Full-screen color behind the panel. Prefer transparent for realtime frost.
+    Color barrierColor = Colors.transparent,
     bool freezePageBackdrop = true,
     CyberBackdropBlurController? pageBackdropController,
   }) {
@@ -34,21 +46,31 @@ abstract final class CyberOverlayHost {
     return showDialog<T>(
       context: context,
       barrierDismissible: barrierDismissible,
-      barrierColor: CyberColors.scrim,
+      barrierColor: barrierColor,
       builder: (dialogContext) {
         return Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: DecoratedBox(
-              decoration: panel.chromeDecoration(),
-              child: CyberModal(
-                sampleMode: sampleMode,
-                intensity: intensity,
-                blurTint: blurTint,
-                useFakeGlass: useFakeGlass,
-                borderRadius: panel.borderRadius,
-                padding: const EdgeInsets.all(CyberDimens.contentPadding),
-                child: builder(dialogContext),
+            constraints: const BoxConstraints(maxWidth: 720, maxHeight: 640),
+            child: ClipRRect(
+              borderRadius: panel.borderRadius,
+              child: DecoratedBox(
+                // Border only — fill would occlude backdrop sampling.
+                decoration: BoxDecoration(
+                  borderRadius: panel.borderRadius,
+                  border: Border.all(
+                    color: panel.flatBorderColor,
+                    width: panel.width,
+                  ),
+                ),
+                child: CyberModal(
+                  sampleMode: sampleMode,
+                  intensity: intensity,
+                  blurTint: blurTint,
+                  useFakeGlass: useFakeGlass,
+                  borderRadius: panel.borderRadius,
+                  padding: const EdgeInsets.all(CyberDimens.contentPadding),
+                  child: builder(dialogContext),
+                ),
               ),
             ),
           ),

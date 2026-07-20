@@ -70,7 +70,6 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   int? _queuedVolume;
 
   static const _defaultPreferredVolumeControls = <String>[
-    'DAC',
     'DAC Playback Volume',
     'Speaker Playback Volume',
     'Headphone Playback Volume',
@@ -175,8 +174,9 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
       while (_queuedVolume != null) {
         final v = _queuedVolume!;
         _queuedVolume = null;
-        await _applyMixerVolume(v);
-        // Soft volume for remote decoder — never restarts playback.
+        // Keep ALSA mixer near full scale; UI loudness is mpg123 soft-V.
+        // rk809 DAC percent has a large low-end dead zone (~0–50% ≈ mute).
+        await _applyMixerVolume(100);
         await _applyRemoteVolume(v);
         // BlueALSA A2DP sink soft-volume (HW mixer alone does not affect BT PCM).
         await _applyA2dpVolume(v);
@@ -193,7 +193,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   Future<void> playAsset(String assetKey) async {
     await _ensureVolumeLoaded();
     await _ensurePlaybackPath();
-    await _applyMixerVolume(_volumePercent);
+    await _applyMixerVolume(100);
 
     final path = await _ensureExtracted(assetKey);
     final player = await _resolvePlayerBinary();
@@ -282,10 +282,8 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
       return;
     }
     try {
-      // When ALSA mixer is bound, it owns loudness — keep decoder at full scale
-      // so UI 70% is not attenuated twice (DAC + mpg123 V).
-      final v = _volumeControl != null ? 100 : percent;
-      sink.writeln('V $v');
+      // UI percent → mpg123 soft-V only (HW held near max in _drainVolumeQueue).
+      sink.writeln('V $percent');
       await sink.flush();
     } catch (e) {
       debugPrint('media-audio: remote volume failed: $e');
@@ -345,7 +343,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   Future<void> warmClickSession() async {
     await _ensureVolumeLoaded();
     await _ensurePlaybackPath();
-    await _applyMixerVolume(_volumePercent);
+    await _applyMixerVolume(100);
     final player = await _resolvePlayerBinary();
     if (player == null || !_isMpg123(player)) {
       return;
@@ -353,7 +351,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     if (!_remoteMode || _playerStdin == null || _player == null) {
       await _startRemoteMpg123(player);
     }
-    await _applyRemoteVolume(100);
+    await _applyRemoteVolume(_volumePercent);
     lwsTrace('media-audio: click session warm');
   }
 
@@ -377,7 +375,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
           return;
         }
         await _startRemoteMpg123(player);
-        await _applyRemoteVolume(100);
+        await _applyRemoteVolume(_volumePercent);
       }
       _playerStdin!.writeln('LOAD $path');
       await _playerStdin!.flush();

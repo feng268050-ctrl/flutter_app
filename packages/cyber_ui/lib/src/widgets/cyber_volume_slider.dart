@@ -39,7 +39,7 @@ class CyberIconFlankedSlider extends StatelessWidget {
             value: progress.toDouble(),
             min: min.toDouble(),
             max: max.toDouble(),
-            divisions: max > min ? (max - min) : null,
+            // No divisions — Material tick marks look like black dots on HMI.
             enabled: enabled,
             onChanged: (v) => onProgressChange(v.round()),
             onChangeEnd: onChangeEnd == null

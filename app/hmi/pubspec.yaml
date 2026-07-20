@@ -79,8 +79,8 @@ flutter:
     - assets/hal/modbus.json
     # Product Home backdrop / heroes (from lws-ui mipmap-mdpi).
     - assets/home/home_back.webp
-    - assets/home/home_left_400.webp
-    - assets/home/home_right_400.webp
+    - assets/home/home_left_1m.webp
+    - assets/home/home_right_1m.webp
     - assets/home/home_left_img.webp
     - assets/home/home_right_img.webp
     - assets/home/home_fast.webp

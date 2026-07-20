@@ -91,6 +91,9 @@ class _VolumeSettingsPageState extends State<VolumeSettingsPage> {
                 position: Duration.zero,
                 duration: Duration.zero,
                 seekEnabled: false,
+                // Keep off: UI click oneshot shares sticky mpg123 with play-test
+                // and a preceding LOAD/STOP races the media LOAD.
+                clickSoundEnabled: false,
                 onPlayPause: () {
                   unawaited(_togglePlay());
                 },

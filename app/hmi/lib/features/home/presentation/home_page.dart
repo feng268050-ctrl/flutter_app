@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
+import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
+import 'package:lws_hmi/ui/cyber/cyber_blur_backdrop_scope.dart';
+import 'package:lws_hmi/ui/cyber/cyber_blur_sample_mode.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
 const double _kDesignW = 1280;
@@ -31,40 +34,48 @@ class HomePage extends StatelessWidget {
           final h = constraints.maxHeight;
           final sx = w / _kDesignW;
           final sy = h / _kDesignH;
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              const _HomeBackdrop(),
-              _HomeAnimatedPlate(
-                asset: HomeAssets.leftAnimated,
-                fallback: HomeAssets.leftStatic,
-                left: -60 * sx,
-                top: -90 * sy,
-                width: 600 * sx,
-                height: 600 * sy,
-              ),
-              _HomeAnimatedPlate(
-                asset: HomeAssets.rightAnimated,
-                fallback: HomeAssets.rightStatic,
-                left: 740 * sx,
-                top: -90 * sy,
-                width: 600 * sx,
-                height: 600 * sy,
-              ),
-              _PositionedAsset(
-                asset: HomeAssets.leftStatic,
-                left: 53 * sx,
-                top: 55 * sy,
-                width: 375 * sx,
-                height: 280 * sy,
-              ),
-              _PositionedAsset(
-                asset: HomeAssets.rightStatic,
-                left: 853 * sx,
-                top: 55 * sy,
-                width: 375 * sx,
-                height: 280 * sy,
-              ),
+          return CyberBlurBackdropScope(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CyberBlurBackdropTarget(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      const _HomeBackdrop(),
+                      _HomeAnimatedPlate(
+                        asset: HomeAssets.leftAnimated,
+                        fallback: HomeAssets.leftStatic,
+                        left: -60 * sx,
+                        top: -90 * sy,
+                        width: 600 * sx,
+                        height: 600 * sy,
+                      ),
+                      _HomeAnimatedPlate(
+                        asset: HomeAssets.rightAnimated,
+                        fallback: HomeAssets.rightStatic,
+                        left: 740 * sx,
+                        top: -90 * sy,
+                        width: 600 * sx,
+                        height: 600 * sy,
+                      ),
+                      _PositionedAsset(
+                        asset: HomeAssets.leftStatic,
+                        left: 53 * sx,
+                        top: 55 * sy,
+                        width: 375 * sx,
+                        height: 280 * sy,
+                      ),
+                      _PositionedAsset(
+                        asset: HomeAssets.rightStatic,
+                        left: 853 * sx,
+                        top: 55 * sy,
+                        width: 375 * sx,
+                        height: 280 * sy,
+                      ),
+                    ],
+                  ),
+                ),
               _ModeEntry(
                 left: 53 * sx,
                 top: 55 * sy,
@@ -106,7 +117,7 @@ class HomePage extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    _QuickActionSquare(
+                    _HomeQuickActionSquare(
                       scaleX: sx,
                       scaleY: sy,
                       iconAsset: HomeAssets.monitorIcon,
@@ -116,7 +127,7 @@ class HomePage extends StatelessWidget {
                       },
                     ),
                     SizedBox(width: _kQaPairGap * sx),
-                    _QuickActionSquare(
+                    _HomeQuickActionSquare(
                       scaleX: sx,
                       scaleY: sy,
                       iconAsset: HomeAssets.settingsIcon,
@@ -132,7 +143,7 @@ class HomePage extends StatelessWidget {
               Positioned(
                 right: _kQaEdgeInset * sx,
                 bottom: _kQaEdgeInset * sy,
-                child: _QuickActionAiVision(
+                child: _HomeQuickActionAiVision(
                   scaleX: sx,
                   scaleY: sy,
                   onPressed: () {
@@ -145,7 +156,8 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ],
-          );
+          ),
+        );
         },
       ),
     );
@@ -332,8 +344,8 @@ class _ModeEntry extends StatelessWidget {
   }
 }
 
-class _QuickActionSquare extends StatelessWidget {
-  const _QuickActionSquare({
+class _HomeQuickActionSquare extends StatelessWidget {
+  const _HomeQuickActionSquare({
     required this.scaleX,
     required this.scaleY,
     required this.iconAsset,
@@ -352,64 +364,36 @@ class _QuickActionSquare extends StatelessWidget {
     final s = (scaleX + scaleY) / 2;
     final card = _kQaInner * s;
     final icon = _kQaIcon * s;
-    final radius = _kQaCorner * s;
     final dpr = MediaQuery.devicePixelRatioOf(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(radius),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Material(
-              color: Colors.black.withOpacity(0.42),
-              borderRadius: BorderRadius.circular(radius),
-              clipBehavior: Clip.antiAlias,
-              child: SizedBox(
-                width: card,
-                height: card,
-                child: Center(
-                  child: Image.asset(
-                    iconAsset,
-                    width: icon,
-                    height: icon,
-                    fit: BoxFit.contain,
-                    cacheWidth: (icon * dpr).round().clamp(48, 240),
-                    cacheHeight: (icon * dpr).round().clamp(48, 240),
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.touch_app,
-                      color: Colors.white70,
-                      size: icon * 0.7,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: _kQaLabelMarginTop * scaleY),
-            SizedBox(
-              width: card,
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: (16 * s).clamp(12, 20),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
+    return HomeQuickAction(
+      cardWidth: card,
+      cardHeight: card,
+      cornerRadius: _kQaCorner * s,
+      labelMarginTop: _kQaLabelMarginTop * scaleY,
+      sampleMode: CyberBlurSampleMode.realtime,
+      label: label,
+      onPressed: onPressed,
+      child: Center(
+        child: Image.asset(
+          iconAsset,
+          width: icon,
+          height: icon,
+          fit: BoxFit.contain,
+          cacheWidth: (icon * dpr).round().clamp(48, 240),
+          cacheHeight: (icon * dpr).round().clamp(48, 240),
+          errorBuilder: (_, __, ___) => Icon(
+            Icons.touch_app,
+            color: Colors.white70,
+            size: icon * 0.7,
+          ),
         ),
       ),
     );
   }
 }
 
-class _QuickActionAiVision extends StatelessWidget {
-  const _QuickActionAiVision({
+class _HomeQuickActionAiVision extends StatelessWidget {
+  const _HomeQuickActionAiVision({
     required this.scaleX,
     required this.scaleY,
     required this.onPressed,
@@ -425,96 +409,69 @@ class _QuickActionAiVision extends StatelessWidget {
     final width = _kQaWideInner * scaleX;
     final height = _kQaInner * s;
     final icon = _kQaIcon * s;
-    final radius = _kQaCorner * s;
     final padStart = _kQaIconStartPad * scaleX;
     final gap = _kQaIconTextGap * scaleX;
     final textSize = (_kQaCardText * s).clamp(14.0, 22.0);
     final dpr = MediaQuery.devicePixelRatioOf(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(radius),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Material(
-              color: Colors.black.withOpacity(0.42),
-              borderRadius: BorderRadius.circular(radius),
-              clipBehavior: Clip.antiAlias,
-              child: SizedBox(
-                width: width,
-                height: height,
-                child: Row(
-                  children: [
-                    SizedBox(width: padStart),
-                    Image.asset(
-                      HomeAssets.aiVisionIcon,
-                      width: icon,
-                      height: icon,
-                      fit: BoxFit.contain,
-                      cacheWidth: (icon * dpr).round().clamp(48, 240),
-                      cacheHeight: (icon * dpr).round().clamp(48, 240),
-                      errorBuilder: (_, __, ___) => Icon(
-                        Icons.visibility,
-                        color: Colors.white70,
-                        size: icon * 0.7,
-                      ),
-                    ),
-                    SizedBox(width: gap),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'AI Detection',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: textSize,
-                              height: 1.1,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: 2 * scaleY),
-                          Text(
-                            'Visualized',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: textSize,
-                              height: 1.1,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 12 * scaleX),
-                  ],
-                ),
-              ),
+    return HomeQuickAction(
+      cardWidth: width,
+      cardHeight: height,
+      labelWidth: width,
+      cornerRadius: _kQaCorner * s,
+      labelMarginTop: _kQaLabelMarginTop * scaleY,
+      sampleMode: CyberBlurSampleMode.realtime,
+      label: 'AI Vision',
+      onPressed: onPressed,
+      child: Row(
+        children: [
+          SizedBox(width: padStart),
+          Image.asset(
+            HomeAssets.aiVisionIcon,
+            width: icon,
+            height: icon,
+            fit: BoxFit.contain,
+            cacheWidth: (icon * dpr).round().clamp(48, 240),
+            cacheHeight: (icon * dpr).round().clamp(48, 240),
+            errorBuilder: (_, __, ___) => Icon(
+              Icons.visibility,
+              color: Colors.white70,
+              size: icon * 0.7,
             ),
-            SizedBox(height: _kQaLabelMarginTop * scaleY),
-            SizedBox(
-              width: width,
-              child: Text(
-                'AI Vision',
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: (16 * s).clamp(12, 20),
-                  fontWeight: FontWeight.w500,
+          ),
+          SizedBox(width: gap),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'AI Detection',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: textSize,
+                    height: 1.1,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
+                SizedBox(height: 2 * scaleY),
+                Text(
+                  'Visualized',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: textSize,
+                    height: 1.1,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          SizedBox(width: 12 * scaleX),
+        ],
       ),
     );
   }

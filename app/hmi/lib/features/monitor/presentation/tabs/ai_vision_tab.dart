@@ -1,3 +1,4 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 
@@ -46,6 +47,7 @@ class AiVisionTab extends StatelessWidget {
                   height: 56,
                   child: FilledButton(
                     onPressed: () {
+                      CyberClickSoundRegistry.playClick();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Choose video — coming soon'),

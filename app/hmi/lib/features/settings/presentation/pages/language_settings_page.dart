@@ -21,13 +21,9 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
           SettingsGroup(
             children: [
               for (final code in const ['EN', 'ZH'])
-                ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  title: Text(code == 'EN' ? 'English' : '中文'),
-                  trailing: _lang == code
-                      ? const Icon(Icons.check, color: Colors.lightBlueAccent)
-                      : null,
+                SettingsOptionTile(
+                  title: code == 'EN' ? 'English' : '中文',
+                  selected: _lang == code,
                   onTap: () => setState(() => _lang = code),
                 ),
             ],

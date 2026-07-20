@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/monitor/application/gun_alarm_telemetry.dart';
@@ -191,6 +192,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                               onPressed: alarms.isEmpty
                                   ? null
                                   : () {
+                                      CyberClickSoundRegistry.playClick();
                                       // Clear is product-policy later; soft stub.
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(

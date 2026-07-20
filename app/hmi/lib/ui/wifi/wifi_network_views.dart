@@ -1,4 +1,5 @@
 import 'package:cyber_hal/network.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
 /// Reusable “current network” panel for Demo / Settings.
@@ -66,14 +67,20 @@ class WifiConnectedPanel extends StatelessWidget {
           children: [
             if (onDisconnect != null)
               FilledButton(
-                onPressed: onDisconnect,
+                onPressed: () {
+                  CyberClickSoundRegistry.playClick();
+                  onDisconnect!();
+                },
                 child: const Text('Disconnect'),
               ),
             if (onForget != null &&
                 connection.ssid != null &&
                 connection.ssid!.isNotEmpty)
               TextButton(
-                onPressed: onForget,
+                onPressed: () {
+                  CyberClickSoundRegistry.playClick();
+                  onForget!();
+                },
                 child: Text('Forget ${connection.ssid}'),
               ),
           ],
@@ -121,7 +128,10 @@ class WifiAvailableList extends StatelessWidget {
               trailing: onConnect == null
                   ? null
                   : TextButton(
-                      onPressed: () => onConnect!(ap),
+                      onPressed: () {
+                        CyberClickSoundRegistry.playClick();
+                        onConnect!(ap);
+                      },
                       child: const Text('Connect'),
                     ),
             ),

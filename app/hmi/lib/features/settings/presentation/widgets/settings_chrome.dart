@@ -1,7 +1,11 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 /// Shared Material stand-ins for lws-ui InsetList / FrostCard settings chrome.
+///
+/// Interactive rows call [CyberClickSoundRegistry.playClick] (lws-ui pattern:
+/// product chrome / listeners invoke the same backend as Frost controls).
 class SettingsSectionHeader extends StatelessWidget {
   const SettingsSectionHeader(this.title, {super.key});
 
@@ -84,7 +88,12 @@ class SettingsNavRow extends StatelessWidget {
           Icon(Icons.chevron_right, color: Colors.white.withOpacity(0.45)),
         ],
       ),
-      onTap: onTap,
+      onTap: onTap == null
+          ? null
+          : () {
+              CyberClickSoundRegistry.playClick();
+              onTap!();
+            },
     );
   }
 }
@@ -105,12 +114,49 @@ class SettingsSwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SwitchListTile(
+    return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       title: Text(title, style: const TextStyle(fontSize: 18)),
       subtitle: subtitle == null ? null : Text(subtitle!),
-      value: value,
-      onChanged: onChanged,
+      trailing: CyberSwitch(
+        value: value,
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+/// Radio / check-style option row (language, unit, screen-off, …).
+class SettingsOptionTile extends StatelessWidget {
+  const SettingsOptionTile({
+    super.key,
+    required this.title,
+    this.selected = false,
+    this.onTap,
+    this.clickSoundEnabled = true,
+  });
+
+  final String title;
+  final bool selected;
+  final VoidCallback? onTap;
+  final bool clickSoundEnabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      title: Text(title),
+      trailing: selected
+          ? const Icon(Icons.check, color: Colors.lightBlueAccent)
+          : null,
+      onTap: onTap == null
+          ? null
+          : () {
+              if (clickSoundEnabled) {
+                CyberClickSoundRegistry.playClick();
+              }
+              onTap!();
+            },
     );
   }
 }
@@ -155,10 +201,22 @@ class SettingsScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
         actions: actions,
+        automaticallyImplyLeading: false,
+        leading: canPop
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Back',
+                onPressed: () {
+                  CyberClickSoundRegistry.playClick();
+                  Navigator.of(context).maybePop();
+                },
+              )
+            : null,
       ),
       body: body,
     );

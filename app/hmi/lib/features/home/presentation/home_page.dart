@@ -315,7 +315,10 @@ class _ModeEntry extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: () {
+            CyberClickSoundRegistry.playClick();
+            onTap();
+          },
           borderRadius: BorderRadius.circular(18),
           child: ClipRect(
             child: Stack(

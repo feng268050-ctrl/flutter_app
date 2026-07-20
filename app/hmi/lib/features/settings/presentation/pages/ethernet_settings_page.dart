@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cyber_hal/network.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -184,11 +185,17 @@ class _EthernetSettingsPageState extends State<EthernetSettingsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () {
+              CyberClickSoundRegistry.playClick();
+              Navigator.pop(ctx, false);
+            },
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () {
+              CyberClickSoundRegistry.playClick();
+              Navigator.pop(ctx, true);
+            },
             child: const Text('Save'),
           ),
         ],

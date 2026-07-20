@@ -5,18 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 
 /// Design tokens from lws-ui `FrostClockAppearance` / `frostui_clock_colors.xml`.
+///
+/// Aliases [CyberClockAppearance] for stable HomeClock call sites.
 abstract final class HomeClockTokens {
-  /// lws-ui `FrostGlyphBlurRenderer.TEXT_VERTICAL_SCALE`.
-  static const verticalScale = 1.2;
-
-  /// lws-ui `FrostHomeClockView.BACKDROP_CAPTURE_SCALE_DIVISOR`.
-  static const captureScaleDivisor = 5.0;
-
-  static const fillTop = Color(0x88FFFFFF);
-  static const fillMid = Color(0x78FFFCFA);
-  static const fillBottom = Color(0x68FFF8F6);
-  static const milkOverlay = Color(0x40FFFCF8);
-  static const borderShadow = Color(0x55000000);
+  static const verticalScale = CyberClockAppearance.verticalScale;
+  static const captureScaleDivisor = CyberClockAppearance.captureScaleDivisor;
+  static const fillTop = CyberClockAppearance.fillTop;
+  static const fillMid = CyberClockAppearance.fillMid;
+  static const fillBottom = CyberClockAppearance.fillBottom;
+  static const milkOverlay = CyberClockAppearance.milkOverlay;
+  static const borderShadow = CyberClockAppearance.borderShadow;
 }
 
 /// Home hero clock — stand-in for lws-ui `FrostHomeClockView`.
@@ -24,8 +22,8 @@ abstract final class HomeClockTokens {
 /// Sampling uses the shared [CyberBlurSampleMode] API (default
 /// [CyberBlurSampleMode.realtime] via [CyberBackdropBlur] / `BackdropFilter`).
 ///
-/// Glyph-clip frost remains an **App / HomeClock** composition concern until a
-/// stable Cyber clock API exists; this widget consumes cyber_ui blur tokens.
+/// Appearance tokens come from [CyberClockAppearance] (via [HomeClockTokens]).
+/// See [CyberClockNotes] for glyph-clip live-blur limits on RK3566.
 /// Glyph chrome (vertical scale, milk overlay, edge stroke) follows lws-ui;
 /// font is system bold (not Roboto Bold).
 class HomeClock extends StatefulWidget {

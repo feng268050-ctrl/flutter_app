@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -91,6 +92,7 @@ class _LedSettingsPageState extends State<LedSettingsPage> {
                       selected: {_modes[color]!},
                       onSelectionChanged: (set) {
                         if (set.isEmpty) return;
+                        CyberClickSoundRegistry.playClick();
                         unawaited(_setMode(color, set.first));
                       },
                     ),

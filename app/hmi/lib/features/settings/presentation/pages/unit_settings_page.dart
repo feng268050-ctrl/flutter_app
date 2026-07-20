@@ -21,13 +21,9 @@ class _UnitSettingsPageState extends State<UnitSettingsPage> {
           SettingsGroup(
             children: [
               for (final u in const ['Metric', 'Imperial'])
-                ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  title: Text(u),
-                  trailing: _unit == u
-                      ? const Icon(Icons.check, color: Colors.lightBlueAccent)
-                      : null,
+                SettingsOptionTile(
+                  title: u,
+                  selected: _unit == u,
                   onTap: () => setState(() => _unit = u),
                 ),
             ],

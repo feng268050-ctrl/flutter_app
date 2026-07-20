@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -145,14 +146,20 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                   const Spacer(),
                   TextButton(
                     onPressed: _scanning
-                        ? () => unawaited(
+                        ? () {
+                            CyberClickSoundRegistry.playClick();
+                            unawaited(
                               widget.services.bluetooth.stopScan(),
-                            )
-                        : () => unawaited(
+                            );
+                          }
+                        : () {
+                            CyberClickSoundRegistry.playClick();
+                            unawaited(
                               _run(
                                 () => widget.services.bluetooth.startScan(),
                               ),
-                            ),
+                            );
+                          },
                     child: Text(_scanning ? 'Stop' : 'Scan'),
                   ),
                 ],

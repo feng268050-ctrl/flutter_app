@@ -1,3 +1,4 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/advanced_settings_tab.dart';
@@ -14,14 +15,26 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
     return DefaultTabController(
       length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Settings'),
-          bottom: const TabBar(
+          automaticallyImplyLeading: false,
+          leading: canPop
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    CyberClickSoundRegistry.playClick();
+                    Navigator.of(context).maybePop();
+                  },
+                )
+              : null,
+          bottom: TabBar(
             isScrollable: true,
-            tabs: [
+            onTap: (_) => CyberClickSoundRegistry.playClick(),
+            tabs: const [
               Tab(text: 'Device Information'),
               Tab(text: 'Common Settings'),
               Tab(text: 'Advanced Settings'),

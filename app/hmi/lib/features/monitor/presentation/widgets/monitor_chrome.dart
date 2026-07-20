@@ -48,14 +48,20 @@ class MonitorGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final panel = CyberPanelBorder(
+      cornerRadius: MonitorDimens.corner,
+    );
     return Container(
       width: width,
       height: height,
       margin: margin,
       decoration: BoxDecoration(
         color: MonitorDimens.glass,
-        borderRadius: BorderRadius.circular(MonitorDimens.corner),
-        border: Border.all(color: Colors.white.withOpacity(0.12)),
+        borderRadius: panel.borderRadius,
+        border: Border.all(
+          color: panel.flatBorderColor.withOpacity(0.35),
+          width: panel.width,
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(padding: padding, child: child),

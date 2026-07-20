@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cyber_hal/network.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -97,11 +98,17 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () {
+                CyberClickSoundRegistry.playClick();
+                Navigator.pop(ctx);
+              },
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(ctx, ctrl.text),
+              onPressed: () {
+                CyberClickSoundRegistry.playClick();
+                Navigator.pop(ctx, ctrl.text);
+              },
               child: const Text('Join'),
             ),
           ],
@@ -138,11 +145,17 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () {
+              CyberClickSoundRegistry.playClick();
+              Navigator.pop(ctx, false);
+            },
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () {
+              CyberClickSoundRegistry.playClick();
+              Navigator.pop(ctx, true);
+            },
             child: const Text('Join'),
           ),
         ],
@@ -205,6 +218,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                               const SizedBox(height: 16),
                               FilledButton(
                                 onPressed: () {
+                                  CyberClickSoundRegistry.playClick();
                                   Navigator.pop(ctx);
                                   unawaited(_guard(_wifi.disconnect));
                                 },
@@ -212,6 +226,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                               ),
                               TextButton(
                                 onPressed: () {
+                                  CyberClickSoundRegistry.playClick();
                                   Navigator.pop(ctx);
                                   unawaited(
                                     _guard(() => _wifi.forget(_conn.ssid!)),
@@ -256,7 +271,12 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                   ),
                   const Spacer(),
                   TextButton(
-                    onPressed: _busy != null ? null : () => unawaited(_scan()),
+                    onPressed: _busy != null
+                        ? null
+                        : () {
+                            CyberClickSoundRegistry.playClick();
+                            unawaited(_scan());
+                          },
                     child: const Text('Scan'),
                   ),
                 ],
@@ -288,7 +308,12 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: OutlinedButton(
-                onPressed: _busy != null ? null : _joinHidden,
+                onPressed: _busy != null
+                    ? null
+                    : () {
+                        CyberClickSoundRegistry.playClick();
+                        unawaited(_joinHidden());
+                      },
                 child: const Text('Other…'),
               ),
             ),

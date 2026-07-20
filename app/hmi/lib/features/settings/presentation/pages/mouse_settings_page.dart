@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cyber_hal/input.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -87,13 +88,16 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
                           ),
                   onChangeEnd: _busy
                       ? null
-                      : (v) => unawaited(
+                      : (v) {
+                          CyberClickSoundRegistry.playClick();
+                          unawaited(
                             _apply(
                               _settings.copyWith(
                                 pointerSpeedPercent: v.round(),
                               ),
                             ),
-                          ),
+                          );
+                        },
                 ),
               ),
               ListTile(
@@ -115,13 +119,16 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
                           ),
                   onChangeEnd: _busy
                       ? null
-                      : (v) => unawaited(
+                      : (v) {
+                          CyberClickSoundRegistry.playClick();
+                          unawaited(
                             _apply(
                               _settings.copyWith(
                                 scrollSpeedPercent: v.round(),
                               ),
                             ),
-                          ),
+                          );
+                        },
                 ),
               ),
             ],

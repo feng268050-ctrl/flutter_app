@@ -22,13 +22,9 @@ class _ScreenOffSettingsPageState extends State<ScreenOffSettingsPage> {
           SettingsGroup(
             children: [
               for (final o in options)
-                ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  title: Text(o),
-                  trailing: _value == o
-                      ? const Icon(Icons.check, color: Colors.lightBlueAccent)
-                      : null,
+                SettingsOptionTile(
+                  title: o,
+                  selected: _value == o,
                   onTap: () => setState(() => _value = o),
                 ),
             ],

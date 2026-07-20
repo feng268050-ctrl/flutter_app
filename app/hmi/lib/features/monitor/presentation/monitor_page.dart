@@ -1,3 +1,4 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/ai_vision_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/alarm_information_tab.dart';
@@ -42,6 +43,7 @@ class MonitorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
     return DefaultTabController(
       length: _tabs.length,
       child: Scaffold(
@@ -50,11 +52,22 @@ class MonitorPage extends StatelessWidget {
           title: const Text('Monitor'),
           backgroundColor: Colors.black87,
           foregroundColor: Colors.white,
+          automaticallyImplyLeading: false,
+          leading: canPop
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    CyberClickSoundRegistry.playClick();
+                    Navigator.of(context).maybePop();
+                  },
+                )
+              : null,
           bottom: TabBar(
             isScrollable: true,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white60,
             indicatorColor: Colors.white70,
+            onTap: (_) => CyberClickSoundRegistry.playClick(),
             tabs: [
               for (final tab in _tabs)
                 Tab(

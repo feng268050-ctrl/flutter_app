@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cyber_hal/datetime.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -181,7 +182,10 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
               child: FilledButton(
                 onPressed: _busy
                     ? null
-                    : () => unawaited(_run(() => _dt.syncFromNetwork())),
+                    : () {
+                        CyberClickSoundRegistry.playClick();
+                        unawaited(_run(() => _dt.syncFromNetwork()));
+                      },
                 child: const Text('Sync Now'),
               ),
             ),
@@ -218,13 +222,9 @@ class _TimezonePickerPage extends StatelessWidget {
           SettingsGroup(
             children: [
               for (final tz in zones)
-                ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  title: Text(tz),
-                  trailing: tz == current
-                      ? const Icon(Icons.check, color: Colors.lightBlueAccent)
-                      : null,
+                SettingsOptionTile(
+                  title: tz,
+                  selected: tz == current,
                   onTap: () {
                     onSelected(tz);
                     Navigator.pop(context);

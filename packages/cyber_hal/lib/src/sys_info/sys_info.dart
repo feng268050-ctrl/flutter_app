@@ -30,6 +30,27 @@ final class SysInfoUpdate {
   bool get isPrimed => kind == SysInfoChangeKind.primed;
 }
 
+/// Optional UI/raster FPS source (typically Flutter [TimingsCallback] at ~1 Hz).
+///
+/// Kept out of the HAL Linux backends so host/stub can supply fixed values and
+/// the App can inject a Flutter-binding sampler without coupling cyber_hal to
+/// SchedulerBinding.
+abstract class FrameTimingSampler {
+  double? get uiFps;
+  double? get rasterFps;
+}
+
+/// Fixed FPS values for stub / tests.
+final class FixedFrameTimingSampler implements FrameTimingSampler {
+  const FixedFrameTimingSampler({this.uiFps, this.rasterFps});
+
+  @override
+  final double? uiFps;
+
+  @override
+  final double? rasterFps;
+}
+
 final class SysInfoSnapshot {
   const SysInfoSnapshot({
     this.serialNumber,
@@ -45,6 +66,9 @@ final class SysInfoSnapshot {
     this.thermal = const [],
     this.uptime,
     this.loadAverage,
+    this.uiFps,
+    this.rasterFps,
+    this.panelRefreshHz,
   });
 
   final String? serialNumber;
@@ -60,6 +84,15 @@ final class SysInfoSnapshot {
   final List<ThermalZone> thermal;
   final Duration? uptime;
   final LoadAverage? loadAverage;
+
+  /// Build/UI thread FPS over the sampler window (typically ~1s), or null.
+  final double? uiFps;
+
+  /// Raster thread FPS over the sampler window (typically ~1s), or null.
+  final double? rasterFps;
+
+  /// Active DRM display mode refresh (Hz), e.g. Rockchip `800x1280p56` → 56.
+  final double? panelRefreshHz;
 
   /// Prefer `soc-thermal` / types containing `soc` (RK356x).
   ThermalZone? get socThermal => _thermalMatching('soc');
@@ -89,7 +122,9 @@ final class SysInfoSnapshot {
     final load = loadAverage == null
         ? ''
         : '${loadAverage!.one},${loadAverage!.five},${loadAverage!.fifteen}';
-    return '$zones|${cpuFreqMhz ?? ''}|${memoryAvailableBytes ?? ''}|$load';
+    final ui = uiFps?.toStringAsFixed(1) ?? '';
+    final rast = rasterFps?.toStringAsFixed(1) ?? '';
+    return '$zones|${cpuFreqMhz ?? ''}|${memoryAvailableBytes ?? ''}|$load|$ui|$rast';
   }
 }
 
@@ -168,6 +203,7 @@ class LinuxSysInfo implements SysInfo {
     this.deviceSnReader = const DeviceSnReader(),
     this.appVersion,
     this.mountPoints = const <String>['/', '/userdata'],
+    this.frameTimingSampler,
   });
 
   final DeviceSnReader deviceSnReader;
@@ -176,6 +212,9 @@ class LinuxSysInfo implements SysInfo {
   final String? appVersion;
 
   final List<String> mountPoints;
+
+  /// Optional FPS sampler (App injects Flutter timings; stub uses fixed).
+  final FrameTimingSampler? frameTimingSampler;
 
   final StreamController<SysInfoUpdate> _updates =
       StreamController<SysInfoUpdate>.broadcast();
@@ -186,10 +225,13 @@ class LinuxSysInfo implements SysInfo {
   String? _lastVolatile;
   int _listenCount = 0;
   bool _closed = false;
+  double? _cachedPanelRefreshHz;
+  bool _panelRefreshResolved = false;
 
   @override
   Future<SysInfoSnapshot> snapshot() async {
     final sn = await deviceSnReader.read();
+    final sampler = frameTimingSampler;
     return SysInfoSnapshot(
       serialNumber: sn == deviceSnReader.unavailableDisplay ? null : sn,
       boardModel: await _readBoardModel(),
@@ -204,6 +246,9 @@ class LinuxSysInfo implements SysInfo {
       thermal: await _readThermal(),
       uptime: await _readUptime(),
       loadAverage: await _readLoadAverage(),
+      uiFps: sampler?.uiFps,
+      rasterFps: sampler?.rasterFps,
+      panelRefreshHz: await _readPanelRefreshHz(),
     );
   }
 
@@ -488,5 +533,51 @@ class LinuxSysInfo implements SysInfo {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Panel mode refresh from Rockchip DRM debugfs (`Display mode: 800x1280p56`).
+  /// Cached after first successful read (mode rarely changes while HMI runs).
+  Future<double?> _readPanelRefreshHz() async {
+    if (_panelRefreshResolved) {
+      return _cachedPanelRefreshHz;
+    }
+    _panelRefreshResolved = true;
+    try {
+      await Process.run('mount', const <String>[
+        '-t',
+        'debugfs',
+        'none',
+        '/sys/kernel/debug',
+      ]);
+    } catch (_) {}
+    try {
+      final dri = Directory('/sys/kernel/debug/dri');
+      if (!await dri.exists()) {
+        return null;
+      }
+      final cards = await dri.list().where((e) => e is Directory).toList();
+      cards.sort((a, b) => a.path.compareTo(b.path));
+      // Rockchip: `Display mode: 800x1280p56` (integer or fractional Hz).
+      final modeRe = RegExp(r'Display mode:\s*\S+p(\d+(?:\.\d+)?)');
+      for (final card in cards) {
+        final summary = File('${card.path}/summary');
+        if (!await summary.exists()) {
+          continue;
+        }
+        final text = await summary.readAsString();
+        final m = modeRe.firstMatch(text);
+        if (m == null) {
+          continue;
+        }
+        final hz = double.tryParse(m.group(1)!);
+        if (hz != null && hz > 0) {
+          _cachedPanelRefreshHz = hz;
+          return hz;
+        }
+      }
+    } catch (e) {
+      debugPrint('sys_info: DRM panel refresh read failed: $e');
+    }
+    return null;
   }
 }

@@ -41,6 +41,7 @@ if [[ "$USE_VOLUME" == "1" ]]; then
       -v "$VOLUME:/work/sdk" \
       -e LWS_HMI_DOCKER=1 \
       -e LWS_HMI_SDK_DIR=/work/sdk \
+      -e "LWS_HMI_WESTON=${LWS_HMI_WESTON:-0}" \
       -w /work/lws-hmi \
       "$IMAGE" \
       bash /work/lws-hmi/scripts/apply-overlay.sh
@@ -59,6 +60,7 @@ docker_args=(
   -e "LWS_HMI_NO_MAKEFLAGS=${LWS_HMI_NO_MAKEFLAGS:-}"
   -e LWS_HMI_ROOT=/work/lws-hmi
   -e LWS_HMI_SDK_DIR=/work/sdk
+  -e "LWS_HMI_WESTON=${LWS_HMI_WESTON:-0}"
   -e "LWS_HMI_CACHE_PUBLISH=${LWS_HMI_CACHE_PUBLISH:-1}"
   -v "$ROOT:/work/lws-hmi"
   -v lws-hmi-ccache:/ccache

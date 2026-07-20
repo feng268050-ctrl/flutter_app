@@ -35,13 +35,45 @@ final class StubSysInfo implements SysInfo {
       ],
       uptime: Duration(hours: 1),
       loadAverage: LoadAverage(one: 0.1, five: 0.1, fifteen: 0.1),
+      uiFps: 56.0,
+      rasterFps: 56.0,
+      panelRefreshHz: 56.0,
     ),
+    this.frameTimingSampler,
   });
 
   final SysInfoSnapshot snapshotData;
 
+  /// When set, overrides [SysInfoSnapshot.uiFps] / [rasterFps] from [snapshotData].
+  final FrameTimingSampler? frameTimingSampler;
+
+  SysInfoSnapshot get _effectiveSnapshot {
+    final s = frameTimingSampler;
+    if (s == null) {
+      return snapshotData;
+    }
+    return SysInfoSnapshot(
+      serialNumber: snapshotData.serialNumber,
+      boardModel: snapshotData.boardModel,
+      kernelRelease: snapshotData.kernelRelease,
+      osReleaseId: snapshotData.osReleaseId,
+      appVersion: snapshotData.appVersion,
+      cpuCoreCount: snapshotData.cpuCoreCount,
+      cpuFreqMhz: snapshotData.cpuFreqMhz,
+      memoryTotalBytes: snapshotData.memoryTotalBytes,
+      memoryAvailableBytes: snapshotData.memoryAvailableBytes,
+      storage: snapshotData.storage,
+      thermal: snapshotData.thermal,
+      uptime: snapshotData.uptime,
+      loadAverage: snapshotData.loadAverage,
+      uiFps: s.uiFps,
+      rasterFps: s.rasterFps,
+      panelRefreshHz: snapshotData.panelRefreshHz,
+    );
+  }
+
   @override
-  Future<SysInfoSnapshot> snapshot() async => snapshotData;
+  Future<SysInfoSnapshot> snapshot() async => _effectiveSnapshot;
 
   @override
   Stream<SysInfoUpdate> watch({
@@ -49,7 +81,7 @@ final class StubSysInfo implements SysInfo {
   }) async* {
     yield SysInfoUpdate(
       kind: SysInfoChangeKind.primed,
-      snapshot: snapshotData,
+      snapshot: _effectiveSnapshot,
     );
   }
 

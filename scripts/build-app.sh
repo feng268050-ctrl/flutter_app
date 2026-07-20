@@ -56,7 +56,7 @@ ensure_flutterpi_tool
 cd "$APP_DIR"
 flutter pub get
 
-echo "Building flutter-pi release bundle (Flutter $PINNED_VER, arm64, meta-flutter)..."
+echo "Building HMI release AOT bundle (Flutter $PINNED_VER, arm64; shared by flutter-pi and Weston)..."
 flutterpi_tool build --arch=arm64 --release
 
 LEGACY_BUNDLE="$APP_DIR/build/flutter-pi/meta-flutter-aarch64-generic"

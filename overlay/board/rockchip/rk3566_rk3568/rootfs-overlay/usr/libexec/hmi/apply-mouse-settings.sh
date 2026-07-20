@@ -1,0 +1,72 @@
+#!/bin/sh
+# Persist mouse.conf (stdin) and apply to Weston when present.
+# flutter-pi reloads mouse.conf on mtime; Weston needs ini rewrite + HMI restart
+# only when the generated weston.ini content actually changes.
+set -eu
+
+PREF_DIR=/var/lib/hmi
+PREF="$PREF_DIR/mouse.conf"
+WESTON_CFG=/usr/libexec/hmi/weston-hmi-config.sh
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/0}"
+WESTON_INI="$RUNTIME_DIR/weston.ini"
+
+mkdir -p "$PREF_DIR"
+tmp="$PREF.tmp.$$"
+cat >"$tmp"
+mv -f "$tmp" "$PREF"
+chmod 644 "$PREF" 2>/dev/null || true
+echo "apply-mouse-settings: wrote $PREF" >&2
+
+# flutter-pi path: done (mtime poll).
+if [ ! -x /usr/bin/weston ]; then
+	exit 0
+fi
+
+if [ ! -f "$WESTON_CFG" ]; then
+	exit 0
+fi
+
+transform=rotate-270
+if [ -f "$WESTON_INI" ]; then
+	t="$(grep -E '^transform=' "$WESTON_INI" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '[:space:]')"
+	if [ -n "$t" ]; then
+		transform="$t"
+	fi
+fi
+
+export MOUSE_CONF="$PREF"
+# shellcheck source=/dev/null
+. "$WESTON_CFG"
+
+ini_tmp="$WESTON_INI.apply.$$"
+weston_write_hmi_ini "$ini_tmp" "$transform"
+
+ini_changed=1
+if [ -f "$WESTON_INI" ] && cmp -s "$ini_tmp" "$WESTON_INI"; then
+	ini_changed=0
+fi
+mv -f "$ini_tmp" "$WESTON_INI"
+
+if [ "$ini_changed" -eq 0 ]; then
+	echo "apply-mouse-settings: weston.ini unchanged → skip restart" >&2
+	exit 0
+fi
+
+# Avoid start-limit-hit loops (e.g. boot restore re-touching conf).
+if [ -f /run/lws-mouse-hmi-restart ]; then
+	age=$(($(date +%s) - $(date -r /run/lws-mouse-hmi-restart +%s 2>/dev/null || echo 0)))
+	if [ "$age" -ge 0 ] && [ "$age" -lt 15 ]; then
+		echo "apply-mouse-settings: restart suppressed (debounced ${age}s)" >&2
+		exit 0
+	fi
+fi
+
+if pidof weston >/dev/null 2>&1; then
+	echo "apply-mouse-settings: weston.ini changed → restarting hmi" >&2
+	date +%s >/run/lws-mouse-hmi-restart 2>/dev/null || true
+	if command -v systemctl >/dev/null 2>&1; then
+		nohup systemctl restart hmi >/dev/null 2>&1 &
+	fi
+fi
+
+exit 0

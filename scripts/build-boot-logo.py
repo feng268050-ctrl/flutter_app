@@ -14,6 +14,11 @@ SRC = ROOT / "board/logo/splash_icon.png"
 LCD_PARAM = ROOT / "board/960_lcd_param_rk356x.txt"
 OUT = ROOT / "board/logo/logo.bmp"
 OUT_KERNEL = ROOT / "board/logo/logo_kernel.bmp"
+# Same canvas as logo.bmp; Weston desktop-shell background until Flutter presents.
+OUT_WESTON_PNG = (
+    ROOT
+    / "overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/share/hmi/boot-splash.png"
+)
 
 BG_COLOR = (255, 255, 255)
 
@@ -110,14 +115,21 @@ def _render_with_magick(canvas_w: int, canvas_h: int, rotate_icon: bool) -> None
 
 
 def _is_up_to_date() -> bool:
-    if not (OUT.is_file() and OUT_KERNEL.is_file()):
+    if not (OUT.is_file() and OUT_KERNEL.is_file() and OUT_WESTON_PNG.is_file()):
         return False
     out_mtime = OUT.stat().st_mtime
     script_mtime = Path(__file__).stat().st_mtime
     for dep in (SRC, LCD_PARAM):
         if dep.is_file() and dep.stat().st_mtime > out_mtime:
             return False
+    if OUT_WESTON_PNG.stat().st_mtime < out_mtime:
+        return False
     return out_mtime >= script_mtime
+
+
+def _write_weston_png(canvas) -> None:
+    OUT_WESTON_PNG.parent.mkdir(parents=True, exist_ok=True)
+    canvas.save(OUT_WESTON_PNG, "PNG")
 
 
 def main() -> int:
@@ -138,8 +150,19 @@ def main() -> int:
         canvas = _render_with_pillow(canvas_w, canvas_h, rotate_icon)
         # PIL BMP writer emits BGR; manual RGB bytes swap red/blue on the panel.
         canvas.save(OUT, "BMP")
+        _write_weston_png(canvas)
     except ImportError:
         _render_with_magick(canvas_w, canvas_h, rotate_icon)
+        # Magick path only wrote BMP; convert for Weston if sips/PIL unavailable later.
+        try:
+            from PIL import Image
+
+            _write_weston_png(Image.open(OUT).convert("RGB"))
+        except ImportError:
+            print(
+                f"WARNING: skip {OUT_WESTON_PNG} (no Pillow after magick BMP)",
+                file=sys.stderr,
+            )
 
     shutil.copy2(OUT, OUT_KERNEL)
     print(
@@ -147,6 +170,8 @@ def main() -> int:
         f"lcd0={lcd_x}x{lcd_y} rotation={rotation}°)"
     )
     print(f"boot logo: {OUT_KERNEL} (copy)")
+    if OUT_WESTON_PNG.is_file():
+        print(f"boot logo: {OUT_WESTON_PNG} (Weston splash)")
     return 0
 
 

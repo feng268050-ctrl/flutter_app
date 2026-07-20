@@ -101,41 +101,50 @@
 
 ## 6. 分阶段计划
 
-### E0 — 可行性 Spike（决策门）🔲
+### E0 — 可行性 Spike（决策门）🔄
 
 **目标**:用最小代价确定 backend,尽早暴露 R1/R5/R6。
 
-- E0.1 调研 eLinux 与 3.24.4 匹配的 tag、CMake 依赖、backend 编译开关。🔲
-- E0.2 主机/设备上最小构建 eLinux(DRM-GBM),链接现有 `libflutter_engine.so`,跑当前 `/opt/hmi` bundle。🔲
-- E0.3 用 [`debug-frame-pacing.sh`](../scripts/debug-frame-pacing.sh) 测**同一首页动画**的 present 稳态帧率(对照 flutter-pi ~26fps)。🔲
-- E0.4 确认 Rockchip libmali 变体清单(`gbm` / `wayland-gbm`),评估 Weston 路径可行性。🔲
-- E0.5(条件)若 E0.3 未达标,最小引入 Weston + eLinux Wayland backend,复测帧率。🔲
-- **产出**:一页 spike 报告 + backend 决策(B 或 C)。
+- E0.1 调研 eLinux 与 3.24.4 匹配的 tag、CMake 依赖、backend 编译开关。✅ → tag `db49896cf2` 精确匹配引擎。
+- E0.2 主机/设备上最小构建 eLinux(DRM-GBM),链接现有 `libflutter_engine.so`,跑当前 `/opt/hmi` bundle。✅ → [`scripts/spike-elinux-drm-gbm.sh`](../scripts/spike-elinux-drm-gbm.sh)。
+- E0.3 用 [`debug-frame-pacing.sh`](../scripts/debug-frame-pacing.sh) 测**同一首页动画**的 present 稳态帧率(对照 flutter-pi)。✅ → 公平 A/B：flutter-pi ~38–40fps，eLinux DRM-GBM+`ENABLE_VSYNC=ON` ~40fps；**均 <50fps**。`ENABLE_VSYNC=OFF` 不可用。
+- E0.4 确认 Rockchip libmali 变体清单(`gbm` / `wayland-gbm`),评估 Weston 路径可行性。✅ → `wayland-gbm`（bifrost-g52-g24p0）现成；SDK 已有 weston 包。
+- E0.5(条件)若 E0.3 未达标,最小引入 Weston + eLinux Wayland backend,复测帧率。✅ 基础设施 + present 探针完成；**C≈41fps vs pi≈24fps，硬门控 ≥50 未过**（见 spike 报告 §5）。
+- **产出**: [`embedder-migration-spike-e0.md`](embedder-migration-spike-e0.md) — **否决 B；方向锁定 C**；≥50fps 留待 E3/调优或 P5.1。
 
-### E1 — Buildroot 打包 🔲
+### E1 — Buildroot 打包 ✅（最小落地：备选 Weston 镜像）
 
-- E1.1 新增 `overlay/buildroot/package/flutter-embedded-linux/`(prebuilt `.mk` + compile `.mk`,参照 flutter-pi 双 `.mk` 模式)。🔲
-- E1.2(仅 C)新增/启用 `weston`、`wayland`、`wayland-protocols`,并切换 libmali 到 `wayland-gbm` 变体;新增 `chips/lws_hmi_wayland.config`。🔲
-- E1.3 prebuilt 导出流程 + `make check-prebuilt` 纳入新包。🔲
-- E1.4 版本文件 `overlay/buildroot/flutter-embedded-linux.version`。🔲
+- E1.1 新增 `overlay/buildroot/package/flutter-embedded-linux/`(prebuilt `.mk`；交叉编译见 `scripts/build-flutter-embedded-linux.sh`)。✅
+- E1.2(仅 C)新增/启用 `weston`、`wayland`、`wayland-protocols`,并切换 libmali 到 `wayland-gbm` 变体;新增 `chips/lws_hmi_wayland.config`。✅ — **默认 defconfig 不 include**；`make build-rootfs-weston` 经 `LWS_HMI_WESTON=1` 注入。
+- E1.3 prebuilt 导出流程 + `make check-prebuilt` 纳入新包。✅（仅 wayland fragment 启用时校验）。
+- E1.4 版本文件 `overlay/buildroot/flutter-embedded-linux.version`。✅ (`db49896cf2`)
+
+**双轨 rootfs：**
+
+| 目标 | 嵌入器 | Mali |
+| ---- | ------ | ---- |
+| `make build-rootfs`（默认） | flutter-pi only（无 weston / eLinux client） | `gbm` |
+| `make build-rootfs-weston` | Weston + `flutter-wayland-client` only（无 `flutter-pi`） | `wayland-gbm` |
+
+两套 rootfs **互斥打包**：`lws_hmi_flutter.config` 显式关闭 Wayland/Weston/eLinux；`lws_hmi_wayland.config` 关闭 `FLUTTER_PI`。`post-build` 写入 `/etc/hmi/display-stack` 且若混装则失败。`hmi-launch.sh` **按该 stamp 选栈**（不是“没有 flutter-pi 才走 Weston”）。栈切换：`make prepare-rootfs` / `prepare-rootfs-weston`（`scripts/prepare-rootfs-stack.sh` + `ensure-mali-variant.sh`）；`build-rootfs*` 会先跑匹配的 prepare。鼠标偏好：`apply-mouse-settings` 写 conf；Weston 下会重启 `hmi` 使 ini 生效。视觉 DPR 对齐在 Dart（`LwsHmiApp` FittedBox≈1.358）。HAL：`BoardBindings.displayStack()` / `DisplayStackProbe`（读 `/etc/hmi/display-stack` 与 `/run/hmi/display-stack`）门控 Settings 中仅 flutter-pi 支持的鼠标项。
 
 ### E2 — 输入 / 光标平权 🔲
 
 - E2.1 按 §7.2 checklist 逐项验证并补齐(文本光标、键盘 LED/重复、鼠标加速/滚动/尺寸、BT 轴交换、触摸、电源键)。🔲
-- E2.2 `cyber_hal` 鼠标偏好在新栈下的落地(R7)。🔲
-- E2.3 旋转(`landscape_left` / `lcd0_rotation=90`)在新栈下对齐。🔲
+- E2.2 `cyber_hal` 鼠标偏好在新栈下的落地(R7)。✅ — `board_profile` 声明 `apply_mouse_settings`；helper 写 conf + Weston `weston.ini`/`[libinput]`；`scroll_speed`/`pointer_axes` 仍为 flutter-pi only（不强做）。
+- E2.3 旋转(`landscape_left` / `lcd0_rotation=90`)在新栈下对齐。🔲 — Weston 路径已用 compositor transform；flutter-pi 仍用 `-o landscape_left`。
 
-### E3 — 运行时集成 🔲
+### E3 — 运行时集成 🔄
 
-- E3.1 改造 `hmi-launch.sh` / `hmi.service`:以 eLinux 命令行(或 Weston + 客户端)启动;保留 orientation、SSL_CERT、ALSA、LED 清理逻辑。🔲
-- E3.2 (仅 C)Weston 配置(kiosk/单客户端全屏、禁用 shell 装饰、背光/DPMS)。🔲
-- E3.3 boot KPI 实测与优化(R3);对齐 [`boot-verify.sh`](../overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/boot-verify.sh)。🔲
+- E3.1 改造 `hmi-launch.sh` / `hmi.service`:以 eLinux 命令行(或 Weston + 客户端)启动;保留 orientation、SSL_CERT、ALSA、LED 清理逻辑。✅（分支启动；unit 名仍为 `hmi.service`）。
+- E3.2 (仅 C)Weston 配置(单客户端全屏、禁用 shell 装饰、splash handoff、背光/DPMS)。✅ → **`desktop-shell.so`**（非 kiosk）：`panel-position=none` + `background-image=/usr/share/hmi/boot-splash.png`（与 `board/logo` 同图，`make build-boot-logo` 同步 PNG）。kiosk-shell **无** `background-image`，仅纯色 → DRM 接手后黑/白空档。运行时 ini：`weston-hmi-config.sh` → `/run/user/0/weston.ini`；静态/post-hook：`etc/xdg/weston/weston.ini` + `91-weston-ini.sh`。Flutter：`flutter-wayland-client --fullscreen`。
+- E3.3 boot KPI 实测与优化(R3);对齐 [`boot-verify.sh`](../overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/boot-verify.sh)。🔲 — **已知**：Weston 在 `Output enabled` 时即清掉内核 `drm_logo`（约早于 Flutter 首 present ~1.6–2.2s）；靠 desktop-shell 背景图桥接，不等同 flutter-pi「logo 留到首帧」机制。
 
 ### E4 — 验收与切换 🔲
 
 - E4.1 §9 验收全过。🔲
-- E4.2 灰度:保留 flutter-pi 包与 prebuilt 作为回退(见 §10);defconfig 开关切换嵌入器。🔲
-- E4.3 更新主线规划(§5 显示栈、P3.2 收敛、P5.1)、README、AGENTS.md 重建表、`env-verify.sh`。🔲
+- E4.2 灰度:保留 flutter-pi 包与 prebuilt 作为回退(见 §10);defconfig 开关切换嵌入器。✅（默认 pi / 备选 `build-rootfs-weston`）。
+- E4.3 更新主线规划(§5 显示栈、P3.2 收敛、P5.1)、README、AGENTS.md 重建表、`env-verify.sh`。🔄（README/AGENTS 已更；env-verify 待补）。
 - E4.4 归档本迁移(OpenSpec/文档)。🔲
 
 ---
@@ -193,8 +202,8 @@
 
 ## 11. 开放问题
 
-1. eLinux 与 3.24.4 引擎的确切兼容 tag?是否必须升级引擎(牵动 P5.1)?
-2. Rockchip 为本 SoC 提供哪些 libmali 变体?`wayland-gbm` 是否现成?
+1. ~~eLinux 与 3.24.4 引擎的确切兼容 tag?是否必须升级引擎(牵动 P5.1)?~~ → **E0 已关闭**：tag `db49896cf2`；spike 无需升引擎。
+2. ~~Rockchip 为本 SoC 提供哪些 libmali 变体?`wayland-gbm` 是否现成?~~ → **E0 已关闭**：`gbm` / `wayland-gbm`（及 x11 组合）均在 `external/libmali`。
 3. 方案 C 下 Weston 的启动开销能否压进 boot KPI?
-4. 触摸在 DRM-GBM(无 Weston)下 eLinux 的多点/坐标旋转是否与现状一致?
+4. 触摸在 DRM-GBM(无 Weston)下 eLinux 的多点/坐标旋转是否与现状一致?（B 已否决为终态，降为次要）
 5. 是否需要保留 GStreamer 视频插件路径(当前默认关闭,RTSP 可选)在新嵌入器下的等价能力?

@@ -521,7 +521,11 @@ class _P2DemoPageState extends State<P2DemoPage> {
                 const SizedBox(height: 32),
                 KeyboardDemoSection(keyboard: _keyboard),
                 const SizedBox(height: 32),
-                MouseDemoSection(controller: _mouse),
+                MouseDemoSection(
+                  controller: _mouse,
+                  displayStack:
+                      _bindings?.displayStack() ?? DisplayStack.unknown,
+                ),
                 const SizedBox(height: 32),
                 DateTimeDemoSection(controller: _dateTime),
                 const SizedBox(height: 32),

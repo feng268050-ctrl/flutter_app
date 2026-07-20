@@ -1,0 +1,64 @@
+diff --git a/src/flutter/shell/platform/linux_embedded/surface/elinux_egl_surface.cc b/src/flutter/shell/platform/linux_embedded/surface/elinux_egl_surface.cc
+index 914ab73..7a2f25c 100644
+--- a/src/flutter/shell/platform/linux_embedded/surface/elinux_egl_surface.cc
++++ b/src/flutter/shell/platform/linux_embedded/surface/elinux_egl_surface.cc
+@@ -7,8 +7,35 @@
+ #include "flutter/shell/platform/linux_embedded/logger.h"
+ #include "flutter/shell/platform/linux_embedded/surface/egl_utils.h"
+ 
++#include <atomic>
++#include <cstdio>
++#include <ctime>
++
+ namespace flutter {
+ 
++namespace {
++// Spike-only present counter (E0.5 frame-pacing seal). Emits one line per
++// wall-clock second: ELINUX_PRESENT_FPS <n>
++void NotePresentSuccess() {
++  static std::atomic<unsigned> count{0};
++  static std::atomic<std::time_t> bucket{0};
++  const std::time_t now = std::time(nullptr);
++  std::time_t prev = bucket.load(std::memory_order_relaxed);
++  if (now != prev) {
++    if (bucket.compare_exchange_strong(prev, now, std::memory_order_acq_rel)) {
++      const unsigned n = count.exchange(0, std::memory_order_acq_rel);
++      // prev==0 on first tick — skip partial bucket.
++      if (prev != 0) {
++        std::fprintf(stderr, "ELINUX_PRESENT_FPS %u\n", n);
++        std::fflush(stderr);
++      }
++    }
++  }
++  count.fetch_add(1, std::memory_order_relaxed);
++}
++}  // namespace
++
++
+ constexpr size_t kInitialWindowWidthPx = 1280;
+ constexpr size_t kInitialWindowHeightPx = 720;
+ 
+@@ -102,6 +129,7 @@ bool ELinuxEGLSurface::SwapBuffers() const {
+     ELINUX_LOG(ERROR) << "eglSwapBuffers failed: " << get_egl_error_cause();
+     return false;
+   }
++  NotePresentSuccess();
+   return true;
+ }
+ 
+@@ -141,6 +169,7 @@ bool ELinuxEGLSurface::SwapBuffers(const FlutterPresentInfo* info) {
+                         << get_egl_error_cause();
+       return false;
+     }
++    NotePresentSuccess();
+   } else {
+     // If the required extensions for partial repaint were not provided, do
+     // full repaint.
+@@ -148,6 +177,7 @@ bool ELinuxEGLSurface::SwapBuffers(const FlutterPresentInfo* info) {
+       ELINUX_LOG(ERROR) << "eglSwapBuffers failed: " << get_egl_error_cause();
+       return false;
+     }
++    NotePresentSuccess();
+   }
+ 
+   return true;

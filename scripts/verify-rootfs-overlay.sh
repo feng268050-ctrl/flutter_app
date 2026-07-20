@@ -404,8 +404,9 @@ enable-ssh-debug /usr/libexec/hmi/enable-ssh-debug.sh
 disable-ssh-debug /usr/libexec/hmi/disable-ssh-debug.sh
 usb-otg-mode /usr/libexec/hmi/usb-otg-mode.sh
 set-performance-mode /usr/libexec/hmi/set-performance-mode.sh
+apply-mouse-settings /usr/libexec/hmi/apply-mouse-settings.sh
 EOF
-	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader lws-hmi-backlight-apply change-backlight change-volume apply-mouse-settings apply-proxy sync-time; do
+	for retired in boot-verify env-verify read-device-serial reboot-rockusb-loader lws-hmi-backlight-apply change-backlight change-volume apply-proxy sync-time; do
 		if [[ -e "$target/usr/bin/$retired" || -L "$target/usr/bin/$retired" ]]; then
 			echo "FAIL: retired usr/bin/$retired command still present" >&2
 			missing=1
@@ -552,6 +553,53 @@ EOF
 		echo "OK:  usr/lib/libflutter_engine.so ($system_sz bytes)"
 	else
 		echo "FAIL: usr/lib/libflutter_engine.so missing (flutter-engine / post-hook sync)" >&2
+		missing=1
+	fi
+
+	echo ""
+	echo "--- display stack (flutter-pi XOR weston) ---"
+	has_pi=0
+	has_weston=0
+	[[ -x "$target/usr/bin/flutter-pi" ]] && has_pi=1
+	if [[ -x "$target/usr/bin/weston" && \
+		-x "$target/usr/bin/flutter-wayland-client" ]]; then
+		has_weston=1
+	fi
+	stack=""
+	if [[ -f "$target/etc/hmi/display-stack" ]]; then
+		stack="$(tr -d '[:space:]' <"$target/etc/hmi/display-stack" | tr '[:upper:]' '[:lower:]')"
+		echo "OK:  etc/hmi/display-stack=$stack"
+	else
+		echo "FAIL: etc/hmi/display-stack missing (post-build)" >&2
+		missing=1
+	fi
+	if [[ "$has_pi" -eq 1 && "$has_weston" -eq 1 ]]; then
+		echo "FAIL: mixed image — both flutter-pi and Weston/eLinux present" >&2
+		missing=1
+	elif [[ "$has_weston" -eq 1 ]]; then
+		echo "OK:  weston image (flutter-wayland-client, no flutter-pi)"
+		if [[ "$has_pi" -eq 1 ]]; then
+			echo "FAIL: weston image must not ship flutter-pi" >&2
+			missing=1
+		fi
+		if [[ "$stack" != "weston" ]]; then
+			echo "FAIL: display-stack should be weston (got: ${stack:-empty})" >&2
+			missing=1
+		fi
+	elif [[ "$has_pi" -eq 1 ]]; then
+		echo "OK:  flutter-pi image (no Weston client)"
+		if [[ -x "$target/usr/bin/flutter-wayland-client" ]]; then
+			echo "FAIL: flutter-pi image must not ship flutter-wayland-client" >&2
+			missing=1
+		else
+			echo "OK:  flutter-wayland-client absent"
+		fi
+		if [[ "$stack" != "flutter-pi" ]]; then
+			echo "FAIL: display-stack should be flutter-pi (got: ${stack:-empty})" >&2
+			missing=1
+		fi
+	else
+		echo "FAIL: neither flutter-pi nor Weston+client present" >&2
 		missing=1
 	fi
 

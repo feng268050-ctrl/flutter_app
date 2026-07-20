@@ -81,7 +81,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 |--------------|----------|
 | `app/hmi/**`, `scripts/build-app.sh`, `scripts/push-app.sh` | `make build-app`, `make push-app` |
 | Bake app into rootfs / A/B image (release or no push path) | `make build-app`, `make build-rootfs`, `make upgrade` |
-| `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make upgrade` |
+| `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make upgrade` — also refreshes Weston `boot-splash.png` in overlay; if the board runs the Weston image, follow with `make build-rootfs-weston`, `make upgrade` |
 | `overlay/kernel/**`, kernel DTS | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
 | `overlay/.../rootfs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | USB plug-ssh (`overlay/kernel/**` + fs-overlay scripts/units) | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
@@ -90,6 +90,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `overlay/.../rootfs-overlay/**` debug scripts (`hmi-launch.sh`, `debug-app-*`, `hmi.service`) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `overlay/buildroot/**` (overlay paths / docs only; no package compile flags) | `make apply-overlay`, `make check-prebuilt`, `make build-rootfs`, `make upgrade` |
 | `overlay/buildroot/chips/*.config` (or other BR Kconfig that changes how an **existing** package is built, e.g. `BR2_PACKAGE_WPA_SUPPLICANT_DBUS`) | `make apply-overlay`, `bash scripts/br-make-packages.sh <label> <pkg>…`, `make check-prebuilt`, `make build-rootfs`, `make upgrade` — **not** kernel; `build-rootfs` alone will keep the old binary |
+| Weston alternate rootfs (`chips/lws_hmi_wayland.config`, eLinux prebuilt, `build-rootfs-weston`, splash/`desktop-shell` overlay) | `make build-flutter-embedded-linux`, `make prepare-rootfs-weston` (stack only) or `make build-rootfs-weston`, `make upgrade` — return to default: `make prepare-rootfs` or `make build-rootfs`, `make upgrade` (`ensure-mali-variant` auto-switches Mali when stamp differs) |
 | `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `board/*.txt` LCD/MIPI params | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `board/parameter-buildroot-fit.txt` (GPT / A/B) | `make apply-overlay`, `make build-img`, `make flash` (repartition once) |

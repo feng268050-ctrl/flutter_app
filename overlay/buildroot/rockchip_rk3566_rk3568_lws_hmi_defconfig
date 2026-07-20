@@ -15,6 +15,9 @@
 #include "chips/lws_hmi_font.config"
 #include "powermanager.config"
 #include "chips/lws_hmi_flutter.config"
+# Alternate rootfs (make build-rootfs-weston): inject via LWS_HMI_WESTON=1.
+# Switches Mali to wayland-gbm + Weston + eLinux client; disables FLUTTER_PI.
+# #include "chips/lws_hmi_wayland.config"
 #include "chips/lws_hmi_p2_io.config"
 # BR2_ROOTFS_OVERLAY for rootfs-overlay: see chips/rk3566_rk3568.config (apply-overlay)
 # #include "fs/vfat.config"

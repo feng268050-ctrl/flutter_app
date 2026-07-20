@@ -22,6 +22,7 @@ BR_DEFCONFIGS="$SDK/buildroot/configs"
 BR_PKG_FLUTTER_ENGINE="$SDK/buildroot/package/flutter-engine"
 BR_PKG_FLUTTER_SDK="$SDK/buildroot/package/flutter-sdk-bin"
 BR_PKG_FLUTTER_PI="$SDK/buildroot/package/flutter-pi"
+BR_PKG_FLUTTER_ELINUX="$SDK/buildroot/package/flutter-embedded-linux"
 BR_PKG_LIBSERIALPORT="$SDK/buildroot/package/libserialport"
 BR_PKG_BLUEZ5_UTILS="$SDK/buildroot/package/bluez5_utils"
 BR_PKG_SOURCE_HAN_SANS_CN="$SDK/buildroot/package/source-han-sans/source-han-sans-cn"
@@ -308,7 +309,17 @@ apply_kernel_patches() {
 
   for patch_file in "$patch_dir"/*.patch; do
     [[ -f "$patch_file" ]] || continue
+    # --forward skips already-applied hunks and exits 1; only exit ≥2 is fatal.
+    set +e
     patch --batch --forward -d "$kernel" -p1 < "$patch_file"
+    local st=$?
+    set -e
+    if [[ "$st" -gt 1 ]]; then
+      echo "ERROR: kernel patch failed (exit $st): $(basename "$patch_file")" >&2
+      return 1
+    fi
+    # Drop reject leftovers from already-applied hunks.
+    find "$kernel" -name '*.rej' -delete 2>/dev/null || true
     echo "overlay: applied kernel patch $(basename "$patch_file")"
   done
 }
@@ -373,6 +384,30 @@ sync_flutter_sdk_package() {
       "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk.orig"
   fi
   install_file "$src" "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk"
+}
+
+sync_flutter_embedded_linux_package() {
+  local src_mk="$OVERLAY/buildroot/package/flutter-embedded-linux/flutter-embedded-linux.mk"
+  local src_cfg="$OVERLAY/buildroot/package/flutter-embedded-linux/Config.in"
+  if [[ ! -f "$src_mk" ]]; then
+    return 0
+  fi
+  mkdir -p "$BR_PKG_FLUTTER_ELINUX"
+  if [[ -f "$BR_PKG_FLUTTER_ELINUX/flutter-embedded-linux.mk" && \
+    ! -f "$BR_PKG_FLUTTER_ELINUX/flutter-embedded-linux.mk.orig" ]]; then
+    cp -a "$BR_PKG_FLUTTER_ELINUX/flutter-embedded-linux.mk" \
+      "$BR_PKG_FLUTTER_ELINUX/flutter-embedded-linux.mk.orig"
+  fi
+  if [[ -f "$BR_PKG_FLUTTER_ELINUX/Config.in" && \
+    ! -f "$BR_PKG_FLUTTER_ELINUX/Config.in.orig" ]]; then
+    cp -a "$BR_PKG_FLUTTER_ELINUX/Config.in" \
+      "$BR_PKG_FLUTTER_ELINUX/Config.in.orig"
+  fi
+  install_file "$src_mk" "$BR_PKG_FLUTTER_ELINUX/flutter-embedded-linux.mk"
+  if [[ -f "$src_cfg" ]]; then
+    install_file "$src_cfg" "$BR_PKG_FLUTTER_ELINUX/Config.in"
+  fi
+  echo "overlay: flutter-embedded-linux prebuilt package synced"
 }
 
 sync_flutter_pi_package() {
@@ -739,6 +774,8 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
     rm -f "$POST_HOOKS_DIR/07-innohi-display-bin.sh"
     rm -f "$POST_HOOKS_DIR/08-systemd-finalize.sh"
     rm -f "$POST_HOOKS_DIR/09-wifibt-innohi.sh"
+    rm -f "$POST_HOOKS_DIR/31-strip-fstab.sh"
+    rm -f "$POST_HOOKS_DIR/91-weston-ini.sh"
     rm -rf "$SDK/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay"
     for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
       rm -f "$BR_CHIPS_DIR/$f"
@@ -763,6 +800,16 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       echo "restored upstream flutter-pi.mk"
     fi
     restore_br_package_patches "$BR_PKG_FLUTTER_PI" "flutter-pi"
+    if [[ -f "$BR_PKG_FLUTTER_ELINUX/flutter-embedded-linux.mk.orig" ]]; then
+      mv -f "$BR_PKG_FLUTTER_ELINUX/flutter-embedded-linux.mk.orig" \
+        "$BR_PKG_FLUTTER_ELINUX/flutter-embedded-linux.mk"
+      echo "restored upstream flutter-embedded-linux.mk"
+    fi
+    if [[ -f "$BR_PKG_FLUTTER_ELINUX/Config.in.orig" ]]; then
+      mv -f "$BR_PKG_FLUTTER_ELINUX/Config.in.orig" \
+        "$BR_PKG_FLUTTER_ELINUX/Config.in"
+      echo "restored upstream flutter-embedded-linux Config.in"
+    fi
     restore_bluez5_utils_rockchip_patch
     restore_flutter_pi_config
     if [[ -f "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig" ]]; then
@@ -871,6 +918,18 @@ install_file "$OVERLAY/device/rockchip/common/post-hooks/31-strip-fstab.sh" \
   "$POST_HOOKS_DIR/31-strip-fstab.sh"
 chmod +x "$POST_HOOKS_DIR/31-strip-fstab.sh"
 
+install_file "$OVERLAY/device/rockchip/common/post-hooks/91-weston-ini.sh" \
+  "$POST_HOOKS_DIR/91-weston-ini.sh"
+chmod +x "$POST_HOOKS_DIR/91-weston-ini.sh"
+
+# Rockchip 90-overlay rsyncs common/overlays/10-weston over BR2_ROOTFS_OVERLAY.
+# Keep that source in sync so stock weston.ini is landscape even without 91-*.
+WESTON_INI_SRC="$OVERLAY_FS/etc/xdg/weston/weston.ini"
+WESTON_INI_RK="$SDK/buildroot/board/rockchip/common/overlays/10-weston/etc/xdg/weston/weston.ini"
+if [[ -f "$WESTON_INI_SRC" && -d "$(dirname "$WESTON_INI_RK")" ]]; then
+  install_file "$WESTON_INI_SRC" "$WESTON_INI_RK"
+fi
+
 sync_fs_overlay
 sync_purge_retired_script
 sync_install_systemctl_wrapper_script
@@ -888,6 +947,7 @@ sync_buildroot_chip_configs
 sync_flutter_engine_package
 sync_flutter_sdk_package
 sync_flutter_pi_package
+sync_flutter_embedded_linux_package
 sync_libserialport_package
 sync_bluez5_utils_stock
 sync_bluez_alsa_package

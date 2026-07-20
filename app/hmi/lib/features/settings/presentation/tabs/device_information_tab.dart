@@ -118,6 +118,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
               _row('Control Card Version', _controlCardVersion),
               _row('Laser Version', _laserVersion),
               _row('Wire Feeder Version', _wireFeederVersion),
+              _row('Display Stack', widget.services.displayStack.displayLabel),
               _row('Modbus Link', _modbusLink),
             ],
           ),
@@ -127,9 +128,10 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
   }
 
   Widget _row(String label, String value) {
+    final style = Theme.of(context).textTheme.titleMedium;
     return ListTile(
-      title: Text(label),
-      trailing: Text(value),
+      title: Text(label, style: style),
+      trailing: Text(value, style: style),
     );
   }
 }

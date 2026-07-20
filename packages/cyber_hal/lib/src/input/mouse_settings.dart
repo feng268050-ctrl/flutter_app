@@ -6,7 +6,7 @@ enum MousePrimaryButton {
   right,
 }
 
-/// Relative pointer X/Y handling (Linux flutter-pi).
+/// Relative pointer X/Y handling (Linux flutter-pi only; hidden on Weston).
 ///
 /// [auto] swaps axes for Bluetooth keyboard+pointer combo devices (common
 /// HOGP trackpad clones). [normal] never swaps; [swap] always swaps.

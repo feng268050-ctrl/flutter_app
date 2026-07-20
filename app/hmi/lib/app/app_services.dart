@@ -9,6 +9,7 @@ import 'package:cyber_hal/output.dart';
 import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app_version.dart';
+import 'package:lws_hmi/app/flutter_frame_timing_sampler.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
@@ -22,6 +23,7 @@ final class AppServices {
     required this.boardProfile,
     this.deviceSnReader = const DeviceSnReader(),
     SysInfo? sysInfo,
+    FrameTimingSampler? frameTimingSampler,
     ModbusRtuClient? modbusClient,
     GpioLedController? ledController,
     MediaAudioController? audioController,
@@ -35,10 +37,22 @@ final class AppServices {
     BluetoothController? bluetoothController,
     Keyboard? keyboard,
     MouseSettingsController? mouse,
+    DisplayStack? displayStack,
   }) : bindings = BoardBindings(boardProfile) {
     final b = bindings;
-    this.sysInfo = sysInfo ??
-        b.sysInfo(deviceSnReader: deviceSnReader, appVersion: kSystemVersion);
+    // Only attach Flutter timings when we own LinuxSysInfo (tests inject StubSysInfo).
+    if (sysInfo != null) {
+      _frameTimingSampler =
+          frameTimingSampler ?? const FixedFrameTimingSampler();
+      this.sysInfo = sysInfo;
+    } else {
+      _frameTimingSampler = frameTimingSampler ?? FlutterFrameTimingSampler();
+      this.sysInfo = b.sysInfo(
+        deviceSnReader: deviceSnReader,
+        appVersion: kSystemVersion,
+        frameTimingSampler: _frameTimingSampler,
+      );
+    }
     final gpioAsset = boardProfile.resolvedGpioAsset;
     final modbusAsset = boardProfile.resolvedModbusAsset;
     modbus = modbusClient ??
@@ -67,12 +81,14 @@ final class AppServices {
     bluetooth = bluetoothController ?? b.bluetooth();
     this.keyboard = keyboard ?? b.keyboard();
     this.mouse = mouse ?? b.mouse();
+    this.displayStack = displayStack ?? b.displayStack();
   }
 
   final BoardProfile boardProfile;
   final BoardBindings bindings;
   final DeviceSnReader deviceSnReader;
 
+  late final FrameTimingSampler _frameTimingSampler;
   late final SysInfo sysInfo;
   late final ModbusRtuClient modbus;
   late final GpioLedController leds;
@@ -87,6 +103,9 @@ final class AppServices {
   late final BluetoothController bluetooth;
   late final Keyboard keyboard;
   late final MouseSettingsController mouse;
+
+  /// flutter-pi vs Weston (Settings gates via [displayStack.mouseSettings]).
+  late final DisplayStack displayStack;
 
   bool _restoreStarted = false;
   bool _modbusLiveStarted = false;

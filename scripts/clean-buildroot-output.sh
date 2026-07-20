@@ -24,5 +24,7 @@ fi
 
 echo "clean-buildroot-output: removing $TARGET"
 rm -rf "$TARGET"
-echo "clean-buildroot-output: done (kept buildroot/dl/)"
+# Mali variant stamp would lie after wiping BR output — force next ensure rebuild.
+rm -f "$ROOT/.cache/lws-mali-variant"
+echo "clean-buildroot-output: done (kept buildroot/dl/; cleared .cache/lws-mali-variant)"
 echo "  Next: make apply-overlay && make lunch && make build-rootfs"

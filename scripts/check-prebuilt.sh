@@ -21,12 +21,14 @@ has_include() {
 
 ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.24.4")"
 PI_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-pi.version" "")"
+ELINUX_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-embedded-linux.version" "db49896cf2")"
 GST_VER="$(read_version_file "$ROOT/overlay/third-party/gstreamer.version" "rockchip-mpp-gst-rtsp")"
 OPENCV_VER="$(read_version_file "$ROOT/overlay/third-party/opencv.version" "4.5.5")"
 RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}"
 
 ENGINE_DIR="$ROOT/prebuilt/flutter-engine/${ENGINE_VER}/arm64-${RUNTIME_MODE}"
 PI_DIR="$ROOT/prebuilt/flutter-pi/${PI_VER}"
+ELINUX_DIR="$ROOT/prebuilt/flutter-embedded-linux/${ELINUX_VER}"
 MEDIAMTX_DIR="$ROOT/prebuilt/mediamtx/linux-arm64"
 RKNN_RT_DIR="$ROOT/prebuilt/rknn-rt"
 GST_EXPORT="$ROOT/prebuilt/gstreamer/target"
@@ -59,8 +61,21 @@ missing=0
 if has_include "lws_hmi_flutter.config"; then
   require_prebuilt "flutter-engine" "$ENGINE_DIR" \
     "make build-flutter-engine / make build-runtime-deps" || missing=1
-  require_prebuilt "flutter-pi" "$PI_DIR" \
-    "make build-flutter-pi / make build-runtime-deps" || missing=1
+  # Weston alternate image disables BR2_PACKAGE_FLUTTER_PI (see lws_hmi_wayland.config).
+  if ! has_include "lws_hmi_wayland.config"; then
+    require_prebuilt "flutter-pi" "$PI_DIR" \
+      "make build-flutter-pi / make build-runtime-deps" || missing=1
+  fi
+fi
+
+if has_include "lws_hmi_wayland.config"; then
+  require_prebuilt "flutter-embedded-linux" "$ELINUX_DIR" \
+    "make build-flutter-embedded-linux" || missing=1
+  if [[ -f "$ELINUX_DIR/.lws-prebuilt" ]] && \
+    [[ ! -x "$ELINUX_DIR/usr/bin/flutter-wayland-client" ]]; then
+    echo "ERROR: flutter-embedded-linux missing usr/bin/flutter-wayland-client" >&2
+    missing=1
+  fi
 fi
 
 if has_include "lws_hmi_mediamtx.config"; then
@@ -105,5 +120,10 @@ echo "  defconfig: $(basename "$DEF")"
 def_includes | sed 's/^/  /'
 if has_include "lws_hmi_flutter.config"; then
   echo "  engine: $ENGINE_DIR"
-  echo "  flutter-pi: $PI_DIR"
+  if ! has_include "lws_hmi_wayland.config"; then
+    echo "  flutter-pi: $PI_DIR"
+  fi
+fi
+if has_include "lws_hmi_wayland.config"; then
+  echo "  flutter-embedded-linux: $ELINUX_DIR"
 fi

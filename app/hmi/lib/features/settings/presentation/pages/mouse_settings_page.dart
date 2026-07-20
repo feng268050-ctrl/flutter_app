@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cyber_hal/display.dart';
 import 'package:cyber_hal/input.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,9 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
   MouseSettings _settings = MouseSettings.defaults();
   bool _busy = false;
   String? _error;
+
+  MouseSettingAvailability get _avail =>
+      widget.services.displayStack.mouseSettings;
 
   @override
   void initState() {
@@ -52,6 +56,12 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final avail = _avail;
+    final stack = widget.services.displayStack;
+    final applyHint = stack.isWeston
+        ? 'Applies after a short HMI restart on Weston.'
+        : 'Applies live from mouse.conf on flutter-pi.';
+
     return SettingsScaffold(
       title: 'Mouse',
       body: SettingsScrollView(
@@ -59,78 +69,215 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
           const SettingsSectionHeader('Mouse'),
           SettingsGroup(
             children: [
-              SettingsSwitchRow(
-                title: 'Natural Scrolling',
-                value: _settings.naturalScroll,
-                onChanged: _busy
-                    ? null
-                    : (v) => unawaited(
-                          _apply(_settings.copyWith(naturalScroll: v)),
-                        ),
-              ),
-              ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                title: Text(
-                  'Tracking Speed: ${_settings.pointerSpeedPercent}',
-                ),
-                subtitle: Slider(
-                  value:
-                      _settings.pointerSpeedPercent.toDouble().clamp(0, 100),
-                  min: 0,
-                  max: 100,
+              if (avail.naturalScroll)
+                SettingsSwitchRow(
+                  title: 'Natural Scrolling',
+                  value: _settings.naturalScroll,
                   onChanged: _busy
                       ? null
-                      : (v) => setState(
-                            () => _settings = _settings.copyWith(
-                              pointerSpeedPercent: v.round(),
-                            ),
+                      : (v) => unawaited(
+                            _apply(_settings.copyWith(naturalScroll: v)),
                           ),
-                  onChangeEnd: _busy
-                      ? null
-                      : (v) {
-                          CyberClickSoundRegistry.playClick();
-                          unawaited(
-                            _apply(
-                              _settings.copyWith(
+                ),
+              if (avail.pointerSpeed)
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  title: Text(
+                    'Tracking Speed: ${_settings.pointerSpeedPercent}',
+                  ),
+                  subtitle: Slider(
+                    value: _settings.pointerSpeedPercent
+                        .toDouble()
+                        .clamp(0, 100),
+                    min: 0,
+                    max: 100,
+                    onChanged: _busy
+                        ? null
+                        : (v) => setState(
+                              () => _settings = _settings.copyWith(
                                 pointerSpeedPercent: v.round(),
                               ),
                             ),
-                          );
-                        },
+                    onChangeEnd: _busy
+                        ? null
+                        : (v) {
+                            CyberClickSoundRegistry.playClick();
+                            unawaited(
+                              _apply(
+                                _settings.copyWith(
+                                  pointerSpeedPercent: v.round(),
+                                ),
+                              ),
+                            );
+                          },
+                  ),
                 ),
-              ),
-              ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                title: Text(
-                  'Scrolling Speed: ${_settings.scrollSpeedPercent}',
-                ),
-                subtitle: Slider(
-                  value: _settings.scrollSpeedPercent.toDouble().clamp(0, 100),
-                  min: 0,
-                  max: 100,
-                  onChanged: _busy
-                      ? null
-                      : (v) => setState(
-                            () => _settings = _settings.copyWith(
-                              scrollSpeedPercent: v.round(),
-                            ),
-                          ),
-                  onChangeEnd: _busy
-                      ? null
-                      : (v) {
-                          CyberClickSoundRegistry.playClick();
-                          unawaited(
-                            _apply(
-                              _settings.copyWith(
+              if (avail.scrollSpeed)
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  title: Text(
+                    'Scrolling Speed: ${_settings.scrollSpeedPercent}',
+                  ),
+                  subtitle: Slider(
+                    value:
+                        _settings.scrollSpeedPercent.toDouble().clamp(0, 100),
+                    min: 0,
+                    max: 100,
+                    onChanged: _busy
+                        ? null
+                        : (v) => setState(
+                              () => _settings = _settings.copyWith(
                                 scrollSpeedPercent: v.round(),
                               ),
                             ),
-                          );
-                        },
+                    onChangeEnd: _busy
+                        ? null
+                        : (v) {
+                            CyberClickSoundRegistry.playClick();
+                            unawaited(
+                              _apply(
+                                _settings.copyWith(
+                                  scrollSpeedPercent: v.round(),
+                                ),
+                              ),
+                            );
+                          },
+                  ),
                 ),
-              ),
+              if (avail.pointerSize)
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  title: Text(
+                    'Pointer Size: ${_settings.pointerSizePercent}',
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Slider(
+                        value: _settings.pointerSizePercent
+                            .toDouble()
+                            .clamp(0, 100),
+                        min: 0,
+                        max: 100,
+                        onChanged: _busy
+                            ? null
+                            : (v) => setState(
+                                  () => _settings = _settings.copyWith(
+                                    pointerSizePercent: v.round(),
+                                  ),
+                                ),
+                        onChangeEnd: _busy
+                            ? null
+                            : (v) {
+                                CyberClickSoundRegistry.playClick();
+                                unawaited(
+                                  _apply(
+                                    _settings.copyWith(
+                                      pointerSizePercent: v.round(),
+                                    ),
+                                  ),
+                                );
+                              },
+                      ),
+                      Text(
+                        applyHint,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.45),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (avail.primaryButton)
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  title: const Text('Primary Button'),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: SegmentedButton<MousePrimaryButton>(
+                      segments: const [
+                        ButtonSegment(
+                          value: MousePrimaryButton.left,
+                          label: Text('Left'),
+                        ),
+                        ButtonSegment(
+                          value: MousePrimaryButton.right,
+                          label: Text('Right'),
+                        ),
+                      ],
+                      selected: {_settings.primaryButton},
+                      onSelectionChanged: _busy
+                          ? null
+                          : (set) {
+                              if (set.isEmpty) {
+                                return;
+                              }
+                              CyberClickSoundRegistry.playClick();
+                              unawaited(
+                                _apply(
+                                  _settings.copyWith(primaryButton: set.first),
+                                ),
+                              );
+                            },
+                    ),
+                  ),
+                ),
+              if (avail.pointerAxes)
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  title: const Text('Pointer Axes'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text(
+                        'Auto = Raw (native axes). Use Swap XY only if left/right '
+                        'moves the pointer up/down.',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.45),
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SegmentedButton<MousePointerAxes>(
+                        segments: const [
+                          ButtonSegment(
+                            value: MousePointerAxes.auto,
+                            label: Text('Auto'),
+                          ),
+                          ButtonSegment(
+                            value: MousePointerAxes.normal,
+                            label: Text('Raw'),
+                          ),
+                          ButtonSegment(
+                            value: MousePointerAxes.swap,
+                            label: Text('Swap XY'),
+                          ),
+                        ],
+                        selected: {_settings.pointerAxes},
+                        onSelectionChanged: _busy
+                            ? null
+                            : (set) {
+                                if (set.isEmpty) {
+                                  return;
+                                }
+                                CyberClickSoundRegistry.playClick();
+                                unawaited(
+                                  _apply(
+                                    _settings.copyWith(pointerAxes: set.first),
+                                  ),
+                                );
+                              },
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
           if (_error != null)

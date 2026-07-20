@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Render Buildroot defconfig: source #includes + auto prebuilt swap when exports exist.
+# Set LWS_HMI_WESTON=1 to enable chips/lws_hmi_wayland.config (Weston alternate image).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -27,5 +28,18 @@ swap_include "lws_hmi_gst_rtsp.config" "lws_hmi_gst_prebuilt.config" \
   "$ROOT/prebuilt/gstreamer/target"
 swap_include "lws_hmi_platform.config" "lws_hmi_platform_prebuilt.config" \
   "$ROOT/prebuilt/platform-packages/target"
+
+# Default image keeps wayland fragment commented; weston image injects it.
+if [[ "${LWS_HMI_WESTON:-0}" == "1" ]]; then
+  if grep -qE '^#include "chips/lws_hmi_wayland\.config"' "$OUT"; then
+    :
+  elif grep -qE '^#[[:space:]]*#include "chips/lws_hmi_wayland\.config"' "$OUT"; then
+    sed -i.bak 's|^#[[:space:]]*#include "chips/lws_hmi_wayland\.config"|#include "chips/lws_hmi_wayland.config"|' "$OUT"
+    rm -f "$OUT.bak"
+  else
+    printf '\n#include "chips/lws_hmi_wayland.config"\n' >>"$OUT"
+  fi
+  echo "generate-lws-hmi-defconfig: LWS_HMI_WESTON=1 → weston fragment enabled"
+fi
 
 echo "generate-lws-hmi-defconfig: → $OUT"

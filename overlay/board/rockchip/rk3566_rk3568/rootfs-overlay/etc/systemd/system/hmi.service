@@ -1,5 +1,5 @@
 [Unit]
-Description=flutter-pi HMI
+Description=Flutter HMI
 DefaultDependencies=yes
 After=local-fs.target cpu-performance.service
 # Optional on lws_hmi images: param-update.service / mainserver.service
@@ -12,11 +12,11 @@ Type=simple
 Nice=-5
 # Runs as root so /dev/ttyS5 (Modbus), GPIO sysfs, backlight sysfs,
 # and ALSA devices remain accessible for P2 / P2.1 demos.
+# Embedder selected by /etc/hmi/display-stack (post-build): flutter-pi XOR Weston.
 ExecStart=/usr/libexec/hmi/hmi-launch.sh
 Restart=on-failure
 RestartSec=2
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-Environment=FLUTTER_PI=1
 StandardOutput=journal
 StandardError=journal
 

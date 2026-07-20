@@ -14,5 +14,7 @@ export 'src/core/board_info.dart';
 export 'src/core/capabilities.dart';
 export 'src/core/errors.dart';
 export 'src/core/net_role.dart';
+export 'src/display/display_stack.dart';
 export 'src/profile/board_bindings.dart';
 export 'src/profile/board_profile.dart';
+

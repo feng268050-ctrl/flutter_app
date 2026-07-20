@@ -556,15 +556,16 @@ RK_WIFIBT=y                                        # 与 wifibt/*.config 一致
 
 ### 5.2 Boot splash logo（P1 必需）
 
-**必须**在上电后、flutter-pi 首页之前显示 **产品 logo**（对齐 lws-ui Android `windowBackground` / splash 体验；无 Weston 时靠 **U-Boot + 内核 early splash**）。
+**必须**在上电后、首页之前显示 **产品 logo**（对齐 lws-ui Android `windowBackground` / splash 体验）。**默认量产镜像**靠 **U-Boot + 内核 early splash**，由 **flutter-pi** 接屏（logo 可留到 `Freeing drm_logo`）。**备选 Weston 镜像**（`make build-rootfs-weston`）仍用同一 early splash；Weston 抢 DRM 后改由 **desktop-shell** 背景图 `/usr/share/hmi/boot-splash.png` 桥接至 `flutter-wayland-client` 首帧（详见 [`embedder-migration-plan.md`](embedder-migration-plan.md) E3.2）。
 
 
 | 层            | 做法                                                                              |
 | ------------ | ------------------------------------------------------------------------------- |
 | **U-Boot**   | Rockchip 常用 `logo.bmp` / resource 分区；`make lunch` 板级 logo 与 **MIPI 旋转/分辨率** 一致  |
 | **内核 early** | DRM/KMS 或 FB early logo（`CONFIG_LOGO` / Rockchip bootlogo 驱动）；**尽早**接管同一 MIPI 屏 |
-| ** handoff** | flutter-pi 起来后 **无缝接屏**（同分辨率/旋转）；避免黑屏闪一下                                        |
-| **资产**       | `board/logo/` 或 overlay；与 Flutter 启动页可共用同一视觉（可选）                                |
+| ** handoff（flutter-pi）** | flutter-pi 起来后 **无缝接屏**（同分辨率/旋转）；避免黑屏闪一下                                        |
+| ** handoff（Weston 备选）** | desktop-shell `background-image` = `boot-splash.png`（`make build-boot-logo` 同步）；**非** Plymouth |
+| **资产**       | `board/logo/`；Weston 另有 overlay `usr/share/hmi/boot-splash.png`                                |
 
 
 **与 KPI 关系**：
@@ -573,9 +574,9 @@ RK_WIFIBT=y                                        # 与 wifibt/*.config 一致
 - **不计入**「上电 → App 首页」10 s KPI 的终点，但 **是 P1 验收必测项**（禁止长时间黑屏）
 - 网络/MediaMTX 异步期间，用户 **一直看到 logo**，直到首页覆盖
 
-**不做**：Plymouth（依赖 systemd、偏重）；Weston 合成器 splash。
+**不做**：Plymouth（依赖 systemd、偏重）。默认镜像 **不** 用 Weston 做 early splash；Weston 备选镜像仅用 compositor **背景图**填 DRM 接手空档（见上）。
 
-**P1 验收**：上电 → **logo 立即出现** → 保持至 flutter-pi 首页 → 无异常闪屏/花屏。
+**P1 验收（默认 flutter-pi）**：上电 → **logo 立即出现** → 保持至 flutter-pi 首页 → 无异常闪屏/花屏。
 
 ---
 

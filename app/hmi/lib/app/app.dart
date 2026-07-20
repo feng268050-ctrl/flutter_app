@@ -17,6 +17,11 @@ import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
 import 'package:lws_hmi/ui/cyber/app_indexed_click_sound.dart';
 import 'package:lws_hmi/ui/demo/p2_demo_page.dart';
 
+/// flutter-pi on ynh960 reports ~1.358 DPR (logical ≈942×589 on 1280×800).
+/// Weston+eLinux defaults to DPR 1.0; `--force-scale-factor` blacks the frame.
+/// Scale the widget tree instead so icons/buttons/text match flutter-pi.
+const double _kFlutterPiDevicePixelRatio = 1.3582342954159592;
+
 /// Root MaterialApp: Home launcher, Settings, Monitor, hidden Demo.
 class LwsHmiApp extends StatefulWidget {
   const LwsHmiApp({
@@ -98,6 +103,41 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     );
   }
 
+  /// When embedder DPR is ~1 (Weston path), layout at flutter-pi logical size
+  /// and FittedBox-scale up so physical pixels match flutter-pi density.
+  Widget _matchFlutterPiDensity(BuildContext context, Widget? child) {
+    final content = child ?? const SizedBox.shrink();
+    final mq = MediaQuery.of(context);
+    final dpr = mq.devicePixelRatio;
+    // Already at flutter-pi density (or host/test with other DPR) — no-op.
+    if ((dpr - _kFlutterPiDevicePixelRatio).abs() < 0.05) {
+      return content;
+    }
+    if ((dpr - 1.0).abs() > 0.05) {
+      return content;
+    }
+    final scale = _kFlutterPiDevicePixelRatio / dpr;
+    final logical = Size(mq.size.width / scale, mq.size.height / scale);
+    return SizedBox(
+      width: mq.size.width,
+      height: mq.size.height,
+      child: FittedBox(
+        fit: BoxFit.fill,
+        child: SizedBox(
+          width: logical.width,
+          height: logical.height,
+          child: MediaQuery(
+            data: mq.copyWith(
+              size: logical,
+              devicePixelRatio: dpr * scale,
+            ),
+            child: content,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScope(
@@ -111,6 +151,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
             title: 'HMI',
             theme: buildAppTheme(),
             scrollBehavior: const AppScrollBehavior(),
+            builder: _matchFlutterPiDensity,
             initialRoute: AppRoutes.home,
             onGenerateRoute: (settings) {
               final Widget page;

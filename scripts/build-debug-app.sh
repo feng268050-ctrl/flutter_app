@@ -59,7 +59,7 @@ ensure_flutterpi_tool
 cd "$APP_DIR"
 flutter pub get
 
-echo "Building flutter-pi debug bundle (Flutter $PINNED_VER, flutterpi_tool $PI_TOOL_VER, arm64)..."
+echo "Building HMI debug bundle (Flutter $PINNED_VER, flutterpi_tool $PI_TOOL_VER, arm64; shared by flutter-pi and Weston)..."
 flutterpi_tool build --arch=arm64 --debug
 
 FLUTTERPI_OUT="$APP_DIR/build/flutter_assets"

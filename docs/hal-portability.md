@@ -99,8 +99,10 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | Need | Detail |
 |------|--------|
 | **OS (keyboard)** | HID keyboard nodes; `xkeyboard-config` for layouts listed by HAL (`us`, `ru` in v1); `systemctl restart hmi` allowed if layout apply restarts UI |
-| **OS (mouse)** | USB HID mouse (presence probe); flutter-pi reads `/var/lib/hmi/mouse.conf` on mtime |
-| **Helper** | `apply_mouse_settings` — **optional**; default HAL writes `mouse.conf` directly |
+| **OS (mouse)** | USB HID mouse (presence probe); prefs in `/var/lib/hmi/mouse.conf` |
+| **Display stack** | Image stamp `/etc/hmi/display-stack` (`flutter-pi` XOR `weston`, baked by post-build) + runtime `/run/hmi/display-stack`. `BoardBindings.displayStack()` / `DisplayStackProbe`. Use `displayStack.mouseSettings` to gate Settings knobs (`scroll_speed` / `pointer_axes` only on flutter-pi). Default and Weston rootfs packages are mutually exclusive (`make build-rootfs` vs `build-rootfs-weston`). |
+| **Helper** | `apply_mouse_settings` — **optional** on flutter-pi-only images (HAL can write `mouse.conf` directly; flutter-pi reloads on mtime). **Required** when the image ships Weston: helper rewrites runtime `weston.ini` via `weston-hmi-config.sh` (`cursor-size`, `[libinput]` accel / natural-scroll / left-handed; **desktop-shell** + splash background unchanged) and restarts `hmi` when needed. Do **not** map `scroll_speed` / `pointer_axes` on Weston (flutter-pi only). |
+| **Weston splash bridge** | Alternate image only: after Weston takes DRM master the kernel `drm_logo` is gone; `desktop-shell` paints `/usr/share/hmi/boot-splash.png` (same canvas as `board/logo`, from `make build-boot-logo`) until `flutter-wayland-client` covers it. kiosk-shell cannot show a background image. |
 
 ### `hal/datetime`
 

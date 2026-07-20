@@ -1,6 +1,7 @@
 import 'package:cyber_hal/bluetooth.dart';
 import 'package:cyber_hal/datetime.dart';
 import 'package:cyber_hal/debug.dart';
+import 'package:cyber_hal/display.dart';
 import 'package:cyber_hal/gpio.dart';
 import 'package:cyber_hal/input.dart';
 import 'package:cyber_hal/modbus.dart';
@@ -11,6 +12,7 @@ import 'package:cyber_hal/src/profile/board_profile.dart';
 import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
 
 /// Constructs Linux HAL backends from a loaded [BoardProfile] (D22 live wiring).
 ///
@@ -27,11 +29,13 @@ final class BoardBindings {
   LinuxSysInfo sysInfo({
     DeviceSnReader deviceSnReader = const DeviceSnReader(),
     String? appVersion,
+    FrameTimingSampler? frameTimingSampler,
   }) {
     return LinuxSysInfo(
       deviceSnReader: deviceSnReader,
       appVersion: appVersion,
       mountPoints: profile.storageMounts,
+      frameTimingSampler: frameTimingSampler,
     );
   }
 
@@ -91,6 +95,11 @@ final class BoardBindings {
     return LinuxMouseSettingsController(
       applyMouseSettingsCommand: cmd ?? const <String>[],
     );
+  }
+
+  /// Active embedder (flutter-pi vs Weston). Inject [probe] in tests.
+  DisplayStack displayStack({DisplayStackProbe probe = const DisplayStackProbe()}) {
+    return probe.detect();
   }
 
   LinuxEthernet ethernet() {

@@ -36,14 +36,23 @@ Boot splash assets SHALL match ynh960 panel configuration: 800×1280 MIPI with 9
 - **WHEN** flutter-pi starts after splash
 - **THEN** transition does not cause a full-screen resolution mode change flash (minor flicker acceptable)
 
-### Requirement: Splash does not use Weston or Plymouth
+### Requirement: Splash does not use Weston or Plymouth for early boot
 
-The P1 boot splash MUST NOT depend on Weston, Wayland compositor, or Plymouth. Only U-Boot resource logo, kernel DRM/FB early logo, or equivalent direct panel path is permitted.
+The **early** boot splash (U-Boot / kernel DRM logo) MUST NOT depend on Weston, Wayland compositor, or Plymouth. Only U-Boot resource logo, kernel DRM/FB early logo, or equivalent direct panel path is permitted for the first paint after power-on.
 
-#### Scenario: No weston during splash
+#### Scenario: No weston during early splash
 
-- **WHEN** device displays boot splash
+- **WHEN** device displays the kernel/U-Boot boot splash before `hmi.service` starts the compositor
 - **THEN** no Wayland or Weston process is running
+
+### Requirement: Weston alternate image bridges splash after DRM takeover
+
+When the firmware stamp is `/etc/hmi/display-stack=weston`, after Weston enables the output the kernel `drm_logo` is replaced. The image SHALL paint the product logo via Weston **desktop-shell** `background-image` (`/usr/share/hmi/boot-splash.png`, same canvas as `board/logo`) until the Flutter Wayland client presents, so the panel is not left black or empty-colored without the logo mark.
+
+#### Scenario: Weston handoff shows logo
+
+- **WHEN** a Weston-stamped rootfs boots and Weston enables `DSI-1` before Flutter first present
+- **THEN** the product splash artwork remains visible (desktop-shell background), not only a solid fill
 
 ### Requirement: U-Boot uses SDK prebuilt FIT chain
 

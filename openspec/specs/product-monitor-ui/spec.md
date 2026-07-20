@@ -68,3 +68,12 @@ Where Monitor shows Cyber status lights or frosted panels, it SHALL use CyberUI 
 - **WHEN** Monitor Alarm Information shows status lights after CyberUI migration
 - **THEN** those lights are built from CyberUI status APIs rather than a one-off feature-local indicator fork
 
+### Requirement: Monitor may adopt Cyber borders and controls
+
+Monitor chrome that needs frosted panels or interactive Cyber controls SHALL prefer `packages/cyber_ui` components when available. Status indicators already using Cyber MUST remain on the package API.
+
+#### Scenario: Status stays on CyberStatusIndicator
+
+- **WHEN** Monitor renders machine/alarm status lights
+- **THEN** they continue to use `CyberStatusIndicator` (or successor) from cyber_ui
+

@@ -101,3 +101,21 @@ CyberUI SHALL provide an injectable click-sound API aligned with lws-ui `FrostUi
 - **WHEN** a Cyber control is built with `clickSoundEnabled: false`
 - **THEN** activating that control does not invoke `playClick()`
 
+### Requirement: Click backend honors App-persisted effect index
+
+CyberUI SHALL keep `CyberClickSound` / `CyberClickSoundRegistry` as a fire-and-forget `playClick()` API (no index parameter on the registry). The product App’s registered backend SHALL select among multiple bundled click samples using the App-persisted sound-effect index. CyberUI MUST NOT hard-depend on `cyber_hal` or prefs files for click playback.
+
+#### Scenario: Registry API stays index-free
+
+- **WHEN** a Cyber control calls `CyberClickSoundRegistry.playClick()`
+- **THEN** the call does not pass an effect index; sample selection is entirely inside the registered App backend
+
+### Requirement: Phased FrostUI parity excluding IME
+
+`packages/cyber_ui` SHALL grow until lws-ui FrostUI modules `border`, `button`, `control`, `dialog`, and `clock` have Cyber counterparts sufficient for product Settings/Home/Monitor chrome. **CyberIME is explicitly excluded** from this requirement. Existing blur/card/click/volume APIs MUST remain and be extended rather than replaced wholesale.
+
+#### Scenario: Module map lists control suite
+
+- **WHEN** Phase B–D are complete
+- **THEN** the package README module map lists switch, checkbox, slider, segmented, stepper, and dialog-host entries
+

@@ -1,6 +1,7 @@
 {
   "comment": "Updated by build-* scripts. Used for docs only.",
   "mediamtx": "v1.11.3-linux-arm64",
+  "btop": "v1.4.7-aarch64-musl",
   "rknn-rt": "sdk-rknpu2",
   "gstreamer": "rockchip-mpp-gst-rtsp",
   "platform-packages": "1",

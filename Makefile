@@ -38,7 +38,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-rootfs-weston prepare-rootfs prepare-rootfs-weston build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi build-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-rootfs-weston prepare-rootfs prepare-rootfs-weston build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi build-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -94,7 +94,7 @@ help:
 	@echo "  make check-prebuilt        # verify prebuilt for enabled defconfig fragments"
 	@echo "  make build-deps            # build-dev-deps + build-runtime-deps"
 	@echo "  make build-dev-deps        # dev host: FLUTTER_SDK + RKNN-Toolkit"
-	@echo "  make build-runtime-deps    # runtime: flutter, gstreamer, mediamtx, opencv, rknn-rt"
+	@echo "  make build-runtime-deps    # runtime: flutter, gstreamer, mediamtx, btop, opencv, rknn-rt"
 	@echo "  make build-gstreamer       # runtime: MPP + GStreamer → prebuilt/ (before build-rootfs)"
 	@echo "  make build-platform-packages # runtime: libmodbus, yaml-cpp, sqlite, avahi → prebuilt/"
 	@echo "  make build-flutter-engine  # runtime: compile engine → prebuilt/ (needs fetch first)"
@@ -102,6 +102,7 @@ help:
 	@echo "  make build-flutter-pi      # runtime: flutter-pi → prebuilt/"
 	@echo "  make build-flutter-embedded-linux  # weston image: eLinux Wayland client → prebuilt/"
 	@echo "  make build-mediamtx        # runtime: mediamtx arm64 → prebuilt/"
+	@echo "  make fetch-btop            # runtime: btop aarch64 musl → prebuilt/ + fs-overlay"
 	@echo "  make fetch-opencv          # runtime: OpenCV sources → .cache/opencv/"
 	@echo "  make fetch-opencv-ximgproc # runtime: ximgproc EdgeDrawing → .cache/"
 	@echo "  make fetch-rknn-rt         # runtime: aarch64 librknnrt → prebuilt/rknn-rt/"
@@ -356,6 +357,12 @@ fetch-rknn-rt:
 
 refetch-rknn-rt:
 	@FORCE=1 bash scripts/fetch-rknn-rt.sh
+
+fetch-btop:
+	@bash scripts/fetch-btop.sh
+
+refetch-btop:
+	@FORCE=1 bash scripts/fetch-btop.sh
 
 build-mediamtx:
 	@bash scripts/build-mediamtx.sh

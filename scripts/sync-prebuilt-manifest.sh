@@ -16,6 +16,7 @@ read_stamp() {
 }
 
 MEDIAMTX="$(read_stamp "$ROOT/prebuilt/mediamtx/linux-arm64")"
+BTOP="$(read_stamp "$ROOT/prebuilt/btop/aarch64")"
 RKNN_RT="$(read_stamp "$ROOT/prebuilt/rknn-rt")"
 FLUTTER_SDK_ROOT="$(bash "$ROOT/scripts/link-flutter-sdk.sh" --print-root)"
 FLUTTER_SDK="$(read_stamp "$FLUTTER_SDK_ROOT")"
@@ -26,14 +27,15 @@ FLUTTER_PI="$(read_stamp "$ROOT/prebuilt/flutter-pi/${PI_VER}")"
 GST="$(read_stamp "$ROOT/prebuilt/gstreamer")"
 PLATFORM="$(read_stamp "$ROOT/prebuilt/platform-packages")"
 
-python3 - "$MANIFEST" "$MEDIAMTX" "$RKNN_RT" "$FLUTTER_SDK" "$FLUTTER_ENGINE" "$FLUTTER_PI" "$GST" "$PLATFORM" <<'PY'
+python3 - "$MANIFEST" "$MEDIAMTX" "$BTOP" "$RKNN_RT" "$FLUTTER_SDK" "$FLUTTER_ENGINE" "$FLUTTER_PI" "$GST" "$PLATFORM" <<'PY'
 import json, sys
-path, mediamtx, rknn, sdk, engine, pi, gst, platform = sys.argv[1:9]
+path, mediamtx, btop, rknn, sdk, engine, pi, gst, platform = sys.argv[1:10]
 def v(s):
     return None if s == "null" else s
 data = {
     "comment": "Updated by build-* scripts. Used for docs only.",
     "mediamtx": v(mediamtx),
+    "btop": v(btop),
     "rknn-rt": v(rknn),
     "gstreamer": v(gst),
     "platform-packages": v(platform),

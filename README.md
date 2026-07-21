@@ -105,6 +105,7 @@ make build-flutter-embedded-linux
 make build-gstreamer
 make build-platform-packages
 make build-mediamtx
+make fetch-btop
 ```
 
 Force refresh a bucket: `make rebuild-deps`, `make rebuild-runtime-deps`, etc.
@@ -377,6 +378,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 |------|----------|----------|
 | flutter-engine / flutter-pi | `prebuilt/flutter-*` | HMI 显示栈 |
 | mediamtx | `prebuilt/mediamtx/` + fs-overlay `usr/bin/` | RTSP 中继（**相机 ping 通后** App 启动；默认不在 wants） |
+| btop | `prebuilt/btop/` + fs-overlay `usr/bin/` | SSH 按需系统监视（官方 aarch64 musl 静态包；`make fetch-btop`） |
 | **GStreamer + MPP** | Buildroot + `prebuilt/gstreamer/` | RTSP 预览/取帧 |
 | OpenCV + ximgproc | `.cache/opencv/` | 编进 `libai.so` |
 | RKNN runtime | `prebuilt/rknn-rt/` + SDK rknpu2 | NPU 推理 |
@@ -386,10 +388,11 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 
 | Target | 作用 |
 |--------|------|
-| `make build-runtime-deps` | 上表全部（含 GStreamer） |
+| `make build-runtime-deps` | 上表全部（含 GStreamer、btop） |
 | `make build-platform-packages` | libmodbus + yaml-cpp + sqlite + avahi |
 | `make fetch-opencv` / `fetch-opencv-ximgproc` | OpenCV 源码 |
 | `make fetch-rknn-rt` | aarch64 `librknnrt.so` |
+| `make fetch-btop` | aarch64 musl `btop` → prebuilt + fs-overlay |
 | `make build-flutter-engine` / `build-flutter-pi` / `build-mediamtx` | 单项 |
 | `make check-prebuilt` | 校验 runtime（`build-rootfs` 自动） |
 | `make build-rootfs` | 装已接入 defconfig 的 prebuilt（Flutter 等） |

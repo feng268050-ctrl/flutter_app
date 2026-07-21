@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:cyber_ui/src/blur/cyber_backdrop_blur.dart';
@@ -5,6 +6,9 @@ import 'package:cyber_ui/src/blur/cyber_blur_intensity.dart';
 import 'package:cyber_ui/src/blur/cyber_blur_sample_mode.dart';
 import 'package:cyber_ui/src/blur/cyber_blur_tint.dart';
 import 'package:cyber_ui/src/theme/cyber_glass_theme.dart';
+import 'package:cyber_ui/src/widgets/cyber_keyboard_avoiding_lift.dart';
+import 'package:cyber_ui/src/widgets/cyber_keyboard_insets.dart';
+import 'package:cyber_ui/src/widgets/cyber_lifted_panel.dart';
 
 /// Modal chrome with optional glass; full lws-ui capture-policy deferred.
 class CyberModal extends StatelessWidget {
@@ -68,20 +72,34 @@ Future<T?> showCyberDialog<T>({
   CyberBlurTint blurTint = CyberBlurTint.dark,
   bool useFakeGlass = false,
   bool barrierDismissible = true,
+  ValueListenable<double>? keyboardHeight,
+  double keyboardMargin = CyberKeyboardInsets.defaultMargin,
+  ValueListenable<double>? liftExtent,
 }) {
   return showDialog<T>(
     context: context,
     barrierDismissible: barrierDismissible,
     barrierColor: Colors.black54,
     builder: (dialogContext) {
-      return Center(
-        child: CyberModal(
-          sampleMode: sampleMode,
-          intensity: intensity,
-          blurTint: blurTint,
-          useFakeGlass: useFakeGlass,
-          child: builder(dialogContext),
-        ),
+      Widget modal = CyberModal(
+        sampleMode: sampleMode,
+        intensity: intensity,
+        blurTint: blurTint,
+        useFakeGlass: useFakeGlass,
+        child: builder(dialogContext),
+      );
+      if (keyboardHeight != null) {
+        modal = CyberKeyboardAvoidingLift(
+          keyboardHeight: keyboardHeight,
+          margin: keyboardMargin,
+          child: modal,
+        );
+      } else if (liftExtent != null) {
+        modal = CyberLiftedPanel(liftExtent: liftExtent, child: modal);
+      }
+      return Material(
+        type: MaterialType.transparency,
+        child: Center(child: modal),
       );
     },
   );

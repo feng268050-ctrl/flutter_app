@@ -17,22 +17,34 @@ class CyberButton extends StatelessWidget {
     this.variant = CyberButtonVariant.primary,
     this.size = CyberButtonSize.regular,
     this.clickSoundEnabled = true,
+    this.expand = false,
+    this.foregroundColor,
+    this.onLongPress,
   });
 
   final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
   final Widget child;
   final CyberButtonVariant variant;
   final CyberButtonSize size;
   final bool clickSoundEnabled;
+
+  /// When true, fill parent constraints (IME keycaps) instead of fixed height.
+  final bool expand;
+
+  /// Optional label/icon color override (e.g. IME accent backspace).
+  final Color? foregroundColor;
 
   @override
   Widget build(BuildContext context) {
     final height = size == CyberButtonSize.small
         ? CyberDimens.actionButtonSmallHeight
         : CyberDimens.actionButtonHeight;
-    final hPad = size == CyberButtonSize.small
-        ? CyberDimens.actionButtonSmallPaddingHorizontal
-        : CyberDimens.actionButtonPaddingHorizontal;
+    final hPad = expand
+        ? 0.0
+        : (size == CyberButtonSize.small
+            ? CyberDimens.actionButtonSmallPaddingHorizontal
+            : CyberDimens.actionButtonPaddingHorizontal);
     final radius = BorderRadius.circular(CyberDimens.rectangleButtonCornerRadius);
 
     final (bg, fg, border) = switch (variant) {
@@ -52,41 +64,70 @@ class CyberButton extends StatelessWidget {
           CyberColors.lightBorderHighlight,
         ),
     };
+    final textColor = foregroundColor ?? fg;
+
+    void handleTap() {
+      if (onPressed == null) return;
+      if (clickSoundEnabled) {
+        CyberClickSoundRegistry.playClick();
+      }
+      onPressed!();
+    }
+
+    final ink = Ink(
+      height: expand ? null : height,
+      padding: EdgeInsets.symmetric(horizontal: hPad),
+      decoration: BoxDecoration(
+        color: variant == CyberButtonVariant.secondary ? bg : null,
+        borderRadius: radius,
+        border: Border.all(
+          color: border,
+          width: CyberDimens.buttonStrokeWidth,
+        ),
+        gradient: variant == CyberButtonVariant.primary
+            ? const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xE6FF9A5C),
+                  Color(0xD9FF8A4D),
+                  Color(0xCCFF7A3D),
+                ],
+              )
+            : variant == CyberButtonVariant.light
+                ? const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      CyberColors.lightFillTop,
+                      CyberColors.lightFillMid,
+                      CyberColors.lightFillBottom,
+                    ],
+                  )
+                : null,
+      ),
+      child: Center(
+        child: DefaultTextStyle(
+          style: TextStyle(
+            color: textColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+          child: IconTheme(
+            data: IconThemeData(color: textColor, size: expand ? 22 : 20),
+            child: child,
+          ),
+        ),
+      ),
+    );
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onPressed == null
-            ? null
-            : () {
-                if (clickSoundEnabled) {
-                  CyberClickSoundRegistry.playClick();
-                }
-                onPressed!();
-              },
+        onTap: onPressed == null ? null : handleTap,
+        onLongPress: onLongPress,
         borderRadius: radius,
-        child: Ink(
-          height: height,
-          padding: EdgeInsets.symmetric(horizontal: hPad),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: radius,
-            border: Border.all(
-              color: border,
-              width: CyberDimens.buttonStrokeWidth,
-            ),
-          ),
-          child: Center(
-            child: DefaultTextStyle(
-              style: TextStyle(
-                color: fg,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-              child: child,
-            ),
-          ),
-        ),
+        child: expand ? SizedBox.expand(child: ink) : ink,
       ),
     );
   }

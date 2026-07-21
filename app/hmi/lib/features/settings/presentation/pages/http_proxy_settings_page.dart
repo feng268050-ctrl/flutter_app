@@ -1,10 +1,11 @@
 import 'dart:async';
 
-import 'package:cyber_ui/cyber_ui.dart';
+import 'package:cyber_ime/cyber_ime.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/platform/http/http_proxy_config.dart';
+import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
 /// HTTP Proxy — phone-style rows (matches lws-ui proxy activity shape).
 class HttpProxySettingsPage extends StatefulWidget {
@@ -67,38 +68,16 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
     required String initial,
     required ValueChanged<String> onSave,
     bool obscure = false,
-    TextInputType? keyboardType,
+    CyberImeFieldType fieldType = CyberImeFieldType.text,
   }) async {
-    final ctrl = TextEditingController(text: initial);
-    final ok = await showDialog<bool>(
+    final value = await showCyberImeInputDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: ctrl,
-          obscureText: obscure,
-          keyboardType: keyboardType,
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              CyberClickSoundRegistry.playClick();
-              Navigator.pop(ctx, false);
-            },
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              CyberClickSoundRegistry.playClick();
-              Navigator.pop(ctx, true);
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      title: title,
+      fieldType: fieldType,
+      initial: initial,
+      obscureText: obscure,
     );
-    if (ok == true) onSave(ctrl.text);
+    if (value != null) onSave(value);
   }
 
   @override
@@ -156,7 +135,7 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
                     : () => _editField(
                           title: 'Port',
                           initial: '$_port',
-                          keyboardType: TextInputType.number,
+                          fieldType: CyberImeFieldType.number,
                           onSave: (v) {
                             final p = int.tryParse(v.trim()) ?? _port;
                             unawaited(
@@ -187,6 +166,7 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
                               title: 'Password',
                               initial: _pass,
                               obscure: true,
+                              fieldType: CyberImeFieldType.password,
                               onSave: (pw) => unawaited(
                                 _save(
                                   HttpProxyConfig(

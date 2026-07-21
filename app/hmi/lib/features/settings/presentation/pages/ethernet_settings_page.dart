@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:cyber_hal/network.dart';
+import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
 /// Ethernet — phone-style settings (not Demo forms).
 class EthernetSettingsPage extends StatefulWidget {
@@ -155,64 +157,73 @@ class _EthernetSettingsPageState extends State<EthernetSettingsPage> {
     final prefix = TextEditingController(text: '${_ipv4.prefixLength}');
     final gw = TextEditingController(text: _ipv4.gateway);
     final dns = TextEditingController(text: _ipv4.dns);
-    final ok = await showDialog<bool>(
+    final ime = CyberImeSession.shared;
+
+    InputDecoration deco(String label) => InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: CyberColors.textSecondary),
+          enabledBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(color: CyberColors.textSecondary),
+          ),
+          focusedBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(color: CyberColors.textPrimary),
+          ),
+        );
+
+    final ok = await showCyberImeFormDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Manual IP'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: addr,
-                decoration: const InputDecoration(labelText: 'IP Address'),
-              ),
-              TextField(
-                controller: prefix,
-                decoration: const InputDecoration(labelText: 'Prefix'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: gw,
-                decoration: const InputDecoration(labelText: 'Router'),
-              ),
-              TextField(
-                controller: dns,
-                decoration: const InputDecoration(labelText: 'DNS'),
-              ),
-            ],
-          ),
+      title: 'Manual IP',
+      session: ime,
+      fields: [
+        CyberImeTextField(
+          fieldType: CyberImeFieldType.text,
+          controller: addr,
+          session: ime,
+          decoration: deco('IP Address'),
+          style: const TextStyle(color: CyberColors.textPrimary),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              CyberClickSoundRegistry.playClick();
-              Navigator.pop(ctx, false);
-            },
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              CyberClickSoundRegistry.playClick();
-              Navigator.pop(ctx, true);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+        CyberImeTextField(
+          fieldType: CyberImeFieldType.number,
+          controller: prefix,
+          session: ime,
+          decoration: deco('Prefix'),
+          style: const TextStyle(color: CyberColors.textPrimary),
+        ),
+        CyberImeTextField(
+          fieldType: CyberImeFieldType.text,
+          controller: gw,
+          session: ime,
+          decoration: deco('Router'),
+          style: const TextStyle(color: CyberColors.textPrimary),
+        ),
+        CyberImeTextField(
+          fieldType: CyberImeFieldType.text,
+          controller: dns,
+          session: ime,
+          decoration: deco('DNS'),
+          style: const TextStyle(color: CyberColors.textPrimary),
+        ),
+      ],
     );
-    if (ok != true || !mounted) return;
+    if (ok != true || !mounted) {
+      addr.dispose();
+      prefix.dispose();
+      gw.dispose();
+      dns.dispose();
+      return;
+    }
     final p = int.tryParse(prefix.text.trim()) ?? 24;
-    await _run(
-      () => widget.services.ethernet.setIpv4Config(
-        EthIpv4Config(
-          mode: EthIpv4Mode.staticMode,
-          address: addr.text.trim(),
-          prefixLength: p,
-          gateway: gw.text.trim(),
-          dns: dns.text.trim(),
-        ),
-      ),
+    final config = EthIpv4Config(
+      mode: EthIpv4Mode.staticMode,
+      address: addr.text.trim(),
+      prefixLength: p,
+      gateway: gw.text.trim(),
+      dns: dns.text.trim(),
     );
+    addr.dispose();
+    prefix.dispose();
+    gw.dispose();
+    dns.dispose();
+    await _run(() => widget.services.ethernet.setIpv4Config(config));
   }
 }

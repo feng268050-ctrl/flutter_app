@@ -72,6 +72,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  cyber_ime:
+    dependency: "direct main"
+    description:
+      path: "../../packages/cyber_ime"
+      relative: true
+    source: path
+    version: "0.1.0"
   cyber_ui:
     dependency: "direct main"
     description:

@@ -421,15 +421,15 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P1 | flutter、RKNPU2、Wi‑Fi/BT、GPU | ✓ | Hello World、hmi 自启 ✅ |
 | P2 | libmodbus、ALSA、wpa、BlueZ… | ✓ | 硬件设施准备（含原 P2.1～P2.3）✅ |
 | P2.5 | A/B **boot+rootfs** | `parameter` 改表 | `make upgrade` ✅；供 P4.8 OTA 复用 |
-| P3.0 | — | — | **cyber_ui** / **cyber_ime** 子模块 |
-| P3.1 | systemd-networkd、wpa D-Bus | 开 networkd | **Dart HAL** + **网络栈切换**（L3=networkd） |
+| P3.0 | — | — | **cyber_ui** / **cyber_ime** path 包 🔄（优化中） |
+| P3.1 | systemd-networkd、wpa D-Bus | 开 networkd | **Dart HAL** + **网络栈切换**（L3=networkd）✅ |
 | P3.2 | UTM、Weston、flutter-embedded-linux | 按需 | Linux 模拟器 + HAL |
-| P3.3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so**（目标 ~2026-07-22） |
-| P4 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云；**P4.8 OTA** |
+| P3.3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** |
+| P4 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云 🔄；**P4.8 OTA** |
 | P5.0 | — | — | Android 兼容 / APK（App + YNHAPI；非 `cyber_hal`） |
 | P5.1 | flutter SDK + engine + flutter-pi **三件套升级** | 重编 prebuilt | 3.24 → 3.41；见 [`docs/flutter-pi-hmi-plan.md` §6.5](docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p51) |
 
-权威阶段表与旧号映射：[`docs/flutter-pi-hmi-plan.md` §1](docs/flutter-pi-hmi-plan.md)。HAL 设计：[`openspec/changes/dart-hal-package/`](openspec/changes/dart-hal-package/)。
+权威阶段表与旧号映射：[`docs/flutter-pi-hmi-plan.md` §1](docs/flutter-pi-hmi-plan.md)。HAL 设计：[`openspec/changes/archive/2026-07-18-dart-hal-package/`](openspec/changes/archive/2026-07-18-dart-hal-package/)。
 
 Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`；P4 保留 `render-mediamtx-config.sh`（`mediamtx.service` ExecStartPre）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** `systemctl start`）由 Flutter App 内 `MediaMtxRelayCoordinator` / HAL·platform channel 触发，不再打包 shell stub。
 

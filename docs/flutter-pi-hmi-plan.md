@@ -2,7 +2,7 @@
 
 目标：在 **lws-hmi** Buildroot 基线上，用 **flutter-pi**（量产）/ **flutter-embedded-linux**（模拟器）跑 Flutter UI；建设可复用的 **嵌入式 OS**：共用 **CyberUI** 框架与 **Dart HAL（`cyber_hal`）**，主板/屏幕以 **board·screen pack** 插拔，**产品顶层 App 可分叉**。按 **P1→P5** 增量交付（见下表）。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块（模拟器 P3.2 另行引入 Weston）。
 
-**能力原则**：**产品能力不少于 lws-ui**；**Linux** 平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**P5.0** 保留 Android 兼容构建（**App/APK + YNHAPI**，不扩展 `cyber_hal`）；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/dart-hal-package/design.md)。
+**能力原则**：**产品能力不少于 lws-ui**；**Linux** 平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**P5.0** 保留 Android 兼容构建（**App/APK + YNHAPI**，不扩展 `cyber_hal`）；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md)（已归档）。
 
 **板级范围（当前）**：**ynh960 / ynh962 / ynh961** 同产品线三档（RK3566 → RK3568B2 → RK3568）；**P1～P4 以 ynh960 验收**。中长期目标是 **少量不同主板 + 不同屏幕** 共用 OS 契约与 CyberUI，而非每产品从零开始。Rockchip SDK `**rk3566_rk3568`** profile 见 **§3.0**。
 
@@ -17,11 +17,11 @@
 | **Linux P1.5 — 设备调试 + 快速 UI 迭代** | 真机调试模式跑 Flutter App；为快速 UI 迭代铺路 | ✅ |
 | **Linux P2 — 硬件设施准备** | Modbus / 三色 LED / 喇叭 / 以太网 / Wi‑Fi / BT / 键盘 / 鼠标等硬件 I/O 接入与前置验证（含原 P2.1～P2.3：板级外设、日期时间 Demo、硬件偏好持久化） | ✅ |
 | **Linux P2.5 — 双分区刷机** | A/B 双分区；经 Wi‑Fi / USB 的 `make upgrade`；加快硬件开发并为 OTA 打底（原 P2.4） | ✅ |
-| **Linux P3.0 — UI 框架 + IME 子模块** | Flutter 重写 UI 框架与 IME：**CyberUI** + **CyberIME**（子模块；初期 Frosted Glass，API 面向可换设计） | 🔲 |
-| **Linux P3.1 — HAL 硬件抽象层** | **Dart HAL 子包** + **systemd-networkd 网络栈切换**（wpa D-Bus + networkd L3；无 Rust/`hald`）。设计：[`dart-hal-package`](../openspec/changes/dart-hal-package/design.md) | 🔲 |
+| **Linux P3.0 — UI 框架 + IME** | Flutter 重写 UI 框架与 IME：**CyberUI** + **CyberIME**（`packages/` path 包；初期 Frosted Glass，API 面向可换设计）；骨架已落地，持续优化中 | 🔄 |
+| **Linux P3.1 — HAL 硬件抽象层** | **Dart HAL 子包** + **systemd-networkd 网络栈切换**（wpa D-Bus + networkd L3；无 Rust/`hald`）。设计：[`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md) | ✅ |
 | **Linux P3.2 — Linux 模拟器** | UTM + Weston (Wayland) + flutter-embedded-linux + HAL；迭代 UI；支持与下位机通讯 | 🔲 |
-| **Linux P3.3 — AI 库迁移** | 迁入 `libai.so` + RKNN 配置；**预计 2026-07-22** | 🔲 |
-| **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务等（原 P5 业务；子阶段见 **§1.2**） | 🔲 |
+| **Linux P3.3 — AI 库迁移** | 迁入 `libai.so` + RKNN 配置 | 🔲 |
+| **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务等（原 P5 业务；子阶段见 **§1.2**） | 🔄 |
 | **Linux P5.0 — Android 兼容** | Flutter App 打 **APK**；Modbus / GPIO / Wi‑Fi / BT 等在 **App 侧**接 Android / `YNHAPI`（**不**往 `cyber_hal` 加 Android 后端） | 🔲 |
 | **Linux P5.1 — 升级 Flutter Engine** | flutter-engine / SDK / flutter-pi：**3.24 → 3.41**（2026 代） | 🔲 |
 
@@ -59,30 +59,32 @@ P2.5  A/B 双分区 + make upgrade ✅（原 P2.4）
     ├─ 主机 make upgrade（USB-SSH / LAN）；不进 loader
     └─ 产品 OTA UI 仍属 P4（业务迁移内的 OTA 子阶段）
 
-P3.0  CyberUI + CyberIME（git 子模块）🔲
-    ├─ packages/cyber_ui — CyberUI（初期 Frosted Glass；§6.3）
-    ├─ packages/cyber_ime — IME overlay + 字体
-    └─ 主 App pubspec 依赖子模块；设计可换，API 用 Cyber* 前缀
+P3.0  CyberUI + CyberIME（packages/ path 包）🔄
+    ├─ packages/cyber_ui — CyberUI（初期 Frosted Glass；§6.3；骨架 + frost parity 已落地，持续优化）
+    ├─ packages/cyber_ime — IME overlay（EnglishGlobal v1；中文等仍优化中）
+    └─ 主 App pubspec path 依赖；设计可换，API 用 Cyber* 前缀
 
-P3.1  Dart HAL 子包 + 网络栈切换 🔲
+P3.1  Dart HAL 子包 + 网络栈切换 ✅
     ├─ packages/cyber_hal/：hal/network|output|input|… 按需 import
     ├─ **启用 systemd-networkd**（L3）+ wpa D-Bus（L2）；旧 L3 脚本删除或改为 networkd 封装
     ├─ restore/persist 按新栈重做；相机 eth0 动态配址改为重配 networkd
     ├─ backlight/volume/gpio/modbus… 配置/路径注入
-    └─ 设计：openspec/changes/dart-hal-package/design.md（D11）
+    └─ 设计：openspec/changes/archive/2026-07-18-dart-hal-package/（D11）
 
 P3.2  Linux 模拟器 🔲
     ├─ UTM + Weston (Wayland) + flutter-embedded-linux + HAL
     ├─ sim/host board pack；可连下位机（Modbus 等）
     └─ 量产显示栈仍为设备侧 flutter-pi + DRM
+        （备选 Weston 镜像见 docs/embedder-migration-plan.md，不替代本阶段 UTM 验收）
 
-P3.3  AI → libai.so 🔲（目标 ~2026-07-22）
+P3.3  AI → libai.so 🔲
     ├─ 迁移 lensinspector；Linux aarch64 libai.so + RKNN
     └─ 板端 smoke；业务叠框 UI 在 P4
 
-P4  业务迁移（子阶段见 §1.2）🔲
-    ├─ 焊机 App 各页 + 告警 / 录像 / AI / 云 / OTA UI 等
-    └─ 依赖 CyberUI + HAL（设置/硬件页）
+P4  业务迁移（子阶段见 §1.2）🔄
+    ├─ 已交付切片：产品 Home / Settings / Monitor（告警温度）/ 开机自检 / 系统状态卡等
+    ├─ 进行中：P4.2 网络与状态栏、P4.6 其余业务页；P4.1 / P4.3～P4.5 / P4.7～P4.8 未开始
+    └─ 依赖 CyberUI（优化中）+ HAL（设置/硬件页）
 
 P5.0  Android 兼容 🔲
     ├─ Flutter App 双目标 APK；平台能力走 Android / YNHAPI（非 cyber_hal）
@@ -93,23 +95,23 @@ P5.1  Flutter Engine / SDK / flutter-pi 升级 🔲
     └─ 回归：Hello World + Demo/HAL + CyberUI + 启动 KPI
 ```
 
-**依赖**：`P1 → P1.5 → P2 → P2.5` 已完成。其后 **P3.0（CyberUI）与 P3.1（HAL）可并行**；**P3.2** 需要可用的 HAL 客户端/stub；**P3.3** 可与 UI/HAL 并行；**P4** 宜在 CyberUI + 关键 HAL 能力就绪后开业务页；**P5.0** 在 Linux App 形态稳定后；**P5.1** 可在 CyberUI/IME 需要新 Dart 时提前，否则在 P4 中后期集中升级。
+**依赖**：`P1 → P1.5 → P2 → P2.5` 与 **P3.1（HAL）已完成**。**P3.0（CyberUI/IME）🔄** 与 **P4 业务 🔄** 可并行推进；**P3.2** 需要可用的 HAL 客户端/stub（已有）；**P3.3** 可与 UI/业务并行；**P5.0** 在 Linux App 形态稳定后；**P5.1** 可在 CyberUI/IME 需要新 Dart 时提前，否则在 P4 中后期集中升级。
 
 ### 1.2 P4 子阶段（业务迁移）
 
 P4 体量大，拆为 **P4.1～P4.8** 增量交付（编号承接原文档 P5.1～P5.8）。**不能**仅按 `openspec/specs/`* 列清单——以 lws-ui 实际产品行为与源码为准（§11.7），openspec 作补充。
 
 
-| 子阶段 | 交付 | 主要对照（lws-ui **实装**） | 不在本阶段 |
-| ----- | ---- | ------------------------ | -------- |
-| **P4.1 视频与 MediaMTX** | IPC 专链配址 + ping 相机；mediamtx、GStreamer/MPP、预览 smoke | `CameraEth0Configurator`、`MediaMtxRelayCoordinator` 等 | 完整 Monitor UI、AI 叠框；eth0 物理链路（已在 **P2**） |
-| **P4.2 网络与状态栏** | 异步配网 + 状态栏；Wi‑Fi / 蓝牙设置页；日期时间页复用 P2 `DateTimeController` / HAL | `WifiActivity`、`BluetoothManagerActivity` | 驱动/出声本身（已在 **P2**） |
-| **P4.3 AI 产品接入** | `libai.so` FFI；PR1 取流 + 叠框；告警契约 | `AiManager`、`NativeBridge` | 全量 Quick/Engineer 页 |
-| **P4.4 本地 HTTP 与数据** | `:5580` shelf；sqlite / 工艺库；Avahi；Modbus 量产逻辑 | NanoHTTPd 路由；Room / 工艺库 | 云上传；OTA UI（**P4.8**） |
-| **P4.5 云与远程** | WebSocket；R2/S3；远程锁/快照等 | device-websocket / upload docs | OTA 业务编排（**P4.8**） |
-| **P4.6 业务页面** | 首页、Quick、Engineer、Monitor、Settings、告警等 | 各 Activity + docs | 一次性全 spec 勾选 |
-| **P4.7 量产收尾** | PR0 录像；产品隐藏 SSH 入口；parity；可选跨 SKU smoke | 录像与量产项 | 按 SKU 拆固件；OTA 放 **P4.8** |
-| **P4.8 OTA** | 两级更新（仅 app / 全系统）；复用 **P2.5** A/B + `make upgrade`；云/本地 UI | `UpgradeActivity`；storage-layout | **不重做** 双分区 |
+| 子阶段 | 交付 | 状态 | 主要对照（lws-ui **实装**） | 不在本阶段 |
+| ----- | ---- | --- | ------------------------ | -------- |
+| **P4.1 视频与 MediaMTX** | IPC 专链配址 + ping 相机；mediamtx、GStreamer/MPP、预览 smoke | 🔲 | `CameraEth0Configurator`、`MediaMtxRelayCoordinator` 等 | 完整 Monitor UI、AI 叠框；eth0 物理链路（已在 **P2**） |
+| **P4.2 网络与状态栏** | 异步配网 + 状态栏；Wi‑Fi / 蓝牙设置页；日期时间页复用 P2 `DateTimeController` / HAL | 🔄 | `WifiActivity`、`BluetoothManagerActivity` | 驱动/出声本身（已在 **P2**） |
+| **P4.3 AI 产品接入** | `libai.so` FFI；PR1 取流 + 叠框；告警契约 | 🔲 | `AiManager`、`NativeBridge` | 全量 Quick/Engineer 页 |
+| **P4.4 本地 HTTP 与数据** | `:5580` shelf；sqlite / 工艺库；Avahi；Modbus 量产逻辑 | 🔲 | NanoHTTPd 路由；Room / 工艺库 | 云上传；OTA UI（**P4.8**） |
+| **P4.5 云与远程** | WebSocket；R2/S3；远程锁/快照等 | 🔲 | device-websocket / upload docs | OTA 业务编排（**P4.8**） |
+| **P4.6 业务页面** | 首页、Quick、Engineer、Monitor、Settings、告警等 | 🔄 | 各 Activity + docs | 一次性全 spec 勾选 |
+| **P4.7 量产收尾** | PR0 录像；产品隐藏 SSH 入口；parity；可选跨 SKU smoke | 🔲 | 录像与量产项 | 按 SKU 拆固件；OTA 放 **P4.8** |
+| **P4.8 OTA** | 两级更新（仅 app / 全系统）；复用 **P2.5** A/B + `make upgrade`；云/本地 UI | 🔲 | `UpgradeActivity`；storage-layout | **不重做** 双分区 |
 
 
 **建议依赖**（可并行处标注）：
@@ -150,7 +152,7 @@ P2.5 + P4.7 ──→ P4.8
 | P5 / P5.1～P5.8 业务 | **P4 / P4.1～P4.8** |
 | FrostUI | **CyberUI**（初期仍 Frosted Glass Design） |
 
-**层级约定（摘要）**：Product App → CyberUI → **Dart HAL 包**（按需 import）→ libexec/sysfs/BlueZ/serial；boot restore 仍可用 shell。能力可选；网络 role→iface；产品三色灯不进 HAL。**已废弃** Rust/`hald` 方案。详见 [`dart-hal-package/design.md`](../openspec/changes/dart-hal-package/design.md)。
+**层级约定（摘要）**：Product App → CyberUI → **Dart HAL 包**（按需 import）→ libexec/sysfs/BlueZ/serial；boot restore 仍可用 shell。能力可选；网络 role→iface；产品三色灯不进 HAL。**已废弃** Rust/`hald` 方案。详见 [`dart-hal-package/design.md`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md)。
 
 ---
 
@@ -1196,7 +1198,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 
 ## 10. 与当前 lws-hmi 仓库的映射
 
-**可复用 Dart/Flutter 包**以 **git submodule**（或同级 package）形式放在 `**packages/`** 下（P3.0：`cyber_ui`、`cyber_ime`；P3.1：`cyber_hal`）。Board profile / gpio·modbus 配置随 HAL 或 overlay，**无**独立 Rust `hal/` / `hald`。
+**可复用 Dart/Flutter 包**以 **`packages/` path 依赖**（可选日后拆 git submodule）形式放在 `**packages/`** 下（P3.0：`cyber_ui`、`cyber_ime` 🔄；P3.1：`cyber_hal` ✅）。Board profile / gpio·modbus 配置随 HAL 或 overlay，**无**独立 Rust `hal/` / `hald`。
 
 
 | 已有                                                                         | 规划用途                                                                                                                |
@@ -1212,9 +1214,9 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **待增** `buildroot/package/flutter-pi/` 或 external                          | flutter-pi 打包                                                                                                       |
 | **待增** `native/` 或独立 repo                                                  | **P3** `libai.so`（对齐 `lws-ui/native/lensinspector`）                                                                 |
 | **待增** `app/` 或独立 repo                                                     | Flutter 工程（P1 Hello World → P2 demo → P2.1 I/O smoke 辅助 → P5 业务）                                                    |
-| **待增** `packages/cyber_ui/`（**git submodule**）                             | **P3.0** CyberUI（§6.3；初期 Frosted Glass）                                                                              |
-| **待增** `packages/cyber_ime/`（**git submodule**）                            | **P3.0** CyberIME                                                                                                      |
-| **待增** `packages/cyber_hal/`（**包 / 可选 submodule**）                      | **P3.1** Dart HAL（`cyber_hal`）+ board profile                                                                         |
+| **已有** `packages/cyber_ui/`（path 包）                             | **P3.0** CyberUI（§6.3；初期 Frosted Glass）🔄                                                                              |
+| **已有** `packages/cyber_ime/`（path 包）                            | **P3.0** CyberIME 🔄                                                                                                      |
+| **已有** `packages/cyber_hal/`（path 包）                      | **P3.1** Dart HAL（`cyber_hal`）+ board profile ✅                                                                         |
 | **待增** `packages/frost_ime/`（**git submodule**）                            | **P4** IME（对齐 lws-ui `IME.md`）                                                                                      |
 | **待增** `buildroot/configs/rockchip/chips/lws_hmi_mediamtx.config`          | **P5** mediamtx 二进制                                                                                                 |
 | **已有** `overlay/.../rootfs-overlay/etc/systemd/system/hmi.service`     | P1 enable（§3.6.4）                                                                                                   |
@@ -1332,8 +1334,8 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | **P2.4** | A/B **boot+rootfs** + `make upgrade`（SSH 远程，免 loader；含内核） | 系统升级底层（接近 flash 可更新部分）；对应 lws-ui OTA 槽位/刷写（无产品 UI）                                                                      |
 | **P2.5** | Linux + Android 双目标；`emulator` / `android-emulator`；APK 构建与推送    | Modbus 串口 chmod；GPIO **共用** `gpio_innohi` 后端（YNHAPI GPIO 降级）；其它平台 API 可对照 `YNHAPI.jar` / `LedIndicatorManager`；版本号与 APK 签名 |
 | **P3**   | `libai.so` + RKNN/`config.yaml`                                  | `NativeBridge` / `lensinspector` / `AiManager`（原生层）                                                                        |
-| **P3.0** | `**cyber_ui` + `cyber_ime`** 子模块 | CyberUI（Frosted Glass）、`IME.md` |
-| **P3.1** | `**hal/**` Rust + Dart client | Platform API / board pack |
+| **P3.0** | `**cyber_ui` + `cyber_ime`** path 包 🔄 | CyberUI（Frosted Glass）、`IME.md` |
+| **P3.1** | `**packages/cyber_hal`** Dart HAL + networkd ✅ | Platform API / board pack |
 | **P5**   | 视频、网络 UI、云、:5580、**lws-ui 实装业务**；**P5.8 OTA**（复用 P2.4）         | EasyPlayer、MediaMTX 协调器、Room、NanoHTTPd、各 Activity；`UpgradeActivity`                                                           |
 
 
@@ -1563,28 +1565,33 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - 验收：SSH 可达时完成一次**含内核**的字母切换并正常启动 HMI；坏包不破坏当前字母；升级前后 Wi‑Fi 等偏好仍在 — 步骤见 [`docs/ab-upgrade-acceptance.md`](ab-upgrade-acceptance.md)
 - misc 布局：[`docs/ab-slot-misc.md`](ab-slot-misc.md)
 
-### P3.0 — CyberUI + CyberIME（git 子模块）🔲
+### P3.0 — CyberUI + CyberIME（`packages/` path 包）🔄
 
-- 创建 **cyber_ui** 仓库 → **packages/cyber_ui** submodule；实现 **§6.3**（`CyberCard` / `showCyberDialog` / `CyberModal`；默认 **frozen**；按需 **liveWhileOpen**；初期 Frosted Glass）
-- 创建 **cyber_ime** 仓库 → **packages/cyber_ime** submodule；IME overlay + 字体（对齐 lws-ui **IME.md**）
-- 主 App `pubspec` 依赖 **cyber_ui**、**cyber_ime**；CI pin 版本
-- **CyberUI 验收**：3566 frozen 全路径 + 至少 2 个 `liveWhileOpen` 用例
-- **IME 验收**：输入框 + 弹窗 + 键盘抬起/收起与 Cyber 弹窗无错位
+**进度（2026-07-21）**：`packages/cyber_ui` / `packages/cyber_ime` 已落地并接入 App；OpenSpec `p3-0-cyber-ui`、`cyber-ui-frost-parity`、`cyber-ime`、`settings-audio-cyber-chrome` 等已归档。**阶段未封板**——Frost/控件/IME 仍在优化（含中文输入等）。
 
-### P3.1 — Dart HAL（`cyber_hal`）+ 网络栈切换 🔲
+- [x] 建立 **packages/cyber_ui**（path 包，非独立 git submodule）；§6.3 骨架（`CyberCard` / dialog / blur / controls / clock 等）
+- [x] 建立 **packages/cyber_ime**；EnglishGlobal + numeric；Settings 部分字段已接入
+- [x] 主 App `pubspec` path 依赖 **cyber_ui**、**cyber_ime**
+- [ ] **CyberUI 验收封板**：3566 体验与控件 parity 持续打磨至产品可接受
+- [ ] **IME 验收封板**：中文等语言 / 全路径输入体验与 Cyber 弹窗无错位
 
-- 建立 `packages/cyber_hal/`（或 submodule）；按需 import（network / output / input / …）
-- App-owned HAL pack (`assets/hal/` board profile + gpio/modbus); Demo from `Linux*Controller` 迁入
-- **systemd-networkd** L3 + wpa D-Bus（易做模块先落地，network 后置）
-- 设计与验收：`openspec/changes/dart-hal-package/`（Rust/`hald` 方案已归档）
+### P3.1 — Dart HAL（`cyber_hal`）+ 网络栈切换 ✅
+
+**封板**：OpenSpec `dart-hal-package` 已归档 `openspec/changes/archive/2026-07-18-dart-hal-package/`；网络栈见 [`docs/network-stack.md`](network-stack.md)。
+
+- [x] 建立 `packages/cyber_hal/`；按需 import（network / output / input / …）
+- [x] App-owned HAL pack (`assets/hal/` board profile + gpio/modbus)；Demo/Settings 走 HAL
+- [x] **systemd-networkd** L3 + wpa D-Bus；restore/persist 按新栈
+- [x] 设计与验收：`openspec/changes/archive/2026-07-18-dart-hal-package/`（Rust/`hald` 方案已归档）
 
 ### P3.2 — Linux 模拟器 🔲
 
 - UTM + Weston + flutter-embedded-linux + HAL（sim/host pack）
 - 支持与下位机通讯（Modbus 等）
 - `make emulator`（或等价）文档化
+- 注：设备侧备选 Weston/`build-rootfs-weston` 见 [`docs/embedder-migration-plan.md`](embedder-migration-plan.md)，**不**替代本阶段 UTM 模拟器验收
 
-### P3.3 — AI 代码库 → libai.so 🔲（目标 ~2026-07-22）
+### P3.3 — AI 代码库 → libai.so 🔲
 
 - 开发机 RKNN：`RKNN_PLATFORM=rk3566`（基准；3568/B2 模型可 OTA 另包）
 - 迁移 `**lensinspector` 全量** → Linux aarch64 `**libai.so`**
@@ -1592,11 +1599,13 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - 板端：`librknnrt.so` + `rknn_server` + **so 加载 smoke**（无需完整 Flutter 业务 UI）
 - 文档：FFI 接口约定（供 P4 接入）
 
-### P4 — 业务迁移（§1.2 子阶段）🔲
+### P4 — 业务迁移（§1.2 子阶段）🔄
 
 子阶段任务表见 **§1.2**；**P4.6 须按 lws-ui 实装建 inventory**（§11.7），勿仅扫 openspec。**P4.8 OTA** 复用 **P2.5**，不另建分区方案。
 
-#### P4.1 — 视频与 MediaMTX
+**进度（2026-07-21）**：产品 Home / Settings / Monitor（告警温度）/ 开机自检 / 系统状态卡 / `product.ini` 等已交付；**P4.2**、**P4.6** 进行中；其余子阶段未开始。
+
+#### P4.1 — 视频与 MediaMTX 🔲
 
 - 移植并验证 `configure-camera-eth0.sh`；`ping -I eth0` 相机 IP（假定 **P2** eth0 RJ45 已通）
 - 对 IPC `/PR0` `/PR1` 做 RTSP DESCRIBE（可直连 IPC，或经本地 relay）
@@ -1605,34 +1614,40 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - upstream `/PR0`、`/PR1`；本机 `127.0.0.1:8554/camera/pr0|pr1`
 - flutter-pi **video** 插件；预览 smoke；`probe-dual-stream.sh`
 
-#### P4.2 — 网络与状态栏
+#### P4.2 — 网络与状态栏 🔄
+
+**已交付**：Settings 下 Wi‑Fi / 以太网 / HTTP 代理 / 蓝牙 / 日期时间等（HAL）；工程向系统状态卡（可选）。
+**仍进行中**：产品状态栏（Wi‑Fi / eth0 相机链 / 云占位图标与动画）、首屏后异步配网编排（§7.0）等与 lws-ui 对齐项。
 
 - 复用 **P4.1** 的 `configure-camera-eth0.sh`；首屏后异步编排（§7.0）；**P2** 已通 eth0 / wpa / BlueZ 与重启 restore
 - **状态栏**：Wi‑Fi / eth0 相机链 / 云占位图标与动画
-- Wi‑Fi / 蓝牙设置页；硬件控制优先走 **HAL**（P3.1）
-- 日期/时间设置页复用 P2 `DateTimeController` / HAL
+- [x] Wi‑Fi / 蓝牙设置页；硬件控制优先走 **HAL**（P3.1）
+- [x] 日期/时间设置页复用 P2 `DateTimeController` / HAL
 
-#### P4.3 — AI 产品接入
+#### P4.3 — AI 产品接入 🔲
 
 - `**libai.so` FFI**；PR1 relay 取帧 + 预览 **CustomPainter** 叠框
 - 镜片/污点/零点/告警链路与 lws-ui `AiManager` 行为对齐
 
-#### P4.4 — 本地 HTTP 与数据
+#### P4.4 — 本地 HTTP 与数据 🔲
 
 - **:5580** Dart `shelf`；**sqlite** + 工艺库；**Avahi** mDNS
 - Modbus **量产**轮询/寄存器（扩 P2 demo / HAL）
 
-#### P4.5 — 云与远程
+#### P4.5 — 云与远程 🔲
 
 - 云 **WebSocket**；**R2** 上传；远程锁/快照/视频列表等
 
-#### P4.6 — 业务页面（实装驱动）
+#### P4.6 — 业务页面（实装驱动）🔄
+
+**已交付**：产品 Home；Settings 壳与 Common 平台项；Monitor（告警信息/温度）；开机自检 overlay。
+**未开始 / 未齐**：Quick Mode、Engineer、完整告警/首页 chrome、录像入口等。
 
 - 维护 **页面/Manager inventory**（§11.7）
 - 迁移页面资源时 **assets 瘦身**（§11.6.1）
 - 分批交付：Main / Quick Mode / Engineer / Monitor / Settings / 告警 …
 
-#### P4.7 — 量产收尾
+#### P4.7 — 量产收尾 🔲
 
 - **PR0 录像**；产品隐藏 SSH（复用 P2 `enable-ssh-debug.sh`）
 - 全量 **§11.5 parity**；可选 ynh961/ynh962 smoke
@@ -1915,4 +1930,4 @@ SD 卡、未做 P0（sshd/mediamtx 误 enable）、或 mediamtx/rknn_server 与�
 
 ---
 
-**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 已完成**（镜像、调试、硬件设施、A/B `make upgrade`）。其后：**P3.0 CyberUI**、**P3.1 Dart HAL（`cyber_hal`）**（可并行）、**P3.2 模拟器**、**P3.3 libai**、**P4 业务**、**P5.0 Android（App/APK + YNHAPI，非 `cyber_hal`）**、**P5.1 Engine 升级**。Linux 平台层长期为 **`cyber_hal` + Buildroot**；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。
+**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 与 P3.1（`cyber_hal` + networkd）已完成**。**进行中**：**P3.0 CyberUI/IME**（优化）、**P4**（含 **P4.2** 网络与状态栏、**P4.6** 业务页切片）。其后仍待：**P3.2 模拟器**、**P3.3 libai**、P4 其余子阶段、**P5.0 Android（App/APK + YNHAPI，非 `cyber_hal`）**、**P5.1 Engine 升级**。Linux 平台层长期为 **`cyber_hal` + Buildroot**；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。

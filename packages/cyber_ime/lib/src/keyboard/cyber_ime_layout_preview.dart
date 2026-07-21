@@ -51,7 +51,7 @@ class CyberImeLayoutPreview extends StatelessWidget {
       width: double.infinity,
       child: IgnorePointer(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
+          padding: const EdgeInsets.all(CyberImeKeyboardRows.keyGap),
           child: CyberImeKeyboardRows(
             layout: resolved,
             keyFace: (key) => CyberButton(

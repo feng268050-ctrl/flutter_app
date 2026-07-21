@@ -53,6 +53,7 @@ abstract final class CyberImeTypewriterLayouts {
   /// No AltGr — second function is Shift layer via KeyMap + long-press slide.
   /// Enter stays on the home row (ANSI horizontal Enter). Field extras such as
   /// password reveal are preserved between Space and the right Ctrl.
+  /// Typewriter bottoms omit the phone-pad `.` / `,` key; Space is widened.
   static List<CyberImeKeyDef> _ansiModifierRow(List<CyberImeKeyDef> fieldBottom) {
     final extras = _fieldExtras(fieldBottom);
     return [
@@ -61,7 +62,7 @@ abstract final class CyberImeTypewriterLayouts {
       const CyberImeKeyDef(
         id: CyberImeKeyId.space,
         primary: ' ',
-        widthWeight: 4.5,
+        widthWeight: 5.5,
       ),
       ...extras,
       _alt(1.25),
@@ -81,7 +82,7 @@ abstract final class CyberImeTypewriterLayouts {
       const CyberImeKeyDef(
         id: CyberImeKeyId.space,
         primary: ' ',
-        widthWeight: 3.8,
+        widthWeight: 4.8,
       ),
       _altGr(1.35),
       ...extras,
@@ -101,7 +102,9 @@ abstract final class CyberImeTypewriterLayouts {
               k.id != CyberImeKeyId.alt &&
               k.id != CyberImeKeyId.muhenkan &&
               k.id != CyberImeKeyId.henkan &&
-              k.id != CyberImeKeyId.kanaToggle,
+              k.id != CyberImeKeyId.kanaToggle &&
+              // Typewriter letter rows already have `.` / `,`; drop phone-pad dup.
+              k.id != CyberImeKeyId.commaPeriod,
         )
         .toList();
   }
@@ -122,7 +125,7 @@ abstract final class CyberImeTypewriterLayouts {
       const CyberImeKeyDef(
         id: CyberImeKeyId.space,
         primary: ' ',
-        widthWeight: 3.0,
+        widthWeight: 4.0,
       ),
       const CyberImeKeyDef(
         id: CyberImeKeyId.henkan,

@@ -59,7 +59,7 @@ class CyberImeKeyboardPanel extends StatelessWidget {
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
+                padding: const EdgeInsets.all(CyberImeKeyboardRows.keyGap),
                 child: CyberImeKeyboardRows(
                   layout: layout,
                   keyFace: (key) => CyberImeKeyCap(
@@ -549,7 +549,12 @@ class CyberImeKeyLabel extends StatelessWidget {
     );
     const primaryStyle = TextStyle(fontSize: 18, fontWeight: FontWeight.w600);
 
-    if (keyDef.isLetter && !inKana) {
+    // Default phone pad: secondary above the letter. Typewriter AltGr (e.g. €):
+    // pin to bottom-right corner so primary stays centered.
+    final cornerAltGr = keyDef.isLetter &&
+        !inKana &&
+        _mapProfile != CyberImeRegionalProfile.defaultSoft;
+    if (cornerAltGr) {
       const corner = CyberDimens.rectangleButtonCornerRadius;
       return Stack(
         fit: StackFit.expand,

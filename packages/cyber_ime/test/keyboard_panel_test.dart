@@ -270,7 +270,7 @@ void main() {
 
     expect(find.text('Default'), findsWidgets);
     expect(find.text('q'), findsWidgets);
-    await tester.tap(find.text('ANSI'));
+    await tester.tap(find.text('QWERTY'));
     await tester.pumpAndSettle();
     expect(selected, CyberImeRegionalProfile.ansi);
     expect(find.text('Ctrl'), findsWidgets);

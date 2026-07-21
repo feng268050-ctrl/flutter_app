@@ -3,7 +3,7 @@ import 'package:cyber_ime/cyber_ime.dart';
 
 /// Product keyboard specification (Settings Segment + CyberIME + XKB).
 ///
-/// Segment labels: Default / ANSI / QWERTZ / AZERTY / JIS.
+/// Segment labels: Default / QWERTY / QWERTZ / AZERTY / JIS.
 enum ProductKeyboardProfile {
   defaultSoft,
   ansi,

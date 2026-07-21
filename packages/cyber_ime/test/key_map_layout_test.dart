@@ -71,6 +71,7 @@ void main() {
     expect(bottom, contains('Alt'));
     expect(bottom, isNot(contains('AltGr')));
     expect(bottom, isNot(contains('123')));
+    expect(bottom, isNot(contains('.')));
     // Number row has Shift-layer secondaries (e.g. 1 → !).
     final digit1 = ansi.rows[0].keys.firstWhere(
       (k) => k.keyCode == CyberImeKeyCode.digit1,

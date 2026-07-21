@@ -12,6 +12,9 @@ typedef CyberImeKeyFaceBuilder = Widget Function(CyberImeKeyDef keyDef);
 ///
 /// Resolves ISO L-Enter (`rowSpan: 2`) into one inverted-L key: letter-row
 /// Enter is full width; home row (longer Caps) shifts right and notches into it.
+///
+/// Spacing: [keyGap] is used for container padding (panel/preview), inter-key
+/// gaps, and inter-row gaps so margins form a regular grid.
 class CyberImeKeyboardRows extends StatelessWidget {
   const CyberImeKeyboardRows({
     super.key,
@@ -22,17 +25,15 @@ class CyberImeKeyboardRows extends StatelessWidget {
   final CyberImeLayout layout;
   final CyberImeKeyFaceBuilder keyFace;
 
-  static const double rowGap = 6;
-
-  /// Horizontal inset on each key face; adjacent faces are [keyPadH]×2 apart.
-  static const double keyPadH = 2;
+  /// Fixed gap between keys / rows; matches keyboard container padding.
+  static const double keyGap = 6;
 
   @override
   Widget build(BuildContext context) {
     final rows = layout.rows;
     final children = <Widget>[];
     for (var r = 0; r < rows.length; r++) {
-      if (r > 0) children.add(const SizedBox(height: rowGap));
+      if (r > 0) children.add(const SizedBox(height: keyGap));
       final spanning = spanningEnterOf(rows[r]);
       if (spanning != null && r + 1 < rows.length) {
         children.add(
@@ -97,9 +98,11 @@ class _IsoEnterBlock extends StatelessWidget {
       builder: (context, constraints) {
         final w = constraints.maxWidth;
         final h = constraints.maxHeight;
-        const gap = CyberImeKeyboardRows.rowGap;
+        const gap = CyberImeKeyboardRows.keyGap;
         final rowH = (h - gap) / 2;
-        final unit = w / total;
+        // Reserve [gap] between the left key cluster and the Enter column.
+        final contentW = (w - gap).clamp(1.0, w);
+        final unit = contentW / total;
         final enterTopW = enterTop * unit;
         final enterBottomW = enterBottom * unit;
         final upperKeysW = upperLeft * unit;
@@ -139,21 +142,15 @@ class _IsoEnterBlock extends StatelessWidget {
               right: 0,
               width: enterTopW,
               height: h,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: CyberImeKeyboardRows.keyPadH,
+              child: ClipPath(
+                clipper: _IsoInvertedLEnterClipper(
+                  topHeight: rowH,
+                  gap: gap,
+                  faceGap: gap,
+                  bottomWidthFraction: enterBottomW / enterTopW,
                 ),
-                child: ClipPath(
-                  clipper: _IsoInvertedLEnterClipper(
-                    topHeight: rowH,
-                    gap: gap,
-                    // Match face gap above `#` to the gap on its right.
-                    faceGap: CyberImeKeyboardRows.keyPadH * 2,
-                    bottomWidthFraction: enterBottomW / enterTopW,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: keyFace(enter),
-                ),
+                clipBehavior: Clip.antiAlias,
+                child: keyFace(enter),
               ),
             ),
           ],
@@ -266,20 +263,18 @@ class CyberImeFlatKeyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final keys = row.keys;
     return Row(
       children: [
         if (row.leadingInsetWeight > 0)
           Spacer(flex: (row.leadingInsetWeight * 10).round().clamp(1, 100)),
-        for (final key in row.keys)
+        for (var i = 0; i < keys.length; i++) ...[
+          if (i > 0) const SizedBox(width: CyberImeKeyboardRows.keyGap),
           Expanded(
-            flex: (key.widthWeight * 10).round().clamp(1, 100),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: CyberImeKeyboardRows.keyPadH,
-              ),
-              child: keyFace(key),
-            ),
+            flex: (keys[i].widthWeight * 10).round().clamp(1, 100),
+            child: keyFace(keys[i]),
           ),
+        ],
         if (row.trailingInsetWeight > 0)
           Spacer(flex: (row.trailingInsetWeight * 10).round().clamp(1, 100)),
       ],

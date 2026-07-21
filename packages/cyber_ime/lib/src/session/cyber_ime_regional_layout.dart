@@ -2,13 +2,13 @@ import 'package:flutter/foundation.dart';
 
 /// Soft-keyboard layout profile (Settings Segment + CyberIME Keyboard A).
 ///
-/// Labels: Default / ANSI / QWERTZ / AZERTY / JIS.
+/// Labels: Default / QWERTY / QWERTZ / AZERTY / JIS.
 /// Distinct from [CyberImeGlobalKind] (english/chinese input language).
 enum CyberImeRegionalProfile {
   /// Original CyberIME phone letter pad (3 letter rows + bottom).
   defaultSoft,
 
-  /// US ANSI typewriter block.
+  /// US QWERTY typewriter block (ANSI Enter geometry).
   ansi,
 
   /// German QWERTZ ISO typewriter block.
@@ -23,7 +23,7 @@ enum CyberImeRegionalProfile {
   /// Short Segment label for product Settings choosers.
   String get segmentLabel => switch (this) {
         CyberImeRegionalProfile.defaultSoft => 'Default',
-        CyberImeRegionalProfile.ansi => 'ANSI',
+        CyberImeRegionalProfile.ansi => 'QWERTY',
         CyberImeRegionalProfile.qwertz => 'QWERTZ',
         CyberImeRegionalProfile.azerty => 'AZERTY',
         CyberImeRegionalProfile.jis => 'JIS',

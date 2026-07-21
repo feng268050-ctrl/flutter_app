@@ -6,7 +6,7 @@ void main() {
   test('five segment labels', () {
     expect(
       ProductKeyboardProfile.values.map((e) => e.segmentLabel).toList(),
-      ['Default', 'ANSI', 'QWERTZ', 'AZERTY', 'JIS'],
+      ['Default', 'QWERTY', 'QWERTZ', 'AZERTY', 'JIS'],
     );
   });
 

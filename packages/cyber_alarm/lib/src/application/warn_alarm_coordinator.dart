@@ -100,6 +100,34 @@ final class WarnAlarmCoordinator {
     }
   }
 
+  /// Staging/debug: arm a demo episode ([WarnEpisodePolicy.demoAlarm]).
+  ///
+  /// Mirrors lws-ui `WarnEpisodeController.armDemoEpisode`. Unknown catalog
+  /// codes are rejected (no soft-fail placeholder).
+  Future<void> armDemoEpisode(String code) async {
+    final trimmed = code.trim();
+    if (trimmed.isEmpty || !catalog.contains(trimmed)) {
+      return;
+    }
+    await _onRising(
+      AlarmSignalEvent(
+        code: trimmed,
+        active: true,
+        kind: AlarmSignalKind.rising,
+      ),
+      policyOverride: WarnEpisodePolicy.demoAlarm,
+    );
+  }
+
+  /// Staging/debug: clear episode restrictions without dismissing a visible warn.
+  ///
+  /// Cancels queued (not yet shown) warns. Mirrors lws-ui `clearAllForDebug`.
+  Future<void> clearAllForDebug() async {
+    _showQueue.clear();
+    _episodes.clear();
+    // Keep [_showingCode] / open overlay; Confirm still closes UI via presentation.
+  }
+
   Future<void> _onEvent(AlarmSignalEvent event) async {
     switch (event.kind) {
       case AlarmSignalKind.rising:
@@ -111,7 +139,10 @@ final class WarnAlarmCoordinator {
     }
   }
 
-  Future<void> _onRising(AlarmSignalEvent event) async {
+  Future<void> _onRising(
+    AlarmSignalEvent event, {
+    WarnEpisodePolicy? policyOverride,
+  }) async {
     final code = event.code;
     if (code.isEmpty) {
       return;
@@ -121,11 +152,13 @@ final class WarnAlarmCoordinator {
       'code': code,
       'gateSuppressed': gate.isPresentationSuppressed,
       'existing': _episodes[code]?.faultActive == true,
+      'demo': policyOverride?.demoSimulated == true,
     });
     // #endregion
     final entry = catalog.resolve(code, labelHint: event.labelHint);
-    final policy =
-        policyForCode?.call(code) ?? WarnEpisodePolicy.productionPassive;
+    final policy = policyOverride ??
+        policyForCode?.call(code) ??
+        WarnEpisodePolicy.productionPassive;
 
     final existing = _episodes[code];
     if (existing != null && existing.faultActive) {

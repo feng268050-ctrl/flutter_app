@@ -268,5 +268,28 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(coord.episodes.containsKey('H001'), isFalse);
     });
+
+    test('armDemoEpisode uses demo policy and rejects unknown codes', () async {
+      await coord.armDemoEpisode('Z999');
+      await Future<void>.delayed(Duration.zero);
+      expect(coord.episodes, isEmpty);
+      expect(presentation.shows, isEmpty);
+
+      await coord.armDemoEpisode('H001');
+      await Future<void>.delayed(Duration.zero);
+      expect(coord.episodes['H001']?.policy.demoSimulated, isTrue);
+      expect(coord.episodes['H001']?.policy.resistExternalAutoClose, isTrue);
+      expect(presentation.shows, ['H001']);
+      expect(log.rows, hasLength(1));
+    });
+
+    test('clearAllForDebug clears episodes without dismiss', () async {
+      await coord.armDemoEpisode('H001');
+      await Future<void>.delayed(Duration.zero);
+      expect(presentation.shows, ['H001']);
+      await coord.clearAllForDebug();
+      expect(coord.episodes, isEmpty);
+      expect(presentation.dismisses, isEmpty);
+    });
   });
 }

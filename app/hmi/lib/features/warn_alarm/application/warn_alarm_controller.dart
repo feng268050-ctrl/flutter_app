@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/monitor/domain/active_alarm.dart';
 import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
 import 'package:lws_hmi/features/warn_alarm/catalog/product_alarm_catalog.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/boot_self_check_warn_gate.dart';
+import 'package:lws_hmi/features/warn_alarm/infrastructure/demo_alarm_command_watcher.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/file_alarm_log_repository.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/modbus_alarm_attribute_adapter.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_sound.dart';
@@ -39,6 +40,10 @@ final class WarnAlarmController {
       log: log,
       gate: gate ?? const BootSelfCheckWarnGate(),
     );
+    _demoAlarmWatcher = DemoAlarmCommandWatcher(
+      onTrigger: triggerDemoAlarm,
+      onClean: clearDemoAlarms,
+    );
     _presentation.onClosed = (code) {
       unawaited(() async {
         // Ack before pump/sync so SFX stops on Confirm (fault may still be active).
@@ -61,6 +66,7 @@ final class WarnAlarmController {
   late final ModbusAlarmAttributeAdapter _adapter;
   late final CyberUiWarnPresentation _presentation;
   late final WarnAlarmCoordinator coordinator;
+  late final DemoAlarmCommandWatcher _demoAlarmWatcher;
 
   StreamSubscription? _monitorSub;
   StreamSubscription? _healthSub;
@@ -94,6 +100,7 @@ final class WarnAlarmController {
       _syncWarnSound();
     });
     await _adapter.start();
+    _demoAlarmWatcher.start();
     _publishActive();
     _syncWarnSound();
     // Episodes can change without monitor attribute batches (ack/recover).
@@ -102,6 +109,25 @@ final class WarnAlarmController {
       _publishActive();
       _syncWarnSound();
     });
+  }
+
+  /// Host `make alarm CODE=…` — demo episode + warn dialog (catalog code).
+  Future<void> triggerDemoAlarm(String code) async {
+    final future = coordinator.armDemoEpisode(code);
+    // Yield so rising can insert the episode before SFX sync.
+    await Future<void>.delayed(Duration.zero);
+    _publishActive();
+    _syncWarnSound();
+    await future;
+    _publishActive();
+    _syncWarnSound();
+  }
+
+  /// Host `make alarm-clean` — clear restrictions; visible popup unchanged.
+  Future<void> clearDemoAlarms() async {
+    await coordinator.clearAllForDebug();
+    _publishActive();
+    _syncWarnSound();
   }
 
   void _publishActive() {
@@ -156,6 +182,7 @@ final class WarnAlarmController {
 
   Future<void> dispose() async {
     _activePoll?.cancel();
+    await _demoAlarmWatcher.dispose();
     await _monitorSub?.cancel();
     await _healthSub?.cancel();
     await _signalSub?.cancel();

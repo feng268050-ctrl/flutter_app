@@ -99,6 +99,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `scripts/upgrade-remote.sh`, `scripts/stream-file-progress.py`, or Makefile `upgrade` only (board already has P2.4 overlay + A/B GPT) | `make upgrade` (no firmware rebuild unless image inputs are stale) |
 | Host device registry/reboot paths (`scripts/ssh-devices.sh`, `scripts/flash-usb.sh`, `scripts/usb-ssh-*.sh`, `scripts/device-target.sh`) | no firmware rebuild; exercise `make devices` (SN + ChipID) / `SN=` or `CHIPID=` selection / `make reboot` / `make reboot-loader` |
 | `product.ini` host tooling (`scripts/set-product-prop.sh`, `scripts/del-product-prop.sh`, Makefile `set-prop` / `del-prop`) | none (host SSH mutate); exercise `make set-prop` / `make del-prop` (multi-board: `CHIPID=` or `IP=` when writing product `SN=`) |
+| Demo alarm host tooling (`scripts/trigger-alarm.sh`, Makefile `alarm` / `alarm-clean`) | none (host SSH writes `/run/hmi/demo-alarm.cmd`); board needs HMI with watcher (`make build-app` + `make push-app` once if app is stale); exercise `make alarm CODE=E006` / `make alarm-clean` |
 | Overlay `read-device-serial.sh` (product.ini `sn` preference) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | Release / factory artifact | Build all changed inputs, then `make build-img`; for hardware validation: `make reboot-loader`, `make flash` |
 | `fetch-*`, `extract-linux-sdk`, `build-dev-deps` only | no firmware rebuild; name the fetch/extract/build-deps target |

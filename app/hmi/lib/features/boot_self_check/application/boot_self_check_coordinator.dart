@@ -34,6 +34,7 @@ abstract final class BootSelfCheckCoordinator {
       return;
     }
     if (BootSelfCheckGate.shouldSkip) {
+      debugPrint('boot-self-check: skip (marker/process complete)');
       // Sync in-process flag when only the boot marker is set (new HMI process).
       if (!BootSelfCheckGate.isCompletedInProcess) {
         BootSelfCheckGate.markCompletedInProcess();
@@ -42,15 +43,18 @@ abstract final class BootSelfCheckCoordinator {
       return;
     }
     if (!settings.warmRead()) {
+      debugPrint('boot-self-check: skip (disabled in settings)');
       BootSelfCheckGate.markCompletedInProcess();
       onComplete?.call();
       return;
     }
     if (_running) {
+      debugPrint('boot-self-check: skip (already running)');
       return;
     }
     _running = true;
     BootSelfCheckGate.setActive(true);
+    debugPrint('boot-self-check: showing dialog');
 
     final session = BootSelfCheckSession();
     var userInteracted = false;
@@ -75,6 +79,7 @@ abstract final class BootSelfCheckCoordinator {
       }
       BootSelfCheckGate.markCompletedInProcess();
       _running = false;
+      debugPrint('boot-self-check: finished');
       onComplete?.call();
     }
 
@@ -93,7 +98,9 @@ abstract final class BootSelfCheckCoordinator {
     try {
       // Let the dialog route mount before appending rows.
       await Future<void>.delayed(const Duration(milliseconds: 32));
+      debugPrint('boot-self-check: pipeline start');
       await _runPipeline(services: services, session: session);
+      debugPrint('boot-self-check: pipeline done rows=${session.rows.length}');
       if (session.dismissed || !context.mounted) {
         await dialogFuture;
         return;

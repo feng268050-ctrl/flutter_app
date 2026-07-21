@@ -152,12 +152,16 @@ Future<void> showBootSelfCheckDialog({
   required VoidCallback onClose,
   VoidCallback? onUserInteracted,
 }) {
+  // Weston/eLinux: realtime BackdropFilter + transparent barrier often yields an
+  // invisible panel. Use opaque fake glass + dim scrim so self-check is always
+  // readable; frost capture can return later once elinux blur is proven.
   return CyberOverlayHost.show<void>(
     context: context,
     barrierDismissible: false,
-    barrierColor: Colors.transparent,
+    barrierColor: const Color(0x99000000),
     freezePageBackdrop: false,
-    sampleMode: CyberBlurSampleMode.realtime,
+    useFakeGlass: true,
+    sampleMode: CyberBlurSampleMode.firstFrame,
     intensity: CyberBlurIntensity.high,
     builder: (dialogContext) {
       return BootSelfCheckDialogBody(

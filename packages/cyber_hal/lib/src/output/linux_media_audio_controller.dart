@@ -62,6 +62,18 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   bool _mixerUnavailable = false;
   final Map<String, String> _extracted = <String, String>{};
 
+  /// Armed warn loop file path (remote sticky session + soft-V, same as click).
+  /// Non-null = keep playing: on `@P 0` the controller re-LOADs immediately.
+  /// mpg123 remote `LOAD` ignores `--loop`. Same-code appear must not clear this.
+  String? _loopPath;
+
+  /// Bumped on [stop] so an in-flight `@P 0` re-LOAD cannot resurrect playback.
+  int _warnLoopEpoch = 0;
+
+  /// Legacy: sticky process started with `--loop` (kept for
+  /// `_ensureRemoteMpg123` identity checks).
+  bool _remoteLoopForever = false;
+
   final StreamController<bool> _playingCtrl =
       StreamController<bool>.broadcast();
 
@@ -80,6 +92,10 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     'Speaker',
     'Playback',
   ];
+
+  @override
+  bool get hasActiveLoop =>
+      _loopPath != null && _player != null && _remoteMode;
 
   @override
   bool get isPlaying => _playing;
@@ -174,8 +190,9 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
       while (_queuedVolume != null) {
         final v = _queuedVolume!;
         _queuedVolume = null;
-        // Keep ALSA mixer near full scale; UI loudness is mpg123 soft-V.
-        // rk809 DAC percent has a large low-end dead zone (~0–50% ≈ mute).
+        // Keep ALSA mixer near full scale; UI loudness is mpg123 soft-V
+        // (click oneshot + warn loop share this path). rk809 DAC percent has
+        // a large low-end dead zone (~0–50% ≈ mute) — do not drive warn via HW %.
         await _applyMixerVolume(100);
         await _applyRemoteVolume(v);
         // BlueALSA A2DP sink soft-volume (HW mixer alone does not affect BT PCM).
@@ -191,6 +208,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
 
   @override
   Future<void> playAsset(String assetKey) async {
+    _loopPath = null;
     await _ensureVolumeLoaded();
     await _ensurePlaybackPath();
     await _applyMixerVolume(100);
@@ -236,11 +254,17 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     }
   }
 
-  List<String> _mpg123Args({required bool remote}) {
+  List<String> _mpg123Args({required bool remote, bool loopForever = false}) {
     final args = <String>[];
     final dev = alsaOutputDevice.trim();
     if (dev.isNotEmpty) {
       args.addAll(<String>['-a', dev]);
+    }
+    // Optional CLI `--loop` (argv files only). Remote `LOAD` ignores this;
+    // warn continuity uses `_reloadArmedWarnLoop` on `@P 0` instead.
+    // NOTE: `-l` is --listentry, NOT loop.
+    if (loopForever) {
+      args.addAll(<String>['--loop', '-1']);
     }
     if (remote) {
       // Do not use -q: we need @P status lines for accurate play/stop state.
@@ -249,11 +273,55 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     return args;
   }
 
-  Future<void> _startRemoteMpg123(String player) async {
-    _player = await Process.start(player, _mpg123Args(remote: true));
+  Future<void> _startRemoteMpg123(
+    String player, {
+    bool loopForever = false,
+  }) async {
+    await _killRemoteMpg123();
+    _player = await Process.start(
+      player,
+      _mpg123Args(remote: true, loopForever: loopForever),
+    );
     _playerStdin = _player!.stdin;
     _remoteMode = true;
+    _remoteLoopForever = loopForever;
     unawaited(_listenProcess(_player!));
+  }
+
+  Future<void> _killRemoteMpg123() async {
+    final p = _player;
+    final sink = _playerStdin;
+    _player = null;
+    _playerStdin = null;
+    _remoteMode = false;
+    // Keep _remoteLoopForever accurate after restart callers set it again.
+    try {
+      if (sink != null) {
+        sink.writeln('QUIT');
+        await sink.flush();
+      }
+    } catch (_) {}
+    try {
+      p?.kill(ProcessSignal.sigterm);
+    } catch (_) {}
+    if (p != null) {
+      try {
+        await p.exitCode.timeout(const Duration(milliseconds: 300));
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _ensureRemoteMpg123(
+    String player, {
+    required bool loopForever,
+  }) async {
+    if (_player != null &&
+        _remoteMode &&
+        _playerStdin != null &&
+        _remoteLoopForever == loopForever) {
+      return;
+    }
+    await _startRemoteMpg123(player, loopForever: loopForever);
   }
 
   bool _isMpg123(String player) {
@@ -298,10 +366,13 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
       _player = null;
       _playerStdin = null;
       _remoteMode = false;
+      _remoteLoopForever = false;
+      _loopPath = null;
       _setPlaying(false);
       lwsTrace('media-audio: player exited code=$code');
     }
   }
+
 
   Future<void> _consumeLines(
     Stream<List<int>> stream,
@@ -327,6 +398,11 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
               _setPlaying(true);
             } else if (code == 0 || code == 1) {
               _setPlaying(false);
+              // Remote LOAD does not honor `--loop`. While warn is armed,
+              // re-LOAD on stop so the clip keeps cycling (same soft-V session).
+              if (code == 0) {
+                _reloadArmedWarnLoop();
+              }
             }
           }
           continue;
@@ -348,11 +424,90 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     if (player == null || !_isMpg123(player)) {
       return;
     }
-    if (!_remoteMode || _playerStdin == null || _player == null) {
-      await _startRemoteMpg123(player);
-    }
+    await _ensureRemoteMpg123(player, loopForever: false);
     await _applyRemoteVolume(_volumePercent);
     lwsTrace('media-audio: click session warm');
+  }
+
+
+  /// End-of-track re-arm for [playLoopingAsset]. No-op if disarmed / no session.
+  void _reloadArmedWarnLoop() {
+    final path = _loopPath;
+    final epoch = _warnLoopEpoch;
+    final sink = _playerStdin;
+    if (path == null || sink == null || !_remoteMode) {
+      return;
+    }
+    // Re-check after capturing: [stop] may have disarmed concurrently.
+    if (_loopPath != path || _warnLoopEpoch != epoch) {
+      return;
+    }
+    try {
+      sink.writeln('LOAD $path');
+      // ignore: discarded_futures
+      sink.flush();
+      if (_loopPath != path || _warnLoopEpoch != epoch) {
+        // Lost the race to [stop] — halt immediately.
+        sink.writeln('STOP');
+        // ignore: discarded_futures
+        sink.flush();
+        return;
+      }
+      lwsTrace('media-audio: warn loop re-LOAD $path');
+    } catch (e) {
+      debugPrint('media-audio: warn re-LOAD failed: $e');
+    }
+  }
+
+  @override
+  Future<void> playLoopingAsset(String assetKey) async {
+    await _ensureVolumeLoaded();
+    await _ensurePlaybackPath();
+    // Same loudness path as click: HW near max + remote soft-V.
+    await _applyMixerVolume(100);
+
+    final path = await _ensureExtracted(assetKey);
+    final player = await _resolvePlayerBinary();
+    if (player == null || !_isMpg123(player)) {
+      debugPrint('media-audio: warn loop needs mpg123 remote LOAD');
+      return;
+    }
+
+    // Same file already armed — volume only; re-LOAD only if playback died.
+    // Do not disarm/restart on same-code re-triggers (listen continuity).
+    if (_loopPath == path &&
+        _player != null &&
+        _remoteMode &&
+        _playerStdin != null) {
+      await _applyRemoteVolume(_volumePercent);
+      if (!_playing) {
+        _reloadArmedWarnLoop();
+      }
+      return;
+    }
+
+    try {
+      // loopForever false: `--loop` does not apply to remote LOAD; cycling is
+      // done via `_reloadArmedWarnLoop` on `@P 0`.
+      await _ensureRemoteMpg123(player, loopForever: false);
+      await _applyRemoteVolume(_volumePercent);
+      _warnLoopEpoch++;
+      _loopPath = path;
+      final armEpoch = _warnLoopEpoch;
+      _playerStdin!.writeln('LOAD $path');
+      await _playerStdin!.flush();
+      if (_loopPath != path || _warnLoopEpoch != armEpoch) {
+        return;
+      }
+      _setPlaying(true);
+      lwsTrace(
+        'media-audio: warn loop LOAD $path (remote soft-V) vol=$_volumePercent%',
+      );
+    } catch (e) {
+      _loopPath = null;
+      _setPlaying(false);
+      debugPrint('media-audio: warn loop start failed: $e');
+    }
   }
 
   @override
@@ -368,15 +523,19 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
       return;
     }
 
+    // Confirm (and any UI tap) must be audible: preempt warn loop, then LOAD.
+    if (_loopPath != null) {
+      _warnLoopEpoch++;
+      _loopPath = null;
+      lwsTrace('media-audio: oneshot preempted warn loop');
+    }
     try {
-      if (!_remoteMode || _playerStdin == null || _player == null) {
-        if (!_isMpg123(player)) {
-          debugPrint('media-audio: oneshot needs mpg123 for remote LOAD');
-          return;
-        }
-        await _startRemoteMpg123(player);
-        await _applyRemoteVolume(_volumePercent);
+      if (!_isMpg123(player)) {
+        debugPrint('media-audio: oneshot needs mpg123 for remote LOAD');
+        return;
       }
+      await _ensureRemoteMpg123(player, loopForever: false);
+      await _applyRemoteVolume(_volumePercent);
       _playerStdin!.writeln('LOAD $path');
       await _playerStdin!.flush();
       lwsTrace('media-audio: oneshot LOAD $path (remote)');
@@ -387,6 +546,9 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
 
   @override
   Future<void> stop() async {
+    // Disarm before STOP so the `@P 0` handler cannot re-LOAD.
+    _warnLoopEpoch++;
+    _loopPath = null;
     final sink = _playerStdin;
     _setPlaying(false);
     if (sink == null) {
@@ -414,6 +576,8 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   Future<void> dispose() async {
     final p = _player;
     final sink = _playerStdin;
+    _loopPath = null;
+    _remoteLoopForever = false;
     _player = null;
     _playerStdin = null;
     _remoteMode = false;

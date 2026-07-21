@@ -20,6 +20,8 @@ import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
 import 'package:lws_hmi/features/system_status/presentation/system_status_overlay_host.dart';
+import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
+import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/ui/cyber/app_indexed_click_sound.dart';
 import 'package:lws_hmi/ui/demo/p2_demo_page.dart';
 
@@ -81,6 +83,11 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
 
   final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
 
+  late final WarnAlarmController _warnAlarm = WarnAlarmController(
+    services: _services,
+    navigatorKey: _navKey,
+  );
+
   bool _restoreScheduled = false;
 
   @override
@@ -98,8 +105,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     unawaited(_services.audio.warmClickSession());
     unawaited(_bootstrapKeyboardProfile());
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Settings restore only. Modbus live poll is started from Home after boot
-      // self-check finishes (or immediately when self-check is skipped).
+      // Settings restore only. Modbus live poll + warn alarm start from Home
+      // after boot self-check finishes (or immediately when self-check is skipped).
       unawaited(_services.restorePersistedSettingsOnce());
       unawaited(_maybeRestoreRoute());
     });
@@ -136,6 +143,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   void dispose() {
     CyberClickSoundRegistry.register(null);
     CyberImeRegionalLayoutRegistry.register(null);
+    unawaited(_warnAlarm.dispose());
     if (widget.miscSettingsStore == null) {
       _miscSettingsStore.dispose();
     }
@@ -208,38 +216,41 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   Widget build(BuildContext context) {
     return AppScope(
       services: _services,
-      child: MiscSettingsScope(
-        store: _miscSettingsStore,
-        child: BootSelfCheckScope(
-          settings: _bootSelfCheckSettings,
-          child: SoundEffectScope(
-            store: _soundEffectStore,
-            clickSound: _clickSound,
-            child: MaterialApp(
-              title: 'HMI',
-              theme: buildAppTheme(),
-              scrollBehavior: const AppScrollBehavior(),
-              builder: _appBuilder,
-              navigatorKey: _navKey,
-              initialRoute: AppRoutes.home,
-              onGenerateRoute: (settings) {
-                final Widget page;
-                switch (settings.name) {
-                  case AppRoutes.settings:
-                    page = SettingsPage(
-                      openKeyboardOnLaunch: settings.arguments ==
-                          HmiRouteRestore.settingsKeyboard,
-                    );
-                  case AppRoutes.monitor:
-                    page = const MonitorPage();
-                  case AppRoutes.demo:
-                    page = _demoPage();
-                  case AppRoutes.home:
-                  default:
-                    page = const HomePage();
-                }
-                return buildAppPageRoute(settings: settings, child: page);
-              },
+      child: WarnAlarmScope(
+        controller: _warnAlarm,
+        child: MiscSettingsScope(
+          store: _miscSettingsStore,
+          child: BootSelfCheckScope(
+            settings: _bootSelfCheckSettings,
+            child: SoundEffectScope(
+              store: _soundEffectStore,
+              clickSound: _clickSound,
+              child: MaterialApp(
+                title: 'HMI',
+                theme: buildAppTheme(),
+                scrollBehavior: const AppScrollBehavior(),
+                builder: _appBuilder,
+                navigatorKey: _navKey,
+                initialRoute: AppRoutes.home,
+                onGenerateRoute: (settings) {
+                  final Widget page;
+                  switch (settings.name) {
+                    case AppRoutes.settings:
+                      page = SettingsPage(
+                        openKeyboardOnLaunch: settings.arguments ==
+                            HmiRouteRestore.settingsKeyboard,
+                      );
+                    case AppRoutes.monitor:
+                      page = const MonitorPage();
+                    case AppRoutes.demo:
+                      page = _demoPage();
+                    case AppRoutes.home:
+                    default:
+                      page = const HomePage();
+                  }
+                  return buildAppPageRoute(settings: settings, child: page);
+                },
+              ),
             ),
           ),
         ),

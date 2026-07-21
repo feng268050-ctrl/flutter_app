@@ -6,6 +6,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
 import 'package:lws_hmi/features/monitor/application/monitor_modbus_ids.dart';
 import 'package:lws_hmi/features/monitor/domain/active_alarm.dart';
+import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 /// Shared gun temperature + active-alarm state driven by HAL attribute watches.
@@ -156,12 +157,55 @@ final class GunAlarmTelemetry {
       _catalog = MonitorModbusIds.alarmCatalog(attrs);
       final ids = MonitorModbusIds.watchIdsFromCatalog(attrs);
       await services.ensureModbusLive();
+      // #region agent log
+      WarnAlarmDebugLog.log(
+        hypothesisId: 'F',
+        location: 'gun_alarm_telemetry.dart:_startNow',
+        message: 'monitor telemetry starting',
+        data: {
+          'catalogSize': _catalog.length,
+          'watchIds': ids.length,
+          'modbusLiveStarted': services.modbusLiveStarted,
+        },
+      );
+      // #endregion
       await _modbusSub?.cancel();
       await _healthSub?.cancel();
       final attrStream = await services.modbus.watchAttributes(ids: ids);
       final healthStream = await services.modbus.watchHealth();
-      _modbusSub = attrStream.listen(applyChanges);
-      _healthSub = healthStream.listen(applyHealth);
+      _modbusSub = attrStream.listen((changes) {
+        // #region agent log
+        if (changes.isNotEmpty) {
+          final trueAlarms = changes
+              .where((c) => c.id.startsWith('alarm.') && c.value == true)
+              .map((c) => c.id)
+              .take(8)
+              .toList();
+          WarnAlarmDebugLog.log(
+            hypothesisId: 'F',
+            location: 'gun_alarm_telemetry.dart:listen',
+            message: 'monitor watch batch',
+            data: {
+              'changeCount': changes.length,
+              'trueAlarms': trueAlarms,
+              'sample': changes.take(4).map((c) => '${c.id}=${c.value}').toList(),
+            },
+          );
+        }
+        // #endregion
+        applyChanges(changes);
+      });
+      _healthSub = healthStream.listen((h) {
+        // #region agent log
+        WarnAlarmDebugLog.log(
+          hypothesisId: 'F',
+          location: 'gun_alarm_telemetry.dart:health',
+          message: 'monitor health',
+          data: {'ok': h.ok, 'message': h.message},
+        );
+        // #endregion
+        applyHealth(h);
+      });
       _uiGate?.cancel();
       _uiGate = Timer.periodic(uiGate, (_) {
         if (!_dirty) {
@@ -170,8 +214,15 @@ final class GunAlarmTelemetry {
         _dirty = false;
         _onUpdate?.call();
       });
-    } catch (_) {
-      // Soft-fail: UI keeps `-` / empty alarm list.
+    } catch (e) {
+      // #region agent log
+      WarnAlarmDebugLog.log(
+        hypothesisId: 'F',
+        location: 'gun_alarm_telemetry.dart:_startNow',
+        message: 'monitor telemetry soft-fail',
+        data: {'error': e.toString()},
+      );
+      // #endregion
     }
   }
 

@@ -1,8 +1,7 @@
 import 'package:cyber_hal/modbus.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lws_hmi/features/monitor/application/gun_alarm_telemetry.dart';
 import 'package:lws_hmi/features/monitor/application/monitor_modbus_ids.dart';
-import 'package:lws_hmi/features/monitor/domain/active_alarm.dart';
+import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
 
 void main() {
   group('MonitorModbusIds', () {
@@ -44,29 +43,38 @@ void main() {
     });
   });
 
-  group('GunAlarmTelemetry', () {
-    test('applyChanges updates temps and active alarm list', () {
-      final t = GunAlarmTelemetry();
-      t.debugSetCatalog({
-        'alarm.gun_comm': const AlarmCatalogEntry(
-          id: 'alarm.gun_comm',
-          code: 'H001',
-          label: 'Gun communication',
-        ),
-      });
-
-      t.applyChanges(const [
-        ModbusAttributeChange(id: 'telemetry.gun_motor_temp', value: 251),
-        ModbusAttributeChange(id: 'alarm.gun_comm', value: true),
+  group('AlarmMonitorState', () {
+    test('unknown/null bits are fault; explicit false is ok', () {
+      final s = AlarmMonitorState();
+      expect(s.laserFault, isTrue);
+      s.applyChanges(const [
+        ModbusAttributeChange(id: 'alarm.laser_comm', value: false),
       ]);
-      expect(t.motor.display, contains('25.1'));
-      expect(t.activeAlarms, hasLength(1));
-      expect(t.activeAlarms.single.code, 'H001');
+      expect(s.laserFault, isFalse);
+      s.applyChanges(const [
+        ModbusAttributeChange(id: 'alarm.laser_comm', value: true),
+      ]);
+      expect(s.laserFault, isTrue);
+    });
 
-      t.applyChanges(const [
+    test('applyChanges updates temps', () {
+      final s = AlarmMonitorState();
+      s.applyChanges(const [
+        ModbusAttributeChange(id: 'telemetry.gun_motor_temp', value: 251),
+      ]);
+      expect(s.motor.display, contains('25.1'));
+    });
+
+    test('unhealthy Modbus forces fault display', () {
+      final s = AlarmMonitorState();
+      s.applyChanges(const [
         ModbusAttributeChange(id: 'alarm.gun_comm', value: false),
       ]);
-      expect(t.activeAlarms, isEmpty);
+      expect(s.gunFault, isFalse);
+      s.applyHealth(
+        const ModbusHealth(ok: false, message: 'window failed'),
+      );
+      expect(s.gunFault, isTrue);
     });
   });
 }

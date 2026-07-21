@@ -256,3 +256,24 @@ Common Settings → Misc SHALL expose an interactive “Show System Status Overl
 - **THEN** the preference is updated in `/var/lib/hmi/misc-settings.json` immediately
 - **AND** the global system status card appears or disappears accordingly without requiring an app restart
 
+### Requirement: Keyboard page offers four-layout Segment and preview
+
+Common Settings → Keyboard SHALL present a product layout chooser using `CyberSegmentedControl` for the four profiles (ANSI US, ISO DE, ISO FR, JIS JP) and a typewriter-block preview of the selection. The page MAY retain HID presence / smoke-test affordances as secondary content but MUST NOT rely solely on the Demo `KeyboardDemoSection` as the primary layout UX.
+
+#### Scenario: Keyboard page shows Segment
+
+- **WHEN** the operator opens Settings → Keyboard
+- **THEN** a segmented control with the four product profiles is visible
+- **AND** a layout preview for the selected profile is visible
+
+### Requirement: Restart persists layout and applies XKB
+
+The Keyboard settings page SHALL provide a single primary **Restart** action after the operator changes the Segment selection. Restart MUST persist the selected profile for CyberIME and XKB preference, restart HMI so physical XKB takes effect, and restore navigation to the Keyboard settings page after relaunch.
+
+#### Scenario: Restart saves and applies
+
+- **WHEN** the operator selects a different profile and taps Restart
+- **THEN** the layout preference is persisted
+- **AND** HMI restarts and, after relaunch, the App opens the Keyboard settings page
+- **AND** soft CyberIME and physical key events follow the persisted layout
+

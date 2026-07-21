@@ -1,9 +1,16 @@
+import 'package:cyber_ime/src/keyboard/cyber_ime_key_code.dart';
+
 /// Key identifiers for CyberIME layouts.
 enum CyberImeKeyId {
   letter,
   digit,
   custom,
   shift,
+  capsLock,
+  tab,
+  control,
+  alt,
+  altGr,
   backspace,
   clear,
   space,
@@ -15,6 +22,18 @@ enum CyberImeKeyId {
   minus,
   decimalPeriod,
   passwordReveal,
+
+  /// JIS 半角/全角 — toggles 英数 ↔ ひらがな.
+  hankakuZenkaku,
+
+  /// JIS 無変換 — force 英数 mode (no composition engine).
+  muhenkan,
+
+  /// JIS 変換 — reserved (no candidate UI in v1).
+  henkan,
+
+  /// JIS カタカナ/ひらがな — cycle kana modes.
+  kanaToggle,
 }
 
 /// One key on a CyberIME layout.
@@ -25,6 +44,8 @@ class CyberImeKeyDef {
     this.secondary,
     this.widthWeight = 1,
     this.isLetter = false,
+    this.keyCode,
+    this.rowSpan = 1,
   });
 
   final CyberImeKeyId id;
@@ -32,6 +53,12 @@ class CyberImeKeyDef {
   final String? secondary;
   final double widthWeight;
   final bool isLetter;
+
+  /// Optional typewriter KeyCode (letter keys built from KeyMap).
+  final CyberImeKeyCode? keyCode;
+
+  /// Vertical span in layout rows (ISO L-Enter uses `2`).
+  final int rowSpan;
 }
 
 /// One row of keys.

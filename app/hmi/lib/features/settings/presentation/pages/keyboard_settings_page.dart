@@ -1,13 +1,127 @@
+import 'dart:async';
+
+import 'package:cyber_hal/input.dart';
+import 'package:cyber_ime/cyber_ime.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/app/hmi_route_restore.dart';
+import 'package:lws_hmi/features/settings/application/product_keyboard_profile.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
-import 'package:lws_hmi/ui/demo/keyboard_demo_section.dart';
 
-/// Keyboard settings page — layout / HID smoke in Settings chrome.
-class KeyboardSettingsPage extends StatelessWidget {
-  const KeyboardSettingsPage({super.key, required this.services});
+/// Product Keyboard settings: Segment + preview + Restart (persist + HMI).
+class KeyboardSettingsPage extends StatefulWidget {
+  const KeyboardSettingsPage({
+    super.key,
+    required this.services,
+    this.regionalProvider,
+  });
 
   final AppServices services;
+
+  /// Optional override (tests); otherwise uses [CyberImeRegionalLayoutRegistry].
+  final CyberImeMutableRegionalLayoutProvider? regionalProvider;
+
+  @override
+  State<KeyboardSettingsPage> createState() => _KeyboardSettingsPageState();
+}
+
+class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
+  ProductKeyboardProfile _selected = ProductKeyboardProfile.defaultSoft;
+  String _presence = '…';
+  bool _busy = false;
+  Timer? _poll;
+
+  Keyboard get _keyboard => widget.services.keyboard;
+
+  CyberImeMutableRegionalLayoutProvider? get _mutableRegional {
+    final override = widget.regionalProvider;
+    if (override != null) return override;
+    final p = CyberImeRegionalLayoutRegistry.provider;
+    return p is CyberImeMutableRegionalLayoutProvider ? p : null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+    unawaited(_refreshPresence());
+    _poll = Timer.periodic(const Duration(seconds: 3), (_) {
+      unawaited(_refreshPresence());
+    });
+  }
+
+  Future<void> _load() async {
+    try {
+      final layout = await _keyboard.getLayout();
+      final profile = ProductKeyboardProfile.fromLayout(layout);
+      if (!mounted) return;
+      setState(() => _selected = profile);
+    } catch (e) {
+      debugPrint('keyboard settings: load failed: $e');
+    }
+  }
+
+  Future<void> _refreshPresence() async {
+    try {
+      final line = await const UsbHidKeyboardProbe().statusLine();
+      if (!mounted) return;
+      setState(() => _presence = line);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _presence = 'probe unavailable');
+    }
+  }
+
+  void _onSegment(ProductKeyboardProfile profile) {
+    setState(() => _selected = profile);
+  }
+
+  Future<void> _restart() async {
+    if (_busy) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Restart HMI?'),
+        content: const Text(
+          'Saves the selected layout and restarts HMI so soft CyberIME and '
+          'physical XKB both take effect. This page will reopen after relaunch.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Restart'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await _keyboard.setLayout(_selected.xkbLayout, restart: false);
+      _mutableRegional?.profile = _selected.imeProfile;
+      await HmiRouteRestore.write(HmiRouteRestore.settingsKeyboard);
+      await _keyboard.restartToApply();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Restart failed: $e')),
+        );
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,15 +130,42 @@ class KeyboardSettingsPage extends StatelessWidget {
       body: SettingsScrollView(
         padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
         children: [
-          const SettingsSectionHeader('Keyboard'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: KeyboardDemoSection(keyboard: services.keyboard),
-              ),
+          const SettingsSectionHeader('Layout'),
+          CyberImeLayoutChooser(
+            selected: _selected.imeProfile,
+            enabled: !_busy,
+            onSelected: (p) {
+              final match = ProductKeyboardProfile.values.firstWhere(
+                (e) => e.imeProfile == p,
+              );
+              _onSegment(match);
+            },
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Text(
+              'Attach a physical keyboard that matches the selected '
+              'specification. A mismatch may make some keys produce unexpected '
+              'characters. Tap Restart to save the layout and apply soft '
+              'CyberIME and physical XKB.',
+              style: TextStyle(color: Colors.white54, fontSize: 14),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: CyberButton(
+              onPressed: _busy ? null : () => unawaited(_restart()),
+              child: const Text('Restart'),
+            ),
+          ),
+          const SettingsSectionHeader('HID'),
+          SettingsGroup(
+            children: [
+              ListTile(
+                title: const Text('Presence'),
+                subtitle: Text(_presence),
+              ),
+            ],
           ),
         ],
       ),

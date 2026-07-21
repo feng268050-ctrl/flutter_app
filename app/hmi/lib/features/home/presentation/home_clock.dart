@@ -19,8 +19,9 @@ abstract final class HomeClockTokens {
 
 /// Home hero clock — stand-in for lws-ui `FrostHomeClockView`.
 ///
-/// Sampling uses the shared [CyberBlurSampleMode] API (default
-/// [CyberBlurSampleMode.realtime] via [CyberBackdropBlur] / `BackdropFilter`).
+/// Sampling uses the shared [CyberBlurSampleMode] API. Realtime mode paints
+/// glyph fill only (no rectangular [CyberBackdropBlur] plate). Frozen modes
+/// capture from [CyberBlurBackdropScope] and clip frost to glyphs via dstIn.
 ///
 /// Appearance tokens come from [CyberClockAppearance] (via [HomeClockTokens]).
 /// See [CyberClockNotes] for glyph-clip live-blur limits on RK3566.
@@ -264,24 +265,10 @@ class _HomeClockState extends State<HomeClock> {
       ),
     );
 
-    Widget body;
-    if (widget.sampleMode == CyberBlurSampleMode.realtime) {
-      // Shared realtime path: CyberBackdropBlur → BackdropFilter every frame.
-      // Transparent plate tint so frost reads through glyph chrome (milk + edges).
-      body = CyberBackdropBlur(
-        sampleMode: CyberBlurSampleMode.realtime,
-        intensity: widget.blurIntensity,
-        blurTint: widget.blurTint,
-        tint: const Color(0x00000000),
-        child: SizedBox(
-          width: glyphW,
-          height: glyphH,
-          child: glyphs,
-        ),
-      );
-    } else {
-      body = glyphs;
-    }
+    // Realtime must NOT wrap [CyberBackdropBlur]: that paints a rectangular
+    // frost plate behind the glyphs. Glyph fill (overlay + milk) stays; the
+    // area around digits stays fully transparent.
+    final body = glyphs;
 
     return Semantics(
       label: 'Home clock',

@@ -49,6 +49,13 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
   bool _imeInteracting = false;
   late final bool _revealSupported;
 
+  /// Eye toggle must not steal focus — that would dismiss CyberIME mid-entry.
+  final FocusNode _revealFocus = FocusNode(
+    debugLabel: 'CyberImePasswordReveal',
+    canRequestFocus: false,
+    skipTraversal: true,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -88,6 +95,7 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
   void dispose() {
     _focus.removeListener(_onFocusChange);
     _hideIme(notify: false);
+    _revealFocus.dispose();
     if (_ownedFocus) _focus.dispose();
     super.dispose();
   }
@@ -154,6 +162,7 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
     final decoration = base.copyWith(
       suffixIcon: _revealSupported
           ? IconButton(
+              focusNode: _revealFocus,
               onPressed: _toggleObscure,
               tooltip: _obscure ? 'Show password' : 'Hide password',
               icon: Icon(
@@ -180,7 +189,7 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
         if (!_focus.hasFocus) {
           _focus.requestFocus();
         } else {
-          // Focus kept after scrim dismiss — reopen IME on field tap.
+          // Focus kept while IME was hidden — reopen on field tap.
           _showIme();
         }
       },

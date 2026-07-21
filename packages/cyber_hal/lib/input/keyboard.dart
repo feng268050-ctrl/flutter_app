@@ -19,9 +19,16 @@ abstract class Keyboard {
 
   Future<KeyboardLayout> getLayout();
 
-  /// Persist layout; v1 apply restarts flutter-pi / hmi.service.
-  /// App MUST restore the previous route after relaunch.
-  Future<void> setLayout(KeyboardLayout layout);
+  /// Persist layout preference (and optionally sync `/etc/default/keyboard`).
+  ///
+  /// When [restart] is true (default), also restarts flutter-pi / `hmi.service`
+  /// so XKB is re-read at init. Product Settings MAY call with `restart: false`
+  /// then invoke [restartToApply] from its Restart action.
+  /// App MUST restore the previous route after relaunch when restarting.
+  Future<void> setLayout(KeyboardLayout layout, {bool restart = true});
+
+  /// Restart HMI so a previously persisted layout is picked up by XKB.
+  Future<void> restartToApply();
 
   Future<List<KeyboardLayout>> listLayouts();
 
@@ -35,6 +42,7 @@ final class KeyboardLayout {
     this.options = '',
     this.model = 'pc105',
     this.displayName,
+    this.softProfile = '',
   });
 
   /// XKB layout id (e.g. `us`, `ru`).
@@ -44,12 +52,17 @@ final class KeyboardLayout {
   final String model;
   final String? displayName;
 
+  /// Soft CyberIME profile id: `default` / `ansi` / `qwertz` / `azerty` / `jis`.
+  /// Persisted as `profile=` in keyboard.conf (not sent to XKB).
+  final String softProfile;
+
   KeyboardLayout copyWith({
     String? id,
     String? variant,
     String? options,
     String? model,
     String? displayName,
+    String? softProfile,
   }) {
     return KeyboardLayout(
       id: id ?? this.id,
@@ -57,6 +70,7 @@ final class KeyboardLayout {
       options: options ?? this.options,
       model: model ?? this.model,
       displayName: displayName ?? this.displayName,
+      softProfile: softProfile ?? this.softProfile,
     );
   }
 
@@ -66,9 +80,10 @@ final class KeyboardLayout {
         other.id == id &&
         other.variant == variant &&
         other.options == options &&
-        other.model == model;
+        other.model == model &&
+        other.softProfile == softProfile;
   }
 
   @override
-  int get hashCode => Object.hash(id, variant, options, model);
+  int get hashCode => Object.hash(id, variant, options, model, softProfile);
 }

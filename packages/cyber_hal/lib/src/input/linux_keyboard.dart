@@ -33,7 +33,28 @@ class LinuxKeyboard implements Keyboard {
   /// When false, [setLayout] only persists (tests / dry-run).
   final bool applyRestart;
 
-  static const us = KeyboardLayout(id: 'us', displayName: 'English (US)');
+  static const us = KeyboardLayout(
+    id: 'us',
+    model: 'pc105',
+    displayName: 'ANSI US (QWERTY)',
+  );
+  static const de = KeyboardLayout(
+    id: 'de',
+    model: 'pc105',
+    displayName: 'ISO DE (QWERTZ)',
+  );
+  static const fr = KeyboardLayout(
+    id: 'fr',
+    model: 'pc105',
+    displayName: 'ISO FR (AZERTY)',
+  );
+  static const jp = KeyboardLayout(
+    id: 'jp',
+    model: 'jp106',
+    displayName: 'JIS JP',
+  );
+
+  /// Demo-only; excluded from product Settings Segment.
   static const ru = KeyboardLayout(id: 'ru', displayName: 'Russian');
 
   @override
@@ -43,7 +64,8 @@ class LinuxKeyboard implements Keyboard {
   }
 
   @override
-  Future<List<KeyboardLayout>> listLayouts() async => const <KeyboardLayout>[us, ru];
+  Future<List<KeyboardLayout>> listLayouts() async =>
+      const <KeyboardLayout>[us, de, fr, jp, ru];
 
   @override
   Future<KeyboardLayout> getLayout() async {
@@ -67,13 +89,16 @@ class LinuxKeyboard implements Keyboard {
   }
 
   @override
-  Future<void> setLayout(KeyboardLayout layout) async {
+  Future<void> setLayout(KeyboardLayout layout, {bool restart = true}) async {
     final normalized = KeyboardLayout(
       id: layout.id.trim().isEmpty ? 'us' : layout.id.trim(),
       variant: layout.variant,
       options: layout.options,
-      model: layout.model.trim().isEmpty ? 'pc105' : layout.model.trim(),
-      displayName: layout.displayName,
+      model: layout.model.trim().isEmpty
+          ? _defaultModelFor(layout.id)
+          : layout.model.trim(),
+      displayName: layout.displayName ?? _displayNameFor(layout.id),
+      softProfile: layout.softProfile.trim(),
     );
     final conf = encodeKeyboardConf(normalized);
     try {
@@ -90,11 +115,16 @@ class LinuxKeyboard implements Keyboard {
       await _tryWriteEtcDefault(normalized);
     }
 
-    if (applyRestart) {
-      final code = await restartHmi();
-      if (code != 0) {
-        debugPrint('keyboard: hmi restart exit $code');
-      }
+    if (restart && applyRestart) {
+      await restartToApply();
+    }
+  }
+
+  @override
+  Future<void> restartToApply() async {
+    final code = await restartHmi();
+    if (code != 0) {
+      debugPrint('keyboard: hmi restart exit $code');
     }
   }
 
@@ -121,6 +151,7 @@ KeyboardLayout parseKeyboardConf(String raw) {
   var variant = '';
   var options = '';
   var model = 'pc105';
+  var softProfile = '';
 
   for (final line in raw.split('\n')) {
     final trimmed = line.trim();
@@ -146,6 +177,10 @@ KeyboardLayout parseKeyboardConf(String raw) {
       case 'model':
       case 'xkbmodel':
         model = value.isEmpty ? 'pc105' : value;
+      case 'profile':
+      case 'soft':
+      case 'softprofile':
+        softProfile = value;
     }
   }
 
@@ -155,15 +190,21 @@ KeyboardLayout parseKeyboardConf(String raw) {
     options: options,
     model: model,
     displayName: _displayNameFor(layout),
+    softProfile: softProfile,
   );
 }
 
 @visibleForTesting
 String encodeKeyboardConf(KeyboardLayout layout) {
-  return 'layout=${layout.id}\n'
-      'variant=${layout.variant}\n'
-      'options=${layout.options}\n'
-      'model=${layout.model}\n';
+  final buf = StringBuffer()
+    ..write('layout=${layout.id}\n')
+    ..write('variant=${layout.variant}\n')
+    ..write('options=${layout.options}\n')
+    ..write('model=${layout.model}\n');
+  if (layout.softProfile.trim().isNotEmpty) {
+    buf.write('profile=${layout.softProfile.trim()}\n');
+  }
+  return buf.toString();
 }
 
 @visibleForTesting
@@ -219,10 +260,18 @@ String encodeEtcDefaultKeyboard(KeyboardLayout layout) {
       'BACKSPACE="guess"\n';
 }
 
+String _defaultModelFor(String id) {
+  final primary = id.split(',').first.trim().toLowerCase();
+  return primary == 'jp' ? 'jp106' : 'pc105';
+}
+
 String? _displayNameFor(String id) {
   final primary = id.split(',').first.trim();
   return switch (primary) {
-    'us' => 'English (US)',
+    'us' => 'ANSI US (QWERTY)',
+    'de' => 'ISO DE (QWERTZ)',
+    'fr' => 'ISO FR (AZERTY)',
+    'jp' => 'JIS JP',
     'ru' => 'Russian',
     _ => null,
   };

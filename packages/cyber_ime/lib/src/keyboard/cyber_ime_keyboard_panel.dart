@@ -4,15 +4,20 @@ import 'package:cyber_ime/src/field/cyber_ime_field_profile.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_alternate_popup.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_key.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_key_gestures.dart';
+import 'package:cyber_ime/src/keyboard/cyber_ime_key_map.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_key_popup.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_keyboard_controller.dart';
+import 'package:cyber_ime/src/keyboard/cyber_ime_keyboard_rows.dart';
 import 'package:cyber_ime/src/overlay/cyber_ime_overlay_scope.dart';
+import 'package:cyber_ime/src/session/cyber_ime_jp_input_mode.dart';
+import 'package:cyber_ime/src/session/cyber_ime_regional_layout.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// Default panel height used for lift (logical pixels).
-const double kCyberImePanelHeight = 280;
+/// Typewriter Keyboard A is 5 rows (number + 3 alpha + bottom).
+const double kCyberImePanelHeight = 320;
 
 const Color _kCapsLockDotActive = Color(0xFF32D74B);
 
@@ -54,80 +59,28 @@ class CyberImeKeyboardPanel extends StatelessWidget {
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
-                child: Column(
-                  children: [
-                    for (var r = 0; r < layout.rows.length; r++) ...[
-                      if (r > 0) const SizedBox(height: 6),
-                      Expanded(
-                        child: _KeyRow(
-                          row: layout.rows[r],
-                          kind: layout.kind,
-                          shiftOn: controller.shiftActive,
-                          capsLock: controller.capsLock,
-                          onTap: controller.onKeyTap,
-                          onShiftLongPress: controller.onShiftLongPress,
-                          onPopupCommit: controller.commitPopupText,
-                        ),
-                      ),
-                    ],
-                  ],
+                padding: const EdgeInsets.all(CyberImeKeyboardRows.keyGap),
+                child: CyberImeKeyboardRows(
+                  layout: layout,
+                  keyFace: (key) => CyberImeKeyCap(
+                    keyDef: key,
+                    kind: layout.kind,
+                    shiftOn: controller.shiftActive,
+                    capsLock: controller.capsLock,
+                    altGrOn: controller.altGrOn,
+                    jpInputMode: controller.jpInputMode,
+                    onTap: () => controller.onKeyTap(key),
+                    onShiftLongPress: key.id == CyberImeKeyId.shift
+                        ? controller.onShiftLongPress
+                        : null,
+                    onPopupCommit: controller.commitPopupText,
+                  ),
                 ),
               ),
             ),
           ),
         );
       },
-    );
-  }
-}
-
-class _KeyRow extends StatelessWidget {
-  const _KeyRow({
-    required this.row,
-    required this.kind,
-    required this.shiftOn,
-    required this.capsLock,
-    required this.onTap,
-    required this.onShiftLongPress,
-    required this.onPopupCommit,
-  });
-
-  final CyberImeKeyboardRow row;
-  final CyberImeKeyboardKind kind;
-  final bool shiftOn;
-  final bool capsLock;
-  final ValueChanged<CyberImeKeyDef> onTap;
-  final VoidCallback onShiftLongPress;
-  final ValueChanged<String> onPopupCommit;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        if (row.leadingInsetWeight > 0)
-          Spacer(flex: (row.leadingInsetWeight * 10).round().clamp(1, 100)),
-        for (final key in row.keys)
-          Expanded(
-            flex: (key.widthWeight * 10).round().clamp(1, 100),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: CyberImeKeyCap(
-                keyDef: key,
-                kind: kind,
-                shiftOn: shiftOn,
-                capsLock: capsLock,
-                onTap: () => onTap(key),
-                onShiftLongPress: key.id == CyberImeKeyId.shift
-                    ? onShiftLongPress
-                    : null,
-                onPopupCommit: onPopupCommit,
-              ),
-            ),
-          ),
-        if (row.trailingInsetWeight > 0)
-          Spacer(flex: (row.trailingInsetWeight * 10).round().clamp(1, 100)),
-      ],
     );
   }
 }
@@ -140,6 +93,8 @@ class CyberImeKeyCap extends StatefulWidget {
     required this.kind,
     required this.shiftOn,
     required this.capsLock,
+    this.altGrOn = false,
+    this.jpInputMode = CyberImeJpInputMode.english,
     required this.onTap,
     this.onShiftLongPress,
     this.onPopupCommit,
@@ -149,6 +104,8 @@ class CyberImeKeyCap extends StatefulWidget {
   final CyberImeKeyboardKind kind;
   final bool shiftOn;
   final bool capsLock;
+  final bool altGrOn;
+  final CyberImeJpInputMode jpInputMode;
   final VoidCallback onTap;
   final VoidCallback? onShiftLongPress;
   final ValueChanged<String>? onPopupCommit;
@@ -183,6 +140,7 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
 
   bool get _usesAlternateGestures =>
       widget.keyDef.id != CyberImeKeyId.shift &&
+      widget.keyDef.id != CyberImeKeyId.altGr &&
       widget.keyDef.supportsAlternatePopup;
 
   @override
@@ -359,7 +317,12 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
     final variant =
         _isPrimary ? CyberButtonVariant.primary : CyberButtonVariant.light;
     final accent = _accentLabel ||
-        (widget.keyDef.id == CyberImeKeyId.shift && widget.shiftOn);
+        (widget.keyDef.id == CyberImeKeyId.shift && widget.shiftOn) ||
+        (widget.keyDef.id == CyberImeKeyId.altGr && widget.altGrOn) ||
+        (widget.keyDef.id == CyberImeKeyId.kanaToggle &&
+            widget.jpInputMode != CyberImeJpInputMode.english) ||
+        (widget.keyDef.id == CyberImeKeyId.hankakuZenkaku &&
+            widget.jpInputMode != CyberImeJpInputMode.english);
 
     return CyberButton(
       expand: true,
@@ -367,9 +330,11 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
       onPressed: onPressed,
       onLongPress: onLongPress,
       foregroundColor: accent ? CyberColors.buttonPrimaryAccent : null,
-      child: _KeyLabel(
+      child: CyberImeKeyLabel(
         keyDef: widget.keyDef,
         shiftOn: widget.shiftOn,
+        altGrOn: widget.altGrOn,
+        jpInputMode: widget.jpInputMode,
       ),
     );
   }
@@ -427,11 +392,31 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
   }
 }
 
-class _KeyLabel extends StatelessWidget {
-  const _KeyLabel({required this.keyDef, required this.shiftOn});
+/// Shared keycap face used by the live panel and Settings preview.
+///
+/// Control keys (Shift / Backspace / Enter / Caps) use Material Icons; character
+/// keys show the KeyMap primary plus an optional second-function secondary.
+class CyberImeKeyLabel extends StatelessWidget {
+  const CyberImeKeyLabel({
+    super.key,
+    required this.keyDef,
+    required this.shiftOn,
+    this.altGrOn = false,
+    this.jpInputMode = CyberImeJpInputMode.english,
+    this.profile,
+  });
 
   final CyberImeKeyDef keyDef;
   final bool shiftOn;
+  final bool altGrOn;
+  final CyberImeJpInputMode jpInputMode;
+
+  /// When set (e.g. Settings preview), KeyMap resolves against this profile
+  /// instead of the live [CyberImeRegionalLayoutRegistry] selection.
+  final CyberImeRegionalProfile? profile;
+
+  CyberImeRegionalProfile get _mapProfile =>
+      profile ?? CyberImeRegionalLayoutRegistry.provider.profile;
 
   @override
   Widget build(BuildContext context) {
@@ -442,6 +427,57 @@ class _KeyLabel extends StatelessWidget {
           size: 22,
           color: shiftOn ? CyberColors.buttonPrimaryAccent : null,
         );
+      case CyberImeKeyId.altGr:
+        return Text(
+          'AltGr',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: altGrOn ? CyberColors.buttonPrimaryAccent : null,
+          ),
+        );
+      case CyberImeKeyId.control:
+        return const Text('Ctrl', style: TextStyle(fontSize: 12));
+      case CyberImeKeyId.alt:
+        return const Text('Alt', style: TextStyle(fontSize: 12));
+      case CyberImeKeyId.capsLock:
+        if (keyDef.primary.contains('英')) {
+          return Text(
+            '英数',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: shiftOn ? CyberColors.buttonPrimaryAccent : null,
+            ),
+          );
+        }
+        return Icon(
+          Icons.keyboard_capslock,
+          size: 20,
+          color: shiftOn ? CyberColors.buttonPrimaryAccent : null,
+        );
+      case CyberImeKeyId.hankakuZenkaku:
+        return const Text('半/全', style: TextStyle(fontSize: 11));
+      case CyberImeKeyId.muhenkan:
+        return const Text('無変換', style: TextStyle(fontSize: 10));
+      case CyberImeKeyId.henkan:
+        return const Text('変換', style: TextStyle(fontSize: 11));
+      case CyberImeKeyId.kanaToggle:
+        final kanaLabel = jpInputMode == CyberImeJpInputMode.hiragana
+            ? 'かな'
+            : 'カナ';
+        return Text(
+          kanaLabel,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: jpInputMode != CyberImeJpInputMode.english
+                ? CyberColors.buttonPrimaryAccent
+                : null,
+          ),
+        );
+      case CyberImeKeyId.tab:
+        return const Text('Tab', style: TextStyle(fontSize: 12));
       case CyberImeKeyId.backspace:
         return const Icon(Icons.backspace_outlined, size: 22);
       case CyberImeKeyId.enter:
@@ -452,42 +488,107 @@ class _KeyLabel extends StatelessWidget {
         break;
     }
 
-    final label = keyDef.isLetter
-        ? (shiftOn ? keyDef.primary.toUpperCase() : keyDef.primary.toLowerCase())
-        : keyDef.primary;
+    final effectiveJp = _mapProfile == CyberImeRegionalProfile.jis
+        ? jpInputMode
+        : CyberImeJpInputMode.english;
 
-    // lws-ui showSecondaryHint: letters + comma/period dual key.
-    final showSecondary = keyDef.secondary != null &&
-        keyDef.secondary!.isNotEmpty &&
-        (keyDef.isLetter || keyDef.id == CyberImeKeyId.commaPeriod);
+    String label;
+    String? faceSecondary;
+    final inKana = effectiveJp == CyberImeJpInputMode.hiragana ||
+        effectiveJp == CyberImeJpInputMode.katakana;
 
-    if (showSecondary) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    if (keyDef.keyCode != null) {
+      final level = CyberImeKeyMaps.level(_mapProfile, keyDef.keyCode!);
+      label = level.resolve(
+        shiftOn: shiftOn,
+        altGrOn: altGrOn,
+        jpMode: effectiveJp,
+      );
+      if (inKana &&
+          !shiftOn &&
+          level.kanaShift != null &&
+          level.kanaShift!.isNotEmpty) {
+        faceSecondary = effectiveJp == CyberImeJpInputMode.katakana
+            ? cyberImeToKatakana(level.kanaShift!)
+            : level.kanaShift;
+      } else if (!inKana) {
+        faceSecondary = keyDef.secondary;
+      }
+    } else if (keyDef.isLetter) {
+      label = shiftOn
+          ? keyDef.primary.toUpperCase()
+          : keyDef.primary.toLowerCase();
+      faceSecondary = keyDef.secondary;
+    } else {
+      label = keyDef.primary;
+      faceSecondary = keyDef.secondary;
+    }
+
+    final showSecondary = !altGrOn &&
+        faceSecondary != null &&
+        faceSecondary.isNotEmpty &&
+        (keyDef.isLetter ||
+            keyDef.id == CyberImeKeyId.commaPeriod ||
+            keyDef.keyCode != null);
+
+    if (!showSecondary) {
+      return Text(
+        label,
+        style: TextStyle(
+          fontSize: label.length > 2 ? 13 : 18,
+          fontWeight: FontWeight.w600,
+        ),
+      );
+    }
+
+    final secondaryStyle = TextStyle(
+      color: CyberColors.textSecondary,
+      fontSize: keyDef.isLetter || inKana ? 11 : 10,
+      fontWeight: FontWeight.w500,
+      height: 1,
+    );
+    const primaryStyle = TextStyle(fontSize: 18, fontWeight: FontWeight.w600);
+
+    // Default phone pad: secondary above the letter. Typewriter AltGr (e.g. €):
+    // pin to bottom-right corner so primary stays centered.
+    final cornerAltGr = keyDef.isLetter &&
+        !inKana &&
+        _mapProfile != CyberImeRegionalProfile.defaultSoft;
+    if (cornerAltGr) {
+      const corner = CyberDimens.rectangleButtonCornerRadius;
+      return Stack(
+        fit: StackFit.expand,
         children: [
-          Text(
-            keyDef.secondary!,
-            style: const TextStyle(
-              color: CyberColors.textSecondary,
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              height: 1,
+          Center(child: Text(label, style: primaryStyle)),
+          Positioned(
+            right: 0,
+            bottom: 0,
+            width: corner * 2,
+            height: corner * 2,
+            child: Center(
+              child: Text(faceSecondary, style: secondaryStyle),
             ),
-          ),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
         ],
       );
     }
 
-    return Text(
-      label,
-      style: TextStyle(
-        fontSize: label.length > 2 ? 13 : 18,
-        fontWeight: FontWeight.w600,
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Center(child: Text(label, style: primaryStyle)),
+        Positioned(
+          top: 2,
+          left: 0,
+          right: 0,
+          child: Text(
+            faceSecondary,
+            textAlign: TextAlign.center,
+            style: secondaryStyle,
+          ),
+        ),
+      ],
     );
   }
 }
+

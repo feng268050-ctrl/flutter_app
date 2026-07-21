@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cyber_hal/cyber_hal.dart';
+import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_navigation.dart';
@@ -80,6 +81,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     _miscSettingsStore.warmRead();
     _bootSelfCheckSettings.warmRead();
     CyberClickSoundRegistry.register(_clickSound);
+    CyberImeLanguageRegistry.register(
+      const CyberImeFixedLanguageProvider(CyberImeGlobalKind.english),
+    );
     // Prime ALSA + sticky mpg123 so the first UI click is not cold-start.
     unawaited(_services.audio.warmClickSession());
     WidgetsBinding.instance.addPostFrameCallback((_) {

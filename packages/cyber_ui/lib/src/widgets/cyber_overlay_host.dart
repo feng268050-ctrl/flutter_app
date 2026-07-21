@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:cyber_ui/src/blur/cyber_backdrop_blur_controller.dart';
@@ -9,6 +10,9 @@ import 'package:cyber_ui/src/theme/cyber_dimens.dart';
 import 'package:cyber_ui/src/theme/cyber_panel_border.dart';
 import 'package:cyber_ui/src/theme/cyber_tone.dart';
 import 'package:cyber_ui/src/widgets/cyber_dialog.dart';
+import 'package:cyber_ui/src/widgets/cyber_keyboard_avoiding_lift.dart';
+import 'package:cyber_ui/src/widgets/cyber_keyboard_insets.dart';
+import 'package:cyber_ui/src/widgets/cyber_lifted_panel.dart';
 
 /// Overlay host for Cyber dialogs (lws-ui `FrostOverlayHost` stand-in).
 ///
@@ -38,6 +42,12 @@ abstract final class CyberOverlayHost {
     Color barrierColor = Colors.transparent,
     bool freezePageBackdrop = true,
     CyberBackdropBlurController? pageBackdropController,
+    /// Keyboard panel height. When non-null, card is recentered / pinned in the
+    /// remaining viewport (not blindly translated by full keyboard height).
+    ValueListenable<double>? keyboardHeight,
+    double keyboardMargin = CyberKeyboardInsets.defaultMargin,
+    /// Raw upward translation (legacy). Prefer [keyboardHeight].
+    ValueListenable<double>? liftExtent,
   }) {
     if (freezePageBackdrop) {
       pageBackdropController?.requestSample();
@@ -48,32 +58,45 @@ abstract final class CyberOverlayHost {
       barrierDismissible: barrierDismissible,
       barrierColor: barrierColor,
       builder: (dialogContext) {
-        return Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720, maxHeight: 640),
-            child: ClipRRect(
-              borderRadius: panel.borderRadius,
-              child: DecoratedBox(
-                // Border only — fill would occlude backdrop sampling.
-                decoration: BoxDecoration(
-                  borderRadius: panel.borderRadius,
-                  border: Border.all(
-                    color: panel.flatBorderColor,
-                    width: panel.width,
-                  ),
+        Widget chrome = ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720, maxHeight: 640),
+          child: ClipRRect(
+            borderRadius: panel.borderRadius,
+            child: DecoratedBox(
+              // Border only — fill would occlude backdrop sampling.
+              decoration: BoxDecoration(
+                borderRadius: panel.borderRadius,
+                border: Border.all(
+                  color: panel.flatBorderColor,
+                  width: panel.width,
                 ),
-                child: CyberModal(
-                  sampleMode: sampleMode,
-                  intensity: intensity,
-                  blurTint: blurTint,
-                  useFakeGlass: useFakeGlass,
-                  borderRadius: panel.borderRadius,
-                  padding: const EdgeInsets.all(CyberDimens.contentPadding),
-                  child: builder(dialogContext),
-                ),
+              ),
+              child: CyberModal(
+                sampleMode: sampleMode,
+                intensity: intensity,
+                blurTint: blurTint,
+                useFakeGlass: useFakeGlass,
+                borderRadius: panel.borderRadius,
+                padding: const EdgeInsets.all(CyberDimens.contentPadding),
+                child: builder(dialogContext),
               ),
             ),
           ),
+        );
+        if (keyboardHeight != null) {
+          chrome = CyberKeyboardAvoidingLift(
+            keyboardHeight: keyboardHeight,
+            margin: keyboardMargin,
+            child: chrome,
+          );
+        } else if (liftExtent != null) {
+          chrome = CyberLiftedPanel(liftExtent: liftExtent, child: chrome);
+        }
+        // showDialog builder is not wrapped in [Dialog]/[Material] — without
+        // this, titles/body Text get the yellow double-underline fallback style.
+        return Material(
+          type: MaterialType.transparency,
+          child: Center(child: chrome),
         );
       },
     ).whenComplete(() {
@@ -110,6 +133,7 @@ class CyberPromptContent extends StatelessWidget {
             color: CyberColors.textPrimary,
             fontSize: 28,
             fontWeight: FontWeight.w600,
+            decoration: TextDecoration.none,
           ),
         ),
         if (body != null) ...[

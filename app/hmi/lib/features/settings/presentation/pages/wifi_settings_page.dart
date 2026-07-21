@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:cyber_hal/network.dart';
+import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
 /// Wireless Network — lws-ui / phone Settings style (not Demo forms).
 class WifiSettingsPage extends StatefulWidget {
@@ -80,95 +82,110 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
       );
 
   Future<void> _connectAp(WifiAccessPoint ap) async {
-    final psk = await showDialog<String?>(
+    if (ap.isOpen) {
+      await _connectWithProgress(ssid: ap.ssid, psk: null);
+      return;
+    }
+    final psk = await showCyberImeInputDialog(
       context: context,
-      builder: (ctx) {
-        final ctrl = TextEditingController();
-        return AlertDialog(
-          title: Text(ap.ssid),
-          content: TextField(
-            controller: ctrl,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'Password',
-              hintText: 'Leave empty if open',
-            ),
-            autofocus: true,
-            onSubmitted: (_) => Navigator.pop(ctx, ctrl.text),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                CyberClickSoundRegistry.playClick();
-                Navigator.pop(ctx);
-              },
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                CyberClickSoundRegistry.playClick();
-                Navigator.pop(ctx, ctrl.text);
-              },
-              child: const Text('Join'),
-            ),
-          ],
-        );
-      },
+      title: ap.ssid,
+      fieldType: CyberImeFieldType.wifi,
+      label: 'Password',
+      hint: 'Enter password',
+      obscureText: true,
+      confirmLabel: 'Join',
+      requireNonEmpty: true,
+      emptyErrorText: 'Password required',
     );
     if (psk == null || !mounted) return;
-    await _guard(() => _wifi.connect(
-          ssid: ap.ssid,
-          psk: psk.isEmpty ? null : psk,
-        ));
+    await _connectWithProgress(ssid: ap.ssid, psk: psk);
+  }
+
+  Future<void> _connectWithProgress({
+    required String ssid,
+    String? psk,
+    bool hidden = false,
+  }) async {
+    if (!mounted) return;
+    setState(() => _error = null);
+    try {
+      await showCyberBusyDialog<void>(
+        context: context,
+        title: 'Connecting…',
+        work: () async {
+          await _wifi.connect(
+            ssid: ssid,
+            psk: psk,
+            hidden: hidden,
+            requiresPsk: psk != null,
+          );
+        },
+      );
+    } catch (e) {
+      if (mounted) setState(() => _error = '$e');
+    }
   }
 
   Future<void> _joinHidden() async {
     final ssidCtrl = TextEditingController();
     final pskCtrl = TextEditingController();
-    final ok = await showDialog<bool>(
+    final ime = CyberImeSession.shared;
+    final ok = await showCyberImeFormDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Other Network'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: ssidCtrl,
-              decoration: const InputDecoration(labelText: 'Name'),
+      title: 'Other Network',
+      confirmLabel: 'Join',
+      session: ime,
+      fields: [
+        CyberImeTextField(
+          fieldType: CyberImeFieldType.text,
+          controller: ssidCtrl,
+          session: ime,
+          decoration: const InputDecoration(
+            labelText: 'Name',
+            labelStyle: TextStyle(color: CyberColors.textSecondary),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: CyberColors.textSecondary),
             ),
-            TextField(
-              controller: pskCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Password'),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: CyberColors.textPrimary),
             ),
-          ],
+          ),
+          style: const TextStyle(color: CyberColors.textPrimary),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              CyberClickSoundRegistry.playClick();
-              Navigator.pop(ctx, false);
-            },
-            child: const Text('Cancel'),
+        CyberImeTextField(
+          fieldType: CyberImeFieldType.wifi,
+          controller: pskCtrl,
+          obscureText: true,
+          session: ime,
+          decoration: const InputDecoration(
+            labelText: 'Password',
+            labelStyle: TextStyle(color: CyberColors.textSecondary),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: CyberColors.textSecondary),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: CyberColors.textPrimary),
+            ),
           ),
-          FilledButton(
-            onPressed: () {
-              CyberClickSoundRegistry.playClick();
-              Navigator.pop(ctx, true);
-            },
-            child: const Text('Join'),
-          ),
-        ],
-      ),
+          style: const TextStyle(color: CyberColors.textPrimary),
+        ),
+      ],
     );
-    if (ok != true || !mounted) return;
+    if (ok != true || !mounted) {
+      ssidCtrl.dispose();
+      pskCtrl.dispose();
+      return;
+    }
     final ssid = ssidCtrl.text.trim();
+    final psk = pskCtrl.text;
+    ssidCtrl.dispose();
+    pskCtrl.dispose();
     if (ssid.isEmpty) return;
-    await _guard(() => _wifi.connect(
-          ssid: ssid,
-          psk: pskCtrl.text.isEmpty ? null : pskCtrl.text,
-          hidden: true,
-        ));
+    await _connectWithProgress(
+      ssid: ssid,
+      psk: psk.isEmpty ? null : psk,
+      hidden: true,
+    );
   }
 
   @override

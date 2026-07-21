@@ -14,6 +14,7 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coo
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
+import 'package:lws_hmi/features/system_status/presentation/system_status_card.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
@@ -161,6 +162,25 @@ AppServices _testServices() {
         serialNumber: 'test-sn',
         kernelRelease: '6.1.0-test',
         appVersion: kSystemVersion,
+        memoryTotalBytes: 512 * 1024 * 1024,
+        memoryAvailableBytes: 256 * 1024 * 1024,
+        uptime: Duration(hours: 2, minutes: 15),
+        loadAverage: LoadAverage(one: 0.42, five: 0.3, fifteen: 0.2),
+        uiFps: 56,
+        rasterFps: 55,
+        panelRefreshHz: 56,
+        thermal: [
+          ThermalZone(
+            id: 'thermal_zone0',
+            type: 'soc-thermal',
+            temperatureCelsius: 48,
+          ),
+          ThermalZone(
+            id: 'thermal_zone1',
+            type: 'gpu-thermal',
+            temperatureCelsius: 45,
+          ),
+        ],
       ),
     ),
     modbusClient: _OfflineModbus(),
@@ -331,5 +351,19 @@ void main() {
     // Drain auto-dismiss timer so the binding ends clean.
     await tester.pump(const Duration(seconds: 4));
     await tester.pump();
+  });
+
+  testWidgets('system status overlay hidden by default', (tester) async {
+    await tester.pumpWidget(
+      LwsHmiApp(
+        boardProfile: _testProfile(),
+        services: _testServices(),
+        bootSelfCheckSettings: disabledBootCheck(),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byType(SystemStatusCard), findsNothing);
   });
 }

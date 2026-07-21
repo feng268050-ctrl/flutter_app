@@ -4,6 +4,7 @@ import 'package:cyber_hal/network.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/bluetooth_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/brightness_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/date_time_settings_page.dart';
@@ -256,6 +257,25 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                       : (v) {
                           unawaited(() async {
                             await boot.setEnabled(v);
+                            if (mounted) setState(() {});
+                          }());
+                        },
+                );
+              },
+            ),
+            Builder(
+              builder: (context) {
+                final misc = MiscSettingsScope.maybeOf(context);
+                final enabled = misc?.showSystemStatusOverlay ?? false;
+                return SettingsSwitchRow(
+                  title: 'Show System Status Overlay',
+                  subtitle: misc == null ? 'Unavailable' : null,
+                  value: enabled,
+                  onChanged: misc == null
+                      ? null
+                      : (v) {
+                          unawaited(() async {
+                            await misc.setShowSystemStatusOverlay(v);
                             if (mounted) setState(() {});
                           }());
                         },

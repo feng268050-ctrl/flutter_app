@@ -11,9 +11,12 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_sco
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
+import 'package:lws_hmi/features/system_status/presentation/system_status_overlay_host.dart';
 import 'package:lws_hmi/ui/cyber/app_indexed_click_sound.dart';
 import 'package:lws_hmi/ui/demo/p2_demo_page.dart';
 
@@ -29,6 +32,7 @@ class LwsHmiApp extends StatefulWidget {
     required this.boardProfile,
     this.services,
     this.soundEffectStore,
+    this.miscSettingsStore,
     this.bootSelfCheckSettings,
   });
 
@@ -39,6 +43,9 @@ class LwsHmiApp extends StatefulWidget {
 
   /// Optional override for tests (inject fake prefs path / store).
   final SoundEffectStore? soundEffectStore;
+
+  /// Optional override for tests (inject fake Misc JSON path / store).
+  final MiscSettingsStore? miscSettingsStore;
 
   /// Optional override for tests (disable overlay / fake prefs path).
   final BootSelfCheckSettings? bootSelfCheckSettings;
@@ -54,8 +61,12 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   late final SoundEffectStore _soundEffectStore =
       widget.soundEffectStore ?? SoundEffectStore();
 
+  late final MiscSettingsStore _miscSettingsStore =
+      widget.miscSettingsStore ?? MiscSettingsStore();
+
   late final BootSelfCheckSettings _bootSelfCheckSettings =
-      widget.bootSelfCheckSettings ?? BootSelfCheckSettings();
+      widget.bootSelfCheckSettings ??
+          BootSelfCheckSettings(miscStore: _miscSettingsStore);
 
   late final AppIndexedClickSound _clickSound = AppIndexedClickSound(
     _soundEffectStore,
@@ -66,6 +77,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   void initState() {
     super.initState();
     _soundEffectStore.warmRead();
+    _miscSettingsStore.warmRead();
     _bootSelfCheckSettings.warmRead();
     CyberClickSoundRegistry.register(_clickSound);
     // Prime ALSA + sticky mpg123 so the first UI click is not cold-start.
@@ -80,6 +92,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   @override
   void dispose() {
     CyberClickSoundRegistry.register(null);
+    if (widget.miscSettingsStore == null) {
+      _miscSettingsStore.dispose();
+    }
     super.dispose();
   }
 
@@ -138,36 +153,46 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     );
   }
 
+  Widget _appBuilder(BuildContext context, Widget? child) {
+    return SystemStatusOverlayHost(
+      store: _miscSettingsStore,
+      child: _matchFlutterPiDensity(context, child),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScope(
       services: _services,
-      child: BootSelfCheckScope(
-        settings: _bootSelfCheckSettings,
-        child: SoundEffectScope(
-          store: _soundEffectStore,
-          clickSound: _clickSound,
-          child: MaterialApp(
-            title: 'HMI',
-            theme: buildAppTheme(),
-            scrollBehavior: const AppScrollBehavior(),
-            builder: _matchFlutterPiDensity,
-            initialRoute: AppRoutes.home,
-            onGenerateRoute: (settings) {
-              final Widget page;
-              switch (settings.name) {
-                case AppRoutes.settings:
-                  page = const SettingsPage();
-                case AppRoutes.monitor:
-                  page = const MonitorPage();
-                case AppRoutes.demo:
-                  page = _demoPage();
-                case AppRoutes.home:
-                default:
-                  page = const HomePage();
-              }
-              return buildAppPageRoute(settings: settings, child: page);
-            },
+      child: MiscSettingsScope(
+        store: _miscSettingsStore,
+        child: BootSelfCheckScope(
+          settings: _bootSelfCheckSettings,
+          child: SoundEffectScope(
+            store: _soundEffectStore,
+            clickSound: _clickSound,
+            child: MaterialApp(
+              title: 'HMI',
+              theme: buildAppTheme(),
+              scrollBehavior: const AppScrollBehavior(),
+              builder: _appBuilder,
+              initialRoute: AppRoutes.home,
+              onGenerateRoute: (settings) {
+                final Widget page;
+                switch (settings.name) {
+                  case AppRoutes.settings:
+                    page = const SettingsPage();
+                  case AppRoutes.monitor:
+                    page = const MonitorPage();
+                  case AppRoutes.demo:
+                    page = _demoPage();
+                  case AppRoutes.home:
+                  default:
+                    page = const HomePage();
+                }
+                return buildAppPageRoute(settings: settings, child: page);
+              },
+            ),
           ),
         ),
       ),

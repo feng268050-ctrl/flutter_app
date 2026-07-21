@@ -50,14 +50,20 @@ The Home screen SHALL provide a visible Settings affordance that navigates to th
 - **WHEN** the user views Home after this change
 - **THEN** Quick Mode, Engineer Mode, AI Vision, and the four customizable stat cards are not required to be present as full product flows (display-only stubs MAY exist)
 
-### Requirement: Home shows temperature readings
+### Requirement: Home does not host engineering perf HUD
 
-Product Home SHALL present temperature readings (SoC, GPU, and welding-gun temperatures when available) without requiring the Demo route. Missing values SHALL show `-`. Temperature I/O MUST NOT block first-frame paint.
+Product Home MUST NOT present the Home-local engineering perf HUD strip (single-line UI/raster/panel FPS + SoC/GPU temperatures). Those host metrics SHALL be provided by the global system status card overlay when Show System Status Overlay is enabled. Home first paint MUST remain free of blocking sysInfo I/O. By default (preference off), Home SHALL NOT show host engineering FPS/thermal chrome.
 
-#### Scenario: Temperature card visible on Home
+#### Scenario: Home has no local perf HUD strip
 
-- **WHEN** the user views product Home after assets load
-- **THEN** a Temperatures section or card is visible with per-sensor rows
+- **WHEN** the user views product Home after this change
+- **THEN** Home does not render the former top-left single-line FPS + SoC/GPU engineering strip as a Home-owned widget
+
+#### Scenario: Host metrics available via overlay when enabled
+
+- **WHEN** Show System Status Overlay is enabled
+- **AND** the user views any product route
+- **THEN** UI/raster/panel FPS and SoC/GPU temperatures are available via the global system status card without opening the Demo route
 
 ### Requirement: Home glass chrome uses CyberUI
 

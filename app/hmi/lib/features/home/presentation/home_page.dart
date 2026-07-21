@@ -8,7 +8,6 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coo
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
-import 'package:lws_hmi/features/home/presentation/home_perf_hud.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
@@ -128,12 +127,6 @@ class _HomePageState extends State<HomePage> {
                       sampleMode: CyberBlurSampleMode.realtime,
                     ),
                   ),
-                ),
-                // Engineering perf HUD (FPS + SoC/GPU) — top-left free strip.
-                Positioned(
-                  left: 10 * sx,
-                  top: 10 * sy,
-                  child: const HomePerfHud(),
                 ),
               _ModeEntry(
                 left: 53 * sx,

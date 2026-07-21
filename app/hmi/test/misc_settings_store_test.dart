@@ -1,0 +1,84 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_store.dart';
+
+void main() {
+  test('defaults when JSON missing', () async {
+    final dir = await Directory.systemTemp.createTemp('misc-');
+    final store = MiscSettingsStore(
+      preferencePath: '${dir.path}/misc-settings.json',
+      legacyBootSelfCheckPath: '${dir.path}/boot-self-check',
+    );
+    store.warmRead();
+    expect(store.showStartupSelfCheck, isTrue);
+    expect(store.showSystemStatusOverlay, isFalse);
+    await dir.delete(recursive: true);
+  });
+
+  test('JSON round-trip for overlay and self-check', () async {
+    final dir = await Directory.systemTemp.createTemp('misc-');
+    final path = '${dir.path}/misc-settings.json';
+    final store = MiscSettingsStore(
+      preferencePath: path,
+      legacyBootSelfCheckPath: '${dir.path}/boot-self-check',
+    );
+    store.warmRead();
+    await store.setShowSystemStatusOverlay(true);
+    await store.setShowStartupSelfCheck(false);
+
+    final again = MiscSettingsStore(
+      preferencePath: path,
+      legacyBootSelfCheckPath: '${dir.path}/boot-self-check',
+    );
+    again.warmRead();
+    expect(again.showSystemStatusOverlay, isTrue);
+    expect(again.showStartupSelfCheck, isFalse);
+
+    final decoded = jsonDecode(await File(path).readAsString()) as Map;
+    expect(decoded['showSystemStatusOverlay'], isTrue);
+    expect(decoded['showStartupSelfCheck'], isFalse);
+
+    await dir.delete(recursive: true);
+  });
+
+  test('imports legacy boot-self-check when JSON absent', () async {
+    final dir = await Directory.systemTemp.createTemp('misc-');
+    final legacy = File('${dir.path}/boot-self-check');
+    await legacy.writeAsString('0\n');
+    final path = '${dir.path}/misc-settings.json';
+
+    final store = MiscSettingsStore(
+      preferencePath: path,
+      legacyBootSelfCheckPath: legacy.path,
+    );
+    store.warmRead();
+    expect(store.showStartupSelfCheck, isFalse);
+    expect(store.showSystemStatusOverlay, isFalse);
+    expect(File(path).existsSync(), isTrue);
+
+    final again = MiscSettingsStore(
+      preferencePath: path,
+      legacyBootSelfCheckPath: legacy.path,
+    );
+    again.warmRead();
+    expect(again.showStartupSelfCheck, isFalse);
+
+    await dir.delete(recursive: true);
+  });
+
+  test('corrupt JSON soft-fails to defaults', () async {
+    final dir = await Directory.systemTemp.createTemp('misc-');
+    final path = '${dir.path}/misc-settings.json';
+    await File(path).writeAsString('not-json{{{');
+    final store = MiscSettingsStore(
+      preferencePath: path,
+      legacyBootSelfCheckPath: '${dir.path}/boot-self-check',
+    );
+    store.warmRead();
+    expect(store.showStartupSelfCheck, isTrue);
+    expect(store.showSystemStatusOverlay, isFalse);
+    await dir.delete(recursive: true);
+  });
+}

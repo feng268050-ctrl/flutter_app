@@ -35,22 +35,39 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _selfCheckStarted = false;
+  bool _homeBootstrapped = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeStartSelfCheck());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrapHome());
   }
 
-  void _maybeStartSelfCheck() {
-    if (!mounted || _selfCheckStarted) {
+  /// After first frame: optional once-per-boot self-check, then Modbus live.
+  ///
+  /// When startup self-check will show, continuous poll is suppressed until the
+  /// dialog closes ([BootSelfCheckCoordinator.onComplete]). Otherwise Modbus
+  /// starts immediately so alarms can subscribe without opening Monitor.
+  void _bootstrapHome() {
+    if (!mounted || _homeBootstrapped) {
       return;
     }
-    _selfCheckStarted = true;
-    final settings = BootSelfCheckScope.maybeOf(context)?.settings;
+    _homeBootstrapped = true;
     final services = AppScope.maybeOf(context);
-    if (settings == null || services == null) {
+    if (services == null) {
+      return;
+    }
+
+    void startModbusLive() {
+      if (!mounted) {
+        return;
+      }
+      unawaited(services.ensureModbusLive());
+    }
+
+    final settings = BootSelfCheckScope.maybeOf(context)?.settings;
+    if (settings == null) {
+      startModbusLive();
       return;
     }
     unawaited(
@@ -58,6 +75,7 @@ class _HomePageState extends State<HomePage> {
         context: context,
         services: services,
         settings: settings,
+        onComplete: startModbusLive,
       ),
     );
   }

@@ -82,6 +82,12 @@ abstract class ModbusHal {
   /// succeeds; otherwise unset words are written as `0`.
   Future<void> writeGroup(String groupId, Map<String, Object?> values);
 
+  /// Start continuous group polling.
+  ///
+  /// Idempotent while already polling: a second call on the same instance is a
+  /// no-op (does not restart the timer or change [groupIds]). After
+  /// [stopPolling], a later [startPolling] may start again (e.g. exclusive
+  /// session resume).
   Future<void> startPolling({Iterable<String>? groupIds});
 
   Future<void> stopPolling();
@@ -476,7 +482,10 @@ final class _LinuxModbusHal implements ModbusHal {
 
   @override
   Future<void> startPolling({Iterable<String>? groupIds}) async {
-    await stopPolling();
+    // One active poll scheduler per HAL instance. Do not stop+restart.
+    if (_polling) {
+      return;
+    }
     final ordered = _resolveContinuousOrder(groupIds);
     if (ordered.isEmpty) {
       return;

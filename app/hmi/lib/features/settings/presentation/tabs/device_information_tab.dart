@@ -60,7 +60,15 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
     try {
       await widget.services.ensureModbusLive();
-      _modbusSub = widget.services.modbusAttributeChanges.listen(_onModbus);
+      final stream = await widget.services.modbus.watchAttributes(
+        ids: kDeviceInfoModbusWatchIds,
+      );
+      _modbusSub = stream.listen(_onModbus);
+      // On-demand info group (gunhead / laser / wire) is not in continuous poll.
+      try {
+        final info = await widget.services.modbus.readGroup('info');
+        _onModbus(modbusGroupToChanges(info));
+      } catch (_) {}
     } catch (_) {}
   }
 

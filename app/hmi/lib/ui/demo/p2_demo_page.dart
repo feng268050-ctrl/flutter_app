@@ -211,23 +211,25 @@ class _P2DemoPageState extends State<P2DemoPage> {
       // Soft-fail: tiles stay at `-`.
     }
 
-    // Prefer app-scoped Modbus fan-out when under AppScope (Home owns live start).
-    if (app != null) {
-      try {
+    // Poll ensure (shared App client or private); watch Demo ids on this surface.
+    final client = app?.modbus ?? _modbus;
+    try {
+      if (app != null) {
         await app.ensureModbusLive();
-        _modbusAttrSub =
-            app.modbusAttributeChanges.listen(_onModbusAttributeChanges);
-        _modbusHealthSub = app.modbusHealthChanges.listen(_onModbusHealth);
-      } catch (_) {}
-    } else {
-      try {
-        await _modbus.startLiveDemo(
-          onAttributeChanges: _onModbusAttributeChanges,
-          onHealth: _onModbusHealth,
-        );
-      } catch (_) {
-        // Soft-fail: tiles stay at `-`.
+      } else {
+        await client.ensurePolling();
       }
+      final attrStream =
+          await client.watchAttributes(ids: kDemoModbusWatchIds);
+      final healthStream = await client.watchHealth();
+      _modbusAttrSub = attrStream.listen(_onModbusAttributeChanges);
+      _modbusHealthSub = healthStream.listen(_onModbusHealth);
+      try {
+        final info = await client.readGroup('info');
+        _onModbusAttributeChanges(modbusGroupToChanges(info));
+      } catch (_) {}
+    } catch (_) {
+      // Soft-fail: tiles stay at `-`.
     }
 
     // HAL-owned settings restore (skipped when AppServices already restored).
@@ -393,7 +395,10 @@ class _P2DemoPageState extends State<P2DemoPage> {
     unawaited(_dateTime.dispose());
     unawaited(_http.dispose());
     unawaited(_bluetooth.dispose());
-    unawaited(_modbus.close());
+    // Do not close App-scoped shared Modbus (would stop process-wide poll).
+    if (widget.modbusClient == null) {
+      unawaited(_modbus.close());
+    }
     super.dispose();
   }
 

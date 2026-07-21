@@ -133,7 +133,7 @@ final class GunAlarmTelemetry {
     }
   }
 
-  /// Load catalog meta, ensure Modbus live, subscribe. Soft-fails silently.
+  /// Ensure poll, then watch Monitor ids + health. Soft-fails silently.
   Future<void> start(
     AppServices services, {
     required void Function() onUpdate,
@@ -154,13 +154,14 @@ final class GunAlarmTelemetry {
     try {
       final attrs = await services.modbus.listAttributes();
       _catalog = MonitorModbusIds.alarmCatalog(attrs);
-      await services.ensureModbusLive(
-        watchIds: MonitorModbusIds.watchIdsFromCatalog(attrs),
-      );
+      final ids = MonitorModbusIds.watchIdsFromCatalog(attrs);
+      await services.ensureModbusLive();
       await _modbusSub?.cancel();
       await _healthSub?.cancel();
-      _modbusSub = services.modbusAttributeChanges.listen(applyChanges);
-      _healthSub = services.modbusHealthChanges.listen(applyHealth);
+      final attrStream = await services.modbus.watchAttributes(ids: ids);
+      final healthStream = await services.modbus.watchHealth();
+      _modbusSub = attrStream.listen(applyChanges);
+      _healthSub = healthStream.listen(applyHealth);
       _uiGate?.cancel();
       _uiGate = Timer.periodic(uiGate, (_) {
         if (!_dirty) {

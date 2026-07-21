@@ -9,8 +9,20 @@ import 'package:lws_hmi/features/settings/presentation/tabs/device_information_t
 /// Product Settings shell — four tabs (Material stand-in for FrostUI).
 ///
 /// Tab changes are tap-only (no swipe) — same anti-mis-touch rule as Monitor.
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Route-level ensure (not only Device Information tab).
+    scheduleEnsureModbusLive(context);
+  }
 
   @override
   Widget build(BuildContext context) {

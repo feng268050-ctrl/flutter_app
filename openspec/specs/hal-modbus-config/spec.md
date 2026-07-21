@@ -17,11 +17,16 @@ TBD - created by archiving change dart-hal-package. Update Purpose after archive
 - **THEN** continuous group polling SHALL use that interval
 
 ### Requirement: Poll groups and contiguous reads
-Continuous telemetry SHALL be expressed as named `groups` with `space`, `start`, `count`, and `mode` (`continuous` | `on_demand`). HAL SHALL read each continuous group as **one contiguous register read** (not one Modbus frame per attribute). Groups MAY declare `chain` to another group id (e.g. status → data). Transport SHALL honor `command_interval_ms` (default **50**) between commands. When `poll.discard_if_busy` is true (default), a poll tick SHALL be discarded if a cycle or other command is in flight or an exclusive session is active.
+Continuous telemetry SHALL be expressed as named `groups` with `space`, `start`, `count`, and `mode` (`continuous` | `on_demand`). HAL SHALL read each continuous group as **one contiguous register read** (not one Modbus frame per attribute). Groups MAY declare `chain` to another group id (e.g. status → data). Transport SHALL honor `command_interval_ms` (default **50**) between commands. When `poll.discard_if_busy` is true (default), a poll tick SHALL be discarded if a cycle or other command is in flight or an exclusive session is active. `startPolling` on a given HAL instance SHALL be **idempotent while already polling**: a second call MUST NOT stop/restart the scheduler or change the active group set; after `stopPolling`, `startPolling` MAY start again (e.g. exclusive-session resume).
 
 #### Scenario: Status then data cycle
 - **WHEN** ynh960-style config defines continuous `status` chained to `data` and polling is started
 - **THEN** HAL SHALL attempt a status contiguous read then a data contiguous read within a cycle, spaced by the command interval, at the configured poll interval
+
+#### Scenario: Second startPolling while live is ignored
+- **WHEN** continuous polling is already active on a Modbus HAL instance
+- **AND** the App calls `startPolling` again (with or without `groupIds`)
+- **THEN** HAL SHALL leave the existing poll timer and group set unchanged
 
 #### Scenario: On-demand info group
 - **WHEN** an `info` group has `mode: on_demand`
@@ -94,4 +99,21 @@ Product Monitor UI paths for Alarm Information temperatures and boolean alarms S
 
 - **WHEN** Monitor shows an active gun-communication alarm
 - **THEN** it uses the `alarm.gun_comm` attribute (and config meta for code/label when present) rather than parsing a raw status register bitmask in the UI
+
+### Requirement: Multiple watch subscribers with distinct id filters
+`hal/modbus` SHALL allow multiple concurrent `watchAttributes` subscriptions on one HAL instance. Each subscription MAY supply its own `ids` filter. Emissions to a subscriber SHALL include only changes (and reminders) for attributes in that subscriber’s filter (or all changing attributes when `ids` is omitted, per existing watch semantics). Starting or canceling one subscription MUST NOT stop continuous polling or other subscribers. Product Apps that show multiple live Modbus surfaces SHOULD use per-subscriber `ids` rather than a single App-owned undifferentiating fan-out of all watched attributes.
+
+#### Scenario: Two subscribers different ids
+- **WHEN** continuous polling is active
+- **AND** subscriber A watches `telemetry.gun_motor_temp` only
+- **AND** subscriber B watches `alarm.gun_comm` only
+- **AND** only the motor temperature decoded value changes in a cycle
+- **THEN** subscriber A SHALL receive that change
+- **AND** subscriber B MUST NOT receive an emission for that cycle (unless a reminder or other B-filtered change is due)
+
+#### Scenario: Cancel one watch leaves poll and peers
+- **WHEN** two watch subscriptions are active
+- **AND** the App cancels one subscription
+- **THEN** continuous polling SHALL continue
+- **AND** the remaining subscription SHALL keep receiving filtered updates
 

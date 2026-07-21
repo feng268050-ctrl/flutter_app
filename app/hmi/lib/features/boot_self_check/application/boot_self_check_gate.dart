@@ -1,8 +1,8 @@
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_boot_marker.dart';
 
 /// Process-wide gate so overlapping warn/camera monitors can defer (lws-ui
-/// `BootSelfCheckGate`). Wire consumers when those monitors land; until then
-/// the coordinator still sets/clears [isActive] for future suppressors.
+/// `BootSelfCheckGate`). [AppServices.ensureModbusLive] also no-ops while
+/// [isActive] so continuous RTU poll does not fight self-check one-shot reads.
 ///
 /// Completion is also recorded in [BootSelfCheckBootMarker] so HMI restarts
 /// within the same system boot skip the dialog.

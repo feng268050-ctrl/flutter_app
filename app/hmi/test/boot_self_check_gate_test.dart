@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cyber_hal/cyber_hal.dart';
@@ -31,12 +32,16 @@ class _OfflineModbus extends ModbusRtuClient {
   Future<bool> open() async => false;
 
   @override
-  Future<void> startLiveDemo({
-    required void Function(List<ModbusAttributeChange> changes)
-        onAttributeChanges,
-    void Function(ModbusHealth health)? onHealth,
-    Iterable<String>? watchIds,
-  }) async {}
+  Future<void> ensurePolling() async {}
+
+  @override
+  Future<Stream<List<ModbusAttributeChange>>> watchAttributes({
+    Iterable<String>? ids,
+  }) async =>
+      const Stream.empty();
+
+  @override
+  Future<Stream<ModbusHealth>> watchHealth() async => const Stream.empty();
 
   @override
   Future<Object?> readAttribute(String id) async => null;

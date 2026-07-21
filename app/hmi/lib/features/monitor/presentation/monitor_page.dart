@@ -1,5 +1,6 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/ai_vision_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/alarm_information_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/machine_status_tab.dart';
@@ -10,7 +11,7 @@ import 'package:lws_hmi/features/monitor/presentation/tabs/work_information_tab.
 ///
 /// Tab changes are tap-only (no swipe), matching lws-ui FragmentShowHideTabHost.
 /// Tab leading icons match lws-ui `job_icon*` / `videos_icon` / `ai_vision_home`.
-class MonitorPage extends StatelessWidget {
+class MonitorPage extends StatefulWidget {
   const MonitorPage({super.key});
 
   static const _tabs = <({Key key, String label, String iconAsset})>[
@@ -42,10 +43,22 @@ class MonitorPage extends StatelessWidget {
   ];
 
   @override
+  State<MonitorPage> createState() => _MonitorPageState();
+}
+
+class _MonitorPageState extends State<MonitorPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Route-level ensure: Alarm tab is lazy and must not be the only starter.
+    scheduleEnsureModbusLive(context);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     return DefaultTabController(
-      length: _tabs.length,
+      length: MonitorPage._tabs.length,
       child: Scaffold(
         backgroundColor: const Color(0xFF121212),
         appBar: AppBar(
@@ -79,7 +92,7 @@ class MonitorPage extends StatelessWidget {
             ),
             onTap: (_) => CyberClickSoundRegistry.playClick(),
             tabs: [
-              for (final tab in _tabs)
+              for (final tab in MonitorPage._tabs)
                 Tab(
                   key: tab.key,
                   height: 46,

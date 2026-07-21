@@ -253,6 +253,90 @@ void main() {
     await hal.close();
   });
 
+  test('startPolling while already polling is a no-op', () async {
+    final config = _testConfig(intervalMs: 25, commandIntervalMs: 1);
+    final fake = FakeModbusRtuTransport(config.transport);
+    fake.inputByStart[0x0000] = _statusWords();
+    fake.inputByStart[0x0060] = _dataWords();
+
+    final hal = ModbusHal.fromConfig(config, transport: fake);
+    await hal.startPolling();
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+    final callsAfterFirst = fake.readInputCalls;
+    expect(callsAfterFirst, greaterThan(0));
+
+    // Second start must not stop+restart (would cancel mid-cycle / reset timer).
+    await hal.startPolling(groupIds: ['status']);
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    expect(fake.readInputCalls, greaterThan(callsAfterFirst));
+
+    await hal.stopPolling();
+    // After stop, startPolling may run again.
+    final callsAfterStop = fake.readInputCalls;
+    await hal.startPolling();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(fake.readInputCalls, greaterThan(callsAfterStop));
+
+    await hal.stopPolling();
+    await hal.close();
+  });
+
+  test('concurrent watchAttributes filter by subscriber ids', () async {
+    final config = _testConfig(intervalMs: 30);
+    final fake = FakeModbusRtuTransport(config.transport);
+    fake.inputByStart[0x0000] = _statusWords(firmware: 1, gunAlarm: 0);
+    fake.inputByStart[0x0060] = _dataWords(motorRaw: 250);
+
+    final hal = ModbusHal.fromConfig(config, transport: fake);
+    final tempEvents = <List<ModbusAttributeChange>>[];
+    final alarmEvents = <List<ModbusAttributeChange>>[];
+    final tempSub = hal
+        .watchAttributes(ids: ['alarm.gun_motor_temp'])
+        .listen(tempEvents.add);
+    final alarmSub = hal
+        .watchAttributes(ids: ['alarm.gun_comm'])
+        .listen(alarmEvents.add);
+
+    await hal.startPolling();
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+
+    expect(tempEvents, isNotEmpty);
+    expect(
+      tempEvents.expand((b) => b).every((c) => c.id == 'alarm.gun_motor_temp'),
+      isTrue,
+    );
+    expect(alarmEvents, isNotEmpty);
+    expect(
+      alarmEvents.expand((b) => b).every((c) => c.id == 'alarm.gun_comm'),
+      isTrue,
+    );
+
+    final tempBefore = tempEvents.length;
+    final alarmBefore = alarmEvents.length;
+    fake.inputByStart[0x0000] = _statusWords(firmware: 1, gunAlarm: 1);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    expect(alarmEvents.length, greaterThan(alarmBefore));
+    final alarmOnly = alarmEvents
+        .skip(alarmBefore)
+        .expand((b) => b)
+        .where((c) => c.id == 'alarm.gun_comm' && c.value == true);
+    expect(alarmOnly, isNotEmpty);
+    // Temperature unchanged → temp subscriber must not get gun_comm.
+    final tempAfter = tempEvents.skip(tempBefore).expand((b) => b);
+    expect(tempAfter.any((c) => c.id == 'alarm.gun_comm'), isFalse);
+
+    await tempSub.cancel();
+    final callsAfterCancel = fake.readInputCalls;
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    expect(fake.readInputCalls, greaterThan(callsAfterCancel));
+    expect(alarmEvents.length, greaterThan(alarmBefore));
+
+    await alarmSub.cancel();
+    await hal.stopPolling();
+    await hal.close();
+  });
+
   test('formatTemperatureDisplay accepts scaled and raw', () {
     expect(formatTemperatureDisplay(250), '25.0 °C');
     expect(formatTemperatureDisplay(25.0), '25.0 °C');

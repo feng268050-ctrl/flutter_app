@@ -87,8 +87,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     // Prime ALSA + sticky mpg123 so the first UI click is not cold-start.
     unawaited(_services.audio.warmClickSession());
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Settings restore only — do not start Modbus here. Home / Demo pull it
-      // when needed so the first Home frames are not fighting RTU poll.
+      // Settings restore only. Modbus live poll is started from Home after boot
+      // self-check finishes (or immediately when self-check is skipped).
       unawaited(_services.restorePersistedSettingsOnce());
     });
   }

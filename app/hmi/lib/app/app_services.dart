@@ -11,6 +11,7 @@ import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/app/flutter_frame_timing_sampler.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
@@ -180,29 +181,35 @@ final class AppServices {
     });
   }
 
-  final StreamController<List<ModbusAttributeChange>> _modbusChanges =
-      StreamController<List<ModbusAttributeChange>>.broadcast();
-  final StreamController<ModbusHealth> _modbusHealth =
-      StreamController<ModbusHealth>.broadcast();
-
-  /// Shared Modbus attribute diffs (Home temps + Demo / Device Info).
-  Stream<List<ModbusAttributeChange>> get modbusAttributeChanges =>
-      _modbusChanges.stream;
-
-  Stream<ModbusHealth> get modbusHealthChanges => _modbusHealth.stream;
-
-  /// Start Modbus live poll; fans out to [modbusAttributeChanges].
+  /// True when the board profile advertises Modbus and has a config asset.
   ///
-  /// Optional [watchIds] widen the HAL watch allowlist (e.g. Monitor alarms).
-  /// Safe to call again after the first start to expand ids without stopping
-  /// poll.
-  Future<void> ensureModbusLive({Iterable<String>? watchIds}) async {
+  /// Sim / host stubs without `Capability.modbus` skip live poll (no UART).
+  bool get modbusLiveAllowed {
+    if (!boardProfile.capabilities.has(Capability.modbus)) {
+      return false;
+    }
+    final asset = boardProfile.resolvedModbusAsset;
+    return asset != null && asset.isNotEmpty;
+  }
+
+  /// Ensure process-wide continuous Modbus polling (no attribute watch).
+  ///
+  /// Product rule: one [modbus] client on [AppServices]; every top-level route
+  /// (Home / Monitor / Settings / Demo) calls this after first frame so poll
+  /// runs even if entry is not Home. UI surfaces open their own
+  /// [ModbusRtuClient.watchAttributes] with explicit ids.
+  ///
+  /// Intercepts: [modbusLiveAllowed] false → no-op; [BootSelfCheckGate.isActive]
+  /// → no-op until Home self-check `onComplete` (or a later ensure) runs.
+  Future<void> ensureModbusLive() async {
+    if (!modbusLiveAllowed) {
+      return;
+    }
+    if (BootSelfCheckGate.isActive) {
+      return;
+    }
     try {
-      await modbus.startLiveDemo(
-        onAttributeChanges: _modbusChanges.add,
-        onHealth: _modbusHealth.add,
-        watchIds: watchIds,
-      );
+      await modbus.ensurePolling();
       _modbusLiveStarted = true;
     } catch (_) {
       if (!_modbusLiveStarted) {
@@ -268,4 +275,21 @@ final class AppScope extends InheritedWidget {
   @override
   bool updateShouldNotify(AppScope oldWidget) =>
       services != oldWidget.services;
+}
+
+/// Post-frame [AppServices.ensureModbusLive] for top-level routes (poll only).
+///
+/// Call from Home / Monitor / Settings / Demo so continuous poll starts even
+/// when the entry route is not Home. Attribute watches stay on each UI surface.
+void scheduleEnsureModbusLive(BuildContext context) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted) {
+      return;
+    }
+    final services = AppScope.maybeOf(context);
+    if (services == null) {
+      return;
+    }
+    unawaited(services.ensureModbusLive());
+  });
 }

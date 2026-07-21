@@ -46,13 +46,16 @@ class _OfflineModbus extends ModbusRtuClient {
   Future<bool> open() async => false;
 
   @override
-  Future<void> startLiveDemo({
-    required void Function(List<ModbusAttributeChange> changes) onAttributeChanges,
-    void Function(ModbusHealth health)? onHealth,
-    Iterable<String>? watchIds,
-  }) async {
-    // Host widget tests: no serial — leave Demo tiles at `-`.
-  }
+  Future<void> ensurePolling() async {}
+
+  @override
+  Future<Stream<List<ModbusAttributeChange>>> watchAttributes({
+    Iterable<String>? ids,
+  }) async =>
+      const Stream.empty();
+
+  @override
+  Future<Stream<ModbusHealth>> watchHealth() async => const Stream.empty();
 
   @override
   Future<ModbusDeviceInfoSnapshot> readDeviceInfo() async {

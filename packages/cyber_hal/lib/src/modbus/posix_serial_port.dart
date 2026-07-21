@@ -51,7 +51,7 @@ class PosixSerialPort {
     try {
       _fd = _libc.open(
         pathPtr.cast<ffi.Char>(),
-        oRdwr | oNoctty | oNonblock,
+        oRdwr | oNoctty | oNonblock | oCloexec,
       );
     } finally {
       pkgffi.malloc.free(pathPtr);
@@ -176,6 +176,7 @@ class PosixSerialPort {
 const int oRdwr = 0x2;
 const int oNoctty = 0x100;
 const int oNonblock = 0x800;
+const int oCloexec = 0x80000; // O_CLOEXEC — do not leak tty to mpg123/hciattach
 const int eAgain = 11;
 
 final _LibC _libc = _LibC(ffi.DynamicLibrary.open('libc.so.6'));

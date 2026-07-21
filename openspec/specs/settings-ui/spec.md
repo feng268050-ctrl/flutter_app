@@ -266,19 +266,14 @@ Common Settings → Keyboard SHALL present a product layout chooser using `Cyber
 - **THEN** a segmented control with the four product profiles is visible
 - **AND** a layout preview for the selected profile is visible
 
-### Requirement: Separate Apply and Restart actions
+### Requirement: Restart persists layout and applies XKB
 
-The Keyboard settings page SHALL provide distinct **Apply** and **Restart** actions after the operator changes the Segment selection. Apply MUST persist the selected profile for CyberIME and XKB preference without restarting HMI by itself. Restart MUST restart HMI so physical XKB takes effect and SHALL restore navigation to the Keyboard settings page after relaunch.
+The Keyboard settings page SHALL provide a single primary **Restart** action after the operator changes the Segment selection. Restart MUST persist the selected profile for CyberIME and XKB preference, restart HMI so physical XKB takes effect, and restore navigation to the Keyboard settings page after relaunch.
 
-#### Scenario: Apply without restart
+#### Scenario: Restart saves and applies
 
-- **WHEN** the operator selects a different profile and taps Apply
-- **THEN** the layout preference is persisted and CyberIME Keyboard A follows the new profile
-- **AND** HMI is not restarted solely by Apply
-
-#### Scenario: Restart applies physical XKB
-
-- **WHEN** the operator taps Restart after Apply (or with a pending applied preference)
-- **THEN** HMI restarts and, after relaunch, the App opens the Keyboard settings page
-- **AND** physical key events follow the persisted XKB layout
+- **WHEN** the operator selects a different profile and taps Restart
+- **THEN** the layout preference is persisted
+- **AND** HMI restarts and, after relaunch, the App opens the Keyboard settings page
+- **AND** soft CyberIME and physical key events follow the persisted layout
 

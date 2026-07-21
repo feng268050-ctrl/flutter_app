@@ -9,7 +9,7 @@ import 'package:lws_hmi/app/hmi_route_restore.dart';
 import 'package:lws_hmi/features/settings/application/product_keyboard_profile.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 
-/// Product Keyboard settings: Segment + preview + Apply / Restart.
+/// Product Keyboard settings: Segment + preview + Restart (persist + HMI).
 class KeyboardSettingsPage extends StatefulWidget {
   const KeyboardSettingsPage({
     super.key,
@@ -28,7 +28,6 @@ class KeyboardSettingsPage extends StatefulWidget {
 
 class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
   ProductKeyboardProfile _selected = ProductKeyboardProfile.defaultSoft;
-  ProductKeyboardProfile _applied = ProductKeyboardProfile.defaultSoft;
   String _presence = '…';
   bool _busy = false;
   Timer? _poll;
@@ -57,10 +56,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
       final layout = await _keyboard.getLayout();
       final profile = ProductKeyboardProfile.fromLayout(layout);
       if (!mounted) return;
-      setState(() {
-        _selected = profile;
-        _applied = profile;
-      });
+      setState(() => _selected = profile);
     } catch (e) {
       debugPrint('keyboard settings: load failed: $e');
     }
@@ -81,33 +77,6 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
     setState(() => _selected = profile);
   }
 
-  Future<void> _apply() async {
-    if (_busy) return;
-    setState(() => _busy = true);
-    try {
-      await _keyboard.setLayout(_selected.xkbLayout, restart: false);
-      _mutableRegional?.profile = _selected.imeProfile;
-      if (!mounted) return;
-      setState(() => _applied = _selected);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Applied ${_selected.displayName}. '
-            'Soft keyboard updated. Tap Restart for physical XKB.',
-          ),
-        ),
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Apply failed: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
   Future<void> _restart() async {
     if (_busy) return;
     final confirmed = await showDialog<bool>(
@@ -115,8 +84,8 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
       builder: (ctx) => AlertDialog(
         title: const Text('Restart HMI?'),
         content: const Text(
-          'Physical keyboard layout (XKB) is applied when HMI restarts. '
-          'This page will reopen after relaunch.',
+          'Saves the selected layout and restarts HMI so soft CyberIME and '
+          'physical XKB both take effect. This page will reopen after relaunch.',
         ),
         actions: [
           TextButton(
@@ -134,12 +103,8 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
 
     setState(() => _busy = true);
     try {
-      // Ensure preference matches the selection before restart.
-      if (_selected != _applied) {
-        await _keyboard.setLayout(_selected.xkbLayout, restart: false);
-        _mutableRegional?.profile = _selected.imeProfile;
-        _applied = _selected;
-      }
+      await _keyboard.setLayout(_selected.xkbLayout, restart: false);
+      _mutableRegional?.profile = _selected.imeProfile;
       await HmiRouteRestore.write(HmiRouteRestore.settingsKeyboard);
       await _keyboard.restartToApply();
     } catch (e) {
@@ -181,30 +146,16 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
             child: Text(
               'Attach a physical keyboard that matches the selected '
               'specification. A mismatch may make some keys produce unexpected '
-              'characters. Soft CyberIME follows Apply immediately; physical '
-              'XKB needs Restart.',
+              'characters. Tap Restart to save the layout and apply soft '
+              'CyberIME and physical XKB.',
               style: TextStyle(color: Colors.white54, fontSize: 14),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: CyberButton(
-                    onPressed: _busy ? null : () => unawaited(_apply()),
-                    variant: CyberButtonVariant.secondary,
-                    child: const Text('Apply'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: CyberButton(
-                    onPressed: _busy ? null : () => unawaited(_restart()),
-                    child: const Text('Restart'),
-                  ),
-                ),
-              ],
+            child: CyberButton(
+              onPressed: _busy ? null : () => unawaited(_restart()),
+              child: const Text('Restart'),
             ),
           ),
           const SettingsSectionHeader('HID'),

@@ -23,7 +23,7 @@ abstract class Keyboard {
   ///
   /// When [restart] is true (default), also restarts flutter-pi / `hmi.service`
   /// so XKB is re-read at init. Product Settings MAY call with `restart: false`
-  /// (Apply) then invoke [restartToApply] separately (Restart).
+  /// then invoke [restartToApply] from its Restart action.
   /// App MUST restore the previous route after relaunch when restarting.
   Future<void> setLayout(KeyboardLayout layout, {bool restart = true});
 

@@ -71,6 +71,9 @@ class _HomePageState extends State<HomePage> {
           final h = constraints.maxHeight;
           final sx = w / _kDesignW;
           final sy = h / _kDesignH;
+          final qaScale = (sx + sy) / 2;
+          final qaLabelSize =
+              homeQuickActionLabelFontSize(_kQaInner * qaScale);
           // Wallpaper/GIF stack stays inside CyberBlurBackdropTarget (sibling capture).
           return CyberBlurBackdropScope(
             child: Stack(
@@ -174,6 +177,7 @@ class _HomePageState extends State<HomePage> {
                       scaleY: sy,
                       iconAsset: HomeAssets.monitorIcon,
                       label: 'Monitor',
+                      labelFontSize: qaLabelSize,
                       onPressed: () {
                         Navigator.of(context).pushNamed(AppRoutes.monitor);
                       },
@@ -184,6 +188,7 @@ class _HomePageState extends State<HomePage> {
                       scaleY: sy,
                       iconAsset: HomeAssets.settingsIcon,
                       label: 'Settings',
+                      labelFontSize: qaLabelSize,
                       onPressed: () {
                         Navigator.of(context).pushNamed(AppRoutes.settings);
                       },
@@ -198,6 +203,7 @@ class _HomePageState extends State<HomePage> {
                 child: _HomeQuickActionAiVision(
                   scaleX: sx,
                   scaleY: sy,
+                  labelFontSize: qaLabelSize,
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -405,6 +411,7 @@ class _HomeQuickActionSquare extends StatelessWidget {
     required this.scaleY,
     required this.iconAsset,
     required this.label,
+    required this.labelFontSize,
     required this.onPressed,
   });
 
@@ -412,6 +419,7 @@ class _HomeQuickActionSquare extends StatelessWidget {
   final double scaleY;
   final String iconAsset;
   final String label;
+  final double labelFontSize;
   final VoidCallback onPressed;
 
   @override
@@ -425,6 +433,7 @@ class _HomeQuickActionSquare extends StatelessWidget {
       cardHeight: card,
       cornerRadius: _kQaCorner * s,
       labelMarginTop: _kQaLabelMarginTop * scaleY,
+      labelFontSize: labelFontSize,
       sampleMode: CyberBlurSampleMode.realtime,
       label: label,
       onPressed: onPressed,
@@ -451,11 +460,13 @@ class _HomeQuickActionAiVision extends StatelessWidget {
   const _HomeQuickActionAiVision({
     required this.scaleX,
     required this.scaleY,
+    required this.labelFontSize,
     required this.onPressed,
   });
 
   final double scaleX;
   final double scaleY;
+  final double labelFontSize;
   final VoidCallback onPressed;
 
   @override
@@ -472,6 +483,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
       cardWidth: width,
       cardHeight: height,
       labelWidth: width,
+      labelFontSize: labelFontSize,
       cornerRadius: _kQaCorner * s,
       labelMarginTop: _kQaLabelMarginTop * scaleY,
       sampleMode: CyberBlurSampleMode.realtime,

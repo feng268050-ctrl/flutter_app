@@ -47,7 +47,7 @@ class CyberImeFixedRegionalLayoutProvider
   final CyberImeRegionalProfile profile;
 }
 
-/// Mutable provider the App can update after Settings Apply.
+/// Mutable provider the App can update when Settings persists a layout.
 class CyberImeMutableRegionalLayoutProvider extends ChangeNotifier
     implements CyberImeRegionalLayoutProvider {
   CyberImeMutableRegionalLayoutProvider([

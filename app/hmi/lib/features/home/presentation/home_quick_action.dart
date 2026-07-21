@@ -5,12 +5,41 @@ import 'package:flutter/material.dart';
 const double kHomeQuickActionCorner = 18;
 const double kHomeQuickActionLabelMarginTop = 10;
 
+/// Caption reference used to size all home quick-action labels equally.
+const String kHomeQuickActionLabelSizeRef = 'Settings';
+
 /// lws-ui `home_quick_action_label_text` ColorStateList.
 const Color _kLabelIdle = Color(0xFFFFFFFF);
 const Color _kLabelPressed = Color(0xB3FFFFFF);
 
 /// Frost tile ripple: `FrostButtonTileRipple` → argb(0x3D, 255, 255, 255).
 const Color _kTileRipple = Color(0x3DFFFFFF);
+
+/// Font size so [kHomeQuickActionLabelSizeRef] fits [cardWidth] with equal
+/// side inset (~11% each side) so the caption is not clipped.
+double homeQuickActionLabelFontSize(double cardWidth) {
+  const weight = FontWeight.w500;
+  final targetWidth = cardWidth * 0.78;
+  var lo = 12.0;
+  var hi = 64.0;
+  for (var i = 0; i < 14; i++) {
+    final mid = (lo + hi) / 2;
+    final probe = TextPainter(
+      text: TextSpan(
+        text: kHomeQuickActionLabelSizeRef,
+        style: TextStyle(fontSize: mid, fontWeight: weight),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    if (probe.width > targetWidth) {
+      hi = mid;
+    } else {
+      lo = mid;
+    }
+  }
+  return lo;
+}
 
 /// Home quick-action tile — Material stand-in for lws-ui
 /// `FrostQuickActionEntry` + nested `FrostCardView`.
@@ -29,6 +58,7 @@ class HomeQuickAction extends StatefulWidget {
     required this.onPressed,
     required this.child,
     this.labelWidth,
+    this.labelFontSize,
     this.cornerRadius = kHomeQuickActionCorner,
     this.labelMarginTop = kHomeQuickActionLabelMarginTop,
     this.sampleMode = CyberBlurSampleMode.realtime,
@@ -45,6 +75,9 @@ class HomeQuickAction extends StatefulWidget {
 
   /// Defaults to [cardWidth] (square tiles). Wide AI Vision passes its card width.
   final double? labelWidth;
+
+  /// When null, sizes so [kHomeQuickActionLabelSizeRef] matches [cardWidth].
+  final double? labelFontSize;
   final double cornerRadius;
   final double labelMarginTop;
 
@@ -136,6 +169,8 @@ class _HomeQuickActionState extends State<HomeQuickAction> {
     final captionWidth = widget.labelWidth ?? widget.cardWidth;
     final radius = BorderRadius.circular(widget.cornerRadius);
     final labelColor = _pressed ? _kLabelPressed : _kLabelIdle;
+    final fontSize =
+        widget.labelFontSize ?? homeQuickActionLabelFontSize(widget.cardWidth);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -181,7 +216,7 @@ class _HomeQuickActionState extends State<HomeQuickAction> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: labelColor,
-                fontSize: (16 * (widget.cardHeight / 108)).clamp(12, 20),
+                fontSize: fontSize,
                 fontWeight: FontWeight.w500,
               ),
             ),

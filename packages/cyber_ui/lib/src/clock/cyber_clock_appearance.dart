@@ -24,11 +24,13 @@ abstract final class CyberClockAppearance {
 /// Documents Cyber clock frost capabilities for product Apps.
 ///
 /// **Glyph-clip live blur:** true per-glyph clip + live frost is not fully
-/// guaranteed on RK3566. Product clocks MAY approximate with rectangular
-/// [CyberBackdropBlur] + milk/fill overlays (see App `HomeClock`).
+/// guaranteed on RK3566. Product clocks SHOULD keep the area around glyphs
+/// fully transparent (no rectangular frost plate). Prefer glyph fill overlays
+/// and/or frozen capture clipped with `dstIn` (see App `HomeClock`).
 abstract final class CyberClockNotes {
   static const glyphClipLiveBlurSupported = false;
   static const glyphClipLiveBlurNote =
       'True glyph-clipped live blur is approximated on RK3566; '
-      'prefer CyberBackdropBlur realtime + fill overlays, or frozen capture.';
+      'do not place a rectangular CyberBackdropBlur behind clock glyphs — '
+      'use fill overlays and/or frozen capture with dstIn.';
 }

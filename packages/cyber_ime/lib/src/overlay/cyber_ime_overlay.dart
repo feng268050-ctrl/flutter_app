@@ -14,14 +14,13 @@ export 'package:cyber_ime/src/overlay/cyber_ime_overlay_scope.dart';
 /// Inserts a panel-sized CyberIME keyboard into the nearest [Overlay].
 ///
 /// Hit-testing:
-/// - Keyboard panel (bottom) receives key taps.
-/// - Region above the panel uses a translucent dismiss layer that **only hides
-///   the keyboard** (does not pop the dialog). Dialog chrome remains usable
-///   after the keyboard is hidden.
+/// - Only the keyboard panel (bottom band) participates in hit testing.
+/// - The region above the panel MUST pass through to underlying routes
+///   (dialog chrome, password visibility toggle, etc.) — no full-screen
+///   absorber (see cyber-ime session lift / touch requirement).
 ///
 /// Glass layering (lws-ui `ImeKeyboardBackdropHost` + transparent panel):
 /// ```
-/// [ dismiss scrim ]
 /// [ keyboard slot ]
 ///   ├─ CyberImeKeyboardBackdrop  ← one Gaussian blur of content behind slot
 ///   ├─ CyberImeKeyboardPanel      ← transparent layout + top stroke + keys
@@ -67,10 +66,6 @@ abstract final class CyberImeOverlay {
       overlayState.insert(entry);
     }
 
-    void hideKeyboard() {
-      handle.hide();
-    }
-
     entry = OverlayEntry(
       builder: (ctx) {
         return Material(
@@ -83,12 +78,6 @@ abstract final class CyberImeOverlay {
               key: stackKey,
               clipBehavior: Clip.none,
               children: [
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: hideKeyboard,
-                  ),
-                ),
                 Positioned(
                   left: 0,
                   right: 0,

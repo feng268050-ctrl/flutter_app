@@ -276,4 +276,38 @@ void main() {
     expect(find.text('Ctrl'), findsWidgets);
     expect(find.text('!'), findsWidgets);
   });
+
+  testWidgets('password visibility toggle works while IME is open',
+      (tester) async {
+    final ctrl = TextEditingController(text: 'secret');
+    addTearDown(ctrl.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.only(bottom: 320),
+            child: CyberImeTextField(
+              fieldType: CyberImeFieldType.wifi,
+              controller: ctrl,
+              obscureText: true,
+              autofocus: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('q'), findsWidgets);
+    expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.visibility_off_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
+    // IME must stay up (eye must not steal focus / full-screen scrim must not
+    // eat the tap).
+    expect(find.text('q'), findsWidgets);
+  });
 }

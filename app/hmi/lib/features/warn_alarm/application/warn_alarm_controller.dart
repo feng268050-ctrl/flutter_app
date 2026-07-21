@@ -26,6 +26,7 @@ final class WarnAlarmController {
         _sound = sound ?? WarnAlarmSound(services.audio) {
     _presentation = CyberUiWarnPresentation(
       navigatorKey: navigatorKey,
+      stopWarnSound: () => _sound.stop(),
     );
     _adapter = ModbusAlarmAttributeAdapter(
       modbus: services.modbus,
@@ -138,7 +139,9 @@ final class WarnAlarmController {
         .toList()
       ..sort();
     if (alertingCodes.isEmpty) {
-      unawaited(_sound.stop());
+      if (_sound.isActive) {
+        unawaited(_sound.stop());
+      }
       return;
     }
     final showing = coordinator.showingCode;

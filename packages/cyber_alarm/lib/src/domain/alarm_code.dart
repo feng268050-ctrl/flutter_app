@@ -34,16 +34,17 @@ final class AlarmCodeEntry {
   String get displayLabel =>
       (label != null && label!.trim().isNotEmpty) ? label!.trim() : title;
 
-  /// Soft-fail placeholder when catalog miss.
+  /// Soft-fail placeholder when catalog miss (no raw code in UI copy).
   factory AlarmCodeEntry.unknown(String code, {String? labelHint}) {
     final hint = labelHint?.trim();
+    final label = hint != null && hint.isNotEmpty ? hint : 'Alarm';
     return AlarmCodeEntry(
       code: code,
       severity: AlarmSeverity.unknown,
-      title: code,
+      title: label,
       body: hint != null && hint.isNotEmpty
           ? hint
-          : 'Unknown alarm $code',
+          : 'An alarm occurred. Please check the device and try again.',
       label: hint,
     );
   }

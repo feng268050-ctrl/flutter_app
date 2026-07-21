@@ -59,8 +59,13 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
     super.dispose();
   }
 
-  MonitorIndicatorKind _commKind(bool fault) =>
-      fault ? MonitorIndicatorKind.failure : MonitorIndicatorKind.success;
+  /// `null` → idle (empty); `true` → fault; `false` → ok.
+  MonitorIndicatorKind _commKind(bool? fault) {
+    if (fault == null) {
+      return MonitorIndicatorKind.idle;
+    }
+    return fault ? MonitorIndicatorKind.failure : MonitorIndicatorKind.success;
+  }
 
   Future<void> _clearHistory() async {
     final warn = WarnAlarmScope.maybeOf(context);
@@ -97,7 +102,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                               const MonitorSectionHeader('Laser Device'),
                               MonitorCommCard(
                                 label: 'Pump Comm Status',
-                                kind: _commKind(m?.laserFault ?? true),
+                                kind: _commKind(m?.laserCommFault),
                               ),
                             ],
                           ),
@@ -113,14 +118,14 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                   Expanded(
                                     child: MonitorCommCard(
                                       label: 'Gun Comm Status',
-                                      kind: _commKind(m?.gunFault ?? true),
+                                      kind: _commKind(m?.gunCommFault),
                                     ),
                                   ),
                                   const SizedBox(width: 24),
                                   Expanded(
                                     child: MonitorCommCard(
                                       label: 'Camera Comm Status',
-                                      kind: _commKind(m?.cameraFault ?? true),
+                                      kind: _commKind(m?.cameraCommFault),
                                     ),
                                   ),
                                 ],
@@ -179,7 +184,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                               const MonitorSectionHeader('Wire Feeder'),
                               MonitorCommCard(
                                 label: 'Wire Feeder Comm Status',
-                                kind: _commKind(m?.wireFeederFault ?? true),
+                                kind: _commKind(m?.wireFeederCommFault),
                               ),
                             ],
                           ),
@@ -219,7 +224,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                         if (actives.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Text(
-                            'Active: ${actives.map((a) => a.code).join(', ')}',
+                            'Active: ${actives.map((a) => a.label).join(', ')}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.65),
                               fontSize: 13,

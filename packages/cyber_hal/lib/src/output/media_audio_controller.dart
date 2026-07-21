@@ -5,7 +5,7 @@ abstract class MediaAudioController {
 
   bool get isPlaying;
 
-  /// Dedicated looping warn stream is running (SoundPool stream id ≠ 0).
+  /// Warn loop is armed on the sticky session (`_loopPath` / SoundPool stream).
   bool get hasActiveLoop;
 
   /// Emits whenever playback becomes active/idle (track end, stop, play).
@@ -16,12 +16,13 @@ abstract class MediaAudioController {
   /// Loop [assetKey] until [stop] (warn / alarm steady-state).
   ///
   /// Linux: sticky remote `mpg123 -R` + LOAD, re-LOAD on track end while armed
-  /// (remote ignores `--loop`; same soft-V as [playOneShotAsset]). Android
-  /// SoundPool `loop=-1`. Same asset already armed → volume only (no restart
-  /// on repeat triggers). Click oneshot skipped while warn loop is armed.
+  /// (same soft-V as [playOneShotAsset]). Mutual exclusion: oneshot is skipped
+  /// while the loop is armed; [stop] then oneshot for Confirm click.
   Future<void> playLoopingAsset(String assetKey);
 
-  /// Short UI SFX (click). Uses a sticky mpg123 remote session when available.
+  /// Short UI SFX (click). Sticky mpg123 remote session.
+  ///
+  /// Skipped while [hasActiveLoop] — click and warn must not share the pipe.
   Future<void> playOneShotAsset(String assetKey);
 
   /// Open ALSA route + sticky mpg123 early so the first UI click is low-latency.

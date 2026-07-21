@@ -15,12 +15,16 @@ final class CyberUiWarnPresentation implements WarnPresentation {
   CyberUiWarnPresentation({
     required this.navigatorKey,
     this.onClosed,
+    this.stopWarnSound,
   });
 
   final GlobalKey<NavigatorState> navigatorKey;
 
   /// Notifies coordinator when a dialog finishes (dismiss / confirm).
   void Function(String code)? onClosed;
+
+  /// Stops warn SFX before Confirm click (single remote session exclusion).
+  Future<void> Function()? stopWarnSound;
 
   final Queue<_PendingWarn> _queue = Queue<_PendingWarn>();
   String? _showingCode;
@@ -128,6 +132,7 @@ final class CyberUiWarnPresentation implements WarnPresentation {
           return WarnDialogBody(
             title: pending.entry.title,
             body: pending.entry.body,
+            beforeConfirm: stopWarnSound,
             onConfirm: () {
               Navigator.of(dialogContext).pop();
             },

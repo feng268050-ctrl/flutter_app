@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
@@ -10,7 +12,7 @@ class WarnDialogBody extends StatelessWidget {
     required this.title,
     required this.body,
     required this.onConfirm,
-    this.code,
+    this.beforeConfirm,
     this.confirmLabel = 'Confirm',
   });
 
@@ -20,11 +22,11 @@ class WarnDialogBody extends StatelessWidget {
   /// Instruction / detail copy.
   final String body;
 
-  /// Optional code shown above the title (e.g. `C001`).
-  final String? code;
-
   final String confirmLabel;
   final VoidCallback onConfirm;
+
+  /// Stop warn loop before click (single mpg123 session — mutual exclusion).
+  final Future<void> Function()? beforeConfirm;
 
   static const iconAsset = 'assets/warn/alarm_warn_icon.webp';
 
@@ -56,20 +58,6 @@ class WarnDialogBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          if (code != null && code!.trim().isNotEmpty) ...[
-            Text(
-              code!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: titleRed,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                height: 1.1,
-                decoration: TextDecoration.none,
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
           Text(
             title,
             textAlign: TextAlign.center,
@@ -107,6 +95,7 @@ class WarnDialogBody extends StatelessWidget {
                 height: CyberDimens.actionButtonHeight,
                 child: _WarnConfirmButton(
                   label: confirmLabel,
+                  beforeConfirm: beforeConfirm,
                   onPressed: onConfirm,
                 ),
               ),
@@ -123,10 +112,12 @@ class _WarnConfirmButton extends StatelessWidget {
   const _WarnConfirmButton({
     required this.label,
     required this.onPressed,
+    this.beforeConfirm,
   });
 
   final String label;
   final VoidCallback onPressed;
+  final Future<void> Function()? beforeConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -134,8 +125,12 @@ class _WarnConfirmButton extends StatelessWidget {
       type: MaterialType.transparency,
       child: InkWell(
         onTap: () {
-          CyberClickSoundRegistry.playClick();
-          onPressed();
+          unawaited(() async {
+            // Release warn loop first so click can use the sticky mpg123 session.
+            await beforeConfirm?.call();
+            CyberClickSoundRegistry.playClick();
+            onPressed();
+          }());
         },
         borderRadius: BorderRadius.circular(CyberDimens.actionButtonHeight / 2),
         child: Ink(

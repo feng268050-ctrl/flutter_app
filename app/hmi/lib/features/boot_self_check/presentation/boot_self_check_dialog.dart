@@ -142,27 +142,27 @@ class BootSelfCheckDialogBody extends StatelessWidget {
 
 /// Shows the self-check overlay; returns when dismissed.
 ///
-/// Realtime [BackdropFilter] needs a clear path to Home: opaque/full-screen
-/// dialog barriers sit under the panel and get sampled instead of the
-/// wallpaper — keep [barrierColor] transparent. Panel frost tint comes from
-/// [CyberBackdropBlur] overlay, not the modal barrier.
+/// Spec / [CyberOverlayHost]: full-screen opaque [barrierColor] sits *under*
+/// the panel, so realtime [BackdropFilter] would blur the scrim instead of
+/// Home — keep the barrier transparent. Frost comes from panel
+/// [CyberBackdropBlur] (realtime) + tint overlay, not the modal barrier.
 Future<void> showBootSelfCheckDialog({
   required BuildContext context,
   required BootSelfCheckSession session,
   required VoidCallback onClose,
   VoidCallback? onUserInteracted,
 }) {
-  // Weston/eLinux: realtime BackdropFilter + transparent barrier often yields an
-  // invisible panel. Use opaque fake glass + dim scrim so self-check is always
-  // readable; frost capture can return later once elinux blur is proven.
   return CyberOverlayHost.show<void>(
     context: context,
     barrierDismissible: false,
-    barrierColor: const Color(0x99000000),
+    // Transparent: realtime frost must sample Home wallpaper, not a dim scrim.
+    barrierColor: Colors.transparent,
     freezePageBackdrop: false,
-    useFakeGlass: true,
-    sampleMode: CyberBlurSampleMode.firstFrame,
+    useFakeGlass: false,
+    sampleMode: CyberBlurSampleMode.realtime,
     intensity: CyberBlurIntensity.high,
+    blurTint: CyberBlurTint.dark,
+    tone: CyberTone.dark,
     builder: (dialogContext) {
       return BootSelfCheckDialogBody(
         session: session,

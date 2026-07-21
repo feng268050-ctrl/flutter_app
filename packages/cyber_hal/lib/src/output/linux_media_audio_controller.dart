@@ -70,6 +70,10 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   /// Bumped on [stop] so an in-flight `@P 0` re-LOAD cannot resurrect playback.
   int _warnLoopEpoch = 0;
 
+  /// Serialize mpg123 remote stdin writes (concurrent flush →
+  /// "StreamSink is bound to a stream" and breaks all later LOAD/STOP).
+  Future<void> _remoteCmdChain = Future<void>.value();
+
   /// Legacy: sticky process started with `--loop` (kept for
   /// `_ensureRemoteMpg123` identity checks).
   bool _remoteLoopForever = false;
@@ -228,8 +232,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
         if (_player == null || !_remoteMode) {
           await _startRemoteMpg123(player);
         }
-        _playerStdin!.writeln('LOAD $path');
-        await _playerStdin!.flush();
+        await _runRemoteCmd(() => _remoteWriteln('LOAD $path'));
         await _applyRemoteVolume(_volumePercent);
         // @P 2 will confirm; optimistically mark playing for responsive UI.
         _setPlaying(true);
@@ -345,17 +348,11 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   }
 
   Future<void> _applyRemoteVolume(int percent) async {
-    final sink = _playerStdin;
-    if (!_remoteMode || sink == null) {
+    if (!_remoteMode || _playerStdin == null) {
       return;
     }
-    try {
-      // UI percent → mpg123 soft-V only (HW held near max in _drainVolumeQueue).
-      sink.writeln('V $percent');
-      await sink.flush();
-    } catch (e) {
-      debugPrint('media-audio: remote volume failed: $e');
-    }
+    // UI percent → mpg123 soft-V only (HW held near max in _drainVolumeQueue).
+    await _runRemoteCmd(() => _remoteWriteln('V $percent'));
   }
 
   Future<void> _listenProcess(Process process) async {
@@ -430,33 +427,64 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   }
 
 
+
+  Future<void> _runRemoteCmd(Future<void> Function() op) {
+    final done = Completer<void>();
+    _remoteCmdChain = _remoteCmdChain.then((_) async {
+      try {
+        await op();
+        if (!done.isCompleted) {
+          done.complete();
+        }
+      } catch (e, st) {
+        if (!done.isCompleted) {
+          done.completeError(e, st);
+        }
+      }
+    });
+    // Keep the chain alive even if [op] failed.
+    _remoteCmdChain = _remoteCmdChain.catchError((_) {});
+    return done.future;
+  }
+
+  Future<void> _remoteWriteln(String line) async {
+    final sink = _playerStdin;
+    if (sink == null || !_remoteMode) {
+      return;
+    }
+    try {
+      sink.writeln(line);
+      await sink.flush();
+    } catch (e) {
+      debugPrint('media-audio: remote write failed ($line): $e');
+      // Recover sticky session so later clicks are not permanently silent.
+      try {
+        await _killRemoteMpg123();
+      } catch (_) {}
+    }
+  }
+
   /// End-of-track re-arm for [playLoopingAsset]. No-op if disarmed / no session.
   void _reloadArmedWarnLoop() {
     final path = _loopPath;
     final epoch = _warnLoopEpoch;
-    final sink = _playerStdin;
-    if (path == null || sink == null || !_remoteMode) {
+    if (path == null || _playerStdin == null || !_remoteMode) {
       return;
     }
-    // Re-check after capturing: [stop] may have disarmed concurrently.
     if (_loopPath != path || _warnLoopEpoch != epoch) {
       return;
     }
-    try {
-      sink.writeln('LOAD $path');
-      // ignore: discarded_futures
-      sink.flush();
+    unawaited(_runRemoteCmd(() async {
       if (_loopPath != path || _warnLoopEpoch != epoch) {
-        // Lost the race to [stop] — halt immediately.
-        sink.writeln('STOP');
-        // ignore: discarded_futures
-        sink.flush();
+        return;
+      }
+      await _remoteWriteln('LOAD $path');
+      if (_loopPath != path || _warnLoopEpoch != epoch) {
+        await _remoteWriteln('STOP');
         return;
       }
       lwsTrace('media-audio: warn loop re-LOAD $path');
-    } catch (e) {
-      debugPrint('media-audio: warn re-LOAD failed: $e');
-    }
+    }));
   }
 
   @override
@@ -494,8 +522,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
       _warnLoopEpoch++;
       _loopPath = path;
       final armEpoch = _warnLoopEpoch;
-      _playerStdin!.writeln('LOAD $path');
-      await _playerStdin!.flush();
+      await _runRemoteCmd(() => _remoteWriteln('LOAD $path'));
       if (_loopPath != path || _warnLoopEpoch != armEpoch) {
         return;
       }
@@ -523,11 +550,11 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
       return;
     }
 
-    // Confirm (and any UI tap) must be audible: preempt warn loop, then LOAD.
+    // Mutual exclusion on the single remote session: warn loop owns the pipe;
+    // do not LOAD a click over it (would tear the loop / race @P re-LOAD).
     if (_loopPath != null) {
-      _warnLoopEpoch++;
-      _loopPath = null;
-      lwsTrace('media-audio: oneshot preempted warn loop');
+      lwsTrace('media-audio: oneshot skipped (warn loop active)');
+      return;
     }
     try {
       if (!_isMpg123(player)) {
@@ -536,8 +563,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
       }
       await _ensureRemoteMpg123(player, loopForever: false);
       await _applyRemoteVolume(_volumePercent);
-      _playerStdin!.writeln('LOAD $path');
-      await _playerStdin!.flush();
+      await _runRemoteCmd(() => _remoteWriteln('LOAD $path'));
       lwsTrace('media-audio: oneshot LOAD $path (remote)');
     } catch (e) {
       debugPrint('media-audio: oneshot remote failed: $e');
@@ -549,19 +575,13 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     // Disarm before STOP so the `@P 0` handler cannot re-LOAD.
     _warnLoopEpoch++;
     _loopPath = null;
-    final sink = _playerStdin;
     _setPlaying(false);
-    if (sink == null) {
+    if (_playerStdin == null) {
       return;
     }
     // Keep mpg123 -R alive so UI click oneshots can LOAD without fighting
     // exclusive plughw (a second mpg123 process exits 255 / is silent).
-    try {
-      sink.writeln('STOP');
-      await sink.flush();
-    } catch (e) {
-      debugPrint('media-audio: stop failed: $e');
-    }
+    await _runRemoteCmd(() => _remoteWriteln('STOP'));
   }
 
   @override

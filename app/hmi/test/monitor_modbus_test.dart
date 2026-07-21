@@ -44,17 +44,17 @@ void main() {
   });
 
   group('AlarmMonitorState', () {
-    test('unknown/null bits are fault; explicit false is ok', () {
+    test('null bits are idle-unknown; false ok; true fault', () {
       final s = AlarmMonitorState();
-      expect(s.laserFault, isTrue);
+      expect(s.laserCommFault, isNull);
       s.applyChanges(const [
         ModbusAttributeChange(id: 'alarm.laser_comm', value: false),
       ]);
-      expect(s.laserFault, isFalse);
+      expect(s.laserCommFault, isFalse);
       s.applyChanges(const [
         ModbusAttributeChange(id: 'alarm.laser_comm', value: true),
       ]);
-      expect(s.laserFault, isTrue);
+      expect(s.laserCommFault, isTrue);
     });
 
     test('applyChanges updates temps', () {
@@ -65,16 +65,17 @@ void main() {
       expect(s.motor.display, contains('25.1'));
     });
 
-    test('unhealthy Modbus forces fault display', () {
+    test('health does not rewrite primed comm bits', () {
       final s = AlarmMonitorState();
       s.applyChanges(const [
         ModbusAttributeChange(id: 'alarm.gun_comm', value: false),
       ]);
-      expect(s.gunFault, isFalse);
+      expect(s.gunCommFault, isFalse);
       s.applyHealth(
         const ModbusHealth(ok: false, message: 'window failed'),
       );
-      expect(s.gunFault, isTrue);
+      expect(s.gunCommFault, isFalse);
+      expect(s.healthOk, isFalse);
     });
   });
 }

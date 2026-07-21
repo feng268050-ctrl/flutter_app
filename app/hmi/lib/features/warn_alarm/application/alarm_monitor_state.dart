@@ -6,8 +6,8 @@ import 'package:lws_hmi/features/monitor/domain/active_alarm.dart';
 
 /// Live Alarm Information snapshot owned by [WarnAlarmController].
 ///
-/// Comm / metric indicators are binary for UI: fault (red) vs ok (green).
-/// Unknown / unread / Modbus-unhealthy → fault (never idle gray).
+/// Comm indicators (lws-ui): `null` → idle (empty), `false` → success (ok),
+/// `true` → failure (fault). Missing temp samples → idle, not red.
 final class AlarmMonitorState extends ChangeNotifier {
   final TempSeries motor = TempSeries();
   final TempSeries motorDriver = TempSeries();
@@ -19,13 +19,13 @@ final class AlarmMonitorState extends ChangeNotifier {
   bool protectiveMirrorOverTemp = false;
   bool collimatorOverTemp = false;
 
-  /// Raw bits from Modbus (`null` = not yet received).
+  /// Comm faults (`true` = alarm active). `null` = not yet primed → idle UI.
   bool? laserCommFault;
   bool? gunCommFault;
   bool? wireFeederCommFault;
 
-  /// Camera is not Modbus; until a camera adapter exists, treat as fault.
-  bool cameraCommFault = true;
+  /// Camera is not Modbus yet; `null` keeps the indicator idle (empty).
+  bool? cameraCommFault;
 
   bool healthOk = true;
   String? healthMessage;
@@ -33,14 +33,6 @@ final class AlarmMonitorState extends ChangeNotifier {
   List<ActiveAlarm> _active = const [];
 
   List<ActiveAlarm> get activeAlarms => _active;
-
-  /// Red unless healthy AND bit is explicitly false.
-  bool faultOrUnknown(bool? bit) => !healthOk || bit != false;
-
-  bool get laserFault => faultOrUnknown(laserCommFault);
-  bool get gunFault => faultOrUnknown(gunCommFault);
-  bool get wireFeederFault => faultOrUnknown(wireFeederCommFault);
-  bool get cameraFault => !healthOk || cameraCommFault;
 
   void setActiveAlarms(List<ActiveAlarm> alarms) {
     _active = List<ActiveAlarm>.unmodifiable(alarms);

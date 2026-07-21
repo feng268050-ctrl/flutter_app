@@ -151,10 +151,10 @@ class MonitorMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Alarm Information: red (fault / missing) or green (ok) only — no gray idle.
-    final kind = !hasValue || fault
-        ? MonitorIndicatorKind.failure
-        : MonitorIndicatorKind.success;
+    // Missing sample → idle (empty); known fault → red; else green.
+    final kind = !hasValue
+        ? MonitorIndicatorKind.idle
+        : (fault ? MonitorIndicatorKind.failure : MonitorIndicatorKind.success);
     return MonitorGlassCard(
       height: MonitorDimens.metricH,
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
@@ -276,7 +276,7 @@ class MonitorTempMetricCard extends StatelessWidget {
     return MonitorMetricCard(
       value: overTemp && !hasValue ? 'OVER TEMP' : value,
       label: label,
-      fault: overTemp || !hasValue,
+      fault: overTemp,
       hasValue: hasValue || overTemp,
     );
   }

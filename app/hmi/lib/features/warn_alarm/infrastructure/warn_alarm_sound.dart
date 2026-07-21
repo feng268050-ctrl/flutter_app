@@ -49,10 +49,15 @@ final class WarnAlarmSound {
   /// Stop when [episodeCode] is cleared (or [episodeCode] is null = stop any).
   ///
   /// No-op if a *different* code still owns the loop (code-change handoff).
+  /// No-op when already idle (avoids 400ms poll spamming [MediaAudioController.stop]
+  /// and racing the sticky mpg123 stdin).
   Future<void> stopForEpisode(String? episodeCode) async {
     if (episodeCode != null &&
         _episodeCode != null &&
         episodeCode != _episodeCode) {
+      return;
+    }
+    if (!_wantLoop && _episodeCode == null) {
       return;
     }
     _wantLoop = false;

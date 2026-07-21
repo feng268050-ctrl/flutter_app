@@ -14,7 +14,7 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 | `package:cyber_hal/gpio.dart` | named GPIO lines | board `gpio.json` (sysfs) |
 | `package:cyber_hal/modbus.dart` | attribute catalog | board `modbus.json` + serial |
 | `package:cyber_hal/bluetooth.dart` | BlueZ | `/var/lib/bluetooth/` |
-| `package:cyber_hal/sys_info.dart` | host inventory | procfs/sysfs + `read-serial` |
+| `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` | procfs/sysfs + `/var/lib/hmi/product.ini` + `read-serial` / `--chip-id` |
 | `package:cyber_hal/datetime.dart` | wall clock | timedatectl / date / hwclock |
 | `package:cyber_hal/stub.dart` | in-memory stubs | P3.2 emulator / host tests |
 | `package:cyber_hal/cyber_hal.dart` | core only | `Capabilities`, `BoardProfile`, errors |

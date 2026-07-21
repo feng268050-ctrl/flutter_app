@@ -641,7 +641,7 @@ P1.5 不另建 debug 固件镜像，而是在 **现有 P1 镜像** 上提供设�
 | `make debug-app` | 在**实体板**以 **调试模式** 启动 App（debug bundle + flutter-pi 调试启动），供 IDE attach 与断点调试 |
 
 
-VSCode / Cursor Flutter 插件应能选择 lws-hmi 自定义设备，并通过 `make debug-app` 拉起调试会话。调试命令应复用 repo `.env` / 环境变量（`FLUTTER_SDK`、`SERIAL` 等），避免开发者在 IDE、Makefile、脚本中维护多份配置。
+VSCode / Cursor Flutter 插件应能选择 lws-hmi 自定义设备，并通过 `make debug-app` 拉起调试会话。调试命令应复用 repo `.env` / 环境变量（`FLUTTER_SDK`、`SN` 等），避免开发者在 IDE、Makefile、脚本中维护多份配置。
 
 **P2.5** 再增加 `**make emulator`**（Linux HMI 模拟器）与 `**make android-emulator**`（参考 lws-ui `make emulator`）：构建并启动 Linux 虚拟机，加载 `rootfs.img` 并运行 Linux App；`make push-app` 与 `make debug-app` 届时同时支持实体板 USB-SSH 与该 Linux VM。
 
@@ -1091,7 +1091,7 @@ paths:
 
 lws-ui **生产不开放**网络 ADB；仅通过 **隐藏操作** 临时开启 `adbd`（`:5555`）。Buildroot HMI 用 **OpenSSH `sshd`** 作等价能力，**默认不运行、不监听**。
 
-**P1 工程迭代（首选）**：OTG USB 插入主机 → **VBUS 触发** ECM + `usb0`（`192.168.55.1/24`）+ **仅 `usb0` 监听**的 sshd → 主机 `**make push-app`**（`scp` staging + 运行时安装 payload + restart/retry `hmi.service`，不重启整机）。拔线自动 teardown；**不进** `multi-user.target.wants`。多板用 `**SERIAL=`**（gadget `iSerial`），与 `make flash` 一致。进入 RockUSB Loader：设备 shell 运行 `**reboot-loader**`，或主机运行 `**make reboot-loader**`；Android 仍可用 adb。
+**P1 工程迭代（首选）**：OTG USB 插入主机 → **VBUS 触发** ECM + `usb0`（`192.168.55.1/24`）+ **仅 `usb0` 监听**的 sshd → 主机 `**make push-app`**（`scp` staging + 运行时安装 payload + restart/retry `hmi.service`，不重启整机）。拔线自动 teardown；**不进** `multi-user.target.wants`。多板用 `**SN=`**（gadget `iSerial`），与 `make flash` 一致。进入 RockUSB Loader：设备 shell 运行 `**reboot-loader**`，或主机运行 `**make reboot-loader**`；Android 仍可用 adb。
 
 **P2.1（LAN/WLAN 按需）**：板端 `**/usr/libexec/hmi/enable-ssh-debug.sh`**（及 `disable-ssh-debug.sh`）启动 `ssh-debug-lan.service` → `lan-ssh-run.sh`（仅在 **eth0/wlan0** 的 IPv4 上 `ListenAddress`，**不**绑 `0.0.0.0` / `192.168.55.1`）；与 USB-SSH **并存**。**不** `systemctl enable sshd`。P2 Demo「LAN SSH debug」开关调用同一脚本。主机 `**make connect <ip>`** 注册后可用 `push-app` / `shell` / `debug-app` / `reboot`（**不含** `reboot-loader`）。重启后自动关闭。
 
@@ -1348,7 +1348,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 | LCD/MIPI 参数（lws-hmi overlay **已有**）                                 | NanoHTTPd → Dart `shelf`；JmDNS → Avahi                                                                                           |
 | `openspec/specs/*`                                                  | **参考** UI/交互验收；**非**完整迁移清单（§11.7）                                                                                                |
 | lws-ui `docs/*.md`（拓扑、API、AI、OTA 等）                                 | Linux：**P2.4** A/B + `make upgrade`；**P5.8** 产品 OTA 两级更新 → oem / `update.img`；旧 Android 继续 `build-apk` / `push-apk`；**adbd** → Linux **sshd 按需开启**（§7.7） |
-| `model.properties`（相机 IP 等）                                         | key 复用；Linux 目录可与 Android 不同（默认候选 `/oem/etc/model.properties`），供 `configure-camera-eth0.sh` / mediamtx 渲染                        |
+| `model.properties`（相机 IP 等）                                         | **Linux：** `/var/lib/hmi/product.ini`（HAL `ProductInfo`；`make set-prop` / `del-prop`）；P5.1 mediamtx 仍可另读 oem 路径若需要 |
 
 
 ### 11.5 lws-ui 能力 parity 核对（仅据前文分析）

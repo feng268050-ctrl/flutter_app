@@ -130,11 +130,17 @@ abstract final class BootSelfCheckCoordinator {
     // Kick off Modbus / camera work in parallel with the first Checking… rows.
     final snapshotFuture =
         BootSelfCheckModbusSnapshotReader.read(services.modbus);
+    final productCameraIp =
+        (await services.ensureProductInfo()).cameraIp();
     final cameraApplicable = BootSelfCheckCameraProbe.isApplicable(
       profile: services.boardProfile,
+      productCameraIp: productCameraIp,
     );
     final cameraHost = cameraApplicable
-        ? BootSelfCheckCameraProbe.resolveHost(services.boardProfile)
+        ? BootSelfCheckCameraProbe.resolveHost(
+            services.boardProfile,
+            productCameraIp: productCameraIp,
+          )
         : null;
     Future<bool>? cameraFuture;
     if (cameraHost != null) {

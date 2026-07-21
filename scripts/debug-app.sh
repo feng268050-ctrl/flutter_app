@@ -25,5 +25,5 @@ bash "$ROOT/scripts/build-debug-app.sh"
 
 cd "$APP_DIR"
 echo "Starting Flutter debug on lws-hmi (Ctrl+C detaches IDE tunnel; app keeps running on device)..."
-echo "Tip: IP=<addr> or SERIAL=... via env/.env when multiple boards (make devices)."
+echo "Tip: IP=<addr> or SN=... via env/.env when multiple boards (make devices)."
 exec "$FLUTTER" run -d lws-hmi --debug --no-pub --no-track-widget-creation

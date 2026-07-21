@@ -39,7 +39,7 @@ For app-only iteration, use make push-app.
 For online OTA staging semantics, use board ab-upgrade-apply.sh.
 
 Env:
-  SERIAL / LWS_HMI_SERIAL   select board when multiple devices
+  SN / LWS_HMI_SN   select board when multiple devices
   IP / LWS_HMI_IP           registered SSH only (make connect <ip>)
   LWS_HMI_FIRMWARE_DIR      default: output/firmware
   UPGRADE_OEM_IMG           optional path to oem.img
@@ -117,8 +117,8 @@ case "$*" in
 esac
 
 usb_ssh_session_load_env "$ROOT"
-if is_android_emulator_serial "${SERIAL:-}"; then
-	die "Android emulator ($SERIAL) is not supported for upgrade (physical board only; see make devices)"
+if is_android_emulator_serial "$(device_select_sn)"; then
+	die "Android emulator ($(device_select_sn)) is not supported for upgrade (physical board only; see make devices)"
 fi
 usb_ssh_session_select "$ROOT"
 

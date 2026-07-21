@@ -2,7 +2,7 @@
 
 ## Purpose
 
-P2 Flutter home demo: device-information rows (iSerial + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth (local adapter + central scan/HID) / USB keyboard / USB mouse sections, P2.2 Date & Time (manual / network), plus audio / brightness controls. Display orientation is **not** a Demo setting (fixed at flutter-pi launch / board default; in-app video rotation stays App-layer).
+P2 Flutter home demo: device-information rows (product identity SN + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth (local adapter + central scan/HID) / USB keyboard / USB mouse sections, P2.2 Date & Time (manual / network), plus audio / brightness controls. Display orientation is **not** a Demo setting (fixed at flutter-pi launch / board default; in-app video rotation stays App-layer).
 ## Requirements
 ### Requirement: Home screen lists device-info rows
 
@@ -18,19 +18,21 @@ The P2 home (or primary demo) screen SHALL display device-information rows as si
 
 A missing or failed value SHALL display exactly `-`.
 
+Device SN SHALL resolve via product identity (non-empty `/var/lib/hmi/product.ini` `sn`, else chip/board serial / `read-serial` helper) and MUST NOT be read from Modbus. Brand/Model rows MAY be shown when the Demo surface mirrors Settings Device Information; if shown, empty values SHALL display `-`.
+
 #### Scenario: All rows visible
 
 - **WHEN** the user views the P2 demo home after first frame
 - **THEN** the listed labels are visible with a value string (possibly `-`)
 
-#### Scenario: Device SN from iSerial identity
+#### Scenario: Device SN from product identity
 
-- **WHEN** board iSerial / `read-serial` identity is available
+- **WHEN** `product.ini` has a non-empty `sn` or board `read-serial` identity is available
 - **THEN** Device SN shows that serial string and is NOT read from Modbus
 
 #### Scenario: Device SN unavailable
 
-- **WHEN** iSerial / `read-serial` identity cannot be obtained
+- **WHEN** product.ini `sn` is empty/absent and chip/`read-serial` identity cannot be obtained
 - **THEN** Device SN displays `-`
 
 ### Requirement: Home screen lists Alarm Information status and temperatures

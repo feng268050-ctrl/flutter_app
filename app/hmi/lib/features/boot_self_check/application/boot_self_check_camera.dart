@@ -8,8 +8,15 @@ abstract final class BootSelfCheckCameraProbe {
   /// Default IPC address from lws-ui `CameraConfig.DEFAULT_CAMERA_IP`.
   static const defaultCameraIp = '192.168.1.100';
 
-  /// Resolve host from board [helpers] `camera_ip`, else [defaultCameraIp].
-  static String? resolveHost(BoardProfile? profile) {
+  /// Resolve host: product.ini `camera_ip`, else board [helpers], else default.
+  static String? resolveHost(
+    BoardProfile? profile, {
+    String? productCameraIp,
+  }) {
+    final fromProduct = productCameraIp?.trim();
+    if (fromProduct != null && fromProduct.isNotEmpty) {
+      return fromProduct;
+    }
     final fromProfile = profile?.helper(BoardHelperKeys.cameraIp)?.trim();
     if (fromProfile != null && fromProfile.isNotEmpty) {
       return fromProfile;
@@ -20,6 +27,7 @@ abstract final class BootSelfCheckCameraProbe {
   /// Host/macOS/tests without a real camera segment: skip when not Linux.
   static bool isApplicable({
     BoardProfile? profile,
+    String? productCameraIp,
     bool? forceApplicableForTest,
   }) {
     if (forceApplicableForTest != null) {
@@ -28,7 +36,7 @@ abstract final class BootSelfCheckCameraProbe {
     if (!Platform.isLinux) {
       return false;
     }
-    final host = resolveHost(profile);
+    final host = resolveHost(profile, productCameraIp: productCameraIp);
     return host != null && host.isNotEmpty;
   }
 

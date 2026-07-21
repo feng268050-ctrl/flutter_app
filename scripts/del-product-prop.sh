@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Remove one key from /var/lib/hmi/product.ini on the SSH target.
+# Usage: make del-prop CAMERA_IP
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/usb-ssh-session.sh
+source "$ROOT/scripts/usb-ssh-session.sh"
+# shellcheck source=scripts/product-ini-common.sh
+source "$ROOT/scripts/product-ini-common.sh"
+
+TARGET="${PRODUCT_INI_PATH:-/var/lib/hmi/product.ini}"
+
+_DEL_PROP_SKIP=(
+	SERIAL CHIPID IP IMAGE FLUTTER_SDK BUILD_JOBS BUILD_BIND_MOUNT
+	LWS_HMI_SERIAL LWS_HMI_SN LWS_HMI_CHIPID LWS_HMI_IP LWS_HMI_USB_SSH_PASS LWS_HMI_USB_SSH_USER
+	LWS_HMI_USB_SSH_ADDR LWS_HMI_USB_IFACE PUSH_APP_WAIT_SEC
+	DOCKER_IMAGE DOCKER_PLATFORM SCOPE FORCE SRC
+	PRODUCT_INI_PATH
+)
+
+usage() {
+	cat <<'EOF'
+Usage:
+  make del-prop <UPPERCASE_KEY>
+
+Examples:
+  make del-prop CAMERA_IP
+  make del-prop FOCUS_SCALE_REF
+
+Command-line keys use UPPERCASE; the matching lowercase key is removed from
+/var/lib/hmi/product.ini. hmi.service is restarted only when the file changes.
+EOF
+}
+
+die() { echo "ERROR: $*" >&2; exit 1; }
+
+is_skipped_make_var() {
+	local name="$1" skip
+	for skip in "${_DEL_PROP_SKIP[@]}"; do
+		[[ "${name}" == "${skip}" ]] && return 0
+	done
+	return 1
+}
+
+find_prop_key() {
+	local o key
+	PROP_KEY=""
+	for o in "$@"; do
+		if [[ "${o}" == *=* ]]; then
+			key="${o%%=*}"
+		elif [[ "${o}" =~ ^[A-Z][A-Z0-9_]*$ ]]; then
+			key="${o}"
+		else
+			continue
+		fi
+		is_skipped_make_var "${key}" && continue
+		[[ "${key}" =~ ^[A-Z][A-Z0-9_]*$ ]] || continue
+		if [[ -n "${PROP_KEY}" ]]; then
+			die "delete one property at a time (got ${PROP_KEY} and ${key})"
+		fi
+		PROP_KEY="${key}"
+	done
+	[[ -n "${PROP_KEY}" ]] || return 1
+}
+
+remote() {
+	usb_ssh_session_run_ssh "$ROOT" "$IFACE" "$@"
+}
+
+find_prop_key "$@" || {
+	usage
+	die "expected one UPPERCASE_KEY (example: make del-prop CAMERA_IP)"
+}
+KEY="$(printf '%s' "${PROP_KEY}" | tr '[:upper:]' '[:lower:]')"
+
+# del-prop SN must not treat Make SN= as device selection.
+if [[ "${PROP_KEY}" == "SN" ]]; then
+	unset SN LWS_HMI_SN
+fi
+
+command -v sshpass >/dev/null 2>&1 || die "sshpass not found (run: make usb-ssh-setup)"
+
+usb_ssh_session_prepare "$ROOT"
+
+if usb_ssh_session_is_remote; then
+	echo "SSH del-prop: target=$TARGET_USER@$TARGET_ADDR -> $TARGET"
+else
+	echo "USB-SSH del-prop: iface=$IFACE target=$TARGET_USER@$TARGET_ADDR -> $TARGET"
+fi
+
+if ! remote "test -f '$TARGET'" >/dev/null 2>&1; then
+	echo "WARN: ${KEY} not present (${TARGET} missing) (from ${PROP_KEY})" >&2
+	exit 0
+fi
+
+local_file="$(mktemp)"
+trap 'rm -f "${local_file}"' EXIT
+
+usb_ssh_session_run_scp "$ROOT" "$IFACE" \
+	"${TARGET_USER}@${TARGET_ADDR}:${TARGET}" "${local_file}" \
+	|| die "failed to pull ${TARGET}"
+
+if delete_product_ini_from_file "${KEY}" "${local_file}"; then
+	echo "INFO: removing ${KEY} from ${TARGET} (from ${PROP_KEY})..." >&2
+	usb_ssh_session_run_scp "$ROOT" "$IFACE" \
+		"${local_file}" "${TARGET_USER}@${TARGET_ADDR}:${TARGET}" \
+		|| die "failed to push ${TARGET}"
+	remote "chmod 0644 '$TARGET'" >/dev/null 2>&1 || true
+	echo "OK: removed ${KEY} from ${TARGET}"
+	echo "INFO: restarting hmi.service..." >&2
+	remote "systemctl restart hmi.service" || die "failed to restart hmi.service"
+else
+	echo "WARN: ${KEY} not present in ${TARGET} (from ${PROP_KEY})" >&2
+fi

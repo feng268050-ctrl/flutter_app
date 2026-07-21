@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # List USB-SSH (ECM gadget) devices for make devices / push-app / reboot / reboot-loader.
-# Output: TSV rows — MODE, SERIAL, LocationID, IFACE, IP, USB
+# Output: TSV rows — MODE, SN, ChipID, LocationID, IFACE, IP, USB
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,17 +18,18 @@ die() {
 	exit 1
 }
 
+# sn chip loc iface [usb]
 usb_ssh_row() {
-	local serial="$1" loc="$2" iface="$3" usb="${4:--}"
-	printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
-		"$USB_SSH_MODE" "$serial" "$loc" "$iface" "$USB_SSH_ADDR" "$usb"
+	local sn="$1" chip="$2" loc="$3" iface="$4" usb="${5:--}"
+	printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+		"$USB_SSH_MODE" "$sn" "$chip" "$loc" "$iface" "$USB_SSH_ADDR" "$usb"
 }
 
 ensure_host_addr_on_iface() {
 	configure_usb_ssh_host_addr "$1"
 }
 
-fetch_board_serial_via_ssh() {
+fetch_board_identity_via_ssh() {
 	local iface="$1"
 	local addr="$USB_SSH_ADDR"
 	local pass="${LWS_HMI_USB_SSH_PASS:-rockchip}"
@@ -45,19 +46,24 @@ fetch_board_serial_via_ssh() {
 	while IFS= read -r opt; do
 		[[ -n "$opt" ]] && ssh_opts+=("$opt")
 	done < <(usb_ssh_bind_pair "$iface")
-	sshpass -p "$pass" ssh "${ssh_opts[@]}" "root@${addr}" \
-		'/usr/libexec/hmi/read-device-serial.sh' 2>/dev/null
+	remote_device_identity_via_ssh sshpass -p "$pass" ssh "${ssh_opts[@]}" "root@${addr}"
 }
 
 enrich_usb_ssh_rows() {
-	local row mode s loc iface addr usb fetched
-	while IFS=$'\t' read -r mode s loc iface addr usb; do
+	# Prefer live board SN + ChipID over host USB iSerial (gadget load may lag product.ini).
+	local mode sn chip loc iface addr usb pair
+	while IFS=$'\t' read -r mode sn chip loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
-		if [[ ( "$s" == "-" || -z "$s" ) && "$iface" != "-" && -n "$iface" ]]; then
-			fetched="$(fetch_board_serial_via_ssh "$iface" || true)"
-			[[ -n "$fetched" ]] && s="$fetched"
+		[[ -n "${chip:-}" ]] || chip="${sn:--}"
+		if [[ "$iface" != "-" && -n "$iface" ]]; then
+			pair="$(fetch_board_identity_via_ssh "$iface" || true)"
+			if [[ -n "$pair" ]]; then
+				IFS=$'\t' read -r sn chip <<<"$pair"
+			fi
 		fi
-		printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$mode" "$s" "$loc" "$iface" "$addr" "$usb"
+		[[ -n "$sn" ]] || sn="-"
+		[[ -n "$chip" ]] || chip="-"
+		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$mode" "$sn" "$chip" "$loc" "$iface" "$addr" "$usb"
 	done
 }
 
@@ -111,7 +117,7 @@ linux_list_usb_ssh() {
 		*" $loc "*) continue ;;
 		esac
 		seen="$seen $loc"
-		usb_ssh_row "$serial" "$loc" "$iface"
+		usb_ssh_row "$serial" "$serial" "$loc" "$iface"
 	done
 
 	for net in /sys/class/net/*; do
@@ -128,7 +134,7 @@ linux_list_usb_ssh() {
 		seen="$seen $loc"
 		serial="$(cat "$usb_path/serial" 2>/dev/null || true)"
 		[[ -n "$serial" ]] || serial="-"
-		usb_ssh_row "$serial" "$loc" "$iface"
+		usb_ssh_row "$serial" "$serial" "$loc" "$iface"
 	done
 }
 
@@ -289,7 +295,7 @@ for name, chunk in gadget_blocks:
     seen.add(identity)
     usb = f"0x{vid}:0x{pid}" if vid and pid else "-"
     iface = iface_for_chunk(name, chunk, text)
-    print(f"{mode}\t{serial}\t{loc}\t{iface}\t{addr}\t{usb}")
+    print(f"{mode}\t{serial}\t{serial}\t{loc}\t{iface}\t{addr}\t{usb}")
 PY
 }
 
@@ -363,10 +369,15 @@ network_reachable_usb_ssh() {
 		while IFS= read -r opt; do
 			[[ -n "$opt" ]] && ssh_opts+=("$opt")
 		done < <(usb_ssh_bind_pair "$iface")
-		serial="$(sshpass -p "$pass" ssh "${ssh_opts[@]}" \
-			"root@${addr}" '/usr/libexec/hmi/read-device-serial.sh' 2>/dev/null || echo "-")"
+		serial="$(remote_device_identity_via_ssh sshpass -p "$pass" ssh "${ssh_opts[@]}" \
+			"root@${addr}" || printf '%s\t%s\n' '-' '-')"
+		IFS=$'\t' read -r sn chip <<<"$serial"
+		[[ -n "$sn" ]] || sn="-"
+		[[ -n "$chip" ]] || chip="-"
+		usb_ssh_row "$sn" "$chip" "$loc" "$iface" "-"
+	else
+		usb_ssh_row "-" "-" "$loc" "$iface" "-"
 	fi
-	usb_ssh_row "$serial" "$loc" "$iface" "-"
 }
 
 list_usb_ssh_devices() {
@@ -391,12 +402,14 @@ usb_ssh_device_count() {
 }
 
 select_usb_ssh_device() {
-	local serial="${SERIAL:-${LWS_HMI_SERIAL:-}}"
-	local pick_iface="${IFACE:-${LWS_HMI_USB_IFACE:-}}"
-	local -a rows=() row mode s loc iface addr usb fetched
-	while IFS="$USB_SSH_FS" read -r mode s loc iface addr usb; do
+	local sn_sel chip_sel pick_iface
+	local -a rows=() row mode sn chip loc iface addr usb pair
+	sn_sel="$(device_select_sn)"
+	chip_sel="$(device_select_chipid)"
+	pick_iface="${IFACE:-${LWS_HMI_USB_IFACE:-}}"
+	while IFS="$USB_SSH_FS" read -r mode sn chip loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
-		rows+=("${mode}${USB_SSH_FS}${s}${USB_SSH_FS}${loc}${USB_SSH_FS}${iface}${USB_SSH_FS}${addr}${USB_SSH_FS}${usb}")
+		rows+=("${mode}${USB_SSH_FS}${sn}${USB_SSH_FS}${chip}${USB_SSH_FS}${loc}${USB_SSH_FS}${iface}${USB_SSH_FS}${addr}${USB_SSH_FS}${usb}")
 	done < <(list_usb_ssh_devices)
 
 	if [[ ${#rows[@]} -eq 0 ]]; then
@@ -405,7 +418,7 @@ select_usb_ssh_device() {
 
 	if [[ -n "$pick_iface" ]]; then
 		for row in "${rows[@]}"; do
-			IFS="$USB_SSH_FS" read -r mode s loc iface addr usb <<<"$row"
+			IFS="$USB_SSH_FS" read -r mode sn chip loc iface addr usb <<<"$row"
 			[[ "$iface" == "$pick_iface" ]] || continue
 			printf '%s\n' "$loc" "$iface" "$addr"
 			return 0
@@ -413,30 +426,54 @@ select_usb_ssh_device() {
 		die "IFACE=$pick_iface not found (make devices)"
 	fi
 
-	if [[ -n "$serial" && "$serial" != "-" ]]; then
+	if [[ -n "$chip_sel" && "$chip_sel" != "-" ]]; then
 		for row in "${rows[@]}"; do
-			IFS="$USB_SSH_FS" read -r mode s loc iface addr usb <<<"$row"
-			if [[ "$s" == "$serial" || "$loc" == "$serial" ]]; then
+			IFS="$USB_SSH_FS" read -r mode sn chip loc iface addr usb <<<"$row"
+			if [[ "$chip" == "$chip_sel" ]]; then
 				printf '%s\n' "$loc" "$iface" "$addr"
 				return 0
 			fi
-			# Host USB iSerial is often "-" on macOS; board serial matches make devices (SSH).
 			if [[ "$iface" != "-" && -n "$iface" ]]; then
-				fetched="$(fetch_board_serial_via_ssh "$iface" || true)"
-				if [[ "$fetched" == "$serial" ]]; then
-					printf '%s\n' "$loc" "$iface" "$addr"
-					return 0
+				pair="$(fetch_board_identity_via_ssh "$iface" || true)"
+				if [[ -n "$pair" ]]; then
+					IFS=$'\t' read -r sn chip <<<"$pair"
+					if [[ "$chip" == "$chip_sel" ]]; then
+						printf '%s\n' "$loc" "$iface" "$addr"
+						return 0
+					fi
 				fi
 			fi
 		done
-		die "SERIAL=$serial not found in USB-SSH devices (make devices)"
+		die "CHIPID=$chip_sel not found in USB-SSH devices (make devices)"
+	fi
+
+	if [[ -n "$sn_sel" && "$sn_sel" != "-" ]]; then
+		for row in "${rows[@]}"; do
+			IFS="$USB_SSH_FS" read -r mode sn chip loc iface addr usb <<<"$row"
+			# SN= matches SN or ChipID (or LocationID).
+			if [[ "$sn" == "$sn_sel" || "$chip" == "$sn_sel" || "$loc" == "$sn_sel" ]]; then
+				printf '%s\n' "$loc" "$iface" "$addr"
+				return 0
+			fi
+			if [[ "$iface" != "-" && -n "$iface" ]]; then
+				pair="$(fetch_board_identity_via_ssh "$iface" || true)"
+				if [[ -n "$pair" ]]; then
+					IFS=$'\t' read -r sn chip <<<"$pair"
+					if [[ "$sn" == "$sn_sel" || "$chip" == "$sn_sel" ]]; then
+						printf '%s\n' "$loc" "$iface" "$addr"
+						return 0
+					fi
+				fi
+			fi
+		done
+		die "SN=$sn_sel not found in USB-SSH devices (make devices)"
 	fi
 
 	if [[ ${#rows[@]} -gt 1 ]]; then
-		die "${#rows[@]} USB-SSH devices — set SERIAL or IFACE (see make devices)"
+		die "${#rows[@]} USB-SSH devices — set SN= or IFACE= (see make devices)"
 	fi
 
-	IFS="$USB_SSH_FS" read -r mode s loc iface addr usb <<<"${rows[0]}"
+	IFS="$USB_SSH_FS" read -r mode sn chip loc iface addr usb <<<"${rows[0]}"
 	[[ "$iface" != "-" && -n "$iface" ]] || die "USB-SSH: no host IFACE (plug USB OTG; board: /usr/libexec/hmi/usb-plug-ssh-start.sh)"
 	printf '%s\n' "$loc" "$iface" "$addr"
 }
@@ -446,8 +483,8 @@ case "${1:-}" in
 	list_usb_ssh_devices
 	;;
 --select)
-	# When SERIAL is set, host USB iSerial is often "-" (macOS RNDIS); enrich via SSH like make devices.
-	if [[ -z "${SERIAL:-${LWS_HMI_SERIAL:-}}" ]]; then
+	# When SN= is set, host USB iSerial is often "-" (macOS RNDIS); enrich via SSH like make devices.
+	if [[ -z "$(device_select_sn)$(device_select_chipid)" ]]; then
 		USB_SSH_SKIP_ENRICH=1
 	fi
 	select_usb_ssh_device

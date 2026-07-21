@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cyber_hal/src/sys_info/product_info.dart';
 import 'package:cyber_hal/src/sys_info/sys_info.dart';
 
 /// Fixed [SysInfo] snapshot for host tests and the P3.2 emulator.
@@ -7,6 +8,9 @@ final class StubSysInfo implements SysInfo {
   StubSysInfo({
     this.snapshotData = const SysInfoSnapshot(
       serialNumber: 'SIM-0001',
+      chipId: 'SIM-CHIP-1',
+      brand: 'SimBrand',
+      model: 'SimModel',
       boardModel: 'sim',
       kernelRelease: 'stub',
       osReleaseId: 'sim',
@@ -40,12 +44,27 @@ final class StubSysInfo implements SysInfo {
       panelRefreshHz: 56.0,
     ),
     this.frameTimingSampler,
+    this.productInfo = const ProductInfo(
+      brand: 'SimBrand',
+      model: 'SimModel',
+      sn: 'SIM-0001',
+      chipId: 'SIM-CHIP-1',
+      keys: {
+        'brand': 'SimBrand',
+        'model': 'SimModel',
+        'sn': 'SIM-0001',
+        'camera_ip': '192.168.1.100',
+      },
+    ),
   });
 
   final SysInfoSnapshot snapshotData;
 
   /// When set, overrides [SysInfoSnapshot.uiFps] / [rasterFps] from [snapshotData].
   final FrameTimingSampler? frameTimingSampler;
+
+  /// Injected product identity for AppServices / boot self-check.
+  final ProductInfo productInfo;
 
   SysInfoSnapshot get _effectiveSnapshot {
     final s = frameTimingSampler;
@@ -54,6 +73,9 @@ final class StubSysInfo implements SysInfo {
     }
     return SysInfoSnapshot(
       serialNumber: snapshotData.serialNumber,
+      chipId: snapshotData.chipId,
+      brand: snapshotData.brand,
+      model: snapshotData.model,
       boardModel: snapshotData.boardModel,
       kernelRelease: snapshotData.kernelRelease,
       osReleaseId: snapshotData.osReleaseId,

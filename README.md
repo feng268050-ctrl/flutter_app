@@ -255,7 +255,7 @@ Loader path from Android:
 
 ```bash
 make devices
-SERIAL=... make reboot-loader
+SN=... make reboot-loader
 make flash
 ```
 
@@ -263,7 +263,7 @@ Loader path from Linux board (USB plug-ssh, no adb):
 
 ```bash
 make devices                    # auto-discovers USB-SSH, configures host 192.168.55.2
-make reboot-loader                # USB-SSH → device reboot-loader (SERIAL= optional)
+make reboot-loader                # USB-SSH → device reboot-loader (SN= optional)
 make flash                      # macOS only
 ```
 
@@ -272,11 +272,17 @@ make flash                      # macOS only
 After one firmware flash with USB plug-ssh support:
 
 ```bash
-make shell                      # interactive root shell; SERIAL=... when multiple boards
+make shell                      # interactive root shell; SN=... when multiple boards
 make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL=1
 make build-app
-make push-app                   # SERIAL=... when multiple boards; hot-swap /opt/hmi (no rootfs rebuild)
+make push-app                   # SN=... when multiple boards; hot-swap /opt/hmi (no rootfs rebuild)
+make set-prop BRAND=Innohi MODEL=YNH960   # upsert /var/lib/hmi/product.ini (multi-key OK); restarts hmi
+# Multi-board + product SN: CHIPID=<chip> make set-prop SN=FACTORY-001
+make del-prop CAMERA_IP         # remove one product.ini key; restarts hmi if changed
+make upgrade                    # A/B stream inactive FIT+rootfs (board already on P2.4 GPT)
 ```
+
+Device selection: use **`SN=`** / **`LWS_HMI_SN=`** (matches `make devices` **SN** or **ChipID**). **`CHIPID=`** matches ChipID only. Put `SN=` / `IP=` in `.env` for IDE / daily use.
 
 Full-system A/B (kernel/rootfs, not app-only): `make upgrade` streams `rootfs.img` + the inactive letter’s FIT into partitions (not userdata staging).
 
@@ -293,7 +299,7 @@ IP=192.168.1.50 make upgrade    # stream-to-partition; not RockUSB / not online 
 make disconnect 192.168.1.50
 ```
 
-`IP=` selects **registered SSH only** (never USB-SSH). `SERIAL=` still selects by board serial for either mode. `make reboot` works over SSH; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`.
+`IP=` selects **registered SSH only** (never USB-SSH). `SN=` selects by **SN** or **ChipID** (`make devices` columns: MODE / SN / ChipID / …). `CHIPID=` selects by ChipID only (useful with `make set-prop SN=…` on multi-board). USB-SSH/SSH **SN** prefers `product.ini` `sn`, else chip ID; **ChipID** is always the chip serial. Android adb / RockUSB loader rows put the adb/SerialNo in both SN and ChipID. `make reboot` works over SSH; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`.
 
 Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
 
@@ -310,7 +316,7 @@ make debug-setup
 After the board has a rootfs with the P1.5 debug overlay scripts (`hmi-launch.sh`, `debug-app-*`):
 
 ```bash
-make debug-app                   # SERIAL=... or IP=... when multiple boards
+make debug-app                   # SN=... or IP=... when multiple boards
 ```
 
 Or open `app/hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH / SSH debug)** from Run and Debug. Pre-launch runs `make debug-host-prepare`: for registered `IP=` / `MODE=SSH` it only checks reachability (no USB ECM); for USB-SSH it configures the host ECM interface (macOS may request `sudo`). Put `IP=` in `.env` so the IDE picks the SSH board. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
@@ -529,7 +535,7 @@ Normal flash from Android:
 
 ```bash
 make devices
-SERIAL=... make reboot-loader   # adb reboot loader (Android)
+SN=... make reboot-loader   # adb reboot loader (Android)
 make flash                     # uf only when already in Loader mode (IMAGE=... to override)
 ```
 
@@ -545,7 +551,8 @@ App deploy without reflash:
 
 ```bash
 make build-app
-make push-app                  # SERIAL=... or IP=... when multiple devices
+make push-app                  # SN=... or IP=... when multiple devices
+make set-prop BRAND=Innohi MODEL=YNH960   # optional: factory product.ini over SSH
 ```
 
 ### macOS Docker Desktop tips
@@ -619,7 +626,7 @@ The upstream SDK ships **ynh962** board defconfig but **ynh960.dts** in kernel; 
 ```bash
 export FLUTTER_SDK=flutter-sdk                                        # host Flutter SDK (gitignored at repo root)
 export BUILD_JOBS=4                                          # parallel make jobs (default 4 on macOS)
-export SERIAL=10.0.0.239:5555                            # for pull-display-params (adb over network)
+export SN=10.0.0.239:5555                            # for pull-display-params (adb over network)
 export REBUILD_IMAGE=1                                       # rebuild Docker image
 make build                 # full firmware → output/firmware/update.img
 ```

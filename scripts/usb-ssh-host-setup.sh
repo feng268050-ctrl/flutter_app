@@ -153,12 +153,14 @@ echo ""
 echo "Ping board at $TARGET_ADDR ..."
 if ping_target "$IFACE"; then
 	echo ""
-	serial="$(bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 | awk -F'\t' '{print $2}')"
-	[[ -n "$serial" && "$serial" != "-" ]] && echo "Board SERIAL: $serial"
+	sn="$(bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 | awk -F'\t' '{print $2}')"
+	chip="$(bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 | awk -F'\t' '{print $3}')"
+	[[ -n "$sn" && "$sn" != "-" ]] && echo "Board SN: $sn"
+	[[ -n "$chip" && "$chip" != "-" && "$chip" != "$sn" ]] && echo "Board ChipID: $chip"
 	echo ""
 	echo "OK — try: ssh root@${TARGET_ADDR}   (password: rockchip)"
 	echo "     or: make push-app"
-	echo "     or: make reboot-loader   (SERIAL not required when only one board)"
+	echo "     or: make reboot-loader   (SN not required when only one board)"
 	exit 0
 fi
 

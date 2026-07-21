@@ -5,7 +5,7 @@ Developer SSH full-system A/B upgrade (`make upgrade`): stream firmware into ina
 ## Requirements
 ### Requirement: make upgrade performs remote full-system firmware upgrade over SSH
 
-The repository SHALL provide **`make upgrade`** that selects a Linux target the same way as **`make push-app`** (**USB-SSH** and/or registered **`MODE=SSH`** via `SERIAL=` / `IP=`), performs a **stream-to-partition** full-system upgrade over SSH, and returns successfully when the board reports reboot requested (`apply.status=ok` or equivalent) or SSH disconnects first. It SHALL NOT wait for post-reboot SSH or claim that boot health was verified.
+The repository SHALL provide **`make upgrade`** that selects a Linux target the same way as **`make push-app`** (**USB-SSH** and/or registered **`MODE=SSH`** via `SN=` / `IP=`), performs a **stream-to-partition** full-system upgrade over SSH, and returns successfully when the board reports reboot requested (`apply.status=ok` or equivalent) or SSH disconnects first. It SHALL NOT wait for post-reboot SSH or claim that boot health was verified.
 
 For the stream path, the host SHALL: preflight the active/inactive letter and refuse unsafe slot state; stream **`rootfs.img`** into the inactive `rootfs_*` partition while transferring; stream **only the inactive letter’s FIT** (`boot.img` for letter A, `boot_b.img` for letter B) into the try-boot FIT path on `boot` after the running FIT is backed up to `boot_b`; optionally stream **oem** when packaged; then arm try-boot and reboot. Default full-system mode MUST update the inactive **boot and rootfs** letter pair (kernel + rootfs).
 
@@ -23,8 +23,8 @@ For the stream path, the host SHALL: preflight the active/inactive letter and re
 
 #### Scenario: Multi-device requires selection
 
-- **WHEN** more than one deployable Linux target is present and neither `SERIAL=` nor `IP=` is set
-- **THEN** `make upgrade` fails with guidance to run `make devices` and set `SERIAL` or `IP`
+- **WHEN** more than one deployable Linux target is present and neither `SN=` nor `IP=` is set
+- **THEN** `make upgrade` fails with guidance to run `make devices` and set `SN` or `IP`
 
 ### Requirement: Host refuses upgrade when required bundle images are missing
 

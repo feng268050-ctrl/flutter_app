@@ -25,6 +25,8 @@ usb_ssh_session_load_env() {
 		set +a
 	fi
 	SERIAL="${SERIAL:-${LWS_HMI_SERIAL:-}}"
+	SN="${SN:-${LWS_HMI_SN:-$SERIAL}}"
+	CHIPID="${CHIPID:-${LWS_HMI_CHIPID:-}}"
 	IP="${IP:-${LWS_HMI_IP:-}}"
 	TARGET_USER="${LWS_HMI_USB_SSH_USER:-root}"
 	SSH_PASS="${LWS_HMI_USB_SSH_PASS:-rockchip}"
@@ -51,7 +53,7 @@ usb_ssh_session_try_select() {
 	local out line
 	local -a sel=()
 	if ! out=$(
-		SERIAL="$SERIAL" IP="$IP" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
+		SN="$SN" CHIPID="$CHIPID" SERIAL="$SERIAL" IP="$IP" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
 			bash "$root/scripts/device-target.sh" --select 2>/dev/null
 	); then
 		return 1

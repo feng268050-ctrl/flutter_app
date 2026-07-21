@@ -27,7 +27,11 @@ fi
 LOADER_BIN="${LWS_HMI_LOADER:-}"
 LOADER_CACHE_DIR="$ROOT/output/firmware/.loader-cache"
 
-SERIAL="${SERIAL:-${LWS_HMI_SERIAL:-}}"
+# SN preferred; SERIAL= deprecated alias. CHIPID= matches ChipID only.
+SN="$(device_select_sn)"
+CHIPID="$(device_select_chipid)"
+# Working token for RockUSB/adb row match (CHIPID wins when set).
+SERIAL="${CHIPID:-$SN}"
 IP="${IP:-${LWS_HMI_IP:-}}"
 LOADER_NORESET="${LOADER_NORESET:-}"
 UPGRADE_NORESET="${UPGRADE_NORESET:-}"
@@ -52,7 +56,7 @@ Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash}
   flash-android  flash with Innohi Android image (optional; not required before Linux)
                  (Android emulator not supported)
 
-Selection: SERIAL / IP (SSH registry only) / IFACE (USB-SSH)
+Selection: SN / CHIPID / IP (SSH registry only) / IFACE (USB-SSH)
 App deploy (no reflash): make build-app && make push-app
 Linux HMI → Loader: make reboot-loader
 MaskROM Linux:  make flash (macOS)
@@ -105,7 +109,7 @@ die() {
   exit 1
 }
 
-# Reject SERIAL=emulator-* for flash / reboot-loader (physical board only).
+# Reject SN=emulator-* for flash / reboot-loader (physical board only).
 reject_android_emulator_target() {
   local action="$1"
   local serial="${SERIAL:-}"
@@ -184,67 +188,71 @@ parse_rockusb_line() {
   _SERIAL="$(sed -n 's/.*SerialNo=\([^[:space:]]*\).*/\1/p' <<<"$line")"
 }
 
-# Rows: MODE, SERIAL, LocationID, IFACE, IP, USB (fields separated by FS)
+# Rows: MODE, SN, ChipID, LocationID, IFACE, IP, USB (fields separated by FS)
 DEVICE_TABLE_FS=$'\t'
 declare -a DEVICE_TABLE_ROWS=()
 
 device_table_add() {
-  DEVICE_TABLE_ROWS+=("${1}${DEVICE_TABLE_FS}${2}${DEVICE_TABLE_FS}${3}${DEVICE_TABLE_FS}${4}${DEVICE_TABLE_FS}${5}${DEVICE_TABLE_FS}${6}")
+  DEVICE_TABLE_ROWS+=("${1}${DEVICE_TABLE_FS}${2}${DEVICE_TABLE_FS}${3}${DEVICE_TABLE_FS}${4}${DEVICE_TABLE_FS}${5}${DEVICE_TABLE_FS}${6}${DEVICE_TABLE_FS}${7}")
 }
 
 device_table_print() {
-  local w_mode=4 w_serial=6 w_loc=10 w_iface=5 w_ip=2 w_usb=3
-  local row mode serial loc iface ip usb
-  local -a modes=() serials=() locs=() ifaces=() ips=() usbs=()
+  local w_mode=4 w_sn=2 w_chip=6 w_loc=10 w_iface=5 w_ip=2 w_usb=3
+  local row mode sn chip loc iface ip usb
+  local -a modes=() sns=() chips=() locs=() ifaces=() ips=() usbs=()
 
   if [[ ${#DEVICE_TABLE_ROWS[@]} -eq 0 ]]; then
-    printf '%s\n' "MODE  SERIAL  LocationID  IFACE  IP  USB"
+    printf '%s\n' "MODE  SN  ChipID  LocationID  IFACE  IP  USB"
     printf '%s\n' "(none)"
     return 0
   fi
 
   for row in "${DEVICE_TABLE_ROWS[@]}"; do
-    IFS="$DEVICE_TABLE_FS" read -r mode serial loc iface ip usb <<<"$row"
+    IFS="$DEVICE_TABLE_FS" read -r mode sn chip loc iface ip usb <<<"$row"
     modes+=("$mode")
-    serials+=("$serial")
+    sns+=("$sn")
+    chips+=("$chip")
     locs+=("$loc")
     ifaces+=("$iface")
     ips+=("$ip")
     usbs+=("$usb")
     (( ${#mode} > w_mode )) && w_mode=${#mode}
-    (( ${#serial} > w_serial )) && w_serial=${#serial}
+    (( ${#sn} > w_sn )) && w_sn=${#sn}
+    (( ${#chip} > w_chip )) && w_chip=${#chip}
     (( ${#loc} > w_loc )) && w_loc=${#loc}
     (( ${#iface} > w_iface )) && w_iface=${#iface}
     (( ${#ip} > w_ip )) && w_ip=${#ip}
     (( ${#usb} > w_usb )) && w_usb=${#usb}
   done
   (( w_mode < 4 )) && w_mode=4
-  (( w_serial < 6 )) && w_serial=6
+  (( w_sn < 2 )) && w_sn=2
+  (( w_chip < 6 )) && w_chip=6
   (( w_loc < 10 )) && w_loc=10
   (( w_iface < 5 )) && w_iface=5
   (( w_ip < 2 )) && w_ip=2
   (( w_usb < 3 )) && w_usb=3
 
-  local sep_mode sep_serial sep_loc sep_iface sep_ip sep_usb i
+  local sep_mode sep_sn sep_chip sep_loc sep_iface sep_ip sep_usb i
   sep_mode="$(printf '%*s' "$w_mode" '' | tr ' ' '-')"
-  sep_serial="$(printf '%*s' "$w_serial" '' | tr ' ' '-')"
+  sep_sn="$(printf '%*s' "$w_sn" '' | tr ' ' '-')"
+  sep_chip="$(printf '%*s' "$w_chip" '' | tr ' ' '-')"
   sep_loc="$(printf '%*s' "$w_loc" '' | tr ' ' '-')"
   sep_iface="$(printf '%*s' "$w_iface" '' | tr ' ' '-')"
   sep_ip="$(printf '%*s' "$w_ip" '' | tr ' ' '-')"
   sep_usb="$(printf '%*s' "$w_usb" '' | tr ' ' '-')"
 
-  printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_ip}s  %-${w_usb}s\n" \
-    MODE SERIAL LocationID IFACE IP USB
-  printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_ip}s  %-${w_usb}s\n" \
-    "$sep_mode" "$sep_serial" "$sep_loc" "$sep_iface" "$sep_ip" "$sep_usb"
+  printf "%-${w_mode}s  %-${w_sn}s  %-${w_chip}s  %-${w_loc}s  %-${w_iface}s  %-${w_ip}s  %-${w_usb}s\n" \
+    MODE SN ChipID LocationID IFACE IP USB
+  printf "%-${w_mode}s  %-${w_sn}s  %-${w_chip}s  %-${w_loc}s  %-${w_iface}s  %-${w_ip}s  %-${w_usb}s\n" \
+    "$sep_mode" "$sep_sn" "$sep_chip" "$sep_loc" "$sep_iface" "$sep_ip" "$sep_usb"
   for i in "${!modes[@]}"; do
-    printf "%-${w_mode}s  %-${w_serial}s  %-${w_loc}s  %-${w_iface}s  %-${w_ip}s  %-${w_usb}s\n" \
-      "${modes[$i]}" "${serials[$i]}" "${locs[$i]}" "${ifaces[$i]}" "${ips[$i]}" "${usbs[$i]}"
+    printf "%-${w_mode}s  %-${w_sn}s  %-${w_chip}s  %-${w_loc}s  %-${w_iface}s  %-${w_ip}s  %-${w_usb}s\n" \
+      "${modes[$i]}" "${sns[$i]}" "${chips[$i]}" "${locs[$i]}" "${ifaces[$i]}" "${ips[$i]}" "${usbs[$i]}"
   done
 }
 
 list_devices() {
-  local out line mode serial loc iface addr usb state row
+  local out line mode serial loc iface addr usb state row chip
 
   DEVICE_TABLE_ROWS=()
 
@@ -259,7 +267,8 @@ list_devices() {
         device) mode=android ;;
         *) mode="$state" ;;
       esac
-      device_table_add "$mode" "$serial" "-" "-" "-" "-"
+      # adb serial is the chip identity; SN matches ChipID on Android.
+      device_table_add "$mode" "$serial" "$serial" "-" "-" "-" "-"
     done < <(adb devices 2>/dev/null | awk 'NR>1 && NF {print $1, $2}')
   fi
 
@@ -276,18 +285,21 @@ list_devices() {
       else
         usb="-"
       fi
-      device_table_add "$mode" "$serial" "$loc" "-" "-" "$usb"
+      # Loader SerialNo is chip identity; SN matches ChipID in RockUSB.
+      device_table_add "$mode" "$serial" "$serial" "$loc" "-" "-" "$usb"
     done < <(grep -E 'DevNo=[0-9]+' <<<"$out" || true)
   fi
 
-  while IFS=$'\t' read -r mode serial loc iface addr usb; do
+  while IFS=$'\t' read -r mode serial chip loc iface addr usb; do
     [[ -n "$mode" ]] || continue
-    device_table_add "$mode" "$serial" "$loc" "$iface" "$addr" "$usb"
+    [[ -n "${chip:-}" ]] || chip="$serial"
+    device_table_add "$mode" "$serial" "$chip" "$loc" "$iface" "$addr" "$usb"
   done < <(bash "$ROOT/scripts/usb-ssh-devices.sh" --tsv 2>/dev/null || true)
 
-  while IFS=$'\t' read -r mode serial loc iface addr usb; do
+  while IFS=$'\t' read -r mode serial chip loc iface addr usb; do
     [[ -n "$mode" ]] || continue
-    device_table_add "$mode" "$serial" "$loc" "$iface" "$addr" "$usb"
+    [[ -n "${chip:-}" ]] || chip="$serial"
+    device_table_add "$mode" "$serial" "$chip" "$loc" "$iface" "$addr" "$usb"
   done < <(bash "$ROOT/scripts/ssh-devices.sh" --tsv 2>/dev/null || true)
 
   device_table_print
@@ -313,10 +325,10 @@ resolve_upgrade_tool_location() {
       UPGRADE_TOOL_LOCATION="$_LOCATION"
       return 0
     done < <(grep -E 'DevNo=[0-9]+' <<<"$out")
-    die "SERIAL=$SERIAL not found (make devices)"
+    die "SN=$SERIAL not found (make devices)"
   fi
 
-  die "$count RockUSB devices — set SERIAL (make devices)"
+  die "$count RockUSB devices — set SN= (make devices)"
 }
 
 upgrade_tool_cmd() {
@@ -350,7 +362,7 @@ resolve_selected_rockusb_mode() {
       elif [[ -n "$SERIAL" ]]; then
         [[ "$_SERIAL" == "$SERIAL" ]] || continue
       else
-        die "$count RockUSB devices — set SERIAL (make devices)"
+        die "$count RockUSB devices — set SN= (make devices)"
       fi
     fi
     printf '%s\n' "${_MODE:-RockUSB}"
@@ -383,8 +395,8 @@ resolve_adb_serial() {
     lines+=("$serial")
   done < <(adb devices | awk 'NR>1 && $2=="device" {print $1}')
   count="${#lines[@]}"
-  [[ "$count" -gt 0 ]] || die "No adb device (set SERIAL)"
-  [[ "$count" -eq 1 ]] || die "Multiple adb devices (set SERIAL)"
+  [[ "$count" -gt 0 ]] || die "No adb device (set SN=)"
+  [[ "$count" -eq 1 ]] || die "Multiple adb devices (set SN=)"
   echo "${lines[0]}"
 }
 
@@ -453,7 +465,7 @@ select_linux_ssh_target() {
   trap "rm -f '$err_file'" RETURN
 
   if ! sel_out="$(
-    SERIAL="$SERIAL" IP="$IP" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
+    SN="$SN" CHIPID="$CHIPID" SERIAL="$SERIAL" IP="$IP" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
       bash "$ROOT/scripts/device-target.sh" --select 2>"$err_file"
   )"; then
     [[ -s "$err_file" ]] && cat "$err_file" >&2
@@ -473,7 +485,7 @@ usb_ssh_select_iface() {
   trap "rm -f '$err_file'" RETURN
 
   if ! sel_out="$(
-    SERIAL="$SERIAL" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
+    SN="$SN" CHIPID="$CHIPID" SERIAL="$SERIAL" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
       bash "$ROOT/scripts/usb-ssh-devices.sh" --select 2>"$err_file"
   )"; then
     [[ -s "$err_file" ]] && cat "$err_file" >&2

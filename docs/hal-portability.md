@@ -115,9 +115,9 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 
 | Need | Detail |
 |------|--------|
-| **OS** | Standard `/proc`, `/sys` (thermal, cpufreq, mounts) |
+| **OS** | Standard `/proc`, `/sys` (thermal, cpufreq, mounts); optional `/var/lib/hmi/product.ini` for factory brand/model/sn + tunables. Snapshot: `serialNumber` (product SN), `chipId` (chip serial). |
 | **Profile** | `storage_mounts` — mount points to report |
-| **Helper / inject** | Serial: default `DeviceSnReader` calls `/usr/bin/read-serial` if present; otherwise inject a custom `DeviceSnReader` when constructing `BoardBindings.sysInfo` |
+| **Helper / inject** | Product SN: `ProductInfo.sn` prefers `product.ini` `sn`, else chip ID. Chip ID: `ProductInfo.chipId` / `DeviceSnReader.readChipId()` → `/usr/bin/read-serial --chip-id` (same as `make devices` ChipID). Inject `ProductInfo` or custom `DeviceSnReader` via `BoardBindings.sysInfo` / `productInfo()` when needed. |
 
 ### `hal/gpio`
 

@@ -6,6 +6,7 @@ import 'package:cyber_hal/debug.dart';
 import 'package:cyber_hal/input.dart';
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_hal/output.dart';
+import 'package:cyber_hal/stub.dart';
 import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app_version.dart';
@@ -23,6 +24,7 @@ final class AppServices {
     required this.boardProfile,
     this.deviceSnReader = const DeviceSnReader(),
     SysInfo? sysInfo,
+    ProductInfo? productInfo,
     FrameTimingSampler? frameTimingSampler,
     ModbusRtuClient? modbusClient,
     GpioLedController? ledController,
@@ -40,18 +42,28 @@ final class AppServices {
     DisplayStack? displayStack,
   }) : bindings = BoardBindings(boardProfile) {
     final b = bindings;
+    _productInfoOverride = productInfo;
     // Only attach Flutter timings when we own LinuxSysInfo (tests inject StubSysInfo).
     if (sysInfo != null) {
       _frameTimingSampler =
           frameTimingSampler ?? const FixedFrameTimingSampler();
       this.sysInfo = sysInfo;
+      if (sysInfo is StubSysInfo && productInfo == null) {
+        _productInfo = sysInfo.productInfo;
+      } else if (productInfo != null) {
+        _productInfo = productInfo;
+      }
     } else {
       _frameTimingSampler = frameTimingSampler ?? FlutterFrameTimingSampler();
       this.sysInfo = b.sysInfo(
         deviceSnReader: deviceSnReader,
         appVersion: kSystemVersion,
         frameTimingSampler: _frameTimingSampler,
+        productInfo: productInfo,
       );
+      if (productInfo != null) {
+        _productInfo = productInfo;
+      }
     }
     final gpioAsset = boardProfile.resolvedGpioAsset;
     final modbusAsset = boardProfile.resolvedModbusAsset;
@@ -94,8 +106,40 @@ final class AppServices {
   final BoardBindings bindings;
   final DeviceSnReader deviceSnReader;
 
+  ProductInfo? _productInfoOverride;
+  ProductInfo? _productInfo;
+  Future<ProductInfo>? _productInfoFuture;
+
   late final FrameTimingSampler _frameTimingSampler;
   late final SysInfo sysInfo;
+
+  /// Factory product identity (`/var/lib/hmi/product.ini`).
+  Future<ProductInfo> ensureProductInfo() {
+    if (_productInfo != null) {
+      return Future<ProductInfo>.value(_productInfo!);
+    }
+    if (_productInfoOverride != null) {
+      _productInfo = _productInfoOverride;
+      return Future<ProductInfo>.value(_productInfo!);
+    }
+    final s = sysInfo;
+    if (s is LinuxSysInfo) {
+      return _productInfoFuture ??= s.ensureProductInfo().then((p) {
+        _productInfo = p;
+        return p;
+      });
+    }
+    if (s is StubSysInfo) {
+      _productInfo = s.productInfo;
+      return Future<ProductInfo>.value(_productInfo!);
+    }
+    return _productInfoFuture ??= bindings
+        .productInfo(deviceSnReader: deviceSnReader)
+        .then((p) {
+      _productInfo = p;
+      return p;
+    });
+  }
   late final ModbusRtuClient modbus;
   late final GpioLedController leds;
   late final MediaAudioController audio;

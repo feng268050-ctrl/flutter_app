@@ -1,12 +1,16 @@
 import 'dart:async';
 
 import 'package:cyber_hal/sys_info.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
-/// Device Information tab — identity / versions from sysinfo + Modbus.
+/// Device Information — same Material settings chrome as Common Settings.
 class DeviceInformationTab extends StatefulWidget {
   const DeviceInformationTab({super.key, required this.services});
 
@@ -17,6 +21,7 @@ class DeviceInformationTab extends StatefulWidget {
 }
 
 class _DeviceInformationTabState extends State<DeviceInformationTab> {
+  String _deviceModel = kUnavailableDisplay;
   String _deviceSn = kUnavailableDisplay;
   String _gunheadSn = kUnavailableDisplay;
   String _systemVersion = kUnavailableDisplay;
@@ -24,11 +29,14 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
   String _controlCardVersion = kUnavailableDisplay;
   String _laserVersion = kUnavailableDisplay;
   String _wireFeederVersion = kUnavailableDisplay;
-  String _modbusLink = kUnavailableDisplay;
+  String _cameraType = kUnavailableDisplay;
+  String _focusScaleRef = kUnavailableDisplay;
+
+  String? _brandRaw;
+  String? _modelRaw;
 
   StreamSubscription<SysInfoUpdate>? _sysSub;
   StreamSubscription<List<ModbusAttributeChange>>? _modbusSub;
-  StreamSubscription<ModbusHealth>? _healthSub;
 
   @override
   void initState() {
@@ -53,29 +61,39 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     try {
       await widget.services.ensureModbusLive();
       _modbusSub = widget.services.modbusAttributeChanges.listen(_onModbus);
-      _healthSub = widget.services.modbusHealthChanges.listen(_onHealth);
     } catch (_) {}
+  }
+
+  static String _dash(String? value) {
+    if (value == null || value.isEmpty) {
+      return kUnavailableDisplay;
+    }
+    return value;
   }
 
   void _onSys(SysInfoUpdate update) {
     if (!mounted) return;
     final snap = update.snapshot;
     setState(() {
-      _deviceSn = snap.serialNumber ?? kUnavailableDisplay;
+      _brandRaw = snap.brand;
+      _modelRaw = snap.model;
+      _deviceModel = productDeviceModelDisplay(snap.brand, snap.model);
+      _deviceSn = _dash(snap.serialNumber);
       _kernelVersion = snap.kernelRelease ?? kUnavailableDisplay;
       _systemVersion = snap.appVersion ?? kUnavailableDisplay;
     });
+    unawaited(_refreshProductRows());
   }
 
-  void _onHealth(ModbusHealth health) {
-    if (!mounted) return;
-    setState(() {
-      if (!health.ok || health.truncated) {
-        _modbusLink = 'FAULT';
-      } else if (health.groupId == null || _modbusLink == kUnavailableDisplay) {
-        _modbusLink = 'OK';
-      }
-    });
+  Future<void> _refreshProductRows() async {
+    try {
+      final product = await widget.services.ensureProductInfo();
+      if (!mounted) return;
+      setState(() {
+        _cameraType = productCameraTypeDisplay(product.cameraType());
+        _focusScaleRef = _dash(product.focusScaleRef());
+      });
+    } catch (_) {}
   }
 
   void _onModbus(List<ModbusAttributeChange> changes) {
@@ -100,43 +118,98 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     });
   }
 
+  Future<void> _openDeviceQr() async {
+    CyberClickSoundRegistry.playClick();
+    final sn = _deviceSn == kUnavailableDisplay ? '' : _deviceSn;
+    final model = productDeviceModelForQr(_brandRaw, _modelRaw);
+    final version =
+        _systemVersion == kUnavailableDisplay ? '' : _systemVersion;
+    final payload = DeviceIdentityQr.contentV2(
+      sn: sn,
+      model: model,
+      systemVersion: version,
+    );
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          child: InkWell(
+            onTap: () => Navigator.of(ctx).pop(),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: QrImageView(
+                data: payload,
+                version: QrVersions.auto,
+                size: 240,
+                backgroundColor: Colors.white,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     unawaited(_sysSub?.cancel() ?? Future<void>.value());
     unawaited(_modbusSub?.cancel() ?? Future<void>.value());
-    unawaited(_healthSub?.cancel() ?? Future<void>.value());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return SettingsScrollView(
       children: [
-        Card(
-          child: Column(
-            children: [
-              _row('Device SN', _deviceSn),
-              _row('Gunhead SN', _gunheadSn),
-              _row('System Version', _systemVersion),
-              _row('Kernel Version', _kernelVersion),
-              _row('Control Card Version', _controlCardVersion),
-              _row('Laser Version', _laserVersion),
-              _row('Wire Feeder Version', _wireFeederVersion),
-              _row('Display Stack', widget.services.displayStack.displayLabel),
-              _row('Modbus Link', _modbusLink),
-            ],
-          ),
+        const SettingsSectionHeader('Identity'),
+        SettingsGroup(
+          children: [
+            SettingsValueRow(
+              title: 'Device Model',
+              value: _deviceModel,
+              trailing: IconButton(
+                tooltip: 'Device QR code',
+                onPressed: () => unawaited(_openDeviceQr()),
+                icon: const Icon(Icons.qr_code_2),
+              ),
+            ),
+            SettingsValueRow(title: 'Device SN', value: _deviceSn),
+            SettingsValueRow(title: 'Gunhead SN', value: _gunheadSn),
+          ],
+        ),
+        const SettingsSectionHeader('Versions'),
+        SettingsGroup(
+          children: [
+            SettingsValueRow(title: 'System Version', value: _systemVersion),
+            SettingsValueRow(title: 'Kernel Version', value: _kernelVersion),
+            SettingsValueRow(
+              title: 'Control Card Version',
+              value: _controlCardVersion,
+            ),
+            SettingsValueRow(title: 'Laser Version', value: _laserVersion),
+            SettingsValueRow(
+              title: 'Wire Feeder Version',
+              value: _wireFeederVersion,
+            ),
+          ],
+        ),
+        const SettingsSectionHeader('Platform'),
+        SettingsGroup(
+          children: [
+            SettingsValueRow(
+              title: 'Display Stack',
+              value: widget.services.displayStack.displayLabel,
+            ),
+            SettingsValueRow(title: 'Camera Type', value: _cameraType),
+            SettingsValueRow(
+              title: 'Focus Scale Reference',
+              value: _focusScaleRef,
+            ),
+          ],
         ),
       ],
-    );
-  }
-
-  Widget _row(String label, String value) {
-    final style = Theme.of(context).textTheme.titleMedium;
-    return ListTile(
-      title: Text(label, style: style),
-      trailing: Text(value, style: style),
     );
   }
 }

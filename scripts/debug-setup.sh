@@ -74,4 +74,4 @@ PY
 echo "Custom device ready. Verify with:"
 echo "  $FLUTTER devices"
 echo "  $FLUTTER doctor"
-echo "Select board: SERIAL=... or IP=... (registered: make connect <ip>); put in .env for IDE."
+echo "Select board: SN=... or IP=... (registered: make connect <ip>); put in .env for IDE."

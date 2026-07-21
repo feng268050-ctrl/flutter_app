@@ -1,6 +1,6 @@
 # Rockchip RK356x Linux SDK (Innohi) build environment for ynh960 + Buildroot.
 # Optional: create .env from .env.example (see README). Bash `source .env` works too.
-# USB flash: set SERIAL when more than one device is connected.
+# USB flash: set SN when more than one device is connected.
 
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
@@ -15,10 +15,12 @@ CHIP ?= rk3566_rk3568
 DEFCONFIG ?= ynh960_defconfig
 
 # USB flash / adb / remote SSH (override when multiple devices connected)
+SN ?=
+CHIPID ?=
 SERIAL ?=
 IP ?=
 IMAGE ?=
-FLASH_ENV = SERIAL='$(SERIAL)' IP='$(IP)' UPDATE_IMG='$(IMAGE)'
+FLASH_ENV = SN='$(SN)' CHIPID='$(CHIPID)' SERIAL='$(SERIAL)' IP='$(IP)' UPDATE_IMG='$(IMAGE)'
 
 # Positional IP for: make connect <ip> / make disconnect <ip>
 ifneq ($(filter connect disconnect,$(firstword $(MAKECMDGOALS))),)
@@ -38,16 +40,18 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-rootfs-weston prepare-rootfs prepare-rootfs-weston build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi build-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-rootfs-weston prepare-rootfs prepare-rootfs-weston build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi build-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
 define WITH_DOTENV
 bash -c 'set -euo pipefail; \
-  __ENV_SERIAL="$${SERIAL-}"; __ENV_IP="$${IP-}"; __ENV_IMAGE="$${IMAGE-}"; \
+  __ENV_SN="$${SN-}"; __ENV_CHIPID="$${CHIPID-}"; __ENV_SERIAL="$${SERIAL-}"; __ENV_IP="$${IP-}"; __ENV_IMAGE="$${IMAGE-}"; \
   __ENV_FLUTTER_SDK="$${FLUTTER_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
   __ENV_BUILD_BIND_MOUNT="$${BUILD_BIND_MOUNT-}"; \
   set -a; [[ -f .env ]] && source .env; set +a; \
+  [[ -n "$$__ENV_SN" ]] && export SN="$$__ENV_SN"; \
+  [[ -n "$$__ENV_CHIPID" ]] && export CHIPID="$$__ENV_CHIPID"; \
   [[ -n "$$__ENV_SERIAL" ]] && export SERIAL="$$__ENV_SERIAL"; \
   [[ -n "$$__ENV_IP" ]] && export IP="$$__ENV_IP"; \
   [[ -n "$$__ENV_IMAGE" ]] && export IMAGE="$$__ENV_IMAGE"; \
@@ -116,10 +120,12 @@ help:
 	@echo "  make debug-host-prepare    # USB ECM or registered SSH reachability for debug-app/IDE"
 	@echo "  make connect <ip>          # register remote SSH board (MODE=SSH in make devices)"
 	@echo "  make disconnect <ip>       # remove registered remote SSH board"
-	@echo "  make devices               # RockUSB + USB-SSH + SSH (no Android emulators)"
+	@echo "  make devices               # RockUSB + USB-SSH + SSH; columns SN + ChipID"
 	@echo "  make shell                 # interactive device shell (USB-SSH or SSH)"
 	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
 	@echo "  make push-app              # scp app over SSH (USB-SSH or registered IP)"
+	@echo "  make set-prop KEY=val ...  # upsert product.ini keys (multi OK); restart hmi"
+	@echo "  make del-prop KEY          # remove one product.ini key; restart hmi if changed"
 	@echo "  make upgrade               # SSH A/B stream-to-partition (inactive FIT+rootfs); not OTA staging"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
@@ -153,7 +159,8 @@ help:
 	@echo "  BUILD_BIND_MOUNT=1         # macOS only: bind-mount SDK instead of Docker volume"
 	@echo "  LWS_HMI_CACHE_ROOT=...   # NAS mount for large .cache artifacts (see .env.example)"
 	@echo "  LWS_HMI_CACHE_URL=...      # optional HTTP mirror of the same layout"
-	@echo "  SERIAL=<serial>            # device serial (flash / USB-SSH / SSH)"
+	@echo "  SN=<sn|chipid>             # select device by SN or ChipID (flash / USB-SSH / SSH)"
+	@echo "  CHIPID=<chipid>            # select by ChipID only (use with set-prop SN=…)"
 	@echo "  IP=<addr>                  # registered SSH only (not USB-SSH); make connect first"
 	@echo "  IMAGE=<path>               # firmware image for make flash"
 	@echo "  DOCKER_IMAGE=$(DOCKER_IMAGE)"
@@ -469,6 +476,16 @@ usb-ssh-setup:
 push-app:
 	@$(call WITH_DOTENV,bash scripts/push-app.sh)
 
+# Upsert one or more UPPERCASE_KEY=value into /var/lib/hmi/product.ini (SSH).
+set-prop:
+	@chmod +x scripts/set-product-prop.sh
+	@$(call WITH_DOTENV,bash scripts/set-product-prop.sh $(MAKEOVERRIDES))
+
+# Remove one UPPERCASE key from product.ini (e.g. make del-prop CAMERA_IP).
+del-prop:
+	@chmod +x scripts/del-product-prop.sh
+	@$(call WITH_DOTENV,bash scripts/del-product-prop.sh $(filter-out del-prop,$(MAKECMDGOALS)) $(MAKEOVERRIDES))
+
 upgrade:
 	@$(call WITH_DOTENV,bash scripts/upgrade-remote.sh)
 
@@ -491,3 +508,9 @@ flash-android:
 
 watch-maskrom:
 	@bash scripts/watch-maskrom.sh
+
+# Swallow extra goals for del-prop (e.g. make del-prop CAMERA_IP).
+ifneq (,$(filter del-prop,$(MAKECMDGOALS)))
+%:
+	@:
+endif

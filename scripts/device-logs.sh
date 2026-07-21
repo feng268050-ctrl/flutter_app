@@ -93,7 +93,7 @@ Follow live journal output from the board over USB-SSH or registered SSH (no buf
 Quit: Ctrl+C
 
 Device selection:
-  SERIAL / LWS_HMI_SERIAL        select board when multiple devices
+  SN / LWS_HMI_SN              select board when multiple devices
   IP / LWS_HMI_IP                registered SSH only (make connect <ip>)
 
 Filters (optional; combine as needed):

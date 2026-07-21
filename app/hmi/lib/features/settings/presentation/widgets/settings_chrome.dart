@@ -98,6 +98,60 @@ class SettingsNavRow extends StatelessWidget {
   }
 }
 
+/// Read-only value row (Device Information) — same Material chrome as [SettingsNavRow],
+/// without a chevron. Optional [trailing] (e.g. QR affordance) and [onTap].
+class SettingsValueRow extends StatelessWidget {
+  const SettingsValueRow({
+    super.key,
+    required this.title,
+    this.value,
+    this.trailing,
+    this.onTap,
+  });
+
+  final String title;
+  final String? value;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      minVerticalPadding: 16,
+      title: Text(title, style: const TextStyle(fontSize: 18)),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (value != null && value!.isNotEmpty)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 220),
+              child: Text(
+                value!,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.55),
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          if (trailing != null) ...[
+            const SizedBox(width: 4),
+            trailing!,
+          ],
+        ],
+      ),
+      onTap: onTap == null
+          ? null
+          : () {
+              CyberClickSoundRegistry.playClick();
+              onTap!();
+            },
+    );
+  }
+}
+
 class SettingsSwitchRow extends StatelessWidget {
   const SettingsSwitchRow({
     super.key,

@@ -31,7 +31,7 @@ The repository SHALL provide **`make disconnect`** that removes a registered IP 
 
 ### Requirement: make devices lists registered SSH devices
 
-**`make devices`** SHALL include registry rows with **`MODE=SSH`**, **`IP`** set to the registered IP, **`IFACE`** as `-`, and **`SERIAL`** from the cached board serial when known.
+**`make devices`** SHALL include registry rows with **`MODE=SSH`**, **`IP`** set to the registered IP, **`IFACE`** as `-`, and **`SN`** / **`ChipID`** from the cached or live-probed board identity when known.
 
 #### Scenario: Registered device appears
 

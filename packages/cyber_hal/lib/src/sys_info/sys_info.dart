@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cyber_hal/src/sys_info/product_info.dart';
 import 'package:flutter/foundation.dart';
+
+export 'package:cyber_hal/src/sys_info/product_info.dart';
 
 /// Host/board inventory snapshot (D17).
 abstract class SysInfo {
@@ -54,6 +57,9 @@ final class FixedFrameTimingSampler implements FrameTimingSampler {
 final class SysInfoSnapshot {
   const SysInfoSnapshot({
     this.serialNumber,
+    this.chipId,
+    this.brand,
+    this.model,
     this.boardModel,
     this.kernelRelease,
     this.osReleaseId,
@@ -71,7 +77,18 @@ final class SysInfoSnapshot {
     this.panelRefreshHz,
   });
 
+  /// Product SN (`product.ini` `sn` or chip ID); null if empty.
   final String? serialNumber;
+
+  /// Chip / SoC serial (never factory `product.ini` `sn`); null if empty.
+  final String? chipId;
+
+  /// Factory brand from `product.ini`; null if empty.
+  final String? brand;
+
+  /// Factory product model from `product.ini` (not DT [boardModel]); null if empty.
+  final String? model;
+
   final String? boardModel;
   final String? kernelRelease;
   final String? osReleaseId;
@@ -176,10 +193,15 @@ class DeviceSnReader {
   /// Placeholder returned on any failure (App may use its own display constant).
   final String unavailableDisplay;
 
-  /// Returns trimmed serial, or [unavailableDisplay] on any failure.
-  Future<String> read() async {
+  /// Product SN (product.ini `sn` preferred, else chip ID).
+  Future<String> read() => _run(const <String>[]);
+
+  /// Chip / SoC ID only (`read-serial --chip-id`).
+  Future<String> readChipId() => _run(const <String>['--chip-id']);
+
+  Future<String> _run(List<String> args) async {
     try {
-      final result = await Process.run(readSerialPath, const <String>[]);
+      final result = await Process.run(readSerialPath, args);
       if (result.exitCode != 0) {
         return unavailableDisplay;
       }
@@ -197,14 +219,16 @@ class DeviceSnReader {
   }
 }
 
-/// Linux [SysInfo] from procfs/sysfs + `read-serial`.
+/// Linux [SysInfo] from procfs/sysfs + `product.ini` / `read-serial`.
 class LinuxSysInfo implements SysInfo {
   LinuxSysInfo({
     this.deviceSnReader = const DeviceSnReader(),
     this.appVersion,
     this.mountPoints = const <String>['/', '/userdata'],
     this.frameTimingSampler,
-  });
+    this.productIniPath = '/var/lib/hmi/product.ini',
+    ProductInfo? productInfo,
+  }) : _productInfo = productInfo;
 
   final DeviceSnReader deviceSnReader;
 
@@ -215,6 +239,11 @@ class LinuxSysInfo implements SysInfo {
 
   /// Optional FPS sampler (App injects Flutter timings; stub uses fixed).
   final FrameTimingSampler? frameTimingSampler;
+
+  /// Path to factory product identity file.
+  final String productIniPath;
+
+  ProductInfo? _productInfo;
 
   final StreamController<SysInfoUpdate> _updates =
       StreamController<SysInfoUpdate>.broadcast();
@@ -228,12 +257,23 @@ class LinuxSysInfo implements SysInfo {
   double? _cachedPanelRefreshHz;
   bool _panelRefreshResolved = false;
 
+  /// Cached [ProductInfo] (loaded once per process / until [close]).
+  Future<ProductInfo> ensureProductInfo() async {
+    return _productInfo ??= await ProductInfo.load(
+      path: productIniPath,
+      deviceSnReader: deviceSnReader,
+    );
+  }
+
   @override
   Future<SysInfoSnapshot> snapshot() async {
-    final sn = await deviceSnReader.read();
+    final product = await ensureProductInfo();
     final sampler = frameTimingSampler;
     return SysInfoSnapshot(
-      serialNumber: sn == deviceSnReader.unavailableDisplay ? null : sn,
+      serialNumber: product.sn.isEmpty ? null : product.sn,
+      chipId: product.chipId.isEmpty ? null : product.chipId,
+      brand: product.brand.isEmpty ? null : product.brand,
+      model: product.model.isEmpty ? null : product.model,
       boardModel: await _readBoardModel(),
       kernelRelease: await _readKernelRelease(),
       osReleaseId: await _readOsReleaseId(),

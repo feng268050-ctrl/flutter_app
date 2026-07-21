@@ -97,19 +97,19 @@ The P1 rootfs (excluding `/opt/hmi` Flutter app) SHOULD be between 220 MB and 45
 The repo SHALL provide `scripts/flash-usb.sh` and Makefile targets for ynh960 firmware programming on a **macOS host** with Rockchip **upgrade_tool** vendored at `tools/upgrade_tool/`, aligned with `tools/upgrade_tool/命令行开发工具使用文档.pdf`:
 
 - `make audit` — pre-flight before flash (firmware on host, upgrade_tool, RockUSB)
-- `make devices` — list connected devices (MODE / SERIAL / LocationID / USB)
+- `make devices` — list connected devices (MODE / SN / ChipID / LocationID / USB)
 - `make flash` — unified flash: `uf update.img`; auto `ul` loader when RockUSB is Maskrom; `IMAGE=` overrides firmware path
 
-Multi-device selection SHALL use `SERIAL=` (table SERIAL column; adb serial or RockUSB SerialNo). macOS Docker builds SHALL auto-export `output/firmware/` to host after `make build-img`.
+Multi-device selection SHALL use `SN=` matching table **SN** or **ChipID** (adb SerialNo or RockUSB SerialNo for those modes). macOS Docker builds SHALL auto-export `output/firmware/` to host after `make build-img`.
 
 #### Scenario: devices table lists RockUSB Loader
 
 - **WHEN** board is in RockUSB Loader mode and developer runs `make devices`
-- **THEN** output includes a row with MODE `Loader`, SERIAL matching device, LocationID, and USB `0x2207:…`
+- **THEN** output includes a row with MODE `Loader`, SN and ChipID matching device SerialNo, LocationID, and USB `0x2207:…`
 
 #### Scenario: bootloader enters RockUSB from Android
 
-- **WHEN** device runs Android with adb connected and developer runs `SERIAL=… make reboot-loader`
+- **WHEN** device runs Android with adb connected and developer runs `SN=… make reboot-loader`
 - **THEN** subsequent `make devices` shows a RockUSB Loader row visible to `upgrade_tool ld`
 
 #### Scenario: flash writes update.img
@@ -117,10 +117,10 @@ Multi-device selection SHALL use `SERIAL=` (table SERIAL column; adb serial or R
 - **WHEN** RockUSB device is connected and `output/firmware/update.img` exists
 - **THEN** `make flash` invokes `upgrade_tool uf` on that image (or `make flash IMAGE=/path/to.img`)
 
-#### Scenario: multi-device requires SERIAL
+#### Scenario: multi-device requires SN
 
-- **WHEN** more than one RockUSB device is connected and `SERIAL` is not set
-- **THEN** `make flash` fails with a message to run `make devices` and set `SERIAL=`
+- **WHEN** more than one RockUSB device is connected and `SN` is not set
+- **THEN** `make flash` fails with a message to run `make devices` and set `SN=`
 
 ### Requirement: Build-time rootfs overlay verification
 

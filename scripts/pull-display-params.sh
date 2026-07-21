@@ -4,19 +4,19 @@ set -euo pipefail
 # Pull ynh960 display param files from a running Android device via adb.
 #
 # Usage:
-#   SERIAL=10.0.0.239:5555 scripts/pull-display-params.sh
+#   SN=10.0.0.239:5555 scripts/pull-display-params.sh
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BOARD="$ROOT/board/from-device"
-SERIAL="${SERIAL:-10.0.0.239:5555}"
-ADB=(adb -s "$SERIAL")
+SN="${SN:-${SERIAL:-10.0.0.239:5555}}"
+ADB=(adb -s "$SN")
 
 require_device() {
   if ! command -v adb >/dev/null 2>&1; then
     echo "ERROR: adb not found" >&2
     exit 1
   fi
-  adb connect "$SERIAL" >/dev/null 2>&1 || true
+  adb connect "$SN" >/dev/null 2>&1 || true
   "${ADB[@]}" wait-for-device
   "${ADB[@]}" root >/dev/null 2>&1 || true
   sleep 1

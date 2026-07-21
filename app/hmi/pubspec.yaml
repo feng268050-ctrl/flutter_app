@@ -51,6 +51,7 @@ dependencies:
   ffi: ^2.1.0
   bluez: ^0.8.3
   dbus: ^0.7.12
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

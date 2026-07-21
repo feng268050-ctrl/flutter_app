@@ -15,7 +15,7 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 - Run `make help` for the authoritative Makefile target list.
 - First time: `make setup`, then `make build-deps`, then `make build` (macOS: `make docker-volume-init` before build).
-- The Rockchip SDK is fixed at repo-root `linux-sdk/`; override the Flutter SDK via repo-root `.env` or `FLUTTER_SDK` (default: `flutter-sdk/`). Other common settings are `BUILD_JOBS` and `SERIAL`.
+- The Rockchip SDK is fixed at repo-root `linux-sdk/`; override the Flutter SDK via repo-root `.env` or `FLUTTER_SDK` (default: `flutter-sdk/`). Other common settings are `BUILD_JOBS` and **`SN=`** (device selection). Use **`CHIPID=`** when selecting by chip ID only (e.g. multi-board `make set-prop SN=…`). See README Make commands / `make devices`.
 - macOS: prefer Docker volume over `BUILD_BIND_MOUNT=1` (bind-mount often crashes Docker Desktop during Buildroot).
 - Flutter app work: host needs `flutter` + `flutterpi_tool` (`make fetch-flutter-sdk` / `make build-dev-deps`).
 - Do not commit unless the user explicitly asks.
@@ -97,7 +97,9 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `board/parameter-buildroot-fit.txt` (GPT / A/B) | `make apply-overlay`, `make build-img`, `make flash` (repartition once) |
 | A/B upgrade helpers (`overlay/.../ab-*.sh`, `ab-boot-confirm.service`) | First adoption: `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash`; existing P2.4 board: `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `scripts/upgrade-remote.sh`, `scripts/stream-file-progress.py`, or Makefile `upgrade` only (board already has P2.4 overlay + A/B GPT) | `make upgrade` (no firmware rebuild unless image inputs are stale) |
-| Host device registry/reboot paths (`scripts/ssh-devices.sh`, `scripts/flash-usb.sh`) | no firmware rebuild; exercise the affected `make devices` / `make reboot` / `make reboot-loader` flow |
+| Host device registry/reboot paths (`scripts/ssh-devices.sh`, `scripts/flash-usb.sh`, `scripts/usb-ssh-*.sh`, `scripts/device-target.sh`) | no firmware rebuild; exercise `make devices` (SN + ChipID) / `SN=` or `CHIPID=` selection / `make reboot` / `make reboot-loader` |
+| `product.ini` host tooling (`scripts/set-product-prop.sh`, `scripts/del-product-prop.sh`, Makefile `set-prop` / `del-prop`) | none (host SSH mutate); exercise `make set-prop` / `make del-prop` (multi-board: `CHIPID=` or `IP=` when writing product `SN=`) |
+| Overlay `read-device-serial.sh` (product.ini `sn` preference) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | Release / factory artifact | Build all changed inputs, then `make build-img`; for hardware validation: `make reboot-loader`, `make flash` |
 | `fetch-*`, `extract-linux-sdk`, `build-dev-deps` only | no firmware rebuild; name the fetch/extract/build-deps target |
 | Docs only | none |

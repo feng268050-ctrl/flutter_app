@@ -30,12 +30,27 @@ final class BoardBindings {
     DeviceSnReader deviceSnReader = const DeviceSnReader(),
     String? appVersion,
     FrameTimingSampler? frameTimingSampler,
+    String productIniPath = kProductIniPath,
+    ProductInfo? productInfo,
   }) {
     return LinuxSysInfo(
       deviceSnReader: deviceSnReader,
       appVersion: appVersion,
       mountPoints: profile.storageMounts,
       frameTimingSampler: frameTimingSampler,
+      productIniPath: productIniPath,
+      productInfo: productInfo,
+    );
+  }
+
+  /// Load [ProductInfo] from [productIniPath] (same SN rules as [sysInfo]).
+  Future<ProductInfo> productInfo({
+    DeviceSnReader deviceSnReader = const DeviceSnReader(),
+    String productIniPath = kProductIniPath,
+  }) {
+    return ProductInfo.load(
+      path: productIniPath,
+      deviceSnReader: deviceSnReader,
     );
   }
 

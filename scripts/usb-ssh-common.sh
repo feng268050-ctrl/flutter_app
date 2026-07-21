@@ -31,6 +31,102 @@ is_android_emulator_serial() {
 	esac
 }
 
+# Device selection: SN (or deprecated SERIAL) matches make devices SN or ChipID columns.
+# CHIPID matches ChipID only (use when `make set-prop SN=...` would collide with selection).
+device_select_sn() {
+	printf '%s' "${SN:-${LWS_HMI_SN:-${SERIAL:-${LWS_HMI_SERIAL:-}}}}"
+}
+
+device_select_chipid() {
+	printf '%s' "${CHIPID:-${LWS_HMI_CHIPID:-}}"
+}
+
+# Remote shell snippet: print SN<TAB>ChipID (product.ini sn preferred for SN).
+# ChipID ALWAYS uses an inline DT/cpuinfo path — never `read-device-serial.sh --chip-id`,
+# because older board helpers ignore unknown flags and still prefer product.ini sn.
+remote_device_identity_sh() {
+	cat <<'EOF'
+PRODUCT_INI="${PRODUCT_INI:-/var/lib/hmi/product.ini}"
+read_chip() {
+	for p in /proc/device-tree/serial-number /sys/firmware/devicetree/base/serial-number; do
+		[ -r "$p" ] || continue
+		tr -d '\0' <"$p"
+		return 0
+	done
+	if [ -r /proc/cpuinfo ]; then
+		s=$(awk -F: '/^[[:space:]]*Serial[[:space:]]*:/ {
+			gsub(/^[ \t]+/, "", $2)
+			print $2
+			exit
+		}' /proc/cpuinfo)
+		if [ -n "$s" ]; then
+			printf '%s\n' "$s"
+			return 0
+		fi
+	fi
+	if [ -r /etc/machine-id ]; then
+		printf 'lws-%s\n' "$(cat /etc/machine-id)"
+		return 0
+	fi
+	printf '%s\n' '-'
+}
+chip="$(read_chip | tr -d '\r' | head -n1)"
+chip="${chip#"${chip%%[![:space:]]*}"}"
+chip="${chip%"${chip##*[![:space:]]}"}"
+[ -n "$chip" ] || chip="-"
+sn=""
+if [ -r "$PRODUCT_INI" ]; then
+	sn=$(awk -F= '
+		/^[[:space:]]*#/ { next }
+		/^[[:space:]]*sn[[:space:]]*=/ {
+			v=$0
+			sub(/^[^=]*=/, "", v)
+			gsub(/\r/, "", v)
+			gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
+			if (v != "") { print v; exit 0 }
+		}
+	' "$PRODUCT_INI")
+fi
+if [ -z "$sn" ]; then
+	sn="$chip"
+fi
+sn="${sn#"${sn%%[![:space:]]*}"}"
+sn="${sn%"${sn##*[![:space:]]}"}"
+[ -n "$sn" ] || sn="$chip"
+printf '%s\t%s\n' "$sn" "$chip"
+EOF
+}
+
+# Prints SN<TAB>ChipID via remote SSH argv prefix (sshpass/ssh … user@host).
+# Pipe the script on stdin — do NOT use `ssh … sh -c "$(script)"`: remote shells
+# expand $vars / break awk inside the -c string, which collapses SN to ChipID.
+remote_device_identity_via_ssh() {
+	local out sn chip
+	out="$(remote_device_identity_sh | "$@" sh 2>/dev/null | tr -d '\r' | head -n1 || true)"
+	out="${out#"${out%%[![:space:]]*}"}"
+	out="${out%"${out##*[![:space:]]}"}"
+	[[ -n "$out" ]] || return 1
+	IFS=$'\t' read -r sn chip <<<"$out"
+	[[ -n "$sn" ]] || sn="-"
+	[[ -n "$chip" ]] || chip="-"
+	printf '%s\t%s\n' "$sn" "$chip"
+}
+
+# Back-compat: SN only (first field of identity probe).
+remote_device_serial_via_ssh() {
+	local pair sn chip
+	pair="$(remote_device_identity_via_ssh "$@" || true)"
+	[[ -n "$pair" ]] || return 1
+	IFS=$'\t' read -r sn chip <<<"$pair"
+	[[ -n "$sn" && "$sn" != "-" ]] || return 1
+	printf '%s\n' "$sn"
+}
+
+# Deprecated name kept for callers; prefer remote_device_identity_sh.
+remote_device_serial_sh() {
+	remote_device_identity_sh
+}
+
 require_sshpass() {
 	if command -v sshpass >/dev/null 2>&1; then
 		return 0
@@ -49,7 +145,7 @@ warn_sshpass_if_usb_ssh() {
 	command -v sshpass >/dev/null 2>&1 && return 0
 	{
 		echo ""
-		echo "NOTE: USB-SSH/SSH device(s) present — install sshpass for SERIAL lookup, push-app, and reboot:"
+		echo "NOTE: USB-SSH/SSH device(s) present — install sshpass for SN/ChipID lookup, push-app, and reboot:"
 		sshpass_install_hint
 	} >&2
 }

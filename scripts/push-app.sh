@@ -31,7 +31,7 @@ Usage: $0
 Deploy libapp.so + flutter_assets to /opt/hmi over SSH, then restart hmi.service.
 
 Env:
-  SERIAL / LWS_HMI_SERIAL        select board when multiple devices
+  SN / LWS_HMI_SN              select board when multiple devices
   IP / LWS_HMI_IP                registered SSH only (make connect <ip>)
   LWS_HMI_USB_SSH_PASS           root password (default: rockchip)
   PUSH_APP_WAIT_SEC              ping wait before deploy (default: 30)

@@ -11,8 +11,8 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_set
 import 'package:lws_hmi/features/boot_self_check/domain/boot_self_check_item.dart';
 import 'package:lws_hmi/features/boot_self_check/presentation/boot_self_check_dialog.dart';
 
-/// Orchestrates one-per-process boot self-check when Home is entered
-/// (lws-ui `BootSelfCheckCoordinator`).
+/// Orchestrates once-per-boot self-check when Home is entered
+/// (lws-ui `BootSelfCheckCoordinator`, boot-scoped via tmpfs marker).
 abstract final class BootSelfCheckCoordinator {
   /// Visible dwell so each row paints Checking… before the next item.
   static const minStepDuration = Duration(milliseconds: 280);
@@ -33,7 +33,11 @@ abstract final class BootSelfCheckCoordinator {
       onComplete?.call();
       return;
     }
-    if (BootSelfCheckGate.isCompletedInProcess) {
+    if (BootSelfCheckGate.shouldSkip) {
+      // Sync in-process flag when only the boot marker is set (new HMI process).
+      if (!BootSelfCheckGate.isCompletedInProcess) {
+        BootSelfCheckGate.markCompletedInProcess();
+      }
       onComplete?.call();
       return;
     }
@@ -190,8 +194,10 @@ abstract final class BootSelfCheckCoordinator {
   }
 
   /// Test hook.
-  static void resetForTest() {
+  ///
+  /// [clearBootMarker]: when false, simulates a new HMI process in the same boot.
+  static void resetForTest({bool clearBootMarker = true}) {
     _running = false;
-    BootSelfCheckGate.resetForTest();
+    BootSelfCheckGate.resetForTest(clearBootMarker: clearBootMarker);
   }
 }

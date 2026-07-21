@@ -4,6 +4,8 @@ abstract final class OsPaths {
   static const varNetwork = '/var/lib/network';
   static const varBluetooth = '/var/lib/bluetooth';
   static const varHmi = '/var/lib/hmi';
+  /// Runtime stamps (tmpfs); created by `hmi-launch.sh`, cleared on reboot.
+  static const runHmi = '/run/hmi';
   static const libexecWpa = '/usr/libexec/wpa';
   static const libexecNetwork = '/usr/libexec/network';
   static const libexecBluetooth = '/usr/libexec/bluetooth';

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_hal/stub.dart';
@@ -10,6 +11,7 @@ import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/device/device_sn_reader.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_boot_marker.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coordinator.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
@@ -197,8 +199,21 @@ Future<void> _openMonitorAlarmTab(WidgetTester tester) async {
 }
 
 void main() {
-  setUp(() {
+  late Directory markerDir;
+
+  setUp(() async {
+    markerDir = await Directory.systemTemp.createTemp('boot-sc-marker-');
+    BootSelfCheckBootMarker.pathOverrideForTest =
+        '${markerDir.path}/boot-self-check-done';
     BootSelfCheckCoordinator.resetForTest();
+  });
+
+  tearDown(() async {
+    BootSelfCheckCoordinator.resetForTest();
+    BootSelfCheckBootMarker.resetForTest();
+    if (markerDir.existsSync()) {
+      await markerDir.delete(recursive: true);
+    }
   });
 
   BootSelfCheckSettings disabledBootCheck() =>

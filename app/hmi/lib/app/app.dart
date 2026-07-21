@@ -8,12 +8,14 @@ import 'package:lws_hmi/app/app_navigation.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/app_theme.dart';
+import 'package:lws_hmi/app/hmi_route_restore.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_store.dart';
+import 'package:lws_hmi/features/settings/application/product_keyboard_profile.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
@@ -74,6 +76,13 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     mediaAudio: _services.audio,
   );
 
+  late final CyberImeMutableRegionalLayoutProvider _regionalLayout =
+      CyberImeMutableRegionalLayoutProvider();
+
+  final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
+
+  bool _restoreScheduled = false;
+
   @override
   void initState() {
     super.initState();
@@ -84,18 +93,49 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     CyberImeLanguageRegistry.register(
       const CyberImeFixedLanguageProvider(CyberImeGlobalKind.english),
     );
+    CyberImeRegionalLayoutRegistry.register(_regionalLayout);
     // Prime ALSA + sticky mpg123 so the first UI click is not cold-start.
     unawaited(_services.audio.warmClickSession());
+    unawaited(_bootstrapKeyboardProfile());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Settings restore only — do not start Modbus here. Home / Demo pull it
       // when needed so the first Home frames are not fighting RTU poll.
       unawaited(_services.restorePersistedSettingsOnce());
+      unawaited(_maybeRestoreRoute());
     });
+  }
+
+  Future<void> _bootstrapKeyboardProfile() async {
+    try {
+      final layout = await _services.keyboard.getLayout();
+      final profile = ProductKeyboardProfile.fromLayout(layout);
+      _regionalLayout.profile = profile.imeProfile;
+    } catch (e) {
+      debugPrint('keyboard profile bootstrap failed: $e');
+    }
+  }
+
+  Future<void> _maybeRestoreRoute() async {
+    if (_restoreScheduled) return;
+    _restoreScheduled = true;
+    final token = await HmiRouteRestore.take();
+    if (token == null) return;
+    final route = HmiRouteRestore.namedRouteFor(token);
+    if (route == null || route == AppRoutes.home) return;
+    final nav = _navKey.currentState;
+    if (nav == null) return;
+    nav.pushNamed(
+      route,
+      arguments: HmiRouteRestore.wantsKeyboardPage(token)
+          ? HmiRouteRestore.settingsKeyboard
+          : null,
+    );
   }
 
   @override
   void dispose() {
     CyberClickSoundRegistry.register(null);
+    CyberImeRegionalLayoutRegistry.register(null);
     if (widget.miscSettingsStore == null) {
       _miscSettingsStore.dispose();
     }
@@ -180,12 +220,16 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
               theme: buildAppTheme(),
               scrollBehavior: const AppScrollBehavior(),
               builder: _appBuilder,
+              navigatorKey: _navKey,
               initialRoute: AppRoutes.home,
               onGenerateRoute: (settings) {
                 final Widget page;
                 switch (settings.name) {
                   case AppRoutes.settings:
-                    page = const SettingsPage();
+                    page = SettingsPage(
+                      openKeyboardOnLaunch: settings.arguments ==
+                          HmiRouteRestore.settingsKeyboard,
+                    );
                   case AppRoutes.monitor:
                     page = const MonitorPage();
                   case AppRoutes.demo:

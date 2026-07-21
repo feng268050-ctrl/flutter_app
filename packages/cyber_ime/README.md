@@ -14,8 +14,11 @@ instead of forking keyboard widgets under feature folders.
 | Policy | `CyberImeNumericPolicy`, `CyberImeBottomRowProfile` |
 | Session | `CyberImeSession`, `CyberImeAction`, `CyberImeCommitTarget` |
 | Language | `CyberImeLanguageProvider`, `CyberImeLanguageRegistry` |
-| Layouts | Keyboard A (QWERTY + `123` + `#+=`), Keyboard B (dedicated numeric) |
+| Regional layout | `CyberImeRegionalProfile`, `CyberImeRegionalLayoutRegistry`, `CyberImeKeyCode`, `CyberImeKeyMaps` |
+| Layouts | Keyboard A (regional letters + `123` + `#+=`), Keyboard B (dedicated numeric) |
 | Overlay | `CyberImeOverlay`, `CyberImeKeyboardPanel` |
+| Layout preview | `CyberImeLayoutPreview` (keycap strip only) |
+| Layout chooser | `CyberImeLayoutChooser` (Segment + caption + preview — product Settings drop-in) |
 | Field chrome | `CyberImeTextField` |
 
 ## Path wiring
@@ -31,25 +34,57 @@ dependencies:
 import 'package:cyber_ime/cyber_ime.dart';
 ```
 
-Register a language provider at App bootstrap (optional; defaults to English):
+Register providers at App bootstrap:
 
 ```dart
 CyberImeLanguageRegistry.register(
   const CyberImeFixedLanguageProvider(CyberImeGlobalKind.english),
 );
+CyberImeRegionalLayoutRegistry.register(
+  CyberImeMutableRegionalLayoutProvider(), // or fixed ansiUs
+);
 ```
 
 ## Keyboard kinds
 
-- **Keyboard A:** QWERTY → primary symbols (`123`) → extended (`#+=`) → `ABC`.
+- **Keyboard A:** regional letter layer → primary symbols (`123`) → extended (`#+=`) → `ABC`.
 - **Keyboard B:** dedicated pad `1–9 ⌫ / C / - / . 0 00 ⏎` (no `abc` switch).
+
+## Regional layouts (KeyCode + KeyMap)
+
+Keyboard A letter arrangements are built from:
+
+1. **`CyberImeKeyCode`** — typewriter-block key identity (US ANSI physical
+   positions as names). **No F1–F12 / NumPad codes** — those stay in
+   flutter-pi / XKB / `cyber_hal` hardware path.
+2. **`CyberImeKeyMaps`** — per-profile character levels (`base` / `shift` /
+   optional `altGr`) for ANSI US, DE QWERTZ, FR AZERTY, JIS JP.
+
+Soft keycaps and commit text resolve through the KeyMap for the registered
+`CyberImeRegionalProfile`. Physical USB/BT typing continues via XKB using the
+matching layout id (`us` / `de` / `fr` / `jp`); product Settings keeps soft
+KeyMap and XKB preference on the same profile so both paths agree on the
+typewriter block. **Do not** remap HID scancodes in Dart.
+
+### Soft vs physical simplifications
+
+| Topic | Soft CyberIME | Physical XKB |
+|-------|---------------|--------------|
+| F-keys / NumPad | Not drawn | Hardware / flutter-pi |
+| ANSI modifiers | Ctrl / Alt / Space bottom; Enter on home row | Full ANSI via XKB `us` |
+| ANSI Shift layer | KeyMap `base`/`shift` + long-press slide popup | Shift via XKB |
+| QWERTZ ISO | Short left Shift + `<`; ü ö ä #; Ctrl/Alt/Space/AltGr; Y/Z via KeyMap | XKB `de` |
+| AZERTY AltGr | Long-press secondaries + AltGr layer approximate third level | Full AltGr via XKB |
+| JIS 半/全・無変換・変換・カナ | Soft keys + `CyberImeJpInputMode` (英数/ひらがな/カタカナ); Shift = small kana | XKB `jp` + `jp106` |
+| Preview | `CyberImeLayoutChooser` / `CyberImeLayoutPreview` | Same KeyMap labels |
 
 ## ChineseGlobal (deferred)
 
 v1 ships **EnglishGlobal** letter caps only. When the language provider reports
 Chinese, EnglishGlobal is still shown until ChineseGlobal assets/layout are
 ported from lws-ui (OpenSpec task 3.6). Do not claim Chinese parity in product
-docs until that task is done.
+docs until that task is done. Regional profiles (ANSI/QWERTZ/…) are orthogonal
+to chinese/english language selection.
 
 ## Fonts / assets
 

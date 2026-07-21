@@ -28,7 +28,15 @@ XKBOPTIONS=""
     expect(layout.id, 'us');
   });
 
-  test('setLayout writes pref without restart when disabled', () async {
+  test('listLayouts includes product us/de/fr/jp and demo ru', () async {
+    final kbd = LinuxKeyboard(applyRestart: false);
+    final ids = (await kbd.listLayouts()).map((e) => e.id).toList();
+    expect(ids, containsAll(['us', 'de', 'fr', 'jp', 'ru']));
+    expect((await kbd.listLayouts()).firstWhere((e) => e.id == 'jp').model,
+        'jp106');
+  });
+
+  test('setLayout writes pref; restart optional', () async {
     final tmp = await Directory.systemTemp.createTemp('lws-kbd-');
     addTearDown(() => tmp.delete(recursive: true));
     final pref = File('${tmp.path}/keyboard.conf');
@@ -45,12 +53,19 @@ XKBOPTIONS=""
       },
     );
 
-    await kbd.setLayout(LinuxKeyboard.ru);
+    await kbd.setLayout(LinuxKeyboard.de, restart: false);
     expect(await pref.exists(), isTrue);
-    expect((await pref.readAsString()).contains('layout=ru'), isTrue);
+    expect((await pref.readAsString()).contains('layout=de'), isTrue);
     expect(await etc.exists(), isTrue);
+    expect(restarts, 0);
+    expect((await kbd.getLayout()).id, 'de');
+
+    await kbd.restartToApply();
     expect(restarts, 1);
-    expect((await kbd.getLayout()).id, 'ru');
-    expect(await kbd.listLayouts(), hasLength(2));
+
+    await kbd.setLayout(LinuxKeyboard.jp);
+    expect((await pref.readAsString()).contains('layout=jp'), isTrue);
+    expect((await pref.readAsString()).contains('model=jp106'), isTrue);
+    expect(restarts, 2);
   });
 }

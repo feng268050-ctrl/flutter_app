@@ -64,6 +64,35 @@ void main() {
     kb.dispose();
   });
 
+  testWidgets('DE regional profile shows QWERTZ letter caps', (tester) async {
+    CyberImeRegionalLayoutRegistry.register(
+      const CyberImeFixedRegionalLayoutProvider(CyberImeRegionalProfile.qwertz),
+    );
+    addTearDown(() => CyberImeRegionalLayoutRegistry.register(null));
+
+    final ctrl = TextEditingController();
+    final kb = CyberImeKeyboardController(
+      fieldType: CyberImeFieldType.text,
+      commit: CyberImeControllerCommit(ctrl),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CyberImeKeyboardPanel(controller: kb),
+        ),
+      ),
+    );
+
+    expect(find.text('z'), findsWidgets); // physical Y → z
+    expect(find.text('y'), findsWidgets); // physical Z → y
+    expect(find.text('F1'), findsNothing);
+    expect(find.text('F12'), findsNothing);
+    // No dedicated numpad chrome on Keyboard A.
+    expect(find.text('00'), findsNothing);
+    kb.dispose();
+  });
+
   testWidgets('Keyboard B clear and enter', (tester) async {
     final ctrl = TextEditingController(text: '42');
     var entered = false;
@@ -108,7 +137,7 @@ void main() {
     final center = tester.getCenter(find.text('q'));
     final gesture = await tester.startGesture(center);
     await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
-    // Popup shows Q / 1 / q — secondary "1" highlighted by default.
+    // Default phone pad: popup Q / 1 / q — secondary "1" highlighted by default.
     expect(find.text('1'), findsWidgets);
     await gesture.up();
     await tester.pump();
@@ -155,8 +184,8 @@ void main() {
       ),
     );
 
-    expect(find.text('.'), findsOneWidget);
-    expect(find.text(','), findsOneWidget);
+    expect(find.text('.'), findsWidgets);
+    expect(find.text(','), findsWidgets);
     kb.dispose();
   });
 
@@ -185,5 +214,66 @@ void main() {
     expect(find.byType(CyberBackdropBlur), findsOneWidget);
     expect(find.text('q'), findsOneWidget);
     kb.dispose();
+  });
+
+  testWidgets('CyberImeLayoutPreview shows secondaries and Material Icons',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: CyberImeLayoutPreview(profile: CyberImeRegionalProfile.ansi),
+        ),
+      ),
+    );
+
+    // Shift-layer secondary on digit 1.
+    expect(find.text('1'), findsWidgets);
+    expect(find.text('!'), findsWidgets);
+    // Material Icons for Shift / Backspace / Enter (not unicode ⇧⌫⏎).
+    expect(find.byIcon(Icons.arrow_upward), findsWidgets);
+    expect(find.byIcon(Icons.backspace_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.keyboard_return), findsOneWidget);
+    expect(find.text('Ctrl'), findsWidgets);
+    expect(find.text('⇧'), findsNothing);
+  });
+
+  testWidgets('QWERTZ preview has one ISO L-Enter', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: CyberImeLayoutPreview(profile: CyberImeRegionalProfile.qwertz),
+        ),
+      ),
+    );
+    expect(find.byIcon(Icons.keyboard_return), findsOneWidget);
+    expect(find.text('ü'), findsWidgets);
+    expect(find.text('#'), findsWidgets);
+  });
+
+  testWidgets('CyberImeLayoutChooser switches Segment and preview',
+      (tester) async {
+    var selected = CyberImeRegionalProfile.defaultSoft;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              return CyberImeLayoutChooser(
+                selected: selected,
+                onSelected: (p) => setState(() => selected = p),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Default'), findsWidgets);
+    expect(find.text('q'), findsWidgets);
+    await tester.tap(find.text('ANSI'));
+    await tester.pumpAndSettle();
+    expect(selected, CyberImeRegionalProfile.ansi);
+    expect(find.text('Ctrl'), findsWidgets);
+    expect(find.text('!'), findsWidgets);
   });
 }

@@ -65,7 +65,7 @@ if (resolveHalBackend(boardId: profile.info.boardId) == HalBackendKind.stub) {
 
 ## Keyboard layouts (v1)
 
-`LinuxKeyboard.listLayouts` ships **`us` and `ru` only**. Additional XKB layout ids are deferred to a product SKU list (image must keep `xkeyboard-config` for any id that is listed).
+`LinuxKeyboard.listLayouts` ships product **`us` / `de` / `fr` / `jp`** (JIS uses model `jp106`) plus Demo-only **`ru`**. Soft CyberIME layouts are separate; physical text stays on XKB (no Dart scancode remap). `setLayout(..., restart: false)` persists without restart; `restartToApply()` restarts HMI for XKB.
 
 ## App dependency
 

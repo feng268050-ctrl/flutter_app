@@ -1,43 +1,128 @@
 import 'package:cyber_ime/src/field/cyber_ime_bottom_row_profile.dart';
 import 'package:cyber_ime/src/field/cyber_ime_field_profile.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_key.dart';
+import 'package:cyber_ime/src/keyboard/cyber_ime_key_code.dart';
+import 'package:cyber_ime/src/keyboard/cyber_ime_key_map.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_layout.dart';
+import 'package:cyber_ime/src/keyboard/cyber_ime_typewriter_layouts.dart';
+import 'package:cyber_ime/src/session/cyber_ime_regional_layout.dart';
 
-/// Factory for Keyboard A / B layouts (lws-ui KeyboardLayouts port).
+/// Factory for Keyboard A / B layouts.
+///
+/// - [CyberImeRegionalProfile.defaultSoft]: original CyberIME phone pad
+/// - ANSI: typewriter block + Ctrl/Alt/Space (Shift layer via KeyMap; no F/NumPad)
+/// - QWERTZ / AZERTY: ISO typewriter + Ctrl/Alt/Space/AltGr (no F-row / NumPad)
+/// - JIS: typewriter block + AltGr (no F-row / NumPad)
 abstract final class CyberImeLayouts {
-  static CyberImeLayout qwerty({
+  /// Keyboard A letter layer for the active (or explicit) regional profile.
+  static CyberImeLayout letters({
+    CyberImeRegionalProfile? profile,
     CyberImeBottomRowProfile bottomRow = CyberImeBottomRowProfile.defaults,
     CyberImeKeyboardKind kind = CyberImeKeyboardKind.englishGlobal,
   }) {
-    const row1Secondaries = [
-      '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-    ];
-    const row2Secondaries = [
-      '~', '!', '@', '#', '%', '"', "'", '*', '?',
-    ];
-    const row3Secondaries = ['(', ')', '-', '_', ':', ';', '/'];
-    const letters1 = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'];
-    const letters2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'];
-    const letters3 = ['Z', 'X', 'C', 'V', 'B', 'N', 'M'];
+    final regional =
+        profile ?? CyberImeRegionalLayoutRegistry.provider.profile;
+    if (regional == CyberImeRegionalProfile.defaultSoft) {
+      return _phoneDefault(bottomRow: bottomRow, kind: kind);
+    }
+    return CyberImeTypewriterLayouts.build(
+      regional,
+      kind: kind,
+      bottomRow: cyberImeBottomRowKeys(bottomRow),
+    );
+  }
 
-    CyberImeKeyDef letter(String primary, String secondary) => CyberImeKeyDef(
-          id: CyberImeKeyId.letter,
-          primary: primary,
-          secondary: secondary,
-          isLetter: true,
-        );
+  /// Backward-compatible alias.
+  static CyberImeLayout qwerty({
+    CyberImeBottomRowProfile bottomRow = CyberImeBottomRowProfile.defaults,
+    CyberImeKeyboardKind kind = CyberImeKeyboardKind.englishGlobal,
+    CyberImeRegionalProfile? profile,
+  }) {
+    return letters(profile: profile, bottomRow: bottomRow, kind: kind);
+  }
+
+  /// Original CyberIME phone QWERTY (3 letter rows + bottom) with digit secondaries.
+  static CyberImeLayout _phoneDefault({
+    required CyberImeBottomRowProfile bottomRow,
+    required CyberImeKeyboardKind kind,
+  }) {
+    const profile = CyberImeRegionalProfile.ansi;
+    const row1Codes = <CyberImeKeyCode>[
+      CyberImeKeyCode.keyQ,
+      CyberImeKeyCode.keyW,
+      CyberImeKeyCode.keyE,
+      CyberImeKeyCode.keyR,
+      CyberImeKeyCode.keyT,
+      CyberImeKeyCode.keyY,
+      CyberImeKeyCode.keyU,
+      CyberImeKeyCode.keyI,
+      CyberImeKeyCode.keyO,
+      CyberImeKeyCode.keyP,
+    ];
+    const row2Codes = <CyberImeKeyCode>[
+      CyberImeKeyCode.keyA,
+      CyberImeKeyCode.keyS,
+      CyberImeKeyCode.keyD,
+      CyberImeKeyCode.keyF,
+      CyberImeKeyCode.keyG,
+      CyberImeKeyCode.keyH,
+      CyberImeKeyCode.keyJ,
+      CyberImeKeyCode.keyK,
+      CyberImeKeyCode.keyL,
+    ];
+    const row3Codes = <CyberImeKeyCode>[
+      CyberImeKeyCode.keyZ,
+      CyberImeKeyCode.keyX,
+      CyberImeKeyCode.keyC,
+      CyberImeKeyCode.keyV,
+      CyberImeKeyCode.keyB,
+      CyberImeKeyCode.keyN,
+      CyberImeKeyCode.keyM,
+    ];
+    const row1Secondaries = <CyberImeKeyCode>[
+      CyberImeKeyCode.digit1,
+      CyberImeKeyCode.digit2,
+      CyberImeKeyCode.digit3,
+      CyberImeKeyCode.digit4,
+      CyberImeKeyCode.digit5,
+      CyberImeKeyCode.digit6,
+      CyberImeKeyCode.digit7,
+      CyberImeKeyCode.digit8,
+      CyberImeKeyCode.digit9,
+      CyberImeKeyCode.digit0,
+    ];
+    const row2Hints = ['~', '!', '@', '#', '%', '"', "'", '*', '?'];
+    const row3Hints = ['(', ')', '-', '_', ':', ';', '/'];
+
+    CyberImeKeyDef letter(CyberImeKeyCode code, String? secondary) {
+      final primary = CyberImeKeyMaps.resolve(profile, code, shiftOn: true);
+      return CyberImeKeyDef(
+        id: CyberImeKeyId.letter,
+        primary: primary,
+        secondary: secondary,
+        isLetter: true,
+        keyCode: code,
+      );
+    }
 
     return CyberImeLayout(
       kind: kind,
       rows: [
         CyberImeKeyboardRow([
-          for (var i = 0; i < letters1.length; i++)
-            letter(letters1[i], row1Secondaries[i]),
+          for (var i = 0; i < row1Codes.length; i++)
+            letter(
+              row1Codes[i],
+              CyberImeKeyMaps.resolve(
+                profile,
+                row1Secondaries[i],
+                shiftOn: false,
+              ),
+            ),
         ]),
         CyberImeKeyboardRow(
           [
-            for (var i = 0; i < letters2.length; i++)
-              letter(letters2[i], row2Secondaries[i]),
+            for (var i = 0; i < row2Codes.length; i++)
+              letter(row2Codes[i], row2Hints[i]),
           ],
           leadingInsetWeight: 0.5,
           trailingInsetWeight: 0.5,
@@ -48,8 +133,8 @@ abstract final class CyberImeLayouts {
             primary: '⇧',
             widthWeight: 1.4,
           ),
-          for (var i = 0; i < letters3.length; i++)
-            letter(letters3[i], row3Secondaries[i]),
+          for (var i = 0; i < row3Codes.length; i++)
+            letter(row3Codes[i], row3Hints[i]),
           const CyberImeKeyDef(
             id: CyberImeKeyId.backspace,
             primary: '⌫',

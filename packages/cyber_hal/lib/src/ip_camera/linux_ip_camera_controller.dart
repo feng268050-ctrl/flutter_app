@@ -1,17 +1,19 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:cyber_hal/src/ip_camera/ip_camera_controller.dart';
 import 'package:cyber_hal/src/ip_camera/ip_camera_models.dart';
+import 'package:cyber_hal/src/ip_camera/ip_camera_probes.dart';
 import 'package:cyber_hal/src/ip_camera/ip_camera_recording.dart';
 import 'package:cyber_hal/src/ip_camera/linux_ip_camera_recorder.dart';
 import 'package:flutter/foundation.dart';
 
-/// Linux [IpCameraController]: HAL-owned ICMP health (path-agnostic).
+/// Linux [IpCameraController]: HAL-owned health (path-agnostic).
 ///
 /// Reachability of [cameraHost] may be via eth0, wlan0, or any routed path —
-/// this type only probes the given host. MediaMTX / dedicated-link bring-up
-/// belong in the product App session.
+/// this type only probes the given host. Default Linux probe is a short TCP
+/// connect to the RTSP port ([tcpRtspPortProbe]); inject [icmpIpCameraProbe],
+/// [rtspOptionsProbe], or [relayInformedProbe] when needed. MUST NOT SETUP/PLAY
+/// `/PR0`/`/PR1`. MediaMTX / dedicated-link bring-up belong in the product App.
 final class LinuxIpCameraController implements IpCameraController {
   LinuxIpCameraController({
     required String cameraHost,
@@ -29,7 +31,9 @@ final class LinuxIpCameraController implements IpCameraController {
           paths: streamPaths,
         ),
         recording = recording ?? LinuxIpCameraRecordingController(),
-        _probe = probe ?? _defaultIcmpProbe {
+        // Locked default after device ladder (see openspec camera-health-probe-ladder):
+        // TCP :554 short-connect — ICMP/OPTIONS remain injectable.
+        _probe = probe ?? tcpRtspPortProbe() {
     if (this.cameraHost.isEmpty) {
       throw ArgumentError.value(cameraHost, 'cameraHost', 'must be non-empty');
     }
@@ -253,22 +257,6 @@ final class LinuxIpCameraController implements IpCameraController {
   void _ensureNotDisposed() {
     if (_disposed) {
       throw StateError('IpCameraController disposed');
-    }
-  }
-
-  static Future<bool> _defaultIcmpProbe(String host) async {
-    if (!Platform.isLinux && !Platform.isMacOS) {
-      return false;
-    }
-    try {
-      // Linux: -W seconds; macOS: -W milliseconds — use -c 1 -W 1 on Linux.
-      final args = Platform.isLinux
-          ? <String>['-c', '1', '-W', '1', host]
-          : <String>['-c', '1', '-W', '1000', host];
-      final result = await Process.run('ping', args);
-      return result.exitCode == 0;
-    } catch (_) {
-      return false;
     }
   }
 }

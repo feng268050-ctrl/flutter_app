@@ -70,6 +70,17 @@ C002 dialog severity SHALL follow existing Advanced Settings `allowWorkAfterCame
 - **THEN** C002 SHALL be delivered as `AlarmSignalEvent`s into the same coordinator as Modbus alarms
 - **AND** the App MUST NOT open a separate camera-only warn host or duplicate episode controller
 
+### Requirement: C002 health probes must not displace MediaMTX stream clients
+
+Camera communication C002 SHALL continue to follow HAL `IpCameraHealth` only. Probe implementations used to drive that health MUST NOT steal the camera’s exclusive `/PR0` or `/PR1` consumers from the product MediaMTX upstream. A false unhealthy caused by the probe itself competing for PR0/PR1 is a defect.
+
+#### Scenario: Probe under live relay does not force C002
+
+- **WHEN** MediaMTX is successfully relaying camera PR0 (or PR1)
+- **AND** the camera host remains reachable
+- **AND** HAL health probing is running
+- **THEN** C002 MUST NOT rise solely because the health probe opened a competing PR0/PR1 session
+
 ### Requirement: Camera C002 participates in laser work policy
 
 While C002 fault is active in the warn episode map, existing `LaserWorkGuard` / `LaserAlarmPolicy` SHALL treat camera as blocking unless `allowWorkAfterCameraAlarm` is ON (or `keepLaserOnWhileAlarmed` applies to runtime interrupt). Fault and recovery edges SHALL re-evaluate soft laser interrupt via the existing guard.

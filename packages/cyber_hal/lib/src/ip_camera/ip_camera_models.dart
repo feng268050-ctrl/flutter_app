@@ -93,5 +93,8 @@ final class IpCameraHealth {
   int get hashCode => Object.hash(phase, consecutiveOk, consecutiveFail, detail);
 }
 
-/// Injectable one-shot reachability probe (default: ICMP ping).
+/// Injectable one-shot reachability probe.
+///
+/// Built-ins: [icmpIpCameraProbe], [tcpRtspPortProbe], [rtspOptionsProbe],
+/// [relayInformedProbe]. MUST NOT SETUP/PLAY native `/PR0` or `/PR1`.
 typedef IpCameraProbe = Future<bool> Function(String cameraHost);

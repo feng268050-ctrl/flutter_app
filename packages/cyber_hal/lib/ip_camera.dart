@@ -10,6 +10,7 @@ library;
 
 export 'package:cyber_hal/src/ip_camera/ip_camera_controller.dart';
 export 'package:cyber_hal/src/ip_camera/ip_camera_models.dart';
+export 'package:cyber_hal/src/ip_camera/ip_camera_probes.dart';
 export 'package:cyber_hal/src/ip_camera/ip_camera_recording.dart';
 export 'package:cyber_hal/src/ip_camera/linux_ip_camera_controller.dart';
 export 'package:cyber_hal/src/ip_camera/linux_ip_camera_recorder.dart';

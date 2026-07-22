@@ -31,7 +31,7 @@ final class IpCameraProductSession {
                 ? LinuxIpCameraMediaMtxRelay()
                 : StubIpCameraMediaMtxRelay());
 
-  /// Build with host from product.ini / default; Linux ICMP controller.
+  /// Build with host from product.ini / default; Linux HAL health (TCP :554 default).
   factory IpCameraProductSession.create({
     required String? productCameraIp,
     required EthernetController ethernet,
@@ -39,12 +39,14 @@ final class IpCameraProductSession {
     IpCameraEth0Path? eth0Path,
     IpCameraMediaMtxRelay? relay,
     IpCameraController? cameraOverride,
+    IpCameraProbe? probe,
   }) {
     final host = _resolveHost(productCameraIp);
     final camera = cameraOverride ??
         LinuxIpCameraController(
           cameraHost: host,
           recoveryStablePings: 3,
+          probe: probe,
         );
     return IpCameraProductSession(
       camera: camera,

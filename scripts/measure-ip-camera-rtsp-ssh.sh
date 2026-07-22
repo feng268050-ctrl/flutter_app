@@ -104,13 +104,12 @@ maybe_stop_services() {
 
 maybe_apply_tune() {
   if [[ "$APPLY_ETH0_TUNE" == "1" ]]; then
-    echo "==> APPLY_ETH0_TUNE=1 — pushing eth0-tune helper+script and applying"
+    echo "==> APPLY_ETH0_TUNE=1 — pushing eth0-tune.sh and applying"
     usb_ssh_session_run_scp "$ROOT" "$IFACE" \
-      "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/network/eth0-tune" \
       "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/network/eth0-tune.sh" \
       "${TARGET_USER}@${TARGET_ADDR}:/tmp/"
-    # Re-apply IPv4 after tune: ring/pause ops can leave eth0 DOWN briefly.
-    remote 'chmod 755 /tmp/eth0-tune /tmp/eth0-tune.sh; mkdir -p /usr/libexec/network; cp -f /tmp/eth0-tune /tmp/eth0-tune.sh /usr/libexec/network/; /usr/libexec/network/eth0-tune.sh eth0; /usr/libexec/network/apply-eth0.sh || true; sleep 2; echo rps=$(cat /sys/class/net/eth0/queues/rx-0/rps_cpus); echo flow=$(cat /sys/module/stmmac/parameters/flow_ctrl) wd=$(cat /sys/module/stmmac/parameters/watchdog); sysctl net.core.rmem_max net.core.netdev_max_backlog; ip -brief addr show eth0'
+    # Re-apply IPv4 after tune in case link was briefly disrupted.
+    remote 'chmod 755 /tmp/eth0-tune.sh; mkdir -p /usr/libexec/network; cp -f /tmp/eth0-tune.sh /usr/libexec/network/; /usr/libexec/network/eth0-tune.sh eth0; /usr/libexec/network/apply-eth0.sh || true; sleep 2; echo rps=$(cat /sys/class/net/eth0/queues/rx-0/rps_cpus); echo flow=$(cat /sys/module/stmmac/parameters/flow_ctrl) wd=$(cat /sys/module/stmmac/parameters/watchdog); sysctl net.core.rmem_max net.core.netdev_max_backlog; ip -brief addr show eth0'
   fi
   if [[ -n "$SET_RX_USECS" ]]; then
     echo "==> SET_RX_USECS=${SET_RX_USECS} (ethtool -C eth0 rx-usecs …)"

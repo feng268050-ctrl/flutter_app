@@ -6,7 +6,7 @@
 #   secondary throttle under the wrong clock; still useful on this path)
 # - Raise UDP socket ceilings + RPS
 #
-# IMPORTANT: do NOT call ethtool -G / the eth0-tune ring-resize helper here.
+# IMPORTANT: do NOT call ethtool -G / resize DMA rings here.
 # Ring resize downs eth0 and, with HMI/networkd, caused tens–hundreds of
 # Link Up/Down events and destroyed RTSP.
 #

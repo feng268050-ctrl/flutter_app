@@ -139,7 +139,7 @@ ethtool -S eth0 | grep -E 'mmc_rx_crc_error|mmc_rx_udp_err'
 | **只改 `clock_in_out="input"`，仍保留 SoC `assigned-clock-rates` 50 MHz** | remux 崩到 ~**0.5 Mbps**、RTP 丢失极高 | 必须同时：`assigned-clock-parents` 含 `gmac1_clkin`，**删除** SoC 对 `SCLK_GMAC1` 的 rate 赋值，并设 `&gmac1_clkin { clock-frequency = <50000000>; }` |
 | **相信 sysfs `rx_crc_errors`** | 一直为 0，误判「无 CRC」 | 看 **`ethtool -S eth0` → `mmc_rx_crc_error` / `mmc_rx_udp_err`** |
 | **用 gst/`rx_bytes` 与 Mac remux 横比** | 数字不可比 | 三端都用同一 ffmpeg remux 脚本 |
-| **`ethtool -G` / C 版 `eth0-tune` 改 ring** | eth0 反复 Link Up/Down，RTSP 全滅 | `eth0-tune.sh` **只做 sysfs/sysctl + pause off**，禁止热路径 ring resize |
+| **`ethtool -G` 改 ring** | eth0 反复 Link Up/Down，RTSP 全滅 | `eth0-tune.sh` **只做 sysfs/sysctl + pause off**，禁止热路径 ring resize |
 | **`networkctl reconfigure eth0` 无谓触发** | carrier flap | App / apply 路径避免；见 `ip_camera_eth0_path.dart` |
 | **多消费者同时拉相机** | 放大 UDP 丢包 | 测量时 `STOP_SERVICES=1`；产品经 MediaMTX 单上游 |
 | **Android adb serial ≠ 产品 SN** | 连错设备 | `adb devices -l`；Linux 用 `make devices` / `SN=` |

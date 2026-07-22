@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coordinator.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/home/presentation/home_camera_status_icon.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
+import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
+import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
 const double _kDesignW = 1280;
@@ -61,10 +64,34 @@ class _HomePageState extends State<HomePage> {
   /// starts immediately so alarms can subscribe without opening Monitor.
   void _bootstrapHome() {
     if (!mounted || _homeBootstrapped) {
+      // #region agent log
+      WarnAlarmDebugLog.log(
+        hypothesisId: 'A',
+        location: 'home_page.dart:_bootstrapHome',
+        message: 'bootstrap skipped',
+        data: {
+          'mounted': mounted,
+          'already': _homeBootstrapped,
+        },
+      );
+      // #endregion
       return;
     }
     _homeBootstrapped = true;
     final services = AppScope.maybeOf(context);
+    // #region agent log
+    WarnAlarmDebugLog.log(
+      hypothesisId: 'A',
+      location: 'home_page.dart:_bootstrapHome',
+      message: 'bootstrap begin',
+      data: {
+        'servicesNull': services == null,
+        'shouldSkip': BootSelfCheckGate.shouldSkip,
+        'gateActive': BootSelfCheckGate.isActive,
+        'hasCompletedBoot': BootSelfCheckGate.hasCompletedThisBoot,
+      },
+    );
+    // #endregion
     if (services == null) {
       return;
     }
@@ -77,7 +104,53 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) {
         return;
       }
-      unawaited(services.ensureModbusLive());
+      // #region agent log
+      WarnAlarmDebugLog.log(
+        hypothesisId: 'A',
+        location: 'home_page.dart:startModbusLive',
+        message: 'startModbusLive entered',
+        data: {
+          'warnScopeNull': WarnAlarmScope.maybeOf(context) == null,
+          'gateActive': BootSelfCheckGate.isActive,
+        },
+      );
+      // #endregion
+      final warn = WarnAlarmScope.maybeOf(context);
+      unawaited(() async {
+        // Poll first so warn adapter prime sees cached attributes.
+        await services.ensureModbusLive();
+        // #region agent log
+        WarnAlarmDebugLog.log(
+          hypothesisId: 'E',
+          location: 'home_page.dart:afterEnsureModbus',
+          message: 'ensureModbusLive finished',
+          data: {
+            'modbusLiveStarted': services.modbusLiveStarted,
+            'modbusLiveAllowed': services.modbusLiveAllowed,
+            'warnNull': warn == null,
+            'mounted': mounted,
+          },
+        );
+        // #endregion
+        if (!mounted || warn == null) {
+          return;
+        }
+        // Let self-check route fully pop before warn dialogs use the navigator.
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        if (!mounted) {
+          return;
+        }
+        await warn.start();
+        // #region agent log
+        WarnAlarmDebugLog.log(
+          hypothesisId: 'A',
+          location: 'home_page.dart:afterWarnStart',
+          message: 'warn.start + flush done',
+          data: const {},
+        );
+        // #endregion
+        await warn.onPresentationGateOpened();
+      }());
     }
 
     final settings = BootSelfCheckScope.maybeOf(context)?.settings;

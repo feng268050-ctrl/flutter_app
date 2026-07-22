@@ -42,10 +42,14 @@ class CyberModal extends StatelessWidget {
     final content = Padding(padding: padding, child: child);
 
     if (useFakeGlass) {
+      // Dark panels stay charcoal; warm/light warn prompts use cream (lws-ui frost light).
+      final fill = blurTint == CyberBlurTint.warm
+          ? const Color(0xE8FFFCFA)
+          : const Color(0xCC1A1A1E);
       return ClipRRect(
         borderRadius: radius,
         child: ColoredBox(
-          color: const Color(0xCC1A1A1E),
+          color: fill,
           child: content,
         ),
       );

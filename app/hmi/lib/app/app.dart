@@ -13,6 +13,12 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_sco
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
+import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
+import 'package:lws_hmi/features/settings/application/advanced_settings_thresholds_controller.dart';
+import 'package:lws_hmi/features/settings/application/ai_assistance_settings.dart';
+import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
+import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/product_keyboard_profile.dart';
@@ -20,6 +26,8 @@ import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
 import 'package:lws_hmi/features/system_status/presentation/system_status_overlay_host.dart';
+import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
+import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/ui/cyber/app_indexed_click_sound.dart';
 import 'package:lws_hmi/ui/demo/p2_demo_page.dart';
 
@@ -36,6 +44,7 @@ class LwsHmiApp extends StatefulWidget {
     this.services,
     this.soundEffectStore,
     this.miscSettingsStore,
+    this.advancedSettingsStore,
     this.bootSelfCheckSettings,
   });
 
@@ -49,6 +58,9 @@ class LwsHmiApp extends StatefulWidget {
 
   /// Optional override for tests (inject fake Misc JSON path / store).
   final MiscSettingsStore? miscSettingsStore;
+
+  /// Optional override for tests (inject fake Advanced JSON path / store).
+  final AdvancedSettingsStore? advancedSettingsStore;
 
   /// Optional override for tests (disable overlay / fake prefs path).
   final BootSelfCheckSettings? bootSelfCheckSettings;
@@ -67,6 +79,21 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   late final MiscSettingsStore _miscSettingsStore =
       widget.miscSettingsStore ?? MiscSettingsStore();
 
+  late final AdvancedSettingsStore _advancedSettingsStore =
+      widget.advancedSettingsStore ?? AdvancedSettingsStore();
+
+  late final AiAssistanceSettings _aiAssistanceSettings =
+      AiAssistanceSettings(_advancedSettingsStore);
+
+  late final DangerousOperationsSettings _dangerousOperationsSettings =
+      DangerousOperationsSettings(_advancedSettingsStore);
+
+  late final AdvancedSettingsThresholdsController _thresholdsController =
+      AdvancedSettingsThresholdsController(
+    store: _advancedSettingsStore,
+    services: _services,
+  );
+
   late final BootSelfCheckSettings _bootSelfCheckSettings =
       widget.bootSelfCheckSettings ??
           BootSelfCheckSettings(miscStore: _miscSettingsStore);
@@ -81,6 +108,12 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
 
   final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
 
+  late final WarnAlarmController _warnAlarm = WarnAlarmController(
+    services: _services,
+    navigatorKey: _navKey,
+    dangerousOperations: _dangerousOperationsSettings,
+  );
+
   bool _restoreScheduled = false;
 
   @override
@@ -88,7 +121,18 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     super.initState();
     _soundEffectStore.warmRead();
     _miscSettingsStore.warmRead();
+    _advancedSettingsStore.warmRead();
+    _thresholdsController.warmFromStore();
     _bootSelfCheckSettings.warmRead();
+    _dangerousOperationsSettings.onBypassDisabled = () {
+      unawaited(
+        LaserWorkGuard.evaluateAndInterruptIfNeeded(
+          services: _services,
+          dangerous: _dangerousOperationsSettings,
+          warnAlarm: _warnAlarm,
+        ),
+      );
+    };
     CyberClickSoundRegistry.register(_clickSound);
     CyberImeLanguageRegistry.register(
       const CyberImeFixedLanguageProvider(CyberImeGlobalKind.english),
@@ -98,8 +142,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     unawaited(_services.audio.warmClickSession());
     unawaited(_bootstrapKeyboardProfile());
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Settings restore only. Modbus live poll is started from Home after boot
-      // self-check finishes (or immediately when self-check is skipped).
+      // Settings restore only. Modbus live poll + warn alarm start from Home
+      // after boot self-check finishes (or immediately when self-check is skipped).
       unawaited(_services.restorePersistedSettingsOnce());
       unawaited(_maybeRestoreRoute());
     });
@@ -136,8 +180,15 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   void dispose() {
     CyberClickSoundRegistry.register(null);
     CyberImeRegionalLayoutRegistry.register(null);
+    unawaited(_warnAlarm.dispose());
     if (widget.miscSettingsStore == null) {
       _miscSettingsStore.dispose();
+    }
+    _aiAssistanceSettings.dispose();
+    _dangerousOperationsSettings.dispose();
+    _thresholdsController.dispose();
+    if (widget.advancedSettingsStore == null) {
+      _advancedSettingsStore.dispose();
     }
     super.dispose();
   }
@@ -208,38 +259,47 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   Widget build(BuildContext context) {
     return AppScope(
       services: _services,
-      child: MiscSettingsScope(
-        store: _miscSettingsStore,
-        child: BootSelfCheckScope(
-          settings: _bootSelfCheckSettings,
-          child: SoundEffectScope(
-            store: _soundEffectStore,
-            clickSound: _clickSound,
-            child: MaterialApp(
-              title: 'HMI',
-              theme: buildAppTheme(),
-              scrollBehavior: const AppScrollBehavior(),
-              builder: _appBuilder,
-              navigatorKey: _navKey,
-              initialRoute: AppRoutes.home,
-              onGenerateRoute: (settings) {
-                final Widget page;
-                switch (settings.name) {
-                  case AppRoutes.settings:
-                    page = SettingsPage(
-                      openKeyboardOnLaunch: settings.arguments ==
-                          HmiRouteRestore.settingsKeyboard,
-                    );
-                  case AppRoutes.monitor:
-                    page = const MonitorPage();
-                  case AppRoutes.demo:
-                    page = _demoPage();
-                  case AppRoutes.home:
-                  default:
-                    page = const HomePage();
-                }
-                return buildAppPageRoute(settings: settings, child: page);
-              },
+      child: WarnAlarmScope(
+        controller: _warnAlarm,
+        child: MiscSettingsScope(
+          store: _miscSettingsStore,
+          child: AdvancedSettingsScope(
+            store: _advancedSettingsStore,
+            aiAssistance: _aiAssistanceSettings,
+            dangerousOperations: _dangerousOperationsSettings,
+            thresholds: _thresholdsController,
+            child: BootSelfCheckScope(
+              settings: _bootSelfCheckSettings,
+              child: SoundEffectScope(
+                store: _soundEffectStore,
+                clickSound: _clickSound,
+                child: MaterialApp(
+                  title: 'HMI',
+                  theme: buildAppTheme(),
+                  scrollBehavior: const AppScrollBehavior(),
+                  builder: _appBuilder,
+                  navigatorKey: _navKey,
+                  initialRoute: AppRoutes.home,
+                  onGenerateRoute: (settings) {
+                    final Widget page;
+                    switch (settings.name) {
+                      case AppRoutes.settings:
+                        page = SettingsPage(
+                          openKeyboardOnLaunch: settings.arguments ==
+                              HmiRouteRestore.settingsKeyboard,
+                        );
+                      case AppRoutes.monitor:
+                        page = const MonitorPage();
+                      case AppRoutes.demo:
+                        page = _demoPage();
+                      case AppRoutes.home:
+                      default:
+                        page = const HomePage();
+                    }
+                    return buildAppPageRoute(settings: settings, child: page);
+                  },
+                ),
+              ),
             ),
           ),
         ),

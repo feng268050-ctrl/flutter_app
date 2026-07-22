@@ -40,7 +40,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-rootfs-flutter-pi prepare-rootfs prepare-rootfs-flutter-pi build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi build-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-rootfs-flutter-pi prepare-rootfs prepare-rootfs-flutter-pi build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi build-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app alarm alarm-clean
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -126,6 +126,8 @@ help:
 	@echo "  make push-app              # scp app over SSH (USB-SSH or registered IP)"
 	@echo "  make set-prop KEY=val ...  # upsert product.ini keys (multi OK); restart hmi"
 	@echo "  make del-prop KEY          # remove one product.ini key; restart hmi if changed"
+	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
+	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
 	@echo "  make upgrade               # SSH A/B stream-to-partition (inactive FIT+rootfs); not OTA staging"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
@@ -475,6 +477,16 @@ usb-ssh-setup:
 
 push-app:
 	@$(call WITH_DOTENV,bash scripts/push-app.sh)
+
+# Demo warn dialog on device (writes /run/hmi/demo-alarm.cmd; HMI must be running).
+alarm:
+	@chmod +x scripts/trigger-alarm.sh
+	@$(call WITH_DOTENV,CODE='$(CODE)' bash scripts/trigger-alarm.sh trigger)
+
+# Clear episode restrictions only; visible warn popup stays open.
+alarm-clean:
+	@chmod +x scripts/trigger-alarm.sh
+	@$(call WITH_DOTENV,bash scripts/trigger-alarm.sh clean)
 
 # Upsert one or more UPPERCASE_KEY=value into /var/lib/hmi/product.ini (SSH).
 set-prop:

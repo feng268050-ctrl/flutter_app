@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
-import 'package:lws_hmi/features/monitor/domain/active_alarm.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 
 /// Design tokens aligned with lws-ui Monitor / Frost glass stand-ins.
@@ -152,6 +151,7 @@ class MonitorMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Missing sample → idle (empty); known fault → red; else green.
     final kind = !hasValue
         ? MonitorIndicatorKind.idle
         : (fault ? MonitorIndicatorKind.failure : MonitorIndicatorKind.success);
@@ -314,12 +314,20 @@ class MonitorHealthBanner extends StatelessWidget {
 }
 
 class MonitorAlarmLogRow extends StatelessWidget {
-  const MonitorAlarmLogRow({super.key, required this.alarm});
+  const MonitorAlarmLogRow({
+    super.key,
+    required this.code,
+    required this.label,
+    this.timestamp,
+  });
 
-  final ActiveAlarm alarm;
+  final String code;
+  final String label;
+  final DateTime? timestamp;
 
   @override
   Widget build(BuildContext context) {
+    final time = timestamp;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       child: Row(
@@ -328,7 +336,7 @@ class MonitorAlarmLogRow extends StatelessWidget {
           SizedBox(
             width: 56,
             child: Text(
-              alarm.code,
+              code,
               style: const TextStyle(
                 color: Color(0xFFFF8A80),
                 fontSize: 15,
@@ -337,17 +345,38 @@ class MonitorAlarmLogRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(
-              alarm.label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 15,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 15,
+                  ),
+                ),
+                if (time != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatTime(time.toLocal()),
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.45),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  static String _formatTime(DateTime t) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${t.year}-${two(t.month)}-${two(t.day)} '
+        '${two(t.hour)}:${two(t.minute)}:${two(t.second)}';
   }
 }
 

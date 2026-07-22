@@ -44,6 +44,10 @@ dependencies:
   cyber_ime:
     path: ../../packages/cyber_ime
 
+  # Shared warn/alarm episode engine (path dep).
+  cyber_alarm:
+    path: ../../packages/cyber_alarm
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
@@ -89,6 +93,10 @@ flutter:
     - assets/audio/click_effect_3.mp3
     # P2.1 speaker smoke track (from lws-ui res/raw/shanghai_tan.mp3).
     - assets/audio/shanghai_tan.mp3
+    # Warn dialog loop (lws-ui res/raw/warn_mp3.mp3).
+    - assets/audio/warn_mp3.mp3
+    # Warn dialog icon (lws-ui mipmap alarm_warn_icon).
+    - assets/warn/alarm_warn_icon.webp
     # Product HAL pack (board profile + gpio/modbus catalogs).
     - assets/hal/board_profile.json
     - assets/hal/gpio.json

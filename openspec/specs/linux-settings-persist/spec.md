@@ -105,3 +105,28 @@ The App SHALL persist Common Settings → Misc operator preferences in `/var/lib
 - **AND** the HMI process restarts
 - **THEN** `/var/lib/hmi/misc-settings.json` still encodes the overlay as enabled
 
+### Requirement: Advanced settings persist under dedicated var file
+
+App-owned Advanced Settings preferences (AI assistance and dangerous-operation booleans, and optional cached numeric thresholds) SHALL persist in a dedicated JSON file under `/var/lib/hmi/` (e.g. `advanced-settings.json` via `OsPaths.varHmi`). They MUST NOT be stored in `misc-settings.json`. Missing or corrupt files MUST soft-fail to documented defaults without crashing the App.
+
+#### Scenario: Soft-fail corrupt file
+
+- **WHEN** `advanced-settings.json` is corrupt
+- **THEN** the App applies defaults for AI (both ON) and dangerous ops (all OFF)
+- **AND** the Settings UI remains usable
+
+#### Scenario: Not Misc
+
+- **WHEN** the operator changes Lens Contamination Detection
+- **THEN** the value is written to the advanced-settings file
+- **AND** MUST NOT appear as a key inside `misc-settings.json`
+
+### Requirement: Advanced settings JSON may cache numeric thresholds
+
+`/var/lib/hmi/advanced-settings.json` MAY store numeric threshold fields (zero offset, swing, powers, pressure, temperatures, recovery interval) in addition to AI/dangerous booleans. Missing numeric keys MUST soft-fail to documented defaults without wiping boolean keys.
+
+#### Scenario: Numerics and booleans coexist
+
+- **WHEN** the file contains both `keepLaserOnWhileAlarmed` and `laserStartPower`
+- **THEN** both are loaded on warm-read
+

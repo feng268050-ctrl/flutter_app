@@ -1,12 +1,16 @@
 import 'dart:async';
 
+import 'package:cyber_alarm/cyber_alarm.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/features/monitor/application/gun_alarm_telemetry.dart';
+import 'package:lws_hmi/features/home/application/temp_series.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
+import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
+import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 
-/// lws-ui `fragment_warn_info` — left status/temps + right alarm log.
+/// lws-ui `fragment_warn_info` — left status/temps + right history + live actives.
+///
+/// Live Modbus (comm + temps) comes from [WarnAlarmController.monitor] only.
 class AlarmInformationTab extends StatefulWidget {
   const AlarmInformationTab({super.key});
 
@@ -15,47 +19,67 @@ class AlarmInformationTab extends StatefulWidget {
 }
 
 class _AlarmInformationTabState extends State<AlarmInformationTab> {
-  final GunAlarmTelemetry _telemetry = GunAlarmTelemetry();
+  StreamSubscription<List<AlarmLogEntry>>? _historySub;
+  List<AlarmLogEntry> _history = const [];
+  AlarmMonitorState? _monitor;
+  final TempSeries _emptyTemp = TempSeries();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final services = AppScope.maybeOf(context);
-      if (services == null) {
+      final warn = WarnAlarmScope.maybeOf(context);
+      if (warn == null) {
         return;
       }
-      unawaited(
-        _telemetry.start(
-          services,
-          startDelay: const Duration(milliseconds: 200),
-          onUpdate: () {
-            if (mounted) {
-              setState(() {});
-            }
-          },
-        ),
-      );
+      _monitor = warn.monitor;
+      _monitor!.addListener(_onMonitor);
+      _historySub = warn.watchHistory(limit: 200).listen((rows) {
+        if (!mounted) {
+          return;
+        }
+        setState(() => _history = rows);
+      });
+      if (mounted) {
+        setState(() {});
+      }
     });
+  }
+
+  void _onMonitor() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
-    unawaited(_telemetry.dispose());
+    _monitor?.removeListener(_onMonitor);
+    unawaited(_historySub?.cancel() ?? Future<void>.value());
     super.dispose();
   }
 
+  /// `null` → idle (empty); `true` → fault; `false` → ok.
   MonitorIndicatorKind _commKind(bool? fault) {
-    // Idle (gray) until primed; then Success / Failure — never "?".
     if (fault == null) {
       return MonitorIndicatorKind.idle;
     }
     return fault ? MonitorIndicatorKind.failure : MonitorIndicatorKind.success;
   }
 
+  Future<void> _clearHistory() async {
+    final warn = WarnAlarmScope.maybeOf(context);
+    if (warn == null) {
+      return;
+    }
+    CyberClickSoundRegistry.playClick();
+    await warn.clearHistory();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final alarms = _telemetry.activeAlarms;
+    final m = _monitor ?? WarnAlarmScope.maybeOf(context)?.monitor;
+    final actives = m?.activeAlarms ?? const [];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
@@ -78,7 +102,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                               const MonitorSectionHeader('Laser Device'),
                               MonitorCommCard(
                                 label: 'Pump Comm Status',
-                                kind: _commKind(_telemetry.laserCommFault),
+                                kind: _commKind(m?.laserCommFault),
                               ),
                             ],
                           ),
@@ -94,14 +118,14 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                   Expanded(
                                     child: MonitorCommCard(
                                       label: 'Gun Comm Status',
-                                      kind: _commKind(_telemetry.gunCommFault),
+                                      kind: _commKind(m?.gunCommFault),
                                     ),
                                   ),
                                   const SizedBox(width: 24),
-                                  const Expanded(
+                                  Expanded(
                                     child: MonitorCommCard(
                                       label: 'Camera Comm Status',
-                                      kind: MonitorIndicatorKind.idle,
+                                      kind: _commKind(m?.cameraCommFault),
                                     ),
                                   ),
                                 ],
@@ -111,17 +135,17 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                 children: [
                                   Expanded(
                                     child: MonitorTempMetricCard(
-                                      series: _telemetry.motor,
+                                      series: m?.motor ?? _emptyTemp,
                                       label: 'Motor Temperature',
-                                      overTemp: _telemetry.gunMotorOverTemp,
+                                      overTemp: m?.gunMotorOverTemp ?? false,
                                     ),
                                   ),
                                   const SizedBox(width: 24),
                                   Expanded(
                                     child: MonitorTempMetricCard(
-                                      series: _telemetry.motorDriver,
+                                      series: m?.motorDriver ?? _emptyTemp,
                                       label: 'Motor Driver Temperature',
-                                      overTemp: _telemetry.driverOverTemp,
+                                      overTemp: m?.driverOverTemp ?? false,
                                     ),
                                   ),
                                 ],
@@ -131,18 +155,20 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                 children: [
                                   Expanded(
                                     child: MonitorTempMetricCard(
-                                      series: _telemetry.protectiveMirror,
+                                      series:
+                                          m?.protectiveMirror ?? _emptyTemp,
                                       label: 'Protective Mirror Temperature',
                                       overTemp:
-                                          _telemetry.protectiveMirrorOverTemp,
+                                          m?.protectiveMirrorOverTemp ?? false,
                                     ),
                                   ),
                                   const SizedBox(width: 24),
                                   Expanded(
                                     child: MonitorTempMetricCard(
-                                      series: _telemetry.collimator,
+                                      series: m?.collimator ?? _emptyTemp,
                                       label: 'Collimator Temperature',
-                                      overTemp: _telemetry.collimatorOverTemp,
+                                      overTemp:
+                                          m?.collimatorOverTemp ?? false,
                                     ),
                                   ),
                                 ],
@@ -158,7 +184,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                               const MonitorSectionHeader('Wire Feeder'),
                               MonitorCommCard(
                                 label: 'Wire Feeder Comm Status',
-                                kind: _commKind(_telemetry.wireFeederCommFault),
+                                kind: _commKind(m?.wireFeederCommFault),
                               ),
                             ],
                           ),
@@ -189,30 +215,28 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                               ),
                             ),
                             TextButton(
-                              onPressed: alarms.isEmpty
-                                  ? null
-                                  : () {
-                                      CyberClickSoundRegistry.playClick();
-                                      // Clear is product-policy later; soft stub.
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Clear alarm log — coming soon',
-                                          ),
-                                        ),
-                                      );
-                                    },
+                              onPressed:
+                                  _history.isEmpty ? null : _clearHistory,
                               child: const Text('Clear'),
                             ),
                           ],
                         ),
+                        if (actives.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Active: ${actives.map((a) => a.label).join(', ')}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.65),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                         const Divider(color: Colors.white24),
                         Expanded(
-                          child: alarms.isEmpty
+                          child: _history.isEmpty
                               ? const Center(
                                   child: Text(
-                                    'No active alarms',
+                                    'No alarm history',
                                     style: TextStyle(
                                       color: Colors.white54,
                                       fontSize: 16,
@@ -220,14 +244,17 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                   ),
                                 )
                               : ListView.separated(
-                                  itemCount: alarms.length,
+                                  itemCount: _history.length,
                                   separatorBuilder: (_, __) => Divider(
                                     height: 1,
                                     color: Colors.white.withOpacity(0.1),
                                   ),
                                   itemBuilder: (context, i) {
+                                    final row = _history[i];
                                     return MonitorAlarmLogRow(
-                                      alarm: alarms[i],
+                                      code: row.code,
+                                      label: row.displayLabel,
+                                      timestamp: row.timestamp,
                                     );
                                   },
                                 ),

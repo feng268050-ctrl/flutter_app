@@ -18,6 +18,7 @@ class CyberButton extends StatelessWidget {
     this.size = CyberButtonSize.regular,
     this.clickSoundEnabled = true,
     this.expand = false,
+    this.height,
     this.foregroundColor,
     this.onLongPress,
   });
@@ -32,14 +33,18 @@ class CyberButton extends StatelessWidget {
   /// When true, fill parent constraints (IME keycaps) instead of fixed height.
   final bool expand;
 
+  /// Overrides [size] height when set (e.g. match a 36dp value chip).
+  final double? height;
+
   /// Optional label/icon color override (e.g. IME accent backspace).
   final Color? foregroundColor;
 
   @override
   Widget build(BuildContext context) {
-    final height = size == CyberButtonSize.small
-        ? CyberDimens.actionButtonSmallHeight
-        : CyberDimens.actionButtonHeight;
+    final height = this.height ??
+        (size == CyberButtonSize.small
+            ? CyberDimens.actionButtonSmallHeight
+            : CyberDimens.actionButtonHeight);
     final hPad = expand
         ? 0.0
         : (size == CyberButtonSize.small

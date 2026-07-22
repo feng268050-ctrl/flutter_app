@@ -110,6 +110,6 @@ void main() {
     expect(find.text('-30'), findsOneWidget);
     expect(find.text('30'), findsOneWidget);
     expect(find.text('0'), findsOneWidget);
-    expect(find.byType(Slider), findsOneWidget);
+    expect(find.byType(CyberSlider), findsOneWidget);
   });
 }

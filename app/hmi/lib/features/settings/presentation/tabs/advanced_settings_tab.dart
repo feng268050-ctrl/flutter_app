@@ -80,6 +80,7 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 ),
                 trailing: CyberButton(
                   size: CyberButtonSize.small,
+                  height: SettingsScaledParam.headerControlHeight,
                   onPressed: () => unawaited(
                     commit(
                       AdvancedSettingsModbusIds.zeroPointCorrection,

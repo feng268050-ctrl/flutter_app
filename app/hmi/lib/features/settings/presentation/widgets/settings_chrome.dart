@@ -292,6 +292,10 @@ class SettingsScaledParam extends StatelessWidget {
     this.enabled = true,
   });
 
+  /// Matches lws-ui `advanced_setting_value_box` (36dp); Auto trailing
+  /// stretches to the same height.
+  static const headerControlHeight = 36.0;
+
   final String title;
   final double value;
   final ValueChanged<double> onChanged;
@@ -314,6 +318,7 @@ class SettingsScaledParam extends StatelessWidget {
           SizedBox(
             height: 40,
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: Text(
@@ -323,9 +328,10 @@ class SettingsScaledParam extends StatelessWidget {
                   ),
                 ),
                 Container(
+                  height: headerControlHeight,
                   constraints: const BoxConstraints(minWidth: 48),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(

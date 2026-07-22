@@ -15,6 +15,7 @@ class CyberScaledSlider extends StatelessWidget {
     this.max = 100,
     this.enabled = true,
     this.divisions,
+    this.longPressDragEnabled = true,
     this.scaleMinText,
     this.scaleMaxText,
     this.scaleZeroText = '0',
@@ -28,6 +29,9 @@ class CyberScaledSlider extends StatelessWidget {
   final double max;
   final bool enabled;
   final int? divisions;
+
+  /// Frost long-press anti-mis-touch (see [CyberSlider.longPressDragEnabled]).
+  final bool longPressDragEnabled;
   final String? scaleMinText;
   final String? scaleMaxText;
   final String scaleZeroText;
@@ -59,6 +63,7 @@ class CyberScaledSlider extends StatelessWidget {
           max: max,
           enabled: enabled,
           divisions: divisions,
+          longPressDragEnabled: longPressDragEnabled,
         ),
         if (scaleMinText != null || scaleMaxText != null || _showZero)
           SizedBox(

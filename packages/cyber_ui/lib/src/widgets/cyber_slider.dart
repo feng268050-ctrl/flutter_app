@@ -1,9 +1,21 @@
+import 'dart:async';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import 'package:cyber_ui/src/sound/cyber_click_sound.dart';
 import 'package:cyber_ui/src/theme/cyber_colors.dart';
+import 'package:cyber_ui/src/widgets/cyber_slider_logic.dart';
 
-/// Core progress slider (presentation only).
-class CyberSlider extends StatelessWidget {
+/// Core progress slider with Frost long-press anti-mis-touch (default ON).
+///
+/// Interaction (lws-ui `FrostSlider` / `frostSliderLongPressDragGesture`):
+/// 1. Pointer must land on the thumb hit target (not the bare track).
+/// 2. Hold ~200ms without moving past touch slop → thumb expands + click.
+/// 3. After expand animation (~150ms) value is armed; drag updates by delta
+///    from the arm point (does not jump to finger on arm).
+/// 4. Ranges spanning 0 get center snap (±3 units, 12px escape).
+class CyberSlider extends StatefulWidget {
   const CyberSlider({
     super.key,
     required this.value,
@@ -13,6 +25,7 @@ class CyberSlider extends StatelessWidget {
     this.max = 100,
     this.enabled = true,
     this.divisions,
+    this.longPressDragEnabled = true,
   });
 
   final double value;
@@ -23,22 +36,354 @@ class CyberSlider extends StatelessWidget {
   final bool enabled;
   final int? divisions;
 
+  /// When true (default), require long-press on thumb before dragging.
+  final bool longPressDragEnabled;
+
   @override
-  Widget build(BuildContext context) {
-    return SliderTheme(
-      data: SliderTheme.of(context).copyWith(
-        activeTrackColor: CyberColors.buttonPrimaryAccent,
-        thumbColor: CyberColors.textPrimary,
-        inactiveTrackColor: CyberColors.borderMid,
-      ),
-      child: Slider(
-        value: value.clamp(min, max),
-        min: min,
-        max: max,
-        divisions: divisions,
-        onChanged: enabled ? onChanged : null,
-        onChangeEnd: enabled ? onChangeEnd : null,
+  State<CyberSlider> createState() => _CyberSliderState();
+}
+
+class _CyberSliderState extends State<CyberSlider>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _expand;
+  Timer? _longPressTimer;
+  Timer? _armTimer;
+
+  bool _thumbExpanded = false;
+  bool _valueArmed = false;
+  double? _dragFraction;
+  double _restingFraction = 0;
+  double _activationX = 0;
+  double _downX = 0;
+  double _lastX = 0;
+  int? _activePointer;
+  bool _startedExpand = false;
+
+  final CyberSliderCenterSnapSession _snapSession =
+      CyberSliderCenterSnapSession();
+
+  @override
+  void initState() {
+    super.initState();
+    _expand = AnimationController(
+      vsync: this,
+      duration: const Duration(
+        milliseconds: CyberSliderLogic.thumbExpandDurationMs,
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _cancelTimers();
+    _expand.dispose();
+    super.dispose();
+  }
+
+  void _cancelTimers() {
+    _longPressTimer?.cancel();
+    _longPressTimer = null;
+    _armTimer?.cancel();
+    _armTimer = null;
+  }
+
+  void _resetGesture({required bool cancelled}) {
+    final endedArmed = _startedExpand;
+    final endValue = _displayValue;
+    _cancelTimers();
+    if (endedArmed) {
+      CyberClickSoundRegistry.playClick();
+      if (!cancelled) {
+        widget.onChangeEnd?.call(endValue);
+      }
+    }
+    _activePointer = null;
+    _startedExpand = false;
+    _thumbExpanded = false;
+    _valueArmed = false;
+    _dragFraction = null;
+    _snapSession.clear();
+    _expand.reverse();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  double get _displayFraction {
+    if (_valueArmed && _dragFraction != null) {
+      return _dragFraction!;
+    }
+    return CyberSliderLogic.fractionFromValue(
+      widget.value,
+      widget.min,
+      widget.max,
+    );
+  }
+
+  double get _displayValue => CyberSliderLogic.valueFromFraction(
+        _displayFraction,
+        widget.min,
+        widget.max,
+      );
+
+  void _applyArmedDrag(double currentX, double travel) {
+    if (!_valueArmed) {
+      return;
+    }
+    final snapConfig = CyberSliderLogic.centerSnapConfig(
+      min: widget.min,
+      max: widget.max,
+    );
+    final result = cyberSliderResolveDragValue(
+      snapConfig: snapConfig,
+      snapSession: _snapSession,
+      min: widget.min,
+      max: widget.max,
+      travelPx: travel,
+      activationX: _activationX,
+      currentX: currentX,
+    );
+    if (result.reanchorActivationX != null) {
+      _activationX = result.reanchorActivationX!;
+    }
+    _dragFraction = result.fraction;
+    widget.onChanged(result.value);
+    setState(() {});
+  }
+
+  void _onPointerDown(
+    PointerDownEvent event,
+    double trackWidth,
+    double overflow,
+  ) {
+    if (!widget.enabled || _activePointer != null) {
+      return;
+    }
+    final thumbPx = CyberSliderLogic.thumbSize;
+    final trackStart = overflow;
+    final resting = CyberSliderLogic.fractionFromValue(
+      widget.value,
+      widget.min,
+      widget.max,
+    );
+    final thumbCx = CyberSliderLogic.thumbCenterX(
+      resting,
+      trackWidth,
+      thumbPx,
+      trackStartX: trackStart,
+    );
+    final touchH = CyberSliderLogic.touchHeight + overflow * 2;
+    final hit = CyberSliderLogic.thumbHitRect(
+      thumbCenterX: thumbCx,
+      touchHeightPx: touchH,
+      thumbRadiusPx: thumbPx / 2,
+    );
+    if (!CyberSliderLogic.hitRectContains(
+      event.localPosition.dx,
+      event.localPosition.dy,
+      hit,
+    )) {
+      return;
+    }
+
+    _activePointer = event.pointer;
+    _downX = event.localPosition.dx;
+    _lastX = _downX;
+    _restingFraction = resting;
+    _dragFraction = null;
+    _valueArmed = false;
+    _thumbExpanded = false;
+    _startedExpand = false;
+    _snapSession.clear();
+
+    if (!widget.longPressDragEnabled) {
+      _startedExpand = true;
+      _thumbExpanded = true;
+      _valueArmed = true;
+      _activationX = _lastX;
+      _dragFraction = resting;
+      _snapSession.reset(resting);
+      _expand.forward();
+      CyberClickSoundRegistry.playClick();
+      setState(() {});
+      return;
+    }
+
+    _longPressTimer = Timer(
+      const Duration(milliseconds: CyberSliderLogic.longPressThresholdMs),
+      () {
+        if (_activePointer == null) {
+          return;
+        }
+        _startedExpand = true;
+        _thumbExpanded = true;
+        _expand.forward();
+        CyberClickSoundRegistry.playClick();
+        _snapSession.reset(_restingFraction);
+        _dragFraction = _restingFraction;
+        setState(() {});
+        _armTimer = Timer(
+          const Duration(milliseconds: CyberSliderLogic.thumbExpandDurationMs),
+          () {
+            if (_activePointer == null || !_thumbExpanded) {
+              return;
+            }
+            _valueArmed = true;
+            _activationX = _lastX;
+            setState(() {});
+          },
+        );
+      },
+    );
+  }
+
+  void _onPointerMove(PointerMoveEvent event, double travel) {
+    if (_activePointer != event.pointer) {
+      return;
+    }
+    final x = event.localPosition.dx;
+    _lastX = x;
+    if (!_thumbExpanded) {
+      if ((x - _downX).abs() > kTouchSlop) {
+        _cancelTimers();
+        _activePointer = null;
+        return;
+      }
+      return;
+    }
+    if (_valueArmed) {
+      _applyArmedDrag(x, travel);
+    }
+  }
+
+  void _onPointerUp(PointerEvent event) {
+    if (_activePointer != event.pointer) {
+      return;
+    }
+    _resetGesture(cancelled: false);
+  }
+
+  void _onPointerCancel(PointerEvent event) {
+    if (_activePointer != event.pointer) {
+      return;
+    }
+    _resetGesture(cancelled: true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final overflow = CyberSliderLogic.thumbDragOverflow;
+    final touchH = CyberSliderLogic.touchHeight + overflow * 2;
+
+    return SizedBox(
+      height: touchH,
+      width: double.infinity,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final trackWidth = (width - overflow * 2).clamp(0.0, width);
+          final travel = CyberSliderLogic.travelPx(
+            trackWidth,
+            CyberSliderLogic.thumbSize,
+          );
+          final fraction = _displayFraction;
+          final thumbCx = CyberSliderLogic.thumbCenterX(
+            fraction,
+            trackWidth,
+            CyberSliderLogic.thumbSize,
+            trackStartX: overflow,
+          );
+
+          return Listener(
+            behavior: HitTestBehavior.opaque,
+            onPointerDown: (e) => _onPointerDown(e, trackWidth, overflow),
+            onPointerMove: (e) => _onPointerMove(e, travel),
+            onPointerUp: _onPointerUp,
+            onPointerCancel: _onPointerCancel,
+            child: AnimatedBuilder(
+              animation: _expand,
+              builder: (context, _) {
+                final scale = 1.0 +
+                    (CyberSliderLogic.thumbDragScale - 1.0) * _expand.value;
+                return CustomPaint(
+                  size: Size(width, touchH),
+                  painter: _CyberSliderPainter(
+                    trackStartX: overflow,
+                    trackWidth: trackWidth,
+                    thumbCenterX: thumbCx,
+                    thumbScale: scale,
+                    activeColor: CyberColors.buttonPrimaryAccent,
+                    inactiveColor: CyberColors.borderMid,
+                    thumbColor: CyberColors.textPrimary,
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CyberSliderPainter extends CustomPainter {
+  _CyberSliderPainter({
+    required this.trackStartX,
+    required this.trackWidth,
+    required this.thumbCenterX,
+    required this.thumbScale,
+    required this.activeColor,
+    required this.inactiveColor,
+    required this.thumbColor,
+  });
+
+  final double trackStartX;
+  final double trackWidth;
+  final double thumbCenterX;
+  final double thumbScale;
+  final Color activeColor;
+  final Color inactiveColor;
+  final Color thumbColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final trackH = CyberSliderLogic.trackHeight;
+    final trackTop = (size.height - trackH) / 2;
+    final r = Radius.circular(CyberSliderLogic.trackCornerRadius);
+    final trackRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(trackStartX, trackTop, trackWidth, trackH),
+      r,
+    );
+    canvas.drawRRect(trackRect, Paint()..color = inactiveColor);
+
+    final activeW =
+        (thumbCenterX - trackStartX).clamp(0.0, trackWidth);
+    if (activeW > 0) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(trackStartX, trackTop, activeW, trackH),
+          r,
+        ),
+        Paint()..color = activeColor,
+      );
+    }
+
+    final radius = (CyberSliderLogic.thumbSize / 2) * thumbScale;
+    canvas.drawCircle(
+      Offset(thumbCenterX, size.height / 2),
+      radius,
+      Paint()..color = thumbColor,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CyberSliderPainter oldDelegate) {
+    return trackStartX != oldDelegate.trackStartX ||
+        trackWidth != oldDelegate.trackWidth ||
+        thumbCenterX != oldDelegate.thumbCenterX ||
+        thumbScale != oldDelegate.thumbScale ||
+        activeColor != oldDelegate.activeColor ||
+        inactiveColor != oldDelegate.inactiveColor ||
+        thumbColor != oldDelegate.thumbColor;
   }
 }

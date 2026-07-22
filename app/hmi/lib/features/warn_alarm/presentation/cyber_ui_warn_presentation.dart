@@ -15,6 +15,7 @@ final class CyberUiWarnPresentation implements WarnPresentation {
   CyberUiWarnPresentation({
     required this.navigatorKey,
     this.onClosed,
+    this.onPresented,
     this.stopWarnSound,
     this.infoStyleForCode,
   });
@@ -23,6 +24,9 @@ final class CyberUiWarnPresentation implements WarnPresentation {
 
   /// Notifies coordinator when a dialog finishes (dismiss / confirm).
   void Function(String code)? onClosed;
+
+  /// Fires when a dialog is about to appear (start SFX with the popup).
+  void Function(String code)? onPresented;
 
   /// Stops warn SFX before Confirm click (single remote session exclusion).
   Future<void> Function()? stopWarnSound;
@@ -49,14 +53,36 @@ final class CyberUiWarnPresentation implements WarnPresentation {
       },
     );
     // #endregion
-    _queue.removeWhere((p) => p.code == episode.code);
-    _queue.addLast(_PendingWarn(episode: episode, entry: entry));
+    final completer = Completer<void>();
+    _queue.removeWhere((p) {
+      if (p.code == episode.code) {
+        if (!p.completer.isCompleted) {
+          p.completer.complete();
+        }
+        return true;
+      }
+      return false;
+    });
+    _queue.addLast(
+      _PendingWarn(episode: episode, entry: entry, completer: completer),
+    );
     await _pump();
+    // Wait until *this* dialog has been presented and closed (not merely
+    // queued behind an in-flight modal — that used to return immediately).
+    await completer.future;
   }
 
   @override
   Future<void> dismiss(String code) async {
-    _queue.removeWhere((p) => p.code == code);
+    _queue.removeWhere((p) {
+      if (p.code == code) {
+        if (!p.completer.isCompleted) {
+          p.completer.complete();
+        }
+        return true;
+      }
+      return false;
+    });
     if (_showingCode == code && _dialogOpen) {
       final nav = navigatorKey.currentState;
       if (nav != null && nav.canPop()) {
@@ -107,7 +133,16 @@ final class CyberUiWarnPresentation implements WarnPresentation {
         },
       );
       // #endregion
-      throw StateError('warn presentation: navigator not ready');
+      // Fail queued waiters so the coordinator can retry.
+      while (_queue.isNotEmpty) {
+        final p = _queue.removeFirst();
+        if (!p.completer.isCompleted) {
+          p.completer.completeError(
+            StateError('warn presentation: navigator not ready'),
+          );
+        }
+      }
+      return;
     }
     final pending = _queue.removeFirst();
     // #region agent log
@@ -120,6 +155,7 @@ final class CyberUiWarnPresentation implements WarnPresentation {
     // #endregion
     _showingCode = pending.code;
     _dialogOpen = true;
+    onPresented?.call(pending.code);
     try {
       // Light frost shell (lws-ui FrostPromptDialog) — fake cream glass on Weston.
       await CyberOverlayHost.show<void>(
@@ -148,6 +184,9 @@ final class CyberUiWarnPresentation implements WarnPresentation {
       final closed = _showingCode;
       _dialogOpen = false;
       _showingCode = null;
+      if (!pending.completer.isCompleted) {
+        pending.completer.complete();
+      }
       if (closed != null) {
         onClosed?.call(closed);
       }
@@ -158,10 +197,15 @@ final class CyberUiWarnPresentation implements WarnPresentation {
 }
 
 final class _PendingWarn {
-  const _PendingWarn({required this.episode, required this.entry});
+  _PendingWarn({
+    required this.episode,
+    required this.entry,
+    required this.completer,
+  });
 
   final WarnEpisode episode;
   final AlarmCodeEntry entry;
+  final Completer<void> completer;
 
   String get code => episode.code;
 }

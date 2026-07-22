@@ -46,11 +46,16 @@ final class SqliteAlarmLogRepository implements AlarmLogRepository {
 
   Database? _db;
   bool _loaded = false;
+  bool _openFailed = false;
   final _ctrl = StreamController<List<AlarmLogEntry>>.broadcast();
 
-  Future<void> _ensureOpen() async {
+  /// Opens DB if needed. Returns false when SQLite is unavailable (soft-fail).
+  Future<bool> _ensureOpen() async {
     if (_loaded && _db != null) {
-      return;
+      return true;
+    }
+    if (_openFailed) {
+      return false;
     }
     try {
       await File(dbPath).parent.create(recursive: true);
@@ -58,9 +63,12 @@ final class SqliteAlarmLogRepository implements AlarmLogRepository {
       _ensureSchema(_db!);
       _pruneOld(_db!);
       _loaded = true;
+      return true;
     } catch (e) {
+      _openFailed = true;
+      _db = null;
       debugPrint('alarm-log sqlite: open failed: $e');
-      rethrow;
+      return false;
     }
   }
 
@@ -133,40 +141,68 @@ CREATE TABLE IF NOT EXISTS $kAlarmLogsTable (
 
   @override
   Future<void> insertRising(AlarmLogEntry entry) async {
-    await _ensureOpen();
-    final db = _db!;
-    final nowMs = entry.timestamp.toUtc().millisecondsSinceEpoch;
-    db.execute(
-      'INSERT INTO $kAlarmLogsTable (code, content, timestamp, level) '
-      'VALUES (?, ?, ?, ?)',
-      [
-        entry.code,
-        entry.displayLabel,
-        nowMs,
-        levelForCode(entry.code),
-      ],
-    );
-    _emit();
+    try {
+      if (!await _ensureOpen()) {
+        return;
+      }
+      final db = _db!;
+      final nowMs = entry.timestamp.toUtc().millisecondsSinceEpoch;
+      db.execute(
+        'INSERT INTO $kAlarmLogsTable (code, content, timestamp, level) '
+        'VALUES (?, ?, ?, ?)',
+        [
+          entry.code,
+          entry.displayLabel,
+          nowMs,
+          levelForCode(entry.code),
+        ],
+      );
+      _emit();
+    } catch (e) {
+      // Soft-fail: missing libsqlite3 / disk errors must not block warn UI.
+      debugPrint('alarm-log sqlite: insertRising failed: $e');
+    }
   }
 
   @override
   Future<List<AlarmLogEntry>> query({int? limit}) async {
-    await _ensureOpen();
-    return _querySync(limit: limit);
+    try {
+      if (!await _ensureOpen()) {
+        return const [];
+      }
+      return _querySync(limit: limit);
+    } catch (e) {
+      debugPrint('alarm-log sqlite: query failed: $e');
+      return const [];
+    }
   }
 
   @override
   Future<void> clear() async {
-    await _ensureOpen();
-    _db!.execute('DELETE FROM $kAlarmLogsTable');
-    _emit();
+    try {
+      if (!await _ensureOpen()) {
+        return;
+      }
+      _db!.execute('DELETE FROM $kAlarmLogsTable');
+      _emit();
+    } catch (e) {
+      debugPrint('alarm-log sqlite: clear failed: $e');
+    }
   }
 
   @override
   Stream<List<AlarmLogEntry>> watch({int? limit}) async* {
-    await _ensureOpen();
-    yield _querySync(limit: limit);
-    yield* _ctrl.stream.map((_) => _querySync(limit: limit));
+    try {
+      if (!await _ensureOpen()) {
+        yield const [];
+        return;
+      }
+      yield _querySync(limit: limit);
+      yield* _ctrl.stream.map((_) => _querySync(limit: limit));
+    } catch (e) {
+      debugPrint('alarm-log sqlite: watch failed: $e');
+      yield const [];
+    }
   }
 
   Future<void> dispose() async {

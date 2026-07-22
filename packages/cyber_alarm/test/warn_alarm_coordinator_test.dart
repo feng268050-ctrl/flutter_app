@@ -283,6 +283,25 @@ void main() {
       expect(log.rows, hasLength(1));
     });
 
+    test('demo after operator ack is not re-shown by flushPresentation', () async {
+      await coord.armDemoEpisode('H001');
+      await Future<void>.delayed(Duration.zero);
+      expect(presentation.shows, ['H001']);
+
+      await coord.acknowledgeOperator('H001');
+      await Future<void>.delayed(Duration.zero);
+      expect(coord.episodes['H001']?.faultActive, isTrue);
+      expect(coord.episodes['H001']?.phase, WarnEpisodePhase.operatorAcked);
+
+      await coord.flushPresentation();
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        presentation.shows,
+        ['H001'],
+        reason: 'acked demo must not spam dialogs on flush',
+      );
+    });
+
     test('clearAllForDebug clears episodes without dismiss', () async {
       await coord.armDemoEpisode('H001');
       await Future<void>.delayed(Duration.zero);
@@ -291,5 +310,95 @@ void main() {
       expect(coord.episodes, isEmpty);
       expect(presentation.dismisses, isEmpty);
     });
+
+    test('second rising while first dialog open is shown after first closes',
+        () async {
+      final catalog2 = AlarmCodeCatalog([
+        const AlarmCodeEntry(
+          code: 'H001',
+          severity: AlarmSeverity.high,
+          title: 'One',
+          body: 'a',
+        ),
+        const AlarmCodeEntry(
+          code: 'C002',
+          severity: AlarmSeverity.high,
+          title: 'Camera',
+          body: 'b',
+        ),
+      ]);
+      final blocking = _BlockingPresentation();
+      await coord.dispose();
+      coord = WarnAlarmCoordinator(
+        catalog: catalog2,
+        signals: source,
+        presentation: blocking,
+        log: log,
+        now: () => DateTime.utc(2026, 7, 21, 10),
+      );
+      await coord.start();
+
+      source.emit(
+        const AlarmSignalEvent(
+          code: 'H001',
+          active: true,
+          kind: AlarmSignalKind.rising,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(blocking.shows, ['H001']);
+      expect(coord.showingCode, 'H001');
+
+      source.emit(
+        const AlarmSignalEvent(
+          code: 'C002',
+          active: true,
+          kind: AlarmSignalKind.rising,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(blocking.shows, ['H001'], reason: 'C002 waits behind H001');
+
+      blocking.completeCurrent();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(blocking.shows, ['H001', 'C002']);
+      expect(coord.showingCode, 'C002');
+
+      blocking.completeCurrent();
+      await Future<void>.delayed(Duration.zero);
+    });
   });
+}
+
+/// [show] blocks until [completeCurrent] — mirrors a real modal host.
+final class _BlockingPresentation implements WarnPresentation {
+  final shows = <String>[];
+  final dismisses = <String>[];
+  Completer<void>? _current;
+
+  void completeCurrent() {
+    final c = _current;
+    _current = null;
+    if (c != null && !c.isCompleted) {
+      c.complete();
+    }
+  }
+
+  @override
+  Future<void> dismiss(String code) async {
+    dismisses.add(code);
+    completeCurrent();
+  }
+
+  @override
+  Future<void> show(WarnEpisode episode, AlarmCodeEntry entry) async {
+    shows.add(episode.code);
+    final c = Completer<void>();
+    _current = c;
+    await c.future;
+  }
+
+  @override
+  Future<void> update(WarnEpisode episode, AlarmCodeEntry entry) async {}
 }

@@ -60,6 +60,10 @@ final class WarnAlarmCoordinator {
   StreamSubscription<AlarmSignalEvent>? _sub;
   bool _started = false;
 
+  /// Serializes [_pumpQueue] so dialog close + rising edges cannot drain the
+  /// queue concurrently (which dropped follow-up codes like C002).
+  Future<void> _pumpTail = Future<void>.value();
+
   Map<String, WarnEpisode> get episodes =>
       Map<String, WarnEpisode>.unmodifiable(_episodes);
 
@@ -96,7 +100,8 @@ final class WarnAlarmCoordinator {
       if (_showingCode == code) {
         _showingCode = null;
       }
-      await _pumpQueue();
+      // Do not pump here — [onPresentationClosed] / in-flight drain continues
+      // the queue. Concurrent pump raced and skipped follow-up dialogs.
     }
   }
 
@@ -175,14 +180,22 @@ final class WarnAlarmCoordinator {
     final episode = WarnEpisode(code: code, policy: policy);
     _episodes[code] = episode;
 
-    await log.insertRising(
-      AlarmLogEntry(
-        code: code,
-        title: entry.title,
-        label: entry.displayLabel,
-        timestamp: (now ?? DateTime.now)().toUtc(),
-      ),
-    );
+    try {
+      await log.insertRising(
+        AlarmLogEntry(
+          code: code,
+          title: entry.title,
+          label: entry.displayLabel,
+          timestamp: (now ?? DateTime.now)().toUtc(),
+        ),
+      );
+    } catch (e) {
+      // History is best-effort; presentation must still proceed.
+      _warnDbg('C', 'warn_alarm_coordinator.dart:_onRising', 'insertRising failed', {
+        'code': code,
+        'error': e.toString(),
+      });
+    }
 
     // Always enqueue; [_pumpQueue] parks while [gate] suppresses presentation.
     _enqueueShow(code);
@@ -232,18 +245,30 @@ final class WarnAlarmCoordinator {
     _showQueue.addLast(code);
   }
 
-  Future<void> _pumpQueue() async {
-    if (_showingCode != null) {
-      return;
-    }
+  /// Drains the show queue. Calls are serialized on [_pumpTail].
+  Future<void> _pumpQueue() {
+    _pumpTail = _pumpTail.then((_) => _drainShowQueue()).catchError((Object e) {
+      _warnDbg('D', 'warn_alarm_coordinator.dart:_pumpQueue', 'pump chain error', {
+        'error': e.toString(),
+      });
+    });
+    return _pumpTail;
+  }
+
+  Future<void> _drainShowQueue() async {
     while (_showQueue.isNotEmpty) {
+      if (_showingCode != null) {
+        // In-flight dialog owns the drain; a chained pump will run after.
+        return;
+      }
       final code = _showQueue.removeFirst();
       final ep = _episodes[code];
       if (ep == null || !ep.faultActive) {
         continue;
       }
-      if (ep.phase == WarnEpisodePhase.operatorAcked &&
-          !ep.policy.demoSimulated) {
+      // After Confirm, stay silent until reminder / new rising re-arms phase.
+      // (Demo used to re-show here and spam when flushPresentation ran.)
+      if (ep.phase == WarnEpisodePhase.operatorAcked) {
         continue;
       }
       if (gate.isPresentationSuppressed) {
@@ -277,11 +302,12 @@ final class WarnAlarmCoordinator {
           _showingCode = null;
         }
         _enqueueShow(code);
+        // Brief backoff then chained retry via caller/flush; avoid tight loop.
         return;
-      }
-      // Presentation may call [onPresentationClosed] before returning.
-      if (_showingCode == code) {
-        _showingCode = null;
+      } finally {
+        if (_showingCode == code) {
+          _showingCode = null;
+        }
         ep.dialogOpen = false;
       }
     }
@@ -307,8 +333,7 @@ final class WarnAlarmCoordinator {
       if (!ep.faultActive) {
         continue;
       }
-      if (ep.phase == WarnEpisodePhase.operatorAcked &&
-          !ep.policy.demoSimulated) {
+      if (ep.phase == WarnEpisodePhase.operatorAcked) {
         continue;
       }
       if (ep.dialogOpen || _showingCode == ep.code) {

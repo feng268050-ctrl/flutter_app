@@ -224,6 +224,8 @@ final class AppServices {
     return asset != null && asset.isNotEmpty;
   }
 
+  bool _commAlarmModeApplied = false;
+
   /// Ensure process-wide continuous Modbus polling (no attribute watch).
   ///
   /// Product rule: one [modbus] client on [AppServices]; every top-level route
@@ -233,6 +235,8 @@ final class AppServices {
   ///
   /// Intercepts: [modbusLiveAllowed] false → no-op; [BootSelfCheckGate.isActive]
   /// → no-op until Home self-check `onComplete` (or a later ensure) runs.
+  ///
+  /// Also applies product.ini `control_card_comm_alarm_mode` once (C001 window).
   Future<void> ensureModbusLive() async {
     if (!modbusLiveAllowed) {
       return;
@@ -243,10 +247,28 @@ final class AppServices {
     try {
       await modbus.ensurePolling();
       _modbusLiveStarted = true;
+      await _applyCommAlarmModeOnce();
     } catch (_) {
       if (!_modbusLiveStarted) {
         // leave false so a later retry can succeed
       }
+    }
+  }
+
+  Future<void> _applyCommAlarmModeOnce() async {
+    if (_commAlarmModeApplied) {
+      return;
+    }
+    try {
+      final info = await ensureProductInfo();
+      final mode = info.controlCardCommAlarmMode();
+      // Empty → keep modbus.json default (`slide_window`).
+      if (mode.isNotEmpty) {
+        await modbus.applyHealthWindowMode(mode);
+      }
+      _commAlarmModeApplied = true;
+    } catch (_) {
+      // Soft-fail: C001 keeps asset JSON mode until a later ensure succeeds.
     }
   }
 

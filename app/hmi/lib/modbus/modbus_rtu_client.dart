@@ -135,6 +135,12 @@ class ModbusRtuClient {
     return hal.watchHealth();
   }
 
+  /// Apply product.ini `control_card_comm_alarm_mode` to HAL C001 window.
+  Future<void> applyHealthWindowMode(String? mode) async {
+    final hal = await _ensureHal();
+    hal.applyHealthWindowMode(mode);
+  }
+
   /// On-demand group read (e.g. `info` for gunhead / laser / wire SN).
   Future<Map<String, Object?>> readGroup(String groupId) async {
     final hal = await _ensureHal();

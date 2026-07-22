@@ -103,6 +103,12 @@ abstract class ModbusHal {
 
   Stream<ModbusHealth> watchHealth();
 
+  /// Override [ModbusHealthWindowConfig.mode] at runtime (`slide_window` /
+  /// `immediate`). Used for product.ini `control_card_comm_alarm_mode`.
+  ///
+  /// Pass `null` or empty to clear the override and use config JSON again.
+  void applyHealthWindowMode(String? mode);
+
   /// Pause poll, run [body], restart poll if it was active.
   Future<T> exclusiveSession<T>(Future<T> Function() body);
 
@@ -290,6 +296,9 @@ final class _LinuxModbusHal implements ModbusHal {
   /// Recent group-cycle outcomes for slide_window health (true = failure).
   final List<bool> _healthFailures = [];
 
+  /// Runtime override for [ModbusHealthWindowConfig.mode] (product.ini).
+  String? _healthModeOverride;
+
   /// Last watch emit time per attribute (edge or reminder) for remind intervals.
   final Map<String, DateTime> _lastNotifyAt = {};
 
@@ -457,14 +466,7 @@ final class _LinuxModbusHal implements ModbusHal {
       count: group.count,
     );
     if (words == null || words.length < group.count) {
-      _emitHealth(
-        ModbusHealth(
-          groupId: groupId,
-          ok: false,
-          truncated: words != null,
-          message: words == null ? 'read failed' : 'truncated',
-        ),
-      );
+      // On-demand reads must not drive C001; only continuous poll health does.
       throw const HalIoException('modbus group read failed');
     }
     _groupWords[groupId] = _GroupWordCache(start: group.start, words: words);
@@ -476,7 +478,6 @@ final class _LinuxModbusHal implements ModbusHal {
       _attrCache[attr.id] = _AttrCacheEntry(value);
       result[attr.id] = value;
     }
-    _emitHealth(ModbusHealth(groupId: groupId, ok: true));
     return result;
   }
 
@@ -599,14 +600,6 @@ final class _LinuxModbusHal implements ModbusHal {
         if (words == null || words.length < group.count) {
           anyGroupFail = true;
           _recordHealthFailure(true);
-          _emitHealth(
-            ModbusHealth(
-              groupId: groupId,
-              ok: false,
-              truncated: words != null,
-              message: words == null ? 'read failed' : 'truncated',
-            ),
-          );
         } else {
           anyGroupOk = true;
           _recordHealthFailure(false);
@@ -614,7 +607,6 @@ final class _LinuxModbusHal implements ModbusHal {
             start: group.start,
             words: words,
           );
-          _emitHealth(ModbusHealth(groupId: groupId, ok: true));
           cycleChanges.addAll(_diffGroupAttributes(groupId, words));
         }
 
@@ -632,22 +624,8 @@ final class _LinuxModbusHal implements ModbusHal {
         _dispatchWatch(cycleChanges, hadSuccessfulRead: anyGroupOk);
       }
 
-      // Aggregate window health when configured.
-      final window = config.poll.health;
-      if (window != null && anyGroupFail) {
-        final unhealthy = _isWindowUnhealthy(window);
-        if (unhealthy) {
-          _emitHealth(
-            ModbusHealth(
-              ok: false,
-              truncated: true,
-              message:
-                  'health window: ${_healthFailures.where((f) => f).length}/'
-                  '${window.windowSize} failures',
-            ),
-          );
-        }
-      }
+      // C001 input: emit only aggregate window health (never per-group).
+      _emitAggregateHealth(anySample: anyGroupOk || anyGroupFail);
     } finally {
       _cycleBusy = false;
     }
@@ -1024,8 +1002,33 @@ final class _LinuxModbusHal implements ModbusHal {
     return [high & 0xFFFF, low & 0xFFFF];
   }
 
+  @override
+  void applyHealthWindowMode(String? mode) {
+    final trimmed = mode?.trim() ?? '';
+    if (trimmed.isEmpty) {
+      _healthModeOverride = null;
+      return;
+    }
+    if (trimmed != 'slide_window' && trimmed != 'immediate') {
+      return;
+    }
+    _healthModeOverride = trimmed;
+  }
+
+  ModbusHealthWindowConfig? _effectiveHealthWindow() {
+    final base = config.poll.health;
+    if (base == null) {
+      return null;
+    }
+    final override = _healthModeOverride;
+    if (override == null || override == base.mode) {
+      return base;
+    }
+    return base.copyWith(mode: override);
+  }
+
   void _recordHealthFailure(bool failed) {
-    final window = config.poll.health;
+    final window = _effectiveHealthWindow();
     if (window == null) return;
     _healthFailures.add(failed);
     while (_healthFailures.length > window.windowSize) {
@@ -1040,6 +1043,24 @@ final class _LinuxModbusHal implements ModbusHal {
     if (_healthFailures.length < window.failureThreshold) return false;
     final failures = _healthFailures.where((f) => f).length;
     return failures >= window.failureThreshold;
+  }
+
+  void _emitAggregateHealth({required bool anySample}) {
+    final window = _effectiveHealthWindow();
+    if (window == null || !anySample) {
+      return;
+    }
+    final unhealthy = _isWindowUnhealthy(window);
+    final failCount = _healthFailures.where((f) => f).length;
+    _emitHealth(
+      ModbusHealth(
+        ok: !unhealthy,
+        truncated: unhealthy,
+        message: unhealthy
+            ? 'health window: $failCount/${window.windowSize} failures'
+            : null,
+      ),
+    );
   }
 
   void _emitHealth(ModbusHealth health) {

@@ -1,12 +1,12 @@
-import 'dart:io';
-
 import 'package:cyber_alarm/cyber_alarm.dart';
 import 'package:cyber_hal/modbus.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/features/monitor/application/machine_status_controller.dart';
 import 'package:lws_hmi/features/warn_alarm/catalog/product_alarm_catalog.dart';
-import 'package:lws_hmi/features/warn_alarm/infrastructure/file_alarm_log_repository.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/modbus_alarm_attribute_adapter.dart';
+import 'package:lws_hmi/features/warn_alarm/infrastructure/sqlite_alarm_log_repository.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+import 'package:sqlite3/sqlite3.dart';
 
 void main() {
   test('product catalog covers Modbus + lws-ui non-Modbus codes', () {
@@ -26,22 +26,39 @@ void main() {
     expect(cat.resolve('ZZZ').severity, AlarmSeverity.unknown);
   });
 
-  test('file log inserts on rising and clear empties', () async {
-    final dir = await Directory.systemTemp.createTemp('alarm-log-');
-    final path = '${dir.path}/alarm-log.json';
-    final repo = FileAlarmLogRepository(path: path);
+  test('sqlite alarm_logs inserts each rising and clear empties', () async {
+    final db = sqlite3.openInMemory();
+    final repo = SqliteAlarmLogRepository(database: db);
+    final t0 = DateTime.utc(2026, 7, 21, 12, 0, 0);
     await repo.insertRising(
       AlarmLogEntry(
         code: 'H001',
         title: 'Gun',
-        timestamp: DateTime.utc(2026, 7, 21),
+        timestamp: t0,
       ),
     );
     expect(await repo.query(), hasLength(1));
+
+    // Repository does not dedup — each rising insert is a row.
+    await repo.insertRising(
+      AlarmLogEntry(
+        code: 'H001',
+        title: 'Gun',
+        timestamp: t0.add(const Duration(minutes: 5)),
+      ),
+    );
+    expect(await repo.query(), hasLength(2));
+
     await repo.clear();
     expect(await repo.query(), isEmpty);
     await repo.dispose();
-    await dir.delete(recursive: true);
+  });
+
+  test('machine status attribute ids match Modbus catalog', () {
+    expect(MachineStatusIds.modbusWatchIds, contains('telemetry.blow_pressure'));
+    expect(MachineStatusIds.modbusWatchIds, contains('telemetry.laser_current'));
+    expect(MachineStatusIds.modbusWatchIds, contains('machine.laser_on'));
+    expect(MachineStatusIds.modbusWatchIds, contains('machine.gun_switch_on'));
   });
 
   test('health edge emits C001 rising then falling once each', () async {

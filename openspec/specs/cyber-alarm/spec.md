@@ -77,6 +77,8 @@ The product stack SHALL place warn/alarm **domain policy and orchestration** in 
 
 `cyber_alarm` SHALL define a historical alarm-log repository port. The product App SHALL implement persistence. Rows SHALL be inserted on rising-edge onset (at least code, label/title, timestamp). Clearing the historical log SHALL remove persisted history and MUST NOT clear live Modbus attribute state or force-inactive HAL values. Query APIs SHALL be consumable by Monitor without re-parsing registers.
 
+This product App SHALL back the port with SQLite at `/var/lib/hmi/alarm-logs.db` (→ `/userdata/hmi/alarm-logs.db`), sole table `alarm_logs` with columns `id`, `code`, `content`, `timestamp` (epoch ms), `level`. Display SHALL format `timestamp` as `YYYY-MM-DD HH:mm` (local). The repository SHALL insert one row per `insertRising` call and MUST NOT apply a time-window dedup; onset policy belongs to Modbus health / attribute edges and `cyber_alarm` (rising only). The App MUST NOT use a JSON-array file as the primary alarm history store.
+
 #### Scenario: Rising edge inserts history
 
 - **WHEN** alarm code `H001` transitions inactive→active
@@ -87,6 +89,11 @@ The product stack SHALL place warn/alarm **domain policy and orchestration** in 
 - **WHEN** the operator clears Alarm Logs
 - **THEN** historical rows are removed
 - **AND** if `alarm.gun_comm` remains true, the live active representation MAY still show that alarm as active
+
+#### Scenario: No repository time-window dedup
+
+- **WHEN** the coordinator calls `insertRising` twice for the same code
+- **THEN** the repository persists two rows (callers MUST NOT rely on store-side coalescing)
 
 ### Requirement: Warn presentation gated during boot self-check
 

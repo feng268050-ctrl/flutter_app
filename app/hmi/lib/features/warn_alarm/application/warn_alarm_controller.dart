@@ -10,8 +10,8 @@ import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart
 import 'package:lws_hmi/features/warn_alarm/catalog/product_alarm_catalog.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/boot_self_check_warn_gate.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/demo_alarm_command_watcher.dart';
-import 'package:lws_hmi/features/warn_alarm/infrastructure/file_alarm_log_repository.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/modbus_alarm_attribute_adapter.dart';
+import 'package:lws_hmi/features/warn_alarm/infrastructure/sqlite_alarm_log_repository.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_sound.dart';
 import 'package:lws_hmi/features/warn_alarm/presentation/cyber_ui_warn_presentation.dart';
 
@@ -27,7 +27,7 @@ final class WarnAlarmController {
     DangerousOperationsSettings? dangerousOperations,
     bool Function(String code)? infoStyleForCode,
   })  : catalog = catalog ?? ProductAlarmCatalog.seed(),
-        log = logRepository ?? FileAlarmLogRepository(),
+        log = logRepository ?? SqliteAlarmLogRepository(),
         _sound = sound ?? WarnAlarmSound(services.audio) {
     _presentation = CyberUiWarnPresentation(
       navigatorKey: navigatorKey,
@@ -205,8 +205,8 @@ final class WarnAlarmController {
     await _adapter.dispose();
     await _sound.dispose();
     monitor.dispose();
-    if (log is FileAlarmLogRepository) {
-      await (log as FileAlarmLogRepository).dispose();
+    if (log is SqliteAlarmLogRepository) {
+      await (log as SqliteAlarmLogRepository).dispose();
     }
   }
 }

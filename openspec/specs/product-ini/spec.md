@@ -44,6 +44,8 @@ The HAL SHALL expose a `ProductInfo` (or equivalent) type with built-in string p
 
 The HAL `ProductInfo` SHALL provide accessors (functions/methods) for at least: `camera_ip`, `camera_type`, `focus_scale_ref`, and `control_card_comm_alarm_mode`. Each SHALL return the trimmed ini value or empty string when absent. Typed accessors for `camera_type` SHALL accept only `1` or `2` (otherwise empty). Typed accessors for `control_card_comm_alarm_mode` SHALL accept only `slide_window` or `immediate` (otherwise empty). A generic `get(key)` SHALL return the raw trimmed value or empty string for any key (including unknown future keys).
 
+The product App SHALL apply a non-empty `control_card_comm_alarm_mode` to Modbus HAL via `applyHealthWindowMode` when continuous poll starts (C001 window mode). When the key is absent or empty, HAL SHALL keep the product `modbus.json` `poll.health.mode` default (`slide_window`). Host `make set-prop CONTROL_CARD_COMM_ALARM_MODE=…` SHALL write the lowercase key and restart HMI so the mode reloads.
+
 #### Scenario: Extended key present
 
 - **WHEN** `product.ini` contains `camera_ip=192.168.1.50` and `camera_type=2`
@@ -59,6 +61,11 @@ The HAL `ProductInfo` SHALL provide accessors (functions/methods) for at least: 
 
 - **WHEN** `product.ini` contains `custom_factory_flag=yes`
 - **THEN** `get('custom_factory_flag')` SHALL return `yes` without requiring a HAL API change
+
+#### Scenario: Comm alarm mode drives C001 window
+
+- **WHEN** `product.ini` contains `control_card_comm_alarm_mode=immediate` and Modbus live poll starts
+- **THEN** the App SHALL call HAL `applyHealthWindowMode('immediate')` so C001 uses immediate mode
 
 ### Requirement: Host SN matches ProductInfo sn
 

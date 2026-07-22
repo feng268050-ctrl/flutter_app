@@ -1283,7 +1283,7 @@ flutter-pi 官方主要验证 **树莓派**；**RK356x**（P1 在 **ynh960 / RK3
 | **yaml-cpp**               | 原生读 `config.yaml`                                   | P3                 | 或 FFI 只暴露已解析结构                                                                                                       |
 | **ping / iproute2**        | eth0 link smoke；P5 相机连通性                            | **P2.1** / P5      | P1 busybox 可能够用                                                                                                      |
 | **Avahi**                  | mDNS 发现                                             | P5                 |                                                                                                                      |
-| **sqlite**                 | 本地告警 / 工艺库                                          | P5                 | drift / isar                                                                                                         |
+| **sqlite**                 | 本地告警 / 工艺库                                          | **P4** / P5        | 告警历史：`/var/lib/hmi/alarm-logs.db`（→ `/userdata/hmi/alarm-logs.db`）单表 `alarm_logs`；工艺库 / :5580 仍属 P4.4 / P5 |
 | **curl / ca-certificates** | 云同步、OTA；**P2.1 Demo HTTPS probe**                   | **P2.1** / P5 / P2.4 | `BR2_PACKAGE_CA_CERTIFICATES` in `lws_hmi_network.config`（Dart `HttpClient` 需要 `/etc/ssl/certs/ca-certificates.crt`） |
 | **ALSA / 本机音频**            | 喇叭 smoke                                            | **P2.1**           | 最小音频栈；P5 业务音效再扩                                                                                                      |
 
@@ -1603,7 +1603,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 子阶段任务表见 **§1.2**；**P4.6 须按 lws-ui 实装建 inventory**（§11.7），勿仅扫 openspec。**P4.8 OTA** 复用 **P2.5**，不另建分区方案。
 
-**进度（2026-07-21）**：产品 Home / Settings / Monitor（告警温度）/ 开机自检 / 系统状态卡 / `product.ini` 等已交付；**P4.2**、**P4.6** 进行中；其余子阶段未开始。
+**进度（2026-07-22）**：产品 Home / Settings / Monitor（Alarm Information + **Machine Status** live gauges/tiles）/ 开机自检 / 系统状态卡 / `product.ini` / **告警历史 SQLite**（`/var/lib/hmi/alarm-logs.db` · `alarm_logs`）/ C001 `control_card_comm_alarm_mode` 等已交付；**P4.2**、**P4.6** 进行中；其余子阶段未开始。
 
 #### P4.1 — 视频与 MediaMTX 🔲
 
@@ -1631,7 +1631,9 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 
 #### P4.4 — 本地 HTTP 与数据 🔲
 
-- **:5580** Dart `shelf`；**sqlite** + 工艺库；**Avahi** mDNS
+- **:5580** Dart `shelf`；**Avahi** mDNS
+- **sqlite 工艺库**（告警历史已落地：`/var/lib/hmi/alarm-logs.db` / 表 `alarm_logs`）
+- 云上传占位；与 P4.8 OTA UI 协调
 - Modbus **量产**轮询/寄存器（扩 P2 demo / HAL）
 
 #### P4.5 — 云与远程 🔲

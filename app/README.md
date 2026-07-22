@@ -122,6 +122,10 @@ Home route is the P2 demo (`lib/ui/demo/p2_demo_page.dart`, `MaterialApp.home`).
 | Control Card Version | attribute `device.control_card_version` (input `0x0002`) |
 | Laser / Wire / Gunhead SN | `0x0032`–`0x0033`, `0x0035`, `0x0038`–`0x0039` (lws-ui formatting) |
 | Alarm temps (Monitor) | Motor / Motor Driver / Protective Mirror / Collimator — `0x0061`–`0x0064`, raw×0.1 °C |
+| Machine Status gauges | Gas Pressure `telemetry.blow_pressure` @ `0x0060` (gauge **0–1500** kPa); Laser Current `telemetry.laser_current` @ `0x006F` (raw×0.1 A, gauge **0–100** A) — lws-ui parity |
+| Machine Status tiles | `machine.laser_on` / `air_valve_on` / `safety_ground_lock` / `gun_switch_on` / `red_light_on` / `wire_feeding_on`; Camera via IP-camera session |
+| Alarm history | SQLite `/var/lib/hmi/alarm-logs.db` → `/userdata/hmi/alarm-logs.db`, table `alarm_logs` (`code` / `content` / `timestamp` epoch ms / `level`; UI `YYYY-MM-DD HH:mm`; one row per rising insert; 90‑day prune) |
+| C001 (comm fault) | Modbus aggregate `poll.health` (`slide_window` 5/3 default); override via `product.ini` `control_card_comm_alarm_mode` |
 | RGB pins | 契约 **GPIO_5 / GPIO_4 / GPIO_7**（红/黄/绿）；路径 `/sys/class/gpio_innohi/GPIO_N/value` |
 | GPIO backend | 优先 `gpio_innohi`；经典 `/sys/class/gpio` 仅兜底（脚被占用时 export 会失败） |
 | Rootfs | `BR2_PACKAGE_LIBSERIALPORT` via `overlay/buildroot/chips/lws_hmi_p2_io.config` |

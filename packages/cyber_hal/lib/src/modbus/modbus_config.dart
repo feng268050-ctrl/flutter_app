@@ -232,7 +232,21 @@ final class ModbusHealthWindowConfig {
 
   final int windowSize;
   final int failureThreshold;
+
+  /// `slide_window` (default) or `immediate`.
   final String mode;
+
+  ModbusHealthWindowConfig copyWith({
+    int? windowSize,
+    int? failureThreshold,
+    String? mode,
+  }) {
+    return ModbusHealthWindowConfig(
+      windowSize: windowSize ?? this.windowSize,
+      failureThreshold: failureThreshold ?? this.failureThreshold,
+      mode: mode ?? this.mode,
+    );
+  }
 
   factory ModbusHealthWindowConfig.fromJson(Map<String, dynamic> json) =>
       ModbusHealthWindowConfig(

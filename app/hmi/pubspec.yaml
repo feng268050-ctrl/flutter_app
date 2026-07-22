@@ -63,6 +63,7 @@ dependencies:
   video_player: 2.9.5
   video_player_platform_interface: ^6.2.0
   flutterpi_gstreamer_video_player: 0.1.1+1
+  sqlite3: ^2.4.0
 
 dev_dependencies:
   flutter_test:

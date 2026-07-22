@@ -201,6 +201,12 @@ The HAL SHALL provide `hal/sys_info` exposing a structured host snapshot includi
 - **WHEN** the App needs `camera_ip` or `control_card_comm_alarm_mode`
 - **THEN** it SHALL read them from HAL `ProductInfo` accessors rather than from `SysInfoSnapshot` inventory fields
 
+#### Scenario: Comm alarm mode applied to Modbus health
+
+- **WHEN** `ProductInfo.controlCardCommAlarmMode()` returns `slide_window` or `immediate`
+- **THEN** the App SHALL apply that mode to Modbus HAL health-window override before relying on C001
+- **AND** when the accessor returns empty, Modbus SHALL keep `modbus.json` `poll.health.mode`
+
 ### Requirement: Network module grouping
 Ethernet, Wi‑Fi, and system proxy SHALL be grouped under `hal/network` with optional subpackage imports (`ethernet`, `wifi`, `proxy`). Apps MUST NOT be required to import bluetooth or unrelated modules to use network APIs.
 

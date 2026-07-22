@@ -75,7 +75,8 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | LCD/MIPI params (seed) | `/mnt/private1/` | private1 |
 | OEM / vendor drop-ins (optional) | `/oem/` | oem |
 | **RKNN models** (`*.rknn`, `config.yaml`) | **`/userdata/models/`** | userdata |
-| PR0 recording, sqlite, online OTA staging | `/userdata/…` (incl. **`/userdata/ota/`**) | userdata |
+| PR0 recording, online OTA staging | `/userdata/…` (incl. **`/userdata/ota/`**) | userdata |
+| **Alarm history SQLite** (`alarm_logs` table) | **`/var/lib/hmi/alarm-logs.db`** → `/userdata/hmi/alarm-logs.db` | userdata |
 | **Subsystem state (P2.3+)** | **`/userdata/{wpa_supplicant,network,bluetooth,hmi}/`** (symlinked from `/var/lib/*`) | userdata |
 | App config / cache | `/userdata/cfg/` (convention) | userdata |
 
@@ -85,6 +86,14 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 - `/var/lib/network` → `/userdata/network`
 - `/var/lib/bluetooth` → `/userdata/bluetooth`
 - `/var/lib/hmi` → `/userdata/hmi`
+
+Notable files under `/var/lib/hmi` (persist across `make upgrade` / `push-app`):
+
+| File | Role |
+|------|------|
+| `product.ini` | Factory identity / tunables (`brand`, `model`, `sn`, `camera_ip`, `control_card_comm_alarm_mode`, …) |
+| `alarm-logs.db` | SQLite alarm history; single table `alarm_logs` (`timestamp` epoch ms; display `YYYY-MM-DD HH:mm`) |
+| `misc-settings.json`, `mouse.conf`, … | Other HMI prefs |
 
 ## Prefs: flash vs upgrade (P2.3 / P2.4)
 

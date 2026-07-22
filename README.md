@@ -286,6 +286,7 @@ make build-app
 make push-app                   # SN=... when multiple boards; hot-swap /opt/hmi (no rootfs rebuild)
 make set-prop BRAND=Innohi MODEL=YNH960   # upsert /var/lib/hmi/product.ini (multi-key OK); restarts hmi
 # Multi-board + product SN: CHIPID=<chip> make set-prop SN=FACTORY-001
+make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
 make del-prop CAMERA_IP         # remove one product.ini key; restarts hmi if changed
@@ -293,6 +294,8 @@ make upgrade                    # A/B stream inactive FIT+rootfs (board already 
 ```
 
 Device selection: use **`SN=`** / **`LWS_HMI_SN=`** (matches `make devices` **SN** or **ChipID**). **`CHIPID=`** matches ChipID only. Put `SN=` / `IP=` in `.env` for IDE / daily use.
+
+Alarm history persists in SQLite **`/var/lib/hmi/alarm-logs.db`** (→ `/userdata/hmi/alarm-logs.db`, table `alarm_logs`) — kept across `push-app` / `make upgrade`.
 
 Full-system A/B (kernel/rootfs, not app-only): `make upgrade` streams `rootfs.img` + the inactive letter’s FIT into partitions (not userdata staging).
 

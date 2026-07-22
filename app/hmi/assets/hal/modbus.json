@@ -1699,7 +1699,9 @@
         "count": 1
       },
       "decode": {
-        "type": "u16"
+        "type": "u16",
+        "scale": 0.1,
+        "unit": "A"
       },
       "meta": {
         "label": "Laser current"

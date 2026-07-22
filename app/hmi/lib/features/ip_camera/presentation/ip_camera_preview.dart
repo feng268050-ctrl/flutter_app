@@ -94,7 +94,6 @@ class _IpCameraPreviewState extends State<IpCameraPreview> {
   Object? _playerError;
   bool _starting = false;
   int _generation = 0;
-
   bool get _canPreview =>
       widget.linkPhase == IpCameraUiPhase.connected &&
       widget.relayReady &&

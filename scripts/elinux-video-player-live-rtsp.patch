@@ -17,22 +17,16 @@ index 40a3fc2..c5183f8 100644
  
 -  // Sets internal video size and buffier.
 +  // Live RTSP often has no negotiated caps until PLAYING (NO_PREROLL).
++  // Do NOT poll with g_usleep here — Create() runs on Flutter's platform
++  // thread and a multi-second wait freezes the whole UI (spinner included).
++  // Stay PAUSED until Play(); early PLAYING+Flutter pause stalls live RTSP.
    GetVideoSize(width_, height_);
 +  if (width_ <= 0 || height_ <= 0) {
-+    if (gst_element_set_state(gst_.pipeline, GST_STATE_PLAYING) !=
-+        GST_STATE_CHANGE_FAILURE) {
-+      for (int i = 0; i < 100 && (width_ <= 0 || height_ <= 0); ++i) {
-+        g_usleep(100 * 1000);  // 100ms, up to ~10s
-+        GetVideoSize(width_, height_);
-+      }
-+    }
-+  }
-+  if (width_ <= 0 || height_ <= 0) {
-+    // HandoffHandler resizes when the first frame arrives.
-+    std::cerr << "Video size unknown after preroll; using placeholder"
++    // AcceptBuffer resizes on first frame. Use 16:9 so Dart aspect is sane.
++    width_ = 960;
++    height_ = 540;
++    std::cerr << "Video size unknown after preroll; using 960x540 placeholder"
 +              << std::endl;
-+    width_ = 16;
-+    height_ = 16;
 +  }
    pixels_.reset(new uint32_t[width_ * height_]);
  

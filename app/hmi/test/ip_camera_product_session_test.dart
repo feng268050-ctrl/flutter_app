@@ -123,7 +123,8 @@ class _FakeWifi implements WifiController {
 }
 
 void main() {
-  test('session reaches connected with healthy camera + path; preview is upstream',
+  test(
+      'session reaches connected with healthy camera + path; preview falls back when relay fails',
       () async {
     var ok = false;
     final linuxCam = LinuxIpCameraController(
@@ -152,8 +153,37 @@ void main() {
       isA<IpCameraUiStatus>(),
     );
     expect(session.currentStatus.phase, IpCameraUiPhase.connected);
+    // Relay stub failed → preview falls back to native camera RTSP.
     expect(session.previewPr1?.toString(), 'rtsp://192.168.1.100/PR1');
     expect(session.previewPr0?.toString(), 'rtsp://192.168.1.100/PR0');
+    expect(session.relayStatus.phase, IpCameraRelayPhase.error);
+    expect(session.previewReady, isTrue);
+
+    await session.dispose();
+  });
+
+  test('preview binds localhost MediaMTX when relay is running', () async {
+    final cam = LinuxIpCameraController(
+      cameraHost: '192.168.1.100',
+      recoveryStablePings: 1,
+      probe: (_) async => true,
+    );
+    final session = IpCameraProductSession(
+      camera: cam,
+      ethernet: _FakeEth(),
+      wifi: _FakeWifi(),
+      eth0Path: StubIpCameraEth0Path(ok: true, pingOk: true),
+      relay: StubIpCameraMediaMtxRelay(),
+      eventDebounce: Duration.zero,
+      failedRetryInterval: const Duration(days: 1),
+    );
+
+    await session.start();
+    expect(session.currentStatus.phase, IpCameraUiPhase.connected);
+    expect(session.relayStatus.phase, IpCameraRelayPhase.running);
+    expect(session.previewPr1?.toString(), 'rtsp://127.0.0.1:8554/camera/pr1');
+    expect(session.previewPr0?.toString(), 'rtsp://127.0.0.1:8554/camera/pr0');
+    expect(session.previewReady, isTrue);
 
     await session.dispose();
   });

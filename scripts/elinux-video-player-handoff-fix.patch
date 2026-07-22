@@ -1,0 +1,70 @@
+diff --git a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc
+index c5183f8..handoff1 100644
+--- a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc
++++ b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc
+@@ -49,7 +49,7 @@ GstVideoPlayer::GstVideoPlayer(
+     width_ = 16;
+     height_ = 16;
+   }
+-  pixels_.reset(new uint32_t[width_ * height_]);
++  pixels_.reset(new uint32_t[static_cast<size_t>(width_) * height_]);
+ 
+   stream_handler_->OnNotifyInitialized();
+ }
+@@ -355,27 +355,36 @@ void GstVideoPlayer::HandoffHandler(GstElement* fakesink, GstBuffer* buf,
+                                     GstPad* new_pad, gpointer user_data) {
+   auto* self = reinterpret_cast<GstVideoPlayer*>(user_data);
+   auto* caps = gst_pad_get_current_caps(new_pad);
++  if (!caps) {
++    return;
++  }
+   auto* structure = gst_caps_get_structure(caps, 0);
++  if (!structure) {
++    gst_caps_unref(caps);
++    return;
++  }
+ 
+   int width;
+   int height;
+   gst_structure_get_int(structure, "width", &width);
+   gst_structure_get_int(structure, "height", &height);
++  gst_caps_unref(caps);
+   if (width != self->width_ || height != self->height_) {
+     self->width_ = width;
+     self->height_ = height;
+-    self->pixels_.reset(new uint32_t[width * height]);
+-    std::cout << "Pixel buffer size: width = " << width
+-              << ", height = " << height << std::endl;
++    self->pixels_.reset(new uint32_t[static_cast<size_t>(width) * height]);
+   }
+ 
+-  std::lock_guard<std::shared_mutex> lock(self->mutex_buffer_);
+-  if (self->gst_.buffer) {
+-    gst_buffer_unref(self->gst_.buffer);
+-    self->gst_.buffer = nullptr;
++  {
++    std::lock_guard<std::shared_mutex> lock(self->mutex_buffer_);
++    if (self->gst_.buffer) {
++      gst_buffer_unref(self->gst_.buffer);
++      self->gst_.buffer = nullptr;
++    }
++    self->gst_.buffer = gst_buffer_ref(buf);
+   }
+-  self->gst_.buffer = gst_buffer_ref(buf);
++  // Notify outside the buffer lock — texture populate may run concurrently.
+   self->stream_handler_->OnNotifyFrameDecoded();
+ }
+ 
+diff --git a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h
+index eb78907..arrfix 100644
+--- a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h
++++ b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h
+@@ -58,7 +58,7 @@ class GstVideoPlayer {
+   VideoPlayerStreamHandler* stream_handler_;
+   GstVideoElements gst_;
+   std::string uri_;
+-  std::unique_ptr<uint32_t> pixels_;
++  std::unique_ptr<uint32_t[]> pixels_;
+   int32_t width_ = 0;
+   int32_t height_ = 0;
+   double volume_ = 1.0;

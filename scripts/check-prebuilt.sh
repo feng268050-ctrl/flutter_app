@@ -84,6 +84,39 @@ if has_include "lws_hmi_wayland.config"; then
     echo "  Run: make build-flutter-embedded-linux" >&2
     missing=1
   fi
+  # Live RTSP preview needs elinux-video-player-live-rtsp.patch (null caps /
+  # NO_PREROLL). Unpatched plugin SIGSEGVs in GetVideoSize during initialize.
+  if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
+    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
+      grep -q 'Video size unknown after preroll'; then
+    echo "ERROR: libvideo_player_plugin.so missing live-RTSP patch marker" >&2
+    echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+    missing=1
+  fi
+  # Flutter play() always setPlaybackSpeed → flush seek stalls live RTSP (black preview).
+  if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
+    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
+      grep -q 'skip flush-seek for live/unseekable'; then
+    echo "ERROR: libvideo_player_plugin.so missing live-seek patch marker" >&2
+    echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+    missing=1
+  fi
+  # Non-blocking Create(): must not g_usleep-poll for live caps on platform thread.
+  if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
+    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
+      grep -q 'using 960x540 placeholder'; then
+    echo "ERROR: libvideo_player_plugin.so missing nonblock-init marker" >&2
+    echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+    missing=1
+  fi
+  # MPP hardware RGBA — software videoconvert is ~1fps on RK3566.
+  if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
+    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
+      grep -q 'MppElementSetup: mppvideodec format=RGBA'; then
+    echo "ERROR: libvideo_player_plugin.so missing MPP RGBA setup marker" >&2
+    echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+    missing=1
+  fi
 fi
 
 if has_include "lws_hmi_mediamtx.config"; then

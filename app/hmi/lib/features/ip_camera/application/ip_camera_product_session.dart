@@ -93,15 +93,42 @@ final class IpCameraProductSession {
 
   IpCameraUiStatus get currentStatus => _status;
 
-  /// Settings / demo preview binds the camera's native RTSP (not MediaMTX).
-  /// MediaMTX remains optional for multi-consumer fan-out once the pull path is stable.
-  Uri? get previewPr0 =>
-      _status.phase == IpCameraUiPhase.connected ? camera.streams.pr0 : null;
+  /// Local MediaMTX fan-out when relay is running; native upstream only as
+  /// fallback if the relay failed (keeps Settings preview usable).
+  Uri? get previewPr0 {
+    if (_status.phase != IpCameraUiPhase.connected) {
+      return null;
+    }
+    switch (_relay.currentStatus.phase) {
+      case IpCameraRelayPhase.running:
+        return _relay.localPr0;
+      case IpCameraRelayPhase.error:
+        return camera.streams.pr0;
+      case IpCameraRelayPhase.stopped:
+      case IpCameraRelayPhase.starting:
+        return null;
+    }
+  }
 
-  Uri? get previewPr1 =>
-      _status.phase == IpCameraUiPhase.connected ? camera.streams.pr1 : null;
+  Uri? get previewPr1 {
+    if (_status.phase != IpCameraUiPhase.connected) {
+      return null;
+    }
+    switch (_relay.currentStatus.phase) {
+      case IpCameraRelayPhase.running:
+        return _relay.localPr1;
+      case IpCameraRelayPhase.error:
+        return camera.streams.pr1;
+      case IpCameraRelayPhase.stopped:
+      case IpCameraRelayPhase.starting:
+        return null;
+    }
+  }
 
   IpCameraRelayStatus get relayStatus => _relay.currentStatus;
+
+  /// True when Settings may open the GStreamer texture (relay up, or fallback).
+  bool get previewReady => previewPr1 != null;
 
   /// Home first frame — idempotent.
   Future<void> start() async {
@@ -243,8 +270,8 @@ final class IpCameraProductSession {
             attempt: _attempt,
           ));
           _attempt = 0;
-          // Best-effort fan-out; preview does not wait on MediaMTX.
-          unawaited(_relay.ensureStarted(camera.streams));
+          // Await relay so Settings can bind localhost preview after ensureReady.
+          await _relay.ensureStarted(camera.streams);
           return;
         }
         await Future<void>.delayed(Duration(milliseconds: 350 * _attempt));
@@ -279,7 +306,7 @@ final class IpCameraProductSession {
   Future<void> _onBecameHealthy() async {
     _emit(const IpCameraUiStatus(phase: IpCameraUiPhase.connected));
     _attempt = 0;
-    unawaited(_relay.ensureStarted(camera.streams));
+    await _relay.ensureStarted(camera.streams);
   }
 
   Future<void> _onPhysicalLinkLost() async {

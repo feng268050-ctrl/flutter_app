@@ -86,6 +86,15 @@ final class LinuxIpCameraMediaMtxRelay implements IpCameraMediaMtxRelay {
         );
         return;
       }
+      final active = await _run('systemctl', <String>['is-active', unit]);
+      final activeOut = active.stdout.toString().trim();
+      if (active.exitCode != 0 || activeOut != 'active') {
+        _status = IpCameraRelayStatus(
+          phase: IpCameraRelayPhase.error,
+          detail: 'mediamtx not active ($activeOut)',
+        );
+        return;
+      }
       _status = const IpCameraRelayStatus(phase: IpCameraRelayPhase.running);
     } catch (e) {
       debugPrint('ip_camera mediamtx ensure failed: $e');

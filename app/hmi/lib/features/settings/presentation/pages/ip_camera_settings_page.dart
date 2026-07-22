@@ -41,10 +41,20 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
   String? _error;
   String? _lastSavedPath;
   bool _recordBusy = false;
+  /// Avoid starting GStreamer during the push route transition (blocks UI).
+  bool _routeSettled = false;
+  Timer? _routeSettleTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _routeSettleTimer = Timer(const Duration(milliseconds: 400), () {
+        if (mounted) {
+          setState(() => _routeSettled = true);
+        }
+      });
+    });
     unawaited(_boot());
   }
 
@@ -177,6 +187,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
 
   @override
   void dispose() {
+    _routeSettleTimer?.cancel();
     unawaited(_sub?.cancel());
     unawaited(_recSub?.cancel());
     super.dispose();
@@ -187,7 +198,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
     final session = _session;
     final previewUrl = session?.previewPr1;
     final previewReady =
-        _status.phase == IpCameraUiPhase.connected && previewUrl != null;
+        (session?.previewReady ?? false) && _routeSettled;
 
     return SettingsScaffold(
       title: 'IP Camera',
@@ -240,11 +251,14 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
                   color: Colors.black87,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: IpCameraPreview(
-                  rtspUrl: previewUrl,
-                  linkPhase: _status.phase,
-                  relayReady: previewReady,
-                  playerFactory: widget.previewPlayerFactory,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: IpCameraPreview(
+                    rtspUrl: previewUrl,
+                    linkPhase: _status.phase,
+                    relayReady: previewReady,
+                    playerFactory: widget.previewPlayerFactory,
+                  ),
                 ),
               ),
             ),

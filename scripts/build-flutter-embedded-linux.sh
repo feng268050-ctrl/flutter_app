@@ -117,6 +117,20 @@ EOF
       (cd \"\$SRC\" && patch -p1 < \"\$PATCH\")
     fi
   fi
+  HANDOFF_PATCH=/work/lws-hmi/scripts/elinux-video-player-handoff-fix.patch
+  if [[ -f \"\$HANDOFF_PATCH\" ]]; then
+    if ! grep -q 'Notify outside the buffer lock' \\
+      \"\$SRC/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc\" 2>/dev/null; then
+      (cd \"\$SRC\" && patch -p1 < \"\$HANDOFF_PATCH\") || true
+    fi
+  fi
+  LIVE_SEEK_PATCH=/work/lws-hmi/scripts/elinux-video-player-live-seek.patch
+  if [[ -f \"\$LIVE_SEEK_PATCH\" ]]; then
+    if ! grep -q 'skip flush-seek for live/unseekable' \\
+      \"\$SRC/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc\" 2>/dev/null; then
+      (cd \"\$SRC\" && patch -p1 < \"\$LIVE_SEEK_PATCH\") || true
+    fi
+  fi
 
   rm -rf \"\$BUILD\"
   mkdir -p \"\$BUILD\"

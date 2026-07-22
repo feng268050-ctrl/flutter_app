@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cyber_hal/ip_camera.dart';
@@ -45,6 +46,7 @@ final class LinuxIpCameraMediaMtxRelay implements IpCameraMediaMtxRelay {
   final Future<ProcessResult> Function(String exe, List<String> args) _run;
 
   IpCameraRelayStatus _status = IpCameraRelayStatus.stopped;
+  Future<void>? _ensureInFlight;
 
   @override
   IpCameraRelayStatus get currentStatus => _status;
@@ -67,6 +69,26 @@ final class LinuxIpCameraMediaMtxRelay implements IpCameraMediaMtxRelay {
 
   @override
   Future<void> ensureStarted(IpCameraStreams upstream) async {
+    final existing = _ensureInFlight;
+    if (existing != null) {
+      await existing;
+      if (_status.phase == IpCameraRelayPhase.running) {
+        return;
+      }
+    }
+    final done = Completer<void>();
+    _ensureInFlight = done.future;
+    try {
+      await _ensureStartedBody(upstream);
+    } finally {
+      _ensureInFlight = null;
+      if (!done.isCompleted) {
+        done.complete();
+      }
+    }
+  }
+
+  Future<void> _ensureStartedBody(IpCameraStreams upstream) async {
     if (!Platform.isLinux) {
       _status = const IpCameraRelayStatus(
         phase: IpCameraRelayPhase.error,
@@ -74,21 +96,28 @@ final class LinuxIpCameraMediaMtxRelay implements IpCameraMediaMtxRelay {
       );
       return;
     }
-    _status = const IpCameraRelayStatus(phase: IpCameraRelayPhase.starting);
+    if (_status.phase != IpCameraRelayPhase.running) {
+      _status = const IpCameraRelayStatus(phase: IpCameraRelayPhase.starting);
+    }
     try {
       final host = upstream.pr0.host;
       await _run(renderHelper, <String>[host]);
-      final start = await _run('systemctl', <String>['start', unit]);
-      if (start.exitCode != 0) {
-        _status = IpCameraRelayStatus(
-          phase: IpCameraRelayPhase.error,
-          detail: 'systemctl start failed (${start.exitCode})',
-        );
-        return;
+
+      // If systemd already has the unit, skip start (avoids queued job stalls).
+      final already = await _isActive();
+      if (!already) {
+        final start = await _run('systemctl', <String>['start', unit]);
+        if (start.exitCode != 0) {
+          _status = IpCameraRelayStatus(
+            phase: IpCameraRelayPhase.error,
+            detail: 'systemctl start failed (${start.exitCode})',
+          );
+          return;
+        }
       }
-      final active = await _run('systemctl', <String>['is-active', unit]);
-      final activeOut = active.stdout.toString().trim();
-      if (active.exitCode != 0 || activeOut != 'active') {
+
+      final activeOut = await _activeState();
+      if (activeOut != 'active') {
         _status = IpCameraRelayStatus(
           phase: IpCameraRelayPhase.error,
           detail: 'mediamtx not active ($activeOut)',
@@ -103,6 +132,15 @@ final class LinuxIpCameraMediaMtxRelay implements IpCameraMediaMtxRelay {
         detail: '$e',
       );
     }
+  }
+
+  Future<bool> _isActive() async {
+    return (await _activeState()) == 'active';
+  }
+
+  Future<String> _activeState() async {
+    final active = await _run('systemctl', <String>['is-active', unit]);
+    return active.stdout.toString().trim();
   }
 
   @override
@@ -121,9 +159,13 @@ final class LinuxIpCameraMediaMtxRelay implements IpCameraMediaMtxRelay {
 }
 
 final class StubIpCameraMediaMtxRelay implements IpCameraMediaMtxRelay {
-  StubIpCameraMediaMtxRelay({this.failStart = false});
+  StubIpCameraMediaMtxRelay({
+    this.failStart = false,
+    this.startDelay = Duration.zero,
+  });
 
   final bool failStart;
+  final Duration startDelay;
   IpCameraRelayStatus _status = IpCameraRelayStatus.stopped;
 
   @override
@@ -143,6 +185,10 @@ final class StubIpCameraMediaMtxRelay implements IpCameraMediaMtxRelay {
         detail: 'stub fail',
       );
       return;
+    }
+    _status = const IpCameraRelayStatus(phase: IpCameraRelayPhase.starting);
+    if (startDelay > Duration.zero) {
+      await Future<void>.delayed(startDelay);
     }
     _status = const IpCameraRelayStatus(phase: IpCameraRelayPhase.running);
   }

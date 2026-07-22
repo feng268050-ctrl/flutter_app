@@ -188,6 +188,46 @@ void main() {
     await session.dispose();
   });
 
+  test('status stream re-notifies after relay leaves starting', () async {
+    final cam = LinuxIpCameraController(
+      cameraHost: '192.168.1.100',
+      recoveryStablePings: 1,
+      probe: (_) async => true,
+    );
+    final session = IpCameraProductSession(
+      camera: cam,
+      ethernet: _FakeEth(),
+      wifi: _FakeWifi(),
+      eth0Path: StubIpCameraEth0Path(ok: true, pingOk: true),
+      relay: StubIpCameraMediaMtxRelay(
+        startDelay: const Duration(milliseconds: 80),
+      ),
+      eventDebounce: Duration.zero,
+      failedRetryInterval: const Duration(days: 1),
+    );
+
+    var sawPreviewReady = false;
+    final sub = session.status.listen((_) {
+      if (session.previewReady) {
+        sawPreviewReady = true;
+      }
+    });
+
+    final homeStart = session.start();
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    // Settings opens while Home configure / relay start is still in flight.
+    await session.start();
+    await session.ensureReady();
+    await homeStart;
+
+    expect(session.relayStatus.phase, IpCameraRelayPhase.running);
+    expect(session.previewReady, isTrue);
+    expect(sawPreviewReady, isTrue);
+
+    await sub.cancel();
+    await session.dispose();
+  });
+
   test('exhausted attempts become failed', () async {
     final cam = LinuxIpCameraController(
       cameraHost: '192.168.1.100',

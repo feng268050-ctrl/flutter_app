@@ -1025,21 +1025,18 @@ P1 镜像可 **预置** `usr/bin/mediamtx` + unit 文件（`verify-env` 仅检�
 ```yaml
 logLevel: info
 logDestinations: [stdout]
-writeQueueSize: 32
+# writeQueueSize: omit (default 512). Do not use lws-ui's 32 on Linux.
 rtspAddress: :8554
 paths:
   camera/pr0:
     source: rtsp://192.168.1.100/PR0
     rtspTransport: udp
-    sourceOnDemand: yes
-    sourceOnDemandStartTimeout: 15s
-    sourceOnDemandCloseAfter: 10s
+    # Eager pull: App already starts/stops mediamtx with camera reachability.
+    sourceOnDemand: no
   camera/pr1:
     source: rtsp://192.168.1.100/PR1
     rtspTransport: udp
-    sourceOnDemand: yes
-    sourceOnDemandStartTimeout: 15s
-    sourceOnDemandCloseAfter: 10s
+    sourceOnDemand: no
 ```
 
 `camera_ip` 若由 `/system/etc/model.properties`（或 Buildroot 等价物）覆盖，启动前 **渲染 YAML**（同 lws-ui 动态 config）。
@@ -1056,7 +1053,7 @@ paths:
 | 项    | 说明                                                                                                                     |
 | ---- | ---------------------------------------------------------------------------------------------------------------------- |
 | 二进制  | 交叉编译 [bluenviron/mediamtx](https://github.com/bluenviron/mediamtx) `**GOOS=linux GOARCH=arm64`**（比 lws-ui Android 版简单） |
-| 版本   | 可与 lws-ui `tools/mediamtx/VERSION` 对齐（当前 v1.11.x）                                                                      |
+| 版本   | 钉在 `overlay/third-party/mediamtx.version`（当前 **v1.19.2**，upstream latest）；lws-ui APK 仍为 v1.11.3 |
 | 打包   | `lws_hmi_mediamtx.config` 或 Buildroot package + rootfs overlay                                                         |
 | 构建脚本 | 参考 lws-ui `scripts/ci/build-mediamtx.sh`，改 `GOOS=linux`                                                                |
 | 防火墙  | 默认监听 `0.0.0.0:8554`；生产可仅 wlan0 暴露                                                                                      |

@@ -213,6 +213,22 @@ sync_flutter_engine_prebuilt() {
 }
 sync_flutter_engine_prebuilt
 
+# Same for eLinux client + video plugin (Buildroot stamp may keep an old .so).
+sync_flutter_elinux_prebuilt() {
+	local script sdk_dir
+	sdk_dir="${LWS_HMI_SDK_DIR:-${RK_SDK_DIR:-}}"
+	if [ -z "$sdk_dir" ]; then
+		sdk_dir="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
+	fi
+	script="$sdk_dir/buildroot/board/rockchip/rk3566_rk3568/sync-flutter-embedded-linux.sh"
+	if [ -f "$script" ]; then
+		sh "$script" "$TARGET_DIR"
+	else
+		echo "post-systemd: skip flutter-elinux sync (missing $script — run make apply-overlay)"
+	fi
+}
+sync_flutter_elinux_prebuilt
+
 # BlueZ 5.77 + systemd: daemon lives in libexec; compat symlink for scripts using /usr/sbin.
 if [ -x "$TARGET_DIR/usr/libexec/bluetooth/bluetoothd" ] && \
 	[ ! -e "$TARGET_DIR/usr/sbin/bluetoothd" ]; then

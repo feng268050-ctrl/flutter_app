@@ -100,6 +100,11 @@ if [ -f "$SYNC_ENGINE" ]; then
 	sh "$SYNC_ENGINE" "$TARGET_DIR"
 fi
 
+SYNC_ELINUX="$(dirname "$0")/sync-flutter-embedded-linux.sh"
+if [ -f "$SYNC_ELINUX" ]; then
+	sh "$SYNC_ELINUX" "$TARGET_DIR"
+fi
+
 LWS_HMI_ROOT="${LWS_HMI_ROOT:-/work/lws-hmi}"
 ENSURE_KEYS="$TARGET_DIR/usr/libexec/hmi/ensure-sshd-hostkeys.sh"
 if [ ! -f "$ENSURE_KEYS" ]; then

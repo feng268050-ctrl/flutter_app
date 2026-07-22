@@ -109,28 +109,23 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 EOF
 
-  # Live RTSP: safe preroll / GetVideoSize / sync=FALSE for texture preview.
-  PATCH=/work/lws-hmi/scripts/elinux-video-player-live-rtsp.patch
-  if [[ -f \"\$PATCH\" ]]; then
-    if ! grep -q 'Live RTSP often has no negotiated caps' \\
+  # Video-player fixes (same dir as 0001-*-wayland-egl.patch).
+  ELINUX_VP_PATCHDIR=/work/lws-hmi/overlay/buildroot/package/flutter-embedded-linux
+  apply_vp_patch() {
+    local marker=\"\$1\" patch=\"\$2\"
+    if [[ -f \"\$patch\" ]] && ! grep -q \"\$marker\" \\
       \"\$SRC/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc\" 2>/dev/null; then
-      (cd \"\$SRC\" && patch -p1 < \"\$PATCH\")
+      (cd \"\$SRC\" && patch -p1 < \"\$patch\") || true
     fi
-  fi
-  HANDOFF_PATCH=/work/lws-hmi/scripts/elinux-video-player-handoff-fix.patch
-  if [[ -f \"\$HANDOFF_PATCH\" ]]; then
-    if ! grep -q 'Notify outside the buffer lock' \\
-      \"\$SRC/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc\" 2>/dev/null; then
-      (cd \"\$SRC\" && patch -p1 < \"\$HANDOFF_PATCH\") || true
-    fi
-  fi
-  LIVE_SEEK_PATCH=/work/lws-hmi/scripts/elinux-video-player-live-seek.patch
-  if [[ -f \"\$LIVE_SEEK_PATCH\" ]]; then
-    if ! grep -q 'skip flush-seek for live/unseekable' \\
-      \"\$SRC/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc\" 2>/dev/null; then
-      (cd \"\$SRC\" && patch -p1 < \"\$LIVE_SEEK_PATCH\") || true
-    fi
-  fi
+  }
+  apply_vp_patch 'Live RTSP often has no negotiated caps' \\
+    \"\$ELINUX_VP_PATCHDIR/0002-video-player-live-rtsp.patch\"
+  apply_vp_patch 'Notify outside the buffer lock' \\
+    \"\$ELINUX_VP_PATCHDIR/0003-video-player-handoff-lock.patch\"
+  apply_vp_patch 'skip flush-seek for live/unseekable' \\
+    \"\$ELINUX_VP_PATCHDIR/0004-video-player-live-seek.patch\"
+  apply_vp_patch 'MppElementSetup: mppvideodec format=RGBA' \\
+    \"\$ELINUX_VP_PATCHDIR/0005-video-player-mpp-rgba.patch\"
 
   rm -rf \"\$BUILD\"
   mkdir -p \"\$BUILD\"

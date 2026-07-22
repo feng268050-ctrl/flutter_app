@@ -36,6 +36,11 @@ if [ -f "$SYNC_ENGINE" ]; then
 	sh "$SYNC_ENGINE" "$TARGET_DIR"
 fi
 
+SYNC_ELINUX="$(dirname "$0")/sync-flutter-embedded-linux.sh"
+if [ -f "$SYNC_ELINUX" ]; then
+	sh "$SYNC_ELINUX" "$TARGET_DIR"
+fi
+
 # Install operator-facing device commands before rootfs image copies are made.
 BUILD_LOADER="$LWS_HMI_ROOT/scripts/build-reboot-rockusb-loader.sh"
 if [ ! -f "$BUILD_LOADER" ]; then

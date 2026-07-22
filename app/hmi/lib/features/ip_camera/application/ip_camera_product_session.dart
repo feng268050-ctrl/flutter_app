@@ -83,6 +83,7 @@ final class IpCameraProductSession {
   bool _started = false;
   bool _disposed = false;
   bool _configureInFlight = false;
+  Future<void>? _configureFuture;
   int _attempt = 0;
   bool _pathReady = false;
   EthLinkPhase? _lastEthPhase;
@@ -130,9 +131,17 @@ final class IpCameraProductSession {
   /// True when Settings may open the GStreamer texture (relay up, or fallback).
   bool get previewReady => previewPr1 != null;
 
-  /// Home first frame — idempotent.
+  /// Home first frame — idempotent. If already started, waits for any in-flight
+  /// configure so callers (e.g. Settings) do not race past a half-ready relay.
   Future<void> start() async {
-    if (_disposed || _started) {
+    if (_disposed) {
+      return;
+    }
+    if (_started) {
+      final inFlight = _configureFuture;
+      if (inFlight != null) {
+        await inFlight;
+      }
       return;
     }
     _started = true;
@@ -223,13 +232,41 @@ final class IpCameraProductSession {
   }
 
   Future<void> _runConfigureCycle({required String reason}) async {
-    if (_disposed || _configureInFlight) {
+    if (_disposed) {
       return;
     }
+
+    // Join an in-flight cycle instead of dropping (Settings used to return
+    // early while Home still held _configureInFlight, then never saw relay
+    // leave "starting").
+    final inFlight = _configureFuture;
+    if (inFlight != null) {
+      await inFlight;
+      if (_disposed) {
+        return;
+      }
+      if (reason == 'ensure' && _relaySettledForPreview) {
+        _publish();
+        return;
+      }
+      if (_configureInFlight) {
+        return;
+      }
+    } else if (_configureInFlight) {
+      return;
+    }
+
+    if (reason == 'ensure' && _relaySettledForPreview) {
+      _publish();
+      return;
+    }
+
     if (_status.phase == IpCameraUiPhase.failed && reason == 'ensure') {
       // allow ensure from Settings to leave failed
     }
     _configureInFlight = true;
+    final done = Completer<void>();
+    _configureFuture = done.future;
     _failedRetry?.cancel();
     try {
       while (!_disposed && _attempt < attemptBudget) {
@@ -272,6 +309,9 @@ final class IpCameraProductSession {
           _attempt = 0;
           // Await relay so Settings can bind localhost preview after ensureReady.
           await _relay.ensureStarted(camera.streams);
+          // Relay phase is not part of IpCameraUiStatus equality — force a
+          // rebuild so MediaMTX leaves "starting" and previewReady becomes true.
+          _publish();
           return;
         }
         await Future<void>.delayed(Duration(milliseconds: 350 * _attempt));
@@ -286,6 +326,24 @@ final class IpCameraProductSession {
       _scheduleFailedRetry();
     } finally {
       _configureInFlight = false;
+      _configureFuture = null;
+      if (!done.isCompleted) {
+        done.complete();
+      }
+    }
+  }
+
+  bool get _relaySettledForPreview {
+    if (_status.phase != IpCameraUiPhase.connected) {
+      return false;
+    }
+    switch (_relay.currentStatus.phase) {
+      case IpCameraRelayPhase.running:
+      case IpCameraRelayPhase.error:
+        return true;
+      case IpCameraRelayPhase.stopped:
+      case IpCameraRelayPhase.starting:
+        return false;
     }
   }
 
@@ -307,6 +365,7 @@ final class IpCameraProductSession {
     _emit(const IpCameraUiStatus(phase: IpCameraUiPhase.connected));
     _attempt = 0;
     await _relay.ensureStarted(camera.streams);
+    _publish();
   }
 
   Future<void> _onPhysicalLinkLost() async {
@@ -348,5 +407,13 @@ final class IpCameraProductSession {
     }
     _status = next;
     _statusCtrl.add(next);
+  }
+
+  /// Re-push current UI status so listeners re-read [relayStatus] / preview URLs.
+  void _publish() {
+    if (_disposed || _statusCtrl.isClosed) {
+      return;
+    }
+    _statusCtrl.add(_status);
   }
 }

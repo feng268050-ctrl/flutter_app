@@ -586,6 +586,22 @@ EOF
 			echo "FAIL: display-stack should be weston (got: ${stack:-empty})" >&2
 			missing=1
 		fi
+		# Unpatched GStreamer video plugin SIGSEGVs on live RTSP initialize.
+		vp="$target/usr/lib/libvideo_player_plugin.so"
+		if [[ -f "$vp" ]]; then
+			if ! strings "$vp" | grep -q 'Video size unknown after preroll'; then
+				echo "FAIL: $vp missing live-RTSP patch (will segfault in IP Camera)" >&2
+				missing=1
+			elif ! strings "$vp" | grep -q 'MppElementSetup: mppvideodec format=RGBA'; then
+				echo "FAIL: $vp missing MPP RGBA patch" >&2
+				missing=1
+			else
+				echo "OK:  libvideo_player_plugin.so has live-RTSP + MPP RGBA markers"
+			fi
+		else
+			echo "FAIL: weston image missing $vp" >&2
+			missing=1
+		fi
 	elif [[ "$has_pi" -eq 1 ]]; then
 		echo "OK:  flutter-pi image (no Weston client)"
 		if [[ -x "$target/usr/bin/flutter-wayland-client" ]]; then
@@ -618,10 +634,12 @@ EOF
 	done
 
 	if [[ -x "$target/usr/libexec/hmi/render-mediamtx-config.sh" ]] && \
-		grep -q 'camera/pr0' "$target/usr/libexec/hmi/render-mediamtx-config.sh" 2>/dev/null; then
-		echo "OK:  render-mediamtx-config.sh (PR0/PR1 paths)"
+		grep -q 'camera/pr0' "$target/usr/libexec/hmi/render-mediamtx-config.sh" 2>/dev/null && \
+		grep -q 'sourceOnDemand: no' "$target/usr/libexec/hmi/render-mediamtx-config.sh" 2>/dev/null && \
+		grep -q 'rtspTransport: udp' "$target/usr/libexec/hmi/render-mediamtx-config.sh" 2>/dev/null; then
+		echo "OK:  render-mediamtx-config.sh (PR0/PR1 + eager pull + udp)"
 	else
-		echo "FAIL: render-mediamtx-config.sh missing or stub" >&2
+		echo "FAIL: render-mediamtx-config.sh missing, stub, or missing path tunables" >&2
 		missing=1
 	fi
 

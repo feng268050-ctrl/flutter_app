@@ -84,7 +84,7 @@ if has_include "lws_hmi_wayland.config"; then
     echo "  Run: make build-flutter-embedded-linux" >&2
     missing=1
   fi
-  # Live RTSP preview needs elinux-video-player-live-rtsp.patch (null caps /
+  # Live RTSP preview needs 0002-video-player-live-rtsp.patch (null caps /
   # NO_PREROLL). Unpatched plugin SIGSEGVs in GetVideoSize during initialize.
   if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
     ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \

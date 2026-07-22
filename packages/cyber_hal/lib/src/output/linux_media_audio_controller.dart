@@ -70,6 +70,15 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
   /// Bumped on [stop] so an in-flight `@P 0` re-LOAD cannot resurrect playback.
   int _warnLoopEpoch = 0;
 
+  /// Seek to frame zero shortly before EOF so ALSA never drains while looping.
+  ///
+  /// Four MP3 frames are about 104 ms at 44.1 kHz. The bundled warn clip fades
+  /// at the tail, so this small overlap is inaudible and avoids the much larger
+  /// EOF → Dart callback → remote LOAD decoder gap. `@P 0` re-LOAD remains as
+  /// the fallback when progress events or seek are unavailable.
+  static const int _warnLoopLeadFrames = 4;
+  bool _warnLoopJumpPending = false;
+
   /// Serialize mpg123 remote stdin writes (concurrent flush →
   /// "StreamSink is bound to a stream" and breaks all later LOAD/STOP).
   Future<void> _remoteCmdChain = Future<void>.value();
@@ -386,6 +395,13 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
         if (t.isEmpty) {
           continue;
         }
+        // mpg123 emits @F <current-frame> <remaining-frames> ... while playing.
+        // Pre-roll an armed warning by seeking before EOF; this keeps the ALSA
+        // device fed instead of waiting for @P 0 and reopening the MP3.
+        if (t.startsWith('@F')) {
+          _maybePreRollWarnLoop(t);
+          continue;
+        }
         // mpg123 remote: @P 0=stopped 1=paused 2=playing
         if (t.startsWith('@P')) {
           final parts = t.split(RegExp(r'\s+'));
@@ -398,6 +414,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
               // Remote LOAD does not honor `--loop`. While warn is armed,
               // re-LOAD on stop so the clip keeps cycling (same soft-V session).
               if (code == 0) {
+                _warnLoopJumpPending = false;
                 _reloadArmedWarnLoop();
               }
             }
@@ -464,6 +481,47 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     }
   }
 
+  void _maybePreRollWarnLoop(String status) {
+    final path = _loopPath;
+    final epoch = _warnLoopEpoch;
+    if (path == null || _playerStdin == null || !_remoteMode) {
+      return;
+    }
+    final parts = status.split(RegExp(r'\s+'));
+    if (parts.length < 3) {
+      return;
+    }
+    final currentFrame = int.tryParse(parts[1]);
+    final remainingFrames = int.tryParse(parts[2]);
+    if (currentFrame == null || remainingFrames == null) {
+      return;
+    }
+    if (_warnLoopJumpPending) {
+      // First progress sample after JUMP confirms that playback wrapped.
+      if (currentFrame <= _warnLoopLeadFrames &&
+          remainingFrames > _warnLoopLeadFrames) {
+        _warnLoopJumpPending = false;
+      }
+      return;
+    }
+    if (currentFrame <= _warnLoopLeadFrames ||
+        remainingFrames > _warnLoopLeadFrames) {
+      return;
+    }
+    _warnLoopJumpPending = true;
+    unawaited(_runRemoteCmd(() async {
+      if (_loopPath != path || _warnLoopEpoch != epoch) {
+        _warnLoopJumpPending = false;
+        return;
+      }
+      await _remoteWriteln('JUMP 0');
+      lwsTrace(
+        'media-audio: warn loop pre-roll JUMP 0 '
+        '(remaining=$remainingFrames frames)',
+      );
+    }));
+  }
+
   /// End-of-track re-arm for [playLoopingAsset]. No-op if disarmed / no session.
   void _reloadArmedWarnLoop() {
     final path = _loopPath;
@@ -521,6 +579,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
       await _applyRemoteVolume(_volumePercent);
       _warnLoopEpoch++;
       _loopPath = path;
+      _warnLoopJumpPending = false;
       final armEpoch = _warnLoopEpoch;
       await _runRemoteCmd(() => _remoteWriteln('LOAD $path'));
       if (_loopPath != path || _warnLoopEpoch != armEpoch) {
@@ -575,6 +634,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     // Disarm before STOP so the `@P 0` handler cannot re-LOAD.
     _warnLoopEpoch++;
     _loopPath = null;
+    _warnLoopJumpPending = false;
     _setPlaying(false);
     if (_playerStdin == null) {
       return;
@@ -597,6 +657,7 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     final p = _player;
     final sink = _playerStdin;
     _loopPath = null;
+    _warnLoopJumpPending = false;
     _remoteLoopForever = false;
     _player = null;
     _playerStdin = null;

@@ -133,8 +133,8 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
       return;
     }
 
-    final previewPr0 = session.camera.streams.pr0;
-    if (_status.phase != IpCameraUiPhase.connected) {
+    final recordSource = session.previewPr0;
+    if (_status.phase != IpCameraUiPhase.connected || recordSource == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Camera not connected')),
       );
@@ -148,7 +148,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
     try {
       final path = widget.recordingPaths.nextMp4Path();
       final startFuture = recorder.start(IpCameraRecordingRequest(
-        sourceCandidates: [previewPr0],
+        sourceCandidates: [recordSource],
         outputPath: path,
         codec: IpCameraVideoCodec.h264,
       ));
@@ -196,7 +196,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final session = _session;
-    final previewUrl = session?.previewPr1;
+    final previewUrl = session?.previewPr0;
     final previewReady =
         (session?.previewReady ?? false) && _routeSettled;
 

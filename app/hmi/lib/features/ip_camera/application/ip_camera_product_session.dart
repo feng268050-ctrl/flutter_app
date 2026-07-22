@@ -129,7 +129,8 @@ final class IpCameraProductSession {
   IpCameraRelayStatus get relayStatus => _relay.currentStatus;
 
   /// True when Settings may open the GStreamer texture (relay up, or fallback).
-  bool get previewReady => previewPr1 != null;
+  /// Default preview/record path is PR0; PR1 is reserved for AI.
+  bool get previewReady => previewPr0 != null;
 
   /// Home first frame — idempotent. If already started, waits for any in-flight
   /// configure so callers (e.g. Settings) do not race past a half-ready relay.

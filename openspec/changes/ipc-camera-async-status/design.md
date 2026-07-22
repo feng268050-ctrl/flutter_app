@@ -267,4 +267,4 @@ rtspsrc protocols=tcp
 ## Open Questions
 
 - `suspendProbes` 是否进 v1 公共 API：建议 **要**（产品重配需要）。
-- 设置页默认 `previewPr1` vs `pr0`：建议 pr1。
+- 设置页默认预览/录像：`previewPr0`（PR1 仅 AI）。

@@ -439,7 +439,9 @@ final class LinuxIpCameraRecordingController
       if (_looksLikeReady(line)) {
         _readySeen = true;
       }
-      if (line.toLowerCase().contains('error')) {
+      if (line.toLowerCase().contains('error') ||
+          line.toLowerCase().contains('not-negotiated') ||
+          line.toLowerCase().contains('failed')) {
         debugPrint('ip_camera.record: $line');
       }
     });
@@ -459,10 +461,27 @@ final class LinuxIpCameraRecordingController
     final parse =
         request.codec == IpCameraVideoCodec.h265 ? 'h265parse' : 'h264parse';
     // Encoded remux only — no decode. -e enables EOS finalize on SIGINT.
-    final pipeline =
-        'rtspsrc location=${source.toString()} protocols=tcp latency=200 '
-        '! $depay ! $parse ! mp4mux ! filesink location=${request.outputPath}';
-    return <String>['-e', '-q', '-m', pipeline];
+    // Pass pipeline tokens as separate argv (not one string): a single
+    // `location=rtsp://…` token inside one argv hits gst-launch parse
+    // "syntax error" on this Buildroot GStreamer.
+    return <String>[
+      '-e',
+      '-q',
+      '-m',
+      'rtspsrc',
+      'location=${source.toString()}',
+      'protocols=tcp',
+      'latency=200',
+      '!',
+      depay,
+      '!',
+      parse,
+      '!',
+      'mp4mux',
+      '!',
+      'filesink',
+      'location=${request.outputPath}',
+    ];
   }
 
   Future<void> _failStart(int gen, String detail) async {

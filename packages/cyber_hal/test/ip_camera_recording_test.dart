@@ -80,7 +80,18 @@ void main() {
       final recorder = LinuxIpCameraRecordingController(
         processFactory: ({required arguments, environment}) async {
           expect(arguments, contains('-e'));
-          expect(arguments.any((a) => a.contains('mp4mux')), isTrue);
+          expect(arguments, contains('rtspsrc'));
+          expect(
+            arguments,
+            contains('location=rtsp://127.0.0.1:8554/camera/pr0'),
+          );
+          expect(arguments, contains('!'));
+          expect(arguments, contains('mp4mux'));
+          // Must not pack the whole pipeline into one argv (gst parse fails).
+          expect(
+            arguments.any((a) => a.contains('rtspsrc') && a.contains('mp4mux')),
+            isFalse,
+          );
           return fake;
         },
         minReadyBytes: 1 << 30, // readiness via bus message, not file size

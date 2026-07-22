@@ -27,7 +27,7 @@
 - [x] 4.3 Add Input → IP Camera page shell, status rows, and transient establishing/failed placeholders
 - [x] 4.4 Enable the active Buildroot GStreamer RTSP fragment (or prebuilt equivalent), Rockchip MPP decode, and flutter-pi GStreamer video player plugin
 - [x] 4.5 Add the Flutter `video_player` dependency/API compatible with the flutter-pi GStreamer plugin and implement a host-safe preview controller wrapper
-- [x] 4.6 Replace the successful `IpCameraPreview` placeholder/URL text with a real video texture bound to `session.previewPr1`
+- [x] 4.6 Replace the successful `IpCameraPreview` placeholder/URL text with a real video texture bound to `session.previewPr0` (PR0 default; PR1 reserved for AI)
 - [x] 4.7 Implement player lifecycle and retry: initialize after relay running, wait for first frame, dispose on page exit, recreate after RTSP/decoder failure
 - [x] 4.8 Add widget/controller tests proving ready state renders the player surface (not a terminal placeholder) and host missing-plugin failure is non-fatal
 - [x] 4.9 Build the Weston flutter-embedded-linux client with Sony's GStreamer `video_player` plugin and package `libvideo_player_plugin.so`

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/home/presentation/home_status_icon_spin.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 
 /// Top-right Home camera link icon (stacked Material glyphs).
@@ -27,12 +28,12 @@ class HomeCameraStatusIcon extends StatelessWidget {
         alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
-          Icon(Icons.videocam, size: size * 0.92, color: baseColor),
+          Icon(Icons.videocam, size: size * 0.95, color: baseColor),
           if (status.phase == IpCameraUiPhase.connecting)
             Positioned(
               right: -2,
               bottom: -2,
-              child: _SpinningSync(size: size * 0.42),
+              child: HomeStatusIconSpin(size: size * 0.48),
             ),
           if (status.phase == IpCameraUiPhase.failed)
             Positioned(
@@ -45,41 +46,6 @@ class HomeCameraStatusIcon extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _SpinningSync extends StatefulWidget {
-  const _SpinningSync({required this.size});
-
-  final double size;
-
-  @override
-  State<_SpinningSync> createState() => _SpinningSyncState();
-}
-
-class _SpinningSyncState extends State<_SpinningSync>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return RotationTransition(
-      turns: _ctrl,
-      child: Icon(
-        Icons.sync,
-        size: widget.size,
-        color: Colors.lightBlueAccent,
       ),
     );
   }

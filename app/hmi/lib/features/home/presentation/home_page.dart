@@ -8,9 +8,9 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coo
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
-import 'package:lws_hmi/features/home/presentation/home_camera_status_icon.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
+import 'package:lws_hmi/features/home/presentation/home_status_bar.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
@@ -263,13 +263,13 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                // Top-right camera link status (lws-ui Wi‑Fi slot area).
+                // Top-right status strip (Wi‑Fi · BT · camera).
                 Positioned(
                   right: 20 * sx,
                   top: 20 * sy,
-                  child: HomeCameraStatusIcon(
-                    status: _cameraStatus,
-                    size: 32 * ((sx + sy) / 2),
+                  child: HomeStatusBar(
+                    cameraStatus: _cameraStatus,
+                    iconSize: 32 * ((sx + sy) / 2),
                   ),
                 ),
                 _ModeEntry(

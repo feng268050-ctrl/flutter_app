@@ -57,9 +57,9 @@ Debounce / quiet windows stay in HAL — adapter is edge-only.
 
 ### 4. Severity + SFX via existing policy
 
-**Choice:** Dialog INFO/WARN already uses `infoStyleForCode` → `LaserAlarmPolicy.treatBypassableAsInfo`. Extend `_syncWarnSound` to skip looping SFX when that predicate is true for the alerting code.
+**Choice:** Dialog INFO/WARN already uses `infoStyleForCode` → `LaserAlarmPolicy.treatBypassableAsInfo`. Looping warn SFX is **not** an independent monitor of fault bits — it plays only while `WarnAlarmCoordinator.showingCode` is set (dialog on screen) and that code is still alerting and not INFO-styled. Queued faults behind another dialog MUST stay silent until their dialog is shown.
 
-**Not:** A separate camera severity enum or warn-type table.
+**Not:** A separate camera severity enum or warn-type table. **Not:** starting SFX on rising edge alone.
 
 ### 5. Laser interrupt on edges
 

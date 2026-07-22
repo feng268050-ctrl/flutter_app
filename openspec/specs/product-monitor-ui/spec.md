@@ -42,7 +42,12 @@ The product Monitor screen SHALL present four welding-gun temperature rows align
 
 ### Requirement: Monitor presents active alarms from HAL attributes
 
-The Monitor screen SHALL list active alarms derived from product `alarm.*` boolean attributes that carry `meta.alarm_code` in the modbus config. An alarm SHALL appear in the list when its decoded value is true, showing at least the alarm code and label (from attribute meta when present). The App MUST obtain live updates via `ModbusHal.watchAttributes` (or AppServices equivalent backed by it) and MUST NOT run a Dart `Timer` that loops `readAttribute` for continuous status/data groups.
+The Monitor screen SHALL list active alarms from the product warn/alarm façade backed by `cyber_alarm` episodes. That list SHALL include:
+
+1. Modbus-backed codes derived from product `alarm.*` boolean attributes that carry `meta.alarm_code` (via the Modbus `AlarmSignalSource` adapter), and
+2. Non-Modbus codes that share the same coordinator (at least camera communication **C002** when IP-camera health is unhealthy).
+
+An alarm SHALL appear when its episode fault is active, showing at least the alarm code and label (catalog or attribute meta). Live Modbus updates MUST use `ModbusHal.watchAttributes` (or AppServices equivalent) and MUST NOT run a Dart `Timer` that loops `readAttribute` for continuous status/data groups. Camera C002 MUST NOT require a Modbus attribute bit.
 
 #### Scenario: Active alarm appears in list
 
@@ -58,6 +63,12 @@ The Monitor screen SHALL list active alarms derived from product `alarm.*` boole
 
 - **WHEN** Monitor needs live temperatures and alarms
 - **THEN** it subscribes via HAL watch APIs and does not start a Timer-based `readAttribute` poll loop for those continuous groups
+
+#### Scenario: Camera C002 appears without Modbus bit
+
+- **WHEN** IP-camera health is unhealthy and a C002 episode is active
+- **THEN** the Monitor active-alarm list SHALL show code **C002** with the catalog label
+- **AND** MUST NOT require a Modbus `alarm.*` attribute for that row
 
 ### Requirement: Monitor uses Material stand-in UI
 

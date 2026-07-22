@@ -24,7 +24,7 @@ final class AlarmMonitorState extends ChangeNotifier {
   bool? gunCommFault;
   bool? wireFeederCommFault;
 
-  /// Camera is not Modbus yet; `null` keeps the indicator idle (empty).
+  /// Camera ICMP / IP-camera health (`true` = unreachable). Not a Modbus bit.
   bool? cameraCommFault;
 
   bool healthOk = true;
@@ -36,6 +36,15 @@ final class AlarmMonitorState extends ChangeNotifier {
 
   void setActiveAlarms(List<ActiveAlarm> alarms) {
     _active = List<ActiveAlarm>.unmodifiable(alarms);
+    notifyListeners();
+  }
+
+  /// Updates Camera Comm Status (Alarm Information). Idempotent.
+  void setCameraCommFault(bool? fault) {
+    if (cameraCommFault == fault) {
+      return;
+    }
+    cameraCommFault = fault;
     notifyListeners();
   }
 

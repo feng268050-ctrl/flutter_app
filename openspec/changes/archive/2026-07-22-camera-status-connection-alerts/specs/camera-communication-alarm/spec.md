@@ -16,7 +16,7 @@ The App SHALL map HAL `IpCameraController` health into the existing `cyber_alarm
 
 Presentation while boot self-check is gated SHALL follow the existing App `WarnGate` / coordinator behavior (no competing modal). Recovery and single-popup-per-fault semantics SHALL follow existing episode policy.
 
-C002 dialog severity SHALL follow existing Advanced Settings `allowWorkAfterCameraAlarm` via `LaserAlarmPolicy` (WARN when bypass OFF, INFO when ON). Looping warn SFX MUST NOT play when that policy resolves the code to INFO.
+C002 dialog severity SHALL follow existing Advanced Settings `allowWorkAfterCameraAlarm` via `LaserAlarmPolicy` (WARN when bypass OFF, INFO when ON). Looping warn SFX SHALL start only when the C002 warn dialog is presented (same moment as the popup), and MUST NOT play for a queued C002 while another dialog is showing or when no dialog is visible. SFX MUST NOT play when that policy resolves the code to INFO.
 
 #### Scenario: Fault detected after unhealthy health
 
@@ -26,7 +26,14 @@ C002 dialog severity SHALL follow existing Advanced Settings `allowWorkAfterCame
 - **THEN** the coordinator SHALL arm a C002 episode
 - **AND** the operator SHALL see a warn popup with the product catalog C002 title/body
 - **AND** the popup MUST use WARN styling
-- **AND** the warn alarm sound SHALL play
+- **AND** the warn alarm sound SHALL play while that popup is showing
+
+#### Scenario: Queued C002 stays silent behind another dialog
+
+- **WHEN** another warn dialog is already showing
+- **AND** C002 becomes active and is queued
+- **THEN** the looping warn alarm sound MUST NOT switch to C002
+- **AND** C002 sound SHALL start only when the C002 popup is presented
 
 #### Scenario: Fault with camera bypass shows info dialog without SFX
 

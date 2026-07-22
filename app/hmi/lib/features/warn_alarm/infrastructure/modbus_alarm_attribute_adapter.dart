@@ -3,12 +3,17 @@ import 'dart:async';
 import 'package:cyber_alarm/cyber_alarm.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/monitor/application/monitor_modbus_ids.dart';
+import 'package:lws_hmi/features/warn_alarm/infrastructure/estop_comm_alarm_mask.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 /// Product code for HMI↔controller Modbus read-health faults (lws-ui C001).
 const kModbusHealthAlarmCode = 'C001';
 
 /// Maps HAL watches → [AlarmSignalEvent] (+ monitor attribute/health fan-out).
+///
+/// Applies [EstopCommAlarmMask] so H022/W001 do not rise (popup/history) while
+/// `machine.emergency_stop` is active. Alarm Information / status checks keep
+/// raw Modbus bit values.
 final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
   ModbusAlarmAttributeAdapter({
     required this.modbus,
@@ -27,9 +32,15 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
 
   StreamSubscription<List<ModbusAttributeChange>>? _sub;
   StreamSubscription<ModbusHealth>? _healthSub;
+  /// Last **warn-signal** active per alarm attribute (post e-stop mask for
+  /// H022/W001; raw for all other codes).
   final Map<String, bool> _activeByAttr = {};
   Map<String, ({String code, String? label})> _meta = {};
   bool _started = false;
+
+  bool _eStopActive = false;
+  bool? _rawLaserComm;
+  bool? _rawWireFeederComm;
 
   /// Last unhealthy latch for C001 edge detection (`null` = not primed).
   bool? _healthFaultActive;
@@ -37,13 +48,17 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
   @override
   Stream<AlarmSignalEvent> get events => _controller.stream;
 
-  /// Temps + alarm bits for Alarm Information UI.
+  /// Temps + alarm bits for Alarm Information UI (raw HAL values).
   Stream<List<ModbusAttributeChange>> get monitorChanges => _monitorCtrl.stream;
 
   Stream<ModbusHealth> get healthChanges => _healthCtrl.stream;
 
   /// Attribute ids that carry `meta.alarm_code`.
   List<String> get watchedIds => _meta.keys.toList(growable: false);
+
+  /// Last known machine e-stop latch (test / diagnostics).
+  @visibleForTesting
+  bool get debugEStopActive => _eStopActive;
 
   Future<void> start() async {
     if (_started) {
@@ -68,6 +83,7 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
         ...MonitorModbusIds.temperatureIds,
         ...MonitorModbusIds.overTempIds,
         ..._meta.keys,
+        EstopCommAlarmMask.emergencyStopAttr,
       }.toList(growable: false);
       if (ids.isNotEmpty) {
         final stream = await modbus.watchAttributes(ids: ids);
@@ -120,14 +136,88 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
   @visibleForTesting
   void debugApplyHealth(ModbusHealth health) => _onHealth(health);
 
+  /// Test hook: apply attribute changes (optionally after seeding [_meta]).
+  @visibleForTesting
+  void debugApplyChanges(List<ModbusAttributeChange> changes) =>
+      _onChanges(changes);
+
+  /// Test hook: seed alarm meta without HAL [listAttributes].
+  @visibleForTesting
+  void debugSeedMeta(Map<String, ({String code, String? label})> meta) {
+    _meta = Map.of(meta);
+  }
+
   void _onChanges(List<ModbusAttributeChange> changes) {
     if (changes.isEmpty) {
       return;
     }
+
+    final wasEStop = _eStopActive;
+
+    // Pass 1: update e-stop latch + raw masked bits from the whole batch.
+    for (final c in changes) {
+      if (c.id == EstopCommAlarmMask.emergencyStopAttr) {
+        _eStopActive = c.value == true;
+      } else if (c.id == EstopCommAlarmMask.laserCommAttr) {
+        _rawLaserComm = c.value == true;
+      } else if (c.id == EstopCommAlarmMask.wireFeederCommAttr) {
+        _rawWireFeederComm = c.value == true;
+      }
+    }
+
+    final eStopEngaged = !wasEStop && _eStopActive;
+    final eStopReleased = wasEStop && !_eStopActive;
+
+    // Pass 2: Alarm Information / status checks — raw values unchanged.
     if (!_monitorCtrl.isClosed) {
       _monitorCtrl.add(changes);
     }
+
+    // Pass 3: e-stop edges force H022/W001 warn-signal transitions only.
+    if (eStopEngaged) {
+      _syncMaskedEffective(
+        EstopCommAlarmMask.laserCommAttr,
+        effective: false,
+      );
+      _syncMaskedEffective(
+        EstopCommAlarmMask.wireFeederCommAttr,
+        effective: false,
+      );
+    } else if (eStopReleased) {
+      _syncMaskedEffective(
+        EstopCommAlarmMask.laserCommAttr,
+        effective: _rawLaserComm == true,
+      );
+      _syncMaskedEffective(
+        EstopCommAlarmMask.wireFeederCommAttr,
+        effective: _rawWireFeederComm == true,
+      );
+    }
+
+    // Pass 4: per-attribute signal edges (skip masked if e-stop edged this batch).
+    final skipMaskedSignals = eStopEngaged || eStopReleased;
     for (final c in changes) {
+      if (c.id == EstopCommAlarmMask.emergencyStopAttr) {
+        continue;
+      }
+      if (EstopCommAlarmMask.isMaskedCommAttr(c.id)) {
+        if (skipMaskedSignals) {
+          continue;
+        }
+        final raw = c.value == true;
+        final effective = EstopCommAlarmMask.effectiveActive(
+          raw: raw,
+          eStopActive: _eStopActive,
+        );
+        final reminder = c.kind == ModbusChangeKind.reminder;
+        _emitEffectiveSignal(
+          attributeId: c.id,
+          effective: effective,
+          reminder: reminder,
+        );
+        continue;
+      }
+
       final meta = _meta[c.id];
       if (meta == null) {
         continue;
@@ -154,18 +244,87 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
         continue;
       }
 
-      if (!_controller.isClosed) {
-        _controller.add(
-          AlarmSignalEvent(
-            code: meta.code,
-            active: active,
-            kind: kind,
-            attributeId: c.id,
-            labelHint: meta.label,
-          ),
-        );
-      }
+      _addSignal(
+        code: meta.code,
+        active: active,
+        kind: kind,
+        attributeId: c.id,
+        labelHint: meta.label,
+      );
     }
+  }
+
+  void _syncMaskedEffective(String attributeId, {required bool effective}) {
+    _emitEffectiveSignal(
+      attributeId: attributeId,
+      effective: effective,
+      reminder: false,
+    );
+  }
+
+  void _emitEffectiveSignal({
+    required String attributeId,
+    required bool effective,
+    required bool reminder,
+  }) {
+    final meta = _meta[attributeId];
+    if (meta == null) {
+      _activeByAttr[attributeId] = effective;
+      return;
+    }
+
+    final previous = _activeByAttr[attributeId];
+    _activeByAttr[attributeId] = effective;
+
+    final AlarmSignalKind kind;
+    if (reminder) {
+      if (!effective) {
+        return;
+      }
+      kind = AlarmSignalKind.reminder;
+    } else if (previous == null) {
+      if (!effective) {
+        return;
+      }
+      kind = AlarmSignalKind.rising;
+    } else if (effective && !previous) {
+      kind = AlarmSignalKind.rising;
+    } else if (!effective && previous) {
+      kind = AlarmSignalKind.falling;
+    } else if (effective) {
+      kind = AlarmSignalKind.reminder;
+    } else {
+      return;
+    }
+
+    _addSignal(
+      code: meta.code,
+      active: effective,
+      kind: kind,
+      attributeId: attributeId,
+      labelHint: meta.label,
+    );
+  }
+
+  void _addSignal({
+    required String code,
+    required bool active,
+    required AlarmSignalKind kind,
+    required String attributeId,
+    String? labelHint,
+  }) {
+    if (_controller.isClosed) {
+      return;
+    }
+    _controller.add(
+      AlarmSignalEvent(
+        code: code,
+        active: active,
+        kind: kind,
+        attributeId: attributeId,
+        labelHint: labelHint,
+      ),
+    );
   }
 
   Future<void> dispose() async {

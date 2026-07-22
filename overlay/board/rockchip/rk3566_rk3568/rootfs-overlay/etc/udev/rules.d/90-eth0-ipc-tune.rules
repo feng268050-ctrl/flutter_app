@@ -1,0 +1,3 @@
+# Apply stmmac IPC RTSP tunables when eth0 appears (sysfs/sysctl only).
+# Must NOT resize DMA rings (that downs the link on rk_gmac / ynh960).
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth0", RUN+="/usr/libexec/network/eth0-tune.sh eth0"

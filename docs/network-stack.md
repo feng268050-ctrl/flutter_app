@@ -119,3 +119,7 @@ Demo ethernet/wifi controllers call the same `NetworkdIpv4Apply` / wpa D-Bus com
 ## Camera eth0 (P4/P5)
 
 When the product needs a dedicated camera LAN address on eth0, reconfigure **networkd** only (HAL `Ethernet.setStatic` / in-package `.network` apply) — do not bypass with raw `ip addr`.
+
+**RMII / GMAC bring-up (ynh960):** product PHY drives the 50 MHz REF_CLK. DTS must use the full **`clock_in_out = "input"`** path (`gmac1_clkin@50M` parent for `SCLK_GMAC1`) — flipping only the string while leaving SoC `assigned-clock-rates` breaks UDP RTSP (MAC CRC). See [`ynh960-uart5-gmac.dtsi`](../overlay/kernel/rockchip/ynh960-uart5-gmac.dtsi).
+
+**IPC RTSP acceptance / pitfall log** (Mac vs Android vs Linux remux, MMC CRC, scripts for new motherboards): [`ip-camera-rtsp-bitrate-android-vs-linux.md`](ip-camera-rtsp-bitrate-android-vs-linux.md).

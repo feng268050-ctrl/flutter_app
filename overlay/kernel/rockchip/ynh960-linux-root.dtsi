@@ -3,5 +3,7 @@
 // Factory / letter A default. Letter B FITs must use root=PARTLABEL=rootfs_b (apply patches).
 // See docs/ab-slot-misc.md and docs/storage-layout.md.
 &chosen {
-	bootargs = "earlycon=uart8250,mmio32,0xfe660000 console=ttyFIQ0 root=PARTLABEL=rootfs_a rw rootfstype=ext4 rootwait loglevel=4";
+	/* stmmac.flow_ctrl=0 watchdog=0: default flow_ctrl=3 + RIWT 5ms caps IPC
+	 * RTSP inbound ~2.5 Mbps on ynh960 RMII; see eth0-tune.sh + bitrate doc. */
+	bootargs = "earlycon=uart8250,mmio32,0xfe660000 console=ttyFIQ0 root=PARTLABEL=rootfs_a rw rootfstype=ext4 rootwait loglevel=4 stmmac.flow_ctrl=0 stmmac.pause=0 stmmac.watchdog=0 stmmac.eee_timer=0";
 };

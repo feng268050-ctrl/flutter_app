@@ -6,8 +6,18 @@
 // That EVB reset steals UART5_TX (Modbus). RGMII clocks/pinctrl also mismatch
 // product HW: with PHY fixed, open still fails ("Failed to reset the dma").
 //
-// Innohi siblings (ynh512/518/530_v2) use RMII + gpio4 PB3 reset + MDIO reg=1.
-// Match that for ynh960 (same SoC product line / PHY wiring).
+// Product wiring matches Innohi siblings / rk3568-evb2 RMII path: RMII + gpio4 PB3
+// reset + MDIO reg=1. Stock Android ynh960.dtb uses clock_in_out = "input" with
+// SCLK_GMAC1 parented to gmac1_clkin@50M (PHY drives REF_CLK).
+//
+// Earlier experiment that only flipped clock_in_out to "input" while leaving
+// assigned-clock-rates = <0>, <50000000> (SoC still driving SCLK_GMAC1) produced
+// ~0.5 Mbps / severe RTP loss. Full input wiring must parent SCLK_GMAC1 to
+// &gmac1_clkin and drop the SoC rate assignment (see rk3568-evb2-lp4x-v10.dtsi).
+
+&gmac1_clkin {
+	clock-frequency = <50000000>;
+};
 
 &gmac1 {
 	/delete-property/ snps,reset-gpio;
@@ -15,9 +25,10 @@
 	/delete-property/ snps,reset-delays-us;
 	/delete-property/ tx_delay;
 	/delete-property/ rx_delay;
+	/delete-property/ assigned-clock-rates;
 
 	phy-mode = "rmii";
-	clock_in_out = "output";
+	clock_in_out = "input";
 
 	snps,reset-gpio = <&gpio4 RK_PB3 GPIO_ACTIVE_LOW>;
 	snps,reset-active-low;
@@ -25,8 +36,7 @@
 	snps,reset-delays-us = <0 20000 100000>;
 
 	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>, <&cru SCLK_GMAC1>;
-	assigned-clock-parents = <&cru SCLK_GMAC1_RMII_SPEED>;
-	assigned-clock-rates = <0>, <50000000>;
+	assigned-clock-parents = <&cru SCLK_GMAC1_RMII_SPEED>, <&gmac1_clkin>;
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&gmac1m1_miim

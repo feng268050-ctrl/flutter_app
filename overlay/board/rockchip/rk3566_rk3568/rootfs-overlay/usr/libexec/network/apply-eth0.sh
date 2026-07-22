@@ -30,6 +30,11 @@ fi
 
 /usr/libexec/network/networkd-apply-ipv4.sh "$IFACE" "$PREF"
 
+# IPC RTSP path: stmmac/sysctl/RPS/pause hygiene (no ring resize).
+if [ -x /usr/libexec/network/eth0-tune.sh ]; then
+	/usr/libexec/network/eth0-tune.sh "$IFACE" || log "WARN: eth0-tune.sh failed"
+fi
+
 mkdir -p /var/lib/network
 : >/var/lib/network/eth0-wanted
 log "ok"

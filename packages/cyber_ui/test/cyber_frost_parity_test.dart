@@ -91,4 +91,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Hello'), findsNothing);
   });
+
+  testWidgets('CyberScaledSlider shows scale labels', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CyberScaledSlider(
+            value: 0,
+            min: -30,
+            max: 30,
+            scaleMinText: '-30',
+            scaleMaxText: '30',
+            onChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+    expect(find.text('-30'), findsOneWidget);
+    expect(find.text('30'), findsOneWidget);
+    expect(find.text('0'), findsOneWidget);
+    expect(find.byType(Slider), findsOneWidget);
+  });
 }

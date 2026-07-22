@@ -29,6 +29,7 @@ export 'src/widgets/cyber_numeric_stepper.dart';
 export 'src/widgets/cyber_overlay_host.dart';
 export 'src/widgets/cyber_press_ripple.dart';
 export 'src/widgets/cyber_segmented_control.dart';
+export 'src/widgets/cyber_scaled_slider.dart';
 export 'src/widgets/cyber_slider.dart';
 export 'src/widgets/cyber_status_indicator.dart';
 export 'src/widgets/cyber_switch.dart';

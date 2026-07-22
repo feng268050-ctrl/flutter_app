@@ -133,17 +133,27 @@ Device Model SHALL be `brand + " " + model` from HAL product identity (`product.
 
 ### Requirement: Advanced and Custom Home tabs are structurally present
 
-Advanced Settings and Custom Home Page tabs SHALL be reachable in the Settings shell. Until product domain migration completes, they MAY show explicit placeholders rather than full lws-ui Modbus/Room or drag-layout behavior.
+Advanced Settings and Custom Home Page tabs SHALL be reachable in the Settings shell. Advanced Settings SHALL present live product content (see `advanced-settings-ui`). Custom Home Page MAY show an explicit placeholder until drag-layout migration completes.
 
 #### Scenario: Advanced tab opens
 
 - **WHEN** the user selects Advanced Settings
-- **THEN** the Advanced tab content is shown (live controls and/or a clear placeholder)
+- **THEN** the Advanced tab content is shown with live sections and CyberUI toggles (not placeholder-only)
 
 #### Scenario: Custom Home tab opens
 
 - **WHEN** the user selects Custom Home Page
 - **THEN** the Custom Home tab content is shown (live controls and/or a clear placeholder)
+
+### Requirement: Advanced Settings tab is live product content
+
+Once Advanced Settings migration for this change is applied, the Advanced Settings tab SHALL present the live Advanced Settings UI (sections and CyberUI toggles) rather than a placeholder-only pane. Custom Home Page MAY remain a placeholder.
+
+#### Scenario: Advanced is not placeholder-only
+
+- **WHEN** the user opens Advanced Settings after this capability lands
+- **THEN** AI Assistance and Dangerous Operations controls are interactive
+- **AND** the tab MUST NOT show only the deferred-migration placeholder text
 
 ### Requirement: Settings does not host USB or LAN SSH debug toggles
 

@@ -14,6 +14,10 @@ import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_sound.dart
 import 'package:lws_hmi/features/warn_alarm/presentation/cyber_ui_warn_presentation.dart';
 
 /// Owns [WarnAlarmCoordinator] + App adapters for the process lifetime.
+///
+/// TODO(advanced-settings): When laser interrupt / severity maps land, consult
+/// DangerousOperationsSettings + LaserAlarmPolicy for A001/C002/L001/W001/W002
+/// bypass and keepLaserOnWhileAlarmed (parity with lws-ui LaserEnableAlarmGuard).
 final class WarnAlarmController {
   WarnAlarmController({
     required this.services,

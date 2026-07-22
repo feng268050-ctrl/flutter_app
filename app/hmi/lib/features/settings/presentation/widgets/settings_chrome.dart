@@ -241,6 +241,158 @@ Future<T?> pushSettingsPage<T>(BuildContext context, Widget page) {
   );
 }
 
+/// Bordered param panel (lws-ui Advanced Settings `FrostCardView` transparent
+/// border chrome — no realtime blur for dense grids).
+class SettingsParamCard extends StatelessWidget {
+  const SettingsParamCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CyberGlassTheme.of(context);
+    final panel = CyberPanelBorder(
+      tone: theme.tone,
+      width: theme.borderWidth,
+      cornerRadius: theme.cornerRadius,
+    );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: panel.borderRadius,
+        border: Border.all(
+          color: panel.flatBorderColor,
+          width: panel.width,
+        ),
+        color: Colors.white.withOpacity(0.04),
+      ),
+      child: Padding(padding: padding, child: child),
+    );
+  }
+}
+
+/// Title + value readout + [CyberScaledSlider] (Advanced Settings threshold row).
+class SettingsScaledParam extends StatelessWidget {
+  const SettingsScaledParam({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    this.onChangeEnd,
+    this.min = 0,
+    this.max = 100,
+    this.scaleMinText,
+    this.scaleMaxText,
+    this.valueLabel,
+    this.trailing,
+    this.enabled = true,
+  });
+
+  final String title;
+  final double value;
+  final ValueChanged<double> onChanged;
+  final ValueChanged<double>? onChangeEnd;
+  final double min;
+  final double max;
+  final String? scaleMinText;
+  final String? scaleMaxText;
+  final String? valueLabel;
+  final Widget? trailing;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final display = valueLabel ?? value.round().toString();
+    return SettingsParamCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            height: 40,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontSize: 16),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Container(
+                  constraints: const BoxConstraints(minWidth: 48),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.25),
+                    ),
+                  ),
+                  child: Text(
+                    display,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white.withOpacity(0.85),
+                    ),
+                  ),
+                ),
+                if (trailing != null) ...[
+                  const SizedBox(width: 12),
+                  trailing!,
+                ],
+              ],
+            ),
+          ),
+          CyberScaledSlider(
+            value: value,
+            onChanged: onChanged,
+            onChangeEnd: onChangeEnd,
+            min: min,
+            max: max,
+            enabled: enabled,
+            scaleMinText: scaleMinText ?? min.round().toString(),
+            scaleMaxText: scaleMaxText ?? max.round().toString(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Two equal-width param cards in a row (lws-ui Advanced Settings grid).
+class SettingsParamRow extends StatelessWidget {
+  const SettingsParamRow({
+    super.key,
+    required this.left,
+    this.right,
+    this.gap = 24,
+  });
+
+  final Widget left;
+  final Widget? right;
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (right == null) {
+      return left;
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: left),
+        SizedBox(width: gap),
+        Expanded(child: right!),
+      ],
+    );
+  }
+}
+
 class SettingsScaffold extends StatelessWidget {
   const SettingsScaffold({
     super.key,

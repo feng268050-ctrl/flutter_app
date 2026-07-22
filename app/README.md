@@ -1,13 +1,13 @@
-# lws_hmi — P1 Hello World (flutter-pi)
+# lws_hmi — P1 Hello World (embedded Linux HMI)
 
 ## Engine alignment
 
-Buildroot builds **flutter-pi** + **flutter-engine** from the SDK in-tree packages. Engine version is pinned in:
+Buildroot ships the Flutter **engine** (and optional DRM runner) from in-tree packages. Engine version is pinned in:
 
 - `overlay/buildroot/flutter-engine.version`
 - `overlay/buildroot/package/flutter-engine/flutter-engine.mk` (`FLUTTER_ENGINE_VERSION`)
 
-Current pin: **Flutter 3.24.4** (through P3.x). **P5.1** upgrades SDK + engine + flutter-pi together per [`docs/flutter-pi-hmi-plan.md` §6.5](../docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p51). UI kit: **CyberUI** (P3.0); platform: **Dart HAL package** (P3.1).
+Current pin: **Flutter 3.24.4** (through P3.x). **P5.1** upgrades SDK + engine (+ display runner as needed) together per [`docs/flutter-pi-hmi-plan.md` §6.5](../docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p51). UI kit: **CyberUI** (P3.0); platform: **Dart HAL package** (P3.1).
 
 ### Prefetch (before `make build-rootfs`)
 
@@ -17,7 +17,7 @@ make build-deps        # build-dev-deps + runtime prebuilt
 make check-prebuilt
 ```
 
-- **Runtime** (`make build-runtime-deps`): flutter-engine/pi, **gstreamer (MPP+RTSP)**, mediamtx, OpenCV sources, `prebuilt/rknn-rt`
+- **Runtime** (`make build-runtime-deps`): flutter-engine, display runners, **gstreamer (MPP+RTSP)**, mediamtx, OpenCV sources, `prebuilt/rknn-rt`
 - **Dev host** (`make build-dev-deps`): `FLUTTER_SDK`, RKNN-Toolkit（仅 x86 转模型）
 - **`make build-rootfs`** 安装 defconfig 已接入的 prebuilt；`check-prebuilt` 校验全部 runtime 项
 
@@ -38,7 +38,7 @@ Or from repo root:
 make build-app   # libapp.so + assets only → overlay /opt/hmi
 ```
 
-**Must use pinned Flutter `3.24.4`** (`make fetch-flutter-sdk`); `build-app.sh` refuses a mismatched SDK (e.g. host `flutter` 3.41.x). AOT `libapp.so` and rootfs `libflutter_engine.so` **must be the same engine version** or flutter-pi exits/hangs with little or no UI.
+**Must use pinned Flutter `3.24.4`** (`make fetch-flutter-sdk`); `build-app.sh` refuses a mismatched SDK (e.g. host `flutter` 3.41.x). AOT `libapp.so` and rootfs `libflutter_engine.so` **must be the same engine version** or the HMI exits/hangs with little or no UI.
 
 ```bash
 make build-rootfs        # installs flutter-engine to /usr/lib (prebuilt)
@@ -46,7 +46,7 @@ make build-img
 make flash
 ```
 
-`libflutter_engine.so` and `icudtl.dat` are **rootfs-only** (`/usr/lib`, `/usr/share/flutter`). flutter-pi loads the engine via `dlopen` when it is absent from the bundle. App updates (`build-app`) do not touch the engine.
+`libflutter_engine.so` and `icudtl.dat` are **rootfs-only** (`/usr/lib`, `/usr/share/flutter`). The display runner loads the engine via `dlopen` when it is absent from the bundle. App updates (`build-app`) do not touch the engine.
 
 ## Deploy layout on device
 
@@ -65,7 +65,7 @@ System runtime (rootfs — updated with `make build-rootfs`):
 /usr/share/flutter/icudtl.dat   → release/data/icudtl.dat
 ```
 
-Started by `hmi.service`: `/usr/libexec/hmi/hmi-launch.sh` (release: `flutter-pi --release`; debug payload: matching debug engine via `LD_LIBRARY_PATH`).
+Started by `hmi.service`: `/usr/libexec/hmi/hmi-launch.sh` (release embedder from the image stack; debug payload: matching debug engine via `LD_LIBRARY_PATH`).
 
 ## P1.5 device debugging (USB-SSH)
 

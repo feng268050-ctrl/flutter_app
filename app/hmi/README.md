@@ -1,6 +1,6 @@
-# lws_hmi — flutter-pi HMI (embedded Linux)
+# lws_hmi — product HMI (embedded Linux)
 
-This tree targets **ynh960 / flutter-pi** via `flutterpi_tool` (`make build-app`).
+This tree targets **ynh960** via `flutterpi_tool` (`make build-app` → `/opt/hmi`).
 It is not a phone app: only the **`linux/`** platform stub is kept (plugin registrant /
 FFI helpers). `android/` / `ios/` / `macos/` / `web/` / `windows/` are intentionally absent.
 

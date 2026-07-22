@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy Flutter app artifacts to target over USB-SSH or registered remote SSH (make push-app).
+# Deploy HMI app artifacts to target over USB-SSH or registered remote SSH (make push-app).
 # USB-SSH and LAN SSH share this path; only transport selection differs.
 set -euo pipefail
 
@@ -126,7 +126,7 @@ echo "Installing staged app and restarting hmi.service..."
 if [[ ! -f "$APPLY_SCRIPT_HOST" ]]; then
 	die "missing host apply script: $APPLY_SCRIPT_HOST"
 fi
-# Refresh board helper each push so Weston/flutter-pi recovery checks stay current
+# Refresh board helper each push so HMI recovery checks stay current
 # without requiring a full rootfs rebuild for script-only fixes.
 upload_with_progress "$APPLY_SCRIPT_HOST" "$APPLY_SCRIPT"
 remote "chmod 0755 '$APPLY_SCRIPT'"

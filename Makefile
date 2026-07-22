@@ -82,7 +82,7 @@ help:
 	@echo "  make lunch                 # select ynh960 + lws_hmi Buildroot profile in SDK"
 	@echo "  make show-config           # print RK_* lines from output/.config"
 	@echo "  make build-boot-logo       # board/logo → logo.bmp (kernel FIT splash)"
-	@echo "  make build-app             # release app (AOT) → fs-overlay /opt/hmi + apply-overlay"
+	@echo "  make build-app             # release HMI (AOT) → fs-overlay /opt/hmi + apply-overlay"
 	@echo "  make build-debug-app       # debug app bundle → .cache (make debug-app / IDE; rarely run alone)"
 	@echo "  make build-kernel          # dual FIT → output/firmware/boot.img + boot_b.img (exports; for upgrade)"
 	@echo "  make build-rootfs          # rootfs → output/firmware/rootfs.img (Weston + eLinux + Mali wayland-gbm)"

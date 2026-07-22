@@ -56,21 +56,22 @@ ensure_flutterpi_tool
 cd "$APP_DIR"
 flutter pub get
 
-echo "Building HMI release AOT bundle (Flutter $PINNED_VER, arm64; shared by flutter-pi and Weston)..."
+echo "Building HMI release AOT bundle (Flutter $PINNED_VER, arm64)..."
 flutterpi_tool build --arch=arm64 --release
 
+# flutterpi_tool output layout (meta-flutter); paths are tool-defined, not embedder-specific.
 LEGACY_BUNDLE="$APP_DIR/build/flutter-pi/meta-flutter-aarch64-generic"
-FLUTTERPI_OUT="$APP_DIR/build/flutter_assets"
+ASSETS_OUT="$APP_DIR/build/flutter_assets"
 
-install_meta_flutter_bundle() {
+install_hmi_bundle() {
 	rm -rf "$DEST"
 	if [[ -f "$LEGACY_BUNDLE/lib/libapp.so" ]]; then
 		mkdir -p "$DEST"
 		cp -a "$LEGACY_BUNDLE/." "$DEST/"
-	elif [[ -f "$FLUTTERPI_OUT/app.so" ]]; then
+	elif [[ -f "$ASSETS_OUT/app.so" ]]; then
 		mkdir -p "$DEST/lib" "$DEST/data/flutter_assets"
-		cp -a "$FLUTTERPI_OUT/app.so" "$DEST/lib/libapp.so"
-		for item in "$FLUTTERPI_OUT"/*; do
+		cp -a "$ASSETS_OUT/app.so" "$DEST/lib/libapp.so"
+		for item in "$ASSETS_OUT"/*; do
 			[[ -e "$item" ]] || continue
 			base="$(basename "$item")"
 			case "$base" in
@@ -79,7 +80,7 @@ install_meta_flutter_bundle() {
 			cp -a "$item" "$DEST/data/flutter_assets/"
 		done
 	else
-		die "flutterpi_tool produced no bundle (expected $LEGACY_BUNDLE/lib/libapp.so or $FLUTTERPI_OUT/app.so)"
+		die "HMI bundle missing (expected $LEGACY_BUNDLE/lib/libapp.so or $ASSETS_OUT/app.so)"
 	fi
 
 	# Engine + icudtl live on rootfs (/usr/lib, /usr/share/flutter) — not in the app bundle.
@@ -91,9 +92,9 @@ install_meta_flutter_bundle() {
 		"$DEST/data/flutter_assets/app.so" \
 		"$DEST/data/flutter_assets/flutter-pi"
 }
-install_meta_flutter_bundle
+install_hmi_bundle
 
 printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >"$DEST/runtime-mode.json"
 
-echo "Installed HMI app bundle to $DEST (libapp.so + assets only; engine $ENGINE_VER on rootfs)"
+echo "Installed HMI bundle to $DEST (libapp.so + assets; engine $ENGINE_VER on rootfs)"
 ls -la "$DEST" "$DEST/lib" "$DEST/data" 2>/dev/null || ls -la "$DEST"

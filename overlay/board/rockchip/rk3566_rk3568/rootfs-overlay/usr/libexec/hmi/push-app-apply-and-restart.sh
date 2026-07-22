@@ -29,7 +29,7 @@ fail() {
 	exit 1
 }
 
-# flutter-wayland-client (default Weston image) or flutter-pi (alternate image).
+# True when the HMI embedder process is up (wayland client or DRM runner).
 hmi_embedder_running() {
 	pidof flutter-pi >/dev/null 2>&1 && return 0
 	pidof flutter-wayland-client >/dev/null 2>&1 && return 0
@@ -73,7 +73,7 @@ while [ "$attempt" -le "$MAX_START_ATTEMPTS" ]; do
 	log "restart attempt $attempt/$MAX_START_ATTEMPTS"
 	systemctl reset-failed hmi.service
 	systemctl start hmi.service || true
-	# Weston path needs a bit longer (compositor + client) than flutter-pi.
+	# Allow compositor + client (or DRM runner) to come up before probing.
 	sleep 2
 	if systemctl is-active --quiet hmi.service && hmi_embedder_running; then
 		log "restart complete"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build Flutter debug bundle for flutter-pi (ARM64 meta-flutter layout).
+# Build HMI debug bundle (ARM64 meta-flutter layout via flutterpi_tool).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -59,23 +59,23 @@ ensure_flutterpi_tool
 cd "$APP_DIR"
 flutter pub get
 
-echo "Building HMI debug bundle (Flutter $PINNED_VER, flutterpi_tool $PI_TOOL_VER, arm64; shared by flutter-pi and Weston)..."
+echo "Building HMI debug bundle (Flutter $PINNED_VER, flutterpi_tool $PI_TOOL_VER, arm64)..."
 flutterpi_tool build --arch=arm64 --debug
 
-FLUTTERPI_OUT="$APP_DIR/build/flutter_assets"
-[[ -f "$FLUTTERPI_OUT/kernel_blob.bin" ]] || die "missing $FLUTTERPI_OUT/kernel_blob.bin (flutterpi_tool debug build failed)"
+ASSETS_OUT="$APP_DIR/build/flutter_assets"
+[[ -f "$ASSETS_OUT/kernel_blob.bin" ]] || die "missing $ASSETS_OUT/kernel_blob.bin (HMI debug build failed)"
 
-ENGINE_SRC="$FLUTTERPI_OUT/libflutter_engine.so"
-ICU_SRC="$FLUTTERPI_OUT/icudtl.dat"
-[[ -f "$ENGINE_SRC" ]] || die "missing debug engine in flutterpi_tool output: $ENGINE_SRC"
-[[ -f "$ICU_SRC" ]] || die "missing debug ICU in flutterpi_tool output: $ICU_SRC"
+ENGINE_SRC="$ASSETS_OUT/libflutter_engine.so"
+ICU_SRC="$ASSETS_OUT/icudtl.dat"
+[[ -f "$ENGINE_SRC" ]] || die "missing debug engine in build output: $ENGINE_SRC"
+[[ -f "$ICU_SRC" ]] || die "missing debug ICU in build output: $ICU_SRC"
 
 HMI_STAGING="$STAGING/opt/hmi"
 RUNTIME_STAGING="$STAGING/debug-runtime/$ENGINE_VER"
 rm -rf "$STAGING"
 mkdir -p "$HMI_STAGING/data/flutter_assets" "$RUNTIME_STAGING"
 
-for item in "$FLUTTERPI_OUT"/*; do
+for item in "$ASSETS_OUT"/*; do
 	[[ -e "$item" ]] || continue
 	base="$(basename "$item")"
 	case "$base" in

@@ -33,8 +33,7 @@ Mount: kernel uses `root=PARTLABEL=rootfs_a` or `rootfs_b`. Prefer PARTLABEL ove
 | Online OTA download / staged apply | **`/userdata/ota/`** | userdata (not rootfs); not used for full images by `make upgrade` |
 | PR0 录像 / sqlite | `/userdata/…` | userdata |
 
-**`update.img` whole package ≤ ~600 MiB** (boot + rootfs + misc…) ⇒ **`rootfs.ext2` ~430–550 MiB** today/P5 target.  
-**1 GiB partition** ≈ 2× that budget — enough for ext4 metadata and a few `push-app` iterations without repartitioning.
+**`update.img` whole package** grows with rootfs; keep `rootfs.ext2` at **`600M`** (both stacks) so the 1 GiB GPT slot still has room for metadata and a few `push-app` iterations.
 
 ### ext4 image size (Buildroot / OTA)
 
@@ -50,11 +49,11 @@ lws-hmi overrides in `overlay/buildroot/chips/lws_hmi_rootfs.config`:
 | Option | Value | Effect |
 |--------|-------|--------|
 | `BR2_TARGET_ROOTFS_EXT2_SIZE_AUTO` | `n` | Fixed cap instead of auto formula |
-| `BR2_TARGET_ROOTFS_EXT2_SIZE` | `450M` | OTA artifact ~450 MiB; ~30 MiB free blocks inside FS for `push-app` |
+| `BR2_TARGET_ROOTFS_EXT2_SIZE` | `600M` | Shared by Weston (default) and flutter-pi (alternate); headroom for GStreamer/CJK fonts + `push-app` |
 | `BR2_TARGET_ROOTFS_EXT2_INODES` | `10240` | ~5.7k free inodes; avoids inode-table bloat |
 | `BR2_TARGET_ROOTFS_EXT2_RESBLKS` | `0` | No 5% root-reserved pool (embedded appliance) |
 
-To change OTA size later: bump `450M` (still must pass `verify-firmware-partitions.sh` vs 1 GiB slot). Pure `SIZE_AUTO` + low `-N` shrinks the image further (~417 MiB) but leaves almost no grow room on `/` until repartition or a deliberate grow step — not used here.
+To change OTA size later: bump `600M` (still must pass `verify-firmware-partitions.sh` vs 1 GiB slot). Pure `SIZE_AUTO` + low `-N` shrinks the image further but leaves almost no grow room on `/` until repartition or a deliberate grow step — not used here.
 
 If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000` → `0x00300000` (1.5 GiB) in parameter and re-flash.
 

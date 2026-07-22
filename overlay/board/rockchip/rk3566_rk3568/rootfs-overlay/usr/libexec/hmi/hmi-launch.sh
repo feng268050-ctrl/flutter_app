@@ -1,5 +1,5 @@
 #!/bin/sh
-# Mode-aware HMI launcher: flutter-pi (default) or Weston + eLinux (weston image).
+# Mode-aware HMI launcher: Weston + eLinux (default) or flutter-pi (alternate).
 set -eu
 
 BUNDLE=/opt/hmi
@@ -60,16 +60,16 @@ if [ -f "$MODE_FILE" ]; then
 	MODE="${MODE:-release}"
 fi
 
-# Image embedder (baked by post-build): flutter-pi XOR weston — never mixed.
+# Image embedder (baked by post-build): weston XOR flutter-pi — never mixed.
 # Override: HMI_DISPLAY_STACK=weston|flutter-pi (debug only).
-DISPLAY_STACK=flutter-pi
+DISPLAY_STACK=weston
 if [ -n "${HMI_DISPLAY_STACK:-}" ]; then
 	DISPLAY_STACK="$(printf '%s' "$HMI_DISPLAY_STACK" | tr '[:upper:]' '[:lower:]')"
 elif [ -f /etc/hmi/display-stack ]; then
 	DISPLAY_STACK="$(tr -d '[:space:]' </etc/hmi/display-stack | tr '[:upper:]' '[:lower:]')"
 fi
 
-# --- Weston + flutter-embedded-linux (weston rootfs only) ---
+# --- Weston + flutter-embedded-linux (default rootfs) ---
 if [ "$DISPLAY_STACK" = weston ] || [ "$DISPLAY_STACK" = wayland ] || \
 	[ "$DISPLAY_STACK" = elinux ]; then
 	if [ ! -x /usr/bin/weston ] || [ ! -x "$ELINUX_CLIENT" ]; then
@@ -157,7 +157,7 @@ if [ "$DISPLAY_STACK" = weston ] || [ "$DISPLAY_STACK" = wayland ] || \
 	exit "$status"
 fi
 
-# --- flutter-pi (default rootfs) ---
+# --- flutter-pi (alternate rootfs) ---
 if [ ! -x /usr/bin/flutter-pi ]; then
 	echo "hmi-launch: display-stack=$DISPLAY_STACK but /usr/bin/flutter-pi missing" >&2
 	exit 1

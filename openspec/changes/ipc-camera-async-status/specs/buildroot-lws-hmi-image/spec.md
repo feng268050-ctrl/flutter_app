@@ -2,21 +2,27 @@
 
 ### Requirement: Product image includes the GStreamer/MPP live IP-camera preview runtime
 
-The lws_hmi product rootfs SHALL include the runtime needed for the Flutter HMI to decode and render the local MediaMTX RTSP preview: GStreamer core, RTSP/RTP transports, required H.264/H.265 parsing, and Rockchip MPP hardware decode integration. The default rootfs SHALL include the flutter-pi GStreamer video player plugin; the alternate Weston rootfs SHALL include a flutter-embedded-linux client linked with the Sony eLinux GStreamer video player plugin and install its required shared library. The active product defconfig SHALL include `lws_hmi_gst_rtsp.config` or its generated prebuilt equivalent. This runtime is required by the IP Camera settings preview and MUST NOT remain deferred/commented out after this change.
+The lws_hmi product rootfs SHALL include the runtime needed for the Flutter HMI to decode and render the local MediaMTX RTSP preview: GStreamer core, RTSP/RTP transports, required H.264/H.265 parsing, and Rockchip MPP hardware decode integration. The default Weston rootfs SHALL include a flutter-embedded-linux client linked with the Sony eLinux GStreamer video player plugin and install its required shared library; the alternate flutter-pi rootfs SHALL include the flutter-pi GStreamer video player plugin. The active product defconfig SHALL include `lws_hmi_gst_rtsp.config` or its generated prebuilt equivalent. This runtime is required by the IP Camera settings preview and MUST NOT remain deferred/commented out after this change.
 
 #### Scenario: Rootfs contains the preview runtime
 
 - **WHEN** the product rootfs for this change is built and deployed
 - **THEN** the required GStreamer shared libraries and RTSP/RTP plugins SHALL be present
 - **AND** Rockchip MPP decode integration SHALL be available
-- **AND** flutter-pi SHALL register the video player plugin used by the App
+- **AND** the active display-stack video player plugin SHALL be registered for the App
 
-#### Scenario: Weston image contains its video texture plugin
+#### Scenario: Default Weston image contains its video texture plugin
 
-- **WHEN** `build-rootfs-weston` is built and deployed
+- **WHEN** `build-rootfs` is built and deployed
 - **THEN** `flutter-wayland-client` SHALL be linked against the eLinux video player plugin
 - **AND** `libvideo_player_plugin.so` and the shared GStreamer/MPP runtime SHALL be installed
 - **AND** the App SHALL not replace the eLinux platform implementation with `FlutterpiVideoPlayer`
+
+#### Scenario: Alternate flutter-pi image contains its video texture plugin
+
+- **WHEN** `build-rootfs-flutter-pi` is built and deployed
+- **THEN** flutter-pi SHALL register the GStreamer video player plugin used by the App
+- **AND** the shared GStreamer/MPP runtime SHALL be installed
 
 #### Scenario: Local relay stream produces a Flutter video texture
 
@@ -26,7 +32,7 @@ The lws_hmi product rootfs SHALL include the runtime needed for the Flutter HMI 
 
 #### Scenario: Host build remains usable without the device plugin
 
-- **WHEN** the App runs on a host/emulator without the flutter-pi GStreamer plugin
+- **WHEN** the App runs on a host/emulator without the device GStreamer plugin
 - **THEN** the preview wrapper SHALL fail softly or use a host stub
 - **AND** Settings navigation MUST remain usable
 

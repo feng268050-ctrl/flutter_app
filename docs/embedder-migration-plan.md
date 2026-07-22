@@ -1,6 +1,8 @@
 # 嵌入器迁移计划（flutter-pi → flutter-embedded-linux / Weston · ynh960 基准）
 
-目标：把量产 HMI 的 Flutter **嵌入器**从 **flutter-pi** 换成 **flutter-embedded-linux（Sony eLinux）**，以解决在本机上无法达到面板刷新率的**动画帧调度 / vsync 卡顿**问题。本文给出诊断依据、候选方案对比、推荐路线、风险、分阶段计划与验收标准。
+目标：把量产 HMI 的 Flutter **嵌入器**从 **flutter-pi** 换成 **flutter-embedded-linux（Sony eLinux）+ Weston**，以解决在本机上无法达到面板刷新率的**动画帧调度 / vsync 卡顿**问题。本文给出诊断依据、候选方案对比、推荐路线、风险、分阶段计划与验收标准。
+
+**当前量产默认（2026-07）：** `make build-rootfs` → Weston；备选 `make build-rootfs-flutter-pi`。根文件系统固定 **600M**（两栈共用 `lws_hmi_rootfs.config`）。
 
 配套阅读：主线规划 [`flutter-pi-hmi-plan.md`](flutter-pi-hmi-plan.md)（§5 显示栈、§3.2 模拟器、§6 应用打包、P5.1 引擎升级）；帧调度诊断脚本 [`scripts/debug-frame-pacing.sh`](../scripts/debug-frame-pacing.sh)、[`scripts/debug-jank-probe.sh`](../scripts/debug-jank-probe.sh)。
 
@@ -112,10 +114,10 @@
 - E0.5(条件)若 E0.3 未达标,最小引入 Weston + eLinux Wayland backend,复测帧率。✅ 基础设施 + present 探针完成；**C≈41fps vs pi≈24fps，硬门控 ≥50 未过**（见 spike 报告 §5）。
 - **产出**: [`embedder-migration-spike-e0.md`](embedder-migration-spike-e0.md) — **否决 B；方向锁定 C**；≥50fps 留待 E3/调优或 P5.1。
 
-### E1 — Buildroot 打包 ✅（最小落地：备选 Weston 镜像）
+### E1 — Buildroot 打包 ✅（量产默认：Weston 镜像；flutter-pi 备选）
 
 - E1.1 新增 `overlay/buildroot/package/flutter-embedded-linux/`(prebuilt `.mk`；交叉编译见 `scripts/build-flutter-embedded-linux.sh`)。✅
-- E1.2(仅 C)新增/启用 `weston`、`wayland`、`wayland-protocols`,并切换 libmali 到 `wayland-gbm` 变体;新增 `chips/lws_hmi_wayland.config`。✅ — **默认 defconfig 不 include**；`make build-rootfs-weston` 经 `LWS_HMI_WESTON=1` 注入。
+- E1.2(仅 C)新增/启用 `weston`、`wayland`、`wayland-protocols`,并切换 libmali 到 `wayland-gbm` 变体;新增 `chips/lws_hmi_wayland.config`。✅ — **默认 defconfig include**；`make build-rootfs` 经 `LWS_HMI_WESTON=1`（默认）注入。备选 flutter-pi：`LWS_HMI_WESTON=0` / `make build-rootfs-flutter-pi`。
 - E1.3 prebuilt 导出流程 + `make check-prebuilt` 纳入新包。✅（仅 wayland fragment 启用时校验）。
 - E1.4 版本文件 `overlay/buildroot/flutter-embedded-linux.version`。✅ (`db49896cf2`)
 
@@ -123,10 +125,12 @@
 
 | 目标 | 嵌入器 | Mali |
 | ---- | ------ | ---- |
-| `make build-rootfs`（默认） | flutter-pi only（无 weston / eLinux client） | `gbm` |
-| `make build-rootfs-weston` | Weston + `flutter-wayland-client` only（无 `flutter-pi`） | `wayland-gbm` |
+| `make build-rootfs`（默认） | Weston + `flutter-wayland-client` only（无 `flutter-pi`） | `wayland-gbm` |
+| `make build-rootfs-flutter-pi`（备选） | flutter-pi only（无 weston / eLinux client） | `gbm` |
 
-两套 rootfs **互斥打包**：`lws_hmi_flutter.config` 显式关闭 Wayland/Weston/eLinux；`lws_hmi_wayland.config` 关闭 `FLUTTER_PI`。`post-build` 写入 `/etc/hmi/display-stack` 且若混装则失败。`hmi-launch.sh` **按该 stamp 选栈**（不是“没有 flutter-pi 才走 Weston”）。栈切换：`make prepare-rootfs` / `prepare-rootfs-weston`（`scripts/prepare-rootfs-stack.sh` + `ensure-mali-variant.sh`）；`build-rootfs*` 会先跑匹配的 prepare。鼠标偏好：`apply-mouse-settings` 写 conf；Weston 下会重启 `hmi` 使 ini 生效。视觉 DPR 对齐在 Dart（`LwsHmiApp` FittedBox≈1.358）。HAL：`BoardBindings.displayStack()` / `DisplayStackProbe`（读 `/etc/hmi/display-stack` 与 `/run/hmi/display-stack`）门控 Settings 中仅 flutter-pi 支持的鼠标项。
+两套 rootfs **互斥打包**：`lws_hmi_flutter.config` 显式关闭 Wayland/Weston/eLinux；`lws_hmi_wayland.config` 关闭 `FLUTTER_PI`。`post-build` 写入 `/etc/hmi/display-stack` 且若混装则失败。`hmi-launch.sh` **按该 stamp 选栈**。栈切换：`make prepare-rootfs` / `prepare-rootfs-flutter-pi`（`scripts/prepare-rootfs-stack.sh` + `ensure-mali-variant.sh`）；`build-rootfs*` 会先跑匹配的 prepare。鼠标偏好：`apply-mouse-settings` 写 conf；Weston 下会重启 `hmi` 使 ini 生效。视觉 DPR 对齐在 Dart（`LwsHmiApp` FittedBox≈1.358）。HAL：`BoardBindings.displayStack()` / `DisplayStackProbe`（读 `/etc/hmi/display-stack` 与 `/run/hmi/display-stack`）门控 Settings 中仅 flutter-pi 支持的鼠标项。
+
+**产品决策（2026-07）：** 板端验证 Weston 在实时高斯模糊等场景下帧率更高更稳，flutter-pi 会明显掉到 24fps 以下 → **Weston 升为默认量产栈**，flutter-pi 保留为备选。
 
 ### E2 — 输入 / 光标平权 🔲
 
@@ -143,8 +147,8 @@
 ### E4 — 验收与切换 🔲
 
 - E4.1 §9 验收全过。🔲
-- E4.2 灰度:保留 flutter-pi 包与 prebuilt 作为回退(见 §10);defconfig 开关切换嵌入器。✅（默认 pi / 备选 `build-rootfs-weston`）。
-- E4.3 更新主线规划(§5 显示栈、P3.2 收敛、P5.1)、README、AGENTS.md 重建表、`env-verify.sh`。🔄（README/AGENTS 已更；env-verify 待补）。
+- E4.2 灰度:保留 flutter-pi 包与 prebuilt 作为回退(见 §10);defconfig 开关切换嵌入器。✅（默认 Weston / 备选 `build-rootfs-flutter-pi`）。
+- E4.3 更新主线规划(§5 显示栈、P3.2 收敛、P5.1)、README、AGENTS.md 重建表、`env-verify.sh`。✅（README/AGENTS/`make build-rootfs` 默认 Weston；env-verify 待补）。
 - E4.4 归档本迁移(OpenSpec/文档)。🔲
 
 ---

@@ -96,12 +96,12 @@ if [ -f "$TARGET_DIR/usr/libexec/hmi/apply-mouse-settings.sh" ]; then
 fi
 
 # Embedder mutual exclusion. Same Buildroot output/ is reused when flipping
-# between make build-rootfs and build-rootfs-weston — leftover binaries from the
-# other stack remain under target/ until purged.
+# between make build-rootfs (Weston) and build-rootfs-flutter-pi — leftover
+# binaries from the other stack remain under target/ until purged.
 #
 # Intent (first match wins):
 #   1) Buildroot .config next to TARGET_DIR (authoritative after lunch/defconfig)
-#   2) LWS_HMI_WESTON from docker-run / make build-rootfs-weston
+#   2) LWS_HMI_WESTON from docker-run (default 1 = Weston)
 wayland_img=0
 br_config="$(dirname "$TARGET_DIR")/.config"
 if [ -f "$br_config" ] && grep -qE '^BR2_PACKAGE_FLUTTER_EMBEDDED_LINUX=y' "$br_config"; then
@@ -109,8 +109,9 @@ if [ -f "$br_config" ] && grep -qE '^BR2_PACKAGE_FLUTTER_EMBEDDED_LINUX=y' "$br_
 elif [ -f "$br_config" ] && grep -qE '^BR2_PACKAGE_FLUTTER_PI=y' "$br_config"; then
 	wayland_img=0
 else
-	case "${LWS_HMI_WESTON:-0}" in
-	1 | y | Y | yes | YES | true | TRUE) wayland_img=1 ;;
+	case "${LWS_HMI_WESTON:-1}" in
+	0 | n | N | no | NO | false | FALSE) wayland_img=0 ;;
+	*) wayland_img=1 ;;
 	esac
 fi
 
@@ -155,10 +156,10 @@ elif [ "$has_pi" -eq 1 ]; then
 	printf '%s\n' flutter-pi >"$TARGET_DIR/etc/hmi/display-stack"
 	echo "post-build: display-stack=flutter-pi"
 else
-	echo "post-build: ERROR flutter-pi missing (default rootfs)" >&2
-	echo "post-build: after a Weston build, reinstall with:" >&2
-	echo "post-build:   bash scripts/ensure-mali-variant.sh gbm" >&2
-	echo "post-build:   (or: bash scripts/br-make-packages.sh ensure-pi flutter-pi)" >&2
+	echo "post-build: ERROR default Weston image missing weston/flutter-wayland-client" >&2
+	echo "post-build: after a flutter-pi build, restore with:" >&2
+	echo "post-build:   bash scripts/ensure-mali-variant.sh wayland-gbm" >&2
+	echo "post-build:   (or: make prepare-rootfs && make build-rootfs)" >&2
 	exit 1
 fi
 

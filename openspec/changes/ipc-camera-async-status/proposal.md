@@ -7,7 +7,7 @@
 - 在 **`cyber_hal` 新增独立域 `ip_camera`**（`package:cyber_hal/ip_camera.dart`）：只描述 IP 相机设备本身（主机、上游 RTSP 端点、健康/重连观察）。**不**包含 eth0 专链、地址规划、MediaMTX。
 - **本产品拓扑与编排留在 App**（`features/ip_camera` 或等价 coordinator）：dedicated eth0 配址、订 `Ethernet`/`Wifi` D-Bus 事件触发重配、尝试预算 → UI `connecting|connected|failed`、按需启动 MediaMTX、把「本地预览 URL」交给 Settings。
 - **MediaMTX**：overlay 实装 render + on-demand unit；编排在 **产品 coordinator**（可薄封装 `systemctl`），upstream 来自 `IpCamera` 的原生流地址。
-- **GStreamer/MPP 实时预览（本变更必交付）**：启用 Buildroot GStreamer RTSP + Rockchip MPP；默认 flutter-pi 镜像内建其 GStreamer video plugin，Weston 镜像的 flutter-embedded-linux client 同时链接 Sony eLinux GStreamer `video_player` plugin。App 使用 Flutter `video_player` 兼容 API 把 `rtsp://127.0.0.1:8554/camera/pr1` 渲染成真实视频纹理。占位 UI 只允许用于 establishing / failed / 首帧等待，**不得**把“显示 URL / GStreamer pending”当作预览完成。
+- **GStreamer/MPP 实时预览（本变更必交付）**：启用 Buildroot GStreamer RTSP + Rockchip MPP；默认 Weston 镜像的 flutter-embedded-linux client 链接 Sony eLinux GStreamer `video_player` plugin，备选 flutter-pi 镜像内建其 GStreamer video plugin。App 使用 Flutter `video_player` 兼容 API 把 `rtsp://127.0.0.1:8554/camera/pr1` 渲染成真实视频纹理。占位 UI 只允许用于 establishing / failed / 首帧等待，**不得**把“显示 URL / GStreamer pending”当作预览完成。
 - **HAL 录像能力**：`ip_camera` 同时抽象单路 RTSP 录像状态机和落盘结果；`startRecording` 在 GStreamer muxer 收到首个可写媒体数据前保持 preparing，超时/候选流失败由 HAL 自己重试或闭环失败，不能由 UI 猜测“已开始”。`stopRecording` 必须发送 EOS、完成 MP4 封装并返回最终文件路径。
 - 事件驱动：链路/Wi‑Fi 用现有 network Streams（回调）；ICMP 健康在 **`ip_camera` HAL 内**有界轮询；产品层把 path-ready + health 折叠成状态栏状态。
 - 开机自检去掉 Camera Comm；Home 右上角状态图标；Common Settings 去掉 Ethernet；**Input → IP Camera** 预览（经本产品 MediaMTX 本地 URL）并在预览下提供仅用于设置页演示的“Record / Stop”按钮。演示录像写入 `/userdata/storage/Videos/movie/<yyyy-MM-dd>/<yy-MM-dd_HH-mm-ss>.mp4`，停止后只提示路径，不接入快速模式/工程师模式业务录像或文件管理。
@@ -24,7 +24,7 @@
 - `product-boot-self-check`: 去掉 Camera Comm。
 - `product-home-ui`: Home 右上角相机链路状态图标（订产品 session，非把拓扑写进 HAL）。
 - `settings-ui`: Network 去 Ethernet；Input 增加 IP Camera 预览页。
-- `buildroot-lws-hmi-image`: 产品镜像启用 GStreamer RTSP、Rockchip MPP 硬解与 flutter-pi 视频插件，满足 IP Camera 本地 relay 实时预览。
+- `buildroot-lws-hmi-image`: 产品镜像启用 GStreamer RTSP、Rockchip MPP 硬解与两套 embedder 的视频插件（默认 Weston/eLinux，备选 flutter-pi），满足 IP Camera 本地 relay 实时预览。
 
 ## Impact
 

@@ -44,7 +44,7 @@
 - [x] 6.2 Build/deploy GStreamer runtime and verify plugin registration plus MPP-backed RTSP decode on ynh960
 - [ ] 6.3 Device: icon phases, stable MediaMTX, and sustained moving preview on both flutter-pi and Weston images
 - [x] 6.4 Rebuild final app + rootfs and upgrade the device
-- [x] 6.5 Build `build-rootfs-weston` and verify the eLinux client/plugin dependencies plus local RTSP texture path
+- [x] 6.5 Build `build-rootfs` (default Weston) and verify the eLinux client/plugin dependencies plus local RTSP texture path
 
 ## 7. HAL recording + Settings demonstration
 

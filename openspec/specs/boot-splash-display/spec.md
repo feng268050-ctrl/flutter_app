@@ -45,9 +45,9 @@ The **early** boot splash (U-Boot / kernel DRM logo) MUST NOT depend on Weston, 
 - **WHEN** device displays the kernel/U-Boot boot splash before `hmi.service` starts the compositor
 - **THEN** no Wayland or Weston process is running
 
-### Requirement: Weston alternate image bridges splash after DRM takeover
+### Requirement: Weston image bridges splash after DRM takeover
 
-When the firmware stamp is `/etc/hmi/display-stack=weston`, after Weston enables the output the kernel `drm_logo` is replaced. The image SHALL paint the product logo via Weston **desktop-shell** `background-image` (`/usr/share/hmi/boot-splash.png`, same canvas as `board/logo`) until the Flutter Wayland client presents, so the panel is not left black or empty-colored without the logo mark.
+When the firmware stamp is `/etc/hmi/display-stack=weston` (default product rootfs), after Weston enables the output the kernel `drm_logo` is replaced. The image SHALL paint the product logo via Weston **desktop-shell** `background-image` (`/usr/share/hmi/boot-splash.png`, same canvas as `board/logo`) until the Flutter Wayland client presents, so the panel is not left black or empty-colored without the logo mark.
 
 #### Scenario: Weston handoff shows logo
 

@@ -5,7 +5,7 @@ Developer SSH full-system A/B upgrade (`make upgrade`): stream firmware into ina
 ## Requirements
 ### Requirement: make upgrade performs remote full-system firmware upgrade over SSH
 
-The repository SHALL provide **`make upgrade`** that selects a Linux target the same way as **`make push-app`** (**USB-SSH** and/or registered **`MODE=SSH`** via `SN=` / `IP=`), performs a **stream-to-partition** full-system upgrade over SSH, and returns successfully when the board reports reboot requested (`apply.status=ok` or equivalent) or SSH disconnects first. It SHALL NOT wait for post-reboot SSH or claim that boot health was verified.
+The repository SHALL provide **`make upgrade`** that selects a Linux target the same way as **`make push-app`** (**USB-SSH** and/or registered **`MODE=SSH`** via `SN=` / `IP=`), performs a **stream-to-partition** full-system upgrade over SSH, and returns successfully as soon as board `arm-reboot` is started (reboot requested). It SHALL NOT wait for SSH disconnect, post-reboot SSH, or claim that boot health was verified.
 
 For the stream path, the host SHALL: preflight the active/inactive letter and refuse unsafe slot state; stream **`rootfs.img`** into the inactive `rootfs_*` partition while transferring; stream **only the inactive letter’s FIT** (`boot.img` for letter A, `boot_b.img` for letter B) into the try-boot FIT path on `boot` after the running FIT is backed up to `boot_b`; optionally stream **oem** when packaged; then arm try-boot and reboot. Default full-system mode MUST update the inactive **boot and rootfs** letter pair (kernel + rootfs).
 
@@ -14,7 +14,7 @@ For the stream path, the host SHALL: preflight the active/inactive letter and re
 #### Scenario: Upgrade over USB-SSH updates kernel and rootfs
 
 - **WHEN** exactly one USB-SSH device is available and the host runs `make upgrade` after successful kernel/rootfs builds that produced the dual FITs and `rootfs.img`
-- **THEN** bytes are written to the inactive rootfs and try-boot FIT path during transfer (not via a post-transfer full-image userdata stage), the board requests reboot without using RockUSB, and the command returns on reboot request or SSH disconnect without waiting for SSH to become reachable again
+- **THEN** bytes are written to the inactive rootfs and try-boot FIT path during transfer (not via a post-transfer full-image userdata stage), the board requests reboot without using RockUSB, and the command returns as soon as `arm-reboot` is started without waiting for SSH disconnect or for SSH to become reachable again
 
 #### Scenario: Upgrade over registered LAN SSH
 

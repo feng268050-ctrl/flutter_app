@@ -110,7 +110,7 @@ make fetch-btop
 
 Force refresh a bucket: `make rebuild-deps`, `make rebuild-runtime-deps`, etc.
 
-`make build-flutter-embedded-linux` is only required for the alternate Weston image (`make build-rootfs-weston`). The default `make build-rootfs` stays on flutter-pi.
+`make build-flutter-embedded-linux` is required for the **default** Weston image (`make build-rootfs`). The alternate `make build-rootfs-flutter-pi` needs `make build-flutter-pi` instead.
 
 ### Full firmware
 
@@ -124,11 +124,11 @@ make show-config
 Firmware stage outputs:
 
 - `make build-kernel` builds two independently hashed FIT images containing the same Linux kernel: `boot.img` selects `rootfs_a`, while `boot_b.img` selects `rootfs_b`. Publishes both to `output/firmware/`.
-- `make build-rootfs` builds the **default** `rootfs.img` (flutter-pi only + Mali `gbm`) and publishes it to `output/firmware/`.
-- `make build-rootfs-weston` builds the **alternate** rootfs (Weston + `flutter-wayland-client` only + Mali `wayland-gbm`; **no** `flutter-pi`). Requires `make build-flutter-embedded-linux` first. Images are mutually exclusive (`/etc/hmi/display-stack`). Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`.
-- `make prepare-rootfs` / `make prepare-rootfs-weston` only flip the Buildroot stack (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. Both `build-rootfs*` targets call the matching prepare first (skips when stamp + binaries already match).
+- `make build-rootfs` builds the **default** `rootfs.img` (Weston + `flutter-wayland-client` only + Mali `wayland-gbm`; **no** `flutter-pi`) and publishes it to `output/firmware/`. Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`. Stamp `/etc/hmi/display-stack=weston`.
+- `make build-rootfs-flutter-pi` builds the **alternate** rootfs (flutter-pi only + Mali `gbm`; **no** Weston). Images are mutually exclusive (`/etc/hmi/display-stack`).
+- `make prepare-rootfs` / `make prepare-rootfs-flutter-pi` only flip the Buildroot stack (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. Both `build-rootfs*` targets call the matching prepare first (skips when stamp + binaries already match).
 - `make build-img` does **not** compile the kernel or rootfs. It packages the existing loader, U-Boot, misc, both FIT images, and rootfs into `output/firmware/update.img` for `make flash`.
-- Full-system `make upgrade` does **not** transfer `update.img`. It **streams** `rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), arms try-boot, and returns when apply reports `apply.status=ok` (reboot requested) or SSH disconnects. Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). The command then tells the operator to wait for the device to finish restarting before reconnecting.
+- Full-system `make upgrade` does **not** transfer `update.img`. It **streams** `rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). Wait for the device to finish restarting before reconnecting.
 
 ### Daily iteration — by what you changed
 
@@ -174,11 +174,11 @@ make build-rootfs
 make upgrade
 ```
 
-**Alternate Weston + eLinux rootfs** (default stays flutter-pi):
+**Default Weston + eLinux rootfs** (product image):
 
 ```bash
 make build-flutter-embedded-linux
-make build-rootfs-weston
+make build-rootfs
 make upgrade
 ```
 
@@ -188,15 +188,23 @@ Weston notes (ynh960):
 - Shell is **desktop-shell** (`panel-position=none`) so `background-image` can show the product logo after DRM takeover (kiosk-shell only supports a solid color).
 - `make build-boot-logo` also writes overlay `usr/share/hmi/boot-splash.png` from the same canvas as `logo.bmp`.
 
+**Alternate flutter-pi rootfs** (fallback when validating without Weston):
+
+```bash
+make build-flutter-pi
+make build-rootfs-flutter-pi
+make upgrade
+```
+
 Switching stacks without packing `rootfs.img` (Mali + embedder only; shared packages reused):
 
 ```bash
-make prepare-rootfs-weston
+make prepare-rootfs-flutter-pi
 # … later …
 make prepare-rootfs
 ```
 
-`make build-rootfs` / `build-rootfs-weston` always run the matching `prepare-*` first (idempotent). Force Mali/embedder rebuild: `FORCE=1 make prepare-rootfs` (or `prepare-rootfs-weston`).
+`make build-rootfs` / `build-rootfs-flutter-pi` always run the matching `prepare-*` first (idempotent). Force Mali/embedder rebuild: `FORCE=1 make prepare-rootfs` (or `prepare-rootfs-flutter-pi`).
 
 **Buildroot defconfig / Kconfig fragments** (`overlay/buildroot/`):
 

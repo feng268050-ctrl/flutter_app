@@ -5,10 +5,10 @@ import 'dart:io';
 /// Image stamp: `/etc/hmi/display-stack` (post-build; flutter-pi XOR weston).
 /// Runtime stamp: `/run/hmi/display-stack` (`hmi-launch.sh`).
 enum DisplayStack {
-  /// Sony/Rockchip flutter-pi DRM path (default production image).
+  /// Sony/Rockchip flutter-pi DRM path (alternate rootfs).
   flutterPi,
 
-  /// Weston kiosk + flutter-wayland-client (alternate weston rootfs).
+  /// Weston + flutter-wayland-client (default production image).
   weston,
 
   /// Host / sim / undecided — treat feature gates like [flutterPi].

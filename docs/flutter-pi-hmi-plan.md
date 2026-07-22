@@ -1,6 +1,6 @@
 # Flutter-pi HMI 规划（通用嵌入式 OS 方向 · ynh960 基准）
 
-目标：在 **lws-hmi** Buildroot 基线上，用 **flutter-pi**（量产）/ **flutter-embedded-linux**（模拟器）跑 Flutter UI；建设可复用的 **嵌入式 OS**：共用 **CyberUI** 框架与 **Dart HAL（`cyber_hal`）**，主板/屏幕以 **board·screen pack** 插拔，**产品顶层 App 可分叉**。按 **P1→P5** 增量交付（见下表）。**裁掉** Rockchip 参考 rootfs 里的 Weston / Chromium / 本地相机等演示模块（模拟器 P3.2 另行引入 Weston）。
+目标：在 **lws-hmi** Buildroot 基线上，用 **Weston + flutter-embedded-linux**（量产默认）/ **flutter-pi**（备选）跑 Flutter UI；建设可复用的 **嵌入式 OS**：共用 **CyberUI** 框架与 **Dart HAL（`cyber_hal`）**，主板/屏幕以 **board·screen pack** 插拔，**产品顶层 App 可分叉**。按 **P1→P5** 增量交付（见下表）。显示栈细节与切换命令见 [`embedder-migration-plan.md`](embedder-migration-plan.md)。
 
 **能力原则**：**产品能力不少于 lws-ui**；**Linux** 平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**P5.0** 保留 Android 兼容构建（**App/APK + YNHAPI**，不扩展 `cyber_hal`）；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md)（已归档）。
 
@@ -30,7 +30,7 @@
 
 **lws-ui 对照**：算法/拓扑/模型复用；平台层 → Linux + HAL；UI = CyberUI；**P4 业务子阶段 §1.2**、**P2.5 双分区 §1.3**；旧阶段号映射 **§1.4**；细则 **§12**；openspec **§11.7**。
 
-当前 Rockchip 参考 defconfig 为 EVB 演示系统；替换为 **HMI 栈 + flutter-pi + HAL**，按上表增量交付。
+当前 Rockchip 参考 defconfig 为 EVB 演示系统；替换为 **HMI 栈 + Weston/eLinux（默认）或 flutter-pi（备选）+ HAL**，按上表增量交付。
 
 ### 1.1 各阶段任务一览
 
@@ -74,8 +74,8 @@ P3.1  Dart HAL 子包 + 网络栈切换 ✅
 P3.2  Linux 模拟器 🔲
     ├─ UTM + Weston (Wayland) + flutter-embedded-linux + HAL
     ├─ sim/host board pack；可连下位机（Modbus 等）
-    └─ 量产显示栈仍为设备侧 flutter-pi + DRM
-        （备选 Weston 镜像见 docs/embedder-migration-plan.md，不替代本阶段 UTM 验收）
+    └─ 量产显示栈默认 Weston + eLinux；备选 flutter-pi + DRM
+        （默认 Weston / 备选 flutter-pi 见 docs/embedder-migration-plan.md，不替代本阶段 UTM 验收）
 
 P3.3  AI → libai.so 🔲
     ├─ 迁移 lensinspector；Linux aarch64 libai.so + RKNN
@@ -540,15 +540,18 @@ RK_WIFIBT=y                                        # 与 wifibt/*.config 一致
 
 ---
 
-## 5. 显示栈（DRM，非 Wayland）
+## 5. 显示栈（默认 Weston；备选 flutter-pi DRM）
+
+量产默认：`make build-rootfs` → Weston + `flutter-wayland-client` + Mali `wayland-gbm`。备选：`make build-rootfs-flutter-pi` → flutter-pi + DRM/GBM。两套互斥；见 [`embedder-migration-plan.md`](embedder-migration-plan.md)。
 
 
 | 层       | 组件                             | 说明                                                             |
 | ------- | ------------------------------ | -------------------------------------------------------------- |
 | 内核      | DRM/KMS、MIPI DSI               | 板级 DTS + LCD overlay（ynh960 / RK3566；未来 ynh961/ynh962 或另屏参时再增） |
-| 用户态 GPU | `rockchip-mali`                | `gpu/gpu.config`                                               |
-| 用户态显示   | **libdrm + libgbm + EGL/GLES** | flutter-pi 直接 scanout                                          |
-| 不需要     | Weston、Wayland、X11、Chromium    | 从 defconfig 删除                                                 |
+| 用户态 GPU | `rockchip-mali`                | `gpu/gpu.config`（Weston：`wayland-gbm`；flutter-pi：`gbm`）         |
+| 用户态显示（默认） | **Weston + Wayland + eLinux** | desktop-shell + `flutter-wayland-client`                         |
+| 用户态显示（备选） | **libdrm + libgbm + EGL/GLES** | flutter-pi 直接 scanout                                          |
+| 不需要（早期裁剪） | 演示 Chromium / EVB 相机等          | 与产品 Weston 栈无关                                                 |
 
 
 **ynh960 屏参**（已在 `board/960_lcd_param_rk356x.txt`）：
@@ -558,15 +561,15 @@ RK_WIFIBT=y                                        # 与 wifibt/*.config 一致
 
 ### 5.2 Boot splash logo（P1 必需）
 
-**必须**在上电后、首页之前显示 **产品 logo**（对齐 lws-ui Android `windowBackground` / splash 体验）。**默认量产镜像**靠 **U-Boot + 内核 early splash**，由 **flutter-pi** 接屏（logo 可留到 `Freeing drm_logo`）。**备选 Weston 镜像**（`make build-rootfs-weston`）仍用同一 early splash；Weston 抢 DRM 后改由 **desktop-shell** 背景图 `/usr/share/hmi/boot-splash.png` 桥接至 `flutter-wayland-client` 首帧（详见 [`embedder-migration-plan.md`](embedder-migration-plan.md) E3.2）。
+**必须**在上电后、首页之前显示 **产品 logo**（对齐 lws-ui Android `windowBackground` / splash 体验）。**默认量产镜像**（`make build-rootfs`，Weston）靠 **U-Boot + 内核 early splash**；Weston 抢 DRM 后由 **desktop-shell** 背景图 `/usr/share/hmi/boot-splash.png` 桥接至 `flutter-wayland-client` 首帧（详见 [`embedder-migration-plan.md`](embedder-migration-plan.md) E3.2）。**备选 flutter-pi 镜像**（`make build-rootfs-flutter-pi`）仍用同一 early splash，由 flutter-pi 接屏（logo 可留到 `Freeing drm_logo`）。
 
 
 | 层            | 做法                                                                              |
 | ------------ | ------------------------------------------------------------------------------- |
 | **U-Boot**   | Rockchip 常用 `logo.bmp` / resource 分区；`make lunch` 板级 logo 与 **MIPI 旋转/分辨率** 一致  |
 | **内核 early** | DRM/KMS 或 FB early logo（`CONFIG_LOGO` / Rockchip bootlogo 驱动）；**尽早**接管同一 MIPI 屏 |
-| ** handoff（flutter-pi）** | flutter-pi 起来后 **无缝接屏**（同分辨率/旋转）；避免黑屏闪一下                                        |
-| ** handoff（Weston 备选）** | desktop-shell `background-image` = `boot-splash.png`（`make build-boot-logo` 同步）；**非** Plymouth |
+| ** handoff（Weston 默认）** | desktop-shell `background-image` = `boot-splash.png`（`make build-boot-logo` 同步）；**非** Plymouth |
+| ** handoff（flutter-pi 备选）** | flutter-pi 起来后 **无缝接屏**（同分辨率/旋转）；避免黑屏闪一下                                        |
 | **资产**       | `board/logo/`；Weston 另有 overlay `usr/share/hmi/boot-splash.png`                                |
 
 
@@ -576,9 +579,9 @@ RK_WIFIBT=y                                        # 与 wifibt/*.config 一致
 - **不计入**「上电 → App 首页」10 s KPI 的终点，但 **是 P1 验收必测项**（禁止长时间黑屏）
 - 网络/MediaMTX 异步期间，用户 **一直看到 logo**，直到首页覆盖
 
-**不做**：Plymouth（依赖 systemd、偏重）。默认镜像 **不** 用 Weston 做 early splash；Weston 备选镜像仅用 compositor **背景图**填 DRM 接手空档（见上）。
+**不做**：Plymouth（依赖 systemd、偏重）。Early splash 仍靠 U-Boot/内核；Weston 默认镜像仅用 compositor **背景图**填 DRM 接手空档（见上）。
 
-**P1 验收（默认 flutter-pi）**：上电 → **logo 立即出现** → 保持至 flutter-pi 首页 → 无异常闪屏/花屏。
+**P1 验收（默认 Weston）**：上电 → **logo 立即出现** → Weston desktop-shell 背景桥接 → flutter-wayland-client 首页 → 无异常闪屏/花屏。备选 flutter-pi 镜像：logo 可留到接屏首帧。
 
 ---
 
@@ -1589,7 +1592,7 @@ P5 验证脚本（可自 lws-ui 移植）：`scripts/device-network/probe-dual-s
 - UTM + Weston + flutter-embedded-linux + HAL（sim/host pack）
 - 支持与下位机通讯（Modbus 等）
 - `make emulator`（或等价）文档化
-- 注：设备侧备选 Weston/`build-rootfs-weston` 见 [`docs/embedder-migration-plan.md`](embedder-migration-plan.md)，**不**替代本阶段 UTM 模拟器验收
+- 注：设备侧默认 Weston / 备选 flutter-pi（`build-rootfs` / `build-rootfs-flutter-pi`）见 [`docs/embedder-migration-plan.md`](embedder-migration-plan.md)，**不**替代本阶段 UTM 模拟器验收
 
 ### P3.3 — AI 代码库 → libai.so 🔲
 

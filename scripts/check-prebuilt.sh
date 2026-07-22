@@ -58,14 +58,15 @@ require_file() {
 
 missing=0
 
-if has_include "lws_hmi_flutter.config"; then
+if has_include "lws_hmi_flutter.config" || has_include "lws_hmi_flutter_weston.config"; then
   require_prebuilt "flutter-engine" "$ENGINE_DIR" \
     "make build-flutter-engine / make build-runtime-deps" || missing=1
-  # Weston alternate image disables BR2_PACKAGE_FLUTTER_PI (see lws_hmi_wayland.config).
-  if ! has_include "lws_hmi_wayland.config"; then
-    require_prebuilt "flutter-pi" "$PI_DIR" \
-      "make build-flutter-pi / make build-runtime-deps" || missing=1
-  fi
+fi
+
+# flutter-pi alternate image (no Wayland fragment).
+if has_include "lws_hmi_flutter.config" && ! has_include "lws_hmi_wayland.config"; then
+  require_prebuilt "flutter-pi" "$PI_DIR" \
+    "make build-flutter-pi / make build-runtime-deps" || missing=1
 fi
 
 if has_include "lws_hmi_wayland.config"; then
@@ -125,11 +126,11 @@ fi
 echo "check-prebuilt: OK"
 echo "  defconfig: $(basename "$DEF")"
 def_includes | sed 's/^/  /'
-if has_include "lws_hmi_flutter.config"; then
+if has_include "lws_hmi_flutter.config" || has_include "lws_hmi_flutter_weston.config"; then
   echo "  engine: $ENGINE_DIR"
-  if ! has_include "lws_hmi_wayland.config"; then
-    echo "  flutter-pi: $PI_DIR"
-  fi
+fi
+if has_include "lws_hmi_flutter.config" && ! has_include "lws_hmi_wayland.config"; then
+  echo "  flutter-pi: $PI_DIR"
 fi
 if has_include "lws_hmi_wayland.config"; then
   echo "  flutter-embedded-linux: $ELINUX_DIR"

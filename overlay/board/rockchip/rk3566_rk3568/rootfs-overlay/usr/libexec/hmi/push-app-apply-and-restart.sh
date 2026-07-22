@@ -29,7 +29,7 @@ fail() {
 	exit 1
 }
 
-# flutter-pi (default image) or flutter-wayland-client (Weston image).
+# flutter-wayland-client (default Weston image) or flutter-pi (alternate image).
 hmi_embedder_running() {
 	pidof flutter-pi >/dev/null 2>&1 && return 0
 	pidof flutter-wayland-client >/dev/null 2>&1 && return 0

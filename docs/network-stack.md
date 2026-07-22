@@ -60,10 +60,12 @@ What it does (Innohi AIC8800D80 SDIO + UART combo — **illustrative**, not port
 1. `rfkill unblock` wifi/bluetooth
 2. Symlink vendor firmware into paths the driver searches
 3. Exit early if a wireless netdev already exists
-4. Detect SDIO vendor `c8a1` (AIC); prefer `rk_wifi_init`, else `insmod`
-   `aic8800_bsp` → `aic8800_fdrv` → optional `aic8800_btlpm`
-5. Wait for wireless iface; `hciattach` on `/dev/ttyS1` (or `wifibt-util`) for `hci0`
-6. Non-AIC fallback: Rockchip `wifibt-init`
+4. Detect SDIO vendor `c8a1` (AIC); **rebind** the SDIO MMC host once so
+   `mmc-pwrseq` resets a combo that can stay enumerated but ignore CMD52/53
+5. Prefer `rk_wifi_init` (with timeout), else `insmod`
+   `aic8800_bsp` → `aic8800_fdrv` → optional `aic8800_btlpm`; on failure rescan once more
+6. Wait for wireless iface; `hciattach` on `/dev/ttyS1` (or `wifibt-util`) for `hci0`
+7. Non-AIC fallback: Rockchip `wifibt-init`
 
 **Other vendors** (Broadcom, Realtek, MediaTek, …) will ship different binaries;
 the **HAL contract is the same**: provide a command that leaves a wireless netdev

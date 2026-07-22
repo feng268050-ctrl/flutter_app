@@ -157,20 +157,81 @@ start_aic_bt() {
 	return 1
 }
 
-bringup_aic() {
-	log "detected AIC SDIO (c8a1) — Innohi AIC8800D80 path"
+# AIC SDIO can stay enumerated but stop answering CMD52/53 (driver probe → -110 /
+# "No such device"). rockchip wifi_power/carddetect often no-op without
+# WIFI,poweren_gpio; mmc-pwrseq reset runs again only if the host is rebound.
+unload_aic_modules() {
+	killall -q -9 rk_wifi_init 2>/dev/null || true
+	# Reverse of Innohi load order; ignore errors when not loaded.
+	rmmod aic8800_fdrv 2>/dev/null || true
+	rmmod aic8800_btlpm 2>/dev/null || true
+	rmmod aic8800_bsp 2>/dev/null || true
+}
+
+rescan_aic_sdio() {
+	plat=""
+	for card in /sys/bus/mmc/devices/*; do
+		[ -e "$card/type" ] || continue
+		[ "$(cat "$card/type" 2>/dev/null || true)" = "SDIO" ] || continue
+		# .../platform/<dev>.mmc/mmc_host/mmcN/mmcN:XXXX
+		plat="$(dirname "$(dirname "$(dirname "$(readlink -f "$card")")")")"
+		break
+	done
+	if [ -z "$plat" ] || [ ! -d "$plat" ]; then
+		log "no SDIO mmc platform device to rescan"
+		return 1
+	fi
+	dev="$(basename "$plat")"
+	if [ ! -e "$plat/driver" ]; then
+		log "$dev has no driver link"
+		return 1
+	fi
+	drv="$(basename "$(readlink -f "$plat/driver")")"
+	drv_dir="/sys/bus/platform/drivers/$drv"
+	if [ ! -w "$drv_dir/unbind" ] || [ ! -w "$drv_dir/bind" ]; then
+		log "cannot unbind/bind $drv ($dev)"
+		return 1
+	fi
+	log "rescan SDIO via $drv unbind/bind $dev (mmc-pwrseq reset)"
+	unload_aic_modules
+	echo "$dev" >"$drv_dir/unbind" 2>/dev/null || true
+	sleep 1
+	echo "$dev" >"$drv_dir/bind" 2>/dev/null || {
+		log "bind $dev failed"
+		return 1
+	}
+	i=0
+	while [ "$i" -lt 40 ]; do
+		if is_aic_sdio; then
+			log "AIC SDIO reappeared after rescan"
+			return 0
+		fi
+		i=$((i + 1))
+		sleep 0.25
+	done
+	log "AIC SDIO did not return after rescan"
+	return 1
+}
+
+bringup_aic_once() {
 	# Prefer vendor rk_wifi_init when present (same binary as Innohi rootfs).
+	# Run under timeout in foreground — a background job can segfault and leave
+	# bsp/fdrv half-initialized, which then hangs a later insmod.
 	if [ -x /usr/bin/rk_wifi_init ]; then
 		tty="$(bt_tty 2>/dev/null || echo /dev/ttyS1)"
 		log "rk_wifi_init $tty"
-		/usr/bin/rk_wifi_init "$tty" >/dev/null 2>&1 &
+		if command -v timeout >/dev/null 2>&1; then
+			timeout 20 /usr/bin/rk_wifi_init "$tty" >/dev/null 2>&1 || true
+		else
+			/usr/bin/rk_wifi_init "$tty" >/dev/null 2>&1 || true
+		fi
 		if iface="$(wait_wlan)"; then
 			log "wlan ready via rk_wifi_init: $iface"
-			# rk_wifi_init may attach HCI; if not, fall through to hciattach.
 			start_aic_bt || true
 			return 0
 		fi
 		log "rk_wifi_init did not bring wlan; falling back to manual insmod"
+		unload_aic_modules
 	fi
 
 	# Innohi order: bsp → fdrv → btlpm
@@ -185,6 +246,19 @@ bringup_aic() {
 	fi
 	log "wlan not ready after aic8800 insmod"
 	return 1
+}
+
+bringup_aic() {
+	log "detected AIC SDIO (c8a1) — Innohi AIC8800D80 path"
+	# SDIO can remain enumerated while the combo ignores CMD52/53 (probe -110 /
+	# "No such device"). Reset via mmc-pwrseq by rebinding the host first.
+	rescan_aic_sdio || log "SDIO rescan skipped/failed — trying bringup anyway"
+	if bringup_aic_once; then
+		return 0
+	fi
+	log "AIC bringup failed; one more SDIO host rescan + retry"
+	rescan_aic_sdio || return 1
+	bringup_aic_once
 }
 
 if command -v rfkill >/dev/null 2>&1; then

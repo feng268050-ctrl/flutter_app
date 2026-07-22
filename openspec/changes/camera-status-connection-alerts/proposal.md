@@ -25,6 +25,6 @@ IP-camera health and Home/Monitor status chrome already exist (`IpCameraProductS
 ## Impact
 
 - App: thin camera→`AlarmSignalSource` adapter; merge in `WarnAlarmController`; optional LaserWorkGuard on edges; SFX filter via existing policy helpers.
-- Depends on in-tree HAL `ip_camera` health + product session + `cyber_alarm` ports already shipped.
+- Depends on main-spec `ip-camera` / in-tree HAL `ip_camera` health + product session + `cyber_alarm` ports (baseline from archived `ipc-camera-async-status`).
 - Does **not** port lws-ui classes (`CameraCommunicationMonitor`, `ExternalWarnAlarm`, MemoryCache listeners, etc.). Product code **C002** and operator outcomes reuse this repo’s catalog/policy; lws-ui is reference only for “camera unreachable should warn,” not an implementation template.
 - Out of scope: L001/H034 adapters; camera version HTTP cache; RGB LED; reworking eth0/MediaMTX/Home icon.

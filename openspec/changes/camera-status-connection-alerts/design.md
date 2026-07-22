@@ -24,7 +24,8 @@ Earlier slices deferred “non-Modbus camera → warn.” This change is **App g
 - Porting or mirroring lws-ui class structure / scheduling / MemoryCache edges.
 - Re-implementing ping, eth0, MediaMTX, or Home/Monitor camera chrome.
 - L001 / H034 / other non-Modbus sources.
-- Camera deviceinfo HTTP; RGB LED refresh; boot self-check Camera Comm item (other changes).
+- Camera deviceinfo HTTP; RGB LED refresh.
+- Boot self-check Camera Comm item — already removed by archived `ipc-camera-async-status` (main `product-boot-self-check`); this change does not revisit the self-check checklist.
 
 ## Decisions
 

@@ -4,6 +4,8 @@ import 'package:cyber_alarm/cyber_alarm.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/monitor/domain/active_alarm.dart';
+import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
+import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
 import 'package:lws_hmi/features/warn_alarm/catalog/product_alarm_catalog.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/boot_self_check_warn_gate.dart';
@@ -14,10 +16,6 @@ import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_sound.dart
 import 'package:lws_hmi/features/warn_alarm/presentation/cyber_ui_warn_presentation.dart';
 
 /// Owns [WarnAlarmCoordinator] + App adapters for the process lifetime.
-///
-/// TODO(advanced-settings): When laser interrupt / severity maps land, consult
-/// DangerousOperationsSettings + LaserAlarmPolicy for A001/C002/L001/W001/W002
-/// bypass and keepLaserOnWhileAlarmed (parity with lws-ui LaserEnableAlarmGuard).
 final class WarnAlarmController {
   WarnAlarmController({
     required this.services,
@@ -26,12 +24,25 @@ final class WarnAlarmController {
     AlarmLogRepository? logRepository,
     WarnGate? gate,
     WarnAlarmSound? sound,
+    DangerousOperationsSettings? dangerousOperations,
+    bool Function(String code)? infoStyleForCode,
   })  : catalog = catalog ?? ProductAlarmCatalog.seed(),
         log = logRepository ?? FileAlarmLogRepository(),
         _sound = sound ?? WarnAlarmSound(services.audio) {
     _presentation = CyberUiWarnPresentation(
       navigatorKey: navigatorKey,
       stopWarnSound: () => _sound.stop(),
+      infoStyleForCode: infoStyleForCode ??
+          (code) {
+            final d = dangerousOperations;
+            if (d == null) {
+              return false;
+            }
+            return LaserAlarmPolicy.treatBypassableAsInfo(
+              code: code,
+              snapshot: d.policySnapshot,
+            );
+          },
     );
     _adapter = ModbusAlarmAttributeAdapter(
       modbus: services.modbus,

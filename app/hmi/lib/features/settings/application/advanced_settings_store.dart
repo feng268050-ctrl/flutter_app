@@ -4,9 +4,77 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
 
+/// Cached numeric thresholds (lws-ui DefaultValueUtils defaults).
+final class AdvancedSettingsThresholdValues {
+  const AdvancedSettingsThresholdValues({
+    this.zeroPointCorrection = defaultZeroPointCorrection,
+    this.properSwingWidth = defaultProperSwingWidth,
+    this.laserStartPower = defaultLaserStartPower,
+    this.laserEndPower = defaultLaserEndPower,
+    this.blowPressureThreshold = defaultBlowPressureThreshold,
+    this.motorTempAlarm = defaultMotorTempAlarm,
+    this.driverTempAlarm = defaultDriverTempAlarm,
+    this.protectiveLensTempAlarm = defaultProtectiveLensTempAlarm,
+    this.collimatingLensTempAlarm = defaultCollimatingLensTempAlarm,
+    this.tempAlarmRecoveryInterval = defaultTempAlarmRecoveryInterval,
+  });
+
+  static const defaultZeroPointCorrection = 0.0;
+  static const defaultProperSwingWidth = 0.0;
+  static const defaultLaserStartPower = 10.0;
+  static const defaultLaserEndPower = 10.0;
+  static const defaultBlowPressureThreshold = 0.0;
+  static const defaultMotorTempAlarm = 70.0;
+  static const defaultDriverTempAlarm = 70.0;
+  static const defaultProtectiveLensTempAlarm = 70.0;
+  static const defaultCollimatingLensTempAlarm = 65.0;
+  static const defaultTempAlarmRecoveryInterval = 5.0;
+
+  final double zeroPointCorrection;
+  final double properSwingWidth;
+  final double laserStartPower;
+  final double laserEndPower;
+  final double blowPressureThreshold;
+  final double motorTempAlarm;
+  final double driverTempAlarm;
+  final double protectiveLensTempAlarm;
+  final double collimatingLensTempAlarm;
+  final double tempAlarmRecoveryInterval;
+
+  AdvancedSettingsThresholdValues copyWith({
+    double? zeroPointCorrection,
+    double? properSwingWidth,
+    double? laserStartPower,
+    double? laserEndPower,
+    double? blowPressureThreshold,
+    double? motorTempAlarm,
+    double? driverTempAlarm,
+    double? protectiveLensTempAlarm,
+    double? collimatingLensTempAlarm,
+    double? tempAlarmRecoveryInterval,
+  }) {
+    return AdvancedSettingsThresholdValues(
+      zeroPointCorrection: zeroPointCorrection ?? this.zeroPointCorrection,
+      properSwingWidth: properSwingWidth ?? this.properSwingWidth,
+      laserStartPower: laserStartPower ?? this.laserStartPower,
+      laserEndPower: laserEndPower ?? this.laserEndPower,
+      blowPressureThreshold:
+          blowPressureThreshold ?? this.blowPressureThreshold,
+      motorTempAlarm: motorTempAlarm ?? this.motorTempAlarm,
+      driverTempAlarm: driverTempAlarm ?? this.driverTempAlarm,
+      protectiveLensTempAlarm:
+          protectiveLensTempAlarm ?? this.protectiveLensTempAlarm,
+      collimatingLensTempAlarm:
+          collimatingLensTempAlarm ?? this.collimatingLensTempAlarm,
+      tempAlarmRecoveryInterval:
+          tempAlarmRecoveryInterval ?? this.tempAlarmRecoveryInterval,
+    );
+  }
+}
+
 /// App-owned Advanced Settings (`/var/lib/hmi/advanced-settings.json`).
 ///
-/// AI + dangerous-operation booleans only (not Misc JSON, not Modbus).
+/// AI + dangerous booleans + optional numeric threshold cache (not Misc JSON).
 final class AdvancedSettingsStore extends ChangeNotifier {
   AdvancedSettingsStore({String? preferencePath})
       : preferencePath =
@@ -22,6 +90,20 @@ final class AdvancedSettingsStore extends ChangeNotifier {
   static const keyAllowWorkAfterLensContamination =
       'allowWorkAfterLensContamination';
   static const keyAllowWorkAfterFeederAlarm = 'allowWorkAfterFeederAlarm';
+
+  static const keyZeroPointCorrection = 'zeroPointCorrection';
+  static const keyProperSwingWidth = 'properSwingWidth';
+  static const keyLaserStartPower = 'laserStartPower';
+  static const keyLaserEndPower = 'laserEndPower';
+  static const keyBlowPressureThreshold = 'blowPressureThreshold';
+  static const keyMotorTempAlarm = 'motorTemperatureAlarmThreshold';
+  static const keyDriverTempAlarm = 'driverTemperatureAlarmThreshold';
+  static const keyProtectiveLensTempAlarm =
+      'protectiveLensTemperatureAlarmThreshold';
+  static const keyCollimatingLensTempAlarm =
+      'collimatingLensTemperatureAlarmThreshold';
+  static const keyTempAlarmRecoveryInterval =
+      'temperatureAlarmRecoveryInterval';
 
   static const defaultLensContaminationDetectionEnabled = true;
   static const defaultZeroPointOffsetDetectionEnabled = true;
@@ -43,6 +125,8 @@ final class AdvancedSettingsStore extends ChangeNotifier {
   bool _allowWorkAfterLensContamination =
       defaultAllowWorkAfterLensContamination;
   bool _allowWorkAfterFeederAlarm = defaultAllowWorkAfterFeederAlarm;
+  AdvancedSettingsThresholdValues _thresholds =
+      const AdvancedSettingsThresholdValues();
   bool _warmed = false;
 
   bool get lensContaminationDetectionEnabled =>
@@ -54,8 +138,8 @@ final class AdvancedSettingsStore extends ChangeNotifier {
   bool get allowWorkAfterLensContamination =>
       _allowWorkAfterLensContamination;
   bool get allowWorkAfterFeederAlarm => _allowWorkAfterFeederAlarm;
+  AdvancedSettingsThresholdValues get thresholds => _thresholds;
 
-  /// Synchronous warm-read for bootstrap.
   void warmRead() {
     if (_warmed) {
       return;
@@ -144,6 +228,13 @@ final class AdvancedSettingsStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setThresholds(AdvancedSettingsThresholdValues value) async {
+    warmRead();
+    _thresholds = value;
+    await _writeUnlocked();
+    notifyListeners();
+  }
+
   void _applyDefaults() {
     _lensContaminationDetectionEnabled =
         defaultLensContaminationDetectionEnabled;
@@ -154,6 +245,7 @@ final class AdvancedSettingsStore extends ChangeNotifier {
     _allowWorkAfterLensContamination =
         defaultAllowWorkAfterLensContamination;
     _allowWorkAfterFeederAlarm = defaultAllowWorkAfterFeederAlarm;
+    _thresholds = const AdvancedSettingsThresholdValues();
   }
 
   void _applyJson(String raw) {
@@ -192,6 +284,48 @@ final class AdvancedSettingsStore extends ChangeNotifier {
         map[keyAllowWorkAfterFeederAlarm],
         defaultAllowWorkAfterFeederAlarm,
       );
+      _thresholds = AdvancedSettingsThresholdValues(
+        zeroPointCorrection: _asDouble(
+          map[keyZeroPointCorrection],
+          AdvancedSettingsThresholdValues.defaultZeroPointCorrection,
+        ),
+        properSwingWidth: _asDouble(
+          map[keyProperSwingWidth],
+          AdvancedSettingsThresholdValues.defaultProperSwingWidth,
+        ),
+        laserStartPower: _asDouble(
+          map[keyLaserStartPower],
+          AdvancedSettingsThresholdValues.defaultLaserStartPower,
+        ),
+        laserEndPower: _asDouble(
+          map[keyLaserEndPower],
+          AdvancedSettingsThresholdValues.defaultLaserEndPower,
+        ),
+        blowPressureThreshold: _asDouble(
+          map[keyBlowPressureThreshold],
+          AdvancedSettingsThresholdValues.defaultBlowPressureThreshold,
+        ),
+        motorTempAlarm: _asDouble(
+          map[keyMotorTempAlarm],
+          AdvancedSettingsThresholdValues.defaultMotorTempAlarm,
+        ),
+        driverTempAlarm: _asDouble(
+          map[keyDriverTempAlarm],
+          AdvancedSettingsThresholdValues.defaultDriverTempAlarm,
+        ),
+        protectiveLensTempAlarm: _asDouble(
+          map[keyProtectiveLensTempAlarm],
+          AdvancedSettingsThresholdValues.defaultProtectiveLensTempAlarm,
+        ),
+        collimatingLensTempAlarm: _asDouble(
+          map[keyCollimatingLensTempAlarm],
+          AdvancedSettingsThresholdValues.defaultCollimatingLensTempAlarm,
+        ),
+        tempAlarmRecoveryInterval: _asDouble(
+          map[keyTempAlarmRecoveryInterval],
+          AdvancedSettingsThresholdValues.defaultTempAlarmRecoveryInterval,
+        ),
+      );
     } catch (e) {
       debugPrint('advanced-settings: corrupt JSON, using defaults: $e');
       _applyDefaults();
@@ -207,6 +341,16 @@ final class AdvancedSettingsStore extends ChangeNotifier {
         keyAllowWorkAfterGasAlarm: _allowWorkAfterGasAlarm,
         keyAllowWorkAfterLensContamination: _allowWorkAfterLensContamination,
         keyAllowWorkAfterFeederAlarm: _allowWorkAfterFeederAlarm,
+        keyZeroPointCorrection: _thresholds.zeroPointCorrection,
+        keyProperSwingWidth: _thresholds.properSwingWidth,
+        keyLaserStartPower: _thresholds.laserStartPower,
+        keyLaserEndPower: _thresholds.laserEndPower,
+        keyBlowPressureThreshold: _thresholds.blowPressureThreshold,
+        keyMotorTempAlarm: _thresholds.motorTempAlarm,
+        keyDriverTempAlarm: _thresholds.driverTempAlarm,
+        keyProtectiveLensTempAlarm: _thresholds.protectiveLensTempAlarm,
+        keyCollimatingLensTempAlarm: _thresholds.collimatingLensTempAlarm,
+        keyTempAlarmRecoveryInterval: _thresholds.tempAlarmRecoveryInterval,
       };
 
   Future<void> _writeUnlocked() async {
@@ -236,6 +380,16 @@ final class AdvancedSettingsStore extends ChangeNotifier {
       if (v == '1' || v == 'true' || v == 'on') {
         return true;
       }
+    }
+    return fallback;
+  }
+
+  static double _asDouble(Object? value, double fallback) {
+    if (value is num) {
+      return value.toDouble();
+    }
+    if (value is String) {
+      return double.tryParse(value) ?? fallback;
     }
     return fallback;
   }

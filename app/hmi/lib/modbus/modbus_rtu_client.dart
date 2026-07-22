@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cyber_hal/cyber_hal.dart' show BoardProfile;
 import 'package:cyber_hal/modbus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/hal/hal_assets.dart';
 
@@ -167,6 +168,18 @@ class ModbusRtuClient {
       return await hal.readAttribute(id);
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Holding-register write by attribute id. Soft-fails → false.
+  Future<bool> writeAttribute(String id, Object? value) async {
+    try {
+      final hal = await _ensureHal();
+      await hal.writeAttribute(id, value);
+      return true;
+    } catch (e) {
+      debugPrint('modbus writeAttribute($id) failed: $e');
+      return false;
     }
   }
 }

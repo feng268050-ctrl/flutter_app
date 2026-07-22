@@ -15,8 +15,10 @@ import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
+import 'package:lws_hmi/features/settings/application/advanced_settings_thresholds_controller.dart';
 import 'package:lws_hmi/features/settings/application/ai_assistance_settings.dart';
 import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
+import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/product_keyboard_profile.dart';
@@ -86,6 +88,12 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   late final DangerousOperationsSettings _dangerousOperationsSettings =
       DangerousOperationsSettings(_advancedSettingsStore);
 
+  late final AdvancedSettingsThresholdsController _thresholdsController =
+      AdvancedSettingsThresholdsController(
+    store: _advancedSettingsStore,
+    services: _services,
+  );
+
   late final BootSelfCheckSettings _bootSelfCheckSettings =
       widget.bootSelfCheckSettings ??
           BootSelfCheckSettings(miscStore: _miscSettingsStore);
@@ -103,6 +111,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   late final WarnAlarmController _warnAlarm = WarnAlarmController(
     services: _services,
     navigatorKey: _navKey,
+    dangerousOperations: _dangerousOperationsSettings,
   );
 
   bool _restoreScheduled = false;
@@ -113,7 +122,17 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     _soundEffectStore.warmRead();
     _miscSettingsStore.warmRead();
     _advancedSettingsStore.warmRead();
+    _thresholdsController.warmFromStore();
     _bootSelfCheckSettings.warmRead();
+    _dangerousOperationsSettings.onBypassDisabled = () {
+      unawaited(
+        LaserWorkGuard.evaluateAndInterruptIfNeeded(
+          services: _services,
+          dangerous: _dangerousOperationsSettings,
+          warnAlarm: _warnAlarm,
+        ),
+      );
+    };
     CyberClickSoundRegistry.register(_clickSound);
     CyberImeLanguageRegistry.register(
       const CyberImeFixedLanguageProvider(CyberImeGlobalKind.english),
@@ -167,6 +186,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     }
     _aiAssistanceSettings.dispose();
     _dangerousOperationsSettings.dispose();
+    _thresholdsController.dispose();
     if (widget.advancedSettingsStore == null) {
       _advancedSettingsStore.dispose();
     }
@@ -247,6 +267,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
             store: _advancedSettingsStore,
             aiAssistance: _aiAssistanceSettings,
             dangerousOperations: _dangerousOperationsSettings,
+            thresholds: _thresholdsController,
             child: BootSelfCheckScope(
               settings: _bootSelfCheckSettings,
               child: SoundEffectScope(

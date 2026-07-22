@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 
 /// Warn dialog body matching lws-ui `dialog_frost_body_prompt` + confirm action.
 ///
-/// Layout: centered alarm icon → red title → dark body → orange Confirm.
+/// Layout: centered alarm icon → title → dark body → orange Confirm.
+/// [infoStyle] uses black title (lws-ui INFO_TYPE); otherwise red WARN title.
 class WarnDialogBody extends StatelessWidget {
   const WarnDialogBody({
     super.key,
@@ -14,6 +15,7 @@ class WarnDialogBody extends StatelessWidget {
     required this.onConfirm,
     this.beforeConfirm,
     this.confirmLabel = 'Confirm',
+    this.infoStyle = false,
   });
 
   /// Product alarm title (e.g. "Camera Communication Alarm").
@@ -28,10 +30,16 @@ class WarnDialogBody extends StatelessWidget {
   /// Stop warn loop before click (single mpg123 session — mutual exclusion).
   final Future<void> Function()? beforeConfirm;
 
+  /// When true, title is black (dangerous-ops bypass INFO).
+  final bool infoStyle;
+
   static const iconAsset = 'assets/warn/alarm_warn_icon.webp';
 
   /// Bright warn red (lws-ui WARN_TYPE title).
   static const titleRed = Color(0xFFFF0000);
+
+  /// INFO title (lws-ui INFO_TYPE).
+  static const titleBlack = Color(0xFF000000);
 
   /// Body on light frost (lws-ui `text_black`).
   static const bodyDark = Color(0xFF1A1A1A);
@@ -61,8 +69,8 @@ class WarnDialogBody extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: titleRed,
+            style: TextStyle(
+              color: infoStyle ? titleBlack : titleRed,
               fontSize: titleSize,
               fontWeight: FontWeight.w700,
               height: 1.15,

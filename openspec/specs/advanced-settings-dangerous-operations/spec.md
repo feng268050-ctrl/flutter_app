@@ -40,7 +40,7 @@ The App SHALL expose a dangerous-operations facade (parity with lws-ui `Dangerou
 
 Ready/LED style indicators SHALL use allow-* only and MUST ignore keepLaserOnWhileAlarmed.
 
-When warn/laser interrupt capabilities are not yet present, the facade and store MUST still ship; consumers SHALL be wired when those capabilities land.
+Warn presentation SHALL consult the facade for INFO vs WARN styling on bypassable codes. Turning a bypass OFF SHALL invoke the App laser re-evaluate entry point when wired (soft-fail if full laser interrupt Host is not yet available).
 
 #### Scenario: Facade not UI state
 
@@ -53,3 +53,8 @@ When warn/laser interrupt capabilities are not yet present, the facade and store
 - **WHEN** laser interrupt evaluation is available
 - **AND** the operator turns a bypass OFF while a matching fault is active and laser enable is on
 - **THEN** the App SHALL re-evaluate runtime interrupt
+
+#### Scenario: Toggle off invokes re-evaluate hook
+
+- **WHEN** the operator turns Allow Work after Gas Alarm OFF
+- **THEN** the App laser re-evaluate entry point is invoked

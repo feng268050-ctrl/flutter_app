@@ -2,14 +2,15 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/settings/application/advanced_settings_modbus_ids.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 
 /// Advanced Settings — layout parity with lws-ui `AdvancedSettingFragment`.
 ///
-/// Section order: Offset → Power → Temperature → AI Assistance → Dangerous.
-/// Threshold cards use [SettingsParamCard] + [CyberScaledSlider] (local UI
-/// state; Modbus bind via `AdvancedSettingsModbusIds` when wired).
+/// Thresholds: Modbus watch/write via [AdvancedSettingsThresholdsController].
+/// Zero Offset Auto is local reset only (full Auto procedure out of scope).
 class AdvancedSettingsTab extends StatefulWidget {
   const AdvancedSettingsTab({super.key});
 
@@ -18,25 +19,45 @@ class AdvancedSettingsTab extends StatefulWidget {
 }
 
 class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
-  // Defaults match lws-ui DefaultValueUtils.createDefaultAdvancedSettings().
-  double _zeroPointCorrection = 0;
-  double _properSwingWidth = 0;
-  double _laserStartPower = 10;
-  double _laserEndPower = 10;
-  double _blowPressureThreshold = 0;
-  double _motorTempAlarm = 70;
-  double _driverTempAlarm = 70;
-  double _protectiveLensTempAlarm = 70;
-  double _collimatingLensTempAlarm = 65;
-  double _tempAlarmRecoveryInterval = 5;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final t = AdvancedSettingsScope.maybeThresholdsOf(context);
+      unawaited(t?.start());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final store = AdvancedSettingsScope.maybeOf(context);
     final ai = AdvancedSettingsScope.maybeAiOf(context);
     final dangerous = AdvancedSettingsScope.maybeDangerousOf(context);
+    final thresholds = AdvancedSettingsScope.maybeThresholdsOf(context);
 
     Widget body() {
+      final v = thresholds?.values ??
+          store?.thresholds ??
+          const AdvancedSettingsThresholdValues();
+
+      Future<void> commit(
+        String id,
+        AdvancedSettingsThresholdValues next,
+      ) async {
+        final t = thresholds;
+        if (t != null) {
+          await t.commitField(id, next);
+        } else if (store != null) {
+          await store.setThresholds(next);
+        }
+        if (mounted) setState(() {});
+      }
+
+      void preview(AdvancedSettingsThresholdValues next) {
+        thresholds?.preview(next);
+        if (mounted) setState(() {});
+      }
+
       return SettingsScrollView(
         children: [
           const SettingsSectionHeader('Offset & Correction'),
@@ -45,24 +66,43 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
             child: SettingsParamRow(
               left: SettingsScaledParam(
                 title: 'Zero Offset',
-                value: _zeroPointCorrection,
+                value: v.zeroPointCorrection,
                 min: -30,
                 max: 30,
-                onChanged: (v) =>
-                    setState(() => _zeroPointCorrection = v.roundToDouble()),
+                onChanged: (n) => preview(
+                  v.copyWith(zeroPointCorrection: n.roundToDouble()),
+                ),
+                onChangeEnd: (n) => unawaited(
+                  commit(
+                    AdvancedSettingsModbusIds.zeroPointCorrection,
+                    v.copyWith(zeroPointCorrection: n.roundToDouble()),
+                  ),
+                ),
                 trailing: CyberButton(
                   size: CyberButtonSize.small,
-                  onPressed: () => setState(() => _zeroPointCorrection = 0),
+                  onPressed: () => unawaited(
+                    commit(
+                      AdvancedSettingsModbusIds.zeroPointCorrection,
+                      v.copyWith(zeroPointCorrection: 0),
+                    ),
+                  ),
                   child: const Text('Auto'),
                 ),
               ),
               right: SettingsScaledParam(
                 title: 'Proper Swing Width',
-                value: _properSwingWidth,
+                value: v.properSwingWidth,
                 min: -75,
                 max: 75,
-                onChanged: (v) =>
-                    setState(() => _properSwingWidth = v.roundToDouble()),
+                onChanged: (n) => preview(
+                  v.copyWith(properSwingWidth: n.roundToDouble()),
+                ),
+                onChangeEnd: (n) => unawaited(
+                  commit(
+                    AdvancedSettingsModbusIds.swingWidthCorrection,
+                    v.copyWith(properSwingWidth: n.roundToDouble()),
+                  ),
+                ),
               ),
             ),
           ),
@@ -73,19 +113,31 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
             child: SettingsParamRow(
               left: SettingsScaledParam(
                 title: 'Laser Starting Power',
-                value: _laserStartPower,
+                value: v.laserStartPower,
                 min: 0,
                 max: 100,
-                onChanged: (v) =>
-                    setState(() => _laserStartPower = v.roundToDouble()),
+                onChanged: (n) =>
+                    preview(v.copyWith(laserStartPower: n.roundToDouble())),
+                onChangeEnd: (n) => unawaited(
+                  commit(
+                    AdvancedSettingsModbusIds.laserStartPower,
+                    v.copyWith(laserStartPower: n.roundToDouble()),
+                  ),
+                ),
               ),
               right: SettingsScaledParam(
                 title: 'Laser Ending Power',
-                value: _laserEndPower,
+                value: v.laserEndPower,
                 min: 0,
                 max: 100,
-                onChanged: (v) =>
-                    setState(() => _laserEndPower = v.roundToDouble()),
+                onChanged: (n) =>
+                    preview(v.copyWith(laserEndPower: n.roundToDouble())),
+                onChangeEnd: (n) => unawaited(
+                  commit(
+                    AdvancedSettingsModbusIds.laserEndPower,
+                    v.copyWith(laserEndPower: n.roundToDouble()),
+                  ),
+                ),
               ),
             ),
           ),
@@ -94,11 +146,18 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SettingsScaledParam(
               title: 'Blow Pressure Threshold',
-              value: _blowPressureThreshold,
+              value: v.blowPressureThreshold,
               min: 0,
               max: 400,
-              onChanged: (v) =>
-                  setState(() => _blowPressureThreshold = v.roundToDouble()),
+              onChanged: (n) => preview(
+                v.copyWith(blowPressureThreshold: n.roundToDouble()),
+              ),
+              onChangeEnd: (n) => unawaited(
+                commit(
+                  AdvancedSettingsModbusIds.blowingPressureThreshold,
+                  v.copyWith(blowPressureThreshold: n.roundToDouble()),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -108,25 +167,37 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
             child: SettingsParamRow(
               left: SettingsScaledParam(
                 title: 'Motor Temperature Alarm Threshold',
-                value: _motorTempAlarm,
+                value: v.motorTempAlarm,
                 min: 0,
                 max: 80,
-                valueLabel: '${_motorTempAlarm.round()}℃',
+                valueLabel: '${v.motorTempAlarm.round()}℃',
                 scaleMinText: '0℃',
                 scaleMaxText: '80℃',
-                onChanged: (v) =>
-                    setState(() => _motorTempAlarm = v.roundToDouble()),
+                onChanged: (n) =>
+                    preview(v.copyWith(motorTempAlarm: n.roundToDouble())),
+                onChangeEnd: (n) => unawaited(
+                  commit(
+                    AdvancedSettingsModbusIds.motorTempAlarmThreshold,
+                    v.copyWith(motorTempAlarm: n.roundToDouble()),
+                  ),
+                ),
               ),
               right: SettingsScaledParam(
                 title: 'Driver Temperature Alarm Threshold',
-                value: _driverTempAlarm,
+                value: v.driverTempAlarm,
                 min: 0,
                 max: 80,
-                valueLabel: '${_driverTempAlarm.round()}℃',
+                valueLabel: '${v.driverTempAlarm.round()}℃',
                 scaleMinText: '0℃',
                 scaleMaxText: '80℃',
-                onChanged: (v) =>
-                    setState(() => _driverTempAlarm = v.roundToDouble()),
+                onChanged: (n) =>
+                    preview(v.copyWith(driverTempAlarm: n.roundToDouble())),
+                onChangeEnd: (n) => unawaited(
+                  commit(
+                    AdvancedSettingsModbusIds.driverTempAlarmThreshold,
+                    v.copyWith(driverTempAlarm: n.roundToDouble()),
+                  ),
+                ),
               ),
             ),
           ),
@@ -136,26 +207,38 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
             child: SettingsParamRow(
               left: SettingsScaledParam(
                 title: 'Protective Lens Temperature Alarm Threshold',
-                value: _protectiveLensTempAlarm,
+                value: v.protectiveLensTempAlarm,
                 min: 0,
                 max: 80,
-                valueLabel: '${_protectiveLensTempAlarm.round()}℃',
+                valueLabel: '${v.protectiveLensTempAlarm.round()}℃',
                 scaleMinText: '0℃',
                 scaleMaxText: '80℃',
-                onChanged: (v) => setState(
-                  () => _protectiveLensTempAlarm = v.roundToDouble(),
+                onChanged: (n) => preview(
+                  v.copyWith(protectiveLensTempAlarm: n.roundToDouble()),
+                ),
+                onChangeEnd: (n) => unawaited(
+                  commit(
+                    AdvancedSettingsModbusIds.protectiveLensTempAlarmThreshold,
+                    v.copyWith(protectiveLensTempAlarm: n.roundToDouble()),
+                  ),
                 ),
               ),
               right: SettingsScaledParam(
                 title: 'Collimating Lens Temperature Alarm Threshold',
-                value: _collimatingLensTempAlarm,
+                value: v.collimatingLensTempAlarm,
                 min: 0,
                 max: 80,
-                valueLabel: '${_collimatingLensTempAlarm.round()}℃',
+                valueLabel: '${v.collimatingLensTempAlarm.round()}℃',
                 scaleMinText: '0℃',
                 scaleMaxText: '80℃',
-                onChanged: (v) => setState(
-                  () => _collimatingLensTempAlarm = v.roundToDouble(),
+                onChanged: (n) => preview(
+                  v.copyWith(collimatingLensTempAlarm: n.roundToDouble()),
+                ),
+                onChangeEnd: (n) => unawaited(
+                  commit(
+                    AdvancedSettingsModbusIds.collimatingLensTempAlarmThreshold,
+                    v.copyWith(collimatingLensTempAlarm: n.roundToDouble()),
+                  ),
                 ),
               ),
             ),
@@ -165,11 +248,17 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SettingsScaledParam(
               title: 'Temperature Alarm Recovery Interval',
-              value: _tempAlarmRecoveryInterval,
+              value: v.tempAlarmRecoveryInterval,
               min: 0,
               max: 20,
-              onChanged: (v) => setState(
-                () => _tempAlarmRecoveryInterval = v.roundToDouble(),
+              onChanged: (n) => preview(
+                v.copyWith(tempAlarmRecoveryInterval: n.roundToDouble()),
+              ),
+              onChangeEnd: (n) => unawaited(
+                commit(
+                  AdvancedSettingsModbusIds.tempAlarmRecoveryInterval,
+                  v.copyWith(tempAlarmRecoveryInterval: n.roundToDouble()),
+                ),
               ),
             ),
           ),
@@ -181,8 +270,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 value: ai?.lensContaminationDetectionEnabled ?? true,
                 onChanged: ai == null
                     ? null
-                    : (v) => unawaited(
-                          ai.setLensContaminationDetectionEnabled(v),
+                    : (x) => unawaited(
+                          ai.setLensContaminationDetectionEnabled(x),
                         ),
               ),
               SettingsSwitchRow(
@@ -190,8 +279,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 value: ai?.zeroPointOffsetDetectionEnabled ?? true,
                 onChanged: ai == null
                     ? null
-                    : (v) => unawaited(
-                          ai.setZeroPointOffsetDetectionEnabled(v),
+                    : (x) => unawaited(
+                          ai.setZeroPointOffsetDetectionEnabled(x),
                         ),
               ),
             ],
@@ -208,8 +297,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 value: dangerous?.keepLaserOnWhileAlarmed ?? false,
                 onChanged: dangerous == null
                     ? null
-                    : (v) => unawaited(
-                          dangerous.setKeepLaserOnWhileAlarmed(v),
+                    : (x) => unawaited(
+                          dangerous.setKeepLaserOnWhileAlarmed(x),
                         ),
               ),
               SettingsSwitchRow(
@@ -220,8 +309,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 value: dangerous?.allowWorkAfterCameraAlarm ?? false,
                 onChanged: dangerous == null
                     ? null
-                    : (v) => unawaited(
-                          dangerous.setAllowWorkAfterCameraAlarm(v),
+                    : (x) => unawaited(
+                          dangerous.setAllowWorkAfterCameraAlarm(x),
                         ),
               ),
               SettingsSwitchRow(
@@ -233,8 +322,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 value: dangerous?.allowWorkAfterGasAlarm ?? false,
                 onChanged: dangerous == null
                     ? null
-                    : (v) => unawaited(
-                          dangerous.setAllowWorkAfterGasAlarm(v),
+                    : (x) => unawaited(
+                          dangerous.setAllowWorkAfterGasAlarm(x),
                         ),
               ),
               SettingsSwitchRow(
@@ -246,8 +335,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 value: dangerous?.allowWorkAfterLensContamination ?? false,
                 onChanged: dangerous == null
                     ? null
-                    : (v) => unawaited(
-                          dangerous.setAllowWorkAfterLensContamination(v),
+                    : (x) => unawaited(
+                          dangerous.setAllowWorkAfterLensContamination(x),
                         ),
               ),
               SettingsSwitchRow(
@@ -258,8 +347,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 value: dangerous?.allowWorkAfterFeederAlarm ?? false,
                 onChanged: dangerous == null
                     ? null
-                    : (v) => unawaited(
-                          dangerous.setAllowWorkAfterFeederAlarm(v),
+                    : (x) => unawaited(
+                          dangerous.setAllowWorkAfterFeederAlarm(x),
                         ),
               ),
             ],
@@ -268,11 +357,15 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
       );
     }
 
-    if (store == null) {
+    final listenables = <Listenable>[
+      if (store != null) store,
+      if (thresholds != null) thresholds,
+    ];
+    if (listenables.isEmpty) {
       return body();
     }
     return ListenableBuilder(
-      listenable: store,
+      listenable: Listenable.merge(listenables),
       builder: (context, _) => body(),
     );
   }

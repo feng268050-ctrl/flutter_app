@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// Corner connecting spinner for Home status-bar glyphs (does not own layout size).
-class HomeStatusIconSpin extends StatefulWidget {
-  const HomeStatusIconSpin({super.key, required this.size});
+/// Corner connecting spinner for status-bar glyphs (does not own layout size).
+class CyberStatusIconSpin extends StatefulWidget {
+  const CyberStatusIconSpin({super.key, required this.size});
 
   final double size;
 
   @override
-  State<HomeStatusIconSpin> createState() => _HomeStatusIconSpinState();
+  State<CyberStatusIconSpin> createState() => _CyberStatusIconSpinState();
 }
 
-class _HomeStatusIconSpinState extends State<HomeStatusIconSpin>
+class _CyberStatusIconSpinState extends State<CyberStatusIconSpin>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl = AnimationController(
     vsync: this,

@@ -3,8 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 /// Classic status-bar Wi‑Fi arcs (1–4 bars). Level 0 = empty outline.
-class WifiSignalBars extends StatelessWidget {
-  const WifiSignalBars({
+class CyberWifiSignalBars extends StatelessWidget {
+  const CyberWifiSignalBars({
     super.key,
     required this.level,
     required this.size,
@@ -22,7 +22,7 @@ class WifiSignalBars extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomPaint(
       size: Size.square(size),
-      painter: _WifiBarsPainter(
+      painter: _CyberWifiBarsPainter(
         level: level.clamp(0, 4),
         color: color,
         emptyColor: emptyColor ?? color.withOpacity(0.28),
@@ -32,8 +32,8 @@ class WifiSignalBars extends StatelessWidget {
 }
 
 /// Connecting animation: cycles filled bars 1 → 2 → 3 → 4 → 1.
-class WifiSignalBarsConnecting extends StatefulWidget {
-  const WifiSignalBarsConnecting({
+class CyberWifiSignalBarsConnecting extends StatefulWidget {
+  const CyberWifiSignalBarsConnecting({
     super.key,
     required this.size,
     required this.color,
@@ -45,11 +45,12 @@ class WifiSignalBarsConnecting extends StatefulWidget {
   final Duration period;
 
   @override
-  State<WifiSignalBarsConnecting> createState() =>
-      _WifiSignalBarsConnectingState();
+  State<CyberWifiSignalBarsConnecting> createState() =>
+      _CyberWifiSignalBarsConnectingState();
 }
 
-class _WifiSignalBarsConnectingState extends State<WifiSignalBarsConnecting>
+class _CyberWifiSignalBarsConnectingState
+    extends State<CyberWifiSignalBarsConnecting>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl = AnimationController(
     vsync: this,
@@ -57,7 +58,7 @@ class _WifiSignalBarsConnectingState extends State<WifiSignalBarsConnecting>
   )..repeat();
 
   @override
-  void didUpdateWidget(covariant WifiSignalBarsConnecting oldWidget) {
+  void didUpdateWidget(covariant CyberWifiSignalBarsConnecting oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.period != widget.period) {
       _ctrl.duration = widget.period;
@@ -75,9 +76,8 @@ class _WifiSignalBarsConnectingState extends State<WifiSignalBarsConnecting>
     return AnimatedBuilder(
       animation: _ctrl,
       builder: (context, _) {
-        // 4 discrete frames: levels 1,2,3,4.
         final frame = (_ctrl.value * 4).floor().clamp(0, 3);
-        return WifiSignalBars(
+        return CyberWifiSignalBars(
           level: frame + 1,
           size: widget.size,
           color: widget.color,
@@ -87,8 +87,8 @@ class _WifiSignalBarsConnectingState extends State<WifiSignalBarsConnecting>
   }
 }
 
-class _WifiBarsPainter extends CustomPainter {
-  _WifiBarsPainter({
+class _CyberWifiBarsPainter extends CustomPainter {
+  _CyberWifiBarsPainter({
     required this.level,
     required this.color,
     required this.emptyColor,
@@ -102,7 +102,6 @@ class _WifiBarsPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final stroke = (size.shortestSide * 0.10).clamp(2.0, 4.0);
     final cx = size.width / 2;
-    // Leave padding so painted arcs match Material icon optical size.
     final cy = size.height * 0.78;
     final maxR = size.shortestSide * 0.62;
 
@@ -117,13 +116,11 @@ class _WifiBarsPainter extends CustomPainter {
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round;
 
-    // Dot (always filled when level > 0; dim when idle).
     final hub = Paint()..color = level > 0 ? color : emptyColor;
     canvas.drawCircle(Offset(cx, cy), stroke * 0.55, hub);
 
-    // Three arcs above the hub → 4 visual “bars” with the hub.
-    const start = -math.pi * 0.75; // ~225°
-    const sweep = math.pi * 0.5; // 90° fan
+    const start = -math.pi * 0.75;
+    const sweep = math.pi * 0.5;
     for (var i = 1; i <= 3; i++) {
       final r = maxR * (i / 3.0);
       final paint = level > i ? filled : empty;
@@ -138,7 +135,7 @@ class _WifiBarsPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _WifiBarsPainter oldDelegate) {
+  bool shouldRepaint(covariant _CyberWifiBarsPainter oldDelegate) {
     return oldDelegate.level != level ||
         oldDelegate.color != color ||
         oldDelegate.emptyColor != emptyColor;

@@ -1,6 +1,7 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 
 /// Shared Material stand-ins for lws-ui InsetList / FrostCard settings chrome.
 ///
@@ -415,19 +416,11 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
+      appBar: ProductPageStatusBar(
+        title: title,
         actions: actions,
-        automaticallyImplyLeading: false,
-        leading: canPop
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                tooltip: 'Back',
-                onPressed: () {
-                  CyberClickSoundRegistry.playClick();
-                  Navigator.of(context).maybePop();
-                },
-              )
+        onBack: canPop
+            ? () => Navigator.of(context).maybePop()
             : null,
       ),
       body: body,

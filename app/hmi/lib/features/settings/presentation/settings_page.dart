@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/settings/presentation/tabs/common_settings_tab.
 import 'package:lws_hmi/features/settings/presentation/tabs/custom_home_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/device_information_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 
 /// Product Settings shell — four tabs (Material stand-in for FrostUI).
 ///
@@ -62,17 +63,10 @@ class _SettingsPageState extends State<SettingsPage>
     final services = AppScope.of(context);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        automaticallyImplyLeading: false,
-        leading: canPop
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  CyberClickSoundRegistry.playClick();
-                  Navigator.of(context).maybePop();
-                },
-              )
+      appBar: ProductPageStatusBar(
+        title: 'Settings',
+        onBack: canPop
+            ? () => Navigator.of(context).maybePop()
             : null,
         bottom: TabBar(
           controller: _tabs,

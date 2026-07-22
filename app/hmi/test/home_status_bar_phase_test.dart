@@ -1,5 +1,6 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lws_hmi/features/home/presentation/home_status_bar_phase.dart';
+import 'package:lws_hmi/features/status_bar/status_bar_phase.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
 import 'package:lws_hmi/platform/wifi/wifi_models.dart';
 
@@ -11,7 +12,7 @@ void main() {
           radio: WifiRadioState.off,
           connection: WifiConnectionPhase.disconnected,
         ),
-        HomeConnectivityIconPhase.hidden,
+        CyberConnectivityIconPhase.hidden,
       );
     });
 
@@ -21,7 +22,7 @@ void main() {
           radio: WifiRadioState.starting,
           connection: WifiConnectionPhase.disconnected,
         ),
-        HomeConnectivityIconPhase.connecting,
+        CyberConnectivityIconPhase.connecting,
       );
     });
 
@@ -31,7 +32,7 @@ void main() {
           radio: WifiRadioState.on,
           connection: WifiConnectionPhase.associating,
         ),
-        HomeConnectivityIconPhase.connecting,
+        CyberConnectivityIconPhase.connecting,
       );
     });
 
@@ -41,7 +42,7 @@ void main() {
           radio: WifiRadioState.on,
           connection: WifiConnectionPhase.obtainingIp,
         ),
-        HomeConnectivityIconPhase.connecting,
+        CyberConnectivityIconPhase.connecting,
       );
     });
 
@@ -51,7 +52,7 @@ void main() {
           radio: WifiRadioState.on,
           connection: WifiConnectionPhase.connected,
         ),
-        HomeConnectivityIconPhase.connected,
+        CyberConnectivityIconPhase.connected,
       );
     });
 
@@ -61,7 +62,7 @@ void main() {
           radio: WifiRadioState.on,
           connection: WifiConnectionPhase.disconnected,
         ),
-        HomeConnectivityIconPhase.onIdle,
+        CyberConnectivityIconPhase.onIdle,
       );
     });
 
@@ -71,7 +72,7 @@ void main() {
           radio: WifiRadioState.error,
           connection: WifiConnectionPhase.failed,
         ),
-        HomeConnectivityIconPhase.onIdle,
+        CyberConnectivityIconPhase.onIdle,
       );
     });
   });
@@ -83,7 +84,7 @@ void main() {
           adapter: BluetoothAdapterState.off,
           devices: const [],
         ),
-        HomeConnectivityIconPhase.hidden,
+        CyberConnectivityIconPhase.hidden,
       );
     });
 
@@ -93,7 +94,7 @@ void main() {
           adapter: BluetoothAdapterState.starting,
           devices: const [],
         ),
-        HomeConnectivityIconPhase.connecting,
+        CyberConnectivityIconPhase.connecting,
       );
     });
 
@@ -108,7 +109,7 @@ void main() {
             kind: BluetoothPairingChallengeKind.confirm,
           ),
         ),
-        HomeConnectivityIconPhase.connecting,
+        CyberConnectivityIconPhase.connecting,
       );
     });
 
@@ -120,7 +121,7 @@ void main() {
             BluetoothRemoteDevice(address: 'AA:BB', connected: true),
           ],
         ),
-        HomeConnectivityIconPhase.connected,
+        CyberConnectivityIconPhase.connected,
       );
     });
 
@@ -132,25 +133,8 @@ void main() {
             BluetoothRemoteDevice(address: 'AA:BB', paired: true),
           ],
         ),
-        HomeConnectivityIconPhase.onIdle,
+        CyberConnectivityIconPhase.onIdle,
       );
-    });
-  });
-
-  group('wifiSignalBarsFromDbm', () {
-    test('unlinked → 0', () {
-      expect(wifiSignalBarsFromDbm(-40, linked: false), 0);
-    });
-
-    test('linked + null → 4', () {
-      expect(wifiSignalBarsFromDbm(null, linked: true), 4);
-    });
-
-    test('thresholds map to 1–4 bars', () {
-      expect(wifiSignalBarsFromDbm(-40, linked: true), 4);
-      expect(wifiSignalBarsFromDbm(-60, linked: true), 3);
-      expect(wifiSignalBarsFromDbm(-70, linked: true), 2);
-      expect(wifiSignalBarsFromDbm(-85, linked: true), 1);
     });
   });
 }

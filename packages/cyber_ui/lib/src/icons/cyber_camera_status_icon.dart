@@ -1,27 +1,28 @@
+import 'package:cyber_ui/src/icons/cyber_camera_link_status.dart';
+import 'package:cyber_ui/src/icons/cyber_status_icon_spin.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/features/home/presentation/home_status_icon_spin.dart';
-import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 
-/// Top-right Home camera link icon (stacked Material glyphs).
-class HomeCameraStatusIcon extends StatelessWidget {
-  const HomeCameraStatusIcon({
+/// Status-bar camera link icon (stacked Material glyphs).
+class CyberCameraStatusIcon extends StatelessWidget {
+  const CyberCameraStatusIcon({
     super.key,
     required this.status,
     this.size = 28,
   });
 
-  final IpCameraUiStatus status;
+  final CyberCameraLinkStatus status;
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = switch (status.phase) {
-      IpCameraUiPhase.connected => Colors.white,
-      IpCameraUiPhase.connecting => Colors.white70,
-      IpCameraUiPhase.failed => Colors.white54,
+    final baseColor = switch (status) {
+      CyberCameraLinkStatus.connected => Colors.white,
+      CyberCameraLinkStatus.connecting => Colors.white70,
+      CyberCameraLinkStatus.failed => Colors.white54,
     };
 
     return SizedBox(
+      key: const ValueKey('cyber-status-camera'),
       width: size,
       height: size,
       child: Stack(
@@ -29,13 +30,13 @@ class HomeCameraStatusIcon extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Icon(Icons.videocam, size: size * 0.95, color: baseColor),
-          if (status.phase == IpCameraUiPhase.connecting)
+          if (status == CyberCameraLinkStatus.connecting)
             Positioned(
               right: -2,
               bottom: -2,
-              child: HomeStatusIconSpin(size: size * 0.48),
+              child: CyberStatusIconSpin(size: size * 0.48),
             ),
-          if (status.phase == IpCameraUiPhase.failed)
+          if (status == CyberCameraLinkStatus.failed)
             Positioned(
               right: -3,
               bottom: -3,

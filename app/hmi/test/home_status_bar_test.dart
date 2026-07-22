@@ -1,10 +1,11 @@
 import 'dart:async';
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lws_hmi/features/home/presentation/home_status_bar.dart';
-import 'package:lws_hmi/features/home/presentation/wifi_signal_bars.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
+import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
+import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
 import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
@@ -282,7 +283,7 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('home-status-wifi')), findsOneWidget);
-    expect(find.byType(WifiSignalBarsConnecting), findsOneWidget);
+    expect(find.byType(CyberWifiSignalBarsConnecting), findsOneWidget);
   });
 
   testWidgets('bt connecting while adapter starting', (tester) async {
@@ -311,5 +312,64 @@ void main() {
     wifi.emitRadio(WifiRadioState.on);
     await tester.pump();
     expect(find.byKey(const ValueKey('home-status-wifi')), findsOneWidget);
+  });
+
+  testWidgets('page status bar regions; wifi hidden when off', (tester) async {
+    final wifi = _FakeWifi();
+    final bt = _FakeBt();
+    addTearDown(wifi.dispose);
+    addTearDown(bt.dispose);
+    var popped = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          appBar: ProductPageStatusBar(
+            title: 'Settings',
+            onBack: () => popped++,
+            cameraStatus: IpCameraUiStatus.connecting,
+            wifi: wifi,
+            bluetooth: bt,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.byKey(const ValueKey('cyber-status-bar-clock')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-status-camera')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-status-wifi')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('cyber-page-status-bar-back')));
+    await tester.pump();
+    expect(popped, 1);
+  });
+
+  testWidgets('page status bar shows icons without Home mounted', (tester) async {
+    final wifi = _FakeWifi(radioState: WifiRadioState.on);
+    final bt = _FakeBt(adapter: BluetoothAdapterState.on);
+    addTearDown(wifi.dispose);
+    addTearDown(bt.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          appBar: ProductPageStatusBar(
+            title: 'Monitor',
+            cameraStatus: const IpCameraUiStatus(
+              phase: IpCameraUiPhase.connected,
+            ),
+            wifi: wifi,
+            bluetooth: bt,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('home-status-wifi')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-status-bt')), findsOneWidget);
+    expect(find.byKey(const ValueKey('cyber-page-status-bar')), findsOneWidget);
   });
 }

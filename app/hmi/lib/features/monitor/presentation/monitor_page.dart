@@ -6,6 +6,7 @@ import 'package:lws_hmi/features/monitor/presentation/tabs/alarm_information_tab
 import 'package:lws_hmi/features/monitor/presentation/tabs/machine_status_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/work_information_tab.dart';
+import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 
 /// Product Monitor — five tabs aligned with lws-ui DeviceMonitoring (Material).
 ///
@@ -61,19 +62,12 @@ class _MonitorPageState extends State<MonitorPage> {
       length: MonitorPage._tabs.length,
       child: Scaffold(
         backgroundColor: const Color(0xFF121212),
-        appBar: AppBar(
-          title: const Text('Monitor'),
+        appBar: ProductPageStatusBar(
+          title: 'Monitor',
           backgroundColor: Colors.black87,
           foregroundColor: Colors.white,
-          automaticallyImplyLeading: false,
-          leading: canPop
-              ? IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () {
-                    CyberClickSoundRegistry.playClick();
-                    Navigator.of(context).maybePop();
-                  },
-                )
+          onBack: canPop
+              ? () => Navigator.of(context).maybePop()
               : null,
           bottom: TabBar(
             isScrollable: true,

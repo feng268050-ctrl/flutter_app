@@ -22,10 +22,14 @@ Usage:
 
 Examples:
   make alarm CODE=E006
+  make alarm CODE=L001
+  make alarm CODE=C002
+  make alarm CODE=H034
   SN=<sn> make alarm CODE=H001
   make alarm-clean
 
-CODE must exist in the product alarm catalog. HMI must be running (hmi.service).
+CODE must exist in ProductAlarmCatalog (lws-ui AlarmCodeEnums parity, including
+non-Modbus codes such as L001 / C002 / H034). HMI must be running (hmi.service).
 EOF
 }
 

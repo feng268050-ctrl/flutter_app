@@ -9,13 +9,20 @@ import 'package:lws_hmi/features/warn_alarm/infrastructure/modbus_alarm_attribut
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 void main() {
-  test('product catalog covers H001/C001 and soft-fails unknown', () {
+  test('product catalog covers Modbus + lws-ui non-Modbus codes', () {
     final cat = ProductAlarmCatalog.seed();
     expect(cat.contains('H001'), isTrue);
     expect(cat.resolve('H001').severity, AlarmSeverity.high);
     expect(cat.contains('C001'), isTrue);
     expect(cat.resolve('C001').severity, AlarmSeverity.high);
     expect(cat.resolve('C001').title, contains('Communication'));
+    expect(cat.contains('L001'), isTrue);
+    expect(cat.resolve('L001').title, contains('Lens'));
+    expect(cat.contains('C002'), isTrue);
+    expect(cat.contains('H034'), isTrue);
+    expect(cat.contains('C003'), isTrue);
+    expect(cat.contains('C004'), isTrue);
+    expect(cat.contains('X006'), isTrue);
     expect(cat.resolve('ZZZ').severity, AlarmSeverity.unknown);
   });
 

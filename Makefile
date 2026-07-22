@@ -126,7 +126,7 @@ help:
 	@echo "  make push-app              # scp app over SSH (USB-SSH or registered IP)"
 	@echo "  make set-prop KEY=val ...  # upsert product.ini keys (multi OK); restart hmi"
 	@echo "  make del-prop KEY          # remove one product.ini key; restart hmi if changed"
-	@echo "  make alarm CODE=E006       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
+	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
 	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
 	@echo "  make upgrade               # SSH A/B stream-to-partition (inactive FIT+rootfs); not OTA staging"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"

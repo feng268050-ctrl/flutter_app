@@ -278,7 +278,7 @@ make build-app
 make push-app                   # SN=... when multiple boards; hot-swap /opt/hmi (no rootfs rebuild)
 make set-prop BRAND=Innohi MODEL=YNH960   # upsert /var/lib/hmi/product.ini (multi-key OK); restarts hmi
 # Multi-board + product SN: CHIPID=<chip> make set-prop SN=FACTORY-001
-make alarm CODE=E006            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
+make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
 make del-prop CAMERA_IP         # remove one product.ini key; restarts hmi if changed
 make upgrade                    # A/B stream inactive FIT+rootfs (board already on P2.4 GPT)

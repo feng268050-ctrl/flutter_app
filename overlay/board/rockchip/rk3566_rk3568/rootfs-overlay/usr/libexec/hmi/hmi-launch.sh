@@ -98,6 +98,12 @@ if [ "$DISPLAY_STACK" = weston ] || [ "$DISPLAY_STACK" = wayland ] || \
 	chmod 700 "$XDG_RUNTIME_DIR" 2>/dev/null || true
 	export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
 
+	# GStreamer (Sony video_player) expects a writable cache for the plugin
+	# registry. systemd does not set HOME for hmi.service.
+	export HOME="${HOME:-/root}"
+	export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+	mkdir -p "$XDG_CACHE_HOME"
+
 	# Rockchip post-hook 10-weston overwrites /etc/xdg/weston/weston.ini.
 	# Own config via --config under XDG_RUNTIME_DIR (transform + mouse prefs).
 	case "$FLUTTER_PI_ORIENTATION" in

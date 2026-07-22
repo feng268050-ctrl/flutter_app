@@ -66,7 +66,7 @@ final class BootSelfCheckModbusSnapshot {
   }
 }
 
-/// Pure evaluation of boot self-check items (lws-ui `BootSelfCheckEvaluator`).
+/// Pure evaluation of boot self-check items (Modbus only; no camera).
 ///
 /// Undetectable / unavailable results are [BootSelfCheckStatus.fail] (Fault),
 /// not skipped — product HMI treats missing telemetry as a fault.
@@ -74,18 +74,7 @@ abstract final class BootSelfCheckEvaluator {
   static BootSelfCheckStatus evaluateItem({
     required BootSelfCheckItem item,
     required BootSelfCheckModbusSnapshot? snapshot,
-    required bool cameraApplicable,
-    required bool cameraReachable,
   }) {
-    if (item.isCamera) {
-      if (!cameraApplicable) {
-        return BootSelfCheckStatus.fail;
-      }
-      return cameraReachable
-          ? BootSelfCheckStatus.pass
-          : BootSelfCheckStatus.fail;
-    }
-
     if (snapshot == null || !snapshot.modbusAvailable) {
       return BootSelfCheckStatus.fail;
     }
@@ -128,7 +117,6 @@ abstract final class BootSelfCheckEvaluator {
           temp: snapshot[MonitorModbusIds.collimatorTemp],
         );
       case BootSelfCheckItem.controllerComm:
-      case BootSelfCheckItem.cameraComm:
         return BootSelfCheckStatus.fail;
     }
   }

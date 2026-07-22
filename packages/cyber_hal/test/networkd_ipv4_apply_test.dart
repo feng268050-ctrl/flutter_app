@@ -43,6 +43,10 @@ void main() {
         dns: '8.8.8.8',
       );
       expect(body, contains('Address=192.168.1.10/24'));
+      expect(body, contains('DHCP=no'));
+      expect(body, contains('IPv6AcceptRA=no'));
+      expect(body, contains('LinkLocalAddressing=no'));
+      expect(body, isNot(contains('LinkLocalAddressing=ipv4')));
       expect(body, contains('DNS=8.8.8.8'));
       expect(body, isNot(contains('Domains=~.')));
       expect(body, contains('[Route]'));

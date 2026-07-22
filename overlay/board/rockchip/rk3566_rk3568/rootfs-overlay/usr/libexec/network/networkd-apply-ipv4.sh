@@ -99,6 +99,11 @@ mkdir -p /etc/systemd/network
 			exit 1
 		fi
 		echo "DHCP=no"
+		# Keep in lockstep with NetworkdIpv4Apply.renderNetworkFile (static):
+		# static IPv4 only — no DHCPv6/RA (can Failed the link) and no IPv4 LL
+		# 169.254/16 (APIPA-looking; wrong for IPC eth0 camera link).
+		echo "IPv6AcceptRA=no"
+		echo "LinkLocalAddressing=no"
 		echo "Address=${address}/${prefix:-24}"
 		if [ -n "$dns" ]; then
 			echo "DNS=${dns}"

@@ -56,6 +56,9 @@ dependencies:
   bluez: ^0.8.3
   dbus: ^0.7.12
   qr_flutter: ^4.1.0
+  video_player: 2.9.5
+  video_player_platform_interface: ^6.2.0
+  flutterpi_gstreamer_video_player: 0.1.1+1
 
 dev_dependencies:
   flutter_test:

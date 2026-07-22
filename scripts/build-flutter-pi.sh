@@ -29,8 +29,16 @@ fi
 
 PI_PREBUILT="$ROOT/prebuilt/flutter-pi/${VERSION}"
 SRC="$ROOT/.cache/flutter-pi/src"
+DEFCONFIG="$ROOT/overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig"
+GST_VIDEO_STAMP="$PI_PREBUILT/.lws-gstreamer-video-player"
+GST_VIDEO_REQUIRED=0
+if grep -qE '^#include "chips/lws_hmi_gst_(rtsp|prebuilt)\.config"' "$DEFCONFIG"; then
+  GST_VIDEO_REQUIRED=1
+fi
 
-if prebuilt_ready "$PI_PREBUILT" && [[ "$FORCE" != "1" ]]; then
+if prebuilt_ready "$PI_PREBUILT" &&
+  [[ "$FORCE" != "1" ]] &&
+  { [[ "$GST_VIDEO_REQUIRED" != "1" ]] || [[ -f "$GST_VIDEO_STAMP" ]]; }; then
   echo "flutter-pi: prebuilt ready at $PI_PREBUILT"
   exit 0
 fi
@@ -64,5 +72,8 @@ echo "flutter-pi: compiling in Buildroot ..."
 bash "$ROOT/scripts/br-compile-flutter.sh" flutter-pi
 
 PACK_ENGINE=0 PACK_FLUTTER_SDK=0 bash "$ROOT/scripts/build-prebuilt.sh"
+if [[ "$GST_VIDEO_REQUIRED" == "1" ]]; then
+  touch "$GST_VIDEO_STAMP"
+fi
 
 echo "flutter-pi: prebuilt at $PI_PREBUILT"

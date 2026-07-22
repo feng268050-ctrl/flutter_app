@@ -7,8 +7,10 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coordinator.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
+import 'package:lws_hmi/features/home/presentation/home_camera_status_icon.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
+import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
 const double _kDesignW = 1280;
@@ -36,6 +38,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _homeBootstrapped = false;
+  IpCameraUiStatus _cameraStatus = IpCameraUiStatus.connecting;
+  StreamSubscription<IpCameraUiStatus>? _cameraSub;
 
   @override
   void initState() {
@@ -43,7 +47,14 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrapHome());
   }
 
-  /// After first frame: optional once-per-boot self-check, then Modbus live.
+  @override
+  void dispose() {
+    unawaited(_cameraSub?.cancel());
+    super.dispose();
+  }
+
+  /// After first frame: IP camera session (async), optional once-per-boot
+  /// self-check, then Modbus live.
   ///
   /// When startup self-check will show, continuous poll is suppressed until the
   /// dialog closes ([BootSelfCheckCoordinator.onComplete]). Otherwise Modbus
@@ -56,6 +67,10 @@ class _HomePageState extends State<HomePage> {
     final services = AppScope.maybeOf(context);
     if (services == null) {
       return;
+    }
+
+    if (services.ipCameraSupported) {
+      unawaited(_startIpCamera(services));
     }
 
     void startModbusLive() {
@@ -80,6 +95,33 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> _startIpCamera(AppServices services) async {
+    try {
+      final session = await services.ensureIpCamera();
+      await session.start();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _cameraStatus = session.currentStatus);
+      await _cameraSub?.cancel();
+      _cameraSub = session.status.listen((s) {
+        if (mounted) {
+          setState(() => _cameraStatus = s);
+        }
+      });
+    } catch (e) {
+      debugPrint('home: ip camera start failed: $e');
+      if (mounted) {
+        setState(() {
+          _cameraStatus = const IpCameraUiStatus(
+            phase: IpCameraUiPhase.failed,
+            detail: 'start failed',
+          );
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,8 +132,7 @@ class _HomePageState extends State<HomePage> {
           final sx = w / _kDesignW;
           final sy = h / _kDesignH;
           final qaScale = (sx + sy) / 2;
-          final qaLabelSize =
-              homeQuickActionLabelFontSize(_kQaInner * qaScale);
+          final qaLabelSize = homeQuickActionLabelFontSize(_kQaInner * qaScale);
           // Wallpaper/GIF stack stays inside CyberBlurBackdropTarget (sibling capture).
           return CyberBlurBackdropScope(
             child: Stack(
@@ -149,91 +190,100 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-              _ModeEntry(
-                left: 53 * sx,
-                top: 55 * sy,
-                width: 375 * sx,
-                height: 280 * sy,
-                hero: HomeAssets.quickMode,
-                label: HomeAssets.quickModeTextEn,
-                heroSize: 280 * sx,
-                labelWidth: 348 * sx,
-                labelHeight: 130 * sy,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Quick Mode — coming soon')),
-                  );
-                },
-              ),
-              _ModeEntry(
-                left: 853 * sx,
-                top: 55 * sy,
-                width: 375 * sx,
-                height: 280 * sy,
-                hero: HomeAssets.engineerMode,
-                label: HomeAssets.engineerModeTextEn,
-                heroSize: 280 * sx,
-                labelWidth: 440 * sx,
-                labelHeight: 150 * sy,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Engineer Mode — coming soon'),
-                    ),
-                  );
-                },
-              ),
-              // Bottom-left: Monitor | Settings (lws-ui box_quick_actions_row).
-              Positioned(
-                left: _kQaEdgeInset * sx,
-                bottom: _kQaEdgeInset * sy,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    _HomeQuickActionSquare(
-                      scaleX: sx,
-                      scaleY: sy,
-                      iconAsset: HomeAssets.monitorIcon,
-                      label: 'Monitor',
-                      labelFontSize: qaLabelSize,
-                      onPressed: () {
-                        Navigator.of(context).pushNamed(AppRoutes.monitor);
-                      },
-                    ),
-                    SizedBox(width: _kQaPairGap * sx),
-                    _HomeQuickActionSquare(
-                      scaleX: sx,
-                      scaleY: sy,
-                      iconAsset: HomeAssets.settingsIcon,
-                      label: 'Settings',
-                      labelFontSize: qaLabelSize,
-                      onPressed: () {
-                        Navigator.of(context).pushNamed(AppRoutes.settings);
-                      },
-                    ),
-                  ],
+                // Top-right camera link status (lws-ui Wi‑Fi slot area).
+                Positioned(
+                  right: 20 * sx,
+                  top: 20 * sy,
+                  child: HomeCameraStatusIcon(
+                    status: _cameraStatus,
+                    size: 32 * ((sx + sy) / 2),
+                  ),
                 ),
-              ),
-              // Bottom-right: AI Vision wide card (lws-ui box_buttons_ai_vision).
-              Positioned(
-                right: _kQaEdgeInset * sx,
-                bottom: _kQaEdgeInset * sy,
-                child: _HomeQuickActionAiVision(
-                  scaleX: sx,
-                  scaleY: sy,
-                  labelFontSize: qaLabelSize,
-                  onPressed: () {
+                _ModeEntry(
+                  left: 53 * sx,
+                  top: 55 * sy,
+                  width: 375 * sx,
+                  height: 280 * sy,
+                  hero: HomeAssets.quickMode,
+                  label: HomeAssets.quickModeTextEn,
+                  heroSize: 280 * sx,
+                  labelWidth: 348 * sx,
+                  labelHeight: 130 * sy,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Quick Mode — coming soon')),
+                    );
+                  },
+                ),
+                _ModeEntry(
+                  left: 853 * sx,
+                  top: 55 * sy,
+                  width: 375 * sx,
+                  height: 280 * sy,
+                  hero: HomeAssets.engineerMode,
+                  label: HomeAssets.engineerModeTextEn,
+                  heroSize: 280 * sx,
+                  labelWidth: 440 * sx,
+                  labelHeight: 150 * sy,
+                  onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('AI Vision — coming soon'),
+                        content: Text('Engineer Mode — coming soon'),
                       ),
                     );
                   },
                 ),
-              ),
-            ],
-          ),
-        );
+                // Bottom-left: Monitor | Settings (lws-ui box_quick_actions_row).
+                Positioned(
+                  left: _kQaEdgeInset * sx,
+                  bottom: _kQaEdgeInset * sy,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _HomeQuickActionSquare(
+                        scaleX: sx,
+                        scaleY: sy,
+                        iconAsset: HomeAssets.monitorIcon,
+                        label: 'Monitor',
+                        labelFontSize: qaLabelSize,
+                        onPressed: () {
+                          Navigator.of(context).pushNamed(AppRoutes.monitor);
+                        },
+                      ),
+                      SizedBox(width: _kQaPairGap * sx),
+                      _HomeQuickActionSquare(
+                        scaleX: sx,
+                        scaleY: sy,
+                        iconAsset: HomeAssets.settingsIcon,
+                        label: 'Settings',
+                        labelFontSize: qaLabelSize,
+                        onPressed: () {
+                          Navigator.of(context).pushNamed(AppRoutes.settings);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                // Bottom-right: AI Vision wide card (lws-ui box_buttons_ai_vision).
+                Positioned(
+                  right: _kQaEdgeInset * sx,
+                  bottom: _kQaEdgeInset * sy,
+                  child: _HomeQuickActionAiVision(
+                    scaleX: sx,
+                    scaleY: sy,
+                    labelFontSize: qaLabelSize,
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('AI Vision — coming soon'),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
         },
       ),
     );

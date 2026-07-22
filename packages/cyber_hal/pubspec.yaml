@@ -1,8 +1,8 @@
 name: cyber_hal
 description: >
   Portable Dart HAL for LWS appliance HMIs — board profiles, Linux backends,
-  and optional modules (network, output, input, gpio, modbus, bluetooth,
-  sys_info, datetime, debug). No Rust hald / IPC daemon.
+  and optional modules (network, output, input, ip_camera, gpio, modbus,
+  bluetooth, sys_info, datetime, debug). No Rust hald / IPC daemon.
 version: 0.1.0
 publish_to: 'none'
 

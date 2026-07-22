@@ -777,7 +777,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
     rm -f "$POST_HOOKS_DIR/31-strip-fstab.sh"
     rm -f "$POST_HOOKS_DIR/91-weston-ini.sh"
     rm -rf "$SDK/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay"
-    for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
+    for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter.config lws_hmi_flutter_weston.config lws_hmi_wayland.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
       rm -f "$BR_CHIPS_DIR/$f"
     done
     for f in rockchip_rk3566_rk3568_lws_hmi_defconfig; do

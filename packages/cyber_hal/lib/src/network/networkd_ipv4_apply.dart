@@ -60,6 +60,12 @@ final class NetworkdIpv4Apply {
         throw ArgumentError('static mode requires address');
       }
       buf.writeln('DHCP=no');
+      // Dedicated camera link (and other static ifaces): static IPv4 only.
+      // IPv6 RA/DHCPv6 can mark the link Failed ("DHCPv6 … No medium") and drop
+      // the static address. LinkLocalAddressing=ipv4 would add 169.254/16 APIPA
+      // (wrong for IPC eth0 — that is not DHCP fallback, it is IPv4 LL).
+      buf.writeln('IPv6AcceptRA=no');
+      buf.writeln('LinkLocalAddressing=no');
       buf.writeln('Address=$address/$prefix');
       if (dns != null && dns.isNotEmpty) {
         buf.writeln('DNS=$dns');
@@ -130,6 +136,16 @@ final class NetworkdIpv4Apply {
       await out.create(recursive: true);
     }
     final file = File('$networkDir/50-hmi-$iface.network');
+    // networkctl reconfigure drops carrier on RMII eth0; skip when unchanged.
+    if (await file.exists()) {
+      try {
+        if (await file.readAsString() == body) {
+          return;
+        }
+      } catch (_) {
+        // Fall through and rewrite.
+      }
+    }
     await file.writeAsString(body);
 
     await _run(systemctl, const ['start', 'systemd-networkd.service']);

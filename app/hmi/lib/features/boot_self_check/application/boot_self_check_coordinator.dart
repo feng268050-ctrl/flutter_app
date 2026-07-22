@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_camera.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_evaluator.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_modbus_snapshot.dart';
@@ -131,28 +130,12 @@ abstract final class BootSelfCheckCoordinator {
     required AppServices services,
     required BootSelfCheckSession session,
   }) async {
-    // Kick off Modbus / camera work in parallel with the first Checking… rows.
+    // Kick off Modbus snapshot in parallel with the first Checking… rows.
+    // Camera reachability is owned by IpCameraProductSession (status icon).
     final snapshotFuture =
         BootSelfCheckModbusSnapshotReader.read(services.modbus);
-    final productCameraIp =
-        (await services.ensureProductInfo()).cameraIp();
-    final cameraApplicable = BootSelfCheckCameraProbe.isApplicable(
-      profile: services.boardProfile,
-      productCameraIp: productCameraIp,
-    );
-    final cameraHost = cameraApplicable
-        ? BootSelfCheckCameraProbe.resolveHost(
-            services.boardProfile,
-            productCameraIp: productCameraIp,
-          )
-        : null;
-    Future<bool>? cameraFuture;
-    if (cameraHost != null) {
-      cameraFuture = BootSelfCheckCameraProbe.pingHost(cameraHost);
-    }
 
     BootSelfCheckModbusSnapshot? snapshot;
-    bool? cameraOk;
 
     for (final item in BootSelfCheckItem.values) {
       if (session.dismissed) {
@@ -164,21 +147,11 @@ abstract final class BootSelfCheckCoordinator {
 
       final sw = Stopwatch()..start();
 
-      if (!item.isCamera) {
-        snapshot ??= await snapshotFuture;
-      } else if (cameraOk == null) {
-        if (cameraFuture != null) {
-          cameraOk = await cameraFuture;
-        } else {
-          cameraOk = false;
-        }
-      }
+      snapshot ??= await snapshotFuture;
 
       final status = BootSelfCheckEvaluator.evaluateItem(
         item: item,
         snapshot: snapshot,
-        cameraApplicable: cameraApplicable,
-        cameraReachable: cameraOk ?? false,
       );
 
       final remaining = minStepDuration - sw.elapsed;

@@ -19,6 +19,7 @@ CACHE="$ROOT/.cache/flutter-embedded-linux"
 SRC="$CACHE/src"
 BUILD_HOST="$CACHE/out-wayland"
 PREBUILT="$ROOT/prebuilt/flutter-embedded-linux/${VERSION}"
+GST_VIDEO_STAMP="$PREBUILT/.lws-gstreamer-video-player"
 
 ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.24.4")"
 RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}"
@@ -28,7 +29,9 @@ if [[ ! -f "$ENGINE_SO" ]]; then
   ENGINE_SO="$ROOT/prebuilt/flutter-engine/${ENGINE_VER}/arm64-${RUNTIME_MODE}/libflutter_engine.so"
 fi
 
-if prebuilt_ready "$PREBUILT" && [[ "$FORCE" != "1" ]]; then
+if prebuilt_ready "$PREBUILT" &&
+  [[ "$FORCE" != "1" ]] &&
+  [[ -f "$GST_VIDEO_STAMP" ]]; then
   echo "flutter-embedded-linux: prebuilt ready at $PREBUILT"
   exit 0
 fi
@@ -47,6 +50,16 @@ if [[ ! -d "$SRC/.git" ]]; then
   echo "flutter-embedded-linux: cloning $REPO @ $VERSION ..."
   mkdir -p "$CACHE"
   git clone --depth 1 --branch "$VERSION" "$REPO" "$SRC"
+fi
+
+VIDEO_PATCH="$ROOT/overlay/buildroot/package/flutter-embedded-linux/0001-video-player-link-wayland-egl.patch"
+if git -C "$SRC" apply --reverse --check "$VIDEO_PATCH" >/dev/null 2>&1; then
+  :
+elif git -C "$SRC" apply --check "$VIDEO_PATCH"; then
+  git -C "$SRC" apply "$VIDEO_PATCH"
+else
+  echo "ERROR: cannot apply Weston video player patch: $VIDEO_PATCH" >&2
+  exit 1
 fi
 
 echo "flutter-embedded-linux: cross-compiling Wayland client (ENABLE_VSYNC=ON) ..."
@@ -69,16 +82,18 @@ bash "$ROOT/scripts/docker-run.sh" bash -lc "
   export PKG_CONFIG_LIBDIR=\"\$STAGING/usr/lib/pkgconfig:\$STAGING/usr/share/pkgconfig\"
   export PKG_CONFIG_PATH=\"\$PKG_CONFIG_LIBDIR\"
 
-  for pc in wayland-client wayland-cursor wayland-egl wayland-protocols; do
+  for pc in wayland-client wayland-cursor wayland-egl wayland-protocols \
+    gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0; do
     if ! pkg-config --exists \"\$pc\"; then
-      echo \"ERROR: staging missing \$pc — build weston pkgs once:\" >&2
+      echo \"ERROR: staging missing \$pc — build GStreamer and Weston deps first:\" >&2
+      echo \"  make build-gstreamer\" >&2
       echo \"  LWS_HMI_WESTON=1 make apply-overlay\" >&2
       echo \"  bash scripts/br-make-packages.sh wayland-deps wayland wayland-protocols\" >&2
       exit 1
     fi
   done
 
-  mkdir -p \"\$SRC/build\"
+  mkdir -p \"\$SRC/build\" \"\$(dirname \"\$TOOLCHAIN\")\"
   ln -sfn \"\$ENGINE_SO\" \"\$SRC/build/libflutter_engine.so\"
 
   cat > \"\$TOOLCHAIN\" <<EOF
@@ -94,6 +109,15 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 EOF
 
+  # Live RTSP: safe preroll / GetVideoSize / sync=FALSE for texture preview.
+  PATCH=/work/lws-hmi/scripts/elinux-video-player-live-rtsp.patch
+  if [[ -f \"\$PATCH\" ]]; then
+    if ! grep -q 'Live RTSP often has no negotiated caps' \\
+      \"\$SRC/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc\" 2>/dev/null; then
+      (cd \"\$SRC\" && patch -p1 < \"\$PATCH\")
+    fi
+  fi
+
   rm -rf \"\$BUILD\"
   mkdir -p \"\$BUILD\"
   cd \"\$BUILD\"
@@ -101,7 +125,7 @@ EOF
     -DCMAKE_TOOLCHAIN_FILE=\"\$TOOLCHAIN\" \\
     -DCMAKE_BUILD_TYPE=Release \\
     -DFLUTTER_RELEASE=ON \\
-    -DUSER_PROJECT_PATH=examples/flutter-wayland-client \\
+    -DUSER_PROJECT_PATH=examples/flutter-video-player-plugin \\
     -DENABLE_VSYNC=ON \\
     \"\$SRC\"
   cmake --build . -j\"\${BUILD_JOBS:-8}\"
@@ -113,15 +137,24 @@ EOF
   test -n \"\$BIN\"
   install -D -m 0755 \"\$BIN\" \\
     /work/lws-hmi/.cache/flutter-embedded-linux/out-wayland/flutter-wayland-client
+  test -f ./plugins/video_player/libvideo_player_plugin.so
+  install -D -m 0755 ./plugins/video_player/libvideo_player_plugin.so \\
+    /work/lws-hmi/.cache/flutter-embedded-linux/out-wayland/libvideo_player_plugin.so
   aarch64-none-linux-gnu-strip \\
     /work/lws-hmi/.cache/flutter-embedded-linux/out-wayland/flutter-wayland-client || true
+  aarch64-none-linux-gnu-strip \\
+    /work/lws-hmi/.cache/flutter-embedded-linux/out-wayland/libvideo_player_plugin.so || true
   file /work/lws-hmi/.cache/flutter-embedded-linux/out-wayland/flutter-wayland-client
+  file /work/lws-hmi/.cache/flutter-embedded-linux/out-wayland/libvideo_player_plugin.so
 "
 
 STAGE="$CACHE/prebuilt-stage"
 rm -rf "$STAGE"
-mkdir -p "$STAGE/usr/bin"
-install -D -m 0755 "$BUILD_HOST/flutter-wayland-client" \
+mkdir -p "$STAGE/usr/bin" "$STAGE/usr/lib"
+install -m 0755 "$BUILD_HOST/flutter-wayland-client" \
   "$STAGE/usr/bin/flutter-wayland-client"
+install -m 0755 "$BUILD_HOST/libvideo_player_plugin.so" \
+  "$STAGE/usr/lib/libvideo_player_plugin.so"
 prebuilt_install_tree "$STAGE" "$PREBUILT" "$VERSION"
+touch "$GST_VIDEO_STAMP"
 echo "flutter-embedded-linux: prebuilt at $PREBUILT"

@@ -32,6 +32,11 @@ define FLUTTER_EMBEDDED_LINUX_ENSURE_PREBUILT
 		printf 'Run: make build-flutter-embedded-linux\n' 1>&2; \
 		exit 1; \
 	fi
+	if [ ! -f "$(FLUTTER_EMBEDDED_LINUX_PREBUILT_DIR)/.lws-gstreamer-video-player" ]; then \
+		printf 'flutter-embedded-linux: missing GStreamer video plugin build\n' 1>&2; \
+		printf 'Run: make build-flutter-embedded-linux\n' 1>&2; \
+		exit 1; \
+	fi
 endef
 FLUTTER_EMBEDDED_LINUX_POST_DOWNLOAD_HOOKS += FLUTTER_EMBEDDED_LINUX_ENSURE_PREBUILT
 
@@ -51,6 +56,9 @@ define FLUTTER_EMBEDDED_LINUX_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0755 \
 		$(FLUTTER_EMBEDDED_LINUX_PREBUILT_DIR)/usr/bin/flutter-wayland-client \
 		$(TARGET_DIR)/usr/bin/flutter-wayland-client
+	$(INSTALL) -D -m 0755 \
+		$(FLUTTER_EMBEDDED_LINUX_PREBUILT_DIR)/usr/lib/libvideo_player_plugin.so \
+		$(TARGET_DIR)/usr/lib/libvideo_player_plugin.so
 endef
 
 $(eval $(generic-package))

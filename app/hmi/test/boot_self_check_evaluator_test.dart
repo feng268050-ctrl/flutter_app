@@ -40,15 +40,20 @@ BootSelfCheckModbusSnapshot _snap({
 }
 
 void main() {
-  test('healthy snapshot passes Modbus items', () {
+  test('checklist has eight Modbus items and no camera', () {
+    expect(BootSelfCheckItem.values, hasLength(8));
+    expect(
+      BootSelfCheckItem.values.map((e) => e.name),
+      isNot(contains('cameraComm')),
+    );
+  });
+
+  test('healthy snapshot passes all items', () {
     final snap = _snap();
     for (final item in BootSelfCheckItem.values) {
-      if (item.isCamera) continue;
       final status = BootSelfCheckEvaluator.evaluateItem(
         item: item,
         snapshot: snap,
-        cameraApplicable: false,
-        cameraReachable: false,
       );
       expect(status, BootSelfCheckStatus.pass, reason: item.name);
     }
@@ -60,8 +65,6 @@ void main() {
       BootSelfCheckEvaluator.evaluateItem(
         item: BootSelfCheckItem.pumpComm,
         snapshot: snap,
-        cameraApplicable: false,
-        cameraReachable: false,
       ),
       BootSelfCheckStatus.fail,
     );
@@ -73,8 +76,6 @@ void main() {
       BootSelfCheckEvaluator.evaluateItem(
         item: BootSelfCheckItem.controllerComm,
         snapshot: snap,
-        cameraApplicable: false,
-        cameraReachable: false,
       ),
       BootSelfCheckStatus.fail,
     );
@@ -82,8 +83,6 @@ void main() {
       BootSelfCheckEvaluator.evaluateItem(
         item: BootSelfCheckItem.gunComm,
         snapshot: snap,
-        cameraApplicable: false,
-        cameraReachable: false,
       ),
       BootSelfCheckStatus.fail,
     );
@@ -95,8 +94,6 @@ void main() {
       BootSelfCheckEvaluator.evaluateItem(
         item: BootSelfCheckItem.gunComm,
         snapshot: snap,
-        cameraApplicable: false,
-        cameraReachable: false,
       ),
       BootSelfCheckStatus.fail,
     );
@@ -108,38 +105,6 @@ void main() {
       BootSelfCheckEvaluator.evaluateItem(
         item: BootSelfCheckItem.gunMotorTemp,
         snapshot: snap,
-        cameraApplicable: false,
-        cameraReachable: false,
-      ),
-      BootSelfCheckStatus.fail,
-    );
-  });
-
-  test('camera unavailable / pass / fail', () {
-    expect(
-      BootSelfCheckEvaluator.evaluateItem(
-        item: BootSelfCheckItem.cameraComm,
-        snapshot: null,
-        cameraApplicable: false,
-        cameraReachable: false,
-      ),
-      BootSelfCheckStatus.fail,
-    );
-    expect(
-      BootSelfCheckEvaluator.evaluateItem(
-        item: BootSelfCheckItem.cameraComm,
-        snapshot: null,
-        cameraApplicable: true,
-        cameraReachable: true,
-      ),
-      BootSelfCheckStatus.pass,
-    );
-    expect(
-      BootSelfCheckEvaluator.evaluateItem(
-        item: BootSelfCheckItem.cameraComm,
-        snapshot: null,
-        cameraApplicable: true,
-        cameraReachable: false,
       ),
       BootSelfCheckStatus.fail,
     );

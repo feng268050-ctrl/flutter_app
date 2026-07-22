@@ -1,4 +1,5 @@
-/// Fixed-order boot self-check items (lws-ui `BootSelfCheckItem`).
+/// Fixed-order boot self-check items (Modbus alarm-information aligned).
+/// Camera Comm is owned by the async IP-camera product session, not self-check.
 enum BootSelfCheckItem {
   controllerComm,
   pumpComm,
@@ -7,8 +8,7 @@ enum BootSelfCheckItem {
   gunMotorTemp,
   protectionMirrorTemp,
   collimatorTemp,
-  wireFeederComm,
-  cameraComm;
+  wireFeederComm;
 
   /// English labels aligned with Monitor → Alarm Information tiles.
   String get label {
@@ -29,14 +29,10 @@ enum BootSelfCheckItem {
         return 'Collimator Temp';
       case BootSelfCheckItem.wireFeederComm:
         return 'Wire Feeder Comm';
-      case BootSelfCheckItem.cameraComm:
-        return 'Camera Comm';
     }
   }
 
-  bool get isCamera => this == BootSelfCheckItem.cameraComm;
-
-  bool get requiresControllerReady => !isCamera;
+  bool get requiresControllerReady => true;
 }
 
 /// Terminal / in-progress status for one self-check row.

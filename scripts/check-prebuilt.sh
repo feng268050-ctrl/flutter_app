@@ -76,6 +76,13 @@ if has_include "lws_hmi_wayland.config"; then
     echo "ERROR: flutter-embedded-linux missing usr/bin/flutter-wayland-client" >&2
     missing=1
   fi
+  if [[ -f "$ELINUX_DIR/.lws-prebuilt" ]] && \
+    { [[ ! -f "$ELINUX_DIR/.lws-gstreamer-video-player" ]] || \
+      [[ ! -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]]; }; then
+    echo "ERROR: flutter-embedded-linux missing GStreamer video player plugin" >&2
+    echo "  Run: make build-flutter-embedded-linux" >&2
+    missing=1
+  fi
 fi
 
 if has_include "lws_hmi_mediamtx.config"; then

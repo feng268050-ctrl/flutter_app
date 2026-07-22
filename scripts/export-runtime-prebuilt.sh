@@ -51,9 +51,8 @@ copy_globs() {
   local rel dest_dir
   mkdir -p "$dest_root"
   for rel in "$@"; do
-    shopt -s nullglob
-    local matches=( "$TARGET/$rel" )
-    shopt -u nullglob
+    local matches=()
+    mapfile -t matches < <(compgen -G "$TARGET/$rel" || true)
     if [[ ${#matches[@]} -eq 0 ]]; then
       echo "WARNING: export skip (no match): $rel" >&2
       continue

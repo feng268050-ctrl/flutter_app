@@ -6,6 +6,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/prebuilt-common.sh"
 
 BR_BOARD="$ROOT/overlay/board/rockchip/rk3566_rk3568"
+SDK_DIR="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
+SDK_BR_BOARD="$SDK_DIR/buildroot/board/rockchip/rk3566_rk3568"
 GST_SRC="$ROOT/prebuilt/gstreamer/target"
 PLAT_SRC="$ROOT/prebuilt/platform-packages/target"
 GST_DEST="$BR_BOARD/lws-hmi-prebuilt-gstreamer"
@@ -28,6 +30,17 @@ sync_tree() {
     rm -rf "$dest"
     mkdir -p "$dest"
     cp -a "$src/." "$dest/"
+  fi
+  if [[ -d "$(dirname "$SDK_BR_BOARD")" ]]; then
+    local sdk_dest="$SDK_BR_BOARD/$(basename "$dest")"
+    mkdir -p "$sdk_dest"
+    if command -v rsync >/dev/null 2>&1; then
+      rsync -a --delete "$dest/" "$sdk_dest/"
+    else
+      rm -rf "$sdk_dest"
+      mkdir -p "$sdk_dest"
+      cp -a "$dest/." "$sdk_dest/"
+    fi
   fi
   echo "sync-prebuilt-overlays: $label → $dest"
 }

@@ -1,0 +1,101 @@
+diff --git a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc
+index 40a3fc2..c5183f8 100644
+--- a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc
++++ b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc
+@@ -12,7 +12,7 @@
+ 
+ GstVideoPlayer::GstVideoPlayer(
+     const std::string& uri, std::unique_ptr<VideoPlayerStreamHandler> handler)
+-    : stream_handler_(std::move(handler)) {
++    : stream_handler_(std::move(handler)), width_(0), height_(0) {
+   gst_.pipeline = nullptr;
+   gst_.playbin = nullptr;
+   gst_.video_convert = nullptr;
+@@ -31,8 +31,24 @@ GstVideoPlayer::GstVideoPlayer(
+   // Prerolls before getting information from the pipeline.
+   Preroll();
+ 
+-  // Sets internal video size and buffier.
++  // Live RTSP often has no negotiated caps until PLAYING (NO_PREROLL).
+   GetVideoSize(width_, height_);
++  if (width_ <= 0 || height_ <= 0) {
++    if (gst_element_set_state(gst_.pipeline, GST_STATE_PLAYING) !=
++        GST_STATE_CHANGE_FAILURE) {
++      for (int i = 0; i < 100 && (width_ <= 0 || height_ <= 0); ++i) {
++        g_usleep(100 * 1000);  // 100ms, up to ~10s
++        GetVideoSize(width_, height_);
++      }
++    }
++  }
++  if (width_ <= 0 || height_ <= 0) {
++    // HandoffHandler resizes when the first frame arrives.
++    std::cerr << "Video size unknown after preroll; using placeholder"
++              << std::endl;
++    width_ = 16;
++    height_ = 16;
++  }
+   pixels_.reset(new uint32_t[width_ * height_]);
+ 
+   stream_handler_->OnNotifyInitialized();
+@@ -193,7 +209,8 @@ bool GstVideoPlayer::CreatePipeline() {
+                            NULL);
+ 
+   // Sets properties to fakesink to get the callback of a decoded frame.
+-  g_object_set(G_OBJECT(gst_.video_sink), "sync", TRUE, "qos", FALSE, NULL);
++  // sync=FALSE: live RTSP + Flutter texture path; sync=TRUE can stall.
++  g_object_set(G_OBJECT(gst_.video_sink), "sync", FALSE, "qos", FALSE, NULL);
+   g_object_set(G_OBJECT(gst_.video_sink), "signal-handoffs", TRUE, NULL);
+   g_signal_connect(G_OBJECT(gst_.video_sink), "handoff",
+                    G_CALLBACK(HandoffHandler), this);
+@@ -234,11 +251,11 @@ void GstVideoPlayer::Preroll() {
+     return;
+   }
+ 
+-  // Waits until the state becomes GST_STATE_PAUSED.
++  // Bound wait: live sources may never complete an infinite preroll.
+   if (result == GST_STATE_CHANGE_ASYNC) {
+     GstState state;
+     result =
+-        gst_element_get_state(gst_.pipeline, &state, NULL, GST_CLOCK_TIME_NONE);
++        gst_element_get_state(gst_.pipeline, &state, NULL, 10 * GST_SECOND);
+     if (result == GST_STATE_CHANGE_FAILURE) {
+       std::cerr << "Failed to get the current state" << std::endl;
+     }
+@@ -316,14 +333,22 @@ void GstVideoPlayer::GetVideoSize(int32_t& width, int32_t& height) {
+   }
+ 
+   auto* caps = gst_pad_get_current_caps(sink_pad);
++  if (!caps) {
++    gst_object_unref(sink_pad);
++    return;
++  }
+   auto* structure = gst_caps_get_structure(caps, 0);
+   if (!structure) {
+     std::cerr << "Failed to get a structure";
++    gst_caps_unref(caps);
++    gst_object_unref(sink_pad);
+     return;
+   }
+ 
+   gst_structure_get_int(structure, "width", &width);
+   gst_structure_get_int(structure, "height", &height);
++  gst_caps_unref(caps);
++  gst_object_unref(sink_pad);
+ }
+ 
+ // static
+diff --git a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h
+index eb58907..7769977 100644
+--- a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h
++++ b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h
+@@ -59,8 +59,8 @@ class GstVideoPlayer {
+   GstVideoElements gst_;
+   std::string uri_;
+   std::unique_ptr<uint32_t> pixels_;
+-  int32_t width_;
+-  int32_t height_;
++  int32_t width_ = 0;
++  int32_t height_ = 0;
+   double volume_ = 1.0;
+   double playback_rate_ = 1.0;
+   bool mute_ = false;

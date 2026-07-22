@@ -29,16 +29,19 @@ swap_include "lws_hmi_gst_rtsp.config" "lws_hmi_gst_prebuilt.config" \
 swap_include "lws_hmi_platform.config" "lws_hmi_platform_prebuilt.config" \
   "$ROOT/prebuilt/platform-packages/target"
 
-# Default image keeps wayland fragment commented; weston image injects it.
+# Buildroot's merged defconfig keeps the first assignment for conflicting
+# symbols. Inject the Weston fragment before lws_hmi_flutter.config so its
+# Weston/Mali choices win while the shared Flutter settings still follow.
 if [[ "${LWS_HMI_WESTON:-0}" == "1" ]]; then
-  if grep -qE '^#include "chips/lws_hmi_wayland\.config"' "$OUT"; then
-    :
-  elif grep -qE '^#[[:space:]]*#include "chips/lws_hmi_wayland\.config"' "$OUT"; then
-    sed -i.bak 's|^#[[:space:]]*#include "chips/lws_hmi_wayland\.config"|#include "chips/lws_hmi_wayland.config"|' "$OUT"
-    rm -f "$OUT.bak"
-  else
-    printf '\n#include "chips/lws_hmi_wayland.config"\n' >>"$OUT"
-  fi
+  sed -i.bak \
+    's|#include "chips/lws_hmi_flutter.config"|#include "chips/lws_hmi_flutter_weston.config"|' \
+    "$OUT"
+  sed -i.bak '/^[#[:space:]]*#include "chips\/lws_hmi_wayland\.config"$/d' "$OUT"
+  sed -i.bak \
+    '/^#include "chips\/lws_hmi_flutter_weston\.config"$/i\
+#include "chips/lws_hmi_wayland.config"
+' "$OUT"
+  rm -f "$OUT.bak"
   echo "generate-lws-hmi-defconfig: LWS_HMI_WESTON=1 → weston fragment enabled"
 fi
 

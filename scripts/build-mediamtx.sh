@@ -17,15 +17,17 @@ read_tag() {
     echo "$MEDIAMTX_VERSION"
     return 0
   fi
-  read_version_file "$VERSION_FILE" "v1.11.3"
+  read_version_file "$VERSION_FILE" "v1.19.2"
 }
 
 TAG="$(read_tag)"
 TAG_NO_V="${TAG#v}"
 REPO="${MEDIAMTX_REPO:-https://github.com/bluenviron/mediamtx.git}"
 OVERLAY_BIN="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/bin/mediamtx"
-RELEASE_URL="https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG_NO_V}_linux_arm64v8.tar.gz"
-CACHE_TAR="$SRC_ROOT/mediamtx_${TAG_NO_V}_linux_arm64v8.tar.gz"
+# Upstream renamed linux_arm64v8 → linux_arm64 around the 1.12+ releases.
+RELEASE_URL_PRIMARY="https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG_NO_V}_linux_arm64.tar.gz"
+RELEASE_URL_LEGACY="https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG_NO_V}_linux_arm64v8.tar.gz"
+CACHE_TAR="$SRC_ROOT/mediamtx_${TAG_NO_V}_linux_arm64.tar.gz"
 
 sync_mediamtx_overlay() {
   if [[ -x "$OUT_DIR/mediamtx" ]]; then
@@ -51,8 +53,19 @@ download_release() {
   if [[ -f "$CACHE_TAR" ]]; then
     echo "build-mediamtx: using cached $CACHE_TAR"
   else
-    echo "build-mediamtx: downloading ${RELEASE_URL} ..."
-    curl -fL --retry 3 --retry-delay 2 -o "$CACHE_TAR" "$RELEASE_URL"
+    local url=""
+    for cand in "$RELEASE_URL_PRIMARY" "$RELEASE_URL_LEGACY"; do
+      echo "build-mediamtx: trying ${cand} ..."
+      if curl -fL --retry 3 --retry-delay 2 -o "$CACHE_TAR" "$cand"; then
+        url="$cand"
+        break
+      fi
+      rm -f "$CACHE_TAR"
+    done
+    if [[ -z "$url" ]]; then
+      echo "ERROR: could not download MediaMTX ${TAG} linux/arm64 release" >&2
+      return 1
+    fi
   fi
   rm -rf "$OUT_DIR"
   mkdir -p "$OUT_DIR"

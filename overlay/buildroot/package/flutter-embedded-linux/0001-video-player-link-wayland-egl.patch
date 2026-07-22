@@ -1,0 +1,12 @@
+diff --git a/examples/flutter-video-player-plugin/cmake/user_build.cmake b/examples/flutter-video-player-plugin/cmake/user_build.cmake
+index 6014e1d..1f22c75 100644
+--- a/examples/flutter-video-player-plugin/cmake/user_build.cmake
++++ b/examples/flutter-video-player-plugin/cmake/user_build.cmake
+@@ -24,4 +24,6 @@ set(USER_APP_INCLUDE_DIRS
+ )
+ 
+ # link libraries for user apps.
+-set(USER_APP_LIBRARIES)
++set(USER_APP_LIBRARIES
++ wayland-egl
++)

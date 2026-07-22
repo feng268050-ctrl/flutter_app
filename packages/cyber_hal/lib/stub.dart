@@ -15,5 +15,6 @@ library;
 
 export 'package:cyber_hal/src/stub/hal_backend.dart';
 export 'package:cyber_hal/src/stub/stub_backlight.dart';
+export 'package:cyber_hal/src/stub/stub_ip_camera.dart';
 export 'package:cyber_hal/src/stub/stub_sys_info.dart';
 export 'package:cyber_hal/src/stub/stub_volume.dart';

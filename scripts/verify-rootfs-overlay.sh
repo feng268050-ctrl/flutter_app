@@ -298,7 +298,7 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/network ---"
-	for f in apply-eth0.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh networkd-apply-ipv4.sh; do
+	for f in apply-eth0.sh eth0-dhcp.sh eth0-static.sh eth0-link.sh eth0-tune.sh networkd-apply-ipv4.sh; do
 		if [[ -x "$libexec_net/$f" ]]; then
 			echo "OK:  network/$f"
 		else
@@ -616,6 +616,14 @@ EOF
 			echo "OK:  $(basename "$f") absent from target"
 		fi
 	done
+
+	if [[ -x "$target/usr/libexec/hmi/render-mediamtx-config.sh" ]] && \
+		grep -q 'camera/pr0' "$target/usr/libexec/hmi/render-mediamtx-config.sh" 2>/dev/null; then
+		echo "OK:  render-mediamtx-config.sh (PR0/PR1 paths)"
+	else
+		echo "FAIL: render-mediamtx-config.sh missing or stub" >&2
+		missing=1
+	fi
 
 	if [[ -x "$target/usr/libexec/hmi/enable-ssh-debug.sh" && -x "$target/usr/libexec/hmi/disable-ssh-debug.sh" ]]; then
 		echo "OK:  enable-ssh-debug.sh / disable-ssh-debug.sh"

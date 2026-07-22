@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/app/flutter_frame_timing_sampler.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
+import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
@@ -41,7 +42,9 @@ final class AppServices {
     Keyboard? keyboard,
     MouseSettingsController? mouse,
     DisplayStack? displayStack,
+    IpCameraProductSession? ipCamera,
   }) : bindings = BoardBindings(boardProfile) {
+    _ipCamera = ipCamera;
     final b = bindings;
     _productInfoOverride = productInfo;
     // Only attach Flutter timings when we own LinuxSysInfo (tests inject StubSysInfo).
@@ -134,13 +137,13 @@ final class AppServices {
       _productInfo = s.productInfo;
       return Future<ProductInfo>.value(_productInfo!);
     }
-    return _productInfoFuture ??= bindings
-        .productInfo(deviceSnReader: deviceSnReader)
-        .then((p) {
+    return _productInfoFuture ??=
+        bindings.productInfo(deviceSnReader: deviceSnReader).then((p) {
       _productInfo = p;
       return p;
     });
   }
+
   late final ModbusRtuClient modbus;
   late final GpioLedController leds;
   late final MediaAudioController audio;
@@ -165,6 +168,35 @@ final class AppServices {
   bool _modbusLiveStarted = false;
   bool _displayStackResolved = false;
   Future<DisplayStack>? _displayStackFuture;
+
+  IpCameraProductSession? _ipCamera;
+  Future<IpCameraProductSession>? _ipCameraFuture;
+
+  /// This product session owns a dedicated Ethernet path to its single IPC.
+  bool get ipCameraSupported =>
+      boardProfile.capabilities.has(Capability.ethernet);
+
+  /// Product IP-camera session (one HAL instance + LWS eth0/MediaMTX).
+  ///
+  /// Prefer [ensureIpCamera] before first use so host comes from product.ini.
+  IpCameraProductSession? get ipCameraOrNull => _ipCamera;
+
+  /// Resolve product camera host and construct the session once.
+  Future<IpCameraProductSession> ensureIpCamera() {
+    if (_ipCamera != null) {
+      return Future<IpCameraProductSession>.value(_ipCamera!);
+    }
+    return _ipCameraFuture ??= () async {
+      final info = await ensureProductInfo();
+      final session = IpCameraProductSession.create(
+        productCameraIp: info.cameraIp(),
+        ethernet: ethernet,
+        wifi: wifi,
+      );
+      _ipCamera = session;
+      return session;
+    }();
+  }
 
   /// True after first successful [ensureModbusLive] (poll stays up for process life).
   bool get modbusLiveStarted => _modbusLiveStarted;
@@ -237,8 +269,9 @@ final class AppServices {
             ? mouse as LinuxMouseSettingsController
             : null,
         wifi: wifi is LinuxWifiSession ? wifi as LinuxWifiSession : null,
-        ethernet:
-            ethernet is LinuxEthernetSession ? ethernet as LinuxEthernetSession : null,
+        ethernet: ethernet is LinuxEthernetSession
+            ? ethernet as LinuxEthernetSession
+            : null,
         bluetooth: bluetooth is LinuxBluezBluetoothController
             ? bluetooth as LinuxBluezBluetoothController
             : null,
@@ -273,8 +306,7 @@ final class AppScope extends InheritedWidget {
   }
 
   @override
-  bool updateShouldNotify(AppScope oldWidget) =>
-      services != oldWidget.services;
+  bool updateShouldNotify(AppScope oldWidget) => services != oldWidget.services;
 }
 
 /// Post-frame [AppServices.ensureModbusLive] for top-level routes (poll only).

@@ -8,8 +8,8 @@ import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/bluetooth_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/brightness_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/date_time_settings_page.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/ethernet_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/http_proxy_settings_page.dart';
+import 'package:lws_hmi/features/settings/presentation/pages/ip_camera_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/keyboard_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/language_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/led_settings_page.dart';
@@ -106,13 +106,6 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                   });
                 }
               },
-            ),
-            SettingsNavRow(
-              title: 'Ethernet',
-              onTap: () => pushSettingsPage(
-                context,
-                EthernetSettingsPage(services: services),
-              ),
             ),
             SettingsNavRow(
               title: 'HTTP Proxy',
@@ -237,6 +230,13 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
               onTap: () => pushSettingsPage(
                 context,
                 KeyboardSettingsPage(services: services),
+              ),
+            ),
+            SettingsNavRow(
+              title: 'IP Camera',
+              onTap: () => pushSettingsPage(
+                context,
+                IpCameraSettingsPage(services: services),
               ),
             ),
           ],

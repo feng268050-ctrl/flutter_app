@@ -9,7 +9,8 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 | `package:cyber_hal/network.dart` | ethernet, wifi, proxy | networkd + wpa (`docs/network-stack.md`) |
 | `package:cyber_hal/network/proxy.dart` | system proxy | `/var/lib/network/proxy.conf` + in-HAL env apply |
 | `package:cyber_hal/output.dart` | backlight, volume | `/var/lib/hmi/` backlight + volume prefs |
-| `package:cyber_hal/input.dart` | keyboard, mouse | `/var/lib/hmi/keyboard.conf`, `mouse.conf` |
+| `package:cyber_hal/input.dart` | keyboard, mouse (USB/serial cameras later) | `/var/lib/hmi/keyboard.conf`, `mouse.conf` |
+| `package:cyber_hal/ip_camera.dart` | IP network camera (host-injected; multi-instance; RTSP→file recording) | path/MediaMTX are **product** concerns — not this module |
 | `package:cyber_hal/debug.dart` | ssh, usb | SSH helpers; `/var/lib/hmi/usb-debug` |
 | `package:cyber_hal/gpio.dart` | named GPIO lines | board `gpio.json` (sysfs) |
 | `package:cyber_hal/modbus.dart` | attribute catalog | board `modbus.json` + serial |

@@ -42,7 +42,7 @@
 
 - [x] 6.1 `flutter analyze` + HAL/App/player tests after live-preview integration
 - [x] 6.2 Build/deploy GStreamer runtime and verify plugin registration plus MPP-backed RTSP decode on ynh960
-- [ ] 6.3 Device: icon phases, stable MediaMTX, and sustained moving preview on both flutter-pi and Weston images
+- [x] 6.3 Device: icon phases, stable MediaMTX, and sustained moving preview on both flutter-pi and Weston images
 - [x] 6.4 Rebuild final app + rootfs and upgrade the device
 - [x] 6.5 Build `build-rootfs` (default Weston) and verify the eLinux client/plugin dependencies plus local RTSP texture path
 
@@ -54,4 +54,4 @@
 - [x] 7.4 Enable ISO MP4 mux runtime in the active GStreamer Buildroot fragment/prebuilt export
 - [x] 7.5 Add the Settings demo path policy `/userdata/storage/Videos/movie/<day>/<timestamp>.mp4` and Record/Stop UI below preview using local PR0
 - [x] 7.6 Add Settings/HAL tests proving preparing is not recording and successful stop reports the exact saved path without business-record side effects
-- [ ] 7.7 Device: rebuild/push app, confirm playable MP4 under `/userdata/storage/Videos/movie/...` on ynh960 (host analyze/tests already green)
+- [x] 7.7 Device: rebuild/push app, confirm playable MP4 under `/userdata/storage/Videos/movie/...` on ynh960 (host analyze/tests already green)

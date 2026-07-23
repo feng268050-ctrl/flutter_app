@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="240dp"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:gravity="start"
+    android:hardwareAccelerated="true"
+    android:layerType="hardware"
+    android:persistentDrawingCache="none">
+    <LinearLayout
+        android:id="@+id/wheel_text_content"
+        android:layout_width="wrap_content"
+        android:layout_height="68dp"
+        android:gravity="center_vertical"
+        android:layerType="hardware">
+
+        <TextView
+            android:id="@+id/offset_wheel_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_size_11" />
+    </LinearLayout>
+</LinearLayout>

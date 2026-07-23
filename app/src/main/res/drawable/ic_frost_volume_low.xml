@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Speaker only; slight scale from the left for optical balance with the high-volume icon. -->
+    <group
+        android:pivotX="3"
+        android:pivotY="12"
+        android:scaleX="1.18"
+        android:scaleY="1.18">
+        <path
+            android:fillColor="@android:color/white"
+            android:pathData="M3,9v6h4l5,5V4L7,9H3z" />
+    </group>
+</vector>

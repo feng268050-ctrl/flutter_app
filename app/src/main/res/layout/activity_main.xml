@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="1280dp"
+        android:layout_height="800dp"
+        tools:context=".MainActivity">
+
+        <!-- 背景与动效层：供首页 stat / quick-action FrostCardView 采样 -->
+        <eightbitlab.com.blurview.BlurTarget
+            android:id="@+id/frost_blur_target"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@mipmap/home_back"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <FrameLayout
+                    android:layout_width="600dp"
+                    android:layout_height="600dp">
+
+                    <LinearLayout
+                        android:id="@+id/home_left_img"
+                        android:layout_width="375dp"
+                        android:layout_height="280dp"
+                        android:layout_marginLeft="53dp"
+                        android:layout_marginTop="55dp"
+                        android:background="@mipmap/home_left_img" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="600dp">
+
+                    <LinearLayout
+                        android:id="@+id/home_right_img"
+                        android:layout_width="375dp"
+                        android:layout_height="280dp"
+                        android:layout_marginLeft="853dp"
+                        android:layout_marginTop="55dp"
+                        android:background="@mipmap/home_right_img" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                    <com.lasercyber.lws.ui.component.home.FrostRippleClickEntry
+                        android:layout_width="440dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginTop="20dp"
+                        android:onClick="toPage"
+                        android:paddingTop="-20dp"
+                        android:tag="1"
+                        app:rippleCornerRadius="@dimen/home_stat_card_corner_radius"
+                        app:rippleTarget="@id/home_left_img">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="40dp"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/toPage_1"
+                                android:layout_width="280dp"
+                                android:layout_height="280dp"
+                                android:layout_gravity="center"
+                                android:layout_marginTop="12dp"
+                                android:orientation="horizontal"
+                                android:src="@mipmap/home_fast" />
+
+                            <ImageView
+                                android:id="@+id/toPage_1_1"
+                                android:layout_width="348dp"
+                                android:layout_height="130dp"
+                                android:layout_marginTop="-86dp"
+                                android:orientation="horizontal" />
+                        </LinearLayout>
+                    </com.lasercyber.lws.ui.component.home.FrostRippleClickEntry>
+
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1" />
+
+                    <com.lasercyber.lws.ui.component.home.FrostRippleClickEntry
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="20dp"
+                        android:layout_marginTop="20dp"
+                        android:onClick="toPage"
+                        android:paddingTop="-20dp"
+                        android:tag="2"
+                        app:rippleCornerRadius="@dimen/home_stat_card_corner_radius"
+                        app:rippleTarget="@id/home_right_img">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/toPage_2"
+                                android:layout_width="280dp"
+                                android:layout_height="280dp"
+                                android:layout_gravity="center"
+                                android:layout_marginTop="12dp"
+                                android:src="@mipmap/home_engine" />
+
+                            <ImageView
+                                android:id="@+id/toPage_2_1"
+                                android:layout_width="440dp"
+                                android:layout_height="150dp"
+                                android:layout_marginTop="-92dp" />
+                        </LinearLayout>
+                    </com.lasercyber.lws.ui.component.home.FrostRippleClickEntry>
+
+                </LinearLayout>
+
+            </FrameLayout>
+        </eightbitlab.com.blurview.BlurTarget>
+
+        <!-- WebP 动效层：须在 BlurTarget 外，避免 stat / quick-action 卡片 blur 采样时 stop Animatable -->
+        <FrameLayout
+            android:id="@+id/home_webp_overlay"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:clipChildren="false"
+            android:clickable="false"
+            android:focusable="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <FrameLayout
+                android:layout_width="600dp"
+                android:layout_height="600dp"
+                android:clipChildren="false">
+
+                <com.lasercyber.lws.ui.component.home.HomeBackdropWebPView
+                    android:id="@+id/home_left_git"
+                    android:layout_width="600dp"
+                    android:layout_height="600dp"
+                    android:layout_marginLeft="-60dp"
+                    android:layout_marginTop="-90dp"
+                    android:scaleType="centerCrop" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="600dp"
+                android:clipChildren="false">
+
+                <com.lasercyber.lws.ui.component.home.HomeBackdropWebPView
+                    android:id="@+id/home_right_git"
+                    android:layout_width="600dp"
+                    android:layout_height="600dp"
+                    android:layout_marginLeft="740dp"
+                    android:layout_marginTop="-90dp"
+                    android:scaleType="centerCrop" />
+            </FrameLayout>
+        </FrameLayout>
+
+        <!-- 左下角卡片1：统计雾化玻璃卡（与右侧卡片同高） -->
+        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+            android:id="@+id/box_card1"
+            android:layout_width="200dp"
+            android:layout_height="124dp"
+            android:paddingLeft="16dp"
+            android:paddingBottom="7dp"
+            android:layout_marginLeft="@dimen/home_quick_action_edge_inset"
+            android:layout_marginBottom="@dimen/home_stat_to_quick_action_gap"
+            app:borderGradientCenter="top-left-bottom-right"
+            app:frostedGlassBlurIntensity="low"
+            app:frostedGlassBlurTint="dark"
+            app:frostedGlassCornerRadius="@dimen/home_stat_card_corner_radius"
+            app:frostedGlassStackPanelFill="false"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/box_quick_actions_row">
+            <FrameLayout
+                android:id="@+id/static_1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+
+        <!-- 左下角卡片2：统计雾化玻璃卡（与右侧卡片同高） -->
+        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+            android:id="@+id/box_card2"
+            android:layout_width="200dp"
+            android:layout_height="124dp"
+            android:paddingLeft="16dp"
+            android:paddingBottom="7dp"
+            android:layout_marginLeft="@dimen/home_stat_card_gap"
+            android:layout_marginBottom="@dimen/home_stat_to_quick_action_gap"
+            app:borderGradientCenter="top-left-bottom-right"
+            app:frostedGlassBlurIntensity="low"
+            app:frostedGlassBlurTint="dark"
+            app:frostedGlassCornerRadius="@dimen/home_stat_card_corner_radius"
+            app:frostedGlassStackPanelFill="false"
+            app:layout_constraintLeft_toRightOf="@+id/box_card1"
+            app:layout_constraintBottom_toTopOf="@+id/box_quick_actions_row">
+            <FrameLayout
+                android:id="@+id/static_2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+
+        <!-- 底部快捷左组：Monitor | Settings -->
+        <LinearLayout
+            android:id="@+id/box_quick_actions_row"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:layout_marginLeft="@dimen/home_quick_action_edge_inset"
+            android:layout_marginBottom="@dimen/home_quick_action_edge_inset"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <com.lasercyber.lws.ui.component.home.FrostQuickActionEntry
+                android:id="@+id/box_buttons"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="toPage"
+                android:tag="3"
+                app:quickActionLabel="@string/device_monitor_home_title"
+                app:quickActionLabelViewId="@+id/monitor_title">
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="@dimen/home_quick_action_inner_height"
+                    android:layout_height="@dimen/home_quick_action_inner_height"
+                    android:gravity="center"
+                    app:borderGradientCenter="top-left-bottom-right"
+                    app:frostedGlassBlurIntensity="extreme"
+                    app:frostedGlassBlurTint="warm"
+                    app:frostedGlassCornerRadius="@dimen/home_stat_card_corner_radius"
+                    app:frostedGlassStackPanelFill="false">
+
+                    <ImageView
+                        android:layout_width="@dimen/home_quick_action_icon_size"
+                        android:layout_height="@dimen/home_quick_action_icon_size"
+                        android:src="@mipmap/home_monitor" />
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+            </com.lasercyber.lws.ui.component.home.FrostQuickActionEntry>
+
+            <com.lasercyber.lws.ui.component.home.FrostQuickActionEntry
+                android:id="@+id/box_buttons_settings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/home_quick_action_pair_gap"
+                android:onClick="toPage"
+                android:tag="4"
+                app:quickActionLabel="@string/device_setting_home_text"
+                app:quickActionLabelViewId="@+id/settings_title">
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="@dimen/home_quick_action_inner_height"
+                    android:layout_height="@dimen/home_quick_action_inner_height"
+                    android:gravity="center"
+                    app:borderGradientCenter="top-left-bottom-right"
+                    app:frostedGlassBlurIntensity="extreme"
+                    app:frostedGlassBlurTint="warm"
+                    app:frostedGlassCornerRadius="@dimen/home_stat_card_corner_radius"
+                    app:frostedGlassStackPanelFill="false">
+
+                    <ImageView
+                        android:layout_width="@dimen/home_quick_action_icon_size"
+                        android:layout_height="@dimen/home_quick_action_icon_size"
+                        android:src="@mipmap/home_settings" />
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+            </com.lasercyber.lws.ui.component.home.FrostQuickActionEntry>
+        </LinearLayout>
+
+        <com.lasercyber.lws.ui.component.home.FrostQuickActionEntry
+            android:id="@+id/box_buttons_ai_vision"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/home_quick_action_edge_inset"
+            android:layout_marginBottom="@dimen/home_quick_action_edge_inset"
+            android:onClick="toPage"
+            android:tag="5"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:quickActionLabel="@string/ai_vision_title"
+            app:quickActionLabelViewId="@+id/ai_vision_home_title"
+            app:quickActionLabelWidth="@dimen/home_quick_action_wide_inner_width">
+
+            <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                android:layout_width="@dimen/home_quick_action_wide_inner_width"
+                android:layout_height="@dimen/home_quick_action_inner_height"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingEnd="@dimen/frost_dialog_content_padding"
+                app:borderGradientCenter="top-right-bottom-left"
+                app:frostedGlassBlurIntensity="extreme"
+                app:frostedGlassBlurTint="warm"
+                app:frostedGlassCornerRadius="@dimen/home_stat_card_corner_radius"
+                app:frostedGlassStackPanelFill="false">
+
+                <ImageView
+                    android:layout_width="@dimen/home_quick_action_icon_size"
+                    android:layout_height="@dimen/home_quick_action_icon_size"
+                    android:layout_marginStart="@dimen/home_quick_action_icon_start_padding"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="@string/ai_vision_title"
+                    android:src="@drawable/ai_vision_home" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/home_ai_vision_icon_text_gap"
+                    android:gravity="center_horizontal|center_vertical"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
+                        android:includeFontPadding="false"
+                        android:maxLines="1"
+                        android:text="@string/home_ai_vision_card_line1"
+                        android:textColor="#FFFFFF"
+                        android:textSize="@dimen/home_ai_vision_card_text_size" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center_horizontal"
+                        android:includeFontPadding="false"
+                        android:maxLines="1"
+                        android:text="@string/home_ai_vision_card_line2"
+                        android:textColor="#FFFFFF"
+                        android:textSize="@dimen/home_ai_vision_card_text_size" />
+                </LinearLayout>
+            </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+        </com.lasercyber.lws.ui.component.home.FrostQuickActionEntry>
+
+
+
+
+        <!-- 右下角卡片3：统计雾化玻璃卡（与左侧卡片同高） -->
+        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+            android:id="@+id/box_card3"
+            android:layout_width="200dp"
+            android:layout_height="124dp"
+            android:paddingLeft="16dp"
+            android:paddingBottom="7dp"
+            android:layout_marginRight="@dimen/home_stat_card_gap"
+            android:layout_marginBottom="@dimen/home_stat_to_quick_action_gap"
+            app:borderGradientCenter="top-right-bottom-left"
+            app:frostedGlassBlurIntensity="low"
+            app:frostedGlassBlurTint="dark"
+            app:frostedGlassCornerRadius="@dimen/home_stat_card_corner_radius"
+            app:frostedGlassStackPanelFill="false"
+            app:layout_constraintRight_toLeftOf="@+id/box_card4"
+            app:layout_constraintBottom_toTopOf="@+id/box_quick_actions_row">
+
+            <FrameLayout
+                android:id="@+id/static_3"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+
+        <!-- 右下角卡片4：半圆进度 + 雾化玻璃卡（与左侧卡片同高） -->
+        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+            android:id="@+id/box_card4"
+            android:layout_width="200dp"
+            android:layout_height="124dp"
+            android:layout_marginRight="@dimen/home_quick_action_edge_inset"
+            android:layout_marginBottom="@dimen/home_stat_to_quick_action_gap"
+            android:paddingLeft="20dp"
+            android:paddingBottom="7dp"
+            app:borderGradientCenter="top-right-bottom-left"
+            app:frostedGlassBlurIntensity="low"
+            app:frostedGlassBlurTint="dark"
+            app:frostedGlassCornerRadius="@dimen/home_stat_card_corner_radius"
+            app:frostedGlassStackPanelFill="false"
+            app:layout_constraintBottom_toTopOf="@+id/box_quick_actions_row"
+            app:layout_constraintRight_toRightOf="parent">
+
+            <FrameLayout
+                android:id="@+id/static_4"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+        <!--<LinearLayout
+            android:id="@+id/box_placeholder"
+            android:layout_width="510dp"
+            android:layout_height="80dp"
+            android:paddingTop="16dp"
+            android:paddingLeft="16dp"
+            android:layout_marginLeft="25dp"
+            android:layout_marginRight="28dp"
+            android:layout_marginTop="109dp"
+            android:orientation="vertical"
+            android:background="@drawable/translucent_box_fff"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/guideline_card"
+            android:onClick="toPage"
+            android:tag="5"
+            >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/safety_title"
+                android:textColor="#FFF"
+                android:textSize="25sp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1.0012"
+                android:layout_marginLeft="388dp"
+                android:textColor="#FFF"
+                android:textSize="25sp"/>
+        </LinearLayout>-->
+
+        <ImageView
+            android:id="@+id/home_remote_lock_icon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginRight="8dp"
+            android:src="@mipmap/wifi_lock_icon"
+            android:visibility="gone"
+            app:layout_constraintRight_toLeftOf="@id/home_wifi_status_icon"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/home_recording_indicator"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginRight="8dp"
+            android:src="@mipmap/camera_stop_icon"
+            android:contentDescription="@string/recording_in_progress"
+            android:visibility="gone"
+            app:layout_constraintRight_toLeftOf="@id/home_remote_lock_icon"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/home_wifi_status_icon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginRight="20dp"
+            android:src="@mipmap/wifi_off"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- 顶部居中时钟：须在 FrostCaptureTarget 外采样背景模糊 -->
+        <FrameLayout
+            android:layout_width="400dp"
+            android:layout_height="300dp"
+            android:layout_marginLeft="440dp"
+            android:layout_marginTop="12dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <com.lasercyber.lws.frostui.clock.interop.FrostHomeClockView
+                android:id="@+id/home_real_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:padding="10dp"
+                android:textSize="155sp" />
+        </FrameLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

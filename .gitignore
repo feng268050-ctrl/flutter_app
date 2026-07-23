@@ -1,0 +1,112 @@
+# macOS
+.DS_Store
+
+# Gradle / 构建产物
+.gradle/
+build/
+ai-library
+
+# GitLab CI workspace placeholder (created in .gitlab-ci.yml before_script only on runners)
+ci-artifacts/
+
+# 本地配置（SDK 路径等，勿提交）
+local.properties
+
+# Local env for signing / adb (see .env.example)
+.env
+
+# IDE（IntelliJ / Android Studio）
+*.iml
+.idea/
+
+# Android 打包与字节码
+*.apk
+*.aar
+*.ap_
+*.aab
+*.dex
+*.class
+
+# 旧式 / 通用生成目录
+bin/
+gen/
+out/
+
+# Proguard（Eclipse 遗留）
+proguard/
+
+# NDK / CMake 本地构建缓存
+.externalNativeBuild/
+.cxx/
+native/lensinspector/build*/
+native/lensinspector/.release_tmp/
+native/lensinspector/third_party/
+native/toolchains/opencv/_cache/
+native/toolchains/opencv/sdk/
+native/toolchains/opencv/installed-version.txt
+# AI-only NDK r18b (make ndk-r18b); Gradle / other native code may use a different NDK
+native/toolchains/ndk-r18b/_cache/
+native/toolchains/ndk-r18b/ndk/
+native/toolchains/ndk-r18b/installed-version.txt
+scripts/make/rknn/_cache/
+# Rockchip MPP headers (fetch-rockchip-mpp.sh) and libmpp.so (pulled from device for link)
+native/toolchains/rockchip-mpp/
+build/ai/
+
+# 日志与内存转储
+*.log
+*.hprof
+
+# Android Studio
+.navigation/
+captures/
+
+# Google Services（若含敏感信息可取消注释）
+# google-services.json
+
+# 密钥（需要提交调试 keystore 时再注释掉）
+# *.jks
+# *.keystore
+
+# fastlane 本地输出（readme 为生成文件，通常不入库）
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+fastlane/readme.md
+
+# Lint 报告缓存
+lint/intermediates/
+lint/generated/
+lint/outputs/
+lint/tmp/
+
+# Kotlin 增量编译缓存（Kotlin 2.x）
+.kotlin/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# 版本控制 IDE 杂项
+vcs.xml
+
+# 常见本地输出目录（若需保留请删除对应行）
+app/release/
+app/debug/
+app/sampledata/
+
+# Bundled process library (downloaded at build time by fetchBundledLibraries)
+app/src/main/assets/process-library/
+# AI native libs staged by `make ai` (built artifacts, not committed)
+app/src/main/jniLibs/arm64-v8a/*.so
+# Bundled control-card firmware (copied at build time by bundleFirmwareAssets)
+app/src/main/assets/firmware/
+# Bundled MediaMTX (built via make mediamtx)
+app/src/main/assets/mediamtx/
+tools/mediamtx/_src/
+
+# Bundled AI daemon (built via make ai)
+app/src/main/assets/ai_daemon/
+
+# Room：schema 已配置导出到 app/schemas，应纳入版本控制以便迁移校验，勿忽略

@@ -1,0 +1,1074 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 基础App主题（不变） -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/side_tab_active_color</item>
+        <item name="colorPrimaryDark">@color/side_tab_active_color</item>
+        <item name="colorAccent">@color/side_tab_active_color</item>
+    </style>
+
+    <!-- 启动页专属Theme -->
+    <style name="AppTheme.Splash" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- 取消标题栏和ActionBar -->
+        <item name="windowNoTitle">true</item>
+        <item name="windowActionBar">true</item>
+        <!-- 替换系统启动窗口背景 -->
+        <item name="android:windowBackground">@mipmap/splash_background</item>
+        <!-- 取消窗口阴影，避免闪烁 -->
+        <item name="android:windowContentOverlay">@null</item>
+        <!-- 状态栏颜色（Android 5.0+） -->
+        <item name="android:statusBarColor">@color/side_tab_active_color</item>
+    </style>
+
+    <style name="TimeDialogExactStyle" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item> <!-- 透明背景 -->
+        <item name="android:windowNoTitle">true</item> <!-- 隐藏标题栏 -->
+        <item name="android:windowIsFloating">true</item> <!-- 浮动窗口 -->
+        <item name="android:windowIsTranslucent">false</item> <!-- 避免IME inset残留 -->
+        <!-- 背景变暗（可选，增强对比） -->
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.9</item>
+    </style>
+
+    <style name="ReminderDialogExactStyle" parent="Theme.AppCompat.Dialog">
+        <!-- 隐藏默认标题栏 -->
+        <item name="windowNoTitle">true</item>
+        <!-- 弹窗背景透明（避免默认阴影/边框） -->
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <!-- 禁用弹窗外部点击关闭（可选，匹配操作类弹窗逻辑） -->
+        <item name="android:windowCloseOnTouchOutside">false</item>
+        <item name="android:windowIsFloating">true</item> <!-- 浮动窗口 -->
+
+        <!-- 背景变暗（可选，增强对比） -->
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.7</item>
+    </style>
+
+    <style name="GlobalDialogStyle" parent="@android:style/Theme.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item> <!-- 透明背景 -->
+        <item name="android:windowNoTitle">true</item> <!-- 隐藏标题栏 -->
+        <item name="android:windowIsFloating">true</item> <!-- 浮动窗口 -->
+        <item name="android:windowIsTranslucent">true</item> <!-- 半透明 -->
+        <!-- 背景变暗（可选，增强对比） -->
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.7</item>
+    </style>
+
+    <style name="WorkStatusDialogExactStyle" parent="Theme.AppCompat.Dialog">
+        <!-- 隐藏默认标题栏 -->
+        <item name="windowNoTitle">true</item>
+        <!-- 弹窗背景透明（避免默认阴影/边框） -->
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <!-- 禁用弹窗外部点击关闭（可选，匹配操作类弹窗逻辑） -->
+        <item name="android:windowCloseOnTouchOutside">false</item>
+        <item name="android:windowIsFloating">true</item> <!-- 浮动窗口 -->
+
+        <!-- 背景变暗（可选，增强对比） -->
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.7</item>
+    </style>
+
+    <!--弹唱遮罩层-->
+    <style name="TranslucentDialog" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowBackground">@color/dialog_color</item> <!-- 背景透明 -->
+        <item name="android:windowNoTitle">true</item> <!-- 隐藏默认标题 -->
+        <item name="android:windowIsFloating">true</item>
+    </style>
+
+    <!--头部tab样式-->
+    <style name="TabTextStyle" parent="TextAppearance.MaterialComponents.Button">
+        <item name="android:textSize">17sp</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+    <!--    工程师模式输入的数据box样式-->
+    <style name="engineer_input_value_box_style">
+        <!--        <item name="android:paddingLeft">54dp</item>-->
+        <!--        <item name="android:paddingTop">9.5dp</item>-->
+        <!--        <item name="android:paddingRight">54dp</item>-->
+        <!--        <item name="android:paddingBottom">9.5dp</item>-->
+        <item name="android:layout_width">300dp</item>
+        <item name="android:layout_height">72dp</item>
+        <item name="android:background">@mipmap/engineer_data_value_background</item>
+        <!--        <item name="android:background">@color/engineer_weld_tab_active</item>-->
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+    <!--    工程师模式的label样式-->
+    <style name="engineer_row_label_style" parent="Widget.AppCompat.TextView">
+        <item name="android:layout_gravity">center_vertical</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/text_size_12</item>
+        <item name="android:fontWeight">400</item>
+    </style>
+    <style name="engineer_row_suffix_label_style" parent="engineer_row_label_style">
+        <item name="android:layout_marginStart">4dp</item>
+    </style>
+    <!--    工程师模式的value样式-->
+    <style name="engineer_value_text_style">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/text_size_12</item>
+        <item name="android:fontWeight">400</item>
+    </style>
+    <!--    工程师模式的value的单位样式-->
+    <style name="engineer_value_unit_text_style" parent="engineer_value_text_style">
+        <item name="android:layout_marginLeft">10dp</item>
+    </style>
+    <!--    工程师模式数据行间距-->
+    <style name="engineer_data_row_margin">
+        <item name="android:layout_marginLeft">24dp</item>
+        <item name="android:layout_marginRight">0dp</item>
+    </style>
+    <style name="engineer_parameter_panel_style">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+    <!--    工程师模式数据行样式-->
+    <style name="engineer_data_row_style" parent="engineer_data_row_margin">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
+    <!--    工程师模式，分割线的样式-->
+    <style name="engineer_row_line_style" parent="engineer_data_row_margin">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">2dp</item>
+        <item name="android:background">@color/line_color</item>
+    </style>
+
+    <!--告警分割线-->
+    <style name="warn_row_line_style">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:background">@color/line_color</item>
+    </style>
+
+    <!--提示分割线-->
+    <style name="info_row_line_style">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:background">@color/info_text_none</item>
+    </style>
+    <!--    内容补齐样式-->
+    <style name="content_completion_style">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+    </style>
+    <!--    工程师的重置按钮样式-->
+    <style name="engineer_pine_base_btn_style">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">@dimen/text_size_11</item>
+        <item name="android:textColor">@color/white</item>
+<!--        <item name="android:padding">16dp</item>-->
+        <item name="android:drawablePadding">8dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:gravity">center</item>
+    </style>
+    <!--    工程师模式的橙色按钮样式-->
+    <style name="engineer_orange_pline_btn_style">
+        <!-- 布局尺寸 -->
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">54dp</item>
+        <!-- 文本样式 -->
+        <item name="android:textColor">@drawable/pline_btn_text</item> <!-- 橙色文字 -->
+        <item name="android:textSize">@dimen/text_size_12</item> <!-- 小字号 -->
+        <!-- 图标与文字间距 -->
+        <item name="android:drawablePadding">9dp</item>
+        <!-- 内边距（补充 RTL 适配：start/end） -->
+        <item name="android:paddingLeft">20dp</item> <!-- 兼容低版本 -->
+        <item name="android:paddingStart">20dp</item> <!-- RTL 适配 -->
+        <item name="android:paddingRight">15dp</item> <!-- 兼容低版本 -->
+        <item name="android:paddingEnd">15dp</item> <!-- RTL 适配 -->
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">13dp</item>
+        <!-- 布局对齐 -->
+        <item name="android:layout_gravity">center_vertical</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:backgroundTint">@null</item>
+    </style>
+    <!--    工程师模式 Laser Enable（可逆 ripple 需与 background 同 bounds）-->
+    <style name="engineer_laser_enable_btn_style">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">78dp</item>
+        <item name="android:drawablePadding">9dp</item>
+        <item name="android:gravity">center_vertical|start</item>
+        <item name="android:paddingLeft">24dp</item>
+        <item name="android:paddingTop">19dp</item>
+        <item name="android:paddingRight">24dp</item>
+        <item name="android:paddingBottom">19dp</item>
+        <item name="android:textColor">@drawable/engineer_toggle_btn_text</item>
+        <item name="android:textSize">@dimen/text_size_16</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:clickable">true</item>
+    </style>
+    <!-- 工程师模式底部 5 按钮：从左到右由小到大 -->
+    <style name="engineer_action_btn_size_1" parent="engineer_orange_pline_btn_style">
+        <item name="android:layout_height">46dp</item>
+        <item name="android:textSize">@dimen/text_size_11</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingRight">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:drawablePadding">6dp</item>
+    </style>
+    <style name="engineer_action_btn_size_2" parent="engineer_orange_pline_btn_style">
+        <item name="android:layout_height">52dp</item>
+        <item name="android:textSize">@dimen/text_size_12</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingRight">13dp</item>
+        <item name="android:paddingEnd">13dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:drawablePadding">7dp</item>
+    </style>
+    <style name="engineer_action_btn_size_3" parent="engineer_orange_pline_btn_style">
+        <item name="android:layout_height">58dp</item>
+        <item name="android:textSize">@dimen/text_size_12</item>
+        <item name="android:paddingLeft">18dp</item>
+        <item name="android:paddingStart">18dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="android:paddingEnd">14dp</item>
+        <item name="android:paddingTop">11dp</item>
+        <item name="android:paddingBottom">11dp</item>
+        <item name="android:drawablePadding">8dp</item>
+    </style>
+    <style name="engineer_action_btn_size_4" parent="engineer_orange_pline_btn_style">
+        <item name="android:layout_height">66dp</item>
+        <item name="android:textSize">@dimen/text_size_14</item>
+        <item name="android:paddingLeft">20dp</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">13dp</item>
+        <item name="android:paddingBottom">13dp</item>
+        <item name="android:drawablePadding">8dp</item>
+    </style>
+    <style name="engineer_action_btn_size_5" parent="engineer_laser_enable_btn_style">
+        <item name="android:layout_height">78dp</item>
+        <item name="android:textSize">@dimen/text_size_16</item>
+        <item name="android:paddingLeft">24dp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingRight">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:paddingTop">19dp</item>
+        <item name="android:paddingBottom">19dp</item>
+    </style>
+    <!-- 工程师模式底部动作按钮（Feed / Retreat）——六列紧凑仍保持触控高度 -->
+    <style name="engineer_bottom_action_btn" parent="engineer_orange_pline_btn_style">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/engineer_bottom_action_btn_height</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">@dimen/text_size_12</item>
+        <item name="android:paddingLeft">8dp</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingRight">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:drawablePadding">4dp</item>
+        <item name="android:maxLines">2</item>
+    </style>
+    <!-- 工程师模式底部 Laser Enable（最高优先级，更宽更高） -->
+    <style name="engineer_bottom_laser_btn" parent="engineer_laser_enable_btn_style">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/engineer_bottom_laser_btn_height</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">@dimen/text_size_16</item>
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingRight">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingTop">18dp</item>
+        <item name="android:paddingBottom">18dp</item>
+        <item name="android:maxLines">2</item>
+    </style>
+    <!-- 连续焊左侧 Laser Enable：亮橙底、上下加高、左右收窄 -->
+    <style name="engineer_continuous_laser_btn" parent="engineer_bottom_laser_btn">
+        <item name="android:layout_height">@dimen/engineer_continuous_laser_btn_height</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:paddingLeft">22dp</item>
+        <item name="android:paddingStart">22dp</item>
+        <item name="android:paddingRight">22dp</item>
+        <item name="android:paddingEnd">22dp</item>
+        <item name="android:paddingTop">22dp</item>
+        <item name="android:paddingBottom">22dp</item>
+    </style>
+    <!-- 连续焊左侧 Retreat / Feed：上下加高、左右收窄 -->
+    <style name="engineer_continuous_action_btn" parent="engineer_bottom_action_btn">
+        <item name="android:layout_height">@dimen/engineer_continuous_action_btn_height</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="android:paddingEnd">14dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
+    <!-- 连续焊左侧 checkbox 行（整行可点，行间分割线同参数区） -->
+    <style name="engineer_continuous_checkbox_row">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:minHeight">@dimen/engineer_continuous_checkbox_row_min_height</item>
+    </style>
+    <style name="engineer_continuous_row_line">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">2dp</item>
+        <item name="android:background">@color/line_color</item>
+    </style>
+    <style name="engineer_ramp_accordion_header">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/engineer_ramp_accordion_header_height</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    <style name="engineer_ramp_accordion_title">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/text_size_12</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+    <!-- 工程师模式底部 Checkbox 单元格 -->
+    <style name="engineer_bottom_checkbox_cell">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minHeight">@dimen/engineer_bottom_row1_min_height</item>
+    </style>
+    <!-- 工程师模式底部竖向页切换按钮 -->
+    <style name="engineer_bottom_page_switch_btn">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:background">@drawable/enginer_mode_btn_orange</item>
+        <item name="android:scaleType">centerInside</item>
+    </style>
+    <!--    工程师模式的橙色按钮禁用样式-->
+    <style name="engineer_orange_pline_disable_btn_style" parent="engineer_orange_pline_btn_style">
+        <item name="android:background">@drawable/pline_disable_btn_background</item>
+        <item name="android:textColor">#FF7D3E2B</item> <!-- 橙色文字 -->
+    </style>
+    <!--    材质下拉选的样式-->
+    <style name="spinner_material_style" parent="Widget.AppCompat.Spinner">
+        <!-- 布局尺寸 -->
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <!-- 下拉弹窗背景 -->
+        <!--        <item name="android:popupBackground">@drawable/bg_spinner_dropdown_container</item>-->
+        <item name="android:popupBackground">@drawable/spinner_process_parameter_container_bg</item>
+        <!-- Spinner 模式（下拉模式） -->
+        <item name="android:spinnerMode">dropdown</item>
+        <!-- 下拉选项垂直偏移量 -->
+        <item name="android:dropDownVerticalOffset">33dp</item>
+    </style>
+    <!--    工艺参数下拉样式-->
+    <style name="spinner_process_parameter_style" parent="Widget.AppCompat.Spinner">
+        <!-- 布局尺寸 -->
+        <item name="android:layout_width">150dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <!-- Spinner 背景（未展开时的样式） -->
+        <item name="android:background">@drawable/spinner_process_parameter_bg</item>
+        <!-- 下拉弹窗背景（展开时的容器样式） -->
+        <item name="android:popupBackground">@drawable/spinner_process_parameter_container_bg</item>
+        <!--        <item name="android:popupBackground">@mipmap/process_parameter_container_bg</item>-->
+        <!-- Spinner 模式：下拉模式 -->
+        <item name="android:spinnerMode">dropdown</item>
+        <!-- 下拉选项垂直偏移量 -->
+        <item name="android:dropDownVerticalOffset">20dp</item>
+    </style>
+
+    <style name="PopupAnimation" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/popup_enter</item>
+        <item name="android:windowExitAnimation">@anim/popup_exit</item>
+    </style>
+
+    <style name="PopupFadeAnimation" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/popup_fade_enter</item>
+        <item name="android:windowExitAnimation">@anim/popup_fade_exit</item>
+    </style>
+    <!--    状态栏的状态文字-->
+    <style name="equipment_status_text" parent="Widget.AppCompat.TextView">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/text_size_10</item>
+        <item name="android:layout_gravity">center_vertical</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:singleLine">true</item>
+    </style>
+    <!--    状态栏的图标-->
+    <style name="equipment_status_icon">
+        <item name="android:layout_width">36dp</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:layout_gravity">center_vertical</item>
+    </style>
+<!--    状态栏的每一个状态：固定内容宽度，不参与压缩 -->
+    <style name="equipment_status_icon_row">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+    <!--    工程师模式，tab切换栏的文字行样式-->
+    <style name="engineer_tab_text_row_style">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingLeft">18dp</item>
+        <item name="android:paddingRight">18dp</item>
+        <item name="android:paddingStart">18dp</item>
+        <item name="android:paddingEnd">18dp</item>
+    </style>
+
+    <style name="engineer_tab_icon_style">
+        <item name="android:layout_width">24dp</item>
+        <item name="android:layout_height">24dp</item>
+        <item name="android:layout_marginRight">13dp</item>
+        <!-- 可选：添加 RTL 支持 -->
+        <item name="android:layout_marginEnd">13dp</item>
+    </style>
+    <!--    工程师模式tab的每一项-->
+    <style name="engineer_tab_item_row_style">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center_horizontal</item>
+    </style>
+    <!--    工程师模式的tab,下划线-->
+    <style name="engineer_tab_item_line">
+        <!-- 基础尺寸 -->
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1.5dp</item>
+        <!-- 外边距：兼容旧版本（left/right）+ 支持 RTL（start/end） -->
+        <item name="android:layout_marginLeft">18dp</item>
+        <item name="android:layout_marginRight">18dp</item>
+        <item name="android:layout_marginStart">18dp</item>
+        <item name="android:layout_marginEnd">18dp</item>
+    </style>
+    <!--    工程师模式的更多箭头-->
+    <style name="engineer_more_common_arrow_icon_style">
+        <item name="android:layout_width">30dp</item>
+        <item name="android:layout_height">30dp</item>
+        <item name="android:layout_marginLeft">2dp</item>
+    </style>
+    <!--    垂直居中-->
+    <style name="linear_layout_center_vertical">
+        <!-- 布局方向：水平 -->
+        <item name="android:orientation">horizontal</item>
+        <!-- 宽高：包裹内容 -->
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <!-- 垂直居中对齐 -->
+        <item name="android:gravity">center_vertical</item>
+    </style>
+    <!--    选择框中的下拉箭头-->
+    <style name="select_down_white_arrow">
+        <!-- 布局尺寸 -->
+        <item name="android:layout_width">18dp</item>
+        <item name="android:layout_height">10dp</item>
+        <!-- 图标资源（mipmap 或 drawable 均可） -->
+        <item name="android:src">@mipmap/select_down_white_arrow</item>
+        <!-- 可选：添加其他通用属性，如缩放类型、tint 等 -->
+        <item name="android:scaleType">fitCenter</item>
+    </style>
+
+    <style name="input_dialog_title">
+        <item name="android:textColor">#ffffffff</item>
+        <item name="android:textSize">@dimen/text_size_12</item>
+    </style>
+    <!--    cnc切割步骤图片样式-->
+    <style name="cnc_step_image">
+        <item name="android:layout_width">230dp</item>
+        <item name="android:layout_height">198dp</item>
+    </style>
+    <!--    cnc切割步骤状态图片样式-->
+    <style name="cnc_step_status_image">
+        <item name="android:layout_width">39dp</item>
+        <item name="android:layout_height">39dp</item>
+        <item name="android:layout_marginTop">24dp</item>
+    </style>
+    <!--    cnc切割步骤文字样式-->
+    <style name="cnc_step_text">
+        <!-- 布局宽高：wrap_content -->
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <!-- 文字颜色：白色（#ffffffff） -->
+        <item name="android:textColor">#ffffffff</item>
+        <!-- 文字大小：10sp -->
+        <item name="android:textSize">@dimen/text_size_10</item>
+        <item name="android:layout_marginTop">24dp</item>
+    </style>
+<!--    快速模式的操作按钮样式-->
+    <style name="quick_mode_operation_btn_container">
+        <item name="android:layout_width">264dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">center_horizontal</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    <style name="quick_mode_operation_btn_content">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:clickable">false</item>
+        <item name="android:focusable">false</item>
+        <item name="android:duplicateParentState">true</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+    </style>
+    <style name="hint_text_style">
+        <item name="android:textColor">@color/engineer_tab_no_active_text</item>
+        <item name="android:textSize">21sp</item>
+    </style>
+    <style name="quick_mode_operation_btn_hint" parent="hint_text_style">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">bottom|center_horizontal</item>
+        <item name="android:duplicateParentState">true</item>
+    </style>
+    <style name="quick_mode_operation_btn_icon">
+        <item name="android:layout_width">24dp</item>
+        <item name="android:layout_height">24dp</item>
+        <item name="android:duplicateParentState">true</item>
+        <item name="android:scaleType">fitCenter</item>
+    </style>
+    <style name="quick_mode_operation_btn_label">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">6dp</item>
+        <item name="android:textColor">@drawable/quick_mode_btn_text</item>
+        <item name="android:textSize">27sp</item>
+        <item name="android:duplicateParentState">true</item>
+    </style>
+    <style name="quick_mode_operation_btn">
+        <!-- 布局宽高：wrap_content -->
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <!-- 背景：透明 -->
+        <item name="android:background">@null</item>
+        <!-- 文字颜色：黑色（引用colors.xml中的black，推荐替代硬编码） -->
+        <item name="android:textColor">@android:color/transparent</item>
+        <!-- 文字大小：11sp -->
+        <item name="android:textSize">27sp</item>
+        <!--        <item name="android:minWidth">0dp</item>-->
+        <item name="android:minHeight">0dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+    </style>
+<!--    快速模式中的按钮块-->
+    <style name="general_operation_btn_block">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:layout_alignParentBottom">true</item>
+        <item name="android:layout_marginBottom">35.5dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:elevation">10dp</item>
+    </style>
+<!--    快速模式中的圆形进度条样式-->
+    <style name="quick_mode_circular_seek_bar">
+        <!-- 系统布局属性 -->
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <!-- 自定义属性（app: 命名空间） -->
+<!--        <item name="circle_color">@color/quick_model_orange</item>-->
+<!--        <item name="circle_progress_color">@color/quick_model_orange</item>-->
+<!--        <item name="pointer_halo_color">@color/quick_model_orange</item>-->
+        <item name="circle_stroke_width">4dp</item>
+        <item name="circle_x_radius">500dp</item>
+        <item name="circle_y_radius">500dp</item>
+<!--        <item name="end_angle">230</item>-->
+        <item name="max">100</item>
+        <item name="pointer_alpha_ontouch">100</item>
+        <item name="pointer_color">@color/black</item>
+
+        <item name="pointer_halo_width">4dp</item>
+        <item name="progress">100</item>
+        <item name="progress_width">16dp</item>
+<!--        <item name="start_angle">130</item>-->
+        <item name="use_custom_radii">true</item>
+        <item name="move_outside_circle">true</item>
+        <item name="lock_enabled">false</item>
+        <item name="is_touch_enabled">false</item>
+    </style>
+    <style name="quick_mode_circular">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="circle_x_radius">170dp</item>
+        <item name="circle_y_radius">170dp</item>
+        <item name="android:layout_centerInParent">true</item>
+        <!-- 自定义属性：最大值 -->
+        <item name="max">100</item>
+        <!-- 是否允许指针移出外部圆 -->
+        <item name="move_outside_circle">false</item>
+        <!-- 触摸时指针的透明度 -->
+        <item name="pointer_alpha_ontouch">0</item>
+        <!-- 指针光晕宽度（0dp） -->
+        <item name="pointer_halo_width">0dp</item>
+        <!-- 进度值 -->
+<!--        <item name="progress">30</item>-->
+        <!-- 进度条宽度（180dp） -->
+<!--        <item name="progress_width">180dp</item>-->
+        <!-- 结束角度 -->
+        <item name="end_angle">50</item>
+        <!-- 起始角度 -->
+        <item name="start_angle">130</item>
+        <!-- 是否使用自定义圆角 -->
+        <item name="use_custom_radii">true</item>
+        <!-- 是否使用圆角（进度条两端） -->
+        <item name="use_round">false</item>
+        <!-- 是否使用光晕画笔 -->
+        <item name="use_halo_paint">false</item>
+        <item name="pointer_color">@android:color/transparent</item>
+        <item name="lock_enabled">false</item>
+        <item name="is_touch_enabled">false</item>
+    </style>
+    <style name="quick_mode_pick_select_options">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">29sp</item>
+<!--        <item name="android:textColor">@color/white</item>-->
+        <item name="android:textColor">@color/white</item>
+        <item name="android:paddingRight">8dp</item>
+        <item name="android:paddingLeft">8dp</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingBottom">5dp</item>
+    </style>
+    <style name="quick_mode_pick_select_options_row">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+<!--    快速模式cnc的填充样式-->
+    <style name="quick_mode_cnc_content_fill">
+        <item name="android:layout_width">55dp</item>
+        <item name="android:layout_height">match_parent</item>
+    </style>
+<!--    工程师模式按钮数据行水平居中样式-->
+    <style name="engineer_btn_row_horizontal_center" parent="engineer_data_row_margin">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:layout_marginTop">31dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="android:gravity">center_horizontal</item>
+    </style>
+<!--    工程师模式材质图标样式-->
+    <style name="engineer_materials_icon">
+        <item name="android:layout_width">40dp</item>
+        <item name="android:layout_height">20dp</item>
+    </style>
+<!--    工程师模式的材质行样式-->
+    <style name="engineer_materials_row" parent="engineer_input_value_box_style">
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+    </style>
+
+    <style name="base_scroll_view_style">
+        <!-- 滚动条相关 -->
+        <item name="android:fadeScrollbars">true</item>
+        <item name="android:fillViewport">true</item>
+        <item name="android:scrollbarSize">10dp</item>
+        <item name="android:scrollbarThumbVertical">@drawable/scroll_thumb</item>
+        <item name="android:scrollbarTrackVertical">@drawable/scroll_track</item>
+        <item name="android:scrollbars">vertical</item>
+    </style>
+
+    <style name="app_vertical_scroll_view_style" parent="base_scroll_view_style">
+        <item name="android:scrollbarStyle">insideOverlay</item>
+        <item name="android:fadeScrollbars">true</item>
+        <item name="android:scrollbarTrackVertical">@null</item>
+    </style>
+
+    <!--    工程师模式的滚动条-->
+    <style name="engineer_scroll_view_style" parent="app_vertical_scroll_view_style">
+        <!-- 宽高 -->
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <!-- 外边距 -->
+        <item name="android:layout_marginRight">16dp</item>
+    </style>
+<!--    工程模式的页面容器样式-->
+    <style name="engineer_root_container">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:paddingLeft">@dimen/engineer_page_padding</item>
+        <item name="android:paddingTop">@dimen/engineer_page_padding</item>
+        <item name="android:paddingRight">@dimen/engineer_page_padding</item>
+        <item name="android:paddingBottom">@dimen/engineer_page_padding</item>
+    </style>
+    <style name="engineer_form_content">
+        <!-- 宽高属性 -->
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">match_parent</item>
+        <!-- 背景与方向 -->
+        <item name="android:orientation">vertical</item>
+        <item name="android:paddingLeft">24dp</item>
+        <item name="android:paddingTop">20dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:paddingBottom">20dp</item>
+    </style>
+<!--    机台状态的每一项状态的样式-->
+    <style name="machine_status_dialog_item_status_row">
+        <!-- 宽高 -->
+        <item name="android:layout_width">360dp</item>
+        <item name="android:layout_height">78dp</item>
+        <!-- 内边距 -->
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="android:paddingLeft">@dimen/frost_dialog_content_padding</item>
+        <item name="android:paddingRight">@dimen/frost_dialog_content_padding</item>
+        <!-- 背景 & 方向 -->
+<!--        <item name="android:background">@mipmap/machine_status_dialog_item_status_bg</item>-->
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@color/white</item>
+    </style>
+    <style name="machine_status_dialog_item_status_text">
+        <item name="android:textColor">#FF000000</item>
+        <item name="android:textSize">@dimen/text_size_16</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:includeFontPadding">true</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:singleLine">true</item>
+    </style>
+    <style name="machine_status_dialog_item_status_check_box">
+        <!-- 宽高 -->
+        <item name="android:layout_width">36dp</item>
+        <item name="android:layout_height">36dp</item>
+        <!-- 复选框自定义样式 -->
+        <item name="android:button">@drawable/highlight_check_box</item>
+        <!-- 禁用状态（固定） -->
+        <item name="android:enabled">false</item>
+    </style>
+<!--    机台状态弹窗重的圆环样式-->
+    <style name="machine_status_dialog_circle_progress">
+        <!-- 布局尺寸 -->
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+
+        <!-- ConstraintLayout 链式样式 -->
+        <item name="layout_constraintHorizontal_chainStyle">spread_inside</item>
+
+        <!-- 自定义颜色属性 -->
+        <item name="scale_line_color">@color/text_black</item>
+        <item name="scale_num_text_color">@color/text_black</item>
+        <item name="num_text_color">@color/text_black</item>
+        <item name="desc_text_color">@color/text_black</item>
+
+        <!-- 自定义字重属性 -->
+        <item name="num_text_weight">500</item>
+        <item name="value_text_offset_x">@dimen/machine_status_gauge_value_offset_x</item>
+        <item name="scale_value_line_interval">18dp</item>
+    </style>
+    <style name="MachineStatusGaugeCardMonitor">
+        <item name="android:layout_width">@dimen/machine_status_monitor_gauge_width</item>
+        <item name="android:layout_height">@dimen/machine_status_monitor_gauge_height</item>
+    </style>
+
+    <style name="MachineStatusGaugeCardDialog">
+        <item name="android:layout_width">@dimen/machine_status_dialog_gauge_width</item>
+        <item name="android:layout_height">@dimen/machine_status_dialog_gauge_height</item>
+        <item name="frostedGlassBlurIntensity">transparent</item>
+        <item name="frostedGlassBlurTint">dark</item>
+        <item name="frostedGlassDrawBorder">true</item>
+        <item name="borderGradientCenter">uniform</item>
+    </style>
+
+    <style name="MachineStatusStatusTileMonitor">
+        <item name="android:layout_width">@dimen/machine_status_monitor_tile_width</item>
+        <item name="android:layout_height">@dimen/machine_status_monitor_tile_height</item>
+    </style>
+
+    <style name="MachineStatusStatusTileDialog">
+        <item name="android:layout_width">@dimen/machine_status_dialog_tile_width</item>
+        <item name="android:layout_height">@dimen/machine_status_dialog_tile_height</item>
+        <item name="frostedGlassBlurIntensity">transparent</item>
+        <item name="frostedGlassBlurTint">dark</item>
+        <item name="frostedGlassDrawBorder">true</item>
+        <item name="borderGradientCenter">uniform</item>
+    </style>
+
+    <style name="machine_status_live_monitor_circle_progress" parent="machine_status_dialog_circle_progress">
+        <item name="scale_line_color">@color/white</item>
+        <item name="scale_num_text_color">@color/white</item>
+        <item name="num_text_color">@color/white</item>
+        <item name="desc_text_color">@color/white</item>
+        <item name="circle_side_length">200dp</item>
+    </style>
+
+    <style name="MachineStatusGaugeCardLiveMonitor" parent="MachineStatusGaugeCardMonitor">
+        <item name="android:layout_width">@dimen/laser_live_monitor_gauge_width</item>
+        <item name="android:layout_height">@dimen/laser_live_monitor_gauge_height</item>
+        <item name="machineStatusGaugeWidth">@dimen/laser_live_monitor_gauge_width</item>
+        <item name="machineStatusGaugeHeight">@dimen/laser_live_monitor_gauge_height</item>
+        <item name="frostedGlassBlurIntensity">transparent</item>
+        <item name="frostedGlassBlurTint">dark</item>
+        <item name="frostedGlassDrawBorder">false</item>
+        <item name="borderGradientCenter">uniform</item>
+    </style>
+
+    <style name="MachineStatusStatusTileLiveMonitor" parent="MachineStatusStatusTileDialog">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">@dimen/laser_live_monitor_tile_height</item>
+        <item name="android:layout_weight">1</item>
+        <item name="machineStatusVariant">live_monitor</item>
+        <item name="machineStatusTileWidth">@dimen/laser_live_monitor_tile_width</item>
+        <item name="machineStatusTileHeight">@dimen/laser_live_monitor_tile_height</item>
+        <item name="machineStatusLabelTextColor">@color/white</item>
+        <item name="frostedGlassDrawBorder">true</item>
+        <item name="frostedGlassBlurIntensity">transparent</item>
+    </style>
+
+<!--    机台状态弹窗重的圆环容器-->
+    <style name="machine_status_dialog_circle_progress_container">
+        <!-- 布局尺寸 -->
+        <item name="android:layout_width">548dp</item>
+        <item name="android:layout_height">338dp</item>
+
+        <!-- 背景色 -->
+        <item name="android:background">@color/white</item>
+
+        <!-- 重力对齐 -->
+        <item name="android:gravity">center_horizontal|top</item>
+
+        <!-- 内边距 -->
+        <item name="android:paddingLeft">110dp</item>
+        <item name="android:paddingRight">110dp</item>
+        <item name="android:paddingTop">24dp</item>
+        <item name="android:paddingBottom">18dp</item>
+    </style>
+    <style name="quick_mode_picker_title">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/quick_mode_picker_title_height</item>
+        <item name="android:ellipsize">none</item>
+        <item name="android:gravity">center</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:textColor">#ffffffff</item>
+        <item name="android:textSize">@dimen/quick_mode_picker_title_text_size</item>
+    </style>
+    <!--    工艺视频的表头样式-->
+    <style name="process_video_table_head_text">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/text_size_14</item>
+        <item name="android:gravity">center</item>
+    </style>
+    <style name="process_video_player_icon_btn_style">
+        <item name="android:gravity">center</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:text"></item>
+        <item name="borderGradientCenter">top-left-bottom-right</item>
+        <item name="frostedGlassButtonShape">rounded</item>
+        <item name="frostedGlassButtonVariant">default</item>
+    </style>
+    <style name="process_video_player_icon_btn_light_style" parent="process_video_player_icon_btn_style">
+        <item name="frostedGlassButtonVariant">light</item>
+        <item name="drawableTint">@color/white</item>
+    </style>
+    <style name="process_video_post_eos_btn_style">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">@dimen/frost_action_button_height</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minWidth">140dp</item>
+        <item name="android:paddingStart">@dimen/frost_action_button_padding_horizontal</item>
+        <item name="android:paddingEnd">@dimen/frost_action_button_padding_horizontal</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="borderGradientCenter">top-left-bottom-right</item>
+        <item name="frostedGlassButtonVariant">default</item>
+    </style>
+    <style name="process_video_post_eos_btn_light_style" parent="process_video_post_eos_btn_style">
+        <item name="frostedGlassButtonVariant">light</item>
+    </style>
+    <!--    工艺参数视频的按钮样式-->
+    <style name="process_video_data_btn_style">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/text_size_12</item>
+        <item name="android:paddingLeft">23dp</item>
+        <item name="android:paddingRight">23dp</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">4dp</item>
+    </style>
+    <!--    工艺视频的内容样式-->
+    <style name="process_video_table_body_text">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/text_size_12</item>
+        <item name="android:gravity">center</item>
+    </style>
+    <!--    视频详情中工艺参数的文字样式-->
+    <style name="video_process_data_text_style">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">#ffe1e1e1</item>
+        <item name="android:textSize">@dimen/text_size_12</item>
+    </style>
+    <!--    视频详情中工艺参数每一行-->
+    <style name="video_process_details_row_style">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="android:paddingLeft">23dp</item>
+        <item name="android:layout_marginRight">10dp</item>
+    </style>
+    <!--    视频详情中工艺参数每一行的label-->
+    <style name="video_process_details_row_label_style">
+        <item name="android:layout_width">230dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+    <!--    视频详情中工艺参数每一行的value-->
+    <style name="video_process_details_row_value_style">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+    <!--    视频详情中工艺参数的单位-->
+    <style name="video_process_details_unit_text_style" parent="engineer_value_unit_text_style">
+        <item name="android:textColor">#ffe1e1e1</item>
+    </style>
+    <!-- 自定义二维码弹窗样式：无标题、无边距、透明背景 -->
+    <style name="QRCustomDialogStyle" parent="Theme.AppCompat.Dialog.Alert">
+        <!-- 隐藏标题栏 -->
+        <item name="windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+        <!-- 取消对话框默认背景（自带的padding/圆角/阴影） -->
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <!-- 取消系统默认内边距 -->
+        <item name="android:padding">0dp</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <!-- 可选：取消弹窗背景蒙层 -->
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
+    <!--    告警设置的输入-->
+    <style name="advanced_setting_scale_label" parent="Widget.AppCompat.TextView">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">25sp</item>
+    </style>
+    <style name="advanced_setting_item_title" parent="Widget.AppCompat.TextView">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">29sp</item>
+    </style>
+    <style name="advanced_setting_item_hint" parent="Widget.AppCompat.TextView">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/frost_text_secondary</item>
+        <item name="android:textSize">23sp</item>
+        <item name="android:lineSpacingMultiplier">1.15</item>
+    </style>
+    <style name="advanced_setting_section_title" parent="Widget.AppCompat.TextView">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">29sp</item>
+    </style>
+    <style name="LwsSwitch" parent="FrostSwitch" />
+    <style name="LwsCheckbox" parent="FrostCheckbox" />
+    <style name="advanced_setting_value_box" parent="Widget.AppCompat.TextView">
+        <!-- 宽度固定 100dp -->
+        <item name="android:layout_width">100dp</item>
+        <!-- 高度固定 36dp -->
+        <item name="android:layout_height">36dp</item>
+        <!-- 背景样式 -->
+        <item name="android:background">@drawable/advanced_bg_input_border</item>
+        <!-- 文字颜色为白色 -->
+        <item name="android:textColor">@android:color/white</item>
+        <!-- 文字大小 24sp -->
+        <item name="android:textSize">29sp</item>
+        <!-- 文字居中显示 -->
+        <item name="android:gravity">center</item>
+        <!-- 最大输入长度 3 个字符 -->
+        <item name="android:maxLength">3</item>
+    </style>
+    <!-- HTTP Proxy 等设置页：毛玻璃值框（区别于 advanced_setting_value_box 数字小框） -->
+    <style name="setting_frost_value_box" parent="Widget.AppCompat.TextView">
+        <item name="android:layout_height">56dp</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:background">@drawable/dialog_edit_bg</item>
+        <item name="android:gravity">end|center_vertical</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:ellipsize">start</item>
+        <item name="android:textColor">@color/frost_text_primary</item>
+        <item name="android:textSize">29sp</item>
+    </style>
+    <!--自定义弹窗样式-->
+    <style name="LoadingDialogStyle">
+        <!-- 屏幕背景是否变暗 -->
+        <item name="android:backgroundDimAmount">0</item>
+    </style>
+    <!--    退出cnc弹窗按钮样式-->
+    <style name="cnc_exit_dialog_btn_style">
+        <item name="android:layout_width">220dp</item>
+        <item name="android:layout_height">70dp</item>
+        <item name="android:background">@mipmap/cnc_dialog_btn</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/text_size_15</item>
+        <item name="android:layout_gravity">center</item>
+    </style>
+</resources>

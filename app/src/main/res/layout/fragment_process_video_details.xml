@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="processVideoDetailsViewModel"
+            type="com.lasercyber.lws.ui.activitys.device.monitor.model.ProcessVideoDetailsViewModel" />
+    </data>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="@dimen/frost_dialog_content_padding"
+        tools:context=".activitys.device.monitor.fragment.ProcessVideoDetailsFragment">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/call_back_previous_page"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:drawablePadding="18dp"
+                    android:text="@string/back_to_videos_text"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/text_size_16" />
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="19dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingTop="22dp"
+                    android:paddingBottom="28dp"
+                    app:borderGradientCenter="top-left-bottom-right"
+                    app:frostedGlassBlurIntensity="transparent">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:text="@string/parameter_recording_text"
+                        android:textColor="#ffffffff"
+                        android:textSize="@dimen/text_size_14" />
+
+                    <!--                    工艺参数详情-->
+                    <com.lasercyber.lws.ui.component.AppScrollView
+                        style="@style/app_vertical_scroll_view_style"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginTop="21dp"
+                        android:layout_weight="1"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                        </LinearLayout>
+                    </com.lasercyber.lws.ui.component.AppScrollView>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                    </LinearLayout>
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+            </LinearLayout>
+
+            <!--            视频信息-->
+            <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                android:layout_width="716dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="@dimen/frost_dialog_content_padding"
+                android:padding="10dp"
+                app:borderGradientCenter="bottom-left-top-right"
+                app:frostedGlassBlurIntensity="transparent" />
+        </LinearLayout>
+
+    </FrameLayout>
+</layout>

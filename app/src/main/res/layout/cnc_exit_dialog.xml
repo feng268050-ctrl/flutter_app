@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/cnc_running_border"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingTop="56dp"
+    android:paddingBottom="44dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/confirm_exit_cnc_mode"
+        android:textColor="@color/white"
+        android:textSize="@dimen/text_size_15" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="56dp"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal"
+        android:paddingLeft="106dp"
+        android:paddingRight="106dp">
+
+        <Button
+            android:id="@+id/cnc_exit_confirm"
+            style="@style/cnc_exit_dialog_btn_style"
+            android:text="@string/confirm_text" />
+
+        <Button
+            android:id="@+id/cnc_exit_cancel"
+            style="@style/cnc_exit_dialog_btn_style"
+            android:layout_marginLeft="42dp"
+            android:text="@string/cancel_text" />
+    </LinearLayout>
+</LinearLayout>

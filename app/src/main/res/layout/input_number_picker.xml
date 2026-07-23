@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    >
+    <!-- 自定义NumberPicker -->
+    <NumberPicker
+        android:id="@+id/number_picker"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:selectionDividerHeight="0dp"
+        android:descendantFocusability="blocksDescendants" /> <!-- 防止内部EditText自动获取焦点 -->
+
+    <!-- 输入框（默认隐藏，选中项时显示） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:paddingTop="10.5dp"
+        android:paddingBottom="10.5dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:background="#FF161836"
+        android:elevation="10dp"
+        android:gravity="center"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="1dp"
+        android:layout_marginRight="1dp"
+        android:layout_centerInParent="true">
+        <EditText
+            android:id="@+id/et_input"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/text_size_14"
+            android:padding="0dp"
+            android:layout_margin="0dp"
+            android:textColor="#FF324BF3"
+            android:background="@android:color/transparent"
+            /> <!-- 软键盘显示"完成"按钮 -->
+        <!--    android:visibility="gone"-->
+        <TextView
+            android:id="@+id/suffix_text_view"
+            android:layout_width="wrap_content"
+            android:textSize="@dimen/text_size_14"
+            android:textColor="#FF324BF3"
+            android:layout_height="wrap_content">
+
+        </TextView>
+    </LinearLayout>
+
+
+</RelativeLayout>

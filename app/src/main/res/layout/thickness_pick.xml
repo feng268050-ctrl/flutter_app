@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+        <variable
+            name="modeType"
+            type="java.lang.Integer" />
+
+        <variable
+            name="activeIndex"
+            type="java.lang.Integer" />
+
+        <variable
+            name="progressValue"
+            type="java.lang.Integer" />
+
+        <import type="com.lasercyber.lws.ui.common.constant.ModelConstant" />
+
+        <variable
+            name="thicknessPick"
+            type="com.lasercyber.lws.ui.activitys.quick.mode.component.ThicknessPick" />
+        <import type="com.blankj.utilcode.util.StringUtils"/>
+    </data>
+
+    <RelativeLayout
+        android:layout_width="520dp"
+        android:layout_height="wrap_content"
+        android:paddingBottom="40dp">
+
+        <com.lasercyber.lws.ui.component.CircularSeekBar
+            android:id="@+id/thickness_circular_seek"
+            style="@style/quick_mode_circular_seek_bar"
+            android:scaleY="-1"
+            app:circle_color="@{(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:modeType==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"
+            app:circle_padding_right="10dp"
+            app:circle_progress_color="@{(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:modeType==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"
+            app:end_angle="50"
+            app:progress="@{progressValue}"
+            app:start_angle="305"
+            app:use_halo_paint="false"
+            android:rotation="-5"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/thickness_circular_seek"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="-20dp"
+            android:layout_marginRight="80dp"
+            android:text="@string/thickness_text"
+            android:textColor="#ffffffff"
+            android:textSize="@dimen/text_size_10" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="500dp"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="40dp"
+            android:orientation="vertical"
+            android:paddingTop="60dp">
+
+            <LinearLayout
+                style="@style/quick_mode_pick_select_options_row"
+                android:gravity="end"
+                android:onClick="@{()->thicknessPick.select(5)}"
+                android:paddingRight="90dp">
+
+                <TextView
+                    android:id="@+id/pick_select_5"
+                    style="@style/quick_mode_pick_select_options"
+                    android:alpha="@{activeIndex!=5?0.5f:1}"
+                    android:background="@{activeIndex!=5||StringUtils.isEmpty(thicknessPick.getSelectedText(5))?@drawable/transparent_bg:(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@drawable/box_border_green:modeType==ModelConstant.HAND_CUT?@drawable/box_border_blue:@drawable/box_border_orange}"
+                    android:text="@{thicknessPick.getSelectedText(5)}"
+                    android:textColor="@{activeIndex!=5?@color/white:(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:modeType==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"
+
+                    />
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/quick_mode_pick_select_options_row"
+                android:gravity="end"
+                android:onClick="@{()->thicknessPick.select(4)}"
+                android:paddingRight="30dp">
+
+                <TextView
+                    android:id="@+id/pick_select_4"
+                    style="@style/quick_mode_pick_select_options"
+                    android:alpha="@{activeIndex!=4?0.5f:1}"
+                    android:background="@{activeIndex!=4||StringUtils.isEmpty(thicknessPick.getSelectedText(4))?@drawable/transparent_bg:(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@drawable/box_border_green:modeType==ModelConstant.HAND_CUT?@drawable/box_border_blue:@drawable/box_border_orange}"
+                    android:text="@{thicknessPick.getSelectedText(4)}"
+                    android:textColor="@{activeIndex!=4?@color/white:(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:modeType==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"
+
+                    />
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/quick_mode_pick_select_options_row"
+                android:gravity="end"
+                android:onClick="@{()->thicknessPick.select(3)}">
+
+                <TextView
+                    android:id="@+id/pick_select_3"
+                    style="@style/quick_mode_pick_select_options"
+                    android:alpha="@{activeIndex!=3?0.5f:1}"
+                    android:background="@{activeIndex!=3||StringUtils.isEmpty(thicknessPick.getSelectedText(3))?@drawable/transparent_bg:(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@drawable/box_border_green:modeType==ModelConstant.HAND_CUT?@drawable/box_border_blue:@drawable/box_border_orange}"
+                    android:text="@{thicknessPick.getSelectedText(3)}"
+                    android:textColor="@{activeIndex!=3?@color/white:(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:modeType==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"
+
+                    />
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/quick_mode_pick_select_options_row"
+                android:gravity="end"
+                android:onClick="@{()->thicknessPick.select(2)}"
+                android:paddingRight="30dp">
+
+                <TextView
+                    android:id="@+id/pick_select_2"
+                    style="@style/quick_mode_pick_select_options"
+                    android:alpha="@{activeIndex!=2?0.5f:1}"
+                    android:background="@{activeIndex!=2||StringUtils.isEmpty(thicknessPick.getSelectedText(2))?@drawable/transparent_bg:(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@drawable/box_border_green:modeType==ModelConstant.HAND_CUT?@drawable/box_border_blue:@drawable/box_border_orange}"
+                    android:text="@{thicknessPick.getSelectedText(2)}"
+                    android:textColor="@{activeIndex!=2?@color/white:(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:modeType==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"
+
+                    />
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/quick_mode_pick_select_options_row"
+                android:gravity="end"
+                android:onClick="@{()->thicknessPick.select(1)}"
+                android:paddingRight="90dp">
+
+                <TextView
+                    android:id="@+id/pick_select_1"
+                    style="@style/quick_mode_pick_select_options"
+                    android:alpha="@{activeIndex!=1?0.5f:1}"
+                    android:background="@{activeIndex!=1||StringUtils.isEmpty(thicknessPick.getSelectedText(1))?@drawable/transparent_bg:(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@drawable/box_border_green:modeType==ModelConstant.HAND_CUT?@drawable/box_border_blue:@drawable/box_border_orange}"
+                    android:text="@{thicknessPick.getSelectedText(1)}"
+                    android:textColor="@{activeIndex!=1?@color/white:(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:modeType==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}" />
+            </LinearLayout>
+        </LinearLayout>
+    </RelativeLayout>
+</layout>

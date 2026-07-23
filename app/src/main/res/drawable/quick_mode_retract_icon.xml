@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="17dp"
+        android:height="17dp"
+        android:gravity="center">
+        <selector xmlns:android="http://schemas.android.com/apk/res/android">
+            <item android:drawable="@mipmap/retreat_white_off" android:state_enabled="false" />
+            <item android:drawable="@mipmap/retreat_white_on" android:state_enabled="true" />
+        </selector>
+    </item>
+</layer-list>

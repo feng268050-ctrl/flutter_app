@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- 1. 圆角设置（radius 越大，圆角越明显） -->
+    <corners android:radius="16dp" />
+    <!-- 统一设置四个角的圆角 -->
+    <!-- 也可单独设置每个角（优先级更高）：
+android:topLeftRadius="10dp"
+android:topRightRadius="10dp"
+android:bottomLeftRadius="10dp"
+android:bottomRightRadius="10dp"
+-->
+
+    <!-- 2. 白色边框设置 #3300040D-->
+    <stroke
+        android:width="1dp"
+        android:color="#FF363749" />
+    <!-- 可选：边框虚线效果（如需实线则删除以下两行）
+    android:dashWidth="8dp"
+    android:dashGap="4dp"
+    -->
+    <!-- 3. 可选：View 内部填充色（无填充则设为透明） -->
+    <!--    @android:color/transparent-->
+    <solid android:color="#FF05061C" />
+    <!-- 如需填充其他颜色：android:color="#F5F5F5" -->
+    <!-- 4. 可选：View 内边距（避免内容贴边框） -->
+    <!--    <padding-->
+    <!--        android:bottom="9.5dp"-->
+    <!--        android:left="54dp"-->
+    <!--        android:right="9.5dp"-->
+    <!--        android:top="54dp" />-->
+</shape>

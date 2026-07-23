@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 通过android:width/android:height设置图标大小（比如24dp，按需调整） -->
+    <item
+        android:width="28dp"
+        android:height="28dp"
+        android:drawable="@mipmap/alarm_button_icon" /> <!-- 原图标资源 -->
+</layer-list>

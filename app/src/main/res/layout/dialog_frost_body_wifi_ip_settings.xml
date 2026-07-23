@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:text="@string/wifi_ip_mode"
+            android:textColor="@color/frost_text_primary"
+            android:textSize="29sp" />
+
+        <com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView
+            android:id="@+id/frost_dialog_wifi_ip_mode"
+            style="@style/FrostSegmentedControl"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_weight="1">
+
+            <RadioButton
+                android:id="@+id/frost_dialog_wifi_ip_mode_dhcp"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:text="@string/wifi_ip_mode_dhcp" />
+
+            <RadioButton
+                android:id="@+id/frost_dialog_wifi_ip_mode_static"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:text="@string/wifi_ip_mode_static" />
+        </com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView>
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/frost_dialog_wifi_ip_fields_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:scrollbars="vertical">
+
+        <LinearLayout
+            android:id="@+id/frost_dialog_wifi_ip_fields"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="24dp">
+
+            <include
+                android:id="@+id/frost_dialog_wifi_ip_row"
+                layout="@layout/dialog_frost_wifi_join_ip_field" />
+
+            <include
+                android:id="@+id/frost_dialog_wifi_mask_row"
+                layout="@layout/dialog_frost_wifi_join_ip_field" />
+
+            <include
+                android:id="@+id/frost_dialog_wifi_gateway_row"
+                layout="@layout/dialog_frost_wifi_join_ip_field" />
+
+            <include
+                android:id="@+id/frost_dialog_wifi_dns_row"
+                layout="@layout/dialog_frost_wifi_join_ip_field" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

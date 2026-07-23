@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="frost_dialog_prompt_confirm_button_min_width">@dimen/engineer_mode_entry_confirm_button_width</dimen>
+    <dimen name="frost_dialog_prompt_min_height">480dp</dimen>
+    <dimen name="frost_dialog_prompt_max_height">@dimen/engineer_mode_entry_dialog_height</dimen>
+    <dimen name="frost_dialog_prompt_icon_size">@dimen/engineer_mode_entry_icon_size</dimen>
+    <dimen name="frost_dialog_prompt_scroll_max_height">148dp</dimen>
+    <dimen name="frost_dialog_prompt_content_inset">@dimen/engineer_mode_entry_dialog_content_padding</dimen>
+    <dimen name="frost_dialog_prompt_dont_show_again_inset">14dp</dimen>
+    <dimen name="frost_dialog_prompt_title_text_size">53sp</dimen>
+
+    <dimen name="frost_corner_radius">28dp</dimen>
+    <dimen name="frost_dialog_content_padding">24dp</dimen>
+    <dimen name="frost_action_button_height">58dp</dimen>
+    <dimen name="frost_action_button_padding_horizontal">24dp</dimen>
+    <dimen name="frost_action_button_text_size">@dimen/text_size_12</dimen>
+    <dimen name="frost_action_button_small_height">40dp</dimen>
+    <dimen name="frost_action_button_small_padding_horizontal">20dp</dimen>
+    <dimen name="frost_rectangle_button_corner_radius">14dp</dimen>
+    <dimen name="frost_button_stroke_width">1.5dp</dimen>
+    <dimen name="frost_dialog_date_picker_row_width">520dp</dimen>
+    <dimen name="frost_dialog_time_picker_row_width">320dp</dimen>
+    <dimen name="frost_dialog_date_picker_width">568dp</dimen>
+    <dimen name="frost_dialog_numeric_input_width">720dp</dimen>
+    <dimen name="frost_dialog_numeric_input_field_width">360dp</dimen>
+    <dimen name="frost_dialog_device_qr_image_size">400dp</dimen>
+
+    <integer name="frost_dialog_fade_in_duration_ms">220</integer>
+    <integer name="frost_dialog_fade_out_duration_ms">160</integer>
+
+    <dimen name="frost_popup_menu_card_padding">16dp</dimen>
+    <dimen name="frost_popup_menu_row_horizontal_inset">16dp</dimen>
+    <dimen name="frost_popup_menu_row_vertical_padding">12dp</dimen>
+    <dimen name="frost_popup_menu_row_min_height">44dp</dimen>
+    <dimen name="frost_popup_menu_item_icon_width">40dp</dimen>
+    <dimen name="frost_popup_menu_item_icon_height">20dp</dimen>
+    <dimen name="frost_popup_menu_item_corner_radius">8dp</dimen>
+    <dimen name="frost_popup_menu_row_spacing">4dp</dimen>
+</resources>

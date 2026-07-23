@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+        <!-- 绑定 EquipmentStatus 实体类（替代多个单独变量） -->
+        <variable
+            name="status"
+            type="com.lasercyber.lws.ui.bean.entity.EquipmentStatus" /> <!-- 替换为实际包名 -->
+        <variable
+            name="deviceStatus"
+            type="com.lasercyber.lws.ui.bean.entity.DeviceStatus" />
+        <import type="android.view.View" />
+        <variable
+            name="modelType"
+            type="java.lang.Integer" />
+        <variable
+            name="callBackHomeEnabled"
+            type="java.lang.Boolean" />
+        <import type="com.lasercyber.lws.ui.common.constant.ModelConstant" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/equipment_status_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1E1E1E"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        >
+        <!--        返回：仅图标，左右等距居中 -->
+        <RelativeLayout
+            android:id="@+id/callback_content"
+            android:layout_width="96dp"
+            android:layout_height="70dp">
+            <View
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="0dp"
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:background="@{Boolean.TRUE.equals(callBackHomeEnabled) ? ((modelType==ModelConstant.WELD_CLEAN||modelType==ModelConstant.WIDTH_CLEAN)?@drawable/line_gradient_black_to_green:(modelType==ModelConstant.HAND_CUT||modelType==ModelConstant.CNC_CUT)?@drawable/line_gradient_black_to_blue:@drawable/line_gradient_black_to_orange) : @drawable/line_gradient_black_to_gray}"
+ />
+            <ImageButton
+                android:id="@+id/status_call_back_home"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@{Boolean.TRUE.equals(callBackHomeEnabled) ? ((modelType==ModelConstant.WELD_CLEAN||modelType==ModelConstant.WIDTH_CLEAN)?@drawable/quick_mode_btn_green:(modelType==ModelConstant.HAND_CUT||modelType==ModelConstant.CNC_CUT)?@drawable/quick_mode_btn_blue:@drawable/quick_mode_btn_orange) : @drawable/quick_mode_btn_gray}"
+                android:contentDescription="@string/call_back_to_home"
+                android:elevation="100dp"
+                android:enabled="@{Boolean.TRUE.equals(callBackHomeEnabled)}"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:scaleType="center"
+                android:src="@{Boolean.TRUE.equals(callBackHomeEnabled) ? @drawable/back_btn_icon : @drawable/back_btn_icon_disabled}" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_alignParentBottom="true"
+                android:layout_marginBottom="0dp"
+                android:layout_height="3dp"
+                android:background="@{Boolean.TRUE.equals(callBackHomeEnabled) ? ((modelType==ModelConstant.WELD_CLEAN||modelType==ModelConstant.WIDTH_CLEAN)?@drawable/line_gradient_black_to_green:(modelType==ModelConstant.HAND_CUT||modelType==ModelConstant.CNC_CUT)?@drawable/line_gradient_black_to_blue:@drawable/line_gradient_black_to_orange) : @drawable/line_gradient_black_to_gray}"
+                />
+
+        </RelativeLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="4dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="4dp"
+            android:minHeight="70dp">
+
+        <!--        标题-->
+        <LinearLayout
+            android:id="@+id/title_content"
+            android:layout_width="0dp"
+            android:gravity="center"
+            android:layout_weight="1"
+            android:layout_height="wrap_content">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/status_title"
+                android:textColor="#ffffffff"
+                android:textSize="@dimen/text_size_12"/>
+        </LinearLayout>
+        <!--        状态：项宽 wrap，中间 Space 均分剩余间距，避免长文案被裁切 -->
+        <LinearLayout
+            android:id="@+id/status_content"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+
+            <!-- 枪头开关导通（通过实体类获取状态） -->
+            <LinearLayout
+                style="@style/equipment_status_icon_row">
+
+                <TextView
+                    style="@style/equipment_status_text"
+                    android:text="@string/gun_switch_on" />
+
+                <!-- 枪头开关导通状态 -->
+                <ImageView
+                    style="@style/equipment_status_icon"
+                    android:layout_width="@dimen/equipment_status_primary_icon_size"
+                    android:layout_height="@dimen/equipment_status_primary_icon_size"
+                    android:src="@mipmap/gun_head_icon"
+                android:visibility="@{deviceStatus.isGunSwitchOn() ? View.VISIBLE : View.GONE}" />
+
+                <!-- 枪头开关断开状态 -->
+                <ImageView
+                    style="@style/equipment_status_icon"
+                    android:layout_width="@dimen/equipment_status_primary_icon_size"
+                    android:layout_height="@dimen/equipment_status_primary_icon_size"
+                    android:src="@mipmap/equipment_status_icon_off"
+                android:visibility="@{!deviceStatus.isGunSwitchOn() ? View.VISIBLE : View.GONE}" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- 安全地锁导通 -->
+            <LinearLayout
+                style="@style/equipment_status_icon_row">
+
+                <TextView
+                    style="@style/equipment_status_text"
+                    android:text="@string/safety_lock_on" />
+
+                <!-- 安全地锁导通状态 -->
+                <ImageView
+                    style="@style/equipment_status_icon"
+                    android:layout_width="@dimen/equipment_status_primary_icon_size"
+                    android:layout_height="@dimen/equipment_status_primary_icon_size"
+                    android:src="@mipmap/safety_lock_icon"
+                android:visibility="@{deviceStatus.isSafetyGroundLockLocked() ? View.VISIBLE : View.GONE}" />
+
+                <!-- 安全地锁断开状态 -->
+                <ImageView
+                    style="@style/equipment_status_icon"
+                    android:layout_width="@dimen/equipment_status_primary_icon_size"
+                    android:layout_height="@dimen/equipment_status_primary_icon_size"
+                    android:src="@mipmap/safety_lock_icon_off"
+                android:visibility="@{!deviceStatus.isSafetyGroundLockLocked() ? View.VISIBLE : View.GONE}" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!--            钥匙-->
+            <LinearLayout
+                style="@style/equipment_status_icon_row">
+
+                <TextView
+                    style="@style/equipment_status_text"
+                    android:text="@string/key_switch_text" />
+
+                <!-- 钥匙开关导通状态 -->
+                <ImageView
+                    style="@style/equipment_status_icon"
+                    android:src="@mipmap/key_icon"
+                android:visibility="@{deviceStatus.isKeySwitchOn() ? View.VISIBLE : View.GONE}" />
+
+                <!-- 钥匙开关断开状态 -->
+                <ImageView
+                    style="@style/equipment_status_icon"
+                    android:src="@mipmap/key_icon_off"
+                android:visibility="@{!deviceStatus.isKeySwitchOn() ? View.VISIBLE : View.GONE}" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- 通气状态 -->
+            <LinearLayout
+                style="@style/equipment_status_icon_row">
+
+                <TextView
+                    style="@style/equipment_status_text"
+                    android:text="@string/vent_status" />
+
+                <!-- 通气状态：开启 -->
+                <ImageView
+                    style="@style/equipment_status_icon"
+                    android:src="@mipmap/ventilation_status_icon"
+                android:visibility="@{deviceStatus.isAirValveOn() ? View.VISIBLE : View.GONE}" />
+
+                <!-- 通气状态：关闭 -->
+                <ImageView
+                    style="@style/equipment_status_icon"
+                    android:src="@mipmap/ventilation_status_icon_off"
+                android:visibility="@{!deviceStatus.isAirValveOn() ? View.VISIBLE : View.GONE}" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- 急停状态 -->
+            <LinearLayout
+                style="@style/equipment_status_icon_row">
+
+                <TextView
+                    style="@style/equipment_status_text"
+                    android:text="@string/emergency_stop" />
+                <!--                急停-->
+                <ImageView
+                    style="@style/equipment_status_icon"
+                    android:src="@mipmap/stop_icon"
+                android:visibility="@{deviceStatus.isEmergencyStopTriggered()?View.VISIBLE : View.GONE}"
+                />
+                <!--                非急停-->
+                <ImageView
+                    style="@style/equipment_status_icon"
+                    android:src="@mipmap/stop_icon_on"
+                android:visibility="@{!deviceStatus.isEmergencyStopTriggered()?View.VISIBLE : View.GONE}"
+                />
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <!-- 网络状态 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:id="@+id/wifi_content"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/remote_lock_icon"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:src="@mipmap/wifi_lock_icon"
+                android:visibility="gone" />
+
+            <ImageButton
+                android:id="@+id/recording_indicator"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/recording_in_progress"
+                android:scaleType="fitCenter"
+                android:src="@mipmap/camera_stop_icon"
+                android:visibility="gone" />
+
+            <!-- 网络连接状态 -->
+            <ImageView
+                android:id="@+id/wifi_content_icon"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@mipmap/wifi_icon"
+            android:visibility="@{status.isNetworkConnected() ? View.VISIBLE : View.GONE}" />
+
+            <!-- 网络断开状态 -->
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@mipmap/wifi_off"
+            android:visibility="@{!status.isNetworkConnected() ? View.VISIBLE : View.GONE}" />
+
+            <TextView
+                android:id="@+id/status_bar_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:textColor="#F2F2F2"
+                android:textSize="@dimen/text_size_12" />
+        </LinearLayout>
+
+        <!-- 蓝牙状态 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:id="@+id/bluetooth_content"
+            android:visibility="gone"
+            android:gravity="center">
+
+            <!-- 蓝牙连接状态 -->
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@mipmap/bluetooth_icon"
+            android:visibility="@{status.isBluetoothConnected() ? View.VISIBLE : View.GONE}" />
+
+            <!-- 蓝牙断开状态 -->
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@mipmap/bluetooth_off"
+            android:visibility="@{!status.isBluetoothConnected() ? View.VISIBLE : View.GONE}" />
+        </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</layout>

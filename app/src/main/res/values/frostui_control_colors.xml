@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="frost_control_switch_track_on">@color/switch_open</color>
+    <color name="frost_control_switch_track_off">@color/side_tab_not_active_color</color>
+    <color name="frost_control_switch_thumb">@color/white</color>
+    <color name="frost_control_checkbox_fill">@color/switch_open</color>
+    <color name="frost_control_checkbox_stroke">@color/white</color>
+    <color name="frost_control_checkbox_checkmark">@color/white</color>
+    <color name="frost_control_checkbox_label">@color/white</color>
+    <color name="frost_control_slider_track_inactive">#FF38394D</color>
+    <color name="frost_control_slider_track_active">#FFFFFFFF</color>
+    <color name="frost_control_slider_thumb">#FFFFFFFF</color>
+    <color name="frost_control_slider_label">@color/white</color>
+    <color name="frost_control_capsule_fill">#FF060720</color>
+    <color name="frost_control_capsule_border">#40FFFFFF</color>
+    <color name="frost_control_segment_selected_fill">@color/white</color>
+    <color name="frost_control_segment_unselected_fill">#FF060720</color>
+    <color name="frost_control_segment_selected_text">#FF060720</color>
+    <color name="frost_control_segment_unselected_text">@color/white</color>
+    <color name="frost_control_capsule_slider_track_inactive">#FF060720</color>
+    <color name="frost_control_capsule_slider_track_active">@color/white</color>
+    <color name="frost_control_capsule_slider_overlay_light">@color/white</color>
+    <color name="frost_control_capsule_slider_overlay_dark">#FF1A1A3B</color>
+    <color name="frost_status_idle_ring">#99FFFFFF</color>
+    <color name="frost_status_in_progress_dot">#FFFFCC00</color>
+    <color name="frost_status_success">#FF34C759</color>
+    <color name="frost_status_failure">#FFFF3B30</color>
+    <color name="frost_status_glyph">@color/white</color>
+    <color name="frost_reversible_ripple_color">#40FFFFFF</color>
+</resources>

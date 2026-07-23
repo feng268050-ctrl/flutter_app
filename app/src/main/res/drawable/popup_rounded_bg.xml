@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 背景颜色：白色 -->
+<!--    <solid android:color="@android:color/white" />-->
+    <!-- 圆角半径：10dp -->
+    <corners android:radius="10dp" />
+    <!-- 可选：添加边框（灰色，1dp） -->
+<!--    <stroke-->
+<!--        android:width="1dp"-->
+<!--        android:color="#E0E0E0" />-->
+    <!-- 可选：添加内边距（避免内容紧贴边框） -->
+<!--    <padding-->
+<!--        android:left="4dp"-->
+<!--        android:top="4dp"-->
+<!--        android:right="4dp"-->
+<!--        android:bottom="4dp" />-->
+</shape>

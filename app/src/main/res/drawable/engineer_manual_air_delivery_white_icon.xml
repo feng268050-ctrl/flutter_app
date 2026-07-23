@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 核心：设置图标宽高（根据需求调整，如 24dp） -->
+    <item
+        android:width="24dp"
+        android:height="24dp"
+        android:gravity="center"> <!-- 居中显示，避免偏移 -->
+        <!-- 引用你的状态选择器 -->
+        <selector >
+            <!-- 禁用状态：显示灰色图标 -->
+            <item android:drawable="@mipmap/engineer_manual_air_delivery_white_icon" android:state_enabled="false" />
+            <!-- 默认/启用状态：显示正常图标 -->
+            <item android:drawable="@mipmap/engineer_manual_air_delivery_white_icon" android:state_enabled="true" />
+        </selector>
+    </item>
+</layer-list>

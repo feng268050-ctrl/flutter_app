@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 1. 底层背景色 -->
+    <item android:drawable="@color/side_tab_not_active_color" />
+
+    <!-- 2. 居中Logo（适配不同屏幕） -->
+    <item>
+        <!-- src 替换为你的Logo -->
+        <bitmap
+            android:gravity="center"
+            android:src="@android:mipmap/sym_def_app_icon"
+            android:scaleType="centerCrop"
+            android:width="1280dp"
+            android:height="800dp" />
+    </item>
+
+</layer-list>

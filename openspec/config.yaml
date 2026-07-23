@@ -1,0 +1,27 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+context: |
+  Android HMI app (Java/Kotlin, Room, Modbus, WebSocket, native AI).
+  OpenSpec main specs live under openspec/specs/<capability>/spec.md.
+
+  **Default modal dialogs:** Use `FrostDialog` (`com.lasercyber.lws.ui.component.dialog`)
+  for new confirmation/teaching/blocking prompts — in-window 雾化玻璃设计 shell with live
+  BlurView blur. Simple flows: `FrostDialog.prompt(context).title(...).message(...).show()`.
+  Legacy shortcut: `GlobalDialogUtil.showFrostPromptDialog(...)`.
+  Default body is a single TextView; progress bars and other rich content go in via
+  `customBodyView(@LayoutRes)` plus a small feature wrapper (see `ZeroPointAutoProgressDialog`
+  and spec `frosted-glass-dialog`). Do not add built-in progress modes to the generic dialog.
+  Specialized existing shells (ReminderExactDialog, VideoUploadProgressDialog, bind-device QR, etc.)
+  stay until explicitly migrated.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours

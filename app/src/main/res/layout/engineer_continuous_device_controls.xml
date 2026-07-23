@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  工程师模式共用左侧设备控制（六控件位置固定）：
+  Record Work → Manual Gas → Auto Wire Feed → Retreat | Feed → Laser Enable
+  非连续焊：Auto Wire / Retreat / Feed 灰显禁用；爬坡 Accordion 仅连续焊/点焊显示
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+        <import type="android.view.View" />
+        <variable
+            name="deviceControlData"
+            type="com.lasercyber.lws.ui.bean.entity.DeviceControlData" />
+        <variable
+            name="startFeedClick"
+            type="java.lang.Boolean" />
+        <variable
+            name="isContinuousFeed"
+            type="java.lang.Boolean" />
+        <variable
+            name="startRetractClick"
+            type="java.lang.Boolean" />
+        <variable
+            name="openRampChart"
+            type="java.lang.Boolean" />
+        <variable
+            name="showRampAccordion"
+            type="java.lang.Boolean" />
+        <variable
+            name="wireControlsEnabled"
+            type="java.lang.Boolean" />
+    </data>
+
+    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="@dimen/engineer_continuous_content_h_padding"
+        android:paddingEnd="@dimen/engineer_continuous_content_h_padding"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
+        app:borderGradientCenter="top-left-bottom-right"
+        app:frostedGlassBlurIntensity="transparent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <include
+                android:id="@+id/ramp_accordion"
+                layout="@layout/engineer_ramp_chart_accordion"
+                android:visibility="@{showRampAccordion == Boolean.TRUE ? View.VISIBLE : View.GONE}"
+                app:openRampChart="@{openRampChart}" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginBottom="@dimen/engineer_bottom_grid_row_gap"
+                android:layout_weight="1">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginBottom="@dimen/engineer_bottom_grid_row_gap"
+                        android:layout_weight="3"
+                        android:orientation="vertical">
+
+                        <View style="@style/engineer_continuous_row_line" />
+
+                        <FrameLayout
+                            android:id="@+id/row_record_work"
+                            style="@style/engineer_continuous_checkbox_row">
+
+                            <com.lasercyber.lws.ui.component.CameraController
+                                android:id="@+id/camera_controller"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical|start"
+                                app:record_label_text_size="@dimen/text_size_12"
+                                app:record_use_mode_color="false" />
+                        </FrameLayout>
+
+                        <View style="@style/engineer_continuous_row_line" />
+
+                        <FrameLayout
+                            android:id="@+id/row_manual_gas"
+                            style="@style/engineer_continuous_checkbox_row">
+
+                            <com.lasercyber.lws.frostui.control.interop.FrostCheckboxView
+                                android:id="@+id/btn_manual_gas"
+                                style="@style/FrostCheckbox"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical|start"
+                                app:labelText="@string/btn_manual_gas"
+                                app:labelTextColor="@color/white"
+                                app:labelTextSize="@dimen/text_size_12" />
+                        </FrameLayout>
+
+                        <View style="@style/engineer_continuous_row_line" />
+
+                        <FrameLayout
+                            android:id="@+id/row_feed_enable"
+                            style="@style/engineer_continuous_checkbox_row">
+
+                            <com.lasercyber.lws.frostui.control.interop.FrostCheckboxView
+                                android:id="@+id/btn_feed_enable"
+                                style="@style/FrostCheckbox"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical|start"
+                                android:enabled="@{wireControlsEnabled == Boolean.TRUE}"
+                                app:labelText="@string/btn_feed_enable"
+                                app:labelTextColor="@color/white"
+                                app:labelTextSize="@dimen/text_size_12" />
+                        </FrameLayout>
+
+                        <View style="@style/engineer_continuous_row_line" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1.15"
+                        android:gravity="center_vertical"
+                        android:minHeight="@dimen/engineer_continuous_action_btn_height"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btn_retract"
+                            style="@style/engineer_continuous_action_btn"
+                            android:layout_width="0dp"
+                            android:layout_height="@dimen/engineer_continuous_action_btn_height"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginEnd="@dimen/engineer_continuous_action_btn_gap"
+                            android:layout_weight="1"
+                            android:background="@drawable/engineer_mode_action_btn_bg"
+                            android:drawableStart="@drawable/engineer_retract_icon_shifted"
+                            android:enabled="@{wireControlsEnabled == Boolean.TRUE}"
+                            android:selected="@{startRetractClick}"
+                            android:text="@string/btn_retract" />
+
+                        <com.lasercyber.lws.ui.component.GradientButton
+                            android:id="@+id/btn_feed"
+                            style="@style/engineer_continuous_action_btn"
+                            android:layout_width="0dp"
+                            android:layout_height="@dimen/engineer_continuous_action_btn_height"
+                            android:layout_gravity="center_vertical"
+                            android:layout_weight="1"
+                            android:background="@drawable/engineer_mode_action_btn_bg"
+                            android:drawableStart="@drawable/engineer_feed_icon_shifted"
+                            android:enabled="@{wireControlsEnabled == Boolean.TRUE}"
+                            android:selected="@{startFeedClick||isContinuousFeed}"
+                            android:text="@{isContinuousFeed?@string/continuous_feeding_text:@string/btn_feed_text}"
+                            app:animation_duration="@{startFeedClick?4000:3000}"
+                            app:animation_positive="@{!startFeedClick}"
+                            app:end_color="@android:color/transparent"
+                            app:max_shrink_ratio="0.4"
+                            app:mid_color="@{!isContinuousFeed&amp;&amp;!startFeedClick?@android:color/transparent:@color/quick_model_orange}"
+                            app:pause_animation="false"
+                            app:shrink_ratio="0.5"
+                            app:start_color="@android:color/transparent"
+                            app:use_animation="@{wireControlsEnabled == Boolean.TRUE &amp;&amp; (startFeedClick||isContinuousFeed)}" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <FrameLayout
+                    android:id="@+id/chart_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/engineer_base_background_color"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="@{showRampAccordion == Boolean.TRUE &amp;&amp; openRampChart == Boolean.TRUE ? View.VISIBLE : View.GONE}" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/engineer_continuous_laser_btn_height"
+                android:minHeight="@dimen/engineer_continuous_laser_btn_height">
+
+                <Button
+                    android:id="@+id/btn_laser_enable"
+                    style="@style/engineer_continuous_laser_btn"
+                    android:layout_width="match_parent"
+                    android:layout_gravity="center"
+                    android:background="@drawable/engineer_continuous_laser_btn_ripple"
+                    android:drawableStart="@{deviceControlData != null &amp;&amp; deviceControlData.isOpenLaser() ? @drawable/engineer_laser_pause_icon_shifted : @drawable/engineer_laser_enable_btn_icon_shifted}"
+                    android:selected="@{deviceControlData != null &amp;&amp; deviceControlData.isOpenLaser()}"
+                    android:text="@{deviceControlData != null &amp;&amp; deviceControlData.isOpenLaser() ? @string/laser_end_of_work : @string/laser_on_text}" />
+            </FrameLayout>
+        </LinearLayout>
+    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+</layout>

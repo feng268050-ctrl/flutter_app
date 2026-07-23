@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="OffsetNumberPickerAttrs">
+        <!--        偏移距离-->
+        <attr name="offset_size" format="dimension" />
+        <!--        偏移方向-->
+        <attr name="offset_direction" format="enum">
+            <enum name="left" value="0" />
+            <enum name="right" value="1" />
+        </attr>
+        <!--        激活背景-->
+        <attr name="active_background" format="reference" />
+
+
+
+        <!-- 数据相关 -->
+        <attr name="pickerData" format="reference" />
+        <!-- 选中项样式 -->
+        <attr name="selectedTextColor" format="color" />
+        <attr name="selectedBgColor" format="color" />
+        <attr name="selectedTextSize" format="dimension" />
+        <attr name="selectedPadding" format="dimension" />
+        <attr name="selectedMargin" format="dimension" />
+        <!-- 未选中项样式 -->
+        <attr name="unSelectedTextColor" format="color" />
+        <attr name="unSelectedBgColor" format="color" />
+        <attr name="unSelectedTextSize" format="dimension" />
+        <attr name="unSelectedPadding" format="dimension" />
+        <attr name="unSelectedMargin" format="dimension" />
+        <!-- 项间距 -->
+        <attr name="itemSpace" format="dimension" />
+        <!-- 初始选中索引 -->
+        <attr name="selectedIndex" format="integer" />
+    </declare-styleable>
+</resources>

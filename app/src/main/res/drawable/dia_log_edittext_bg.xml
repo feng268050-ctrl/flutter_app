@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle"> <!-- 矩形形状，EditText默认样式 -->
+
+    <!-- 1. 背景颜色：#4D000000（30%透明黑） -->
+    <solid android:color="#4D000000" />
+
+    <!-- 2. 边框：1dp宽度，颜色#33000000（20%透明黑） -->
+    <stroke
+        android:width="1dp"
+        android:color="#33000000" />
+
+    <!-- 3. 圆角：10dp（核心新增配置） -->
+    <corners android:radius="10dp" />
+
+    <!-- 可选：内边距（避免文字紧贴边框，提升体验） -->
+<!--    <padding-->
+<!--        android:left="12dp"-->
+<!--        android:top="10dp"-->
+<!--        android:right="12dp"-->
+<!--        android:bottom="10dp" />-->
+
+</shape>

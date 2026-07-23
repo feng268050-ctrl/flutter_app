@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<permissions>
+    <!--
+      HMI 应用 privapp 白名单：为将来完全取代 System UI（自定义状态栏/导航、设置中心、连接与电源等）预留系统权限。
+      需在目标设备的 /etc/permissions/ 中部署对应白名单并由系统镜像授予。
+    -->
+    <privapp-permissions package="com.lasercyber.lws.ui">
+        <!--
+          1. UI 与交互控制（取代原生状态栏与导航栏）
+          绘制自定义状态栏、通知栏及物理按键监听：禁用/展开原生状态栏、自定义通知中心、
+          顶层窗口、悬浮控制、应用栈与多窗口。
+        -->
+        <permission name="android.permission.STATUS_BAR" />
+        <permission name="android.permission.EXPAND_STATUS_BAR" />
+        <permission name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+        <permission name="android.permission.SYSTEM_ALERT_WINDOW" />
+        <permission name="android.permission.MANAGE_ACTIVITY_STACKS" />
+
+        <!--
+          2. 系统核心设置（取代原生设置中心）
+          亮度、音量、语言、时间：基础与安全设置、音频路由、语言/DPI、RTC 与时区。
+        -->
+        <permission name="android.permission.WRITE_SETTINGS" />
+        <permission name="android.permission.WRITE_SECURE_SETTINGS" />
+        <permission name="android.permission.MODIFY_AUDIO_ROUTING" />
+        <permission name="android.permission.CHANGE_CONFIGURATION" />
+        <permission name="android.permission.SET_TIME" />
+        <permission name="android.permission.SET_TIME_ZONE" />
+
+        <!--
+          3. 连接与硬件管理（完全控制 Wi-Fi、蓝牙、网络）
+          全局网络配置、内部连接策略、热点、蓝牙特权配对、移动数据/通话（带 SIM 时）。
+        -->
+        <permission name="android.permission.NETWORK_SETTINGS" />
+        <permission name="android.permission.LOCAL_MAC_ADDRESS" />
+        <permission name="android.permission.CONNECTIVITY_INTERNAL" />
+        <permission name="android.permission.TETHER_PRIVILEGED" />
+        <permission name="android.permission.BLUETOOTH_PRIVILEGED" />
+        <permission name="android.permission.MODIFY_PHONE_STATE" />
+
+        <!--
+          4. 电源与生命周期（设备控制权）
+          重启/Recovery/Fastboot、关机、电源键与亮灭屏、深度睡眠策略等。
+        -->
+        <permission name="android.permission.REBOOT" />
+        <permission name="android.permission.SHUTDOWN" />
+        <permission name="android.permission.DEVICE_POWER" />
+
+        <!--
+          5. 应用与数据管理（实现静默升级）
+          绕过应用商店时的安装/卸载/强停与使用统计（最近任务等）。
+        -->
+        <permission name="android.permission.INSTALL_PACKAGES" />
+        <permission name="android.permission.DELETE_PACKAGES" />
+        <permission name="android.permission.FORCE_STOP_PACKAGES" />
+        <permission name="android.permission.PACKAGE_USAGE_STATS" />
+        <permission name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
+    </privapp-permissions>
+</permissions>

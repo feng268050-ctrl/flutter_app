@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+<LinearLayout
+    android:id="@+id/main"
+    android:layout_width="1280dp"
+    android:layout_height="800dp"
+    android:orientation="vertical"
+    android:background="@color/safety_black"
+    tools:context=".activitys.device.monitor.DeviceMonitoringActivity">
+
+    <!--&lt;!&ndash;状态栏&ndash;&gt;-->
+    <com.lasercyber.lws.ui.component.EquipmentStatusBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/engineer_equipment_status"
+        app:use_title="true"
+        app:bar_title="@string/work_title"
+        />
+
+    <!-- 引用公共Tab组件（置顶+占满行） -->
+    <com.lasercyber.lws.ui.component.layout.TopTabView
+        android:id="@+id/topTabView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:id="@+id/device_monitor_container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+
+</LinearLayout>
+</layout>

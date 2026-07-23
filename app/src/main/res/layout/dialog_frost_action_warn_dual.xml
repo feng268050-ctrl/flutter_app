@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/frost_dialog_prompt_content_inset"
+    android:paddingEnd="@dimen/frost_dialog_prompt_content_inset">
+
+    <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+        android:id="@+id/btn_confirm"
+        style="@style/FrostPromptConfirmButton"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/frost_action_button_height"
+        android:layout_weight="1"
+        android:text="@string/confirm_text" />
+
+    <View
+        android:id="@+id/btn_jump_divider"
+        android:layout_width="1dp"
+        android:layout_height="@dimen/frost_action_button_height"
+        android:background="#E0E0E0" />
+
+    <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+        android:id="@+id/btn_jump"
+        style="@style/FrostPromptConfirmButton"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/frost_action_button_height"
+        android:layout_weight="1"
+        android:text="@string/zero_point_offset_alert_go_settings" />
+</LinearLayout>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.lasercyber.lws.ui.component.AppScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/frost_dialog_readonly_parameter_scroll"
+    style="@style/app_vertical_scroll_view_style"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:overScrollMode="never"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp">
+
+    <com.lasercyber.lws.ui.component.layout.InsetList
+        android:id="@+id/frost_dialog_readonly_parameter_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+</com.lasercyber.lws.ui.component.AppScrollView>

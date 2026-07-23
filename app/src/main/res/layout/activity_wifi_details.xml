@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="1280dp"
+        android:layout_height="800dp"
+        android:background="@color/safety_black"
+        android:orientation="vertical"
+        tools:context=".activitys.other.WifiDetailsActivity">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:background="@mipmap/job_border1"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/go_to_up_page"
+                android:layout_width="200dp"
+                android:layout_height="72dp">
+
+                <TextView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginLeft="30sp"
+                    android:layout_marginTop="20dp"
+                    android:background="@mipmap/top_page_icon"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:textSize="24dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="-200dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/wifi_details_title"
+                android:textColor="@color/white"
+                android:textSize="29sp" />
+        </LinearLayout>
+
+        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="24dp"
+            android:orientation="vertical"
+            android:padding="0dp"
+            app:borderGradientCenter="top-left-bottom-right"
+            app:frostedGlassBlurIntensity="transparent">
+
+            <com.lasercyber.lws.ui.component.AppScrollView
+                style="@style/app_vertical_scroll_view_style"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false">
+
+                <com.lasercyber.lws.ui.component.layout.InsetList
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/wifi_ip_mode" />
+
+                        <TextView
+                            android:id="@+id/tv_value_ip_mode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/wifi_ip_address" />
+
+                        <TextView
+                            android:id="@+id/tv_value_ip_address"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/wifi_subnet_mask" />
+
+                        <TextView
+                            android:id="@+id/tv_value_subnet_mask"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/wifi_gateway" />
+
+                        <TextView
+                            android:id="@+id/tv_value_router"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/wifi_dns" />
+
+                        <TextView
+                            android:id="@+id/tv_value_dns"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/wifi_signal_strength" />
+
+                        <TextView
+                            android:id="@+id/tv_value_signal_strength"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/wifi_link_speed" />
+
+                        <TextView
+                            android:id="@+id/tv_value_link_speed"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/wifi_security" />
+
+                        <TextView
+                            android:id="@+id/tv_value_security_type"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/wifi_frequency" />
+
+                        <TextView
+                            android:id="@+id/tv_value_frequency"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/wifi_mac_address" />
+
+                        <TextView
+                            android:id="@+id/tv_value_mac"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+                </com.lasercyber.lws.ui.component.layout.InsetList>
+            </com.lasercyber.lws.ui.component.AppScrollView>
+        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="24dp"
+            android:orientation="horizontal">
+
+            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                android:id="@+id/btn_edit_ip"
+                android:layout_width="163dp"
+                android:layout_height="58dp"
+                android:layout_marginEnd="24dp"
+                android:gravity="center"
+                android:text="@string/wifi_ip_settings"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="29sp"
+                app:frostedGlassButtonVariant="default" />
+
+            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                android:id="@+id/btn_forget"
+                android:layout_width="163dp"
+                android:layout_height="58dp"
+                android:gravity="center"
+                android:text="@string/wifi_forget_network"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="29sp"
+                app:frostedGlassButtonVariant="secondary" />
+        </LinearLayout>
+    </LinearLayout>
+</layout>

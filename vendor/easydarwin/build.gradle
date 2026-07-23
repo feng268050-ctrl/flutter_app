@@ -1,0 +1,57 @@
+apply plugin: 'com.android.library'
+
+android {
+//    compileSdkVersion 26
+//    buildToolsVersion '28.0.3'
+    namespace = "org.easydarwin.video"
+    compileSdk 34
+
+    defaultConfig {
+//        minSdkVersion 19
+//        targetSdkVersion 26
+        minSdk 29
+        targetSdk 34
+
+        consumerProguardFiles 'proguard-rules.pro'
+
+        buildConfigField 'boolean', 'MEDIA_DEBUG', 'false'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    buildTypes {
+        release {
+//            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'library.pro'
+            ndk {
+                debugSymbolLevel = 'NONE' // 不生成调试符号
+            }
+        }
+    }
+    // 启用 BuildConfig 生成功能
+    buildFeatures {
+        buildConfig = true
+    }
+}
+
+//repositories {
+//    flatDir {
+//        dirs 'libs'
+//    }
+//    mavenCentral()
+//    google()
+//}
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "com.android.support:appcompat-v7:28.0.0"
+    implementation "com.android.support:support-v4:28.0.0"
+    // 添加 AndroidX 注解库
+    implementation 'androidx.annotation:annotation:1.6.0'
+    // 添加 AndroidX 生命周期库（根据需求选择模块）
+    implementation 'androidx.lifecycle:lifecycle-runtime:2.6.2'
+    // 若使用 LifecycleOwner 等接口，可能需要额外依赖
+    implementation 'androidx.lifecycle:lifecycle-common:2.6.2'
+    // 添加 AndroidX Core 库（包含 ContextCompat）
+    implementation 'androidx.core:core:1.10.1'
+}

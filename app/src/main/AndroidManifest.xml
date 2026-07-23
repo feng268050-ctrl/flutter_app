@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Core network/system -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- mDNS / DNS-SD 在部分机型上需要组播锁，否则可能不向 Wi-Fi 发送公告 -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.LOCAL_MAC_ADDRESS" />
+    <uses-permission android:name="android.permission.NETWORK_SETTINGS" />
+    <uses-permission android:name="android.permission.SET_TIME" />
+    <uses-permission android:name="android.permission.SET_TIME_ZONE" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.READ_HOME_APP_SEARCH_DATA" />
+    <uses-permission android:name="android.permission.ACCESS_SERIAL_PORT" />
+
+    <!-- Foreground service / background work -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Camera / audio -->
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Storage / media -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.WRITE_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
+    <!-- 访问约定公共目录（如 /sdcard/lws）；勿加 maxSdkVersion，否则 API 34+ 不会声明该权限 -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+
+    <!-- Bluetooth -->
+    <uses-feature
+        android:name="android.hardware.bluetooth"
+        android:required="true" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+
+    <!-- Location -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <application
+        android:name=".LaserApplication"
+        android:allowBackup="true"
+        android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:extractNativeLibs="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:hardwareAccelerated="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="34">
+        <activity
+            android:name=".activitys.device.monitor.AiVisionVideoChooseActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activitys.video.details.ProcessVideoDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activitys.dev.DevActivity"
+            android:exported="false" /> <!-- android:theme="@style/AppTheme.Dark" -->
+        <!-- 启动Activity -->
+        <activity
+            android:name=".activitys.SplashActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme.Splash"> <!-- 启动专属Theme -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".MainActivity"
+            android:exported="false">
+
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.intent.action.MAIN" /> -->
+            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+            <!-- </intent-filter> -->
+        </activity>
+        <activity
+            android:name=".activitys.quick.mode.QuickModeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activitys.engineer.mode.EngineerModeActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustNothing|stateHidden" />
+        <activity
+            android:name=".activitys.SafetyTipsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activitys.other.WifiActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activitys.other.WifiDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activitys.other.WifiIpSettingsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustNothing|stateHidden" />
+        <!--
+<activity
+            android:name=".activitys.other.TimeSettingActivity"
+            android:exported="false" />
+        -->
+        <activity
+            android:name=".activitys.other.UpgradeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activitys.UseSafetyTipsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activitys.setting.HttpProxySettingsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustNothing|stateHidden" />
+        <activity
+            android:name=".activitys.setting.DeviceSettingActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustNothing|stateHidden" />
+        <activity
+            android:name=".activitys.device.monitor.DeviceMonitoringActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activitys.other.BluetoothManagerActivity"
+            android:exported="false" />
+
+        <service
+            android:name=".common.sysservice.RecordService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
+        <!-- FileProvider配置 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <receiver
+            android:name=".common.handler.DemoAlarmReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.lasercyber.lws.ui.action.DEMO_ALARM" />
+                <action android:name="com.lasercyber.lws.ui.action.DEMO_ALARM_CLEAN" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".common.handler.DemoSafetyGroundLockReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.lasercyber.lws.ui.action.DEMO_SAFETY_GROUND_LOCK" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".common.handler.SyncFirmwareReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.lasercyber.lws.ui.action.SYNC_FIRMWARE" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

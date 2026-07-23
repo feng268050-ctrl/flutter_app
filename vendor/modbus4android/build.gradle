@@ -1,0 +1,42 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdk 34
+    namespace = "com.licheedev.modbus4android"
+
+    defaultConfig {
+        minSdk 29
+        targetSdk 34
+        versionCode 3
+        versionName "3.0.0"
+
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    api fileTree(dir: 'libs', include: ['*.jar'])
+
+    testImplementation 'junit:junit:4.13'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+
+    // 串口
+    api 'com.licheedev:android-serialport:2.1.4'
+    // modbus4j
+//    api 'com.github.licheedev:modbus4j:3.1.1-alpha1'
+    api(project(":vendor:modbus4j"))
+}
+
+//apply from: '../jitpack.gradle'

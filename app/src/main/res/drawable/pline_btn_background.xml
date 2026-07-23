@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+<!--    启用状态-->
+    <item android:state_enabled="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF2C1923" />
+            <corners android:radius="@dimen/engineer_toggle_btn_corner_radius" />
+        </shape>
+    </item>
+    <!--    禁用状态-->
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF191022" />
+            <corners android:radius="@dimen/engineer_toggle_btn_corner_radius" />
+        </shape>
+    </item>
+</selector>

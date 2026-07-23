@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <!--    侧边栏未激活的颜色-->
+    <color name="side_tab_not_active_color">#909399</color>
+    <!--    侧边栏激活的颜色-->
+    <color name="side_tab_active_color">#67C23A</color>
+    <!--    侧边栏的横线-->
+    <color name="side_tab_line_color">#67C23A</color>
+    <!--    选择的spinner颜色-->
+    <color name="spinner_select_color">#409EFF</color>
+</resources>

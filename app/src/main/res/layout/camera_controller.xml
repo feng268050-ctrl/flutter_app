@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+        <variable
+            name="modelType"
+            type="java.lang.Integer" />
+
+        <import type="com.lasercyber.lws.ui.common.constant.ModelConstant" />
+
+        <variable
+            name="isRecord"
+            type="java.lang.Boolean" />
+
+        <variable
+            name="isRecordPreparing"
+            type="java.lang.Boolean" />
+
+        <variable
+            name="recordingDuration"
+            type="java.lang.String" />
+
+        <variable
+            name="cameraCommAvailable"
+            type="java.lang.Boolean" />
+
+        <import type="android.view.View" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/camera_controller_root"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <com.lasercyber.lws.frostui.control.interop.FrostCheckboxView
+            android:id="@+id/record_working_checkbox"
+            style="@style/FrostCheckbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            app:labelText="@string/record_working_text"
+            app:labelTextColor="@color/white"
+            app:labelTextSize="@dimen/text_size_16" />
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:visibility="@{(isRecord == Boolean.TRUE || isRecordPreparing == Boolean.TRUE) ? View.VISIBLE : View.GONE}">
+
+            <com.lasercyber.lws.ui.component.CameraRecordPreparingRingView
+                android:id="@+id/camera_record_preparing_spinner"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:visibility="@{isRecordPreparing == Boolean.TRUE ? View.VISIBLE : View.GONE}" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_gravity="center_vertical"
+                android:background="@{(modelType==ModelConstant.WELD_CLEAN||modelType==ModelConstant.WIDTH_CLEAN)?@drawable/camera_time_green_box:modelType==ModelConstant.HAND_CUT?@drawable/camera_time_blue_box:@drawable/camera_time_orange_box}"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:visibility="@{isRecord == Boolean.TRUE ? View.VISIBLE : View.GONE}">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@{recordingDuration}"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/text_size_16" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+</layout>

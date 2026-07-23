@@ -1,0 +1,1114 @@
+<resources>
+    <string name="app_name">激光</string>
+    <string name="device_monitor_title">设备监测</string>
+    <string name="device_monitor_work_info_title">工作信息</string>
+    <string name="device_monitor_machine_status_title">机台状态</string>
+    <string name="device_monitor_warn_info_title">告警信息</string>
+    <string name="call_back_home_title">回到主页</string>
+    <string name="warn_info_light_time">出光总时长</string>
+    <string name="warn_info_light_time_info">较上周使用情况</string>
+    <string name="warn_info_welding_consumables">焊接耗材总计</string>
+    <string name="warn_info_welding_consumables_info">常用耗材</string>
+    <string name="warn_info_last_work">工作时长</string>
+    <string name="welding_proportion_text">焊接占比</string>
+    <string name="cutting_proportion_text">切割占比</string>
+    <string name="wash_proportion_text">清洗占比</string>
+    <string name="laser_text">激光</string>
+    <string name="blow_text">通气状态</string>
+    <string name="safety_lock_text">安全地锁</string>
+    <string name="gun_head_switch_text">激光枪开关</string>
+    <string name="red_light_text">红光</string>
+    <string name="wire_feeding_text">送丝</string>
+    <string name="machine_blow_title">吹气</string>
+    <string name="machine_blow_content">气压</string>
+    <string name="machine_pump_title">泵源</string>
+    <string name="machine_pump_content">当前</string>
+    <string name="machine_laser_current_title">激光</string>
+    <string name="machine_laser_current_content">电流</string>
+    <string name="pump_current_text">泵源电流</string>
+    <string name="blowing_air_pressure_text">吹气气压</string>
+    <string name="pump_board_temperature_text">泵源板温度</string>
+    <string name="pump_status_text">泵源通讯状态</string>
+    <string name="pump_temperature_text">泵源温度</string>
+    <string name="current_alarm_text">电流报警</string>
+    <string name="red_light_current_text">红光电流</string>
+    <string name="front_light_pd_voltage_text">前向光PD电压</string>
+    <string name="gun_head_communication_text">枪头通讯状态</string>
+    <string name="camera_comm_status_text">摄像头通讯状态</string>
+    <string name="motor_driver_temperature_text">电机驱动板温度</string>
+    <string name="protective_mirror_temperature_text">保护镜温度</string>
+    <string name="collimator_temperature_text">聚焦镜温度</string>
+    <string name="environment_temperature_text">环境温度</string>
+    <string name="wire_feeding_machine_communication_text">送丝机通讯状态</string>
+    <string name="device_setting_text">设备设置</string>
+    <string name="quick_mode_text">快速模式</string>
+    <string name="remote_lock_dialog_title">设备已远程锁定</string>
+    <string name="remote_lock_dialog_message">该设备已被远程锁定，作业功能不可用，请联系所有者进行解锁。</string>
+    <string name="remote_process_param_received_title">接收工艺参数</string>
+    <string name="engineer_mode_text">工程师模式</string>
+    <string name="more_parameters_text">更多参数</string>
+    <string name="record_working_text">作业录制</string>
+    <string name="welding_ramp_chart_text">爬坡图</string>
+    <string name="engineer_bottom_switch_page_cd">切换底部控制</string>
+    <string name="engineer_bottom_hidden_active_cd">隐藏页有已启用功能</string>
+    <string name="empty_text"></string>
+    <string name="device_information_text">设备信息</string>
+    <string name="network_setting_text">网络设置</string>
+    <string name="screen_display_text">屏幕显示</string>
+    <string name="advanced_setting_text">高级设置</string>
+    <string name="cellular_network_text">蜂窝网络</string>
+    <string name="not_connecting_text">未连接</string>
+    <string name="connected_text">已连接</string>
+    <string name="wifi_network_text">无线网络</string>
+    <string name="wifi_details_title">无线网络详情</string>
+    <string name="wifi_ip_address">IP 地址</string>
+    <string name="wifi_subnet_mask">子网掩码</string>
+    <string name="wifi_router">路由器</string>
+    <string name="wifi_gateway">网关</string>
+    <string name="wifi_dns">DNS</string>
+    <string name="wifi_dns1">DNS 1</string>
+    <string name="wifi_dns2">DNS 2</string>
+    <string name="wifi_ip_mode">IP 模式</string>
+    <string name="wifi_ip_mode_dhcp">DHCP</string>
+    <string name="wifi_ip_mode_static">静态</string>
+    <string name="wifi_ip_settings">IP 设置</string>
+    <string name="wifi_ip_settings_hide">收起 IP 设置</string>
+    <string name="wifi_apply">应用</string>
+    <string name="wifi_advanced_settings">IP 设置</string>
+    <string name="wifi_advanced_settings_hide">收起 IP 设置</string>
+    <string name="wifi_edit_ip_config">编辑 IP 配置</string>
+    <string name="wifi_edit_ip_success">IP 配置已保存</string>
+    <string name="wifi_static_ip_invalid">静态 IP 配置无效</string>
+    <string name="wifi_static_ip_incomplete">请填写所有必填的静态 IP 字段</string>
+    <string name="wifi_static_ip_gateway_subnet">网关必须与 IP 在同一子网</string>
+    <string name="wifi_static_ip_conflict">IP 地址与其他网络接口冲突</string>
+    <string name="http_proxy_title">HTTP 代理</string>
+    <string name="wifi_signal_strength">信号强度</string>
+    <string name="wifi_link_speed">链路速率</string>
+    <string name="wifi_security">安全类型</string>
+    <string name="wifi_frequency">频段</string>
+    <string name="wifi_mac_address">MAC 地址</string>
+    <string name="wifi_not_available">不可用</string>
+    <string name="wifi_ip_field_enter_hint">请输入 %1$s</string>
+    <string name="wifi_forget_network">忘记此网络</string>
+    <string name="wifi_forget_confirm_message">是否忽略此网络并断开连接？</string>
+    <string name="wifi_forget_success">已忽略该网络</string>
+    <string name="wifi_forget_partial_failed">忽略网络未完全成功</string>
+    <string name="wifi_open_system_settings_hint">该网络由系统无线网络管理，请打开系统设置完成彻底忽略。</string>
+    <string name="wifi_wlan_label">无线局域网</string>
+    <string name="wifi_status_connected">已连接</string>
+    <string name="wifi_status_not_connected">未连接</string>
+    <string name="wifi_status_connecting">正在连接，请稍候…</string>
+    <string name="wifi_dialog_password_label">密码</string>
+    <string name="wifi_dialog_connect">连接</string>
+    <string name="wifi_dialog_show_password">显示密码</string>
+    <string name="wifi_dialog_hide_password">隐藏密码</string>
+    <string name="wifi_join_ssid_format">加入 \"%1$s\"</string>
+    <string name="wifi_list_standard_format">WiFi %1$s</string>
+    <string name="wifi_toast_connected_success">连接成功。</string>
+    <string name="wifi_toast_connection_failed">连接失败。</string>
+    <string name="wifi_toast_requires_system_privilege">需要系统级无线网络权限，请以特权系统应用安装。</string>
+    <string name="wifi_toast_password_required">密码不能为空。</string>
+    <string name="wifi_toast_ssid_required">网络名称不能为空。</string>
+    <string name="wifi_hidden_network_connect">连接隐藏网络</string>
+    <string name="wifi_hidden_network_title">连接隐藏网络</string>
+    <string name="wifi_dialog_ssid_label">网络名称</string>
+    <string name="wifi_security_open">开放</string>
+    <string name="wifi_security_wpa2">WPA2</string>
+    <string name="wifi_security_wpa3">WPA3</string>
+    <string name="wifi_toast_wifi_disabled">无线网络未开启</string>
+    <string name="wifi_toast_profile_exists_connecting">无线网络配置已存在，正在尝试连接。</string>
+    <string name="wifi_toast_invalid_bssid">BSSID 格式无效。</string>
+    <string name="wifi_toast_details_only_when_connected">仅已连接的无线网络可查看详情。</string>
+    <string name="wifi_toast_no_connection_details">无已连接无线网络详情。</string>
+    <string name="wifi_toast_profile_saved_use_system">配置已保存，请在系统无线网络列表中连接。</string>
+    <string name="wifi_toast_added_connecting">无线网络已添加，正在连接…</string>
+    <string name="wifi_toast_add_canceled_by_system">系统已取消添加无线网络。</string>
+    <string name="wifi_init_dialog_title">设置无线网络</string>
+    <string name="wifi_init_dialog_message">当前未连接无线网络，请先连接无线网络完成初始化。</string>
+    <string name="wifi_init_dialog_confirm">前往设置</string>
+    <string name="boot_self_check_dialog_title">开机自检</string>
+    <string name="boot_self_check_controller_comm">控制器通讯状态</string>
+    <string name="boot_self_check_status_checking">检测中…</string>
+    <string name="boot_self_check_status_pass">正常</string>
+    <string name="boot_self_check_status_fail">异常</string>
+    <string name="boot_self_check_status_skipped">跳过</string>
+    <string name="boot_self_check_dont_show_again">以后不再显示</string>
+    <string name="boot_self_check_close">关闭</string>
+    <string name="advanced_setting_show_boot_self_check">显示开机自检</string>
+    <string name="common_settings_show_safety_ground_lock_alarm">显示安全地锁告警</string>
+    <string name="bind_device_dialog_title">绑定本设备</string>
+    <string name="bind_device_dialog_subtitle">在 LaserCyber App 中查找设备或扫描二维码</string>
+    <string name="ws_register_device_dialog_title">注册本设备</string>
+    <string name="ws_register_device_dialog_message">系统无法识别此设备，请使用 LaserCyber App 扫描二维码完成注册。</string>
+    <string name="ws_register_device_reconnect">重新连接</string>
+    <string name="wifi_error_too_many_profiles">本应用保存的无线网络配置过多。</string>
+    <string name="wifi_error_duplicate_profile">无线网络配置已存在。</string>
+    <string name="wifi_error_add_not_allowed">系统拒绝此请求，请允许本应用添加无线网络建议。</string>
+    <string name="wifi_error_internal">保存无线网络配置时发生系统内部错误。</string>
+    <string name="wifi_error_remove_invalid">无效的已保存无线网络配置。</string>
+    <string name="wifi_error_save_failed_format">保存无线网络配置失败（代码 %1$d）。</string>
+    <string name="bluetooth_text">蓝牙</string>
+    <string name="bluetooth_not_supported_text">本设备不支持蓝牙</string>
+    <string name="bluetooth_opened_text">蓝牙已开启</string>
+    <string name="bluetooth_closed_text">蓝牙已关闭</string>
+    <string name="bluetooth_open_failed_text">蓝牙开启失败</string>
+    <string name="bluetooth_close_failed_text">蓝牙关闭失败</string>
+    <string name="screen_brightness_text">屏幕亮度</string>
+    <string name="volume_setting_text">音量</string>
+    <string name="volume_set_failed">音量设置失败</string>
+    <string name="color_mode_text">色彩模式</string>
+    <string name="please_color_mode_text">请选择色彩模式</string>
+    <string name="screen_off_time_text">息屏时间</string>
+    <string name="please_screen_off_time_text">请选择息屏时间</string>
+    <string name="night_mode_text">夜间模式</string>
+    <!--    色彩模式选项-->
+    <string-array name="color_mode_option">
+        <item>标准模式</item>
+        <item>专业模式</item>
+        <item>显眼模式</item>
+    </string-array>
+    <string-array name="color_mode_option_data">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+    <!--    息屏时间选项-->
+    <string-array name="screen_off_time_option">
+        <item>5分钟</item>
+        <item>10分钟</item>
+        <item>15分钟</item>
+        <item>30分钟</item>
+        <item>60分钟</item>
+    </string-array>
+    <string-array name="screen_off_time_option_data">
+        <item>10</item>
+        <item>30</item>
+        <item>60</item>
+        <item>9999</item>
+    </string-array>
+
+    <!--材料类型的枚举-->
+    <string-array name="materials_type_option_data">
+        <item>不锈钢</item>
+        <item>碳钢</item>
+        <item>镀锌板</item>
+        <item>铝合金</item>
+        <item>黄铜</item>
+        <item>自定义</item>
+    </string-array>
+
+    <string name="alarm_info_laser_device">激光设备</string>
+    <string name="alarm_info_welding_gun">焊枪</string>
+    <string name="alarm_info_wire_feeder">送丝机</string>
+    <string name="device_monitor_home_title">监测</string>
+    <string name="device_setting_home_text">设置</string>
+    <string name="language_setting_text">语言</string>
+    <string name="language_option_english">English</string>
+    <string name="language_option_chinese">简体中文</string>
+    <string name="unit_option_imperial">IN</string>
+    <string name="unit_option_metric">MM</string>
+    <string name="screen_off_option_10_min">10 分钟</string>
+    <string name="screen_off_option_30_min">30 分钟</string>
+    <string name="screen_off_option_60_min">60 分钟</string>
+    <string name="sound_effect_option_1">音效 1</string>
+    <string name="sound_effect_option_2">音效 2</string>
+    <string name="sound_effect_option_3">音效 3</string>
+    <string name="never_text">永不</string>
+    <string-array name="language_setting_option">
+        <item>简体中文</item>
+        <item>英语</item>
+    </string-array>
+    <string-array name="language_setting_data">
+        <item>zh-CN</item>
+        <item>en-US</item>
+    </string-array>
+    <string name="unit_setting_text">单位</string>
+    <string name="zero_point_correction_text">零点较正</string>
+    <string name="please_zero_point_correction_text">请输入零点较正</string>
+    <string name="proper_swing_width_text">摆宽较正</string>
+    <string name="please_proper_swing_width_text">请输入摆宽较正</string>
+    <string name="laser_start_power_text">激光起始功率</string>
+    <string name="please_laser_start_power_text">请输入激光起始功率</string>
+    <string name="laser_end_power_text">激光终止功率</string>
+    <string name="please_laser_end_power_text">请输入激光终止功率</string>
+    <string name="blow_pressure_threshold_text">最低气压阈值</string>
+    <string name="sound_effect_check">音效</string>
+    <string name="please_blow_pressure_threshold_text">请输入最低气压阈值</string>
+    <string name="inlet_gas_pressure_threshold_text">进气气压阈值</string>
+    <string name="driver_temperature_alarm_threshold_text">驱动器温度报警阈值</string>
+    <string name="protective_lens_temperature_alarm_threshold_text">保护镜温度报警阈值</string>
+    <string name="collimating_lens_temperature_alarm_threshold_text">聚焦镜温度报警阈值</string>
+    <string name="motor_temperature_alarm_threshold_text">电机温度报警阈值</string>
+    <string name="temperature_alarm_recovery_interval_text">温度报警恢复差值</string>
+    <string name="device_model">设备型号</string>
+    <string name="firmware_version">机器固件版本号</string>
+    <string name="gun_sn">枪头SN</string>
+    <string name="laser_version">激光器版本</string>
+    <string name="system_version">系统版本</string>
+    <string name="select_app_env">选择运行环境</string>
+    <string name="app_env_dev">开发</string>
+    <string name="app_env_test">测试</string>
+    <string name="app_env_prod">生产</string>
+    <string name="app_env_changed">运行环境已更新，探测完成后将使用新的接口地址。</string>
+    <string name="adb_remote_debug_enabled">已开启 ADB 远程调试（端口 %1$d），可使用 adb connect 连接。</string>
+    <string name="adb_remote_debug_failed">开启 ADB 远程调试失败。</string>
+    <string name="process_lib_version">工艺库版本</string>
+    <string name="device_sn">设备SN</string>
+    <string name="wire_feeder_version">送丝机版本</string>
+    <string name="camera_version">摄像头版本</string>
+    <string name="focus_scale_reference">对焦刻度参考值</string>
+    <string name="check_update">检查更新</string>
+    <!-- 设备状态栏文本 -->
+    <string name="gun_switch_on">枪头开关导通</string>
+    <string name="safety_lock_on">安全地锁导通</string>
+    <string name="vent_status">通气状态</string>
+    <string name="emergency_stop">急停状态</string>
+    <string name="btn_feed_text">送丝</string>
+    <string name="btn_retract">退丝</string>
+    <string name="btn_feed_enable">自动送丝</string>
+    <string name="btn_manual_gas">手动送气</string>
+    <string name="btn_laser_enable">激光开启</string>
+    <!--    激光切割-->
+    <string name="laser_cutting_text">激光切割</string>
+    <string name="hand_cutting_text">切割</string>
+    <string name="cnc_cutting_text">CNC切割</string>
+    <!--    激光清洗-->
+    <string name="laser_cleaning_text">激光清洗</string>
+    <string name="weld_cleaning_text">焊道清洗</string>
+    <string name="width_cleaning_text">宽幅清洗</string>
+    <!--    激光焊接-->
+    <string name="laser_welding_text">激光焊接</string>
+    <string name="continuous_welding_text">连续焊接</string>
+    <string name="point_welding_text">点焊</string>
+
+    <!--全局提示弹窗:-->
+    <string name="connection_fail">连接失败!</string><!--连接失败-->
+    <string name="connection_fail_info">请确认密码及网络状态.</string>
+    <string name="api_origin_probe_failed">无法连接云服务，请检查网络</string>
+    <string name="please_wait">请等待片刻.</string><!--请稍后-->
+    <string name="complete_operation">操作完成</string><!--操作完成-->
+    <string name="Value_Rollback">数值回退</string><!--数值回退-->
+
+    <string name="back_home">返回主页</string>
+    <string name="mode_switch">模式切换</string>
+    <string name="current_process_parameter_name">当前工艺参数名称</string>
+    <string name="laser_on_text">激光开启</string>
+    <string name="parameter_import_text">参数导入</string>
+    <string name="welding_materials_text">焊接材料</string>
+    <string name="welding_thickness_text">焊接厚度</string>
+    <string name="spot_welding_interval_t1_text">点焊间隔</string>
+    <string name="continuous_spot_welding_t2_text">点焊持续</string>
+    <string name="welding_power_text">焊接功率</string>
+    <string name="swing_frequency_text">摆动频率</string>
+    <string name="welding_width_text">焊接宽度</string>
+    <string name="off_light_delay_text">关光延时</string>
+    <string name="blow_delay_text">吹气延时</string>
+    <string name="air_shut_off_delay_text">关气延时</string>
+    <string name="reset_to_default_data_text">重置为默认</string>
+    <string name="set_commonly_used_parameter_text">保存为常用</string>
+    <string name="confirm_text">确定</string>
+    <string name="cancel_text">取消</string>
+    <string name="ok_text">OK</string>
+    <string name="stainless_steel_text">不锈钢</string>
+    <string name="carbon_steel_text">碳钢</string>
+    <string name="galvanized_sheet_text">镀锌板</string>
+    <string name="aluminum_alloy_text">铝合金</string>
+    <string name="brass_text">黄铜</string>
+    <string name="customize_text">自定义</string>
+    <string name="currently_selected_material_text">当前选择材料</string>
+    <string name="please_select_welding_material">请选择焊接材料</string>
+    <string name="cleaning_materials_text">清洗材料</string>
+    <string name="swing_width_text">摆动宽度</string>
+    <string name="laser_power_text">激光功率</string>
+    <string name="slow_rise_duration_text">缓升时长</string>
+    <string name="slow_descent_duration_text">缓降时长</string>
+    <string name="cutting_materials_text">切割材料</string>
+    <string name="cutting_thickness_text">切割厚度</string>
+    <string name="laser_frequency_text">激光频率</string>
+    <string name="laser_duty_cycle_text">激光占空比</string>
+    <string name="perforation_frequency_text">穿孔频率</string>
+    <string name="perforation_duration_text">穿孔时长</string>
+    <string name="turn_laster_dailog_title">重要提醒</string>
+    <string name="turn_laster_dailog_confirm">是，我已经做好激光防护措施</string>
+    <string name="turn_laster_dailog_cancel">否，我还未进行防护措施</string>
+    <string name="turn_laster_dailog_end_work">结束工作</string>
+
+
+    <!--错误故障-->
+    <string-array name="warn_code">
+        <item>S028</item>
+        <item>E001</item>
+        <item>E002</item>
+        <item>E004</item>
+        <item>E005</item>
+        <item>E006</item>
+        <item>E007</item>
+        <item>E008</item>
+        <item>E009</item>
+        <item>E010</item>
+        <item>E011</item>
+        <item>E012</item>
+        <item>E013</item>
+        <item>E014</item>
+        <item>E016</item>
+        <item>E017</item>
+        <item>E018</item>
+        <item>E019</item>
+        <item>E020</item>
+        <item>E021</item>
+        <item>E022</item>
+        <item>C003</item>
+        <item>C004</item>
+        <item>E905</item>
+        <item>E906</item>
+        <item>E907</item>
+        <item>E908</item>
+        <item>E909</item>
+        <item>E910</item>
+        <item>E911</item>
+        <item>E912</item>
+        <item>E917</item>
+        <item>E918</item>
+    </string-array>
+
+    <string-array name="warn_text">
+        <item>激光器锁定</item>
+        <item>模组通讯故障</item>
+        <item>模组故障</item>
+        <item>保留</item>
+        <item>AD板通讯故障</item>
+        <item>二极体模块超温</item>
+        <item>驱动模块超温</item>
+        <item>水温超温</item>
+        <item>光纤温度超温</item>
+        <item>激光反射能量超上限</item>
+        <item>激光输出能量超下限</item>
+        <item>二极体短路故障</item>
+        <item>光纤断开</item>
+        <item>超湿</item>
+        <item>急停</item>
+        <item>气压故障</item>
+        <item>窄脉冲</item>
+        <item>驱动板过压</item>
+        <item>内部温度故障</item>
+        <item>驱动短路</item>
+        <item>故障锁定</item>
+        <item>主控板与温控板通讯故障</item>
+        <item>温控板与制冷系统通讯故障</item>
+        <item>DC电压过低</item>
+        <item>DC电压过高</item>
+        <item>温度传感器过温</item>
+        <item>温度传感器异常</item>
+        <item>通信异常</item>
+        <item>AC欠相或CT短线</item>
+        <item>AC电流过流或压缩机过功率</item>
+        <item>AC输入电压过低</item>
+        <item>二极体温度传感器故障</item>
+        <item>环境温度故障</item>
+    </string-array>
+
+    <string name="def_warn_text">故障告警</string>
+    <string name="parameter_process_text">参数工艺</string>
+    <string name="retract_length_text">回抽长度</string>
+    <string name="retract_speed_text">回抽速度</string>
+    <string name="fill_length_text">补丝长度</string>
+    <string name="fill_delay_text">补丝延时</string>
+    <string name="power_ramp_up_text">功率缓升</string>
+    <string name="power_ramp_down_text">功率缓降</string>
+    <string name="wire_feed_speed_text">送丝速度</string>
+    <string name="wire_feeding_delay_text">送丝延时</string>
+    <string name="red_light_offset_text">红光偏移</string>
+    <string name="please_red_light_offset_text">请输入红光偏移</string>
+    <string name="swing_speed_upper_limit_text">摆速区间上限</string>
+    <string name="please_swing_speed_upper_limit_text">请输入摆速区间上限</string>
+    <string name="swing_speed_lower_limit_text">摆速区间下限</string>
+    <string name="please_swing_speed_lower_limit_text">请输入摆速区间下限</string>
+    <string name="manual_wire_feed_speed_text">手动送丝速度</string>
+    <string name="please_manual_wire_feed_speed">请输入手动送丝速度</string>
+    <string name="manual_draw_string_speed_text">手动抽丝速度</string>
+    <string name="please_manual_draw_string_speed">请输入手动抽丝速度</string>
+    <string name="perforation_power_text">穿孔功率</string>
+    <string name="perforation_duty_cycle_text">穿孔占空比</string>
+    <string name="gun_motor_temp_text">电机温度</string>
+    <!-- 功率缓升 (T2) -->
+    <string name="power_ramp_up_desc">设置脉冲模式下的激光上升时间。0–1000 ms</string>
+
+    <!-- 焊接功率 (P) -->
+    <string name="welding_power_desc">100% 功率表示设备额定最大功率。</string>
+
+    <!-- 功率缓降 (T3) -->
+    <string name="power_descent_desc">设置脉冲模式下的激光下降时间。0–1000 ms</string>
+
+    <!-- 关气延时 (T4) -->
+    <string name="air_off_delay_desc">设置激光关闭后延时关气的时间。0–10000 ms</string>
+
+    <!-- 摆动频率 -->
+    <string name="oscillation_frequency_desc">推荐的扫描频率范围：20–220 Hz</string>
+
+    <!-- 焊接宽度 -->
+    <string name="weld_width_desc">设置激光扫描宽度，可选范围：%1$s–%2$s %3$s。</string>
+
+    <!-- 送丝速度（代码前拼接 “0–50 mm/s” 等，此处只写说明） -->
+    <string name="wire_feeding_speed_desc">送丝线速度可调范围：%1$s–%2$s %3$s。</string>
+
+    <!-- 关光延时 -->
+    <string name="shutdown_delay_desc">设置停止送丝与关闭激光之间的延时，用于切断焊丝。0–1000 ms</string>
+
+    <!-- 回抽长度（代码后拼接范围） -->
+    <string name="pullback_length_desc">设置焊丝回抽长度；焊接完成后的回抽距离，可选范围：%1$s–%2$s %3$s。</string>
+
+    <!-- 回抽速度（代码后拼接范围） -->
+    <string name="pullback_speed_desc">设置回抽速度；过慢不利于自动断丝，可选范围：%1$s–%2$s %3$s。</string>
+
+    <!-- 补丝长度（代码后拼接范围） -->
+    <string name="wire_length_desc">设置补丝长度；建议焊丝端部对齐红光指示位置，长度范围：%1$s–%2$s %3$s。</string>
+
+    <!-- 补丝延时 -->
+    <string name="repair_wire_delay_desc">设置补丝延时；回抽结束至再次送丝前的等待时间，可减少二次粘丝。0–1000 ms</string>
+    <string name="call_back_to_home">返回\n首页</string>
+    <string name="call_back_to_quick_mode">返回\n快速模式</string>
+    <string name="key_switch_text">钥匙</string>
+
+
+    <string name="safety_tips_title">安全操作提示</string>
+    <string name="safety_tips_content">
+        1. 焊接过程中，请确保周围没有其他人员、反光物体或易燃材料。
+        \n\n2. 请确保安全夹牢固夹在焊接工作台上；不要将安全锁夹在焊枪支架、喷嘴、送丝组件等部位。
+        \n\n3. 请佩戴专业防护眼镜、口罩、耳塞以及耐高温手套。
+        \n\n4. 在安装和调试设备时，激光操作结束后务必将激光切换到关闭位置。
+        \n\n5. 请确保设备已正确接地；接地回路任一环节中断都可能造成人身伤害。
+        \n\n6. 请确保过滤装置通风良好，并及时清除异物或污垢。
+    </string>
+    <string name="safety_tips_info">我已阅读以上内容和</string>
+    <string name="safety_tips_info_use">产品使用免责声明。</string>
+    <string name="safety_operation">占位文本 占位文本 占位文本</string>
+    <string name="safety_tips_agree">同意</string>
+
+    <string name="use_safety_tips_title">产品免责声明</string>
+    <string name="use_safety_tips_info">我已阅读并同意以上内容</string>
+
+    <string name="use_safety_tips_content">
+     尊敬的用户：感谢您选择我们的手持激光焊接产品。在使用本产品前，我们强烈建议您仔细阅读本免责声明，并严格遵守用户手册中的所有说明和安全措施。
+    \n\n1. 安全警告
+        \n激光设备可能对眼睛和皮肤造成严重伤害。在操作过程中，请始终佩戴适当的个人防护装备（PPE），包括但不限于激光防护眼镜和手套，以确保您的安全。
+    \n\n2. 操作说明
+         \n请确保您已充分理解并能够遵守产品手册中的所有操作流程和安全指南。使用不当可能导致设备损坏或人身伤害。
+    \n\n3. 不当操作
+        \n对于用户未遵循产品手册中的说明或未采取适当安全措施而导致的任何伤害或损失，本公司概不负责。
+    \n\n4. 维护
+        \n请定期检查并维护产品，以确保其处于良好工作状态。由于产品维护不当造成的任何事故，本公司不承担责任。
+    \n\n5. 责任免责声明
+        \n虽然本公司提供了全面的使用说明和安全措施，但对于因用户操作不当或违反手册规定而造成的任何伤害或损坏，本公司保留免责权利。我们强烈建议用户在使用本产品前，充分了解并遵守所有相关安全法规和操作标准。
+    \n\n6. 适用法律
+        \n本免责声明的解释、适用和争议解决，应受本公司总部所在地法律管辖。
+    \n\n7. 完整协议
+        \n本免责声明构成您与本公司之间的完整协议，并取代此前任何口头或书面理解或协议。   </string>
+
+    <!--弹窗提示框-->
+    <string name="dialog_main_title">工程师模式提示</string>
+    <string name="dialog_main_info">工程师模式将开放高级参数自定义功能，适合有经验的用户进行精细调节；建议在充分了解设备工作机制后再进行操作。</string>
+    <string name="dialog_main_commit_text">本次会话不再提醒</string>
+    <string name="dialog_main_button_text">确认进入</string>
+    <string name="p_text">(P)</string>
+    <string name="t2_text">(T2)</string>
+    <string name="t4_text">(T4)</string>
+
+    <!--设备监测-->
+    <string name="work_title">工作信息</string> <!--工作信息-->
+    <string name="machine_title">机台状态</string> <!--机台状态-->
+    <string name="alarm_title">告警信息</string> <!--告警信息-->
+    <string name="custom_title">自定义布局</string>
+    <string name="camera_title">相机</string>
+
+    <!--设备设置-->
+    <string name="network_settings">网络设置</string> <!--网络设置-->
+    <string name="bluetooth_settings">蓝牙设置</string> <!--蓝牙设置-->
+    <string name="screen_settings">屏幕设置</string> <!--屏幕设置-->
+    <string name="date_time_settings">日期和时间</string>
+    <string name="date_time_automatic">自动</string>
+    <string name="date_time_select_date">选择日期</string>
+    <string name="date_time_select_time">选择时间</string>
+    <string name="custom_home_page">自定义首页</string>
+    <string name="common_settings">通用设置</string>
+    <string name="common_settings_group_network">网络</string>
+    <string name="http_proxy_settings_title">HTTP 代理</string>
+    <string name="http_proxy_enable">启用代理</string>
+    <string name="http_proxy_host">主机</string>
+    <string name="http_proxy_host_hint">proxy.example.com</string>
+    <string name="http_proxy_port">端口</string>
+    <string name="http_proxy_port_hint">8080</string>
+    <string name="http_proxy_auth_type">认证方式</string>
+    <string name="http_proxy_auth_none">无</string>
+    <string name="http_proxy_auth_basic">Basic</string>
+    <string name="http_proxy_username">用户名</string>
+    <string name="http_proxy_password">密码</string>
+    <string name="http_proxy_test_connection">测试连接</string>
+    <string name="http_proxy_save">保存</string>
+    <string name="http_proxy_save_success">代理设置已保存</string>
+    <string name="http_proxy_test_success">连接成功</string>
+    <string name="http_proxy_test_failed">连接失败</string>
+    <string name="http_proxy_test_no_origin">无可用的 API 源进行测试</string>
+    <string name="http_proxy_status_off">关闭</string>
+    <string name="http_proxy_status_incomplete">开启（未完成）</string>
+    <string name="http_proxy_validation_host_required">请输入主机地址</string>
+    <string name="http_proxy_validation_port_invalid">端口必须为 1–65535</string>
+    <string name="http_proxy_validation_username_required">Basic 认证需要用户名</string>
+    <string name="common_settings_group_display_sound">显示与声音</string>
+    <string name="common_settings_group_date_time">日期与时间</string>
+    <string name="common_settings_group_misc">其他</string>
+    <string name="advanced_settings">高级设置</string>
+    <string name="advanced_settings_group_offset_correction">偏移与校正</string>
+    <string name="advanced_settings_group_power_thresholds">功率阈值</string>
+    <string name="advanced_settings_group_temperature_thresholds">温度阈值</string>
+    <string name="advanced_settings_group_ai_assistance">AI 辅助</string>
+    <string name="advanced_setting_lens_contamination_detection">镜片污染检测</string>
+    <string name="advanced_setting_zero_point_offset_detection">零点偏移检测</string>
+    <string name="advanced_settings_group_dangerous_operations">危险作业</string>
+    <string name="advanced_setting_keep_laser_on_while_alarmed">告警时保持出光</string>
+    <string name="advanced_setting_keep_laser_on_while_alarmed_hint">开启后，出光过程中出现告警时不会自动关光，告警弹窗仍会正常显示。仅应在明确风险可控时使用。</string>
+    <string name="advanced_setting_allow_work_after_camera_alarm">摄像头告警后允许作业</string>
+    <string name="advanced_setting_allow_work_after_camera_alarm_hint">摄像头通讯异常时将无法使用 AI 自动检测功能</string>
+    <string name="advanced_setting_allow_work_after_gas_alarm">保护气告警后允许作业</string>
+    <string name="advanced_setting_allow_work_after_gas_alarm_hint">保护气异常时强制允许出光可能会损坏您的设备，这个开关仅应在确定无影响时打开</string>
+    <string name="advanced_setting_allow_work_after_lens_contamination">保护镜脏污告警后允许作业</string>
+    <string name="advanced_setting_allow_work_after_lens_contamination_hint">保护镜脏污时强制允许出光可能会损坏您的设备，这个开关仅应在 AI 检测不准时打开</string>
+    <string name="advanced_setting_allow_work_after_feeder_alarm">送丝机告警后允许作业</string>
+    <string name="advanced_setting_allow_work_after_feeder_alarm_hint">送丝机异常时连续焊接模式将无法正常工作，但其他模式可以继续工作。</string>
+    <string name="device_information">设备信息</string> <!--设备信息-->
+    <string name="date_time_auto_date_time">自动设置日期和时间</string>
+    <string name="date_time_auto_time_zone">自动设置时区</string>
+    <string name="date_time_set_date">日期</string>
+    <string name="date_time_set_time">时间</string>
+    <string name="date_time_set_time_zone">时区</string>
+    <string name="date_time_select_time_zone">选择时区</string>
+    <string name="date_time_auto_sync_off">自动同步已关闭</string>
+    <string name="date_time_auto_sync_offline">网络不可用，等待同步</string>
+    <string name="date_time_auto_syncing">正在通过网络时间服务同步…</string>
+    <string name="date_time_auto_sync_ok">网络时间同步成功</string>
+    <string name="date_time_auto_sync_failed">网络时间服务不可用</string>
+    <string name="date_time_set_failed">日期或时间设置失败</string>
+    <string name="date_time_permission_denied">缺少系统级日期时间设置权限</string>
+    <string name="date_time_search_timezone_hint">搜索时区（例如 Asia/Shanghai）</string>
+
+    <!--设备更新升级-->
+    <string name="check_and_install_updates">检查并安装更新</string>
+    <string name="auto_check_ota_update">自动检查更新</string>
+    <string name="auto_ota_update_dialog_title">新版本可用</string>
+    <string name="auto_ota_update_dialog_message">新版本 %1$s 可用，请前往「设置」下载并安装更新。</string>
+    <string name="go_to_update">前往更新</string>
+
+    <string name="more_common_specs">更多常用工艺</string>
+    <string name="t1_text">(T1)</string>
+    <string name="mm_unit">mm</string><!--自定义布局-->
+    <string name="in_unit">in</string>
+    <string name="welding_power_cannot_be_empty">激光功率不能为空</string>
+    <string name="the_welding_power_must_be_greater_than_10">焊接功率必须大于 0%</string>
+    <string name="welding_power_cannot_exceed_100">焊接功率不能超过 100%</string>
+    <string name="perforation_power_cannot_be_empty">穿孔功率不能为空</string>
+    <string name="perforation_power_format_error">穿孔功率格式错误</string>
+    <string name="perforation_power_cannot_be_less_than_0">穿孔功率不能小于 0</string>
+    <string name="perforation_power_cannot_exceed_100">穿孔功率不能超过 100</string>
+    <string name="swing_frequency_cannot_be_empty">摆动频率不能为空</string>
+    <string name="swing_frequency_format_error">摆动频率格式错误</string>
+    <string name="clean_swing_frequency_cannot_be_less_than_20">清洗扫描频率不能小于 20</string>
+    <string name="clean_swing_frequency_cannot_exceed_200">清洗扫描频率不能超过 200</string>
+    <string name="weld_swing_frequency_cannot_be_less_than_0">扫描频率不能小于20</string>
+    <string name="weld_swing_frequency_cannot_exceed_220">扫描频率不能超过220</string>
+    <string name="unknown_process_type">未知工艺类型</string>
+    <string name="laser_frequency_cannot_be_empty">激光频率不能为空</string>
+    <string name="laser_frequency_format_error">激光频率格式错误</string>
+    <string name="laser_frequency_cannot_be_less_than_1">激光频率不能小于 1</string>
+    <string name="laser_frequency_cannot_exceed_5000">激光频率不能超过 5000</string>
+    <string name="perforation_frequency_cannot_be_empty">穿孔频率不能为空</string>
+    <string name="perforation_frequency_format_error">穿孔频率格式错误</string>
+    <string name="perforation_frequency_cannot_be_less_than_0">穿孔频率不能小于 0</string>
+    <string name="perforation_frequency_cannot_exceed_2000">穿孔频率不能超过 2000</string>
+    <string name="swing_width_cannot_be_empty">摆动宽度不能为空</string>
+    <string name="swing_width_format_error">摆动宽度格式错误</string>
+    <string name="swing_width_cannot_be_less_than_0">摆动宽度不能小于 0</string>
+    <string name="swing_width_cannot_exceed_6">摆动宽度不能超过 </string>
+    <string name="blow_delay_cannot_be_empty">吹气延时不能为空</string>
+    <string name="blow_delay_format_error">吹气延时格式错误</string>
+    <string name="blow_delay_cannot_be_less_than_0">吹气延时不能小于 0</string>
+    <string name="blow_delay_cannot_exceed_10000">吹气延时不能超过 10000</string>
+    <string name="close_air_delay_cannot_be_empty">关气延时不能为空</string>
+    <string name="close_air_delay_format_error">关气延时格式错误</string>
+    <string name="close_air_delay_cannot_be_less_than_0">关气延时不能小于 0</string>
+    <string name="close_air_delay_cannot_exceed_10000">关气延时不能超过 10000</string>
+    <string name="close_light_delay_cannot_be_empty">关光延时不能为空</string>
+    <string name="close_light_delay_format_error">关光延时格式错误</string>
+    <string name="close_light_delay_cannot_be_less_than_0">关光延时不能小于 0</string>
+    <string name="close_light_delay_cannot_exceed_1000">关光延时不能超过 1000</string>
+    <string name="fill_delay_cannot_be_empty">补丝时延不能为空</string>
+    <string name="fill_delay_format_error">补丝时延格式错误</string>
+    <string name="fill_delay_cannot_be_less_than_0">补丝时延不能小于0</string>
+    <string name="fill_delay_cannot_exceed_1000">补丝时延不能超过1000</string>
+    <string name="wire_feeding_delay_cannot_be_empty">送丝延时不能为空</string>
+    <string name="wire_feeding_delay_format_error">送丝延时格式错误</string>
+    <string name="wire_feeding_delay_cannot_be_less_than_0">送丝延时不能小于 0</string>
+    <string name="wire_feeding_delay_cannot_exceed_2000">送丝延时不能超过 2000</string>
+    <string name="perforation_duration_cannot_be_empty">穿孔时长不能为空</string>
+    <string name="perforation_duration_format_error">穿孔时长格式错误</string>
+    <string name="perforation_duration_cannot_be_less_than_0_1">穿孔时长不能小于 0.1</string>
+    <string name="perforation_duration_cannot_exceed_2_0">穿孔时长不能超过 2.0</string>
+    <string name="point_welding_interval_cannot_be_empty">点焊间隔不能为空</string>
+    <string name="point_welding_interval_format_error">点焊间隔格式错误</string>
+    <string name="point_welding_interval_cannot_be_less_than_0">点焊间隔不能小于 0</string>
+    <string name="point_welding_interval_cannot_exceed_10000">点焊间隔不能超过 10000</string>
+    <string name="point_welding_duration_cannot_be_empty">点焊持续不能为空</string>
+    <string name="point_welding_duration_format_error">点焊持续格式错误</string>
+    <string name="point_welding_duration_cannot_be_less_than_0">点焊持续不能小于 0</string>
+    <string name="point_welding_duration_cannot_exceed_10000">点焊持续不能超过 10000</string>
+    <string name="power_ramp_up_cannot_be_empty">功率缓升不能为空</string>
+    <string name="power_ramp_up_format_error">功率缓升格式错误</string>
+    <string name="power_ramp_up_cannot_be_less_than_0">功率缓升不能小于 0</string>
+    <string name="power_ramp_up_cannot_exceed_1000">功率缓升不能超过 1000</string>
+    <string name="power_ramp_down_cannot_be_empty">功率缓降不能为空</string>
+    <string name="power_ramp_down_format_error">功率缓降格式错误</string>
+    <string name="power_ramp_down_cannot_be_less_than_0">功率缓降不能小于 0</string>
+    <string name="power_ramp_down_cannot_exceed_1000">功率缓降不能超过 1000</string>
+    <string name="wire_feed_speed_cannot_be_empty">送丝速度不能为空</string>
+    <string name="wire_feed_speed_format_error">送丝速度格式错误</string>
+    <string name="wire_feed_speed_cannot_be_less_than_0">送丝速度不能小于 0</string>
+    <string name="wire_feed_speed_cannot_exceed_50">送丝速度不能超过 </string>
+    <string name="retract_length_cannot_be_empty">回抽长度不能为空</string>
+    <string name="retract_length_format_error">回抽长度格式错误</string>
+    <string name="retract_length_cannot_be_less_than_0">回抽长度不能小于 0</string>
+    <string name="retract_length_cannot_exceed_15">回抽长度不能超过 </string>
+    <string name="retract_speed_cannot_be_empty">回抽速度不能为空</string>
+    <string name="retract_speed_format_error">回抽速度格式错误</string>
+    <string name="retract_speed_cannot_be_less_than_0">回抽速度不能小于 </string>
+    <string name="retract_speed_cannot_exceed_300">回抽速度不能超过 </string>
+    <string name="fill_length_cannot_be_empty">补丝长度不能为空</string>
+    <string name="fill_length_format_error">补丝长度格式错误</string>
+    <string name="fill_length_cannot_be_less_than_0">补丝长度不能小于 0</string>
+    <string name="fill_length_cannot_exceed_15">补丝长度不能超过 </string>
+    <string name="laser_duty_cycle_cannot_be_empty">激光占空比不能为空</string>
+    <string name="laser_duty_cycle_format_error">激光占空比格式错误</string>
+    <string name="laser_duty_cycle_cannot_be_less_than_0">激光占空比不能小于 1%</string>
+    <string name="laser_duty_cycle_cannot_exceed_100">激光占空比不能超过 100%</string>
+    <string name="perforation_duty_cycle_cannot_be_empty">穿孔占空比不能为空</string>
+    <string name="perforation_duty_cycle_format_error">穿孔占空比格式错误</string>
+    <string name="perforation_duty_cycle_cannot_be_less_than_0">穿孔占空比不能小于 0</string>
+    <string name="perforation_duty_cycle_cannot_exceed_100">穿孔占空比不能超过 100</string>
+    <string name="thickness_cannot_be_empty">厚度不能为空</string>
+    <string name="thickness_format_error">厚度格式错误</string>
+    <string name="materials_cannot_be_empty">材料不能为空</string>
+    <string name="materials_format_error">材料格式错误</string>
+    <string name="params_name_cannot_be_empty">参数名称不能为空</string>
+    <string name="process_type_cannot_be_empty">工艺类型不能为空</string>
+    <string name="process_type_format_error">工艺类型格式错误</string>
+    <string name="input_dialog_title_with_unit">%1$s (%2$s)</string>
+    <string name="ms_unit">ms</string>
+    <string name="p_unit">p</string>
+    <string name="hz_unit">Hz</string>
+    <string name="mm_s_unit">mm/s</string>
+    <string name="percentage_unit">%</string>
+    <string name="s_unit">s</string>
+    <string name="in_s_unit">in/s</string>
+    <string name="parameter_exception">参数异常</string>
+    <string name="reset_data_successfully">数据已重置</string>
+    <string name="saved_successfully">保存成功</string>
+    <string name="save_changes">保存更改</string>
+    <string name="default_parameters_do_not_support_resetting">默认参数不支持重置</string>
+    <string name="spot_welding_interval_t1_desc">设置两次点焊之间的时间间隔，取值范围 0–10000 ms。</string>
+    <string name="continuous_spot_welding_t2_desc">设置单次点焊的出光持续时间，取值范围 0–10000 ms。</string>
+    <string name="laser_duty_cycle_desc">激光脉冲占空比（占空比越高平均功率越高），取值范围 1–100%。</string>
+    <string name="blow_delay_desc">出光前提前送气的时间，取值范围 0–10000 ms。</string>
+    <string name="air_shut_off_delay_desc">激光关闭后延时关气的时间，取值范围 0–10000 ms。</string>
+    <string name="perforation_frequency_desc">穿孔时激光脉冲频率；频率越高越接近连续出光。取值范围 0–2000 Hz。</string>
+    <string name="perforation_duration_desc">单点穿孔时脉冲激光作用在材料上的总时长。取值范围 0.1–2.0 s。</string>
+    <string name="t3_text">(T3)</string>
+    <string name="wire_feeding_dela_desc">送丝时延（若启用），取值范围 0–10000 ms。</string>
+    <string name="process_parameter_name">工艺参数名称</string>
+    <string name="the_process_parameter_name_max_length">工艺参数名称不能超过32个字符</string>
+    <string name="laser_power_desc_text">设置激光输出功率；100% 对应设备额定最大功率。焊接功率可在工艺允许范围内调节。</string>
+    <string name="w_unit">W</string>
+    <string name="swing_frequency_desc">推荐扫描频率范围：%1$s–%2$s %3$s。</string>
+    <string name="laser_frequency_cut_desc">切割时激光脉冲频率，取值范围 1–5000 Hz。</string>
+    <string name="laser_duty_cycle_cut_desc">切割时激光脉冲占空比，取值范围 1–100%。</string>
+    <string name="perforation_duty_cycle_desc">穿孔时激光脉冲占空比，取值范围 1–100%。</string>
+    <string name="material_name_cannot_empty">材料名称不能为空</string>
+    <string name="material_name_cannot_exceed_characters">材料名称不能超过 20 个字符</string>
+    <string name="device_connection_check">设备连接检查</string>
+    <string name="connecting_device_guide">连接设备指引</string>
+    <string name="cnc_cut_note_text">说明：连接建立后，后续调节将通过 CNC 进行。</string>
+    <string name="cnc_connect_1_text">1.请确认 RS485 通讯连接正常。</string>
+    <string name="cnc_connect_2_text">2.请确认切割喷嘴传感器线缆连接正常。</string>
+    <string name="cnc_connect_3_text">3.请确认激光割炬及固定装置安装牢固。</string>
+    <string name="feed_sub">退丝</string>
+    <string name="feed_sub_add">进丝+</string>
+    <string name="feed_sub_hold">进丝+（长按3秒）</string>
+    <string name="feed_sub_hold_hint">长按3秒保持</string>
+    <string name="continuous_feeding_text">持续送丝</string>
+    <string name="continuous_retreat_text">持续退丝</string>
+    <string name="retreat_ongoing_text">退丝进行中</string>
+    <string name="gear_text">档位</string>
+    <string name="thickness_text">厚度</string>
+    <string name="laser_end_of_work">工作结束</string>
+    <string name="laser_beam_output_text">激光出光</string>
+    <string name="operation_failed_text">操作失败</string>
+    <string name="please_check_the_equipment_text">请检查设备</string>
+    <string name="check_key_error_text">钥匙开关未打开</string>
+    <string name="abnormal_atmospheric_pressure_text">气压异常</string>
+    <string name="check_e_stop_state_error">设备处于急停状态</string>
+    <string name="check_safety_interlock_error">安全互锁未导通</string>
+    <string name="safety_ground_lock_not_connected_title">安全地锁未连通</string>
+    <string name="safety_ground_lock_not_connected_message">请连接安全地锁后再打开激光。</string>
+    <string name="operation_successful_text">操作成功</string>
+    <string name="open_laser_success">激光已开启</string>
+    <string name="close_laser_success">激光已关闭</string>
+    <string name="manual_gas_supply_successful">手动送气已开启</string>
+    <string name="wire_feed_enable_successful">自动送丝使能已开启</string>
+    <string name="end_feed">结束送丝+</string>
+    <string name="feed_successful">送丝+ 成功</string>
+    <string name="feed_ongoing_text">送丝进行中</string>
+    <string name="feed_end_text">送丝已结束</string>
+    <string name="feed_success_text">送丝成功</string>
+    <string name="the_laser_power_must_be_greater_than_the_starting_power">激光功率必须大于起始功率</string>
+    <string name="there_are_no_more_common_specs_available">暂无更多常用工艺</string>
+    <string name="real_time_machine_status_text">机台实时状态</string>
+    <string name="i_understand_text">我知道了</string>
+    <string name="gas_pressure_text">气压</string>
+    <string name="kpa_unit">kpa</string>
+    <string name="celsius_unit">℃</string>
+    <string name="fahrenheit_unit">℉</string>
+    <string name="advanced_setting_scale_0_celsius">0℃</string>
+    <string name="advanced_setting_scale_20_celsius">20℃</string>
+    <string name="advanced_setting_scale_80_celsius">80℃</string>
+    <string name="advanced_setting_scale_85_celsius">85℃</string>
+    <string name="more_monitor_text">更多监测</string>
+    <string name="bracket_left">(</string>
+    <string name="bracket_right">)</string>
+    <string name="gun_head_communication_alarm_title">枪头通信告警</string>
+    <string name="gun_head_communication_alarm_content">如果激光器和枪头之间存在通讯问题，请检查连接。若确认没有问题后机器仍报警，请联系售后服务协助。</string>
+    <string name="controller_tablet_comm_alarm_title">主控板与平板通讯故障</string>
+    <string name="controller_tablet_comm_alarm_content">主控板与平板通讯异常。请先关机，等待 10 秒后再开机。若开机后告警仍然出现，请联系售后服务。</string>
+    <string name="camera_communication_alarm_title">摄像头通信告警</string>
+    <string name="camera_communication_alarm_content">主机与内置摄像头通讯异常。请先关机，等待 10 秒后再开机。若开机后告警仍然出现，请联系售后服务。</string>
+    <string name="main_controller_temp_board_comm_alarm_title">主控板与温控板通讯故障</string>
+    <string name="main_controller_temp_board_comm_alarm_content">主控板与温控板之间通讯异常。请先关机，等待 10 秒后再开机。若开机后告警仍然出现，请联系售后服务。</string>
+    <string name="temp_board_refrigeration_comm_alarm_title">温控板与制冷系统通讯故障</string>
+    <string name="temp_board_refrigeration_comm_alarm_content">温控板与制冷系统之间通讯异常。请先关机，等待 10 秒后再开机。若开机后告警仍然出现，请联系售后服务。</string>
+    <string name="gun_head_motor_overtemperature_alarm_title">枪头电机过温告警</string>
+    <string name="contact_cyber_after_sales_team_text">联系 LaserCyber 售后团队</string>
+    <string name="drive_overtemperature_alarm_title">驱动温度告警</string>
+    <string name="protective_lens_overtemperature_alarm_title">保护镜温度告警</string>
+    <string name="protective_lens_overtemperature_alarm_content">如果保护镜出现明显烧痕，请立即更换。</string>
+    <string name="undervoltage_24v_alarm_title">24V 欠压告警</string>
+    <string name="galvanometer_motor_overcurrent_alarm_title">振镜电机过流告警</string>
+    <string name="galvanometer_motor_trajectory_error_title">振镜电机轨迹异常</string>
+    <string name="galvanometer_motor_stall_alarm_title">振镜电机堵转告警</string>
+    <string name="water_temperature_upper_limit_alarm_title">水温超上限告警</string>
+    <string name="water_temperature_upper_limit_alarm_content">如确认一切正常后机器仍报警，请联系客服协助。</string>
+    <string name="fiber_temperature_upper_limit_alarm_title">光纤温度超上限告警</string>
+    <string name="laser_output_energy_lower_limit_alarm_title">激光输出能量低于下限告警</string>
+    <string name="diode_short_circuit_error_cleared_title">二极管短路故障解除</string>
+    <string name="fiber_disconnection_alarm_title">光纤断开告警</string>
+    <string name="shielding_gas_alarm_title">保护气告警</string>
+    <string name="shielding_gas_alarm_content">请检查保护气是否开启、气瓶是否缺气。如确认无误后机器仍报警，请联系售后服务。</string>
+    <string name="shielding_gas_alarm_log_message">A001 保护气告警，原因：%1$s</string>
+    <string name="shielding_gas_alarm_reason_header">原因：</string>
+    <string name="shielding_gas_alarm_reason_bullet">· %1$s</string>
+    <string name="shielding_gas_alarm_warn_log_content">%1$s。如确认无误后机器仍报警，请联系售后服务。</string>
+    <string name="shielding_gas_alarm_engineer_check_message">保护气异常：%1$s</string>
+    <string name="shielding_gas_alarm_cause_blow_pressure">吹气气压过低</string>
+    <string name="shielding_gas_alarm_cause_inlet_pressure">进气气压过低</string>
+    <string name="shielding_gas_alarm_cause_pressure_check">气压检测异常</string>
+    <string name="shielding_gas_alarm_cause_device_service">设备异常，请联系售后服务</string>
+    <string name="the_materials_thickness_must_be_greater_than">材料厚度必须大于 </string>
+    <string name="the_materials_thickness_must_be_less_than">材料厚度必须小于 </string>
+    <string name="laser_power_cannot_be_empty">激光功率不能为空</string>
+    <string name="the_laser_power_must_be_greater_than_zero">激光功率必须大于 0%</string>
+    <string name="laser_power_cannot_exceed_100">激光功率不能超过 100%</string>
+    <string name="the_laser_power_must_exceed_the_laser_starting_power">激光功率必须大于激光起始功率</string>
+    <string name="the_laser_power_must_be_less_than_the_laser_end_power">激光功率必须大于激光终止功率</string>
+    <string name="laser_current_text">激光电流</string>
+    <string name="wire_feed_successfully_closed">送丝已成功关闭</string>
+    <string name="manual_gas_supply_successfully_shut_down">手动送气已成功关闭</string>
+    <string name="straight_track_temperature_alarm_content">检查聚焦镜。若保护镜有明显烧痕，请立即更换。</string>
+    <string name="wire_feeder_communication_alarm_title">送丝机通讯告警</string>
+    <string name="wire_feeder_communication_alarm_content">送丝机通讯告警</string>
+    <string name="wire_feeder_current_alarm_title">送丝机电流告警</string>
+    <string name="upload_successful">上传成功</string>
+    <string name="upload_failed">上传失败</string>
+    <string name="recording_failed">无法开始录制</string>
+    <string name="start_recording_the_video">已开始录制</string>
+    <string name="recording_completed">录制已保存</string>
+    <string name="recording_in_progress">录制进行中</string>
+    <string name="recording_preparing">准备中</string>
+    <string name="camera_record_another_thread_recording">另一个线程正在录制中</string>
+    <string name="videos_text">视频</string>
+    <string name="ai_vision_title">AI Vision</string>
+    <string name="home_ai_vision_card_line1">AI Detection</string>
+    <string name="home_ai_vision_card_line2">Visualized</string>
+    <string name="warn_log_title">告警日志</string>
+    <string name="warn_log_clear">清除</string>
+    <string name="warn_log_clear_start">开始清除...</string>
+    <string name="warn_log_clear_fail">清除失败！</string>
+    <string name="warn_log_clear_success">清除成功！</string>
+    <string name="work_mode_info_title">工作信息</string>
+    <string name="detection_type_text">检测类型</string>
+    <string name="ai_vision_process_type_text">工艺类型</string>
+    <string name="ai_vision_material_type_text">材料类型</string>
+    <string name="ai_vision_work_info_unavailable">-</string>
+    <string name="lens_text">镜片</string>
+    <string name="live_video_loading">正在加载实时视频…</string>
+    <string name="live_video_failed">实时视频不可用</string>
+    <string name="live_video_retry_hint">正在重连实时视频…</string>
+    <string name="live_monitor_expand">放大画面</string>
+    <string name="live_monitor_collapse">退出全屏</string>
+    <string name="ai_vision_stream_failure_unknown">未知原因</string>
+    <string name="ai_vision_stream_failure_surface_unavailable">视频渲染 Surface 未就绪</string>
+    <string name="ai_vision_stream_failure_player_timeout">播放器连接或取流超时</string>
+    <string name="ai_vision_stream_failure_unsupported_video">视频编码不支持或解码器初始化失败</string>
+    <string name="ai_vision_stream_failure_rtsp_event">RTSP 事件错误：%1$s</string>
+    <string name="ai_vision_stream_failure_start_code">播放器 start 返回错误码：%1$d</string>
+    <string name="ai_vision_stream_failure_first_frame_timeout">等待首帧超时：%1$d ms</string>
+    <string name="ai_overlay_hud_status_prefix">AI: %1$s</string>
+    <string name="ai_overlay_hud_status_idle">IDLE</string>
+    <string name="ai_overlay_hud_state_prefix">STATE: %1$s</string>
+    <string name="ai_overlay_state_idle">空闲</string>
+    <string name="ai_overlay_state_monitoring">监控中</string>
+    <string name="ai_overlay_state_locked">已锁定</string>
+    <string name="ai_overlay_result_waiting">最新结果：等待中…</string>
+    <string name="ai_overlay_result_prefix">最新结果：%1$s</string>
+    <string name="ai_overlay_cls_disabled">分类：未启用</string>
+    <string name="ai_overlay_cls_waiting">分类：等待中…</string>
+    <string name="ai_overlay_state_stain_detect">污点检测</string>
+    <string name="ai_overlay_cls_prefix">分类：%1$s（%2$.3f）</string>
+    <string name="ai_overlay_cls_other">其他</string>
+    <string name="ai_overlay_cls_metal">金属</string>
+    <string name="lens_alert_mild_title">镜片提示</string>
+    <string name="lens_alert_mild_body_default">镜片轻度污染，建议擦拭</string>
+    <string name="lens_alert_heavy_title">镜片告警</string>
+    <string name="lens_alert_heavy_body_default">保护镜严重脏污，需要清洁或更换保护镜片</string>
+    <string name="security_alert_title">安全警报</string>
+    <string name="gas_pressure_low_title">气压过低</string>
+    <string name="lens_heavy_contamination_alarm_title">镜片脏污告警</string>
+    <string name="lens_alert_heavy_continue_after_ack">点击确认可继续出光</string>
+    <string name="lens_alert_btn_ack">知道了</string>
+    <string name="zoom_state_default">默认</string>
+    <string name="zoom_state_best">最佳</string>
+    <string name="zoom_state_max">最大</string>
+    <string name="zoom_ratio_format">%1$.1fx</string>
+    <string name="zoom_tutorial_title">缩放手势教学</string>
+    <string name="zoom_tutorial_zoom_in">双指张开：放大画面</string>
+    <string name="zoom_tutorial_zoom_out">双指收拢：缩小画面</string>
+    <string name="zoom_tutorial_reset">双击画面：恢复默认</string>
+    <string name="zoom_tutorial_page_format">%1$d / %2$d</string>
+    <string name="zoom_tutorial_prev">上一页</string>
+    <string name="zoom_tutorial_next">下一页</string>
+    <string name="zoom_tutorial_finish">完成</string>
+    <string name="zoom_tutorial_skip">跳过</string>
+    <string name="recording_time_text">录制时间</string>
+    <string name="work_mode_text">工艺类型</string>
+    <string name="work_material_text">材料类型</string>
+    <string name="duration_text">时长</string>
+    <string name="operations_text">操作</string>
+    <string name="delete_text">删除</string>
+    <string name="upload_text">上传</string>
+    <string name="upload_button_uploaded">已上传</string>
+    <string name="choose_text">CHOOSE</string>
+    <string name="select_text">SELECT</string>
+    <string name="ai_vision_choose_btn">选择视频</string>
+    <string name="ai_vision_upload_btn">上传</string>
+    <string name="ai_vision_select_btn">选择</string>
+    <string name="ai_vision_choose_video_title">Back to AI Vision</string>
+    <string name="ai_vision_select_video_first">请选择一个视频进行检测</string>
+    <string name="details_text">详情</string>
+    <string name="unknown_text">未知</string>
+    <string name="video_deletion_failed_text">视频删除失败</string>
+    <string name="video_deleted_successfully_text">视频删除成功</string>
+    <string name="loading_text">加载中...</string>
+    <string name="process_video_loaded_total_format">%1$d of %2$d</string>
+    <string name="no_more_data_available_text">暂无更多数据</string>
+    <string name="pull_up_to_load_more_text">上拉加载更多</string>
+    <string name="release_immediate_loading_text">松开立即加载</string>
+    <string name="pull_down_to_refresh_text">下拉刷新</string>
+    <string name="refreshing_text">正在刷新…</string>
+    <string name="release_to_refresh_immediately_text">松开立即刷新</string>
+    <string name="back_to_videos_text">返回视频列表</string>
+    <string name="parameter_recording_text">工艺参数</string>
+    <string name="delete_btn_text">删除</string>
+    <string name="functional_modes_text">工艺类型</string>
+    <string name="colon_text">:</string>
+    <string name="playback_failed_text">播放失败</string>
+    <string name="video_loading_failed_text">视频加载失败</string>
+    <string name="ai_vision_video_pause">暂停</string>
+    <string name="ai_vision_video_play">播放</string>
+    <string name="process_video_rewind">快退</string>
+    <string name="process_video_fast_forward">快进</string>
+    <string name="ai_vision_video_replay">重播</string>
+    <string name="ai_vision_detect_btn">检测</string>
+    <string name="ai_vision_reinfer_btn">重新检测</string>
+    <string name="ai_vision_video_inferring">推理中...</string>
+    <string name="ai_vision_video_analyzing">分析中…</string>
+    <string name="ai_vision_video_inference_progress">正在分析视频... %1$d%%</string>
+    <string name="ai_vision_video_exporting">正在生成结果视频...</string>
+    <string name="ai_vision_video_inference_failed">视频分析失败：%1$s</string>
+    <string name="ai_vision_video_export_failed">推理视频导出失败：%1$s</string>
+    <string name="ai_vision_inference_video_not_ready">推理视频尚未准备好</string>
+    <string name="ai_vision_offline_inference_not_available">当前 AI 库不支持离线推理</string>
+    <string name="ai_vision_ai_engine_not_ready">AI 引擎未就绪</string>
+    <string name="lws_video_storage_permission_required">需要存储或「视频」读取权限，才能访问约定的 /lws 目录下的视频文件。</string>
+    <string name="please_turn_off_the_manual_gas_supply_first">请先关闭手动送气。</string>
+    <string name="silk_feed_successful">送丝成功</string>
+    <string name="silk_feed_ends">送丝结束</string>
+    <string name="retreat_ends">退丝结束</string>
+    <string name="successful_retreat">退丝成功</string>
+    <string name="connection_successful">连接成功</string>
+    <string name="don_t_show_again_this_session">本次会话内不再显示</string>
+    <string name="laser_reminder_title">重要提醒！</string>
+    <string name="laser_reminder_laser_protection">请确认您已佩戴激光防护装备。</string>
+    <string name="laser_reminder_welding_nozzle">请确认您已安装焊接铜喷嘴。</string>
+    <string name="laser_reminder_cutting_nozzle">请确认您已安装切割铜喷嘴。</string>
+    <string name="laser_reminder_clean_nozzle_removed">请确认您已移除激光管及铜喷嘴。</string>
+    <string name="laser_reminder_focus_scale_ref">请将枪头对焦刻度调整至指定参考值。</string>
+    <string name="laser_reminder_confirm">是，我已完成上述安全检查</string>
+    <string name="close_text">关闭</string>
+    <string name="do_we_need_to_upload_the_video">是否上传本次录制的视频？</string>
+    <string name="laser_communication_anomaly_text">激光通信异常</string>
+    <string name="pump_module_overtemperature_alarm_title">泵浦模块超温告警</string>
+    <string name="sensor_channel_deviation_alarm_title">传感器通道偏差告警</string>
+    <string name="quiescent_current_abnormal_alarm_title">静态电流异常告警</string>
+    <string name="motor_cable_open_alarm_title">电机连接线开路告警</string>
+    <string name="flash_error_alarm_title">FLASH 错误告警</string>
+    <string name="sensor_abnormal_alarm_title">传感器异常告警</string>
+    <string name="flash_unencrypted_alarm_title">FLASH 未加密告警</string>
+    <string name="collimating_lens_overtemperature_alarm_title">聚焦镜温度告警</string>
+    <string name="mmi_oscillator_malfunction_alarm_title">MMI 振荡器故障告警</string>
+    <string name="hardware_bus_error_alarm_title">硬件总线错误告警</string>
+    <string name="memory_management_error_title">内存管理错误</string>
+    <string name="memory_access_error_title">内存访问错误</string>
+    <string name="illegal_instruction_alarm_title">非法指令告警</string>
+    <string name="watchdog_reset_event_title">看门狗复位事件</string>
+    <string name="pump_module_overtemperature_cleared_title">泵浦模块超温解除</string>
+    <string name="water_temperature_limit_cleared_title">水温超限解除</string>
+    <string name="fiber_temperature_upper_limit_cleared_title">光纤温度超上限解除</string>
+    <string name="laser_reflected_energy_upper_limit_cleared_title">激光反射能量超上限解除</string>
+    <string name="laser_output_energy_lower_limit_cleared_title">激光输出能量低于下限解除</string>
+    <string name="fiber_disconnection_cleared_title">光纤断开解除</string>
+    <string name="pump_module_overtemperature_alarm_content">确认无误后机器仍报警，请联系客服协助。</string>
+    <string name="laser_communication_alarm_title">激光器通信告警</string>
+    <string name="pump_source_temperature_alarm_title">泵源温度告警</string>
+    <string name="laser_current_alarm_title">激光器电流告警</string>
+    <string name="red_light_current_alarm_title">红光电流告警</string>
+    <string name="pump_source_voltage_alarm_title">泵源电压告警</string>
+    <string name="laser_driver_communication_alarm_title">激光器驱动通信告警</string>
+    <string name="ad_feedback_communication_alarm_title">AD 反馈通信告警</string>
+    <string name="driver_module_overtemperature_alarm_title">驱动模块超温告警</string>
+    <string name="internal_humidity_exceeds_the_upper_limit_alarm_title">内部湿度超上限告警</string>
+    <string name="cold_water_interlock_alarm_title">冷水互锁告警</string>
+    <string name="laser_emergency_stop_alarm_title">激光器急停告警</string>
+    <string name="positioning_light_fault_alarm_title">定位光故障告警</string>
+    <string name="narrow_pulse_protection_alarm_title">窄脉冲保护告警</string>
+    <string name="driver_board_overvoltage_title">驱动板过压</string>
+    <string name="environment_temperature_alarm_title">环境温度告警</string>
+    <string name="unable_to_open_the_camera_title">摄像头不可用</string>
+    <string name="uploading_in_progress">正在上传</string>
+    <string name="video_upload_phase_cover">正在上传封面</string>
+    <string name="video_upload_phase_metadata">正在上传封面…</string>
+    <string name="video_upload_phase_video">正在上传视频</string>
+    <string name="upload_cancelled">已取消上传</string>
+    <string name="parameter_exception_text">参数异常</string>
+    <string name="zero_offset_cannot_be_empty">零点偏移不能为空</string>
+    <string name="zero_offset_format_error">零点偏移格式错误</string>
+    <string name="zero_offset_cannot_be_less_than">零点偏移不能小于 -30</string>
+    <string name="zero_offset_cannot_be_greater_than">零点偏移不能大于 30</string>
+    <string name="zero_point_auto_button">自动</string>
+    <string name="zero_point_auto_title">Zero Offset 自动校正</string>
+    <string name="zero_point_auto_teaching_message">请将枪头对准安全区域并按住扳机后再点击 Auto。Auto 会临时开启激光使能，真实出光由扳机触发，请等待进度条完成自动零点校正。</string>
+    <string name="zero_point_auto_progress_waiting_laser">正在临时开启激光使能…</string>
+    <string name="zero_point_auto_progress_online">在线检测中…</string>
+    <string name="zero_point_auto_progress_recording_tail">已检测到激光关闭，正在保存临时视频…</string>
+    <string name="zero_point_auto_progress_finalizing_online">正在确认在线检测结果…</string>
+    <string name="zero_point_auto_progress_offline_200">离线复检 200ms…</string>
+    <string name="zero_point_auto_progress_offline_100">离线复检 100ms…</string>
+    <string name="zero_point_auto_progress_success">校正完成</string>
+    <string name="zero_point_auto_failed_retry">检测失败，请再试一次</string>
+    <string name="zero_point_auto_correction_failed">校正失败请再次点击 Auto 或者手动校正</string>
+    <string name="zero_point_auto_recording_unavailable">临时视频录制不可用</string>
+    <string name="zero_point_auto_busy">Zero Offset 自动校正正在运行中</string>
+    <string name="zero_point_offset_alarm_title">零点偏移告警</string>
+    <string name="zero_point_offset_alert_body">零点偏移中心请及时校正</string>
+    <string name="zero_point_offset_alert_go_settings">去设置</string>
+    <string name="scan_width_correction_cannot_be_empty">扫描宽度校正不能为空</string>
+    <string name="scan_width_correction_format_error">扫描宽度校正格式错误</string>
+    <string name="the_scan_width_correction_cannot_exceed">扫描宽度校正不能超过 75</string>
+    <string name="the_scan_width_correction_cannot_be_less_than">扫描宽度校正不能小于 -75</string>
+    <string name="laser_starting_power_cannot_be_empty">激光起始功率不能为空</string>
+    <string name="laser_starting_power_format_error">激光起始功率格式错误</string>
+    <string name="the_laser_starting_power_cannot_be_less_than">激光起始功率不能小于 0</string>
+    <string name="the_laser_starting_power_cannot_exceed">激光起始功率不能超过 100</string>
+    <string name="the_laser_termination_power_cannot_exceed">激光终止功率不能超过 100</string>
+    <string name="the_laser_termination_power_cannot_be_less_than">激光终止功率不能小于 0</string>
+    <string name="laser_termination_power_cannot_be_empty">激光终止功率不能为空</string>
+    <string name="laser_termination_power_format_error">激光终止功率格式错误</string>
+    <string name="gas_pressure_threshold_cannot_be_empty">最低气压阈值不能为空</string>
+    <string name="gas_pressure_threshold_format_error">最低气压阈值格式错误</string>
+    <string name="the_gas_pressure_threshold_cannot_be_less_than">最低气压阈值不能小于 0 KPA</string>
+    <string name="the_gas_pressure_threshold_cannot_exceed">最低气压阈值不能超过 400 KPA</string>
+    <string name="inlet_gas_pressure_threshold_cannot_be_empty">进气气压阈值不能为空</string>
+    <string name="inlet_gas_pressure_threshold_format_error">进气气压阈值格式错误</string>
+    <string name="the_inlet_gas_pressure_threshold_cannot_be_less_than">进气气压阈值不能小于 0 KPA</string>
+    <string name="the_inlet_gas_pressure_threshold_cannot_exceed">进气气压阈值不能超过 200 KPA</string>
+    <string name="driver_temperature_alarm_threshold_cannot_be_empty">驱动器温度报警阈值不能为空</string>
+    <string name="driver_temperature_alarm_threshold_format_error">驱动器温度报警阈值格式错误</string>
+    <string name="the_driver_temperature_alarm_threshold_cannot_be_less_than">驱动器温度报警阈值不能小于 0℃</string>
+    <string name="the_driver_temperature_alarm_threshold_cannot_exceed">驱动器温度报警阈值不能超过 80℃</string>
+    <string name="protective_lens_temperature_alarm_threshold_cannot_be_empty">保护镜温度报警阈值不能为空</string>
+    <string name="protective_lens_temperature_alarm_threshold_format_error">保护镜温度报警阈值格式错误</string>
+    <string name="the_protective_lens_temperature_alarm_threshold_cannot_be_less_than">保护镜温度报警阈值不能小于 0℃</string>
+    <string name="the_protective_lens_temperature_alarm_threshold_cannot_exceed">保护镜温度报警阈值不能超过 85℃</string>
+    <string name="collimating_lens_temperature_alarm_threshold_cannot_be_empty">聚焦镜温度报警阈值不能为空</string>
+    <string name="collimating_lens_temperature_alarm_threshold_format_error">聚焦镜温度报警阈值格式错误</string>
+    <string name="the_collimating_lens_temperature_alarm_threshold_cannot_be_less_than">聚焦镜温度报警阈值不能小于 0℃</string>
+    <string name="the_collimating_lens_temperature_alarm_threshold_cannot_exceed">聚焦镜温度报警阈值不能超过 85℃</string>
+    <string name="motor_temperature_alarm_threshold_cannot_be_empty">电机温度报警阈值不能为空</string>
+    <string name="motor_temperature_alarm_threshold_format_error">电机温度报警阈值格式错误</string>
+    <string name="the_motor_temperature_alarm_threshold_cannot_be_less_than">电机温度报警阈值不能小于 0℃</string>
+    <string name="the_motor_temperature_alarm_threshold_cannot_exceed">电机温度报警阈值不能超过 80℃</string>
+    <string name="temperature_alarm_recovery_interval_cannot_be_empty">温度报警恢复差值不能为空</string>
+    <string name="temperature_alarm_recovery_interval_format_error">温度报警恢复差值格式错误</string>
+    <string name="the_temperature_alarm_recovery_interval_cannot_be_less_than">温度报警恢复差值不能小于 0℃</string>
+    <string name="the_temperature_alarm_recovery_interval_cannot_exceed">温度报警恢复差值不能超过 20℃</string>
+    <string name="detecting_connection">正在检测连接...</string>
+    <string name="cnc_connection_successful">CNC 连接成功</string>
+    <string name="cnc_connection_failed">CNC 连接失败</string>
+    <string name="please_enter_the_video_title">请输入视频标题</string>
+    <string name="prompt_text">提示</string>
+    <string name="close_cnc">关闭 CNC</string>
+    <string name="please_turn_off_the_cnc_first">请先关闭 CNC。</string>
+    <string name="the_recording_time_is_too_short">录制时间太短</string>
+    <string name="video_saving_failed">视频保存失败</string>
+    <string name="laser_anomaly">激光异常</string>
+    <string name="cnc_running_hit_text">CNC 模式已启用\n请在 CNC 设备上操作。</string>
+    <string name="exit_cnc_mode">退出 CNC 模式</string>
+    <string name="confirm_exit_cnc_mode">确认退出 CNC 模式？</string>
+    <string name="insufficient_space_please_delete_videos_first">存储空间不足，请先删除部分视频后再试</string>
+    <string name="ota_upgrade_status_downloading">正在下载升级包</string>
+    <string name="ota_upgrade_status_preparing">正在准备升级</string>
+    <string name="ota_upgrade_status_firmware">正在升级控制卡固件 (%1$d%%)</string>
+    <string name="ota_upgrade_status_apk">正在安装应用</string>
+    <string name="ota_upgrade_status_system">升级系统中</string>
+    <string name="upgrade_check_rate_limit_title">点击过于频繁</string>
+    <string name="upgrade_check_rate_limit_message">请等待 10 秒后再检查更新。</string>
+    <string name="upgrade_check_query_title">检查更新</string>
+    <string name="upgrade_check_query_message">正在远程查询版本，请稍候…</string>
+    <string name="upgrade_already_latest_title">已是最新版本</string>
+    <string name="upgrade_already_latest_message">当前已安装最新版本。</string>
+    <string name="upgrade_check_failed_title">检查更新失败</string>
+    <string name="upgrade_check_failed_message">无法获取版本信息，请稍后重试。</string>
+    <string name="bundled_firmware_dialog_title">控制卡固件更新</string>
+    <string name="bundled_firmware_dialog_message">检测到新控制卡固件（当前 %1$s → %2$s）。\n请保持设备通电，升级过程中请勿操作。</string>
+    <string name="bundled_firmware_upgrading_title">正在升级控制卡固件</string>
+    <string name="bundled_firmware_upgrading_message">请保持设备通电，升级过程中请勿操作。</string>
+    <string name="bundled_firmware_progress_percent">%1$d%%</string>
+    <string name="bundled_firmware_success_title">固件升级成功</string>
+    <string name="bundled_firmware_success_message">控制卡固件已更新完成。</string>
+    <string name="bundled_firmware_failed_title">固件升级失败</string>
+    <string name="bundled_firmware_failed_message">控制卡固件升级失败，请稍后重试。</string>
+    <string name="ime_enter_send_label">发送</string>
+</resources>

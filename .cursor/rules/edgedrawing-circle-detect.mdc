@@ -1,0 +1,40 @@
+---
+description: EdgeDrawing detect — native JSON + offline CLI only (no App overlay)
+globs: native/lensinspector/**/edgedrawing/**,native/lensinspector/tools/edgedrawing_infer/**
+alwaysApply: false
+---
+
+# EdgeDrawing Workflow
+
+## Scope
+
+EdgeDrawing (`ScanVChannelRadialAdaptive`) is **offline/CLI only**. Laser-on production zero-point uses `StreamDetectPipeline` module `zero_point`. The App does **not** publish EdgeDrawing overlay state.
+
+## Native (C++ / JNI)
+
+EdgeDrawing mirrors **zero_point** for everything except the single-frame detect algorithm:
+
+- Same JSON shape: `ok`, `code`, `reason`, `offset_x`, `offset_y`
+- Same `OpencvDetectCodes` / `FRAME_REJECTED` (-5) semantics; EdgeDrawing uses **`circle_radius_below_min`** when min-enclosing radius **&lt; 300 px** (not zero_point spot-size gates)
+- Same ROI asset fields and `reference_zero_xy` offset comparison
+- Same position tolerance as zero_point: **16 px** per axis (`ZeroPointCorrectionMapper.POSITION_TOLERANCE_PX`)
+
+EdgeDrawing-specific fields (detection only, no drawing in C++):
+
+- `base_x`, `base_y` — per-frame radial-scan circle center (radius not exported in JSON)
+- **Reference zero** `reference_zero_xy` ≈ **(924.47, 292.00)** @1920×1080 (`edgedrawing_detect_roi.json`)
+
+Algorithm constraints:
+
+1. **No Hough** — 640×640 upper-center ROI (`edgedrawing_detect_roi.json`); **RadialCircleFit** (`detectScanVChannelRadialAdaptiveInBox`)
+2. Do **not** draw circles or overlay graphics in native code
+
+## Offline CLI
+
+Use `tools/edgedrawing_infer` or JNI (`nativeOpencvEdgeDrawingDetectFromNv12` / `FromJpg`) for single-frame debug. Parse JSON in the tool; do not wire results into the App overlay pipeline.
+
+## Native pipeline (debug stages)
+
+BGR → 640×640 upper-center ROI → **RadialCircleFit** (`detectScanVChannelRadialAdaptiveInBox`) → JSON
+
+Stage files: `03_plasma_binary` → `03b_plasma_guide` → `03_v_gaussian` → `04_brightness_weight` → `06_scan_v_channel_radial_adaptive_overlay` → `09_circle_fit.json`

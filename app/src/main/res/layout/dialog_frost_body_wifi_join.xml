@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:overScrollMode="never"
+    android:scrollbars="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingBottom="24dp">
+
+        <EditText
+            android:id="@+id/frost_dialog_wifi_connect_anchor"
+            android:layout_width="1dp"
+            android:layout_height="1dp"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:imeActionId="1001"
+            android:imeActionLabel="@string/wifi_dialog_connect"
+            android:imeOptions="actionUnspecified"
+            android:inputType="text"
+            android:visibility="invisible" />
+
+        <LinearLayout
+            android:id="@+id/frost_dialog_wifi_password_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="100dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:text="@string/wifi_dialog_password_label"
+                android:textColor="@color/frost_text_primary"
+                android:textSize="33sp" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/frost_divider" />
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+
+                <EditText
+                    android:id="@+id/frost_dialog_wifi_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/dialog_edit_bg"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:gravity="center_vertical|start"
+                    android:imeActionId="1001"
+                    android:imeActionLabel="@string/wifi_dialog_connect"
+                    android:imeOptions="actionUnspecified"
+                    android:inputType="textPassword"
+                    android:minHeight="72dp"
+                    android:paddingLeft="16dp"
+                    android:paddingTop="12dp"
+                    android:paddingRight="56dp"
+                    android:paddingBottom="12dp"
+                    android:singleLine="true"
+                    android:textAlignment="viewStart"
+                    android:textColor="@color/frost_text_primary"
+                    android:textSize="33sp" />
+
+                <ImageButton
+                    android:id="@+id/frost_dialog_wifi_password_visibility"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center_vertical|end"
+                    android:layout_marginEnd="8dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/wifi_dialog_show_password"
+                    android:padding="10dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_password_visibility_off" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/frost_dialog_wifi_ip_settings_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="@string/wifi_ip_settings"
+            android:textColor="@color/frost_text_secondary"
+            android:textSize="29sp" />
+
+        <LinearLayout
+            android:id="@+id/frost_dialog_wifi_ip_settings_panel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <include layout="@layout/dialog_frost_body_wifi_ip_settings" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+
+        <import type="com.lasercyber.lws.ui.common.constant.ModelConstant" />
+
+        <variable
+            name="modeType"
+            type="java.lang.Integer" />
+
+        <variable
+            name="useMmUnit"
+            type="java.lang.Boolean" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingBottom="@dimen/quick_mode_picker_bottom_padding">
+
+        <TextView
+            style="@style/quick_mode_picker_title"
+            android:text="@{@string/quick_mode_picker_title_with_unit((modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@string/swing_width_text:@string/thickness_text, useMmUnit?@string/mm_unit:@string/in_unit)}" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/quick_mode_picker_scale_height"
+            android:layout_marginTop="@dimen/quick_mode_picker_title_scale_gap">
+
+            <ImageView
+                android:id="@+id/scale_right"
+                android:layout_width="80.2dp"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="40dp"
+                android:src="@mipmap/scale_right"
+                android:translationX="@dimen/quick_mode_picker_right_scale_horizontal_offset" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:translationX="@dimen/quick_mode_picker_thickness_value_horizontal_offset"
+                android:translationY="@dimen/quick_mode_picker_value_vertical_offset">
+
+                <com.lasercyber.lws.ui.component.wheelview.widget.WheelView
+                    android:id="@+id/thickness_wheel_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </LinearLayout>
+
+        </RelativeLayout>
+    </LinearLayout>
+</layout>

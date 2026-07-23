@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.lasercyber.lws.ui.component.layout.InsetListRow xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/popup_menu_row"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:focusable="true"
+    app:horizontalInset="0dp"
+    app:rowMinHeight="@dimen/frost_popup_menu_row_min_height"
+    app:rowVerticalPadding="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="@dimen/frost_popup_menu_row_horizontal_inset"
+        android:paddingTop="@dimen/frost_popup_menu_row_vertical_padding"
+        android:paddingRight="@dimen/frost_popup_menu_row_horizontal_inset"
+        android:paddingBottom="@dimen/frost_popup_menu_row_vertical_padding">
+
+        <ImageView
+            android:id="@+id/popup_menu_icon"
+            android:layout_width="@dimen/frost_popup_menu_item_icon_width"
+            android:layout_height="@dimen/frost_popup_menu_item_icon_height" />
+
+        <TextView
+            android:id="@+id/popup_menu_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_size_12" />
+    </LinearLayout>
+</com.lasercyber.lws.ui.component.layout.InsetListRow>

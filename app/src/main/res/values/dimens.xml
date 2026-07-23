@@ -1,0 +1,166 @@
+<resources>
+    <dimen name="alarm_metric_tile_width">351dp</dimen>
+    <dimen name="home_quick_action_inner_height">108dp</dimen>
+    <dimen name="home_quick_action_edge_inset">28dp</dimen>
+    <dimen name="home_quick_action_pair_gap">@dimen/home_quick_action_edge_inset</dimen>
+    <dimen name="home_stat_card_gap">@dimen/home_quick_action_edge_inset</dimen>
+    <dimen name="home_stat_to_quick_action_gap">@dimen/home_quick_action_edge_inset</dimen>
+    <!-- Monitor + gap + Settings: inner_height × 2 + pair_gap = 244dp -->
+    <dimen name="home_quick_action_wide_inner_width">244dp</dimen>
+    <dimen name="home_quick_action_icon_size">60dp</dimen>
+    <!-- Icon inset from card start edge; matches centered icon in square quick-action tiles. -->
+    <dimen name="home_quick_action_icon_start_padding">24dp</dimen>
+    <dimen name="home_quick_action_label_width">108dp</dimen>
+    <dimen name="home_quick_action_label_margin_top">10dp</dimen>
+    <dimen name="home_ai_vision_icon_size">70dp</dimen>
+    <dimen name="home_ai_vision_icon_text_gap">8dp</dimen>
+    <dimen name="home_ai_vision_card_text_size">25sp</dimen>
+    <dimen name="top_tab_item_width">236dp</dimen>
+    <dimen name="top_tab_item_text_max_width">190dp</dimen>
+    <dimen name="machine_status_gauge_value_offset_x">0dp</dimen>
+    <dimen name="machine_status_monitor_gauge_width">604dp</dimen>
+    <dimen name="machine_status_monitor_gauge_height">344dp</dimen>
+    <dimen name="machine_status_dialog_gauge_width">548dp</dimen>
+    <dimen name="machine_status_dialog_gauge_height">338dp</dimen>
+    <dimen name="machine_status_monitor_tile_width">290dp</dimen>
+    <dimen name="machine_status_monitor_tile_height">102dp</dimen>
+    <dimen name="machine_status_dialog_tile_width">360dp</dimen>
+    <dimen name="machine_status_dialog_tile_height">78dp</dimen>
+    <dimen name="machine_status_dialog_screen_inset">15dp</dimen>
+    <!-- 2 gauge rows + 2 status tile rows + row gaps (dialog variant). -->
+    <dimen name="machine_status_dialog_body_min_height">526dp</dimen>
+    <dimen name="laser_live_monitor_body_min_height">480dp</dimen>
+    <dimen name="laser_live_monitor_preview_min_width">640dp</dimen>
+    <dimen name="laser_live_monitor_preview_min_height">480dp</dimen>
+    <dimen name="laser_live_monitor_gauge_width">280dp</dimen>
+    <dimen name="laser_live_monitor_gauge_height">250dp</dimen>
+    <dimen name="laser_live_monitor_tile_width">140dp</dimen>
+    <dimen name="laser_live_monitor_tile_height">48dp</dimen>
+    <dimen name="laser_live_monitor_tile_gap">8dp</dimen>
+    <dimen name="laser_live_monitor_side_inset">16dp</dimen>
+    <dimen name="laser_live_monitor_bottom_inset">16dp</dimen>
+    <dimen name="engineer_page_padding">24dp</dimen>
+    <!-- Bottom 2×3 control grid -->
+    <dimen name="engineer_bottom_grid_column_gap">16dp</dimen>
+    <dimen name="engineer_bottom_grid_row_gap">12dp</dimen>
+    <dimen name="engineer_bottom_row1_min_height">56dp</dimen>
+    <dimen name="engineer_bottom_action_btn_height">58dp</dimen>
+    <dimen name="engineer_bottom_laser_btn_height">88dp</dimen>
+    <!-- 连续焊左侧：上下加宽；内容区左右等距内边距（Checkbox 圆圈左缘为基准） -->
+    <dimen name="engineer_continuous_laser_btn_height">104dp</dimen>
+    <dimen name="engineer_continuous_action_btn_height">72dp</dimen>
+    <dimen name="engineer_continuous_content_h_padding">24dp</dimen>
+    <dimen name="engineer_continuous_action_btn_gap">16dp</dimen>
+    <dimen name="engineer_continuous_checkbox_row_min_height">64dp</dimen>
+    <dimen name="engineer_ramp_chart_expanded_height">240dp</dimen>
+    <dimen name="engineer_ramp_accordion_header_height">56dp</dimen>
+    <!-- 与 engineer_continuous_laser_btn 的 text_size_16（37sp）对齐 -->
+    <dimen name="engineer_laser_btn_icon_size">37dp</dimen>
+    <dimen name="engineer_bottom_page_switch_width">52dp</dimen>
+    <dimen name="engineer_tab_bar_height">88dp</dimen>
+    <!-- 连续焊左侧设备控制区宽度（原爬坡图 508dp，略收以让参数区向左扩展） -->
+    <dimen name="engineer_welding_left_panel_width">460dp</dimen>
+    <!-- 连续焊底部六列权重（非均分：Laser 最高，长文案 Checkbox 略大） -->
+    <item name="engineer_bottom_weight_manual_gas" format="float" type="dimen">1.25</item>
+    <item name="engineer_bottom_weight_feed" format="float" type="dimen">1.0</item>
+    <item name="engineer_bottom_weight_retreat" format="float" type="dimen">1.0</item>
+    <item name="engineer_bottom_weight_laser" format="float" type="dimen">1.85</item>
+    <item name="engineer_bottom_weight_auto_wire" format="float" type="dimen">1.3</item>
+    <item name="engineer_bottom_weight_record" format="float" type="dimen">1.15</item>
+    <dimen name="laser_live_monitor_expand_btn_size">48dp</dimen>
+    <dimen name="laser_live_monitor_expanded_edge_inset">2dp</dimen>
+    <dimen name="laser_live_monitor_dialog_chrome_pad">20dp</dimen>
+    <!-- frost_* dimens: canonical definitions in values/frostui_dimens.xml -->
+    <dimen name="laser_reminder_image_to_tip_spacing">24dp</dimen>
+    <dimen name="engineer_mode_entry_dialog_width">700dp</dimen>
+    <dimen name="engineer_mode_entry_dialog_height">680dp</dimen>
+    <dimen name="engineer_mode_entry_icon_size">150dp</dimen>
+    <dimen name="engineer_mode_entry_dialog_content_padding">36dp</dimen>
+    <dimen name="engineer_mode_entry_title_width">620dp</dimen>
+    <dimen name="engineer_mode_entry_confirm_button_width">500dp</dimen>
+    <dimen name="engineer_mode_entry_section_spacing">32dp</dimen>
+    <!-- Engineer toggle buttons: single corner-radius token (clipToOutline), not per-drawable -->
+    <dimen name="engineer_toggle_btn_corner_radius">14dp</dimen>
+    <dimen name="machine_status_indicator_size">36dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
+    <!-- 录像浮窗默认 Y：设备状态栏(70dp) + 与「更多参数」相同的上边距(20dp) -->
+    <dimen name="camera_float_default_y">90dp</dimen>
+    <dimen name="text_size_12">29sp</dimen>
+    <dimen name="text_size_11">27sp</dimen>
+    <dimen name="text_size_10">25sp</dimen>
+    <dimen name="text_size_14">33sp</dimen>
+    <dimen name="text_size_18">41sp</dimen>
+    <dimen name="text_size_16">37sp</dimen>
+    <dimen name="text_size_15">35sp</dimen>
+    <dimen name="text_size_20">45sp</dimen>
+    <dimen name="text_size_24">53sp</dimen>
+    <dimen name="text_size_48">101sp</dimen>
+    <dimen name="margin_top_14">28dp</dimen>
+    <!-- AI Vision DetectionOverlayView: match Work Information value text (text_size_12 = 29sp) -->
+    <dimen name="ai_vision_overlay_hud_text_size">@dimen/text_size_12</dimen>
+    <dimen name="ai_vision_overlay_box_label_text_size">@dimen/text_size_12</dimen>
+    <dimen name="ai_vision_overlay_box_stroke_width">4dp</dimen>
+    <dimen name="ai_vision_overlay_hud_margin">16dp</dimen>
+    <dimen name="ai_vision_overlay_hud_pad_h">16dp</dimen>
+    <dimen name="ai_vision_overlay_hud_pad_v">10dp</dimen>
+    <dimen name="ai_vision_overlay_hud_line_gap">5dp</dimen>
+    <dimen name="ai_vision_overlay_hud_corner_radius">20dp</dimen>
+    <dimen name="ai_vision_overlay_hud_stroke_width">1dp</dimen>
+    <dimen name="home_stat_card_corner_radius">22dp</dimen>
+    <dimen name="monitor_alarm_left_panel_height">608dp</dimen>
+
+    <!-- Quick Mode Gear / Thickness pickers: shared geometry prevents unit changes from shifting layout. -->
+    <dimen name="quick_mode_picker_width">280dp</dimen>
+    <dimen name="quick_mode_picker_title_height">48dp</dimen>
+    <dimen name="quick_mode_picker_title_text_size">@dimen/text_size_12</dimen>
+    <dimen name="quick_mode_picker_title_scale_gap">24dp</dimen>
+    <dimen name="quick_mode_picker_scale_height">402dp</dimen>
+    <dimen name="quick_mode_picker_bottom_padding">70dp</dimen>
+    <dimen name="quick_mode_picker_center_overlap">-150dp</dimen>
+    <dimen name="quick_mode_picker_horizontal_offset">60dp</dimen>
+    <dimen name="quick_mode_picker_value_vertical_offset">-6dp</dimen>
+    <dimen name="quick_mode_picker_thickness_value_horizontal_offset">20dp</dimen>
+    <dimen name="quick_mode_picker_left_scale_horizontal_offset">-25dp</dimen>
+    <dimen name="quick_mode_picker_right_scale_horizontal_offset">-55dp</dimen>
+    <dimen name="quick_mode_picker_material_value_vertical_offset">-2dp</dimen>
+    <dimen name="quick_mode_picker_gear_title_horizontal_offset">-40dp</dimen>
+    <dimen name="equipment_status_primary_icon_size">40dp</dimen>
+
+    <dimen name="inset_list_horizontal_inset">24dp</dimen>
+    <dimen name="inset_list_row_height">80dp</dimen>
+    <!-- HTTP Proxy：右侧毛玻璃值框列宽（右对齐，与 Port 窄框共用右缘） -->
+    <dimen name="http_proxy_value_box_width">360dp</dimen>
+    <dimen name="http_proxy_port_value_box_width">120dp</dimen>
+
+    <dimen name="remote_process_param_dialog_screen_margin">48dp</dimen>
+    <dimen name="readonly_parameter_row_horizontal_inset">20dp</dimen>
+    <dimen name="readonly_parameter_row_min_height">56dp</dimen>
+    <dimen name="readonly_parameter_row_vertical_padding">6dp</dimen>
+    <dimen name="inset_divider_height">1dp</dimen>
+    <dimen name="section_header_divider_height">1dp</dimen>
+
+    <!-- Track = 2 × thumb so the non-thumb area equals thumb width at either end -->
+    <dimen name="switch_track_width">56dp</dimen>
+    <dimen name="switch_track_height">32dp</dimen>
+    <dimen name="switch_track_corner_radius">16dp</dimen>
+    <dimen name="switch_thumb_size">28dp</dimen>
+    <dimen name="switch_thumb_inset_vertical">2dp</dimen>
+    <dimen name="checkbox_size">28dp</dimen>
+    <dimen name="checkbox_stroke_width">2dp</dimen>
+    <dimen name="checkbox_label_spacing">16dp</dimen>
+
+    <!-- Shared ScaledSeekBar value labels (ScaledSlider scale row, FlankedSeekBar playback row) -->
+    <dimen name="scaled_seekbar_label_text_size">@dimen/text_size_12</dimen>
+    <dimen name="scaled_seekbar_flank_label_spacing">16dp</dimen>
+
+    <!-- Process video details player controls (match AI Vision video chrome) -->
+    <dimen name="process_video_player_play_button_size">88dp</dimen>
+    <dimen name="process_video_player_play_button_padding">22dp</dimen>
+    <dimen name="process_video_player_seek_button_padding">16dp</dimen>
+    <dimen name="process_video_player_seek_icon_size">24dp</dimen>
+    <dimen name="process_video_player_play_icon_size">42dp</dimen>
+    <dimen name="process_video_player_transport_button_spacing">32dp</dimen>
+    <dimen name="process_video_player_control_bar_padding_h">24dp</dimen>
+    <dimen name="process_video_player_control_bar_padding_v">16dp</dimen>
+    <dimen name="process_video_list_footer_height">72dp</dimen>
+</resources>

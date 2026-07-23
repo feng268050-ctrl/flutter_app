@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 左侧爬坡图 Accordion 标题行；图表本体由父布局 overlay 承载 -->
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+        <import type="android.view.View" />
+        <variable
+            name="openRampChart"
+            type="java.lang.Boolean" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/ramp_accordion_header"
+            style="@style/engineer_ramp_accordion_header">
+
+            <TextView
+                style="@style/engineer_ramp_accordion_title"
+                android:text="@string/welding_ramp_chart_text" />
+
+            <ImageView
+                style="@style/engineer_more_common_arrow_icon_style"
+                android:src="@mipmap/right_white_arrow"
+                android:visibility="@{openRampChart == Boolean.TRUE ? View.GONE : View.VISIBLE}" />
+
+            <ImageView
+                style="@style/engineer_more_common_arrow_icon_style"
+                android:src="@mipmap/down_white_arrow"
+                android:visibility="@{openRampChart == Boolean.TRUE ? View.VISIBLE : View.GONE}" />
+        </LinearLayout>
+
+        <View style="@style/engineer_continuous_row_line" />
+    </LinearLayout>
+</layout>

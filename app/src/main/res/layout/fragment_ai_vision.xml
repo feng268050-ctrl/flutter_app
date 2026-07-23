@@ -1,0 +1,553 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".activitys.device.monitor.fragment.AiVisionFragment">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layout_ai_normal_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="@dimen/frost_dialog_content_padding">
+
+        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+            android:id="@+id/layout_ai_info_panel"
+            android:layout_width="360dp"
+            android:layout_height="0dp"
+            android:orientation="vertical"
+            android:paddingTop="22dp"
+            android:paddingBottom="8dp"
+            app:borderGradientCenter="top-left-bottom-right"
+            app:frostedGlassBlurIntensity="transparent"
+            app:layout_constraintBottom_toTopOf="@id/btn_choose_video"
+            android:layout_marginBottom="@dimen/frost_dialog_content_padding"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="21dp"
+                android:gravity="center_vertical"
+                android:includeFontPadding="false"
+                android:text="@string/work_mode_info_title"
+                android:textColor="@android:color/white"
+                android:textSize="33sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp">
+
+                <TextView
+                    style="@style/video_process_data_text_style"
+                    android:layout_width="match_parent"
+                    android:background="#CC2E3653"
+                    android:paddingStart="31dp"
+                    android:paddingTop="16dp"
+                    android:paddingEnd="31dp"
+                    android:paddingBottom="16dp"
+                    android:text="@string/ai_vision_process_type_text" />
+
+                <TextView
+                    android:id="@+id/tv_process_type_value"
+                    style="@style/video_process_data_text_style"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:includeFontPadding="false"
+                    android:paddingStart="31dp"
+                    android:paddingEnd="31dp"
+                    tools:text="@string/continuous_welding_text" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp">
+
+                <TextView
+                    style="@style/video_process_data_text_style"
+                    android:layout_width="match_parent"
+                    android:background="#CC2E3653"
+                    android:paddingStart="31dp"
+                    android:paddingTop="16dp"
+                    android:paddingEnd="31dp"
+                    android:paddingBottom="16dp"
+                    android:text="@string/ai_vision_material_type_text" />
+
+                <TextView
+                    android:id="@+id/tv_material_type_value"
+                    style="@style/video_process_data_text_style"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:includeFontPadding="false"
+                    android:paddingStart="31dp"
+                    android:paddingEnd="31dp"
+                    tools:text="@string/stainless_steel_text" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp">
+
+                <TextView
+                    style="@style/video_process_data_text_style"
+                    android:layout_width="match_parent"
+                    android:background="#CC2E3653"
+                    android:paddingStart="31dp"
+                    android:paddingTop="16dp"
+                    android:paddingEnd="31dp"
+                    android:paddingBottom="16dp"
+                    android:text="@string/recording_time_text" />
+
+                <TextView
+                    android:id="@+id/tv_recording_time_value"
+                    style="@style/video_process_data_text_style"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:includeFontPadding="false"
+                    android:paddingStart="31dp"
+                    android:paddingEnd="31dp"
+                    tools:text="2026.01.27" />
+            </LinearLayout>
+        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+        <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+            android:id="@+id/btn_choose_video"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/frost_action_button_height"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="@string/ai_vision_choose_btn"
+            android:textAllCaps="false"
+            app:borderGradientCenter="top-left-bottom-right"
+            app:layout_constraintBottom_toBottomOf="@id/layout_ai_video_box"
+            app:layout_constraintEnd_toEndOf="@id/layout_ai_info_panel"
+            app:layout_constraintStart_toStartOf="@id/layout_ai_info_panel"
+            app:frostedGlassButtonVariant="primary" />
+
+        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+            android:id="@+id/layout_ai_video_box"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="@dimen/frost_dialog_content_padding"
+            android:padding="10dp"
+            app:borderGradientCenter="bottom-left-top-right"
+            app:frostedGlassBlurIntensity="transparent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/layout_ai_info_panel"
+            app:layout_constraintTop_toTopOf="@id/layout_ai_info_panel">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+            <androidx.media3.ui.PlayerView
+                android:id="@+id/player_ai_selected_video_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:foreground="@drawable/video_mark"
+                app:keep_content_on_player_reset="true"
+                app:show_buffering="never"
+                app:shutter_background_color="@android:color/transparent"
+                app:use_artwork="false"
+                app:use_controller="false" />
+
+            <ImageView
+                android:id="@+id/iv_selected_video_cover"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:scaleType="centerCrop"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <TextureView
+                android:id="@+id/texture_vision_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/iv_live_composited_preview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
+
+            <com.lasercyber.lws.ui.common.view.DetectionOverlayView
+                android:id="@+id/view_detection_overlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                android:id="@+id/layout_ai_overlay_hud"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="@dimen/ai_vision_overlay_hud_margin"
+                android:visibility="gone"
+                app:borderGradientCenter="top-left-bottom-right"
+                app:frostedGlassBlurIntensity="low"
+                app:frostedGlassCornerRadius="@dimen/ai_vision_overlay_hud_corner_radius"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="@dimen/ai_vision_overlay_hud_pad_h"
+                    android:paddingTop="@dimen/ai_vision_overlay_hud_pad_v"
+                    android:paddingEnd="@dimen/ai_vision_overlay_hud_pad_h"
+                    android:paddingBottom="@dimen/ai_vision_overlay_hud_pad_v">
+
+                    <TextView
+                        android:id="@+id/tv_ai_overlay_hud_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/frost_text_primary"
+                        android:textSize="@dimen/ai_vision_overlay_hud_text_size"
+                        android:textStyle="bold"
+                        tools:text="AI: IDLE" />
+
+                    <TextView
+                        android:id="@+id/tv_ai_overlay_hud_detail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/ai_vision_overlay_hud_line_gap"
+                        android:textColor="@color/frost_text_secondary"
+                        android:textSize="@dimen/ai_vision_overlay_hud_text_size"
+                        android:visibility="gone"
+                        tools:text="Monitoring"
+                        tools:visibility="visible" />
+                </LinearLayout>
+            </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+            <TextView
+                android:id="@+id/tv_video_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="@drawable/rounded_box_bg"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="12dp"
+                android:textColor="@android:color/white"
+                android:textSize="25sp"
+                android:visibility="gone"
+                tools:text="Loading..."
+                tools:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/layout_zoom_state_panel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="16dp"
+                android:layout_marginBottom="72dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tv_zoom_ratio"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_box_bg"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp"
+                    android:text="@string/zoom_ratio_format"
+                    android:textColor="@android:color/white"
+                    android:textSize="21sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_zoom_state"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/rounded_box_bg"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp"
+                    android:text="@string/zoom_state_default"
+                    android:textColor="@android:color/white"
+                    android:textSize="21sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/btn_selected_video_play_pause"
+                android:layout_width="88dp"
+                android:layout_height="88dp"
+                android:layout_gravity="center"
+                android:background="@drawable/ai_vision_video_control_circle"
+                android:contentDescription="@string/ai_vision_video_pause"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="22dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_ai_vision_video_pause"
+                android:visibility="gone" />
+
+            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                android:id="@+id/btn_detect_video"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/frost_action_button_height"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:minWidth="160dp"
+                android:paddingStart="@dimen/frost_action_button_padding_horizontal"
+                android:paddingEnd="@dimen/frost_action_button_padding_horizontal"
+                android:singleLine="true"
+                android:text="@string/ai_vision_detect_btn"
+                android:textAllCaps="false"
+                app:borderGradientCenter="top-left-bottom-right"
+                app:frostedGlassButtonVariant="primary"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <LinearLayout
+                android:id="@+id/layout_post_eos_actions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                    android:id="@+id/btn_replay_inference_video"
+                    style="@style/process_video_post_eos_btn_light_style"
+                    android:text="@string/ai_vision_video_replay" />
+
+                <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                    android:id="@+id/btn_redetect_video"
+                    style="@style/process_video_post_eos_btn_light_style"
+                    android:layout_marginStart="@dimen/frost_dialog_content_padding"
+                    android:text="@string/ai_vision_reinfer_btn" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:id="@+id/layout_offline_inference_loading"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#99000000"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                tools:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="220dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@drawable/rounded_box_bg"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="32dp"
+                    android:paddingVertical="24dp">
+
+                    <ProgressBar
+                        android:id="@+id/progress_offline_inference"
+                        style="?android:attr/progressBarStyleLarge"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:indeterminate="true"
+                        android:indeterminateTint="#FFC331" />
+
+                    <TextView
+                        android:id="@+id/tv_offline_inference_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:gravity="center"
+                        android:includeFontPadding="false"
+                        android:text="@string/ai_vision_video_inferring"
+                        android:textColor="@android:color/white"
+                        android:textSize="25sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </FrameLayout>
+            </FrameLayout>
+        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+        <!-- 全屏教学：虚化背景遮罩 + 居中卡片（每次进入 AI Vision 显示，完成/跳过后关闭） -->
+        <FrameLayout
+            android:id="@+id/layout_zoom_tutorial"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:clickable="true"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:focusable="true"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="gone">
+
+            <View
+                android:id="@+id/view_zoom_tutorial_scrim"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/ai_vision_tutorial_scrim" />
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <LinearLayout
+                    android:layout_width="750dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/ai_vision_tutorial_bg"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="36dp"
+                    android:paddingTop="30dp"
+                    android:paddingBottom="26dp">
+
+                    <TextView
+                        android:id="@+id/tv_zoom_tutorial_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/zoom_tutorial_title"
+                        android:textColor="@android:color/white"
+                        android:textSize="39sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_zoom_tutorial_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center"
+                        android:text="@string/zoom_tutorial_zoom_in"
+                        android:textColor="#DDE3FF"
+                        android:textSize="29sp" />
+
+                    <!-- 手势演示区：高度上下各加 15dp -->
+                    <FrameLayout
+                        android:id="@+id/layout_zoom_tutorial_stage"
+                        android:layout_width="match_parent"
+                        android:layout_height="198dp"
+                        android:layout_marginTop="18dp">
+
+                        <View
+                            android:id="@+id/view_tutorial_finger_left"
+                            android:layout_width="78dp"
+                            android:layout_height="78dp"
+                            android:layout_gravity="center"
+                            android:background="@drawable/ai_vision_tutorial_finger_dot" />
+
+                        <View
+                            android:id="@+id/view_tutorial_finger_right"
+                            android:layout_width="78dp"
+                            android:layout_height="78dp"
+                            android:layout_gravity="center"
+                            android:background="@drawable/ai_vision_tutorial_finger_dot" />
+                    </FrameLayout>
+
+                    <!-- 页码相对整行水平居中，左右箭头分列两侧 -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:minHeight="60dp">
+
+                        <TextView
+                            android:id="@+id/tv_zoom_tutorial_page"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:minWidth="72dp"
+                            android:text="@string/zoom_tutorial_page_format"
+                            android:textColor="#BFC8FF"
+                            android:textSize="26sp" />
+
+                        <ImageButton
+                            android:id="@+id/btn_zoom_tutorial_page_prev"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:layout_gravity="start|center_vertical"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/zoom_tutorial_prev"
+                            android:padding="12dp"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_tutorial_chevron_left" />
+
+                        <ImageButton
+                            android:id="@+id/btn_zoom_tutorial_page_next"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:layout_gravity="end|center_vertical"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/zoom_tutorial_next"
+                            android:padding="12dp"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_tutorial_chevron_right" />
+                    </FrameLayout>
+
+                    <!-- 单按钮：前页为 Next，末页变为 Finish -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp">
+
+                        <TextView
+                            android:id="@+id/tv_zoom_tutorial_next"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:paddingHorizontal="22dp"
+                            android:paddingVertical="10dp"
+                            android:text="@string/zoom_tutorial_next"
+                            android:textColor="@android:color/white"
+                            android:textSize="25sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_zoom_tutorial_skip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="26dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@drawable/rounded_box_bg"
+                    android:paddingHorizontal="18dp"
+                    android:paddingVertical="10dp"
+                    android:text="@string/zoom_tutorial_skip"
+                    android:textColor="@android:color/white"
+                    android:textSize="26sp" />
+            </FrameLayout>
+        </FrameLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </FrameLayout>
+</layout>

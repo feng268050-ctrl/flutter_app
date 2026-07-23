@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+  <!--  <data>
+
+        <variable
+            name="workInfoViewModel"
+            type="com.lasercyber.lws.ui.activitys.device.monitor.model.WorkInfoViewModel" />
+
+        <variable
+            name="workInfo"
+            type="com.lasercyber.lws.ui.bean.entity.WorkInfo" />
+    </data>-->
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".activitys.device.monitor.fragment.WorkInfoFragment">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/safety_black"
+            android:clipToPadding="false"
+            android:padding="@dimen/frost_dialog_content_padding"/>
+
+    </FrameLayout>
+</layout>
+
+      <!--  <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="10dp"
+            tools:ignore="UselessParent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+                    &lt;!&ndash;                焊接占比&ndash;&gt;
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/welding_proportion_text"
+                        android:textColor="?attr/app_base_text_color" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="75dp"
+                        android:orientation="horizontal">
+
+
+                        <com.github.mikephil.charting.charts.PieChart
+                            android:id="@+id/welding_proportion_chart"
+                            android:layout_width="150dp"
+                            android:layout_height="150dp"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_margin="20dp"
+                            android:layout_marginHorizontal="20dp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+                    &lt;!&ndash;                切割占比&ndash;&gt;
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/cutting_proportion_text"
+                        android:textColor="?attr/app_base_text_color" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="75dp"
+                        android:orientation="horizontal">
+
+
+                        <com.github.mikephil.charting.charts.PieChart
+                            android:id="@+id/cutting_proportion_chart"
+                            android:layout_width="150dp"
+                            android:layout_height="150dp"
+                            android:layout_marginHorizontal="20dp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+                    &lt;!&ndash;                清洗占比&ndash;&gt;
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/wash_proportion_text"
+                        android:textColor="?attr/app_base_text_color" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="75dp"
+                        android:orientation="horizontal">
+
+
+                        <com.github.mikephil.charting.charts.PieChart
+                            android:id="@+id/wash_proportion_chart"
+                            android:layout_width="150dp"
+                            android:layout_height="150dp"
+                            android:layout_marginHorizontal="20dp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/warn_info_light_time"
+                    android:textColor="?attr/app_base_text_color" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:layout_weight="1"
+                    android:text="@{workInfo.lightTimeTotalText}"
+                    android:textColor="?attr/app_base_text_color" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/warn_info_welding_consumables"
+                    android:textColor="?attr/app_base_text_color" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:text="@{workInfo.weldingConsumablesText}"
+                    android:textColor="?attr/app_base_text_color" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:text="@string/warn_info_last_work"
+                    android:textColor="?attr/app_base_text_color" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:text="@{workInfo.lastWorkStatisticsText}"
+                    android:textColor="?attr/app_base_text_color" />
+            </LinearLayout>
+
+           &lt;!&ndash; <Button
+                android:id="@+id/data_test"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="改变数据" />&ndash;&gt;
+        </LinearLayout>-->

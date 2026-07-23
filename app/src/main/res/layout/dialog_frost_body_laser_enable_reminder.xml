@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:weightSum="3">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="15dp">
+
+        <LinearLayout
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:background="#FFF8F0E8"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="220dp"
+                android:layout_height="220dp"
+                android:importantForAccessibility="no"
+                android:scaleType="centerInside"
+                android:src="@mipmap/open_laser_icon1" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/laser_reminder_image_to_tip_spacing"
+            android:gravity="center"
+            android:text="@string/laser_reminder_laser_protection"
+            android:textColor="@color/text_black"
+            android:textSize="29sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="15dp">
+
+        <LinearLayout
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:background="#FFF8F0E8"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/iv_nozzle_reminder"
+                android:layout_width="220dp"
+                android:layout_height="220dp"
+                android:importantForAccessibility="no"
+                android:scaleType="centerInside" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_nozzle_tip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/laser_reminder_image_to_tip_spacing"
+            android:gravity="center"
+            android:text="@string/laser_reminder_welding_nozzle"
+            android:textColor="@color/text_black"
+            android:textSize="29sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="15dp">
+
+        <LinearLayout
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:background="#FFF8F0E8"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/iv_focus_scale_ref"
+                android:layout_width="220dp"
+                android:layout_height="220dp"
+                android:importantForAccessibility="no"
+                android:scaleType="centerInside" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_focus_scale_ref_tip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/laser_reminder_image_to_tip_spacing"
+            android:gravity="center"
+            android:text="@string/laser_reminder_focus_scale_ref"
+            android:textColor="@color/text_black"
+            android:textSize="29sp" />
+    </LinearLayout>
+</LinearLayout>

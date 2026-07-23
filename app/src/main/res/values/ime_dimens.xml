@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="ime_keyboard_height">328dp</dimen>
+    <dimen name="ime_pinyin_bar_height">48dp</dimen>
+    <dimen name="ime_pinyin_composition_text_size">16sp</dimen>
+    <dimen name="ime_pinyin_candidate_text_size">18sp</dimen>
+    <dimen name="ime_key_min_height">44dp</dimen>
+    <!-- Unified keyboard spacing: container padding, row gap, and inter-key gap -->
+    <dimen name="ime_key_gap">12dp</dimen>
+    <dimen name="ime_key_primary_text_size">28sp</dimen>
+    <dimen name="ime_key_secondary_hint_text_size">14sp</dimen>
+    <dimen name="ime_key_shift_icon_width">36dp</dimen>
+    <dimen name="ime_key_shift_icon_height">36dp</dimen>
+    <dimen name="ime_key_shift_caps_indicator_size">8dp</dimen>
+    <dimen name="ime_key_shift_caps_label_text_size">10sp</dimen>
+    <dimen name="ime_key_enter_text_size">20sp</dimen>
+    <dimen name="ime_key_enter_icon_size">42dp</dimen>
+    <dimen name="ime_key_alternate_popup_text_size">28sp</dimen>
+</resources>

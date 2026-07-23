@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_gravity="center">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="24dp"
+        android:orientation="horizontal">
+
+    <!-- 设备名称（对应WiFi的SSID） -->
+    <TextView
+        android:id="@+id/tv_device_name"
+        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:textColor="@android:color/white"
+        android:textSize="35sp"/>
+
+    <!-- 状态+图标区域（对应WiFi的状态+对勾+信号） -->
+        <!-- 状态+锁+信号 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="20dp"
+            android:orientation="horizontal"
+            android:layout_gravity="center">
+
+            <TextView
+                android:id="@+id/tv_connect_state"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="30dp"
+                android:layout_weight="1"
+                android:textColor="@color/tab_text_unselected"
+                android:textSize="29sp"/>
+
+
+        </LinearLayout>
+
+
+    </LinearLayout>
+    <View style="@style/engineer_row_line_style" android:layout_marginTop="25dp" android:layout_marginRight="5dp" android:layout_marginBottom="25dp"/>
+</LinearLayout>

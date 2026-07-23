@@ -1,0 +1,9 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="12dp" /> <!-- 匹配原图圆角 -->
+    <solid android:color="#33FFFFFF" /> <!-- 半透明白色，透明度可调整 -->
+
+    <stroke
+    android:width="0.5dp"
+    android:color="#55FFFFFF" />
+</shape>

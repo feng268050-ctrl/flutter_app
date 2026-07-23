@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="deviceStatus"
+            type="com.lasercyber.lws.ui.bean.entity.DeviceStatus" />
+
+        <variable
+            name="deviceData"
+            type="com.lasercyber.lws.ui.bean.entity.DeviceData" />
+
+        <import type="android.view.View" />
+
+    </data>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:context=".activitys.engineer.mode.fragment.MachineStatusDialogFragment">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="54dp"
+            android:paddingRight="54dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.lasercyber.lws.ui.component.machine.MachineStatusGaugeCard
+                    android:id="@+id/left_circle_view_container"
+                    style="@style/MachineStatusGaugeCardDialog"
+                    app:machineStatusVariant="dialog">
+
+                    <com.lasercyber.lws.ui.common.view.CircleProgressView
+                        android:id="@+id/leftCircleView"
+                        style="@style/machine_status_dialog_circle_progress"
+                        app:circle_padding="15dp"
+                        app:circle_scale_text_margin="20dp" />
+                </com.lasercyber.lws.ui.component.machine.MachineStatusGaugeCard>
+
+                <View style="@style/content_completion_style" />
+
+                <com.lasercyber.lws.ui.component.machine.MachineStatusGaugeCard
+                    android:id="@+id/right_circle_view_container"
+                    style="@style/MachineStatusGaugeCardDialog"
+                    app:machineStatusVariant="dialog">
+
+                    <com.lasercyber.lws.ui.common.view.CircleProgressView
+                        android:id="@+id/rightCircleView"
+                        style="@style/machine_status_dialog_circle_progress"
+                        app:circle_padding="5dp"
+                        app:circle_scale_text_margin="15dp" />
+                </com.lasercyber.lws.ui.component.machine.MachineStatusGaugeCard>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp">
+
+                <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                    android:id="@+id/machine_status_item_1"
+                    style="@style/MachineStatusStatusTileDialog"
+                    app:machineStatusVariant="dialog"
+                    app:labelText="@string/laser_text"
+                    app:machineStatusChecked="@{deviceStatus.isLaserOn}" />
+
+                <View style="@style/content_completion_style" />
+
+                <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                    android:id="@+id/machine_status_item_2"
+                    style="@style/MachineStatusStatusTileDialog"
+                    app:machineStatusVariant="dialog"
+                    app:labelText="@string/blow_text"
+                    app:machineStatusChecked="@{deviceStatus.isAirValveOn}" />
+
+                <View style="@style/content_completion_style" />
+
+                <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                    android:id="@+id/machine_status_item_3"
+                    style="@style/MachineStatusStatusTileDialog"
+                    app:machineStatusVariant="dialog"
+                    app:labelText="@string/safety_lock_text"
+                    app:machineStatusChecked="@{deviceStatus.isSafetyGroundLockLocked}" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp">
+
+                <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                    android:id="@+id/machine_status_item_4"
+                    style="@style/MachineStatusStatusTileDialog"
+                    app:machineStatusVariant="dialog"
+                    app:labelText="@string/gun_head_switch_text"
+                    app:machineStatusChecked="@{deviceStatus.isGunSwitchOn}" />
+
+                <View style="@style/content_completion_style" />
+
+                <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                    android:id="@+id/machine_status_item_5"
+                    style="@style/MachineStatusStatusTileDialog"
+                    app:machineStatusVariant="dialog"
+                    app:labelText="@string/red_light_text"
+                    app:machineStatusChecked="@{deviceStatus.isRedLightOn}" />
+
+                <View style="@style/content_completion_style" />
+
+                <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                    android:id="@+id/machine_status_item_6"
+                    style="@style/MachineStatusStatusTileDialog"
+                    app:machineStatusVariant="dialog"
+                    app:labelText="@string/wire_feeding_text"
+                    app:machineStatusChecked="@{deviceStatus.isWireFeedingOn}" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </FrameLayout>
+</layout>

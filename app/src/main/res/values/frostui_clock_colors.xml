@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home clock glyph fallback fill (aliases legacy light-tone tokens). -->
+    <color name="frost_clock_fill_top">@color/frost_light_fill_top</color>
+    <color name="frost_clock_fill_mid">@color/frost_light_fill_mid</color>
+    <color name="frost_clock_fill_bottom">@color/frost_light_fill_bottom</color>
+    <color name="frost_clock_border_highlight">@color/frost_light_border_highlight</color>
+    <color name="frost_clock_border_mid">@color/frost_light_border_mid</color>
+    <color name="frost_clock_border_shadow">@color/frost_light_border_shadow</color>
+    <!-- EXTREME warm overlay: alpha 0x50 over frost_blur_tint_warm, boosted to min 0x68 -->
+    <color name="frost_clock_warm_overlay">#68FFFFFF</color>
+    <color name="frost_clock_milk_overlay">#40FFFCF8</color>
+</resources>

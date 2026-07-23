@@ -1,0 +1,62 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!--    亮色模式主题-->
+    <style name="AppTheme.Light" parent="XUITheme.Tablet.Small">
+        <!-- 1. 关闭状态栏透明（必须，否则 statusBarColor 无效） -->
+        <item name="android:windowTranslucentStatus">false</item>
+        <!-- 2. 允许状态栏覆盖布局（可选，控制布局是否顶到状态栏） -->
+        <item name="android:fitsSystemWindows">true</item>
+        <!-- 3. 设置状态栏背景色（API 21+） -->
+        <item name="android:statusBarColor">@color/white</item> <!-- 主色调 -->
+        <!-- 兼容 AppCompat 主题（可选，部分手机需要） -->
+        <item name="colorPrimaryDark">@color/white</item> <!-- 和 statusBarColor 一致 -->
+
+        <item name="app_page_background_color">@color/white</item>
+        <item name="app_base_text_color">@color/black</item>
+        <item name="switchStyle">@style/LwsSwitch</item>
+        <item name="checkboxStyle">@style/LwsCheckbox</item>
+        <item name="frostSwitchStyle">@style/FrostSwitch</item>
+        <item name="frostCheckboxStyle">@style/FrostCheckbox</item>
+        <item name="frostSegmentedControlStyle">@style/FrostSegmentedControl</item>
+        <item name="frostCapsuleSliderStyle">@style/FrostCapsuleSlider</item>
+        <item name="frostButtonStyle">@style/FrostButton</item>
+        <item name="frostSliderStyle">@style/FrostSlider</item>
+        <item name="frostNumericStepperStyle">@style/FrostNumericStepper</item>
+        <item name="frostStatusIndicatorStyle">@style/FrostStatusIndicator</item>
+        <!-- 隐藏标题栏 -->
+        <item name="windowNoTitle">true</item>
+        <!-- 隐藏状态栏 -->
+        <item name="android:windowFullscreen">true</item>
+        <!-- 隐藏导航栏（可选，需 API 19+） -->
+        <item name="android:windowTranslucentNavigation">false</item>
+    </style>
+    <!--    暗色模式主题-->
+    <style name="AppTheme.Dark" parent="XUITheme.Tablet.Small">
+        <!-- 1. 关闭状态栏透明（必须，否则 statusBarColor 无效） -->
+        <item name="android:windowTranslucentStatus">false</item>
+        <!-- 2. 允许状态栏覆盖布局（可选，控制布局是否顶到状态栏） -->
+        <item name="android:fitsSystemWindows">true</item>
+        <!-- 3. 设置状态栏背景色（API 21+） -->
+        <item name="android:statusBarColor">@color/black</item> <!-- 主色调 -->
+        <!-- 兼容 AppCompat 主题（可选，部分手机需要） -->
+        <item name="colorPrimaryDark">@color/black</item> <!-- 和 statusBarColor 一致 -->
+
+        <item name="app_page_background_color">@color/black</item>
+        <item name="app_base_text_color">@color/white</item>
+        <item name="switchStyle">@style/LwsSwitch</item>
+        <item name="checkboxStyle">@style/LwsCheckbox</item>
+        <item name="frostSwitchStyle">@style/FrostSwitch</item>
+        <item name="frostCheckboxStyle">@style/FrostCheckbox</item>
+        <item name="frostSegmentedControlStyle">@style/FrostSegmentedControl</item>
+        <item name="frostCapsuleSliderStyle">@style/FrostCapsuleSlider</item>
+        <item name="frostButtonStyle">@style/FrostButton</item>
+        <item name="frostSliderStyle">@style/FrostSlider</item>
+        <item name="frostNumericStepperStyle">@style/FrostNumericStepper</item>
+        <item name="frostStatusIndicatorStyle">@style/FrostStatusIndicator</item>
+        <!-- 隐藏标题栏 -->
+        <item name="windowNoTitle">true</item>
+        <!-- 隐藏状态栏 -->
+        <item name="android:windowFullscreen">true</item>
+        <!-- 隐藏导航栏（可选，需 API 19+） -->
+        <item name="android:windowTranslucentNavigation">false</item>
+    </style>
+</resources>

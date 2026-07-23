@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <LinearLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="30dp"
+        android:paddingBottom="0dp"
+        android:background="@color/safety_black"
+        tools:context=".activitys.UseSafetyTipsActivity">
+
+    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+        android:layout_width="1220dp"
+        android:layout_height="740dp"
+        android:orientation="vertical"
+        android:paddingLeft="50dp"
+        android:paddingRight="50dp"
+        android:paddingTop="50dp"
+        android:paddingBottom="32dp"
+        app:borderGradientCenter="bottom-left-top-right"
+        app:frostedGlassBackdropBlur="false"
+        app:frostedGlassDrawBorder="true"
+        app:frostedGlassDrawFill="true">
+
+        <!-- 标题 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/title"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="37sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="40dp"/>
+
+        <com.lasercyber.lws.ui.component.AppScrollView
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            style="@style/app_vertical_scroll_view_style"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            >
+        <!-- 安全提示列表 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:id="@+id/content"
+            android:textSize="29sp"/>
+        </com.lasercyber.lws.ui.component.AppScrollView>
+
+        <!-- 已阅读选择框 + 文字 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp">
+
+            <com.lasercyber.lws.frostui.control.interop.FrostCheckboxView
+                android:id="@+id/cb_agree"
+                style="@style/FrostCheckbox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true" />
+
+            <!-- AGREE按钮 -->
+            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                android:id="@+id/btn_agree"
+                android:layout_width="163dp"
+                android:layout_height="@dimen/frost_action_button_height"
+                android:enabled="true"
+                android:onClick="toHome"
+                app:borderGradientCenter="top-left-bottom-right"
+                app:frostedGlassButtonVariant="primary" />
+        </LinearLayout>
+
+    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+    </LinearLayout>
+</layout>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="deviceStatus"
+            type="com.lasercyber.lws.ui.bean.entity.DeviceStatus" />
+
+        <variable
+            name="deviceData"
+            type="com.lasercyber.lws.ui.bean.entity.DeviceData" />
+
+        <import type="android.view.View" />
+    </data>
+
+    <!-- Mobile Monitor style: gauges + status overlaid on PR1 preview; expand for fullscreen. -->
+    <FrameLayout
+        android:id="@+id/live_monitor_root"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/laser_live_monitor_preview_min_height"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:minHeight="@dimen/laser_live_monitor_preview_min_height"
+        tools:context=".activitys.engineer.mode.fragment.LaserLiveMonitorOverlayFragment">
+
+        <FrameLayout
+            android:id="@+id/live_monitor_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black">
+
+            <TextureView
+                android:id="@+id/texture_live_monitor"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <com.lasercyber.lws.ui.common.view.DetectionOverlayView
+                android:id="@+id/view_detection_overlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <TextView
+                android:id="@+id/tv_preview_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:padding="16dp"
+                android:text="@string/live_video_loading"
+                android:textColor="@color/white"
+                android:textSize="@dimen/text_size_16"
+                android:visibility="visible" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|center_vertical"
+            android:layout_marginStart="@dimen/laser_live_monitor_side_inset"
+            android:background="@drawable/laser_live_monitor_gauge_panel"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:padding="10dp">
+
+            <com.lasercyber.lws.ui.component.machine.MachineStatusGaugeCard
+                android:id="@+id/left_circle_view_container"
+                style="@style/MachineStatusGaugeCardLiveMonitor"
+                app:machineStatusGaugeHeight="@dimen/laser_live_monitor_gauge_height"
+                app:machineStatusGaugeWidth="@dimen/laser_live_monitor_gauge_width"
+                app:machineStatusVariant="live_monitor">
+
+                <com.lasercyber.lws.ui.common.view.CircleProgressView
+                    android:id="@+id/leftCircleView"
+                    style="@style/machine_status_live_monitor_circle_progress"
+                    app:circle_padding="8dp"
+                    app:circle_scale_text_margin="4dp" />
+            </com.lasercyber.lws.ui.component.machine.MachineStatusGaugeCard>
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="@dimen/laser_live_monitor_side_inset"
+            android:background="@drawable/laser_live_monitor_gauge_panel"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:padding="10dp">
+
+            <com.lasercyber.lws.ui.component.machine.MachineStatusGaugeCard
+                android:id="@+id/right_circle_view_container"
+                style="@style/MachineStatusGaugeCardLiveMonitor"
+                app:machineStatusGaugeHeight="@dimen/laser_live_monitor_gauge_height"
+                app:machineStatusGaugeWidth="@dimen/laser_live_monitor_gauge_width"
+                app:machineStatusVariant="live_monitor">
+
+                <com.lasercyber.lws.ui.common.view.CircleProgressView
+                    android:id="@+id/rightCircleView"
+                    style="@style/machine_status_live_monitor_circle_progress"
+                    app:circle_padding="6dp"
+                    app:circle_scale_text_margin="4dp" />
+            </com.lasercyber.lws.ui.component.machine.MachineStatusGaugeCard>
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/live_monitor_status_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginStart="@dimen/laser_live_monitor_side_inset"
+            android:layout_marginEnd="@dimen/laser_live_monitor_side_inset"
+            android:layout_marginBottom="@dimen/laser_live_monitor_bottom_inset"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                android:id="@+id/machine_status_item_1"
+                style="@style/MachineStatusStatusTileLiveMonitor"
+                app:labelText="@string/laser_text"
+                app:machineStatusVariant="live_monitor"
+                app:machineStatusChecked="@{deviceStatus.isLaserOn}" />
+
+            <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                android:id="@+id/machine_status_item_2"
+                style="@style/MachineStatusStatusTileLiveMonitor"
+                app:labelText="@string/blow_text"
+                app:machineStatusVariant="live_monitor"
+                app:machineStatusChecked="@{deviceStatus.isAirValveOn}" />
+
+            <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                android:id="@+id/machine_status_item_3"
+                style="@style/MachineStatusStatusTileLiveMonitor"
+                app:labelText="@string/safety_lock_text"
+                app:machineStatusVariant="live_monitor"
+                app:machineStatusChecked="@{deviceStatus.isSafetyGroundLockLocked}" />
+
+            <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                android:id="@+id/machine_status_item_4"
+                style="@style/MachineStatusStatusTileLiveMonitor"
+                app:labelText="@string/gun_head_switch_text"
+                app:machineStatusVariant="live_monitor"
+                app:machineStatusChecked="@{deviceStatus.isGunSwitchOn}" />
+
+            <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                android:id="@+id/machine_status_item_5"
+                style="@style/MachineStatusStatusTileLiveMonitor"
+                app:labelText="@string/red_light_text"
+                app:machineStatusVariant="live_monitor"
+                app:machineStatusChecked="@{deviceStatus.isRedLightOn}" />
+
+            <com.lasercyber.lws.ui.component.machine.MachineStatusStatusTile
+                android:id="@+id/machine_status_item_6"
+                style="@style/MachineStatusStatusTileLiveMonitor"
+                app:labelText="@string/wire_feeding_text"
+                app:machineStatusVariant="live_monitor"
+                app:machineStatusChecked="@{deviceStatus.isWireFeedingOn}" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btn_live_monitor_expand"
+            android:layout_width="@dimen/laser_live_monitor_expand_btn_size"
+            android:layout_height="@dimen/laser_live_monitor_expand_btn_size"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/ai_vision_video_control_circle"
+            android:contentDescription="@string/live_monitor_expand"
+            android:padding="10dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_live_monitor_fullscreen" />
+    </FrameLayout>
+</layout>

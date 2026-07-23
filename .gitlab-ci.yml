@@ -1,0 +1,155 @@
+# Lws UI — build + optional on-device test.
+#
+# `make build` compiles native (opencv + ai + mediamtx) then Gradle release APK.
+# CI skips ONNX→RKNN Docker conversion (SKIP_RKNN_CONVERT=1) and uses the committed
+# native/lensinspector/assets/models/det_raw_head.rknn; host tools: cmake + Go 1.22+.
+#
+# Signing (CI/CD Variables or defaults in app/build.gradle.kts):
+#   SIGNING_STORE_FILE — path to keystore (default: $CI_PROJECT_DIR/platform.jks)
+#   SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS, SIGNING_KEY_PASSWORD — default "android" if unset
+# Provide platform.jks at repo root on the runner or upload via a File variable and decode in a before_script.
+#
+# Device testing: register a GitLab runner with adb + a physical device in "device" state, writable /system,
+# and valid priv-app permissions XML. Tag the runner `adb-device` (or edit tags below).
+
+stages:
+  - build
+  - publish
+
+.build-job:
+  image:
+    name: cimg/android:2024.11.1-ndk
+  variables:
+    GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+    # Use committed det_raw_head.rknn; ai-library/ and Docker RKNN convert are dev-only.
+    SKIP_RKNN_CONVERT: "1"
+  cache:
+    - key: bundled-assets-v1
+      paths:
+        - app/src/main/assets/process-library/
+        - app/src/main/assets/firmware/
+    - key: native-toolchains-v1
+      paths:
+        - native/toolchains/opencv/_cache/
+        - native/toolchains/opencv/sdk/
+        - native/toolchains/ndk-r18b/_cache/
+        - native/toolchains/ndk-r18b/ndk/
+        - tools/mediamtx/_src/
+        - native/lensinspector/build_android/
+  before_script:
+    - |
+      for d in "${ANDROID_SDK_ROOT:-}" "${ANDROID_HOME:-}" "${HOME}/Android/Sdk"; do
+        if [ -n "$d" ] && [ -d "$d/platform-tools" ]; then
+          export PATH="$d/platform-tools:$PATH"
+          break
+        fi
+      done
+    - chmod +x scripts/ci/setup-native-build.sh
+    - source scripts/ci/setup-native-build.sh
+    # Always upload at least one file with when:always so GitLab does not ERROR on "No files to upload".
+    - mkdir -p ci-artifacts app/build/reports build/reports
+    - printf 'pipeline=%s\njob=%s\ncommit=%s\nbranch=%s\n' "${CI_PIPELINE_ID}" "${CI_JOB_ID}" "${CI_COMMIT_SHA:-}" "${CI_COMMIT_REF_NAME:-}" > ci-artifacts/job_meta.txt
+
+verify_staging_build:
+  extends: .build-job
+  stage: build
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"'
+      when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+      when: on_success
+    - when: never
+  script:
+    - export SIGNING_STORE_FILE="${SIGNING_STORE_FILE:-${CI_PROJECT_DIR}/platform.jks}"
+    - make build SKIP_BUNDLED_FETCH=1
+    - chmod +x scripts/ci/verify-bundled-firmware-assets.sh scripts/ci/verify-native-bundled-assets.sh scripts/ci/verify-opencv-detect-integration.sh
+    - ./scripts/ci/verify-bundled-firmware-assets.sh
+    - ./scripts/ci/verify-native-bundled-assets.sh app/build/outputs/apk/staging/app-staging.apk
+    - ./scripts/ci/verify-opencv-detect-integration.sh app/build/outputs/apk/staging/app-staging.apk
+  artifacts:
+    paths:
+      - app/build/outputs/apk/staging/*.apk
+    expire_in: 3 days
+
+publish_tag:
+  extends: .build-job
+  stage: publish
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$/'
+      when: on_success
+    - when: never
+  script:
+    - export SIGNING_STORE_FILE="${SIGNING_STORE_FILE:-${CI_PROJECT_DIR}/platform.jks}"
+    - |
+      set -euo pipefail
+      if [ -z "${PUBLISH_API_TOKEN:-}" ]; then
+        echo "ERROR: missing CI variable PUBLISH_API_TOKEN." >&2
+        echo "Set it in GitLab: Settings -> CI/CD -> Variables -> PUBLISH_API_TOKEN" >&2
+        exit 1
+      fi
+      if echo "$CI_COMMIT_TAG" | grep -Eq -- '-(alpha|beta)([.-].*)?$'; then
+        echo "Detected prerelease tag: $CI_COMMIT_TAG -> staging publish"
+        make build
+        chmod +x scripts/ci/verify-native-bundled-assets.sh
+        ./scripts/ci/verify-native-bundled-assets.sh app/build/outputs/apk/staging/app-staging.apk
+        make pack-only
+        make publish-only
+      else
+        echo "Detected stable semver tag: $CI_COMMIT_TAG -> release publish"
+        make build RELEASE=1
+        chmod +x scripts/ci/verify-native-bundled-assets.sh
+        ./scripts/ci/verify-native-bundled-assets.sh app/build/outputs/apk/release/app-release.apk
+        make pack-only RELEASE=1
+        make publish-only RELEASE=1
+      fi
+  # Keep artifacts tiny: APK + firmware zip exceed default GitLab max artifact size (413).
+  # Successful publishes ship binaries via Workers/R2; CI retains only meta for failed-job debugging.
+  artifacts:
+    when: always
+    paths:
+      - ci-artifacts/
+    expire_in: 7 days
+
+publish_manual:
+  extends: .build-job
+  stage: publish
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "dev"'
+      when: on_success
+      allow_failure: false
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"'
+      when: manual
+      allow_failure: false
+    - when: never
+  script:
+    - export SIGNING_STORE_FILE="${SIGNING_STORE_FILE:-${CI_PROJECT_DIR}/platform.jks}"
+    - |
+      set -euo pipefail
+      if [ -z "${PUBLISH_API_TOKEN:-}" ]; then
+        echo "ERROR: missing CI variable PUBLISH_API_TOKEN." >&2
+        echo "Set it in GitLab: Settings -> CI/CD -> Variables -> PUBLISH_API_TOKEN" >&2
+        exit 1
+      fi
+      if [ "${RELEASE:-0}" = "1" ]; then
+        echo "Manual publish in release mode (release.json + prod channel)"
+        make build RELEASE=1
+        chmod +x scripts/ci/verify-native-bundled-assets.sh
+        ./scripts/ci/verify-native-bundled-assets.sh app/build/outputs/apk/release/app-release.apk
+        make pack-only RELEASE=1
+        make publish-only RELEASE=1
+      else
+        echo "Manual publish in staging mode (set RELEASE=1 for release)"
+        make build
+        chmod +x scripts/ci/verify-native-bundled-assets.sh
+        ./scripts/ci/verify-native-bundled-assets.sh app/build/outputs/apk/staging/app-staging.apk
+        make pack-only
+        make publish-only
+      fi
+  # Same as publish_tag: avoid 413 by not archiving APK/zip/reports (see publish_tag comment above).
+  artifacts:
+    when: always
+    paths:
+      - ci-artifacts/
+    expire_in: 7 days

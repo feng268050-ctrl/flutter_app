@@ -1,0 +1,828 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+            name="advancedSettingViewModel"
+            type="com.lasercyber.lws.ui.activitys.setting.model.AdvancedSettingViewModel" />
+
+        <variable
+            name="advancedSettingFragment"
+            type="com.lasercyber.lws.ui.activitys.setting.fragment.AdvancedSettingFragment" />
+    </data>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".activitys.setting.fragment.AdvancedSettingFragment">
+
+        <com.lasercyber.lws.ui.component.AppScrollView
+            style="@style/app_vertical_scroll_view_style"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="false"
+            android:padding="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="0dp"
+                    app:borderGradientCenter="top-left-bottom-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingStart="24dp"
+                        android:paddingTop="24dp"
+                        android:paddingEnd="24dp"
+                        android:paddingBottom="24dp">
+
+                    <com.lasercyber.lws.ui.component.layout.SectionHeader
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/advanced_settings_group_offset_correction" />
+
+                    <com.lasercyber.lws.ui.component.layout.SectionContent
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        app:borderGradientCenter="top-left-bottom-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/zero_point_correction_text" />
+
+                            <TextView
+                                android:id="@+id/zero_point_correction"
+                                style="@style/advanced_setting_value_box"
+                                android:text="@={advancedSettingViewModel.liveData.zeroPointCorrection}" />
+
+                            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                                android:id="@+id/zero_point_auto"
+                                style="@style/process_video_frost_btn_style"
+                                android:layout_marginLeft="12dp"
+                                android:text="@string/zero_point_auto_button"
+                                app:frostedGlassButtonVariant="primary" />
+                        </LinearLayout>
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSliderView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/zeroPointCorrectionSeek"
+    android:min="-30"
+    android:max="30"
+    android:progress="@{advancedSettingViewModel.liveData.zeroPointCorrectionInt}"
+    app:frostScaleMinText="-30"
+    app:frostScaleMaxText="30" />
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="24dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        app:borderGradientCenter="bottom-left-top-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/proper_swing_width_text" />
+
+                            <TextView
+                                android:id="@+id/proper_swing_width_text"
+                                style="@style/advanced_setting_value_box"
+                                android:text="@={advancedSettingViewModel.liveData.properSwingWidth}" />
+                        </LinearLayout>
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSliderView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/proper_swing_width"
+    android:min="-75"
+    android:max="75"
+    android:progress="@{advancedSettingViewModel.liveData.properSwingWidthInt}"
+    app:frostScaleMinText="-75"
+    app:frostScaleMaxText="75" />
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+                </LinearLayout>
+                    </com.lasercyber.lws.ui.component.layout.SectionContent>
+
+                    </LinearLayout>
+
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="vertical"
+                    android:padding="0dp"
+                    app:borderGradientCenter="bottom-left-top-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingStart="24dp"
+                        android:paddingTop="24dp"
+                        android:paddingEnd="24dp"
+                        android:paddingBottom="24dp">
+
+                    <com.lasercyber.lws.ui.component.layout.SectionHeader
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/advanced_settings_group_power_thresholds" />
+
+                    <com.lasercyber.lws.ui.component.layout.SectionContent
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        app:borderGradientCenter="top-left-bottom-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/laser_start_power_text" />
+
+                            <TextView
+                                android:id="@+id/laser_start_power_text"
+                                style="@style/advanced_setting_value_box"
+                                android:text="@={advancedSettingViewModel.liveData.laserStartPower}" />
+                        </LinearLayout>
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSliderView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/laser_start_power"
+    android:min="0"
+    android:max="100"
+    android:progress="@{advancedSettingViewModel.liveData.laserStartPowerInt}"
+    app:frostScaleMinText="0"
+    app:frostScaleMaxText="100" />
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:id="@+id/layout_scan_width"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="24dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        app:borderGradientCenter="bottom-left-top-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/laser_end_power_text" />
+
+                            <TextView
+                                android:id="@+id/layout_scan_width_offset"
+                                style="@style/advanced_setting_value_box"
+                                android:text="@={advancedSettingViewModel.liveData.laserEndPower}" />
+                        </LinearLayout>
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSliderView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/layout_scan_offset"
+    android:min="0"
+    android:max="100"
+    android:progress="@{advancedSettingViewModel.liveData.laserEndPowerInt}"
+    app:frostScaleMinText="0"
+    app:frostScaleMaxText="100" />
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="horizontal">
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        app:borderGradientCenter="top-bottom"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/blow_pressure_threshold_text" />
+
+                            <TextView
+                                android:id="@+id/blow_pressure_threshold_text"
+                                style="@style/advanced_setting_value_box"
+                                android:text="@={advancedSettingViewModel.liveData.blowPressureThreshold}" />
+                        </LinearLayout>
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSliderView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/blow_pressure_threshold"
+    android:min="0"
+    android:max="400"
+    android:progress="@{advancedSettingViewModel.liveData.blowPressureThresholdInt}"
+    app:frostScaleMinText="0"
+    app:frostScaleMaxText="400" />
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+                </LinearLayout>
+                    </com.lasercyber.lws.ui.component.layout.SectionContent>
+
+                    </LinearLayout>
+
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="vertical"
+                    android:padding="0dp"
+                    app:borderGradientCenter="top-left-bottom-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingStart="24dp"
+                        android:paddingTop="24dp"
+                        android:paddingEnd="24dp"
+                        android:paddingBottom="24dp">
+
+                    <com.lasercyber.lws.ui.component.layout.SectionHeader
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/advanced_settings_group_temperature_thresholds" />
+
+                    <com.lasercyber.lws.ui.component.layout.SectionContent
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        app:borderGradientCenter="top-left-bottom-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/motor_temperature_alarm_threshold_text" />
+
+                            <TextView
+                                android:id="@+id/motor_temperature_alarm_threshold_text"
+                                style="@style/advanced_setting_value_box" />
+                        </LinearLayout>
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSliderView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/motor_temperature_alarm_threshold"
+    android:min="0"
+    android:max="80"
+    android:progress="@{advancedSettingViewModel.liveData.motorTemperatureAlarmThresholdInt}"
+    app:frostScaleMinText="0"
+    app:frostScaleMaxText="80" />
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="24dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        app:borderGradientCenter="bottom-left-top-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/driver_temperature_alarm_threshold_text" />
+
+                            <TextView
+                                android:id="@+id/driver_temperature_alarm_threshold_text"
+                                style="@style/advanced_setting_value_box" />
+                        </LinearLayout>
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSliderView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/driver_temperature_alarm_threshold"
+    android:min="0"
+    android:max="80"
+    android:progress="@{advancedSettingViewModel.liveData.driverTemperatureAlarmThresholdInt}"
+    app:frostScaleMinText="0"
+    app:frostScaleMaxText="80" />
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="horizontal">
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        app:borderGradientCenter="top-left-bottom-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/protective_lens_temperature_alarm_threshold_text" />
+
+                            <TextView
+                                android:id="@+id/protective_lens_temperature_alarm_threshold_text"
+                                style="@style/advanced_setting_value_box" />
+                        </LinearLayout>
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSliderView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/protective_lens_temperature_alarm_threshold"
+    android:min="0"
+    android:max="85"
+    android:progress="@{advancedSettingViewModel.liveData.protectiveLensTemperatureAlarmThresholdInt}"
+    app:frostScaleMinText="0"
+    app:frostScaleMaxText="85" />
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="24dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        app:borderGradientCenter="bottom-left-top-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/collimating_lens_temperature_alarm_threshold_text" />
+
+                            <TextView
+                                android:id="@+id/collimating_lens_temperature_alarm_threshold_text"
+                                style="@style/advanced_setting_value_box" />
+                        </LinearLayout>
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSliderView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/collimating_lens_temperature_alarm_threshold"
+    android:min="0"
+    android:max="85"
+    android:progress="@{advancedSettingViewModel.liveData.collimatingLensTemperatureAlarmThresholdInt}"
+    app:frostScaleMinText="0"
+    app:frostScaleMaxText="85" />
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="horizontal">
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        app:borderGradientCenter="top-bottom"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/temperature_alarm_recovery_interval_text" />
+
+                            <TextView
+                                android:id="@+id/temperature_alarm_recovery_interval_text"
+                                style="@style/advanced_setting_value_box" />
+                        </LinearLayout>
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSliderView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/temperature_alarm_recovery_interval"
+    android:min="0"
+    android:max="20"
+    android:progress="@{advancedSettingViewModel.liveData.temperatureAlarmRecoveryIntervalInt}"
+    app:frostScaleMinText="0"
+    app:frostScaleMaxText="20" />
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+                </LinearLayout>
+                    </com.lasercyber.lws.ui.component.layout.SectionContent>
+
+                    </LinearLayout>
+
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="vertical"
+                    android:padding="0dp"
+                    app:borderGradientCenter="top-right-bottom-left"
+                    app:frostedGlassBlurIntensity="transparent">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingStart="24dp"
+                        android:paddingTop="24dp"
+                        android:paddingEnd="24dp">
+
+                        <com.lasercyber.lws.ui.component.layout.SectionHeader
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/advanced_settings_group_ai_assistance" />
+                    </LinearLayout>
+
+                    <com.lasercyber.lws.ui.component.layout.SectionContent
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:contentTopPadding="0dp">
+
+                        <com.lasercyber.lws.ui.component.layout.InsetList
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <com.lasercyber.lws.ui.component.layout.InsetListRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    style="@style/advanced_setting_item_title"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/advanced_setting_lens_contamination_detection" />
+
+                                <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                                    android:id="@+id/lens_contamination_detection_switch"
+                                    style="@style/FrostSwitch" />
+                            </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                            <com.lasercyber.lws.ui.component.layout.InsetDivider
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                            <com.lasercyber.lws.ui.component.layout.InsetListRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    style="@style/advanced_setting_item_title"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/advanced_setting_zero_point_offset_detection" />
+
+                                <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                                    android:id="@+id/zero_point_offset_detection_switch"
+                                    style="@style/FrostSwitch" />
+                            </com.lasercyber.lws.ui.component.layout.InsetListRow>
+                        </com.lasercyber.lws.ui.component.layout.InsetList>
+                    </com.lasercyber.lws.ui.component.layout.SectionContent>
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="vertical"
+                    app:borderGradientCenter="top-left-bottom-right"
+                    app:frostedGlassBlurIntensity="transparent">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingStart="24dp"
+                        android:paddingTop="24dp"
+                        android:paddingEnd="24dp">
+
+                        <com.lasercyber.lws.ui.component.layout.SectionHeader
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/advanced_settings_group_dangerous_operations" />
+                    </LinearLayout>
+
+                    <com.lasercyber.lws.ui.component.layout.SectionContent
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:contentTopPadding="0dp">
+
+                        <com.lasercyber.lws.ui.component.layout.InsetList
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <com.lasercyber.lws.ui.component.layout.InsetListRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="top"
+                                app:rowVerticalPadding="16dp">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/advanced_setting_item_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0"
+                                        android:maxLines="2"
+                                        android:text="@string/advanced_setting_keep_laser_on_while_alarmed" />
+
+                                    <TextView
+                                        style="@style/advanced_setting_item_hint"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="8dp"
+                                        android:text="@string/advanced_setting_keep_laser_on_while_alarmed_hint" />
+                                </LinearLayout>
+
+                                <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                                    android:id="@+id/keep_laser_on_while_alarmed_switch"
+                                    style="@style/FrostSwitch"
+                                    android:layout_marginTop="4dp" />
+                            </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                            <com.lasercyber.lws.ui.component.layout.InsetDivider
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                            <com.lasercyber.lws.ui.component.layout.InsetListRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="top"
+                                app:rowVerticalPadding="16dp">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/advanced_setting_item_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0"
+                                        android:maxLines="2"
+                                        android:text="@string/advanced_setting_allow_work_after_camera_alarm" />
+
+                                    <TextView
+                                        style="@style/advanced_setting_item_hint"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="8dp"
+                                        android:text="@string/advanced_setting_allow_work_after_camera_alarm_hint" />
+                                </LinearLayout>
+
+                                <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                                    android:id="@+id/allow_work_after_camera_alarm_switch"
+                                    style="@style/FrostSwitch"
+                                    android:layout_marginTop="4dp" />
+                            </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                            <com.lasercyber.lws.ui.component.layout.InsetDivider
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                            <com.lasercyber.lws.ui.component.layout.InsetListRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="top"
+                                app:rowVerticalPadding="16dp">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/advanced_setting_item_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0"
+                                        android:maxLines="2"
+                                        android:text="@string/advanced_setting_allow_work_after_gas_alarm" />
+
+                                    <TextView
+                                        style="@style/advanced_setting_item_hint"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="8dp"
+                                        android:text="@string/advanced_setting_allow_work_after_gas_alarm_hint" />
+                                </LinearLayout>
+
+                                <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                                    android:id="@+id/allow_work_after_gas_alarm_switch"
+                                    style="@style/FrostSwitch"
+                                    android:layout_marginTop="4dp" />
+                            </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                            <com.lasercyber.lws.ui.component.layout.InsetDivider
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                            <com.lasercyber.lws.ui.component.layout.InsetListRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="top"
+                                app:rowVerticalPadding="16dp">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/advanced_setting_item_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0"
+                                        android:maxLines="2"
+                                        android:text="@string/advanced_setting_allow_work_after_lens_contamination" />
+
+                                    <TextView
+                                        style="@style/advanced_setting_item_hint"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="8dp"
+                                        android:text="@string/advanced_setting_allow_work_after_lens_contamination_hint" />
+                                </LinearLayout>
+
+                                <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                                    android:id="@+id/allow_work_after_lens_contamination_switch"
+                                    style="@style/FrostSwitch"
+                                    android:layout_marginTop="4dp" />
+                            </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                            <com.lasercyber.lws.ui.component.layout.InsetDivider
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+
+                            <com.lasercyber.lws.ui.component.layout.InsetListRow
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="top"
+                                app:rowVerticalPadding="16dp">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/advanced_setting_item_title"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0"
+                                        android:maxLines="2"
+                                        android:text="@string/advanced_setting_allow_work_after_feeder_alarm" />
+
+                                    <TextView
+                                        style="@style/advanced_setting_item_hint"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="8dp"
+                                        android:text="@string/advanced_setting_allow_work_after_feeder_alarm_hint" />
+                                </LinearLayout>
+
+                                <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                                    android:id="@+id/allow_work_after_feeder_alarm_switch"
+                                    style="@style/FrostSwitch"
+                                    android:layout_marginTop="4dp" />
+                            </com.lasercyber.lws.ui.component.layout.InsetListRow>
+                        </com.lasercyber.lws.ui.component.layout.InsetList>
+                    </com.lasercyber.lws.ui.component.layout.SectionContent>
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+            </LinearLayout>
+        </com.lasercyber.lws.ui.component.AppScrollView>
+    </FrameLayout>
+</layout>

@@ -1,0 +1,1447 @@
+--------- beginning of main
+05-02 19:02:14.914 D/AndroidRuntime( 3420): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+05-02 19:02:14.924 I/AndroidRuntime( 3420): Using default boot image
+05-02 19:02:14.924 I/AndroidRuntime( 3420): Leaving lock profiling enabled
+05-02 19:02:14.932 I/app_process( 3420): Core platform API reporting enabled, enforcing=false
+05-02 19:02:15.004 W/linker  ( 3420): Warning: library "/system/framework/arm64/boot-framework.oat" ("/system/framework/arm64/boot-framework.oat") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 10000)
+05-02 19:02:15.008 W/linker  ( 3420): Warning: library "/system/framework/arm64/boot-ext.oat" ("/system/framework/arm64/boot-ext.oat") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 10000)
+05-02 19:02:15.012 W/linker  ( 3420): Warning: library "/system/framework/arm64/boot-telephony-common.oat" ("/system/framework/arm64/boot-telephony-common.oat") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 10000)
+05-02 19:02:15.015 W/linker  ( 3420): Warning: library "/system/framework/arm64/boot-voip-common.oat" ("/system/framework/arm64/boot-voip-common.oat") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 10000)
+05-02 19:02:15.018 W/linker  ( 3420): Warning: library "/system/framework/arm64/boot-ims-common.oat" ("/system/framework/arm64/boot-ims-common.oat") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 10000)
+05-02 19:02:15.021 W/linker  ( 3420): Warning: library "/system/framework/arm64/boot-framework-atb-backward-compatibility.oat" ("/system/framework/arm64/boot-framework-atb-backward-compatibility.oat") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 10000)
+05-02 19:02:15.169 D/app_process( 3420): Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+05-02 19:02:15.169 D/app_process( 3420): I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt66l.dat
+05-02 19:02:15.186 W/linker  ( 3420): Warning: library "/system/framework/oat/arm64/am.odex" ("/system/framework/oat/arm64/am.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 10000)
+05-02 19:02:15.188 I/app_process( 3420): The ClassLoaderContext is a special shared library.
+05-02 19:02:15.202 D/serial_port(  737): Opening serial port /dev/ttyS5 with flags 0x2
+05-02 19:02:15.202 D/serial_port(  737): open() fd = 93
+05-02 19:02:15.202 D/serial_port(  737): Configuring serial port
+05-02 19:02:15.218 W/app_process( 3420): JNI RegisterNativeMethods: attempt to register 0 native methods for android.media.AudioAttributes
+05-02 19:02:15.231 D/AndroidRuntime( 3420): Calling main entry com.android.commands.am.Am
+--------- beginning of system
+05-02 19:02:15.241 I/ActivityManager(  477): Force stopping com.lasercyber.lws.ui appid=10070 user=0: start instr
+05-02 19:02:15.241 I/ActivityManager(  477): Killing 737:com.lasercyber.lws.ui/u0a70 (adj 0): stop com.lasercyber.lws.ui due to start instr
+05-02 19:02:15.243 W/ActivityTaskManager(  477): Force removing ActivityRecord{60dcc40 u0 com.lasercyber.lws.ui/.activitys.SafetyTipsActivity t30 f}}: app died, no saved state
+05-02 19:02:15.293 D/CompatibilityChangeReporter(  477): Compat change id reported: 135634846; UID 10070; state: DISABLED
+05-02 19:02:15.294 D/CompatibilityChangeReporter(  477): Compat change id reported: 135754954; UID 10070; state: ENABLED
+05-02 19:02:15.295 D/CompatibilityChangeReporter(  477): Compat change id reported: 143937733; UID 10070; state: ENABLED
+05-02 19:02:15.330 I/DropBoxManagerService(  477): add tag=system_server_strictmode isTagEnabled=true flags=0x2
+05-02 19:02:15.339 I/DropBoxManagerService(  477): add tag=system_server_strictmode isTagEnabled=true flags=0x2
+05-02 19:02:15.339 D/WindowManager(  477): onWindowsDrawn intent = Intent { act=android.intent.action.MAIN cat=[android.intent.category.HOME] flg=0x10000100 cmp=com.android.launcher3/.uioverrides.QuickstepLauncher }
+05-02 19:02:15.340 D/WindowManager(  477): onWindowsDrawn innohiBootApkPkg =  shortComponentName = com.android.launcher3/.uioverrides.QuickstepLauncher
+05-02 19:02:15.342 D/Zygote  (  268): Forked child process 3436
+05-02 19:02:15.346 W/ActivityManager(  477): Slow operation: 54ms so far, now at startProcess: returned from zygote!
+05-02 19:02:15.348 I/DropBoxManagerService(  477): add tag=system_server_strictmode isTagEnabled=true flags=0x2
+05-02 19:02:15.356 W/ActivityManager(  477): Slow operation: 65ms so far, now at startProcess: done updating battery stats
+05-02 19:02:15.356 W/ActivityManager(  477): Slow operation: 65ms so far, now at startProcess: building log message
+05-02 19:02:15.356 I/ActivityManager(  477): Start proc 3436:com.lasercyber.lws.ui/u0a70 for added application com.lasercyber.lws.ui
+05-02 19:02:15.356 W/ActivityManager(  477): Slow operation: 65ms so far, now at startProcess: starting to update pids map
+05-02 19:02:15.359 W/ActivityManager(  477): Slow operation: 68ms so far, now at startProcess: done updating pids map
+05-02 19:02:15.361 I/Zygote  ( 3436): seccomp disabled by setenforce 0
+05-02 19:02:15.397 V/WindowManager(  477): getPackagePerformanceMode -- ComponentInfo{com.android.launcher3/com.android.launcher3.uioverrides.QuickstepLauncher} -- com.android.launcher3 -- mode=0
+05-02 19:02:15.398 I/adbd    ( 1837): jdwp connection from 3436
+05-02 19:02:15.445 W/ActivityThread( 3436): Package uses different ABI(s) than its instrumentation: package[com.lasercyber.lws.ui]: arm64-v8a, null instrumentation[com.lasercyber.lws.ui.test]: null, null
+05-02 19:02:15.451 W/linker  ( 3436): Warning: library "/system/framework/oat/arm64/android.test.runner.odex" ("/system/framework/oat/arm64/android.test.runner.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.453 I/sercyber.lws.u( 3436): The ClassLoaderContext is a special shared library.
+05-02 19:02:15.456 W/linker  ( 3436): Warning: library "/system/framework/oat/arm64/android.test.mock.odex" ("/system/framework/oat/arm64/android.test.mock.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.459 I/sercyber.lws.u( 3436): The ClassLoaderContext is a special shared library.
+05-02 19:02:15.461 W/linker  ( 3436): Warning: library "/system/framework/oat/arm64/android.test.base.odex" ("/system/framework/oat/arm64/android.test.base.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.464 I/sercyber.lws.u( 3436): The ClassLoaderContext is a special shared library.
+05-02 19:02:15.465 W/linker  ( 3436): Warning: library "/data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/oat/arm64/base.odex" ("/data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/oat/arm64/base.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.467 W/sercyber.lws.u( 3436): ClassLoaderContext classpath size mismatch. expected=0, found=3 (PCL[]{PCL[/system/framework/android.test.base.jar*2798937298]#PCL[/system/framework/android.test.mock.jar*1699164922]{PCL[/system/framework/android.test.base.jar*2798937298]}#PCL[/system/framework/android.test.runner.jar*594874720]{PCL[/system/framework/android.test.base.jar*2798937298]#PCL[/system/framework/android.test.mock.jar*1699164922]{PCL[/system/framework/android.test.base.jar*2798937298]}}} | PCL[/system/framework/android.test.runner.jar*594874720:/system/framework/android.test.mock.jar*1699164922:/system/framework/android.test.base.jar*2798937298])
+05-02 19:02:15.468 W/sercyber.lws.u( 3436): Found duplicate classes, falling back to extracting from APK : /data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/base.apk
+05-02 19:02:15.468 W/sercyber.lws.u( 3436): NOTE: This wastes RAM and hurts startup performance.
+05-02 19:02:15.468 W/sercyber.lws.u( 3436): Found duplicated class when checking oat files: 'Ljunit/framework/Assert;' in /data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/base.apk and /system/framework/android.test.base.jar
+05-02 19:02:15.484 D/BufferPoolAccessor2.0(  383): bufferpool2 0xb400006ef3b5ee78 : 0(0 size) total buffers - 0(0 size) used buffers - 98/103 (recycle/alloc) - 5/103 (fetch/transfer)
+05-02 19:02:15.485 D/BufferPoolAccessor2.0(  383): Destruction - bufferpool2 0xb400006ef3b5ee78 cached: 0/0M, 0/0% in use; allocs: 103, 95% recycled; transfers: 103, 95% unfetched
+05-02 19:02:15.485 D/BufferPoolAccessor2.0(  383): bufferpool2 0xb400006ef3b5c4d8 : 0(0 size) total buffers - 0(0 size) used buffers - 7/11 (recycle/alloc) - 4/11 (fetch/transfer)
+05-02 19:02:15.485 D/BufferPoolAccessor2.0(  383): Destruction - bufferpool2 0xb400006ef3b5c4d8 cached: 0/0M, 0/0% in use; allocs: 11, 64% recycled; transfers: 11, 64% unfetched
+05-02 19:02:15.515 W/ActivityManager(  477): setHasOverlayUi called on unknown pid: 737
+--------- beginning of kernel
+05-02 19:02:15.518 I/binder  (    0): undelivered transaction 6730046, process died.
+05-02 19:02:15.518 D/ConnectivityService(  477): ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ LISTEN id=33, [ Transports: CELLULAR|WIFI Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN Uid: 10070 AdministratorUids: [] RequestorUid: 10070 RequestorPackageName: com.lasercyber.lws.ui] ], android.os.BinderProxy@2a003d)
+05-02 19:02:15.518 I/binder  (    0): undelivered transaction 6729710, process died.
+05-02 19:02:15.518 I/binder  (    0): undelivered transaction 6730045, process died.
+05-02 19:02:15.518 D/ConnectivityService(  477): releasing NetworkRequest [ LISTEN id=33, [ Transports: CELLULAR|WIFI Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN Uid: 10070 AdministratorUids: [] RequestorUid: 10070 RequestorPackageName: com.lasercyber.lws.ui] ] (release request)
+05-02 19:02:15.542 W/linker  ( 3436): Warning: library "/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/oat/arm64/base.odex" ("/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/oat/arm64/base.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.555 W/sercyber.lws.u( 3436): ClassLoaderContext classpath size mismatch. expected=0, found=4 (PCL[] | PCL[/system/framework/android.test.runner.jar*594874720:/system/framework/android.test.mock.jar*1699164922:/system/framework/android.test.base.jar*2798937298:/data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/base.apk*1869726618])
+05-02 19:02:15.559 I/Zygote  (  268): Process 737 exited due to signal 9 (Killed)
+05-02 19:02:15.596 D/ApplicationLoaders( 3436): Returning zygote-cached class loader: /system/framework/android.test.base.jar
+05-02 19:02:15.596 D/ApplicationLoaders( 3436): Returning zygote-cached class loader: /system/framework/android.test.base.jar
+05-02 19:02:15.597 W/linker  ( 3436): Warning: library "/system/framework/oat/arm64/android.test.mock.odex" ("/system/framework/oat/arm64/android.test.mock.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.599 I/sercyber.lws.u( 3436): The ClassLoaderContext is a special shared library.
+05-02 19:02:15.601 D/ApplicationLoaders( 3436): Returning zygote-cached class loader: /system/framework/android.test.base.jar
+05-02 19:02:15.601 D/ApplicationLoaders( 3436): Returning zygote-cached class loader: /system/framework/android.test.base.jar
+05-02 19:02:15.602 W/linker  ( 3436): Warning: library "/system/framework/oat/arm64/android.test.runner.odex" ("/system/framework/oat/arm64/android.test.runner.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.604 I/sercyber.lws.u( 3436): The ClassLoaderContext is a special shared library.
+05-02 19:02:15.607 W/linker  ( 3436): Warning: library "/system/framework/oat/arm64/android.test.runner.odex" ("/system/framework/oat/arm64/android.test.runner.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.609 I/sercyber.lws.u( 3436): The ClassLoaderContext is a special shared library.
+05-02 19:02:15.612 W/linker  ( 3436): Warning: library "/system/framework/oat/arm64/android.test.mock.odex" ("/system/framework/oat/arm64/android.test.mock.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.613 I/sercyber.lws.u( 3436): The ClassLoaderContext is a special shared library.
+05-02 19:02:15.616 W/linker  ( 3436): Warning: library "/system/framework/oat/arm64/android.test.base.odex" ("/system/framework/oat/arm64/android.test.base.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.617 I/sercyber.lws.u( 3436): The ClassLoaderContext is a special shared library.
+05-02 19:02:15.621 W/linker  ( 3436): Warning: library "/data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/oat/arm64/base.odex" ("/data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/oat/arm64/base.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.623 W/sercyber.lws.u( 3436): ClassLoaderContext classpath size mismatch. expected=0, found=3 (PCL[]{PCL[/system/framework/android.test.base.jar*2798937298]#PCL[/system/framework/android.test.mock.jar*1699164922]{PCL[/system/framework/android.test.base.jar*2798937298]}#PCL[/system/framework/android.test.runner.jar*594874720]{PCL[/system/framework/android.test.base.jar*2798937298]#PCL[/system/framework/android.test.mock.jar*1699164922]{PCL[/system/framework/android.test.base.jar*2798937298]}}} | PCL[/system/framework/android.test.runner.jar*594874720:/system/framework/android.test.mock.jar*1699164922:/system/framework/android.test.base.jar*2798937298]{PCL[/system/framework/android.test.base.jar*2798937298]#PCL[/system/framework/android.test.mock.jar*1699164922]{PCL[/system/framework/android.test.base.jar*2798937298]}#PCL[/system/framework/android.test.runner.jar*594874720]{PCL[/system/framework/android.test.base.jar*2798937298]#PCL[/system/framework/android.test.mock.jar*1699164922]{PCL[/system/framework/android.test.base.jar*2798937298]}}};PCL[/system/framework/android.test.runner.jar*594874720:/system/framework/android.test.mock.jar*1699164922:/system/framework/android.test.base.jar*2798937298:/data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/base.apk*1869726618:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk*2348610825:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes2.dex*2460141661:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes3.dex*3838194917:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes4.dex*89582354:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes5.dex*1373744629:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes6.dex*2030534225:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes7.dex*2270288047:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes8.dex*1680744206:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes9.dex*1517764077])
+05-02 19:02:15.628 W/sercyber.lws.u( 3436): Found duplicate classes, falling back to extracting from APK : /data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/base.apk
+05-02 19:02:15.628 W/sercyber.lws.u( 3436): NOTE: This wastes RAM and hurts startup performance.
+05-02 19:02:15.628 W/sercyber.lws.u( 3436): Found duplicated class when checking oat files: 'Landroidx/test/InstrumentationRegistry;' in /data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/base.apk and /data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/base.apk
+05-02 19:02:15.669 W/linker  ( 3436): Warning: library "/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/oat/arm64/base.odex" ("/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/oat/arm64/base.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:15.679 W/sercyber.lws.u( 3436): ClassLoaderContext classpath size mismatch. expected=0, found=4 (PCL[] | PCL[/system/framework/android.test.runner.jar*594874720:/system/framework/android.test.mock.jar*1699164922:/system/framework/android.test.base.jar*2798937298:/data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/base.apk*1869726618]{PCL[/system/framework/android.test.base.jar*2798937298]#PCL[/system/framework/android.test.mock.jar*1699164922]{PCL[/system/framework/android.test.base.jar*2798937298]}#PCL[/system/framework/android.test.runner.jar*594874720]{PCL[/system/framework/android.test.base.jar*2798937298]#PCL[/system/framework/android.test.mock.jar*1699164922]{PCL[/system/framework/android.test.base.jar*2798937298]}}};PCL[/system/framework/android.test.runner.jar*594874720:/system/framework/android.test.mock.jar*1699164922:/system/framework/android.test.base.jar*2798937298:/data/app/~~9SAYJ7SugPq1gv9JysHliA==/com.lasercyber.lws.ui.test-RkIQQuIvHFD1NSk5GNr7pw==/base.apk*1869726618:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk*2348610825:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes2.dex*2460141661:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes3.dex*3838194917:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes4.dex*89582354:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes5.dex*1373744629:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes6.dex*2030534225:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes7.dex*2270288047:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes8.dex*1680744206:/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk!classes9.dex*1517764077])
+05-02 19:02:15.682 W/sercyber.lws.u( 3436): Found duplicate classes, falling back to extracting from APK : /data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk
+05-02 19:02:15.682 W/sercyber.lws.u( 3436): NOTE: This wastes RAM and hurts startup performance.
+05-02 19:02:15.682 W/sercyber.lws.u( 3436): Found duplicated class when checking oat files: 'L_COROUTINE/ArtificialStackFrames;' in /data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk and /data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/base.apk
+05-02 19:02:15.917 D/InnohiManagerService(  477): MSG_FOREGROUND_APP_KEEPLIVE_LOOP 11927263 com.lasercyber.lws.ui show... , wait 10 seconds
+05-02 19:02:15.931 I/AutoWifiReconnectService(  477): Try auto reconnect to netId=0
+05-02 19:02:15.931 I/WifiService(  477): enableNetwork uid=1000 disableOthers=false
+05-02 19:02:15.955 D/WifiConfigStore(  477): Writing to stores completed in 18 ms.
+05-02 19:02:15.956 I/WifiService(  477): reconnect uid=1000
+05-02 19:02:17.058 D/WifiNl80211Manager(  477): Scan result ready event
+05-02 19:02:17.058 D/WifiNative(  477): Scan result ready event
+05-02 19:02:17.060 I/EthernetTracker(  477): interfaceLinkStateChanged, iface: wlan0, up: true
+05-02 19:02:17.087 D/WificondScannerImpl(  477): Filtering out 33 scan results.
+05-02 19:02:17.096 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1d:<xiaohaowifi_5G>
+05-02 19:02:17.097 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1e:<xiaohaowifi_IoT>
+05-02 19:02:17.097 D/PasspointManager(  477): ANQP entry not found for: 60:cf:84:00:ac:18:<>
+05-02 19:02:18.308 E/TaskPersister(  477): File error accessing recents directory (directory doesn't exist?).
+05-02 19:02:18.758 D/NetworkSecurityConfig( 3436): No Network Security Config specified, using platform default
+05-02 19:02:18.759 D/NetworkSecurityConfig( 3436): No Network Security Config specified, using platform default
+05-02 19:02:18.759 I/MonitoringInstr( 3436): newApplication called!
+05-02 19:02:18.826 D/WM-WrkMgrInitializer( 3436): Initializing WorkManager with default configuration.
+05-02 19:02:18.846 I/TetheringManager( 3436): registerTetheringEventCallback:com.lasercyber.lws.ui
+05-02 19:02:18.854 D/WM-PackageManagerHelper( 3436): Skipping component enablement for androidx.work.impl.background.systemjob.SystemJobService
+05-02 19:02:18.854 D/WM-Schedulers( 3436): Created SystemJobScheduler and enabled SystemJobService
+05-02 19:02:18.877 I/MonitoringInstr( 3436): Instrumentation started!
+05-02 19:02:18.898 I/AndroidJUnitRunner( 3436): onCreate Bundle[{class=com.lasercyber.lws.ui.ai.InferPicturesDirectoryInstrumentedTest#inferAllPicturesAndPrintResultPaths}]
+05-02 19:02:18.902 V/TestEventClient( 3436): No service name argument was given (testDiscoveryService, testRunEventService or orchestratorService)
+05-02 19:02:18.908 D/AndroidJUnitRunner( 3436): onStart is called.
+05-02 19:02:18.909 D/application( 3436): 正在启动 LaserApplication=====>
+05-02 19:02:18.916 D/ConnectivityService(  477): listenForNetwork for uid/pid:10070/3436 NetworkRequest [ LISTEN id=34, [ Transports: CELLULAR|WIFI Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN Uid: 10070 AdministratorUids: [] RequestorUid: 10070 RequestorPackageName: com.lasercyber.lws.ui] ]
+05-02 19:02:18.917 D/ConnectivityService(  477): NetworkReassignment : no changes
+05-02 19:02:18.919 D/application( 3436): 事件总线注册完成...
+05-02 19:02:18.927 D/InnohiManagerService(  477): setForegroundAppKeepLive packageName = com.lasercyber.lws.ui keepAliveTimeSec = 10
+05-02 19:02:18.928 D/FileUtil(  477): path = /sys/class/gpio_innohi/GPIO_8/value write = 1 read = 1
+05-02 19:02:18.931 D/FileUtil(  477): path = /sys/class/gpio_innohi/GPIO_5/value write = 0 read = 0
+05-02 19:02:18.933 D/InnohiManagerService(  477): setExtendStatusBarVisibility visibility = 5
+05-02 19:02:18.933 D/FileUtil(  477): path = /sys/class/gpio_innohi/GPIO_6/value write = 0 read = 0
+05-02 19:02:18.933 D/InnohiManagerService(  477): getNavigationBarVisibility type = 2
+05-02 19:02:18.935 W/application( 3436): skip LensGuard init enable=true emulator=false instrumentation=true
+05-02 19:02:18.935 I/application( 3436): startup_phase=modbus_init, outcome=start, reason=begin
+05-02 19:02:18.936 I/LwsCloudSync( 3436): App | cold start: schedule API origin probe only (metadata enqueue after pin)
+05-02 19:02:18.936 D/ModbusManagerRtu( 3436): 正在创建modbus管理器====>
+05-02 19:02:18.937 I/application( 3436): cold start: no active network, skip immediate API origin probe
+05-02 19:02:18.937 I/LwsCloudSync( 3436): App | no active network at cold start (getActiveNetwork null) — wait for NetworkCallback
+05-02 19:02:18.938 I/MonitoringInstr( 3436): No JSBridge.
+05-02 19:02:18.938 I/application( 3436): startup_phase=modbus_init, outcome=open_requested, reason=async_init_requested
+05-02 19:02:18.938 D/DeviceStatusTaskHandler( 3436): 正在重置设备状态的定时任务=====>
+05-02 19:02:18.939 D/application( 3436): AndroidUtilCode 初始化完成...
+05-02 19:02:18.948 W/Glide   ( 3436): Failed to find GeneratedAppGlideModule. You should include an annotationProcessor compile dependency on com.github.bumptech.glide:compiler in your application and a @GlideModule annotated AppGlideModule implementation or LibraryGlideModules will be silently ignored
+05-02 19:02:18.953 W/ContextImpl(  477): Calling a method in the system process without a qualified user: android.app.ContextImpl.sendBroadcast:1111 com.innohi.server.InnohiManagerService.setExtendStatusBarVisibility:1357 com.innohi.IInnohiManager$Stub.onTransact:1143 android.os.Binder.execTransactInternal:1154 android.os.Binder.execTransact:1123 
+05-02 19:02:18.955 D/StatusBar(  666): innohi onReceive com.systemui.action.hideStatusBar type = 2 curType = 2
+05-02 19:02:18.955 D/InnohiManagerService(  477): setNavigationBarVisibility visibility = 2
+05-02 19:02:18.955 D/InnohiManagerService(  477): getNavigationBarVisibility type = 2
+05-02 19:02:18.967 D/DeviceStatusTaskHandler( 3436): 添加新的设备状态定时任务:ReadInputRegisters_1777719738947
+05-02 19:02:18.967 D/DeviceStatusTaskHandler( 3436): 正在重置设备数据的定时任务=====>
+05-02 19:02:18.977 D/DeviceStatusTaskHandler( 3436): 添加新的设备数据定时任务:ReadInputRegisters_1777719738967
+05-02 19:02:19.003 D/TestRequestBuilder( 3436): Skipping class path scanning and directly running [com.lasercyber.lws.ui.ai.InferPicturesDirectoryInstrumentedTest]
+05-02 19:02:19.029 D/GlobalSoundManager( 3436): initSoundPool: 生成的音频Id：2
+05-02 19:02:19.036 I/application( 3436): bundled process-library: skip (not newer than data) asset=1.0.0 data=1.0.0
+05-02 19:02:19.041 I/application( 3436): bundled ai-library: skip (not newer) asset=1.0.9 data=1.0.9 storageDir=1.0.9
+05-02 19:02:19.042 D/serial_port( 3436): Opening serial port /dev/ttyS5 with flags 0x2
+05-02 19:02:19.043 D/serial_port( 3436): open() fd = 73
+05-02 19:02:19.043 D/serial_port( 3436): Configuring serial port
+05-02 19:02:19.043 D/AndroidJUnitRunner( 3436): Use the raw file system for managing file I/O.
+05-02 19:02:19.049 E/Utils   (  373): did not find channel-count and/or sample-rate
+05-02 19:02:19.051 I/ModbusManagerRtu( 3436): Modbus startup state -> AVAILABLE
+05-02 19:02:19.052 D/ModbusManagerRtu( 3436): modbus链接成功
+05-02 19:02:19.052 D/InitModbusCallBack( 3436): 串口打开成功
+05-02 19:02:19.055 D/TestExecutor( 3436): Adding listener androidx.test.internal.runner.listener.LogRunListener
+05-02 19:02:19.056 D/TestExecutor( 3436): Adding listener androidx.test.internal.runner.listener.InstrumentationResultPrinter
+05-02 19:02:19.056 D/TestExecutor( 3436): Adding listener androidx.test.internal.runner.listener.ActivityFinisherRunListener
+05-02 19:02:19.057 D/TestExecutor( 3436): Adding listener androidx.test.internal.runner.listener.TraceRunListener
+05-02 19:02:19.059 E/Utils   (  373): did not find channel-count and/or sample-rate
+05-02 19:02:19.062 D/ModbusManagerRtu( 3436): 批量下发数据：144==>[0, 75, 1000, 1000, 0, 0, 0, 0, 80, 15]
+05-02 19:02:19.062 D/CCodec  ( 3436): allocate(c2.android.mp3.decoder)
+05-02 19:02:19.064 I/TestRunner( 3436): run started: 1 tests
+05-02 19:02:19.068 D/CCodec  ( 3436): allocate(c2.android.mp3.decoder)
+05-02 19:02:19.071 I/Codec2Client( 3436): Available Codec2 services: "software"
+05-02 19:02:19.074 I/TestRunner( 3436): started: inferAllPicturesAndPrintResultPaths(com.lasercyber.lws.ui.ai.InferPicturesDirectoryInstrumentedTest)
+05-02 19:02:19.076 V/C2Store (  383): in init
+05-02 19:02:19.076 V/C2Store (  383): loading dll
+05-02 19:02:19.087 I/CCodec  ( 3436): Created component [c2.android.mp3.decoder]
+05-02 19:02:19.088 D/CCodecConfig( 3436): read media type: audio/mpeg
+05-02 19:02:19.090 I/CCodec  ( 3436): Created component [c2.android.mp3.decoder]
+05-02 19:02:19.091 I/application( 3436): startup_phase=modbus_init, outcome=done, reason=startup_continue
+05-02 19:02:19.092 D/CCodecConfig( 3436): read media type: audio/mpeg
+05-02 19:02:19.092 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: algo.buffers.max-count.values
+05-02 19:02:19.093 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: output.subscribed-indices.values
+05-02 19:02:19.093 D/PermissionUtils( 1235): checkRuntimePermission permission=android.permission.READ_EXTERNAL_STORAGE packageName=com.lasercyber.lws.ui isCheckPermissionOk=false
+05-02 19:02:19.093 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: input.buffers.allocator-ids.values
+05-02 19:02:19.093 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: output.buffers.allocator-ids.values
+05-02 19:02:19.093 D/PermissionUtils( 1235): checkAppOpPermission permission=android.permission.MANAGE_EXTERNAL_STORAGE AppOpsManager op=android:manage_external_storage forDataDelivery=true
+05-02 19:02:19.094 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: algo.buffers.allocator-ids.values
+05-02 19:02:19.094 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: output.buffers.pool-ids.values
+05-02 19:02:19.094 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: algo.buffers.pool-ids.values
+05-02 19:02:19.094 D/PermissionUtils( 1235): checkAppOpPermission permission=android.permission.MANAGE_EXTERNAL_STORAGE opMode=0
+05-02 19:02:19.095 D/PermissionUtils( 1235): checkAppOpPermission permission=android.permission.MANAGE_EXTERNAL_STORAGE packageName=com.lasercyber.lws.ui isCheckPermissionOk=true
+05-02 19:02:19.095 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: algo.buffers.max-count.values
+05-02 19:02:19.095 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: output.subscribed-indices.values
+05-02 19:02:19.095 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: input.buffers.allocator-ids.values
+05-02 19:02:19.095 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: output.buffers.allocator-ids.values
+05-02 19:02:19.096 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: algo.buffers.allocator-ids.values
+05-02 19:02:19.096 I/CCodecConfig( 3436): query failed after returning 7 values (BAD_INDEX)
+05-02 19:02:19.096 D/CCodecConfig( 3436): c2 config diff is Dict {
+05-02 19:02:19.096 D/CCodecConfig( 3436):   c2::u32 coded.bitrate.value = 64000
+05-02 19:02:19.096 D/CCodecConfig( 3436):   c2::u32 input.buffers.max-size.value = 8192
+05-02 19:02:19.096 D/CCodecConfig( 3436):   c2::u32 input.delay.value = 0
+05-02 19:02:19.096 D/CCodecConfig( 3436):   string input.media-type.value = "audio/mpeg"
+05-02 19:02:19.096 D/CCodecConfig( 3436):   string output.media-type.value = "audio/raw"
+05-02 19:02:19.096 D/CCodecConfig( 3436):   c2::u32 raw.channel-count.value = 2
+05-02 19:02:19.096 D/CCodecConfig( 3436):   c2::u32 raw.sample-rate.value = 44100
+05-02 19:02:19.096 D/CCodecConfig( 3436): }
+05-02 19:02:19.096 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: output.buffers.pool-ids.values
+05-02 19:02:19.096 D/ReflectedParamUpdater( 3436): extent() != 1 for single value type: algo.buffers.pool-ids.values
+05-02 19:02:19.097 D/CCodec  ( 3436): [c2.android.mp3.decoder] buffers are bound to CCodec for this session
+05-02 19:02:19.097 D/CCodecConfig( 3436): no c2 equivalents for durationUs
+05-02 19:02:19.097 D/CCodecConfig( 3436): no c2 equivalents for track-id
+05-02 19:02:19.097 D/CCodecConfig( 3436): no c2 equivalents for encoder-delay
+05-02 19:02:19.097 D/CCodecConfig( 3436): no c2 equivalents for encoder-padding
+05-02 19:02:19.097 D/CCodecConfig( 3436): no c2 equivalents for flags
+05-02 19:02:19.098 I/CCodecConfig( 3436): query failed after returning 7 values (BAD_INDEX)
+05-02 19:02:19.098 D/CCodecConfig( 3436): c2 config diff is Dict {
+05-02 19:02:19.098 D/CCodecConfig( 3436):   c2::u32 coded.bitrate.value = 64000
+05-02 19:02:19.098 D/CCodecConfig( 3436):   c2::u32 input.buffers.max-size.value = 8192
+05-02 19:02:19.098 D/CCodecConfig( 3436):   c2::u32 input.delay.value = 0
+05-02 19:02:19.098 D/CCodecConfig( 3436):   string input.media-type.value = "audio/mpeg"
+05-02 19:02:19.098 D/CCodecConfig( 3436):   string output.media-type.value = "audio/raw"
+05-02 19:02:19.098 D/CCodecConfig( 3436):   c2::u32 raw.channel-count.value = 2
+05-02 19:02:19.098 D/CCodecConfig( 3436):   c2::u32 raw.sample-rate.value = 44100
+05-02 19:02:19.098 D/CCodecConfig( 3436): }
+05-02 19:02:19.103 W/Codec2Client( 3436): query -- param skipped: index = 1107298332.
+05-02 19:02:19.103 D/CCodec  ( 3436): setup formats input: AMessage(what = 0x00000000) = {
+05-02 19:02:19.103 D/CCodec  ( 3436):   int32_t channel-count = 2
+05-02 19:02:19.103 D/CCodec  ( 3436):   int32_t max-input-size = 8192
+05-02 19:02:19.103 D/CCodec  ( 3436):   string mime = "audio/mpeg"
+05-02 19:02:19.103 D/CCodec  ( 3436):   int32_t sample-rate = 44100
+05-02 19:02:19.103 D/CCodec  ( 3436): } and output: AMessage(what = 0x00000000) = {
+05-02 19:02:19.103 D/CCodec  ( 3436):   int32_t channel-count = 2
+05-02 19:02:19.103 D/CCodec  ( 3436):   string mime = "audio/raw"
+05-02 19:02:19.103 D/CCodec  ( 3436):   int32_t sample-rate = 44100
+05-02 19:02:19.103 D/CCodec  ( 3436):   int32_t encoder-delay = 576
+05-02 19:02:19.103 D/CCodec  ( 3436):   int32_t encoder-padding = 935
+05-02 19:02:19.103 D/CCodec  ( 3436): }
+05-02 19:02:19.104 D/CCodec  ( 3436): [c2.android.mp3.decoder] buffers are bound to CCodec for this session
+05-02 19:02:19.104 D/CCodecConfig( 3436): no c2 equivalents for durationUs
+05-02 19:02:19.104 D/CCodecConfig( 3436): no c2 equivalents for track-id
+05-02 19:02:19.104 D/CCodecConfig( 3436): no c2 equivalents for encoder-delay
+05-02 19:02:19.104 D/CCodecConfig( 3436): no c2 equivalents for encoder-padding
+05-02 19:02:19.104 D/CCodecConfig( 3436): no c2 equivalents for flags
+05-02 19:02:19.104 I/application( 3436): bundled process-library: skip (not newer than data) asset=1.0.0 data=1.0.0
+05-02 19:02:19.105 W/Codec2Client( 3436): query -- param skipped: index = 1342179345.
+05-02 19:02:19.105 W/Codec2Client( 3436): query -- param skipped: index = 2415921170.
+05-02 19:02:19.105 W/Codec2Client( 3436): query -- param skipped: index = 1107298332.
+05-02 19:02:19.105 D/CCodec  ( 3436): setup formats input: AMessage(what = 0x00000000) = {
+05-02 19:02:19.105 D/CCodec  ( 3436):   int32_t channel-count = 2
+05-02 19:02:19.105 D/CCodec  ( 3436):   int32_t max-input-size = 8192
+05-02 19:02:19.105 D/CCodec  ( 3436):   string mime = "audio/mpeg"
+05-02 19:02:19.105 D/CCodec  ( 3436):   int32_t sample-rate = 44100
+05-02 19:02:19.105 D/CCodec  ( 3436): } and output: AMessage(what = 0x00000000) = {
+05-02 19:02:19.105 D/CCodec  ( 3436):   int32_t channel-count = 2
+05-02 19:02:19.105 D/CCodec  ( 3436):   string mime = "audio/raw"
+05-02 19:02:19.105 D/CCodec  ( 3436):   int32_t sample-rate = 44100
+05-02 19:02:19.105 D/CCodec  ( 3436):   int32_t encoder-delay = 576
+05-02 19:02:19.105 D/CCodec  ( 3436):   int32_t encoder-padding = 1409
+05-02 19:02:19.105 D/CCodec  ( 3436): }
+05-02 19:02:19.107 E/FMQ     ( 3436): grantorIdx must be less than 3
+05-02 19:02:19.107 E/FMQ     ( 3436): grantorIdx must be less than 3
+05-02 19:02:19.107 W/Codec2Client( 3436): query -- param skipped: index = 1342179345.
+05-02 19:02:19.107 W/Codec2Client( 3436): query -- param skipped: index = 2415921170.
+05-02 19:02:19.107 D/CCodecBufferChannel( 3436): [c2.android.mp3.decoder#483] Created input block pool with allocatorID 16 => poolID 17 - OK (0)
+05-02 19:02:19.108 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:19.108 E/FMQ     ( 3436): grantorIdx must be less than 3
+05-02 19:02:19.108 I/application( 3436): bundled ai-library: skip (not newer) asset=1.0.9 data=1.0.9 storageDir=1.0.9
+05-02 19:02:19.108 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:19.108 E/FMQ     ( 3436): grantorIdx must be less than 3
+05-02 19:02:19.108 D/CCodecBufferChannel( 3436): [c2.android.mp3.decoder#832] Created input block pool with allocatorID 16 => poolID 18 - OK (0)
+05-02 19:02:19.109 I/CCodecBufferChannel( 3436): [c2.android.mp3.decoder#483] Created output block pool with allocatorID 16 => poolID 41 - OK
+05-02 19:02:19.110 D/CCodecBufferChannel( 3436): [c2.android.mp3.decoder#483] Configured output block pool ids 41 => OK
+05-02 19:02:19.110 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:19.110 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:19.111 E/ion     ( 3436): ioctl c0044901 failed with code -1: Inappropriate ioctl for device
+05-02 19:02:19.111 I/CCodecBufferChannel( 3436): [c2.android.mp3.decoder#832] Created output block pool with allocatorID 16 => poolID 42 - OK
+05-02 19:02:19.111 D/CCodecBufferChannel( 3436): [c2.android.mp3.decoder#832] Configured output block pool ids 42 => OK
+05-02 19:02:19.112 D/SimpleC2Component(  383): Using output block pool with poolID 41 => got 41 - 0
+05-02 19:02:19.126 E/FMQ     ( 3436): grantorIdx must be less than 3
+05-02 19:02:19.127 D/SimpleC2Component(  383): Using output block pool with poolID 42 => got 42 - 0
+05-02 19:02:19.128 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:19.128 I/NativeBridge( 3436): ensureLoaded using ai lib dir=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library/1.0.9/jniLibs/arm64-v8a requestedVersion=1.0.0 variant=
+05-02 19:02:19.128 I/NativeBridge( 3436): ensureLoaded aiRoot=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library aiVersion(core)=1.0.0 libDir=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library/1.0.9/jniLibs/arm64-v8a
+05-02 19:02:19.128 I/NativeBridge( 3436): System.load target so=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library/1.0.9/jniLibs/arm64-v8a/libc++_shared.so
+05-02 19:02:19.129 I/C2SoftMp3Dec(  383): Reconfiguring decoder: 0->44100 Hz, 0->2 channels
+05-02 19:02:19.131 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:19.132 E/FMQ     ( 3436): grantorIdx must be less than 3
+05-02 19:02:19.132 I/NativeBridge( 3436): System.load target so=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library/1.0.9/jniLibs/arm64-v8a/librknnrt.so
+05-02 19:02:19.135 D/CCodecBuffers( 3436): [c2.android.mp3.decoder#483:Output[N]] popFromStashAndRegister: output format changed to AMessage(what = 0x00000000) = {
+05-02 19:02:19.135 D/CCodecBuffers( 3436):   int32_t channel-count = 2
+05-02 19:02:19.135 D/CCodecBuffers( 3436):   string mime = "audio/raw"
+05-02 19:02:19.135 D/CCodecBuffers( 3436):   int32_t sample-rate = 44100
+05-02 19:02:19.135 D/CCodecBuffers( 3436):   int32_t encoder-delay = 576
+05-02 19:02:19.135 D/CCodecBuffers( 3436):   int32_t encoder-padding = 935
+05-02 19:02:19.135 D/CCodecBuffers( 3436): }
+05-02 19:02:19.139 I/NativeBridge( 3436): System.load target so=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library/1.0.9/jniLibs/arm64-v8a/libai.so
+05-02 19:02:19.150 I/LensGuardJNI( 3436): JNI_OnLoad: libai loaded
+05-02 19:02:19.151 D/AssetDeployer( 3436): config.yaml already exists, skipping deploy
+05-02 19:02:19.152 I/LensGuardManager( 3436): Engine config ready configPath=/data/user/0/com.lasercyber.lws.ui/files/lens_guard/config.yaml projectRoot=/data/user/0/com.lasercyber.lws.ui/files/lens_guard
+05-02 19:02:19.154 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeCreate seq=1 stage=init handle=0 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:19.155 I/LensGuardJNI( 3436): nativeCreate enter
+05-02 19:02:19.155 I/LensGuardJNI( 3436): configPath=/data/user/0/com.lasercyber.lws.ui/files/lens_guard/config.yaml
+05-02 19:02:19.155 I/LensGuardJNI( 3436): projectRoot=/data/user/0/com.lasercyber.lws.ui/files/lens_guard
+05-02 19:02:19.155 I/LensGuardJNI( 3436): before parse config
+05-02 19:02:19.159 D/CCodecBufferChannel( 3436): [c2.android.mp3.decoder#483] MediaCodec discarded an unknown buffer
+05-02 19:02:19.160 E/FMQ     ( 3436): grantorIdx must be less than 3
+05-02 19:02:19.161 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:19.163 I/C2SoftMp3Dec(  383): Reconfiguring decoder: 0->44100 Hz, 0->2 channels
+05-02 19:02:19.163 I/hw-BpHwBinder( 3436): onLastStrongRef automatically unlinking death recipients
+05-02 19:02:19.164 I/LensGuardJNI( 3436): after parse config
+05-02 19:02:19.164 I/LensGuardJNI( 3436): before create scheduler
+05-02 19:02:19.164 I/LensGuardModel( 3436): modelPath=<embedded:cls.rknn>
+05-02 19:02:19.164 I/LensGuardModel( 3436): model exists=1 size=3189184
+05-02 19:02:19.164 I/LensGuardModel( 3436): before load model file
+05-02 19:02:19.164 I/RKNNRunner( 3436): before load model file
+05-02 19:02:19.164 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:19.165 E/FMQ     ( 3436): grantorIdx must be less than 3
+05-02 19:02:19.167 D/CCodecBuffers( 3436): [c2.android.mp3.decoder#832:Output[N]] popFromStashAndRegister: output format changed to AMessage(what = 0x00000000) = {
+05-02 19:02:19.167 D/CCodecBuffers( 3436):   int32_t channel-count = 2
+05-02 19:02:19.167 D/CCodecBuffers( 3436):   string mime = "audio/raw"
+05-02 19:02:19.167 D/CCodecBuffers( 3436):   int32_t sample-rate = 44100
+05-02 19:02:19.167 D/CCodecBuffers( 3436):   int32_t encoder-delay = 576
+05-02 19:02:19.167 D/CCodecBuffers( 3436):   int32_t encoder-padding = 1409
+05-02 19:02:19.167 D/CCodecBuffers( 3436): }
+05-02 19:02:19.183 I/RKNNRunner( 3436): after load model file, buffer=0xb4000076e0b29040 size=3189184
+05-02 19:02:19.183 I/RKNNRunner( 3436): [RKNN] init begin model=<embedded> bytes=3189184
+05-02 19:02:19.183 I/RKNNRunner( 3436): [RKNN_API] rknn_init BEGIN
+05-02 19:02:19.200 I/RKNNRunner( 3436): [RKNN_API] rknn_init END ret=0
+05-02 19:02:19.200 I/RKNNRunner( 3436): after rknn_init ret=0 ctx=12970367441319071664
+05-02 19:02:19.201 I/RKNNRunner( 3436): [RKNN_API] rknn_set_core_mask BEGIN core_mask=0x1
+05-02 19:02:19.201 I/RKNNRunner( 3436): [RKNN_API] rknn_set_core_mask END ret=-13
+05-02 19:02:19.201 W/RKNNRunner( 3436): [RKNN] set_core_mask non-success ret=-13 (continuing)
+05-02 19:02:19.201 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_SDK_VERSION) BEGIN
+05-02 19:02:19.201 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_SDK_VERSION) END ret=0
+05-02 19:02:19.201 I/RKNNRunner( 3436): [RKNN] sdk api=2.3.2 (429f97ae6b@2025-04-09T09:08:16) drv=0.7.2
+05-02 19:02:19.201 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_IN_OUT_NUM) BEGIN
+05-02 19:02:19.201 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_IN_OUT_NUM) END ret=0 in=1 out=1
+05-02 19:02:19.201 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_INPUT_ATTR) BEGIN i=0
+05-02 19:02:19.201 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_INPUT_ATTR) END i=0 ret=0
+05-02 19:02:19.201 I/RKNNRunner( 3436): IN #0 n_dims=4 fmt=1 type=2 quant=2 zp=-128 scale=0.003922 n_elems=150528 size=150528 size_stride=150528 w_stride=224
+05-02 19:02:19.202 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_OUTPUT_ATTR) BEGIN i=0
+05-02 19:02:19.202 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_OUTPUT_ATTR) END i=0 ret=0
+05-02 19:02:19.202 I/RKNNRunner( 3436): OUT #0 n_dims=2 fmt=3 type=1 quant=2 zp=0 scale=1.000000 n_elems=1000 size=2000 size_stride=2000 w_stride=0
+05-02 19:02:19.202 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_CUSTOM_STRING) BEGIN
+05-02 19:02:19.202 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_CUSTOM_STRING) END ret=0
+05-02 19:02:19.202 I/RKNNRunner( 3436): [RKNN] allocate_io_memory begin
+05-02 19:02:19.202 I/RKNNRunner( 3436): [RKNN_API] rknn_create_mem(input) BEGIN i=0 size=150528
+05-02 19:02:19.202 I/RKNNRunner( 3436): [RKNN_API] rknn_create_mem(input) END i=0 ptr=0xb4000077aa20a490 ok=1
+05-02 19:02:19.202 I/RKNNRunner( 3436): [RKNN_API] rknn_set_io_mem(input) BEGIN i=0
+05-02 19:02:19.203 I/RKNNRunner( 3436): [RKNN_API] rknn_set_io_mem(input) END i=0 ret=0
+05-02 19:02:19.203 I/RKNNRunner( 3436): [RKNN_API] rknn_create_mem(output) BEGIN i=0 size=4000 n_elems=1000
+05-02 19:02:19.203 I/RKNNRunner( 3436): [RKNN_API] rknn_create_mem(output) END i=0 ptr=0xb4000077aa20b090 ok=1
+05-02 19:02:19.203 I/RKNNRunner( 3436): [RKNN_API] rknn_set_io_mem(output) BEGIN i=0
+05-02 19:02:19.203 I/RKNNRunner( 3436): [RKNN_API] rknn_set_io_mem(output) END i=0 ret=0
+05-02 19:02:19.203 I/RKNNRunner( 3436): [RKNN] allocate_io_memory end
+05-02 19:02:19.203 I/RKNNRunner( 3436): [RKNN] loaded model=<embedded> inputs=1 outputs=1
+05-02 19:02:19.203 I/LensGuardModel( 3436): after load model file, buffer=0x76e1606008 size=3189184
+05-02 19:02:19.203 I/LensGuardModel( 3436): modelPath=<embedded:det.rknn>
+05-02 19:02:19.203 I/LensGuardModel( 3436): model exists=1 size=28981904
+05-02 19:02:19.203 I/LensGuardModel( 3436): before load model file
+05-02 19:02:19.203 I/RKNNRunner( 3436): before load model file
+05-02 19:02:19.322 I/RKNNRunner( 3436): after load model file, buffer=0xb4000076deb7c040 size=28981904
+05-02 19:02:19.322 I/RKNNRunner( 3436): [RKNN] init begin model=<embedded> bytes=28981904
+05-02 19:02:19.322 I/RKNNRunner( 3436): [RKNN_API] rknn_init BEGIN
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_init END ret=0
+05-02 19:02:19.437 I/RKNNRunner( 3436): after rknn_init ret=0 ctx=12970367441319046128
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_set_core_mask BEGIN core_mask=0x1
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_set_core_mask END ret=-13
+05-02 19:02:19.437 W/RKNNRunner( 3436): [RKNN] set_core_mask non-success ret=-13 (continuing)
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_SDK_VERSION) BEGIN
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_SDK_VERSION) END ret=0
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN] sdk api=2.3.2 (429f97ae6b@2025-04-09T09:08:16) drv=0.7.2
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_IN_OUT_NUM) BEGIN
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_IN_OUT_NUM) END ret=0 in=1 out=1
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_INPUT_ATTR) BEGIN i=0
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_INPUT_ATTR) END i=0 ret=0
+05-02 19:02:19.437 I/RKNNRunner( 3436): IN #0 n_dims=4 fmt=1 type=2 quant=2 zp=-128 scale=0.003922 n_elems=1228800 size=1228800 size_stride=1228800 w_stride=640
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_OUTPUT_ATTR) BEGIN i=0
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_OUTPUT_ATTR) END i=0 ret=0
+05-02 19:02:19.437 I/RKNNRunner( 3436): OUT #0 n_dims=3 fmt=3 type=2 quant=2 zp=-128 scale=2.515601 n_elems=705600 size=705600 size_stride=705600 w_stride=0
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_CUSTOM_STRING) BEGIN
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_query(RKNN_QUERY_CUSTOM_STRING) END ret=0
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN] allocate_io_memory begin
+05-02 19:02:19.437 I/RKNNRunner( 3436): [RKNN_API] rknn_create_mem(input) BEGIN i=0 size=1228800
+05-02 19:02:19.439 I/RKNNRunner( 3436): [RKNN_API] rknn_create_mem(input) END i=0 ptr=0xb4000077aa236bd0 ok=1
+05-02 19:02:19.439 I/RKNNRunner( 3436): [RKNN_API] rknn_set_io_mem(input) BEGIN i=0
+05-02 19:02:19.440 I/RKNNRunner( 3436): [RKNN_API] rknn_set_io_mem(input) END i=0 ret=0
+05-02 19:02:19.440 I/RKNNRunner( 3436): [RKNN_API] rknn_create_mem(output) BEGIN i=0 size=2822400 n_elems=705600
+05-02 19:02:19.444 I/RKNNRunner( 3436): [RKNN_API] rknn_create_mem(output) END i=0 ptr=0xb4000077aa236d10 ok=1
+05-02 19:02:19.444 I/RKNNRunner( 3436): [RKNN_API] rknn_set_io_mem(output) BEGIN i=0
+05-02 19:02:19.444 I/RKNNRunner( 3436): [RKNN_API] rknn_set_io_mem(output) END i=0 ret=0
+05-02 19:02:19.444 I/RKNNRunner( 3436): [RKNN] allocate_io_memory end
+05-02 19:02:19.444 I/RKNNRunner( 3436): [RKNN] loaded model=<embedded> inputs=1 outputs=1
+05-02 19:02:19.444 I/LensGuardModel( 3436): after load model file, buffer=0x76e19109c8 size=28981904
+05-02 19:02:19.444 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] rknn_output_attr model=det idx=0 name=output0 n_dims=3 dims=[1,84,8400] n_elems=705600 size=705600 type=2 fmt=3 qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:19.445 I/LensGuard( 3436): === COREDEX System Booting ===
+05-02 19:02:19.445 I/LensGuard( 3436): [VER] C++ Build  Apr 30 2026 11:35:25
+05-02 19:02:19.445 I/LensGuard( 3436): [VER] OpenCV     4.5.5
+05-02 19:02:19.445 I/LensGuard( 3436): [BOOT] Frame source: App push via nativePushFrame (I420)
+05-02 19:02:19.445 I/LensGuard( 3436): [BOOT] RKNN Models OK
+05-02 19:02:19.445 I/LensGuard( 3436): --- Self-Test Begin ---
+05-02 19:02:19.445 I/LensGuard( 3436): [TEST] Laser state   via App API (DeviceStatus.isLaserOn)
+05-02 19:02:19.445 I/LensGuard( 3436): [TEST] RKNN models loaded (inference tested on first frame)
+05-02 19:02:19.445 I/LensGuard( 3436): --- Self-Test PASSED ---
+05-02 19:02:19.445 I/LensGuard( 3436): === COREDEX Ready (waiting for frames) ===
+05-02 19:02:19.445 I/LensGuardJNI( 3436): after create scheduler
+05-02 19:02:19.445 I/LensGuardJNI( 3436): nativeCreate: OK
+05-02 19:02:19.446 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeCreate seq=1 stage=init handle=0 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=292382
+05-02 19:02:19.447 I/NativeBridge( 3436): RKNN_DIAG stage=init handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=session created
+05-02 19:02:19.448 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeSetListener seq=2 stage=query handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:19.450 I/LensGuardJNI( 3436): nativeSetListener: OK
+05-02 19:02:19.450 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeSetListener seq=2 stage=query handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=1625
+05-02 19:02:19.450 I/NativeBridge( 3436): RKNN_DIAG stage=query handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=listener attached
+05-02 19:02:19.451 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeStart seq=3 stage=query handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:19.452 I/LensGuardJNI( 3436): Worker thread started
+05-02 19:02:19.453 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeStart seq=3 stage=query handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=1219
+05-02 19:02:19.453 I/LensGuard( 3436): [SYS] Entering main loop (waiting for App to push frames)...
+05-02 19:02:19.453 I/NativeBridge( 3436): RKNN_DIAG stage=query handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=session started
+05-02 19:02:19.454 I/LensGuardManager( 3436): Engine started, handle=-5476376629974442480
+05-02 19:02:19.460 D/PermissionUtils( 1235): checkRuntimePermission permission=android.permission.WRITE_EXTERNAL_STORAGE packageName=com.lasercyber.lws.ui isCheckPermissionOk=false
+05-02 19:02:19.462 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeInferImageAndSave seq=4 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:19.463 I/LensGuardJNI( 3436): nativeInferImageAndSave: input=/sdcard/Pictures/syn_00084_blur.jpg output=/sdcard/lws/result/syn_00084_blur_result_20260502_190219.jpg
+05-02 19:02:19.463 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave input=/sdcard/Pictures/syn_00084_blur.jpg output=/sdcard/lws/result/syn_00084_blur_result_20260502_190219.jpg
+05-02 19:02:19.490 D/CCodecBufferChannel( 3436): [c2.android.mp3.decoder#832] MediaCodec discarded an unknown buffer
+05-02 19:02:19.490 I/chatty  ( 3436): uid=10070(com.lasercyber.lws.ui) identical 1 line
+05-02 19:02:19.490 D/CCodecBufferChannel( 3436): [c2.android.mp3.decoder#832] MediaCodec discarded an unknown buffer
+05-02 19:02:19.492 I/LensGuard( 3436): [BOOT] Frame params: 640x640 (from App push)
+05-02 19:02:19.492 I/LensGuard( 3436): [BOOT] Optical center (320, 320)  scale 1.00
+05-02 19:02:19.500 I/RKNNRunner( 3436): [RKNN_API] rknn_run BEGIN iter=1/1
+05-02 19:02:19.501 I/hw-BpHwBinder( 3436): onLastStrongRef automatically unlinking death recipients
+05-02 19:02:19.501 I/hw-BpHwBinder(  383): onLastStrongRef automatically unlinking death recipients
+05-02 19:02:19.501 V/C2Store (  383): in ~ComponentModule
+05-02 19:02:19.501 V/C2Store (  383): unloading dll
+05-02 19:02:19.741 I/RKNNRunner( 3436): [RKNN_API] rknn_run END iter=1/1 ret=0
+05-02 19:02:19.755 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 float_min=0.00000000 float_max=641.47814941 float_p50=0.00000000 first20=7.546802,27.671608,37.734009,45.280811,47.796413,55.343216,60.374416,67.921219,72.952423,72.952423,77.983620,80.499222,90.561623,103.139626,110.686432,123.264435,128.295639,140.873642,153.451645,160.998444 (io_mem=FLOAT32 after NPU; compare qnt_type/zp/scale from rknn_output_attr)
+05-02 19:02:19.774 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 recon_int8_from_float min=-128 max=127 p50=-128 (inverse of dequant; use to spot zp plateaus vs varying buffer)
+05-02 19:02:19.792 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_raw min=0.000000 p50=0.000000 p90=0.000000 max=0.000000
+05-02 19:02:19.792 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_sigmoid min=0.500000 p50=0.500000 p90=0.500000 max=0.500000
+05-02 19:02:19.792 I/LensGuardModel( 3436): [YOLO_PP_DIAG] obj_raw n/a (layout has no dedicated obj channel)
+05-02 19:02:19.792 I/LensGuardModel( 3436): [YOLO_PP_DIAG] output_attr qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:19.792 I/LensGuardModel( 3436): [YOLO_PP_DIAG] model_manager score_mode=logits conf_thresh=0.250 nms_iou=0.450 dims=[84,8400]
+05-02 19:02:19.823 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 C_N(f*n_cand+anchor) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=0.000000
+05-02 19:02:19.823 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 N_C(anchor*num_features+class_ch) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=641.478149
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample1 layout=C_N cx=7.547 cy=7.547 w=12.578 h=12.578 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample2 layout=C_N cx=27.672 cy=10.062 w=60.374 h=12.578 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample3 layout=C_N cx=37.734 cy=5.031 w=75.468 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample4 layout=C_N cx=45.281 cy=5.031 w=85.530 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample5 layout=C_N cx=47.796 cy=5.031 w=98.108 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample6 layout=C_N cx=55.343 cy=5.031 w=105.655 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample7 layout=C_N cx=60.374 cy=5.031 w=118.233 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample8 layout=C_N cx=67.921 cy=5.031 w=128.296 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample9 layout=C_N cx=72.952 cy=5.031 w=138.358 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample10 layout=C_N cx=72.952 cy=5.031 w=148.420 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample11 layout=C_N cx=77.984 cy=5.031 w=158.483 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample12 layout=C_N cx=80.499 cy=5.031 w=158.483 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample13 layout=C_N cx=90.562 cy=5.031 w=155.967 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample14 layout=C_N cx=103.140 cy=5.031 w=145.905 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample15 layout=C_N cx=110.686 cy=5.031 w=140.874 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample16 layout=C_N cx=123.264 cy=5.031 w=143.389 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample17 layout=C_N cx=128.296 cy=5.031 w=140.874 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:19.825 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample18 layout=C_N cx=140.874 cy=5.031 w=138.358 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:19.826 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample19 layout=C_N cx=153.452 cy=5.031 w=135.842 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:19.826 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample20 layout=C_N cx=160.998 cy=5.031 w=133.327 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:20.061 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] raw_output_shape d0=84 d1=8400 before_conf=8400 after_conf=8400 after_class=8400 after_nms=1026 pre_nms_boxes=8400 conf_thresh=0.250 nms_iou=0.450 score_mode=logits
+05-02 19:02:20.061 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] final_conf min=0.5000 p50=0.5000 p90=0.5000 max=0.5000
+05-02 19:02:20.061 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top1 class_id=0 conf=0.5000 xyxy=1.3,1.3,13.8,13.8
+05-02 19:02:20.061 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top2 class_id=0 conf=0.5000 xyxy=0.0,3.8,57.9,16.4
+05-02 19:02:20.061 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top3 class_id=0 conf=0.5000 xyxy=0.0,0.0,75.5,10.1
+05-02 19:02:20.061 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top4 class_id=0 conf=0.5000 xyxy=3.8,1.3,142.1,8.8
+05-02 19:02:20.061 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top5 class_id=0 conf=0.5000 xyxy=51.6,2.5,195.0,7.5
+05-02 19:02:20.062 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top6 class_id=0 conf=0.5000 xyxy=100.6,0.0,241.5,10.1
+05-02 19:02:20.062 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top7 class_id=0 conf=0.5000 xyxy=166.0,1.3,251.6,8.8
+05-02 19:02:20.062 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top8 class_id=0 conf=0.5000 xyxy=195.0,0.0,283.0,10.1
+05-02 19:02:20.062 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top9 class_id=0 conf=0.5000 xyxy=246.5,1.3,286.8,8.8
+05-02 19:02:20.062 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top10 class_id=0 conf=0.5000 xyxy=235.2,3.8,373.6,11.3
+05-02 19:02:20.104 D/serial_port( 3436): close(fd = 73)
+05-02 19:02:20.104 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave total_after_nms=1026 drawn=80 draw_cap=80 saved=1 level=2 status=HEAVY
+05-02 19:02:20.104 I/LensGuardManager( 3436): Check result: level=2 status=HEAVY 立即更换 (核心区域命中)
+05-02 19:02:20.105 D/serial_port( 3436): Opening serial port /dev/ttyS5 with flags 0x2
+05-02 19:02:20.106 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultEvent
+05-02 19:02:20.106 D/serial_port( 3436): open() fd = 73
+05-02 19:02:20.106 D/serial_port( 3436): Configuring serial port
+05-02 19:02:20.106 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:20.107 I/LensGuardJNI( 3436): nativeInferImageAndSave: result=0
+05-02 19:02:20.107 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeInferImageAndSave seq=4 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=645021
+05-02 19:02:20.107 I/NativeBridge( 3436): RKNN_DIAG stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=infer completed
+05-02 19:02:20.108 I/LensGuardManager( 3436): inferJpgAndSaveResult image=/sdcard/Pictures/syn_00084_blur.jpg output=/sdcard/lws/result/syn_00084_blur_result_20260502_190219.jpg code=0
+05-02 19:02:20.109 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultImageEvent
+05-02 19:02:20.109 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:20.110 I/InferPicturesDir( 3436): INFER_OK src=/sdcard/Pictures/syn_00084_blur.jpg out=/sdcard/lws/result/syn_00084_blur_result_20260502_190219.jpg
+05-02 19:02:20.115 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeInferImageAndSave seq=5 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:20.115 I/LensGuardJNI( 3436): nativeInferImageAndSave: input=/sdcard/Pictures/syn009_00006_syn_0_blur.jpg output=/sdcard/lws/result/syn009_00006_syn_0_blur_result_20260502_190220.jpg
+05-02 19:02:20.115 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave input=/sdcard/Pictures/syn009_00006_syn_0_blur.jpg output=/sdcard/lws/result/syn009_00006_syn_0_blur_result_20260502_190220.jpg
+05-02 19:02:20.145 I/RKNNRunner( 3436): [RKNN_API] rknn_run BEGIN iter=1/1
+05-02 19:02:20.400 I/RKNNRunner( 3436): [RKNN_API] rknn_run END iter=1/1 ret=0
+05-02 19:02:20.413 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 float_min=0.00000000 float_max=641.47814941 float_p50=0.00000000 first20=10.062403,25.156006,32.702808,40.249611,40.249611,50.312012,57.858814,67.921219,72.952423,72.952423,77.983620,83.014824,93.077225,105.655228,110.686432,120.748833,128.295639,138.358032,150.936035,153.451645 (io_mem=FLOAT32 after NPU; compare qnt_type/zp/scale from rknn_output_attr)
+05-02 19:02:20.430 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 recon_int8_from_float min=-128 max=127 p50=-128 (inverse of dequant; use to spot zp plateaus vs varying buffer)
+05-02 19:02:20.445 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_raw min=0.000000 p50=0.000000 p90=0.000000 max=0.000000
+05-02 19:02:20.445 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_sigmoid min=0.500000 p50=0.500000 p90=0.500000 max=0.500000
+05-02 19:02:20.445 I/LensGuardModel( 3436): [YOLO_PP_DIAG] obj_raw n/a (layout has no dedicated obj channel)
+05-02 19:02:20.445 I/LensGuardModel( 3436): [YOLO_PP_DIAG] output_attr qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:20.446 I/LensGuardModel( 3436): [YOLO_PP_DIAG] model_manager score_mode=logits conf_thresh=0.250 nms_iou=0.450 dims=[84,8400]
+05-02 19:02:20.476 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 C_N(f*n_cand+anchor) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=0.000000
+05-02 19:02:20.476 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 N_C(anchor*num_features+class_ch) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=641.478149
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample1 layout=C_N cx=10.062 cy=7.547 w=17.609 h=15.094 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample2 layout=C_N cx=25.156 cy=7.547 w=57.859 h=15.094 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample3 layout=C_N cx=32.703 cy=7.547 w=62.890 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample4 layout=C_N cx=40.250 cy=5.031 w=75.468 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample5 layout=C_N cx=40.250 cy=5.031 w=83.015 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample6 layout=C_N cx=50.312 cy=5.031 w=93.077 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample7 layout=C_N cx=57.859 cy=5.031 w=110.686 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample8 layout=C_N cx=67.921 cy=5.031 w=125.780 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample9 layout=C_N cx=72.952 cy=5.031 w=133.327 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample10 layout=C_N cx=72.952 cy=5.031 w=143.389 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample11 layout=C_N cx=77.984 cy=5.031 w=158.483 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample12 layout=C_N cx=83.015 cy=5.031 w=160.998 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:20.478 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample13 layout=C_N cx=93.077 cy=5.031 w=160.998 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:20.479 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample14 layout=C_N cx=105.655 cy=5.031 w=155.967 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:20.479 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample15 layout=C_N cx=110.686 cy=5.031 w=150.936 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:20.479 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample16 layout=C_N cx=120.749 cy=5.031 w=145.905 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:20.479 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample17 layout=C_N cx=128.296 cy=5.031 w=140.874 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:20.479 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample18 layout=C_N cx=138.358 cy=5.031 w=138.358 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:20.479 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample19 layout=C_N cx=150.936 cy=5.031 w=138.358 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:20.479 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample20 layout=C_N cx=153.452 cy=5.031 w=138.358 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:20.486 D/BufferPoolAccessor2.0(  383): evictor expired: 2, evicted: 0
+05-02 19:02:20.711 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] raw_output_shape d0=84 d1=8400 before_conf=8400 after_conf=8400 after_class=8400 after_nms=1024 pre_nms_boxes=8400 conf_thresh=0.250 nms_iou=0.450 score_mode=logits
+05-02 19:02:20.712 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] final_conf min=0.5000 p50=0.5000 p90=0.5000 max=0.5000
+05-02 19:02:20.712 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top1 class_id=0 conf=0.5000 xyxy=1.3,0.0,18.9,15.1
+05-02 19:02:20.712 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top2 class_id=0 conf=0.5000 xyxy=0.0,0.0,54.1,15.1
+05-02 19:02:20.712 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top3 class_id=0 conf=0.5000 xyxy=3.8,1.3,96.9,8.8
+05-02 19:02:20.712 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top4 class_id=0 conf=0.5000 xyxy=2.5,2.5,163.5,7.5
+05-02 19:02:20.712 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top5 class_id=0 conf=0.5000 xyxy=69.2,1.3,207.5,8.8
+05-02 19:02:20.712 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top6 class_id=0 conf=0.5000 xyxy=125.8,1.3,276.7,8.8
+05-02 19:02:20.712 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top7 class_id=0 conf=0.5000 xyxy=164.8,3.8,313.2,11.3
+05-02 19:02:20.712 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top8 class_id=0 conf=0.5000 xyxy=200.0,0.0,348.4,10.1
+05-02 19:02:20.712 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top9 class_id=0 conf=0.5000 xyxy=216.3,3.8,392.4,11.3
+05-02 19:02:20.712 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top10 class_id=0 conf=0.5000 xyxy=240.2,1.3,418.8,8.8
+05-02 19:02:20.758 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave total_after_nms=1024 drawn=80 draw_cap=80 saved=1 level=2 status=HEAVY
+05-02 19:02:20.758 I/LensGuardManager( 3436): Check result: level=2 status=HEAVY 立即更换 (核心区域命中)
+05-02 19:02:20.759 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultEvent
+05-02 19:02:20.759 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:20.760 I/LensGuardJNI( 3436): nativeInferImageAndSave: result=0
+05-02 19:02:20.760 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeInferImageAndSave seq=5 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=645597
+05-02 19:02:20.760 I/NativeBridge( 3436): RKNN_DIAG stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=infer completed
+05-02 19:02:20.761 I/LensGuardManager( 3436): inferJpgAndSaveResult image=/sdcard/Pictures/syn009_00006_syn_0_blur.jpg output=/sdcard/lws/result/syn009_00006_syn_0_blur_result_20260502_190220.jpg code=0
+05-02 19:02:20.761 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultImageEvent
+05-02 19:02:20.761 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:20.761 I/InferPicturesDir( 3436): INFER_OK src=/sdcard/Pictures/syn009_00006_syn_0_blur.jpg out=/sdcard/lws/result/syn009_00006_syn_0_blur_result_20260502_190220.jpg
+05-02 19:02:20.766 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeInferImageAndSave seq=6 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:20.766 I/LensGuardJNI( 3436): nativeInferImageAndSave: input=/sdcard/Pictures/syn002_0048_syn_0_blur.jpg output=/sdcard/lws/result/syn002_0048_syn_0_blur_result_20260502_190220.jpg
+05-02 19:02:20.766 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave input=/sdcard/Pictures/syn002_0048_syn_0_blur.jpg output=/sdcard/lws/result/syn002_0048_syn_0_blur_result_20260502_190220.jpg
+05-02 19:02:20.796 I/RKNNRunner( 3436): [RKNN_API] rknn_run BEGIN iter=1/1
+05-02 19:02:20.958 I/AutoWifiReconnectService(  477): Try auto reconnect to netId=0
+05-02 19:02:20.958 I/WifiService(  477): enableNetwork uid=1000 disableOthers=false
+05-02 19:02:20.980 D/WifiConfigStore(  477): Writing to stores completed in 19 ms.
+05-02 19:02:20.980 I/WifiService(  477): reconnect uid=1000
+05-02 19:02:21.063 I/RKNNRunner( 3436): [RKNN_API] rknn_run END iter=1/1 ret=0
+05-02 19:02:21.077 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 float_min=0.00000000 float_max=641.47814941 float_p50=0.00000000 first20=10.062403,25.156006,35.218410,42.765213,45.280811,52.827614,60.374416,67.921219,75.468018,72.952423,77.983620,83.014824,93.077225,103.139626,113.202034,123.264435,128.295639,138.358032,148.420441,153.451645 (io_mem=FLOAT32 after NPU; compare qnt_type/zp/scale from rknn_output_attr)
+05-02 19:02:21.095 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 recon_int8_from_float min=-128 max=127 p50=-128 (inverse of dequant; use to spot zp plateaus vs varying buffer)
+05-02 19:02:21.109 D/serial_port( 3436): close(fd = 73)
+05-02 19:02:21.111 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_raw min=0.000000 p50=0.000000 p90=0.000000 max=0.000000
+05-02 19:02:21.111 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_sigmoid min=0.500000 p50=0.500000 p90=0.500000 max=0.500000
+05-02 19:02:21.111 I/LensGuardModel( 3436): [YOLO_PP_DIAG] obj_raw n/a (layout has no dedicated obj channel)
+05-02 19:02:21.111 I/LensGuardModel( 3436): [YOLO_PP_DIAG] output_attr qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:21.111 I/LensGuardModel( 3436): [YOLO_PP_DIAG] model_manager score_mode=logits conf_thresh=0.250 nms_iou=0.450 dims=[84,8400]
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): [mj-laser-thread-2]写入失败: com.serotonin.modbus4j.sero.messaging.TimeoutException: request=SerialMessage [modbusMessage=com.serotonin.modbus4j.msg.WriteRegistersRequest@bf5e4b6]
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): com.serotonin.modbus4j.exception.ModbusTransportException: com.serotonin.modbus4j.sero.messaging.TimeoutException: request=SerialMessage [modbusMessage=com.serotonin.modbus4j.msg.WriteRegistersRequest@bf5e4b6]
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at com.serotonin.modbus4j.serial.rtu.RtuMaster.sendImpl(RtuMaster.java:230)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at com.serotonin.modbus4j.ModbusMaster.send(ModbusMaster.java:143)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at com.licheedev.modbus4android.ModbusWorker$10.call(ModbusWorker.java:706)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at com.licheedev.modbus4android.ModbusWorker$10.call(ModbusWorker.java:698)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at com.licheedev.modbus4android.ModbusWorker$1.call(ModbusWorker.java:157)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at java.lang.Thread.run(Thread.java:923)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): Caused by: com.serotonin.modbus4j.sero.messaging.TimeoutException: request=SerialMessage [modbusMessage=com.serotonin.modbus4j.msg.WriteRegistersRequest@bf5e4b6]
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at com.serotonin.modbus4j.sero.messaging.MessageControl.send(MessageControl.java:225)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at com.serotonin.modbus4j.sero.messaging.MessageControl.send(MessageControl.java:182)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	at com.serotonin.modbus4j.serial.rtu.RtuMaster.sendImpl(RtuMaster.java:223)
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 	... 8 more
+05-02 19:02:21.115 E/ModbusManagerRtu( 3436): 写入超时或通信失败 
+05-02 19:02:21.144 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 C_N(f*n_cand+anchor) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=0.000000
+05-02 19:02:21.144 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 N_C(anchor*num_features+class_ch) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=641.478149
+05-02 19:02:21.145 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample1 layout=C_N cx=10.062 cy=7.547 w=17.609 h=12.578 best_cls=0 score=0.5000
+05-02 19:02:21.145 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample2 layout=C_N cx=25.156 cy=7.547 w=60.374 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:21.145 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample3 layout=C_N cx=35.218 cy=7.547 w=67.921 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample4 layout=C_N cx=42.765 cy=5.031 w=77.984 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample5 layout=C_N cx=45.281 cy=5.031 w=90.562 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample6 layout=C_N cx=52.828 cy=5.031 w=98.108 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample7 layout=C_N cx=60.374 cy=5.031 w=113.202 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample8 layout=C_N cx=67.921 cy=5.031 w=123.264 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample9 layout=C_N cx=75.468 cy=5.031 w=135.842 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample10 layout=C_N cx=72.952 cy=5.031 w=148.420 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample11 layout=C_N cx=77.984 cy=5.031 w=163.514 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample12 layout=C_N cx=83.015 cy=5.031 w=163.514 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample13 layout=C_N cx=93.077 cy=5.031 w=166.030 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample14 layout=C_N cx=103.140 cy=5.031 w=158.483 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample15 layout=C_N cx=113.202 cy=5.031 w=155.967 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample16 layout=C_N cx=123.264 cy=5.031 w=153.452 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample17 layout=C_N cx=128.296 cy=5.031 w=150.936 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample18 layout=C_N cx=138.358 cy=5.031 w=150.936 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample19 layout=C_N cx=148.420 cy=5.031 w=150.936 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.146 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample20 layout=C_N cx=153.452 cy=5.031 w=150.936 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.386 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] raw_output_shape d0=84 d1=8400 before_conf=8400 after_conf=8400 after_class=8400 after_nms=1048 pre_nms_boxes=8400 conf_thresh=0.250 nms_iou=0.450 score_mode=logits
+05-02 19:02:21.386 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] final_conf min=0.5000 p50=0.5000 p90=0.5000 max=0.5000
+05-02 19:02:21.386 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top1 class_id=0 conf=0.5000 xyxy=1.3,1.3,18.9,13.8
+05-02 19:02:21.386 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top2 class_id=0 conf=0.5000 xyxy=0.0,2.5,55.3,12.6
+05-02 19:02:21.386 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top3 class_id=0 conf=0.5000 xyxy=3.8,0.0,81.8,10.1
+05-02 19:02:21.386 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top4 class_id=0 conf=0.5000 xyxy=7.5,1.3,143.4,8.8
+05-02 19:02:21.386 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top5 class_id=0 conf=0.5000 xyxy=62.9,1.3,213.8,8.8
+05-02 19:02:21.386 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top6 class_id=0 conf=0.5000 xyxy=129.6,1.3,288.0,8.8
+05-02 19:02:21.387 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top7 class_id=0 conf=0.5000 xyxy=168.5,3.8,309.4,11.3
+05-02 19:02:21.387 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top8 class_id=0 conf=0.5000 xyxy=213.8,3.8,394.9,11.3
+05-02 19:02:21.387 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top9 class_id=0 conf=0.5000 xyxy=241.5,0.0,422.6,10.1
+05-02 19:02:21.387 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top10 class_id=0 conf=0.5000 xyxy=293.1,3.8,451.6,11.3
+05-02 19:02:21.437 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave total_after_nms=1048 drawn=80 draw_cap=80 saved=1 level=2 status=HEAVY
+05-02 19:02:21.438 I/LensGuardManager( 3436): Check result: level=2 status=HEAVY 立即更换 (核心区域命中)
+05-02 19:02:21.438 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultEvent
+05-02 19:02:21.438 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:21.438 I/LensGuardJNI( 3436): nativeInferImageAndSave: result=0
+05-02 19:02:21.438 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeInferImageAndSave seq=6 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=672695
+05-02 19:02:21.439 I/NativeBridge( 3436): RKNN_DIAG stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=infer completed
+05-02 19:02:21.439 I/LensGuardManager( 3436): inferJpgAndSaveResult image=/sdcard/Pictures/syn002_0048_syn_0_blur.jpg output=/sdcard/lws/result/syn002_0048_syn_0_blur_result_20260502_190220.jpg code=0
+05-02 19:02:21.439 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultImageEvent
+05-02 19:02:21.439 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:21.439 I/InferPicturesDir( 3436): INFER_OK src=/sdcard/Pictures/syn002_0048_syn_0_blur.jpg out=/sdcard/lws/result/syn002_0048_syn_0_blur_result_20260502_190220.jpg
+05-02 19:02:21.442 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeInferImageAndSave seq=7 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:21.442 I/LensGuardJNI( 3436): nativeInferImageAndSave: input=/sdcard/Pictures/syn0006_00137_syn_0_blur.jpg output=/sdcard/lws/result/syn0006_00137_syn_0_blur_result_20260502_190221.jpg
+05-02 19:02:21.442 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave input=/sdcard/Pictures/syn0006_00137_syn_0_blur.jpg output=/sdcard/lws/result/syn0006_00137_syn_0_blur_result_20260502_190221.jpg
+05-02 19:02:21.470 I/RKNNRunner( 3436): [RKNN_API] rknn_run BEGIN iter=1/1
+05-02 19:02:21.712 I/RKNNRunner( 3436): [RKNN_API] rknn_run END iter=1/1 ret=0
+05-02 19:02:21.725 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 float_min=0.00000000 float_max=641.47814941 float_p50=0.00000000 first20=10.062403,25.156006,32.702808,40.249611,40.249611,47.796413,52.827614,62.890018,70.436821,72.952423,75.468018,77.983620,90.561623,103.139626,110.686432,120.748833,125.780037,135.842438,148.420441,158.482849 (io_mem=FLOAT32 after NPU; compare qnt_type/zp/scale from rknn_output_attr)
+05-02 19:02:21.743 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 recon_int8_from_float min=-128 max=127 p50=-128 (inverse of dequant; use to spot zp plateaus vs varying buffer)
+05-02 19:02:21.758 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_raw min=0.000000 p50=0.000000 p90=0.000000 max=0.000000
+05-02 19:02:21.758 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_sigmoid min=0.500000 p50=0.500000 p90=0.500000 max=0.500000
+05-02 19:02:21.758 I/LensGuardModel( 3436): [YOLO_PP_DIAG] obj_raw n/a (layout has no dedicated obj channel)
+05-02 19:02:21.758 I/LensGuardModel( 3436): [YOLO_PP_DIAG] output_attr qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:21.758 I/LensGuardModel( 3436): [YOLO_PP_DIAG] model_manager score_mode=logits conf_thresh=0.250 nms_iou=0.450 dims=[84,8400]
+05-02 19:02:21.788 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 C_N(f*n_cand+anchor) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=0.000000
+05-02 19:02:21.788 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 N_C(anchor*num_features+class_ch) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=641.478149
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample1 layout=C_N cx=10.062 cy=7.547 w=17.609 h=15.094 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample2 layout=C_N cx=25.156 cy=7.547 w=52.828 h=15.094 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample3 layout=C_N cx=32.703 cy=7.547 w=62.890 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample4 layout=C_N cx=40.250 cy=5.031 w=75.468 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample5 layout=C_N cx=40.250 cy=5.031 w=83.015 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample6 layout=C_N cx=47.796 cy=5.031 w=88.046 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample7 layout=C_N cx=52.828 cy=5.031 w=100.624 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample8 layout=C_N cx=62.890 cy=5.031 w=110.686 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample9 layout=C_N cx=70.437 cy=5.031 w=123.264 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample10 layout=C_N cx=72.952 cy=5.031 w=140.874 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample11 layout=C_N cx=75.468 cy=5.031 w=153.452 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample12 layout=C_N cx=77.984 cy=7.547 w=153.452 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample13 layout=C_N cx=90.562 cy=7.547 w=148.420 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.790 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample14 layout=C_N cx=103.140 cy=5.031 w=143.389 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:21.791 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample15 layout=C_N cx=110.686 cy=7.547 w=133.327 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.791 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample16 layout=C_N cx=120.749 cy=5.031 w=130.811 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:21.791 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample17 layout=C_N cx=125.780 cy=5.031 w=128.296 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:21.791 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample18 layout=C_N cx=135.842 cy=7.547 w=120.749 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.791 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample19 layout=C_N cx=148.420 cy=7.547 w=123.264 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:21.791 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample20 layout=C_N cx=158.483 cy=7.547 w=123.264 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] raw_output_shape d0=84 d1=8400 before_conf=8400 after_conf=8400 after_class=8400 after_nms=1072 pre_nms_boxes=8400 conf_thresh=0.250 nms_iou=0.450 score_mode=logits
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] final_conf min=0.5000 p50=0.5000 p90=0.5000 max=0.5000
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top1 class_id=0 conf=0.5000 xyxy=1.3,0.0,18.9,15.1
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top2 class_id=0 conf=0.5000 xyxy=0.0,0.0,51.6,15.1
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top3 class_id=0 conf=0.5000 xyxy=3.8,0.0,91.8,10.1
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top4 class_id=0 conf=0.5000 xyxy=2.5,2.5,143.4,7.5
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top5 class_id=0 conf=0.5000 xyxy=1.3,3.8,154.7,11.3
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top6 class_id=0 conf=0.5000 xyxy=61.6,0.0,189.9,10.1
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top7 class_id=0 conf=0.5000 xyxy=86.8,3.8,210.1,11.3
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top8 class_id=0 conf=0.5000 xyxy=132.1,0.0,270.4,10.1
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top9 class_id=0 conf=0.5000 xyxy=167.3,3.8,300.6,11.3
+05-02 19:02:22.035 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top10 class_id=0 conf=0.5000 xyxy=203.8,0.0,304.4,10.1
+05-02 19:02:22.087 D/WifiNl80211Manager(  477): Scan result ready event
+05-02 19:02:22.087 D/WifiNative(  477): Scan result ready event
+05-02 19:02:22.088 I/EthernetTracker(  477): interfaceLinkStateChanged, iface: wlan0, up: true
+05-02 19:02:22.099 D/WificondScannerImpl(  477): Filtering out 33 scan results.
+05-02 19:02:22.103 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1d:<xiaohaowifi_5G>
+05-02 19:02:22.103 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1e:<xiaohaowifi_IoT>
+05-02 19:02:22.165 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave total_after_nms=1072 drawn=80 draw_cap=80 saved=1 level=2 status=HEAVY
+05-02 19:02:22.166 I/LensGuardManager( 3436): Check result: level=2 status=HEAVY 立即更换 (核心区域命中)
+05-02 19:02:22.166 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultEvent
+05-02 19:02:22.166 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:22.167 I/LensGuardJNI( 3436): nativeInferImageAndSave: result=0
+05-02 19:02:22.167 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeInferImageAndSave seq=7 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=725088
+05-02 19:02:22.168 I/NativeBridge( 3436): RKNN_DIAG stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=infer completed
+05-02 19:02:22.168 I/LensGuardManager( 3436): inferJpgAndSaveResult image=/sdcard/Pictures/syn0006_00137_syn_0_blur.jpg output=/sdcard/lws/result/syn0006_00137_syn_0_blur_result_20260502_190221.jpg code=0
+05-02 19:02:22.169 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultImageEvent
+05-02 19:02:22.169 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:22.169 I/InferPicturesDir( 3436): INFER_OK src=/sdcard/Pictures/syn0006_00137_syn_0_blur.jpg out=/sdcard/lws/result/syn0006_00137_syn_0_blur_result_20260502_190221.jpg
+05-02 19:02:22.175 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeInferImageAndSave seq=8 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:22.175 I/LensGuardJNI( 3436): nativeInferImageAndSave: input=/sdcard/Pictures/syn003_0044_syn_0_blur.jpg output=/sdcard/lws/result/syn003_0044_syn_0_blur_result_20260502_190222.jpg
+05-02 19:02:22.175 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave input=/sdcard/Pictures/syn003_0044_syn_0_blur.jpg output=/sdcard/lws/result/syn003_0044_syn_0_blur_result_20260502_190222.jpg
+05-02 19:02:22.211 I/RKNNRunner( 3436): [RKNN_API] rknn_run BEGIN iter=1/1
+05-02 19:02:22.213 I/system_server(  477): Background young concurrent copying GC freed 181917(6577KB) AllocSpace objects, 68(3224KB) LOS objects, 48% free, 10MB/19MB, paused 311us total 108.116ms
+05-02 19:02:22.454 I/RKNNRunner( 3436): [RKNN_API] rknn_run END iter=1/1 ret=0
+05-02 19:02:22.467 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 float_min=0.00000000 float_max=641.47814941 float_p50=0.00000000 first20=10.062403,25.156006,35.218410,40.249611,42.765213,50.312012,57.858814,65.405617,70.436821,70.436821,77.983620,80.499222,93.077225,103.139626,110.686432,120.748833,125.780037,138.358032,148.420441,153.451645 (io_mem=FLOAT32 after NPU; compare qnt_type/zp/scale from rknn_output_attr)
+05-02 19:02:22.486 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 recon_int8_from_float min=-128 max=127 p50=-128 (inverse of dequant; use to spot zp plateaus vs varying buffer)
+05-02 19:02:22.504 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_raw min=0.000000 p50=0.000000 p90=0.000000 max=0.000000
+05-02 19:02:22.504 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_sigmoid min=0.500000 p50=0.500000 p90=0.500000 max=0.500000
+05-02 19:02:22.504 I/LensGuardModel( 3436): [YOLO_PP_DIAG] obj_raw n/a (layout has no dedicated obj channel)
+05-02 19:02:22.504 I/LensGuardModel( 3436): [YOLO_PP_DIAG] output_attr qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:22.504 I/LensGuardModel( 3436): [YOLO_PP_DIAG] model_manager score_mode=logits conf_thresh=0.250 nms_iou=0.450 dims=[84,8400]
+05-02 19:02:22.538 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 C_N(f*n_cand+anchor) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=0.000000
+05-02 19:02:22.538 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 N_C(anchor*num_features+class_ch) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=641.478149
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample1 layout=C_N cx=10.062 cy=7.547 w=17.609 h=15.094 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample2 layout=C_N cx=25.156 cy=7.547 w=55.343 h=15.094 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample3 layout=C_N cx=35.218 cy=5.031 w=62.890 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample4 layout=C_N cx=40.250 cy=5.031 w=75.468 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample5 layout=C_N cx=42.765 cy=5.031 w=85.530 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample6 layout=C_N cx=50.312 cy=5.031 w=93.077 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample7 layout=C_N cx=57.859 cy=5.031 w=108.171 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample8 layout=C_N cx=65.406 cy=5.031 w=118.233 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample9 layout=C_N cx=70.437 cy=5.031 w=133.327 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample10 layout=C_N cx=70.437 cy=5.031 w=143.389 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample11 layout=C_N cx=77.984 cy=5.031 w=155.967 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample12 layout=C_N cx=80.499 cy=5.031 w=158.483 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample13 layout=C_N cx=93.077 cy=5.031 w=153.452 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample14 layout=C_N cx=103.140 cy=5.031 w=148.420 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample15 layout=C_N cx=110.686 cy=5.031 w=140.874 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample16 layout=C_N cx=120.749 cy=5.031 w=140.874 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:22.540 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample17 layout=C_N cx=125.780 cy=5.031 w=140.874 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:22.541 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample18 layout=C_N cx=138.358 cy=5.031 w=138.358 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.541 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample19 layout=C_N cx=148.420 cy=5.031 w=138.358 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.541 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample20 layout=C_N cx=153.452 cy=5.031 w=138.358 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:22.779 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] raw_output_shape d0=84 d1=8400 before_conf=8400 after_conf=8400 after_class=8400 after_nms=1050 pre_nms_boxes=8400 conf_thresh=0.250 nms_iou=0.450 score_mode=logits
+05-02 19:02:22.779 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] final_conf min=0.5000 p50=0.5000 p90=0.5000 max=0.5000
+05-02 19:02:22.779 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top1 class_id=0 conf=0.5000 xyxy=1.3,0.0,18.9,15.1
+05-02 19:02:22.779 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top2 class_id=0 conf=0.5000 xyxy=0.0,0.0,52.8,15.1
+05-02 19:02:22.780 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top3 class_id=0 conf=0.5000 xyxy=0.0,1.3,85.5,8.8
+05-02 19:02:22.780 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top4 class_id=0 conf=0.5000 xyxy=16.4,1.3,169.8,8.8
+05-02 19:02:22.780 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top5 class_id=0 conf=0.5000 xyxy=55.3,2.5,196.2,7.5
+05-02 19:02:22.780 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top6 class_id=0 conf=0.5000 xyxy=95.6,1.3,236.5,8.8
+05-02 19:02:22.780 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top7 class_id=0 conf=0.5000 xyxy=150.9,1.3,296.8,8.8
+05-02 19:02:22.780 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top8 class_id=0 conf=0.5000 xyxy=169.8,3.8,308.2,11.3
+05-02 19:02:22.780 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top9 class_id=0 conf=0.5000 xyxy=208.8,0.0,369.8,10.1
+05-02 19:02:22.780 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top10 class_id=0 conf=0.5000 xyxy=230.2,3.8,408.8,11.3
+05-02 19:02:22.872 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave total_after_nms=1050 drawn=80 draw_cap=80 saved=1 level=2 status=HEAVY
+05-02 19:02:22.872 I/LensGuardManager( 3436): Check result: level=2 status=HEAVY 立即更换 (核心区域命中)
+05-02 19:02:22.873 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultEvent
+05-02 19:02:22.873 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:22.876 I/LensGuardJNI( 3436): nativeInferImageAndSave: result=0
+05-02 19:02:22.876 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeInferImageAndSave seq=8 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=701461
+05-02 19:02:22.877 I/NativeBridge( 3436): RKNN_DIAG stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=infer completed
+05-02 19:02:22.877 I/LensGuardManager( 3436): inferJpgAndSaveResult image=/sdcard/Pictures/syn003_0044_syn_0_blur.jpg output=/sdcard/lws/result/syn003_0044_syn_0_blur_result_20260502_190222.jpg code=0
+05-02 19:02:22.878 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultImageEvent
+05-02 19:02:22.878 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:22.878 I/InferPicturesDir( 3436): INFER_OK src=/sdcard/Pictures/syn003_0044_syn_0_blur.jpg out=/sdcard/lws/result/syn003_0044_syn_0_blur_result_20260502_190222.jpg
+05-02 19:02:22.883 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeInferImageAndSave seq=9 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:22.883 I/LensGuardJNI( 3436): nativeInferImageAndSave: input=/sdcard/Pictures/syn0009_00056_syn_1_blur.jpg output=/sdcard/lws/result/syn0009_00056_syn_1_blur_result_20260502_190222.jpg
+05-02 19:02:22.883 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave input=/sdcard/Pictures/syn0009_00056_syn_1_blur.jpg output=/sdcard/lws/result/syn0009_00056_syn_1_blur_result_20260502_190222.jpg
+05-02 19:02:22.925 I/RKNNRunner( 3436): [RKNN_API] rknn_run BEGIN iter=1/1
+05-02 19:02:23.198 I/RKNNRunner( 3436): [RKNN_API] rknn_run END iter=1/1 ret=0
+05-02 19:02:23.211 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 float_min=0.00000000 float_max=641.47814941 float_p50=0.00000000 first20=12.578003,27.671608,35.218410,42.765213,42.765213,52.827614,60.374416,67.921219,75.468018,75.468018,77.983620,80.499222,88.046021,98.108429,105.655228,118.233231,125.780037,135.842438,150.936035,153.451645 (io_mem=FLOAT32 after NPU; compare qnt_type/zp/scale from rknn_output_attr)
+05-02 19:02:23.229 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 recon_int8_from_float min=-128 max=127 p50=-128 (inverse of dequant; use to spot zp plateaus vs varying buffer)
+05-02 19:02:23.245 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_raw min=0.000000 p50=0.000000 p90=0.000000 max=0.000000
+05-02 19:02:23.245 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_sigmoid min=0.500000 p50=0.500000 p90=0.500000 max=0.500000
+05-02 19:02:23.245 I/LensGuardModel( 3436): [YOLO_PP_DIAG] obj_raw n/a (layout has no dedicated obj channel)
+05-02 19:02:23.245 I/LensGuardModel( 3436): [YOLO_PP_DIAG] output_attr qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:23.245 I/LensGuardModel( 3436): [YOLO_PP_DIAG] model_manager score_mode=logits conf_thresh=0.250 nms_iou=0.450 dims=[84,8400]
+05-02 19:02:23.277 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 C_N(f*n_cand+anchor) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=0.000000
+05-02 19:02:23.277 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 N_C(anchor*num_features+class_ch) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=641.478149
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample1 layout=C_N cx=12.578 cy=7.547 w=25.156 h=15.094 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample2 layout=C_N cx=27.672 cy=7.547 w=60.374 h=15.094 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample3 layout=C_N cx=35.218 cy=7.547 w=65.406 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample4 layout=C_N cx=42.765 cy=7.547 w=77.984 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample5 layout=C_N cx=42.765 cy=5.031 w=88.046 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample6 layout=C_N cx=52.828 cy=5.031 w=95.593 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample7 layout=C_N cx=60.374 cy=5.031 w=108.171 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample8 layout=C_N cx=67.921 cy=5.031 w=123.264 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample9 layout=C_N cx=75.468 cy=5.031 w=135.842 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample10 layout=C_N cx=75.468 cy=5.031 w=145.905 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample11 layout=C_N cx=77.984 cy=7.547 w=158.483 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample12 layout=C_N cx=80.499 cy=5.031 w=158.483 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample13 layout=C_N cx=88.046 cy=5.031 w=145.905 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample14 layout=C_N cx=98.108 cy=5.031 w=135.842 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample15 layout=C_N cx=105.655 cy=5.031 w=125.780 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample16 layout=C_N cx=118.233 cy=5.031 w=118.233 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.279 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample17 layout=C_N cx=125.780 cy=5.031 w=105.655 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.280 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample18 layout=C_N cx=135.842 cy=5.031 w=103.140 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.280 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample19 layout=C_N cx=150.936 cy=5.031 w=98.108 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.280 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample20 layout=C_N cx=153.452 cy=5.031 w=95.593 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.541 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] raw_output_shape d0=84 d1=8400 before_conf=8400 after_conf=8400 after_class=8400 after_nms=1172 pre_nms_boxes=8400 conf_thresh=0.250 nms_iou=0.450 score_mode=logits
+05-02 19:02:23.541 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] final_conf min=0.5000 p50=0.5000 p90=0.5000 max=0.5000
+05-02 19:02:23.541 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top1 class_id=0 conf=0.5000 xyxy=0.0,0.0,25.2,15.1
+05-02 19:02:23.542 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top2 class_id=0 conf=0.5000 xyxy=0.0,0.0,57.9,15.1
+05-02 19:02:23.542 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top3 class_id=0 conf=0.5000 xyxy=3.8,3.8,81.8,11.3
+05-02 19:02:23.542 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top4 class_id=0 conf=0.5000 xyxy=6.3,1.3,114.5,8.8
+05-02 19:02:23.542 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top5 class_id=0 conf=0.5000 xyxy=30.2,0.0,166.0,10.1
+05-02 19:02:23.542 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top6 class_id=0 conf=0.5000 xyxy=101.9,0.0,200.0,10.1
+05-02 19:02:23.542 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top7 class_id=0 conf=0.5000 xyxy=135.8,1.3,246.5,13.8
+05-02 19:02:23.542 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top8 class_id=0 conf=0.5000 xyxy=159.7,3.8,278.0,11.3
+05-02 19:02:23.542 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top9 class_id=0 conf=0.5000 xyxy=178.6,0.0,294.3,10.1
+05-02 19:02:23.542 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top10 class_id=0 conf=0.5000 xyxy=236.5,0.0,322.0,10.1
+05-02 19:02:23.581 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave total_after_nms=1172 drawn=80 draw_cap=80 saved=1 level=2 status=HEAVY
+05-02 19:02:23.581 I/LensGuardManager( 3436): Check result: level=2 status=HEAVY 立即更换 (核心区域命中)
+05-02 19:02:23.582 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultEvent
+05-02 19:02:23.582 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:23.583 I/LensGuardJNI( 3436): nativeInferImageAndSave: result=0
+05-02 19:02:23.584 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeInferImageAndSave seq=9 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=700818
+05-02 19:02:23.584 I/NativeBridge( 3436): RKNN_DIAG stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=infer completed
+05-02 19:02:23.584 I/LensGuardManager( 3436): inferJpgAndSaveResult image=/sdcard/Pictures/syn0009_00056_syn_1_blur.jpg output=/sdcard/lws/result/syn0009_00056_syn_1_blur_result_20260502_190222.jpg code=0
+05-02 19:02:23.585 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultImageEvent
+05-02 19:02:23.585 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:23.585 I/InferPicturesDir( 3436): INFER_OK src=/sdcard/Pictures/syn0009_00056_syn_1_blur.jpg out=/sdcard/lws/result/syn0009_00056_syn_1_blur_result_20260502_190222.jpg
+05-02 19:02:23.590 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeInferImageAndSave seq=10 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:23.590 I/LensGuardJNI( 3436): nativeInferImageAndSave: input=/sdcard/Pictures/image005_5_syn_0_blur.jpg output=/sdcard/lws/result/image005_5_syn_0_blur_result_20260502_190223.jpg
+05-02 19:02:23.590 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave input=/sdcard/Pictures/image005_5_syn_0_blur.jpg output=/sdcard/lws/result/image005_5_syn_0_blur_result_20260502_190223.jpg
+05-02 19:02:23.614 I/RKNNRunner( 3436): [RKNN_API] rknn_run BEGIN iter=1/1
+05-02 19:02:23.856 I/RKNNRunner( 3436): [RKNN_API] rknn_run END iter=1/1 ret=0
+05-02 19:02:23.869 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 float_min=0.00000000 float_max=641.47814941 float_p50=0.00000000 first20=7.546802,25.156006,32.702808,40.249611,42.765213,50.312012,57.858814,67.921219,72.952423,75.468018,80.499222,85.530426,95.592827,105.655228,113.202034,123.264435,128.295639,138.358032,148.420441,155.967239 (io_mem=FLOAT32 after NPU; compare qnt_type/zp/scale from rknn_output_attr)
+05-02 19:02:23.887 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 recon_int8_from_float min=-128 max=127 p50=-128 (inverse of dequant; use to spot zp plateaus vs varying buffer)
+05-02 19:02:23.902 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_raw min=0.000000 p50=0.000000 p90=0.000000 max=0.000000
+05-02 19:02:23.902 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_sigmoid min=0.500000 p50=0.500000 p90=0.500000 max=0.500000
+05-02 19:02:23.902 I/LensGuardModel( 3436): [YOLO_PP_DIAG] obj_raw n/a (layout has no dedicated obj channel)
+05-02 19:02:23.902 I/LensGuardModel( 3436): [YOLO_PP_DIAG] output_attr qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:23.902 I/LensGuardModel( 3436): [YOLO_PP_DIAG] model_manager score_mode=logits conf_thresh=0.250 nms_iou=0.450 dims=[84,8400]
+05-02 19:02:23.933 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 C_N(f*n_cand+anchor) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=0.000000
+05-02 19:02:23.934 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 N_C(anchor*num_features+class_ch) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=641.478149
+05-02 19:02:23.935 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample1 layout=C_N cx=7.547 cy=7.547 w=15.094 h=15.094 best_cls=0 score=0.5000
+05-02 19:02:23.935 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample2 layout=C_N cx=25.156 cy=7.547 w=55.343 h=15.094 best_cls=0 score=0.5000
+05-02 19:02:23.935 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample3 layout=C_N cx=32.703 cy=7.547 w=60.374 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.935 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample4 layout=C_N cx=40.250 cy=5.031 w=75.468 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:23.935 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample5 layout=C_N cx=42.765 cy=5.031 w=88.046 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.935 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample6 layout=C_N cx=50.312 cy=5.031 w=90.562 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.935 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample7 layout=C_N cx=57.859 cy=5.031 w=108.171 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.935 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample8 layout=C_N cx=67.921 cy=5.031 w=120.749 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.935 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample9 layout=C_N cx=72.952 cy=5.031 w=133.327 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.935 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample10 layout=C_N cx=75.468 cy=5.031 w=150.936 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.935 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample11 layout=C_N cx=80.499 cy=5.031 w=163.514 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.936 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample12 layout=C_N cx=85.530 cy=5.031 w=166.030 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.936 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample13 layout=C_N cx=95.593 cy=5.031 w=163.514 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.936 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample14 layout=C_N cx=105.655 cy=5.031 w=158.483 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.936 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample15 layout=C_N cx=113.202 cy=5.031 w=150.936 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.936 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample16 layout=C_N cx=123.264 cy=5.031 w=148.420 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.936 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample17 layout=C_N cx=128.296 cy=5.031 w=143.389 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.936 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample18 layout=C_N cx=138.358 cy=5.031 w=138.358 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.936 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample19 layout=C_N cx=148.420 cy=5.031 w=140.874 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:23.936 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample20 layout=C_N cx=155.967 cy=5.031 w=135.842 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.108 D/BufferPoolAccessor2.0( 3436): bufferpool2 0xb40000785a1f3248 : 0(0 size) total buffers - 0(0 size) used buffers - 0/5 (recycle/alloc) - 4/20 (fetch/transfer)
+05-02 19:02:24.108 D/BufferPoolAccessor2.0( 3436): evictor expired: 1, evicted: 1
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] raw_output_shape d0=84 d1=8400 before_conf=8400 after_conf=8400 after_class=8400 after_nms=1077 pre_nms_boxes=8400 conf_thresh=0.250 nms_iou=0.450 score_mode=logits
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] final_conf min=0.5000 p50=0.5000 p90=0.5000 max=0.5000
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top1 class_id=0 conf=0.5000 xyxy=0.0,0.0,15.1,15.1
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top2 class_id=0 conf=0.5000 xyxy=0.0,0.0,52.8,15.1
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top3 class_id=0 conf=0.5000 xyxy=2.5,3.8,62.9,11.3
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top4 class_id=0 conf=0.5000 xyxy=0.0,1.3,86.8,8.8
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top5 class_id=0 conf=0.5000 xyxy=13.8,1.3,177.3,8.8
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top6 class_id=0 conf=0.5000 xyxy=88.0,1.3,223.9,8.8
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top7 class_id=0 conf=0.5000 xyxy=140.9,1.3,291.8,8.8
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top8 class_id=0 conf=0.5000 xyxy=167.3,3.8,315.7,11.3
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top9 class_id=0 conf=0.5000 xyxy=202.5,0.0,340.9,10.1
+05-02 19:02:24.180 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top10 class_id=0 conf=0.5000 xyxy=221.4,3.8,407.5,11.3
+05-02 19:02:24.221 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave total_after_nms=1077 drawn=80 draw_cap=80 saved=1 level=2 status=HEAVY
+05-02 19:02:24.222 I/LensGuardManager( 3436): Check result: level=2 status=HEAVY 立即更换 (核心区域命中)
+05-02 19:02:24.222 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultEvent
+05-02 19:02:24.222 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:24.223 I/LensGuardJNI( 3436): nativeInferImageAndSave: result=0
+05-02 19:02:24.223 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeInferImageAndSave seq=10 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=633183
+05-02 19:02:24.223 I/NativeBridge( 3436): RKNN_DIAG stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=infer completed
+05-02 19:02:24.223 I/LensGuardManager( 3436): inferJpgAndSaveResult image=/sdcard/Pictures/image005_5_syn_0_blur.jpg output=/sdcard/lws/result/image005_5_syn_0_blur_result_20260502_190223.jpg code=0
+05-02 19:02:24.224 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultImageEvent
+05-02 19:02:24.224 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:24.224 I/InferPicturesDir( 3436): INFER_OK src=/sdcard/Pictures/image005_5_syn_0_blur.jpg out=/sdcard/lws/result/image005_5_syn_0_blur_result_20260502_190223.jpg
+05-02 19:02:24.229 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeInferImageAndSave seq=11 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:24.229 I/LensGuardJNI( 3436): nativeInferImageAndSave: input=/sdcard/Pictures/syn0006_00146_syn_0_blur.jpg output=/sdcard/lws/result/syn0006_00146_syn_0_blur_result_20260502_190224.jpg
+05-02 19:02:24.229 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave input=/sdcard/Pictures/syn0006_00146_syn_0_blur.jpg output=/sdcard/lws/result/syn0006_00146_syn_0_blur_result_20260502_190224.jpg
+05-02 19:02:24.259 I/RKNNRunner( 3436): [RKNN_API] rknn_run BEGIN iter=1/1
+05-02 19:02:24.459 D/ProfileInstaller( 3436): Skipping profile installation for com.lasercyber.lws.ui
+05-02 19:02:24.486 D/BufferPoolAccessor2.0(  383): bufferpool2 0xb400006ef3b5ee78 : 0(0 size) total buffers - 0(0 size) used buffers - 7/11 (recycle/alloc) - 4/11 (fetch/transfer)
+05-02 19:02:24.486 D/BufferPoolAccessor2.0(  383): bufferpool2 0xb400006ef3b61128 : 0(0 size) total buffers - 0(0 size) used buffers - 99/103 (recycle/alloc) - 4/103 (fetch/transfer)
+05-02 19:02:24.486 D/BufferPoolAccessor2.0(  383): evictor expired: 2, evicted: 2
+05-02 19:02:24.522 I/RKNNRunner( 3436): [RKNN_API] rknn_run END iter=1/1 ret=0
+05-02 19:02:24.535 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 float_min=0.00000000 float_max=641.47814941 float_p50=0.00000000 first20=10.062403,25.156006,35.218410,42.765213,42.765213,50.312012,57.858814,67.921219,72.952423,72.952423,77.983620,83.014824,93.077225,103.139626,110.686432,120.748833,125.780037,138.358032,148.420441,155.967239 (io_mem=FLOAT32 after NPU; compare qnt_type/zp/scale from rknn_output_attr)
+05-02 19:02:24.553 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 recon_int8_from_float min=-128 max=127 p50=-128 (inverse of dequant; use to spot zp plateaus vs varying buffer)
+05-02 19:02:24.568 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_raw min=0.000000 p50=0.000000 p90=0.000000 max=0.000000
+05-02 19:02:24.568 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_sigmoid min=0.500000 p50=0.500000 p90=0.500000 max=0.500000
+05-02 19:02:24.568 I/LensGuardModel( 3436): [YOLO_PP_DIAG] obj_raw n/a (layout has no dedicated obj channel)
+05-02 19:02:24.568 I/LensGuardModel( 3436): [YOLO_PP_DIAG] output_attr qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:24.568 I/LensGuardModel( 3436): [YOLO_PP_DIAG] model_manager score_mode=logits conf_thresh=0.250 nms_iou=0.450 dims=[84,8400]
+05-02 19:02:24.601 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 C_N(f*n_cand+anchor) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=0.000000
+05-02 19:02:24.601 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 N_C(anchor*num_features+class_ch) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=641.478149
+05-02 19:02:24.603 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample1 layout=C_N cx=10.062 cy=7.547 w=17.609 h=15.094 best_cls=0 score=0.5000
+05-02 19:02:24.603 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample2 layout=C_N cx=25.156 cy=7.547 w=60.374 h=12.578 best_cls=0 score=0.5000
+05-02 19:02:24.603 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample3 layout=C_N cx=35.218 cy=7.547 w=67.921 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.603 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample4 layout=C_N cx=42.765 cy=5.031 w=77.984 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:24.603 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample5 layout=C_N cx=42.765 cy=5.031 w=88.046 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.603 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample6 layout=C_N cx=50.312 cy=5.031 w=95.593 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample7 layout=C_N cx=57.859 cy=5.031 w=108.171 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample8 layout=C_N cx=67.921 cy=5.031 w=120.749 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample9 layout=C_N cx=72.952 cy=5.031 w=130.811 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample10 layout=C_N cx=72.952 cy=5.031 w=145.905 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample11 layout=C_N cx=77.984 cy=5.031 w=158.483 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample12 layout=C_N cx=83.015 cy=5.031 w=160.998 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample13 layout=C_N cx=93.077 cy=5.031 w=153.452 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample14 layout=C_N cx=103.140 cy=5.031 w=150.936 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample15 layout=C_N cx=110.686 cy=5.031 w=145.905 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample16 layout=C_N cx=120.749 cy=5.031 w=140.874 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample17 layout=C_N cx=125.780 cy=5.031 w=135.842 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample18 layout=C_N cx=138.358 cy=5.031 w=138.358 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample19 layout=C_N cx=148.420 cy=5.031 w=133.327 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.604 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample20 layout=C_N cx=155.967 cy=5.031 w=133.327 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] raw_output_shape d0=84 d1=8400 before_conf=8400 after_conf=8400 after_class=8400 after_nms=1089 pre_nms_boxes=8400 conf_thresh=0.250 nms_iou=0.450 score_mode=logits
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] final_conf min=0.5000 p50=0.5000 p90=0.5000 max=0.5000
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top1 class_id=0 conf=0.5000 xyxy=1.3,0.0,18.9,15.1
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top2 class_id=0 conf=0.5000 xyxy=0.0,1.3,55.3,13.8
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top3 class_id=0 conf=0.5000 xyxy=3.8,0.0,81.8,10.1
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top4 class_id=0 conf=0.5000 xyxy=0.0,1.3,157.2,8.8
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top5 class_id=0 conf=0.5000 xyxy=57.9,2.5,193.7,7.5
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top6 class_id=0 conf=0.5000 xyxy=98.1,1.3,234.0,8.8
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top7 class_id=0 conf=0.5000 xyxy=150.9,1.3,296.8,8.8
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top8 class_id=0 conf=0.5000 xyxy=191.2,3.8,317.0,11.3
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top9 class_id=0 conf=0.5000 xyxy=213.8,0.0,339.6,10.1
+05-02 19:02:24.850 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top10 class_id=0 conf=0.5000 xyxy=231.4,3.8,382.4,11.3
+05-02 19:02:24.891 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave total_after_nms=1089 drawn=80 draw_cap=80 saved=1 level=2 status=HEAVY
+05-02 19:02:24.891 I/LensGuardManager( 3436): Check result: level=2 status=HEAVY 立即更换 (核心区域命中)
+05-02 19:02:24.892 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultEvent
+05-02 19:02:24.892 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:24.892 I/LensGuardJNI( 3436): nativeInferImageAndSave: result=0
+05-02 19:02:24.892 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeInferImageAndSave seq=11 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=663576
+05-02 19:02:24.892 I/NativeBridge( 3436): RKNN_DIAG stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=infer completed
+05-02 19:02:24.893 I/LensGuardManager( 3436): inferJpgAndSaveResult image=/sdcard/Pictures/syn0006_00146_syn_0_blur.jpg output=/sdcard/lws/result/syn0006_00146_syn_0_blur_result_20260502_190224.jpg code=0
+05-02 19:02:24.893 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultImageEvent
+05-02 19:02:24.893 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:24.893 I/InferPicturesDir( 3436): INFER_OK src=/sdcard/Pictures/syn0006_00146_syn_0_blur.jpg out=/sdcard/lws/result/syn0006_00146_syn_0_blur_result_20260502_190224.jpg
+05-02 19:02:24.898 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeInferImageAndSave seq=12 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:24.898 I/LensGuardJNI( 3436): nativeInferImageAndSave: input=/sdcard/Pictures/syn0006_00130_syn_0_blur.jpg output=/sdcard/lws/result/syn0006_00130_syn_0_blur_result_20260502_190224.jpg
+05-02 19:02:24.898 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave input=/sdcard/Pictures/syn0006_00130_syn_0_blur.jpg output=/sdcard/lws/result/syn0006_00130_syn_0_blur_result_20260502_190224.jpg
+05-02 19:02:24.928 I/RKNNRunner( 3436): [RKNN_API] rknn_run BEGIN iter=1/1
+05-02 19:02:25.108 D/BufferPoolAccessor2.0( 3436): bufferpool2 0xb40000785a1f0f98 : 0(0 size) total buffers - 0(0 size) used buffers - 0/5 (recycle/alloc) - 4/204 (fetch/transfer)
+05-02 19:02:25.108 D/BufferPoolAccessor2.0( 3436): evictor expired: 1, evicted: 1
+05-02 19:02:25.174 I/RKNNRunner( 3436): [RKNN_API] rknn_run END iter=1/1 ret=0
+05-02 19:02:25.187 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 float_min=0.00000000 float_max=641.47814941 float_p50=0.00000000 first20=10.062403,25.156006,32.702808,40.249611,42.765213,50.312012,55.343216,65.405617,70.436821,72.952423,75.468018,77.983620,88.046021,100.624023,108.170830,120.748833,125.780037,135.842438,148.420441,155.967239 (io_mem=FLOAT32 after NPU; compare qnt_type/zp/scale from rknn_output_attr)
+05-02 19:02:25.204 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 recon_int8_from_float min=-128 max=127 p50=-128 (inverse of dequant; use to spot zp plateaus vs varying buffer)
+05-02 19:02:25.220 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_raw min=0.000000 p50=0.000000 p90=0.000000 max=0.000000
+05-02 19:02:25.220 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_sigmoid min=0.500000 p50=0.500000 p90=0.500000 max=0.500000
+05-02 19:02:25.220 I/LensGuardModel( 3436): [YOLO_PP_DIAG] obj_raw n/a (layout has no dedicated obj channel)
+05-02 19:02:25.220 I/LensGuardModel( 3436): [YOLO_PP_DIAG] output_attr qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:25.220 I/LensGuardModel( 3436): [YOLO_PP_DIAG] model_manager score_mode=logits conf_thresh=0.250 nms_iou=0.450 dims=[84,8400]
+05-02 19:02:25.251 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 C_N(f*n_cand+anchor) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=0.000000
+05-02 19:02:25.251 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 N_C(anchor*num_features+class_ch) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=641.478149
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample1 layout=C_N cx=10.062 cy=7.547 w=17.609 h=12.578 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample2 layout=C_N cx=25.156 cy=7.547 w=57.859 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample3 layout=C_N cx=32.703 cy=7.547 w=65.406 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample4 layout=C_N cx=40.250 cy=5.031 w=75.468 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample5 layout=C_N cx=42.765 cy=5.031 w=85.530 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample6 layout=C_N cx=50.312 cy=5.031 w=88.046 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample7 layout=C_N cx=55.343 cy=5.031 w=105.655 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample8 layout=C_N cx=65.406 cy=5.031 w=118.233 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample9 layout=C_N cx=70.437 cy=5.031 w=128.296 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample10 layout=C_N cx=72.952 cy=5.031 w=140.874 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample11 layout=C_N cx=75.468 cy=5.031 w=153.452 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample12 layout=C_N cx=77.984 cy=5.031 w=150.936 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample13 layout=C_N cx=88.046 cy=5.031 w=145.905 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample14 layout=C_N cx=100.624 cy=5.031 w=140.874 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample15 layout=C_N cx=108.171 cy=5.031 w=135.842 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample16 layout=C_N cx=120.749 cy=5.031 w=133.327 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample17 layout=C_N cx=125.780 cy=5.031 w=123.264 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample18 layout=C_N cx=135.842 cy=5.031 w=120.749 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample19 layout=C_N cx=148.420 cy=7.547 w=120.749 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.253 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample20 layout=C_N cx=155.967 cy=7.547 w=123.264 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] raw_output_shape d0=84 d1=8400 before_conf=8400 after_conf=8400 after_class=8400 after_nms=1076 pre_nms_boxes=8400 conf_thresh=0.250 nms_iou=0.450 score_mode=logits
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] final_conf min=0.5000 p50=0.5000 p90=0.5000 max=0.5000
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top1 class_id=0 conf=0.5000 xyxy=1.3,1.3,18.9,13.8
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top2 class_id=0 conf=0.5000 xyxy=0.0,2.5,54.1,12.6
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top3 class_id=0 conf=0.5000 xyxy=2.5,0.0,78.0,10.1
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top4 class_id=0 conf=0.5000 xyxy=0.0,2.5,152.2,7.5
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top5 class_id=0 conf=0.5000 xyxy=75.5,1.3,196.2,8.8
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top6 class_id=0 conf=0.5000 xyxy=88.0,3.8,208.8,11.3
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top7 class_id=0 conf=0.5000 xyxy=109.4,0.0,237.7,10.1
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top8 class_id=0 conf=0.5000 xyxy=142.1,1.3,285.5,8.8
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top9 class_id=0 conf=0.5000 xyxy=166.0,3.8,301.9,11.3
+05-02 19:02:25.496 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top10 class_id=0 conf=0.5000 xyxy=211.3,0.0,332.1,10.1
+05-02 19:02:25.534 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave total_after_nms=1076 drawn=80 draw_cap=80 saved=1 level=2 status=HEAVY
+05-02 19:02:25.534 I/LensGuardManager( 3436): Check result: level=2 status=HEAVY 立即更换 (核心区域命中)
+05-02 19:02:25.535 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultEvent
+05-02 19:02:25.535 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:25.535 I/LensGuardJNI( 3436): nativeInferImageAndSave: result=0
+05-02 19:02:25.535 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeInferImageAndSave seq=12 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=637275
+05-02 19:02:25.535 I/NativeBridge( 3436): RKNN_DIAG stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=infer completed
+05-02 19:02:25.535 I/LensGuardManager( 3436): inferJpgAndSaveResult image=/sdcard/Pictures/syn0006_00130_syn_0_blur.jpg output=/sdcard/lws/result/syn0006_00130_syn_0_blur_result_20260502_190224.jpg code=0
+05-02 19:02:25.535 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultImageEvent
+05-02 19:02:25.536 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:25.536 I/InferPicturesDir( 3436): INFER_OK src=/sdcard/Pictures/syn0006_00130_syn_0_blur.jpg out=/sdcard/lws/result/syn0006_00130_syn_0_blur_result_20260502_190224.jpg
+05-02 19:02:25.541 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeInferImageAndSave seq=13 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=0
+05-02 19:02:25.542 I/LensGuardJNI( 3436): nativeInferImageAndSave: input=/sdcard/Pictures/syn007_00099_syn_0_blur.jpg output=/sdcard/lws/result/syn007_00099_syn_0_blur_result_20260502_190225.jpg
+05-02 19:02:25.542 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave input=/sdcard/Pictures/syn007_00099_syn_0_blur.jpg output=/sdcard/lws/result/syn007_00099_syn_0_blur_result_20260502_190225.jpg
+05-02 19:02:25.568 I/RKNNRunner( 3436): [RKNN_API] rknn_run BEGIN iter=1/1
+05-02 19:02:25.817 I/RKNNRunner( 3436): [RKNN_API] rknn_run END iter=1/1 ret=0
+05-02 19:02:25.834 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 float_min=0.00000000 float_max=641.47814941 float_p50=0.00000000 first20=7.546802,25.156006,32.702808,40.249611,40.249611,50.312012,55.343216,62.890018,67.921219,70.436821,75.468018,83.014824,93.077225,103.139626,110.686432,123.264435,128.295639,138.358032,148.420441,153.451645 (io_mem=FLOAT32 after NPU; compare qnt_type/zp/scale from rknn_output_attr)
+05-02 19:02:25.856 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] output_buffer model=det idx=0 recon_int8_from_float min=-128 max=127 p50=-128 (inverse of dequant; use to spot zp plateaus vs varying buffer)
+05-02 19:02:25.873 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_raw min=0.000000 p50=0.000000 p90=0.000000 max=0.000000
+05-02 19:02:25.873 I/LensGuardModel( 3436): [YOLO_PP_DIAG] class_sigmoid min=0.500000 p50=0.500000 p90=0.500000 max=0.500000
+05-02 19:02:25.873 I/LensGuardModel( 3436): [YOLO_PP_DIAG] obj_raw n/a (layout has no dedicated obj channel)
+05-02 19:02:25.873 I/LensGuardModel( 3436): [YOLO_PP_DIAG] output_attr qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:25.873 I/LensGuardModel( 3436): [YOLO_PP_DIAG] model_manager score_mode=logits conf_thresh=0.250 nms_iou=0.450 dims=[84,8400]
+05-02 19:02:25.906 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 C_N(f*n_cand+anchor) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=0.000000
+05-02 19:02:25.906 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] layout_dual_read det_out_idx=0 N_C(anchor*num_features+class_ch) n_cand=8400 num_features=84 class_logits min=0.000000 p50=0.000000 max=641.478149
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample1 layout=C_N cx=7.547 cy=7.547 w=15.094 h=12.578 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample2 layout=C_N cx=25.156 cy=10.062 w=52.828 h=12.578 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample3 layout=C_N cx=32.703 cy=5.031 w=60.374 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample4 layout=C_N cx=40.250 cy=5.031 w=75.468 h=10.062 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample5 layout=C_N cx=40.250 cy=5.031 w=83.015 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample6 layout=C_N cx=50.312 cy=5.031 w=88.046 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample7 layout=C_N cx=55.343 cy=5.031 w=103.140 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample8 layout=C_N cx=62.890 cy=5.031 w=110.686 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample9 layout=C_N cx=67.921 cy=5.031 w=123.264 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample10 layout=C_N cx=70.437 cy=5.031 w=138.358 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample11 layout=C_N cx=75.468 cy=5.031 w=153.452 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample12 layout=C_N cx=83.015 cy=5.031 w=155.967 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample13 layout=C_N cx=93.077 cy=5.031 w=153.452 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample14 layout=C_N cx=103.140 cy=5.031 w=153.452 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample15 layout=C_N cx=110.686 cy=5.031 w=143.389 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample16 layout=C_N cx=123.264 cy=5.031 w=138.358 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample17 layout=C_N cx=128.296 cy=5.031 w=130.811 h=5.031 best_cls=0 score=0.5000
+05-02 19:02:25.908 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample18 layout=C_N cx=138.358 cy=5.031 w=130.811 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.909 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample19 layout=C_N cx=148.420 cy=5.031 w=125.780 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.909 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] sample20 layout=C_N cx=153.452 cy=5.031 w=125.780 h=7.547 best_cls=0 score=0.5000
+05-02 19:02:25.918 D/InnohiManagerService(  477): MSG_FOREGROUND_APP_KEEPLIVE_LOOP  elapsedRealtime change
+05-02 19:02:25.919 D/InnohiManagerService(  477): MSG_FOREGROUND_APP_KEEPLIVE_LOOP 11937264 com.lasercyber.lws.ui double check false
+05-02 19:02:25.919 D/InnohiManagerService(  477): MSG_FOREGROUND_APP_KEEPLIVE_LOOP 11937265 com.lasercyber.lws.ui show... , wait 10 seconds
+05-02 19:02:25.982 I/AutoWifiReconnectService(  477): Try auto reconnect to netId=0
+05-02 19:02:25.983 I/WifiService(  477): enableNetwork uid=1000 disableOthers=false
+05-02 19:02:26.005 D/WifiConfigStore(  477): Writing to stores completed in 17 ms.
+05-02 19:02:26.005 I/WifiService(  477): reconnect uid=1000
+05-02 19:02:26.147 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] raw_output_shape d0=84 d1=8400 before_conf=8400 after_conf=8400 after_class=8400 after_nms=1061 pre_nms_boxes=8400 conf_thresh=0.250 nms_iou=0.450 score_mode=logits
+05-02 19:02:26.147 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] final_conf min=0.5000 p50=0.5000 p90=0.5000 max=0.5000
+05-02 19:02:26.147 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top1 class_id=0 conf=0.5000 xyxy=0.0,1.3,15.1,13.8
+05-02 19:02:26.147 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top2 class_id=0 conf=0.5000 xyxy=0.0,3.8,51.6,16.4
+05-02 19:02:26.147 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top3 class_id=0 conf=0.5000 xyxy=2.5,0.0,62.9,10.1
+05-02 19:02:26.147 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top4 class_id=0 conf=0.5000 xyxy=7.5,1.3,118.2,8.8
+05-02 19:02:26.147 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top5 class_id=0 conf=0.5000 xyxy=26.4,2.5,179.9,7.5
+05-02 19:02:26.148 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top6 class_id=0 conf=0.5000 xyxy=73.0,1.3,203.8,8.8
+05-02 19:02:26.148 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top7 class_id=0 conf=0.5000 xyxy=104.4,2.5,232.7,7.5
+05-02 19:02:26.148 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top8 class_id=0 conf=0.5000 xyxy=127.0,1.3,270.4,8.8
+05-02 19:02:26.148 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top9 class_id=0 conf=0.5000 xyxy=164.8,3.8,303.1,11.3
+05-02 19:02:26.148 I/YOLO_PP_DIAG( 3436): [YOLO_PP_DIAG] top10 class_id=0 conf=0.5000 xyxy=208.8,0.0,319.5,10.1
+05-02 19:02:26.183 D/serial_port( 3436): Opening serial port /dev/ttyS5 with flags 0x2
+05-02 19:02:26.183 D/serial_port( 3436): open() fd = 74
+05-02 19:02:26.184 D/serial_port( 3436): Configuring serial port
+05-02 19:02:26.189 I/LensGuard( 3436): [DIAG] nativeInferImageAndSave total_after_nms=1061 drawn=80 draw_cap=80 saved=1 level=2 status=HEAVY
+05-02 19:02:26.190 I/LensGuardManager( 3436): Check result: level=2 status=HEAVY 立即更换 (核心区域命中)
+05-02 19:02:26.190 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultEvent
+05-02 19:02:26.190 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:26.190 I/LensGuardJNI( 3436): nativeInferImageAndSave: result=0
+05-02 19:02:26.190 I/NativeBridge( 3436): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeInferImageAndSave seq=13 stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 elapsedUs=648766
+05-02 19:02:26.190 I/NativeBridge( 3436): RKNN_DIAG stage=run handle=-5476376629974442480 pid=3436 tid=3511 thread=mj-laser-thread-rknn threadId=219 category=OK nativeCode=0 detail=infer completed
+05-02 19:02:26.191 I/LensGuardManager( 3436): inferJpgAndSaveResult image=/sdcard/Pictures/syn007_00099_syn_0_blur.jpg output=/sdcard/lws/result/syn007_00099_syn_0_blur_result_20260502_190225.jpg code=0
+05-02 19:02:26.191 D/EventBus( 3436): No subscribers registered for event class com.lasercyber.lws.ui.bean.event.LensCheckResultImageEvent
+05-02 19:02:26.191 D/EventBus( 3436): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+05-02 19:02:26.192 I/InferPicturesDir( 3436): INFER_OK src=/sdcard/Pictures/syn007_00099_syn_0_blur.jpg out=/sdcard/lws/result/syn007_00099_syn_0_blur_result_20260502_190225.jpg
+05-02 19:02:26.192 I/TestRunner( 3436): finished: inferAllPicturesAndPrintResultPaths(com.lasercyber.lws.ui.ai.InferPicturesDirectoryInstrumentedTest)
+05-02 19:02:26.200 I/TestRunner( 3436): run finished: 1 tests, 0 failed, 0 ignored
+05-02 19:02:26.207 I/ActivityManager(  477): Force stopping com.lasercyber.lws.ui appid=10070 user=0: finished inst
+05-02 19:02:26.209 I/ActivityManager(  477): Killing 3436:com.lasercyber.lws.ui/u0a70 (adj 0): stop com.lasercyber.lws.ui due to finished inst
+05-02 19:02:26.215 D/AndroidRuntime( 3420): Shutting down VM
+05-02 19:02:26.218 V/WindowManager(  477): getPackagePerformanceMode -- ComponentInfo{com.android.launcher3/com.android.launcher3.uioverrides.QuickstepLauncher} -- com.android.launcher3 -- mode=0
+05-02 19:02:26.353 D/BufferPoolAccessor2.0(  383): Destruction - bufferpool2 0xb400006ef3b61128 cached: 0/0M, 0/0% in use; allocs: 103, 96% recycled; transfers: 103, 96% unfetched
+05-02 19:02:26.354 D/BufferPoolAccessor2.0(  383): Destruction - bufferpool2 0xb400006ef3b5ee78 cached: 0/0M, 0/0% in use; allocs: 11, 64% recycled; transfers: 11, 64% unfetched
+05-02 19:02:26.354 D/ConnectivityService(  477): ConnectivityService NetworkRequestInfo binderDied(NetworkRequest [ LISTEN id=34, [ Transports: CELLULAR|WIFI Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN Uid: 10070 AdministratorUids: [] RequestorUid: 10070 RequestorPackageName: com.lasercyber.lws.ui] ], android.os.BinderProxy@3a6cbf)
+05-02 19:02:26.355 D/ConnectivityService(  477): releasing NetworkRequest [ LISTEN id=34, [ Transports: CELLULAR|WIFI Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN Uid: 10070 AdministratorUids: [] RequestorUid: 10070 RequestorPackageName: com.lasercyber.lws.ui] ] (release request)
+05-02 19:02:26.358 I/binder  (    0): undelivered TRANSACTION_COMPLETE
+05-02 19:02:26.358 I/binder  (    0): undelivered transaction 6735249, process died.
+05-02 19:02:26.385 I/Zygote  (  268): Process 3436 exited due to signal 9 (Killed)
+05-02 19:02:26.691 I/ActivityManager(  477): Failure reporting to instrumentation watcher: comp=ComponentInfo{com.lasercyber.lws.ui.test/androidx.test.runner.AndroidJUnitRunner} results=Bundle[mParcelledData.dataSize=92]
+05-02 19:02:26.695 I/binder  (    0): release 3420:3433 transaction 6735247 in, still active
+05-02 19:02:26.695 I/binder  (    0): send failed reply for transaction 6735247 to 477:3563
+05-02 19:02:27.106 D/WifiNl80211Manager(  477): Scan result ready event
+05-02 19:02:27.107 D/WifiNative(  477): Scan result ready event
+05-02 19:02:27.109 I/EthernetTracker(  477): interfaceLinkStateChanged, iface: wlan0, up: true
+05-02 19:02:27.146 D/WificondScannerImpl(  477): Filtering out 32 scan results.
+05-02 19:02:27.153 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1d:<xiaohaowifi_5G>
+05-02 19:02:27.154 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1e:<xiaohaowifi_IoT>
+05-02 19:02:31.011 I/AutoWifiReconnectService(  477): Try auto reconnect to netId=0
+05-02 19:02:31.012 I/WifiService(  477): enableNetwork uid=1000 disableOthers=false
+05-02 19:02:31.052 D/WifiConfigStore(  477): Writing to stores completed in 31 ms.
+05-02 19:02:31.054 I/WifiService(  477): reconnect uid=1000
+05-02 19:02:31.355 D/BufferPoolAccessor2.0(  383): evictor expired: 2, evicted: 0
+05-02 19:02:32.166 D/WifiNl80211Manager(  477): Scan result ready event
+05-02 19:02:32.166 D/WifiNative(  477): Scan result ready event
+05-02 19:02:32.168 I/EthernetTracker(  477): interfaceLinkStateChanged, iface: wlan0, up: true
+05-02 19:02:32.217 D/WificondScannerImpl(  477): Filtering out 30 scan results.
+05-02 19:02:32.226 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1d:<xiaohaowifi_5G>
+05-02 19:02:32.227 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1e:<xiaohaowifi_IoT>
+05-02 19:02:32.227 D/PasspointManager(  477): ANQP entry not found for: 60:cf:84:00:ac:1c:<>
+05-02 19:02:35.922 D/InnohiManagerService(  477): MSG_FOREGROUND_APP_KEEPLIVE_LOOP 11947267 com.lasercyber.lws.ui double check true
+05-02 19:02:35.926 D/InnohiManagerService(  477):  rInfo com.lasercyber.lws.ui com.lasercyber.lws.ui.activitys.SplashActivity
+05-02 19:02:35.926 D/InnohiManagerService(  477): MSG_FOREGROUND_APP_KEEPLIVE_LOOP startActivity Intent { flg=0x10000000 cmp=com.lasercyber.lws.ui/.activitys.SplashActivity }
+05-02 19:02:35.927 W/ContextImpl(  477): Calling a method in the system process without a qualified user: android.app.ContextImpl.startActivity:993 com.innohi.server.InnohiManagerService$7.handleMessage:2121 android.os.Handler.dispatchMessage:106 android.os.Looper.loop:223 android.os.HandlerThread.run:67 
+05-02 19:02:35.928 W/ContextImpl(  477): Calling a method in the system process without a qualified user: android.app.ContextImpl.startActivity:1005 android.app.ContextImpl.startActivity:994 com.innohi.server.InnohiManagerService$7.handleMessage:2121 android.os.Handler.dispatchMessage:106 android.os.Looper.loop:223 
+05-02 19:02:35.930 I/ActivityTaskManager(  477): START u0 {flg=0x10000000 cmp=com.lasercyber.lws.ui/.activitys.SplashActivity} from uid 1000
+05-02 19:02:35.968 D/CompatibilityChangeReporter(  477): Compat change id reported: 135634846; UID 10070; state: DISABLED
+05-02 19:02:35.969 D/CompatibilityChangeReporter(  477): Compat change id reported: 135754954; UID 10070; state: ENABLED
+05-02 19:02:35.970 D/CompatibilityChangeReporter(  477): Compat change id reported: 143937733; UID 10070; state: ENABLED
+05-02 19:02:35.987 D/Zygote  (  268): Forked child process 3589
+05-02 19:02:35.991 I/ActivityManager(  477): Start proc 3589:com.lasercyber.lws.ui/u0a70 for pre-top-activity {com.lasercyber.lws.ui/com.lasercyber.lws.ui.activitys.SplashActivity}
+05-02 19:02:35.993 I/Zygote  ( 3589): seccomp disabled by setenforce 0
+05-02 19:02:36.005 I/adbd    ( 1837): jdwp connection from 3589
+05-02 19:02:36.034 W/linker  ( 3589): Warning: library "/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/oat/arm64/base.odex" ("/data/app/~~oSHH628NiPwi0g6PIej1Ag==/com.lasercyber.lws.ui-QCe4BDYyptLM3ikfpOzR-Q==/oat/arm64/base.odex") needed or dlopened by "/apex/com.android.art/lib64/libart.so" is not accessible by namespace "com_android_art" and will not work when the app moves to API level 24 or later (https://android.googlesource.com/platform/bionic/+/master/private-api-enforced-for-api-level-24) (allowing for now because this app's target API level is still 34)
+05-02 19:02:36.056 I/AutoWifiReconnectService(  477): Try auto reconnect to netId=0
+05-02 19:02:36.056 I/WifiService(  477): enableNetwork uid=1000 disableOthers=false
+05-02 19:02:36.061 D/NetworkSecurityConfig( 3589): No Network Security Config specified, using platform default
+05-02 19:02:36.062 D/NetworkSecurityConfig( 3589): No Network Security Config specified, using platform default
+05-02 19:02:36.076 D/WifiConfigStore(  477): Writing to stores completed in 16 ms.
+05-02 19:02:36.076 I/WifiService(  477): reconnect uid=1000
+05-02 19:02:36.112 D/WM-WrkMgrInitializer( 3589): Initializing WorkManager with default configuration.
+05-02 19:02:36.129 I/TetheringManager( 3589): registerTetheringEventCallback:com.lasercyber.lws.ui
+05-02 19:02:36.136 D/WM-PackageManagerHelper( 3589): Skipping component enablement for androidx.work.impl.background.systemjob.SystemJobService
+05-02 19:02:36.136 D/WM-Schedulers( 3589): Created SystemJobScheduler and enabled SystemJobService
+05-02 19:02:36.155 D/application( 3589): 正在启动 LaserApplication=====>
+05-02 19:02:36.163 D/ConnectivityService(  477): listenForNetwork for uid/pid:10070/3589 NetworkRequest [ LISTEN id=35, [ Transports: CELLULAR|WIFI Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VPN Uid: 10070 AdministratorUids: [] RequestorUid: 10070 RequestorPackageName: com.lasercyber.lws.ui] ]
+05-02 19:02:36.164 D/ConnectivityService(  477): NetworkReassignment : no changes
+05-02 19:02:36.166 D/InnohiManagerService(  477): setForegroundAppKeepLive packageName = com.lasercyber.lws.ui keepAliveTimeSec = 10
+05-02 19:02:36.169 D/FileUtil(  477): path = /sys/class/gpio_innohi/GPIO_8/value write = 1 read = 1
+05-02 19:02:36.170 D/application( 3589): 事件总线注册完成...
+05-02 19:02:36.172 D/FileUtil(  477): path = /sys/class/gpio_innohi/GPIO_5/value write = 0 read = 0
+05-02 19:02:36.174 D/FileUtil(  477): path = /sys/class/gpio_innohi/GPIO_6/value write = 0 read = 0
+05-02 19:02:36.180 D/InnohiManagerService(  477): setExtendStatusBarVisibility visibility = 5
+05-02 19:02:36.181 D/InnohiManagerService(  477): getNavigationBarVisibility type = 2
+05-02 19:02:36.194 W/ContextImpl(  477): Calling a method in the system process without a qualified user: android.app.ContextImpl.sendBroadcast:1111 com.innohi.server.InnohiManagerService.setExtendStatusBarVisibility:1357 com.innohi.IInnohiManager$Stub.onTransact:1143 android.os.Binder.execTransactInternal:1154 android.os.Binder.execTransact:1123 
+05-02 19:02:36.196 D/StatusBar(  666): innohi onReceive com.systemui.action.hideStatusBar type = 2 curType = 2
+05-02 19:02:36.197 D/InnohiManagerService(  477): setNavigationBarVisibility visibility = 2
+05-02 19:02:36.197 D/InnohiManagerService(  477): getNavigationBarVisibility type = 2
+05-02 19:02:36.199 I/application( 3589): startup_phase=modbus_init, outcome=start, reason=begin
+05-02 19:02:36.200 D/ModbusManagerRtu( 3589): 正在创建modbus管理器====>
+05-02 19:02:36.201 I/application( 3589): startup_phase=modbus_init, outcome=open_requested, reason=async_init_requested
+05-02 19:02:36.201 D/DeviceStatusTaskHandler( 3589): 正在重置设备状态的定时任务=====>
+05-02 19:02:36.211 D/DeviceStatusTaskHandler( 3589): 添加新的设备状态定时任务:ReadInputRegisters_1777719756210
+05-02 19:02:36.211 D/DeviceStatusTaskHandler( 3589): 正在重置设备数据的定时任务=====>
+05-02 19:02:36.212 I/LwsCloudSync( 3589): App | cold start: schedule API origin probe only (metadata enqueue after pin)
+05-02 19:02:36.212 D/DeviceStatusTaskHandler( 3589): 添加新的设备数据定时任务:ReadInputRegisters_1777719756212
+05-02 19:02:36.213 I/application( 3589): cold start: no active network, skip immediate API origin probe
+05-02 19:02:36.213 I/LwsCloudSync( 3589): App | no active network at cold start (getActiveNetwork null) — wait for NetworkCallback
+05-02 19:02:36.214 D/application( 3589): AndroidUtilCode 初始化完成...
+05-02 19:02:36.215 W/Glide   ( 3589): Failed to find GeneratedAppGlideModule. You should include an annotationProcessor compile dependency on com.github.bumptech.glide:compiler in your application and a @GlideModule annotated AppGlideModule implementation or LibraryGlideModules will be silently ignored
+05-02 19:02:36.217 D/AppCompatDelegate( 3589): Checking for metadata for AppLocalesMetadataHolderService : Service not found
+05-02 19:02:36.222 I/NativeBridge( 3589): ensureLoaded using ai lib dir=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library/1.0.9/jniLibs/arm64-v8a requestedVersion=1.0.0 variant=
+05-02 19:02:36.222 I/NativeBridge( 3589): ensureLoaded aiRoot=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library aiVersion(core)=1.0.0 libDir=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library/1.0.9/jniLibs/arm64-v8a
+05-02 19:02:36.223 I/NativeBridge( 3589): System.load target so=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library/1.0.9/jniLibs/arm64-v8a/libc++_shared.so
+05-02 19:02:36.242 I/NativeBridge( 3589): System.load target so=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library/1.0.9/jniLibs/arm64-v8a/librknnrt.so
+05-02 19:02:36.273 D/GlobalSoundManager( 3589): initSoundPool: 生成的音频Id：2
+05-02 19:02:36.285 I/application( 3589): bundled process-library: skip (not newer than data) asset=1.0.0 data=1.0.0
+05-02 19:02:36.290 I/application( 3589): bundled ai-library: skip (not newer) asset=1.0.9 data=1.0.9 storageDir=1.0.9
+05-02 19:02:36.301 I/NativeBridge( 3589): System.load target so=/data/user/0/com.lasercyber.lws.ui/files/bundled-libraries/ai-library/1.0.9/jniLibs/arm64-v8a/libai.so
+05-02 19:02:36.302 E/Utils   (  373): did not find channel-count and/or sample-rate
+05-02 19:02:36.311 E/Utils   (  373): did not find channel-count and/or sample-rate
+05-02 19:02:36.327 D/CCodec  ( 3589): allocate(c2.android.mp3.decoder)
+05-02 19:02:36.328 D/CCodec  ( 3589): allocate(c2.android.mp3.decoder)
+05-02 19:02:36.331 I/Codec2Client( 3589): Available Codec2 services: "software"
+05-02 19:02:36.334 I/LensGuardJNI( 3589): JNI_OnLoad: libai loaded
+05-02 19:02:36.334 V/C2Store (  383): in init
+05-02 19:02:36.334 V/C2Store (  383): loading dll
+05-02 19:02:36.340 I/CCodec  ( 3589): Created component [c2.android.mp3.decoder]
+05-02 19:02:36.341 D/AssetDeployer( 3589): config.yaml already exists, skipping deploy
+05-02 19:02:36.342 I/LensGuardManager( 3589): Engine config ready configPath=/data/user/0/com.lasercyber.lws.ui/files/lens_guard/config.yaml projectRoot=/data/user/0/com.lasercyber.lws.ui/files/lens_guard
+05-02 19:02:36.343 D/CCodecConfig( 3589): read media type: audio/mpeg
+05-02 19:02:36.346 I/CCodec  ( 3589): Created component [c2.android.mp3.decoder]
+05-02 19:02:36.347 D/CCodecConfig( 3589): read media type: audio/mpeg
+05-02 19:02:36.347 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: algo.buffers.max-count.values
+05-02 19:02:36.349 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: output.subscribed-indices.values
+05-02 19:02:36.349 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: input.buffers.allocator-ids.values
+05-02 19:02:36.349 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: output.buffers.allocator-ids.values
+05-02 19:02:36.350 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: algo.buffers.allocator-ids.values
+05-02 19:02:36.350 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: output.buffers.pool-ids.values
+05-02 19:02:36.350 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: algo.buffers.pool-ids.values
+05-02 19:02:36.350 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: algo.buffers.max-count.values
+05-02 19:02:36.351 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: output.subscribed-indices.values
+05-02 19:02:36.351 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: input.buffers.allocator-ids.values
+05-02 19:02:36.351 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: output.buffers.allocator-ids.values
+05-02 19:02:36.351 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: algo.buffers.allocator-ids.values
+05-02 19:02:36.351 I/CCodecConfig( 3589): query failed after returning 7 values (BAD_INDEX)
+05-02 19:02:36.352 D/CCodecConfig( 3589): c2 config diff is Dict {
+05-02 19:02:36.352 D/CCodecConfig( 3589):   c2::u32 coded.bitrate.value = 64000
+05-02 19:02:36.352 D/CCodecConfig( 3589):   c2::u32 input.buffers.max-size.value = 8192
+05-02 19:02:36.352 D/CCodecConfig( 3589):   c2::u32 input.delay.value = 0
+05-02 19:02:36.352 D/CCodecConfig( 3589):   string input.media-type.value = "audio/mpeg"
+05-02 19:02:36.352 D/CCodecConfig( 3589):   string output.media-type.value = "audio/raw"
+05-02 19:02:36.352 D/CCodecConfig( 3589):   c2::u32 raw.channel-count.value = 2
+05-02 19:02:36.352 D/CCodecConfig( 3589):   c2::u32 raw.sample-rate.value = 44100
+05-02 19:02:36.352 D/CCodecConfig( 3589): }
+05-02 19:02:36.352 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: output.buffers.pool-ids.values
+05-02 19:02:36.352 D/ReflectedParamUpdater( 3589): extent() != 1 for single value type: algo.buffers.pool-ids.values
+05-02 19:02:36.353 D/CCodec  ( 3589): [c2.android.mp3.decoder] buffers are bound to CCodec for this session
+05-02 19:02:36.353 D/CCodecConfig( 3589): no c2 equivalents for durationUs
+05-02 19:02:36.353 D/CCodecConfig( 3589): no c2 equivalents for track-id
+05-02 19:02:36.353 D/CCodecConfig( 3589): no c2 equivalents for encoder-delay
+05-02 19:02:36.353 D/CCodecConfig( 3589): no c2 equivalents for encoder-padding
+05-02 19:02:36.353 D/CCodecConfig( 3589): no c2 equivalents for flags
+05-02 19:02:36.354 W/Codec2Client( 3589): query -- param skipped: index = 1107298332.
+05-02 19:02:36.354 D/CCodec  ( 3589): setup formats input: AMessage(what = 0x00000000) = {
+05-02 19:02:36.354 D/CCodec  ( 3589):   int32_t channel-count = 2
+05-02 19:02:36.354 D/CCodec  ( 3589):   int32_t max-input-size = 8192
+05-02 19:02:36.354 D/CCodec  ( 3589):   string mime = "audio/mpeg"
+05-02 19:02:36.354 D/CCodec  ( 3589):   int32_t sample-rate = 44100
+05-02 19:02:36.354 D/CCodec  ( 3589): } and output: AMessage(what = 0x00000000) = {
+05-02 19:02:36.354 D/CCodec  ( 3589):   int32_t channel-count = 2
+05-02 19:02:36.354 D/CCodec  ( 3589):   string mime = "audio/raw"
+05-02 19:02:36.354 D/CCodec  ( 3589):   int32_t sample-rate = 44100
+05-02 19:02:36.354 D/CCodec  ( 3589):   int32_t encoder-delay = 576
+05-02 19:02:36.354 D/CCodec  ( 3589):   int32_t encoder-padding = 1409
+05-02 19:02:36.354 D/CCodec  ( 3589): }
+05-02 19:02:36.355 I/CCodecConfig( 3589): query failed after returning 7 values (BAD_INDEX)
+05-02 19:02:36.355 D/CCodecConfig( 3589): c2 config diff is Dict {
+05-02 19:02:36.355 D/CCodecConfig( 3589):   c2::u32 coded.bitrate.value = 64000
+05-02 19:02:36.355 D/CCodecConfig( 3589):   c2::u32 input.buffers.max-size.value = 8192
+05-02 19:02:36.355 D/CCodecConfig( 3589):   c2::u32 input.delay.value = 0
+05-02 19:02:36.355 D/CCodecConfig( 3589):   string input.media-type.value = "audio/mpeg"
+05-02 19:02:36.355 D/CCodecConfig( 3589):   string output.media-type.value = "audio/raw"
+05-02 19:02:36.355 D/CCodecConfig( 3589):   c2::u32 raw.channel-count.value = 2
+05-02 19:02:36.355 D/CCodecConfig( 3589):   c2::u32 raw.sample-rate.value = 44100
+05-02 19:02:36.355 D/CCodecConfig( 3589): }
+05-02 19:02:36.355 W/Codec2Client( 3589): query -- param skipped: index = 1342179345.
+05-02 19:02:36.355 W/Codec2Client( 3589): query -- param skipped: index = 2415921170.
+05-02 19:02:36.356 D/CCodec  ( 3589): [c2.android.mp3.decoder] buffers are bound to CCodec for this session
+05-02 19:02:36.357 D/CCodecConfig( 3589): no c2 equivalents for durationUs
+05-02 19:02:36.357 D/CCodecConfig( 3589): no c2 equivalents for track-id
+05-02 19:02:36.357 D/CCodecConfig( 3589): no c2 equivalents for encoder-delay
+05-02 19:02:36.357 D/CCodecConfig( 3589): no c2 equivalents for encoder-padding
+05-02 19:02:36.357 D/CCodecConfig( 3589): no c2 equivalents for flags
+05-02 19:02:36.357 E/FMQ     ( 3589): grantorIdx must be less than 3
+05-02 19:02:36.357 E/FMQ     ( 3589): grantorIdx must be less than 3
+05-02 19:02:36.357 D/CCodecBufferChannel( 3589): [c2.android.mp3.decoder#854] Created input block pool with allocatorID 16 => poolID 17 - OK (0)
+05-02 19:02:36.358 W/Codec2Client( 3589): query -- param skipped: index = 1107298332.
+05-02 19:02:36.358 D/CCodec  ( 3589): setup formats input: AMessage(what = 0x00000000) = {
+05-02 19:02:36.358 D/CCodec  ( 3589):   int32_t channel-count = 2
+05-02 19:02:36.358 D/CCodec  ( 3589):   int32_t max-input-size = 8192
+05-02 19:02:36.358 D/CCodec  ( 3589):   string mime = "audio/mpeg"
+05-02 19:02:36.358 D/CCodec  ( 3589):   int32_t sample-rate = 44100
+05-02 19:02:36.358 D/CCodec  ( 3589): } and output: AMessage(what = 0x00000000) = {
+05-02 19:02:36.358 D/CCodec  ( 3589):   int32_t channel-count = 2
+05-02 19:02:36.358 D/CCodec  ( 3589):   string mime = "audio/raw"
+05-02 19:02:36.358 D/CCodec  ( 3589):   int32_t sample-rate = 44100
+05-02 19:02:36.358 D/CCodec  ( 3589):   int32_t encoder-delay = 576
+05-02 19:02:36.358 D/CCodec  ( 3589):   int32_t encoder-padding = 935
+05-02 19:02:36.358 D/CCodec  ( 3589): }
+05-02 19:02:36.358 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:36.358 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:36.359 W/Codec2Client( 3589): query -- param skipped: index = 1342179345.
+05-02 19:02:36.359 W/Codec2Client( 3589): query -- param skipped: index = 2415921170.
+05-02 19:02:36.359 I/CCodecBufferChannel( 3589): [c2.android.mp3.decoder#854] Created output block pool with allocatorID 16 => poolID 43 - OK
+05-02 19:02:36.360 D/CCodecBufferChannel( 3589): [c2.android.mp3.decoder#854] Configured output block pool ids 43 => OK
+05-02 19:02:36.360 E/FMQ     ( 3589): grantorIdx must be less than 3
+05-02 19:02:36.361 E/FMQ     ( 3589): grantorIdx must be less than 3
+05-02 19:02:36.361 E/ion     ( 3589): ioctl c0044901 failed with code -1: Inappropriate ioctl for device
+05-02 19:02:36.362 D/CCodecBufferChannel( 3589): [c2.android.mp3.decoder#830] Created input block pool with allocatorID 16 => poolID 18 - OK (0)
+05-02 19:02:36.363 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:36.363 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:36.363 D/SimpleC2Component(  383): Using output block pool with poolID 43 => got 43 - 0
+05-02 19:02:36.364 I/CCodecBufferChannel( 3589): [c2.android.mp3.decoder#830] Created output block pool with allocatorID 16 => poolID 44 - OK
+05-02 19:02:36.365 D/CCodecBufferChannel( 3589): [c2.android.mp3.decoder#830] Configured output block pool ids 44 => OK
+05-02 19:02:36.369 I/NativeBridge( 3589): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeCreate seq=1 stage=init handle=0 pid=3589 tid=3621 thread=mj-laser-thread-rknn threadId=204 elapsedUs=0
+05-02 19:02:36.370 I/LensGuardJNI( 3589): nativeCreate enter
+05-02 19:02:36.371 I/LensGuardJNI( 3589): configPath=/data/user/0/com.lasercyber.lws.ui/files/lens_guard/config.yaml
+05-02 19:02:36.372 I/LensGuardJNI( 3589): projectRoot=/data/user/0/com.lasercyber.lws.ui/files/lens_guard
+05-02 19:02:36.372 I/LensGuardJNI( 3589): before parse config
+05-02 19:02:36.377 I/application( 3589): startup_phase=modbus_init, outcome=done, reason=startup_continue
+05-02 19:02:36.383 E/FMQ     ( 3589): grantorIdx must be less than 3
+05-02 19:02:36.384 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:36.385 D/SimpleC2Component(  383): Using output block pool with poolID 44 => got 44 - 0
+05-02 19:02:36.387 I/C2SoftMp3Dec(  383): Reconfiguring decoder: 0->44100 Hz, 0->2 channels
+05-02 19:02:36.389 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:36.390 E/FMQ     ( 3589): grantorIdx must be less than 3
+05-02 19:02:36.393 D/CCodecBuffers( 3589): [c2.android.mp3.decoder#854:Output[N]] popFromStashAndRegister: output format changed to AMessage(what = 0x00000000) = {
+05-02 19:02:36.393 D/CCodecBuffers( 3589):   int32_t channel-count = 2
+05-02 19:02:36.393 D/CCodecBuffers( 3589):   string mime = "audio/raw"
+05-02 19:02:36.393 D/CCodecBuffers( 3589):   int32_t sample-rate = 44100
+05-02 19:02:36.393 D/CCodecBuffers( 3589):   int32_t encoder-delay = 576
+05-02 19:02:36.393 D/CCodecBuffers( 3589):   int32_t encoder-padding = 1409
+05-02 19:02:36.393 D/CCodecBuffers( 3589): }
+05-02 19:02:36.403 E/FMQ     ( 3589): grantorIdx must be less than 3
+05-02 19:02:36.404 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:36.406 I/C2SoftMp3Dec(  383): Reconfiguring decoder: 0->44100 Hz, 0->2 channels
+05-02 19:02:36.408 E/FMQ     (  383): grantorIdx must be less than 3
+05-02 19:02:36.408 E/FMQ     ( 3589): grantorIdx must be less than 3
+05-02 19:02:36.413 D/CCodecBuffers( 3589): [c2.android.mp3.decoder#830:Output[N]] popFromStashAndRegister: output format changed to AMessage(what = 0x00000000) = {
+05-02 19:02:36.413 D/CCodecBuffers( 3589):   int32_t channel-count = 2
+05-02 19:02:36.413 D/CCodecBuffers( 3589):   string mime = "audio/raw"
+05-02 19:02:36.413 D/CCodecBuffers( 3589):   int32_t sample-rate = 44100
+05-02 19:02:36.413 D/CCodecBuffers( 3589):   int32_t encoder-delay = 576
+05-02 19:02:36.413 D/CCodecBuffers( 3589):   int32_t encoder-padding = 935
+05-02 19:02:36.413 D/CCodecBuffers( 3589): }
+05-02 19:02:36.442 D/CCodecBufferChannel( 3589): [c2.android.mp3.decoder#830] MediaCodec discarded an unknown buffer
+05-02 19:02:36.442 D/CCodecBufferChannel( 3589): [c2.android.mp3.decoder#830] MediaCodec discarded an unknown buffer
+05-02 19:02:36.444 I/LensGuardJNI( 3589): after parse config
+05-02 19:02:36.444 I/LensGuardJNI( 3589): before create scheduler
+05-02 19:02:36.446 I/LensGuardModel( 3589): modelPath=<embedded:cls.rknn>
+05-02 19:02:36.446 I/LensGuardModel( 3589): model exists=1 size=3189184
+05-02 19:02:36.446 I/LensGuardModel( 3589): before load model file
+05-02 19:02:36.446 I/RKNNRunner( 3589): before load model file
+05-02 19:02:36.450 I/hw-BpHwBinder( 3589): onLastStrongRef automatically unlinking death recipients
+05-02 19:02:36.459 D/serial_port( 3589): Opening serial port /dev/ttyS5 with flags 0x2
+05-02 19:02:36.460 D/serial_port( 3589): open() fd = 72
+05-02 19:02:36.460 D/serial_port( 3589): Configuring serial port
+05-02 19:02:36.469 I/RKNNRunner( 3589): after load model file, buffer=0xb4000076d8626040 size=3189184
+05-02 19:02:36.470 I/RKNNRunner( 3589): [RKNN] init begin model=<embedded> bytes=3189184
+05-02 19:02:36.470 I/RKNNRunner( 3589): [RKNN_API] rknn_init BEGIN
+05-02 19:02:36.488 I/RKNNRunner( 3589): [RKNN_API] rknn_init END ret=0
+05-02 19:02:36.489 I/RKNNRunner( 3589): after rknn_init ret=0 ctx=12970367441319054000
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_set_core_mask BEGIN core_mask=0x1
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_set_core_mask END ret=-13
+05-02 19:02:36.489 W/RKNNRunner( 3589): [RKNN] set_core_mask non-success ret=-13 (continuing)
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_SDK_VERSION) BEGIN
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_SDK_VERSION) END ret=0
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN] sdk api=2.3.2 (429f97ae6b@2025-04-09T09:08:16) drv=0.7.2
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_IN_OUT_NUM) BEGIN
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_IN_OUT_NUM) END ret=0 in=1 out=1
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_INPUT_ATTR) BEGIN i=0
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_INPUT_ATTR) END i=0 ret=0
+05-02 19:02:36.489 I/RKNNRunner( 3589): IN #0 n_dims=4 fmt=1 type=2 quant=2 zp=-128 scale=0.003922 n_elems=150528 size=150528 size_stride=150528 w_stride=224
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_OUTPUT_ATTR) BEGIN i=0
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_OUTPUT_ATTR) END i=0 ret=0
+05-02 19:02:36.489 I/RKNNRunner( 3589): OUT #0 n_dims=2 fmt=3 type=1 quant=2 zp=0 scale=1.000000 n_elems=1000 size=2000 size_stride=2000 w_stride=0
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_CUSTOM_STRING) BEGIN
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_CUSTOM_STRING) END ret=0
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN] allocate_io_memory begin
+05-02 19:02:36.489 I/RKNNRunner( 3589): [RKNN_API] rknn_create_mem(input) BEGIN i=0 size=150528
+05-02 19:02:36.490 I/RKNNRunner( 3589): [RKNN_API] rknn_create_mem(input) END i=0 ptr=0xb4000077aa22d450 ok=1
+05-02 19:02:36.490 I/RKNNRunner( 3589): [RKNN_API] rknn_set_io_mem(input) BEGIN i=0
+05-02 19:02:36.490 I/RKNNRunner( 3589): [RKNN_API] rknn_set_io_mem(input) END i=0 ret=0
+05-02 19:02:36.490 I/RKNNRunner( 3589): [RKNN_API] rknn_create_mem(output) BEGIN i=0 size=4000 n_elems=1000
+05-02 19:02:36.490 I/RKNNRunner( 3589): [RKNN_API] rknn_create_mem(output) END i=0 ptr=0xb4000077aa22e950 ok=1
+05-02 19:02:36.490 I/RKNNRunner( 3589): [RKNN_API] rknn_set_io_mem(output) BEGIN i=0
+05-02 19:02:36.491 I/RKNNRunner( 3589): [RKNN_API] rknn_set_io_mem(output) END i=0 ret=0
+05-02 19:02:36.491 I/RKNNRunner( 3589): [RKNN] allocate_io_memory end
+05-02 19:02:36.491 I/RKNNRunner( 3589): [RKNN] loaded model=<embedded> inputs=1 outputs=1
+05-02 19:02:36.491 I/LensGuardModel( 3589): after load model file, buffer=0x76e1204008 size=3189184
+05-02 19:02:36.491 I/LensGuardModel( 3589): modelPath=<embedded:det.rknn>
+05-02 19:02:36.491 I/LensGuardModel( 3589): model exists=1 size=28981904
+05-02 19:02:36.491 I/LensGuardModel( 3589): before load model file
+05-02 19:02:36.491 I/RKNNRunner( 3589): before load model file
+05-02 19:02:36.612 I/RKNNRunner( 3589): after load model file, buffer=0xb4000076d5a80040 size=28981904
+05-02 19:02:36.612 I/RKNNRunner( 3589): [RKNN] init begin model=<embedded> bytes=28981904
+05-02 19:02:36.612 I/RKNNRunner( 3589): [RKNN_API] rknn_init BEGIN
+05-02 19:02:36.715 I/RKNNRunner( 3589): [RKNN_API] rknn_init END ret=0
+05-02 19:02:36.716 I/RKNNRunner( 3589): after rknn_init ret=0 ctx=12970367441319053328
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_set_core_mask BEGIN core_mask=0x1
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_set_core_mask END ret=-13
+05-02 19:02:36.716 W/RKNNRunner( 3589): [RKNN] set_core_mask non-success ret=-13 (continuing)
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_SDK_VERSION) BEGIN
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_SDK_VERSION) END ret=0
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN] sdk api=2.3.2 (429f97ae6b@2025-04-09T09:08:16) drv=0.7.2
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_IN_OUT_NUM) BEGIN
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_IN_OUT_NUM) END ret=0 in=1 out=1
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_INPUT_ATTR) BEGIN i=0
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_INPUT_ATTR) END i=0 ret=0
+05-02 19:02:36.716 I/RKNNRunner( 3589): IN #0 n_dims=4 fmt=1 type=2 quant=2 zp=-128 scale=0.003922 n_elems=1228800 size=1228800 size_stride=1228800 w_stride=640
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_OUTPUT_ATTR) BEGIN i=0
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_OUTPUT_ATTR) END i=0 ret=0
+05-02 19:02:36.716 I/RKNNRunner( 3589): OUT #0 n_dims=3 fmt=3 type=2 quant=2 zp=-128 scale=2.515601 n_elems=705600 size=705600 size_stride=705600 w_stride=0
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_CUSTOM_STRING) BEGIN
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_query(RKNN_QUERY_CUSTOM_STRING) END ret=0
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN] allocate_io_memory begin
+05-02 19:02:36.716 I/RKNNRunner( 3589): [RKNN_API] rknn_create_mem(input) BEGIN i=0 size=1228800
+05-02 19:02:36.718 I/RKNNRunner( 3589): [RKNN_API] rknn_create_mem(input) END i=0 ptr=0xb4000077aa23ab10 ok=1
+05-02 19:02:36.718 I/RKNNRunner( 3589): [RKNN_API] rknn_set_io_mem(input) BEGIN i=0
+05-02 19:02:36.718 I/RKNNRunner( 3589): [RKNN_API] rknn_set_io_mem(input) END i=0 ret=0
+05-02 19:02:36.718 I/RKNNRunner( 3589): [RKNN_API] rknn_create_mem(output) BEGIN i=0 size=2822400 n_elems=705600
+05-02 19:02:36.722 I/RKNNRunner( 3589): [RKNN_API] rknn_create_mem(output) END i=0 ptr=0xb4000077aa23b0d0 ok=1
+05-02 19:02:36.722 I/RKNNRunner( 3589): [RKNN_API] rknn_set_io_mem(output) BEGIN i=0
+05-02 19:02:36.723 I/RKNNRunner( 3589): [RKNN_API] rknn_set_io_mem(output) END i=0 ret=0
+05-02 19:02:36.723 I/RKNNRunner( 3589): [RKNN] allocate_io_memory end
+05-02 19:02:36.723 I/RKNNRunner( 3589): [RKNN] loaded model=<embedded> inputs=1 outputs=1
+05-02 19:02:36.723 I/LensGuardModel( 3589): after load model file, buffer=0x76e150e9c8 size=28981904
+05-02 19:02:36.723 I/YOLO_PP_DIAG( 3589): [YOLO_PP_DIAG] rknn_output_attr model=det idx=0 name=output0 n_dims=3 dims=[1,84,8400] n_elems=705600 size=705600 type=2 fmt=3 qnt_type=2 scale=2.51560068 zp=-128
+05-02 19:02:36.723 I/LensGuard( 3589): === COREDEX System Booting ===
+05-02 19:02:36.723 I/LensGuard( 3589): [VER] C++ Build  Apr 30 2026 11:35:25
+05-02 19:02:36.723 I/LensGuard( 3589): [VER] OpenCV     4.5.5
+05-02 19:02:36.723 I/LensGuard( 3589): [BOOT] Frame source: App push via nativePushFrame (I420)
+05-02 19:02:36.723 I/LensGuard( 3589): [BOOT] RKNN Models OK
+05-02 19:02:36.723 I/LensGuard( 3589): --- Self-Test Begin ---
+05-02 19:02:36.723 I/LensGuard( 3589): [TEST] Laser state   via App API (DeviceStatus.isLaserOn)
+05-02 19:02:36.724 I/LensGuard( 3589): [TEST] RKNN models loaded (inference tested on first frame)
+05-02 19:02:36.724 I/LensGuard( 3589): --- Self-Test PASSED ---
+05-02 19:02:36.724 I/LensGuard( 3589): === COREDEX Ready (waiting for frames) ===
+05-02 19:02:36.724 I/LensGuardJNI( 3589): after create scheduler
+05-02 19:02:36.724 I/LensGuardJNI( 3589): nativeCreate: OK
+05-02 19:02:36.724 I/NativeBridge( 3589): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeCreate seq=1 stage=init handle=0 pid=3589 tid=3621 thread=mj-laser-thread-rknn threadId=204 elapsedUs=375728
+05-02 19:02:36.725 I/NativeBridge( 3589): RKNN_DIAG stage=init handle=-5476376629974451360 pid=3589 tid=3621 thread=mj-laser-thread-rknn threadId=204 category=OK nativeCode=0 detail=session created
+05-02 19:02:36.727 I/NativeBridge( 3589): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeSetListener seq=2 stage=query handle=-5476376629974451360 pid=3589 tid=3621 thread=mj-laser-thread-rknn threadId=204 elapsedUs=0
+05-02 19:02:36.727 I/LensGuardJNI( 3589): nativeSetListener: OK
+05-02 19:02:36.727 I/NativeBridge( 3589): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeSetListener seq=2 stage=query handle=-5476376629974451360 pid=3589 tid=3621 thread=mj-laser-thread-rknn threadId=204 elapsedUs=860
+05-02 19:02:36.728 I/NativeBridge( 3589): RKNN_DIAG stage=query handle=-5476376629974451360 pid=3589 tid=3621 thread=mj-laser-thread-rknn threadId=204 category=OK nativeCode=0 detail=listener attached
+05-02 19:02:36.729 I/NativeBridge( 3589): RKNN_THREAD_TRACE phase=NATIVE_CALL_BEGIN method=nativeStart seq=3 stage=query handle=-5476376629974451360 pid=3589 tid=3621 thread=mj-laser-thread-rknn threadId=204 elapsedUs=0
+05-02 19:02:36.730 I/NativeBridge( 3589): RKNN_THREAD_TRACE phase=NATIVE_CALL_END method=nativeStart seq=3 stage=query handle=-5476376629974451360 pid=3589 tid=3621 thread=mj-laser-thread-rknn threadId=204 elapsedUs=1714
+05-02 19:02:36.731 I/NativeBridge( 3589): RKNN_DIAG stage=query handle=-5476376629974451360 pid=3589 tid=3621 thread=mj-laser-thread-rknn threadId=204 category=OK nativeCode=0 detail=session started
+05-02 19:02:36.731 I/LensGuardManager( 3589): Engine started, handle=-5476376629974451360
+05-02 19:02:36.732 I/LensGuardJNI( 3589): Worker thread started
+05-02 19:02:36.732 I/LensGuard( 3589): [SYS] Entering main loop (waiting for App to push frames)...
+05-02 19:02:36.783 D/CCodecBufferChannel( 3589): [c2.android.mp3.decoder#854] MediaCodec discarded an unknown buffer
+05-02 19:02:36.784 I/chatty  ( 3589): uid=10070(com.lasercyber.lws.ui) identical 1 line
+05-02 19:02:36.784 D/CCodecBufferChannel( 3589): [c2.android.mp3.decoder#854] MediaCodec discarded an unknown buffer
+05-02 19:02:36.786 I/hw-BpHwBinder(  383): onLastStrongRef automatically unlinking death recipients
+05-02 19:02:36.787 V/C2Store (  383): in ~ComponentModule
+05-02 19:02:36.787 V/C2Store (  383): unloading dll
+05-02 19:02:36.788 I/hw-BpHwBinder( 3589): onLastStrongRef automatically unlinking death recipients
+05-02 19:02:37.178 I/EthernetTracker(  477): interfaceLinkStateChanged, iface: wlan0, up: true
+05-02 19:02:37.180 D/WifiNl80211Manager(  477): Scan result ready event
+05-02 19:02:37.180 D/WifiNative(  477): Scan result ready event
+05-02 19:02:37.205 D/WificondScannerImpl(  477): Filtering out 34 scan results.
+05-02 19:02:37.215 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1d:<xiaohaowifi_5G>
+05-02 19:02:37.216 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1e:<xiaohaowifi_IoT>
+05-02 19:02:37.216 D/PasspointManager(  477): ANQP entry not found for: 60:cf:84:00:ac:1c:<>
+05-02 19:02:37.393 I/system_server(  477): NativeAlloc concurrent copying GC freed 103609(3839KB) AllocSpace objects, 28(1344KB) LOS objects, 49% free, 10061KB/19MB, paused 194us total 207.914ms
+05-02 19:02:37.693 D/serial_port( 3589): close(fd = 72)
+05-02 19:02:37.693 D/serial_port( 3589): Opening serial port /dev/ttyS5 with flags 0x2
+05-02 19:02:37.694 D/serial_port( 3589): open() fd = 71
+05-02 19:02:37.694 D/serial_port( 3589): Configuring serial port
+05-02 19:02:38.696 D/serial_port( 3589): close(fd = 71)
+05-02 19:02:38.964 D/InnohiManagerService(  477): MSG_FOREGROUND_APP_KEEPLIVE_LOOP  elapsedRealtime change
+05-02 19:02:40.089 E/TaskPersister(  477): File error accessing recents directory (directory doesn't exist?).
+05-02 19:02:40.329 I/Choreographer(  477): Skipped 243 frames!  The application may be doing too much work on its main thread.
+05-02 19:02:40.573 E/BufferQueueProducer(  187): [com.android.launcher3/com.android.launcher3.uioverrides.QuickstepLauncher#0](id:bb00000022,api:0,p:-1,c:187) disconnect: not connected (req=1)
+05-02 19:02:40.573 W/libEGL  ( 1018): EGLNativeWindowType 0xb4000078fa35c250 disconnect failed
+05-02 19:02:40.739 I/ActivityTaskManager(  477): START u0 {cmp=com.lasercyber.lws.ui/.activitys.SafetyTipsActivity} from uid 10070
+05-02 19:02:40.768 I/Choreographer( 3589): Skipped 258 frames!  The application may be doing too much work on its main thread.
+05-02 19:02:40.769 I/ModbusManagerRtu( 3589): Modbus startup state -> AVAILABLE
+05-02 19:02:40.769 D/ModbusManagerRtu( 3589): modbus链接成功
+05-02 19:02:40.769 D/InitModbusCallBack( 3589): 串口打开成功
+05-02 19:02:40.771 W/ActivityTaskManager(  477): Tried to set launchTime (0) < mLastActivityLaunchTime (11947363)
+05-02 19:02:40.931 I/mali_so ( 3589): [File] : hardware/rockchip/mali_so/driver/product/base/src/mali_base_kbase.c; [Line] : 1311; [Func] : base_context_deal_with_version_affairs_rk_ext;
+05-02 19:02:40.931 I/mali_so ( 3589): arm_release_ver of this mali_so is 'g2p0-01eac0', rk_so_ver is '8@0 '.
+05-02 19:02:40.932 I/mali_so ( 3589): [File] : hardware/rockchip/mali_so/driver/product/base/src/mali_base_kbase.c; [Line] : 1327; [Func] : base_context_deal_with_version_affairs_rk_ext;
+05-02 19:02:40.932 I/mali_so ( 3589): arm_release_vers are match. to set the full mali_ver 'g2p0-01eac0-x-8@0' as value of 'sys.gmali.version'.
+05-02 19:02:40.948 I/hwservicemanager(  153): getTransport: Cannot find entry android.hardware.configstore@1.0::ISurfaceFlingerConfigs/default in either framework or device manifest.
+05-02 19:02:41.043 D/WindowManager(  477): onWindowsDrawn intent = Intent { cmp=com.lasercyber.lws.ui/.activitys.SafetyTipsActivity }
+05-02 19:02:41.043 D/WindowManager(  477): onWindowsDrawn innohiBootApkPkg =  shortComponentName = com.lasercyber.lws.ui/.activitys.SafetyTipsActivity
+05-02 19:02:41.048 V/WindowManager(  477): getPackagePerformanceMode -- ComponentInfo{com.lasercyber.lws.ui/com.lasercyber.lws.ui.activitys.SafetyTipsActivity} -- com.lasercyber.lws.ui -- mode=0
+05-02 19:02:41.096 I/AutoWifiReconnectService(  477): Try auto reconnect to netId=0
+05-02 19:02:41.096 I/WifiService(  477): enableNetwork uid=1000 disableOthers=false
+05-02 19:02:41.112 I/ActivityTaskManager(  477): Displayed com.lasercyber.lws.ui/.activitys.SafetyTipsActivity: +5s114ms
+05-02 19:02:41.131 D/WifiConfigStore(  477): Writing to stores completed in 24 ms.
+05-02 19:02:41.132 I/WifiService(  477): reconnect uid=1000
+05-02 19:02:41.358 D/BufferPoolAccessor2.0( 3589): bufferpool2 0xb40000785a1fa838 : 0(0 size) total buffers - 0(0 size) used buffers - 0/5 (recycle/alloc) - 4/204 (fetch/transfer)
+05-02 19:02:41.358 D/BufferPoolAccessor2.0( 3589): evictor expired: 1, evicted: 1
+05-02 19:02:41.359 D/BufferPoolAccessor2.0(  383): bufferpool2 0xb400006ef3b63628 : 0(0 size) total buffers - 0(0 size) used buffers - 100/103 (recycle/alloc) - 3/103 (fetch/transfer)
+05-02 19:02:41.359 D/BufferPoolAccessor2.0(  383): evictor expired: 1, evicted: 1
+05-02 19:02:42.245 D/WifiNl80211Manager(  477): Scan result ready event
+05-02 19:02:42.245 D/WifiNative(  477): Scan result ready event
+05-02 19:02:42.245 I/EthernetTracker(  477): interfaceLinkStateChanged, iface: wlan0, up: true
+05-02 19:02:42.277 D/WificondScannerImpl(  477): Filtering out 36 scan results.
+05-02 19:02:42.284 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1d:<xiaohaowifi_5G>
+05-02 19:02:42.284 D/PasspointManager(  477): ANQP entry not found for: ca:cf:84:00:ac:1e:<xiaohaowifi_IoT>
+05-02 19:02:42.285 D/PasspointManager(  477): ANQP entry not found for: aa:cf:84:00:ac:19:<xiaohaowifi>
+05-02 19:02:42.358 D/BufferPoolAccessor2.0( 3589): bufferpool2 0xb40000785a1f2ff8 : 0(0 size) total buffers - 0(0 size) used buffers - 0/5 (recycle/alloc) - 4/20 (fetch/transfer)
+05-02 19:02:42.358 D/BufferPoolAccessor2.0( 3589): evictor expired: 1, evicted: 1
+05-02 19:02:42.359 D/BufferPoolAccessor2.0(  383): bufferpool2 0xb400006ef3b5dbf8 : 0(0 size) total buffers - 0(0 size) used buffers - 6/11 (recycle/alloc) - 5/11 (fetch/transfer)
+05-02 19:02:42.359 D/BufferPoolAccessor2.0(  383): evictor expired: 1, evicted: 1
+05-02 19:02:43.759 D/serial_port( 3589): Opening serial port /dev/ttyS5 with flags 0x2
+05-02 19:02:43.760 D/serial_port( 3589): open() fd = 100
+05-02 19:02:43.760 D/serial_port( 3589): Configuring serial port
+05-02 19:02:44.341 E/TaskPersister(  477): File error accessing recents directory (directory doesn't exist?).
+05-02 19:02:44.766 D/serial_port( 3589): close(fd = 100)
+05-02 19:02:45.198 D/logd    (    0): logdr: UID=2000 GID=2000 PID=3713 n tail=0 logMask=99 pid=0 start=0ns timeout=0ns

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Preserve drawable width while shifting only the icon 5dp right. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/retract_icon"
+    android:insetLeft="5dp"
+    android:insetRight="-5dp" />

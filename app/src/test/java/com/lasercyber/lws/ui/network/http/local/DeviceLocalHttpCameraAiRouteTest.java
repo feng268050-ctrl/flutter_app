@@ -1,0 +1,27 @@
+package com.lasercyber.lws.ui.network.http.local;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+/**
+ * Route-level probe for {@code GET /v1/camera/ai} (no Android {@link android.content.Context}).
+ */
+public class DeviceLocalHttpCameraAiRouteTest {
+
+    @Test
+    public void cameraAi_withoutAppContext_returnsServerNotReady() throws Exception {
+        CameraAiHttpPublisher.resetForTest();
+        DeviceLocalHttpServer server = new DeviceLocalHttpServer(0);
+        server.start();
+        try {
+            int port = server.getListeningPort();
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection)
+                    new java.net.URL("http://127.0.0.1:" + port + "/v1/camera/ai").openConnection();
+            conn.setRequestMethod("GET");
+            conn.connect();
+            Assert.assertEquals(500, conn.getResponseCode());
+        } finally {
+            server.stop();
+        }
+    }
+}

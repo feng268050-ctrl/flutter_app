@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- 滑块颜色（可设置透明度） -->
+    <solid android:color="#FFFFFFFF" /> <!-- 半透明黑色 -->
+    <!-- 滑块圆角（与scrollbarSize匹配，实现圆形/圆角滑块） -->
+    <corners android:radius="5dp" />
+    <!-- 可选：滑块内边距 -->
+    <padding android:left="2dp" android:right="2dp"/>
+</shape>

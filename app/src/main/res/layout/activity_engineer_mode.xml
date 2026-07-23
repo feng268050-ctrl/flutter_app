@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="android.view.View" />
+        <variable
+            name="activeMode"
+            type="java.lang.Integer" />
+        <import type="com.lasercyber.lws.ui.common.constant.ModelConstant" />
+        <variable
+            name="deviceControlData"
+            type="com.lasercyber.lws.ui.bean.entity.DeviceControlData" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/engineer_base_background_color"
+        android:orientation="vertical"
+        tools:context=".activitys.engineer.mode.EngineerModeActivity">
+
+
+            <com.lasercyber.lws.ui.component.EquipmentStatusBar
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/engineer_equipment_status"
+                app:use_status="true"
+                app:bar_background_color="@color/spinner_no_select_bg_color"
+                app:model_type="@{activeMode}"
+                />
+
+            <com.lasercyber.lws.ui.activitys.engineer.mode.component.EngineerTab
+                android:layout_width="match_parent"
+                android:id="@+id/engineer_tab"
+                android:layout_height="wrap_content"/>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/engineer_mode_page_content"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </FrameLayout>
+
+        <!-- 设备控制已迁至各 Tab 左侧面板 -->
+        <LinearLayout
+            android:id="@+id/bottom_controls_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/engineer_bottom_laser_btn_height"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="16dp"
+            android:visibility="gone">
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/engineer_bottom_grid_column_gap"
+                android:layout_weight="1"
+                android:minHeight="@dimen/engineer_bottom_laser_btn_height">
+
+                <com.lasercyber.lws.frostui.control.interop.FrostCheckboxView
+                    android:id="@+id/btn_manual_gas"
+                    style="@style/FrostCheckbox"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    app:labelText="@string/btn_manual_gas"
+                    app:labelTextColor="@color/white"
+                    app:labelTextSize="@dimen/text_size_12" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/engineer_bottom_grid_column_gap"
+                android:layout_weight="1.4"
+                android:minHeight="@dimen/engineer_bottom_laser_btn_height">
+
+                <Button
+                    android:id="@+id/btn_laser_enable"
+                    style="@style/engineer_bottom_laser_btn"
+                    android:layout_gravity="center"
+                    android:background="@drawable/engineer_toggle_btn_ripple"
+                    android:drawableStart="@{ deviceControlData.isOpenLaser()?@drawable/engineer_laser_enable_icon:@drawable/engineer_laser_enable_orange_icon}"
+                    android:selected="@{deviceControlData.isOpenLaser()}"
+                    android:text="@string/laser_on_text" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minHeight="@dimen/engineer_bottom_laser_btn_height">
+
+                <com.lasercyber.lws.ui.component.CameraController
+                    android:id="@+id/camera_controller"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    app:mode_type="@{activeMode}" />
+            </FrameLayout>
+        </LinearLayout>
+    </LinearLayout>
+</layout>

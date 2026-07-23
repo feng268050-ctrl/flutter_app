@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="safety_black">#060720</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="machine_status_tile_idle_fill">#99000000</color>
+    <color name="machine_status_tile_success_fill">#B334C759</color>
+    <color name="machine_status_tile_failure_fill">#B3FF3B30</color>
+    <color name="machine_status_tile_progress_fill">#B3FFCC00</color>
+    <!-- Live Monitor / 更多监测：通过态白字 + 红色背景（不再改字体色） -->
+    <color name="machine_status_tile_live_success_fill">#B3FF3B30</color>
+    <!-- Live Monitor gauges: same translucent black wash as status-tile idle fill. -->
+    <color name="laser_live_monitor_gauge_panel_fill">@color/machine_status_tile_idle_fill</color>
+    <color name="laser_live_monitor_gauge_panel_stroke">#40FFFFFF</color>
+    <!--深蓝色-->
+
+    <color name="warn_text">#B0B1C2</color>
+    <!-- Alarm Information Comm Status neutral (emulator / no peripheral) -->
+    <color name="comm_status_neutral">#B0B1C2</color>
+    <!--    侧边栏未激活的颜色-->
+    <color name="side_tab_not_active_color">#909399</color>
+    <!--    侧边栏激活的颜色-->
+    <color name="side_tab_active_color">#303133</color>
+    <!--    侧边栏的横线-->
+    <color name="side_tab_line_color">#E4E7ED</color>
+    <!--    选择的spinner颜色-->
+    <color name="spinner_select_color">#409EFF</color>
+
+    <color name="dialog_color">#90060720</color>
+
+    <color name="tab_text_none">#BBBBBB</color>
+
+    <color name="info_text_none">#88BBBBBB</color>
+
+    <color name="advanced_text_border">#444668</color>
+
+    <!-- 匹配截图的深色背景 -->
+    <color name="tab_bg">#060720</color>
+    <!-- 未选中文字颜色（浅灰） -->
+    <color name="tab_text_unselected">#94A3B8</color>
+    <!-- 选中文字颜色（白色） -->
+    <color name="tab_text_selected">#FFFFFF</color>
+    <!--选中开启蓝牙（绿色）-->
+    <color name="switch_open">#34C759</color>
+<!--    工程师模式的tab激活颜色  焊接-->
+    <color name="engineer_weld_tab_active">#FD7632</color>
+    <!--    工程师模式的tab激活颜色 清洗-->
+    <color name="engineer_wash_tab_active">#37F3D2</color>
+    <!--    工程师模式的tab激活颜色 切割-->
+    <color name="engineer_cut_tab_active">#324BF3</color>
+<!--    未激活文字颜色-->
+    <color name="engineer_tab_no_active_text">#99FFFFFF</color>
+
+    <color name="engineer_base_background_color">#060720</color>
+
+    <color name="line_color">#FF1A1B32</color>
+    <color name="inset_divider_color">@color/frost_divider_center</color>
+    <color name="blue_label_text">#FF324BF3</color>
+<!--    spinner选中的文字样式-->
+    <color name="spinner_selected_text_color">#FF324BF3</color>
+<!--    spinner选中的背景样式-->
+    <color name="spinner_selected_bg_color">#FF161836</color>
+<!--    spinner未选中的背景样式-->
+    <color name="spinner_no_select_bg_color">#FF060720</color>
+    <color name="line_char_low">#FF0F0AFF</color>
+    <color name="line_char_height">#FFD2632F</color>
+    <color name="material_selected_bg">#FF161836</color>  <!-- 选中行背景色 -->
+    <color name="engineer_popup_item_selected_bg">#33F37535</color>
+
+    <color name="orange">#FF7043</color>
+    <color name="blue">#42A5F5</color>
+    <color name="cyan">#26C6DA</color>
+    <color name="gray_dark">#424242</color>
+<!--    工程师模式的图表橙色（明亮描边）-->
+    <color name="engineer_charts_orange">#FFFFC266</color>
+<!--    工程师模式的图表蓝色-->
+    <color name="engineer_blue_orange">#FF0F0AFF</color>
+
+    <color name="quick_model_orange">#FFF46E01</color>
+    <color name="quick_model_blue">#FF0151F4</color>
+    <color name="quick_model_green">#FF37F3D2</color>
+
+<!--    圆圈线条颜色-->
+    <color name="quick_model_circle_line_orange">#B65718</color>
+    <color name="quick_model_circle_line_blue">#1E38C9</color>
+    <color name="quick_model_circle_line_green">#19C7AA</color>
+
+    <!--    内层圆环颜色-->
+    <color name="quick_model_circle_inner_orange">#B35517</color>
+    <color name="quick_model_circle_inner_blue">#1C35BD</color>
+    <color name="quick_model_circle_inner_green">#19C0A4</color>
+<!--    未选中字体颜色-->
+    <color name="not_select_text_color">#FF26273D</color>
+    <color name="orange_text_disabled">#FF7D3E2B</color>
+    <color name="orange_text">#FFF37535</color>
+    <color name="text_black">#FF222222</color>
+    <color name="text_black_muted">#80222222</color>
+    <color name="table_bg">#FF1F2036</color>
+    <color name="engineer_btn_active_text_color">#FFF37535</color>
+    <color name="engineer_btn_disable_text_color">#FF7D3E2B</color>
+    <!-- Engineer toggle buttons: rectangular fill; corner radius is View outline only -->
+    <color name="engineer_toggle_btn_fill">#FF2C1923</color>
+    <color name="engineer_toggle_btn_fill_disabled">#FF191022</color>
+    <color name="engineer_toggle_btn_fill_selected">#F37535</color>
+    <!-- AI Vision overlay Status HUD (translucent card) -->
+    <color name="ai_vision_overlay_hud_bg">#902E3653</color>
+    <color name="ai_vision_overlay_hud_stroke">#40FFFFFF</color>
+
+    <!-- Frost tokens: canonical definitions in values/frostui_colors.xml -->
+    <color name="reminder_confirm_button">#FFF37535</color>
+    <!-- Work-status dialog — translucent warm-yellow edges fading to white center -->
+    <color name="work_status_dialog_backdrop_edge">#B8FFEFD0</color>
+    <color name="work_status_dialog_backdrop_blend">#A6FFF8F0</color>
+    <color name="work_status_dialog_backdrop_center">#BFFFFFFF</color>
+</resources>

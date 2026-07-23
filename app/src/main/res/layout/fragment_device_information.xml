@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+            name="deviceInfoViewModel"
+            type="com.lasercyber.lws.ui.activitys.setting.model.DeviceInfoViewModel" />
+
+        <variable
+            name="deviceInformationFragment"
+            type="com.lasercyber.lws.ui.activitys.setting.fragment.DeviceInformationFragment" />
+    </data>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".activitys.setting.fragment.DeviceInformationFragment">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <com.lasercyber.lws.ui.component.AppScrollView
+                style="@style/app_vertical_scroll_view_style"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:clipToPadding="false">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="0dp"
+                        app:borderGradientCenter="top-left-bottom-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <com.lasercyber.lws.ui.component.layout.InsetList
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/device_model" />
+
+                            <TextView
+                                android:id="@+id/model_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@{deviceInfoViewModel.liveData.model}"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+
+                            <ImageView
+                                android:id="@+id/qr_code_active"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:layout_marginLeft="15dp"
+                                android:scaleType="fitCenter"
+                                android:src="@mipmap/qrcode_icon" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                        <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/device_sn" />
+
+                            <TextView
+                                android:id="@+id/device_sn_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@{deviceInfoViewModel.liveData.deviceSn}"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                        <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/gun_sn" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@{deviceInfoViewModel.liveData.gunSn}"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+                        </com.lasercyber.lws.ui.component.layout.InsetList>
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:orientation="vertical"
+                        android:padding="0dp"
+                        app:borderGradientCenter="bottom-left-top-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <com.lasercyber.lws.ui.component.layout.InsetList
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/system_version" />
+
+                            <TextView
+                                android:id="@+id/system_version_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@{deviceInfoViewModel.installedAppVersion}"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                        <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/process_lib_version" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@{deviceInfoViewModel.liveData.processLibVersion}"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                        <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/firmware_version" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@{deviceInfoViewModel.liveData.firmwareVersion}"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                        <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/laser_version" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@{deviceInfoViewModel.liveData.laserVersion}"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                        <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/wire_feeder_version" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@{deviceInfoViewModel.liveData.wireFeederVersion}"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                        <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/camera_version" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@{deviceInfoViewModel.cameraVersionDisplay}"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+                        </com.lasercyber.lws.ui.component.layout.InsetList>
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:orientation="vertical"
+                        android:padding="0dp"
+                        app:borderGradientCenter="top-bottom"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                        <com.lasercyber.lws.ui.component.layout.InsetList
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/focus_scale_reference" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@{`` + deviceInfoViewModel.liveData.focusScaleRef}"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+                        </com.lasercyber.lws.ui.component.layout.InsetList>
+                    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+                </LinearLayout>
+            </com.lasercyber.lws.ui.component.AppScrollView>
+
+            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                android:id="@+id/btn_check_update"
+                android:layout_width="340dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:onClick="@{()->deviceInformationFragment.checkUpgrade()}"
+                android:text="@string/check_update"
+                android:textColor="#FFFFFF"
+                android:textSize="29sp"
+                app:frostedGlassButtonVariant="primary" />
+
+            <com.lasercyber.lws.frostui.control.interop.FrostCheckboxView
+                android:id="@+id/auto_check_ota_update_checkbox"
+                style="@style/FrostCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="14dp"
+                app:labelText="@string/auto_check_ota_update" />
+        </LinearLayout>
+    </FrameLayout>
+</layout>

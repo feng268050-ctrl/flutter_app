@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="FrostButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">@dimen/frost_action_button_height</item>
+        <item name="android:paddingStart">@dimen/frost_action_button_padding_horizontal</item>
+        <item name="android:paddingEnd">@dimen/frost_action_button_padding_horizontal</item>
+        <item name="android:gravity">center</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/frost_action_button_text_size</item>
+        <item name="borderGradientCenter">top-left-bottom-right</item>
+        <item name="frostedGlassButtonVariant">default</item>
+        <item name="frostedGlassButtonShape">rounded</item>
+        <item name="frostedGlassButtonSize">default</item>
+    </style>
+
+    <style name="FrostPromptConfirmButton" parent="FrostButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">@dimen/frost_action_button_height</item>
+        <item name="android:minWidth">@dimen/frost_dialog_prompt_confirm_button_min_width</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/frost_action_button_text_size</item>
+        <item name="borderGradientCenter">top-left-bottom-right</item>
+        <item name="frostedGlassButtonVariant">primary</item>
+    </style>
+
+    <style name="process_video_frost_btn_style">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">@dimen/frost_action_button_small_height</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingStart">@dimen/frost_action_button_small_padding_horizontal</item>
+        <item name="android:paddingEnd">@dimen/frost_action_button_small_padding_horizontal</item>
+        <item name="borderGradientCenter">top-left-bottom-right</item>
+        <item name="frostedGlassButtonSize">small</item>
+    </style>
+</resources>

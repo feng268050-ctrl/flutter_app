@@ -1,0 +1,44 @@
+---
+description: After Android app changes, default to make sync on the emulator only (never physical devices)
+alwaysApply: true
+---
+
+# Android Emulator Sync (Default)
+
+After completing changes that affect the Android app (Java/Kotlin, resources, native code, Gradle, etc.), **run `make sync` by default** so the user can verify on the emulator immediately.
+
+Only skip sync when the user **explicitly** says not to (e.g. "don't sync", "不用 sync", "skip install").
+
+## Command (emulator only)
+
+```bash
+ADB_SERIAL=emulator-5554 SKIP_BUNDLED_FETCH=1 make sync
+```
+
+This builds the Gradle APK (Java/Kotlin/resources), installs it on the **emulator**, and launches it. For native changes (ai/mediamtx), run `make build` first.
+
+## Never sync to physical / network devices
+
+- **Do not** run `make sync`, `adb install`, or `pm install` against physical devices or network adb targets (e.g. `192.168.x.x:5555`, USB serials) unless the user **explicitly** requests it for that specific device.
+- Demos and visual verification use **emulator-5554** only.
+- If multiple devices are connected, always set `ADB_SERIAL=emulator-5554` so sync does not pick the wrong target.
+
+## When to sync
+
+- UI/layout/style changes
+- Activity/Fragment/ViewModel behavior changes
+- Resource or manifest updates
+- Any task where the user will want to see the result on device
+
+## When sync is optional
+
+- Docs-only, OpenSpec-only, or comment-only edits with no runtime impact (unless the user still wants sync)
+- User explicitly asked not to sync
+- Pure refactor with no behavior/UI change and user did not ask for verification
+
+## Agent behavior
+
+1. Finish the code change.
+2. Run `make sync` with `ADB_SERIAL=emulator-5554` before reporting done (unless an explicit skip applies).
+3. If sync fails, fix the build/install issue or report the blocker; do not claim verification is complete.
+4. Never install demo/debug builds onto physical devices without explicit user approval.

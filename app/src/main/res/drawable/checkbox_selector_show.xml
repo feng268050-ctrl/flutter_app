@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 选中状态 -->
+    <item android:drawable="@mipmap/check_succeed" android:state_checked="true" />
+    <!-- 未选中状态 -->
+    <item android:drawable="@mipmap/check_none" android:state_checked="false" />
+    <!-- 默认状态（兜底） -->
+    <item android:drawable="@mipmap/check_none" />
+</selector>

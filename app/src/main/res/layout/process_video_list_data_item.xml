@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="24dp"
+    android:layout_marginEnd="58dp"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingTop="35dp"
+        android:paddingBottom="33dp">
+
+
+        <TextView
+            android:id="@+id/video_process_data_recording_time"
+            style="@style/process_video_table_body_text"
+            android:layout_width="232dp" />
+
+        <TextView
+            android:id="@+id/video_process_data_work_model"
+            style="@style/process_video_table_body_text"
+            android:layout_width="196dp" />
+
+        <TextView
+            android:id="@+id/video_process_data_work_material"
+            style="@style/process_video_table_body_text"
+            android:layout_width="229dp" />
+
+        <TextView
+            android:id="@+id/video_process_data_duration"
+            style="@style/process_video_table_body_text"
+            android:layout_width="157dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical|center_horizontal"
+            android:orientation="horizontal">
+
+            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                android:id="@+id/process_video_delete"
+                style="@style/process_video_frost_btn_style"
+                android:text="@string/delete_text"
+                app:frostedGlassButtonVariant="secondary" />
+
+            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                android:id="@+id/process_video_upload"
+                style="@style/process_video_frost_btn_style"
+                android:layout_marginStart="15dp"
+                android:text="@string/upload_text"
+                app:frostedGlassButtonVariant="default" />
+
+            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                android:id="@+id/process_video_details"
+                style="@style/process_video_frost_btn_style"
+                android:layout_marginStart="15dp"
+                android:text="@string/details_text"
+                app:frostedGlassButtonVariant="primary" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/video_list_line" />
+</LinearLayout>

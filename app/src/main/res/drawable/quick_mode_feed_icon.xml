@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="16dp"
+        android:height="16dp"
+        android:gravity="center">
+        <selector xmlns:android="http://schemas.android.com/apk/res/android">
+            <item android:state_enabled="false">
+                <bitmap
+                    android:src="@mipmap/entering_silk"
+                    android:alpha="0.5" />
+            </item>
+            <item android:drawable="@mipmap/entering_silk" android:state_enabled="true" />
+        </selector>
+    </item>
+</layer-list>

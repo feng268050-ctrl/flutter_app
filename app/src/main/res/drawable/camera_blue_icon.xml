@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Comm-unavailable idle mute: ImageButtonStateAdapter.commUnavailableState (alpha), not state_enabled. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 空闲（未录制） -->
+    <item android:drawable="@mipmap/camera_stop_icon" android:state_selected="false" />
+    <!-- 默认状态（兜底） -->
+    <item android:drawable="@mipmap/camera_run_blue_icon" />
+</selector>

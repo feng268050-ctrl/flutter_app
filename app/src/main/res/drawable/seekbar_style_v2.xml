@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 1. 进度条背景：左右圆角（胶囊形） -->
+    <item android:id="@android:id/background" android:height="48dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#060720"/>
+            <corners android:radius="30dp"/> <!-- 对应56dp高度的胶囊圆角 -->
+        </shape>
+    </item>
+
+    <!-- 2. 进度部分：左右圆角（通过scale实现，替代clip） -->
+    <item android:id="@android:id/progress" android:height="48dp">
+        <scale
+            android:scaleWidth="100%"
+            android:scaleGravity="left|center_vertical"> <!-- 从左侧开始缩放 -->
+            <shape android:shape="rectangle">
+                <solid android:color="@android:color/white"/>
+                <corners android:radius="30dp"/> <!-- 与背景圆角一致，确保进度块左右圆角 -->
+            </shape>
+        </scale>
+    </item>
+</layer-list>

@@ -1,0 +1,486 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="android.view.View" />
+
+        <!--        <variable-->
+        <!--            name="warnInfo"-->
+        <!--            type="com.lasercyber.lws.ui.bean.entity.WarnInfo" />-->
+        <variable
+            name="deviceStatus"
+            type="com.lasercyber.lws.ui.bean.entity.DeviceStatus" />
+        <variable
+            name="deviceData"
+            type="com.lasercyber.lws.ui.bean.entity.DeviceData" />
+        <variable
+            name="statusReady"
+            type="boolean" />
+        <variable
+            name="dataReady"
+            type="boolean" />
+        <variable
+            name="emulator"
+            type="boolean" />
+        <variable
+            name="cameraCommFault"
+            type="boolean" />
+        <variable
+            name="cameraHostConfigured"
+            type="boolean" />
+    </data>
+
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        tools:context=".activitys.device.monitor.fragment.WarnInfoFragment">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="24dp"
+            android:paddingTop="20dp">
+
+            <FrameLayout
+                android:id="@+id/warn_info_left_panel"
+                android:layout_width="740dp"
+                android:layout_height="@dimen/monitor_alarm_left_panel_height"
+                android:clipChildren="true">
+
+                <com.lasercyber.lws.ui.component.AppScrollView
+                    android:id="@+id/warn_info_left_scroll"
+                    style="@style/app_vertical_scroll_view_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:fillViewport="false"
+                    android:overScrollMode="ifContentScrolls">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/frost_dialog_content_padding"
+                    app:borderGradientCenter="top-left-bottom-right"
+                    app:frostedGlassBlurIntensity="transparent">
+
+                    <com.lasercyber.lws.ui.component.layout.SectionHeader
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/alarm_info_laser_device" />
+
+                    <com.lasercyber.lws.ui.component.layout.SectionContent
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="102dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingLeft="24dp"
+                            app:borderGradientCenter="top-left-bottom-right"
+                            app:frostedGlassBlurIntensity="transparent">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:maxLines="1"
+                                    android:text="@string/pump_status_text"
+                                    android:textColor="@color/warn_text"
+                                    android:textSize="25sp" />
+                            </LinearLayout>
+
+                            <com.lasercyber.lws.frostui.control.interop.FrostStatusIndicatorView
+                                style="@style/FrostStatusIndicator"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="24dp"
+                                app:frostStatusVariant="icon"
+                                app:commStatusAlarm="@{deviceStatus.isLaserCommunicationAlarm}"
+                                app:commStatusEmulator="@{emulator}"
+                                app:commStatusReady="@{statusReady}" />
+                        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+                    </com.lasercyber.lws.ui.component.layout.SectionContent>
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/frost_dialog_content_padding"
+                    android:orientation="vertical"
+                    android:padding="@dimen/frost_dialog_content_padding"
+                    app:borderGradientCenter="bottom-left-top-right"
+                    app:frostedGlassBlurIntensity="transparent">
+
+                    <com.lasercyber.lws.ui.component.layout.SectionHeader
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/alarm_info_welding_gun" />
+
+                    <com.lasercyber.lws.ui.component.layout.SectionContent
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                                android:layout_width="0dp"
+                                android:layout_height="102dp"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingLeft="24dp"
+                                app:borderGradientCenter="top-left-bottom-right"
+                                app:frostedGlassBlurIntensity="transparent">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:text="@string/gun_head_communication_text"
+                            android:textColor="@color/warn_text"
+                            android:textSize="25sp" />
+                    </LinearLayout>
+
+                    <com.lasercyber.lws.frostui.control.interop.FrostStatusIndicatorView
+                        style="@style/FrostStatusIndicator"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginEnd="24dp"
+                        app:frostStatusVariant="icon"
+                        app:commStatusAlarm="@{deviceStatus.isGunCommunicationAlarm}"
+                        app:commStatusEmulator="@{emulator}"
+                        app:commStatusReady="@{statusReady}" />
+                            </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                            <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                                android:layout_width="0dp"
+                                android:layout_height="102dp"
+                                android:layout_marginLeft="24dp"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingLeft="24dp"
+                                app:borderGradientCenter="bottom-left-top-right"
+                                app:frostedGlassBlurIntensity="transparent">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:text="@string/camera_comm_status_text"
+                            android:textColor="@color/warn_text"
+                            android:textSize="25sp" />
+                    </LinearLayout>
+
+                    <com.lasercyber.lws.frostui.control.interop.FrostStatusIndicatorView
+                        style="@style/FrostStatusIndicator"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginEnd="24dp"
+                        app:frostStatusVariant="icon"
+                        app:cameraCommHostConfigured="@{cameraHostConfigured}"
+                        app:cameraCommStatusAlarm="@{cameraCommFault}"
+                        app:cameraCommStatusEmulator="@{emulator}"
+                        app:cameraCommStatusReady="@{statusReady}" />
+                            </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/frost_dialog_content_padding"
+                            android:orientation="horizontal">
+
+                            <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                                android:layout_width="0dp"
+                                android:layout_height="102dp"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingLeft="24dp"
+                                app:borderGradientCenter="top-left-bottom-right"
+                                app:frostedGlassBlurIntensity="transparent">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:text="@{deviceData.gunMotorTempText}"
+                            android:textColor="@android:color/white"
+                            android:textSize="33sp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/gun_motor_temp_text"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:textColor="@color/warn_text"
+                            android:textSize="25sp" />
+                    </LinearLayout>
+
+                    <com.lasercyber.lws.frostui.control.interop.FrostStatusIndicatorView
+                        style="@style/FrostStatusIndicator"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginEnd="24dp"
+                        app:frostStatusVariant="icon"
+                        app:alarmMetricFault="@{deviceStatus.isGunMotorOverTemperatureAlarm}"
+                        app:alarmMetricHasValue="@{deviceData.hasGunMotorTempValue()}"
+                        app:alarmMetricReady="@{statusReady &amp;&amp; dataReady}" />
+                            </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                            <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                                android:layout_width="0dp"
+                                android:layout_height="102dp"
+                                android:layout_marginLeft="24dp"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingLeft="24dp"
+                                app:borderGradientCenter="bottom-left-top-right"
+                                app:frostedGlassBlurIntensity="transparent">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center_vertical"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="34dp"
+                                        android:text="@{deviceData.gunDriverBoardTempText}"
+                                        android:textColor="@android:color/white"
+                                        android:textSize="33sp" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:ellipsize="end"
+                                        android:maxLines="1"
+                                        android:text="@string/motor_driver_temperature_text"
+                                        android:textColor="@color/warn_text"
+                                        android:textSize="25sp" />
+                                </LinearLayout>
+
+                                <com.lasercyber.lws.frostui.control.interop.FrostStatusIndicatorView
+                                    style="@style/FrostStatusIndicator"
+                                    android:layout_gravity="center_vertical"
+                                    android:layout_marginEnd="24dp"
+                                    app:frostStatusVariant="icon"
+                                    app:alarmMetricFault="@{deviceStatus.isDriverTemperatureAlarm}"
+                                    app:alarmMetricHasValue="@{deviceData.hasGunDriverBoardTempValue()}"
+                                    app:alarmMetricReady="@{statusReady &amp;&amp; dataReady}" />
+                            </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/frost_dialog_content_padding"
+                            android:orientation="horizontal">
+
+                            <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                                android:layout_width="0dp"
+                                android:layout_height="102dp"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingLeft="24dp"
+                                app:borderGradientCenter="top-left-bottom-right"
+                                app:frostedGlassBlurIntensity="transparent">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center_vertical"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="34dp"
+                                        android:text="@{deviceData.protectionBoardTempText}"
+                                        android:textColor="@android:color/white"
+                                        android:textSize="33sp" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:ellipsize="end"
+                                        android:maxLines="1"
+                                        android:text="@string/protective_mirror_temperature_text"
+                                        android:textColor="@color/warn_text"
+                                        android:textSize="25sp" />
+                                </LinearLayout>
+
+                                <com.lasercyber.lws.frostui.control.interop.FrostStatusIndicatorView
+                                    style="@style/FrostStatusIndicator"
+                                    android:layout_gravity="center_vertical"
+                                    android:layout_marginEnd="24dp"
+                                    app:frostStatusVariant="icon"
+                                    app:alarmMetricFault="@{deviceStatus.isProtectionBoardTemperatureAlarm}"
+                                    app:alarmMetricHasValue="@{deviceData.hasProtectionBoardTempValue()}"
+                                    app:alarmMetricReady="@{statusReady &amp;&amp; dataReady}" />
+                            </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                            <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                                android:layout_width="0dp"
+                                android:layout_height="102dp"
+                                android:layout_marginLeft="24dp"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingLeft="24dp"
+                                app:borderGradientCenter="bottom-left-top-right"
+                                app:frostedGlassBlurIntensity="transparent">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center_vertical"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="34dp"
+                                        android:text="@{deviceData.collimatorTempText}"
+                                        android:textColor="@android:color/white"
+                                        android:textSize="33sp" />
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:ellipsize="end"
+                                        android:maxLines="1"
+                                        android:text="@string/collimator_temperature_text"
+                                        android:textColor="@color/warn_text"
+                                        android:textSize="25sp" />
+                                </LinearLayout>
+
+                                <com.lasercyber.lws.frostui.control.interop.FrostStatusIndicatorView
+                                    style="@style/FrostStatusIndicator"
+                                    android:layout_gravity="center_vertical"
+                                    android:layout_marginEnd="24dp"
+                                    app:frostStatusVariant="icon"
+                                    app:alarmMetricFault="@{deviceStatus.isStraightTrackTemperatureAlarm}"
+                                    app:alarmMetricHasValue="@{deviceData.hasCollimatorTempValue()}"
+                                    app:alarmMetricReady="@{statusReady &amp;&amp; dataReady}" />
+                            </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+                        </LinearLayout>
+                    </com.lasercyber.lws.ui.component.layout.SectionContent>
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/frost_dialog_content_padding"
+                    android:orientation="vertical"
+                    android:padding="@dimen/frost_dialog_content_padding"
+                    app:borderGradientCenter="top-left-bottom-right"
+                    app:frostedGlassBlurIntensity="transparent">
+
+                    <com.lasercyber.lws.ui.component.layout.SectionHeader
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/alarm_info_wire_feeder" />
+
+                    <com.lasercyber.lws.ui.component.layout.SectionContent
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="102dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingLeft="24dp"
+                            app:borderGradientCenter="top-left-bottom-right"
+                            app:frostedGlassBlurIntensity="transparent">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:maxLines="1"
+                                    android:text="@string/wire_feeding_machine_communication_text"
+                                    android:textColor="@color/warn_text"
+                                    android:textSize="25sp" />
+                            </LinearLayout>
+
+                            <com.lasercyber.lws.frostui.control.interop.FrostStatusIndicatorView
+                                style="@style/FrostStatusIndicator"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="24dp"
+                                app:frostStatusVariant="icon"
+                                app:commStatusAlarm="@{deviceStatus.isWireFeederCommunicationAlarm}"
+                                app:commStatusEmulator="@{emulator}"
+                                app:commStatusReady="@{statusReady}" />
+                        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+                    </com.lasercyber.lws.ui.component.layout.SectionContent>
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+            </LinearLayout>
+                </com.lasercyber.lws.ui.component.AppScrollView>
+
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/warn_log"
+                android:layout_width="468dp"
+                android:layout_height="@dimen/monitor_alarm_left_panel_height"
+                android:layout_marginStart="20dp" />
+
+        </LinearLayout>
+    </FrameLayout>
+</layout>

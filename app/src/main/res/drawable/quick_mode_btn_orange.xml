@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 优先级1：按压 OR 选中 → 显示橙色背景 -->
+    <item android:drawable="@drawable/quick_mode_wheel_active_orange"
+        android:state_pressed="true"/>
+    <item android:drawable="@drawable/quick_mode_wheel_active_orange"
+        android:state_selected="true"/>
+
+    <!-- 优先级2：其他所有情况（未按压 + 未选中）→ 透明背景 -->
+    <item android:drawable="@drawable/transparent_bg"/>
+</selector>

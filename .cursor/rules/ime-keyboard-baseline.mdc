@@ -1,0 +1,84 @@
+---
+description: IME keyboard A/B + Field Type registry. User 回退 reverts to this baseline.
+alwaysApply: true
+---
+
+# IME Keyboard Baseline
+
+## Architecture
+
+- Entry: `ImeOverlaySpec.create(config, fieldType, onEditorAction)` — **not** scattered dialog `if`.
+- Registry: `ImeFieldProfileRegistry.profile(fieldType)` → layout + bottom row + `NumericPolicy`.
+- **IME kernel first**; business dialogs wire `fieldType` when a scene needs it (Phase 5).
+
+## Keyboard A — global QWERTY + 123 / symbol layers
+
+### QWERTY bottom row (Text default)
+
+```
+123  [space — wide]  .  ⏎
+```
+
+- `.` key with `,` on long-press popup; **no `@`** on default Text row.
+- Kind: `EnglishGlobal` / `ChineseGlobal`.
+
+### Primary symbol layer (123 toggle) — iOS figure 2
+
+```
+1  2  3  4  5  6  7  8  9  0
+-  /  :  ;  (  )  $  &  @  "
+#+=  ,  .  ?  !  '  ⌫
+ABC  [space]  ⏎
+```
+
+- Kind: `KeyboardKind.NumericGlobal` (`GlobalSymbolsPrimaryLayout`).
+
+### Extended symbol layer (#+=) — iOS figure 3
+
+```
+[  ]  {  }  #  %  ^  *  +  =
+_  \  |  ~  <  >  €  £  ¥  •
+123  ,  .  ?  !  '  ⌫
+ABC  [space]  ⏎
+```
+
+- Kind: `KeyboardKind.SymbolsExtendedGlobal` (`GlobalSymbolsExtendedLayout`).
+- **`123`** on row 3 → back to primary symbol layer; **`ABC`** → QWERTY.
+
+## Keyboard B — dedicated numeric pad
+
+```
+1  2  3  ⌫
+4  5  6  C
+7  8  9  -
+.  0  00  ⏎
+```
+
+- **C** clears field; **no abc** / mode switch; **⏎** only (no SEND + paper plane).
+- Kind: `NumericDedicated`; `NumericPolicy` gates `-` / `.` / `00`.
+
+## Field types (Registry)
+
+| Type | Keyboard | Scene wired |
+|------|----------|-------------|
+| Text | A | `FrostedGlassTextInputDialog` |
+| Number / SignedDecimal | B | `FrostedGlassNumericInputDialog` |
+| WiFi | A · `123` · space · `.` · Connect (⏎) | `FrostedGlassWifiPasswordDialog` |
+| Email / Uri / Password | A + Profile | Registry only — wire in Phase 5 |
+
+## When the user says 回退
+
+Revert IME keyboard work **to this baseline** (see `docs/ime-field-type-keyboard-design.md`).
+
+Restore at minimum:
+
+- `ime/field/` — `ImeFieldType`, `ImeFieldProfileRegistry`, `ImeBottomRowProfile`, `NumericPolicy`
+- `ImeOverlaySpec.fieldType` (not boolean-only)
+- `GlobalQwertyLayout` + `GlobalSymbolsPrimaryLayout` + `GlobalSymbolsExtendedLayout` + `DedicatedNumericLayout`
+- `KeyboardController.forFieldType(...)` — single panel path
+
+## Scope
+
+- Do not merge A and B into one numeric layout.
+- B fixes stay on `NumericDedicated`; QWERTY / symbol-layer fixes stay on keyboard A.
+- New scenes = Registry entry + `ImeOverlaySpec.fieldType`; do not fork overlay/backdrop pipeline.

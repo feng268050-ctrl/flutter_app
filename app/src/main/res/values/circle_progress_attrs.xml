@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CircleProgress">
+<!--        描述文字-->
+        <attr name="desc_text_color" format="color|reference"/>
+        <attr name="desc_text_size" format="dimension|reference"/>
+<!--        刻度线-->
+        <attr name="scale_line_color" format="color|reference"/>
+        <attr name="scale_line_width" format="dimension|reference"/>
+<!--        刻度数字-->
+        <attr name="scale_num_text_color" format="color|reference"/>
+        <attr name="scale_num_text_size" format="dimension|reference"/>
+<!--            刻度数值与刻度线间隔-->
+        <attr name="scale_value_line_interval" format="dimension|reference"/>
+<!--        数值文字-->
+        <attr name="num_text_color" format="color|reference"/>
+        <attr name="num_text_size" format="dimension|reference"/>
+        <attr name="num_text_weight" format="integer|reference"/>
+        <attr name="value_text_offset_x" format="dimension|reference"/>
+            <!--            边长-->
+            <attr name="circle_side_length" format="dimension" />
+            <!--            内边距-->
+            <attr name="circle_padding" format="dimension" />
+            <!--            文字与刻度边距-->
+            <attr name="circle_scale_text_margin" format="dimension" />
+    </declare-styleable>
+</resources>

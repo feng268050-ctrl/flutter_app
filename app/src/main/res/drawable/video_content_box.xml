@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 第一层：阴影背景（实现阴影效果） -->
+    <item
+        android:bottom="0dp"
+        android:left="0dp"
+        android:right="0dp"
+        android:top="0dp">
+        <shape android:shape="rectangle">
+            <!-- 阴影颜色 + 透明度（4d 对应 30% 透明度） -->
+            <solid android:color="#4df37535" />
+            <!-- 圆角与主体保持一致，避免阴影边角突兀 -->
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+
+    <!-- 第二层：主体矩形（带边框+圆角） -->
+    <item
+        android:bottom="0dp"
+        android:left="0dp"
+        android:right="0dp"
+        android:top="0dp">
+        <shape android:shape="rectangle">
+            <!-- 主体背景色（必填，否则会透明显示下层阴影） -->
+            <solid android:color="@color/engineer_base_background_color" />
+
+            <!-- 边框 -->
+            <stroke
+                android:width="2dp"
+                android:color="#fff37535" />
+
+            <!-- 圆角（统一用radius简化写法） -->
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</layer-list>

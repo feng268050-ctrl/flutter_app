@@ -1,0 +1,35 @@
+<com.lasercyber.lws.frostui.card.interop.FrostCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/item_contet_layout"
+    android:layout_width="match_parent"
+    android:layout_height="250dp"
+    android:layout_margin="0dp"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingTop="24dp"
+    app:frostedGlassBlurIntensity="transparent">
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
+        android:textColor="@android:color/white"
+        android:textSize="33sp" />
+
+    <com.lasercyber.lws.ui.common.view.RingProgressView
+        android:id="@+id/ring_view"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        app:rpv_dotColor="@android:color/white" />
+
+    <TextView
+        android:id="@+id/tv_percent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="-140dp"
+        android:textColor="@android:color/white"
+        android:textSize="53sp"
+        android:textStyle="bold" />
+</com.lasercyber.lws.frostui.card.interop.FrostCardView>

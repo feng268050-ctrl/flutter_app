@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 底层：背景图片（铺满整个弹窗） -->
+    <item>
+        <!-- 图片平铺模式（可选，根据图片尺寸调整） -->
+        <bitmap
+            android:src="@mipmap/process_parameter_container_bg"
+            android:tileMode="clamp"
+        android:gravity="fill" /> <!-- 图片填充整个区域 -->
+    </item>
+    <!-- 上层：透明形状，用于添加内边距（padding） -->
+    <!-- 注意：这里的 padding 会向内收缩内容区域，从而实现弹窗内容与背景边缘的间距 -->
+<!--    android:left="10dp"-->
+<!--    android:top="10dp"-->
+<!--    android:right="10dp"-->
+<!--    android:bottom="10dp"-->
+    <item
+        android:left="50dp"
+        android:top="10dp"
+        android:right="3dp"
+        android:bottom="23dp">
+        <!-- 透明形状，仅用于占位和添加内边距 -->
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+<!--            <solid android:color="@color/white" />-->
+        </shape>
+    </item>
+</layer-list>

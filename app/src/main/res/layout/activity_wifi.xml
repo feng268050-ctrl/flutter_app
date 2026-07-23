@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="1280dp"
+        android:layout_height="800dp"
+        android:orientation="vertical"
+        android:background="@color/safety_black"
+        tools:context=".activitys.other.WifiActivity">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:orientation="horizontal"
+            android:background="@mipmap/job_border1">
+
+            <LinearLayout
+                android:id="@+id/go_to_up_page"
+                android:layout_width="200dp"
+                android:layout_height="72dp">
+
+            <TextView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:textSize="24dp"
+                android:background="@mipmap/top_page_icon"
+                android:layout_marginTop="20dp"
+                android:layout_marginLeft="30sp"
+                android:textColor="@color/white"
+                android:gravity="center" />
+            </LinearLayout>
+
+            <TextView android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_marginLeft="-200dp"
+                android:layout_height="match_parent"
+                android:text="@string/wifi_network_text"
+                android:textSize="29sp"
+                android:textColor="@color/white"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <!-- WLAN开关栏 -->
+        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="24dp"
+            android:orientation="vertical"
+            android:padding="0dp"
+            android:layout_gravity="center"
+            app:borderGradientCenter="top-left-bottom-right"
+            app:frostedGlassBlurIntensity="transparent">
+
+            <com.lasercyber.lws.ui.component.layout.InsetList
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <com.lasercyber.lws.ui.component.layout.InsetListRow
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/inset_list_row_height">
+
+                    <TextView
+                        style="@style/advanced_setting_item_title"
+                        android:text="@string/wifi_wlan_label" />
+
+                    <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                        android:id="@+id/wifi_switch"
+                        style="@style/FrostSwitch"
+                        android:checked="true" />
+                </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                <com.lasercyber.lws.ui.component.layout.InsetDivider
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <com.lasercyber.lws.ui.component.layout.InsetListRow
+                    android:id="@+id/wifi_con_not"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/inset_list_row_height">
+
+                    <TextView
+                        android:id="@+id/wifi_con_not_text"
+                        style="@style/advanced_setting_item_title"
+                        android:layout_weight="0"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/wifi_status_not_connected"
+                        android:textColor="@color/side_tab_not_active_color" />
+                </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                <com.lasercyber.lws.ui.component.layout.InsetListRow
+                    android:id="@+id/wifi_con"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/inset_list_row_height"
+                    android:visibility="gone">
+
+                    <include
+                        android:id="@+id/wifi_connected_row"
+                        layout="@layout/include_wifi_network_row" />
+                </com.lasercyber.lws.ui.component.layout.InsetListRow>
+            </com.lasercyber.lws.ui.component.layout.InsetList>
+        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginBottom="24dp"
+            android:orientation="vertical"
+            android:padding="0dp"
+            android:layout_gravity="center"
+            app:borderGradientCenter="bottom-left-top-right"
+            app:frostedGlassBlurIntensity="transparent">
+
+            <com.lasercyber.lws.ui.component.AppScrollView
+                style="@style/app_vertical_scroll_view_style"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/wifi_recycler"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never" />
+            </com.lasercyber.lws.ui.component.AppScrollView>
+        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+        <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+            android:id="@+id/btn_hidden_network"
+            android:layout_width="wrap_content"
+            android:layout_height="58dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="24dp"
+            android:gravity="center"
+            android:minWidth="220dp"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:text="@string/wifi_hidden_network_connect"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="29sp"
+            app:frostedGlassButtonVariant="default" />
+
+    </LinearLayout>
+</layout>

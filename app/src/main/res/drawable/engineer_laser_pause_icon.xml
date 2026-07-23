@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Laser Enable 开启态：暂停图标（矢量绘制），高度对齐文字 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="@dimen/engineer_laser_btn_icon_size"
+    android:height="@dimen/engineer_laser_btn_icon_size"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M6,4h4v16h-4z" />
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M14,4h4v16h-4z" />
+</vector>

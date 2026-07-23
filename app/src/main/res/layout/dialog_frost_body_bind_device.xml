@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp">
+
+    <TextView
+        android:id="@+id/tv_bind_device_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:lineSpacingExtra="6dp"
+        android:paddingBottom="12dp"
+        android:textAlignment="center"
+        android:textColor="@color/frost_text_secondary"
+        android:textSize="33sp" />
+
+    <ImageView
+        android:id="@+id/iv_bind_device_qr"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:contentDescription="@string/bind_device_dialog_title"
+        android:scaleType="fitCenter" />
+</LinearLayout>

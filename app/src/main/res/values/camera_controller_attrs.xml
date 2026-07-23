@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CameraControllerAttrs">
+        <!--        模式类型-->
+        <attr name="mode_type" />
+        <!-- Optional Record Work label size override for embedded contexts. -->
+        <attr name="record_label_text_size" format="dimension" />
+        <!-- Quick Mode follows its process color; Engineer Mode keeps the default green. -->
+        <attr name="record_use_mode_color" format="boolean" />
+    </declare-styleable>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same chrome as Machine Status check_box_warn_show; pair with CheckBox checked=false → check_none -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="36dp"
+        android:height="36dp"
+        android:gravity="center"
+        android:drawable="@drawable/checkbox_selector_show" />
+</layer-list>

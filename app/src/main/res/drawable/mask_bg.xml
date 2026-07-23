@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- 遮罩颜色：格式为 #透明度+颜色值（示例：80=半透明，444444=深灰色） -->
+    <solid android:color="#90060720" />
+</shape>

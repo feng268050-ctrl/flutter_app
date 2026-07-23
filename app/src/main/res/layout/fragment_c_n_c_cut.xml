@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+        <!--        通讯状态 1:连接中，2：连接成功，3连接失败-->
+        <variable
+            name="communicationStatus"
+            type="java.lang.Integer" />
+    </data>
+    <FrameLayout xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingTop="30dp"
+        android:paddingRight="32dp"
+        android:paddingBottom="28dp"
+        android:paddingLeft="310dp"
+        tools:context=".activitys.quick.mode.fragment.CNCCutFragment">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@mipmap/cnc_bg"
+            android:orientation="vertical"
+            android:paddingLeft="33dp"
+            android:paddingRight="33dp">
+            <!--            标题-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="34dp"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/connecting_device_guide"
+                    android:textColor="#ffffffff"
+                    android:textSize="44sp" />
+            </LinearLayout>
+            <!--            内容-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="33dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        style="@style/cnc_step_image"
+                        android:src="@mipmap/cnc_step_1" />
+
+                    <ImageView
+                        style="@style/cnc_step_status_image"
+                        imageSrc="@{communicationStatus==1?@drawable/unconnect:communicationStatus==2?@drawable/connect_success:@drawable/connect_error}" />
+
+                    <TextView
+                        style="@style/cnc_step_text"
+                        android:text="@string/cnc_connect_1_text" />
+                </LinearLayout>
+                <View style="@style/quick_mode_cnc_content_fill"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        style="@style/cnc_step_image"
+                        android:src="@mipmap/cnc_step_2" />
+
+                    <ImageView
+                        style="@style/cnc_step_status_image" />
+                    <!--                    android:src="@drawable/unconnect"-->
+                    <TextView
+                        style="@style/cnc_step_text"
+                        android:text="@string/cnc_connect_2_text" />
+                </LinearLayout>
+                <View style="@style/quick_mode_cnc_content_fill"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        style="@style/cnc_step_image"
+                        android:src="@mipmap/cnc_step_2" />
+
+                    <ImageView
+                        style="@style/cnc_step_status_image" />
+                    <!--                    android:src="@mipmap/connect_error"-->
+                    <TextView
+                        style="@style/cnc_step_text"
+                        android:text="@string/cnc_connect_3_text" />
+                </LinearLayout>
+            </LinearLayout>
+            <!--            提示-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="48dp"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cnc_cut_note_text"
+                    android:textColor="#ffffffff"
+                    android:textSize="@dimen/text_size_10">
+
+                </TextView>
+            </LinearLayout>
+
+            <!--            <LinearLayout-->
+            <!--                android:layout_width="match_parent"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:layout_marginTop="51dp"-->
+            <!--                android:gravity="center">-->
+
+            <!--                <Button-->
+            <!--                    android:id="@+id/cnc_check_btn"-->
+            <!--                    android:layout_width="wrap_content"-->
+            <!--                    android:layout_height="wrap_content"-->
+            <!--                    android:background="@mipmap/check_connect_btn"-->
+            <!--                    android:drawableLeft="@drawable/check_connect_icon"-->
+            <!--                    android:drawablePadding="8dp"-->
+            <!--                    android:paddingLeft="26dp"-->
+            <!--                    android:paddingTop="16dp"-->
+            <!--                    android:paddingRight="26dp"-->
+            <!--                    android:paddingBottom="16dp"-->
+            <!--                    android:text="@string/device_connection_check"-->
+            <!--                    android:textColor="#ffffffff"-->
+            <!--                    android:textSize="@dimen/text_size_11" />-->
+            <!--            </LinearLayout>-->
+        </LinearLayout>
+    </FrameLayout>
+</layout>

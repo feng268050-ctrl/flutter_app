@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 第一层：固定底层背景，始终显示 -->
+    <item android:drawable="@drawable/pline_btn_background" />
+
+    <!-- 第二层：状态选择器，叠加在底层之上，控制按压/选中效果 -->
+    <item android:drawable="@drawable/quick_mode_btn_orange" />
+</layer-list>

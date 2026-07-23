@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 第1层：渐变边框（带15dp圆角） -->
+    <item>
+        <shape android:shape="rectangle">
+            <!-- 15dp圆角（核心：与下层同步） -->
+            <corners android:radius="15dp"/>
+            <!-- 边框宽度0.5dp（透明占位，渐变填充） -->
+            <stroke
+                android:width="0.5dp"
+                android:color="@android:color/transparent"/>
+            <!-- 垂直渐变：上下#ACACAC → 中间#666666 -->
+            <gradient
+                android:type="linear"
+                android:angle="270"
+            android:startColor="#ACACAC"
+            android:centerColor="#666666"
+            android:endColor="#ACACAC"
+            android:centerY="0.5"/>
+        </shape>
+    </item>
+
+    <!-- 第2层：内部透明区域（带15dp圆角，留出边框宽度） -->
+    <item
+        android:left="0.5dp"
+        android:top="0.5dp"
+        android:right="0.5dp"
+        android:bottom="0.5dp">
+        <shape android:shape="rectangle">
+            <!-- 必须与上层圆角一致（15dp），否则会出现“边框圆角、内部直角”错位 -->
+            <corners android:radius="15dp"/>
+            <!-- 内部透明，不遮挡下层内容 -->
+            <solid android:color="@android:color/transparent"/>
+        </shape>
+    </item>
+</layer-list>

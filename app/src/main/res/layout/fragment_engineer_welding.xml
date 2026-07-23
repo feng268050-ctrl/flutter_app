@@ -1,0 +1,736 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="engineerWeldingFragment"
+            type="com.lasercyber.lws.ui.activitys.engineer.mode.fragment.EngineerWeldingFragment" />
+
+        <variable
+            name="type"
+            type="java.lang.Integer" />
+
+        <import type="android.view.View" />
+
+        <variable
+            name="openMoreCommon"
+            type="java.lang.Boolean" />
+
+        <variable
+            name="processParametersDataViewModel"
+            type="com.lasercyber.lws.ui.activitys.engineer.mode.model.ProcessParametersDataViewModel" />
+
+        <import type="com.lasercyber.lws.ui.common.constant.ModelConstant" />
+    </data>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".activitys.engineer.mode.fragment.EngineerWeldingFragment">
+
+        <LinearLayout
+            style="@style/engineer_root_container"
+            android:orientation="horizontal">
+
+            <!-- 左侧：六控件固定布局（各 Tab 共用，仅可用性不同） -->
+            <include
+                android:id="@+id/continuous_device_controls"
+                layout="@layout/engineer_continuous_device_controls"
+                android:layout_width="@dimen/engineer_welding_left_panel_width"
+                android:layout_height="match_parent" />
+
+            <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                style="@style/engineer_form_content"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="24dp"
+                android:layout_weight="1"
+                app:borderGradientCenter="bottom-left-top-right"
+                app:frostedGlassBlurIntensity="transparent">
+                <!--                切换工艺参数-->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingLeft="24dp"
+                    android:paddingBottom="13dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/process_parameter_name"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@{processParametersDataViewModel.name}"
+                            android:textColor="#ffffffff"
+                            android:textSize="@dimen/text_size_12" />
+
+                        <TextView
+                            style="@style/hint_text_style"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/current_process_parameter_name" />
+                    </LinearLayout>
+
+                    <View style="@style/content_completion_style" />
+
+                    <LinearLayout
+                        android:id="@+id/more_common"
+                        style="@style/linear_layout_center_vertical"
+                        android:layout_height="match_parent">
+
+                        <TextView
+                            style="@style/engineer_value_text_style"
+                            android:text="@string/more_common_specs" />
+
+                        <ImageView
+                            style="@style/engineer_more_common_arrow_icon_style"
+                            android:src="@mipmap/right_white_arrow"
+                            android:visibility="@{openMoreCommon ? View.GONE: View.VISIBLE}" />
+
+                        <ImageView
+                            style="@style/engineer_more_common_arrow_icon_style"
+                            android:src="@mipmap/down_white_arrow"
+                            android:visibility="@{openMoreCommon ? View.VISIBLE : View.GONE}" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View style="@style/engineer_row_line_style" />
+
+                <!--                TOOD 测试阶段 暂时设为200dp-->
+                <com.lasercyber.lws.ui.component.EngineerParameterScrollView
+                    style="@style/engineer_scroll_view_style">
+
+                    <LinearLayout style="@style/engineer_parameter_panel_style">
+
+                        <LinearLayout style="@style/engineer_data_row_style">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/welding_materials_text" />
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/materials_box"
+                                style="@style/engineer_materials_row">
+
+                                <ImageView
+                                    android:id="@+id/materials_icon"
+                                    style="@style/engineer_materials_icon" />
+
+                                <View style="@style/content_completion_style" />
+
+                                <TextView
+                                    android:id="@+id/welding_materials_input"
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.materialTypeLabel}" />
+
+                                <View style="@style/content_completion_style" />
+
+                                <ImageView style="@style/select_down_white_arrow" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+
+                        <View style="@style/engineer_row_line_style" />
+
+                        <LinearLayout style="@style/engineer_data_row_style">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/welding_thickness_text">
+
+                            </TextView>
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/thickness"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.thickness}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@{processParametersDataViewModel.useMMUnit ? @string/mm_unit : @string/in_unit}" />
+
+
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            style="@style/engineer_row_line_style"
+                            android:visibility="@{type==ModelConstant.POINT_WELDING?View.VISIBLE:View.GONE}" />
+
+                        <LinearLayout
+                            style="@style/engineer_data_row_style"
+                            android:visibility="@{type==ModelConstant.POINT_WELDING?View.VISIBLE:View.GONE}">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/spot_welding_interval_t1_text">
+
+                            </TextView>
+
+                            <TextView
+                                style="@style/engineer_row_suffix_label_style"
+                                android:text="@string/t1_text"
+                                android:textColor="@color/blue_label_text" />
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/point_welding_interval"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.pointWeldingInterval}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@string/ms_unit" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            style="@style/engineer_row_line_style"
+                            android:visibility="@{type==ModelConstant.POINT_WELDING?View.VISIBLE:View.GONE}" />
+
+                        <LinearLayout
+                            style="@style/engineer_data_row_style"
+                            android:visibility="@{type==ModelConstant.POINT_WELDING?View.VISIBLE:View.GONE}">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/continuous_spot_welding_t2_text" />
+
+                            <TextView
+                                style="@style/engineer_row_suffix_label_style"
+                                android:text="@string/t2_text"
+                                android:textColor="@color/engineer_weld_tab_active" />
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/point_welding_duration"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.pointWeldingDuration}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@string/ms_unit" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View style="@style/engineer_row_line_style" />
+
+                        <LinearLayout style="@style/engineer_data_row_style">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/blow_delay_text" />
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/airOff_delay"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.blowDelay}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@string/ms_unit" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            style="@style/engineer_row_line_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}" />
+
+                        <LinearLayout
+                            style="@style/engineer_data_row_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/power_ramp_up_text" />
+
+                            <TextView
+                                style="@style/engineer_row_suffix_label_style"
+                                android:text="@string/t2_text"
+                                android:textColor="@color/engineer_charts_orange" />
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/power_ramp_up"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.powerRampUp}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@string/ms_unit" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View style="@style/engineer_row_line_style" />
+
+                        <LinearLayout style="@style/engineer_data_row_style">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/laser_power_text" />
+
+                            <TextView
+                                style="@style/engineer_row_suffix_label_style"
+                                android:text="@string/p_text" />
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/welding_power"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.laserPower}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@string/percentage_unit" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            style="@style/engineer_row_line_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}" />
+
+                        <LinearLayout
+                            style="@style/engineer_data_row_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/power_ramp_down_text" />
+
+                            <TextView
+                                style="@style/engineer_row_suffix_label_style"
+                                android:text="@string/t3_text"
+                                android:textColor="@color/engineer_weld_tab_active" />
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/powerDescent"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.powerRampDown}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@string/ms_unit" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View style="@style/engineer_row_line_style" />
+
+                        <LinearLayout style="@style/engineer_data_row_style">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/air_shut_off_delay_text">
+
+                            </TextView>
+
+                            <TextView
+                                style="@style/engineer_row_suffix_label_style"
+                                android:text="@string/t4_text"
+                                android:textColor="@color/blue_label_text"
+                                android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}" />
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/close_air_delay"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.closeAirDelay}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@string/ms_unit" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View style="@style/engineer_row_line_style" />
+
+                        <LinearLayout style="@style/engineer_data_row_style">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/swing_frequency_text">
+
+                            </TextView>
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/swing_frequency"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.swingFrequency}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@string/hz_unit" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View style="@style/engineer_row_line_style" />
+
+                        <LinearLayout style="@style/engineer_data_row_style">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/welding_width_text" />
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/weld_width"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.swingWidth}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@{processParametersDataViewModel.useMMUnit ? @string/mm_unit : @string/in_unit}" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            style="@style/engineer_row_line_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}" />
+
+                        <LinearLayout
+                            style="@style/engineer_data_row_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/wire_feed_speed_text">
+
+                            </TextView>
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/wireFeedingSpeed"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.wireFeedSpeed}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@{processParametersDataViewModel.useMMUnit ? @string/mm_s_unit : @string/in_s_unit}" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View style="@style/engineer_row_line_style" />
+
+                        <LinearLayout style="@style/engineer_data_row_style">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/off_light_delay_text" />
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/close_light_delay"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.closeLightDelay}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@string/ms_unit" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View style="@style/engineer_row_line_style" />
+
+                        <LinearLayout
+                            style="@style/engineer_data_row_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/retract_length_text">
+
+                            </TextView>
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/pullbackLength"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.retractLength}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@{processParametersDataViewModel.useMMUnit ? @string/mm_unit : @string/in_unit}" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            style="@style/engineer_row_line_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}" />
+
+                        <LinearLayout
+                            style="@style/engineer_data_row_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/retract_speed_text">
+
+                            </TextView>
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/pullbackSpeed"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.retractSpeed}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@{processParametersDataViewModel.useMMUnit ? @string/mm_s_unit : @string/in_s_unit}" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            style="@style/engineer_row_line_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}" />
+
+                        <LinearLayout
+                            style="@style/engineer_data_row_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/fill_length_text">
+
+                            </TextView>
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/wireLength"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.fillLength}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@{processParametersDataViewModel.useMMUnit ? @string/mm_unit : @string/in_unit}" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            style="@style/engineer_row_line_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}" />
+
+                        <LinearLayout
+                            style="@style/engineer_data_row_style"
+                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}">
+
+                            <TextView
+                                style="@style/engineer_row_label_style"
+                                android:text="@string/fill_delay_text">
+
+                            </TextView>
+
+                            <View style="@style/content_completion_style" />
+
+                            <LinearLayout
+                                android:id="@+id/repair_wire_delay"
+                                style="@style/engineer_input_value_box_style">
+
+                                <TextView
+                                    style="@style/engineer_value_text_style"
+                                    android:text="@{processParametersDataViewModel.fillDelay}" />
+
+                                <TextView
+                                    style="@style/engineer_value_unit_text_style"
+                                    android:text="@string/ms_unit" />
+
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!--                        <View-->
+                        <!--                            style="@style/engineer_row_line_style"-->
+                        <!--                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}" />-->
+
+                        <!--                        <LinearLayout-->
+                        <!--                            style="@style/engineer_data_row_style"-->
+                        <!--                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}">-->
+
+                        <!--                            <TextView-->
+                        <!--                                style="@style/engineer_row_label_style"-->
+                        <!--                                android:text="@string/wire_feeding_delay_text">-->
+
+                        <!--                            </TextView>-->
+
+                        <!--                            <View style="@style/content_completion_style" />-->
+
+                        <!--                            <LinearLayout-->
+                        <!--                                android:id="@+id/repairWireDelay"-->
+                        <!--                                style="@style/engineer_input_value_box_style">-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/engineer_value_text_style"-->
+                        <!--                                    android:text="@{processParametersDataViewModel.wireFeedingDelay}" />-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/engineer_value_text_style"-->
+                        <!--                                    android:text="@string/ms_unit" />-->
+
+                        <!--                            </LinearLayout>-->
+                        <!--                        </LinearLayout>-->
+
+                        <!--                        <View-->
+                        <!--                            style="@style/engineer_row_line_style"-->
+                        <!--                            android:visibility="@{type==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.GONE}" />-->
+
+                        <!--                        <LinearLayout style="@style/engineer_data_row_style">-->
+
+                        <!--                            <TextView-->
+                        <!--                                style="@style/engineer_row_label_style"-->
+                        <!--                                android:text="@string/laser_frequency_text">-->
+
+                        <!--                            </TextView>-->
+
+                        <!--                            <View style="@style/content_completion_style" />-->
+
+                        <!--                            <LinearLayout-->
+                        <!--                                android:id="@+id/laser_frequency"-->
+                        <!--                                style="@style/engineer_input_value_box_style">-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/engineer_value_text_style"-->
+                        <!--                                    android:text="@{processParametersDataViewModel.laserFrequency}" />-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/engineer_value_unit_text_style"-->
+                        <!--                                    android:text="@string/hz_unit" />-->
+
+                        <!--                            </LinearLayout>-->
+                        <!--                        </LinearLayout>-->
+
+                        <!--                        <View style="@style/engineer_row_line_style" />-->
+
+                        <!--                        <LinearLayout style="@style/engineer_data_row_style">-->
+
+                        <!--                            <TextView-->
+                        <!--                                style="@style/engineer_row_label_style"-->
+                        <!--                                android:text="@string/laser_duty_cycle_text" />-->
+
+                        <!--                            <View style="@style/content_completion_style" />-->
+
+                        <!--                            <LinearLayout-->
+                        <!--                                android:id="@+id/laser_duty_cycle"-->
+                        <!--                                style="@style/engineer_input_value_box_style">-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/engineer_value_text_style"-->
+                        <!--                                    android:text="@{processParametersDataViewModel.laserDutyCycle}" />-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/engineer_value_unit_text_style"-->
+                        <!--                                    android:text="@string/percentage_unit" />-->
+                        <!--                            </LinearLayout>-->
+                        <!--                        </LinearLayout>-->
+
+                        <View style="@style/engineer_row_line_style" />
+
+                        <LinearLayout style="@style/engineer_btn_row_horizontal_center">
+
+                            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                                style="@style/engineer_pine_base_btn_style"
+                                android:drawableStart="@drawable/engineer_reset_icon"
+                                android:paddingStart="45dp"
+                                android:paddingEnd="45dp"
+                                android:text="@string/reset_to_default_data_text"
+                                app:borderGradientCenter="top-left-bottom-right"
+                                android:onClick="@{()->engineerWeldingFragment.resetDefaultData()}" />
+
+                            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                                android:id="@+id/engineer_pine_base_btn"
+                                style="@style/engineer_pine_base_btn_style"
+                                android:layout_marginStart="22dp"
+                                android:drawableStart="@drawable/engineer_mark_common_icon"
+                                android:paddingStart="35dp"
+                                android:paddingEnd="35dp"
+                                android:text="@string/set_commonly_used_parameter_text"
+                                app:borderGradientCenter="top-left-bottom-right"
+                                android:onClick="@{()->engineerWeldingFragment.setCommonlyUsedParameter()}" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.lasercyber.lws.ui.component.EngineerParameterScrollView>
+            </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+        </LinearLayout>
+    </FrameLayout>
+</layout>

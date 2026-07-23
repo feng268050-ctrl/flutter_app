@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/app_page_background_color">
+
+    <TextView
+        android:id="@+id/side_master_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="?attr/app_base_text_color" />
+    <!--    每一项sidetab-->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/side_bar_item_list"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/side_master_title"
+        android:orientation="vertical" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/side_bar_item_list"
+        android:gravity="bottom">
+
+        <TextView
+            android:id="@+id/call_back_home"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/call_back_home_title"
+            android:textColor="?attr/app_base_text_color" />
+    </LinearLayout>
+</RelativeLayout>

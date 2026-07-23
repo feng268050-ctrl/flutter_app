@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- 按钮背景色（与示例图一致的蓝色） -->
+    <solid android:color="#2196F3" />
+    <!-- 圆角半径（匹配示例图的圆角） -->
+    <corners android:radius="16dp" />
+</shape>

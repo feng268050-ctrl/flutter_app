@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/app_page_background_color"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/currently_selected_material_text"
+            android:textColor="?attr/app_base_text_color" />
+
+        <TextView
+            android:id="@+id/currently_selected_material"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:textColor="?attr/app_base_text_color" />
+    </LinearLayout>
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:columnCount="3">
+
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/stainless_steel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stainless_steel_text"
+                android:textColor="?attr/app_base_text_color" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/carbon_steel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/carbon_steel_text"
+                android:textColor="?attr/app_base_text_color" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/galvanized_sheet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/galvanized_sheet_text"
+                android:textColor="?attr/app_base_text_color" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/aluminum_alloy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/aluminum_alloy_text"
+                android:textColor="?attr/app_base_text_color" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/brass"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/brass_text"
+                android:textColor="?attr/app_base_text_color" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/customize"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/customize_text"
+                android:textColor="?attr/app_base_text_color" />
+        </LinearLayout>
+    </GridLayout>
+</LinearLayout>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="FrostSwitch">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="frostSwitchTrackOffColor">@color/frost_control_switch_track_off</item>
+        <item name="frostSwitchTrackOnColor">@color/frost_control_switch_track_on</item>
+        <item name="frostSwitchThumbColor">@color/frost_control_switch_thumb</item>
+        <item name="frostSwitchTrackWidth">@dimen/frost_switch_track_width</item>
+        <item name="frostSwitchTrackHeight">@dimen/frost_switch_track_height</item>
+        <item name="frostSwitchTrackCornerRadius">@dimen/frost_switch_track_corner_radius</item>
+        <item name="frostSwitchThumbSize">@dimen/frost_switch_thumb_size</item>
+        <item name="frostSwitchThumbInsetVertical">@dimen/frost_switch_thumb_inset_vertical</item>
+        <item name="frostSwitchAnimationDuration">200</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:background">@null</item>
+        <item name="android:padding">0dp</item>
+    </style>
+
+    <style name="FrostCheckbox">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="frostCheckboxCheckedFillColor">@color/frost_control_checkbox_fill</item>
+        <item name="frostCheckboxUncheckedStrokeColor">@color/frost_control_checkbox_stroke</item>
+        <item name="frostCheckboxCheckmarkColor">@color/frost_control_checkbox_checkmark</item>
+        <item name="frostCheckboxSize">@dimen/frost_checkbox_size</item>
+        <item name="frostCheckboxStrokeWidth">@dimen/frost_checkbox_stroke_width</item>
+        <item name="frostCheckboxAnimationDuration">200</item>
+        <item name="frostCheckboxLabelTextColor">@color/frost_control_checkbox_label</item>
+        <item name="frostCheckboxLabelTextSize">@dimen/frost_checkbox_label_text_size</item>
+        <item name="frostCheckboxLabelSpacing">@dimen/frost_checkbox_label_spacing</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:background">@null</item>
+        <item name="android:padding">0dp</item>
+    </style>
+
+    <style name="FrostSegmentedControl">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/frost_capsule_control_height</item>
+        <item name="frostCapsuleFillColor">@color/frost_control_capsule_fill</item>
+        <item name="frostCapsuleBorderColor">@color/frost_control_capsule_border</item>
+        <item name="frostCapsuleCornerRadius">@dimen/frost_capsule_outer_corner_radius</item>
+        <item name="frostCapsuleInset">@dimen/frost_capsule_inset</item>
+        <item name="frostSegmentSelectedFillColor">@color/frost_control_segment_selected_fill</item>
+        <item name="frostSegmentUnselectedFillColor">@color/frost_control_segment_unselected_fill</item>
+        <item name="frostSegmentSelectedTextColor">@color/frost_control_segment_selected_text</item>
+        <item name="frostSegmentUnselectedTextColor">@color/frost_control_segment_unselected_text</item>
+        <item name="frostSegmentTextSize">@dimen/frost_segment_text_size_large</item>
+        <item name="frostSegmentCrossfadeDuration">200</item>
+    </style>
+
+    <style name="FrostSegmentedControl.MediumText">
+        <item name="frostSegmentTextSize">@dimen/frost_segment_text_size_medium</item>
+    </style>
+
+    <style name="FrostCapsuleSlider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/frost_capsule_control_height</item>
+        <item name="frostCapsuleFillColor">@color/frost_control_capsule_fill</item>
+        <item name="frostCapsuleBorderColor">@color/frost_control_capsule_border</item>
+        <item name="frostCapsuleCornerRadius">@dimen/frost_capsule_outer_corner_radius</item>
+        <item name="frostCapsuleInset">@dimen/frost_capsule_inset</item>
+        <item name="frostCapsuleSliderTrackInactiveColor">@color/frost_control_capsule_slider_track_inactive</item>
+        <item name="frostCapsuleSliderTrackActiveColor">@color/frost_control_capsule_slider_track_active</item>
+        <item name="frostCapsuleSliderOverlayLightColor">@color/frost_control_capsule_slider_overlay_light</item>
+        <item name="frostCapsuleSliderOverlayDarkColor">@color/frost_control_capsule_slider_overlay_dark</item>
+        <item name="frostCapsuleSliderHeight">@dimen/frost_capsule_slider_height</item>
+        <item name="frostCapsuleSliderCornerRadius">@dimen/frost_capsule_slider_corner_radius</item>
+        <item name="frostCapsuleSliderValueTextSize">@dimen/frost_capsule_slider_value_text_size</item>
+        <item name="frostCapsuleSliderTrailingIconSize">@dimen/frost_capsule_slider_trailing_icon_size</item>
+        <item name="frostCapsuleValueSuffix">%</item>
+    </style>
+
+    <style name="FrostSlider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="frostReserveThumbOverflow">true</item>
+    </style>
+
+    <style name="FrostStatusIndicator">
+        <item name="android:layout_width">@dimen/frost_status_indicator_size</item>
+        <item name="android:layout_height">@dimen/frost_status_indicator_size</item>
+        <item name="frostStatusState">idle</item>
+        <item name="frostStatusVariant">dot</item>
+        <item name="frostStatusIndicatorSize">@dimen/frost_status_indicator_size</item>
+        <item name="frostStatusStrokeWidth">@dimen/frost_status_stroke_width</item>
+        <item name="frostStatusDotRadius">@dimen/frost_status_dot_radius</item>
+        <item name="frostStatusIdleRingColor">@color/frost_status_idle_ring</item>
+        <item name="frostStatusInProgressDotColor">@color/frost_status_in_progress_dot</item>
+        <item name="frostStatusSuccessColor">@color/frost_status_success</item>
+        <item name="frostStatusFailureColor">@color/frost_status_failure</item>
+        <item name="frostStatusGlyphColor">@color/frost_status_glyph</item>
+        <item name="android:clickable">false</item>
+        <item name="android:focusable">false</item>
+        <item name="android:background">@null</item>
+        <item name="android:padding">0dp</item>
+    </style>
+
+    <style name="FrostNumericStepper">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="frostStepperStepButtonSize">@dimen/frost_stepper_step_button_size</item>
+        <item name="frostStepperStepButtonTextSize">@dimen/frost_stepper_step_button_text_size</item>
+        <item name="frostStepperFieldWidth">@dimen/frost_dialog_numeric_input_field_width</item>
+        <item name="frostStepperFieldMinHeight">@dimen/frost_stepper_field_min_height</item>
+        <item name="frostStepperFieldTextSize">@dimen/frost_stepper_field_text_size</item>
+        <item name="frostStepperDescriptionTextSize">@dimen/frost_stepper_description_text_size</item>
+        <item name="frostStepperHorizontalPadding">@dimen/frost_stepper_horizontal_padding</item>
+    </style>
+</resources>

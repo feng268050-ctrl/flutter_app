@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="offset_wheel_view_holder_tag" type="id" />
+    <item name="offset_wheel_view_data_tag" type="id" />
+    <item name="tv_tip_message" type="id" />
+    <item name="mini_loading_view" type="id" />
+    <item name="frost_dialog_dismiss_notified" type="id" />
+    <item name="frost_dialog_on_dismiss" type="id" />
+    <item name="frost_dialog_dismissing" type="id" />
+    <item name="frost_dialog_dismiss_finished" type="id" />
+    <item name="frost_dialog_dismiss_on_scrim_click" type="id" />
+    <item name="frost_blur_target" type="id" />
+    <item name="frost_reversible_ripple_overlay" type="id" />
+    <item name="laser_button_ripple_overlay" type="id" />
+    <item name="frost_dialog_panel_shell" type="id" />
+    <item name="tag_warn_overlay_resist_code" type="id" />
+</resources>

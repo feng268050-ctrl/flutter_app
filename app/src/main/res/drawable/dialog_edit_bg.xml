@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 第一层：阴影层（实现阴影效果） -->
+    <item
+        android:bottom="0dp"
+        android:left="0dp"
+        android:right="0dp"
+        android:top="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#80ffffff" /> <!-- 阴影颜色（白色带透明度） -->
+            <corners android:radius="@dimen/frost_rectangle_button_corner_radius" />
+        </shape>
+    </item>
+
+    <!-- 第二层：主体背景层（半透明黑色 + 圆角） -->
+    <item
+        android:bottom="0dp"
+        android:left="0dp"
+        android:right="0dp"
+        android:top="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#33000000" /> <!-- 原半透明黑色背景 -->
+            <corners android:radius="@dimen/frost_rectangle_button_corner_radius" />
+        </shape>
+    </item>
+</layer-list>

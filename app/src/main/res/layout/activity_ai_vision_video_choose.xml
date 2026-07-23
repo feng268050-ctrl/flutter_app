@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/engineer_base_background_color"
+        android:orientation="vertical"
+        android:padding="24dp"
+        tools:context=".activitys.device.monitor.AiVisionVideoChooseActivity">
+
+        <Button
+            android:id="@+id/call_back_previous_page"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="2dp"
+            android:background="@android:color/transparent"
+            android:drawableLeft="@drawable/call_back_page_icon"
+            android:drawablePadding="18dp"
+            android:text="@string/ai_vision_choose_video_title"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_size_16" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="58dp"
+            android:background="@drawable/video_process_table_head_bg"
+            android:paddingTop="35dp"
+            android:paddingBottom="32dp">
+
+            <TextView
+                style="@style/process_video_table_head_text"
+                android:layout_width="232dp"
+                android:text="@string/recording_time_text" />
+
+            <TextView
+                style="@style/process_video_table_head_text"
+                android:layout_width="196dp"
+                android:text="@string/work_mode_text" />
+
+            <TextView
+                style="@style/process_video_table_head_text"
+                android:layout_width="229dp"
+                android:text="@string/work_material_text" />
+
+            <TextView
+                style="@style/process_video_table_head_text"
+                android:layout_width="157dp"
+                android:text="@string/duration_text" />
+
+            <TextView
+                style="@style/process_video_table_head_text"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="@string/operations_text" />
+        </LinearLayout>
+
+        <com.scwang.smart.refresh.layout.SmartRefreshLayout
+            android:id="@+id/refresh_video_layout"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <com.scwang.smart.refresh.header.ClassicsHeader
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:srlTextPulling="@string/pull_down_to_refresh_text"
+                app:srlTextRefreshing="@string/refreshing_text"
+                app:srlTextRelease="@string/release_to_refresh_immediately_text" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/video_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <com.scwang.smart.refresh.footer.ClassicsFooter
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:srlTextLoading="@string/loading_text"
+                app:srlTextNothing="@string/no_more_data_available_text"
+                app:srlTextPulling="@string/pull_up_to_load_more_text"
+                app:srlTextRelease="@string/release_immediate_loading_text" />
+        </com.scwang.smart.refresh.layout.SmartRefreshLayout>
+    </LinearLayout>
+</layout>

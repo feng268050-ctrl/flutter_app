@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="frostSwitchStyle" format="reference" />
+    <attr name="frostCheckboxStyle" format="reference" />
+    <attr name="frostSegmentedControlStyle" format="reference" />
+    <attr name="frostCapsuleSliderStyle" format="reference" />
+    <attr name="frostSliderStyle" format="reference" />
+    <attr name="frostVolumeControlStyle" format="reference" />
+    <attr name="frostNumericStepperStyle" format="reference" />
+    <attr name="frostStatusIndicatorStyle" format="reference" />
+
+    <attr name="frostStatusState" format="enum">
+        <enum name="idle" value="0" />
+        <enum name="inProgress" value="1" />
+        <enum name="success" value="2" />
+        <enum name="failure" value="3" />
+    </attr>
+    <attr name="frostStatusVariant" format="enum">
+        <enum name="dot" value="0" />
+        <enum name="icon" value="1" />
+    </attr>
+    <attr name="frostStatusIndicatorSize" format="dimension" />
+    <attr name="frostStatusStrokeWidth" format="dimension" />
+    <attr name="frostStatusDotRadius" format="dimension" />
+    <attr name="frostStatusIdleRingColor" format="color" />
+    <attr name="frostStatusInProgressDotColor" format="color" />
+    <attr name="frostStatusSuccessColor" format="color" />
+    <attr name="frostStatusFailureColor" format="color" />
+    <attr name="frostStatusGlyphColor" format="color" />
+    <attr name="frostContentPadding" format="dimension" />
+
+    <attr name="frostSwitchTrackOffColor" format="color" />
+    <attr name="frostSwitchTrackOnColor" format="color" />
+    <attr name="frostSwitchThumbColor" format="color" />
+    <attr name="frostSwitchTrackWidth" format="dimension" />
+    <attr name="frostSwitchTrackHeight" format="dimension" />
+    <attr name="frostSwitchTrackCornerRadius" format="dimension" />
+    <attr name="frostSwitchThumbSize" format="dimension" />
+    <attr name="frostSwitchThumbInsetVertical" format="dimension" />
+    <attr name="frostSwitchAnimationDuration" format="integer" />
+
+    <attr name="frostCheckboxCheckedFillColor" format="color" />
+    <attr name="frostCheckboxUncheckedStrokeColor" format="color" />
+    <attr name="frostCheckboxCheckmarkColor" format="color" />
+    <attr name="frostCheckboxSize" format="dimension" />
+    <attr name="frostCheckboxStrokeWidth" format="dimension" />
+    <attr name="frostCheckboxAnimationDuration" format="integer" />
+    <attr name="frostCheckboxLabelTextColor" format="color" />
+    <attr name="frostCheckboxLabelTextSize" format="dimension" />
+    <attr name="frostCheckboxLabelSpacing" format="dimension" />
+
+    <attr name="frostLongPressDragEnabled" format="boolean" />
+    <attr name="frostReserveThumbOverflow" format="boolean" />
+
+    <attr name="frostScaleMinText" format="string" />
+    <attr name="frostScaleMaxText" format="string" />
+    <attr name="frostScaleZeroText" format="string" />
+    <attr name="frostMinScaleLabelId" format="reference" />
+    <attr name="frostMaxScaleLabelId" format="reference" />
+
+    <declare-styleable name="FrostSwitch">
+        <attr name="android:checked" />
+        <attr name="frostSwitchTrackOffColor" />
+        <attr name="frostSwitchTrackOnColor" />
+        <attr name="frostSwitchThumbColor" />
+        <attr name="frostSwitchTrackWidth" />
+        <attr name="frostSwitchTrackHeight" />
+        <attr name="frostSwitchTrackCornerRadius" />
+        <attr name="frostSwitchThumbSize" />
+        <attr name="frostSwitchThumbInsetVertical" />
+        <attr name="frostSwitchAnimationDuration" />
+    </declare-styleable>
+
+    <declare-styleable name="FrostCheckbox">
+        <attr name="android:checked" />
+        <attr name="frostCheckboxCheckedFillColor" />
+        <attr name="frostCheckboxUncheckedStrokeColor" />
+        <attr name="frostCheckboxCheckmarkColor" />
+        <attr name="frostCheckboxSize" />
+        <attr name="frostCheckboxStrokeWidth" />
+        <attr name="frostCheckboxAnimationDuration" />
+        <attr name="labelText" />
+        <attr name="labelTextColor" />
+        <attr name="labelTextSize" />
+        <attr name="labelSpacing" />
+        <attr name="frostCheckboxLabelTextColor" />
+        <attr name="frostCheckboxLabelTextSize" />
+        <attr name="frostCheckboxLabelSpacing" />
+    </declare-styleable>
+
+    <attr name="frostFlankLabelSpacing" format="dimension" />
+
+    <declare-styleable name="FrostFlankedSlider">
+        <attr name="android:max" />
+        <attr name="android:min" />
+        <attr name="android:progress" />
+        <attr name="frostFlankStartLabelText" format="string" />
+        <attr name="frostFlankEndLabelText" format="string" />
+        <attr name="frostFlankStartLabelId" format="reference" />
+        <attr name="frostFlankEndLabelId" format="reference" />
+        <attr name="frostFlankLabelSpacing" />
+        <attr name="frostLongPressDragEnabled" />
+    </declare-styleable>
+
+    <declare-styleable name="FrostVolumeControl">
+        <attr name="android:max" />
+        <attr name="android:min" />
+        <attr name="android:progress" />
+        <attr name="frostContentPadding" />
+        <attr name="frostReserveThumbOverflow" />
+    </declare-styleable>
+
+    <declare-styleable name="FrostSlider">
+        <attr name="android:max" />
+        <attr name="android:min" />
+        <attr name="android:progress" />
+        <attr name="frostLongPressDragEnabled" />
+        <attr name="frostReserveThumbOverflow" />
+        <attr name="frostScaleMinText" />
+        <attr name="frostScaleMaxText" />
+        <attr name="frostScaleZeroText" />
+        <attr name="frostMinScaleLabelId" />
+        <attr name="frostMaxScaleLabelId" />
+    </declare-styleable>
+
+    <declare-styleable name="FrostSegmentedControl">
+        <attr name="frostClickSoundEnabled" format="boolean" />
+        <attr name="frostCapsuleFillColor" format="color" />
+        <attr name="frostCapsuleBorderColor" format="color" />
+        <attr name="frostCapsuleCornerRadius" format="dimension" />
+        <attr name="frostCapsuleInset" format="dimension" />
+        <attr name="frostSegmentSelectedFillColor" format="color" />
+        <attr name="frostSegmentUnselectedFillColor" format="color" />
+        <attr name="frostSegmentSelectedTextColor" format="color" />
+        <attr name="frostSegmentUnselectedTextColor" format="color" />
+        <attr name="frostSegmentTextSize" format="dimension" />
+        <attr name="frostSegmentCrossfadeDuration" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="FrostCapsuleSlider">
+        <attr name="android:max" />
+        <attr name="android:min" />
+        <attr name="android:progress" />
+        <attr name="frostCapsuleTrailingIcon" format="reference" />
+        <attr name="frostCapsuleValueSuffix" format="string" />
+        <attr name="frostCapsuleSliderTrackInactiveColor" format="color" />
+        <attr name="frostCapsuleSliderTrackActiveColor" format="color" />
+        <attr name="frostCapsuleSliderOverlayLightColor" format="color" />
+        <attr name="frostCapsuleSliderOverlayDarkColor" format="color" />
+        <attr name="frostCapsuleSliderHeight" format="dimension" />
+        <attr name="frostCapsuleSliderCornerRadius" format="dimension" />
+        <attr name="frostCapsuleSliderValueTextSize" format="dimension" />
+        <attr name="frostCapsuleSliderTrailingIconSize" format="dimension" />
+        <attr name="frostCapsuleInset" />
+        <attr name="frostCapsuleFillColor" />
+        <attr name="frostCapsuleBorderColor" />
+        <attr name="frostCapsuleCornerRadius" />
+    </declare-styleable>
+
+    <attr name="frostStepperDescriptionTextColor" format="color" />
+    <attr name="frostStepperDescriptionTextSize" format="dimension" />
+    <attr name="frostStepperStepButtonSize" format="dimension" />
+    <attr name="frostStepperStepButtonTextSize" format="dimension" />
+    <attr name="frostStepperStepButtonTextColor" format="color" />
+    <attr name="frostStepperFieldWidth" format="dimension" />
+    <attr name="frostStepperFieldMinHeight" format="dimension" />
+    <attr name="frostStepperFieldTextSize" format="dimension" />
+    <attr name="frostStepperHorizontalPadding" format="dimension" />
+
+    <declare-styleable name="FrostStatusIndicator">
+        <attr name="frostStatusState" />
+        <attr name="frostStatusVariant" />
+        <attr name="frostStatusIndicatorSize" />
+        <attr name="frostStatusStrokeWidth" />
+        <attr name="frostStatusDotRadius" />
+        <attr name="frostStatusIdleRingColor" />
+        <attr name="frostStatusInProgressDotColor" />
+        <attr name="frostStatusSuccessColor" />
+        <attr name="frostStatusFailureColor" />
+        <attr name="frostStatusGlyphColor" />
+    </declare-styleable>
+
+    <declare-styleable name="FrostNumericStepper">
+        <attr name="frostStepperDescriptionTextColor" />
+        <attr name="frostStepperDescriptionTextSize" />
+        <attr name="frostStepperStepButtonSize" />
+        <attr name="frostStepperStepButtonTextSize" />
+        <attr name="frostStepperStepButtonTextColor" />
+        <attr name="frostStepperFieldWidth" />
+        <attr name="frostStepperFieldMinHeight" />
+        <attr name="frostStepperFieldTextSize" />
+        <attr name="frostStepperHorizontalPadding" />
+    </declare-styleable>
+</resources>

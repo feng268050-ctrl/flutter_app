@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- FrostUI design tokens (canonical `frost_*` names). -->
+
+    <color name="frost_light_fill_top">#40FFFFFF</color>
+    <color name="frost_light_fill_mid">#33FFFCFA</color>
+    <color name="frost_light_fill_bottom">#2EFFF8F6</color>
+    <color name="frost_light_border_highlight">#D9FFFFFF</color>
+    <color name="frost_light_border_mid">#80E0E0E0</color>
+    <color name="frost_light_border_shadow">#40000000</color>
+    <color name="frost_light_shell_frost_edge">#28FFFFFF</color>
+    <color name="frost_light_shell_frost_center">#1FFFFFFF</color>
+
+    <color name="frost_blur_tint_warm">#52FFFFFF</color>
+
+    <color name="frost_dialog_scrim">#99000000</color>
+    <color name="frost_dialog_panel_surface">#73121214</color>
+    <color name="frost_dialog_panel_stroke">#55FFFFFF</color>
+    <color name="frost_fill_top">#73121214</color>
+    <color name="frost_fill_mid">#7018181A</color>
+    <color name="frost_fill_bottom">#6E1C1C1E</color>
+    <color name="frost_fill_solid_top">#FF121214</color>
+    <color name="frost_fill_solid_mid">#FF18181A</color>
+    <color name="frost_fill_solid_bottom">#FF1C1C1E</color>
+    <color name="frost_border_highlight">#77FFFFFF</color>
+    <color name="frost_border_mid">#8868686C</color>
+    <color name="frost_border_shadow">#66000000</color>
+    <color name="frost_blur_tint">#30101012</color>
+    <color name="frost_text_primary">#FFFFFFFF</color>
+    <color name="frost_text_secondary">#B8B8BC</color>
+
+    <color name="frost_button_primary_fill">@color/reminder_confirm_button</color>
+    <color name="frost_button_primary_stroke">#FFFF8A4D</color>
+    <color name="frost_button_primary_fill_top">@color/reminder_confirm_button</color>
+    <color name="frost_button_primary_fill_mid">@color/reminder_confirm_button</color>
+    <color name="frost_button_primary_fill_bottom">@color/reminder_confirm_button</color>
+    <color name="frost_button_primary_border_highlight">#E6FFFFF5</color>
+    <color name="frost_button_primary_border_mid">#CCFFC078</color>
+    <color name="frost_button_primary_border_shadow">#99E07040</color>
+    <color name="frost_button_secondary_fill_top">#73121214</color>
+    <color name="frost_button_secondary_fill_mid">#7018181A</color>
+    <color name="frost_button_secondary_fill_bottom">#6E1C1C1E</color>
+    <color name="frost_button_secondary_stroke">#8868686C</color>
+    <color name="frost_button_secondary_border_highlight">#77FFFFFF</color>
+    <color name="frost_button_secondary_border_mid">#8868686C</color>
+    <color name="frost_button_secondary_border_shadow">#66000000</color>
+    <color name="frost_button_secondary_text">#FFFF5A52</color>
+    <color name="frost_button_light_fill_top">@color/frost_light_fill_top</color>
+    <color name="frost_button_light_fill_mid">@color/frost_light_fill_mid</color>
+    <color name="frost_button_light_fill_bottom">@color/frost_light_fill_bottom</color>
+    <color name="frost_button_light_border_highlight">@color/frost_light_border_highlight</color>
+    <color name="frost_button_light_border_mid">@color/frost_light_border_mid</color>
+    <color name="frost_button_light_border_shadow">#80686870</color>
+    <color name="frost_divider_center">#9968686C</color>
+    <color name="frost_divider_edge">#00000000</color>
+</resources>

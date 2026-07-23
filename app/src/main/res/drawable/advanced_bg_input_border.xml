@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- 容器背景色（匹配图片的深色） -->
+    <solid android:color="#060720"/>
+    <!-- 边框：白色、1dp宽度 -->
+    <stroke android:width="1dp" android:color="@color/advanced_text_border"/>
+    <!-- 圆角（匹配图片的轻微圆角） -->
+    <corners android:radius="4dp"/>
+</shape>

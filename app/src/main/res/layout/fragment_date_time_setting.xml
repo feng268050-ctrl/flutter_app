@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+            name="dateTimeSetting"
+            type="com.lasercyber.lws.ui.bean.entity.DateTimeSetting" />
+    </data>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".activitys.setting.fragment.DateTimeSettingFragment">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="24dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:background="@mipmap/settings_box1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/date_time_auto_date_time"
+                    android:textColor="@android:color/white"
+                    android:textSize="35sp" />
+
+                <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                    android:id="@+id/auto_date_time_switch"
+                    style="@style/FrostSwitch"
+                    android:checked="@{dateTimeSetting.automaticDateTime}" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:layout_marginTop="24dp"
+                android:background="@mipmap/settings_box2"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/date_time_auto_time_zone"
+                    android:textColor="@android:color/white"
+                    android:textSize="35sp" />
+
+                <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                    android:id="@+id/auto_time_zone_switch"
+                    style="@style/FrostSwitch"
+                    android:checked="@{dateTimeSetting.automaticTimeZone}" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/date_row"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:layout_marginTop="24dp"
+                android:background="@mipmap/settings_box2"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/date_time_set_date"
+                    android:textColor="@android:color/white"
+                    android:textSize="35sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:text="@{dateTimeSetting.dateValue}"
+                    android:textColor="@color/tab_text_unselected"
+                    android:textSize="35sp" />
+
+                <TextView
+                    android:id="@+id/date_arrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:text=">"
+                    android:textColor="@color/white"
+                    android:textSize="35sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/time_row"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:layout_marginTop="24dp"
+                android:background="@mipmap/settings_box2"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/date_time_set_time"
+                    android:textColor="@android:color/white"
+                    android:textSize="35sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:text="@{dateTimeSetting.timeValue}"
+                    android:textColor="@color/tab_text_unselected"
+                    android:textSize="35sp" />
+
+                <TextView
+                    android:id="@+id/time_arrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:text=">"
+                    android:textColor="@color/white"
+                    android:textSize="35sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/time_zone_row"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:layout_marginTop="24dp"
+                android:background="@mipmap/settings_box2"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/date_time_set_time_zone"
+                    android:textColor="@android:color/white"
+                    android:textSize="35sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:text="@{dateTimeSetting.timeZoneValue}"
+                    android:textColor="@color/tab_text_unselected"
+                    android:textSize="35sp" />
+
+                <TextView
+                    android:id="@+id/time_zone_arrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:text=">"
+                    android:textColor="@color/white"
+                    android:textSize="35sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/auto_sync_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@{dateTimeSetting.autoSyncStatus}"
+                android:textColor="@color/tab_text_unselected"
+                android:textSize="29sp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+</layout>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+<data>
+    <variable
+        name="modeType"
+        type="java.lang.Integer" />
+    <variable
+        name="activeIndex"
+        type="java.lang.Integer" />
+    <variable
+        name="progressValue"
+        type="java.lang.Integer" />
+    <import type="com.lasercyber.lws.ui.common.constant.ModelConstant" />
+    <variable
+        name="gearPick"
+        type="com.lasercyber.lws.ui.activitys.quick.mode.component.GearPick" />
+</data>
+    <RelativeLayout
+        android:layout_width="520dp"
+        android:layout_height="wrap_content"
+        android:paddingBottom="40dp"
+
+        >
+        <com.lasercyber.lws.ui.component.CircularSeekBar
+            android:id="@+id/gear_circular_seek"
+            style="@style/quick_mode_circular_seek_bar"
+            app:circle_color="@{(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:modeType==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"
+            app:circle_progress_color="@{(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:modeType==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"
+            app:end_angle="235"
+            app:pointer_halo_color="@{(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:modeType==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"
+            app:start_angle="125"
+            app:progress="@{progressValue}"
+            app:circle_padding_left="10dp"
+            android:rotation="3"
+            />
+        <TextView
+            android:layout_below="@id/gear_circular_seek"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#ffffffff"
+            android:textSize="@dimen/text_size_10"
+            android:text="@string/gear_text"
+            android:layout_marginStart="110dp"
+            android:layout_marginTop="-20dp"/>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="500dp"
+            android:paddingTop="60dp"
+            android:paddingLeft="50dp"
+            android:orientation="vertical">
+            <LinearLayout
+                style="@style/quick_mode_pick_select_options_row"
+                android:paddingLeft="90dp"
+                android:onClick="@{()->gearPick.select(5)}">
+                <TextView
+                    style="@style/quick_mode_pick_select_options"
+                    android:id="@+id/pick_select_5"
+                    android:text="@{gearPick.getSelectedText(5)}"
+                    android:alpha="@{activeIndex!=5?0.5f:1f}"/>
+            </LinearLayout>
+            <LinearLayout
+                style="@style/quick_mode_pick_select_options_row"
+                android:paddingLeft="30dp"
+                android:onClick="@{()->gearPick.select(4)}">
+                <TextView
+                    style="@style/quick_mode_pick_select_options"
+                    android:id="@+id/pick_select_4"
+                    android:text="@{gearPick.getSelectedText(4)}"
+                    android:alpha="@{activeIndex!=4?0.5f:1f}"
+                    />
+            </LinearLayout>
+            <LinearLayout
+                style="@style/quick_mode_pick_select_options_row"
+                android:onClick="@{()->gearPick.select(3)}">
+                <TextView
+                    style="@style/quick_mode_pick_select_options"
+                    android:id="@+id/pick_select_3"
+                    android:text="@{gearPick.getSelectedText(3)}"
+                    android:alpha="@{activeIndex!=3?0.5f:1f}"/>
+            </LinearLayout>
+            <LinearLayout
+                style="@style/quick_mode_pick_select_options_row"
+                android:paddingLeft="30dp"
+                android:onClick="@{()->gearPick.select(2)}">
+                <TextView
+                    style="@style/quick_mode_pick_select_options"
+                    android:id="@+id/pick_select_2"
+                    android:text="@{gearPick.getSelectedText(2)}"
+                    android:alpha="@{activeIndex!=2?0.5f:1f}"/>
+            </LinearLayout>
+            <LinearLayout
+                style="@style/quick_mode_pick_select_options_row"
+                android:paddingLeft="90dp"
+                android:onClick="@{()->gearPick.select(1)}">
+                <TextView
+                    style="@style/quick_mode_pick_select_options"
+                    android:id="@+id/pick_select_1"
+                    android:text="@{gearPick.getSelectedText(1)}"
+                    android:alpha="@{activeIndex!=1?0.5f:1f}"/>
+            </LinearLayout>
+        </LinearLayout>
+    </RelativeLayout>
+</layout>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+
+        <variable
+            name="activeType"
+            type="java.lang.Integer" />
+
+        <import type="android.view.View" />
+
+        <import type="com.lasercyber.lws.ui.common.constant.ModelConstant" />
+
+        <variable
+            name="engineerTab"
+            type="com.lasercyber.lws.ui.activitys.engineer.mode.component.EngineerTab" />
+    </data>
+
+    <!-- Fixed height: avoid wrap_content + weight spacers expanding to fill the screen. -->
+    <LinearLayout
+        android:id="@+id/engineer_container"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/engineer_tab_bar_height"
+        android:background="@mipmap/continuous_welding_tab_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            style="@style/engineer_tab_item_row_style"
+            android:layout_width="306dp"
+            android:layout_height="match_parent"
+            android:onClick="@{()->engineerTab.switchTab(ModelConstant.CONTINUOUS_WELDING,0)}">
+
+            <LinearLayout style="@style/engineer_tab_text_row_style">
+                <ImageView
+                    style="@style/engineer_tab_icon_style"
+                    android:src="@mipmap/continuous_welding_on"
+                    android:visibility="@{activeType==ModelConstant.CONTINUOUS_WELDING ? View.VISIBLE : View.GONE}" />
+                <ImageView
+                    style="@style/engineer_tab_icon_style"
+                    android:src="@mipmap/continuous_welding_off"
+                    android:visibility="@{activeType!=ModelConstant.CONTINUOUS_WELDING ? View.VISIBLE : View.GONE}" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="@string/continuous_welding_text"
+                    android:textColor="@{activeType==ModelConstant.CONTINUOUS_WELDING?@color/engineer_weld_tab_active:@color/engineer_tab_no_active_text}"
+                    android:textSize="@dimen/text_size_12" />
+            </LinearLayout>
+
+            <View
+                style="@style/engineer_tab_item_line"
+                android:background="@color/engineer_weld_tab_active"
+                android:visibility="@{activeType==ModelConstant.CONTINUOUS_WELDING?View.VISIBLE:View.INVISIBLE}" />
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/engineer_tab_item_row_style"
+            android:layout_width="226dp"
+            android:layout_height="match_parent"
+            android:onClick="@{()->engineerTab.switchTab(ModelConstant.POINT_WELDING,1)}">
+
+            <LinearLayout style="@style/engineer_tab_text_row_style">
+                <ImageView
+                    style="@style/engineer_tab_icon_style"
+                    android:src="@mipmap/spot_weld_on"
+                    android:visibility="@{activeType==ModelConstant.POINT_WELDING ? View.VISIBLE : View.GONE}" />
+                <ImageView
+                    style="@style/engineer_tab_icon_style"
+                    android:src="@mipmap/spot_weld_off"
+                    android:visibility="@{activeType!=ModelConstant.POINT_WELDING ? View.VISIBLE : View.GONE}" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="@string/point_welding_text"
+                    android:textColor="@{activeType==ModelConstant.POINT_WELDING?@color/engineer_weld_tab_active:@color/engineer_tab_no_active_text}"
+                    android:textSize="@dimen/text_size_12" />
+            </LinearLayout>
+
+            <View
+                style="@style/engineer_tab_item_line"
+                android:background="@color/engineer_weld_tab_active"
+                android:visibility="@{activeType==ModelConstant.POINT_WELDING?View.VISIBLE:View.INVISIBLE}" />
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/engineer_tab_item_row_style"
+            android:layout_width="298dp"
+            android:layout_height="match_parent"
+            android:onClick="@{()->engineerTab.switchTab(ModelConstant.WELD_CLEAN,2)}">
+
+            <LinearLayout style="@style/engineer_tab_text_row_style">
+                <ImageView
+                    style="@style/engineer_tab_icon_style"
+                    android:src="@mipmap/weld_cleaning_on"
+                    android:visibility="@{activeType==ModelConstant.WELD_CLEAN ? View.VISIBLE : View.GONE}" />
+                <ImageView
+                    style="@style/engineer_tab_icon_style"
+                    android:src="@mipmap/weld_cleaning_off"
+                    android:visibility="@{activeType!=ModelConstant.WELD_CLEAN ? View.VISIBLE : View.GONE}" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="@string/weld_cleaning_text"
+                    android:textColor="@{activeType==ModelConstant.WELD_CLEAN?@color/engineer_wash_tab_active:@color/engineer_tab_no_active_text}"
+                    android:textSize="@dimen/text_size_12" />
+            </LinearLayout>
+
+            <View
+                style="@style/engineer_tab_item_line"
+                android:background="@color/engineer_wash_tab_active"
+                android:visibility="@{activeType==ModelConstant.WELD_CLEAN?View.VISIBLE:View.INVISIBLE}" />
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/engineer_tab_item_row_style"
+            android:layout_width="300dp"
+            android:layout_height="match_parent"
+            android:onClick="@{()->engineerTab.switchTab(ModelConstant.WIDTH_CLEAN,3)}">
+
+            <LinearLayout style="@style/engineer_tab_text_row_style">
+                <ImageView
+                    android:src="@mipmap/wide_width_cleaning_on"
+                    style="@style/engineer_tab_icon_style"
+                    android:visibility="@{activeType==ModelConstant.WIDTH_CLEAN ? View.VISIBLE : View.GONE}" />
+                <ImageView
+                    style="@style/engineer_tab_icon_style"
+                    android:src="@mipmap/wide_width_cleaning_off"
+                    android:visibility="@{activeType!=ModelConstant.WIDTH_CLEAN ? View.VISIBLE : View.GONE}" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="@string/width_cleaning_text"
+                    android:textColor="@{activeType==ModelConstant.WIDTH_CLEAN?@color/engineer_wash_tab_active:@color/engineer_tab_no_active_text}"
+                    android:textSize="@dimen/text_size_12" />
+            </LinearLayout>
+
+            <View
+                style="@style/engineer_tab_item_line"
+                android:background="@color/engineer_wash_tab_active"
+                android:visibility="@{activeType==ModelConstant.WIDTH_CLEAN?View.VISIBLE:View.INVISIBLE}" />
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/engineer_tab_item_row_style"
+            android:layout_width="150dp"
+            android:layout_height="match_parent"
+            android:onClick="@{()->engineerTab.switchTab(ModelConstant.HAND_CUT,4)}">
+
+            <LinearLayout style="@style/engineer_tab_text_row_style">
+                <ImageView
+                    style="@style/engineer_tab_icon_style"
+                    android:src="@mipmap/cut_on"
+                    android:visibility="@{activeType==ModelConstant.HAND_CUT ? View.VISIBLE : View.GONE}" />
+                <ImageView
+                    style="@style/engineer_tab_icon_style"
+                    android:src="@mipmap/cut_off"
+                    android:visibility="@{activeType!=ModelConstant.HAND_CUT ? View.VISIBLE : View.GONE}" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="@string/hand_cutting_text"
+                    android:textColor="@{activeType==ModelConstant.HAND_CUT?@color/engineer_cut_tab_active:@color/engineer_tab_no_active_text}"
+                    android:textSize="@dimen/text_size_12" />
+            </LinearLayout>
+
+            <View
+                style="@style/engineer_tab_item_line"
+                android:background="@color/engineer_cut_tab_active"
+                android:visibility="@{activeType==ModelConstant.HAND_CUT?View.VISIBLE:View.INVISIBLE}" />
+        </LinearLayout>
+    </LinearLayout>
+</layout>

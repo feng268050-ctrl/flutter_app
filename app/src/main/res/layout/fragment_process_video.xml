@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+    </data>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".activitys.device.monitor.fragment.ProcessVideoFragment">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="58dp"
+                android:background="@drawable/video_process_table_head_bg"
+                android:paddingTop="35dp"
+                android:paddingBottom="32dp">
+
+                <TextView
+                    style="@style/process_video_table_head_text"
+                    android:layout_width="232dp"
+                    android:text="@string/recording_time_text" />
+
+                <TextView
+                    style="@style/process_video_table_head_text"
+                    android:layout_width="196dp"
+                    android:text="@string/work_mode_text" />
+
+                <TextView
+                    style="@style/process_video_table_head_text"
+                    android:layout_width="229dp"
+                    android:text="@string/work_material_text" />
+
+                <TextView
+                    style="@style/process_video_table_head_text"
+                    android:layout_width="157dp"
+                    android:text="@string/duration_text" />
+
+                <TextView
+                    style="@style/process_video_table_head_text"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:text="@string/operations_text" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <com.scwang.smart.refresh.layout.SmartRefreshLayout
+                    android:id="@+id/refresh_video_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <com.scwang.smart.refresh.header.ClassicsHeader
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:srlTextPulling="@string/pull_down_to_refresh_text"
+                        app:srlTextRefreshing="@string/refreshing_text"
+                        app:srlTextRelease="@string/release_to_refresh_immediately_text"
+                        app:srlTextSizeTime="@dimen/text_size_12"
+                        app:srlTextSizeTitle="@dimen/text_size_12" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/video_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clipToPadding="true"
+                        android:orientation="vertical"
+                        android:overScrollMode="ifContentScrolls"
+                        android:paddingBottom="@dimen/process_video_list_footer_height" />
+                </com.scwang.smart.refresh.layout.SmartRefreshLayout>
+
+                <TextView
+                    android:id="@+id/video_list_footer_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/process_video_list_footer_height"
+                    android:layout_gravity="bottom"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginEnd="58dp"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/text_size_12" />
+            </FrameLayout>
+        </LinearLayout>
+    </FrameLayout>
+</layout>

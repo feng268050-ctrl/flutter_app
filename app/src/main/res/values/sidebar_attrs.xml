@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SideBar">
+        <!--        侧边栏的大标题-->
+        <attr name="side_bar_master_title" format="reference" />
+        <!--        是否使用返回到首页-->
+        <attr name="use_call_back_home" format="boolean" />
+    </declare-styleable>
+</resources>

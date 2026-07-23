@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ArcSlider">
+        <!-- 导轨参数 -->
+        <attr name="arcStartAngle" format="float" /> <!-- 圆弧起始角度 -->
+        <attr name="arcSweepAngle" format="float" /> <!-- 圆弧总角度（长度） -->
+        <attr name="railNormalColor" format="color" /> <!-- 未选中导轨颜色 -->
+        <attr name="railSelectedColor" format="color" /> <!-- 已选中导轨颜色 -->
+        <attr name="railNormalWidth" format="dimension" /> <!-- 未选中导轨粗细 -->
+        <attr name="railSelectedWidth" format="dimension" /> <!-- 已选中导轨粗细 -->
+        <!-- 滑块参数 -->
+        <attr name="thumbRadius" format="dimension" /> <!-- 滑块半径 -->
+        <attr name="thumbColor" format="color" /> <!-- 滑块颜色 -->
+        <!-- 刻度参数 -->
+        <attr name="tickCount" format="integer" /> <!-- 刻度数量 -->
+        <attr name="tickLength" format="dimension" /> <!-- 刻度长度 -->
+        <attr name="tickColor" format="color" /> <!-- 刻度颜色 -->
+    </declare-styleable>
+</resources>

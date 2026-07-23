@@ -1,0 +1,1046 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 33,
+    "identityHash": "bff3b2c81a8462c07bc81c578c8db97a",
+    "entities": [
+      {
+        "tableName": "t_device_test",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `ctrBoardNo` INTEGER, `ctrPortNo` INTEGER, `devType` INTEGER, `devName` TEXT, `spdEn` INTEGER, `pwrChkEn` INTEGER, `pwrLimit` INTEGER, `runModelType` INTEGER, `portEnable` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ctrBoardNo",
+            "columnName": "ctrBoardNo",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ctrPortNo",
+            "columnName": "ctrPortNo",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "devType",
+            "columnName": "devType",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "devName",
+            "columnName": "devName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "spdEn",
+            "columnName": "spdEn",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pwrChkEn",
+            "columnName": "pwrChkEn",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pwrLimit",
+            "columnName": "pwrLimit",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "runModelType",
+            "columnName": "runModelType",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "portEnable",
+            "columnName": "portEnable",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "t_engineer_welding",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `weldingMaterials` INTEGER, `weldingThickness` REAL, `pointWeldingInterval` INTEGER, `pointWeldingDuration` INTEGER, `weldingPower` INTEGER, `swingFrequency` INTEGER, `weldingWidth` INTEGER, `closeLightDelay` INTEGER, `blowDelay` INTEGER, `closeAirDelay` INTEGER, `powerRampUp` INTEGER, `powerRampDown` INTEGER, `wireFeedSpeed` INTEGER, `retractLength` INTEGER, `retractSpeed` INTEGER, `fillLength` INTEGER, `fillDelay` INTEGER, `type` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weldingMaterials",
+            "columnName": "weldingMaterials",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weldingThickness",
+            "columnName": "weldingThickness",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pointWeldingInterval",
+            "columnName": "pointWeldingInterval",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pointWeldingDuration",
+            "columnName": "pointWeldingDuration",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weldingPower",
+            "columnName": "weldingPower",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "swingFrequency",
+            "columnName": "swingFrequency",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weldingWidth",
+            "columnName": "weldingWidth",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "closeLightDelay",
+            "columnName": "closeLightDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "blowDelay",
+            "columnName": "blowDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "closeAirDelay",
+            "columnName": "closeAirDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "powerRampUp",
+            "columnName": "powerRampUp",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "powerRampDown",
+            "columnName": "powerRampDown",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "wireFeedSpeed",
+            "columnName": "wireFeedSpeed",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "retractLength",
+            "columnName": "retractLength",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "retractSpeed",
+            "columnName": "retractSpeed",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "fillLength",
+            "columnName": "fillLength",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "fillDelay",
+            "columnName": "fillDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "t_engineer_wash",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `cleaningMaterials` INTEGER, `swingWidth` INTEGER, `laserPower` INTEGER, `swingFrequency` INTEGER, `blowDelay` INTEGER, `closeAirDelay` INTEGER, `slowRiseDuration` INTEGER, `slowDescentDuration` INTEGER, `type` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cleaningMaterials",
+            "columnName": "cleaningMaterials",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "swingWidth",
+            "columnName": "swingWidth",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laserPower",
+            "columnName": "laserPower",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "swingFrequency",
+            "columnName": "swingFrequency",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "blowDelay",
+            "columnName": "blowDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "closeAirDelay",
+            "columnName": "closeAirDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "slowRiseDuration",
+            "columnName": "slowRiseDuration",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "slowDescentDuration",
+            "columnName": "slowDescentDuration",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "t_engineer_cutting",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `cuttingMaterials` INTEGER, `cuttingThickness` INTEGER, `laserPower` INTEGER, `laserFrequency` INTEGER, `laserDutyCycle` INTEGER, `blowDelay` INTEGER, `closeAirDelay` INTEGER, `slowRiseDuration` INTEGER, `slowDescentDuration` INTEGER, `perforationFrequency` INTEGER, `perforationDuration` REAL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cuttingMaterials",
+            "columnName": "cuttingMaterials",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cuttingThickness",
+            "columnName": "cuttingThickness",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laserPower",
+            "columnName": "laserPower",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laserFrequency",
+            "columnName": "laserFrequency",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laserDutyCycle",
+            "columnName": "laserDutyCycle",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "blowDelay",
+            "columnName": "blowDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "closeAirDelay",
+            "columnName": "closeAirDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "slowRiseDuration",
+            "columnName": "slowRiseDuration",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "slowDescentDuration",
+            "columnName": "slowDescentDuration",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "perforationFrequency",
+            "columnName": "perforationFrequency",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "perforationDuration",
+            "columnName": "perforationDuration",
+            "affinity": "REAL",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "t_advanced_setting",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `languageSetting` TEXT, `unitSetting` INTEGER, `zeroPointCorrection` REAL, `properSwingWidth` REAL, `laserStartPower` REAL, `laserEndPower` REAL, `blowPressureThreshold` REAL, `redLightOffset` INTEGER, `swingSpeedUpperLimit` INTEGER, `swingSpeedLowerLimit` INTEGER, `manualWireFeedSpeed` INTEGER, `manualDrawStringSpeed` INTEGER, `voiceCheck` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "languageSetting",
+            "columnName": "languageSetting",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "unitSetting",
+            "columnName": "unitSetting",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "zeroPointCorrection",
+            "columnName": "zeroPointCorrection",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "properSwingWidth",
+            "columnName": "properSwingWidth",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laserStartPower",
+            "columnName": "laserStartPower",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laserEndPower",
+            "columnName": "laserEndPower",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "blowPressureThreshold",
+            "columnName": "blowPressureThreshold",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "redLightOffset",
+            "columnName": "redLightOffset",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "swingSpeedUpperLimit",
+            "columnName": "swingSpeedUpperLimit",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "swingSpeedLowerLimit",
+            "columnName": "swingSpeedLowerLimit",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "manualWireFeedSpeed",
+            "columnName": "manualWireFeedSpeed",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "manualDrawStringSpeed",
+            "columnName": "manualDrawStringSpeed",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "voiceCheck",
+            "columnName": "voiceCheck",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "t_device_info",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `model` TEXT, `serialNumber` TEXT, `firmwareVersion` TEXT, `gunSn` TEXT, `mainControlSn` TEXT, `laserVersion` TEXT, `laserHardwareVersion` TEXT, `processLibVersion` TEXT, `wireFeederVersion` TEXT, `wireFeederHardwareVersion` TEXT, `gunHeadHardwareVersion` TEXT, `gunHeadSoftwareVersion` TEXT, `AIVersion` TEXT, `deviceSn` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "model",
+            "columnName": "model",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "serialNumber",
+            "columnName": "serialNumber",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "firmwareVersion",
+            "columnName": "firmwareVersion",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "gunSn",
+            "columnName": "gunSn",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mainControlSn",
+            "columnName": "mainControlSn",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laserVersion",
+            "columnName": "laserVersion",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laserHardwareVersion",
+            "columnName": "laserHardwareVersion",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "processLibVersion",
+            "columnName": "processLibVersion",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "wireFeederVersion",
+            "columnName": "wireFeederVersion",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "wireFeederHardwareVersion",
+            "columnName": "wireFeederHardwareVersion",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "gunHeadHardwareVersion",
+            "columnName": "gunHeadHardwareVersion",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "gunHeadSoftwareVersion",
+            "columnName": "gunHeadSoftwareVersion",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "AIVersion",
+            "columnName": "AIVersion",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "deviceSn",
+            "columnName": "deviceSn",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "static_data",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER, `weldingTimeLength` INTEGER, `cuttingTimeLength` INTEGER, `washTimeLength` INTEGER, `jobTimeLength` INTEGER, `consumableTimeLength` INTEGER, `topStartTime` INTEGER, `topDay` TEXT, `currStartTime` INTEGER, `currDay` TEXT, `commonUse` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weldingTimeLength",
+            "columnName": "weldingTimeLength",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cuttingTimeLength",
+            "columnName": "cuttingTimeLength",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "washTimeLength",
+            "columnName": "washTimeLength",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "jobTimeLength",
+            "columnName": "jobTimeLength",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "consumableTimeLength",
+            "columnName": "consumableTimeLength",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "topStartTime",
+            "columnName": "topStartTime",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "topDay",
+            "columnName": "topDay",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "currStartTime",
+            "columnName": "currStartTime",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "currDay",
+            "columnName": "currDay",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "commonUse",
+            "columnName": "commonUse",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "common_use_consumable",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`commonUse` INTEGER, `useNumber` INTEGER, PRIMARY KEY(`commonUse`))",
+        "fields": [
+          {
+            "fieldPath": "commonUse",
+            "columnName": "commonUse",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "useNumber",
+            "columnName": "useNumber",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "commonUse"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "warn_table",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `ymdDate` TEXT, `hmDate` TEXT, `code` TEXT, `content` TEXT, `time` INTEGER, `newTiem` INTEGER, `level` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ymdDate",
+            "columnName": "ymdDate",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "hmDate",
+            "columnName": "hmDate",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "time",
+            "columnName": "time",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "newTiem",
+            "columnName": "newTiem",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "level",
+            "columnName": "level",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "t_process_parameters_data",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `paramsName` TEXT, `materials` INTEGER, `materialsName` TEXT, `thickness` REAL, `laserPower` INTEGER, `perforationPower` INTEGER, `swingFrequency` INTEGER, `laserFrequency` INTEGER, `perforationFrequency` INTEGER, `swingWidth` REAL, `blowDelay` INTEGER, `closeAirDelay` INTEGER, `closeLightDelay` INTEGER, `fillDelay` INTEGER, `wireFeedingDelay` INTEGER, `perforationDuration` REAL, `pointWeldingInterval` INTEGER, `pointWeldingDuration` INTEGER, `powerRampUp` INTEGER, `powerRampDown` INTEGER, `wireFeedSpeed` REAL, `retractLength` REAL, `retractSpeed` REAL, `fillLength` REAL, `laserDutyCycle` INTEGER, `perforationDutyCycle` INTEGER, `processType` INTEGER, `dataType` INTEGER, `originId` INTEGER, `gear` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "paramsName",
+            "columnName": "paramsName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "materials",
+            "columnName": "materials",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "materialsName",
+            "columnName": "materialsName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "thickness",
+            "columnName": "thickness",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laserPower",
+            "columnName": "laserPower",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "perforationPower",
+            "columnName": "perforationPower",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "swingFrequency",
+            "columnName": "swingFrequency",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laserFrequency",
+            "columnName": "laserFrequency",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "perforationFrequency",
+            "columnName": "perforationFrequency",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "swingWidth",
+            "columnName": "swingWidth",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "blowDelay",
+            "columnName": "blowDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "closeAirDelay",
+            "columnName": "closeAirDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "closeLightDelay",
+            "columnName": "closeLightDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "fillDelay",
+            "columnName": "fillDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "wireFeedingDelay",
+            "columnName": "wireFeedingDelay",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "perforationDuration",
+            "columnName": "perforationDuration",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pointWeldingInterval",
+            "columnName": "pointWeldingInterval",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pointWeldingDuration",
+            "columnName": "pointWeldingDuration",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "powerRampUp",
+            "columnName": "powerRampUp",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "powerRampDown",
+            "columnName": "powerRampDown",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "wireFeedSpeed",
+            "columnName": "wireFeedSpeed",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "retractLength",
+            "columnName": "retractLength",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "retractSpeed",
+            "columnName": "retractSpeed",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "fillLength",
+            "columnName": "fillLength",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laserDutyCycle",
+            "columnName": "laserDutyCycle",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "perforationDutyCycle",
+            "columnName": "perforationDutyCycle",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "processType",
+            "columnName": "processType",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dataType",
+            "columnName": "dataType",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "originId",
+            "columnName": "originId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "gear",
+            "columnName": "gear",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "custom_layout",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `laoutIndex` INTEGER, `type` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "laoutIndex",
+            "columnName": "laoutIndex",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "t_params_process_video",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `videoPath` TEXT, `processData` TEXT, `processType` INTEGER, `materials` INTEGER, `fileSize` INTEGER NOT NULL, `duration` INTEGER NOT NULL, `createTime` INTEGER, `status` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "videoPath",
+            "columnName": "videoPath",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "processData",
+            "columnName": "processData",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "processType",
+            "columnName": "processType",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "materials",
+            "columnName": "materials",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "fileSize",
+            "columnName": "fileSize",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "duration",
+            "columnName": "duration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createTime",
+            "columnName": "createTime",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bff3b2c81a8462c07bc81c578c8db97a')"
+    ]
+  }
+}

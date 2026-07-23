@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 这里的 width/height 要和 CheckBox 的宽高一致（28dp） -->
+    <item
+        android:width="36dp"
+        android:height="36dp"
+        android:gravity="center"
+        android:drawable="@drawable/checkbox_selector_show" /> <!-- 引用你的原 selector -->
+</layer-list>

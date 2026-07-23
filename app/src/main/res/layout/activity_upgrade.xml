@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:id="@+id/activity_upgrade_main"
+        android:layout_width="1280dp"
+        android:layout_height="800dp"
+        android:orientation="vertical"
+        android:background="@color/safety_black"
+        tools:context=".activitys.other.UpgradeActivity">
+
+        <!--&lt;!&ndash;状态栏&ndash;&gt;-->
+        <com.lasercyber.lws.ui.component.EquipmentStatusBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/engineer_equipment_status"
+            app:use_title="true" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:orientation="horizontal"
+            android:background="@mipmap/job_border1">
+
+            <LinearLayout
+                android:id="@+id/go_to_up_page"
+                android:layout_width="200dp"
+                android:layout_height="72dp">
+
+                <TextView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:textSize="24dp"
+                    android:background="@mipmap/top_page_icon"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginLeft="30sp"
+                    android:textColor="@color/white"
+                    android:gravity="center" />
+            </LinearLayout>
+
+            <TextView android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="-200dp"
+                android:text="Update"
+                android:textSize="37sp"
+                android:textColor="@color/white"
+                android:gravity="center" />
+        </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="604dp"
+        android:layout_margin="24dp"
+        android:padding="24dp"
+        android:orientation="vertical"
+        android:background="@mipmap/device_box_div">
+        <!-- 标题：New version upgrade v1.2 -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:orientation="vertical"
+            android:layout_height="400dp">
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="New version upgrade"
+            android:textColor="#FFFFFF"
+            android:textSize="37sp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <!-- 更新内容1 -->
+            <com.lasercyber.lws.ui.component.AppScrollView
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                style="@style/app_vertical_scroll_view_style"
+                android:layout_width="match_parent"
+                android:layout_height="400dp"
+                >
+                <TextView
+                    android:id="@+id/tv_update1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="1.Placeholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder text
+        \n\n2.Placeholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder text
+        \n\n2.Placeholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder textPlaceholder text"
+                    android:textColor="#FFFFFF"
+                    android:textSize="29sp"
+                    android:layout_marginTop="20dp"
+                    app:layout_constraintTop_toBottomOf="@id/tv_title"/>
+            </com.lasercyber.lws.ui.component.AppScrollView>
+
+        </LinearLayout>
+
+            <!-- Later按钮 -->
+            <LinearLayout
+                android:id="@+id/linear_upgrade_bt"
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_later"
+                    android:layout_width="640dp"
+                    android:layout_height="58dp"
+                    android:text="Later"
+                    android:textColor="#FF7D29"
+                    android:textSize="29sp"
+                    android:visibility="gone"
+                    android:background="@drawable/upgrade_btn_later_bg"
+                    app:layout_constraintRight_toLeftOf="@id/btn_update_now"/>
+
+                <!-- Update Now按钮 -->
+                <Button
+                    android:id="@+id/btn_update_now"
+                    android:layout_width="640dp"
+                    android:layout_height="58dp"
+                    android:text="Update Now"
+                    android:textColor="#FFFFFF"
+                    android:textSize="29sp"
+                    android:layout_marginLeft="40dp"
+                    android:background="@drawable/upgrade_btn_update_now_bg"
+                    app:layout_constraintRight_toRightOf="parent"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/linear_upgrade_schedule"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:src="@mipmap/updating_upgrade"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"/>
+
+                <SeekBar
+                    android:id="@+id/updating_start_power"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginLeft="50dp"
+                    android:layout_marginRight="50dp"
+                    android:minHeight="10dp"
+                    android:maxHeight="10dp"
+                    android:max="100"
+                    android:min="0"
+                    android:progress="0"
+                    android:progressDrawable="@drawable/scaled_seekbar_progress"
+                    android:thumbTint="@android:color/holo_orange_dark"
+                    android:progressTint="@android:color/holo_orange_dark"
+                    android:enabled="false"
+                    android:progressBackgroundTint="#38394D"/>
+
+                <TextView
+                    android:id="@+id/tv_upgrade_status"
+                    android:textColor="@color/white"
+                    android:textSize="29sp"
+                    android:text="@string/ota_upgrade_status_downloading"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+    
+</layout>

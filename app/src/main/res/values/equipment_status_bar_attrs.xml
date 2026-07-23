@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="EquipmentStatusBarAttrs">
+        <!--        显示状态-->
+        <attr name="use_status" format="boolean" />
+        <!--        使用标题-->
+        <attr name="use_title" format="boolean" />
+        <!--        标题-->
+        <attr name="bar_title" format="reference" />
+        <!--连接状态-->
+        <attr name="use_connect" format="boolean" />
+        <!--是否显示返回首页按钮区域-->
+        <attr name="use_callback" format="boolean" />
+        <!--        背景颜色-->
+        <attr name="bar_background_color" format="color"/>
+<!--        模式类型-->
+        <attr name="model_type" format="integer"/>
+        <!-- 返回首页是否可点击（CNC 连接中应为 false） -->
+        <attr name="call_back_home_enabled" format="boolean"/>
+    </declare-styleable>
+
+</resources>

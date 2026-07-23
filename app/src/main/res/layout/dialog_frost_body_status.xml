@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp">
+
+    <ImageView
+        android:id="@+id/frost_dialog_status_icon"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginBottom="20dp"
+        android:contentDescription="@null" />
+
+    <SeekBar
+        android:id="@+id/frost_dialog_status_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:enabled="false"
+        android:max="100"
+        android:maxHeight="10dp"
+        android:min="0"
+        android:minHeight="10dp"
+        android:progress="0"
+        android:progressBackgroundTint="#38394D"
+        android:progressDrawable="@drawable/scaled_seekbar_progress"
+        android:progressTint="@android:color/holo_orange_dark"
+        android:thumbTint="@android:color/holo_orange_dark"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/frost_dialog_status_progress_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:gravity="center"
+        android:textAlignment="center"
+        android:textColor="@color/frost_text_secondary"
+        android:textSize="29sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/frost_dialog_status_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:lineSpacingExtra="6dp"
+        android:textAlignment="center"
+        android:textColor="@color/frost_text_secondary"
+        android:textSize="33sp" />
+</LinearLayout>

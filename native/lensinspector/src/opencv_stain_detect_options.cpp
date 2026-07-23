@@ -1,0 +1,74 @@
+#include "opencv_stain_detect_options.h"
+
+opencv_stain_detect::Options opencvStainDetectOptionsFromAppConfig(const AppConfig& config) {
+    opencv_stain_detect::Options options;
+    const auto& w = config.opencv_stain_detect;
+    options.osd_max_width = w.osd_max_width;
+    options.osd_max_height = w.osd_max_height;
+    options.roi_x = w.roi_x;
+    options.roi_y = w.roi_y;
+    options.roi_width = w.roi_width;
+    options.roi_height = w.roi_height;
+    options.enhance_clahe_clip = w.enhance_clahe_clip;
+    options.enhance_alpha = w.enhance_alpha;
+    options.enhance_beta = w.enhance_beta;
+    options.invert_thresh = w.invert_thresh;
+    options.strict_invert_thresh = w.strict_invert_thresh;
+    options.strict_invert_reject_dark_blob_count = w.strict_invert_reject_dark_blob_count;
+    options.strict_invert_dark_max_value = w.strict_invert_dark_max_value;
+    options.strict_invert_dark_min_area = w.strict_invert_dark_min_area;
+    options.strict_invert_dark_min_width = w.strict_invert_dark_min_width;
+    options.strict_invert_dark_min_height = w.strict_invert_dark_min_height;
+    options.strict_invert_dark_max_height = w.strict_invert_dark_max_height;
+    options.strict_invert_dark_min_aspect = w.strict_invert_dark_min_aspect;
+    options.gray_global_denoise_kernel = w.gray_global_denoise_kernel;
+    options.min_blob_area = w.min_blob_area;
+    options.open_kernel = w.open_kernel;
+    options.global_erode_kernel = w.global_erode_kernel;
+    options.erode_max_iterations = w.erode_max_iterations;
+    options.erode_kernel = w.erode_kernel;
+    options.red_bright_s_min = w.red_bright_s_min;
+    options.red_bright_v_min = w.red_bright_v_min;
+    options.red_bright_red_hue_lo = w.red_bright_red_hue_lo;
+    options.red_bright_red_hue_hi = w.red_bright_red_hue_hi;
+    options.red_bright_magenta_hue_lo = w.red_bright_magenta_hue_lo;
+    options.red_bright_magenta_hue_hi = w.red_bright_magenta_hue_hi;
+    options.red_bright_morph_kernel = w.red_bright_morph_kernel;
+    options.red_bright_dilate_iterations = w.red_bright_dilate_iterations;
+    options.red_bright_target_min_width_px = w.red_bright_target_min_width_px;
+    options.red_bright_target_min_height_px = w.red_bright_target_min_height_px;
+    options.red_bright_reject_v200_fraction_max = w.red_bright_reject_v200_fraction_max;
+    options.red_bright_reject_white_fraction_max = w.red_bright_reject_white_fraction_max;
+    options.red_bright_reject_centroid_y_min_full = w.red_bright_reject_centroid_y_min_full;
+    options.halo_analysis_margin_px = w.halo_analysis_margin_px;
+    options.halo_core_v_min = w.halo_core_v_min;
+    options.halo_halo_v_min = w.halo_halo_v_min;
+    options.halo_halo_v_max = w.halo_halo_v_max;
+    options.halo_reject_fwhm_halo_w_frac_max = w.halo_reject_fwhm_halo_w_frac_max;
+    options.halo_reject_halo_score_max = w.halo_reject_halo_score_max;
+    options.min_split_regions = w.min_split_regions;
+    options.max_split_regions = w.max_split_regions;
+    options.min_target_area_px = w.min_target_area_px;
+    options.global_erode_min_target_area_px = w.global_erode_min_target_area_px;
+    options.global_erode_min_target_height_px = w.global_erode_min_target_height_px;
+    options.red_above_min_target_height_px = w.red_above_min_target_height_px;
+    options.global_erode_reject_two_targets_centroid_dist_px =
+        w.global_erode_reject_two_targets_centroid_dist_px;
+    options.red_line_bright_gray_threshold = w.red_line_bright_gray_threshold;
+    options.red_line_margin_px = w.red_line_margin_px;
+    options.red_above_min_fraction = w.red_above_min_fraction;
+    options.min_target_width_px = w.min_target_width_px;
+    options.min_target_height_px = w.min_target_height_px;
+    options.max_saturated_white_area_px = w.max_saturated_white_area_px;
+    options.min_relative_area_vs_largest = w.min_relative_area_vs_largest;
+    options.min_centroid_dist_from_largest_px = w.min_centroid_dist_from_largest_px;
+    options.neck_split_max_width_px = w.neck_split_max_width_px;
+    options.neck_split_min_width_px = w.neck_split_min_width_px;
+    options.neck_cut_line_thickness_px = w.neck_cut_line_thickness_px;
+    options.global_erode_island_slot_margin_px = w.global_erode_island_slot_margin_px;
+    options.multi_blob_min_target_width_px = w.multi_blob_min_target_width_px;
+    options.multi_blob_min_target_height_px = w.multi_blob_min_target_height_px;
+    options.multi_blob_max_centroid_dist_from_largest_px =
+        w.multi_blob_max_centroid_dist_from_largest_px;
+    return options;
+}

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.lasercyber.lws.frostui.card.interop.FrostCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/frost_popup_menu_card"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:orientation="vertical"
+    android:padding="@dimen/frost_popup_menu_card_padding"
+    app:borderGradientCenter="top-left-bottom-right"
+    app:frostedGlassStackPanelFill="true">
+
+    <com.lasercyber.lws.ui.component.AppScrollView
+        android:id="@+id/frost_popup_menu_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:fadeScrollbars="true"
+        android:overScrollMode="ifContentScrolls"
+        android:scrollbarSize="10dp"
+        android:scrollbarStyle="insideOverlay"
+        android:scrollbarThumbVertical="@drawable/scroll_thumb"
+        android:scrollbars="vertical">
+
+        <com.lasercyber.lws.ui.component.layout.InsetList
+            android:id="@+id/frost_popup_menu_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false" />
+    </com.lasercyber.lws.ui.component.AppScrollView>
+</com.lasercyber.lws.frostui.card.interop.FrostCardView>

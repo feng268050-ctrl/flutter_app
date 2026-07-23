@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+<LinearLayout
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="上一项"
+        android:id="@+id/previous"
+        android:layout_gravity="center_horizontal"
+        />
+    <NumberPicker
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:selectionDividerHeight="0dp"
+        android:id="@+id/data_picker_content"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="下一项"
+        android:id="@+id/next"
+        android:layout_gravity="center_horizontal"
+        />
+</LinearLayout>
+</layout>

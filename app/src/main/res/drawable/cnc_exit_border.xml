@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- 实心填充颜色（透明，不遮挡控件内容） -->
+    <solid android:color="@android:color/transparent" />
+
+    <!-- 边框：4dp宽度 + #ff0741ba颜色 -->
+    <stroke
+        android:width="4dp"
+        android:color="#262234" />
+
+    <!-- 可选：圆角（不需要可删除） -->
+    <corners android:radius="8dp" />
+</shape>

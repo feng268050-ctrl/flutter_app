@@ -1,0 +1,783 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="android.view.View" />
+
+        <variable
+            name="processVideoDetailsViewModel"
+            type="com.lasercyber.lws.ui.activitys.device.monitor.model.ProcessVideoDetailsViewModel" />
+    </data>
+
+    <LinearLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/engineer_base_background_color"
+        android:orientation="horizontal"
+        android:padding="@dimen/frost_dialog_content_padding"
+        tools:context=".activitys.video.details.ProcessVideoDetailsActivity">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/call_back_previous_page"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:drawableLeft="@drawable/call_back_page_icon"
+                android:drawablePadding="18dp"
+                android:text="@string/back_to_videos_text"
+                android:textColor="@color/white"
+                android:textSize="@dimen/text_size_16" />
+
+
+            <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="19dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingTop="22dp"
+                android:paddingBottom="28dp"
+                app:borderGradientCenter="top-left-bottom-right"
+                app:frostedGlassBlurIntensity="transparent">
+                <!--                    工艺参数详情-->
+                <TextView
+                    android:id="@+id/parameter_recording_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:text="@string/parameter_recording_text"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/text_size_14" />
+
+                <com.lasercyber.lws.ui.component.AppScrollView
+                    style="@style/app_vertical_scroll_view_style"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="21dp"
+                    android:layout_weight="1"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="16dp">
+
+                    <LinearLayout
+                        android:id="@+id/field_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <!--                        参数详情-->
+
+                        <LinearLayout style="@style/video_process_details_row_style">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/functional_modes_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <TextView
+                                style="@style/video_process_data_text_style"
+                                android:text="@{processVideoDetailsViewModel.modelName}" />
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/video_process_details_row_style">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/welding_materials_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <TextView
+                                style="@style/video_process_data_text_style"
+                                android:text="@{processVideoDetailsViewModel.materialTypeLabel}" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{(processVideoDetailsViewModel.isPointWelding||processVideoDetailsViewModel.isContinuousWelding||processVideoDetailsViewModel.isHandCut)?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/welding_thickness_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.thickness}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@{processVideoDetailsViewModel.useMMUnit()?@string/mm_unit:@string/in_unit}" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{processVideoDetailsViewModel.isPointWelding?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/spot_welding_interval_t1_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.pointWeldingInterval}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/ms_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{processVideoDetailsViewModel.isPointWelding?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/continuous_spot_welding_t2_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.pointWeldingDuration}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/ms_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+
+                        <LinearLayout style="@style/video_process_details_row_style">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/blow_delay_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.blowDelay}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/ms_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{(processVideoDetailsViewModel.isContinuousWelding||processVideoDetailsViewModel.isWeldClean||processVideoDetailsViewModel.isWidthClean||processVideoDetailsViewModel.isHandCut)?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/power_ramp_up_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.powerRampUp}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/ms_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/video_process_details_row_style">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/laser_power_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.laserPower}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/percentage_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{(processVideoDetailsViewModel.isContinuousWelding||processVideoDetailsViewModel.isWeldClean||processVideoDetailsViewModel.isWidthClean||processVideoDetailsViewModel.isHandCut)?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/power_ramp_down_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.powerRampDown}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/ms_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout style="@style/video_process_details_row_style">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/air_shut_off_delay_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.closeAirDelay}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/ms_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{(processVideoDetailsViewModel.isContinuousWelding||processVideoDetailsViewModel.isPointWelding||processVideoDetailsViewModel.isWeldClean||processVideoDetailsViewModel.isWidthClean)?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/swing_frequency_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.swingFrequency}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/hz_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{(processVideoDetailsViewModel.isContinuousWelding||processVideoDetailsViewModel.isPointWelding||processVideoDetailsViewModel.isWeldClean||processVideoDetailsViewModel.isWidthClean)?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/welding_width_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.swingWidth}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@{processVideoDetailsViewModel.useMMUnit()?@string/mm_unit:@string/in_unit}" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{processVideoDetailsViewModel.isContinuousWelding?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/wire_feed_speed_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                style="@style/video_process_details_row_value_style"
+                                android:visibility="@{processVideoDetailsViewModel.isContinuousWelding?View.VISIBLE:View.GONE}">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.wireFeedSpeed}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/mm_s_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{(processVideoDetailsViewModel.isContinuousWelding||processVideoDetailsViewModel.isPointWelding)?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/off_light_delay_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.closeLightDelay}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/ms_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{processVideoDetailsViewModel.isContinuousWelding?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/retract_length_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.retractLength}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@{processVideoDetailsViewModel.useMMUnit()?@string/mm_unit:@string/in_unit}" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{processVideoDetailsViewModel.isContinuousWelding?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/retract_speed_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.retractSpeed}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/mm_s_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{processVideoDetailsViewModel.isContinuousWelding?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/fill_length_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.fillLength}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@{processVideoDetailsViewModel.useMMUnit()?@string/mm_unit:@string/in_unit}" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/video_process_details_row_style"
+                            android:visibility="@{processVideoDetailsViewModel.isContinuousWelding?View.VISIBLE:View.GONE}">
+
+                            <LinearLayout style="@style/video_process_details_row_label_style">
+                                <!--                                每一项的label-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/fill_delay_text" />
+
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@string/colon_text" />
+                            </LinearLayout>
+
+                            <LinearLayout style="@style/video_process_details_row_value_style">
+                                <!--                                每一项的值-->
+                                <TextView
+                                    style="@style/video_process_data_text_style"
+                                    android:text="@{processVideoDetailsViewModel.fillDelay}" />
+
+                                <TextView
+                                    style="@style/video_process_details_unit_text_style"
+                                    android:text="@string/ms_unit" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <!--                        <LinearLayout-->
+                        <!--                            style="@style/video_process_details_row_style"-->
+                        <!--                            android:visibility="@{processVideoDetailsViewModel.isHandCut?View.VISIBLE:View.GONE}">-->
+
+                        <!--                            <LinearLayout style="@style/video_process_details_row_label_style">-->
+                        <!--                                &lt;!&ndash;                                每一项的label&ndash;&gt;-->
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@string/laser_frequency_text" />-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@string/colon_text" />-->
+                        <!--                            </LinearLayout>-->
+
+                        <!--                            <LinearLayout-->
+                        <!--                                style="@style/video_process_details_row_value_style"-->
+                        <!--                                android:visibility="@{processVideoDetailsViewModel.isHandCut?View.VISIBLE:View.GONE}">-->
+                        <!--                                &lt;!&ndash;                                每一项的值&ndash;&gt;-->
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@{processVideoDetailsViewModel.laserFrequency}" />-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_details_unit_text_style"-->
+                        <!--                                    android:text="@string/hz_unit" />-->
+                        <!--                            </LinearLayout>-->
+
+                        <!--                        </LinearLayout>-->
+
+
+                        <!--                        <LinearLayout-->
+                        <!--                            style="@style/video_process_details_row_style"-->
+                        <!--                            android:visibility="@{processVideoDetailsViewModel.isHandCut?View.VISIBLE:View.GONE}">-->
+
+                        <!--                            <LinearLayout style="@style/video_process_details_row_label_style">-->
+                        <!--                                &lt;!&ndash;                                每一项的label&ndash;&gt;-->
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@string/perforation_frequency_text" />-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@string/colon_text" />-->
+                        <!--                            </LinearLayout>-->
+
+                        <!--                            <LinearLayout style="@style/video_process_details_row_value_style">-->
+                        <!--                                &lt;!&ndash;                                每一项的值&ndash;&gt;-->
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@{processVideoDetailsViewModel.perforationFrequency}" />-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_details_unit_text_style"-->
+                        <!--                                    android:text="@string/hz_unit" />-->
+                        <!--                            </LinearLayout>-->
+
+                        <!--                        </LinearLayout>-->
+
+                        <!--                        <LinearLayout-->
+                        <!--                            style="@style/video_process_details_row_style"-->
+                        <!--                            android:visibility="@{processVideoDetailsViewModel.isHandCut?View.VISIBLE:View.GONE}">-->
+
+                        <!--                            <LinearLayout style="@style/video_process_details_row_label_style">-->
+                        <!--                                &lt;!&ndash;                                每一项的label&ndash;&gt;-->
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@string/perforation_duration_text" />-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@string/colon_text" />-->
+                        <!--                            </LinearLayout>-->
+
+                        <!--                            <LinearLayout style="@style/video_process_details_row_value_style">-->
+                        <!--                                &lt;!&ndash;                                每一项的值&ndash;&gt;-->
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@{processVideoDetailsViewModel.perforationDuration}" />-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_details_unit_text_style"-->
+                        <!--                                    android:text="@string/s_unit" />-->
+                        <!--                            </LinearLayout>-->
+
+                        <!--                        </LinearLayout>-->
+
+                        <!--                        <LinearLayout-->
+                        <!--                            style="@style/video_process_details_row_style"-->
+                        <!--                            android:visibility="@{processVideoDetailsViewModel.isHandCut?View.VISIBLE:View.GONE}">-->
+
+                        <!--                            <LinearLayout style="@style/video_process_details_row_label_style">-->
+                        <!--                                &lt;!&ndash;                                每一项的label&ndash;&gt;-->
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@string/laser_duty_cycle_text" />-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@string/colon_text" />-->
+                        <!--                            </LinearLayout>-->
+
+                        <!--                            <LinearLayout style="@style/video_process_details_row_value_style">-->
+                        <!--                                &lt;!&ndash;                                每一项的值&ndash;&gt;-->
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_data_text_style"-->
+                        <!--                                    android:text="@{processVideoDetailsViewModel.laserDutyCycle}" />-->
+
+                        <!--                                <TextView-->
+                        <!--                                    style="@style/video_process_details_unit_text_style"-->
+                        <!--                                    android:text="@string/percentage_unit" />-->
+                        <!--                            </LinearLayout>-->
+
+                        <!--                        </LinearLayout>-->
+
+                    </LinearLayout>
+                </com.lasercyber.lws.ui.component.AppScrollView>
+
+                <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                    android:id="@+id/video_delete"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/frost_action_button_height"
+                    android:layout_gravity="center_horizontal"
+                    android:drawableStart="@drawable/btn_icon_fixed_size"
+                    android:drawablePadding="4dp"
+                    app:drawableTint="@color/frost_button_secondary_text"
+                    android:gravity="center"
+                    android:paddingStart="@dimen/frost_action_button_padding_horizontal"
+                    android:paddingEnd="@dimen/frost_action_button_padding_horizontal"
+                    android:text="@string/delete_btn_text"
+                    app:borderGradientCenter="top-left-bottom-right"
+                    app:frostedGlassButtonVariant="secondary" />
+            </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+        </LinearLayout>
+
+        <!--            视频信息-->
+        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+            android:layout_width="716dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="@dimen/frost_dialog_content_padding"
+            android:padding="10dp"
+            app:borderGradientCenter="bottom-left-top-right"
+            app:frostedGlassBlurIntensity="transparent">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <androidx.media3.ui.PlayerView
+                    android:id="@+id/player_process_video_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:foreground="@drawable/video_mark"
+                    app:keep_content_on_player_reset="true"
+                    app:show_buffering="when_playing"
+                    app:shutter_background_color="@android:color/transparent"
+                    app:use_artwork="true"
+                    app:use_controller="false" />
+
+                <LinearLayout
+                    android:id="@+id/layout_process_video_center_controls"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                        android:id="@+id/btn_process_video_rewind"
+                        style="@style/process_video_player_icon_btn_light_style"
+                        android:layout_width="@dimen/frost_action_button_height"
+                        android:layout_height="@dimen/frost_action_button_height"
+                        android:contentDescription="@string/process_video_rewind"
+                        android:drawableStart="@drawable/ic_process_video_rewind"
+                        android:padding="@dimen/process_video_player_seek_button_padding" />
+
+                    <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                        android:id="@+id/btn_process_video_play_pause"
+                        style="@style/process_video_player_icon_btn_light_style"
+                        android:layout_width="@dimen/process_video_player_play_button_size"
+                        android:layout_height="@dimen/process_video_player_play_button_size"
+                        android:layout_marginStart="@dimen/process_video_player_transport_button_spacing"
+                        android:layout_marginEnd="@dimen/process_video_player_transport_button_spacing"
+                        android:contentDescription="@string/ai_vision_video_play"
+                        android:drawableStart="@drawable/ic_process_video_play"
+                        android:padding="@dimen/process_video_player_play_button_padding" />
+
+                    <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                        android:id="@+id/btn_process_video_fast_forward"
+                        style="@style/process_video_player_icon_btn_light_style"
+                        android:layout_width="@dimen/frost_action_button_height"
+                        android:layout_height="@dimen/frost_action_button_height"
+                        android:contentDescription="@string/process_video_fast_forward"
+                        android:drawableStart="@drawable/ic_process_video_fast_forward"
+                        android:padding="@dimen/process_video_player_seek_button_padding" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layout_process_video_controls"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:background="#CC000000"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="@dimen/process_video_player_control_bar_padding_h"
+                    android:paddingTop="@dimen/process_video_player_control_bar_padding_v"
+                    android:paddingEnd="@dimen/process_video_player_control_bar_padding_h"
+                    android:paddingBottom="@dimen/process_video_player_control_bar_padding_v"
+                    android:visibility="gone">
+
+                    <com.lasercyber.lws.frostui.control.interop.FrostFlankedSliderView
+                        android:id="@+id/process_video_seek_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="1000"
+                        app:frostFlankLabelSpacing="@dimen/scaled_seekbar_flank_label_spacing" />
+                </LinearLayout>
+            </FrameLayout>
+        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+    </LinearLayout>
+</layout>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="LaserProgress">
+        <!--        模式类型-->
+        <attr name="mode_type" />
+<!--        当前进度-->
+        <attr name="progress_value" format="integer"/>
+<!--        激光状态-->
+        <attr name="laser_status" format="boolean"/>
+    </declare-styleable>
+</resources>

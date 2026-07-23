@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="android.view.View" />
+
+        <variable
+            name="laserStatus"
+            type="java.lang.Boolean" />
+
+        <variable
+            name="modeType"
+            type="java.lang.Integer" />
+
+        <variable
+            name="cncOpening"
+            type="java.lang.Boolean" />
+
+        <variable
+            name="cncHomeBlocked"
+            type="java.lang.Boolean" />
+        <import type="com.lasercyber.lws.ui.common.constant.ModelConstant" />
+    </data>
+
+
+    <RelativeLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FF0A0B0C"
+        android:orientation="vertical"
+        tools:context=".activitys.quick.mode.QuickModeActivity">
+
+        <LinearLayout
+            android:id="@+id/equipment_status_bar_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end">
+
+            <com.lasercyber.lws.ui.component.EquipmentStatusBar
+                android:id="@+id/quick_mode_status_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="@{laserStatus? View.INVISIBLE: View.VISIBLE}"
+                app:call_back_home_enabled="@{!Boolean.TRUE.equals(cncHomeBlocked)}"
+                app:model_type="@{modeType}"
+                app:use_status="true" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="36dp"
+            android:elevation="10dp"
+            android:text="@string/laser_beam_output_text"
+            android:textColor="@color/white"
+            android:textFontWeight="700"
+            android:textSize="@dimen/text_size_24"
+            android:visibility="@{laserStatus? View.VISIBLE: View.GONE}" />
+        <!--        快速模式内容-->
+        <FrameLayout
+            android:id="@+id/quick_mode_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/equipment_status_bar_content"
+            android:elevation="8dp" />
+
+        <!-- Recording Work：与「更多参数」视觉边距一致（32dp margin + 8dp padding = 40dp） -->
+        <com.lasercyber.lws.ui.component.CameraController
+            android:id="@+id/camera_controller"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/equipment_status_bar_content"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="40dp"
+            android:layout_marginTop="20dp"
+            android:elevation="1200dp"
+            android:visibility="@{modeType == ModelConstant.CNC_CUT ? View.GONE : View.VISIBLE}"
+            app:mode_type="@{modeType}" />
+
+        <LinearLayout
+            android:id="@+id/model_wheel_view_content"
+            android:layout_width="260dp"
+            android:layout_height="340dp"
+            android:layout_marginTop="250dp"
+            android:elevation="10dp"
+            android:gravity="center">
+
+            <com.lasercyber.lws.ui.component.wheelview.widget.WheelView
+                android:id="@+id/wheel_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="400dp"
+            android:layout_height="68dp"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="0dp"
+            android:layout_marginTop="386dp"
+            android:orientation="horizontal"
+            android:visibility="@{laserStatus? View.INVISIBLE: View.VISIBLE}">
+
+            <View
+                android:layout_width="275dp"
+                android:layout_height="match_parent"
+                android:background="@{(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@drawable/quick_mode_wheel_active_green:(modeType==ModelConstant.HAND_CUT||modeType==ModelConstant.CNC_CUT)?@drawable/quick_mode_wheel_active_blue:@drawable/quick_mode_wheel_active_orange}" />
+
+            <View
+                android:visibility="@{modeType==ModelConstant.CNC_CUT? View.INVISIBLE: View.VISIBLE}"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@{(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@drawable/quick_mode_wheel_active_green:modeType==ModelConstant.HAND_CUT?@drawable/quick_mode_wheel_active_blue:@drawable/quick_mode_wheel_active_orange}" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="400dp"
+            android:layout_height="68dp"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="386dp"
+            android:layout_marginRight="0dp"
+            android:orientation="horizontal"
+            android:visibility="@{laserStatus||modeType==ModelConstant.CNC_CUT? View.INVISIBLE: View.VISIBLE}">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@{(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@drawable/quick_mode_wheel_active_green:modeType==ModelConstant.HAND_CUT?@drawable/quick_mode_wheel_active_blue:@drawable/quick_mode_wheel_active_orange}" />
+
+            <View
+                android:layout_width="275dp"
+                android:layout_height="match_parent"
+                android:background="@{(modeType==ModelConstant.WELD_CLEAN||modeType==ModelConstant.WIDTH_CLEAN)?@drawable/quick_mode_wheel_active_green:modeType==ModelConstant.HAND_CUT?@drawable/quick_mode_wheel_active_blue:@drawable/quick_mode_wheel_active_orange}" />
+        </LinearLayout>
+
+        <com.lasercyber.lws.ui.activitys.quick.mode.component.CNCRunning
+            android:id="@+id/cnc_running"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/equipment_status_bar_content"
+            android:elevation="200dp"
+            android:visibility="@{cncOpening? View.VISIBLE:View.GONE}"
+            app:cnc_link_status="@{cncOpening}" />
+    </RelativeLayout>
+</layout>

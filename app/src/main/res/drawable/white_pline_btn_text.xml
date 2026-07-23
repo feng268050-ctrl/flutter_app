@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 禁用状态：浅灰色文字 -->
+    <item android:state_enabled="false" android:color="@color/white" />
+    <!-- 启用状态：白色文字（按需调整） -->
+    <item android:state_enabled="true" android:color="@color/white" />
+</selector>

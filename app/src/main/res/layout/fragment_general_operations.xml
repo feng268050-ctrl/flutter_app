@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="android.view.View" />
+
+        <variable
+            name="generalOperations"
+            type="com.lasercyber.lws.ui.bean.ui.GeneralOperations" />
+
+        <import type="com.lasercyber.lws.ui.common.constant.ModelConstant" />
+
+        <variable
+            name="generalOperationsFragment"
+            type="com.lasercyber.lws.ui.activitys.quick.mode.fragment.GeneralOperationsFragment" />
+
+        <variable
+            name="isContinuousFeed"
+            type="java.lang.Boolean" />
+
+        <variable
+            name="isContinuousRetract"
+            type="java.lang.Boolean" />
+
+        <variable
+            name="deviceControlData"
+            type="com.lasercyber.lws.ui.bean.entity.DeviceControlData" />
+
+        <variable
+            name="startFeedClick"
+            type="java.lang.Boolean" />
+
+        <variable
+            name="startRetractClick"
+            type="java.lang.Boolean" />
+
+        <variable
+            name="quickProcessParametersDataViewModel"
+            type="com.lasercyber.lws.ui.activitys.quick.mode.model.QuickProcessParametersDataViewModel" />
+    </data>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".activitys.quick.mode.fragment.GeneralOperationsFragment">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/materials_wheel_view_content"
+                android:layout_width="260dp"
+                android:layout_height="360dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="0dp"
+                android:elevation="100dp"
+                android:gravity="center"
+                android:paddingBottom="25dp"
+                android:translationY="@dimen/quick_mode_picker_material_value_vertical_offset">
+
+                <com.lasercyber.lws.ui.component.wheelview.widget.WheelView
+                    android:id="@+id/materials_wheel_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+            <com.lasercyber.lws.ui.activitys.quick.mode.component.GearPickV2
+                android:id="@+id/gear_picker"
+                android:layout_width="@dimen/quick_mode_picker_width"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="@dimen/quick_mode_picker_center_overlap"
+                android:layout_toStartOf="@id/laser_progress"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:elevation="1100dp"
+                android:translationX="@dimen/quick_mode_picker_horizontal_offset"
+                android:translationY="-8dp"
+                app:click_enable="@{!deviceControlData.isOpenLaser()}"
+                app:mode_type="@{generalOperations.type}" />
+<!--            <com.lasercyber.lws.ui.activitys.quick.mode.component.GearPick-->
+<!--                android:id="@+id/gear_picker"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_centerVertical="true"-->
+<!--                android:layout_marginRight="-400dp"-->
+<!--                android:layout_toStartOf="@id/laser_progress"-->
+<!--                android:elevation="100dp"-->
+<!--                app:click_enable="@{!deviceControlData.isOpenLaser()}"-->
+<!--                app:mode_type="@{generalOperations.type}" />-->
+
+            <com.lasercyber.lws.ui.activitys.quick.mode.component.LaserProgress
+                android:id="@+id/laser_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                app:laser_status="@{deviceControlData.isOpenLaser()}"
+                app:mode_type="@{generalOperations.type}" />
+
+            <!-- 仪表盘右上角：更多参数 -->
+            <LinearLayout
+                android:id="@+id/more_parameters_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="20dp"
+                android:layout_marginEnd="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:elevation="1200dp"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="0dp"
+                android:visibility="@{deviceControlData.isOpenLaser() ? View.INVISIBLE : View.VISIBLE}">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="@string/more_parameters_text"
+                    android:src="@drawable/ic_more_parameters" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:includeFontPadding="false"
+                    android:layout_marginStart="6dp"
+                    android:text="@string/more_parameters_text"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/text_size_16" />
+            </LinearLayout>
+
+            <!--            厚度-->
+<!--            <com.lasercyber.lws.ui.activitys.quick.mode.component.ThicknessPick-->
+<!--                android:id="@+id/thickness_picker"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_centerVertical="true"-->
+<!--                android:layout_marginLeft="-400dp"-->
+<!--                android:layout_toEndOf="@id/laser_progress"-->
+<!--                android:elevation="100dp"-->
+<!--                app:click_enable="@{!deviceControlData.isOpenLaser()}"-->
+<!--                app:mode_type="@{generalOperations.type}" />-->
+            <com.lasercyber.lws.ui.activitys.quick.mode.component.ThicknessPickV2
+                android:id="@+id/thickness_picker"
+                android:layout_width="@dimen/quick_mode_picker_width"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="@dimen/quick_mode_picker_center_overlap"
+                android:layout_toEndOf="@id/laser_progress"
+                android:elevation="100dp"
+                android:translationX="@dimen/quick_mode_picker_horizontal_offset"
+                android:translationY="-8dp"
+                app:click_enable="@{!deviceControlData.isOpenLaser()}"
+                app:mode_type="@{generalOperations.type}"
+                app:use_mm_unit="@{quickProcessParametersDataViewModel.useMMUnit}" />
+            <!--            <com.lasercyber.lws.ui.component.CircularSeekBar-->
+            <!--                android:id="@+id/thickness_circular_seek"-->
+            <!--                style="@style/quick_mode_circular_seek_bar"-->
+            <!--                android:layout_alignParentRight="true"-->
+            <!--                android:layout_marginRight="10dp"-->
+            <!--                android:scaleY="-1"-->
+            <!--                app:circle_color="@{(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:generalOperations.type==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"-->
+            <!--                app:circle_progress_color="@{(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:generalOperations.type==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"-->
+            <!--                app:end_angle="50"-->
+            <!--                app:pointer_halo_color="@{(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:generalOperations.type==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"-->
+            <!--                app:start_angle="310" />-->
+
+
+            <!--            激光开启按钮-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_marginBottom="0dp"
+                android:gravity="center">
+
+                <com.lasercyber.lws.ui.activitys.quick.mode.component.LaserButtonLinearLayout
+                    android:id="@+id/btn_laser_enable"
+                    android:layout_width="564dp"
+                    android:layout_height="223dp"
+                    android:background="@{(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@drawable/laser_enable_green:generalOperations.type==ModelConstant.HAND_CUT?@drawable/laser_enable_blue:@drawable/laser_enable_orange}"
+                    android:elevation="110dp">
+
+                    <LinearLayout
+                        android:id="@+id/laser_button_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="76dp"
+                            android:layout_height="67dp"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="68dp"
+                            android:src="@{deviceControlData.isOpenLaser()?@drawable/laser_switch_status_close_icon:@drawable/laser_switch_status_open_icon}" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="12dp"
+                            android:text="@{deviceControlData.isOpenLaser()?@string/laser_end_of_work:@string/btn_laser_enable}"
+                            android:textColor="#ffffffff"
+                            android:textFontWeight="700"
+                            android:textSize="@dimen/text_size_24" />
+                    </LinearLayout>
+
+                    <com.lasercyber.lws.ui.activitys.quick.mode.component.LaserButtonTrapezoidRippleOverlay
+                        android:id="@+id/laser_button_ripple_overlay"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+                </com.lasercyber.lws.ui.activitys.quick.mode.component.LaserButtonLinearLayout>
+                <!--                <com.lasercyber.lws.ui.activitys.quick.mode.component.LaserButton-->
+                <!--                    android:id="@+id/btn_laser_enable"-->
+                <!--                    android:layout_width="564dp"-->
+                <!--                    android:layout_height="223dp"-->
+                <!--                    android:background="@{(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@drawable/laser_enable_green:generalOperations.type==ModelConstant.HAND_CUT?@drawable/laser_enable_blue:@drawable/laser_enable_orange}"-->
+                <!--                    android:onClick="@{() -> generalOperationsFragment.laserEnableClick()}"-->
+                <!--                    android:text="@{deviceControlData.isOpenLaser()?@string/laser_end_of_work:@string/btn_laser_enable}"-->
+                <!--                    android:textColor="#ffffffff"-->
+                <!--                    android:textFontWeight="700"-->
+                <!--                    android:textSize="53sp"-->
+                <!--                    android:elevation="110dp"/>-->
+
+            </LinearLayout>
+            <!--            左下角按钮组-->
+            <LinearLayout
+                android:id="@+id/left_bottom_btn_group"
+                style="@style/general_operation_btn_block"
+                android:layout_alignParentLeft="true"
+                android:layout_marginLeft="30dp">
+
+                <FrameLayout
+                    android:id="@+id/btn_manual_gas"
+                    style="@style/quick_mode_operation_btn_container"
+                    android:layout_marginBottom="27dp"
+                    android:background="@{(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@drawable/quick_mode_btn_green:generalOperations.type==ModelConstant.HAND_CUT?@drawable/quick_mode_btn_blue:@drawable/quick_mode_btn_orange}"
+                    android:enabled="@{generalOperations.manualGasVisible}"
+                    android:onClick="@{() -> generalOperationsFragment.manualGasClick()}"
+                    android:selected="@{deviceControlData.isOpenManualGas()&amp;&amp;generalOperations.manualGasVisible}"
+                    android:visibility="@{deviceControlData.isOpenLaser()? View.INVISIBLE: View.VISIBLE}">
+
+                    <LinearLayout style="@style/quick_mode_operation_btn_content">
+                        <ImageView
+                            style="@style/quick_mode_operation_btn_icon"
+                            android:contentDescription="@string/btn_manual_gas"
+                            android:src="@drawable/quick_mode_manual_air_supply_icon" />
+
+                        <TextView
+                            style="@style/quick_mode_operation_btn_label"
+                            android:text="@string/btn_manual_gas" />
+                    </LinearLayout>
+                </FrameLayout>
+
+                <View
+                    android:id="@+id/line_quick"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:background="@{(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@drawable/line_gradient_black_to_green:generalOperations.type==ModelConstant.HAND_CUT?@drawable/line_gradient_black_to_blue:@drawable/line_gradient_black_to_orange}"
+                    android:visibility="@{deviceControlData.isOpenLaser()? View.INVISIBLE: View.VISIBLE}" />
+
+                <FrameLayout
+                    android:id="@+id/btn_feed_enable"
+                    style="@style/quick_mode_operation_btn_container"
+                    android:layout_marginTop="15dp"
+                    android:background="@{(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@drawable/quick_mode_btn_green:generalOperations.type==ModelConstant.HAND_CUT?@drawable/quick_mode_btn_blue:@drawable/quick_mode_btn_orange}"
+                    android:enabled="@{generalOperations.feedEnableVisible}"
+                    android:onClick="@{() -> generalOperationsFragment.feedEnableClick()}"
+                    android:selected="@{deviceControlData.isOpenAutoWireFeed()&amp;&amp;generalOperations.feedEnableVisible}"
+                    android:visibility="@{deviceControlData.isOpenLaser()? View.INVISIBLE: View.VISIBLE}">
+
+                    <LinearLayout style="@style/quick_mode_operation_btn_content">
+                        <ImageView
+                            style="@style/quick_mode_operation_btn_icon"
+                            android:contentDescription="@string/btn_feed_enable"
+                            android:src="@drawable/quick_mode_feed_enable_icon" />
+
+                        <TextView
+                            style="@style/quick_mode_operation_btn_label"
+                            android:text="@string/btn_feed_enable" />
+                    </LinearLayout>
+                </FrameLayout>
+            </LinearLayout>
+            <!--            右下角按钮组-->
+            <LinearLayout
+                android:id="@+id/right_bottom_btn_group"
+                style="@style/general_operation_btn_block"
+                android:layout_alignParentRight="true"
+                android:layout_marginRight="30dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <!--                <com.lasercyber.lws.ui.component.GradientButton-->
+                <!--                    android:visibility="@{deviceControlData.isOpenLaser()? View.INVISIBLE: View.VISIBLE}"-->
+                <!--                    android:id="@+id/btn_feed"-->
+                <!--                    style="@style/quick_mode_operation_btn"-->
+                <!--                    android:layout_marginBottom="27dp"-->
+                <!--                    android:background="@{(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@drawable/quick_mode_btn_green:generalOperations.type==ModelConstant.HAND_CUT?@drawable/quick_mode_btn_blue:@drawable/quick_mode_btn_orange}"-->
+                <!--                    android:drawableLeft="@drawable/quick_mode_feed_icon"-->
+                <!--                    android:enabled="@{generalOperations.feedVisible}"-->
+                <!--                    android:onClick="@{() -> generalOperationsFragment.btnFeedClick()}"-->
+                <!--                    android:text="@{isContinuousFeed?@string/continuous_feeding_text:@string/feed_sub_hold}"-->
+                <!--                    app:animation_duration="3000"-->
+                <!--                    app:end_color="@android:color/transparent"-->
+                <!--                    app:mid_color="@{!isContinuousFeed?@android:color/transparent:(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:generalOperations.type==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"-->
+                <!--                    app:pause_animation="@{!isContinuousFeed}"-->
+                <!--                    app:start_color="@android:color/transparent"-->
+                <!--                    app:max_shrink_ratio="0.4"-->
+                <!--                    app:use_animation="true" />-->
+                <FrameLayout
+                    style="@style/quick_mode_operation_btn_container"
+                    android:layout_marginBottom="27dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:clickable="false"
+                    android:enabled="@{generalOperations.feedVisible}"
+                    android:focusable="false"
+                    android:visibility="@{deviceControlData.isOpenLaser()? View.INVISIBLE: View.VISIBLE}">
+
+                    <com.lasercyber.lws.ui.component.GradientButton
+                        android:id="@+id/btn_feed"
+                        style="@style/quick_mode_operation_btn"
+                        android:enabled="@{generalOperations.feedVisible}"
+                        android:text=""
+                        app:animation_duration="@{startFeedClick?4000:3000}"
+                        app:animation_positive="@{!startFeedClick}"
+                        app:end_color="@android:color/transparent"
+                        app:max_shrink_ratio="0.4"
+                        app:mid_color="@{!isContinuousFeed&amp;&amp;!startFeedClick?@android:color/transparent:(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:generalOperations.type==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"
+                        app:pause_animation="false"
+                        app:shrink_ratio="0.5"
+                        app:start_color="@android:color/transparent"
+                        app:use_animation="@{startFeedClick||isContinuousFeed}" />
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"
+                        android:clickable="false"
+                        android:focusable="false">
+
+                        <LinearLayout style="@style/quick_mode_operation_btn_content">
+                            <ImageView
+                                style="@style/quick_mode_operation_btn_icon"
+                                android:contentDescription="@string/btn_feed_text"
+                                android:src="@drawable/quick_mode_feed_icon"
+                                android:tint="@android:color/white" />
+
+                            <TextView
+                                style="@style/quick_mode_operation_btn_label"
+                                android:text="@{isContinuousFeed?@string/continuous_feeding_text:@string/btn_feed_text}" />
+                        </LinearLayout>
+
+                        <TextView
+                            style="@style/quick_mode_operation_btn_hint"
+                            android:text="@string/feed_sub_hold_hint"
+                            android:translationY="10dp"
+                            android:visibility="@{isContinuousFeed ? View.GONE : View.VISIBLE}" />
+                    </FrameLayout>
+                </FrameLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:background="@{(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@drawable/line_gradient_black_to_green:generalOperations.type==ModelConstant.HAND_CUT?@drawable/line_gradient_black_to_blue:@drawable/line_gradient_black_to_orange}"
+                    android:visibility="@{deviceControlData.isOpenLaser()? View.INVISIBLE: View.VISIBLE}" />
+
+                <FrameLayout
+                    android:id="@+id/btn_retract"
+                    style="@style/quick_mode_operation_btn_container"
+                    android:layout_marginTop="15dp"
+                    android:background="@{(generalOperations.type==ModelConstant.WELD_CLEAN||generalOperations.type==ModelConstant.WIDTH_CLEAN)?@drawable/quick_mode_btn_green:generalOperations.type==ModelConstant.HAND_CUT?@drawable/quick_mode_btn_blue:@drawable/quick_mode_btn_orange}"
+                    android:enabled="@{generalOperations.retractVisible}"
+                    android:visibility="@{deviceControlData.isOpenLaser()? View.INVISIBLE: View.VISIBLE}">
+
+                    <LinearLayout style="@style/quick_mode_operation_btn_content">
+                        <ImageView
+                            style="@style/quick_mode_operation_btn_icon"
+                            android:contentDescription="@string/btn_retract"
+                            android:src="@drawable/quick_mode_retract_icon" />
+
+                        <TextView
+                            style="@style/quick_mode_operation_btn_label"
+                            android:text="@{isContinuousRetract?@string/continuous_retreat_text:@string/btn_retract}" />
+                    </LinearLayout>
+                </FrameLayout>
+            </LinearLayout>
+
+        </RelativeLayout>
+    </FrameLayout>
+</layout>

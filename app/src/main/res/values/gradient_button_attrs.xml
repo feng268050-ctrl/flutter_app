@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="GradientButton">
+        <!--        使用动画，默认为false-->
+        <attr name="use_animation" format="boolean" />
+        <!--        动画时长 ms-->
+        <attr name="animation_duration" format="integer" />
+        <!--        开始颜色-->
+        <attr name="start_color" format="color|reference" />
+        <!--        中间颜色-->
+        <attr name="mid_color" format="color|reference" />
+        <!--        结束颜色-->
+        <attr name="end_color" format="color|reference" />
+        <!--        暂停动画，默认false-->
+        <attr name="pause_animation" format="boolean" />
+        <!--        中间颜色的起始位置 0.1~1-->
+        <attr name="starting_position" format="float" />
+        <attr name="shrink_ratio" format="float" />
+        <!-- 最大收缩比例（0~0.5，建议0.4） -->
+        <attr name="max_shrink_ratio" format="float" />
+        <!--        动画效果-->
+        <attr name="animation_type" format="enum">
+            <enum name="zoom" value="1" />
+            <enum name="flowingLight" value="2" />
+        </attr>
+<!--        正向动画-->
+        <attr name="animation_positive" format="boolean"/>
+        <attr name="content_padding_end" format="integer" />
+    </declare-styleable>
+
+</resources>

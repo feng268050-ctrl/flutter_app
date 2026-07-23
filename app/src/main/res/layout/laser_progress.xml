@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+        <variable
+            name="modelType"
+            type="java.lang.Integer" />
+
+        <variable
+            name="progressValue"
+            type="java.lang.Integer" />
+
+        <import type="com.lasercyber.lws.ui.common.constant.ModelConstant" />
+
+        <variable
+            name="laserStatus"
+            type="java.lang.Boolean" />
+    </data>
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center">
+
+        <com.lasercyber.lws.ui.component.CircularSeekBar
+            android:id="@+id/laser_circular_seek"
+            style="@style/quick_mode_circular"
+            android:layout_width="570dp"
+            android:layout_height="570dp"
+            android:alpha="@{laserStatus?1f:0.5f}"
+            app:circle_color="@{(modelType==ModelConstant.WELD_CLEAN||modelType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_green:modelType==ModelConstant.HAND_CUT?@color/quick_model_blue:@color/quick_model_orange}"
+            app:circle_progress_color="@color/quick_model_green"
+            app:circle_stroke_width="38dp"
+            app:circle_x_radius="560dp"
+            app:circle_y_radius="560dp"
+            app:progress="@{progressValue}"
+            app:progress_width="38dp" />
+
+
+        <!--        内层圆环-->
+        <com.lasercyber.lws.ui.component.CircularSeekBar
+            android:id="@+id/laser_circular_seek_mini"
+            style="@style/quick_mode_circular"
+            android:layout_width="514dp"
+            android:layout_height="514dp"
+            android:alpha="@{laserStatus?1f:0.5f}"
+            app:circle_color="@{(modelType==ModelConstant.WELD_CLEAN||modelType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_circle_inner_green:modelType==ModelConstant.HAND_CUT?@color/quick_model_circle_inner_blue:@color/quick_model_circle_inner_orange}"
+            app:circle_stroke_width="50dp"
+            app:circle_x_radius="270dp"
+            app:circle_y_radius="270dp"
+            app:progress="@{progressValue}"
+            app:progress_width="50dp" />
+        <!--        圆上的线-->
+        <com.lasercyber.lws.ui.component.CircularSeekBar
+            android:id="@+id/laser_circular_seek_line"
+            style="@style/quick_mode_circular"
+            android:layout_width="568dp"
+            android:layout_height="568dp"
+            android:alpha="@{laserStatus?1f:0.5f}"
+            app:circle_color="@android:color/transparent"
+            app:circle_progress_color="@{(modelType==ModelConstant.WELD_CLEAN||modelType==ModelConstant.WIDTH_CLEAN)?@color/quick_model_circle_line_green:modelType==ModelConstant.HAND_CUT?@color/quick_model_circle_line_blue:@color/quick_model_circle_line_orange}"
+            app:circle_stroke_width="50dp"
+            app:progress="@{progressValue}"
+            app:progress_width="6dp" />
+
+<!--        <ImageView-->
+<!--            android:layout_width="520dp"-->
+<!--            android:layout_height="520dp"-->
+<!--            android:layout_centerInParent="true"-->
+<!--            android:elevation="8dp"-->
+<!--            android:src="@mipmap/quick_model_circle_center" />-->
+
+        <ImageView
+            android:layout_width="500.14dp"
+            android:layout_height="477.48dp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="26dp"
+            android:alpha="0.3"
+            android:elevation="10dp"
+            android:src="@mipmap/quick_model_circle_split_border" />
+
+        <ImageView
+            android:layout_width="532.14dp"
+            android:layout_height="477.48dp"
+            android:layout_centerHorizontal="true"
+            android:alpha="0.8"
+            android:src="@mipmap/quick_model_circle_split_border_top" />
+        <LinearLayout
+            android:layout_width="372dp"
+            android:layout_height="372dp"
+            android:orientation="vertical"
+            android:layout_centerInParent="true"
+            android:elevation="15dp"
+            android:gravity="center_horizontal"
+            android:background="@{(modelType==ModelConstant.WELD_CLEAN||modelType==ModelConstant.WIDTH_CLEAN)?@drawable/pressure_monitoring_green:modelType==ModelConstant.HAND_CUT?@drawable/pressure_monitoring_blue:@drawable/pressure_monitoring_orange}"
+            >
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/gas_pressure_text"
+                android:textColor="#ffffffff"
+                android:textSize="@dimen/text_size_14"
+                android:alpha="0.8"
+                android:layout_marginTop="50dp"/>
+            <TextView
+                android:id="@+id/pressure_value_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#ffffffff"
+                android:textSize="@dimen/text_size_48"
+                android:layout_marginTop="5dp"
+                />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/kpa_unit"
+                android:textColor="#ffffffff"
+                android:textSize="@dimen/text_size_10"
+                android:alpha="0.4"
+                android:layout_marginTop="5dp"/>
+            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                style="@style/FrostButton"
+                android:id="@+id/more_monitor_btn"
+                android:layout_width="wrap_content"
+                android:layout_marginTop="16.5dp"
+                android:drawableEnd="@mipmap/right_white_arrow"
+                android:drawablePadding="4dp"
+                android:paddingStart="@dimen/frost_action_button_padding_horizontal"
+                android:paddingEnd="@dimen/frost_action_button_padding_horizontal"
+                android:text="@string/more_monitor_text" />
+        </LinearLayout>
+        <ImageView
+            android:layout_width="541dp"
+            android:layout_height="573.5dp"
+            android:layout_marginTop="30dp"
+            android:layout_marginLeft="14dp"
+            android:elevation="9dp"
+            android:src="@mipmap/quick_model_circle_border" />
+    </RelativeLayout>
+</layout>

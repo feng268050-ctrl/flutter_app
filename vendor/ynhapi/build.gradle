@@ -1,0 +1,19 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdk 34
+    namespace = "com.innohi"
+
+    defaultConfig {
+        minSdk 29
+        targetSdk 34
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    api files("libs/YNHAPI-20250310.jar")
+}

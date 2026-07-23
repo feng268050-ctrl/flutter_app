@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="QuickModelBasePick">
+<!--        模式类型-->
+        <attr name="mode_type" />
+        <!--        点击开关-->
+        <attr name="click_enable" format="boolean"/>
+<!--        是否使用mm单位-->
+        <attr name="use_mm_unit" format="boolean"/>
+    </declare-styleable>
+</resources>

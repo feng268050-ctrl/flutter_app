@@ -1,0 +1,31 @@
+# Tablet layout: guest 2560x1600 @ 320dpi; hw.lcd.* in AVD config.ini (emulator-launch.sh).
+# Frame = display + 100px (50px bezel); back.png must match frame size below.
+parts {
+  device {
+    display {
+      width 2560
+      height 1600
+    }
+  }
+  landscape {
+    background {
+      image back.png
+    }
+  }
+}
+layouts {
+  landscape {
+    width 2660
+    height 1700
+    part1 {
+      name landscape
+      x 0
+      y 0
+    }
+    part2 {
+      name device
+      x 50
+      y 50
+    }
+  }
+}

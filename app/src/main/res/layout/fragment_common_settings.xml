@@ -1,0 +1,488 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.lasercyber.lws.ui.component.AppScrollView
+            style="@style/app_vertical_scroll_view_style"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:padding="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/advanced_setting_section_title"
+                    android:text="@string/common_settings_group_network" />
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:id="@+id/wireless_network_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="0dp"
+                    app:borderGradientCenter="top-bottom"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                    <com.lasercyber.lws.ui.component.layout.InsetList
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:id="@+id/wireless_network_inset_row"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/wifi_network_text" />
+
+                            <TextView
+                                android:id="@+id/wireless_network_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="right"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginLeft="20dp"
+                                android:src="@drawable/ic_settings_chevron_right" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                        <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:id="@+id/http_proxy_inset_row"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/http_proxy_settings_title" />
+
+                            <TextView
+                                android:id="@+id/http_proxy_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="right"
+                                android:textColor="@color/side_tab_not_active_color"
+                                android:textSize="29sp" />
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginLeft="20dp"
+                                android:src="@drawable/ic_settings_chevron_right" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+                    </com.lasercyber.lws.ui.component.layout.InsetList>
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                <TextView
+                    style="@style/advanced_setting_section_title"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/common_settings_group_display_sound" />
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical"
+                    android:padding="0dp"
+                    app:borderGradientCenter="top-left-bottom-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                    <com.lasercyber.lws.ui.component.layout.InsetList
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/language_setting_text" />
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView
+                            android:id="@+id/language_setting"
+                            style="@style/FrostSegmentedControl"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1">
+
+                            <RadioButton
+                                android:id="@+id/english"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/language_option_english" />
+
+                            <RadioButton
+                                android:id="@+id/chinese"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/language_option_chinese" />
+                        </com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView>
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/unit_setting_text" />
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView
+                            android:id="@+id/unit_setting"
+                            style="@style/FrostSegmentedControl"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1">
+
+                            <RadioButton
+                                android:id="@+id/unit_imperial"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/unit_option_imperial" />
+
+                            <RadioButton
+                                android:id="@+id/unit_metric"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/unit_option_metric" />
+                        </com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView>
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/screen_brightness_text" />
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostCapsuleSliderView
+                            android:id="@+id/seek_bar_screen_brightness"
+                            style="@style/FrostCapsuleSlider"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            android:max="100"
+                            android:min="0"
+                            app:frostCapsuleTrailingIcon="@mipmap/settings_icon" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/screen_off_time_text" />
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView
+                            android:id="@+id/spinner_screen_off_time"
+                            style="@style/FrostSegmentedControl.MediumText"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1">
+
+                            <RadioButton
+                                android:id="@+id/rb_10min"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/screen_off_option_10_min" />
+
+                            <RadioButton
+                                android:id="@+id/rb_30min"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/screen_off_option_30_min" />
+
+                            <RadioButton
+                                android:id="@+id/rb_60min"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/screen_off_option_60_min" />
+
+                            <RadioButton
+                                android:id="@+id/rb_never"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/never_text" />
+                        </com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView>
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/volume_setting_text" />
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostVolumeControlView
+                            android:id="@+id/volume_control"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:max="100"
+                            android:min="0"
+                            app:frostReserveThumbOverflow="true" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/sound_effect_check" />
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView
+                            android:id="@+id/spinner_screen_voice"
+                            style="@style/FrostSegmentedControl.MediumText"
+                            android:layout_width="0dp"
+                            android:layout_height="56dp"
+                            android:layout_weight="1"
+                            app:frostClickSoundEnabled="false">
+
+                            <RadioButton
+                                android:id="@+id/setting_effect1"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/sound_effect_option_1" />
+
+                            <RadioButton
+                                android:id="@+id/setting_effect2"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/sound_effect_option_2" />
+
+                            <RadioButton
+                                android:id="@+id/setting_effect3"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/sound_effect_option_3" />
+                        </com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView>
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+                    </com.lasercyber.lws.ui.component.layout.InsetList>
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                <TextView
+                    style="@style/advanced_setting_section_title"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/common_settings_group_date_time" />
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical"
+                    android:padding="0dp"
+                    app:borderGradientCenter="bottom-left-top-right"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                    <com.lasercyber.lws.ui.component.layout.InsetList
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/date_time_automatic" />
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                            android:id="@+id/automatic_switch"
+                            style="@style/FrostSwitch" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:id="@+id/date_row"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/date_time_set_date" />
+
+                        <TextView
+                            android:id="@+id/date_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+
+                        <ImageView
+                            android:id="@+id/date_arrow"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginLeft="20dp"
+                            android:src="@drawable/ic_settings_chevron_right" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:id="@+id/time_row"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/date_time_set_time" />
+
+                        <TextView
+                            android:id="@+id/time_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+
+                        <ImageView
+                            android:id="@+id/time_arrow"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginLeft="20dp"
+                            android:src="@drawable/ic_settings_chevron_right" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:id="@+id/time_zone_row"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/date_time_set_time_zone" />
+
+                        <TextView
+                            android:id="@+id/time_zone_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/side_tab_not_active_color"
+                            android:textSize="29sp" />
+
+                        <ImageView
+                            android:id="@+id/time_zone_arrow"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginLeft="20dp"
+                            android:src="@drawable/ic_settings_chevron_right" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+                    </com.lasercyber.lws.ui.component.layout.InsetList>
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+                <TextView
+                    android:id="@+id/auto_sync_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:textColor="@color/tab_text_unselected"
+                    android:textSize="29sp" />
+
+                <TextView
+                    style="@style/advanced_setting_section_title"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/common_settings_group_misc" />
+
+                <com.lasercyber.lws.frostui.card.interop.FrostCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:padding="0dp"
+                    app:borderGradientCenter="top-bottom"
+                        app:frostedGlassBlurIntensity="transparent">
+
+                    <com.lasercyber.lws.ui.component.layout.InsetList
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/advanced_setting_show_boot_self_check" />
+
+                            <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                                android:id="@+id/show_boot_self_check_switch"
+                                style="@style/FrostSwitch" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                        <com.lasercyber.lws.ui.component.layout.InsetListRow
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                style="@style/advanced_setting_item_title"
+                                android:text="@string/common_settings_show_safety_ground_lock_alarm" />
+
+                            <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                                android:id="@+id/show_safety_ground_lock_alarm_switch"
+                                style="@style/FrostSwitch" />
+                        </com.lasercyber.lws.ui.component.layout.InsetListRow>
+                    </com.lasercyber.lws.ui.component.layout.InsetList>
+                </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+            </LinearLayout>
+        </com.lasercyber.lws.ui.component.AppScrollView>
+    </FrameLayout>
+</layout>

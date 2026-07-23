@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CircularSeekBar">
+        <!-- 进度值：控制SeekBar当前的进度，默认一般为0 -->
+        <attr name="progress" format="integer"/>
+
+        <!-- 最大进度值：控制SeekBar的进度上限，默认一般为100 -->
+        <attr name="max" format="integer"/>
+
+        <!-- 是否允许指针移出外部圆形区域：true=允许指针超出圆范围，false=限制指针在圆内 -->
+        <attr name="move_outside_circle" format="boolean"/>
+
+        <!-- 是否保持圆形的等比例（正圆）：true=强制X/Y半径相等（正圆），false=允许椭圆（X/Y半径不同） -->
+        <attr name="maintain_equal_circle" format="boolean"/>
+
+        <!-- 是否使用自定义的圆角/半径：true=启用circle_x_radius/circle_y_radius的自定义值，false=使用默认半径 -->
+        <attr name="use_custom_radii" format="boolean"/>
+
+        <!-- 是否启用锁定功能 -->
+        <attr name="lock_enabled" format="boolean"/>
+
+        <!-- 圆形的X轴半径：控制圆形的水平方向半径，支持dp/px等尺寸单位（需配合use_custom_radii=true生效） -->
+        <attr name="circle_x_radius" format="dimension" />
+
+        <!-- 圆形的Y轴半径：控制圆形的垂直方向半径，支持dp/px等尺寸单位（需配合use_custom_radii=true生效） -->
+        <attr name="circle_y_radius" format="dimension" />
+
+        <!-- 圆形的描边宽度：控制SeekBar背景圆的边框厚度，支持dp/px等尺寸单位 -->
+        <attr name="circle_stroke_width" format="dimension" />
+
+        <!-- 指针的半径：控制拖动指针的大小（实心部分），支持dp/px等尺寸单位 -->
+        <attr name="pointer_radius" format="dimension" />
+
+        <!-- 指针光晕的宽度：控制指针外围光晕的厚度，支持dp/px等尺寸单位（0dp则无光晕） -->
+        <attr name="pointer_halo_width" format="dimension" />
+
+        <!-- 指针光晕的边框宽度：控制光晕外围的边框厚度，支持dp/px等尺寸单位 -->
+        <attr name="pointer_halo_border_width" format="dimension"/>
+
+        <!-- 圆形的背景颜色：支持直接色值（#FFFFFF）或颜色引用（@color/xxx） -->
+        <attr name="circle_color" format="color|reference"/>
+
+        <!-- 圆形的进度条颜色：支持直接色值或颜色引用，控制进度部分的显示颜色 -->
+        <attr name="circle_progress_color" format="color|reference"/>
+
+        <!-- 指针的实心颜色：支持直接色值或颜色引用，控制指针主体的颜色 -->
+        <attr name="pointer_color" format="color|reference"/>
+
+        <!-- 指针光晕的默认颜色：支持直接色值或颜色引用，控制指针光晕的常规颜色 -->
+        <attr name="pointer_halo_color" format="color|reference"/>
+
+        <!-- 指针被触摸时的光晕颜色：支持直接色值或颜色引用，控制触摸状态下光晕的颜色 -->
+        <attr name="pointer_halo_color_ontouch" format="color|reference"/>
+
+        <!-- 指针被触摸时的透明度：取值范围0~255（0=完全透明，255=完全不透明），控制触摸状态下指针的透明度 -->
+        <attr name="pointer_alpha_ontouch" format="integer"/>
+
+        <!-- 进度条的起始角度：单位为角度（如125表示从125°开始绘制进度），支持浮点值（如125.5°） -->
+        <attr name="start_angle" format="float"/>
+
+        <!-- 进度条的结束角度：单位为角度（如55表示到55°结束绘制进度），支持浮点值 -->
+        <attr name="end_angle" format="float"/>
+
+        <!-- 圆形的填充颜色：支持直接色值或颜色引用，控制圆形内部的填充色（若为透明则显示背景） -->
+        <attr name="circle_fill" format="color|reference"/>
+        <!-- 新增：进度宽度（已选中导轨粗细） -->
+        <attr name="progress_width" format="dimension" />
+<!--        使用圆形-->
+        <attr name="use_round" format="boolean"/>
+<!--        使用拖动的滑块-->
+        <attr name="use_halo_paint" format="boolean"/>
+        <attr name="circle_padding_left" format="dimension"/>
+        <attr name="circle_padding_right" format="dimension"/>
+<!--        是允许输入-->
+        <attr name="is_touch_enabled" format="boolean"/>
+    </declare-styleable>
+</resources>

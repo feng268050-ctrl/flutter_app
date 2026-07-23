@@ -1,0 +1,212 @@
+## MODIFIED Requirements
+
+### Requirement: Advanced Settings exposes Dangerous Operations toggle group
+
+The Advanced Settings page SHALL include a titled group **Dangerous Operations** containing five Switch controls in this order:
+
+| Control | Persisted field | Default |
+|---------|-----------------|---------|
+| Keep Laser On while Alarmed | `keepLaserOnWhileAlarmed` | OFF (false) |
+| Allow Work after Camera Alarm | `allowWorkAfterCameraAlarm` | OFF (false) |
+| Allow Work after Gas Alarm | `allowWorkAfterGasAlarm` | OFF (false) |
+| Allow Work after Lens Contamination | `allowWorkAfterLensContamination` | OFF (false) |
+| Allow Work after Feeder Alarm | `allowWorkAfterFeederAlarm` | OFF (false) |
+
+All five fields SHALL be stored in `t_advanced_settings`. Labels MUST be localized (EN: group **Dangerous Operations**, items as named above; ZH equivalents in `values-zh`).
+
+Each toggle row SHALL display a secondary hint line below the title explaining operator impact. Hint strings MUST be localized in EN and ZH. The feeder toggle hint MUST state that continuous welding will not work properly when the wire feeder is abnormal but other modes can continue. Hint text is informational only and MUST NOT be enforced by runtime laser-enable or work guards.
+
+#### Scenario: User views Dangerous Operations group
+
+- **WHEN** the user opens Advanced Settings
+- **THEN** the page displays the Dangerous Operations group below AI Assistance
+- **AND** Keep Laser On while Alarmed is the first switch in the group
+- **AND** all five switches reflect persisted values from `t_advanced_settings`
+- **AND** each switch shows its localized hint text below the title
+
+#### Scenario: User enables keep laser on while alarmed
+
+- **WHEN** the user turns ON Keep Laser On while Alarmed
+- **THEN** the app persists `keepLaserOnWhileAlarmed` true in `t_advanced_settings`
+- **AND** no Modbus device-setting write is sent solely because this toggle changed
+
+#### Scenario: User enables allow work after gas alarm
+
+- **WHEN** the user turns ON Allow Work after Gas Alarm
+- **THEN** the app persists `allowWorkAfterGasAlarm` true in `t_advanced_settings`
+- **AND** no Modbus device-setting write is sent solely because this toggle changed
+
+#### Scenario: User enables allow work after feeder alarm
+
+- **WHEN** the user turns ON Allow Work after Feeder Alarm
+- **THEN** the app persists `allowWorkAfterFeederAlarm` true in `t_advanced_settings`
+- **AND** no Modbus device-setting write is sent solely because this toggle changed
+
+#### Scenario: Fresh install defaults all dangerous toggles off
+
+- **WHEN** the app creates the default `t_advanced_settings` row on first access
+- **THEN** `keepLaserOnWhileAlarmed`, `allowWorkAfterCameraAlarm`, `allowWorkAfterGasAlarm`, `allowWorkAfterLensContamination`, and `allowWorkAfterFeederAlarm` MUST be false
+
+### Requirement: Dangerous operations toggles gate laser-enable alarm blocking
+
+When the operator initiates **laser enable** in Quick Mode or Engineer Mode, the app SHALL evaluate camera communication (C002), shielding gas (A001), lens heavy contamination (L001), and wire feeder (W001/W002) laser-enable guards **before** sending laser-on Modbus commands.
+
+For each of these **four** alarm families:
+
+- When the corresponding dangerous-operations toggle is **OFF** and the alarm is **active**, laser enable MUST be blocked and the operator MUST see the corresponding warn dialog again on that attempt (immediate warn queue, same copy as passive alarms).
+- When the corresponding toggle is **ON** and the alarm is still active, that alarm MUST NOT block laser enable and MUST NOT enqueue a repeat warn dialog solely because of that alarm on that attempt.
+
+For all other `AlarmCodeEnums` alarm codes, dangerous-operations toggles MUST NOT apply: active alarms MUST continue to block laser enable (where the existing Modbus preflight applies) and MUST force laser off at runtime per `alarm-laser-interrupt` unless **Keep Laser On while Alarmed** is ON.
+
+**Keep Laser On while Alarmed** MUST NOT change laser-enable preflight for any alarm code. It affects **runtime** laser interrupt only (see `alarm-laser-interrupt`).
+
+Laser **disable** / end-of-work actions MUST NOT be blocked by these guards.
+
+While laser enable is active in Quick Mode or Engineer Mode, when a guarded alarm (C002, A001, unresolved L001, or W001/W002) is active and the matching bypass toggle is **OFF** and `keepLaserOnWhileAlarmed` is **OFF**, the app MUST force laser enable off (runtime work guard) without blocking laser disable. When any **other** coded alarm is active and `keepLaserOnWhileAlarmed` is **OFF**, the app MUST force laser enable off with **no** per-alarm dangerous-operations exemption. When `keepLaserOnWhileAlarmed` is **ON**, the app MUST NOT force laser off at runtime for any coded alarm while laser enable is active.
+
+Laser-enable C002 blocking MUST use an active warn dialog path that is not suppressed by passive warn-cache reminder consumption. Blocking MUST occur even when dialog materialization returns null.
+
+All `WARN_TYPE` warn dialogs shown through the global warn dialog pipeline (including immediate laser-enable blocks) MUST play the warn alarm sound when displayed.
+
+Quick Mode laser enable SHALL run the same laser-power vs advanced-settings start/end power validation as Engineer Mode before `EngineerModeCheck.enableLaser`.
+
+Active predicates:
+
+| Alarm | Active when |
+|-------|-------------|
+| Camera C002 | Camera ping health reports unreachable (`CameraCommStatus.isFault()`) or demo-sticky C002 |
+| Gas A001 | `ShieldingGasAlarmMessageUtil.hasActiveAlarm(deviceStatus)` or demo-sticky A001 |
+| Lens L001 | A production heavy contamination episode is unresolved (detected heavy without level-0 / fault-cleared event, including after operator acknowledged the L001 dialog this boot) or demo-sticky L001 |
+| Feeder W001/W002 | `deviceStatus.isWireFeederCommunicationAlarm()` or `deviceStatus.isWireFeederCurrentAlarm()` or demo-sticky W001/W002 |
+
+#### Scenario: Camera fault blocks laser enable by default
+
+- **WHEN** camera communication fault C002 is active
+- **AND** `allowWorkAfterCameraAlarm` is false
+- **AND** the operator taps laser enable in Quick Mode or Engineer Mode
+- **THEN** laser enable MUST NOT proceed
+- **AND** the operator MUST see the C002 camera communication warn dialog
+
+#### Scenario: Camera bypass allows laser enable
+
+- **WHEN** camera communication fault C002 is active
+- **AND** `allowWorkAfterCameraAlarm` is true
+- **AND** all other laser-enable preflight checks pass
+- **THEN** laser enable MAY proceed
+- **AND** the app MUST NOT show a repeat C002 popup solely for that laser-enable attempt
+
+#### Scenario: Gas alarm blocks laser enable by default
+
+- **WHEN** shielding gas alarm A001 is active
+- **AND** `allowWorkAfterGasAlarm` is false
+- **AND** the operator taps laser enable
+- **THEN** laser enable MUST NOT proceed
+- **AND** the operator MUST see the A001 shielding gas warn dialog
+
+#### Scenario: Gas bypass allows laser enable
+
+- **WHEN** shielding gas alarm A001 is active
+- **AND** `allowWorkAfterGasAlarm` is true
+- **AND** all other laser-enable preflight checks pass
+- **THEN** laser enable MAY proceed
+- **AND** the app MUST NOT show a repeat A001 popup solely for that laser-enable attempt
+
+#### Scenario: Lens contamination blocks repeat laser enable by default
+
+- **WHEN** a production heavy lens contamination episode is unresolved (L001)
+- **AND** `allowWorkAfterLensContamination` is false
+- **AND** the operator taps laser enable after previously acknowledging the L001 dialog
+- **THEN** laser enable MUST NOT proceed
+- **AND** the operator MUST see the L001 heavy contamination warn dialog again
+
+#### Scenario: Lens contamination bypass allows laser enable
+
+- **WHEN** a production heavy lens contamination episode is unresolved (L001)
+- **AND** `allowWorkAfterLensContamination` is true
+- **AND** all other laser-enable preflight checks pass
+- **THEN** laser enable MAY proceed
+- **AND** the app MUST NOT show a repeat L001 popup solely for that laser-enable attempt
+
+#### Scenario: Feeder alarm blocks laser enable by default
+
+- **WHEN** wire feeder alarm W001 or W002 is active
+- **AND** `allowWorkAfterFeederAlarm` is false
+- **AND** the operator taps laser enable in any process type
+- **THEN** laser enable MUST NOT proceed
+- **AND** the operator MUST see the corresponding W001 or W002 warn dialog
+
+#### Scenario: Feeder bypass allows laser enable
+
+- **WHEN** wire feeder alarm W001 or W002 is active
+- **AND** `allowWorkAfterFeederAlarm` is true
+- **AND** all other laser-enable preflight checks pass
+- **THEN** laser enable MAY proceed
+- **AND** the app MUST NOT show a repeat feeder popup solely for that laser-enable attempt
+
+#### Scenario: Laser disable not blocked by dangerous guards
+
+- **WHEN** any of C002, A001, unresolved L001, or W001/W002 is active
+- **AND** laser is currently ON
+- **AND** the operator initiates laser disable or end-of-work
+- **THEN** laser disable MUST proceed without dangerous-operations preflight blocking
+
+#### Scenario: Active guarded alarm forces laser off at runtime
+
+- **WHEN** laser enable is active in Quick Mode or Engineer Mode
+- **AND** a guarded alarm (C002, A001, unresolved L001, or W001/W002) is active
+- **AND** the matching dangerous-operations bypass toggle is OFF
+- **AND** `keepLaserOnWhileAlarmed` is false
+- **THEN** the app MUST force laser enable off
+- **AND** laser disable MUST NOT be blocked by dangerous guards
+
+#### Scenario: Keep laser on while alarmed suppresses runtime interrupt
+
+- **WHEN** laser enable is active
+- **AND** any coded alarm (for example E006 or C002) is active
+- **AND** `keepLaserOnWhileAlarmed` is true
+- **THEN** the app MUST NOT force laser enable off solely because of that alarm
+- **AND** warn dialogs for that alarm MAY still be shown
+
+#### Scenario: Turning off keep laser on while alarmed restores interrupt
+
+- **WHEN** laser enable is active
+- **AND** a coded alarm is active
+- **AND** the operator turns OFF Keep Laser On while Alarmed
+- **THEN** the app MUST evaluate runtime interrupt and force laser off if alarms still block work per default rules
+
+#### Scenario: Non-bypass coded alarm forces laser off without bypass
+
+- **WHEN** laser enable is active
+- **AND** a coded alarm other than A001, C002, L001, or W001/W002 (for example E006) is active
+- **AND** `keepLaserOnWhileAlarmed` is false
+- **THEN** the app MUST force laser enable off
+- **AND** no per-alarm dangerous-operations toggle MAY exempt that alarm from runtime interrupt
+
+#### Scenario: C002 laser-enable block plays warn sound
+
+- **WHEN** camera communication fault C002 is active
+- **AND** `allowWorkAfterCameraAlarm` is false
+- **AND** the operator taps laser enable
+- **THEN** laser enable MUST NOT proceed
+- **AND** the C002 warn dialog MUST be shown with warn alarm sound
+
+#### Scenario: Quick Mode validates laser power before enable
+
+- **WHEN** the operator taps laser enable in Quick Mode
+- **AND** process laser power does not exceed advanced-settings start or end power thresholds
+- **THEN** laser enable MUST NOT proceed
+- **AND** the app MUST show the existing laser power validation message
+
+### Requirement: Dangerous operations settings are app-only
+
+The five dangerous-operations boolean fields MUST be read by the Advanced Settings UI and laser guard paths only. They MUST NOT be included in Advanced Settings Modbus write payloads or remote stat / device.online snapshots.
+
+#### Scenario: Modbus payload omits dangerous operations toggles
+
+- **WHEN** the app builds an Advanced Settings Modbus write payload
+- **THEN** the payload MUST NOT include `keepLaserOnWhileAlarmed`, `allowWorkAfterCameraAlarm`, `allowWorkAfterGasAlarm`, `allowWorkAfterLensContamination`, or `allowWorkAfterFeederAlarm`
+
+#### Scenario: Remote snapshot omits dangerous operations toggles
+
+- **WHEN** the device sends `command.stat_response` or `device.online`
+- **THEN** dangerous-operations toggle fields MUST NOT appear in the remote snapshot JSON

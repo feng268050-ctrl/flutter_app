@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- FrostUI card/button XML attributes (canonical tokens for frostui migration). -->
+    <attr name="borderGradientCenter" format="string" />
+    <attr name="frostedGlassDrawFill" format="boolean" />
+    <attr name="frostedGlassDrawBorder" format="boolean" />
+    <attr name="cardBackground" format="string" />
+    <attr name="frostedGlassButtonVariant" format="string" />
+    <attr name="frostedGlassButtonSize" format="string" />
+    <attr name="frostedGlassButtonShape" format="string" />
+    <attr name="borderRadius" format="dimension" />
+    <attr name="frostedGlassStackPanelFill" format="boolean" />
+    <!-- When false, draw frosted panel fill/border only (no snapshot backdrop blur). -->
+    <attr name="frostedGlassBackdropBlur" format="boolean" />
+
+    <attr name="frostedGlassBlurTint" format="enum">
+        <enum name="dark" value="0" />
+        <enum name="warm" value="1" />
+    </attr>
+
+    <attr name="frostedGlassBlurIntensity" format="enum">
+        <enum name="low" value="0" />
+        <enum name="middle" value="1" />
+        <enum name="high" value="2" />
+        <enum name="extreme" value="3" />
+        <enum name="transparent" value="4" />
+        <enum name="solid" value="5" />
+        <enum name="minimal" value="6" />
+    </attr>
+
+    <attr name="frostedGlassCornerRadius" format="dimension" />
+
+    <declare-styleable name="FrostCard">
+        <attr name="borderGradientCenter" />
+        <attr name="frostedGlassDrawFill" />
+        <attr name="frostedGlassDrawBorder" />
+        <attr name="frostedGlassStackPanelFill" />
+        <attr name="frostedGlassBackdropBlur" />
+        <attr name="frostedGlassBlurTint" />
+        <attr name="frostedGlassBlurIntensity" />
+        <attr name="frostedGlassCornerRadius" />
+        <attr name="cardBackground" />
+        <attr name="android:orientation" />
+        <attr name="android:gravity" />
+    </declare-styleable>
+    <attr name="frostButtonStyle" format="reference" />
+
+    <declare-styleable name="FrostButton">
+        <attr name="android:text" />
+        <attr name="android:textColor" />
+        <attr name="android:textSize" />
+        <attr name="android:enabled" />
+        <attr name="android:drawableStart" />
+        <attr name="android:drawableEnd" />
+        <attr name="android:drawablePadding" />
+        <attr name="android:padding" />
+        <attr name="android:paddingLeft" />
+        <attr name="android:paddingRight" />
+        <attr name="android:paddingTop" />
+        <attr name="android:paddingBottom" />
+        <attr name="android:paddingStart" />
+        <attr name="android:paddingEnd" />
+        <attr name="android:layout_width" />
+        <attr name="android:layout_height" />
+        <attr name="android:minWidth" />
+        <attr name="android:minHeight" />
+        <attr name="android:singleLine" />
+        <attr name="android:textAllCaps" />
+        <attr name="drawableTint" />
+        <attr name="borderGradientCenter" />
+        <attr name="frostedGlassButtonVariant" />
+        <attr name="frostedGlassButtonSize" />
+        <attr name="frostedGlassButtonShape" />
+        <attr name="borderRadius" />
+    </declare-styleable>
+</resources>

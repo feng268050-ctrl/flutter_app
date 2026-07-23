@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="1280dp"
+        android:layout_height="800dp"
+        android:background="@color/safety_black"
+        android:orientation="vertical"
+        tools:context=".activitys.setting.HttpProxySettingsActivity">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:background="@mipmap/job_border1"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/go_to_up_page"
+                android:layout_width="200dp"
+                android:layout_height="72dp">
+
+                <TextView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginLeft="30sp"
+                    android:layout_marginTop="20dp"
+                    android:background="@mipmap/top_page_icon"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:textSize="24dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="-200dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/http_proxy_settings_title"
+                android:textColor="@color/white"
+                android:textSize="29sp" />
+        </LinearLayout>
+
+        <com.lasercyber.lws.frostui.card.interop.FrostCardView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="24dp"
+            android:orientation="vertical"
+            android:padding="0dp"
+            app:borderGradientCenter="top-left-bottom-right"
+            app:frostedGlassBlurIntensity="transparent">
+
+            <com.lasercyber.lws.ui.component.AppScrollView
+                style="@style/app_vertical_scroll_view_style"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false">
+
+                <com.lasercyber.lws.ui.component.layout.InsetList
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:text="@string/http_proxy_enable" />
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSwitchView
+                            android:id="@+id/switch_enable_proxy"
+                            style="@style/FrostSwitch" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/http_proxy_host" />
+
+                        <TextView
+                            android:id="@+id/tv_proxy_host"
+                            style="@style/setting_frost_value_box"
+                            android:layout_width="@dimen/http_proxy_value_box_width"
+                            android:layout_marginStart="24dp"
+                            android:maxLength="253" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/http_proxy_port" />
+
+                        <TextView
+                            android:id="@+id/tv_proxy_port"
+                            style="@style/setting_frost_value_box"
+                            android:layout_width="@dimen/http_proxy_port_value_box_width"
+                            android:layout_marginStart="24dp"
+                            android:maxLength="5" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/http_proxy_auth_type" />
+
+                        <com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView
+                            android:id="@+id/auth_type_setting"
+                            style="@style/FrostSegmentedControl"
+                            android:layout_width="@dimen/http_proxy_value_box_width"
+                            android:layout_height="56dp"
+                            android:layout_marginStart="24dp">
+
+                            <RadioButton
+                                android:id="@+id/auth_none"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/http_proxy_auth_none" />
+
+                            <RadioButton
+                                android:id="@+id/auth_basic"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:text="@string/http_proxy_auth_basic" />
+                        </com.lasercyber.lws.frostui.control.interop.FrostSegmentedControlView>
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:id="@+id/divider_username"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:id="@+id/row_username"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/http_proxy_username" />
+
+                        <TextView
+                            android:id="@+id/tv_proxy_username"
+                            style="@style/setting_frost_value_box"
+                            android:layout_width="@dimen/http_proxy_value_box_width"
+                            android:layout_marginStart="24dp"
+                            android:maxLength="128" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+                    <com.lasercyber.lws.ui.component.layout.InsetDivider
+                        android:id="@+id/divider_password"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <com.lasercyber.lws.ui.component.layout.InsetListRow
+                        android:id="@+id/row_password"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/advanced_setting_item_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/http_proxy_password" />
+
+                        <TextView
+                            android:id="@+id/tv_proxy_password"
+                            style="@style/setting_frost_value_box"
+                            android:layout_width="@dimen/http_proxy_value_box_width"
+                            android:layout_marginStart="24dp"
+                            android:maxLength="128" />
+                    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+                </com.lasercyber.lws.ui.component.layout.InsetList>
+            </com.lasercyber.lws.ui.component.AppScrollView>
+        </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="24dp"
+            android:orientation="horizontal">
+
+            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                android:id="@+id/btn_test_connection"
+                android:layout_width="220dp"
+                android:layout_height="58dp"
+                android:layout_marginEnd="24dp"
+                android:gravity="center"
+                android:text="@string/http_proxy_test_connection"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="29sp"
+                app:frostedGlassButtonVariant="primary" />
+
+            <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                android:id="@+id/btn_save"
+                android:layout_width="163dp"
+                android:layout_height="58dp"
+                android:gravity="center"
+                android:text="@string/http_proxy_save"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="29sp"
+                app:frostedGlassButtonVariant="primary" />
+        </LinearLayout>
+    </LinearLayout>
+</layout>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 禁用状态 -->
+    <item  android:state_enabled="false" android:drawable="@mipmap/laser_enable_btn_green"/>
+    <!-- 默认/启用状态 -->
+    <item  android:state_enabled="true" android:drawable="@mipmap/laser_enable_btn_green"/>
+</selector>

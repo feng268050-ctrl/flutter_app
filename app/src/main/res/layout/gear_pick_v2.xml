@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+
+        <variable
+            name="modeType"
+            type="java.lang.Integer" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:orientation="vertical"
+        android:paddingBottom="@dimen/quick_mode_picker_bottom_padding">
+
+        <TextView
+            style="@style/quick_mode_picker_title"
+            android:text="@string/gear_text"
+            android:translationX="@dimen/quick_mode_picker_gear_title_horizontal_offset"
+            />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/quick_mode_picker_scale_height"
+            android:layout_marginTop="@dimen/quick_mode_picker_title_scale_gap"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <ImageView
+                android:id="@+id/scale_left"
+                android:layout_width="80.2dp"
+                android:layout_height="match_parent"
+                android:layout_alignParentStart="true"
+                android:src="@mipmap/scale_left"
+                android:translationX="@dimen/quick_mode_picker_left_scale_horizontal_offset" />
+<!--            android:rotation="6.0"-->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="20dp"
+                android:gravity="center"
+                android:translationY="@dimen/quick_mode_picker_value_vertical_offset">
+
+                <com.lasercyber.lws.ui.component.wheelview.widget.WheelView
+                    android:id="@+id/gear_wheel_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </LinearLayout>
+
+        </RelativeLayout>
+    </LinearLayout>
+</layout>

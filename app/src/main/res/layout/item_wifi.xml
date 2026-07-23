@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <com.lasercyber.lws.ui.component.layout.InsetListRow
+        android:id="@+id/wifi_row"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/inset_list_row_height"
+        android:clickable="true"
+        android:focusable="true">
+
+        <include layout="@layout/include_wifi_network_row" />
+    </com.lasercyber.lws.ui.component.layout.InsetListRow>
+
+    <com.lasercyber.lws.ui.component.layout.InsetDivider
+        android:id="@+id/wifi_row_divider"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+</LinearLayout>

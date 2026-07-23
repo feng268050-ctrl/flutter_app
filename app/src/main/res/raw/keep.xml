@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/logging.properties,@raw/*.properties,@raw/shanghai_tan,@assets/logging.properties,@assets/*.properties"
+    tools:shrinkMode="strict" />

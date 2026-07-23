@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 点焊蓝色区 #0F0AFF：下深上浅，顶部约 15% 不透明度 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:type="linear"
+        android:angle="270"
+        android:startColor="#260F0AFF"
+        android:centerColor="#990F0AFF"
+        android:endColor="#E60F0AFF"
+        android:centerY="0.45"
+        android:tileMode="clamp" />
+</shape>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--    页面背景色-->
+    <attr name="app_page_background_color" format="color|reference" />
+    <!--    字体颜色-->
+    <attr name="app_base_text_color" format="color|reference" />
+
+    <attr name="app_base_text_color_white" format="color|reference" />
+    <!--统计图形-->
+    <declare-styleable name="RingProgressView">
+        <attr name="rpv_progress" format="float"/>
+        <attr name="rpv_foregroundColor" format="color"/>
+        <attr name="rpv_backgroundColor" format="color"/>
+        <attr name="rpv_strokeWidth" format="dimension"/>
+        <attr name="rpv_dotColor" format="color"/>
+    </declare-styleable>
+    <declare-styleable name="quick_model_common">
+        <attr name="mode_type" format="integer"/>
+    </declare-styleable>
+    <!--    CNC运行页面-->
+    <declare-styleable name="cnc_running">
+        <attr name="cnc_link_status" format="boolean" />
+    </declare-styleable>
+
+    <attr name="labelText" format="string" />
+    <attr name="labelTextColor" format="color" />
+    <attr name="labelTextSize" format="dimension" />
+    <attr name="labelSpacing" format="dimension" />
+
+    <declare-styleable name="FrostQuickActionEntry">
+        <attr name="quickActionLabel" format="string" />
+        <attr name="quickActionLabelWidth" format="dimension" />
+        <attr name="quickActionLabelViewId" format="reference" />
+        <attr name="quickActionCornerRadius" format="dimension" />
+        <attr name="quickActionLabelMarginTop" format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="FrostRippleClickEntry">
+        <attr name="rippleCornerRadius" format="dimension" />
+        <attr name="rippleTarget" format="reference" />
+    </declare-styleable>
+
+    <attr name="machineStatusVariant" format="enum">
+        <enum name="monitor" value="0" />
+        <enum name="dialog" value="1" />
+        <enum name="live_monitor" value="2" />
+    </attr>
+    <attr name="machineStatusGaugeWidth" format="dimension" />
+    <attr name="machineStatusGaugeHeight" format="dimension" />
+    <attr name="machineStatusTileWidth" format="dimension" />
+    <attr name="machineStatusTileHeight" format="dimension" />
+    <attr name="machineStatusLabelTextColor" format="color" />
+    <attr name="machineStatusLabelTextSize" format="dimension" />
+    <attr name="machineStatusCheckboxButton" format="reference" />
+
+    <declare-styleable name="MachineStatusGaugeCard">
+        <attr name="machineStatusVariant" />
+        <attr name="machineStatusGaugeWidth" />
+        <attr name="machineStatusGaugeHeight" />
+        <attr name="borderGradientCenter" />
+        <attr name="frostedGlassBlurTint" />
+        <attr name="frostedGlassBlurIntensity" />
+        <attr name="cardBackground" />
+        <attr name="android:orientation" />
+        <attr name="android:gravity" />
+    </declare-styleable>
+
+    <declare-styleable name="MachineStatusStatusTile">
+        <attr name="machineStatusVariant" />
+        <attr name="machineStatusTileWidth" />
+        <attr name="machineStatusTileHeight" />
+        <attr name="machineStatusLabelTextColor" />
+        <attr name="machineStatusLabelTextSize" />
+        <attr name="machineStatusCheckboxButton" />
+        <attr name="labelText" />
+        <attr name="android:checked" />
+        <attr name="borderGradientCenter" />
+        <attr name="frostedGlassBlurTint" />
+        <attr name="frostedGlassBlurIntensity" />
+        <attr name="cardBackground" />
+    </declare-styleable>
+
+    <declare-styleable name="InsetListRow">
+        <attr name="horizontalInset" format="dimension" />
+        <attr name="rowVerticalPadding" format="dimension" />
+        <attr name="rowMinHeight" format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="InsetDivider">
+        <attr name="dividerInset" format="dimension" />
+        <attr name="dividerInsetStart" format="dimension" />
+        <attr name="dividerInsetEnd" format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="SectionHeader">
+        <attr name="android:text" />
+        <attr name="dividerTopSpacing" format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="SectionContent">
+        <attr name="contentTopPadding" format="dimension" />
+    </declare-styleable>
+
+    <attr name="switchStyle" format="reference" />
+    <attr name="checkboxStyle" format="reference" />
+</resources>

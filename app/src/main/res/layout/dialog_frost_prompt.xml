@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/frost_dialog_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <View
+        android:id="@+id/frost_dialog_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/frost_dialog_scrim"
+        android:clickable="true"
+        android:focusable="false"
+        android:focusableInTouchMode="false" />
+
+    <com.lasercyber.lws.frostui.card.interop.FrostCardView
+        android:id="@+id/frost_dialog_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:clickable="true"
+        android:elevation="8dp"
+        android:focusable="false"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="@dimen/frost_dialog_content_padding"
+        app:borderGradientCenter="top-left-bottom-right"
+        app:frostedGlassBackdropBlur="true"
+        app:frostedGlassDrawBorder="true"
+        app:frostedGlassBlurIntensity="high"
+        app:frostedGlassStackPanelFill="true">
+
+        <LinearLayout
+            android:id="@+id/frost_dialog_title_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:id="@+id/frost_dialog_title_slot"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/tv_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:letterSpacing="0.02"
+                    android:textColor="@color/frost_text_primary"
+                    android:textSize="37sp"
+                    android:textStyle="bold" />
+            </FrameLayout>
+
+            <View
+                android:id="@+id/frost_dialog_title_divider"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="@dimen/frost_dialog_content_padding"
+                android:layout_marginBottom="@dimen/frost_dialog_content_padding"
+                android:background="@drawable/frost_divider" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/frost_dialog_body_slot"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="true"
+            android:clipToPadding="true">
+
+            <TextView
+                android:id="@+id/tv_frost_dialog_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:lineSpacingExtra="6dp"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:textAlignment="viewStart"
+                android:textColor="@color/frost_text_secondary"
+                android:textSize="33sp" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/frost_dialog_action_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <View
+                android:id="@+id/frost_dialog_action_divider"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="@dimen/frost_dialog_content_padding"
+                android:layout_marginBottom="@dimen/frost_dialog_content_padding"
+                android:background="@drawable/frost_divider" />
+
+            <FrameLayout
+                android:id="@+id/frost_dialog_action_slot"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:id="@+id/frost_dialog_action_default"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                        android:id="@+id/tv_frost_dialog_cancel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="@dimen/frost_action_button_height"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="@string/cancel_text"
+                        android:textColor="@color/frost_text_primary"
+                        android:textSize="@dimen/frost_action_button_text_size"
+                        app:borderGradientCenter="top-left-bottom-right"
+                        app:frostedGlassButtonVariant="default" />
+
+                    <View
+                        android:layout_width="@dimen/frost_dialog_content_padding"
+                        android:layout_height="1dp" />
+
+                    <com.lasercyber.lws.frostui.button.interop.FrostButtonView
+                        android:id="@+id/tv_frost_dialog_confirm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="@dimen/frost_action_button_height"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/frost_action_button_text_size"
+                        app:borderGradientCenter="top-left-bottom-right"
+                        app:frostedGlassButtonVariant="primary" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+    </com.lasercyber.lws.frostui.card.interop.FrostCardView>
+
+    <FrameLayout
+        android:id="@+id/frost_dialog_ime_slot"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/ime_keyboard_height"
+        android:layout_gravity="bottom"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:elevation="48dp"
+        android:translationZ="48dp"
+        android:focusable="false"
+        android:clickable="false" />
+</FrameLayout>

@@ -1,0 +1,1120 @@
+<resources>
+    <string name="app_name">laser</string>
+    <string name="device_monitor_title">设备监测</string>
+    <string name="device_monitor_work_info_title">工作信息</string>
+    <string name="device_monitor_machine_status_title">机台状态</string>
+    <string name="device_monitor_warn_info_title">告警信息</string>
+    <string name="call_back_home_title">回到主页</string>
+    <string name="warn_info_light_time">Total Laser-On Time</string>
+    <string name="warn_info_light_time_info">Weekly Usage Δ</string>
+    <string name="warn_info_welding_consumables">Total Wire Consumption</string>
+    <string name="warn_info_welding_consumables_info">Frequent Usage</string>
+    <string name="warn_info_last_work">Last Job Summary</string>
+    <string name="welding_proportion_text">Weld Time Ratio</string>
+    <string name="cutting_proportion_text">Cut Time Ratio</string>
+    <string name="wash_proportion_text">Clean Time Ratio</string>
+    <string name="laser_text">Laser</string>
+    <string name="blow_text">Gas Flow</string>
+    <string name="safety_lock_text">Ground Lock</string>
+    <string name="gun_head_switch_text">Gun Switch</string>
+    <string name="red_light_text">Red Light</string>
+    <string name="wire_feeding_text">Wire Feed</string>
+    <string name="machine_blow_title">Gas Flow</string>
+    <string name="machine_blow_content">Pressure</string>
+    <string name="machine_pump_title">Pump Source</string>
+    <string name="machine_pump_content">Current</string>
+    <string name="machine_laser_current_title">Laser</string>
+    <string name="machine_laser_current_content">Current</string>
+    <string name="pump_current_text">Pump Current</string>
+    <string name="blowing_air_pressure_text">吹气气压</string>
+    <string name="pump_board_temperature_text">Pump Board Temp</string>
+    <string name="pump_status_text">Pump Comm Status</string>
+    <string name="pump_temperature_text">Pump Temp</string>
+    <string name="current_alarm_text">Current Alarm</string>
+    <string name="red_light_current_text">Red Pointer Current</string>
+    <string name="front_light_pd_voltage_text">Forward Light PD Voltage</string>
+    <string name="gun_head_communication_text">Gun Comm Status</string>
+    <string name="camera_comm_status_text">Camera Comm Status</string>
+    <string name="motor_driver_temperature_text">Motor Driver Temprature</string>
+    <string name="protective_mirror_temperature_text">Protective Mirror Temperature</string>
+    <string name="collimator_temperature_text">Collimator Temperature</string>
+    <string name="environment_temperature_text">Ambient Temp</string>
+    <string name="wire_feeding_machine_communication_text">Feeder Comm Status</string>
+    <string name="device_setting_text">设备设置</string>
+    <string name="quick_mode_text">快速模式</string>
+    <string name="engineer_mode_text">工程师模式</string>
+    <string name="more_parameters_text">更多参数</string>
+    <string name="record_working_text">作业录制</string>
+    <string name="welding_ramp_chart_text">爬坡图</string>
+    <string name="engineer_bottom_switch_page_cd">切换底部控制</string>
+    <string name="engineer_bottom_hidden_active_cd">隐藏页有已启用功能</string>
+    <string name="remote_lock_dialog_title">设备已远程锁定</string>
+    <string name="remote_lock_dialog_message">该设备已被远程锁定，作业功能不可用，请联系所有者进行解锁。</string>
+    <string name="empty_text"></string>
+    <string name="device_information_text">设备信息</string>
+    <string name="network_setting_text">网络设置</string>
+    <string name="screen_display_text">屏幕显示</string>
+    <string name="advanced_setting_text">高级设置</string>
+    <string name="cellular_network_text">Cellular Network</string>
+    <string name="not_connecting_text">Not connected</string>
+    <string name="connected_text">Connected</string>
+    <string name="wifi_network_text">Wireless Network</string>
+    <string name="wifi_details_title">WiFi Details</string>
+    <string name="wifi_ip_address">IP Address</string>
+    <string name="wifi_subnet_mask">Subnet Mask</string>
+    <string name="wifi_router">Router</string>
+    <string name="wifi_gateway">Gateway</string>
+    <string name="wifi_dns">DNS</string>
+    <string name="wifi_dns1">DNS 1</string>
+    <string name="wifi_dns2">DNS 2</string>
+    <string name="wifi_ip_mode">IP Mode</string>
+    <string name="wifi_ip_mode_dhcp">DHCP</string>
+    <string name="wifi_ip_mode_static">Static</string>
+    <string name="wifi_ip_settings">IP Settings</string>
+    <string name="wifi_ip_settings_hide">Hide IP Settings</string>
+    <string name="wifi_apply">Apply</string>
+    <string name="wifi_advanced_settings">IP Settings</string>
+    <string name="wifi_advanced_settings_hide">Hide IP Settings</string>
+    <string name="wifi_edit_ip_config">Edit IP Configuration</string>
+    <string name="wifi_edit_ip_success">IP configuration saved</string>
+    <string name="wifi_static_ip_invalid">Invalid static IP configuration</string>
+    <string name="wifi_static_ip_incomplete">Please complete all required static IP fields</string>
+    <string name="wifi_static_ip_gateway_subnet">Gateway must be in the same subnet</string>
+    <string name="wifi_static_ip_conflict">IP address conflicts with another interface</string>
+    <string name="http_proxy_title">HTTP Proxy</string>
+    <string name="wifi_signal_strength">Signal Strength</string>
+    <string name="wifi_link_speed">Link Speed</string>
+    <string name="wifi_security">Security</string>
+    <string name="wifi_frequency">Frequency</string>
+    <string name="wifi_mac_address">MAC Address</string>
+    <string name="wifi_not_available">Not available</string>
+    <string name="wifi_ip_field_enter_hint">Please enter %1$s</string>
+    <string name="wifi_forget_network">Forget</string>
+    <string name="wifi_forget_confirm_message">Forget this network and disconnect now?</string>
+    <string name="wifi_forget_success">Network forgotten</string>
+    <string name="wifi_forget_partial_failed">Failed to fully forget network</string>
+    <string name="wifi_open_system_settings_hint">This network is managed by system WiFi. Open system settings to forget it completely.</string>
+    <string name="wifi_wlan_label">WLAN</string>
+    <string name="wifi_status_connected">Connected</string>
+    <string name="wifi_status_not_connected">Not connected</string>
+    <string name="wifi_status_connecting">Connecting... Please Wait.</string>
+    <string name="wifi_dialog_password_label">Password</string>
+    <string name="wifi_dialog_connect">Connect</string>
+    <string name="wifi_dialog_show_password">Show password</string>
+    <string name="wifi_dialog_hide_password">Hide password</string>
+    <string name="wifi_join_ssid_format">Join In \"%1$s\"</string>
+    <string name="wifi_list_standard_format">WiFi %1$s</string>
+    <string name="wifi_toast_connected_success">Connected Successfully.</string>
+    <string name="wifi_toast_connection_failed">Connection Failed.</string>
+    <string name="wifi_toast_requires_system_privilege">System WiFi Permission Required. Please Install As A Privileged System App.</string>
+    <string name="wifi_toast_password_required">The Password Cannot Be Left Blank.</string>
+    <string name="wifi_toast_ssid_required">Network name cannot be empty.</string>
+    <string name="wifi_hidden_network_connect">Connect Hidden Network</string>
+    <string name="wifi_hidden_network_title">Connect Hidden Network</string>
+    <string name="wifi_dialog_ssid_label">Network Name</string>
+    <string name="wifi_security_open">Open</string>
+    <string name="wifi_security_wpa2">WPA2</string>
+    <string name="wifi_security_wpa3">WPA3</string>
+    <string name="wifi_toast_wifi_disabled">WiFi Not Open</string>
+    <string name="wifi_toast_profile_exists_connecting">WiFi Profile Already Exists, Trying To Connect.</string>
+    <string name="wifi_toast_invalid_bssid">Invalid BSSID Format.</string>
+    <string name="wifi_toast_details_only_when_connected">Only Connected WiFi Supports Details.</string>
+    <string name="wifi_toast_no_connection_details">No Connected WiFi Details.</string>
+    <string name="wifi_toast_profile_saved_use_system">Profile Saved. Please Connect From System WiFi List.</string>
+    <string name="wifi_toast_added_connecting">WiFi Added, Connecting...</string>
+    <string name="wifi_toast_add_canceled_by_system">WiFi Add Canceled By System.</string>
+    <string name="wifi_init_dialog_title">Set Up WiFi</string>
+    <string name="wifi_init_dialog_message">WiFi is not connected. Please connect to WiFi to complete initialization.</string>
+    <string name="wifi_init_dialog_confirm">Go to Settings</string>
+    <string name="boot_self_check_dialog_title">Startup Self-Check</string>
+    <string name="boot_self_check_controller_comm">Controller Comm Status</string>
+    <string name="boot_self_check_status_checking">Checking…</string>
+    <string name="boot_self_check_status_pass">OK</string>
+    <string name="boot_self_check_status_fail">Fault</string>
+    <string name="boot_self_check_status_skipped">Skipped</string>
+    <string name="boot_self_check_dont_show_again">Don\u2019t show again</string>
+    <string name="boot_self_check_close">Close</string>
+    <string name="advanced_setting_show_boot_self_check">Show Startup Self-Check</string>
+    <string name="common_settings_show_safety_ground_lock_alarm">Show Ground Lock Alarm</string>
+    <string name="bind_device_dialog_title">Bind This Device</string>
+    <string name="bind_device_dialog_subtitle">Find this device or scan QR code in LaserCyber mobile app</string>
+    <string name="ws_register_device_dialog_title">Register This Device</string>
+    <string name="ws_register_device_dialog_message">This device is unrecognized, please scan the QR code with LaserCyber app to register it.</string>
+    <string name="ws_register_device_reconnect">Reconnect</string>
+    <string name="wifi_error_too_many_profiles">Too Many Saved WiFi Profiles For This App.</string>
+    <string name="wifi_error_duplicate_profile">WiFi Profile Already Exists.</string>
+    <string name="wifi_error_add_not_allowed">System Denied This Request. Please Allow WiFi Suggestions For This App.</string>
+    <string name="wifi_error_internal">System Internal Error While Saving WiFi Profile.</string>
+    <string name="wifi_error_remove_invalid">Invalid Saved WiFi Profile.</string>
+    <string name="wifi_error_save_failed_format">Failed To Save WiFi Profile (Code %1$d).</string>
+    <string name="bluetooth_text">Bluetooth</string>
+    <string name="bluetooth_not_supported_text">Bluetooth Not Supported</string>
+    <string name="bluetooth_opened_text">Bluetooth On</string>
+    <string name="bluetooth_closed_text">Bluetooth Off</string>
+    <string name="bluetooth_open_failed_text">Failed to Turn On Bluetooth</string>
+    <string name="bluetooth_close_failed_text">Failed to Turn Off Bluetooth</string>
+    <string name="screen_brightness_text">Screen Brightness</string>
+    <string name="volume_setting_text">Volume</string>
+    <string name="volume_set_failed">Failed to set volume</string>
+    <string name="color_mode_text">色彩模式</string>
+    <string name="please_color_mode_text">请选择色彩模式</string>
+    <string name="screen_off_time_text">Screen-off Time</string>
+    <string name="never_text">Never</string>
+    <string name="please_screen_off_time_text">请选择息屏时间</string>
+    <string name="night_mode_text">夜间模式</string>
+    <!--    色彩模式选项-->
+    <string-array name="color_mode_option">
+        <item>标准模式</item>
+        <item>专业模式</item>
+        <item>显眼模式</item>
+    </string-array>
+    <string-array name="color_mode_option_data">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+    <!--    息屏时间选项-->
+    <string-array name="screen_off_time_option">
+        <item>5分钟</item>
+        <item>10分钟</item>
+        <item>15分钟</item>
+        <item>30分钟</item>
+        <item>60分钟</item>
+    </string-array>
+    <string-array name="screen_off_time_option_data">
+        <item>10</item>
+        <item>30</item>
+        <item>60</item>
+        <item>9999</item>
+    </string-array>
+
+    <!--材料类型的枚举-->
+    <string-array name="materials_type_option_data">
+        <item>不锈钢</item>
+        <item>碳钢</item>
+        <item>镀锌板</item>
+        <item>铝合金</item>
+        <item>黄铜</item>
+        <item>自定义</item>
+    </string-array>
+
+    <string name="alarm_info_laser_device">Laser Device</string>
+    <string name="alarm_info_welding_gun">Welding Gun</string>
+    <string name="alarm_info_wire_feeder">Wire Feeder</string>
+    <string name="device_monitor_home_title">Monitor</string>
+    <string name="device_setting_home_text">Settings</string>
+    <string name="language_setting_text">Language</string>
+    <string name="language_option_english">English</string>
+    <string name="language_option_chinese">简体中文</string>
+    <string name="unit_option_imperial">IN</string>
+    <string name="unit_option_metric">MM</string>
+    <string name="screen_off_option_10_min">10 min</string>
+    <string name="screen_off_option_30_min">30 min</string>
+    <string name="screen_off_option_60_min">60 min</string>
+    <string name="sound_effect_option_1">Effect 1</string>
+    <string name="sound_effect_option_2">Effect 2</string>
+    <string name="sound_effect_option_3">Effect 3</string>
+    <string-array name="language_setting_option">
+        <item>简体中文</item>
+        <item>英语</item>
+    </string-array>
+    <string-array name="language_setting_data">
+        <item>zh-CN</item>
+        <item>en-US</item>
+    </string-array>
+    <string name="unit_setting_text">Unit</string>
+    <string name="zero_point_correction_text">Zero Offset</string>
+    <string name="please_zero_point_correction_text">请输入零点较正</string>
+    <string name="proper_swing_width_text">Scan Width Correction</string>
+    <string name="please_proper_swing_width_text">请输入摆宽较正</string>
+    <string name="laser_start_power_text">Laser Starting Power</string>
+    <string name="please_laser_start_power_text">请输入激光起始功率</string>
+    <string name="laser_end_power_text">Laser Termination Power</string>
+    <string name="please_laser_end_power_text">请输入激光终止功率</string>
+    <string name="blow_pressure_threshold_text">Minimum Gas Pressure Threshold</string>
+    <string name="sound_effect_check">Sound Effect</string>
+    <string name="please_blow_pressure_threshold_text">Please enter the minimum gas pressure threshold</string>
+    <string name="inlet_gas_pressure_threshold_text">Inlet Gas Pressure Threshold</string>
+    <string name="driver_temperature_alarm_threshold_text">Driver Temperature Alarm Threshold</string>
+    <string name="protective_lens_temperature_alarm_threshold_text">Protective Lens Temperature Alarm Threshold</string>
+    <string name="collimating_lens_temperature_alarm_threshold_text">Collimating Lens Temperature Alarm Threshold</string>
+    <string name="motor_temperature_alarm_threshold_text">Motor Temperature Alarm Threshold</string>
+    <string name="temperature_alarm_recovery_interval_text">Temperature Alarm Recovery Interval</string>
+    <string name="device_model">Machine Model</string>
+    <string name="firmware_version">Firmware Version</string>
+    <string name="gun_sn">Gunhead SN</string>
+    <string name="laser_version">Laser Version</string>
+    <string name="system_version">System Version</string>
+    <string name="select_app_env">Select App Env</string>
+    <string name="app_env_dev">Dev</string>
+    <string name="app_env_test">Test</string>
+    <string name="app_env_prod">Prod</string>
+    <string name="app_env_changed">Runtime environment updated. API traffic will use the new endpoints after probe completes.</string>
+    <string name="adb_remote_debug_enabled">ADB remote debugging enabled (port %1$d). Use adb connect to attach.</string>
+    <string name="adb_remote_debug_failed">Failed to enable ADB remote debugging.</string>
+    <string name="process_lib_version">Process Library Version</string>
+    <string name="device_sn">Device SN</string>
+    <string name="wire_feeder_version">Wire Feeder Version</string>
+    <string name="camera_version">Camera Version</string>
+    <string name="focus_scale_reference">Focus Scale Reference</string>
+    <string name="check_update">Check and Install Updates</string>
+    <!-- 设备状态栏文本 -->
+    <string name="gun_switch_on">枪枪头开关导通</string>
+    <string name="safety_lock_on">安全地锁导通</string>
+    <string name="vent_status">通气状态</string>
+    <string name="emergency_stop">急停状态</string>
+    <string name="btn_feed_text">送丝</string>
+    <string name="btn_retract">退丝</string>
+    <string name="btn_feed_enable">自动送丝</string>
+    <string name="btn_manual_gas">手动送气</string>
+    <string name="btn_laser_enable">激光开启</string>
+    <!--    激光切割-->
+    <string name="laser_cutting_text">激光切割</string>
+    <string name="hand_cutting_text">切割</string>
+    <string name="cnc_cutting_text">CNC切割</string>
+    <!--    激光清洗-->
+    <string name="laser_cleaning_text">激光清洗</string>
+    <string name="weld_cleaning_text">焊道清洗</string>
+    <string name="width_cleaning_text">宽幅清洗</string>
+    <!--    激光焊接-->
+    <string name="laser_welding_text">激光焊接</string>
+    <string name="continuous_welding_text">连续焊接</string>
+    <string name="point_welding_text">点焊</string>
+
+    <!--全局提示弹窗:-->
+    <string name="connection_fail">Connection Failed</string><!--连接失败-->
+    <string name="connection_fail_info">Please verify the password and network status.</string>
+    <string name="api_origin_probe_failed">Cannot reach the cloud service. Please check the network.</string>
+    <string name="please_wait">Please wait for a moment.</string><!--请稍后-->
+    <string name="complete_operation">Complete the operation</string><!--操作完成-->
+    <string name="Value_Rollback">Value Rollback</string><!--数值回退-->
+
+    <string name="back_home">返回主页</string>
+    <string name="mode_switch">模式切换</string>
+    <string name="current_process_parameter_name">当前工艺参数名称</string>
+    <string name="remote_process_param_received_title">Received Process Parameters</string>
+    <string name="laser_on_text">激光开启</string>
+    <string name="parameter_import_text">参数导入</string>
+    <string name="welding_materials_text">焊接材料</string>
+    <string name="welding_thickness_text">焊接厚度</string>
+    <string name="spot_welding_interval_t1_text">点焊间隔</string>
+    <string name="continuous_spot_welding_t2_text">点焊持续</string>
+    <string name="welding_power_text">焊接功率</string>
+    <string name="swing_frequency_text">摆动频率</string>
+    <string name="welding_width_text">焊接宽度</string>
+    <string name="off_light_delay_text">关光延时</string>
+    <string name="blow_delay_text">吹气延时</string>
+    <string name="air_shut_off_delay_text">关气延时</string>
+    <string name="reset_to_default_data_text">重置为默认</string>
+    <string name="set_commonly_used_parameter_text">Save as Common</string>
+    <string name="confirm_text">确定</string>
+    <string name="cancel_text">取消</string>
+    <string name="ok_text">OK</string>
+    <string name="stainless_steel_text">不锈钢</string>
+    <string name="carbon_steel_text">碳钢</string>
+    <string name="galvanized_sheet_text">镀锌板</string>
+    <string name="aluminum_alloy_text">铝合金</string>
+    <string name="brass_text">黄铜</string>
+    <string name="customize_text">自定义</string>
+    <string name="currently_selected_material_text">当前选择材料</string>
+    <string name="please_select_welding_material">请选择焊接材料</string>
+    <string name="cleaning_materials_text">清洗材料</string>
+    <string name="swing_width_text">摆动宽度</string>
+    <string name="laser_power_text">激光功率</string>
+    <string name="slow_rise_duration_text">缓升时长</string>
+    <string name="slow_descent_duration_text">缓降时长</string>
+    <string name="cutting_materials_text">切割材料</string>
+    <string name="cutting_thickness_text">切割厚度</string>
+    <string name="laser_frequency_text">激光频率</string>
+    <string name="laser_duty_cycle_text">激光占空比</string>
+    <string name="perforation_frequency_text">穿孔频率</string>
+    <string name="perforation_duration_text">穿孔时长</string>
+    <string name="turn_laster_dailog_title">重要提醒</string>
+    <string name="turn_laster_dailog_confirm">是，我已经做好激光防护措施</string>
+    <string name="turn_laster_dailog_cancel">否，我还未进行防护措施</string>
+    <string name="turn_laster_dailog_end_work">结束工作</string>
+
+
+    <!--错误故障-->
+    <string-array name="warn_code">
+        <item>S028</item>
+        <item>E001</item>
+        <item>E002</item>
+        <item>E004</item>
+        <item>E005</item>
+        <item>E006</item>
+        <item>E007</item>
+        <item>E008</item>
+        <item>E009</item>
+        <item>E010</item>
+        <item>E011</item>
+        <item>E012</item>
+        <item>E013</item>
+        <item>E014</item>
+        <item>E016</item>
+        <item>E017</item>
+        <item>E018</item>
+        <item>E019</item>
+        <item>E020</item>
+        <item>E021</item>
+        <item>E022</item>
+        <item>C003</item>
+        <item>C004</item>
+        <item>E905</item>
+        <item>E906</item>
+        <item>E907</item>
+        <item>E908</item>
+        <item>E909</item>
+        <item>E910</item>
+        <item>E911</item>
+        <item>E912</item>
+        <item>E917</item>
+        <item>E918</item>
+    </string-array>
+
+    <string-array name="warn_text">
+        <item>激光器锁定</item>
+        <item>模组通讯故障</item>
+        <item>模组故障</item>
+        <item>保留</item>
+        <item>AD板通讯故障</item>
+        <item>二极体模块超温</item>
+        <item>驱动模块超温</item>
+        <item>水温超温</item>
+        <item>光纤温度超温</item>
+        <item>激光反射能量超上限</item>
+        <item>激光输出能量超下限</item>
+        <item>二极体短路故障</item>
+        <item>光纤断开</item>
+        <item>超湿</item>
+        <item>急停</item>
+        <item>气压故障</item>
+        <item>窄脉冲</item>
+        <item>驱动板过压</item>
+        <item>内部温度故障</item>
+        <item>驱动短路</item>
+        <item>故障锁定</item>
+        <item>主控板与温控板通讯故障</item>
+        <item>温控板与制冷系统通讯故障</item>
+        <item>DC电压过低</item>
+        <item>DC电压过高</item>
+        <item>温度传感器过温</item>
+        <item>温度传感器异常</item>
+        <item>通信异常</item>
+        <item>AC欠相或CT短线</item>
+        <item>AC电流过流或压缩机过功率</item>
+        <item>AC输入电压过低</item>
+        <item>二极体温度传感器故障</item>
+        <item>环境温度故障</item>
+    </string-array>
+
+    <string name="def_warn_text">故障告警</string>
+    <string name="parameter_process_text">参数工艺</string>
+    <string name="retract_length_text">回抽长度</string>
+    <string name="retract_speed_text">回抽速度</string>
+    <string name="fill_length_text">补丝长度</string>
+    <string name="fill_delay_text">补丝延时</string>
+    <string name="power_ramp_up_text">功率缓升</string>
+    <string name="power_ramp_down_text">功率缓降</string>
+    <string name="wire_feed_speed_text">送丝速度</string>
+    <string name="wire_feeding_delay_text">送丝延时</string>
+    <string name="red_light_offset_text">红光偏移</string>
+    <string name="please_red_light_offset_text">请输入红光偏移</string>
+    <string name="swing_speed_upper_limit_text">摆速区间上限</string>
+    <string name="please_swing_speed_upper_limit_text">请输入摆速区间上限</string>
+    <string name="swing_speed_lower_limit_text">摆速区间下限</string>
+    <string name="please_swing_speed_lower_limit_text">请输入摆速区间下限</string>
+    <string name="manual_wire_feed_speed_text">手动送丝速度</string>
+    <string name="please_manual_wire_feed_speed">请输入手动送丝速度</string>
+    <string name="manual_draw_string_speed_text">手动抽丝速度</string>
+    <string name="please_manual_draw_string_speed">请输入手动抽丝速度</string>
+    <string name="perforation_power_text">穿孔功率</string>
+    <string name="perforation_duty_cycle_text">穿孔占空比</string>
+    <string name="gun_motor_temp_text">Motor Temperature</string>
+    <!-- 功率缓升 (T2) -->
+    <string name="power_ramp_up_desc">设置脉冲模式下的激光上升时间。0–1000 ms</string>
+
+    <!-- 焊接功率 (P) -->
+    <string name="welding_power_desc">100%功率设置代表设备的额定最大功率。</string>
+
+    <!-- 功率缓降 (T3) -->
+    <string name="power_descent_desc">设置脉冲模式下的激光下降时间。0–1000 ms</string>
+
+    <!-- 关气延时 (T4) -->
+    <string name="air_off_delay_desc">设置激光关闭后关闭气体的延迟时间。0–10000 ms</string>
+
+    <!-- 摆动频率 -->
+    <string name="oscillation_frequency_desc">推荐的扫描频率范围：20–220 Hz</string>
+
+    <!-- 焊接宽度 -->
+    <string name="weld_width_desc">设置激光扫描宽度，可选范围：%1$s–%2$s %3$s。</string>
+
+    <!-- 送丝速度 -->
+    <string name="wire_feeding_speed_desc">送丝线速度可调范围：%1$s–%2$s %3$s。</string>
+
+    <!-- 关光延时 -->
+    <string name="shutdown_delay_desc">设置停止送丝与关闭激光之间的延时，用于切断焊丝。0–1000 ms</string>
+
+    <!-- 回抽长度 -->
+    <string name="pullback_length_desc">设置焊丝回抽长度；焊接完成后的回抽距离，可选范围：%1$s–%2$s %3$s。</string>
+
+    <!-- 回抽速度 -->
+    <string name="pullback_speed_desc">设置回抽速度；过慢不利于自动断丝，可选范围：%1$s–%2$s %3$s。</string>
+
+    <!-- 补丝长度 -->
+    <string name="wire_length_desc">设置补丝长度；建议焊丝端部对齐红光指示位置，长度范围：%1$s–%2$s %3$s。</string>
+
+    <!-- 补丝延时 -->
+    <string name="repair_wire_delay_desc">设置焊丝补充延迟；防止二次粘丝，指示回抽与补丝之间的等待时间。0–1000 ms</string>
+    <string name="call_back_to_home">返回\n首页</string>
+    <string name="call_back_to_quick_mode">返回\n快速模式</string>
+    <string name="key_switch_text">钥匙</string>
+
+    <!--安全组-->
+    <string name="safety_tips_title">Safety Operation Tips</string>
+    <string name="safety_tips_content">
+        1. Ensure there are no other personnel, reflective objects, or flammable materials nearby during welding.
+        \n\n2. Ensure the safety clamp is securely fastened to the welding table; do not clamp the safety lock onto the welding torch holder, nozzle, wire feed assembly, etc.
+        \n\n3. Ensure you wear professional protective eyewear, a mask, earplugs, and high-temperature resistant gloves.
+        \n\n4. When installing and debugging the equipment, always switch the laser to the off position after laser operation.
+        \n\n5. Ensure the equipment is properly grounded; interruption at any point in the grounding circuit may result in personal injury.
+        \n\n6. Ensure the filter is well-ventilated; promptly remove any foreign objects or dirt.
+    </string>
+    <string name="safety_tips_info">I have read the above content and the</string>
+    <string name="safety_tips_info_use">Product Use Disclaimer.</string>
+    <string name="safety_operation">Placeholder text Placeholder text Placeholder text</string>
+    <string name="safety_tips_agree">AGREE</string>
+
+    <string name="use_safety_tips_title">Product Disclaimer</string>
+    <string name="use_safety_tips_info">I have read and agree to the above content</string>
+    <string name="use_safety_tips_content">
+    Dear User:Thank you for choosing our handheld laser welding product. Before using this product, we strongly recommend that you read this disclaimer carefully and strictly adhere to all instructions and safety measures provided in the user manual.
+    \n\n1. Safety Warning
+        \nLaser equipment can cause severe damage to the eyes and skin. During operation, please always wear appropriate Personal Protective Equipment (PPE), including but not limited to laser safety goggles and gloves, to ensure your safety.
+    \n\n2. Operating Instructions
+         \nPlease ensure that you fully understand and are able to comply with all operating procedures and safety guidelines in the product manual. Improper use may result in equipment damage or personal injury.
+    \n\n3. Improper Operation
+        \nThe Company shall not be held liable for any injury or loss resulting from the user`s failure to follow the instructions in the product manual or failure to take appropriate safety measures.
+    \n\n4. Maintenance
+        \nPlease inspect and maintain the product regularly to ensure it is in good working condition. The Company is not responsible for any accidents caused by improper maintenance of the product.
+    \n\n5. Disclaimer of Liability
+        \nWhile the Company provides comprehensive usage instructions and safety measures, it reserves the right to disclaim liability for any injury or damage caused by improper user operation or violations of the manual. We strongly advise users to understand and comply with all relevant safety regulations and operating standards before using this product.
+    \n\n6. Governing Law
+        \nThe interpretation, application, and dispute resolution of this Disclaimer shall be governed by the laws of the jurisdiction where the Company is headquartered.
+    \n\n7. Entire Agreement
+        \nThis Disclaimer constitutes the entire agreement between you and the Company and supersedes any prior oral or written understandings or agreements.
+    </string>
+    <string name="p_text">(P)</string>
+    <string name="t2_text">(T2)</string>
+    <string name="t4_text">(T4)</string>
+
+    <!--弹窗提示框-->
+    <string name="dialog_main_title">Engineer Mode Tips</string>
+    <string name="dialog_main_info">Engineer Mode unlocks all advanced parameter customization for experienced users to perform fine-tuning;
+        we recommend operating after familiarizing yourself with the machine mechanism.</string>
+    <string name="dialog_main_commit_text">Don`t remind again</string>
+    <string name="dialog_main_button_text">Confirm and Enter</string>
+
+    <!--设备监测-->
+    <string name="work_title">Work Information</string> <!--工作信息-->
+    <string name="machine_title">Machine Status</string> <!--机台状态-->
+    <string name="alarm_title">Alarm Information</string> <!--告警信息-->
+    <string name="custom_title">Custom Layout</string>
+    <string name="custom_home_page">Custom Home Page</string>
+    <string name="camera_title">Camera</string>
+
+    <!--设备设置-->
+    <string name="network_settings">Network Settings</string> <!--网络设置-->
+    <string name="bluetooth_settings">Bluetooth Settings</string> <!--蓝牙设置-->
+    <string name="screen_settings">Screen Settings</string> <!--屏幕设置-->
+    <string name="date_time_settings">Date &amp; Time</string>
+    <string name="date_time_automatic">Automatic</string>
+    <string name="advanced_settings">Advanced Settings</string> <!--高级设置-->
+    <string name="common_settings">Common Settings</string>
+    <string name="common_settings_group_network">Network</string>
+    <string name="http_proxy_settings_title">HTTP Proxy</string>
+    <string name="http_proxy_enable">Enable Proxy</string>
+    <string name="http_proxy_host">Host</string>
+    <string name="http_proxy_host_hint">proxy.example.com</string>
+    <string name="http_proxy_port">Port</string>
+    <string name="http_proxy_port_hint">8080</string>
+    <string name="http_proxy_auth_type">Authentication</string>
+    <string name="http_proxy_auth_none">None</string>
+    <string name="http_proxy_auth_basic">Basic</string>
+    <string name="http_proxy_username">Username</string>
+    <string name="http_proxy_password">Password</string>
+    <string name="http_proxy_test_connection">Test Connection</string>
+    <string name="http_proxy_save">Save</string>
+    <string name="http_proxy_save_success">Proxy settings saved</string>
+    <string name="http_proxy_test_success">Connection successful</string>
+    <string name="http_proxy_test_failed">Connection failed</string>
+    <string name="http_proxy_test_no_origin">No API origin available to test</string>
+    <string name="http_proxy_status_off">Off</string>
+    <string name="http_proxy_status_incomplete">On (incomplete)</string>
+    <string name="http_proxy_validation_host_required">Host is required</string>
+    <string name="http_proxy_validation_port_invalid">Port must be 1–65535</string>
+    <string name="http_proxy_validation_username_required">Username is required for Basic auth</string>
+    <string name="common_settings_group_display_sound">Display &amp; Sound</string>
+    <string name="common_settings_group_date_time">Date &amp; Time</string>
+    <string name="common_settings_group_misc">Misc</string>
+    <string name="advanced_settings_group_offset_correction">Offset &amp; Correction</string>
+    <string name="advanced_settings_group_power_thresholds">Power Thresholds</string>
+    <string name="advanced_settings_group_temperature_thresholds">Temperature Thresholds</string>
+    <string name="advanced_settings_group_ai_assistance">AI Assistance</string>
+    <string name="advanced_setting_lens_contamination_detection">Lens Contamination Detection</string>
+    <string name="advanced_setting_zero_point_offset_detection">Zero Point Offset Detection</string>
+    <string name="advanced_settings_group_dangerous_operations">Dangerous Operations</string>
+    <string name="advanced_setting_keep_laser_on_while_alarmed">Keep Laser On while Alarmed</string>
+    <string name="advanced_setting_keep_laser_on_while_alarmed_hint">When enabled, coded alarms will not automatically turn off laser output while you are already welding. Warn dialogs still appear.</string>
+    <string name="advanced_setting_allow_work_after_camera_alarm">Allow Work after Camera Alarm</string>
+    <string name="advanced_setting_allow_work_after_camera_alarm_hint">When camera communication is abnormal, AI automatic detection will be unavailable.</string>
+    <string name="advanced_setting_allow_work_after_gas_alarm">Allow Work after Gas Alarm</string>
+    <string name="advanced_setting_allow_work_after_gas_alarm_hint">Allowing laser output while shielding gas is abnormal may damage your device. Turn this on only when you are sure there is no impact.</string>
+    <string name="advanced_setting_allow_work_after_lens_contamination">Allow Work after Lens Contamination</string>
+    <string name="advanced_setting_allow_work_after_lens_contamination_hint">Allowing laser output while the protective lens is contaminated may damage your device. Turn this on only when AI detection is inaccurate.</string>
+    <string name="advanced_setting_allow_work_after_feeder_alarm">Allow Work after Feeder Alarm</string>
+    <string name="advanced_setting_allow_work_after_feeder_alarm_hint">Continuous welding will not work properly when the wire feeder is abnormal, but other modes can continue.</string>
+    <string name="device_information">Device Information</string> <!--设备信息-->
+    <string name="date_time_auto_date_time">Automatic Date &amp; Time</string>
+    <string name="date_time_auto_time_zone">Automatic Time Zone</string>
+    <string name="date_time_set_date">Set Date</string>
+    <string name="date_time_set_time">Set Time</string>
+    <string name="date_time_set_time_zone">Set Time Zone</string>
+    <string name="date_time_select_date">Select Date</string>
+    <string name="date_time_select_time">Select Time</string>
+    <string name="date_time_select_time_zone">Select Time Zone</string>
+    <string name="date_time_apply_failed">Date/time update failed</string>
+    <string name="date_time_timezone_apply_failed">Time zone update failed</string>
+    <string name="date_time_auto_sync_off">Automatic sync is off</string>
+    <string name="date_time_auto_sync_offline">No network, waiting to sync</string>
+    <string name="date_time_auto_syncing">Syncing with network time service…</string>
+    <string name="date_time_auto_sync_ok">Network time synchronized</string>
+    <string name="date_time_auto_sync_failed">Network time service unavailable</string>
+    <string name="date_time_set_failed">Failed to update date or time</string>
+    <string name="date_time_permission_denied">Missing system permission for date/time changes</string>
+    <string name="date_time_search_timezone_hint">Search timezone (e.g. Asia/Shanghai)</string>
+
+    <!--设备更新升级-->
+    <string name="check_and_install_updates">Check and Install Updates</string>
+    <string name="auto_check_ota_update">Auto check for updates</string>
+    <string name="auto_ota_update_dialog_title">New Version Available</string>
+    <string name="auto_ota_update_dialog_message">A new version %1$s is available, download and install updates in Settings.</string>
+    <string name="go_to_update">Go to Update</string>
+
+    <string name="more_common_specs">More Common Specs</string>
+    <string name="t1_text">(T1)</string>
+    <string name="mm_unit">mm</string><!--自定义布局-->
+    <string name="in_unit">in</string>
+    <string name="quick_mode_picker_title_with_unit">%1$s (%2$s)</string>
+    <string name="welding_power_cannot_be_empty">焊接功率不能为空</string>
+    <string name="the_welding_power_must_be_greater_than_10">焊接功率必须大于0%</string>
+    <string name="welding_power_cannot_exceed_100">焊接功率不能大于100%</string>
+    <string name="perforation_power_cannot_be_empty">穿孔功率不能为空</string>
+    <string name="perforation_power_format_error">穿孔功率格式错误</string>
+    <string name="perforation_power_cannot_be_less_than_0">穿孔功率不能小于0</string>
+    <string name="perforation_power_cannot_exceed_100">穿孔功率不能超过100</string>
+    <string name="swing_frequency_cannot_be_empty">摆动频率不能为空</string>
+    <string name="swing_frequency_format_error">摆动频率格式错误</string>
+    <string name="clean_swing_frequency_cannot_be_less_than_20">清洗摆动频率不能小于20</string>
+    <string name="clean_swing_frequency_cannot_exceed_200">清洗摆动频率不能超过200</string>
+    <string name="weld_swing_frequency_cannot_be_less_than_0">焊接摆动频率不能小于20</string>
+    <string name="weld_swing_frequency_cannot_exceed_220">焊接摆动频率不能超过220</string>
+    <string name="unknown_process_type">未知工艺类型</string>
+    <string name="laser_frequency_cannot_be_empty">激光频率不能为空</string>
+    <string name="laser_frequency_format_error">激光频率格式错误</string>
+    <string name="laser_frequency_cannot_be_less_than_1">激光频率不能小于1</string>
+    <string name="laser_frequency_cannot_exceed_5000">激光频率不能超过5000</string>
+    <string name="perforation_frequency_cannot_be_empty">穿孔频率不能为空</string>
+    <string name="perforation_frequency_format_error">穿孔频率格式错误</string>
+    <string name="perforation_frequency_cannot_be_less_than_0">穿孔频率不能小于0</string>
+    <string name="perforation_frequency_cannot_exceed_2000">穿孔频率不能超过2000</string>
+    <string name="swing_width_cannot_be_empty">摆动宽度不能为空</string>
+    <string name="swing_width_format_error">摆动宽度格式错误</string>
+    <string name="swing_width_cannot_be_less_than_0">摆动宽度不能小于0</string>
+    <string name="swing_width_cannot_exceed_6">摆动宽度不能超过</string>
+    <string name="blow_delay_cannot_be_empty">吹气延时不能为空</string>
+    <string name="blow_delay_format_error">吹气延时格式错误</string>
+    <string name="blow_delay_cannot_be_less_than_0">吹气延时不能小于0</string>
+    <string name="blow_delay_cannot_exceed_10000">吹气延时不能超过10000</string>
+    <string name="close_air_delay_cannot_be_empty">关气延时不能为空</string>
+    <string name="close_air_delay_format_error">关气延时格式错误</string>
+    <string name="close_air_delay_cannot_be_less_than_0">关气延时不能小于0</string>
+    <string name="close_air_delay_cannot_exceed_10000">关气延时不能超过10000</string>
+    <string name="close_light_delay_cannot_be_empty">关光延时不能为空</string>
+    <string name="close_light_delay_format_error">关光延时格式错误</string>
+    <string name="close_light_delay_cannot_be_less_than_0">关光延时不能小于0</string>
+    <string name="close_light_delay_cannot_exceed_1000">关光延时不能超过1000</string>
+    <string name="fill_delay_cannot_be_empty">补丝时延不能为空</string>
+    <string name="fill_delay_format_error">补丝时延格式错误</string>
+    <string name="fill_delay_cannot_be_less_than_0">补丝时延不能小于0</string>
+    <string name="fill_delay_cannot_exceed_1000">补丝时延不能超过1000</string>
+    <string name="wire_feeding_delay_cannot_be_empty">送丝时延不能为空</string>
+    <string name="wire_feeding_delay_format_error">送丝时延格式错误</string>
+    <string name="wire_feeding_delay_cannot_be_less_than_0">送丝时延不能小于0</string>
+    <string name="wire_feeding_delay_cannot_exceed_2000">送丝时延不能超过2000</string>
+    <string name="perforation_duration_cannot_be_empty">穿孔时长不能为空</string>
+    <string name="perforation_duration_format_error">穿孔时长格式错误</string>
+    <string name="perforation_duration_cannot_be_less_than_0_1">穿孔时长不能小于0.1</string>
+    <string name="perforation_duration_cannot_exceed_2_0">穿孔时长不能超过2.0</string>
+    <string name="point_welding_interval_cannot_be_empty">点焊间隔不能为空</string>
+    <string name="point_welding_interval_format_error">点焊间隔格式错误</string>
+    <string name="point_welding_interval_cannot_be_less_than_0">点焊间隔不能小于0</string>
+    <string name="point_welding_interval_cannot_exceed_10000">点焊间隔不能超过10000</string>
+    <string name="point_welding_duration_cannot_be_empty">点焊持续不能为空</string>
+    <string name="point_welding_duration_format_error">点焊持续格式错误</string>
+    <string name="point_welding_duration_cannot_be_less_than_0">点焊持续不能小于0</string>
+    <string name="point_welding_duration_cannot_exceed_10000">点焊持续不能超过10000</string>
+    <string name="power_ramp_up_cannot_be_empty">功率缓升不能为空</string>
+    <string name="power_ramp_up_format_error">功率缓升格式错误</string>
+    <string name="power_ramp_up_cannot_be_less_than_0">功率缓升不能小于0</string>
+    <string name="power_ramp_up_cannot_exceed_1000">功率缓升不能超过1000</string>
+    <string name="power_ramp_down_cannot_be_empty">功率缓降不能为空</string>
+    <string name="power_ramp_down_format_error">功率缓降格式错误</string>
+    <string name="power_ramp_down_cannot_be_less_than_0">功率缓降不能小于0</string>
+    <string name="power_ramp_down_cannot_exceed_1000">功率缓降不能超过1000</string>
+    <string name="wire_feed_speed_cannot_be_empty">送丝速度不能为空</string>
+    <string name="wire_feed_speed_format_error">送丝速度格式错误</string>
+    <string name="wire_feed_speed_cannot_be_less_than_0">送丝速度不能小于0</string>
+    <string name="wire_feed_speed_cannot_exceed_50">送丝速度不能超过</string>
+    <string name="retract_length_cannot_be_empty">回抽长度不能为空</string>
+    <string name="retract_length_format_error">回抽长度格式错误</string>
+    <string name="retract_length_cannot_be_less_than_0">回抽长度不能小于0</string>
+    <string name="retract_length_cannot_exceed_15">回抽长度不能超过</string>
+    <string name="retract_speed_cannot_be_empty">回抽速度不能为空</string>
+    <string name="retract_speed_format_error">回抽速度格式错误</string>
+    <string name="retract_speed_cannot_be_less_than_0">回抽速度不能小于</string>
+    <string name="retract_speed_cannot_exceed_300">回抽速度不能超过</string>
+    <string name="fill_length_cannot_be_empty">补丝长度不能为空</string>
+    <string name="fill_length_format_error">补丝长度格式错误</string>
+    <string name="fill_length_cannot_be_less_than_0">补丝长度不能小于0</string>
+    <string name="fill_length_cannot_exceed_15">补丝长度不能超过</string>
+    <string name="laser_duty_cycle_cannot_be_empty">激光占空比不能为空</string>
+    <string name="laser_duty_cycle_format_error">激光占空比格式错误</string>
+    <string name="laser_duty_cycle_cannot_be_less_than_0">激光占空比不能小于1%</string>
+    <string name="laser_duty_cycle_cannot_exceed_100">激光占空比不能超过100%</string>
+    <string name="perforation_duty_cycle_cannot_be_empty">穿孔占空比不能为空</string>
+    <string name="perforation_duty_cycle_format_error">穿孔占空比格式错误</string>
+    <string name="perforation_duty_cycle_cannot_be_less_than_0">穿孔占空比不能小于0</string>
+    <string name="perforation_duty_cycle_cannot_exceed_100">穿孔占空比不能超过100</string>
+    <string name="thickness_cannot_be_empty">厚度不能为空</string>
+    <string name="thickness_format_error">厚度格式错误</string>
+    <string name="materials_cannot_be_empty">材料不能为空</string>
+    <string name="materials_format_error">材料格式错误</string>
+    <string name="params_name_cannot_be_empty">参数名称不能为空</string>
+    <string name="process_type_cannot_be_empty">工艺类型不能为空</string>
+    <string name="process_type_format_error">工艺类型格式错误</string>
+    <string name="input_dialog_title_with_unit">%1$s (%2$s)</string>
+    <string name="ms_unit">ms</string>
+    <string name="p_unit">p</string>
+    <string name="hz_unit">Hz</string>
+    <string name="mm_s_unit">mm/s</string>
+    <string name="percentage_unit">%</string>
+    <string name="s_unit">s</string>
+    <string name="in_s_unit">in/s</string>
+    <string name="parameter_exception">参数异常</string>
+    <string name="reset_data_successfully">Reset data successfully</string>
+    <string name="saved_successfully">Saved successfully</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="default_parameters_do_not_support_resetting">Default parameters do not support resetting</string>
+    <string name="spot_welding_interval_t1_desc">Set the interval between spot welds in burst mode. Range: 0–10000 ms.</string>
+    <string name="continuous_spot_welding_t2_desc">Set the burst duration in burst mode. Range: 0–10000 ms.</string>
+    <string name="laser_duty_cycle_desc">Duty cycle of the laser pulse during cutting. Range: 1–100%.</string>
+    <string name="blow_delay_desc">Set the time for pre-air delivery before laser emission. Range: 0–10000 ms.</string>
+    <string name="air_shut_off_delay_desc">Set the delay time for shutting off the gas after the laser is turned off. Range: 0–10000 ms.</string>
+    <string name="perforation_frequency_desc">Sets the laser pulse frequency during piercing; high frequency resembles continuous output. Range: 0–2000 Hz.</string>
+    <string name="perforation_duration_desc">Sets the total time for the pulsed laser to pierce the material at a single point. Range: 0.1–2.0 s.</string>
+    <string name="t3_text">(T3)</string>
+    <string name="wire_feeding_dela_desc">Sets the delay time for shutting off the gas after the laser is turned off. 0–10000 ms</string>
+    <string name="process_parameter_name">Process Parameter Name</string>
+    <string name="the_process_parameter_name_max_length">The process parameter name cannot exceed 32 characters</string>
+    <string name="laser_power_desc_text">Sets the output power of the laser. The maximum setting corresponds to the machine\'s nominal power of 1300W.  0 – 1300W</string>
+    <string name="w_unit">W</string>
+    <string name="swing_frequency_desc">推荐扫描频率范围：%1$s–%2$s %3$s。</string>
+    <string name="laser_frequency_cut_desc">Laser pulse frequency during cutting. Range: 1–5000 Hz.</string>
+    <string name="laser_duty_cycle_cut_desc">Duty cycle of the laser pulse during cutting. Range: 1–100%.</string>
+    <string name="perforation_duty_cycle_desc">Duty cycle of the laser pulse during piercing. Range: 0–100%.</string>
+    <string name="material_name_cannot_empty">The material name cannot be empty</string>
+    <string name="material_name_cannot_exceed_characters">The material name cannot exceed 20 characters</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="device_connection_check">Device Connection Check</string>
+    <string name="connecting_device_guide">Connecting Device Guide</string>
+    <string name="cnc_cut_note_text">Note: After the connection is established, subsequent adjustments will be made using CNC.</string>
+    <string name="cnc_connect_1_text">1.Verify RS485 Communication Connection.</string>
+    <string name="cnc_connect_2_text">2.Verify Cutting Nozzle Sensor Cable Connection.</string>
+    <string name="cnc_connect_3_text">3.Ensure Laser Torch and Fixture Are Secured.</string>
+    <string name="feed_sub">Feed–</string>
+    <string name="feed_sub_add">Feed+</string>
+    <string name="feed_sub_hold">Feed+ (Hold 3s)</string>
+    <string name="feed_sub_hold_hint">Hold 3s to Keep</string>
+    <string name="continuous_feeding_text">Continuous Feeding</string>
+    <string name="continuous_retreat_text">Continuous Retreat</string>
+    <string name="retreat_ongoing_text">Retreat ongoing</string>
+    <string name="gear_text">Gear</string>
+    <string name="thickness_text">Thickness</string>
+    <string name="laser_end_of_work">End of work</string>
+    <string name="laser_beam_output_text">Laser beam output</string>
+    <string name="operation_failed_text">Operation Failed</string>
+    <string name="please_check_the_equipment_text">Please check the equipment</string>
+    <string name="check_key_error_text">The key is not turned on</string>
+    <string name="abnormal_atmospheric_pressure_text">abnormal atmospheric pressure</string>
+    <string name="check_e_stop_state_error">The device is in E-stop state</string>
+    <string name="check_safety_interlock_error">The Ground Lock is not conducting</string>
+    <string name="safety_ground_lock_not_connected_title">Ground Lock Disconnected</string>
+    <string name="safety_ground_lock_not_connected_message">Please connect the Ground Lock before turning on the laser.</string>
+    <string name="operation_successful_text">Operation Successful</string>
+    <string name="open_laser_success">Laser successfully turned on</string>
+    <string name="close_laser_success">Laser successfully turned off</string>
+    <string name="manual_gas_supply_successful">Manual Gas Supply Successful</string>
+    <string name="wire_feed_enable_successful">Wire Feed Enable successful</string>
+    <string name="end_feed">End Feed+</string>
+    <string name="feed_successful">Feed+ Successful</string>
+    <string name="feed_ongoing_text">Feed ongoing</string>
+    <string name="feed_end_text">Feed - End</string>
+    <string name="feed_success_text">Feed - Success</string>
+    <string name="the_laser_power_must_be_greater_than_the_starting_power">The laser power must be greater than the starting power</string>
+    <string name="there_are_no_more_common_specs_available">There are no more common specs available</string>
+    <string name="real_time_machine_status_text">Real-time Machine Status</string>
+    <string name="i_understand_text">I understand</string>
+    <string name="gas_pressure_text">Gas Pressure</string>
+    <string name="kpa_unit">kpa</string>
+    <string name="celsius_unit">℃</string>
+    <string name="fahrenheit_unit">℉</string>
+    <string name="advanced_setting_scale_0_celsius">0℃</string>
+    <string name="advanced_setting_scale_20_celsius">20℃</string>
+    <string name="advanced_setting_scale_80_celsius">80℃</string>
+    <string name="advanced_setting_scale_85_celsius">85℃</string>
+    <string name="more_monitor_text">More Monitor</string>
+    <string name="bracket_left">(</string>
+    <string name="bracket_right">)</string>
+    <string name="gun_head_communication_alarm_title">Gun Head Communication Alarm</string>
+    <string name="gun_head_communication_alarm_content">If there is a communication problem between the laser and the laser head, please check the connection. If the machine still alarms after confirming that there is no problem, please contact after-sales service for assistance.</string>
+    <string name="controller_tablet_comm_alarm_title">Controller–Tablet Communication Fault</string>
+    <string name="controller_tablet_comm_alarm_content">Communication between the controller and tablet is abnormal. Please shut down the device, wait 10 seconds, then power on again. If the alarm persists after powering on, please contact after-sales service.</string>
+    <string name="camera_communication_alarm_title">Camera Communication Alarm</string>
+    <string name="camera_communication_alarm_content">Communication with the built-in camera is abnormal. Please shut down the device, wait 10 seconds, then power on again. If the alarm persists after powering on, please contact after-sales service.</string>
+    <string name="main_controller_temp_board_comm_alarm_title">Main Controller–Temperature Board Communication Fault</string>
+    <string name="main_controller_temp_board_comm_alarm_content">Communication between the main controller and temperature-control board is abnormal. Please shut down the device, wait 10 seconds, then power on again. If the alarm persists after powering on, please contact after-sales service.</string>
+    <string name="temp_board_refrigeration_comm_alarm_title">Temperature Board–Refrigeration Communication Fault</string>
+    <string name="temp_board_refrigeration_comm_alarm_content">Communication between the temperature-control board and refrigeration system is abnormal. Please shut down the device, wait 10 seconds, then power on again. If the alarm persists after powering on, please contact after-sales service.</string>
+    <string name="gun_head_motor_overtemperature_alarm_title">Gun Head Motor Overtemperature Alarm</string>
+    <string name="contact_cyber_after_sales_team_text">Contact LaserCyber After-Sales Team</string>
+    <string name="drive_overtemperature_alarm_title">Drive Overtemperature Alarm</string>
+    <string name="protective_lens_overtemperature_alarm_title">Protective Lens Overtemperature Alarm</string>
+    <string name="protective_lens_overtemperature_alarm_content">If the protective lens shows obvious burn marks, please replace it immediately.</string>
+    <string name="undervoltage_24v_alarm_title">24V Undervoltage Alarm</string>
+    <string name="galvanometer_motor_overcurrent_alarm_title">Galvanometer Motor Overcurrent Alarm</string>
+    <string name="galvanometer_motor_trajectory_error_title">Galvanometer Motor Trajectory Error</string>
+    <string name="galvanometer_motor_stall_alarm_title">Galvanometer Motor Stall Alarm</string>
+    <string name="water_temperature_upper_limit_alarm_title">Water Temperature Upper Limit Alarm</string>
+    <string name="water_temperature_upper_limit_alarm_content">If the machine still alarms after confirming everything is correct, please contact customer service for assistance.</string>
+    <string name="fiber_temperature_upper_limit_alarm_title">Fiber Temperature Upper Limit Alarm</string>
+    <string name="laser_output_energy_lower_limit_alarm_title">Laser Output Energy Lower Limit Alarm</string>
+    <string name="diode_short_circuit_error_cleared_title">Diode Short Circuit Error Cleared</string>
+    <string name="fiber_disconnection_alarm_title">Fiber Disconnection Alarm</string>
+    <string name="shielding_gas_alarm_title">Shielding Gas Alarm</string>
+    <string name="shielding_gas_alarm_content">Please check if the protective gas is on and if the gas cylinder is low. If the machine still alarms after confirming these are correct, please contact after-sales service.</string>
+    <string name="shielding_gas_alarm_log_message">A001 shielding gas alarm, reason: %1$s</string>
+    <string name="shielding_gas_alarm_reason_header">Reason:</string>
+    <string name="shielding_gas_alarm_reason_bullet">· %1$s</string>
+    <string name="shielding_gas_alarm_warn_log_content">%1$s. If the machine still alarms after confirming these are correct, please contact after-sales service.</string>
+    <string name="shielding_gas_alarm_engineer_check_message">Shielding gas fault: %1$s</string>
+    <string name="shielding_gas_alarm_cause_blow_pressure">Blow pressure too low</string>
+    <string name="shielding_gas_alarm_cause_inlet_pressure">Inlet gas pressure too low</string>
+    <string name="shielding_gas_alarm_cause_pressure_check">Gas pressure check abnormal</string>
+    <string name="shielding_gas_alarm_cause_device_service">Equipment fault, please contact after-sales service</string>
+    <string name="the_materials_thickness_must_be_greater_than">The materials thickness must be greater than </string>
+    <string name="the_materials_thickness_must_be_less_than">The materials thickness must be less than </string>
+    <string name="laser_power_cannot_be_empty">Laser power cannot be empty</string>
+    <string name="the_laser_power_must_be_greater_than_zero">Laser power must be greater than 0%</string>
+    <string name="laser_power_cannot_exceed_100">Laser power cannot exceed 100%</string>
+    <string name="the_laser_power_must_exceed_the_laser_starting_power">The laser power must exceed the laser starting power</string>
+    <string name="the_laser_power_must_be_less_than_the_laser_end_power">The laser power must exceed the laser termination power</string>
+    <string name="laser_current_text">Laser current</string>
+    <string name="wire_feed_successfully_closed">Wire Feed successfully closed</string>
+    <string name="manual_gas_supply_successfully_shut_down">Manual Gas Supply successfully shut down</string>
+    <string name="straight_track_temperature_alarm_content">Inspect the collimating lens. If the protective lens has obvious burn marks, replace it immediately.</string>
+    <string name="wire_feeder_communication_alarm_title">Wire Feeder Communication Alarm</string>
+    <string name="wire_feeder_communication_alarm_content">Wire Feeder Communication Alarm</string>
+    <string name="wire_feeder_current_alarm_title">Wire Feeder Current Alarm</string>
+    <string name="upload_successful">Upload successful</string>
+    <string name="upload_failed">Upload failed</string>
+    <string name="recording_failed">Unable to start recording</string>
+    <string name="start_recording_the_video">Recording started</string>
+    <string name="recording_completed">Recording saved</string>
+    <string name="recording_in_progress">Recording in progress</string>
+    <string name="recording_preparing">Preparing</string>
+    <string name="camera_record_another_thread_recording">Another thread is recording</string>
+    <string name="videos_text">Videos</string>
+    <string name="ai_vision_title">AI Vision</string>
+    <string name="home_ai_vision_card_line1">AI Detection</string>
+    <string name="home_ai_vision_card_line2">Visualized</string>
+    <string name="warn_log_title">Alarm Logs</string>
+    <string name="warn_log_clear">Clear</string>
+    <string name="warn_log_clear_start">Start clearing ...</string>
+    <string name="warn_log_clear_fail">Clear failed!</string>
+    <string name="warn_log_clear_success">Clear Succeeded</string>
+    <string name="work_mode_info_title">Work Information</string>
+    <string name="detection_type_text">Detection Type</string>
+    <string name="ai_vision_process_type_text">Process Type</string>
+    <string name="ai_vision_material_type_text">Material Type</string>
+    <string name="ai_vision_work_info_unavailable">-</string>
+    <string name="lens_text">Lens</string>
+    <string name="live_video_loading">Loading live video...</string>
+    <string name="live_video_failed">Live video unavailable</string>
+    <string name="live_video_retry_hint">Reconnecting live video...</string>
+    <string name="live_monitor_expand">Expand live video</string>
+    <string name="live_monitor_collapse">Exit fullscreen</string>
+    <string name="ai_vision_stream_failure_unknown">Unknown reason</string>
+    <string name="ai_vision_stream_failure_surface_unavailable">Video render Surface is not ready</string>
+    <string name="ai_vision_stream_failure_player_timeout">Player connection or stream timeout</string>
+    <string name="ai_vision_stream_failure_unsupported_video">Unsupported video codec or decoder initialization failed</string>
+    <string name="ai_vision_stream_failure_rtsp_event">RTSP event error: %1$s</string>
+    <string name="ai_vision_stream_failure_start_code">Player start returned error code: %1$d</string>
+    <string name="ai_vision_stream_failure_first_frame_timeout">Timed out waiting for first frame: %1$d ms</string>
+    <string name="ai_overlay_hud_status_prefix">AI: %1$s</string>
+    <string name="ai_overlay_hud_status_idle">IDLE</string>
+    <string name="ai_overlay_hud_state_prefix">STATE: %1$s</string>
+    <string name="ai_overlay_state_idle">Idle</string>
+    <string name="ai_overlay_state_monitoring">Monitoring</string>
+    <string name="ai_overlay_state_locked">Locked</string>
+    <string name="ai_overlay_result_waiting">Latest result: waiting...</string>
+    <string name="ai_overlay_result_prefix">Latest result: %1$s</string>
+    <string name="ai_overlay_cls_disabled">Class: not enabled</string>
+    <string name="ai_overlay_cls_waiting">Class: waiting...</string>
+    <string name="ai_overlay_state_stain_detect">Stain detection</string>
+    <string name="ai_overlay_cls_prefix">Class: %1$s (%2$.3f)</string>
+    <string name="ai_overlay_cls_other">Other</string>
+    <string name="ai_overlay_cls_metal">Metal</string>
+    <string name="lens_alert_mild_title">Lens notice</string>
+    <string name="lens_alert_mild_body_default">Mild lens contamination — wipe when convenient.</string>
+    <string name="lens_alert_heavy_title">Lens alert</string>
+    <string name="lens_alert_heavy_body_default">Protective lens is heavily contaminated; clean or replace the protective lens.</string>
+    <string name="security_alert_title">Security Alert</string>
+    <string name="gas_pressure_low_title">Gas Pressure too low</string>
+    <string name="lens_heavy_contamination_alarm_title">Lens Contamination Alarm</string>
+    <string name="lens_alert_heavy_continue_after_ack">Tap OK to continue laser output.</string>
+    <string name="lens_alert_btn_ack">OK</string>
+    <string name="zoom_state_default">DEFAULT</string>
+    <string name="zoom_state_best">BEST</string>
+    <string name="zoom_state_max">MAX</string>
+    <string name="zoom_ratio_format">%1$.1fx</string>
+    <string name="zoom_tutorial_title">Zoom Gesture Guide</string>
+    <string name="zoom_tutorial_zoom_in">Spread two fingers to zoom in</string>
+    <string name="zoom_tutorial_zoom_out">Pinch two fingers to zoom out</string>
+    <string name="zoom_tutorial_reset">Double tap to restore DEFAULT</string>
+    <string name="zoom_tutorial_page_format">%1$d / %2$d</string>
+    <string name="zoom_tutorial_prev">Previous</string>
+    <string name="zoom_tutorial_next">Next</string>
+    <string name="zoom_tutorial_finish">Finish</string>
+    <string name="zoom_tutorial_skip">Skip</string>
+    <string name="recording_time_text">Recording Time</string>
+    <string name="work_mode_text">Process Type</string>
+    <string name="work_material_text">Material Type</string>
+    <string name="duration_text">Duration</string>
+    <string name="operations_text">Operations</string>
+    <string name="delete_text">Delete</string>
+    <string name="upload_text">Upload</string>
+    <string name="upload_button_uploaded">Uploaded</string>
+    <string name="choose_text">CHOOSE</string>
+    <string name="select_text">SELECT</string>
+    <string name="ai_vision_choose_btn">Select Video</string>
+    <string name="ai_vision_upload_btn">Upload</string>
+    <string name="ai_vision_select_btn">Select</string>
+    <string name="ai_vision_choose_video_title">Back to AI Vision</string>
+    <string name="ai_vision_select_video_first">Please select a video to detect.</string>
+    <string name="details_text">Details</string>
+    <string name="unknown_text">unknown</string>
+    <string name="video_deletion_failed_text">Video deletion failed</string>
+    <string name="video_deleted_successfully_text">Video deleted successfully</string>
+    <string name="loading_text">Loading...</string>
+    <string name="process_video_loaded_total_format">%1$d of %2$d</string>
+    <string name="no_more_data_available_text">No more data available</string>
+    <string name="pull_up_to_load_more_text">Pull up to load more</string>
+    <string name="release_immediate_loading_text">Release immediate loading</string>
+    <string name="pull_down_to_refresh_text">Pull down to refresh</string>
+    <string name="refreshing_text">Refreshing ..</string>
+    <string name="release_to_refresh_immediately_text">Release to refresh immediately</string>
+    <string name="back_to_videos_text">Back to Videos</string>
+    <string name="parameter_recording_text">Process Parameters</string>
+    <string name="delete_btn_text">Delete</string>
+    <string name="functional_modes_text">Process Type</string>
+    <string name="colon_text">:</string>
+    <string name="playback_failed_text">Playback failed</string>
+    <string name="video_loading_failed_text">Video loading failed</string>
+    <string name="ai_vision_video_pause">Pause</string>
+    <string name="ai_vision_video_play">Play</string>
+    <string name="process_video_rewind">Rewind</string>
+    <string name="process_video_fast_forward">Fast forward</string>
+    <string name="ai_vision_video_replay">Replay</string>
+    <string name="ai_vision_detect_btn">Detect</string>
+    <string name="ai_vision_reinfer_btn">Re-detect</string>
+    <string name="ai_vision_video_inferring">Inferring...</string>
+    <string name="ai_vision_video_analyzing">Analyzing…</string>
+    <string name="ai_vision_video_inference_progress">Analyzing video... %1$d%%</string>
+    <string name="ai_vision_video_exporting">Generating result video...</string>
+    <string name="ai_vision_video_inference_failed">Video analysis failed: %1$s</string>
+    <string name="ai_vision_video_export_failed">Inference video export failed: %1$s</string>
+    <string name="ai_vision_inference_video_not_ready">Inference video is not ready yet.</string>
+    <string name="ai_vision_offline_inference_not_available">Offline inference is unavailable in current AI library</string>
+    <string name="ai_vision_ai_engine_not_ready">AI engine is not ready</string>
+    <string name="lws_video_storage_permission_required">Storage or video read permission is required to open files under the agreed /lws path.</string>
+    <string name="please_turn_off_the_manual_gas_supply_first">Please turn off the Manual Gas Supply first</string>
+    <string name="silk_feed_successful">Silk Feed Successful</string>
+    <string name="silk_feed_ends">Silk Feed Ends</string>
+    <string name="retreat_ends">Retreat ends</string>
+    <string name="successful_retreat">Successful retreat</string>
+    <string name="connection_successful">Connection successful</string>
+    <string name="don_t_show_again_this_session">本次会话内不再显示</string>
+    <string name="laser_reminder_title">重要提醒！</string>
+    <string name="laser_reminder_laser_protection">请确认您已佩戴激光防护装备。</string>
+    <string name="laser_reminder_welding_nozzle">请确认您已安装焊接铜喷嘴。</string>
+    <string name="laser_reminder_cutting_nozzle">请确认您已安装切割铜喷嘴。</string>
+    <string name="laser_reminder_clean_nozzle_removed">请确认您已移除激光管及铜喷嘴。</string>
+    <string name="laser_reminder_focus_scale_ref">请将枪头对焦刻度调整至指定参考值。</string>
+    <string name="laser_reminder_confirm">是，我已完成上述安全检查</string>
+    <string name="close_text">close</string>
+    <string name="do_we_need_to_upload_the_video">Do we need to upload the video?</string>
+    <string name="laser_communication_anomaly_text">Laser Communication Anomaly</string>
+    <string name="pump_module_overtemperature_alarm_title">Pump Module Overtemperature Alarm</string>
+    <string name="sensor_channel_deviation_alarm_title">Sensor Channel Deviation Alarm</string>
+    <string name="quiescent_current_abnormal_alarm_title">Quiescent Current Abnormal Alarm</string>
+    <string name="motor_cable_open_alarm_title">Motor Cable Open Alarm</string>
+    <string name="flash_error_alarm_title">FLASH Error Alarm</string>
+    <string name="sensor_abnormal_alarm_title">Sensor Abnormal Alarm</string>
+    <string name="flash_unencrypted_alarm_title">FLASH Unencrypted Alarm</string>
+    <string name="collimating_lens_overtemperature_alarm_title">Collimating Lens Overtemperature Alarm</string>
+    <string name="mmi_oscillator_malfunction_alarm_title">MMI Oscillator Malfunction Alarm</string>
+    <string name="hardware_bus_error_alarm_title">Hardware Bus Error Alarm</string>
+    <string name="memory_management_error_title">Memory Management Error</string>
+    <string name="memory_access_error_title">Memory Access Error</string>
+    <string name="illegal_instruction_alarm_title">Illegal Instruction Alarm</string>
+    <string name="watchdog_reset_event_title">Watchdog Reset Event</string>
+    <string name="pump_module_overtemperature_cleared_title">Pump Module Overtemperature Cleared</string>
+    <string name="water_temperature_limit_cleared_title">Water Temperature Limit Cleared</string>
+    <string name="fiber_temperature_upper_limit_cleared_title">Fiber Temperature Upper Limit Cleared</string>
+    <string name="laser_reflected_energy_upper_limit_cleared_title">Laser Reflected Energy Upper Limit Cleared</string>
+    <string name="laser_output_energy_lower_limit_cleared_title">Laser Output Energy Lower Limit Cleared</string>
+    <string name="fiber_disconnection_cleared_title">Fiber Disconnection Cleared</string>
+    <string name="pump_module_overtemperature_alarm_content">If the machine still alarms after confirming everything is correct, please contact customer service for assistance.</string>
+    <string name="laser_communication_alarm_title">Laser Communication Alarm</string>
+    <string name="pump_source_temperature_alarm_title">Pump Source Temperature Alarm</string>
+    <string name="laser_current_alarm_title">Laser Current Alarm</string>
+    <string name="red_light_current_alarm_title">Red Light Current Alarm</string>
+    <string name="pump_source_voltage_alarm_title">Pump Source Voltage Alarm</string>
+    <string name="laser_driver_communication_alarm_title">Laser Driver Communication Alarm</string>
+    <string name="ad_feedback_communication_alarm_title">AD Feedback Communication Alarm</string>
+    <string name="driver_module_overtemperature_alarm_title">Driver Module Overtemperature Alarm</string>
+    <string name="internal_humidity_exceeds_the_upper_limit_alarm_title">Internal Humidity Upper Limit Alarm</string>
+    <string name="cold_water_interlock_alarm_title">Cold Water Interlock Alarm</string>
+    <string name="laser_emergency_stop_alarm_title">Laser Emergency Stop Alarm</string>
+    <string name="positioning_light_fault_alarm_title">Positioning Light Fault Alarm</string>
+    <string name="narrow_pulse_protection_alarm_title">Narrow Pulse Protection Alarm</string>
+    <string name="driver_board_overvoltage_title">Driver Board Overvoltage</string>
+    <string name="environment_temperature_alarm_title">Environment Temperature Alarm</string>
+    <string name="unable_to_open_the_camera_title">Camera unavailable</string>
+    <string name="uploading_in_progress">Uploading in Progress</string>
+    <string name="video_upload_phase_cover">Uploading cover</string>
+    <string name="video_upload_phase_metadata">Uploading cover…</string>
+    <string name="video_upload_phase_video">Uploading video file</string>
+    <string name="upload_cancelled">Upload cancelled</string>
+    <string name="parameter_exception_text">Parameter exception</string>
+    <string name="zero_offset_cannot_be_empty">Zero Offset cannot be empty</string>
+    <string name="zero_offset_format_error">Zero Offset format error</string>
+    <string name="zero_offset_cannot_be_less_than">Zero Offset cannot be less than -30</string>
+    <string name="zero_offset_cannot_be_greater_than">Zero Offset cannot be greater than 30</string>
+    <string name="zero_point_auto_button">Auto</string>
+    <string name="zero_point_auto_title">Zero Offset Auto Correction</string>
+    <string name="zero_point_auto_teaching_message">Aim the welding torch at a safe area and hold the trigger before tapping Auto. Auto temporarily enables laser output; the trigger fires the physical laser. Wait for the progress bar to finish automatic zero-point correction.</string>
+    <string name="zero_point_auto_progress_waiting_laser">Temporarily enabling laser output…</string>
+    <string name="zero_point_auto_progress_online">Detecting online…</string>
+    <string name="zero_point_auto_progress_recording_tail">Laser off detected, saving temporary video…</string>
+    <string name="zero_point_auto_progress_finalizing_online">Checking online result…</string>
+    <string name="zero_point_auto_progress_offline_200">Offline recheck at 200 ms…</string>
+    <string name="zero_point_auto_progress_offline_100">Offline recheck at 100 ms…</string>
+    <string name="zero_point_auto_progress_success">Correction complete</string>
+    <string name="zero_point_auto_failed_retry">检测失败，请再试一次</string>
+    <string name="zero_point_auto_correction_failed">校正失败请再次点击 Auto 或者手动校正</string>
+    <string name="zero_point_auto_recording_unavailable">Temporary video recording unavailable</string>
+    <string name="zero_point_auto_busy">Zero Offset Auto Correction is already running</string>
+    <string name="zero_point_offset_alarm_title">Zero Point Offset Alarm</string>
+    <string name="zero_point_offset_alert_body">Zero offset is off center — please correct it promptly.</string>
+    <string name="zero_point_offset_alert_go_settings">Go to settings</string>
+    <string name="scan_width_correction_cannot_be_empty">Scan Width Correction cannot be empty</string>
+    <string name="scan_width_correction_format_error">Scan Width Correction format error</string>
+    <string name="the_scan_width_correction_cannot_exceed">The scan width correction cannot exceed 75</string>
+    <string name="the_scan_width_correction_cannot_be_less_than">The scan width correction cannot be less than -75</string>
+    <string name="laser_starting_power_cannot_be_empty">Laser Starting Power cannot be empty</string>
+    <string name="laser_starting_power_format_error">Laser Starting Power format error</string>
+    <string name="the_laser_starting_power_cannot_be_less_than">The laser starting power cannot be less than 0</string>
+    <string name="the_laser_starting_power_cannot_exceed">The laser starting power cannot exceed 100</string>
+    <string name="the_laser_termination_power_cannot_exceed">The laser termination power cannot exceed 100</string>
+    <string name="the_laser_termination_power_cannot_be_less_than">The laser termination power cannot be less than 0</string>
+    <string name="laser_termination_power_cannot_be_empty">Laser Termination Power cannot be empty</string>
+    <string name="laser_termination_power_format_error">Laser Termination Power format error</string>
+    <string name="gas_pressure_threshold_cannot_be_empty">Minimum gas pressure threshold cannot be empty</string>
+    <string name="gas_pressure_threshold_format_error">Minimum gas pressure threshold format error</string>
+    <string name="the_gas_pressure_threshold_cannot_be_less_than">The minimum gas pressure threshold cannot be less than 0 KPA</string>
+    <string name="the_gas_pressure_threshold_cannot_exceed">The minimum gas pressure threshold cannot exceed 400 KPA</string>
+    <string name="inlet_gas_pressure_threshold_cannot_be_empty">Inlet Gas Pressure Threshold cannot be empty</string>
+    <string name="inlet_gas_pressure_threshold_format_error">Inlet Gas Pressure Threshold format error</string>
+    <string name="the_inlet_gas_pressure_threshold_cannot_be_less_than">Inlet Gas Pressure Threshold cannot be less than 0 KPA</string>
+    <string name="the_inlet_gas_pressure_threshold_cannot_exceed">Inlet Gas Pressure Threshold cannot exceed 200 KPA</string>
+    <string name="driver_temperature_alarm_threshold_cannot_be_empty">Driver Temperature Alarm Threshold cannot be empty</string>
+    <string name="driver_temperature_alarm_threshold_format_error">Driver Temperature Alarm Threshold format error</string>
+    <string name="the_driver_temperature_alarm_threshold_cannot_be_less_than">Driver Temperature Alarm Threshold cannot be less than 0℃</string>
+    <string name="the_driver_temperature_alarm_threshold_cannot_exceed">Driver Temperature Alarm Threshold cannot exceed 80℃</string>
+    <string name="protective_lens_temperature_alarm_threshold_cannot_be_empty">Protective Lens Temperature Alarm Threshold cannot be empty</string>
+    <string name="protective_lens_temperature_alarm_threshold_format_error">Protective Lens Temperature Alarm Threshold format error</string>
+    <string name="the_protective_lens_temperature_alarm_threshold_cannot_be_less_than">Protective Lens Temperature Alarm Threshold cannot be less than 0℃</string>
+    <string name="the_protective_lens_temperature_alarm_threshold_cannot_exceed">Protective Lens Temperature Alarm Threshold cannot exceed 85℃</string>
+    <string name="collimating_lens_temperature_alarm_threshold_cannot_be_empty">Collimating Lens Temperature Alarm Threshold cannot be empty</string>
+    <string name="collimating_lens_temperature_alarm_threshold_format_error">Collimating Lens Temperature Alarm Threshold format error</string>
+    <string name="the_collimating_lens_temperature_alarm_threshold_cannot_be_less_than">Collimating Lens Temperature Alarm Threshold cannot be less than 0℃</string>
+    <string name="the_collimating_lens_temperature_alarm_threshold_cannot_exceed">Collimating Lens Temperature Alarm Threshold cannot exceed 85℃</string>
+    <string name="motor_temperature_alarm_threshold_cannot_be_empty">Motor Temperature Alarm Threshold cannot be empty</string>
+    <string name="motor_temperature_alarm_threshold_format_error">Motor Temperature Alarm Threshold format error</string>
+    <string name="the_motor_temperature_alarm_threshold_cannot_be_less_than">Motor Temperature Alarm Threshold cannot be less than 0℃</string>
+    <string name="the_motor_temperature_alarm_threshold_cannot_exceed">Motor Temperature Alarm Threshold cannot exceed 80℃</string>
+    <string name="temperature_alarm_recovery_interval_cannot_be_empty">Temperature Alarm Recovery Interval cannot be empty</string>
+    <string name="temperature_alarm_recovery_interval_format_error">Temperature Alarm Recovery Interval format error</string>
+    <string name="the_temperature_alarm_recovery_interval_cannot_be_less_than">Temperature Alarm Recovery Interval cannot be less than 0℃</string>
+    <string name="the_temperature_alarm_recovery_interval_cannot_exceed">Temperature Alarm Recovery Interval cannot exceed 20℃</string>
+    <string name="detecting_connection">Detecting connection...</string>
+    <string name="cnc_connection_successful">CNC Connection Successful</string>
+    <string name="cnc_connection_failed">CNC Connection Failed</string>
+    <string name="please_enter_the_video_title">Please enter the video title</string>
+    <string name="prompt_text">Prompt</string>
+    <string name="close_cnc">Close CNC</string>
+    <string name="please_turn_off_the_cnc_first">Please turn off the CNC first.</string>
+    <string name="the_recording_time_is_too_short">Recording too short</string>
+    <string name="video_saving_failed">Failed to save video</string>
+    <string name="laser_anomaly">Laser anomaly</string>
+    <string name="cnc_running_hit_text">CNC Mode Active\nPlease operate on the CNC equipment.</string>
+    <string name="exit_cnc_mode">Exit CNC Mode</string>
+    <string name="confirm_exit_cnc_mode">Confirm Exit CNC Mode？</string>
+    <string name="insufficient_space_please_delete_videos_first">Not enough storage. Delete some videos first.</string>
+    <string name="ota_upgrade_status_downloading">正在下载升级包</string>
+    <string name="ota_upgrade_status_preparing">正在准备升级</string>
+    <string name="ota_upgrade_status_firmware">正在升级控制卡固件 (%1$d%%)</string>
+    <string name="ota_upgrade_status_apk">正在安装应用</string>
+    <string name="ota_upgrade_status_system">升级系统中</string>
+    <string name="upgrade_check_rate_limit_title">Frequent Clicking</string>
+    <string name="upgrade_check_rate_limit_message">Please wait 10 seconds before checking again.</string>
+    <string name="upgrade_check_query_title">Check for Updates</string>
+    <string name="upgrade_check_query_message">Querying the latest version, please wait…</string>
+    <string name="upgrade_already_latest_title">Up to Date</string>
+    <string name="upgrade_already_latest_message">You are already on the latest version.</string>
+    <string name="upgrade_check_failed_title">Update Check Failed</string>
+    <string name="upgrade_check_failed_message">Could not fetch version information. Please try again later.</string>
+    <string name="bundled_firmware_dialog_title">Control-Card Firmware Update</string>
+    <string name="bundled_firmware_dialog_message">A newer control-card firmware is available (%1$s → %2$s).\nKeep power connected and do not operate the device during upgrade.</string>
+    <string name="bundled_firmware_upgrading_title">Upgrading Control-Card Firmware</string>
+    <string name="bundled_firmware_upgrading_message">Keep power connected and do not operate the device during upgrade.</string>
+    <string name="bundled_firmware_progress_percent">%1$d%%</string>
+    <string name="bundled_firmware_success_title">Firmware Upgrade Succeeded</string>
+    <string name="bundled_firmware_success_message">Control-card firmware has been updated.</string>
+    <string name="bundled_firmware_failed_title">Firmware Upgrade Failed</string>
+    <string name="bundled_firmware_failed_message">Control-card firmware upgrade failed. Please try again later.</string>
+    <string name="ime_enter_send_label">SEND</string>
+</resources>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 双层叠底描边：避免 shape+stroke 在圆角/底边被裁切导致「下边亮线不完整」 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 外圈：作为完整一圈边框（含底边） -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#66FFFFFF" />
+            <corners android:radius="18dp" />
+        </shape>
+    </item>
+    <!-- 内填：比外圈四边各缩 1dp，露出均匀亮边 -->
+    <item
+        android:bottom="1dp"
+        android:left="1dp"
+        android:right="1dp"
+        android:top="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#CC050821" />
+            <corners android:radius="17dp" />
+        </shape>
+    </item>
+</layer-list>

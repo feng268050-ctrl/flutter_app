@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tvTitle"
+    android:layout_width="278dp"
+    android:layout_height="100dp"
+    android:textColor="#FFFFFF"
+    android:layout_marginTop="12dp"
+    android:layout_marginLeft="12dp"
+    android:layout_marginRight="12dp"
+    android:layout_marginBottom="50dp"
+    android:textSize="33sp"
+    android:gravity="center"
+    android:clickable="true"
+    android:focusable="true"
+    android:tileMode="repeat"
+    android:tileModeX="repeat"
+    android:tileModeY="repeat"
+    android:alpha="0.8"
+    />

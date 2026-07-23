@@ -128,7 +128,7 @@
 | `make build-rootfs`（默认） | Weston + `flutter-wayland-client` only（无 `flutter-pi`） | `wayland-gbm` |
 | `make build-rootfs-flutter-pi`（备选） | flutter-pi only（无 weston / eLinux client） | `gbm` |
 
-两套 rootfs **互斥打包**：`lws_hmi_flutter.config` 显式关闭 Wayland/Weston/eLinux；`lws_hmi_wayland.config` 关闭 `FLUTTER_PI`。`post-build` 写入 `/etc/display-stack` 且若混装则失败。`hmi-launch.sh` **按该 stamp 选栈**。栈切换：`make prepare-rootfs` / `prepare-rootfs-flutter-pi`（`scripts/prepare-rootfs-stack.sh` + `ensure-mali-variant.sh`）；`build-rootfs*` 会先跑匹配的 prepare。鼠标偏好：`apply-mouse-settings` 写 conf；Weston 下会重启 `hmi` 使 ini 生效。视觉 DPR 对齐在 Dart（`LwsHmiApp` FittedBox≈1.358）。HAL：`BoardBindings.displayStack()` / `DisplayStackProbe`（读 `/etc/display-stack` 与 `/run/display-stack`）门控 Settings 中仅 flutter-pi 支持的鼠标项。
+两套 rootfs **互斥打包**：`lws_hmi_flutter.config` 显式关闭 Wayland/Weston/eLinux；`lws_hmi_wayland.config` 关闭 `FLUTTER_PI`。`post-build` 写入 `/etc/display-stack` 且若混装则失败。`hmi-launch.sh` **按该 stamp 选栈**。栈切换：`make prepare-rootfs` / `prepare-rootfs-flutter-pi`（`scripts/prepare-rootfs-stack.sh` + `ensure-mali-variant.sh`）；`build-rootfs*` 会先跑匹配的 prepare。鼠标偏好：`apply-mouse-settings` 写 conf；Weston 下会重启 `hmi` 使 ini 生效。视觉 DPR 对齐在 Dart（`LwsHmiApp` FittedBox≈1.358）。HAL：`BoardBindings.displayStack()` / `DisplayStackProbe`（读 `/etc/display-stack`）门控 Settings 中仅 flutter-pi 支持的鼠标项。
 
 **产品决策（2026-07）：** 板端验证 Weston 在实时高斯模糊等场景下帧率更高更稳，flutter-pi 会明显掉到 24fps 以下 → **Weston 升为默认量产栈**，flutter-pi 保留为备选。
 

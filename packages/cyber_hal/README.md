@@ -15,7 +15,7 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 | `package:cyber_hal/gpio.dart` | named GPIO lines | board `gpio.json` (sysfs) |
 | `package:cyber_hal/modbus.dart` | attribute catalog | board `modbus.json` + serial |
 | `package:cyber_hal/bluetooth.dart` | BlueZ | `/var/lib/bluetooth/` |
-| `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` + `DisplayStack` | procfs/sysfs + `/var/lib/hal/product.ini` + `/etc/display-stack` + `/run/display-stack` |
+| `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` + `DisplayStack` | procfs/sysfs + `/var/lib/hal/product.ini` + `/etc/display-stack` |
 | `package:cyber_hal/datetime.dart` | wall clock | `/var/lib/hal/datetime.conf` (`sync_mode`, `timezone`) |
 | `package:cyber_hal/stub.dart` | in-memory stubs | P3.2 emulator / host tests |
 | `package:cyber_hal/cyber_hal.dart` | core only | `Capabilities`, `BoardProfile`, errors |
@@ -89,7 +89,7 @@ dependencies:
 HAL mid-session writes use existing FHS:
 
 - `/var/lib/hal/` — mouse, keyboard, usb-debug, product.ini; **output prefs** as `/var/lib/hal/display.conf` (`backlight`, `auto_sleep`, `orientation`) and `/var/lib/hal/sound.conf`; **datetime** as `/var/lib/hal/datetime.conf`
-- `/etc/display-stack` + `/run/display-stack` — image / runtime embedder stamps (`DisplayStackProbe`; legacy `/etc/hmi` + `/run/hmi` fallbacks)
+- `/etc/display-stack` — image embedder stamp (`DisplayStackProbe`; legacy `/etc/hmi/display-stack` fallback)
 - `/var/lib/hmi/` — **App-owned** only (misc/advanced JSON, alarm SQLite, debug/push staging)
 - `/var/lib/network/` — ethernet/proxy (after network wave)
 - `/var/lib/wpa_supplicant/` — Wi‑Fi wanted / networks

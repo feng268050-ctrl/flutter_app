@@ -3,22 +3,19 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('DisplayStackProbe', () {
-    test('runtime stamp weston wins over image flutter-pi', () async {
+    test('image stamp weston', () async {
       final stack = await DisplayStackProbe(
-        runtimeStampPath: '/run/fake',
         imageStampPath: '/etc/fake',
         environment: const {},
-        fileExists: (p) async => true,
-        readFile: (p) async =>
-            p.startsWith('/run') ? 'weston\n' : 'flutter-pi\n',
+        fileExists: (p) async => p == '/etc/fake',
+        readFile: (_) async => 'weston\n',
       ).detect();
       expect(stack, DisplayStack.weston);
       expect(stack.mouseSettings.scrollSpeed, isFalse);
     });
 
-    test('image stamp used when runtime missing', () async {
+    test('image stamp flutter-pi preferred over WAYLAND_DISPLAY', () async {
       final stack = await DisplayStackProbe(
-        runtimeStampPath: '/run/missing',
         imageStampPath: '/etc/fake',
         environment: const {'WAYLAND_DISPLAY': 'wayland-0'},
         fileExists: (p) async => p == '/etc/fake',
@@ -30,7 +27,6 @@ void main() {
 
     test('WAYLAND_DISPLAY fallback when no stamps', () async {
       final stack = await DisplayStackProbe(
-        runtimeStampPath: '/run/missing',
         imageStampPath: '/etc/missing',
         environment: const {'WAYLAND_DISPLAY': 'wayland-0'},
         fileExists: (_) async => false,
@@ -40,7 +36,6 @@ void main() {
 
     test('no stamp no wayland → flutterPi or unknown', () async {
       final stack = await DisplayStackProbe(
-        runtimeStampPath: '/run/missing',
         imageStampPath: '/etc/missing',
         environment: const {},
         fileExists: (_) async => false,
@@ -51,24 +46,20 @@ void main() {
       );
     });
 
-    test('default stamp paths are /run|/etc/display-stack', () {
-      expect(
-        DisplayStackProbe.defaultRuntimeStampPath,
-        '/run/display-stack',
-      );
+    test('default stamp path is /etc/display-stack', () {
       expect(
         DisplayStackProbe.defaultImageStampPath,
         '/etc/display-stack',
       );
     });
 
-    test('legacy /run/hmi|/etc/hmi stamps used when new paths missing', () async {
+    test('legacy /etc/hmi stamp used when new path missing', () async {
       final stack = await DisplayStackProbe(
         environment: const {},
         fileExists: (p) async =>
-            p == DisplayStackProbe.legacyRuntimeStampPath,
+            p == DisplayStackProbe.legacyImageStampPath,
         readFile: (p) async {
-          expect(p, DisplayStackProbe.legacyRuntimeStampPath);
+          expect(p, DisplayStackProbe.legacyImageStampPath);
           return 'weston\n';
         },
       ).detect();

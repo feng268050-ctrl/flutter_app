@@ -3,8 +3,7 @@ import 'dart:io';
 /// Active HMI display / embedder stack on the appliance.
 ///
 /// Image stamp: `/etc/display-stack` (post-build; flutter-pi XOR weston).
-/// Runtime stamp: `/run/display-stack` (`hmi-launch.sh`).
-/// Legacy fallbacks: `/etc/hmi/display-stack`, `/run/hmi/display-stack`.
+/// Legacy fallback: `/etc/hmi/display-stack`.
 enum DisplayStack {
   /// Sony/Rockchip flutter-pi DRM path (alternate rootfs).
   flutterPi,
@@ -76,31 +75,23 @@ extension DisplayStackMouse on DisplayStack {
   bool get isFlutterPi => this == DisplayStack.flutterPi;
 }
 
-/// Resolves [DisplayStack] from runtime/image stamps and/or Wayland env.
+/// Resolves [DisplayStack] from the image stamp and/or Wayland env.
 ///
 /// Always async — stamp reads must not use `*Sync` on the UI isolate.
 final class DisplayStackProbe {
   const DisplayStackProbe({
-    this.runtimeStampPath = defaultRuntimeStampPath,
     this.imageStampPath = defaultImageStampPath,
     this.environment,
     this.fileExists,
     this.readFile,
   });
 
-  /// Written by `hmi-launch.sh` after the embedder path is chosen.
-  static const defaultRuntimeStampPath = '/run/display-stack';
-
   /// Baked by rootfs post-build (`flutter-pi` XOR `weston`).
   static const defaultImageStampPath = '/etc/display-stack';
-
-  /// Pre-`/run/display-stack` path (partial-upgrade fallback).
-  static const legacyRuntimeStampPath = '/run/hmi/display-stack';
 
   /// Pre-`/etc/display-stack` path (partial-upgrade fallback).
   static const legacyImageStampPath = '/etc/hmi/display-stack';
 
-  final String runtimeStampPath;
   final String imageStampPath;
   final Map<String, String>? environment;
 
@@ -116,10 +107,7 @@ final class DisplayStackProbe {
     final env = environment ?? Platform.environment;
 
     final paths = <String>[
-      runtimeStampPath,
       imageStampPath,
-      // Partial-upgrade: old stamps under /run/hmi and /etc/hmi.
-      if (runtimeStampPath != legacyRuntimeStampPath) legacyRuntimeStampPath,
       if (imageStampPath != legacyImageStampPath) legacyImageStampPath,
     ];
 

@@ -252,17 +252,17 @@ Related capabilities SHALL be grouped under domain packages with optional sub-im
 
 ### Requirement: DisplayStack under sys_info
 
-Embedder/stack detection (`DisplayStack`, probe helpers, and mouse-setting availability gates derived from the stack) SHALL be exported from `package:cyber_hal/sys_info.dart`. Product Apps MUST NOT import a top-level `package:cyber_hal/display.dart`. Default stamp paths SHALL be `/run/display-stack` (runtime) and `/etc/display-stack` (image), not under `/run/hmi/` or `/etc/hmi/`.
+Embedder/stack detection (`DisplayStack`, probe helpers, and mouse-setting availability gates derived from the stack) SHALL be exported from `package:cyber_hal/sys_info.dart`. Product Apps MUST NOT import a top-level `package:cyber_hal/display.dart`. The default stamp path SHALL be `/etc/display-stack` (image, baked by post-build), not under `/etc/hmi/`. Writers MUST NOT create a runtime `/run/display-stack` stamp.
 
 #### Scenario: App resolves stack via sys_info
 
 - **WHEN** Settings needs the active display stack label or mouse-knob gates
 - **THEN** it SHALL obtain `DisplayStack` through `sys_info` (or `BoardBindings.displayStack`) without importing `cyber_hal/display.dart`
 
-#### Scenario: Probe defaults are OS paths
+#### Scenario: Probe default is image stamp
 
 - **WHEN** `DisplayStackProbe` is constructed with default paths
-- **THEN** it reads `/run/display-stack` then `/etc/display-stack`
+- **THEN** it reads `/etc/display-stack` (then legacy `/etc/hmi/display-stack` if needed)
 
 ### Requirement: Debug module grouping
 LAN SSH debug and USB OTG / plug-ssh debug SHALL be grouped under `hal/debug`, with optional sub-imports for ssh and usb. Top-level modules named `hal/ssh_debug` or `hal/usb_debug` MUST NOT be the long-term public layout.
@@ -332,25 +332,24 @@ exercise preparing, recording, stopping, completed, failure, and cancellation.
 
 ### Requirement: DisplayStack stamps use OS paths
 
-`DisplayStackProbe` (and board launch/post-build writers) SHALL use:
+`DisplayStackProbe` (and rootfs post-build writers) SHALL use:
 
 - **Image stamp:** `/etc/display-stack` (baked by rootfs post-build; `weston` XOR `flutter-pi`)
-- **Runtime stamp:** `/run/display-stack` (written when the embedder path is chosen)
 
-Detection priority remains: runtime stamp → image stamp → `WAYLAND_DISPLAY` / platform fallbacks. Tokens (`weston` / `wayland` / `elinux` / `flutter-pi` / …) are unchanged. Writers MUST NOT use `/etc/hmi/display-stack` or `/run/hmi/display-stack` as the primary path. Probe MAY read those legacy paths only as a one-shot fallback when the new stamps are absent.
+Detection priority SHALL be: image stamp → `WAYLAND_DISPLAY` / platform fallbacks. Tokens (`weston` / `wayland` / `elinux` / `flutter-pi` / …) are unchanged. The image MUST NOT write a runtime `/run/display-stack` (or legacy `/run/hmi/display-stack`) stamp. Writers MUST NOT use `/etc/hmi/display-stack` as the primary path. Probe MAY read `/etc/hmi/display-stack` only as a legacy fallback when `/etc/display-stack` is absent.
 
-#### Scenario: Runtime stamp wins
+#### Scenario: Image stamp selects flutter-pi
 
-- **WHEN** `/run/display-stack` contains `weston` and `/etc/display-stack` contains `flutter-pi`
-- **THEN** `DisplayStackProbe.detect` returns Weston
+- **WHEN** `/etc/display-stack` contains `flutter-pi`
+- **THEN** `DisplayStackProbe.detect` returns flutter-pi
 
-#### Scenario: Image stamp when runtime missing
+#### Scenario: Image stamp selects weston
 
-- **WHEN** `/run/display-stack` is absent and `/etc/display-stack` contains `flutter-pi`
-- **THEN** detect returns flutter-pi
+- **WHEN** `/etc/display-stack` contains `weston`
+- **THEN** detect returns Weston
 
 #### Scenario: Legacy stamp fallback
 
-- **WHEN** `/etc/display-stack` and `/run/display-stack` are absent but `/etc/hmi/display-stack` contains `weston`
+- **WHEN** `/etc/display-stack` is absent but `/etc/hmi/display-stack` contains `weston`
 - **THEN** detect MAY return Weston via legacy fallback
 

@@ -11,7 +11,6 @@ DISPLAY_CONF="${VAR_HAL:-/var/lib/hal}/display.conf"
 LEGACY_ORIENTATION_FILE=/var/lib/hmi/display-orientation
 LEGACY_ORIENTATION_HAL=/var/lib/hal/display-orientation
 ETC_STACK="${ETC_DISPLAY_STACK:-/etc/display-stack}"
-RUN_STACK="${RUN_DISPLAY_STACK:-/run/display-stack}"
 ELINUX_CLIENT=/usr/bin/flutter-wayland-client
 
 # Default matches ynh960 production (lcd0_rotation=90 → landscape_left).
@@ -117,11 +116,6 @@ elif [ -f /etc/hmi/display-stack ]; then
 	DISPLAY_STACK="$(tr -d '[:space:]' </etc/hmi/display-stack | tr '[:upper:]' '[:lower:]')"
 fi
 
-write_runtime_stack() {
-	mkdir -p "$(dirname "$RUN_STACK")"
-	printf '%s\n' "$1" >"$RUN_STACK"
-}
-
 # --- Weston + flutter-embedded-linux (default rootfs) ---
 if [ "$DISPLAY_STACK" = weston ] || [ "$DISPLAY_STACK" = wayland ] || \
 	[ "$DISPLAY_STACK" = elinux ]; then
@@ -173,9 +167,6 @@ if [ "$DISPLAY_STACK" = weston ] || [ "$DISPLAY_STACK" = wayland ] || \
 	WESTON_INI="$XDG_RUNTIME_DIR/weston.ini"
 	weston_write_hmi_ini "$WESTON_INI" "$WESTON_TRANSFORM"
 
-	# HAL DisplayStackProbe reads this (Settings feature gates).
-	write_runtime_stack weston
-
 	# desktop-shell.so: paints boot-splash.png until Flutter covers it.
 	# (kiosk-shell cannot show a background image — only a solid color.)
 	weston --config="$WESTON_INI" --backend=drm-backend.so \
@@ -224,7 +215,6 @@ if [ "$MODE" = "debug" ]; then
 			exit 1
 		fi
 		export FLUTTER_EMBEDDER_ICU_DATA_PATH="$RT/icudtl.dat"
-		write_runtime_stack flutter-pi
 		exec env LD_LIBRARY_PATH="$RT" /usr/bin/flutter-pi -o "$FLUTTER_PI_ORIENTATION" "$BUNDLE"
 	fi
 	echo "hmi-launch: debug runtime missing at $RT; falling back to release engine" >&2
@@ -237,5 +227,4 @@ if [ ! -f "$BUNDLE/lib/libapp.so" ]; then
 fi
 
 # Release path must match pre-P1.5 hmi.service: no LD_LIBRARY_PATH / ICU overrides.
-write_runtime_stack flutter-pi
 exec /usr/bin/flutter-pi --release -o "$FLUTTER_PI_ORIENTATION" "$BUNDLE"

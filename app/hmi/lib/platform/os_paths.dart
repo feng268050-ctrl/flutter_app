@@ -7,9 +7,9 @@ abstract final class OsPaths {
   static const varHal = '/var/lib/hal';
   /// HMI App-owned stores (misc/advanced JSON, alarm DB, push/debug staging).
   static const varHmi = '/var/lib/hmi';
-  /// Runtime stamps (tmpfs); App markers under `/run/hmi`, display-stack at `/run/display-stack`.
+  /// App runtime markers (tmpfs); cleared on reboot.
   static const runHmi = '/run/hmi';
-  static const runDisplayStack = '/run/display-stack';
+  /// Image embedder stamp (`weston` XOR `flutter-pi`), baked by post-build.
   static const etcDisplayStack = '/etc/display-stack';
   static const libexecWpa = '/usr/libexec/wpa';
   static const libexecNetwork = '/usr/libexec/network';

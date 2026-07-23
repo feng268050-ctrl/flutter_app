@@ -1,8 +1,13 @@
 #!/bin/sh
 # Persist display orientation for hmi-launch.sh (portrait|landscape).
+# Writes /var/lib/hal/display.conf key orientation= (upsert).
 # Usage: change-orientation <portrait|landscape>
-# Does not restart HMI; callers (Demo) restart when needed.
+# Does not restart HMI; callers restart when needed.
 set -eu
+
+. /usr/libexec/hmi/paths.sh 2>/dev/null || true
+PREF_DIR="${VAR_HAL:-/var/lib/hal}"
+CONF="$PREF_DIR/display.conf"
 
 MODE="${1:-}"
 case "$MODE" in
@@ -13,8 +18,15 @@ portrait|landscape) ;;
 	;;
 esac
 
-PREF_DIR=/var/lib/hmi
-PREF="$PREF_DIR/display-orientation"
 mkdir -p "$PREF_DIR"
-printf '%s\n' "$MODE" >"$PREF"
-echo "change-orientation: $MODE; persisted $PREF"
+tmp="$(mktemp "$CONF.XXXXXX")"
+if [ -f "$CONF" ]; then
+	grep -vE '^orientation=' "$CONF" >"$tmp" 2>/dev/null || true
+else
+	: >"$tmp"
+fi
+printf 'orientation=%s\n' "$MODE" >>"$tmp"
+mv -f "$tmp" "$CONF"
+# Drop legacy standalone file if present.
+rm -f "$PREF_DIR/display-orientation" /var/lib/hmi/display-orientation
+echo "change-orientation: $MODE; persisted $CONF (orientation=)"

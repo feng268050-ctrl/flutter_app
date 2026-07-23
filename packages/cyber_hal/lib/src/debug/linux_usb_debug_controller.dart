@@ -12,7 +12,7 @@ class LinuxUsbDebugController implements UsbDebug {
   LinuxUsbDebugController({
     this.helper = const <String>[],
     this.otgModePath = '',
-    this.preferencePath = '/var/lib/hmi/usb-debug',
+    this.preferencePath = '/var/lib/hal/usb-debug',
   });
 
   final List<String> helper;

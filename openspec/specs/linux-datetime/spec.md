@@ -39,26 +39,26 @@ The controller SHALL allow setting the system wall clock from a civil date/time 
 
 ### Requirement: Timezone get and set
 
-The controller SHALL get and set a timezone identifier. Linux SHOULD use IANA names when zoneinfo/`tzdata` is present (at least `UTC` and `Asia/Shanghai` for ynh960). The preferred timezone SHALL be persisted in `/var/lib/hmi/datetime.conf` under key `timezone` (mouse-style `key=value`, upsert preserves sibling keys such as `sync_mode`). If full zoneinfo is unavailable, the implementation MUST document the fallback and still accept the curated Demo identifiers without crashing.
+The controller SHALL get and set a timezone identifier. Linux SHOULD use IANA names when zoneinfo/`tzdata` is present (at least `UTC` and `Asia/Shanghai` for ynh960). The preferred timezone SHALL be persisted in `/var/lib/hal/datetime.conf` under key `timezone` (mouse-style `key=value`, upsert preserves sibling keys such as `sync_mode`). If full zoneinfo is unavailable, the implementation MUST document the fallback and still accept the curated Demo identifiers without crashing.
 
 #### Scenario: Timezone preference persists
 
 - **WHEN** the caller sets timezone to `Asia/Shanghai` and restarts the HMI process
-- **THEN** `getTimezone` returns `Asia/Shanghai` (or the documented equivalent token) and `/var/lib/hmi/datetime.conf` contains `timezone=Asia/Shanghai`
+- **THEN** `getTimezone` returns `Asia/Shanghai` (or the documented equivalent token) and `/var/lib/hal/datetime.conf` contains `timezone=Asia/Shanghai`
 
 ### Requirement: Sync mode and timezone share datetime.conf
 
-Linux datetime preferences SHALL persist in a single file `/var/lib/hmi/datetime.conf` with keys:
+Linux datetime preferences SHALL persist in a single file `/var/lib/hal/datetime.conf` with keys:
 
 - `sync_mode` — `manual` | `network` (default `network` when absent)
 - `timezone` — IANA timezone id (empty/missing falls through to timedatectl / `UTC` as today)
 
-HAL MUST NOT use standalone `/var/lib/hmi/time-sync-mode` or `/var/lib/hmi/timezone` as the primary write path after this change. When `datetime.conf` is missing both keys but a legacy file exists, the controller SHALL one-shot import that value into the conf before serving reads/writes.
+HAL MUST NOT use standalone `time-sync-mode` or `timezone` files (under `/var/lib/hal/` or legacy `/var/lib/hmi/`) as the primary write path. When `datetime.conf` is missing both keys but a legacy file exists under `/var/lib/hal/` or `/var/lib/hmi/`, the controller SHALL one-shot import that value into `/var/lib/hal/datetime.conf` before serving reads/writes.
 
 #### Scenario: Sync mode persists in datetime.conf
 
 - **WHEN** the caller sets sync mode to `manual`
-- **THEN** `/var/lib/hmi/datetime.conf` contains `sync_mode=manual` and a later `getSyncMode` returns `manual`
+- **THEN** `/var/lib/hal/datetime.conf` contains `sync_mode=manual` and a later `getSyncMode` returns `manual`
 
 #### Scenario: Upsert preserves sibling key
 
@@ -67,8 +67,8 @@ HAL MUST NOT use standalone `/var/lib/hmi/time-sync-mode` or `/var/lib/hmi/timez
 
 #### Scenario: Legacy files migrate once
 
-- **WHEN** `datetime.conf` is absent, `/var/lib/hmi/time-sync-mode` contains `manual`, and `/var/lib/hmi/timezone` contains `UTC`
-- **THEN** the first datetime get or set creates `/var/lib/hmi/datetime.conf` with `sync_mode=manual` and `timezone=UTC`
+- **WHEN** `/var/lib/hal/datetime.conf` is absent, a legacy `/var/lib/hmi/time-sync-mode` contains `manual`, and `/var/lib/hmi/timezone` contains `UTC`
+- **THEN** the first datetime get or set creates `/var/lib/hal/datetime.conf` with `sync_mode=manual` and `timezone=UTC`
 
 ### Requirement: Network time sync
 

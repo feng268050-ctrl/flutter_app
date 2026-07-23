@@ -50,6 +50,30 @@ void main() {
         isTrue,
       );
     });
+
+    test('default stamp paths are /run|/etc/display-stack', () {
+      expect(
+        DisplayStackProbe.defaultRuntimeStampPath,
+        '/run/display-stack',
+      );
+      expect(
+        DisplayStackProbe.defaultImageStampPath,
+        '/etc/display-stack',
+      );
+    });
+
+    test('legacy /run/hmi|/etc/hmi stamps used when new paths missing', () async {
+      final stack = await DisplayStackProbe(
+        environment: const {},
+        fileExists: (p) async =>
+            p == DisplayStackProbe.legacyRuntimeStampPath,
+        readFile: (p) async {
+          expect(p, DisplayStackProbe.legacyRuntimeStampPath);
+          return 'weston\n';
+        },
+      ).detect();
+      expect(stack, DisplayStack.weston);
+    });
   });
 
   group('MouseSettingAvailability', () {

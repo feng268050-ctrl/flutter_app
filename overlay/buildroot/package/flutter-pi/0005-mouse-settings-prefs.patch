@@ -2,7 +2,7 @@ From: lws-hmi <dev@lws>
 Date: Thu, 16 Jul 2026 09:30:00 +0800
 Subject: [PATCH] user_input: mouse.conf prefs + mtime poll + pointer_size
 
-Poll /var/lib/hmi/mouse.conf (natural_scroll, scroll_speed, pointer_speed,
+Poll /var/lib/hal/mouse.conf (natural_scroll, scroll_speed, pointer_speed,
 pointer_size, primary_button, pointer_axes). Use nanosecond mtime so rapid
 UI writes are detected; LOG_ERROR when pointer_axes changes (visible in
 release journal).
@@ -35,7 +35,7 @@ release journal).
  #define KEY_REPEAT_DELAY_USEC (660ULL * 1000ULL)
  #define KEY_REPEAT_INTERVAL_USEC (40ULL * 1000ULL)
  
-+#define LWS_MOUSE_CONF_PATH "/var/lib/hmi/mouse.conf"
++#define LWS_MOUSE_CONF_PATH "/var/lib/hal/mouse.conf"
 +#define LWS_MOUSE_MAX_POINTER_DEVICES 16
 +#define LWS_MOUSE_SCROLL_BASE (53.0 / 15.0)
 +

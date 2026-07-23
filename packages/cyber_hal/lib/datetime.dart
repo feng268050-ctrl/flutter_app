@@ -1,7 +1,7 @@
 /// Wall clock / timezone (timedatectl helpers).
 ///
 /// [TimeSyncMode] uses `manual` / `network` (not NTP enum).
-/// Linux prefs: `/var/lib/hmi/datetime.conf` (`sync_mode`, `timezone`).
+/// Linux prefs: `/var/lib/hal/datetime.conf` (`sync_mode`, `timezone`).
 /// Concrete Linux type: [LinuxDateTimeController].
 library;
 

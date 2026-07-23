@@ -2,10 +2,16 @@
 # Mode-aware HMI launcher: Weston + eLinux (default) or flutter-pi (alternate).
 set -eu
 
+. /usr/libexec/hmi/paths.sh 2>/dev/null || true
+
 BUNDLE=/opt/hmi
 MODE_FILE="$BUNDLE/runtime-mode.json"
 MODE=release
-ORIENTATION_FILE=/var/lib/hmi/display-orientation
+DISPLAY_CONF="${VAR_HAL:-/var/lib/hal}/display.conf"
+LEGACY_ORIENTATION_FILE=/var/lib/hmi/display-orientation
+LEGACY_ORIENTATION_HAL=/var/lib/hal/display-orientation
+ETC_STACK="${ETC_DISPLAY_STACK:-/etc/display-stack}"
+RUN_STACK="${RUN_DISPLAY_STACK:-/run/display-stack}"
 ELINUX_CLIENT=/usr/bin/flutter-wayland-client
 
 # Default matches ynh960 production (lcd0_rotation=90 → landscape_left).
@@ -39,21 +45,60 @@ read_json_field() {
 		| head -1
 }
 
-if [ -f "$ORIENTATION_FILE" ]; then
-	token="$(tr -d '[:space:]' <"$ORIENTATION_FILE" | tr '[:upper:]' '[:lower:]')"
-	case "$token" in
-	portrait)
-		FLUTTER_PI_ORIENTATION=portrait_up
-		;;
-	landscape|"")
-		FLUTTER_PI_ORIENTATION=landscape_left
-		;;
-	*)
-		echo "hmi-launch: unknown orientation '$token'; using landscape_left" >&2
-		FLUTTER_PI_ORIENTATION=landscape_left
-		;;
-	esac
+conf_get() {
+	# usage: conf_get <file> <key>
+	file="$1"
+	key="$2"
+	[ -f "$file" ] || return 0
+	grep -E "^${key}=" "$file" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '[:space:]'
+}
+
+upsert_conf_key() {
+	conf="$1"
+	key="$2"
+	value="$3"
+	mkdir -p "$(dirname "$conf")"
+	tmp="$(mktemp "${conf}.XXXXXX")"
+	if [ -f "$conf" ]; then
+		grep -vE "^${key}=" "$conf" >"$tmp" 2>/dev/null || true
+	else
+		: >"$tmp"
+	fi
+	printf '%s=%s\n' "$key" "$value" >>"$tmp"
+	mv -f "$tmp" "$conf"
+}
+
+# Resolve orientation from display.conf; one-shot import legacy standalone file.
+token="$(conf_get "$DISPLAY_CONF" orientation | tr '[:upper:]' '[:lower:]')"
+if [ -z "$token" ]; then
+	for legacy in "$LEGACY_ORIENTATION_HAL" "$LEGACY_ORIENTATION_FILE"; do
+		if [ -f "$legacy" ]; then
+			token="$(tr -d '[:space:]' <"$legacy" | tr '[:upper:]' '[:lower:]')"
+			case "$token" in
+			portrait | landscape)
+				upsert_conf_key "$DISPLAY_CONF" orientation "$token"
+				rm -f "$legacy"
+				;;
+			*)
+				token=""
+				;;
+			esac
+			break
+		fi
+	done
 fi
+case "$token" in
+portrait)
+	FLUTTER_PI_ORIENTATION=portrait_up
+	;;
+landscape | "")
+	FLUTTER_PI_ORIENTATION=landscape_left
+	;;
+*)
+	echo "hmi-launch: unknown orientation '$token'; using landscape_left" >&2
+	FLUTTER_PI_ORIENTATION=landscape_left
+	;;
+esac
 
 if [ -f "$MODE_FILE" ]; then
 	MODE="$(read_json_field "$MODE_FILE" mode)"
@@ -65,9 +110,17 @@ fi
 DISPLAY_STACK=weston
 if [ -n "${HMI_DISPLAY_STACK:-}" ]; then
 	DISPLAY_STACK="$(printf '%s' "$HMI_DISPLAY_STACK" | tr '[:upper:]' '[:lower:]')"
+elif [ -f "$ETC_STACK" ]; then
+	DISPLAY_STACK="$(tr -d '[:space:]' <"$ETC_STACK" | tr '[:upper:]' '[:lower:]')"
 elif [ -f /etc/hmi/display-stack ]; then
+	# Legacy image stamp fallback (partial upgrade).
 	DISPLAY_STACK="$(tr -d '[:space:]' </etc/hmi/display-stack | tr '[:upper:]' '[:lower:]')"
 fi
+
+write_runtime_stack() {
+	mkdir -p "$(dirname "$RUN_STACK")"
+	printf '%s\n' "$1" >"$RUN_STACK"
+}
 
 # --- Weston + flutter-embedded-linux (default rootfs) ---
 if [ "$DISPLAY_STACK" = weston ] || [ "$DISPLAY_STACK" = wayland ] || \
@@ -121,8 +174,7 @@ if [ "$DISPLAY_STACK" = weston ] || [ "$DISPLAY_STACK" = wayland ] || \
 	weston_write_hmi_ini "$WESTON_INI" "$WESTON_TRANSFORM"
 
 	# HAL DisplayStackProbe reads this (Settings feature gates).
-	mkdir -p /run/hmi
-	printf '%s\n' weston >/run/hmi/display-stack
+	write_runtime_stack weston
 
 	# desktop-shell.so: paints boot-splash.png until Flutter covers it.
 	# (kiosk-shell cannot show a background image — only a solid color.)
@@ -172,8 +224,7 @@ if [ "$MODE" = "debug" ]; then
 			exit 1
 		fi
 		export FLUTTER_EMBEDDER_ICU_DATA_PATH="$RT/icudtl.dat"
-		mkdir -p /run/hmi
-		printf '%s\n' flutter-pi >/run/hmi/display-stack
+		write_runtime_stack flutter-pi
 		exec env LD_LIBRARY_PATH="$RT" /usr/bin/flutter-pi -o "$FLUTTER_PI_ORIENTATION" "$BUNDLE"
 	fi
 	echo "hmi-launch: debug runtime missing at $RT; falling back to release engine" >&2
@@ -186,6 +237,5 @@ if [ ! -f "$BUNDLE/lib/libapp.so" ]; then
 fi
 
 # Release path must match pre-P1.5 hmi.service: no LD_LIBRARY_PATH / ICU overrides.
-mkdir -p /run/hmi
-printf '%s\n' flutter-pi >/run/hmi/display-stack
+write_runtime_stack flutter-pi
 exec /usr/bin/flutter-pi --release -o "$FLUTTER_PI_ORIENTATION" "$BUNDLE"

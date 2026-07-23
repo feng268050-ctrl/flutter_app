@@ -4,11 +4,11 @@
 #   debug (USB Debug ON)  → otg_mode=peripheral; VBUS starts plug-ssh
 #   host  (USB Debug OFF) → otg_mode=host; stop plug-ssh (keyboard on Micro-USB)
 #
-# Preference: /var/lib/hmi/usb-debug  ("1"/"0"). Missing file = default ON.
+# Preference: /var/lib/hal/usb-debug  ("1"/"0"). Missing file = default ON.
 set -eu
 
 PHY_OTG_MODE=/sys/devices/platform/fe8a0000.usb2-phy/otg_mode
-PREF=/var/lib/hmi/usb-debug
+PREF=/var/lib/hal/usb-debug
 LOCK_DIR=/run/usb-otg-mode.lock
 
 usage() {

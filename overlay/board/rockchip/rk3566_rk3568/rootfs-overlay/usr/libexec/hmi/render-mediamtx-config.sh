@@ -10,7 +10,7 @@
 set -eu
 
 OUT="${MEDIAMTX_CONFIG:-/etc/mediamtx/mediamtx.yaml}"
-PRODUCT_INI="${PRODUCT_INI:-/var/lib/hmi/product.ini}"
+PRODUCT_INI="${PRODUCT_INI:-/var/lib/hal/product.ini}"
 DEFAULT_IP="192.168.1.100"
 
 resolve_camera_ip() {

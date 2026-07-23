@@ -4,7 +4,7 @@
 # --chip-id: chip ID only (skip product.ini).
 set -eu
 
-PRODUCT_INI="${PRODUCT_INI:-/var/lib/hmi/product.ini}"
+PRODUCT_INI="${PRODUCT_INI:-/var/lib/hal/product.ini}"
 CHIP_ONLY=0
 case "${1:-}" in
 --chip-id | --chip)

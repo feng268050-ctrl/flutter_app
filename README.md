@@ -124,8 +124,8 @@ make show-config
 Firmware stage outputs:
 
 - `make build-kernel` builds two independently hashed FIT images containing the same Linux kernel: `boot.img` selects `rootfs_a`, while `boot_b.img` selects `rootfs_b`. Publishes both to `output/firmware/`.
-- `make build-rootfs` builds the **default** `rootfs.img` (Weston + `flutter-wayland-client` only + Mali `wayland-gbm`; **no** `flutter-pi`) and publishes it to `output/firmware/`. Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`. Stamp `/etc/hmi/display-stack=weston`.
-- `make build-rootfs-flutter-pi` builds the **alternate** rootfs (flutter-pi only + Mali `gbm`; **no** Weston). Images are mutually exclusive (`/etc/hmi/display-stack`).
+- `make build-rootfs` builds the **default** `rootfs.img` (Weston + `flutter-wayland-client` only + Mali `wayland-gbm`; **no** `flutter-pi`) and publishes it to `output/firmware/`. Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`. Stamp `/etc/display-stack=weston`.
+- `make build-rootfs-flutter-pi` builds the **alternate** rootfs (flutter-pi only + Mali `gbm`; **no** Weston). Images are mutually exclusive (`/etc/display-stack`).
 - `make prepare-rootfs` / `make prepare-rootfs-flutter-pi` only flip the Buildroot stack (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. Both `build-rootfs*` targets call the matching prepare first (skips when stamp + binaries already match).
 - `make build-img` does **not** compile the kernel or rootfs. It packages the existing loader, U-Boot, misc, both FIT images, and rootfs into `output/firmware/update.img` for `make flash`.
 - Full-system `make upgrade` does **not** transfer `update.img`. It **streams** `rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). Wait for the device to finish restarting before reconnecting.
@@ -184,7 +184,7 @@ make upgrade
 
 Weston notes (ynh960):
 
-- Stamp `/etc/hmi/display-stack=weston`; `hmi-launch.sh` starts Weston then `flutter-wayland-client --fullscreen`.
+- Stamp `/etc/display-stack=weston`; `hmi-launch.sh` starts Weston then `flutter-wayland-client --fullscreen`.
 - Shell is **desktop-shell** (`panel-position=none`) so `background-image` can show the product logo after DRM takeover (kiosk-shell only supports a solid color).
 - `make build-boot-logo` also writes overlay `usr/share/hmi/boot-splash.png` from the same canvas as `logo.bmp`.
 
@@ -284,7 +284,7 @@ make shell                      # interactive root shell; SN=... when multiple b
 make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL=1
 make build-app
 make push-app                   # SN=... when multiple boards; hot-swap /opt/hmi (no rootfs rebuild)
-make set-prop BRAND=Innohi MODEL=YNH960   # upsert /var/lib/hmi/product.ini (multi-key OK); restarts hmi
+make set-prop BRAND=Innohi MODEL=YNH960   # upsert /var/lib/hal/product.ini (multi-key OK); restarts hmi
 # Multi-board + product SN: CHIPID=<chip> make set-prop SN=FACTORY-001
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers for /var/lib/hmi/product.ini upsert/delete (host make set-prop / del-prop).
+# Shared helpers for /var/lib/hal/product.ini upsert/delete (host make set-prop / del-prop).
 # shellcheck shell=bash
 
 _product_ini_die() {

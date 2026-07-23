@@ -14,7 +14,7 @@ Future<int> defaultHmiRestartRunner() async {
 /// Linux keyboard: HID presence + XKB pref + HMI restart (D15 v1).
 class LinuxKeyboard implements Keyboard {
   LinuxKeyboard({
-    this.preferencePath = '/var/lib/hmi/keyboard.conf',
+    this.preferencePath = '/var/lib/hal/keyboard.conf',
     this.etcDefaultKeyboardPath = '/etc/default/keyboard',
     this.probe = const UsbHidKeyboardProbe(),
     this.restartHmi = defaultHmiRestartRunner,

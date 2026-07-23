@@ -3,22 +3,20 @@
 ## Purpose
 
 OS-common mouse preferences for the HMI: natural scrolling, scroll speed, pointer speed, and primary button. Linux set operations go through `apply-mouse-settings`; flutter-pi applies via libinput / wheel scale.
-
 ## Requirements
-
 ### Requirement: Mouse settings OS abstraction
 
-The HMI app SHALL provide a reusable **`MouseSettingsController`** abstraction (Linux implementation in P2.1; Android MAY plug later) that gets and sets OS-common mouse preferences: **natural scrolling**, **scroll speed**, **pointer speed**, and **primary button** (left vs right / left-handed). On Linux, set operations MUST go through `apply-mouse-settings` / `apply-mouse-settings.sh`, which persists under `/var/lib/hmi/mouse.conf` and is applied through the Linux input / flutter-pi path — not by re-decoding HID events in Dart and not by Dart being the sole writer of `mouse.conf`. Controls whose backend is unavailable on the device MUST NOT silently claim success (disable or report unsupported).
+The HMI app SHALL provide a reusable **`MouseSettingsController`** abstraction (Linux implementation in P2.1; Android MAY plug later) that gets and sets OS-common mouse preferences: **natural scrolling**, **scroll speed**, **pointer speed**, and **primary button** (left vs right / left-handed). On Linux, set operations MUST go through `apply-mouse-settings` / `apply-mouse-settings.sh`, which persists under `/var/lib/hal/mouse.conf` and is applied through the Linux input / flutter-pi path — not by re-decoding HID events in Dart and not by Dart being the sole writer of `mouse.conf`. Controls whose backend is unavailable on the device MUST NOT silently claim success (disable or report unsupported).
 
 #### Scenario: Read defaults when no pref file
 
-- **WHEN** no mouse preference file exists under `/var/lib/hmi/`
+- **WHEN** no mouse preference file exists under `/var/lib/hal/`
 - **THEN** `getSettings` returns documented defaults (natural scroll off; mid scroll/pointer speed; primary button left)
 
 #### Scenario: Persist and apply natural scroll
 
 - **WHEN** the controller sets natural scrolling on
-- **THEN** `apply-mouse-settings` updates `/var/lib/hmi/mouse.conf` and subsequent mouse wheel vertical motion is inverted at the platform input layer relative to natural scroll off
+- **THEN** `apply-mouse-settings` updates `/var/lib/hal/mouse.conf` and subsequent mouse wheel vertical motion is inverted at the platform input layer relative to natural scroll off
 
 #### Scenario: Persist and apply scroll speed
 
@@ -38,4 +36,5 @@ The HMI app SHALL provide a reusable **`MouseSettingsController`** abstraction (
 #### Scenario: Prefs survive HMI restart
 
 - **WHEN** mouse preferences are saved and `hmi.service` / flutter-pi restarts
-- **THEN** the saved preferences are applied again without requiring the operator to re-enter Demo controls
+- **THEN** the same preferences remain in effect without the operator re-opening Settings
+

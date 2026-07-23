@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Remove one key from /var/lib/hmi/product.ini on the SSH target.
+# Remove one key from /var/lib/hal/product.ini on the SSH target.
 # Usage: make del-prop CAMERA_IP
 set -euo pipefail
 
@@ -9,7 +9,7 @@ source "$ROOT/scripts/usb-ssh-session.sh"
 # shellcheck source=scripts/product-ini-common.sh
 source "$ROOT/scripts/product-ini-common.sh"
 
-TARGET="${PRODUCT_INI_PATH:-/var/lib/hmi/product.ini}"
+TARGET="${PRODUCT_INI_PATH:-/var/lib/hal/product.ini}"
 
 _DEL_PROP_SKIP=(
 	SERIAL CHIPID IP IMAGE FLUTTER_SDK BUILD_JOBS BUILD_BIND_MOUNT
@@ -29,7 +29,7 @@ Examples:
   make del-prop FOCUS_SCALE_REF
 
 Command-line keys use UPPERCASE; the matching lowercase key is removed from
-/var/lib/hmi/product.ini. hmi.service is restarted only when the file changes.
+/var/lib/hal/product.ini. hmi.service is restarted only when the file changes.
 EOF
 }
 

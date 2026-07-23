@@ -9,14 +9,14 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 | `package:cyber_hal/network.dart` | ethernet, wifi, proxy | networkd + wpa (`docs/network-stack.md`) |
 | `package:cyber_hal/network/proxy.dart` | system proxy | `/var/lib/network/proxy.conf` + in-HAL env apply |
 | `package:cyber_hal/output.dart` | display + sound barrels | see sub-imports |
-| `package:cyber_hal/input.dart` | keyboard, mouse (USB/serial cameras later) | `/var/lib/hmi/keyboard.conf`, `mouse.conf` |
+| `package:cyber_hal/input.dart` | keyboard, mouse (USB/serial cameras later) | `/var/lib/hal/keyboard.conf`, `mouse.conf` |
 | `package:cyber_hal/ip_camera.dart` | IP network camera (host-injected; multi-instance; RTSP→file recording) | path/MediaMTX are **product** concerns — not this module |
-| `package:cyber_hal/debug.dart` | ssh, usb | SSH helpers; `/var/lib/hmi/usb-debug` |
+| `package:cyber_hal/debug.dart` | ssh, usb | SSH helpers; `/var/lib/hal/usb-debug` |
 | `package:cyber_hal/gpio.dart` | named GPIO lines | board `gpio.json` (sysfs) |
 | `package:cyber_hal/modbus.dart` | attribute catalog | board `modbus.json` + serial |
 | `package:cyber_hal/bluetooth.dart` | BlueZ | `/var/lib/bluetooth/` |
-| `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` + `DisplayStack` | procfs/sysfs + `/var/lib/hmi/product.ini` + display-stack stamps |
-| `package:cyber_hal/datetime.dart` | wall clock | `/var/lib/hmi/datetime.conf` (`sync_mode`, `timezone`) |
+| `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` + `DisplayStack` | procfs/sysfs + `/var/lib/hal/product.ini` + `/etc/display-stack` + `/run/display-stack` |
+| `package:cyber_hal/datetime.dart` | wall clock | `/var/lib/hal/datetime.conf` (`sync_mode`, `timezone`) |
 | `package:cyber_hal/stub.dart` | in-memory stubs | P3.2 emulator / host tests |
 | `package:cyber_hal/cyber_hal.dart` | core only | `Capabilities`, `BoardProfile`, errors |
 
@@ -24,8 +24,8 @@ Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/displa
 
 | Import | Domain | Persist / helpers |
 |--------|--------|-------------------|
-| `package:cyber_hal/output/display.dart` | backlight, auto-sleep | `/var/lib/hmi/display.conf` |
-| `package:cyber_hal/output/sound.dart` | volume, button-feedback (+ media audio) | `/var/lib/hmi/sound.conf` |
+| `package:cyber_hal/output/display.dart` | backlight, auto-sleep, orientation | `/var/lib/hal/display.conf` (`backlight`, `auto_sleep`, `orientation`) |
+| `package:cyber_hal/output/sound.dart` | volume, button-feedback (+ media audio) | `/var/lib/hal/sound.conf` |
 
 ## Portability (D11b / D22)
 
@@ -67,6 +67,7 @@ if (resolveHalBackend(boardId: profile.info.boardId) == HalBackendKind.stub) {
   final volume = StubVolume();
   final autoSleep = StubAutoSleep();
   final buttonFeedback = StubButtonFeedback();
+  final orientation = StubOrientation();
   final sysInfo = StubSysInfo();
 }
 ```
@@ -87,12 +88,14 @@ dependencies:
 
 HAL mid-session writes use existing FHS:
 
-- `/var/lib/hmi/` — mouse, keyboard, usb-debug, …; **output prefs** as `/var/lib/hmi/display.conf` and `/var/lib/hmi/sound.conf`; **datetime** as `/var/lib/hmi/datetime.conf`
+- `/var/lib/hal/` — mouse, keyboard, usb-debug, product.ini; **output prefs** as `/var/lib/hal/display.conf` (`backlight`, `auto_sleep`, `orientation`) and `/var/lib/hal/sound.conf`; **datetime** as `/var/lib/hal/datetime.conf`
+- `/etc/display-stack` + `/run/display-stack` — image / runtime embedder stamps (`DisplayStackProbe`; legacy `/etc/hmi` + `/run/hmi` fallbacks)
+- `/var/lib/hmi/` — **App-owned** only (misc/advanced JSON, alarm SQLite, debug/push staging)
 - `/var/lib/network/` — ethernet/proxy (after network wave)
 - `/var/lib/wpa_supplicant/` — Wi‑Fi wanted / networks
 - `/var/lib/bluetooth/` — BT
 
-Boot re-apply is `BoardBindings.restorePersistedSettings` (HAL-owned). Do not invent a parallel `/var/lib/hal-alt/...` tree or restore shell unit.
+Boot re-apply is `BoardBindings.restorePersistedSettings` (HAL-owned).
 
 ## Status
 

@@ -488,7 +488,7 @@ alarm-clean:
 	@chmod +x scripts/trigger-alarm.sh
 	@$(call WITH_DOTENV,bash scripts/trigger-alarm.sh clean)
 
-# Upsert one or more UPPERCASE_KEY=value into /var/lib/hmi/product.ini (SSH).
+# Upsert one or more UPPERCASE_KEY=value into /var/lib/hal/product.ini (SSH).
 set-prop:
 	@chmod +x scripts/set-product-prop.sh
 	@$(call WITH_DOTENV,bash scripts/set-product-prop.sh $(MAKEOVERRIDES))

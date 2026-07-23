@@ -121,7 +121,7 @@ final class AppServices {
   late final FrameTimingSampler _frameTimingSampler;
   late final SysInfo sysInfo;
 
-  /// Factory product identity (`/var/lib/hmi/product.ini`).
+  /// Factory product identity (`/var/lib/hal/product.ini`).
   Future<ProductInfo> ensureProductInfo() {
     if (_productInfo != null) {
       return Future<ProductInfo>.value(_productInfo!);

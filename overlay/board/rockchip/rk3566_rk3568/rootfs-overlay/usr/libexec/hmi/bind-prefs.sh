@@ -32,16 +32,82 @@ bind_one() {
 	log "ok ($var_path → $userdata_path)"
 }
 
+# Upsert key=value into conf; preserves sibling keys.
+upsert_conf_key() {
+	conf="$1"
+	key="$2"
+	value="$3"
+	mkdir -p "$(dirname "$conf")"
+	tmp="$(mktemp "${conf}.XXXXXX")"
+	if [ -f "$conf" ]; then
+		grep -vE "^${key}=" "$conf" >"$tmp" 2>/dev/null || true
+	else
+		: >"$tmp"
+	fi
+	printf '%s=%s\n' "$key" "$value" >>"$tmp"
+	mv -f "$tmp" "$conf"
+}
+
+# Move known HAL files from HMI userdata into HAL; fold orientation into display.conf.
+migrate_hal_from_hmi() {
+	src_root="$1"
+	dst_root="$2"
+	[ -d "$src_root" ] || return 0
+	mkdir -p "$dst_root"
+
+	for name in display.conf sound.conf mouse.conf keyboard.conf datetime.conf \
+		usb-debug product.ini time-sync-mode timezone; do
+		src="$src_root/$name"
+		dst="$dst_root/$name"
+		if [ -e "$src" ] && [ ! -e "$dst" ]; then
+			log "migrate $src → $dst"
+			cp -a "$src" "$dst"
+			rm -f "$src"
+		elif [ -e "$src" ] && [ -e "$dst" ]; then
+			log "drop duplicate HAL source $src (dst exists)"
+			rm -f "$src"
+		fi
+	done
+
+	# Fold legacy display-orientation into display.conf key orientation.
+	orient_src=""
+	if [ -f "$src_root/display-orientation" ]; then
+		orient_src="$src_root/display-orientation"
+	elif [ -f "$dst_root/display-orientation" ]; then
+		orient_src="$dst_root/display-orientation"
+	fi
+	if [ -n "$orient_src" ]; then
+		token="$(tr -d '[:space:]' <"$orient_src" | tr '[:upper:]' '[:lower:]')"
+		case "$token" in
+		portrait | landscape) ;;
+		*) token=landscape ;;
+		esac
+		conf="$dst_root/display.conf"
+		have_orient=0
+		if [ -f "$conf" ] && grep -qE '^orientation=' "$conf" 2>/dev/null; then
+			have_orient=1
+		fi
+		if [ "$have_orient" -eq 0 ]; then
+			log "fold orientation=$token into $conf"
+			upsert_conf_key "$conf" orientation "$token"
+		fi
+		rm -f "$src_root/display-orientation" "$dst_root/display-orientation"
+	fi
+}
+
 if [ ! -d /userdata ]; then
 	log "WARN: /userdata missing — keep state on rootfs"
-	mkdir -p "$VAR_WPA" "$VAR_NETWORK" "$VAR_BLUETOOTH" "$VAR_HMI"
+	mkdir -p "$VAR_WPA" "$VAR_NETWORK" "$VAR_BLUETOOTH" "$VAR_HAL" "$VAR_HMI"
 	exit 0
 fi
 
 bind_one "$VAR_WPA" "$USERDATA_WPA"
 bind_one "$VAR_NETWORK" "$USERDATA_NETWORK"
 bind_one "$VAR_BLUETOOTH" "$USERDATA_BLUETOOTH"
+bind_one "$VAR_HAL" "$USERDATA_HAL"
 bind_one "$VAR_HMI" "$USERDATA_HMI"
+
+migrate_hal_from_hmi "$USERDATA_HMI" "$USERDATA_HAL"
 
 # One-time fold of pre-rename monolithic userdata (fix-hmi-system-naming).
 legacy_userdata=/userdata/lws-hmi
@@ -56,6 +122,7 @@ if [ -d "$legacy_userdata" ] && [ ! -L "$legacy_userdata" ]; then
 	if [ -d "$legacy_userdata" ]; then
 		rm -rf "$legacy_userdata"
 	fi
+	migrate_hal_from_hmi "$USERDATA_HMI" "$USERDATA_HAL"
 fi
 
 exit 0

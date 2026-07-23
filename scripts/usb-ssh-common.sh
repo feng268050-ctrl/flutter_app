@@ -46,7 +46,7 @@ device_select_chipid() {
 # because older board helpers ignore unknown flags and still prefer product.ini sn.
 remote_device_identity_sh() {
 	cat <<'EOF'
-PRODUCT_INI="${PRODUCT_INI:-/var/lib/hmi/product.ini}"
+PRODUCT_INI="${PRODUCT_INI:-/var/lib/hal/product.ini}"
 read_chip() {
 	for p in /proc/device-tree/serial-number /sys/firmware/devicetree/base/serial-number; do
 		[ -r "$p" ] || continue

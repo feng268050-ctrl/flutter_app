@@ -107,6 +107,18 @@ final class BoardBindings {
     return LinuxAutoSleep(preferencePath: preferencePath);
   }
 
+  LinuxOrientation orientation({
+    String preferencePath = OutputPrefs.displayConf,
+    List<String> changeOrientationCommand = const <String>['change-orientation'],
+    List<String> restartCommand = const <String>['systemctl', 'restart', 'hmi'],
+  }) {
+    return LinuxOrientation(
+      preferencePath: preferencePath,
+      changeOrientationCommand: changeOrientationCommand,
+      restartCommand: restartCommand,
+    );
+  }
+
   LinuxButtonFeedback buttonFeedback({
     MediaAudioController? mediaAudio,
     String preferencePath = OutputPrefs.soundConf,

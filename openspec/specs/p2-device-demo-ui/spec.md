@@ -18,7 +18,7 @@ The P2 home (or primary demo) screen SHALL display device-information rows as si
 
 A missing or failed value SHALL display exactly `-`.
 
-Device SN SHALL resolve via product identity (non-empty `/var/lib/hmi/product.ini` `sn`, else chip/board serial / `read-serial` helper) and MUST NOT be read from Modbus. Brand/Model rows MAY be shown when the Demo surface mirrors Settings Device Information; if shown, empty values SHALL display `-`.
+Device SN SHALL resolve via product identity (non-empty `/var/lib/hal/product.ini` `sn`, else chip/board serial / `read-serial` helper) and MUST NOT be read from Modbus. Brand/Model rows MAY be shown when the Demo surface mirrors Settings Device Information; if shown, empty values SHALL display `-`.
 
 #### Scenario: All rows visible
 

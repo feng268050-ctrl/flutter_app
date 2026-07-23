@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Upsert one or more keys into /var/lib/hmi/product.ini on the SSH target.
+# Upsert one or more keys into /var/lib/hal/product.ini on the SSH target.
 # Usage: make set-prop BRAND=Innohi MODEL=YNH960 CAMERA_IP=192.168.1.50
 set -euo pipefail
 
@@ -9,7 +9,7 @@ source "$ROOT/scripts/usb-ssh-session.sh"
 # shellcheck source=scripts/product-ini-common.sh
 source "$ROOT/scripts/product-ini-common.sh"
 
-TARGET="${PRODUCT_INI_PATH:-/var/lib/hmi/product.ini}"
+TARGET="${PRODUCT_INI_PATH:-/var/lib/hal/product.ini}"
 
 # Make / host workflow vars — not product.ini keys.
 # Note: SN is a product key (make set-prop SN=…); do not skip it.
@@ -32,7 +32,7 @@ Examples:
   make set-prop CAMERA_IP=192.168.1.50 CAMERA_TYPE=2
   make set-prop CONTROL_CARD_COMM_ALARM_MODE=immediate
 
-Command-line keys use UPPERCASE; values are written to /var/lib/hmi/product.ini
+Command-line keys use UPPERCASE; values are written to /var/lib/hal/product.ini
 with lowercase keys. Multiple assignments are applied in one remote write.
 hmi.service is restarted once after a successful write.
 EOF

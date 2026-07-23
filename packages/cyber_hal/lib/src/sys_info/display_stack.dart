@@ -2,8 +2,9 @@ import 'dart:io';
 
 /// Active HMI display / embedder stack on the appliance.
 ///
-/// Image stamp: `/etc/hmi/display-stack` (post-build; flutter-pi XOR weston).
-/// Runtime stamp: `/run/hmi/display-stack` (`hmi-launch.sh`).
+/// Image stamp: `/etc/display-stack` (post-build; flutter-pi XOR weston).
+/// Runtime stamp: `/run/display-stack` (`hmi-launch.sh`).
+/// Legacy fallbacks: `/etc/hmi/display-stack`, `/run/hmi/display-stack`.
 enum DisplayStack {
   /// Sony/Rockchip flutter-pi DRM path (alternate rootfs).
   flutterPi,
@@ -88,10 +89,16 @@ final class DisplayStackProbe {
   });
 
   /// Written by `hmi-launch.sh` after the embedder path is chosen.
-  static const defaultRuntimeStampPath = '/run/hmi/display-stack';
+  static const defaultRuntimeStampPath = '/run/display-stack';
 
   /// Baked by rootfs post-build (`flutter-pi` XOR `weston`).
-  static const defaultImageStampPath = '/etc/hmi/display-stack';
+  static const defaultImageStampPath = '/etc/display-stack';
+
+  /// Pre-`/run/display-stack` path (partial-upgrade fallback).
+  static const legacyRuntimeStampPath = '/run/hmi/display-stack';
+
+  /// Pre-`/etc/display-stack` path (partial-upgrade fallback).
+  static const legacyImageStampPath = '/etc/hmi/display-stack';
 
   final String runtimeStampPath;
   final String imageStampPath;
@@ -108,7 +115,15 @@ final class DisplayStackProbe {
     final read = readFile ?? ((path) => File(path).readAsString());
     final env = environment ?? Platform.environment;
 
-    for (final path in <String>[runtimeStampPath, imageStampPath]) {
+    final paths = <String>[
+      runtimeStampPath,
+      imageStampPath,
+      // Partial-upgrade: old stamps under /run/hmi and /etc/hmi.
+      if (runtimeStampPath != legacyRuntimeStampPath) legacyRuntimeStampPath,
+      if (imageStampPath != legacyImageStampPath) legacyImageStampPath,
+    ];
+
+    for (final path in paths) {
       if (!await exists(path)) {
         continue;
       }

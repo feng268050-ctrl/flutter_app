@@ -175,34 +175,46 @@ class LinuxDateTimeController implements DateTimeController {
 
     final updates = <String, String>{};
     if (!hasSync) {
-      try {
-        final f = File(legacySyncModePath);
-        if (await f.exists()) {
-          final raw = (await f.readAsString()).trim();
-          if (raw.isNotEmpty) {
-            updates[TimeSyncPrefs.keySyncMode] =
-                TimeSyncPrefs.modeToToken(TimeSyncPrefs.modeFromToken(raw));
-          }
-        }
-      } catch (_) {}
+      final raw = await _readFirstExisting(<String>[
+        TimeSyncPrefs.legacySyncModePathHal,
+        legacySyncModePath,
+      ]);
+      if (raw != null && raw.isNotEmpty) {
+        updates[TimeSyncPrefs.keySyncMode] =
+            TimeSyncPrefs.modeToToken(TimeSyncPrefs.modeFromToken(raw));
+      }
     }
     if (!hasTz) {
-      try {
-        final f = File(legacyTimezonePath);
-        if (await f.exists()) {
-          final raw = (await f.readAsString()).trim();
-          if (raw.isNotEmpty) {
-            updates[TimeSyncPrefs.keyTimezone] =
-                TimeSyncPrefs.normalizeTimezone(raw);
-          }
-        }
-      } catch (_) {}
+      final raw = await _readFirstExisting(<String>[
+        TimeSyncPrefs.legacyTimezonePathHal,
+        legacyTimezonePath,
+      ]);
+      if (raw != null && raw.isNotEmpty) {
+        updates[TimeSyncPrefs.keyTimezone] =
+            TimeSyncPrefs.normalizeTimezone(raw);
+      }
     }
     if (updates.isEmpty) {
       return;
     }
     await upsertKeyValueConfFile(preferencePath, updates);
     lwsTrace('datetime: migrated legacy prefs → $preferencePath');
+  }
+
+  Future<String?> _readFirstExisting(List<String> paths) async {
+    for (final path in paths) {
+      try {
+        final f = File(path);
+        if (!await f.exists()) {
+          continue;
+        }
+        final raw = (await f.readAsString()).trim();
+        if (raw.isNotEmpty) {
+          return raw;
+        }
+      } catch (_) {}
+    }
+    return null;
   }
 
   Future<TimeSyncResult> _runNetworkLadder({required String reason}) async {

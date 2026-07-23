@@ -2,7 +2,7 @@
 # Shared Weston HMI config helpers (sourced by hmi-launch / apply-mouse-settings).
 # shellcheck shell=sh
 
-MOUSE_CONF_DEFAULT=/var/lib/hmi/mouse.conf
+MOUSE_CONF_DEFAULT=/var/lib/hal/mouse.conf
 
 mouse_conf_get() {
 	# usage: mouse_conf_get <key> <default> [conf_path]

@@ -36,7 +36,7 @@ void main() {
     });
 
     test('datetime.conf path and keys', () {
-      expect(TimeSyncPrefs.datetimeConf, '/var/lib/hmi/datetime.conf');
+      expect(TimeSyncPrefs.datetimeConf, '/var/lib/hal/datetime.conf');
       expect(TimeSyncPrefs.keySyncMode, 'sync_mode');
       expect(TimeSyncPrefs.keyTimezone, 'timezone');
     });

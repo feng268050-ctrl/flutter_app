@@ -145,7 +145,7 @@ class _DebugDemoSectionState extends State<DebugDemoSection> {
             style: TextStyle(color: Colors.white),
           ),
           subtitle: Text(
-            'Persisted under /var/lib/hmi/usb-debug',
+            'Persisted under /var/lib/hal/usb-debug',
             style: hint,
           ),
           value: _usbOn,

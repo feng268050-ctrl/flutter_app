@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:cyber_hal/src/sys_info/sys_info.dart';
 
-/// Default on-device product identity file (`VAR_HMI` → `/userdata/hmi`).
-const String kProductIniPath = '/var/lib/hmi/product.ini';
+/// Default on-device product identity file (`VAR_HAL` → `/userdata/hal`).
+const String kProductIniPath = '/var/lib/hal/product.ini';
 
 /// Parses flat `key=value` product.ini (comments / blanks ignored).
 final class ProductIniReader {

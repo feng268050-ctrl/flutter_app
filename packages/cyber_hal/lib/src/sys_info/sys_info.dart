@@ -226,7 +226,7 @@ class LinuxSysInfo implements SysInfo {
     this.appVersion,
     this.mountPoints = const <String>['/', '/userdata'],
     this.frameTimingSampler,
-    this.productIniPath = '/var/lib/hmi/product.ini',
+    this.productIniPath = '/var/lib/hal/product.ini',
     ProductInfo? productInfo,
   }) : _productInfo = productInfo;
 

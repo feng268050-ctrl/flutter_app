@@ -45,7 +45,7 @@ if mountpoint -q /userdata 2>/dev/null; then
 else
 	warn "/userdata not a mountpoint (prefs on rootfs until GPT userdata exists)"
 fi
-for p in /var/lib/wpa_supplicant /var/lib/network /var/lib/bluetooth /var/lib/hmi; do
+for p in /var/lib/wpa_supplicant /var/lib/network /var/lib/bluetooth /var/lib/hal /var/lib/hmi; do
 	if [ -L "$p" ]; then
 		ok "$p -> $(readlink "$p")"
 	elif [ -d "$p" ]; then

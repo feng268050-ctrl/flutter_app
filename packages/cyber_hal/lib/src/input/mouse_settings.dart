@@ -16,7 +16,7 @@ enum MousePointerAxes {
   swap,
 }
 
-/// OS-common mouse preferences (Linux: `/var/lib/hmi/mouse.conf`).
+/// OS-common mouse preferences (Linux: `/var/lib/hal/mouse.conf`).
 class MouseSettings {
   const MouseSettings({
     this.naturalScroll = false,

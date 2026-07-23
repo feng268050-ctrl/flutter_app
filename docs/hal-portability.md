@@ -82,7 +82,7 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 
 **SDK note:** Rockchip’s `0001-bluez-modified-only-for-rockchip.patch` (Connect/`ADDR_TYPE` string args) is **disabled by** `scripts/apply-overlay.sh` → `sync_bluez5_utils_stock` so images build portable upstream BlueZ 5.77. Do not re-enable that fork for HAL portability.
 
-### `hal/output` — backlight / volume
+### `hal/output` — backlight / volume / orientation
 
 | Need | Detail |
 |------|--------|
@@ -91,7 +91,9 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | **OS (volume)** | ALSA `amixer`; controls that accept percent (`sset … N%`) |
 | **Profile** | `helpers.alsa_volume_controls` — preferred mixer control names (board codec order) |
 | **Profile** | `helpers.alsa_playback_path_control` + `alsa_playback_path_value` — **optional** enum route (e.g. Rockchip `Playback Path` / `RING_SPK_HP`). Omit on boards that have no such control; HAL skips routing when unset |
-| **Helper** | `change_backlight` / `change_volume` — **optional**; default is sysfs / amixer + `/var/lib/hmi/` prefs |
+| **Helper** | `change_backlight` / `change_volume` — **optional**; default is sysfs / amixer + `/var/lib/hal/` prefs |
+| **Prefs** | `/var/lib/hal/display.conf` — `backlight`, `auto_sleep`, `orientation` (`landscape` \| `portrait`); `/var/lib/hal/sound.conf` — `volume`, `button_feedback` |
+| **Orientation** | Portable `Orientation` API; Linux calls `change-orientation` then optional `systemctl restart hmi`. Stack mapping stays in `hmi-launch.sh` |
 | **Helper** | `bt_a2dp_volume` — optional A2DP soft-volume when BlueALSA sink is used |
 
 ### `hal/input` — keyboard / mouse
@@ -99,8 +101,8 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | Need | Detail |
 |------|--------|
 | **OS (keyboard)** | HID keyboard nodes; `xkeyboard-config` for layouts listed by HAL (`us`, `ru` in v1); `systemctl restart hmi` allowed if layout apply restarts UI |
-| **OS (mouse)** | USB HID mouse (presence probe); prefs in `/var/lib/hmi/mouse.conf` |
-| **Display stack** | Image stamp `/etc/hmi/display-stack` (`weston` XOR `flutter-pi`, baked by post-build) + runtime `/run/hmi/display-stack`. `BoardBindings.displayStack()` / `DisplayStackProbe`. Use `displayStack.mouseSettings` to gate Settings knobs (`scroll_speed` / `pointer_axes` only on flutter-pi). Default Weston and alternate flutter-pi rootfs packages are mutually exclusive (`make build-rootfs` vs `build-rootfs-flutter-pi`). |
+| **OS (mouse)** | USB HID mouse (presence probe); prefs in `/var/lib/hal/mouse.conf` |
+| **Display stack** | Image stamp `/etc/display-stack` (`weston` XOR `flutter-pi`, baked by post-build) + runtime `/run/display-stack` (legacy `/etc/hmi` + `/run/hmi` fallbacks). `BoardBindings.displayStack()` / `DisplayStackProbe`. Use `displayStack.mouseSettings` to gate Settings knobs (`scroll_speed` / `pointer_axes` only on flutter-pi). Default Weston and alternate flutter-pi rootfs packages are mutually exclusive (`make build-rootfs` vs `build-rootfs-flutter-pi`). |
 | **Helper** | `apply_mouse_settings` — **optional** on flutter-pi-only images (HAL can write `mouse.conf` directly; flutter-pi reloads on mtime). **Required** when the image ships Weston: helper rewrites runtime `weston.ini` via `weston-hmi-config.sh` (`cursor-size`, `[libinput]` accel / natural-scroll / left-handed; **desktop-shell** + splash background unchanged) and restarts `hmi` when needed. Do **not** map `scroll_speed` / `pointer_axes` on Weston (flutter-pi only). |
 | **Weston splash bridge** | Alternate image only: after Weston takes DRM master the kernel `drm_logo` is gone; `desktop-shell` paints `/usr/share/hmi/boot-splash.png` (same canvas as `board/logo`, from `make build-boot-logo`) until `flutter-wayland-client` covers it. kiosk-shell cannot show a background image. |
 
@@ -109,14 +111,14 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | Need | Detail |
 |------|--------|
 | **OS** | `date` and/or `timedatectl`; `hwclock` for RTC write; preferably `rdate` and/or `wget` for network ladder |
-| **Prefs** | `/var/lib/hmi/datetime.conf` — `sync_mode` (`manual` \| `network`), `timezone` (IANA) |
+| **Prefs** | `/var/lib/hal/datetime.conf` — `sync_mode` (`manual` \| `network`), `timezone` (IANA) |
 | **Helper** | `sync_time` — **optional** override binary; default ladder is in-HAL |
 
 ### `hal/sys_info`
 
 | Need | Detail |
 |------|--------|
-| **OS** | Standard `/proc`, `/sys` (thermal, cpufreq, mounts); optional `/var/lib/hmi/product.ini` for factory brand/model/sn + tunables. Snapshot: `serialNumber` (product SN), `chipId` (chip serial). |
+| **OS** | Standard `/proc`, `/sys` (thermal, cpufreq, mounts); optional `/var/lib/hal/product.ini` for factory brand/model/sn + tunables. Snapshot: `serialNumber` (product SN), `chipId` (chip serial). |
 | **Profile** | `storage_mounts` — mount points to report |
 | **Helper / inject** | Product SN: `ProductInfo.sn` prefers `product.ini` `sn`, else chip ID. Chip ID: `ProductInfo.chipId` / `DeviceSnReader.readChipId()` → `/usr/bin/read-serial --chip-id` (same as `make devices` ChipID). Inject `ProductInfo` or custom `DeviceSnReader` via `BoardBindings.sysInfo` / `productInfo()` when needed. |
 

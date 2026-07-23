@@ -155,10 +155,10 @@ if [ "$wayland_img" -eq 1 ]; then
 		echo "post-build: ERROR LWS_HMI_WESTON=1 but weston/flutter-wayland-client missing" >&2
 		exit 1
 	fi
-	printf '%s\n' weston >"$TARGET_DIR/etc/hmi/display-stack"
+	printf '%s\n' weston >"$TARGET_DIR/etc/display-stack"
 	echo "post-build: display-stack=weston"
 elif [ "$has_pi" -eq 1 ]; then
-	printf '%s\n' flutter-pi >"$TARGET_DIR/etc/hmi/display-stack"
+	printf '%s\n' flutter-pi >"$TARGET_DIR/etc/display-stack"
 	echo "post-build: display-stack=flutter-pi"
 else
 	echo "post-build: ERROR default Weston image missing weston/flutter-wayland-client" >&2

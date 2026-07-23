@@ -566,11 +566,11 @@ EOF
 		has_weston=1
 	fi
 	stack=""
-	if [[ -f "$target/etc/hmi/display-stack" ]]; then
-		stack="$(tr -d '[:space:]' <"$target/etc/hmi/display-stack" | tr '[:upper:]' '[:lower:]')"
-		echo "OK:  etc/hmi/display-stack=$stack"
+	if [[ -f "$target/etc/display-stack" ]]; then
+		stack="$(tr -d '[:space:]' <"$target/etc/display-stack" | tr '[:upper:]' '[:lower:]')"
+		echo "OK:  etc/display-stack=$stack"
 	else
-		echo "FAIL: etc/hmi/display-stack missing (post-build)" >&2
+		echo "FAIL: etc/display-stack missing (post-build)" >&2
 		missing=1
 	fi
 	if [[ "$has_pi" -eq 1 && "$has_weston" -eq 1 ]]; then

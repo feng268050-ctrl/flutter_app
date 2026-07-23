@@ -111,7 +111,7 @@ class _MouseDemoSectionState extends State<MouseDemoSection>
         Text(
           'USB or Bluetooth HID pointer. '
           'Pointer should be visible when a mouse or keyboard trackpad is attached. '
-          'Settings persist under /var/lib/hmi/mouse.conf.',
+          'Settings persist under /var/lib/hal/mouse.conf.',
           style: muted,
         ),
         const SizedBox(height: 8),

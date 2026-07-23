@@ -1,7 +1,7 @@
 /// Physical keyboard presence + XKB layout (D15).
 ///
 /// Backend: presence via `/dev/input/by-id`; layout via
-/// `/var/lib/hmi/keyboard.conf` (and/or `/etc/default/keyboard`).
+/// `/var/lib/hal/keyboard.conf` (and/or `/etc/default/keyboard`).
 ///
 /// **v1 apply:** [Keyboard.setLayout] persists the preference then restarts
 /// `hmi.service` / flutter-pi so XKB is re-read at init. The **App MUST

@@ -1,4 +1,4 @@
-/// Output domain: display (backlight, auto-sleep) + sound (volume, button feedback).
+/// Output domain: display (backlight, auto-sleep, orientation) + sound (volume, button feedback).
 library;
 
 export 'output/display.dart';

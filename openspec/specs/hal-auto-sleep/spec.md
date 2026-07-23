@@ -19,7 +19,7 @@ The HAL SHALL expose a portable `AutoSleep` API under `hal/output/display` that 
 
 ### Requirement: AutoSleep preference under hmi prefs
 
-Setting AutoSleep policy from the HMI SHALL persist the selected policy at `/var/lib/hmi/display.conf` (key `auto_sleep`). Cold start SHALL restore the last policy. Preference MUST NOT be stored inside `misc-settings.json`.
+Setting AutoSleep policy from the HMI SHALL persist the selected policy at `/var/lib/hal/display.conf` (key `auto_sleep`). Cold start SHALL restore the last policy. Preference MUST NOT be stored inside `misc-settings.json`.
 
 #### Scenario: Preference survives relaunch
 
@@ -44,3 +44,4 @@ On Linux, when idle exceeds the policy duration, AutoSleep SHALL blank the panel
 
 - **WHEN** the panel is blanked by AutoSleep and the operator performs a single tap
 - **THEN** the panel remains at absolute brightness 0
+

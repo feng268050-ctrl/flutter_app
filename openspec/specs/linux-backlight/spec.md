@@ -3,9 +3,7 @@
 ## Purpose
 
 Reusable percent-based backlight controller writing `/sys/class/backlight/*/brightness` on Linux, without blocking first frame.
-
 ## Requirements
-
 ### Requirement: Backlight controller API is percent-based
 
 The HMI SHALL provide a reusable `BacklightController` / `Backlight` that gets and sets display brightness as an integer **logical percent in 0–100** (clamped). Callers MUST NOT depend on Android `Settings.System` brightness integers. Logical **0 MUST be allowed** by the API and means “dimmest usable level,” not “panel off.”
@@ -55,12 +53,12 @@ The app SHALL NOT block `runApp` / first frame on a successful backlight open or
 
 ### Requirement: Persist backlight brightness percent
 
-Setting backlight brightness from the HMI SHALL apply via the Linux HAL backlight backend, which MUST write remapped sysfs values and persist the **logical** clamped percent (0–100, including 0) to `/var/lib/hmi/display.conf` (key `backlight`). Restoring a persisted `0` MUST re-apply the hardware floor (not absolute zero).
+Setting backlight brightness from the HMI SHALL apply via the Linux HAL backlight backend, which MUST write remapped sysfs values and persist the **logical** clamped percent (0–100, including 0) to `/var/lib/hal/display.conf` (key `backlight`). Restoring a persisted `0` MUST re-apply the hardware floor (not absolute zero).
 
 #### Scenario: Set writes logical preference including zero
 
 - **WHEN** the operator sets backlight brightness to 0 via Demo / HAL
-- **THEN** `/var/lib/hmi/display.conf` (key `backlight`) contains `0` and sysfs brightness is the hardware floor (not 0)
+- **THEN** `/var/lib/hal/display.conf` (key `backlight`) contains `0` and sysfs brightness is the hardware floor (not 0)
 
 #### Scenario: Mid value still round-trips
 
@@ -75,3 +73,4 @@ The Demo (or product) brightness slider SHALL use minimum **0** and maximum 100 
 
 - **WHEN** the operator drags the brightness slider to its minimum
 - **THEN** the UI value is 0, HAL is requested with 0, and the panel stays above absolute hardware zero
+

@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:cyber_hal/output/display/orientation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/platform/backlight/linux_sysfs_backlight.dart';
-import 'package:lws_hmi/platform/display/display_orientation.dart';
 import 'package:lws_hmi/platform/percent.dart';
 
 void main() {
@@ -29,61 +29,21 @@ void main() {
     });
   });
 
-  group('DisplayOrientationMapping', () {
+  group('OrientationMode', () {
     test('default / unknown token is landscape', () {
-      expect(
-        DisplayOrientationMapping.fromPreferenceToken(null),
-        DisplayOrientationMode.landscape,
-      );
-      expect(
-        DisplayOrientationMapping.fromPreferenceToken(''),
-        DisplayOrientationMode.landscape,
-      );
-      expect(
-        DisplayOrientationMapping.fromPreferenceToken('nonsense'),
-        DisplayOrientationMode.landscape,
-      );
+      expect(OrientationMode.parse(null), OrientationMode.landscape);
+      expect(OrientationMode.parse(''), OrientationMode.landscape);
+      expect(OrientationMode.parse('nonsense'), OrientationMode.landscape);
     });
 
     test('parses portrait case-insensitively', () {
-      expect(
-        DisplayOrientationMapping.fromPreferenceToken('portrait\n'),
-        DisplayOrientationMode.portrait,
-      );
-      expect(
-        DisplayOrientationMapping.fromPreferenceToken('PORTRAIT'),
-        DisplayOrientationMode.portrait,
-      );
+      expect(OrientationMode.parse('portrait\n'), OrientationMode.portrait);
+      expect(OrientationMode.parse('PORTRAIT'), OrientationMode.portrait);
     });
 
-    test('maps flutter-pi -o flags', () {
-      expect(
-        DisplayOrientationMapping.toFlutterPiFlag(
-          DisplayOrientationMode.landscape,
-        ),
-        'landscape_left',
-      );
-      expect(
-        DisplayOrientationMapping.toFlutterPiFlag(
-          DisplayOrientationMode.portrait,
-        ),
-        'portrait_up',
-      );
-    });
-
-    test('preference tokens are stable', () {
-      expect(
-        DisplayOrientationMapping.toPreferenceToken(
-          DisplayOrientationMode.landscape,
-        ),
-        'landscape',
-      );
-      expect(
-        DisplayOrientationMapping.toPreferenceToken(
-          DisplayOrientationMode.portrait,
-        ),
-        'portrait',
-      );
+    test('wire tokens are stable', () {
+      expect(OrientationMode.landscape.wireName, 'landscape');
+      expect(OrientationMode.portrait.wireName, 'portrait');
     });
   });
 

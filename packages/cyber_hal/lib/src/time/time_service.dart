@@ -27,13 +27,16 @@ class TimeSyncResult {
 /// Preference paths and pure helpers for Linux datetime prefs.
 class TimeSyncPrefs {
   /// Mouse-style `key=value` file (`sync_mode`, `timezone`).
-  static const datetimeConf = '/var/lib/hmi/datetime.conf';
+  static const datetimeConf = '/var/lib/hal/datetime.conf';
   static const keySyncMode = 'sync_mode';
   static const keyTimezone = 'timezone';
 
   /// Pre-`datetime.conf` standalone files (one-shot import only).
+  /// Prefer HAL tree; keep HMI paths for devices not yet migrated.
   static const legacySyncModePath = '/var/lib/hmi/time-sync-mode';
   static const legacyTimezonePath = '/var/lib/hmi/timezone';
+  static const legacySyncModePathHal = '/var/lib/hal/time-sync-mode';
+  static const legacyTimezonePathHal = '/var/lib/hal/timezone';
 
   static const helperPath = ''; // optional board override only
 

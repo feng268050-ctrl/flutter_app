@@ -12,8 +12,8 @@ if [ -x /usr/libexec/hmi/usb-otg-mode.sh ]; then
 else
 	fail "usb-otg-mode.sh missing"
 fi
-if [ -r /var/lib/hmi/usb-debug ]; then
-	info "pref file: $(tr -d '\n' </var/lib/hmi/usb-debug)"
+if [ -r /var/lib/hal/usb-debug ]; then
+	info "pref file: $(tr -d '\n' </var/lib/hal/usb-debug)"
 else
 	info "pref file missing (default USB Debug ON)"
 fi

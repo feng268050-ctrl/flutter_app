@@ -8,7 +8,7 @@ import 'package:cyber_hal/src/linux/percent.dart';
 /// Linux: persist `mouse.conf` (flutter-pi reloads on mtime); helper optional.
 class LinuxMouseSettingsController implements Mouse {
   LinuxMouseSettingsController({
-    this.preferencePath = '/var/lib/hmi/mouse.conf',
+    this.preferencePath = '/var/lib/hal/mouse.conf',
     this.applyMouseSettingsCommand = const <String>[],
     this.runHelperWithStdin = defaultBoardHelperRunnerWithStdin,
     this.probe = const UsbHidMouseProbe(),

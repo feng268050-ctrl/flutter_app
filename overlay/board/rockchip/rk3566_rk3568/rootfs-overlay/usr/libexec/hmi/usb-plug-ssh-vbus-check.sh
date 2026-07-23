@@ -4,7 +4,7 @@ set -eu
 
 LOCK_DIR=/run/usb-plug-ssh-vbus.lock
 PENDING=/run/usb-plug-ssh-vbus.pending
-PREF=/var/lib/hmi/usb-debug
+PREF=/var/lib/hal/usb-debug
 
 usb_debug_on() {
 	if [ ! -r "$PREF" ]; then

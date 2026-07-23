@@ -121,6 +121,7 @@ When unsure or on a clean tree: `make build`.
 
 - **Minimize scope** — smallest correct diff; no drive-by refactors.
 - **Match existing style** in touched files (shell, Dart, Buildroot `.mk`, overlay layout).
+- **Flutter App API = 3.24.4** — write `app/hmi/` (and Flutter packages) against the pinned SDK only; do **not** follow newer Flutter/Material docs (e.g. do not replace `DropdownButtonFormField(value: …)` with `initialValue`). Detail: `.cursor/rules/flutter-3.24-api.mdc`. Upgrade path is P5.1, not drive-by API churn.
 - **Script / device-command naming** — prefer **verb + noun** (kebab-case), no product prefix on script basenames. Operator commands → `/usr/bin/<verb-noun>` via `post-build.sh`. Helpers → **`/usr/libexec/{wpa,network,bluetooth,hmi}/`**. State → **`/var/lib/{wpa_supplicant,network,bluetooth,hmi}/`**. systemd units use **functional** names (`wlan-wpa.service`, `settings-restore.service`); UI daemon only: `hmi.service`.
 - **Paths:** app → `app/hmi/`; rootfs overlay → `overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/`; Buildroot fragments → `overlay/buildroot/`.
 - **Do not** run `make build-uboot` on ynh960 unless Innohi instructs.

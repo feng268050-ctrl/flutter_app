@@ -77,6 +77,7 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | **RKNN models** (`*.rknn`, `config.yaml`) | **`/userdata/models/`** | userdata |
 | PR0 recording, online OTA staging | `/userdata/…` (incl. **`/userdata/ota/`**) | userdata |
 | **Alarm history SQLite** (`alarm_logs` table) | **`/var/lib/hmi/alarm-logs.db`** → `/userdata/hmi/alarm-logs.db` | userdata |
+| **Process library SQLite** (`process_presets`, `process_library_meta`) | **`/var/lib/hmi/process-library.db`** → `/userdata/hmi/process-library.db` | userdata |
 | **Subsystem state (P2.3+)** | **`/userdata/{wpa_supplicant,network,bluetooth,hmi}/`** (symlinked from `/var/lib/*`) | userdata |
 | App config / cache | `/userdata/cfg/` (convention) | userdata |
 
@@ -91,9 +92,11 @@ Notable files under `/var/lib/hmi` (persist across `make upgrade` / `push-app`):
 
 | File | Role |
 |------|------|
-| `product.ini` | Factory identity / tunables (`brand`, `model`, `sn`, `camera_ip`, `control_card_comm_alarm_mode`, …) |
 | `alarm-logs.db` | SQLite alarm history; single table `alarm_logs` (`timestamp` epoch ms; display `YYYY-MM-DD HH:mm`) |
+| `process-library.db` | Versioned built-in and user process presets; WAL-enabled SQLite |
 | `misc-settings.json`, `mouse.conf`, … | Other HMI prefs |
+
+Factory identity and tunables (`brand`, `model`, `sn`, `camera_ip`, `control_card_comm_alarm_mode`, …) are stored separately at `/var/lib/hal/product.ini` → `/userdata/hal/product.ini`.
 
 ## Prefs: flash vs upgrade (P2.3 / P2.4)
 

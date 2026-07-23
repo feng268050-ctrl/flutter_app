@@ -10,6 +10,31 @@ import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.da
 /// preflight / ready-GPIO parity lands with engineer-mode migration.
 abstract final class LaserWorkGuard {
   static const laserEnableAttribute = 'control.laser_enable';
+  static const laserOnAttribute = 'machine.laser_on';
+  static const wireFeedingOnAttribute = 'machine.wire_feeding_on';
+
+  /// Fail-closed interlock for changing process type or process parameters.
+  static Future<bool> isProcessChangeSafe(AppServices services) async {
+    await services.ensureModbusLive();
+    Map<String, Object?> control;
+    Map<String, Object?> status;
+    try {
+      // Group reads always hit the controller; readAttribute may return cache.
+      control = await services.modbus.readGroup('control');
+      status = await services.modbus.readGroup('status');
+    } catch (_) {
+      return false;
+    }
+    final values = [
+      control[laserEnableAttribute],
+      status[laserOnAttribute],
+      status[wireFeedingOnAttribute],
+    ];
+    if (values.any((value) => value == null)) {
+      return false;
+    }
+    return values.every((value) => value == false || value == 0);
+  }
 
   /// Re-evaluate after a dangerous bypass is turned OFF.
   static Future<void> evaluateAndInterruptIfNeeded({

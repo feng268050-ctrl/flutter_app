@@ -6,5 +6,7 @@ abstract final class AppRoutes {
   static const home = '/';
   static const settings = '/settings';
   static const monitor = '/monitor';
+  static const quickMode = '/process-library/quick';
+  static const engineerMode = '/process-library/engineer';
   static const demo = '/demo';
 }

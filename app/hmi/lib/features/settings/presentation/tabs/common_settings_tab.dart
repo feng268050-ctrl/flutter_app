@@ -158,18 +158,10 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
               ),
             ),
             SettingsNavRow(
-              title: 'RGB LED',
-              onTap: () => pushSettingsPage(
-                context,
-                LedSettingsPage(services: services),
-              ),
-            ),
-            SettingsNavRow(
               title: 'Screen-off Time',
-              value: 'Never',
               onTap: () => pushSettingsPage(
                 context,
-                const ScreenOffSettingsPage(),
+                ScreenOffSettingsPage(services: services),
               ),
             ),
             SettingsNavRow(
@@ -185,6 +177,17 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
               onTap: () => pushSettingsPage(
                 context,
                 const SoundEffectSettingsPage(),
+              ),
+            ),
+          ],
+        ),
+        SettingsGroup(
+          children: [
+            SettingsNavRow(
+              title: 'RGB LED',
+              onTap: () => pushSettingsPage(
+                context,
+                LedSettingsPage(services: services),
               ),
             ),
           ],

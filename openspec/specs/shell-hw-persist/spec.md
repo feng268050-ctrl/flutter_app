@@ -12,16 +12,16 @@ The image SHALL provide board helpers under `/usr/libexec/hmi/` that both apply 
 
 | Helper / writer | Preference file |
 |-----------------|-----------------|
-| HAL backlight (or legacy `change-backlight.sh` if present) | `backlight-brightness` (logical 0–100; apply MUST NOT write sysfs absolute 0) |
-| `change-volume.sh` | `media-volume` (0–100) |
+| HAL backlight (or legacy `change-backlight.sh` if present) | `display.conf` (`backlight`) (logical 0–100; apply MUST NOT write sysfs absolute 0) |
+| `change-volume.sh` | `sound.conf` (`volume`) (0–100) |
 | `change-orientation.sh` | `display-orientation` (`portrait` / `landscape`) |
 | `apply-mouse-settings.sh` | `mouse.conf` |
 
-Each shipped helper MUST write the preference file as part of a successful apply. For backlight, successful HAL writes MAY persist logical `0`, and apply/restore of that value MUST keep the panel above absolute hardware zero.
+Each shipped helper MUST write the preference file as part of a successful apply. For backlight, successful HAL writes MAY persist logical `0`, and apply/restore of that value MUST keep the panel above absolute hardware zero. AutoSleep blanking MAY write absolute sysfs `0` transiently without updating this preference file.
 
 #### Scenario: Logical zero preference does not black out panel
 
-- **WHEN** `/var/lib/hmi/backlight-brightness` contains `0` and HAL applies persisted preference
+- **WHEN** `/var/lib/hmi/display.conf` (key `backlight`) contains `0` and HAL applies persisted preference
 - **THEN** sysfs brightness is the hardware floor (≥ 1), not absolute 0
 
 #### Scenario: Orientation helper writes launch preference

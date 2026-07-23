@@ -1,15 +1,11 @@
-import 'dart:io';
+import 'dart:async';
+import 'package:cyber_hal/output.dart';
 
-import 'package:flutter/foundation.dart';
-import 'package:lws_hmi/platform/os_paths.dart';
-
-/// Persisted UI click sound-effect index (lws-ui `SoundEffectSettings`).
+/// App catalog + façade for HAL [ButtonFeedback] click samples.
 ///
-/// File: `/var/lib/hmi/sound-effect` — single integer `0..2` (default `0`).
+/// Effect labels/assets stay product-owned; persistence and playback are HAL.
 final class SoundEffectStore {
-  SoundEffectStore({
-    String? preferencePath,
-  }) : preferencePath = preferencePath ?? '${OsPaths.varHmi}/sound-effect';
+  SoundEffectStore({required this.feedback});
 
   static const effectCount = 3;
   static const defaultIndex = 0;
@@ -23,14 +19,18 @@ final class SoundEffectStore {
 
   static const labels = <String>['Effect 1', 'Effect 2', 'Effect 3'];
 
-  final String preferencePath;
+  final ButtonFeedback feedback;
 
-  int _index = defaultIndex;
-  bool _warmed = false;
+  int get index {
+    final key = feedback.assetKey;
+    final i = assetKeys.indexOf(key);
+    return i >= 0 ? i : defaultIndex;
+  }
 
-  int get index => _index;
-
-  String get activeAssetKey => assetKeys[_index];
+  String get activeAssetKey {
+    final key = feedback.assetKey;
+    return key.isNotEmpty ? key : assetKeys[defaultIndex];
+  }
 
   static int clampIndex(int? value) {
     if (value == null || value < 0 || value >= effectCount) {
@@ -39,52 +39,23 @@ final class SoundEffectStore {
     return value;
   }
 
-  /// Synchronous warm-read for bootstrap (mirror `SoundEffectSettings.warmCache`).
+  /// Ensure a default asset is selected after warm-read if pref empty.
   int warmRead() {
-    if (_warmed) {
-      return _index;
+    feedback.warmRead();
+    if (feedback.assetKey.isEmpty) {
+      unawaited(feedback.setAssetKey(assetKeys[defaultIndex]));
+      return defaultIndex;
     }
-    try {
-      final f = File(preferencePath);
-      if (f.existsSync()) {
-        final raw = f.readAsStringSync().trim();
-        _index = clampIndex(int.tryParse(raw));
-      }
-    } catch (e) {
-      debugPrint('sound-effect: warmRead failed: $e');
-      _index = defaultIndex;
-    }
-    _warmed = true;
-    return _index;
+    return index;
   }
 
-  Future<int> read() async {
-    if (_warmed) {
-      return _index;
-    }
-    try {
-      final f = File(preferencePath);
-      if (await f.exists()) {
-        final raw = (await f.readAsString()).trim();
-        _index = clampIndex(int.tryParse(raw));
-      }
-    } catch (e) {
-      debugPrint('sound-effect: read failed: $e');
-      _index = defaultIndex;
-    }
-    _warmed = true;
-    return _index;
+  Future<void> selectIndex(int index) async {
+    final i = clampIndex(index);
+    await feedback.setAssetKey(assetKeys[i]);
   }
 
-  Future<void> write(int index) async {
-    _index = clampIndex(index);
-    _warmed = true;
-    try {
-      final f = File(preferencePath);
-      await f.parent.create(recursive: true);
-      await f.writeAsString('$_index\n');
-    } catch (e) {
-      debugPrint('sound-effect: write failed: $e');
-    }
+  Future<void> previewIndex(int index) async {
+    await selectIndex(index);
+    await feedback.play();
   }
 }

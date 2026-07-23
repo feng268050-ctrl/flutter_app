@@ -68,7 +68,7 @@ class _SoundEffectSettingsPageState extends State<SoundEffectSettingsPage> {
           const Padding(
             padding: EdgeInsets.all(20),
             child: Text(
-              'Persisted under /var/lib/hmi/sound-effect (0–2). '
+              'Persisted under /var/lib/hmi/sound.conf (`button_feedback=`) (asset key). '
               'Home and Cyber controls use the selected click sample.',
               style: TextStyle(color: Colors.white54),
             ),

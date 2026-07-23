@@ -73,8 +73,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   late final AppServices _services =
       widget.services ?? AppServices(boardProfile: widget.boardProfile);
 
-  late final SoundEffectStore _soundEffectStore =
-      widget.soundEffectStore ?? SoundEffectStore();
+  late final SoundEffectStore _soundEffectStore = widget.soundEffectStore ??
+      SoundEffectStore(feedback: _services.buttonFeedback);
 
   late final MiscSettingsStore _miscSettingsStore =
       widget.miscSettingsStore ?? MiscSettingsStore();
@@ -98,10 +98,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
       widget.bootSelfCheckSettings ??
           BootSelfCheckSettings(miscStore: _miscSettingsStore);
 
-  late final AppIndexedClickSound _clickSound = AppIndexedClickSound(
-    _soundEffectStore,
-    mediaAudio: _services.audio,
-  );
+  late final AppIndexedClickSound _clickSound = AppIndexedClickSound(_soundEffectStore);
 
   late final CyberImeMutableRegionalLayoutProvider _regionalLayout =
       CyberImeMutableRegionalLayoutProvider();
@@ -146,6 +143,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
       // after boot self-check finishes (or immediately when self-check is skipped).
       unawaited(_services.restorePersistedSettingsOnce());
       unawaited(_maybeRestoreRoute());
+      _services.autoSleep.arm(backlight: _services.backlight);
     });
   }
 
@@ -180,6 +178,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   void dispose() {
     CyberClickSoundRegistry.register(null);
     CyberImeRegionalLayoutRegistry.register(null);
+    unawaited(_services.autoSleep.dispose());
     unawaited(_warnAlarm.dispose());
     if (widget.miscSettingsStore == null) {
       _miscSettingsStore.dispose();
@@ -192,6 +191,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     }
     super.dispose();
   }
+
+  void _noteUserActivity() => _services.autoSleep.noteActivity();
+
 
   Widget _demoPage() {
     return P2DemoPage(
@@ -273,31 +275,44 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
               child: SoundEffectScope(
                 store: _soundEffectStore,
                 clickSound: _clickSound,
-                child: MaterialApp(
-                  title: 'HMI',
-                  theme: buildAppTheme(),
-                  scrollBehavior: const AppScrollBehavior(),
-                  builder: _appBuilder,
-                  navigatorKey: _navKey,
-                  initialRoute: AppRoutes.home,
-                  onGenerateRoute: (settings) {
-                    final Widget page;
-                    switch (settings.name) {
-                      case AppRoutes.settings:
-                        page = SettingsPage(
-                          openKeyboardOnLaunch: settings.arguments ==
-                              HmiRouteRestore.settingsKeyboard,
-                        );
-                      case AppRoutes.monitor:
-                        page = const MonitorPage();
-                      case AppRoutes.demo:
-                        page = _demoPage();
-                      case AppRoutes.home:
-                      default:
-                        page = const HomePage();
+                child: Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerDown: (_) => _noteUserActivity(),
+                  onPointerMove: (_) {
+                    // Moves reset idle only while awake; blanked wake is double-tap.
+                    if (!_services.autoSleep.isBlanked) {
+                      _noteUserActivity();
                     }
-                    return buildAppPageRoute(settings: settings, child: page);
                   },
+                  child: MaterialApp(
+                    title: 'HMI',
+                    theme: buildAppTheme(),
+                    scrollBehavior: const AppScrollBehavior(),
+                    builder: _appBuilder,
+                    navigatorKey: _navKey,
+                    initialRoute: AppRoutes.home,
+                    onGenerateRoute: (settings) {
+                      final Widget page;
+                      switch (settings.name) {
+                        case AppRoutes.settings:
+                          page = SettingsPage(
+                            openKeyboardOnLaunch: settings.arguments ==
+                                HmiRouteRestore.settingsKeyboard,
+                          );
+                        case AppRoutes.monitor:
+                          page = const MonitorPage();
+                        case AppRoutes.demo:
+                          page = _demoPage();
+                        case AppRoutes.home:
+                        default:
+                          page = const HomePage();
+                      }
+                      return buildAppPageRoute(
+                        settings: settings,
+                        child: page,
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

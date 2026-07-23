@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:cyber_hal/display.dart';
+import 'package:cyber_hal/sys_info.dart';
 import 'package:cyber_hal/input.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';

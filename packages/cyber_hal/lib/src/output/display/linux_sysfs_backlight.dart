@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:cyber_hal/output/backlight.dart';
+import 'package:cyber_hal/output/display/backlight.dart';
+import 'package:cyber_hal/src/linux/key_value_conf.dart';
+import 'package:cyber_hal/src/output/output_prefs.dart';
 import 'package:cyber_hal/src/linux/board_helper.dart';
 import 'package:cyber_hal/src/linux/lws_trace.dart';
 import 'package:cyber_hal/src/linux/percent.dart';
@@ -14,7 +16,7 @@ class LinuxSysfsBacklight implements Backlight {
   LinuxSysfsBacklight({
     this.classDir = '/sys/class/backlight',
     this.preferredNames = const <String>['backlight', 'backlight1', 'backlight2'],
-    this.preferencePath = '/var/lib/hmi/backlight-brightness',
+    this.preferencePath = OutputPrefs.displayConf,
     this.changeBacklightCommand = const <String>[],
     BoardHelperRunner? runHelper,
   }) : runHelper = runHelper ?? defaultBoardHelperRunner;
@@ -117,12 +119,8 @@ class LinuxSysfsBacklight implements Backlight {
   /// Re-apply preference via [changeBacklightCommand].
   Future<void> applyPersistedPreference() async {
     try {
-      final f = File(preferencePath);
-      if (!await f.exists()) {
-        return;
-      }
-      final raw = (await f.readAsString()).trim();
-      final pct = int.tryParse(raw);
+      final map = await readKeyValueConfFile(preferencePath);
+      final pct = int.tryParse(map[OutputPrefs.keyBacklight] ?? '');
       if (pct == null) {
         return;
       }
@@ -156,10 +154,22 @@ class LinuxSysfsBacklight implements Backlight {
     }
     final val = backlightPercentToDevice(clamped, _max);
     await File(_brightnessPath!).writeAsString('$val\n', flush: true);
-    final pref = File(preferencePath);
-    await pref.parent.create(recursive: true);
-    await pref.writeAsString('$clamped\n', flush: true);
+    await upsertKeyValueConfFile(preferencePath, {
+      OutputPrefs.keyBacklight: '$clamped',
+    });
     lwsTrace('backlight: set $clamped% → $_brightnessPath ($val/$_max)');
+  }
+
+
+  @override
+  Future<void> setAbsoluteBrightness(int deviceValue) async {
+    if (!await ensureDevice()) {
+      debugPrint('backlight: absolute set skipped (no device)');
+      return;
+    }
+    final val = deviceValue < 0 ? 0 : deviceValue;
+    await File(_brightnessPath!).writeAsString('$val\n', flush: true);
+    lwsTrace('backlight: absolute $val → $_brightnessPath (max=$_max)');
   }
 
   @override

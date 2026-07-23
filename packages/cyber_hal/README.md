@@ -8,19 +8,24 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 |--------|--------|-------------------|
 | `package:cyber_hal/network.dart` | ethernet, wifi, proxy | networkd + wpa (`docs/network-stack.md`) |
 | `package:cyber_hal/network/proxy.dart` | system proxy | `/var/lib/network/proxy.conf` + in-HAL env apply |
-| `package:cyber_hal/output.dart` | backlight, volume | `/var/lib/hmi/` backlight + volume prefs |
+| `package:cyber_hal/output.dart` | display + sound barrels | see sub-imports |
 | `package:cyber_hal/input.dart` | keyboard, mouse (USB/serial cameras later) | `/var/lib/hmi/keyboard.conf`, `mouse.conf` |
 | `package:cyber_hal/ip_camera.dart` | IP network camera (host-injected; multi-instance; RTSP→file recording) | path/MediaMTX are **product** concerns — not this module |
 | `package:cyber_hal/debug.dart` | ssh, usb | SSH helpers; `/var/lib/hmi/usb-debug` |
 | `package:cyber_hal/gpio.dart` | named GPIO lines | board `gpio.json` (sysfs) |
 | `package:cyber_hal/modbus.dart` | attribute catalog | board `modbus.json` + serial |
 | `package:cyber_hal/bluetooth.dart` | BlueZ | `/var/lib/bluetooth/` |
-| `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` | procfs/sysfs + `/var/lib/hmi/product.ini` + `read-serial` / `--chip-id` |
+| `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` + `DisplayStack` | procfs/sysfs + `/var/lib/hmi/product.ini` + display-stack stamps |
 | `package:cyber_hal/datetime.dart` | wall clock | timedatectl / date / hwclock |
 | `package:cyber_hal/stub.dart` | in-memory stubs | P3.2 emulator / host tests |
 | `package:cyber_hal/cyber_hal.dart` | core only | `Capabilities`, `BoardProfile`, errors |
 
-Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/volume.dart`, `package:cyber_hal/debug/usb.dart`.
+Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/display/backlight.dart`, `package:cyber_hal/output/sound/volume.dart`, `package:cyber_hal/debug/usb.dart`.
+
+| Import | Domain | Persist / helpers |
+|--------|--------|-------------------|
+| `package:cyber_hal/output/display.dart` | backlight, auto-sleep | `/var/lib/hmi/display.conf` |
+| `package:cyber_hal/output/sound.dart` | volume, button-feedback (+ media audio) | `/var/lib/hmi/sound.conf` |
 
 ## Portability (D11b / D22)
 
@@ -60,6 +65,8 @@ final profile = await BoardProfile.loadAsset('packages/cyber_hal/boards/sim.json
 if (resolveHalBackend(boardId: profile.info.boardId) == HalBackendKind.stub) {
   final backlight = StubBacklight();
   final volume = StubVolume();
+  final autoSleep = StubAutoSleep();
+  final buttonFeedback = StubButtonFeedback();
   final sysInfo = StubSysInfo();
 }
 ```
@@ -80,7 +87,7 @@ dependencies:
 
 HAL mid-session writes use existing FHS:
 
-- `/var/lib/hmi/` — backlight, volume, mouse, keyboard, usb-debug
+- `/var/lib/hmi/` — mouse, keyboard, usb-debug, …; **output prefs** as `/var/lib/hmi/display.conf` and `/var/lib/hmi/sound.conf`
 - `/var/lib/network/` — ethernet/proxy (after network wave)
 - `/var/lib/wpa_supplicant/` — Wi‑Fi wanted / networks
 - `/var/lib/bluetooth/` — BT

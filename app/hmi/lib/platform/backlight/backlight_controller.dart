@@ -1,1 +1,1 @@
-export 'package:cyber_hal/output/backlight.dart';
+export 'package:cyber_hal/output/display/backlight.dart';

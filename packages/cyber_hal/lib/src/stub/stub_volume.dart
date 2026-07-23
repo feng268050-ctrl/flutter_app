@@ -1,4 +1,4 @@
-import 'package:cyber_hal/output/volume.dart';
+import 'package:cyber_hal/output/sound/volume.dart';
 import 'package:cyber_hal/src/linux/percent.dart';
 
 /// In-memory volume for host tests and the P3.2 emulator.

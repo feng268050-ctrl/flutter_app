@@ -71,14 +71,23 @@ A successful or failed **full-system A/B upgrade** (`make upgrade` updating boot
 - **WHEN** a full-system upgrade fails verification before letter commit
 - **THEN** `/userdata/{wpa_supplicant,network,bluetooth,hmi}` contents remain intact on the still-active letter’s runtime
 
-### Requirement: Sound-effect index preference under hmi prefs
+### Requirement: Sound-effect asset preference under hmi prefs
 
-The image / App SHALL persist the UI click sound-effect index (integer `0..2`) under `/var/lib/hmi/` (exact filename chosen at implementation, e.g. `sound-effect` or a field inside an existing HMI prefs file). Cold start of the HMI App SHALL read this preference before registering the Cyber click backend so the first taps use the correct sample. Boot `settings-restore.service` is NOT required to apply sound-effect (App-owned; unlike backlight/volume shell helpers). Sound-effect MUST NOT be relocated into `misc-settings.json` solely because Misc prefs were unified (Sound Effect is Display & Sound, not Misc).
+The image / HAL SHALL persist the UI click **asset key** via `ButtonFeedback` at `/var/lib/hmi/sound.conf` (key `button_feedback`). Cold start of the HMI App SHALL warm-read this preference before registering the Cyber click backend so the first taps play the correct sample. Boot `settings-restore.service` is NOT required to apply sound-effect / ButtonFeedback (unlike backlight/volume shell helpers). Sound-effect MUST NOT be relocated into `misc-settings.json` solely because Misc prefs were unified (Sound Effect is Display & Sound, not Misc).
 
 #### Scenario: Pref file survives relaunch
 
 - **WHEN** the operator selects Effect 2 and the HMI process restarts
-- **THEN** the sound-effect preference under `/var/lib/hmi/` still encodes index `1`
+- **THEN** `/var/lib/hmi/sound.conf` (key `button_feedback`) still encodes Effect 2’s asset key
+
+### Requirement: AutoSleep preference under hmi prefs
+
+The image / HAL SHALL persist the AutoSleep / screen-off policy at `/var/lib/hmi/display.conf` (key `auto_sleep`). Cold start SHALL restore the last policy for the idle watchdog. Boot `settings-restore.service` is NOT required to apply AutoSleep. AutoSleep MUST NOT be stored inside `misc-settings.json`.
+
+#### Scenario: AutoSleep pref survives relaunch
+
+- **WHEN** the operator selects Screen-off Time 30 min and the HMI process restarts
+- **THEN** `/var/lib/hmi/display.conf` (key `auto_sleep`) still encodes the 30-minute policy
 
 ### Requirement: Boot-self-check preference under hmi prefs
 

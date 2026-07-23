@@ -1,4 +1,4 @@
-import 'package:cyber_hal/src/output/linux_media_audio_controller.dart';
+import 'package:cyber_hal/src/output/sound/linux_media_audio_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

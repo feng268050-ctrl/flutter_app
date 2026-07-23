@@ -1,7 +1,5 @@
-/// Output domain: backlight + volume (human-facing levels).
+/// Output domain: display (backlight, auto-sleep) + sound (volume, button feedback).
 library;
 
-export 'output/backlight.dart';
-export 'output/volume.dart';
-export 'package:cyber_hal/src/output/linux_sysfs_backlight.dart';
-export 'package:cyber_hal/src/output/linux_media_audio_controller.dart';
+export 'output/display.dart';
+export 'output/sound.dart';

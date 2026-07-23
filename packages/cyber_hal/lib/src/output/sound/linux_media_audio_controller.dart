@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:cyber_hal/output/volume.dart';
+import 'package:cyber_hal/output/sound/volume.dart';
 import 'package:cyber_hal/src/linux/board_helper.dart';
 import 'package:cyber_hal/src/linux/lws_trace.dart';
 import 'package:cyber_hal/src/linux/percent.dart';
+import 'package:cyber_hal/src/linux/key_value_conf.dart';
+import 'package:cyber_hal/src/output/output_prefs.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -19,7 +21,7 @@ import 'package:flutter/services.dart';
 class LinuxMediaAudioController implements MediaAudioController, Volume {
   LinuxMediaAudioController({
     this.cacheDir = '/var/lib/hmi/audio',
-    this.volumePreferencePath = '/var/lib/hmi/media-volume',
+    this.volumePreferencePath = OutputPrefs.soundConf,
     this.changeVolumeCommand = const <String>[],
     this.playerBinary = 'mpg123',
     this.amixerBinary = 'amixer',
@@ -153,13 +155,10 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     }
     _volumeLoaded = true;
     try {
-      final f = File(volumePreferencePath);
-      if (await f.exists()) {
-        final raw = (await f.readAsString()).trim();
-        final n = int.tryParse(raw);
-        if (n != null) {
-          _volumePercent = clampPercent(n);
-        }
+      final map = await readKeyValueConfFile(volumePreferencePath);
+      final n = int.tryParse(map[OutputPrefs.keyVolume] ?? '');
+      if (n != null) {
+        _volumePercent = clampPercent(n);
       }
     } catch (e) {
       debugPrint('media-audio: volume load failed: $e');
@@ -184,9 +183,9 @@ class LinuxMediaAudioController implements MediaAudioController, Volume {
     }
     // Default: persist preference; mixer apply is via amixer in _drainVolumeQueue.
     try {
-      final f = File(volumePreferencePath);
-      await f.parent.create(recursive: true);
-      await f.writeAsString('$percent\n', flush: true);
+      await upsertKeyValueConfFile(volumePreferencePath, {
+        OutputPrefs.keyVolume: '$percent',
+      });
     } catch (e) {
       debugPrint('media-audio: persist volume failed: $e');
     }

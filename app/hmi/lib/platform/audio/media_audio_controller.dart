@@ -1,1 +1,1 @@
-export 'package:cyber_hal/src/output/media_audio_controller.dart';
+export 'package:cyber_hal/src/output/sound/media_audio_controller.dart';

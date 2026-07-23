@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:cyber_hal/stub.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 
@@ -12,19 +11,18 @@ void main() {
     expect(SoundEffectStore.clampIndex(3), 0);
   });
 
-  test('write and warmRead round-trip', () async {
-    final dir = await Directory.systemTemp.createTemp('sfx-');
-    final path = '${dir.path}/sound-effect';
-    final store = SoundEffectStore(preferencePath: path);
-
-    expect(store.warmRead(), 0);
-    await store.write(2);
+  test('selectIndex and warmRead round-trip via ButtonFeedback', () async {
+    final feedback = StubButtonFeedback();
+    final store = SoundEffectStore(feedback: feedback);
+    await store.selectIndex(2);
     expect(store.index, 2);
+    expect(store.activeAssetKey, SoundEffectStore.assetKeys[2]);
+    expect(feedback.assetKey, SoundEffectStore.assetKeys[2]);
 
-    final again = SoundEffectStore(preferencePath: path);
-    expect(again.warmRead(), 2);
-    expect(again.activeAssetKey, SoundEffectStore.assetKeys[2]);
-
-    await dir.delete(recursive: true);
+    final again = SoundEffectStore(feedback: StubButtonFeedback(
+      initialAssetKey: feedback.assetKey,
+    ));
+    again.warmRead();
+    expect(again.index, 2);
   });
 }

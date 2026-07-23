@@ -13,7 +13,7 @@ The appliance OS SHALL NOT store Wi‑Fi, Ethernet, Bluetooth, and HMI platform 
 - **`/var/lib/wpa_supplicant/`** — Wi‑Fi: `wifi-wanted`, `wpa_supplicant.conf`, `wpa_supplicant.log`, `wlan0-ipv4`, `wlan0-resolv.conf`
 - **`/var/lib/network/`** — Ethernet: `eth0-wanted`, `eth0-ipv4`, `eth0-resolv.conf`
 - **`/var/lib/bluetooth/`** — Bluetooth: HMI prefs `bt-wanted`, `bt-a2dp-sink`, `bt-a2dp-volume` at the directory top level alongside BlueZ adapter subdirectories
-- **`/var/lib/hmi/`** — UI platform: `display-orientation`, `mouse.conf`, `backlight-brightness`, `media-volume`, `http-proxy`, `usb-debug`, `timezone`, and push/debug/A-B staging artifacts
+- **`/var/lib/hmi/`** — UI platform: `display-orientation`, `mouse.conf`, `display.conf`, `sound.conf`, `http-proxy`, `usb-debug`, `timezone`, and push/debug/A-B staging artifacts
 
 The legacy monolithic path **`/var/lib/lws-hmi/`** MUST NOT exist on shipped rootfs.
 
@@ -107,8 +107,8 @@ On upgrade from images that used `/userdata/lws-hmi/`, the image SHALL split-mov
 
 #### Scenario: Backlight pref lands in hmi tree
 
-- **WHEN** device had `/userdata/lws-hmi/backlight-brightness` before upgrade
-- **THEN** after migration `/var/lib/hmi/backlight-brightness` contains the same value
+- **WHEN** device had `/userdata/lws-hmi/display.conf` before upgrade
+- **THEN** after migration `/var/lib/hmi/display.conf` (key `backlight`) contains the same value
 
 ### Requirement: Build overlay uses neutral OS build names
 

@@ -32,6 +32,8 @@ final class AppServices {
     GpioLedController? ledController,
     MediaAudioController? audioController,
     BacklightController? backlightController,
+    AutoSleep? autoSleep,
+    ButtonFeedback? buttonFeedback,
     EthernetController? ethernetController,
     WifiController? wifiController,
     HttpClientController? httpClientController,
@@ -87,6 +89,8 @@ final class AppServices {
         );
     audio = audioController ?? b.mediaAudio();
     backlight = backlightController ?? b.backlight();
+    this.autoSleep = autoSleep ?? b.autoSleep();
+    this.buttonFeedback = buttonFeedback ?? b.buttonFeedback(mediaAudio: audio);
     ethernet = ethernetController ?? b.ethernetSession();
     wifi = wifiController ?? b.wifiSession();
     dateTime = dateTimeController ?? b.dateTime();
@@ -148,6 +152,8 @@ final class AppServices {
   late final GpioLedController leds;
   late final MediaAudioController audio;
   late final BacklightController backlight;
+  late final AutoSleep autoSleep;
+  late final ButtonFeedback buttonFeedback;
   late final EthernetController ethernet;
   late final WifiController wifi;
   late final DateTimeController dateTime;

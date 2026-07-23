@@ -1,15 +1,15 @@
 import 'package:cyber_hal/bluetooth.dart';
 import 'package:cyber_hal/datetime.dart';
 import 'package:cyber_hal/debug.dart';
-import 'package:cyber_hal/display.dart';
+import 'package:cyber_hal/sys_info.dart';
 import 'package:cyber_hal/gpio.dart';
 import 'package:cyber_hal/input.dart';
 import 'package:cyber_hal/modbus.dart';
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_hal/output.dart';
+import 'package:cyber_hal/src/output/output_prefs.dart';
 import 'package:cyber_hal/src/core/errors.dart';
 import 'package:cyber_hal/src/profile/board_profile.dart';
-import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -100,6 +100,20 @@ final class BoardBindings {
       changeBacklightCommand: cmd ?? const <String>[],
       preferredNames: names ??
           const <String>['backlight', 'backlight1', 'backlight2'],
+    );
+  }
+
+  LinuxAutoSleep autoSleep({String preferencePath = OutputPrefs.displayConf}) {
+    return LinuxAutoSleep(preferencePath: preferencePath);
+  }
+
+  LinuxButtonFeedback buttonFeedback({
+    MediaAudioController? mediaAudio,
+    String preferencePath = OutputPrefs.soundConf,
+  }) {
+    return LinuxButtonFeedback(
+      mediaAudio: mediaAudio ?? this.mediaAudio(),
+      preferencePath: preferencePath,
     );
   }
 

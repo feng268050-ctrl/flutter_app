@@ -1,8 +1,10 @@
 import 'dart:io';
 
-import 'package:cyber_hal/output/backlight.dart';
+import 'package:cyber_hal/output/display/backlight.dart';
+import 'package:cyber_hal/src/linux/key_value_conf.dart';
 import 'package:cyber_hal/src/linux/percent.dart';
-import 'package:cyber_hal/src/output/linux_sysfs_backlight.dart';
+import 'package:cyber_hal/src/output/display/linux_sysfs_backlight.dart';
+import 'package:cyber_hal/src/output/output_prefs.dart';
 import 'package:cyber_hal/src/stub/stub_backlight.dart';
 import 'package:cyber_hal/src/stub/stub_volume.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -53,7 +55,7 @@ void main() {
     await File('${device.path}/max_brightness').writeAsString('100\n');
     await File('${device.path}/brightness').writeAsString('50\n');
 
-    final pref = File('${tmp.path}/backlight-brightness');
+    final pref = File('${tmp.path}/display.conf');
     final bl = LinuxSysfsBacklight(
       classDir: classDir.path,
       preferencePath: pref.path,
@@ -61,7 +63,8 @@ void main() {
     );
 
     await bl.setBrightnessPercent(0);
-    expect((await pref.readAsString()).trim(), '0');
+    final map = parseKeyValueConf(await pref.readAsString());
+    expect(map[OutputPrefs.keyBacklight], '0');
     final raw =
         int.parse((await File('${device.path}/brightness').readAsString()).trim());
     expect(raw, backlightHwFloorDevice(100));
@@ -79,8 +82,8 @@ void main() {
     await File('${device.path}/max_brightness').writeAsString('100\n');
     await File('${device.path}/brightness').writeAsString('50\n');
 
-    final pref = File('${tmp.path}/backlight-brightness');
-    await pref.writeAsString('0\n');
+    final pref = File('${tmp.path}/display.conf');
+    await pref.writeAsString('backlight=0\n');
 
     final bl = LinuxSysfsBacklight(
       classDir: classDir.path,
@@ -89,7 +92,8 @@ void main() {
     );
 
     await bl.applyPersistedPreference();
-    expect((await pref.readAsString()).trim(), '0');
+    final map = parseKeyValueConf(await pref.readAsString());
+    expect(map[OutputPrefs.keyBacklight], '0');
     final raw =
         int.parse((await File('${device.path}/brightness').readAsString()).trim());
     expect(raw, backlightHwFloorDevice(100));

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cyber_hal/src/linux/key_value_conf.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/platform/datetime/date_time_controller.dart';
 import 'package:lws_hmi/platform/datetime/linux_date_time_controller.dart';
@@ -33,17 +34,25 @@ void main() {
       expect(TimeSyncPrefs.curatedTimezones, contains('Asia/Shanghai'));
       expect(TimeSyncPrefs.curatedTimezones, contains('UTC'));
     });
+
+    test('datetime.conf path and keys', () {
+      expect(TimeSyncPrefs.datetimeConf, '/var/lib/hmi/datetime.conf');
+      expect(TimeSyncPrefs.keySyncMode, 'sync_mode');
+      expect(TimeSyncPrefs.keyTimezone, 'timezone');
+    });
   });
 
   group('LinuxDateTimeController prefs', () {
     late Directory tmp;
-    late String modePath;
-    late String tzPath;
+    late String confPath;
+    late String legacyModePath;
+    late String legacyTzPath;
 
     setUp(() async {
       tmp = await Directory.systemTemp.createTemp('lws-datetime-');
-      modePath = '${tmp.path}/time-sync-mode';
-      tzPath = '${tmp.path}/timezone';
+      confPath = '${tmp.path}/datetime.conf';
+      legacyModePath = '${tmp.path}/time-sync-mode';
+      legacyTzPath = '${tmp.path}/timezone';
     });
 
     tearDown(() async {
@@ -52,35 +61,66 @@ void main() {
       }
     });
 
-    test('getSyncMode defaults to network when file missing', () async {
-      final c = LinuxDateTimeController(
-        syncModePath: modePath,
-        timezonePath: tzPath,
-        runProcess: (exe, args) async => ProcessResult(0, 1, '', 'skip'),
+    LinuxDateTimeController controller({
+      DateTimeProcessRunner? runProcess,
+      String? helperPath,
+    }) {
+      return LinuxDateTimeController(
+        preferencePath: confPath,
+        legacySyncModePath: legacyModePath,
+        legacyTimezonePath: legacyTzPath,
+        helperPath: helperPath ?? '${tmp.path}/missing-helper',
+        runProcess: runProcess ??
+            ((exe, args) async => ProcessResult(0, 1, '', 'skip')),
       );
+    }
+
+    test('getSyncMode defaults to network when conf missing', () async {
+      final c = controller();
       expect(await c.getSyncMode(), TimeSyncMode.network);
     });
 
-    test('setSyncMode persists manual', () async {
-      final c = LinuxDateTimeController(
-        syncModePath: modePath,
-        timezonePath: tzPath,
+    test('setSyncMode persists manual in datetime.conf', () async {
+      final c = controller(
         runProcess: (exe, args) async => ProcessResult(0, 0, '', ''),
       );
       await c.setSyncMode(TimeSyncMode.manual);
-      expect(await File(modePath).readAsString(), 'manual');
+      final map = parseKeyValueConf(await File(confPath).readAsString());
+      expect(map[TimeSyncPrefs.keySyncMode], 'manual');
       expect(await c.getSyncMode(), TimeSyncMode.manual);
+    });
+
+    test('setTimezone upsert preserves sync_mode sibling', () async {
+      final c = controller(
+        runProcess: (exe, args) async => ProcessResult(0, 1, '', 'no td'),
+      );
+      await c.setSyncMode(TimeSyncMode.manual);
+      await c.setTimezone('Asia/Shanghai');
+      final map = parseKeyValueConf(await File(confPath).readAsString());
+      expect(map[TimeSyncPrefs.keySyncMode], 'manual');
+      expect(map[TimeSyncPrefs.keyTimezone], 'Asia/Shanghai');
+      expect(await c.getTimezone(), 'Asia/Shanghai');
+    });
+
+    test('legacy files migrate once into datetime.conf', () async {
+      await File(legacyModePath).writeAsString('manual\n');
+      await File(legacyTzPath).writeAsString('UTC\n');
+      final c = controller();
+      expect(await c.getSyncMode(), TimeSyncMode.manual);
+      expect(await c.getTimezone(), 'UTC');
+      final map = parseKeyValueConf(await File(confPath).readAsString());
+      expect(map[TimeSyncPrefs.keySyncMode], 'manual');
+      expect(map[TimeSyncPrefs.keyTimezone], 'UTC');
     });
 
     test('setWallClock switches mode to manual on success', () async {
       final calls = <String>[];
-      final c = LinuxDateTimeController(
-        syncModePath: modePath,
-        timezonePath: tzPath,
-        helperPath: '${tmp.path}/missing-helper',
+      final c = controller(
         runProcess: (exe, args) async {
           calls.add('$exe ${args.join(' ')}');
-          if (exe == 'timedatectl' && args.isNotEmpty && args.first == 'set-time') {
+          if (exe == 'timedatectl' &&
+              args.isNotEmpty &&
+              args.first == 'set-time') {
             return ProcessResult(0, 0, '', '');
           }
           if (exe == 'hwclock') {
@@ -100,10 +140,7 @@ void main() {
         return;
       }
       var ran = false;
-      final c = LinuxDateTimeController(
-        syncModePath: modePath,
-        timezonePath: tzPath,
-        helperPath: '${tmp.path}/missing-helper',
+      final c = controller(
         runProcess: (exe, args) async {
           ran = true;
           return ProcessResult(0, 1, '', '');
@@ -112,17 +149,6 @@ void main() {
       final r = await c.syncFromNetwork(onlyIfStale: true);
       expect(r.ok, isTrue);
       expect(ran, isFalse);
-    });
-
-    test('setTimezone writes preference file', () async {
-      final c = LinuxDateTimeController(
-        syncModePath: modePath,
-        timezonePath: tzPath,
-        runProcess: (exe, args) async => ProcessResult(0, 1, '', 'no td'),
-      );
-      await c.setTimezone('Asia/Shanghai');
-      expect(await File(tzPath).readAsString(), 'Asia/Shanghai');
-      expect(await c.getTimezone(), 'Asia/Shanghai');
     });
   });
 }

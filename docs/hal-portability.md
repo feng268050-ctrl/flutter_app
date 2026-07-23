@@ -109,6 +109,7 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | Need | Detail |
 |------|--------|
 | **OS** | `date` and/or `timedatectl`; `hwclock` for RTC write; preferably `rdate` and/or `wget` for network ladder |
+| **Prefs** | `/var/lib/hmi/datetime.conf` — `sync_mode` (`manual` \| `network`), `timezone` (IANA) |
 | **Helper** | `sync_time` — **optional** override binary; default ladder is in-HAL |
 
 ### `hal/sys_info`

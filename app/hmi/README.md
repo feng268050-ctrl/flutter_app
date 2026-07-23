@@ -22,7 +22,7 @@ Reusable modules live under `lib/platform/`:
 | `audio/` | `change-volume` + `mpg123`/`amixer` | Forces `Playback Path=RING_SPK_HP`; asset → `/var/lib/hmi/audio/`; set volume via shell (persist `/var/lib/hmi/sound.conf` key `volume`) |
 | `backlight/` | `change-backlight` | Prefer panel sysfs for get; set via shell (persist `/var/lib/hmi/display.conf` key `backlight`; restore + HMI re-apply) |
 | `display/` | launch-only `display-orientation` → flutter-pi `-o` | **Not** a Demo/HAL setting; fixed panel orientation at launch |
-| `datetime/` | `timedatectl`/`date` + `hwclock` + `/usr/bin/sync-time` | Manual set / Network sync; prefs `/var/lib/hmi/time-sync-mode` + `timezone`; HTTPS TLS uses `ensureSaneForTls` |
+| `datetime/` | `timedatectl`/`date` + `hwclock` + `/usr/bin/sync-time` | Manual set / Network sync; prefs `/var/lib/hmi/datetime.conf` (`sync_mode`, `timezone`); HTTPS TLS uses `ensureSaneForTls` |
 | `ethernet/` | helpers + `ip` / sysfs | RJ45 `eth0`; DHCP/static via **`eth0-network.service`** (outside HMI cgroup); `eth0-wanted` |
 | `input/` | `/dev/input/by-id` probe + `MouseSettingsController` | USB HID keyboard/mouse presence; keys/pointer via flutter-pi; mouse prefs via **`apply-mouse-settings`** → `mouse.conf` (flutter-pi mtime poll; no SIGHUP) |
 | `wifi/` | helpers + **D-Bus status** (`fi.w1.wpa_supplicant1`); `wpa_cli` for scan/connect | **`wlan-wpa`** requires `wpa -u`; L3 via networkd D-Bus |

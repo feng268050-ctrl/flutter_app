@@ -16,7 +16,7 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 | `package:cyber_hal/modbus.dart` | attribute catalog | board `modbus.json` + serial |
 | `package:cyber_hal/bluetooth.dart` | BlueZ | `/var/lib/bluetooth/` |
 | `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` + `DisplayStack` | procfs/sysfs + `/var/lib/hmi/product.ini` + display-stack stamps |
-| `package:cyber_hal/datetime.dart` | wall clock | timedatectl / date / hwclock |
+| `package:cyber_hal/datetime.dart` | wall clock | `/var/lib/hmi/datetime.conf` (`sync_mode`, `timezone`) |
 | `package:cyber_hal/stub.dart` | in-memory stubs | P3.2 emulator / host tests |
 | `package:cyber_hal/cyber_hal.dart` | core only | `Capabilities`, `BoardProfile`, errors |
 
@@ -87,7 +87,7 @@ dependencies:
 
 HAL mid-session writes use existing FHS:
 
-- `/var/lib/hmi/` — mouse, keyboard, usb-debug, …; **output prefs** as `/var/lib/hmi/display.conf` and `/var/lib/hmi/sound.conf`
+- `/var/lib/hmi/` — mouse, keyboard, usb-debug, …; **output prefs** as `/var/lib/hmi/display.conf` and `/var/lib/hmi/sound.conf`; **datetime** as `/var/lib/hmi/datetime.conf`
 - `/var/lib/network/` — ethernet/proxy (after network wave)
 - `/var/lib/wpa_supplicant/` — Wi‑Fi wanted / networks
 - `/var/lib/bluetooth/` — BT

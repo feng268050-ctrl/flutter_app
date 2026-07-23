@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:cyber_hal/src/time/time_service.dart';
+import 'package:cyber_hal/src/linux/key_value_conf.dart';
 import 'package:cyber_hal/src/linux/lws_trace.dart';
+import 'package:cyber_hal/src/time/time_service.dart';
 
 typedef DateTimeProcessRunner = Future<ProcessResult> Function(
   String executable,
@@ -11,49 +12,47 @@ typedef DateTimeProcessRunner = Future<ProcessResult> Function(
 /// Linux: BusyBox/`timedatectl` + `hwclock` + `/usr/bin/sync-time` ladder.
 class LinuxDateTimeController implements DateTimeController {
   LinuxDateTimeController({
-    this.syncModePath = TimeSyncPrefs.syncModePath,
-    this.timezonePath = TimeSyncPrefs.timezonePath,
+    this.preferencePath = TimeSyncPrefs.datetimeConf,
+    this.legacySyncModePath = TimeSyncPrefs.legacySyncModePath,
+    this.legacyTimezonePath = TimeSyncPrefs.legacyTimezonePath,
     this.helperPath = '',
     DateTimeProcessRunner? runProcess,
   }) : _run = runProcess ?? ((exe, args) => Process.run(exe, args));
 
-  final String syncModePath;
-  final String timezonePath;
+  final String preferencePath;
+  final String legacySyncModePath;
+  final String legacyTimezonePath;
   final String helperPath;
   final DateTimeProcessRunner _run;
+
+  bool _legacyImportAttempted = false;
 
   @override
   Future<DateTime> now() async => DateTime.now();
 
   @override
   Future<TimeSyncMode> getSyncMode() async {
-    try {
-      final f = File(syncModePath);
-      if (!await f.exists()) {
-        return TimeSyncMode.network;
-      }
-      return TimeSyncPrefs.modeFromToken(await f.readAsString());
-    } catch (_) {
-      return TimeSyncMode.network;
-    }
+    final map = await _prefsMap();
+    return TimeSyncPrefs.modeFromToken(map[TimeSyncPrefs.keySyncMode]);
   }
 
   @override
   Future<void> setSyncMode(TimeSyncMode mode) async {
-    final f = File(syncModePath);
-    await f.parent.create(recursive: true);
-    await f.writeAsString(TimeSyncPrefs.modeToToken(mode), flush: true);
-    lwsTrace('datetime: sync mode → ${TimeSyncPrefs.modeToToken(mode)}');
+    await _ensureLegacyImported();
+    final token = TimeSyncPrefs.modeToToken(mode);
+    await upsertKeyValueConfFile(preferencePath, {
+      TimeSyncPrefs.keySyncMode: token,
+    });
+    lwsTrace('datetime: sync mode → $token');
   }
 
   @override
   Future<String> getTimezone() async {
-    try {
-      final f = File(timezonePath);
-      if (await f.exists()) {
-        return TimeSyncPrefs.normalizeTimezone(await f.readAsString());
-      }
-    } catch (_) {}
+    final map = await _prefsMap();
+    final fromConf = map[TimeSyncPrefs.keyTimezone]?.trim() ?? '';
+    if (fromConf.isNotEmpty) {
+      return TimeSyncPrefs.normalizeTimezone(fromConf);
+    }
     // Fall back to timedatectl if present.
     try {
       final r = await _run('timedatectl', ['show', '-p', 'Timezone', '--value']);
@@ -70,9 +69,10 @@ class LinuxDateTimeController implements DateTimeController {
   @override
   Future<void> setTimezone(String id) async {
     final zone = TimeSyncPrefs.normalizeTimezone(id);
-    final f = File(timezonePath);
-    await f.parent.create(recursive: true);
-    await f.writeAsString(zone, flush: true);
+    await _ensureLegacyImported();
+    await upsertKeyValueConfFile(preferencePath, {
+      TimeSyncPrefs.keyTimezone: zone,
+    });
 
     final td = await _run('timedatectl', ['set-timezone', zone]);
     if (td.exitCode == 0) {
@@ -152,6 +152,57 @@ class LinuxDateTimeController implements DateTimeController {
     );
     // Do not change persisted mode.
     return _runNetworkLadder(reason: 'ensureSaneForTls');
+  }
+
+  Future<Map<String, String>> _prefsMap() async {
+    await _ensureLegacyImported();
+    return readKeyValueConfFile(preferencePath);
+  }
+
+  /// One-shot: fill missing conf keys from legacy standalone files.
+  Future<void> _ensureLegacyImported() async {
+    if (_legacyImportAttempted) {
+      return;
+    }
+    _legacyImportAttempted = true;
+
+    final map = await readKeyValueConfFile(preferencePath);
+    final hasSync = (map[TimeSyncPrefs.keySyncMode] ?? '').trim().isNotEmpty;
+    final hasTz = (map[TimeSyncPrefs.keyTimezone] ?? '').trim().isNotEmpty;
+    if (hasSync && hasTz) {
+      return;
+    }
+
+    final updates = <String, String>{};
+    if (!hasSync) {
+      try {
+        final f = File(legacySyncModePath);
+        if (await f.exists()) {
+          final raw = (await f.readAsString()).trim();
+          if (raw.isNotEmpty) {
+            updates[TimeSyncPrefs.keySyncMode] =
+                TimeSyncPrefs.modeToToken(TimeSyncPrefs.modeFromToken(raw));
+          }
+        }
+      } catch (_) {}
+    }
+    if (!hasTz) {
+      try {
+        final f = File(legacyTimezonePath);
+        if (await f.exists()) {
+          final raw = (await f.readAsString()).trim();
+          if (raw.isNotEmpty) {
+            updates[TimeSyncPrefs.keyTimezone] =
+                TimeSyncPrefs.normalizeTimezone(raw);
+          }
+        }
+      } catch (_) {}
+    }
+    if (updates.isEmpty) {
+      return;
+    }
+    await upsertKeyValueConfFile(preferencePath, updates);
+    lwsTrace('datetime: migrated legacy prefs → $preferencePath');
   }
 
   Future<TimeSyncResult> _runNetworkLadder({required String reason}) async {

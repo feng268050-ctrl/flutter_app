@@ -26,8 +26,15 @@ class TimeSyncResult {
 
 /// Preference paths and pure helpers for Linux datetime prefs.
 class TimeSyncPrefs {
-  static const syncModePath = '/var/lib/hmi/time-sync-mode';
-  static const timezonePath = '/var/lib/hmi/timezone';
+  /// Mouse-style `key=value` file (`sync_mode`, `timezone`).
+  static const datetimeConf = '/var/lib/hmi/datetime.conf';
+  static const keySyncMode = 'sync_mode';
+  static const keyTimezone = 'timezone';
+
+  /// Pre-`datetime.conf` standalone files (one-shot import only).
+  static const legacySyncModePath = '/var/lib/hmi/time-sync-mode';
+  static const legacyTimezonePath = '/var/lib/hmi/timezone';
+
   static const helperPath = ''; // optional board override only
 
   /// Curated Demo / Settings list (extend later).

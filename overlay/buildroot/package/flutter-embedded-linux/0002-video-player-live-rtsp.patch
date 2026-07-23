@@ -1,8 +1,12 @@
 diff --git a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc
-index 40a3fc2..c5183f8 100644
+index 40a3fc2..115db3a 100644
 --- a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc
 +++ b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc
-@@ -12,7 +12,7 @@
+@@ -9,10 +9,11 @@
+ #include <gst/video/video.h>
+ 
+ #include <iostream>
++#include <shared_mutex>
  
  GstVideoPlayer::GstVideoPlayer(
      const std::string& uri, std::unique_ptr<VideoPlayerStreamHandler> handler)
@@ -11,7 +15,7 @@ index 40a3fc2..c5183f8 100644
    gst_.pipeline = nullptr;
    gst_.playbin = nullptr;
    gst_.video_convert = nullptr;
-@@ -31,8 +31,24 @@ GstVideoPlayer::GstVideoPlayer(
+@@ -31,9 +32,19 @@ GstVideoPlayer::GstVideoPlayer(
    // Prerolls before getting information from the pipeline.
    Preroll();
  
@@ -21,6 +25,7 @@ index 40a3fc2..c5183f8 100644
 +  // thread and a multi-second wait freezes the whole UI (spinner included).
 +  // Stay PAUSED until Play(); early PLAYING+Flutter pause stalls live RTSP.
    GetVideoSize(width_, height_);
+-  pixels_.reset(new uint32_t[width_ * height_]);
 +  if (width_ <= 0 || height_ <= 0) {
 +    // AcceptBuffer resizes on first frame. Use 16:9 so Dart aspect is sane.
 +    width_ = 960;
@@ -28,20 +33,146 @@ index 40a3fc2..c5183f8 100644
 +    std::cerr << "Video size unknown after preroll; using 960x540 placeholder"
 +              << std::endl;
 +  }
-   pixels_.reset(new uint32_t[width_ * height_]);
++  pixels_.reset(new uint32_t[static_cast<size_t>(width_) * height_]);
  
    stream_handler_->OnNotifyInitialized();
-@@ -193,7 +209,8 @@ bool GstVideoPlayer::CreatePipeline() {
+ }
+@@ -96,10 +107,28 @@ bool GstVideoPlayer::SetPlaybackRate(double rate) {
+     return false;
+   }
+ 
++  // Flutter VideoPlayerController always applies playback speed after play().
++  // Live RTSP has no position/duration; a FLUSH seek here stalls the pipeline
++  // permanently (no buffers to fakesink → black Texture).
++  gint64 duration = 0;
++  gint64 position = 0;
++  const bool seekable =
++      gst_element_query_duration(gst_.pipeline, GST_FORMAT_TIME, &duration) &&
++      duration > 0 &&
++      gst_element_query_position(gst_.pipeline, GST_FORMAT_TIME, &position);
++  if (!seekable) {
++    // Marker string retained for scripts/check-prebuilt.sh.
++    std::cerr << "SetPlaybackRate: skip flush-seek for live/unseekable"
++              << std::endl;
++    playback_rate_ = rate;
++    mute_ = (rate < 0.5 || rate > 2);
++    g_object_set(gst_.playbin, "mute", mute_, NULL);
++    return true;
++  }
++
+   if (!gst_element_seek(gst_.pipeline, rate, GST_FORMAT_TIME,
+-                        GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
+-                        GetCurrentPosition() * GST_MSECOND, GST_SEEK_TYPE_SET,
+-                        GST_CLOCK_TIME_NONE)) {
++                        GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET, position,
++                        GST_SEEK_TYPE_SET, GST_CLOCK_TIME_NONE)) {
+     std::cerr << "Failed to set playback rate to " << rate
+               << " (gst_element_seek failed)" << std::endl;
+     return false;
+@@ -113,6 +142,11 @@ bool GstVideoPlayer::SetPlaybackRate(double rate) {
+ }
+ 
+ bool GstVideoPlayer::SetSeek(int64_t position) {
++  gint64 duration = 0;
++  if (!(gst_element_query_duration(gst_.pipeline, GST_FORMAT_TIME, &duration) &&
++        duration > 0)) {
++    return true;
++  }
+   auto nanosecond = position * 1000 * 1000;
+   if (!gst_element_seek(
+           gst_.pipeline, playback_rate_, GST_FORMAT_TIME,
+@@ -139,7 +173,7 @@ int64_t GstVideoPlayer::GetDuration() {
+ int64_t GstVideoPlayer::GetCurrentPosition() {
+   gint64 position = 0;
+   if (!gst_element_query_position(gst_.pipeline, GST_FORMAT_TIME, &position)) {
+-    std::cerr << "Failed to get current position" << std::endl;
++    return 0;
+   }
+   return position / GST_MSECOND;
+ }
+@@ -155,6 +189,29 @@ const uint8_t* GstVideoPlayer::GetFrameBuffer() {
+   return reinterpret_cast<const uint8_t*>(pixels_.get());
+ }
+ 
++
++// Prefer Rockchip MPP hardware RGBA instead of software videoconvert —
++// CPU NV12→RGBA on RK3566 is ~1fps; MPP RGBA is ~10fps+.
++// static
++void GstVideoPlayer::MppElementSetup(GstElement* playbin, GstElement* element,
++                                     gpointer user_data) {
++  (void)playbin;
++  (void)user_data;
++  GstElementFactory* factory = gst_element_get_factory(element);
++  if (!factory) {
++    return;
++  }
++  const gchar* name =
++      gst_plugin_feature_get_name(GST_PLUGIN_FEATURE(factory));
++  if (!name || !g_str_has_prefix(name, "mppvideodec")) {
++    return;
++  }
++  // GstMppVideoDecFormat: RGBA=11. Scale preview to 960x540 for headroom.
++  g_object_set(element, "arm-afbc", FALSE, "dma-feature", FALSE, "format", 11,
++               "width", 960, "height", 540, NULL);
++  std::cerr << "MppElementSetup: mppvideodec format=RGBA 960x540" << std::endl;
++}
++
+ // Creats a video pipeline using playbin.
+ // $ playbin uri=<file> video-sink="videoconvert ! video/x-raw,format=RGBA !
+ // fakesink"
+@@ -169,6 +226,8 @@ bool GstVideoPlayer::CreatePipeline() {
+     std::cerr << "Failed to create a source" << std::endl;
+     return false;
+   }
++  g_signal_connect(gst_.playbin, "element-setup", G_CALLBACK(MppElementSetup),
++                   this);
+   gst_.video_convert = gst_element_factory_make("videoconvert", "videoconvert");
+   if (!gst_.video_convert) {
+     std::cerr << "Failed to create a videoconvert" << std::endl;
+@@ -193,7 +252,9 @@ bool GstVideoPlayer::CreatePipeline() {
                             NULL);
  
    // Sets properties to fakesink to get the callback of a decoded frame.
 -  g_object_set(G_OBJECT(gst_.video_sink), "sync", TRUE, "qos", FALSE, NULL);
 +  // sync=FALSE: live RTSP + Flutter texture path; sync=TRUE can stall.
-+  g_object_set(G_OBJECT(gst_.video_sink), "sync", FALSE, "qos", FALSE, NULL);
++  g_object_set(G_OBJECT(gst_.video_sink), "sync", FALSE, "async", FALSE,
++               "qos", FALSE, NULL);
    g_object_set(G_OBJECT(gst_.video_sink), "signal-handoffs", TRUE, NULL);
    g_signal_connect(G_OBJECT(gst_.video_sink), "handoff",
                     G_CALLBACK(HandoffHandler), this);
-@@ -234,11 +251,11 @@ void GstVideoPlayer::Preroll() {
+@@ -210,10 +271,31 @@ bool GstVideoPlayer::CreatePipeline() {
+     return false;
+   }
+ 
++  // Pad probe fires when a buffer is pushed to fakesink — before basesink
++  // clock sync. Captures frames even if handoff is stalled by sync=TRUE.
++  {
++    auto* fsink_pad = gst_element_get_static_pad(gst_.video_sink, "sink");
++    if (fsink_pad) {
++      gst_pad_add_probe(fsink_pad, GST_PAD_PROBE_TYPE_BUFFER, BufferProbe, this,
++                        NULL);
++      gst_object_unref(fsink_pad);
++    }
++  }
++
+   auto* sinkpad = gst_element_get_static_pad(gst_.video_convert, "sink");
+   auto* ghost_sinkpad = gst_ghost_pad_new("sink", sinkpad);
+   gst_pad_set_active(ghost_sinkpad, TRUE);
+   gst_element_add_pad(gst_.output, ghost_sinkpad);
++  gst_object_unref(sinkpad);
++
++  // Drop audio so autoaudiosink cannot stall live playbin.
++  {
++    GstElement* audio_sink = gst_element_factory_make("fakesink", "audiosink");
++    if (audio_sink) {
++      g_object_set(G_OBJECT(audio_sink), "sync", FALSE, "async", FALSE, NULL);
++      g_object_set(gst_.playbin, "audio-sink", audio_sink, NULL);
++    }
++  }
+ 
+   // Sets properties to playbin.
+   g_object_set(gst_.playbin, "uri", uri_.c_str(), NULL);
+@@ -234,11 +316,11 @@ void GstVideoPlayer::Preroll() {
      return;
    }
  
@@ -55,7 +186,7 @@ index 40a3fc2..c5183f8 100644
      if (result == GST_STATE_CHANGE_FAILURE) {
        std::cerr << "Failed to get the current state" << std::endl;
      }
-@@ -316,14 +333,22 @@ void GstVideoPlayer::GetVideoSize(int32_t& width, int32_t& height) {
+@@ -316,44 +398,95 @@ void GstVideoPlayer::GetVideoSize(int32_t& width, int32_t& height) {
    }
  
    auto* caps = gst_pad_get_current_caps(sink_pad);
@@ -78,16 +209,115 @@ index 40a3fc2..c5183f8 100644
  }
  
  // static
+-void GstVideoPlayer::HandoffHandler(GstElement* fakesink, GstBuffer* buf,
+-                                    GstPad* new_pad, gpointer user_data) {
++void GstVideoPlayer::AcceptBuffer(GstBuffer* buf, GstPad* pad, gpointer user_data,
++                                  const char* via) {
+   auto* self = reinterpret_cast<GstVideoPlayer*>(user_data);
+-  auto* caps = gst_pad_get_current_caps(new_pad);
++  auto* caps = gst_pad_get_current_caps(pad);
++  if (!caps) {
++    return;
++  }
+   auto* structure = gst_caps_get_structure(caps, 0);
++  if (!structure) {
++    gst_caps_unref(caps);
++    return;
++  }
+ 
+   int width;
+   int height;
+   gst_structure_get_int(structure, "width", &width);
+   gst_structure_get_int(structure, "height", &height);
++  gst_caps_unref(caps);
+   if (width != self->width_ || height != self->height_) {
+     self->width_ = width;
+     self->height_ = height;
+-    self->pixels_.reset(new uint32_t[width * height]);
+-    std::cout << "Pixel buffer size: width = " << width
+-              << ", height = " << height << std::endl;
++    self->pixels_.reset(new uint32_t[static_cast<size_t>(width) * height]);
+   }
+ 
+-  std::lock_guard<std::shared_mutex> lock(self->mutex_buffer_);
+-  if (self->gst_.buffer) {
+-    gst_buffer_unref(self->gst_.buffer);
+-    self->gst_.buffer = nullptr;
++  {
++    std::lock_guard<std::shared_mutex> lock(self->mutex_buffer_);
++    // Probe + handoff can both see the same buffer; accept once.
++    if (self->gst_.buffer == buf) {
++      return;
++    }
++    if (self->gst_.buffer) {
++      gst_buffer_unref(self->gst_.buffer);
++      self->gst_.buffer = nullptr;
++    }
++    self->gst_.buffer = gst_buffer_ref(buf);
+   }
+-  self->gst_.buffer = gst_buffer_ref(buf);
++  (void)via;
++  // Notify outside the buffer lock — texture populate may run concurrently.
+   self->stream_handler_->OnNotifyFrameDecoded();
+ }
+ 
++// static
++GstPadProbeReturn GstVideoPlayer::BufferProbe(GstPad* pad, GstPadProbeInfo* info,
++                                              gpointer user_data) {
++  if (!(GST_PAD_PROBE_INFO_TYPE(info) & GST_PAD_PROBE_TYPE_BUFFER)) {
++    return GST_PAD_PROBE_OK;
++  }
++  GstBuffer* buf = GST_PAD_PROBE_INFO_BUFFER(info);
++  if (!buf) {
++    return GST_PAD_PROBE_OK;
++  }
++  auto* self = reinterpret_cast<GstVideoPlayer*>(user_data);
++  if (self->gst_.video_sink) {
++    gboolean sync = TRUE;
++    g_object_get(G_OBJECT(self->gst_.video_sink), "sync", &sync, NULL);
++    if (sync) {
++      g_object_set(G_OBJECT(self->gst_.video_sink), "sync", FALSE, NULL);
++    }
++  }
++  AcceptBuffer(buf, pad, user_data, "BufferProbe");
++  return GST_PAD_PROBE_OK;
++}
++
++// static
++void GstVideoPlayer::HandoffHandler(GstElement* fakesink, GstBuffer* buf,
++                                    GstPad* new_pad, gpointer user_data) {
++  (void)fakesink;
++  AcceptBuffer(buf, new_pad, user_data, "HandoffHandler");
++}
++
+ // static
+ gboolean GstVideoPlayer::HandleGstMessage(GstBus* bus, GstMessage* message,
+                                           gpointer user_data) {
 diff --git a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h
-index eb58907..7769977 100644
+index eb58907..47702b4 100644
 --- a/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h
 +++ b/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.h
-@@ -59,8 +59,8 @@ class GstVideoPlayer {
+@@ -46,6 +46,12 @@ class GstVideoPlayer {
+     GstBuffer* buffer;
+   };
+ 
++  static void MppElementSetup(GstElement* playbin, GstElement* element,
++                              gpointer user_data);
++  static void AcceptBuffer(GstBuffer* buf, GstPad* pad, gpointer user_data,
++                           const char* via);
++  static GstPadProbeReturn BufferProbe(GstPad* pad, GstPadProbeInfo* info,
++                                       gpointer user_data);
+   static void HandoffHandler(GstElement* fakesink, GstBuffer* buf,
+                              GstPad* new_pad, gpointer user_data);
+   static gboolean HandleGstMessage(GstBus* bus, GstMessage* message,
+@@ -58,9 +64,9 @@ class GstVideoPlayer {
+ 
    GstVideoElements gst_;
    std::string uri_;
-   std::unique_ptr<uint32_t> pixels_;
+-  std::unique_ptr<uint32_t> pixels_;
 -  int32_t width_;
 -  int32_t height_;
++  std::unique_ptr<uint32_t[]> pixels_;
 +  int32_t width_ = 0;
 +  int32_t height_ = 0;
    double volume_ = 1.0;

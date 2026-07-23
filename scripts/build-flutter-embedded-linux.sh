@@ -85,10 +85,15 @@ bash "$ROOT/scripts/docker-run.sh" bash -lc "
   for pc in wayland-client wayland-cursor wayland-egl wayland-protocols \
     gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0; do
     if ! pkg-config --exists \"\$pc\"; then
-      echo \"ERROR: staging missing \$pc — build GStreamer and Weston deps first:\" >&2
+      echo \"ERROR: staging missing \$pc — restore Weston/Mali/GStreamer staging deps:\" >&2
       echo \"  make build-gstreamer\" >&2
       echo \"  LWS_HMI_WESTON=1 make apply-overlay\" >&2
       echo \"  bash scripts/br-make-packages.sh wayland-deps wayland wayland-protocols\" >&2
+      echo \"  # wayland-egl comes from rockchip-mali (wayland-gbm), not wayland:\" >&2
+      echo \"  bash scripts/br-make-packages.sh mali-egl rockchip-mali\" >&2
+      echo \"  # If gstreamer-*.pc still missing after make build-gstreamer, stamp hid\" >&2
+      echo \"  # BR compile (gst_prebuilt). Re-run: make build-gstreamer\" >&2
+      echo \"  # (script restores staging .pc without wiping prebuilt).\" >&2
       exit 1
     fi
   done
@@ -109,23 +114,19 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 EOF
 
-  # Video-player fixes (same dir as 0001-*-wayland-egl.patch).
+  # Video-player fixes (0002 folds former 0003–0005 live-RTSP / MPP changes).
   ELINUX_VP_PATCHDIR=/work/lws-hmi/overlay/buildroot/package/flutter-embedded-linux
   apply_vp_patch() {
     local marker=\"\$1\" patch=\"\$2\"
     if [[ -f \"\$patch\" ]] && ! grep -q \"\$marker\" \\
       \"\$SRC/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc\" 2>/dev/null; then
-      (cd \"\$SRC\" && patch -p1 < \"\$patch\") || true
+      echo \"flutter-embedded-linux: applying \$(basename \"\$patch\")\"
+      (cd \"\$SRC\" && patch -p1 < \"\$patch\")
     fi
   }
   apply_vp_patch 'Live RTSP often has no negotiated caps' \\
     \"\$ELINUX_VP_PATCHDIR/0002-video-player-live-rtsp.patch\"
-  apply_vp_patch 'Notify outside the buffer lock' \\
-    \"\$ELINUX_VP_PATCHDIR/0003-video-player-handoff-lock.patch\"
-  apply_vp_patch 'skip flush-seek for live/unseekable' \\
-    \"\$ELINUX_VP_PATCHDIR/0004-video-player-live-seek.patch\"
-  apply_vp_patch 'MppElementSetup: mppvideodec format=RGBA' \\
-    \"\$ELINUX_VP_PATCHDIR/0005-video-player-mpp-rgba.patch\"
+  # 0003–0005 retired: content merged into 0002 (markers still checked by check-prebuilt).
 
   rm -rf \"\$BUILD\"
   mkdir -p \"\$BUILD\"

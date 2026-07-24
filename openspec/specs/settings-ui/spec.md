@@ -28,23 +28,23 @@ UI chrome MAY use Material widgets where CyberUI counterparts are not yet availa
 
 Common Settings SHALL include a Network group with operator entry points for:
 
-- Wireless Network (Wi‑Fi) using the existing Wi‑Fi settings flow
+- Wi‑Fi
+- Ethernet (when the product exposes it)
 - HTTP Proxy
+- **LAN SSH debug** (immediately after HTTP Proxy in the same Network group)
 - Bluetooth
 
-Common Settings MUST NOT expose an Ethernet (RJ45 / eth0) operator settings entry. On this product the wired port is reserved for the IPC dedicated link and is brought up by the product IP-camera session, not by a Common Settings Ethernet page.
+LAN SSH debug SHALL control on-demand LAN/WLAN SSH via `SshDebug` (not persisted across reboot as an enabled-at-boot service; default off). USB OTG mode selection lives under Input → USB OTG, not as a Network row.
 
-#### Scenario: Network group lists Wi-Fi, proxy, and Bluetooth only
+#### Scenario: Network entries reachable
 
-- **WHEN** the operator opens Common Settings
-- **THEN** Wi‑Fi, HTTP Proxy, and Bluetooth entries are available under Network
-- **AND** an Ethernet settings row MUST NOT be listed
+- **WHEN** the operator opens Common Settings → Network
+- **THEN** Wi‑Fi, HTTP Proxy, LAN SSH debug (after Proxy), and Bluetooth entries are available under Network
 
-#### Scenario: Ethernet page is not reachable from Common Settings
+#### Scenario: LAN SSH toggle enable
 
-- **WHEN** the operator navigates only through Common Settings Network rows
-- **THEN** the App MUST NOT open the former Ethernet settings page
-
+- **WHEN** the operator turns LAN SSH debug on from Settings
+- **THEN** `SshDebug` is asked to enable LAN SSH debug
 ### Requirement: Common Settings exposes display, sound, date-time, and input controls
 
 Common Settings SHALL expose:
@@ -159,15 +159,6 @@ Once Advanced Settings migration for this change is applied, the Advanced Settin
 - **WHEN** the user opens Advanced Settings after this capability lands
 - **THEN** AI Assistance and Dangerous Operations controls are interactive
 - **AND** the tab MUST NOT show only the deferred-migration placeholder text
-
-### Requirement: Settings does not host USB or LAN SSH debug toggles
-
-Product Settings MUST NOT expose Debug over USB or Debug over LAN toggles. Those remain on the hidden Demo route only.
-
-#### Scenario: No debug toggles in Settings
-
-- **WHEN** the user browses Settings tabs and Common groups
-- **THEN** there is no control whose purpose is enabling USB plug-ssh host mode or LAN SSH debug
 
 ### Requirement: Display & Sound includes RGB LED controls
 
@@ -373,3 +364,21 @@ The Settings shell and Settings sub-pages hosted by the shared Settings scaffold
 
 - **WHEN** the operator opens Common Settings → Wi‑Fi (or another Settings scaffold sub-page)
 - **THEN** the sub-page top chrome is the CyberUI page status bar showing back, that page’s title, this product’s current status icons, and a compact clock
+### Requirement: Settings Input includes USB OTG mode
+
+Common Settings → Input SHALL include a **USB OTG** entry that lets the operator choose among modes allowed by `/etc/usb-otg.ini` (`debug` / `mtp` / `host`, or debug-only). Choosing a mode SHALL call `UsbOtg.setMode` (persist + apply). The page MUST NOT depend on cable attach/detach events.
+
+#### Scenario: Three modes on ynh960
+
+- **WHEN** the operator opens Settings → Input → USB OTG on ynh960 (`debug_only=false`, `auto_host_support=false`)
+- **THEN** Debug, MTP, and Host choices are available
+
+#### Scenario: Selection persists
+
+- **WHEN** the operator selects MTP
+- **THEN** `UsbOtg.setMode(mtp)` persists `mode=mtp` and applies MTP gadget behavior
+
+#### Scenario: debug_only locks Debug
+
+- **WHEN** `debug_only=true`
+- **THEN** Settings offers only Debug and does not allow switching to mtp/host

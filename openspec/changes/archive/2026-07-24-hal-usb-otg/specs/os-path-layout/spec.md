@@ -1,9 +1,5 @@
-# os-path-layout Specification
+## MODIFIED Requirements
 
-## Purpose
-
-On-device runtime layout for the ynh960 appliance OS: FHS-aligned subsystem state under `/var/lib/*`, helpers under `/usr/libexec/*`, userdata bind mounts, and no `lws-hmi` product prefix on flashed rootfs paths.
-## Requirements
 ### Requirement: Subsystem state under separate var lib directories
 
 The appliance OS SHALL NOT store Wi‑Fi, Ethernet, Bluetooth, HAL platform, and HMI App mutable state in a single flat directory. Each subsystem MUST use its own FHS `/var/lib/<name>/` tree:
@@ -35,70 +31,6 @@ The legacy monolithic path **`/var/lib/lws-hmi/`** MUST NOT exist on shipped roo
 
 - **WHEN** Common Settings → Misc preferences are persisted
 - **THEN** they live under `/var/lib/hmi/misc-settings.json` and MUST NOT be written under `/var/lib/hal/`
-### Requirement: Subsystem helpers under usr libexec tiers
-
-Programs invoked by systemd units or daemons (not user PATH commands) MUST live under **`/usr/libexec/<subsystem>/`**, not `/usr/lib/`:
-
-- **`/usr/libexec/wpa/`** — Wi‑Fi stack scripts
-- **`/usr/libexec/network/`** — Ethernet scripts
-- **`/usr/libexec/bluetooth/`** — Bluetooth stack scripts
-- **`/usr/libexec/hmi/`** — UI launch, HW change helpers, `restore-settings.sh`, `bind-prefs.sh`, push/debug/A-B/USB helpers
-
-Legacy **`/usr/lib/lws-hmi/`** MUST NOT exist on shipped rootfs. Relocating helpers into `/usr/libexec/hal/` is NOT required by this change.
-
-#### Scenario: Wi-Fi helper location
-
-- **WHEN** `wlan-wpa.service` runs
-- **THEN** it invokes scripts under `/usr/libexec/wpa/` not `/usr/libexec/lws-hmi/`
-
-#### Scenario: restore-settings orchestrates split paths
-
-- **WHEN** `settings-restore.service` runs after boot
-- **THEN** `restore-settings.sh` under `/usr/libexec/hmi/` reads Wi‑Fi markers from `/var/lib/wpa_supplicant/`, eth0 from `/var/lib/network/`, BT from `/var/lib/bluetooth/`, and HAL platform prefs from `/var/lib/hal/`
-
-### Requirement: Userdata bind per subsystem
-
-After `/userdata` is mounted, the image SHALL bind each subsystem state directory to a persistent userdata subtree via symlink:
-
-- `/var/lib/wpa_supplicant` → `/userdata/wpa_supplicant`
-- `/var/lib/network` → `/userdata/network`
-- `/var/lib/bluetooth` → `/userdata/bluetooth`
-- `/var/lib/hal` → `/userdata/hal`
-- `/var/lib/hmi` → `/userdata/hmi`
-
-Full-system A/B upgrade MUST NOT format userdata or delete these trees.
-
-#### Scenario: Five bind symlinks after boot
-
-- **WHEN** userdata is mounted and `bind-prefs.sh` completes
-- **THEN** all five `/var/lib/*` paths above are symlinks into `/userdata/`
-
-### Requirement: No lws-hmi prefix on device runtime
-
-No on-device path segment, systemd unit basename, udev rule, or config drop-in filename SHALL use the **`lws-hmi`** product prefix. Product/repo identity is reserved for build host, Git, and Buildroot defconfig only.
-
-#### Scenario: Overlay verify rejects legacy layout
-
-- **WHEN** `verify-rootfs-overlay.sh` runs
-- **THEN** it fails if `/var/lib/lws-hmi`, `/usr/lib/lws-hmi`, or any `lws-hmi-*.service` is present
-
-### Requirement: OS integration systemd units use functional names
-
-systemd units for CPU governors, settings restore, network stacks, USB debug, A/B confirm, and serial setup SHALL use functional basenames (`wlan-wpa.service`, `settings-restore.service`, …). The primary UI daemon unit SHALL remain **`hmi.service`**.
-
-#### Scenario: Wi-Fi unit functional name
-
-- **WHEN** rootfs overlay is inspected
-- **THEN** `wlan-wpa.service` exists and `lws-hmi-wpa.service` does not
-
-### Requirement: Operator commands remain FHS user binaries
-
-Operator commands SHALL remain **`/usr/bin/<verb-noun>`** without product prefix. Symlinks MAY target scripts in any `/usr/libexec/<subsystem>/` tier.
-
-#### Scenario: change-backlight on PATH
-
-- **WHEN** operator runs `change-backlight 75`
-- **THEN** `/usr/bin/change-backlight` invokes `/usr/libexec/hmi/change-backlight.sh`
 
 ### Requirement: Monolithic legacy userdata migration
 
@@ -110,14 +42,8 @@ On upgrade from images that stored HAL prefs under `/userdata/hmi/`, `bind-prefs
 
 - **WHEN** device had `/userdata/hal/usb-debug` or `/userdata/hal/usb-otg.conf`
 - **THEN** after migration those files are removed and OTG mode is not restored from them
-### Requirement: Build overlay uses neutral OS build names
 
-Build-time overlay source SHALL be named `rootfs-overlay/` with neutral post-build hook basenames. Product prefixes MUST NOT appear in flashed rootfs paths.
-
-#### Scenario: Repository overlay path
-
-- **WHEN** developer inspects board overlay directory
-- **THEN** it is named `rootfs-overlay/` not `lws-hmi-fs-overlay/`
+## ADDED Requirements
 
 ### Requirement: Board usb-otg policy ini + runtime session
 
@@ -127,3 +53,4 @@ The image SHALL ship **`/etc/usb-otg.ini`** in rootfs with at least **`debug_onl
 
 - **WHEN** ynh960 rootfs is produced
 - **THEN** `/etc/usb-otg.ini` exists with `debug_only=false` and `auto_host_support=false`
+

@@ -253,3 +253,11 @@ Product Home’s top-right status strip SHALL be CyberUI **`CyberHomeStatusBar`*
 
 - **WHEN** integrators inspect Home status-bar presentation after this change
 - **THEN** the bar and status glyphs come from `package:cyber_ui` rather than feature-local status-bar forks
+### Requirement: Home status bar has no USB OTG attach icon
+
+Product Home’s CyberUI status-bar strip MUST NOT show a USB OTG attach/connection icon driven by cable presence or `UsbOtg` attach APIs. Wi‑Fi, Bluetooth, and camera status icons remain unchanged.
+
+#### Scenario: No USB glyph in strip
+
+- **WHEN** Home status-bar items are composed
+- **THEN** the strip does not include a USB OTG connection icon

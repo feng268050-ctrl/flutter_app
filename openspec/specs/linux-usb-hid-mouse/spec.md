@@ -5,10 +5,9 @@
 Wired USB HID mouse (pointer) on ynh960: **1 mm pin-header USB host expansion** always, and **Micro-USB** when Debug over USB is off (OTG host). Kernel enum, evdev/libinput → flutter-pi pointer events, and a visible on-screen cursor.
 
 ## Requirements
-
 ### Requirement: USB HID mouse enumerates on existing host paths
 
-The system SHALL support a wired **USB HID mouse** (or mouse-class HID pointer) on the same host paths as the USB keyboard: the **1 mm pin-header USB host expansion**, and the **Micro-USB** jack when Debug over USB is **off** (OTG host). When attached, the kernel MUST expose an input event node under `/dev/input/` usable by libinput/flutter-pi.
+The system SHALL support a wired **USB HID mouse** (or mouse-class HID pointer) on the same host paths as the USB keyboard: the **1 mm pin-header USB host expansion**, and the **Micro-USB** jack when OTG **`mode=host`**. When attached, the kernel MUST expose an input event node under `/dev/input/` usable by libinput/flutter-pi.
 
 #### Scenario: Mouse appears on 1 mm host
 
@@ -17,14 +16,13 @@ The system SHALL support a wired **USB HID mouse** (or mouse-class HID pointer) 
 
 #### Scenario: Mouse on Micro-USB host
 
-- **WHEN** Debug over USB is off and an operator connects a USB HID mouse through an OTG adapter on Micro-USB
+- **WHEN** `mode=host` and an operator connects a USB HID mouse through an OTG adapter on Micro-USB
 - **THEN** within 10 seconds the kernel enumerates the mouse and exposes an input event node under `/dev/input/`
 
 #### Scenario: Hot unplug
 
-- **WHEN** the mouse is unplugged
+- **WHEN** the mouse is unplugged from a supported host path
 - **THEN** the corresponding HID input node is removed without crashing `hmi.service`
-
 ### Requirement: Pointer events reach Flutter
 
 With the HMI Flutter app running under flutter-pi, USB mouse motion, primary/secondary buttons, and vertical wheel events SHALL be delivered through the platform input path (evdev/libinput → flutter-pi → Flutter) without a custom Dart HID decoder.

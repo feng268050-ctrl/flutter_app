@@ -5,7 +5,6 @@
 On-demand LAN/WLAN OpenSSH debug (`ssh-debug-lan.service`), default off, coexisting with USB plug-ssh.
 
 ## Requirements
-
 ### Requirement: On-demand LAN SSH debug scripts
 
 The image SHALL provide `/usr/libexec/hmi/enable-ssh-debug.sh` and `/usr/libexec/hmi/disable-ssh-debug.sh` that start and stop **`ssh-debug-lan.service`** (on-demand LAN/WLAN OpenSSH). The unit MUST NOT be linked in `multi-user.target.wants` and scripts MUST NOT `systemctl enable` it. After a board reboot with no further action, port 22 MUST NOT be listening for LAN/WLAN solely due to a prior enable. LAN sshd MUST run **outside** `hmi.service`'s cgroup so `systemctl stop hmi` during `make push-app` does not terminate the SSH session.
@@ -32,13 +31,12 @@ The image SHALL provide `/usr/libexec/hmi/enable-ssh-debug.sh` and `/usr/libexec
 
 ### Requirement: Status query for LAN SSH debug
 
-The image SHALL provide a status helper (argument or sibling script) that reports whether LAN SSH debug is currently running so the Demo UI can initialize its toggle.
+The image SHALL provide a status helper (argument or sibling script) that reports whether LAN SSH debug is currently running so the **Settings** UI (and HAL `SshDebug`) can initialize its toggle.
 
 #### Scenario: Status when enabled
 
 - **WHEN** LAN SSH debug is running
 - **THEN** the status helper exits successfully and indicates enabled/on
-
 ### Requirement: USB plug-ssh coexistence with LAN debug
 
 When LAN SSH debug is enabled, USB plug-ssh SHALL continue to run its usb0-only sshd on `192.168.55.1:22`. LAN SSH debug SHALL listen only on eth0/wlan0 addresses (never `0.0.0.0` and never `192.168.55.1`). Enabling LAN SSH MUST NOT stop the USB plug-ssh sshd process.
@@ -57,3 +55,11 @@ Global OpenSSH drop-in configuration used by the image SHALL NOT permanently set
 
 - **WHEN** LAN SSH debug is enabled and eth0 has `192.168.10.20`
 - **THEN** SSH to `192.168.10.20` succeeds (not only `192.168.55.1`)
+### Requirement: Dart SshDebug lives under hal/network
+
+On-demand LAN SSH control SHALL be exposed as portable **`SshDebug`** under **`package:cyber_hal/network`** (peer of proxy), not under `hal/debug`.
+
+#### Scenario: Settings uses network SshDebug
+
+- **WHEN** Settings toggles LAN SSH debug
+- **THEN** it uses `SshDebug` from the network module

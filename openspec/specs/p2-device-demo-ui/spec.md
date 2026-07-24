@@ -57,30 +57,6 @@ The demo home MUST NOT provide Portrait / Landscape (or equivalent) controls tha
 - **WHEN** the operator opens the P2 demo home
 - **THEN** there is no Demo control whose purpose is to switch system display orientation between portrait and landscape
 
-### Requirement: Demo exposes LAN SSH debug toggle after HTTP / Proxy
-
-The Demo route SHALL include a **Debug** group with two toggles: **Debug over USB** and **Debug over LAN**. Debug over USB SHALL control Micro-USB plug-ssh vs host via `UsbDebugController` (persisted, default on). Debug over LAN SHALL control on-demand LAN/WLAN SSH via `SshDebugController` (not persisted, default off). Toggle I/O MUST NOT block first-frame paint. Placement MAY follow device/alarm/LED content; it MUST NOT depend on HTTP Proxy or Bluetooth sections remaining on Demo.
-
-#### Scenario: Toggle enables Debug over LAN
-
-- **WHEN** the user turns Debug over LAN on after first frame
-- **THEN** the SSH debug controller is asked to enable LAN SSH debug
-
-#### Scenario: Toggle disables Debug over LAN
-
-- **WHEN** the user turns Debug over LAN off while it was on
-- **THEN** the SSH debug controller is asked to disable LAN SSH debug
-
-#### Scenario: Toggle disables Debug over USB for keyboard
-
-- **WHEN** the user turns Debug over USB off after first frame
-- **THEN** the USB debug controller is asked to disable USB Debug (host mode)
-
-#### Scenario: Debug group visible on Demo
-
-- **WHEN** the user views the Demo route
-- **THEN** the Debug group with USB and LAN toggles is visible
-
 ### Requirement: Demo is available only on a hidden named route
 
 The P2 Demo screen SHALL remain implemented and reachable via the app’s Demo named route (see `hmi-app-navigation`), but MUST NOT be the application launcher home. Product Home and Settings own the operator-facing entry points.
@@ -95,17 +71,16 @@ The P2 Demo screen SHALL remain implemented and reachable via the app’s Demo n
 - **WHEN** the app starts on the initial route
 - **THEN** the P2 Demo is not the first screen shown
 
-### Requirement: Demo omits Settings-owned platform sections
+### Requirement: Demo omits capabilities owned by product Home or Settings
 
-The Demo screen MUST NOT include operator sections for Ethernet, Wi‑Fi, HTTP proxy, Bluetooth, Date & Time, mouse settings, keyboard settings, media volume/play-test, backlight brightness, RGB LED mode controls, or host/gun temperature lists that product Home or Settings own. Those capabilities SHALL be exercised from product Settings (`settings-ui`) or product Home (`product-home-ui`) as applicable. Demo MAY retain device-information rows, Alarm Information **comm status** rows, and Debug over USB/LAN toggles, and MUST continue to omit display-orientation controls.
+The Demo screen MUST NOT include operator sections for Ethernet, Wi‑Fi, HTTP proxy, Bluetooth, Date & Time, mouse settings, keyboard settings, media volume/play-test, backlight brightness, RGB LED mode controls, host/gun temperature lists, **Debug over USB**, or **Debug over LAN** that product Home or Settings own. Those capabilities SHALL be exercised from product Settings (`settings-ui`) or product Home (`product-home-ui`) as applicable. Demo MAY retain device-information rows and Alarm Information **comm status** rows, and MUST continue to omit display-orientation controls.
 
-#### Scenario: Settings sections absent on Demo
+#### Scenario: Migrated controls absent on Demo
 
-- **WHEN** the user views the Demo route after this change
-- **THEN** Ethernet, Wi‑Fi, HTTP proxy, Bluetooth, Date & Time, mouse, keyboard, speaker/volume, brightness, RGB LED, and temperature list sections are not present
+- **WHEN** the user opens the Demo route after this change
+- **THEN** Ethernet, Wi‑Fi, HTTP proxy, Bluetooth, Date & Time, mouse, keyboard, volume, brightness, RGB LED, temperature lists, and Debug USB/LAN toggles are not present as Demo operator sections
 
-#### Scenario: Core smoke sections remain
+#### Scenario: Retained Demo content remains
 
-- **WHEN** the user views the Demo route after this change
-- **THEN** device-information rows, Alarm Information comm-status rows, and Debug over USB/LAN toggles remain available
-
+- **WHEN** the user opens the Demo route after this change
+- **THEN** device-information rows and Alarm Information comm-status rows remain available

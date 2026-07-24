@@ -19,7 +19,8 @@ import 'package:lws_hmi/features/process_library/application/process_library_sco
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_repository.dart';
 import 'package:lws_hmi/features/process_library/infrastructure/sqlite_process_library_repository.dart';
-import 'package:lws_hmi/features/process_library/presentation/process_library_page.dart';
+import 'package:lws_hmi/features/process_library/presentation/engineer_mode_page.dart';
+import 'package:lws_hmi/features/process_library/presentation/quick_mode_page.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_thresholds_controller.dart';
@@ -379,13 +380,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
                                 case AppRoutes.monitor:
                                   page = const MonitorPage();
                                 case AppRoutes.quickMode:
-                                  page = const ProcessLibraryPage(
-                                    mode: ProcessLibraryPageMode.quick,
-                                  );
+                                  page = const QuickModePage();
                                 case AppRoutes.engineerMode:
-                                  page = const ProcessLibraryPage(
-                                    mode: ProcessLibraryPageMode.engineer,
-                                  );
+                                  page = const EngineerModePage();
                                 case AppRoutes.demo:
                                   page = _demoPage();
                                 case AppRoutes.home:

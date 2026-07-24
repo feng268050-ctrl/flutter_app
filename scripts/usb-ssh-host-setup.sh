@@ -32,7 +32,8 @@ find_mac_usb_gadget_iface() {
 	local row iface
 	row="$(bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 || true)"
 	if [[ -n "$row" ]]; then
-		IFS=$'\t' read -r _mode _serial _loc iface _addr _usb <<<"$row"
+		# TSV: MODE SN ChipID LocationID IFACE IP USB
+		IFS=$'\t' read -r _mode _serial _chip _loc iface _addr _usb <<<"$row"
 		if [[ -n "$iface" && "$iface" != "-" ]]; then
 			echo "$iface"
 			return 0

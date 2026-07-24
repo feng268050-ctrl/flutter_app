@@ -71,6 +71,8 @@ Started by `hmi.service`: `/usr/libexec/hmi/hmi-launch.sh` (release embedder fro
 
 Pinned toolchain: **Flutter 3.24.4** + **flutterpi_tool 0.5.4** (see `overlay/buildroot/flutterpi_tool.version`). Debug and release use the **same Flutter version** but different runtime-mode engine binaries.
 
+**Display stack:** `make debug-app` is **flutter-pi only** (JIT `kernel_blob.bin` + debug engine). The default Weston + `flutter-wayland-client` image is **AOT-only** (`libapp.so`); on that image use `make push-app`. Deploying debug onto Weston would blank the panel — the host deploy path refuses `display-stack=weston` before touching `/opt/hmi`. For breakpoints on a physical board, flash the alternate rootfs (`make build-rootfs-flutter-pi` then `make upgrade`), then `make debug-app`.
+
 One-time host setup:
 
 ```bash

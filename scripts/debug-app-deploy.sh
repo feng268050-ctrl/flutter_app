@@ -30,6 +30,36 @@ else
 	echo "debug-deploy: iface=$IFACE target=$TARGET_USER@$TARGET_ADDR"
 fi
 
+# JIT debug (kernel_blob + debug engine) is flutter-pi only. Default Weston /
+# flutter-wayland-client images require AOT libapp.so — deploying debug here
+# removes release AOT and leaves the panel blank.
+stack="$(usb_ssh_session_run_ssh "$ROOT" "$IFACE" \
+	"tr -d '[:space:]' </etc/display-stack 2>/dev/null || tr -d '[:space:]' </etc/hmi/display-stack 2>/dev/null || echo unknown" \
+	| tr '[:upper:]' '[:lower:]' | tr -d '\r')"
+case "$stack" in
+weston | wayland | elinux)
+	die "board display-stack=$stack — make debug-app is flutter-pi only.
+
+Default image is Weston + flutter-wayland-client (AOT libapp.so).
+JIT debug would overwrite /opt/hmi and fail to launch.
+
+For this board:
+  make build-app && make push-app
+
+For breakpoints / hot reload, flash the alternate flutter-pi rootfs:
+  make build-rootfs-flutter-pi && make upgrade
+then: make debug-app"
+	;;
+flutter-pi | "")
+	;;
+unknown)
+	echo "WARNING: could not read /etc/display-stack; assuming flutter-pi" >&2
+	;;
+*)
+	die "unsupported display-stack=$stack (expected flutter-pi or weston)"
+	;;
+esac
+
 # Upload debug runtime when device cache is missing or manifest differs.
 local_manifest="$STAGING/debug-runtime/$ENGINE_VER/manifest.json"
 device_manifest_path="/var/lib/hmi/debug-runtime/$ENGINE_VER/manifest.json"

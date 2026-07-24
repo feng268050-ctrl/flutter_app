@@ -70,7 +70,7 @@ while [ "$i" -lt 60 ]; do
 		exec tail -F "$LOG"
 	fi
 	if ! pid_is_live "$(cat "$PIDFILE")"; then
-		log "flutter-pi exited during startup"
+		log "HMI exited during startup"
 		tail -40 "$LOG" >&2 || true
 		exit 1
 	fi

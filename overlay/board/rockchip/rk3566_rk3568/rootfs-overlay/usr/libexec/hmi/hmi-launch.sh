@@ -123,6 +123,12 @@ if [ "$DISPLAY_STACK" = weston ] || [ "$DISPLAY_STACK" = wayland ] || \
 		echo "hmi-launch: display-stack=$DISPLAY_STACK but weston/client missing" >&2
 		exit 1
 	fi
+	# eLinux client is AOT-only today; JIT debug is flutter-pi (make debug-app).
+	if [ "$MODE" = "debug" ]; then
+		echo "hmi-launch: display-stack=$DISPLAY_STACK does not support debug mode" >&2
+		echo "hmi-launch: restore release with: make build-app && make push-app" >&2
+		exit 1
+	fi
 	if [ ! -f "$BUNDLE/lib/libapp.so" ]; then
 		echo "hmi-launch: missing release AOT $BUNDLE/lib/libapp.so" >&2
 		exit 1

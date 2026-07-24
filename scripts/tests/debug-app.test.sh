@@ -87,6 +87,25 @@ else
 	fail=1
 fi
 
+# TSV is MODE SN ChipID LocationID IFACE IP USB — must not treat ChipID as IFACE.
+if grep -qE 'read -r _mode _serial _chip _loc iface' "$ROOT/scripts/usb-ssh-host-setup.sh"; then
+	echo "OK  usb-ssh-host-setup parses ChipID column"
+else
+	echo "FAIL usb-ssh-host-setup TSV parse missing ChipID (breaks make debug-app)" >&2
+	fail=1
+fi
+
+# Default Weston image is AOT-only; debug-app must refuse before overwriting /opt/hmi.
+if grep -q 'display-stack' "$ROOT/scripts/debug-app-deploy.sh" \
+	&& grep -q 'flutter-pi only' "$ROOT/scripts/debug-app-deploy.sh" \
+	&& grep -q 'refusing debug install on display-stack' \
+		"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"; then
+	echo "OK  debug-app refuses Weston before blanking /opt/hmi"
+else
+	echo "FAIL debug-app missing Weston display-stack guard" >&2
+	fail=1
+fi
+
 if grep -q 'make debug-host-prepare debug-setup build-debug-app' "$ROOT/.vscode/tasks.json" \
 	&& ! grep -q 'make usb-ssh-setup debug-setup build-debug-app' "$ROOT/.vscode/tasks.json"; then
 	echo "OK  IDE preLaunchTask uses debug-host-prepare"

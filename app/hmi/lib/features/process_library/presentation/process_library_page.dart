@@ -5,6 +5,7 @@ import 'package:lws_hmi/features/process_library/application/process_library_sco
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 enum ProcessLibraryPageMode { quick, engineer }
 
@@ -40,11 +41,12 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = ProcessLibraryScope.of(context);
     final isQuick = widget.mode == ProcessLibraryPageMode.quick;
     return Scaffold(
       appBar: ProductPageStatusBar(
-        title: isQuick ? 'Quick Mode' : 'Engineer Mode',
+        title: isQuick ? l10n.homeQuickModeLabel : l10n.homeEngineerModeLabel,
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: controller.loading && !controller.initialized

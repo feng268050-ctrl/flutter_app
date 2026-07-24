@@ -45,11 +45,27 @@ LAN SSH debug SHALL control on-demand LAN/WLAN SSH via `SshDebug` (not persisted
 
 - **WHEN** the operator turns LAN SSH debug on from Settings
 - **THEN** `SshDebug` is asked to enable LAN SSH debug
+### Requirement: Language selection applies UI locale and lists supported endonyms
+
+Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `zh-TW` with endonym labels (English / 简体中文 / 繁體中文). Selecting a locale SHALL persist via `CommonSettingsStore` and apply both Flutter UI locale and CyberIME language mapping. Language Settings and Common Settings Language summary MUST NOT claim that Language applies only to the soft keyboard once UI localization for that surface has shipped.
+
+#### Scenario: Language page lists three locales
+
+- **WHEN** the operator opens Language Settings
+- **THEN** English, 简体中文, and 繁體中文 options are available
+
+#### Scenario: Selecting Simplified Chinese updates UI and summary
+
+- **WHEN** the operator selects 简体中文
+- **THEN** the choice is persisted
+- **AND** Common Settings Language summary shows the matching endonym
+- **AND** migrated Settings chrome uses Simplified Chinese strings
+
 ### Requirement: Common Settings exposes display, sound, date-time, and input controls
 
 Common Settings SHALL expose:
 
-- Display & Sound: screen brightness via HAL `Backlight`; screen-off time via HAL `AutoSleep` (real control, not a non-persisted stub); media volume via media audio / `Volume` using **Cyber volume chrome** where CyberUI is available; **Language and Unit SHALL be real persisted controls** backed by `/var/lib/hmi/common-settings.json` (not in-memory stubs); **sound-effect SHALL be a real Effect 1/2/3 control** wired through HAL `ButtonFeedback` (see `settings-sound-effect` / `hal-button-feedback`). Within the main Display & Sound settings group, Language and Unit SHALL appear before brightness / screen-off; display controls (brightness, screen-off) SHALL appear before sound controls (volume, sound-effect).
+- Display & Sound: screen brightness via HAL `Backlight`; screen-off time via HAL `AutoSleep` (real control, not a non-persisted stub); media volume via media audio / `Volume` using **Cyber volume chrome** where CyberUI is available; **Language and Unit SHALL be real persisted controls** backed by `/var/lib/hmi/common-settings.json` (not in-memory stubs); Language SHALL drive Flutter UI locale for migrated strings in addition to CyberIME; **sound-effect SHALL be a real Effect 1/2/3 control** wired through HAL `ButtonFeedback` (see `settings-sound-effect` / `hal-button-feedback`). Within the main Display & Sound settings group, Language and Unit SHALL appear before brightness / screen-off; display controls (brightness, screen-off) SHALL appear before sound controls (volume, sound-effect). Operator-visible labels for migrated Common Settings rows and sub-pages SHALL come from App localization.
 - Date & Time: wall clock, manual vs network sync, timezone, Apply / Sync Now via `DateTimeController`
 - Input: mouse settings via `MouseSettingsController`; keyboard layout / smoke affordances via keyboard HAL as applicable; **IP Camera** entry that navigates to a live preview page backed by the product IP-camera session (HAL `ip_camera` + this product’s path/relay)
 
@@ -97,6 +113,11 @@ Common Settings SHALL expose:
 
 - **WHEN** the operator opens Common Settings
 - **THEN** an IP Camera row SHALL be available under Input alongside Mouse and Keyboard
+
+#### Scenario: Common Settings chrome follows UI locale
+
+- **WHEN** Language is `zh-CN` and the operator opens Common Settings
+- **THEN** migrated group headers and row titles render in Simplified Chinese via App localization
 
 ### Requirement: Device Information shows available identity and version rows
 

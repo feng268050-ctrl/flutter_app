@@ -10,8 +10,7 @@ final class AppCyberImeLanguageProvider implements CyberImeLanguageProvider {
   final CommonSettingsStore _store;
 
   @override
-  CyberImeGlobalKind get globalKind =>
-      _store.language == CommonSettingsStore.languageZh
-          ? CyberImeGlobalKind.chinese
-          : CyberImeGlobalKind.english;
+  CyberImeGlobalKind get globalKind => _store.isChineseLanguage
+      ? CyberImeGlobalKind.chinese
+      : CyberImeGlobalKind.english;
 }

@@ -5,6 +5,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 class VolumeSettingsPage extends StatefulWidget {
   const VolumeSettingsPage({super.key, required this.services});
@@ -58,8 +59,9 @@ class _VolumeSettingsPageState extends State<VolumeSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SettingsScaffold(
-      title: 'Volume',
+      title: l10n.volumeSettingText,
       body: SettingsScrollView(
         children: [
           const SettingsSectionHeader('Media Volume'),

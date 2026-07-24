@@ -80,6 +80,8 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | What changed | Commands |
 |--------------|----------|
 | `app/hmi/**`, `scripts/build-app.sh`, `scripts/push-app.sh` | `make build-app`, `make push-app` |
+| `app/hmi/lib/l10n/*.arb` (parent ARBs) | `make l10n` (then `make build-app` / `make push-app` to ship) |
+| `scripts/flutter/l10n*.sh`, `sync_l10n_child_arbs.py`, `zh_s2t.py` | none for firmware; exercise `make l10n` / `make l10n-verify` |
 | Bake app into rootfs / A/B image (release or no push path) | `make build-app`, `make build-rootfs`, `make upgrade` |
 | `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make upgrade` — also refreshes Weston `boot-splash.png` in overlay; follow with `make build-rootfs`, `make upgrade` |
 | `overlay/kernel/**`, kernel DTS | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |

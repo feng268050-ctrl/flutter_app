@@ -3,6 +3,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/monitor/application/machine_status_controller.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_gauges.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// lws-ui `fragment_machine_status` — dual gauges + 7 status tiles (4+3).
 class MachineStatusTab extends StatefulWidget {
@@ -46,15 +47,16 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final s = _ctrl;
     final tiles = <(String, bool?)>[
-      ('Laser', s?.laserOn),
-      ('Blow', s?.blowOn),
-      ('Safety Lock', s?.safetyLockOn),
-      ('Gun Switch', s?.gunSwitchOn),
-      ('Red Light', s?.redLightOn),
-      ('Wire Feeding', s?.wireFeedingOn),
-      ('Camera', s?.cameraOn),
+      (l10n.laserOnLabel, s?.laserOn),
+      (l10n.blowOnLabel, s?.blowOn),
+      (l10n.safetyLockLabel, s?.safetyLockOn),
+      (l10n.gunSwitchLabel, s?.gunSwitchOn),
+      (l10n.redLightLabel, s?.redLightOn),
+      (l10n.wireFeedingLabel, s?.wireFeedingOn),
+      (l10n.ipCameraText, s?.cameraOn),
     ];
 
     return Padding(
@@ -82,8 +84,8 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                             majorTickEvery: 150,
                             minorTickEvery: 30,
                             unit: 'kPa',
-                            titleLine1: 'Gas',
-                            titleLine2: 'Pressure',
+                            titleLine1: l10n.machineBlowTitle,
+                            titleLine2: l10n.machineBlowContent,
                             size: gaugeSize,
                             progressColor: const Color(0xFF4FC3F7),
                             trackColor: const Color(0xFF2A3550),
@@ -105,8 +107,8 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                             majorTickEvery: 10,
                             minorTickEvery: 2,
                             unit: 'A',
-                            titleLine1: 'Laser',
-                            titleLine2: 'Current',
+                            titleLine1: l10n.machineLaserCurrentTitle,
+                            titleLine2: l10n.machineLaserCurrentContent,
                             size: gaugeSize,
                             progressColor: const Color(0xFF4FC3F7),
                             trackColor: const Color(0xFF2A3550),

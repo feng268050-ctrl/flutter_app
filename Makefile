@@ -40,7 +40,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-rootfs-flutter-pi prepare-rootfs prepare-rootfs-flutter-pi build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi build-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-umtprd rebuild-umtprd build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app alarm alarm-clean
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-rootfs-flutter-pi prepare-rootfs prepare-rootfs-flutter-pi build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi build-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-umtprd rebuild-umtprd build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app alarm alarm-clean l10n l10n-sync l10n-gen l10n-verify
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -84,6 +84,10 @@ help:
 	@echo "  make build-boot-logo       # board/logo → logo.bmp (kernel FIT splash)"
 	@echo "  make build-app             # release HMI (AOT) → fs-overlay /opt/hmi + apply-overlay"
 	@echo "  make build-debug-app       # debug app bundle → .cache (make debug-app / IDE; rarely run alone)"
+	@echo "  make l10n                  # sync child ARBs + flutter gen-l10n (app/hmi)"
+	@echo "  make l10n-sync             # regenerate en_US/zh_CN/zh_TW child ARBs only"
+	@echo "  make l10n-gen              # flutter gen-l10n only"
+	@echo "  make l10n-verify           # fail if ARBs / AppLocalizations drift"
 	@echo "  make build-kernel          # dual FIT → output/firmware/boot.img + boot_b.img (exports; for upgrade)"
 	@echo "  make build-rootfs          # rootfs → output/firmware/rootfs.img (Weston + eLinux + Mali wayland-gbm)"
 	@echo "  make build-rootfs-flutter-pi # alternate rootfs: flutter-pi only + Mali gbm (no Weston)"
@@ -260,6 +264,20 @@ build-boot-logo:
 
 build-app:
 	@bash scripts/build-app.sh
+
+# App UI i18n (edit app_en.arb + app_zh.arb, then make l10n)
+l10n:
+	@bash scripts/flutter/l10n.sh
+
+l10n-sync:
+	@bash scripts/flutter/l10n_sync.sh
+
+l10n-gen:
+	@bash scripts/flutter/l10n_gen.sh
+
+l10n-verify:
+	@bash scripts/flutter/l10n_verify.sh
+
 	@bash scripts/apply-overlay.sh
 
 build-debug-app:

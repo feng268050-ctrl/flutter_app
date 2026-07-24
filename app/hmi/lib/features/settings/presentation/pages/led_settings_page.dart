@@ -4,6 +4,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/gpio/gpio_led_config.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 
@@ -53,8 +54,9 @@ class _LedSettingsPageState extends State<LedSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SettingsScaffold(
-      title: 'RGB LED',
+      title: l10n.rgbLedText,
       body: SettingsScrollView(
         children: [
           const SettingsSectionHeader('Indicator LEDs'),
@@ -75,18 +77,18 @@ class _LedSettingsPageState extends State<LedSettingsPage> {
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: SegmentedButton<IndicatorMode>(
-                      segments: const [
-                        ButtonSegment(
+                      segments: [
+                        const ButtonSegment(
                           value: IndicatorMode.steadyOn,
                           label: Text('Steady'),
                         ),
-                        ButtonSegment(
+                        const ButtonSegment(
                           value: IndicatorMode.blink,
                           label: Text('Blink'),
                         ),
                         ButtonSegment(
                           value: IndicatorMode.off,
-                          label: Text('Off'),
+                          label: Text(l10n.offLabel),
                         ),
                       ],
                       selected: {_modes[color]!},

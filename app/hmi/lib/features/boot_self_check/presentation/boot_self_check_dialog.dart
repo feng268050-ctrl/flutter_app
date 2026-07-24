@@ -2,6 +2,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_session.dart';
 import 'package:lws_hmi/features/boot_self_check/domain/boot_self_check_item.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Max height for the item list before it scrolls (lws-ui `maxHeight="420dp"`).
 const double _kItemListMaxHeight = 420;
@@ -24,6 +25,7 @@ class BootSelfCheckDialogBody extends StatelessWidget {
     return ListenableBuilder(
       listenable: session,
       builder: (context, _) {
+        final l10n = AppLocalizations.of(context)!;
         return Material(
           type: MaterialType.transparency,
           child: GestureDetector(
@@ -35,10 +37,10 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Startup Self-Check',
+                  Text(
+                    l10n.bootSelfCheckDialogTitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: CyberColors.textPrimary,
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
@@ -63,7 +65,7 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  row.item.label,
+                                  row.item.labelFor(l10n),
                                   style: const TextStyle(
                                     color: CyberColors.textPrimary,
                                     fontSize: 18,
@@ -71,7 +73,7 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                row.status.label,
+                                row.status.labelFor(l10n),
                                 style: TextStyle(
                                   color: _statusColor(row.status),
                                   fontSize: 16,
@@ -98,10 +100,10 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                           },
                         ),
                         const SizedBox(width: 8),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Don’t show again',
-                            style: TextStyle(
+                            l10n.bootSelfCheckDontShowAgain,
+                            style: const TextStyle(
                               color: CyberColors.textSecondary,
                               fontSize: 16,
                             ),
@@ -112,7 +114,7 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                             onUserInteracted?.call();
                             onClose();
                           },
-                          child: const Text('Close'),
+                          child: Text(l10n.bootSelfCheckClose),
                         ),
                       ],
                     ),

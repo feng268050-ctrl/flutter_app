@@ -4,6 +4,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
 
 /// Bluetooth settings — phone-style list (not Demo section dump).
@@ -71,20 +72,21 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final on = _info.powered || _state == BluetoothAdapterState.on;
     final nearby =
         _devices.where((d) => !d.paired && !d.trusted).toList();
     final paired = _devices.where((d) => d.paired || d.trusted).toList();
 
     return SettingsScaffold(
-      title: 'Bluetooth',
+      title: l10n.bluetoothSettings,
       body: SettingsScrollView(
         children: [
-          const SettingsSectionHeader('Bluetooth'),
+          SettingsSectionHeader(l10n.bluetoothText),
           SettingsGroup(
             children: [
               SettingsSwitchRow(
-                title: 'Bluetooth',
+                title: l10n.bluetoothText,
                 value: on,
                 onChanged: (v) => unawaited(
                   _run(() => widget.services.bluetooth.setAdapterEnabled(v)),
@@ -177,7 +179,7 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                   for (final d in paired)
                     SettingsNavRow(
                       title: d.name.isNotEmpty ? d.name : d.address,
-                      value: d.connected ? 'Connected' : 'Paired',
+                      value: d.connected ? l10n.connectedText : 'Paired',
                       onTap: () => unawaited(
                         _run(
                           () => d.connected
@@ -205,7 +207,7 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                   for (final d in nearby)
                     SettingsNavRow(
                       title: d.name.isNotEmpty ? d.name : d.address,
-                      value: 'Not Connected',
+                      value: l10n.notConnected,
                       onTap: () => unawaited(
                         _run(
                           () => widget.services.bluetooth

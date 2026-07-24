@@ -1,3 +1,5 @@
+import 'package:lws_hmi/l10n/app_localizations.dart';
+
 /// Fixed-order boot self-check items (Modbus alarm-information aligned).
 /// Camera Comm is owned by the async IP-camera product session, not self-check.
 enum BootSelfCheckItem {
@@ -10,25 +12,24 @@ enum BootSelfCheckItem {
   collimatorTemp,
   wireFeederComm;
 
-  /// English labels aligned with Monitor → Alarm Information tiles.
-  String get label {
+  String labelFor(AppLocalizations l10n) {
     switch (this) {
       case BootSelfCheckItem.controllerComm:
-        return 'Controller Comm';
+        return l10n.bootSelfCheckControllerComm;
       case BootSelfCheckItem.pumpComm:
-        return 'Pump Comm';
+        return l10n.pumpStatusText;
       case BootSelfCheckItem.gunComm:
-        return 'Gun Head Comm';
+        return l10n.gunHeadCommunicationText;
       case BootSelfCheckItem.motorDriverTemp:
-        return 'Motor Driver Temp';
+        return l10n.motorDriverTempLabel;
       case BootSelfCheckItem.gunMotorTemp:
-        return 'Gun Motor Temp';
+        return l10n.motorTempLabel;
       case BootSelfCheckItem.protectionMirrorTemp:
-        return 'Protective Mirror Temp';
+        return l10n.protectiveMirrorTempLabel;
       case BootSelfCheckItem.collimatorTemp:
-        return 'Collimator Temp';
+        return l10n.collimatorTempLabel;
       case BootSelfCheckItem.wireFeederComm:
-        return 'Wire Feeder Comm';
+        return l10n.wireFeedingMachineCommunicationText;
     }
   }
 
@@ -42,16 +43,16 @@ enum BootSelfCheckStatus {
   fail,
   skipped;
 
-  String get label {
+  String labelFor(AppLocalizations l10n) {
     switch (this) {
       case BootSelfCheckStatus.checking:
-        return 'Checking…';
+        return l10n.bootSelfCheckStatusChecking;
       case BootSelfCheckStatus.pass:
-        return 'OK';
+        return l10n.bootSelfCheckStatusPass;
       case BootSelfCheckStatus.fail:
-        return 'Fault';
+        return l10n.bootSelfCheckStatusFail;
       case BootSelfCheckStatus.skipped:
-        return 'Skipped';
+        return l10n.bootSelfCheckStatusSkipped;
     }
   }
 

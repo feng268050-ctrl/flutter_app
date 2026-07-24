@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:lws_hmi/l10n/app_locales.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
 
 /// App-owned Common Settings product prefs (`/var/lib/hmi/common-settings.json`).
@@ -15,15 +16,26 @@ final class CommonSettingsStore extends ChangeNotifier {
   static const keyLanguage = 'language';
   static const keyUnit = 'unit';
 
-  static const languageEn = 'EN';
-  static const languageZh = 'ZH';
+  /// BCP-47 wire values (persisted).
+  static const languageEnUs = 'en-US';
+  static const languageZhCn = 'zh-CN';
+  static const languageZhTw = 'zh-TW';
+
+  /// Legacy wire values accepted on read only.
+  static const languageLegacyEn = 'EN';
+  static const languageLegacyZh = 'ZH';
+
   static const unitMetric = 'Metric';
   static const unitImperial = 'Imperial';
 
-  static const defaultLanguage = languageEn;
+  static const defaultLanguage = languageEnUs;
   static const defaultUnit = unitMetric;
 
-  static const supportedLanguages = <String>[languageEn, languageZh];
+  static const supportedLanguages = <String>[
+    languageEnUs,
+    languageZhCn,
+    languageZhTw,
+  ];
   static const supportedUnits = <String>[unitMetric, unitImperial];
 
   final String preferencePath;
@@ -35,9 +47,25 @@ final class CommonSettingsStore extends ChangeNotifier {
   String get language => _language;
   String get unit => _unit;
 
-  /// Display label for Common Settings Language row.
-  String get languageLabel =>
-      _language == languageZh ? '中文' : 'English';
+  /// Flutter [Locale] for [MaterialApp.locale].
+  Locale get locale => localeFromLanguageTag(_language);
+
+  /// Endonym for Common Settings Language row / Language page.
+  String get languageLabel {
+    switch (_language) {
+      case languageZhCn:
+        return '简体中文';
+      case languageZhTw:
+        return '繁體中文';
+      case languageEnUs:
+      default:
+        return 'English';
+    }
+  }
+
+  /// Whether the language prefers Chinese IME (Simplified or Traditional).
+  bool get isChineseLanguage =>
+      _language == languageZhCn || _language == languageZhTw;
 
   /// Synchronous warm-read for bootstrap.
   void warmRead() {
@@ -99,13 +127,18 @@ final class CommonSettingsStore extends ChangeNotifier {
   }
 
   static String normalizeLanguage(String? value) {
-    if (value == languageZh) {
-      return languageZh;
+    switch (value) {
+      case languageZhCn:
+      case languageLegacyZh:
+        return languageZhCn;
+      case languageZhTw:
+        return languageZhTw;
+      case languageEnUs:
+      case languageLegacyEn:
+        return languageEnUs;
+      default:
+        return defaultLanguage;
     }
-    if (value == languageEn) {
-      return languageEn;
-    }
-    return defaultLanguage;
   }
 
   static String normalizeUnit(String? value) {

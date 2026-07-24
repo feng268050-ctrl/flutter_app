@@ -1,0 +1,2784 @@
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Chinese (`zh`).
+class AppLocalizationsZh extends AppLocalizations {
+  AppLocalizationsZh([String locale = 'zh']) : super(locale);
+
+  @override
+  String get activeAlarmsTitle => '当前告警';
+
+  @override
+  String get adFeedbackCommunicationAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get adFeedbackCommunicationAlarmTitle => 'AD 反馈通讯告警';
+
+  @override
+  String adbRemoteDebugEnabled(int port) {
+    return '已开启 ADB 远程调试（端口 $port），可使用 adb connect 连接。';
+  }
+
+  @override
+  String get adbRemoteDebugFailed => '开启 ADB 远程调试失败。';
+
+  @override
+  String get advancedSettingAllowWorkAfterCameraAlarm => '摄像头告警后允许作业';
+
+  @override
+  String get advancedSettingAllowWorkAfterCameraAlarmHint => '摄像头通讯异常时将无法使用 AI 自动检测功能';
+
+  @override
+  String get advancedSettingAllowWorkAfterFeederAlarm => '送丝机告警后允许作业';
+
+  @override
+  String get advancedSettingAllowWorkAfterFeederAlarmHint => '送丝机异常时连续焊接模式将无法正常工作，但其他模式可以继续工作。';
+
+  @override
+  String get advancedSettingAllowWorkAfterGasAlarm => '保护气告警后允许作业';
+
+  @override
+  String get advancedSettingAllowWorkAfterGasAlarmHint => '保护气异常时强制允许出光可能会损坏设备，仅应在确定无影响时打开。';
+
+  @override
+  String get advancedSettingAllowWorkAfterLensContamination => '保护镜脏污告警后允许作业';
+
+  @override
+  String get advancedSettingAllowWorkAfterLensContaminationHint => '保护镜脏污时强制允许出光可能会损坏设备，仅应在 AI 检测不准时打开。';
+
+  @override
+  String get advancedSettingKeepLaserOnWhileAlarmed => '告警时保持出光';
+
+  @override
+  String get advancedSettingKeepLaserOnWhileAlarmedHint => '开启后，作业过程中出现编码告警时不会自动关光，告警弹窗仍会显示。仅应在明确风险可控时使用。';
+
+  @override
+  String get advancedSettingLensContaminationDetection => '镜片污染检测';
+
+  @override
+  String get advancedSettingLensContaminationDetectionHint => '作业时通过摄像头与 AI 监测保护镜脏污情况，发现污染时提示处理。仅在检测不准或不可用时关闭。';
+
+  @override
+  String get advancedSettingScale0Celsius => '0℃';
+
+  @override
+  String get advancedSettingScale20Celsius => '20℃';
+
+  @override
+  String get advancedSettingScale80Celsius => '80℃';
+
+  @override
+  String get advancedSettingScale85Celsius => '85℃';
+
+  @override
+  String get advancedSettingShowBootSelfCheck => '显示开机自检';
+
+  @override
+  String get advancedSettingText => '高级设置';
+
+  @override
+  String get advancedSettingZeroPointOffsetDetection => '零点偏移检测';
+
+  @override
+  String get advancedSettingZeroPointOffsetDetectionHint => '通过 AI 判断光斑是否居中，零点偏移时提示校正。若不需要此类告警可关闭。';
+
+  @override
+  String get advancedSettings => '高级设置';
+
+  @override
+  String get advancedSettingsGroupAiAssistance => 'AI 辅助';
+
+  @override
+  String get advancedSettingsGroupDangerousOperations => '危险作业（覆盖保护）';
+
+  @override
+  String get advancedSettingsGroupOffsetCorrection => '偏移与校正';
+
+  @override
+  String get advancedSettingsGroupPowerThresholds => '功率阈值';
+
+  @override
+  String get advancedSettingsGroupTemperatureThresholds => '温度阈值';
+
+  @override
+  String get aiDetectionLabel => 'AI检测';
+
+  @override
+  String get aiOverlayClsDisabled => '分类：未启用';
+
+  @override
+  String get aiOverlayClsMetal => '金属';
+
+  @override
+  String get aiOverlayClsOther => '其他';
+
+  @override
+  String aiOverlayClsPrefix(String className, double score) {
+    return '分类：$className（$score）';
+  }
+
+  @override
+  String get aiOverlayClsWaiting => '分类：等待中…';
+
+  @override
+  String aiOverlayHudStatePrefix(String state) {
+    return 'STATE: $state';
+  }
+
+  @override
+  String get aiOverlayHudStatusIdle => 'IDLE';
+
+  @override
+  String aiOverlayHudStatusPrefix(String status) {
+    return 'AI: $status';
+  }
+
+  @override
+  String aiOverlayResultPrefix(String result) {
+    return '最新结果：$result';
+  }
+
+  @override
+  String get aiOverlayResultWaiting => '最新结果：等待中…';
+
+  @override
+  String get aiOverlayStateIdle => '空闲';
+
+  @override
+  String get aiOverlayStateLocked => '已锁定';
+
+  @override
+  String get aiOverlayStateMonitoring => '监控中';
+
+  @override
+  String get aiOverlayStateStainDetect => '污点检测';
+
+  @override
+  String get aiVisionAiEngineNotReady => 'AI 引擎未就绪';
+
+  @override
+  String get aiVisionChooseBtn => '选择视频';
+
+  @override
+  String get aiVisionComingSoon => 'AI视觉 — 即将推出';
+
+  @override
+  String get aiVisionDetectBtn => '检测';
+
+  @override
+  String get aiVisionInferenceVideoNotReady => '推理视频尚未准备好';
+
+  @override
+  String get aiVisionMaterialTypeText => '材料类型';
+
+  @override
+  String get aiVisionNavLabel => 'AI视觉';
+
+  @override
+  String get aiVisionOfflineInferenceNotAvailable => '当前 AI 库不支持离线推理';
+
+  @override
+  String get aiVisionProcessTypeText => '工艺类型';
+
+  @override
+  String get aiVisionReinferBtn => '重新检测';
+
+  @override
+  String get aiVisionSelectBtn => '选择';
+
+  @override
+  String get aiVisionSelectVideoFirst => '请选择一个视频进行检测';
+
+  @override
+  String aiVisionStreamFailureFirstFrameTimeout(int timeoutMs) {
+    return '等待首帧超时：$timeoutMs ms';
+  }
+
+  @override
+  String get aiVisionStreamFailurePlayerTimeout => '播放器连接或取流超时';
+
+  @override
+  String aiVisionStreamFailureRtspEvent(String message) {
+    return 'RTSP 事件错误：$message';
+  }
+
+  @override
+  String aiVisionStreamFailureStartCode(int code) {
+    return '播放器 start 返回错误码：$code';
+  }
+
+  @override
+  String get aiVisionStreamFailureSurfaceUnavailable => '视频渲染 Surface 未就绪';
+
+  @override
+  String get aiVisionStreamFailureUnknown => '未知原因';
+
+  @override
+  String get aiVisionStreamFailureUnsupportedVideo => '视频编码不支持或解码器初始化失败';
+
+  @override
+  String get aiVisionTitle => 'AI 视觉';
+
+  @override
+  String get aiVisionUploadBtn => '上传';
+
+  @override
+  String get aiVisionVideoAnalyzing => '分析中…';
+
+  @override
+  String aiVisionVideoExportFailed(String error) {
+    return '推理视频导出失败：$error';
+  }
+
+  @override
+  String get aiVisionVideoExporting => '正在生成结果视频...';
+
+  @override
+  String aiVisionVideoInferenceFailed(String error) {
+    return '视频分析失败：$error';
+  }
+
+  @override
+  String aiVisionVideoInferenceProgress(int percent) {
+    return '正在分析视频... $percent%';
+  }
+
+  @override
+  String get aiVisionVideoInferring => '分析中…';
+
+  @override
+  String get aiVisionVideoPause => '暂停';
+
+  @override
+  String get aiVisionVideoPlay => '播放';
+
+  @override
+  String get aiVisionVideoReplay => '重播';
+
+  @override
+  String get aiVisionWorkInfoUnavailable => '-';
+
+  @override
+  String get aiVisualizedLabel => '可视化';
+
+  @override
+  String get alarmFaultClearedContent => '该故障已解除，可继续作业。若频繁出现，请联系 LaserCyber 售后。';
+
+  @override
+  String get alarmInfoLaserDevice => '激光设备';
+
+  @override
+  String get alarmInfoWeldingGun => '焊枪';
+
+  @override
+  String get alarmInfoWireFeeder => '送丝机';
+
+  @override
+  String get alarmLogsTitle => '告警日志';
+
+  @override
+  String get alarmRebootThenSupportContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get alarmTitle => '告警信息';
+
+  @override
+  String autoOtaUpdateDialogMessage(String version) {
+    return '新版本 $version 可用，请前往设置下载并安装。';
+  }
+
+  @override
+  String get autoOtaUpdateDialogTitle => '新版本可用';
+
+  @override
+  String get blowOnLabel => '吹气';
+
+  @override
+  String get blowText => '通气状态';
+
+  @override
+  String get blowingAirPressureText => '吹气气压';
+
+  @override
+  String get bluetoothCloseFailedText => '蓝牙关闭失败';
+
+  @override
+  String get bluetoothClosedText => '蓝牙已关闭';
+
+  @override
+  String get bluetoothNotSupportedText => '本设备不支持蓝牙';
+
+  @override
+  String get bluetoothOpenFailedText => '蓝牙开启失败';
+
+  @override
+  String get bluetoothOpenedText => '蓝牙已开启';
+
+  @override
+  String get bluetoothSettings => '蓝牙设置';
+
+  @override
+  String get bluetoothText => '蓝牙';
+
+  @override
+  String get bootSelfCheckClose => '关闭';
+
+  @override
+  String get bootSelfCheckControllerComm => '控制器通讯状态';
+
+  @override
+  String get bootSelfCheckDialogTitle => '开机自检';
+
+  @override
+  String get bootSelfCheckDontShowAgain => '以后不再显示';
+
+  @override
+  String get bootSelfCheckStatusChecking => '检测中…';
+
+  @override
+  String get bootSelfCheckStatusFail => '异常';
+
+  @override
+  String get bootSelfCheckStatusPass => '正常';
+
+  @override
+  String get bootSelfCheckStatusSkipped => '跳过';
+
+  @override
+  String bundledFirmwareDialogMessage(String currentVersion, String newVersion) {
+    return '检测到新控制板固件（当前 $currentVersion → $newVersion）。\n请保持设备通电，升级过程中请勿操作。';
+  }
+
+  @override
+  String get bundledFirmwareDialogTitle => '控制板固件更新';
+
+  @override
+  String get bundledFirmwareFailedMessage => '控制板固件升级失败，请稍后重试。';
+
+  @override
+  String get bundledFirmwareFailedTitle => '固件升级失败';
+
+  @override
+  String bundledFirmwareProgressPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get bundledFirmwareSuccessMessage => '控制板固件已更新完成。';
+
+  @override
+  String get bundledFirmwareSuccessTitle => '固件升级成功';
+
+  @override
+  String get bundledFirmwareUpgradingMessage => '请保持设备通电，升级过程中请勿操作。';
+
+  @override
+  String get bundledFirmwareUpgradingTitle => '正在升级控制板固件';
+
+  @override
+  String get callBackHomeTitle => '回到主页';
+
+  @override
+  String get cameraCommStatusText => '摄像头通讯状态';
+
+  @override
+  String get cameraCommunicationAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get cameraCommunicationAlarmTitle => '摄像头通讯告警';
+
+  @override
+  String get cancelText => '取消';
+
+  @override
+  String get cellularNetworkText => '蜂窝网络';
+
+  @override
+  String get celsiusUnit => '℃';
+
+  @override
+  String get checkUpdate => '检查更新';
+
+  @override
+  String get checkingStatus => '检测中…';
+
+  @override
+  String get clearAlarmLogs => '清除';
+
+  @override
+  String get closeText => '关闭';
+
+  @override
+  String get coldWaterInterlockAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get coldWaterInterlockAlarmTitle => '冷水互锁告警';
+
+  @override
+  String get collimatingLensOvertemperatureAlarmTitle => '聚焦镜温度告警';
+
+  @override
+  String get collimatorTempLabel => '准直镜';
+
+  @override
+  String get collimatorTemperatureText => '聚焦镜温度';
+
+  @override
+  String get commonSettings => '通用设置';
+
+  @override
+  String get commonSettingsGroupDateTime => '日期与时间';
+
+  @override
+  String get commonSettingsGroupDisplaySound => '显示与声音';
+
+  @override
+  String get commonSettingsGroupMisc => '其他';
+
+  @override
+  String get commonSettingsGroupNetwork => '网络';
+
+  @override
+  String get commonSettingsShowSafetyGroundLockAlarm => '显示安全夹告警';
+
+  @override
+  String get confirmText => '确定';
+
+  @override
+  String get connectedText => '已连接';
+
+  @override
+  String get controllerTabletCommAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get controllerTabletCommAlarmTitle => '控制板通讯故障';
+
+  @override
+  String get currentAlarmText => '电流报警';
+
+  @override
+  String get customHomePage => '自定义首页';
+
+  @override
+  String get cuttingProportionText => '切割占比';
+
+  @override
+  String get dateTimeApplyFailed => '无法更新日期/时间';
+
+  @override
+  String get dateTimeAutoDateTime => '自动设置日期和时间';
+
+  @override
+  String get dateTimeAutoSyncFailed => '网络时间服务不可用';
+
+  @override
+  String get dateTimeAutoSyncOff => '自动同步已关闭';
+
+  @override
+  String get dateTimeAutoSyncOffline => '网络不可用，等待同步';
+
+  @override
+  String get dateTimeAutoSyncOk => '网络时间同步成功';
+
+  @override
+  String get dateTimeAutoSyncing => '正在通过网络时间服务同步…';
+
+  @override
+  String get dateTimeAutoTimeZone => '自动设置时区';
+
+  @override
+  String get dateTimeAutomatic => '自动';
+
+  @override
+  String get dateTimePermissionDenied => '缺少系统级日期时间设置权限';
+
+  @override
+  String get dateTimeSearchTimezoneHint => '搜索时区（例如 Asia/Shanghai）';
+
+  @override
+  String get dateTimeSelectDate => '选择日期';
+
+  @override
+  String get dateTimeSelectTime => '选择时间';
+
+  @override
+  String get dateTimeSelectTimeZone => '选择时区';
+
+  @override
+  String get dateTimeSetDate => '日期';
+
+  @override
+  String get dateTimeSetFailed => '日期或时间设置失败';
+
+  @override
+  String get dateTimeSetTime => '时间';
+
+  @override
+  String get dateTimeSetTimeZone => '时区';
+
+  @override
+  String get dateTimeSettings => '日期和时间';
+
+  @override
+  String get dateTimeTimezoneApplyFailed => '无法更新时区';
+
+  @override
+  String get defaultLabel => '默认';
+
+  @override
+  String get deleteText => '删除';
+
+  @override
+  String get deviceInformation => '设备信息';
+
+  @override
+  String get deviceInformationText => '设备信息';
+
+  @override
+  String get deviceModel => '设备型号';
+
+  @override
+  String get deviceMonitorHomeTitle => '监测';
+
+  @override
+  String get deviceMonitorMachineStatusTitle => '机台状态';
+
+  @override
+  String get deviceMonitorTitle => '设备监测';
+
+  @override
+  String get deviceMonitorWarnInfoTitle => '告警信息';
+
+  @override
+  String get deviceMonitorWorkInfoTitle => '工作信息';
+
+  @override
+  String get deviceSettingText => '设备设置';
+
+  @override
+  String get deviceSn => '设备 SN';
+
+  @override
+  String get diodeShortCircuitAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get diodeShortCircuitAlarmTitle => '二极管短路故障';
+
+  @override
+  String get diodeShortCircuitErrorClearedTitle => '二极管短路故障解除';
+
+  @override
+  String get dontShowAgain => '不再显示';
+
+  @override
+  String get driveOvertemperatureAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get driveOvertemperatureAlarmTitle => '驱动温度告警';
+
+  @override
+  String get driverModuleOvertemperatureAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get driverModuleOvertemperatureAlarmTitle => '驱动模块超温告警';
+
+  @override
+  String get emptyText => '';
+
+  @override
+  String get environmentTemperatureAlarmContent => '环境温度超出允许范围。请改善车间温控；若读数明显异常，请联系 LaserCyber 售后。';
+
+  @override
+  String get environmentTemperatureAlarmTitle => '环境温度告警';
+
+  @override
+  String get environmentTemperatureText => '环境温度';
+
+  @override
+  String get equipmentStatusBack => '返回';
+
+  @override
+  String get fahrenheitUnit => '℉';
+
+  @override
+  String get failStatus => '故障';
+
+  @override
+  String get fiberDisconnectionAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get fiberDisconnectionAlarmTitle => '光纤断开告警';
+
+  @override
+  String get fiberTemperatureUpperLimitAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get fiberTemperatureUpperLimitAlarmTitle => '光纤温度超上限告警';
+
+  @override
+  String get fiberTemperatureUpperLimitClearedTitle => '光纤温度超上限解除';
+
+  @override
+  String get firmwareVersion => '固件版本';
+
+  @override
+  String get flashErrorAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get flashErrorAlarmTitle => 'FLASH 错误告警';
+
+  @override
+  String get flashUnencryptedAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get flashUnencryptedAlarmTitle => 'FLASH 未加密告警';
+
+  @override
+  String get frontLightPdVoltageText => '前向光PD电压';
+
+  @override
+  String get galvanometerMotorOvercurrentAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get galvanometerMotorOvercurrentAlarmTitle => '振镜电机过流告警';
+
+  @override
+  String get galvanometerMotorStallAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get galvanometerMotorStallAlarmTitle => '振镜电机堵转告警';
+
+  @override
+  String get gasPressureLabel => '气压';
+
+  @override
+  String get gunHeadCommunicationAlarmContent => '主机与焊枪通讯失败。请检查枪头线缆与接头；重新连接后若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get gunHeadCommunicationAlarmTitle => '枪头通讯告警';
+
+  @override
+  String get gunHeadCommunicationText => '枪头通讯状态';
+
+  @override
+  String get gunHeadMotorOvertemperatureAlarmContent => '焊枪电机过温。请暂停作业并等待冷却；若再次出现，请联系 LaserCyber 售后。';
+
+  @override
+  String get gunHeadMotorOvertemperatureAlarmTitle => '枪头电机过温告警';
+
+  @override
+  String get gunHeadSwitchText => '激光枪开关';
+
+  @override
+  String get gunSn => '枪头 SN';
+
+  @override
+  String get gunSwitchLabel => '焊枪开关';
+
+  @override
+  String get hardwareBusErrorAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get hardwareBusErrorAlarmTitle => '硬件总线错误告警';
+
+  @override
+  String get homeAiVisionLabel => 'AI 视觉';
+
+  @override
+  String get homeEngineerModeLabel => '工程师模式';
+
+  @override
+  String get homeMonitorLabel => '监控';
+
+  @override
+  String get homeQuickModeLabel => '快速模式';
+
+  @override
+  String get homeSettingsLabel => '设置';
+
+  @override
+  String get httpProxyAuthBasic => 'Basic';
+
+  @override
+  String get httpProxyAuthNone => '无';
+
+  @override
+  String get httpProxyAuthType => '认证方式';
+
+  @override
+  String get httpProxyEnable => '启用代理';
+
+  @override
+  String get httpProxyHost => '主机';
+
+  @override
+  String get httpProxyHostHint => 'proxy.example.com';
+
+  @override
+  String get httpProxyPassword => '密码';
+
+  @override
+  String get httpProxyPort => '端口';
+
+  @override
+  String get httpProxyPortHint => '8080';
+
+  @override
+  String get httpProxySave => '保存';
+
+  @override
+  String get httpProxySaveSuccess => '代理设置已保存';
+
+  @override
+  String get httpProxySettingsTitle => 'HTTP 代理';
+
+  @override
+  String get httpProxyStatusIncomplete => '开启（未完成）';
+
+  @override
+  String get httpProxyStatusOff => '关闭';
+
+  @override
+  String get httpProxyTestConnection => '测试连接';
+
+  @override
+  String get httpProxyTestFailed => '连接失败';
+
+  @override
+  String get httpProxyTestNoOrigin => '无可用的 API 源进行测试';
+
+  @override
+  String get httpProxyTestSuccess => '连接成功';
+
+  @override
+  String get httpProxyTitle => 'HTTP 代理';
+
+  @override
+  String get httpProxyUsername => '用户名';
+
+  @override
+  String get httpProxyValidationHostRequired => '请输入主机地址';
+
+  @override
+  String get httpProxyValidationPortInvalid => '端口必须为 1–65535';
+
+  @override
+  String get httpProxyValidationUsernameRequired => 'Basic 认证需要用户名';
+
+  @override
+  String get illegalInstructionAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get illegalInstructionAlarmTitle => '非法指令告警';
+
+  @override
+  String get inUnit => 'in';
+
+  @override
+  String inputDialogTitleWithUnit(String title, String unit) {
+    return '$title ($unit)';
+  }
+
+  @override
+  String get internalHumidityExceedsTheUpperLimitAlarmTitle => '内部湿度超上限告警';
+
+  @override
+  String get internalHumidityUpperLimitAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get ipCameraText => 'IP 摄像头';
+
+  @override
+  String get keyboardText => '键盘';
+
+  @override
+  String get languageAppliesToUi => '应用于产品界面语言与软键盘。';
+
+  @override
+  String get languageOptionChinese => '简体中文';
+
+  @override
+  String get languageOptionEnglish => 'English';
+
+  @override
+  String get languageOptionTraditionalChinese => '繁體中文';
+
+  @override
+  String get languagePreferenceUnavailable => '无法读取语言偏好。';
+
+  @override
+  String get languageSettingText => '语言';
+
+  @override
+  String get laserCommunicationAlarmContent => '请确认已经按下了 Reset 按钮。若依旧没有恢复，请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get laserCommunicationAlarmTitle => '激光器通讯告警';
+
+  @override
+  String get laserCurrentAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get laserCurrentAlarmTitle => '激光器电流告警';
+
+  @override
+  String get laserCurrentLabel => '激光电流';
+
+  @override
+  String get laserDriverCommunicationAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get laserDriverCommunicationAlarmTitle => '激光器驱动通讯告警';
+
+  @override
+  String get laserEmergencyStopAlarmContent => '激光器急停已触发。请松开急停并复位设备后再继续作业。';
+
+  @override
+  String get laserEmergencyStopAlarmTitle => '激光器急停告警';
+
+  @override
+  String get laserOnLabel => '激光';
+
+  @override
+  String get laserOutputEnergyLowerLimitAlarmContent => '激光输出能量过低。请检查保护镜与工艺功率设置。若持续出现，请联系 LaserCyber 售后。';
+
+  @override
+  String get laserOutputEnergyLowerLimitAlarmTitle => '激光输出能量低于下限告警';
+
+  @override
+  String get laserOutputEnergyLowerLimitClearedTitle => '激光输出能量低于下限解除';
+
+  @override
+  String get laserReflectedEnergyUpperLimitAlarmContent => '激光反射能量过高。请停止出光，检查工件角度、装配间隙与工艺参数。若持续出现，请联系 LaserCyber 售后。';
+
+  @override
+  String get laserReflectedEnergyUpperLimitAlarmTitle => '激光反射能量超上限告警';
+
+  @override
+  String get laserReflectedEnergyUpperLimitClearedTitle => '激光反射能量超上限解除';
+
+  @override
+  String get laserText => '激光';
+
+  @override
+  String get laserVersion => '激光器版本';
+
+  @override
+  String get lensHeavyContaminationAlarmTitle => '镜片脏污告警';
+
+  @override
+  String get loadingText => '加载中...';
+
+  @override
+  String get machineBlowContent => '气压';
+
+  @override
+  String get machineBlowTitle => '吹气';
+
+  @override
+  String get machineLaserCurrentContent => '电流';
+
+  @override
+  String get machineLaserCurrentTitle => '激光';
+
+  @override
+  String get machinePumpContent => '当前';
+
+  @override
+  String get machinePumpTitle => '泵源';
+
+  @override
+  String get machineTitle => '机台状态';
+
+  @override
+  String get mainControllerTempBoardCommAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get mainControllerTempBoardCommAlarmTitle => '主控板与温控板通讯故障';
+
+  @override
+  String get mmUnit => 'mm';
+
+  @override
+  String get mmiOscillatorMalfunctionAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get mmiOscillatorMalfunctionAlarmTitle => 'MMI 振荡器故障告警';
+
+  @override
+  String get modbusCommunicationFault => 'Modbus 通讯故障';
+
+  @override
+  String get monitorNavLabel => '设备监控';
+
+  @override
+  String get motorCableOpenAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get motorCableOpenAlarmTitle => '电机连接线开路告警';
+
+  @override
+  String get motorDriverTempLabel => '电机驱动';
+
+  @override
+  String get motorDriverTemperatureText => '电机驱动板温度';
+
+  @override
+  String get motorTempLabel => '电机';
+
+  @override
+  String get mouseText => '鼠标';
+
+  @override
+  String get narrowPulseProtectionAlarmContent => '已触发窄脉冲保护。请调整工艺参数后重试；若反复出现，请联系 LaserCyber 售后。';
+
+  @override
+  String get narrowPulseProtectionAlarmTitle => '窄脉冲保护告警';
+
+  @override
+  String get networkSettingText => '网络设置';
+
+  @override
+  String get networkSettings => '网络设置';
+
+  @override
+  String get noActiveAlarms => '无当前告警';
+
+  @override
+  String get noSignedProcessLibrary => '未安装已签名的工艺库';
+
+  @override
+  String get notConnected => '未连接';
+
+  @override
+  String get notConnectingText => '未连接';
+
+  @override
+  String get notPersistedYet => '尚未持久化';
+
+  @override
+  String get offLabel => '关闭';
+
+  @override
+  String get okText => 'OK';
+
+  @override
+  String get onLabel => '开启';
+
+  @override
+  String get otaUpgradeStatusApk => '正在安装应用';
+
+  @override
+  String get otaUpgradeStatusDownloading => '正在下载升级包';
+
+  @override
+  String otaUpgradeStatusFirmware(int percent) {
+    return '正在升级控制板固件 ($percent%)';
+  }
+
+  @override
+  String get otaUpgradeStatusPreparing => '正在准备升级';
+
+  @override
+  String get otaUpgradeStatusSystem => '升级系统中';
+
+  @override
+  String get overTempLabel => '超温';
+
+  @override
+  String get passStatus => '正常';
+
+  @override
+  String get pleaseWait => '请稍候…';
+
+  @override
+  String get positioningLightFaultAlarmContent => '红光（定位光）故障。请检查指示光是否正常；若不亮，请联系 LaserCyber 售后。';
+
+  @override
+  String get positioningLightFaultAlarmTitle => '定位光故障告警';
+
+  @override
+  String get protectiveLensOvertemperatureAlarmContent => '如果保护镜出现明显烧痕，请立即更换。';
+
+  @override
+  String get protectiveLensOvertemperatureAlarmTitle => '保护镜温度告警';
+
+  @override
+  String get protectiveMirrorTempLabel => '保护镜';
+
+  @override
+  String get protectiveMirrorTemperatureText => '保护镜温度';
+
+  @override
+  String get pumpBoardTemperatureText => '泵源板温度';
+
+  @override
+  String get pumpCurrentText => '泵源电流';
+
+  @override
+  String get pumpModuleOvertemperatureAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get pumpModuleOvertemperatureAlarmTitle => '泵浦模块超温告警';
+
+  @override
+  String get pumpModuleOvertemperatureClearedTitle => '泵浦模块超温解除';
+
+  @override
+  String get pumpSourceTemperatureAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get pumpSourceTemperatureAlarmTitle => '泵源温度告警';
+
+  @override
+  String get pumpSourceVoltageAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get pumpSourceVoltageAlarmTitle => '泵源电压告警';
+
+  @override
+  String get pumpStatusText => '泵源通讯状态';
+
+  @override
+  String get pumpTemperatureText => '泵源温度';
+
+  @override
+  String get quiescentCurrentAbnormalAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get quiescentCurrentAbnormalAlarmTitle => '静态电流异常告警';
+
+  @override
+  String get redLightCurrentAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get redLightCurrentAlarmTitle => '红光电流告警';
+
+  @override
+  String get redLightCurrentText => '红光电流';
+
+  @override
+  String get redLightLabel => '红光';
+
+  @override
+  String get redLightText => '红光';
+
+  @override
+  String get rgbLedText => 'RGB 指示灯';
+
+  @override
+  String get safetyLockLabel => '安全锁';
+
+  @override
+  String get safetyLockText => '安全夹';
+
+  @override
+  String get screenBrightnessText => '屏幕亮度';
+
+  @override
+  String get screenDisplayText => '屏幕显示';
+
+  @override
+  String get screenOffOption10Min => '10 分钟';
+
+  @override
+  String get screenOffOption30Min => '30 分钟';
+
+  @override
+  String get screenOffOption60Min => '60 分钟';
+
+  @override
+  String get screenOffTimeText => '息屏时间';
+
+  @override
+  String get screenSettings => '屏幕设置';
+
+  @override
+  String get sensorAbnormalAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get sensorAbnormalAlarmTitle => '传感器异常告警';
+
+  @override
+  String get sensorChannelDeviationAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get sensorChannelDeviationAlarmTitle => '传感器通道偏差告警';
+
+  @override
+  String get settingsNavLabel => '设置';
+
+  @override
+  String get settingsTabAdvanced => '高级设置';
+
+  @override
+  String get settingsTabCommon => '通用设置';
+
+  @override
+  String get settingsTabCustomHome => '自定义首页';
+
+  @override
+  String get settingsTabDeviceInfo => '设备信息';
+
+  @override
+  String get settingsTitle => '设置';
+
+  @override
+  String get shieldingGasAlarmCauseBlowPressure => '吹气气压过低';
+
+  @override
+  String get shieldingGasAlarmCauseDeviceService => '设备异常，请联系售后服务';
+
+  @override
+  String get shieldingGasAlarmCauseInletPressure => '进气气压过低';
+
+  @override
+  String get shieldingGasAlarmCausePressureCheck => '气压检测异常';
+
+  @override
+  String get shieldingGasAlarmContent => '请检查保护气是否开启、气瓶是否缺气。如确认无误后机器仍报警，请联系售后服务。';
+
+  @override
+  String shieldingGasAlarmEngineerCheckMessage(String reason) {
+    return '保护气异常：$reason';
+  }
+
+  @override
+  String shieldingGasAlarmLogMessage(String reason) {
+    return 'A001 保护气告警，原因：$reason';
+  }
+
+  @override
+  String shieldingGasAlarmReasonBullet(String reason) {
+    return '· $reason';
+  }
+
+  @override
+  String get shieldingGasAlarmReasonHeader => '原因：';
+
+  @override
+  String get shieldingGasAlarmTitle => '保护气告警';
+
+  @override
+  String shieldingGasAlarmWarnLogContent(String summary) {
+    return '$summary。如确认无误后机器仍报警，请联系售后服务。';
+  }
+
+  @override
+  String get showStartupSelfCheck => '显示开机自检';
+
+  @override
+  String get showSystemStatusOverlay => '显示系统状态浮层';
+
+  @override
+  String get soundEffectCheck => '音效';
+
+  @override
+  String get soundEffectOption1 => '音效 1';
+
+  @override
+  String get soundEffectOption2 => '音效 2';
+
+  @override
+  String get soundEffectOption3 => '音效 3';
+
+  @override
+  String get sshDebugText => 'SSH 调试';
+
+  @override
+  String get straightTrackTemperatureAlarmContent => '检查聚焦镜。若聚焦镜有明显烧痕，请立即更换。';
+
+  @override
+  String get tempBoardRefrigerationCommAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get tempBoardRefrigerationCommAlarmTitle => '温控板与制冷系统通讯故障';
+
+  @override
+  String get unavailable => '不可用';
+
+  @override
+  String get undervoltage24vAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get undervoltage24vAlarmTitle => '24V 欠压告警';
+
+  @override
+  String get unitImperial => '英制';
+
+  @override
+  String get unitMetric => '公制';
+
+  @override
+  String get unitOptionImperial => '英制';
+
+  @override
+  String get unitOptionMetric => '公制';
+
+  @override
+  String get unitPersistedFooter => '已保存到 /var/lib/hmi/common-settings.json。';
+
+  @override
+  String get unitPreferenceUnavailable => '无法读取单位偏好。';
+
+  @override
+  String get unitSettingText => '单位';
+
+  @override
+  String get usbOtgModeDebug => '调试';
+
+  @override
+  String get usbOtgModeHost => '主机';
+
+  @override
+  String get usbOtgModeMtp => 'MTP';
+
+  @override
+  String get usbOtgText => 'USB OTG';
+
+  @override
+  String get videosTitle => '视频';
+
+  @override
+  String get volumeSetFailed => '音量设置失败';
+
+  @override
+  String get volumeSettingText => '音量';
+
+  @override
+  String get warnInfoLastWork => '上次作业时长';
+
+  @override
+  String get warnInfoLightTime => '出光总时长';
+
+  @override
+  String get warnInfoLightTimeInfo => '较上周';
+
+  @override
+  String get warnInfoWeldingConsumables => '焊丝耗材总计';
+
+  @override
+  String get warnInfoWeldingConsumablesInfo => '常用耗材';
+
+  @override
+  String get washProportionText => '清洗占比';
+
+  @override
+  String get waterTemperatureUpperLimitAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get waterTemperatureUpperLimitAlarmTitle => '水温超上限告警';
+
+  @override
+  String get weldingProportionText => '焊接占比';
+
+  @override
+  String get wifiAdvancedSettings => 'IP 设置';
+
+  @override
+  String get wifiAdvancedSettingsHide => '收起 IP 设置';
+
+  @override
+  String get wifiApply => '应用';
+
+  @override
+  String get wifiDetailsTitle => '无线网络详情';
+
+  @override
+  String get wifiDialogConnect => '连接';
+
+  @override
+  String get wifiDialogHidePassword => '隐藏密码';
+
+  @override
+  String get wifiDialogPasswordLabel => '密码';
+
+  @override
+  String get wifiDialogShowPassword => '显示密码';
+
+  @override
+  String get wifiDialogSsidLabel => '网络名称';
+
+  @override
+  String get wifiDns => 'DNS';
+
+  @override
+  String get wifiDns1 => 'DNS 1';
+
+  @override
+  String get wifiDns2 => 'DNS 2';
+
+  @override
+  String get wifiEditIpConfig => '编辑 IP 配置';
+
+  @override
+  String get wifiEditIpSuccess => 'IP 配置已保存';
+
+  @override
+  String get wifiErrorAddNotAllowed => '系统拒绝此请求，请允许本应用添加无线网络建议。';
+
+  @override
+  String get wifiErrorDuplicateProfile => '无线网络配置已存在。';
+
+  @override
+  String get wifiErrorInternal => '保存无线网络配置时发生系统内部错误。';
+
+  @override
+  String get wifiErrorRemoveInvalid => '无效的已保存无线网络配置。';
+
+  @override
+  String wifiErrorSaveFailedFormat(int code) {
+    return '保存无线网络配置失败（代码 $code）。';
+  }
+
+  @override
+  String get wifiErrorTooManyProfiles => '本应用保存的无线网络配置过多。';
+
+  @override
+  String get wifiForgetConfirmMessage => '是否忘记此网络并断开连接？';
+
+  @override
+  String get wifiForgetNetwork => '忘记网络';
+
+  @override
+  String get wifiForgetPartialFailed => '忘记网络未完全成功';
+
+  @override
+  String get wifiForgetSuccess => '已忘记该网络';
+
+  @override
+  String get wifiFrequency => '频段';
+
+  @override
+  String get wifiGateway => '网关';
+
+  @override
+  String get wifiHiddenNetworkConnect => '连接隐藏网络';
+
+  @override
+  String get wifiHiddenNetworkTitle => '连接隐藏网络';
+
+  @override
+  String get wifiInitDialogConfirm => '前往设置';
+
+  @override
+  String get wifiInitDialogMessage => '当前未连接无线网络，请先连接无线网络完成初始化。';
+
+  @override
+  String get wifiInitDialogTitle => '设置无线网络';
+
+  @override
+  String get wifiIpAddress => 'IP 地址';
+
+  @override
+  String wifiIpFieldEnterHint(String field) {
+    return '请输入 $field';
+  }
+
+  @override
+  String get wifiIpMode => 'IP 模式';
+
+  @override
+  String get wifiIpModeDhcp => 'DHCP';
+
+  @override
+  String get wifiIpModeStatic => '静态';
+
+  @override
+  String get wifiIpSettings => 'IP 设置';
+
+  @override
+  String get wifiIpSettingsHide => '收起 IP 设置';
+
+  @override
+  String wifiJoinSsidFormat(String ssid) {
+    return '加入 \"$ssid\"';
+  }
+
+  @override
+  String get wifiLinkSpeed => '链路速率';
+
+  @override
+  String wifiListStandardFormat(String band) {
+    return 'WiFi $band';
+  }
+
+  @override
+  String get wifiMacAddress => 'MAC 地址';
+
+  @override
+  String get wifiNetworkText => '无线网络';
+
+  @override
+  String get wifiNotAvailable => '不可用';
+
+  @override
+  String get wifiOpenSystemSettingsHint => '该网络由系统无线网络管理，请打开系统设置完成彻底忽略。';
+
+  @override
+  String get wifiRouter => '路由器';
+
+  @override
+  String get wifiSecurity => '安全类型';
+
+  @override
+  String get wifiSecurityOpen => '开放';
+
+  @override
+  String get wifiSecurityWpa2 => 'WPA2';
+
+  @override
+  String get wifiSecurityWpa3 => 'WPA3';
+
+  @override
+  String get wifiSignalStrength => '信号强度';
+
+  @override
+  String get wifiStaticIpConflict => 'IP 地址与其他网络接口冲突';
+
+  @override
+  String get wifiStaticIpGatewaySubnet => '网关必须与 IP 在同一子网';
+
+  @override
+  String get wifiStaticIpIncomplete => '请填写所有必填的静态 IP 字段';
+
+  @override
+  String get wifiStaticIpInvalid => '静态 IP 配置无效';
+
+  @override
+  String get wifiStatusConnected => '已连接';
+
+  @override
+  String get wifiStatusConnecting => '正在连接，请稍候…';
+
+  @override
+  String get wifiStatusNotConnected => '未连接';
+
+  @override
+  String get wifiSubnetMask => '子网掩码';
+
+  @override
+  String get wifiToastAddCanceledBySystem => '系统已取消添加无线网络。';
+
+  @override
+  String get wifiToastAddedConnecting => '无线网络已添加，正在连接…';
+
+  @override
+  String get wifiToastConnectedSuccess => '连接成功。';
+
+  @override
+  String get wifiToastConnectionFailed => '连接失败。';
+
+  @override
+  String get wifiToastDetailsOnlyWhenConnected => '仅已连接的无线网络可查看详情。';
+
+  @override
+  String get wifiToastInvalidBssid => 'BSSID 格式无效。';
+
+  @override
+  String get wifiToastNoConnectionDetails => '无已连接无线网络详情。';
+
+  @override
+  String get wifiToastPasswordRequired => '密码不能为空。';
+
+  @override
+  String get wifiToastProfileExistsConnecting => '无线网络配置已存在，正在尝试连接。';
+
+  @override
+  String get wifiToastProfileSavedUseSystem => '配置已保存，请在系统无线网络列表中连接。';
+
+  @override
+  String get wifiToastRequiresSystemPrivilege => '需要系统级无线网络权限，请以特权系统应用安装。';
+
+  @override
+  String get wifiToastSsidRequired => '网络名称不能为空。';
+
+  @override
+  String get wifiToastWifiDisabled => '无线网络未开启';
+
+  @override
+  String get wifiWlanLabel => '无线局域网';
+
+  @override
+  String get wireFeederCommunicationAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get wireFeederCommunicationAlarmTitle => '送丝机通讯告警';
+
+  @override
+  String get wireFeederCurrentAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+
+  @override
+  String get wireFeederCurrentAlarmTitle => '送丝机电流告警';
+
+  @override
+  String get wireFeedingLabel => '送丝';
+
+  @override
+  String get wireFeedingMachineCommunicationText => '送丝机通讯状态';
+
+  @override
+  String get wireFeedingText => '送丝';
+
+  @override
+  String get wirelessNetworkText => '无线网络';
+
+  @override
+  String get workInfoTitle => '工作信息';
+
+  @override
+  String get workTitle => '工作信息';
+
+  @override
+  String get zeroPointOffsetAlarmTitle => '零点偏移告警';
+}
+
+/// The translations for Chinese, as used in China (`zh_CN`).
+class AppLocalizationsZhCn extends AppLocalizationsZh {
+  AppLocalizationsZhCn(): super('zh_CN');
+
+
+}
+
+/// The translations for Chinese, as used in Taiwan (`zh_TW`).
+class AppLocalizationsZhTw extends AppLocalizationsZh {
+  AppLocalizationsZhTw(): super('zh_TW');
+
+  @override
+  String get activeAlarmsTitle => '當前告警';
+
+  @override
+  String get adFeedbackCommunicationAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get adFeedbackCommunicationAlarmTitle => 'AD 反饋通訊告警';
+
+  @override
+  String adbRemoteDebugEnabled(int port) {
+    return '已開啓 ADB 遠程調試（端口 $port），可使用 adb connect 連接。';
+  }
+
+  @override
+  String get adbRemoteDebugFailed => '開啓 ADB 遠程調試失敗。';
+
+  @override
+  String get advancedSettingAllowWorkAfterCameraAlarm => '攝像頭告警後允許作業';
+
+  @override
+  String get advancedSettingAllowWorkAfterCameraAlarmHint => '攝像頭通訊異常時將無法使用 AI 自動檢測功能';
+
+  @override
+  String get advancedSettingAllowWorkAfterFeederAlarm => '送絲機告警後允許作業';
+
+  @override
+  String get advancedSettingAllowWorkAfterFeederAlarmHint => '送絲機異常時連續焊接模式將無法正常工作，但其他模式可以繼續工作。';
+
+  @override
+  String get advancedSettingAllowWorkAfterGasAlarm => '保護氣告警後允許作業';
+
+  @override
+  String get advancedSettingAllowWorkAfterGasAlarmHint => '保護氣異常時強制允許出光可能會損壞設備，僅應在確定無影響時打開。';
+
+  @override
+  String get advancedSettingAllowWorkAfterLensContamination => '保護鏡髒污告警後允許作業';
+
+  @override
+  String get advancedSettingAllowWorkAfterLensContaminationHint => '保護鏡髒污時強制允許出光可能會損壞設備，僅應在 AI 檢測不準時打開。';
+
+  @override
+  String get advancedSettingKeepLaserOnWhileAlarmed => '告警時保持出光';
+
+  @override
+  String get advancedSettingKeepLaserOnWhileAlarmedHint => '開啓後，作業過程中出現編碼告警時不會自動關光，告警彈窗仍會顯示。僅應在明確風險可控時使用。';
+
+  @override
+  String get advancedSettingLensContaminationDetection => '鏡片污染檢測';
+
+  @override
+  String get advancedSettingLensContaminationDetectionHint => '作業時通過攝像頭與 AI 監測保護鏡髒污情況，發現污染時提示處理。僅在檢測不準或不可用時關閉。';
+
+  @override
+  String get advancedSettingShowBootSelfCheck => '顯示開機自檢';
+
+  @override
+  String get advancedSettingText => '高級設置';
+
+  @override
+  String get advancedSettingZeroPointOffsetDetection => '零點偏移檢測';
+
+  @override
+  String get advancedSettingZeroPointOffsetDetectionHint => '通過 AI 判斷光斑是否居中，零點偏移時提示校正。若不需要此類告警可關閉。';
+
+  @override
+  String get advancedSettings => '高級設置';
+
+  @override
+  String get advancedSettingsGroupAiAssistance => 'AI 輔助';
+
+  @override
+  String get advancedSettingsGroupDangerousOperations => '危險作業（覆蓋保護）';
+
+  @override
+  String get advancedSettingsGroupOffsetCorrection => '偏移與校正';
+
+  @override
+  String get advancedSettingsGroupPowerThresholds => '功率閾值';
+
+  @override
+  String get advancedSettingsGroupTemperatureThresholds => '溫度閾值';
+
+  @override
+  String get aiDetectionLabel => 'AI檢測';
+
+  @override
+  String get aiOverlayClsDisabled => '分類：未啓用';
+
+  @override
+  String get aiOverlayClsMetal => '金屬';
+
+  @override
+  String aiOverlayClsPrefix(String className, double score) {
+    return '分類：$className（$score）';
+  }
+
+  @override
+  String get aiOverlayClsWaiting => '分類：等待中…';
+
+  @override
+  String aiOverlayResultPrefix(String result) {
+    return '最新結果：$result';
+  }
+
+  @override
+  String get aiOverlayResultWaiting => '最新結果：等待中…';
+
+  @override
+  String get aiOverlayStateIdle => '空閒';
+
+  @override
+  String get aiOverlayStateLocked => '已鎖定';
+
+  @override
+  String get aiOverlayStateMonitoring => '監控中';
+
+  @override
+  String get aiOverlayStateStainDetect => '污點檢測';
+
+  @override
+  String get aiVisionAiEngineNotReady => 'AI 引擎未就緒';
+
+  @override
+  String get aiVisionChooseBtn => '選擇視頻';
+
+  @override
+  String get aiVisionComingSoon => 'AI視覺 — 即將推出';
+
+  @override
+  String get aiVisionDetectBtn => '檢測';
+
+  @override
+  String get aiVisionInferenceVideoNotReady => '推理視頻尚未準備好';
+
+  @override
+  String get aiVisionMaterialTypeText => '材料類型';
+
+  @override
+  String get aiVisionNavLabel => 'AI視覺';
+
+  @override
+  String get aiVisionOfflineInferenceNotAvailable => '當前 AI 庫不支持離線推理';
+
+  @override
+  String get aiVisionProcessTypeText => '工藝類型';
+
+  @override
+  String get aiVisionReinferBtn => '重新檢測';
+
+  @override
+  String get aiVisionSelectBtn => '選擇';
+
+  @override
+  String get aiVisionSelectVideoFirst => '請選擇一個視頻進行檢測';
+
+  @override
+  String aiVisionStreamFailureFirstFrameTimeout(int timeoutMs) {
+    return '等待首幀超時：$timeoutMs ms';
+  }
+
+  @override
+  String get aiVisionStreamFailurePlayerTimeout => '播放器連接或取流超時';
+
+  @override
+  String aiVisionStreamFailureRtspEvent(String message) {
+    return 'RTSP 事件錯誤：$message';
+  }
+
+  @override
+  String aiVisionStreamFailureStartCode(int code) {
+    return '播放器 start 返回錯誤碼：$code';
+  }
+
+  @override
+  String get aiVisionStreamFailureSurfaceUnavailable => '視頻渲染 Surface 未就緒';
+
+  @override
+  String get aiVisionStreamFailureUnsupportedVideo => '視頻編碼不支持或解碼器初始化失敗';
+
+  @override
+  String get aiVisionTitle => 'AI 視覺';
+
+  @override
+  String get aiVisionUploadBtn => '上傳';
+
+  @override
+  String aiVisionVideoExportFailed(String error) {
+    return '推理視頻導出失敗：$error';
+  }
+
+  @override
+  String get aiVisionVideoExporting => '正在生成結果視頻...';
+
+  @override
+  String aiVisionVideoInferenceFailed(String error) {
+    return '視頻分析失敗：$error';
+  }
+
+  @override
+  String aiVisionVideoInferenceProgress(int percent) {
+    return '正在分析視頻... $percent%';
+  }
+
+  @override
+  String get aiVisionVideoPause => '暫停';
+
+  @override
+  String get aiVisualizedLabel => '可視化';
+
+  @override
+  String get alarmFaultClearedContent => '該故障已解除，可繼續作業。若頻繁出現，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get alarmInfoLaserDevice => '激光設備';
+
+  @override
+  String get alarmInfoWeldingGun => '焊槍';
+
+  @override
+  String get alarmInfoWireFeeder => '送絲機';
+
+  @override
+  String get alarmLogsTitle => '告警日誌';
+
+  @override
+  String get alarmRebootThenSupportContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String autoOtaUpdateDialogMessage(String version) {
+    return '新版本 $version 可用，請前往設置下載並安裝。';
+  }
+
+  @override
+  String get blowOnLabel => '吹氣';
+
+  @override
+  String get blowText => '通氣狀態';
+
+  @override
+  String get blowingAirPressureText => '吹氣氣壓';
+
+  @override
+  String get bluetoothCloseFailedText => '藍牙關閉失敗';
+
+  @override
+  String get bluetoothClosedText => '藍牙已關閉';
+
+  @override
+  String get bluetoothNotSupportedText => '本設備不支持藍牙';
+
+  @override
+  String get bluetoothOpenFailedText => '藍牙開啓失敗';
+
+  @override
+  String get bluetoothOpenedText => '藍牙已開啓';
+
+  @override
+  String get bluetoothSettings => '藍牙設置';
+
+  @override
+  String get bluetoothText => '藍牙';
+
+  @override
+  String get bootSelfCheckClose => '關閉';
+
+  @override
+  String get bootSelfCheckControllerComm => '控制器通訊狀態';
+
+  @override
+  String get bootSelfCheckDialogTitle => '開機自檢';
+
+  @override
+  String get bootSelfCheckDontShowAgain => '以後不再顯示';
+
+  @override
+  String get bootSelfCheckStatusChecking => '檢測中…';
+
+  @override
+  String get bootSelfCheckStatusFail => '異常';
+
+  @override
+  String get bootSelfCheckStatusSkipped => '跳過';
+
+  @override
+  String bundledFirmwareDialogMessage(String currentVersion, String newVersion) {
+    return '檢測到新控制板固件（當前 $currentVersion → $newVersion）。\n請保持設備通電，升級過程中請勿操作。';
+  }
+
+  @override
+  String get bundledFirmwareFailedMessage => '控制板固件升級失敗，請稍後重試。';
+
+  @override
+  String get bundledFirmwareFailedTitle => '固件升級失敗';
+
+  @override
+  String get bundledFirmwareSuccessTitle => '固件升級成功';
+
+  @override
+  String get bundledFirmwareUpgradingMessage => '請保持設備通電，升級過程中請勿操作。';
+
+  @override
+  String get bundledFirmwareUpgradingTitle => '正在升級控制板固件';
+
+  @override
+  String get callBackHomeTitle => '回到主頁';
+
+  @override
+  String get cameraCommStatusText => '攝像頭通訊狀態';
+
+  @override
+  String get cameraCommunicationAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get cameraCommunicationAlarmTitle => '攝像頭通訊告警';
+
+  @override
+  String get cellularNetworkText => '蜂窩網絡';
+
+  @override
+  String get checkUpdate => '檢查更新';
+
+  @override
+  String get checkingStatus => '檢測中…';
+
+  @override
+  String get closeText => '關閉';
+
+  @override
+  String get coldWaterInterlockAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get coldWaterInterlockAlarmTitle => '冷水互鎖告警';
+
+  @override
+  String get collimatingLensOvertemperatureAlarmTitle => '聚焦鏡溫度告警';
+
+  @override
+  String get collimatorTempLabel => '準直鏡';
+
+  @override
+  String get collimatorTemperatureText => '聚焦鏡溫度';
+
+  @override
+  String get commonSettings => '通用設置';
+
+  @override
+  String get commonSettingsGroupDateTime => '日期與時間';
+
+  @override
+  String get commonSettingsGroupDisplaySound => '顯示與聲音';
+
+  @override
+  String get commonSettingsGroupNetwork => '網絡';
+
+  @override
+  String get commonSettingsShowSafetyGroundLockAlarm => '顯示安全夾告警';
+
+  @override
+  String get confirmText => '確定';
+
+  @override
+  String get connectedText => '已連接';
+
+  @override
+  String get controllerTabletCommAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get controllerTabletCommAlarmTitle => '控制板通訊故障';
+
+  @override
+  String get currentAlarmText => '電流報警';
+
+  @override
+  String get customHomePage => '自定義首頁';
+
+  @override
+  String get cuttingProportionText => '切割佔比';
+
+  @override
+  String get dateTimeApplyFailed => '無法更新日期/時間';
+
+  @override
+  String get dateTimeAutoDateTime => '自動設置日期和時間';
+
+  @override
+  String get dateTimeAutoSyncFailed => '網絡時間服務不可用';
+
+  @override
+  String get dateTimeAutoSyncOff => '自動同步已關閉';
+
+  @override
+  String get dateTimeAutoSyncOffline => '網絡不可用，等待同步';
+
+  @override
+  String get dateTimeAutoSyncOk => '網絡時間同步成功';
+
+  @override
+  String get dateTimeAutoSyncing => '正在通過網絡時間服務同步…';
+
+  @override
+  String get dateTimeAutoTimeZone => '自動設置時區';
+
+  @override
+  String get dateTimeAutomatic => '自動';
+
+  @override
+  String get dateTimePermissionDenied => '缺少系統級日期時間設置權限';
+
+  @override
+  String get dateTimeSearchTimezoneHint => '搜索時區（例如 Asia/Shanghai）';
+
+  @override
+  String get dateTimeSelectDate => '選擇日期';
+
+  @override
+  String get dateTimeSelectTime => '選擇時間';
+
+  @override
+  String get dateTimeSelectTimeZone => '選擇時區';
+
+  @override
+  String get dateTimeSetFailed => '日期或時間設置失敗';
+
+  @override
+  String get dateTimeSetTime => '時間';
+
+  @override
+  String get dateTimeSetTimeZone => '時區';
+
+  @override
+  String get dateTimeSettings => '日期和時間';
+
+  @override
+  String get dateTimeTimezoneApplyFailed => '無法更新時區';
+
+  @override
+  String get defaultLabel => '默認';
+
+  @override
+  String get deleteText => '刪除';
+
+  @override
+  String get deviceInformation => '設備信息';
+
+  @override
+  String get deviceInformationText => '設備信息';
+
+  @override
+  String get deviceModel => '設備型號';
+
+  @override
+  String get deviceMonitorHomeTitle => '監測';
+
+  @override
+  String get deviceMonitorMachineStatusTitle => '機臺狀態';
+
+  @override
+  String get deviceMonitorTitle => '設備監測';
+
+  @override
+  String get deviceSettingText => '設備設置';
+
+  @override
+  String get deviceSn => '設備 SN';
+
+  @override
+  String get diodeShortCircuitAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get diodeShortCircuitAlarmTitle => '二極管短路故障';
+
+  @override
+  String get diodeShortCircuitErrorClearedTitle => '二極管短路故障解除';
+
+  @override
+  String get dontShowAgain => '不再顯示';
+
+  @override
+  String get driveOvertemperatureAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get driveOvertemperatureAlarmTitle => '驅動溫度告警';
+
+  @override
+  String get driverModuleOvertemperatureAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get driverModuleOvertemperatureAlarmTitle => '驅動模塊超溫告警';
+
+  @override
+  String get environmentTemperatureAlarmContent => '環境溫度超出允許範圍。請改善車間溫控；若讀數明顯異常，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get environmentTemperatureAlarmTitle => '環境溫度告警';
+
+  @override
+  String get environmentTemperatureText => '環境溫度';
+
+  @override
+  String get fiberDisconnectionAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get fiberDisconnectionAlarmTitle => '光纖斷開告警';
+
+  @override
+  String get fiberTemperatureUpperLimitAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get fiberTemperatureUpperLimitAlarmTitle => '光纖溫度超上限告警';
+
+  @override
+  String get fiberTemperatureUpperLimitClearedTitle => '光纖溫度超上限解除';
+
+  @override
+  String get flashErrorAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get flashErrorAlarmTitle => 'FLASH 錯誤告警';
+
+  @override
+  String get flashUnencryptedAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get frontLightPdVoltageText => '前向光PD電壓';
+
+  @override
+  String get galvanometerMotorOvercurrentAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get galvanometerMotorOvercurrentAlarmTitle => '振鏡電機過流告警';
+
+  @override
+  String get galvanometerMotorStallAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get galvanometerMotorStallAlarmTitle => '振鏡電機堵轉告警';
+
+  @override
+  String get gasPressureLabel => '氣壓';
+
+  @override
+  String get gunHeadCommunicationAlarmContent => '主機與焊槍通訊失敗。請檢查槍頭線纜與接頭；重新連接後若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get gunHeadCommunicationAlarmTitle => '槍頭通訊告警';
+
+  @override
+  String get gunHeadCommunicationText => '槍頭通訊狀態';
+
+  @override
+  String get gunHeadMotorOvertemperatureAlarmContent => '焊槍電機過溫。請暫停作業並等待冷卻；若再次出現，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get gunHeadMotorOvertemperatureAlarmTitle => '槍頭電機過溫告警';
+
+  @override
+  String get gunHeadSwitchText => '激光槍開關';
+
+  @override
+  String get gunSn => '槍頭 SN';
+
+  @override
+  String get gunSwitchLabel => '焊槍開關';
+
+  @override
+  String get hardwareBusErrorAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get hardwareBusErrorAlarmTitle => '硬件總線錯誤告警';
+
+  @override
+  String get homeAiVisionLabel => 'AI 視覺';
+
+  @override
+  String get homeEngineerModeLabel => '工程師模式';
+
+  @override
+  String get homeMonitorLabel => '監控';
+
+  @override
+  String get homeSettingsLabel => '設置';
+
+  @override
+  String get httpProxyAuthNone => '無';
+
+  @override
+  String get httpProxyAuthType => '認證方式';
+
+  @override
+  String get httpProxyEnable => '啓用代理';
+
+  @override
+  String get httpProxyHost => '主機';
+
+  @override
+  String get httpProxyPassword => '密碼';
+
+  @override
+  String get httpProxySaveSuccess => '代理設置已保存';
+
+  @override
+  String get httpProxyStatusIncomplete => '開啓（未完成）';
+
+  @override
+  String get httpProxyStatusOff => '關閉';
+
+  @override
+  String get httpProxyTestConnection => '測試連接';
+
+  @override
+  String get httpProxyTestFailed => '連接失敗';
+
+  @override
+  String get httpProxyTestNoOrigin => '無可用的 API 源進行測試';
+
+  @override
+  String get httpProxyTestSuccess => '連接成功';
+
+  @override
+  String get httpProxyUsername => '用戶名';
+
+  @override
+  String get httpProxyValidationHostRequired => '請輸入主機地址';
+
+  @override
+  String get httpProxyValidationPortInvalid => '端口必須爲 1–65535';
+
+  @override
+  String get httpProxyValidationUsernameRequired => 'Basic 認證需要用戶名';
+
+  @override
+  String get illegalInstructionAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get internalHumidityExceedsTheUpperLimitAlarmTitle => '內部溼度超上限告警';
+
+  @override
+  String get internalHumidityUpperLimitAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get ipCameraText => 'IP 攝像頭';
+
+  @override
+  String get keyboardText => '鍵盤';
+
+  @override
+  String get languageAppliesToUi => '應用於產品界面語言與軟鍵盤。';
+
+  @override
+  String get languageOptionChinese => '簡體中文';
+
+  @override
+  String get languagePreferenceUnavailable => '無法讀取語言偏好。';
+
+  @override
+  String get languageSettingText => '語言';
+
+  @override
+  String get laserCommunicationAlarmContent => '請確認已經按下了 Reset 按鈕。若依舊沒有恢復，請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get laserCommunicationAlarmTitle => '激光器通訊告警';
+
+  @override
+  String get laserCurrentAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get laserCurrentAlarmTitle => '激光器電流告警';
+
+  @override
+  String get laserCurrentLabel => '激光電流';
+
+  @override
+  String get laserDriverCommunicationAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get laserDriverCommunicationAlarmTitle => '激光器驅動通訊告警';
+
+  @override
+  String get laserEmergencyStopAlarmContent => '激光器急停已觸發。請鬆開急停並復位設備後再繼續作業。';
+
+  @override
+  String get laserOutputEnergyLowerLimitAlarmContent => '激光輸出能量過低。請檢查保護鏡與工藝功率設置。若持續出現，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get laserOutputEnergyLowerLimitAlarmTitle => '激光輸出能量低於下限告警';
+
+  @override
+  String get laserOutputEnergyLowerLimitClearedTitle => '激光輸出能量低於下限解除';
+
+  @override
+  String get laserReflectedEnergyUpperLimitAlarmContent => '激光反射能量過高。請停止出光，檢查工件角度、裝配間隙與工藝參數。若持續出現，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get lensHeavyContaminationAlarmTitle => '鏡片髒污告警';
+
+  @override
+  String get loadingText => '加載中...';
+
+  @override
+  String get machineBlowContent => '氣壓';
+
+  @override
+  String get machineBlowTitle => '吹氣';
+
+  @override
+  String get machineLaserCurrentContent => '電流';
+
+  @override
+  String get machinePumpContent => '當前';
+
+  @override
+  String get machineTitle => '機臺狀態';
+
+  @override
+  String get mainControllerTempBoardCommAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get mainControllerTempBoardCommAlarmTitle => '主控板與溫控板通訊故障';
+
+  @override
+  String get mmiOscillatorMalfunctionAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get mmiOscillatorMalfunctionAlarmTitle => 'MMI 振盪器故障告警';
+
+  @override
+  String get modbusCommunicationFault => 'Modbus 通訊故障';
+
+  @override
+  String get monitorNavLabel => '設備監控';
+
+  @override
+  String get motorCableOpenAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get motorCableOpenAlarmTitle => '電機連接線開路告警';
+
+  @override
+  String get motorDriverTempLabel => '電機驅動';
+
+  @override
+  String get motorDriverTemperatureText => '電機驅動板溫度';
+
+  @override
+  String get motorTempLabel => '電機';
+
+  @override
+  String get mouseText => '鼠標';
+
+  @override
+  String get narrowPulseProtectionAlarmContent => '已觸發窄脈衝保護。請調整工藝參數後重試；若反覆出現，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get narrowPulseProtectionAlarmTitle => '窄脈衝保護告警';
+
+  @override
+  String get networkSettingText => '網絡設置';
+
+  @override
+  String get networkSettings => '網絡設置';
+
+  @override
+  String get noActiveAlarms => '無當前告警';
+
+  @override
+  String get noSignedProcessLibrary => '未安裝已簽名的工藝庫';
+
+  @override
+  String get notConnected => '未連接';
+
+  @override
+  String get notConnectingText => '未連接';
+
+  @override
+  String get offLabel => '關閉';
+
+  @override
+  String get onLabel => '開啓';
+
+  @override
+  String get otaUpgradeStatusApk => '正在安裝應用';
+
+  @override
+  String get otaUpgradeStatusDownloading => '正在下載升級包';
+
+  @override
+  String otaUpgradeStatusFirmware(int percent) {
+    return '正在升級控制板固件 ($percent%)';
+  }
+
+  @override
+  String get otaUpgradeStatusPreparing => '正在準備升級';
+
+  @override
+  String get otaUpgradeStatusSystem => '升級系統中';
+
+  @override
+  String get overTempLabel => '超溫';
+
+  @override
+  String get pleaseWait => '請稍候…';
+
+  @override
+  String get positioningLightFaultAlarmContent => '紅光（定位光）故障。請檢查指示光是否正常；若不亮，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get protectiveLensOvertemperatureAlarmContent => '如果保護鏡出現明顯燒痕，請立即更換。';
+
+  @override
+  String get protectiveLensOvertemperatureAlarmTitle => '保護鏡溫度告警';
+
+  @override
+  String get protectiveMirrorTempLabel => '保護鏡';
+
+  @override
+  String get protectiveMirrorTemperatureText => '保護鏡溫度';
+
+  @override
+  String get pumpBoardTemperatureText => '泵源板溫度';
+
+  @override
+  String get pumpCurrentText => '泵源電流';
+
+  @override
+  String get pumpModuleOvertemperatureAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get pumpModuleOvertemperatureAlarmTitle => '泵浦模塊超溫告警';
+
+  @override
+  String get pumpModuleOvertemperatureClearedTitle => '泵浦模塊超溫解除';
+
+  @override
+  String get pumpSourceTemperatureAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get pumpSourceTemperatureAlarmTitle => '泵源溫度告警';
+
+  @override
+  String get pumpSourceVoltageAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get pumpSourceVoltageAlarmTitle => '泵源電壓告警';
+
+  @override
+  String get pumpStatusText => '泵源通訊狀態';
+
+  @override
+  String get pumpTemperatureText => '泵源溫度';
+
+  @override
+  String get quiescentCurrentAbnormalAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get quiescentCurrentAbnormalAlarmTitle => '靜態電流異常告警';
+
+  @override
+  String get redLightCurrentAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get redLightCurrentAlarmTitle => '紅光電流告警';
+
+  @override
+  String get redLightCurrentText => '紅光電流';
+
+  @override
+  String get redLightLabel => '紅光';
+
+  @override
+  String get redLightText => '紅光';
+
+  @override
+  String get rgbLedText => 'RGB 指示燈';
+
+  @override
+  String get safetyLockLabel => '安全鎖';
+
+  @override
+  String get safetyLockText => '安全夾';
+
+  @override
+  String get screenDisplayText => '屏幕顯示';
+
+  @override
+  String get screenOffOption10Min => '10 分鐘';
+
+  @override
+  String get screenOffOption30Min => '30 分鐘';
+
+  @override
+  String get screenOffOption60Min => '60 分鐘';
+
+  @override
+  String get screenOffTimeText => '息屏時間';
+
+  @override
+  String get screenSettings => '屏幕設置';
+
+  @override
+  String get sensorAbnormalAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get sensorAbnormalAlarmTitle => '傳感器異常告警';
+
+  @override
+  String get sensorChannelDeviationAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get sensorChannelDeviationAlarmTitle => '傳感器通道偏差告警';
+
+  @override
+  String get settingsNavLabel => '設置';
+
+  @override
+  String get settingsTabAdvanced => '高級設置';
+
+  @override
+  String get settingsTabCommon => '通用設置';
+
+  @override
+  String get settingsTabCustomHome => '自定義首頁';
+
+  @override
+  String get settingsTabDeviceInfo => '設備信息';
+
+  @override
+  String get settingsTitle => '設置';
+
+  @override
+  String get shieldingGasAlarmCauseBlowPressure => '吹氣氣壓過低';
+
+  @override
+  String get shieldingGasAlarmCauseDeviceService => '設備異常，請聯繫售後服務';
+
+  @override
+  String get shieldingGasAlarmCauseInletPressure => '進氣氣壓過低';
+
+  @override
+  String get shieldingGasAlarmCausePressureCheck => '氣壓檢測異常';
+
+  @override
+  String get shieldingGasAlarmContent => '請檢查保護氣是否開啓、氣瓶是否缺氣。如確認無誤後機器仍報警，請聯繫售後服務。';
+
+  @override
+  String shieldingGasAlarmEngineerCheckMessage(String reason) {
+    return '保護氣異常：$reason';
+  }
+
+  @override
+  String shieldingGasAlarmLogMessage(String reason) {
+    return 'A001 保護氣告警，原因：$reason';
+  }
+
+  @override
+  String get shieldingGasAlarmTitle => '保護氣告警';
+
+  @override
+  String shieldingGasAlarmWarnLogContent(String summary) {
+    return '$summary。如確認無誤後機器仍報警，請聯繫售後服務。';
+  }
+
+  @override
+  String get showStartupSelfCheck => '顯示開機自檢';
+
+  @override
+  String get showSystemStatusOverlay => '顯示系統狀態浮層';
+
+  @override
+  String get sshDebugText => 'SSH 調試';
+
+  @override
+  String get straightTrackTemperatureAlarmContent => '檢查聚焦鏡。若聚焦鏡有明顯燒痕，請立即更換。';
+
+  @override
+  String get tempBoardRefrigerationCommAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get tempBoardRefrigerationCommAlarmTitle => '溫控板與製冷系統通訊故障';
+
+  @override
+  String get undervoltage24vAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get undervoltage24vAlarmTitle => '24V 欠壓告警';
+
+  @override
+  String get unitPreferenceUnavailable => '無法讀取單位偏好。';
+
+  @override
+  String get unitSettingText => '單位';
+
+  @override
+  String get usbOtgModeDebug => '調試';
+
+  @override
+  String get usbOtgModeHost => '主機';
+
+  @override
+  String get videosTitle => '視頻';
+
+  @override
+  String get volumeSetFailed => '音量設置失敗';
+
+  @override
+  String get warnInfoLastWork => '上次作業時長';
+
+  @override
+  String get warnInfoLightTime => '出光總時長';
+
+  @override
+  String get warnInfoLightTimeInfo => '較上週';
+
+  @override
+  String get warnInfoWeldingConsumables => '焊絲耗材總計';
+
+  @override
+  String get washProportionText => '清洗佔比';
+
+  @override
+  String get waterTemperatureUpperLimitAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get waterTemperatureUpperLimitAlarmTitle => '水溫超上限告警';
+
+  @override
+  String get weldingProportionText => '焊接佔比';
+
+  @override
+  String get wifiAdvancedSettings => 'IP 設置';
+
+  @override
+  String get wifiAdvancedSettingsHide => '收起 IP 設置';
+
+  @override
+  String get wifiApply => '應用';
+
+  @override
+  String get wifiDetailsTitle => '無線網絡詳情';
+
+  @override
+  String get wifiDialogConnect => '連接';
+
+  @override
+  String get wifiDialogHidePassword => '隱藏密碼';
+
+  @override
+  String get wifiDialogPasswordLabel => '密碼';
+
+  @override
+  String get wifiDialogShowPassword => '顯示密碼';
+
+  @override
+  String get wifiDialogSsidLabel => '網絡名稱';
+
+  @override
+  String get wifiEditIpConfig => '編輯 IP 配置';
+
+  @override
+  String get wifiErrorAddNotAllowed => '系統拒絕此請求，請允許本應用添加無線網絡建議。';
+
+  @override
+  String get wifiErrorDuplicateProfile => '無線網絡配置已存在。';
+
+  @override
+  String get wifiErrorInternal => '保存無線網絡配置時發生系統內部錯誤。';
+
+  @override
+  String get wifiErrorRemoveInvalid => '無效的已保存無線網絡配置。';
+
+  @override
+  String wifiErrorSaveFailedFormat(int code) {
+    return '保存無線網絡配置失敗（代碼 $code）。';
+  }
+
+  @override
+  String get wifiErrorTooManyProfiles => '本應用保存的無線網絡配置過多。';
+
+  @override
+  String get wifiForgetConfirmMessage => '是否忘記此網絡並斷開連接？';
+
+  @override
+  String get wifiForgetNetwork => '忘記網絡';
+
+  @override
+  String get wifiForgetPartialFailed => '忘記網絡未完全成功';
+
+  @override
+  String get wifiForgetSuccess => '已忘記該網絡';
+
+  @override
+  String get wifiFrequency => '頻段';
+
+  @override
+  String get wifiGateway => '網關';
+
+  @override
+  String get wifiHiddenNetworkConnect => '連接隱藏網絡';
+
+  @override
+  String get wifiHiddenNetworkTitle => '連接隱藏網絡';
+
+  @override
+  String get wifiInitDialogConfirm => '前往設置';
+
+  @override
+  String get wifiInitDialogMessage => '當前未連接無線網絡，請先連接無線網絡完成初始化。';
+
+  @override
+  String get wifiInitDialogTitle => '設置無線網絡';
+
+  @override
+  String wifiIpFieldEnterHint(String field) {
+    return '請輸入 $field';
+  }
+
+  @override
+  String get wifiIpModeStatic => '靜態';
+
+  @override
+  String get wifiIpSettings => 'IP 設置';
+
+  @override
+  String get wifiIpSettingsHide => '收起 IP 設置';
+
+  @override
+  String get wifiLinkSpeed => '鏈路速率';
+
+  @override
+  String get wifiNetworkText => '無線網絡';
+
+  @override
+  String get wifiOpenSystemSettingsHint => '該網絡由系統無線網絡管理，請打開系統設置完成徹底忽略。';
+
+  @override
+  String get wifiSecurity => '安全類型';
+
+  @override
+  String get wifiSecurityOpen => '開放';
+
+  @override
+  String get wifiSignalStrength => '信號強度';
+
+  @override
+  String get wifiStaticIpConflict => 'IP 地址與其他網絡接口衝突';
+
+  @override
+  String get wifiStaticIpGatewaySubnet => '網關必須與 IP 在同一子網';
+
+  @override
+  String get wifiStaticIpIncomplete => '請填寫所有必填的靜態 IP 字段';
+
+  @override
+  String get wifiStaticIpInvalid => '靜態 IP 配置無效';
+
+  @override
+  String get wifiStatusConnected => '已連接';
+
+  @override
+  String get wifiStatusConnecting => '正在連接，請稍候…';
+
+  @override
+  String get wifiStatusNotConnected => '未連接';
+
+  @override
+  String get wifiSubnetMask => '子網掩碼';
+
+  @override
+  String get wifiToastAddCanceledBySystem => '系統已取消添加無線網絡。';
+
+  @override
+  String get wifiToastAddedConnecting => '無線網絡已添加，正在連接…';
+
+  @override
+  String get wifiToastConnectedSuccess => '連接成功。';
+
+  @override
+  String get wifiToastConnectionFailed => '連接失敗。';
+
+  @override
+  String get wifiToastDetailsOnlyWhenConnected => '僅已連接的無線網絡可查看詳情。';
+
+  @override
+  String get wifiToastInvalidBssid => 'BSSID 格式無效。';
+
+  @override
+  String get wifiToastNoConnectionDetails => '無已連接無線網絡詳情。';
+
+  @override
+  String get wifiToastPasswordRequired => '密碼不能爲空。';
+
+  @override
+  String get wifiToastProfileExistsConnecting => '無線網絡配置已存在，正在嘗試連接。';
+
+  @override
+  String get wifiToastProfileSavedUseSystem => '配置已保存，請在系統無線網絡列表中連接。';
+
+  @override
+  String get wifiToastRequiresSystemPrivilege => '需要系統級無線網絡權限，請以特權系統應用安裝。';
+
+  @override
+  String get wifiToastSsidRequired => '網絡名稱不能爲空。';
+
+  @override
+  String get wifiToastWifiDisabled => '無線網絡未開啓';
+
+  @override
+  String get wifiWlanLabel => '無線局域網';
+
+  @override
+  String get wireFeederCommunicationAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get wireFeederCommunicationAlarmTitle => '送絲機通訊告警';
+
+  @override
+  String get wireFeederCurrentAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get wireFeederCurrentAlarmTitle => '送絲機電流告警';
+
+  @override
+  String get wireFeedingLabel => '送絲';
+
+  @override
+  String get wireFeedingMachineCommunicationText => '送絲機通訊狀態';
+
+  @override
+  String get wireFeedingText => '送絲';
+
+  @override
+  String get wirelessNetworkText => '無線網絡';
+
+  @override
+  String get zeroPointOffsetAlarmTitle => '零點偏移告警';
+}

@@ -6,6 +6,7 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_modbus_i
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Advanced Settings — layout parity with lws-ui `AdvancedSettingFragment`.
 ///
@@ -36,6 +37,7 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
     final thresholds = AdvancedSettingsScope.maybeThresholdsOf(context);
 
     Widget body() {
+      final l10n = AppLocalizations.of(context)!;
       final v = thresholds?.values ??
           store?.thresholds ??
           const AdvancedSettingsThresholdValues();
@@ -60,7 +62,7 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
 
       return SettingsScrollView(
         children: [
-          const SettingsSectionHeader('Offset & Correction'),
+          SettingsSectionHeader(l10n.advancedSettingsGroupOffsetCorrection),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SettingsParamRow(
@@ -108,7 +110,7 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
             ),
           ),
           const SizedBox(height: 16),
-          const SettingsSectionHeader('Power Thresholds'),
+          SettingsSectionHeader(l10n.advancedSettingsGroupPowerThresholds),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SettingsParamRow(
@@ -162,7 +164,7 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
             ),
           ),
           const SizedBox(height: 8),
-          const SettingsSectionHeader('Temperature Thresholds'),
+          SettingsSectionHeader(l10n.advancedSettingsGroupTemperatureThresholds),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SettingsParamRow(
@@ -172,8 +174,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 min: 0,
                 max: 80,
                 valueLabel: '${v.motorTempAlarm.round()}℃',
-                scaleMinText: '0℃',
-                scaleMaxText: '80℃',
+                scaleMinText: l10n.advancedSettingScale0Celsius,
+                scaleMaxText: l10n.advancedSettingScale80Celsius,
                 onChanged: (n) =>
                     preview(v.copyWith(motorTempAlarm: n.roundToDouble())),
                 onChangeEnd: (n) => unawaited(
@@ -189,8 +191,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 min: 0,
                 max: 80,
                 valueLabel: '${v.driverTempAlarm.round()}℃',
-                scaleMinText: '0℃',
-                scaleMaxText: '80℃',
+                scaleMinText: l10n.advancedSettingScale0Celsius,
+                scaleMaxText: l10n.advancedSettingScale80Celsius,
                 onChanged: (n) =>
                     preview(v.copyWith(driverTempAlarm: n.roundToDouble())),
                 onChangeEnd: (n) => unawaited(
@@ -212,8 +214,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 min: 0,
                 max: 80,
                 valueLabel: '${v.protectiveLensTempAlarm.round()}℃',
-                scaleMinText: '0℃',
-                scaleMaxText: '80℃',
+                scaleMinText: l10n.advancedSettingScale0Celsius,
+                scaleMaxText: l10n.advancedSettingScale80Celsius,
                 onChanged: (n) => preview(
                   v.copyWith(protectiveLensTempAlarm: n.roundToDouble()),
                 ),
@@ -230,8 +232,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 min: 0,
                 max: 80,
                 valueLabel: '${v.collimatingLensTempAlarm.round()}℃',
-                scaleMinText: '0℃',
-                scaleMaxText: '80℃',
+                scaleMinText: l10n.advancedSettingScale0Celsius,
+                scaleMaxText: l10n.advancedSettingScale80Celsius,
                 onChanged: (n) => preview(
                   v.copyWith(collimatingLensTempAlarm: n.roundToDouble()),
                 ),
@@ -263,11 +265,11 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               ),
             ),
           ),
-          const SettingsSectionHeader('AI Assistance'),
+          SettingsSectionHeader(l10n.advancedSettingsGroupAiAssistance),
           SettingsGroup(
             children: [
               SettingsSwitchRow(
-                title: 'Lens Contamination Detection',
+                title: l10n.advancedSettingLensContaminationDetection,
                 value: ai?.lensContaminationDetectionEnabled ?? true,
                 onChanged: ai == null
                     ? null
@@ -276,7 +278,7 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                         ),
               ),
               SettingsSwitchRow(
-                title: 'Zero Point Offset Detection',
+                title: l10n.advancedSettingZeroPointOffsetDetection,
                 value: ai?.zeroPointOffsetDetectionEnabled ?? true,
                 onChanged: ai == null
                     ? null
@@ -286,15 +288,12 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               ),
             ],
           ),
-          const SettingsSectionHeader('Dangerous Operations'),
+          SettingsSectionHeader(l10n.advancedSettingsGroupDangerousOperations),
           SettingsGroup(
             children: [
               SettingsSwitchRow(
-                title: 'Keep Laser On while Alarmed',
-                subtitle:
-                    'When enabled, coded alarms will not automatically turn '
-                    'off laser output while you are already welding. Warn '
-                    'dialogs still appear.',
+                title: l10n.advancedSettingKeepLaserOnWhileAlarmed,
+                subtitle: l10n.advancedSettingKeepLaserOnWhileAlarmedHint,
                 value: dangerous?.keepLaserOnWhileAlarmed ?? false,
                 onChanged: dangerous == null
                     ? null
@@ -303,10 +302,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                         ),
               ),
               SettingsSwitchRow(
-                title: 'Allow Work after Camera Alarm',
-                subtitle:
-                    'When camera communication is abnormal, AI automatic '
-                    'detection will be unavailable.',
+                title: l10n.advancedSettingAllowWorkAfterCameraAlarm,
+                subtitle: l10n.advancedSettingAllowWorkAfterCameraAlarmHint,
                 value: dangerous?.allowWorkAfterCameraAlarm ?? false,
                 onChanged: dangerous == null
                     ? null
@@ -315,11 +312,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                         ),
               ),
               SettingsSwitchRow(
-                title: 'Allow Work after Gas Alarm',
-                subtitle:
-                    'Allowing laser output while shielding gas is abnormal '
-                    'may damage your device. Turn this on only when you are '
-                    'sure there is no impact.',
+                title: l10n.advancedSettingAllowWorkAfterGasAlarm,
+                subtitle: l10n.advancedSettingAllowWorkAfterGasAlarmHint,
                 value: dangerous?.allowWorkAfterGasAlarm ?? false,
                 onChanged: dangerous == null
                     ? null
@@ -328,11 +322,9 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                         ),
               ),
               SettingsSwitchRow(
-                title: 'Allow Work after Lens Contamination',
+                title: l10n.advancedSettingAllowWorkAfterLensContamination,
                 subtitle:
-                    'Allowing laser output while the protective lens is '
-                    'contaminated may damage your device. Turn this on only '
-                    'when AI detection is inaccurate.',
+                    l10n.advancedSettingAllowWorkAfterLensContaminationHint,
                 value: dangerous?.allowWorkAfterLensContamination ?? false,
                 onChanged: dangerous == null
                     ? null
@@ -341,10 +333,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                         ),
               ),
               SettingsSwitchRow(
-                title: 'Allow Work after Feeder Alarm',
-                subtitle:
-                    'Continuous welding will not work properly when the wire '
-                    'feeder is abnormal, but other modes can continue.',
+                title: l10n.advancedSettingAllowWorkAfterFeederAlarm,
+                subtitle: l10n.advancedSettingAllowWorkAfterFeederAlarmHint,
                 value: dangerous?.allowWorkAfterFeederAlarm ?? false,
                 onChanged: dangerous == null
                     ? null

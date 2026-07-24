@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// SSH debug toggle over LAN (Settings → Network, after HTTP Proxy).
 class LanSshDebugSettingsPage extends StatefulWidget {
@@ -64,15 +65,16 @@ class _LanSshDebugSettingsPageState extends State<LanSshDebugSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SettingsScaffold(
-      title: 'SSH Debug',
+      title: l10n.sshDebugText,
       body: SettingsScrollView(
         children: [
-          const SettingsSectionHeader('SSH'),
+          SettingsSectionHeader(l10n.sshDebugText),
           SettingsGroup(
             children: [
               SettingsSwitchRow(
-                title: 'SSH Debug over LAN',
+                title: l10n.sshDebugText,
                 value: _enabled,
                 onChanged: !_ready ? null : (v) => unawaited(_set(v)),
               ),

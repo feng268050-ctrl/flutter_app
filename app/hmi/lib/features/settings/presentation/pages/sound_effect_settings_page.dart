@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 class SoundEffectSettingsPage extends StatefulWidget {
   const SoundEffectSettingsPage({super.key});
@@ -36,8 +37,9 @@ class _SoundEffectSettingsPageState extends State<SoundEffectSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SettingsScaffold(
-      title: 'Sound Effect',
+      title: l10n.soundEffectCheck,
       body: SettingsScrollView(
         children: [
           const SettingsSectionHeader('Click Sound'),

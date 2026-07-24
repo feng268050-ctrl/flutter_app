@@ -7,6 +7,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -169,13 +170,14 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SettingsScrollView(
       children: [
         const SettingsSectionHeader('Identity'),
         SettingsGroup(
           children: [
             SettingsValueRow(
-              title: 'Device Model',
+              title: l10n.deviceModel,
               value: _deviceModel,
               trailing: IconButton(
                 tooltip: 'Device QR code',
@@ -183,7 +185,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
                 icon: const Icon(Icons.qr_code_2),
               ),
             ),
-            SettingsValueRow(title: 'Device SN', value: _deviceSn),
+            SettingsValueRow(title: l10n.deviceSn, value: _deviceSn),
             SettingsValueRow(title: 'Gunhead SN', value: _gunheadSn),
           ],
         ),
@@ -196,7 +198,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
               title: 'Control Card Version',
               value: _controlCardVersion,
             ),
-            SettingsValueRow(title: 'Laser Version', value: _laserVersion),
+            SettingsValueRow(title: l10n.laserVersion, value: _laserVersion),
             SettingsValueRow(
               title: 'Wire Feeder Version',
               value: _wireFeederVersion,

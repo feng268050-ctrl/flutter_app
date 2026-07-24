@@ -6,6 +6,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
 /// Wireless Network — lws-ui / phone Settings style (not Demo forms).
@@ -190,6 +191,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final radioOn = _radio == WifiRadioState.on ||
         _radio == WifiRadioState.starting;
     final connected = _conn.isAssociated &&
@@ -197,14 +199,14 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
         _conn.ssid!.isNotEmpty;
 
     return SettingsScaffold(
-      title: 'Wireless Network',
+      title: l10n.wirelessNetworkText,
       body: SettingsScrollView(
         children: [
-          const SettingsSectionHeader('WLAN'),
+          SettingsSectionHeader(l10n.wifiWlanLabel),
           SettingsGroup(
             children: [
               SettingsSwitchRow(
-                title: 'Wi‑Fi',
+                title: l10n.wifiNetworkText,
                 value: radioOn,
                 onChanged: _busy != null
                     ? null
@@ -215,7 +217,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
               if (connected)
                 SettingsNavRow(
                   title: _conn.ssid!,
-                  value: _conn.ipv4 ?? 'Connected',
+                  value: _conn.ipv4 ?? l10n.connectedText,
                   onTap: () async {
                     await showModalBottomSheet<void>(
                       context: context,
@@ -249,7 +251,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                                     _guard(() => _wifi.forget(_conn.ssid!)),
                                   );
                                 },
-                                child: const Text('Forget This Network'),
+                                child: Text(l10n.wifiForgetNetwork),
                               ),
                             ],
                           ),
@@ -259,10 +261,10 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                   },
                 )
               else if (radioOn)
-                const ListTile(
+                ListTile(
                   contentPadding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  title: Text('Not Connected'),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  title: Text(l10n.notConnected),
                 ),
             ],
           ),

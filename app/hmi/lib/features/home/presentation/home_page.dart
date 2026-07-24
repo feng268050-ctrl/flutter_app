@@ -15,6 +15,7 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart'
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
 const double _kDesignW = 1280;
@@ -198,6 +199,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final processLibrary = ProcessLibraryScope.of(context);
     final hasSignedProcessLibrary =
         processLibrary.presets.any((preset) => preset.isBuiltin);
@@ -282,15 +284,15 @@ class _HomePageState extends State<HomePage> {
                   width: 375 * sx,
                   height: 280 * sy,
                   hero: HomeAssets.quickMode,
-                  label: HomeAssets.quickModeTextEn,
+                  textLabel: l10n.homeQuickModeLabel,
                   heroSize: 280 * sx,
                   labelWidth: 348 * sx,
                   labelHeight: 130 * sy,
                   onTap: () {
                     if (!hasSignedProcessLibrary) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('No signed process library installed'),
+                        SnackBar(
+                          content: Text(l10n.noSignedProcessLibrary),
                         ),
                       );
                       return;
@@ -304,15 +306,15 @@ class _HomePageState extends State<HomePage> {
                   width: 375 * sx,
                   height: 280 * sy,
                   hero: HomeAssets.engineerMode,
-                  label: HomeAssets.engineerModeTextEn,
+                  textLabel: l10n.homeEngineerModeLabel,
                   heroSize: 280 * sx,
                   labelWidth: 440 * sx,
                   labelHeight: 150 * sy,
                   onTap: () {
                     if (!hasSignedProcessLibrary) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('No signed process library installed'),
+                        SnackBar(
+                          content: Text(l10n.noSignedProcessLibrary),
                         ),
                       );
                       return;
@@ -331,7 +333,7 @@ class _HomePageState extends State<HomePage> {
                         scaleX: sx,
                         scaleY: sy,
                         iconAsset: HomeAssets.monitorIcon,
-                        label: 'Monitor',
+                        label: l10n.homeMonitorLabel,
                         labelFontSize: qaLabelSize,
                         onPressed: () {
                           Navigator.of(context).pushNamed(AppRoutes.monitor);
@@ -342,7 +344,7 @@ class _HomePageState extends State<HomePage> {
                         scaleX: sx,
                         scaleY: sy,
                         iconAsset: HomeAssets.settingsIcon,
-                        label: 'Settings',
+                        label: l10n.homeSettingsLabel,
                         labelFontSize: qaLabelSize,
                         onPressed: () {
                           Navigator.of(context).pushNamed(AppRoutes.settings);
@@ -359,10 +361,11 @@ class _HomePageState extends State<HomePage> {
                     scaleX: sx,
                     scaleY: sy,
                     labelFontSize: qaLabelSize,
+                    l10n: l10n,
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('AI Vision — coming soon'),
+                        SnackBar(
+                          content: Text(l10n.aiVisionComingSoon),
                         ),
                       );
                     },
@@ -484,7 +487,7 @@ class _ModeEntry extends StatelessWidget {
     required this.width,
     required this.height,
     required this.hero,
-    required this.label,
+    required this.textLabel,
     required this.heroSize,
     required this.labelWidth,
     required this.labelHeight,
@@ -496,7 +499,7 @@ class _ModeEntry extends StatelessWidget {
   final double width;
   final double height;
   final String hero;
-  final String label;
+  final String textLabel;
   final double heroSize;
   final double labelWidth;
   final double labelHeight;
@@ -543,12 +546,28 @@ class _ModeEntry extends StatelessWidget {
                   right: 0,
                   bottom: 0,
                   height: labelHeight.clamp(24, height * 0.45),
-                  child: Image.asset(
-                    label,
-                    fit: BoxFit.contain,
-                    cacheWidth: (labelWidth * dpr).round().clamp(120, 800),
-                    cacheHeight: (labelHeight * dpr).round().clamp(80, 400),
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        textLabel,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: (labelHeight * 0.28).clamp(18.0, 36.0),
+                          fontWeight: FontWeight.w700,
+                          height: 1.05,
+                          shadows: const [
+                            Shadow(
+                              color: Color(0x99000000),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -616,12 +635,14 @@ class _HomeQuickActionAiVision extends StatelessWidget {
     required this.scaleX,
     required this.scaleY,
     required this.labelFontSize,
+    required this.l10n,
     required this.onPressed,
   });
 
   final double scaleX;
   final double scaleY;
   final double labelFontSize;
+  final AppLocalizations l10n;
   final VoidCallback onPressed;
 
   @override
@@ -642,7 +663,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
       cornerRadius: _kQaCorner * s,
       labelMarginTop: _kQaLabelMarginTop * scaleY,
       sampleMode: CyberBlurSampleMode.realtime,
-      label: 'AI Vision',
+      label: l10n.homeAiVisionLabel,
       onPressed: onPressed,
       child: Row(
         children: [
@@ -667,7 +688,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'AI Detection',
+                  l10n.aiDetectionLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -679,7 +700,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
                 ),
                 SizedBox(height: 2 * scaleY),
                 Text(
-                  'Visualized',
+                  l10n.aiVisualizedLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

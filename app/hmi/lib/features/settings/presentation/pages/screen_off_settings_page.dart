@@ -2,6 +2,7 @@ import 'package:cyber_hal/output.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 class ScreenOffSettingsPage extends StatefulWidget {
   const ScreenOffSettingsPage({super.key, required this.services});
@@ -16,12 +17,15 @@ class _ScreenOffSettingsPageState extends State<ScreenOffSettingsPage> {
   AutoSleepPolicy _value = AutoSleepPolicy.never;
   bool _loading = true;
 
-  static const _options = <(AutoSleepPolicy, String)>[
-    (AutoSleepPolicy.minutes10, '10 min'),
-    (AutoSleepPolicy.minutes30, '30 min'),
-    (AutoSleepPolicy.minutes60, '60 min'),
-    (AutoSleepPolicy.never, 'Never'),
-  ];
+  List<(AutoSleepPolicy, String Function(AppLocalizations l10n))> _options(
+    AppLocalizations l10n,
+  ) =>
+      [
+        (AutoSleepPolicy.minutes10, (_) => l10n.screenOffOption10Min),
+        (AutoSleepPolicy.minutes30, (_) => l10n.screenOffOption30Min),
+        (AutoSleepPolicy.minutes60, (_) => l10n.screenOffOption60Min),
+        (AutoSleepPolicy.never, (_) => 'Never'),
+      ];
 
   @override
   void initState() {
@@ -43,25 +47,27 @@ class _ScreenOffSettingsPageState extends State<ScreenOffSettingsPage> {
     await widget.services.autoSleep.setPolicy(policy);
   }
 
-  String get _summaryLabel {
-    for (final (p, label) in _options) {
-      if (p == _value) return label;
+  String _summaryLabel(AppLocalizations l10n) {
+    for (final (p, label) in _options(l10n)) {
+      if (p == _value) return label(l10n);
     }
     return 'Never';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final options = _options(l10n);
     return SettingsScaffold(
-      title: 'Screen-off Time',
+      title: l10n.screenOffTimeText,
       body: SettingsScrollView(
         children: [
           const SettingsSectionHeader('Auto-Lock'),
           SettingsGroup(
             children: [
-              for (final (policy, label) in _options)
+              for (final (policy, label) in options)
                 SettingsOptionTile(
-                  title: label,
+                  title: label(l10n),
                   selected: !_loading && _value == policy,
                   onTap: _loading ? null : () => _select(policy),
                 ),
@@ -71,7 +77,7 @@ class _ScreenOffSettingsPageState extends State<ScreenOffSettingsPage> {
             Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
-                'Current: $_summaryLabel',
+                'Current: ${_summaryLabel(l10n)}',
                 style: const TextStyle(color: Colors.white54),
               ),
             ),

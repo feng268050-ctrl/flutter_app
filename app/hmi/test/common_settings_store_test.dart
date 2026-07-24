@@ -12,6 +12,7 @@ void main() {
     );
     store.warmRead();
     expect(store.language, CommonSettingsStore.defaultLanguage);
+    expect(store.language, CommonSettingsStore.languageEnUs);
     expect(store.unit, CommonSettingsStore.defaultUnit);
     expect(File('${dir.path}/common-settings.json').existsSync(), isFalse);
     await dir.delete(recursive: true);
@@ -22,17 +23,38 @@ void main() {
     final path = '${dir.path}/common-settings.json';
     final store = CommonSettingsStore(preferencePath: path);
     store.warmRead();
-    await store.setLanguage(CommonSettingsStore.languageZh);
+    await store.setLanguage(CommonSettingsStore.languageZhCn);
     await store.setUnit(CommonSettingsStore.unitImperial);
 
     final again = CommonSettingsStore(preferencePath: path);
     again.warmRead();
-    expect(again.language, CommonSettingsStore.languageZh);
+    expect(again.language, CommonSettingsStore.languageZhCn);
     expect(again.unit, CommonSettingsStore.unitImperial);
 
     final decoded = jsonDecode(await File(path).readAsString()) as Map;
-    expect(decoded['language'], 'ZH');
+    expect(decoded['language'], 'zh-CN');
     expect(decoded['unit'], 'Imperial');
+
+    await dir.delete(recursive: true);
+  });
+
+  test('legacy EN/ZH normalize on read', () async {
+    final dir = await Directory.systemTemp.createTemp('common-');
+    final path = '${dir.path}/common-settings.json';
+    await File(path).writeAsString(
+      jsonEncode({'language': 'ZH', 'unit': 'Metric'}),
+    );
+    final store = CommonSettingsStore(preferencePath: path);
+    store.warmRead();
+    expect(store.language, CommonSettingsStore.languageZhCn);
+    expect(store.isChineseLanguage, isTrue);
+
+    await File(path).writeAsString(
+      jsonEncode({'language': 'EN', 'unit': 'Metric'}),
+    );
+    final enStore = CommonSettingsStore(preferencePath: path);
+    enStore.warmRead();
+    expect(enStore.language, CommonSettingsStore.languageEnUs);
 
     await dir.delete(recursive: true);
   });
@@ -64,7 +86,11 @@ void main() {
   test('normalize helpers clamp unknown codes', () {
     expect(
       CommonSettingsStore.normalizeLanguage('ZH'),
-      CommonSettingsStore.languageZh,
+      CommonSettingsStore.languageZhCn,
+    );
+    expect(
+      CommonSettingsStore.normalizeLanguage('zh-TW'),
+      CommonSettingsStore.languageZhTw,
     );
     expect(
       CommonSettingsStore.normalizeLanguage('nope'),

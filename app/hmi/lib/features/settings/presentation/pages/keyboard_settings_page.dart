@@ -8,6 +8,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/hmi_route_restore.dart';
 import 'package:lws_hmi/features/settings/application/product_keyboard_profile.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Product Keyboard settings: Segment + preview + Restart (persist + HMI).
 class KeyboardSettingsPage extends StatefulWidget {
@@ -81,23 +82,26 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
     if (_busy) return;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Restart HMI?'),
-        content: const Text(
-          'Saves the selected layout and restarts HMI so soft CyberIME and '
-          'physical XKB both take effect. This page will reopen after relaunch.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return AlertDialog(
+          title: const Text('Restart HMI?'),
+          content: const Text(
+            'Saves the selected layout and restarts HMI so soft CyberIME and '
+            'physical XKB both take effect. This page will reopen after relaunch.',
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Restart'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancelText),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Restart'),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true || !mounted) return;
 
@@ -125,8 +129,9 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SettingsScaffold(
-      title: 'Keyboard',
+      title: l10n.keyboardText,
       body: SettingsScrollView(
         padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
         children: [

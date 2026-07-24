@@ -1,0 +1,673 @@
+{
+  "@@locale": "en",
+  "activeAlarmsTitle": "Active Alarms",
+  "adFeedbackCommunicationAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "adFeedbackCommunicationAlarmTitle": "AD Feedback Communication Alarm",
+  "adbRemoteDebugEnabled": "ADB remote debugging enabled (port {port}). Use adb connect to attach.",
+  "@adbRemoteDebugEnabled": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "adbRemoteDebugFailed": "Failed to enable ADB remote debugging",
+  "advancedSettingAllowWorkAfterCameraAlarm": "Allow Work After Camera Alarm",
+  "advancedSettingAllowWorkAfterCameraAlarmHint": "If camera communication fails, AI auto-detection will be unavailable.",
+  "advancedSettingAllowWorkAfterFeederAlarm": "Allow Work After Feeder Alarm",
+  "advancedSettingAllowWorkAfterFeederAlarmHint": "Continuous welding won’t work properly if the wire feeder is abnormal, but other modes can continue.",
+  "advancedSettingAllowWorkAfterGasAlarm": "Allow Work After Gas Alarm",
+  "advancedSettingAllowWorkAfterGasAlarmHint": "Allowing laser output with abnormal shielding gas may damage the device. Enable only when you’re sure it’s safe.",
+  "advancedSettingAllowWorkAfterLensContamination": "Allow Work After Lens Contamination",
+  "advancedSettingAllowWorkAfterLensContaminationHint": "Allowing laser output with a contaminated protective lens may damage the device. Enable only if AI detection is inaccurate.",
+  "advancedSettingKeepLaserOnWhileAlarmed": "Keep Laser On During Alarms",
+  "advancedSettingKeepLaserOnWhileAlarmedHint": "When enabled, coded alarms won’t automatically turn off the laser while you’re already welding. Warning dialogs still appear. Use only when the risk is acceptable.",
+  "advancedSettingLensContaminationDetection": "Lens Contamination Detection",
+  "advancedSettingLensContaminationDetectionHint": "Uses the camera and AI to watch the protective lens during work and warn when contamination is detected. Turn off only if detection is inaccurate or unavailable.",
+  "advancedSettingScale0Celsius": "0℃",
+  "advancedSettingScale20Celsius": "20℃",
+  "advancedSettingScale80Celsius": "80℃",
+  "advancedSettingScale85Celsius": "85℃",
+  "advancedSettingShowBootSelfCheck": "Show Startup Self-Check",
+  "advancedSettingText": "Advanced",
+  "advancedSettingZeroPointOffsetDetection": "Zero Offset Detection",
+  "advancedSettingZeroPointOffsetDetectionHint": "Uses AI to check whether the laser spot is centered. You’ll be prompted to correct zero offset when it drifts. Turn off only if you don’t need this alert.",
+  "advancedSettings": "Advanced",
+  "advancedSettingsGroupAiAssistance": "AI Assistance",
+  "advancedSettingsGroupDangerousOperations": "Override Safeguards",
+  "advancedSettingsGroupOffsetCorrection": "Offset & Correction",
+  "advancedSettingsGroupPowerThresholds": "Power Thresholds",
+  "advancedSettingsGroupTemperatureThresholds": "Temperature Thresholds",
+  "aiDetectionLabel": "AI Detection",
+  "aiOverlayClsDisabled": "Class: disabled",
+  "aiOverlayClsMetal": "Metal",
+  "aiOverlayClsOther": "Other",
+  "aiOverlayClsPrefix": "Class: {className} ({score})",
+  "@aiOverlayClsPrefix": {
+    "placeholders": {
+      "className": {
+        "type": "String"
+      },
+      "score": {
+        "type": "double"
+      }
+    }
+  },
+  "aiOverlayClsWaiting": "Class: waiting…",
+  "aiOverlayHudStatePrefix": "STATE: {state}",
+  "@aiOverlayHudStatePrefix": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "aiOverlayHudStatusIdle": "IDLE",
+  "aiOverlayHudStatusPrefix": "AI: {status}",
+  "@aiOverlayHudStatusPrefix": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "aiOverlayResultPrefix": "Latest result: {result}",
+  "@aiOverlayResultPrefix": {
+    "placeholders": {
+      "result": {
+        "type": "String"
+      }
+    }
+  },
+  "aiOverlayResultWaiting": "Latest result: waiting…",
+  "aiOverlayStateIdle": "Idle",
+  "aiOverlayStateLocked": "Locked",
+  "aiOverlayStateMonitoring": "Monitoring",
+  "aiOverlayStateStainDetect": "Contamination detection",
+  "aiVisionAiEngineNotReady": "AI engine isn’t ready",
+  "aiVisionChooseBtn": "Select Video",
+  "aiVisionComingSoon": "AI Vision — coming soon",
+  "aiVisionDetectBtn": "Detect",
+  "aiVisionInferenceVideoNotReady": "Result video isn’t ready yet",
+  "aiVisionMaterialTypeText": "Material Type",
+  "aiVisionNavLabel": "AI Vision",
+  "aiVisionOfflineInferenceNotAvailable": "Offline analysis isn’t available in the current AI library",
+  "aiVisionProcessTypeText": "Process Type",
+  "aiVisionReinferBtn": "Re-detect",
+  "aiVisionSelectBtn": "Select",
+  "aiVisionSelectVideoFirst": "Select a video to analyze",
+  "aiVisionStreamFailureFirstFrameTimeout": "Timed out waiting for first frame ({timeoutMs} ms)",
+  "@aiVisionStreamFailureFirstFrameTimeout": {
+    "placeholders": {
+      "timeoutMs": {
+        "type": "int"
+      }
+    }
+  },
+  "aiVisionStreamFailurePlayerTimeout": "Player connection or stream timed out",
+  "aiVisionStreamFailureRtspEvent": "RTSP error: {message}",
+  "@aiVisionStreamFailureRtspEvent": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "aiVisionStreamFailureStartCode": "Player start failed (code {code})",
+  "@aiVisionStreamFailureStartCode": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "aiVisionStreamFailureSurfaceUnavailable": "Video surface isn’t ready",
+  "aiVisionStreamFailureUnknown": "Unknown reason",
+  "aiVisionStreamFailureUnsupportedVideo": "Unsupported video codec or decoder failed to start",
+  "aiVisionTitle": "AI Vision",
+  "aiVisionUploadBtn": "Upload",
+  "aiVisionVideoAnalyzing": "Analyzing…",
+  "aiVisionVideoExportFailed": "Failed to export result video: {error}",
+  "@aiVisionVideoExportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "aiVisionVideoExporting": "Generating result video…",
+  "aiVisionVideoInferenceFailed": "Video analysis failed: {error}",
+  "@aiVisionVideoInferenceFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "aiVisionVideoInferenceProgress": "Analyzing video… {percent}%",
+  "@aiVisionVideoInferenceProgress": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "aiVisionVideoInferring": "Analyzing…",
+  "aiVisionVideoPause": "Pause",
+  "aiVisionVideoPlay": "Play",
+  "aiVisionVideoReplay": "Replay",
+  "aiVisionWorkInfoUnavailable": "-",
+  "aiVisualizedLabel": "Visualized",
+  "alarmFaultClearedContent": "This fault has cleared. You can resume work. If it happens often, contact LaserCyber support.",
+  "alarmInfoLaserDevice": "Laser",
+  "alarmInfoWeldingGun": "Welding Gun",
+  "alarmInfoWireFeeder": "Wire Feeder",
+  "alarmLogsTitle": "Alarm Logs",
+  "alarmRebootThenSupportContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "alarmTitle": "Alarms",
+  "autoOtaUpdateDialogMessage": "Version {version} is available. Download and install it in Settings.",
+  "@autoOtaUpdateDialogMessage": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "autoOtaUpdateDialogTitle": "Update Available",
+  "blowOnLabel": "Blow",
+  "blowText": "Gas Flow",
+  "blowingAirPressureText": "Shielding Gas Pressure",
+  "bluetoothCloseFailedText": "Couldn’t turn off Bluetooth",
+  "bluetoothClosedText": "Bluetooth off",
+  "bluetoothNotSupportedText": "Bluetooth not supported",
+  "bluetoothOpenFailedText": "Couldn’t turn on Bluetooth",
+  "bluetoothOpenedText": "Bluetooth on",
+  "bluetoothSettings": "Bluetooth",
+  "bluetoothText": "Bluetooth",
+  "bootSelfCheckClose": "Close",
+  "bootSelfCheckControllerComm": "Controller Comm",
+  "bootSelfCheckDialogTitle": "Startup Self-Check",
+  "bootSelfCheckDontShowAgain": "Don’t show again",
+  "bootSelfCheckStatusChecking": "Checking…",
+  "bootSelfCheckStatusFail": "Fault",
+  "bootSelfCheckStatusPass": "OK",
+  "bootSelfCheckStatusSkipped": "Skipped",
+  "bundledFirmwareDialogMessage": "A newer control board firmware is available ({currentVersion} → {newVersion}).\nKeep power connected and don’t operate the device during the upgrade.",
+  "@bundledFirmwareDialogMessage": {
+    "placeholders": {
+      "currentVersion": {
+        "type": "String"
+      },
+      "newVersion": {
+        "type": "String"
+      }
+    }
+  },
+  "bundledFirmwareDialogTitle": "Control Board Firmware Update",
+  "bundledFirmwareFailedMessage": "Control board firmware update failed. Try again later.",
+  "bundledFirmwareFailedTitle": "Firmware Update Failed",
+  "bundledFirmwareProgressPercent": "{percent}%",
+  "@bundledFirmwareProgressPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "bundledFirmwareSuccessMessage": "Control board firmware has been updated.",
+  "bundledFirmwareSuccessTitle": "Firmware Updated",
+  "bundledFirmwareUpgradingMessage": "Keep power connected and don’t operate the device during the upgrade.",
+  "bundledFirmwareUpgradingTitle": "Updating Control Board Firmware",
+  "callBackHomeTitle": "Home",
+  "cameraCommStatusText": "Camera Comm",
+  "cameraCommunicationAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "cameraCommunicationAlarmTitle": "Camera Communication Alarm",
+  "cancelText": "Cancel",
+  "cellularNetworkText": "Cellular",
+  "celsiusUnit": "°C",
+  "checkUpdate": "Check for Updates",
+  "checkingStatus": "Checking…",
+  "clearAlarmLogs": "Clear",
+  "closeText": "Close",
+  "coldWaterInterlockAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "coldWaterInterlockAlarmTitle": "Coolant Interlock Alarm",
+  "collimatingLensOvertemperatureAlarmTitle": "Collimating Lens Overtemperature",
+  "collimatorTempLabel": "Collimator",
+  "collimatorTemperatureText": "Collimating Lens Temperature",
+  "commonSettings": "General",
+  "commonSettingsGroupDateTime": "Date & Time",
+  "commonSettingsGroupDisplaySound": "Display & Sound",
+  "commonSettingsGroupMisc": "Other",
+  "commonSettingsGroupNetwork": "Network",
+  "commonSettingsShowSafetyGroundLockAlarm": "Show Safety Clamp Alarm",
+  "confirmText": "Confirm",
+  "connectedText": "Connected",
+  "controllerTabletCommAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "controllerTabletCommAlarmTitle": "Control Board Communication Error",
+  "currentAlarmText": "Current Alarm",
+  "customHomePage": "Custom Home",
+  "cuttingProportionText": "Cutting Ratio",
+  "dateTimeApplyFailed": "Couldn’t update date/time",
+  "dateTimeAutoDateTime": "Automatic Date & Time",
+  "dateTimeAutoSyncFailed": "Network time unavailable",
+  "dateTimeAutoSyncOff": "Automatic sync is off",
+  "dateTimeAutoSyncOffline": "No network — waiting to sync",
+  "dateTimeAutoSyncOk": "Network time synchronized",
+  "dateTimeAutoSyncing": "Syncing with network time…",
+  "dateTimeAutoTimeZone": "Automatic Time Zone",
+  "dateTimeAutomatic": "Automatic",
+  "dateTimePermissionDenied": "Missing system permission to change date/time",
+  "dateTimeSearchTimezoneHint": "Search time zone (e.g. Asia/Shanghai)",
+  "dateTimeSelectDate": "Select Date",
+  "dateTimeSelectTime": "Select Time",
+  "dateTimeSelectTimeZone": "Select Time Zone",
+  "dateTimeSetDate": "Set Date",
+  "dateTimeSetFailed": "Couldn’t update date or time",
+  "dateTimeSetTime": "Set Time",
+  "dateTimeSetTimeZone": "Set Time Zone",
+  "dateTimeSettings": "Date & Time",
+  "dateTimeTimezoneApplyFailed": "Couldn’t update time zone",
+  "defaultLabel": "Default",
+  "deleteText": "Delete",
+  "deviceInformation": "Device Info",
+  "deviceInformationText": "Device Info",
+  "deviceModel": "Model",
+  "deviceMonitorHomeTitle": "Monitor",
+  "deviceMonitorMachineStatusTitle": "Machine Status",
+  "deviceMonitorTitle": "Device Monitor",
+  "deviceMonitorWarnInfoTitle": "Alarms",
+  "deviceMonitorWorkInfoTitle": "Work Info",
+  "deviceSettingText": "Device Settings",
+  "deviceSn": "Device SN",
+  "diodeShortCircuitAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "diodeShortCircuitAlarmTitle": "Diode Short Circuit",
+  "diodeShortCircuitErrorClearedTitle": "Diode Short Circuit Cleared",
+  "dontShowAgain": "Don’t show again",
+  "driveOvertemperatureAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "driveOvertemperatureAlarmTitle": "Driver Overtemperature",
+  "driverModuleOvertemperatureAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "driverModuleOvertemperatureAlarmTitle": "Driver Module Overtemperature",
+  "emptyText": "",
+  "environmentTemperatureAlarmContent": "Ambient temperature is out of the allowed range. Improve workshop cooling/heating. If the reading looks wrong, contact LaserCyber support.",
+  "environmentTemperatureAlarmTitle": "Ambient Temperature Alarm",
+  "environmentTemperatureText": "Ambient Temperature",
+  "equipmentStatusBack": "Back",
+  "fahrenheitUnit": "°F",
+  "failStatus": "Fault",
+  "fiberDisconnectionAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "fiberDisconnectionAlarmTitle": "Fiber Disconnected",
+  "fiberTemperatureUpperLimitAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "fiberTemperatureUpperLimitAlarmTitle": "Fiber Temperature High",
+  "fiberTemperatureUpperLimitClearedTitle": "Fiber Temperature High Cleared",
+  "firmwareVersion": "Firmware Version",
+  "flashErrorAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "flashErrorAlarmTitle": "FLASH Error",
+  "flashUnencryptedAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "flashUnencryptedAlarmTitle": "FLASH Unencrypted",
+  "frontLightPdVoltageText": "Forward PD Voltage",
+  "galvanometerMotorOvercurrentAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "galvanometerMotorOvercurrentAlarmTitle": "Galvo Motor Overcurrent",
+  "galvanometerMotorStallAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "galvanometerMotorStallAlarmTitle": "Galvo Motor Stall",
+  "gasPressureLabel": "Gas Pressure",
+  "gunHeadCommunicationAlarmContent": "Communication between the host and the welding gun failed. Check the gun cable and connectors. If the alarm continues after reconnecting, contact LaserCyber support.",
+  "gunHeadCommunicationAlarmTitle": "Welding Gun Communication Alarm",
+  "gunHeadCommunicationText": "Gun Comm",
+  "gunHeadMotorOvertemperatureAlarmContent": "The welding gun motor is overheating. Pause work and let it cool. If the alarm returns, contact LaserCyber support.",
+  "gunHeadMotorOvertemperatureAlarmTitle": "Welding Gun Motor Overtemperature",
+  "gunHeadSwitchText": "Gun Switch",
+  "gunSn": "Welding Gun SN",
+  "gunSwitchLabel": "Gun Switch",
+  "hardwareBusErrorAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "hardwareBusErrorAlarmTitle": "Hardware Bus Error",
+  "homeAiVisionLabel": "AI Vision",
+  "homeEngineerModeLabel": "Engineer Mode",
+  "homeMonitorLabel": "Monitor",
+  "homeQuickModeLabel": "Quick Mode",
+  "homeSettingsLabel": "Settings",
+  "httpProxyAuthBasic": "Basic",
+  "httpProxyAuthNone": "None",
+  "httpProxyAuthType": "Authentication",
+  "httpProxyEnable": "Enable Proxy",
+  "httpProxyHost": "Host",
+  "httpProxyHostHint": "proxy.example.com",
+  "httpProxyPassword": "Password",
+  "httpProxyPort": "Port",
+  "httpProxyPortHint": "8080",
+  "httpProxySave": "Save",
+  "httpProxySaveSuccess": "Proxy settings saved",
+  "httpProxySettingsTitle": "HTTP Proxy",
+  "httpProxyStatusIncomplete": "On (incomplete)",
+  "httpProxyStatusOff": "Off",
+  "httpProxyTestConnection": "Test Connection",
+  "httpProxyTestFailed": "Connection failed",
+  "httpProxyTestNoOrigin": "No API origin available to test",
+  "httpProxyTestSuccess": "Connection successful",
+  "httpProxyTitle": "HTTP Proxy",
+  "httpProxyUsername": "Username",
+  "httpProxyValidationHostRequired": "Enter a host address",
+  "httpProxyValidationPortInvalid": "Port must be 1–65535",
+  "httpProxyValidationUsernameRequired": "Username is required for Basic auth",
+  "illegalInstructionAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "illegalInstructionAlarmTitle": "Illegal Instruction",
+  "inUnit": "in",
+  "inputDialogTitleWithUnit": "{title} ({unit})",
+  "@inputDialogTitleWithUnit": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "internalHumidityExceedsTheUpperLimitAlarmTitle": "Internal Humidity High",
+  "internalHumidityUpperLimitAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "ipCameraText": "IP Camera",
+  "keyboardText": "Keyboard",
+  "languageAppliesToUi": "Applies to the product UI language and soft keyboard.",
+  "languageOptionChinese": "简体中文",
+  "languageOptionEnglish": "English",
+  "languageOptionTraditionalChinese": "Traditional Chinese",
+  "languagePreferenceUnavailable": "Language preference unavailable.",
+  "languageSettingText": "Language",
+  "laserCommunicationAlarmContent": "Confirm that the Reset button has been pressed. If it still doesn’t recover, power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "laserCommunicationAlarmTitle": "Laser Communication Alarm",
+  "laserCurrentAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "laserCurrentAlarmTitle": "Laser Current Alarm",
+  "laserCurrentLabel": "Laser Current",
+  "laserDriverCommunicationAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "laserDriverCommunicationAlarmTitle": "Laser Driver Communication Alarm",
+  "laserEmergencyStopAlarmContent": "Laser E-stop is active. Release the emergency stop and reset the machine before continuing.",
+  "laserEmergencyStopAlarmTitle": "Laser E-Stop Alarm",
+  "laserOnLabel": "Laser",
+  "laserOutputEnergyLowerLimitAlarmContent": "Laser output energy is below the limit. Check the protective lens and process power setting. If it continues, contact LaserCyber support.",
+  "laserOutputEnergyLowerLimitAlarmTitle": "Laser Output Energy Low",
+  "laserOutputEnergyLowerLimitClearedTitle": "Output Energy Low Cleared",
+  "laserReflectedEnergyUpperLimitAlarmContent": "Reflected laser energy is too high. Stop emission and check workpiece angle, joint fit-up, and process parameters. If it continues, contact LaserCyber support.",
+  "laserReflectedEnergyUpperLimitAlarmTitle": "Reflected Laser Energy High",
+  "laserReflectedEnergyUpperLimitClearedTitle": "Reflected Energy High Cleared",
+  "laserText": "Laser",
+  "laserVersion": "Laser Version",
+  "lensHeavyContaminationAlarmTitle": "Lens Contamination Alarm",
+  "loadingText": "Loading…",
+  "machineBlowContent": "Pressure",
+  "machineBlowTitle": "Gas",
+  "machineLaserCurrentContent": "Current",
+  "machineLaserCurrentTitle": "Laser",
+  "machinePumpContent": "Current",
+  "machinePumpTitle": "Pump",
+  "machineTitle": "Machine Status",
+  "mainControllerTempBoardCommAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "mainControllerTempBoardCommAlarmTitle": "Main Controller–Temperature Board Communication Fault",
+  "mmUnit": "mm",
+  "mmiOscillatorMalfunctionAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "mmiOscillatorMalfunctionAlarmTitle": "MMI Oscillator Fault",
+  "modbusCommunicationFault": "Modbus communication fault",
+  "monitorNavLabel": "Monitor",
+  "motorCableOpenAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "motorCableOpenAlarmTitle": "Motor Cable Open",
+  "motorDriverTempLabel": "Motor Driver",
+  "motorDriverTemperatureText": "Motor Driver Temperature",
+  "motorTempLabel": "Motor",
+  "mouseText": "Mouse",
+  "narrowPulseProtectionAlarmContent": "Narrow-pulse protection was triggered. Adjust process parameters and try again. If it keeps happening, contact LaserCyber support.",
+  "narrowPulseProtectionAlarmTitle": "Narrow Pulse Protection",
+  "networkSettingText": "Network",
+  "networkSettings": "Network",
+  "noActiveAlarms": "No active alarms",
+  "noSignedProcessLibrary": "No signed process library installed",
+  "notConnected": "Not Connected",
+  "notConnectingText": "Not connected",
+  "notPersistedYet": "Not persisted yet",
+  "offLabel": "Off",
+  "okText": "OK",
+  "onLabel": "On",
+  "otaUpgradeStatusApk": "Installing app…",
+  "otaUpgradeStatusDownloading": "Downloading update…",
+  "otaUpgradeStatusFirmware": "Updating control board firmware ({percent}%)",
+  "@otaUpgradeStatusFirmware": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "otaUpgradeStatusPreparing": "Preparing upgrade…",
+  "otaUpgradeStatusSystem": "Updating system…",
+  "overTempLabel": "OVER TEMP",
+  "passStatus": "OK",
+  "pleaseWait": "Please wait…",
+  "positioningLightFaultAlarmContent": "The red pointer (aiming beam) has a fault. Check whether the aiming beam is on; if not, contact LaserCyber support.",
+  "positioningLightFaultAlarmTitle": "Red Pointer Fault",
+  "protectiveLensOvertemperatureAlarmContent": "If the protective lens shows burn marks, replace it immediately.",
+  "protectiveLensOvertemperatureAlarmTitle": "Protective Lens Overtemperature",
+  "protectiveMirrorTempLabel": "Protective Mirror",
+  "protectiveMirrorTemperatureText": "Protective Lens Temperature",
+  "pumpBoardTemperatureText": "Pump Board Temperature",
+  "pumpCurrentText": "Pump Current",
+  "pumpModuleOvertemperatureAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "pumpModuleOvertemperatureAlarmTitle": "Pump Module Overtemperature",
+  "pumpModuleOvertemperatureClearedTitle": "Pump Module Overtemperature Cleared",
+  "pumpSourceTemperatureAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "pumpSourceTemperatureAlarmTitle": "Pump Temperature Alarm",
+  "pumpSourceVoltageAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "pumpSourceVoltageAlarmTitle": "Pump Voltage Alarm",
+  "pumpStatusText": "Pump Comm",
+  "pumpTemperatureText": "Pump Temperature",
+  "quiescentCurrentAbnormalAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "quiescentCurrentAbnormalAlarmTitle": "Abnormal Quiescent Current",
+  "redLightCurrentAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "redLightCurrentAlarmTitle": "Red Pointer Current Alarm",
+  "redLightCurrentText": "Red Pointer Current",
+  "redLightLabel": "Red Light",
+  "redLightText": "Red Pointer",
+  "rgbLedText": "RGB LED",
+  "safetyLockLabel": "Safety Lock",
+  "safetyLockText": "Safety Clamp",
+  "screenBrightnessText": "Brightness",
+  "screenDisplayText": "Display",
+  "screenOffOption10Min": "10 min",
+  "screenOffOption30Min": "30 min",
+  "screenOffOption60Min": "60 min",
+  "screenOffTimeText": "Auto Screen Off",
+  "screenSettings": "Display",
+  "sensorAbnormalAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "sensorAbnormalAlarmTitle": "Sensor Fault",
+  "sensorChannelDeviationAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "sensorChannelDeviationAlarmTitle": "Sensor Channel Deviation",
+  "settingsNavLabel": "Settings",
+  "settingsTabAdvanced": "Advanced",
+  "settingsTabCommon": "General",
+  "settingsTabCustomHome": "Custom Home",
+  "settingsTabDeviceInfo": "Device Info",
+  "settingsTitle": "Settings",
+  "shieldingGasAlarmCauseBlowPressure": "Shielding gas pressure too low",
+  "shieldingGasAlarmCauseDeviceService": "Equipment fault, please contact after-sales service",
+  "shieldingGasAlarmCauseInletPressure": "Inlet gas pressure too low",
+  "shieldingGasAlarmCausePressureCheck": "Gas pressure check abnormal",
+  "shieldingGasAlarmContent": "Please check if the shielding gas is on and if the gas cylinder is low. If the machine still alarms after confirming these are correct, please contact after-sales service.",
+  "shieldingGasAlarmEngineerCheckMessage": "Shielding gas fault: {reason}",
+  "@shieldingGasAlarmEngineerCheckMessage": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "shieldingGasAlarmLogMessage": "A001 shielding gas alarm, reason: {reason}",
+  "@shieldingGasAlarmLogMessage": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "shieldingGasAlarmReasonBullet": "· {reason}",
+  "@shieldingGasAlarmReasonBullet": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "shieldingGasAlarmReasonHeader": "Reason:",
+  "shieldingGasAlarmTitle": "Shielding Gas Alarm",
+  "shieldingGasAlarmWarnLogContent": "{summary}. If the machine still alarms after confirming these are correct, please contact after-sales service.",
+  "@shieldingGasAlarmWarnLogContent": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "showStartupSelfCheck": "Show Startup Self-Check",
+  "showSystemStatusOverlay": "Show System Status Overlay",
+  "soundEffectCheck": "Sound Effects",
+  "soundEffectOption1": "Sound 1",
+  "soundEffectOption2": "Sound 2",
+  "soundEffectOption3": "Sound 3",
+  "sshDebugText": "SSH Debug",
+  "straightTrackTemperatureAlarmContent": "Inspect the collimating lens. If the collimating lens has burn marks, replace it immediately.",
+  "tempBoardRefrigerationCommAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "tempBoardRefrigerationCommAlarmTitle": "Temperature Board–Cooling Communication Fault",
+  "unavailable": "Unavailable",
+  "undervoltage24vAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "undervoltage24vAlarmTitle": "24 V Undervoltage",
+  "unitImperial": "Imperial",
+  "unitMetric": "Metric",
+  "unitOptionImperial": "IN",
+  "unitOptionMetric": "MM",
+  "unitPersistedFooter": "Persisted under /var/lib/hmi/common-settings.json.",
+  "unitPreferenceUnavailable": "Unit preference unavailable.",
+  "unitSettingText": "Units",
+  "usbOtgModeDebug": "Debug",
+  "usbOtgModeHost": "Host",
+  "usbOtgModeMtp": "MTP",
+  "usbOtgText": "USB OTG",
+  "videosTitle": "Videos",
+  "volumeSetFailed": "Couldn’t set volume",
+  "volumeSettingText": "Volume",
+  "warnInfoLastWork": "Last Op-Time",
+  "warnInfoLightTime": "Total Laser-On Time",
+  "warnInfoLightTimeInfo": "vs. last week",
+  "warnInfoWeldingConsumables": "Total Wire Used",
+  "warnInfoWeldingConsumablesInfo": "Common consumables",
+  "washProportionText": "Cleaning Ratio",
+  "waterTemperatureUpperLimitAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "waterTemperatureUpperLimitAlarmTitle": "Water Temperature High",
+  "weldingProportionText": "Welding Ratio",
+  "wifiAdvancedSettings": "IP Settings",
+  "wifiAdvancedSettingsHide": "Hide IP Settings",
+  "wifiApply": "Apply",
+  "wifiDetailsTitle": "Wi‑Fi Details",
+  "wifiDialogConnect": "Connect",
+  "wifiDialogHidePassword": "Hide password",
+  "wifiDialogPasswordLabel": "Password",
+  "wifiDialogShowPassword": "Show password",
+  "wifiDialogSsidLabel": "Network Name",
+  "wifiDns": "DNS",
+  "wifiDns1": "DNS 1",
+  "wifiDns2": "DNS 2",
+  "wifiEditIpConfig": "Edit IP Configuration",
+  "wifiEditIpSuccess": "IP configuration saved",
+  "wifiErrorAddNotAllowed": "Request denied. Allow Wi‑Fi suggestions for this app.",
+  "wifiErrorDuplicateProfile": "This Wi‑Fi profile already exists",
+  "wifiErrorInternal": "System error while saving the Wi‑Fi profile",
+  "wifiErrorRemoveInvalid": "Invalid saved Wi‑Fi profile",
+  "wifiErrorSaveFailedFormat": "Failed to save Wi‑Fi profile (code {code})",
+  "@wifiErrorSaveFailedFormat": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "wifiErrorTooManyProfiles": "Too many saved Wi‑Fi profiles for this app",
+  "wifiForgetConfirmMessage": "Forget this network and disconnect?",
+  "wifiForgetNetwork": "Forget Network",
+  "wifiForgetPartialFailed": "Couldn’t fully forget this network",
+  "wifiForgetSuccess": "Network forgotten",
+  "wifiFrequency": "Frequency",
+  "wifiGateway": "Gateway",
+  "wifiHiddenNetworkConnect": "Connect to Hidden Network",
+  "wifiHiddenNetworkTitle": "Connect to Hidden Network",
+  "wifiInitDialogConfirm": "Go to Settings",
+  "wifiInitDialogMessage": "Wi‑Fi isn’t connected. Connect to a network to finish setup.",
+  "wifiInitDialogTitle": "Set Up Wi‑Fi",
+  "wifiIpAddress": "IP Address",
+  "wifiIpFieldEnterHint": "Enter {field}",
+  "@wifiIpFieldEnterHint": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "wifiIpMode": "IP Mode",
+  "wifiIpModeDhcp": "DHCP",
+  "wifiIpModeStatic": "Static",
+  "wifiIpSettings": "IP Settings",
+  "wifiIpSettingsHide": "Hide IP Settings",
+  "wifiJoinSsidFormat": "Join “{ssid}”",
+  "@wifiJoinSsidFormat": {
+    "placeholders": {
+      "ssid": {
+        "type": "String"
+      }
+    }
+  },
+  "wifiLinkSpeed": "Link Speed",
+  "wifiListStandardFormat": "Wi‑Fi {band}",
+  "@wifiListStandardFormat": {
+    "placeholders": {
+      "band": {
+        "type": "String"
+      }
+    }
+  },
+  "wifiMacAddress": "MAC Address",
+  "wifiNetworkText": "Wi‑Fi",
+  "wifiNotAvailable": "Unavailable",
+  "wifiOpenSystemSettingsHint": "This network is managed by system Wi‑Fi. Open system settings to forget it completely.",
+  "wifiRouter": "Router",
+  "wifiSecurity": "Security",
+  "wifiSecurityOpen": "Open",
+  "wifiSecurityWpa2": "WPA2",
+  "wifiSecurityWpa3": "WPA3",
+  "wifiSignalStrength": "Signal Strength",
+  "wifiStaticIpConflict": "IP address conflicts with another interface",
+  "wifiStaticIpGatewaySubnet": "Gateway must be on the same subnet",
+  "wifiStaticIpIncomplete": "Please fill in all required static IP fields",
+  "wifiStaticIpInvalid": "Invalid static IP configuration",
+  "wifiStatusConnected": "Connected",
+  "wifiStatusConnecting": "Connecting…",
+  "wifiStatusNotConnected": "Not connected",
+  "wifiSubnetMask": "Subnet Mask",
+  "wifiToastAddCanceledBySystem": "Adding Wi‑Fi was canceled by the system",
+  "wifiToastAddedConnecting": "Network added. Connecting…",
+  "wifiToastConnectedSuccess": "Connected",
+  "wifiToastConnectionFailed": "Connection failed",
+  "wifiToastDetailsOnlyWhenConnected": "Details are only available for the connected network",
+  "wifiToastInvalidBssid": "Invalid BSSID format",
+  "wifiToastNoConnectionDetails": "No connected Wi‑Fi details",
+  "wifiToastPasswordRequired": "Password is required",
+  "wifiToastProfileExistsConnecting": "This network is already saved. Connecting…",
+  "wifiToastProfileSavedUseSystem": "Profile saved. Connect from the system Wi‑Fi list.",
+  "wifiToastRequiresSystemPrivilege": "System Wi‑Fi permission required. Install this app as a privileged system app.",
+  "wifiToastSsidRequired": "Network name is required",
+  "wifiToastWifiDisabled": "Wi‑Fi is off",
+  "wifiWlanLabel": "Wi‑Fi",
+  "wireFeederCommunicationAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "wireFeederCommunicationAlarmTitle": "Wire Feeder Communication Alarm",
+  "wireFeederCurrentAlarmContent": "Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.",
+  "wireFeederCurrentAlarmTitle": "Wire Feeder Current Alarm",
+  "wireFeedingLabel": "Wire Feeding",
+  "wireFeedingMachineCommunicationText": "Feeder Comm",
+  "wireFeedingText": "Wire Feeder",
+  "wirelessNetworkText": "Wireless Network",
+  "workInfoTitle": "Work Info",
+  "workTitle": "Work Info",
+  "zeroPointOffsetAlarmTitle": "Zero Offset Alarm"
+}

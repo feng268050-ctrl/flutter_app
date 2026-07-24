@@ -6,6 +6,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 class MouseSettingsPage extends StatefulWidget {
   const MouseSettingsPage({super.key, required this.services});
@@ -57,6 +58,7 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final avail = _avail;
     final stack = widget.services.displayStack;
     final applyHint = stack.isWeston
@@ -64,10 +66,10 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
         : 'Applies live from mouse.conf on flutter-pi.';
 
     return SettingsScaffold(
-      title: 'Mouse',
+      title: l10n.mouseText,
       body: SettingsScrollView(
         children: [
-          const SettingsSectionHeader('Mouse'),
+          SettingsSectionHeader(l10n.mouseText),
           SettingsGroup(
             children: [
               if (avail.naturalScroll)

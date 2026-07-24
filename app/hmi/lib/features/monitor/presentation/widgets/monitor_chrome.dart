@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 
 /// Design tokens aligned with lws-ui Monitor / Frost glass stand-ins.
@@ -273,8 +274,9 @@ class MonitorTempMetricCard extends StatelessWidget {
     final value = overTemp && series.display.contains('°C')
         ? series.display.split(' · ').first
         : series.display;
+    final l10n = AppLocalizations.of(context)!;
     return MonitorMetricCard(
-      value: overTemp && !hasValue ? 'OVER TEMP' : value,
+      value: overTemp && !hasValue ? l10n.overTempLabel : value,
       label: label,
       fault: overTemp,
       hasValue: hasValue || overTemp,
@@ -289,6 +291,7 @@ class MonitorHealthBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Material(
       color: const Color(0xFF5D4037),
       borderRadius: BorderRadius.circular(12),
@@ -302,7 +305,7 @@ class MonitorHealthBanner extends StatelessWidget {
               child: Text(
                 message?.trim().isNotEmpty == true
                     ? message!
-                    : 'Modbus communication fault',
+                    : l10n.modbusCommunicationFault,
                 style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
             ),

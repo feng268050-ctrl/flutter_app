@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/monitor/presentation/tabs/machine_status_tab.da
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/work_information_tab.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Product Monitor — five tabs aligned with lws-ui DeviceMonitoring (Material).
 ///
@@ -15,33 +16,36 @@ import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 class MonitorPage extends StatefulWidget {
   const MonitorPage({super.key});
 
-  static const _tabs = <({Key key, String label, String iconAsset})>[
+  static const _tabs = <({Key key, String iconAsset})>[
     (
       key: ValueKey('monitor-tab-work-information'),
-      label: 'Work Information',
       iconAsset: 'assets/monitor/job_icon1.webp',
     ),
     (
       key: ValueKey('monitor-tab-machine-status'),
-      label: 'Machine Status',
       iconAsset: 'assets/monitor/job_icon2.webp',
     ),
     (
       key: ValueKey('monitor-tab-alarm-information'),
-      label: 'Alarm Information',
       iconAsset: 'assets/monitor/job_icon3.webp',
     ),
     (
       key: ValueKey('monitor-tab-videos'),
-      label: 'Videos',
       iconAsset: 'assets/monitor/videos_icon.webp',
     ),
     (
       key: ValueKey('monitor-tab-ai-vision'),
-      label: 'AI Vision',
       iconAsset: 'assets/monitor/ai_vision_tab.webp',
     ),
   ];
+
+  static List<String> _tabLabels(AppLocalizations l10n) => [
+        l10n.deviceMonitorWorkInfoTitle,
+        l10n.deviceMonitorMachineStatusTitle,
+        l10n.deviceMonitorWarnInfoTitle,
+        l10n.videosTitle,
+        l10n.aiVisionTitle,
+      ];
 
   @override
   State<MonitorPage> createState() => _MonitorPageState();
@@ -57,13 +61,15 @@ class _MonitorPageState extends State<MonitorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final tabLabels = MonitorPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     return DefaultTabController(
       length: MonitorPage._tabs.length,
       child: Scaffold(
         backgroundColor: const Color(0xFF121212),
         appBar: ProductPageStatusBar(
-          title: 'Monitor',
+          title: l10n.deviceMonitorHomeTitle,
           backgroundColor: Colors.black87,
           foregroundColor: Colors.white,
           onBack: canPop
@@ -86,16 +92,16 @@ class _MonitorPageState extends State<MonitorPage> {
             ),
             onTap: (_) => CyberClickSoundRegistry.playClick(),
             tabs: [
-              for (final tab in MonitorPage._tabs)
+              for (var i = 0; i < MonitorPage._tabs.length; i++)
                 Tab(
-                  key: tab.key,
+                  key: MonitorPage._tabs[i].key,
                   height: 46,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Image.asset(
-                        tab.iconAsset,
+                        MonitorPage._tabs[i].iconAsset,
                         width: 18,
                         height: 18,
                         color: Colors.white,
@@ -104,7 +110,7 @@ class _MonitorPageState extends State<MonitorPage> {
                             const Icon(Icons.circle, size: 16),
                       ),
                       const SizedBox(width: 6),
-                      Text(tab.label),
+                      Text(tabLabels[i]),
                     ],
                   ),
                 ),

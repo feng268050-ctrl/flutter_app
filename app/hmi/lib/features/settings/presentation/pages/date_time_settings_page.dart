@@ -5,6 +5,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Date & Time hub — phone-style automatic + date/time/zone rows.
 class DateTimeSettingsPage extends StatefulWidget {
@@ -92,16 +93,17 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final automatic = _mode == TimeSyncMode.network;
     return SettingsScaffold(
-      title: 'Date & Time',
+      title: l10n.dateTimeSettings,
       body: SettingsScrollView(
         children: [
-          const SettingsSectionHeader('Date & Time'),
+          SettingsSectionHeader(l10n.dateTimeSettings),
           SettingsGroup(
             children: [
               SettingsSwitchRow(
-                title: 'Set Automatically',
+                title: l10n.dateTimeAutomatic,
                 value: automatic,
                 onChanged: _busy
                     ? null
@@ -114,7 +116,7 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
                         ),
               ),
               SettingsNavRow(
-                title: 'Date',
+                title: l10n.dateTimeSetDate,
                 value: _dateLabel,
                 onTap: automatic || _busy
                     ? null
@@ -138,7 +140,7 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
                       },
               ),
               SettingsNavRow(
-                title: 'Time',
+                title: l10n.dateTimeSetTime,
                 value: _timeLabel,
                 onTap: automatic || _busy
                     ? null
@@ -160,7 +162,7 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
                       },
               ),
               SettingsNavRow(
-                title: 'Time Zone',
+                title: l10n.dateTimeSetTimeZone,
                 value: _timezone,
                 onTap: _busy
                     ? null
@@ -214,9 +216,10 @@ class _TimezonePickerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final zones = TimeSyncPrefs.curatedTimezones;
     return SettingsScaffold(
-      title: 'Time Zone',
+      title: l10n.dateTimeSetTimeZone,
       body: SettingsScrollView(
         children: [
           SettingsGroup(

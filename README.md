@@ -150,6 +150,13 @@ make build-rootfs
 make upgrade
 ```
 
+**App UI i18n** (edit `app/hmi/lib/l10n/app_en.arb` + `app_zh.arb`, then):
+
+```bash
+make l10n
+make l10n-verify
+```
+
 **Boot splash** (`board/logo/`):
 
 ```bash

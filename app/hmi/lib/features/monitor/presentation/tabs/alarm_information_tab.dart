@@ -7,6 +7,8 @@ import 'package:lws_hmi/features/home/application/temp_series.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
+import 'package:lws_hmi/features/warn_alarm/l10n/product_alarm_l10n.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// lws-ui `fragment_warn_info` — left status/temps + right history + live actives.
 ///
@@ -78,6 +80,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final m = _monitor ?? WarnAlarmScope.maybeOf(context)?.monitor;
     final actives = m?.activeAlarms ?? const [];
 
@@ -99,9 +102,9 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const MonitorSectionHeader('Laser Device'),
+                              MonitorSectionHeader(l10n.alarmInfoLaserDevice),
                               MonitorCommCard(
-                                label: 'Pump Comm Status',
+                                label: l10n.pumpStatusText,
                                 kind: _commKind(m?.laserCommFault),
                               ),
                             ],
@@ -112,19 +115,19 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const MonitorSectionHeader('Welding Gun'),
+                              MonitorSectionHeader(l10n.alarmInfoWeldingGun),
                               Row(
                                 children: [
                                   Expanded(
                                     child: MonitorCommCard(
-                                      label: 'Gun Comm Status',
+                                      label: l10n.gunHeadCommunicationText,
                                       kind: _commKind(m?.gunCommFault),
                                     ),
                                   ),
                                   const SizedBox(width: 24),
                                   Expanded(
                                     child: MonitorCommCard(
-                                      label: 'Camera Comm Status',
+                                      label: l10n.cameraCommStatusText,
                                       kind: _commKind(m?.cameraCommFault),
                                     ),
                                   ),
@@ -136,7 +139,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                   Expanded(
                                     child: MonitorTempMetricCard(
                                       series: m?.motor ?? _emptyTemp,
-                                      label: 'Motor Temperature',
+                                      label: l10n.motorTempLabel,
                                       overTemp: m?.gunMotorOverTemp ?? false,
                                     ),
                                   ),
@@ -144,7 +147,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                   Expanded(
                                     child: MonitorTempMetricCard(
                                       series: m?.motorDriver ?? _emptyTemp,
-                                      label: 'Motor Driver Temperature',
+                                      label: l10n.motorDriverTempLabel,
                                       overTemp: m?.driverOverTemp ?? false,
                                     ),
                                   ),
@@ -157,7 +160,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                     child: MonitorTempMetricCard(
                                       series:
                                           m?.protectiveMirror ?? _emptyTemp,
-                                      label: 'Protective Mirror Temperature',
+                                      label: l10n.protectiveMirrorTempLabel,
                                       overTemp:
                                           m?.protectiveMirrorOverTemp ?? false,
                                     ),
@@ -166,7 +169,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                   Expanded(
                                     child: MonitorTempMetricCard(
                                       series: m?.collimator ?? _emptyTemp,
-                                      label: 'Collimator Temperature',
+                                      label: l10n.collimatorTempLabel,
                                       overTemp:
                                           m?.collimatorOverTemp ?? false,
                                     ),
@@ -181,9 +184,9 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const MonitorSectionHeader('Wire Feeder'),
+                              MonitorSectionHeader(l10n.alarmInfoWireFeeder),
                               MonitorCommCard(
-                                label: 'Wire Feeder Comm Status',
+                                label: l10n.wireFeedingMachineCommunicationText,
                                 kind: _commKind(m?.wireFeederCommFault),
                               ),
                             ],
@@ -203,10 +206,10 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                       children: [
                         Row(
                           children: [
-                            const Expanded(
+                            Expanded(
                               child: Text(
-                                'Alarm Logs',
-                                style: TextStyle(
+                                l10n.alarmLogsTitle,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: MonitorDimens.sectionTitleSize,
                                   fontWeight: FontWeight.w400,
@@ -217,14 +220,15 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                             TextButton(
                               onPressed:
                                   _history.isEmpty ? null : _clearHistory,
-                              child: const Text('Clear'),
+                              child: Text(l10n.clearAlarmLogs),
                             ),
                           ],
                         ),
                         if (actives.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Text(
-                            'Active: ${actives.map((a) => a.label).join(', ')}',
+                            '${l10n.activeAlarmsTitle}: '
+                            '${actives.map((a) => l10n.alarmTitleFor(a.code, fallback: a.label)).join(', ')}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.65),
                               fontSize: 13,
@@ -234,10 +238,10 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                         const Divider(color: Colors.white24),
                         Expanded(
                           child: _history.isEmpty
-                              ? const Center(
+                              ? Center(
                                   child: Text(
-                                    'No alarm history',
-                                    style: TextStyle(
+                                    l10n.noActiveAlarms,
+                                    style: const TextStyle(
                                       color: Colors.white54,
                                       fontSize: 16,
                                     ),
@@ -253,7 +257,10 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                     final row = _history[i];
                                     return MonitorAlarmLogRow(
                                       code: row.code,
-                                      label: row.displayLabel,
+                                      label: l10n.alarmTitleFor(
+                                        row.code,
+                                        fallback: row.displayLabel,
+                                      ),
                                       timestamp: row.timestamp,
                                     );
                                   },

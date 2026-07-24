@@ -38,8 +38,11 @@ import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
 import 'package:lws_hmi/features/system_status/presentation/system_status_overlay_host.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
+import 'package:lws_hmi/l10n/app_locales.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/app_indexed_click_sound.dart';
 import 'package:lws_hmi/ui/demo/p2_demo_page.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 /// flutter-pi on ynh960 reports ~1.358 DPR (logical ≈942×589 on 1280×800).
 /// Weston+eLinux defaults to DPR 1.0; `--force-scale-factor` blacks the frame.
@@ -333,40 +336,67 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
                           _noteUserActivity();
                         }
                       },
-                      child: MaterialApp(
-                        title: 'HMI',
-                        theme: buildAppTheme(),
-                        scrollBehavior: const AppScrollBehavior(),
-                        builder: _appBuilder,
-                        navigatorKey: _navKey,
-                        initialRoute: AppRoutes.home,
-                        onGenerateRoute: (settings) {
-                          final Widget page;
-                          switch (settings.name) {
-                            case AppRoutes.settings:
-                              page = SettingsPage(
-                                openKeyboardOnLaunch: settings.arguments ==
-                                    HmiRouteRestore.settingsKeyboard,
+                      child: ListenableBuilder(
+                        listenable: _commonSettingsStore,
+                        builder: (context, _) {
+                          return MaterialApp(
+                            title: 'HMI',
+                            theme: buildAppTheme(),
+                            scrollBehavior: const AppScrollBehavior(),
+                            locale: _commonSettingsStore.locale,
+                            supportedLocales: kAppSupportedLocales,
+                            localeListResolutionCallback:
+                                (locales, supported) {
+                              final preferred =
+                                  locales == null || locales.isEmpty
+                                      ? null
+                                      : locales.first;
+                              return resolveAppLocale(
+                                    preferred,
+                                    supported,
+                                  ) ??
+                                  supported.first;
+                            },
+                            localizationsDelegates: const [
+                              AppLocalizations.delegate,
+                              GlobalMaterialLocalizations.delegate,
+                              GlobalWidgetsLocalizations.delegate,
+                              GlobalCupertinoLocalizations.delegate,
+                            ],
+                            builder: _appBuilder,
+                            navigatorKey: _navKey,
+                            initialRoute: AppRoutes.home,
+                            onGenerateRoute: (settings) {
+                              final Widget page;
+                              switch (settings.name) {
+                                case AppRoutes.settings:
+                                  page = SettingsPage(
+                                    openKeyboardOnLaunch:
+                                        settings.arguments ==
+                                            HmiRouteRestore
+                                                .settingsKeyboard,
+                                  );
+                                case AppRoutes.monitor:
+                                  page = const MonitorPage();
+                                case AppRoutes.quickMode:
+                                  page = const ProcessLibraryPage(
+                                    mode: ProcessLibraryPageMode.quick,
+                                  );
+                                case AppRoutes.engineerMode:
+                                  page = const ProcessLibraryPage(
+                                    mode: ProcessLibraryPageMode.engineer,
+                                  );
+                                case AppRoutes.demo:
+                                  page = _demoPage();
+                                case AppRoutes.home:
+                                default:
+                                  page = const HomePage();
+                              }
+                              return buildAppPageRoute(
+                                settings: settings,
+                                child: page,
                               );
-                            case AppRoutes.monitor:
-                              page = const MonitorPage();
-                            case AppRoutes.quickMode:
-                              page = const ProcessLibraryPage(
-                                mode: ProcessLibraryPageMode.quick,
-                              );
-                            case AppRoutes.engineerMode:
-                              page = const ProcessLibraryPage(
-                                mode: ProcessLibraryPageMode.engineer,
-                              );
-                            case AppRoutes.demo:
-                              page = _demoPage();
-                            case AppRoutes.home:
-                            default:
-                              page = const HomePage();
-                          }
-                          return buildAppPageRoute(
-                            settings: settings,
-                            child: page,
+                            },
                           );
                         },
                       ),

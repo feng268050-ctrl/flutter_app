@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 class BrightnessSettingsPage extends StatefulWidget {
   const BrightnessSettingsPage({super.key, required this.services});
@@ -46,11 +47,12 @@ class _BrightnessSettingsPageState extends State<BrightnessSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SettingsScaffold(
-      title: 'Screen Brightness',
+      title: l10n.screenBrightnessText,
       body: SettingsScrollView(
         children: [
-          const SettingsSectionHeader('Brightness'),
+          SettingsSectionHeader(l10n.screenBrightnessText),
           SettingsGroup(
             children: [
               Padding(

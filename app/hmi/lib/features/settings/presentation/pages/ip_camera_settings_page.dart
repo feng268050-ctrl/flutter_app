@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Common Settings → Input → IP Camera: status + live RTSP preview + demo record.
 class IpCameraSettingsPage extends StatefulWidget {
@@ -195,13 +196,14 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final session = _session;
     final previewUrl = session?.previewPr0;
     final previewReady =
         (session?.previewReady ?? false) && _routeSettled;
 
     return SettingsScaffold(
-      title: 'IP Camera',
+      title: l10n.ipCameraText,
       body: SettingsScrollView(
         children: [
           if (_error != null)
@@ -214,7 +216,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
             children: [
               ListTile(
                 title: const Text('Connection'),
-                subtitle: Text(_statusLabel(_status)),
+                subtitle: Text(_statusLabel(l10n, _status)),
                 trailing: TextButton(
                   onPressed: session == null
                       ? null
@@ -272,7 +274,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
                   onPressed: session == null || _recordBusy
                       ? null
                       : () => unawaited(_toggleRecord()),
-                  child: Text(_recordButtonLabel()),
+                  child: Text(_recordButtonLabel(l10n)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -299,10 +301,10 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
     );
   }
 
-  String _recordButtonLabel() {
+  String _recordButtonLabel(AppLocalizations l10n) {
     switch (_recording.phase) {
       case IpCameraRecordingPhase.preparing:
-        return 'Cancel';
+        return l10n.cancelText;
       case IpCameraRecordingPhase.recording:
       case IpCameraRecordingPhase.stopping:
         return 'Stop';
@@ -329,12 +331,12 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
     }
   }
 
-  String _statusLabel(IpCameraUiStatus s) {
+  String _statusLabel(AppLocalizations l10n, IpCameraUiStatus s) {
     switch (s.phase) {
       case IpCameraUiPhase.connecting:
         return 'Establishing… (attempt ${s.attempt})';
       case IpCameraUiPhase.connected:
-        return 'Connected';
+        return l10n.connectedText;
       case IpCameraUiPhase.failed:
         return 'Failed${s.detail != null ? ': ${s.detail}' : ''}';
     }

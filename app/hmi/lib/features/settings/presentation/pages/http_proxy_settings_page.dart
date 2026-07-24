@@ -4,6 +4,7 @@ import 'package:cyber_ime/cyber_ime.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/http/http_proxy_config.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
@@ -82,15 +83,16 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SettingsScaffold(
-      title: 'HTTP Proxy',
+      title: l10n.httpProxySettingsTitle,
       body: SettingsScrollView(
         children: [
-          const SettingsSectionHeader('Proxy'),
+          SettingsSectionHeader(l10n.httpProxyTitle),
           SettingsGroup(
             children: [
               SettingsSwitchRow(
-                title: 'HTTP Proxy',
+                title: l10n.httpProxyTitle,
                 value: _enabled,
                 onChanged: _busy
                     ? null
@@ -107,12 +109,12 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
                         ),
               ),
               SettingsNavRow(
-                title: 'Server',
+                title: l10n.httpProxyHost,
                 value: _host.isEmpty ? 'Not Set' : _host,
                 onTap: _busy
                     ? null
                     : () => _editField(
-                          title: 'Server',
+                          title: l10n.httpProxyHost,
                           initial: _host,
                           onSave: (v) => unawaited(
                             _save(
@@ -128,12 +130,12 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
                         ),
               ),
               SettingsNavRow(
-                title: 'Port',
+                title: l10n.httpProxyPort,
                 value: '$_port',
                 onTap: _busy
                     ? null
                     : () => _editField(
-                          title: 'Port',
+                          title: l10n.httpProxyPort,
                           initial: '$_port',
                           fieldType: CyberImeFieldType.number,
                           onSave: (v) {
@@ -153,17 +155,17 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
                         ),
               ),
               SettingsNavRow(
-                title: 'Authentication',
-                value: _user.isEmpty ? 'Off' : _user,
+                title: l10n.httpProxyAuthType,
+                value: _user.isEmpty ? l10n.offLabel : _user,
                 onTap: _busy
                     ? null
                     : () async {
                         await _editField(
-                          title: 'Username',
+                          title: l10n.httpProxyUsername,
                           initial: _user,
                           onSave: (u) async {
                             await _editField(
-                              title: 'Password',
+                              title: l10n.httpProxyPassword,
                               initial: _pass,
                               obscure: true,
                               fieldType: CyberImeFieldType.password,

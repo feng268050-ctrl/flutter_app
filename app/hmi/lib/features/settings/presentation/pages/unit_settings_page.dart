@@ -4,23 +4,35 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 class UnitSettingsPage extends StatelessWidget {
   const UnitSettingsPage({super.key});
 
+  static String _unitLabel(AppLocalizations l10n, String unit) {
+    switch (unit) {
+      case CommonSettingsStore.unitImperial:
+        return l10n.unitImperial;
+      case CommonSettingsStore.unitMetric:
+      default:
+        return l10n.unitMetric;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final store = CommonSettingsScope.maybeOf(context);
     return SettingsScaffold(
-      title: 'Unit',
+      title: l10n.unitSettingText,
       body: store == null
-          ? const SettingsScrollView(
+          ? SettingsScrollView(
               children: [
                 Padding(
-                  padding: EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   child: Text(
-                    'Unit preference unavailable.',
-                    style: TextStyle(color: Colors.white54),
+                    l10n.unitPreferenceUnavailable,
+                    style: const TextStyle(color: Colors.white54),
                   ),
                 ),
               ],
@@ -31,12 +43,12 @@ class UnitSettingsPage extends StatelessWidget {
                 final unit = store.unit;
                 return SettingsScrollView(
                   children: [
-                    const SettingsSectionHeader('Unit'),
+                    SettingsSectionHeader(l10n.unitSettingText),
                     SettingsGroup(
                       children: [
                         for (final u in CommonSettingsStore.supportedUnits)
                           SettingsOptionTile(
-                            title: u,
+                            title: _unitLabel(l10n, u),
                             selected: unit == u,
                             onTap: () {
                               unawaited(store.setUnit(u));
@@ -44,11 +56,11 @@ class UnitSettingsPage extends StatelessWidget {
                           ),
                       ],
                     ),
-                    const Padding(
-                      padding: EdgeInsets.all(20),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
                       child: Text(
-                        'Persisted under /var/lib/hmi/common-settings.json.',
-                        style: TextStyle(color: Colors.white54),
+                        l10n.unitPersistedFooter,
+                        style: const TextStyle(color: Colors.white54),
                       ),
                     ),
                   ],

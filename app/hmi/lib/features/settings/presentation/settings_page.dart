@@ -8,6 +8,7 @@ import 'package:lws_hmi/features/settings/presentation/tabs/custom_home_tab.dart
 import 'package:lws_hmi/features/settings/presentation/tabs/device_information_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Product Settings shell — four tabs (Material stand-in for FrostUI).
 ///
@@ -60,11 +61,12 @@ class _SettingsPageState extends State<SettingsPage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final services = AppScope.of(context);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     return Scaffold(
       appBar: ProductPageStatusBar(
-        title: 'Settings',
+        title: l10n.settingsTitle,
         onBack: canPop
             ? () => Navigator.of(context).maybePop()
             : null,
@@ -72,11 +74,11 @@ class _SettingsPageState extends State<SettingsPage>
           controller: _tabs,
           isScrollable: true,
           onTap: (_) => CyberClickSoundRegistry.playClick(),
-          tabs: const [
-            Tab(text: 'Device Information'),
-            Tab(text: 'Common Settings'),
-            Tab(text: 'Advanced Settings'),
-            Tab(text: 'Custom Home Page'),
+          tabs: [
+            Tab(text: l10n.settingsTabDeviceInfo),
+            Tab(text: l10n.settingsTabCommon),
+            Tab(text: l10n.settingsTabAdvanced),
+            Tab(text: l10n.settingsTabCustomHome),
           ],
         ),
       ),

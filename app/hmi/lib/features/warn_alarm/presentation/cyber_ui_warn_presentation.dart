@@ -5,7 +5,9 @@ import 'package:cyber_alarm/cyber_alarm.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
+import 'package:lws_hmi/features/warn_alarm/l10n/product_alarm_l10n.dart';
 import 'package:lws_hmi/features/warn_alarm/presentation/warn_dialog_body.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Process-wide CyberUI warn host (single modal at a time).
 ///
@@ -169,9 +171,17 @@ final class CyberUiWarnPresentation implements WarnPresentation {
         sampleMode: CyberBlurSampleMode.firstFrame,
         intensity: CyberBlurIntensity.high,
         builder: (dialogContext) {
+          final l10n = AppLocalizations.of(dialogContext)!;
           return WarnDialogBody(
-            title: pending.entry.title,
-            body: pending.entry.body,
+            title: l10n.alarmTitleFor(
+              pending.code,
+              fallback: pending.entry.title,
+            ),
+            body: l10n.alarmBodyFor(
+              pending.code,
+              fallback: pending.entry.body,
+            ),
+            confirmLabel: l10n.confirmText,
             infoStyle: infoStyleForCode?.call(pending.code) ?? false,
             beforeConfirm: stopWarnSound,
             onConfirm: () {

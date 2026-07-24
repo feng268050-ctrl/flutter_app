@@ -5,6 +5,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Common Settings → Input → USB OTG: persist + apply Micro-USB mode.
 class UsbOtgSettingsPage extends StatefulWidget {
@@ -58,10 +59,10 @@ class _UsbOtgSettingsPageState extends State<UsbOtgSettingsPage> {
     }
   }
 
-  String _label(UsbOtgMode m) => switch (m) {
-        UsbOtgMode.debug => CyberUsbOtgModeCopy.debugLabel,
-        UsbOtgMode.mtp => CyberUsbOtgModeCopy.mtpLabel,
-        UsbOtgMode.host => CyberUsbOtgModeCopy.hostLabel,
+  String _label(AppLocalizations l10n, UsbOtgMode m) => switch (m) {
+        UsbOtgMode.debug => l10n.usbOtgModeDebug,
+        UsbOtgMode.mtp => l10n.usbOtgModeMtp,
+        UsbOtgMode.host => l10n.usbOtgModeHost,
       };
 
   /// Plain-language help for the selected mode (ordinary operators).
@@ -105,17 +106,18 @@ class _UsbOtgSettingsPageState extends State<UsbOtgSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final locked = _choices.length <= 1;
     return SettingsScaffold(
-      title: 'USB OTG',
+      title: l10n.usbOtgText,
       body: SettingsScrollView(
         children: [
           if (!_ready)
-            const Padding(
-              padding: EdgeInsets.all(20),
+            Padding(
+              padding: const EdgeInsets.all(20),
               child: Text(
-                'Loading…',
-                style: TextStyle(color: Colors.white54),
+                l10n.loadingText,
+                style: const TextStyle(color: Colors.white54),
               ),
             )
           else ...[
@@ -123,7 +125,7 @@ class _UsbOtgSettingsPageState extends State<UsbOtgSettingsPage> {
               children: [
                 for (final m in _choices)
                   SettingsOptionTile(
-                    title: _label(m),
+                    title: _label(l10n, m),
                     selected: _mode == m,
                     onTap: (_busy || (locked && m != _mode))
                         ? null

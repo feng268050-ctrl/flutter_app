@@ -4,8 +4,10 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
+import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/status_bar/status_bar_phase.dart';
 import 'package:lws_hmi/features/work_mode/application/work_mode_equipment_status_controller.dart';
+import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_assets.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_equipment_status.dart';
 
@@ -14,14 +16,16 @@ enum WorkMode { quick, engineer }
 
 /// App-local status bar for Quick / Engineer (lws-ui `EquipmentStatusBar` parity).
 ///
-/// Lives under `app/hmi/` — not exported from `cyber_ui`. Trailing chrome is
-/// camera + clock only (no Wi‑Fi / Bluetooth). Center shows the five equipment
-/// indicators with migrated lws-ui icons.
+/// Layout follows lws-ui: fixed, equal 160dp left/right rails and an Expanded
+/// center rail. Back fills the left rail, equipment is centered in the
+/// remaining width, and camera + clock are end-aligned in the right rail.
 final class WorkModeStatusBar extends StatelessWidget
     implements PreferredSizeWidget {
   const WorkModeStatusBar({
     super.key,
     required this.mode,
+    this.processType = ProcessType.continuousWelding,
+    this.backEnabled = true,
     this.equipmentStatus,
     this.cameraStatus,
     this.onBack,
@@ -30,6 +34,13 @@ final class WorkModeStatusBar extends StatelessWidget
   });
 
   final WorkMode mode;
+
+  /// Drives Back-rail accent (weld orange / clean green / cut blue).
+  final ProcessType processType;
+
+  /// When false, Back uses gray chrome and does not navigate.
+  final bool backEnabled;
+
   final WorkModeEquipmentStatus? equipmentStatus;
   final IpCameraUiStatus? cameraStatus;
   final VoidCallback? onBack;
@@ -41,30 +52,43 @@ final class WorkModeStatusBar extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
+    final accent = backEnabled
+        ? WorkModeAccent.forProcessType(processType)
+        : WorkModeAccent.disabled;
     return Material(
       key: ValueKey('work-mode-status-bar-${mode.name}'),
       color: WorkModeStatusBarDimens.background,
       child: SizedBox(
         height: toolbarHeight,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // lws-ui left_rail: fixed 160dp; Back fills the complete slot.
             SizedBox(
               width: WorkModeStatusBarDimens.sideRailWidth,
               child: _WorkModeBackButton(
+                accent: accent,
+                enabled: backEnabled,
                 onPressed: onBack ?? () => Navigator.of(context).maybePop(),
               ),
             ),
+            // lws-ui center_content: weight=1 + gravity=center.
             Expanded(
               child: Center(
-                child: _WorkModeEquipmentStrip(status: equipmentStatus),
+                child: _WorkModeEquipmentStrip(
+                  status: equipmentStatus,
+                ),
               ),
             ),
+            // lws-ui right_rail: fixed 160dp, end-aligned, 16dp end padding.
             SizedBox(
               width: WorkModeStatusBarDimens.sideRailWidth,
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 16),
+                  padding: const EdgeInsets.only(
+                    right: WorkModeStatusBarDimens.rightRailPadding,
+                  ),
                   child: _WorkModeTrailing(
                     cameraStatus: cameraStatus,
                     clockNow: clockNow,
@@ -80,78 +104,183 @@ final class WorkModeStatusBar extends StatelessWidget
 }
 
 abstract final class WorkModeStatusBarDimens {
+  /// lws-ui `equipment_status` minHeight / rail height.
   static const double height = 70;
+
+  /// lws-ui `equipment_status_side_rail_width`.
   static const double sideRailWidth = 160;
-  static const double itemGap = 28;
-  static const double primaryIconSize = 40;
-  static const double trailingIconSize = 36;
+
+  /// lws-ui right_rail `paddingEnd`.
+  static const double rightRailPadding = 16;
+
+  /// Gap between the five equipment status groups.
+  static const double itemGap = 16;
+
+  /// Equipment on/off icons (slightly under lws-ui 36–40 for HMI density).
+  static const double primaryIconSize = 32;
+
+  /// Design size for camera (same as HomeStatusBar `iconSize: 32` on 1280×800).
+  static const double trailingIconSize = 32;
+
+  /// lws-ui / home design canvas (see `home_page.dart` `_kDesignW` / `_kDesignH`).
+  static const double designWidth = 1280;
+  static const double designHeight = 800;
+
+  /// Same scale Home applies: `32 * ((sx + sy) / 2)` with sx=w/1280, sy=h/800.
+  /// Compensates `_matchFlutterPiDensity` FittedBox so camera matches Home.
+  static double trailingIconSizeFor(Size layoutSize) {
+    final sx = layoutSize.width / designWidth;
+    final sy = layoutSize.height / designHeight;
+    return trailingIconSize * ((sx + sy) / 2);
+  }
+
+  /// lws-ui `equipment_status_back_icon_size`.
   static const double backIconSize = 28;
+
+  /// lws-ui Back `paddingStart` / `paddingEnd`.
+  static const double backHorizontalPadding = 12;
+
+  static const double edgeLineHeight = 3;
+
+  /// Status labels (under lws-ui `text_size_10` 25sp for HMI density).
+  static const double statusLabelFontSize = 22;
+
+  /// Back label + clock (was 12; bumped for readability on 1280×800).
+  static const double chromeLabelFontSize = 20;
+
   static const Color background = Color(0xFF1E1E1E);
-  static const Color accent = Color(0xFFFF8A00);
   static const Color label = Color(0xFFFFFFFF);
   static const Color clock = Color(0xFFF2F2F2);
+  static const Color backLabelDisabled = Color(0xFF909399);
 }
 
-final class _WorkModeBackButton extends StatelessWidget {
-  const _WorkModeBackButton({required this.onPressed});
+/// Left Back rail: idle = transparent + accent edge lines; pressed = translucent
+/// fill; disabled = gray lines + dimmed icon/label (lws-ui EquipmentStatusBar).
+final class _WorkModeBackButton extends StatefulWidget {
+  const _WorkModeBackButton({
+    required this.accent,
+    required this.enabled,
+    required this.onPressed,
+  });
 
+  final WorkModeAccent accent;
+  final bool enabled;
   final VoidCallback onPressed;
 
   @override
+  State<_WorkModeBackButton> createState() => _WorkModeBackButtonState();
+}
+
+final class _WorkModeBackButtonState extends State<_WorkModeBackButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: WorkModeStatusBarDimens.accent,
-      child: InkWell(
-        key: const ValueKey('work-mode-status-back'),
-        onTap: () {
-          CyberClickSoundRegistry.playClick();
-          onPressed();
-        },
-        child: Column(
-          children: [
-            Container(
-              height: 3,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1E1E1E), WorkModeStatusBarDimens.accent],
+    final accent = widget.accent;
+    final enabled = widget.enabled;
+    final labelColor =
+        enabled ? Colors.white : WorkModeStatusBarDimens.backLabelDisabled;
+
+    return Column(
+      children: [
+        _AccentEdgeLine(gradient: accent.edgeGradient),
+        Expanded(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const ValueKey('work-mode-status-back'),
+              onTap: enabled
+                  ? () {
+                      CyberClickSoundRegistry.playClick();
+                      widget.onPressed();
+                    }
+                  : null,
+              onHighlightChanged: enabled
+                  ? (value) {
+                      if (_pressed != value) {
+                        setState(() => _pressed = value);
+                      }
+                    }
+                  : null,
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: (_pressed && enabled) ? accent.pressGradient : null,
                 ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      WorkModeAssets.back,
-                      width: WorkModeStatusBarDimens.backIconSize,
-                      height: WorkModeStatusBarDimens.backIconSize,
-                      filterQuality: FilterQuality.medium,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Back',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        height: 1,
+                // Background fills the rail; content group is centered.
+                child: KeyedSubtree(
+                  key: const ValueKey('work-mode-status-back-content'),
+                  child: SizedBox.expand(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal:
+                            WorkModeStatusBarDimens.backHorizontalPadding,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (enabled)
+                            Image.asset(
+                              WorkModeAssets.back,
+                              width: WorkModeStatusBarDimens.backIconSize,
+                              height: WorkModeStatusBarDimens.backIconSize,
+                              filterQuality: FilterQuality.medium,
+                            )
+                          else
+                            ColorFiltered(
+                              colorFilter: const ColorFilter.mode(
+                                WorkModeStatusBarDimens.backLabelDisabled,
+                                BlendMode.srcATop,
+                              ),
+                              child: Image.asset(
+                                WorkModeAssets.back,
+                                width: WorkModeStatusBarDimens.backIconSize,
+                                height: WorkModeStatusBarDimens.backIconSize,
+                                filterQuality: FilterQuality.medium,
+                              ),
+                            ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Back',
+                            maxLines: 1,
+                            overflow: TextOverflow.clip,
+                            style: TextStyle(
+                              color: labelColor,
+                              fontSize:
+                                  WorkModeStatusBarDimens.chromeLabelFontSize,
+                              height: 1,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-            Container(
-              height: 3,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1E1E1E), WorkModeStatusBarDimens.accent],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
+        _AccentEdgeLine(gradient: accent.edgeGradient),
+      ],
+    );
+  }
+}
+
+final class _AccentEdgeLine extends StatelessWidget {
+  const _AccentEdgeLine({required this.gradient});
+
+  final LinearGradient gradient;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: WorkModeStatusBarDimens.edgeLineHeight,
+      width: double.infinity,
+      child: DecoratedBox(
+        decoration: BoxDecoration(gradient: gradient),
       ),
     );
   }
@@ -167,7 +296,8 @@ final class _WorkModeEquipmentStrip extends StatefulWidget {
       _WorkModeEquipmentStripState();
 }
 
-final class _WorkModeEquipmentStripState extends State<_WorkModeEquipmentStrip> {
+final class _WorkModeEquipmentStripState
+    extends State<_WorkModeEquipmentStrip> {
   WorkModeEquipmentStatusController? _ctrl;
   WorkModeEquipmentStatus _status = WorkModeEquipmentStatus.unknown;
 
@@ -218,10 +348,13 @@ final class _WorkModeEquipmentStripState extends State<_WorkModeEquipmentStrip> 
   @override
   Widget build(BuildContext context) {
     final status = widget.status ?? _status;
+    // Content-width group centered by parent; scaleDown only if the center
+    // rail is too narrow (does not flex-shrink individual items).
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _EquipmentStatusItem(
             key: const ValueKey('work-mode-gun-switch'),
@@ -285,22 +418,24 @@ final class _EquipmentStatusItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = WorkModeStatusBarDimens.primaryIconSize;
     return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
           style: const TextStyle(
             color: WorkModeStatusBarDimens.label,
-            fontSize: 10,
+            fontSize: WorkModeStatusBarDimens.statusLabelFontSize,
             height: 1,
           ),
         ),
         const SizedBox(width: 8),
         Image.asset(
           active ? onAsset : offAsset,
-          width: WorkModeStatusBarDimens.primaryIconSize,
-          height: WorkModeStatusBarDimens.primaryIconSize,
+          width: iconSize,
+          height: iconSize,
           filterQuality: FilterQuality.medium,
         ),
       ],
@@ -357,7 +492,8 @@ final class _WorkModeTrailingState extends State<_WorkModeTrailing> {
       } catch (_) {
         if (mounted) {
           setState(
-            () => _camera = const IpCameraUiStatus(phase: IpCameraUiPhase.failed),
+            () =>
+                _camera = const IpCameraUiStatus(phase: IpCameraUiPhase.failed),
           );
         }
       }
@@ -382,26 +518,34 @@ final class _WorkModeTrailingState extends State<_WorkModeTrailing> {
   @override
   Widget build(BuildContext context) {
     final camera = widget.cameraStatus ?? _camera;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        KeyedSubtree(
-          key: const ValueKey('work-mode-status-camera'),
-          child: CyberCameraStatusIcon(
-            status: mapCameraLinkStatus(camera.phase),
-            size: WorkModeStatusBarDimens.trailingIconSize,
+    final cameraSize = WorkModeStatusBarDimens.trailingIconSizeFor(
+      MediaQuery.sizeOf(context),
+    );
+    return SizedBox(
+      height: WorkModeStatusBarDimens.height,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          KeyedSubtree(
+            key: const ValueKey('work-mode-status-camera'),
+            child: CyberCameraStatusIcon(
+              status: mapCameraLinkStatus(camera.phase),
+              size: cameraSize,
+            ),
           ),
-        ),
-        const SizedBox(width: 10),
-        CyberStatusBarClock(
-          now: widget.clockNow,
-          style: const TextStyle(
-            color: WorkModeStatusBarDimens.clock,
-            fontSize: 12,
-            fontFeatures: [FontFeature.tabularFigures()],
+          const SizedBox(width: 10),
+          CyberStatusBarClock(
+            now: widget.clockNow,
+            style: const TextStyle(
+              color: WorkModeStatusBarDimens.clock,
+              fontSize: WorkModeStatusBarDimens.chromeLabelFontSize,
+              height: 1,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

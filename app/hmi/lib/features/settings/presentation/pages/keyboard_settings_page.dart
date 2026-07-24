@@ -66,7 +66,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
     try {
       final line = await const UsbHidKeyboardProbe().statusLine();
       if (!mounted) return;
-      setState(() => _presence = line);
+      setState(() => _presence = line ?? 'probe unavailable');
     } catch (_) {
       if (!mounted) return;
       setState(() => _presence = 'probe unavailable');

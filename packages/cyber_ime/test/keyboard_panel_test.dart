@@ -279,6 +279,11 @@ void main() {
 
   testWidgets('password visibility toggle works while IME is open',
       (tester) async {
+    CyberImePhysicalKeyboard.register(
+      const CyberImeFixedPhysicalKeyboardDetector(false),
+    );
+    addTearDown(() => CyberImePhysicalKeyboard.register(null));
+
     final ctrl = TextEditingController(text: 'secret');
     addTearDown(ctrl.dispose);
 
@@ -298,6 +303,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    // Soft show is async (physical-keyboard probe).
+    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('q'), findsWidgets);
     expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
@@ -308,6 +316,104 @@ void main() {
     expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
     // IME must stay up (eye must not steal focus / full-screen scrim must not
     // eat the tap).
+    expect(find.text('q'), findsWidgets);
+  });
+
+  testWidgets('physical keyboard inserts into CyberImeTextField',
+      (tester) async {
+    final ctrl = TextEditingController();
+    addTearDown(ctrl.dispose);
+    final focus = FocusNode();
+    addTearDown(focus.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.only(bottom: 320),
+            child: CyberImeTextField(
+              fieldType: CyberImeFieldType.text,
+              controller: ctrl,
+              focusNode: focus,
+              autofocus: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(focus.hasFocus, isTrue);
+
+    // Regression: readOnly:true blocked flutter-pi/XKB (and TextInput) inserts.
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.readOnly, isFalse);
+
+    // TextInput path used by flutter-pi/XKB when not readOnly.
+    await tester.enterText(find.byType(TextField), 'ab');
+    await tester.pump();
+    expect(ctrl.text, 'ab');
+  });
+
+  testWidgets('soft IME hidden when physical keyboard present', (tester) async {
+    CyberImePhysicalKeyboard.register(
+      const CyberImeFixedPhysicalKeyboardDetector(true),
+    );
+    addTearDown(() => CyberImePhysicalKeyboard.register(null));
+
+    final ctrl = TextEditingController();
+    addTearDown(ctrl.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.only(bottom: 320),
+            child: CyberImeTextField(
+              fieldType: CyberImeFieldType.text,
+              controller: ctrl,
+              autofocus: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('q'), findsNothing);
+    expect(find.byType(CyberImeKeyboardPanel), findsNothing);
+  });
+
+  testWidgets('soft IME shown when no physical keyboard', (tester) async {
+    CyberImePhysicalKeyboard.register(
+      const CyberImeFixedPhysicalKeyboardDetector(false),
+    );
+    addTearDown(() => CyberImePhysicalKeyboard.register(null));
+
+    final ctrl = TextEditingController();
+    addTearDown(ctrl.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.only(bottom: 320),
+            child: CyberImeTextField(
+              fieldType: CyberImeFieldType.text,
+              controller: ctrl,
+              autofocus: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
     expect(find.text('q'), findsWidgets);
   });
 }

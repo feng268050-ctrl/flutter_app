@@ -58,10 +58,7 @@ class LinuxKeyboard implements Keyboard {
   static const ru = KeyboardLayout(id: 'ru', displayName: 'Russian');
 
   @override
-  Future<bool> isPresent() async {
-    final line = await probe.statusLine();
-    return line.startsWith('detected:');
-  }
+  Future<bool> isPresent() => probe.isPresent();
 
   @override
   Future<List<KeyboardLayout>> listLayouts() async =>

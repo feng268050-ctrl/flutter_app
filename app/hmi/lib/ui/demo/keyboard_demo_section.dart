@@ -52,7 +52,7 @@ class _KeyboardDemoSectionState extends State<KeyboardDemoSection>
     if (!mounted) {
       return;
     }
-    setState(() => _presence = line);
+    setState(() => _presence = line ?? 'probe unavailable');
   }
 
   Future<void> _loadLayouts() async {

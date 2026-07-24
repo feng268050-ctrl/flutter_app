@@ -103,6 +103,13 @@ left-handed=$left_handed
 accel-profile=adaptive
 accel-speed=$accel
 
+[keyboard]
+# Advertised to Wayland clients via wl_keyboard.repeat_info (client must
+# implement repeat; flutter-elinux historically ignored this — CyberIME
+# synthesizes hold-repeat until the embedder is fixed).
+repeat-rate=25
+repeat-delay=500
+
 [output]
 name=DSI-1
 mode=800x1280

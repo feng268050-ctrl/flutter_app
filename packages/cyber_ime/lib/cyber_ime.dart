@@ -6,6 +6,8 @@ export 'src/field/cyber_ime_field_profile.dart';
 export 'src/field/cyber_ime_field_profile_registry.dart';
 export 'src/field/cyber_ime_field_type.dart';
 export 'src/field/cyber_ime_numeric_policy.dart';
+export 'src/input/cyber_ime_physical_key_repeat.dart';
+export 'src/input/cyber_ime_physical_keyboard.dart';
 export 'src/keyboard/cyber_ime_alternate_popup.dart';
 export 'src/keyboard/cyber_ime_key.dart';
 export 'src/keyboard/cyber_ime_key_code.dart';

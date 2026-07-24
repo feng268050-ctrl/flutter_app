@@ -135,6 +135,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
       const CyberImeFixedLanguageProvider(CyberImeGlobalKind.english),
     );
     CyberImeRegionalLayoutRegistry.register(_regionalLayout);
+    CyberImePhysicalKeyboard.register(
+      CyberImeCallbackPhysicalKeyboardDetector(_services.keyboard.isPresent),
+    );
     // Prime ALSA + sticky mpg123 so the first UI click is not cold-start.
     unawaited(_services.audio.warmClickSession());
     unawaited(_bootstrapKeyboardProfile());
@@ -178,6 +181,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   void dispose() {
     CyberClickSoundRegistry.register(null);
     CyberImeRegionalLayoutRegistry.register(null);
+    CyberImePhysicalKeyboard.register(null);
     unawaited(_services.autoSleep.dispose());
     unawaited(_warnAlarm.dispose());
     if (widget.miscSettingsStore == null) {

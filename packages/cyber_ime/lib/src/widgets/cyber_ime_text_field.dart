@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:cyber_ime/src/field/cyber_ime_field_type.dart';
+import 'package:cyber_ime/src/input/cyber_ime_physical_key_repeat.dart';
+import 'package:cyber_ime/src/input/cyber_ime_physical_keyboard.dart';
 import 'package:cyber_ime/src/overlay/cyber_ime_overlay.dart';
 import 'package:cyber_ime/src/session/cyber_ime_action.dart';
 import 'package:cyber_ime/src/session/cyber_ime_session.dart';
@@ -7,6 +11,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// Text field that suppresses the system soft keyboard and opens CyberIME.
+///
+/// Editable (not [TextField.readOnly]) so physical USB/BT keys from
+/// flutter-pi / XKB still insert. Soft system IME is suppressed via
+/// [SystemChannels.textInput] hide — do not use `readOnly: true` for that.
+///
+/// Soft CyberIME is skipped when [CyberImePhysicalKeyboard] reports present
+/// (App wires HAL `Keyboard.isPresent`). Physical key-hold repeat is synthesized
+/// by [CyberImePhysicalKeyRepeat] because flutter-elinux ignores Wayland
+/// `repeat_info` (printable keys, Backspace, Delete, and arrows).
 class CyberImeTextField extends StatefulWidget {
   const CyberImeTextField({
     super.key,
@@ -48,6 +61,13 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
   bool _obscure = false;
   bool _imeInteracting = false;
   late final bool _revealSupported;
+  int _showGeneration = 0;
+
+  /// Sticky for this focus session after HAL says present or a HW key arrives.
+  bool _preferPhysical = false;
+  bool _hwHideScheduled = false;
+
+  final _keyRepeat = CyberImePhysicalKeyRepeat();
 
   /// Eye toggle must not steal focus — that would dismiss CyberIME mid-entry.
   final FocusNode _revealFocus = FocusNode(
@@ -68,6 +88,8 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
       _ownedFocus = true;
     }
     _focus.addListener(_onFocusChange);
+    HardwareKeyboard.instance.addHandler(_onHardwareKey);
+    _keyRepeat.attach(focusNode: _focus, controller: widget.controller);
     if (widget.autofocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _focus.requestFocus();
@@ -83,6 +105,9 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
         !_revealSupported) {
       _obscure = widget.obscureText;
     }
+    if (oldWidget.controller != widget.controller) {
+      _keyRepeat.attach(focusNode: _focus, controller: widget.controller);
+    }
   }
 
   void _hideIme({bool notify = true}) {
@@ -93,11 +118,36 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
 
   @override
   void dispose() {
+    _keyRepeat.detach();
+    HardwareKeyboard.instance.removeHandler(_onHardwareKey);
     _focus.removeListener(_onFocusChange);
     _hideIme(notify: false);
     _revealFocus.dispose();
     if (_ownedFocus) _focus.dispose();
     super.dispose();
+  }
+
+  /// Soft-IME hide only. Never consume keys; never [setState] here.
+  bool _onHardwareKey(KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return false;
+    }
+    if (!_focus.hasFocus) {
+      return false;
+    }
+    _preferPhysical = true;
+    if (_handle == null || _handle!.isClosed || _hwHideScheduled) {
+      return false;
+    }
+    _hwHideScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _hwHideScheduled = false;
+      if (!mounted || !_preferPhysical) {
+        return;
+      }
+      _hideIme();
+    });
+    return false;
   }
 
   void _toggleObscure() {
@@ -107,7 +157,8 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
 
   void _onFocusChange() {
     if (_focus.hasFocus) {
-      _showIme();
+      _preferPhysical = false;
+      unawaited(_showImeIfNeeded());
       return;
     }
     if (_imeInteracting) return;
@@ -138,7 +189,27 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
     setState(() => _handle = null);
   }
 
+  Future<void> _showImeIfNeeded() async {
+    final gen = ++_showGeneration;
+    final physical =
+        _preferPhysical || await CyberImePhysicalKeyboard.isPresent();
+    if (!mounted || gen != _showGeneration || !_focus.hasFocus) {
+      return;
+    }
+    if (physical) {
+      _preferPhysical = true;
+      _hideIme();
+      // Keep TextInput client alive for embedders that route chars through it.
+      return;
+    }
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    _showIme();
+  }
+
   void _showIme() {
+    if (_preferPhysical) {
+      return;
+    }
     if (_handle != null && !_handle!.isClosed) return;
     SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
     _handle = CyberImeOverlay.show(
@@ -178,7 +249,8 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
     return TextField(
       controller: widget.controller,
       focusNode: _focus,
-      readOnly: true,
+      // Must stay editable: readOnly also blocks flutter-pi / XKB hardware keys.
+      readOnly: false,
       showCursor: true,
       enableInteractiveSelection: true,
       obscureText: _obscure,
@@ -186,11 +258,15 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
       decoration: decoration,
       style: widget.style,
       onTap: () {
+        if (_preferPhysical) {
+          // Physical typing — do not TextInput.hide (keeps client / caret path).
+        } else {
+          SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+        }
         if (!_focus.hasFocus) {
           _focus.requestFocus();
         } else {
-          // Focus kept while IME was hidden — reopen on field tap.
-          _showIme();
+          unawaited(_showImeIfNeeded());
         }
       },
     );

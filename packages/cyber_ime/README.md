@@ -20,6 +20,7 @@ instead of forking keyboard widgets under feature folders.
 | Layout preview | `CyberImeLayoutPreview` (keycap strip only) |
 | Layout chooser | `CyberImeLayoutChooser` (Segment + caption + preview — product Settings drop-in) |
 | Field chrome | `CyberImeTextField` |
+| Physical keyboard | `CyberImePhysicalKeyboard` — **App injects** HAL `Keyboard.isPresent` (no `/dev` in IME) |
 
 ## Path wiring
 
@@ -65,6 +66,22 @@ Soft keycaps and commit text resolve through the KeyMap for the registered
 matching layout id (`us` / `de` / `fr` / `jp`); product Settings keeps soft
 KeyMap and XKB preference on the same profile so both paths agree on the
 typewriter block. **Do not** remap HID scancodes in Dart.
+
+`CyberImeTextField` stays **editable** (`readOnly: false`) and hides any system
+soft keyboard via `TextInput.hide`, so physical keys are not blocked. Soft
+CyberIME is skipped when the App-registered
+[`CyberImePhysicalKeyboard`](lib/src/input/cyber_ime_physical_keyboard.dart)
+detector reports present (product wiring: `Keyboard.isPresent` from
+`cyber_hal`). CyberIME never opens `/dev/input` itself. Soft overlay teardown on a hardware
+key (HAL miss / race) is deferred to a **post-frame** callback so key-repeat
+is not interrupted mid-dispatch.
+
+Hold-to-repeat: Wayland advertises rate/delay via `wl_keyboard.repeat_info`, but
+flutter-elinux currently ignores it. Until the embedder synthesizes
+`KeyRepeatEvent`, [`CyberImePhysicalKeyRepeat`](lib/src/input/cyber_ime_physical_key_repeat.dart)
+inserts into the focused field’s controller after a short delay while a
+printable key, Backspace, Delete, or arrow key stays down (cancels if a real
+`KeyRepeatEvent` arrives).
 
 ### Soft vs physical simplifications
 

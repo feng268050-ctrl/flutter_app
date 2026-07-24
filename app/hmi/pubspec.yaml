@@ -64,6 +64,7 @@ dependencies:
   video_player_platform_interface: ^6.2.0
   flutterpi_gstreamer_video_player: 0.1.1+1
   sqlite3: ^2.4.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:
@@ -102,6 +103,8 @@ flutter:
     - assets/hal/board_profile.json
     - assets/hal/gpio.json
     - assets/hal/modbus.json
+    # Versioned process-library manifest and generated JSON payloads.
+    - assets/process-library/
     # Product Home backdrop / heroes (from lws-ui mipmap-mdpi).
     - assets/home/home_back.webp
     - assets/home/home_left_1m.webp

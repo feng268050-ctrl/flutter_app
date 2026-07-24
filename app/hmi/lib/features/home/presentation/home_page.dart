@@ -12,6 +12,7 @@ import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
 import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
+import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
 
@@ -197,6 +198,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final processLibrary = ProcessLibraryScope.of(context);
+    final hasSignedProcessLibrary =
+        processLibrary.presets.any((preset) => preset.isBuiltin);
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -283,9 +287,15 @@ class _HomePageState extends State<HomePage> {
                   labelWidth: 348 * sx,
                   labelHeight: 130 * sy,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Quick Mode — coming soon')),
-                    );
+                    if (!hasSignedProcessLibrary) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('No signed process library installed'),
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.of(context).pushNamed(AppRoutes.quickMode);
                   },
                 ),
                 _ModeEntry(
@@ -299,11 +309,15 @@ class _HomePageState extends State<HomePage> {
                   labelWidth: 440 * sx,
                   labelHeight: 150 * sy,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Engineer Mode — coming soon'),
-                      ),
-                    );
+                    if (!hasSignedProcessLibrary) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('No signed process library installed'),
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.of(context).pushNamed(AppRoutes.engineerMode);
                   },
                 ),
                 // Bottom-left: Monitor | Settings (lws-ui box_quick_actions_row).

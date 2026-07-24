@@ -15,13 +15,30 @@ JOBS="${BUILD_JOBS:-4}"
 PKG_LIST="$*"
 
 # wayland-dirclean does not remove libs already copied into target/. A partial or
-# older install can leave libwayland-egl.so.1 as a regular file; meson then
+# older install can leave libwayland-client.so as a regular file; meson then
 # fails with "already exists and is not a symlink" on reinstall.
+#
+# Do NOT scrub libwayland-egl / wayland-egl.pc — on Rockchip those come from
+# rockchip-mali (wayland-gbm), not the wayland package. Wiping them leaves
+# staging missing wayland-egl for flutter-embedded-linux cross-builds.
 needs_wayland_scrub() {
   case " ${PKG_LIST} " in
   *" wayland "*) return 0 ;;
   esac
   return 1
+}
+
+# After a wayland-only rebuild, restore Mali's wayland-egl if Mali was not
+# already in this package list.
+needs_mali_wayland_egl_restore() {
+  case " ${PKG_LIST} " in
+  *" wayland "*) ;;
+  *) return 1 ;;
+  esac
+  case " ${PKG_LIST} " in
+  *" rockchip-mali "*) return 1 ;;
+  esac
+  return 0
 }
 
 # Weston/eLinux packages need the default Weston defconfig (DRM backend…).
@@ -66,10 +83,18 @@ bash "$ROOT/scripts/docker-run.sh" bash -lc "
     make O=\"\$OUT\" \"\${pkg}-dirclean\" || true
   done
   if $(needs_wayland_scrub && echo true || echo false); then
-    echo 'br-make-packages: scrub stale wayland libs from target/staging'
-    rm -f \"\$OUT/target/usr/lib/libwayland-\"*.so*
-    rm -f \"\$OUT/staging/usr/lib/libwayland-\"*.so*
-    rm -f \"\$OUT/staging/usr/lib/pkgconfig/wayland-\"*.pc
+    echo 'br-make-packages: scrub stale wayland client/server/cursor libs (keep wayland-egl)'
+    for base in libwayland-client libwayland-cursor libwayland-server; do
+      rm -f \"\$OUT/target/usr/lib/\${base}\"* \"\$OUT/staging/usr/lib/\${base}\"*
+    done
+    rm -f \"\$OUT/staging/usr/lib/pkgconfig/wayland-client.pc\"
+    rm -f \"\$OUT/staging/usr/lib/pkgconfig/wayland-cursor.pc\"
+    rm -f \"\$OUT/staging/usr/lib/pkgconfig/wayland-server.pc\"
   fi
   make O=\"\$OUT\" -j${JOBS} ${PKG_LIST}
+  if $(needs_mali_wayland_egl_restore && echo true || echo false); then
+    echo 'br-make-packages: restore rockchip-mali wayland-egl after wayland rebuild'
+    make O=\"\$OUT\" rockchip-mali-dirclean || true
+    make O=\"\$OUT\" -j${JOBS} rockchip-mali
+  fi
 "

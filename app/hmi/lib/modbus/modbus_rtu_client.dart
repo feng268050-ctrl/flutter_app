@@ -188,6 +188,27 @@ class ModbusRtuClient {
       return false;
     }
   }
+
+  /// One Modbus function-16 write for a named holding-register group.
+  Future<bool> writeGroup(
+    String groupId,
+    Map<String, Object?> values,
+  ) async {
+    try {
+      final hal = await _ensureHal();
+      await hal.writeGroup(groupId, values);
+      return true;
+    } catch (e) {
+      debugPrint('modbus writeGroup($groupId) failed: $e');
+      return false;
+    }
+  }
+
+  /// Pause background polling while [body] performs a control transaction.
+  Future<T> exclusiveSession<T>(Future<T> Function() body) async {
+    final hal = await _ensureHal();
+    return hal.exclusiveSession(body);
+  }
 }
 
 /// Map HAL unavailable token to App display constant (same glyph today).

@@ -14,6 +14,7 @@ void main() {
     store.warmRead();
     expect(store.showStartupSelfCheck, isTrue);
     expect(store.showSystemStatusOverlay, isFalse);
+    expect(store.hideEngineerModeEntryTip, isFalse);
     await dir.delete(recursive: true);
   });
 
@@ -27,6 +28,7 @@ void main() {
     store.warmRead();
     await store.setShowSystemStatusOverlay(true);
     await store.setShowStartupSelfCheck(false);
+    await store.setHideEngineerModeEntryTip(true);
 
     final again = MiscSettingsStore(
       preferencePath: path,
@@ -35,10 +37,12 @@ void main() {
     again.warmRead();
     expect(again.showSystemStatusOverlay, isTrue);
     expect(again.showStartupSelfCheck, isFalse);
+    expect(again.hideEngineerModeEntryTip, isTrue);
 
     final decoded = jsonDecode(await File(path).readAsString()) as Map;
     expect(decoded['showSystemStatusOverlay'], isTrue);
     expect(decoded['showStartupSelfCheck'], isFalse);
+    expect(decoded['hideEngineerModeEntryTip'], isTrue);
 
     await dir.delete(recursive: true);
   });

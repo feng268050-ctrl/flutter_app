@@ -129,6 +129,8 @@ flutter:
     - assets/monitor/ai_vision_tab.webp
     # Work-mode status bar icons (from lws-ui EquipmentStatusBar mipmaps).
     - assets/work-mode/
+    # Process-mode chrome (Quick wheel / Engineer tabs; from lws-ui mipmap-xxxhdpi).
+    - assets/process/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

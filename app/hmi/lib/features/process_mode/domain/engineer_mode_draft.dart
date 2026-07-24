@@ -1,0 +1,120 @@
+import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+
+/// In-memory engineer workspace draft (not persisted until Save).
+final class EngineerModeDraft {
+  const EngineerModeDraft({
+    required this.preset,
+    required this.baseline,
+    required this.unsaved,
+    required this.fromQuickHandoff,
+  });
+
+  /// Working copy shown in the form.
+  final ProcessPreset preset;
+
+  /// Snapshot for dirty-state and discard confirmation.
+  final ProcessPreset baseline;
+
+  /// True when [preset] is not yet stored as a user row (or dirty vs DB).
+  final bool unsaved;
+
+  /// Opened from Quick Mode More Parameters.
+  final bool fromQuickHandoff;
+
+  bool get isReadOnly => preset.isBuiltin;
+
+  bool get canDelete =>
+      !preset.isBuiltin && preset.kind == ProcessPresetKind.user && !unsaved;
+
+  bool get isDirty {
+    if (unsaved) {
+      return true;
+    }
+    return !_sameContent(preset, baseline);
+  }
+
+  EngineerModeDraft copyWith({
+    ProcessPreset? preset,
+    ProcessPreset? baseline,
+    bool? unsaved,
+    bool? fromQuickHandoff,
+  }) {
+    return EngineerModeDraft(
+      preset: preset ?? this.preset,
+      baseline: baseline ?? this.baseline,
+      unsaved: unsaved ?? this.unsaved,
+      fromQuickHandoff: fromQuickHandoff ?? this.fromQuickHandoff,
+    );
+  }
+
+  EngineerModeDraft resetToBaseline() => copyWith(
+        preset: baseline,
+        unsaved: unsaved && fromQuickHandoff,
+      );
+
+  /// Load a library row into the workspace (built-in stays read-only).
+  static EngineerModeDraft fromLibrary(ProcessPreset source) {
+    return EngineerModeDraft(
+      preset: source,
+      baseline: source,
+      unsaved: false,
+      fromQuickHandoff: false,
+    );
+  }
+
+  /// Quick → Engineer handoff: in-memory user draft, no DB write yet.
+  static EngineerModeDraft fromQuickSource(ProcessPreset source) {
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final draft = ProcessPreset(
+      uuid: 'draft-${source.uuid}',
+      name: source.name.isEmpty ? _defaultName(source) : source.name,
+      kind: ProcessPresetKind.user,
+      source: 'user',
+      isBuiltin: false,
+      processType: source.processType,
+      materialType: source.materialType,
+      materialName: source.materialName,
+      thickness: source.thickness,
+      gear: source.gear,
+      parameters: source.parameters,
+      createdAtMs: now,
+      updatedAtMs: now,
+    );
+    return EngineerModeDraft(
+      preset: draft,
+      baseline: draft,
+      unsaved: true,
+      fromQuickHandoff: true,
+    );
+  }
+
+  static String _defaultName(ProcessPreset source) {
+    final material =
+        source.materialName ?? source.materialType?.englishName ?? 'Process';
+    if (source.processType.isCleaning) {
+      final swing = source.parameters.values['process.swing_width'];
+      return swing == null ? material : '$material-${swing}mm';
+    }
+    final thickness = source.thickness;
+    return thickness == null ? material : '$material-${thickness}mm';
+  }
+
+  static bool _sameContent(ProcessPreset a, ProcessPreset b) {
+    if (a.name != b.name ||
+        a.materialType != b.materialType ||
+        a.materialName != b.materialName ||
+        a.thickness != b.thickness ||
+        a.gear != b.gear) {
+      return false;
+    }
+    if (a.parameters.values.length != b.parameters.values.length) {
+      return false;
+    }
+    for (final entry in a.parameters.values.entries) {
+      if (b.parameters.values[entry.key] != entry.value) {
+        return false;
+      }
+    }
+    return true;
+  }
+}

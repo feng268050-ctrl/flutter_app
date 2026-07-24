@@ -11,16 +11,18 @@ final class MiscSettingsStore extends ChangeNotifier {
     String? legacyBootSelfCheckPath,
   })  : preferencePath =
             preferencePath ?? '${OsPaths.varHmi}/misc-settings.json',
-        legacyBootSelfCheckPath = legacyBootSelfCheckPath ??
-            '${OsPaths.varHmi}/boot-self-check';
+        legacyBootSelfCheckPath =
+            legacyBootSelfCheckPath ?? '${OsPaths.varHmi}/boot-self-check';
 
   static const keyShowStartupSelfCheck = 'showStartupSelfCheck';
   static const keyShowSystemStatusOverlay = 'showSystemStatusOverlay';
   static const keyShowGroundLockAlarm = 'showGroundLockAlarm';
+  static const keyHideEngineerModeEntryTip = 'hideEngineerModeEntryTip';
 
   static const defaultShowStartupSelfCheck = true;
   static const defaultShowSystemStatusOverlay = false;
   static const defaultShowGroundLockAlarm = false;
+  static const defaultHideEngineerModeEntryTip = false;
 
   final String preferencePath;
   final String legacyBootSelfCheckPath;
@@ -28,11 +30,13 @@ final class MiscSettingsStore extends ChangeNotifier {
   bool _showStartupSelfCheck = defaultShowStartupSelfCheck;
   bool _showSystemStatusOverlay = defaultShowSystemStatusOverlay;
   bool _showGroundLockAlarm = defaultShowGroundLockAlarm;
+  bool _hideEngineerModeEntryTip = defaultHideEngineerModeEntryTip;
   bool _warmed = false;
 
   bool get showStartupSelfCheck => _showStartupSelfCheck;
   bool get showSystemStatusOverlay => _showSystemStatusOverlay;
   bool get showGroundLockAlarm => _showGroundLockAlarm;
+  bool get hideEngineerModeEntryTip => _hideEngineerModeEntryTip;
 
   /// Synchronous warm-read for bootstrap.
   void warmRead() {
@@ -115,10 +119,21 @@ final class MiscSettingsStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setHideEngineerModeEntryTip(bool value) async {
+    warmRead();
+    if (_hideEngineerModeEntryTip == value) {
+      return;
+    }
+    _hideEngineerModeEntryTip = value;
+    await _writeUnlocked();
+    notifyListeners();
+  }
+
   void _applyDefaults() {
     _showStartupSelfCheck = defaultShowStartupSelfCheck;
     _showSystemStatusOverlay = defaultShowSystemStatusOverlay;
     _showGroundLockAlarm = defaultShowGroundLockAlarm;
+    _hideEngineerModeEntryTip = defaultHideEngineerModeEntryTip;
   }
 
   /// Returns true when legacy boot-self-check was imported (caller should persist).
@@ -146,6 +161,12 @@ final class MiscSettingsStore extends ChangeNotifier {
       if (map.containsKey(keyShowGroundLockAlarm)) {
         _showGroundLockAlarm =
             _asBool(map[keyShowGroundLockAlarm], defaultShowGroundLockAlarm);
+      }
+      if (map.containsKey(keyHideEngineerModeEntryTip)) {
+        _hideEngineerModeEntryTip = _asBool(
+          map[keyHideEngineerModeEntryTip],
+          defaultHideEngineerModeEntryTip,
+        );
       }
     } catch (e) {
       debugPrint('misc-settings: corrupt JSON, using defaults: $e');
@@ -190,6 +211,7 @@ final class MiscSettingsStore extends ChangeNotifier {
         keyShowStartupSelfCheck: _showStartupSelfCheck,
         keyShowSystemStatusOverlay: _showSystemStatusOverlay,
         keyShowGroundLockAlarm: _showGroundLockAlarm,
+        keyHideEngineerModeEntryTip: _hideEngineerModeEntryTip,
       };
 
   Future<void> _writeUnlocked() async {

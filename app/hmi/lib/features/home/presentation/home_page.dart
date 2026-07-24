@@ -13,6 +13,8 @@ import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
 import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
+import 'package:lws_hmi/features/process_mode/presentation/engineer_mode_entry_tips_dialog.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -45,6 +47,22 @@ class _HomePageState extends State<HomePage> {
   bool _homeBootstrapped = false;
   IpCameraUiStatus _cameraStatus = IpCameraUiStatus.connecting;
   StreamSubscription<IpCameraUiStatus>? _cameraSub;
+
+  Future<void> _openEngineerMode() async {
+    final misc = MiscSettingsScope.maybeOf(context);
+    if (misc?.hideEngineerModeEntryTip != true) {
+      final result = await showEngineerModeEntryTipsDialog(context);
+      if (result == null || !mounted) {
+        return;
+      }
+      if (misc != null) {
+        await misc.setHideEngineerModeEntryTip(result.dontShowAgain);
+      }
+    }
+    if (mounted) {
+      Navigator.of(context).pushNamed(AppRoutes.engineerMode);
+    }
+  }
 
   @override
   void initState() {
@@ -319,7 +337,7 @@ class _HomePageState extends State<HomePage> {
                       );
                       return;
                     }
-                    Navigator.of(context).pushNamed(AppRoutes.engineerMode);
+                    unawaited(_openEngineerMode());
                   },
                 ),
                 // Bottom-left: Monitor | Settings (lws-ui box_quick_actions_row).

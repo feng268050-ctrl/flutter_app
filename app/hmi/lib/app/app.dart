@@ -21,6 +21,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_reposito
 import 'package:lws_hmi/features/process_library/infrastructure/sqlite_process_library_repository.dart';
 import 'package:lws_hmi/features/process_library/presentation/engineer_mode_page.dart';
 import 'package:lws_hmi/features/process_library/presentation/quick_mode_page.dart';
+import 'package:lws_hmi/features/process_mode/domain/quick_mode_selection.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_thresholds_controller.dart';
@@ -382,7 +383,15 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
                                 case AppRoutes.quickMode:
                                   page = const QuickModePage();
                                 case AppRoutes.engineerMode:
-                                  page = const EngineerModePage();
+                                  final engineerArgs = settings.arguments;
+                                  page = engineerArgs is EngineerModeRouteArgs
+                                      ? EngineerModePage(
+                                          initialProcessType:
+                                              engineerArgs.processType,
+                                          initialPresetUuid:
+                                              engineerArgs.presetUuid,
+                                        )
+                                      : const EngineerModePage();
                                 case AppRoutes.demo:
                                   page = _demoPage();
                                 case AppRoutes.home:

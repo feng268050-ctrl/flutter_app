@@ -7,6 +7,8 @@ import 'package:lws_hmi/features/process_library/presentation/quick_mode_page.da
 import 'package:lws_hmi/features/work_mode/domain/work_mode_equipment_status.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 
+import 'process_library_test_harness.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -104,28 +106,37 @@ void main() {
     expect(find.text('09:05'), findsOneWidget);
   });
 
-  testWidgets('QuickModePage is blank under shared status bar', (tester) async {
-    await setDesignSurface(tester);
-    await tester.pumpWidget(const MaterialApp(home: QuickModePage()));
-    await tester.pump();
-
-    expect(
-        find.byKey(const ValueKey('quick-mode-placeholder')), findsOneWidget);
-    expect(find.text('Gun Switch'), findsOneWidget);
-    expect(find.byKey(const ValueKey('cyber-status-wifi')), findsNothing);
-  });
-
-  testWidgets('EngineerModePage is blank under shared status bar',
+  testWidgets('QuickModePage keeps shared status bar without wifi/bt',
       (tester) async {
     await setDesignSurface(tester);
-    await tester.pumpWidget(const MaterialApp(home: EngineerModePage()));
-    await tester.pump();
-
-    expect(
-      find.byKey(const ValueKey('engineer-mode-placeholder')),
-      findsOneWidget,
+    final controller = await createEmptyProcessLibraryController(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: wrapWithProcessLibrary(controller, const QuickModePage()),
+      ),
     );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Gun Switch'), findsOneWidget);
+    expect(find.byKey(const ValueKey('cyber-status-wifi')), findsNothing);
+    expect(find.byKey(const ValueKey('cyber-status-bt')), findsNothing);
+  });
+
+  testWidgets('EngineerModePage keeps shared status bar equipment strip',
+      (tester) async {
+    await setDesignSurface(tester);
+    final controller = await createEmptyProcessLibraryController(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: wrapWithProcessLibrary(controller, const EngineerModePage()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
     expect(find.text('Ground Clamp'), findsOneWidget);
+    expect(find.byKey(const ValueKey('cyber-status-wifi')), findsNothing);
   });
 
   testWidgets('disabled Back uses gray label color', (tester) async {

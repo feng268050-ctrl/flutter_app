@@ -1,0 +1,131 @@
+import 'dart:io';
+
+import 'package:cyber_hal/cyber_hal.dart';
+import 'package:cyber_hal/modbus.dart';
+import 'package:cyber_hal/stub.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
+import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
+import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
+import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+
+void main() {
+  BoardProfile testProfile() => BoardProfile.fromJsonString('''
+{
+  "board_id": "test",
+  "platform": "linux",
+  "capabilities": [],
+  "helpers": {},
+  "configs": {}
+}
+''');
+
+  AppServices servicesWith(ModbusRtuClient modbus) => AppServices(
+        boardProfile: testProfile(),
+        sysInfo: StubSysInfo(),
+        modbusClient: modbus,
+      );
+
+  group('LaserWorkGuard.isProcessChangeSafe', () {
+    test('true when laser enable/on and wire feed are off', () async {
+      final modbus = _GuardModbus()
+        ..control[LaserWorkGuard.laserEnableAttribute] = false
+        ..status[LaserWorkGuard.laserOnAttribute] = false
+        ..status[LaserWorkGuard.wireFeedingOnAttribute] = 0;
+      expect(
+        await LaserWorkGuard.isProcessChangeSafe(servicesWith(modbus)),
+        isTrue,
+      );
+    });
+
+    test('fail-closed when any interlock bit is on', () async {
+      final modbus = _GuardModbus()
+        ..control[LaserWorkGuard.laserEnableAttribute] = true
+        ..status[LaserWorkGuard.laserOnAttribute] = false
+        ..status[LaserWorkGuard.wireFeedingOnAttribute] = false;
+      expect(
+        await LaserWorkGuard.isProcessChangeSafe(servicesWith(modbus)),
+        isFalse,
+      );
+    });
+
+    test('fail-closed when a status attribute is missing', () async {
+      final modbus = _GuardModbus()
+        ..control[LaserWorkGuard.laserEnableAttribute] = false
+        ..status[LaserWorkGuard.laserOnAttribute] = false;
+      // wire_feeding_on absent → null
+      expect(
+        await LaserWorkGuard.isProcessChangeSafe(servicesWith(modbus)),
+        isFalse,
+      );
+    });
+
+    test('fail-closed when group read throws', () async {
+      final modbus = _GuardModbus(throwOnRead: true);
+      expect(
+        await LaserWorkGuard.isProcessChangeSafe(servicesWith(modbus)),
+        isFalse,
+      );
+    });
+  });
+
+  group('LaserWorkGuard.evaluateAndInterruptIfNeeded', () {
+    test('does not clear laser when no active alarm episodes', () async {
+      final modbus = _GuardModbus();
+      final dir = await Directory.systemTemp.createTemp('laser-guard-');
+      addTearDown(() => dir.delete(recursive: true));
+      final store = AdvancedSettingsStore(
+        preferencePath: '${dir.path}/advanced-settings.json',
+      );
+      store.warmRead();
+      final dangerous = DangerousOperationsSettings(store);
+
+      await LaserWorkGuard.evaluateAndInterruptIfNeeded(
+        services: servicesWith(modbus),
+        dangerous: dangerous,
+      );
+
+      expect(modbus.writes, isEmpty);
+    });
+  });
+}
+
+final class _GuardModbus extends ModbusRtuClient {
+  _GuardModbus({this.throwOnRead = false});
+
+  final bool throwOnRead;
+  final Map<String, Object?> control = {};
+  final Map<String, Object?> status = {};
+  final List<(String, Object?)> writes = [];
+
+  @override
+  Future<void> ensurePolling() async {}
+
+  @override
+  Future<void> applyHealthWindowMode(String? mode) async {}
+
+  @override
+  Future<Stream<List<ModbusAttributeChange>>> watchAttributes({
+    Iterable<String>? ids,
+  }) async =>
+      const Stream.empty();
+
+  @override
+  Future<Map<String, Object?>> readGroup(String groupId) async {
+    if (throwOnRead) {
+      throw StateError('read failed');
+    }
+    return switch (groupId) {
+      'control' => Map<String, Object?>.from(control),
+      'status' => Map<String, Object?>.from(status),
+      _ => <String, Object?>{},
+    };
+  }
+
+  @override
+  Future<bool> writeAttribute(String id, Object? value) async {
+    writes.add((id, value));
+    return true;
+  }
+}

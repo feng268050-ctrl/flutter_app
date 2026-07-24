@@ -1,42 +1,63 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 
-class LanguageSettingsPage extends StatefulWidget {
+class LanguageSettingsPage extends StatelessWidget {
   const LanguageSettingsPage({super.key});
 
   @override
-  State<LanguageSettingsPage> createState() => _LanguageSettingsPageState();
-}
-
-class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
-  String _lang = 'EN';
-
-  @override
   Widget build(BuildContext context) {
+    final store = CommonSettingsScope.maybeOf(context);
     return SettingsScaffold(
       title: 'Language',
-      body: SettingsScrollView(
-        children: [
-          const SettingsSectionHeader('Language'),
-          SettingsGroup(
-            children: [
-              for (final code in const ['EN', 'ZH'])
-                SettingsOptionTile(
-                  title: code == 'EN' ? 'English' : '中文',
-                  selected: _lang == code,
-                  onTap: () => setState(() => _lang = code),
+      body: store == null
+          ? const SettingsScrollView(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text(
+                    'Language preference unavailable.',
+                    style: TextStyle(color: Colors.white54),
+                  ),
                 ),
-            ],
-          ),
-          const Padding(
-            padding: EdgeInsets.all(20),
-            child: Text(
-              'Language preference is not persisted yet.',
-              style: TextStyle(color: Colors.white54),
+              ],
+            )
+          : ListenableBuilder(
+              listenable: store,
+              builder: (context, _) {
+                final lang = store.language;
+                return SettingsScrollView(
+                  children: [
+                    const SettingsSectionHeader('Language'),
+                    SettingsGroup(
+                      children: [
+                        for (final code in CommonSettingsStore.supportedLanguages)
+                          SettingsOptionTile(
+                            title: code == CommonSettingsStore.languageEn
+                                ? 'English'
+                                : '中文',
+                            selected: lang == code,
+                            onTap: () {
+                              unawaited(store.setLanguage(code));
+                            },
+                          ),
+                      ],
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Text(
+                        'Persisted under /var/lib/hmi/common-settings.json. '
+                        'Applies to soft keyboard language (CyberIME).',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
-          ),
-        ],
-      ),
     );
   }
 }

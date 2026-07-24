@@ -5,7 +5,7 @@ abstract final class OsPaths {
   static const varBluetooth = '/var/lib/bluetooth';
   /// HAL / system platform prefs (`display.conf`, `mouse.conf`, `product.ini`, …).
   static const varHal = '/var/lib/hal';
-  /// HMI App-owned stores (misc/advanced JSON, alarm DB, push/debug staging).
+  /// HMI App-owned stores (common/misc/advanced JSON, alarm DB, push/debug staging).
   static const varHmi = '/var/lib/hmi';
   /// App runtime markers (tmpfs); cleared on reboot.
   static const runHmi = '/run/hmi';

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/bluetooth_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/brightness_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/date_time_settings_page.dart';
@@ -178,21 +179,61 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
         const SettingsSectionHeader('Display & Sound'),
         SettingsGroup(
           children: [
-            SettingsNavRow(
-              title: 'Language',
-              value: 'English',
-              onTap: () => pushSettingsPage(
-                context,
-                const LanguageSettingsPage(),
-              ),
+            Builder(
+              builder: (context) {
+                final store = CommonSettingsScope.maybeOf(context);
+                if (store == null) {
+                  return SettingsNavRow(
+                    title: 'Language',
+                    value: 'English',
+                    onTap: () => pushSettingsPage(
+                      context,
+                      const LanguageSettingsPage(),
+                    ),
+                  );
+                }
+                return ListenableBuilder(
+                  listenable: store,
+                  builder: (context, _) {
+                    return SettingsNavRow(
+                      title: 'Language',
+                      value: store.languageLabel,
+                      onTap: () => pushSettingsPage(
+                        context,
+                        const LanguageSettingsPage(),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-            SettingsNavRow(
-              title: 'Unit',
-              value: 'Metric',
-              onTap: () => pushSettingsPage(
-                context,
-                const UnitSettingsPage(),
-              ),
+            Builder(
+              builder: (context) {
+                final store = CommonSettingsScope.maybeOf(context);
+                if (store == null) {
+                  return SettingsNavRow(
+                    title: 'Unit',
+                    value: 'Metric',
+                    onTap: () => pushSettingsPage(
+                      context,
+                      const UnitSettingsPage(),
+                    ),
+                  );
+                }
+                return ListenableBuilder(
+                  listenable: store,
+                  builder: (context, _) {
+                    return SettingsNavRow(
+                      title: 'Unit',
+                      value: store.unit,
+                      onTap: () => pushSettingsPage(
+                        context,
+                        const UnitSettingsPage(),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
             SettingsNavRow(
               title: 'Screen Brightness',

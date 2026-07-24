@@ -24,6 +24,9 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_scope.da
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_thresholds_controller.dart';
 import 'package:lws_hmi/features/settings/application/ai_assistance_settings.dart';
+import 'package:lws_hmi/features/settings/application/app_cyber_ime_language_provider.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
 import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
@@ -51,6 +54,7 @@ class LwsHmiApp extends StatefulWidget {
     this.services,
     this.soundEffectStore,
     this.miscSettingsStore,
+    this.commonSettingsStore,
     this.advancedSettingsStore,
     this.bootSelfCheckSettings,
     this.processLibraryRepository,
@@ -66,6 +70,9 @@ class LwsHmiApp extends StatefulWidget {
 
   /// Optional override for tests (inject fake Misc JSON path / store).
   final MiscSettingsStore? miscSettingsStore;
+
+  /// Optional override for tests (inject fake Common JSON path / store).
+  final CommonSettingsStore? commonSettingsStore;
 
   /// Optional override for tests (inject fake Advanced JSON path / store).
   final AdvancedSettingsStore? advancedSettingsStore;
@@ -89,6 +96,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
 
   late final MiscSettingsStore _miscSettingsStore =
       widget.miscSettingsStore ?? MiscSettingsStore();
+
+  late final CommonSettingsStore _commonSettingsStore =
+      widget.commonSettingsStore ?? CommonSettingsStore();
 
   late final AdvancedSettingsStore _advancedSettingsStore =
       widget.advancedSettingsStore ?? AdvancedSettingsStore();
@@ -148,6 +158,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     super.initState();
     _soundEffectStore.warmRead();
     _miscSettingsStore.warmRead();
+    _commonSettingsStore.warmRead();
     _advancedSettingsStore.warmRead();
     _thresholdsController.warmFromStore();
     _bootSelfCheckSettings.warmRead();
@@ -163,7 +174,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     };
     CyberClickSoundRegistry.register(_clickSound);
     CyberImeLanguageRegistry.register(
-      const CyberImeFixedLanguageProvider(CyberImeGlobalKind.english),
+      AppCyberImeLanguageProvider(_commonSettingsStore),
     );
     CyberImeRegionalLayoutRegistry.register(_regionalLayout);
     CyberImePhysicalKeyboard.register(
@@ -301,61 +312,64 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
           controller: _warnAlarm,
           child: MiscSettingsScope(
             store: _miscSettingsStore,
-            child: AdvancedSettingsScope(
-              store: _advancedSettingsStore,
-              aiAssistance: _aiAssistanceSettings,
-              dangerousOperations: _dangerousOperationsSettings,
-              thresholds: _thresholdsController,
-              child: BootSelfCheckScope(
-                settings: _bootSelfCheckSettings,
-                child: SoundEffectScope(
-                  store: _soundEffectStore,
-                  clickSound: _clickSound,
-                  child: Listener(
-                    behavior: HitTestBehavior.translucent,
-                    onPointerDown: (_) => _noteUserActivity(),
-                    onPointerMove: (_) {
-                      // Moves reset idle only while awake; blanked wake is double-tap.
-                      if (!_services.autoSleep.isBlanked) {
-                        _noteUserActivity();
-                      }
-                    },
-                    child: MaterialApp(
-                      title: 'HMI',
-                      theme: buildAppTheme(),
-                      scrollBehavior: const AppScrollBehavior(),
-                      builder: _appBuilder,
-                      navigatorKey: _navKey,
-                      initialRoute: AppRoutes.home,
-                      onGenerateRoute: (settings) {
-                        final Widget page;
-                        switch (settings.name) {
-                          case AppRoutes.settings:
-                            page = SettingsPage(
-                              openKeyboardOnLaunch: settings.arguments ==
-                                  HmiRouteRestore.settingsKeyboard,
-                            );
-                          case AppRoutes.monitor:
-                            page = const MonitorPage();
-                          case AppRoutes.quickMode:
-                            page = const ProcessLibraryPage(
-                              mode: ProcessLibraryPageMode.quick,
-                            );
-                          case AppRoutes.engineerMode:
-                            page = const ProcessLibraryPage(
-                              mode: ProcessLibraryPageMode.engineer,
-                            );
-                          case AppRoutes.demo:
-                            page = _demoPage();
-                          case AppRoutes.home:
-                          default:
-                            page = const HomePage();
+            child: CommonSettingsScope(
+              store: _commonSettingsStore,
+              child: AdvancedSettingsScope(
+                store: _advancedSettingsStore,
+                aiAssistance: _aiAssistanceSettings,
+                dangerousOperations: _dangerousOperationsSettings,
+                thresholds: _thresholdsController,
+                child: BootSelfCheckScope(
+                  settings: _bootSelfCheckSettings,
+                  child: SoundEffectScope(
+                    store: _soundEffectStore,
+                    clickSound: _clickSound,
+                    child: Listener(
+                      behavior: HitTestBehavior.translucent,
+                      onPointerDown: (_) => _noteUserActivity(),
+                      onPointerMove: (_) {
+                        // Moves reset idle only while awake; blanked wake is double-tap.
+                        if (!_services.autoSleep.isBlanked) {
+                          _noteUserActivity();
                         }
-                        return buildAppPageRoute(
-                          settings: settings,
-                          child: page,
-                        );
                       },
+                      child: MaterialApp(
+                        title: 'HMI',
+                        theme: buildAppTheme(),
+                        scrollBehavior: const AppScrollBehavior(),
+                        builder: _appBuilder,
+                        navigatorKey: _navKey,
+                        initialRoute: AppRoutes.home,
+                        onGenerateRoute: (settings) {
+                          final Widget page;
+                          switch (settings.name) {
+                            case AppRoutes.settings:
+                              page = SettingsPage(
+                                openKeyboardOnLaunch: settings.arguments ==
+                                    HmiRouteRestore.settingsKeyboard,
+                              );
+                            case AppRoutes.monitor:
+                              page = const MonitorPage();
+                            case AppRoutes.quickMode:
+                              page = const ProcessLibraryPage(
+                                mode: ProcessLibraryPageMode.quick,
+                              );
+                            case AppRoutes.engineerMode:
+                              page = const ProcessLibraryPage(
+                                mode: ProcessLibraryPageMode.engineer,
+                              );
+                            case AppRoutes.demo:
+                              page = _demoPage();
+                            case AppRoutes.home:
+                            default:
+                              page = const HomePage();
+                          }
+                          return buildAppPageRoute(
+                            settings: settings,
+                            child: page,
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),

@@ -12,7 +12,7 @@ The appliance OS SHALL NOT store Wi‑Fi, Ethernet, Bluetooth, HAL platform, and
 - **`/var/lib/network/`** — Ethernet: `eth0-wanted`, `eth0-ipv4`, `eth0-resolv.conf`; system proxy `proxy.conf`
 - **`/var/lib/bluetooth/`** — Bluetooth: HMI prefs `bt-wanted`, `bt-a2dp-sink`, `bt-a2dp-volume` at the directory top level alongside BlueZ adapter subdirectories
 - **`/var/lib/hal/`** — HAL / system platform prefs: `mouse.conf`, `keyboard.conf`, `display.conf` (keys `backlight` / `auto_sleep` / `orientation`), `sound.conf`, `datetime.conf`, `product.ini`. OTG mode MUST NOT live here: session file is **`/run/usb-otg.mode`**. Stale **`usb-otg.conf`** / **`usb-debug`** MUST be removed by `bind-prefs` when present.
-- **`/var/lib/hmi/`** — HMI App-owned state: `misc-settings.json`, `advanced-settings.json`, `alarm-logs.db`, push/debug/A-B staging artifacts
+- **`/var/lib/hmi/`** — HMI App-owned state: `common-settings.json`, `misc-settings.json`, `advanced-settings.json`, `alarm-logs.db`, push/debug/A-B staging artifacts
 
 The legacy monolithic path **`/var/lib/lws-hmi/`** MUST NOT exist on shipped rootfs.
 
@@ -35,6 +35,11 @@ The legacy monolithic path **`/var/lib/lws-hmi/`** MUST NOT exist on shipped roo
 
 - **WHEN** Common Settings → Misc preferences are persisted
 - **THEN** they live under `/var/lib/hmi/misc-settings.json` and MUST NOT be written under `/var/lib/hal/`
+
+#### Scenario: App common prefs stay under hmi
+
+- **WHEN** Common Settings Language or Unit preferences are persisted
+- **THEN** they live under `/var/lib/hmi/common-settings.json` and MUST NOT be written under `/var/lib/hal/` or into `misc-settings.json`
 ### Requirement: Subsystem helpers under usr libexec tiers
 
 Programs invoked by systemd units or daemons (not user PATH commands) MUST live under **`/usr/libexec/<subsystem>/`**, not `/usr/lib/`:

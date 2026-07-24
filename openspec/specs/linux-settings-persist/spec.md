@@ -12,9 +12,9 @@ The image SHALL document and use:
 - **`/var/lib/network/`** — eth0 wanted, eth0 IPv4/DNS; system proxy
 - **`/var/lib/bluetooth/`** — BT wanted, A2DP sink/volume prefs
 - **`/var/lib/hal/`** — `display.conf` / `sound.conf`, mouse/keyboard settings, `datetime.conf` (sync mode + timezone), USB debug role, `product.ini` (`display.conf` keys include `backlight`, `auto_sleep`, `orientation`)
-- **`/var/lib/hmi/`** — HMI App stores (`misc-settings.json`, `advanced-settings.json`, alarm history DB) and push/debug/A-B staging
+- **`/var/lib/hmi/`** — HMI App stores (`common-settings.json`, `misc-settings.json`, `advanced-settings.json`, alarm history DB) and push/debug/A-B staging
 
-LAN SSH debug MUST NOT be restored at boot solely due to a prior enable. Mouse preferences MUST be re-applied when flutter-pi / `hmi.service` starts; they do NOT require a separate network-style restore oneshot.
+LAN SSH debug MUST NOT be restored at boot solely due to a prior enable. Mouse preferences MUST be re-applied when flutter-pi / `hmi.service` starts; they do NOT require a separate network-style restore oneshot. `common-settings.json` is App-owned and is NOT applied by `settings-restore.service` (Language / Unit are read by the HMI process on start).
 
 #### Scenario: Cold boot without wifi-wanted
 
@@ -35,6 +35,11 @@ LAN SSH debug MUST NOT be restored at boot solely due to a prior enable. Mouse p
 
 - **WHEN** an operator sets portrait via `change-orientation`
 - **THEN** `/var/lib/hal/display.conf` contains `orientation=portrait` and MUST NOT rely on a standalone `display-orientation` primary write
+
+#### Scenario: Common product prefs use common-settings.json
+
+- **WHEN** an operator changes Language or Unit via Common Settings
+- **THEN** the HMI App persists under `/var/lib/hmi/common-settings.json` rather than under `/var/lib/hal/` or `misc-settings.json`
 
 ### Requirement: Simple HW prefs written by shell apply helpers
 

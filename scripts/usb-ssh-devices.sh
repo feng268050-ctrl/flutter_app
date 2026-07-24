@@ -9,9 +9,12 @@ source "$ROOT/scripts/usb-ssh-common.sh"
 
 USB_SSH_ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
 USB_SSH_MODE="USB-SSH"
+USB_MTP_MODE="USB-MTP"
 USB_SSH_FS=$'\t'
+# g_ether plug-ssh (usb-plug-ssh-start.sh); MTP uses 0011 — must not count as USB-SSH.
 GADGET_VID="${LWS_HMI_USB_GADGET_VID:-2207}"
 GADGET_PID="${LWS_HMI_USB_GADGET_PID:-0019}"
+MTP_PID="${LWS_HMI_USB_MTP_PID:-0011}"
 
 die() {
 	echo "ERROR: $*" >&2
@@ -23,6 +26,13 @@ usb_ssh_row() {
 	local sn="$1" chip="$2" loc="$3" iface="$4" usb="${5:--}"
 	printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
 		"$USB_SSH_MODE" "$sn" "$chip" "$loc" "$iface" "$USB_SSH_ADDR" "$usb"
+}
+
+# MTP gadget: visible in make devices, never selected for SSH/push/upgrade.
+usb_mtp_row() {
+	local sn="$1" chip="$2" loc="$3" usb="${4:--}"
+	printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+		"$USB_MTP_MODE" "$sn" "$chip" "$loc" "-" "-" "$usb"
 }
 
 ensure_host_addr_on_iface() {
@@ -51,10 +61,15 @@ fetch_board_identity_via_ssh() {
 
 enrich_usb_ssh_rows() {
 	# Prefer live board SN + ChipID over host USB iSerial (gadget load may lag product.ini).
+	# USB-MTP has no SSH — pass through without enrich.
 	local mode sn chip loc iface addr usb pair
 	while IFS=$'\t' read -r mode sn chip loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
 		[[ -n "${chip:-}" ]] || chip="${sn:--}"
+		if [[ "$mode" == "$USB_MTP_MODE" ]]; then
+			printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$mode" "$sn" "$chip" "$loc" "-" "-" "${usb:--}"
+			continue
+		fi
 		if [[ "$iface" != "-" && -n "$iface" ]]; then
 			pair="$(fetch_board_identity_via_ssh "$iface" || true)"
 			if [[ -n "$pair" ]]; then
@@ -93,6 +108,8 @@ linux_usb_matches_gadget() {
 	local usb_path="$1" vid pid
 	vid="$(cat "$usb_path/idVendor" 2>/dev/null || echo "")"
 	pid="$(cat "$usb_path/idProduct" 2>/dev/null || echo "")"
+	# Never treat MTP as USB-SSH (same Rockchip VID, different PID).
+	[[ "$vid" == "$GADGET_VID" && "$pid" == "$MTP_PID" ]] && return 1
 	if [[ "$vid" == "$GADGET_VID" ]]; then
 		case "$GADGET_PID" in
 		"" | "*" | any) return 0 ;;
@@ -104,20 +121,35 @@ linux_usb_matches_gadget() {
 	return 1
 }
 
+linux_usb_is_mtp() {
+	local usb_path="$1" vid pid
+	vid="$(cat "$usb_path/idVendor" 2>/dev/null || echo "")"
+	pid="$(cat "$usb_path/idProduct" 2>/dev/null || echo "")"
+	[[ "$vid" == "$GADGET_VID" && "$pid" == "$MTP_PID" ]]
+}
+
 linux_list_usb_ssh() {
-	local usb_dev net usb_path vid pid serial loc iface seen=""
+	local usb_dev net usb_path vid pid serial loc iface seen="" usb
 	for usb_dev in /sys/bus/usb/devices/*; do
 		[ -f "$usb_dev/idVendor" ] || continue
-		linux_usb_matches_gadget "$usb_dev" || continue
 		serial="$(cat "$usb_dev/serial" 2>/dev/null || true)"
 		[[ -n "$serial" ]] || serial="-"
 		loc="$(basename "$usb_dev")"
-		iface="$(linux_iface_for_usb_sysfs "$usb_dev" 2>/dev/null || echo "-")"
+		vid="$(cat "$usb_dev/idVendor" 2>/dev/null || echo "")"
+		pid="$(cat "$usb_dev/idProduct" 2>/dev/null || echo "")"
+		usb="0x${vid}:0x${pid}"
 		case " $seen " in
 		*" $loc "*) continue ;;
 		esac
+		if linux_usb_is_mtp "$usb_dev"; then
+			seen="$seen $loc"
+			usb_mtp_row "$serial" "$serial" "$loc" "$usb"
+			continue
+		fi
+		linux_usb_matches_gadget "$usb_dev" || continue
 		seen="$seen $loc"
-		usb_ssh_row "$serial" "$serial" "$loc" "$iface"
+		iface="$(linux_iface_for_usb_sysfs "$usb_dev" 2>/dev/null || echo "-")"
+		usb_ssh_row "$serial" "$serial" "$loc" "$iface" "$usb"
 	done
 
 	for net in /sys/class/net/*; do
@@ -134,24 +166,29 @@ linux_list_usb_ssh() {
 		seen="$seen $loc"
 		serial="$(cat "$usb_path/serial" 2>/dev/null || true)"
 		[[ -n "$serial" ]] || serial="-"
-		usb_ssh_row "$serial" "$serial" "$loc" "$iface"
+		vid="$(cat "$usb_path/idVendor" 2>/dev/null || echo "")"
+		pid="$(cat "$usb_path/idProduct" 2>/dev/null || echo "")"
+		usb_ssh_row "$serial" "$serial" "$loc" "$iface" "0x${vid}:0x${pid}"
 	done
 }
 
 macos_list_usb_ssh() {
 	local python=python3
 	command -v "$python" >/dev/null 2>&1 || return 0
-	"$python" - "$GADGET_VID" "$GADGET_PID" "$USB_SSH_ADDR" "$USB_SSH_MODE" <<'PY'
+	"$python" - "$GADGET_VID" "$GADGET_PID" "$MTP_PID" "$USB_SSH_ADDR" "$USB_SSH_MODE" "$USB_MTP_MODE" <<'PY'
 import hashlib, re, subprocess, sys
 
-vid_want = sys.argv[1].lower()
-pid_want = sys.argv[2].lower()
-addr = sys.argv[3]
-mode = sys.argv[4]
+vid_want = sys.argv[1].lower().zfill(4)
+pid_want = sys.argv[2].lower().zfill(4)
+mtp_pid = sys.argv[3].lower().zfill(4)
+addr = sys.argv[4]
+ssh_mode = sys.argv[5]
+mtp_mode = sys.argv[6]
 
-def pid_matches(pid_hex: str) -> bool:
+def pid_matches_ssh(pid_hex: str) -> bool:
     if pid_want in ("", "*", "any"):
-        return True
+        # Still exclude MTP when wildcard VID match is enabled.
+        return pid_hex.lower() != mtp_pid
     return pid_hex.lower() == pid_want
 
 def networksetup_iface_for_port(port_substr: str) -> str:
@@ -220,23 +257,27 @@ def parse_vendor_product(chunk: str):
         pid.zfill(4) if pid is not None else None,
     )
 
-def chunk_matches(name: str, chunk: str) -> bool:
+def classify(name: str, chunk: str):
+    """Return USB-SSH / USB-MTP / None.
+
+    MTP iProduct is \"LWS Storage\"; plug-ssh is \"LWS HMI\" — classify by PID.
+    """
     vid, pid = parse_vendor_product(chunk)
-    if vid == vid_want and pid and pid_matches(pid):
-        return True
+    if vid == vid_want and pid == mtp_pid:
+        return mtp_mode
+    if vid == vid_want and pid and pid_matches_ssh(pid):
+        return ssh_mode
+    # Legacy Linux ECM as RNDIS/Ethernet Gadget on macOS.
+    if vid == "0525" and pid == "a4a2":
+        return ssh_mode
     if "RNDIS" in name and "Gadget" in name:
-        return True
-    if "LWS HMI" in name:
-        return True
+        return ssh_mode
     m_prod = re.search(r'"USB Product Name"\s*=\s*"([^"]+)"', chunk)
     if m_prod:
         prod = m_prod.group(1)
-        if "LWS HMI" in prod or ("RNDIS" in prod and "Gadget" in prod):
-            return True
-    m_vendor = re.search(r'"USB Vendor Name"\s*=\s*"([^"]+)"', chunk)
-    if m_vendor and "dwc3-gadget" in m_vendor.group(1):
-        return True
-    return False
+        if "RNDIS" in prod and "Gadget" in prod:
+            return ssh_mode
+    return None
 
 def iface_for_chunk(name: str, chunk: str, text: str) -> str:
     m_bsd = re.search(r'"BSD Name"\s*=\s*"(en[^"]+)"', chunk)
@@ -262,38 +303,34 @@ def iface_for_chunk(name: str, chunk: str, text: str) -> str:
         iface = networksetup_iface_for_port("RNDIS/Ethernet Gadget")
         if iface != "-":
             return iface
-    if "LWS HMI" in name:
-        iface = networksetup_iface_for_port("LWS HMI")
-        if iface != "-":
-            return iface
-    if "LWS" in name:
-        iface = networksetup_iface_for_port("LWS")
-        if iface != "-":
-            return iface
     return "-"
 
 text = subprocess.check_output(["ioreg", "-p", "IOUSB", "-l", "-w", "0"], text=True, errors="replace")
 
 gadget_blocks = []
 for name, chunk in iter_gadget_chunks(text):
-    if chunk_matches(name, chunk):
-        gadget_blocks.append((name, chunk))
+    mode = classify(name, chunk)
+    if mode:
+        gadget_blocks.append((mode, name, chunk))
 
 if not gadget_blocks:
     sys.exit(0)
 
 seen = set()
-for name, chunk in gadget_blocks:
+for mode, name, chunk in gadget_blocks:
     m_serial = re.search(r'"USB Serial Number"\s*=\s*"([^"]+)"', chunk)
     m_loc = re.search(r'"locationID"\s*=\s*0x([0-9a-fA-F]+)', chunk)
     vid, pid = parse_vendor_product(chunk)
     serial = m_serial.group(1).strip() if m_serial and m_serial.group(1).strip() else "-"
     loc = m_loc.group(1).upper() if m_loc else "-"
-    identity = (serial, loc)
+    identity = (mode, serial, loc)
     if identity in seen:
         continue
     seen.add(identity)
     usb = f"0x{vid}:0x{pid}" if vid and pid else "-"
+    if mode == mtp_mode:
+        print(f"{mode}\t{serial}\t{serial}\t{loc}\t-\t-\t{usb}")
+        continue
     iface = iface_for_chunk(name, chunk, text)
     print(f"{mode}\t{serial}\t{serial}\t{loc}\t{iface}\t{addr}\t{usb}")
 PY
@@ -409,6 +446,7 @@ select_usb_ssh_device() {
 	pick_iface="${IFACE:-${LWS_HMI_USB_IFACE:-}}"
 	while IFS="$USB_SSH_FS" read -r mode sn chip loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
+		[[ "$mode" == "$USB_SSH_MODE" ]] || continue
 		rows+=("${mode}${USB_SSH_FS}${sn}${USB_SSH_FS}${chip}${USB_SSH_FS}${loc}${USB_SSH_FS}${iface}${USB_SSH_FS}${addr}${USB_SSH_FS}${usb}")
 	done < <(list_usb_ssh_devices)
 

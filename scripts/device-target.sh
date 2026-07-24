@@ -36,17 +36,32 @@ transport_for_mode() {
 	esac
 }
 
+is_ssh_selectable() {
+	case "$1" in
+	USB-SSH | SSH) return 0 ;;
+	*) return 1 ;;
+	esac
+}
+
+mtp_hint() {
+	echo "OTG is in MTP mode (not USB-SSH). Switch Settings → USB OTG → Debug, or: make connect <lan-ip>" >&2
+}
+
 emit_selection() {
 	local mode="$1" loc="$2" iface="$3" addr="$4" transport
+	if [[ "$mode" == "USB-MTP" ]]; then
+		mtp_hint
+		die "SN/device is USB-MTP — no SSH transport"
+	fi
 	transport="$(transport_for_mode "$mode")" || die "unsupported MODE=$mode"
 	printf '%s\n' "$transport" "$loc" "$iface" "$addr"
 }
 
 select_device() {
 	local sn_sel chip_sel pick_ip pick_iface
-	local -a rows=()
+	local -a rows=() selectable=()
 	local row mode sn chip loc iface addr usb
-	local -a matches=()
+	local -a matches=() mtp_matches=()
 
 	sn_sel="$(device_select_sn)"
 	chip_sel="$(device_select_chipid)"
@@ -61,7 +76,12 @@ select_device() {
 		die "No USB-SSH or SSH device (plug OTG or: make connect <ip>; see make devices)"
 	fi
 
-	# IP= selects MODE=SSH only (never USB-SSH).
+	for row in "${rows[@]}"; do
+		IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
+		is_ssh_selectable "$mode" && selectable+=("$row")
+	done
+
+	# IP= selects MODE=SSH only (never USB-SSH / USB-MTP).
 	if [[ -n "$pick_ip" ]]; then
 		for row in "${rows[@]}"; do
 			IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
@@ -83,14 +103,23 @@ select_device() {
 		die "IFACE=$pick_iface not found (make devices)"
 	fi
 
-	# CHIPID= matches ChipID column only.
+	# CHIPID= matches ChipID column only (SSH-selectable rows).
 	if [[ -n "$chip_sel" && "$chip_sel" != "-" ]]; then
 		for row in "${rows[@]}"; do
 			IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
 			[[ "$chip" == "$chip_sel" ]] || continue
+			if [[ "$mode" == "USB-MTP" ]]; then
+				mtp_matches+=("$row")
+				continue
+			fi
+			is_ssh_selectable "$mode" || continue
 			matches+=("$row")
 		done
 		if [[ ${#matches[@]} -eq 0 ]]; then
+			if [[ ${#mtp_matches[@]} -gt 0 ]]; then
+				mtp_hint
+				die "CHIPID=$chip_sel is USB-MTP only (make devices)"
+			fi
 			die "CHIPID=$chip_sel not found (make devices)"
 		fi
 		if [[ ${#matches[@]} -gt 1 ]]; then
@@ -106,9 +135,18 @@ select_device() {
 		for row in "${rows[@]}"; do
 			IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
 			[[ "$sn" == "$sn_sel" || "$chip" == "$sn_sel" ]] || continue
+			if [[ "$mode" == "USB-MTP" ]]; then
+				mtp_matches+=("$row")
+				continue
+			fi
+			is_ssh_selectable "$mode" || continue
 			matches+=("$row")
 		done
 		if [[ ${#matches[@]} -eq 0 ]]; then
+			if [[ ${#mtp_matches[@]} -gt 0 ]]; then
+				mtp_hint
+				die "SN=$sn_sel is USB-MTP only (make devices)"
+			fi
 			die "SN=$sn_sel not found (make devices)"
 		fi
 		if [[ ${#matches[@]} -gt 1 ]]; then
@@ -119,11 +157,21 @@ select_device() {
 		return 0
 	fi
 
-	if [[ ${#rows[@]} -gt 1 ]]; then
-		die "${#rows[@]} devices — set SN= or IP= (see make devices)"
+	if [[ ${#selectable[@]} -eq 0 ]]; then
+		for row in "${rows[@]}"; do
+			IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
+			[[ "$mode" == "USB-MTP" ]] || continue
+			mtp_hint
+			die "Only USB-MTP connected — no SSH target (make devices)"
+		done
+		die "No USB-SSH or SSH device (plug OTG or: make connect <ip>; see make devices)"
 	fi
 
-	IFS="$FS" read -r mode sn chip loc iface addr usb <<<"${rows[0]}"
+	if [[ ${#selectable[@]} -gt 1 ]]; then
+		die "${#selectable[@]} devices — set SN= or IP= (see make devices)"
+	fi
+
+	IFS="$FS" read -r mode sn chip loc iface addr usb <<<"${selectable[0]}"
 	case "$mode" in
 	USB-SSH | SSH) ;;
 	*) die "No Linux SSH target (make devices)" ;;

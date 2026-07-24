@@ -211,8 +211,6 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
       wifiController: _services.wifi,
       httpClientController: _services.http,
       dateTimeController: _services.dateTime,
-      sshDebugController: _services.sshDebug,
-      usbDebugController: _services.usbDebug,
       bluetoothController: _services.bluetooth,
       skipPlatformSections: true,
       skipSettingsRestore: true,

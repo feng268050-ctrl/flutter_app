@@ -44,4 +44,5 @@ export 'src/widgets/cyber_slider.dart';
 export 'src/widgets/cyber_slider_logic.dart';
 export 'src/widgets/cyber_status_indicator.dart';
 export 'src/widgets/cyber_switch.dart';
+export 'src/widgets/cyber_usb_otg_mode_dialog.dart';
 export 'src/widgets/cyber_volume_slider.dart';

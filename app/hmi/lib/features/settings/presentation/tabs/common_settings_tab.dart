@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cyber_hal/network.dart';
+import 'package:cyber_hal/usb_otg.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
@@ -12,11 +13,13 @@ import 'package:lws_hmi/features/settings/presentation/pages/http_proxy_settings
 import 'package:lws_hmi/features/settings/presentation/pages/ip_camera_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/keyboard_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/language_settings_page.dart';
+import 'package:lws_hmi/features/settings/presentation/pages/lan_ssh_debug_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/led_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/mouse_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/screen_off_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/sound_effect_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/unit_settings_page.dart';
+import 'package:lws_hmi/features/settings/presentation/pages/usb_otg_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/volume_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/wifi_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -34,6 +37,8 @@ class CommonSettingsTab extends StatefulWidget {
 class _CommonSettingsTabState extends State<CommonSettingsTab> {
   String _wifiValue = '';
   String _proxyValue = 'Off';
+  String _sshDebugValue = 'Off';
+  String _usbOtgValue = '';
   String _btValue = '';
   StreamSubscription<WifiConnectionState>? _wifiSub;
 
@@ -47,6 +52,8 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
       if (mounted) setState(() => _wifiValue = _wifiSummary(c));
     });
     unawaited(_refreshProxy());
+    unawaited(_refreshSshDebug());
+    unawaited(_refreshUsbOtg());
     unawaited(_refreshBt());
   }
 
@@ -70,6 +77,32 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             : 'Off';
       });
     } catch (_) {}
+  }
+
+  Future<void> _refreshSshDebug() async {
+    try {
+      final on = await services.sshDebug.isEnabled();
+      if (!mounted) return;
+      setState(() => _sshDebugValue = on ? 'On' : 'Off');
+    } catch (_) {
+      if (mounted) setState(() => _sshDebugValue = 'Off');
+    }
+  }
+
+  Future<void> _refreshUsbOtg() async {
+    try {
+      final mode = await services.usbOtg.getMode();
+      if (!mounted) return;
+      setState(() {
+        _usbOtgValue = switch (mode) {
+          UsbOtgMode.debug => 'Debug',
+          UsbOtgMode.mtp => 'MTP',
+          UsbOtgMode.host => 'Host',
+        };
+      });
+    } catch (_) {
+      if (mounted) setState(() => _usbOtgValue = '');
+    }
   }
 
   Future<void> _refreshBt() async {
@@ -116,6 +149,17 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                   HttpProxySettingsPage(services: services),
                 );
                 await _refreshProxy();
+              },
+            ),
+            SettingsNavRow(
+              title: 'SSH Debug',
+              value: _sshDebugValue,
+              onTap: () async {
+                await pushSettingsPage(
+                  context,
+                  LanSshDebugSettingsPage(services: services),
+                );
+                await _refreshSshDebug();
               },
             ),
             SettingsNavRow(
@@ -234,6 +278,17 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                 context,
                 KeyboardSettingsPage(services: services),
               ),
+            ),
+            SettingsNavRow(
+              title: 'USB OTG',
+              value: _usbOtgValue.isEmpty ? null : _usbOtgValue,
+              onTap: () async {
+                await pushSettingsPage(
+                  context,
+                  UsbOtgSettingsPage(services: services),
+                );
+                await _refreshUsbOtg();
+              },
             ),
             SettingsNavRow(
               title: 'IP Camera',

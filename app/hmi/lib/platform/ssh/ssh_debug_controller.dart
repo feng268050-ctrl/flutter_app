@@ -1,1 +1,1 @@
-export 'package:cyber_hal/debug/ssh.dart';
+export 'package:cyber_hal/network/ssh_debug.dart';

@@ -79,7 +79,7 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 
 Overlays：`ynh960-usb-gadget.dtsi`（OTG dual-role）、`ynh960-usb-host.dtsi`（扩展 host）。
 
-**外接 USB 键盘（HID）**：1 mm host，或 Micro-USB 在 **USB Debug OFF**（Demo Debug 组）时用 OTG 转接头。板上 Micro-USB **不依赖 ID 自动切角色**（转接头常不接地 ID）。**USB Debug ON**（默认，`/var/lib/hmi/usb-debug`）→ plug-ssh；OFF → host/键盘。LAN Debug 默认关、不持久化。
+**外接 USB 键盘（HID）**：1 mm host，或 Micro-USB 在 OTG **`mode=host`** 时用 OTG 转接头。板上 Micro-USB 策略见 `/etc/usb-otg.ini`（ynh960：`debug_only=false`，`auto_host_support=false`）。会话模式 `/run/usb-otg.mode`（插拔需重新选择，除非 `debug_only` 或 ID/CC 自动 host）。LAN SSH 在 Settings → Network（不持久化）。
 
 用户态依赖（缺一 flutter-pi 会禁用按键或行为异常）见下表。
 

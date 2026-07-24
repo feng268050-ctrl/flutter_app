@@ -34,8 +34,7 @@ void main() {
     expect(b.wifiSession().iface, 'wlp2s0');
     expect(b.dateTime().helperPath, '');
     expect(b.sshDebug().enableHelper, isEmpty);
-    expect(b.usbDebug().helper, isEmpty);
-    expect(b.usbDebug().otgModePath, '');
+    expect(b.usbOtg().helper, isEmpty);
     expect(b.mediaAudio().changeVolumeCommand, isEmpty);
     expect(b.mediaAudio().a2dpVolumeCommand, isEmpty);
     expect(b.mediaAudio().playbackPathControl, '');
@@ -77,8 +76,7 @@ void main() {
     expect(b.ethernetIface(), 'eth0');
     expect(b.wifiIface(), 'wlan0');
     expect(b.sshDebug().enableHelper, ['/usr/libexec/hmi/enable-ssh-debug.sh']);
-    expect(b.usbDebug().otgModePath,
-        '/sys/devices/platform/fe8a0000.usb2-phy/otg_mode');
+    expect(b.usbOtg().helper, ['/usr/libexec/hmi/usb-otg-mode.sh']);
     expect(b.mediaAudio().playbackPathControl, 'Playback Path');
     expect(b.mediaAudio().playbackPathValue, 'RING_SPK_HP');
 

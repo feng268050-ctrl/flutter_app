@@ -16,7 +16,7 @@
     "sysInfo",
     "datetime",
     "sshDebug",
-    "usbDebug"
+    "usbOtg"
   ],
   "net_roles": {
     "ethernet.primary": "eth0",

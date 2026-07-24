@@ -12,7 +12,8 @@ Reusable **CyberUI** chrome for LWS HMI (Frosted Glass). Path package under
 | Chrome | `CyberCard`, `CyberStatusIndicator`, `CyberButton` |
 | Controls | `CyberSwitch`, `CyberCheckbox`, `CyberSlider`, `CyberScaledSlider`, `CyberSegmentedControl`, `CyberNumericStepper`, `CyberCapsuleSlider`, `CyberHoldConfirm`, `CyberPressRipple` |
 | Audio chrome | `CyberVolumeSlider`, `CyberIconFlankedSlider`, `CyberAudioPlayerCard` |
-| Dialog | `showCyberDialog`, `CyberModal`, `CyberOverlayHost`, `CyberPromptContent`, `CyberKeyboardAvoidingLift` / `CyberKeyboardInsets` (IME card lift), `CyberLiftedPanel` (raw) |
+| Dialog | `showCyberDialog`, `CyberModal`, `CyberOverlayHost`, `CyberPromptContent`, `showCyberUsbOtgModeDialog` / `CyberUsbOtgModeCopy`, `CyberKeyboardAvoidingLift` / `CyberKeyboardInsets` (IME card lift), `CyberLiftedPanel` (raw) |
+| Status icons | `CyberWifiStatusIcon`, `CyberBluetoothStatusIcon`, `CyberCameraStatusIcon` |
 | Clock | `CyberClockAppearance`, `CyberClockNotes` (glyph-clip limits) |
 | Sound | `CyberClickSound` + `CyberClickSoundRegistry` |
 

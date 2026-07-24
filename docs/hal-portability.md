@@ -136,17 +136,22 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | **Asset** | Product `modbus.json` (RTU transport path/baud + attribute catalog); `configs.modbus` (App asset, e.g. `assets/hal/modbus.json`) |
 | **OS** | Serial device node (e.g. `/dev/ttyS…` / USB ACM) usable by Posix `stty` transport |
 
-### `hal/debug` — SSH / USB
-
-**No portable default.** Without inject, APIs throw `HalUnsupportedException`.
+### `hal/network` — LAN SSH (`SshDebug`)
 
 | Profile helper | Role | Argv contract |
 |----------------|------|---------------|
 | `ssh_debug` | LAN/WLAN sshd policy | `status` / `enable` / `disable` |
-| `usb_otg_mode` | Full USB debug/host orchestration (optional if Kind-A alone suffices) | `status` / `debug` / `host` |
-| `otg_mode_sysfs` | Kind-A: write `peripheral` / `host` to PHY node | absolute sysfs path |
 
-New products that expose Demo Debug **must** ship helpers and declare these keys
+### `hal/usb_otg` — OTG modes
+
+| Profile helper | Role | Argv contract |
+|----------------|------|---------------|
+| `usb_otg_mode` | Mode apply | `debug` / `mtp` / `host` / `status` / `apply` (`attached` no-op) |
+
+Session preference: `/var/lib/hal/usb-otg.conf` (`mode=`). Board policy: `/etc/usb-otg.ini` (`debug_only`, `auto_host_support`).
+Product materials: see OpenSpec `hal-usb-otg` + [`docs/usb-otg-mtp.md`](usb-otg-mtp.md).
+
+New products that expose OTG / LAN SSH **must** ship helpers and declare these keys
 (or omit the capability / catch `HalUnsupportedException`).
 
 ---
@@ -160,7 +165,9 @@ New products that expose Demo Debug **must** ship helpers and declare these keys
 | `bt_modem` | bluetooth | When HCI needs firmware/UART attach |
 | `bt_bluetooth_unit` | bluetooth | If ≠ `bluetooth.service` |
 | `bt_a2dp_*` | bluetooth | Product-dependent A2DP sink helpers |
-| `ssh_debug` / `usb_otg_mode` / `otg_mode_sysfs` | debug | To enable Debug APIs |
+| `ssh_debug` | network | LAN SSH debug |
+| `usb_otg_mode` | usb_otg | OTG three-mode apply |
+| `otg_mode_sysfs` | legacy | Optional PHY path (prefer helper) |
 | `backlight_preferred_names` / `alsa_volume_controls` | output | Strongly recommended per codec/panel |
 | `alsa_playback_path_control` / `alsa_playback_path_value` | output | Optional codec route enum (ynh960: `Playback Path` / `RING_SPK_HP`) |
 | `change_*` / `apply_mouse_settings` / `apply_proxy` / `sync_time` | various | Optional overrides only |

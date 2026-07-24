@@ -56,7 +56,7 @@ migrate_hal_from_hmi() {
 	mkdir -p "$dst_root"
 
 	for name in display.conf sound.conf mouse.conf keyboard.conf datetime.conf \
-		usb-debug product.ini time-sync-mode timezone; do
+		usb-otg.conf product.ini time-sync-mode timezone; do
 		src="$src_root/$name"
 		dst="$dst_root/$name"
 		if [ -e "$src" ] && [ ! -e "$dst" ]; then
@@ -68,6 +68,21 @@ migrate_hal_from_hmi() {
 			rm -f "$src"
 		fi
 	done
+
+	# Fold legacy usb-debug into usb-otg.conf when conf missing.
+	if [ ! -f "$dst_root/usb-otg.conf" ] && [ -f "$dst_root/usb-debug" ]; then
+		case "$(tr -d '[:space:]' <"$dst_root/usb-debug" | tr '[:upper:]' '[:lower:]')" in
+		0 | off | false | host)
+			printf 'mode=host\n' >"$dst_root/usb-otg.conf"
+			;;
+		*)
+			printf 'mode=debug\n' >"$dst_root/usb-otg.conf"
+			;;
+		esac
+		log "fold usb-debug → usb-otg.conf ($(tr -d '[:space:]' <"$dst_root/usb-otg.conf"))"
+		rm -f "$dst_root/usb-debug" "$src_root/usb-debug"
+	fi
+	rm -f "$src_root/usb-debug" 2>/dev/null || true
 
 	# Fold legacy display-orientation into display.conf key orientation.
 	orient_src=""

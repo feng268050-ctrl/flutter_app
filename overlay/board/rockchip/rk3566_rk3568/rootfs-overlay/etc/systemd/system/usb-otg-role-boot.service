@@ -1,11 +1,12 @@
 [Unit]
-Description=Apply Micro-USB USB Debug preference at boot
+Description=Apply Micro-USB OTG mode at boot
 DefaultDependencies=no
 After=sysinit.target systemd-udev-settle.service
 Before=multi-user.target
 
 [Service]
 Type=oneshot
+# Policy is static: /etc/usb-otg.ini
 ExecStart=/usr/libexec/hmi/usb-otg-mode.sh apply
 RemainAfterExit=yes
 

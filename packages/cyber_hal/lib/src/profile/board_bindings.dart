@@ -1,12 +1,12 @@
 import 'package:cyber_hal/bluetooth.dart';
 import 'package:cyber_hal/datetime.dart';
-import 'package:cyber_hal/debug.dart';
 import 'package:cyber_hal/sys_info.dart';
 import 'package:cyber_hal/gpio.dart';
 import 'package:cyber_hal/input.dart';
 import 'package:cyber_hal/modbus.dart';
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_hal/output.dart';
+import 'package:cyber_hal/usb_otg.dart';
 import 'package:cyber_hal/src/output/output_prefs.dart';
 import 'package:cyber_hal/src/core/errors.dart';
 import 'package:cyber_hal/src/profile/board_profile.dart';
@@ -67,12 +67,10 @@ final class BoardBindings {
     );
   }
 
-  LinuxUsbDebugController usbDebug() {
+  LinuxUsbOtg usbOtg() {
     final helper = profile.helperArgv(BoardHelperKeys.usbOtgMode);
-    final otg = profile.helper(BoardHelperKeys.otgModeSysfs);
-    return LinuxUsbDebugController(
+    return LinuxUsbOtg(
       helper: helper ?? const <String>[],
-      otgModePath: otg ?? '',
     );
   }
 

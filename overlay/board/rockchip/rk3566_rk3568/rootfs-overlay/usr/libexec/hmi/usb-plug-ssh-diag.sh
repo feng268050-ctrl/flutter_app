@@ -6,16 +6,19 @@ pass() { echo "  [PASS] $*"; }
 fail() { echo "  [FAIL] $*"; }
 info() { echo "  [INFO] $*"; }
 
-echo "=== 1. USB Debug preference ==="
+echo "=== 1. USB OTG session ==="
 if [ -x /usr/libexec/hmi/usb-otg-mode.sh ]; then
 	info "$(/usr/libexec/hmi/usb-otg-mode.sh status 2>&1 || true)"
 else
 	fail "usb-otg-mode.sh missing"
 fi
-if [ -r /var/lib/hal/usb-debug ]; then
-	info "pref file: $(tr -d '\n' </var/lib/hal/usb-debug)"
+if [ -r /var/lib/hal/usb-otg.conf ]; then
+	info "otg conf: $(tr -d '\n' </var/lib/hal/usb-otg.conf)"
 else
-	info "pref file missing (default USB Debug ON)"
+	info "otg conf: missing (default mode=debug)"
+fi
+if [ -r /etc/usb-otg.ini ]; then
+	info "otg ini: $(tr '\n' ' ' </etc/usb-otg.ini | tr -s ' ')"
 fi
 
 echo ""

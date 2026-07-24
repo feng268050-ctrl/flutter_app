@@ -44,7 +44,7 @@ usage() {
   cat <<EOF
 Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash}
 
-  devices        List connected devices (RockUSB + USB-SSH + SSH; MODE column)
+  devices        List connected devices (RockUSB + USB-SSH + USB-MTP + SSH; MODE column)
                  (Android emulators omitted)
   reboot         Linux board (USB-SSH or SSH) → reboot; Android → adb reboot
   reboot-loader  Linux board (USB-SSH only) → reboot-loader; Android → adb reboot loader

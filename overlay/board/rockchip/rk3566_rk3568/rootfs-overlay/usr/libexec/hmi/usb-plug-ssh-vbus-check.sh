@@ -1,19 +1,22 @@
 #!/bin/sh
-# Start/stop USB plug-ssh when USB Debug is on and OTG reports VBUS (USB=1).
+# Start/stop USB plug-ssh when persisted OTG mode=debug and VBUS (USB=1).
 set -eu
 
-LOCK_DIR=/run/usb-plug-ssh-vbus.lock
-PENDING=/run/usb-plug-ssh-vbus.pending
-PREF=/var/lib/hal/usb-debug
+. /usr/libexec/hmi/paths.sh 2>/dev/null || true
 
-usb_debug_on() {
-	if [ ! -r "$PREF" ]; then
-		return 0
+LOCK_DIR="${RUN_USB_PLUG_SSH_VBUS_LOCK:-/run/usb-plug-ssh-vbus.lock}"
+PENDING="${RUN_USB_PLUG_SSH_VBUS_PENDING:-/run/usb-plug-ssh-vbus.pending}"
+CONF="${VAR_HAL:-/var/lib/hal}/usb-otg.conf"
+
+mode_is_debug() {
+	if [ -r "$CONF" ]; then
+		case "$(grep -E '^mode=' "$CONF" 2>/dev/null | head -n1 | cut -d= -f2- | tr -d ' \n' | tr '[:upper:]' '[:lower:]')" in
+		debug | usb-debug) return 0 ;;
+		*) return 1 ;;
+		esac
 	fi
-	case "$(tr -d ' \n' <"$PREF")" in
-	0 | off | false | host) return 1 ;;
-	*) return 0 ;;
-	esac
+	# Missing conf → treat as debug (same as usb-otg-mode.sh read_mode default).
+	return 0
 }
 
 otg_extcon_state() {
@@ -34,7 +37,7 @@ otg_extcon_state() {
 
 otg_peripheral_vbus_up() {
 	local state
-	usb_debug_on || return 1
+	mode_is_debug || return 1
 	state="$(otg_extcon_state)" || return 1
 	echo "$state" | grep -qE '(^|[[:space:]])USB-HOST=1([[:space:]]|$)' && return 1
 	echo "$state" | grep -qE '(^|[[:space:]])USB=1([[:space:]]|$)'

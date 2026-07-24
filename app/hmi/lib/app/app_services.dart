@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_hal/datetime.dart';
-import 'package:cyber_hal/debug.dart';
 import 'package:cyber_hal/input.dart';
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_hal/output.dart';
 import 'package:cyber_hal/stub.dart';
 import 'package:cyber_hal/sys_info.dart';
+import 'package:cyber_hal/usb_otg.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/app/flutter_frame_timing_sampler.dart';
@@ -39,7 +39,7 @@ final class AppServices {
     HttpClientController? httpClientController,
     DateTimeController? dateTimeController,
     SshDebugController? sshDebugController,
-    UsbDebugController? usbDebugController,
+    UsbOtg? usbOtg,
     BluetoothController? bluetoothController,
     Keyboard? keyboard,
     MouseSettingsController? mouse,
@@ -97,7 +97,7 @@ final class AppServices {
     http = httpClientController ??
         LinuxHttpClientController(dateTimeController: dateTime);
     sshDebug = sshDebugController ?? b.sshDebug();
-    usbDebug = usbDebugController ?? b.usbDebug();
+    this.usbOtg = usbOtg ?? b.usbOtg();
     bluetooth = bluetoothController ?? b.bluetooth();
     this.keyboard = keyboard ?? b.keyboard();
     this.mouse = mouse ?? b.mouse();
@@ -159,7 +159,7 @@ final class AppServices {
   late final DateTimeController dateTime;
   late final HttpClientController http;
   late final SshDebugController sshDebug;
-  late final UsbDebugController usbDebug;
+  late final UsbOtg usbOtg;
   late final BluetoothController bluetooth;
   late final Keyboard keyboard;
   late final MouseSettingsController mouse;

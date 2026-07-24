@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_hal/datetime.dart';
-import 'package:cyber_hal/debug.dart';
 import 'package:cyber_hal/input.dart';
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_hal/output.dart';
@@ -18,7 +17,6 @@ import 'package:lws_hmi/platform/http/http_client_controller.dart';
 import 'package:lws_hmi/platform/http/linux_http_client_controller.dart';
 import 'package:lws_hmi/ui/demo/bluetooth_demo_section.dart';
 import 'package:lws_hmi/ui/demo/date_time_demo_section.dart';
-import 'package:lws_hmi/ui/demo/debug_demo_section.dart';
 import 'package:lws_hmi/ui/demo/demo_scroll_interaction.dart';
 import 'package:lws_hmi/ui/demo/ethernet_demo_section.dart';
 import 'package:lws_hmi/ui/demo/http_demo_section.dart';
@@ -43,8 +41,6 @@ class P2DemoPage extends StatefulWidget {
     this.wifiController,
     this.httpClientController,
     this.dateTimeController,
-    this.sshDebugController,
-    this.usbDebugController,
     this.bluetoothController,
     this.skipPlatformSections = true,
     this.skipSettingsRestore = false,
@@ -64,8 +60,6 @@ class P2DemoPage extends StatefulWidget {
   final WifiController? wifiController;
   final HttpClientController? httpClientController;
   final DateTimeController? dateTimeController;
-  final SshDebugController? sshDebugController;
-  final UsbDebugController? usbDebugController;
   final BluetoothController? bluetoothController;
 
   /// When true (default), omit Settings-owned sections; keep Debug.
@@ -87,8 +81,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
   late final WifiController _wifi;
   late final DateTimeController _dateTime;
   late final HttpClientController _http;
-  late final SshDebugController _sshDebug;
-  late final UsbDebugController _usbDebug;
   late final BluetoothController _bluetooth;
   late final Keyboard _keyboard;
   late final MouseSettingsController _mouse;
@@ -160,12 +152,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
         LinuxDateTimeController();
     _http = widget.httpClientController ??
         LinuxHttpClientController(dateTimeController: _dateTime);
-    _sshDebug = widget.sshDebugController ??
-        bindings?.sshDebug() ??
-        LinuxSshDebugController();
-    _usbDebug = widget.usbDebugController ??
-        bindings?.usbDebug() ??
-        LinuxUsbDebugController();
     _bluetooth = widget.bluetoothController ??
         bindings?.bluetooth() ??
         LinuxBluezBluetoothController();
@@ -556,10 +542,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
                 const SizedBox(height: 32),
                 BluetoothDemoSection(controller: _bluetooth),
               ],
-            ],
-            if (_networkSectionsReady) ...[
-              const SizedBox(height: 32),
-              DebugDemoSection(usbDebug: _usbDebug, lanDebug: _sshDebug),
             ],
             const SizedBox(height: 24),
               ],

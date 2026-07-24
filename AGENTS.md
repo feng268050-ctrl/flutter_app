@@ -94,6 +94,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | Flutter-pi alternate rootfs (`chips/lws_hmi_flutter.config`, Mali gbm, `build-rootfs-flutter-pi`) | `make build-flutter-pi` (if needed), `make prepare-rootfs-flutter-pi` (stack only) or `make build-rootfs-flutter-pi`, `make upgrade` — return to default Weston: `make prepare-rootfs` or `make build-rootfs`, `make upgrade` (`ensure-mali-variant` auto-switches Mali when stamp differs) |
 | `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `prebuilt/btop/**`, `scripts/fetch-btop.sh`, or overlay `usr/bin/btop` | `make fetch-btop` (if binary missing), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `prebuilt/umtprd/**`, `scripts/build-umtprd.sh`, or overlay `usr/bin/umtprd` / `usb-mtp-*.sh` | `make build-umtprd` (if binary missing), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `board/*.txt` LCD/MIPI params | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `board/parameter-buildroot-fit.txt` (GPT / A/B) | `make apply-overlay`, `make build-img`, `make flash` (repartition once) |
 | A/B upgrade helpers (`overlay/.../ab-*.sh`, `ab-boot-confirm.service`) | First adoption: `make apply-overlay`, `make build-rootfs`, `make build-img`, `make flash`; existing P2.4 board: `make apply-overlay`, `make build-rootfs`, `make upgrade` |

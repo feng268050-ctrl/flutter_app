@@ -13,7 +13,7 @@ enum Capability {
   sysInfo,
   datetime,
   sshDebug,
-  usbDebug,
+  usbOtg,
 }
 
 /// Immutable capability set for the active board.

@@ -6,12 +6,12 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 
 | Import | Domain | Persist / helpers |
 |--------|--------|-------------------|
-| `package:cyber_hal/network.dart` | ethernet, wifi, proxy | networkd + wpa (`docs/network-stack.md`) |
+| `package:cyber_hal/network.dart` | ethernet, wifi, proxy, **ssh_debug** | networkd + wpa (`docs/network-stack.md`); LAN SSH helpers |
 | `package:cyber_hal/network/proxy.dart` | system proxy | `/var/lib/network/proxy.conf` + in-HAL env apply |
+| `package:cyber_hal/usb_otg.dart` | OTG modes debug/mtp/host | `/var/lib/hal/usb-otg.conf`; `/etc/usb-otg.ini` |
 | `package:cyber_hal/output.dart` | display + sound barrels | see sub-imports |
 | `package:cyber_hal/input.dart` | keyboard, mouse (USB/serial cameras later) | `/var/lib/hal/keyboard.conf`, `mouse.conf` |
 | `package:cyber_hal/ip_camera.dart` | IP network camera (host-injected; multi-instance; RTSP→file recording) | path/MediaMTX are **product** concerns — not this module |
-| `package:cyber_hal/debug.dart` | ssh, usb | SSH helpers; `/var/lib/hal/usb-debug` |
 | `package:cyber_hal/gpio.dart` | named GPIO lines | board `gpio.json` (sysfs) |
 | `package:cyber_hal/modbus.dart` | attribute catalog | board `modbus.json` + serial |
 | `package:cyber_hal/bluetooth.dart` | BlueZ | `/var/lib/bluetooth/` |
@@ -20,7 +20,7 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 | `package:cyber_hal/stub.dart` | in-memory stubs | P3.2 emulator / host tests |
 | `package:cyber_hal/cyber_hal.dart` | core only | `Capabilities`, `BoardProfile`, errors |
 
-Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/display/backlight.dart`, `package:cyber_hal/output/sound/volume.dart`, `package:cyber_hal/debug/usb.dart`.
+Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/display/backlight.dart`, `package:cyber_hal/network/ssh_debug.dart`, `package:cyber_hal/usb_otg.dart`.
 
 | Import | Domain | Persist / helpers |
 |--------|--------|-------------------|

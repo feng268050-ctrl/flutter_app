@@ -105,6 +105,7 @@ make build-flutter-embedded-linux
 make build-gstreamer
 make build-platform-packages
 make build-mediamtx
+make build-umtprd
 make fetch-btop
 ```
 
@@ -397,6 +398,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 |------|----------|----------|
 | flutter-engine / flutter-pi | `prebuilt/flutter-*` | HMI 显示栈 |
 | mediamtx | `prebuilt/mediamtx/` + fs-overlay `usr/bin/` | RTSP 中继（**相机 ping 通后** App 启动；默认不在 wants） |
+| umtprd | `prebuilt/umtprd/` + fs-overlay `usr/bin/` | USB MTP gadget（`mode=mtp`；`make build-umtprd`） |
 | btop | `prebuilt/btop/` + fs-overlay `usr/bin/` | SSH 按需系统监视（官方 aarch64 musl 静态包；`make fetch-btop`） |
 | **GStreamer + MPP** | Buildroot + `prebuilt/gstreamer/` | RTSP 预览/取帧 |
 | OpenCV + ximgproc | `.cache/opencv/` | 编进 `libai.so` |
@@ -412,6 +414,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | `make fetch-opencv` / `fetch-opencv-ximgproc` | OpenCV 源码 |
 | `make fetch-rknn-rt` | aarch64 `librknnrt.so` |
 | `make fetch-btop` | aarch64 musl `btop` → prebuilt + fs-overlay |
+| `make build-umtprd` | aarch64 static `umtprd` → prebuilt + fs-overlay（MTP） |
 | `make build-flutter-engine` / `build-flutter-pi` / `build-mediamtx` | 单项 |
 | `make check-prebuilt` | 校验 runtime（`build-rootfs` 自动） |
 | `make build-rootfs` | 装已接入 defconfig 的 prebuilt（Flutter 等） |

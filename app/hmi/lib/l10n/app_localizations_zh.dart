@@ -60,6 +60,72 @@ class AppLocalizationsZh extends AppLocalizations {
   String get advancedSettingLensContaminationDetectionHint => '作业时通过摄像头与 AI 监测保护镜脏污情况，发现污染时提示处理。仅在检测不准或不可用时关闭。';
 
   @override
+  String get advancedSettingZeroOffset => '零点校正';
+
+  @override
+  String get advancedSettingZeroOffsetAuto => '自动';
+
+  @override
+  String get advancedSettingEnterZeroOffset => '请输入零点校正';
+
+  @override
+  String get advancedSettingScanWidthCorrection => '摆宽校正';
+
+  @override
+  String get advancedSettingEnterScanWidthCorrection => '请输入摆宽校正';
+
+  @override
+  String get advancedSettingLaserStartPower => '激光起始功率';
+
+  @override
+  String get advancedSettingEnterLaserStartPower => '请输入激光起始功率';
+
+  @override
+  String get advancedSettingLaserEndPower => '激光终止功率';
+
+  @override
+  String get advancedSettingEnterLaserEndPower => '请输入激光终止功率';
+
+  @override
+  String get advancedSettingMinGasPressure => '最低气压阈值';
+
+  @override
+  String get advancedSettingEnterMinGasPressure => '请输入最低气压阈值';
+
+  @override
+  String get advancedSettingMotorTempAlarmThreshold => '电机温度报警阈值';
+
+  @override
+  String get advancedSettingEnterMotorTempAlarmThreshold => '请输入电机温度报警阈值';
+
+  @override
+  String get advancedSettingDriverTempAlarmThreshold => '驱动器温度报警阈值';
+
+  @override
+  String get advancedSettingEnterDriverTempAlarmThreshold => '请输入驱动器温度报警阈值';
+
+  @override
+  String get advancedSettingProtectiveLensTempAlarmThreshold => '保护镜温度报警阈值';
+
+  @override
+  String get advancedSettingEnterProtectiveLensTempAlarmThreshold => '请输入保护镜温度报警阈值';
+
+  @override
+  String get advancedSettingCollimatingLensTempAlarmThreshold => '聚焦镜温度报警阈值';
+
+  @override
+  String get advancedSettingEnterCollimatingLensTempAlarmThreshold => '请输入聚焦镜温度报警阈值';
+
+  @override
+  String get advancedSettingTempAlarmRecoveryHysteresis => '温度报警恢复差值';
+
+  @override
+  String get advancedSettingEnterTempAlarmRecoveryHysteresis => '请输入温度报警恢复差值';
+
+  @override
+  String get advancedSettingValueRequired => '值不能为空';
+
+  @override
   String get advancedSettingScale0Celsius => '0℃';
 
   @override
@@ -620,7 +686,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fiberTemperatureUpperLimitClearedTitle => '光纤温度超上限解除';
 
   @override
-  String get firmwareVersion => '固件版本';
+  String get firmwareVersion => '控制板版本';
 
   @override
   String get flashErrorAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
@@ -787,7 +853,55 @@ class AppLocalizationsZh extends AppLocalizations {
   String get internalHumidityUpperLimitAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
-  String get ipCameraText => 'IP 摄像头';
+  String get ipCameraText => '摄像头';
+
+  @override
+  String get cameraType => '摄像头类型';
+
+  @override
+  String get cameraVersion => '摄像头版本';
+
+  @override
+  String get cameraTypeBlueLight => '蓝光';
+
+  @override
+  String get cameraTypeRedLight => '红光';
+
+  @override
+  String get cameraStatus => '状态';
+
+  @override
+  String get cameraStatusEstablishing => '连接中…';
+
+  @override
+  String get cameraStatusFailed => '失败';
+
+  @override
+  String get systemVersion => '系统版本';
+
+  @override
+  String get processLibVersion => '工艺库版本';
+
+  @override
+  String get focusScaleReference => '焦点刻度参考';
+
+  @override
+  String get kernelVersion => '内核版本';
+
+  @override
+  String get displayStack => '显示栈';
+
+  @override
+  String get autoCheckOtaUpdate => '自动检查更新';
+
+  @override
+  String get otaCheckUnavailable => '当前版本暂不支持软件更新检查。';
+
+  @override
+  String get screenOffNever => '永不';
+
+  @override
+  String get syncNow => '立即同步';
 
   @override
   String get keyboardText => '键盘';
@@ -1522,6 +1636,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wireFeedingText => '送丝';
 
   @override
+  String get wireFeederVersion => '送丝机版本';
+
+  @override
   String get wirelessNetworkText => '无线网络';
 
   @override
@@ -1597,6 +1714,69 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get advancedSettingLensContaminationDetectionHint => '作業時通過攝像頭與 AI 監測保護鏡髒污情況，發現污染時提示處理。僅在檢測不準或不可用時關閉。';
+
+  @override
+  String get advancedSettingZeroOffset => '零點校正';
+
+  @override
+  String get advancedSettingZeroOffsetAuto => '自動';
+
+  @override
+  String get advancedSettingEnterZeroOffset => '請輸入零點校正';
+
+  @override
+  String get advancedSettingScanWidthCorrection => '擺寬校正';
+
+  @override
+  String get advancedSettingEnterScanWidthCorrection => '請輸入擺寬校正';
+
+  @override
+  String get advancedSettingEnterLaserStartPower => '請輸入激光起始功率';
+
+  @override
+  String get advancedSettingLaserEndPower => '激光終止功率';
+
+  @override
+  String get advancedSettingEnterLaserEndPower => '請輸入激光終止功率';
+
+  @override
+  String get advancedSettingMinGasPressure => '最低氣壓閾值';
+
+  @override
+  String get advancedSettingEnterMinGasPressure => '請輸入最低氣壓閾值';
+
+  @override
+  String get advancedSettingMotorTempAlarmThreshold => '電機溫度報警閾值';
+
+  @override
+  String get advancedSettingEnterMotorTempAlarmThreshold => '請輸入電機溫度報警閾值';
+
+  @override
+  String get advancedSettingDriverTempAlarmThreshold => '驅動器溫度報警閾值';
+
+  @override
+  String get advancedSettingEnterDriverTempAlarmThreshold => '請輸入驅動器溫度報警閾值';
+
+  @override
+  String get advancedSettingProtectiveLensTempAlarmThreshold => '保護鏡溫度報警閾值';
+
+  @override
+  String get advancedSettingEnterProtectiveLensTempAlarmThreshold => '請輸入保護鏡溫度報警閾值';
+
+  @override
+  String get advancedSettingCollimatingLensTempAlarmThreshold => '聚焦鏡溫度報警閾值';
+
+  @override
+  String get advancedSettingEnterCollimatingLensTempAlarmThreshold => '請輸入聚焦鏡溫度報警閾值';
+
+  @override
+  String get advancedSettingTempAlarmRecoveryHysteresis => '溫度報警恢復差值';
+
+  @override
+  String get advancedSettingEnterTempAlarmRecoveryHysteresis => '請輸入溫度報警恢復差值';
+
+  @override
+  String get advancedSettingValueRequired => '值不能爲空';
 
   @override
   String get advancedSettingShowBootSelfCheck => '顯示開機自檢';
@@ -2186,16 +2366,55 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get internalHumidityUpperLimitAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
-  String get ipCameraText => 'IP 攝像頭';
+  String get ipCameraText => '攝像頭';
+
+  @override
+  String get cameraType => '攝像頭類型';
+
+  @override
+  String get cameraVersion => '攝像頭版本';
+
+  @override
+  String get cameraTypeBlueLight => '藍光';
+
+  @override
+  String get cameraTypeRedLight => '紅光';
+
+  @override
+  String get cameraStatus => '狀態';
+
+  @override
+  String get cameraStatusEstablishing => '連接中…';
+
+  @override
+  String get cameraStatusFailed => '失敗';
+
+  @override
+  String get systemVersion => '系統版本';
+
+  @override
+  String get processLibVersion => '工藝庫版本';
+
+  @override
+  String get focusScaleReference => '焦點刻度參考';
+
+  @override
+  String get kernelVersion => '內核版本';
+
+  @override
+  String get displayStack => '顯示棧';
+
+  @override
+  String get autoCheckOtaUpdate => '自動檢查更新';
+
+  @override
+  String get otaCheckUnavailable => '當前版本暫不支持軟件更新檢查。';
 
   @override
   String get keyboardText => '鍵盤';
 
   @override
   String get languageAppliesToUi => '應用於產品界面語言與軟鍵盤。';
-
-  @override
-  String get languageOptionChinese => '簡體中文';
 
   @override
   String get languagePreferenceUnavailable => '無法讀取語言偏好。';
@@ -2775,6 +2994,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get wireFeedingText => '送絲';
+
+  @override
+  String get wireFeederVersion => '送絲機版本';
 
   @override
   String get wirelessNetworkText => '無線網絡';

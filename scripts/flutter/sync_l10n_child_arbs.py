@@ -19,6 +19,16 @@ from zh_s2t import apply_tw_product_terms, simplified_to_traditional
 
 L10N_DIR = Path(__file__).resolve().parents[2] / "app" / "hmi" / "lib" / "l10n"
 
+# Language option labels are endonyms (always English / 简体中文 / 繁體中文).
+# Never OpenCC-convert or locale-translate these — keep them identical to zh.
+ENDONYM_KEYS = frozenset(
+    {
+        "languageOptionChinese",
+        "languageOptionEnglish",
+        "languageOptionTraditionalChinese",
+    }
+)
+
 
 def _load(path: Path) -> dict[str, object]:
     with path.open(encoding="utf-8") as f:
@@ -60,6 +70,10 @@ def main() -> int:
     for key in _message_keys(zh):
         parent_val = zh[key]
         if not isinstance(parent_val, str):
+            continue
+        # Endonyms must stay in each language’s own script under every locale.
+        if key in ENDONYM_KEYS:
+            inherited_unchanged += 1
             continue
         if key in existing_tw and existing_tw[key] != parent_val:
             tw_out[key] = apply_tw_product_terms(str(existing_tw[key]))

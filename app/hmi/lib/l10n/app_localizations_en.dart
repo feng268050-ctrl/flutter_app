@@ -60,6 +60,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advancedSettingLensContaminationDetectionHint => 'Uses the camera and AI to watch the protective lens during work and warn when contamination is detected. Turn off only if detection is inaccurate or unavailable.';
 
   @override
+  String get advancedSettingZeroOffset => 'Zero Offset';
+
+  @override
+  String get advancedSettingZeroOffsetAuto => 'Auto';
+
+  @override
+  String get advancedSettingEnterZeroOffset => 'Enter zero offset';
+
+  @override
+  String get advancedSettingScanWidthCorrection => 'Scan Width Correction';
+
+  @override
+  String get advancedSettingEnterScanWidthCorrection => 'Enter scan width correction';
+
+  @override
+  String get advancedSettingLaserStartPower => 'Laser Start Power';
+
+  @override
+  String get advancedSettingEnterLaserStartPower => 'Enter laser start power';
+
+  @override
+  String get advancedSettingLaserEndPower => 'Laser End Power';
+
+  @override
+  String get advancedSettingEnterLaserEndPower => 'Enter laser end power';
+
+  @override
+  String get advancedSettingMinGasPressure => 'Min. Gas Pressure';
+
+  @override
+  String get advancedSettingEnterMinGasPressure => 'Enter minimum gas pressure threshold';
+
+  @override
+  String get advancedSettingMotorTempAlarmThreshold => 'Motor Temperature Alarm Threshold';
+
+  @override
+  String get advancedSettingEnterMotorTempAlarmThreshold => 'Enter motor temperature alarm threshold';
+
+  @override
+  String get advancedSettingDriverTempAlarmThreshold => 'Driver Temperature Alarm Threshold';
+
+  @override
+  String get advancedSettingEnterDriverTempAlarmThreshold => 'Enter driver temperature alarm threshold';
+
+  @override
+  String get advancedSettingProtectiveLensTempAlarmThreshold => 'Protective Lens Temperature Alarm Threshold';
+
+  @override
+  String get advancedSettingEnterProtectiveLensTempAlarmThreshold => 'Enter protective lens temperature alarm threshold';
+
+  @override
+  String get advancedSettingCollimatingLensTempAlarmThreshold => 'Collimating Lens Temperature Alarm Threshold';
+
+  @override
+  String get advancedSettingEnterCollimatingLensTempAlarmThreshold => 'Enter collimating lens temperature alarm threshold';
+
+  @override
+  String get advancedSettingTempAlarmRecoveryHysteresis => 'Temperature Alarm Recovery Hysteresis';
+
+  @override
+  String get advancedSettingEnterTempAlarmRecoveryHysteresis => 'Enter temperature alarm recovery hysteresis';
+
+  @override
+  String get advancedSettingValueRequired => 'Value is required';
+
+  @override
   String get advancedSettingScale0Celsius => '0℃';
 
   @override
@@ -620,7 +686,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fiberTemperatureUpperLimitClearedTitle => 'Fiber Temperature High Cleared';
 
   @override
-  String get firmwareVersion => 'Firmware Version';
+  String get firmwareVersion => 'Control Board Version';
 
   @override
   String get flashErrorAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
@@ -787,7 +853,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get internalHumidityUpperLimitAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
-  String get ipCameraText => 'IP Camera';
+  String get ipCameraText => 'Camera';
+
+  @override
+  String get cameraType => 'Camera Type';
+
+  @override
+  String get cameraVersion => 'Camera Version';
+
+  @override
+  String get cameraTypeBlueLight => 'Blue Light';
+
+  @override
+  String get cameraTypeRedLight => 'Red Light';
+
+  @override
+  String get cameraStatus => 'Status';
+
+  @override
+  String get cameraStatusEstablishing => 'Establishing…';
+
+  @override
+  String get cameraStatusFailed => 'Failed';
+
+  @override
+  String get systemVersion => 'System Version';
+
+  @override
+  String get processLibVersion => 'Process Library Version';
+
+  @override
+  String get focusScaleReference => 'Focus Scale Reference';
+
+  @override
+  String get kernelVersion => 'Kernel Version';
+
+  @override
+  String get displayStack => 'Display Stack';
+
+  @override
+  String get autoCheckOtaUpdate => 'Automatically check for updates';
+
+  @override
+  String get otaCheckUnavailable => 'Software update check is not available on this build.';
+
+  @override
+  String get screenOffNever => 'Never';
+
+  @override
+  String get syncNow => 'Sync Now';
 
   @override
   String get keyboardText => 'Keyboard';
@@ -802,7 +916,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageOptionEnglish => 'English';
 
   @override
-  String get languageOptionTraditionalChinese => 'Traditional Chinese';
+  String get languageOptionTraditionalChinese => '繁體中文';
 
   @override
   String get languagePreferenceUnavailable => 'Language preference unavailable.';
@@ -1172,7 +1286,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showSystemStatusOverlay => 'Show System Status Overlay';
 
   @override
-  String get soundEffectCheck => 'Sound Effects';
+  String get soundEffectCheck => 'Sound Effect';
 
   @override
   String get soundEffectOption1 => 'Sound 1';
@@ -1223,7 +1337,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unitPreferenceUnavailable => 'Unit preference unavailable.';
 
   @override
-  String get unitSettingText => 'Units';
+  String get unitSettingText => 'Unit';
 
   @override
   String get usbOtgModeDebug => 'Debug';
@@ -1520,6 +1634,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wireFeedingText => 'Wire Feeder';
+
+  @override
+  String get wireFeederVersion => 'Wire Feeder Version';
 
   @override
   String get wirelessNetworkText => 'Wireless Network';

@@ -200,6 +200,138 @@ abstract class AppLocalizations {
   /// **'Uses the camera and AI to watch the protective lens during work and warn when contamination is detected. Turn off only if detection is inaccurate or unavailable.'**
   String get advancedSettingLensContaminationDetectionHint;
 
+  /// No description provided for @advancedSettingZeroOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero Offset'**
+  String get advancedSettingZeroOffset;
+
+  /// No description provided for @advancedSettingZeroOffsetAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get advancedSettingZeroOffsetAuto;
+
+  /// No description provided for @advancedSettingEnterZeroOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter zero offset'**
+  String get advancedSettingEnterZeroOffset;
+
+  /// No description provided for @advancedSettingScanWidthCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Width Correction'**
+  String get advancedSettingScanWidthCorrection;
+
+  /// No description provided for @advancedSettingEnterScanWidthCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter scan width correction'**
+  String get advancedSettingEnterScanWidthCorrection;
+
+  /// No description provided for @advancedSettingLaserStartPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser Start Power'**
+  String get advancedSettingLaserStartPower;
+
+  /// No description provided for @advancedSettingEnterLaserStartPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter laser start power'**
+  String get advancedSettingEnterLaserStartPower;
+
+  /// No description provided for @advancedSettingLaserEndPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser End Power'**
+  String get advancedSettingLaserEndPower;
+
+  /// No description provided for @advancedSettingEnterLaserEndPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter laser end power'**
+  String get advancedSettingEnterLaserEndPower;
+
+  /// No description provided for @advancedSettingMinGasPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'Min. Gas Pressure'**
+  String get advancedSettingMinGasPressure;
+
+  /// No description provided for @advancedSettingEnterMinGasPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter minimum gas pressure threshold'**
+  String get advancedSettingEnterMinGasPressure;
+
+  /// No description provided for @advancedSettingMotorTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Motor Temperature Alarm Threshold'**
+  String get advancedSettingMotorTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingEnterMotorTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter motor temperature alarm threshold'**
+  String get advancedSettingEnterMotorTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingDriverTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver Temperature Alarm Threshold'**
+  String get advancedSettingDriverTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingEnterDriverTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter driver temperature alarm threshold'**
+  String get advancedSettingEnterDriverTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingProtectiveLensTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Protective Lens Temperature Alarm Threshold'**
+  String get advancedSettingProtectiveLensTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingEnterProtectiveLensTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter protective lens temperature alarm threshold'**
+  String get advancedSettingEnterProtectiveLensTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingCollimatingLensTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Collimating Lens Temperature Alarm Threshold'**
+  String get advancedSettingCollimatingLensTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingEnterCollimatingLensTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter collimating lens temperature alarm threshold'**
+  String get advancedSettingEnterCollimatingLensTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingTempAlarmRecoveryHysteresis.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature Alarm Recovery Hysteresis'**
+  String get advancedSettingTempAlarmRecoveryHysteresis;
+
+  /// No description provided for @advancedSettingEnterTempAlarmRecoveryHysteresis.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter temperature alarm recovery hysteresis'**
+  String get advancedSettingEnterTempAlarmRecoveryHysteresis;
+
+  /// No description provided for @advancedSettingValueRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Value is required'**
+  String get advancedSettingValueRequired;
+
   /// No description provided for @advancedSettingScale0Celsius.
   ///
   /// In en, this message translates to:
@@ -1271,7 +1403,7 @@ abstract class AppLocalizations {
   /// No description provided for @firmwareVersion.
   ///
   /// In en, this message translates to:
-  /// **'Firmware Version'**
+  /// **'Control Board Version'**
   String get firmwareVersion;
 
   /// No description provided for @flashErrorAlarmContent.
@@ -1601,8 +1733,104 @@ abstract class AppLocalizations {
   /// No description provided for @ipCameraText.
   ///
   /// In en, this message translates to:
-  /// **'IP Camera'**
+  /// **'Camera'**
   String get ipCameraText;
+
+  /// No description provided for @cameraType.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Type'**
+  String get cameraType;
+
+  /// No description provided for @cameraVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Version'**
+  String get cameraVersion;
+
+  /// No description provided for @cameraTypeBlueLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue Light'**
+  String get cameraTypeBlueLight;
+
+  /// No description provided for @cameraTypeRedLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Red Light'**
+  String get cameraTypeRedLight;
+
+  /// No description provided for @cameraStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get cameraStatus;
+
+  /// No description provided for @cameraStatusEstablishing.
+  ///
+  /// In en, this message translates to:
+  /// **'Establishing…'**
+  String get cameraStatusEstablishing;
+
+  /// No description provided for @cameraStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get cameraStatusFailed;
+
+  /// No description provided for @systemVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'System Version'**
+  String get systemVersion;
+
+  /// No description provided for @processLibVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Library Version'**
+  String get processLibVersion;
+
+  /// No description provided for @focusScaleReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus Scale Reference'**
+  String get focusScaleReference;
+
+  /// No description provided for @kernelVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Kernel Version'**
+  String get kernelVersion;
+
+  /// No description provided for @displayStack.
+  ///
+  /// In en, this message translates to:
+  /// **'Display Stack'**
+  String get displayStack;
+
+  /// No description provided for @autoCheckOtaUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically check for updates'**
+  String get autoCheckOtaUpdate;
+
+  /// No description provided for @otaCheckUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Software update check is not available on this build.'**
+  String get otaCheckUnavailable;
+
+  /// No description provided for @screenOffNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get screenOffNever;
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Now'**
+  String get syncNow;
 
   /// No description provided for @keyboardText.
   ///
@@ -1631,7 +1859,7 @@ abstract class AppLocalizations {
   /// No description provided for @languageOptionTraditionalChinese.
   ///
   /// In en, this message translates to:
-  /// **'Traditional Chinese'**
+  /// **'繁體中文'**
   String get languageOptionTraditionalChinese;
 
   /// No description provided for @languagePreferenceUnavailable.
@@ -2351,7 +2579,7 @@ abstract class AppLocalizations {
   /// No description provided for @soundEffectCheck.
   ///
   /// In en, this message translates to:
-  /// **'Sound Effects'**
+  /// **'Sound Effect'**
   String get soundEffectCheck;
 
   /// No description provided for @soundEffectOption1.
@@ -2453,7 +2681,7 @@ abstract class AppLocalizations {
   /// No description provided for @unitSettingText.
   ///
   /// In en, this message translates to:
-  /// **'Units'**
+  /// **'Unit'**
   String get unitSettingText;
 
   /// No description provided for @usbOtgModeDebug.
@@ -3031,6 +3259,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wire Feeder'**
   String get wireFeedingText;
+
+  /// No description provided for @wireFeederVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Wire Feeder Version'**
+  String get wireFeederVersion;
 
   /// No description provided for @wirelessNetworkText.
   ///

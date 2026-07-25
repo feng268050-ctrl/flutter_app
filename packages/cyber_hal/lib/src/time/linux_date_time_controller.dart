@@ -154,6 +154,15 @@ class LinuxDateTimeController implements DateTimeController {
     return _runNetworkLadder(reason: 'ensureSaneForTls');
   }
 
+  /// Re-apply timezone from prefs to the OS (timedatectl /localtime).
+  ///
+  /// Needed so [DateTime.now] matches the Settings timezone label — prefs alone
+  /// do not change libc localtime.
+  Future<void> applyPersistedTimezone() async {
+    final tz = await getTimezone();
+    await setTimezone(tz);
+  }
+
   Future<Map<String, String>> _prefsMap() async {
     await _ensureLegacyImported();
     return readKeyValueConfFile(preferencePath);
@@ -218,6 +227,14 @@ class LinuxDateTimeController implements DateTimeController {
   }
 
   Future<TimeSyncResult> _runNetworkLadder({required String reason}) async {
+    // Pref timezone must be on the OS before we judge / display local time.
+    // Otherwise UTC wall (e.g. 10:12) is shown while Settings still says Asia/Shanghai.
+    try {
+      await applyPersistedTimezone();
+    } catch (e) {
+      lwsTrace('datetime: apply timezone before sync: $e');
+    }
+
     if (helperPath.isNotEmpty && await File(helperPath).exists()) {
       final r = await _run(helperPath, []);
       if (TimeSyncPrefs.isSaneUtcYear(DateTime.now().toUtc().year)) {
@@ -256,26 +273,34 @@ class LinuxDateTimeController implements DateTimeController {
         url,
       ]);
       final blob = '${r.stderr}\n${r.stdout}';
-      final m = RegExp(r'^\s*Date:\s*(.+)$', multiLine: true, caseSensitive: false).firstMatch(blob);
+      final m = RegExp(
+        r'^\s*Date:\s*(.+)$',
+        multiLine: true,
+        caseSensitive: false,
+      ).firstMatch(blob);
       if (m == null) {
         continue;
       }
       final hdr = m.group(1)!.trim();
-      final set = await _run('date', [
-        '-u',
-        '-D',
-        '%a, %d %b %Y %H:%M:%S GMT',
-        '-s',
-        hdr,
-      ]);
-      if (set.exitCode == 0 &&
-          TimeSyncPrefs.isSaneUtcYear(DateTime.now().toUtc().year)) {
-        final rtc = await _writeRtc();
-        return TimeSyncResult(
-          ok: true,
-          message: '$reason HTTP Date $url',
-          rtcWritten: rtc,
-        );
+      DateTime utc;
+      try {
+        // HTTP Date is always GMT/UTC — never feed the raw header to BusyBox
+        // `date -u -D … GMT -s` (some builds treat the stamp as local and end
+        // up eight hours slow in Asia/Shanghai).
+        utc = HttpDate.parse(hdr).toUtc();
+      } catch (e) {
+        lwsTrace('datetime: HTTP Date parse failed ($hdr): $e');
+        continue;
+      }
+      if (await _setSystemUtc(utc)) {
+        if (TimeSyncPrefs.isSaneUtcYear(DateTime.now().toUtc().year)) {
+          final rtc = await _writeRtc();
+          return TimeSyncResult(
+            ok: true,
+            message: '$reason HTTP Date $url',
+            rtcWritten: rtc,
+          );
+        }
       }
     }
 
@@ -286,6 +311,29 @@ class LinuxDateTimeController implements DateTimeController {
     );
   }
 
+  /// Set the OS clock from a UTC instant (not local civil fields).
+  Future<bool> _setSystemUtc(DateTime utc) async {
+    final u = utc.toUtc();
+    final stamp =
+        '${_pad4(u.year)}-${_pad2(u.month)}-${_pad2(u.day)} '
+        '${_pad2(u.hour)}:${_pad2(u.minute)}:${_pad2(u.second)}';
+
+    final td = await _run('timedatectl', ['set-time', '$stamp UTC']);
+    if (td.exitCode == 0) {
+      lwsTrace('datetime: set UTC via timedatectl → $stamp');
+      return true;
+    }
+
+    final d = await _run('date', ['-u', '-s', stamp]);
+    if (d.exitCode == 0) {
+      lwsTrace('datetime: set UTC via date -u -s → $stamp');
+      return true;
+    }
+    final err = ((d.stderr as String?) ?? (d.stdout as String?) ?? '').trim();
+    lwsTrace('datetime: set UTC failed: $err');
+    return false;
+  }
+
   Future<bool> _writeRtc() async {
     try {
       final r = await _run('hwclock', ['-w', '-u']);
@@ -293,6 +341,140 @@ class LinuxDateTimeController implements DateTimeController {
     } catch (_) {
       return false;
     }
+  }
+
+  @override
+  Future<List<TimezoneEntry>> listTimezoneEntries() async {
+    final ids = await _listTimezoneIds();
+    final offsets = await _readUtcOffsetLabels(ids);
+    return [
+      for (final id in ids)
+        TimezoneEntry(
+          id: id,
+          utcOffsetLabel: offsets[id] ?? '',
+        ),
+    ];
+  }
+
+  Future<List<String>> _listTimezoneIds() async {
+    try {
+      final r = await _run('timedatectl', ['list-timezones']);
+      if (r.exitCode == 0) {
+        final lines = (r.stdout as String)
+            .split('\n')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+        if (lines.isNotEmpty) {
+          return lines;
+        }
+      }
+    } catch (_) {}
+
+    final walked = await _walkZoneinfo('/usr/share/zoneinfo');
+    if (walked.isNotEmpty) {
+      return walked;
+    }
+    return List<String>.of(TimeSyncPrefs.curatedTimezones);
+  }
+
+  Future<List<String>> _walkZoneinfo(String rootPath) async {
+    final root = Directory(rootPath);
+    if (!await root.exists()) {
+      return const [];
+    }
+    const skipNames = {
+      'iso3166.tab',
+      'zone.tab',
+      'zone1970.tab',
+      'leapseconds',
+      'tzdata.zi',
+      'Factory',
+      'localtime',
+    };
+    final out = <String>[];
+    try {
+      await for (final entity in root.list(recursive: true, followLinks: false)) {
+        if (entity is! File) {
+          continue;
+        }
+        var rel = entity.path;
+        if (rel.startsWith(rootPath)) {
+          rel = rel.substring(rootPath.length);
+          if (rel.startsWith('/')) {
+            rel = rel.substring(1);
+          }
+        }
+        if (rel.isEmpty) {
+          continue;
+        }
+        if (rel.startsWith('posix/') || rel.startsWith('right/')) {
+          continue;
+        }
+        final base = rel.contains('/') ? rel.split('/').last : rel;
+        if (skipNames.contains(base) || base.endsWith('.tab') || base.endsWith('.zi')) {
+          continue;
+        }
+        out.add(rel);
+      }
+    } catch (e) {
+      lwsTrace('datetime: zoneinfo walk failed: $e');
+      return const [];
+    }
+    out.sort();
+    return out;
+  }
+
+  /// Map zone id → `UTC±HH:MM` via `TZ=<id> date +%z` (chunked shell).
+  Future<Map<String, String>> _readUtcOffsetLabels(List<String> zones) async {
+    final out = <String, String>{};
+    if (zones.isEmpty) {
+      return out;
+    }
+    const chunkSize = 100;
+    for (var i = 0; i < zones.length; i += chunkSize) {
+      final end = (i + chunkSize < zones.length) ? i + chunkSize : zones.length;
+      final slice = zones.sublist(i, end);
+      final script = StringBuffer();
+      for (final z in slice) {
+        if (!_isSafeTimezoneId(z)) {
+          continue;
+        }
+        script.writeln(
+          'printf \'%s\\t%s\\n\' \'$z\' "\$(TZ=\'$z\' date +%z 2>/dev/null)"',
+        );
+      }
+      if (script.isEmpty) {
+        continue;
+      }
+      try {
+        final r = await _run('sh', ['-c', script.toString()]);
+        if (r.exitCode != 0 && (r.stdout as String).trim().isEmpty) {
+          continue;
+        }
+        for (final line in (r.stdout as String).split('\n')) {
+          final t = line.trim();
+          if (t.isEmpty) {
+            continue;
+          }
+          final tab = t.indexOf('\t');
+          if (tab <= 0) {
+            continue;
+          }
+          final id = t.substring(0, tab);
+          final label = TimezoneCatalog.formatPosixOffset(t.substring(tab + 1));
+          if (label.isNotEmpty) {
+            out[id] = label;
+          }
+        }
+      } catch (_) {}
+    }
+    return out;
+  }
+
+  static bool _isSafeTimezoneId(String id) {
+    // IANA ids: letters, digits, _, +, -, /
+    return RegExp(r'^[A-Za-z0-9_+\-/]+$').hasMatch(id);
   }
 
   static String _pad2(int n) => n.toString().padLeft(2, '0');

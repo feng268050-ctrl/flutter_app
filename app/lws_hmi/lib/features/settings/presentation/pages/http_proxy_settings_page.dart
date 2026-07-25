@@ -8,7 +8,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/http/http_proxy_config.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
-/// HTTP Proxy — phone-style rows (matches lws-ui proxy activity shape).
+/// Proxy settings — phone-style rows (matches lws-ui proxy activity shape).
 class HttpProxySettingsPage extends StatefulWidget {
   const HttpProxySettingsPage({super.key, required this.services});
 
@@ -88,11 +88,10 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
       title: l10n.httpProxySettingsTitle,
       body: SettingsScrollView(
         children: [
-          SettingsSectionHeader(l10n.httpProxyTitle),
           SettingsGroup(
             children: [
               SettingsSwitchRow(
-                title: l10n.httpProxyTitle,
+                title: l10n.httpProxyEnable,
                 value: _enabled,
                 onChanged: _busy
                     ? null

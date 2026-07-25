@@ -91,4 +91,46 @@ void main() {
     await tester.pump();
     expect(value, 50);
   });
+
+  testWidgets('drag value bubble appears while thumb is expanded', (tester) async {
+    var value = 50.0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 300,
+              child: StatefulBuilder(
+                builder: (context, setState) {
+                  return CyberSlider(
+                    value: value,
+                    min: 0,
+                    max: 100,
+                    showDragValueLabel: true,
+                    onChanged: (v) => setState(() => value = v),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('50'), findsNothing);
+
+    final hold = await tester.startGesture(tester.getCenter(find.byType(CyberSlider)));
+    await tester.pump(
+      const Duration(milliseconds: CyberSliderLogic.longPressThresholdMs),
+    );
+    await tester.pump(
+      const Duration(milliseconds: CyberSliderLogic.thumbExpandDurationMs),
+    );
+    await tester.pump();
+    expect(find.text('50'), findsOneWidget);
+
+    await hold.up();
+    await tester.pumpAndSettle();
+    expect(find.text('50'), findsNothing);
+  });
 }

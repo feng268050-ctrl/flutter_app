@@ -70,8 +70,8 @@ class _LanSshDebugSettingsPageState extends State<LanSshDebugSettingsPage> {
       title: l10n.sshDebugText,
       body: SettingsScrollView(
         children: [
-          SettingsSectionHeader(l10n.sshDebugText),
           SettingsGroup(
+            bottomInset: 0,
             children: [
               SettingsSwitchRow(
                 title: l10n.sshDebugText,
@@ -80,19 +80,20 @@ class _LanSshDebugSettingsPageState extends State<LanSshDebugSettingsPage> {
               ),
             ],
           ),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              _error!,
-              style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                SettingsDimens.inset,
+                SettingsDimens.helpGap,
+                SettingsDimens.inset,
+                0,
+              ),
+              child: Text(
+                _error!,
+                style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+              ),
             ),
-          ],
-          const SizedBox(height: 16),
-          const Text(
-            'Enables on-demand OpenSSH on eth0/wlan0. Not persisted across reboot. '
-            'USB plug-ssh uses OTG mode Debug over USB separately.',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
+          SettingsHelpFooter(l10n.sshDebugFooter),
         ],
       ),
     );

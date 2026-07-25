@@ -12,7 +12,7 @@ import 'package:cyber_hal/src/network/wifi_models.dart';
 import 'package:cyber_hal/src/network/wifi_radio.dart';
 import 'package:cyber_hal/src/network/wpa_cli_parse.dart';
 import 'package:cyber_hal/src/network/wpa_supplicant_dbus.dart'
-    show WpaSupplicantDbus, wpaSecurityLabel;
+    show WpaScanResult, WpaSupplicantDbus, wpaSecurityLabel;
 import 'package:cyber_hal/src/profile/board_profile.dart';
 import 'package:dbus/dbus.dart';
 import 'package:flutter/foundation.dart';
@@ -396,6 +396,14 @@ class LinuxWifiSession implements WifiController {
   Future<List<WifiAccessPoint>> scan({
     Duration timeout = const Duration(seconds: 8),
   }) async {
+    // Wait briefly if the radio is still coming up (Settings opens / toggle).
+    if (_radio == WifiRadioState.starting) {
+      final waitUntil = DateTime.now().add(const Duration(seconds: 5));
+      while (_radio == WifiRadioState.starting &&
+          DateTime.now().isBefore(waitUntil)) {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+    }
     if (_radio != WifiRadioState.on) {
       return const [];
     }
@@ -404,40 +412,34 @@ class LinuxWifiSession implements WifiController {
     try {
       await wpa.scan(iface);
     } catch (e) {
-      debugPrint('wifi: dbus scan failed: $e');
-      return const [];
+      // Scan() often fails when a scan is already running — still read BSS.
+      debugPrint('wifi: dbus scan trigger failed: $e');
     }
+
+    List<WifiAccessPoint> mapRows(List<WpaScanResult> rows) {
+      return [
+        for (final r in rows)
+          WifiAccessPoint(
+            ssid: r.ssid,
+            signalDbm: r.signalDbm,
+            flags: r.requiresPsk ? '[WPA2-PSK-CCMP]' : '[ESS]',
+            bssid: r.bssid,
+          ),
+      ];
+    }
+
     final deadline = DateTime.now().add(timeout);
     while (DateTime.now().isBefore(deadline)) {
       await Future<void>.delayed(const Duration(milliseconds: 500));
       try {
         final rows = await wpa.listScanResults(iface);
         if (rows.isNotEmpty) {
-          return rows
-              .map(
-                (r) => WifiAccessPoint(
-                  ssid: r.ssid,
-                  signalDbm: r.signalDbm,
-                  flags: r.requiresPsk ? '[WPA2-PSK-CCMP]' : '[ESS]',
-                  bssid: r.bssid,
-                ),
-              )
-              .toList();
+          return mapRows(rows);
         }
       } catch (_) {}
     }
     try {
-      final rows = await wpa.listScanResults(iface);
-      return rows
-          .map(
-            (r) => WifiAccessPoint(
-              ssid: r.ssid,
-              signalDbm: r.signalDbm,
-              flags: r.requiresPsk ? '[WPA2-PSK-CCMP]' : '[ESS]',
-              bssid: r.bssid,
-            ),
-          )
-          .toList();
+      return mapRows(await wpa.listScanResults(iface));
     } catch (_) {
       return const [];
     }

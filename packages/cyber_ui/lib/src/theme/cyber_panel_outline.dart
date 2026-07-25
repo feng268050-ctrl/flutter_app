@@ -321,8 +321,11 @@ class CyberOutlinedPanel extends StatelessWidget {
       child: child,
     );
     if (!useGradient) return card;
+    // Match [Card.clipBehavior]. Default Stack clip (hardEdge) would still
+    // crop children that intentionally paint outside (e.g. CyberSlider bubble).
     return Stack(
       fit: StackFit.passthrough,
+      clipBehavior: clipBehavior,
       children: [
         card,
         Positioned.fill(

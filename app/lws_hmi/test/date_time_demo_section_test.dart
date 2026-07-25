@@ -49,6 +49,15 @@ class _FakeDateTimeController implements DateTimeController {
   }
 
   @override
+  Future<List<TimezoneEntry>> listTimezoneEntries() async {
+    return const [
+      TimezoneEntry(id: 'UTC', utcOffsetLabel: 'UTC+00:00'),
+      TimezoneEntry(id: 'Asia/Shanghai', utcOffsetLabel: 'UTC+08:00'),
+      TimezoneEntry(id: 'America/Los_Angeles', utcOffsetLabel: 'UTC-07:00'),
+    ];
+  }
+
+  @override
   Future<void> dispose() async {}
 }
 

@@ -28,13 +28,7 @@ class UnitSettingsPage extends StatelessWidget {
       body: store == null
           ? SettingsScrollView(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    l10n.unitPreferenceUnavailable,
-                    style: const TextStyle(color: Colors.white54),
-                  ),
-                ),
+                SettingsHelpFooter(l10n.unitPreferenceUnavailable),
               ],
             )
           : ListenableBuilder(
@@ -44,6 +38,7 @@ class UnitSettingsPage extends StatelessWidget {
                 return SettingsScrollView(
                   children: [
                     SettingsGroup(
+                      bottomInset: 0,
                       children: [
                         for (final u in CommonSettingsStore.supportedUnits)
                           SettingsOptionTile(
@@ -55,13 +50,7 @@ class UnitSettingsPage extends StatelessWidget {
                           ),
                       ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text(
-                        l10n.unitPersistedFooter,
-                        style: const TextStyle(color: Colors.white54),
-                      ),
-                    ),
+                    SettingsHelpFooter(l10n.unitPersistedFooter),
                   ],
                 );
               },

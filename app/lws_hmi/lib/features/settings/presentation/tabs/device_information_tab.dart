@@ -302,7 +302,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             ),
           ],
         ),
-        // Update CTA — scrolls with content (end of list)
+        // Update CTA — Frost pill button + centered auto-check (lws-ui)
         Padding(
           padding: const EdgeInsets.fromLTRB(
             SettingsDimens.inset,
@@ -316,6 +316,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
               height: CyberDimens.actionButtonHeight,
               child: CyberButton(
                 variant: CyberButtonVariant.primary,
+                shape: CyberButtonShape.rounded,
                 borderGradientCenter:
                     CyberBorderGradientCenter.topLeftBottomRight,
                 onPressed: () => unawaited(_checkForUpdates(l10n)),
@@ -331,29 +332,31 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             SettingsDimens.inset,
             SettingsDimens.inset,
           ),
-          child: Builder(
-            builder: (context) {
-              final misc = MiscSettingsScope.maybeOf(context);
-              if (misc == null) {
-                return SettingsCheckboxRow(
-                  title: l10n.autoCheckOtaUpdate,
-                  value: false,
-                  onChanged: null,
-                );
-              }
-              return ListenableBuilder(
-                listenable: misc,
-                builder: (context, _) {
+          child: Center(
+            child: Builder(
+              builder: (context) {
+                final misc = MiscSettingsScope.maybeOf(context);
+                if (misc == null) {
                   return SettingsCheckboxRow(
                     title: l10n.autoCheckOtaUpdate,
-                    value: misc.autoCheckOtaUpdate,
-                    onChanged: (v) => unawaited(
-                      misc.setAutoCheckOtaUpdate(v ?? false),
-                    ),
+                    value: false,
+                    onChanged: null,
                   );
-                },
-              );
-            },
+                }
+                return ListenableBuilder(
+                  listenable: misc,
+                  builder: (context, _) {
+                    return SettingsCheckboxRow(
+                      title: l10n.autoCheckOtaUpdate,
+                      value: misc.autoCheckOtaUpdate,
+                      onChanged: (v) => unawaited(
+                        misc.setAutoCheckOtaUpdate(v ?? false),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ),
       ],

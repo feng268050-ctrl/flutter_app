@@ -14,10 +14,10 @@
 
 ## 3. Common Settings CyberUI + lws-ui interaction parity
 
-- [x] 3.1 Rebuild `common_settings_tab.dart` untitled cards: Network (Wi‑Fi, HTTP Proxy, LAN SSH, Bluetooth), Display & Sound inline Cyber controls, RGB LED card after Display & Sound, Date & Time Automatic + conditional rows, Input (Mouse / Keyboard / USB OTG), Camera (own card), Misc switches
-- [x] 3.2 Inline Language (3 locales), Unit, Brightness, Screen Off, Volume, Sound Effects with CyberUI; keep store/HAL bindings; avoid bilingual-only Language UX
+- [x] 3.1 Rebuild `common_settings_tab.dart` untitled cards: Network (Wi‑Fi, HTTP Proxy, LAN SSH, Bluetooth), Display & Sound inline Cyber controls, RGB LED + Camera card (after Display & Sound, before Date & Time), Date & Time Automatic + conditional rows, Input (Mouse / Keyboard / USB OTG), Misc switches
+- [x] 3.2 Language / Unit as nav; Display sub-page (Brightness `CyberSlider` + Auto Screen Off dropdown); Sound sub-page (Volume `CyberVolumeSlider` left/right + Sound Effect dropdown, no play-test card); keep store/HAL bindings; avoid bilingual-only Language UX
 - [x] 3.3 Fold Date & Time Automatic / Set Date / Set Time / Set Time Zone (+ status line) onto Common Settings using `DateTimeController` + Cyber dialogs; trim or repurpose `DateTimeSettingsPage` as needed
-- [x] 3.4 Move Camera out of Input into its own group; rename operator label to Camera (ARB)
+- [x] 3.4 Move Camera out of Input into the RGB LED card (before Date & Time); rename operator label to Camera (ARB)
 
 ## 4. Wi‑Fi Details + IP Settings
 

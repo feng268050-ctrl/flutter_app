@@ -1,7 +1,7 @@
 import 'dart:async';
 
+import 'package:cyber_hal/datetime.dart';
 import 'package:cyber_hal/network.dart';
-import 'package:cyber_hal/output.dart';
 import 'package:cyber_hal/usb_otg.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
@@ -10,11 +10,9 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_sco
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
-import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
-import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/bluetooth_settings_page.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/brightness_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/date_time_settings_page.dart';
+import 'package:lws_hmi/features/settings/presentation/pages/display_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/http_proxy_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/ip_camera_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/keyboard_settings_page.dart';
@@ -22,11 +20,9 @@ import 'package:lws_hmi/features/settings/presentation/pages/language_settings_p
 import 'package:lws_hmi/features/settings/presentation/pages/lan_ssh_debug_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/led_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/mouse_settings_page.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/screen_off_settings_page.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/sound_effect_settings_page.dart';
+import 'package:lws_hmi/features/settings/presentation/pages/sound_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/unit_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/usb_otg_settings_page.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/volume_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/wifi_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -47,10 +43,9 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
   String _sshDebugValue = '';
   String _usbOtgValue = '';
   String _btValue = '';
-  String _screenOffValue = '';
-  String _soundEffectValue = '';
   String _brightnessValue = '';
   String _volumeValue = '';
+  TimeSyncMode? _dateTimeMode;
   StreamSubscription<WifiConnectionState>? _wifiSub;
 
   AppServices get services => widget.services;
@@ -72,9 +67,9 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
       unawaited(_refreshSshDebug());
       unawaited(_refreshUsbOtg());
       unawaited(_refreshBt());
-      unawaited(_refreshScreenOff());
       unawaited(_refreshBrightness());
       unawaited(_refreshVolume());
+      unawaited(_refreshDateTime());
     });
   }
 
@@ -92,7 +87,6 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     if (_btValue.isEmpty) {
       _btValue = l10n.offLabel;
     }
-    _refreshSoundEffectSummary(l10n);
   }
 
   String _wifiSummary(AppLocalizations l10n, WifiConnectionState c) {
@@ -123,23 +117,12 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     }
   }
 
-  String _screenOffLabel(AppLocalizations l10n, AutoSleepPolicy p) {
-    return switch (p) {
-      AutoSleepPolicy.minutes10 => l10n.screenOffOption10Min,
-      AutoSleepPolicy.minutes30 => l10n.screenOffOption30Min,
-      AutoSleepPolicy.minutes60 => l10n.screenOffOption60Min,
-      AutoSleepPolicy.never => l10n.screenOffNever,
-    };
-  }
-
-  void _refreshSoundEffectSummary(AppLocalizations l10n) {
-    final sound = SoundEffectScope.maybeOf(context);
-    final index = sound?.store.index ?? SoundEffectStore.defaultIndex;
-    _soundEffectValue = switch (index) {
-      1 => l10n.soundEffectOption2,
-      2 => l10n.soundEffectOption3,
-      _ => l10n.soundEffectOption1,
-    };
+  String? _dateTimeSummary(AppLocalizations l10n) {
+    final mode = _dateTimeMode;
+    if (mode == null) return null;
+    return mode == TimeSyncMode.network
+        ? l10n.dateTimeModeAuto
+        : l10n.dateTimeModeManual;
   }
 
   Future<void> _refreshProxy() async {
@@ -184,15 +167,6 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     setState(() => _btValue = powered ? l10n.onLabel : l10n.offLabel);
   }
 
-  Future<void> _refreshScreenOff() async {
-    try {
-      final p = await services.autoSleep.getPolicy();
-      if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
-      setState(() => _screenOffValue = _screenOffLabel(l10n, p));
-    } catch (_) {}
-  }
-
   Future<void> _refreshBrightness() async {
     try {
       final v = await services.backlight.getBrightnessPercent();
@@ -210,6 +184,16 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
       setState(() => _volumeValue = '$v%');
     } catch (_) {
       if (mounted) setState(() => _volumeValue = '');
+    }
+  }
+
+  Future<void> _refreshDateTime() async {
+    try {
+      final mode = await services.dateTime.getSyncMode();
+      if (!mounted) return;
+      setState(() => _dateTimeMode = mode);
+    } catch (_) {
+      if (mounted) setState(() => _dateTimeMode = null);
     }
   }
 
@@ -334,54 +318,30 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                 },
               ),
             SettingsNavRow(
-              title: l10n.screenBrightnessText,
+              title: l10n.screenSettings,
               value: _brightnessValue.isEmpty ? null : _brightnessValue,
               onTap: () async {
                 await pushSettingsPage(
                   context,
-                  BrightnessSettingsPage(services: services),
+                  DisplaySettingsPage(services: services),
                 );
                 await _refreshBrightness();
               },
             ),
             SettingsNavRow(
-              title: l10n.screenOffTimeText,
-              value: _screenOffValue.isEmpty ? null : _screenOffValue,
-              onTap: () async {
-                await pushSettingsPage(
-                  context,
-                  ScreenOffSettingsPage(services: services),
-                );
-                await _refreshScreenOff();
-              },
-            ),
-            SettingsNavRow(
-              title: l10n.volumeSettingText,
+              title: l10n.soundSettings,
               value: _volumeValue.isEmpty ? null : _volumeValue,
               onTap: () async {
                 await pushSettingsPage(
                   context,
-                  VolumeSettingsPage(services: services),
+                  SoundSettingsPage(services: services),
                 );
                 await _refreshVolume();
               },
             ),
-            SettingsNavRow(
-              title: l10n.soundEffectCheck,
-              value: _soundEffectValue,
-              onTap: () async {
-                await pushSettingsPage(
-                  context,
-                  const SoundEffectSettingsPage(),
-                );
-                if (mounted) {
-                  setState(() => _refreshSoundEffectSummary(l10n));
-                }
-              },
-            ),
           ],
         ),
-        // RGB LED
+        // RGB LED + Camera — before Date & Time
         SettingsGroup(
           borderGradientCenter: CyberBorderGradientCenter.topRightBottomLeft,
           children: [
@@ -392,6 +352,13 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                 LedSettingsPage(services: services),
               ),
             ),
+            SettingsNavRow(
+              title: l10n.ipCameraText,
+              onTap: () => pushSettingsPage(
+                context,
+                IpCameraSettingsPage(services: services),
+              ),
+            ),
           ],
         ),
         // Date & Time — lws-ui `bottom-left-top-right`
@@ -400,10 +367,14 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
           children: [
             SettingsNavRow(
               title: l10n.dateTimeSettings,
-              onTap: () => pushSettingsPage(
-                context,
-                DateTimeSettingsPage(services: services),
-              ),
+              value: _dateTimeSummary(l10n),
+              onTap: () async {
+                await pushSettingsPage(
+                  context,
+                  DateTimeSettingsPage(services: services),
+                );
+                await _refreshDateTime();
+              },
             ),
           ],
         ),
@@ -435,19 +406,6 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                 );
                 await _refreshUsbOtg();
               },
-            ),
-          ],
-        ),
-        // Camera
-        SettingsGroup(
-          borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
-          children: [
-            SettingsNavRow(
-              title: l10n.ipCameraText,
-              onTap: () => pushSettingsPage(
-                context,
-                IpCameraSettingsPage(services: services),
-              ),
             ),
           ],
         ),

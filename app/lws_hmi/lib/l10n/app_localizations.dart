@@ -812,6 +812,12 @@ abstract class AppLocalizations {
   /// **'Bluetooth'**
   String get bluetoothText;
 
+  /// No description provided for @bluetoothAsSpeaker.
+  ///
+  /// In en, this message translates to:
+  /// **'As a Speaker'**
+  String get bluetoothAsSpeaker;
+
   /// No description provided for @bootSelfCheckClose.
   ///
   /// In en, this message translates to:
@@ -1142,6 +1148,18 @@ abstract class AppLocalizations {
   /// **'Automatic'**
   String get dateTimeAutomatic;
 
+  /// No description provided for @dateTimeModeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get dateTimeModeAuto;
+
+  /// No description provided for @dateTimeModeManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get dateTimeModeManual;
+
   /// No description provided for @dateTimePermissionDenied.
   ///
   /// In en, this message translates to:
@@ -1175,7 +1193,7 @@ abstract class AppLocalizations {
   /// No description provided for @dateTimeSetDate.
   ///
   /// In en, this message translates to:
-  /// **'Set Date'**
+  /// **'Date'**
   String get dateTimeSetDate;
 
   /// No description provided for @dateTimeSetFailed.
@@ -1187,13 +1205,13 @@ abstract class AppLocalizations {
   /// No description provided for @dateTimeSetTime.
   ///
   /// In en, this message translates to:
-  /// **'Set Time'**
+  /// **'Time'**
   String get dateTimeSetTime;
 
   /// No description provided for @dateTimeSetTimeZone.
   ///
   /// In en, this message translates to:
-  /// **'Set Time Zone'**
+  /// **'Time Zone'**
   String get dateTimeSetTimeZone;
 
   /// No description provided for @dateTimeSettings.
@@ -1201,6 +1219,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Date & Time'**
   String get dateTimeSettings;
+
+  /// No description provided for @timezoneSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or UTC offset'**
+  String get timezoneSearchHint;
 
   /// No description provided for @dateTimeTimezoneApplyFailed.
   ///
@@ -1625,7 +1649,7 @@ abstract class AppLocalizations {
   /// No description provided for @httpProxySettingsTitle.
   ///
   /// In en, this message translates to:
-  /// **'HTTP Proxy'**
+  /// **'Proxy'**
   String get httpProxySettingsTitle;
 
   /// No description provided for @httpProxyStatusIncomplete.
@@ -1667,7 +1691,7 @@ abstract class AppLocalizations {
   /// No description provided for @httpProxyTitle.
   ///
   /// In en, this message translates to:
-  /// **'HTTP Proxy'**
+  /// **'Proxy'**
   String get httpProxyTitle;
 
   /// No description provided for @httpProxyUsername.
@@ -2384,6 +2408,12 @@ abstract class AppLocalizations {
   /// **'RGB LED'**
   String get rgbLedText;
 
+  /// No description provided for @rgbLedFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Use these controls to test the status LED indicators on this device.'**
+  String get rgbLedFooter;
+
   /// No description provided for @safetyLockLabel.
   ///
   /// In en, this message translates to:
@@ -2600,11 +2630,29 @@ abstract class AppLocalizations {
   /// **'Sound 3'**
   String get soundEffectOption3;
 
+  /// No description provided for @soundSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get soundSettings;
+
   /// No description provided for @sshDebugText.
   ///
   /// In en, this message translates to:
   /// **'SSH Debug'**
   String get sshDebugText;
+
+  /// No description provided for @sshDebugFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'When enabled, you can connect to this device over the network for remote troubleshooting. Turns off after reboot. USB debugging is set separately under USB OTG.'**
+  String get sshDebugFooter;
+
+  /// No description provided for @settingsMayRestartApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Some of the settings may restart the application.'**
+  String get settingsMayRestartApp;
 
   /// No description provided for @straightTrackTemperatureAlarmContent.
   ///
@@ -2669,13 +2717,13 @@ abstract class AppLocalizations {
   /// No description provided for @unitPersistedFooter.
   ///
   /// In en, this message translates to:
-  /// **'Persisted under /var/lib/hmi/common-settings.json.'**
+  /// **'Choose Metric (°C, mm) or Imperial (°F, in) for values shown on this device.'**
   String get unitPersistedFooter;
 
   /// No description provided for @unitPreferenceUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Unit preference unavailable.'**
+  /// **'Unit settings are temporarily unavailable.'**
   String get unitPreferenceUnavailable;
 
   /// No description provided for @unitSettingText.

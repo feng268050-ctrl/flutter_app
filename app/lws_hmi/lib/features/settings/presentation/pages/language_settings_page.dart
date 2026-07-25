@@ -18,13 +18,7 @@ class LanguageSettingsPage extends StatelessWidget {
       body: store == null
           ? SettingsScrollView(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    l10n.languagePreferenceUnavailable,
-                    style: const TextStyle(color: Colors.white54),
-                  ),
-                ),
+                SettingsHelpFooter(l10n.languagePreferenceUnavailable),
               ],
             )
           : ListenableBuilder(
@@ -34,6 +28,7 @@ class LanguageSettingsPage extends StatelessWidget {
                 return SettingsScrollView(
                   children: [
                     SettingsGroup(
+                      bottomInset: 0,
                       children: [
                         for (final code
                             in CommonSettingsStore.supportedLanguages)
@@ -46,13 +41,7 @@ class LanguageSettingsPage extends StatelessWidget {
                           ),
                       ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text(
-                        l10n.languageAppliesToUi,
-                        style: const TextStyle(color: Colors.white54),
-                      ),
-                    ),
+                    SettingsHelpFooter(l10n.languageAppliesToUi),
                   ],
                 );
               },

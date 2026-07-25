@@ -65,76 +65,75 @@ Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `z
 
 Common Settings SHALL expose:
 
-- Display & Sound: screen brightness via HAL `Backlight`; screen-off time via HAL `AutoSleep` (real control, not a non-persisted stub); media volume via media audio / `Volume` using **Cyber volume chrome** where CyberUI is available; **Language and Unit SHALL be real persisted controls** backed by `/var/lib/hmi/common-settings.json` (not in-memory stubs); Language SHALL drive Flutter UI locale for migrated strings in addition to CyberIME; **sound-effect SHALL be a real Effect 1/2/3 control** wired through HAL `ButtonFeedback` (see `settings-sound-effect` / `hal-button-feedback`). Within the main Display & Sound settings group, Language and Unit SHALL appear before brightness / screen-off; display controls (brightness, screen-off) SHALL appear before sound controls (volume, sound-effect). Operator-visible labels for migrated Common Settings rows and sub-pages SHALL come from App localization.
-- Date & Time: wall clock, manual vs network sync, timezone, Apply / Sync Now via `DateTimeController`
-- Input: mouse settings via `MouseSettingsController`; keyboard layout / smoke affordances via keyboard HAL as applicable; **IP Camera** entry that navigates to a live preview page backed by the product IP-camera session (HAL `ip_camera` + this product’s path/relay)
+- Display & Sound (untitled card): Language and Unit as persisted controls backed by `/var/lib/hmi/common-settings.json`; Language drives Flutter UI locale and CyberIME for three locales; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: Language and Unit before Display before Sound.
+- RGB LED + Camera (untitled card, after Display & Sound, before Date & Time): RGB LED entry; Camera entry → product IP-camera settings page.
+- Date & Time (untitled card): Automatic sync plus Set Date / Set Time / Set Time Zone via `DateTimeController` (lws-ui parity).
+- Input (untitled card): mouse settings; keyboard layout; USB OTG. **Camera is not under Input** (see Camera + RGB LED group requirement).
+- Operator-visible labels SHALL come from App localization. Group section titles MUST NOT be shown.
 
 #### Scenario: Brightness and volume invoke controllers
 
-- **WHEN** the user adjusts brightness or volume in Common Settings
+- **WHEN** the user adjusts brightness on Display or volume on Sound
 - **THEN** the backlight or media audio controller is asked to set the corresponding percent
 
 #### Scenario: Screen-off invokes AutoSleep
 
-- **WHEN** the user selects a Screen-off Time option other than the current policy
+- **WHEN** the user selects an Auto Screen Off option on the Display page other than the current policy
 - **THEN** HAL `AutoSleep` is asked to set the corresponding policy and the choice is persisted
-
-#### Scenario: Volume page uses Cyber volume chrome
-
-- **WHEN** the user opens Volume under Display & Sound
-- **THEN** the volume control is rendered with CyberUI volume chrome (not a bare Material-only Settings stand-in as the long-term target)
 
 #### Scenario: Sound effect is not a stub
 
-- **WHEN** the user opens Sound Effect under Display & Sound
+- **WHEN** the user selects a Sound Effect option on the Sound page
 - **THEN** Effect 1 / Effect 2 / Effect 3 are selectable and the choice is persisted via `ButtonFeedback`
 
 #### Scenario: Language is persisted
 
 - **WHEN** the user selects a Language option other than the current value
-- **THEN** the choice is persisted in `/var/lib/hmi/common-settings.json` and Common Settings shows the matching Language summary
+- **THEN** the choice is persisted in `/var/lib/hmi/common-settings.json` and Common Settings shows the matching Language summary or segment
 
 #### Scenario: Unit is persisted
 
 - **WHEN** the user selects a Unit option other than the current value
-- **THEN** the choice is persisted in `/var/lib/hmi/common-settings.json` and Common Settings shows the matching Unit summary
+- **THEN** the choice is persisted in `/var/lib/hmi/common-settings.json`
 
 #### Scenario: Date and time sync actions invoke controllers
 
-- **WHEN** the user taps Apply or Sync Now in Date & Time
-- **THEN** the date/time controller is asked to set the clock or sync from the network
+- **WHEN** the user enables Automatic or applies a manual date/time/zone change
+- **THEN** the date/time controller is asked to set the corresponding policy or wall clock
 
 #### Scenario: Mouse settings invoke controller
 
-- **WHEN** the user changes a mouse setting in Common Settings
+- **WHEN** the user changes a mouse setting from Common Settings
 - **THEN** the mouse settings controller is asked to persist and apply the value
 
-#### Scenario: Input lists IP Camera
+#### Scenario: Camera is not under Input
 
 - **WHEN** the operator opens Common Settings
-- **THEN** an IP Camera row SHALL be available under Input alongside Mouse and Keyboard
+- **THEN** Camera is reachable from the RGB LED + Camera card before Date & Time
+- **AND** Input does not list IP Camera / Camera
 
 #### Scenario: Common Settings chrome follows UI locale
 
 - **WHEN** Language is `zh-CN` and the operator opens Common Settings
-- **THEN** migrated group headers and row titles render in Simplified Chinese via App localization
+- **THEN** migrated row titles and control labels render in Simplified Chinese via App localization
 
 ### Requirement: Device Information shows available identity and version rows
 
-Device Information SHALL display device identity and version rows in **three Material groups** (same chrome as Common Settings: section headers + inset `Card` lists with dividers):
+Device Information SHALL display device identity and version rows in **untitled CyberUI card groups** (no section header text; same Settings chrome vocabulary as Common Settings):
 
-1. **Identity:** Device Model (with device QR affordance), Device SN, Gunhead SN  
-2. **Versions:** System Version, Kernel Version, Control Card Version, Laser Version, Wire Feeder Version  
-3. **Platform:** Display Stack, Camera Type, and Focus Scale Reference
+1. **Identity:** Device Model (with device QR affordance), Device SN, Welding Gun SN  
+2. **Versions:** System Version, Process Library Version when available, Firmware Version (control-card / firmware Modbus display), Laser Version, Wire Feeder Version; HMI MAY also show Kernel Version and Display Stack  
+3. **Focus:** Focus Scale Reference  
 
-Device Model SHALL be `brand + " " + model` from HAL product identity (`product.ini`), with each missing part shown as `-`; if both parts are missing (computed value `- -`), the row SHALL display a single `-`. Device SN SHALL use product identity SN resolution (non-empty `product.ini` `sn`, else chip/board serial). Camera Type SHALL come from `product.ini` `camera_type` via HAL (`1` → `Blue Light`, `2` → `Red Light`; empty/invalid → `-`) and SHALL appear immediately before Focus Scale Reference. Focus Scale Reference SHALL come from `product.ini` `focus_scale_ref` via HAL `ProductInfo` (empty → `-`). The tab MUST NOT show a Modbus Link row. Missing or empty values SHALL show `-`. OTA check-update controls MAY be deferred.
+Device Model SHALL be `brand + " " + model` from HAL product identity (`product.ini`), with each missing part shown as `-`; if both parts are missing (computed value `- -`), the row SHALL display a single `-`. Device SN SHALL use product identity SN resolution (non-empty `product.ini` `sn`, else chip/board serial). Focus Scale Reference SHALL come from `product.ini` `focus_scale_ref` via HAL `ProductInfo` (empty → `-`). Camera Type and Camera Version MUST NOT appear on this tab. The tab MUST NOT show a Modbus Link row. Missing or empty values SHALL show `-`. OTA check-update controls SHALL appear per the Device Information row-set requirement.
 
 #### Scenario: Device Information lists grouped core rows
 
 - **WHEN** the user opens the Device Information tab
-- **THEN** Device Model, Device SN, System Version, Display Stack, Camera Type, and Focus Scale Reference rows are visible with a value string (possibly `-`)
+- **THEN** Device Model, Device SN, System Version, and Focus Scale Reference rows are visible with a value string (possibly `-`)
 - **AND** Device Model appears in the first card before Device SN
-- **AND** Display Stack, Camera Type, and Focus Scale Reference appear together in a card below the versions card (Camera Type before Focus Scale Reference)
+- **AND** Focus Scale Reference appears in a card below the versions card
+- **AND** Camera Type is not shown
 - **AND** Modbus Link is not shown
 
 #### Scenario: Empty brand and model show single dash
@@ -151,16 +150,6 @@ Device Model SHALL be `brand + " " + model` from HAL product identity (`product.
 
 - **WHEN** the user activates the device QR control on the Device Model row
 - **THEN** a dismissible dialog SHALL show a QR encoding `SN|2|Model|SystemVersion` (v2), with `|` characters in fields replaced by `_`
-
-#### Scenario: Camera type from product.ini
-
-- **WHEN** `product.ini` contains `camera_type=1`
-- **THEN** Camera Type SHALL display `Blue Light`
-
-#### Scenario: Camera type red light
-
-- **WHEN** `product.ini` contains `camera_type=2`
-- **THEN** Camera Type SHALL display `Red Light`
 
 #### Scenario: Focus scale from product.ini
 
@@ -193,12 +182,13 @@ Once Advanced Settings migration for this change is applied, the Advanced Settin
 
 ### Requirement: Display & Sound includes RGB LED controls
 
-Common Settings SHALL include an RGB LED entry under the Display & Sound **section** that opens controls for Red, Yellow, and Green modes (Steady / Blink / Off), wired to the GPIO RGB LED controller. The RGB LED entry MUST appear **after** the main Display & Sound settings group (the card that contains brightness / screen-off / volume / sound-effect), not as a mid-group row among those controls. LED I/O MUST NOT block Home first paint.
+Common Settings SHALL include an RGB LED entry in an **untitled** card **after** the main Display & Sound controls card (the card that contains language / unit / Display / Sound) and **before** Date & Time, sharing that card with Camera (not as a mid-group row among Display & Sound controls). The entry opens controls for Red, Yellow, and Green modes (Steady / Blink / Off), wired to the GPIO RGB LED controller. LED I/O MUST NOT block Home first paint. No visible “Display & Sound” section title is required.
 
 #### Scenario: LED entry after display-sound group
 
-- **WHEN** the user opens Display & Sound in Common Settings
-- **THEN** an RGB LED (or equivalent) entry is available after the main Display & Sound settings group
+- **WHEN** the user opens Common Settings
+- **THEN** an RGB LED (or equivalent) entry is available in a card after Display & Sound and before Date & Time
+- **AND** that card also contains the Camera navigation row
 
 #### Scenario: LED mode invokes GPIO controller
 
@@ -316,12 +306,12 @@ The Keyboard settings page SHALL provide a single primary **Restart** action aft
 
 ### Requirement: IP Camera settings page previews live video via the product session
 
-Common Settings → Input → IP Camera SHALL open a settings page that shows product IP-camera UI status and a **real live video preview**. On this product, preview MUST use the session-published **local MediaMTX** URL when the relay is running, and MUST NOT require opening a direct long-lived RTSP session to the camera’s native upstream as the primary multi-consumer path. The Linux/flutter-pi implementation SHALL decode and render the stream through the GStreamer/Rockchip MPP video plugin (or a demonstrably equivalent hardware-accelerated texture path). Opening the page SHALL call `ensureReady()` (or equivalent) without blocking the Settings shell from painting; while not ready, the page SHALL show establishing/failed placeholder UI. A static placeholder, RTSP URL text, or “GStreamer pending” message MUST NOT be accepted as the successful preview state.
+Common Settings → Camera SHALL open a settings page that shows product camera **Status**, **Camera Type**, **Camera Version**, and a **real live video preview**. On this product, preview MUST use the session-published **local MediaMTX** URL when the relay is running, and MUST NOT require opening a direct long-lived RTSP session to the camera’s native upstream as the primary multi-consumer path. The Linux/flutter-pi implementation SHALL decode and render the stream through the GStreamer/Rockchip MPP video plugin (or a demonstrably equivalent hardware-accelerated texture path). Opening the page SHALL call `ensureReady()` (or equivalent) without blocking the Settings shell from painting; while not ready, the page SHALL show establishing/failed placeholder UI. A static placeholder or “GStreamer pending” message MUST NOT be accepted as the successful preview state. The page MUST NOT display Camera IP or Preview URL as operator-visible rows. The page MUST NOT offer a manual Retry control for connection/MediaMTX bring-up.
 
 #### Scenario: Preview uses local relay URL on this product
 
 - **WHEN** the product MediaMTX relay is running
-- **AND** the operator opens IP Camera under Input
+- **AND** the operator opens Camera under Common Settings
 - **THEN** the preview surface SHALL bind to a localhost MediaMTX URL from the product session
 - **AND** after player initialization it SHALL display live moving camera frames in a Flutter video texture
 
@@ -335,25 +325,29 @@ Common Settings → Input → IP Camera SHALL open a settings page that shows pr
 #### Scenario: Preview placeholder while connecting
 
 - **WHEN** product UI phase is **connecting**, relay is not ready, or the video player is waiting for its first frame
-- **AND** the operator opens IP Camera under Input
+- **AND** the operator opens Camera under Common Settings
 - **THEN** the page SHALL show a non-blocking establishing/failed placeholder
 - **AND** MUST NOT freeze Settings navigation awaiting the first video frame
 
 #### Scenario: Preview player is disposed with the page
 
-- **WHEN** the operator leaves the IP Camera settings page
+- **WHEN** the operator leaves the Camera settings page
 - **THEN** the App SHALL pause and dispose the page-owned video controller/texture
 - **AND** returning to the page SHALL be able to create a fresh preview
 
-#### Scenario: Decoder or RTSP error is retryable
+#### Scenario: No IP or URL rows
 
-- **WHEN** the GStreamer player reports an initialization, decoder, or RTSP error
-- **THEN** the page SHALL show a failed/retryable state instead of a false live preview
-- **AND** a later retry SHALL recreate the player against the local MediaMTX URL
+- **WHEN** the operator opens the Camera settings page
+- **THEN** Camera IP and Preview URL rows are not shown
+
+#### Scenario: No manual Retry control
+
+- **WHEN** the operator opens the Camera settings page
+- **THEN** no Retry button for connection/MediaMTX is shown
 
 ### Requirement: IP Camera settings provides a recording demonstration
 
-The IP Camera settings page SHALL place a Record/Stop control below the live
+The Camera settings page SHALL place a Record/Stop control below the live
 preview. This control is a settings demonstration only: it SHALL call the
 `ip_camera` HAL recording controller against this product's local MediaMTX PR0
 URL and SHALL NOT reuse or define future Quick Mode / Engineer Mode business
@@ -413,3 +407,115 @@ Common Settings → Input SHALL include a **USB OTG** entry that lets the operat
 
 - **WHEN** `debug_only=true`
 - **THEN** Settings offers only Debug and does not allow switching to mtp/host
+
+### Requirement: Device Information and Common Settings use CyberUI cards without visible group titles
+
+Device Information and Common Settings SHALL render settings groups with CyberUI card chrome (`CyberCard` or shared Settings wrappers built on CyberUI). Operator-visible **group section titles** (e.g. Network, Display & Sound, Identity, Versions) MUST NOT appear on these tabs. Group boundaries SHALL be conveyed by separate cards and spacing only. Source code MAY retain comment labels naming each group for maintainers.
+
+#### Scenario: Common Settings has no group header text
+
+- **WHEN** the operator opens Common Settings
+- **THEN** no uppercase/localized section header widgets for Network / Display & Sound / Date & Time / Input / Misc (or equivalent) are visible above the cards
+- **AND** the Wi‑Fi and Language controls remain reachable inside card groups
+
+#### Scenario: Device Information has no group header text
+
+- **WHEN** the operator opens Device Information
+- **THEN** no Identity / Versions / Platform section header text is visible
+- **AND** identity and version rows remain visible inside CyberUI cards
+
+#### Scenario: CyberUI cards not Material Card as primary shell
+
+- **WHEN** Device Information or Common Settings paints a settings group
+- **THEN** the group shell uses CyberUI frosted card chrome rather than Material `Card` as the long-term primary shell
+
+### Requirement: Common Settings Display and Sound — Display and Sound sub-pages
+
+Within Common Settings, Language and Unit remain as list/nav rows. **Brightness** and **Auto Screen Off** SHALL be merged into a single **Display** nav row. **Volume** and **Sound Effect** SHALL be merged into a single **Sound** nav row. Display SHALL provide Brightness via `CyberSlider` (drag-value chrome) → HAL `Backlight`, and Auto Screen Off as a dropdown → HAL `AutoSleep`. Sound SHALL provide Volume via left-label / right `CyberVolumeSlider` (speaker icons retained; no play-test card) → HAL media audio, and Sound Effect as a dropdown → `ButtonFeedback` / sound-effect store. Language SHALL continue to offer **three** App locales (`en-US`, `zh-CN`, `zh-TW`).
+
+#### Scenario: Display opens brightness and screen-off
+
+- **WHEN** the operator opens Common Settings → Display
+- **THEN** Brightness can be adjusted with a CyberSlider
+- **AND** Auto Screen Off can be chosen from a dropdown without a separate screen-off page
+
+#### Scenario: Sound opens volume and sound effect
+
+- **WHEN** the operator opens Common Settings → Sound
+- **THEN** Volume uses a left-label / right speaker-flanked CyberVolumeSlider
+- **AND** Sound Effect can be chosen from a dropdown
+- **AND** no music play-test card is shown
+
+#### Scenario: Brightness invokes Backlight
+
+- **WHEN** the operator changes Brightness on the Display page
+- **THEN** HAL `Backlight` is asked to set the corresponding percent
+
+#### Scenario: Language still lists three locales
+
+- **WHEN** the operator changes Language on Common Settings
+- **THEN** English, 简体中文, and 繁體中文 remain available
+- **AND** the choice persists via `CommonSettingsStore` and updates UI locale
+
+### Requirement: Common Settings Date and Time follows Automatic plus conditional rows
+
+Common Settings SHALL present Date & Time in an untitled CyberUI card. The Common Settings nav row SHALL show a trailing **Auto** / **Manual** summary from `DateTimeController` sync mode (`network` → Auto, `manual` → Manual). The Date & Time page SHALL provide an **Automatic** switch and **Set Date** / **Set Time** / **Set Time Zone** rows that open CyberUI dialogs (or equivalent) when Automatic is off, matching lws-ui behavior. A sync status line MAY appear below the card. Controls SHALL use `DateTimeController`.
+
+#### Scenario: Common Settings shows Auto or Manual
+
+- **WHEN** the operator opens Common Settings and sync mode is network
+- **THEN** the Date & Time row trailing value is Auto (localized)
+- **AND** when sync mode is manual, the trailing value is Manual (localized)
+
+#### Scenario: Automatic hides manual rows
+
+- **WHEN** Automatic is on
+- **THEN** Set Date / Set Time / Set Time Zone rows are hidden or disabled per lws-ui parity
+- **AND** network time sync policy is enabled via the date/time controller
+
+#### Scenario: Manual date dialog
+
+- **WHEN** Automatic is off and the operator opens Set Date
+- **THEN** a CyberUI dialog allows choosing a calendar date and applying it through `DateTimeController`
+
+### Requirement: Camera shares an untitled card with RGB LED (not under Input)
+
+Common Settings SHALL present **Camera** in the same untitled card as **RGB LED**, placed **after** Display & Sound and **before** Date & Time. Camera MUST NOT be nested under Input. The row label SHALL be **Camera** (localized), not “IP Camera”. Tapping SHALL open the Camera settings page (product IP-camera session). Input SHALL retain Mouse, Keyboard, and USB OTG only (no Camera row under Input).
+
+#### Scenario: Camera with RGB LED before Date & Time
+
+- **WHEN** the operator opens Common Settings
+- **THEN** RGB LED and Camera navigation rows appear in the same card group
+- **AND** that card is after Display & Sound and before Date & Time
+- **AND** the Input card group does not list Camera / IP Camera
+
+#### Scenario: Camera label
+
+- **WHEN** Language is `en-US`
+- **THEN** the Camera row title is `Camera`
+
+### Requirement: Device Information row set matches lws-ui without Camera Type or Camera Version
+
+Device Information SHALL show CyberUI untitled cards with at least:
+
+1. Identity: Device Model (QR), Device SN, Welding Gun SN  
+2. Versions: System Version, Process Library Version (when available), Firmware Version (existing control-card / firmware Modbus value), Laser Version, Wire Feeder Version — and MAY retain HMI-only Kernel Version / Display Stack  
+3. Focus: Focus Scale Reference  
+
+Device Information MUST NOT show Camera Type or Camera Version. OTA footer controls (**Check for Updates**, **Automatically check for updates**) SHALL be present; when no OTA client is available they SHALL report an unavailable/deferred status rather than a false success. Secret 5×-tap debug entry points MUST NOT be implemented.
+
+#### Scenario: No Camera Type on Device Information
+
+- **WHEN** the operator opens Device Information
+- **THEN** Camera Type is not listed
+- **AND** Focus Scale Reference remains visible
+
+#### Scenario: Welding Gun SN present
+
+- **WHEN** the operator opens Device Information
+- **THEN** a Welding Gun SN (or localized equivalent) row is visible with a value or `-`
+
+#### Scenario: Check for Updates visible
+
+- **WHEN** the operator opens Device Information
+- **THEN** a Check for Updates action is visible

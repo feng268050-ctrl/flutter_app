@@ -14,6 +14,16 @@ import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 /// Top / bottom / left / right / group-to-group must all use this value.
 abstract final class SettingsDimens {
   static const inset = 24.0;
+
+  /// Shared min height for switch / value / nav / slider / control rows.
+  static const rowMinHeight = 64.0;
+
+  /// Horizontal + vertical padding inside a settings row.
+  static const rowPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 8);
+
+  /// Gap between a settings card and [SettingsHelpFooter] under it.
+  /// Preceding [SettingsGroup] must use `bottomInset: 0` so this is the only gap.
+  static const helpGap = 8.0;
 }
 
 class SettingsSectionHeader extends StatelessWidget {
@@ -41,6 +51,43 @@ class SettingsSectionHeader extends StatelessWidget {
   }
 }
 
+/// Operator help / footnote under a settings card.
+///
+/// Place immediately after a [SettingsGroup] with `bottomInset: 0` (or any
+/// sibling that has no bottom margin) so card→help spacing is always
+/// [SettingsDimens.helpGap], with L/R matching [SettingsDimens.inset].
+class SettingsHelpFooter extends StatelessWidget {
+  const SettingsHelpFooter(
+    this.text, {
+    super.key,
+    this.bottomInset = SettingsDimens.inset,
+  });
+
+  final String text;
+
+  /// Space below the footnote (use `0` when a [SettingsSectionHeader] follows).
+  final double bottomInset;
+
+  static const textStyle = TextStyle(
+    color: Colors.white54,
+    fontSize: 14,
+    height: 1.35,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        SettingsDimens.inset,
+        SettingsDimens.helpGap,
+        SettingsDimens.inset,
+        bottomInset,
+      ),
+      child: Text(text, style: textStyle),
+    );
+  }
+}
+
 /// Settings group shell — Material [Card] outline, border-only (Frost
 /// `transparent` blur: no live [BackdropFilter]).
 class SettingsPanel extends StatelessWidget {
@@ -58,6 +105,7 @@ class SettingsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = CyberGlassTheme.of(context);
     return CyberOutlinedPanel(
+      clipBehavior: Clip.none,
       outline: CyberPanelOutline(
         style: CyberPanelOutlineStyle.frostGradient,
         tone: theme.tone,
@@ -150,51 +198,54 @@ class SettingsNavRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chevron = showChevron ?? (onTap != null);
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      minVerticalPadding: 16,
-      leading: leading,
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          color: CyberColors.textPrimary,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
+      child: ListTile(
+        contentPadding: SettingsDimens.rowPadding,
+        minVerticalPadding: 0,
+        leading: leading,
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            color: CyberColors.textPrimary,
+          ),
         ),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (trailingExtra != null) ...[
-            trailingExtra!,
-            const SizedBox(width: 8),
-          ],
-          if (value != null && value!.isNotEmpty)
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 220),
-              child: Text(
-                value!,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: CyberColors.textSecondary,
-                  fontSize: 18,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (trailingExtra != null) ...[
+              trailingExtra!,
+              const SizedBox(width: 8),
+            ],
+            if (value != null && value!.isNotEmpty)
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 220),
+                child: Text(
+                  value!,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: CyberColors.textSecondary,
+                    fontSize: 18,
+                  ),
                 ),
               ),
-            ),
-          if (chevron) ...[
-            const SizedBox(width: 8),
-            const Icon(
-              Icons.chevron_right,
-              color: CyberColors.textSecondary,
-            ),
+            if (chevron) ...[
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right,
+                color: CyberColors.textSecondary,
+              ),
+            ],
           ],
-        ],
+        ),
+        onTap: onTap == null
+            ? null
+            : () {
+                CyberClickSoundRegistry.playClick();
+                onTap!();
+              },
       ),
-      onTap: onTap == null
-          ? null
-          : () {
-              CyberClickSoundRegistry.playClick();
-              onTap!();
-            },
     );
   }
 }
@@ -217,44 +268,47 @@ class SettingsValueRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      minVerticalPadding: 16,
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          color: CyberColors.textPrimary,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
+      child: ListTile(
+        contentPadding: SettingsDimens.rowPadding,
+        minVerticalPadding: 0,
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            color: CyberColors.textPrimary,
+          ),
         ),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (value != null && value!.isNotEmpty)
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 220),
-              child: Text(
-                value!,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.end,
-                style: const TextStyle(
-                  color: CyberColors.textSecondary,
-                  fontSize: 18,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (value != null && value!.isNotEmpty)
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 220),
+                child: Text(
+                  value!,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                    color: CyberColors.textSecondary,
+                    fontSize: 18,
+                  ),
                 ),
               ),
-            ),
-          if (trailing != null) ...[
-            const SizedBox(width: 4),
-            trailing!,
+            if (trailing != null) ...[
+              const SizedBox(width: 4),
+              trailing!,
+            ],
           ],
-        ],
+        ),
+        onTap: onTap == null
+            ? null
+            : () {
+                CyberClickSoundRegistry.playClick();
+                onTap!();
+              },
       ),
-      onTap: onTap == null
-          ? null
-          : () {
-              CyberClickSoundRegistry.playClick();
-              onTap!();
-            },
     );
   }
 }
@@ -275,34 +329,38 @@ class SettingsSwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          color: CyberColors.textPrimary,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
+      child: ListTile(
+        contentPadding: SettingsDimens.rowPadding,
+        minVerticalPadding: 0,
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            color: CyberColors.textPrimary,
+          ),
         ),
-      ),
-      subtitle: subtitle == null
-          ? null
-          : Text(
-              subtitle!,
-              style: const TextStyle(
-                color: CyberColors.textSecondary,
-                fontSize: 14,
-                height: 1.35,
+        subtitle: subtitle == null
+            ? null
+            : Text(
+                subtitle!,
+                style: const TextStyle(
+                  color: CyberColors.textSecondary,
+                  fontSize: 14,
+                  height: 1.35,
+                ),
               ),
-            ),
-      trailing: CyberSwitch(
-        value: value,
-        onChanged: onChanged,
+        trailing: CyberSwitch(
+          value: value,
+          onChanged: onChanged,
+        ),
       ),
     );
   }
 }
 
-/// Title + trailing control (segmented / slider) for inline Common Settings rows.
+/// Title left + trailing control right (segmented / chips), matching switch rows.
 class SettingsControlRow extends StatelessWidget {
   const SettingsControlRow({
     super.key,
@@ -317,73 +375,106 @@ class SettingsControlRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    color: CyberColors.textPrimary,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 4),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
+      child: Padding(
+        padding: SettingsDimens.rowPadding,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   Text(
-                    subtitle!,
+                    title,
                     style: const TextStyle(
-                      fontSize: 14,
-                      color: CyberColors.textSecondary,
+                      fontSize: 18,
+                      color: CyberColors.textPrimary,
                     ),
                   ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: CyberColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            flex: 0,
-            child: control,
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 3,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: control,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Full-width inline slider row (brightness / volume).
+/// Title left + slider right (same left/right rhythm as [SettingsControlRow]).
 class SettingsSliderRow extends StatelessWidget {
   const SettingsSliderRow({
     super.key,
     required this.title,
     required this.child,
+    this.subtitle,
   });
 
   final String title;
+  final String? subtitle;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              color: CyberColors.textPrimary,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
+      child: Padding(
+        padding: SettingsDimens.rowPadding,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: CyberColors.textPrimary,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: CyberColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          child,
-        ],
+            const SizedBox(width: 12),
+            Expanded(flex: 3, child: child),
+          ],
+        ),
       ),
     );
   }
@@ -414,15 +505,14 @@ class SettingsCheckboxRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             CyberCheckbox(value: value, onChanged: onChanged),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: CyberColors.textPrimary,
-                ),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                color: CyberColors.textPrimary,
               ),
             ),
           ],
@@ -480,6 +570,9 @@ class SettingsScrollView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
+      // Allow CyberSlider drag bubbles / expanded thumbs to paint into the
+      // top inset without being cropped by the viewport clip.
+      clipBehavior: Clip.none,
       physics: const BouncingScrollPhysics(
         parent: AlwaysScrollableScrollPhysics(),
       ),

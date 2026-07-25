@@ -21,8 +21,8 @@ class WifiSettingsPage extends StatefulWidget {
 }
 
 class _WifiSettingsPageState extends State<WifiSettingsPage> {
-  /// Matches lws-ui `WifiActivity.SCAN_INTERVAL` (150s).
-  static const _scanInterval = Duration(milliseconds: 150000);
+  /// Linux has no Android-style scan throttle; refresh often enough for UX.
+  static const _scanInterval = Duration(seconds: 15);
 
   late WifiRadioState _radio = widget.services.wifi.currentRadio;
   late WifiConnectionState _conn = widget.services.wifi.currentConnection;
@@ -41,16 +41,35 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
     super.initState();
     _radioSub = _wifi.radio.listen((s) {
       if (!mounted) return;
+      final prev = _radio;
       setState(() => _radio = s);
       _syncScanTimer();
+      if (s != WifiRadioState.on && s != WifiRadioState.starting) {
+        setState(() => _scanned = const []);
+      } else if (s == WifiRadioState.on && prev != WifiRadioState.on) {
+        // Covers syncFromSystem / external radio-up (not nested in _guard).
+        unawaited(_scan(retries: 3));
+      }
     });
     _connSub = _wifi.connection.listen((c) {
       if (mounted) setState(() => _conn = c);
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _syncScanTimer();
-      if (_radioOn) unawaited(_scan());
+    unawaited(_bootstrap());
+  }
+
+  Future<void> _bootstrap() async {
+    try {
+      await _wifi.syncFromSystem();
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _radio = _wifi.currentRadio;
+      _conn = _wifi.currentConnection;
     });
+    _syncScanTimer();
+    if (_radioOn) {
+      unawaited(_scan(retries: 3));
+    }
   }
 
   @override
@@ -87,10 +106,31 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
     }
   }
 
-  Future<void> _scan() async {
-    await _guard(() async {
-      final aps = await _wifi.scan();
-      if (mounted) setState(() => _scanned = aps);
+  Future<void> _scan({int retries = 1, bool managed = true}) async {
+    if (managed) {
+      if (_busy != null) return;
+      await _guard(() => _scanBody(retries: retries));
+    } else {
+      await _scanBody(retries: retries);
+    }
+  }
+
+  Future<void> _scanBody({required int retries}) async {
+    List<WifiAccessPoint> aps = const [];
+    for (var i = 0; i < retries; i++) {
+      aps = await _wifi.scan();
+      if (aps.isNotEmpty) break;
+      if (i < retries - 1) {
+        await Future<void>.delayed(const Duration(seconds: 1));
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      // Keep last good list on a transient empty result so the UI does not
+      // flash “No networks found” after a failed rescan.
+      if (aps.isNotEmpty || _scanned.isEmpty) {
+        _scanned = aps;
+      }
     });
   }
 
@@ -258,7 +298,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                     : (v) => unawaited(
                           _guard(() async {
                             await _wifi.setRadioEnabled(v);
-                            if (v) await _scan();
+                            if (v) await _scan(retries: 3, managed: false);
                           }),
                         ),
               ),
@@ -298,11 +338,14 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                 child: SettingsPanel(
                   borderGradientCenter:
                       CyberBorderGradientCenter.bottomLeftTopRight,
-                  child: ListView(
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
-                    ),
-                    children: [
+                  child: RefreshIndicator(
+                    color: CyberColors.buttonPrimaryAccent,
+                    onRefresh: () => _scan(retries: 3),
+                    child: ListView(
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      children: [
                         if (_busy != null && nearby.isEmpty)
                           const Padding(
                             padding: EdgeInsets.symmetric(
@@ -350,7 +393,8 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                                 color: CyberColors.dividerCenter,
                               ),
                           ],
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

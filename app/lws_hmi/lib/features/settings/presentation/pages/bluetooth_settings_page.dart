@@ -111,7 +111,7 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                 ),
               if (on)
                 SettingsSwitchRow(
-                  title: 'A2DP Sink',
+                  title: l10n.bluetoothAsSpeaker,
                   value: _a2dp,
                   onChanged: (v) => unawaited(
                     _run(
@@ -132,8 +132,14 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
           if (on) ...[
             // My Devices
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 8, 0),
+              padding: const EdgeInsets.fromLTRB(
+                SettingsDimens.inset,
+                12,
+                SettingsDimens.inset,
+                8,
+              ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     'MY DEVICES',
@@ -144,6 +150,14 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                   ),
                   const Spacer(),
                   TextButton(
+                    style: TextButton.styleFrom(
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                    ),
                     onPressed: _scanning
                         ? () {
                             CyberClickSoundRegistry.playClick();
@@ -197,7 +211,12 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
             ),
             // Other Devices
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: const EdgeInsets.fromLTRB(
+                SettingsDimens.inset,
+                12,
+                SettingsDimens.inset,
+                8,
+              ),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(

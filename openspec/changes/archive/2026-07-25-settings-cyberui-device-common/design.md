@@ -35,14 +35,14 @@ Replace Material `Card` group shell with `CyberCard` (or shared Settings group w
 |---------|----------|
 | Language | Keep **3** locales (`en-US` / `zh-CN` / `zh-TW`). Prefer `CyberSegmentedControl` (or equivalent) on the Common Settings card when layout fits 1280×800; otherwise CyberUI Language sub-page. **Do not** shrink to lws-ui’s EN/ZH-only segmented control. |
 | Unit | Inline `CyberSegmentedControl` (IN / MM) bound to `CommonSettingsStore`. |
-| Brightness | Inline `CyberCapsuleSlider` → HAL `Backlight`. |
-| Auto Screen Off | Inline segmented options → HAL `AutoSleep` (same policy set as today). |
-| Volume | Inline `CyberVolumeSlider` → media audio. |
-| Sound Effects | Inline segmented Effect 1/2/3 → `ButtonFeedback` / sound-effect store. |
+| Brightness | Display sub-page `CyberSlider` (drag value label) → HAL `Backlight`. |
+| Auto Screen Off | Display sub-page dropdown → HAL `AutoSleep` (same policy set as today). |
+| Volume | Sound sub-page left-label / right `CyberVolumeSlider` (speaker icons; no play-test card) → media audio. |
+| Sound Effects | Sound sub-page dropdown Effect 1/2/3 → `ButtonFeedback` / sound-effect store. |
 | Date & Time | lws-ui-like: **Automatic** `CyberSwitch` + Set Date / Set Time / Set Time Zone rows (dialogs) + sync status line; may absorb most of `DateTimeSettingsPage` into the tab (sub-page retained only if needed for overflow). |
 | Network / Input / Misc / LED / Camera | Keep nav rows + existing sub-pages; Camera moved out of Input. |
 
-RGB LED stays a **separate card after** Display & Sound controls (existing order rule), without a visible “Display & Sound” title.
+RGB LED + Camera share one **untitled card after** Display & Sound and **before** Date & Time (no visible group title).
 
 **Alternatives:** Keep all Display & Sound as chevron pages — rejected for Frost parity. Force 2-option Language — rejected by i18n requirement.
 
@@ -69,7 +69,7 @@ Replace the connected-row bottom sheet as the primary details UX. Disconnect may
 
 ### 5. Camera group + page reshape
 
-- Common Settings: **Camera** nav row in its **own** card group (not under Input). Title key becomes Camera (ARB); route may keep file name `ip_camera_settings_page.dart` or rename for clarity.
+- Common Settings: **Camera** nav row in the same card as **RGB LED** (after Display & Sound, before Date & Time; not under Input). Title key becomes Camera (ARB); route may keep file name `ip_camera_settings_page.dart` or rename for clarity.
 - Page body rows (before preview/demo record):
   1. **Status** — single value combining product UI phase and MediaMTX/relay readiness (e.g. Connected / Establishing / Failed / Relay …). No separate MediaMTX / MediaMTX detail rows. **No Retry button**; background session retry policy unchanged.
   2. **Camera Type** — same `product.ini` mapping as today’s Device Information.

@@ -26,6 +26,8 @@ class CyberSlider extends StatefulWidget {
     this.enabled = true,
     this.divisions,
     this.longPressDragEnabled = true,
+    this.showDragValueLabel = false,
+    this.dragValueLabelBuilder,
   });
 
   final double value;
@@ -38,6 +40,12 @@ class CyberSlider extends StatefulWidget {
 
   /// When true (default), require long-press on thumb before dragging.
   final bool longPressDragEnabled;
+
+  /// When true, show a floating value label above the thumb while dragging.
+  final bool showDragValueLabel;
+
+  /// Formats [showDragValueLabel] text; defaults to rounded integer.
+  final String Function(double value)? dragValueLabelBuilder;
 
   @override
   State<CyberSlider> createState() => _CyberSliderState();
@@ -172,7 +180,7 @@ class _CyberSliderState extends State<CyberSlider>
       thumbPx,
       trackStartX: trackStart,
     );
-    final touchH = CyberSliderLogic.touchHeight + overflow * 2;
+    final touchH = CyberSliderLogic.touchHeight;
     final hit = CyberSliderLogic.thumbHitRect(
       thumbCenterX: thumbCx,
       touchHeightPx: touchH,
@@ -273,7 +281,9 @@ class _CyberSliderState extends State<CyberSlider>
   @override
   Widget build(BuildContext context) {
     final overflow = CyberSliderLogic.thumbDragOverflow;
-    final touchH = CyberSliderLogic.touchHeight + overflow * 2;
+    // Resting thumb height only — expanded thumb + drag bubble paint outside
+    // via [Clip.none] (parents such as SettingsPanel must also allow overflow).
+    final touchH = CyberSliderLogic.touchHeight;
 
     return SizedBox(
       height: touchH,
@@ -293,34 +303,90 @@ class _CyberSliderState extends State<CyberSlider>
             CyberSliderLogic.thumbSize,
             trackStartX: overflow,
           );
+          final showBubble = widget.showDragValueLabel && _thumbExpanded;
+          final label = widget.dragValueLabelBuilder?.call(_displayValue) ??
+              '${_displayValue.round()}';
 
-          return Listener(
-            behavior: HitTestBehavior.opaque,
-            onPointerDown: (e) => _onPointerDown(e, trackWidth, overflow),
-            onPointerMove: (e) => _onPointerMove(e, travel),
-            onPointerUp: _onPointerUp,
-            onPointerCancel: _onPointerCancel,
-            child: AnimatedBuilder(
-              animation: _expand,
-              builder: (context, _) {
-                final scale = 1.0 +
-                    (CyberSliderLogic.thumbDragScale - 1.0) * _expand.value;
-                return CustomPaint(
-                  size: Size(width, touchH),
-                  painter: _CyberSliderPainter(
-                    trackStartX: overflow,
-                    trackWidth: trackWidth,
-                    thumbCenterX: thumbCx,
-                    thumbScale: scale,
-                    activeColor: CyberColors.buttonPrimaryAccent,
-                    inactiveColor: CyberColors.borderMid,
-                    thumbColor: CyberColors.textPrimary,
-                  ),
-                );
-              },
-            ),
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Listener(
+                behavior: HitTestBehavior.opaque,
+                onPointerDown: (e) =>
+                    _onPointerDown(e, trackWidth, overflow),
+                onPointerMove: (e) => _onPointerMove(e, travel),
+                onPointerUp: _onPointerUp,
+                onPointerCancel: _onPointerCancel,
+                child: AnimatedBuilder(
+                  animation: _expand,
+                  builder: (context, _) {
+                    final scale = 1.0 +
+                        (CyberSliderLogic.thumbDragScale - 1.0) *
+                            _expand.value;
+                    return CustomPaint(
+                      size: Size(width, touchH),
+                      painter: _CyberSliderPainter(
+                        trackStartX: overflow,
+                        trackWidth: trackWidth,
+                        thumbCenterX: thumbCx,
+                        thumbScale: scale,
+                        activeColor: CyberColors.buttonPrimaryAccent,
+                        inactiveColor: CyberColors.borderMid,
+                        thumbColor: CyberColors.textPrimary,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              if (showBubble)
+                Positioned(
+                  left: (thumbCx - _CyberSliderDragValueBubble.width / 2)
+                      .clamp(0.0, width - _CyberSliderDragValueBubble.width),
+                  top: -_CyberSliderDragValueBubble.height,
+                  child: _CyberSliderDragValueBubble(label: label),
+                ),
+            ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Compact value chip above the thumb while dragging.
+class _CyberSliderDragValueBubble extends StatelessWidget {
+  const _CyberSliderDragValueBubble({required this.label});
+
+  static const width = 44.0;
+  static const height = 28.0;
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Center(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: CyberColors.fillSolidTop,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: CyberColors.borderHighlight),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: CyberColors.textPrimary,
+                height: 1.1,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -30,8 +30,8 @@ void main() {
         ),
       ),
     );
-    final ink = tester.widget<Ink>(find.byType(Ink));
-    final decoration = ink.decoration! as BoxDecoration;
+    final deco = tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = deco.decoration as BoxDecoration;
     expect(decoration.color, CyberColors.buttonPrimaryFill);
     expect(decoration.gradient, isNull);
   });
@@ -64,12 +64,12 @@ void main() {
     expect(standard.variant, CyberButtonVariant.standard);
     expect(secondary.variant, CyberButtonVariant.secondary);
 
-    final inks = tester.widgetList<Ink>(find.byType(Ink)).toList();
-    expect(inks.length, 2);
-    final standardDeco = inks[0].decoration! as BoxDecoration;
-    final secondaryDeco = inks[1].decoration! as BoxDecoration;
-    expect(standardDeco.border?.top.color, secondaryDeco.border?.top.color);
-    expect(standardDeco.gradient?.colors, secondaryDeco.gradient?.colors);
+    final decos = tester
+        .widgetList<DecoratedBox>(find.byType(DecoratedBox))
+        .map((w) => w.decoration! as BoxDecoration)
+        .toList();
+    expect(decos.length, greaterThanOrEqualTo(2));
+    expect(decos[0].gradient?.colors, decos[1].gradient?.colors);
   });
 
   test('button dimens match Frost heights; label matches HMI chrome', () {
@@ -80,6 +80,50 @@ void main() {
     expect(CyberDimens.actionButtonFontSize, 18);
     expect(CyberDimens.actionButtonSmallFontSize, 14);
     expect(CyberDimens.cornerRadius, 28);
+  });
+
+  testWidgets('rounded shape uses pill corner radius', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CyberButton(
+            shape: CyberButtonShape.rounded,
+            height: 58,
+            onPressed: _noop,
+            child: const Text('Pill'),
+          ),
+        ),
+      ),
+    );
+    final deco = tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = deco.decoration as BoxDecoration;
+    expect(decoration.borderRadius, BorderRadius.circular(29));
+  });
+
+  testWidgets('default layout is intrinsic width (not full-bleed)', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 800,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: CyberButton(
+                    onPressed: _noop,
+                    child: const Text('Connect to Hidden Network'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final size = tester.getSize(find.byType(CyberButton));
+    expect(size.width, lessThan(800));
+    expect(size.width, greaterThan(100));
   });
 
   testWidgets('DefaultTextStyle uses size-appropriate font', (tester) async {

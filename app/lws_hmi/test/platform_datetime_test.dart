@@ -42,6 +42,40 @@ void main() {
     });
   });
 
+  group('TimezoneCatalog', () {
+    test('formats posix %z offsets', () {
+      expect(TimezoneCatalog.formatPosixOffset('+0800'), 'UTC+08:00');
+      expect(TimezoneCatalog.formatPosixOffset('-0530'), 'UTC-05:30');
+      expect(TimezoneCatalog.formatPosixOffset('bogus'), '');
+    });
+
+    test('matches zone name and utc offset queries', () {
+      const shanghai = TimezoneEntry(
+        id: 'Asia/Shanghai',
+        utcOffsetLabel: 'UTC+08:00',
+      );
+      expect(TimezoneCatalog.matchesQuery(shanghai, 'shang'), isTrue);
+      expect(TimezoneCatalog.matchesQuery(shanghai, 'Asia/Shanghai'), isTrue);
+      expect(TimezoneCatalog.matchesQuery(shanghai, '8'), isTrue);
+      expect(TimezoneCatalog.matchesQuery(shanghai, '+08'), isTrue);
+      expect(TimezoneCatalog.matchesQuery(shanghai, 'utc+8'), isTrue);
+      expect(TimezoneCatalog.matchesQuery(shanghai, 'UTC+08:00'), isTrue);
+      expect(TimezoneCatalog.matchesQuery(shanghai, '-5'), isFalse);
+    });
+
+    test('filter prefers exact / suffix matches', () {
+      const all = [
+        TimezoneEntry(id: 'America/New_York', utcOffsetLabel: 'UTC-04:00'),
+        TimezoneEntry(id: 'Asia/Shanghai', utcOffsetLabel: 'UTC+08:00'),
+        TimezoneEntry(id: 'Australia/Sydney', utcOffsetLabel: 'UTC+10:00'),
+      ];
+      final byCity = TimezoneCatalog.filter(all, 'shanghai');
+      expect(byCity.map((e) => e.id), ['Asia/Shanghai']);
+      final byOffset = TimezoneCatalog.filter(all, '+08');
+      expect(byOffset.map((e) => e.id), ['Asia/Shanghai']);
+    });
+  });
+
   group('LinuxDateTimeController prefs', () {
     late Directory tmp;
     late String confPath;
@@ -149,6 +183,66 @@ void main() {
       final r = await c.syncFromNetwork(onlyIfStale: true);
       expect(r.ok, isTrue);
       expect(ran, isFalse);
+    });
+
+    test('syncFromNetwork HTTP Date sets UTC stamp not local GMT fields', () async {
+      if (!TimeSyncPrefs.isSaneUtcYear(DateTime.now().toUtc().year)) {
+        return;
+      }
+      final calls = <String>[];
+      await File(confPath).writeAsString(
+        'sync_mode=network\ntimezone=Asia/Shanghai\n',
+      );
+      final c = controller(
+        runProcess: (exe, args) async {
+          calls.add('$exe ${args.join(' ')}');
+          if (exe == 'timedatectl' &&
+              args.isNotEmpty &&
+              args.first == 'set-timezone') {
+            return ProcessResult(0, 0, '', '');
+          }
+          if (exe == 'rdate') {
+            return ProcessResult(0, 1, '', 'fail');
+          }
+          if (exe == 'wget') {
+            return ProcessResult(
+              0,
+              0,
+              '',
+              '  Date: Sat, 25 Jul 2026 10:12:00 GMT\r\n',
+            );
+          }
+          if (exe == 'timedatectl' &&
+              args.isNotEmpty &&
+              args.first == 'set-time') {
+            // Prefer failing so we assert BusyBox date -u -s path.
+            return ProcessResult(0, 1, '', 'no td');
+          }
+          if (exe == 'date' && args.contains('-u') && args.contains('-s')) {
+            return ProcessResult(0, 0, '', '');
+          }
+          if (exe == 'hwclock') {
+            return ProcessResult(0, 0, '', '');
+          }
+          return ProcessResult(0, 1, '', '');
+        },
+      );
+      final r = await c.syncFromNetwork(onlyIfStale: false);
+      expect(r.ok, isTrue);
+      expect(
+        calls.any((e) => e == 'date -u -s 2026-07-25 10:12:00'),
+        isTrue,
+        reason: 'HTTP Date GMT must become UTC civil stamp via date -u -s',
+      );
+      expect(
+        calls.any((e) => e.contains('%a,') || e.contains('GMT')),
+        isFalse,
+        reason: 'must not pass raw HTTP Date into BusyBox -D parser',
+      );
+      expect(
+        calls.any((e) => e == 'timedatectl set-timezone Asia/Shanghai'),
+        isTrue,
+      );
     });
   });
 }

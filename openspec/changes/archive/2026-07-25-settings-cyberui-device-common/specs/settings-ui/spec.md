@@ -21,14 +21,27 @@ Device Information and Common Settings SHALL render settings groups with CyberUI
 - **WHEN** Device Information or Common Settings paints a settings group
 - **THEN** the group shell uses CyberUI frosted card chrome rather than Material `Card` as the long-term primary shell
 
-### Requirement: Common Settings Display and Sound controls are inline CyberUI where lws-ui is inline
+### Requirement: Common Settings Display and Sound — Display and Sound sub-pages
 
-Within Common Settings, Language, Unit, Brightness, Auto Screen Off, Volume, and Sound Effects SHALL be operable from the main tab using CyberUI controls (segmented control, capsule slider, volume slider) without requiring a chevron push for the primary adjustment path, matching lws-ui Frost inline composition. Language SHALL continue to offer **three** App locales (`en-US`, `zh-CN`, `zh-TW`) — MUST NOT regress to lws-ui’s bilingual-only choice. Persistence and HAL bindings remain as today’s stores/controllers.
+Within Common Settings, Language and Unit remain as list/nav rows. **Brightness** and **Auto Screen Off** SHALL be merged into a single **Display** nav row. **Volume** and **Sound Effect** SHALL be merged into a single **Sound** nav row. Display SHALL provide Brightness via `CyberSlider` (drag-value chrome) → HAL `Backlight`, and Auto Screen Off as a dropdown → HAL `AutoSleep`. Sound SHALL provide Volume via left-label / right `CyberVolumeSlider` (speaker icons retained; no play-test card) → HAL media audio, and Sound Effect as a dropdown → `ButtonFeedback` / sound-effect store. Language SHALL continue to offer **three** App locales (`en-US`, `zh-CN`, `zh-TW`).
 
-#### Scenario: Brightness adjusts on the Common Settings tab
+#### Scenario: Display opens brightness and screen-off
 
-- **WHEN** the operator moves the brightness control on Common Settings
-- **THEN** HAL `Backlight` is asked to set the corresponding percent without opening a dedicated Brightness sub-page as the only path
+- **WHEN** the operator opens Common Settings → Display
+- **THEN** Brightness can be adjusted with a CyberSlider
+- **AND** Auto Screen Off can be chosen from a dropdown without a separate screen-off page
+
+#### Scenario: Sound opens volume and sound effect
+
+- **WHEN** the operator opens Common Settings → Sound
+- **THEN** Volume uses a left-label / right speaker-flanked CyberVolumeSlider
+- **AND** Sound Effect can be chosen from a dropdown
+- **AND** no music play-test card is shown
+
+#### Scenario: Brightness invokes Backlight
+
+- **WHEN** the operator changes Brightness on the Display page
+- **THEN** HAL `Backlight` is asked to set the corresponding percent
 
 #### Scenario: Language still lists three locales
 
@@ -38,7 +51,13 @@ Within Common Settings, Language, Unit, Brightness, Auto Screen Off, Volume, and
 
 ### Requirement: Common Settings Date and Time follows Automatic plus conditional rows
 
-Common Settings SHALL present Date & Time in an untitled CyberUI card with an **Automatic** switch and **Set Date** / **Set Time** / **Set Time Zone** rows that open CyberUI dialogs (or equivalent) when Automatic is off, matching lws-ui behavior. A sync status line MAY appear below the card. Controls SHALL use `DateTimeController`.
+Common Settings SHALL present Date & Time in an untitled CyberUI card. The Common Settings nav row SHALL show a trailing **Auto** / **Manual** summary from `DateTimeController` sync mode (`network` → Auto, `manual` → Manual). The Date & Time page SHALL provide an **Automatic** switch and **Set Date** / **Set Time** / **Set Time Zone** rows that open CyberUI dialogs (or equivalent) when Automatic is off, matching lws-ui behavior. A sync status line MAY appear below the card. Controls SHALL use `DateTimeController`.
+
+#### Scenario: Common Settings shows Auto or Manual
+
+- **WHEN** the operator opens Common Settings and sync mode is network
+- **THEN** the Date & Time row trailing value is Auto (localized)
+- **AND** when sync mode is manual, the trailing value is Manual (localized)
 
 #### Scenario: Automatic hides manual rows
 
@@ -51,14 +70,15 @@ Common Settings SHALL present Date & Time in an untitled CyberUI card with an **
 - **WHEN** Automatic is off and the operator opens Set Date
 - **THEN** a CyberUI dialog allows choosing a calendar date and applying it through `DateTimeController`
 
-### Requirement: Camera is its own Common Settings group named Camera
+### Requirement: Camera shares an untitled card with RGB LED (not under Input)
 
-Common Settings SHALL present **Camera** as a dedicated untitled card group (not nested under Input). The row label SHALL be **Camera** (localized), not “IP Camera”. Tapping SHALL open the Camera settings page (product IP-camera session). Input SHALL retain Mouse, Keyboard, and USB OTG only (no Camera row under Input).
+Common Settings SHALL present **Camera** in the same untitled card as **RGB LED**, placed **after** Display & Sound and **before** Date & Time. Camera MUST NOT be nested under Input. The row label SHALL be **Camera** (localized), not “IP Camera”. Tapping SHALL open the Camera settings page (product IP-camera session). Input SHALL retain Mouse, Keyboard, and USB OTG only (no Camera row under Input).
 
-#### Scenario: Camera group separate from Input
+#### Scenario: Camera with RGB LED before Date & Time
 
 - **WHEN** the operator opens Common Settings
-- **THEN** a Camera navigation row appears in its own card group
+- **THEN** RGB LED and Camera navigation rows appear in the same card group
+- **AND** that card is after Display & Sound and before Date & Time
 - **AND** the Input card group does not list Camera / IP Camera
 
 #### Scenario: Camera label
@@ -98,25 +118,25 @@ Device Information MUST NOT show Camera Type or Camera Version. OTA footer contr
 
 Common Settings SHALL expose:
 
-- Display & Sound (untitled card): Language and Unit as persisted controls backed by `/var/lib/hmi/common-settings.json`; Language drives Flutter UI locale and CyberIME for three locales; brightness via HAL `Backlight`; screen-off via HAL `AutoSleep`; media volume via Cyber volume chrome; sound-effect Effect 1/2/3 via HAL `ButtonFeedback`. Primary adjustments SHALL be inline CyberUI on the Common Settings tab (lws-ui parity). Order: Language and Unit before brightness / screen-off; display before sound.
+- Display & Sound (untitled card): Language and Unit as persisted controls backed by `/var/lib/hmi/common-settings.json`; Language drives Flutter UI locale and CyberIME for three locales; **Display** nav → Brightness (`CyberSlider` / HAL `Backlight`) + Auto Screen Off (dropdown / HAL `AutoSleep`); **Sound** nav → Volume (`CyberVolumeSlider` with speaker icons, left/right row) + Sound Effect (dropdown / `ButtonFeedback`). Order: Language and Unit before Display before Sound.
+- RGB LED + Camera (untitled card, after Display & Sound, before Date & Time): RGB LED entry; Camera entry → product IP-camera settings page.
 - Date & Time (untitled card): Automatic sync plus Set Date / Set Time / Set Time Zone via `DateTimeController` (lws-ui parity).
-- Input (untitled card): mouse settings; keyboard layout; USB OTG. **Camera is not under Input** (see Camera group requirement).
-- Camera (untitled card): Camera entry → product IP-camera settings page.
+- Input (untitled card): mouse settings; keyboard layout; USB OTG. **Camera is not under Input** (see Camera + RGB LED group requirement).
 - Operator-visible labels SHALL come from App localization. Group section titles MUST NOT be shown.
 
 #### Scenario: Brightness and volume invoke controllers
 
-- **WHEN** the user adjusts brightness or volume in Common Settings
+- **WHEN** the user adjusts brightness on Display or volume on Sound
 - **THEN** the backlight or media audio controller is asked to set the corresponding percent
 
 #### Scenario: Screen-off invokes AutoSleep
 
-- **WHEN** the user selects a Screen-off Time option other than the current policy
+- **WHEN** the user selects an Auto Screen Off option on the Display page other than the current policy
 - **THEN** HAL `AutoSleep` is asked to set the corresponding policy and the choice is persisted
 
 #### Scenario: Sound effect is not a stub
 
-- **WHEN** the user selects a Sound Effect option on Common Settings
+- **WHEN** the user selects a Sound Effect option on the Sound page
 - **THEN** Effect 1 / Effect 2 / Effect 3 are selectable and the choice is persisted via `ButtonFeedback`
 
 #### Scenario: Language is persisted
@@ -142,7 +162,7 @@ Common Settings SHALL expose:
 #### Scenario: Camera is not under Input
 
 - **WHEN** the operator opens Common Settings
-- **THEN** Camera is reachable from its own group
+- **THEN** Camera is reachable from the RGB LED + Camera card before Date & Time
 - **AND** Input does not list IP Camera / Camera
 
 #### Scenario: Common Settings chrome follows UI locale
@@ -191,12 +211,13 @@ Device Model SHALL be `brand + " " + model` from HAL product identity (`product.
 
 ### Requirement: Display & Sound includes RGB LED controls
 
-Common Settings SHALL include an RGB LED entry in an **untitled** card **after** the main Display & Sound controls card (the card that contains language / unit / brightness / screen-off / volume / sound-effect), not as a mid-group row among those controls. The entry opens controls for Red, Yellow, and Green modes (Steady / Blink / Off), wired to the GPIO RGB LED controller. LED I/O MUST NOT block Home first paint. No visible “Display & Sound” section title is required.
+Common Settings SHALL include an RGB LED entry in an **untitled** card **after** the main Display & Sound controls card (the card that contains language / unit / Display / Sound) and **before** Date & Time, sharing that card with Camera (not as a mid-group row among Display & Sound controls). The entry opens controls for Red, Yellow, and Green modes (Steady / Blink / Off), wired to the GPIO RGB LED controller. LED I/O MUST NOT block Home first paint. No visible “Display & Sound” section title is required.
 
 #### Scenario: LED entry after display-sound group
 
 - **WHEN** the user opens Common Settings
-- **THEN** an RGB LED (or equivalent) entry is available in a card after the main Display & Sound controls card
+- **THEN** an RGB LED (or equivalent) entry is available in a card after Display & Sound and before Date & Time
+- **AND** that card also contains the Camera navigation row
 
 #### Scenario: LED mode invokes GPIO controller
 

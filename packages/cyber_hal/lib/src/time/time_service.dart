@@ -40,7 +40,7 @@ class TimeSyncPrefs {
 
   static const helperPath = ''; // optional board override only
 
-  /// Curated Demo / Settings list (extend later).
+  /// Curated Demo short list (Settings uses [DateTimeController.listTimezoneEntries]).
   static const curatedTimezones = <String>[
     'UTC',
     'Asia/Shanghai',
@@ -77,6 +77,124 @@ class TimeSyncPrefs {
   }
 }
 
+/// Timezone id + current UTC offset label for Settings search / display.
+class TimezoneEntry {
+  const TimezoneEntry({
+    required this.id,
+    this.utcOffsetLabel = '',
+  });
+
+  final String id;
+
+  /// e.g. `UTC+08:00` (empty when unknown).
+  final String utcOffsetLabel;
+}
+
+/// Pure helpers for timezone search / offset formatting (host-testable).
+class TimezoneCatalog {
+  /// `+0800` / `-0530` → `UTC+08:00` / `UTC-05:30`.
+  static String formatPosixOffset(String raw) {
+    final s = raw.trim();
+    final m = RegExp(r'^([+-])(\d{2})(\d{2})$').firstMatch(s);
+    if (m == null) {
+      return '';
+    }
+    return 'UTC${m.group(1)}${m.group(2)}:${m.group(3)}';
+  }
+
+  /// Match zone id text and/or UTC offset (`8`, `+08`, `utc+8`, `UTC+08:00`, …).
+  static bool matchesQuery(TimezoneEntry entry, String rawQuery) {
+    final q = rawQuery.trim().toLowerCase();
+    if (q.isEmpty) {
+      return true;
+    }
+    final id = entry.id.toLowerCase();
+    if (id.contains(q) || id == q || id.endsWith('/$q')) {
+      return true;
+    }
+    final city = id.split('/').last;
+    if (city.contains(q)) {
+      return true;
+    }
+
+    final label = entry.utcOffsetLabel.toLowerCase();
+    if (label.isEmpty) {
+      return false;
+    }
+    if (label.contains(q)) {
+      return true;
+    }
+    final compactLabel = label.replaceAll(':', '');
+    final compactQ = q.replaceAll(':', '');
+    if (compactLabel.contains(compactQ)) {
+      return true;
+    }
+
+    final offsetTok = _normalizeOffsetQuery(q);
+    if (offsetTok == null) {
+      return false;
+    }
+    if (label.contains(offsetTok)) {
+      return true;
+    }
+    return compactLabel.contains(offsetTok.replaceAll(':', ''));
+  }
+
+  /// Filter with exact / suffix matches first (lws-ui timezone picker parity).
+  static List<TimezoneEntry> filter(
+    Iterable<TimezoneEntry> all,
+    String rawQuery,
+  ) {
+    final q = rawQuery.trim().toLowerCase();
+    if (q.isEmpty) {
+      return List<TimezoneEntry>.of(all);
+    }
+    final exact = <TimezoneEntry>[];
+    final fuzzy = <TimezoneEntry>[];
+    for (final e in all) {
+      if (!matchesQuery(e, q)) {
+        continue;
+      }
+      final id = e.id.toLowerCase();
+      if (id == q || id.endsWith('/$q')) {
+        exact.add(e);
+      } else {
+        fuzzy.add(e);
+      }
+    }
+    return [...exact, ...fuzzy];
+  }
+
+  /// `8` / `+8` / `utc+08:00` / `-5:30` → `+08` / `+08:00` / `-05:30` token.
+  static String? _normalizeOffsetQuery(String q) {
+    var s = q;
+    if (s.startsWith('utc')) {
+      s = s.substring(3).trim();
+    } else if (s.startsWith('gmt')) {
+      s = s.substring(3).trim();
+    }
+    final m = RegExp(r'^([+-])?(\d{1,2})(?::?(\d{2}))?$').firstMatch(s);
+    if (m == null) {
+      return null;
+    }
+    final sign = m.group(1) ?? '+';
+    final hour = int.tryParse(m.group(2)!);
+    if (hour == null || hour > 14) {
+      return null;
+    }
+    final hh = hour.toString().padLeft(2, '0');
+    final minRaw = m.group(3);
+    if (minRaw == null) {
+      return '$sign$hh';
+    }
+    final minute = int.tryParse(minRaw);
+    if (minute == null || minute > 59) {
+      return null;
+    }
+    return '$sign$hh:${minute.toString().padLeft(2, '0')}';
+  }
+}
+
 /// Reusable date/time API (manual set + network sync + RTC write).
 abstract class DateTimeController {
   Future<DateTime> now();
@@ -97,6 +215,9 @@ abstract class DateTimeController {
   /// TLS survival: sync when UTC year &lt; 2025 even if mode is manual;
   /// does not change persisted mode.
   Future<TimeSyncResult> ensureSaneForTls();
+
+  /// All usable IANA zones on this host with current UTC offset labels.
+  Future<List<TimezoneEntry>> listTimezoneEntries();
 
   Future<void> dispose();
 }

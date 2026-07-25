@@ -388,6 +388,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bluetoothText => '蓝牙';
 
   @override
+  String get bluetoothAsSpeaker => '作为音箱';
+
+  @override
   String get bootSelfCheckClose => '关闭';
 
   @override
@@ -557,6 +560,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dateTimeAutomatic => '自动';
 
   @override
+  String get dateTimeModeAuto => '自动';
+
+  @override
+  String get dateTimeModeManual => '手动';
+
+  @override
   String get dateTimePermissionDenied => '缺少系统级日期时间设置权限';
 
   @override
@@ -585,6 +594,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dateTimeSettings => '日期和时间';
+
+  @override
+  String get timezoneSearchHint => '按名称或 UTC 偏移搜索';
 
   @override
   String get dateTimeTimezoneApplyFailed => '无法更新时区';
@@ -797,7 +809,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get httpProxySaveSuccess => '代理设置已保存';
 
   @override
-  String get httpProxySettingsTitle => 'HTTP 代理';
+  String get httpProxySettingsTitle => '代理';
 
   @override
   String get httpProxyStatusIncomplete => '开启（未完成）';
@@ -818,7 +830,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get httpProxyTestSuccess => '连接成功';
 
   @override
-  String get httpProxyTitle => 'HTTP 代理';
+  String get httpProxyTitle => '代理';
 
   @override
   String get httpProxyUsername => '用户名';
@@ -1182,6 +1194,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get rgbLedText => 'RGB 指示灯';
 
   @override
+  String get rgbLedFooter => '用这些开关测试本机状态指示灯。';
+
+  @override
   String get safetyLockLabel => '安全锁';
 
   @override
@@ -1298,7 +1313,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get soundEffectOption3 => '音效 3';
 
   @override
+  String get soundSettings => '声音';
+
+  @override
   String get sshDebugText => 'SSH 调试';
+
+  @override
+  String get sshDebugFooter => '开启后，可通过网络远程连接本机进行排查。重启后会自动关闭。USB 调试请在 USB OTG 中单独设置。';
+
+  @override
+  String get settingsMayRestartApp => '部分设置可能会重启应用。';
 
   @override
   String get straightTrackTemperatureAlarmContent => '检查聚焦镜。若聚焦镜有明显烧痕，请立即更换。';
@@ -1331,10 +1355,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unitOptionMetric => '公制';
 
   @override
-  String get unitPersistedFooter => '已保存到 /var/lib/hmi/common-settings.json。';
+  String get unitPersistedFooter => '选择公制（℃、毫米）或英制（℉、英寸），用于本机显示的数值。';
 
   @override
-  String get unitPreferenceUnavailable => '无法读取单位偏好。';
+  String get unitPreferenceUnavailable => '暂时无法更改单位设置。';
 
   @override
   String get unitSettingText => '单位';
@@ -1989,6 +2013,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get bluetoothText => '藍牙';
 
   @override
+  String get bluetoothAsSpeaker => '作爲音箱';
+
+  @override
   String get bootSelfCheckClose => '關閉';
 
   @override
@@ -2132,6 +2159,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dateTimeAutomatic => '自動';
 
   @override
+  String get dateTimeModeAuto => '自動';
+
+  @override
+  String get dateTimeModeManual => '手動';
+
+  @override
   String get dateTimePermissionDenied => '缺少系統級日期時間設置權限';
 
   @override
@@ -2157,6 +2190,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get dateTimeSettings => '日期和時間';
+
+  @override
+  String get timezoneSearchHint => '按名稱或 UTC 偏移搜索';
 
   @override
   String get dateTimeTimezoneApplyFailed => '無法更新時區';
@@ -2641,6 +2677,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get rgbLedText => 'RGB 指示燈';
 
   @override
+  String get rgbLedFooter => '用這些開關測試本機狀態指示燈。';
+
+  @override
   String get safetyLockLabel => '安全鎖';
 
   @override
@@ -2734,7 +2773,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get showSystemStatusOverlay => '顯示系統狀態浮層';
 
   @override
+  String get soundSettings => '聲音';
+
+  @override
   String get sshDebugText => 'SSH 調試';
+
+  @override
+  String get sshDebugFooter => '開啓後，可通過網絡遠程連接本機進行排查。重啓後會自動關閉。USB 調試請在 USB OTG 中單獨設置。';
+
+  @override
+  String get settingsMayRestartApp => '部分設置可能會重啓應用。';
 
   @override
   String get straightTrackTemperatureAlarmContent => '檢查聚焦鏡。若聚焦鏡有明顯燒痕，請立即更換。';
@@ -2752,7 +2800,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get undervoltage24vAlarmTitle => '24V 欠壓告警';
 
   @override
-  String get unitPreferenceUnavailable => '無法讀取單位偏好。';
+  String get unitPersistedFooter => '選擇公制（℃、毫米）或英制（℉、英寸），用於本機顯示的數值。';
+
+  @override
+  String get unitPreferenceUnavailable => '暫時無法更改單位設置。';
 
   @override
   String get unitSettingText => '單位';

@@ -388,6 +388,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bluetoothText => 'Bluetooth';
 
   @override
+  String get bluetoothAsSpeaker => 'As a Speaker';
+
+  @override
   String get bootSelfCheckClose => 'Close';
 
   @override
@@ -557,6 +560,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateTimeAutomatic => 'Automatic';
 
   @override
+  String get dateTimeModeAuto => 'Auto';
+
+  @override
+  String get dateTimeModeManual => 'Manual';
+
+  @override
   String get dateTimePermissionDenied => 'Missing system permission to change date/time';
 
   @override
@@ -572,19 +581,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateTimeSelectTimeZone => 'Select Time Zone';
 
   @override
-  String get dateTimeSetDate => 'Set Date';
+  String get dateTimeSetDate => 'Date';
 
   @override
   String get dateTimeSetFailed => 'Couldn’t update date or time';
 
   @override
-  String get dateTimeSetTime => 'Set Time';
+  String get dateTimeSetTime => 'Time';
 
   @override
-  String get dateTimeSetTimeZone => 'Set Time Zone';
+  String get dateTimeSetTimeZone => 'Time Zone';
 
   @override
   String get dateTimeSettings => 'Date & Time';
+
+  @override
+  String get timezoneSearchHint => 'Search by name or UTC offset';
 
   @override
   String get dateTimeTimezoneApplyFailed => 'Couldn’t update time zone';
@@ -797,7 +809,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get httpProxySaveSuccess => 'Proxy settings saved';
 
   @override
-  String get httpProxySettingsTitle => 'HTTP Proxy';
+  String get httpProxySettingsTitle => 'Proxy';
 
   @override
   String get httpProxyStatusIncomplete => 'On (incomplete)';
@@ -818,7 +830,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get httpProxyTestSuccess => 'Connection successful';
 
   @override
-  String get httpProxyTitle => 'HTTP Proxy';
+  String get httpProxyTitle => 'Proxy';
 
   @override
   String get httpProxyUsername => 'Username';
@@ -1182,6 +1194,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rgbLedText => 'RGB LED';
 
   @override
+  String get rgbLedFooter => 'Use these controls to test the status LED indicators on this device.';
+
+  @override
   String get safetyLockLabel => 'Safety Lock';
 
   @override
@@ -1298,7 +1313,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get soundEffectOption3 => 'Sound 3';
 
   @override
+  String get soundSettings => 'Sound';
+
+  @override
   String get sshDebugText => 'SSH Debug';
+
+  @override
+  String get sshDebugFooter => 'When enabled, you can connect to this device over the network for remote troubleshooting. Turns off after reboot. USB debugging is set separately under USB OTG.';
+
+  @override
+  String get settingsMayRestartApp => 'Some of the settings may restart the application.';
 
   @override
   String get straightTrackTemperatureAlarmContent => 'Inspect the collimating lens. If the collimating lens has burn marks, replace it immediately.';
@@ -1331,10 +1355,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unitOptionMetric => 'MM';
 
   @override
-  String get unitPersistedFooter => 'Persisted under /var/lib/hmi/common-settings.json.';
+  String get unitPersistedFooter => 'Choose Metric (°C, mm) or Imperial (°F, in) for values shown on this device.';
 
   @override
-  String get unitPreferenceUnavailable => 'Unit preference unavailable.';
+  String get unitPreferenceUnavailable => 'Unit settings are temporarily unavailable.';
 
   @override
   String get unitSettingText => 'Unit';

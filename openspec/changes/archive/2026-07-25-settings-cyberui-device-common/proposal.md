@@ -9,7 +9,7 @@ Device Information and Common Settings still use Material stand-ins (`Card` / `L
 - **Remove visible settings group section titles** on these surfaces (and related Common Settings / Device Information / Camera / Wi‑Fi chrome touched here). Group boundaries remain via separate cards; **code comments** may name groups (Network, Display & Sound, …) — UI MUST NOT show the label.
 - Add a **Wi‑Fi connected-hotspot Details** page (and IP Settings entry) matching lws-ui fields/actions: IP mode / address / mask / gateway / DNS / signal / link speed / security / frequency / MAC; **IP Settings** + **Forget Network** (confirm). Replace the current bottom-sheet Disconnect/Forget shortcut as the primary details path.
 - Restructure Camera settings:
-  - Promote Camera out of Input into its **own card group**; rename operator label from **IP Camera** → **Camera**.
+  - Promote Camera out of Input into the **RGB LED card** (before Date & Time); rename operator label from **IP Camera** → **Camera**.
   - Sub-page rows: (1) **Status** (merged connection + MediaMTX phase — no separate MediaMTX rows; status value on the right); (2) **Camera Type**; (3) **Camera Version**.
   - **Do not** show Camera IP, Preview URL, MediaMTX detail rows, or a manual **Retry** control.
   - **Remove** Camera Type (and any Camera Version duplicate) from Device Information.

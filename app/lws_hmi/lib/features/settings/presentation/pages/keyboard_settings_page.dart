@@ -150,8 +150,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
       title: l10n.keyboardText,
       body: SettingsScrollView(
         children: [
-          // Layout
-          const SettingsSectionHeader('Layout'),
+          // Layout (no section header — title is on the row)
           SettingsGroup(
             borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             children: [
@@ -193,7 +192,12 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
             ],
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+              SettingsDimens.inset,
+              8,
+              SettingsDimens.inset,
+              0,
+            ),
             child: Row(
               children: [
                 const Text(
@@ -214,19 +218,21 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.fromLTRB(
+              SettingsDimens.inset,
+              8,
+              SettingsDimens.inset,
+              0,
+            ),
             child: CyberCard(
               child: CyberImeLayoutPreview(profile: _selected.imeProfile),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Text(
-              'Attach a physical keyboard that matches the selected '
-              'specification. A mismatch may make some keys produce unexpected '
-              'characters.',
-              style: TextStyle(color: Colors.white54, fontSize: 14),
-            ),
+          const SettingsHelpFooter(
+            'Attach a physical keyboard that matches the selected '
+            'specification. A mismatch may make some keys produce unexpected '
+            'characters.',
+            bottomInset: 0,
           ),
           // Physical keyboard
           const SettingsSectionHeader('Physical Keyboard'),

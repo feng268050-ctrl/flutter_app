@@ -11,10 +11,18 @@ enum CyberButtonVariant { standard, primary, secondary, light }
 
 enum CyberButtonSize { regular, small }
 
+/// Frost `FrostButtonShape` — [rounded] is pill (half-height); [rectangle]
+/// uses [CyberDimens.rectangleButtonCornerRadius].
+enum CyberButtonShape { rounded, rectangle }
+
 /// Frost-styled button (Material [InkWell] + shape; lws-ui `FrostButton`).
 ///
 /// Default variant is [CyberButtonVariant.standard] (dark glass). Use
 /// [CyberButtonVariant.primary] for confirm CTAs.
+///
+/// Default [shape] is [CyberButtonShape.rectangle] (existing HMI CTAs).
+/// Frost XML defaults to rounded/pill — set [CyberButtonShape.rounded]
+/// for parity (e.g. Device Information Check for Updates).
 ///
 /// [borderGradientCenter] defaults to Frost button default
 /// (`top-left-bottom-right`); Settings CTAs SHOULD vary this like cards.
@@ -31,6 +39,7 @@ class CyberButton extends StatelessWidget {
     required this.child,
     this.variant = CyberButtonVariant.standard,
     this.size = CyberButtonSize.regular,
+    this.shape = CyberButtonShape.rectangle,
     this.clickSoundEnabled = true,
     this.expand = false,
     this.stretch = false,
@@ -46,6 +55,7 @@ class CyberButton extends StatelessWidget {
   final Widget child;
   final CyberButtonVariant variant;
   final CyberButtonSize size;
+  final CyberButtonShape shape;
   final bool clickSoundEnabled;
 
   /// When true, fill parent constraints (IME keycaps). Unbounded parents
@@ -78,8 +88,10 @@ class CyberButton extends StatelessWidget {
         : (size == CyberButtonSize.small
             ? CyberDimens.actionButtonSmallPaddingHorizontal
             : CyberDimens.actionButtonPaddingHorizontal);
-    final radius =
-        BorderRadius.circular(CyberDimens.rectangleButtonCornerRadius);
+    final cornerRadius = shape == CyberButtonShape.rounded
+        ? resolvedHeight / 2
+        : CyberDimens.rectangleButtonCornerRadius;
+    final radius = BorderRadius.circular(cornerRadius);
     final textColor = foregroundColor ?? _foreground(variant);
     final fontSize = size == CyberButtonSize.small
         ? CyberDimens.actionButtonSmallFontSize
@@ -99,53 +111,73 @@ class CyberButton extends StatelessWidget {
           ? CyberTone.light
           : CyberTone.dark,
       width: CyberDimens.buttonStrokeWidth,
-      cornerRadius: CyberDimens.rectangleButtonCornerRadius,
+      cornerRadius: cornerRadius,
       gradientCenter: borderGradientCenter,
       gradientColorsOverride: _borderGradientColors(variant),
       uniformColor: _borderFlat(variant),
     );
 
-    final ink = Ink(
-      height: expand ? null : resolvedHeight,
-      padding: EdgeInsets.symmetric(horizontal: hPad),
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        color: _solidFill(variant),
-        gradient: _fillGradient(variant),
+    final label = DefaultTextStyle(
+      style: TextStyle(
+        color: textColor,
+        fontSize: fontSize,
+        fontWeight: FontWeight.w600,
+        height: 1.0,
       ),
-      child: Center(
-        child: DefaultTextStyle(
-          style: TextStyle(
-            color: textColor,
-            fontSize: fontSize,
-            fontWeight: FontWeight.w600,
-            height: 1.0,
-          ),
-          child: IconTheme(
-            data: IconThemeData(color: textColor, size: expand ? 22 : 20),
-            child: child,
-          ),
-        ),
+      child: IconTheme(
+        data: IconThemeData(color: textColor, size: expand ? 22 : 20),
+        child: child,
       ),
     );
 
-    final framed = Stack(
-      fit: StackFit.passthrough,
-      children: [
-        ink,
-        Positioned.fill(
-          child: IgnorePointer(
-            child: CustomPaint(
-              painter: CyberFrostPanelOutlinePainter(outline),
+    final fillDecoration = BoxDecoration(
+      borderRadius: radius,
+      color: _solidFill(variant),
+      gradient: _fillGradient(variant),
+    );
+
+    final Widget face;
+    if (expand || stretch) {
+      face = Stack(
+        fit: StackFit.passthrough,
+        children: [
+          Ink(
+            height: resolvedHeight,
+            padding: EdgeInsets.symmetric(horizontal: hPad),
+            decoration: fillDecoration,
+            child: Center(child: label),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: CyberFrostPanelOutlinePainter(outline),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      // Shrink-wrap face. [Text] expands to max width for wrapping — wrap in
+      // a min-[Row] so the label keeps intrinsic width under loose constraints.
+      final vPad = ((resolvedHeight - fontSize) / 2).clamp(0.0, resolvedHeight);
+      face = CustomPaint(
+        foregroundPainter: CyberFrostPanelOutlinePainter(outline),
+        child: DecoratedBox(
+          decoration: fillDecoration,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [label],
             ),
           ),
         ),
-      ],
-    );
+      );
+    }
 
     final body = Opacity(
       opacity: enabled ? 1 : _disabledOpacity,
-      child: framed,
+      child: face,
     );
 
     Widget childBox = body;
@@ -159,7 +191,7 @@ class CyberButton extends StatelessWidget {
       );
     }
 
-    return Material(
+    final button = Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: enabled ? handleTap : null,
@@ -167,6 +199,18 @@ class CyberButton extends StatelessWidget {
         borderRadius: radius,
         child: childBox,
       ),
+    );
+
+    if (expand || stretch) {
+      return button;
+    }
+    // Shrink-wrap to label; [Align] widthFactor avoids [Ink]/[Container]
+    // full-bleed under loose parent constraints.
+    return Align(
+      alignment: Alignment.center,
+      widthFactor: 1.0,
+      heightFactor: 1.0,
+      child: button,
     );
   }
 

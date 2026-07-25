@@ -112,15 +112,10 @@ class _UsbOtgSettingsPageState extends State<UsbOtgSettingsPage> {
       body: SettingsScrollView(
         children: [
           if (!_ready)
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                l10n.loadingText,
-                style: const TextStyle(color: Colors.white54),
-              ),
-            )
+            SettingsHelpFooter(l10n.loadingText)
           else ...[
             SettingsGroup(
+              bottomInset: 0,
               children: [
                 for (final m in _choices)
                   SettingsOptionTile(
@@ -132,20 +127,21 @@ class _UsbOtgSettingsPageState extends State<UsbOtgSettingsPage> {
                   ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                locked
-                    ? 'This product only supports Debug over USB. The mode '
-                        'cannot be changed.'
-                    : _description(_mode),
-                style: const TextStyle(color: Colors.white54, height: 1.35),
-              ),
+            SettingsHelpFooter(
+              locked
+                  ? 'This product only supports Debug over USB. The mode '
+                      'cannot be changed.'
+                  : _description(_mode),
             ),
           ],
           if (_error != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              padding: const EdgeInsets.fromLTRB(
+                SettingsDimens.inset,
+                0,
+                SettingsDimens.inset,
+                SettingsDimens.inset,
+              ),
               child: Text(
                 _error!,
                 style: const TextStyle(color: Colors.redAccent, fontSize: 14),

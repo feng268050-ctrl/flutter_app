@@ -1,13 +1,15 @@
 import 'dart:async';
 
 import 'package:cyber_hal/datetime.dart';
+import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Date & Time hub — phone-style automatic + date/time/zone rows.
+/// Date & Time hub — Automatic sync + manual date/time/zone rows.
 class DateTimeSettingsPage extends StatefulWidget {
   const DateTimeSettingsPage({super.key, required this.services});
 
@@ -44,9 +46,7 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
       if (!mounted) return;
       setState(() {
         _mode = mode;
-        _timezone = TimeSyncPrefs.curatedTimezones.contains(tz)
-            ? tz
-            : 'Asia/Shanghai';
+        _timezone = tz.isNotEmpty ? tz : 'Asia/Shanghai';
         _now = now;
       });
     } catch (e) {
@@ -74,6 +74,57 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _setAutomatic(bool enabled) async {
+    await _run(() async {
+      if (enabled) {
+        await _dt.setSyncMode(TimeSyncMode.network);
+        await _dt.syncFromNetwork();
+      } else {
+        await _dt.setSyncMode(TimeSyncMode.manual);
+      }
+    });
+  }
+
+  Future<void> _pickDate(AppLocalizations l10n) async {
+    final picked = await showCyberDatePicker(
+      context: context,
+      title: l10n.dateTimeSetDate,
+      initial: _now,
+      confirmLabel: l10n.confirmText,
+      cancelLabel: l10n.cancelText,
+    );
+    if (picked == null || !mounted) return;
+    final next = DateTime(
+      picked.year,
+      picked.month,
+      picked.day,
+      _now.hour,
+      _now.minute,
+      _now.second,
+    );
+    await _run(() => _dt.setWallClock(next));
+  }
+
+  Future<void> _pickTime(AppLocalizations l10n) async {
+    final picked = await showCyberTimePicker(
+      context: context,
+      title: l10n.dateTimeSetTime,
+      initial: TimeOfDay.fromDateTime(_now),
+      confirmLabel: l10n.confirmText,
+      cancelLabel: l10n.cancelText,
+    );
+    if (picked == null || !mounted) return;
+    final next = DateTime(
+      _now.year,
+      _now.month,
+      _now.day,
+      picked.hour,
+      picked.minute,
+      0,
+    );
+    await _run(() => _dt.setWallClock(next));
   }
 
   @override
@@ -108,59 +159,21 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
                 value: automatic,
                 onChanged: _busy
                     ? null
-                    : (v) => unawaited(
-                          _run(
-                            () => _dt.setSyncMode(
-                              v ? TimeSyncMode.network : TimeSyncMode.manual,
-                            ),
-                          ),
-                        ),
+                    : (v) => unawaited(_setAutomatic(v)),
               ),
               SettingsNavRow(
                 title: l10n.dateTimeSetDate,
                 value: _dateLabel,
                 onTap: automatic || _busy
                     ? null
-                    : () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _now,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked == null) return;
-                        final next = DateTime(
-                          picked.year,
-                          picked.month,
-                          picked.day,
-                          _now.hour,
-                          _now.minute,
-                          _now.second,
-                        );
-                        await _run(() => _dt.setWallClock(next));
-                      },
+                    : () => unawaited(_pickDate(l10n)),
               ),
               SettingsNavRow(
                 title: l10n.dateTimeSetTime,
                 value: _timeLabel,
                 onTap: automatic || _busy
                     ? null
-                    : () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.fromDateTime(_now),
-                        );
-                        if (picked == null) return;
-                        final next = DateTime(
-                          _now.year,
-                          _now.month,
-                          _now.day,
-                          picked.hour,
-                          picked.minute,
-                          _now.second,
-                        );
-                        await _run(() => _dt.setWallClock(next));
-                      },
+                    : () => unawaited(_pickTime(l10n)),
               ),
               SettingsNavRow(
                 title: l10n.dateTimeSetTimeZone,
@@ -171,6 +184,7 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
                           context,
                           _TimezonePickerPage(
                             current: _timezone,
+                            controller: _dt,
                             onSelected: (tz) => unawaited(
                               _run(() => _dt.setTimezone(tz)),
                             ),
@@ -179,24 +193,14 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
               ),
             ],
           ),
-          if (!automatic)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: CyberButton(
-                stretch: true,
-                borderGradientCenter:
-                    CyberBorderGradientCenter.topLeftBottomRight,
-                onPressed: _busy
-                    ? null
-                    : () {
-                        unawaited(_run(() => _dt.syncFromNetwork()));
-                      },
-                child: Text(l10n.syncNow),
-              ),
-            ),
           if (_status != null)
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(
+                SettingsDimens.inset,
+                SettingsDimens.helpGap,
+                SettingsDimens.inset,
+                SettingsDimens.inset,
+              ),
               child: Text(
                 _status!,
                 style: const TextStyle(color: Colors.redAccent),
@@ -208,36 +212,527 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
   }
 }
 
-class _TimezonePickerPage extends StatelessWidget {
+class _TimezonePickerPage extends StatefulWidget {
   const _TimezonePickerPage({
     required this.current,
     required this.onSelected,
+    required this.controller,
   });
 
   final String current;
   final ValueChanged<String> onSelected;
+  final DateTimeController controller;
+
+  @override
+  State<_TimezonePickerPage> createState() => _TimezonePickerPageState();
+}
+
+class _TimezonePickerPageState extends State<_TimezonePickerPage> {
+  final _searchCtrl = TextEditingController();
+  final _ime = CyberImeSession.shared;
+  List<TimezoneEntry> _all = const [];
+  List<TimezoneEntry> _filtered = const [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl.addListener(_onSearchChanged);
+    unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    try {
+      final entries = await widget.controller.listTimezoneEntries();
+      if (!mounted) return;
+      setState(() {
+        _all = entries;
+        _filtered = TimezoneCatalog.filter(entries, _searchCtrl.text);
+        _loading = false;
+        _error = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = '$e';
+      });
+    }
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _filtered = TimezoneCatalog.filter(_all, _searchCtrl.text);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.removeListener(_onSearchChanged);
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final zones = TimeSyncPrefs.curatedTimezones;
     return SettingsScaffold(
       title: l10n.dateTimeSetTimeZone,
-      body: SettingsScrollView(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SettingsGroup(
-            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
-            children: [
-              for (final tz in zones)
-                SettingsOptionTile(
-                  title: tz,
-                  selected: tz == current,
-                  onTap: () {
-                    onSelected(tz);
-                    Navigator.pop(context);
-                  },
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SettingsDimens.inset,
+              SettingsDimens.inset,
+              SettingsDimens.inset,
+              SettingsDimens.helpGap,
+            ),
+            child: CyberImeTextField(
+              fieldType: CyberImeFieldType.text,
+              controller: _searchCtrl,
+              session: _ime,
+              style: const TextStyle(
+                color: CyberColors.textPrimary,
+                fontSize: 18,
+              ),
+              decoration: InputDecoration(
+                hintText: l10n.timezoneSearchHint,
+                hintStyle: const TextStyle(color: CyberColors.textSecondary),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: CyberColors.textSecondary,
                 ),
-            ],
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.06),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: CyberColors.borderMid),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: CyberColors.buttonPrimaryAccent,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: SettingsDimens.inset),
+              child: Text(
+                _error!,
+                style: const TextStyle(color: Colors.redAccent),
+              ),
+            ),
+          Expanded(
+            child: _loading
+                ? const Center(
+                    child: Text(
+                      '…',
+                      style: TextStyle(color: CyberColors.textSecondary),
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      SettingsDimens.inset,
+                      0,
+                      SettingsDimens.inset,
+                      SettingsDimens.inset,
+                    ),
+                    child: SettingsPanel(
+                      borderGradientCenter:
+                          CyberBorderGradientCenter.topLeftBottomRight,
+                      child: _filtered.isEmpty
+                          ? const Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Text(
+                                'No time zones found',
+                                style: TextStyle(
+                                  color: CyberColors.textPrimary,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            )
+                          : ListView.separated(
+                              physics: const BouncingScrollPhysics(
+                                parent: AlwaysScrollableScrollPhysics(),
+                              ),
+                              itemCount: _filtered.length,
+                              separatorBuilder: (_, __) => const Divider(
+                                height: 1,
+                                indent: 20,
+                                endIndent: 20,
+                                color: CyberColors.dividerCenter,
+                              ),
+                              itemBuilder: (context, index) {
+                                final e = _filtered[index];
+                                return SettingsOptionTile(
+                                  title: e.utcOffsetLabel.isEmpty
+                                      ? e.id
+                                      : '${e.id}  (${e.utcOffsetLabel})',
+                                  selected: e.id == widget.current,
+                                  onTap: () {
+                                    widget.onSelected(e.id);
+                                    Navigator.pop(context);
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- Cyber date / time pickers (lws-ui frost NumberPicker parity) ---
+
+/// Dialog width matching lws-ui `frost_dialog_date_picker_width` (568dp).
+const _kPickerDialogWidth = 568.0;
+const _kDateWheelHeight = 220.0;
+const _kTimeWheelHeight = 180.0;
+const _kPickerItemExtent = 48.0;
+
+Future<DateTime?> showCyberDatePicker({
+  required BuildContext context,
+  required String title,
+  required DateTime initial,
+  required String confirmLabel,
+  required String cancelLabel,
+  int firstYear = 2000,
+  int lastYear = 2099,
+}) {
+  return showCyberDialog<DateTime>(
+    context: context,
+    builder: (ctx) => _CyberDatePickerBody(
+      title: title,
+      initial: initial,
+      firstYear: firstYear,
+      lastYear: lastYear,
+      confirmLabel: confirmLabel,
+      cancelLabel: cancelLabel,
+    ),
+  );
+}
+
+Future<TimeOfDay?> showCyberTimePicker({
+  required BuildContext context,
+  required String title,
+  required TimeOfDay initial,
+  required String confirmLabel,
+  required String cancelLabel,
+}) {
+  return showCyberDialog<TimeOfDay>(
+    context: context,
+    builder: (ctx) => _CyberTimePickerBody(
+      title: title,
+      initial: initial,
+      confirmLabel: confirmLabel,
+      cancelLabel: cancelLabel,
+    ),
+  );
+}
+
+int _daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
+
+TextStyle get _pickerWheelStyle => const TextStyle(
+      fontSize: 32,
+      fontWeight: FontWeight.w500,
+      color: CyberColors.textPrimary,
+    );
+
+TextStyle get _pickerSeparatorStyle => const TextStyle(
+      fontSize: 45,
+      color: CyberColors.textPrimary,
+      height: 1,
+    );
+
+class _CyberDatePickerBody extends StatefulWidget {
+  const _CyberDatePickerBody({
+    required this.title,
+    required this.initial,
+    required this.firstYear,
+    required this.lastYear,
+    required this.confirmLabel,
+    required this.cancelLabel,
+  });
+
+  final String title;
+  final DateTime initial;
+  final int firstYear;
+  final int lastYear;
+  final String confirmLabel;
+  final String cancelLabel;
+
+  @override
+  State<_CyberDatePickerBody> createState() => _CyberDatePickerBodyState();
+}
+
+class _CyberDatePickerBodyState extends State<_CyberDatePickerBody> {
+  late int _year;
+  late int _month;
+  late int _day;
+  late FixedExtentScrollController _yearCtrl;
+  late FixedExtentScrollController _monthCtrl;
+  late FixedExtentScrollController _dayCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _year = widget.initial.year.clamp(widget.firstYear, widget.lastYear);
+    _month = widget.initial.month.clamp(1, 12);
+    _day = widget.initial.day.clamp(1, _daysInMonth(_year, _month));
+    _yearCtrl = FixedExtentScrollController(initialItem: _year - widget.firstYear);
+    _monthCtrl = FixedExtentScrollController(initialItem: _month - 1);
+    _dayCtrl = FixedExtentScrollController(initialItem: _day - 1);
+  }
+
+  @override
+  void dispose() {
+    _yearCtrl.dispose();
+    _monthCtrl.dispose();
+    _dayCtrl.dispose();
+    super.dispose();
+  }
+
+  void _clampDay() {
+    final maxDay = _daysInMonth(_year, _month);
+    if (_day <= maxDay) return;
+    _day = maxDay;
+    _dayCtrl.dispose();
+    _dayCtrl = FixedExtentScrollController(initialItem: _day - 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final yearCount = widget.lastYear - widget.firstYear + 1;
+    final dayCount = _daysInMonth(_year, _month);
+    return SizedBox(
+      width: _kPickerDialogWidth,
+      child: CyberPromptContent(
+        title: widget.title,
+        body: SizedBox(
+          height: _kDateWheelHeight,
+          child: CupertinoTheme(
+            data: const CupertinoThemeData(brightness: Brightness.dark),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: CupertinoPicker(
+                    scrollController: _yearCtrl,
+                    itemExtent: _kPickerItemExtent,
+                    magnification: 1.08,
+                    useMagnifier: true,
+                    onSelectedItemChanged: (i) {
+                      setState(() {
+                        _year = widget.firstYear + i;
+                        _clampDay();
+                      });
+                    },
+                    children: [
+                      for (var i = 0; i < yearCount; i++)
+                        Center(
+                          child: Text(
+                            '${widget.firstYear + i}',
+                            style: _pickerWheelStyle,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Text('-', style: _pickerSeparatorStyle),
+                Expanded(
+                  flex: 3,
+                  child: CupertinoPicker(
+                    scrollController: _monthCtrl,
+                    itemExtent: _kPickerItemExtent,
+                    magnification: 1.08,
+                    useMagnifier: true,
+                    onSelectedItemChanged: (i) {
+                      setState(() {
+                        _month = i + 1;
+                        _clampDay();
+                      });
+                    },
+                    children: [
+                      for (var m = 1; m <= 12; m++)
+                        Center(
+                          child: Text(
+                            m.toString().padLeft(2, '0'),
+                            style: _pickerWheelStyle,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Text('-', style: _pickerSeparatorStyle),
+                Expanded(
+                  flex: 3,
+                  child: CupertinoPicker(
+                    key: ValueKey('day-$dayCount'),
+                    scrollController: _dayCtrl,
+                    itemExtent: _kPickerItemExtent,
+                    magnification: 1.08,
+                    useMagnifier: true,
+                    onSelectedItemChanged: (i) {
+                      setState(() => _day = i + 1);
+                    },
+                    children: [
+                      for (var d = 1; d <= dayCount; d++)
+                        Center(
+                          child: Text(
+                            d.toString().padLeft(2, '0'),
+                            style: _pickerWheelStyle,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          CyberButton(
+            variant: CyberButtonVariant.secondary,
+            onPressed: () => Navigator.pop(context),
+            child: Text(widget.cancelLabel),
+          ),
+          CyberButton(
+            variant: CyberButtonVariant.primary,
+            onPressed: () {
+              CyberClickSoundRegistry.playClick();
+              Navigator.pop(context, DateTime(_year, _month, _day));
+            },
+            child: Text(widget.confirmLabel),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CyberTimePickerBody extends StatefulWidget {
+  const _CyberTimePickerBody({
+    required this.title,
+    required this.initial,
+    required this.confirmLabel,
+    required this.cancelLabel,
+  });
+
+  final String title;
+  final TimeOfDay initial;
+  final String confirmLabel;
+  final String cancelLabel;
+
+  @override
+  State<_CyberTimePickerBody> createState() => _CyberTimePickerBodyState();
+}
+
+class _CyberTimePickerBodyState extends State<_CyberTimePickerBody> {
+  late int _hour;
+  late int _minute;
+  late FixedExtentScrollController _hourCtrl;
+  late FixedExtentScrollController _minuteCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _hour = widget.initial.hour.clamp(0, 23);
+    _minute = widget.initial.minute.clamp(0, 59);
+    _hourCtrl = FixedExtentScrollController(initialItem: _hour);
+    _minuteCtrl = FixedExtentScrollController(initialItem: _minute);
+  }
+
+  @override
+  void dispose() {
+    _hourCtrl.dispose();
+    _minuteCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: _kPickerDialogWidth,
+      child: CyberPromptContent(
+        title: widget.title,
+        body: SizedBox(
+          height: _kTimeWheelHeight,
+          child: CupertinoTheme(
+            data: const CupertinoThemeData(brightness: Brightness.dark),
+            child: Row(
+              children: [
+                const Spacer(flex: 2),
+                Expanded(
+                  flex: 3,
+                  child: CupertinoPicker(
+                    scrollController: _hourCtrl,
+                    itemExtent: _kPickerItemExtent,
+                    magnification: 1.08,
+                    useMagnifier: true,
+                    onSelectedItemChanged: (i) => setState(() => _hour = i),
+                    children: [
+                      for (var h = 0; h < 24; h++)
+                        Center(
+                          child: Text(
+                            h.toString().padLeft(2, '0'),
+                            style: _pickerWheelStyle,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    ':',
+                    style: _pickerSeparatorStyle.copyWith(fontSize: 53),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: CupertinoPicker(
+                    scrollController: _minuteCtrl,
+                    itemExtent: _kPickerItemExtent,
+                    magnification: 1.08,
+                    useMagnifier: true,
+                    onSelectedItemChanged: (i) => setState(() => _minute = i),
+                    children: [
+                      for (var m = 0; m < 60; m++)
+                        Center(
+                          child: Text(
+                            m.toString().padLeft(2, '0'),
+                            style: _pickerWheelStyle,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const Spacer(flex: 2),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          CyberButton(
+            variant: CyberButtonVariant.secondary,
+            onPressed: () => Navigator.pop(context),
+            child: Text(widget.cancelLabel),
+          ),
+          CyberButton(
+            variant: CyberButtonVariant.primary,
+            onPressed: () {
+              CyberClickSoundRegistry.playClick();
+              Navigator.pop(context, TimeOfDay(hour: _hour, minute: _minute));
+            },
+            child: Text(widget.confirmLabel),
           ),
         ],
       ),

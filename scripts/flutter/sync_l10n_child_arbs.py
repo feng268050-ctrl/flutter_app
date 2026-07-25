@@ -17,7 +17,7 @@ from pathlib import Path
 
 from zh_s2t import apply_tw_product_terms, simplified_to_traditional
 
-L10N_DIR = Path(__file__).resolve().parents[2] / "app" / "hmi" / "lib" / "l10n"
+L10N_DIR = Path(__file__).resolve().parents[2] / "app" / "lws_hmi" / "lib" / "l10n"
 
 # Language option labels are endonyms (always English / 简体中文 / 繁體中文).
 # Never OpenCC-convert or locale-translate these — keep them identical to zh.

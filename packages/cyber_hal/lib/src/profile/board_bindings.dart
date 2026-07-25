@@ -288,7 +288,11 @@ final class BoardBindings {
       debugPrint('restore: proxy: $e');
     }
     try {
+      await dt.applyPersistedTimezone();
       await dt.ensureSaneForTls();
+      if (await dt.getSyncMode() == TimeSyncMode.network) {
+        await dt.syncFromNetwork(onlyIfStale: true);
+      }
     } catch (e) {
       debugPrint('restore: datetime: $e');
     }

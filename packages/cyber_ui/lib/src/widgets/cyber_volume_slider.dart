@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:cyber_ui/src/theme/cyber_colors.dart';
 import 'package:cyber_ui/src/widgets/cyber_slider.dart';
+import 'package:cyber_ui/src/widgets/cyber_slider_logic.dart';
 
 /// Icon-flanked progress slider (lws-ui `FrostIconFlankedSlider` stand-in).
 class CyberIconFlankedSlider extends StatelessWidget {
@@ -15,6 +16,7 @@ class CyberIconFlankedSlider extends StatelessWidget {
     this.leading,
     this.trailing,
     this.onChangeEnd,
+    this.showDragValueLabel = false,
   });
 
   final int progress;
@@ -25,14 +27,28 @@ class CyberIconFlankedSlider extends StatelessWidget {
   final bool enabled;
   final Widget? leading;
   final Widget? trailing;
+  final bool showDragValueLabel;
+
+  static double get _trackHeight =>
+      CyberSliderLogic.touchHeight + CyberSliderLogic.thumbDragOverflow * 2;
 
   @override
   Widget build(BuildContext context) {
+    Widget? iconSlot(Widget? icon) {
+      if (icon == null) return null;
+      return SizedBox(
+        height: _trackHeight,
+        width: 28,
+        child: Center(child: icon),
+      );
+    }
+
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (leading != null) ...[
-          leading!,
-          const SizedBox(width: 12),
+          iconSlot(leading)!,
+          const SizedBox(width: 8),
         ],
         Expanded(
           child: CyberSlider(
@@ -41,6 +57,7 @@ class CyberIconFlankedSlider extends StatelessWidget {
             max: max.toDouble(),
             // No divisions — Material tick marks look like black dots on HMI.
             enabled: enabled,
+            showDragValueLabel: showDragValueLabel,
             onChanged: (v) => onProgressChange(v.round()),
             onChangeEnd: onChangeEnd == null
                 ? null
@@ -48,8 +65,8 @@ class CyberIconFlankedSlider extends StatelessWidget {
           ),
         ),
         if (trailing != null) ...[
-          const SizedBox(width: 12),
-          trailing!,
+          const SizedBox(width: 8),
+          iconSlot(trailing)!,
         ],
       ],
     );
@@ -64,12 +81,14 @@ class CyberVolumeSlider extends StatelessWidget {
     required this.onChanged,
     this.onChangeEnd,
     this.enabled = true,
+    this.showDragValueLabel = false,
   });
 
   final int percent;
   final ValueChanged<int> onChanged;
   final ValueChanged<int>? onChangeEnd;
   final bool enabled;
+  final bool showDragValueLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -79,8 +98,9 @@ class CyberVolumeSlider extends StatelessWidget {
       onProgressChange: onChanged,
       onChangeEnd: onChangeEnd,
       enabled: enabled,
-      leading: Icon(Icons.volume_mute, color: color, size: 28),
-      trailing: Icon(Icons.volume_up, color: color, size: 28),
+      showDragValueLabel: showDragValueLabel,
+      leading: Icon(Icons.volume_mute, color: color, size: 22),
+      trailing: Icon(Icons.volume_up, color: color, size: 22),
     );
   }
 }

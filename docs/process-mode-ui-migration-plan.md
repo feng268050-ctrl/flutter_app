@@ -79,7 +79,7 @@ quick → `engineer_preset` 中位数派生已在工艺库切片落地（见 `do
 | 档位 / 厚度·摆宽 | `QuickModeGearPick` / `QuickModeDimensionPick`（相对仪表盘 -150 重叠 + 60/-8 微调） |
 | 中心仪表盘 | `QuickModeLaserDashboard`（气压 + More Status） |
 | More Parameters | → `EngineerModePage(initialProcessType, initialPresetUuid)` |
-| CNC | 隐藏选择器与 More Parameters |
+| CNC | 隐藏选择器与 More Parameters；连接引导 + 运行覆盖层 + 退出确认（见 §1.9） |
 | 测试 | `quick_mode_selection_resolver_test.dart`、`quick_mode_page_test.dart` |
 
 ## 1.6 U4：工程师内部 UI（已完成；左右分栏已对齐）
@@ -109,14 +109,17 @@ Flutter 优先：`CustomClipper` / `CustomPainter` 复刻 Android 梯形激光�
 | 开启顺序 | 长按预检 → 安全确认 → 重发当前工艺 → 重发高级设置 → Modbus 激光使能（Quick / Engineer 同序） |
 | 互斥 | 开气先关激光；激光开时禁用开气与送丝 |
 | 送丝 | Quick + Engineer 连续焊：自动送丝开关；Feed/Retract 共用 `ManualWireGesture`（短按 500ms 脉冲、长按 3s 闩锁、回抽按住运行） |
+| Feed UI（lws-ui） | Quick Feed：副文案 `Hold 3s to keep on`；闩锁后主文案 `Continuous Feed` 并隐藏 hint；按住/闩锁时 GradientButton 式呼吸渐变（hold 4s / latch 3s） |
+| Toast | `ProcessModeToastLayer` 页内毛玻璃（Weston Overlay `BackdropFilter` 会变黑）；文案见 `DeviceControlFeedbackCopy` |
 | 曲线/录像 | 本轮不做（Record Work 保持禁用） |
-| 测试 | `laser_enable_preflight_test.dart`、`device_control_test.dart`、`quick_mode_laser_button_test.dart`、`engineer_device_panel_test.dart`、`process_mode_acceptance_test.dart` |
+| 测试 | `laser_enable_preflight_test.dart`、`device_control_test.dart`、`quick_mode_laser_button_test.dart`、`engineer_device_panel_test.dart`、`process_mode_acceptance_test.dart`、`manual_wire_gesture_feedback_test.dart`、`process_mode_toast_test.dart` |
 
 ### 送丝实机确认项（ynh960 smoke，不阻塞仓内交付）
 
 1. 确认 bit RMW 脉冲在 ynh960 上不会覆盖来自枪头的控制字更新。
 2. 确认脉冲关断 500ms、长按开始 500ms、连续闩锁 3000ms。
 3. `control.wire_manual_mode`（bit4）沿用 lws-ui 的 `autoWireFeedEnable` 写入语义；需实机确认 HAL 标注是否应更名。
+4. Quick Feed：idle 见 hint；长按 ≥3s 松手后仍送丝，标签变为 Continuous Feed、hint 消失；再点停止。
 
 ## 2. 后续 UI 范围
 
@@ -137,7 +140,7 @@ Flutter 优先：`CustomClipper` / `CustomPainter` 复刻 Android 梯形激光�
 | 项目 | 实现 |
 |---|---|
 | LaserWorkGuard | `laser_work_guard_test.dart`（`isProcessChangeSafe` fail-closed；无告警时 interrupt 不写） |
-| 页面 + Modbus 模拟 | `process_mode_acceptance_test.dart`（DeviceControlBar / CNC 隐藏；Quick debounce apply；Guard 阻断文案；Engineer Apply 写入） |
+| 页面 + Modbus 模拟 | `process_mode_acceptance_test.dart`（DeviceControlBar / CNC guide 隐藏设备栏；Quick debounce apply；Guard 阻断文案；Engineer Apply 写入） |
 | HAL 抽样 | `gpio_modbus_golden_test.dart` 增补 `control.manual_gas`、`machine.wire_feeding_on` |
 | 像素 golden | **不做**（与现有仓库约定一致；用 ValueKey + 1280×800 widget 断言） |
 
@@ -147,8 +150,23 @@ Flutter 优先：`CustomClipper` / `CustomPainter` 复刻 Android 梯形激光�
 - [ ] Quick 选材/档/厚 → 参数下发与读回
 - [ ] Engineer Apply / Copy / Save
 - [ ] Manual Gas 与 Hold-to-Enable Laser 互斥；E-Stop / 钥匙开关拦截
-- [ ] CNC 隐藏选择器与设备控制栏
+- [ ] CNC 隐藏选择器与设备控制栏；连接引导 → 连上出运行层 → Exit 确认回引导；会话中 Back 拦截
 - [ ] （协议确认后）送丝/回抽
+
+## 1.9 CNC Quick 会话（已完成）
+
+对齐 Android Quick CNC 连接链路（工程师模式仍无 CNC Tab）。
+
+| 项目 | 实现 |
+|---|---|
+| 资源 | `assets/process/cnc_*.webp` + 连接状态 / Exit 按钮图 |
+| Modbus 映射 | `ProcessType.modbusProcessType`（UI CNC=5 → 写线 CNC=4） |
+| 会话 | `CncSessionController`（写工艺类型、10s 超时、watch `machine.cnc_connected`、退出写回连续焊） |
+| UI | `CncConnectionGuide` / `CncRunningOverlay` / `CncExitDialog` |
+| 接入 | `QuickModePage`：CNC 展示引导；运行层叠顶；Back/轮盘在覆盖层时拦截 |
+| 测试 | `cnc_session_controller_test.dart`；page/acceptance 用 `quick-mode-cnc-guide` |
+
+不做：录像/摄像头 CNC 特例、云同步、RGB LED、工程师 CNC Tab。
 
 ## 3. 后续内部 UI 约束
 
@@ -156,7 +174,7 @@ Flutter 优先：`CustomClipper` / `CustomPainter` 复刻 Android 梯形激光�
 - 工程师模式复刻五个工艺类型 Tab（与 lws-ui 一致；CNC 不在工程师顶栏）；内置 `engineer_preset` 只读，编辑时先复制成 `user` 工艺。
 - 参数表单由 `ProcessParameterCatalog` 驱动，不能在 widget 中复制 Modbus 地址或缩放规则。
 - 所有参数应用仅经 `ProcessParameterApplier`；应用前通过 `LaserWorkGuard.isProcessChangeSafe`，成功后必须读回确认。
-- CNC 连接/运行覆盖层、录像、云同步不属于本轮内部 UI 迁移。
+- 录像、云同步不属于本轮内部 UI 迁移（CNC 连接/运行覆盖层已在 §1.9）。
 
 ## 4. 资源与验证
 

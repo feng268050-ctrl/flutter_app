@@ -55,6 +55,16 @@ void main() {
     await tester.pump();
   }
 
+  testWidgets('continuous weld Feed shows hold-3s hint', (tester) async {
+    await pumpControls(tester, processType: ProcessType.continuousWelding);
+    expect(
+      find.byKey(const ValueKey('device-control-feed-hold-hint')),
+      findsOneWidget,
+    );
+    expect(find.text('Hold 3s to keep on'), findsOneWidget);
+    expect(find.text('Feed'), findsOneWidget);
+  });
+
   testWidgets('pins left/right groups to screen corners', (tester) async {
     await pumpControls(tester, processType: ProcessType.continuousWelding);
 

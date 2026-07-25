@@ -9,6 +9,10 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_material_pop
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
 /// Catalog-driven engineer parameter form (row label + tappable value pill).
+///
+/// Optional [footer] (Reset / Save as Favorite) sits after the last parameter
+/// row so it only appears after scrolling the right panel to the bottom —
+/// matching lws-ui `EngineerParameterScrollView`.
 final class EngineerParameterForm extends StatelessWidget {
   const EngineerParameterForm({
     super.key,
@@ -16,6 +20,7 @@ final class EngineerParameterForm extends StatelessWidget {
     required this.readOnly,
     required this.onChanged,
     this.onBeginEdit,
+    this.footer,
   });
 
   final ProcessPreset preset;
@@ -24,6 +29,9 @@ final class EngineerParameterForm extends StatelessWidget {
 
   /// Unlocks a built-in row into an editable working preset (no DB write yet).
   final Future<ProcessPreset?> Function()? onBeginEdit;
+
+  /// Trailing actions inside the scroll view (e.g. Reset / Save as Favorite).
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -65,20 +73,47 @@ final class EngineerParameterForm extends StatelessWidget {
             ),
           ),
     ];
+    final footer = this.footer;
+    final children = <Widget>[];
+    for (var i = 0; i < rows.length; i++) {
+      if (i > 0) {
+        children.add(
+          const Padding(
+            padding: EdgeInsets.only(left: 24),
+            child: Divider(
+              height: 2,
+              thickness: 2,
+              color: Color(0xFF1A1B32),
+            ),
+          ),
+        );
+      }
+      children.add(rows[i]);
+    }
+    if (footer != null) {
+      children
+        ..add(
+          const Divider(
+            key: ValueKey('engineer-parameters-actions-divider'),
+            height: 2,
+            thickness: 1,
+            color: Color(0x33FFFFFF),
+            indent: 24,
+            endIndent: 8,
+          ),
+        )
+        ..add(footer);
+    }
 
-    return ListView.separated(
+    // Scrollable column (not lazy ListView) so footer actions stay mounted
+    // off-screen — user scrolls the right panel to reach Reset / Save.
+    return SingleChildScrollView(
       key: const ValueKey('engineer-parameter-form'),
-      padding: const EdgeInsets.only(right: 16, bottom: 12),
-      itemCount: rows.length,
-      separatorBuilder: (_, __) => const Padding(
-        padding: EdgeInsets.only(left: 24),
-        child: Divider(
-          height: 2,
-          thickness: 2,
-          color: Color(0xFF1A1B32),
-        ),
+      padding: const EdgeInsets.only(right: 16, bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
       ),
-      itemBuilder: (_, index) => rows[index],
     );
   }
 

@@ -279,8 +279,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.byKey(const ValueKey('quick-mode-cnc-placeholder')),
-        findsOneWidget);
+    expect(find.byKey(const ValueKey('quick-mode-cnc-guide')), findsOneWidget);
     expect(
         find.byKey(const ValueKey('quick-mode-material-wheel')), findsNothing);
     expect(

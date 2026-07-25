@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 
 /// Shared Quick Mode offset wheel: fixed selection chrome, scroll-linked
 /// item styling, and tap-to-position (lws-ui `setClickToPosition(true)`).
+///
+/// Switch SFX: silent while the finger is down / scrolling; play on release
+/// (scroll idle after a drag, or tap which fires on finger up).
 final class QuickModeOffsetWheel extends StatefulWidget {
   const QuickModeOffsetWheel({
     super.key,
@@ -43,6 +46,12 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
 
   /// Continuous center index from scroll offset (for visual styling).
   double _scrollIndex = 0;
+
+  /// User finger-drag in progress (not a programmatic animateToItem).
+  bool _userDragging = false;
+
+  /// Selection when the current drag started (for release SFX).
+  int _indexAtDragStart = 0;
 
   static const Duration _tapDuration = Duration(milliseconds: 400);
 
@@ -107,19 +116,37 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
     if (index < 0 || index >= widget.itemCount) {
       return;
     }
-    CyberClickSoundRegistry.playClick();
     if (!_controller.hasClients) {
-      _onSelected(index);
+      if (index != _index) {
+        CyberClickSoundRegistry.playClick();
+        _onSelected(index);
+      }
       return;
     }
     if (index == _controller.selectedItem) {
       return;
     }
+    // onTap fires on finger up — play then; animate must not double-fire.
+    CyberClickSoundRegistry.playClick();
     _controller.animateToItem(
       index,
       duration: _tapDuration,
       curve: Curves.easeOutCubic,
     );
+  }
+
+  bool _onScrollNotification(ScrollNotification notification) {
+    if (notification is ScrollStartNotification &&
+        notification.dragDetails != null) {
+      _userDragging = true;
+      _indexAtDragStart = _index;
+    } else if (notification is ScrollEndNotification && _userDragging) {
+      _userDragging = false;
+      if (_index != _indexAtDragStart) {
+        CyberClickSoundRegistry.playClick();
+      }
+    }
+    return false;
   }
 
   @override
@@ -144,24 +171,27 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
               child: widget.fixedAccent,
             ),
           ),
-        ListWheelScrollView.useDelegate(
-          controller: _controller,
-          itemExtent: widget.itemExtent,
-          diameterRatio: widget.diameterRatio,
-          perspective: widget.perspective,
-          offAxisFraction: widget.offAxisFraction,
-          physics: const FixedExtentScrollPhysics(),
-          onSelectedItemChanged: _onSelected,
-          childDelegate: ListWheelChildBuilderDelegate(
-            childCount: widget.itemCount,
-            builder: (context, index) {
-              final distance = (index - _scrollIndex).abs();
-              return GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _onItemTap(index),
-                child: widget.itemBuilder(context, index, distance),
-              );
-            },
+        NotificationListener<ScrollNotification>(
+          onNotification: _onScrollNotification,
+          child: ListWheelScrollView.useDelegate(
+            controller: _controller,
+            itemExtent: widget.itemExtent,
+            diameterRatio: widget.diameterRatio,
+            perspective: widget.perspective,
+            offAxisFraction: widget.offAxisFraction,
+            physics: const FixedExtentScrollPhysics(),
+            onSelectedItemChanged: _onSelected,
+            childDelegate: ListWheelChildBuilderDelegate(
+              childCount: widget.itemCount,
+              builder: (context, index) {
+                final distance = (index - _scrollIndex).abs();
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _onItemTap(index),
+                  child: widget.itemBuilder(context, index, distance),
+                );
+              },
+            ),
           ),
         ),
       ],

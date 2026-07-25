@@ -10,13 +10,15 @@ import 'package:lws_hmi/features/process_library/application/process_parameter_a
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_mode_draft.dart';
+import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_device_panel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_favorites_popup.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
-import 'package:lws_hmi/features/process_mode/presentation/engineer_operation_status_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_parameter_form.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_process_tab_bar.dart';
+import 'package:lws_hmi/features/process_mode/presentation/laser_enable_reminder_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
@@ -35,6 +37,13 @@ final class EngineerModePage extends StatefulWidget {
   @override
   State<EngineerModePage> createState() => _EngineerModePageState();
 }
+
+/// Brighter TL→BR rim for Reset / Save pills (default dark HL is 0x77).
+const _engineerActionPillBorder = <Color>[
+  Color(0xCCFFFFFF),
+  Color(0xAA86868C),
+  Color(0x66000000),
+];
 
 final class _EngineerModePageState extends State<EngineerModePage> {
   late ProcessType _processType;
@@ -205,29 +214,21 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (draft == null) {
       return false;
     }
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Safety confirmation'),
-        content: const Text(
-          'Confirm that the work area is clear and protective equipment '
-          'is in place before enabling the laser.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Enable Laser'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) {
+    final focusScaleRef = await _focusScaleRef();
+    if (!mounted) {
       return false;
+    }
+    final confirmed = await showLaserEnableReminderDialog(
+      context: context,
+      processType: _processType,
+      session: LaserEnableReminderSession.engineer,
+      focusScaleRef: focusScaleRef,
+    );
+    if (confirmed == null || !mounted) {
+      return false;
+    }
+    if (confirmed.dontShowAgain) {
+      LaserEnableReminderGate.suppress(LaserEnableReminderSession.engineer);
     }
 
     final library = ProcessLibraryScope.of(context);
@@ -249,6 +250,21 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       await thresholds.commit(thresholds.values);
     }
     return true;
+  }
+
+  Future<int> _focusScaleRef() async {
+    final services = AppScope.maybeOf(context);
+    if (services == null) {
+      return 0;
+    }
+    try {
+      final product = await services.ensureProductInfo();
+      return LaserEnableReminderCopy.parseFocusScaleRef(
+        product.focusScaleRef(),
+      );
+    } catch (_) {
+      return 0;
+    }
   }
 
   String _applyFailureMessage(ProcessApplyFailure? failure) {
@@ -292,11 +308,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (!mounted) {
       return;
     }
-    // lws-ui toast copy shown as FrostStatusDialog success chrome.
-    await showEngineerOperationSuccessDialog(
-      context,
-      message: 'Reset complete',
-    );
+    // lws-ui `ToastUtils.showShort(R.string.reset_data_successfully)`.
+    ProcessModeToast.show(context, 'Reset complete');
   }
 
   Future<void> _saveAsFavorite() async {
@@ -319,8 +332,9 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       return;
     }
     if (trimmed.length > 32) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Name must be 32 characters or fewer')),
+      ProcessModeToast.show(
+        context,
+        'Name must be 32 characters or fewer',
       );
       return;
     }
@@ -335,10 +349,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       setState(() {
         _setActiveDraft(EngineerModeDraft.fromLibrary(saved));
       });
-      await showEngineerOperationSuccessDialog(
-        context,
-        message: 'Saved',
-      );
+      // lws-ui `ToastUtils.showShort(R.string.saved_successfully)`.
+      ProcessModeToast.show(context, 'Saved');
     } catch (_) {
       // Keep session draft; Save as Favorite is the only persist path.
     }
@@ -382,14 +394,15 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         mode: WorkMode.engineer,
         processType: _processType,
       ),
-      body: CyberBlurBackdropScope(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            const CyberBlurBackdropTarget(
-              child: ColoredBox(color: ProcessModeTokens.background),
-            ),
-            Column(
+      body: ProcessModeToastLayer(
+        child: CyberBlurBackdropScope(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              const CyberBlurBackdropTarget(
+                child: ColoredBox(color: ProcessModeTokens.background),
+              ),
+              Column(
               children: [
                 EngineerProcessTabBar(
                   processType: _processType,
@@ -548,82 +561,103 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                       readOnly: draft.isReadOnly,
                                       onChanged: _onDraftChanged,
                                       onBeginEdit: _beginEditFromBuiltin,
-                                    ),
-                                  ),
-                                  Divider(
-                                    key: const ValueKey(
-                                        'engineer-parameters-actions-divider'),
-                                    height: 2,
-                                    thickness: 1,
-                                    color: const Color(0x33FFFFFF),
-                                    indent: 24,
-                                    endIndent: 24,
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        16, 8, 16, 20),
-                                    child: Row(
-                                      children: [
-                                        // lws-ui FrostButton DEFAULT
-                                        // (`engineer_pine_base_btn_style`).
-                                        Expanded(
-                                          child: CyberButton(
-                                            key: const ValueKey(
-                                                'engineer-action-reset-default'),
-                                            stretch: true,
-                                            height: 56,
-                                            onPressed: _resetToDefault,
-                                            child: const Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.restart_alt,
-                                                    size: 20),
-                                                SizedBox(width: 8),
-                                                Flexible(
-                                                  child: Text(
-                                                    'Reset to Default',
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
+                                      footer: Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          16,
+                                          8,
+                                          0,
+                                          12,
                                         ),
-                                        const SizedBox(width: 22),
-                                        Expanded(
-                                          child: CyberButton(
-                                            key: const ValueKey(
-                                                'engineer-action-save-favorite'),
-                                            stretch: true,
-                                            height: 56,
-                                            onPressed: controller.applying
-                                                ? null
-                                                : _saveAsFavorite,
-                                            child: const Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.bookmark_add,
-                                                    size: 20),
-                                                SizedBox(width: 8),
-                                                Flexible(
-                                                  child: Text(
-                                                    'Save as Favorite',
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
+                                        child: Row(
+                                          children: [
+                                            // lws-ui FrostButton DEFAULT
+                                            // (`engineer_pine_base_btn_style`).
+                                            Expanded(
+                                              child: CyberButton(
+                                                key: const ValueKey(
+                                                  'engineer-action-reset-default',
                                                 ),
-                                              ],
+                                                stretch: true,
+                                                height: 56,
+                                                // lws-ui FrostButtonShape.ROUNDED
+                                                // (stadium) + TL→BR rim light.
+                                                shape:
+                                                    CyberButtonShape.rounded,
+                                                borderGradientCenter:
+                                                    CyberBorderGradientCenter
+                                                        .topLeftBottomRight,
+                                                borderGradientColors:
+                                                    _engineerActionPillBorder,
+                                                strokeWidth: 1.5,
+                                                onPressed: _resetToDefault,
+                                                child: const Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.restart_alt,
+                                                      size: 20,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Flexible(
+                                                      child: Text(
+                                                        'Reset to Default',
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
                                             ),
-                                          ),
+                                            const SizedBox(width: 22),
+                                            Expanded(
+                                              child: CyberButton(
+                                                key: const ValueKey(
+                                                  'engineer-action-save-favorite',
+                                                ),
+                                                stretch: true,
+                                                height: 56,
+                                                shape:
+                                                    CyberButtonShape.rounded,
+                                                borderGradientCenter:
+                                                    CyberBorderGradientCenter
+                                                        .topLeftBottomRight,
+                                                borderGradientColors:
+                                                    _engineerActionPillBorder,
+                                                strokeWidth: 1.5,
+                                                onPressed: controller.applying
+                                                    ? null
+                                                    : _saveAsFavorite,
+                                                child: const Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.bookmark_add,
+                                                      size: 20,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Flexible(
+                                                      child: Text(
+                                                        'Save as Favorite',
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -637,6 +671,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
               ],
             ),
           ],
+          ),
         ),
       ),
     );

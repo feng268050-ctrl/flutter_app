@@ -13,6 +13,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_library/infrastructure/sqlite_process_library_repository.dart';
 import 'package:lws_hmi/features/process_library/presentation/engineer_mode_page.dart';
 import 'package:lws_hmi/features/process_library/presentation/quick_mode_page.dart';
+import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/domain/quick_mode_selection_carry.dart';
 import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
@@ -23,7 +24,10 @@ import 'package:sqlite3/sqlite3.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  tearDown(QuickModeSelectionCarry.clear);
+  tearDown(() {
+    QuickModeSelectionCarry.clear();
+    LaserEnableReminderGate.resetForTest();
+  });
 
   Future<void> setDesignSurface(WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
@@ -241,8 +245,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.byKey(const ValueKey('quick-mode-cnc-placeholder')),
-        findsOneWidget);
+    expect(find.byKey(const ValueKey('quick-mode-cnc-guide')), findsOneWidget);
     expect(find.byKey(const ValueKey('device-control-bar')), findsNothing);
   });
 
@@ -305,9 +308,9 @@ void main() {
     await gesture.up();
     await tester.pump();
 
-    expect(find.text('Safety confirmation'), findsOneWidget);
+    expect(find.byKey(const ValueKey('laser-enable-reminder')), findsOneWidget);
     await tester.tap(
-      find.widgetWithText(FilledButton, 'Enable Laser'),
+      find.byKey(const ValueKey('laser-enable-reminder-confirm')),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));

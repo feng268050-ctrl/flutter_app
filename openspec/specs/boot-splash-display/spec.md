@@ -3,9 +3,9 @@
 ## Purpose
 TBD - created by archiving change p1-linux-flutter-platform. Update Purpose after archive.
 ## Requirements
-### Requirement: Boot splash logo appears before flutter-pi home frame
+### Requirement: Boot splash logo appears before eLinux HMI home frame
 
-The system SHALL display a product boot logo on the MIPI panel within ~2 seconds of power-on, via SDK FIT `boot.its` resource logo and/or kernel early splash, and SHALL keep the logo visible until the flutter-pi Hello World home frame is rendered (`Freeing drm_logo`).
+The system SHALL display a product boot logo on the MIPI panel within ~2 seconds of power-on, via SDK FIT `boot.its` resource logo and/or kernel early splash, and SHALL keep the logo visible until the eLinux HMI Hello World home frame is rendered (`Freeing drm_logo`).
 
 #### Scenario: Logo visible at early boot
 
@@ -14,26 +14,26 @@ The system SHALL display a product boot logo on the MIPI panel within ~2 seconds
 
 #### Scenario: No prolonged black screen before UI
 
-- **WHEN** device boots from cold power to flutter-pi home frame
+- **WHEN** device boots from cold power to the eLinux client home frame
 - **THEN** the panel does not remain black for more than ~2 seconds at any point before home frame
 
-#### Scenario: Logo holds through flutter-pi EGL init
+#### Scenario: Logo holds through eLinux HMI EGL init
 
-- **WHEN** `hmi.service` starts flutter-pi
+- **WHEN** `hmi.service` starts the HMI
 - **THEN** boot logo remains on screen during EGL/Mali initialization until first Flutter frame commits
 
 ### Requirement: Splash matches ynh960 display geometry
 
-Boot splash assets SHALL match ynh960 panel configuration: 800×1280 MIPI with 90° rotation consistent with `960_lcd_param_rk356x.txt` and flutter-pi orientation flags (`-o landscape_left`).
+Boot splash assets SHALL match ynh960 panel configuration: 800×1280 MIPI with 90° rotation consistent with `960_lcd_param_rk356x.txt` and eLinux HMI orientation flags (`-o landscape_left`).
 
 #### Scenario: Logo orientation correct
 
 - **WHEN** boot splash is displayed on ynh960 production panel
 - **THEN** logo is upright relative to the physical enclosure (not sideways or cropped)
 
-#### Scenario: Handoff to flutter-pi without resolution flash
+#### Scenario: Handoff to the eLinux client without resolution flash
 
-- **WHEN** flutter-pi starts after splash
+- **WHEN** HMI starts after splash
 - **THEN** transition does not cause a full-screen resolution mode change flash (minor flicker acceptable)
 
 ### Requirement: Splash does not use Weston or Plymouth for early boot
@@ -47,11 +47,11 @@ The **early** boot splash (U-Boot / kernel DRM logo) MUST NOT depend on Weston, 
 
 ### Requirement: Weston image bridges splash after DRM takeover
 
-When the firmware stamp is `/etc/display-stack=weston` (default product rootfs), after Weston enables the output the kernel `drm_logo` is replaced. The image SHALL paint the product logo via Weston **desktop-shell** `background-image` (`/usr/share/hmi/boot-splash.png`, same canvas as `board/logo`) until the Flutter Wayland client presents, so the panel is not left black or empty-colored without the logo mark.
+When Weston enables the output, the kernel `drm_logo` is replaced. The image SHALL paint the product logo via Weston **desktop-shell** `background-image` (`/usr/share/hmi/boot-splash.png`, same canvas as `board/logo`) until the Flutter Wayland client presents, so the panel is not left black or empty-colored without the logo mark.
 
 #### Scenario: Weston handoff shows logo
 
-- **WHEN** a Weston-stamped rootfs boots and Weston enables `DSI-1` before Flutter first present
+- **WHEN** the product rootfs boots and Weston enables `DSI-1` before Flutter first present
 - **THEN** the product splash artwork remains visible (desktop-shell background), not only a solid fill
 
 ### Requirement: U-Boot uses SDK prebuilt FIT chain

@@ -43,7 +43,6 @@ final class AppServices {
     BluetoothController? bluetoothController,
     Keyboard? keyboard,
     MouseSettingsController? mouse,
-    DisplayStack? displayStack,
     IpCameraProductSession? ipCamera,
   }) : bindings = BoardBindings(boardProfile) {
     _ipCamera = ipCamera;
@@ -101,13 +100,6 @@ final class AppServices {
     bluetooth = bluetoothController ?? b.bluetooth();
     this.keyboard = keyboard ?? b.keyboard();
     this.mouse = mouse ?? b.mouse();
-    if (displayStack != null) {
-      this.displayStack = displayStack;
-      _displayStackResolved = true;
-    } else {
-      this.displayStack = DisplayStack.unknown;
-      unawaited(ensureDisplayStack());
-    }
   }
 
   final BoardProfile boardProfile;
@@ -164,16 +156,8 @@ final class AppServices {
   late final Keyboard keyboard;
   late final MouseSettingsController mouse;
 
-  /// flutter-pi vs Weston (Settings gates via [displayStack.mouseSettings]).
-  ///
-  /// Resolved asynchronously in [ensureDisplayStack] / restore — starts as
-  /// [DisplayStack.unknown] until the stamp probe completes.
-  late DisplayStack displayStack;
-
   bool _restoreStarted = false;
   bool _modbusLiveStarted = false;
-  bool _displayStackResolved = false;
-  Future<DisplayStack>? _displayStackFuture;
 
   IpCameraProductSession? _ipCamera;
   Future<IpCameraProductSession>? _ipCameraFuture;
@@ -206,18 +190,6 @@ final class AppServices {
 
   /// True after first successful [ensureModbusLive] (poll stays up for process life).
   bool get modbusLiveStarted => _modbusLiveStarted;
-
-  /// Resolve embedder stamp once (async file I/O — never `*Sync`).
-  Future<DisplayStack> ensureDisplayStack() {
-    if (_displayStackResolved) {
-      return Future<DisplayStack>.value(displayStack);
-    }
-    return _displayStackFuture ??= bindings.displayStack().then((stack) {
-      displayStack = stack;
-      _displayStackResolved = true;
-      return stack;
-    });
-  }
 
   /// True when the board profile advertises Modbus and has a config asset.
   ///
@@ -285,7 +257,6 @@ final class AppServices {
     }
     _restoreStarted = true;
     try {
-      await ensureDisplayStack();
       await bindings.restorePersistedSettings(
         backlight: backlight is LinuxSysfsBacklight
             ? backlight as LinuxSysfsBacklight

@@ -7,7 +7,7 @@ Buildroot ships the Flutter **engine** (and optional DRM runner) from in-tree pa
 - `overlay/buildroot/flutter-engine.version`
 - `overlay/buildroot/package/flutter-engine/flutter-engine.mk` (`FLUTTER_ENGINE_VERSION`)
 
-Current pin: **Flutter 3.24.4** (through P3.x). **P5.1** upgrades SDK + engine (+ display runner as needed) together per [`docs/flutter-pi-hmi-plan.md` §6.5](../docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p51). UI kit: **CyberUI** (P3.0); platform: **Dart HAL package** (P3.1).
+Current pin: **Flutter 3.24.4** (through P3.x). **P5.1** upgrades SDK + engine (+ display runner as needed) together per [`docs/flutter-linux-hmi-plan.md` §6.5](../docs/flutter-linux-hmi-plan.md#65-flutter-engine-版本策略与升级p51). UI kit: **CyberUI** (P3.0); platform: **Dart HAL package** (P3.1).
 
 ### Prefetch (before `make build-rootfs`)
 
@@ -23,13 +23,10 @@ make check-prebuilt
 
 Version pins in `overlay/buildroot/flutter-*.version`.
 
-Host app builds use **flutterpi_tool** (meta-flutter layout, matching Buildroot `FILESYSTEM_LAYOUT=meta-flutter`):
+Host app builds use **`make build-app`** (`flutter assemble` + `gen_snapshot`, meta-flutter layout, matching Buildroot `FILESYSTEM_LAYOUT=meta-flutter`):
 
 ```bash
-flutter pub global activate flutterpi_tool
-cd app/lws_hmi
-flutter pub get
-flutterpi_tool build --arch=arm64 --release
+make build-app
 ```
 
 Or from repo root:
@@ -69,9 +66,9 @@ Started by `hmi.service`: `/usr/libexec/hmi/hmi-launch.sh` (release embedder fro
 
 ## P1.5 device debugging (USB-SSH)
 
-Pinned toolchain: **Flutter 3.24.4** + **flutterpi_tool 0.5.4** (see `overlay/buildroot/flutterpi_tool.version`). Debug and release use the **same Flutter version** but different runtime-mode engine binaries.
+Pinned toolchain: **Flutter 3.24.4** (`make fetch-flutter-sdk`). Debug/release via `flutter assemble`.
 
-**Display stack:** `make debug-app` works on the **default Weston** image (`flutter-wayland-client` + cached debug engine via `LD_LIBRARY_PATH`) and on the alternate **flutter-pi** rootfs. Both use the same JIT bundle (`kernel_blob.bin` + snapshots under `/opt/hmi`). Board overlay scripts must include this Weston debug path (`make apply-overlay` → `make build-rootfs` → `make upgrade` once if the board is older than this change). Restore release AOT with `make build-app` then `make push-app`.
+**Display stack:** `make debug-app` works on the **Weston** image (`flutter-wayland-client` + cached debug engine via `LD_LIBRARY_PATH`). Board overlay scripts must include this Weston debug path (`make apply-overlay` → `make build-rootfs` → `make upgrade` once if the board is older than this change). Restore release AOT with `make build-app` then `make push-app`.
 
 One-time host setup:
 
@@ -98,11 +95,10 @@ Behavior:
 
 - First debug session uploads the debug engine to `/var/lib/hmi/debug-runtime/<version>/` (large; cached afterward).
 - `/opt/hmi` is replaced with the debug bundle (`kernel_blob.bin`); IDE stop keeps the debug app running.
-- Weston: `hmi-launch` starts Weston + `flutter-wayland-client` with the cached debug engine; ICU is at `/opt/hmi/data/icudtl.dat`.
-- flutter-pi: same debug payload without `--release`.
+- `hmi-launch` starts Weston + `flutter-wayland-client` with the cached debug engine; ICU is at `/opt/hmi/data/icudtl.dat`.
 - Return to release: `make build-app` then `make push-app`.
 
-Optional prebuilt debug engine (instead of flutterpi_tool cache):
+Optional prebuilt debug engine (instead of flutter assemble + gen_snapshot cache):
 
 ```bash
 FLUTTER_ENGINE_RUNTIME_MODE=debug make build-flutter-engine
@@ -152,7 +148,7 @@ OpenSpec: `openspec/changes/p2-modbus-gpio/`.
    make build-img
    make flash
    ```
-3. `verify-env` showing `WARN: flutter-pi not running` after boot → service crashed; see journal (version mismatch, missing icudtl, DRM).
+3. `verify-env` showing `WARN: eLinux not running` after boot → service crashed; see journal (version mismatch, missing icudtl, DRM).
 
 ## ynh960 display
 

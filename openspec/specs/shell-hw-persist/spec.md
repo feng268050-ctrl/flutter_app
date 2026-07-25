@@ -25,10 +25,10 @@ Each shipped helper MUST write the preference file under `/var/lib/hal/` as part
 #### Scenario: Orientation helper writes launch preference
 
 - **WHEN** `change-orientation portrait` succeeds
-- **THEN** `/var/lib/hal/display.conf` contains `orientation=portrait` so the next `hmi-launch.sh` start uses the portrait flutter-pi mapping
+- **THEN** `/var/lib/hal/display.conf` contains `orientation=portrait` so the next `hmi-launch.sh` start uses the portrait eLinux HMI mapping
 
 #### Scenario: Mouse helper writes mouse.conf
 
 - **WHEN** `apply-mouse-settings` is invoked with a valid settings payload or flags representing natural scroll on
-- **THEN** `/var/lib/hal/mouse.conf` is updated accordingly for flutter-pi to apply on HMI start
+- **THEN** `/var/lib/hal/mouse.conf` is updated accordingly for the eLinux HMI to apply on HMI start
 

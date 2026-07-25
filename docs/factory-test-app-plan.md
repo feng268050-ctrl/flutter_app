@@ -2,7 +2,7 @@
 
 目标：在 **lws-hmi** 仓库内并行开发一个通用 **Factory Test** Flutter 应用，作为 **`cyber_hal` 的前端**，用于出场 / 售后验证 HAL 能力；与焊机产品 App（`app/lws_hmi`）共用板级 profile 与 gpio/modbus 目录，打入同一份 rootfs，**不必另刷镜像**，避免损坏用户数据（`/userdata` 等）。
 
-配套阅读：主线 [`flutter-pi-hmi-plan.md`](flutter-pi-hmi-plan.md)（产品 App 可分叉、CyberUI + `cyber_hal`）；HAL 合同 [`hal-portability.md`](hal-portability.md)；包说明 [`packages/cyber_hal/README.md`](../packages/cyber_hal/README.md)。
+配套阅读：主线 [`flutter-linux-hmi-plan.md`](flutter-linux-hmi-plan.md)（产品 App 可分叉、CyberUI + `cyber_hal`）；HAL 合同 [`hal-portability.md`](hal-portability.md)；包说明 [`packages/cyber_hal/README.md`](../packages/cyber_hal/README.md)。
 
 状态图例：✅ 完成 · 🔄 进行中 · 🔲 未开始
 
@@ -23,7 +23,7 @@
 
 ### 1.2 结论
 
-1. **源码并行**：新增 `app/factory_test/`，path 依赖 `cyber_hal`（+ 按需 `cyber_ui`），与 `app/lws_hmi` 同 pinned Flutter **3.24.4** / `flutterpi_tool`。
+1. **源码并行**：新增 `app/factory_test/`，path 依赖 `cyber_hal`（+ 按需 `cyber_ui`），与 `app/lws_hmi` 同 pinned Flutter **3.24.4** / `flutter assemble + gen_snapshot`。
 2. **板级目录进 rootfs**：`board_profile.json` / `gpio.json` / `modbus.json` **脱离任一 App**，以 **board pack** 形式打入 rootfs；HMI 与 Factory Test **共用同一路径**。
 3. **构建入口**：`make build-factory-test` → overlay `/opt/factory-test` + `apply-overlay`；文档同步更新 `AGENTS.md` / `README.md`。
 4. **部署形态**：常驻 rootfs `/opt/factory-test`；**不**进 `multi-user` 自启；可由 Settings 隐藏手势 / systemctl / CLI 进入。日常 OTA/`make upgrade` 即可带上，**无需** factory 专用刷机镜像。
@@ -198,7 +198,7 @@ overlay/.../rootfs-overlay/usr/share/cyber_hal/boards/ynh960/
 
 | 脚本 | 行为 |
 | ---- | ---- |
-| `scripts/build-factory-test.sh` | 对齐 `build-app.sh`：校验 Flutter pin → `flutterpi_tool build --arch=arm64 --release` → 安装到 `rootfs-overlay/opt/factory-test` → `apply-overlay` |
+| `scripts/build-factory-test.sh` | 对齐 `build-app.sh`：校验 Flutter pin → `flutter assemble + gen_snapshot build --arch=arm64 --release` → 安装到 `rootfs-overlay/opt/factory-test` → `apply-overlay` |
 | （可选）`scripts/push-factory-test.sh` | 类 `push-app`，热替换 `/opt/factory-test` **不**重启 `hmi.service`（或仅提示手启） |
 
 实现上可抽公共 `install_flutter_bundle DEST=…`，避免两脚本分叉。

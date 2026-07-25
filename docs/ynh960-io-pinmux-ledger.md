@@ -2,7 +2,7 @@
 
 基准板：**ynh960（RK3566）**。同产品线 ynh961/962 拓扑相近；跨 SKU 改板时先对照本表与原理图，再改 DTS。
 
-契约真相源：**DTS 标签 + Linux 节点路径**（`/dev/ttyS5`、`/sys/class/gpio_innohi/GPIO_N`）。**不要**用 YNHAPI 0-based 下标当 Linux 主键（见 [`flutter-pi-hmi-plan.md` §11.0](flutter-pi-hmi-plan.md)）。
+契约真相源：**DTS 标签 + Linux 节点路径**（`/dev/ttyS5`、`/sys/class/gpio_innohi/GPIO_N`）。**不要**用 YNHAPI 0-based 下标当 Linux 主键（见 [`flutter-linux-hmi-plan.md` §11.0](flutter-linux-hmi-plan.md)）。
 
 EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-evb-dts-deferred.md)。
 
@@ -64,7 +64,11 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 | Overlay | [`ynh960-touch.dtsi`](../overlay/kernel/rockchip/ynh960-touch.dtsi)：启用 Goodix；禁用 Focaltech / Sitronix |
 | 验收（P2.1） | libinput 点击/滑动稳定；与屏旋转坐标一致 |
 
-用户态：flutter-pi + libinput。旋转偏好：`/var/lib/hmi/display-orientation` → `hmi-launch.sh` `-o`。
+用户态：Weston + libinput + `cyber_hal`（`apply-mouse-settings` / `weston-hmi-config.sh`）。
+
+> **注（2026-07）：** `overlay/buildroot/package/flutter-pi/` 已删除。下表 **§4.1.1 / §4.1.2 中标注「历史」的补丁行**仅作当年诊断对照，勿再执行 `rebuild-flutter-pi` 或依赖 `flutter-pi.compile.mk`。
+
+旋转偏好：`/var/lib/hal/display.conf` 的 `orientation` → `hmi-launch.sh` Weston `transform`（不再使用 flutter-pi `-o`）。
 
 ---
 
@@ -81,23 +85,23 @@ Overlays：`ynh960-usb-gadget.dtsi`（OTG dual-role）、`ynh960-usb-host.dtsi`�
 
 **外接 USB 键盘（HID）**：1 mm host，或 Micro-USB 在 OTG **`mode=host`** 时用 OTG 转接头。板上 Micro-USB 策略见 `/etc/usb-otg.ini`（ynh960：`debug_only=false`，`auto_host_support=false`）。会话模式 `/run/usb-otg.mode`（插拔需重新选择，除非 `debug_only` 或 ID/CC 自动 host）。LAN SSH 在 Settings → Network（不持久化）。
 
-用户态依赖（缺一 flutter-pi 会禁用按键或行为异常）见下表。
+用户态依赖（缺一则键盘异常）见下表。当前栈：`xkeyboard-config` + Weston/libinput；历史 flutter-pi 补丁列仅作对照。
 
-### 4.1.1 用户态踩坑（2026-07-15 真机）
+### 4.1.1 用户态踩坑（2026-07-15 真机；含历史 flutter-pi 对照）
 
-内核 HID 枚举与 libinput seat 正常 ≠ Flutter 能打字。问题均在 **flutter-pi / XKB**，换键盘或换 1 mm host 口一般仍有效；**不要**靠 `kbdrate` / usbhid quirks。
+内核 HID 枚举与 libinput seat 正常 ≠ Flutter 能打字。问题多在 **XKB / 嵌入器输入路径**，换键盘或换 1 mm host 口一般仍有效；**不要**靠 `kbdrate` / usbhid quirks。
 
-| 现象 | 根因 | 固化位置 |
+| 现象 | 根因 | 固化位置（当前 / 历史） |
 |------|------|----------|
-| 完全打不出字 | 仅有 `libxkbcommon`，缺 `/usr/share/X11/xkb` 与 Compose | `BR2_PACKAGE_XKEYBOARD_CONFIG`；fs-overlay `usr/share/X11/locale/*` + `/etc/default/keyboard` |
-| 方向键不动光标 | `text_input` 把 Left/Right 让给 Flutter，但 `on_key_event==NULL` | `flutter-pi` `0001-text-input-arrow-keys.patch` |
-| 小键盘 NumLock「反了」 | 硬件 LED 亮着但 xkb Mod2 默认关（或不同步） | `0002-sync-keyboard-leds.patch`；`hmi-launch.sh` 启动前清 `input*::{num,caps,scroll}lock` |
-| 长按不连发 | libinput 不合成 repeat；flutter-pi 原无定时器 | `0003-key-repeat.patch`（660 ms 后约 25 Hz，只重发 utf8/keysym） |
-| `make rebuild-flutter-pi` 补丁未进包 | `SITE_METHOD=local` 跳过 Buildroot Patching | `flutter-pi.compile.mk` → `FLUTTER_PI_APPLY_PACKAGE_PATCHES` |
-| USB 鼠标能动/滚但不能见指针 | Rockchip GBM cursor stride 常 pad；原逻辑要求 `stride == width*4` 直接放弃 HW cursor | `0004-cursor-stride-padded-gbm.patch` |
-| 鼠标移动 journal 刷屏 / 卡顿 | 每帧 `drmModeMoveCursor` 在 Rockchip 上 EFAULT（Bad address），未节流的 `LOG_ERROR` 拖垮 journal | `0010-cursor-movecursor-fallback.patch`（失败后 latch，走 atomic prefer_cursor composition） |
-| 鼠标滚轮速度 / 自然滚动等 OS 设置 | flutter-pi 硬编码 wheel scale；未调 libinput config | `0005-mouse-settings-prefs.patch` + `/var/lib/hmi/mouse.conf`（含 `pointer_axes=auto|normal|swap`）；Demo「Mouse」；**mtime 轮询**重载（禁止 `kill -HUP`，会直接停掉 `hmi.service`）；BT 键盘触控板轴交换见 `0009` |
-| QM002 / BLE 键盘触控板 左右→下上 | 同一节点兼键盘+指针的 HOGP 仿品 REL 轴对调；USB 鼠标正常 | `0009-bt-kb-pointer-axis-swap.patch`（模式：`BT + KEYBOARD + POINTER`） |
+| 完全打不出字 | 仅有 `libxkbcommon`，缺 `/usr/share/X11/xkb` 与 Compose | **当前** `BR2_PACKAGE_XKEYBOARD_CONFIG`；fs-overlay `usr/share/X11/locale/*` + `/etc/default/keyboard` |
+| 方向键不动光标 | `text_input` 把 Left/Right 让给 Flutter，但 `on_key_event==NULL` | **历史** flutter-pi `0001-…`（Weston/eLinux 路径另验） |
+| 小键盘 NumLock「反了」 | 硬件 LED 亮着但 xkb Mod2 默认关（或不同步） | **当前** `hmi-launch.sh` 启动前清 `input*::{num,caps,scroll}lock`；**历史** `0002-…` |
+| 长按不连发 | libinput 不合成 repeat；旧嵌入器无定时器 | **历史** flutter-pi `0003-…`；Weston 侧另验 |
+| 补丁未进包 | `SITE_METHOD=local` 跳过 Buildroot Patching | **历史** `flutter-pi.compile.mk`（包已删）；eLinux 用 `make rebuild-flutter-embedded-linux` |
+| USB 鼠标能动/滚但不能见指针 | Rockchip GBM cursor stride 常 pad | **历史** flutter-pi `0004-…`；**当前** Weston cursor planes |
+| 鼠标移动 journal 刷屏 / 卡顿 | 每帧 `drmModeMoveCursor` EFAULT | **历史** flutter-pi `0010-…` |
+| 鼠标滚轮 / 自然滚动等 OS 设置 | 旧嵌入器硬编码 wheel scale | **当前** `apply-mouse-settings` + `/var/lib/hal/mouse.conf` + `weston-hmi-config.sh`；**历史** `0005-…` / `/var/lib/hmi/mouse.conf` |
+| QM002 / BLE 键盘触控板轴对调 | HOGP 仿品 REL 轴 | **历史** flutter-pi `0009-…` |
 
 Smoke（含连发 / 方向键）：
 
@@ -107,22 +111,20 @@ ls -l /dev/input/by-id/*kbd* 2>/dev/null
 dmesg | grep -iE 'hid|usbhost|dwc3'
 test -f /usr/share/X11/xkb/rules/evdev && test -f /usr/share/X11/locale/C/Compose
 # Demo「Keyboard」：打字、←→、长按连发；有小键盘再验 NumLock 灯与数字/导航
-# flutter-pi 启动日志不得出现: Could not initialize keyboard configuration
+# journalctl -u hmi：不应反复报 XKB / keyboard configuration 失败
 ```
 
 ### 4.1.2 USB 鼠标（指针 + 设置）
 
-与键盘同 host 路径。枚举后应有**可见指针**；偏好写入 `mouse.conf`（`natural_scroll` / `scroll_speed` / `pointer_speed` / `pointer_size` / `primary_button`），flutter-pi 启动时加载并每秒检查文件 mtime 后应用。`pointer_size` 控制光标图标密度（默认 **20**；手型/文本缺密度档时 ceil + 放大以对齐箭头）。HW 光标位置按 **display_size** 钳制（`0008`），与 `-o landscape_*` 下面板分辨率一致。**不要**对 flutter-pi 发 `SIGHUP`。
+与键盘同 host 路径。枚举后应有**可见指针**；偏好写入 `/var/lib/hal/mouse.conf`（`natural_scroll` / `pointer_speed` / `pointer_size` / `primary_button` 等），由 `apply-mouse-settings` → Weston `weston.ini`/`[libinput]` 应用（必要时重启 `hmi`）。**不要**对 HMI 进程发 `SIGHUP`。
 
 ```bash
 ls -l /dev/input/by-id/*mouse* 2>/dev/null
-# Demo「Mouse」：指针跟随；自然滚动 / 滚轮速度 / 指针速度 / 主按钮 / 指针轴（Auto/Normal/Swap）
-# journal / flutter-pi 日志不应再刷 "unsupported framebuffer stride" 后无 cursor
-# 移动鼠标时 drmModeMoveCursor 错误至多一行（Bad address），不应刷屏
-cat /var/lib/hmi/mouse.conf 2>/dev/null || true
+# Settings / Demo「Mouse」：指针跟随；自然滚动 / 跟踪速度 / 指针大小 / 主按钮
+cat /var/lib/hal/mouse.conf 2>/dev/null || true
 ```
 
-重新编译 flutter-pi 补丁后还须进 rootfs（见 AGENTS / README Make）：`make rebuild-flutter-pi` → `apply-overlay` → `build-rootfs` → `build-img` → `flash`。
+鼠标/键盘相关 **eLinux/Weston** 改动进 rootfs：`make rebuild-flutter-embedded-linux`（若动客户端）→ `apply-overlay` → `build-rootfs` → `upgrade`（或 `build-img` → `flash`）。
 
 ---
 ## 5. Overlay 索引（改引脚时先看这些）

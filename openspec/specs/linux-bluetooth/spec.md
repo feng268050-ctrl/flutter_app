@@ -97,7 +97,7 @@ The system SHALL provide one deterministic BlueZ `Agent1` path that supports exi
 
 ### Requirement: Bluetooth HID devices use the Linux input path
 
-The image SHALL include the BlueZ and kernel support required for supported Bluetooth Classic HID and BLE HOGP keyboards and mice to appear as Linux input devices. After successful connection, keyboard keys and mouse motion/buttons/wheel events SHALL flow through the standard Linux input/libinput/flutter-pi path without a custom Dart HID report decoder.
+The image SHALL include the BlueZ and kernel support required for supported Bluetooth Classic HID and BLE HOGP keyboards and mice to appear as Linux input devices. After successful connection, keyboard keys and mouse motion/buttons/wheel events SHALL flow through the standard Linux input/libinput/eLinux HMI path without a custom Dart HID report decoder.
 
 #### Scenario: Bluetooth keyboard types into Flutter
 

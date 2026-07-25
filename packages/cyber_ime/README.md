@@ -57,7 +57,7 @@ Keyboard A letter arrangements are built from:
 
 1. **`CyberImeKeyCode`** — typewriter-block key identity (US ANSI physical
    positions as names). **No F1–F12 / NumPad codes** — those stay in
-   flutter-pi / XKB / `cyber_hal` hardware path.
+   eLinux / XKB / `cyber_hal` hardware path.
 2. **`CyberImeKeyMaps`** — per-profile character levels (`base` / `shift` /
    optional `altGr`) for ANSI US, DE QWERTZ, FR AZERTY, JIS JP.
 
@@ -87,7 +87,7 @@ printable key, Backspace, Delete, or arrow key stays down (cancels if a real
 
 | Topic | Soft CyberIME | Physical XKB |
 |-------|---------------|--------------|
-| F-keys / NumPad | Not drawn | Hardware / flutter-pi |
+| F-keys / NumPad | Not drawn | Hardware / eLinux |
 | ANSI modifiers | Ctrl / Alt / Space bottom; Enter on home row | Full ANSI via XKB `us` |
 | ANSI Shift layer | KeyMap `base`/`shift` + long-press slide popup | Shift via XKB |
 | QWERTZ ISO | Short left Shift + `<`; ü ö ä #; Ctrl/Alt/Space/AltGr; Y/Z via KeyMap | XKB `de` |

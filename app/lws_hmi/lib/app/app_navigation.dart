@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-/// Always use bounce overscroll (phone/tablet feel on flutter-pi / Linux).
+/// Always use bounce overscroll (phone/tablet feel on eLinux / Linux).
 class AppScrollBehavior extends MaterialScrollBehavior {
   const AppScrollBehavior();
 

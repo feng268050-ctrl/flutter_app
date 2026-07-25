@@ -31,7 +31,7 @@ migrate_working_dir/
 /build/
 /coverage/
 
-# Not a mobile/desktop multi-target app (flutter-pi + linux stub only).
+# Not a mobile/desktop multi-target app (eLinux + linux stub only).
 # Rebuild platforms in P2.5+ if needed: flutter create --platforms=android .
 /android/
 /ios/

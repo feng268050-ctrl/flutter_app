@@ -15,7 +15,7 @@ Portable Dart HAL for LWS appliance HMIs (parallel to CyberUI). Apps import only
 | `package:cyber_hal/gpio.dart` | named GPIO lines | board `gpio.json` (sysfs) |
 | `package:cyber_hal/modbus.dart` | attribute catalog | board `modbus.json` + serial |
 | `package:cyber_hal/bluetooth.dart` | BlueZ | `/var/lib/bluetooth/` |
-| `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` + `DisplayStack` | procfs/sysfs + `/var/lib/hal/product.ini` + `/etc/display-stack` |
+| `package:cyber_hal/sys_info.dart` | host inventory + `ProductInfo` | procfs/sysfs + `/var/lib/hal/product.ini` |
 | `package:cyber_hal/datetime.dart` | wall clock | `/var/lib/hal/datetime.conf` (`sync_mode`, `timezone`) |
 | `package:cyber_hal/stub.dart` | in-memory stubs | P3.2 emulator / host tests |
 | `package:cyber_hal/cyber_hal.dart` | core only | `Capabilities`, `BoardProfile`, errors |
@@ -32,7 +32,7 @@ Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/displa
 **Full new-product contract (all modules):** [`docs/hal-portability.md`](../../docs/hal-portability.md).  
 **Network OS + modem bring-up case study:** [`docs/network-stack.md`](../../docs/network-stack.md).
 
-**Scope:** Buildroot / flutter-pi **Linux** appliance (+ `Stub*` for host/sim). `Linux*` types are Linux backends of the abstract APIs — **not** a foreshadowing of `Android*` in this package. P5.0 Android APK compatibility is **App-layer** (Android platform APIs / `YNHAPI`); Android already has its own HAL.
+**Scope:** Buildroot / eLinux **Linux** appliance (+ `Stub*` for host/sim). `Linux*` types are Linux backends of the abstract APIs — **not** a foreshadowing of `Android*` in this package. P5.0 Android APK compatibility is **App-layer** (Android platform APIs / `YNHAPI`); Android already has its own HAL.
 
 - **Portable core:** D-Bus (networkd, wpa, BlueZ), config-driven gpio/modbus, `/proc`/`/sys` inventory.
 - **Board pack:** `BoardBindings(profile)` wires helpers / ifaces / mounts / gpio+modbus assets from `BoardProfile.helpers`. Inject modem / SSH-USB / A2DP only when needed.
@@ -89,7 +89,6 @@ dependencies:
 HAL mid-session writes use existing FHS:
 
 - `/var/lib/hal/` — mouse, keyboard, usb-debug, product.ini; **output prefs** as `/var/lib/hal/display.conf` (`backlight`, `auto_sleep`, `orientation`) and `/var/lib/hal/sound.conf`; **datetime** as `/var/lib/hal/datetime.conf`
-- `/etc/display-stack` — image embedder stamp (`DisplayStackProbe`; legacy `/etc/hmi/display-stack` fallback)
 - `/var/lib/hmi/` — **App-owned** only (misc/advanced JSON, alarm SQLite, debug/push staging)
 - `/var/lib/network/` — ethernet/proxy (after network wave)
 - `/var/lib/wpa_supplicant/` — Wi‑Fi wanted / networks
@@ -105,4 +104,4 @@ OpenSpec `dart-hal-package`: output, input, debug, datetime, sys_info, **gpio**,
 
 RTU uses the in-tree Posix (`stty` + libc) transport plus an attribute catalog from the **product App’s** `modbus.json` (profile `configs.modbus`). A pub.dev `modbus_client` / `modbus_client_serial` dependency was evaluated but not adopted for v1: those packages route through libserialport, which fails `sp_open` with ENOTTY on this board’s kernel 6.1 + Buildroot libserialport 0.1.1. Package identity may be revisited once a suitable aarch64-friendly serial backend is confirmed.
 
-**Device validation on aarch64/flutter-pi still required (task 4.4).**
+**Device validation on aarch64/eLinux still required (task 4.4).**

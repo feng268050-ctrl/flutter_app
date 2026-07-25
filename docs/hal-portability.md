@@ -10,7 +10,7 @@ Related: [`network-stack.md`](network-stack.md) (OS network ownership + modem br
 
 ## Principles
 
-1. **Linux appliance only** — `cyber_hal` targets Buildroot / flutter-pi. It does **not**
+1. **Linux appliance only** — `cyber_hal` targets Buildroot / eLinux. It does **not**
    ship Android backends; P5.0 APK work uses App-side Android / `YNHAPI` adapters.
    `Linux*` names mark Linux implementations vs abstract APIs / `Stub*`.
 2. **Portable core in HAL** — D-Bus / sysfs / `systemctl` / `ip` / `amixer` / file prefs.
@@ -93,7 +93,7 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | **Profile** | `helpers.alsa_playback_path_control` + `alsa_playback_path_value` — **optional** enum route (e.g. Rockchip `Playback Path` / `RING_SPK_HP`). Omit on boards that have no such control; HAL skips routing when unset |
 | **Helper** | `change_backlight` / `change_volume` — **optional**; default is sysfs / amixer + `/var/lib/hal/` prefs |
 | **Prefs** | `/var/lib/hal/display.conf` — `backlight`, `auto_sleep`, `orientation` (`landscape` \| `portrait`); `/var/lib/hal/sound.conf` — `volume`, `button_feedback` |
-| **Orientation** | Portable `Orientation` API; Linux calls `change-orientation` then optional `systemctl restart hmi`. Stack mapping stays in `hmi-launch.sh` |
+| **Orientation** | Portable `Orientation` API; Linux calls `change-orientation` then optional `systemctl restart hmi`. Mapping stays in `hmi-launch.sh` (Weston transform). |
 | **Helper** | `bt_a2dp_volume` — optional A2DP soft-volume when BlueALSA sink is used |
 
 ### `hal/input` — keyboard / mouse
@@ -102,9 +102,8 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 |------|--------|
 | **OS (keyboard)** | HID keyboard nodes; `xkeyboard-config` for layouts listed by HAL (`us`, `ru` in v1); `systemctl restart hmi` allowed if layout apply restarts UI |
 | **OS (mouse)** | USB HID mouse (presence probe); prefs in `/var/lib/hal/mouse.conf` |
-| **Display stack** | Image stamp `/etc/display-stack` (`weston` XOR `flutter-pi`, baked by post-build; legacy `/etc/hmi/display-stack` fallback). No runtime `/run/display-stack` writer. `BoardBindings.displayStack()` / `DisplayStackProbe`. Use `displayStack.mouseSettings` to gate Settings knobs (`scroll_speed` / `pointer_axes` only on flutter-pi). Default Weston and alternate flutter-pi rootfs packages are mutually exclusive (`make build-rootfs` vs `build-rootfs-flutter-pi`). |
-| **Helper** | `apply_mouse_settings` — **optional** on flutter-pi-only images (HAL can write `mouse.conf` directly; flutter-pi reloads on mtime). **Required** when the image ships Weston: helper rewrites runtime `weston.ini` via `weston-hmi-config.sh` (`cursor-size`, `[libinput]` accel / natural-scroll / left-handed; **desktop-shell** + splash background unchanged) and restarts `hmi` when needed. Do **not** map `scroll_speed` / `pointer_axes` on Weston (flutter-pi only). |
-| **Weston splash bridge** | Alternate image only: after Weston takes DRM master the kernel `drm_logo` is gone; `desktop-shell` paints `/usr/share/hmi/boot-splash.png` (same canvas as `board/logo`, from `make build-boot-logo`) until `flutter-wayland-client` covers it. kiosk-shell cannot show a background image. |
+| **Helper** | `apply_mouse_settings` — **required**: helper rewrites runtime `weston.ini` via `weston-hmi-config.sh` (`cursor-size`, `[libinput]` accel / natural-scroll / left-handed; **desktop-shell** + splash background unchanged) and restarts `hmi` when needed. Do **not** map `scroll_speed` / `pointer_axes` (Weston ignores them). |
+| **Weston splash bridge** | After Weston takes DRM master the kernel `drm_logo` is gone; `desktop-shell` paints `/usr/share/hmi/boot-splash.png` (same canvas as `board/logo`, from `make build-boot-logo`) until `flutter-wayland-client` covers it. kiosk-shell cannot show a background image. |
 
 ### `hal/datetime`
 

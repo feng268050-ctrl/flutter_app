@@ -41,19 +41,11 @@ needs_mali_wayland_egl_restore() {
   return 0
 }
 
-# Weston/eLinux packages need the default Weston defconfig (DRM backend…).
-# flutter-pi package builds need the alternate flutter-pi defconfig.
+# Weston/eLinux packages need the Weston defconfig (DRM backend…).
 # Other packages inherit LWS_HMI_WESTON (default 1 = Weston).
 needs_wayland_defconfig() {
   case " ${PKG_LIST} " in
   *" wayland "*|*" weston "*|*" flutter-embedded-linux "*) return 0 ;;
-  esac
-  return 1
-}
-
-needs_flutter_pi_defconfig() {
-  case " ${PKG_LIST} " in
-  *" flutter-pi "*) return 0 ;;
   esac
   return 1
 }
@@ -64,8 +56,6 @@ echo "br-make-packages (${LABEL}): ${PKG_LIST} in output/${BR_OUTPUT} ..."
 # docker-run (with LWS_HMI_WESTON), not on the host tree only.
 if needs_wayland_defconfig; then
   export LWS_HMI_WESTON=1
-elif needs_flutter_pi_defconfig; then
-  export LWS_HMI_WESTON=0
 fi
 
 bash "$ROOT/scripts/docker-run.sh" bash -lc "

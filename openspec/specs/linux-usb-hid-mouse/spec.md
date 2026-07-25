@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Wired USB HID mouse (pointer) on ynh960: **1 mm pin-header USB host expansion** always, and **Micro-USB** when Debug over USB is off (OTG host). Kernel enum, evdev/libinput → flutter-pi pointer events, and a visible on-screen cursor.
+Wired USB HID mouse (pointer) on ynh960: **1 mm pin-header USB host expansion** always, and **Micro-USB** when Debug over USB is off (OTG host). Kernel enum, evdev/libinput → eLinux HMI pointer events, and a visible on-screen cursor.
 
 ## Requirements
 ### Requirement: USB HID mouse enumerates on existing host paths
 
-The system SHALL support a wired **USB HID mouse** (or mouse-class HID pointer) on the same host paths as the USB keyboard: the **1 mm pin-header USB host expansion**, and the **Micro-USB** jack when OTG **`mode=host`**. When attached, the kernel MUST expose an input event node under `/dev/input/` usable by libinput/flutter-pi.
+The system SHALL support a wired **USB HID mouse** (or mouse-class HID pointer) on the same host paths as the USB keyboard: the **1 mm pin-header USB host expansion**, and the **Micro-USB** jack when OTG **`mode=host`**. When attached, the kernel MUST expose an input event node under `/dev/input/` usable by libinput/eLinux HMI.
 
 #### Scenario: Mouse appears on 1 mm host
 
@@ -25,7 +25,7 @@ The system SHALL support a wired **USB HID mouse** (or mouse-class HID pointer) 
 - **THEN** the corresponding HID input node is removed without crashing `hmi.service`
 ### Requirement: Pointer events reach Flutter
 
-With the HMI Flutter app running under flutter-pi, USB mouse motion, primary/secondary buttons, and vertical wheel events SHALL be delivered through the platform input path (evdev/libinput → flutter-pi → Flutter) without a custom Dart HID decoder.
+With the HMI Flutter app running under eLinux HMI, USB mouse motion, primary/secondary buttons, and vertical wheel events SHALL be delivered through the platform input path (evdev/libinput → eLinux HMI → Flutter) without a custom Dart HID decoder.
 
 #### Scenario: Wheel scrolls Demo content
 
@@ -39,7 +39,7 @@ With the HMI Flutter app running under flutter-pi, USB mouse motion, primary/sec
 
 ### Requirement: On-screen mouse pointer is visible
 
-When at least one USB HID mouse (pointer device that enables flutter-pi’s cursor) is attached, the system SHALL display a **visible** on-screen pointer that tracks mouse motion. The pointer MUST remain usable on ynh960 even if the DRM hardware cursor plane is unavailable or broken (software or other reliable fallback MAY be used). When no cursor-capable pointer device is attached, the system SHOULD hide the pointer (touch-only operation).
+When at least one USB HID mouse (pointer device that enables eLinux HMI’s cursor) is attached, the system SHALL display a **visible** on-screen pointer that tracks mouse motion. The pointer MUST remain usable on ynh960 even if the DRM hardware cursor plane is unavailable or broken (software or other reliable fallback MAY be used). When no cursor-capable pointer device is attached, the system SHOULD hide the pointer (touch-only operation).
 
 #### Scenario: Pointer appears after plug
 

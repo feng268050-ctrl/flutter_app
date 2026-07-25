@@ -49,7 +49,7 @@ lws-hmi overrides in `overlay/buildroot/chips/lws_hmi_rootfs.config`:
 | Option | Value | Effect |
 |--------|-------|--------|
 | `BR2_TARGET_ROOTFS_EXT2_SIZE_AUTO` | `n` | Fixed cap instead of auto formula |
-| `BR2_TARGET_ROOTFS_EXT2_SIZE` | `600M` | Shared by Weston (default) and flutter-pi (alternate); headroom for GStreamer/CJK fonts + `push-app` |
+| `BR2_TARGET_ROOTFS_EXT2_SIZE` | `600M` | Weston/eLinux image; headroom for GStreamer/CJK fonts + `push-app` |
 | `BR2_TARGET_ROOTFS_EXT2_INODES` | `10240` | ~5.7k free inodes; avoids inode-table bloat |
 | `BR2_TARGET_ROOTFS_EXT2_RESBLKS` | `0` | No 5% root-reserved pool (embedded appliance) |
 

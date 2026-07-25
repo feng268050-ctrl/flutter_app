@@ -1826,12 +1826,6 @@ abstract class AppLocalizations {
   /// **'Kernel Version'**
   String get kernelVersion;
 
-  /// No description provided for @displayStack.
-  ///
-  /// In en, this message translates to:
-  /// **'Display Stack'**
-  String get displayStack;
-
   /// No description provided for @autoCheckOtaUpdate.
   ///
   /// In en, this message translates to:

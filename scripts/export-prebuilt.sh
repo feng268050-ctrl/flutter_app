@@ -4,7 +4,7 @@
 # Replaces separate make build-prebuilt + make export-prebuilt-runtime.
 #
 # Env (auto by default):
-#   EXPORT_FLUTTER=1|0   — flutter-engine / flutter-pi (and optional host SDK)
+#   EXPORT_FLUTTER=1|0   — flutter-engine (and optional host SDK)
 #   EXPORT_RUNTIME=1|0   — gstreamer + platform-packages from target/
 #   PACK_*               — passed through to flutter export (see build-prebuilt.sh)
 #   FORCE=1              — overwrite existing prebuilt trees
@@ -39,7 +39,7 @@ has_include() {
 want_flutter() {
   [[ "${EXPORT_FLUTTER:-}" == "0" ]] && return 1
   [[ "${EXPORT_FLUTTER:-}" == "1" ]] && return 0
-  has_include "lws_hmi_flutter.config"
+  has_include "lws_hmi_flutter_weston.config"
 }
 
 want_runtime() {
@@ -60,7 +60,7 @@ runtime_ready() {
 did=0
 
 if want_flutter; then
-  echo "export-prebuilt: flutter (engine / flutter-pi / optional SDK) ..."
+  echo "export-prebuilt: flutter (engine / optional SDK) ..."
   bash "$ROOT/scripts/build-prebuilt.sh"
   did=1
 else

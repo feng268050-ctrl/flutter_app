@@ -90,7 +90,7 @@ EOF
 
 debug_runtime_resolve_host_paths() {
 	local root="$1"
-	local engine icu bundle_engine bundle_icu version
+	local engine icu bundle_engine bundle_icu version legacy_engine legacy_icu
 	version="$(debug_runtime_engine_version "$root")"
 
 	if engine="$(debug_runtime_host_engine "$root" 2>/dev/null)" && icu="$(debug_runtime_host_icu "$root" 2>/dev/null)"; then
@@ -107,13 +107,32 @@ debug_runtime_resolve_host_paths() {
 		return 0
 	fi
 
+	# Legacy leftover from older host toolchains (still valid arm64 debug .so).
+	legacy_engine="$root/app/lws_hmi/build/flutter_assets/libflutter_engine.so"
+	legacy_icu="$root/app/lws_hmi/build/flutter_assets/icudtl.dat"
+	if [[ -f "$legacy_engine" && -f "$legacy_icu" ]]; then
+		echo "$legacy_engine"
+		echo "$legacy_icu"
+		return 0
+	fi
+
+	# ICU is identical across modes — allow release prebuilt ICU with legacy engine.
+	if [[ -f "$legacy_engine" ]]; then
+		legacy_icu="$root/prebuilt/flutter-engine/${version}/arm64-release/target/usr/share/flutter/release/data/icudtl.dat"
+		if [[ -f "$legacy_icu" ]]; then
+			echo "$legacy_engine"
+			echo "$legacy_icu"
+			return 0
+		fi
+	fi
+
 	cat >&2 <<EOF
 ERROR: debug engine/ICU not found for Flutter ${version}.
 
 Build the matching arm64-debug prebuilt:
   FLUTTER_ENGINE_RUNTIME_MODE=debug make build-flutter-engine
 
-Or run a debug app build first (uses flutterpi_tool cache):
+Or stage a debug build after the debug engine exists:
   make build-debug-app
 EOF
 	return 1

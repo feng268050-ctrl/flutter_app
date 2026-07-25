@@ -40,7 +40,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs build-rootfs-flutter-pi prepare-rootfs prepare-rootfs-flutter-pi build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine build-flutter-pi rebuild-flutter-pi build-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-umtprd rebuild-umtprd build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app alarm alarm-clean l10n l10n-sync l10n-gen l10n-verify
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-umtprd rebuild-umtprd build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app alarm alarm-clean l10n l10n-sync l10n-gen l10n-verify
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -90,9 +90,7 @@ help:
 	@echo "  make l10n-verify           # fail if ARBs / AppLocalizations drift"
 	@echo "  make build-kernel          # dual FIT → output/firmware/boot.img + boot_b.img (exports; for upgrade)"
 	@echo "  make build-rootfs          # rootfs → output/firmware/rootfs.img (Weston + eLinux + Mali wayland-gbm)"
-	@echo "  make build-rootfs-flutter-pi # alternate rootfs: flutter-pi only + Mali gbm (no Weston)"
-	@echo "  make prepare-rootfs        # switch Buildroot stack → Weston (no rootfs.img pack)"
-	@echo "  make prepare-rootfs-flutter-pi # switch Buildroot stack → flutter-pi (no rootfs.img pack)"
+	@echo "  make prepare-rootfs        # ensure Buildroot stack → Weston (no rootfs.img pack)"
 	@echo "  make build-img             # pack update.img only (reuses existing boot/rootfs; no rebuild)"
 	@echo "  make sdk-shell             # interactive shell in linux-sdk (native Linux or macOS Docker)"
 	@echo "  See docs/build-optimization.md"
@@ -107,8 +105,7 @@ help:
 	@echo "  make build-platform-packages # runtime: libmodbus, yaml-cpp, sqlite, avahi → prebuilt/"
 	@echo "  make build-flutter-engine  # runtime: compile engine → prebuilt/ (needs fetch first)"
 	@echo "  make fetch-flutter-engine  # runtime: engine sources → .cache/flutter-engine/"
-	@echo "  make build-flutter-pi      # runtime: flutter-pi → prebuilt/"
-	@echo "  make build-flutter-embedded-linux  # default Weston image: eLinux Wayland client → prebuilt/"
+	@echo "  make build-flutter-embedded-linux  # Weston image: eLinux Wayland client → prebuilt/"
 	@echo "  make build-mediamtx        # runtime: mediamtx arm64 → prebuilt/"
 	@echo "  make build-umtprd          # runtime: umtprd aarch64 → prebuilt/ + fs-overlay (MTP)"
 	@echo "  make fetch-btop            # runtime: btop aarch64 musl → prebuilt/ + fs-overlay"
@@ -234,27 +231,17 @@ build-kernel:
 	@bash scripts/docker-run.sh bash -lc 'bash /work/lws-hmi/scripts/sync-lunch-config.sh && bash /work/lws-hmi/scripts/build-kernel-ab.sh'
 	@bash scripts/docker-export-artifacts.sh boot
 
-# Default rootfs: Weston + eLinux + Mali wayland-gbm.
+# Rootfs: Weston + eLinux + Mali wayland-gbm.
 # prepare-rootfs flips Mali/embedder only when the stack stamp differs.
 build-rootfs: prepare-rootfs
-	@LWS_HMI_WESTON=1 bash scripts/docker-run.sh ./build.sh rootfs
+	@bash scripts/docker-run.sh ./build.sh rootfs
 	@bash scripts/lws-hmi-rootfs-postprocess.sh
 	@bash scripts/verify-rootfs-overlay.sh
 	@bash scripts/docker-export-artifacts.sh rootfs
 
-# Alternate image: flutter-pi + Mali gbm (no Weston / eLinux client).
-build-rootfs-flutter-pi: prepare-rootfs-flutter-pi
-	@LWS_HMI_WESTON=0 bash scripts/docker-run.sh ./build.sh rootfs
-	@bash scripts/lws-hmi-rootfs-postprocess.sh
-	@bash scripts/verify-rootfs-overlay.sh
-	@bash scripts/docker-export-artifacts.sh rootfs
-
-# Stack switch only (check-prebuilt + overlay + Mali/embedder). Idempotent.
+# Stack ensure only (check-prebuilt + overlay + Mali/embedder). Idempotent.
 prepare-rootfs:
 	@bash scripts/prepare-rootfs-stack.sh weston
-
-prepare-rootfs-flutter-pi:
-	@bash scripts/prepare-rootfs-stack.sh flutter-pi
 
 build-img:
 	@bash scripts/build-img.sh
@@ -340,12 +327,6 @@ refetch-flutter-engine:
 
 cache-publish-flutter-engine:
 	@bash scripts/cache-publish-flutter-engine.sh
-
-build-flutter-pi:
-	@bash scripts/build-flutter-pi.sh
-
-rebuild-flutter-pi:
-	@FORCE=1 bash scripts/build-flutter-pi.sh
 
 build-flutter-embedded-linux:
 	@bash scripts/build-flutter-embedded-linux.sh

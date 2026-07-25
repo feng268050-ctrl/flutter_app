@@ -4,7 +4,7 @@ import 'package:cyber_hal/input/keyboard.dart';
 import 'package:cyber_hal/src/linux/board_helper.dart';
 import 'package:flutter/foundation.dart';
 
-/// Restarts HMI so flutter-pi re-reads XKB; injectable for tests.
+/// Restarts HMI so the embedder re-reads XKB; injectable for tests.
 typedef HmiRestartRunner = Future<int> Function();
 
 Future<int> defaultHmiRestartRunner() async {

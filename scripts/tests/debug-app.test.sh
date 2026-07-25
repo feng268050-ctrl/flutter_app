@@ -25,7 +25,16 @@ assert_executable() {
 	fi
 }
 
-assert_file "$ROOT/overlay/buildroot/flutterpi_tool.version"
+assert_file "$ROOT/scripts/hmi-bundle-common.sh"
+if grep -q 'android-arm64-.*/gen_snapshot' "$ROOT/scripts/hmi-bundle-common.sh"; then
+	echo "FAIL hmi-bundle-common must not fall back to Android gen_snapshot" >&2
+	fail=1
+elif grep -q 'hmi_bundle_install_gen_snapshot_docker_wrapper' "$ROOT/scripts/hmi-bundle-common.sh"; then
+	echo "OK  hmi-bundle-common uses Docker linux gen_snapshot on Darwin"
+else
+	echo "FAIL hmi-bundle-common missing Docker gen_snapshot wrapper" >&2
+	fail=1
+fi
 assert_executable "$ROOT/scripts/build-debug-app.sh"
 assert_executable "$ROOT/scripts/debug-app.sh"
 assert_executable "$ROOT/scripts/debug-setup.sh"
@@ -40,7 +49,7 @@ assert_executable "$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr
 if grep -q '"--no-track-widget-creation"' "$ROOT/.vscode/launch.json" \
 	&& grep -q '"dart.flutterRunAdditionalArgs".*"--no-track-widget-creation"' "$ROOT/.vscode/settings.json" \
 	&& grep -q -- '--no-track-widget-creation' "$ROOT/scripts/debug-app.sh"; then
-	echo "OK  all IDE and CLI launches match flutterpi_tool widget tracking"
+	echo "OK  all IDE and CLI launches match HMI bundle widget tracking"
 else
 	echo "FAIL an IDE or CLI launch can differ from initial bundle widget tracking" >&2
 	fail=1
@@ -100,22 +109,22 @@ fi
 LAUNCH="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh"
 APPLY="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"
 if ! grep -q 'flutter-pi only' "$ROOT/scripts/debug-app-deploy.sh" \
-	&& ! grep -q 'refusing debug install on display-stack' "$APPLY" \
-	&& grep -q 'debug-deploy: display-stack=' "$ROOT/scripts/debug-app-deploy.sh" \
+	&& ! grep -q 'display-stack' "$ROOT/scripts/debug-app-deploy.sh" \
+	&& ! grep -q 'display-stack' "$APPLY" \
 	&& grep -q 'ELINUX_LD_LIBRARY_PATH' "$LAUNCH" \
 	&& grep -q 'kernel_blob.bin' "$LAUNCH" \
 	&& grep -q 'data/icudtl.dat' "$LAUNCH"; then
-	echo "OK  Weston debug path wired (no hard refuse)"
+	echo "OK  Weston debug path wired (no display-stack gate)"
 else
-	echo "FAIL Weston debug path missing or still hard-refusing weston" >&2
+	echo "FAIL Weston debug path missing or still gated on display-stack" >&2
 	fail=1
 fi
 
 # Staging must ship ICU for eLinux bundle path.
-if grep -q 'HMI_STAGING/data/icudtl.dat' "$ROOT/scripts/build-debug-app.sh"; then
-	echo "OK  build-debug-app stages data/icudtl.dat for eLinux"
+if grep -q 'data/icudtl.dat' "$ROOT/scripts/hmi-bundle-common.sh"; then
+	echo "OK  hmi-bundle-common stages data/icudtl.dat for eLinux"
 else
-	echo "FAIL build-debug-app does not stage data/icudtl.dat" >&2
+	echo "FAIL hmi-bundle-common does not stage data/icudtl.dat" >&2
 	fail=1
 fi
 
@@ -180,7 +189,7 @@ if grep -q 'start-stop-daemon -S -b -m' \
 	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh" \
 	&& grep -q 'live_weston_pids' \
 	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh"; then
-	echo "OK  debug process detaches cleanly; stop covers Weston + flutter-pi"
+	echo "OK  debug process detaches cleanly; stop covers Weston"
 else
 	echo "FAIL debug process lifecycle incomplete for Weston" >&2
 	fail=1

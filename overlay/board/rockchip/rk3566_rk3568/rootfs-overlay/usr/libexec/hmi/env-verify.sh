@@ -1,5 +1,5 @@
 #!/bin/sh
-# §3.4 platform stack verification on ynh960 device (excludes flutter-pi / hmi boot KPI).
+# §3.4 platform stack verification on ynh960 device (excludes HMI boot KPI).
 # Run after flash: verify-env
 # Canonical copy: overlay/.../rootfs-overlay/usr/libexec/hmi/env-verify.sh
 set -u
@@ -11,7 +11,7 @@ prep_ok() { echo "PASS: $* (P1 prep-only — absent on rootfs is OK)"; }
 
 FAILED=0
 
-echo "=== verify-env (§3.4 platform stack, no flutter-pi) ==="
+echo "=== verify-env (§3.4 platform stack, Weston + eLinux) ==="
 
 echo ""
 echo "--- RKNPU2 runtime (P1 rootfs) ---"
@@ -74,14 +74,14 @@ if [ -f /usr/share/flutter/icudtl.dat ] || [ -f /usr/share/flutter/release/data/
 else
 	fail "system icudtl.dat missing under /usr/share/flutter"
 fi
-if pidof flutter-pi >/dev/null 2>&1; then
-	pass "flutter-pi process running"
+if pidof flutter-wayland-client >/dev/null 2>&1 || pidof flutter-waylan >/dev/null 2>&1; then
+	pass "flutter-wayland-client running"
 else
-	warn "flutter-pi not running"
+	warn "flutter-wayland-client not running"
 fi
 
 echo ""
-echo "--- flutter-pi keyboard runtime (xkb + Compose) ---"
+echo "--- keyboard runtime (xkb + Compose) ---"
 if [ -f /usr/share/X11/xkb/rules/evdev ]; then
 	pass "xkeyboard-config rules/evdev present"
 else
@@ -95,7 +95,7 @@ fi
 if [ -f /etc/default/keyboard ]; then
 	pass "/etc/default/keyboard present"
 else
-	warn "/etc/default/keyboard missing (flutter-pi uses built-in defaults)"
+	warn "/etc/default/keyboard missing (embedder uses built-in defaults)"
 fi
 
 echo ""
@@ -122,7 +122,7 @@ if [ "$npu_sysfs" -eq 0 ]; then
 fi
 
 echo ""
-echo "--- GPU / display libs (Mali, libdrm — not flutter-pi) ---"
+echo "--- GPU / display libs (Mali, libdrm) ---"
 gpu_ok=0
 for lib in /usr/lib/libmali.so* /usr/lib/libMali.so* /usr/lib/libdrm.so* /usr/lib/libgbm.so*; do
 	[ -e "$lib" ] || continue

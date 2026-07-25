@@ -143,11 +143,11 @@ cmd_run() {
       rm -f /opt/hmi/data/icudtl.dat
       cp -L /usr/share/flutter/release/data/icudtl.dat /opt/hmi/data/icudtl.dat
     fi
-    pkill -9 -x flutter-pi 2>/dev/null || true
+    true # flutter-pi removed 2>/dev/null || true
     pkill -9 -x flutter-drm-gbm-backend 2>/dev/null || true
     sleep 1
     # Ensure no stale DRM clients before claiming card0.
-    if pidof flutter-drm-gbm-backend >/dev/null 2>&1 || pidof flutter-pi >/dev/null 2>&1; then
+    if pidof flutter-drm-gbm-backend >/dev/null 2>&1 >/dev/null 2>&1; then
       echo 'ERROR: could not stop previous Flutter DRM client' >&2
       exit 1
     fi

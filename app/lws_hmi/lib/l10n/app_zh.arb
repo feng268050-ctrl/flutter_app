@@ -288,7 +288,6 @@
   "processLibVersion": "工艺库版本",
   "focusScaleReference": "焦点刻度参考",
   "kernelVersion": "内核版本",
-  "displayStack": "显示栈",
   "autoCheckOtaUpdate": "自动检查更新",
   "otaCheckUnavailable": "当前版本暂不支持软件更新检查。",
   "screenOffNever": "永不",

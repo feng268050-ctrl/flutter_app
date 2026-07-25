@@ -402,7 +402,6 @@
   "processLibVersion": "Process Library Version",
   "focusScaleReference": "Focus Scale Reference",
   "kernelVersion": "Kernel Version",
-  "displayStack": "Display Stack",
   "autoCheckOtaUpdate": "Automatically check for updates",
   "otaCheckUnavailable": "Software update check is not available on this build.",
   "screenOffNever": "Never",

@@ -128,7 +128,7 @@ cmd_run() {
   local rotation="${1:-90}"
   echo "spike-elinux-wayland: launching Wayland client (Weston must be up) ..."
   SSH "systemctl stop hmi.service 2>/dev/null || true
-    pkill -9 -x flutter-pi 2>/dev/null || true
+    true # flutter-pi removed 2>/dev/null || true
     pkill -9 -x flutter-drm-gbm-backend 2>/dev/null || true
     pkill -9 -x flutter-wayland-client 2>/dev/null || true
     sleep 1

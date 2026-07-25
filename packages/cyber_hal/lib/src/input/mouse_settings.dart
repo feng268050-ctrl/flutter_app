@@ -6,7 +6,7 @@ enum MousePrimaryButton {
   right,
 }
 
-/// Relative pointer X/Y handling (Linux flutter-pi only; hidden on Weston).
+/// Relative pointer X/Y handling (not applied on Weston).
 ///
 /// [auto] swaps axes for Bluetooth keyboard+pointer combo devices (common
 /// HOGP trackpad clones). [normal] never swaps; [swap] always swaps.
@@ -31,7 +31,7 @@ class MouseSettings {
   final int scrollSpeedPercent;
   final int pointerSpeedPercent;
 
-  /// Visual cursor size (0–100). Default 20 — flutter-pi maps this to icon
+  /// Visual cursor size (0–100). Default 20 — the cursor theme maps this to icon
   /// density (ceil + upscale for sparse hand/text assets).
   final int pointerSizePercent;
   final MousePrimaryButton primaryButton;

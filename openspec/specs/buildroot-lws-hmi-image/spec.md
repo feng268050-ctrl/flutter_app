@@ -43,12 +43,12 @@ The lws_hmi defconfig MUST NOT include Weston, Chromium, camera, benchmark, test
 
 ### Requirement: Platform stack packages are present
 
-The P1 rootfs SHALL include Rockchip Mali GPU, libdrm/libgbm, flutter-pi (prebuilt install), RKNPU2 runtime (`librknnrt.so`, `rknn_server`) without RKNPU2 example binaries, wpa_supplicant and BlueZ/rkwifibt userland (installed but boot-deferred), powermanager, and Chinese font support. RKNPU2 binaries SHALL be staged via `make fetch-rknn-rt` into `rootfs-overlay` (this SDK has no `BR2_PACKAGE_RKNPU2` Buildroot package).
+The P1 rootfs SHALL include Rockchip Mali GPU, libdrm/libgbm, eLinux HMI (prebuilt install), RKNPU2 runtime (`librknnrt.so`, `rknn_server`) without RKNPU2 example binaries, wpa_supplicant and BlueZ/rkwifibt userland (installed but boot-deferred), powermanager, and Chinese font support. RKNPU2 binaries SHALL be staged via `make fetch-rknn-rt` into `rootfs-overlay` (this SDK has no `BR2_PACKAGE_RKNPU2` Buildroot package).
 
-#### Scenario: flutter-pi binary on target
+#### Scenario: eLinux HMI binary on target
 
 - **WHEN** P1 rootfs is deployed to device
-- **THEN** `/usr/bin/flutter-pi` exists and is executable
+- **THEN** `/usr/bin/flutter-wayland-client` exists and is executable
 
 #### Scenario: RKNPU2 runtime on target without demo
 
@@ -60,9 +60,9 @@ The P1 rootfs SHALL include Rockchip Mali GPU, libdrm/libgbm, flutter-pi (prebui
 - **WHEN** P1 device boots
 - **THEN** `wpa_supplicant` binary is installed but `wpa_supplicant.service` and `network.service` are not in `multi-user.target.wants`
 
-### Requirement: flutter-pi and engine install from prebuilt only
+### Requirement: eLinux HMI and engine install from prebuilt only
 
-Buildroot overlay packages for flutter-pi and flutter-engine SHALL copy from `prebuilt/flutter-pi/<version>/` and `prebuilt/flutter-engine/<version>/` during `make build-rootfs`. `make check-prebuilt` SHALL fail if prebuilt artifacts are missing. Host `make build-runtime-deps` populates prebuilt directories.
+Buildroot overlay packages for the eLinux HMI and flutter-engine SHALL copy from `prebuilt/eLinux HMI/<version>/` and `prebuilt/flutter-engine/<version>/` during `make build-rootfs`. `make check-prebuilt` SHALL fail if prebuilt artifacts are missing. Host `make build-runtime-deps` populates prebuilt directories.
 
 #### Scenario: check-prebuilt gates rootfs build
 
@@ -72,7 +72,7 @@ Buildroot overlay packages for flutter-pi and flutter-engine SHALL copy from `pr
 #### Scenario: engine version pinned
 
 - **WHEN** developer inspects version pins
-- **THEN** `overlay/buildroot/flutter-engine.version` and `overlay/buildroot/flutter-pi.version` document the active pins (Flutter 3.24.4 / commit 37bd977)
+- **THEN** `overlay/buildroot/flutter-engine.version` and `overlay/buildroot/eLinux HMI.version` document the active pins (Flutter 3.24.4 / commit 37bd977)
 
 ### Requirement: Rootfs overlay and LCD display params are applied
 
@@ -218,23 +218,23 @@ The lws-hmi kernel/Device Tree/Buildroot configuration SHALL enable **OTG dual-r
 - **WHEN** the same image is used with Debug over USB on and a PC data cable on Micro-USB (peripheral role + VBUS)
 - **THEN** plug-ssh ECM debug can still come up per `usb-plug-ssh-debug`
 
-### Requirement: flutter-pi keyboard runtime data present
+### Requirement: eLinux HMI keyboard runtime data present
 
-The image SHALL ship the userspace data flutter-pi needs to enable text/raw keyboard input: **xkeyboard-config** files under `/usr/share/X11/xkb` (including `rules/evdev`) and enough X11 locale Compose mapping under `/usr/share/X11/locale` for locale `C` / `C.UTF-8`. Enabling `BR2_PACKAGE_LIBXKBCOMMON` alone is not sufficient. Full X.org (`BR2_PACKAGE_XORG7`) is not required when Compose stubs are provided via rootfs overlay.
+The image SHALL ship the userspace data eLinux HMI needs to enable text/raw keyboard input: **xkeyboard-config** files under `/usr/share/X11/xkb` (including `rules/evdev`) and enough X11 locale Compose mapping under `/usr/share/X11/locale` for locale `C` / `C.UTF-8`. Enabling `BR2_PACKAGE_LIBXKBCOMMON` alone is not sufficient. Full X.org (`BR2_PACKAGE_XORG7`) is not required when Compose stubs are provided via rootfs overlay.
 
-#### Scenario: flutter-pi initializes keyboard configuration
+#### Scenario: eLinux HMI initializes keyboard configuration
 
-- **WHEN** `flutter-pi` starts on a flashed image that includes the keyboard runtime data
-- **THEN** it MUST NOT log `Could not initialize keyboard configuration` / `Flutter-pi will run without text/raw keyboard input`
+- **WHEN** `eLinux HMI` starts on a flashed image that includes the keyboard runtime data
+- **THEN** it MUST NOT log `Could not initialize keyboard configuration` / `eLinux HMI will run without text/raw keyboard input`
 
-### Requirement: flutter-pi cursor and mouse pref support in image
+### Requirement: eLinux HMI cursor and mouse pref support in image
 
-The Buildroot/lws-hmi image SHALL ship a flutter-pi build that: (1) shows a reliable on-screen mouse pointer when a USB mouse is attached on ynh960; and (2) applies mouse preferences from `/var/lib/hal/` (natural scroll, scroll speed, pointer speed, primary button) at process start and when pointer devices are added. Any package patches required for cursor fallback or pref apply MUST be present under the repository flutter-pi package overlay and baked into the prebuilt used by rootfs.
+The Buildroot/lws-hmi image SHALL ship a eLinux HMI build that: (1) shows a reliable on-screen mouse pointer when a USB mouse is attached on ynh960; and (2) applies mouse preferences from `/var/lib/hal/` (natural scroll, scroll speed, pointer speed, primary button) at process start and when pointer devices are added. Any package patches required for cursor fallback or pref apply MUST be present under the repository eLinux HMI package overlay and baked into the prebuilt used by rootfs.
 
 #### Scenario: Prebuilt includes mouse/cursor patches
 
-- **WHEN** the image is built with the flutter-pi prebuilt used by rootfs
-- **THEN** the shipped flutter-pi binary includes the cursor visibility and mouse preference apply support required by `linux-usb-hid-mouse` and `linux-mouse-settings`
+- **WHEN** the image is built with the eLinux HMI prebuilt used by rootfs
+- **THEN** the shipped eLinux HMI binary includes the cursor visibility and mouse preference apply support required by `linux-usb-hid-mouse` and `linux-mouse-settings`
 
 #### Scenario: verify-rootfs accepts mouse pref path
 
@@ -280,27 +280,21 @@ The boot chain configuration used by the product image SHALL load the active let
 
 ### Requirement: Product image includes the GStreamer/MPP live IP-camera preview runtime
 
-The lws_hmi product rootfs SHALL include the runtime needed for the Flutter HMI to decode and render the local MediaMTX RTSP preview: GStreamer core, RTSP/RTP transports, required H.264/H.265 parsing, and Rockchip MPP hardware decode integration. The default Weston rootfs SHALL include a flutter-embedded-linux client linked with the Sony eLinux GStreamer video player plugin and install its required shared library; the alternate flutter-pi rootfs SHALL include the flutter-pi GStreamer video player plugin. The active product defconfig SHALL include `lws_hmi_gst_rtsp.config` or its generated prebuilt equivalent. This runtime is required by the IP Camera settings preview and MUST NOT remain deferred/commented out after this change.
+The lws_hmi product rootfs SHALL include the runtime needed for the Flutter HMI to decode and render the local MediaMTX RTSP preview: GStreamer core, RTSP/RTP transports, required H.264/H.265 parsing, and Rockchip MPP hardware decode integration. The product rootfs SHALL include a flutter-embedded-linux client linked with the Sony eLinux GStreamer video player plugin and install its required shared library. The active product defconfig SHALL include `lws_hmi_gst_rtsp.config` or its generated prebuilt equivalent. This runtime is required by the IP Camera settings preview and MUST NOT remain deferred/commented out after this change.
 
 #### Scenario: Rootfs contains the preview runtime
 
 - **WHEN** the product rootfs for this change is built and deployed
 - **THEN** the required GStreamer shared libraries and RTSP/RTP plugins SHALL be present
 - **AND** Rockchip MPP decode integration SHALL be available
-- **AND** the active display-stack video player plugin SHALL be registered for the App
+- **AND** the eLinux video player plugin SHALL be registered for the App
 
-#### Scenario: Default Weston image contains its video texture plugin
+#### Scenario: Product image contains its video texture plugin
 
 - **WHEN** `build-rootfs` is built and deployed
 - **THEN** `flutter-wayland-client` SHALL be linked against the eLinux video player plugin
 - **AND** `libvideo_player_plugin.so` and the shared GStreamer/MPP runtime SHALL be installed
-- **AND** the App SHALL not replace the eLinux platform implementation with `FlutterpiVideoPlayer`
-
-#### Scenario: Alternate flutter-pi image contains its video texture plugin
-
-- **WHEN** `build-rootfs-flutter-pi` is built and deployed
-- **THEN** flutter-pi SHALL register the GStreamer video player plugin used by the App
-- **AND** the shared GStreamer/MPP runtime SHALL be installed
+- **AND** the App SHALL not replace the eLinux platform implementation with a DRM-only video player
 
 #### Scenario: Local relay stream produces a Flutter video texture
 

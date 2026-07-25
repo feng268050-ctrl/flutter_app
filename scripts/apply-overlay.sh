@@ -21,7 +21,6 @@ BR_CHIPS_DIR="$SDK/buildroot/configs/rockchip/chips"
 BR_DEFCONFIGS="$SDK/buildroot/configs"
 BR_PKG_FLUTTER_ENGINE="$SDK/buildroot/package/flutter-engine"
 BR_PKG_FLUTTER_SDK="$SDK/buildroot/package/flutter-sdk-bin"
-BR_PKG_FLUTTER_PI="$SDK/buildroot/package/flutter-pi"
 BR_PKG_FLUTTER_ELINUX="$SDK/buildroot/package/flutter-embedded-linux"
 BR_PKG_LIBSERIALPORT="$SDK/buildroot/package/libserialport"
 BR_PKG_BLUEZ5_UTILS="$SDK/buildroot/package/bluez5_utils"
@@ -423,49 +422,6 @@ sync_flutter_embedded_linux_package() {
   echo "overlay: flutter-embedded-linux prebuilt package synced"
 }
 
-sync_flutter_pi_package() {
-  local src="$OVERLAY/buildroot/package/flutter-pi/flutter-pi.mk"
-  local patch_src patch_name
-  local mark="$BR_PKG_FLUTTER_PI/.lws-overlay-patches"
-  local stash="$BR_PKG_FLUTTER_PI/$LWS_PREBUILT_PATCHES_DIR"
-  local prev
-  if [[ ! -f "$src" ]]; then
-    return 0
-  fi
-  if [[ ! -f "$BR_PKG_FLUTTER_PI/flutter-pi.mk.orig" ]]; then
-    cp -a "$BR_PKG_FLUTTER_PI/flutter-pi.mk" \
-      "$BR_PKG_FLUTTER_PI/flutter-pi.mk.orig"
-  fi
-  install_file "$src" "$BR_PKG_FLUTTER_PI/flutter-pi.mk"
-
-  # Drop retired LWS overlay patches (install is additive; stash otherwise keeps
-  # obsolete 0009-*.patch and breaks compile when two 0009s both apply).
-  if [[ -f "$mark" ]]; then
-    while IFS= read -r prev || [[ -n "${prev:-}" ]]; do
-      [[ -z "$prev" ]] && continue
-      rm -f "$BR_PKG_FLUTTER_PI/$prev" "$stash/$prev"
-    done <"$mark"
-  fi
-  # Known retired names (mark may be missing on older trees).
-  rm -f \
-    "$BR_PKG_FLUTTER_PI/0009-pointer-relative-display-axes.patch" \
-    "$stash/0009-pointer-relative-display-axes.patch" \
-    "$BR_PKG_FLUTTER_PI/0009-qm002-pointer-axis-swap.patch" \
-    "$stash/0009-qm002-pointer-axis-swap.patch"
-
-  : >"$mark"
-  shopt -s nullglob
-  for patch_src in "$OVERLAY/buildroot/package/flutter-pi"/*.patch; do
-    patch_name="$(basename "$patch_src")"
-    install_file "$patch_src" "$BR_PKG_FLUTTER_PI/$patch_name"
-    printf '%s\n' "$patch_name" >>"$mark"
-  done
-  shopt -u nullglob
-  # Install overlay patches before stashing (prebuilt .mk); br-compile-flutter
-  # restores them when swapping to flutter-pi.compile.mk.
-  disable_br_package_patches "$BR_PKG_FLUTTER_PI" "flutter-pi"
-  patch_flutter_pi_config_prebuilt
-}
 
 # libserialport 0.1.1 probes removed Linux termiox → sp_open ENOTTY on kernel 6.1+.
 sync_libserialport_package() {
@@ -546,26 +502,7 @@ sync_bluez_alsa_package() {
   fi
 }
 
-patch_flutter_pi_config_prebuilt() {
-  local cfg="$BR_PKG_FLUTTER_PI/Config.in"
-  [[ -f "$cfg" ]] || return 0
-  if [[ ! -f "$cfg.lws-prebuilt.orig" ]]; then
-    cp -a "$cfg" "$cfg.lws-prebuilt.orig"
-  fi
-  if grep -q 'select BR2_PACKAGE_HOST_FLUTTER_SDK_BIN' "$cfg"; then
-    sed -i.bak '/select BR2_PACKAGE_HOST_FLUTTER_SDK_BIN/d' "$cfg"
-    rm -f "$cfg.bak"
-    echo "overlay: flutter-pi Config.in — drop select HOST_FLUTTER_SDK_BIN (prebuilt rootfs)"
-  fi
-}
 
-restore_flutter_pi_config() {
-  local cfg="$BR_PKG_FLUTTER_PI/Config.in"
-  if [[ -f "$cfg.lws-prebuilt.orig" ]]; then
-    mv -f "$cfg.lws-prebuilt.orig" "$cfg"
-    echo "overlay: restored upstream flutter-pi Config.in"
-  fi
-}
 
 sdk_realpath() {
   python3 - "$1" <<'PY'
@@ -790,7 +727,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
     rm -f "$POST_HOOKS_DIR/31-strip-fstab.sh"
     rm -f "$POST_HOOKS_DIR/91-weston-ini.sh"
     rm -rf "$SDK/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay"
-    for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter.config lws_hmi_flutter_weston.config lws_hmi_wayland.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
+    for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter_weston.config lws_hmi_wayland.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
       rm -f "$BR_CHIPS_DIR/$f"
     done
     for f in rockchip_rk3566_rk3568_lws_hmi_defconfig; do
@@ -807,12 +744,6 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
         "$BR_PKG_FLUTTER_SDK/flutter-sdk-bin.mk"
       echo "restored upstream flutter-sdk-bin.mk"
     fi
-    if [[ -f "$BR_PKG_FLUTTER_PI/flutter-pi.mk.orig" ]]; then
-      mv -f "$BR_PKG_FLUTTER_PI/flutter-pi.mk.orig" \
-        "$BR_PKG_FLUTTER_PI/flutter-pi.mk"
-      echo "restored upstream flutter-pi.mk"
-    fi
-    restore_br_package_patches "$BR_PKG_FLUTTER_PI" "flutter-pi"
     if [[ -f "$BR_PKG_FLUTTER_ELINUX/flutter-embedded-linux.mk.orig" ]]; then
       mv -f "$BR_PKG_FLUTTER_ELINUX/flutter-embedded-linux.mk.orig" \
         "$BR_PKG_FLUTTER_ELINUX/flutter-embedded-linux.mk"
@@ -824,7 +755,6 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
       echo "restored upstream flutter-embedded-linux Config.in"
     fi
     restore_bluez5_utils_rockchip_patch
-    restore_flutter_pi_config
     if [[ -f "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig" ]]; then
       mv -f "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk.orig" \
         "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk"
@@ -960,7 +890,6 @@ sync_hmi_app_overlay
 sync_buildroot_chip_configs
 sync_flutter_engine_package
 sync_flutter_sdk_package
-sync_flutter_pi_package
 sync_flutter_embedded_linux_package
 sync_libserialport_package
 sync_bluez5_utils_stock

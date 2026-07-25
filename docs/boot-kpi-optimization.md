@@ -1,7 +1,7 @@
 # Boot KPI 优化追踪（ynh960 / Plan A）
 
 **KPI 终点**：上电 → Flutter **首页首帧** ≤ **10 s**（eMMC）。  
-**单独验收**：Boot splash 上电 **<1～2 s** 出 logo（§5.2 `docs/flutter-pi-hmi-plan.md`），不计入 KPI 终点。
+**单独验收**：Boot splash 上电 **<1～2 s** 出 logo（§5.2 `docs/flutter-linux-hmi-plan.md`），不计入 KPI 终点。
 
 **前提**：单一镜像（§3.6.0）、方案 A systemd、`hmi.service` 仅 `After=local-fs.target`；网络/eth0 首屏后异步（§7.0）。
 
@@ -12,7 +12,7 @@
 | 主题 | 约定 |
 |------|------|
 | **镜像** | 开发与量产 **同一份** `update.img`；无 `LWS_HMI_DEV`、无 sysinit 早期配网 |
-| **systemd** | **保留 systemd 作 PID 1**；flutter-pi 只链接 **`libsystemd.so`**（`sd_event`），与 init 解耦（§3.6） |
+| **systemd** | **保留 systemd 作 PID 1**；平台库链接 **`libsystemd.so`**（`sd_event`），与 init 解耦（§3.6） |
 | **工程调试** | 串口 `ttyFIQ0` + `make serial-console`；远程 SSH 仅 §7.7 按需 |
 | **禁止** | `debug-boot`、内核 `ip=` bootargs、默认 enable `sshd`/`mediamtx`/`bluetoothd` |
 | **`multi-user.target`** | 仅表示「应用可启」，非多用户登录；HMI 可 root 运行 |
@@ -52,7 +52,7 @@ systemd-analyze critical-chain hmi.service
 verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep 组件）
 ```
 
-**`verify-boot` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` + `lws-hmi-pwrkey-poweroff` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；22 未监听；`network-generator` masked；pwrkey input 存在且服务 active；`flutter-pi` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
+**`verify-boot` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` + `lws-hmi-pwrkey-poweroff` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；22 未监听；`network-generator` masked；pwrkey input 存在且服务 active；`flutter-wayland-client` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
 
 **秒表**（填 §6 表格）：上电 → logo；上电 → multi-user；上电 → 首页首帧。
 
@@ -94,7 +94,7 @@ verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep �
 | ID | 项 | 状态 |
 |----|-----|------|
 | D0-1 | 上电 <1～2 s logo | **done** 板端秒表约 2 s，基本无优化空间 |
-| D0-2 | logo 保持至 flutter-pi 首帧接替 | **done** 板端确认：`Started flutter-pi` 后屏上仍为 boot logo，至 `Freeing drm_logo` |
+| D0-2 | logo 保持至 Flutter 首帧接替 | **done** 板端确认：`Started hmi` / client 后屏上仍为 boot logo，至 `Freeing drm_logo` |
 | D0-3 | Weston 备选：DRM 接手后 logo 桥接 | **repo** desktop-shell + `boot-splash.png`（见 `embedder-migration-plan.md` E3.2）；冷启验收待补 |
 
 ### B — systemd 方案 A 瘦身（通常 −1～2 s）
@@ -112,7 +112,7 @@ verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep �
 | B-9 | disable `log-guardian.service` @ boot | **done** | 刷机验证通过；`08-systemd-finalize.sh` 防止 SDK `07-log-guardian.sh` 重新 enable |
 | B-10 | `lws-hmi-settings-restore` **`After=hmi`**（非并行）；Nice/idle；Demo 对 `*-wanted` 显示 starting | **repo** | UI 绝对优先；网/BT 在首帧后恢复 |
 
-### C — flutter-pi / App（通常 −1～3 s）
+### C — HMI App（通常 −1～3 s）
 
 | ID | 项 | 状态 |
 |----|-----|------|
@@ -145,7 +145,7 @@ P0（done）
 
 **一次只改一类**，避免分不清收益来源。
 
-**首帧 ~1s 结论（B-6/B-8 板端）**：`lws-hmi-performance` 已 `Finished`，`Freeing drm_logo` 仍在 `Started flutter-pi` 后约 **1 s**（8.58 s vs 基线 8.67 s，收益可忽略）。屏上为 boot logo 保持，非黑屏。瓶颈在 **flutter-pi 进程内**（Mali EGL 初始化 + AOT 引擎 + 首帧 commit），**不强求**再压；KPI 余量充足（~9.7 s < 10 s）。
+**首帧 ~1s 结论（B-6/B-8 板端）**：`lws-hmi-performance` 已 `Finished`，`Freeing drm_logo` 仍在 `Started hmi` / client 后约 **1 s**（8.58 s vs 基线 8.67 s，收益可忽略）。屏上为 boot logo 保持，非黑屏。瓶颈在 **embedder 进程内**（Mali EGL 初始化 + AOT 引擎 + 首帧 commit），**不强求**再压；KPI 余量充足（~9.7 s < 10 s）。
 
 **A-6 注意**：`rootflags=noatime` 会致内核 panic（`ext4: Unknown parameter 'noatime'`）。`noatime` 须写在 fstab 第 4 列，由 `systemd-remount-fs` 生效。
 
@@ -159,7 +159,7 @@ P0（done）
 
 | 日期 | git 简述 | 上电→logo | 上电→multi-user | 上电→首帧 | verify-boot | 备注 |
 |------|----------|-----------|-----------------|-----------|-------------|------|
-| 2026-07 | baseline（优化前日志） | | ~8.7s | ~9.7s | FAIL sshd/mtx | `Started flutter-pi` 后 ~1s 仍见 logo |
+| 2026-07 | baseline（优化前日志） | | ~8.7s | ~9.7s | FAIL sshd/mtx | `Started hmi` / client 后 ~1s 仍见 logo |
 | 2026-07 | P0 重刷 | | | | PASS | sshd/mediamtx/debug-boot 已清除 |
 | 2026-07 | +B-6/B-8 performance | | ~8.6s | ~8.6s | PASS | governors OK；首帧仍 ~1s logo→UI |
 | 2026-07 | +A-2 loglevel=4 | | | | PASS | 串口日志减少 |
@@ -186,9 +186,9 @@ P0（done）
 | `overlay/.../shutdown.sh` | 跳过 HMI teardown；sync 后使用 SysRq `s/u/o` 或 `s/u/b` |
 | `overlay/.../systemctl-poweroff-wrapper.sh` | 拦截 `systemctl poweroff/halt/reboot` |
 | `overlay/.../pre-poweroff.sh` | 不停止 HMI；在 SysRq 关机前执行 storage sync |
-| `overlay/.../hmi.service` | flutter-pi；`Nice=-5` |
+| `overlay/.../hmi.service` | Weston + eLinux；`Nice=-5` |
 | `overlay/.../boot-verify.sh` | 板端 Plan A / 启动 KPI 验收 |
-| `overlay/.../env-verify.sh` | 板端 §3.4 平台栈验收（不含 flutter-pi） |
+| `overlay/.../env-verify.sh` | 板端 §3.4 平台栈验收（不含 HMI boot KPI） |
 | `overlay/.../post-fakeroot.sh` | preset-all 后重链 Plan A wants |
 | `scripts/verify-rootfs-overlay.sh` | 构建后 staging 检查 |
 | `overlay/kernel/rockchip/ynh960-linux-root.dtsi` | 内核 cmdline（`root=/dev/mmcblk0p6`、`loglevel=4`） |
@@ -196,7 +196,7 @@ P0（done）
 | `overlay/kernel/rockchip/ynh960-kernel-trim.config` | A-3 内核裁剪 fragment（保留 HDMI/USB/音频/文件系统/蓝牙/debugfs） |
 | `docs/storage-layout.md` | GPT 分区（1GiB rootfs + grow userdata） |
 | `docs/kernel-evb-dts-deferred.md` | 内核 dmesg 残留项追踪（P2/P3+） |
-| `docs/flutter-pi-hmi-plan.md` §3.6 / §14 | 设计详述 |
+| `docs/flutter-linux-hmi-plan.md` §3.6 / §14 | 设计详述 |
 | `docs/build-optimization.md` | 日常构建命令 |
 
 ---

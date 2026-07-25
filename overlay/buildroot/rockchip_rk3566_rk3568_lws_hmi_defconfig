@@ -17,9 +17,6 @@
 # Default rootfs (make build-rootfs): Weston + eLinux + Mali wayland-gbm.
 #include "chips/lws_hmi_wayland.config"
 #include "chips/lws_hmi_flutter_weston.config"
-# Alternate rootfs (make build-rootfs-flutter-pi): inject via LWS_HMI_WESTON=0.
-# Switches to flutter-pi + Mali gbm; disables Wayland/Weston/eLinux.
-# #include "chips/lws_hmi_flutter.config"
 #include "chips/lws_hmi_p2_io.config"
 # BR2_ROOTFS_OVERLAY for rootfs-overlay: see chips/rk3566_rk3568.config (apply-overlay)
 # #include "fs/vfat.config"

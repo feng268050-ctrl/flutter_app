@@ -195,7 +195,6 @@ void main() {
         ethernetController: _FakeEth(),
         wifiController: _FakeWifi(),
         ipCamera: session,
-        displayStack: DisplayStack.flutterPi,
       );
 
       await tester.binding.setSurfaceSize(const Size(800, 1600));

@@ -563,35 +563,24 @@ EOF
 	fi
 
 	echo ""
-	echo "--- display stack (flutter-pi XOR weston) ---"
-	has_pi=0
+	echo "--- display (Weston + eLinux client) ---"
 	has_weston=0
-	[[ -x "$target/usr/bin/flutter-pi" ]] && has_pi=1
 	if [[ -x "$target/usr/bin/weston" && \
 		-x "$target/usr/bin/flutter-wayland-client" ]]; then
 		has_weston=1
 	fi
-	stack=""
-	if [[ -f "$target/etc/display-stack" ]]; then
-		stack="$(tr -d '[:space:]' <"$target/etc/display-stack" | tr '[:upper:]' '[:lower:]')"
-		echo "OK:  etc/display-stack=$stack"
-	else
-		echo "FAIL: etc/display-stack missing (post-build)" >&2
+	if [[ -x "$target/usr/bin/flutter-pi" ]]; then
+		echo "FAIL: flutter-pi binary must not ship" >&2
 		missing=1
 	fi
-	if [[ "$has_pi" -eq 1 && "$has_weston" -eq 1 ]]; then
-		echo "FAIL: mixed image — both flutter-pi and Weston/eLinux present" >&2
+	if [[ -f "$target/etc/display-stack" || -f "$target/etc/hmi/display-stack" ]]; then
+		echo "FAIL: retired display-stack stamp must not ship" >&2
 		missing=1
-	elif [[ "$has_weston" -eq 1 ]]; then
-		echo "OK:  weston image (flutter-wayland-client, no flutter-pi)"
-		if [[ "$has_pi" -eq 1 ]]; then
-			echo "FAIL: weston image must not ship flutter-pi" >&2
-			missing=1
-		fi
-		if [[ "$stack" != "weston" ]]; then
-			echo "FAIL: display-stack should be weston (got: ${stack:-empty})" >&2
-			missing=1
-		fi
+	else
+		echo "OK:  no display-stack stamp"
+	fi
+	if [[ "$has_weston" -eq 1 ]]; then
+		echo "OK:  weston image (flutter-wayland-client)"
 		# Unpatched GStreamer video plugin SIGSEGVs on live RTSP initialize.
 		vp="$target/usr/lib/libvideo_player_plugin.so"
 		if [[ -f "$vp" ]]; then
@@ -608,20 +597,8 @@ EOF
 			echo "FAIL: weston image missing $vp" >&2
 			missing=1
 		fi
-	elif [[ "$has_pi" -eq 1 ]]; then
-		echo "OK:  flutter-pi image (no Weston client)"
-		if [[ -x "$target/usr/bin/flutter-wayland-client" ]]; then
-			echo "FAIL: flutter-pi image must not ship flutter-wayland-client" >&2
-			missing=1
-		else
-			echo "OK:  flutter-wayland-client absent"
-		fi
-		if [[ "$stack" != "flutter-pi" ]]; then
-			echo "FAIL: display-stack should be flutter-pi (got: ${stack:-empty})" >&2
-			missing=1
-		fi
 	else
-		echo "FAIL: neither flutter-pi nor Weston+client present" >&2
+		echo "FAIL: Weston + flutter-wayland-client not present" >&2
 		missing=1
 	fi
 

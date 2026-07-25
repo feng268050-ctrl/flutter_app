@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Render Buildroot defconfig: source #includes + auto prebuilt swap when exports exist.
-# Default stack is Weston + eLinux. Set LWS_HMI_WESTON=0 for the alternate flutter-pi image.
+# Product stack is Weston + flutter-embedded-linux only.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -29,21 +29,5 @@ swap_include "lws_hmi_gst_rtsp.config" "lws_hmi_gst_prebuilt.config" \
 swap_include "lws_hmi_platform.config" "lws_hmi_platform_prebuilt.config" \
   "$ROOT/prebuilt/platform-packages/target"
 
-# Default source defconfig is Weston. Alternate flutter-pi (LWS_HMI_WESTON=0):
-# Buildroot keeps the first assignment for conflicting symbols — replace the
-# Weston/eLinux includes with lws_hmi_flutter.config (which clears Wayland pkgs).
-case "${LWS_HMI_WESTON:-1}" in
-0 | n | N | no | NO | false | FALSE)
-  sed -i.bak \
-    's|#include "chips/lws_hmi_flutter_weston.config"|#include "chips/lws_hmi_flutter.config"|' \
-    "$OUT"
-  sed -i.bak '/^#include "chips\/lws_hmi_wayland\.config"$/d' "$OUT"
-  rm -f "$OUT.bak"
-  echo "generate-lws-hmi-defconfig: LWS_HMI_WESTON=0 → flutter-pi alternate"
-  ;;
-*)
-  echo "generate-lws-hmi-defconfig: default Weston stack (LWS_HMI_WESTON=${LWS_HMI_WESTON:-1})"
-  ;;
-esac
-
+echo "generate-lws-hmi-defconfig: Weston stack"
 echo "generate-lws-hmi-defconfig: → $OUT"

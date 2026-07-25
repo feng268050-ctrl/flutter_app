@@ -20,7 +20,7 @@ PREBUILT="$HMI_ROOT/prebuilt/flutter-embedded-linux/${VER}"
 CLIENT="$PREBUILT/usr/bin/flutter-wayland-client"
 PLUGIN="$PREBUILT/usr/lib/libvideo_player_plugin.so"
 
-# flutter-pi alternate images omit the Weston client; skip quietly.
+# Skip quietly when the Weston client prebuilt is absent.
 if [ ! -x "$TARGET_DIR/usr/bin/flutter-wayland-client" ] && [ ! -f "$CLIENT" ]; then
 	echo "lws-hmi-sync-flutter-elinux: skip (no weston client / prebuilt)" >&2
 	exit 0

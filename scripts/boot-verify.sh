@@ -120,11 +120,11 @@ else
 fi
 
 echo ""
-echo "--- flutter-pi / hmi.service ---"
-if pidof flutter-pi >/dev/null 2>&1; then
-	pass "flutter-pi running"
+echo "--- Weston client / hmi.service ---"
+if pidof flutter-wayland-client >/dev/null 2>&1 || pidof flutter-waylan >/dev/null 2>&1; then
+	pass "flutter-wayland-client running"
 else
-	warn "flutter-pi not running"
+	warn "flutter-wayland-client not running"
 fi
 if command -v systemctl >/dev/null 2>&1; then
 	state="$(systemctl is-active hmi.service 2>/dev/null || echo unknown)"

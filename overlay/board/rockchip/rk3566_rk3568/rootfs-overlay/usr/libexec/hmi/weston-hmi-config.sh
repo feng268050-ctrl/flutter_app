@@ -21,7 +21,7 @@ mouse_conf_get() {
 	printf '%s\n' "$raw"
 }
 
-# Compositor cursors look larger than flutter-pi density icons — keep modest.
+# Compositor cursors look larger than reference density icons — keep modest.
 # 0%→20px, 50%→30px, 100%→40px (clamp 16–40).
 mouse_pointer_size_to_cursor_px() {
 	p="$1"
@@ -54,7 +54,7 @@ mouse_pointer_speed_to_accel() {
 # Write runtime weston.ini for ynh960 HMI (DRM + splash bridge + mouse prefs).
 # desktop-shell (not kiosk): kiosk only has solid background-color; we need
 # background-image so the product logo survives until Flutter's first frame
-# (flutter-pi keeps kernel drm_logo instead).
+# (legacy DRM stacks kept kernel drm_logo).
 # usage: weston_write_hmi_ini <out_path> <transform>
 weston_write_hmi_ini() {
 	out="$1"

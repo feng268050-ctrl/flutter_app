@@ -5,7 +5,7 @@ Board profiles declare capability flags, net role→iface maps, helpers, and poi
 
 ## Requirements
 ### Requirement: Board profile for Dart HAL
-Each supported product image/App SHALL provide a board profile consumable by the Dart HAL package (Flutter asset and/or on-image file), including at least: board id, capability flags, and network role→iface map for advertised network roles. Optional fields MAY include a **fixed launch orientation hint** for image/board packaging (consumed by `hmi-launch` / flutter-pi `-o`, not by a HAL orientation API), audio route hints, radio bringup notes, and **paths to gpio/modbus config files** (or embedded references). Fine-grained pin and register maps SHALL live in those gpio/modbus configs (see `hal-gpio-config` / `hal-modbus-config`), not as opaque constants inside App Dart.
+Each supported product image/App SHALL provide a board profile consumable by the Dart HAL package (Flutter asset and/or on-image file), including at least: board id, capability flags, and network role→iface map for advertised network roles. Optional fields MAY include a **fixed launch orientation hint** for image/board packaging (consumed by `hmi-launch` / eLinux HMI `-o`, not by a HAL orientation API), audio route hints, radio bringup notes, and **paths to gpio/modbus config files** (or embedded references). Fine-grained pin and register maps SHALL live in those gpio/modbus configs (see `hal-gpio-config` / `hal-modbus-config`), not as opaque constants inside App Dart.
 
 #### Scenario: Product profile present
 - **WHEN** the product HMI App uses HAL

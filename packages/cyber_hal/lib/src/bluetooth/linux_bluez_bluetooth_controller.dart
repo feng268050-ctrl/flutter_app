@@ -1632,7 +1632,7 @@ class LinuxBluezBluetoothController implements BluetoothController {
 
   /// True when a Bluetooth (uhid) HID node for [addr] exists — never USB mice.
   ///
-  /// Pure Dart sysfs walk (no `sh -c`). Shell probes under flutter-pi often
+  /// Pure Dart sysfs walk (no `sh -c`). Shell probes under the embedder often
   /// reported `bt_hid:none` while root saw the same `event*` uniq match.
   Future<bool> _hidEvdevPresent(String addr) async {
     final want = addr.toLowerCase();

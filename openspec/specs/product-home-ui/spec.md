@@ -9,7 +9,7 @@ The Flutter HMI app SHALL present a product Home screen as the initial route aft
 
 #### Scenario: Launcher shows product Home
 
-- **WHEN** flutter-pi renders the app initial route
+- **WHEN** eLinux HMI renders the app initial route
 - **THEN** the user sees the product Home backdrop (not the P2 Demo scroll as the primary home)
 
 #### Scenario: First paint is not blocked by platform I/O

@@ -84,7 +84,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
   late final BluetoothController _bluetooth;
   late final Keyboard _keyboard;
   late final MouseSettingsController _mouse;
-  DisplayStack _displayStack = DisplayStack.unknown;
   bool _networkSectionsReady = false;
 
   String _deviceSn = kUnavailableDisplay;
@@ -175,16 +174,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
     }
 
     final app = AppScope.maybeOf(context);
-    if (app != null) {
-      _displayStack = await app.ensureDisplayStack();
-    } else {
-      final bindings = _bindings;
-      if (bindings != null) {
-        try {
-          _displayStack = await bindings.displayStack();
-        } catch (_) {}
-      }
-    }
     if (mounted) {
       setState(() {});
     }
@@ -529,7 +518,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
                 const SizedBox(height: 32),
                 MouseDemoSection(
                   controller: _mouse,
-                  displayStack: _displayStack,
                 ),
                 const SizedBox(height: 32),
                 DateTimeDemoSection(controller: _dateTime),

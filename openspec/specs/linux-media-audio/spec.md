@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Reusable percent-based media audio controller for flutter-pi: play/stop bundled assets via ALSA, without blocking first frame.
+Reusable percent-based media audio controller for the eLinux HMI: play/stop bundled assets via ALSA, without blocking first frame.
 ## Requirements
 ### Requirement: Media audio controller API is percent-based and asset-capable
 
@@ -20,7 +20,7 @@ The HMI SHALL provide a reusable `MediaAudioController` (name may vary; behavior
 
 ### Requirement: Linux backend drives speaker via ALSA path
 
-On Linux/flutter-pi, the media audio implementation SHALL produce audible output through the board speaker path using ALSA (plugin or ALSA-backed helper process). Volume percent SHALL map to the ALSA mixer and/or player gain so that increasing the percent increases loudness under normal amp configuration.
+On Linux/eLinux HMI, the media audio implementation SHALL produce audible output through the board speaker path using ALSA (plugin or ALSA-backed helper process). Volume percent SHALL map to the ALSA mixer and/or player gain so that increasing the percent increases loudness under normal amp configuration.
 
 #### Scenario: Demo track plays on device
 

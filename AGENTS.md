@@ -6,7 +6,7 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 - **What:** Buildroot-based **embedded appliance OS** for Innohi boards (benchmark: **ynh960/961/962**) + Flutter HMI (`app/lws_hmi/`). Direction: shared **CyberUI** + **`cyber_hal`** Dart package (submodule/packages), per-product Apps, board profiles for new motherboards/panels. **No** Rust `hald` Platform API.
 - **Board SKUs (current line):** ynh960 → RK3566 (entry); ynh962 → RK3568B2 (mid); ynh961 → RK3568 (high). Same product line; **one firmware image is the near-term goal** for this line. **Validate on ynh960** — no per-SKU defconfig fork yet. Future products may use different boards/screens via packs + HAL package.
-- **Phase roadmap:** See `docs/flutter-pi-hmi-plan.md` §1 (P1–P2.5 + **P3.1 HAL** done; **P3.0 CyberUI/IME** and **P4** in progress; next P3.2 emulator, P3.3 AI, remaining P4 slices, P5.0 Android App/APK — not `cyber_hal` Android backends, P5.1 engine). HAL design: `openspec/changes/archive/2026-07-18-dart-hal-package/`. `cyber_hal` is Linux (+ stub) only.
+- **Phase roadmap:** See `docs/flutter-linux-hmi-plan.md` §1 (P1–P2.5 + **P3.1 HAL** done; **P3.0 CyberUI/IME** and **P4** in progress; next P3.2 emulator, P3.3 AI, remaining P4 slices, P5.0 Android App/APK — not `cyber_hal` Android backends, P5.1 engine). HAL design: `openspec/changes/archive/2026-07-18-dart-hal-package/`. `cyber_hal` is Linux (+ stub) only.
 - **Hosts:** Linux builds natively in `linux-sdk/`; macOS uses Docker `linux/amd64` + a Docker volume for the SDK tree.
 - **Outputs:** `output/firmware/boot.img` (FIT for `rootfs_a`), `boot_b.img` (same kernel, FIT for `rootfs_b`), `rootfs.img`, and factory `update.img`; Linux also has them under `linux-sdk/output/firmware/`.
 - **Scope:** Active Buildroot packages follow `#include` lines in `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig`.
@@ -17,7 +17,7 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 - First time: `make setup`, then `make build-deps`, then `make build` (macOS: `make docker-volume-init` before build).
 - The Rockchip SDK is fixed at repo-root `linux-sdk/`; override the Flutter SDK via repo-root `.env` or `FLUTTER_SDK` (default: `flutter-sdk/`). Other common settings are `BUILD_JOBS` and **`SN=`** (device selection). Use **`CHIPID=`** when selecting by chip ID only (e.g. multi-board `make set-prop SN=…`). See README Make commands / `make devices`.
 - macOS: prefer Docker volume over `BUILD_BIND_MOUNT=1` (bind-mount often crashes Docker Desktop during Buildroot).
-- Flutter app work: host needs `flutter` + `flutterpi_tool` (`make fetch-flutter-sdk` / `make build-dev-deps`).
+- Flutter app work: host needs pinned `flutter` (`make fetch-flutter-sdk` / `make build-dev-deps`); packaging is `scripts/hmi-bundle-common.sh` via `make build-app`.
 - Do not commit unless the user explicitly asks.
 
 ## Build commands
@@ -79,7 +79,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 
 | What changed | Commands |
 |--------------|----------|
-| `app/lws_hmi/**`, `scripts/build-app.sh`, `scripts/push-app.sh` | `make build-app`, `make push-app` |
+| `app/lws_hmi/**`, `scripts/build-app.sh`, `scripts/hmi-bundle-common.sh`, `scripts/push-app.sh` | `make build-app`, `make push-app` |
 | `app/lws_hmi/lib/l10n/*.arb` (parent ARBs) | `make l10n` (then `make build-app` / `make push-app` to ship) |
 | `scripts/flutter/l10n*.sh`, `sync_l10n_child_arbs.py`, `zh_s2t.py` | none for firmware; exercise `make l10n` / `make l10n-verify` |
 | Bake app into rootfs / A/B image (release or no push path) | `make build-app`, `make build-rootfs`, `make upgrade` |
@@ -88,12 +88,11 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `overlay/.../rootfs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | USB plug-ssh (`overlay/kernel/**` + fs-overlay scripts/units) | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
 | `scripts/device-logs.sh` only (host log streaming) | none |
-| `scripts/debug-app*.sh`, `scripts/debug-host-prepare.sh`, `scripts/debug-custom-device/**`, `scripts/debug-setup.sh`, `scripts/build-debug-app.sh` (host only; board already has P1.5 overlay) | `make debug-setup`, `make debug-app` |
+| `scripts/debug-app*.sh`, `scripts/debug-host-prepare.sh`, `scripts/debug-custom-device/**`, `scripts/debug-setup.sh`, `scripts/build-debug-app.sh`, `scripts/hmi-bundle-common.sh` (host only; board already has P1.5 overlay) | `make debug-setup`, `make debug-app` |
 | `overlay/.../rootfs-overlay/**` debug scripts (`hmi-launch.sh`, `debug-app-*`, `hmi.service`) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `overlay/buildroot/**` (overlay paths / docs only; no package compile flags) | `make apply-overlay`, `make check-prebuilt`, `make build-rootfs`, `make upgrade` |
 | `overlay/buildroot/chips/*.config` (or other BR Kconfig that changes how an **existing** package is built, e.g. `BR2_PACKAGE_WPA_SUPPLICANT_DBUS`) | `make apply-overlay`, `bash scripts/br-make-packages.sh <label> <pkg>…`, `make check-prebuilt`, `make build-rootfs`, `make upgrade` — **not** kernel; `build-rootfs` alone will keep the old binary |
 | Default Weston rootfs (`chips/lws_hmi_wayland.config`, eLinux prebuilt, splash/`desktop-shell`) | `make build-flutter-embedded-linux` (first time / refresh), `make build-rootfs`, `make upgrade` |
-| Flutter-pi alternate rootfs (`chips/lws_hmi_flutter.config`, Mali gbm, `build-rootfs-flutter-pi`) | `make build-flutter-pi` (if needed), `make prepare-rootfs-flutter-pi` (stack only) or `make build-rootfs-flutter-pi`, `make upgrade` — return to default Weston: `make prepare-rootfs` or `make build-rootfs`, `make upgrade` (`ensure-mali-variant` auto-switches Mali when stamp differs) |
 | `prebuilt/**`, runtime recipes | `make build-runtime-deps` (or specific target), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `prebuilt/btop/**`, `scripts/fetch-btop.sh`, or overlay `usr/bin/btop` | `make fetch-btop` (if binary missing), `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `prebuilt/umtprd/**`, `scripts/build-umtprd.sh`, or overlay `usr/bin/umtprd` / `usb-mtp-*.sh` | `make build-umtprd` (if binary missing), `make apply-overlay`, `make build-rootfs`, `make upgrade` |

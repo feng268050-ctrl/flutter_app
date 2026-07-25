@@ -6,7 +6,7 @@ TBD - created by archiving change p1-linux-flutter-platform. Update Purpose afte
 
 ### Requirement: Plan A minimal systemd is PID 1
 
-The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL ship `libsystemd.so` for flutter-pi (`sd_event`); libsystemd availability does not by itself mandate systemd as init, but both are enabled via `lws_hmi_systemd.config`. **P3.1 / D11:** the image SHALL enable **systemd-networkd** and **systemd-resolved**. It MUST keep systemd-timesyncd, systemd-logind, and polkit packages disabled per that config.
+The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL ship `libsystemd.so` for the eLinux HMI (`sd_event`); libsystemd availability does not by itself mandate systemd as init, but both are enabled via `lws_hmi_systemd.config`. **P3.1 / D11:** the image SHALL enable **systemd-networkd** and **systemd-resolved**. It MUST keep systemd-timesyncd, systemd-logind, and polkit packages disabled per that config.
 
 #### Scenario: systemd is init
 
@@ -18,9 +18,9 @@ The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL shi
 - **WHEN** the appliance image reaches multi-user target after the D11 network cutover
 - **THEN** `systemd-networkd` and `systemd-resolved` are enabled (preset) and provide L3 addressing and DNS
 
-### Requirement: hmi.service auto-starts flutter-pi after local-fs only
+### Requirement: hmi.service auto-starts the HMI after local-fs only
 
-The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/usr/bin/flutter-pi --release -o landscape_left /opt/hmi` with `Nice=-5`, restart on failure, and MUST depend only on `local-fs.target` and `cpu-performance.service` — not on `network-online.target`, `mediamtx.service`, or `systemd-udev-settle.service`.
+The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/usr/bin/eLinux HMI --release -o landscape_left /opt/hmi` with `Nice=-5`, restart on failure, and MUST depend only on `local-fs.target` and `cpu-performance.service` — not on `network-online.target`, `mediamtx.service`, or `systemd-udev-settle.service`.
 
 #### Scenario: hmi enabled at image build
 
@@ -32,10 +32,10 @@ The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/us
 - **WHEN** operator runs `verify-boot` on device after flash
 - **THEN** output reports PASS for hmi/mainserver/performance/pwrkey enabled and mediamtx/sshd/wpa_supplicant/network not in multi-user wants
 
-#### Scenario: flutter-pi starts automatically
+#### Scenario: HMI starts automatically
 
 - **WHEN** device boots to multi-user without manual intervention
-- **THEN** `flutter-pi` process is running with `/opt/hmi` as bundle path
+- **THEN** `eLinux HMI` process is running with `/opt/hmi` as bundle path
 
 ### Requirement: Boot-supporting services enabled at image build
 
@@ -90,7 +90,7 @@ Post-build hook SHALL patch `/etc/fstab` to add `noatime` mount options on ext4 
 
 ### Requirement: Stable board poweroff without Mali DRM oops
 
-The image SHALL provide `pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdown.sh`, and a `/usr/bin/systemctl` wrapper. The pwrkey handler SHALL request poweroff after the `KEY_POWER` release event. Rockchip `input-event-daemon.service` SHALL be disabled because its short-press release handler requests suspend and races the poweroff flow. Until repeated flutter-pi teardown is proven stable, poweroff, halt, and reboot SHALL avoid stopping `hmi.service`, sync storage, and use SysRq `s/u/o` or `s/u/b`.
+The image SHALL provide `pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdown.sh`, and a `/usr/bin/systemctl` wrapper. The pwrkey handler SHALL request poweroff after the `KEY_POWER` release event. Rockchip `input-event-daemon.service` SHALL be disabled because its short-press release handler requests suspend and races the poweroff flow. Until repeated eLinux HMI teardown is proven stable, poweroff, halt, and reboot SHALL avoid stopping `hmi.service`, sync storage, and use SysRq `s/u/o` or `s/u/b`.
 
 #### Scenario: pwrkey service active
 
@@ -105,7 +105,7 @@ The image SHALL provide `pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdo
 #### Scenario: Poweroff avoids HMI teardown
 
 - **WHEN** the power key or `systemctl poweroff` requests shutdown
-- **THEN** storage is synced and shutdown uses SysRq without stopping flutter-pi
+- **THEN** storage is synced and shutdown uses SysRq without stopping eLinux HMI
 
 #### Scenario: SysRq is unavailable
 
@@ -116,16 +116,16 @@ The image SHALL provide `pwrkey-poweroff.service`, `pwrkey-poweroff.sh`, `shutdo
 
 The kernel SHALL tolerate transient `NULL`/invalid object entries and an object whose `obj->dev` has become a non-kernel address in a DRM file's GEM handle IDR. Because repeated teardown has also produced a non-NULL but corrupted `drm_gem_object.funcs` pointer, Rockchip SHALL publish its immutable GEM funcs table and the GEM core SHALL restore that canonical pointer before invoking release or free callbacks.
 
-#### Scenario: Stop flutter-pi while render threads are exiting
+#### Scenario: Stop eLinux HMI while render threads are exiting
 
-- **WHEN** `hmi.service` is stopped and flutter-pi releases DRM/GEM handles
+- **WHEN** `hmi.service` is stopped and eLinux HMI releases DRM/GEM handles
 - **THEN** the kernel does not oops in `drm_gem_object_release_handle`
 
 #### Scenario: Switch between release and debug payloads
 
 - **WHEN** tooling replaces the active HMI payload
-- **THEN** it stops all service-managed and detached `flutter-pi` instances, waits for process and deferred DRM/Mali teardown, and only then starts one new instance
-- **AND** the DRM device can be acquired by a subsequent flutter-pi process
+- **THEN** it stops all service-managed and detached `eLinux HMI` instances, waits for process and deferred DRM/Mali teardown, and only then starts one new instance
+- **AND** the DRM device can be acquired by a subsequent eLinux HMI process
 
 ### Requirement: Boot KPI to first home frame
 
@@ -138,7 +138,7 @@ From power-on on eMMC storage, the Flutter Hello World home frame SHALL become v
 
 ### Requirement: Device boot verification script
 
-The image SHALL ship `verify-boot` in the device command path; it validates Plan A unit enable/disable state, pwrkey poweroff setup, performance governors, flutter-pi running, and critical-chain expectations.
+The image SHALL ship `verify-boot` in the device command path; it validates Plan A unit enable/disable state, pwrkey poweroff setup, performance governors, eLinux HMI running, and critical-chain expectations.
 
 #### Scenario: verify-boot passes on P1 device
 

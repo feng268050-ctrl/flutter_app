@@ -901,9 +901,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kernelVersion => 'Kernel Version';
 
   @override
-  String get displayStack => 'Display Stack';
-
-  @override
   String get autoCheckOtaUpdate => 'Automatically check for updates';
 
   @override

@@ -31,7 +31,6 @@ fail() {
 
 # True when the HMI embedder process is up (wayland client or DRM runner).
 hmi_embedder_running() {
-	pidof flutter-pi >/dev/null 2>&1 && return 0
 	pidof flutter-wayland-client >/dev/null 2>&1 && return 0
 	return 1
 }

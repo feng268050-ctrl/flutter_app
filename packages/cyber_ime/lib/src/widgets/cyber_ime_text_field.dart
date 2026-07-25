@@ -13,7 +13,7 @@ import 'package:flutter/services.dart';
 /// Text field that suppresses the system soft keyboard and opens CyberIME.
 ///
 /// Editable (not [TextField.readOnly]) so physical USB/BT keys from
-/// flutter-pi / XKB still insert. Soft system IME is suppressed via
+/// hardware / XKB still insert. Soft system IME is suppressed via
 /// [SystemChannels.textInput] hide — do not use `readOnly: true` for that.
 ///
 /// Soft CyberIME is skipped when [CyberImePhysicalKeyboard] reports present
@@ -249,7 +249,7 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
     return TextField(
       controller: widget.controller,
       focusNode: _focus,
-      // Must stay editable: readOnly also blocks flutter-pi / XKB hardware keys.
+      // Must stay editable: readOnly also blocks hardware / XKB hardware keys.
       readOnly: false,
       showCursor: true,
       enableInteractiveSelection: true,

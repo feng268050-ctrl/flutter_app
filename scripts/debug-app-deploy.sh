@@ -43,21 +43,6 @@ local_manifest="$STAGING/debug-runtime/$ENGINE_VER/manifest.json"
 [[ -f "$STAGING/debug-runtime/$ENGINE_VER/icudtl.dat" ]] \
 	|| die "missing debug icudtl.dat (run: make build-debug-app)"
 
-stack="$(usb_ssh_session_run_ssh "$ROOT" "$IFACE" \
-	"tr -d '[:space:]' </etc/display-stack 2>/dev/null || tr -d '[:space:]' </etc/hmi/display-stack 2>/dev/null || echo unknown" \
-	| tr '[:upper:]' '[:lower:]' | tr -d '\r')"
-case "$stack" in
-weston | wayland | elinux | flutter-pi | "")
-	echo "debug-deploy: display-stack=${stack:-unknown}"
-	;;
-unknown)
-	echo "WARNING: could not read /etc/display-stack; proceeding anyway" >&2
-	;;
-*)
-	die "unsupported display-stack=$stack (expected weston, wayland, elinux, or flutter-pi)"
-	;;
-esac
-
 # Upload debug runtime when device cache is missing or manifest differs.
 device_manifest_path="/var/lib/hmi/debug-runtime/$ENGINE_VER/manifest.json"
 need_runtime=1

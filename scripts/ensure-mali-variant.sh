@@ -1,29 +1,28 @@
 #!/usr/bin/env bash
-# Ensure rockchip-mali matches the requested variant (gbm vs wayland-gbm).
+# Ensure rockchip-mali matches wayland-gbm for the Weston + eLinux stack.
 # Remembers the last successful choice in .cache/lws-mali-variant and skips
-# br-make-packages when unchanged *and* the expected embedder binary is present.
+# br-make-packages when unchanged *and* weston + flutter-wayland-client exist.
 # FORCE=1 always rebuilds.
 #
-# Cross-image note: post-build purges the opposite embedder from target/. Buildroot
-# stamps still think the package is installed, so switching back must reinstall
-# flutter-pi (gbm) or weston+client (wayland-gbm).
-#
 # Usage:
-#   bash scripts/ensure-mali-variant.sh gbm
 #   bash scripts/ensure-mali-variant.sh wayland-gbm
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DESIRED="${1:?usage: ensure-mali-variant.sh <gbm|wayland-gbm>}"
+DESIRED="${1:?usage: ensure-mali-variant.sh <wayland-gbm>}"
 FORCE="${FORCE:-0}"
 STAMP="$ROOT/.cache/lws-mali-variant"
 BR_OUTPUT="${BR_OUTPUT:-rockchip_rk3566_rk3568_lws_hmi}"
 TARGET_BIN="buildroot/output/${BR_OUTPUT}/target/usr/bin"
 
 case "$DESIRED" in
-gbm|wayland-gbm) ;;
+wayland-gbm) ;;
+gbm)
+	echo "ERROR: Mali gbm (flutter-pi) stack was removed; use wayland-gbm" >&2
+	exit 2
+	;;
 *)
-	echo "ERROR: variant must be gbm or wayland-gbm (got: $DESIRED)" >&2
+	echo "ERROR: variant must be wayland-gbm (got: $DESIRED)" >&2
 	exit 2
 	;;
 esac
@@ -42,11 +41,7 @@ target_has() {
 }
 
 embedder_ok() {
-	if [[ "$DESIRED" == "gbm" ]]; then
-		target_has flutter-pi
-	else
-		target_has weston && target_has flutter-wayland-client
-	fi
+	target_has weston && target_has flutter-wayland-client
 }
 
 if [[ "$FORCE" != "1" && "$CURRENT" == "$DESIRED" ]]; then
@@ -55,12 +50,8 @@ if [[ "$FORCE" != "1" && "$CURRENT" == "$DESIRED" ]]; then
 		exit 0
 	fi
 	echo "ensure-mali-variant: stamp ${DESIRED} but embedder missing in target — reinstall"
-	if [[ "$DESIRED" == "gbm" ]]; then
-		bash "$ROOT/scripts/br-make-packages.sh" ensure-pi flutter-pi
-	else
-		bash "$ROOT/scripts/br-make-packages.sh" ensure-weston \
-			weston flutter-embedded-linux
-	fi
+	bash "$ROOT/scripts/br-make-packages.sh" ensure-weston \
+		weston flutter-embedded-linux
 	exit 0
 fi
 
@@ -72,14 +63,8 @@ else
 	echo "ensure-mali-variant: no stamp → rebuild for ${DESIRED}"
 fi
 
-if [[ "$DESIRED" == "wayland-gbm" ]]; then
-	bash "$ROOT/scripts/br-make-packages.sh" weston-img \
-		rockchip-mali wayland wayland-protocols weston flutter-embedded-linux
-else
-	# Default flutter-pi image: Mali gbm + reinstall flutter-pi (weston builds
-	# purge /usr/bin/flutter-pi from the shared target/).
-	bash "$ROOT/scripts/br-make-packages.sh" mali-gbm rockchip-mali flutter-pi
-fi
+bash "$ROOT/scripts/br-make-packages.sh" weston-img \
+	rockchip-mali wayland wayland-protocols weston flutter-embedded-linux
 
 printf '%s\n' "$DESIRED" >"$STAMP"
 echo "ensure-mali-variant: stamped ${DESIRED} → $STAMP"

@@ -16,7 +16,7 @@ Future<void> main() async {
       // Weston + flutter-wayland-client links Sony's GStreamer plugin.
       ELinuxVideoPlayer.registerWith();
     } else {
-      // flutter-pi GStreamer texture plugin.
+      // eLinux GStreamer texture plugin.
       FlutterpiVideoPlayer.registerWith();
     }
   }

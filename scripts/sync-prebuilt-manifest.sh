@@ -22,14 +22,14 @@ FLUTTER_SDK_ROOT="$(bash "$ROOT/scripts/link-flutter-sdk.sh" --print-root)"
 FLUTTER_SDK="$(read_stamp "$FLUTTER_SDK_ROOT")"
 ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.24.4")"
 FLUTTER_ENGINE="$(read_stamp "$ROOT/prebuilt/flutter-engine/${ENGINE_VER}/arm64-release")"
-PI_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-pi.version" "")"
-FLUTTER_PI="$(read_stamp "$ROOT/prebuilt/flutter-pi/${PI_VER}")"
+ELINUX_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-embedded-linux.version" "db49896cf2")"
+FLUTTER_ELINUX="$(read_stamp "$ROOT/prebuilt/flutter-embedded-linux/${ELINUX_VER}")"
 GST="$(read_stamp "$ROOT/prebuilt/gstreamer")"
 PLATFORM="$(read_stamp "$ROOT/prebuilt/platform-packages")"
 
-python3 - "$MANIFEST" "$MEDIAMTX" "$BTOP" "$RKNN_RT" "$FLUTTER_SDK" "$FLUTTER_ENGINE" "$FLUTTER_PI" "$GST" "$PLATFORM" <<'PY'
+python3 - "$MANIFEST" "$MEDIAMTX" "$BTOP" "$RKNN_RT" "$FLUTTER_SDK" "$FLUTTER_ENGINE" "$FLUTTER_ELINUX" "$GST" "$PLATFORM" <<'PY'
 import json, sys
-path, mediamtx, btop, rknn, sdk, engine, pi, gst, platform = sys.argv[1:10]
+path, mediamtx, btop, rknn, sdk, engine, elinux, gst, platform = sys.argv[1:10]
 def v(s):
     return None if s == "null" else s
 data = {
@@ -41,7 +41,7 @@ data = {
     "platform-packages": v(platform),
     "flutter-sdk": v(sdk),
     "flutter-engine": v(engine),
-    "flutter-pi": v(pi),
+    "flutter-embedded-linux": v(elinux),
 }
 with open(path, "w", encoding="utf-8") as f:
     json.dump(data, f, indent=2)

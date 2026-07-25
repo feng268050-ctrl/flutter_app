@@ -34,7 +34,7 @@ if [ -f "$ICU_DAT" ]; then
 	ln -sf "${RUNTIME_MODE}/data/icudtl.dat" "$ICU_LEGACY_LINK"
 fi
 
-# App bundle must not ship a second engine/icu copy (~40MB); flutter-pi dlopens from /usr/lib.
+# App bundle must not ship a second engine/icu copy (~40MB); client dlopens from /usr/lib.
 rm -f \
 	"$TARGET_DIR/opt/hmi/lib/libflutter_engine.so" \
 	"$TARGET_DIR/opt/hmi/data/icudtl.dat"

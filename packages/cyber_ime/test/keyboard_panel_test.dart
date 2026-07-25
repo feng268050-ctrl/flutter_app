@@ -346,11 +346,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(focus.hasFocus, isTrue);
 
-    // Regression: readOnly:true blocked flutter-pi/XKB (and TextInput) inserts.
+    // Regression: readOnly:true blocked hardware/XKB (and TextInput) inserts.
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.readOnly, isFalse);
 
-    // TextInput path used by flutter-pi/XKB when not readOnly.
+    // TextInput path used by hardware/XKB when not readOnly.
     await tester.enterText(find.byType(TextField), 'ab');
     await tester.pump();
     expect(ctrl.text, 'ab');

@@ -2,11 +2,23 @@
 # Swap in *.compile.mk inside the SDK tree used by Buildroot, build one package, restore.
 set -euo pipefail
 
-PKG="${1:?usage: br-compile-flutter.sh flutter-engine|flutter-pi}"
+PKG="${1:?usage: br-compile-flutter.sh flutter-engine}"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BR_OUTPUT="${BR_OUTPUT:-rockchip_rk3566_rk3568_lws_hmi}"
 JOBS="${BUILD_JOBS:-4}"
+
+case "$PKG" in
+flutter-engine) ;;
+flutter-pi)
+	echo "ERROR: flutter-pi package was removed; use flutter-engine / flutter-embedded-linux" >&2
+	exit 2
+	;;
+*)
+	echo "ERROR: unsupported package '$PKG' (expected flutter-engine)" >&2
+	exit 2
+	;;
+esac
 
 echo "br-compile-flutter: building ${PKG} (compile.mk) in buildroot output ${BR_OUTPUT} ..."
 

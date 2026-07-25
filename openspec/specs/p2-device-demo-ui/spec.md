@@ -2,7 +2,7 @@
 
 ## Purpose
 
-P2 Flutter home demo: device-information rows (product identity SN + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth (local adapter + central scan/HID) / USB keyboard / USB mouse sections, P2.2 Date & Time (manual / network), plus audio / brightness controls. Display orientation is **not** a Demo setting (fixed at flutter-pi launch / board default; in-app video rotation stays App-layer).
+P2 Flutter home demo: device-information rows (product identity SN + Modbus), Alarm Information temperatures, mutually exclusive RGB LED mode controls, P2.1 Ethernet / Wi-Fi / HTTP proxy probe / Bluetooth (local adapter + central scan/HID) / USB keyboard / USB mouse sections, P2.2 Date & Time (manual / network), plus audio / brightness controls. Display orientation is **not** a Demo setting (fixed at HMI launch / board default; in-app video rotation stays App-layer).
 ## Requirements
 ### Requirement: Home screen lists device-info rows
 
@@ -51,7 +51,7 @@ On the trimmed Demo route, Alarm Information SHALL list Pump / Gun / Feeder Comm
 
 ### Requirement: Demo does not expose display orientation controls
 
-The demo home MUST NOT provide Portrait / Landscape (or equivalent) controls that change flutter-pi `-o` / HMI restart orientation. Panel orientation is fixed by image/board launch configuration. Any temporary layout change for media (e.g. video landscape while chrome is portrait) SHALL be product App UI work, not a Demo platform setting.
+The demo home MUST NOT provide Portrait / Landscape (or equivalent) controls that change eLinux HMI `-o` / HMI restart orientation. Panel orientation is fixed by image/board launch configuration. Any temporary layout change for media (e.g. video landscape while chrome is portrait) SHALL be product App UI work, not a Demo platform setting.
 
 #### Scenario: No orientation segmented control
 - **WHEN** the operator opens the P2 demo home

@@ -43,7 +43,7 @@ define FLUTTER_ENGINE_ENSURE_PREBUILT
 	if [ ! -f "$(FLUTTER_ENGINE_PREBUILT_DIR)/.lws-prebuilt" ]; then \
 		printf 'flutter-engine %s: missing prebuilt %s\n' \
 			"$(FLUTTER_ENGINE_VERSION)" "$(FLUTTER_ENGINE_PREBUILT_DIR)" 1>&2; \
-		printf 'Run: make build-flutter-engine / make build-flutter-pi\n' 1>&2; \
+		printf 'Run: make build-flutter-engine\n' 1>&2; \
 		exit 1; \
 	fi
 endef

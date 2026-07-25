@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # #region agent log — DEBUG INSTRUMENTATION (session 8fb78d), safe to delete
 # Frame-pacing probe: per-second, compares VOP2 vblank IRQ rate (ground-truth
-# panel refresh) against flutter-pi page-flip rate (actual presented fps, via
+# panel refresh) against Weston/eLinux present rate (actual presented fps, via
 # win0 framebuffer-address changes in the DRM debugfs summary). Reveals whether
-# flutter-pi is missing vblanks (H2a) vs the panel simply running at 56 Hz (H2b).
+# embedder is missing vblanks (H2a) vs the panel simply running at 56 Hz (H2b).
 #
 # Usage: bash scripts/debug-frame-pacing.sh [RUN_ID] [DURATION_S]
 set -u

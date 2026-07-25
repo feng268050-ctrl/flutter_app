@@ -94,88 +94,40 @@ rm -f \
 	"$TARGET_DIR/etc/systemd/system/settings-restore.service" \
 	"$TARGET_DIR/etc/systemd/system/multi-user.target.wants/settings-restore.service"
 
-# Operator symlink for mouse prefs (Weston + flutter-pi).
+# Operator symlink for mouse prefs (Weston / eLinux).
 if [ -f "$TARGET_DIR/usr/libexec/hmi/apply-mouse-settings.sh" ]; then
 	ln -sf /usr/libexec/hmi/apply-mouse-settings.sh \
 		"$TARGET_DIR/usr/bin/apply-mouse-settings"
 fi
 
-# Embedder mutual exclusion. Same Buildroot output/ is reused when flipping
-# between make build-rootfs (Weston) and build-rootfs-flutter-pi — leftover
-# binaries from the other stack remain under target/ until purged.
-#
-# Intent (first match wins):
-#   1) Buildroot .config next to TARGET_DIR (authoritative after lunch/defconfig)
-#   2) LWS_HMI_WESTON from docker-run (default 1 = Weston)
-wayland_img=0
-br_config="$(dirname "$TARGET_DIR")/.config"
-if [ -f "$br_config" ] && grep -qE '^BR2_PACKAGE_FLUTTER_EMBEDDED_LINUX=y' "$br_config"; then
-	wayland_img=1
-elif [ -f "$br_config" ] && grep -qE '^BR2_PACKAGE_FLUTTER_PI=y' "$br_config"; then
-	wayland_img=0
-else
-	case "${LWS_HMI_WESTON:-1}" in
-	0 | n | N | no | NO | false | FALSE) wayland_img=0 ;;
-	*) wayland_img=1 ;;
-	esac
-fi
+# Product image is Weston + flutter-wayland-client only. Purge any leftover
+# flutter-pi binary from a previous Buildroot output reuse.
+rm -f "$TARGET_DIR/usr/bin/flutter-pi"
+echo "post-build: purged flutter-pi (if leftover)"
 
-if [ "$wayland_img" -eq 1 ]; then
-	rm -f "$TARGET_DIR/usr/bin/flutter-pi"
-	echo "post-build: weston image — purged flutter-pi (if leftover)"
-else
-	rm -f \
-		"$TARGET_DIR/usr/bin/weston" \
-		"$TARGET_DIR/usr/bin/flutter-wayland-client"
-	# Drop compositor plugins/libs so a stale weston cannot be started by hand.
-	rm -rf \
-		"$TARGET_DIR/usr/lib/weston" \
-		"$TARGET_DIR/usr/share/weston"
-	rm -f "$TARGET_DIR/usr/lib"/libweston-*.so* \
-		"$TARGET_DIR/usr/lib"/libweston-desktop-*.so* 2>/dev/null || true
-	echo "post-build: flutter-pi image — purged Weston/eLinux client (if leftover)"
-fi
-
-has_pi=0
 has_weston=0
-if [ -x "$TARGET_DIR/usr/bin/flutter-pi" ]; then
-	has_pi=1
-fi
 if [ -x "$TARGET_DIR/usr/bin/weston" ] && \
 	[ -x "$TARGET_DIR/usr/bin/flutter-wayland-client" ]; then
 	has_weston=1
 fi
-if [ "$has_pi" -eq 1 ] && [ "$has_weston" -eq 1 ]; then
-	echo "post-build: ERROR rootfs still has both flutter-pi and Weston/eLinux after purge" >&2
-	exit 1
-fi
 mkdir -p "$TARGET_DIR/etc/hmi"
-if [ "$wayland_img" -eq 1 ]; then
-	if [ "$has_weston" -ne 1 ]; then
-		echo "post-build: ERROR LWS_HMI_WESTON=1 but weston/flutter-wayland-client missing" >&2
-		exit 1
-	fi
-	printf '%s\n' weston >"$TARGET_DIR/etc/display-stack"
-	echo "post-build: display-stack=weston"
-elif [ "$has_pi" -eq 1 ]; then
-	printf '%s\n' flutter-pi >"$TARGET_DIR/etc/display-stack"
-	echo "post-build: display-stack=flutter-pi"
-else
-	echo "post-build: ERROR default Weston image missing weston/flutter-wayland-client" >&2
-	echo "post-build: after a flutter-pi build, restore with:" >&2
+if [ "$has_weston" -ne 1 ]; then
+	echo "post-build: ERROR weston/flutter-wayland-client missing" >&2
 	echo "post-build:   bash scripts/ensure-mali-variant.sh wayland-gbm" >&2
 	echo "post-build:   (or: make prepare-rootfs && make build-rootfs)" >&2
 	exit 1
 fi
-
-# Retired helper scripts (Buildroot overlay copy does not delete removed files).
+# Retired stamps / helpers (Buildroot overlay copy does not delete removed files).
 rm -f \
+	"$TARGET_DIR/etc/display-stack" \
+	"$TARGET_DIR/etc/hmi/display-stack" \
 	"$TARGET_DIR/usr/libexec/hmi/ab-upgrade-app-only.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/lws-hmi-backlight-apply.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/lws-hmi-eth0-apply.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/lws-hmi-wpa-run.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/lws-hmi-settings-restore.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/lws-hmi-prefs-bind.sh"
+echo "post-build: weston + flutter-wayland-client OK"
 
 # Baked etc/ must not reference removed monolithic helper/state dirs.
 stale_refs=""

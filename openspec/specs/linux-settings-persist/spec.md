@@ -14,7 +14,7 @@ The image SHALL document and use:
 - **`/var/lib/hal/`** — `display.conf` / `sound.conf`, mouse/keyboard settings, `datetime.conf` (sync mode + timezone), USB debug role, `product.ini` (`display.conf` keys include `backlight`, `auto_sleep`, `orientation`)
 - **`/var/lib/hmi/`** — HMI App stores (`common-settings.json`, `misc-settings.json`, `advanced-settings.json`, alarm history DB) and push/debug/A-B staging
 
-LAN SSH debug MUST NOT be restored at boot solely due to a prior enable. Mouse preferences MUST be re-applied when flutter-pi / `hmi.service` starts; they do NOT require a separate network-style restore oneshot. `common-settings.json` is App-owned and is NOT applied by `settings-restore.service` (Language / Unit are read by the HMI process on start).
+LAN SSH debug MUST NOT be restored at boot solely due to a prior enable. Mouse preferences MUST be re-applied when `hmi.service` starts; they do NOT require a separate network-style restore oneshot. `common-settings.json` is App-owned and is NOT applied by `settings-restore.service` (Language / Unit are read by the HMI process on start).
 
 #### Scenario: Cold boot without wifi-wanted
 
@@ -23,8 +23,8 @@ LAN SSH debug MUST NOT be restored at boot solely due to a prior enable. Mouse p
 
 #### Scenario: Mouse prefs applied on HMI start
 
-- **WHEN** mouse preference files exist under `/var/lib/hal/` and `hmi.service` starts flutter-pi
-- **THEN** flutter-pi applies those mouse preferences for attached pointer devices without requiring the operator to open Demo
+- **WHEN** mouse preference files exist under `/var/lib/hal/` and `hmi.service` starts the HMI
+- **THEN** the compositor applies those mouse preferences for attached pointer devices without requiring the operator to open Demo
 
 #### Scenario: Datetime prefs use datetime.conf under hal
 

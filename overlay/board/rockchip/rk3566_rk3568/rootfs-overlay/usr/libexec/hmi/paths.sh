@@ -9,7 +9,6 @@ LIBEXEC_NETWORK=/usr/libexec/network
 LIBEXEC_BLUETOOTH=/usr/libexec/bluetooth
 LIBEXEC_HMI=/usr/libexec/hmi
 ETC_HMI=/etc/hmi
-ETC_DISPLAY_STACK=/etc/display-stack
 USERDATA_WPA=/userdata/wpa_supplicant
 USERDATA_NETWORK=/userdata/network
 USERDATA_BLUETOOTH=/userdata/bluetooth

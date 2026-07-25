@@ -136,13 +136,6 @@ final class BoardBindings {
     );
   }
 
-  /// Active embedder (flutter-pi vs Weston). Inject [probe] in tests.
-  Future<DisplayStack> displayStack({
-    DisplayStackProbe probe = const DisplayStackProbe(),
-  }) {
-    return probe.detect();
-  }
-
   LinuxEthernet ethernet() {
     return LinuxEthernet(
       profile: profile,
@@ -278,7 +271,7 @@ final class BoardBindings {
     }
     try {
       final s = await ms.getSettings();
-      await ms.setSettings(s); // re-touch mouse.conf for flutter-pi mtime
+      await ms.setSettings(s); // re-touch mouse.conf for compositor apply
     } catch (e) {
       debugPrint('restore: mouse: $e');
     }

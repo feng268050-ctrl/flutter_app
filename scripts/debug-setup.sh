@@ -52,7 +52,7 @@ config_path, schema, ping, post_build, install, uninstall, run_debug, forward, f
 device = {
     "id": "lws-hmi",
     "label": "lws-hmi (USB-SSH / SSH)",
-    "sdkNameAndVersion": f"flutter-pi / Flutter {flutter_ver}",
+    "sdkNameAndVersion": f"eLinux / Flutter {flutter_ver}",
     "platform": "linux-arm64",
     "enabled": True,
     "ping": ["bash", ping],

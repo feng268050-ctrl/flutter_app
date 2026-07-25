@@ -901,9 +901,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get kernelVersion => '内核版本';
 
   @override
-  String get displayStack => '显示栈';
-
-  @override
   String get autoCheckOtaUpdate => '自动检查更新';
 
   @override
@@ -2436,9 +2433,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get kernelVersion => '內核版本';
-
-  @override
-  String get displayStack => '顯示棧';
 
   @override
   String get autoCheckOtaUpdate => '自動檢查更新';

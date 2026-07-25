@@ -1,7 +1,7 @@
 # dart-hal Specification
 
 ## Purpose
-Portable Dart HAL (`cyber_hal`) for Buildroot / flutter-pi **Linux** appliances. Product Apps import modules on demand. Scope is Linux backends (`Linux*`) plus stub/sim — **not** Android platform adapters (P5.0 APK uses App-side Android / `YNHAPI`; Android already has its own HAL).
+Portable Dart HAL (`cyber_hal`) for Buildroot / eLinux HMI **Linux** appliances. Product Apps import modules on demand. Scope is Linux backends (`Linux*`) plus stub/sim — **not** Android platform adapters (P5.0 APK uses App-side Android / `YNHAPI`; Android already has its own HAL).
 ## Requirements
 ### Requirement: Dart HAL package
 The system SHALL provide a Dart HAL package (git submodule or `packages/` tree), independent of any single product App and parallel to CyberUI, that exposes portable hardware/platform APIs for the **Linux** appliance image. Product Apps on Linux SHALL depend on this package rather than embedding board-specific Linux paths or Process helpers for migrated capabilities. The package SHALL NOT require a Rust `hald` or equivalent IPC daemon as the Platform API. The package SHALL NOT implement Android-specific backends; Android product compatibility remains App-layer.
@@ -25,7 +25,7 @@ Every HAL module SHALL declare exactly one primary backend kind: **device/sysfs*
 
 ### Requirement: Industry-style public API
 
-Portable HAL public types SHALL use system-service vocabulary including at least: `Capabilities` / `BoardInfo`; under `hal/network`: network device/role APIs plus `ProxySettings` and **`SshDebug`** (LAN SSH); under `hal/output`: **display** (`Backlight`, `AutoSleep`, **`Orientation`**) and **sound** (`Volume`, `ButtonFeedback`); under `hal/input`: keyboard and mouse; `hal/gpio`; `hal/modbus`; under **`hal/usb_otg`**: OTG mode (`debug`/`mtp`/`host`) without attach/detach product APIs; `BluetoothManager` / related; `TimeService`; `SysInfo`. Implementation types (`Linux*`, `*Backend`) MUST NOT be required by product App code. Temporary `*Controller` wrappers MAY exist during migration. The HAL package MUST NOT expose a top-level `hal/http` module. Long-term public layout SHALL use grouped packages where decided (`hal/output`, `hal/input`, `hal/network`) plus top-level `hal/usb_otg`, `hal/gpio` / `hal/modbus` (not under an `io`/`media` umbrella). A long-term **`hal/debug`** barrel for SSH+USB MUST NOT remain. URL probe UI stays in the App. System proxy policy SHALL live under `hal/network/proxy`. Panel orientation SHALL live under `hal/output/display` (not a top-level `hal/orientation` entrypoint). Embedder/stack detection (`DisplayStack`) SHALL live under `hal/sys_info`. The package MUST NOT expose a top-level `hal/display` / `package:cyber_hal/display.dart` entrypoint.
+Portable HAL public types SHALL use system-service vocabulary including at least: `Capabilities` / `BoardInfo`; under `hal/network`: network device/role APIs plus `ProxySettings` and **`SshDebug`** (LAN SSH); under `hal/output`: **display** (`Backlight`, `AutoSleep`, **`Orientation`**) and **sound** (`Volume`, `ButtonFeedback`); under `hal/input`: keyboard and mouse; `hal/gpio`; `hal/modbus`; under **`hal/usb_otg`**: OTG mode (`debug`/`mtp`/`host`) without attach/detach product APIs; `BluetoothManager` / related; `TimeService`; `SysInfo`. Implementation types (`Linux*`, `*Backend`) MUST NOT be required by product App code. Temporary `*Controller` wrappers MAY exist during migration. The HAL package MUST NOT expose a top-level `hal/http` module. Long-term public layout SHALL use grouped packages where decided (`hal/output`, `hal/input`, `hal/network`) plus top-level `hal/usb_otg`, `hal/gpio` / `hal/modbus` (not under an `io`/`media` umbrella). A long-term **`hal/debug`** barrel for SSH+USB MUST NOT remain. URL probe UI stays in the App. System proxy policy SHALL live under `hal/network/proxy`. Panel orientation SHALL live under `hal/output/display` (not a top-level `hal/orientation` entrypoint). The package MUST NOT expose a top-level `hal/display` / `package:cyber_hal/display.dart` entrypoint.
 
 #### Scenario: New integration uses network module
 
@@ -148,17 +148,17 @@ HAL mid-session writes SHALL use `/var/lib/{wpa_supplicant,network,bluetooth,hal
 
 ### Requirement: Physical keyboard layout via XKB pref
 
-Physical USB/BT HID keyboard layout SHALL be applied through flutter-pi / libxkbcommon (XKB). `hal/input/keyboard` SHALL expose get/set/list layout APIs that persist layout (via `/etc/default/keyboard` and/or `/var/lib/hal/keyboard.conf`). For v1, applying a new layout SHALL take effect by restarting flutter-pi / `hmi.service` so XKB is rebuilt at keyboard init. After that restart, the product App SHALL restore navigation to the previous route/page (brief flash is acceptable; most devices rarely change layout). Soft-keyboard layouts remain CyberIME and MUST NOT be implemented as Dart remapping of HID scancodes. A flutter-pi mtime hot-reload path MAY be added later as a non-blocking enhancement. **Product Settings SHALL offer at least the US / DE / FR / JP layouts** corresponding to ANSI / QWERTZ / AZERTY / JIS profiles; Demo-only layouts (e.g. `ru`) MAY remain available to Demo surfaces without appearing in the product Segment.
+Physical USB/BT HID keyboard layout SHALL be applied through eLinux HMI / libxkbcommon (XKB). `hal/input/keyboard` SHALL expose get/set/list layout APIs that persist layout (via `/etc/default/keyboard` and/or `/var/lib/hal/keyboard.conf`). For v1, applying a new layout SHALL take effect by restarting `hmi.service` so XKB is rebuilt at keyboard init. After that restart, the product App SHALL restore navigation to the previous route/page (brief flash is acceptable; most devices rarely change layout). Soft-keyboard layouts remain CyberIME and MUST NOT be implemented as Dart remapping of HID scancodes. A eLinux HMI mtime hot-reload path MAY be added later as a non-blocking enhancement. **Product Settings SHALL offer at least the US / DE / FR / JP layouts** corresponding to ANSI / QWERTZ / AZERTY / JIS profiles; Demo-only layouts (e.g. `ru`) MAY remain available to Demo surfaces without appearing in the product Segment.
 
 #### Scenario: US to Russian
 
-- **WHEN** the App calls setLayout for `ru` (or equivalent) with xkeyboard-config present and flutter-pi has been restarted after persist
+- **WHEN** the App calls setLayout for `ru` (or equivalent) with xkeyboard-config present and eLinux HMI has been restarted after persist
 - **THEN** subsequent physical key events SHALL produce Russian layout characters
 
 #### Scenario: Apply restarts then returns to prior page
 
 - **WHEN** layout preference is changed via HAL in v1
-- **THEN** flutter-pi / HMI SHALL restart to apply XKB, and after relaunch the App SHALL open the previous route/page rather than only the default home
+- **THEN** eLinux HMI / HMI SHALL restart to apply XKB, and after relaunch the App SHALL open the previous route/page rather than only the default home
 
 #### Scenario: Apply German layout from product profile
 
@@ -176,12 +176,12 @@ Physical USB/BT HID keyboard layout SHALL be applied through flutter-pi / libxkb
 
 ### Requirement: Mouse settings via existing pref contract
 
-`hal/input/mouse` SHALL formalize the P2.1 mouse preference contract: settings persist in `/var/lib/hal/mouse.conf` and are applied through `apply-mouse-settings` (or equivalent injectable helper); flutter-pi SHALL continue to reload on file mtime without `SIGHUP` or HMI restart. Supported keys SHALL include at least `natural_scroll`, `scroll_speed`, `pointer_speed`, `pointer_size`, `primary_button`, and `pointer_axes`. Presence SHALL be observed via `/dev/input/by-id` (with documented fallbacks). The HAL MUST NOT synthesize pointer events in Dart and MUST NOT introduce a parallel preference tree. Bluetooth pairing/HOGP remains outside mouse (stays bluetooth).
+`hal/input/mouse` SHALL formalize the P2.1 mouse preference contract: settings persist in `/var/lib/hal/mouse.conf` and are applied through `apply-mouse-settings` (or equivalent injectable helper); eLinux HMI SHALL continue to reload on file mtime without `SIGHUP` or HMI restart. Supported keys SHALL include at least `natural_scroll`, `scroll_speed`, `pointer_speed`, `pointer_size`, `primary_button`, and `pointer_axes`. Presence SHALL be observed via `/dev/input/by-id` (with documented fallbacks). The HAL MUST NOT synthesize pointer events in Dart and MUST NOT introduce a parallel preference tree. Bluetooth pairing/HOGP remains outside mouse (stays bluetooth).
 
 #### Scenario: Settings apply without restart
 
 - **WHEN** the App changes natural scroll or pointer speed via HAL
-- **THEN** flutter-pi SHALL pick up `/var/lib/hal/mouse.conf` via mtime poll and apply without restarting `hmi.service`
+- **THEN** eLinux HMI SHALL pick up `/var/lib/hal/mouse.conf` via mtime poll and apply without restarting `hmi.service`
 
 #### Scenario: Package migration preserves conf
 
@@ -264,19 +264,6 @@ Related capabilities SHALL be grouped under domain packages with optional sub-im
 
 - **WHEN** a product App needs only OTG mode control
 - **THEN** it SHALL import `hal/usb_otg` without importing wifi
-### Requirement: DisplayStack under sys_info
-
-Embedder/stack detection (`DisplayStack`, probe helpers, and mouse-setting availability gates derived from the stack) SHALL be exported from `package:cyber_hal/sys_info.dart`. Product Apps MUST NOT import a top-level `package:cyber_hal/display.dart`. The default stamp path SHALL be `/etc/display-stack` (image, baked by post-build), not under `/etc/hmi/`. Writers MUST NOT create a runtime `/run/display-stack` stamp.
-
-#### Scenario: App resolves stack via sys_info
-
-- **WHEN** Settings needs the active display stack label or mouse-knob gates
-- **THEN** it SHALL obtain `DisplayStack` through `sys_info` (or `BoardBindings.displayStack`) without importing `cyber_hal/display.dart`
-
-#### Scenario: Probe default is image stamp
-
-- **WHEN** `DisplayStackProbe` is constructed with default paths
-- **THEN** it reads `/etc/display-stack` (then legacy `/etc/hmi/display-stack` if needed)
 
 ### Requirement: Cross-module portability (D22)
 
@@ -340,27 +327,4 @@ exercise preparing, recording, stopping, completed, failure, and cancellation.
 - **WHEN** an integrator inspects `IpCameraRecordingRequest`
 - **THEN** it MAY contain source URIs, codec, destination, timeout, and retry policy
 - **AND** it MUST NOT contain Quick Mode, Engineer Mode, process parameters, or product video-database fields
-
-### Requirement: DisplayStack stamps use OS paths
-
-`DisplayStackProbe` (and rootfs post-build writers) SHALL use:
-
-- **Image stamp:** `/etc/display-stack` (baked by rootfs post-build; `weston` XOR `flutter-pi`)
-
-Detection priority SHALL be: image stamp → `WAYLAND_DISPLAY` / platform fallbacks. Tokens (`weston` / `wayland` / `elinux` / `flutter-pi` / …) are unchanged. The image MUST NOT write a runtime `/run/display-stack` (or legacy `/run/hmi/display-stack`) stamp. Writers MUST NOT use `/etc/hmi/display-stack` as the primary path. Probe MAY read `/etc/hmi/display-stack` only as a legacy fallback when `/etc/display-stack` is absent.
-
-#### Scenario: Image stamp selects flutter-pi
-
-- **WHEN** `/etc/display-stack` contains `flutter-pi`
-- **THEN** `DisplayStackProbe.detect` returns flutter-pi
-
-#### Scenario: Image stamp selects weston
-
-- **WHEN** `/etc/display-stack` contains `weston`
-- **THEN** detect returns Weston
-
-#### Scenario: Legacy stamp fallback
-
-- **WHEN** `/etc/display-stack` is absent but `/etc/hmi/display-stack` contains `weston`
-- **THEN** detect MAY return Weston via legacy fallback
 

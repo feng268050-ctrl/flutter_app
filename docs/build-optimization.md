@@ -15,7 +15,7 @@
 Example — Hello World today (flutter only):
 
 ```makefile
-#include "chips/lws_hmi_flutter.config"
+#include "chips/lws_hmi_flutter_weston.config"
 # #include "chips/lws_hmi_gst_rtsp.config"    ← enable when P5 video merges
 # #include "chips/lws_hmi_platform.config"     ← enable when P2/P5 merges
 ```

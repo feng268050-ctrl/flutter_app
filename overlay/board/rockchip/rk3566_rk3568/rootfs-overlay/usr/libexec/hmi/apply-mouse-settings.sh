@@ -1,6 +1,6 @@
 #!/bin/sh
 # Persist mouse.conf (stdin) and apply to Weston when present.
-# flutter-pi reloads mouse.conf on mtime; Weston needs ini rewrite + HMI restart
+# Weston needs ini rewrite + HMI restart
 # only when the generated weston.ini content actually changes.
 set -eu
 
@@ -18,7 +18,6 @@ mv -f "$tmp" "$PREF"
 chmod 644 "$PREF" 2>/dev/null || true
 echo "apply-mouse-settings: wrote $PREF" >&2
 
-# flutter-pi path: done (mtime poll).
 if [ ! -x /usr/bin/weston ]; then
 	exit 0
 fi

@@ -3,7 +3,7 @@ import 'dart:io';
 /// Best-effort USB / HID keyboard presence for Demo status and [Keyboard.isPresent].
 ///
 /// Does not decode keys — Flutter Focus/`TextField` receives HID via
-/// libinput/flutter-pi once a keyboard is enumerated.
+/// libinput once a keyboard is enumerated.
 ///
 /// **Important:** `/dev/input/by-id` entries are symlinks. Listing must use
 /// `followLinks: false` — the default follows them into `event*` nodes and

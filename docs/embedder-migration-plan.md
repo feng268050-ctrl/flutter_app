@@ -1,10 +1,14 @@
 # 嵌入器迁移计划（flutter-pi → flutter-embedded-linux / Weston · ynh960 基准）
 
+## 状态（2026-07-25）
+
+**完成：** 量产仅保留 Weston + `flutter-wayland-client`；`flutter-pi` 备选 rootfs / prebuilt / Buildroot 包 / `flutterpi_tool` 已移除；App 打包改为 `scripts/hmi-bundle-common.sh`（`flutter assemble` + `gen_snapshot`）。下文保留迁移诊断与决策史实。
+
 目标：把量产 HMI 的 Flutter **嵌入器**从 **flutter-pi** 换成 **flutter-embedded-linux（Sony eLinux）+ Weston**，以解决在本机上无法达到面板刷新率的**动画帧调度 / vsync 卡顿**问题。本文给出诊断依据、候选方案对比、推荐路线、风险、分阶段计划与验收标准。
 
-**当前量产默认（2026-07）：** `make build-rootfs` → Weston；备选 `make build-rootfs-flutter-pi`。根文件系统固定 **600M**（两栈共用 `lws_hmi_rootfs.config`）。
+**当前量产（2026-07）：** `make build-rootfs` → Weston + eLinux（flutter-pi 备选已移除）。根文件系统固定 **600M**（`lws_hmi_rootfs.config`）。
 
-配套阅读：主线规划 [`flutter-pi-hmi-plan.md`](flutter-pi-hmi-plan.md)（§5 显示栈、§3.2 模拟器、§6 应用打包、P5.1 引擎升级）；帧调度诊断脚本 [`scripts/debug-frame-pacing.sh`](../scripts/debug-frame-pacing.sh)、[`scripts/debug-jank-probe.sh`](../scripts/debug-jank-probe.sh)。
+配套阅读：主线规划 [`flutter-linux-hmi-plan.md`](flutter-linux-hmi-plan.md)（§5 显示栈、§3.2 模拟器、§6 应用打包、P5.1 引擎升级）；帧调度诊断脚本 [`scripts/debug-frame-pacing.sh`](../scripts/debug-frame-pacing.sh)、[`scripts/debug-jank-probe.sh`](../scripts/debug-jank-probe.sh)。
 
 状态图例：✅ 完成 · 🔄 进行中 · 🔲 未开始
 
@@ -94,7 +98,7 @@
 | R1 | **libmali 变体**:Wayland backend 需 `wayland-gbm` 变体,当前量产用 `gbm` 变体 | C 方案阻塞项 | Phase 0 先确认 Rockchip 提供的 libmali 变体清单与切换代价;必要时并存两套 |
 | R2 | **输入/光标补丁丢失**:flutter-pi 的 10 个补丁(文本光标、键盘 LED/重复、鼠标偏好、BT 轴交换、光标尺寸、Rockchip 光标 stride/move 回退)在新嵌入器不存在 | 输入能力回退 | 逐项归类:Weston/eLinux 原生已覆盖的删除;仍需的在 eLinux 侧或 `cyber_hal` 重建;建输入平权 checklist(见 §7.2) |
 | R3 | **启动 KPI**:Weston 增加合成器启动时间,可能触碰 ≤10s | 用户体验/验收 | Phase 3 实测 boot KPI;必要时 Weston 精简配置/并行启动 |
-| R4 | **Buildroot 打包**:需新增 eLinux(+ 可能 Weston/wayland/wayland-protocols)包与 prebuilt 流程 | 工作量 | 复用现有 prebuilt 模式(见 flutter-pi.mk / flutter-engine.mk);eLinux 走 CMake |
+| R4 | **Buildroot 打包**:需新增 eLinux(+ 可能 Weston/wayland/wayland-protocols)包与 prebuilt 流程 | 工作量 | 复用现有 prebuilt 模式(`flutter-engine.mk` / `flutter-embedded-linux.mk`);eLinux 走 CMake |
 | R5 | **引擎 embedder API 兼容**:eLinux 需与 3.24.4 `libflutter_engine.so` 的 embedder API 对齐 | 编译/运行 | 选用与 3.24.4 匹配的 eLinux tag;先用现有引擎 .so 验证,不行再评估引擎重编 |
 | R6 | **换嵌入器仍不达标**:若 DRM-GBM 与 Weston 都到不了 56fps | 计划失败 | 说明瓶颈在引擎(Animator/vsync waiter)层,转入引擎升级(P5.1)或引擎侧调查;Phase 0 的低成本正是为尽早暴露此风险 |
 | R7 | `cyber_hal` 鼠标偏好(`/var/lib/hmi/mouse.conf`)当前由 flutter-pi 补丁 0005 消费 | 鼠标设置失效 | Wayland 下改由 Weston/libinput 配置或 `cyber_hal` 适配 |
@@ -114,29 +118,28 @@
 - E0.5(条件)若 E0.3 未达标,最小引入 Weston + eLinux Wayland backend,复测帧率。✅ 基础设施 + present 探针完成；**C≈41fps vs pi≈24fps，硬门控 ≥50 未过**（见 spike 报告 §5）。
 - **产出**: [`embedder-migration-spike-e0.md`](embedder-migration-spike-e0.md) — **否决 B；方向锁定 C**；≥50fps 留待 E3/调优或 P5.1。
 
-### E1 — Buildroot 打包 ✅（量产默认：Weston 镜像；flutter-pi 备选）
+### E1 — Buildroot 打包 ✅（量产：Weston 镜像）
 
 - E1.1 新增 `overlay/buildroot/package/flutter-embedded-linux/`(prebuilt `.mk`；交叉编译见 `scripts/build-flutter-embedded-linux.sh`)。✅
-- E1.2(仅 C)新增/启用 `weston`、`wayland`、`wayland-protocols`,并切换 libmali 到 `wayland-gbm` 变体;新增 `chips/lws_hmi_wayland.config`。✅ — **默认 defconfig include**；`make build-rootfs` 经 `LWS_HMI_WESTON=1`（默认）注入。备选 flutter-pi：`LWS_HMI_WESTON=0` / `make build-rootfs-flutter-pi`。
+- E1.2(仅 C)新增/启用 `weston`、`wayland`、`wayland-protocols`,并切换 libmali 到 `wayland-gbm` 变体;新增 `chips/lws_hmi_wayland.config`。✅ — **默认 defconfig include**；`make build-rootfs` 注入 Weston 栈（flutter-pi 备选已移除）。
 - E1.3 prebuilt 导出流程 + `make check-prebuilt` 纳入新包。✅（仅 wayland fragment 启用时校验）。
 - E1.4 版本文件 `overlay/buildroot/flutter-embedded-linux.version`。✅ (`db49896cf2`)
 
-**双轨 rootfs：**
+**Product rootfs:**
 
 | 目标 | 嵌入器 | Mali |
 | ---- | ------ | ---- |
-| `make build-rootfs`（默认） | Weston + `flutter-wayland-client` only（无 `flutter-pi`） | `wayland-gbm` |
-| `make build-rootfs-flutter-pi`（备选） | flutter-pi only（无 weston / eLinux client） | `gbm` |
+| `make build-rootfs` | Weston + `flutter-wayland-client` | `wayland-gbm` |
 
-两套 rootfs **互斥打包**：`lws_hmi_flutter.config` 显式关闭 Wayland/Weston/eLinux；`lws_hmi_wayland.config` 关闭 `FLUTTER_PI`。`post-build` 写入 `/etc/display-stack` 且若混装则失败。`hmi-launch.sh` **按该 stamp 选栈**。栈切换：`make prepare-rootfs` / `prepare-rootfs-flutter-pi`（`scripts/prepare-rootfs-stack.sh` + `ensure-mali-variant.sh`）；`build-rootfs*` 会先跑匹配的 prepare。鼠标偏好：`apply-mouse-settings` 写 conf；Weston 下会重启 `hmi` 使 ini 生效。视觉 DPR 对齐在 Dart（`LwsHmiApp` FittedBox≈1.358）。HAL：`BoardBindings.displayStack()` / `DisplayStackProbe`（读 `/etc/display-stack`）门控 Settings 中仅 flutter-pi 支持的鼠标项。
+`post-build` 校验 Weston/client 存在，并清除遗留的 `flutter-pi` / `display-stack` stamp。`hmi-launch.sh` 固定走 Weston 路径。鼠标偏好：`apply-mouse-settings` 写 conf；Weston 下会重启 `hmi` 使 ini 生效。视觉 DPR 对齐在 Dart（`LwsHmiApp` FittedBox≈1.358）。
 
-**产品决策（2026-07）：** 板端验证 Weston 在实时高斯模糊等场景下帧率更高更稳，flutter-pi 会明显掉到 24fps 以下 → **Weston 升为默认量产栈**，flutter-pi 保留为备选。
+**产品决策（2026-07）：** 板端验证 Weston 在实时高斯模糊等场景下帧率更高更稳 → **Weston 为唯一量产栈**（flutter-pi / display-stack 分支已移除）。
 
 ### E2 — 输入 / 光标平权 🔲
 
 - E2.1 按 §7.2 checklist 逐项验证并补齐(文本光标、键盘 LED/重复、鼠标加速/滚动/尺寸、BT 轴交换、触摸、电源键)。🔲
-- E2.2 `cyber_hal` 鼠标偏好在新栈下的落地(R7)。✅ — `board_profile` 声明 `apply_mouse_settings`；helper 写 conf + Weston `weston.ini`/`[libinput]`；`scroll_speed`/`pointer_axes` 仍为 flutter-pi only（不强做）。
-- E2.3 旋转(`landscape_left` / `lcd0_rotation=90`)在新栈下对齐。🔲 — Weston 路径已用 compositor transform；flutter-pi 仍用 `-o landscape_left`。
+- E2.2 `cyber_hal` 鼠标偏好在新栈下的落地(R7)。✅ — `board_profile` 声明 `apply_mouse_settings`；helper 写 conf + Weston `weston.ini`/`[libinput]`；`scroll_speed`/`pointer_axes` 不映射（Weston 忽略）。
+- E2.3 旋转(`landscape_left` / `lcd0_rotation=90`)在新栈下对齐。🔲 — Weston 路径已用 compositor transform。
 
 ### E3 — 运行时集成 🔄
 
@@ -147,7 +150,7 @@
 ### E4 — 验收与切换 🔲
 
 - E4.1 §9 验收全过。🔲
-- E4.2 灰度:保留 flutter-pi 包与 prebuilt 作为回退(见 §10);defconfig 开关切换嵌入器。✅（默认 Weston / 备选 `build-rootfs-flutter-pi`）。
+- E4.2 灰度: flutter-pi 包与备选 rootfs **已移除**（2026-07-25）；仅 Weston 量产镜像。✅
 - E4.3 更新主线规划(§5 显示栈、P3.2 收敛、P5.1)、README、AGENTS.md 重建表、`env-verify.sh`。✅（README/AGENTS/`make build-rootfs` 默认 Weston；env-verify 待补）。
 - E4.4 归档本迁移(OpenSpec/文档)。🔲
 
@@ -190,15 +193,13 @@
 
 ## 9. 回退方案
 
-- flutter-pi 包(`overlay/buildroot/package/flutter-pi/` + `prebuilt/flutter-pi/<commit>/`)与 10 个补丁**全部保留**,不删除。
-- 通过 defconfig 开关(`BR2_PACKAGE_FLUTTER_PI` vs 新嵌入器包)与 `hmi-launch.sh` 分支切换嵌入器,可一键回退到 flutter-pi 基线。
-- 迁移完成并稳定运行 ≥1 个验收周期后,再评估是否移除 flutter-pi。
+- flutter-pi 包与备选 rootfs **已移除**（2026-07-25）。
 
 ---
 
 ## 10. 与主线规划的关系
 
-- 本迁移把主线 [`flutter-pi-hmi-plan.md`](flutter-pi-hmi-plan.md) §5「显示栈(DRM,非 Wayland)」与 §1.1「量产显示栈仍为设备侧 flutter-pi + DRM」**调整为 eLinux(+可能 Weston)**;需在迁移落地后同步更新该文档。
+- 本迁移把主线 [`flutter-linux-hmi-plan.md`](flutter-linux-hmi-plan.md) §5「显示栈(DRM,非 Wayland)」与 §1.1「量产显示栈仍为设备侧 flutter-pi + DRM」**调整为 eLinux(+可能 Weston)**;需在迁移落地后同步更新该文档。
 - 与 **P3.2 模拟器**(UTM + Weston + flutter-embedded-linux)**收敛为同一嵌入器**;若取方案 C,设备与模拟器共用 Weston + eLinux。
 - 可与 **P5.1(引擎 3.24→3.41)** 合并评估:换嵌入器与升引擎都涉及 embedder API,一并规划可减少一次大改。
 

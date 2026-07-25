@@ -183,7 +183,6 @@
   "diodeShortCircuitAlarmContent": "請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。",
   "diodeShortCircuitAlarmTitle": "二極管短路故障",
   "diodeShortCircuitErrorClearedTitle": "二極管短路故障解除",
-  "displayStack": "顯示棧",
   "dontShowAgain": "不再顯示",
   "driveOvertemperatureAlarmContent": "請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。",
   "driveOvertemperatureAlarmTitle": "驅動溫度告警",

@@ -49,7 +49,7 @@ On-screen text entry in product flows SHALL continue to use CyberIME by default.
 
 ### Requirement: Physical keyboard requires matching profile
 
-Physical USB/BT HID key text SHALL be produced by flutter-pi / XKB using the persisted layout for the selected profile. The Settings Keyboard page MUST inform the operator that the selected specification must match the attached physical keyboard; otherwise some keys may not produce the expected characters. The App MUST NOT implement physical typing by remapping HID scancodes in Dart as a substitute for XKB.
+Physical USB/BT HID key text SHALL be produced by eLinux HMI / XKB using the persisted layout for the selected profile. The Settings Keyboard page MUST inform the operator that the selected specification must match the attached physical keyboard; otherwise some keys may not produce the expected characters. The App MUST NOT implement physical typing by remapping HID scancodes in Dart as a substitute for XKB.
 
 #### Scenario: Apply persists XKB layout for profile
 

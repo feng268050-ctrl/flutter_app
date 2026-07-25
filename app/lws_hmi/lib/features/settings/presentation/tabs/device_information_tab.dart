@@ -52,11 +52,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
   Future<void> _start() async {
     try {
-      await widget.services.ensureDisplayStack();
-      if (mounted) setState(() {});
-    } catch (_) {}
-
-    try {
       _sysSub = widget.services.sysInfo
           .watch(interval: const Duration(seconds: 2))
           .listen(_onSys, onError: (_) {});
@@ -285,10 +280,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             SettingsValueRow(
               title: l10n.wireFeederVersion,
               value: _wireFeederVersion,
-            ),
-            SettingsValueRow(
-              title: l10n.displayStack,
-              value: widget.services.displayStack.displayLabel,
             ),
           ],
         ),

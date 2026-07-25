@@ -9,8 +9,6 @@ abstract final class OsPaths {
   static const varHmi = '/var/lib/hmi';
   /// App runtime markers (tmpfs); cleared on reboot.
   static const runHmi = '/run/hmi';
-  /// Image embedder stamp (`weston` XOR `flutter-pi`), baked by post-build.
-  static const etcDisplayStack = '/etc/display-stack';
   static const libexecWpa = '/usr/libexec/wpa';
   static const libexecNetwork = '/usr/libexec/network';
   static const libexecBluetooth = '/usr/libexec/bluetooth';

@@ -12,7 +12,7 @@ import 'package:cyber_hal/src/input/mouse_settings.dart';
 abstract class MouseSettingsController {
   Future<MouseSettings> getSettings();
 
-  /// Persist [settings] (Linux: write prefs; flutter-pi picks up via mtime poll).
+  /// Persist [settings] (Linux: write prefs; helper/compositor apply).
   Future<void> setSettings(MouseSettings settings);
 
   Future<void> dispose();

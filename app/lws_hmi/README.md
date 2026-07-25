@@ -1,6 +1,6 @@
 # lws_hmi — product HMI (embedded Linux)
 
-This tree targets **ynh960** via `flutterpi_tool` (`make build-app` → `/opt/hmi`).
+This tree targets **ynh960** via `flutter assemble + gen_snapshot` (`make build-app` → `/opt/hmi`).
 It is not a phone app: only the **`linux/`** platform stub is kept (plugin registrant /
 FFI helpers). `android/` / `ios/` / `macos/` / `web/` / `windows/` are intentionally absent.
 
@@ -21,10 +21,10 @@ Reusable modules live under `lib/platform/`:
 |--------|---------------|-------|
 | `audio/` | `change-volume` + `mpg123`/`amixer` | Forces `Playback Path=RING_SPK_HP`; asset → `/var/lib/hmi/audio/`; set volume via shell (persist `/var/lib/hal/sound.conf` key `volume`) |
 | `backlight/` | `change-backlight` | Prefer panel sysfs for get; set via HAL (persist `/var/lib/hal/display.conf` key `backlight`; restore + HMI re-apply) |
-| `display/` / HAL `Orientation` | `change-orientation` → `display.conf` `orientation` | HAL API; launch applies flutter-pi `-o` or Weston `transform` |
+| `display/` / HAL `Orientation` | `change-orientation` → `display.conf` `orientation` | HAL API; launch applies eLinux `-o` or Weston `transform` |
 | `datetime/` | `timedatectl`/`date` + `hwclock` + `/usr/bin/sync-time` | Manual set / Network sync; prefs `/var/lib/hal/datetime.conf` (`sync_mode`, `timezone`); HTTPS TLS uses `ensureSaneForTls` |
 | `ethernet/` | helpers + `ip` / sysfs | RJ45 `eth0`; DHCP/static via **`eth0-network.service`** (outside HMI cgroup); `eth0-wanted` |
-| `input/` | `/dev/input/by-id` probe + `MouseSettingsController` | USB HID keyboard/mouse presence; keys/pointer via flutter-pi; mouse prefs via **`apply-mouse-settings`** → `mouse.conf` (flutter-pi mtime poll; no SIGHUP) |
+| `input/` | `/dev/input/by-id` probe + `MouseSettingsController` | USB HID keyboard/mouse presence; keys/pointer via eLinux; mouse prefs via **`apply-mouse-settings`** → `mouse.conf` (eLinux mtime poll; no SIGHUP) |
 | `wifi/` | helpers + **D-Bus status** (`fi.w1.wpa_supplicant1`); `wpa_cli` for scan/connect | **`wlan-wpa`** requires `wpa -u`; L3 via networkd D-Bus |
 | `http/` | Dart `HttpClient` (+ optional `curl`) | Default `SecurityContext`; wall-clock via `DateTimeController`; system proxy via `LinuxProxy` → `/var/lib/network/proxy.conf` + `apply-proxy`; Demo GET probe |
 | `bluetooth/` | BlueZ D-Bus (`bluez` pkg) + stack/A2DP helpers | Discoverable peer + central scan/pair; HMI Agent1; `bt-wanted` + A2DP; Demo `syncFromSystem()` |
@@ -38,7 +38,7 @@ Reusable modules live under `lib/platform/`:
 3. Orientation — **no Demo control**; confirm launch `-o` matches board default (video layout flips are App UI later)
 4. Ethernet — enable interface → DHCP or Static → link LED / `ping` peer PC (not IPC camera IP yet)
 5. Keyboard — **1 mm pin → USB host** and/or **Micro-USB OTG host** (OTG/ID adapter) + HID / Bluetooth → Demo「Keyboard」：type, arrow caret, hold-to-repeat; optional NumLock if present. Standard PC cable on Micro-USB → plug-ssh (not keyboard). Pitfalls: [`docs/ynh960-io-pinmux-ledger.md`](../../docs/ynh960-io-pinmux-ledger.md) §4.1 / §4.1.1
-6. Mouse — same host paths / Bluetooth → Demo「Mouse」：visible pointer tracks; natural scroll / scroll speed / pointer speed / primary button / pointer axes (Auto/Normal/Swap); prefs in `/var/lib/hal/mouse.conf`. Pitfalls: ledger §4.1.2 (`0004`/`0005`/`0009` flutter-pi patches)
+6. Mouse — same host paths / Bluetooth → Demo「Mouse」：visible pointer tracks; natural scroll / scroll speed / pointer speed / primary button / pointer axes (Auto/Normal/Swap); prefs in `/var/lib/hal/mouse.conf`. Pitfalls: ledger §4.1.2 (`0004`/`0005`/`0009` eLinux patches)
 7. Wi‑Fi — enable radio → Scan → Connect (or Hidden SSID) → DHCP or Static → `ping` gateway; Send request (default `https://www.baidu.com/`) shows HTTP status/body
 8. Proxy — enable proxy, Save, re-run Send request
 9. LAN SSH debug — toggle on → note eth0/wlan0 IP → host `make connect <ip>`
@@ -66,6 +66,6 @@ Off by default even in debug — printing every slider tick / Modbus timeout slo
 Enable when needed:
 
 ```bash
-# example: flutterpi_tool / kernel compile with
+# example: flutter assemble + gen_snapshot / kernel compile with
 --dart-define=LWS_HMI_TRACE=true
 ```

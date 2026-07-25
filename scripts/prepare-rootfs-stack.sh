@@ -1,36 +1,30 @@
 #!/usr/bin/env bash
-# Prepare Buildroot output for one exclusive HMI stack (no rootfs.img pack).
+# Prepare Buildroot output for the Weston + eLinux HMI stack (no rootfs.img pack).
 #
 # Does: check-prebuilt → apply-overlay → ensure-mali-variant (+ embedder pkgs).
 # Shared packages already built in output/ are reused; only Mali / embedder
 # flip when the stack stamp or target binaries differ.
 #
 # Usage:
-#   bash scripts/prepare-rootfs-stack.sh weston       # default product stack
-#   bash scripts/prepare-rootfs-stack.sh flutter-pi   # alternate
+#   bash scripts/prepare-rootfs-stack.sh weston
 #   FORCE=1 bash scripts/prepare-rootfs-stack.sh weston
 #
 # Then pack:
-#   make build-rootfs              # calls prepare weston, then ./build.sh rootfs
-#   make build-rootfs-flutter-pi
+#   make build-rootfs
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-STACK="${1:?usage: prepare-rootfs-stack.sh <weston|flutter-pi>}"
+STACK="${1:-weston}"
 
 case "$STACK" in
-weston | wayland-gbm)
+weston | wayland-gbm | "" )
 	STACK=weston
 	export LWS_HMI_WESTON=1
 	MALI=wayland-gbm
 	;;
-flutter-pi | pi | gbm)
-	STACK=flutter-pi
-	export LWS_HMI_WESTON=0
-	MALI=gbm
-	;;
 *)
-	echo "ERROR: stack must be weston or flutter-pi (got: $STACK)" >&2
+	echo "ERROR: only the Weston stack is supported (got: $STACK)" >&2
+	echo "  flutter-pi alternate rootfs was removed; use: make prepare-rootfs" >&2
 	exit 2
 	;;
 esac
@@ -41,8 +35,4 @@ bash "$ROOT/scripts/check-prebuilt.sh"
 bash "$ROOT/scripts/apply-overlay.sh"
 bash "$ROOT/scripts/ensure-mali-variant.sh" "$MALI"
 
-if [[ "$STACK" = flutter-pi ]]; then
-	echo "prepare-rootfs-stack: ${STACK} ready — next: make build-rootfs-flutter-pi"
-else
-	echo "prepare-rootfs-stack: ${STACK} ready — next: make build-rootfs"
-fi
+echo "prepare-rootfs-stack: ${STACK} ready — next: make build-rootfs"

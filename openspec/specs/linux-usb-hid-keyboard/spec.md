@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Wired USB HID keyboard on ynh960: **1 mm pin-header USB host expansion** always, and **Micro-USB** when Debug over USB is off (OTG host). Kernel enum, evdev/libinput → flutter-pi text input for Demo and later product surfaces. Soft IME remains P4.
+Wired USB HID keyboard on ynh960: **1 mm pin-header USB host expansion** always, and **Micro-USB** when Debug over USB is off (OTG host). Kernel enum, evdev/libinput → eLinux HMI text input for Demo and later product surfaces. Soft IME remains P4.
 
 ## Requirements
 ### Requirement: USB HID keyboard enumerates on the 1 mm host expansion
@@ -20,7 +20,7 @@ The system SHALL support a wired **USB HID keyboard** attached via the product�
 - **THEN** the corresponding HID input node is removed without crashing `hmi.service`
 ### Requirement: USB HID keyboard enumerates on Micro-USB when Debug over USB is off
 
-The system SHALL support a wired **USB HID keyboard** attached to the on-board **Micro-USB** jack when OTG **`mode=host`** (formerly “Debug over USB off”), such that the kernel enumerates the device and exposes an input event node under `/dev/input/` usable by flutter-pi, in addition to the existing **1 mm pin-header USB host expansion** path.
+The system SHALL support a wired **USB HID keyboard** attached to the on-board **Micro-USB** jack when OTG **`mode=host`** (formerly “Debug over USB off”), such that the kernel enumerates the device and exposes an input event node under `/dev/input/` usable by eLinux HMI, in addition to the existing **1 mm pin-header USB host expansion** path.
 
 #### Scenario: Keyboard on OTG after host mode
 
@@ -31,9 +31,9 @@ The system SHALL support a wired **USB HID keyboard** attached to the on-board *
 
 - **WHEN** the Demo keyboard section text field has focus and the operator types ASCII characters on a keyboard attached via Micro-USB in host mode
 - **THEN** those characters appear in the text field
-### Requirement: Keys reach flutter-pi / Flutter focus
+### Requirement: Keys reach eLinux HMI / Flutter focus
 
-With a focused text input in the HMI Flutter app running under flutter-pi, printable keys and common editing keys from the USB HID keyboard SHALL be delivered through the platform input path (evdev/libinput → flutter-pi → Flutter) without requiring a Dart soft-IME, whether the keyboard is attached via the **1 mm host expansion** or via **Micro-USB host** (`mode=host`).
+With a focused text input in the HMI Flutter app running under eLinux HMI, printable keys and common editing keys from the USB HID keyboard SHALL be delivered through the platform input path (evdev/libinput → eLinux HMI → Flutter) without requiring a Dart soft-IME, whether the keyboard is attached via the **1 mm host expansion** or via **Micro-USB host** (`mode=host`).
 
 #### Scenario: Type into Demo field
 

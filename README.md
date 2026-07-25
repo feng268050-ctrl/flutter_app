@@ -100,7 +100,7 @@ make build-dev-deps
 make build-runtime-deps
 make fetch-flutter-sdk
 make build-flutter-engine
-make build-flutter-pi
+make build-flutter-embedded-linux
 make build-flutter-embedded-linux
 make build-gstreamer
 make build-platform-packages
@@ -111,7 +111,7 @@ make fetch-btop
 
 Force refresh a bucket: `make rebuild-deps`, `make rebuild-runtime-deps`, etc.
 
-`make build-flutter-embedded-linux` is required for the **default** Weston image (`make build-rootfs`). The alternate `make build-rootfs-flutter-pi` needs `make build-flutter-pi` instead.
+`make build-flutter-embedded-linux` is required for the **default** Weston image (`make build-rootfs`). The alternate `make build-rootfs` needs `make build-flutter-embedded-linux` instead.
 
 ### Full firmware
 
@@ -125,9 +125,8 @@ make show-config
 Firmware stage outputs:
 
 - `make build-kernel` builds two independently hashed FIT images containing the same Linux kernel: `boot.img` selects `rootfs_a`, while `boot_b.img` selects `rootfs_b`. Publishes both to `output/firmware/`.
-- `make build-rootfs` builds the **default** `rootfs.img` (Weston + `flutter-wayland-client` only + Mali `wayland-gbm`; **no** `flutter-pi`) and publishes it to `output/firmware/`. Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`. Stamp `/etc/display-stack=weston`.
-- `make build-rootfs-flutter-pi` builds the **alternate** rootfs (flutter-pi only + Mali `gbm`; **no** Weston). Images are mutually exclusive (`/etc/display-stack`).
-- `make prepare-rootfs` / `make prepare-rootfs-flutter-pi` only flip the Buildroot stack (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. Both `build-rootfs*` targets call the matching prepare first (skips when stamp + binaries already match).
+- `make build-rootfs` builds `rootfs.img` (Weston + `flutter-wayland-client` + Mali `wayland-gbm`) and publishes it to `output/firmware/`. Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`.
+- `make prepare-rootfs` flips Buildroot stack prep (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. `build-rootfs` calls prepare first (skips when stamp + binaries already match).
 - `make build-img` does **not** compile the kernel or rootfs. It packages the existing loader, U-Boot, misc, both FIT images, and rootfs into `output/firmware/update.img` for `make flash`.
 - Full-system `make upgrade` does **not** transfer `update.img`. It **streams** `rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). Wait for the device to finish restarting before reconnecting.
 
@@ -192,28 +191,18 @@ make upgrade
 
 Weston notes (ynh960):
 
-- Stamp `/etc/display-stack=weston`; `hmi-launch.sh` starts Weston then `flutter-wayland-client --fullscreen`.
+- `hmi-launch.sh` starts Weston then `flutter-wayland-client --fullscreen`.
 - Shell is **desktop-shell** (`panel-position=none`) so `background-image` can show the product logo after DRM takeover (kiosk-shell only supports a solid color).
 - `make build-boot-logo` also writes overlay `usr/share/hmi/boot-splash.png` from the same canvas as `logo.bmp`.
 
-**Alternate flutter-pi rootfs** (fallback when validating without Weston):
 
 ```bash
-make build-flutter-pi
-make build-rootfs-flutter-pi
+make build-flutter-embedded-linux
+make build-rootfs
 make upgrade
 ```
 
-Switching stacks without packing `rootfs.img` (Mali + embedder only; shared packages reused):
-
-```bash
-make prepare-rootfs-flutter-pi
-# … later …
-make prepare-rootfs
-```
-
-`make build-rootfs` / `build-rootfs-flutter-pi` always run the matching `prepare-*` first (idempotent). Force Mali/embedder rebuild: `FORCE=1 make prepare-rootfs` (or `prepare-rootfs-flutter-pi`).
-
+`make build-rootfs` always runs `prepare-rootfs` first (idempotent). Force Mali/embedder rebuild: `FORCE=1 make prepare-rootfs`.
 **Buildroot defconfig / Kconfig fragments** (`overlay/buildroot/`):
 
 Overlay-only or new `#include` wiring (no change to how an already-built package is compiled):
@@ -403,7 +392,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 
 | 组件 | 产出位置 | 板上角色 |
 |------|----------|----------|
-| flutter-engine / flutter-pi | `prebuilt/flutter-*` | HMI 显示栈 |
+| flutter-engine / eLinux | `prebuilt/flutter-*` | HMI 显示栈 |
 | mediamtx | `prebuilt/mediamtx/` + fs-overlay `usr/bin/` | RTSP 中继（**相机 ping 通后** App 启动；默认不在 wants） |
 | umtprd | `prebuilt/umtprd/` + fs-overlay `usr/bin/` | USB MTP gadget（`mode=mtp`；`make build-umtprd`） |
 | btop | `prebuilt/btop/` + fs-overlay `usr/bin/` | SSH 按需系统监视（官方 aarch64 musl 静态包；`make fetch-btop`） |
@@ -422,7 +411,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | `make fetch-rknn-rt` | aarch64 `librknnrt.so` |
 | `make fetch-btop` | aarch64 musl `btop` → prebuilt + fs-overlay |
 | `make build-umtprd` | aarch64 static `umtprd` → prebuilt + fs-overlay（MTP） |
-| `make build-flutter-engine` / `build-flutter-pi` / `build-mediamtx` | 单项 |
+| `make build-flutter-engine` / `build-eLinux` / `build-mediamtx` | 单项 |
 | `make check-prebuilt` | 校验 runtime（`build-rootfs` 自动） |
 | `make build-rootfs` | 装已接入 defconfig 的 prebuilt（Flutter 等） |
 
@@ -450,9 +439,9 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P3.3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** |
 | P4 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云 🔄；**P4.8 OTA** |
 | P5.0 | — | — | Android 兼容 / APK（App + YNHAPI；非 `cyber_hal`） |
-| P5.1 | flutter SDK + engine + flutter-pi **三件套升级** | 重编 prebuilt | 3.24 → 3.41；见 [`docs/flutter-pi-hmi-plan.md` §6.5](docs/flutter-pi-hmi-plan.md#65-flutter-engine-版本策略与升级p51) |
+| P5.1 | flutter SDK + engine + eLinux **三件套升级** | 重编 prebuilt | 3.24 → 3.41；见 [`docs/flutter-linux-hmi-plan.md` §6.5](docs/flutter-linux-hmi-plan.md#65-flutter-engine-版本策略与升级p51) |
 
-权威阶段表与旧号映射：[`docs/flutter-pi-hmi-plan.md` §1](docs/flutter-pi-hmi-plan.md)。HAL 设计：[`openspec/changes/archive/2026-07-18-dart-hal-package/`](openspec/changes/archive/2026-07-18-dart-hal-package/)。
+权威阶段表与旧号映射：[`docs/flutter-linux-hmi-plan.md` §1](docs/flutter-linux-hmi-plan.md)。HAL 设计：[`openspec/changes/archive/2026-07-18-dart-hal-package/`](openspec/changes/archive/2026-07-18-dart-hal-package/)。
 
 Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`；P4 保留 `render-mediamtx-config.sh`（`mediamtx.service` ExecStartPre）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** `systemctl start`）由 Flutter App 内 `MediaMtxRelayCoordinator` / HAL·platform channel 触发，不再打包 shell stub。
 
@@ -505,7 +494,7 @@ On device (serial shell or ssh), after `make build-img` and `make flash`:
 
 ```bash
 verify-boot                        # Plan A 启动链 / KPI
-verify-env                         # §3.4 平台栈（不含 flutter-pi）
+verify-env                         # §3.4 平台栈（不含 eLinux）
 ```
 
 Boot KPI 优化阶段与状态表：[`docs/boot-kpi-optimization.md`](docs/boot-kpi-optimization.md).
@@ -630,7 +619,7 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 | `board/960_lcd_param_rk356x.txt` | From production ynh960 Android |
 | `board/lcd_mipi_param.txt` | MIPI init table from production Android |
 | `board/from-device/` | adb pull backups |
-| `overlay/buildroot/chips/lws_hmi_*.config` | **方案 A** + flutter-pi Kconfig 片段 |
+| `overlay/buildroot/chips/lws_hmi_*.config` | **方案 A** + eLinux Kconfig 片段 |
 | `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig` | 瘦身 Buildroot defconfig（无 Weston/Chromium） |
 | `board/logo/splash_icon.png` | Boot splash 源图 → `make build-boot-logo` |
 | `app/lws_hmi/` | P1 Hello World Flutter 工程 |
@@ -642,7 +631,7 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 | `overlay/.../check-sdk.sh` | Skip ext4/WSL guards when `LWS_HMI_DOCKER=1` |
 | `docker/Dockerfile` | Ubuntu 22.04 + Rockchip build dependencies |
 
-The upstream SDK ships **ynh962** board defconfig but **ynh960.dts** in kernel; this overlay adds the missing **`ynh960_defconfig`** for our RK3566 target. (SDK `ynh962` naming ≠ product ynh962 / RK3568B2 SKU — see [`docs/flutter-pi-hmi-plan.md`](docs/flutter-pi-hmi-plan.md) §3.0.)
+The upstream SDK ships **ynh962** board defconfig but **ynh960.dts** in kernel; this overlay adds the missing **`ynh960_defconfig`** for our RK3566 target. (SDK `ynh962` naming ≠ product ynh962 / RK3568B2 SKU — see [`docs/flutter-linux-hmi-plan.md`](docs/flutter-linux-hmi-plan.md) §3.0.)
 
 ## Environment
 
@@ -658,7 +647,7 @@ make build                 # full firmware → output/firmware/update.img
 
 - First Buildroot build downloads packages; allow network and ~20GB+ free disk under SDK `output/` and `buildroot/dl/`.
 - Rockchip’s pre-build check used to probe `sources.buildroot.net` with HTTP HEAD on the site root, which always returns **403** (not a VPN/GFW issue). `make setup` patches `check-buildroot.sh` to probe `buildroot.net/downloads/buildroot-<version>.tar.gz` instead. Package downloads during the build may still use `sources.buildroot.net` via `BR2_PRIMARY_SITE`; that is separate from this pre-flight check.
-- Flutter-pi is enabled via `lws_hmi_flutter.config` (SDK in-tree `flutter-pi` + `flutter-engine` packages). See [`app/README.md`](app/README.md).
-- **Flutter-pi HMI 规划**（组件裁剪、Hello World、RTSP 分阶段）：[`docs/flutter-pi-hmi-plan.md`](docs/flutter-pi-hmi-plan.md)
+- Weston + eLinux is enabled via `lws_hmi_wayland.config` + `lws_hmi_flutter_weston.config`. See [`app/README.md`](app/README.md).
+- **Linux Flutter HMI 规划**（组件裁剪、Hello World、RTSP 分阶段）：[`docs/flutter-linux-hmi-plan.md`](docs/flutter-linux-hmi-plan.md)
 - **ynh960 串口 / GPIO / pinmux 台账**（P2.1）：[`docs/ynh960-io-pinmux-ledger.md`](docs/ynh960-io-pinmux-ledger.md)
 - `make clean-overlay` restores patched SDK files (`check-sdk.sh`, `rk3566_rk3568.config`, post-hook, fs-overlay).

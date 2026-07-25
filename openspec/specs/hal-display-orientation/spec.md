@@ -17,29 +17,24 @@ The HAL SHALL expose a portable `Orientation` API under `hal/output/display` tha
 - **WHEN** the client sets orientation to portrait
 - **THEN** a subsequent get returns portrait (after persist succeeds)
 
-### Requirement: Linux Orientation is stack-agnostic via launch
+### Requirement: Linux Orientation applies via launch
 
-On Linux, setting orientation SHALL go through `change-orientation` / `change-orientation.sh` (or an equivalent injectable helper), which persists `/var/lib/hal/display.conf` key `orientation`. Apply SHALL restart `hmi.service` (or equivalent) so `hmi-launch.sh` maps the preference for the **active display stack**:
+On Linux, setting orientation SHALL go through `change-orientation` / `change-orientation.sh` (or an equivalent injectable helper), which persists `/var/lib/hal/display.conf` key `orientation`. Apply SHALL restart `hmi.service` (or equivalent) so `hmi-launch.sh` maps the preference for Weston:
 
-- flutter-pi: `landscape` → `-o landscape_left`, `portrait` → `-o portrait_up`
-- Weston: `landscape` → `transform=rotate-270`, `portrait` → `transform=normal` (ynh960 panel mapping)
+- `landscape` → `transform=rotate-270`
+- `portrait` → `transform=normal` (ynh960 panel mapping)
 
-The Linux HAL backend MUST NOT branch on `DisplayStack` to choose `-o` vs `transform` itself, and MUST NOT write preference files as the sole writer when the shell helper is the persistence contract. Warm-read MAY read `display.conf` directly. Legacy standalone `display-orientation` SHALL be one-shot imported when `orientation` is missing.
-
-#### Scenario: Preference survives restart on flutter-pi
-
-- **WHEN** the client sets portrait via HAL and `hmi.service` restarts on a flutter-pi image
-- **THEN** flutter-pi starts with `-o portrait_up`
+The Linux HAL backend MUST NOT write preference files as the sole writer when the shell helper is the persistence contract. Warm-read MAY read `display.conf` directly. Legacy standalone `display-orientation` SHALL be one-shot imported when `orientation` is missing.
 
 #### Scenario: Preference survives restart on Weston
 
-- **WHEN** the client sets portrait via HAL and `hmi.service` restarts on a Weston image
+- **WHEN** the client sets portrait via HAL and `hmi.service` restarts
 - **THEN** Weston output transform is `normal` (portrait) per `hmi-launch.sh` mapping
 
 #### Scenario: Landscape restores production default
 
 - **WHEN** the client sets landscape and the HMI process is restarted
-- **THEN** flutter-pi uses `-o landscape_left` or Weston uses `transform=rotate-270` according to the active stack
+- **THEN** Weston uses `transform=rotate-270`
 
 ### Requirement: Failed Orientation persist keeps previous mode
 

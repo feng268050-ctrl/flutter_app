@@ -8,7 +8,7 @@
 
 FLUTTER_EMBEDDED_LINUX_VERSION = db49896cf2
 
-# Prebuilt-only: no download (see flutter-pi.mk / flutter-engine.mk).
+# Prebuilt-only: no download (see flutter-engine.mk).
 FLUTTER_EMBEDDED_LINUX_SITE =
 FLUTTER_EMBEDDED_LINUX_SOURCE =
 

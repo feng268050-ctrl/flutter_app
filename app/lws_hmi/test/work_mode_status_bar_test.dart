@@ -17,7 +17,7 @@ void main() {
       WorkModeStatusBarDimens.trailingIconSizeFor(const Size(1280, 800)),
       32,
     );
-    // flutter-pi logical ≈942×589 under Weston density match (DPR ~1.358).
+    // reference logical ≈942×589 under Weston density match (DPR ~1.358).
     const logical = Size(942.4, 589.0);
     final sx = logical.width / 1280;
     final sy = logical.height / 800;

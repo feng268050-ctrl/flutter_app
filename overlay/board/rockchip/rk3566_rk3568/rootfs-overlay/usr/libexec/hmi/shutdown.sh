@@ -1,5 +1,5 @@
 #!/bin/sh
-# Avoid flutter-pi teardown during shutdown; use crash-safe SysRq first.
+# Avoid HMI embedder teardown during shutdown; use crash-safe SysRq first.
 set -eu
 
 mode="${1:-poweroff}"

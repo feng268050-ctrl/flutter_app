@@ -2,7 +2,7 @@
 ///
 /// Positions follow US ANSI geometry as the identity (same convention as XKB
 /// keycodes for the alphanumerics block). F1–F12 and keypad keys are **not**
-/// modeled — hardware / flutter-pi / XKB owns those.
+/// modeled — hardware / XKB owns those.
 enum CyberImeKeyCode {
   // Number row (physical positions)
   grave,

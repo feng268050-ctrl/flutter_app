@@ -8,7 +8,7 @@ Linux Modbus RTU client for the HMI over `/dev/ttyS5`, matching the lws-ui regis
 
 ### Requirement: Modbus RTU opens Linux serial port
 
-The HMI Modbus client SHALL open Modbus RTU on Linux device **`/dev/ttyS5`** using `flutter_libserialport` (or an equivalent serial backend compatible with flutter-pi ARM64). Serial framing parameters SHALL match lws-ui Modbus RTU configuration for the product (baud, data bits, parity, stop bits).
+The HMI Modbus client SHALL open Modbus RTU on Linux device **`/dev/ttyS5`** using `flutter_libserialport` (or an equivalent serial backend compatible with eLinux HMI ARM64). Serial framing parameters SHALL match lws-ui Modbus RTU configuration for the product (baud, data bits, parity, stop bits).
 
 #### Scenario: Port open succeeds when device node exists
 

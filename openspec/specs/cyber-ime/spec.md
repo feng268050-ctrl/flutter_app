@@ -1,7 +1,7 @@
 # cyber-ime Specification
 
 ## Purpose
-In-app overlay soft keyboard (CyberIME) for LWS HMI product Apps on flutter-pi — field-type registry, Keyboard A/B, session lift height, and commit path without OEM IME.
+In-app overlay soft keyboard (CyberIME) for LWS HMI product Apps on the eLinux HMI — field-type registry, Keyboard A/B, session lift height, and commit path without OEM IME.
 
 ## Requirements
 

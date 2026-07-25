@@ -4,7 +4,7 @@
 # high frequency while the user reproduces animation jank, and append one NDJSON
 # line per sample to the debug session log. Discriminates these hypotheses:
 #   H1 CPU clamped at 1104 MHz + CPU-bound raster/ui -> frame deadline misses
-#   H2 flutter-pi raster NOT saturated but frames drop -> vsync/DRM page-flip stall
+#   H2 eLinux raster NOT saturated but frames drop -> vsync/DRM page-flip stall
 #   H3 Goodix gt9xx IRQ report rate too low/bursty during touch -> scroll stutter
 #   H4 deep cpu-sleep idle re-entered on some cores -> wake-latency jank
 #   H5 gpu/dmc devfreq drops during animation
@@ -46,7 +46,7 @@ SSH 'sh -s' "$RUN_ID" "$DURATION_S" "$INTERVAL_MS" <<'DEVEOF' >>"$LOGFILE"
 RUN="$1"; DUR="$2"; IVL_MS="$3"; SID="8fb78d"
 mount -t debugfs none /sys/kernel/debug 2>/dev/null
 
-PID=$(pidof flutter-pi | awk '{print $1}')
+PID=$(pidof flutter-wayland-client | awk '{print $1}')
 UITID=""; RASTID=""
 if [ -n "$PID" ]; then
   for t in /proc/$PID/task/*; do

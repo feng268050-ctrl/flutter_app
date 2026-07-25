@@ -5,7 +5,7 @@ import 'package:cyber_hal/input/mouse.dart';
 import 'package:cyber_hal/src/linux/board_helper.dart';
 import 'package:cyber_hal/src/linux/percent.dart';
 
-/// Linux: persist `mouse.conf` (flutter-pi reloads on mtime); helper optional.
+/// Linux: persist `mouse.conf` (compositor/helper applies); helper optional.
 class LinuxMouseSettingsController implements Mouse {
   LinuxMouseSettingsController({
     this.preferencePath = '/var/lib/hal/mouse.conf',

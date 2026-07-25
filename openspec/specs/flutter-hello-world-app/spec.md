@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Flutter HMI app at `app/lws_hmi/` for flutter-pi ARM64 (meta-flutter layout). Launcher is product Home (`product-home-ui`); Settings and trimmed P2 Demo are named routes; engine/ICU stay on rootfs.
+Flutter HMI app at `app/lws_hmi/` for the eLinux HMI ARM64 (meta-flutter layout). Launcher is product Home (`product-home-ui`); Settings and trimmed P2 Demo are named routes; engine/ICU stay on rootfs.
 ## Requirements
 ### Requirement: Flutter Hello World project exists in repository
 
-The repository SHALL contain a Flutter application at `app/lws_hmi/` configured for flutter-pi ARM64 release builds (meta-flutter layout), with documentation for engine/flutter-pi version alignment (Flutter 3.24.4 / flutter-pi 37bd977).
+The repository SHALL contain a Flutter application at `app/lws_hmi/` configured for the eLinux HMI ARM64 release builds (meta-flutter layout), with documentation for engine/eLinux HMI version alignment (Flutter 3.24.4 / eLinux HMI 37bd977).
 
 #### Scenario: Project structure present
 
@@ -16,7 +16,7 @@ The repository SHALL contain a Flutter application at `app/lws_hmi/` configured 
 #### Scenario: Release build script documented
 
 - **WHEN** developer reads app build instructions
-- **THEN** steps to produce meta-flutter bundle (`lib/libapp.so`, `data/flutter_assets/`) via `flutterpi_tool` are documented
+- **THEN** steps to produce meta-flutter bundle (`lib/libapp.so`, `data/flutter_assets/`) via `hmi-bundle (flutter assemble)` are documented
 
 ### Requirement: Hello World UI is minimal for boot KPI
 
@@ -24,7 +24,7 @@ The home screen SHALL display the **product Home** (capability `product-home-ui`
 
 #### Scenario: First frame content
 
-- **WHEN** flutter-pi renders the app home route after this change
+- **WHEN** eLinux HMI renders the app home route after this change
 - **THEN** the user sees the product Home backdrop and Settings entry (not a Hello World–only screen and not the P2 Demo as the launcher)
 
 #### Scenario: No heavy plugins on startup
@@ -53,9 +53,9 @@ Flutter engine and ICU data SHALL be on rootfs only (not duplicated in the app b
 - **WHEN** rootfs or overlay is deployed after P2 app build
 - **THEN** `/opt/hmi/lib/libapp.so` and `/opt/hmi/data/flutter_assets/` exist; `/opt/hmi/lib/libflutter_engine.so` is absent
 
-#### Scenario: flutter-pi launches bundle
+#### Scenario: HMI launches bundle
 
-- **WHEN** operator runs `flutter-pi --release -o landscape_left /opt/hmi` on device
+- **WHEN** operator runs `eLinux HMI --release -o landscape_left /opt/hmi` on device
 - **THEN** the product Home UI displays without missing required Home asset errors
 
 #### Scenario: System engine on rootfs
@@ -74,7 +74,7 @@ P1 SHALL deploy Hello World artifacts via Buildroot rootfs overlay (not Buildroo
 
 ### Requirement: Display orientation compatible with ynh960
 
-The flutter-pi launch configuration SHALL default to `-o landscape_left` for ynh960 landscape orientation, consistent with LCD params (`lcd0_rotation=90`), when no persisted orientation preference exists. When a persisted preference from the display-orientation platform module is present, `hmi-launch.sh` (or equivalent) SHALL pass the mapped `-o` (`landscape_left` or `portrait_up`) instead of a hardcoded landscape-only value.
+The HMI launch configuration SHALL default to `-o landscape_left` for ynh960 landscape orientation, consistent with LCD params (`lcd0_rotation=90`), when no persisted orientation preference exists. When a persisted preference from the display-orientation platform module is present, `hmi-launch.sh` (or equivalent) SHALL pass the mapped `-o` (`landscape_left` or `portrait_up`) instead of a hardcoded landscape-only value.
 
 #### Scenario: UI readable on ynh960 panel (default)
 
@@ -84,20 +84,20 @@ The flutter-pi launch configuration SHALL default to `-o landscape_left` for ynh
 #### Scenario: Persisted portrait is honored at launch
 
 - **WHEN** the orientation preference is portrait and HMI is started via the normal launch path
-- **THEN** flutter-pi is invoked with `-o portrait_up`
+- **THEN** eLinux HMI is invoked with `-o portrait_up`
 
-### Requirement: Host build uses flutterpi_tool
+### Requirement: Host build uses hmi-bundle (flutter assemble)
 
-The host build script SHALL use `flutterpi_tool build --arch=arm64 --release` to produce the meta-flutter bundle matching Buildroot `FILESYSTEM_LAYOUT=meta-flutter`.
+The host build script SHALL use `hmi-bundle (flutter assemble) build --arch=arm64 --release` to produce the meta-flutter bundle matching Buildroot `FILESYSTEM_LAYOUT=meta-flutter`.
 
 #### Scenario: build-app produces meta-flutter bundle
 
 - **WHEN** developer runs `make build-app`
-- **THEN** `lib/libapp.so` and `data/flutter_assets/` are installed under overlay `opt/hmi/` (assembled from `flutterpi_tool` output; engine not copied into bundle)
+- **THEN** `lib/libapp.so` and `data/flutter_assets/` are installed under overlay `opt/hmi/` (assembled from `hmi-bundle (flutter assemble)` output; engine not copied into bundle)
 
 ### Requirement: Shanghai tan test track is bundled as a Flutter asset
 
-The Flutter app SHALL ship `assets/audio/shanghai_tan.mp3` (sourced from lws-ui `res/raw/shanghai_tan.mp3`) in the flutter-pi bundle so the demo can play it offline on device.
+The Flutter app SHALL ship `assets/audio/shanghai_tan.mp3` (sourced from lws-ui `res/raw/shanghai_tan.mp3`) in the eLinux HMI bundle so the demo can play it offline on device.
 
 #### Scenario: Asset present in bundle
 

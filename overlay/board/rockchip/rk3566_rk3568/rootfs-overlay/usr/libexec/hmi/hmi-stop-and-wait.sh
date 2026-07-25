@@ -1,5 +1,5 @@
 #!/bin/sh
-# Stop every release/debug HMI embedder (flutter-pi or Weston client) and wait
+# Stop every release/debug HMI embedder (Weston + flutter-wayland-client) and wait
 # for DRM/Mali teardown.
 set -eu
 
@@ -16,7 +16,7 @@ live_flutter_pids() {
 		[ -r "$comm_file" ] || continue
 		IFS= read -r comm <"$comm_file" || continue
 		case "$comm" in
-		flutter-pi | flutter-wayland | flutter-waylan)
+		flutter-wayland | flutter-waylan)
 			# BusyBox /proc/comm is TASK_COMM_LEN (16): flutter-wayland-client → flutter-waylan
 			;;
 		*)
@@ -47,7 +47,7 @@ reap_stale_flutter_zombies() {
 		[ -r "$comm_file" ] || continue
 		IFS= read -r comm <"$comm_file" || continue
 		case "$comm" in
-		flutter-pi | flutter-wayland | flutter-waylan) ;;
+		flutter-wayland | flutter-waylan) ;;
 		*) continue ;;
 		esac
 		pid="${comm_file#/proc/}"

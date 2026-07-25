@@ -35,7 +35,7 @@ kill_all_flutter() {
       rm -f "$f"
     done
     # No pkill on this rootfs — use killall (matches argv0 prefix OK on BusyBox).
-    killall -9 flutter-pi 2>/dev/null || true
+    true # flutter-pi removed 2>/dev/null || true
     killall -9 flutter-drm-gbm-backend 2>/dev/null || true
     killall -9 flutter-wayland-client 2>/dev/null || true
     killall -9 weston 2>/dev/null || true

@@ -16,6 +16,7 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/ip_camera_settings_page.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 class _FakePreviewPlayer extends ChangeNotifier implements IpCameraPreviewPlayer {
   @override
@@ -205,6 +206,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: IpCameraSettingsPage(
             services: services,
             recordingPaths: const IpCameraDemoRecordingPaths(root: '/tmp/Videos'),

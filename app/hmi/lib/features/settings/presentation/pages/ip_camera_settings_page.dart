@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:cyber_hal/ip_camera.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_demo_recording_paths.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_mediamtx_relay.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
@@ -11,7 +13,7 @@ import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Common Settings → Input → IP Camera: status + live RTSP preview + demo record.
+/// Common Settings → Camera: Status / Type / Version + live preview + demo record.
 class IpCameraSettingsPage extends StatefulWidget {
   const IpCameraSettingsPage({
     super.key,
@@ -42,9 +44,14 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
   String? _error;
   String? _lastSavedPath;
   bool _recordBusy = false;
+
   /// Avoid starting GStreamer during the push route transition (blocks UI).
   bool _routeSettled = false;
   Timer? _routeSettleTimer;
+
+  String? _cameraTypeRaw;
+  String _cameraVersion = kUnavailableDisplay;
+  final _versionCache = CameraDeviceInfoCache();
 
   @override
   void initState() {
@@ -61,11 +68,22 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
 
   Future<void> _boot() async {
     try {
+      final product = await widget.services.ensureProductInfo();
+      if (mounted) {
+        setState(() => _cameraTypeRaw = product.cameraType());
+      }
+      final host = product.cameraIp();
+      if (host.isNotEmpty) {
+        final version = await _versionCache.fetch(host);
+        if (mounted) setState(() => _cameraVersion = version);
+      }
+    } catch (_) {}
+
+    try {
       final session = await widget.services.ensureIpCamera();
       if (!mounted) {
         return;
       }
-      // Paint the page immediately; path bring-up continues in the background.
       setState(() {
         _session = session;
         _status = session.currentStatus;
@@ -92,6 +110,11 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
         _status = session.currentStatus;
         _recording = session.camera.recording.currentStatus;
       });
+      final host = session.camera.cameraHost;
+      if (host.isNotEmpty) {
+        final version = await _versionCache.fetch(host);
+        if (mounted) setState(() => _cameraVersion = version);
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _error = '$e');
@@ -153,8 +176,6 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
         outputPath: path,
         codec: IpCameraVideoCodec.h264,
       ));
-      // `start` emits preparing before its first await; release busy so Stop
-      // can cancel while waiting for the first RTSP media.
       if (mounted) {
         setState(() => _recordBusy = false);
       }
@@ -191,6 +212,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
     _routeSettleTimer?.cancel();
     unawaited(_sub?.cancel());
     unawaited(_recSub?.cancel());
+    _versionCache.dispose();
     super.dispose();
   }
 
@@ -199,8 +221,12 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
     final l10n = AppLocalizations.of(context)!;
     final session = _session;
     final previewUrl = session?.previewPr0;
-    final previewReady =
-        (session?.previewReady ?? false) && _routeSettled;
+    final previewReady = (session?.previewReady ?? false) && _routeSettled;
+    final typeLabel = productCameraTypeDisplayLocalized(
+      _cameraTypeRaw,
+      blueLight: l10n.cameraTypeBlueLight,
+      redLight: l10n.cameraTypeRedLight,
+    );
 
     return SettingsScaffold(
       title: l10n.ipCameraText,
@@ -211,39 +237,24 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
               padding: const EdgeInsets.all(16),
               child: Text(_error!, style: const TextStyle(color: Colors.red)),
             ),
-          SettingsSectionHeader('Status'),
+          // Status / Type / Version
           SettingsGroup(
             children: [
-              ListTile(
-                title: const Text('Connection'),
-                subtitle: Text(_statusLabel(l10n, _status)),
-                trailing: TextButton(
-                  onPressed: session == null
-                      ? null
-                      : () => unawaited(session.retryNow()),
-                  child: const Text('Retry'),
-                ),
+              SettingsValueRow(
+                title: l10n.cameraStatus,
+                value: _statusLabel(l10n, _status, session?.relayStatus),
               ),
               SettingsValueRow(
-                title: 'Camera IP',
-                value: session?.camera.cameraHost ?? '—',
+                title: l10n.cameraType,
+                value: typeLabel,
               ),
               SettingsValueRow(
-                title: 'Preview URL',
-                value: previewUrl?.toString() ?? '—',
+                title: l10n.cameraVersion,
+                value: _cameraVersion,
               ),
-              SettingsValueRow(
-                title: 'MediaMTX',
-                value: session?.relayStatus.phase.name ?? '—',
-              ),
-              if (session?.relayStatus.detail != null)
-                SettingsValueRow(
-                  title: 'MediaMTX detail',
-                  value: session!.relayStatus.detail!,
-                ),
             ],
           ),
-          const SettingsSectionHeader('Preview'),
+          // Preview
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: AspectRatio(
@@ -331,14 +342,33 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
     }
   }
 
-  String _statusLabel(AppLocalizations l10n, IpCameraUiStatus s) {
-    switch (s.phase) {
-      case IpCameraUiPhase.connecting:
-        return 'Establishing… (attempt ${s.attempt})';
-      case IpCameraUiPhase.connected:
+  String _statusLabel(
+    AppLocalizations l10n,
+    IpCameraUiStatus s,
+    IpCameraRelayStatus? relay,
+  ) {
+    if (s.phase == IpCameraUiPhase.failed) {
+      final detail = s.detail;
+      return detail == null || detail.isEmpty
+          ? l10n.cameraStatusFailed
+          : '${l10n.cameraStatusFailed}: $detail';
+    }
+    if (s.phase == IpCameraUiPhase.connecting) {
+      return l10n.cameraStatusEstablishing;
+    }
+    switch (relay?.phase) {
+      case IpCameraRelayPhase.running:
         return l10n.connectedText;
-      case IpCameraUiPhase.failed:
-        return 'Failed${s.detail != null ? ': ${s.detail}' : ''}';
+      case IpCameraRelayPhase.starting:
+      case IpCameraRelayPhase.stopped:
+        return l10n.cameraStatusEstablishing;
+      case IpCameraRelayPhase.error:
+        final detail = relay?.detail;
+        return detail == null || detail.isEmpty
+            ? l10n.cameraStatusFailed
+            : '${l10n.cameraStatusFailed}: $detail';
+      case null:
+        return l10n.connectedText;
     }
   }
 }

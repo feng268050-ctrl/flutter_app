@@ -374,7 +374,9 @@ final class _QuickModePageState extends State<QuickModePage> {
         processType: _processType,
       ),
       body: ColoredBox(
-        color: ProcessModeTokens.background,
+        // lws-ui activity_quick_mode root is #FF0A0B0C; Engineer uses the
+        // bluer shared background token, but Quick mode does not.
+        color: ProcessModeTokens.quickRootBackground,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -498,7 +500,10 @@ final class _QuickModePageState extends State<QuickModePage> {
                   ),
                 ),
               ),
-            if (_statusMessage != null)
+            // Keep operator safety feedback visible, but do not expose the
+            // internal process-library baseline-read failure in Quick mode.
+            if (_statusMessage != null &&
+                _statusMessage != 'Baseline read failed')
               Positioned(
                 left: 40,
                 bottom: 24,

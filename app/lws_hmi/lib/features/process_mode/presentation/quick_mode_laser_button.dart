@@ -67,16 +67,21 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
     super.dispose();
   }
 
-  bool _contains(Offset point) => _QuickLaserTrapezoid.contains(
-        point,
-        const Size(
-          ProcessModeDimens.quickLaserButtonWidth,
-          ProcessModeDimens.quickLaserButtonHeight,
-        ),
-      );
+  Size _buttonSize(BuildContext context) {
+    final scale =
+        ProcessModeDimens.dashboardScaleFor(MediaQuery.sizeOf(context));
+    return Size(
+      ProcessModeDimens.quickLaserButtonWidth * scale,
+      ProcessModeDimens.quickLaserButtonHeight * scale,
+    );
+  }
 
   void _pointerDown(PointerDownEvent event) {
-    if (widget.busy || !_contains(event.localPosition)) {
+    if (widget.busy ||
+        !_QuickLaserTrapezoid.contains(
+          event.localPosition,
+          _buttonSize(context),
+        )) {
       return;
     }
     _gestureActive = true;
@@ -97,7 +102,11 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
   }
 
   void _pointerMove(PointerMoveEvent event) {
-    if (_gestureActive && !_contains(event.localPosition)) {
+    if (_gestureActive &&
+        !_QuickLaserTrapezoid.contains(
+          event.localPosition,
+          _buttonSize(context),
+        )) {
       _cancelGesture();
     }
   }
@@ -143,13 +152,16 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
 
   @override
   Widget build(BuildContext context) {
+    final scale =
+        ProcessModeDimens.dashboardScaleFor(MediaQuery.sizeOf(context));
+    final size = _buttonSize(context);
     return AnimatedOpacity(
       opacity: widget.busy ? 0.45 : 1,
       duration: const Duration(milliseconds: 120),
       child: SizedBox(
         key: const ValueKey('quick-mode-laser-enable'),
-        width: ProcessModeDimens.quickLaserButtonWidth,
-        height: ProcessModeDimens.quickLaserButtonHeight,
+        width: size.width,
+        height: size.height,
         child: Listener(
           behavior: HitTestBehavior.translucent,
           onPointerDown: _pointerDown,
@@ -159,9 +171,12 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
           child: Stack(
             fit: StackFit.expand,
             children: [
+              // Black bevels at the dashboard contact are baked into the
+              // lws-ui WebP. Do not add a generic Flutter drop shadow: the
+              // Android layout only elevates this bitmap-backed view.
               Image.asset(_background, fit: BoxFit.fill),
               Positioned(
-                top: 47,
+                top: 68 * scale,
                 left: 0,
                 right: 0,
                 child: Icon(
@@ -170,20 +185,21 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
                       : Icons.play_circle_outline,
                   key: const ValueKey('quick-mode-laser-enable-icon'),
                   color: Colors.white,
-                  size: ProcessModeDimens.quickLaserButtonIconSize,
+                  size: ProcessModeDimens.quickLaserButtonIconSize * scale,
                 ),
               ),
               Positioned(
-                top: 100,
+                top: 147 * scale,
                 left: 0,
                 right: 0,
                 child: Text(
                   widget.laserOpen ? 'End of work' : 'Laser Enable',
                   key: const ValueKey('quick-mode-laser-enable-label'),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: ProcessModeDimens.quickLaserButtonLabelSize,
+                    fontSize:
+                        ProcessModeDimens.quickLaserButtonLabelSize * scale,
                     height: 1,
                     fontWeight: FontWeight.w700,
                   ),

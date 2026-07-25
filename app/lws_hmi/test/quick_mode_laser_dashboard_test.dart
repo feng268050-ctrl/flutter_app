@@ -35,12 +35,12 @@ void main() {
       tester.getSize(
         find.byKey(const ValueKey('quick-mode-laser-dashboard')),
       ),
-      const Size(
-        ProcessModeDimens.dashboardSize,
-        ProcessModeDimens.dashboardSize,
-      ),
+      const Size(356.25, 377.1875),
     );
-    expect(ProcessModeDimens.dashboardSize, 380);
+    expect(
+      ProcessModeDimens.dashboardScaleFor(const Size(800, 600)),
+      0.625,
+    );
   });
 
   testWidgets('laserOn / laserOff drive climb and fall without crash',

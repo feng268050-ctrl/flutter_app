@@ -37,9 +37,8 @@ void main() {
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
-    final c = controller ??
-        DeviceControlController(servicesWith(_IdleModbus()))
-          ..keySwitchOn = true;
+    final c = controller ?? DeviceControlController(servicesWith(_IdleModbus()))
+      ..keySwitchOn = true;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -65,11 +64,18 @@ void main() {
     final feed = tester.getRect(
       find.byKey(const ValueKey('device-control-feed')),
     );
-    expect(gas.left, closeTo(ProcessModeDimens.quickSideButtonInset, 1));
-    expect(gas.width, closeTo(ProcessModeDimens.quickSideButtonWidth, 1));
+    const scale = 0.625; // 800×500 logical viewport on the 1280×800 test view.
+    expect(
+      gas.left,
+      closeTo(ProcessModeDimens.quickSideButtonInset * scale, 1),
+    );
+    expect(
+      gas.width,
+      closeTo(ProcessModeDimens.quickSideButtonWidth * scale, 1),
+    );
     expect(
       feed.right,
-      closeTo(1280 - ProcessModeDimens.quickSideButtonInset, 1),
+      closeTo(1280 - ProcessModeDimens.quickSideButtonInset * scale, 1),
     );
   });
 
@@ -100,8 +106,8 @@ void main() {
       controller: controller,
     );
 
-    expect(find.byKey(const ValueKey('device-control-manual-gas')),
-        findsNothing);
+    expect(
+        find.byKey(const ValueKey('device-control-manual-gas')), findsNothing);
     expect(find.byKey(const ValueKey('device-control-feed')), findsNothing);
     expect(
       find.byKey(const ValueKey('quick-mode-laser-enable')),

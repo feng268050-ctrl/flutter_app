@@ -32,8 +32,8 @@ void main() {
     expect(
       tester.getSize(finder),
       const Size(
-        ProcessModeDimens.quickLaserButtonWidth,
-        ProcessModeDimens.quickLaserButtonHeight,
+        ProcessModeDimens.quickLaserButtonWidth * 0.625,
+        ProcessModeDimens.quickLaserButtonHeight * 0.625,
       ),
     );
 

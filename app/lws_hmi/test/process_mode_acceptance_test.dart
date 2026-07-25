@@ -184,10 +184,17 @@ void main() {
     final laser = tester.getRect(
       find.byKey(const ValueKey('quick-mode-laser-enable')),
     );
-    expect(gasLeft.dx, closeTo(ProcessModeDimens.quickSideButtonInset, 1));
+    const quickControlScale = 0.625;
+    expect(
+      gasLeft.dx,
+      closeTo(ProcessModeDimens.quickSideButtonInset * quickControlScale, 1),
+    );
     expect(
       feedRight.dx,
-      closeTo(1280 - ProcessModeDimens.quickSideButtonInset, 1),
+      closeTo(
+        1280 - ProcessModeDimens.quickSideButtonInset * quickControlScale,
+        1,
+      ),
     );
     expect(laser.bottom, closeTo(800, 1));
     expect(

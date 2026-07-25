@@ -70,7 +70,7 @@ Future<String?> showCyberUsbOtgModeDialog({
             if (i > 0) const SizedBox(height: 12),
             Center(
               child: CyberButton(
-                variant: CyberButtonVariant.secondary,
+                variant: CyberButtonVariant.standard,
                 onPressed: () => Navigator.of(ctx).pop(options[i].id),
                 child: Text(options[i].label),
               ),

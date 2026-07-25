@@ -14,11 +14,13 @@ const Color kCyberFakeGlassBorder = Color(0x44FFFFFF);
 
 /// Applies Gaussian backdrop blur with a selectable sampling policy.
 ///
-/// - [CyberBlurSampleMode.realtime] (default): [BackdropFilter] every frame.
-/// - [CyberBlurSampleMode.firstFrame]: capture once from
-///   [CyberBlurBackdropScope], then freeze.
-/// - [CyberBlurSampleMode.onChange]: re-capture when [sampleToken] or
-///   [controller] generation changes.
+/// **Two schemes** (see [CyberBlurSampleMode]):
+/// - Realtime Gaussian (default): [CyberBlurSampleMode.realtime] → Material
+///   [BackdropFilter] + [ImageFilter.blur].
+/// - Static sampling (FrostUI): [firstFrame] / [onChange] → capture from
+///   [CyberBlurBackdropScope], freeze blurred bitmap.
+///
+/// [CyberBlurIntensity.transparent] skips blur and overlay (border-only host).
 ///
 /// Overlay tint follows lws-ui: [blurTint] RGB + [intensity] overlay alpha,
 /// unless [tint] is set explicitly.
@@ -89,7 +91,8 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
   void initState() {
     super.initState();
     widget.controller?.addListener(_onController);
-    if (widget.sampleMode != CyberBlurSampleMode.realtime) {
+    if (widget.intensity.usesBackdropBlur &&
+        widget.sampleMode != CyberBlurSampleMode.realtime) {
       _scheduleCapture(settlePasses: 2);
     }
   }
@@ -253,23 +256,28 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
 
   @override
   Widget build(BuildContext context) {
-    final filter = ui.ImageFilter.blur(
-      sigmaX: _sigmaX,
-      sigmaY: _sigmaY,
-      tileMode: TileMode.clamp,
-    );
+    final blurOn = widget.intensity.usesBackdropBlur;
+    final filter = blurOn
+        ? ui.ImageFilter.blur(
+            sigmaX: _sigmaX,
+            sigmaY: _sigmaY,
+            tileMode: TileMode.clamp,
+          )
+        : null;
 
     final content = Stack(
       fit: StackFit.passthrough,
       children: [
-        if (widget.sampleMode == CyberBlurSampleMode.realtime)
+        if (blurOn &&
+            widget.sampleMode == CyberBlurSampleMode.realtime &&
+            filter != null)
           Positioned.fill(
             child: BackdropFilter(
               filter: filter,
               child: const SizedBox.expand(),
             ),
           )
-        else if (_frozen != null)
+        else if (blurOn && _frozen != null && filter != null)
           Positioned.fill(
             child: ImageFiltered(
               imageFilter: filter,
@@ -281,7 +289,7 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
               ),
             ),
           )
-        else if (_useFakeGlass)
+        else if (blurOn && _useFakeGlass)
           const Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -296,7 +304,7 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
           Positioned.fill(
             child: ColoredBox(color: widget.tint!),
           )
-        else
+        else if (widget.intensity.drawsOverlay)
           Positioned.fill(
             child: ColoredBox(
               color: cyberBlurOverlayColor(

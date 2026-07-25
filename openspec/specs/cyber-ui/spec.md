@@ -1,8 +1,15 @@
 # cyber-ui Specification
 
 ## Purpose
-TBD - created by archiving change p3-0-cyber-ui. Update Purpose after archive.
+
+Shared Flutter UI kit (`packages/cyber_ui`) providing Frosted-Glass product chrome
+for LWS HMI Apps. Structure prefers Flutter / Material primitives (`Card`,
+`Material`/`InkWell`, `BackdropFilter`); FrostUI supplies tokens (color, dimens)
+and the static-sampling blur policy. Soft keyboard rendering stays in
+`packages/cyber_ime`.
+
 ## Requirements
+
 ### Requirement: CyberUI package identity and layout
 
 The shared Flutter UI kit SHALL live at `packages/cyber_ui` (in-repo path package for v1) with `publish_to: none`, SDK constraint compatible with `app/hmi`, and a public import surface under `package:cyber_ui/...`. Public types and widgets MUST use the **Cyber\*** prefix. Product Apps MUST depend on this package rather than forking glass widget implementations under feature folders.
@@ -17,13 +24,18 @@ The shared Flutter UI kit SHALL live at `packages/cyber_ui` (in-repo path packag
 - **WHEN** a product feature imports glass chrome from the kit
 - **THEN** imported public types use `Cyber*` names (not long-term public `Frost*` App APIs)
 
-### Requirement: Backdrop sample modes
+### Requirement: Two Gaussian blur schemes
 
-CyberUI SHALL expose `CyberBlurSampleMode` with at least `realtime`, `firstFrame`, and `onChange`. Glass surfaces that sample backdrop MUST accept a sample-mode parameter. Default for general glass chrome SHALL be `realtime` unless a factory documents otherwise (e.g. dialogs MAY default to `firstFrame`).
+CyberUI SHALL document and implement exactly **two** Gaussian blur schemes behind `CyberBlurSampleMode`:
+
+1. **Realtime Gaussian (default for chrome)** — `realtime` uses Material / `dart:ui` `BackdropFilter` + `ImageFilter.blur` continuously.
+2. **Static sampling (FrostUI)** — `firstFrame` and `onChange` capture from `CyberBlurBackdropScope`, downscale, blur, and freeze the bitmap (`onChange` re-captures on token/controller).
+
+Glass surfaces that sample backdrop MUST accept a sample-mode parameter. Default for general glass chrome SHALL be `realtime` unless a factory documents otherwise (e.g. dialogs MAY default to `firstFrame`). `CyberBlurIntensity.transparent` SHALL skip blur and tint overlay (border-only host).
 
 #### Scenario: Realtime uses compositor filter
 
-- **WHEN** a Cyber glass widget is built with `sampleMode: realtime`
+- **WHEN** a Cyber glass widget is built with `sampleMode: realtime` and a non-transparent intensity
 - **THEN** backdrop blur updates continuously via a compositor `BackdropFilter` (or package-equivalent) without requiring a frozen bitmap capture for that mode
 
 #### Scenario: First-frame freezes after capture
@@ -41,6 +53,11 @@ CyberUI SHALL expose `CyberBlurSampleMode` with at least `realtime`, `firstFrame
 - **WHEN** first-frame or on-change mode cannot resolve a backdrop capture root or capture fails
 - **THEN** the widget SHALL fall back to fake glass (semi-transparent fill/border) without crashing
 
+#### Scenario: Transparent intensity is border-only
+
+- **WHEN** intensity is `CyberBlurIntensity.transparent`
+- **THEN** the widget SHALL NOT apply `BackdropFilter` or intensity tint overlay
+
 ### Requirement: Capture root scope and target
 
 CyberUI SHALL provide a page-level backdrop scope and a capture target widget so consumers that are siblings of the wallpaper/GIF stack can still resolve the `RepaintBoundary` used for frozen sampling (lws-ui sibling capture-target pattern).
@@ -52,17 +69,31 @@ CyberUI SHALL provide a page-level backdrop scope and a capture target widget so
 
 ### Requirement: Core Cyber glass widgets (v1)
 
-CyberUI v1 SHALL provide at least: backdrop blur applicator (`CyberBackdropBlur`), frosted card (`CyberCard`), status indicator (`CyberStatusIndicator`), and a dialog entry point (`showCyberDialog` or `CyberModal`). Widgets SHALL read shared theme tokens (intensity, tint, radius) from a documented Cyber theme seam.
+CyberUI v1 SHALL provide at least: backdrop blur applicator (`CyberBackdropBlur`), frosted card (`CyberCard`), status indicator (`CyberStatusIndicator`), and a dialog entry point (`showCyberDialog` or `CyberModal`). Widgets SHALL read shared theme tokens (intensity, tint, radius) from a documented Cyber theme seam. `CyberCard` SHALL use Material `Card` (elevation 0) plus `CyberPanelOutline` for visible stroke.
 
 #### Scenario: CyberCard renders frosted panel
 
-- **WHEN** an App builds a `CyberCard` with child content
-- **THEN** the card shows frosted glass chrome (blur + tint + clip) around the child
+- **WHEN** an App builds a `CyberCard` with child content and a blurring intensity
+- **THEN** the card shows frosted glass chrome (blur + tint + clip + outline) around the child
 
 #### Scenario: Status indicator states
 
 - **WHEN** an App builds `CyberStatusIndicator` with idle / success / failure (and optional in-progress) states
 - **THEN** the indicator presents the corresponding Cyber status visual without requiring Material-only forks in the feature module
+
+### Requirement: CyberButton Frost variant matrix
+
+`CyberButton` SHALL expose variants `standard`, `primary`, `secondary`, and `light` aligned with lws-ui `FrostButton` (`DEFAULT` / `PRIMARY` / `SECONDARY` / `LIGHT`). Default variant SHALL be `standard` (dark glass fill, white label). `primary` SHALL use solid fill `#F37535`. `secondary` SHALL reuse `standard` fill and border with label color `#FF5A52`. Sizes SHALL match Frost regular (58dp height, 24dp horizontal padding) and small (40 / 20); stroke 1dp; rectangle corner radius 14dp; label size **18** (regular) / **14** (small) on the Flutter HMI density (Settings chrome), not Android design-canvas 29sp. `stretch` SHALL expand width with fixed height for list CTAs; `expand` SHALL fill the parent box for IME keycaps and MUST NOT be used as a direct child of unbounded scrollables. Structure SHALL use Material `InkWell` (not ad-hoc product forks).
+
+#### Scenario: Default button is standard glass
+
+- **WHEN** an App builds `CyberButton` without an explicit variant
+- **THEN** the button uses `CyberButtonVariant.standard`
+
+#### Scenario: Confirm CTA uses primary
+
+- **WHEN** an App builds `CyberButton(variant: primary)`
+- **THEN** the fill is solid primary orange (`#F37535`) rather than dark glass
 
 ### Requirement: Design language seam
 
@@ -229,6 +260,7 @@ The page status bar background MUST **adapt to the page’s primary chrome color
 
 - **WHEN** an App builds `CyberPageStatusBar` with an explicit `backgroundColor` (or equivalent)
 - **THEN** the page status bar background uses that color instead of the default theme resolution
+
 ### Requirement: Module map lists OTG mode picker
 
 The CyberUI package README module map (or equivalent public export surface documentation) SHALL list the OTG mode-picker dialog entry alongside dialog-host / control suite entries so other products can discover and import it without reading HMI sources.

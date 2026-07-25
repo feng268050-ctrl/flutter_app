@@ -3,11 +3,14 @@
 Reusable **CyberUI** chrome for LWS HMI (Frosted Glass). Path package under
 `packages/cyber_ui` (same pattern as `cyber_hal`).
 
+Prefer **Flutter / Material** structure (`Card`, `Material`/`InkWell`,
+`BackdropFilter`) with Frost tokens for color, size, and sampling policy.
+
 ## Module map
 
 | Area | API |
 |------|-----|
-| Tokens / border | `CyberColors`, `CyberDimens`, `CyberTone`, `CyberPanelBorder`, `CyberGlassTheme` |
+| Tokens / border | `CyberColors`, `CyberDimens`, `CyberTone`, `CyberPanelBorder`, `CyberPanelOutline`, `CyberOutlinedPanel`, `CyberGlassTheme` |
 | Blur | `CyberBackdropBlur`, `CyberBlurSampleMode`, intensity/tint, scope/target |
 | Chrome | `CyberCard`, `CyberStatusIndicator`, `CyberButton` |
 | Controls | `CyberSwitch`, `CyberCheckbox`, `CyberSlider`, `CyberScaledSlider`, `CyberSegmentedControl`, `CyberNumericStepper`, `CyberCapsuleSlider`, `CyberHoldConfirm`, `CyberPressRipple` |
@@ -17,13 +20,36 @@ Reusable **CyberUI** chrome for LWS HMI (Frosted Glass). Path package under
 | Clock | `CyberClockAppearance`, `CyberClockNotes` (glyph-clip limits) |
 | Sound | `CyberClickSound` + `CyberClickSoundRegistry` |
 
+## Two Gaussian blur schemes
+
+| Scheme | Modes | Engine | Typical use |
+|--------|--------|--------|-------------|
+| **Realtime Gaussian (default chrome)** | `CyberBlurSampleMode.realtime` | Material `BackdropFilter` + `ImageFilter.blur` | `CyberCard` on Home / live panels |
+| **Static sampling (FrostUI)** | `firstFrame`, `onChange` | Capture via `CyberBlurBackdropScope`, freeze bitmap | Dialogs / overlays (`firstFrame` default) |
+
+`CyberBlurIntensity.transparent` = border-only (no blur, no tint overlay) — settings Frost `TRANSPARENT` cards.
+
+Product features must **not** use bare `BackdropFilter` — go through Cyber\* widgets.
+
+## CyberButton variants (Frost `FrostButton`)
+
+| Variant | Frost | Fill | Label |
+|---------|-------|------|-------|
+| `standard` (**default**) | `DEFAULT` | Dark glass gradient | White |
+| `primary` | `PRIMARY` | Solid `#F37535` | White |
+| `secondary` | `SECONDARY` | Same as `standard` | `#FF5A52` |
+| `light` | `LIGHT` | Light glass gradient | White |
+
+Sizes: regular 58× pad 24; small 40× pad 20; stroke 1; rectangle radius 14;
+label **18** (regular) / **14** (small) — matches HMI settings chrome (not Android
+design-canvas 29sp).
+
 ## Sample-mode defaults
 
-- **Chrome** (`CyberCard`, live panels): default **`CyberBlurSampleMode.realtime`**.
+- **Chrome** (`CyberCard`, live panels): default **`realtime`**.
 - **Dialogs** (`showCyberDialog` / `CyberModal` / overlay host): default **`firstFrame`**.
-- Product features must **not** use bare `BackdropFilter` — go through Cyber\* widgets.
-
-See plan §6.3 and OpenSpec `p3-0-cyber-ui` / `cyber-ui-frost-parity`.
+- Outline: `CyberPanelOutlineStyle.frostGradient` by default (Frost bidirectional); `uniform` for flat `BorderSide`.
+- Gradient placement: `CyberBorderGradientCenter` — axis modes use symmetric **H–S–H** `LinearGradient`; diagonal modes use shadow baseline + dual corner `RadialGradient` (radius **0.5 × short side**). Settings lists MUST vary adjacent cards (`settingsCardAt` / lws-ui `app:borderGradientCenter`).
 
 ## Click SFX
 
@@ -43,7 +69,7 @@ is not fully supported on RK3566** (`CyberClockNotes.glyphClipLiveBlurSupported
 ## Theme seam
 
 Optional `ThemeData.extensions: [CyberGlassTheme(...)]` for default intensity,
-tint, tone, border, and corner radius.
+tint, tone, border, and corner radius (card corner **28**).
 
 ## Consumption
 

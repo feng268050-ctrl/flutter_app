@@ -24,6 +24,7 @@ export 'src/theme/cyber_colors.dart';
 export 'src/theme/cyber_dimens.dart';
 export 'src/theme/cyber_glass_theme.dart';
 export 'src/theme/cyber_panel_border.dart';
+export 'src/theme/cyber_panel_outline.dart';
 export 'src/theme/cyber_tone.dart';
 export 'src/widgets/cyber_audio_player_card.dart';
 export 'src/widgets/cyber_button.dart';

@@ -5,14 +5,16 @@ import 'package:cyber_ui/src/blur/cyber_blur_intensity.dart';
 import 'package:cyber_ui/src/blur/cyber_blur_sample_mode.dart';
 import 'package:cyber_ui/src/blur/cyber_blur_tint.dart';
 import 'package:cyber_ui/src/sound/cyber_click_sound.dart';
+import 'package:cyber_ui/src/theme/cyber_colors.dart';
 import 'package:cyber_ui/src/theme/cyber_glass_theme.dart';
-import 'package:cyber_ui/src/theme/cyber_panel_border.dart';
+import 'package:cyber_ui/src/theme/cyber_panel_outline.dart';
 import 'package:cyber_ui/src/theme/cyber_tone.dart';
 
-/// Clip + [CyberBackdropBlur] chrome card (Home quick actions, panels).
+/// Frosted panel on Material [Card] + [CyberPanelOutline].
 ///
-/// Default sample mode is [CyberBlurSampleMode.realtime] (chrome / plan §6.3
-/// OpenSpec override). Dialogs may pass [CyberBlurSampleMode.firstFrame].
+/// Default sample mode is [CyberBlurSampleMode.realtime] (Material Gaussian).
+/// Pass [CyberBlurIntensity.transparent] for border-only (Frost settings cards).
+/// Dialogs typically use [CyberBlurSampleMode.firstFrame].
 class CyberCard extends StatelessWidget {
   const CyberCard({
     super.key,
@@ -26,6 +28,9 @@ class CyberCard extends StatelessWidget {
     this.borderRadius,
     this.borderColor,
     this.borderWidth,
+    this.outlineStyle = CyberPanelOutlineStyle.frostGradient,
+    this.borderGradientCenter =
+        CyberBorderGradientCenter.topLeftBottomRight,
     this.onTap,
     this.clickSoundEnabled = true,
   });
@@ -40,40 +45,45 @@ class CyberCard extends StatelessWidget {
   final BorderRadius? borderRadius;
   final Color? borderColor;
   final double? borderWidth;
+  final CyberPanelOutlineStyle outlineStyle;
+  final CyberBorderGradientCenter borderGradientCenter;
   final VoidCallback? onTap;
   final bool clickSoundEnabled;
+
+  /// Readable uniform stroke (legacy alias for settings call sites).
+  static const defaultBorderColor = CyberColors.borderUniform;
 
   @override
   Widget build(BuildContext context) {
     final theme = CyberGlassTheme.of(context);
     final resolvedTone = tone ?? theme.tone;
-    final panel = CyberPanelBorder(
+    final resolvedIntensity = intensity ?? resolvedTone.blurIntensity;
+    final corner = borderRadius?.topLeft.x ?? theme.cornerRadius;
+    final stroke = borderWidth ?? theme.borderWidth;
+    final outline = CyberPanelOutline(
+      style: outlineStyle,
       tone: resolvedTone,
-      width: borderWidth ?? theme.borderWidth,
-      cornerRadius: theme.cornerRadius,
-    );
-    final radius = borderRadius ?? panel.borderRadius;
-    final border = Border.all(
-      color: borderColor ?? panel.flatBorderColor,
-      width: borderWidth ?? panel.width,
+      width: stroke < 1.0 ? 1.0 : stroke,
+      cornerRadius: corner,
+      uniformColor: borderColor,
+      gradientCenter: borderGradientCenter,
     );
 
-    Widget body = ClipRRect(
-      borderRadius: radius,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          border: border,
-        ),
-        child: CyberBackdropBlur(
-          sampleMode: sampleMode,
-          intensity: intensity ?? resolvedTone.blurIntensity,
-          blurTint: blurTint ?? resolvedTone.blurTint,
-          child: SizedBox(
-            width: width,
-            height: height,
-            child: child,
-          ),
+    final fill = resolvedIntensity == CyberBlurIntensity.transparent
+        ? Colors.white.withOpacity(0.06)
+        : Colors.transparent;
+
+    Widget body = CyberOutlinedPanel(
+      outline: outline,
+      color: fill,
+      child: CyberBackdropBlur(
+        sampleMode: sampleMode,
+        intensity: resolvedIntensity,
+        blurTint: blurTint ?? resolvedTone.blurTint,
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: child,
         ),
       ),
     );
@@ -81,7 +91,7 @@ class CyberCard extends StatelessWidget {
     if (onTap != null) {
       body = Material(
         color: Colors.transparent,
-        borderRadius: radius,
+        borderRadius: outline.borderRadius,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
@@ -90,7 +100,7 @@ class CyberCard extends StatelessWidget {
             }
             onTap!();
           },
-          borderRadius: radius,
+          borderRadius: outline.borderRadius,
           child: body,
         ),
       );

@@ -21,6 +21,9 @@ abstract final class CyberColors {
   static const borderMid = Color(0x8868686C);
   static const borderShadow = Color(0x66000000);
 
+  /// Readable uniform stroke on dark HMI when gradient outline is not used.
+  static const borderUniform = Color(0xB3FFFFFF);
+
   // Panel border — light
   static const lightBorderHighlight = Color(0xD9FFFFFF);
   static const lightBorderMid = Color(0x80E0E0E0);
@@ -33,7 +36,17 @@ abstract final class CyberColors {
   static const textPrimary = Color(0xFFFFFFFF);
   static const textSecondary = Color(0xFFB8B8BC);
 
+  /// Frost primary fill (`reminder_confirm_button`).
+  static const buttonPrimaryFill = Color(0xFFF37535);
+
+  /// Legacy alias — prefer [buttonPrimaryFill] for solid primary buttons.
   static const buttonPrimaryAccent = Color(0xFFFF8A4D);
+
+  /// Primary button border stops (Frost primary HL / mid / shadow).
+  static const buttonPrimaryBorderHighlight = Color(0xE6FFFFF5);
+  static const buttonPrimaryBorderMid = Color(0xCCFFC078);
+  static const buttonPrimaryBorderShadow = Color(0x99E07040);
+
   static const buttonSecondaryText = Color(0xFFFF5A52);
 
   static const dividerCenter = Color(0x9968686C);

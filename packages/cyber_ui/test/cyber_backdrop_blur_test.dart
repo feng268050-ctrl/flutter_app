@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('blur intensity sigma aligns with lws-ui range', () {
+    expect(CyberBlurIntensity.transparent.sigma, 0);
     expect(CyberBlurIntensity.low.sigma, 12);
     expect(CyberBlurIntensity.medium.sigma, 20);
     expect(CyberBlurIntensity.high.sigma, 23);

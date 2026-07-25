@@ -41,10 +41,9 @@ void main() {
         updatedAtMs: 1,
       );
 
-  test('fromLibrary marks built-in read-only and not deletable', () {
+  test('fromLibrary marks built-in read-only', () {
     final draft = EngineerModeDraft.fromLibrary(builtin());
     expect(draft.isReadOnly, isTrue);
-    expect(draft.canDelete, isFalse);
     expect(draft.unsaved, isFalse);
     expect(draft.isDirty, isFalse);
   });

@@ -123,7 +123,7 @@ void main() {
     expect(
         find.byKey(const ValueKey('engineer-parameter-form')), findsOneWidget);
     expect(find.text('Stainless Steel-2mm'), findsOneWidget);
-    expect(find.text('Current Process Parameter'), findsOneWidget);
+    expect(find.text('Current Process Name'), findsOneWidget);
     expect(find.byKey(const ValueKey('engineer-action-copy')), findsNothing);
     expect(find.byKey(const ValueKey('engineer-action-save')), findsNothing);
     expect(find.byKey(const ValueKey('engineer-action-reset')), findsNothing);
@@ -179,18 +179,19 @@ void main() {
     expect(find.byKey(const ValueKey('engineer-action-save')), findsNothing);
   });
 
-  testWidgets('More Favorites sheet lists built-in and user', (tester) async {
+  testWidgets('More Favorites popup lists built-in and user', (tester) async {
     await setDesignSurface(tester);
     final controller = await seedController();
     await tester.pumpWidget(engineerHarness(controller: controller));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 80));
 
+    expect(find.text('More Favorites'), findsOneWidget);
+
     await tester.tap(find.byKey(const ValueKey('engineer-more-favorites')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Favorites'), findsOneWidget);
     expect(
         find.byKey(const ValueKey('engineer-preset-eng-ss')), findsOneWidget);
     expect(
@@ -209,8 +210,11 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const ValueKey('engineer-action-save')), findsNothing);
+    expect(find.byKey(const ValueKey('engineer-action-delete')), findsNothing);
     expect(
-        find.byKey(const ValueKey('engineer-action-delete')), findsOneWidget);
+      find.byKey(const ValueKey('engineer-action-save-favorite')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('tab switch keeps per-type in-memory session', (tester) async {

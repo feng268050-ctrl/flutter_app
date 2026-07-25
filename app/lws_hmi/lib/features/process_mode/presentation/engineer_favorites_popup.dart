@@ -5,27 +5,29 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_anchored_popup_layout.dart';
 
-/// Anchored material list (lws-ui `DataPopupBuilder.materialsBuilder`).
+/// Anchored favorites list (lws-ui `DataPopupBuilder.moreCommonBuilder`).
 ///
-/// Uses [CyberBlurSampleMode.realtime] Gaussian frost (same as
-/// [CyberOverlayHost] IME / Engineer frost panels). Transparent barrier so
-/// [BackdropFilter] samples the page, not a scrim.
-Future<MaterialType?> showEngineerMaterialPopup({
+/// Frost menu under the “More Favorites” anchor — not a bottom sheet.
+Future<ProcessPreset?> showEngineerFavoritesPopup({
   required BuildContext context,
   required Rect anchor,
-  required MaterialType? selected,
+  required List<ProcessPreset> presets,
+  required String? selectedUuid,
+  required String? selectedName,
   required ProcessType processType,
 }) {
-  return showGeneralDialog<MaterialType>(
+  return showGeneralDialog<ProcessPreset>(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Dismiss',
     barrierColor: Colors.transparent,
     transitionDuration: const Duration(milliseconds: 180),
     pageBuilder: (context, animation, secondaryAnimation) {
-      return _EngineerMaterialPopup(
+      return _EngineerFavoritesPopup(
         globalAnchor: anchor,
-        selected: selected,
+        presets: presets,
+        selectedUuid: selectedUuid,
+        selectedName: selectedName,
         processType: processType,
         animation: animation,
       );
@@ -33,20 +35,45 @@ Future<MaterialType?> showEngineerMaterialPopup({
   );
 }
 
-final class _EngineerMaterialPopup extends StatelessWidget {
-  const _EngineerMaterialPopup({
+final class _EngineerFavoritesPopup extends StatelessWidget {
+  const _EngineerFavoritesPopup({
     required this.globalAnchor,
-    required this.selected,
+    required this.presets,
+    required this.selectedUuid,
+    required this.selectedName,
     required this.processType,
     required this.animation,
   });
 
   final Rect globalAnchor;
-  final MaterialType? selected;
+  final List<ProcessPreset> presets;
+  final String? selectedUuid;
+  final String? selectedName;
   final ProcessType processType;
   final Animation<double> animation;
 
+  /// lws-ui `DataPopupBuilder` more-common width; height shows ~4 rows.
   static const double _popupWidth = 350;
+  static const double _rowMinHeight = 56;
+  static const double _rowVerticalPadding = 16;
+  static const double _rowSpacing = 12;
+  static const double _listVerticalPadding = 12;
+  static const int _visibleRows = 4;
+
+  static double get _maxHeight =>
+      _listVerticalPadding * 2 +
+      _visibleRows * _rowMinHeight +
+      (_visibleRows - 1) * _rowSpacing;
+
+  bool _isSelected(ProcessPreset preset) {
+    if (selectedUuid != null && preset.uuid == selectedUuid) {
+      return true;
+    }
+    if (selectedName != null && preset.name == selectedName) {
+      return true;
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,35 +110,40 @@ final class _EngineerMaterialPopup extends StatelessWidget {
             child: FadeTransition(
               opacity: animation,
               child: CyberCard(
-                // Realtime Gaussian — firstFrame needs CyberBlurBackdropScope and
-                // falls back to opaque fake glass without it.
                 sampleMode: CyberBlurSampleMode.realtime,
                 intensity: CyberBlurIntensity.high,
                 blurTint: CyberBlurTint.dark,
                 width: _popupWidth,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 334),
+                  constraints: BoxConstraints(maxHeight: _maxHeight),
                   child: ListView.separated(
                     shrinkWrap: true,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: MaterialType.values.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 4),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: _listVerticalPadding,
+                    ),
+                    itemCount: presets.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: _rowSpacing),
                     itemBuilder: (context, index) {
-                      final material = MaterialType.values[index];
-                      final isSelected = material == selected;
+                      final preset = presets[index];
+                      final isSelected = _isSelected(preset);
+                      final material = preset.materialType;
                       return Material(
+                        key: ValueKey('engineer-preset-${preset.uuid}'),
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(8),
                           onTap: () {
                             CyberClickSoundRegistry.playClick();
-                            Navigator.pop(context, material);
+                            Navigator.pop(context, preset);
                           },
                           child: Container(
-                            constraints: const BoxConstraints(minHeight: 44),
+                            constraints: const BoxConstraints(
+                              minHeight: _rowMinHeight,
+                            ),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
-                              vertical: 12,
+                              vertical: _rowVerticalPadding,
                             ),
                             decoration: BoxDecoration(
                               color: isSelected ? selectedBg : null,
@@ -120,7 +152,10 @@ final class _EngineerMaterialPopup extends StatelessWidget {
                             child: Row(
                               children: [
                                 Image.asset(
-                                  ProcessModeAssets.materialIcon(material),
+                                  material == null
+                                      ? ProcessModeAssets.customizeIcon
+                                      : ProcessModeAssets.materialIcon(
+                                          material),
                                   width: 40,
                                   height: 20,
                                   fit: BoxFit.contain,
@@ -128,7 +163,9 @@ final class _EngineerMaterialPopup extends StatelessWidget {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Text(
-                                    material.englishName,
+                                    preset.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       color:
                                           isSelected ? accent : Colors.white,

@@ -230,14 +230,16 @@ abstract final class ProcessModeDimens {
   static const double engineerTabUnderlineHeight = 1.5;
   static const double engineerTabUnderlineInset = 18;
 
-  /// Enlarged for the 1280×800 touch panel; the old Android tabs used 12sp.
-  static const double engineerTabLabelSize = 16;
+  /// Enlarged for the 1280×800 touch panel (lws-ui tabs used 12sp).
+  static const double engineerTabLabelSize = 20;
 
   /// Left device panel — lws-ui `engineer_welding_left_panel_width`.
   static const double engineerLeftPanelWidth = 460;
 
-  /// Flex weights matching lws-ui engineer_tab.xml (5 tabs; CNC is Quick-only).
-  static const List<int> engineerTabWeights = [306, 226, 298, 300, 150];
+  /// Flex weights for five engineer tabs (sum 1280, same as lws-ui `weightSum`).
+  /// Cutting widened vs original Android art; the five `*_tab_bg` assets were
+  /// remeshed to these ratios so painted frames match hit targets.
+  static const List<int> engineerTabWeights = [290, 214, 282, 284, 210];
 }
 
 /// Display strings aligned with lws-ui [ModelConstant] English labels.

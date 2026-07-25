@@ -27,9 +27,6 @@ final class EngineerModeDraft {
 
   bool get isReadOnly => preset.isBuiltin;
 
-  bool get canDelete =>
-      !preset.isBuiltin && preset.kind == ProcessPresetKind.user && !unsaved;
-
   bool get isDirty {
     if (unsaved) {
       return true;

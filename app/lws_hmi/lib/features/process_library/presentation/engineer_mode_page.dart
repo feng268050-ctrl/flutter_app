@@ -11,9 +11,10 @@ import 'package:lws_hmi/features/process_mode/application/device_control_control
 import 'package:lws_hmi/features/process_mode/domain/engineer_mode_draft.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_device_panel.dart';
+import 'package:lws_hmi/features/process_mode/presentation/engineer_favorites_popup.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
+import 'package:lws_hmi/features/process_mode/presentation/engineer_operation_status_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_parameter_form.dart';
-import 'package:lws_hmi/features/process_mode/presentation/engineer_preset_picker_sheet.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_process_tab_bar.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
@@ -40,6 +41,9 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   /// Per-process-type edit sessions (lws-ui `engineer_data_cache:{type}`).
   /// Survives tab switches within Engineer Mode; cleared when leaving the page.
   final Map<ProcessType, EngineerModeDraft> _sessions = {};
+
+  final GlobalKey _moreFavoritesKey = GlobalKey();
+  bool _favoritesOpen = false;
 
   bool _bootstrapped = false;
   DeviceControlController? _deviceControl;
@@ -149,12 +153,33 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     final controller = ProcessLibraryScope.of(context);
     final presets =
         controller.engineerPresets(processType: _processType).toList();
-    final selected = await showEngineerPresetPickerSheet(
+    if (presets.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No more favorites')),
+      );
+      return;
+    }
+
+    final box =
+        _moreFavoritesKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      return;
+    }
+    final origin = box.localToGlobal(Offset.zero);
+    setState(() => _favoritesOpen = true);
+    final selected = await showEngineerFavoritesPopup(
       context: context,
+      anchor: origin & box.size,
       presets: presets,
       selectedUuid: _draft?.unsaved == true ? null : _draft?.preset.uuid,
+      selectedName: _draft?.preset.name,
+      processType: _processType,
     );
-    if (selected == null || !mounted) {
+    if (!mounted) {
+      return;
+    }
+    setState(() => _favoritesOpen = false);
+    if (selected == null) {
       return;
     }
     setState(() {
@@ -186,19 +211,23 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     return next.preset;
   }
 
-  void _resetToDefault() {
-    final controller = ProcessLibraryScope.of(context);
-    final defaults = controller
-        .engineerPresets(processType: _processType)
-        .where((preset) => preset.isBuiltin)
-        .toList();
-    final defaultPreset = defaults.isEmpty ? null : defaults.first;
-    if (defaultPreset == null) {
+  Future<void> _resetToDefault() async {
+    final draft = _draft;
+    if (draft == null) {
       return;
     }
+    // lws-ui: restore session baseline (not “first builtin in library”).
     setState(() {
-      _setActiveDraft(EngineerModeDraft.fromLibrary(defaultPreset));
+      _setActiveDraft(draft.resetToBaseline());
     });
+    if (!mounted) {
+      return;
+    }
+    // lws-ui toast copy shown as FrostStatusDialog success chrome.
+    await showEngineerOperationSuccessDialog(
+      context,
+      message: 'Reset complete',
+    );
   }
 
   Future<void> _saveAsFavorite() async {
@@ -206,61 +235,44 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (draft == null) {
       return;
     }
+    final name = await showCyberImeInputDialog(
+      context: context,
+      title: 'Process Parameter Name',
+      fieldType: CyberImeFieldType.text,
+      initial: draft.preset.name,
+      requireNonEmpty: true,
+    );
+    if (name == null || !mounted) {
+      return;
+    }
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+    if (trimmed.length > 32) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Name must be 32 characters or fewer')),
+      );
+      return;
+    }
     final controller = ProcessLibraryScope.of(context);
     try {
       ProcessParameterValidator.validate(draft.preset);
-      final saved = await controller.copyAsUser(
-        draft.preset,
-        name: draft.preset.name,
-      );
+      final named = draft.preset.copyWith(name: trimmed);
+      final saved = await controller.saveAsFavorite(named, name: trimmed);
       if (!mounted) {
         return;
       }
       setState(() {
         _setActiveDraft(EngineerModeDraft.fromLibrary(saved));
       });
+      await showEngineerOperationSuccessDialog(
+        context,
+        message: 'Saved',
+      );
     } catch (_) {
       // Keep session draft; Save as Favorite is the only persist path.
     }
-  }
-
-  Future<void> _delete() async {
-    final draft = _draft;
-    if (draft == null || !draft.canDelete) {
-      return;
-    }
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete process?'),
-        content: Text('Delete “${draft.preset.name}”?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              CyberClickSoundRegistry.playClick();
-              Navigator.pop(context, false);
-            },
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              CyberClickSoundRegistry.playClick();
-              Navigator.pop(context, true);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) {
-      return;
-    }
-    final controller = ProcessLibraryScope.of(context);
-    await controller.deleteUser(draft.preset);
-    if (!mounted) {
-      return;
-    }
-    _selectDefaultForType(controller);
   }
 
   Future<void> _editName() async {
@@ -388,7 +400,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  'Current Process Parameter',
+                                                  'Current Process Name',
                                                   key: ValueKey(
                                                     draft.fromQuickHandoff
                                                         ? 'engineer-mode-draft-uuid'
@@ -404,34 +416,47 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                             ),
                                           ),
                                         ),
-                                        InkWell(
+                                        KeyedSubtree(
                                           key: const ValueKey(
-                                              'engineer-more-favorites'),
-                                          onTap: () {
-                                            CyberClickSoundRegistry.playClick();
-                                            _openFavorites();
-                                          },
-                                          child: const Padding(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 12,
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Text(
-                                                  'More Common Specs',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 14,
+                                            'engineer-more-favorites',
+                                          ),
+                                          child: InkWell(
+                                            key: _moreFavoritesKey,
+                                            onTap: () {
+                                              CyberClickSoundRegistry
+                                                  .playClick();
+                                              if (_favoritesOpen) {
+                                                return;
+                                              }
+                                              _openFavorites();
+                                            },
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 12,
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Text(
+                                                    'More Favorites',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                    ),
                                                   ),
-                                                ),
-                                                SizedBox(width: 8),
-                                                Icon(
-                                                  Icons.chevron_right,
-                                                  color: Colors.white,
-                                                ),
-                                              ],
+                                                  const SizedBox(width: 2),
+                                                  Icon(
+                                                    _favoritesOpen
+                                                        ? Icons
+                                                            .keyboard_arrow_down
+                                                        : Icons.chevron_right,
+                                                    color: Colors.white,
+                                                    size: 30,
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -528,21 +553,6 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                             ),
                                           ),
                                         ),
-                                        if (draft.canDelete) ...[
-                                          const SizedBox(width: 22),
-                                          CyberButton(
-                                            key: const ValueKey(
-                                                'engineer-action-delete'),
-                                            height: 56,
-                                            onPressed: _delete,
-                                            child: const Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 20,
-                                              ),
-                                              child: Text('Delete'),
-                                            ),
-                                          ),
-                                        ],
                                       ],
                                     ),
                                   ),

@@ -154,6 +154,8 @@ void main() {
         'telemetry.collimator_temp': ('input', 0x0064, 1, 's16', 'data'),
         'telemetry.blow_pressure': ('input', 0x0060, 1, 'u16', 'data'),
         'control.laser_enable': ('holding', 0x0058, 1, 'bit', 'control'),
+        'control.manual_gas': ('holding', 0x0058, 1, 'bit', 'control'),
+        'machine.wire_feeding_on': ('input', 0x0015, 1, 'bit', 'status'),
         'process.laser_power': ('holding', 0x0060, 1, 'u16', 'process'),
         'process.swing_width': ('holding', 0x0067, 1, 'u16', 'process'),
         'setting.motor_temp_alarm_threshold': ('holding', 0x009E, 1, 'u16', 'settings'),
@@ -195,6 +197,14 @@ void main() {
       final laserEnable = config.attributeById('control.laser_enable')!;
       expect(laserEnable.decode.bit, 0);
       expect(laserEnable.access, 'rw');
+
+      final manualGas = config.attributeById('control.manual_gas')!;
+      expect(manualGas.decode.bit, 1);
+      expect(manualGas.access, 'rw');
+
+      final wireFeeding = config.attributeById('machine.wire_feeding_on')!;
+      expect(wireFeeding.decode.bit, 2);
+      expect(wireFeeding.access, 'r');
     });
 
     test('ModbusHal listAttributes + unknown id', () async {

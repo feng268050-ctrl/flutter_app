@@ -1,0 +1,392 @@
+import 'dart:async';
+
+import 'package:cyber_ui/cyber_ui.dart';
+import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
+import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
+import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
+import 'package:lws_hmi/features/monitor/application/machine_status_controller.dart';
+import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_gauges.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
+
+/// lws-ui [MachineStatusOverlay] — light frost + live PR1 video (not Monitor route).
+///
+/// Quick Mode “More Status” opens this with a confirm action
+/// (`MachineStatusOverlay.show(context, true)`).
+Future<void> showLiveMachineStatusDialog(
+  BuildContext context, {
+  IpCameraPreviewPlayerFactory? playerFactory,
+  bool showConfirmButton = true,
+}) {
+  final panel = CyberPanelBorder(tone: CyberTone.light);
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: !showConfirmButton,
+    barrierColor: CyberColors.scrim,
+    builder: (dialogContext) {
+      // lws-ui `machine_status_dialog_screen_inset` = 2dp.
+      const screenInset = 2.0;
+      final size = MediaQuery.sizeOf(dialogContext);
+      final maxW = (size.width - screenInset * 2).clamp(480.0, 1280.0);
+      final maxH = (size.height - screenInset * 2).clamp(420.0, 800.0);
+      return Material(
+        type: MaterialType.transparency,
+        child: Center(
+          child: SizedBox(
+            width: maxW,
+            height: maxH,
+            child: ClipRRect(
+              borderRadius: panel.borderRadius,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: panel.borderRadius,
+                  border: Border.all(
+                    color: panel.flatBorderColor,
+                    width: panel.width,
+                  ),
+                ),
+                child: CyberModal(
+                  sampleMode: CyberBlurSampleMode.firstFrame,
+                  intensity: CyberBlurIntensity.high,
+                  blurTint: CyberBlurTint.warm,
+                  useFakeGlass: true,
+                  borderRadius: panel.borderRadius,
+                  // Horizontal pad 0 so the live frame sits 2px from screen edges.
+                  padding: const EdgeInsets.fromLTRB(0, 16, 0, 12),
+                  child: _LiveMachineStatusBody(
+                    playerFactory: playerFactory,
+                    showConfirmButton: showConfirmButton,
+                    onConfirm: () => Navigator.of(dialogContext).pop(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+final class _LiveMachineStatusBody extends StatefulWidget {
+  const _LiveMachineStatusBody({
+    required this.onConfirm,
+    required this.showConfirmButton,
+    this.playerFactory,
+  });
+
+  final VoidCallback onConfirm;
+  final bool showConfirmButton;
+  final IpCameraPreviewPlayerFactory? playerFactory;
+
+  @override
+  State<_LiveMachineStatusBody> createState() => _LiveMachineStatusBodyState();
+}
+
+final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
+  static const _titleDark = Color(0xFF1A1A1A);
+
+  IpCameraProductSession? _session;
+  IpCameraUiStatus _status = IpCameraUiStatus.connecting;
+  StreamSubscription<IpCameraUiStatus>? _statusSub;
+  MachineStatusController? _machine;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_bind());
+    });
+  }
+
+  Future<void> _bind() async {
+    final services = AppScope.maybeOf(context);
+    if (services == null || !mounted) {
+      setState(() => _error = 'Camera unavailable');
+      return;
+    }
+
+    final machine = MachineStatusController(services);
+    machine.addListener(_onMachine);
+    unawaited(machine.start());
+
+    try {
+      final session = await services.ensureIpCamera();
+      if (!mounted) {
+        machine.dispose();
+        return;
+      }
+      setState(() {
+        _session = session;
+        _machine = machine;
+        _status = session.currentStatus;
+        _error = null;
+      });
+      await _statusSub?.cancel();
+      _statusSub = session.status.listen((s) {
+        if (mounted) {
+          setState(() => _status = s);
+        }
+      });
+      await session.start();
+      await session.ensureReady();
+      if (mounted) {
+        setState(() => _status = session.currentStatus);
+      }
+    } catch (e) {
+      machine.removeListener(_onMachine);
+      machine.dispose();
+      if (mounted) {
+        setState(() => _error = '$e');
+      }
+    }
+  }
+
+  void _onMachine() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_statusSub?.cancel() ?? Future<void>.value());
+    final machine = _machine;
+    machine?.removeListener(_onMachine);
+    machine?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    // lws-ui `real_time_machine_status_text` (not Monitor tab title).
+    const liveTitle = 'Live Machine Status';
+
+    final session = _session;
+    // lws-ui LaserLiveMonitorOverlayFragment uses PR1; fall back to PR0.
+    final rtsp = session?.previewPr1 ?? session?.previewPr0;
+    final relayReady = session?.previewReady ?? false;
+    final machine = _machine;
+
+    final tiles = <(String, bool?)>[
+      (l10n?.laserOnLabel ?? 'Laser', machine?.laserOn),
+      (l10n?.blowOnLabel ?? 'Blow', machine?.blowOn),
+      (l10n?.safetyLockLabel ?? 'Safety Lock', machine?.safetyLockOn),
+      (l10n?.gunSwitchLabel ?? 'Gun Switch', machine?.gunSwitchOn),
+      (l10n?.redLightLabel ?? 'Red Light', machine?.redLightOn),
+      // Live-monitor copy (lws-ui live row); not the shorter Monitor label.
+      ('Wire Feeder', machine?.wireFeedingOn),
+    ];
+
+    return Column(
+      key: const ValueKey('live-machine-status-dialog'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            liveTitle,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: _titleDark,
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              height: 1.15,
+              decoration: TextDecoration.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: ColoredBox(
+            color: Colors.black,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (_error != null)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  IpCameraPreview(
+                    key: const ValueKey('live-machine-status-preview'),
+                    rtspUrl: rtsp,
+                    linkPhase: _status.phase,
+                    relayReady: relayReady,
+                    playerFactory:
+                        widget.playerFactory ?? createIpCameraPreviewPlayer,
+                  ),
+                // Side gauges (lws-ui live_monitor left/right cards).
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: _GaugePanel(
+                      child: CurrentArcGauge(
+                        value: machine?.gasPressureKpa ?? 0,
+                        min: 0,
+                        max: 1500,
+                        majorTickEvery: 150,
+                        minorTickEvery: 30,
+                        unit: 'kPa',
+                        titleLine1: l10n?.machineBlowTitle ?? 'Blow',
+                        titleLine2: l10n?.machineBlowContent ?? 'Pressure',
+                        size: 168,
+                        trackWidth: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: _GaugePanel(
+                      child: CurrentArcGauge(
+                        value: machine?.laserCurrentA ?? 0,
+                        min: 0,
+                        max: 100,
+                        majorTickEvery: 10,
+                        minorTickEvery: 2,
+                        unit: 'A',
+                        titleLine1: l10n?.machineLaserCurrentTitle ?? 'Laser',
+                        titleLine2:
+                            l10n?.machineLaserCurrentContent ?? 'Current',
+                        size: 168,
+                        trackWidth: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < tiles.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 8),
+                          Expanded(
+                            child: _CompactStatusTile(
+                              label: tiles[i].$1,
+                              on: tiles[i].$2,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (widget.showConfirmButton) ...[
+          const SizedBox(height: 10),
+          Center(
+            child: SizedBox(
+              width: 280,
+              child: CyberButton(
+                key: const ValueKey('live-machine-status-confirm'),
+                variant: CyberButtonVariant.primary,
+                shape: CyberButtonShape.rounded,
+                stretch: true,
+                height: 44,
+                onPressed: widget.onConfirm,
+                child: const Text(
+                  'Got it',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+final class _GaugePanel extends StatelessWidget {
+  const _GaugePanel({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0x99000000),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0x33FFFFFF)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// lws-ui [MachineStatusStatusTile]: whole-tile fill, no status glyph.
+///
+/// Success → `machine_status_tile_success_fill` (#FFF46E01);
+/// idle / undetected → `machine_status_tile_idle_fill` (#99000000).
+final class _CompactStatusTile extends StatelessWidget {
+  const _CompactStatusTile({required this.label, required this.on});
+
+  final String label;
+  final bool? on;
+
+  static const _idleFill = Color(0x99000000);
+  static const _successFill = Color(0xFFF46E01);
+
+  @override
+  Widget build(BuildContext context) {
+    final active = on == true;
+    return SizedBox(
+      height: 52,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: active ? _successFill : _idleFill,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0x40FFFFFF)),
+        ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                height: 1.1,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

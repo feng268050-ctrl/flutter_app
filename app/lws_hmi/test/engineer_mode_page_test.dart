@@ -167,7 +167,7 @@ void main() {
     expect(resetButton.shape, CyberButtonShape.rounded);
     expect(
       resetButton.borderGradientCenter,
-      CyberBorderGradientCenter.topLeftBottomRight,
+      CyberBorderGradientCenter.topBottom,
     );
     expect(resetButton.strokeWidth, 1.5);
     expect(resetButton.borderGradientColors?.first.alpha, greaterThan(0x77));

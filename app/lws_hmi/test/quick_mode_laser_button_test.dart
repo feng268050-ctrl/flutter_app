@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_button.dart';
+import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_dashboard.dart';
 
 void main() {
   testWidgets('laser trapezoid requires filled hold and release to enable',
@@ -78,5 +79,52 @@ void main() {
     );
     await tester.pump();
     expect(disabled, 1);
+  });
+
+  testWidgets('transparent laser chrome does not steal More Status taps',
+      (tester) async {
+    var moreTaps = 0;
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Stack(
+            children: [
+              Center(
+                child: QuickModeLaserDashboard(
+                  processType: ProcessType.continuousWelding,
+                  gasPressureKpa: 80,
+                  laserEnable: false,
+                  laserOn: false,
+                  onMoreStatus: () => moreTaps++,
+                ),
+              ),
+              // Same overlay order as QuickModePage device controls.
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: QuickModeLaserButton(
+                    processType: ProcessType.continuousWelding,
+                    laserOpen: false,
+                    busy: false,
+                    preflight: () => null,
+                    onEnableConfirmed: () async {},
+                    onDisable: () async {},
+                    onBlocked: (_) {},
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('quick-mode-more-status')));
+    await tester.pump();
+    expect(moreTaps, 1);
   });
 }

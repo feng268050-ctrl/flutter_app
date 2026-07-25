@@ -59,11 +59,11 @@ void main() {
     final expectedTitleTop = dash.dy - (372 * scale) / 2 + (50 * scale);
     expect(titleTop, closeTo(expectedTitleTop, 4));
 
-    // More Status: original intrinsic size (not stretched to trapezoid width).
+    // More Status: longer frost pill (minWidth 240×scale), still centered.
     final more = tester.getSize(
       find.byKey(const ValueKey('quick-mode-more-status')),
     );
-    expect(more.width, lessThan(180));
+    expect(more.width, greaterThanOrEqualTo(250 * scale - 1));
     expect(
       tester.getCenter(find.byKey(const ValueKey('quick-mode-more-status'))).dx,
       closeTo(dash.dx, 1),

@@ -162,52 +162,54 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
         key: const ValueKey('quick-mode-laser-enable'),
         width: size.width,
         height: size.height,
-        child: Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: _pointerDown,
-          onPointerMove: _pointerMove,
-          onPointerUp: _pointerUp,
-          onPointerCancel: (_) => _cancelGesture(),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Black bevels at the dashboard contact are baked into the
-              // lws-ui WebP. Do not add a generic Flutter drop shadow: the
-              // Android layout only elevates this bitmap-backed view.
-              Image.asset(_background, fit: BoxFit.fill),
-              Positioned(
-                top: 68 * scale,
-                left: 0,
-                right: 0,
-                child: Icon(
-                  widget.laserOpen
-                      ? Icons.pause_circle_outline
-                      : Icons.play_circle_outline,
-                  key: const ValueKey('quick-mode-laser-enable-icon'),
-                  color: Colors.white,
-                  size: ProcessModeDimens.quickLaserButtonIconSize * scale,
-                ),
-              ),
-              Positioned(
-                top: 147 * scale,
-                left: 0,
-                right: 0,
-                child: Text(
-                  widget.laserOpen ? 'End of work' : 'Laser Enable',
-                  key: const ValueKey('quick-mode-laser-enable-label'),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
+        // Clip hit-testing to the orange trapezoid so the transparent top of
+        // this bottom-layer rect does not steal taps from More Status.
+        child: ClipPath(
+          clipper: const _QuickLaserTrapezoidClipper(),
+          child: Listener(
+            behavior: HitTestBehavior.opaque,
+            onPointerDown: _pointerDown,
+            onPointerMove: _pointerMove,
+            onPointerUp: _pointerUp,
+            onPointerCancel: (_) => _cancelGesture(),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Black bevels at the dashboard contact are baked into the
+                // lws-ui WebP. Do not add a generic Flutter drop shadow: the
+                // Android layout only elevates this bitmap-backed view.
+                Image.asset(_background, fit: BoxFit.fill),
+                Positioned(
+                  top: 68 * scale,
+                  left: 0,
+                  right: 0,
+                  child: Icon(
+                    widget.laserOpen
+                        ? Icons.pause_circle_outline
+                        : Icons.play_circle_outline,
+                    key: const ValueKey('quick-mode-laser-enable-icon'),
                     color: Colors.white,
-                    fontSize:
-                        ProcessModeDimens.quickLaserButtonLabelSize * scale,
-                    height: 1,
-                    fontWeight: FontWeight.w700,
+                    size: ProcessModeDimens.quickLaserButtonIconSize * scale,
                   ),
                 ),
-              ),
-              ClipPath(
-                clipper: const _QuickLaserTrapezoidClipper(),
-                child: AnimatedBuilder(
+                Positioned(
+                  top: 147 * scale,
+                  left: 0,
+                  right: 0,
+                  child: Text(
+                    widget.laserOpen ? 'End of work' : 'Laser Enable',
+                    key: const ValueKey('quick-mode-laser-enable-label'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize:
+                          ProcessModeDimens.quickLaserButtonLabelSize * scale,
+                      height: 1,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                AnimatedBuilder(
                   animation: _hold,
                   builder: (context, _) => CustomPaint(
                     painter: _HoldRipplePainter(
@@ -217,8 +219,8 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -1,10 +1,12 @@
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/features/process_mode/presentation/live_machine_status_dialog.dart';
 
 /// Center laser instrument cluster — Flutter port of lws-ui `LaserProgress`.
 ///
@@ -189,44 +191,50 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Text(
-                    pressureText,
-                    key: const ValueKey('quick-mode-gas-pressure'),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: metrics.valueSize,
-                      fontWeight: FontWeight.w500,
-                      height: 1.0,
+                  IgnorePointer(
+                    child: Text(
+                      pressureText,
+                      key: const ValueKey('quick-mode-gas-pressure'),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: metrics.valueSize,
+                        fontWeight: FontWeight.w500,
+                        height: 1.0,
+                      ),
                     ),
                   ),
                   Positioned(
                     top: metrics.contentTop,
                     left: 0,
                     right: 0,
-                    child: Text(
-                      'Gas Pressure',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: const Color(0xCCFFFFFF),
-                        fontSize: metrics.titleSize,
-                        height: 1.0,
+                    child: IgnorePointer(
+                      child: Text(
+                        'Gas Pressure',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: const Color(0xCCFFFFFF),
+                          fontSize: metrics.titleSize,
+                          height: 1.0,
+                        ),
                       ),
                     ),
                   ),
-                  Transform.translate(
-                    offset: Offset(
-                      0,
-                      metrics.valueSize / 2 +
-                          metrics.contentGap +
-                          metrics.unitSize / 2 +
-                          20 * metrics.scale,
-                    ),
-                    child: Text(
-                      'kPa',
-                      style: TextStyle(
-                        color: const Color(0x66FFFFFF),
-                        fontSize: metrics.unitSize,
-                        height: 1.0,
+                  IgnorePointer(
+                    child: Transform.translate(
+                      offset: Offset(
+                        0,
+                        metrics.valueSize / 2 +
+                            metrics.contentGap +
+                            metrics.unitSize / 2 +
+                            20 * metrics.scale,
+                      ),
+                      child: Text(
+                        'kPa',
+                        style: TextStyle(
+                          color: const Color(0x66FFFFFF),
+                          fontSize: metrics.unitSize,
+                          height: 1.0,
+                        ),
                       ),
                     ),
                   ),
@@ -240,36 +248,51 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                     left: 0,
                     right: 0,
                     child: Center(
-                      child: TextButton(
-                        key: const ValueKey('quick-mode-more-status'),
-                        onPressed: widget.onMoreStatus ??
-                            () => Navigator.of(context)
-                                .pushNamed(AppRoutes.monitor),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: const Color(0x33FFFFFF),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16 * metrics.scale,
-                            vertical: 8 * metrics.scale,
-                          ),
-                          shape: const StadiumBorder(),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'More Status',
-                              style: TextStyle(
-                                fontSize: metrics.buttonTextSize,
-                              ),
-                            ),
-                            SizedBox(width: metrics.buttonIconGap),
-                            Icon(
-                              Icons.chevron_right,
-                              size: metrics.buttonIconSize,
-                            ),
+                      // lws-ui `more_monitor_btn`: FrostButton + bright rim.
+                      // Width kept under the circle chord at this Y so the 亮边
+                      // is not clipped by the circular pressure face.
+                      child: SizedBox(
+                        width: 250 * metrics.scale,
+                        child: CyberButton(
+                          key: const ValueKey('quick-mode-more-status'),
+                          variant: CyberButtonVariant.standard,
+                          shape: CyberButtonShape.rounded,
+                          stretch: true,
+                          // 1.5px frost rim + diagonal HL (engineer Reset/Save).
+                          strokeWidth: 1.5,
+                          borderGradientCenter:
+                              CyberBorderGradientCenter.topBottom,
+                          borderGradientColors: const [
+                            Color(0xE6FFFFFF),
+                            Color(0xAA86868C),
+                            Color(0x66000000),
                           ],
+                          height: (58 * metrics.scale).clamp(40.0, 58.0),
+                          onPressed: widget.onMoreStatus ??
+                              () => unawaited(
+                                    showLiveMachineStatusDialog(context),
+                                  ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'More Status',
+                                  style: TextStyle(
+                                    fontSize: metrics.buttonTextSize,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(width: metrics.buttonIconGap),
+                                Icon(
+                                  Icons.chevron_right,
+                                  size: metrics.buttonIconSize,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -418,8 +441,8 @@ final class _LaserDashboardMetrics {
   double get titleSize => 33 * scale;
   double get valueSize => 101 * scale;
   double get unitSize => 25 * scale;
-  double get buttonTextSize => 14 * scale;
-  double get buttonIconSize => 18 * scale;
+  double get buttonTextSize => 20 * scale;
+  double get buttonIconSize => 22 * scale;
   double get buttonIconGap => 4 * scale;
 
   /// Previous Column layout placed the digit center this far above the circle

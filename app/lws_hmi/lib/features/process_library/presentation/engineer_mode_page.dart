@@ -580,12 +580,12 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                 stretch: true,
                                                 height: 56,
                                                 // lws-ui FrostButtonShape.ROUNDED
-                                                // (stadium) + TL→BR rim light.
+                                                // (stadium) + top↔bottom rim light.
                                                 shape:
                                                     CyberButtonShape.rounded,
                                                 borderGradientCenter:
                                                     CyberBorderGradientCenter
-                                                        .topLeftBottomRight,
+                                                        .topBottom,
                                                 borderGradientColors:
                                                     _engineerActionPillBorder,
                                                 strokeWidth: 1.5,
@@ -625,7 +625,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                     CyberButtonShape.rounded,
                                                 borderGradientCenter:
                                                     CyberBorderGradientCenter
-                                                        .topLeftBottomRight,
+                                                        .topBottom,
                                                 borderGradientColors:
                                                     _engineerActionPillBorder,
                                                 strokeWidth: 1.5,

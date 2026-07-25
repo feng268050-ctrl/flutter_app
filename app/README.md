@@ -71,7 +71,7 @@ Started by `hmi.service`: `/usr/libexec/hmi/hmi-launch.sh` (release embedder fro
 
 Pinned toolchain: **Flutter 3.24.4** + **flutterpi_tool 0.5.4** (see `overlay/buildroot/flutterpi_tool.version`). Debug and release use the **same Flutter version** but different runtime-mode engine binaries.
 
-**Display stack:** `make debug-app` is **flutter-pi only** (JIT `kernel_blob.bin` + debug engine). The default Weston + `flutter-wayland-client` image is **AOT-only** (`libapp.so`); on that image use `make push-app`. Deploying debug onto Weston would blank the panel — the host deploy path refuses `display-stack=weston` before touching `/opt/hmi`. For breakpoints on a physical board, flash the alternate rootfs (`make build-rootfs-flutter-pi` then `make upgrade`), then `make debug-app`.
+**Display stack:** `make debug-app` works on the **default Weston** image (`flutter-wayland-client` + cached debug engine via `LD_LIBRARY_PATH`) and on the alternate **flutter-pi** rootfs. Both use the same JIT bundle (`kernel_blob.bin` + snapshots under `/opt/hmi`). Board overlay scripts must include this Weston debug path (`make apply-overlay` → `make build-rootfs` → `make upgrade` once if the board is older than this change). Restore release AOT with `make build-app` then `make push-app`.
 
 One-time host setup:
 
@@ -98,6 +98,8 @@ Behavior:
 
 - First debug session uploads the debug engine to `/var/lib/hmi/debug-runtime/<version>/` (large; cached afterward).
 - `/opt/hmi` is replaced with the debug bundle (`kernel_blob.bin`); IDE stop keeps the debug app running.
+- Weston: `hmi-launch` starts Weston + `flutter-wayland-client` with the cached debug engine; ICU is at `/opt/hmi/data/icudtl.dat`.
+- flutter-pi: same debug payload without `--release`.
 - Return to release: `make build-app` then `make push-app`.
 
 Optional prebuilt debug engine (instead of flutterpi_tool cache):

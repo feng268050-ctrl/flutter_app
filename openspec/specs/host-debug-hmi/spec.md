@@ -3,21 +3,26 @@
 ## Purpose
 
 Host-side physical-device Flutter debugging over USB-SSH, including debug deployment, runtime isolation, IDE integration, DevTools, and hot reload.
-
 ## Requirements
-
-
 ### Requirement: make debug-app starts a physical-device Flutter debug session
 
-The repository SHALL provide `make debug-app` that uses the pinned Flutter SDK to build the application as an ARM64 debug bundle, deploys it over USB-SSH to the selected physical lws-hmi device, replaces the firmware-bundled application for the session, and starts flutter-pi in debug mode.
+The repository SHALL provide `make debug-app` that uses the pinned Flutter SDK to build the application as an ARM64 debug bundle, deploys it over USB-SSH or registered SSH to the selected physical lws-hmi device, replaces the firmware-bundled application for the session, and starts the board HMI in Flutter **debug** mode on the image’s display stack.
 
-The target SHALL run the debug bundle with a debug-runtime engine built from the same pinned Flutter version/source as the release-runtime engine. The two runtime-mode binaries are distinct because debug requires JIT, VM Service, and hot reload while release executes AOT output. The command MUST fail before stopping the release HMI if the app bundle, engine, or version manifest is missing or incompatible.
+On `/etc/display-stack=weston` (or `wayland` / `elinux`), the target SHALL run Weston plus `flutter-wayland-client` with the cached debug-runtime engine selected via `LD_LIBRARY_PATH` (JIT assets under `/opt/hmi/data/flutter_assets/`, including `kernel_blob.bin`). On `/etc/display-stack=flutter-pi`, the target SHALL run flutter-pi with that same cached debug-runtime engine and without the `--release` runtime mode.
 
-#### Scenario: Start debug session on one connected board
+The target SHALL run the debug bundle with a debug-runtime engine built from the same pinned Flutter version/source as the release-runtime engine. The two runtime-mode binaries are distinct because debug requires JIT, VM Service, and hot reload while release executes AOT output. The command MUST fail before stopping the release HMI if the app bundle, engine, or version manifest is missing or incompatible. Host deploy MUST NOT refuse Weston solely because `display-stack` is not flutter-pi.
 
-- **WHEN** one compatible ynh960 is connected over USB-SSH and the developer runs `make debug-app`
-- **THEN** the pinned SDK builds a debug bundle, the bundle is installed on that board, and flutter-pi displays it without the `--release` runtime mode
+#### Scenario: Start debug session on one connected Weston board
+
+- **WHEN** one compatible ynh960 with `/etc/display-stack=weston` is connected over USB-SSH and the developer runs `make debug-app`
+- **THEN** the pinned SDK builds a debug bundle, the bundle is installed on that board, and the HMI shows the app via Weston + `flutter-wayland-client` using the cached debug engine
 - **AND** the command does not require rebuilding, repacking, or flashing a firmware image
+- **AND** the command does not require switching to the alternate flutter-pi rootfs
+
+#### Scenario: Start debug session on one connected flutter-pi board
+
+- **WHEN** one compatible ynh960 with `/etc/display-stack=flutter-pi` is connected over USB-SSH and the developer runs `make debug-app`
+- **THEN** the pinned SDK builds a debug bundle, the bundle is installed on that board, and flutter-pi displays it without the `--release` runtime mode
 
 #### Scenario: Debug runtime is incompatible
 
@@ -47,6 +52,7 @@ Debug host commands SHALL reuse `.env` and the shared device selection contract 
 
 - **WHEN** the developer configures the pinned SDK and board serial in the repository `.env`
 - **THEN** `make debug-app` and the IDE device adapter use those values without a second IDE-specific copy
+
 ### Requirement: Same-version debug runtime is cached without replacing the release engine
 
 The host workflow SHALL provision the matching debug-runtime engine and ICU data into a versioned debug-runtime directory on the target and SHALL skip uploading unchanged runtime files when a manifest/hash confirms an exact match. The debug and release engine binaries MUST be built from the same pinned Flutter version/source, and the debug workflow MUST NOT replace the release-runtime binary or ICU data used for release payloads.
@@ -68,7 +74,7 @@ The host workflow SHALL provision the matching debug-runtime engine and ICU data
 
 ### Requirement: The last successful app deployment remains installed
 
-The device SHALL stage and validate a complete payload before stopping the current flutter-pi process and atomically replacing `/opt/hmi`. Each installed payload SHALL include a validated runtime-mode manifest so `hmi.service` launches release payloads with the release engine and `--release`, and debug payloads with the matching cached debug engine and debug runtime mode.
+The device SHALL stage and validate a complete payload before stopping the current HMI processes (Weston client and/or flutter-pi as applicable) and atomically replacing `/opt/hmi`. Each installed payload SHALL include a validated runtime-mode manifest so `hmi.service` / `hmi-launch.sh` launches release payloads with the release engine path for that display stack, and debug payloads with the matching cached debug engine and debug runtime mode (Weston: `LD_LIBRARY_PATH` + JIT assets; flutter-pi: debug engine without `--release`).
 
 IDE detach or stop SHALL close the debugger connection without terminating the running debug application or restoring an older release payload. A later `make debug-app` SHALL replace the installed app with a newer debug build; `make push-app` SHALL replace it with the current release build.
 
@@ -85,12 +91,12 @@ IDE detach or stop SHALL close the debugger connection without terminating the r
 #### Scenario: Board reboots with debug app installed
 
 - **WHEN** the board reboots after a debug payload was successfully installed
-- **THEN** `hmi.service` selects the cached matching debug engine and starts that debug payload without `--release`
+- **THEN** `hmi.service` selects the cached matching debug engine and starts that debug payload in debug runtime mode for the image display stack
 
 #### Scenario: push-app replaces debug app
 
 - **WHEN** a debug payload is installed and the developer runs `make build-app` followed by `make push-app`
-- **THEN** `/opt/hmi` is replaced by the release payload and `hmi.service` starts it with the release engine and `--release`
+- **THEN** `/opt/hmi` is replaced by the release payload and `hmi.service` starts it with the release engine path for that display stack
 
 #### Scenario: Payload transfer fails
 
@@ -154,3 +160,18 @@ This capability SHALL target physical lws-hmi boards over USB-SSH only. It SHALL
 
 - **WHEN** the P1.5 physical-device debug change is implemented
 - **THEN** no emulator target, VM image launcher, or emulator deployment path is introduced by this change
+
+### Requirement: Weston debug launch supplies ICU and JIT assets for eLinux
+
+When `display-stack` is weston/wayland/elinux and `/opt/hmi/runtime-mode.json` indicates `mode=debug`, `hmi-launch.sh` SHALL ensure `/opt/hmi/data/icudtl.dat` is present (copying from the versioned debug-runtime cache if needed), SHALL require `data/flutter_assets/kernel_blob.bin`, SHALL start Weston as for release, and SHALL exec `flutter-wayland-client` with `LD_LIBRARY_PATH` set to the matching `/var/lib/hmi/debug-runtime/<engine_version>/` directory. If the debug runtime or kernel blob is missing, launch MUST fail with an actionable message and MUST NOT attempt AOT `libapp.so` as a silent fallback for that debug payload.
+
+#### Scenario: Debug payload on Weston with cached runtime
+
+- **WHEN** `/opt/hmi` holds a valid debug payload and `/var/lib/hmi/debug-runtime/<ver>/` contains `libflutter_engine.so` and `icudtl.dat`
+- **THEN** `hmi-launch.sh` starts Weston and `flutter-wayland-client` such that the Dart VM Service becomes available for the IDE tunnel
+
+#### Scenario: Debug payload on Weston without runtime cache
+
+- **WHEN** `/opt/hmi` holds `mode=debug` but the matching debug-runtime directory is incomplete
+- **THEN** `hmi-launch.sh` exits with an error naming the missing path and does not leave an AOT-only client running against the JIT-only tree
+

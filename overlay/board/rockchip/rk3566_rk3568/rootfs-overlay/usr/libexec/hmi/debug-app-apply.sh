@@ -21,21 +21,14 @@ log() {
 	exit 1
 }
 
-# Defense in depth: host deploy should refuse Weston first; never blank the panel.
-stack=flutter-pi
+# Log display stack for operators; Weston and flutter-pi both accept JIT debug.
+stack=unknown
 if [ -f /etc/display-stack ]; then
 	stack="$(tr -d '[:space:]' </etc/display-stack | tr '[:upper:]' '[:lower:]')"
 elif [ -f /etc/hmi/display-stack ]; then
 	stack="$(tr -d '[:space:]' </etc/hmi/display-stack | tr '[:upper:]' '[:lower:]')"
 fi
-case "$stack" in
-weston | wayland | elinux)
-	log "refusing debug install on display-stack=$stack (needs AOT libapp.so)"
-	log "restore with: make build-app && make push-app"
-	rm -rf "$STAGE"
-	exit 1
-	;;
-esac
+log "display-stack=$stack"
 
 log "stopping current HMI"
 /usr/libexec/hmi/hmi-stop-and-wait.sh

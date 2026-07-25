@@ -30,38 +30,35 @@ else
 	echo "debug-deploy: iface=$IFACE target=$TARGET_USER@$TARGET_ADDR"
 fi
 
-# JIT debug (kernel_blob + debug engine) is flutter-pi only. Default Weston /
-# flutter-wayland-client images require AOT libapp.so — deploying debug here
-# removes release AOT and leaves the panel blank.
+# Fail before touching the running HMI if staging/runtime is incomplete.
+[[ -f "$STAGING/opt/hmi/data/flutter_assets/kernel_blob.bin" ]] \
+	|| die "missing kernel_blob.bin in debug staging (run: make build-debug-app)"
+[[ -f "$STAGING/opt/hmi/runtime-mode.json" ]] \
+	|| die "missing runtime-mode.json in debug staging (run: make build-debug-app)"
+local_manifest="$STAGING/debug-runtime/$ENGINE_VER/manifest.json"
+[[ -f "$local_manifest" ]] \
+	|| die "missing debug runtime manifest $local_manifest (run: make build-debug-app)"
+[[ -f "$STAGING/debug-runtime/$ENGINE_VER/libflutter_engine.so" ]] \
+	|| die "missing debug engine (run: make build-debug-app)"
+[[ -f "$STAGING/debug-runtime/$ENGINE_VER/icudtl.dat" ]] \
+	|| die "missing debug icudtl.dat (run: make build-debug-app)"
+
 stack="$(usb_ssh_session_run_ssh "$ROOT" "$IFACE" \
 	"tr -d '[:space:]' </etc/display-stack 2>/dev/null || tr -d '[:space:]' </etc/hmi/display-stack 2>/dev/null || echo unknown" \
 	| tr '[:upper:]' '[:lower:]' | tr -d '\r')"
 case "$stack" in
-weston | wayland | elinux)
-	die "board display-stack=$stack — make debug-app is flutter-pi only.
-
-Default image is Weston + flutter-wayland-client (AOT libapp.so).
-JIT debug would overwrite /opt/hmi and fail to launch.
-
-For this board:
-  make build-app && make push-app
-
-For breakpoints / hot reload, flash the alternate flutter-pi rootfs:
-  make build-rootfs-flutter-pi && make upgrade
-then: make debug-app"
-	;;
-flutter-pi | "")
+weston | wayland | elinux | flutter-pi | "")
+	echo "debug-deploy: display-stack=${stack:-unknown}"
 	;;
 unknown)
-	echo "WARNING: could not read /etc/display-stack; assuming flutter-pi" >&2
+	echo "WARNING: could not read /etc/display-stack; proceeding anyway" >&2
 	;;
 *)
-	die "unsupported display-stack=$stack (expected flutter-pi or weston)"
+	die "unsupported display-stack=$stack (expected weston, wayland, elinux, or flutter-pi)"
 	;;
 esac
 
 # Upload debug runtime when device cache is missing or manifest differs.
-local_manifest="$STAGING/debug-runtime/$ENGINE_VER/manifest.json"
 device_manifest_path="/var/lib/hmi/debug-runtime/$ENGINE_VER/manifest.json"
 need_runtime=1
 if usb_ssh_session_run_ssh "$ROOT" "$IFACE" "test -f $device_manifest_path"; then

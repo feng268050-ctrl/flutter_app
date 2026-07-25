@@ -90,6 +90,12 @@ EOF
 
 debug_runtime_write_manifest "$RUNTIME_STAGING" "$ENGINE_SRC" "$ICU_SRC" "$ENGINE_VER"
 
+# eLinux (Weston) expects ICU at <bundle>/data/icudtl.dat; flutter-pi uses
+# FLUTTER_EMBEDDER_ICU_DATA_PATH from the debug-runtime cache instead.
+mkdir -p "$HMI_STAGING/data"
+cp -f "$ICU_SRC" "$HMI_STAGING/data/icudtl.dat"
+
 echo "Debug staging ready at $STAGING"
 echo "  app:     $HMI_STAGING/data/flutter_assets/kernel_blob.bin"
+echo "  icu:     $HMI_STAGING/data/icudtl.dat"
 echo "  runtime: $RUNTIME_STAGING/libflutter_engine.so"

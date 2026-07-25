@@ -1,5 +1,5 @@
 #!/bin/sh
-# Start debug flutter-pi for IDE sessions; keep process alive after SSH detach.
+# Start debug HMI for IDE sessions (Weston or flutter-pi); keep alive after SSH detach.
 set -eu
 
 BUNDLE=/opt/hmi

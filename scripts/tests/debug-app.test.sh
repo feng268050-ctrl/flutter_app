@@ -95,14 +95,27 @@ else
 	fail=1
 fi
 
-# Default Weston image is AOT-only; debug-app must refuse before overwriting /opt/hmi.
-if grep -q 'display-stack' "$ROOT/scripts/debug-app-deploy.sh" \
-	&& grep -q 'flutter-pi only' "$ROOT/scripts/debug-app-deploy.sh" \
-	&& grep -q 'refusing debug install on display-stack' \
-		"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"; then
-	echo "OK  debug-app refuses Weston before blanking /opt/hmi"
+# Default Weston image supports debug via LD_LIBRARY_PATH + JIT assets.
+# Deploy must not refuse weston; launch wires the debug engine path.
+LAUNCH="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh"
+APPLY="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"
+if ! grep -q 'flutter-pi only' "$ROOT/scripts/debug-app-deploy.sh" \
+	&& ! grep -q 'refusing debug install on display-stack' "$APPLY" \
+	&& grep -q 'debug-deploy: display-stack=' "$ROOT/scripts/debug-app-deploy.sh" \
+	&& grep -q 'ELINUX_LD_LIBRARY_PATH' "$LAUNCH" \
+	&& grep -q 'kernel_blob.bin' "$LAUNCH" \
+	&& grep -q 'data/icudtl.dat' "$LAUNCH"; then
+	echo "OK  Weston debug path wired (no hard refuse)"
 else
-	echo "FAIL debug-app missing Weston display-stack guard" >&2
+	echo "FAIL Weston debug path missing or still hard-refusing weston" >&2
+	fail=1
+fi
+
+# Staging must ship ICU for eLinux bundle path.
+if grep -q 'HMI_STAGING/data/icudtl.dat' "$ROOT/scripts/build-debug-app.sh"; then
+	echo "OK  build-debug-app stages data/icudtl.dat for eLinux"
+else
+	echo "FAIL build-debug-app does not stage data/icudtl.dat" >&2
 	fail=1
 fi
 
@@ -153,13 +166,23 @@ else
 	fail=1
 fi
 
+if grep -q "trap '' PIPE" \
+	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-launch.sh"; then
+	echo "OK  hmi-launch ignores SIGPIPE (debug outside systemd)"
+else
+	echo "FAIL hmi-launch missing SIGPIPE ignore (debug exits 141)" >&2
+	fail=1
+fi
+
 if grep -q 'start-stop-daemon -S -b -m' \
 	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-run.sh" \
 	&& grep -q 'live_flutter_pids' \
+	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh" \
+	&& grep -q 'live_weston_pids' \
 	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/hmi-stop-and-wait.sh"; then
-	echo "OK  debug process detaches cleanly and ignores zombies"
+	echo "OK  debug process detaches cleanly; stop covers Weston + flutter-pi"
 else
-	echo "FAIL debug process lifecycle can retain flutter-pi zombies" >&2
+	echo "FAIL debug process lifecycle incomplete for Weston" >&2
 	fail=1
 fi
 

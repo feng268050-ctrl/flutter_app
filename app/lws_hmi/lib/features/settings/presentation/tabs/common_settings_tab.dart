@@ -58,20 +58,24 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
   @override
   void initState() {
     super.initState();
-    _wifiSub = services.wifi.connection.listen((c) {
-      if (mounted) {
+    // AppLocalizations / Theme.of are illegal during initState. Defer any
+    // work that reads InheritedWidgets (including sync stream emits).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _wifiSub = services.wifi.connection.listen((c) {
+        if (!mounted) return;
         setState(
           () => _wifiValue = _wifiSummary(AppLocalizations.of(context)!, c),
         );
-      }
+      });
+      unawaited(_refreshProxy());
+      unawaited(_refreshSshDebug());
+      unawaited(_refreshUsbOtg());
+      unawaited(_refreshBt());
+      unawaited(_refreshScreenOff());
+      unawaited(_refreshBrightness());
+      unawaited(_refreshVolume());
     });
-    unawaited(_refreshProxy());
-    unawaited(_refreshSshDebug());
-    unawaited(_refreshUsbOtg());
-    unawaited(_refreshBt());
-    unawaited(_refreshScreenOff());
-    unawaited(_refreshBrightness());
-    unawaited(_refreshVolume());
   }
 
   @override

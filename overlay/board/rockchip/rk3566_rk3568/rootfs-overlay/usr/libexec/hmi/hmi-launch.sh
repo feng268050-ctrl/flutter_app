@@ -2,6 +2,11 @@
 # Mode-aware HMI launcher: Weston + eLinux (default) or flutter-pi (alternate).
 set -eu
 
+# Match systemd IgnoreSIGPIPE=yes. Outside hmi.service (make debug-app via
+# start-stop-daemon) a SIGPIPE from Wayland/DBus/helper teardown would exit
+# the embedder with code 141 and tear down Weston.
+trap '' PIPE
+
 . /usr/libexec/hmi/paths.sh 2>/dev/null || true
 
 BUNDLE=/opt/hmi
@@ -123,27 +128,52 @@ if [ "$DISPLAY_STACK" = weston ] || [ "$DISPLAY_STACK" = wayland ] || \
 		echo "hmi-launch: display-stack=$DISPLAY_STACK but weston/client missing" >&2
 		exit 1
 	fi
-	# eLinux client is AOT-only today; JIT debug is flutter-pi (make debug-app).
+
+	# Debug: same client binary + cached debug engine via LD_LIBRARY_PATH (Sony).
+	# Fail closed — never fall back to AOT libapp.so against a JIT-only tree.
+	ELINUX_LD_LIBRARY_PATH=
 	if [ "$MODE" = "debug" ]; then
-		echo "hmi-launch: display-stack=$DISPLAY_STACK does not support debug mode" >&2
-		echo "hmi-launch: restore release with: make build-app && make push-app" >&2
-		exit 1
-	fi
-	if [ ! -f "$BUNDLE/lib/libapp.so" ]; then
-		echo "hmi-launch: missing release AOT $BUNDLE/lib/libapp.so" >&2
-		exit 1
-	fi
-	# eLinux looks for ICU next to the bundle.
-	if [ ! -e "$BUNDLE/data/icudtl.dat" ]; then
-		for icu in \
-			/usr/share/flutter/release/data/icudtl.dat \
-			/usr/share/flutter/icudtl.dat; do
-			if [ -e "$icu" ]; then
-				mkdir -p "$BUNDLE/data"
-				cp -L "$icu" "$BUNDLE/data/icudtl.dat" 2>/dev/null || true
-				break
-			fi
-		done
+		VER="$(read_json_field "$MODE_FILE" engine_version)"
+		RT="/var/lib/hmi/debug-runtime/${VER}"
+		if [ -z "$VER" ]; then
+			echo "hmi-launch: debug mode missing engine_version in $MODE_FILE" >&2
+			exit 1
+		fi
+		if [ ! -f "$RT/libflutter_engine.so" ] || [ ! -f "$RT/icudtl.dat" ]; then
+			echo "hmi-launch: debug runtime incomplete at $RT" >&2
+			echo "hmi-launch: need libflutter_engine.so and icudtl.dat (make debug-app)" >&2
+			exit 1
+		fi
+		if [ ! -f "$BUNDLE/data/flutter_assets/kernel_blob.bin" ]; then
+			echo "hmi-launch: missing debug kernel $BUNDLE/data/flutter_assets/kernel_blob.bin" >&2
+			exit 1
+		fi
+		# eLinux DartProject expects ICU at <bundle>/data/icudtl.dat.
+		if [ ! -e "$BUNDLE/data/icudtl.dat" ]; then
+			mkdir -p "$BUNDLE/data"
+			cp -L "$RT/icudtl.dat" "$BUNDLE/data/icudtl.dat" 2>/dev/null || {
+				echo "hmi-launch: failed to install $BUNDLE/data/icudtl.dat from $RT" >&2
+				exit 1
+			}
+		fi
+		ELINUX_LD_LIBRARY_PATH="$RT"
+	else
+		if [ ! -f "$BUNDLE/lib/libapp.so" ]; then
+			echo "hmi-launch: missing release AOT $BUNDLE/lib/libapp.so" >&2
+			exit 1
+		fi
+		# eLinux looks for ICU next to the bundle.
+		if [ ! -e "$BUNDLE/data/icudtl.dat" ]; then
+			for icu in \
+				/usr/share/flutter/release/data/icudtl.dat \
+				/usr/share/flutter/icudtl.dat; do
+				if [ -e "$icu" ]; then
+					mkdir -p "$BUNDLE/data"
+					cp -L "$icu" "$BUNDLE/data/icudtl.dat" 2>/dev/null || true
+					break
+				fi
+			done
+		fi
 	fi
 
 	export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/0}"
@@ -198,7 +228,12 @@ if [ "$DISPLAY_STACK" = weston ] || [ "$DISPLAY_STACK" = wayland ] || \
 	# frame is composited black. Visual DPR parity with flutter-pi is done in
 	# Dart (LwsHmiApp MediaQuery + Transform.scale) instead.
 	set +e
-	"$ELINUX_CLIENT" --bundle="$BUNDLE" --fullscreen
+	if [ -n "$ELINUX_LD_LIBRARY_PATH" ]; then
+		env LD_LIBRARY_PATH="$ELINUX_LD_LIBRARY_PATH" \
+			"$ELINUX_CLIENT" --bundle="$BUNDLE" --fullscreen
+	else
+		"$ELINUX_CLIENT" --bundle="$BUNDLE" --fullscreen
+	fi
 	status=$?
 	set -e
 	kill "$WESTON_PID" 2>/dev/null || true

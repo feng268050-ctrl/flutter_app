@@ -36,7 +36,11 @@ final class EngineerModePage extends StatefulWidget {
 final class _EngineerModePageState extends State<EngineerModePage> {
   late ProcessType _processType;
   EngineerModeDraft? _draft;
-  String? _statusMessage;
+
+  /// Per-process-type edit sessions (lws-ui `engineer_data_cache:{type}`).
+  /// Survives tab switches within Engineer Mode; cleared when leaving the page.
+  final Map<ProcessType, EngineerModeDraft> _sessions = {};
+
   bool _bootstrapped = false;
   DeviceControlController? _deviceControl;
 
@@ -90,7 +94,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
           _processType = EngineerProcessTabs.types.contains(source!.processType)
               ? source.processType
               : _processType;
-          _draft = EngineerModeDraft.fromQuickSource(source);
+          _setActiveDraft(EngineerModeDraft.fromQuickSource(source));
         });
         return;
       }
@@ -98,66 +102,53 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     _selectDefaultForType(controller);
   }
 
+  /// Assign [_draft] and mirror into [_sessions] for the active process type.
+  void _setActiveDraft(EngineerModeDraft? draft) {
+    _draft = draft;
+    if (draft == null) {
+      _sessions.remove(_processType);
+    } else {
+      _sessions[_processType] = draft;
+    }
+  }
+
   void _selectDefaultForType(ProcessLibraryController controller) {
     final presets =
         controller.engineerPresets(processType: _processType).toList();
     setState(() {
-      _draft =
-          presets.isEmpty ? null : EngineerModeDraft.fromLibrary(presets.first);
-      _statusMessage = null;
+      _setActiveDraft(
+        presets.isEmpty ? null : EngineerModeDraft.fromLibrary(presets.first),
+      );
     });
   }
 
+  /// Switch process tab: keep each type's in-memory session (lws-ui behavior).
   Future<void> _onProcessTypeChanged(ProcessType type) async {
     if (type == _processType) {
       return;
     }
-    if (_draft?.isDirty == true) {
-      final discard = await _confirmDiscard();
-      if (discard != true || !mounted) {
+    final controller = ProcessLibraryScope.of(context);
+    setState(() {
+      if (_draft != null) {
+        _sessions[_processType] = _draft!;
+      }
+      _processType = type;
+      final cached = _sessions[type];
+      if (cached != null) {
+        _draft = cached;
         return;
       }
-    }
-    setState(() => _processType = type);
-    _selectDefaultForType(ProcessLibraryScope.of(context));
-  }
-
-  Future<bool?> _confirmDiscard() {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Discard changes?'),
-        content: const Text('Unsaved edits will be lost.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              CyberClickSoundRegistry.playClick();
-              Navigator.pop(context, false);
-            },
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              CyberClickSoundRegistry.playClick();
-              Navigator.pop(context, true);
-            },
-            child: const Text('Discard'),
-          ),
-        ],
-      ),
-    );
+      final presets = controller.engineerPresets(processType: type).toList();
+      _setActiveDraft(
+        presets.isEmpty ? null : EngineerModeDraft.fromLibrary(presets.first),
+      );
+    });
   }
 
   Future<void> _openFavorites() async {
     final controller = ProcessLibraryScope.of(context);
     final presets =
         controller.engineerPresets(processType: _processType).toList();
-    if (_draft?.isDirty == true) {
-      final discard = await _confirmDiscard();
-      if (discard != true || !mounted) {
-        return;
-      }
-    }
     final selected = await showEngineerPresetPickerSheet(
       context: context,
       presets: presets,
@@ -167,8 +158,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       return;
     }
     setState(() {
-      _draft = EngineerModeDraft.fromLibrary(selected);
-      _statusMessage = null;
+      _setActiveDraft(EngineerModeDraft.fromLibrary(selected));
     });
   }
 
@@ -178,7 +168,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       return;
     }
     setState(() {
-      _draft = draft.copyWith(preset: preset, unsaved: true);
+      _setActiveDraft(draft.copyWith(preset: preset, unsaved: true));
     });
   }
 
@@ -192,42 +182,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       return draft.preset;
     }
     final next = EngineerModeDraft.fromQuickSource(draft.preset);
-    setState(() {
-      _draft = next;
-      _statusMessage = 'Editing copy — Save to keep';
-    });
+    setState(() => _setActiveDraft(next));
     return next.preset;
-  }
-
-  Future<void> _save() async {
-    final draft = _draft;
-    if (draft == null || draft.isReadOnly) {
-      return;
-    }
-    final controller = ProcessLibraryScope.of(context);
-    try {
-      ProcessParameterValidator.validate(draft.preset);
-      final ProcessPreset saved;
-      if (draft.fromQuickHandoff || draft.preset.uuid.startsWith('draft-')) {
-        saved = await controller.copyAsUser(
-          draft.preset,
-          name: draft.preset.name,
-        );
-      } else {
-        saved = await controller.saveUser(draft.preset);
-      }
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _draft = EngineerModeDraft.fromLibrary(saved);
-        _statusMessage = 'Saved';
-      });
-    } catch (error) {
-      if (mounted) {
-        setState(() => _statusMessage = 'Save failed: $error');
-      }
-    }
   }
 
   void _resetToDefault() {
@@ -238,12 +194,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         .toList();
     final defaultPreset = defaults.isEmpty ? null : defaults.first;
     if (defaultPreset == null) {
-      setState(() => _statusMessage = 'No default process available');
       return;
     }
     setState(() {
-      _draft = EngineerModeDraft.fromLibrary(defaultPreset);
-      _statusMessage = 'Reset to default';
+      _setActiveDraft(EngineerModeDraft.fromLibrary(defaultPreset));
     });
   }
 
@@ -263,13 +217,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         return;
       }
       setState(() {
-        _draft = EngineerModeDraft.fromLibrary(saved);
-        _statusMessage = 'Saved as favorite';
+        _setActiveDraft(EngineerModeDraft.fromLibrary(saved));
       });
-    } catch (error) {
-      if (mounted) {
-        setState(() => _statusMessage = 'Save failed: $error');
-      }
+    } catch (_) {
+      // Keep session draft; Save as Favorite is the only persist path.
     }
   }
 
@@ -310,7 +261,6 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       return;
     }
     _selectDefaultForType(controller);
-    setState(() => _statusMessage = 'Deleted');
   }
 
   Future<void> _editName() async {
@@ -395,6 +345,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                   : EngineerDevicePanel(
                                       controller: _deviceControl!,
                                       processType: _processType,
+                                      preset: draft.preset,
                                     ),
                             ),
                           ),
@@ -515,76 +466,86 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.fromLTRB(
-                                        16, 0, 16, 16),
-                                    child: Wrap(
-                                      spacing: 10,
-                                      runSpacing: 8,
-                                      alignment: WrapAlignment.center,
+                                        16, 8, 16, 20),
+                                    child: Row(
                                       children: [
-                                        OutlinedButton.icon(
-                                          key: const ValueKey(
-                                              'engineer-action-reset-default'),
-                                          onPressed: () {
-                                            CyberClickSoundRegistry.playClick();
-                                            _resetToDefault();
-                                          },
-                                          icon: const Icon(Icons.restart_alt),
-                                          label: const Text('Reset to Default'),
-                                        ),
-                                        OutlinedButton.icon(
-                                          key: const ValueKey(
-                                              'engineer-action-save-favorite'),
-                                          onPressed: controller.applying
-                                              ? null
-                                              : () {
-                                                  CyberClickSoundRegistry
-                                                      .playClick();
-                                                  _saveAsFavorite();
-                                                },
-                                          icon: const Icon(Icons.bookmark_add),
-                                          label: const Text('Save as Favorite'),
-                                        ),
-                                        if (!draft.isReadOnly)
-                                          FilledButton(
+                                        // lws-ui FrostButton DEFAULT
+                                        // (`engineer_pine_base_btn_style`).
+                                        Expanded(
+                                          child: CyberButton(
                                             key: const ValueKey(
-                                                'engineer-action-save'),
+                                                'engineer-action-reset-default'),
+                                            stretch: true,
+                                            height: 56,
+                                            onPressed: _resetToDefault,
+                                            child: const Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.restart_alt,
+                                                    size: 20),
+                                                SizedBox(width: 8),
+                                                Flexible(
+                                                  child: Text(
+                                                    'Reset to Default',
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 22),
+                                        Expanded(
+                                          child: CyberButton(
+                                            key: const ValueKey(
+                                                'engineer-action-save-favorite'),
+                                            stretch: true,
+                                            height: 56,
                                             onPressed: controller.applying
                                                 ? null
-                                                : () {
-                                                    CyberClickSoundRegistry
-                                                        .playClick();
-                                                    _save();
-                                                  },
-                                            child: const Text('Save'),
+                                                : _saveAsFavorite,
+                                            child: const Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.bookmark_add,
+                                                    size: 20),
+                                                SizedBox(width: 8),
+                                                Flexible(
+                                                  child: Text(
+                                                    'Save as Favorite',
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        if (draft.canDelete)
-                                          OutlinedButton(
+                                        ),
+                                        if (draft.canDelete) ...[
+                                          const SizedBox(width: 22),
+                                          CyberButton(
                                             key: const ValueKey(
                                                 'engineer-action-delete'),
-                                            onPressed: () {
-                                              CyberClickSoundRegistry
-                                                  .playClick();
-                                              _delete();
-                                            },
-                                            child: const Text('Delete'),
+                                            height: 56,
+                                            onPressed: _delete,
+                                            child: const Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 20,
+                                              ),
+                                              child: Text('Delete'),
+                                            ),
                                           ),
+                                        ],
                                       ],
                                     ),
                                   ),
-                                  if (_statusMessage != null)
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 12),
-                                      child: Text(
-                                        _statusMessage!,
-                                        key: const ValueKey(
-                                            'engineer-status-message'),
-                                        style: const TextStyle(
-                                          color: Color(0xB3FFFFFF),
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ),
                                 ],
                               ),
                             ),

@@ -7,148 +7,262 @@ import 'package:lws_hmi/features/process_mode/application/device_control_control
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
+import 'package:lws_hmi/features/process_mode/presentation/engineer_ramp_chart.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 
 /// Engineer left device panel (lws-ui `engineer_continuous_device_controls`).
 ///
 /// Wire feed/retract stay stubbed until protocol is confirmed.
-final class EngineerDevicePanel extends StatelessWidget {
+final class EngineerDevicePanel extends StatefulWidget {
   const EngineerDevicePanel({
     super.key,
     required this.controller,
     required this.processType,
+    required this.preset,
   });
 
   final DeviceControlController controller;
   final ProcessType processType;
+  final ProcessPreset preset;
 
-  bool get _wireEnabled => processType == ProcessType.continuousWelding;
+  @override
+  State<EngineerDevicePanel> createState() => _EngineerDevicePanelState();
+}
+
+final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
+  bool _rampOpen = false;
+
+  /// Fixed ramp accordion strip (header + divider).
+  static const _rampHeaderHeight = 50.0;
+
+  /// Gap from frost panel top to ramp header.
+  static const _panelTopInset = 2.0;
+
+  /// Shared gap: Retract↔Feed, Feed/Retract↔Laser, checkboxes↔Retract/Feed.
+  static const _actionGap = 20.0;
+
+  /// Retract + Feed + Enable Laser block (includes gap between rows).
+  static const _functionButtonsHeight = 120.0;
+  static const _wireButtonsHeight = 45.0;
+  static const _laserButtonHeight =
+      _functionButtonsHeight - _wireButtonsHeight - _actionGap;
+
+  bool get _showRamp =>
+      widget.processType == ProcessType.continuousWelding ||
+      widget.processType == ProcessType.spotWelding;
+
+  @override
+  void didUpdateWidget(covariant EngineerDevicePanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.processType != widget.processType) {
+      _rampOpen = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: controller,
+      animation: widget.controller,
       builder: (context, _) {
-        final laserActive = controller.laserEnable || controller.laserOn;
+        final laserActive =
+            widget.controller.laserEnable || widget.controller.laserOn;
+        final thresholds =
+            AdvancedSettingsScope.maybeThresholdsOf(context)?.values ??
+                const AdvancedSettingsThresholdValues();
         return EngineerFrostPanel(
           key: const ValueKey('engineer-device-panel'),
           edge: EngineerFrostEdge.topLeftBottomRight,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+            padding: const EdgeInsets.fromLTRB(20, _panelTopInset, 20, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (_showRamp)
+                  SizedBox(
+                    height: _rampHeaderHeight,
+                    child: EngineerRampAccordionHeader(
+                      expanded: _rampOpen,
+                      onToggle: () => setState(() => _rampOpen = !_rampOpen),
+                    ),
+                  ),
                 Expanded(
-                  child: Column(
+                  child: Stack(
+                    fit: StackFit.expand,
                     children: [
-                      _CheckRow(
-                        label: 'Record Work',
-                        value: false,
-                        enabled: false,
-                        onChanged: null,
-                      ),
-                      const Divider(color: Color(0x33FFFFFF), height: 1),
-                      _CheckRow(
-                        key: const ValueKey('engineer-panel-manual-gas'),
-                        label: 'Manual Gas',
-                        value: controller.manualGas,
-                        enabled: !laserActive && !controller.busy,
-                        onChanged: (value) async {
-                          final err = await controller.setManualGas(value);
-                          if (err != null && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(err.message)),
-                            );
-                          }
-                        },
-                      ),
-                      const Divider(color: Color(0x33FFFFFF), height: 1),
-                      _CheckRow(
-                        key: const ValueKey('engineer-panel-auto-wire'),
-                        label: 'Auto Wire Feed',
-                        value: false,
-                        enabled: false,
-                        onChanged: null,
-                        subtitle: _wireEnabled ? 'Protocol TBD' : null,
-                      ),
-                      const Divider(color: Color(0x33FFFFFF), height: 1),
-                      const Spacer(),
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(
-                            child: _EngineerDeviceActionButton(
-                              key: const ValueKey('engineer-panel-retract'),
-                              label: 'Retract',
-                              icon: Icons.output,
-                              height: 52,
-                              enabled: false,
-                              visualEnabled: true,
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: _CheckRow(
+                                    label: 'Record Work',
+                                    value: false,
+                                    enabled: false,
+                                    onChanged: null,
+                                  ),
+                                ),
+                                const Divider(
+                                    color: Color(0x33FFFFFF), height: 1),
+                                Expanded(
+                                  child: _CheckRow(
+                                    key: const ValueKey(
+                                        'engineer-panel-manual-gas'),
+                                    label: 'Manual Gas',
+                                    value: widget.controller.manualGas,
+                                    enabled: !laserActive &&
+                                        !widget.controller.busy,
+                                    onChanged: (value) async {
+                                      final err = await widget.controller
+                                          .setManualGas(value);
+                                      if (err != null && context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(content: Text(err.message)),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const Divider(
+                                    color: Color(0x33FFFFFF), height: 1),
+                                Expanded(
+                                  child: _CheckRow(
+                                    key: const ValueKey(
+                                        'engineer-panel-auto-wire'),
+                                    label: 'Auto Wire Feed',
+                                    value: false,
+                                    enabled: false,
+                                    onChanged: null,
+                                  ),
+                                ),
+                                const Divider(
+                                    color: Color(0x33FFFFFF), height: 1),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 20),
-                          Expanded(
-                            child: _EngineerDeviceActionButton(
-                              key: const ValueKey('engineer-panel-feed'),
-                              label: 'Feed',
-                              icon: Icons.input,
-                              height: 52,
-                              enabled: false,
-                              visualEnabled: true,
+                          const SizedBox(height: _actionGap),
+                          SizedBox(
+                            height: _functionButtonsHeight,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                SizedBox(
+                                  height: _wireButtonsHeight,
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: _EngineerDeviceActionButton(
+                                          key: const ValueKey(
+                                              'engineer-panel-retract'),
+                                          label: 'Retract',
+                                          icon: Icons.output,
+                                          height: _wireButtonsHeight,
+                                          enabled: false,
+                                          visualEnabled: true,
+                                        ),
+                                      ),
+                                      const SizedBox(width: _actionGap),
+                                      Expanded(
+                                        child: _EngineerDeviceActionButton(
+                                          key: const ValueKey(
+                                              'engineer-panel-feed'),
+                                          label: 'Feed',
+                                          icon: Icons.input,
+                                          height: _wireButtonsHeight,
+                                          enabled: false,
+                                          visualEnabled: true,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: _actionGap),
+                                _EngineerDeviceActionButton(
+                                  key: const ValueKey('engineer-panel-laser'),
+                                  label: laserActive
+                                      ? 'End Work'
+                                      : 'Enable Laser',
+                                  icon: laserActive
+                                      ? Icons.pause
+                                      : Icons.ondemand_video,
+                                  height: _laserButtonHeight,
+                                  filled: true,
+                                  laserOn: laserActive,
+                                  enabled: !(widget.controller.busy ||
+                                      widget.controller.manualGas),
+                                  onHoldComplete: () async {
+                                    final policy = AdvancedSettingsScope
+                                                .maybeDangerousOf(context)
+                                            ?.policySnapshot ??
+                                        const LaserAlarmPolicySnapshot(
+                                          keepLaserOnWhileAlarmed: false,
+                                          allowWorkAfterCameraAlarm: false,
+                                          allowWorkAfterGasAlarm: false,
+                                          allowWorkAfterLensContamination:
+                                              false,
+                                          allowWorkAfterFeederAlarm: false,
+                                        );
+                                    final err =
+                                        await widget.controller.enableLaser(
+                                      warnAlarm:
+                                          WarnAlarmScope.maybeOf(context),
+                                      policy: policy,
+                                    );
+                                    if (err != null && context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(content: Text(err.message)),
+                                      );
+                                    }
+                                  },
+                                  onPressed: laserActive
+                                      ? () async {
+                                          final err = await widget.controller
+                                              .disableLaser();
+                                          if (err != null && context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(err.message)),
+                                            );
+                                          }
+                                        }
+                                      : null,
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
+                      // Cover checkboxes + Retract/Feed; leave Enable Laser.
+                      if (_showRamp && _rampOpen)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          bottom: _laserButtonHeight,
+                          child: ColoredBox(
+                            color: ProcessModeTokens.background,
+                            child: EngineerRampChart(
+                              processType: widget.processType,
+                              preset: widget.preset,
+                              startPower: thresholds.laserStartPower,
+                              endPower: thresholds.laserEndPower,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-                // lws-ui target geometry: a distinct two-tier action group.
-                const SizedBox(height: 40),
-                _EngineerDeviceActionButton(
-                  key: const ValueKey('engineer-panel-laser'),
-                  label: laserActive ? 'End Work' : 'Enable Laser',
-                  icon: laserActive ? Icons.pause : Icons.ondemand_video,
-                  height: 104,
-                  filled: true,
-                  laserOn: laserActive,
-                  enabled: !(controller.busy || controller.manualGas),
-                  onHoldComplete: () async {
-                    final policy =
-                        AdvancedSettingsScope.maybeDangerousOf(context)
-                                ?.policySnapshot ??
-                            const LaserAlarmPolicySnapshot(
-                              keepLaserOnWhileAlarmed: false,
-                              allowWorkAfterCameraAlarm: false,
-                              allowWorkAfterGasAlarm: false,
-                              allowWorkAfterLensContamination: false,
-                              allowWorkAfterFeederAlarm: false,
-                            );
-                    final err = await controller.enableLaser(
-                      warnAlarm: WarnAlarmScope.maybeOf(context),
-                      policy: policy,
-                    );
-                    if (err != null && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(err.message)),
-                      );
-                    }
-                  },
-                  onPressed: laserActive
-                      ? () async {
-                          final err = await controller.disableLaser();
-                          if (err != null && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(err.message)),
-                            );
-                          }
-                        }
-                      : null,
-                ),
-                if (controller.lastError != null) ...[
+                if (widget.controller.lastError != null) ...[
                   const SizedBox(height: 8),
                   Text(
-                    controller.lastError!,
+                    widget.controller.lastError!,
                     style: const TextStyle(
                       color: Color(0xFFFF8A80),
                       fontSize: 12,
@@ -171,19 +285,16 @@ final class _CheckRow extends StatelessWidget {
     required this.value,
     required this.enabled,
     required this.onChanged,
-    this.subtitle,
   });
 
   final String label;
   final bool value;
   final bool enabled;
   final ValueChanged<bool>? onChanged;
-  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 64,
+    return SizedBox.expand(
       child: InkWell(
         onTap: enabled && onChanged != null
             ? () {
@@ -198,31 +309,18 @@ final class _CheckRow extends StatelessWidget {
               color: value
                   ? ProcessModeTokens.tabCleanActive
                   : const Color(0x66FFFFFF),
-              size: 22,
+              size: 28,
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: enabled ? Colors.white : const Color(0x66FFFFFF),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (subtitle != null)
-                    Text(
-                      subtitle!,
-                      style: const TextStyle(
-                        color: Color(0x66FFFFFF),
-                        fontSize: 11,
-                      ),
-                    ),
-                ],
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: enabled ? Colors.white : const Color(0x66FFFFFF),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w500,
+                  height: 1.0,
+                ),
               ),
             ),
           ],
@@ -324,6 +422,9 @@ final class _EngineerDeviceActionButtonState
     final foreground = widget.filled ? Colors.white : actionOrange;
     final disabledForeground =
         widget.filled ? const Color(0x99FFFFFF) : const Color(0xFF7D3E2B);
+    // Icon height matches label font size (wire smaller; laser larger).
+    final labelSize = widget.filled ? 22.0 : 16.0;
+    final iconSize = labelSize;
     return Semantics(
       button: true,
       enabled: canPress,
@@ -376,7 +477,7 @@ final class _EngineerDeviceActionButtonState
                       widget.icon,
                       color:
                           isVisuallyEnabled ? foreground : disabledForeground,
-                      size: widget.filled ? 38 : 32,
+                      size: iconSize,
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -384,8 +485,9 @@ final class _EngineerDeviceActionButtonState
                       style: TextStyle(
                         color:
                             isVisuallyEnabled ? foreground : disabledForeground,
-                      fontSize: widget.filled ? 20 : 16,
+                        fontSize: labelSize,
                         fontWeight: FontWeight.w600,
+                        height: 1.0,
                       ),
                     ),
                   ],

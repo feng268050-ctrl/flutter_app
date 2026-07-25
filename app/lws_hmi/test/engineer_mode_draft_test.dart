@@ -101,4 +101,26 @@ void main() {
       isFalse,
     );
   });
+
+  test('continuous welding parameter order matches lws-ui T sequence', () {
+    final keys = EngineerParameterVisibility.parameterKeysFor(
+      ProcessType.continuousWelding,
+    );
+    expect(
+      keys.indexOf('process.blowing_delay'),
+      lessThan(keys.indexOf('process.power_ramp_up_duration')),
+    );
+    expect(
+      keys.indexOf('process.power_ramp_up_duration'),
+      lessThan(keys.indexOf('process.laser_power')),
+    );
+    expect(
+      keys.indexOf('process.laser_power'),
+      lessThan(keys.indexOf('process.power_ramp_down_duration')),
+    );
+    expect(
+      keys.indexOf('process.power_ramp_down_duration'),
+      lessThan(keys.indexOf('process.gas_off_delay')),
+    );
+  });
 }

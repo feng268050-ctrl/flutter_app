@@ -1,6 +1,9 @@
+import 'package:cyber_hal/cyber_hal.dart';
+import 'package:cyber_hal/stub.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_importer.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
@@ -13,6 +16,19 @@ import 'package:sqlite3/sqlite3.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  AppServices testServices() => AppServices(
+        boardProfile: BoardProfile.fromJsonString('''
+{
+  "schema_version": 1,
+  "board_id": "test",
+  "display_name": "Test",
+  "bindings": {"sys_info": "stub"}
+}
+'''),
+        sysInfo: StubSysInfo(),
+        modbusClient: _UnusedModbus(),
+      );
 
   Future<void> setDesignSurface(WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
@@ -76,26 +92,38 @@ void main() {
     return controller;
   }
 
+  Widget engineerHarness({
+    required ProcessLibraryController controller,
+    ProcessType? initialProcessType,
+    String? initialPresetUuid,
+  }) {
+    return AppScope(
+      services: testServices(),
+      child: MaterialApp(
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        home: ProcessLibraryScope(
+          controller: controller,
+          child: EngineerModePage(
+            initialProcessType: initialProcessType,
+            initialPresetUuid: initialPresetUuid,
+          ),
+        ),
+      ),
+    );
+  }
+
   testWidgets('EngineerModePage loads built-in form and favorites',
       (tester) async {
     await setDesignSurface(tester);
     final controller = await seedController();
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(splashFactory: NoSplash.splashFactory),
-        home: ProcessLibraryScope(
-          controller: controller,
-          child: const EngineerModePage(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(engineerHarness(controller: controller));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 80));
 
     expect(
         find.byKey(const ValueKey('engineer-parameter-form')), findsOneWidget);
     expect(find.text('Stainless Steel-2mm'), findsOneWidget);
-    expect(find.text('Current Process Parameter'), findsOneWidget);
+    expect(find.text('Current Process Name'), findsOneWidget);
     expect(find.byKey(const ValueKey('engineer-action-copy')), findsNothing);
     expect(find.byKey(const ValueKey('engineer-action-save')), findsNothing);
     expect(find.byKey(const ValueKey('engineer-action-reset')), findsNothing);
@@ -109,6 +137,12 @@ void main() {
     expect(find.byKey(const ValueKey('engineer-parameters-actions-divider')),
         findsOneWidget);
     expect(find.byKey(const ValueKey('engineer-param-process.laser_power')),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey('engineer-ramp-accordion')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('engineer-ramp-accordion')));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('engineer-ramp-chart-continuousWelding')),
         findsOneWidget);
 
     final deviceWidth = tester
@@ -127,14 +161,10 @@ void main() {
     await setDesignSurface(tester);
     final controller = await seedController();
     await tester.pumpWidget(
-      MaterialApp(
-        home: ProcessLibraryScope(
-          controller: controller,
-          child: const EngineerModePage(
-            initialProcessType: ProcessType.continuousWelding,
-            initialPresetUuid: 'quick-hand',
-          ),
-        ),
+      engineerHarness(
+        controller: controller,
+        initialProcessType: ProcessType.continuousWelding,
+        initialPresetUuid: 'quick-hand',
       ),
     );
     await tester.pump();
@@ -146,29 +176,22 @@ void main() {
       find.byKey(const ValueKey('engineer-mode-draft-uuid')),
       findsOneWidget,
     );
-    expect(find.byKey(const ValueKey('engineer-action-save')), findsOneWidget);
+    expect(find.byKey(const ValueKey('engineer-action-save')), findsNothing);
   });
 
-  testWidgets('More Favorites sheet lists built-in and user', (tester) async {
+  testWidgets('More Favorites popup lists built-in and user', (tester) async {
     await setDesignSurface(tester);
     final controller = await seedController();
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(splashFactory: NoSplash.splashFactory),
-        home: ProcessLibraryScope(
-          controller: controller,
-          child: const EngineerModePage(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(engineerHarness(controller: controller));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 80));
+
+    expect(find.text('More Favorites'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('engineer-more-favorites')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Favorites'), findsOneWidget);
     expect(
         find.byKey(const ValueKey('engineer-preset-eng-ss')), findsOneWidget);
     expect(
@@ -186,9 +209,45 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.byKey(const ValueKey('engineer-action-save')), findsOneWidget);
+    expect(find.byKey(const ValueKey('engineer-action-save')), findsNothing);
+    expect(find.byKey(const ValueKey('engineer-action-delete')), findsNothing);
     expect(
-        find.byKey(const ValueKey('engineer-action-delete')), findsOneWidget);
+      find.byKey(const ValueKey('engineer-action-save-favorite')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('tab switch keeps per-type in-memory session', (tester) async {
+    await setDesignSurface(tester);
+    final controller = await seedController();
+    await tester.pumpWidget(
+      engineerHarness(
+        controller: controller,
+        initialProcessType: ProcessType.continuousWelding,
+        initialPresetUuid: 'quick-hand',
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    expect(find.text('Quick handoff'), findsOneWidget);
+    expect(find.textContaining('42'), findsWidgets);
+
+    await tester.tap(
+      find.byKey(const ValueKey('engineer-tab-spotWelding')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    await tester.tap(
+      find.byKey(const ValueKey('engineer-tab-continuousWelding')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    expect(find.text('Quick handoff'), findsOneWidget);
+    expect(find.textContaining('42'), findsWidgets);
+    expect(find.text('Stainless Steel-2mm'), findsNothing);
   });
 }
 

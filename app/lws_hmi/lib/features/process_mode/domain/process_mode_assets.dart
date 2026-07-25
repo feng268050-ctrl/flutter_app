@@ -1,3 +1,5 @@
+import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+
 /// Process-mode visual assets (from lws-ui mipmap-xxxhdpi).
 abstract final class ProcessModeAssets {
   static const continuousWeldingOn =
@@ -56,4 +58,34 @@ abstract final class ProcessModeAssets {
   static const feedIcon = 'assets/process/entering_silk.webp';
   static const retractOnIcon = 'assets/process/retreat_white_on.webp';
   static const retractOffIcon = 'assets/process/retreat_white_off.webp';
+
+  /// Engineer material type icons (lws-ui mipmap-xxhdpi).
+  static const stainlessSteelIcon = 'assets/process/stainless_steel_icon.webp';
+  static const carbonSteelIcon = 'assets/process/carbon_steel_icon.webp';
+  static const galvanizedSheetIcon =
+      'assets/process/galvanized_sheet_icon.webp';
+  static const aluminumAlloyIcon = 'assets/process/aluminum_alloy_icon.webp';
+  static const brassIcon = 'assets/process/brass_icon.webp';
+  static const customizeIcon = 'assets/process/customize_icon.webp';
+  static const selectDownWhiteArrow =
+      'assets/process/select_down_white_arrow.webp';
+  static const engineerDataValueBackground =
+      'assets/process/engineer_data_value_background.webp';
+
+  static String materialIcon(MaterialType material) {
+    switch (material) {
+      case MaterialType.stainlessSteel:
+        return stainlessSteelIcon;
+      case MaterialType.carbonSteel:
+        return carbonSteelIcon;
+      case MaterialType.galvanizedSheet:
+        return galvanizedSheetIcon;
+      case MaterialType.aluminumAlloy:
+        return aluminumAlloyIcon;
+      case MaterialType.brass:
+        return brassIcon;
+      case MaterialType.custom:
+        return customizeIcon;
+    }
+  }
 }

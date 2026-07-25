@@ -8,7 +8,7 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 
 /// Center laser instrument cluster — Flutter port of lws-ui `LaserProgress`.
 ///
-/// Layers: outer/inner progress rings + thin highlight arc + decorative mipmaps
+/// Layers: outer/inner progress rings + standalone thin highlight arc + decorative mipmaps
 /// + center gas-pressure panel. Ring progress animates with [laserOn] (not
 /// pressure); opacity follows [laserEnable]; center digits follow [gasPressureKpa].
 final class QuickModeLaserDashboard extends StatefulWidget {
@@ -110,151 +110,168 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
   @override
   Widget build(BuildContext context) {
     final palette = _LaserDashboardPalette.forType(widget.processType);
-    final size = ProcessModeDimens.dashboardSize;
-    final inner = ProcessModeDimens.dashboardInnerSize;
+    final metrics =
+        _LaserDashboardMetrics.fromViewport(MediaQuery.sizeOf(context));
     final ringAlpha = widget.laserEnable ? 1.0 : 0.5;
     final pressureText = widget.gasPressureKpa.round().toString();
 
     return SizedBox(
       key: const ValueKey('quick-mode-laser-dashboard'),
-      width: size,
-      height: size,
+      width: metrics.size,
+      height: metrics.height,
       child: Stack(
         alignment: Alignment.center,
-        clipBehavior: Clip.none,
+        // The lws-ui RelativeLayout wraps the 541×573.5dp border at y=30,
+        // making the component 570×603.5dp. Keep that overflow rather than
+        // cropping it at 570.
+        clipBehavior: Clip.hardEdge,
         children: [
-          // Rings + chrome (alpha 0.5 when laser enable off).
-          Opacity(
-            opacity: ringAlpha,
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                CustomPaint(
-                  size: Size(size, size),
-                  painter: _LaserProgressRingsPainter(
-                    progress: _progress / 100.0,
-                    palette: palette,
-                  ),
+          Align(
+            alignment: Alignment.center,
+            child: Opacity(
+              opacity: ringAlpha,
+              child: CustomPaint(
+                size: Size.square(metrics.size),
+                painter: _LaserProgressRingsPainter(
+                  progress: _progress / 100.0,
+                  palette: palette,
+                  metrics: metrics,
                 ),
-                Image.asset(
-                  ProcessModeAssets.circleSplitBorderTop,
-                  width: ProcessModeDimens.dashboardSplitTopWidth,
-                  height: ProcessModeDimens.dashboardSplitTopHeight,
-                  fit: BoxFit.contain,
-                  opacity: const AlwaysStoppedAnimation(0.8),
-                ),
-                Transform.translate(
-                  offset: const Offset(
-                    0,
-                    ProcessModeDimens.dashboardSplitOffsetY,
-                  ),
-                  child: Image.asset(
-                    ProcessModeAssets.circleSplitBorder,
-                    width: ProcessModeDimens.dashboardSplitWidth,
-                    height: ProcessModeDimens.dashboardSplitHeight,
-                    fit: BoxFit.contain,
-                    opacity: const AlwaysStoppedAnimation(0.3),
-                  ),
-                ),
-                Transform.translate(
-                  offset: const Offset(
-                    0,
-                    ProcessModeDimens.dashboardBorderOffsetY,
-                  ),
-                  child: Image.asset(
-                    ProcessModeAssets.circleBorder,
-                    width: ProcessModeDimens.dashboardBorderWidth,
-                    height: ProcessModeDimens.dashboardBorderHeight,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-          // Center pressure panel — topmost, 372×372 (laser_progress.xml).
+          Positioned(
+            left: metrics.splitTopLeft,
+            top: 0,
+            child: Image.asset(
+              ProcessModeAssets.circleSplitBorderTop,
+              width: metrics.splitTopWidth,
+              height: metrics.splitTopHeight,
+              fit: BoxFit.contain,
+              opacity: const AlwaysStoppedAnimation(0.8),
+            ),
+          ),
+          Positioned(
+            left: metrics.splitLeft,
+            top: metrics.splitTop,
+            child: Image.asset(
+              ProcessModeAssets.circleSplitBorder,
+              width: metrics.splitWidth,
+              height: metrics.splitHeight,
+              fit: BoxFit.contain,
+              opacity: const AlwaysStoppedAnimation(0.3),
+            ),
+          ),
+          Positioned(
+            left: metrics.borderLeft,
+            top: metrics.borderTop,
+            child: Image.asset(
+              ProcessModeAssets.circleBorder,
+              width: metrics.borderWidth,
+              height: metrics.borderHeight,
+              fit: BoxFit.contain,
+            ),
+          ),
+          // Digit on circle center; title at original Column slot; kPa +20dp;
+          // More Status under the unit with original intrinsic size.
           SizedBox(
-            width: inner,
-            height: inner,
+            width: metrics.centerSize,
+            height: metrics.centerSize,
             child: DecoratedBox(
               decoration: BoxDecoration(
+                color: const Color(0xFF050505),
                 image: DecorationImage(
                   image: AssetImage(palette.pressureBg),
                   fit: BoxFit.cover,
                 ),
                 shape: BoxShape.circle,
               ),
-              child: Column(
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  const SizedBox(
-                    height: ProcessModeDimens.dashboardContentTop,
-                  ),
-                  const Text(
-                    'Gas Pressure',
-                    style: TextStyle(
-                      color: Color(0xCCFFFFFF), // alpha 0.8
-                      fontSize: ProcessModeDimens.dashboardTitleSize,
-                      height: 1.0,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: ProcessModeDimens.dashboardContentGap,
-                  ),
                   Text(
                     pressureText,
                     key: const ValueKey('quick-mode-gas-pressure'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: ProcessModeDimens.dashboardValueSize,
+                      fontSize: metrics.valueSize,
                       fontWeight: FontWeight.w500,
                       height: 1.0,
                     ),
                   ),
-                  const SizedBox(
-                    height: ProcessModeDimens.dashboardContentGap,
-                  ),
-                  const Text(
-                    'kPa',
-                    style: TextStyle(
-                      color: Color(0x66FFFFFF), // alpha 0.4
-                      fontSize: ProcessModeDimens.dashboardUnitSize,
-                      height: 1.0,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: ProcessModeDimens.dashboardButtonGap,
-                  ),
-                  TextButton(
-                    key: const ValueKey('quick-mode-more-status'),
-                    onPressed: widget.onMoreStatus ??
-                        () =>
-                            Navigator.of(context).pushNamed(AppRoutes.monitor),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: const Color(0x33FFFFFF),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16 * ProcessModeDimens.dashboardScale,
-                        vertical: 8 * ProcessModeDimens.dashboardScale,
+                  Positioned(
+                    top: metrics.contentTop,
+                    left: 0,
+                    right: 0,
+                    child: Text(
+                      'Gas Pressure',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: const Color(0xCCFFFFFF),
+                        fontSize: metrics.titleSize,
+                        height: 1.0,
                       ),
-                      shape: const StadiumBorder(),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'More Status',
-                          style: TextStyle(
-                            fontSize: ProcessModeDimens.dashboardButtonTextSize,
+                  ),
+                  Transform.translate(
+                    offset: Offset(
+                      0,
+                      metrics.valueSize / 2 +
+                          metrics.contentGap +
+                          metrics.unitSize / 2 +
+                          20 * metrics.scale,
+                    ),
+                    child: Text(
+                      'kPa',
+                      style: TextStyle(
+                        color: const Color(0x66FFFFFF),
+                        fontSize: metrics.unitSize,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: metrics.centerSize / 2 +
+                        metrics.valueSize / 2 +
+                        metrics.contentGap +
+                        metrics.unitSize +
+                        20 * metrics.scale +
+                        metrics.buttonGap,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: TextButton(
+                        key: const ValueKey('quick-mode-more-status'),
+                        onPressed: widget.onMoreStatus ??
+                            () => Navigator.of(context)
+                                .pushNamed(AppRoutes.monitor),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: const Color(0x33FFFFFF),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16 * metrics.scale,
+                            vertical: 8 * metrics.scale,
                           ),
+                          shape: const StadiumBorder(),
                         ),
-                        SizedBox(
-                          width: ProcessModeDimens.dashboardButtonIconGap,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'More Status',
+                              style: TextStyle(
+                                fontSize: metrics.buttonTextSize,
+                              ),
+                            ),
+                            SizedBox(width: metrics.buttonIconGap),
+                            Icon(
+                              Icons.chevron_right,
+                              size: metrics.buttonIconSize,
+                            ),
+                          ],
                         ),
-                        Icon(
-                          Icons.chevron_right,
-                          size: ProcessModeDimens.dashboardButtonIconSize,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
@@ -350,14 +367,78 @@ final class _LaserDashboardPalette {
 /// Triple circular seek arcs (lws-ui laser_progress.xml CircularSeekBars).
 ///
 /// Android style: start_angle=130°, end_angle=50° → 280° sweep; max=100.
+final class _LaserDashboardMetrics {
+  const _LaserDashboardMetrics._(this.scale);
+
+  factory _LaserDashboardMetrics.fromViewport(Size viewport) =>
+      _LaserDashboardMetrics._(ProcessModeDimens.dashboardScaleFor(viewport));
+
+  final double scale;
+
+  double get size => 570 * scale;
+  double get height => 603.5 * scale;
+  double get outerViewSize => 570 * scale;
+  double get outerCircleStroke => 38 * scale;
+  double get outerProgressStroke => 38 * scale;
+
+  /// Keep the coloured 38dp base rail inside the static white outer trim.
+  /// The trim itself remains at the XML coordinates below; only the rail is
+  /// inset so no dark track can protrude beyond it at either lower endpoint.
+  double get outerTrackRadius =>
+      outerViewSize / 2 - outerCircleStroke - 4 * scale;
+  double get innerViewSize => 514 * scale;
+  double get innerCircleStroke => 50 * scale;
+  double get innerProgressStroke => 50 * scale;
+  double get lineViewSize => 568 * scale;
+  double get lineCircleStroke => 50 * scale;
+  double get lineProgressStroke => 6 * scale;
+
+  /// The highlight's outside edge sits flush with the outside edge of the
+  /// outer 38dp rail, instead of crossing its visual middle.
+  double get outerHighlightRadius =>
+      outerViewSize / 2 - outerCircleStroke / 2 - lineProgressStroke / 2;
+
+  // Exact RelativeLayout child bounds from lws-ui laser_progress.xml.
+  double get splitWidth => 500.14 * scale;
+  double get splitHeight => 477.48 * scale;
+  double get splitLeft => (570 - 500.14) / 2 * scale;
+  double get splitTop => 26 * scale;
+  double get splitTopWidth => 532.14 * scale;
+  double get splitTopHeight => 477.48 * scale;
+  double get splitTopLeft => (570 - 532.14) / 2 * scale;
+  double get borderWidth => 541 * scale;
+  double get borderHeight => 573.5 * scale;
+  double get borderLeft => 14 * scale;
+  double get borderTop => 30 * scale;
+  double get centerSize => 372 * scale;
+
+  double get contentTop => 50 * scale;
+  double get contentGap => 5 * scale;
+  double get buttonGap => 16.5 * scale;
+  double get titleSize => 33 * scale;
+  double get valueSize => 101 * scale;
+  double get unitSize => 25 * scale;
+  double get buttonTextSize => 14 * scale;
+  double get buttonIconSize => 18 * scale;
+  double get buttonIconGap => 4 * scale;
+
+  /// Previous Column layout placed the digit center this far above the circle
+  /// midline; centering the digit moves it down by this amount.
+  double get pressureValueCenterShiftDown =>
+      centerSize / 2 -
+      (contentTop + titleSize + contentGap + valueSize / 2);
+}
+
 final class _LaserProgressRingsPainter extends CustomPainter {
   _LaserProgressRingsPainter({
     required this.progress,
     required this.palette,
+    required this.metrics,
   });
 
   final double progress;
   final _LaserDashboardPalette palette;
+  final _LaserDashboardMetrics metrics;
 
   /// Matches `quick_mode_circular` start_angle / end_angle.
   static const double _startDeg = 130;
@@ -370,70 +451,81 @@ final class _LaserProgressRingsPainter extends CustomPainter {
     final fullSweep = _totalDeg * math.pi / 180;
     final progressSweep = fullSweep * progress.clamp(0.0, 1.0);
 
-    // Outer ring — 570 layout, stroke/progress 38 (scaled).
+    // These use CircularSeekBar's actual radius calculation, not the View's
+    // outside diameter: radius = viewSize / 2 - circleStrokeWidth.
+    // This preserves the 19dp inset on the 570dp outer seekbar.
     _paintRing(
       canvas: canvas,
       center: center,
-      layoutSize: ProcessModeDimens.dashboardOuterRing,
-      strokeWidth: ProcessModeDimens.dashboardOuterStroke,
-      trackColor: palette.outerTrack.withOpacity(0.45),
+      viewSize: metrics.outerViewSize,
+      circleStrokeWidth: metrics.outerCircleStroke,
+      progressStrokeWidth: metrics.outerProgressStroke,
+      trackColor: palette.outerTrack,
       progressColors: palette.outerProgress,
       start: start,
       fullSweep: fullSweep,
       progressSweep: progressSweep,
+      radius: metrics.outerTrackRadius,
     );
 
-    // Inner dark rail — same stroke as outer rail (1:1), nested inside it.
+    // Inner seekbar — its 514dp View and 50dp rail are deliberately not
+    // derived from the outer ring; they overlap by the Android layout math.
     _paintRing(
       canvas: canvas,
       center: center,
-      layoutSize: ProcessModeDimens.dashboardInnerRing,
-      strokeWidth: ProcessModeDimens.dashboardInnerStroke,
-      trackColor: palette.innerTrack.withOpacity(0.55),
+      viewSize: metrics.innerViewSize,
+      circleStrokeWidth: metrics.innerCircleStroke,
+      progressStrokeWidth: metrics.innerProgressStroke,
+      trackColor: palette.innerTrack,
       progressColors: palette.innerProgress,
       start: start,
       fullSweep: fullSweep,
       progressSweep: progressSweep,
     );
 
-    // Thin bright line — path radius matches outer rail outer face.
+    // The source's third CircularSeekBar is an independent 6dp highlight
+    // following the circular outer rail. It deliberately stops at the two arc
+    // endpoints: do not connect it to the Laser Enable trapezoid border.
     _paintRing(
       canvas: canvas,
       center: center,
-      layoutSize: ProcessModeDimens.dashboardLineRing,
-      strokeWidth: ProcessModeDimens.dashboardLineStroke,
-      trackColor: palette.lineProgress.withOpacity(0.35),
-      progressColors: [
-        palette.lineProgress,
-        palette.lineProgress,
-      ],
+      viewSize: metrics.lineViewSize,
+      circleStrokeWidth: metrics.lineCircleStroke,
+      progressStrokeWidth: metrics.lineProgressStroke,
+      // `laser_circular_seek_line` declares `circle_color=transparent` in
+      // lws-ui: this layer is only the 6dp progress highlight, never a dark
+      // inactive rail outside the static white trim.
+      trackColor: Colors.transparent,
+      progressColors: [palette.lineProgress, palette.lineProgress],
       start: start,
       fullSweep: fullSweep,
       progressSweep: progressSweep,
       solidProgress: true,
+      radius: metrics.outerHighlightRadius,
     );
   }
 
   void _paintRing({
     required Canvas canvas,
     required Offset center,
-    required double layoutSize,
-    required double strokeWidth,
+    required double viewSize,
+    required double circleStrokeWidth,
+    required double progressStrokeWidth,
     required Color trackColor,
     required List<Color> progressColors,
     required double start,
     required double fullSweep,
     required double progressSweep,
     bool solidProgress = false,
+    double? radius,
   }) {
-    // Stroke is centered on [radius]; layoutSize is the outer diameter of the stroke.
-    final radius = layoutSize / 2 - strokeWidth / 2;
-    final rect = Rect.fromCircle(center: center, radius: radius);
+    final pathRadius = radius ?? viewSize / 2 - circleStrokeWidth;
+    final rect = Rect.fromCircle(center: center, radius: pathRadius);
 
     if (trackColor.alpha > 0) {
       final track = Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
+        ..strokeWidth = circleStrokeWidth
         ..strokeCap = StrokeCap.butt
         ..color = trackColor;
       canvas.drawArc(rect, start, fullSweep, false, track);
@@ -445,7 +537,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
 
     final progressPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
+      ..strokeWidth = progressStrokeWidth
       ..strokeCap = StrokeCap.butt;
 
     if (solidProgress) {
@@ -454,7 +546,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       // Radial gradient across ring thickness (lws-ui CircularSeekColorCall).
       final stops = progressColors.length == 4
           ? <double>[
-              (strokeWidth / (layoutSize)).clamp(0.0, 0.49),
+              (circleStrokeWidth / viewSize).clamp(0.0, 0.49),
               0.5,
               0.9,
               1.0,
@@ -463,7 +555,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       progressPaint.shader = RadialGradient(
         colors: progressColors,
         stops: stops,
-      ).createShader(Rect.fromCircle(center: center, radius: layoutSize / 2));
+      ).createShader(Rect.fromCircle(center: center, radius: viewSize / 2));
     }
 
     canvas.drawArc(rect, start, progressSweep, false, progressPaint);
@@ -471,5 +563,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _LaserProgressRingsPainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.palette != palette;
+      oldDelegate.progress != progress ||
+      oldDelegate.palette != palette ||
+      oldDelegate.metrics.scale != metrics.scale;
 }

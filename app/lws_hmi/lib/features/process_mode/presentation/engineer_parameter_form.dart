@@ -2,7 +2,10 @@ import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_mode/domain/engineer_parameter_presentation.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_parameter_visibility.dart';
+import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/features/process_mode/presentation/engineer_material_popup.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
 /// Catalog-driven engineer parameter form (row label + tappable value pill).
@@ -28,14 +31,18 @@ final class EngineerParameterForm extends StatelessWidget {
         EngineerParameterVisibility.parameterKeysFor(preset.processType);
     final rows = <Widget>[
       if (EngineerParameterVisibility.showsMaterial(preset.processType))
-        _ValueRow(
-          label: 'Material Type',
-          value: preset.materialName ?? preset.materialType?.englishName ?? '—',
+        _MaterialRow(
+          material: preset.materialType,
+          label: preset.materialName ??
+              preset.materialType?.englishName ??
+              '—',
           onTap: () => _guarded(context, (w) => _editMaterial(context, w)),
         ),
       if (EngineerParameterVisibility.showsThickness(preset.processType))
         _ValueRow(
-          label: 'Material Thickness',
+          presentation: const EngineerParameterPresentation(
+            label: 'Material Thickness',
+          ),
           value: preset.thickness == null
               ? '—'
               : '${_formatNumber(preset.thickness!)} mm',
@@ -45,7 +52,10 @@ final class EngineerParameterForm extends StatelessWidget {
         if (ProcessParameterCatalog.byKey[key] case final spec?)
           _ValueRow(
             key: ValueKey('engineer-param-${spec.key}'),
-            label: spec.label,
+            presentation: EngineerParameterPresentation.forKey(
+              key,
+              preset.processType,
+            ),
             value: preset.parameters.values[key] == null
                 ? '—'
                 : '${_formatNumber(preset.parameters.values[key]!)} ${spec.unit}',
@@ -58,7 +68,7 @@ final class EngineerParameterForm extends StatelessWidget {
 
     return ListView.separated(
       key: const ValueKey('engineer-parameter-form'),
-      padding: const EdgeInsets.only(right: 16, bottom: 20),
+      padding: const EdgeInsets.only(right: 16, bottom: 12),
       itemCount: rows.length,
       separatorBuilder: (_, __) => const Padding(
         padding: EdgeInsets.only(left: 24),
@@ -95,28 +105,17 @@ final class EngineerParameterForm extends StatelessWidget {
     BuildContext context,
     ProcessPreset working,
   ) async {
-    final materials =
-        MaterialType.values.where((m) => m != MaterialType.custom).toList();
-    final selected = await showModalBottomSheet<MaterialType>(
+    final pill =
+        _materialPillKey.currentContext?.findRenderObject() as RenderBox?;
+    if (pill == null || !pill.hasSize) {
+      return;
+    }
+    final origin = pill.localToGlobal(Offset.zero);
+    final selected = await showEngineerMaterialPopup(
       context: context,
-      backgroundColor: const Color(0xFF12142A),
-      builder: (context) => ListView(
-        shrinkWrap: true,
-        children: [
-          for (final material in materials)
-            ListTile(
-              title: Text(
-                material.englishName,
-                style: const TextStyle(color: Colors.white),
-              ),
-              selected: material == working.materialType,
-              onTap: () {
-                CyberClickSoundRegistry.playClick();
-                Navigator.pop(context, material);
-              },
-            ),
-        ],
-      ),
+      anchor: origin & pill.size,
+      selected: working.materialType,
+      processType: working.processType,
     );
     if (selected == null) {
       return;
@@ -156,10 +155,14 @@ final class EngineerParameterForm extends StatelessWidget {
     ProcessPreset working,
     ProcessParameterSpec spec,
   ) async {
+    final presentation = EngineerParameterPresentation.forKey(
+      spec.key,
+      working.processType,
+    );
     final current = working.parameters.values[spec.key];
     final text = await showCyberImeInputDialog(
       context: context,
-      title: spec.label,
+      title: presentation.label,
       fieldType: CyberImeFieldType.signedDecimal,
       initial: current?.toString() ?? '',
       label: '${spec.min}–${spec.max} ${spec.unit}',
@@ -185,33 +188,148 @@ final class EngineerParameterForm extends StatelessWidget {
   }
 }
 
-final class _ValueRow extends StatelessWidget {
-  const _ValueRow({
-    super.key,
+/// Shared with [_MaterialRow] so the popup anchors to the value pill.
+final GlobalKey _materialPillKey = GlobalKey();
+
+final class _MaterialRow extends StatelessWidget {
+  const _MaterialRow({
+    required this.material,
     required this.label,
-    required this.value,
     required this.onTap,
   });
 
+  final MaterialType? material;
   final String label;
-  final String value;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 100,
+      height: 86,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 24),
+        child: Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Material Type',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+            SizedBox(
+              key: _materialPillKey,
+              width: 300,
+              height: 72,
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(36),
+                clipBehavior: Clip.antiAlias,
+                child: Ink.image(
+                  image: const AssetImage(
+                    ProcessModeAssets.engineerDataValueBackground,
+                  ),
+                  fit: BoxFit.fill,
+                  child: InkWell(
+                    onTap: () {
+                      CyberClickSoundRegistry.playClick();
+                      onTap();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          if (material != null)
+                            Image.asset(
+                              ProcessModeAssets.materialIcon(material!),
+                              width: 40,
+                              height: 20,
+                              fit: BoxFit.contain,
+                            )
+                          else
+                            const SizedBox(width: 40, height: 20),
+                          Expanded(
+                            child: Text(
+                              label,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                          Image.asset(
+                            ProcessModeAssets.selectDownWhiteArrow,
+                            width: 18,
+                            height: 10,
+                            fit: BoxFit.contain,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _ValueRow extends StatelessWidget {
+  const _ValueRow({
+    super.key,
+    required this.presentation,
+    required this.value,
+    required this.onTap,
+  });
+
+  final EngineerParameterPresentation presentation;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final suffix = presentation.suffix;
+    return SizedBox(
+      height: 86,
       child: Padding(
         padding: const EdgeInsets.only(left: 24),
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                ),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      presentation.label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                  if (suffix != null) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      suffix,
+                      style: TextStyle(
+                        color: presentation.suffixColor ?? Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             SizedBox(
@@ -223,7 +341,7 @@ final class _ValueRow extends StatelessWidget {
                 clipBehavior: Clip.antiAlias,
                 child: Ink.image(
                   image: const AssetImage(
-                    'assets/process/engineer_data_value_background.webp',
+                    ProcessModeAssets.engineerDataValueBackground,
                   ),
                   fit: BoxFit.fill,
                   child: InkWell(
@@ -237,7 +355,7 @@ final class _ValueRow extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.w400,
                         ),
                       ),

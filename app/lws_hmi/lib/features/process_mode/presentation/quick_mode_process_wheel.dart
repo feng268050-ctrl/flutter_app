@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/features/process_mode/presentation/quick_mode_offset_wheel.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 
 /// Quick Mode process-type offset wheel (lws-ui `wheel_view` + accent bands).
 ///
-/// U2 skeleton: selection + chrome only; does not read the process library.
-final class QuickModeProcessWheel extends StatefulWidget {
+/// Selection bands stay fixed at page center; labels scroll / tap-to-position.
+final class QuickModeProcessWheel extends StatelessWidget {
   const QuickModeProcessWheel({
     super.key,
     required this.processType,
@@ -17,60 +18,14 @@ final class QuickModeProcessWheel extends StatefulWidget {
   final ValueChanged<ProcessType> onChanged;
 
   @override
-  State<QuickModeProcessWheel> createState() => _QuickModeProcessWheelState();
-}
-
-final class _QuickModeProcessWheelState extends State<QuickModeProcessWheel> {
-  late final FixedExtentScrollController _controller;
-  late int _index;
-
-  @override
-  void initState() {
-    super.initState();
-    _index = QuickProcessWheelItems.types.indexOf(widget.processType);
-    if (_index < 0) {
-      _index = 0;
-    }
-    _controller = FixedExtentScrollController(initialItem: _index);
-  }
-
-  @override
-  void didUpdateWidget(covariant QuickModeProcessWheel oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.processType == widget.processType) {
-      return;
-    }
-    final next = QuickProcessWheelItems.types.indexOf(widget.processType);
-    if (next < 0 || next == _index) {
-      return;
-    }
-    _index = next;
-    if (_controller.hasClients) {
-      _controller.jumpToItem(next);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _select(int index) {
-    if (index < 0 || index >= QuickProcessWheelItems.types.length) {
-      return;
-    }
-    if (index == _index) {
-      return;
-    }
-    setState(() => _index = index);
-    widget.onChanged(QuickProcessWheelItems.types[index]);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final accent = ProcessModeTokens.accentFor(widget.processType);
-    final hideSideAccent = widget.processType == ProcessType.cncCutting;
+    final accent = ProcessModeTokens.accentFor(processType);
+    final hideSideAccent = processType == ProcessType.cncCutting;
+    final selectedIndex =
+        QuickProcessWheelItems.types.indexOf(processType).clamp(
+              0,
+              QuickProcessWheelItems.types.length - 1,
+            );
 
     return SizedBox.expand(
       child: Stack(
@@ -109,55 +64,47 @@ final class _QuickModeProcessWheelState extends State<QuickModeProcessWheel> {
             child: Align(
               alignment: Alignment.centerLeft,
               child: SizedBox(
+                key: const ValueKey('quick-mode-process-wheel'),
                 width: ProcessModeDimens.wheelWidth,
                 height: ProcessModeDimens.wheelHeight,
-                child: KeyedSubtree(
-                  key: const ValueKey('quick-mode-process-wheel'),
-                  child: ListWheelScrollView.useDelegate(
-                    controller: _controller,
-                    itemExtent: ProcessModeDimens.wheelItemHeight,
-                    diameterRatio: 5,
-                    perspective: 0.002,
-                    offAxisFraction: -0.35,
-                    physics: const FixedExtentScrollPhysics(),
-                    onSelectedItemChanged: _select,
-                    childDelegate: ListWheelChildBuilderDelegate(
-                      childCount: QuickProcessWheelItems.types.length,
-                      builder: (context, index) {
-                        final type = QuickProcessWheelItems.types[index];
-                        final selected = index == _index;
-                        final distance = (index - _index).abs();
-                        final alpha = selected
-                            ? 1.0
-                            : (1.0 - distance * 0.2).clamp(0.4, 1.0);
-                        final startPad = ProcessModeDimens
-                                .wheelSelectedPadding +
-                            distance * ProcessModeDimens.wheelDistancePadding;
-                        return Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(
-                            padding:
-                                EdgeInsetsDirectional.only(start: startPad),
-                            child: Text(
-                              ProcessModeLabels.wheelLabel(type),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(alpha),
-                                fontSize: selected
-                                    ? ProcessModeDimens.wheelSelectedTextSize
-                                    : ProcessModeDimens.wheelUnselectedTextSize,
-                                fontWeight: selected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                                height: 1.1,
-                              ),
-                            ),
+                child: QuickModeOffsetWheel(
+                  itemCount: QuickProcessWheelItems.types.length,
+                  selectedIndex: selectedIndex,
+                  itemExtent: ProcessModeDimens.wheelItemHeight,
+                  diameterRatio: 5,
+                  perspective: 0.002,
+                  offAxisFraction: -0.35,
+                  onChanged: (index) =>
+                      onChanged(QuickProcessWheelItems.types[index]),
+                  itemBuilder: (context, index, distance) {
+                    final type = QuickProcessWheelItems.types[index];
+                    final selected = distance < 0.5;
+                    final alpha = selected
+                        ? 1.0
+                        : (1.0 - distance * 0.2).clamp(0.4, 1.0);
+                    final startPad = ProcessModeDimens.wheelSelectedPadding +
+                        distance * ProcessModeDimens.wheelDistancePadding;
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: EdgeInsetsDirectional.only(start: startPad),
+                        child: Text(
+                          ProcessModeLabels.wheelLabel(type),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(alpha),
+                            fontSize: selected
+                                ? ProcessModeDimens.wheelSelectedTextSize
+                                : ProcessModeDimens.wheelUnselectedTextSize,
+                            fontWeight:
+                                selected ? FontWeight.w600 : FontWeight.w400,
+                            height: 1.1,
                           ),
-                        );
-                      },
-                    ),
-                  ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

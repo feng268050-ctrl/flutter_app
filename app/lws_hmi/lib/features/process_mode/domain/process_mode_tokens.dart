@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
@@ -106,13 +108,23 @@ abstract final class ProcessModeDimens {
   static const double wheelSelectedPadding = 24 * quickSelectorScale;
   static const double wheelDistancePadding = 10 * quickSelectorScale;
 
-  /// Center laser dashboard: lws-ui `laser_progress.xml` at 2/3 scale.
+  /// Center laser dashboard design canvas from lws-ui `laser_progress.xml`.
   ///
-  /// Progress rings keep the Android ratios; pressure panel and decorative
-  /// outline are sized to hug those rings rather than the original image
-  /// margins (which leave gaps once scaled).
+  /// Android lays the Quick screen out at 1280×800dp. Flutter-pi reports a
+  /// smaller logical viewport for the same panel, so dashboard geometry must
+  /// be derived from the viewport rather than copied as fixed logical pixels.
+  static const double dashboardDesignSize = 570;
+
+  static double dashboardScaleFor(Size viewport) {
+    final widthScale = viewport.width / designWidth;
+    final heightScale = viewport.height / designHeight;
+    return math.min(1.0, math.min(widthScale, heightScale));
+  }
+
+  /// Quick-mode picker placement remains on its existing 2/3 design grid.
+  /// The dashboard itself uses [dashboardScaleFor] at runtime.
   static const double dashboardScale = 2 / 3;
-  static const double dashboardSize = 570 * dashboardScale;
+  static const double dashboardSize = dashboardDesignSize * dashboardScale;
   static const double dashboardOuterRing = 570 * dashboardScale;
   static const double dashboardOuterStroke = 38 * dashboardScale;
   static const double dashboardLineStroke = 6 * dashboardScale;
@@ -157,37 +169,54 @@ abstract final class ProcessModeDimens {
   static const double dashboardButtonIconSize = 18 * dashboardScale;
   static const double dashboardButtonIconGap = 4 * dashboardScale;
 
-  /// Laser Enable sits in the dashboard lower opening, flush to the page bottom.
-  static const double quickLaserButtonWidth = 360;
-  static const double quickLaserButtonHeight = 150;
-  static const double quickLaserButtonIconSize = 44;
-  static const double quickLaserButtonLabelSize = 30;
+  /// `fragment_general_operations.xml` LaserButtonLinearLayout design bounds.
+  /// Runtime size uses the same 1280×800 scale as the center dashboard.
+  static const double quickLaserButtonWidth = 564;
+  static const double quickLaserButtonHeight = 223;
+  static const double quickLaserButtonIconSize = 67;
+  static const double quickLaserButtonLabelSize = 45;
+
+  /// Trapezoid clip inside the laser button (matches `_QuickLaserTrapezoid`).
+  static const double quickLaserTrapezoidTopWidthRatio = 0.5;
+  static const double quickLaserTrapezoidBottomWidthRatio = 0.93;
+  static const double quickLaserTrapezoidHeightRatio = 0.8;
+
   /// Side ops (Manual Gas / Auto Wire / Feed / Retract) — lws-ui styles.
   static const double quickSideButtonWidth = 264;
   static const double quickSideButtonInset = 30;
   static const double quickSideButtonBottom = 35.5;
-  static const double quickSideOpIconSize = 24 * 2 / 3;
-  static const double quickSideOpLabelSize = 27 * 2 / 3;
-  static const double quickSideOpIconGap = 6 * 2 / 3;
+  static const double quickSideOpIconSize = 24;
+  static const double quickSideOpLabelSize = 27;
+  static const double quickSideOpIconGap = 6;
   static const double quickSideOpVerticalPadding = 12;
   static const double quickSideOpDividerHeight = 8;
   static const double quickSideOpGapAboveDivider = 27;
   static const double quickSideOpGapBelowDivider = 15;
 
-  /// Lift mode / material together (design canvas px). Gear/thickness stay
-  /// locked to the laser-arc center via [pickerScaleCenterOffsetY].
+  /// Thin bright ring radius (lws-ui outer highlight), same formula as
+  /// `_LaserDashboardMetrics.outerHighlightRadius`.
+  static double outerHighlightRadiusFor(Size viewport) {
+    final s = dashboardScaleFor(viewport);
+    return (dashboardDesignSize / 2) * s -
+        (38 * s) / 2 -
+        (6 * s) / 2; // 263 * s
+  }
+
+  /// Lift mode / material / gear / thickness together (design canvas px).
   static const double quickSelectorNudgeY = -25;
 
   /// Gear/Thickness: toStartOf/toEndOf dashboard + overlap + translation.
   static const double pickerWidth = 280 * quickSelectorScale;
   static const double pickerCenterOverlap = 150 * quickSelectorScale;
-  static const double pickerHorizontalOffset = 60 * quickSelectorScale;
+  /// Smaller than lws-ui 60dp so gear/thickness sit further outward.
+  static const double pickerHorizontalOffset = 20 * quickSelectorScale;
 
-  /// lws-ui `translationY="-8dp"` on gear/thickness pickers.
+  /// lws-ui `translationY="-8dp"` on gear/thickness pickers — omitted from
+  /// page Y so the selected value / accent shares mode & material midline.
   static const double pickerVerticalOffset = -8 * quickSelectorScale;
 
   /// Shift so the scale / selected-row center (not the Column midpoint) sits on
-  /// the Align(center) point — matching the laser-arc circle center.
+  /// the Align(center) point — matching mode/material selection height.
   static double get pickerScaleCenterOffsetY {
     const title = 48 * quickSelectorScale;
     const gap = 24 * quickSelectorScale;
@@ -197,6 +226,10 @@ abstract final class ProcessModeDimens {
     const scaleCenterFromTop = title + gap + scaleH / 2;
     return total / 2 - scaleCenterFromTop;
   }
+
+  /// Page Y for gear/thickness (accent + value on mode/material midline).
+  static double get pickerVerticalFromPageCenter =>
+      pickerScaleCenterOffsetY + quickSelectorNudgeY;
 
   static const double materialVerticalOffset =
       -2 * quickSelectorScale + quickSelectorNudgeY;
@@ -216,14 +249,16 @@ abstract final class ProcessModeDimens {
   static const double engineerTabUnderlineHeight = 1.5;
   static const double engineerTabUnderlineInset = 18;
 
-  /// Enlarged for the 1280×800 touch panel; the old Android tabs used 12sp.
-  static const double engineerTabLabelSize = 16;
+  /// Enlarged for the 1280×800 touch panel (lws-ui tabs used 12sp).
+  static const double engineerTabLabelSize = 20;
 
   /// Left device panel — lws-ui `engineer_welding_left_panel_width`.
   static const double engineerLeftPanelWidth = 460;
 
-  /// Flex weights matching lws-ui engineer_tab.xml (5 tabs; CNC is Quick-only).
-  static const List<int> engineerTabWeights = [306, 226, 298, 300, 150];
+  /// Flex weights for five engineer tabs (sum 1280, same as lws-ui `weightSum`).
+  /// Cutting widened vs original Android art; the five `*_tab_bg` assets were
+  /// remeshed to these ratios so painted frames match hit targets.
+  static const List<int> engineerTabWeights = [290, 214, 282, 284, 210];
 }
 
 /// Display strings aligned with lws-ui [ModelConstant] English labels.

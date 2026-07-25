@@ -92,7 +92,7 @@ quick → `engineer_preset` 中位数派生已在工艺库切片落地（见 `do
 | 字段可见性 | `EngineerParameterVisibility`（按工艺类型过滤 catalog keys） |
 | 左栏 | `EngineerDevicePanel`（Manual Gas / Wire stub / Enable Laser） |
 | 表单 | `EngineerParameterForm`（可点 value pill + CyberIME） |
-| 收藏列表 | `showEngineerPresetPickerSheet` |
+| 收藏列表 | `showEngineerFavoritesPopup` |
 | 操作 | Copy / Save / Delete / Reset / Apply |
 | 内置编辑 | 点参数值 → 内存 user 草稿；Save 才落库 |
 | 测试 | `engineer_mode_draft_test.dart`、`engineer_mode_page_test.dart` |

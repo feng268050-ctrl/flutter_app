@@ -366,6 +366,9 @@ final class _QuickModePageState extends State<QuickModePage> {
     final dimensionIndex = selection == null || selection.dimension == null
         ? 0
         : selection.dimensions.indexOf(selection.dimension!);
+    final highlightR = ProcessModeDimens.outerHighlightRadiusFor(
+      MediaQuery.sizeOf(context),
+    );
 
     return Scaffold(
       backgroundColor: ProcessModeTokens.quickRootBackground,
@@ -374,7 +377,9 @@ final class _QuickModePageState extends State<QuickModePage> {
         processType: _processType,
       ),
       body: ColoredBox(
-        color: ProcessModeTokens.background,
+        // lws-ui activity_quick_mode root is #FF0A0B0C; Engineer uses the
+        // bluer shared background token, but Quick mode does not.
+        color: ProcessModeTokens.quickRootBackground,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -421,14 +426,15 @@ final class _QuickModePageState extends State<QuickModePage> {
                     laserOn: false,
                   ),
                 ),
-              // Gear: toStartOf dashboard + -150 overlap + (+60, -8).
+              // Gear / thickness: value-wheel center = accent midline (ring-hug).
               Align(
                 alignment: Alignment.center,
                 child: Transform.translate(
                   offset: Offset(
-                    ProcessModeDimens.pickerCenterFromPageCenter,
-                    ProcessModeDimens.pickerVerticalOffset +
-                        ProcessModeDimens.pickerScaleCenterOffsetY,
+                    QuickModePickerDimens.gearPickCenterFromPageCenter(
+                      highlightR,
+                    ),
+                    ProcessModeDimens.pickerVerticalFromPageCenter,
                   ),
                   child: QuickModeGearPick(
                     processType: _processType,
@@ -438,14 +444,14 @@ final class _QuickModePageState extends State<QuickModePage> {
                   ),
                 ),
               ),
-              // Thickness: mirrored to the right of dashboard.
               Align(
                 alignment: Alignment.center,
                 child: Transform.translate(
                   offset: Offset(
-                    -ProcessModeDimens.pickerCenterFromPageCenter,
-                    ProcessModeDimens.pickerVerticalOffset +
-                        ProcessModeDimens.pickerScaleCenterOffsetY,
+                    QuickModePickerDimens.thicknessPickCenterFromPageCenter(
+                      highlightR,
+                    ),
+                    ProcessModeDimens.pickerVerticalFromPageCenter,
                   ),
                   child: QuickModeDimensionPick(
                     processType: _processType,
@@ -498,7 +504,10 @@ final class _QuickModePageState extends State<QuickModePage> {
                   ),
                 ),
               ),
-            if (_statusMessage != null)
+            // Keep operator safety feedback visible, but do not expose the
+            // internal process-library baseline-read failure in Quick mode.
+            if (_statusMessage != null &&
+                _statusMessage != 'Baseline read failed')
               Positioned(
                 left: 40,
                 bottom: 24,

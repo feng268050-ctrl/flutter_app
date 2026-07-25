@@ -35,12 +35,39 @@ void main() {
       tester.getSize(
         find.byKey(const ValueKey('quick-mode-laser-dashboard')),
       ),
-      const Size(
-        ProcessModeDimens.dashboardSize,
-        ProcessModeDimens.dashboardSize,
-      ),
+      const Size(356.25, 377.1875),
     );
-    expect(ProcessModeDimens.dashboardSize, 380);
+    expect(
+      ProcessModeDimens.dashboardScaleFor(const Size(800, 600)),
+      0.625,
+    );
+
+    // Digit centered on the pressure circle.
+    final dash = tester.getCenter(
+      find.byKey(const ValueKey('quick-mode-laser-dashboard')),
+    );
+    final value = tester.getCenter(
+      find.byKey(const ValueKey('quick-mode-gas-pressure')),
+    );
+    expect(value.dx, closeTo(dash.dx, 1));
+    expect(value.dy, closeTo(dash.dy, 2));
+
+    final scale = ProcessModeDimens.dashboardScaleFor(const Size(800, 600));
+
+    // Gas Pressure restored to original Column top slot (contentTop from panel).
+    final titleTop = tester.getTopLeft(find.text('Gas Pressure')).dy;
+    final expectedTitleTop = dash.dy - (372 * scale) / 2 + (50 * scale);
+    expect(titleTop, closeTo(expectedTitleTop, 4));
+
+    // More Status: original intrinsic size (not stretched to trapezoid width).
+    final more = tester.getSize(
+      find.byKey(const ValueKey('quick-mode-more-status')),
+    );
+    expect(more.width, lessThan(180));
+    expect(
+      tester.getCenter(find.byKey(const ValueKey('quick-mode-more-status'))).dx,
+      closeTo(dash.dx, 1),
+    );
   });
 
   testWidgets('laserOn / laserOff drive climb and fall without crash',

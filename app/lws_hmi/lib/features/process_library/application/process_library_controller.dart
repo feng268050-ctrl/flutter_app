@@ -94,6 +94,42 @@ final class ProcessLibraryController extends ChangeNotifier {
     );
   }
 
+  /// Engineer “Save as Favorite”: upsert user row by processType + name (lws-ui).
+  Future<ProcessPreset> saveAsFavorite(
+    ProcessPreset source, {
+    required String name,
+  }) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Favorite name cannot be empty');
+    }
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    ProcessPreset? existing;
+    for (final preset in _presets) {
+      if (!preset.isBuiltin &&
+          preset.kind == ProcessPresetKind.user &&
+          preset.processType == source.processType &&
+          preset.name == trimmed) {
+        existing = preset;
+        break;
+      }
+    }
+    if (existing != null) {
+      return saveUser(
+        existing.copyWith(
+          name: trimmed,
+          materialType: source.materialType,
+          materialName: source.materialName,
+          thickness: source.thickness,
+          gear: source.gear,
+          parameters: source.parameters,
+          updatedAtMs: now,
+        ),
+      );
+    }
+    return copyAsUser(source, name: trimmed);
+  }
+
   Future<void> deleteUser(ProcessPreset preset) async {
     if (preset.kind != ProcessPresetKind.user || preset.isBuiltin) {
       throw StateError('Built-in process presets are read-only');

@@ -135,21 +135,83 @@ void main() {
     expect(
       gearCenter.dy,
       closeTo(
-        dashboardCenter.dy +
-            ProcessModeDimens.pickerVerticalOffset +
-            ProcessModeDimens.pickerScaleCenterOffsetY,
+        dashboardCenter.dy + ProcessModeDimens.pickerVerticalFromPageCenter,
         1,
       ),
     );
     expect(
       dimensionCenter.dy,
       closeTo(
-        dashboardCenter.dy +
-            ProcessModeDimens.pickerVerticalOffset +
-            ProcessModeDimens.pickerScaleCenterOffsetY,
+        dashboardCenter.dy + ProcessModeDimens.pickerVerticalFromPageCenter,
         1,
       ),
     );
+    // Local accent chips are centered on the value-wheel viewport (selected digit).
+    final accents = find.byKey(const ValueKey('quick-mode-value-pick-accent'));
+    expect(accents, findsNWidgets(2));
+    final gearAccent = tester.getCenter(accents.at(0));
+    final thicknessAccent = tester.getCenter(accents.at(1));
+    expect(gearAccent.dy, closeTo(modeCenter.dy, 3));
+    expect(thicknessAccent.dy, closeTo(modeCenter.dy, 3));
+    // Pick placement tracks accent / value slot vs thin bright ring.
+    final dashboardSize = tester.getSize(
+      find.byKey(const ValueKey('quick-mode-laser-dashboard')),
+    );
+    final dashScale =
+        dashboardSize.width / ProcessModeDimens.dashboardDesignSize;
+    final liveHighlightR = dashboardSize.width / 2 -
+        (38 * dashScale) / 2 -
+        (6 * dashScale) / 2;
+    expect(
+      gearCenter.dx,
+      closeTo(
+        dashboardCenter.dx +
+            QuickModePickerDimens.gearPickCenterFromPageCenter(liveHighlightR),
+        4,
+      ),
+    );
+    expect(
+      dimensionCenter.dx,
+      closeTo(
+        dashboardCenter.dx +
+            QuickModePickerDimens.thicknessPickCenterFromPageCenter(
+              liveHighlightR,
+            ),
+        4,
+      ),
+    );
+    // Accent midline sits on the value-wheel center (same X as pick math).
+    final gearValueX = dashboardCenter.dx +
+        QuickModePickerDimens.gearValueCenterFromPageCenter(liveHighlightR);
+    expect(gearAccent.dx, closeTo(gearValueX, 4));
+  });
+
+  testWidgets('tap switches gear thickness material and mode', (tester) async {
+    await setDesignSurface(tester);
+    final controller = await seedController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProcessLibraryScope(
+          controller: controller,
+          child: const QuickModePage(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    final gear = find.byKey(const ValueKey('quick-mode-gear-pick'));
+    await tester.drag(gear, Offset(0, -QuickModePickerDimens.itemHeight));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final material = find.byKey(const ValueKey('quick-mode-material-wheel'));
+    await tester.drag(material, Offset(0, -QuickModePickerDimens.itemHeight));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Carbon Steel'), findsWidgets);
+
+    await tester.tap(find.text('Spot Welding', skipOffstage: false));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Spot Welding'), findsWidgets);
   });
 
   testWidgets('More Parameters navigates with draft uuid', (tester) async {

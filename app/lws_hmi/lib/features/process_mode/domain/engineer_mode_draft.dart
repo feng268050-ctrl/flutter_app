@@ -1,6 +1,10 @@
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 
-/// In-memory engineer workspace draft (not persisted until Save).
+/// In-memory engineer workspace draft.
+///
+/// Matches lws-ui: field edits live in a per-process-type session (not Room).
+/// [Save as Favorite] is the intentional DB write; Reset restores baseline /
+/// built-in default for the active type.
 final class EngineerModeDraft {
   const EngineerModeDraft({
     required this.preset,
@@ -22,9 +26,6 @@ final class EngineerModeDraft {
   final bool fromQuickHandoff;
 
   bool get isReadOnly => preset.isBuiltin;
-
-  bool get canDelete =>
-      !preset.isBuiltin && preset.kind == ProcessPresetKind.user && !unsaved;
 
   bool get isDirty {
     if (unsaved) {

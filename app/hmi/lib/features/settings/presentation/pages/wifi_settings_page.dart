@@ -5,11 +5,12 @@ import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/settings/presentation/pages/wifi_details_page.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
-/// Wireless Network — lws-ui / phone Settings style (not Demo forms).
+/// Wireless Network — lws-ui WifiActivity parity (switch + connected + scan list).
 class WifiSettingsPage extends StatefulWidget {
   const WifiSettingsPage({super.key, required this.services});
 
@@ -20,11 +21,15 @@ class WifiSettingsPage extends StatefulWidget {
 }
 
 class _WifiSettingsPageState extends State<WifiSettingsPage> {
+  /// Matches lws-ui `WifiActivity.SCAN_INTERVAL` (150s).
+  static const _scanInterval = Duration(milliseconds: 150000);
+
   late WifiRadioState _radio = widget.services.wifi.currentRadio;
   late WifiConnectionState _conn = widget.services.wifi.currentConnection;
   List<WifiAccessPoint> _scanned = const [];
   String? _busy;
   String? _error;
+  Timer? _scanTimer;
 
   StreamSubscription<WifiRadioState>? _radioSub;
   StreamSubscription<WifiConnectionState>? _connSub;
@@ -35,23 +40,37 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
   void initState() {
     super.initState();
     _radioSub = _wifi.radio.listen((s) {
-      if (mounted) setState(() => _radio = s);
+      if (!mounted) return;
+      setState(() => _radio = s);
+      _syncScanTimer();
     });
     _connSub = _wifi.connection.listen((c) {
       if (mounted) setState(() => _conn = c);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_radio == WifiRadioState.on) {
-        unawaited(_scan());
-      }
+      _syncScanTimer();
+      if (_radioOn) unawaited(_scan());
     });
   }
 
   @override
   void dispose() {
+    _scanTimer?.cancel();
     unawaited(_radioSub?.cancel() ?? Future<void>.value());
     unawaited(_connSub?.cancel() ?? Future<void>.value());
     super.dispose();
+  }
+
+  bool get _radioOn =>
+      _radio == WifiRadioState.on || _radio == WifiRadioState.starting;
+
+  void _syncScanTimer() {
+    _scanTimer?.cancel();
+    _scanTimer = null;
+    if (!_radioOn) return;
+    _scanTimer = Timer.periodic(_scanInterval, (_) {
+      if (mounted && _busy == null) unawaited(_scan());
+    });
   }
 
   Future<void> _guard(Future<void> Function() fn) async {
@@ -77,26 +96,51 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
 
   List<WifiAccessPoint> get _available => WifiApList.available(
         scanned: _scanned,
-        connectedSsid: _radio == WifiRadioState.on && _conn.isAssociated
-            ? _conn.ssid
-            : null,
+        connectedSsid: _radioOn && _conn.isAssociated ? _conn.ssid : null,
       );
 
+  IconData _signalIcon(int? dbm) {
+    final s = dbm ?? -100;
+    if (s >= -55) return Icons.wifi;
+    if (s >= -70) return Icons.wifi_2_bar;
+    return Icons.wifi_1_bar;
+  }
+
+  bool _connSecured() {
+    final s = _conn.security;
+    if (s == null || s.isEmpty) return true;
+    final u = s.toUpperCase();
+    if (u.contains('OPEN') || u == 'NONE') return false;
+    return true;
+  }
+
+  Future<void> _openDetails() async {
+    await pushSettingsPage(
+      context,
+      WifiDetailsPage(services: widget.services),
+    );
+  }
+
   Future<void> _connectAp(WifiAccessPoint ap) async {
+    if (_conn.isAssociated && _conn.ssid == ap.ssid) {
+      await _openDetails();
+      return;
+    }
     if (ap.isOpen) {
       await _connectWithProgress(ssid: ap.ssid, psk: null);
       return;
     }
+    final l10n = AppLocalizations.of(context)!;
     final psk = await showCyberImeInputDialog(
       context: context,
       title: ap.ssid,
       fieldType: CyberImeFieldType.wifi,
-      label: 'Password',
-      hint: 'Enter password',
+      label: l10n.wifiDialogPasswordLabel,
+      hint: l10n.wifiDialogPasswordLabel,
       obscureText: true,
-      confirmLabel: 'Join',
+      confirmLabel: l10n.confirmText,
       requireNonEmpty: true,
-      emptyErrorText: 'Password required',
+      emptyErrorText: l10n.wifiToastPasswordRequired,
     );
     if (psk == null || !mounted) return;
     await _connectWithProgress(ssid: ap.ssid, psk: psk);
@@ -112,7 +156,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
     try {
       await showCyberBusyDialog<void>(
         context: context,
-        title: 'Connecting…',
+        title: AppLocalizations.of(context)!.wifiStatusConnecting,
         work: () async {
           await _wifi.connect(
             ssid: ssid,
@@ -128,26 +172,27 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
   }
 
   Future<void> _joinHidden() async {
+    final l10n = AppLocalizations.of(context)!;
     final ssidCtrl = TextEditingController();
     final pskCtrl = TextEditingController();
     final ime = CyberImeSession.shared;
     final ok = await showCyberImeFormDialog(
       context: context,
-      title: 'Other Network',
-      confirmLabel: 'Join',
+      title: l10n.wifiHiddenNetworkTitle,
+      confirmLabel: l10n.confirmText,
       session: ime,
       fields: [
         CyberImeTextField(
           fieldType: CyberImeFieldType.text,
           controller: ssidCtrl,
           session: ime,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            labelStyle: TextStyle(color: CyberColors.textSecondary),
-            enabledBorder: UnderlineInputBorder(
+          decoration: InputDecoration(
+            labelText: l10n.wifiDialogSsidLabel,
+            labelStyle: const TextStyle(color: CyberColors.textSecondary),
+            enabledBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: CyberColors.textSecondary),
             ),
-            focusedBorder: UnderlineInputBorder(
+            focusedBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: CyberColors.textPrimary),
             ),
           ),
@@ -158,13 +203,13 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
           controller: pskCtrl,
           obscureText: true,
           session: ime,
-          decoration: const InputDecoration(
-            labelText: 'Password',
-            labelStyle: TextStyle(color: CyberColors.textSecondary),
-            enabledBorder: UnderlineInputBorder(
+          decoration: InputDecoration(
+            labelText: l10n.wifiDialogPasswordLabel,
+            labelStyle: const TextStyle(color: CyberColors.textSecondary),
+            enabledBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: CyberColors.textSecondary),
             ),
-            focusedBorder: UnderlineInputBorder(
+            focusedBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: CyberColors.textPrimary),
             ),
           ),
@@ -192,152 +237,211 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final radioOn = _radio == WifiRadioState.on ||
-        _radio == WifiRadioState.starting;
-    final connected = _conn.isAssociated &&
-        _conn.ssid != null &&
-        _conn.ssid!.isNotEmpty;
+    final connected =
+        _conn.isAssociated && _conn.ssid != null && _conn.ssid!.isNotEmpty;
+    final nearby = _available.take(20).toList();
 
     return SettingsScaffold(
       title: l10n.wirelessNetworkText,
-      body: SettingsScrollView(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SettingsSectionHeader(l10n.wifiWlanLabel),
+          // Switch + connected — lws-ui `top-left-bottom-right`
           SettingsGroup(
+            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             children: [
               SettingsSwitchRow(
-                title: l10n.wifiNetworkText,
-                value: radioOn,
+                title: l10n.wifiWlanLabel,
+                value: _radioOn,
                 onChanged: _busy != null
                     ? null
                     : (v) => unawaited(
-                          _guard(() => _wifi.setRadioEnabled(v)),
+                          _guard(() async {
+                            await _wifi.setRadioEnabled(v);
+                            if (v) await _scan();
+                          }),
                         ),
               ),
               if (connected)
-                SettingsNavRow(
-                  title: _conn.ssid!,
-                  value: _conn.ipv4 ?? l10n.connectedText,
-                  onTap: () async {
-                    await showModalBottomSheet<void>(
-                      context: context,
-                      builder: (ctx) => SafeArea(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                _conn.ssid!,
-                                style: Theme.of(ctx).textTheme.titleLarge,
-                              ),
-                              if (_conn.ipv4 != null)
-                                Text('IP ${_conn.ipv4}'),
-                              const SizedBox(height: 16),
-                              FilledButton(
-                                onPressed: () {
-                                  CyberClickSoundRegistry.playClick();
-                                  Navigator.pop(ctx);
-                                  unawaited(_guard(_wifi.disconnect));
-                                },
-                                child: const Text('Disconnect'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  CyberClickSoundRegistry.playClick();
-                                  Navigator.pop(ctx);
-                                  unawaited(
-                                    _guard(() => _wifi.forget(_conn.ssid!)),
-                                  );
-                                },
-                                child: Text(l10n.wifiForgetNetwork),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+                _WifiNetworkRow(
+                  ssid: _conn.ssid!,
+                  secured: _connSecured(),
+                  showConnectedBadge: true,
+                  signalIcon: _signalIcon(_conn.signalDbm),
+                  onTap: () => unawaited(_openDetails()),
                 )
-              else if (radioOn)
-                ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  title: Text(l10n.notConnected),
+              else if (_radioOn)
+                SettingsValueRow(
+                  title: l10n.notConnected,
+                  value: null,
                 ),
             ],
           ),
           if (_error != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: Text(
                 _error!,
                 style: const TextStyle(color: Colors.redAccent),
               ),
             ),
-          if (radioOn) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Row(
-                children: [
-                  Text(
-                    'NETWORKS',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Colors.white70,
-                          letterSpacing: 0.6,
-                        ),
-                  ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: _busy != null
-                        ? null
-                        : () {
-                            CyberClickSoundRegistry.playClick();
-                            unawaited(_scan());
-                          },
-                    child: const Text('Scan'),
-                  ),
-                ],
-              ),
-            ),
-            SettingsGroup(
-              children: [
-                if (_available.isEmpty)
-                  const ListTile(
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    title: Text('No networks found'),
-                  )
-                else
-                  for (final ap in _available.take(20))
-                    SettingsNavRow(
-                      title: ap.ssid,
-                      value: '${ap.signalDbm ?? '—'} dBm',
-                      leading: Icon(
-                        (ap.signalDbm ?? -100) > -60
-                            ? Icons.wifi
-                            : Icons.wifi_2_bar,
-                      ),
-                      onTap: _busy != null ? null : () => _connectAp(ap),
+          if (_radioOn) ...[
+            // Scan list card (lws-ui weight=1 FrostCard + RecyclerView)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  SettingsDimens.inset,
+                  0,
+                  SettingsDimens.inset,
+                  SettingsDimens.inset,
+                ),
+                child: SettingsPanel(
+                  borderGradientCenter:
+                      CyberBorderGradientCenter.bottomLeftTopRight,
+                  child: ListView(
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
                     ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: OutlinedButton(
-                onPressed: _busy != null
-                    ? null
-                    : () {
-                        CyberClickSoundRegistry.playClick();
-                        unawaited(_joinHidden());
-                      },
-                child: const Text('Other…'),
+                    children: [
+                        if (_busy != null && nearby.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 16,
+                            ),
+                            child: Text(
+                              'Scanning…',
+                              style: TextStyle(
+                                color: CyberColors.textPrimary,
+                                fontSize: 18,
+                              ),
+                            ),
+                          )
+                        else if (nearby.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 16,
+                            ),
+                            child: Text(
+                              'No networks found',
+                              style: TextStyle(
+                                color: CyberColors.textPrimary,
+                                fontSize: 18,
+                              ),
+                            ),
+                          )
+                        else
+                          for (var i = 0; i < nearby.length; i++) ...[
+                            _WifiNetworkRow(
+                              ssid: nearby[i].ssid,
+                              secured: !nearby[i].isOpen,
+                              showConnectedBadge: false,
+                              signalIcon: _signalIcon(nearby[i].signalDbm),
+                              onTap: _busy != null
+                                  ? null
+                                  : () => unawaited(_connectAp(nearby[i])),
+                            ),
+                            if (i < nearby.length - 1)
+                              const Divider(
+                                height: 1,
+                                indent: 20,
+                                endIndent: 20,
+                                color: CyberColors.dividerCenter,
+                              ),
+                          ],
+                    ],
+                  ),
+                ),
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                SettingsDimens.inset,
+                0,
+                SettingsDimens.inset,
+                SettingsDimens.inset,
+              ),
+              child: Center(
+                child: CyberButton(
+                  onPressed:
+                      _busy != null ? null : () => unawaited(_joinHidden()),
+                  child: Text(l10n.wifiHiddenNetworkConnect),
+                ),
+              ),
+            ),
+          ] else
+            const Spacer(),
+        ],
+      ),
+    );
+  }
+}
+
+/// lws-ui `include_wifi_network_row`: SSID · optional connected badge ·
+/// lock + signal on the trailing edge — no chevron.
+class _WifiNetworkRow extends StatelessWidget {
+  const _WifiNetworkRow({
+    required this.ssid,
+    required this.secured,
+    required this.showConnectedBadge,
+    required this.signalIcon,
+    this.onTap,
+  });
+
+  final String ssid;
+  final bool secured;
+  final bool showConnectedBadge;
+  final IconData signalIcon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap == null
+          ? null
+          : () {
+              CyberClickSoundRegistry.playClick();
+              onTap!();
+            },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                ssid,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: CyberColors.textPrimary,
+                ),
+              ),
+            ),
+            if (showConnectedBadge) ...[
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.check_circle,
+                size: 22,
+                color: CyberColors.buttonPrimaryAccent,
+              ),
+            ],
+            const SizedBox(width: 12),
+            if (secured) ...[
+              const Icon(
+                Icons.lock,
+                size: 20,
+                color: CyberColors.textSecondary,
+              ),
+              const SizedBox(width: 8),
+            ],
+            Icon(
+              signalIcon,
+              size: 22,
+              color: CyberColors.textPrimary,
             ),
           ],
-        ],
+        ),
       ),
     );
   }

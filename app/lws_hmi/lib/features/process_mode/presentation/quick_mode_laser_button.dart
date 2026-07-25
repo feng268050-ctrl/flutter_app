@@ -227,9 +227,12 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
 }
 
 abstract final class _QuickLaserTrapezoid {
-  static const double topWidthRatio = 0.5;
-  static const double bottomWidthRatio = 0.93;
-  static const double heightRatio = 0.8;
+  static const double topWidthRatio =
+      ProcessModeDimens.quickLaserTrapezoidTopWidthRatio;
+  static const double bottomWidthRatio =
+      ProcessModeDimens.quickLaserTrapezoidBottomWidthRatio;
+  static const double heightRatio =
+      ProcessModeDimens.quickLaserTrapezoidHeightRatio;
 
   static Path path(Size size) {
     final topY = size.height * (1 - heightRatio);

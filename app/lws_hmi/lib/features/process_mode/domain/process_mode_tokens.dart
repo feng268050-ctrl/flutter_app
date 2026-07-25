@@ -176,6 +176,11 @@ abstract final class ProcessModeDimens {
   static const double quickLaserButtonIconSize = 67;
   static const double quickLaserButtonLabelSize = 45;
 
+  /// Trapezoid clip inside the laser button (matches `_QuickLaserTrapezoid`).
+  static const double quickLaserTrapezoidTopWidthRatio = 0.5;
+  static const double quickLaserTrapezoidBottomWidthRatio = 0.93;
+  static const double quickLaserTrapezoidHeightRatio = 0.8;
+
   /// Side ops (Manual Gas / Auto Wire / Feed / Retract) — lws-ui styles.
   static const double quickSideButtonWidth = 264;
   static const double quickSideButtonInset = 30;
@@ -188,20 +193,30 @@ abstract final class ProcessModeDimens {
   static const double quickSideOpGapAboveDivider = 27;
   static const double quickSideOpGapBelowDivider = 15;
 
-  /// Lift mode / material together (design canvas px). Gear/thickness stay
-  /// locked to the laser-arc center via [pickerScaleCenterOffsetY].
+  /// Thin bright ring radius (lws-ui outer highlight), same formula as
+  /// `_LaserDashboardMetrics.outerHighlightRadius`.
+  static double outerHighlightRadiusFor(Size viewport) {
+    final s = dashboardScaleFor(viewport);
+    return (dashboardDesignSize / 2) * s -
+        (38 * s) / 2 -
+        (6 * s) / 2; // 263 * s
+  }
+
+  /// Lift mode / material / gear / thickness together (design canvas px).
   static const double quickSelectorNudgeY = -25;
 
   /// Gear/Thickness: toStartOf/toEndOf dashboard + overlap + translation.
   static const double pickerWidth = 280 * quickSelectorScale;
   static const double pickerCenterOverlap = 150 * quickSelectorScale;
-  static const double pickerHorizontalOffset = 60 * quickSelectorScale;
+  /// Smaller than lws-ui 60dp so gear/thickness sit further outward.
+  static const double pickerHorizontalOffset = 20 * quickSelectorScale;
 
-  /// lws-ui `translationY="-8dp"` on gear/thickness pickers.
+  /// lws-ui `translationY="-8dp"` on gear/thickness pickers — omitted from
+  /// page Y so the selected value / accent shares mode & material midline.
   static const double pickerVerticalOffset = -8 * quickSelectorScale;
 
   /// Shift so the scale / selected-row center (not the Column midpoint) sits on
-  /// the Align(center) point — matching the laser-arc circle center.
+  /// the Align(center) point — matching mode/material selection height.
   static double get pickerScaleCenterOffsetY {
     const title = 48 * quickSelectorScale;
     const gap = 24 * quickSelectorScale;
@@ -211,6 +226,10 @@ abstract final class ProcessModeDimens {
     const scaleCenterFromTop = title + gap + scaleH / 2;
     return total / 2 - scaleCenterFromTop;
   }
+
+  /// Page Y for gear/thickness (accent + value on mode/material midline).
+  static double get pickerVerticalFromPageCenter =>
+      pickerScaleCenterOffsetY + quickSelectorNudgeY;
 
   static const double materialVerticalOffset =
       -2 * quickSelectorScale + quickSelectorNudgeY;

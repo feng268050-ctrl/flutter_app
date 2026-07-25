@@ -122,12 +122,10 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
       child: Stack(
         alignment: Alignment.center,
         // The lws-ui RelativeLayout wraps the 541×573.5dp border at y=30,
-        // making the component 570×603.5dp. Its rings are then centered in
-        // that taller box; keep that overflow rather than cropping it at 570.
+        // making the component 570×603.5dp. Keep that overflow rather than
+        // cropping it at 570.
         clipBehavior: Clip.hardEdge,
         children: [
-          // Only CircularSeekBars dim with laser_status in lws-ui. The white
-          // chrome and split overlays remain bright when the laser is off.
           Align(
             alignment: Alignment.center,
             child: Opacity(
@@ -164,9 +162,6 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
               opacity: const AlwaysStoppedAnimation(0.3),
             ),
           ),
-          // Static white outer trim from laser_progress.xml. Its bitmap only
-          // contains the 280° arc and the two short lower endpoints; it is
-          // not a contour around the Laser Enable trapezoid.
           Positioned(
             left: metrics.borderLeft,
             top: metrics.borderTop,
@@ -177,14 +172,13 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
               fit: BoxFit.contain,
             ),
           ),
-          // Center pressure panel — topmost, 372×372 (laser_progress.xml).
+          // Digit on circle center; title at original Column slot; kPa +20dp;
+          // More Status under the unit with original intrinsic size.
           SizedBox(
             width: metrics.centerSize,
             height: metrics.centerSize,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                // The PNG/WebP center is transparent at its core; lws-ui is
-                // composited over a black quick-mode root there, not blue.
                 color: const Color(0xFF050505),
                 image: DecorationImage(
                   image: AssetImage(palette.pressureBg),
@@ -192,18 +186,9 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                 ),
                 shape: BoxShape.circle,
               ),
-              child: Column(
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  SizedBox(height: metrics.contentTop),
-                  Text(
-                    'Gas Pressure',
-                    style: TextStyle(
-                      color: Color(0xCCFFFFFF), // alpha 0.8
-                      fontSize: metrics.titleSize,
-                      height: 1.0,
-                    ),
-                  ),
-                  SizedBox(height: metrics.contentGap),
                   Text(
                     pressureText,
                     key: const ValueKey('quick-mode-gas-pressure'),
@@ -214,45 +199,79 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                       height: 1.0,
                     ),
                   ),
-                  SizedBox(height: metrics.contentGap),
-                  Text(
-                    'kPa',
-                    style: TextStyle(
-                      color: Color(0x66FFFFFF), // alpha 0.4
-                      fontSize: metrics.unitSize,
-                      height: 1.0,
+                  Positioned(
+                    top: metrics.contentTop,
+                    left: 0,
+                    right: 0,
+                    child: Text(
+                      'Gas Pressure',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: const Color(0xCCFFFFFF),
+                        fontSize: metrics.titleSize,
+                        height: 1.0,
+                      ),
                     ),
                   ),
-                  SizedBox(height: metrics.buttonGap),
-                  TextButton(
-                    key: const ValueKey('quick-mode-more-status'),
-                    onPressed: widget.onMoreStatus ??
-                        () =>
-                            Navigator.of(context).pushNamed(AppRoutes.monitor),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: const Color(0x33FFFFFF),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16 * metrics.scale,
-                        vertical: 8 * metrics.scale,
-                      ),
-                      shape: const StadiumBorder(),
+                  Transform.translate(
+                    offset: Offset(
+                      0,
+                      metrics.valueSize / 2 +
+                          metrics.contentGap +
+                          metrics.unitSize / 2 +
+                          20 * metrics.scale,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'More Status',
-                          style: TextStyle(
-                            fontSize: metrics.buttonTextSize,
+                    child: Text(
+                      'kPa',
+                      style: TextStyle(
+                        color: const Color(0x66FFFFFF),
+                        fontSize: metrics.unitSize,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: metrics.centerSize / 2 +
+                        metrics.valueSize / 2 +
+                        metrics.contentGap +
+                        metrics.unitSize +
+                        20 * metrics.scale +
+                        metrics.buttonGap,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: TextButton(
+                        key: const ValueKey('quick-mode-more-status'),
+                        onPressed: widget.onMoreStatus ??
+                            () => Navigator.of(context)
+                                .pushNamed(AppRoutes.monitor),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: const Color(0x33FFFFFF),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16 * metrics.scale,
+                            vertical: 8 * metrics.scale,
                           ),
+                          shape: const StadiumBorder(),
                         ),
-                        SizedBox(width: metrics.buttonIconGap),
-                        Icon(
-                          Icons.chevron_right,
-                          size: metrics.buttonIconSize,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'More Status',
+                              style: TextStyle(
+                                fontSize: metrics.buttonTextSize,
+                              ),
+                            ),
+                            SizedBox(width: metrics.buttonIconGap),
+                            Icon(
+                              Icons.chevron_right,
+                              size: metrics.buttonIconSize,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
@@ -402,6 +421,12 @@ final class _LaserDashboardMetrics {
   double get buttonTextSize => 14 * scale;
   double get buttonIconSize => 18 * scale;
   double get buttonIconGap => 4 * scale;
+
+  /// Previous Column layout placed the digit center this far above the circle
+  /// midline; centering the digit moves it down by this amount.
+  double get pressureValueCenterShiftDown =>
+      centerSize / 2 -
+      (contentTop + titleSize + contentGap + valueSize / 2);
 }
 
 final class _LaserProgressRingsPainter extends CustomPainter {

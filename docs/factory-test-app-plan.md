@@ -1,10 +1,12 @@
 # Factory Test App 计划
 
+> **状态（2026-07）：** 本计划**暂缓实施**。平台层以 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md) 为准：**board profile 进 OEM**；**`gpio.json` / `modbus.json` 仍属产品 App**，不进 OEM / 不以 `/usr/share/cyber_hal/boards/<board>/` 为产品目录权威。下文 §1.2 / §4 中「三份 JSON 进 rootfs 主板 pack」与平台计划冲突，产测启动时须 rebase。
+
 目标：在 **lws-hmi** 仓库内并行开发一个通用 **Factory Test** Flutter 应用，作为 **`cyber_hal` 的前端**，用于出场 / 售后验证 HAL 能力；与焊机产品 App（`app/lws_hmi`）共用板级 profile 与 gpio/modbus 目录，打入同一份 rootfs，**不必另刷镜像**，避免损坏用户数据（`/userdata` 等）。
 
-配套阅读：主线 [`flutter-linux-hmi-plan.md`](flutter-linux-hmi-plan.md)（产品 App 可分叉、CyberUI + `cyber_hal`）；HAL 合同 [`hal-portability.md`](hal-portability.md)；包说明 [`packages/cyber_hal/README.md`](../packages/cyber_hal/README.md)。
+配套阅读：主线 [`flutter-linux-hmi-plan.md`](flutter-linux-hmi-plan.md)（产品 App 可分叉、CyberUI + `cyber_hal`）；平台化 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md)；HAL 合同 [`hal-portability.md`](hal-portability.md)；包说明 [`packages/cyber_hal/README.md`](../packages/cyber_hal/README.md)。
 
-状态图例：✅ 完成 · 🔄 进行中 · 🔲 未开始
+状态图例：✅ 完成 · 🔄 进行中 · 🔲 未开始 · ⏸ 暂缓
 
 ---
 
@@ -19,12 +21,14 @@
 | 板级 JSON | `app/lws_hmi/assets/hal/{board_profile,gpio,modbus}.json`，随 HMI Flutter assets 打包 |
 | 设备槽位 | 单目录 `/opt/hmi`；engine 在 `/usr/lib`，App 只换 `libapp.so` + assets |
 | HAL 加载 | `BoardProfile.loadAsset` / `GpioHal.fromAsset` / `ModbusHal.fromAsset`（Flutter asset URI） |
-| `/usr/share/cyber_hal/` | 文档已预留，**尚未落地**（见 cyber_hal README） |
+| `/usr/share/cyber_hal/` | 文档已预留，**尚未落地**（见 cyber_hal README）；平台计划改为 OEM profile，见上注 |
 
 ### 1.2 结论
 
+> **⏸ 整节暂缓。** 下列条目保留为历史草案；实施前按 `platform-os-oem-sdk-plan.md` 修订（OEM profile；gpio/modbus 留在各 App）。
+
 1. **源码并行**：新增 `app/factory_test/`，path 依赖 `cyber_hal`（+ 按需 `cyber_ui`），与 `app/lws_hmi` 同 pinned Flutter **3.24.4** / `flutter assemble + gen_snapshot`。
-2. **板级目录进 rootfs**：`board_profile.json` / `gpio.json` / `modbus.json` **脱离任一 App**，以 **board pack** 形式打入 rootfs；HMI 与 Factory Test **共用同一路径**。
+2. **板级目录进 rootfs**：`board_profile.json` / `gpio.json` / `modbus.json` **脱离任一 App**，以 **board pack** 形式打入 rootfs；HMI 与 Factory Test **共用同一路径**。（**已否决进 OEM 的 gpio/modbus；profile 权威改为 OEM——见平台计划。**）
 3. **构建入口**：`make build-factory-test` → overlay `/opt/factory-test` + `apply-overlay`；文档同步更新 `AGENTS.md` / `README.md`。
 4. **部署形态**：常驻 rootfs `/opt/factory-test`；**不**进 `multi-user` 自启；可由 Settings 隐藏手势 / systemctl / CLI 进入。日常 OTA/`make upgrade` 即可带上，**无需** factory 专用刷机镜像。
 5. **产品形态**：Factory Test = 通用、大而全的 **iPadOS Settings 风格** HAL/平台设置 App（横/竖两套布局）；完成后 **删除** HMI P2 Demo。

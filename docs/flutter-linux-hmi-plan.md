@@ -1,6 +1,6 @@
 # eLinux HMI HMI 规划（通用嵌入式 OS 方向 · ynh960 基准）
 
-目标：在 **lws-hmi** Buildroot 基线上，用 **Weston + flutter-embedded-linux** 跑 Flutter UI；建设可复用的 **嵌入式 OS**：共用 **CyberUI** 框架与 **Dart HAL（`cyber_hal`）**，主板/屏幕以 **board·screen pack** 插拔，**产品顶层 App 可分叉**。按 **P1→P5** 增量交付（见下表）。显示栈细节与切换命令见 [`embedder-migration-plan.md`](embedder-migration-plan.md)。
+目标：在 **lws-hmi** Buildroot 基线上，用 **Weston + flutter-embedded-linux** 跑 Flutter UI；建设可复用的 **嵌入式 OS**：共用 **CyberUI** 框架与 **Dart HAL（`cyber_hal`）**，主板/屏幕以 **OEM board·screen pack** 插拔，**产品顶层 App 可分叉**（`gpio`/`modbus` 目录属 App，不进 OEM）。按 **P1→P5** 增量交付（见下表）。显示栈细节与切换命令见 [`embedder-migration-plan.md`](embedder-migration-plan.md)。平台化（OEM / 自有 SDK / P3.2 虚拟机）见 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md)。
 
 **能力原则**：**产品能力不少于 lws-ui**；**Linux** 平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**P5.0** 保留 Android 兼容构建（**App/APK + YNHAPI**，不扩展 `cyber_hal`）；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md)（已归档）。
 
@@ -19,7 +19,7 @@
 | **Linux P2.5 — 双分区刷机** | A/B 双分区；经 Wi‑Fi / USB 的 `make upgrade`；加快硬件开发并为 OTA 打底（原 P2.4） | ✅ |
 | **Linux P3.0 — UI 框架 + IME** | Flutter 重写 UI 框架与 IME：**CyberUI** + **CyberIME**（`packages/` path 包；初期 Frosted Glass，API 面向可换设计）；骨架已落地，持续优化中 | 🔄 |
 | **Linux P3.1 — HAL 硬件抽象层** | **Dart HAL 子包** + **systemd-networkd 网络栈切换**（wpa D-Bus + networkd L3；无 Rust/`hald`）。设计：[`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md) | ✅ |
-| **Linux P3.2 — Linux 模拟器** | UTM + Weston (Wayland) + flutter-embedded-linux + HAL；迭代 UI；支持与下位机通讯 | 🔲 |
+| **Linux P3.2 — Linux 模拟器** | UTM + Weston (Wayland) + flutter-embedded-linux + HAL；作为第二块「主板+屏」验证 OEM 组合；细则 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md) | 🔲 |
 | **Linux P3.3 — AI 库迁移** | 迁入 `libai.so` + RKNN 配置 | 🔲 |
 | **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务等（原 P5 业务；子阶段见 **§1.2**） | 🔄 |
 | **Linux P5.0 — Android 兼容** | Flutter App 打 **APK**；Modbus / GPIO / Wi‑Fi / BT 等在 **App 侧**接 Android / `YNHAPI`（**不**往 `cyber_hal` 加 Android 后端） | 🔲 |
@@ -73,7 +73,9 @@ P3.1  Dart HAL 子包 + 网络栈切换 ✅
 
 P3.2  Linux 模拟器 🔲
     ├─ UTM + Weston (Wayland) + flutter-embedded-linux + HAL
-    ├─ sim/host board pack；可连下位机（Modbus 等）
+    ├─ sim+virt OEM pack（第二主板+屏）；可连下位机（Modbus 等）
+    ├─ 平台化：OEM · 通用 boot/rootfs · 自有 linux-sdk
+    │   （见 docs/platform-os-oem-sdk-plan.md；gpio/modbus 仍属产品 App）
     └─ 量产显示栈：Weston + eLinux
         （见 docs/embedder-migration-plan.md）
 

@@ -82,6 +82,7 @@ class _EthernetSettingsPageState extends State<EthernetSettingsPage> {
         children: [
           const SettingsSectionHeader('Ethernet'),
           SettingsGroup(
+            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             children: [
               SettingsSwitchRow(
                 title: 'Ethernet',
@@ -126,6 +127,8 @@ class _EthernetSettingsPageState extends State<EthernetSettingsPage> {
             ),
           const SettingsSectionHeader('Configure IP'),
           SettingsGroup(
+            borderGradientCenter:
+                CyberBorderGradientCenter.bottomLeftTopRight,
             children: [
               SettingsNavRow(
                 title: 'DHCP',

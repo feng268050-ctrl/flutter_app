@@ -9,30 +9,38 @@ final class MiscSettingsStore extends ChangeNotifier {
   MiscSettingsStore({
     String? preferencePath,
     String? legacyBootSelfCheckPath,
+    String? legacyAutoCheckOtaPath,
   })  : preferencePath =
             preferencePath ?? '${OsPaths.varHmi}/misc-settings.json',
         legacyBootSelfCheckPath = legacyBootSelfCheckPath ??
-            '${OsPaths.varHmi}/boot-self-check';
+            '${OsPaths.varHmi}/boot-self-check',
+        legacyAutoCheckOtaPath = legacyAutoCheckOtaPath ??
+            '${OsPaths.varHmi}/auto-check-ota.json';
 
   static const keyShowStartupSelfCheck = 'showStartupSelfCheck';
   static const keyShowSystemStatusOverlay = 'showSystemStatusOverlay';
   static const keyShowGroundLockAlarm = 'showGroundLockAlarm';
+  static const keyAutoCheckOtaUpdate = 'autoCheckOtaUpdate';
 
   static const defaultShowStartupSelfCheck = true;
   static const defaultShowSystemStatusOverlay = false;
   static const defaultShowGroundLockAlarm = false;
+  static const defaultAutoCheckOtaUpdate = false;
 
   final String preferencePath;
   final String legacyBootSelfCheckPath;
+  final String legacyAutoCheckOtaPath;
 
   bool _showStartupSelfCheck = defaultShowStartupSelfCheck;
   bool _showSystemStatusOverlay = defaultShowSystemStatusOverlay;
   bool _showGroundLockAlarm = defaultShowGroundLockAlarm;
+  bool _autoCheckOtaUpdate = defaultAutoCheckOtaUpdate;
   bool _warmed = false;
 
   bool get showStartupSelfCheck => _showStartupSelfCheck;
   bool get showSystemStatusOverlay => _showSystemStatusOverlay;
   bool get showGroundLockAlarm => _showGroundLockAlarm;
+  bool get autoCheckOtaUpdate => _autoCheckOtaUpdate;
 
   /// Synchronous warm-read for bootstrap.
   void warmRead() {
@@ -50,7 +58,14 @@ final class MiscSettingsStore extends ChangeNotifier {
         _applyDefaults();
         // Only persist when migrating a legacy value; otherwise keep defaults
         // in memory until the operator changes a Misc switch.
+        var migrated = false;
         if (_importLegacyBootSelfCheckSync()) {
+          migrated = true;
+        }
+        if (_importLegacyAutoCheckOtaSync()) {
+          migrated = true;
+        }
+        if (migrated) {
           _writeSync();
         }
       }
@@ -74,7 +89,14 @@ final class MiscSettingsStore extends ChangeNotifier {
         }
       } else {
         _applyDefaults();
+        var migrated = false;
         if (await _importLegacyBootSelfCheck()) {
+          migrated = true;
+        }
+        if (await _importLegacyAutoCheckOta()) {
+          migrated = true;
+        }
+        if (migrated) {
           await _writeUnlocked();
         }
       }
@@ -115,13 +137,24 @@ final class MiscSettingsStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setAutoCheckOtaUpdate(bool value) async {
+    warmRead();
+    if (_autoCheckOtaUpdate == value) {
+      return;
+    }
+    _autoCheckOtaUpdate = value;
+    await _writeUnlocked();
+    notifyListeners();
+  }
+
   void _applyDefaults() {
     _showStartupSelfCheck = defaultShowStartupSelfCheck;
     _showSystemStatusOverlay = defaultShowSystemStatusOverlay;
     _showGroundLockAlarm = defaultShowGroundLockAlarm;
+    _autoCheckOtaUpdate = defaultAutoCheckOtaUpdate;
   }
 
-  /// Returns true when legacy boot-self-check was imported (caller should persist).
+  /// Returns true when a legacy value was imported (caller should persist).
   bool _applyJson(String raw) {
     _applyDefaults();
     var migrated = false;
@@ -146,6 +179,12 @@ final class MiscSettingsStore extends ChangeNotifier {
       if (map.containsKey(keyShowGroundLockAlarm)) {
         _showGroundLockAlarm =
             _asBool(map[keyShowGroundLockAlarm], defaultShowGroundLockAlarm);
+      }
+      if (map.containsKey(keyAutoCheckOtaUpdate)) {
+        _autoCheckOtaUpdate =
+            _asBool(map[keyAutoCheckOtaUpdate], defaultAutoCheckOtaUpdate);
+      } else if (_importLegacyAutoCheckOtaSync()) {
+        migrated = true;
       }
     } catch (e) {
       debugPrint('misc-settings: corrupt JSON, using defaults: $e');
@@ -186,10 +225,50 @@ final class MiscSettingsStore extends ChangeNotifier {
     }
   }
 
+  /// Returns true when a legacy auto-check-ota.json was present and applied.
+  bool _importLegacyAutoCheckOtaSync() {
+    try {
+      final legacy = File(legacyAutoCheckOtaPath);
+      if (!legacy.existsSync()) {
+        return false;
+      }
+      final decoded = jsonDecode(legacy.readAsStringSync());
+      if (decoded is Map && decoded.containsKey('enabled')) {
+        _autoCheckOtaUpdate =
+            _asBool(decoded['enabled'], defaultAutoCheckOtaUpdate);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('misc-settings: legacy auto-check-ota import failed: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _importLegacyAutoCheckOta() async {
+    try {
+      final legacy = File(legacyAutoCheckOtaPath);
+      if (!await legacy.exists()) {
+        return false;
+      }
+      final decoded = jsonDecode(await legacy.readAsString());
+      if (decoded is Map && decoded.containsKey('enabled')) {
+        _autoCheckOtaUpdate =
+            _asBool(decoded['enabled'], defaultAutoCheckOtaUpdate);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('misc-settings: legacy auto-check-ota import failed: $e');
+      return false;
+    }
+  }
+
   Map<String, dynamic> _toJson() => {
         keyShowStartupSelfCheck: _showStartupSelfCheck,
         keyShowSystemStatusOverlay: _showSystemStatusOverlay,
         keyShowGroundLockAlarm: _showGroundLockAlarm,
+        keyAutoCheckOtaUpdate: _autoCheckOtaUpdate,
       };
 
   Future<void> _writeUnlocked() async {

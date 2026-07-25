@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:cyber_hal/usb_otg.dart';
-import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';

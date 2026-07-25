@@ -69,7 +69,6 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
       title: l10n.mouseText,
       body: SettingsScrollView(
         children: [
-          SettingsSectionHeader(l10n.mouseText),
           SettingsGroup(
             children: [
               if (avail.naturalScroll)

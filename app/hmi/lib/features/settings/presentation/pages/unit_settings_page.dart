@@ -43,7 +43,6 @@ class UnitSettingsPage extends StatelessWidget {
                 final unit = store.unit;
                 return SettingsScrollView(
                   children: [
-                    SettingsSectionHeader(l10n.unitSettingText),
                     SettingsGroup(
                       children: [
                         for (final u in CommonSettingsStore.supportedUnits)

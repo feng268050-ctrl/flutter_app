@@ -105,4 +105,19 @@ void main() {
       CommonSettingsStore.defaultUnit,
     );
   });
+
+  test('language endonyms are not locale-translated', () {
+    expect(
+      CommonSettingsStore.languageEndonym(CommonSettingsStore.languageEnUs),
+      'English',
+    );
+    expect(
+      CommonSettingsStore.languageEndonym(CommonSettingsStore.languageZhCn),
+      '简体中文',
+    );
+    expect(
+      CommonSettingsStore.languageEndonym(CommonSettingsStore.languageZhTw),
+      '繁體中文',
+    );
+  });
 }

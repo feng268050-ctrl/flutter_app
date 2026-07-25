@@ -64,8 +64,9 @@ class _VolumeSettingsPageState extends State<VolumeSettingsPage> {
       title: l10n.volumeSettingText,
       body: SettingsScrollView(
         children: [
-          const SettingsSectionHeader('Media Volume'),
+          // Media volume
           SettingsGroup(
+            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -73,28 +74,26 @@ class _VolumeSettingsPageState extends State<VolumeSettingsPage> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                child: Slider(
-                  value: _volume.toDouble().clamp(0, 100),
-                  min: 0,
-                  max: 100,
-                  onChanged: (v) => setState(() => _volume = v.round()),
+                child: CyberVolumeSlider(
+                  percent: _volume.clamp(0, 100),
+                  onChanged: (v) => setState(() => _volume = v),
                   onChangeEnd: (v) {
-                    unawaited(_audio.setVolumePercent(v.round()));
+                    unawaited(_audio.setVolumePercent(v));
                   },
                 ),
               ),
             ],
           ),
-          const SettingsSectionHeader('Play Test'),
+          // Play test
           SettingsGroup(
+            borderGradientCenter:
+                CyberBorderGradientCenter.bottomLeftTopRight,
             children: [
               CyberAudioPlayerCard(
                 isPlaying: _playing,
                 position: Duration.zero,
                 duration: Duration.zero,
                 seekEnabled: false,
-                // Keep off: UI click oneshot shares sticky mpg123 with play-test
-                // and a preceding LOAD/STOP races the media LOAD.
                 clickSoundEnabled: false,
                 onPlayPause: () {
                   unawaited(_togglePlay());

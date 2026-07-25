@@ -1,13 +1,17 @@
 import 'dart:async';
 
 import 'package:cyber_hal/network.dart';
+import 'package:cyber_hal/output.dart';
 import 'package:cyber_hal/usb_otg.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
+import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/bluetooth_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/brightness_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/date_time_settings_page.dart';
@@ -27,7 +31,7 @@ import 'package:lws_hmi/features/settings/presentation/pages/wifi_settings_page.
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Common Settings — phone/tablet list groups with chevron sub-pages.
+/// Common Settings — CyberUI untitled cards (nav rows → sub-pages).
 class CommonSettingsTab extends StatefulWidget {
   const CommonSettingsTab({super.key, required this.services});
 
@@ -43,6 +47,10 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
   String _sshDebugValue = '';
   String _usbOtgValue = '';
   String _btValue = '';
+  String _screenOffValue = '';
+  String _soundEffectValue = '';
+  String _brightnessValue = '';
+  String _volumeValue = '';
   StreamSubscription<WifiConnectionState>? _wifiSub;
 
   AppServices get services => widget.services;
@@ -52,13 +60,18 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     super.initState();
     _wifiSub = services.wifi.connection.listen((c) {
       if (mounted) {
-        setState(() => _wifiValue = _wifiSummary(AppLocalizations.of(context)!, c));
+        setState(
+          () => _wifiValue = _wifiSummary(AppLocalizations.of(context)!, c),
+        );
       }
     });
     unawaited(_refreshProxy());
     unawaited(_refreshSshDebug());
     unawaited(_refreshUsbOtg());
     unawaited(_refreshBt());
+    unawaited(_refreshScreenOff());
+    unawaited(_refreshBrightness());
+    unawaited(_refreshVolume());
   }
 
   @override
@@ -75,6 +88,7 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     if (_btValue.isEmpty) {
       _btValue = l10n.offLabel;
     }
+    _refreshSoundEffectSummary(l10n);
   }
 
   String _wifiSummary(AppLocalizations l10n, WifiConnectionState c) {
@@ -87,6 +101,14 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     return l10n.notConnected;
   }
 
+  String _usbOtgLabel(AppLocalizations l10n, UsbOtgMode mode) {
+    return switch (mode) {
+      UsbOtgMode.debug => l10n.usbOtgModeDebug,
+      UsbOtgMode.mtp => l10n.usbOtgModeMtp,
+      UsbOtgMode.host => l10n.usbOtgModeHost,
+    };
+  }
+
   String _unitLabel(AppLocalizations l10n, String unit) {
     switch (unit) {
       case CommonSettingsStore.unitImperial:
@@ -97,11 +119,22 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     }
   }
 
-  String _usbOtgLabel(AppLocalizations l10n, UsbOtgMode mode) {
-    return switch (mode) {
-      UsbOtgMode.debug => l10n.usbOtgModeDebug,
-      UsbOtgMode.mtp => l10n.usbOtgModeMtp,
-      UsbOtgMode.host => l10n.usbOtgModeHost,
+  String _screenOffLabel(AppLocalizations l10n, AutoSleepPolicy p) {
+    return switch (p) {
+      AutoSleepPolicy.minutes10 => l10n.screenOffOption10Min,
+      AutoSleepPolicy.minutes30 => l10n.screenOffOption30Min,
+      AutoSleepPolicy.minutes60 => l10n.screenOffOption60Min,
+      AutoSleepPolicy.never => l10n.screenOffNever,
+    };
+  }
+
+  void _refreshSoundEffectSummary(AppLocalizations l10n) {
+    final sound = SoundEffectScope.maybeOf(context);
+    final index = sound?.store.index ?? SoundEffectStore.defaultIndex;
+    _soundEffectValue = switch (index) {
+      1 => l10n.soundEffectOption2,
+      2 => l10n.soundEffectOption3,
+      _ => l10n.soundEffectOption1,
     };
   }
 
@@ -147,6 +180,35 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     setState(() => _btValue = powered ? l10n.onLabel : l10n.offLabel);
   }
 
+  Future<void> _refreshScreenOff() async {
+    try {
+      final p = await services.autoSleep.getPolicy();
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      setState(() => _screenOffValue = _screenOffLabel(l10n, p));
+    } catch (_) {}
+  }
+
+  Future<void> _refreshBrightness() async {
+    try {
+      final v = await services.backlight.getBrightnessPercent();
+      if (!mounted) return;
+      setState(() => _brightnessValue = '$v%');
+    } catch (_) {
+      if (mounted) setState(() => _brightnessValue = '');
+    }
+  }
+
+  Future<void> _refreshVolume() async {
+    try {
+      final v = await services.audio.getVolumePercent();
+      if (!mounted) return;
+      setState(() => _volumeValue = '$v%');
+    } catch (_) {
+      if (mounted) setState(() => _volumeValue = '');
+    }
+  }
+
   @override
   void dispose() {
     unawaited(_wifiSub?.cancel() ?? Future<void>.value());
@@ -156,10 +218,13 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final store = CommonSettingsScope.maybeOf(context);
+
     return SettingsScrollView(
       children: [
-        SettingsSectionHeader(l10n.commonSettingsGroupNetwork),
+        // Network — lws-ui `top-bottom`
         SettingsGroup(
+          borderGradientCenter: CyberBorderGradientCenter.topBottom,
           children: [
             SettingsNavRow(
               title: l10n.wirelessNetworkText,
@@ -214,97 +279,107 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             ),
           ],
         ),
-        SettingsSectionHeader(l10n.commonSettingsGroupDisplaySound),
+        // Display & Sound — lws-ui `top-left-bottom-right`
         SettingsGroup(
+          borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
           children: [
-            Builder(
-              builder: (context) {
-                final store = CommonSettingsScope.maybeOf(context);
-                if (store == null) {
+            if (store == null)
+              SettingsNavRow(
+                title: l10n.languageSettingText,
+                value: l10n.languageOptionEnglish,
+                onTap: () => pushSettingsPage(
+                  context,
+                  const LanguageSettingsPage(),
+                ),
+              )
+            else
+              ListenableBuilder(
+                listenable: store,
+                builder: (context, _) {
                   return SettingsNavRow(
                     title: l10n.languageSettingText,
-                    value: l10n.languageOptionEnglish,
+                    value: store.languageLabel,
                     onTap: () => pushSettingsPage(
                       context,
                       const LanguageSettingsPage(),
                     ),
                   );
-                }
-                return ListenableBuilder(
-                  listenable: store,
-                  builder: (context, _) {
-                    return SettingsNavRow(
-                      title: l10n.languageSettingText,
-                      value: store.languageLabel,
-                      onTap: () => pushSettingsPage(
-                        context,
-                        const LanguageSettingsPage(),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-            Builder(
-              builder: (context) {
-                final store = CommonSettingsScope.maybeOf(context);
-                if (store == null) {
+                },
+              ),
+            if (store == null)
+              SettingsNavRow(
+                title: l10n.unitSettingText,
+                value: l10n.unitMetric,
+                onTap: () => pushSettingsPage(
+                  context,
+                  const UnitSettingsPage(),
+                ),
+              )
+            else
+              ListenableBuilder(
+                listenable: store,
+                builder: (context, _) {
                   return SettingsNavRow(
                     title: l10n.unitSettingText,
-                    value: l10n.unitMetric,
+                    value: _unitLabel(l10n, store.unit),
                     onTap: () => pushSettingsPage(
                       context,
                       const UnitSettingsPage(),
                     ),
                   );
-                }
-                return ListenableBuilder(
-                  listenable: store,
-                  builder: (context, _) {
-                    return SettingsNavRow(
-                      title: l10n.unitSettingText,
-                      value: _unitLabel(l10n, store.unit),
-                      onTap: () => pushSettingsPage(
-                        context,
-                        const UnitSettingsPage(),
-                      ),
-                    );
-                  },
+                },
+              ),
+            SettingsNavRow(
+              title: l10n.screenBrightnessText,
+              value: _brightnessValue.isEmpty ? null : _brightnessValue,
+              onTap: () async {
+                await pushSettingsPage(
+                  context,
+                  BrightnessSettingsPage(services: services),
                 );
+                await _refreshBrightness();
               },
             ),
             SettingsNavRow(
-              title: l10n.screenBrightnessText,
-              onTap: () => pushSettingsPage(
-                context,
-                BrightnessSettingsPage(services: services),
-              ),
-            ),
-            SettingsNavRow(
               title: l10n.screenOffTimeText,
-              onTap: () => pushSettingsPage(
-                context,
-                ScreenOffSettingsPage(services: services),
-              ),
+              value: _screenOffValue.isEmpty ? null : _screenOffValue,
+              onTap: () async {
+                await pushSettingsPage(
+                  context,
+                  ScreenOffSettingsPage(services: services),
+                );
+                await _refreshScreenOff();
+              },
             ),
             SettingsNavRow(
               title: l10n.volumeSettingText,
-              onTap: () => pushSettingsPage(
-                context,
-                VolumeSettingsPage(services: services),
-              ),
+              value: _volumeValue.isEmpty ? null : _volumeValue,
+              onTap: () async {
+                await pushSettingsPage(
+                  context,
+                  VolumeSettingsPage(services: services),
+                );
+                await _refreshVolume();
+              },
             ),
             SettingsNavRow(
               title: l10n.soundEffectCheck,
-              value: l10n.defaultLabel,
-              onTap: () => pushSettingsPage(
-                context,
-                const SoundEffectSettingsPage(),
-              ),
+              value: _soundEffectValue,
+              onTap: () async {
+                await pushSettingsPage(
+                  context,
+                  const SoundEffectSettingsPage(),
+                );
+                if (mounted) {
+                  setState(() => _refreshSoundEffectSummary(l10n));
+                }
+              },
             ),
           ],
         ),
+        // RGB LED
         SettingsGroup(
+          borderGradientCenter: CyberBorderGradientCenter.topRightBottomLeft,
           children: [
             SettingsNavRow(
               title: l10n.rgbLedText,
@@ -315,25 +390,12 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             ),
           ],
         ),
-        SettingsSectionHeader(l10n.commonSettingsGroupDateTime),
+        // Date & Time — lws-ui `bottom-left-top-right`
         SettingsGroup(
+          borderGradientCenter: CyberBorderGradientCenter.bottomLeftTopRight,
           children: [
             SettingsNavRow(
-              title: l10n.dateTimeSetDate,
-              onTap: () => pushSettingsPage(
-                context,
-                DateTimeSettingsPage(services: services),
-              ),
-            ),
-            SettingsNavRow(
-              title: l10n.dateTimeSetTime,
-              onTap: () => pushSettingsPage(
-                context,
-                DateTimeSettingsPage(services: services),
-              ),
-            ),
-            SettingsNavRow(
-              title: l10n.dateTimeSetTimeZone,
+              title: l10n.dateTimeSettings,
               onTap: () => pushSettingsPage(
                 context,
                 DateTimeSettingsPage(services: services),
@@ -341,8 +403,9 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             ),
           ],
         ),
-        const SettingsSectionHeader('Input'),
+        // Input
         SettingsGroup(
+          borderGradientCenter: CyberBorderGradientCenter.leftRight,
           children: [
             SettingsNavRow(
               title: l10n.mouseText,
@@ -369,6 +432,12 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                 await _refreshUsbOtg();
               },
             ),
+          ],
+        ),
+        // Camera
+        SettingsGroup(
+          borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
+          children: [
             SettingsNavRow(
               title: l10n.ipCameraText,
               onTap: () => pushSettingsPage(
@@ -378,8 +447,9 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             ),
           ],
         ),
-        SettingsSectionHeader(l10n.commonSettingsGroupMisc),
+        // Misc — lws-ui `top-bottom`
         SettingsGroup(
+          borderGradientCenter: CyberBorderGradientCenter.topBottom,
           children: [
             Builder(
               builder: (context) {
@@ -419,11 +489,24 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                 );
               },
             ),
-            SettingsSwitchRow(
-              title: l10n.commonSettingsShowSafetyGroundLockAlarm,
-              subtitle: l10n.notPersistedYet,
-              value: false,
-              onChanged: null,
+            Builder(
+              builder: (context) {
+                final misc = MiscSettingsScope.maybeOf(context);
+                final enabled = misc?.showGroundLockAlarm ?? false;
+                return SettingsSwitchRow(
+                  title: l10n.commonSettingsShowSafetyGroundLockAlarm,
+                  subtitle: misc == null ? l10n.unavailable : null,
+                  value: enabled,
+                  onChanged: misc == null
+                      ? null
+                      : (v) {
+                          unawaited(() async {
+                            await misc.setShowGroundLockAlarm(v);
+                            if (mounted) setState(() {});
+                          }());
+                        },
+                );
+              },
             ),
           ],
         ),

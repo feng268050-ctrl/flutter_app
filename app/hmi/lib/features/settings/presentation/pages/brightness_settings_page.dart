@@ -52,7 +52,6 @@ class _BrightnessSettingsPageState extends State<BrightnessSettingsPage> {
       title: l10n.screenBrightnessText,
       body: SettingsScrollView(
         children: [
-          SettingsSectionHeader(l10n.screenBrightnessText),
           SettingsGroup(
             children: [
               Padding(

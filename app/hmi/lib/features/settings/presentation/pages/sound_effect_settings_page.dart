@@ -1,4 +1,3 @@
-import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
@@ -35,6 +34,12 @@ class _SoundEffectSettingsPageState extends State<SoundEffectSettingsPage> {
     if (mounted) setState(() {});
   }
 
+  String _label(AppLocalizations l10n, int i) => switch (i) {
+        1 => l10n.soundEffectOption2,
+        2 => l10n.soundEffectOption3,
+        _ => l10n.soundEffectOption1,
+      };
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -42,38 +47,19 @@ class _SoundEffectSettingsPageState extends State<SoundEffectSettingsPage> {
       title: l10n.soundEffectCheck,
       body: SettingsScrollView(
         children: [
-          const SettingsSectionHeader('Click Sound'),
           SettingsGroup(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                child: CyberSegmentedControl<int>(
-                  segments: [
-                    for (var i = 0; i < SoundEffectStore.effectCount; i++)
-                      ButtonSegment<int>(
-                        value: i,
-                        label: Text(SoundEffectStore.labels[i]),
-                      ),
-                  ],
-                  selected: {_index},
-                  // openEffect already previews; avoid double click from segment.
+              for (var i = 0; i < SoundEffectStore.effectCount; i++)
+                SettingsOptionTile(
+                  title: _label(l10n, i),
+                  selected: _index == i,
                   clickSoundEnabled: false,
-                  onSelectionChanged: (s) {
-                    if (s.isEmpty) return;
+                  onTap: () {
                     // ignore: discarded_futures
-                    _select(s.first);
+                    _select(i);
                   },
                 ),
-              ),
             ],
-          ),
-          const Padding(
-            padding: EdgeInsets.all(20),
-            child: Text(
-              'Persisted under /var/lib/hal/sound.conf (`button_feedback=`) (asset key). '
-              'Home and Cyber controls use the selected click sample.',
-              style: TextStyle(color: Colors.white54),
-            ),
           ),
         ],
       ),

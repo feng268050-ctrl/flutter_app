@@ -99,8 +99,9 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
       title: l10n.dateTimeSettings,
       body: SettingsScrollView(
         children: [
-          SettingsSectionHeader(l10n.dateTimeSettings),
           SettingsGroup(
+            borderGradientCenter:
+                CyberBorderGradientCenter.bottomLeftTopRight,
             children: [
               SettingsSwitchRow(
                 title: l10n.dateTimeAutomatic,
@@ -181,14 +182,16 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
           if (!automatic)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: FilledButton(
+              child: CyberButton(
+                stretch: true,
+                borderGradientCenter:
+                    CyberBorderGradientCenter.topLeftBottomRight,
                 onPressed: _busy
                     ? null
                     : () {
-                        CyberClickSoundRegistry.playClick();
                         unawaited(_run(() => _dt.syncFromNetwork()));
                       },
-                child: const Text('Sync Now'),
+                child: Text(l10n.syncNow),
               ),
             ),
           if (_status != null)
@@ -223,6 +226,7 @@ class _TimezonePickerPage extends StatelessWidget {
       body: SettingsScrollView(
         children: [
           SettingsGroup(
+            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             children: [
               for (final tz in zones)
                 SettingsOptionTile(

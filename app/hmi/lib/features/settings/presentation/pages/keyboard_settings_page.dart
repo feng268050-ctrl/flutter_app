@@ -10,7 +10,7 @@ import 'package:lws_hmi/features/settings/application/product_keyboard_profile.d
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Product Keyboard settings: Segment + preview + Restart (persist + HMI).
+/// Keyboard settings: Layout (dropdown + Preview/Apply) + physical keyboard list.
 class KeyboardSettingsPage extends StatefulWidget {
   const KeyboardSettingsPage({
     super.key,
@@ -29,6 +29,7 @@ class KeyboardSettingsPage extends StatefulWidget {
 
 class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
   ProductKeyboardProfile _selected = ProductKeyboardProfile.defaultSoft;
+  ProductKeyboardProfile _applied = ProductKeyboardProfile.defaultSoft;
   String _presence = '…';
   bool _busy = false;
   Timer? _poll;
@@ -57,7 +58,10 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
       final layout = await _keyboard.getLayout();
       final profile = ProductKeyboardProfile.fromLayout(layout);
       if (!mounted) return;
-      setState(() => _selected = profile);
+      setState(() {
+        _selected = profile;
+        _applied = profile;
+      });
     } catch (e) {
       debugPrint('keyboard settings: load failed: $e');
     }
@@ -67,37 +71,47 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
     try {
       final line = await const UsbHidKeyboardProbe().statusLine();
       if (!mounted) return;
-      setState(() => _presence = line ?? 'probe unavailable');
+      setState(() => _presence = line ?? 'Not detected');
     } catch (_) {
       if (!mounted) return;
-      setState(() => _presence = 'probe unavailable');
+      setState(() => _presence = 'Not detected');
     }
   }
 
-  void _onSegment(ProductKeyboardProfile profile) {
-    setState(() => _selected = profile);
-  }
-
-  Future<void> _restart() async {
+  Future<void> _apply() async {
     if (_busy) return;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showCyberDialog<bool>(
       context: context,
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
-        return AlertDialog(
-          title: const Text('Restart HMI?'),
-          content: const Text(
-            'Saves the selected layout and restarts HMI so soft CyberIME and '
-            'physical XKB both take effect. This page will reopen after relaunch.',
-          ),
-          actions: [
-            TextButton(
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Apply keyboard layout?',
+              style: TextStyle(
+                fontSize: 20,
+                color: CyberColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Saves the selected layout and restarts HMI so soft CyberIME and '
+              'physical keyboard both take effect. This page will reopen after '
+              'relaunch.',
+              style: TextStyle(color: CyberColors.textSecondary),
+            ),
+            const SizedBox(height: 20),
+            CyberButton(
+              variant: CyberButtonVariant.primary,
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.confirmText),
+            ),
+            const SizedBox(height: 8),
+            CyberButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: Text(l10n.cancelText),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Restart'),
             ),
           ],
         );
@@ -114,7 +128,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Restart failed: $e')),
+          SnackBar(content: Text('Apply failed: $e')),
         );
         setState(() => _busy = false);
       }
@@ -130,45 +144,99 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final dirty = _selected != _applied;
+
     return SettingsScaffold(
       title: l10n.keyboardText,
       body: SettingsScrollView(
-        padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
         children: [
+          // Layout
           const SettingsSectionHeader('Layout'),
-          CyberImeLayoutChooser(
-            selected: _selected.imeProfile,
-            enabled: !_busy,
-            onSelected: (p) {
-              final match = ProductKeyboardProfile.values.firstWhere(
-                (e) => e.imeProfile == p,
-              );
-              _onSegment(match);
-            },
+          SettingsGroup(
+            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
+            children: [
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                title: const Text(
+                  'Layout',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: CyberColors.textPrimary,
+                  ),
+                ),
+                trailing: DropdownButtonHideUnderline(
+                  child: DropdownButton<ProductKeyboardProfile>(
+                    value: _selected,
+                    dropdownColor: CyberColors.fillSolidMid,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: CyberColors.textPrimary,
+                    ),
+                    items: [
+                      for (final p in ProductKeyboardProfile.values)
+                        DropdownMenuItem(
+                          value: p,
+                          child: Text(p.displayName),
+                        ),
+                    ],
+                    onChanged: _busy
+                        ? null
+                        : (v) {
+                            if (v == null) return;
+                            CyberClickSoundRegistry.playClick();
+                            setState(() => _selected = v);
+                          },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 16, 8),
+            child: Row(
+              children: [
+                const Text(
+                  'Preview',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: CyberColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                CyberButton(
+                  size: CyberButtonSize.small,
+                  variant: CyberButtonVariant.primary,
+                  onPressed: (_busy || !dirty) ? null : () => unawaited(_apply()),
+                  child: const Text('Apply'),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: CyberCard(
+              child: CyberImeLayoutPreview(profile: _selected.imeProfile),
+            ),
           ),
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
             child: Text(
               'Attach a physical keyboard that matches the selected '
               'specification. A mismatch may make some keys produce unexpected '
-              'characters. Tap Restart to save the layout and apply soft '
-              'CyberIME and physical XKB.',
+              'characters.',
               style: TextStyle(color: Colors.white54, fontSize: 14),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: CyberButton(
-              onPressed: _busy ? null : () => unawaited(_restart()),
-              child: const Text('Restart'),
-            ),
-          ),
-          const SettingsSectionHeader('HID'),
+          // Physical keyboard
+          const SettingsSectionHeader('Physical Keyboard'),
           SettingsGroup(
+            borderGradientCenter:
+                CyberBorderGradientCenter.bottomLeftTopRight,
             children: [
-              ListTile(
-                title: const Text('Presence'),
-                subtitle: Text(_presence),
+              SettingsValueRow(
+                title: 'Status',
+                value: _presence,
               ),
             ],
           ),

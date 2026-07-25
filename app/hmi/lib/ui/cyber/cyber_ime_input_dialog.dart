@@ -123,10 +123,12 @@ class _CyberImeInputDialogBodyState extends State<_CyberImeInputDialogBody> {
       ),
       actions: [
         CyberButton(
+          variant: CyberButtonVariant.secondary,
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         CyberButton(
+          variant: CyberButtonVariant.primary,
           onPressed: _trySubmit,
           child: Text(widget.confirmLabel),
         ),
@@ -160,10 +162,12 @@ Future<bool> showCyberImeFormDialog({
         ),
         actions: [
           CyberButton(
+            variant: CyberButtonVariant.secondary,
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel'),
           ),
           CyberButton(
+            variant: CyberButtonVariant.primary,
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(confirmLabel),
           ),

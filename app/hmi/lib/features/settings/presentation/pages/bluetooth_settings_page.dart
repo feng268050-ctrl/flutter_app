@@ -82,8 +82,9 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
       title: l10n.bluetoothSettings,
       body: SettingsScrollView(
         children: [
-          SettingsSectionHeader(l10n.bluetoothText),
+          // Adapter — rotate like Wi‑Fi top card
           SettingsGroup(
+            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             children: [
               SettingsSwitchRow(
                 title: l10n.bluetoothText,
@@ -93,14 +94,9 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                 ),
               ),
               if (on && _info.name.isNotEmpty)
-                ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  title: const Text('This Device'),
-                  trailing: Text(
-                    _info.name,
-                    style: TextStyle(color: Colors.white.withOpacity(0.55)),
-                  ),
+                SettingsValueRow(
+                  title: 'This Device',
+                  value: _info.name,
                 ),
               if (on)
                 SettingsSwitchRow(
@@ -134,14 +130,15 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
               ),
             ),
           if (on) ...[
+            // My Devices
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              padding: const EdgeInsets.fromLTRB(20, 12, 8, 0),
               child: Row(
                 children: [
                   Text(
                     'MY DEVICES',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Colors.white70,
+                          color: CyberColors.textSecondary,
                           letterSpacing: 0.6,
                         ),
                   ),
@@ -168,18 +165,24 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
               ),
             ),
             SettingsGroup(
+              borderGradientCenter:
+                  CyberBorderGradientCenter.bottomLeftTopRight,
               children: [
                 if (paired.isEmpty)
                   const ListTile(
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    title: Text('No paired devices'),
+                    title: Text(
+                      'No paired devices',
+                      style: TextStyle(color: CyberColors.textPrimary),
+                    ),
                   )
                 else
                   for (final d in paired)
                     SettingsNavRow(
                       title: d.name.isNotEmpty ? d.name : d.address,
                       value: d.connected ? l10n.connectedText : 'Paired',
+                      showChevron: false,
                       onTap: () => unawaited(
                         _run(
                           () => d.connected
@@ -192,8 +195,22 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                     ),
               ],
             ),
-            const SettingsSectionHeader('Other Devices'),
+            // Other Devices
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'OTHER DEVICES',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: CyberColors.textSecondary,
+                        letterSpacing: 0.6,
+                      ),
+                ),
+              ),
+            ),
             SettingsGroup(
+              borderGradientCenter: CyberBorderGradientCenter.topBottom,
               children: [
                 if (nearby.isEmpty)
                   ListTile(
@@ -201,13 +218,17 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                       horizontal: 20,
                       vertical: 12,
                     ),
-                    title: Text(_scanning ? 'Scanning…' : 'No devices found'),
+                    title: Text(
+                      _scanning ? 'Scanning…' : 'No devices found',
+                      style: const TextStyle(color: CyberColors.textPrimary),
+                    ),
                   )
                 else
                   for (final d in nearby)
                     SettingsNavRow(
                       title: d.name.isNotEmpty ? d.name : d.address,
                       value: l10n.notConnected,
+                      showChevron: false,
                       onTap: () => unawaited(
                         _run(
                           () => widget.services.bluetooth

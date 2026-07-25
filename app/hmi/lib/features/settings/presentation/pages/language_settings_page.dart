@@ -9,18 +9,6 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 class LanguageSettingsPage extends StatelessWidget {
   const LanguageSettingsPage({super.key});
 
-  static String _endonym(String code) {
-    switch (code) {
-      case CommonSettingsStore.languageZhCn:
-        return '简体中文';
-      case CommonSettingsStore.languageZhTw:
-        return '繁體中文';
-      case CommonSettingsStore.languageEnUs:
-      default:
-        return 'English';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -45,13 +33,12 @@ class LanguageSettingsPage extends StatelessWidget {
                 final lang = store.language;
                 return SettingsScrollView(
                   children: [
-                    SettingsSectionHeader(l10n.languageSettingText),
                     SettingsGroup(
                       children: [
                         for (final code
                             in CommonSettingsStore.supportedLanguages)
                           SettingsOptionTile(
-                            title: _endonym(code),
+                            title: CommonSettingsStore.languageEndonym(code),
                             selected: lang == code,
                             onTap: () {
                               unawaited(store.setLanguage(code));

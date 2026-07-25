@@ -3,10 +3,19 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 
-/// Shared Material stand-ins for lws-ui InsetList / FrostCard settings chrome.
+/// Shared Settings chrome (lws-ui InsetList / FrostCard → CyberUI).
 ///
-/// Interactive rows call [CyberClickSoundRegistry.playClick] (lws-ui pattern:
-/// product chrome / listeners invoke the same backend as Frost controls).
+/// Interactive rows call [CyberClickSoundRegistry.playClick].
+///
+/// Device Information / Common Settings / Wi‑Fi / Camera MUST NOT use
+/// [SettingsSectionHeader] — keep group names as Dart comments only.
+
+/// Screen-edge inset and inter-group gap (lws-ui settings `padding="24dp"`).
+/// Top / bottom / left / right / group-to-group must all use this value.
+abstract final class SettingsDimens {
+  static const inset = 24.0;
+}
+
 class SettingsSectionHeader extends StatelessWidget {
   const SettingsSectionHeader(this.title, {super.key});
 
@@ -15,11 +24,16 @@ class SettingsSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      padding: const EdgeInsets.fromLTRB(
+        SettingsDimens.inset,
+        SettingsDimens.inset,
+        SettingsDimens.inset,
+        8,
+      ),
       child: Text(
         title.toUpperCase(),
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Colors.white70,
+              color: CyberColors.textSecondary,
               letterSpacing: 0.6,
             ),
       ),
@@ -27,10 +41,56 @@ class SettingsSectionHeader extends StatelessWidget {
   }
 }
 
+/// Settings group shell — Material [Card] outline, border-only (Frost
+/// `transparent` blur: no live [BackdropFilter]).
+class SettingsPanel extends StatelessWidget {
+  const SettingsPanel({
+    super.key,
+    required this.child,
+    this.borderGradientCenter =
+        CyberBorderGradientCenter.topLeftBottomRight,
+  });
+
+  final Widget child;
+  final CyberBorderGradientCenter borderGradientCenter;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CyberGlassTheme.of(context);
+    return CyberOutlinedPanel(
+      outline: CyberPanelOutline(
+        style: CyberPanelOutlineStyle.frostGradient,
+        tone: theme.tone,
+        width: theme.borderWidth,
+        cornerRadius: theme.cornerRadius,
+        gradientCenter: borderGradientCenter,
+      ),
+      color: Colors.white.withOpacity(0.06),
+      child: child,
+    );
+  }
+}
+
+/// Untitled settings group ([SettingsPanel] + inset dividers).
+///
+/// Outer margin: [SettingsDimens.inset] on left/right/bottom so group gap
+/// equals distance to screen edges. Pair with [SettingsScrollView] top inset.
+///
+/// Pass [borderGradientCenter] so adjacent cards follow lws-ui Frost habit
+/// (not one shared diagonal). Set [bottomInset] to `0` when a following
+/// [SettingsSectionHeader] already supplies the vertical gap.
 class SettingsGroup extends StatelessWidget {
-  const SettingsGroup({super.key, required this.children});
+  const SettingsGroup({
+    super.key,
+    required this.children,
+    this.borderGradientCenter =
+        CyberBorderGradientCenter.topLeftBottomRight,
+    this.bottomInset = SettingsDimens.inset,
+  });
 
   final List<Widget> children;
+  final CyberBorderGradientCenter borderGradientCenter;
+  final double bottomInset;
 
   @override
   Widget build(BuildContext context) {
@@ -38,13 +98,30 @@ class SettingsGroup extends StatelessWidget {
     for (var i = 0; i < children.length; i++) {
       items.add(children[i]);
       if (i < children.length - 1) {
-        items.add(const Divider(height: 1, indent: 20, endIndent: 20));
+        items.add(
+          const Divider(
+            height: 1,
+            indent: 20,
+            endIndent: 20,
+            color: CyberColors.dividerCenter,
+          ),
+        );
       }
     }
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      clipBehavior: Clip.antiAlias,
-      child: Column(children: items),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        SettingsDimens.inset,
+        0,
+        SettingsDimens.inset,
+        bottomInset,
+      ),
+      child: SettingsPanel(
+        borderGradientCenter: borderGradientCenter,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: items,
+        ),
+      ),
     );
   }
 }
@@ -55,38 +132,61 @@ class SettingsNavRow extends StatelessWidget {
     required this.title,
     this.value,
     this.leading,
+    this.trailingExtra,
     this.onTap,
+    this.showChevron,
   });
 
   final String title;
   final String? value;
   final Widget? leading;
+  final Widget? trailingExtra;
   final VoidCallback? onTap;
+
+  /// When null, chevron shows only if [onTap] is set. Set false for
+  /// actionable rows that do not push a sub-page.
+  final bool? showChevron;
 
   @override
   Widget build(BuildContext context) {
+    final chevron = showChevron ?? (onTap != null);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       minVerticalPadding: 16,
       leading: leading,
-      title: Text(title, style: const TextStyle(fontSize: 18)),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          color: CyberColors.textPrimary,
+        ),
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (trailingExtra != null) ...[
+            trailingExtra!,
+            const SizedBox(width: 8),
+          ],
           if (value != null && value!.isNotEmpty)
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 220),
               child: Text(
                 value!,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.55),
-                  fontSize: 16,
+                style: const TextStyle(
+                  color: CyberColors.textSecondary,
+                  fontSize: 18,
                 ),
               ),
             ),
-          const SizedBox(width: 8),
-          Icon(Icons.chevron_right, color: Colors.white.withOpacity(0.45)),
+          if (chevron) ...[
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.chevron_right,
+              color: CyberColors.textSecondary,
+            ),
+          ],
         ],
       ),
       onTap: onTap == null
@@ -99,7 +199,7 @@ class SettingsNavRow extends StatelessWidget {
   }
 }
 
-/// Read-only value row (Device Information) — same Material chrome as [SettingsNavRow],
+/// Read-only value row (Device Information) — same chrome as [SettingsNavRow],
 /// without a chevron. Optional [trailing] (e.g. QR affordance) and [onTap].
 class SettingsValueRow extends StatelessWidget {
   const SettingsValueRow({
@@ -120,7 +220,13 @@ class SettingsValueRow extends StatelessWidget {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       minVerticalPadding: 16,
-      title: Text(title, style: const TextStyle(fontSize: 18)),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          color: CyberColors.textPrimary,
+        ),
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -131,9 +237,9 @@ class SettingsValueRow extends StatelessWidget {
                 value!,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.55),
-                  fontSize: 16,
+                style: const TextStyle(
+                  color: CyberColors.textSecondary,
+                  fontSize: 18,
                 ),
               ),
             ),
@@ -171,11 +277,156 @@ class SettingsSwitchRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      title: Text(title, style: const TextStyle(fontSize: 18)),
-      subtitle: subtitle == null ? null : Text(subtitle!),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          color: CyberColors.textPrimary,
+        ),
+      ),
+      subtitle: subtitle == null
+          ? null
+          : Text(
+              subtitle!,
+              style: const TextStyle(
+                color: CyberColors.textSecondary,
+                fontSize: 14,
+                height: 1.35,
+              ),
+            ),
       trailing: CyberSwitch(
         value: value,
         onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+/// Title + trailing control (segmented / slider) for inline Common Settings rows.
+class SettingsControlRow extends StatelessWidget {
+  const SettingsControlRow({
+    super.key,
+    required this.title,
+    required this.control,
+    this.subtitle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget control;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: CyberColors.textPrimary,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: CyberColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            flex: 0,
+            child: control,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Full-width inline slider row (brightness / volume).
+class SettingsSliderRow extends StatelessWidget {
+  const SettingsSliderRow({
+    super.key,
+    required this.title,
+    required this.child,
+  });
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              color: CyberColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Checkbox + label row (Device Information OTA auto-check).
+class SettingsCheckboxRow extends StatelessWidget {
+  const SettingsCheckboxRow({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final bool value;
+  final ValueChanged<bool?>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onChanged == null
+          ? null
+          : () {
+              CyberClickSoundRegistry.playClick();
+              onChanged!(!value);
+            },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Row(
+          children: [
+            CyberCheckbox(value: value, onChanged: onChanged),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: CyberColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -200,9 +451,12 @@ class SettingsOptionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      title: Text(title),
+      title: Text(
+        title,
+        style: const TextStyle(color: CyberColors.textPrimary),
+      ),
       trailing: selected
-          ? const Icon(Icons.check, color: Colors.lightBlueAccent)
+          ? const Icon(Icons.check, color: CyberColors.buttonPrimaryAccent)
           : null,
       onTap: onTap == null
           ? null
@@ -216,7 +470,7 @@ class SettingsOptionTile extends StatelessWidget {
   }
 }
 
-/// Phone-style vertical list with bounce overscroll.
+/// Settings list — bounce overscroll (same as [AppScrollBehavior]).
 class SettingsScrollView extends StatelessWidget {
   const SettingsScrollView({super.key, required this.children, this.padding});
 
@@ -229,7 +483,8 @@ class SettingsScrollView extends StatelessWidget {
       physics: const BouncingScrollPhysics(
         parent: AlwaysScrollableScrollPhysics(),
       ),
-      padding: padding ?? const EdgeInsets.only(bottom: 32),
+      // Top inset only — L/R/bottom come from [SettingsGroup] so gap == edge.
+      padding: padding ?? const EdgeInsets.only(top: SettingsDimens.inset),
       children: children,
     );
   }
@@ -242,41 +497,41 @@ Future<T?> pushSettingsPage<T>(BuildContext context, Widget page) {
   );
 }
 
-/// Bordered param panel (lws-ui Advanced Settings `FrostCardView` transparent
-/// border chrome — no realtime blur for dense grids).
+/// Bordered param panel — same frost outline chrome as [SettingsPanel]
+/// (lws-ui Advanced nested `FrostCardView`).
 class SettingsParamCard extends StatelessWidget {
   const SettingsParamCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
+    this.borderGradientCenter =
+        CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
+  final CyberBorderGradientCenter borderGradientCenter;
 
   @override
   Widget build(BuildContext context) {
     final theme = CyberGlassTheme.of(context);
-    final panel = CyberPanelBorder(
-      tone: theme.tone,
-      width: theme.borderWidth,
-      cornerRadius: theme.cornerRadius,
-    );
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: panel.borderRadius,
-        border: Border.all(
-          color: panel.flatBorderColor,
-          width: panel.width,
-        ),
-        color: Colors.white.withOpacity(0.04),
+    return CyberOutlinedPanel(
+      outline: CyberPanelOutline(
+        style: CyberPanelOutlineStyle.frostGradient,
+        tone: theme.tone,
+        width: theme.borderWidth,
+        cornerRadius: theme.cornerRadius,
+        gradientCenter: borderGradientCenter,
       ),
+      color: Colors.white.withOpacity(0.06),
       child: Padding(padding: padding, child: child),
     );
   }
 }
 
 /// Title + value readout + [CyberScaledSlider] (Advanced Settings threshold row).
+///
+/// Tap the value box to edit via [onValueTap] (lws-ui FrostNumericInputDialog).
 class SettingsScaledParam extends StatelessWidget {
   const SettingsScaledParam({
     super.key,
@@ -291,6 +546,9 @@ class SettingsScaledParam extends StatelessWidget {
     this.valueLabel,
     this.trailing,
     this.enabled = true,
+    this.onValueTap,
+    this.borderGradientCenter =
+        CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   /// Matches lws-ui `advanced_setting_value_box` (36dp); Auto trailing
@@ -309,10 +567,39 @@ class SettingsScaledParam extends StatelessWidget {
   final Widget? trailing;
   final bool enabled;
 
+  /// When set, the value chip is tappable (opens numeric input dialog).
+  final VoidCallback? onValueTap;
+
+  /// Frost corner habit — pair left/right as TLBR / BLTR; full-width as
+  /// [CyberBorderGradientCenter.topBottom].
+  final CyberBorderGradientCenter borderGradientCenter;
+
   @override
   Widget build(BuildContext context) {
     final display = valueLabel ?? value.round().toString();
+    final valueBox = Container(
+      height: headerControlHeight,
+      constraints: const BoxConstraints(minWidth: 48),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.25),
+        ),
+      ),
+      child: Text(
+        display,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 16,
+          color: Colors.white.withOpacity(0.85),
+        ),
+      ),
+    );
+
     return SettingsParamCard(
+      borderGradientCenter: borderGradientCenter,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -328,26 +615,20 @@ class SettingsScaledParam extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
-                  height: headerControlHeight,
-                  constraints: const BoxConstraints(minWidth: 48),
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.25),
+                if (onValueTap != null && enabled)
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        CyberClickSoundRegistry.playClick();
+                        onValueTap!();
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: valueBox,
                     ),
-                  ),
-                  child: Text(
-                    display,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withOpacity(0.85),
-                    ),
-                  ),
-                ),
+                  )
+                else
+                  valueBox,
                 if (trailing != null) ...[
                   const SizedBox(width: 12),
                   trailing!,

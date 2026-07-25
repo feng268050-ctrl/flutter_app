@@ -24,7 +24,7 @@ class _ScreenOffSettingsPageState extends State<ScreenOffSettingsPage> {
         (AutoSleepPolicy.minutes10, (_) => l10n.screenOffOption10Min),
         (AutoSleepPolicy.minutes30, (_) => l10n.screenOffOption30Min),
         (AutoSleepPolicy.minutes60, (_) => l10n.screenOffOption60Min),
-        (AutoSleepPolicy.never, (_) => 'Never'),
+        (AutoSleepPolicy.never, (_) => l10n.screenOffNever),
       ];
 
   @override
@@ -62,7 +62,6 @@ class _ScreenOffSettingsPageState extends State<ScreenOffSettingsPage> {
       title: l10n.screenOffTimeText,
       body: SettingsScrollView(
         children: [
-          const SettingsSectionHeader('Auto-Lock'),
           SettingsGroup(
             children: [
               for (final (policy, label) in options)

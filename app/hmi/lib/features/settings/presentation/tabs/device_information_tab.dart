@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-/// Device Information — same Material settings chrome as Common Settings.
+/// Device Information — CyberUI untitled cards (lws-ui Frost parity).
 class DeviceInformationTab extends StatefulWidget {
   const DeviceInformationTab({super.key, required this.services});
 
@@ -30,8 +32,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
   String _controlCardVersion = kUnavailableDisplay;
   String _laserVersion = kUnavailableDisplay;
   String _wireFeederVersion = kUnavailableDisplay;
-  String _cameraType = kUnavailableDisplay;
   String _focusScaleRef = kUnavailableDisplay;
+  String _processLibVersion = kUnavailableDisplay;
 
   String? _brandRaw;
   String? _modelRaw;
@@ -44,6 +46,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_start());
+      _refreshProcessLib();
     });
   }
 
@@ -65,7 +68,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
         ids: kDeviceInfoModbusWatchIds,
       );
       _modbusSub = stream.listen(_onModbus);
-      // On-demand info group (gunhead / laser / wire) is not in continuous poll.
       try {
         final info = await widget.services.modbus.readGroup('info');
         _onModbus(modbusGroupToChanges(info));
@@ -99,8 +101,23 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
       final product = await widget.services.ensureProductInfo();
       if (!mounted) return;
       setState(() {
-        _cameraType = productCameraTypeDisplay(product.cameraType());
         _focusScaleRef = _dash(product.focusScaleRef());
+      });
+    } catch (_) {}
+  }
+
+  void _refreshProcessLib() {
+    try {
+      final lib = ProcessLibraryScope.of(context);
+      final fromPreset = lib.presets
+          .map((p) => p.libraryVersion)
+          .whereType<String>()
+          .where((v) => v.trim().isNotEmpty)
+          .cast<String?>()
+          .firstWhere((_) => true, orElse: () => null);
+      if (!mounted) return;
+      setState(() {
+        _processLibVersion = _dash(fromPreset);
       });
     } catch (_) {}
   }
@@ -139,23 +156,52 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
       systemVersion: version,
     );
     if (!mounted) return;
-    await showDialog<void>(
+    await showCyberDialog<void>(
       context: context,
       builder: (ctx) {
-        return Dialog(
-          backgroundColor: Colors.white,
-          child: InkWell(
-            onTap: () => Navigator.of(ctx).pop(),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: QrImageView(
-                data: payload,
-                version: QrVersions.auto,
-                size: 240,
-                backgroundColor: Colors.white,
-              ),
+        return InkWell(
+          onTap: () => Navigator.of(ctx).pop(),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: QrImageView(
+              data: payload,
+              version: QrVersions.auto,
+              size: 240,
+              backgroundColor: Colors.white,
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Future<void> _checkForUpdates(AppLocalizations l10n) async {
+    CyberClickSoundRegistry.playClick();
+    await showCyberDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.checkUpdate,
+              style: const TextStyle(
+                fontSize: 20,
+                color: CyberColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              l10n.otaCheckUnavailable,
+              style: const TextStyle(color: CyberColors.textSecondary),
+            ),
+            const SizedBox(height: 20),
+            CyberButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l10n.closeText),
+            ),
+          ],
         );
       },
     );
@@ -171,53 +217,144 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // Refresh process-lib label when scope notifies.
+    try {
+      final lib = ProcessLibraryScope.of(context);
+      final v = lib.presets
+          .map((p) => p.libraryVersion)
+          .whereType<String>()
+          .where((s) => s.trim().isNotEmpty)
+          .cast<String?>()
+          .firstWhere((_) => true, orElse: () => null);
+      final next = _dash(v);
+      if (next != _processLibVersion) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _processLibVersion = next);
+        });
+      }
+    } catch (_) {}
+
     return SettingsScrollView(
       children: [
-        const SettingsSectionHeader('Identity'),
+        // Identity — lws-ui `top-left-bottom-right`
         SettingsGroup(
+          borderGradientCenter:
+              CyberBorderGradientCenter.topLeftBottomRight,
           children: [
             SettingsValueRow(
               title: l10n.deviceModel,
               value: _deviceModel,
               trailing: IconButton(
-                tooltip: 'Device QR code',
+                tooltip: l10n.deviceModel,
                 onPressed: () => unawaited(_openDeviceQr()),
-                icon: const Icon(Icons.qr_code_2),
+                icon: const Icon(
+                  Icons.qr_code_2,
+                  color: CyberColors.textPrimary,
+                ),
               ),
             ),
             SettingsValueRow(title: l10n.deviceSn, value: _deviceSn),
-            SettingsValueRow(title: 'Gunhead SN', value: _gunheadSn),
+            SettingsValueRow(title: l10n.gunSn, value: _gunheadSn),
           ],
         ),
-        const SettingsSectionHeader('Versions'),
+        // Versions — lws-ui `bottom-left-top-right`
         SettingsGroup(
+          borderGradientCenter:
+              CyberBorderGradientCenter.bottomLeftTopRight,
           children: [
-            SettingsValueRow(title: 'System Version', value: _systemVersion),
-            SettingsValueRow(title: 'Kernel Version', value: _kernelVersion),
             SettingsValueRow(
-              title: 'Control Card Version',
+              title: l10n.systemVersion,
+              value: _systemVersion,
+            ),
+            SettingsValueRow(
+              title: l10n.kernelVersion,
+              value: _kernelVersion,
+            ),
+            SettingsValueRow(
+              title: l10n.processLibVersion,
+              value: _processLibVersion,
+            ),
+            SettingsValueRow(
+              title: l10n.firmwareVersion,
               value: _controlCardVersion,
             ),
-            SettingsValueRow(title: l10n.laserVersion, value: _laserVersion),
             SettingsValueRow(
-              title: 'Wire Feeder Version',
+              title: l10n.laserVersion,
+              value: _laserVersion,
+            ),
+            SettingsValueRow(
+              title: l10n.wireFeederVersion,
               value: _wireFeederVersion,
+            ),
+            SettingsValueRow(
+              title: l10n.displayStack,
+              value: widget.services.displayStack.displayLabel,
             ),
           ],
         ),
-        const SettingsSectionHeader('Platform'),
+        // Focus — lws-ui `top-bottom`
         SettingsGroup(
+          borderGradientCenter: CyberBorderGradientCenter.topBottom,
           children: [
             SettingsValueRow(
-              title: 'Display Stack',
-              value: widget.services.displayStack.displayLabel,
-            ),
-            SettingsValueRow(title: 'Camera Type', value: _cameraType),
-            SettingsValueRow(
-              title: 'Focus Scale Reference',
+              title: l10n.focusScaleReference,
               value: _focusScaleRef,
             ),
           ],
+        ),
+        // Update CTA — scrolls with content (end of list)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SettingsDimens.inset,
+            16,
+            SettingsDimens.inset,
+            0,
+          ),
+          child: Center(
+            child: SizedBox(
+              width: 340,
+              height: CyberDimens.actionButtonHeight,
+              child: CyberButton(
+                variant: CyberButtonVariant.primary,
+                borderGradientCenter:
+                    CyberBorderGradientCenter.topLeftBottomRight,
+                onPressed: () => unawaited(_checkForUpdates(l10n)),
+                child: Text(l10n.checkUpdate),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SettingsDimens.inset,
+            14,
+            SettingsDimens.inset,
+            SettingsDimens.inset,
+          ),
+          child: Builder(
+            builder: (context) {
+              final misc = MiscSettingsScope.maybeOf(context);
+              if (misc == null) {
+                return SettingsCheckboxRow(
+                  title: l10n.autoCheckOtaUpdate,
+                  value: false,
+                  onChanged: null,
+                );
+              }
+              return ListenableBuilder(
+                listenable: misc,
+                builder: (context, _) {
+                  return SettingsCheckboxRow(
+                    title: l10n.autoCheckOtaUpdate,
+                    value: misc.autoCheckOtaUpdate,
+                    onChanged: (v) => unawaited(
+                      misc.setAutoCheckOtaUpdate(v ?? false),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
     );

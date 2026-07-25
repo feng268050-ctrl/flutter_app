@@ -35,12 +35,30 @@ String productDeviceModelForQr(String? brand, String? model) {
 }
 
 /// Camera Type row: `1` → Blue Light, `2` → Red Light; else `-`.
+///
+/// Prefer [productCameraTypeDisplayLocalized] when [AppLocalizations] is available.
 String productCameraTypeDisplay(String? cameraType) {
   switch ((cameraType ?? '').trim()) {
     case '1':
       return 'Blue Light';
     case '2':
       return 'Red Light';
+    default:
+      return kUnavailableDisplay;
+  }
+}
+
+/// Localized Camera Type labels (Blue Light / Red Light).
+String productCameraTypeDisplayLocalized(
+  String? cameraType, {
+  required String blueLight,
+  required String redLight,
+}) {
+  switch ((cameraType ?? '').trim()) {
+    case '1':
+      return blueLight;
+    case '2':
+      return redLight;
     default:
       return kUnavailableDisplay;
   }

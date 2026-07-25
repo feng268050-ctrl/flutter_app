@@ -10,10 +10,12 @@ void main() {
     final store = MiscSettingsStore(
       preferencePath: '${dir.path}/misc-settings.json',
       legacyBootSelfCheckPath: '${dir.path}/boot-self-check',
+      legacyAutoCheckOtaPath: '${dir.path}/auto-check-ota.json',
     );
     store.warmRead();
     expect(store.showStartupSelfCheck, isTrue);
     expect(store.showSystemStatusOverlay, isFalse);
+    expect(store.autoCheckOtaUpdate, isFalse);
     await dir.delete(recursive: true);
   });
 
@@ -23,22 +25,27 @@ void main() {
     final store = MiscSettingsStore(
       preferencePath: path,
       legacyBootSelfCheckPath: '${dir.path}/boot-self-check',
+      legacyAutoCheckOtaPath: '${dir.path}/auto-check-ota.json',
     );
     store.warmRead();
     await store.setShowSystemStatusOverlay(true);
     await store.setShowStartupSelfCheck(false);
+    await store.setAutoCheckOtaUpdate(true);
 
     final again = MiscSettingsStore(
       preferencePath: path,
       legacyBootSelfCheckPath: '${dir.path}/boot-self-check',
+      legacyAutoCheckOtaPath: '${dir.path}/auto-check-ota.json',
     );
     again.warmRead();
     expect(again.showSystemStatusOverlay, isTrue);
     expect(again.showStartupSelfCheck, isFalse);
+    expect(again.autoCheckOtaUpdate, isTrue);
 
     final decoded = jsonDecode(await File(path).readAsString()) as Map;
     expect(decoded['showSystemStatusOverlay'], isTrue);
     expect(decoded['showStartupSelfCheck'], isFalse);
+    expect(decoded['autoCheckOtaUpdate'], isTrue);
 
     await dir.delete(recursive: true);
   });
@@ -64,6 +71,27 @@ void main() {
     );
     again.warmRead();
     expect(again.showStartupSelfCheck, isFalse);
+
+    await dir.delete(recursive: true);
+  });
+
+  test('imports legacy auto-check-ota when JSON absent', () async {
+    final dir = await Directory.systemTemp.createTemp('misc-');
+    final legacy = File('${dir.path}/auto-check-ota.json');
+    await legacy.writeAsString('{"enabled":true}\n');
+    final path = '${dir.path}/misc-settings.json';
+
+    final store = MiscSettingsStore(
+      preferencePath: path,
+      legacyBootSelfCheckPath: '${dir.path}/boot-self-check',
+      legacyAutoCheckOtaPath: legacy.path,
+    );
+    store.warmRead();
+    expect(store.autoCheckOtaUpdate, isTrue);
+    expect(File(path).existsSync(), isTrue);
+
+    final decoded = jsonDecode(await File(path).readAsString()) as Map;
+    expect(decoded['autoCheckOtaUpdate'], isTrue);
 
     await dir.delete(recursive: true);
   });

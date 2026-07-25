@@ -50,9 +50,10 @@ final class CommonSettingsStore extends ChangeNotifier {
   /// Flutter [Locale] for [MaterialApp.locale].
   Locale get locale => localeFromLanguageTag(_language);
 
-  /// Endonym for Common Settings Language row / Language page.
-  String get languageLabel {
-    switch (_language) {
+  /// Endonym for [code] — always the language’s own script/name, never
+  /// translated to the current UI locale (English / 简体中文 / 繁體中文).
+  static String languageEndonym(String code) {
+    switch (normalizeLanguage(code)) {
       case languageZhCn:
         return '简体中文';
       case languageZhTw:
@@ -62,6 +63,9 @@ final class CommonSettingsStore extends ChangeNotifier {
         return 'English';
     }
   }
+
+  /// Endonym for the active Language preference.
+  String get languageLabel => languageEndonym(_language);
 
   /// Whether the language prefers Chinese IME (Simplified or Traditional).
   bool get isChineseLanguage =>

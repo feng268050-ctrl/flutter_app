@@ -21,13 +21,11 @@ final class MiscSettingsStore extends ChangeNotifier {
   static const keyShowSystemStatusOverlay = 'showSystemStatusOverlay';
   static const keyShowGroundLockAlarm = 'showGroundLockAlarm';
   static const keyAutoCheckOtaUpdate = 'autoCheckOtaUpdate';
-  static const keyHideEngineerModeEntryTip = 'hideEngineerModeEntryTip';
 
   static const defaultShowStartupSelfCheck = true;
   static const defaultShowSystemStatusOverlay = false;
   static const defaultShowGroundLockAlarm = false;
   static const defaultAutoCheckOtaUpdate = false;
-  static const defaultHideEngineerModeEntryTip = false;
 
   final String preferencePath;
   final String legacyBootSelfCheckPath;
@@ -37,14 +35,12 @@ final class MiscSettingsStore extends ChangeNotifier {
   bool _showSystemStatusOverlay = defaultShowSystemStatusOverlay;
   bool _showGroundLockAlarm = defaultShowGroundLockAlarm;
   bool _autoCheckOtaUpdate = defaultAutoCheckOtaUpdate;
-  bool _hideEngineerModeEntryTip = defaultHideEngineerModeEntryTip;
   bool _warmed = false;
 
   bool get showStartupSelfCheck => _showStartupSelfCheck;
   bool get showSystemStatusOverlay => _showSystemStatusOverlay;
   bool get showGroundLockAlarm => _showGroundLockAlarm;
   bool get autoCheckOtaUpdate => _autoCheckOtaUpdate;
-  bool get hideEngineerModeEntryTip => _hideEngineerModeEntryTip;
 
   /// Synchronous warm-read for bootstrap.
   void warmRead() {
@@ -151,22 +147,11 @@ final class MiscSettingsStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setHideEngineerModeEntryTip(bool value) async {
-    warmRead();
-    if (_hideEngineerModeEntryTip == value) {
-      return;
-    }
-    _hideEngineerModeEntryTip = value;
-    await _writeUnlocked();
-    notifyListeners();
-  }
-
   void _applyDefaults() {
     _showStartupSelfCheck = defaultShowStartupSelfCheck;
     _showSystemStatusOverlay = defaultShowSystemStatusOverlay;
     _showGroundLockAlarm = defaultShowGroundLockAlarm;
     _autoCheckOtaUpdate = defaultAutoCheckOtaUpdate;
-    _hideEngineerModeEntryTip = defaultHideEngineerModeEntryTip;
   }
 
   /// Returns true when a legacy value was imported (caller should persist).
@@ -201,11 +186,9 @@ final class MiscSettingsStore extends ChangeNotifier {
       } else if (_importLegacyAutoCheckOtaSync()) {
         migrated = true;
       }
-      if (map.containsKey(keyHideEngineerModeEntryTip)) {
-        _hideEngineerModeEntryTip = _asBool(
-          map[keyHideEngineerModeEntryTip],
-          defaultHideEngineerModeEntryTip,
-        );
+      // Drop obsolete hideEngineerModeEntryTip if present (session-only now).
+      if (map.containsKey('hideEngineerModeEntryTip')) {
+        migrated = true;
       }
     } catch (e) {
       debugPrint('misc-settings: corrupt JSON, using defaults: $e');
@@ -290,7 +273,6 @@ final class MiscSettingsStore extends ChangeNotifier {
         keyShowSystemStatusOverlay: _showSystemStatusOverlay,
         keyShowGroundLockAlarm: _showGroundLockAlarm,
         keyAutoCheckOtaUpdate: _autoCheckOtaUpdate,
-        keyHideEngineerModeEntryTip: _hideEngineerModeEntryTip,
       };
 
   Future<void> _writeUnlocked() async {

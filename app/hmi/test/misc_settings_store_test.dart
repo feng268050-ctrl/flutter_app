@@ -16,7 +16,6 @@ void main() {
     expect(store.showStartupSelfCheck, isTrue);
     expect(store.showSystemStatusOverlay, isFalse);
     expect(store.autoCheckOtaUpdate, isFalse);
-    expect(store.hideEngineerModeEntryTip, isFalse);
     await dir.delete(recursive: true);
   });
 
@@ -32,7 +31,6 @@ void main() {
     await store.setShowSystemStatusOverlay(true);
     await store.setShowStartupSelfCheck(false);
     await store.setAutoCheckOtaUpdate(true);
-    await store.setHideEngineerModeEntryTip(true);
 
     final again = MiscSettingsStore(
       preferencePath: path,
@@ -43,13 +41,38 @@ void main() {
     expect(again.showSystemStatusOverlay, isTrue);
     expect(again.showStartupSelfCheck, isFalse);
     expect(again.autoCheckOtaUpdate, isTrue);
-    expect(again.hideEngineerModeEntryTip, isTrue);
 
     final decoded = jsonDecode(await File(path).readAsString()) as Map;
     expect(decoded['showSystemStatusOverlay'], isTrue);
     expect(decoded['showStartupSelfCheck'], isFalse);
     expect(decoded['autoCheckOtaUpdate'], isTrue);
-    expect(decoded['hideEngineerModeEntryTip'], isTrue);
+    expect(decoded.containsKey('hideEngineerModeEntryTip'), isFalse);
+
+    await dir.delete(recursive: true);
+  });
+
+  test('strips obsolete hideEngineerModeEntryTip on read', () async {
+    final dir = await Directory.systemTemp.createTemp('misc-');
+    final path = '${dir.path}/misc-settings.json';
+    await File(path).writeAsString(
+      '${const JsonEncoder.withIndent('  ').convert({
+            'showStartupSelfCheck': true,
+            'showSystemStatusOverlay': false,
+            'showGroundLockAlarm': false,
+            'autoCheckOtaUpdate': false,
+            'hideEngineerModeEntryTip': true,
+          })}\n',
+    );
+
+    final store = MiscSettingsStore(
+      preferencePath: path,
+      legacyBootSelfCheckPath: '${dir.path}/boot-self-check',
+      legacyAutoCheckOtaPath: '${dir.path}/auto-check-ota.json',
+    );
+    store.warmRead();
+
+    final decoded = jsonDecode(await File(path).readAsString()) as Map;
+    expect(decoded.containsKey('hideEngineerModeEntryTip'), isFalse);
 
     await dir.delete(recursive: true);
   });

@@ -1,7 +1,28 @@
 import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+/// Process-lifetime suppress for the engineer entry tip (not persisted).
+///
+/// Checking “don’t remind me again” only hides the dialog until the next HMI
+/// process start / reboot — never written to `misc-settings.json`.
+abstract final class EngineerModeEntryTipGate {
+  static bool _suppressedThisBoot = false;
+
+  static bool get isSuppressedThisBoot => _suppressedThisBoot;
+
+  static void suppressForThisBoot() {
+    _suppressedThisBoot = true;
+  }
+
+  /// Test-only reset.
+  @visibleForTesting
+  static void resetForTest() {
+    _suppressedThisBoot = false;
+  }
+}
 
 /// lws-ui's first-entry notice shared by Home and Quick → Engineer handoff.
 final class EngineerModeEntryTipsResult {
@@ -142,7 +163,7 @@ final class _EngineerModeEntryTipsDialogState
                         ),
                       ),
                       const Text(
-                        'Don’t remind me again',
+                        'Don’t remind me again this boot',
                         style: TextStyle(
                           color: Color(0xFF999999),
                           fontSize: 14,

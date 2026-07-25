@@ -21,7 +21,6 @@ import 'package:lws_hmi/features/process_mode/presentation/quick_mode_process_wh
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_value_pick.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
-import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 
@@ -328,14 +327,13 @@ final class _QuickModePageState extends State<QuickModePage> {
     if (matched == null || _processType == ProcessType.cncCutting) {
       return;
     }
-    final misc = MiscSettingsScope.maybeOf(context);
-    if (misc?.hideEngineerModeEntryTip != true) {
+    if (!EngineerModeEntryTipGate.isSuppressedThisBoot) {
       final result = await showEngineerModeEntryTipsDialog(context);
       if (result == null || !mounted) {
         return;
       }
-      if (misc != null) {
-        await misc.setHideEngineerModeEntryTip(result.dontShowAgain);
+      if (result.dontShowAgain) {
+        EngineerModeEntryTipGate.suppressForThisBoot();
       }
     }
     if (!mounted) {

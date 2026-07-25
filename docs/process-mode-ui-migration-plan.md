@@ -1,6 +1,6 @@
 # 快速模式与工程师模式 UI 迁移方案
 
-**状态：进行中：U0–U4 完成；U5 激光/气体完成、送丝待协议；U6 仓内验收完成，ynh960 实机 smoke 待做。**
+**状态：进行中：U0–U5 仓内完成；U6 仓内验收完成，ynh960 实机 smoke 待做。**
 
 目标是在 Flutter/CyberUI 中迁移 `lws-ui` 的 Quick Mode 与 Engineer Mode。页面和设备业务保留在 `lws-hmi`：不向 `cyber_ui` 增加产品状态栏或产品设备状态 API。
 
@@ -97,7 +97,7 @@ quick → `engineer_preset` 中位数派生已在工艺库切片落地（见 `do
 | 内置编辑 | 点参数值 → 内存 user 草稿；Save 才落库 |
 | 测试 | `engineer_mode_draft_test.dart`、`engineer_mode_page_test.dart` |
 
-## 1.7 U5：设备控制（部分完成）
+## 1.7 U5：设备控制（完成）
 
 Flutter 优先：`CustomClipper` / `CustomPainter` 复刻 Android 梯形激光按钮及可逆径向 ripple；关闭态按住蓄满后松开确认，开启态短按结束工作。
 
@@ -106,13 +106,13 @@ Flutter 优先：`CustomClipper` / `CustomPainter` 复刻 Android 梯形激光�
 | 控制器 | `DeviceControlController`（exclusiveSession 写 `control.laser_enable` / `control.manual_gas`；开关激光前清 `control.wire_work`） |
 | 预检 | `LaserEnablePreflight`（E-Stop / 钥匙开关 / 告警策略） |
 | UI | Quick：`QuickModeDeviceControls` + 564×223 `QuickModeLaserButton`；Engineer：`EngineerDevicePanel`；CNC 隐藏 |
-| 开启顺序 | 长按预检 → 安全确认 → 重发当前工艺 → 重发高级设置 → Modbus 激光使能 |
-| 互斥 | 开气先关激光；激光开时禁用开气 |
-| 送丝 | Quick 连续焊：自动送丝开关；Feed 短按 500ms 脉冲、长按 3s 进入持续并再点停止；Retract 短按脉冲、长按仅按住运行 |
-| 曲线/录像 | 本轮不做 |
-| 测试 | `laser_enable_preflight_test.dart`、`device_control_test.dart`、`quick_mode_laser_button_test.dart`、`process_mode_acceptance_test.dart` |
+| 开启顺序 | 长按预检 → 安全确认 → 重发当前工艺 → 重发高级设置 → Modbus 激光使能（Quick / Engineer 同序） |
+| 互斥 | 开气先关激光；激光开时禁用开气与送丝 |
+| 送丝 | Quick + Engineer 连续焊：自动送丝开关；Feed/Retract 共用 `ManualWireGesture`（短按 500ms 脉冲、长按 3s 闩锁、回抽按住运行） |
+| 曲线/录像 | 本轮不做（Record Work 保持禁用） |
+| 测试 | `laser_enable_preflight_test.dart`、`device_control_test.dart`、`quick_mode_laser_button_test.dart`、`engineer_device_panel_test.dart`、`process_mode_acceptance_test.dart` |
 
-### 送丝实机确认项
+### 送丝实机确认项（ynh960 smoke，不阻塞仓内交付）
 
 1. 确认 bit RMW 脉冲在 ynh960 上不会覆盖来自枪头的控制字更新。
 2. 确认脉冲关断 500ms、长按开始 500ms、连续闩锁 3000ms。
@@ -127,10 +127,10 @@ Flutter 优先：`CustomClipper` / `CustomPainter` 复刻 Android 梯形激光�
 | U2：视觉骨架 | [x] | 1280×800 模式壳、快速模式轮盘、工程师五 Tab、资源/颜色 token |
 | U3：快速模式内部 UI | [x] | 材料/档位/厚度或摆宽、继承/fallback、预览、工程师草稿跳转 |
 | U4：工程师内部 UI | [x] | 内置/用户预设、catalog 表单、CyberIME、复制/保存/删除/应用 |
-| U5：设备控制 | [~] | 激光/气体已落地；送丝待协议确认；曲线/录像不做 |
+| U5：设备控制 | [x] | 激光/气体/送丝（Quick+Engineer）仓内落地；曲线/录像不做；ynh960 送丝确认见 §1.7 |
 | U6：验收 | [~] | 仓内 widget/Modbus 模拟完成；像素 golden 不做；ynh960 smoke 见 §1.8 |
 
-推荐顺序：在 ynh960 跑 §1.8 smoke；确认送丝协议后补齐 U5 送丝。
+推荐顺序：在 ynh960 跑 §1.8 smoke（含送丝实机确认项）。
 
 ## 1.8 U6：验收（仓内完成；实机待做）
 

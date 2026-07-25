@@ -6,6 +6,7 @@ import 'package:lws_hmi/features/process_mode/application/device_control_control
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_button.dart';
 
 /// Quick-mode bottom composition: left/right side ops + center trapezoid.
@@ -340,126 +341,36 @@ final class _ManualWireButton extends StatefulWidget {
 }
 
 final class _ManualWireButtonState extends State<_ManualWireButton> {
-  static const _holdDelay = Duration(milliseconds: 500);
-  static const _feedLatchDelay = Duration(milliseconds: 3000);
-  static const _pulseDuration = Duration(milliseconds: 500);
-
-  Timer? _holdTimer;
-  Timer? _latchTimer;
-  Timer? _pulseTimer;
-  bool _pressed = false;
-  bool _runningFromHold = false;
-  bool _latchedFeed = false;
+  late final ManualWireGesture _gesture = ManualWireGesture(
+    controller: widget.controller,
+    retract: widget.retract,
+    isEnabled: () => widget.enabled,
+    isActive: () => widget.active,
+    onMessage: widget.onMessage,
+    onVisualChanged: () {
+      if (mounted) {
+        setState(() {});
+      }
+    },
+  );
 
   @override
   void dispose() {
-    _holdTimer?.cancel();
-    _latchTimer?.cancel();
-    _pulseTimer?.cancel();
-    if (_runningFromHold && !_latchedFeed) {
-      unawaited(widget.controller.stopWire());
-    }
+    _gesture.dispose();
     super.dispose();
-  }
-
-  void _pointerDown(PointerDownEvent _) {
-    if (!widget.enabled) {
-      return;
-    }
-    if (!widget.retract && widget.active) {
-      _pressed = true;
-      setState(() {});
-      return;
-    }
-    _pressed = true;
-    _runningFromHold = false;
-    _latchedFeed = false;
-    _holdTimer = Timer(_holdDelay, () async {
-      if (!_pressed || !mounted) {
-        return;
-      }
-      final error = await widget.controller.startWire(retract: widget.retract);
-      if (!mounted) {
-        return;
-      }
-      if (error != null) {
-        widget.onMessage(widget.controller.lastError ?? error.message);
-        return;
-      }
-      _runningFromHold = true;
-      if (!widget.retract) {
-        _latchTimer = Timer(_feedLatchDelay - _holdDelay, () {
-          if (_pressed && mounted) {
-            _latchedFeed = true;
-            widget.onMessage('Continuous feed');
-          }
-        });
-      }
-      setState(() {});
-    });
-    setState(() {});
-  }
-
-  void _finishGesture() {
-    if (!_pressed) {
-      return;
-    }
-    _pressed = false;
-    _holdTimer?.cancel();
-    _holdTimer = null;
-    _latchTimer?.cancel();
-    _latchTimer = null;
-
-    if (!widget.enabled) {
-      setState(() {});
-      return;
-    }
-
-    if (!widget.retract && widget.active) {
-      unawaited(_stopWithMessage('Feed stopped'));
-    } else if (_runningFromHold) {
-      if (!_latchedFeed || widget.retract) {
-        unawaited(
-          _stopWithMessage(widget.retract ? 'Retract stopped' : 'Feed stopped'),
-        );
-      }
-    } else {
-      unawaited(_pulse());
-    }
-    setState(() {});
-  }
-
-  Future<void> _pulse() async {
-    final error = await widget.controller.startWire(retract: widget.retract);
-    if (error != null) {
-      widget.onMessage(widget.controller.lastError ?? error.message);
-      return;
-    }
-    _pulseTimer?.cancel();
-    _pulseTimer = Timer(_pulseDuration, () {
-      unawaited(widget.controller.stopWire());
-    });
-  }
-
-  Future<void> _stopWithMessage(String message) async {
-    final error = await widget.controller.stopWire();
-    if (error != null) {
-      widget.onMessage(widget.controller.lastError ?? error.message);
-      return;
-    }
-    widget.onMessage(message);
   }
 
   @override
   Widget build(BuildContext context) {
-    final highlight = widget.enabled && (widget.active || _pressed);
+    final highlight =
+        widget.enabled && (widget.active || _gesture.pressed);
     final fg =
         widget.enabled ? Colors.white : ProcessModeTokens.sideOperationDisabled;
 
     return Listener(
-      onPointerDown: _pointerDown,
-      onPointerUp: (_) => _finishGesture(),
-      onPointerCancel: (_) => _finishGesture(),
+      onPointerDown: (_) => _gesture.pointerDown(),
+      onPointerUp: (_) => _gesture.pointerUp(),
+      onPointerCancel: (_) => _gesture.pointerUp(),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         width: ProcessModeDimens.quickSideButtonWidth,

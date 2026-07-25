@@ -22,4 +22,17 @@ void main() {
       expect(wpaKeyMgmtRequiresPsk(const ['wpa-ft-eap']), isFalse);
     });
   });
+
+  group('wpaSecurityLabel', () {
+    test('maps keyMgmt tokens to user-facing labels', () {
+      expect(wpaSecurityLabel(const []), 'Open');
+      expect(wpaSecurityLabel(const ['none']), 'Open');
+      expect(wpaSecurityLabel(const ['wpa-psk']), 'WPA2');
+      expect(wpaSecurityLabel(const ['wpa-eap']), 'WPA2');
+      expect(wpaSecurityLabel(const ['sae']), 'WPA3');
+      expect(wpaSecurityLabel(const ['owe']), 'OWE');
+      expect(wpaSecurityLabel(const ['wep']), 'WEP');
+      expect(wpaSecurityLabel(const [], privacy: true), 'WEP');
+    });
+  });
 }

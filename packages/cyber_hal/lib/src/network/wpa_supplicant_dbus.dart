@@ -88,6 +88,8 @@ class WpaSupplicantDbus {
     String? bssid;
     int? freq;
     int? signal;
+    var keyMgmt = const <String>[];
+    var bssPrivacy = false;
     try {
       final bssPath = await obj.getProperty(
         'fi.w1.wpa_supplicant1.Interface',
@@ -100,6 +102,8 @@ class WpaSupplicantDbus {
         bssid = await _readBssid(bss);
         freq = await _getUint(bss, 'fi.w1.wpa_supplicant1.BSS', 'Frequency');
         signal = await _getInt(bss, 'fi.w1.wpa_supplicant1.BSS', 'Signal');
+        keyMgmt = await _readBssKeyMgmt(bss);
+        bssPrivacy = await _bssPrivacyImpliesWep(bss, keyMgmt);
       }
     } catch (_) {}
     return WpaIfaceSnapshot(
@@ -108,6 +112,8 @@ class WpaSupplicantDbus {
       bssid: bssid,
       frequencyMhz: freq,
       signalDbm: signal,
+      keyMgmt: keyMgmt,
+      bssPrivacy: bssPrivacy,
     );
   }
 
@@ -627,6 +633,8 @@ final class WpaIfaceSnapshot {
     this.bssid,
     this.frequencyMhz,
     this.signalDbm,
+    this.keyMgmt = const [],
+    this.bssPrivacy = false,
   });
 
   /// wpa D-Bus Interface.State (e.g. completed, scanning, disconnected).
@@ -635,6 +643,8 @@ final class WpaIfaceSnapshot {
   final String? bssid;
   final int? frequencyMhz;
   final int? signalDbm;
+  final List<String> keyMgmt;
+  final bool bssPrivacy;
 
   /// Map D-Bus State → legacy wpa_cli-style uppercase token for phase helpers.
   String get wpaStateToken {
@@ -701,6 +711,33 @@ bool wpaKeyMgmtRequiresPsk(Iterable<String> keyMgmt) {
     }
   }
   return false;
+}
+
+/// User-facing security label from wpa KeyMgmt tokens (Open / WEP / WPA2 / WPA3 / OWE).
+String? wpaSecurityLabel(
+  Iterable<String> keyMgmt, {
+  bool privacy = false,
+}) {
+  final keys = keyMgmt
+      .map((k) => k.toLowerCase().trim())
+      .where((k) => k.isNotEmpty && k != 'wps')
+      .toList();
+  if (keys.any((k) => k.contains('sae'))) {
+    return 'WPA3';
+  }
+  if (keys.any((k) => k.contains('wep'))) {
+    return 'WEP';
+  }
+  if (keys.any((k) => k.contains('psk') || k.contains('eap') || k.startsWith('wpa-'))) {
+    return 'WPA2';
+  }
+  if (keys.any((k) => k == 'owe')) {
+    return 'OWE';
+  }
+  if (keys.isEmpty || keys.every((k) => k == 'none' || k == 'wpa-none')) {
+    return privacy ? 'WEP' : 'Open';
+  }
+  return null;
 }
 
 /// Parse networkd `Addresses` a(iiay) into IPv4 host strings + prefix.

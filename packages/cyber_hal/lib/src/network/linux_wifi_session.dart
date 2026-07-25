@@ -11,7 +11,8 @@ import 'package:cyber_hal/src/network/wifi_link_parse.dart';
 import 'package:cyber_hal/src/network/wifi_models.dart';
 import 'package:cyber_hal/src/network/wifi_radio.dart';
 import 'package:cyber_hal/src/network/wpa_cli_parse.dart';
-import 'package:cyber_hal/src/network/wpa_supplicant_dbus.dart';
+import 'package:cyber_hal/src/network/wpa_supplicant_dbus.dart'
+    show WpaSupplicantDbus, wpaSecurityLabel;
 import 'package:cyber_hal/src/profile/board_profile.dart';
 import 'package:dbus/dbus.dart';
 import 'package:flutter/foundation.dart';
@@ -330,6 +331,13 @@ class LinuxWifiSession implements WifiController {
         (ipv4 == null || ipv4.isEmpty)) {
       phase = WifiConnectionPhase.obtainingIp;
     }
+    String? security;
+    if (snap.wpaStateToken == 'COMPLETED') {
+      security = wpaSecurityLabel(
+        snap.keyMgmt,
+        privacy: snap.bssPrivacy,
+      );
+    }
     return WifiConnectionState(
       phase: phase,
       ssid: snap.ssid,
@@ -341,7 +349,35 @@ class LinuxWifiSession implements WifiController {
       dns: dns,
       frequencyMhz: snap.frequencyMhz,
       signalDbm: snap.signalDbm,
+      macAddress: await _readMac(),
+      linkSpeedMbps: await _readLinkSpeedMbps(),
+      security: security,
     );
+  }
+
+  Future<String?> _readMac() async {
+    try {
+      return (await File('/sys/class/net/$iface/address').readAsString())
+          .trim();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<int?> _readLinkSpeedMbps() async {
+    try {
+      final s = await File('/sys/class/net/$iface/speed').readAsString();
+      final v = int.tryParse(s.trim());
+      if (v != null && v > 0) {
+        return v;
+      }
+    } catch (_) {}
+    try {
+      final r = await _run(['iw', 'dev', iface, 'link'], log: false);
+      return WifiLinkParse.linkSpeedMbpsFromIw(r.stdout as String? ?? '');
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<String?> _readGateway() async {

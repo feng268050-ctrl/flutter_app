@@ -95,6 +95,9 @@ class WifiConnectionState {
     this.dns,
     this.frequencyMhz,
     this.signalDbm,
+    this.macAddress,
+    this.linkSpeedMbps,
+    this.security,
     this.message,
   });
 
@@ -107,6 +110,15 @@ class WifiConnectionState {
   final String? dns;
   final int? frequencyMhz;
   final int? signalDbm;
+
+  /// Station interface MAC (e.g. wlan0), when known.
+  final String? macAddress;
+
+  /// Negotiated link rate in Mbps, when reported by the driver / `iw`.
+  final int? linkSpeedMbps;
+
+  /// User-facing security label (Open / WPA2 / WPA3 / …) for the current BSS.
+  final String? security;
   final String? message;
 
   bool get isAssociated =>
@@ -127,6 +139,9 @@ class WifiConnectionState {
     String? dns,
     int? frequencyMhz,
     int? signalDbm,
+    String? macAddress,
+    int? linkSpeedMbps,
+    String? security,
     String? message,
   }) {
     return WifiConnectionState(
@@ -139,6 +154,9 @@ class WifiConnectionState {
       dns: dns ?? this.dns,
       frequencyMhz: frequencyMhz ?? this.frequencyMhz,
       signalDbm: signalDbm ?? this.signalDbm,
+      macAddress: macAddress ?? this.macAddress,
+      linkSpeedMbps: linkSpeedMbps ?? this.linkSpeedMbps,
+      security: security ?? this.security,
       message: message ?? this.message,
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
@@ -7,11 +8,18 @@ import 'package:lws_hmi/features/process_library/application/process_library_con
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/domain/quick_mode_selection.dart';
 import 'package:lws_hmi/features/process_mode/domain/quick_mode_selection_carry.dart';
+import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
+import 'package:lws_hmi/features/process_mode/presentation/cnc_connection_guide.dart';
+import 'package:lws_hmi/features/process_mode/presentation/cnc_exit_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/cnc_running_overlay.dart';
+import 'package:lws_hmi/features/process_mode/presentation/laser_enable_reminder_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_device_controls.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_dashboard.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_mode_entry_tips_dialog.dart';
@@ -39,6 +47,7 @@ final class _QuickModePageState extends State<QuickModePage> {
   String? _lastAppliedUuid;
   String? _statusMessage;
   DeviceControlController? _deviceControl;
+  CncSessionController? _cncSession;
 
   @override
   void initState() {
@@ -50,9 +59,15 @@ final class _QuickModePageState extends State<QuickModePage> {
         return;
       }
       final services = AppScope.maybeOf(context);
-      if (services != null && _deviceControl == null) {
-        _deviceControl = DeviceControlController(services);
-        unawaited(_deviceControl!.start());
+      if (services != null) {
+        if (_deviceControl == null) {
+          _deviceControl = DeviceControlController(services);
+          unawaited(_deviceControl!.start());
+        }
+        if (_cncSession == null) {
+          _cncSession = CncSessionController(services);
+          _cncSession!.addListener(_onCncSessionChanged);
+        }
         setState(() {});
       }
       final controller = ProcessLibraryScope.of(context);
@@ -68,7 +83,15 @@ final class _QuickModePageState extends State<QuickModePage> {
   void dispose() {
     _applyDebounce?.cancel();
     _deviceControl?.dispose();
+    _cncSession?.removeListener(_onCncSessionChanged);
+    _cncSession?.dispose();
     super.dispose();
+  }
+
+  void _onCncSessionChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   List<ProcessPreset> _rowsFor(ProcessLibraryController controller) =>
@@ -102,8 +125,58 @@ final class _QuickModePageState extends State<QuickModePage> {
     if (type == _processType) {
       return;
     }
+    final session = _cncSession;
+    if (_processType == ProcessType.cncCutting &&
+        session != null &&
+        session.runningOverlay) {
+      _showControlMessage('Turn off CNC first.');
+      return;
+    }
+    if (_processType == ProcessType.cncCutting &&
+        type != ProcessType.cncCutting) {
+      unawaited(session?.leaveWithoutExitWrite());
+    }
     setState(() => _processType = type);
     _rebuildSelection(ProcessLibraryScope.of(context));
+    if (type == ProcessType.cncCutting) {
+      unawaited(session?.enter() ?? _enterCncWhenReady());
+    }
+  }
+
+  Future<void> _enterCncWhenReady() async {
+    final services = AppScope.maybeOf(context);
+    if (services == null || !mounted) {
+      return;
+    }
+    if (_cncSession == null) {
+      _cncSession = CncSessionController(services);
+      _cncSession!.addListener(_onCncSessionChanged);
+    }
+    await _cncSession!.enter();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _onBack() {
+    final session = _cncSession;
+    if (session != null && session.blocksNavigation) {
+      _showControlMessage('Turn off CNC first.');
+      return;
+    }
+    Navigator.of(context).maybePop();
+  }
+
+  Future<void> _onCncExitPressed() async {
+    final session = _cncSession;
+    if (session == null) {
+      return;
+    }
+    final confirmed = await showCncExitDialog(context);
+    if (!confirmed || !mounted) {
+      return;
+    }
+    await session.exitToGuide(writeContinuous: true);
   }
 
   void _onMaterialIndex(int index) {
@@ -251,29 +324,21 @@ final class _QuickModePageState extends State<QuickModePage> {
       return;
     }
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Safety confirmation'),
-        content: const Text(
-          'Confirm that the work area is clear and protective equipment '
-          'is in place before enabling the laser.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Enable Laser'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) {
+    final focusScaleRef = await _focusScaleRef();
+    if (!mounted) {
       return;
+    }
+    final confirmed = await showLaserEnableReminderDialog(
+      context: context,
+      processType: _processType,
+      session: LaserEnableReminderSession.quick,
+      focusScaleRef: focusScaleRef,
+    );
+    if (confirmed == null || !mounted) {
+      return;
+    }
+    if (confirmed.dontShowAgain) {
+      LaserEnableReminderGate.suppress(LaserEnableReminderSession.quick);
     }
 
     final secondBlock = _laserPreflight();
@@ -320,6 +385,21 @@ final class _QuickModePageState extends State<QuickModePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
+  }
+
+  Future<int> _focusScaleRef() async {
+    final services = AppScope.maybeOf(context);
+    if (services == null) {
+      return 0;
+    }
+    try {
+      final product = await services.ensureProductInfo();
+      return LaserEnableReminderCopy.parseFocusScaleRef(
+        product.focusScaleRef(),
+      );
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<void> _openEngineerDraft() async {
@@ -370,26 +450,46 @@ final class _QuickModePageState extends State<QuickModePage> {
       MediaQuery.sizeOf(context),
     );
 
+    final cncSession = _cncSession;
+    final processWheel = Transform.translate(
+      offset: const Offset(0, ProcessModeDimens.quickSelectorNudgeY),
+      child: QuickModeProcessWheel(
+        processType: _processType,
+        onChanged: _onProcessTypeChanged,
+      ),
+    );
+
     return Scaffold(
       backgroundColor: ProcessModeTokens.quickRootBackground,
       appBar: WorkModeStatusBar(
         mode: WorkMode.quick,
         processType: _processType,
+        onBack: _onBack,
       ),
-      body: ColoredBox(
-        // lws-ui activity_quick_mode root is #FF0A0B0C; Engineer uses the
-        // bluer shared background token, but Quick mode does not.
-        color: ProcessModeTokens.quickRootBackground,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Transform.translate(
-              offset: const Offset(0, ProcessModeDimens.quickSelectorNudgeY),
-              child: QuickModeProcessWheel(
-                processType: _processType,
-                onChanged: _onProcessTypeChanged,
+      // In-page toast + capture scope for laser reminder frost.
+      body: ProcessModeToastLayer(
+        child: CyberBlurBackdropScope(
+          child: ColoredBox(
+            color: ProcessModeTokens.quickRootBackground,
+            child: CyberBlurBackdropTarget(
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+            // Wheel under content (Android accent elev 0 / wheel only on the
+            // left). CNC guide is Positioned to the right so its bright frame
+            // is never covered by the expand wheel layer.
+            processWheel,
+            if (isCnc)
+              Positioned(
+                left: ProcessModeDimens.cncGuideLeftInset,
+                top: ProcessModeDimens.cncGuideTopInset,
+                right: ProcessModeDimens.cncGuideRightInset,
+                bottom: ProcessModeDimens.cncGuideBottomInset,
+                child: CncConnectionGuide(
+                  linkStatus:
+                      cncSession?.linkStatus ?? CncLinkStatus.connecting,
+                ),
               ),
-            ),
             if (controller.loading && !controller.initialized)
               const Center(child: CircularProgressIndicator()),
             if (showPickers) ...[
@@ -479,17 +579,6 @@ final class _QuickModePageState extends State<QuickModePage> {
                 ),
               ),
             ],
-            if (isCnc)
-              const Center(
-                child: Text(
-                  'CNC Cutting',
-                  key: ValueKey('quick-mode-cnc-placeholder'),
-                  style: TextStyle(
-                    color: Color(0xB3FFFFFF),
-                    fontSize: 18,
-                  ),
-                ),
-              ),
             if (!isCnc &&
                 controller.initialized &&
                 selection != null &&
@@ -530,7 +619,18 @@ final class _QuickModePageState extends State<QuickModePage> {
                   onDisable: _disableLaser,
                 ),
               ),
-          ],
+            if (isCnc &&
+                cncSession != null &&
+                cncSession.runningOverlay)
+              Positioned.fill(
+                child: CncRunningOverlay(
+                  onExitPressed: _onCncExitPressed,
+                ),
+              ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

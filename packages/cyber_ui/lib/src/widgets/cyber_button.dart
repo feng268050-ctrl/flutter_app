@@ -48,6 +48,8 @@ class CyberButton extends StatelessWidget {
     this.onLongPress,
     this.borderGradientCenter =
         CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientColors,
+    this.strokeWidth,
   });
 
   final VoidCallback? onPressed;
@@ -73,6 +75,13 @@ class CyberButton extends StatelessWidget {
 
   /// Frost `borderGradientCenter` for the 1dp stroke.
   final CyberBorderGradientCenter borderGradientCenter;
+
+  /// Optional HL / mid / shadow override for the frost rim (e.g. brighter
+  /// engineer Reset / Save pills). When null, uses [variant] defaults.
+  final List<Color>? borderGradientColors;
+
+  /// Stroke width override; defaults to [CyberDimens.buttonStrokeWidth].
+  final double? strokeWidth;
 
   static const _disabledOpacity = 0.45;
 
@@ -110,10 +119,11 @@ class CyberButton extends StatelessWidget {
       tone: variant == CyberButtonVariant.light
           ? CyberTone.light
           : CyberTone.dark,
-      width: CyberDimens.buttonStrokeWidth,
+      width: strokeWidth ?? CyberDimens.buttonStrokeWidth,
       cornerRadius: cornerRadius,
       gradientCenter: borderGradientCenter,
-      gradientColorsOverride: _borderGradientColors(variant),
+      gradientColorsOverride:
+          borderGradientColors ?? _borderGradientColors(variant),
       uniformColor: _borderFlat(variant),
     );
 

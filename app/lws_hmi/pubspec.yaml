@@ -131,6 +131,7 @@ flutter:
     - assets/work-mode/
     # Process-mode chrome (Quick wheel / Engineer tabs; from lws-ui mipmap-xxxhdpi).
     - assets/process/
+    - assets/process/laser_reminder/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

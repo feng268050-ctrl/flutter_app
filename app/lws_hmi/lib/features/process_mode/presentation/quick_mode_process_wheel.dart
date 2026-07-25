@@ -21,6 +21,12 @@ final class QuickModeProcessWheel extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = ProcessModeTokens.accentFor(processType);
     final hideSideAccent = processType == ProcessType.cncCutting;
+    // CNC: only the solid accent (Android left fill is INVISIBLE). Keep width
+    // ≤ cncGuideLeftInset so elevating the wheel above the guide cannot cover
+    // the connection panel.
+    final leftAccentWidth = hideSideAccent
+        ? ProcessModeDimens.wheelAccentSolidWidth
+        : ProcessModeDimens.wheelAccentBandWidth;
     final selectedIndex =
         QuickProcessWheelItems.types.indexOf(processType).clamp(
               0,
@@ -35,7 +41,7 @@ final class QuickModeProcessWheel extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: SizedBox(
-                width: ProcessModeDimens.wheelAccentBandWidth,
+                width: leftAccentWidth,
                 height: ProcessModeDimens.wheelItemHeight,
                 child: _WheelAccentBand(
                   accent: accent,

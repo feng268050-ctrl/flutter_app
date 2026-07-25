@@ -32,6 +32,18 @@ enum ProcessType {
   bool get isCleaning =>
       this == ProcessType.weldCleaning || this == ProcessType.wideCleaning;
 
+  /// Modbus `control.process_type` value (lws-ui `ModbusProcessType`).
+  ///
+  /// Differs from [wireValue] for cleaning (both map to 2), hand cut (3), and
+  /// CNC (4). UI / library storage keep [wireValue].
+  int get modbusProcessType => switch (this) {
+        ProcessType.continuousWelding => 0,
+        ProcessType.spotWelding => 1,
+        ProcessType.weldCleaning || ProcessType.wideCleaning => 2,
+        ProcessType.handCutting => 3,
+        ProcessType.cncCutting => 4,
+      };
+
   static ProcessType fromWireValue(int value) => values.firstWhere(
         (type) => type.wireValue == value,
         orElse: () => throw FormatException('Unknown process type: $value'),

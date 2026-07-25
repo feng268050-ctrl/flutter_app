@@ -108,6 +108,13 @@ abstract final class ProcessModeDimens {
   static const double wheelSelectedPadding = 24 * quickSelectorScale;
   static const double wheelDistancePadding = 10 * quickSelectorScale;
 
+  /// Clears the scaled process wheel / left accent (Android used 310 with a
+  /// full-size 260 wheel; HMI wheel is 2/3 so the inset is reduced).
+  static const double cncGuideLeftInset = 210;
+  static const double cncGuideTopInset = 24;
+  static const double cncGuideRightInset = 24;
+  static const double cncGuideBottomInset = 24;
+
   /// Center laser dashboard design canvas from lws-ui `laser_progress.xml`.
   ///
   /// Android lays the Quick screen out at 1280×800dp. Flutter-pi reports a

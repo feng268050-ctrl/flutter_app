@@ -20,9 +20,9 @@ abstract final class ProcessModeAssets {
   static const cutOff = 'assets/process/cut_off.webp';
 
   static const continuousWeldingTabBg =
-      'assets/process/continuous_welding_tab_bg.png';
-  static const spotWeldingTabBg = 'assets/process/point_welding_tab_bg.png';
-  static const weldCleaningTabBg = 'assets/process/weld_clean_tab_bg.png';
+      'assets/process/continuous_welding_tab_bg.webp';
+  static const spotWeldingTabBg = 'assets/process/point_welding_tab_bg.webp';
+  static const weldCleaningTabBg = 'assets/process/weld_clean_tab_bg.webp';
   static const wideCleaningTabBg = 'assets/process/width_clean_tab_bg.webp';
   static const handCuttingTabBg = 'assets/process/hand_cut_tab_bg.webp';
 
@@ -58,6 +58,39 @@ abstract final class ProcessModeAssets {
   static const feedIcon = 'assets/process/entering_silk.webp';
   static const retractOnIcon = 'assets/process/retreat_white_on.webp';
   static const retractOffIcon = 'assets/process/retreat_white_off.webp';
+
+  /// CNC connection guide / running overlay (lws-ui mipmap-xxxhdpi).
+  static const cncBg = 'assets/process/cnc_bg.webp';
+  static const cncStep1 = 'assets/process/cnc_step_1.webp';
+  static const cncStep2 = 'assets/process/cnc_step_2.webp';
+  static const cncUnconnect = 'assets/process/unconnect.webp';
+  static const cncConnectSuccess = 'assets/process/connect_success.webp';
+  static const cncConnectError = 'assets/process/connect_error.webp';
+  static const cncBlueLink = 'assets/process/blue_link.webp';
+  static const cncExitBtn = 'assets/process/cnc_exit_btn.webp';
+  static const cncDialogBtn = 'assets/process/cnc_dialog_btn.webp';
+
+  /// Laser-enable Important Reminder (lws-ui open_laser / nozzle_* / fsr_*).
+  static const laserReminderProtection =
+      'assets/process/laser_reminder/open_laser_icon1.webp';
+  static const laserReminderNozzleWeld =
+      'assets/process/laser_reminder/nozzle_weld.webp';
+  static const laserReminderNozzleCut =
+      'assets/process/laser_reminder/nozzle_cut.webp';
+  static const laserReminderNozzleWeldPathClean =
+      'assets/process/laser_reminder/nozzle_weld_path_clean.webp';
+  static const laserReminderNozzleUltraWideClean =
+      'assets/process/laser_reminder/nozzle_ultra_wide_clean.webp';
+
+  static String laserReminderFocusScale(int focusScaleRef) {
+    if (focusScaleRef >= 0 && focusScaleRef <= 9) {
+      return 'assets/process/laser_reminder/fsr_$focusScaleRef.webp';
+    }
+    if (focusScaleRef >= -9 && focusScaleRef <= -1) {
+      return 'assets/process/laser_reminder/fsr_n${-focusScaleRef}.webp';
+    }
+    return '';
+  }
 
   /// Engineer material type icons (lws-ui mipmap-xxhdpi).
   static const stainlessSteelIcon = 'assets/process/stainless_steel_icon.webp';

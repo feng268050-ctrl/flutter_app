@@ -4,11 +4,13 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
+import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_ramp_chart.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
@@ -73,9 +75,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   }
 
   void _toast(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
-    );
+    ProcessModeToast.show(context, message);
   }
 
   @override
@@ -137,9 +137,25 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     onChanged: (value) async {
                                       final err = await widget.controller
                                           .setManualGas(value);
-                                      if (err != null && context.mounted) {
-                                        _toast(context, err.message);
+                                      if (!context.mounted) {
+                                        return;
                                       }
+                                      if (err != null) {
+                                        _toast(
+                                          context,
+                                          widget.controller.lastError ??
+                                              err.message,
+                                        );
+                                        return;
+                                      }
+                                      _toast(
+                                        context,
+                                        value
+                                            ? DeviceControlFeedbackCopy
+                                                .manualGasOn
+                                            : DeviceControlFeedbackCopy
+                                                .manualGasOff,
+                                      );
                                     },
                                   ),
                                 ),
@@ -160,14 +176,20 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                         return;
                                       }
                                       if (err != null) {
-                                        _toast(context, err.message);
+                                        _toast(
+                                          context,
+                                          widget.controller.lastError ??
+                                              err.message,
+                                        );
                                         return;
                                       }
                                       _toast(
                                         context,
                                         value
-                                            ? 'Auto wire feed enabled'
-                                            : 'Wire feed turned off',
+                                            ? DeviceControlFeedbackCopy
+                                                .autoWireFeedOn
+                                            : DeviceControlFeedbackCopy
+                                                .autoWireFeedOff,
                                       );
                                     },
                                   ),

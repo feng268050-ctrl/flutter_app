@@ -1,5 +1,6 @@
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_hal/stub.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,11 +12,14 @@ import 'package:lws_hmi/features/process_library/application/process_parameter_a
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_library/infrastructure/sqlite_process_library_repository.dart';
 import 'package:lws_hmi/features/process_library/presentation/engineer_mode_page.dart';
+import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  tearDown(ProcessModeToast.resetForTest);
 
   AppServices testServices() => AppServices(
         boardProfile: BoardProfile.fromJsonString('''
@@ -136,6 +140,38 @@ void main() {
         findsOneWidget);
     expect(find.byKey(const ValueKey('engineer-parameters-actions-divider')),
         findsOneWidget);
+
+    // Reset / Save sit after the last param row — below the form viewport.
+    final formRect = tester
+        .getRect(find.byKey(const ValueKey('engineer-parameter-form')));
+    final resetRect = tester
+        .getRect(find.byKey(const ValueKey('engineer-action-reset-default')));
+    expect(resetRect.top, greaterThanOrEqualTo(formRect.bottom - 1));
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('engineer-action-reset-default')),
+    );
+    await tester.pump();
+    expect(
+      tester
+          .getRect(
+            find.byKey(const ValueKey('engineer-action-reset-default')),
+          )
+          .top,
+      lessThan(formRect.bottom),
+    );
+
+    final resetButton = tester.widget<CyberButton>(
+      find.byKey(const ValueKey('engineer-action-reset-default')),
+    );
+    expect(resetButton.shape, CyberButtonShape.rounded);
+    expect(
+      resetButton.borderGradientCenter,
+      CyberBorderGradientCenter.topLeftBottomRight,
+    );
+    expect(resetButton.strokeWidth, 1.5);
+    expect(resetButton.borderGradientColors?.first.alpha, greaterThan(0x77));
+
     expect(find.byKey(const ValueKey('engineer-param-process.laser_power')),
         findsOneWidget);
     expect(find.byKey(const ValueKey('engineer-ramp-accordion')), findsOneWidget);
@@ -153,8 +189,16 @@ void main() {
         .width;
     expect(parameterWidth / deviceWidth, closeTo(2, 0.05));
 
-    final continuousTab = tester.widget<Text>(find.text('Continuous').first);
-    expect(continuousTab.style?.fontSize, 16);
+    final continuousTab = tester.widget<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey('engineer-tab-continuousWelding')),
+        matching: find.text('Continuous'),
+      ),
+    );
+    expect(
+      continuousTab.style?.fontSize,
+      ProcessModeDimens.engineerTabLabelSize,
+    );
   });
 
   testWidgets('Quick handoff opens unsaved draft', (tester) async {
@@ -215,6 +259,32 @@ void main() {
       find.byKey(const ValueKey('engineer-action-save-favorite')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('Reset to Default shows toast, not success dialog', (tester) async {
+    await setDesignSurface(tester);
+    final controller = await seedController();
+    await tester.pumpWidget(engineerHarness(controller: controller));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('engineer-action-reset-default')),
+    );
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey('engineer-action-reset-default')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Reset complete'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('engineer-operation-success')),
+      findsNothing,
+    );
+    await tester.pump(ProcessModeToast.shortDuration);
+    ProcessModeToast.resetForTest();
   });
 
   testWidgets('tab switch keeps per-type in-memory session', (tester) async {

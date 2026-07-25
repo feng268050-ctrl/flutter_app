@@ -10,10 +10,12 @@ import 'package:lws_hmi/features/process_mode/application/device_control_control
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_device_panel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  tearDown(ProcessModeToast.resetForTest);
 
   AppServices servicesWith(ModbusRtuClient modbus) {
     return AppServices(
@@ -47,6 +49,7 @@ void main() {
 
   testWidgets('continuous weld enables Auto Wire / Feed / Retract',
       (tester) async {
+    addTearDown(ProcessModeToast.resetForTest);
     final modbus = _RecordingModbus();
     final controller = DeviceControlController(servicesWith(modbus))
       ..keySwitchOn = true
@@ -81,6 +84,7 @@ void main() {
     expect(find.byKey(const ValueKey('engineer-panel-feed')), findsOneWidget);
     expect(
         find.byKey(const ValueKey('engineer-panel-retract')), findsOneWidget);
+    ProcessModeToast.resetForTest();
   });
 
   testWidgets('spot welding keeps wire controls disabled', (tester) async {

@@ -8,6 +8,7 @@ import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_ramp_chart.dart';
+import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
@@ -15,18 +16,24 @@ import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 
 /// Engineer left device panel (lws-ui `engineer_continuous_device_controls`).
 ///
-/// Wire feed/retract stay stubbed until protocol is confirmed.
+/// Wire Feed/Retract share Quick's [ManualWireGesture] protocol. Continuous
+/// welding is the only process type with live wire controls.
 final class EngineerDevicePanel extends StatefulWidget {
   const EngineerDevicePanel({
     super.key,
     required this.controller,
     required this.processType,
     required this.preset,
+    this.onBeforeEnableLaser,
   });
 
   final DeviceControlController controller;
   final ProcessType processType;
   final ProcessPreset preset;
+
+  /// Optional pre-enable hook (safety dialog + re-apply process). Return
+  /// `false` to abort laser enable.
+  final Future<bool> Function()? onBeforeEnableLaser;
 
   @override
   State<EngineerDevicePanel> createState() => _EngineerDevicePanelState();
@@ -54,12 +61,21 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
       widget.processType == ProcessType.continuousWelding ||
       widget.processType == ProcessType.spotWelding;
 
+  bool get _wireCapable =>
+      widget.processType == ProcessType.continuousWelding;
+
   @override
   void didUpdateWidget(covariant EngineerDevicePanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.processType != widget.processType) {
       _rampOpen = false;
     }
+  }
+
+  void _toast(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
   }
 
   @override
@@ -72,6 +88,8 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
         final thresholds =
             AdvancedSettingsScope.maybeThresholdsOf(context)?.values ??
                 const AdvancedSettingsThresholdValues();
+        final wireEnabled =
+            _wireCapable && !widget.controller.busy && !laserActive;
         return EngineerFrostPanel(
           key: const ValueKey('engineer-device-panel'),
           edge: EngineerFrostEdge.topLeftBottomRight,
@@ -120,10 +138,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                       final err = await widget.controller
                                           .setManualGas(value);
                                       if (err != null && context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(content: Text(err.message)),
-                                        );
+                                        _toast(context, err.message);
                                       }
                                     },
                                   ),
@@ -135,9 +150,26 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     key: const ValueKey(
                                         'engineer-panel-auto-wire'),
                                     label: 'Auto Wire Feed',
-                                    value: false,
-                                    enabled: false,
-                                    onChanged: null,
+                                    value: widget.controller.autoWireFeed &&
+                                        _wireCapable,
+                                    enabled: wireEnabled,
+                                    onChanged: (value) async {
+                                      final err = await widget.controller
+                                          .setAutoWireFeed(value);
+                                      if (!context.mounted) {
+                                        return;
+                                      }
+                                      if (err != null) {
+                                        _toast(context, err.message);
+                                        return;
+                                      }
+                                      _toast(
+                                        context,
+                                        value
+                                            ? 'Auto wire feed enabled'
+                                            : 'Wire feed turned off',
+                                      );
+                                    },
                                   ),
                                 ),
                                 const Divider(
@@ -156,26 +188,36 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   child: Row(
                                     children: [
                                       Expanded(
-                                        child: _EngineerDeviceActionButton(
+                                        child: _EngineerWireActionButton(
                                           key: const ValueKey(
                                               'engineer-panel-retract'),
                                           label: 'Retract',
                                           icon: Icons.output,
                                           height: _wireButtonsHeight,
-                                          enabled: false,
-                                          visualEnabled: true,
+                                          enabled: wireEnabled,
+                                          retract: true,
+                                          active: widget.controller.wireWork &&
+                                              widget.controller.wireRetracting,
+                                          controller: widget.controller,
+                                          onMessage: (message) =>
+                                              _toast(context, message),
                                         ),
                                       ),
                                       const SizedBox(width: _actionGap),
                                       Expanded(
-                                        child: _EngineerDeviceActionButton(
+                                        child: _EngineerWireActionButton(
                                           key: const ValueKey(
                                               'engineer-panel-feed'),
                                           label: 'Feed',
                                           icon: Icons.input,
                                           height: _wireButtonsHeight,
-                                          enabled: false,
-                                          visualEnabled: true,
+                                          enabled: wireEnabled,
+                                          retract: false,
+                                          active: widget.controller.wireWork &&
+                                              !widget.controller.wireRetracting,
+                                          controller: widget.controller,
+                                          onMessage: (message) =>
+                                              _toast(context, message),
                                         ),
                                       ),
                                     ],
@@ -196,6 +238,14 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   enabled: !(widget.controller.busy ||
                                       widget.controller.manualGas),
                                   onHoldComplete: () async {
+                                    final before =
+                                        widget.onBeforeEnableLaser;
+                                    if (before != null) {
+                                      final ok = await before();
+                                      if (!ok || !context.mounted) {
+                                        return;
+                                      }
+                                    }
                                     final policy = AdvancedSettingsScope
                                                 .maybeDangerousOf(context)
                                             ?.policySnapshot ??
@@ -214,10 +264,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                       policy: policy,
                                     );
                                     if (err != null && context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(content: Text(err.message)),
-                                      );
+                                      _toast(context, err.message);
                                     }
                                   },
                                   onPressed: laserActive
@@ -225,11 +272,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                           final err = await widget.controller
                                               .disableLaser();
                                           if (err != null && context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                  content: Text(err.message)),
-                                            );
+                                            _toast(context, err.message);
                                           }
                                         }
                                       : null,
@@ -324,6 +367,116 @@ final class _CheckRow extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Wire Feed/Retract with [ManualWireGesture], Engineer outline chrome.
+final class _EngineerWireActionButton extends StatefulWidget {
+  const _EngineerWireActionButton({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.height,
+    required this.enabled,
+    required this.retract,
+    required this.active,
+    required this.controller,
+    required this.onMessage,
+  });
+
+  final String label;
+  final IconData icon;
+  final double height;
+  final bool enabled;
+  final bool retract;
+  final bool active;
+  final DeviceControlController controller;
+  final ValueChanged<String> onMessage;
+
+  @override
+  State<_EngineerWireActionButton> createState() =>
+      _EngineerWireActionButtonState();
+}
+
+final class _EngineerWireActionButtonState
+    extends State<_EngineerWireActionButton> {
+  late final ManualWireGesture _gesture = ManualWireGesture(
+    controller: widget.controller,
+    retract: widget.retract,
+    isEnabled: () => widget.enabled,
+    isActive: () => widget.active,
+    onMessage: widget.onMessage,
+    onVisualChanged: () {
+      if (mounted) {
+        setState(() {});
+      }
+    },
+  );
+
+  @override
+  void dispose() {
+    _gesture.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const actionOrange = Color(0xFFF46E01);
+    final highlight = widget.enabled && (widget.active || _gesture.pressed);
+    final foreground = highlight ? Colors.white : actionOrange;
+    final disabledForeground = const Color(0xFF7D3E2B);
+    const labelSize = 16.0;
+    return Semantics(
+      button: true,
+      enabled: widget.enabled,
+      label: widget.label,
+      child: Listener(
+        onPointerDown: (_) {
+          if (!widget.enabled) {
+            return;
+          }
+          CyberClickSoundRegistry.playClick();
+          _gesture.pointerDown();
+        },
+        onPointerUp: (_) => _gesture.pointerUp(),
+        onPointerCancel: (_) => _gesture.pointerUp(),
+        child: Opacity(
+          opacity: widget.enabled ? 1 : 0.55,
+          child: Container(
+            height: widget.height,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              color: highlight ? actionOrange : const Color(0xFF2C1923),
+              border: Border.all(
+                color: actionOrange,
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  widget.icon,
+                  color: widget.enabled ? foreground : disabledForeground,
+                  size: labelSize,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: widget.enabled ? foreground : disabledForeground,
+                    fontSize: labelSize,
+                    fontWeight: FontWeight.w600,
+                    height: 1.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

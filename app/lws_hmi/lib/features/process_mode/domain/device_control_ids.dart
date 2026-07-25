@@ -63,4 +63,9 @@ extension LaserEnableBlockReasonMessage on LaserEnableBlockReason {
 /// Hold-to-enable timing (lws-ui FrostHoldConfirmController fill).
 abstract final class DeviceControlTiming {
   static const Duration laserHoldToEnable = Duration(milliseconds: 300);
+
+  /// Manual Feed/Retract gesture timings (lws-ui wire pulse / hold / latch).
+  static const Duration wireHoldToRun = Duration(milliseconds: 500);
+  static const Duration wirePulseDuration = Duration(milliseconds: 500);
+  static const Duration wireFeedLatchDelay = Duration(milliseconds: 3000);
 }

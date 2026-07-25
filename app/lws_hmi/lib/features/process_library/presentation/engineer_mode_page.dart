@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
+import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_mode_draft.dart';
@@ -16,6 +17,7 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.
 import 'package:lws_hmi/features/process_mode/presentation/engineer_operation_status_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_parameter_form.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_process_tab_bar.dart';
+import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
@@ -197,6 +199,73 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     });
   }
 
+  /// Safety dialog + re-apply current draft (Quick enable order parity).
+  Future<bool> _beforeEnableLaser() async {
+    final draft = _draft;
+    if (draft == null) {
+      return false;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Safety confirmation'),
+        content: const Text(
+          'Confirm that the work area is clear and protective equipment '
+          'is in place before enabling the laser.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Enable Laser'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return false;
+    }
+
+    final library = ProcessLibraryScope.of(context);
+    final result = await library.apply(draft.preset);
+    if (!mounted) {
+      return false;
+    }
+    if (result.failure != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_applyFailureMessage(result.failure)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return false;
+    }
+    final thresholds = AdvancedSettingsScope.maybeThresholdsOf(context);
+    if (thresholds != null) {
+      await thresholds.commit(thresholds.values);
+    }
+    return true;
+  }
+
+  String _applyFailureMessage(ProcessApplyFailure? failure) {
+    return switch (failure) {
+      ProcessApplyFailure.busy => 'Apply busy',
+      ProcessApplyFailure.unsafeMachineState => 'Laser work in progress',
+      ProcessApplyFailure.baselineReadFailed => 'Baseline read failed',
+      ProcessApplyFailure.processWriteFailed => 'Write failed',
+      ProcessApplyFailure.processReadbackFailed => 'Readback mismatch',
+      ProcessApplyFailure.processTypeWriteFailed => 'Process type write failed',
+      ProcessApplyFailure.processTypeReadbackFailed =>
+        'Process type readback mismatch',
+      ProcessApplyFailure.partialApply => 'Partial apply',
+      null => 'Apply failed',
+    };
+  }
+
   /// Unlock built-in for editing as an in-memory user draft (no DB write yet).
   Future<ProcessPreset?> _beginEditFromBuiltin() async {
     final draft = _draft;
@@ -358,6 +427,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                       controller: _deviceControl!,
                                       processType: _processType,
                                       preset: draft.preset,
+                                      onBeforeEnableLaser: _beforeEnableLaser,
                                     ),
                             ),
                           ),

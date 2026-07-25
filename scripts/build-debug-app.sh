@@ -8,7 +8,7 @@ source "$ROOT/scripts/prebuilt-common.sh"
 # shellcheck source=debug-runtime-common.sh
 source "$ROOT/scripts/debug-runtime-common.sh"
 
-APP_DIR="$ROOT/app/hmi"
+APP_DIR="$ROOT/app/lws_hmi"
 STAGING="$(debug_runtime_staging_dir "$ROOT")"
 PINNED_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-sdk.version" "3.24.4")"
 ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "$PINNED_VER")"

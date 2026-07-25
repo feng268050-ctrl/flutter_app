@@ -68,7 +68,7 @@ Product Home MUST NOT present the Home-local engineering perf HUD strip (single-
 
 ### Requirement: Home glass chrome uses CyberUI
 
-Product Home frosted surfaces (quick-action cards, and any Cyber glass used by the home clock composition) SHALL use `packages/cyber_ui` APIs (`CyberBackdropBlur` / `CyberCard` / shared sample-mode types) rather than duplicating glass implementations under `app/hmi/lib/ui/cyber` after migration. Home MUST keep a backdrop capture scope/target so frozen/on-change modes remain available when selected.
+Product Home frosted surfaces (quick-action cards, and any Cyber glass used by the home clock composition) SHALL use `packages/cyber_ui` APIs (`CyberBackdropBlur` / `CyberCard` / shared sample-mode types) rather than duplicating glass implementations under `app/lws_hmi/lib/ui/cyber` after migration. Home MUST keep a backdrop capture scope/target so frozen/on-change modes remain available when selected.
 
 #### Scenario: Quick actions use CyberUI sample mode
 

@@ -7,11 +7,11 @@ In-app overlay soft keyboard (CyberIME) for LWS HMI product Apps on flutter-pi â
 
 ### Requirement: CyberIME package identity
 
-The shared Flutter soft-keyboard kit SHALL live at `packages/cyber_ime` (in-repo path package for v1) with `publish_to: none`, SDK constraint compatible with `app/hmi`, and a public import surface under `package:cyber_ime/...`. Public types and widgets MUST use the **CyberIme\*** prefix. The package MUST NOT depend on the product App. Product Apps MUST depend on this package for HMI overlay keyboards rather than forking keyboard widgets under feature folders.
+The shared Flutter soft-keyboard kit SHALL live at `packages/cyber_ime` (in-repo path package for v1) with `publish_to: none`, SDK constraint compatible with `app/lws_hmi`, and a public import surface under `package:cyber_ime/...`. Public types and widgets MUST use the **CyberIme\*** prefix. The package MUST NOT depend on the product App. Product Apps MUST depend on this package for HMI overlay keyboards rather than forking keyboard widgets under feature folders.
 
 #### Scenario: App imports CyberIME
 
-- **WHEN** `app/hmi` declares a path dependency on `cyber_ime`
+- **WHEN** `app/lws_hmi` declares a path dependency on `cyber_ime`
 - **THEN** product code can `import 'package:cyber_ime/cyber_ime.dart'` and resolve at least one public overlay/session API
 
 ### Requirement: In-app overlay keyboard (not system IME)

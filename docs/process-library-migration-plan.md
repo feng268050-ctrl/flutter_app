@@ -2,7 +2,7 @@
 
 **状态：实施中（A–D 含工程师内置预设派生已完成；正式签收、E 的导入包 UI/审计、F 待实施）**  
 **目标阶段：P4.4 本地 HTTP 与数据、P4.6 产品功能迁移**  
-**范围：将 `lws-ui` 的工艺库迁移至 `app/hmi/`，以 SQLite 作为设备端唯一持久化存储。**
+**范围：将 `lws-ui` 的工艺库迁移至 `app/lws_hmi/`，以 SQLite 作为设备端唯一持久化存储。**
 
 ## 1. 背景与结论
 
@@ -88,12 +88,12 @@ ProcessLibraryRepository
 建议目录：
 
 ```text
-app/hmi/lib/features/process_library/
+app/lws_hmi/lib/features/process_library/
   domain/           # 工艺、枚举、Repository 接口、校验规则
   application/      # 查询、保存、导入、应用 Use Case
   infrastructure/   # SQLite、JSON asset/导入器、HAL 写入适配器
   presentation/     # 快速模式与工程师模式页面
-app/hmi/assets/process-library/
+app/lws_hmi/assets/process-library/
   manifest.json
   l1-pro.<version>.json
 ```
@@ -165,7 +165,7 @@ CREATE UNIQUE INDEX uq_process_presets_uuid ON process_presets(uuid);
 
 数据模型使用业务单位，例如毫米、毫秒、Hz、百分比；寄存器编码由 HAL 配置负责。不得把 Modbus 地址、缩放系数或字节序复制进 UI/SQLite 代码。
 
-首期映射以 `app/hmi/assets/hal/modbus.json` 为准，包含以下类别：
+首期映射以 `app/lws_hmi/assets/hal/modbus.json` 为准，包含以下类别：
 
 | 类别 | HAL 属性示例 |
 |---|---|
@@ -295,9 +295,9 @@ Android Room 文件不能作为 Linux HMI 的直接升级源：路径、权限�
 
 ## 13. 实施记录
 
-2026-07-23 已在 `app/hmi/` 落地阶段 A–D（含 `EngineerPresetDeriver` 与 golden test），以及阶段 E 的备份恢复底层接口：领域模型、SQLite Repository、版本化 JSON 导入、quick→engineer_preset 派生、Quick/Engineer 页面、用户工艺 CRUD、HAL 批量应用/读回、备份恢复和自动化测试。USB/OTA 外部导入包 UI 与审计报告仍按后续切片处理。
+2026-07-23 已在 `app/lws_hmi/` 落地阶段 A–D（含 `EngineerPresetDeriver` 与 golden test），以及阶段 E 的备份恢复底层接口：领域模型、SQLite Repository、版本化 JSON 导入、quick→engineer_preset 派生、Quick/Engineer 页面、用户工艺 CRUD、HAL 批量应用/读回、备份恢复和自动化测试。USB/OTA 外部导入包 UI 与审计报告仍按后续切片处理。
 
-仓库已包含 `app/hmi/assets/process-library/L1 Pro.xlsx`，并已转换出 `l1-pro.1.0.4-beta.json` 与 manifest（366 行 `quick`）。导入后还会按材料组派生 `engineer_preset`。该 asset 仅缺少工艺负责人正式签收，不能据此宣称已完成生产参数验收。取得更新的签收 Excel 后执行：
+仓库已包含 `app/lws_hmi/assets/process-library/L1 Pro.xlsx`，并已转换出 `l1-pro.1.0.4-beta.json` 与 manifest（366 行 `quick`）。导入后还会按材料组派生 `engineer_preset`。该 asset 仅缺少工艺负责人正式签收，不能据此宣称已完成生产参数验收。取得更新的签收 Excel 后执行：
 
 ```bash
 python3 scripts/convert-process-library.py /path/to/工艺库_V1.4.xlsx --version 1.4.0 --models "PRODUCT_MODEL"

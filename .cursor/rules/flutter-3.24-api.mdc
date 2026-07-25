@@ -1,6 +1,6 @@
 ---
 description: Pin Flutter/Material APIs to 3.24.4 — do not use newer Flutter docs
-globs: app/hmi/**/*.dart,packages/**/*.dart
+globs: app/lws_hmi/**/*.dart,packages/**/*.dart
 alwaysApply: false
 ---
 
@@ -11,8 +11,8 @@ This repo builds and ships with **Flutter 3.24.4** (`flutter-sdk/`, `make build-
 ## Rules
 
 - Target API surface = **3.24.4** only until P5.1 upgrades the SDK/engine.
-- Prefer matching existing widgets in `app/hmi/lib/` over “current best practice” from latest Flutter.
-- After Dart UI changes, verify with the pinned SDK (`make build-app` or `flutter-sdk/bin/flutter analyze` in `app/hmi/`). Host/`fvm`/IDE Flutter newer than 3.24.4 is not authoritative.
+- Prefer matching existing widgets in `app/lws_hmi/lib/` over “current best practice” from latest Flutter.
+- After Dart UI changes, verify with the pinned SDK (`make build-app` or `flutter-sdk/bin/flutter analyze` in `app/lws_hmi/`). Host/`fvm`/IDE Flutter newer than 3.24.4 is not authoritative.
 
 ## Known trap: `DropdownButtonFormField`
 

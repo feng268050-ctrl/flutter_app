@@ -1,6 +1,6 @@
 {
   "dart.flutterSdkPath": "flutter-sdk",
-  "dart.projectSearchPaths": ["app/hmi"],
+  "dart.projectSearchPaths": ["app/lws_hmi"],
   "dart.flutterRunAdditionalArgs": ["--no-track-widget-creation"],
   "dart.analysisExcludedFolders": [
     "flutter-sdk",

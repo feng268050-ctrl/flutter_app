@@ -2,16 +2,16 @@
 
 ## Purpose
 
-Flutter HMI app at `app/hmi/` for flutter-pi ARM64 (meta-flutter layout). Launcher is product Home (`product-home-ui`); Settings and trimmed P2 Demo are named routes; engine/ICU stay on rootfs.
+Flutter HMI app at `app/lws_hmi/` for flutter-pi ARM64 (meta-flutter layout). Launcher is product Home (`product-home-ui`); Settings and trimmed P2 Demo are named routes; engine/ICU stay on rootfs.
 ## Requirements
 ### Requirement: Flutter Hello World project exists in repository
 
-The repository SHALL contain a Flutter application at `app/hmi/` configured for flutter-pi ARM64 release builds (meta-flutter layout), with documentation for engine/flutter-pi version alignment (Flutter 3.24.4 / flutter-pi 37bd977).
+The repository SHALL contain a Flutter application at `app/lws_hmi/` configured for flutter-pi ARM64 release builds (meta-flutter layout), with documentation for engine/flutter-pi version alignment (Flutter 3.24.4 / flutter-pi 37bd977).
 
 #### Scenario: Project structure present
 
 - **WHEN** developer clones lws-hmi after P1 implementation
-- **THEN** `app/hmi/pubspec.yaml` and `lib/main.dart` exist
+- **THEN** `app/lws_hmi/pubspec.yaml` and `lib/main.dart` exist
 
 #### Scenario: Release build script documented
 

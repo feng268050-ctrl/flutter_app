@@ -25,7 +25,7 @@ instead of forking keyboard widgets under feature folders.
 ## Path wiring
 
 ```yaml
-# app/hmi/pubspec.yaml
+# app/lws_hmi/pubspec.yaml
 dependencies:
   cyber_ime:
     path: ../../packages/cyber_ime

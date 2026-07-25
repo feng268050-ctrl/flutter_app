@@ -27,7 +27,7 @@ Host app builds use **flutterpi_tool** (meta-flutter layout, matching Buildroot 
 
 ```bash
 flutter pub global activate flutterpi_tool
-cd app/hmi
+cd app/lws_hmi
 flutter pub get
 flutterpi_tool build --arch=arm64 --release
 ```

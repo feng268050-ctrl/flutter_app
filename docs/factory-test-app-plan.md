@@ -1,6 +1,6 @@
 # Factory Test App 计划
 
-目标：在 **lws-hmi** 仓库内并行开发一个通用 **Factory Test** Flutter 应用，作为 **`cyber_hal` 的前端**，用于出场 / 售后验证 HAL 能力；与焊机产品 App（`app/hmi`）共用板级 profile 与 gpio/modbus 目录，打入同一份 rootfs，**不必另刷镜像**，避免损坏用户数据（`/userdata` 等）。
+目标：在 **lws-hmi** 仓库内并行开发一个通用 **Factory Test** Flutter 应用，作为 **`cyber_hal` 的前端**，用于出场 / 售后验证 HAL 能力；与焊机产品 App（`app/lws_hmi`）共用板级 profile 与 gpio/modbus 目录，打入同一份 rootfs，**不必另刷镜像**，避免损坏用户数据（`/userdata` 等）。
 
 配套阅读：主线 [`flutter-pi-hmi-plan.md`](flutter-pi-hmi-plan.md)（产品 App 可分叉、CyberUI + `cyber_hal`）；HAL 合同 [`hal-portability.md`](hal-portability.md)；包说明 [`packages/cyber_hal/README.md`](../packages/cyber_hal/README.md)。
 
@@ -14,16 +14,16 @@
 
 | 项 | 现状 |
 | ---- | ---- |
-| 产品 App | 仅 `app/hmi/`；`make build-app` → overlay `/opt/hmi`；`hmi.service` 自启 |
+| 产品 App | 仅 `app/lws_hmi/`；`make build-app` → overlay `/opt/hmi`；`hmi.service` 自启 |
 | HAL 前端 | 焊机 App 内嵌 P2 Demo，不是独立应用 |
-| 板级 JSON | `app/hmi/assets/hal/{board_profile,gpio,modbus}.json`，随 HMI Flutter assets 打包 |
+| 板级 JSON | `app/lws_hmi/assets/hal/{board_profile,gpio,modbus}.json`，随 HMI Flutter assets 打包 |
 | 设备槽位 | 单目录 `/opt/hmi`；engine 在 `/usr/lib`，App 只换 `libapp.so` + assets |
 | HAL 加载 | `BoardProfile.loadAsset` / `GpioHal.fromAsset` / `ModbusHal.fromAsset`（Flutter asset URI） |
 | `/usr/share/cyber_hal/` | 文档已预留，**尚未落地**（见 cyber_hal README） |
 
 ### 1.2 结论
 
-1. **源码并行**：新增 `app/factory_test/`，path 依赖 `cyber_hal`（+ 按需 `cyber_ui`），与 `app/hmi` 同 pinned Flutter **3.24.4** / `flutterpi_tool`。
+1. **源码并行**：新增 `app/factory_test/`，path 依赖 `cyber_hal`（+ 按需 `cyber_ui`），与 `app/lws_hmi` 同 pinned Flutter **3.24.4** / `flutterpi_tool`。
 2. **板级目录进 rootfs**：`board_profile.json` / `gpio.json` / `modbus.json` **脱离任一 App**，以 **board pack** 形式打入 rootfs；HMI 与 Factory Test **共用同一路径**。
 3. **构建入口**：`make build-factory-test` → overlay `/opt/factory-test` + `apply-overlay`；文档同步更新 `AGENTS.md` / `README.md`。
 4. **部署形态**：常驻 rootfs `/opt/factory-test`；**不**进 `multi-user` 自启；可由 Settings 隐藏手势 / systemctl / CLI 进入。日常 OTA/`make upgrade` 即可带上，**无需** factory 专用刷机镜像。
@@ -60,7 +60,7 @@
 ```mermaid
 flowchart TB
   subgraph apps [Flutter Apps]
-    HMI["app/hmi → /opt/hmi"]
+    HMI["app/lws_hmi → /opt/hmi"]
     FT["app/factory_test → /opt/factory-test"]
   end
   subgraph shared [共用 packages]
@@ -101,7 +101,7 @@ board/hal/ynh960/
   modbus.json
 ```
 
-从 `app/hmi/assets/hal/` **迁出**（删除 App 内副本，避免双源）。`apply-overlay`（或专用 sync 步骤）将上述文件安装到：
+从 `app/lws_hmi/assets/hal/` **迁出**（删除 App 内副本，避免双源）。`apply-overlay`（或专用 sync 步骤）将上述文件安装到：
 
 ```text
 overlay/.../rootfs-overlay/usr/share/cyber_hal/boards/ynh960/
@@ -135,7 +135,7 @@ overlay/.../rootfs-overlay/usr/share/cyber_hal/boards/ynh960/
 
 ### 4.4 App 侧接线
 
-- **`app/hmi`**：`main.dart` 经 §12.3 解析顺序加载 profile；删除或改写 `HmiHalAssets` 为路径常量/helper；gpio/modbus 经 `fromProfile`（文件路径），不再硬绑 Flutter assets。
+- **`app/lws_hmi`**：`main.dart` 经 §12.3 解析顺序加载 profile；删除或改写 `HmiHalAssets` 为路径常量/helper；gpio/modbus 经 `fromProfile`（文件路径），不再硬绑 Flutter assets。
 - **`app/factory_test`**：同一解析 helper。
 - **单测**：读 `board/hal/ynh960/` 或 `CYBER_HAL_BOARD_ROOT`；更新 portability 文档。
 
@@ -307,7 +307,7 @@ systemctl start hmi
 
 ### Phase A — Board pack 进 rootfs（🔲）
 
-1. 新增 `board/hal/ynh960/`，从 `app/hmi/assets/hal/` 迁入三 JSON；`configs.*` 相对同目录。
+1. 新增 `board/hal/ynh960/`，从 `app/lws_hmi/assets/hal/` 迁入三 JSON；`configs.*` 相对同目录。
 2. Overlay 同步 + `verify-rootfs-overlay.sh` 校验。
 3. HAL：`loadFile` + `fromProfile` 文件/相对路径解析。
 4. HMI 改为读 rootfs pack；更新单测与 portability 文档。
@@ -348,7 +348,7 @@ systemctl start hmi
 | # | 标准 |
 | ---- | ---- |
 | 1 | 仓库存在 `app/factory_test/`，`flutter analyze` 通过（pinned SDK）。 |
-| 2 | `board/hal/ynh960/` 为唯一量产 JSON 源；`app/hmi/assets/hal/` 不再持有副本。 |
+| 2 | `board/hal/ynh960/` 为唯一量产 JSON 源；`app/lws_hmi/assets/hal/` 不再持有副本。 |
 | 3 | rootfs 含 `/usr/share/cyber_hal/boards/ynh960/{board_profile,gpio,modbus}.json`。 |
 | 4 | rootfs 含 `/opt/factory-test/lib/libapp.so` + `flutter_assets`；**无** bundle 内 engine/icu。 |
 | 5 | `make build-factory-test` 写入 overlay；`make help` / README / AGENTS 已描述。 |

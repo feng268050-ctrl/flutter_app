@@ -18,7 +18,7 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# Run & Debug lives in repo root .vscode/ (open lws-hmi, not app/hmi).
+# Run & Debug lives in repo root .vscode/ (open lws-hmi, not app/lws_hmi).
 .vscode/
 
 # Flutter/Dart/Pub related

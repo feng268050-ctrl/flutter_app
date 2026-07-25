@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="$ROOT/app/hmi"
+APP_DIR="$ROOT/app/lws_hmi"
 # shellcheck source=prebuilt-common.sh
 source "$ROOT/scripts/prebuilt-common.sh"
 

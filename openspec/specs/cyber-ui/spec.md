@@ -12,12 +12,12 @@ and the static-sampling blur policy. Soft keyboard rendering stays in
 
 ### Requirement: CyberUI package identity and layout
 
-The shared Flutter UI kit SHALL live at `packages/cyber_ui` (in-repo path package for v1) with `publish_to: none`, SDK constraint compatible with `app/hmi`, and a public import surface under `package:cyber_ui/...`. Public types and widgets MUST use the **Cyber\*** prefix. Product Apps MUST depend on this package rather than forking glass widget implementations under feature folders.
+The shared Flutter UI kit SHALL live at `packages/cyber_ui` (in-repo path package for v1) with `publish_to: none`, SDK constraint compatible with `app/lws_hmi`, and a public import surface under `package:cyber_ui/...`. Public types and widgets MUST use the **Cyber\*** prefix. Product Apps MUST depend on this package rather than forking glass widget implementations under feature folders.
 
 #### Scenario: App declares CyberUI dependency
 
 - **WHEN** the HMI App lists UI kit dependencies after this change
-- **THEN** `app/hmi/pubspec.yaml` SHALL reference `cyber_ui` via a path dependency to `packages/cyber_ui`
+- **THEN** `app/lws_hmi/pubspec.yaml` SHALL reference `cyber_ui` via a path dependency to `packages/cyber_ui`
 
 #### Scenario: Public API naming
 

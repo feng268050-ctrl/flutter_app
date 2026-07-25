@@ -3,7 +3,7 @@
 记录同相机、同硅片路径上的 inbound RTSP 码率对比，以及 **2026-07-22 已确认的根因与修复**。  
 换主板 / 换 GMAC·PHY 布线时，用本文的方法与脚本做验收。
 
-相关：[`network-stack.md`](network-stack.md)（eth0 / networkd）、[`ynh960-uart5-gmac.dtsi`](../overlay/kernel/rockchip/ynh960-uart5-gmac.dtsi)、产品 IPC（`app/hmi/.../ip_camera_*` + MediaMTX）。
+相关：[`network-stack.md`](network-stack.md)（eth0 / networkd）、[`ynh960-uart5-gmac.dtsi`](../overlay/kernel/rockchip/ynh960-uart5-gmac.dtsi)、产品 IPC（`app/lws_hmi/.../ip_camera_*` + MediaMTX）。
 
 ---
 
@@ -181,8 +181,8 @@ ethtool -S eth0 | grep -E 'mmc_rx_crc_error|mmc_rx_udp_err'
 | `overlay/.../90-eth0-ipc-tune.rules` | eth0 出现时触发 tune |
 | `overlay/kernel/patches/0005-icplus-ip101a-disable-aps-ynh960.patch` | IP101G 关 APS |
 | `overlay/.../render-mediamtx-config.sh` | 上游 RTSP transport 策略 |
-| `app/hmi/.../ip_camera_eth0_path.dart` | 避免无谓 reconfigure |
-| `app/hmi/.../ip_camera_product_session.dart` | 忽略自有 apply 期间 flap |
+| `app/lws_hmi/.../ip_camera_eth0_path.dart` | 避免无谓 reconfigure |
+| `app/lws_hmi/.../ip_camera_product_session.dart` | 忽略自有 apply 期间 flap |
 
 ---
 

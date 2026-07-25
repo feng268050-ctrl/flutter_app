@@ -7,7 +7,7 @@ Flutter gen-l10n catalogs, host `make l10n*` workflow, and MaterialApp locale wi
 
 ### Requirement: Flutter gen-l10n catalogs ship with the HMI App
 
-The product App under `app/hmi/` SHALL use Flutter official `flutter gen-l10n` with `l10n.yaml`, parent ARB files `app_en.arb` (template with `@metadata`) and `app_zh.arb`, child locale ARBs for `en_US` / `zh_CN` / `zh_TW`, and committed generated `AppLocalizations` Dart sources. The App SHALL depend on `flutter_localizations` and enable `flutter: generate: true`. Runtime supported locales SHALL be `en-US`, `zh-CN`, and `zh-TW` (no bare `en` / `zh` as MaterialApp `supportedLocales` entries).
+The product App under `app/lws_hmi/` SHALL use Flutter official `flutter gen-l10n` with `l10n.yaml`, parent ARB files `app_en.arb` (template with `@metadata`) and `app_zh.arb`, child locale ARBs for `en_US` / `zh_CN` / `zh_TW`, and committed generated `AppLocalizations` Dart sources. The App SHALL depend on `flutter_localizations` and enable `flutter: generate: true`. Runtime supported locales SHALL be `en-US`, `zh-CN`, and `zh-TW` (no bare `en` / `zh` as MaterialApp `supportedLocales` entries).
 
 #### Scenario: Generated localizations are available
 
@@ -24,7 +24,7 @@ The product App under `app/hmi/` SHALL use Flutter official `flutter gen-l10n` w
 
 The repository SHALL provide host commands that sync child ARBs and regenerate localizations:
 
-- `make l10n` — sync child ARBs then `flutter gen-l10n` for `app/hmi`
+- `make l10n` — sync child ARBs then `flutter gen-l10n` for `app/lws_hmi`
 - `make l10n-sync` — sync child ARBs only
 - `make l10n-gen` — `flutter gen-l10n` only
 - `make l10n-verify` — fail if child ARBs or generated Dart drift from what sync+gen would produce
@@ -34,7 +34,7 @@ zh_TW child content SHALL be derived from Simplified Chinese via OpenCC (with pr
 #### Scenario: Full workflow regenerates children and Dart
 
 - **WHEN** an operator runs `make l10n` after editing parent ARBs
-- **THEN** child ARBs and `app_localizations*.dart` are updated for `app/hmi`
+- **THEN** child ARBs and `app_localizations*.dart` are updated for `app/lws_hmi`
 
 #### Scenario: Verify detects drift
 

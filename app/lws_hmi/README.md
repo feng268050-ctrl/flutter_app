@@ -7,7 +7,7 @@ FFI helpers). `android/` / `ios/` / `macos/` / `web/` / `windows/` are intention
 P2.5 can re-add a mobile target later, for example:
 
 ```bash
-cd app/hmi
+cd app/lws_hmi
 flutter create --platforms=android .
 ```
 

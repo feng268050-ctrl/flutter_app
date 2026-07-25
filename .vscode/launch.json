@@ -5,7 +5,7 @@
       "name": "lws-hmi (USB-SSH / SSH debug)",
       "type": "dart",
       "request": "launch",
-      "cwd": "${workspaceFolder}/app/hmi",
+      "cwd": "${workspaceFolder}/app/lws_hmi",
       "program": "lib/main.dart",
       "flutterMode": "debug",
       "deviceId": "lws-hmi",

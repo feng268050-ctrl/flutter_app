@@ -10,7 +10,7 @@
 
 | 项目 | 实现 |
 |---|---|
-| 应用内抽象 | `app/hmi/lib/features/work_mode/presentation/work_mode_status_bar.dart` |
+| 应用内抽象 | `app/lws_hmi/lib/features/work_mode/presentation/work_mode_status_bar.dart` |
 | 使用页面 | `QuickModePage`、`EngineerModePage` |
 | 左侧 | Back 按钮，沿用 `Navigator.maybePop` |
 | 中间 | Gun Switch、Ground Clamp、Key Switch、Gas Flow、E-Stop 及各自 on/off 图标 |
@@ -35,7 +35,7 @@
 
 ### 1.2 U0 验收
 
-- [x] `WorkModeStatusBar` 在 `app/hmi/`，不属于 `cyber_ui`。
+- [x] `WorkModeStatusBar` 在 `app/lws_hmi/`，不属于 `cyber_ui`。
 - [x] Quick 与 Engineer 路由均使用它。
 - [x] 中间显示五个设备指标及图标。
 - [x] 右侧严格只显示摄像头与时间。
@@ -59,7 +59,7 @@ quick → `engineer_preset` 中位数派生已在工艺库切片落地（见 `do
 |---|---|
 | Token / 标签 | `features/process_mode/domain/process_mode_tokens.dart` |
 | 资源常量 | `features/process_mode/domain/process_mode_assets.dart` |
-| 资源目录 | `app/hmi/assets/process/`（来自 lws-ui `mipmap-xxxhdpi`） |
+| 资源目录 | `app/lws_hmi/assets/process/`（来自 lws-ui `mipmap-xxxhdpi`） |
 | Quick 轮盘 | `QuickModeProcessWheel`（六工艺类型 + 选中高亮带） |
 | Engineer Tab | `EngineerProcessTabBar`（**五** Tab，对齐 lws-ui；CNC 仅在 Quick） |
 | 页面 | `QuickModePage` / `EngineerModePage` 接入骨架 |
@@ -160,13 +160,13 @@ Flutter 优先：`CustomClipper` / `CustomPainter` 复刻 Android 梯形激光�
 
 ## 4. 资源与验证
 
-迁移 Android 视觉时，优先使用 `lws-ui` 的最高质量图标资源；纯色、渐变、边框与分割线优先由 CyberUI/Flutter 绘制。新资源归入 `app/hmi/assets/process/`，并在代码中以工艺类型颜色 token 使用。
+迁移 Android 视觉时，优先使用 `lws-ui` 的最高质量图标资源；纯色、渐变、边框与分割线优先由 CyberUI/Flutter 绘制。新资源归入 `app/lws_hmi/assets/process/`，并在代码中以工艺类型颜色 token 使用。
 
 后续每个切片均须包含对应 Dart/widget 测试。U5 之后在 ynh960 验证设备状态、互锁、写入与读回。
 
 ## 5. 构建
 
-本次改动了 `app/hmi/**`，验证或部署时执行：
+本次改动了 `app/lws_hmi/**`，验证或部署时执行：
 
 ```text
 make build-app

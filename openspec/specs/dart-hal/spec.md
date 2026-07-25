@@ -307,7 +307,7 @@ Linux backends outside `hal/network` ethernet/wifi apply SHALL meet the same reu
 - **WHEN** Demo constructs gpio HAL with a loaded `BoardProfile`
 - **THEN** it SHALL use the profile’s gpio config asset pointer (App-owned `assets/…` URI) and MUST NOT fall back to a hard-coded `packages/cyber_hal/boards/<board>/gpio.json` constant
 ### Requirement: Migration from in-app platform
-Existing `app/hmi/lib/platform/**` Linux backends SHALL be movable into the HAL package with App dependency cutover. After cutover, product App code SHALL NOT construct `LinuxWpaWifiController` (etc.) as the long-term pattern.
+Existing `app/lws_hmi/lib/platform/**` Linux backends SHALL be movable into the HAL package with App dependency cutover. After cutover, product App code SHALL NOT construct `LinuxWpaWifiController` (etc.) as the long-term pattern.
 
 #### Scenario: Demo uses package
 - **WHEN** migration milestone for a domain is complete

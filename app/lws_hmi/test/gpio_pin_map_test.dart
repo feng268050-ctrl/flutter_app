@@ -5,9 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 
 void main() {
-  final halRoot = Directory.current.path.endsWith('hmi')
+  final halRoot = Directory.current.path.endsWith('lws_hmi')
       ? 'assets/hal'
-      : 'app/hmi/assets/hal';
+      : 'app/lws_hmi/assets/hal';
 
   test('RGB line ids match product gpio.json (5/4/7 → 105/106/149)', () {
     final json = File('$halRoot/gpio.json').readAsStringSync();

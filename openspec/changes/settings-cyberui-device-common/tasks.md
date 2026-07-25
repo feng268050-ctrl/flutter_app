@@ -36,4 +36,4 @@
 
 - [x] 6.1 Add/update parent ARB keys (Camera rename, Status, Camera Type/Version, Device Information / Wi‑Fi Details gaps); run `make l10n`
 - [x] 6.2 Update widget/store tests for Device Information (no Camera Type), Common Settings (no section headers, Camera group), Wi‑Fi Details navigation, Camera Status rows
-- [x] 6.3 Run `flutter analyze` (pinned SDK) under `app/hmi/` and targeted tests; device smoke via `make build-app` / `make push-app`
+- [x] 6.3 Run `flutter analyze` (pinned SDK) under `app/lws_hmi/` and targeted tests; device smoke via `make build-app` / `make push-app`

@@ -142,7 +142,7 @@ make reboot-loader
 make flash
 ```
 
-**Flutter app** (`app/hmi/`) — `/opt/hmi` is installed during rootfs build:
+**Flutter app** (`app/lws_hmi/`) — `/opt/hmi` is installed during rootfs build:
 
 ```bash
 make build-app
@@ -150,7 +150,7 @@ make build-rootfs
 make upgrade
 ```
 
-**App UI i18n** (edit `app/hmi/lib/l10n/app_en.arb` + `app_zh.arb`, then):
+**App UI i18n** (edit `app/lws_hmi/lib/l10n/app_en.arb` + `app_zh.arb`, then):
 
 ```bash
 make l10n
@@ -340,7 +340,7 @@ After the board has a rootfs with the P1.5 debug overlay scripts (`hmi-launch.sh
 make debug-app                   # SN=... or IP=... when multiple boards
 ```
 
-Or open `app/hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH / SSH debug)** from Run and Debug. Pre-launch runs `make debug-host-prepare`: for registered `IP=` / `MODE=SSH` it only checks reachability (no USB ECM); for USB-SSH it configures the host ECM interface (macOS may request `sudo`). Put `IP=` in `.env` so the IDE picks the SSH board. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
+Or open `app/lws_hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH / SSH debug)** from Run and Debug. Pre-launch runs `make debug-host-prepare`: for registered `IP=` / `MODE=SSH` it only checks reachability (no USB ECM); for USB-SSH it configures the host ECM interface (macOS may request `sudo`). Put `IP=` in `.env` so the IDE picks the SSH board. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
 
 `make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/hmi/debug-runtime/`), replaces `/opt/hmi`, and starts the HMI with VM Service over SSH port forwarding (USB-SSH or registered IP). Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make push-app`.
 
@@ -633,7 +633,7 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 | `overlay/buildroot/chips/lws_hmi_*.config` | **方案 A** + flutter-pi Kconfig 片段 |
 | `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig` | 瘦身 Buildroot defconfig（无 Weston/Chromium） |
 | `board/logo/splash_icon.png` | Boot splash 源图 → `make build-boot-logo` |
-| `app/hmi/` | P1 Hello World Flutter 工程 |
+| `app/lws_hmi/` | P1 Hello World Flutter 工程 |
 | `AGENTS.md` | AI agent 工作流 + 改动后的重新构建指引 |
 | `scripts/build-{boot-logo,flutter-app}.sh` | Logo / App 构建脚本 |
 | `overlay/.../rootfs-overlay/etc/systemd/` | `hmi.service`、journald volatile 等 |

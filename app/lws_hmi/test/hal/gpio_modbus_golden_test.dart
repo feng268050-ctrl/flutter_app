@@ -7,9 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Golden-style assertions: ynh960 gpio/modbus JSON vs former Demo maps.
 void main() {
-  final halRoot = Directory.current.path.endsWith('hmi')
+  final halRoot = Directory.current.path.endsWith('lws_hmi')
       ? 'assets/hal'
-      : 'app/hmi/assets/hal';
+      : 'app/lws_hmi/assets/hal';
 
   group('app gpio.json golden', () {
     late GpioConfig config;

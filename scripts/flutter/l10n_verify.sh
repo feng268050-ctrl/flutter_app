@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-L10N_DIR="$ROOT_DIR/app/hmi/lib/l10n"
+L10N_DIR="$ROOT_DIR/app/lws_hmi/lib/l10n"
 FLUTTER="$("$ROOT_DIR/scripts/flutter/l10n_flutter.sh")"
 
 if ! command -v python3 >/dev/null 2>&1; then
@@ -19,7 +19,7 @@ if ! git -C "$ROOT_DIR" diff --quiet -- "$L10N_DIR"; then
   exit 1
 fi
 
-cd "$ROOT_DIR/app/hmi"
+cd "$ROOT_DIR/app/lws_hmi"
 "$FLUTTER" gen-l10n
 
 if ! git -C "$ROOT_DIR" diff --quiet -- "$L10N_DIR"; then

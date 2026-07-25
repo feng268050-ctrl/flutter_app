@@ -46,7 +46,7 @@ Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/displa
 | `boards/sim.json` | Limited host/emulator profile (no gpio/modbus/network/BT) |
 | `boards/portable-smoke.json` | D22 accept: non-default ifaces / unit names; no libexec required |
 
-**Product** board profile + `gpio.json` + `modbus.json` live in the **App** (this repo: `app/hmi/assets/hal/`), not under `boards/<board_id>/` in this package. The same motherboard may ship different catalogs in other products. `BoardProfile.configs.gpio` / `configs.modbus` point at Flutter asset URIs (`assets/hal/…`); `assets/…` and `packages/…` resolve as-is.
+**Product** board profile + `gpio.json` + `modbus.json` live in the **App** (this repo: `app/lws_hmi/assets/hal/`), not under `boards/<board_id>/` in this package. The same motherboard may ship different catalogs in other products. `BoardProfile.configs.gpio` / `configs.modbus` point at Flutter asset URIs (`assets/hal/…`); `assets/…` and `packages/…` resolve as-is.
 
 ### Config install path (v1)
 

@@ -84,7 +84,7 @@ help:
 	@echo "  make build-boot-logo       # board/logo → logo.bmp (kernel FIT splash)"
 	@echo "  make build-app             # release HMI (AOT) → fs-overlay /opt/hmi + apply-overlay"
 	@echo "  make build-debug-app       # debug app bundle → .cache (make debug-app / IDE; rarely run alone)"
-	@echo "  make l10n                  # sync child ARBs + flutter gen-l10n (app/hmi)"
+	@echo "  make l10n                  # sync child ARBs + flutter gen-l10n (app/lws_hmi)"
 	@echo "  make l10n-sync             # regenerate en_US/zh_CN/zh_TW child ARBs only"
 	@echo "  make l10n-gen              # flutter gen-l10n only"
 	@echo "  make l10n-verify           # fail if ARBs / AppLocalizations drift"

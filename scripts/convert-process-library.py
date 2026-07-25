@@ -335,7 +335,7 @@ def main() -> int:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("app/hmi/assets/process-library"),
+        default=Path("app/lws_hmi/assets/process-library"),
     )
     args = parser.parse_args()
     if not re.fullmatch(r"\d+(?:\.\d+){0,2}(?:[-+][0-9A-Za-z.-]+)?", args.version):

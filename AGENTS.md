@@ -4,7 +4,7 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 ## Project overview
 
-- **What:** Buildroot-based **embedded appliance OS** for Innohi boards (benchmark: **ynh960/961/962**) + Flutter HMI (`app/hmi/`). Direction: shared **CyberUI** + **`cyber_hal`** Dart package (submodule/packages), per-product Apps, board profiles for new motherboards/panels. **No** Rust `hald` Platform API.
+- **What:** Buildroot-based **embedded appliance OS** for Innohi boards (benchmark: **ynh960/961/962**) + Flutter HMI (`app/lws_hmi/`). Direction: shared **CyberUI** + **`cyber_hal`** Dart package (submodule/packages), per-product Apps, board profiles for new motherboards/panels. **No** Rust `hald` Platform API.
 - **Board SKUs (current line):** ynh960 → RK3566 (entry); ynh962 → RK3568B2 (mid); ynh961 → RK3568 (high). Same product line; **one firmware image is the near-term goal** for this line. **Validate on ynh960** — no per-SKU defconfig fork yet. Future products may use different boards/screens via packs + HAL package.
 - **Phase roadmap:** See `docs/flutter-pi-hmi-plan.md` §1 (P1–P2.5 + **P3.1 HAL** done; **P3.0 CyberUI/IME** and **P4** in progress; next P3.2 emulator, P3.3 AI, remaining P4 slices, P5.0 Android App/APK — not `cyber_hal` Android backends, P5.1 engine). HAL design: `openspec/changes/archive/2026-07-18-dart-hal-package/`. `cyber_hal` is Linux (+ stub) only.
 - **Hosts:** Linux builds natively in `linux-sdk/`; macOS uses Docker `linux/amd64` + a Docker volume for the SDK tree.
@@ -79,8 +79,8 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 
 | What changed | Commands |
 |--------------|----------|
-| `app/hmi/**`, `scripts/build-app.sh`, `scripts/push-app.sh` | `make build-app`, `make push-app` |
-| `app/hmi/lib/l10n/*.arb` (parent ARBs) | `make l10n` (then `make build-app` / `make push-app` to ship) |
+| `app/lws_hmi/**`, `scripts/build-app.sh`, `scripts/push-app.sh` | `make build-app`, `make push-app` |
+| `app/lws_hmi/lib/l10n/*.arb` (parent ARBs) | `make l10n` (then `make build-app` / `make push-app` to ship) |
 | `scripts/flutter/l10n*.sh`, `sync_l10n_child_arbs.py`, `zh_s2t.py` | none for firmware; exercise `make l10n` / `make l10n-verify` |
 | Bake app into rootfs / A/B image (release or no push path) | `make build-app`, `make build-rootfs`, `make upgrade` |
 | `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make upgrade` — also refreshes Weston `boot-splash.png` in overlay; follow with `make build-rootfs`, `make upgrade` |
@@ -124,9 +124,9 @@ When unsure or on a clean tree: `make build`.
 
 - **Minimize scope** — smallest correct diff; no drive-by refactors.
 - **Match existing style** in touched files (shell, Dart, Buildroot `.mk`, overlay layout).
-- **Flutter App API = 3.24.4** — write `app/hmi/` (and Flutter packages) against the pinned SDK only; do **not** follow newer Flutter/Material docs (e.g. do not replace `DropdownButtonFormField(value: …)` with `initialValue`). Detail: `.cursor/rules/flutter-3.24-api.mdc`. Upgrade path is P5.1, not drive-by API churn.
+- **Flutter App API = 3.24.4** — write `app/lws_hmi/` (and Flutter packages) against the pinned SDK only; do **not** follow newer Flutter/Material docs (e.g. do not replace `DropdownButtonFormField(value: …)` with `initialValue`). Detail: `.cursor/rules/flutter-3.24-api.mdc`. Upgrade path is P5.1, not drive-by API churn.
 - **Script / device-command naming** — prefer **verb + noun** (kebab-case), no product prefix on script basenames. Operator commands → `/usr/bin/<verb-noun>` via `post-build.sh`. Helpers → **`/usr/libexec/{wpa,network,bluetooth,hmi}/`**. State → **`/var/lib/{wpa_supplicant,network,bluetooth,hmi}/`**. systemd units use **functional** names (`wlan-wpa.service`, `settings-restore.service`); UI daemon only: `hmi.service`.
-- **Paths:** app → `app/hmi/`; rootfs overlay → `overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/`; Buildroot fragments → `overlay/buildroot/`.
+- **Paths:** app → `app/lws_hmi/`; rootfs overlay → `overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/`; Buildroot fragments → `overlay/buildroot/`.
 - **Do not** run `make build-uboot` on ynh960 unless Innohi instructs.
 - OpenSpec workflow: `.cursor/skills/openspec-*` when the user uses that flow.
 
@@ -135,7 +135,7 @@ When unsure or on a clean tree: `make build`.
 Before finishing implementation work:
 
 - Docs-only: no build required.
-- `app/hmi/`: `flutter analyze` / tests under `app/hmi/` when Dart changed.
+- `app/lws_hmi/`: `flutter analyze` / tests under `app/lws_hmi/` when Dart changed.
 - Overlay/rootfs: `make build-rootfs` should pass `scripts/verify-rootfs-overlay.sh`.
 - After flash (device): `verify-boot` (Plan A boot KPI); `verify-env` (§3.4 platform stack).
 
@@ -153,7 +153,7 @@ Keep long command examples in **README.md**; keep agent-only rules (rebuild bloc
 
 | Path | Role |
 |------|------|
-| `app/hmi/` | Flutter HMI → `overlay/.../opt/hmi` |
+| `app/lws_hmi/` | Flutter HMI → `overlay/.../opt/hmi` |
 | `overlay/.../rootfs-overlay/` | Rootfs overlay (systemd, scripts, `/opt/hmi` staging) |
 | `overlay/buildroot/` | Defconfig fragments, package pins |
 | `overlay/kernel/` | DTS / kernel config |

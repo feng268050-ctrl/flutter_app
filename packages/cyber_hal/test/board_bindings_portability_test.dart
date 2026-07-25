@@ -12,8 +12,8 @@ void main() {
 
   /// Product HAL pack lives in the HMI app (not cyber_hal).
   final appHalRoot = Directory.current.path.endsWith('cyber_hal')
-      ? '../../app/hmi/assets/hal'
-      : 'app/hmi/assets/hal';
+      ? '../../app/lws_hmi/assets/hal'
+      : 'app/lws_hmi/assets/hal';
 
   test('portable-smoke: empty script helpers still construct HAL defaults', () {
     final json = File('$boardsRoot/portable-smoke.json').readAsStringSync();

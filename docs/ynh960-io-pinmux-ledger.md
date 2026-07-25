@@ -34,7 +34,7 @@ EVB 杂讯与尚未阻塞产品的项：[`kernel-evb-dts-deferred.md`](kernel-ev
 | 绿 | **`GPIO_7`** | gpio4 RK_PC5 | 149 | `YNHAPI.GPIO_7` → **6** |
 
 - 路径：`/sys/class/gpio_innohi/GPIO_N/value`（写 `0`/`1`）。
-- App：`app/hmi/lib/gpio/gpio_led_config.dart` — 红/黄/绿 = **5/4/7**（勿改成 4/3/6）。
+- App：`app/lws_hmi/lib/gpio/gpio_led_config.dart` — 红/黄/绿 = **5/4/7**（勿改成 4/3/6）。
 - 开机默认：**关**（overlay 将 `GPIO_4/5/7` 的 `default-value` 设为 `"0"`）。
 
 经典 `/sys/class/gpio/export` 仅作工程兜底；`gpio_innohi` 已占用同脚时 export 失败是预期行为。

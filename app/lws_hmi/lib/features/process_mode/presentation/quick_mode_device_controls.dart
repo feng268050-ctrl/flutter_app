@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
@@ -316,11 +317,12 @@ final class _QuickSideToggleState extends State<_QuickSideToggle> {
   }
 }
 
-/// lws-ui parity: short press is a 500ms pulse; Feed held for 3s latches
-/// until tapped again; Retract only runs while the pointer remains pressed.
+/// lws-ui parity: short press is a 500ms pulse; hold ≥500ms runs while
+/// pressed; Feed held ~3s latches until tapped again. Retract never latches.
 ///
-/// Feed also shows `feed_sub_hold_hint`, swaps to Continuous Feed when latched,
-/// and breathes a GradientButton-style accent fill while holding / latched.
+/// Feed paints a mode-color horizontal GradientButton band (transparent ends,
+/// mid accent): hold-run = 2.5s one-shot center→edges over icon+label width;
+/// latched = end-band breathe.
 final class _ManualWireButton extends StatefulWidget {
   const _ManualWireButton({
     super.key,
@@ -351,8 +353,7 @@ final class _ManualWireButton extends StatefulWidget {
   State<_ManualWireButton> createState() => _ManualWireButtonState();
 }
 
-final class _ManualWireButtonState extends State<_ManualWireButton>
-    with TickerProviderStateMixin {
+final class _ManualWireButtonState extends State<_ManualWireButton> {
   late final ManualWireGesture _gesture = ManualWireGesture(
     controller: widget.controller,
     retract: widget.retract,
@@ -362,75 +363,102 @@ final class _ManualWireButtonState extends State<_ManualWireButton>
     onVisualChanged: () {
       if (mounted) {
         setState(() {});
-        _syncHoldProgress();
+        _syncBandBreath();
       }
     },
   );
 
-  /// Determinate 0→1 over 3s while pressed (lws-ui hold-to-latch cue).
-  late final AnimationController _holdProgress = AnimationController(
-    vsync: this,
-    duration: DeviceControlTiming.wireFeedLatchDelay,
-  );
+  /// `holding` | `latched` | null — which gradient driver is active.
+  String? _breathPhase;
 
-  /// Soft breath after latch (GradientButton continuous feed).
-  late final AnimationController _breath = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 3000),
-  );
+  /// Hold-run one-shot expand (wall clock; flutter-pi may not tick
+  /// [AnimationController] reliably during a static press).
+  DateTime? _holdExpandStartedAt;
 
-  bool _breathing = false;
+  /// Latch breathe phase origin.
+  DateTime? _latchBreathStartedAt;
+
+  /// Triangle-wave offset so latch can hand off from a fully expanded hold.
+  double _latchBreathPhaseOffset = 0;
+
+  Timer? _gradientTimer;
+
+  /// Drives [CustomPaint] repaints on flutter-pi where [setState] alone may
+  /// not schedule frames during a static press.
+  final ValueNotifier<int> _gradientRepaint = ValueNotifier<int>(0);
 
   @override
   void dispose() {
-    _holdProgress.dispose();
-    _breath.dispose();
+    _gradientTimer?.cancel();
+    _gradientRepaint.dispose();
     _gesture.dispose();
     super.dispose();
   }
 
-  void _syncHoldProgress() {
+  void _syncBandBreath() {
     if (widget.retract) {
       return;
     }
-    final holding = widget.enabled && _gesture.pressed && !_gesture.latched;
-    final latched = widget.enabled && _gesture.latched;
+    // Match Android `startFeedClick || isContinuousFeed` — not raw press.
+    final holding = _gesture.holdingRun;
+    final latched = _gesture.latched;
 
     if (holding) {
-      if (!_holdProgress.isAnimating && _holdProgress.value < 1) {
-        unawaited(_holdProgress.forward(from: _holdProgress.value));
-      }
-      if (_breathing) {
-        _breathing = false;
-        _breath.stop();
-        _breath.value = 0;
+      if (_breathPhase != 'holding') {
+        _breathPhase = 'holding';
+        _holdExpandStartedAt = DateTime.now();
+        _latchBreathStartedAt = null;
+        _latchBreathPhaseOffset = 0;
+        _startGradientTimer();
+        _gradientRepaint.value++;
       }
     } else if (latched) {
-      _holdProgress.value = 1;
-      if (!_breathing) {
-        _breathing = true;
-        unawaited(_breath.repeat(reverse: true));
+      if (_breathPhase != 'latched') {
+        final wasHolding = _breathPhase == 'holding';
+        _breathPhase = 'latched';
+        _holdExpandStartedAt = null;
+        _latchBreathStartedAt = DateTime.now();
+        // Hold ends at breath=1 (shrink=0); start latch triangle there.
+        _latchBreathPhaseOffset = wasHolding ? 0.5 : 0;
+        _startGradientTimer();
+        _gradientRepaint.value++;
       }
-    } else {
-      if (_holdProgress.isAnimating || _holdProgress.value != 0) {
-        _holdProgress.stop();
-        _holdProgress.value = 0;
-      }
-      if (_breathing) {
-        _breathing = false;
-        _breath.stop();
-        _breath.value = 0;
-      }
+    } else if (_breathPhase != null) {
+      _breathPhase = null;
+      _holdExpandStartedAt = null;
+      _latchBreathStartedAt = null;
+      _latchBreathPhaseOffset = 0;
+      _gradientTimer?.cancel();
+      _gradientTimer = null;
     }
+  }
+
+  void _startGradientTimer() {
+    _gradientTimer?.cancel();
+    _gradientTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      if (!mounted) {
+        return;
+      }
+      if (_breathPhase == 'holding' &&
+          _holdExpandStartedAt != null &&
+          DateTime.now().difference(_holdExpandStartedAt!) >=
+              FeedHoldGradient.holdExpandDuration) {
+        _gradientTimer?.cancel();
+        _gradientTimer = null;
+      }
+      // flutter-pi may not vsync during a static press; force a frame.
+      SchedulerBinding.instance.scheduleFrame();
+      _gradientRepaint.value++;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isFeed = !widget.retract;
     final latched = isFeed && _gesture.latched;
-    final showProgress = isFeed &&
-        widget.enabled &&
-        (_gesture.pressed || latched || _holdProgress.value > 0);
+    final holdingRun = isFeed && _gesture.holdingRun;
+    final showFeedGradient = isFeed &&
+        (holdingRun || latched || _breathPhase != null);
     final retractHighlight =
         !isFeed && widget.enabled && (widget.active || _gesture.pressed);
     final fg =
@@ -438,99 +466,102 @@ final class _ManualWireButtonState extends State<_ManualWireButton>
     final label = latched
         ? DeviceControlFeedbackCopy.continuousFeedLabel
         : widget.label;
-    final mid = ProcessModeTokens.tabActiveColor(widget.processType);
+    final mid = ProcessModeTokens.feedHoldGradientMid(widget.processType);
 
     return Listener(
       onPointerDown: (_) {
         _gesture.pointerDown();
-        _syncHoldProgress();
+        _syncBandBreath();
       },
       onPointerUp: (_) {
         _gesture.pointerUp();
-        _syncHoldProgress();
+        _syncBandBreath();
       },
       onPointerCancel: (_) {
         _gesture.pointerUp();
-        _syncHoldProgress();
+        _syncBandBreath();
       },
       child: SizedBox(
         width: ProcessModeDimens.quickSideButtonWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedBuilder(
-              animation: Listenable.merge([_holdProgress, _breath]),
-              builder: (context, child) {
-                // lws-ui GradientButton zoom: shrinkRatio 0.4→0 expands
-                // center mid-color band to both edges while holding.
-                // Latched: reverse breathe 0↔0.4.
-                const maxShrink = 0.4;
-                final double? shrinkRatio;
-                if (retractHighlight && !isFeed) {
-                  shrinkRatio = 0.0;
-                } else if (latched) {
-                  shrinkRatio = maxShrink * _breath.value;
-                } else if (isFeed && _gesture.pressed) {
-                  shrinkRatio =
-                      maxShrink * (1.0 - _holdProgress.value.clamp(0.0, 1.0));
-                } else {
-                  shrinkRatio = null;
-                }
+            Builder(
+              builder: (context) {
+                final showGradientBand = (retractHighlight && !isFeed) ||
+                    showFeedGradient;
                 return SizedBox(
                   width: ProcessModeDimens.quickSideButtonWidth,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      if (showProgress || retractHighlight)
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _FeedHoldProgressPainter(
-                              mid: mid,
-                              shrinkRatio: shrinkRatio ?? maxShrink,
-                              active: shrinkRatio != null,
+                  child: Center(
+                    child: IntrinsicWidth(
+                      child: Stack(
+                        clipBehavior: Clip.hardEdge,
+                        alignment: Alignment.center,
+                        children: [
+                          if (showGradientBand)
+                            Positioned.fill(
+                              child: CustomPaint(
+                                painter: _FeedHoldGradientPainter(
+                                  repaint: _gradientRepaint,
+                                  mid: mid,
+                                  retractHighlight: retractHighlight && !isFeed,
+                                  phase: _breathPhase,
+                                  holdingRun: holdingRun,
+                                  latched: latched,
+                                  holdExpandStartedAt: _holdExpandStartedAt,
+                                  latchBreathStartedAt: _latchBreathStartedAt,
+                                  latchBreathPhaseOffset:
+                                      _latchBreathPhaseOffset,
+                                ),
+                              ),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: ProcessModeDimens
+                                  .quickSideOpVerticalPadding,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.asset(
+                                  widget.enabled
+                                      ? widget.iconAsset
+                                      : widget.disabledIconAsset,
+                                  width: ProcessModeDimens.quickSideOpIconSize,
+                                  height:
+                                      ProcessModeDimens.quickSideOpIconSize,
+                                  color: widget.enabled ? null : fg,
+                                  colorBlendMode:
+                                      widget.enabled ? null : BlendMode.srcIn,
+                                  opacity: widget.enabled
+                                      ? null
+                                      : const AlwaysStoppedAnimation(0.5),
+                                ),
+                                const SizedBox(
+                                  width: ProcessModeDimens.quickSideOpIconGap,
+                                ),
+                                Text(
+                                  label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: fg,
+                                    fontSize:
+                                        ProcessModeDimens.quickSideOpLabelSize,
+                                    height: 1.0,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical:
-                              ProcessModeDimens.quickSideOpVerticalPadding,
-                        ),
-                        child: child,
-                      ),
-                    ],
-                  ),
-                );
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    widget.enabled ? widget.iconAsset : widget.disabledIconAsset,
-                    width: ProcessModeDimens.quickSideOpIconSize,
-                    height: ProcessModeDimens.quickSideOpIconSize,
-                    color: widget.enabled ? null : fg,
-                    colorBlendMode: widget.enabled ? null : BlendMode.srcIn,
-                    opacity: widget.enabled
-                        ? null
-                        : const AlwaysStoppedAnimation(0.5),
-                  ),
-                  const SizedBox(width: ProcessModeDimens.quickSideOpIconGap),
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: fg,
-                        fontSize: ProcessModeDimens.quickSideOpLabelSize,
-                        height: 1.0,
-                        fontWeight: FontWeight.w500,
+                        ],
                       ),
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
             if (isFeed && widget.enabled && !latched)
               Transform.translate(
@@ -554,49 +585,170 @@ final class _ManualWireButtonState extends State<_ManualWireButton>
   }
 }
 
-/// Soft process-color band matching lws-ui `GradientButton` zoom type:
-/// transparent → mid → transparent with stops at [shrink, 0.5, 1-shrink].
-/// Hold: shrink 0.4→0 (center expands to both edges). Latch: breathe 0↔0.4.
-final class _FeedHoldProgressPainter extends CustomPainter {
-  _FeedHoldProgressPainter({
+/// Feed hold / continuous-feed gradient math (lws-ui `GradientButton` zoom).
+///
+/// Mid band width is absolute px on the icon+label paint box:
+/// first paint [initialMidWidth] (18), then expands to full paint width.
+/// Stops `[shrink, 0.5, 1-shrink]` with transparent → mid → transparent.
+abstract final class FeedHoldGradient {
+  /// First-appear mid-band width (hold-run / latch min).
+  static const double initialMidWidth = 18;
+
+  /// Hold-run window: 3s latch minus 500ms hold-to-run.
+  static final Duration holdExpandDuration =
+      DeviceControlTiming.wireFeedLatchDelay -
+      DeviceControlTiming.wireHoldToRun;
+
+  /// Android `animation_duration` while `isContinuousFeed`.
+  static const Duration latchBreathDuration = Duration(milliseconds: 3000);
+
+  /// Hold one-shot: breath 0→1 ⇒ mid 18px → full width.
+  /// Latch breathe: breath 0↔1 ⇒ mid 18px ↔ full width.
+  static double breathValue({
+    required String? phase,
+    required DateTime? holdExpandStartedAt,
+    required DateTime? latchBreathStartedAt,
+    required double latchBreathPhaseOffset,
+    DateTime? now,
+  }) {
+    final clock = now ?? DateTime.now();
+    if (phase == 'holding') {
+      final start = holdExpandStartedAt;
+      if (start == null) {
+        return 0;
+      }
+      final total = holdExpandDuration.inMilliseconds;
+      if (total <= 0) {
+        return 1;
+      }
+      final ms = clock.difference(start).inMilliseconds;
+      return (ms / total).clamp(0.0, 1.0);
+    }
+    if (phase == 'latched') {
+      final start = latchBreathStartedAt;
+      if (start == null) {
+        return 0;
+      }
+      final period = latchBreathDuration.inMilliseconds;
+      if (period <= 0) {
+        return 0;
+      }
+      final phaseT =
+          ((clock.difference(start).inMilliseconds / period) +
+                  latchBreathPhaseOffset) %
+              1.0;
+      return phaseT <= 0.5 ? phaseT * 2 : (1 - phaseT) * 2;
+    }
+    return 0;
+  }
+
+  /// Visible mid-band width for [paintWidth] at [breathValue] (0=narrow, 1=full).
+  static double midWidth({
+    required double paintWidth,
+    required double breathValue,
+  }) {
+    if (paintWidth <= 0) {
+      return 0;
+    }
+    final t = breathValue.clamp(0.0, 1.0);
+    final minW = initialMidWidth.clamp(0.0, paintWidth);
+    return minW + (paintWidth - minW) * t;
+  }
+
+  /// Shrink from absolute mid width: `(1 - mid/paintWidth) / 2`.
+  static double shrinkRatio({
+    required double paintWidth,
+    required double midWidth,
+  }) {
+    if (paintWidth <= 0) {
+      return 0.5;
+    }
+    final mid = midWidth.clamp(0.0, paintWidth);
+    return ((1.0 - mid / paintWidth) / 2.0).clamp(0.0, 0.5);
+  }
+
+  static LinearGradient gradient({
+    required Color mid,
+    required double shrinkRatio,
+  }) {
+    final shrink = shrinkRatio.clamp(0.0, 0.5);
+    return LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [
+        const Color(0x00000000),
+        mid,
+        const Color(0x00000000),
+      ],
+      stops: [shrink, 0.5, 1.0 - shrink],
+    );
+  }
+}
+
+/// Canvas draw of [FeedHoldGradient] (lws-ui `GradientButton#onDraw`).
+final class _FeedHoldGradientPainter extends CustomPainter {
+  _FeedHoldGradientPainter({
+    required Listenable repaint,
     required this.mid,
-    required this.shrinkRatio,
-    required this.active,
-  });
+    required this.retractHighlight,
+    required this.phase,
+    required this.holdingRun,
+    required this.latched,
+    required this.holdExpandStartedAt,
+    required this.latchBreathStartedAt,
+    required this.latchBreathPhaseOffset,
+  }) : super(repaint: repaint);
 
   final Color mid;
-  final double shrinkRatio;
-  final bool active;
+  final bool retractHighlight;
+  final String? phase;
+  final bool holdingRun;
+  final bool latched;
+  final DateTime? holdExpandStartedAt;
+  final DateTime? latchBreathStartedAt;
+  final double latchBreathPhaseOffset;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (!active || size.width <= 0 || size.height <= 0) {
+    if (size.width <= 0 || size.height <= 0) {
       return;
     }
-
-    final shrink = shrinkRatio.clamp(0.0, 0.5);
-    final leftPos = shrink;
-    const centerPos = 0.5;
-    final rightPos = 1.0 - shrink;
-
+    final double shrink;
+    if (retractHighlight) {
+      shrink = 0.0;
+    } else {
+      final breath = FeedHoldGradient.breathValue(
+        phase: phase,
+        holdExpandStartedAt: holdExpandStartedAt,
+        latchBreathStartedAt: latchBreathStartedAt,
+        latchBreathPhaseOffset: latchBreathPhaseOffset,
+      );
+      final bandW = FeedHoldGradient.midWidth(
+        paintWidth: size.width,
+        breathValue: breath,
+      );
+      shrink = FeedHoldGradient.shrinkRatio(
+        paintWidth: size.width,
+        midWidth: bandW,
+      );
+    }
     final paint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-        colors: [
-          const Color(0x00000000),
-          mid,
-          const Color(0x00000000),
-        ],
-        stops: [leftPos, centerPos, rightPos],
+      ..shader = FeedHoldGradient.gradient(
+        mid: mid,
+        shrinkRatio: shrink,
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, paint);
   }
 
   @override
-  bool shouldRepaint(covariant _FeedHoldProgressPainter oldDelegate) {
+  bool shouldRepaint(covariant _FeedHoldGradientPainter oldDelegate) {
     return oldDelegate.mid != mid ||
-        oldDelegate.shrinkRatio != shrinkRatio ||
-        oldDelegate.active != active;
+        oldDelegate.retractHighlight != retractHighlight ||
+        oldDelegate.phase != phase ||
+        oldDelegate.holdingRun != holdingRun ||
+        oldDelegate.latched != latched ||
+        oldDelegate.holdExpandStartedAt != holdExpandStartedAt ||
+        oldDelegate.latchBreathStartedAt != latchBreathStartedAt ||
+        oldDelegate.latchBreathPhaseOffset != latchBreathPhaseOffset;
   }
 }

@@ -47,6 +47,17 @@ abstract final class ProcessModeTokens {
     return const Color(0xB2FF8000);
   }
 
+  /// Feed hold / continuous-feed GradientButton mid (lws-ui `quick_model_*`).
+  static Color feedHoldGradientMid(ProcessType type) {
+    if (type.isCleaning) {
+      return const Color(0xFF37F3D2);
+    }
+    if (type == ProcessType.handCutting || type == ProcessType.cncCutting) {
+      return const Color(0xFF0151F4);
+    }
+    return const Color(0xFFF46E01);
+  }
+
   /// Transparent ends for the side-op / divider horizontal gradient.
   static Color sideOperationHighlightEdge(ProcessType type) {
     if (type.isCleaning) {

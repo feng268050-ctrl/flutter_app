@@ -6,9 +6,9 @@ import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 
 /// Shared Feed/Retract pointer protocol for Quick and Engineer panels.
 ///
-/// Short press → 500ms pulse. Hold ≥500ms starts continuous motion; Feed
-/// latches after 3s total and stops on the next tap; Retract runs only while
-/// pressed.
+/// Short press → ~500ms pulse then auto-stop. Hold ≥500ms runs while pressed
+/// (release stops). Feed held ~3s total latches continuous feed until the next
+/// tap; Retract never latches.
 ///
 /// Toast copy mirrors lws-ui `GeneralOperationsFragment` wire host callbacks.
 final class ManualWireGesture {

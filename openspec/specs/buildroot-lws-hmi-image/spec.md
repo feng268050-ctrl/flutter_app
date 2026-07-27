@@ -2,6 +2,7 @@
 
 ## Purpose
 TBD - created by archiving change p1-linux-flutter-platform. Update Purpose after archive.
+
 ## Requirements
 ### Requirement: lws_hmi Buildroot defconfig is the default rootfs profile for ynh960
 
@@ -14,12 +15,12 @@ The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the
 
 #### Scenario: product-line firmware boots on ynh960
 
-- **WHEN** P1 `update.img` is built via `make lunch` with `ynh960_defconfig` and flashed to **ynh960 (RK3566)** hardware
+- **WHEN** P1 `factory.img` (or migration `update.img` symlink) is built via `make lunch` with `ynh960_defconfig` and flashed to **ynh960 (RK3566)** hardware
 - **THEN** the image SHALL boot and reach the Hello World HMI on ynh960 (primary P1 acceptance target)
 
 #### Scenario: shared firmware goal across product line
 
-- **WHEN** the same P1 `update.img` is flashed to ynh961 (RK3568) or ynh962 (RK3568B2) boards on the same product line
+- **WHEN** the same P1 factory image is flashed to ynh961 (RK3568) or ynh962 (RK3568B2) boards on the same product line
 - **THEN** the image SHOULD boot without a per-SKU defconfig fork (cross-SKU smoke is optional in P1; not a blocker for ynh960-only CI)
 
 #### Scenario: rootfs build succeeds with lws_hmi defconfig
@@ -204,6 +205,7 @@ The lws-hmi Buildroot/kernel configuration for ynh960 SHALL retain (or restore i
 
 - **WHEN** a USB HID keyboard is attached via the 1 mm host expansion while OTG mode is `debug`
 - **THEN** the keyboard still enumerates on the expansion host path
+
 ### Requirement: Image enables Micro-USB OTG dual-role with HID host on OTG
 
 The lws-hmi kernel/Device Tree/Buildroot configuration SHALL enable **OTG dual-role** on the Micro-USB `usbdrd` path (`dr_mode=otg` or equivalent) with USB HID host support when that port is in host role, without removing the 1 mm expansion host enablement. DWC3 MUST NOT be built gadget-only if that prevents OTG host on Micro-USB.
@@ -329,3 +331,17 @@ The lws-hmi Buildroot configuration SHALL include the kernel and userspace piece
 
 - **WHEN** `verify-rootfs-overlay` / rootfs checks run after this change
 - **THEN** the chosen MTP responder (or documented unit/helper path) is present on the rootfs used by ynh960
+
+### Requirement: Factory artifact named factory.img includes oem
+
+`make build-img` SHALL produce `output/firmware/<factory_sku>/factory.img` for the resolved `FACTORY_SKU`, packaging loader, uboot from `prebuilt/bootloader/<uboot_id>/`, misc, dual FIT, rootfs, and **oem** when `oem.img` is present for the resolved `OEM_ID`. A sibling `manifest.txt` SHALL record `uboot_id`, `oem_id`, and git/build identity. During migration, `output/firmware/update.img` SHALL remain usable as a symlink or copy of the selected/default sku's `factory.img` so existing flash defaults keep working.
+
+#### Scenario: build-img writes per-sku factory.img
+
+- **WHEN** required inputs including oem.img exist and the operator runs `FACTORY_SKU=ynh960-p800 make build-img`
+- **THEN** `output/firmware/ynh960-p800/factory.img` and `manifest.txt` exist
+
+#### Scenario: flash default uses factory path
+
+- **WHEN** the operator runs `FACTORY_SKU=ynh960-p800 make flash` without `IMAGE=`
+- **THEN** the flash path SHALL target that sku's `factory.img` (or the compatible `update.img` symlink to it)

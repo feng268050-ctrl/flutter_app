@@ -1,7 +1,12 @@
 import 'dart:async';
 
+import 'package:cyber_hal/ip_camera.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/ip_camera/application/ip_camera_demo_recording_paths.dart';
+import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
+import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
@@ -59,6 +64,17 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   static const _laserButtonHeight =
       _functionButtonsHeight - _wireButtonsHeight - _actionGap;
 
+  static const _recordingPaths = IpCameraDemoRecordingPaths();
+
+  /// Record Work arm: checked + laser on → start encode.
+  /// Defaults on (product default); cleared while camera is unreachable.
+  bool _recordArmed = true;
+  bool _recordSyncInFlight = false;
+  bool? _lastLaserActive;
+  IpCameraUiPhase _cameraPhase = IpCameraUiPhase.connecting;
+  IpCameraProductSession? _cameraSession;
+  StreamSubscription<IpCameraUiStatus>? _cameraSub;
+
   bool get _showRamp =>
       widget.processType == ProcessType.continuousWelding ||
       widget.processType == ProcessType.spotWelding;
@@ -66,11 +82,167 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   bool get _wireCapable =>
       widget.processType == ProcessType.continuousWelding;
 
+  bool get _recordEnabled => _cameraPhase == IpCameraUiPhase.connected;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onDeviceControlChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_bindCamera());
+    });
+  }
+
   @override
   void didUpdateWidget(covariant EngineerDevicePanel oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onDeviceControlChanged);
+      widget.controller.addListener(_onDeviceControlChanged);
+    }
     if (oldWidget.processType != widget.processType) {
       _rampOpen = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onDeviceControlChanged);
+    unawaited(_cameraSub?.cancel());
+    super.dispose();
+  }
+
+  void _onDeviceControlChanged() {
+    final laserActive =
+        widget.controller.laserEnable || widget.controller.laserOn;
+    if (_lastLaserActive == laserActive) {
+      return;
+    }
+    _lastLaserActive = laserActive;
+    unawaited(_syncRecordingWithArmedAndLaser());
+  }
+
+  Future<void> _bindCamera() async {
+    final services = AppScope.maybeOf(context);
+    if (services == null || !mounted) {
+      if (mounted) {
+        setState(() {
+          _cameraPhase = IpCameraUiPhase.failed;
+          _recordArmed = false;
+        });
+      }
+      return;
+    }
+    try {
+      final session = await services.ensureIpCamera();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _cameraSession = session;
+        _applyCameraPhase(session.currentStatus.phase);
+      });
+      await _cameraSub?.cancel();
+      _cameraSub = session.status.listen(_onCameraStatus);
+      await session.start();
+      await session.ensureReady();
+      if (mounted) {
+        setState(() => _applyCameraPhase(session.currentStatus.phase));
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _cameraPhase = IpCameraUiPhase.failed;
+          _recordArmed = false;
+        });
+      }
+    }
+  }
+
+  void _applyCameraPhase(IpCameraUiPhase phase) {
+    final wasConnected = _cameraPhase == IpCameraUiPhase.connected;
+    _cameraPhase = phase;
+    if (phase != IpCameraUiPhase.connected) {
+      _recordArmed = false;
+      return;
+    }
+    // Fresh (re)connect restores product default (armed on).
+    if (!wasConnected) {
+      _recordArmed = true;
+    }
+  }
+
+  void _onCameraStatus(IpCameraUiStatus status) {
+    if (!mounted) {
+      return;
+    }
+    final wasHealthy = _cameraPhase == IpCameraUiPhase.connected;
+    setState(() => _applyCameraPhase(status.phase));
+    final healthy = status.phase == IpCameraUiPhase.connected;
+    if (!healthy || (!wasHealthy && healthy)) {
+      unawaited(_syncRecordingWithArmedAndLaser());
+    }
+  }
+
+  Future<void> _setRecordArmed(bool armed) async {
+    if (!_recordEnabled) {
+      return;
+    }
+    setState(() => _recordArmed = armed);
+    await _syncRecordingWithArmedAndLaser();
+  }
+
+  /// Start when Record Work is armed and laser enable is on; stop otherwise.
+  Future<void> _syncRecordingWithArmedAndLaser() async {
+    if (_recordSyncInFlight) {
+      return;
+    }
+    final session = _cameraSession;
+    if (session == null) {
+      return;
+    }
+    final recorder = session.camera.recording;
+    final laserActive =
+        widget.controller.laserEnable || widget.controller.laserOn;
+    if (_recordArmed && laserActive) {
+      if (recorder.currentStatus.isActive) {
+        return;
+      }
+      final source = session.previewPr0;
+      if (_cameraPhase != IpCameraUiPhase.connected || source == null) {
+        if (mounted) {
+          _toast(context, DeviceControlFeedbackCopy.cameraUnavailable);
+        }
+        return;
+      }
+      _recordSyncInFlight = true;
+      try {
+        final path = _recordingPaths.nextMp4Path();
+        await recorder.start(
+          IpCameraRecordingRequest(
+            sourceCandidates: [source],
+            outputPath: path,
+            codec: IpCameraVideoCodec.h264,
+          ),
+        );
+      } catch (_) {
+        if (mounted) {
+          _toast(context, DeviceControlFeedbackCopy.cameraUnavailable);
+        }
+      } finally {
+        _recordSyncInFlight = false;
+      }
+      return;
+    }
+    if (recorder.currentStatus.isActive) {
+      _recordSyncInFlight = true;
+      try {
+        await recorder.stop();
+      } catch (_) {
+        // Best-effort stop.
+      } finally {
+        _recordSyncInFlight = false;
+      }
     }
   }
 
@@ -118,10 +290,16 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                               children: [
                                 Expanded(
                                   child: _CheckRow(
+                                    key: const ValueKey(
+                                        'engineer-panel-record-work'),
                                     label: 'Record Work',
-                                    value: false,
-                                    enabled: false,
-                                    onChanged: null,
+                                    value: _recordArmed,
+                                    enabled: _recordEnabled,
+                                    onChanged: _recordEnabled
+                                        ? (value) {
+                                            unawaited(_setRecordArmed(value));
+                                          }
+                                        : null,
                                   ),
                                 ),
                                 const Divider(
@@ -369,12 +547,16 @@ final class _CheckRow extends StatelessWidget {
             : null,
         child: Row(
           children: [
-            Icon(
-              value ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: value
-                  ? ProcessModeTokens.tabCleanActive
-                  : const Color(0x66FFFFFF),
-              size: 28,
+            IgnorePointer(
+              child: Opacity(
+                opacity: enabled ? 1 : 0.45,
+                child: CyberCheckbox(
+                  value: value,
+                  // Visual only — row InkWell owns the tap.
+                  onChanged: enabled && onChanged != null ? (_) {} : null,
+                  clickSoundEnabled: false,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(

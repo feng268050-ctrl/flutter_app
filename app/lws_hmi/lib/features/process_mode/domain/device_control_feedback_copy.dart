@@ -30,4 +30,7 @@ abstract final class DeviceControlFeedbackCopy {
 
   /// Sub-hint under Feed (`feed_sub_hold_hint`).
   static const feedHoldHint = 'Hold 3s to keep on';
+
+  /// Record Work cannot start (`unable_to_open_the_camera_title`).
+  static const cameraUnavailable = 'Camera unavailable';
 }

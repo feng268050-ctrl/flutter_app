@@ -37,7 +37,7 @@
 | `product.ini` | ✅ OEM 种子；compose 强制 `brand`/`model`/`sn`；`set-prop`/`del-prop` 拒改 identity |
 | `linux-sdk/` | ✅ W3：白名单/trim/squash/薄 overlay 已归档；**暂不进仓**；DT git 真相源仍为 `overlay/kernel/`（见 `docs/linux-sdk-vendor-import.md`） |
 | 定制方式 | 平台 kernel/device squash 进本地树；**DT/fragment 同事同步走 overlay**；第三方 BR 包仍 overlay；产品/OEM 仍 `apply-overlay` |
-| P3.2 | 🔲 未开始；规划 UTM + Weston + eLinux + HAL（W4） |
+| P3.2 | 🔲 W4：UTM + Linux HAL + `sim_virt`；三网卡 + USB 外设；GPIO LED 浮层；**无 OTG** |
 
 ### 1.2 结论（本计划采纳）
 
@@ -45,7 +45,7 @@
 2. **`gpio.json` / `modbus.json` 是产品 App 资产**，继续跟 `app/lws_hmi`（或未来产品 App）走，**不进 OEM**、也不以「主板目录」为权威源。同一主板可服务不同产品寄存器图。  
 3. **boot/rootfs 趋向通用**：板/屏差异尽量退出 rootfs；内核仍按 SoC/板选 FIT（DT 不能完全进 OEM）。  
 4. **自有 `linux-sdk/` 进仓**（保留此名）：只留 Buildroot + 必要 kernel/device/external/tools；debian/ubuntu/yocto 等删除；overlay 差异逐步内化；蓝本外置参考。  
-5. **P3.2 = 第二个 board×screen pack**（`sim` + `virt` 屏），用 **Apple Silicon 上 aarch64 UTM** 验证组合与装配器；启动用 UEFI/QEMU virt，**不用** Rockchip `uboot.img`；**不做** x86_64 host 路径。  
+5. **P3.2 = 第二个 board×screen pack**（`sim` + `virt`），Apple Silicon **aarch64 UTM**；访客内 **Linux HAL** + USB/网桥接真下位机；**不是** Stub 降级 demo，也 **不是** RK SoC 仿真；**不做** x86_64 host 路径。  
 6. **Factory Test App**：⏸ **本计划不做**（见另文）；产测若复用 OEM profile，届时再对齐加载路径。  
 7. **工厂制品按变体分目录 + 环境变量选择**：不同供应商/板级的 `uboot.img`（及配套 loader）分库存放；`build-oem` / `build-img` / `flash` 用同一套 `FACTORY_SKU`（可覆盖 `UBOOT_ID` / `OEM_ID`）解析路径；整包输出改称 **`factory.img`**（见 §5.6）。
 
@@ -477,73 +477,106 @@ FACTORY_SKU=ynh960-p800 make flash
 
 | 是 | 不是 |
 |----|------|
-| **Apple Silicon 上 aarch64 UTM** 通用 Linux 访客 | Rockchip SoC 仿真 |
-| 与量产相同的 **Weston + flutter-embedded-linux + cyber_hal** | 真机 FIT + Rockchip U-Boot |
-| OEM pack：`board_id=sim` + `screen_id=virt` | ynh960 DT / Mali / AIC |
-| | **x86_64 host 路径**（无此需求；开发机均为 Apple Silicon） |
+| **Apple Silicon 上 aarch64 UTM** 通用 Linux 访客 | Rockchip SoC / Mali / MIPI / AIC 仿真 |
+| 与量产同构的 **Weston + flutter-embedded-linux + Linux `cyber_hal`** | 以 Stub HAL / 关 capability 为主的「演示机」 |
+| OEM pack：`board_id=sim` + `screen_id=virt`（`sim_virt`） | 仅 UI 可点、不能带真下位机 |
+| 网桥 + **USB 透传**（BT / 串口 / Wi‑Fi / GPIO 等） | **x86_64 host** 验收路径 |
 
-Apple Silicon 上 UTM：HVF 虚拟化 + 通常 **EDK2 UEFI** 启动（或 QEMU `virt` U-Boot）；与板级 `uboot.img` 无关。P3.2 **只做 aarch64**。
+Apple Silicon 上 UTM：HVF + 通常 **EDK2 UEFI**（或 QEMU `virt`）；与板级 `uboot.img` 无关。P3.2 **只做 aarch64**。
+
+**目标一句话：** 做一个真正能跑、能带下位机的虚拟机环境——能力与接线合同对齐真机，差异只在「机型 / OEM / 外设从哪进来」，不是缺硬件就整页降级的 demo。
 
 ### 6.2 架构对照
 
 ```text
-真机 ynh960                         P3.2 UTM
-─────────────────────               ─────────────────────
+真机 ynh960                         P3.2 UTM（sim_virt）
+─────────────────────               ────────────────────────────
 Rockchip uboot.img                  EDK2 / virt 启动
-kernel FIT + RK DT                  virt 内核 + virtio
+kernel FIT + RK DT                  virt 内核 + virtio（+ USB）
 /oem boards/ynh960 + screen         /oem boards/sim + screens/virt
-                                    （或 host 目录 bind 模拟 /oem）
-BoardBindings Linux*                Stub* 与/或有限 Linux（virtio 网）
-gpio/modbus = App assets            同 App；无 UART 则 capability 关闭
-                                    可选：USB/串口透传真 Modbus
+BoardBindings Linux*                同：BoardBindings Linux*
+  eth0 / wlan0(AIC)                   【三网卡】§6.3
+  gpio_innohi 侧灯                    gpiochip（VM 内配线）
+                                      + App LED 悬浮层（参考系统状态浮层）
+  USB-OTG gadget                      【不做】无 OTG / 无 usbOtg
+gpio/modbus = App assets            同；Modbus←USB-serial 透传
 ```
 
-### 6.3 sim board pack
+### 6.3 sim board：三网卡 · GPIO LED · 不做 OTG
 
-基于现有 `packages/cyber_hal/boards/sim.json` 升级为正式 OEM board：
+基于 `packages/cyber_hal/boards/sim.json` 升级为正式 OEM board。
 
-- capabilities：按迭代逐步增加（初期 backlight/volume/sysInfo/datetime；网/BT 可后加或 Stub）。  
-- **无** gpio/modbus capability **或** 有 capability 但仅当 App 配置且设备存在时启用。  
-- helpers：空或指向 no-op；遵守「缺省不碰 ynh960 libexec」。
+#### 三网卡（UTM 配齐）
 
-App：`resolveHalBackend(boardId: sim)` → Stub；并支持 `HAL_BACKEND=stub`。  
-`AppServices` 需按 backend 接线（今日默认 Linux，属本阶段缺口）。
+| 角色 | 用途 | Flutter / HAL |
+|------|------|----------------|
+| **有线** | 桥接真实网络 | `ethernet.primary` → 该 iface；App 有线设置管理 |
+| **无线** | 桥接真实网络（或 USB Wi‑Fi → `wlan0`） | `wifi.station` → 该 iface；App Wi‑Fi 设置管理 |
+| **调试** | 宿主 ↔ 访客快速 SSH（私有/host-only，类 USB-SSH） | **不**当作出厂产品网口；固定地址文档化；`sshDebug` 走此通路 |
+
+- sim profile：**不**声明 `usbOtg`；不仿真 Rockchip OTG PHY/gadget。  
+- 调试网与产品有线/无线分离。
+
+#### GPIO LED
+
+- 在 **UTM/访客** 内配置好与产品一致的 LED 线（`gpio-sim` 或等价 + 稳定 sysfs）。  
+- App **gpio.json**（可 sim 专用 asset）指向这些线；HAL 走 Linux GPIO 写。  
+- **灯效可视化**：悬浮层反映红/黄/绿 LED 状态，交互/挂载方式参考 **系统状态悬浮层**（`SystemStatusOverlayHost`）。  
+- 产品 gpio 权威仍在 App，不进 OEM。
+
+#### 其它
+
+| 能力 | 合同 |
+|------|------|
+| bluetooth | USB BT + BlueZ |
+| modbus | USB-serial + 同一产品 `modbus.json` |
+| datetime / sysInfo / backlight / volume / keyboard / mouse | Linux 后端 |
+| sshDebug | **调试网卡** SSH |
+| usbOtg | **不做** |
+
+- helpers：仅 sim 专用；禁止引用 ynh960 helpers。  
+- 访客主路径：Linux `BoardBindings`；Stub 仅 host 单测/应急。  
+- App：compose 优先；去掉写死 `ynh960` 回退。
 
 ### 6.4 virt screen pack
 
-- `screen.json`：逻辑分辨率（如 1280×800）、默认 landscape、无 lcd_param。  
-- Weston 输出：virtio-gpu / 帧缓冲；与真机同样 `desktop-shell` + splash 策略可简化。
+- `screen.json`：逻辑分辨率（如 1280×800）、默认 landscape；**无** lcd_param / ParamUpdate。  
+- Weston：virtio-gpu / 帧缓冲；`desktop-shell`；启动链 **跳过** ynh960 display-init。
 
-### 6.5 镜像与开发路径（建议分两级）
+### 6.5 镜像与开发路径
 
-**路径 A — 快迭代（优先）**
+**路径 B — 正式验收（优先抬高）**
 
-- **aarch64 UTM** 内跑：Debian/Ubuntu aarch64（或等价）+ 手装 Weston + 推送 Flutter bundle。  
-- `/oem` 用目录树或 loop 挂载 **ext4** `oem.img`。  
-- 验证：装配器、profile 合并、UI、Stub HAL、可选 Modbus 透传。  
-- 不在 macOS host 本机直接当「模拟器验收」（无 x86_64 路径；Apple Silicon 上以 UTM aarch64 为准）。
+- 自有 **Buildroot `virt` / `qemu_aarch64`** rootfs：复用 lws_hmi 用户态包与单元名（networkd、wpa `-u`、BlueZ、Weston、eLinux）。  
+- 差异仅：内核/机型、OEM=`sim_virt`、无 Mali/AIC/Rockchip 屏参链。  
+- 产出可导入 UTM 的磁盘/rootfs；`make` 目标 + 文档。
 
-**路径 B — 契约对齐（随后）**
+**路径 A — 过渡探路（不替代 B）**
 
-- 用**裁剪后的自有 Buildroot** 打一份 `virt` / `qemu_aarch64` 根文件系统（或复用大量 lws_hmi 包、换 machine）。  
-- 目标：与真机同一套 package 集合与单元名，差异仅在 OEM + 内核机型。
+- UTM 内 Debian/Ubuntu aarch64 + 手装同构栈，用于尽早验证 OEM compose 与 USB 透传。  
+- `/oem`：loop 挂载 ext4 `oem.img` 或 bind（须为 mountpoint，或扩展 compose 支持 `OEM_ROOT` 目录模式）。
 
-### 6.6 下位机通讯
+### 6.6 下位机与外设
 
-- 默认：无 Modbus capability → 产品页降级。  
-- 增强：UTM 转发 USB-serial / 命名管道 → 真控制板；App 仍用 **同一** `assets/hal/modbus.json`。
+- **Modbus**：USB 转换器透传为验收项；同一产品 `modbus.json`。  
+- **GPIO LED**：VM 内配线 + App 悬浮层显示灯效（§6.3）；读写走 Linux GPIO。  
+- **Wi‑Fi / 有线**：两张产品网卡桥接真实网络，由 Flutter 管理；**第三张**专供宿主 SSH。  
+- **BT**：USB BT 直通。  
+- **OTG**：sim **不做**。  
+- 无某 USB 外设时：该子系统失败可见，其余继续。
 
 ### 6.7 验收（P3.2）
 
-1. 文档化：`make` 或脚本一键说明如何启动 UTM / 挂载 OEM。  
-2. 同一 `app/lws_hmi` 在真机（ynh960 OEM）与模拟器（sim OEM）可构建；启动不因缺硬件崩溃。  
-3. 装配器对两套 manifest 均成功；错 manifest 失败可见。  
-4. UI 主路径可点；Modbus 在透传配置下可读（可选门禁）。  
-5. **不**要求模拟器帧率或 GPU 与真机一致。
+1. 文档化：UTM **三网卡**、USB 透传、OEM、`OEM_ID=sim_virt make build-oem`。  
+2. 同一 App：真机 / sim OEM；访客 **Linux HAL**；**无** usbOtg。  
+3. 装配器两套 manifest 成功；错包失败可见。  
+4. 有线+无线可由 App 管理且桥接真实网络；宿主经 **调试网卡** SSH 进访客。  
+5. Modbus 可读真下位机；BT 可枚举；GPIO LED 悬浮层与 sysfs 写入一致。  
+6. 不要求帧率/GPU 对齐真机。
 
 ### 6.8 与主线阶段关系
 
-本文件将 **P3.2** 从「仅有模拟器」扩展为 **「模拟器 + OEM 组合验证」**。实施顺序：§7 中 **W0–W2 已完成**；**W4** 可基于现有 compose 契约推进（先路径 A）；完整自有 SDK（**W3**）可与 W4 重叠，但 P3.2 验收不阻塞在 SDK 全量进仓完成之后。
+W0–W3（进仓除外）已完成，不阻塞 W4。W4 以 **路径 B + 外设透传** 为正式里程碑；路径 A 可并行探路。
 
 ---
 
@@ -576,11 +609,12 @@ W3  自有 linux-sdk                                       ✅ 工具已归档�
     └─ git 策略文档已写；linux-sdk/ 仍 ignore（防索引卡死）
     └─ change: openspec/changes/platform-linux-sdk-own-tree
 
-W4  P3.2 虚拟机（第二主板+屏）                           🔲 可与 W3 并行
-    ├─ oem pack sim_virt
-    ├─ AppServices Stub 接线
-    ├─ 路径 A 文档 + 脚本
-    └─ 可选路径 B Buildroot virt
+W4  P3.2 虚拟机（第二主板+屏，可带下位机）              🔲
+    ├─ 契约：Linux-in-guest；无 OTG；三网卡（有线+无线桥真实网 + 调试 SSH）
+    ├─ oem pack sim_virt；GPIO LED 悬浮层（参考系统状态浮层）
+    ├─ USB 透传：BT / 串口（Modbus）/（可选）Wi‑Fi dongle
+    ├─ 路径 B Buildroot virt rootfs（正式）
+    └─ 路径 A Debian 探路（可选、不替代 B）
 
 W5  （另案）Factory Test App                             ⏸
     └─ 复用 OEM profile；gpio/modbus 仍按产测需求另定
@@ -590,8 +624,8 @@ W5  （另案）Factory Test App                             ⏸
 
 ```text
 W0 → W1 → W2 ✅ 已完成
-       ↘ W4（可用 W1/W2 的 compose 契约；先路径 A）
-W0 → W3（可与 W4 并行；完成前仍可用现 linux-sdk）
+W0 → W3 ✅（进仓⏸）
+W0 → W4（Linux-in-guest + USB/网桥；路径 B 正式，A 探路）
 ```
 
 ---
@@ -626,7 +660,7 @@ W0 → W3（可与 W4 并行；完成前仍可用现 linux-sdk）
 ## 10. 成功标准（平台化第一里程碑）
 
 1. **真机**：`oem.img`（ynh960+屏）+ 通用 rootfs 启动；HMI 使用 OEM profile + **App 内** gpio/modbus。 ✅（W1+W2）  
-2. **模拟器**：sim_virt OEM 启动同一 HMI；缺硬件不崩；可作为「第二主板+屏」演示组合切换。 🔲 W4  
+2. **模拟器**：`sim_virt` + Linux HAL；三网卡（有线/无线桥真实网 + 调试 SSH）；无 OTG；Modbus/BT USB 透传；GPIO LED 悬浮层。 🔲 W4  
 3. **构建**：裁剪 linux-sdk 可出与现网等价的 ynh960 镜像（或明确差距清单）。 🟡 W3 工具就绪；本机 trim 后验证  
 4. **工厂变体**：`FACTORY_SKU=… make build-oem` / `build-img` / `flash` 解析同一套路径；产出 `output/firmware/<sku>/factory.img`；uboot 来自 `prebuilt/bootloader/<uboot_id>/`。 ✅（W1）  
 5. **文档**：`make help` / README / AGENTS 重建表含 `build-oem`、`factory.img`、模拟器步骤；**无** factory-test 强依赖。 部分 ✅（模拟器步骤待 W4）  

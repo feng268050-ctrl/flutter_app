@@ -77,11 +77,14 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
   }
 
   void _pointerDown(PointerDownEvent event) {
-    if (widget.busy ||
-        !_QuickLaserTrapezoid.contains(
-          event.localPosition,
-          _buttonSize(context),
-        )) {
+    if (widget.busy) {
+      widget.onBlocked(LaserEnableBlockReason.busy.message);
+      return;
+    }
+    if (!_QuickLaserTrapezoid.contains(
+      event.localPosition,
+      _buttonSize(context),
+    )) {
       return;
     }
     _gestureActive = true;
@@ -155,28 +158,25 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
     final scale =
         ProcessModeDimens.dashboardScaleFor(MediaQuery.sizeOf(context));
     final size = _buttonSize(context);
-    return AnimatedOpacity(
-      opacity: widget.busy ? 0.45 : 1,
-      duration: const Duration(milliseconds: 120),
-      child: SizedBox(
-        key: const ValueKey('quick-mode-laser-enable'),
-        width: size.width,
-        height: size.height,
-        child: Stack(
-          // Keep edge shadow inside the 564×223 graphic — no overflow bloom.
-          clipBehavior: Clip.hardEdge,
-          fit: StackFit.expand,
-          children: [
-            // Edge shadow behind chrome: covers arc-shoulder voids along the
-            // trapezoid rim without changing the WebP button colors.
-            CustomPaint(
-              painter: _LaserTrapezoidRimShadowPainter(scale: scale),
-            ),
-            IgnorePointer(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.asset(_background, fit: BoxFit.fill),
+    return SizedBox(
+      key: const ValueKey('quick-mode-laser-enable'),
+      width: size.width,
+      height: size.height,
+      child: Stack(
+        // Keep edge shadow inside the 564×223 graphic — no overflow bloom.
+        clipBehavior: Clip.hardEdge,
+        fit: StackFit.expand,
+        children: [
+          // Edge shadow behind chrome: covers arc-shoulder voids along the
+          // trapezoid rim without changing the WebP button colors.
+          CustomPaint(
+            painter: _LaserTrapezoidRimShadowPainter(scale: scale),
+          ),
+          IgnorePointer(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(_background, fit: BoxFit.fill),
                   Positioned(
                     top: 68 * scale,
                     left: 0,
@@ -233,7 +233,6 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
             ),
           ],
         ),
-      ),
     );
   }
 }

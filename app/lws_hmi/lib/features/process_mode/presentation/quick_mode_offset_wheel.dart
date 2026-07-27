@@ -14,8 +14,8 @@ final class QuickModeOffsetWheel extends StatefulWidget {
     required this.itemExtent,
     required this.onChanged,
     required this.itemBuilder,
-    this.diameterRatio = 5,
-    this.perspective = 0.002,
+    this.diameterRatio = 100,
+    this.perspective = 0.001,
     this.offAxisFraction = 0,
     this.fixedAccent,
   });

@@ -11,6 +11,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
+import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/domain/quick_mode_selection.dart';
@@ -29,6 +30,8 @@ import 'package:lws_hmi/features/process_mode/presentation/quick_mode_parameter_
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_process_wheel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_value_pick.dart';
 import 'package:lws_hmi/features/process_mode/presentation/record_work_toggle.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
@@ -186,8 +189,8 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
   }
 
-  /// Quick Back (lws-ui `finishQuickMode`): stop record + clear continuous
-  /// wire, then return home. Laser stays on until End of work / special exit.
+  /// Quick Back (lws-ui `finishQuickMode`): stop record, then return home.
+  /// Laser stays on until End of work. Do not await wire/laser Modbus cleanup.
   Future<void> _handleExit() async {
     if (_exiting) {
       return;
@@ -200,7 +203,6 @@ final class _QuickModePageState extends State<QuickModePage> {
     _exiting = true;
     try {
       await _recordWork?.stopRecordingForExit();
-      await _deviceControl?.clearContinuousWire();
       if (!mounted) {
         return;
       }
@@ -457,6 +459,11 @@ final class _QuickModePageState extends State<QuickModePage> {
     if (matched == null || _processType == ProcessType.cncCutting) {
       return;
     }
+    final control = _deviceControl;
+    if (control != null && (control.laserEnable || control.laserOn)) {
+      _showControlMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
+      return;
+    }
     if (!EngineerModeEntryTipGate.isSuppressedThisBoot) {
       final result = await showEngineerModeEntryTipsDialog(context);
       if (result == null || !mounted) {
@@ -484,8 +491,6 @@ final class _QuickModePageState extends State<QuickModePage> {
     final selection = _selection;
     final isCnc = _processType == ProcessType.cncCutting;
     final showPickers = !isCnc && selection != null;
-    final laserActive = _deviceControl != null &&
-        (_deviceControl!.laserEnable || _deviceControl!.laserOn);
 
     final materialIndex = selection == null || selection.material == null
         ? 0
@@ -552,9 +557,9 @@ final class _QuickModePageState extends State<QuickModePage> {
               const Center(child: CircularProgressIndicator()),
             if (!isCnc && _deviceControl != null && _recordWork != null)
               Positioned(
-                // lws-ui activity_quick_mode: marginStart 40 + marginTop 20.
-                top: 20,
-                left: 40,
+                // Symmetric with More Parameters: inset 40, top 20.
+                top: ProcessModeDimens.quickTopChromeTop,
+                left: ProcessModeDimens.quickTopChromeInset,
                 child: RecordWorkToggle(
                   key: const ValueKey('quick-mode-record-work'),
                   controller: _recordWork!,
@@ -563,10 +568,10 @@ final class _QuickModePageState extends State<QuickModePage> {
               ),
             if (showPickers) ...[
               Positioned(
-                top: 20,
-                right: 32,
+                top: ProcessModeDimens.quickTopChromeTop,
+                right: ProcessModeDimens.quickTopChromeInset,
                 child: QuickModeMoreParametersButton(
-                  enabled: selection.matched != null && !laserActive,
+                  enabled: selection.matched != null,
                   onPressed: _openEngineerDraft,
                 ),
               ),
@@ -622,14 +627,34 @@ final class _QuickModePageState extends State<QuickModePage> {
                     ),
                     ProcessModeDimens.pickerVerticalFromPageCenter,
                   ),
-                  child: QuickModeDimensionPick(
-                    processType: _processType,
-                    title: selection.useSwingWidth
-                        ? 'Swing Width (mm)'
-                        : 'Thickness (mm)',
-                    dimensions: selection.dimensions,
-                    selectedIndex: dimensionIndex < 0 ? 0 : dimensionIndex,
-                    onChanged: _onDimensionIndex,
+                  child: Builder(
+                    builder: (context) {
+                      final unitStore = CommonSettingsScope.maybeOf(context);
+                      Widget pick(bool useMm) {
+                        final unit = useMm ? 'mm' : 'in';
+                        return QuickModeDimensionPick(
+                          processType: _processType,
+                          title: selection.useSwingWidth
+                              ? 'Swing Width ($unit)'
+                              : 'Thickness ($unit)',
+                          dimensions: selection.dimensions,
+                          selectedIndex:
+                              dimensionIndex < 0 ? 0 : dimensionIndex,
+                          onChanged: _onDimensionIndex,
+                          useMmUnit: useMm,
+                        );
+                      }
+
+                      if (unitStore == null) {
+                        return pick(true);
+                      }
+                      return ListenableBuilder(
+                        listenable: unitStore,
+                        builder: (context, _) => pick(
+                          LengthUnitConvert.isMetric(unitStore.unit),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),

@@ -3,6 +3,8 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_offset_wheel.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
+import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 
 /// Shared dimens for gear / thickness V2-style picks (lws-ui quick_mode_picker_*).
@@ -20,17 +22,18 @@ abstract final class QuickModePickerDimens {
   static const double scaleImageWidth = 80.2;
 
   /// Visual shrink of the scale asset about its center (layout box unchanged).
-  static const double scaleImageVisualScale = 0.88;
+  static const double scaleImageVisualScale = 0.82;
   static const double valueWheelWidth = 280 / 3; // 93.333…
   static const double materialWidth = 640 / 3; // 213.333…
   static const double materialHeight = 240;
-  static const double itemHeight = 136 / 3; // 45.333…
+  static const double itemHeight = 168 / 3; // 56 — was 136/3; more row gap
   static const double selectedTextSize = 56 / 3; // 18.666…
   static const double unselectedTextSize = 16;
   static const double selectedTextPadding = 16;
   static const Color titleColor = Colors.white;
 
-  static const double gearTitleOffset = -80 / 3; // -26.666…
+  /// Title sits on the scale's vertical centerline; optional downward nudge.
+  static const double titleNudgeY = 60;
 
   /// Selection band width — chip centered on the selected value.
   static const double accentWidth =
@@ -51,16 +54,25 @@ abstract final class QuickModePickerDimens {
       accentWidth / 2 + scaleValueGap + valueWheelWidth / 2 - scaleToOuterFrameGap;
 
   /// Extra end padding per wheel distance unit (material arc, lws-ui linear).
-  static const double materialArcPadPerDistance = 20 / 3; // 6.666…
+  static const double materialArcPadPerDistance = 10;
 
-  /// lws-ui gear/thickness wheel cylinder (ListWheelScrollView).
-  static const double wheelDiameterRatio = 5.5;
-  static const double wheelPerspective = 0.002;
+  /// Nearly-flat cylinder so the visible arc is padding (lws-ui OffsetWheel).
+  static const double wheelDiameterRatio = 100;
+  static const double wheelPerspective = 0.001;
 
-  /// lws-ui OffsetWheelBuilder.builderOffsetGearOffset:
-  /// `abs(d)^2 * 8 + 24` (design dp → logical px here).
+  /// Gear/thickness quadratic arc term: `d² × 8` (shifted from selection midline).
+  ///
+  /// lws-ui absolute edge pad is `d²×8+24`; applying that as left-edge padding
+  /// on a narrow wheel parks the nearest neighbor left of center. We keep the
+  /// quadratic term as a midline translate instead.
   static double unselectedOffset(double distance) =>
-      distance * distance * 8 + 24;
+      distance * distance * 8;
+
+  /// Mode/material linear arc: `|d| × 10 + 24`.
+  static double linearArcPad(double distance) => distance * 10 + 24;
+
+  /// Selected-row equal pad (lws-ui `selectedTextMarginBottomTop` = 24dp).
+  static const double arcSelectedPad = 24;
 
   /// Selected-value X from page center (accent midline, just outside the ring).
   static double gearValueCenterFromPageCenter(double highlightR) =>
@@ -120,24 +132,46 @@ final class QuickModeValuePick extends StatelessWidget {
         children: [
           SizedBox(
             height: QuickModePickerDimens.titleHeight,
-            child: Transform.translate(
-              offset: Offset(
-                scaleOnLeft ? QuickModePickerDimens.gearTitleOffset : 0,
-                0,
-              ),
-              child: Center(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.visible,
-                  style: const TextStyle(
-                    color: QuickModePickerDimens.titleColor,
-                    fontSize: QuickModePickerDimens.titleTextSize,
-                    height: 1,
-                    fontWeight: FontWeight.w400,
+            width: QuickModePickerDimens.pickWidth,
+            // Text center shares the scale image's vertical centerline.
+            // OverflowBox keeps long titles (e.g. Thickness (in)) fully visible.
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: scaleOnLeft
+                      ? QuickModePickerDimens.scaleInwardInset +
+                          QuickModePickerDimens.scaleImageWidth / 2
+                      : null,
+                  right: scaleOnLeft
+                      ? null
+                      : QuickModePickerDimens.scaleInwardInset +
+                          QuickModePickerDimens.scaleImageWidth / 2,
+                  top: 0,
+                  width: 0,
+                  height: QuickModePickerDimens.titleHeight,
+                  child: Transform.translate(
+                    offset: const Offset(0, QuickModePickerDimens.titleNudgeY),
+                    child: OverflowBox(
+                      maxWidth: QuickModePickerDimens.pickWidth * 2,
+                      alignment: Alignment.center,
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: QuickModePickerDimens.titleColor,
+                          fontSize: QuickModePickerDimens.titleTextSize,
+                          height: 1,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
           const SizedBox(height: QuickModePickerDimens.titleScaleGap),
@@ -279,7 +313,7 @@ final class _ValuePickItem extends StatelessWidget {
       ),
     );
 
-    // Selected / center row stays on the accent midline (特效中心).
+    // Selected stays on the accent midline.
     if (atCenter) {
       return SizedBox(
         height: QuickModePickerDimens.itemHeight,
@@ -287,20 +321,17 @@ final class _ValuePickItem extends StatelessWidget {
       );
     }
 
-    // lws-ui OffsetWheelAdapter unselected arc via one-sided padding:
-    // gear pad left → toward dashboard; thickness pad right.
-    final offset = QuickModePickerDimens.unselectedOffset(distance);
-    final align =
-        scaleOnLeft ? Alignment.centerLeft : Alignment.centerRight;
-    return Align(
-      alignment: align,
-      child: Padding(
-        padding: scaleOnLeft
-            ? EdgeInsets.only(left: offset)
-            : EdgeInsets.only(right: offset),
-        child: SizedBox(
-          height: QuickModePickerDimens.itemHeight,
-          child: Align(alignment: align, child: text),
+    // Arc from the selection midline (not from the left/right edge).
+    // Absolute left-pad (d²×8+24) made the nearest neighbor sit left of
+    // center; shift only by the quadratic term toward the dashboard.
+    final shift = distance * distance * 8;
+    return SizedBox(
+      height: QuickModePickerDimens.itemHeight,
+      child: Center(
+        child: Transform.translate(
+          // Gear (scale left): +X toward dashboard; thickness: −X.
+          offset: Offset(scaleOnLeft ? shift : -shift, 0),
+          child: text,
         ),
       ),
     );
@@ -346,6 +377,7 @@ final class QuickModeDimensionPick extends StatelessWidget {
     required this.dimensions,
     required this.selectedIndex,
     required this.onChanged,
+    this.useMmUnit = true,
   });
 
   final ProcessType processType;
@@ -353,6 +385,9 @@ final class QuickModeDimensionPick extends StatelessWidget {
   final List<double> dimensions;
   final int selectedIndex;
   final ValueChanged<int> onChanged;
+
+  /// Common Settings: Metric → mm labels; Imperial → in labels (values stay mm).
+  final bool useMmUnit;
 
   @override
   Widget build(BuildContext context) {
@@ -362,19 +397,18 @@ final class QuickModeDimensionPick extends StatelessWidget {
       title: title,
       values: dimensions,
       selectedIndex: selectedIndex,
-      labelOf: _formatMm,
+      labelOf: (value) => _formatDimension(value, useMmUnit: useMmUnit),
       onChanged: onChanged,
       scaleOnLeft: false,
     );
   }
 
-  static String _formatMm(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toInt().toString();
-    }
-    final fixed = value.toStringAsFixed(2);
-    return fixed
-        .replaceFirst(RegExp(r'0+$'), '')
-        .replaceFirst(RegExp(r'\.$'), '');
+  static String _formatDimension(double valueMm, {required bool useMmUnit}) {
+    return LengthUnitConvert.formatMm(
+      valueMm,
+      unitWire: useMmUnit
+          ? CommonSettingsStore.unitMetric
+          : CommonSettingsStore.unitImperial,
+    );
   }
 }

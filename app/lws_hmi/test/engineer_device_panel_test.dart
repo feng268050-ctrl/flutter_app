@@ -127,7 +127,7 @@ void main() {
     ProcessModeToast.resetForTest();
   });
 
-  testWidgets('spot welding keeps wire controls disabled', (tester) async {
+  testWidgets('spot welding toasts and keeps wire off', (tester) async {
     final controller =
         DeviceControlController(servicesWith(_RecordingModbus()))
           ..keySwitchOn = true
@@ -136,15 +136,17 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 400,
-            height: 700,
-            child: EngineerDevicePanel(
-              controller: controller,
-              recordWork: RecordWorkController(deviceControl: controller),
-              processType: ProcessType.spotWelding,
-              preset: presetFor(ProcessType.spotWelding),
+        home: ProcessModeToastLayer(
+          child: Scaffold(
+            body: SizedBox(
+              width: 400,
+              height: 700,
+              child: EngineerDevicePanel(
+                controller: controller,
+                recordWork: RecordWorkController(deviceControl: controller),
+                processType: ProcessType.spotWelding,
+                preset: presetFor(ProcessType.spotWelding),
+              ),
             ),
           ),
         ),
@@ -155,6 +157,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('engineer-panel-auto-wire')));
     await tester.pump();
     expect(controller.autoWireFeed, isFalse);
+    expect(find.text('Wire feed unavailable in this mode'), findsOneWidget);
   });
 
   testWidgets('Record Work enables when camera is connected', (tester) async {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
+import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 
 /// Quick / Engineer Record Work checkbox row (lws-ui `CameraController`).
 ///
@@ -61,7 +62,8 @@ final class _RecordWorkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelSize = compact ? 16.0 : 22.0;
+    final labelSize =
+        compact ? ProcessModeDimens.quickTopChromeLabelSize : 22.0;
     return InkWell(
       onTap: enabled && onChanged != null
           ? () {

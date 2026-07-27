@@ -77,9 +77,9 @@ final class QuickModeProcessWheel extends StatelessWidget {
                   itemCount: QuickProcessWheelItems.types.length,
                   selectedIndex: selectedIndex,
                   itemExtent: ProcessModeDimens.wheelItemHeight,
-                  diameterRatio: 5,
-                  perspective: 0.002,
-                  offAxisFraction: -0.35,
+                  diameterRatio: ProcessModeDimens.wheelDiameterRatio,
+                  perspective: ProcessModeDimens.wheelPerspective,
+                  offAxisFraction: 0,
                   onChanged: (index) =>
                       onChanged(QuickProcessWheelItems.types[index]),
                   itemBuilder: (context, index, distance) {
@@ -88,8 +88,10 @@ final class QuickModeProcessWheel extends StatelessWidget {
                     final alpha = selected
                         ? 1.0
                         : (1.0 - distance * 0.2).clamp(0.4, 1.0);
-                    final startPad = ProcessModeDimens.wheelSelectedPadding +
-                        distance * ProcessModeDimens.wheelDistancePadding;
+                    // Right-offset arc: left pad = |d|×10+24 (lws-ui mode wheel).
+                    final startPad = selected
+                        ? ProcessModeDimens.wheelSelectedPadding
+                        : ProcessModeDimens.linearArcPad(distance);
                     return Align(
                       alignment: Alignment.centerLeft,
                       child: Padding(

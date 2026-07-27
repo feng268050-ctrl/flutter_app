@@ -110,13 +110,21 @@ abstract final class ProcessModeDimens {
 
   static const double wheelWidth = 520 / 3; // 173.333…
   static const double wheelHeight = 680 / 3; // 226.666…
-  static const double wheelItemHeight = 136 / 3; // 45.333…
+  static const double wheelItemHeight = 168 / 3; // 56 — was 136/3; more row gap
   static const double wheelSelectedTextSize = 56 / 3; // 18.666…
   static const double wheelUnselectedTextSize = 16;
   static const double wheelAccentBandWidth = 400;
   static const double wheelAccentSolidWidth = 550 / 3; // 183.333…
-  static const double wheelSelectedPadding = 16;
-  static const double wheelDistancePadding = 20 / 3; // 6.666…
+
+  /// lws-ui OffsetWheel: selected equal L/R pad (`selectedTextMarginBottomTop`).
+  static const double wheelSelectedPadding = 24;
+
+  /// Nearly-flat ListWheel (lws-ui OffsetWheel is a flat ListView + pad arc).
+  static const double wheelDiameterRatio = 100;
+  static const double wheelPerspective = 0.001;
+
+  /// Mode / material linear arc: `|d| × 10 + 24` (lws-ui OffsetWheelBuilder).
+  static double linearArcPad(double distance) => distance * 10 + 24;
 
   /// Clears the process wheel / left accent for the CNC guide.
   static const double cncGuideLeftInset = 210;
@@ -210,7 +218,8 @@ abstract final class ProcessModeDimens {
   /// Side ops (Manual Gas / Auto Wire / Feed / Retract) — lws-ui styles.
   static const double quickSideButtonWidth = 264;
   static const double quickSideButtonInset = 30;
-  static const double quickSideButtonBottom = 35.5;
+  /// Lower than lws-ui 35.5 so wheels sit farther above the four side buttons.
+  static const double quickSideButtonBottom = 12;
   static const double quickSideOpIconSize = 24;
   static const double quickSideOpLabelSize = 27;
   static const double quickSideOpIconGap = 6;
@@ -231,6 +240,12 @@ abstract final class ProcessModeDimens {
   /// Lift mode / material selection midline (and gear/thickness value + accent
   /// only — scale chrome stays on the dashboard circle center).
   static const double quickSelectorNudgeY = -25;
+
+  /// Quick Mode top chrome: Record Work (left) / More Parameters (right).
+  /// Equal screen-edge inset; same [quickTopChromeTop] for a shared baseline.
+  static const double quickTopChromeInset = 40;
+  static const double quickTopChromeTop = 20;
+  static const double quickTopChromeLabelSize = 26;
 
   /// Gear/Thickness: toStartOf/toEndOf dashboard + overlap + translation.
   static const double pickerWidth = 560 / 3; // 186.666…

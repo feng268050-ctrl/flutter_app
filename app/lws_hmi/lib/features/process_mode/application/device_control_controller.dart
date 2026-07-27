@@ -39,6 +39,9 @@ final class DeviceControlController extends ChangeNotifier {
     try {
       await services.ensureModbusLive();
       await _refreshSnapshot();
+      // lws-ui GeneralOperationsFragment.initData: Auto Wire Feed ON unless
+      // e-stop halt (device snapshot often leaves the bit off).
+      await ensureAutoWireFeedDefault();
       final stream = await services.modbus.watchAttributes(
         ids: DeviceControlIds.watchIds,
       );
@@ -48,6 +51,14 @@ final class DeviceControlController extends ChangeNotifier {
       lastError = 'Status watch failed';
       notifyListeners();
     }
+  }
+
+  /// Match lws-ui Quick/Engineer init: force Auto Wire Feed enable when safe.
+  Future<void> ensureAutoWireFeedDefault() async {
+    if (emergencyStop || autoWireFeed) {
+      return;
+    }
+    await setAutoWireFeed(true);
   }
 
   Future<void> _refreshSnapshot() async {

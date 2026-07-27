@@ -92,8 +92,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
         final thresholds =
             AdvancedSettingsScope.maybeThresholdsOf(context)?.values ??
                 const AdvancedSettingsThresholdValues();
-        final wireEnabled =
-            _wireCapable && !widget.controller.busy && !laserActive;
+        // Toast mutex only — do not dim peers for laser / non-wire / busy.
         return EngineerFrostPanel(
           key: const ValueKey('engineer-device-panel'),
           edge: EngineerFrostEdge.topLeftBottomRight,
@@ -136,9 +135,23 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                         'engineer-panel-manual-gas'),
                                     label: 'Manual Gas',
                                     value: widget.controller.manualGas,
-                                    enabled: !laserActive &&
-                                        !widget.controller.busy,
+                                    enabled: true,
                                     onChanged: (value) async {
+                                      if (widget.controller.busy) {
+                                        _toast(
+                                          context,
+                                          LaserEnableBlockReason.busy.message,
+                                        );
+                                        return;
+                                      }
+                                      if (laserActive) {
+                                        _toast(
+                                          context,
+                                          DeviceControlFeedbackCopy
+                                              .endOfWorkFirst,
+                                        );
+                                        return;
+                                      }
                                       final err = await widget.controller
                                           .setManualGas(value);
                                       if (!context.mounted) {
@@ -172,8 +185,31 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     label: 'Auto Wire Feed',
                                     value: widget.controller.autoWireFeed &&
                                         _wireCapable,
-                                    enabled: wireEnabled,
+                                    enabled: true,
                                     onChanged: (value) async {
+                                      if (widget.controller.busy) {
+                                        _toast(
+                                          context,
+                                          LaserEnableBlockReason.busy.message,
+                                        );
+                                        return;
+                                      }
+                                      if (laserActive) {
+                                        _toast(
+                                          context,
+                                          DeviceControlFeedbackCopy
+                                              .endOfWorkFirst,
+                                        );
+                                        return;
+                                      }
+                                      if (!_wireCapable) {
+                                        _toast(
+                                          context,
+                                          DeviceControlFeedbackCopy
+                                              .wireUnavailableInMode,
+                                        );
+                                        return;
+                                      }
                                       final err = await widget.controller
                                           .setAutoWireFeed(value);
                                       if (!context.mounted) {
@@ -220,7 +256,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                           label: 'Retract',
                                           icon: Icons.output,
                                           height: _wireButtonsHeight,
-                                          enabled: wireEnabled,
+                                          enabled: true,
+                                          laserBlocked: laserActive,
+                                          modeBlocked: !_wireCapable,
                                           retract: true,
                                           active: widget.controller.wireWork &&
                                               widget.controller.wireRetracting,
@@ -237,7 +275,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                           label: 'Feed',
                                           icon: Icons.input,
                                           height: _wireButtonsHeight,
-                                          enabled: wireEnabled,
+                                          enabled: true,
+                                          laserBlocked: laserActive,
+                                          modeBlocked: !_wireCapable,
                                           retract: false,
                                           active: widget.controller.wireWork &&
                                               !widget.controller.wireRetracting,
@@ -261,9 +301,23 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   height: _laserButtonHeight,
                                   filled: true,
                                   laserOn: laserActive,
-                                  enabled: !(widget.controller.busy ||
-                                      widget.controller.manualGas),
+                                  enabled: true,
                                   onHoldComplete: () async {
+                                    if (widget.controller.busy) {
+                                      _toast(
+                                        context,
+                                        LaserEnableBlockReason.busy.message,
+                                      );
+                                      return;
+                                    }
+                                    if (widget.controller.manualGas) {
+                                      _toast(
+                                        context,
+                                        LaserEnableBlockReason
+                                            .manualGasOn.message,
+                                      );
+                                      return;
+                                    }
                                     final before =
                                         widget.onBeforeEnableLaser;
                                     if (before != null) {
@@ -328,16 +382,6 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                     ],
                   ),
                 ),
-                if (widget.controller.lastError != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.controller.lastError!,
-                    style: const TextStyle(
-                      color: Color(0xFFFF8A80),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
@@ -411,6 +455,8 @@ final class _EngineerWireActionButton extends StatefulWidget {
     required this.icon,
     required this.height,
     required this.enabled,
+    required this.laserBlocked,
+    required this.modeBlocked,
     required this.retract,
     required this.active,
     required this.controller,
@@ -421,6 +467,8 @@ final class _EngineerWireActionButton extends StatefulWidget {
   final IconData icon;
   final double height;
   final bool enabled;
+  final bool laserBlocked;
+  final bool modeBlocked;
   final bool retract;
   final bool active;
   final DeviceControlController controller;
@@ -465,14 +513,40 @@ final class _EngineerWireActionButtonState
       label: widget.label,
       child: Listener(
         onPointerDown: (_) {
+          if (widget.controller.busy) {
+            widget.onMessage(LaserEnableBlockReason.busy.message);
+            return;
+          }
+          if (widget.laserBlocked) {
+            widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
+            return;
+          }
+          if (widget.modeBlocked) {
+            widget.onMessage(DeviceControlFeedbackCopy.wireUnavailableInMode);
+            return;
+          }
           if (!widget.enabled) {
             return;
           }
           CyberClickSoundRegistry.playClick();
           _gesture.pointerDown();
         },
-        onPointerUp: (_) => _gesture.pointerUp(),
-        onPointerCancel: (_) => _gesture.pointerUp(),
+        onPointerUp: (_) {
+          if (widget.controller.busy ||
+              widget.laserBlocked ||
+              widget.modeBlocked) {
+            return;
+          }
+          _gesture.pointerUp();
+        },
+        onPointerCancel: (_) {
+          if (widget.controller.busy ||
+              widget.laserBlocked ||
+              widget.modeBlocked) {
+            return;
+          }
+          _gesture.pointerUp();
+        },
         child: Opacity(
           opacity: widget.enabled ? 1 : 0.55,
           child: Container(

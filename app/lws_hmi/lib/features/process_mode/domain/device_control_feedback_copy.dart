@@ -33,4 +33,10 @@ abstract final class DeviceControlFeedbackCopy {
 
   /// Record Work cannot start (`unable_to_open_the_camera_title`).
   static const cameraUnavailable = 'Camera unavailable';
+
+  /// Side ops / More Parameters blocked while laser is open.
+  static const endOfWorkFirst = 'End of work first';
+
+  /// Feed / Retract / Auto Wire outside continuous welding.
+  static const wireUnavailableInMode = 'Wire feed unavailable in this mode';
 }

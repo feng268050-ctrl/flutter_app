@@ -38,6 +38,7 @@ Commands:
   write <dev> <bytes>    Read exactly <bytes> from stdin into block device <dev>
   backup-boot            Copy running FIT boot → boot_b (rollback copy)
   arm-reboot <letter>    Arm try-boot to <letter> (A|B), set ok, reboot
+  plain-reboot           Reboot without A/B letter switch (OEM-only upgrade)
 
 Env: LWS_HMI_AB_LIB, LWS_HMI_OTA_DIR
 EOF
@@ -226,6 +227,15 @@ cmd_arm_reboot() {
 	ab_reboot
 }
 
+# Plain reboot (OEM-only upgrade): no misc try-boot arming.
+cmd_plain_reboot() {
+	set_status ok
+	sync
+	ab_log "rebooting (no A/B letter switch)"
+	sleep 1
+	ab_reboot
+}
+
 case "${1:-}" in
 -h|--help|"") usage; exit 0 ;;
 preflight) shift; cmd_preflight "$@" ;;
@@ -233,5 +243,6 @@ set-status) shift; cmd_set_status "$@" ;;
 write) shift; cmd_write "$@" ;;
 backup-boot) shift; cmd_backup_boot "$@" ;;
 arm-reboot) shift; cmd_arm_reboot "$@" ;;
+plain-reboot) shift; cmd_plain_reboot "$@" ;;
 *) fail "unknown command: $1" ;;
 esac

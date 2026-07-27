@@ -7,6 +7,10 @@ import 'package:lws_hmi/app/app.dart';
 import 'package:lws_hmi/hal/hal_assets.dart';
 import 'package:lws_hmi/platform/video_player_elinux/video_player_elinux.dart';
 
+/// Compose export (preferred) then on-device OEM board pack.
+const _kRunBoardProfile = '/run/hmi/board_profile.json';
+const _kOemBoardProfile = '/oem/boards/ynh960/board_profile.json';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isLinux) {
@@ -20,6 +24,30 @@ Future<void> main() async {
       FlutterpiVideoPlayer.registerWith();
     }
   }
-  final profile = await BoardProfile.loadAsset(HmiHalAssets.boardProfile);
+  final profile = await _loadBoardProfile();
   runApp(LwsHmiApp(boardProfile: profile));
+}
+
+Future<BoardProfile> _loadBoardProfile() async {
+  for (final path in <String>[_kRunBoardProfile, _kOemBoardProfile]) {
+    final file = File(path);
+    if (!await file.exists()) {
+      continue;
+    }
+    try {
+      final oem = await BoardProfile.loadFile(path);
+      return oem.withProductConfigs(
+        gpio: HmiHalAssets.gpio,
+        modbus: HmiHalAssets.modbus,
+      );
+    } catch (e, st) {
+      debugPrint('board profile load failed ($path): $e\n$st');
+    }
+  }
+
+  debugPrint(
+    'WARN: OEM/compose board profile missing; '
+    'falling back to ${HmiHalAssets.boardProfile} (migration window)',
+  );
+  return BoardProfile.loadAsset(HmiHalAssets.boardProfile);
 }

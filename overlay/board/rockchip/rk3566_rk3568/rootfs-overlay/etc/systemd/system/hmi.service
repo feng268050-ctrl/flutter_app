@@ -1,7 +1,8 @@
 [Unit]
 Description=Flutter HMI
 DefaultDependencies=yes
-After=local-fs.target cpu-performance.service
+After=local-fs.target cpu-performance.service oem-compose.service
+Wants=oem-compose.service
 # Optional on lws_hmi images: param-update.service / mainserver.service
 # sdk-native: panel init is in kernel DTS (panel-init-sequence).
 # Do not wait for network or MediaMTX (KPI = first home frame).

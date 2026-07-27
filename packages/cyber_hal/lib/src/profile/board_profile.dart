@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cyber_hal/src/core/board_info.dart';
 import 'package:cyber_hal/src/core/capabilities.dart';
@@ -132,6 +133,38 @@ final class BoardProfile {
   }) async {
     final source = await (bundle ?? rootBundle).loadString(assetPath);
     return BoardProfile.fromJsonString(source);
+  }
+
+  /// Load a board profile from an absolute filesystem path (OEM / compose).
+  static Future<BoardProfile> loadFile(String path) async {
+    final file = File(path);
+    if (!await file.exists()) {
+      throw HalIoException('board profile missing: $path');
+    }
+    try {
+      return BoardProfile.fromJsonString(await file.readAsString());
+    } on HalIoException {
+      rethrow;
+    } catch (e) {
+      throw HalIoException('board profile read failed ($path): $e');
+    }
+  }
+
+  /// Copy with App-owned gpio/modbus Flutter asset paths merged in.
+  BoardProfile withProductConfigs({
+    String? gpio,
+    String? modbus,
+  }) {
+    return BoardProfile(
+      info: info,
+      capabilities: capabilities,
+      netRoles: netRoles,
+      gpioConfigAsset: gpio ?? gpioConfigAsset,
+      modbusConfigAsset: modbus ?? modbusConfigAsset,
+      storageMounts: storageMounts,
+      routeMetrics: routeMetrics,
+      helpers: helpers,
+    );
   }
 
   factory BoardProfile.fromJson(Map<String, dynamic> json) {

@@ -12,6 +12,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/usb-ssh-common.sh
 source "$ROOT/scripts/usb-ssh-common.sh"
+# shellcheck source=scripts/factory-sku.sh
+source "$ROOT/scripts/factory-sku.sh"
 ACTION="${1:-}"
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 
@@ -20,7 +22,10 @@ UPGRADE_TOOL="$UPGRADE_TOOL_DIR/upgrade_tool"
 SDK="$ROOT/linux-sdk"
 LWS_FIRMWARE_DIR="$ROOT/output/firmware"
 SDK_FIRMWARE_DIR="$SDK/output/firmware"
-UPDATE_IMG="${UPDATE_IMG:-${LWS_HMI_UPDATE_IMG:-${IMAGE:-$LWS_FIRMWARE_DIR/update.img}}}"
+# Prefer per-sku factory.img; fall back to migration update.img symlink/path.
+_DEFAULT_FLASH_IMG="$FACTORY_IMG"
+[[ -r "$_DEFAULT_FLASH_IMG" ]] || _DEFAULT_FLASH_IMG="$LWS_FIRMWARE_DIR/update.img"
+UPDATE_IMG="${UPDATE_IMG:-${LWS_HMI_UPDATE_IMG:-${IMAGE:-$_DEFAULT_FLASH_IMG}}}"
 if [[ "$ACTION" == upgrade || "$ACTION" == uf || "$ACTION" == update ]] && [[ -n "${2:-}" ]]; then
   UPDATE_IMG="$2"
 fi

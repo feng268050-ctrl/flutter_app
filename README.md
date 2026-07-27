@@ -53,7 +53,7 @@ make flash
 
 1. `make docker-volume-init` — copy host SDK → volume (once)
 2. `make apply-overlay` / `make build-*` — repo bind-mounted into container; build in volume
-3. `make build-kernel` / `make build-rootfs` / `make build-img` — each publishes its own artifacts to host `output/firmware/` (`boot.img`+`boot_b.img`, `rootfs.img`, and factory `update.img`). Daily `make upgrade` only needs kernel/rootfs builds — not `build-img` or a manual export.
+3. `make build-kernel` / `make build-rootfs` / `make build-oem` / `make build-img` — each publishes artifacts to host `output/firmware/` (FITs, `rootfs.img`, `oem.img`, and per-SKU `factory.img` with `update.img` symlink). Daily `make upgrade` needs kernel/rootfs (+ optional oem) — not `build-img` or a manual export.
 
 ---
 
@@ -127,15 +127,17 @@ Firmware stage outputs:
 - `make build-kernel` builds two independently hashed FIT images containing the same Linux kernel: `boot.img` selects `rootfs_a`, while `boot_b.img` selects `rootfs_b`. Publishes both to `output/firmware/`.
 - `make build-rootfs` builds `rootfs.img` (Weston + `flutter-wayland-client` + Mali `wayland-gbm`) and publishes it to `output/firmware/`. Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`.
 - `make prepare-rootfs` flips Buildroot stack prep (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. `build-rootfs` calls prepare first (skips when stamp + binaries already match).
-- `make build-img` does **not** compile the kernel or rootfs. It packages the existing loader, U-Boot, misc, both FIT images, and rootfs into `output/firmware/update.img` for `make flash`.
-- Full-system `make upgrade` does **not** transfer `update.img`. It **streams** `rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). Wait for the device to finish restarting before reconnecting.
+- `make build-img` does **not** compile the kernel or rootfs. It requires `make build-oem`, then packages loader, U-Boot, misc, both FIT images, rootfs, and **oem** into `output/firmware/<FACTORY_SKU>/factory.img` (default sku `ynh960-p800`) and refreshes `output/firmware/update.img` as a symlink for `make flash`.
+- Full-system `make upgrade` does **not** transfer `factory.img`. It **streams** `rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), defaults to streaming resolved `oem.img` when present (`OEM_IMG=` empty to skip), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). Wait for the device to finish restarting before reconnecting.
+- OEM-only (board helpers / profile / screen pack): `make build-oem` then `make upgrade OEM_ONLY=1` — streams `oem.img` only and plain-reboots (no A/B letter switch).
 
 ### Daily iteration — by what you changed
 
 The examples below prefer A/B OTA on a board already flashed with the P2.4 GPT and helpers. To use the factory/USB path instead, replace the final `make upgrade` with:
 
 ```bash
-# Or: package update.img, enter Loader, and flash
+# Or: package factory.img, enter Loader, and flash
+make build-oem
 make build-img
 make reboot-loader
 make flash
@@ -237,13 +239,14 @@ make upgrade
 
 ### Release / factory image
 
-A release or factory-flash artifact always requires `make build-img`, even if daily iteration used `make upgrade`. If the kernel and rootfs are already up to date:
+A release or factory-flash artifact always requires `make build-oem` and `make build-img`, even if daily iteration used `make upgrade`. If the kernel and rootfs are already up to date:
 
 ```bash
+make build-oem
 make build-img
 ```
 
-This produces `output/firmware/update.img`. To test the release image on hardware, then run `make reboot-loader` and `make flash`.
+This produces `output/firmware/<FACTORY_SKU>/factory.img` (default `ynh960-p800`) and a migration `update.img` symlink. To test the release image on hardware, then run `make reboot-loader` and `make flash`.
 
 Linux hosts: firmware is under `linux-sdk/output/firmware/` as well as `output/firmware/` after export steps.
 

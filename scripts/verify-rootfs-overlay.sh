@@ -40,7 +40,7 @@ check_systemd_wants() {
 		fi
 	done
 
-	for unit in hmi.service mainserver.service cpu-performance.service pwrkey-poweroff.service usb-otg-role-boot.service ab-boot-confirm.service; do
+	for unit in hmi.service oem-compose.service mainserver.service cpu-performance.service pwrkey-poweroff.service usb-otg-role-boot.service ab-boot-confirm.service; do
 		if unit_wants_link "$unit"; then
 			echo "OK:  $unit enabled in $label"
 		else
@@ -268,7 +268,7 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/hmi ---"
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-gadget-usb-state.sh usb-mtp-start.sh usb-mtp-stop.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh change-orientation.sh bind-prefs.sh push-app-apply-and-restart.sh hmi-launch.sh; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh oem-compose.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-gadget-usb-state.sh usb-mtp-start.sh usb-mtp-stop.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh change-orientation.sh bind-prefs.sh push-app-apply-and-restart.sh hmi-launch.sh; do
 		if [[ -x "$libexec_hmi/$f" ]]; then
 			echo "OK:  hmi/$f"
 		else
@@ -429,6 +429,19 @@ EOF
 		echo "OK:  hmi.service in target"
 	else
 		echo "FAIL: hmi.service missing from target/etc/systemd/system" >&2
+		missing=1
+	fi
+	if [[ -f "$target/etc/systemd/system/oem-compose.service" ]]; then
+		echo "OK:  oem-compose.service in target"
+	else
+		echo "FAIL: oem-compose.service missing from target/etc/systemd/system" >&2
+		missing=1
+	fi
+	if [[ -f "$target/usr/share/hmi/oem-fallback/manifest.json" ]] && \
+		[[ -f "$target/usr/share/hmi/oem-fallback/boards/ynh960/board_profile.json" ]]; then
+		echo "OK:  oem-fallback pack present (migration)"
+	else
+		echo "FAIL: missing usr/share/hmi/oem-fallback migration pack" >&2
 		missing=1
 	fi
 
@@ -852,6 +865,13 @@ EOF
 		echo "OK:  preset enables hmi.service"
 	else
 		echo "FAIL: preset must enable hmi.service" >&2
+		missing=1
+	fi
+	if grep -q 'enable oem-compose.service' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
+		echo "OK:  preset enables oem-compose.service"
+	else
+		echo "FAIL: preset must enable oem-compose.service" >&2
 		missing=1
 	fi
 	if grep -q 'settings-restore' \

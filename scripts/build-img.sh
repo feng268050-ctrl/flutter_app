@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Pack output/firmware/update.img from existing loader + dual FIT + rootfs.
-# Does NOT rebuild kernel or rootfs — run make build-kernel / build-rootfs first.
+# Pack output/firmware/<sku>/factory.img from existing loader + dual FIT + rootfs + oem.
+# Does NOT rebuild kernel or rootfs — run make build-kernel / build-rootfs / build-oem first.
+# Migration: also refreshes output/firmware/update.img as a symlink to factory.img.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/factory-sku.sh
+source "$ROOT/scripts/factory-sku.sh"
+
 OUT_FIRMWARE="$ROOT/output/firmware"
 UPDATE_IMG="$OUT_FIRMWARE/update.img"
 PARAM="$ROOT/board/parameter-buildroot-fit.txt"
@@ -41,77 +45,77 @@ install_file_follow() {
   cp -Lf "$src" "$dest"
 }
 
-install_images_linux() {
-  local dest_dir="$ROOT/images/linux"
-  local dest="$dest_dir/update.img"
-  mkdir -p "$dest_dir"
-  # Real file (not symlink) so Finder / cp -a copy the image bytes.
-  rm -f "$dest"
-  cp -fL "$UPDATE_IMG" "$dest"
-  echo "images/linux/update.img: real copy of output/firmware/update.img"
-  bash "$SIZE_HELPER" "$dest"
-}
-
-install_update_img() {
-  local src="$1"
-  install_file_follow "$src" "$UPDATE_IMG"
-  echo "update.img ready: $UPDATE_IMG"
-  bash "$SIZE_HELPER" "$UPDATE_IMG"
-  install_images_linux
-}
-
-link_parameter() {
-  local sdk="$1" firmware="$2"
-  if [[ -r "$firmware/parameter.txt" ]]; then
-    return 0
+publish_factory_artifacts() {
+  local src_update="$1"
+  mkdir -p "$FACTORY_OUT_DIR" "$OUT_FIRMWARE" "$ROOT/images/linux"
+  install_file_follow "$src_update" "$FACTORY_IMG"
+  # Migration: update.img → selected sku factory.img (symlink when possible).
+  rm -f "$UPDATE_IMG"
+  ln -sfn "$FACTORY_SKU/factory.img" "$UPDATE_IMG"
+  # Real copy for Finder / cp -a convenience.
+  rm -f "$ROOT/images/linux/update.img" "$ROOT/images/linux/factory.img"
+  cp -fL "$FACTORY_IMG" "$ROOT/images/linux/factory.img"
+  cp -fL "$FACTORY_IMG" "$ROOT/images/linux/update.img"
+  if [[ -r "$FACTORY_OEM_IMG" ]]; then
+    install_file_follow "$FACTORY_OEM_IMG" "$FACTORY_OUT_DIR/oem.img"
   fi
-  local parameter
-  parameter="$(sed -n 's/^RK_PARAMETER="\(.*\)"$/\1/p' "$sdk/output/.config")"
-  [[ -n "$parameter" ]] || die "RK_PARAMETER missing in output/.config"
-  for param in \
-    "$sdk/device/rockchip/.chips/rk3566_rk3568/$parameter" \
-    "$sdk/device/rockchip/rk3566_rk3568/$parameter" \
-    "$PARAM"; do
-    if [[ -r "$param" ]]; then
-      install_file "$param" "$firmware/parameter.txt"
-      return 0
-    fi
-  done
-  die "parameter file not found: $parameter"
+  install_file_follow "$FACTORY_UBOOT_IMG" "$FACTORY_OUT_DIR/uboot.img"
+  install_file_follow "$FACTORY_LOADER_BIN" "$FACTORY_OUT_DIR/MiniLoaderAll.bin"
+  {
+    echo "factory_sku=$FACTORY_SKU"
+    echo "uboot_id=$UBOOT_ID"
+    echo "oem_id=$OEM_ID"
+    echo "git_rev=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+    echo "uboot=$FACTORY_UBOOT_IMG"
+    echo "oem=$FACTORY_OEM_IMG"
+    echo "factory_img=$FACTORY_IMG"
+  } >"$FACTORY_OUT_DIR/manifest.txt"
+  echo "factory.img ready: $FACTORY_IMG"
+  bash "$SIZE_HELPER" "$FACTORY_IMG"
+  echo "update.img symlink: $UPDATE_IMG -> $FACTORY_SKU/factory.img"
 }
 
 ensure_sdk_loader() {
   local sdk="$1" firmware="$2"
-  local loader="$ROOT/prebuilt/sdk-loader/MiniLoaderAll.bin"
+  local loader="$FACTORY_LOADER_BIN"
   local host="$ROOT/output/firmware/MiniLoaderAll.bin"
 
-  [[ -r "$loader" ]] || die "missing $loader (copy SDK MiniLoaderAll.bin into prebuilt/sdk-loader/)"
+  factory_sku_require_uboot
   mkdir -p "$sdk/u-boot" "$firmware" "$ROOT/output/firmware"
-  install_file "$loader" "$firmware/MiniLoaderAll.bin"
-  install_file "$loader" "$sdk/u-boot/rk356x_spl_loader_v1.23.114.bin"
-  install_file "$loader" "$host"
-  echo "MiniLoaderAll.bin: SDK prebuilt (never use compiled loader)"
+  install_file_follow "$loader" "$firmware/MiniLoaderAll.bin"
+  install_file_follow "$loader" "$sdk/u-boot/rk356x_spl_loader_v1.23.114.bin"
+  install_file_follow "$loader" "$host"
+  echo "MiniLoaderAll.bin: $UBOOT_ID"
   bash "$SIZE_HELPER" "$loader"
 }
 
 ensure_sdk_uboot() {
   local sdk="$1" firmware="$2"
-  local vendor="$ROOT/prebuilt/sdk-uboot/uboot.img"
+  local vendor="$FACTORY_UBOOT_IMG"
   local dest="$firmware/uboot.img"
   local host="$ROOT/output/firmware/uboot.img"
 
-  [[ -r "$vendor" ]] || die "missing $vendor"
+  factory_sku_require_uboot
   mkdir -p "$firmware" "$ROOT/output/firmware"
 
   # ONLY unpatched vendor uboot. Do NOT binary-patch (env CRC → no backlight/maskrom).
   # Do NOT use LWS_HMI_COMPILED_UBOOT (ynh960 brick risk). Do NOT use Innohi uboot for Linux GPT.
   rm -f "$dest"
-  install_file "$vendor" "$dest"
-  install_file "$vendor" "$host"
-  echo "uboot.img: vendor SDK unmodified"
+  install_file_follow "$vendor" "$dest"
+  install_file_follow "$vendor" "$host"
+  echo "uboot.img: $UBOOT_ID unmodified"
   bash "$SIZE_HELPER" "$vendor"
   echo "NOTE: bootcmd=boot_android;boot_fit — Linux needs Innohi uboot or serial 'boot_fit'"
   strings "$dest" | grep '^bootcmd=' || true
+}
+
+ensure_sdk_oem() {
+  local firmware="$1"
+  factory_sku_require_oem
+  install_file_follow "$FACTORY_OEM_IMG" "$firmware/oem.img"
+  install_file_follow "$FACTORY_OEM_IMG" "$OUT_FIRMWARE/oem.img"
+  echo "oem.img: $OEM_ID"
+  bash "$SIZE_HELPER" "$FACTORY_OEM_IMG"
 }
 
 install_misc() {
@@ -145,6 +149,7 @@ pack_in_sdk() {
   local updateimg="$firmware/update.img"
   local boot_bytes rootfs_img
 
+  factory_sku_print
   [[ -d "$sdk" ]] || die "SDK not found at $sdk"
   [[ -r "$sdk/output/.config" ]] || die "output/.config missing — run make lunch first"
 
@@ -156,6 +161,7 @@ pack_in_sdk() {
   install_file "$PARAM" "$firmware/parameter.txt"
   ensure_sdk_loader "$sdk" "$firmware"
   ensure_sdk_uboot "$sdk" "$firmware"
+  ensure_sdk_oem "$firmware"
   install_misc "$sdk" "$firmware"
 
   [[ -r "$firmware/boot.img" ]] || die "boot.img (rootfs_a FIT) missing — run make build-kernel (does not rebuild here)"
@@ -167,7 +173,8 @@ pack_in_sdk() {
 
   boot_bytes="$(wc -c <"$firmware/boot.img" | tr -d ' ')"
   echo "Firmware inputs:"
-  bash "$SIZE_HELPER" "$firmware/boot.img" "$firmware/boot_b.img" "$rootfs_img" "$firmware/MiniLoaderAll.bin" "$firmware/uboot.img" "$firmware/misc.img"
+  bash "$SIZE_HELPER" "$firmware/boot.img" "$firmware/boot_b.img" "$rootfs_img" \
+    "$firmware/MiniLoaderAll.bin" "$firmware/uboot.img" "$firmware/misc.img" "$firmware/oem.img"
   if [[ "$boot_bytes" -gt "$LINUX_BOOT_MAX" ]]; then
     die "boot.img is ${boot_bytes} bytes — Linux boot partition is 64 MiB"
   fi
@@ -175,9 +182,9 @@ pack_in_sdk() {
   bash "$ROOT/scripts/verify-firmware-partitions.sh" "$firmware" "$PARAM"
 
   echo ""
-  echo "Linux update.img: SDK loader + vendor uboot + hash-valid A/B FITs"
+  echo "Linux factory.img: SKU=$FACTORY_SKU loader+uboot+oem + hash-valid A/B FITs"
   echo "A/B GPT: boot←boot.img(rootfs_a), boot_b←boot_b.img(rootfs_b)"
-  echo "Flash: make flash (repartitions once); later: make upgrade (SSH, boot+rootfs)"
+  echo "Flash: FACTORY_SKU=$FACTORY_SKU make flash; later: make upgrade (SSH, boot+rootfs+oem)"
   echo "Note: PARTNAME=boot required (vendor U-Boot); not boot_a — see docs/ab-slot-misc.md"
   echo ""
 
@@ -185,7 +192,7 @@ pack_in_sdk() {
   ./build.sh updateimg
 
   [[ -r "$updateimg" ]] || die "pack failed: $updateimg"
-  install_update_img "$updateimg"
+  publish_factory_artifacts "$updateimg"
 }
 
 if [[ "${LWS_HMI_PACK_IMG:-}" == "1" ]]; then
@@ -195,15 +202,24 @@ fi
 
 export LWS_HMI_PACK_IMG=1
 bash "$ROOT/scripts/docker-run.sh" \
-  bash -c 'export LWS_HMI_PACK_IMG=1; bash /work/lws-hmi/scripts/build-img.sh'
+  env LWS_HMI_PACK_IMG=1 FACTORY_SKU="$FACTORY_SKU" UBOOT_ID="$UBOOT_ID" OEM_ID="$OEM_ID" \
+  bash /work/lws-hmi/scripts/build-img.sh
 
 bash "$ROOT/scripts/docker-export-artifacts.sh" update
 
-if [[ -r "$UPDATE_IMG" ]]; then
+if [[ -r "$FACTORY_IMG" || -r "$UPDATE_IMG" ]]; then
+  if [[ -r "$FACTORY_IMG" ]]; then
+    rm -f "$UPDATE_IMG"
+    ln -sfn "$FACTORY_SKU/factory.img" "$UPDATE_IMG"
+  elif [[ -r "$UPDATE_IMG" && ! -e "$FACTORY_IMG" ]]; then
+    mkdir -p "$FACTORY_OUT_DIR"
+    cp -fL "$UPDATE_IMG" "$FACTORY_IMG"
+    rm -f "$UPDATE_IMG"
+    ln -sfn "$FACTORY_SKU/factory.img" "$UPDATE_IMG"
+  fi
   echo ""
   echo "Host firmware ready:"
-  bash "$SIZE_HELPER" "$UPDATE_IMG"
-  install_images_linux
+  bash "$SIZE_HELPER" "$FACTORY_IMG" 2>/dev/null || bash "$SIZE_HELPER" "$UPDATE_IMG"
 else
-  die "update.img missing at $UPDATE_IMG after build-img + export"
+  die "factory.img / update.img missing after build-img + export"
 fi

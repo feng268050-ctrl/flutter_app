@@ -15,6 +15,7 @@ disable network.service
 disable log-guardian.service
 enable systemd-networkd.service
 enable systemd-resolved.service
+enable oem-compose.service
 enable hmi.service
 enable pwrkey-poweroff.service
 enable ab-boot-confirm.service

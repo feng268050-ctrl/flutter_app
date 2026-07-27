@@ -2,7 +2,6 @@
   "board_id": "ynh960",
   "display_name": "Innohi ynh960",
   "model_hint": "RK3566",
-  "_comment": "Migration fallback only. Shipping devices load OEM /run/hmi/board_profile.json; gpio/modbus stay App assets via withProductConfigs.",
   "capabilities": [
     "ethernet",
     "wifi",
@@ -22,10 +21,6 @@
   "net_roles": {
     "ethernet.primary": "eth0",
     "wifi.station": "wlan0"
-  },
-  "configs": {
-    "gpio": "assets/hal/gpio.json",
-    "modbus": "assets/hal/modbus.json"
   },
   "storage_mounts": [
     "/",
@@ -48,7 +43,6 @@
     "alsa_volume_controls": "DAC Playback Volume,Speaker Playback Volume,Headphone Playback Volume,Playback Volume,Master Playback Volume,Master,PCM,Speaker,Playback",
     "alsa_playback_path_control": "Playback Path",
     "alsa_playback_path_value": "RING_SPK_HP",
-    "camera_ip": "192.168.1.100",
     "apply_mouse_settings": "/usr/bin/apply-mouse-settings"
   }
 }

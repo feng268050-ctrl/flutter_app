@@ -9,3 +9,4 @@ boot	boot.img
 boot_b	boot_b.img
 rootfs_a	rootfs.img
 rootfs_b	rootfs.img
+oem	oem.img

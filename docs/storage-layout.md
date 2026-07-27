@@ -73,7 +73,8 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | Buildroot rootfs, `/opt/hmi`, libs | `/` | active `rootfs_*` |
 | Kernel FIT | — | active `boot_*` |
 | LCD/MIPI params (seed) | `/mnt/private1/` | private1 |
-| OEM / vendor drop-ins (optional) | `/oem/` | oem |
+| OEM board×screen pack (SKU authority) | `/oem/` (`manifest.json`, `boards/`, `screens/`) | oem |
+| Compose export (runtime) | `/run/hmi/{oem.env,board_profile.json,screen.env}` | tmpfs |
 | **RKNN models** (`*.rknn`, `config.yaml`) | **`/userdata/models/`** | userdata |
 | PR0 recording, online OTA staging | `/userdata/…` (incl. **`/userdata/ota/`**) | userdata |
 | **Alarm history SQLite** (`alarm_logs` table) | **`/var/lib/hmi/alarm-logs.db`** → `/userdata/hmi/alarm-logs.db` | userdata |

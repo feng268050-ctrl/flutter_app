@@ -203,6 +203,10 @@ Test: `packages/cyber_hal/test/board_bindings_portability_test.dart`.
 
 ## Demo wiring
 
-`main.dart` loads `HmiHalAssets.boardProfile` (`assets/hal/board_profile.json`) →
-`P2DemoPage` → `BoardBindings` + `restorePersistedSettings` after first frame.
-Product gpio/modbus catalogs are `assets/hal/gpio.json` and `assets/hal/modbus.json`.
+On device, `main.dart` prefers `/run/hmi/board_profile.json` (from `oem-compose`)
+or `/oem/boards/<id>/board_profile.json`, then merges App gpio/modbus assets
+(`assets/hal/gpio.json`, `assets/hal/modbus.json`). The App-bundled
+`assets/hal/board_profile.json` is a **migration fallback** only.
+
+OEM owns board×screen SKU + v1 `product.ini` seed; see
+[`docs/platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md).

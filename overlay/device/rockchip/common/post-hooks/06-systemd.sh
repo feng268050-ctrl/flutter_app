@@ -86,6 +86,11 @@ if [ -f "$TARGET_DIR/etc/systemd/system/pwrkey-poweroff.service" ]; then
 	echo "post-systemd: enabled pwrkey-poweroff.service"
 fi
 
+if [ -f "$TARGET_DIR/etc/systemd/system/oem-compose.service" ]; then
+	link_unit oem-compose.service
+	echo "post-systemd: enabled oem-compose.service"
+fi
+
 if [ -f "$TARGET_DIR/etc/systemd/system/hmi.service" ]; then
 	link_unit hmi.service
 	echo "post-systemd: enabled hmi.service"

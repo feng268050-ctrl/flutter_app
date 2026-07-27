@@ -40,7 +40,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-umtprd rebuild-umtprd build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app alarm alarm-clean l10n l10n-sync l10n-gen l10n-verify
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-umtprd rebuild-umtprd build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app alarm alarm-clean l10n l10n-sync l10n-gen l10n-verify
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -91,7 +91,8 @@ help:
 	@echo "  make build-kernel          # dual FIT → output/firmware/boot.img + boot_b.img (exports; for upgrade)"
 	@echo "  make build-rootfs          # rootfs → output/firmware/rootfs.img (Weston + eLinux + Mali wayland-gbm)"
 	@echo "  make prepare-rootfs        # ensure Buildroot stack → Weston (no rootfs.img pack)"
-	@echo "  make build-img             # pack update.img only (reuses existing boot/rootfs; no rebuild)"
+	@echo "  make build-oem             # pack oem/out/<oem_id>/oem.img (FACTORY_SKU / OEM_ID)"
+	@echo "  make build-img             # pack factory.img (+ update.img symlink); needs build-oem"
 	@echo "  make sdk-shell             # interactive shell in linux-sdk (native Linux or macOS Docker)"
 	@echo "  See docs/build-optimization.md"
 	@echo ""
@@ -130,7 +131,7 @@ help:
 	@echo "  make del-prop KEY          # remove one product.ini key; restart hmi if changed"
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
 	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
-	@echo "  make upgrade               # SSH A/B stream-to-partition (inactive FIT+rootfs); not OTA staging"
+	@echo "  make upgrade               # SSH stream: inactive FIT+rootfs (+oem); OEM_ONLY=1 for oem-only"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
 	@echo "  make serial-console        # TTL UART ttyFIQ0 @ 1500000 (quit Ctrl+])"
@@ -141,7 +142,7 @@ help:
 	@echo "  make audit                 # pre-flight before make flash"
 	@echo "  make reboot                # Linux → USB-SSH/SSH sysrq + unregister; Android → adb"
 	@echo "  make reboot-loader         # Linux USB-SSH → RockUSB + unregister; Android → adb"
-	@echo "  make flash                 # uf update.img; ul loader when RockUSB is Maskrom (macOS)"
+	@echo "  make flash                 # uf factory.img (FACTORY_SKU); IMAGE= override; Maskrom ul (macOS)"
 	@echo "  make flash-android         # optional: flash Android instead"
 	@echo ""
 	@echo "SDK-native (Innohi baseline, optional):"
@@ -172,8 +173,10 @@ help:
 	@echo ""
 	@echo "Notes:"
 	@echo "  - Daily A/B: make build-kernel and/or build-rootfs then make upgrade (no build-img)."
+	@echo "  - OEM-only (helpers/profile): make build-oem && make upgrade OEM_ONLY=1."
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ (no manual export)."
-	@echo "  - Factory flash: make build-img packs update.img from existing boot/rootfs; then make flash."
+	@echo "  - Factory: make build-oem then build-img → output/firmware/<sku>/factory.img; make flash."
+	@echo "  - FACTORY_SKU=ynh960-p800 (default); override UBOOT_ID= / OEM_ID=; see board/factory-skus.tsv."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
 
 # --- Setup ---
@@ -219,12 +222,14 @@ lunch:
 show-config:
 	@bash scripts/docker-run.sh bash -lc 'test -r output/.config && grep -E "^RK_(CHIP|KERNEL_DTS|ROOTFS|DEFCONFIG|BUILDROOT)" output/.config || echo "No output/.config yet — run make lunch first"'
 
-build: check-prebuilt apply-overlay lunch build-boot-logo build-app build-kernel build-rootfs build-img
+build: check-prebuilt apply-overlay lunch build-boot-logo build-app build-kernel build-rootfs build-oem build-img
 	@echo ""
-	@if [[ -r output/firmware/update.img ]]; then \
-		echo "Build complete:"; bash scripts/artifact-size.sh output/firmware/update.img; \
+	@if [[ -r output/firmware/update.img || -r output/firmware/ynh960-p800/factory.img ]]; then \
+		echo "Build complete:"; \
+		bash scripts/artifact-size.sh output/firmware/ynh960-p800/factory.img 2>/dev/null \
+			|| bash scripts/artifact-size.sh output/firmware/update.img; \
 	else \
-		echo "ERROR: output/firmware/update.img missing after build" >&2; exit 1; \
+		echo "ERROR: factory.img / update.img missing after build" >&2; exit 1; \
 	fi
 
 build-kernel:
@@ -242,6 +247,9 @@ build-rootfs: prepare-rootfs
 # Stack ensure only (check-prebuilt + overlay + Mali/embedder). Idempotent.
 prepare-rootfs:
 	@bash scripts/prepare-rootfs-stack.sh weston
+
+build-oem:
+	@bash scripts/build-oem.sh
 
 build-img:
 	@bash scripts/build-img.sh

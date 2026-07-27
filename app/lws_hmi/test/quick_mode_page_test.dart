@@ -160,8 +160,8 @@ void main() {
     final dashScale =
         dashboardSize.width / ProcessModeDimens.dashboardDesignSize;
     final liveHighlightR = dashboardSize.width / 2 -
-        (38 * dashScale) / 2 -
-        (6 * dashScale) / 2;
+        (ProcessModeDimens.dashboardOuterStrokeDesign * dashScale) / 2 -
+        (ProcessModeDimens.dashboardLineStrokeDesign * dashScale) / 2;
     expect(
       gearCenter.dx,
       closeTo(
@@ -284,6 +284,7 @@ void main() {
         find.byKey(const ValueKey('quick-mode-material-wheel')), findsNothing);
     expect(
         find.byKey(const ValueKey('quick-mode-more-parameters')), findsNothing);
+    expect(find.byKey(const ValueKey('quick-mode-record-work')), findsNothing);
   });
 }
 

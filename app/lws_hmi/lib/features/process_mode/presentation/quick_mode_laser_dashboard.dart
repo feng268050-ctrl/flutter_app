@@ -401,23 +401,21 @@ final class _LaserDashboardMetrics {
   double get size => 570 * scale;
   double get height => 603.5 * scale;
   double get outerViewSize => 570 * scale;
-  double get outerCircleStroke => 38 * scale;
-  double get outerProgressStroke => 38 * scale;
 
-  /// Keep the coloured 38dp base rail inside the static white outer trim.
-  /// The trim itself remains at the XML coordinates below; only the rail is
-  /// inset so no dark track can protrude beyond it at either lower endpoint.
-  double get outerTrackRadius =>
-      outerViewSize / 2 - outerCircleStroke - 4 * scale;
+  /// Outer rail matches inner rail (lws-ui mini = 50dp; product: outer = inner).
+  double get outerCircleStroke => 50 * scale;
+  double get outerProgressStroke => 50 * scale;
+
   double get innerViewSize => 514 * scale;
   double get innerCircleStroke => 50 * scale;
   double get innerProgressStroke => 50 * scale;
   double get lineViewSize => 568 * scale;
   double get lineCircleStroke => 50 * scale;
+
+  /// Thin bright highlight (lws-ui `progress_width` 6dp); flush with outer face.
   double get lineProgressStroke => 6 * scale;
 
-  /// The highlight's outside edge sits flush with the outside edge of the
-  /// outer 38dp rail, instead of crossing its visual middle.
+  /// Highlight outside edge stays flush with the outer rail outside edge.
   double get outerHighlightRadius =>
       outerViewSize / 2 - outerCircleStroke / 2 - lineProgressStroke / 2;
 
@@ -474,9 +472,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
     final fullSweep = _totalDeg * math.pi / 180;
     final progressSweep = fullSweep * progress.clamp(0.0, 1.0);
 
-    // These use CircularSeekBar's actual radius calculation, not the View's
-    // outside diameter: radius = viewSize / 2 - circleStrokeWidth.
-    // This preserves the 19dp inset on the 570dp outer seekbar.
+    // CircularSeekBar radius: viewSize / 2 - circleStrokeWidth.
     _paintRing(
       canvas: canvas,
       center: center,
@@ -488,7 +484,6 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       start: start,
       fullSweep: fullSweep,
       progressSweep: progressSweep,
-      radius: metrics.outerTrackRadius,
     );
 
     // Inner seekbar — its 514dp View and 50dp rail are deliberately not
@@ -519,7 +514,11 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       // lws-ui: this layer is only the 6dp progress highlight, never a dark
       // inactive rail outside the static white trim.
       trackColor: Colors.transparent,
-      progressColors: [palette.lineProgress, palette.lineProgress],
+      // Product: thin bright edge at 75% opacity.
+      progressColors: [
+        palette.lineProgress.withOpacity(0.75),
+        palette.lineProgress.withOpacity(0.75),
+      ],
       start: start,
       fullSweep: fullSweep,
       progressSweep: progressSweep,

@@ -133,8 +133,16 @@ abstract final class ProcessModeDimens {
   static const double dashboardScale = 2 / 3;
   static const double dashboardSize = dashboardDesignSize * dashboardScale;
   static const double dashboardOuterRing = 570 * dashboardScale;
-  static const double dashboardOuterStroke = 38 * dashboardScale;
-  static const double dashboardLineStroke = 6 * dashboardScale;
+
+  /// Outer rail stroke (design dp) — equal to inner (`laser_circular_seek_mini`).
+  static const double dashboardOuterStrokeDesign = 50;
+  static const double dashboardOuterStroke =
+      dashboardOuterStrokeDesign * dashboardScale;
+
+  /// Thin bright line (lws-ui `laser_circular_seek_line` progress_width).
+  static const double dashboardLineStrokeDesign = 6;
+  static const double dashboardLineStroke =
+      dashboardLineStrokeDesign * dashboardScale;
 
   /// Thin highlight path radius matches the outer rail outer face (outerRing/2).
   static const double dashboardLineRing =
@@ -188,6 +196,11 @@ abstract final class ProcessModeDimens {
   static const double quickLaserTrapezoidBottomWidthRatio = 0.93;
   static const double quickLaserTrapezoidHeightRatio = 0.8;
 
+  /// Edge shadow band along Laser Enable rim (top + upper slants). Stays inside
+  /// the 564×223 graphic; covers arc-shoulder voids without changing colors.
+  static const double quickLaserRimShadowStroke = 18;
+  static const double quickLaserRimShadowBlur = 8;
+
   /// Side ops (Manual Gas / Auto Wire / Feed / Retract) — lws-ui styles.
   static const double quickSideButtonWidth = 264;
   static const double quickSideButtonInset = 30;
@@ -205,8 +218,8 @@ abstract final class ProcessModeDimens {
   static double outerHighlightRadiusFor(Size viewport) {
     final s = dashboardScaleFor(viewport);
     return (dashboardDesignSize / 2) * s -
-        (38 * s) / 2 -
-        (6 * s) / 2; // 263 * s
+        (dashboardOuterStrokeDesign * s) / 2 -
+        (dashboardLineStrokeDesign * s) / 2;
   }
 
   /// Lift mode / material / gear / thickness together (design canvas px).

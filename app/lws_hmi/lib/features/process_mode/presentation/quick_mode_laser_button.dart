@@ -162,54 +162,64 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
         key: const ValueKey('quick-mode-laser-enable'),
         width: size.width,
         height: size.height,
-        // Clip hit-testing to the orange trapezoid so the transparent top of
-        // this bottom-layer rect does not steal taps from More Status.
-        child: ClipPath(
-          clipper: const _QuickLaserTrapezoidClipper(),
-          child: Listener(
-            behavior: HitTestBehavior.opaque,
-            onPointerDown: _pointerDown,
-            onPointerMove: _pointerMove,
-            onPointerUp: _pointerUp,
-            onPointerCancel: (_) => _cancelGesture(),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Black bevels at the dashboard contact are baked into the
-                // lws-ui WebP. Do not add a generic Flutter drop shadow: the
-                // Android layout only elevates this bitmap-backed view.
-                Image.asset(_background, fit: BoxFit.fill),
-                Positioned(
-                  top: 68 * scale,
-                  left: 0,
-                  right: 0,
-                  child: Icon(
-                    widget.laserOpen
-                        ? Icons.pause_circle_outline
-                        : Icons.play_circle_outline,
-                    key: const ValueKey('quick-mode-laser-enable-icon'),
-                    color: Colors.white,
-                    size: ProcessModeDimens.quickLaserButtonIconSize * scale,
-                  ),
-                ),
-                Positioned(
-                  top: 147 * scale,
-                  left: 0,
-                  right: 0,
-                  child: Text(
-                    widget.laserOpen ? 'End of work' : 'Laser Enable',
-                    key: const ValueKey('quick-mode-laser-enable-label'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
+        child: Stack(
+          // Keep edge shadow inside the 564×223 graphic — no overflow bloom.
+          clipBehavior: Clip.hardEdge,
+          fit: StackFit.expand,
+          children: [
+            // Edge shadow behind chrome: covers arc-shoulder voids along the
+            // trapezoid rim without changing the WebP button colors.
+            CustomPaint(
+              painter: _LaserTrapezoidRimShadowPainter(scale: scale),
+            ),
+            IgnorePointer(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(_background, fit: BoxFit.fill),
+                  Positioned(
+                    top: 68 * scale,
+                    left: 0,
+                    right: 0,
+                    child: Icon(
+                      widget.laserOpen
+                          ? Icons.pause_circle_outline
+                          : Icons.play_circle_outline,
+                      key: const ValueKey('quick-mode-laser-enable-icon'),
                       color: Colors.white,
-                      fontSize:
-                          ProcessModeDimens.quickLaserButtonLabelSize * scale,
-                      height: 1,
-                      fontWeight: FontWeight.w700,
+                      size: ProcessModeDimens.quickLaserButtonIconSize * scale,
                     ),
                   ),
-                ),
-                AnimatedBuilder(
+                  Positioned(
+                    top: 147 * scale,
+                    left: 0,
+                    right: 0,
+                    child: Text(
+                      widget.laserOpen ? 'End of work' : 'Laser Enable',
+                      key: const ValueKey('quick-mode-laser-enable-label'),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize:
+                            ProcessModeDimens.quickLaserButtonLabelSize * scale,
+                        height: 1,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Hits + ripple stay trapezoid-clipped so More Status remains tappable.
+            ClipPath(
+              clipper: const _QuickLaserTrapezoidClipper(),
+              child: Listener(
+                behavior: HitTestBehavior.opaque,
+                onPointerDown: _pointerDown,
+                onPointerMove: _pointerMove,
+                onPointerUp: _pointerUp,
+                onPointerCancel: (_) => _cancelGesture(),
+                child: AnimatedBuilder(
                   animation: _hold,
                   builder: (context, _) => CustomPaint(
                     painter: _HoldRipplePainter(
@@ -219,9 +229,9 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -237,30 +247,37 @@ abstract final class _QuickLaserTrapezoid {
       ProcessModeDimens.quickLaserTrapezoidHeightRatio;
 
   static Path path(Size size) {
+    final v = vertices(size);
+    return Path()
+      ..moveTo(v.topLeft.dx, v.topLeft.dy)
+      ..lineTo(v.topRight.dx, v.topRight.dy)
+      ..lineTo(v.bottomRight.dx, v.bottomRight.dy)
+      ..lineTo(v.bottomLeft.dx, v.bottomLeft.dy)
+      ..close();
+  }
+
+  static ({
+    Offset topLeft,
+    Offset topRight,
+    Offset bottomRight,
+    Offset bottomLeft,
+  }) vertices(Size size) {
     final topY = size.height * (1 - heightRatio);
     final topInset = size.width * (1 - topWidthRatio) / 2;
     final bottomInset = size.width * (1 - bottomWidthRatio) / 2;
-    return Path()
-      ..moveTo(topInset, topY)
-      ..lineTo(size.width - topInset, topY)
-      ..lineTo(size.width - bottomInset, size.height)
-      ..lineTo(bottomInset, size.height)
-      ..close();
+    return (
+      topLeft: Offset(topInset, topY),
+      topRight: Offset(size.width - topInset, topY),
+      bottomRight: Offset(size.width - bottomInset, size.height),
+      bottomLeft: Offset(bottomInset, size.height),
+    );
   }
 
   static bool contains(Offset point, Size size) => path(size).contains(point);
 
   static double coverRadius(Offset origin, Size size) {
-    final topY = size.height * (1 - heightRatio);
-    final topInset = size.width * (1 - topWidthRatio) / 2;
-    final bottomInset = size.width * (1 - bottomWidthRatio) / 2;
-    final vertices = [
-      Offset(topInset, topY),
-      Offset(size.width - topInset, topY),
-      Offset(size.width - bottomInset, size.height),
-      Offset(bottomInset, size.height),
-    ];
-    return vertices
+    final v = vertices(size);
+    return [v.topLeft, v.topRight, v.bottomRight, v.bottomLeft]
         .map((point) => (point - origin).distance)
         .fold<double>(0, math.max);
   }
@@ -276,6 +293,73 @@ final class _QuickLaserTrapezoidClipper extends CustomClipper<Path> {
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
+/// Edge shadow along the trapezoid rim (top + upper slants only).
+///
+/// Fills a thin band **outside** the trapezoid path but **inside** the 564×223
+/// graphic rect — covers arc-shoulder voids without changing WebP colors or
+/// blooming past the button silhouette. Bottom edge stays clean.
+final class _LaserTrapezoidRimShadowPainter extends CustomPainter {
+  const _LaserTrapezoidRimShadowPainter({required this.scale});
+
+  final double scale;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final v = _QuickLaserTrapezoid.vertices(size);
+    final trap = _QuickLaserTrapezoid.path(size);
+    final band = ProcessModeDimens.quickLaserRimShadowStroke * scale;
+    final blur = ProcessModeDimens.quickLaserRimShadowBlur * scale;
+
+    // Only the exterior of the trapezoid, still inside this graphic.
+    final exterior = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(Offset.zero & size)
+      ..addPath(trap, Offset.zero);
+
+    canvas.save();
+    canvas.clipPath(exterior);
+    canvas.clipRect(Rect.fromLTRB(0, 0, size.width, size.height * 0.88));
+
+    // Outer rim path: offset the top + upper slants outward, then evenOdd
+    // against the trapezoid → a filled edge band (not a centered stroke that
+    // straddles into chrome).
+    final outward = band * 0.85;
+    final topLeftOut = Offset(v.topLeft.dx - outward * 0.35, v.topLeft.dy - outward);
+    final topRightOut =
+        Offset(v.topRight.dx + outward * 0.35, v.topRight.dy - outward);
+    final leftEnd = Offset.lerp(v.topLeft, v.bottomLeft, 0.55)!;
+    final rightEnd = Offset.lerp(v.topRight, v.bottomRight, 0.55)!;
+    final leftEndOut = Offset(leftEnd.dx - outward * 0.7, leftEnd.dy);
+    final rightEndOut = Offset(rightEnd.dx + outward * 0.7, rightEnd.dy);
+
+    final rimBand = Path()
+      ..fillType = PathFillType.evenOdd
+      ..moveTo(leftEndOut.dx, leftEndOut.dy)
+      ..lineTo(topLeftOut.dx, topLeftOut.dy)
+      ..lineTo(topRightOut.dx, topRightOut.dy)
+      ..lineTo(rightEndOut.dx, rightEndOut.dy)
+      ..lineTo(rightEnd.dx, rightEnd.dy)
+      ..lineTo(v.topRight.dx, v.topRight.dy)
+      ..lineTo(v.topLeft.dx, v.topLeft.dy)
+      ..lineTo(leftEnd.dx, leftEnd.dy)
+      ..close();
+
+    canvas.drawPath(
+      rimBand,
+      Paint()
+        ..color = const Color(0xD9000000)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, blur),
+    );
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _LaserTrapezoidRimShadowPainter oldDelegate) =>
+      oldDelegate.scale != scale;
+}
+
+/// Hold-to-enable radial fill; always clips to the trapezoid (lws-ui overlay).
 final class _HoldRipplePainter extends CustomPainter {
   const _HoldRipplePainter({
     required this.origin,
@@ -289,27 +373,33 @@ final class _HoldRipplePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Match Android LaserButtonTrapezoidRippleOverlay: clip in draw, not only
+    // via outer ClipPath (more reliable for the fill demo range).
+    canvas.save();
+    canvas.clipPath(_QuickLaserTrapezoid.path(size));
+
     if (pressed) {
-      canvas.drawRect(
-        Offset.zero & size,
+      canvas.drawPath(
+        _QuickLaserTrapezoid.path(size),
         Paint()..color = const Color(0x24FFFFFF),
       );
     }
-    if (progress <= 0) {
-      return;
+    if (progress > 0) {
+      final radius = _QuickLaserTrapezoid.coverRadius(origin, size) * progress;
+      canvas.drawCircle(
+        origin,
+        radius,
+        Paint()
+          ..shader = RadialGradient(
+            colors: const [
+              Color(0x70FFFFFF),
+              Color(0x30FFFFFF),
+            ],
+          ).createShader(Rect.fromCircle(center: origin, radius: radius)),
+      );
     }
-    final radius = _QuickLaserTrapezoid.coverRadius(origin, size) * progress;
-    canvas.drawCircle(
-      origin,
-      radius,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [
-            const Color(0x70FFFFFF),
-            const Color(0x30FFFFFF),
-          ],
-        ).createShader(Rect.fromCircle(center: origin, radius: radius)),
-    );
+
+    canvas.restore();
   }
 
   @override

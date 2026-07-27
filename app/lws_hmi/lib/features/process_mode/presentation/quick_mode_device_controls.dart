@@ -45,6 +45,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
         return SizedBox.expand(
           key: const ValueKey('device-control-bar'),
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
               if (!laserOpen)
                 Positioned(

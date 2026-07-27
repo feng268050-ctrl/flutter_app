@@ -10,7 +10,7 @@ import 'package:lws_hmi/features/settings/application/product_keyboard_profile.d
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Keyboard settings: Layout (dropdown + Preview/Apply) + physical keyboard list.
+/// Keyboard settings: soft layout Segment + preview + physical keyboard status.
 class KeyboardSettingsPage extends StatefulWidget {
   const KeyboardSettingsPage({
     super.key,
@@ -28,8 +28,8 @@ class KeyboardSettingsPage extends StatefulWidget {
 }
 
 class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
-  ProductKeyboardProfile _selected = ProductKeyboardProfile.defaultSoft;
-  ProductKeyboardProfile _applied = ProductKeyboardProfile.defaultSoft;
+  ProductKeyboardProfile _selected = ProductKeyboardProfile.qwerty;
+  ProductKeyboardProfile _applied = ProductKeyboardProfile.qwerty;
   String _presence = '…';
   bool _busy = false;
   Timer? _poll;
@@ -150,83 +150,38 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
       title: l10n.keyboardText,
       body: SettingsScrollView(
         children: [
-          // Layout (no section header — title is on the row)
           SettingsGroup(
             borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             children: [
-              ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                title: const Text(
-                  'Layout',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: CyberColors.textPrimary,
-                  ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: CyberImeLayoutChooser(
+                  selected: _selected.imeProfile,
+                  enabled: !_busy,
+                  onSelected: (p) {
+                    CyberClickSoundRegistry.playClick();
+                    setState(() {
+                      _selected = ProductKeyboardProfile.fromConfProfile(
+                        p.confId,
+                      );
+                    });
+                  },
                 ),
-                trailing: DropdownButtonHideUnderline(
-                  child: DropdownButton<ProductKeyboardProfile>(
-                    value: _selected,
-                    dropdownColor: CyberColors.fillSolidMid,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      color: CyberColors.textPrimary,
-                    ),
-                    items: [
-                      for (final p in ProductKeyboardProfile.values)
-                        DropdownMenuItem(
-                          value: p,
-                          child: Text(p.displayName),
-                        ),
-                    ],
-                    onChanged: _busy
-                        ? null
-                        : (v) {
-                            if (v == null) return;
-                            CyberClickSoundRegistry.playClick();
-                            setState(() => _selected = v);
-                          },
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: CyberButton(
+                    size: CyberButtonSize.small,
+                    variant: CyberButtonVariant.primary,
+                    onPressed:
+                        (_busy || !dirty) ? null : () => unawaited(_apply()),
+                    child: const Text('Apply'),
                   ),
                 ),
               ),
             ],
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              SettingsDimens.inset,
-              8,
-              SettingsDimens.inset,
-              0,
-            ),
-            child: Row(
-              children: [
-                const Text(
-                  'Preview',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: CyberColors.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                CyberButton(
-                  size: CyberButtonSize.small,
-                  variant: CyberButtonVariant.primary,
-                  onPressed: (_busy || !dirty) ? null : () => unawaited(_apply()),
-                  child: const Text('Apply'),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              SettingsDimens.inset,
-              8,
-              SettingsDimens.inset,
-              0,
-            ),
-            child: CyberCard(
-              child: CyberImeLayoutPreview(profile: _selected.imeProfile),
-            ),
           ),
           const SettingsHelpFooter(
             'Attach a physical keyboard that matches the selected '
@@ -234,7 +189,6 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
             'characters.',
             bottomInset: 0,
           ),
-          // Physical keyboard
           const SettingsSectionHeader('Physical Keyboard'),
           SettingsGroup(
             borderGradientCenter:

@@ -99,23 +99,25 @@ CyberIME SHALL commit characters, backspace, and enter/submit through a document
 - **WHEN** no backdrop hook is registered
 - **THEN** keyboard show/hide and typing still function
 
-### Requirement: Keyboard A supports four regional typewriter layouts
+### Requirement: Keyboard A supports four regional soft layouts
 
-CyberIME Keyboard A SHALL provide selectable typewriter arrangements for ANSI US QWERTY, ISO German QWERTZ, ISO French AZERTY, and JIS Japanese letter/symbol rows. Layout selection MUST be driven by an App-registered profile/layout provider (or the shared product keyboard preference). Layouts MUST NOT include an F1–F12 row or a right-hand numeric keypad.
+CyberIME Keyboard A SHALL provide selectable **phone soft** arrangements for QWERTY, QWERTZ, AZERTY, and JIS (romaji 26-key). Layout selection MUST be driven by an App-registered profile/layout provider (or the shared product keyboard preference). Soft layouts MUST be three letter rows plus one bottom function row and MUST NOT include an F1–F12 row, number row, Tab/Caps/Ctrl/Alt/AltGr chrome, typewriter Enter geometry, or a right-hand numeric keypad.
 
-Regional soft layouts MUST be built from a unified `CyberImeKeyCode` identity plus per-profile character maps (base / shift / optional altGr). Soft key commit characters MUST come from that map. The product MUST align those maps with the XKB layouts used for physical typing for the same profile; CyberIME MUST NOT implement F-keys or NumPad chrome (hardware path owns those).
+Digits and punctuation on Keyboard A MUST come from the shared `123` / `#+=` symbol layers only — not as letter-key digit secondaries. QWERTZ/AZERTY MAY expose accent characters via long-press popups. Soft JIS MUST support a language toggle (英数 ↔ 罗马字), romaji→hiragana composition, Space candidate cycling, and confirm-to-commit.
+
+`CyberImeKeyMaps` MAY remain as XKB-aligned character tables for physical/reference use. Soft letter faces and commits for the phone pads are driven by the soft layout specs (and romaji engine for JIS Japanese mode), not by typewriter KeyMap kana glyphs.
 
 #### Scenario: Profile switches QWERTY to QWERTZ
 
-- **WHEN** the registered profile is ISO DE and Keyboard A letter layer is shown
-- **THEN** the letter row arrangement matches German QWERTZ (Z/Y positions per DE), not US QWERTY
+- **WHEN** the registered profile is QWERTZ and Keyboard A letter layer is shown
+- **THEN** the letter row arrangement matches soft German QWERTZ (Z/Y positions), not US QWERTY
 
-#### Scenario: No numpad on Keyboard A
+#### Scenario: No typewriter chrome on Keyboard A
 
 - **WHEN** Keyboard A is shown for any regional profile
-- **THEN** the panel MUST NOT render a dedicated 9-key numeric keypad block
+- **THEN** the panel MUST NOT render a dedicated 9-key numeric keypad block, number row, or Ctrl/Alt/AltGr row
 
-#### Scenario: Soft commit uses KeyMap
+#### Scenario: Soft JIS romaji commit
 
-- **WHEN** the operator taps a letter key on Keyboard A for the active regional profile
-- **THEN** the inserted character matches the KeyMap entry for that key’s `CyberImeKeyCode` under the active profile
+- **WHEN** soft JIS Japanese mode is active and the operator types `ka` then confirms
+- **THEN** `か` is committed to the field

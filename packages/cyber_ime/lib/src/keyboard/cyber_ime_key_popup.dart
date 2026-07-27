@@ -3,7 +3,10 @@ import 'package:cyber_ime/src/keyboard/cyber_ime_key_gestures.dart';
 
 extension CyberImeKeyPopup on CyberImeKeyDef {
   bool get supportsAlternatePopup =>
-      isLetter || _hasShiftLayerPopup || _hasDualPopupOptions;
+      (longPressOptions != null && longPressOptions!.isNotEmpty) ||
+      isLetter ||
+      _hasShiftLayerPopup ||
+      _hasDualPopupOptions;
 
   bool get _hasDualPopupOptions =>
       (id == CyberImeKeyId.commaPeriod || id == CyberImeKeyId.custom) &&
@@ -19,10 +22,11 @@ extension CyberImeKeyPopup on CyberImeKeyDef {
       secondary != primary;
 
   /// Options shown in the long-press floating popup (lws-ui `popupOptions`).
-  ///
-  /// Order is always normal → Shift (→ optional AltGr / phone digit), so
-  /// horizontal slide picks the second function layer.
   List<String> popupOptions() {
+    final explicit = longPressOptions;
+    if (explicit != null && explicit.isNotEmpty) {
+      return List<String>.from(explicit);
+    }
     if (keyCode != null && isLetter) {
       final lower = primary.toLowerCase();
       final upper = primary.toUpperCase();
@@ -34,7 +38,6 @@ extension CyberImeKeyPopup on CyberImeKeyDef {
           sec.toUpperCase() != upper) {
         return [upper, sec, lower];
       }
-      // ANSI / typewriter Shift layer: normal then Shift.
       return [lower, upper];
     }
     if (_hasShiftLayerPopup || _hasDualPopupOptions) {

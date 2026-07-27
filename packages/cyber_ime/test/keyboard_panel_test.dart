@@ -121,31 +121,7 @@ void main() {
     kb.dispose();
   });
 
-  testWidgets('letter long-press shows popup; release commits secondary',
-      (tester) async {
-    final ctrl = TextEditingController();
-    final kb = CyberImeKeyboardController(
-      fieldType: CyberImeFieldType.text,
-      commit: CyberImeControllerCommit(ctrl),
-    );
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(body: CyberImeKeyboardPanel(controller: kb)),
-      ),
-    );
-
-    final center = tester.getCenter(find.text('q'));
-    final gesture = await tester.startGesture(center);
-    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
-    // Default phone pad: popup Q / 1 / q — secondary "1" highlighted by default.
-    expect(find.text('1'), findsWidgets);
-    await gesture.up();
-    await tester.pump();
-    expect(ctrl.text, '1');
-    kb.dispose();
-  });
-
-  testWidgets('letter long-press slide left commits uppercase', (tester) async {
+  testWidgets('letter long-press slide left commits lowercase', (tester) async {
     final ctrl = TextEditingController();
     final kb = CyberImeKeyboardController(
       fieldType: CyberImeFieldType.text,
@@ -163,16 +139,17 @@ void main() {
     final rect = tester.getRect(keyFinder);
     final gesture = await tester.startGesture(rect.center);
     await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
-    // Slide to left third of the key → uppercase Q (lws-ui selectionIndexForX).
+    expect(find.text('Q'), findsWidgets);
+    // Soft pad popup [q, Q]: left half → lowercase.
     await gesture.moveTo(Offset(rect.left + rect.width * 0.05, rect.center.dy));
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(ctrl.text, 'Q');
+    expect(ctrl.text, 'q');
     kb.dispose();
   });
 
-  testWidgets('period key shows comma secondary hint', (tester) async {
+  testWidgets('letter long-press slide right commits uppercase', (tester) async {
     final ctrl = TextEditingController();
     final kb = CyberImeKeyboardController(
       fieldType: CyberImeFieldType.text,
@@ -184,8 +161,50 @@ void main() {
       ),
     );
 
-    expect(find.text('.'), findsWidgets);
-    expect(find.text(','), findsWidgets);
+    final keyFinder = find.byWidgetPredicate(
+      (w) => w is CyberImeKeyCap && w.keyDef.primary == 'Q',
+    );
+    final rect = tester.getRect(keyFinder);
+    final gesture = await tester.startGesture(rect.center);
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    await gesture.moveTo(Offset(rect.left + rect.width * 0.95, rect.center.dy));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(ctrl.text, 'Q');
+    kb.dispose();
+  });
+
+  testWidgets('QWERTZ A long-press offers umlaut candidates', (tester) async {
+    CyberImeRegionalLayoutRegistry.register(
+      const CyberImeFixedRegionalLayoutProvider(CyberImeRegionalProfile.qwertz),
+    );
+    addTearDown(() => CyberImeRegionalLayoutRegistry.register(null));
+
+    final ctrl = TextEditingController();
+    final kb = CyberImeKeyboardController(
+      fieldType: CyberImeFieldType.text,
+      commit: CyberImeControllerCommit(ctrl),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: CyberImeKeyboardPanel(controller: kb)),
+      ),
+    );
+
+    final keyFinder = find.byWidgetPredicate(
+      (w) => w is CyberImeKeyCap && w.keyDef.primary == 'A',
+    );
+    final rect = tester.getRect(keyFinder);
+    final gesture = await tester.startGesture(rect.center);
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    expect(find.text('ä'), findsWidgets);
+    // Options [a, ä, A, Ä] — second quarter commits ä.
+    await gesture.moveTo(Offset(rect.left + rect.width * 0.35, rect.center.dy));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(ctrl.text, 'ä');
     kb.dispose();
   });
 
@@ -216,28 +235,27 @@ void main() {
     kb.dispose();
   });
 
-  testWidgets('CyberImeLayoutPreview shows secondaries and Material Icons',
+  testWidgets('CyberImeLayoutPreview shows soft QWERTY without typewriter chrome',
       (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: CyberImeLayoutPreview(profile: CyberImeRegionalProfile.ansi),
+          body: CyberImeLayoutPreview(profile: CyberImeRegionalProfile.qwerty),
         ),
       ),
     );
 
-    // Shift-layer secondary on digit 1.
-    expect(find.text('1'), findsWidgets);
-    expect(find.text('!'), findsWidgets);
-    // Material Icons for Shift / Backspace / Enter (not unicode ⇧⌫⏎).
+    expect(find.text('q'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
+    expect(find.text('!'), findsNothing);
     expect(find.byIcon(Icons.arrow_upward), findsWidgets);
     expect(find.byIcon(Icons.backspace_outlined), findsOneWidget);
     expect(find.byIcon(Icons.keyboard_return), findsOneWidget);
-    expect(find.text('Ctrl'), findsWidgets);
-    expect(find.text('⇧'), findsNothing);
+    expect(find.text('Ctrl'), findsNothing);
+    expect(find.text('123'), findsOneWidget);
   });
 
-  testWidgets('QWERTZ preview has one ISO L-Enter', (tester) async {
+  testWidgets('QWERTZ soft preview swaps Y/Z', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -246,13 +264,14 @@ void main() {
       ),
     );
     expect(find.byIcon(Icons.keyboard_return), findsOneWidget);
-    expect(find.text('ü'), findsWidgets);
-    expect(find.text('#'), findsWidgets);
+    expect(find.text('z'), findsWidgets);
+    expect(find.text('y'), findsWidgets);
+    expect(find.text('Ctrl'), findsNothing);
   });
 
   testWidgets('CyberImeLayoutChooser switches Segment and preview',
       (tester) async {
-    var selected = CyberImeRegionalProfile.defaultSoft;
+    var selected = CyberImeRegionalProfile.qwerty;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -268,13 +287,14 @@ void main() {
       ),
     );
 
-    expect(find.text('Default'), findsWidgets);
+    expect(find.text('Default'), findsNothing);
+    expect(find.text('软件键盘布局预览'), findsOneWidget);
     expect(find.text('q'), findsWidgets);
-    await tester.tap(find.text('QWERTY'));
+    await tester.tap(find.text('QWERTZ'));
     await tester.pumpAndSettle();
-    expect(selected, CyberImeRegionalProfile.ansi);
-    expect(find.text('Ctrl'), findsWidgets);
-    expect(find.text('!'), findsWidgets);
+    expect(selected, CyberImeRegionalProfile.qwertz);
+    expect(find.text('长按可输入重音字符'), findsOneWidget);
+    expect(find.text('Ctrl'), findsNothing);
   });
 
   testWidgets('password visibility toggle works while IME is open',

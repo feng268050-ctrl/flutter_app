@@ -3,10 +3,9 @@ import 'package:cyber_ime/cyber_ime.dart';
 
 /// Product keyboard specification (Settings Segment + CyberIME + XKB).
 ///
-/// Segment labels: Default / QWERTY / QWERTZ / AZERTY / JIS.
+/// Soft Segment labels: QWERTY / QWERTZ / AZERTY / JIS.
 enum ProductKeyboardProfile {
-  defaultSoft,
-  ansi,
+  qwerty,
   qwertz,
   azerty,
   jis;
@@ -14,22 +13,14 @@ enum ProductKeyboardProfile {
   /// Short Segment label.
   String get segmentLabel => imeProfile.segmentLabel;
 
-  /// Full operator-facing name (same as Segment for these five).
+  /// Full operator-facing name (same as Segment for these four).
   String get displayName => imeProfile.displayName;
 
-  /// Value written as `profile=` in keyboard.conf.
-  String get confProfileId => switch (this) {
-        ProductKeyboardProfile.defaultSoft => 'default',
-        ProductKeyboardProfile.ansi => 'ansi',
-        ProductKeyboardProfile.qwertz => 'qwertz',
-        ProductKeyboardProfile.azerty => 'azerty',
-        ProductKeyboardProfile.jis => 'jis',
-      };
+  /// Value written as `profile=` in keyboard.conf (only the four soft ids).
+  String get confProfileId => imeProfile.confId;
 
   CyberImeRegionalProfile get imeProfile => switch (this) {
-        ProductKeyboardProfile.defaultSoft =>
-          CyberImeRegionalProfile.defaultSoft,
-        ProductKeyboardProfile.ansi => CyberImeRegionalProfile.ansi,
+        ProductKeyboardProfile.qwerty => CyberImeRegionalProfile.qwerty,
         ProductKeyboardProfile.qwertz => CyberImeRegionalProfile.qwertz,
         ProductKeyboardProfile.azerty => CyberImeRegionalProfile.azerty,
         ProductKeyboardProfile.jis => CyberImeRegionalProfile.jis,
@@ -37,13 +28,7 @@ enum ProductKeyboardProfile {
 
   /// XKB layout persisted in `keyboard.conf` (+ soft `profile=`).
   KeyboardLayout get xkbLayout => switch (this) {
-        ProductKeyboardProfile.defaultSoft => KeyboardLayout(
-            id: 'us',
-            model: 'pc105',
-            displayName: displayName,
-            softProfile: confProfileId,
-          ),
-        ProductKeyboardProfile.ansi => KeyboardLayout(
+        ProductKeyboardProfile.qwerty => KeyboardLayout(
             id: 'us',
             model: 'pc105',
             displayName: displayName,
@@ -70,13 +55,11 @@ enum ProductKeyboardProfile {
       };
 
   static ProductKeyboardProfile fromConfProfile(String profile) {
-    return switch (profile.trim().toLowerCase()) {
-      'default' => ProductKeyboardProfile.defaultSoft,
-      'ansi' => ProductKeyboardProfile.ansi,
-      'qwertz' || 'de' => ProductKeyboardProfile.qwertz,
-      'azerty' || 'fr' => ProductKeyboardProfile.azerty,
-      'jis' || 'jp' => ProductKeyboardProfile.jis,
-      _ => ProductKeyboardProfile.defaultSoft,
+    return switch (CyberImeRegionalProfile.parse(profile)) {
+      CyberImeRegionalProfile.qwerty => ProductKeyboardProfile.qwerty,
+      CyberImeRegionalProfile.qwertz => ProductKeyboardProfile.qwertz,
+      CyberImeRegionalProfile.azerty => ProductKeyboardProfile.azerty,
+      CyberImeRegionalProfile.jis => ProductKeyboardProfile.jis,
     };
   }
 
@@ -85,14 +68,7 @@ enum ProductKeyboardProfile {
     if (layout.softProfile.trim().isNotEmpty) {
       return fromConfProfile(layout.softProfile);
     }
-    final primary = layout.id.split(',').first.trim().toLowerCase();
-    return switch (primary) {
-      'de' => ProductKeyboardProfile.qwertz,
-      'fr' => ProductKeyboardProfile.azerty,
-      'jp' => ProductKeyboardProfile.jis,
-      'us' => ProductKeyboardProfile.ansi,
-      _ => ProductKeyboardProfile.defaultSoft,
-    };
+    return fromConfProfile(layout.id.split(',').first);
   }
 
   static ProductKeyboardProfile fromXkbId(String id) =>

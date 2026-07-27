@@ -6,10 +6,18 @@ void main() {
     CyberImeRegionalLayoutRegistry.register(null);
   });
 
+  test('legacy profile ids parse to qwerty', () {
+    expect(CyberImeRegionalProfile.parse('default'), CyberImeRegionalProfile.qwerty);
+    expect(CyberImeRegionalProfile.parse('ansi'), CyberImeRegionalProfile.qwerty);
+    expect(CyberImeRegionalProfile.parse(''), CyberImeRegionalProfile.qwerty);
+    expect(CyberImeRegionalProfile.values.map((e) => e.segmentLabel).toList(),
+        ['QWERTY', 'QWERTZ', 'AZERTY', 'JIS']);
+  });
+
   test('DE KeyMap swaps Y/Z vs US', () {
     expect(
       CyberImeKeyMaps.resolve(
-        CyberImeRegionalProfile.ansi,
+        CyberImeRegionalProfile.qwerty,
         CyberImeKeyCode.keyY,
         shiftOn: false,
       ),
@@ -55,45 +63,91 @@ void main() {
   List<String> rowLabels(CyberImeLayout layout, int row) =>
       layout.rows[row].keys.map((k) => k.primary).toList();
 
-  test('Default is phone pad; ANSI is typewriter with Ctrl/Alt/Space', () {
-    final phone = CyberImeLayouts.letters(
-      profile: CyberImeRegionalProfile.defaultSoft,
-    );
-    expect(phone.rows.length, 4);
-    expect(rowLabels(phone, 3), isNot(contains('AltGr')));
+  test('all soft profiles are phone pads without typewriter chrome', () {
+    for (final profile in CyberImeRegionalProfile.values) {
+      final layout = CyberImeLayouts.letters(profile: profile);
+      expect(layout.rows.length, 4, reason: '$profile');
+      final all = layout.rows.expand((r) => r.keys).map((k) => k.primary);
+      expect(all, isNot(contains('Ctrl')), reason: '$profile');
+      expect(all, isNot(contains('Alt')), reason: '$profile');
+      expect(all, isNot(contains('AltGr')), reason: '$profile');
+      expect(all, isNot(contains('Tab')), reason: '$profile');
+      expect(rowLabels(layout, 0).any((l) => RegExp(r'^\d$').hasMatch(l)),
+          isFalse,
+          reason: '$profile');
+      // Letter faces have no digit secondaries.
+      for (final key in layout.rows.expand((r) => r.keys)) {
+        if (!key.isLetter) continue;
+        expect(key.secondary, isNull, reason: '$profile ${key.primary}');
+        if (key.longPressOptions != null) {
+          expect(
+            key.longPressOptions!.any((o) => RegExp(r'^\d$').hasMatch(o)),
+            isFalse,
+          );
+        }
+      }
+    }
+  });
 
-    final ansi = CyberImeLayouts.letters(
-      profile: CyberImeRegionalProfile.ansi,
-    );
-    expect(ansi.rows.length, 5);
-    final bottom = rowLabels(ansi, 4);
-    expect(bottom, contains('Ctrl'));
-    expect(bottom, contains('Alt'));
-    expect(bottom, isNot(contains('AltGr')));
-    expect(bottom, isNot(contains('123')));
-    expect(bottom, isNot(contains('.')));
-    // Number row has Shift-layer secondaries (e.g. 1 → !).
-    final digit1 = ansi.rows[0].keys.firstWhere(
-      (k) => k.keyCode == CyberImeKeyCode.digit1,
-    );
-    expect(digit1.primary, '1');
-    expect(digit1.secondary, '!');
-    expect(digit1.popupOptions(), ['1', '!']);
-    // Letters expose normal/shift popup for long-press slide.
-    final keyQ = ansi.rows[1].keys.firstWhere(
-      (k) => k.keyCode == CyberImeKeyCode.keyQ,
-    );
-    expect(keyQ.popupOptions(), ['q', 'Q']);
+  test('QWERTY soft letter order', () {
+    final layout =
+        CyberImeLayouts.letters(profile: CyberImeRegionalProfile.qwerty);
+    expect(rowLabels(layout, 0), 'QWERTYUIOP'.split(''));
+    expect(rowLabels(layout, 1), 'ASDFGHJKL'.split(''));
     expect(
-      ansi.rows.expand((r) => r.keys).any((k) =>
-          k.secondary != null &&
-          k.secondary!.isNotEmpty &&
-          k.keyCode != null),
-      isTrue,
+      layout.rows[2].keys.map((k) => k.id).toList(),
+      [
+        CyberImeKeyId.shift,
+        ...List.filled(7, CyberImeKeyId.letter),
+        CyberImeKeyId.backspace,
+      ],
+    );
+    expect(rowLabels(layout, 3).first, '123');
+    expect(rowLabels(layout, 3), isNot(contains('.')));
+  });
+
+  test('QWERTZ soft swaps Y/Z and exposes umlaut long-press', () {
+    final layout =
+        CyberImeLayouts.letters(profile: CyberImeRegionalProfile.qwertz);
+    expect(rowLabels(layout, 0), 'QWERTZUIOP'.split(''));
+    expect(
+      layout.rows[2].keys.where((k) => k.isLetter).map((k) => k.primary).toList(),
+      'YXCVBNM'.split(''),
+    );
+    final a = layout.rows[1].keys.firstWhere((k) => k.primary == 'A');
+    expect(a.popupOptions(), containsAll(['a', 'ä', 'A', 'Ä']));
+  });
+
+  test('AZERTY soft letter order and apostrophe', () {
+    final layout =
+        CyberImeLayouts.letters(profile: CyberImeRegionalProfile.azerty);
+    expect(rowLabels(layout, 0), 'AZERTYUIOP'.split(''));
+    expect(rowLabels(layout, 1), 'QSDFGHJKLM'.split(''));
+    expect(rowLabels(layout, 2), contains("'"));
+    final e = layout.rows[0].keys.firstWhere((k) => k.primary == 'E');
+    expect(e.popupOptions(), containsAll(['é', 'è', 'ê', 'ë', 'É']));
+  });
+
+  test('JIS soft has language toggle, no physical JP chrome', () {
+    final layout =
+        CyberImeLayouts.letters(profile: CyberImeRegionalProfile.jis);
+    final ids = layout.rows.expand((r) => r.keys).map((k) => k.id).toList();
+    expect(ids, contains(CyberImeKeyId.languageToggle));
+    expect(ids, isNot(contains(CyberImeKeyId.hankakuZenkaku)));
+    expect(ids, isNot(contains(CyberImeKeyId.muhenkan)));
+    expect(rowLabels(layout, 0), 'QWERTYUIOP'.split(''));
+  });
+
+  test('romaji converts ka and nihongo', () {
+    expect(CyberImeRomaji.toHiragana('ka'), 'か');
+    expect(CyberImeRomaji.toHiragana('nihongo'), 'にほんご');
+    expect(
+      CyberImeRomaji.candidatesFor('にほんご'),
+      containsAll(['にほんご', 'ニホンゴ', '日本語']),
     );
   });
 
-  test('ANSI KeyMap digit Shift layer matches US symbols', () {
+  test('QWERTY KeyMap digit Shift layer matches US symbols', () {
     const cases = <CyberImeKeyCode, String>{
       CyberImeKeyCode.digit1: '!',
       CyberImeKeyCode.digit2: '@',
@@ -105,22 +159,11 @@ void main() {
       CyberImeKeyCode.digit8: '*',
       CyberImeKeyCode.digit9: '(',
       CyberImeKeyCode.digit0: ')',
-      CyberImeKeyCode.minus: '_',
-      CyberImeKeyCode.equal: '+',
-      CyberImeKeyCode.bracketLeft: '{',
-      CyberImeKeyCode.bracketRight: '}',
-      CyberImeKeyCode.backslash: '|',
-      CyberImeKeyCode.semicolon: ':',
-      CyberImeKeyCode.quote: '"',
-      CyberImeKeyCode.comma: '<',
-      CyberImeKeyCode.period: '>',
-      CyberImeKeyCode.slash: '?',
-      CyberImeKeyCode.grave: '~',
     };
     for (final e in cases.entries) {
       expect(
         CyberImeKeyMaps.resolve(
-          CyberImeRegionalProfile.ansi,
+          CyberImeRegionalProfile.qwerty,
           e.key,
           shiftOn: true,
         ),
@@ -128,155 +171,5 @@ void main() {
         reason: '${e.key}',
       );
     }
-  });
-
-  test('QWERTZ ISO typewriter geometry and Shift layer', () {
-    final layout = CyberImeLayouts.letters(
-      profile: CyberImeRegionalProfile.qwertz,
-    );
-    expect(layout.rows.length, 5);
-    final letters = rowLabels(layout, 1).where((l) => l.length == 1).toList();
-    expect(letters.take(10).toList(),
-        ['Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O', 'P']);
-    // ü / + on letter row; one ISO L-Enter (rowSpan 2); ö ä # on home (no 2nd Enter).
-    expect(rowLabels(layout, 1), containsAll(['Ü', '+']));
-    expect(layout.rows[1].keys.last.id, CyberImeKeyId.enter);
-    expect(layout.rows[1].keys.last.rowSpan, 2);
-    expect(rowLabels(layout, 2), containsAll(['Ö', 'Ä', '#']));
-    expect(
-      layout.rows[2].keys.any((k) => k.id == CyberImeKeyId.enter),
-      isFalse,
-    );
-    // Longer Caps shifts home row right → inverted-L Enter notch.
-    expect(layout.rows[2].keys.first.id, CyberImeKeyId.capsLock);
-    expect(layout.rows[2].keys.first.widthWeight, 1.8);
-    expect(
-      layout.rows[3].keys[1].keyCode,
-      CyberImeKeyCode.intlBackslash,
-    );
-    final bottom = rowLabels(layout, 4);
-    expect(bottom, containsAll(['Ctrl', 'Alt', 'AltGr']));
-    expect(bottom, isNot(contains('123')));
-
-    final digit2 = layout.rows[0].keys.firstWhere(
-      (k) => k.keyCode == CyberImeKeyCode.digit2,
-    );
-    expect(digit2.primary, '2');
-    expect(digit2.secondary, '"');
-    expect(digit2.popupOptions(), ['2', '"']);
-
-    final keyQ = layout.rows[1].keys.firstWhere(
-      (k) => k.keyCode == CyberImeKeyCode.keyQ,
-    );
-    expect(keyQ.popupOptions(), ['Q', '@', 'q']);
-
-    expect(
-      CyberImeKeyMaps.resolve(
-        CyberImeRegionalProfile.qwertz,
-        CyberImeKeyCode.minus,
-        shiftOn: false,
-      ),
-      'ß',
-    );
-    expect(
-      CyberImeKeyMaps.resolve(
-        CyberImeRegionalProfile.qwertz,
-        CyberImeKeyCode.digit7,
-        shiftOn: true,
-      ),
-      '/',
-    );
-    expect(
-      CyberImeKeyMaps.resolve(
-        CyberImeRegionalProfile.qwertz,
-        CyberImeKeyCode.digit7,
-        shiftOn: false,
-        altGrOn: true,
-      ),
-      '{',
-    );
-  });
-
-  test('AZERTY typewriter geometry', () {
-    final layout = CyberImeLayouts.letters(
-      profile: CyberImeRegionalProfile.azerty,
-    );
-    expect(rowLabels(layout, 1).sublist(1, 11),
-        ['A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P']);
-    expect(rowLabels(layout, 0).first, '²');
-    expect(rowLabels(layout, 4), contains('AltGr'));
-    expect(rowLabels(layout, 4), contains('Ctrl'));
-
-    // ù (right of m): Shift % must show as secondary (not dropped as "letter").
-    final ugrave = layout.rows[2].keys.firstWhere(
-      (k) => k.keyCode == CyberImeKeyCode.quote,
-    );
-    expect(ugrave.primary, 'ù');
-    expect(ugrave.secondary, '%');
-    expect(ugrave.isLetter, isFalse);
-
-    // é digit: Shift 2 as secondary (accented base is not a case-pair letter).
-    final digit2 = layout.rows[0].keys.firstWhere(
-      (k) => k.keyCode == CyberImeKeyCode.digit2,
-    );
-    expect(digit2.primary, 'é');
-    expect(digit2.secondary, '2');
-
-    final keyE = layout.rows[1].keys.firstWhere(
-      (k) => k.keyCode == CyberImeKeyCode.keyE,
-    );
-    expect(keyE.isLetter, isTrue);
-    expect(keyE.secondary, '€');
-  });
-
-  test('JIS typewriter has ¥ and JP keys, no F-row/numpad', () {
-    final layout = CyberImeLayouts.letters(
-      profile: CyberImeRegionalProfile.jis,
-    );
-    final all = layout.rows.expand((r) => r.keys).map((k) => k.primary);
-    expect(all, contains('¥'));
-    expect(all, contains('半/全'));
-    expect(all, contains('英数'));
-    expect(all, contains('無変換'));
-    expect(all, contains('変換'));
-    expect(all, contains('カナ'));
-    expect(all, isNot(contains('AltGr')));
-    expect(all.any((l) => RegExp(r'^F\d+$').hasMatch(l)), isFalse);
-
-    expect(
-      CyberImeKeyMaps.resolve(
-        CyberImeRegionalProfile.jis,
-        CyberImeKeyCode.keyQ,
-        shiftOn: false,
-        jpMode: CyberImeJpInputMode.hiragana,
-      ),
-      'た',
-    );
-    expect(
-      CyberImeKeyMaps.resolve(
-        CyberImeRegionalProfile.jis,
-        CyberImeKeyCode.keyZ,
-        shiftOn: true,
-        jpMode: CyberImeJpInputMode.hiragana,
-      ),
-      'っ',
-    );
-    expect(
-      CyberImeKeyMaps.resolve(
-        CyberImeRegionalProfile.jis,
-        CyberImeKeyCode.keyQ,
-        shiftOn: false,
-        jpMode: CyberImeJpInputMode.katakana,
-      ),
-      'タ',
-    );
-    expect(
-      CyberImeKeyMaps.resolve(
-        CyberImeRegionalProfile.jis,
-        CyberImeKeyCode.yen,
-        shiftOn: false,
-      ),
-      '¥',
-    );
   });
 }

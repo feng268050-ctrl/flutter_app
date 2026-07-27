@@ -34,6 +34,9 @@ enum CyberImeKeyId {
 
   /// JIS カタカナ/ひらがな — cycle kana modes.
   kanaToggle,
+
+  /// Soft JIS language toggle — 英数 ↔ ローマ字 (あ / ABC).
+  languageToggle,
 }
 
 /// One key on a CyberIME layout.
@@ -46,6 +49,7 @@ class CyberImeKeyDef {
     this.isLetter = false,
     this.keyCode,
     this.rowSpan = 1,
+    this.longPressOptions,
   });
 
   final CyberImeKeyId id;
@@ -59,6 +63,10 @@ class CyberImeKeyDef {
 
   /// Vertical span in layout rows (ISO L-Enter uses `2`).
   final int rowSpan;
+
+  /// Explicit long-press popup options (accents). When set, overrides default
+  /// case-twin popup construction for letters.
+  final List<String>? longPressOptions;
 }
 
 /// One row of keys.

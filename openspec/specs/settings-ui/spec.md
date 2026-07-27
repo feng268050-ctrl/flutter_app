@@ -285,13 +285,13 @@ Common Settings → Misc SHALL expose an interactive “Show System Status Overl
 
 ### Requirement: Keyboard page offers four-layout Segment and preview
 
-Common Settings → Keyboard SHALL present a product layout chooser using `CyberSegmentedControl` for the four profiles (ANSI US, ISO DE, ISO FR, JIS JP) and a typewriter-block preview of the selection. The page MAY retain HID presence / smoke-test affordances as secondary content but MUST NOT rely solely on the Demo `KeyboardDemoSection` as the primary layout UX.
+Common Settings → Keyboard SHALL present a product layout chooser using `CyberSegmentedControl` for the four soft profiles (QWERTY, QWERTZ, AZERTY, JIS) and a phone soft-keyboard preview of the selection (same layout factory as live CyberIME). The page MAY retain HID presence / smoke-test affordances as secondary content but MUST NOT rely solely on the Demo `KeyboardDemoSection` as the primary layout UX. Default / typewriter-block preview chrome MUST NOT be shown.
 
 #### Scenario: Keyboard page shows Segment
 
 - **WHEN** the operator opens Settings → Keyboard
 - **THEN** a segmented control with the four product profiles is visible
-- **AND** a layout preview for the selected profile is visible
+- **AND** a soft keyboard layout preview for the selected profile is visible
 
 ### Requirement: Restart persists layout and applies XKB
 

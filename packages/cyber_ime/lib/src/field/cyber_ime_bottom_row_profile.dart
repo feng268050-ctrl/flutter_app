@@ -2,7 +2,7 @@ import 'package:cyber_ime/src/keyboard/cyber_ime_key.dart';
 
 /// Bottom-row (4th row) profiles for Keyboard A.
 enum CyberImeBottomRowProfile {
-  /// Mode · space · ./, · enter
+  /// Mode · space · enter
   defaults,
 
   /// Mode · space · .com · @ · enter
@@ -11,21 +11,29 @@ enum CyberImeBottomRowProfile {
   /// Mode · space · / · : · enter
   uri,
 
-  /// Mode · space · ./, · reveal · enter
+  /// Mode · space · reveal · enter
   password,
 
   /// Same as [defaults] (reveal lives on the text field for Wi‑Fi).
   wifi,
 }
 
-List<CyberImeKeyDef> cyberImeBottomRowKeys(
+/// Soft phone bottom row (123 / optional language / Space / extras / confirm).
+List<CyberImeKeyDef> cyberImeSoftBottomRowKeys(
   CyberImeBottomRowProfile profile, {
+  bool includeLanguageToggle = false,
   bool numericModeLabel = false,
 }) {
   CyberImeKeyDef modeSwitch() => CyberImeKeyDef(
         id: CyberImeKeyId.modeSwitch,
-        primary: numericModeLabel ? 'abc' : '123',
-        widthWeight: 1.2,
+        primary: numericModeLabel ? 'ABC' : '123',
+        widthWeight: 1.5,
+      );
+
+  CyberImeKeyDef language() => const CyberImeKeyDef(
+        id: CyberImeKeyId.languageToggle,
+        primary: 'あ',
+        widthWeight: 1.25,
       );
 
   CyberImeKeyDef space() => const CyberImeKeyDef(
@@ -34,27 +42,25 @@ List<CyberImeKeyDef> cyberImeBottomRowKeys(
         widthWeight: 5,
       );
 
-  CyberImeKeyDef commaPeriod() => const CyberImeKeyDef(
-        id: CyberImeKeyId.commaPeriod,
-        primary: '.',
-        secondary: ',',
-        widthWeight: 1,
-      );
-
   CyberImeKeyDef enter() => const CyberImeKeyDef(
         id: CyberImeKeyId.enter,
         primary: '⏎',
-        widthWeight: 1.4,
+        widthWeight: 1.8,
       );
+
+  final lead = <CyberImeKeyDef>[
+    modeSwitch(),
+    if (includeLanguageToggle) language(),
+    space(),
+  ];
 
   switch (profile) {
     case CyberImeBottomRowProfile.defaults:
     case CyberImeBottomRowProfile.wifi:
-      return [modeSwitch(), space(), commaPeriod(), enter()];
+      return [...lead, enter()];
     case CyberImeBottomRowProfile.email:
       return [
-        modeSwitch(),
-        space(),
+        ...lead,
         const CyberImeKeyDef(
           id: CyberImeKeyId.custom,
           primary: '.com',
@@ -65,8 +71,7 @@ List<CyberImeKeyDef> cyberImeBottomRowKeys(
       ];
     case CyberImeBottomRowProfile.uri:
       return [
-        modeSwitch(),
-        space(),
+        ...lead,
         const CyberImeKeyDef(
           id: CyberImeKeyId.custom,
           primary: '/',
@@ -81,9 +86,7 @@ List<CyberImeKeyDef> cyberImeBottomRowKeys(
       ];
     case CyberImeBottomRowProfile.password:
       return [
-        modeSwitch(),
-        space(),
-        commaPeriod(),
+        ...lead,
         const CyberImeKeyDef(
           id: CyberImeKeyId.passwordReveal,
           primary: '👁',
@@ -93,3 +96,13 @@ List<CyberImeKeyDef> cyberImeBottomRowKeys(
       ];
   }
 }
+
+/// Legacy alias used by older call sites / typewriter helpers.
+List<CyberImeKeyDef> cyberImeBottomRowKeys(
+  CyberImeBottomRowProfile profile, {
+  bool numericModeLabel = false,
+}) =>
+    cyberImeSoftBottomRowKeys(
+      profile,
+      numericModeLabel: numericModeLabel,
+    );

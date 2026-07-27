@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/settings/application/product_keyboard_profile.dart';
 
 void main() {
-  test('five segment labels', () {
+  test('four segment labels', () {
     expect(
       ProductKeyboardProfile.values.map((e) => e.segmentLabel).toList(),
-      ['Default', 'QWERTY', 'QWERTZ', 'AZERTY', 'JIS'],
+      ['QWERTY', 'QWERTZ', 'AZERTY', 'JIS'],
     );
   });
 
@@ -18,14 +18,26 @@ void main() {
     }
   });
 
-  test('XKB id alone still maps DE/FR/JP', () {
+  test('legacy default/ansi migrate to qwerty', () {
+    expect(
+      ProductKeyboardProfile.fromConfProfile('default'),
+      ProductKeyboardProfile.qwerty,
+    );
+    expect(
+      ProductKeyboardProfile.fromConfProfile('ansi'),
+      ProductKeyboardProfile.qwerty,
+    );
+    expect(ProductKeyboardProfile.qwerty.confProfileId, 'qwerty');
+  });
+
+  test('XKB id alone still maps DE/FR/JP/US', () {
     expect(
       ProductKeyboardProfile.fromLayout(const KeyboardLayout(id: 'de')),
       ProductKeyboardProfile.qwertz,
     );
     expect(
       ProductKeyboardProfile.fromLayout(const KeyboardLayout(id: 'us')),
-      ProductKeyboardProfile.ansi,
+      ProductKeyboardProfile.qwerty,
     );
   });
 

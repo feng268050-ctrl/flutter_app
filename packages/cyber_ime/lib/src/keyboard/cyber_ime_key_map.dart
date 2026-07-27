@@ -59,9 +59,7 @@ abstract final class CyberImeKeyMaps {
     CyberImeRegionalProfile profile,
   ) {
     return switch (profile) {
-      CyberImeRegionalProfile.defaultSoft ||
-      CyberImeRegionalProfile.ansi =>
-        ansiUs,
+      CyberImeRegionalProfile.qwerty => ansiUs,
       CyberImeRegionalProfile.qwertz => isoDe,
       CyberImeRegionalProfile.azerty => isoFr,
       CyberImeRegionalProfile.jis => jisJp,

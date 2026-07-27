@@ -536,7 +536,7 @@ gpio/modbus = App assets            同；Modbus←USB-serial 透传
 
 - helpers：仅 sim 专用；禁止引用 ynh960 helpers。  
 - 访客主路径：Linux `BoardBindings`；Stub 仅 host 单测/应急。  
-- App：compose 优先；去掉写死 `ynh960` 回退。
+- App：设备上**仅**读 `/run/hmi/board_profile.json`（compose）；缺失或解析失败立即抛错，无 `/oem/boards/<id>` / App asset 回退。  
 
 ### 6.4 virt screen pack
 

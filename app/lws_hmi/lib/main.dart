@@ -7,9 +7,8 @@ import 'package:lws_hmi/app/app.dart';
 import 'package:lws_hmi/hal/hal_assets.dart';
 import 'package:lws_hmi/platform/video_player_elinux/video_player_elinux.dart';
 
-/// Compose export (preferred) then on-device OEM board pack.
+/// Written by oem-compose before HMI starts. No per-board path fallback.
 const _kRunBoardProfile = '/run/hmi/board_profile.json';
-const _kOemBoardProfile = '/oem/boards/ynh960/board_profile.json';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,30 +28,23 @@ Future<void> main() async {
 }
 
 Future<BoardProfile> _loadBoardProfile() async {
-  for (final path in <String>[_kRunBoardProfile, _kOemBoardProfile]) {
-    final file = File(path);
-    if (!await file.exists()) {
-      continue;
-    }
-    try {
-      final oem = await BoardProfile.loadFile(path);
-      return oem.withProductConfigs(
-        gpio: HmiHalAssets.gpio,
-        modbus: HmiHalAssets.modbus,
-      );
-    } catch (e, st) {
-      debugPrint('board profile load failed ($path): $e\n$st');
-    }
-  }
-
-  // Host/desktop: App asset is OK for UI work without an OEM partition.
-  // On-device Linux: refuse App asset fallback — fix oem-compose /oem.
+  // Host/desktop UI work without an OEM partition.
   if (!Platform.isLinux) {
     return BoardProfile.loadAsset(HmiHalAssets.boardProfile);
   }
-  throw StateError(
-    'OEM/compose board profile missing '
-    '(tried $_kRunBoardProfile, $_kOemBoardProfile). '
-    'Check oem-compose.service and oem.img — no App asset fallback on device.',
+
+  final file = File(_kRunBoardProfile);
+  if (!await file.exists()) {
+    throw StateError(
+      'Board profile missing: $_kRunBoardProfile. '
+      'oem-compose must write it before HMI starts — '
+      'no /oem/boards/<id> or App asset fallback on device.',
+    );
+  }
+
+  final oem = await BoardProfile.loadFile(_kRunBoardProfile);
+  return oem.withProductConfigs(
+    gpio: HmiHalAssets.gpio,
+    modbus: HmiHalAssets.modbus,
   );
 }

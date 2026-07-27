@@ -30,13 +30,14 @@
 | 层 | 现状 |
 |----|------|
 | HAL | P3.1 ✅：`BoardProfile` + `BoardBindings`；合同见 `hal-portability.md` |
-| 板级 JSON | `app/lws_hmi/assets/hal/{board_profile,gpio,modbus}.json` 绑在 App assets |
-| 屏参 | `board/*.txt` → rootfs → **private1** + Innohi `ParamUpdate` |
-| 板脚本 | rootfs-overlay `/usr/libexec/...`，大量 `ynh960-*` |
-| GPT `oem` | ~128 MiB，已挂载 `/oem`；`upgrade` 可选写 `oem.img`；**内容几乎空** |
-| `linux-sdk/` | gitignore；~18 G 全能树（debian/ubuntu/yocto/全量 mali/toolkit…） |
-| 定制方式 | `overlay/**` + `apply-overlay` 打进供应商 SDK |
-| P3.2 | 🔲 未开始；规划 UTM + Weston + eLinux + HAL |
+| 板级 JSON | **W1 ✅**：OEM `board_profile`；`gpio.json` / `modbus.json` 仍在 App assets |
+| 屏参 | **W2 ✅**：screen pack `lcd/` → private1（OEM 权威）；无 `/system/etc` 回退 |
+| 板脚本 | **W2 ✅**：modem / OTG / display-init 在 `oem/boards/ynh960/helpers/`；rootfs 为 thin stub |
+| GPT `oem` | ✅ ~128 MiB `/oem`；`build-oem` + `upgrade`（含 `OEM_ONLY=1`）已通；ynh960 pack 有内容 |
+| `product.ini` | ✅ OEM 种子；compose 强制 `brand`/`model`/`sn`；`set-prop`/`del-prop` 拒改 identity |
+| `linux-sdk/` | 🔲 仍 gitignore；~18 G 全能树（W3 待裁剪进仓） |
+| 定制方式 | 仍 `overlay/**` + `apply-overlay` 打进供应商 SDK（W3 内化） |
+| P3.2 | 🔲 未开始；规划 UTM + Weston + eLinux + HAL（W4） |
 
 ### 1.2 结论（本计划采纳）
 
@@ -239,9 +240,7 @@ AppServices(boardProfile: profile) …
    - `/run/hmi/board_profile.json`（可选：已解析的副本）  
    - `/run/hmi/screen.env`（旋转等）  
    - 按 §3.5 处理 `product.ini` 种子 → HAL 运行时路径  
-4. 失败策略（v1）：记 journal + 不启动完整 HMI，或启动最小错误页；**禁止**回落到另一块板的 profile。
-
-过渡期允许：OEM 缺失时 fallback 到 rootfs 内嵌的 ynh960 默认（仅迁移窗口；有明确 deprecation）。
+4. 失败策略（v1）：记 journal + 不启动完整 HMI，或启动最小错误页；**禁止**回落到另一块板的 profile；**禁止** rootfs 内嵌 oem-fallback（W2 已移除）。
 
 ### 3.8 构建与刷写
 
@@ -256,13 +255,13 @@ AppServices(boardProfile: profile) …
 
 ### 3.9 从现状迁移（OEM）
 
-| 步骤 | 内容 |
-|------|------|
-| O1 | 定义 manifest / screen.json schema；`oem/boards/ynh960` 从现 App `board_profile.json` **剥掉** gpio/modbus 指针后迁入；**迁入 `product.ini` 种子**（含今日 `camera_ip` 等） |
-| O2 | App 改为「OEM profile + 本地 gpio/modbus」；单测用 fixture |
-| O3 | 板脚本：modem / OTG 等从 rootfs 迁到 `oem/boards/.../helpers`，profile helpers 改路径 |
-| O4 | 屏参：双读（private1 **或** screen pack）→ 仅 screen pack |
-| O5 | `make build-oem`（ext4）+ flash/upgrade 路径打通；清空迁移 fallback |
+| 步骤 | 内容 | 状态 |
+|------|------|------|
+| O1 | 定义 manifest / screen.json schema；`oem/boards/ynh960` 从 App `board_profile.json` **剥掉** gpio/modbus 指针后迁入；**迁入 `product.ini` 种子** | ✅ W1 |
+| O2 | App 改为「OEM profile + 本地 gpio/modbus」；单测用 fixture | ✅ W1 |
+| O3 | 板脚本：modem / OTG / display-init 迁到 `oem/boards/.../helpers`，profile helpers 改路径 | ✅ W2 |
+| O4 | 屏参：仅 OEM screen pack `lcd/` 种子 private1（无 `/system/etc` 回退） | ✅ W2 |
+| O5 | `make build-oem`（ext4）+ flash/upgrade 路径打通；清空 oem-fallback | ✅ W1+W2 |
 
 ---
 
@@ -544,52 +543,54 @@ App：`resolveHalBackend(boardId: sim)` → Stub；并支持 `HAL_BACKEND=stub`�
 
 ### 6.8 与主线阶段关系
 
-本文件将 **P3.2** 从「仅有模拟器」扩展为 **「模拟器 + OEM 组合验证」**。实施顺序建议：§7 中 **W1 → W2 与 W4 可部分并行**；完整自有 SDK（W3）可与 P3.2 重叠，但 P3.2 验收不阻塞在 SDK 全量进仓完成之后。
+本文件将 **P3.2** 从「仅有模拟器」扩展为 **「模拟器 + OEM 组合验证」**。实施顺序：§7 中 **W0–W2 已完成**；**W4** 可基于现有 compose 契约推进（先路径 A）；完整自有 SDK（**W3**）可与 W4 重叠，但 P3.2 验收不阻塞在 SDK 全量进仓完成之后。
 
 ---
 
 ## 7. 工作包与建议顺序
 
 ```text
-W0  契约冻结（本文 + 必要时 OpenSpec）
+W0  契约冻结（本文 + 必要时 OpenSpec）                    ✅
     ├─ OEM manifest / screen schema
     ├─ gpio/modbus 归属 App（否决进 OEM）
     └─ UTM ≠ SoC 仿真
 
-W1  OEM 垂直切片（真机 ynh960）
+W1  OEM 垂直切片（真机 ynh960）                          ✅
     ├─ oem/ 源码树 + board_profile 迁出 App（保留 gpio/modbus 在 App）
     ├─ HAL loadFile + 产品 configs 合并
     ├─ oem-compose + /run/hmi
     ├─ make build-oem；upgrade/flash 带 oem.img
-    └─ 迁移期 fallback
+    └─ archive: 2026-07-27-platform-oem-ynh960-slice
 
-W2  Rootfs/脚本瘦身（进行中 → OpenSpec `platform-rootfs-script-thinning`）
-    ├─ helpers → OEM
-    ├─ hmi-launch 只读 /run/hmi
-    └─ private1 双读 → screen pack
+W2  Rootfs/脚本瘦身                                      ✅
+    ├─ helpers → OEM；rootfs thin stubs
+    ├─ hmi-launch 读 display.conf → /run/hmi/screen.env（缺则失败）
+    ├─ private1 仅由 screen pack lcd/ 种子；去掉 oem-fallback
+    ├─ product.ini：OEM 强制 brand/model/sn；set-prop 拒 identity
+    └─ archive: 2026-07-27-platform-rootfs-script-thinning
 
-W3  自有 linux-sdk
+W3  自有 linux-sdk                                       🔲 下一步候选
     ├─ 裁剪构建可复现 ynh960 镜像
     ├─ 白名单门禁；VENDOR_IMPORT.md
     ├─ overlay 冻结/内化
     └─ git 策略（源码进仓 / LFS / dl ignore）
 
-W4  P3.2 虚拟机（第二主板+屏）
+W4  P3.2 虚拟机（第二主板+屏）                           🔲 可与 W3 并行
     ├─ oem pack sim+virt
     ├─ AppServices Stub 接线
     ├─ 路径 A 文档 + 脚本
     └─ 可选路径 B Buildroot virt
 
-W5  （另案）Factory Test App
+W5  （另案）Factory Test App                             ⏸
     └─ 复用 OEM profile；gpio/modbus 仍按产测需求另定
 ```
 
 依赖关系：
 
 ```text
-W0 → W1 → W2
-       ↘ W4（可用 W1 的 compose 契约；先路径 A）
-W0 → W3（可与 W1/W4 并行，但 W3 完成前仍可用现 linux-sdk）
+W0 → W1 → W2 ✅ 已完成
+       ↘ W4（可用 W1/W2 的 compose 契约；先路径 A）
+W0 → W3（可与 W4 并行；完成前仍可用现 linux-sdk）
 ```
 
 ---
@@ -612,7 +613,7 @@ W0 → W3（可与 W1/W4 并行，但 W3 完成前仍可用现 linux-sdk）
 |------|------|
 | OEM 单槽刷坏 | compose 失败可见；工厂校验 manifest；关键升级默认不写 OEM |
 | 错 uboot / 错 oem 打进整包 | §5.6：分目录 + SKU 表 + 缺文件失败；`factory` 旁写 `manifest.txt` |
-| 早启亮屏仍依赖 private1/Innohi | 迁移期双读；换屏 DT 变更走 boot 升级 |
+| 早启亮屏仍依赖 private1/Innohi | W2：private1 由 OEM `lcd/` 种子；换屏 DT 变更仍走 boot 升级 |
 | SDK 进仓历史膨胀 | 白名单 + LFS/prebuilt；禁 commit `output/`/`dl/` |
 | 模拟器与真机差过大 | 契约对齐（单元名、路径、Weston）；不追求 GPU 奇偶 |
 | App 合并 profile 出错 | 单测：OEM fixture + App gpio/modbus；错 board_id 拒绝启动 |
@@ -623,11 +624,11 @@ W0 → W3（可与 W1/W4 并行，但 W3 完成前仍可用现 linux-sdk）
 
 ## 10. 成功标准（平台化第一里程碑）
 
-1. **真机**：`oem.img`（ynh960+屏）+ 通用 rootfs 启动；HMI 使用 OEM profile + **App 内** gpio/modbus。  
-2. **模拟器**：sim+virt OEM 启动同一 HMI；缺硬件不崩；可作为「第二主板+屏」演示组合切换。  
-3. **构建**：裁剪 linux-sdk 可出与现网等价的 ynh960 镜像（或明确差距清单）。  
-4. **工厂变体**：`FACTORY_SKU=… make build-oem` / `build-img` / `flash` 解析同一套路径；产出 `output/firmware/<sku>/factory.img`；uboot 来自 `prebuilt/bootloader/<uboot_id>/`。  
-5. **文档**：`make help` / README / AGENTS 重建表含 `build-oem`、`factory.img`、模拟器步骤；**无** factory-test 强依赖。
+1. **真机**：`oem.img`（ynh960+屏）+ 通用 rootfs 启动；HMI 使用 OEM profile + **App 内** gpio/modbus。 ✅（W1+W2）  
+2. **模拟器**：sim+virt OEM 启动同一 HMI；缺硬件不崩；可作为「第二主板+屏」演示组合切换。 🔲 W4  
+3. **构建**：裁剪 linux-sdk 可出与现网等价的 ynh960 镜像（或明确差距清单）。 🔲 W3  
+4. **工厂变体**：`FACTORY_SKU=… make build-oem` / `build-img` / `flash` 解析同一套路径；产出 `output/firmware/<sku>/factory.img`；uboot 来自 `prebuilt/bootloader/<uboot_id>/`。 ✅（W1）  
+5. **文档**：`make help` / README / AGENTS 重建表含 `build-oem`、`factory.img`、模拟器步骤；**无** factory-test 强依赖。 部分 ✅（模拟器步骤待 W4）  
 
 ---
 

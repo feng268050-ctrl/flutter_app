@@ -895,6 +895,68 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processLibVersion => '工艺库版本';
 
   @override
+  String get updateProcessLibrary => '更新工艺库';
+
+  @override
+  String get processLibraryImportTitle => '导入工艺库';
+
+  @override
+  String get processLibraryScanHint => '将工艺包（manifest.json + 库 JSON）放到 /var/lib/hmi/incoming/process-library/、/userdata/ota/process-library/ 或 U 盘后扫描。';
+
+  @override
+  String get processLibraryNoPackages => '未找到工艺库导入包。';
+
+  @override
+  String get processLibraryRescan => '重新扫描';
+
+  @override
+  String get processLibraryImportAction => '导入';
+
+  @override
+  String get processLibraryImporting => '正在导入…';
+
+  @override
+  String get processLibraryModelMatch => '匹配本机型号';
+
+  @override
+  String get processLibraryModelMismatch => '型号非优先';
+
+  @override
+  String get processLibraryAuditTitle => '导入报告';
+
+  @override
+  String get processLibraryAuditImported => '导入成功';
+
+  @override
+  String get processLibraryAuditCurrent => '已是最新';
+
+  @override
+  String get processLibraryAuditRejected => '导入被拒绝';
+
+  @override
+  String get processLibraryAuditNoCompatible => '无适配本机型号的工艺库';
+
+  @override
+  String processLibraryAuditFromTo(String from, String to) {
+    return '版本：$from → $to';
+  }
+
+  @override
+  String processLibraryAuditRows(int count) {
+    return '行数：$count';
+  }
+
+  @override
+  String processLibraryAuditUsersKept(int count) {
+    return '保留的用户工艺：$count';
+  }
+
+  @override
+  String processLibraryAuditPath(String path) {
+    return '包路径：$path';
+  }
+
+  @override
   String get focusScaleReference => '焦点刻度参考';
 
   @override
@@ -2427,6 +2489,60 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get processLibVersion => '工藝庫版本';
+
+  @override
+  String get updateProcessLibrary => '更新工藝庫';
+
+  @override
+  String get processLibraryImportTitle => '導入工藝庫';
+
+  @override
+  String get processLibraryScanHint => '將工藝包（manifest.json + 庫 JSON）放到 /var/lib/hmi/incoming/process-library/、/userdata/ota/process-library/ 或 U 盤後掃描。';
+
+  @override
+  String get processLibraryNoPackages => '未找到工藝庫導入包。';
+
+  @override
+  String get processLibraryRescan => '重新掃描';
+
+  @override
+  String get processLibraryImportAction => '導入';
+
+  @override
+  String get processLibraryImporting => '正在導入…';
+
+  @override
+  String get processLibraryModelMatch => '匹配本機型號';
+
+  @override
+  String get processLibraryModelMismatch => '型號非優先';
+
+  @override
+  String get processLibraryAuditTitle => '導入報告';
+
+  @override
+  String get processLibraryAuditImported => '導入成功';
+
+  @override
+  String get processLibraryAuditRejected => '導入被拒絕';
+
+  @override
+  String get processLibraryAuditNoCompatible => '無適配本機型號的工藝庫';
+
+  @override
+  String processLibraryAuditRows(int count) {
+    return '行數：$count';
+  }
+
+  @override
+  String processLibraryAuditUsersKept(int count) {
+    return '保留的用戶工藝：$count';
+  }
+
+  @override
+  String processLibraryAuditPath(String path) {
+    return '包路徑：$path';
+  }
 
   @override
   String get focusScaleReference => '焦點刻度參考';

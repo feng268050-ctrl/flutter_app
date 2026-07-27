@@ -1,3 +1,4 @@
+import 'package:lws_hmi/features/process_library/application/process_parameter_wire_codec.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
@@ -58,11 +59,11 @@ final class ProcessParameterApplier {
         ProcessApplyFailure.baselineReadFailed,
       );
     }
-    final expected = <String, double>{
-      ...baseline,
-      ...preset.parameters.values,
-    };
-    if (!await modbus.writeGroup('process', preset.parameters.values)) {
+    final expected = ProcessParameterWireCodec.buildWriteValues(
+      preset: preset,
+      baseline: baseline,
+    );
+    if (!await modbus.writeGroup('process', expected)) {
       return const ProcessApplyResult.failure(
         ProcessApplyFailure.processWriteFailed,
       );
@@ -75,9 +76,10 @@ final class ProcessParameterApplier {
             : ProcessApplyFailure.partialApply,
       );
     }
+    final modbusType = preset.processType.modbusProcessType;
     if (!await modbus.writeAttribute(
       'control.process_type',
-      preset.processType.wireValue,
+      modbusType,
     )) {
       return ProcessApplyResult.failure(
         await _rollback(baseline, previousType.toInt())
@@ -87,7 +89,7 @@ final class ProcessParameterApplier {
     }
     final typeReadback = (await _readGroup('control'))?['control.process_type'];
     final actualType = typeReadback is num ? typeReadback.toInt() : null;
-    if (actualType != preset.processType.wireValue) {
+    if (actualType != modbusType) {
       return ProcessApplyResult.failure(
         await _rollback(baseline, previousType.toInt())
             ? ProcessApplyFailure.processTypeReadbackFailed

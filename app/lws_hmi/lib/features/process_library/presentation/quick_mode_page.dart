@@ -267,9 +267,13 @@ final class _QuickModePageState extends State<QuickModePage> {
       setState(() => _statusMessage = null);
       return true;
     }
-    setState(() {
-      _statusMessage = _applyFailureMessage(result.failure);
-    });
+    final message = _applyFailureMessage(result.failure);
+    setState(() => _statusMessage = message);
+    // Prefer toast/snackbar — do not paint a persistent red corner banner.
+    if (message != 'Baseline read failed' &&
+        message != 'Laser work in progress') {
+      _showControlMessage(message);
+    }
     return false;
   }
 
@@ -602,24 +606,6 @@ final class _QuickModePageState extends State<QuickModePage> {
                   style: TextStyle(
                     color: Color(0xB3FFFFFF),
                     fontSize: 16,
-                  ),
-                ),
-              ),
-            // Keep operator safety feedback visible, but do not expose the
-            // internal process-library baseline-read failure or the legacy
-            // “Laser work in progress” corner banner in Quick mode.
-            if (_statusMessage != null &&
-                _statusMessage != 'Baseline read failed' &&
-                _statusMessage != 'Laser work in progress')
-              Positioned(
-                left: 40,
-                bottom: 24,
-                child: Text(
-                  _statusMessage!,
-                  key: const ValueKey('quick-mode-status-message'),
-                  style: const TextStyle(
-                    color: Color(0xFFFF8A80),
-                    fontSize: 14,
                   ),
                 ),
               ),

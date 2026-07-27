@@ -895,6 +895,68 @@ class AppLocalizationsEn extends AppLocalizations {
   String get processLibVersion => 'Process Library Version';
 
   @override
+  String get updateProcessLibrary => 'Update Process Library';
+
+  @override
+  String get processLibraryImportTitle => 'Import Process Library';
+
+  @override
+  String get processLibraryScanHint => 'Place a package (manifest.json + library JSON) under /var/lib/hmi/incoming/process-library/, /userdata/ota/process-library/, or a USB volume, then scan.';
+
+  @override
+  String get processLibraryNoPackages => 'No process-library packages found.';
+
+  @override
+  String get processLibraryRescan => 'Scan again';
+
+  @override
+  String get processLibraryImportAction => 'Import';
+
+  @override
+  String get processLibraryImporting => 'Importing…';
+
+  @override
+  String get processLibraryModelMatch => 'Matches this device';
+
+  @override
+  String get processLibraryModelMismatch => 'Model not preferred';
+
+  @override
+  String get processLibraryAuditTitle => 'Import report';
+
+  @override
+  String get processLibraryAuditImported => 'Imported successfully';
+
+  @override
+  String get processLibraryAuditCurrent => 'Already up to date';
+
+  @override
+  String get processLibraryAuditRejected => 'Import rejected';
+
+  @override
+  String get processLibraryAuditNoCompatible => 'No compatible library for this model';
+
+  @override
+  String processLibraryAuditFromTo(String from, String to) {
+    return 'Version: $from → $to';
+  }
+
+  @override
+  String processLibraryAuditRows(int count) {
+    return 'Rows: $count';
+  }
+
+  @override
+  String processLibraryAuditUsersKept(int count) {
+    return 'User presets kept: $count';
+  }
+
+  @override
+  String processLibraryAuditPath(String path) {
+    return 'Package: $path';
+  }
+
+  @override
   String get focusScaleReference => 'Focus Scale Reference';
 
   @override

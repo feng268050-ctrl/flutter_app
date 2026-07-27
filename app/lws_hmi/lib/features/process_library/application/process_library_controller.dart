@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_importer.dart';
+import 'package:lws_hmi/features/process_library/application/process_library_package_scanner.dart';
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_repository.dart';
@@ -11,11 +12,16 @@ final class ProcessLibraryController extends ChangeNotifier {
     required this.repository,
     required this.importer,
     required this.applier,
-  });
+    ProcessLibraryPackageScanner? packageScanner,
+  }) : packageScanner = packageScanner ??
+            ProcessLibraryPackageScanner(
+              deviceModel: importer.deviceModel,
+            );
 
   final ProcessLibraryRepository repository;
   final ProcessLibraryImporter importer;
   final ProcessParameterApplier applier;
+  final ProcessLibraryPackageScanner packageScanner;
 
   List<ProcessPreset> _presets = const [];
   Object? _lastError;
@@ -23,12 +29,14 @@ final class ProcessLibraryController extends ChangeNotifier {
   bool _initialized = false;
   bool _closed = false;
   bool _applying = false;
+  bool _importingExternal = false;
 
   List<ProcessPreset> get presets => List.unmodifiable(_presets);
   Object? get lastError => _lastError;
   bool get loading => _loading;
   bool get initialized => _initialized;
   bool get applying => _applying;
+  bool get importingExternal => _importingExternal;
 
   Future<void> initialize() async {
     if (_closed || _loading || (_initialized && _lastError == null)) {
@@ -53,6 +61,58 @@ final class ProcessLibraryController extends ChangeNotifier {
       debugPrint('process-library initialization failed: $error');
     } finally {
       _loading = false;
+      _notify();
+    }
+  }
+
+  Future<List<ProcessLibraryPackageCandidate>> scanImportCandidates() async {
+    final model = await importer.resolveDeviceModel();
+    final scanner = ProcessLibraryPackageScanner(
+      deviceModel: model,
+      extraRoots: packageScanner.extraRoots,
+      includeDefaultRoots: packageScanner.includeDefaultRoots,
+    );
+    return scanner.scan();
+  }
+
+  Future<ProcessLibraryImportAudit> importExternal(
+    ProcessLibraryPackageCandidate candidate,
+  ) async {
+    if (_importingExternal) {
+      return ProcessLibraryImportAudit(
+        status: ProcessLibraryImportStatus.rejected,
+        packagePath: candidate.directoryPath,
+        source: candidate.defaultSource,
+        skippedReason: 'busy',
+        errors: const ['Another import is already in progress'],
+      );
+    }
+    _importingExternal = true;
+    _lastError = null;
+    _notify();
+    try {
+      final audit = await importer.importPackageFromDirectory(
+        candidate.directory,
+        defaultSource: candidate.defaultSource,
+      );
+      if (audit.status == ProcessLibraryImportStatus.imported ||
+          audit.status == ProcessLibraryImportStatus.current) {
+        await _reload();
+      } else if (audit.errors.isNotEmpty) {
+        _lastError = audit.errors.join('\n');
+      }
+      return audit;
+    } catch (error) {
+      _lastError = error;
+      return ProcessLibraryImportAudit(
+        status: ProcessLibraryImportStatus.rejected,
+        packagePath: candidate.directoryPath,
+        source: candidate.defaultSource,
+        skippedReason: 'exception',
+        errors: ['$error'],
+      );
+    } finally {
+      _importingExternal = false;
       _notify();
     }
   }

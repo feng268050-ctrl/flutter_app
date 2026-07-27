@@ -87,7 +87,7 @@ ModbusConfig _writeConfig({
         access: 'rw',
         group: 'process',
         register: ModbusRegisterBinding(space: 'holding', address: 0x0060),
-        decode: ModbusDecode(type: 'u16', unit: '%'),
+        decode: ModbusDecode(type: 'u16', scale: 0.01, unit: '%'),
       ),
       ModbusAttributeConfig(
         id: 'process.swing_width',
@@ -126,7 +126,7 @@ ModbusConfig _writeConfig({
 }
 
 void main() {
-  test('writeAttribute uses FC16 when write_multiple only', () async {
+  test('writeAttribute encodes percent power with scale 0.01', () async {
     final config = _writeConfig();
     final fake = FakeWriteTransport(config.transport);
     final hal = ModbusHal.fromConfig(config, transport: fake);
@@ -135,7 +135,7 @@ void main() {
     expect(fake.writeMultipleCalls, 1);
     expect(fake.writeSingleCalls, 0);
     expect(fake.writes.last.$1, 0x0060);
-    expect(fake.writes.last.$2, [55]);
+    expect(fake.writes.last.$2, [5500]);
   });
 
   test('writeAttribute encodes scaled swing width', () async {
@@ -176,7 +176,7 @@ void main() {
     final written = fake.writes.last;
     expect(written.$1, 0x0060);
     expect(written.$2.length, 8);
-    expect(written.$2[0], 40); // 0x0060
+    expect(written.$2[0], 4000); // 0x0060 laser power 40% → ×100
     expect(written.$2[7], 20); // 0x0067 → offset 7
   });
 

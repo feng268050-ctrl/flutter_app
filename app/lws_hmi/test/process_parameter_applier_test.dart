@@ -29,7 +29,26 @@ void main() {
     expect(result.isSuccess, isTrue);
     expect(modbus.groupWrites, 1);
     expect(modbus.attributes['control.process_type'], 0);
-    expect(modbus.attributes['process.laser_frequency'], 10.0);
+    expect(modbus.attributes['process.laser_power'], 50);
+    expect(modbus.attributes['process.laser_duty_cycle'], 100);
+    expect(modbus.attributes['process.laser_frequency'], 5000);
+    expect(modbus.attributes['process.piercing_power'], 50);
+  });
+
+  test('writes modbus process type for wide cleaning (2, not wire 3)', () async {
+    final modbus = _FakeModbus();
+    final applier = ProcessParameterApplier(
+      modbus: modbus,
+      isSafeToApply: () async => true,
+    );
+
+    final result = await applier.apply(
+      _preset(processType: ProcessType.wideCleaning),
+    );
+
+    expect(result.isSuccess, isTrue);
+    expect(modbus.attributes['control.process_type'], 2);
+    expect(modbus.attributes['process.swing_width'], 0.5);
   });
 
   test('reports mismatched process readback', () async {
@@ -75,7 +94,7 @@ ProcessPreset _preset({
     isBuiltin: true,
     processType: processType,
     materialType: MaterialType.stainlessSteel,
-    thickness: 1,
+    thickness: processType.isCleaning ? null : 1,
     gear: 1,
     parameters: ProcessParameters({
       'process.laser_power': 50,

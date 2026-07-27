@@ -1814,6 +1814,114 @@ abstract class AppLocalizations {
   /// **'Process Library Version'**
   String get processLibVersion;
 
+  /// No description provided for @updateProcessLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Process Library'**
+  String get updateProcessLibrary;
+
+  /// No description provided for @processLibraryImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Process Library'**
+  String get processLibraryImportTitle;
+
+  /// No description provided for @processLibraryScanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Place a package (manifest.json + library JSON) under /var/lib/hmi/incoming/process-library/, /userdata/ota/process-library/, or a USB volume, then scan.'**
+  String get processLibraryScanHint;
+
+  /// No description provided for @processLibraryNoPackages.
+  ///
+  /// In en, this message translates to:
+  /// **'No process-library packages found.'**
+  String get processLibraryNoPackages;
+
+  /// No description provided for @processLibraryRescan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan again'**
+  String get processLibraryRescan;
+
+  /// No description provided for @processLibraryImportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get processLibraryImportAction;
+
+  /// No description provided for @processLibraryImporting.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing…'**
+  String get processLibraryImporting;
+
+  /// No description provided for @processLibraryModelMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches this device'**
+  String get processLibraryModelMatch;
+
+  /// No description provided for @processLibraryModelMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Model not preferred'**
+  String get processLibraryModelMismatch;
+
+  /// No description provided for @processLibraryAuditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import report'**
+  String get processLibraryAuditTitle;
+
+  /// No description provided for @processLibraryAuditImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported successfully'**
+  String get processLibraryAuditImported;
+
+  /// No description provided for @processLibraryAuditCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Already up to date'**
+  String get processLibraryAuditCurrent;
+
+  /// No description provided for @processLibraryAuditRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Import rejected'**
+  String get processLibraryAuditRejected;
+
+  /// No description provided for @processLibraryAuditNoCompatible.
+  ///
+  /// In en, this message translates to:
+  /// **'No compatible library for this model'**
+  String get processLibraryAuditNoCompatible;
+
+  /// No description provided for @processLibraryAuditFromTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Version: {from} → {to}'**
+  String processLibraryAuditFromTo(String from, String to);
+
+  /// No description provided for @processLibraryAuditRows.
+  ///
+  /// In en, this message translates to:
+  /// **'Rows: {count}'**
+  String processLibraryAuditRows(int count);
+
+  /// No description provided for @processLibraryAuditUsersKept.
+  ///
+  /// In en, this message translates to:
+  /// **'User presets kept: {count}'**
+  String processLibraryAuditUsersKept(int count);
+
+  /// No description provided for @processLibraryAuditPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Package: {path}'**
+  String processLibraryAuditPath(String path);
+
   /// No description provided for @focusScaleReference.
   ///
   /// In en, this message translates to:

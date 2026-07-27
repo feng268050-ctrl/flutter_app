@@ -320,7 +320,7 @@ void main() {
     expect(modbus.control['control.laser_enable'], isTrue);
   });
 
-  testWidgets('Quick shows unsafe status when LaserWorkGuard blocks apply',
+  testWidgets('Quick hides unsafe status banner when LaserWorkGuard blocks',
       (tester) async {
     await setDesignSurface(tester);
     final modbus = _SimModbus()
@@ -335,21 +335,23 @@ void main() {
     modbus.status[LaserWorkGuard.wireFeedingOnAttribute] = false;
     modbus.control[LaserWorkGuard.laserEnableAttribute] = true;
 
+    // No AppScope: avoids Record Work camera probe timers in this unit test.
     await tester.pumpWidget(
-      AppScope(
-        services: services,
-        child: MaterialApp(
-          home: ProcessLibraryScope(
-            controller: controller,
-            child: const QuickModePage(),
-          ),
+      MaterialApp(
+        home: ProcessLibraryScope(
+          controller: controller,
+          child: const QuickModePage(),
         ),
       ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Laser work in progress'), findsOneWidget);
+    expect(find.text('Laser work in progress'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('quick-mode-status-message')),
+      findsNothing,
+    );
     expect(modbus.groupWrites, 0);
   });
 

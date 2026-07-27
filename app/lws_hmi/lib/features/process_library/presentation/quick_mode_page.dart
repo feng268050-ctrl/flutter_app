@@ -27,6 +27,7 @@ import 'package:lws_hmi/features/process_mode/presentation/quick_mode_material_w
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_parameter_preview.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_process_wheel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_value_pick.dart';
+import 'package:lws_hmi/features/process_mode/presentation/record_work_toggle.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
@@ -492,6 +493,17 @@ final class _QuickModePageState extends State<QuickModePage> {
               ),
             if (controller.loading && !controller.initialized)
               const Center(child: CircularProgressIndicator()),
+            if (!isCnc && _deviceControl != null)
+              Positioned(
+                // lws-ui activity_quick_mode: marginStart 40 + marginTop 20.
+                top: 20,
+                left: 40,
+                child: RecordWorkToggle(
+                  key: const ValueKey('quick-mode-record-work'),
+                  deviceControl: _deviceControl!,
+                  compact: true,
+                ),
+              ),
             if (showPickers) ...[
               Positioned(
                 top: 20,
@@ -594,9 +606,11 @@ final class _QuickModePageState extends State<QuickModePage> {
                 ),
               ),
             // Keep operator safety feedback visible, but do not expose the
-            // internal process-library baseline-read failure in Quick mode.
+            // internal process-library baseline-read failure or the legacy
+            // “Laser work in progress” corner banner in Quick mode.
             if (_statusMessage != null &&
-                _statusMessage != 'Baseline read failed')
+                _statusMessage != 'Baseline read failed' &&
+                _statusMessage != 'Laser work in progress')
               Positioned(
                 left: 40,
                 bottom: 24,

@@ -94,6 +94,20 @@ void main() {
     await record.setArmed(true);
     expect(record.armed, isTrue);
   });
+
+  test('stopRecordingForExit disarms armed record work', () async {
+    final session = await connectedSession();
+    addTearDown(session.dispose);
+    final device = DeviceControlController(servicesWith(ipCamera: session))
+      ..keySwitchOn = true;
+    final record = RecordWorkController(deviceControl: device);
+    addTearDown(record.dispose);
+    await record.start(servicesWith(ipCamera: session));
+    expect(record.armed, isTrue);
+
+    await record.stopRecordingForExit();
+    expect(record.armed, isFalse);
+  });
 }
 
 final class _IdleModbus extends ModbusRtuClient {

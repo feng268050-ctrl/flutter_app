@@ -4,6 +4,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
+import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
@@ -25,12 +26,14 @@ final class EngineerDevicePanel extends StatefulWidget {
   const EngineerDevicePanel({
     super.key,
     required this.controller,
+    required this.recordWork,
     required this.processType,
     required this.preset,
     this.onBeforeEnableLaser,
   });
 
   final DeviceControlController controller;
+  final RecordWorkController recordWork;
   final ProcessType processType;
   final ProcessPreset preset;
 
@@ -121,7 +124,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   child: RecordWorkToggle(
                                     key: const ValueKey(
                                         'engineer-panel-record-work'),
-                                    deviceControl: widget.controller,
+                                    controller: widget.recordWork,
                                     expand: true,
                                   ),
                                 ),

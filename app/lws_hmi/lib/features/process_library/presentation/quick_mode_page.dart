@@ -10,6 +10,7 @@ import 'package:lws_hmi/features/process_library/application/process_parameter_a
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
+import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/domain/quick_mode_selection.dart';
@@ -48,7 +49,9 @@ final class _QuickModePageState extends State<QuickModePage> {
   String? _lastAppliedUuid;
   String? _statusMessage;
   DeviceControlController? _deviceControl;
+  RecordWorkController? _recordWork;
   CncSessionController? _cncSession;
+  bool _exiting = false;
 
   @override
   void initState() {
@@ -63,7 +66,18 @@ final class _QuickModePageState extends State<QuickModePage> {
       if (services != null) {
         if (_deviceControl == null) {
           _deviceControl = DeviceControlController(services);
+          _deviceControl!.addListener(_onDeviceControlChanged);
           unawaited(_deviceControl!.start());
+          _recordWork = RecordWorkController(
+            deviceControl: _deviceControl!,
+            onMessage: (message) {
+              if (!mounted) {
+                return;
+              }
+              ProcessModeToast.show(context, message);
+            },
+          );
+          unawaited(_recordWork!.start(services));
         }
         if (_cncSession == null) {
           _cncSession = CncSessionController(services);
@@ -83,10 +97,18 @@ final class _QuickModePageState extends State<QuickModePage> {
   @override
   void dispose() {
     _applyDebounce?.cancel();
+    _recordWork?.dispose();
+    _deviceControl?.removeListener(_onDeviceControlChanged);
     _deviceControl?.dispose();
     _cncSession?.removeListener(_onCncSessionChanged);
     _cncSession?.dispose();
     super.dispose();
+  }
+
+  void _onDeviceControlChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onCncSessionChanged() {
@@ -122,7 +144,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     _scheduleApply(next.matched);
   }
 
-  void _onProcessTypeChanged(ProcessType type) {
+  Future<void> _onProcessTypeChanged(ProcessType type) async {
     if (type == _processType) {
       return;
     }
@@ -131,6 +153,11 @@ final class _QuickModePageState extends State<QuickModePage> {
         session != null &&
         session.runningOverlay) {
       _showControlMessage('Turn off CNC first.');
+      return;
+    }
+    // Mode switch always clears continuous feed/retract first (lws-ui).
+    await _deviceControl?.clearContinuousWire();
+    if (!mounted) {
       return;
     }
     if (_processType == ProcessType.cncCutting &&
@@ -159,14 +186,32 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
   }
 
-  void _onBack() {
+  /// Quick Back (lws-ui `finishQuickMode`): stop record + clear continuous
+  /// wire, then return home. Laser stays on until End of work / special exit.
+  Future<void> _handleExit() async {
+    if (_exiting) {
+      return;
+    }
     final session = _cncSession;
     if (session != null && session.blocksNavigation) {
       _showControlMessage('Turn off CNC first.');
       return;
     }
-    Navigator.of(context).maybePop();
+    _exiting = true;
+    try {
+      await _recordWork?.stopRecordingForExit();
+      await _deviceControl?.clearContinuousWire();
+      if (!mounted) {
+        return;
+      }
+      // PopScope(canPop: false) blocks maybePop; force leave after cleanup.
+      Navigator.of(context).pop();
+    } finally {
+      _exiting = false;
+    }
   }
+
+  void _onBack() => unawaited(_handleExit());
 
   Future<void> _onCncExitPressed() async {
     final session = _cncSession;
@@ -460,11 +505,19 @@ final class _QuickModePageState extends State<QuickModePage> {
       offset: const Offset(0, ProcessModeDimens.quickSelectorNudgeY),
       child: QuickModeProcessWheel(
         processType: _processType,
-        onChanged: _onProcessTypeChanged,
+        onChanged: (type) => unawaited(_onProcessTypeChanged(type)),
       ),
     );
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          return;
+        }
+        unawaited(_handleExit());
+      },
+      child: Scaffold(
       backgroundColor: ProcessModeTokens.quickRootBackground,
       appBar: WorkModeStatusBar(
         mode: WorkMode.quick,
@@ -497,14 +550,14 @@ final class _QuickModePageState extends State<QuickModePage> {
               ),
             if (controller.loading && !controller.initialized)
               const Center(child: CircularProgressIndicator()),
-            if (!isCnc && _deviceControl != null)
+            if (!isCnc && _deviceControl != null && _recordWork != null)
               Positioned(
                 // lws-ui activity_quick_mode: marginStart 40 + marginTop 20.
                 top: 20,
                 left: 40,
                 child: RecordWorkToggle(
                   key: const ValueKey('quick-mode-record-work'),
-                  deviceControl: _deviceControl!,
+                  controller: _recordWork!,
                   compact: true,
                 ),
               ),
@@ -633,6 +686,7 @@ final class _QuickModePageState extends State<QuickModePage> {
           ),
         ),
       ),
+    ),
     );
   }
 }

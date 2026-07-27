@@ -14,6 +14,7 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_mediamtx_relay.
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
+import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/record_work_toggle.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
@@ -69,6 +70,9 @@ void main() {
     addTearDown(session.dispose);
     final services = servicesWith(session);
     final device = DeviceControlController(services)..keySwitchOn = true;
+    final record = RecordWorkController(deviceControl: device);
+    addTearDown(record.dispose);
+    await record.start(services);
 
     await tester.pumpWidget(
       AppScope(
@@ -77,16 +81,14 @@ void main() {
           home: Scaffold(
             body: RecordWorkToggle(
               key: const ValueKey('quick-mode-record-work'),
-              deviceControl: device,
+              controller: record,
               compact: true,
             ),
           ),
         ),
       ),
     );
-    for (var i = 0; i < 20; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
+    await tester.pump();
 
     expect(find.text('Record Work'), findsOneWidget);
     expect(

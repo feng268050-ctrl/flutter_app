@@ -2,21 +2,21 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
-import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 
 /// Quick / Engineer Record Work checkbox row (lws-ui `CameraController`).
-final class RecordWorkToggle extends StatefulWidget {
+///
+/// The page owns [RecordWorkController] so exit paths can stop recording
+/// without digging into private widget state.
+final class RecordWorkToggle extends StatelessWidget {
   const RecordWorkToggle({
     super.key,
-    required this.deviceControl,
+    required this.controller,
     this.compact = false,
     this.expand = false,
   });
 
-  final DeviceControlController deviceControl;
+  final RecordWorkController controller;
 
   /// Quick Mode top-left: intrinsic width, smaller label.
   final bool compact;
@@ -25,54 +25,19 @@ final class RecordWorkToggle extends StatefulWidget {
   final bool expand;
 
   @override
-  State<RecordWorkToggle> createState() => _RecordWorkToggleState();
-}
-
-final class _RecordWorkToggleState extends State<RecordWorkToggle> {
-  late final RecordWorkController _record = RecordWorkController(
-    deviceControl: widget.deviceControl,
-    onMessage: (message) {
-      if (!mounted) {
-        return;
-      }
-      ProcessModeToast.show(context, message);
-    },
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_record.start(AppScope.maybeOf(context)));
-    });
-  }
-
-  @override
-  void didUpdateWidget(covariant RecordWorkToggle oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Device control is owned by the page and stays stable for the route.
-  }
-
-  @override
-  void dispose() {
-    _record.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _record,
+      animation: controller,
       builder: (context, _) {
         final row = _RecordWorkRow(
-          armed: _record.armed,
-          enabled: _record.enabled,
-          compact: widget.compact,
-          onChanged: _record.enabled
-              ? (value) => unawaited(_record.setArmed(value))
+          armed: controller.armed,
+          enabled: controller.enabled,
+          compact: compact,
+          onChanged: controller.enabled
+              ? (value) => unawaited(controller.setArmed(value))
               : null,
         );
-        if (widget.expand) {
+        if (expand) {
           return SizedBox.expand(child: row);
         }
         return row;

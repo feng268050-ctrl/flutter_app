@@ -110,6 +110,7 @@ void main() {
     expect(modbus.writes, [
       (DeviceControlIds.wireWork, false),
       (DeviceControlIds.wireManualMode, false),
+      (DeviceControlIds.wireWork, false),
       (DeviceControlIds.laserEnable, false),
       (DeviceControlIds.wireDirection, true),
       (DeviceControlIds.wireWork, true),

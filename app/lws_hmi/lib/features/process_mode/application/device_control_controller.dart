@@ -251,6 +251,13 @@ final class DeviceControlController extends ChangeNotifier {
     notifyListeners();
     try {
       final ok = await services.modbus.exclusiveSession(() async {
+        // Any feed/retract first clears continuous latch (lws-ui close then open).
+        if (!await services.modbus.writeAttribute(
+          DeviceControlIds.wireWork,
+          false,
+        )) {
+          return false;
+        }
         // lws-ui's createOpenFeedConfig/createBackFeedConfig force laser off.
         if (!await services.modbus.writeAttribute(
           DeviceControlIds.laserEnable,
@@ -282,6 +289,9 @@ final class DeviceControlController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Idempotent clear of continuous feed/retract (mode switch / exit prep).
+  Future<LaserEnableBlockReason?> clearContinuousWire() => stopWire();
 
   /// Stop whichever manual wire movement is active.
   Future<LaserEnableBlockReason?> stopWire() async {

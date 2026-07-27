@@ -16,6 +16,7 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
+import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_device_panel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
@@ -102,6 +103,7 @@ void main() {
             height: 700,
             child: EngineerDevicePanel(
               controller: controller,
+              recordWork: RecordWorkController(deviceControl: controller),
               processType: ProcessType.continuousWelding,
               preset: presetFor(ProcessType.continuousWelding),
             ),
@@ -140,6 +142,7 @@ void main() {
             height: 700,
             child: EngineerDevicePanel(
               controller: controller,
+              recordWork: RecordWorkController(deviceControl: controller),
               processType: ProcessType.spotWelding,
               preset: presetFor(ProcessType.spotWelding),
             ),
@@ -171,6 +174,7 @@ void main() {
               height: 700,
               child: EngineerDevicePanel(
                 controller: controller,
+              recordWork: RecordWorkController(deviceControl: controller),
                 processType: ProcessType.continuousWelding,
                 preset: presetFor(ProcessType.continuousWelding),
               ),
@@ -201,6 +205,9 @@ void main() {
     final controller =
         DeviceControlController(servicesWith(_RecordingModbus()))
           ..keySwitchOn = true;
+    final record = RecordWorkController(deviceControl: controller);
+    addTearDown(record.dispose);
+    await record.start(null);
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
@@ -211,6 +218,7 @@ void main() {
             height: 700,
             child: EngineerDevicePanel(
               controller: controller,
+              recordWork: record,
               processType: ProcessType.continuousWelding,
               preset: presetFor(ProcessType.continuousWelding),
             ),
@@ -248,6 +256,7 @@ void main() {
             height: 700,
             child: EngineerDevicePanel(
               controller: controller,
+              recordWork: RecordWorkController(deviceControl: controller),
               processType: ProcessType.continuousWelding,
               preset: presetFor(ProcessType.continuousWelding),
             ),

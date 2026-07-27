@@ -92,6 +92,18 @@ final class RecordWorkController extends ChangeNotifier {
     await _syncRecordingWithArmedAndLaser();
   }
 
+  /// Mode exit (lws-ui `tryStopRecord`): disarm and stop any active encode.
+  Future<void> stopRecordingForExit() async {
+    if (_disposed) {
+      return;
+    }
+    if (_armed) {
+      _armed = false;
+      notifyListeners();
+    }
+    await _syncRecordingWithArmedAndLaser();
+  }
+
   void _onDeviceControlChanged() {
     if (_disposed) {
       return;

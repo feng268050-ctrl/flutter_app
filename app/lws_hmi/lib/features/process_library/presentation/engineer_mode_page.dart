@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/process_library/application/process_library_sco
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
+import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_mode_draft.dart';
 import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
@@ -58,6 +59,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
 
   bool _bootstrapped = false;
   DeviceControlController? _deviceControl;
+  RecordWorkController? _recordWork;
+  bool _exiting = false;
 
   @override
   void initState() {
@@ -76,6 +79,16 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       if (services != null && _deviceControl == null) {
         _deviceControl = DeviceControlController(services);
         unawaited(_deviceControl!.start());
+        _recordWork = RecordWorkController(
+          deviceControl: _deviceControl!,
+          onMessage: (message) {
+            if (!mounted) {
+              return;
+            }
+            ProcessModeToast.show(context, message);
+          },
+        );
+        unawaited(_recordWork!.start(services));
         setState(() {});
       }
       unawaited(_bootstrap());
@@ -84,6 +97,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
 
   @override
   void dispose() {
+    _recordWork?.dispose();
     _deviceControl?.dispose();
     super.dispose();
   }
@@ -142,6 +156,13 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (type == _processType) {
       return;
     }
+    // lws-ui `selectModel`: clear continuous wire, stop record, then laser off.
+    await _deviceControl?.clearContinuousWire();
+    await _recordWork?.stopRecordingForExit();
+    await _deviceControl?.disableLaser();
+    if (!mounted) {
+      return;
+    }
     final controller = ProcessLibraryScope.of(context);
     setState(() {
       if (_draft != null) {
@@ -159,6 +180,27 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       );
     });
   }
+
+  /// Engineer Back (lws-ui): disable laser, stop record, then return home.
+  Future<void> _handleExit() async {
+    if (_exiting) {
+      return;
+    }
+    _exiting = true;
+    try {
+      await _deviceControl?.disableLaser();
+      await _recordWork?.stopRecordingForExit();
+      if (!mounted) {
+        return;
+      }
+      // PopScope(canPop: false) blocks maybePop; force leave after cleanup.
+      Navigator.of(context).pop();
+    } finally {
+      _exiting = false;
+    }
+  }
+
+  void _onBack() => unawaited(_handleExit());
 
   Future<void> _openFavorites() async {
     final controller = ProcessLibraryScope.of(context);
@@ -388,11 +430,20 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     final draft = _draft;
     final accent = ProcessModeTokens.tabActiveColor(_processType);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          return;
+        }
+        unawaited(_handleExit());
+      },
+      child: Scaffold(
       backgroundColor: ProcessModeTokens.background,
       appBar: WorkModeStatusBar(
         mode: WorkMode.engineer,
         processType: _processType,
+        onBack: _onBack,
       ),
       body: ProcessModeToastLayer(
         child: CyberBlurBackdropScope(
@@ -434,14 +485,16 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                             child: SizedBox(
                               key: const ValueKey(
                                   'engineer-device-panel-container'),
-                              child: _deviceControl == null
-                                  ? const SizedBox.shrink()
-                                  : EngineerDevicePanel(
-                                      controller: _deviceControl!,
-                                      processType: _processType,
-                                      preset: draft.preset,
-                                      onBeforeEnableLaser: _beforeEnableLaser,
-                                    ),
+                                  child: _deviceControl == null ||
+                                          _recordWork == null
+                                      ? const SizedBox.shrink()
+                                      : EngineerDevicePanel(
+                                          controller: _deviceControl!,
+                                          recordWork: _recordWork!,
+                                          processType: _processType,
+                                          preset: draft.preset,
+                                          onBeforeEnableLaser: _beforeEnableLaser,
+                                        ),
                             ),
                           ),
                           const SizedBox(width: 24),
@@ -674,6 +727,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
           ),
         ),
       ),
+    ),
     );
   }
 }

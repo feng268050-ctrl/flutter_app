@@ -538,7 +538,7 @@ final class _QuickModePageState extends State<QuickModePage> {
                     laserOn: false,
                   ),
                 ),
-              // Gear / thickness: value-wheel center = accent midline (ring-hug).
+              // Gear / thickness: scale ↔ circle center; values nudge separately.
               Align(
                 alignment: Alignment.center,
                 child: Transform.translate(

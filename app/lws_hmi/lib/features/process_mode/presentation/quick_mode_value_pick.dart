@@ -6,45 +6,61 @@ import 'package:lws_hmi/features/process_mode/presentation/quick_mode_offset_whe
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 
 /// Shared dimens for gear / thickness V2-style picks (lws-ui quick_mode_picker_*).
+///
+/// Values are fixed logical px for Flutter HMI (no runtime scale factor).
 abstract final class QuickModePickerDimens {
-  static const double scale = 2 / 3;
-  static const double pickWidth = 280 * scale;
-  static const double titleHeight = 48 * scale;
-  static const double titleTextSize = 29 * scale;
-  static const double titleScaleGap = 24 * scale;
-  static const double scaleHeight = 402 * scale;
-  static const double bottomPadding = 70 * scale;
-  static const double scaleImageWidth = 80.2 * scale;
-  static const double valueWheelWidth = 140 * scale;
-  static const double materialWidth = 320 * scale;
-  static const double materialHeight = 360 * scale;
-  static const double itemHeight = 68 * scale;
-  static const double selectedTextSize = 28 * scale;
-  static const double unselectedTextSize = 24 * scale;
-  static const double selectedTextPadding = 24 * scale;
+  static const double pickWidth = 560 / 3; // 186.666…
+  static const double titleHeight = 32;
+  static const double titleTextSize = 58 / 3; // 19.333…
+  static const double titleScaleGap = 16;
+  /// lws-ui `quick_mode_picker_scale_height` / scale ImageView height.
+  static const double scaleHeight = 402;
+  static const double bottomPadding = 140 / 3; // 46.666…
+  /// lws-ui gear/thickness scale ImageView width (`80.2dp`).
+  static const double scaleImageWidth = 80.2;
+
+  /// Visual shrink of the scale asset about its center (layout box unchanged).
+  static const double scaleImageVisualScale = 0.88;
+  static const double valueWheelWidth = 280 / 3; // 93.333…
+  static const double materialWidth = 640 / 3; // 213.333…
+  static const double materialHeight = 240;
+  static const double itemHeight = 136 / 3; // 45.333…
+  static const double selectedTextSize = 56 / 3; // 18.666…
+  static const double unselectedTextSize = 16;
+  static const double selectedTextPadding = 16;
   static const Color titleColor = Colors.white;
 
-  static const double gearTitleOffset = -40 * scale;
+  static const double gearTitleOffset = -80 / 3; // -26.666…
 
   /// Selection band width — chip centered on the selected value.
   static const double accentWidth =
       selectedTextPadding * 2 + selectedTextSize * 2.5;
 
   /// Gap between scale chrome and the value wheel.
-  static const double scaleValueGap = 4 * scale;
+  static const double scaleValueGap = 8 / 3; // 2.666…
 
   /// Value wheel inset from the pick's outer (scale) side.
   static const double valueWheelInset = scaleImageWidth + scaleValueGap;
 
-  /// Pull both scales inward toward the value / screen center (design 70dp).
-  static const double scaleInwardInset = 70 * scale;
+  /// Scale layout inner edge → thin bright ring (horizontal through center).
+  static const double scaleToOuterFrameGap = 20;
 
-  /// lws-ui gear/thickness wheel cylinder (offset arc via item padding).
+  /// Pull scales inward so [scaleToOuterFrameGap] holds with value ring-hug:
+  /// `accentWidth/2 + scaleValueGap + valueWheelWidth/2 - gap`.
+  static const double scaleInwardInset =
+      accentWidth / 2 + scaleValueGap + valueWheelWidth / 2 - scaleToOuterFrameGap;
+
+  /// Extra end padding per wheel distance unit (material arc, lws-ui linear).
+  static const double materialArcPadPerDistance = 20 / 3; // 6.666…
+
+  /// lws-ui gear/thickness wheel cylinder (ListWheelScrollView).
   static const double wheelDiameterRatio = 5.5;
   static const double wheelPerspective = 0.002;
 
+  /// lws-ui OffsetWheelBuilder.builderOffsetGearOffset:
+  /// `abs(d)^2 * 8 + 24` (design dp → logical px here).
   static double unselectedOffset(double distance) =>
-      (distance * distance * 8 + 24) * scale;
+      distance * distance * 8 + 24;
 
   /// Selected-value X from page center (accent midline, just outside the ring).
   static double gearValueCenterFromPageCenter(double highlightR) =>
@@ -69,8 +85,11 @@ abstract final class QuickModePickerDimens {
 
 /// Vertical value wheel with scale chrome (GearPickV2 / ThicknessPickV2).
 ///
-/// Selected numbers sit on the local accent midline; unselected rows arc
-/// toward the scale (lws-ui OffsetWheel padding direction).
+/// Scale image stays on the pick's vertical center (page places that on the
+/// dashboard circle). Selected values / accent chip are lifted by
+/// [ProcessModeDimens.quickSelectorNudgeY] to share the mode / material
+/// selection midline. Unselected rows arc toward the scale (lws-ui OffsetWheel
+/// padding direction).
 final class QuickModeValuePick extends StatelessWidget {
   const QuickModeValuePick({
     super.key,
@@ -137,13 +156,24 @@ final class QuickModeValuePick extends StatelessWidget {
                       : QuickModePickerDimens.scaleInwardInset,
                   top: 0,
                   bottom: 0,
-                  child: Image.asset(
-                    scaleOnLeft
-                        ? ProcessModeAssets.scaleLeft
-                        : ProcessModeAssets.scaleRight,
-                    width: QuickModePickerDimens.scaleImageWidth,
-                    fit: BoxFit.fitHeight,
-                    filterQuality: FilterQuality.medium,
+                  width: QuickModePickerDimens.scaleImageWidth,
+                  child: Transform.scale(
+                    scale: QuickModePickerDimens.scaleImageVisualScale,
+                    alignment: Alignment.center,
+                    child: Image.asset(
+                      scaleOnLeft
+                          ? ProcessModeAssets.scaleLeft
+                          : ProcessModeAssets.scaleRight,
+                      key: ValueKey(
+                        scaleOnLeft
+                            ? 'quick-mode-scale-left'
+                            : 'quick-mode-scale-right',
+                      ),
+                      width: QuickModePickerDimens.scaleImageWidth,
+                      height: QuickModePickerDimens.scaleHeight,
+                      fit: BoxFit.fill,
+                      filterQuality: FilterQuality.medium,
+                    ),
                   ),
                 ),
                 Positioned(
@@ -156,25 +186,31 @@ final class QuickModeValuePick extends StatelessWidget {
                       ? null
                       : QuickModePickerDimens.valueWheelInset,
                   width: QuickModePickerDimens.valueWheelWidth,
-                  child: QuickModeOffsetWheel(
-                    itemCount: values.length,
-                    selectedIndex: selectedIndex,
-                    itemExtent: QuickModePickerDimens.itemHeight,
-                    diameterRatio: QuickModePickerDimens.wheelDiameterRatio,
-                    perspective: QuickModePickerDimens.wheelPerspective,
-                    // Keep cylinder on-axis so the selected digit stays on the
-                    // accent midline; horizontal arc is Transform (lws-ui
-                    // OffsetWheel pad direction: gear → right, thickness → left).
-                    offAxisFraction: 0,
-                    onChanged: onChanged,
-                    fixedAccent: _ValueAccentChip(accent: accent),
-                    itemBuilder: (context, index, distance) {
-                      return _ValuePickItem(
-                        label: labelOf(values[index]),
-                        distance: distance,
-                        scaleOnLeft: scaleOnLeft,
-                      );
-                    },
+                  child: Transform.translate(
+                    offset: const Offset(
+                      0,
+                      ProcessModeDimens.quickSelectorNudgeY,
+                    ),
+                    child: QuickModeOffsetWheel(
+                      itemCount: values.length,
+                      selectedIndex: selectedIndex,
+                      itemExtent: QuickModePickerDimens.itemHeight,
+                      diameterRatio: QuickModePickerDimens.wheelDiameterRatio,
+                      perspective: QuickModePickerDimens.wheelPerspective,
+                      // Keep cylinder on-axis so the selected digit stays on the
+                      // accent midline; horizontal arc is EdgeInsets padding
+                      // (lws-ui OffsetWheel left/right pad).
+                      offAxisFraction: 0,
+                      onChanged: onChanged,
+                      fixedAccent: _ValueAccentChip(accent: accent),
+                      itemBuilder: (context, index, distance) {
+                        return _ValuePickItem(
+                          label: labelOf(values[index]),
+                          distance: distance,
+                          scaleOnLeft: scaleOnLeft,
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -232,33 +268,39 @@ final class _ValuePickItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final atCenter = distance < 0.5;
     final alpha = atCenter ? 1.0 : (1.0 - distance * 0.2).clamp(0.4, 1.0);
-    // lws-ui OffsetWheelBuilder:
-    // - Gear offsetDirection=1 (right): unselected pad *left* → text arcs
-    //   bottom-right ↔ top-right (toward dashboard).
-    // - Thickness offsetDirection=0 (left): unselected pad *right* → text
-    //   arcs bottom-left ↔ top-left.
-    final sidePad = atCenter
-        ? 0.0
-        : QuickModePickerDimens.unselectedOffset(distance);
-    final arcX = scaleOnLeft ? sidePad : -sidePad;
-    return Transform.translate(
-      offset: Offset(arcX, 0),
-      child: Align(
-        alignment: Alignment.center,
+    final text = Text(
+      label,
+      style: TextStyle(
+        color: Colors.white.withOpacity(alpha),
+        fontSize: atCenter
+            ? QuickModePickerDimens.selectedTextSize
+            : QuickModePickerDimens.unselectedTextSize,
+        fontWeight: atCenter ? FontWeight.w600 : FontWeight.w400,
+      ),
+    );
+
+    // Selected / center row stays on the accent midline (特效中心).
+    if (atCenter) {
+      return SizedBox(
+        height: QuickModePickerDimens.itemHeight,
+        child: Center(child: text),
+      );
+    }
+
+    // lws-ui OffsetWheelAdapter unselected arc via one-sided padding:
+    // gear pad left → toward dashboard; thickness pad right.
+    final offset = QuickModePickerDimens.unselectedOffset(distance);
+    final align =
+        scaleOnLeft ? Alignment.centerLeft : Alignment.centerRight;
+    return Align(
+      alignment: align,
+      child: Padding(
+        padding: scaleOnLeft
+            ? EdgeInsets.only(left: offset)
+            : EdgeInsets.only(right: offset),
         child: SizedBox(
           height: QuickModePickerDimens.itemHeight,
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(alpha),
-                fontSize: atCenter
-                    ? QuickModePickerDimens.selectedTextSize
-                    : QuickModePickerDimens.unselectedTextSize,
-                fontWeight: atCenter ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
-          ),
+          child: Align(alignment: align, child: text),
         ),
       ),
     );

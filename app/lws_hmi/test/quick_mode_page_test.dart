@@ -146,13 +146,25 @@ void main() {
         1,
       ),
     );
-    // Local accent chips are centered on the value-wheel viewport (selected digit).
+    // Scale image ↔ dashboard circle center; value accent ↔ mode / material.
     final accents = find.byKey(const ValueKey('quick-mode-value-pick-accent'));
     expect(accents, findsNWidgets(2));
     final gearAccent = tester.getCenter(accents.at(0));
     final thicknessAccent = tester.getCenter(accents.at(1));
-    expect(gearAccent.dy, closeTo(modeCenter.dy, 3));
-    expect(thicknessAccent.dy, closeTo(modeCenter.dy, 3));
+    final selectionMidlineY =
+        dashboardCenter.dy + ProcessModeDimens.quickSelectorNudgeY;
+    expect(gearAccent.dy, closeTo(selectionMidlineY, 3));
+    expect(thicknessAccent.dy, closeTo(selectionMidlineY, 3));
+    expect(modeCenter.dy, closeTo(selectionMidlineY, 1));
+    expect(materialCenter.dy, closeTo(selectionMidlineY, 2));
+    final scaleLeft = tester.getCenter(
+      find.byKey(const ValueKey('quick-mode-scale-left')),
+    );
+    final scaleRight = tester.getCenter(
+      find.byKey(const ValueKey('quick-mode-scale-right')),
+    );
+    expect(scaleLeft.dy, closeTo(dashboardCenter.dy, 3));
+    expect(scaleRight.dy, closeTo(dashboardCenter.dy, 3));
     // Pick placement tracks accent / value slot vs thin bright ring.
     final dashboardSize = tester.getSize(
       find.byKey(const ValueKey('quick-mode-laser-dashboard')),

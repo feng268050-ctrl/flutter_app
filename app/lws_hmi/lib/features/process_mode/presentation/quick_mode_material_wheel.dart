@@ -35,7 +35,7 @@ final class QuickModeMaterialWheel extends StatelessWidget {
           final alpha =
               selected ? 1.0 : (1.0 - distance * 0.2).clamp(0.4, 1.0);
           final endPad = QuickModePickerDimens.selectedTextPadding +
-              distance * (10 * QuickModePickerDimens.scale);
+              distance * QuickModePickerDimens.materialArcPadPerDistance;
           return Align(
             alignment: Alignment.centerRight,
             child: Padding(

@@ -101,26 +101,24 @@ abstract final class ProcessModeTokens {
 abstract final class ProcessModeDimens {
   static const double designWidth = 1280;
   static const double designHeight = 800;
-  static const double quickSelectorScale = 2 / 3;
 
   /// Status bar height shared with [WorkModeStatusBarDimens.height].
   static const double statusBarHeight = WorkModeStatusBarDimens.height;
 
   // --- Quick mode process wheel (activity_quick_mode.xml) ---
+  // Fixed logical px (lws-ui design values frozen for Flutter HMI).
 
-  /// lws-ui selector metrics rendered at 2/3 scale on Flutter.
-  static const double wheelWidth = 260 * quickSelectorScale;
-  static const double wheelHeight = 340 * quickSelectorScale;
-  static const double wheelItemHeight = 68 * quickSelectorScale;
-  static const double wheelSelectedTextSize = 28 * quickSelectorScale;
-  static const double wheelUnselectedTextSize = 24 * quickSelectorScale;
+  static const double wheelWidth = 520 / 3; // 173.333…
+  static const double wheelHeight = 680 / 3; // 226.666…
+  static const double wheelItemHeight = 136 / 3; // 45.333…
+  static const double wheelSelectedTextSize = 56 / 3; // 18.666…
+  static const double wheelUnselectedTextSize = 16;
   static const double wheelAccentBandWidth = 400;
-  static const double wheelAccentSolidWidth = 275 * quickSelectorScale;
-  static const double wheelSelectedPadding = 24 * quickSelectorScale;
-  static const double wheelDistancePadding = 10 * quickSelectorScale;
+  static const double wheelAccentSolidWidth = 550 / 3; // 183.333…
+  static const double wheelSelectedPadding = 16;
+  static const double wheelDistancePadding = 20 / 3; // 6.666…
 
-  /// Clears the scaled process wheel / left accent (Android used 310 with a
-  /// full-size 260 wheel; HMI wheel is 2/3 so the inset is reduced).
+  /// Clears the process wheel / left accent for the CNC guide.
   static const double cncGuideLeftInset = 210;
   static const double cncGuideTopInset = 24;
   static const double cncGuideRightInset = 24;
@@ -139,21 +137,18 @@ abstract final class ProcessModeDimens {
     return math.min(1.0, math.min(widthScale, heightScale));
   }
 
-  /// Quick-mode picker placement remains on its existing 2/3 design grid.
-  /// The dashboard itself uses [dashboardScaleFor] at runtime.
-  static const double dashboardScale = 2 / 3;
-  static const double dashboardSize = dashboardDesignSize * dashboardScale;
-  static const double dashboardOuterRing = 570 * dashboardScale;
+  /// Fixed reference size for picker placement math (live dashboard uses
+  /// [dashboardScaleFor] at runtime).
+  static const double dashboardSize = 380;
+  static const double dashboardOuterRing = 380;
 
   /// Outer rail stroke (design dp) — equal to inner (`laser_circular_seek_mini`).
   static const double dashboardOuterStrokeDesign = 50;
-  static const double dashboardOuterStroke =
-      dashboardOuterStrokeDesign * dashboardScale;
+  static const double dashboardOuterStroke = 100 / 3; // 33.333…
 
   /// Thin bright line (lws-ui `laser_circular_seek_line` progress_width).
   static const double dashboardLineStrokeDesign = 6;
-  static const double dashboardLineStroke =
-      dashboardLineStrokeDesign * dashboardScale;
+  static const double dashboardLineStroke = 4;
 
   /// Thin highlight path radius matches the outer rail outer face (outerRing/2).
   static const double dashboardLineRing =
@@ -178,22 +173,22 @@ abstract final class ProcessModeDimens {
   static const double dashboardBorderWidth = dashboardLineRing;
   static const double dashboardBorderHeight =
       dashboardBorderWidth * (573.5 / 541);
-  static const double dashboardSplitOffsetY = 8 * dashboardScale;
+  static const double dashboardSplitOffsetY = 16 / 3; // 5.333…
   static const double dashboardBorderOffsetX = 0;
-  static const double dashboardBorderOffsetY = 8 * dashboardScale;
+  static const double dashboardBorderOffsetY = 16 / 3; // 5.333…
 
   /// lws-ui `text_size_14` / `text_size_48` / `text_size_10` (named ≠ sp).
-  static const double dashboardTitleSize = 33 * dashboardScale;
-  static const double dashboardValueSize = 101 * dashboardScale;
-  static const double dashboardUnitSize = 25 * dashboardScale;
+  static const double dashboardTitleSize = 22;
+  static const double dashboardValueSize = 202 / 3; // 67.333…
+  static const double dashboardUnitSize = 50 / 3; // 16.666…
 
   /// Keep content rhythm proportional to the enlarged pressure panel.
   static const double dashboardContentTop = 50 * dashboardInnerSize / 372;
   static const double dashboardContentGap = 5 * dashboardInnerSize / 372;
   static const double dashboardButtonGap = 16.5 * dashboardInnerSize / 372;
-  static const double dashboardButtonTextSize = 14 * dashboardScale;
-  static const double dashboardButtonIconSize = 18 * dashboardScale;
-  static const double dashboardButtonIconGap = 4 * dashboardScale;
+  static const double dashboardButtonTextSize = 28 / 3; // 9.333…
+  static const double dashboardButtonIconSize = 12;
+  static const double dashboardButtonIconGap = 8 / 3; // 2.666…
 
   /// `fragment_general_operations.xml` LaserButtonLinearLayout design bounds.
   /// Runtime size uses the same 1280×800 scale as the center dashboard.
@@ -233,37 +228,36 @@ abstract final class ProcessModeDimens {
         (dashboardLineStrokeDesign * s) / 2;
   }
 
-  /// Lift mode / material / gear / thickness together (design canvas px).
+  /// Lift mode / material selection midline (and gear/thickness value + accent
+  /// only — scale chrome stays on the dashboard circle center).
   static const double quickSelectorNudgeY = -25;
 
   /// Gear/Thickness: toStartOf/toEndOf dashboard + overlap + translation.
-  static const double pickerWidth = 280 * quickSelectorScale;
-  static const double pickerCenterOverlap = 150 * quickSelectorScale;
+  static const double pickerWidth = 560 / 3; // 186.666…
+  static const double pickerCenterOverlap = 100;
   /// Smaller than lws-ui 60dp so gear/thickness sit further outward.
-  static const double pickerHorizontalOffset = 20 * quickSelectorScale;
+  static const double pickerHorizontalOffset = 40 / 3; // 13.333…
 
   /// lws-ui `translationY="-8dp"` on gear/thickness pickers — omitted from
   /// page Y so the selected value / accent shares mode & material midline.
-  static const double pickerVerticalOffset = -8 * quickSelectorScale;
+  static const double pickerVerticalOffset = -16 / 3; // -5.333…
 
-  /// Shift so the scale / selected-row center (not the Column midpoint) sits on
-  /// the Align(center) point — matching mode/material selection height.
+  /// Column asymmetry: scale image center vs pick widget center.
   static double get pickerScaleCenterOffsetY {
-    const title = 48 * quickSelectorScale;
-    const gap = 24 * quickSelectorScale;
-    const scaleH = 402 * quickSelectorScale;
-    const bottom = 70 * quickSelectorScale;
+    const title = 32.0;
+    const gap = 16.0;
+    const scaleH = 402.0;
+    const bottom = 140 / 3; // 46.666…
     const total = title + gap + scaleH + bottom;
     const scaleCenterFromTop = title + gap + scaleH / 2;
     return total / 2 - scaleCenterFromTop;
   }
 
-  /// Page Y for gear/thickness (accent + value on mode/material midline).
-  static double get pickerVerticalFromPageCenter =>
-      pickerScaleCenterOffsetY + quickSelectorNudgeY;
+  /// Page Y for gear/thickness pick chrome (scale center ↔ dashboard circle).
+  /// Value wheel / accent are nudged separately via [quickSelectorNudgeY].
+  static double get pickerVerticalFromPageCenter => pickerScaleCenterOffsetY;
 
-  static const double materialVerticalOffset =
-      -2 * quickSelectorScale + quickSelectorNudgeY;
+  static const double materialVerticalOffset = -79 / 3; // -26.333…
 
   /// Gear/Thickness center X from page center (lws-ui RelativeLayout math).
   static double get pickerCenterFromPageCenter =>

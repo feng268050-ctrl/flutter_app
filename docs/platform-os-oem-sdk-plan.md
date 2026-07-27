@@ -250,7 +250,7 @@ AppServices(boardProfile: profile) …
 | `oem.img`（**ext4**） | `FACTORY_SKU=… make build-oem` | 输出到该 SKU 目录（与 U-Boot 同套解析逻辑，见 §5.6） |
 | `factory.img` | `FACTORY_SKU=… make build-img` | 打包时按 SKU **导入对应 uboot + oem**；取代单一 `update.img` 心智 |
 | 工厂刷写 | `FACTORY_SKU=… make flash` | 刷入该 SKU 目录下的 `factory.img`（可用 `IMAGE=` 覆盖） |
-| 字段升级 | `make upgrade`；OEM 调试用 `make upgrade OEM_ONLY=1`；`OEM_IMG=` 可选覆盖路径 | A/B 流式（OEM_ONLY 仅写 oem）；**不**等同 `flash` |
+| 字段升级 | `make upgrade`；OEM 调试：`OEM_ONLY=1 make upgrade`（或 `.env`）；`OEM_IMG=` 跳过 oem / 路径覆盖 | A/B 流式（`OEM_ONLY=1` 仅写 oem）；**不**等同 `flash` |
 
 `scripts/verify-rootfs-overlay.sh` 增加：装配器单元存在；可选校验 staging 的 oem 内容（若 build 流水线生成）。
 
@@ -563,7 +563,7 @@ W1  OEM 垂直切片（真机 ynh960）
     ├─ make build-oem；upgrade/flash 带 oem.img
     └─ 迁移期 fallback
 
-W2  Rootfs/脚本瘦身
+W2  Rootfs/脚本瘦身（进行中 → OpenSpec `platform-rootfs-script-thinning`）
     ├─ helpers → OEM
     ├─ hmi-launch 只读 /run/hmi
     └─ private1 双读 → screen pack

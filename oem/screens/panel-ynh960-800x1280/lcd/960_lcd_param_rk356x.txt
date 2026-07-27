@@ -1,0 +1,47 @@
+###lcd_param_start###
+board=ynh960;
+lcd0_type=1;//屏参 1:mipi lcd 2:hdmi 3:edp
+lcd1_type=2;//屏参 1:mipi lcd 2:hdmi 3:edp
+
+lcd0_clk=68;
+lcd0_x=800; 
+lcd0_y=1280; 
+lcd0_hbp=20;
+lcd0_hfp=72;
+lcd0_hspw=20;
+lcd0_vfp=30;
+lcd0_vbp=12;
+lcd0_vspw=4;
+lcd0_bus_format=0;
+lcd0_rotation=90;
+
+lcd1_clk=140;
+lcd1_x=1920; 
+lcd1_y=1080; 
+lcd1_hbp=120;
+lcd1_hfp=220;
+lcd1_hspw=40;
+lcd1_vfp=8;
+lcd1_vbp=4;
+lcd1_vspw=4;
+lcd1_bus_format=0;
+lcd1_rotation=0;
+
+mipi_lcd_index =-1;
+
+//背光参数
+lcd0_backlight_min =10;//1~255
+lcd0_backlight_max =130;  //1~255
+lcd1_backlight_min = -1;
+lcd1_backlight_max = -1;
+
+//主触摸屏旋转角度
+ro.sf.lcd0_input_rotation=0;  0/90/180/270主触摸角度
+
+//音量参数
+max_volume=255; // max_volume > default_volume
+
+//屏幕显示密度
+lcd_density=160;
+
+###lcd_param_end###

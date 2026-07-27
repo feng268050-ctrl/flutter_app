@@ -26,17 +26,43 @@ EOF
 	chmod 600 "$WPA_CONF"
 fi
 
-# Load SDIO Wi-Fi (ynh960 AIC8800D80) via Innohi-compatible bringup.
-if [ -x /usr/libexec/bluetooth/wifibt-bringup.sh ]; then
-	/usr/libexec/bluetooth/wifibt-bringup.sh || {
-		log "wifibt-bringup failed"
-		exit 1
-	}
-else
-	log "wifibt-bringup.sh missing"
-	exit 1
-fi
+# Load SDIO Wi-Fi via board OEM modem helper (profile / oem.env / wrapper).
+resolve_wifi_modem() {
+	if [ -n "${WIFI_MODEM_HELPER:-}" ] && [ -x "$WIFI_MODEM_HELPER" ]; then
+		printf '%s\n' "$WIFI_MODEM_HELPER"
+		return 0
+	fi
+	if [ -f /run/hmi/oem.env ]; then
+		# shellcheck source=/dev/null
+		. /run/hmi/oem.env
+		if [ -n "${WIFI_MODEM_HELPER:-}" ] && [ -x "$WIFI_MODEM_HELPER" ]; then
+			printf '%s\n' "$WIFI_MODEM_HELPER"
+			return 0
+		fi
+	fi
+	if [ -f /run/hmi/board_profile.json ]; then
+		p="$(sed -n 's/.*"wifi_modem"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /run/hmi/board_profile.json | head -1)"
+		if [ -n "$p" ] && [ -x "$p" ]; then
+			printf '%s\n' "$p"
+			return 0
+		fi
+	fi
+	if [ -x /usr/libexec/bluetooth/wifibt-bringup.sh ]; then
+		printf '%s\n' /usr/libexec/bluetooth/wifibt-bringup.sh
+		return 0
+	fi
+	return 1
+}
 
+MODEM="$(resolve_wifi_modem)" || {
+	log "wifi modem helper missing"
+	exit 1
+}
+log "modem helper $MODEM"
+"$MODEM" || {
+	log "wifibt-bringup failed"
+	exit 1
+}
 detect_wlan() {
 	for d in /sys/class/net/*; do
 		[ -e "$d" ] || continue

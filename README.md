@@ -128,8 +128,8 @@ Firmware stage outputs:
 - `make build-rootfs` builds `rootfs.img` (Weston + `flutter-wayland-client` + Mali `wayland-gbm`) and publishes it to `output/firmware/`. Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`.
 - `make prepare-rootfs` flips Buildroot stack prep (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. `build-rootfs` calls prepare first (skips when stamp + binaries already match).
 - `make build-img` does **not** compile the kernel or rootfs. It requires `make build-oem`, then packages loader, U-Boot, misc, both FIT images, rootfs, and **oem** into `output/firmware/<FACTORY_SKU>/factory.img` (default sku `ynh960-p800`) and refreshes `output/firmware/update.img` as a symlink for `make flash`.
-- Full-system `make upgrade` does **not** transfer `factory.img`. It **streams** `rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), defaults to streaming resolved `oem.img` when present (`OEM_IMG=` empty to skip), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). Wait for the device to finish restarting before reconnecting.
-- OEM-only (board helpers / profile / screen pack): `make build-oem` then `make upgrade OEM_ONLY=1` — streams `oem.img` only and plain-reboots (no A/B letter switch).
+- Full-system `make upgrade` does **not** transfer `factory.img`. It **streams** `rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), defaults to streaming resolved `oem.img` when present (`OEM_IMG= make upgrade` to skip oem), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). Wait for the device to finish restarting before reconnecting.
+- OEM-only (board helpers / profile / screen pack): `make build-oem` then `OEM_ONLY=1 make upgrade` — streams `oem.img` only and plain-reboots (no A/B letter switch). Set `OEM_ONLY=1` in `.env` for repeated OEM iteration.
 
 ### Daily iteration — by what you changed
 
@@ -284,16 +284,16 @@ make shell                      # interactive root shell; SN=... when multiple b
 make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL=1
 make build-app
 make push-app                   # SN=... when multiple boards; hot-swap /opt/hmi (no rootfs rebuild)
-make set-prop BRAND=Innohi MODEL=YNH960   # upsert /var/lib/hal/product.ini (multi-key OK); restarts hmi
-# Multi-board + product SN: CHIPID=<chip> make set-prop SN=FACTORY-001
+make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/product.ini (multi-key OK); restarts hmi
+# brand / model / sn are OEM-only — edit oem/boards/<sku>/product.ini (not set-prop / del-prop)
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
-make del-prop CAMERA_IP         # remove one product.ini key; restarts hmi if changed
+make del-prop CAMERA_IP         # remove one tunable key; restarts hmi if changed
 make upgrade                    # A/B stream inactive FIT+rootfs (board already on P2.4 GPT)
 ```
 
-Device selection: use **`SN=`** / **`LWS_HMI_SN=`** (matches `make devices` **SN** or **ChipID**). **`CHIPID=`** matches ChipID only. Put `SN=` / `IP=` in `.env` for IDE / daily use.
+Device selection: use **`SN=`** / **`LWS_HMI_SN=`** (matches `make devices` **SN** or **ChipID**). **`CHIPID=`** matches ChipID only. Put `SN=` / `IP=` / **`OEM_ONLY=`** / **`OEM_IMG=`** in `.env` for IDE / daily use.
 
 Alarm history persists in SQLite **`/var/lib/hmi/alarm-logs.db`** (→ `/userdata/hmi/alarm-logs.db`, table `alarm_logs`) — kept across `push-app` / `make upgrade`.
 
@@ -312,8 +312,7 @@ IP=192.168.1.50 make upgrade    # stream-to-partition; not RockUSB / not online 
 make disconnect 192.168.1.50
 ```
 
-`IP=` selects **registered SSH only** (never USB-SSH). `SN=` selects by **SN** or **ChipID** (`make devices` columns: MODE / SN / ChipID / …). `CHIPID=` selects by ChipID only (useful with `make set-prop SN=…` on multi-board). USB-SSH/SSH **SN** prefers `product.ini` `sn`, else chip ID; **ChipID** is always the chip serial. Android adb / RockUSB loader rows put the adb/SerialNo in both SN and ChipID. `make reboot` works over SSH; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`.
-
+`IP=` selects **registered SSH only** (never USB-SSH). `SN=` selects by **SN** or **ChipID** (`make devices` columns: MODE / SN / ChipID / …). `CHIPID=` selects by ChipID only (multi-board). USB-SSH/SSH **SN** prefers `product.ini` `sn`, else chip ID; **ChipID** is always the chip serial. Android adb / RockUSB loader rows put the adb/SerialNo in both SN and ChipID. `make reboot` works over SSH; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. Product identity keys `brand` / `model` / `sn` come from the OEM seed only — `make set-prop` / `del-prop` refuse them.
 Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
 
 `make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) **streams** **`rootfs.img` + the inactive letter’s FIT** into partitions with single-line write progress, arms try-boot, and reboots — **not** RockUSB/`upgrade_tool uf` (use **`make flash`** for GPT / U-Boot) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
@@ -567,8 +566,7 @@ App deploy without reflash:
 ```bash
 make build-app
 make push-app                  # SN=... or IP=... when multiple devices
-make set-prop BRAND=Innohi MODEL=YNH960   # optional: factory product.ini over SSH
-```
+make set-prop CAMERA_IP=192.168.1.50   # optional: product tunables over SSH (not brand/model/sn)```
 
 ### macOS Docker Desktop tips
 

@@ -62,13 +62,18 @@ OEM_ONLY=1:
 Does not stage full images under /userdata/ota/ (unlike online OTA).
 For app-only iteration, use make push-app.
 
-Env:
+Env (also in repo-root `.env`; command-line env overrides `.env`):
   SN / LWS_HMI_SN           select board when multiple devices
   IP / LWS_HMI_IP           registered SSH only (make connect <ip>)
   LWS_HMI_FIRMWARE_DIR      default: output/firmware
   FACTORY_SKU / OEM_ID      resolve default oem.img (see board/factory-skus.tsv)
   OEM_IMG                   oem.img path; unset=auto from FACTORY_SKU; empty=skip oem
-  OEM_ONLY=0|1              1 = oem partition only (requires oem.img)
+  OEM_ONLY                  0|1 — 1 = oem partition only (requires oem.img)
+
+Examples:
+  OEM_ONLY=1 make upgrade
+  OEM_IMG= make upgrade          # full upgrade without oem
+  OEM_IMG=/path/oem.img make upgrade
 
 Does NOT enter RockUSB or run upgrade_tool uf. Use make flash for GPT/U-Boot.
 EOF

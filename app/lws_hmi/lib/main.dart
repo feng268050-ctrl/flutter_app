@@ -45,9 +45,14 @@ Future<BoardProfile> _loadBoardProfile() async {
     }
   }
 
-  debugPrint(
-    'WARN: OEM/compose board profile missing; '
-    'falling back to ${HmiHalAssets.boardProfile} (migration window)',
+  // Host/desktop: App asset is OK for UI work without an OEM partition.
+  // On-device Linux: refuse App asset fallback — fix oem-compose /oem.
+  if (!Platform.isLinux) {
+    return BoardProfile.loadAsset(HmiHalAssets.boardProfile);
+  }
+  throw StateError(
+    'OEM/compose board profile missing '
+    '(tried $_kRunBoardProfile, $_kOemBoardProfile). '
+    'Check oem-compose.service and oem.img — no App asset fallback on device.',
   );
-  return BoardProfile.loadAsset(HmiHalAssets.boardProfile);
 }

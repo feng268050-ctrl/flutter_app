@@ -100,6 +100,26 @@ model=YNH960
       expect(map['model'], 'YNH960');
     });
 
+    test('parse strips matching single and double quotes', () {
+      final map = ProductIniReader.parse('''
+brand="LaserCyber"
+model='L1 Pro'
+camera_ip="192.168.1.100"
+''');
+      expect(map['brand'], 'LaserCyber');
+      expect(map['model'], 'L1 Pro');
+      expect(map['camera_ip'], '192.168.1.100');
+    });
+
+    test('parse keeps unmatched quotes as-is', () {
+      final map = ProductIniReader.parse('''
+brand="LaserCyber
+model=L1 Pro"
+''');
+      expect(map['brand'], '"LaserCyber');
+      expect(map['model'], 'L1 Pro"');
+    });
+
     test('missing file yields empty map', () async {
       final map = await const ProductIniReader(
         path: '/tmp/lws-hmi-definitely-missing-product.ini',

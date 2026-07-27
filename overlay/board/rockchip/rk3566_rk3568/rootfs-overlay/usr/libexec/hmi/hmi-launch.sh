@@ -17,8 +17,9 @@ LEGACY_ORIENTATION_FILE=/var/lib/hmi/display-orientation
 LEGACY_ORIENTATION_HAL=/var/lib/hal/display-orientation
 ELINUX_CLIENT=/usr/bin/flutter-wayland-client
 
-# Default matches ynh960 production (lcd0_rotation=90 → landscape_left).
-HMI_ORIENTATION=landscape_left
+# Last-resort removed: orientation MUST come from display.conf or OEM screen.env.
+HMI_ORIENTATION=
+SCREEN_ENV="${RUN_HMI:-/run/hmi}/screen.env"
 
 # RK809 speaker path (ParamUpdate also sets this; re-assert before HMI audio smoke).
 if command -v amixer >/dev/null 2>&1; then
@@ -70,7 +71,7 @@ upsert_conf_key() {
 	mv -f "$tmp" "$conf"
 }
 
-# Resolve orientation from display.conf; one-shot import legacy standalone file.
+# Resolve orientation: operator display.conf → OEM screen.env (no silent default).
 token="$(conf_get "$DISPLAY_CONF" orientation | tr '[:upper:]' '[:lower:]')"
 if [ -z "$token" ]; then
 	for legacy in "$LEGACY_ORIENTATION_HAL" "$LEGACY_ORIENTATION_FILE"; do
@@ -89,18 +90,40 @@ if [ -z "$token" ]; then
 		fi
 	done
 fi
+orient_src=display.conf
+if [ -z "$token" ]; then
+	[ -f "$SCREEN_ENV" ] || {
+		echo "hmi-launch: missing $SCREEN_ENV — oem-compose must succeed first" >&2
+		exit 1
+	}
+	# shellcheck source=/dev/null
+	. "$SCREEN_ENV"
+	token="$(printf '%s' "${SCREEN_DEFAULT_ORIENTATION:-}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+	orient_src="$SCREEN_ENV"
+fi
+[ -n "$token" ] || {
+	echo "hmi-launch: empty orientation (display.conf and SCREEN_DEFAULT_ORIENTATION) — fix OEM screen.json" >&2
+	exit 1
+}
 case "$token" in
-portrait)
+portrait | portrait_up)
 	HMI_ORIENTATION=portrait_up
 	;;
-landscape | "")
+landscape | landscape_left)
 	HMI_ORIENTATION=landscape_left
+	;;
+landscape_right)
+	HMI_ORIENTATION=landscape_right
+	;;
+portrait_down)
+	HMI_ORIENTATION=portrait_down
 	;;
 *)
-	echo "hmi-launch: unknown orientation '$token'; using landscape_left" >&2
-	HMI_ORIENTATION=landscape_left
+	echo "hmi-launch: unknown orientation '$token' from $orient_src" >&2
+	exit 1
 	;;
 esac
+echo "hmi-launch: orientation=$HMI_ORIENTATION (from $orient_src)" >&2
 
 if [ -f "$MODE_FILE" ]; then
 	MODE="$(read_json_field "$MODE_FILE" mode)"

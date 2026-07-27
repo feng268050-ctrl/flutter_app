@@ -47,6 +47,8 @@ endif
 define WITH_DOTENV
 bash -c 'set -euo pipefail; \
   __ENV_SN="$${SN-}"; __ENV_CHIPID="$${CHIPID-}"; __ENV_SERIAL="$${SERIAL-}"; __ENV_IP="$${IP-}"; __ENV_IMAGE="$${IMAGE-}"; \
+  __ENV_OEM_ONLY="$${OEM_ONLY-}"; \
+  if [[ -n "$${OEM_IMG+x}" ]]; then __ENV_OEM_IMG_SET=1; __ENV_OEM_IMG="$${OEM_IMG-}"; else __ENV_OEM_IMG_SET=0; fi; \
   __ENV_FLUTTER_SDK="$${FLUTTER_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
   __ENV_BUILD_BIND_MOUNT="$${BUILD_BIND_MOUNT-}"; \
   set -a; [[ -f .env ]] && source .env; set +a; \
@@ -55,6 +57,8 @@ bash -c 'set -euo pipefail; \
   [[ -n "$$__ENV_SERIAL" ]] && export SERIAL="$$__ENV_SERIAL"; \
   [[ -n "$$__ENV_IP" ]] && export IP="$$__ENV_IP"; \
   [[ -n "$$__ENV_IMAGE" ]] && export IMAGE="$$__ENV_IMAGE"; \
+  [[ -n "$$__ENV_OEM_ONLY" ]] && export OEM_ONLY="$$__ENV_OEM_ONLY"; \
+  [[ "$$__ENV_OEM_IMG_SET" == 1 ]] && export OEM_IMG="$$__ENV_OEM_IMG"; \
   [[ -n "$$__ENV_FLUTTER_SDK" ]] && export FLUTTER_SDK="$$__ENV_FLUTTER_SDK"; \
   [[ -n "$$__ENV_BUILD_JOBS" ]] && export BUILD_JOBS="$$__ENV_BUILD_JOBS"; \
   [[ -n "$$__ENV_BUILD_BIND_MOUNT" ]] && export BUILD_BIND_MOUNT="$$__ENV_BUILD_BIND_MOUNT"; \
@@ -127,11 +131,11 @@ help:
 	@echo "  make shell                 # interactive device shell (USB-SSH or SSH)"
 	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
 	@echo "  make push-app              # scp app over SSH (USB-SSH or registered IP)"
-	@echo "  make set-prop KEY=val ...  # upsert product.ini keys (multi OK); restart hmi"
-	@echo "  make del-prop KEY          # remove one product.ini key; restart hmi if changed"
+	@echo "  make set-prop KEY=val ...  # upsert product.ini tunables (not brand/model/sn); restart hmi"
+	@echo "  make del-prop KEY          # remove one tunable key (not brand/model/sn); restart hmi if changed"
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
 	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
-	@echo "  make upgrade               # SSH stream: inactive FIT+rootfs (+oem); OEM_ONLY=1 for oem-only"
+	@echo "  make upgrade               # SSH stream: inactive FIT+rootfs (+oem); env OEM_ONLY=1 for oem-only"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
 	@echo "  make serial-console        # TTL UART ttyFIQ0 @ 1500000 (quit Ctrl+])"
@@ -165,7 +169,7 @@ help:
 	@echo "  LWS_HMI_CACHE_ROOT=...   # NAS mount for large .cache artifacts (see .env.example)"
 	@echo "  LWS_HMI_CACHE_URL=...      # optional HTTP mirror of the same layout"
 	@echo "  SN=<sn|chipid>             # select device by SN or ChipID (flash / USB-SSH / SSH)"
-	@echo "  CHIPID=<chipid>            # select by ChipID only (use with set-prop SN=…)"
+	@echo "  CHIPID=<chipid>            # select by ChipID only (multi-board)"
 	@echo "  IP=<addr>                  # registered SSH only (not USB-SSH); make connect first"
 	@echo "  IMAGE=<path>               # firmware image for make flash"
 	@echo "  DOCKER_IMAGE=$(DOCKER_IMAGE)"
@@ -173,7 +177,7 @@ help:
 	@echo ""
 	@echo "Notes:"
 	@echo "  - Daily A/B: make build-kernel and/or build-rootfs then make upgrade (no build-img)."
-	@echo "  - OEM-only (helpers/profile): make build-oem && make upgrade OEM_ONLY=1."
+	@echo "  - OEM-only (helpers/profile): make build-oem && OEM_ONLY=1 make upgrade"
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ (no manual export)."
 	@echo "  - Factory: make build-oem then build-img → output/firmware/<sku>/factory.img; make flash."
 	@echo "  - FACTORY_SKU=ynh960-p800 (default); override UBOOT_ID= / OEM_ID=; see board/factory-skus.tsv."

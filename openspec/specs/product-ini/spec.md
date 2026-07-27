@@ -91,10 +91,10 @@ Board serial helpers used for USB gadget iSerial and host device listing (`make 
 - **WHEN** multiple boards are listed and the operator sets `SN=FACTORY-001` (or `SN=ABC123`)
 - **THEN** host commands that require a single target SHALL select the matching row
 
-#### Scenario: CHIPID env with set-prop SN
+#### Scenario: CHIPID env selects one board
 
-- **WHEN** multiple boards are present and the operator runs `CHIPID=ABC123 make set-prop SN=FACTORY-001`
-- **THEN** device selection SHALL use ChipID `ABC123` and the product `sn` key SHALL be written as `FACTORY-001`
+- **WHEN** multiple boards are present and the operator runs `CHIPID=ABC123 make set-prop CAMERA_IP=192.168.1.50`
+- **THEN** device selection SHALL use ChipID `ABC123` and the product `camera_ip` key SHALL be written
 
 ### Requirement: Device Information empty display
 
@@ -112,7 +112,7 @@ When Device Information (or equivalent About UI) displays Device Model, Device S
 
 ### Requirement: Host make set-prop upserts product.ini
 
-The host build system SHALL provide `make set-prop` that upserts one or more product properties on the selected board (USB-SSH or registered SSH device, same selection rules as `push-app` / `shell`). Each assignment SHALL be `UPPERCASE_KEY=value` on the Make command line and SHALL be written to `/var/lib/hal/product.ini` as the corresponding lowercase key (e.g. `CAMERA_IP` → `camera_ip`). Unlike lws-ui’s single-key restriction, **multiple** assignments in one invocation SHALL be applied together via one remote file replace. Make/workflow variables that are not product keys (at least `CHIPID`, `IP`, deprecated `SERIAL`, and other documented host vars) MUST be ignored as property keys. `SN=` on `make set-prop` SHALL write the product `sn` key and MUST NOT be treated as device selection for that invocation (multi-board: use `CHIPID=` / `IP=` / deprecated `SERIAL=`). After a successful write, the host tooling SHALL restart the on-device HMI service so the App reloads product identity.
+The host build system SHALL provide `make set-prop` that upserts one or more product properties on the selected board (USB-SSH or registered SSH device, same selection rules as `push-app` / `shell`). Each assignment SHALL be `UPPERCASE_KEY=value` on the Make command line and SHALL be written to `/var/lib/hal/product.ini` as the corresponding lowercase key (e.g. `CAMERA_IP` → `camera_ip`). Unlike lws-ui’s single-key restriction, **multiple** assignments in one invocation SHALL be applied together via one remote file replace. Make/workflow variables that are not product keys (at least `CHIPID`, `IP`, deprecated `SERIAL`, `SN` as device selection, and other documented host vars) MUST be ignored as property keys. `make set-prop` MUST refuse to write OEM identity keys `brand`, `model`, and `sn` (including `BRAND=` / `MODEL=` / a sole `SN=` product assignment) and MUST fail with an error that points operators to the OEM board `product.ini` seed. After a successful write, the host tooling SHALL restart the on-device HMI service so the App reloads product identity.
 
 #### Scenario: Single property upsert
 
@@ -122,9 +122,15 @@ The host build system SHALL provide `make set-prop` that upserts one or more pro
 
 #### Scenario: Multiple properties in one set-prop
 
-- **WHEN** the operator runs `make set-prop BRAND=Innohi MODEL=YNH960 SN=FACTORY-001`
-- **THEN** the remote `product.ini` SHALL contain `brand=Innohi`, `model=YNH960`, and `sn=FACTORY-001` after one successful mutate
+- **WHEN** the operator runs `make set-prop CAMERA_IP=192.168.1.50 CAMERA_TYPE=2`
+- **THEN** the remote `product.ini` SHALL contain `camera_ip=192.168.1.50` and `camera_type=2` after one successful mutate
 - **AND** HMI SHALL be restarted once (not once per key)
+
+#### Scenario: set-prop refuses OEM identity keys
+
+- **WHEN** the operator runs `make set-prop BRAND=Innohi` or `make set-prop MODEL=YNH960` or `make set-prop SN=FACTORY-001`
+- **THEN** the command SHALL fail without writing `product.ini`
+- **AND** HMI MUST NOT be restarted
 
 #### Scenario: set-prop with no product assignment fails
 
@@ -133,7 +139,7 @@ The host build system SHALL provide `make set-prop` that upserts one or more pro
 
 ### Requirement: Host make del-prop removes a product.ini key
 
-The host build system SHALL provide `make del-prop` that removes exactly one product key per invocation. The key SHALL be given as an UPPERCASE identifier (as a Make goal or equivalent), mapped to the lowercase file key, and removed from `/var/lib/hal/product.ini` on the selected board. If the key is absent, the command SHALL warn and MUST NOT fail solely for absence. After a successful file update that changes the file contents, tooling SHALL restart HMI. When the key was absent (no file change), tooling MUST NOT fail and SHOULD skip the HMI restart.
+The host build system SHALL provide `make del-prop` that removes exactly one product key per invocation. The key SHALL be given as an UPPERCASE identifier (as a Make goal or equivalent), mapped to the lowercase file key, and removed from `/var/lib/hal/product.ini` on the selected board. `make del-prop` MUST refuse OEM identity keys `brand`, `model`, and `sn`. If a non-identity key is absent, the command SHALL warn and MUST NOT fail solely for absence. After a successful file update that changes the file contents, tooling SHALL restart HMI. When the key was absent (no file change), tooling MUST NOT fail and SHOULD skip the HMI restart.
 
 #### Scenario: Delete existing key
 
@@ -147,23 +153,34 @@ The host build system SHALL provide `make del-prop` that removes exactly one pro
 - **THEN** the command SHALL report that the key was not present and SHALL exit successfully (non-zero only for transport/auth/IO failures)
 - **AND** HMI SHOULD NOT be restarted solely because of a missing-key no-op
 
+#### Scenario: del-prop refuses OEM identity keys
+
+- **WHEN** the operator runs `make del-prop BRAND` or `make del-prop MODEL` or `make del-prop SN`
+- **THEN** the command SHALL fail without modifying `product.ini`
+- **AND** HMI MUST NOT be restarted
+
 ### Requirement: OEM board pack seeds product.ini
 
-For v1, each OEM board directory MAY include a `product.ini` factory seed (keys such as `brand`, `model`, `camera_ip`, and other product tunables). Runtime HAL and host tooling continue to use `/var/lib/hal/product.ini` as the authoritative live file. `make set-prop` / `del-prop` SHALL keep writing the runtime path and MUST NOT require writing back into the OEM partition.
+For v1, each OEM board directory MAY include a `product.ini` factory seed (keys such as `brand`, `model`, `sn`, `camera_ip`, and other product tunables). Runtime HAL and host tooling continue to use `/var/lib/hal/product.ini` as the authoritative live file. `make set-prop` / `del-prop` SHALL keep writing the runtime path for non-identity tunables and MUST NOT require writing back into the OEM partition. Identity keys `brand` / `model` / `sn` SHALL be changed only via the OEM seed (then `make build-oem` / compose), not via host mutate commands.
 
 #### Scenario: Seed file in OEM tree
 
 - **WHEN** inspecting `oem/boards/ynh960/product.ini`
 - **THEN** the file SHALL be valid `key=value` product.ini syntax and MAY include a non-empty `camera_ip` default
 
-### Requirement: oem-compose merges product.ini seed without clobber
+### Requirement: oem-compose merges product.ini seed (identity from OEM)
 
-On first boot (and subsequent compose runs), `oem-compose` SHALL ensure `/var/lib/hal/product.ini` exists by applying the OEM board seed: if the runtime file is missing, copy the seed; if it exists, for each key in the seed, write the seed value only when the runtime key is absent or blank. Non-empty runtime values MUST be preserved.
+On first boot (and subsequent compose runs), `oem-compose` SHALL ensure `/var/lib/hal/product.ini` exists by applying the OEM board seed: if the runtime file is missing, copy the seed. If it exists, for each key in the seed: `brand`, `model`, and `sn` SHALL be written from the OEM seed whenever those keys are present in the seed (overwriting non-empty runtime values). All other seed keys SHALL be written only when the runtime key is absent or blank. Non-empty runtime values for non-identity keys MUST be preserved.
 
 #### Scenario: Operator camera_ip preserved
 
 - **WHEN** `/var/lib/hal/product.ini` already has `camera_ip=10.0.0.5` and OEM seed has `camera_ip=192.168.1.100`
 - **THEN** after compose the runtime file SHALL still contain `camera_ip=10.0.0.5`
+
+#### Scenario: OEM brand/model overwrite runtime
+
+- **WHEN** `/var/lib/hal/product.ini` has `brand=Innohi` and `model=YNH960`, and OEM seed has `brand=LaserCyber` and `model=L1 Pro`
+- **THEN** after compose the runtime file SHALL contain `brand=LaserCyber` and `model=L1 Pro`
 
 #### Scenario: Missing runtime file seeded
 

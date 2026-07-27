@@ -437,12 +437,11 @@ EOF
 		echo "FAIL: oem-compose.service missing from target/etc/systemd/system" >&2
 		missing=1
 	fi
-	if [[ -f "$target/usr/share/hmi/oem-fallback/manifest.json" ]] && \
-		[[ -f "$target/usr/share/hmi/oem-fallback/boards/ynh960/board_profile.json" ]]; then
-		echo "OK:  oem-fallback pack present (migration)"
-	else
-		echo "FAIL: missing usr/share/hmi/oem-fallback migration pack" >&2
+	if [[ -e "$target/usr/share/hmi/oem-fallback" ]]; then
+		echo "FAIL: usr/share/hmi/oem-fallback must be removed (no OEM migration fallback)" >&2
 		missing=1
+	else
+		echo "OK:  oem-fallback absent (compose fails hard without /oem)"
 	fi
 
 	echo ""
@@ -853,11 +852,13 @@ EOF
 		echo "OK:  settings-restore retired (HAL-owned restore)"
 	fi
 	if [[ -x "$libexec_hmi/bind-prefs.sh" ]] && \
-		grep -q 'bind-prefs.sh' \
-		"$libexec_hmi/ynh960-display-init.sh" 2>/dev/null; then
+		( grep -q 'bind-prefs.sh' \
+			"$libexec_hmi/ynh960-display-init.sh" 2>/dev/null || \
+		  grep -q 'bind-prefs.sh' \
+			"$ROOT/oem/boards/ynh960/helpers/display-init.sh" 2>/dev/null ); then
 		echo "OK:  bind-prefs (four /var/lib/* → /userdata/*)"
 	else
-		echo "FAIL: missing bind-prefs.sh wired into display-init" >&2
+		echo "FAIL: missing bind-prefs.sh wired into display-init (stub or OEM helper)" >&2
 		missing=1
 	fi
 	if grep -q 'enable hmi.service' \

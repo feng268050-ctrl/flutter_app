@@ -288,6 +288,40 @@ for helper in bt-stack-up.sh bt-stack-down.sh bt-pair-agent.sh bt-ensure-agent.s
 		fail "helper $helper missing or not executable (/usr/libexec/bluetooth/)"
 	fi
 done
+# W2: board modem/OTG/display-init live under OEM; rootfs keeps thin stubs.
+# No oem-fallback — missing OEM helpers is a hard fail when /oem is mounted.
+if [ -f /run/hmi/oem.env ]; then
+	# shellcheck source=/dev/null
+	. /run/hmi/oem.env
+fi
+if [ -f /run/hmi/oem.env ] && grep -q '^OEM_MIGRATE_FALLBACK=1' /run/hmi/oem.env 2>/dev/null; then
+	fail "OEM_MIGRATE_FALLBACK set — rootfs fallback must not be used"
+fi
+if [ -f /run/hmi/oem.env ]; then
+	src="$(grep -E '^OEM_SOURCE=' /run/hmi/oem.env 2>/dev/null | head -1 | cut -d= -f2-)"
+	if [ "$src" = "partition" ]; then
+		pass "OEM_SOURCE=partition"
+	else
+		fail "OEM_SOURCE expected partition (got '${src:-empty}')"
+	fi
+fi
+for oem_helper in \
+	"${WIFI_MODEM_HELPER:-/oem/boards/ynh960/helpers/wifibt-bringup.sh}" \
+	"${USB_OTG_MODE_HELPER:-/oem/boards/ynh960/helpers/usb-otg-mode.sh}" \
+	"/oem/boards/ynh960/helpers/display-init.sh"; do
+	if [ -x "$oem_helper" ]; then
+		pass "OEM helper $(basename "$oem_helper")"
+	elif [ -d /oem/boards ]; then
+		fail "OEM helper missing or not executable ($oem_helper)"
+	else
+		fail "OEM not mounted — cannot verify $oem_helper (flash/upgrade oem.img)"
+	fi
+done
+if [ -x /usr/libexec/hmi/usb-otg-mode.sh ] && [ -x /usr/libexec/hmi/ynh960-display-init.sh ]; then
+	pass "rootfs OEM helper stubs (usb-otg-mode / ynh960-display-init)"
+else
+	fail "rootfs OEM helper stubs missing under /usr/libexec/hmi/"
+fi
 for helper in change-orientation.sh bind-prefs.sh; do
 	if [ -x "/usr/libexec/hmi/$helper" ]; then
 		pass "helper $helper"
@@ -538,11 +572,25 @@ fi
 
 echo ""
 echo "--- LCD / display params ---"
+oem_lcd=""
+if [ -f /oem/manifest.json ]; then
+	sp="$(sed -n 's/.*"screen_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /oem/manifest.json | head -1)"
+	[ -n "$sp" ] && [ -d "/oem/$sp/lcd" ] && oem_lcd="/oem/$sp/lcd"
+fi
+if [ -z "$oem_lcd" ]; then
+	fail "OEM screen lcd/ missing — required (no /system/etc seed fallback)"
+else
+	for f in 960_lcd_param_rk356x.txt lcd_mipi_param.txt; do
+		if [ -f "$oem_lcd/$f" ]; then
+			pass "OEM lcd $(basename "$f")"
+		else
+			fail "$oem_lcd/$f missing"
+		fi
+	done
+fi
 for f in /system/etc/960_lcd_param_rk356x.txt /system/etc/lcd_mipi_param.txt; do
 	if [ -f "$f" ]; then
-		pass "$(basename "$f") present"
-	else
-		fail "$f missing"
+		warn "$(basename "$f") still in /system/etc (unused at runtime; OEM lcd is authority)"
 	fi
 done
 

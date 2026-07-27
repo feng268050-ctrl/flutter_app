@@ -64,9 +64,9 @@ void main() {
     final json = File('$appHalRoot/board_profile.json').readAsStringSync();
     final profile = BoardProfile.fromJsonString(json);
     expect(profile.helper(BoardHelperKeys.wifiModem),
-        '/usr/libexec/bluetooth/wifibt-bringup.sh');
+        '/oem/boards/ynh960/helpers/wifibt-bringup.sh');
     expect(profile.helper(BoardHelperKeys.btModem),
-        '/usr/libexec/bluetooth/wifibt-bringup.sh');
+        '/oem/boards/ynh960/helpers/wifibt-bringup.sh');
     expect(profile.helper(BoardHelperKeys.wifiStackUp), isNull);
     expect(profile.resolvedGpioAsset, 'assets/hal/gpio.json');
     expect(profile.resolvedModbusAsset, 'assets/hal/modbus.json');
@@ -76,7 +76,7 @@ void main() {
     expect(b.ethernetIface(), 'eth0');
     expect(b.wifiIface(), 'wlan0');
     expect(b.sshDebug().enableHelper, ['/usr/libexec/hmi/enable-ssh-debug.sh']);
-    expect(b.usbOtg().helper, ['/usr/libexec/hmi/usb-otg-mode.sh']);
+    expect(b.usbOtg().helper, ['/oem/boards/ynh960/helpers/usb-otg-mode.sh']);
     expect(b.mediaAudio().playbackPathControl, 'Playback Path');
     expect(b.mediaAudio().playbackPathValue, 'RING_SPK_HP');
 

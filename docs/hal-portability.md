@@ -205,8 +205,9 @@ Test: `packages/cyber_hal/test/board_bindings_portability_test.dart`.
 
 On device, `main.dart` prefers `/run/hmi/board_profile.json` (from `oem-compose`)
 or `/oem/boards/<id>/board_profile.json`, then merges App gpio/modbus assets
-(`assets/hal/gpio.json`, `assets/hal/modbus.json`). The App-bundled
-`assets/hal/board_profile.json` is a **migration fallback** only.
+(`assets/hal/gpio.json`, `assets/hal/modbus.json`). On Linux device a missing
+OEM/compose profile **fails hard** (no App asset fallback). Host/desktop may
+still `loadAsset` `assets/hal/board_profile.json` for UI work without `/oem`.
 
 OEM owns board×screen SKU + v1 `product.ini` seed; see
 [`docs/platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md).

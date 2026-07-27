@@ -4,11 +4,11 @@
   "height": 1280,
   "default_orientation": "landscape_left",
   "lcd_param_files": [
-    "board/960_lcd_param_rk356x.txt",
-    "board/lcd_mipi_param.txt"
+    "lcd/960_lcd_param_rk356x.txt",
+    "lcd/lcd_mipi_param.txt"
   ],
   "splash": {
-    "notes": "Boot splash remains board/logo until W2 screen-pack migration"
+    "notes": "Boot splash remains board/logo; screen-pack splash migration later"
   },
   "touch_notes": "Touch via board DT; not configured from this pack"
 }

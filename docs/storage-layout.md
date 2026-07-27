@@ -72,8 +72,9 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 |---------|------|-----------|
 | Buildroot rootfs, `/opt/hmi`, libs | `/` | active `rootfs_*` |
 | Kernel FIT | — | active `boot_*` |
-| LCD/MIPI params (seed) | `/mnt/private1/` | private1 |
-| OEM board×screen pack (SKU authority) | `/oem/` (`manifest.json`, `boards/`, `screens/`) | oem |
+| LCD/MIPI params (runtime seed) | `/mnt/private1/` (seeded at boot from OEM only) | private1 |
+| LCD/MIPI param **authority** | `/oem/screens/<id>/lcd/` (required; no `/system/etc` seed fallback) | oem |
+| OEM board×screen pack (SKU authority) | `/oem/` (`manifest.json`, `boards/`, `screens/`, helpers) | oem |
 | Compose export (runtime) | `/run/hmi/{oem.env,board_profile.json,screen.env}` | tmpfs |
 | **RKNN models** (`*.rknn`, `config.yaml`) | **`/userdata/models/`** | userdata |
 | PR0 recording, online OTA staging | `/userdata/…` (incl. **`/userdata/ota/`**) | userdata |
@@ -82,7 +83,7 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 | **Subsystem state (P2.3+)** | **`/userdata/{wpa_supplicant,network,bluetooth,hmi}/`** (symlinked from `/var/lib/*`) | userdata |
 | App config / cache | `/userdata/cfg/` (convention) | userdata |
 
-`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `ynh960-display-init.sh`, which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, then runs **`bind-prefs.sh`** to symlink:
+`/userdata` is **not** in `/etc/fstab`. `param-update.service` runs `/usr/libexec/hmi/ynh960-display-init.sh` (thin stub that mounts `PARTLABEL=oem` then execs OEM `helpers/display-init.sh`), which mounts `PARTLABEL=userdata` → `/userdata`, formats on first boot when empty, then runs **`bind-prefs.sh`** to symlink:
 
 - `/var/lib/wpa_supplicant` → `/userdata/wpa_supplicant`
 - `/var/lib/network` → `/userdata/network`

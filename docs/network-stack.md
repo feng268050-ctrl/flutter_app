@@ -47,12 +47,13 @@ boot (typical PCIe / built-in MAC).
 
 ### Case study: ynh960 `wifibt-bringup.sh`
 
-Path: `overlay/.../usr/libexec/bluetooth/wifibt-bringup.sh`  
-Profile (`app/lws_hmi/assets/hal/board_profile.json`):
+Path (W2): `oem/boards/ynh960/helpers/wifibt-bringup.sh`  
+Rootfs keeps a thin stub at `/usr/libexec/bluetooth/wifibt-bringup.sh` that execs the OEM helper.  
+Profile (`oem/boards/ynh960/board_profile.json`):
 
 ```json
-"wifi_modem": "/usr/libexec/bluetooth/wifibt-bringup.sh",
-"bt_modem": "/usr/libexec/bluetooth/wifibt-bringup.sh"
+"wifi_modem": "/oem/boards/ynh960/helpers/wifibt-bringup.sh",
+"bt_modem": "/oem/boards/ynh960/helpers/wifibt-bringup.sh"
 ```
 
 What it does (Innohi AIC8800D80 SDIO + UART combo — **illustrative**, not portable):

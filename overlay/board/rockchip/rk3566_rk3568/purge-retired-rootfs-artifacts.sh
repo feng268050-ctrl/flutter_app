@@ -81,6 +81,10 @@ rm -f \
 
 rm -rf "$TARGET_DIR/usr/lib/lws-hmi" "$TARGET_DIR/var/lib/lws-hmi"
 
+# W2: no rootfs OEM migration fallback (compose fails hard without /oem).
+# Buildroot incremental target/ keeps this tree after overlay rsync --delete.
+rm -rf "$TARGET_DIR/usr/share/hmi/oem-fallback"
+
 # In-HAL HOGP/evdev heal (retired board service + helpers).
 disable_unit "bt-hid-heal.service"
 rm -f \

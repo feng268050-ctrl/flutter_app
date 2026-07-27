@@ -31,11 +31,11 @@
     "eth0": 2000
   },
   "helpers": {
-    "usb_otg_mode": "/usr/libexec/hmi/usb-otg-mode.sh",
+    "usb_otg_mode": "/oem/boards/ynh960/helpers/usb-otg-mode.sh",
     "otg_mode_sysfs": "/sys/devices/platform/fe8a0000.usb2-phy/otg_mode",
     "ssh_debug": "/usr/libexec/hmi/enable-ssh-debug.sh",
-    "wifi_modem": "/usr/libexec/bluetooth/wifibt-bringup.sh",
-    "bt_modem": "/usr/libexec/bluetooth/wifibt-bringup.sh",
+    "wifi_modem": "/oem/boards/ynh960/helpers/wifibt-bringup.sh",
+    "bt_modem": "/oem/boards/ynh960/helpers/wifibt-bringup.sh",
     "bt_a2dp_volume": "/usr/libexec/bluetooth/bt-a2dp-volume.sh",
     "bt_a2dp_up": "/usr/libexec/bluetooth/bt-a2dp-sink-up.sh",
     "bt_a2dp_down": "/usr/libexec/bluetooth/bt-a2dp-sink-down.sh",

@@ -14,7 +14,7 @@ void main() {
     expect(profile.resolvedGpioAsset, isNull);
     expect(profile.resolvedModbusAsset, isNull);
     expect(profile.helper(BoardHelperKeys.wifiModem),
-        '/usr/libexec/bluetooth/wifibt-bringup.sh');
+        '/oem/boards/ynh960/helpers/wifibt-bringup.sh');
   });
 
   test('withProductConfigs merges App gpio/modbus assets', () async {

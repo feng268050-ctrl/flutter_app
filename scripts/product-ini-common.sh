@@ -19,6 +19,28 @@ validate_product_ini_key() {
 	_product_ini_die "invalid property key '${key}' (use lowercase letters, digits, underscores)"
 }
 
+# OEM-owned identity keys — not mutable via make set-prop / del-prop.
+# Argument may be UPPERCASE or lowercase.
+is_oem_identity_product_key() {
+	local key_lc
+	key_lc="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+	case "${key_lc}" in
+	brand | model | sn) return 0 ;;
+	*) return 1 ;;
+	esac
+}
+
+# Fail if key is brand/model/sn (host mutate must not change OEM identity).
+refuse_oem_identity_product_key() {
+	local key="$1"
+	is_oem_identity_product_key "${key}" || return 0
+	local msg="refusing to mutate ${key}: brand/model/sn come from OEM seed only (edit oem/boards/<sku>/product.ini, then make build-oem)"
+	if declare -F die >/dev/null 2>&1; then
+		die "${msg}"
+	fi
+	_product_ini_die "${msg}"
+}
+
 # Upsert key=value in a local properties file (replace existing key or append).
 upsert_product_ini_in_file() {
 	local key="$1" value="$2" file="$3"

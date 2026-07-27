@@ -32,7 +32,7 @@ is_android_emulator_serial() {
 }
 
 # Device selection: SN (or deprecated SERIAL) matches make devices SN or ChipID columns.
-# CHIPID matches ChipID only (use when `make set-prop SN=...` would collide with selection).
+# CHIPID matches ChipID only (when SN= would be ambiguous across boards).
 device_select_sn() {
 	printf '%s' "${SN:-${LWS_HMI_SN:-${SERIAL:-${LWS_HMI_SERIAL:-}}}}"
 }

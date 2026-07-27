@@ -33,9 +33,47 @@ if [ ! -f /etc/dbus-1/system.d/bluetooth.conf ] && \
 	exit 1
 fi
 
-# Wi‑Fi+BT combo (AIC8800D80): SDIO wifi + UART hciattach first.
-if [ -x /usr/libexec/bluetooth/wifibt-bringup.sh ]; then
-	/usr/libexec/bluetooth/wifibt-bringup.sh || log "wifibt-bringup soft-fail (continue for BT)"
+# Wi‑Fi+BT combo: SDIO wifi + UART hciattach via OEM modem helper.
+resolve_bt_modem() {
+	if [ -n "${BT_MODEM_HELPER:-}" ] && [ -x "$BT_MODEM_HELPER" ]; then
+		printf '%s\n' "$BT_MODEM_HELPER"
+		return 0
+	fi
+	if [ -f /run/hmi/oem.env ]; then
+		# shellcheck source=/dev/null
+		. /run/hmi/oem.env
+		if [ -n "${BT_MODEM_HELPER:-}" ] && [ -x "$BT_MODEM_HELPER" ]; then
+			printf '%s\n' "$BT_MODEM_HELPER"
+			return 0
+		fi
+		if [ -n "${WIFI_MODEM_HELPER:-}" ] && [ -x "$WIFI_MODEM_HELPER" ]; then
+			printf '%s\n' "$WIFI_MODEM_HELPER"
+			return 0
+		fi
+	fi
+	if [ -f /run/hmi/board_profile.json ]; then
+		p="$(sed -n 's/.*"bt_modem"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /run/hmi/board_profile.json | head -1)"
+		if [ -n "$p" ] && [ -x "$p" ]; then
+			printf '%s\n' "$p"
+			return 0
+		fi
+		p="$(sed -n 's/.*"wifi_modem"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /run/hmi/board_profile.json | head -1)"
+		if [ -n "$p" ] && [ -x "$p" ]; then
+			printf '%s\n' "$p"
+			return 0
+		fi
+	fi
+	if [ -x /usr/libexec/bluetooth/wifibt-bringup.sh ]; then
+		printf '%s\n' /usr/libexec/bluetooth/wifibt-bringup.sh
+		return 0
+	fi
+	return 1
+}
+
+if MODEM="$(resolve_bt_modem)"; then
+	"$MODEM" || log "wifibt-bringup soft-fail (continue for BT)"
+else
+	log "wifi/bt modem helper missing (soft-fail)"
 fi
 
 # Non-AIC boards may still use Rockchip BT attach; harmless soft-fail on AIC.

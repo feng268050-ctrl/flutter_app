@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Upsert one or more keys into /var/lib/hal/product.ini on the SSH target.
-# Usage: make set-prop BRAND=Innohi MODEL=YNH960 CAMERA_IP=192.168.1.50
+# Usage: make set-prop CAMERA_IP=192.168.1.50
+# brand / model / sn are OEM-owned and rejected.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -12,14 +13,14 @@ source "$ROOT/scripts/product-ini-common.sh"
 TARGET="${PRODUCT_INI_PATH:-/var/lib/hal/product.ini}"
 
 # Make / host workflow vars — not product.ini keys.
-# Note: SN is a product key (make set-prop SN=…); do not skip it.
-# Device selection for set-prop uses CHIPID= / IP= / SERIAL= (deprecated) when SN= is a prop.
+# SN= remains device selection (exported by Make); never a set-prop product key.
 _SET_PROP_SKIP=(
 	SERIAL CHIPID IP IMAGE FLUTTER_SDK BUILD_JOBS BUILD_BIND_MOUNT
 	LWS_HMI_SERIAL LWS_HMI_SN LWS_HMI_CHIPID LWS_HMI_IP LWS_HMI_USB_SSH_PASS LWS_HMI_USB_SSH_USER
 	LWS_HMI_USB_SSH_ADDR LWS_HMI_USB_IFACE PUSH_APP_WAIT_SEC
 	DOCKER_IMAGE DOCKER_PLATFORM SCOPE FORCE SRC
 	PRODUCT_INI_PATH
+	SN
 )
 
 usage() {
@@ -28,12 +29,12 @@ Usage:
   make set-prop <UPPERCASE_KEY>=<value> [<UPPERCASE_KEY>=<value> ...]
 
 Examples:
-  make set-prop BRAND=Innohi MODEL=YNH960 SN=FACTORY-001
   make set-prop CAMERA_IP=192.168.1.50 CAMERA_TYPE=2
   make set-prop CONTROL_CARD_COMM_ALARM_MODE=immediate
 
 Command-line keys use UPPERCASE; values are written to /var/lib/hal/product.ini
 with lowercase keys. Multiple assignments are applied in one remote write.
+brand / model / sn are OEM-owned and cannot be set here (edit oem/boards/<sku>/product.ini).
 hmi.service is restarted once after a successful write.
 EOF
 }
@@ -49,22 +50,36 @@ is_skipped_make_var() {
 }
 
 # Fills PROP_KEYS[] and PROP_VALUES[] (parallel arrays).
+# Refuses brand/model immediately. SN= is skipped (device selection) but noted.
 collect_assignments() {
 	local o key value
+	local saw_sn_override=0
 	PROP_KEYS=()
 	PROP_VALUES=()
 	for o in "$@"; do
 		[[ "${o}" == *=* ]] || continue
 		key="${o%%=*}"
 		value="${o#*=}"
-		is_skipped_make_var "${key}" && continue
 		[[ "${key}" =~ ^[A-Z][A-Z0-9_]*$ ]] || continue
-		# GNU make escapes spaces in MAKEOVERRIDES (e.g. MODEL=LaserCyber\ L1\ Pro).
+		if is_oem_identity_product_key "${key}"; then
+			if [[ "${key}" == "SN" ]]; then
+				saw_sn_override=1
+				continue
+			fi
+			refuse_oem_identity_product_key "${key}"
+		fi
+		is_skipped_make_var "${key}" && continue
+		# GNU make escapes spaces in MAKEOVERRIDES.
 		value="${value//\\ / }"
 		PROP_KEYS+=("${key}")
 		PROP_VALUES+=("${value}")
 	done
-	[[ ${#PROP_KEYS[@]} -gt 0 ]] || return 1
+	if [[ ${#PROP_KEYS[@]} -eq 0 ]]; then
+		if [[ "${saw_sn_override}" -eq 1 ]]; then
+			refuse_oem_identity_product_key "SN"
+		fi
+		return 1
+	fi
 }
 
 remote() {
@@ -78,16 +93,8 @@ restart_hmi() {
 
 collect_assignments "$@" || {
 	usage
-	die "expected one or more UPPERCASE_KEY=value (example: make set-prop BRAND=Innohi MODEL=YNH960)"
+	die "expected one or more UPPERCASE_KEY=value (example: make set-prop CAMERA_IP=192.168.1.50)"
 }
-
-# SN= as a product key must not also act as device selection (use CHIPID= / IP= / SERIAL=).
-for _k in "${PROP_KEYS[@]}"; do
-	if [[ "${_k}" == "SN" ]]; then
-		unset SN LWS_HMI_SN
-		break
-	fi
-done
 
 command -v sshpass >/dev/null 2>&1 || die "sshpass not found (run: make usb-ssh-setup)"
 

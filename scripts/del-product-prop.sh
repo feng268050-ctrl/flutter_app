@@ -29,7 +29,8 @@ Examples:
   make del-prop FOCUS_SCALE_REF
 
 Command-line keys use UPPERCASE; the matching lowercase key is removed from
-/var/lib/hal/product.ini. hmi.service is restarted only when the file changes.
+/var/lib/hal/product.ini. brand / model / sn are OEM-owned and cannot be deleted.
+hmi.service is restarted only when the file changes.
 EOF
 }
 
@@ -72,12 +73,8 @@ find_prop_key "$@" || {
 	usage
 	die "expected one UPPERCASE_KEY (example: make del-prop CAMERA_IP)"
 }
+refuse_oem_identity_product_key "${PROP_KEY}"
 KEY="$(printf '%s' "${PROP_KEY}" | tr '[:upper:]' '[:lower:]')"
-
-# del-prop SN must not treat Make SN= as device selection.
-if [[ "${PROP_KEY}" == "SN" ]]; then
-	unset SN LWS_HMI_SN
-fi
 
 command -v sshpass >/dev/null 2>&1 || die "sshpass not found (run: make usb-ssh-setup)"
 

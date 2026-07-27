@@ -1,11 +1,10 @@
 #!/bin/sh
 # Compose OEM pack into /run/hmi before HMI starts.
-# Migration: missing /oem falls back to /usr/share/hmi/oem-fallback (deprecated).
+# Missing or invalid /oem MUST fail — no rootfs fallback.
 set -eu
 
 OEM_ROOT="${OEM_ROOT:-/oem}"
 RUN_HMI="${RUN_HMI:-/run/hmi}"
-FALLBACK_ROOT="${OEM_FALLBACK_ROOT:-/usr/share/hmi/oem-fallback}"
 VAR_HAL="${VAR_HAL:-/var/lib/hal}"
 PRODUCT_INI="$VAR_HAL/product.ini"
 
@@ -19,17 +18,18 @@ ensure_oem_mount() {
 	if mountpoint -q "$OEM_ROOT" 2>/dev/null; then
 		return 0
 	fi
-	if [ -b "$dev" ]; then
-		mount -t ext4 -o noatime "$dev" "$OEM_ROOT" 2>/dev/null \
-			|| mount -o noatime "$dev" "$OEM_ROOT" 2>/dev/null \
-			|| warn "mount $dev -> $OEM_ROOT failed"
-	fi
+	[ -b "$dev" ] || die "oem partition missing ($dev) — flash/upgrade oem.img"
+	mount -t ext4 -o noatime "$dev" "$OEM_ROOT" 2>/dev/null \
+		|| mount -o noatime "$dev" "$OEM_ROOT" 2>/dev/null \
+		|| die "mount $dev -> $OEM_ROOT failed"
 }
 
-# Merge seed keys into runtime product.ini; never overwrite non-empty values.
+# Merge OEM seed into runtime product.ini.
+# brand/model/sn: always from OEM when present in seed (SKU identity).
+# Other keys: fill only when runtime key is absent or blank (preserve operator).
 merge_product_ini() {
 	local seed="$1"
-	local key val cur line
+	local key val cur line force
 	[ -f "$seed" ] || return 0
 	mkdir -p "$VAR_HAL"
 	if [ ! -f "$PRODUCT_INI" ]; then
@@ -45,17 +45,28 @@ merge_product_ini() {
 		val="${line#*=}"
 		key="$(printf '%s' "$key" | tr -d '[:space:]')"
 		[ -n "$key" ] || continue
+		force=0
+		case "$key" in
+		brand | model | sn) force=1 ;;
+		esac
 		cur="$(grep -E "^[[:space:]]*${key}[[:space:]]*=" "$PRODUCT_INI" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true)"
 		cur="$(printf '%s' "$cur" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-		if [ -n "$cur" ]; then
+		if [ "$force" -eq 0 ] && [ -n "$cur" ]; then
 			continue
 		fi
-		# Drop blank/absent key then append seed value.
+		if [ "$force" -eq 1 ] && [ "$cur" = "$val" ]; then
+			continue
+		fi
+		# Drop existing key then append seed value.
 		tmp="$(mktemp "${PRODUCT_INI}.XXXXXX")"
 		grep -vE "^[[:space:]]*${key}[[:space:]]*=" "$PRODUCT_INI" >"$tmp" 2>/dev/null || true
 		printf '%s=%s\n' "$key" "$val" >>"$tmp"
 		mv -f "$tmp" "$PRODUCT_INI"
-		log "filled empty $key from OEM seed"
+		if [ "$force" -eq 1 ]; then
+			log "applied OEM identity $key from seed"
+		else
+			log "filled empty $key from OEM seed"
+		fi
 	done <"$seed"
 }
 
@@ -65,8 +76,9 @@ write_screen_env() {
 	orient="$(sed -n 's/.*"default_orientation"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$screen_json" | head -1)"
 	width="$(sed -n 's/.*"width"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$screen_json" | head -1)"
 	height="$(sed -n 's/.*"height"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$screen_json" | head -1)"
+	[ -n "$orient" ] || die "screen.json missing default_orientation ($screen_json)"
 	{
-		echo "SCREEN_DEFAULT_ORIENTATION=${orient:-}"
+		echo "SCREEN_DEFAULT_ORIENTATION=$orient"
 		echo "SCREEN_WIDTH=${width:-}"
 		echo "SCREEN_HEIGHT=${height:-}"
 	} >"$RUN_HMI/screen.env"
@@ -74,12 +86,12 @@ write_screen_env() {
 
 compose_from_root() {
 	local root="$1"
-	local migrate="$2"
 	local manifest board_path screen_path board_id screen_id pack_id
 	local board_profile screen_json product_seed
+	local wifi_modem bt_modem usb_otg
 
 	manifest="$root/manifest.json"
-	[ -f "$manifest" ] || return 1
+	[ -f "$manifest" ] || die "missing $manifest"
 
 	board_path="$(sed -n 's/.*"board_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$manifest" | head -1)"
 	screen_path="$(sed -n 's/.*"screen_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$manifest" | head -1)"
@@ -97,6 +109,10 @@ compose_from_root() {
 	[ -f "$board_profile" ] || die "missing $board_profile"
 	[ -f "$screen_json" ] || die "missing $screen_json"
 
+	wifi_modem="$(sed -n 's/.*"wifi_modem"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$board_profile" | head -1)"
+	bt_modem="$(sed -n 's/.*"bt_modem"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$board_profile" | head -1)"
+	usb_otg="$(sed -n 's/.*"usb_otg_mode"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$board_profile" | head -1)"
+
 	mkdir -p "$RUN_HMI"
 	cp -f "$board_profile" "$RUN_HMI/board_profile.json"
 	{
@@ -106,34 +122,20 @@ compose_from_root() {
 		echo "OEM_BOARD_ROOT=$root/$board_path"
 		echo "OEM_SCREEN_ROOT=$root/$screen_path"
 		echo "OEM_ROOT=$root"
-		if [ "$migrate" = "1" ]; then
-			echo "OEM_MIGRATE_FALLBACK=1"
-		fi
+		echo "OEM_SOURCE=partition"
+		echo "WIFI_MODEM_HELPER=${wifi_modem:-}"
+		echo "BT_MODEM_HELPER=${bt_modem:-}"
+		echo "USB_OTG_MODE_HELPER=${usb_otg:-}"
 	} >"$RUN_HMI/oem.env"
 	write_screen_env "$screen_json"
 	merge_product_ini "$product_seed"
 
-	if [ "$migrate" = "1" ]; then
-		warn "using deprecated rootfs fallback at $root — flash/upgrade oem.img"
-	else
-		log "composed pack=${pack_id:-?} board=${board_id:-?} screen=${screen_id:-?}"
-	fi
+	log "composed pack=${pack_id:-?} board=${board_id:-?} screen=${screen_id:-?} source=partition"
 	return 0
 }
 
 ensure_oem_mount
 
-# Prefer real OEM pack; invalid pack fails hard (no silent board swap).
-if [ -f "$OEM_ROOT/manifest.json" ]; then
-	compose_from_root "$OEM_ROOT" 0
-	exit 0
-fi
-
-# Migration window only: rootfs-bundled ynh960 default.
-if [ -f "$FALLBACK_ROOT/manifest.json" ]; then
-	warn "OEM pack missing at $OEM_ROOT — DEPRECATED fallback $FALLBACK_ROOT"
-	compose_from_root "$FALLBACK_ROOT" 1
-	exit 0
-fi
-
-die "no OEM manifest at $OEM_ROOT and no fallback at $FALLBACK_ROOT"
+[ -f "$OEM_ROOT/manifest.json" ] || die "no OEM manifest at $OEM_ROOT/manifest.json — build-oem + upgrade OEM (no rootfs fallback)"
+compose_from_root "$OEM_ROOT"
+exit 0

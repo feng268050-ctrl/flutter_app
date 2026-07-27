@@ -37,13 +37,26 @@ final class ProductIniReader {
         continue;
       }
       final key = line.substring(0, eq).trim();
-      final value = line.substring(eq + 1).trim();
+      final value = _normalizeValue(line.substring(eq + 1).trim());
       if (key.isEmpty) {
         continue;
       }
       out[key] = value;
     }
     return out;
+  }
+
+  static String _normalizeValue(String value) {
+    if (value.length >= 2) {
+      final first = value[0];
+      final last = value[value.length - 1];
+      final matchingQuotes =
+          (first == '"' && last == '"') || (first == "'" && last == "'");
+      if (matchingQuotes) {
+        return value.substring(1, value.length - 1).trim();
+      }
+    }
+    return value;
   }
 }
 

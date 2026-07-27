@@ -10,6 +10,7 @@ import 'package:lws_hmi/features/process_library/application/process_parameter_a
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
+import 'package:lws_hmi/features/process_mode/application/gun_dialog_coordinator.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
@@ -28,6 +29,7 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_mode_entry_t
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_material_wheel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_parameter_preview.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_process_wheel.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_value_pick.dart';
 import 'package:lws_hmi/features/process_mode/presentation/record_work_toggle.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
@@ -54,6 +56,7 @@ final class _QuickModePageState extends State<QuickModePage> {
   DeviceControlController? _deviceControl;
   RecordWorkController? _recordWork;
   CncSessionController? _cncSession;
+  GunDialogCoordinator? _gunDialogs;
   bool _exiting = false;
 
   @override
@@ -81,6 +84,7 @@ final class _QuickModePageState extends State<QuickModePage> {
             },
           );
           unawaited(_recordWork!.start(services));
+          _startGunDialogCoordinator(services);
         }
         if (_cncSession == null) {
           _cncSession = CncSessionController(services);
@@ -97,9 +101,28 @@ final class _QuickModePageState extends State<QuickModePage> {
     });
   }
 
+  void _startGunDialogCoordinator(AppServices services) {
+    final device = _deviceControl;
+    if (device == null || _gunDialogs != null) {
+      return;
+    }
+    _gunDialogs = GunDialogCoordinator(
+      deviceControl: device,
+      services: services,
+      contextGetter: () => mounted ? context : null,
+      showGroundLockAlarmGetter: () =>
+          MiscSettingsScope.maybeOf(context)?.showGroundLockAlarm ?? false,
+      resetGunLatchOnEnableOff: true,
+    );
+    unawaited(_gunDialogs!.start());
+    _gunDialogs!.setActive(_processType != ProcessType.cncCutting);
+  }
+
   @override
   void dispose() {
     _applyDebounce?.cancel();
+    _gunDialogs?.dispose();
+    _gunDialogs = null;
     _recordWork?.dispose();
     _deviceControl?.removeListener(_onDeviceControlChanged);
     _deviceControl?.dispose();
@@ -168,6 +191,7 @@ final class _QuickModePageState extends State<QuickModePage> {
       unawaited(session?.leaveWithoutExitWrite());
     }
     setState(() => _processType = type);
+    _gunDialogs?.setActive(type != ProcessType.cncCutting);
     _rebuildSelection(ProcessLibraryScope.of(context));
     if (type == ProcessType.cncCutting) {
       unawaited(session?.enter() ?? _enterCncWhenReady());
@@ -189,8 +213,11 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
   }
 
-  /// Quick Back (lws-ui `finishQuickMode`): stop record, then return home.
-  /// Laser stays on until End of work. Do not await wire/laser Modbus cleanup.
+  /// Quick Back → home: stop continuous wire + Laser Enable, stop record, pop.
+  ///
+  /// lws-ui `finishQuickMode` only stops record, but fragment `onDestroyView`
+  /// closes continuous feed/retract. We also clear Laser Enable on exit so
+  /// hardware does not keep enable after leaving the work page.
   Future<void> _handleExit() async {
     if (_exiting) {
       return;
@@ -202,6 +229,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     _exiting = true;
     try {
+      await _deviceControl?.shutdownForExit();
       await _recordWork?.stopRecordingForExit();
       if (!mounted) {
         return;

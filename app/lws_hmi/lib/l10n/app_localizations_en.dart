@@ -1259,6 +1259,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get safetyLockLabel => 'Safety Lock';
 
   @override
+  String get safetyGroundLockNotConnectedMessage => 'Connect the safety clamp before enabling the laser.';
+
+  @override
+  String get safetyGroundLockNotConnectedTitle => 'Safety Clamp Disconnected';
+
+  @override
   String get safetyLockText => 'Safety Clamp';
 
   @override

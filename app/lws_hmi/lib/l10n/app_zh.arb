@@ -425,6 +425,8 @@
   "rgbLedText": "RGB 指示灯",
   "rgbLedFooter": "用这些开关测试本机状态指示灯。",
   "safetyLockLabel": "安全锁",
+  "safetyGroundLockNotConnectedMessage": "请连接安全夹后再打开激光。",
+  "safetyGroundLockNotConnectedTitle": "安全夹未连通",
   "safetyLockText": "安全夹",
   "screenBrightnessText": "屏幕亮度",
   "screenDisplayText": "屏幕显示",

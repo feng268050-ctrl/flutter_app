@@ -2522,6 +2522,18 @@ abstract class AppLocalizations {
   /// **'Safety Lock'**
   String get safetyLockLabel;
 
+  /// No description provided for @safetyGroundLockNotConnectedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the safety clamp before enabling the laser.'**
+  String get safetyGroundLockNotConnectedMessage;
+
+  /// No description provided for @safetyGroundLockNotConnectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety Clamp Disconnected'**
+  String get safetyGroundLockNotConnectedTitle;
+
   /// No description provided for @safetyLockText.
   ///
   /// In en, this message translates to:

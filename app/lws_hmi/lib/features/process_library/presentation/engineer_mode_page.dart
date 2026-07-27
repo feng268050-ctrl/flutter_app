@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/process_library/application/process_library_sco
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
+import 'package:lws_hmi/features/process_mode/application/gun_dialog_coordinator.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_mode_draft.dart';
 import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
@@ -21,6 +22,7 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_process_tab_
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_reminder_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
@@ -60,6 +62,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   bool _bootstrapped = false;
   DeviceControlController? _deviceControl;
   RecordWorkController? _recordWork;
+  GunDialogCoordinator? _gunDialogs;
   bool _exiting = false;
 
   @override
@@ -89,6 +92,16 @@ final class _EngineerModePageState extends State<EngineerModePage> {
           },
         );
         unawaited(_recordWork!.start(services));
+        _gunDialogs = GunDialogCoordinator(
+          deviceControl: _deviceControl!,
+          services: services,
+          contextGetter: () => mounted ? context : null,
+          showGroundLockAlarmGetter: () =>
+              MiscSettingsScope.maybeOf(context)?.showGroundLockAlarm ?? false,
+          // Engineer keeps edge latch across Enable OFF (lws-ui).
+          resetGunLatchOnEnableOff: false,
+        );
+        unawaited(_gunDialogs!.start());
         setState(() {});
       }
       unawaited(_bootstrap());
@@ -97,6 +110,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
 
   @override
   void dispose() {
+    _gunDialogs?.dispose();
+    _gunDialogs = null;
     _recordWork?.dispose();
     _deviceControl?.dispose();
     super.dispose();
@@ -181,14 +196,16 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     });
   }
 
-  /// Engineer Back (lws-ui): disable laser, stop record, then return home.
+  /// Engineer Back (lws-ui): stop wire + Laser Enable, stop record, then home.
   Future<void> _handleExit() async {
     if (_exiting) {
       return;
     }
     _exiting = true;
     try {
-      await _deviceControl?.disableLaser();
+      // Prefer shutdownForExit over disableLaser: ignores mid-write busy and
+      // always clears continuous feed/retract direction + laser enable.
+      await _deviceControl?.shutdownForExit();
       await _recordWork?.stopRecordingForExit();
       if (!mounted) {
         return;

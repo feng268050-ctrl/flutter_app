@@ -1259,6 +1259,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get safetyLockLabel => '安全锁';
 
   @override
+  String get safetyGroundLockNotConnectedMessage => '请连接安全夹后再打开激光。';
+
+  @override
+  String get safetyGroundLockNotConnectedTitle => '安全夹未连通';
+
+  @override
   String get safetyLockText => '安全夹';
 
   @override
@@ -2791,6 +2797,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get safetyLockLabel => '安全鎖';
+
+  @override
+  String get safetyGroundLockNotConnectedMessage => '請連接安全夾後再打開激光。';
+
+  @override
+  String get safetyGroundLockNotConnectedTitle => '安全夾未連通';
 
   @override
   String get safetyLockText => '安全夾';

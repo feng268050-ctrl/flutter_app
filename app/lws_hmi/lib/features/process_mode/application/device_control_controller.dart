@@ -468,6 +468,47 @@ final class DeviceControlController extends ChangeNotifier {
     }
   }
 
+  /// Best-effort Modbus shutdown when leaving Quick/Engineer (Back → home).
+  ///
+  /// Stops continuous feed/retract and clears Laser Enable. Waits briefly if
+  /// another write holds [busy], then forces the clear (exit must not skip
+  /// hardware cleanup the way a mid-session busy toast would).
+  Future<void> shutdownForExit() async {
+    for (var i = 0; i < 10 && busy; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    busy = true;
+    lastError = null;
+    notifyListeners();
+    try {
+      await services.modbus.exclusiveSession(() async {
+        // Match lws-ui createCloseFeedOrBackConfig direction reset + wire off.
+        await services.modbus.writeAttribute(
+          DeviceControlIds.wireDirection,
+          false,
+        );
+        await services.modbus.writeAttribute(
+          DeviceControlIds.wireWork,
+          false,
+        );
+        await services.modbus.writeAttribute(
+          DeviceControlIds.laserEnable,
+          false,
+        );
+        return true;
+      });
+    } catch (e) {
+      debugPrint('device-control: shutdownForExit failed: $e');
+      lastError = '$e';
+    } finally {
+      laserEnable = false;
+      wireWork = false;
+      wireRetracting = false;
+      busy = false;
+      notifyListeners();
+    }
+  }
+
   @override
   void dispose() {
     unawaited(_sub?.cancel() ?? Future<void>.value());

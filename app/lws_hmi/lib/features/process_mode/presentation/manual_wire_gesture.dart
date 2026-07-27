@@ -45,7 +45,12 @@ final class ManualWireGesture {
     _holdTimer?.cancel();
     _latchTimer?.cancel();
     _pulseTimer?.cancel();
-    if (_runningFromHold && !_latchedFeed) {
+    // Hold-run and latched continuous feed both leave wireWork ON — stop both.
+    // (Previously only non-latched hold-run was cleared, so Back→home left
+    // continuous feed running until an explicit End of work.)
+    if (_latchedFeed || _runningFromHold) {
+      _latchedFeed = false;
+      _runningFromHold = false;
       unawaited(controller.stopWire());
     }
   }

@@ -546,6 +546,8 @@
   "rgbLedText": "RGB LED",
   "rgbLedFooter": "Use these controls to test the status LED indicators on this device.",
   "safetyLockLabel": "Safety Lock",
+  "safetyGroundLockNotConnectedMessage": "Connect the safety clamp before enabling the laser.",
+  "safetyGroundLockNotConnectedTitle": "Safety Clamp Disconnected",
   "safetyLockText": "Safety Clamp",
   "screenBrightnessText": "Brightness",
   "screenDisplayText": "Display",

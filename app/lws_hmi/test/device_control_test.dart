@@ -88,6 +88,26 @@ void main() {
     ]);
   });
 
+  test('shutdownForExit clears wire direction, work, and laser enable',
+      () async {
+    final modbus = _RecordingModbus();
+    final controller = DeviceControlController(servicesWith(modbus));
+    controller.laserEnable = true;
+    controller.wireWork = true;
+    controller.wireRetracting = true;
+
+    await controller.shutdownForExit();
+
+    expect(controller.laserEnable, isFalse);
+    expect(controller.wireWork, isFalse);
+    expect(controller.wireRetracting, isFalse);
+    expect(modbus.writes, [
+      (DeviceControlIds.wireDirection, false),
+      (DeviceControlIds.wireWork, false),
+      (DeviceControlIds.laserEnable, false),
+    ]);
+  });
+
   test('laser preflight blocks manual gas before hold', () {
     final controller =
         DeviceControlController(servicesWith(_RecordingModbus()));

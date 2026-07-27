@@ -28,7 +28,21 @@ class LinuxDateTimeController implements DateTimeController {
   bool _legacyImportAttempted = false;
 
   @override
-  Future<DateTime> now() async => DateTime.now();
+  Future<DateTime> now() async {
+    // Prefer OS civil time via `date` so Settings matches timedatectl even when
+    // the Dart/ICU default zone is still UTC (common on eLinux until TZ is set).
+    try {
+      final r = await _run('date', ['+%Y-%m-%dT%H:%M:%S']);
+      if (r.exitCode == 0) {
+        final raw = (r.stdout as String?)?.trim() ?? '';
+        final parsed = DateTime.tryParse(raw);
+        if (parsed != null) {
+          return parsed;
+        }
+      }
+    } catch (_) {}
+    return DateTime.now();
+  }
 
   @override
   Future<TimeSyncMode> getSyncMode() async {

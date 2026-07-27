@@ -15,8 +15,13 @@ Buildroot + **ynh960** (Innohi **RK3566**) on the Rockchip Linux 6.1 SDK.
 make extract-linux-sdk SRC=/path/to/rk356x_linux6.1_…
 # or: make extract-linux-sdk /path/to/rk356x_linux6.1_…
 # replace existing tree: FORCE=1 make extract-linux-sdk SRC=…
+# owned trim + platform squash: TRIM=1 make extract-linux-sdk SRC=…
+# or on an existing full tree:
+make trim-linux-sdk
+make check-linux-sdk
 ```
 
+See [`docs/linux-sdk-vendor-import.md`](docs/linux-sdk-vendor-import.md). After trim on macOS, refresh the Docker volume (`make docker-volume-init` or `make docker-volume-sync`) so deleted vendor trees are not retained.
 - Host Flutter SDK at repo-root `flutter-sdk/` (gitignored; run `make fetch-flutter-sdk`; override with `FLUTTER_SDK` in `.env`)
 - **Git LFS is required:** install it before cloning when possible (`brew install git-lfs` on macOS or `sudo apt install git-lfs` on Ubuntu), then run `git lfs install` and `git lfs pull` inside the repository
 - **Linux:** Ubuntu 22.04+ on ext4; Rockchip build deps (see `docker/Dockerfile` package list)
@@ -67,12 +72,16 @@ Run `make help` for the full target list. Stages below are **one command per lin
 git lfs install
 git lfs pull
 make extract-linux-sdk SRC=/path/to/rk356x_linux6.1_…
+make trim-linux-sdk
+make check-linux-sdk
 make setup
 make fetch-flutter-sdk
 make apply-overlay
 ```
 
-macOS only, before the first build:
+Or extract already trimmed: `TRIM=1 make extract-linux-sdk SRC=…`.
+
+macOS only, before the first build (re-run `docker-volume-init` / `docker-volume-sync` **after** trim so deleted vendor dirs are not kept in the volume):
 
 ```bash
 make docker-image
@@ -166,10 +175,12 @@ make build-kernel
 make upgrade
 ```
 
-**Kernel / DTS / display DTS** (`overlay/kernel/`, related `board/`):
+**Kernel / DTS / display DTS** (`overlay/kernel/` is the **git source of truth** while `linux-sdk/` is gitignored; do **not** put boot DTBs in `oem/`):
 
 ```bash
-make apply-overlay
+# After editing overlay/kernel (required for colleague sync):
+FORCE_PLATFORM_OVERLAY=1 make apply-overlay
+# or: make squash-linux-sdk-platform
 make build-kernel
 make build-rootfs
 make upgrade
@@ -505,9 +516,9 @@ On **macOS**, builds use a Docker volume for the SDK (not a bind mount from APFS
 
 On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under `linux-sdk/`; firmware lands in `linux-sdk/output/`.
 
-### `innohi_board` / WiFi-BT firmware errors
+### `innohi/` / WiFi-BT firmware errors
 
-Rockchip Innohi scripts reference **`linux-sdk/innohi_board/`** (not in git; only **`linux-sdk/innohi/`** ships). `make apply-overlay` syncs firmware + binaries and patches `post-wifibt.sh` / `mk-rootfs.sh`. **lws_hmi** skips Innohi **MainServer** autostart (Plan A uses systemd + `hmi.service`). If `build-rootfs` fails on `innohi_board` or `MainServer`, run `make apply-overlay` again (macOS: auto before each Docker build).
+Rockchip Innohi board binaries and Wi‑Fi/BT firmware live under **`linux-sdk/innohi/`** (vendor drop; not in git). `make apply-overlay` runs `normalize-innohi-sdk` to drop any legacy `innohi_board/` mirror and retarget scripts to `innohi/rootfs`. **lws_hmi** skips Innohi **MainServer** autostart (Plan A uses systemd + `hmi.service`). If `build-rootfs` fails on missing `rk_wifi_init` / firmware, re-extract the SDK (ensure `linux-sdk/innohi/rootfs` exists) and run `make apply-overlay` again (macOS: auto before each Docker build).
 
 **ynh960 Wi‑Fi/BT chip:** board SDIO is **AIC8800D80** (`c8a1:0082`), not AP6256. Keep `RK_WIFIBT_MODULES` non-empty so `post-wifibt` copies kernel `*.ko` + Innohi firmware; runtime uses `wifibt-bringup.sh` / `rk_wifi_init` (`aic8800_bsp`/`fdrv`/`btlpm`). Kernel fragment: `ynh960-wifibt.config`.
 

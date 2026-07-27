@@ -17,6 +17,7 @@ import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/linux_bluez_bluetooth_controller.dart';
+import 'package:lws_hmi/platform/datetime/os_wall_clock.dart';
 import 'package:lws_hmi/platform/http/http_client_controller.dart';
 import 'package:lws_hmi/platform/http/linux_http_client_controller.dart';
 
@@ -93,6 +94,7 @@ final class AppServices {
     ethernet = ethernetController ?? b.ethernetSession();
     wifi = wifiController ?? b.wifiSession();
     dateTime = dateTimeController ?? b.dateTime();
+    wallClock = OsWallClock(dateTime)..start();
     http = httpClientController ??
         LinuxHttpClientController(dateTimeController: dateTime);
     sshDebug = sshDebugController ?? b.sshDebug();
@@ -149,6 +151,7 @@ final class AppServices {
   late final EthernetController ethernet;
   late final WifiController wifi;
   late final DateTimeController dateTime;
+  late final OsWallClock wallClock;
   late final HttpClientController http;
   late final SshDebugController sshDebug;
   late final UsbOtg usbOtg;
@@ -278,6 +281,7 @@ final class AppServices {
             ? dateTime as LinuxDateTimeController
             : null,
       );
+      await wallClock.refresh();
     } catch (_) {
       // Soft-fail: Settings/Demo keep defaults.
     }

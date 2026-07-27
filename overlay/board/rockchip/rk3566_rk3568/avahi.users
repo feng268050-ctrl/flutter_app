@@ -1,0 +1,4 @@
+# Buildroot users table — required when avahi ships via prebuilt overlay
+# (BR2_PACKAGE_AVAHI is off, so package AVAHI_USERS never runs).
+# username uid group gid password home shell groups
+avahi -1 avahi -1 * - - -

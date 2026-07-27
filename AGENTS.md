@@ -15,7 +15,8 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 - Run `make help` for the authoritative Makefile target list.
 - First time: `make setup`, then `make build-deps`, then `make build` (macOS: `make docker-volume-init` before build).
-- The Rockchip SDK is fixed at repo-root `linux-sdk/`; override the Flutter SDK via repo-root `.env` or `FLUTTER_SDK` (default: `flutter-sdk/`). Other common settings are `BUILD_JOBS` and **`SN=`** (device selection). Use **`CHIPID=`** when selecting by chip ID only on multi-board. See README Make commands / `make devices`.- macOS: prefer Docker volume over `BUILD_BIND_MOUNT=1` (bind-mount often crashes Docker Desktop during Buildroot).
+- The Rockchip SDK is fixed at repo-root `linux-sdk/` (**gitignored** until S4). Override the Flutter SDK via repo-root `.env` or `FLUTTER_SDK` (default: `flutter-sdk/`). Other common settings are `BUILD_JOBS` and **`SN=`** (device selection). Use **`CHIPID=`** when selecting by chip ID only on multi-board. See README Make commands / `make devices`. macOS: prefer Docker volume over `BUILD_BIND_MOUNT=1` (bind-mount often crashes Docker Desktop during Buildroot).
+- **Device tree / kernel fragments (until `linux-sdk` is committed):** git source of truth is **`overlay/kernel/`**, not the local SDK tree and **not** `oem/`. After editing overlay DTS, run `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` (or `make squash-linux-sdk-platform`) then `make build-kernel`. Boot DTBs stay in the FIT; OEM only has runtime LCD params / profile. Detail: [`docs/linux-sdk-vendor-import.md`](docs/linux-sdk-vendor-import.md).
 - Flutter app work: host needs pinned `flutter` (`make fetch-flutter-sdk` / `make build-dev-deps`); packaging is `scripts/hmi-bundle-common.sh` via `make build-app`.
 - Do not commit unless the user explicitly asks.
 
@@ -84,7 +85,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `scripts/flutter/l10n*.sh`, `sync_l10n_child_arbs.py`, `zh_s2t.py` | none for firmware; exercise `make l10n` / `make l10n-verify` |
 | Bake app into rootfs / A/B image (release or no push path) | `make build-app`, `make build-rootfs`, `make upgrade` |
 | `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make upgrade` — also refreshes Weston `boot-splash.png` in overlay; follow with `make build-rootfs`, `make upgrade` |
-| `overlay/kernel/**`, kernel DTS | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
+| `overlay/kernel/**`, kernel DTS | Owned SDK: `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` (or `make squash-linux-sdk-platform`), then `make build-kernel`, `make build-rootfs`, `make upgrade`. Git SoT remains `overlay/kernel/` until linux-sdk is committed — do not sync DT via OEM |
 | `overlay/.../rootfs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | USB plug-ssh (`overlay/kernel/**` + fs-overlay scripts/units) | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
 | `scripts/device-logs.sh` only (host log streaming) | none |
@@ -109,7 +110,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | Alarm history SQLite (`SqliteAlarmLogRepository`, `/var/lib/hmi/alarm-logs.db`) | none beyond shipping App (`make build-app` / `make push-app`); board needs rootfs `libsqlite3` (already via platform packages) |
 | Overlay `read-device-serial.sh` (product.ini `sn` preference) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | Release / factory artifact | Build all changed inputs + `make build-oem`, then `make build-img`; for hardware validation: `make reboot-loader`, `make flash` (`FACTORY_SKU=` / `IMAGE=`) |
-| `fetch-*`, `extract-linux-sdk`, `build-dev-deps` only | no firmware rebuild; name the fetch/extract/build-deps target |
+| `fetch-*`, `extract-linux-sdk`, `trim-linux-sdk`, `check-linux-sdk`, `squash-linux-sdk-platform`, `build-dev-deps` only | no firmware rebuild; name the fetch/extract/trim/check target; after trim on macOS also `make docker-volume-init` or `make docker-volume-sync` |
 | Docs only | none |
 
 Example:

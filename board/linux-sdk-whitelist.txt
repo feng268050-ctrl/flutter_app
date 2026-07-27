@@ -1,0 +1,50 @@
+# linux-sdk whitelist for lws-hmi owned tree (W3).
+# Parsed by scripts/check-linux-sdk-whitelist.sh and scripts/trim-linux-sdk.sh.
+# Lines: KEY=value  |  # comments  |  blank ignored.
+# Paths are relative to linux-sdk/ root.
+
+# --- Forbidden top-level dirs (must be absent after trim) ---
+FORBID_TOP=debian
+FORBID_TOP=ubuntu
+FORBID_TOP=yocto
+FORBID_TOP=docs
+FORBID_TOP=app
+FORBID_TOP=innohi_board
+
+# --- Required top-level / roots (must exist after trim) ---
+REQUIRE_TOP=buildroot
+REQUIRE_TOP=kernel-6.1
+REQUIRE_TOP=device
+REQUIRE_TOP=rkbin
+REQUIRE_TOP=external
+REQUIRE_TOP=tools
+REQUIRE_TOP=build.sh
+
+# --- external/ keep (others under external/ are dropped by trim) ---
+KEEP_EXTERNAL=alsa-config
+KEEP_EXTERNAL=drm-cursor
+KEEP_EXTERNAL=gstreamer-rockchip
+KEEP_EXTERNAL=libmali
+KEEP_EXTERNAL=linux-rga
+KEEP_EXTERNAL=mpp
+KEEP_EXTERNAL=rknpu2
+KEEP_EXTERNAL=rkscript
+KEEP_EXTERNAL=rktoolkit
+KEEP_EXTERNAL=rkupdate
+KEEP_EXTERNAL=rkwifibt
+KEEP_EXTERNAL=rkwifibt-app
+KEEP_EXTERNAL=recovery
+
+# --- Forbidden fat paths (must be absent after trim) ---
+FORBID_PATH=external/rknn-toolkit2
+FORBID_PATH=external/camera_engine_rkaiq
+FORBID_PATH=external/chromium
+FORBID_PATH=external/dpdk
+FORBID_PATH=external/rknpu2/examples
+FORBID_PATH=external/rknpu2/doc
+FORBID_PATH=tools/windows
+FORBID_PATH=external/libmali/lib/arm-linux-gnueabihf
+
+# Soft size band for source tree (GiB), excluding dl/output caches.
+# Soft warning only when above MAX; hard fail when forbid paths present.
+SOFT_MAX_GIB=4.0

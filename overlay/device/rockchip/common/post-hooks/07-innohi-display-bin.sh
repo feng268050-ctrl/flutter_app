@@ -11,9 +11,9 @@ if [[ -z "$SDK_DIR" ]]; then
 	SDK_DIR="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 fi
 
-INNOHI_BIN="$SDK_DIR/innohi_board/rootfs/usr/bin"
+INNOHI_BIN="$SDK_DIR/innohi/rootfs/usr/bin"
 if [[ ! -d "$INNOHI_BIN" ]]; then
-	echo "post-innohi: skip (missing $INNOHI_BIN — run make apply-overlay)"
+	echo "post-innohi: skip (missing $INNOHI_BIN — check linux-sdk/innohi from extract)"
 	exit 0
 fi
 
@@ -41,7 +41,7 @@ for bin in MountAll ParamUpdate MainServer; do
 	echo "post-innohi: /system/bin/$bin -> /usr/bin/$bin"
 done
 
-INNOHI_UDEV="$SDK_DIR/innohi_board/rootfs/usr/lib/udev/rules.d/61-partition-init.rules"
+INNOHI_UDEV="$SDK_DIR/innohi/rootfs/usr/lib/udev/rules.d/61-partition-init.rules"
 if [[ -f "$INNOHI_UDEV" ]]; then
 	install -d "$TARGET_DIR/usr/lib/udev/rules.d"
 	install -m 0644 "$INNOHI_UDEV" "$TARGET_DIR/usr/lib/udev/rules.d/61-partition-init.rules"

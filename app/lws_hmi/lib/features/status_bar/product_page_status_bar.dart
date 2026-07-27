@@ -1,5 +1,6 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
@@ -21,6 +22,8 @@ class ProductPageStatusBar extends StatelessWidget
     this.wifi,
     this.bluetooth,
     this.toolbarHeight = kToolbarHeight,
+    this.clockNow,
+    this.clockListenable,
   });
 
   final String title;
@@ -34,6 +37,8 @@ class ProductPageStatusBar extends StatelessWidget
   final WifiController? wifi;
   final BluetoothController? bluetooth;
   final double toolbarHeight;
+  final DateTime Function()? clockNow;
+  final Listenable? clockListenable;
 
   @override
   Size get preferredSize {
@@ -43,21 +48,34 @@ class ProductPageStatusBar extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
+    final services = AppScope.maybeOf(context);
+    final listenable = clockListenable ?? services?.wallClock;
+    final nowFn =
+        clockNow ?? (services != null ? () => services.wallClock.now : null);
+
     return LiveProductStatusItems(
       cameraStatus: cameraStatus,
       iconSize: iconSize,
       wifi: wifi,
       bluetooth: bluetooth,
       builder: (context, items) {
-        return CyberPageStatusBar(
-          title: title,
-          onBack: onBack,
-          statusItems: items,
-          actions: actions,
-          bottom: bottom,
-          backgroundColor: backgroundColor,
-          foregroundColor: foregroundColor,
-          toolbarHeight: toolbarHeight,
+        CyberPageStatusBar buildBar() => CyberPageStatusBar(
+              title: title,
+              onBack: onBack,
+              statusItems: items,
+              actions: actions,
+              bottom: bottom,
+              backgroundColor: backgroundColor,
+              foregroundColor: foregroundColor,
+              toolbarHeight: toolbarHeight,
+              clockNow: nowFn,
+            );
+        if (listenable == null) {
+          return buildBar();
+        }
+        return ListenableBuilder(
+          listenable: listenable,
+          builder: (context, _) => buildBar(),
         );
       },
     );

@@ -112,9 +112,15 @@ if [[ "${EXPORT_PLATFORM}" == "1" ]]; then
   require_path "yaml-cpp" "$TARGET/usr/lib/libyaml-cpp.so*"
   require_path "sqlite" "$TARGET/usr/lib/libsqlite3.so*"
   [[ -x "$TARGET/usr/sbin/avahi-daemon" ]] || die "missing $TARGET/usr/sbin/avahi-daemon"
+  [[ -f "$TARGET/usr/share/dbus-1/system.d/avahi-dbus.conf" ]] || \
+    die "missing $TARGET/usr/share/dbus-1/system.d/avahi-dbus.conf"
+  [[ -f "$TARGET/usr/lib/systemd/system/avahi-daemon.service" ]] || \
+    die "missing $TARGET/usr/lib/systemd/system/avahi-daemon.service"
   PLAT_DEST="$ROOT/prebuilt/platform-packages/target"
   rm -rf "$PLAT_DEST"
   echo "export-runtime-prebuilt: platform → $PLAT_DEST"
+  # Include dbus policy + systemd units + etc/avahi so prebuilt rootfs does not
+  # depend on a leftover BR2_PACKAGE_AVAHI install in buildroot/output.
   copy_globs "$PLAT_DEST" \
     usr/lib/libmodbus.so* \
     usr/lib/libyaml-cpp.so* \
@@ -127,7 +133,15 @@ if [[ "${EXPORT_PLATFORM}" == "1" ]]; then
     usr/lib/libavahi-glib.so* \
     usr/lib/libdnsfile.so* \
     usr/lib/libdaemon.so* \
-    usr/share/avahi
+    usr/share/avahi \
+    usr/share/dbus-1/system.d/avahi-dbus.conf \
+    usr/lib/systemd/system/avahi-daemon.service \
+    usr/lib/systemd/system/avahi-daemon.socket \
+    usr/lib/tmpfiles.d/avahi.conf \
+    etc/avahi
+  mkdir -p "$PLAT_DEST/etc/systemd/system/multi-user.target.wants"
+  ln -sfn /usr/lib/systemd/system/avahi-daemon.service \
+    "$PLAT_DEST/etc/systemd/system/multi-user.target.wants/avahi-daemon.service"
   prebuilt_stamp "$PLAT_DEST" "$PLAT_VER"
   did=1
 fi

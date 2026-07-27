@@ -52,53 +52,68 @@ final class WorkModeStatusBar extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
-    final accent = backEnabled
-        ? WorkModeAccent.forProcessType(processType)
-        : WorkModeAccent.disabled;
-    return Material(
-      key: ValueKey('work-mode-status-bar-${mode.name}'),
-      color: WorkModeStatusBarDimens.background,
-      child: SizedBox(
-        height: toolbarHeight,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // lws-ui left_rail: fixed 160dp; Back fills the complete slot.
-            SizedBox(
-              width: WorkModeStatusBarDimens.sideRailWidth,
-              child: _WorkModeBackButton(
-                accent: accent,
-                enabled: backEnabled,
-                onPressed: onBack ?? () => Navigator.of(context).maybePop(),
-              ),
-            ),
-            // lws-ui center_content: weight=1 + gravity=center.
-            Expanded(
-              child: Center(
-                child: _WorkModeEquipmentStrip(
-                  status: equipmentStatus,
+    final services = AppScope.maybeOf(context);
+    final resolvedNow =
+        clockNow ?? (services != null ? () => services.wallClock.now : null);
+    final listenable = clockNow == null ? services?.wallClock : null;
+
+    Widget body() {
+      final accent = backEnabled
+          ? WorkModeAccent.forProcessType(processType)
+          : WorkModeAccent.disabled;
+      return Material(
+        key: ValueKey('work-mode-status-bar-${mode.name}'),
+        color: WorkModeStatusBarDimens.background,
+        child: SizedBox(
+          height: toolbarHeight,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // lws-ui left_rail: fixed 160dp; Back fills the complete slot.
+              SizedBox(
+                width: WorkModeStatusBarDimens.sideRailWidth,
+                child: _WorkModeBackButton(
+                  accent: accent,
+                  enabled: backEnabled,
+                  onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                 ),
               ),
-            ),
-            // lws-ui right_rail: fixed 160dp, end-aligned, 16dp end padding.
-            SizedBox(
-              width: WorkModeStatusBarDimens.sideRailWidth,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    right: WorkModeStatusBarDimens.rightRailPadding,
-                  ),
-                  child: _WorkModeTrailing(
-                    cameraStatus: cameraStatus,
-                    clockNow: clockNow,
+              // lws-ui center_content: weight=1 + gravity=center.
+              Expanded(
+                child: Center(
+                  child: _WorkModeEquipmentStrip(
+                    status: equipmentStatus,
                   ),
                 ),
               ),
-            ),
-          ],
+              // lws-ui right_rail: fixed 160dp, end-aligned, 16dp end padding.
+              SizedBox(
+                width: WorkModeStatusBarDimens.sideRailWidth,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      right: WorkModeStatusBarDimens.rightRailPadding,
+                    ),
+                    child: _WorkModeTrailing(
+                      cameraStatus: cameraStatus,
+                      clockNow: resolvedNow,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+      );
+    }
+
+    if (listenable == null) {
+      return body();
+    }
+    return ListenableBuilder(
+      listenable: listenable,
+      builder: (context, _) => body(),
     );
   }
 }

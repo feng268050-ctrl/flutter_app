@@ -153,7 +153,7 @@ fix_innohi_scripts_buildroot_output_dir() {
 
 echo "=== SDK native prepare (Innohi ynh960) ==="
 
-bash "$ROOT/scripts/sync-innohi-board.sh"
+bash "$ROOT/scripts/normalize-innohi-sdk.sh"
 
 install_file "$BOARD_DIR/ynh960_innohi_defconfig" "$CHIPS_DIR/ynh960_innohi_defconfig"
 install_file "$BOARD_DIR/960_lcd_param_rk356x.txt" "$CHIPS_DIR/960_lcd_param_rk356x.txt"

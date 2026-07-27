@@ -10,7 +10,7 @@ The repository SHALL provide an `oem/` tree with `packs/<pack_id>/manifest.json`
 
 #### Scenario: ynh960 pack present
 
-- **WHEN** a developer inspects `oem/packs/ynh960+panel-800x1280/manifest.json`
+- **WHEN** a developer inspects `oem/packs/ynh960_panel-800x1280/manifest.json`
 - **THEN** the manifest SHALL declare `board_id` `ynh960` and a screen id for the 800×1280 panel with paths under `boards/` and `screens/`
 
 ### Requirement: OEM manifest schema
@@ -118,7 +118,7 @@ The build system SHALL provide `make build-oem` that resolves `FACTORY_SKU` / `O
 #### Scenario: Default SKU build-oem
 
 - **WHEN** the operator runs `FACTORY_SKU=ynh960-p800 make build-oem` (or the default sku)
-- **THEN** `oem/out/ynh960+panel-800x1280/oem.img` (or matching oem_id path) exists and is an ext4 filesystem image
+- **THEN** `oem/out/ynh960_panel-800x1280/oem.img` (or matching oem_id path) exists and is an ext4 filesystem image
 
 ### Requirement: FACTORY_SKU resolves uboot and oem paths
 

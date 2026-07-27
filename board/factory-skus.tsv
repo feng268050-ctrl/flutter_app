@@ -1,2 +1,3 @@
 # sku uboot_id oem_id
-ynh960-p800 rockchip-ynh960 ynh960+panel-800x1280
+# oem_id = <board>_<panel-…>  (underscore between board and panel; hyphens stay inside panel/resolution)
+ynh960-p800 rockchip-ynh960 ynh960_panel-800x1280

@@ -20,6 +20,7 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
     this.statusIconGap = 12,
     this.clockGap = 12,
     this.toolbarHeight = kToolbarHeight,
+    this.clockNow,
   });
 
   final String title;
@@ -32,6 +33,9 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
   final double statusIconGap;
   final double clockGap;
   final double toolbarHeight;
+
+  /// Optional wall-clock source (e.g. OS civil time); defaults to [DateTime.now].
+  final DateTime Function()? clockNow;
 
   @override
   Size get preferredSize {
@@ -87,6 +91,7 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
               ),
               if (statusItems.isNotEmpty) SizedBox(width: clockGap),
               CyberStatusBarClock(
+                now: clockNow,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: fg,
                   fontFeatures: const [FontFeature.tabularFigures()],

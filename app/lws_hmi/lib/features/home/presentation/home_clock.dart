@@ -34,6 +34,8 @@ class HomeClock extends StatefulWidget {
     this.sampleMode = CyberBlurSampleMode.realtime,
     this.blurIntensity = CyberBlurIntensity.extreme,
     this.blurTint = CyberBlurTint.warm,
+    this.now,
+    this.listenable,
   });
 
   /// Design text size (product Home: 120; lws-ui XML: 150sp).
@@ -45,21 +47,30 @@ class HomeClock extends StatefulWidget {
   final CyberBlurIntensity blurIntensity;
   final CyberBlurTint blurTint;
 
+  /// Optional OS wall clock; defaults to [DateTime.now].
+  final DateTime Function()? now;
+
+  /// When set, rebuilds clock text when the listenable notifies.
+  final Listenable? listenable;
+
   @override
   State<HomeClock> createState() => _HomeClockState();
 }
 
 class _HomeClockState extends State<HomeClock> {
-  Timer? _minuteTimer;
+  Timer? _secondTimer;
   late String _text;
   ui.Image? _frozen;
   bool _capturePending = false;
 
+  DateTime get _now => widget.now?.call() ?? DateTime.now();
+
   @override
   void initState() {
     super.initState();
-    _text = _format(DateTime.now());
-    _scheduleNextMinute();
+    _text = _format(_now);
+    _secondTimer = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
+    widget.listenable?.addListener(_onExternalTick);
     if (widget.sampleMode != CyberBlurSampleMode.realtime) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _requestFrozenSample());
     }
@@ -67,7 +78,8 @@ class _HomeClockState extends State<HomeClock> {
 
   @override
   void dispose() {
-    _minuteTimer?.cancel();
+    widget.listenable?.removeListener(_onExternalTick);
+    _secondTimer?.cancel();
     _frozen?.dispose();
     super.dispose();
   }
@@ -75,6 +87,10 @@ class _HomeClockState extends State<HomeClock> {
   @override
   void didUpdateWidget(HomeClock oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.listenable != widget.listenable) {
+      oldWidget.listenable?.removeListener(_onExternalTick);
+      widget.listenable?.addListener(_onExternalTick);
+    }
     if (oldWidget.sampleMode != widget.sampleMode) {
       if (widget.sampleMode == CyberBlurSampleMode.realtime) {
         _frozen?.dispose();
@@ -92,22 +108,20 @@ class _HomeClockState extends State<HomeClock> {
     return '$h:$m';
   }
 
-  void _scheduleNextMinute() {
-    _minuteTimer?.cancel();
-    final now = DateTime.now();
-    final next = DateTime(now.year, now.month, now.day, now.hour, now.minute)
-        .add(const Duration(minutes: 1));
-    final delay = next.difference(now) + const Duration(milliseconds: 40);
-    _minuteTimer = Timer(delay, () {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _text = _format(DateTime.now()));
-      _scheduleNextMinute();
-      if (widget.sampleMode == CyberBlurSampleMode.onChange) {
-        _requestFrozenSample();
-      }
-    });
+  void _onExternalTick() => _onTick();
+
+  void _onTick() {
+    if (!mounted) {
+      return;
+    }
+    final next = _format(_now);
+    if (next == _text) {
+      return;
+    }
+    setState(() => _text = next);
+    if (widget.sampleMode == CyberBlurSampleMode.onChange) {
+      _requestFrozenSample();
+    }
   }
 
   void _requestFrozenSample() {

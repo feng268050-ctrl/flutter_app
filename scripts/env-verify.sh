@@ -566,6 +566,13 @@ for spec in \
 		prep_ok "$name not in rootfs"
 	fi
 done
+if [ -x /usr/sbin/avahi-daemon ]; then
+	if grep -q '^avahi:' /etc/passwd 2>/dev/null; then
+		prep_ok "avahi system user present"
+	else
+		fail "avahi-daemon installed but user 'avahi' missing (prebuilt users table / post-build)"
+	fi
+fi
 if command -v modbus_connect >/dev/null 2>&1; then
 	warn "modbus_connect CLI present"
 fi

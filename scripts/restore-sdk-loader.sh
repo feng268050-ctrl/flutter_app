@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Restore paired SDK MiniLoaderAll.bin (481728 B). Docker volume may have been
 # overwritten with Innohi loader (465344 B) by an earlier build-img run.
+# Authoritative copy: prebuilt/sdk-loader (or prebuilt/bootloader/<id>/); sdk/u-boot is staging only.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -22,41 +23,37 @@ file_md5() {
   md5 -q "$1" 2>/dev/null || md5sum "$1" | awk '{print $1}'
 }
 
-find_host_sdk_loader() {
-  local host_sdk="$ROOT/linux-sdk"
-  local candidate
-  for candidate in \
-    "$host_sdk/u-boot/rk356x_spl_loader_v1.23.114.bin" \
-    "$host_sdk/u-boot/"*_loader_*.bin; do
-    [[ -r "$candidate" ]] || continue
-    [[ "$(file_size "$candidate")" -ge "$SDK_MIN_SIZE" ]] || continue
-    [[ "$(file_md5 "$candidate")" == "$ANDROID_MD5" ]] && continue
-    echo "$candidate"
-    return 0
-  done
-  return 1
+acceptable_loader() {
+  local candidate="$1"
+  [[ -r "$candidate" ]] || return 1
+  [[ "$(file_size "$candidate")" -ge "$SDK_MIN_SIZE" ]] || return 1
+  [[ "$(file_md5 "$candidate")" == "$ANDROID_MD5" ]] && return 1
+  return 0
 }
 
 find_sdk_loader() {
   local candidate
+  # Prefer repo prebuilt (authoritative); sdk/u-boot is pack staging only.
   for candidate in \
+    "$ROOT/prebuilt/sdk-loader/MiniLoaderAll.bin" \
+    "$ROOT"/prebuilt/bootloader/*/MiniLoaderAll.bin \
     "$SDK/u-boot/rk356x_spl_loader_v1.23.114.bin" \
     "$SDK/u-boot/"*_loader_*.bin \
-    "$ROOT/prebuilt/sdk-loader/MiniLoaderAll.bin"; do
-    [[ -r "$candidate" ]] || continue
-    [[ "$(file_size "$candidate")" -ge "$SDK_MIN_SIZE" ]] || continue
-    [[ "$(file_md5 "$candidate")" == "$ANDROID_MD5" ]] && continue
-    echo "$candidate"
-    return 0
+    "$ROOT/linux-sdk/u-boot/rk356x_spl_loader_v1.23.114.bin" \
+    "$ROOT/linux-sdk/u-boot/"*_loader_*.bin; do
+    if acceptable_loader "$candidate"; then
+      echo "$candidate"
+      return 0
+    fi
   done
-  find_host_sdk_loader
+  return 1
 }
 
 restore_loader() {
   local loader dest size md5
 
   [[ -d "$SDK" ]] || die "SDK not found: $SDK"
-  loader="$(find_sdk_loader)" || die "SDK MiniLoaderAll not found (need 481728 B rk356x_spl_loader)"
+  loader="$(find_sdk_loader)" || die "SDK MiniLoaderAll not found (need 481728 B under prebuilt/sdk-loader)"
 
   size="$(file_size "$loader")"
   md5="$(file_md5 "$loader")"
@@ -67,7 +64,7 @@ restore_loader() {
   if [[ ! -r "$dest" ]] || [[ "$(file_size "$dest")" -lt "$SDK_MIN_SIZE" ]] \
     || [[ "$(file_md5 "$dest")" == "$ANDROID_MD5" ]]; then
     cp -f "$loader" "$dest"
-    echo "restored $dest"
+    echo "restored staging $dest"
   fi
 
   rm -f "$FIRMWARE/MiniLoaderAll.bin"

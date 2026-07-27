@@ -147,6 +147,23 @@ void main() {
       expect(map[TimeSyncPrefs.keyTimezone], 'UTC');
     });
 
+    test('now prefers date civil stamp over DateTime.now', () async {
+      final c = controller(
+        runProcess: (exe, args) async {
+          if (exe == 'date' && args.length == 1 && args.first.startsWith('+%')) {
+            return ProcessResult(0, 0, '2026-07-27T17:30:00\n', '');
+          }
+          return ProcessResult(0, 1, '', 'fail');
+        },
+      );
+      final n = await c.now();
+      expect(n.year, 2026);
+      expect(n.month, 7);
+      expect(n.day, 27);
+      expect(n.hour, 17);
+      expect(n.minute, 30);
+    });
+
     test('setWallClock switches mode to manual on success', () async {
       final calls = <String>[];
       final c = controller(

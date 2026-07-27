@@ -10,10 +10,7 @@ if [[ -z "$SDK_DIR" ]]; then
 	SDK_DIR="$(cd "$(dirname "$TARGET_DIR")/../../../.." && pwd)"
 fi
 
-INNOHI_BIN="$SDK_DIR/innohi_board/rootfs/usr/bin"
-if [[ ! -d "$INNOHI_BIN" ]]; then
-	INNOHI_BIN="$SDK_DIR/innohi/rootfs/usr/bin"
-fi
+INNOHI_BIN="$SDK_DIR/innohi/rootfs/usr/bin"
 
 if [[ -x "$INNOHI_BIN/rk_wifi_init" ]]; then
 	install -m 0755 "$INNOHI_BIN/rk_wifi_init" "$TARGET_DIR/usr/bin/rk_wifi_init"

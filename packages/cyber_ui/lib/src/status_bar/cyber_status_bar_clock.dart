@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-/// Compact minute-resolution `HH:mm` clock for page status bars.
+/// Compact `HH:mm` clock for page status bars.
+///
+/// Polls once per second and only rebuilds when the displayed minute changes
+/// (or when [now] jumps after a manual wall-clock set).
 class CyberStatusBarClock extends StatefulWidget {
   const CyberStatusBarClock({
     super.key,
@@ -12,7 +15,7 @@ class CyberStatusBarClock extends StatefulWidget {
 
   final TextStyle? style;
 
-  /// Injected for tests; defaults to [DateTime.now].
+  /// Injected for tests / OS wall clock; defaults to [DateTime.now].
   final DateTime Function()? now;
 
   @override
@@ -35,22 +38,25 @@ class _CyberStatusBarClockState extends State<CyberStatusBarClock> {
   void initState() {
     super.initState();
     _text = _format(_now);
-    _scheduleNextTick();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
   }
 
-  void _scheduleNextTick() {
-    _timer?.cancel();
-    final now = _now;
-    final next = DateTime(now.year, now.month, now.day, now.hour, now.minute)
-        .add(const Duration(minutes: 1));
-    final delay = next.difference(now) + const Duration(milliseconds: 50);
-    _timer = Timer(delay, () {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _text = _format(_now));
-      _scheduleNextTick();
-    });
+  void _onTick() {
+    if (!mounted) {
+      return;
+    }
+    final next = _format(_now);
+    if (next != _text) {
+      setState(() => _text = next);
+    }
+  }
+
+  @override
+  void didUpdateWidget(CyberStatusBarClock oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.now != widget.now) {
+      _onTick();
+    }
   }
 
   @override

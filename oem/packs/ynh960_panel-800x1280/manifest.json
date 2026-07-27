@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "pack_id": "ynh960+panel-800x1280",
+  "pack_id": "ynh960_panel-800x1280",
   "board_id": "ynh960",
   "screen_id": "panel-ynh960-800x1280",
   "board_path": "boards/ynh960",

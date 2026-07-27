@@ -35,8 +35,8 @@
 | 板脚本 | **W2 ✅**：modem / OTG / display-init 在 `oem/boards/ynh960/helpers/`；rootfs 为 thin stub |
 | GPT `oem` | ✅ ~128 MiB `/oem`；`build-oem` + `upgrade`（含 `OEM_ONLY=1`）已通；ynh960 pack 有内容 |
 | `product.ini` | ✅ OEM 种子；compose 强制 `brand`/`model`/`sn`；`set-prop`/`del-prop` 拒改 identity |
-| `linux-sdk/` | 🔲 仍 gitignore；~18 G 全能树（W3 待裁剪进仓） |
-| 定制方式 | 仍 `overlay/**` + `apply-overlay` 打进供应商 SDK（W3 内化） |
+| `linux-sdk/` | ✅ W3：白名单/trim/squash/薄 overlay 已归档；**暂不进仓**；DT git 真相源仍为 `overlay/kernel/`（见 `docs/linux-sdk-vendor-import.md`） |
+| 定制方式 | 平台 kernel/device squash 进本地树；**DT/fragment 同事同步走 overlay**；第三方 BR 包仍 overlay；产品/OEM 仍 `apply-overlay` |
 | P3.2 | 🔲 未开始；规划 UTM + Weston + eLinux + HAL（W4） |
 
 ### 1.2 结论（本计划采纳）
@@ -118,9 +118,9 @@
 oem/                              # 新建：OEM 包源（打进 oem.img）
   manifest.schema.json            # 可选：JSON Schema
   packs/
-    ynh960+panel-800x1280/        # 一种出厂组合（或由组装脚本生成）
+    ynh960_panel-800x1280/        # board_panel（避免 + / 分辨率 - 歧义）
       manifest.json
-    sim+virt/                     # P3.2
+    sim_virt/                     # P3.2
       manifest.json
   boards/
     ynh960/
@@ -143,7 +143,7 @@ oem/                              # 新建：OEM 包源（打进 oem.img）
 真机当前组合可由构建选择：
 
 ```bash
-OEM_PACK=ynh960+panel-800x1280 make build-oem
+OEM_PACK=ynh960_panel-800x1280 make build-oem
 ```
 
 ### 3.3 `manifest.json`（组合声明）
@@ -151,7 +151,7 @@ OEM_PACK=ynh960+panel-800x1280 make build-oem
 ```json
 {
   "schema_version": 1,
-  "pack_id": "ynh960+panel-800x1280",
+  "pack_id": "ynh960_panel-800x1280",
   "board_id": "ynh960",
   "screen_id": "panel-ynh960-800x1280",
   "board_path": "boards/ynh960",
@@ -351,17 +351,17 @@ linux-sdk/                    # 保留此名（进仓后的自有 platform 树�
 
 1. 记录蓝本版本（commit / 包名 / 日期）于 `linux-sdk/VENDOR_IMPORT.md`。  
 2. 新蓝本合入：`import` 分支 → 审 diff → 合入主树；禁止「整包覆盖后无法审」。  
-3. 日常功能改动：**只改自有树**，不再往 `overlay/kernel` 无限加补丁（迁移期：旧 overlay **只删不增**）。  
+3. **S4 进仓前**：板级 DTS/DTSI / 内核 fragment 的 **git 真相源仍是 `overlay/kernel/`**（同事靠 PR 同步）；本地 owned `linux-sdk` 仅构建缓存。改 DT 后用 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` 或 `make squash-linux-sdk-platform` 灌入 SDK，再 `build-kernel`。**禁止**只改本机 `linux-sdk` 不回写 overlay；**禁止**把启动 DTB 放进 OEM（见 §4 / 决策表）。S4 进仓后可改为「直接改自有树 + PR」。  
 4. 大二进制（Mali so、firmware）：优先 **Git LFS** 或 `prebuilt/` + 校验和，避免涨爆主历史。
 
 ### 5.4 与现有 `overlay/` 的过渡
 
 ```text
-阶段 S0  文档 + 白名单清单 + 体积门禁脚本（du / 禁止目录）
-阶段 S1  生成「裁剪 SDK」可构建（仍可出 ynh960 rootfs）
-阶段 S2  将 overlay 中已稳定补丁 squash 进 linux-sdk；CI 用自有树
-阶段 S3  overlay 仅留「产品/OEM 注入」或清空；apply-overlay 缩成薄封装
-阶段 S4  gitignore 调整：linux-sdk 源码可提交；output/dl 仍忽略
+阶段 S0  文档 + 白名单清单 + 体积门禁脚本（du / 禁止目录）     ✅
+阶段 S1  生成「裁剪 SDK」可构建（仍可出 ynh960 rootfs）       ✅ 工具；本机 trim 后需验证镜像
+阶段 S2  将 overlay 中已稳定补丁 squash 进 linux-sdk         ✅ 平台 kernel/device；第三方包仍 overlay
+阶段 S3  apply-overlay 变薄（owned 时跳过平台步骤）           ✅ 产品/OEM/第三方包仍 inject
+阶段 S4  gitignore 放开进仓                                   ⏸ 暂缓（防索引卡死）；策略见 docs/linux-sdk-vendor-import.md
 ```
 
 ### 5.5 U-Boot 策略（写入 SDK 规范）
@@ -396,7 +396,7 @@ output/firmware/<factory_sku>/
 ```
 
 `<uboot_id>` 例：`rockchip-ynh960`、`vendorB-rk3568-evb`。  
-`<oem_id>` 例：`ynh960+panel-800x1280`、`sim+virt`（与 §3 pack_id 对齐）。  
+`<oem_id>` 例：`ynh960_panel-800x1280`、`sim_virt`（与 §3 pack_id 对齐；**board 与 panel 用 `_` 连接**，panel/分辨率内仍可用 `-`）。  
 `<factory_sku>` 例：`ynh960-p800`——工厂扫码/料号用的短名，可映射到一对 `(uboot_id, oem_id)`。
 
 #### 5.6.2 环境变量（同一解析器）
@@ -414,8 +414,8 @@ SKU 表（仓库内，例 `board/factory-skus.tsv` 或 `board/skus/*.env`）：
 
 ```text
 # sku              uboot_id              oem_id
-ynh960-p800        rockchip-ynh960       ynh960+panel-800x1280
-ynh960-p1024       rockchip-ynh960       ynh960+panel-1024x600
+ynh960-p800        rockchip-ynh960       ynh960_panel-800x1280
+ynh960-p1024       rockchip-ynh960       ynh960_panel-1024x600
 vendorB-panelA     vendorB-rk3568        boardB+panelA
 ```
 
@@ -438,7 +438,7 @@ factory   = $out_dir/factory.img
 
 ```text
 FACTORY_SKU=ynh960-p800 make build-oem
-  → 按 OEM_ID 组装 oem/packs/… → 写 oem/out/ynh960+panel-800x1280/oem.img
+  → 按 OEM_ID 组装 oem/packs/… → 写 oem/out/ynh960_panel-800x1280/oem.img
 
 FACTORY_SKU=ynh960-p800 make build-img
   → 读 uboot_dir 的 uboot.img (+ loader)
@@ -569,14 +569,15 @@ W2  Rootfs/脚本瘦身                                      ✅
     ├─ product.ini：OEM 强制 brand/model/sn；set-prop 拒 identity
     └─ archive: 2026-07-27-platform-rootfs-script-thinning
 
-W3  自有 linux-sdk                                       🔲 下一步候选
-    ├─ 裁剪构建可复现 ynh960 镜像
-    ├─ 白名单门禁；VENDOR_IMPORT.md
-    ├─ overlay 冻结/内化
-    └─ git 策略（源码进仓 / LFS / dl ignore）
+W3  自有 linux-sdk                                       ✅ 工具已归档（进仓⏸）
+    ├─ 裁剪构建可复现 ynh960 镜像（trim + check；验证随本机树）
+    ├─ 白名单门禁；docs/linux-sdk-vendor-import.md
+    ├─ overlay：kernel/device 平台 squash；第三方包仍 overlay
+    └─ git 策略文档已写；linux-sdk/ 仍 ignore（防索引卡死）
+    └─ change: openspec/changes/platform-linux-sdk-own-tree
 
 W4  P3.2 虚拟机（第二主板+屏）                           🔲 可与 W3 并行
-    ├─ oem pack sim+virt
+    ├─ oem pack sim_virt
     ├─ AppServices Stub 接线
     ├─ 路径 A 文档 + 脚本
     └─ 可选路径 B Buildroot virt
@@ -625,8 +626,8 @@ W0 → W3（可与 W4 并行；完成前仍可用现 linux-sdk）
 ## 10. 成功标准（平台化第一里程碑）
 
 1. **真机**：`oem.img`（ynh960+屏）+ 通用 rootfs 启动；HMI 使用 OEM profile + **App 内** gpio/modbus。 ✅（W1+W2）  
-2. **模拟器**：sim+virt OEM 启动同一 HMI；缺硬件不崩；可作为「第二主板+屏」演示组合切换。 🔲 W4  
-3. **构建**：裁剪 linux-sdk 可出与现网等价的 ynh960 镜像（或明确差距清单）。 🔲 W3  
+2. **模拟器**：sim_virt OEM 启动同一 HMI；缺硬件不崩；可作为「第二主板+屏」演示组合切换。 🔲 W4  
+3. **构建**：裁剪 linux-sdk 可出与现网等价的 ynh960 镜像（或明确差距清单）。 🟡 W3 工具就绪；本机 trim 后验证  
 4. **工厂变体**：`FACTORY_SKU=… make build-oem` / `build-img` / `flash` 解析同一套路径；产出 `output/firmware/<sku>/factory.img`；uboot 来自 `prebuilt/bootloader/<uboot_id>/`。 ✅（W1）  
 5. **文档**：`make help` / README / AGENTS 重建表含 `build-oem`、`factory.img`、模拟器步骤；**无** factory-test 强依赖。 部分 ✅（模拟器步骤待 W4）  
 
@@ -642,6 +643,7 @@ W0 → W3（可与 W4 并行；完成前仍可用现 linux-sdk）
 | 4 | **`product.ini` v1 进 OEM** | 按现状把出厂身份/调参（含 `camera_ip` 等）放入 OEM board 包；运行时仍衔接 HAL 既有路径；**长期归属未来另议** |
 | 5 | **整包改称 `factory.img`** | 取代以单一 `update.img` 为工厂产物的心智；过渡期可 symlink |
 | 6 | **U-Boot / OEM 分目录 + 环境变量选择** | `prebuilt/bootloader/<uboot_id>/` 与 `oem/out/<oem_id>/`；`FACTORY_SKU`（可覆盖 `UBOOT_ID`/`OEM_ID`）驱动 `build-oem` / `build-img` / `flash`；缺文件失败，禁止静默混用 |
+| 7 | **启动 DT 不进 OEM；S4 前 overlay/kernel 为 git 真相源** | DTB 在 boot FIT（U-Boot 早于 `/oem`）。OEM 仅运行期屏参/profile/helpers。`linux-sdk/` 暂不进仓期间，DTS 变更提交 `overlay/kernel/`，再 squash / `FORCE_PLATFORM_OVERLAY=1`；细则见 [`linux-sdk-vendor-import.md`](linux-sdk-vendor-import.md) |
 
 ---
 

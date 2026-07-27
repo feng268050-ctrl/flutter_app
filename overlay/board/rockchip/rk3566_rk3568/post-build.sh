@@ -105,6 +105,24 @@ fi
 rm -f "$TARGET_DIR/usr/bin/flutter-pi"
 echo "post-build: purged flutter-pi (if leftover)"
 
+# Prebuilt avahi-daemon skips Buildroot AVAHI_USERS. Users table should create
+# the account; this is an idempotent safety net if mkusers did not run.
+if [ -x "$TARGET_DIR/usr/sbin/avahi-daemon" ]; then
+	if ! grep -q '^avahi:' "$TARGET_DIR/etc/group" 2>/dev/null; then
+		echo 'avahi:x:110:' >> "$TARGET_DIR/etc/group"
+		echo "post-build: added group avahi (gid 110)"
+	fi
+	if ! grep -q '^avahi:' "$TARGET_DIR/etc/passwd" 2>/dev/null; then
+		gid="$(awk -F: '$1=="avahi"{print $3; exit}' "$TARGET_DIR/etc/group")"
+		echo "avahi:x:104:${gid}:Avahi mDNS daemon:/run/avahi-daemon:/bin/false" \
+			>> "$TARGET_DIR/etc/passwd"
+		echo "post-build: added user avahi (uid 104)"
+	fi
+	if [ -f "$TARGET_DIR/etc/shadow" ] && ! grep -q '^avahi:' "$TARGET_DIR/etc/shadow"; then
+		echo 'avahi:!:0:0:99999:7:::' >> "$TARGET_DIR/etc/shadow"
+	fi
+fi
+
 has_weston=0
 if [ -x "$TARGET_DIR/usr/bin/weston" ] && \
 	[ -x "$TARGET_DIR/usr/bin/flutter-wayland-client" ]; then

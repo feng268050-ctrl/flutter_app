@@ -671,10 +671,39 @@ patch_buildroot_config() {
 
 restore_check_sdk=0
 restore_all=0
+platform_squash_only=0
 if [[ "${1:-}" == "--restore-check-sdk" ]]; then
   restore_check_sdk=1
 elif [[ "${1:-}" == "--restore" ]]; then
   restore_all=1
+elif [[ "${1:-}" == "--platform-squash" ]]; then
+  platform_squash_only=1
+fi
+
+# Owned tree (W3): skip re-applying kernel + stable device script patches unless forced.
+# Third-party / custom BR packages always sync on a normal apply-overlay.
+skip_platform_overlay=0
+if [[ "$platform_squash_only" != "1" \
+   && -f "$SDK/.lws-owned-tree" \
+   && "${FORCE_PLATFORM_OVERLAY:-0}" != "1" ]]; then
+  skip_platform_overlay=1
+fi
+
+run_platform_overlay() {
+  sync_kernel_display_dts
+  sync_kernel_config_fragments
+  apply_kernel_patches
+  patch_mk_loader
+  patch_mk_rootfs
+  patch_30_rootfs
+  patch_post_wifibt
+  fix_innohi_scripts_buildroot_output_dir
+}
+
+if [[ "$platform_squash_only" == "1" ]]; then
+  run_platform_overlay
+  echo "ynh960 platform squash applied to SDK (kernel + device patches only)"
+  exit 0
 fi
 
 if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
@@ -798,6 +827,15 @@ fi
 
 install_file "$BOARD_DIR/ynh960_defconfig" "$CHIP_DIR/ynh960_defconfig"
 install_file "$BOARD_DIR/ynh960_defconfig" "$CHIPS_DIR/ynh960_defconfig"
+
+# Avahi users table for prebuilt platform path.
+# BR2_ROOTFS_USERS_TABLES paths are relative to the Buildroot topdir (buildroot/),
+# same as BR2_ROOTFS_OVERLAY — not device/rockchip/.
+AVAHI_USERS_SRC="$OVERLAY/board/rockchip/rk3566_rk3568/avahi.users"
+AVAHI_USERS_DST="$SDK/buildroot/board/rockchip/rk3566_rk3568/avahi.users"
+if [[ -f "$AVAHI_USERS_SRC" ]]; then
+  install_file "$AVAHI_USERS_SRC" "$AVAHI_USERS_DST"
+fi
 install_file "$BOARD_DIR/960_lcd_param_rk356x.txt" "$CHIP_DIR/960_lcd_param_rk356x.txt"
 install_file "$BOARD_DIR/960_lcd_param_rk356x.txt" "$CHIPS_DIR/960_lcd_param_rk356x.txt"
 install_file "$BOARD_DIR/parameter-buildroot-fit.txt" "$CHIP_DIR/parameter-buildroot-fit.txt"
@@ -881,9 +919,11 @@ sync_post_fakeroot_script
 sync_strip_fstab_script
 sync_flutter_engine_script
 sync_flutter_elinux_script
-sync_kernel_display_dts
-sync_kernel_config_fragments
-apply_kernel_patches
+if [[ "$skip_platform_overlay" == "1" ]]; then
+  echo "overlay: skip platform kernel/device patches (.lws-owned-tree present; FORCE_PLATFORM_OVERLAY=1 to re-apply)"
+else
+  run_platform_overlay
+fi
 sync_display_params
 sync_boot_logo
 sync_hmi_app_overlay
@@ -896,12 +936,7 @@ sync_bluez5_utils_stock
 sync_bluez_alsa_package
 sync_source_han_sans_cn_package
 patch_buildroot_config
-patch_mk_loader
-patch_mk_rootfs
-patch_30_rootfs
-patch_post_wifibt
-fix_innohi_scripts_buildroot_output_dir
-bash "$ROOT/scripts/sync-innohi-board.sh"
+bash "$ROOT/scripts/normalize-innohi-sdk.sh"
 bash "$ROOT/scripts/sync-prebuilt-overlays.sh"
 
 echo "ynh960 board + display + Plan A systemd overlay applied to SDK"

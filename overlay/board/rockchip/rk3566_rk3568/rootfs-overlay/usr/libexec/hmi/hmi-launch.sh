@@ -193,6 +193,34 @@ export HOME="${HOME:-/root}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 mkdir -p "$XDG_CACHE_HOME"
 
+# Dart/Flutter DateTime.now() follows TZ / libc localtime. Prefer product prefs,
+# then /etc/localtime, then Asia/Shanghai (ynh960 default). Without this, ICU may
+# stay on UTC and Settings/status clocks read eight hours behind CST.
+resolve_hmi_tz() {
+	if [ -n "${TZ:-}" ]; then
+		printf '%s\n' "$TZ"
+		return 0
+	fi
+	if [ -f /var/lib/hal/datetime.conf ]; then
+		t=$(sed -n 's/^timezone=//p' /var/lib/hal/datetime.conf 2>/dev/null | head -n1 | tr -d '\r')
+		if [ -n "$t" ]; then
+			printf '%s\n' "$t"
+			return 0
+		fi
+	fi
+	if [ -L /etc/localtime ]; then
+		target=$(readlink /etc/localtime 2>/dev/null || true)
+		case "$target" in
+		*/zoneinfo/*)
+			printf '%s\n' "${target##*/zoneinfo/}"
+			return 0
+			;;
+		esac
+	fi
+	printf '%s\n' "Asia/Shanghai"
+}
+export TZ="$(resolve_hmi_tz)"
+
 # Rockchip post-hook 10-weston overwrites /etc/xdg/weston/weston.ini.
 # Own config via --config under XDG_RUNTIME_DIR (transform + mouse prefs).
 case "$HMI_ORIENTATION" in

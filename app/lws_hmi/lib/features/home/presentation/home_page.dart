@@ -282,6 +282,8 @@ class _HomePageState extends State<HomePage> {
                     child: HomeClock(
                       fontSize: 120 * sx,
                       sampleMode: CyberBlurSampleMode.realtime,
+                      now: () => AppScope.of(context).wallClock.now,
+                      listenable: AppScope.of(context).wallClock,
                     ),
                   ),
                 ),

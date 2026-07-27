@@ -94,16 +94,19 @@ ensure_sdk_uboot() {
   local vendor="$FACTORY_UBOOT_IMG"
   local dest="$firmware/uboot.img"
   local host="$ROOT/output/firmware/uboot.img"
+  local staging="$sdk/u-boot/uboot.img"
 
   factory_sku_require_uboot
-  mkdir -p "$firmware" "$ROOT/output/firmware"
+  mkdir -p "$firmware" "$ROOT/output/firmware" "$sdk/u-boot"
 
   # ONLY unpatched vendor uboot. Do NOT binary-patch (env CRC → no backlight/maskrom).
   # Do NOT use LWS_HMI_COMPILED_UBOOT (ynh960 brick risk). Do NOT use Innohi uboot for Linux GPT.
-  rm -f "$dest"
+  # Authoritative: prebuilt/bootloader/$UBOOT_ID — sdk/u-boot is pack staging only.
+  rm -f "$dest" "$staging"
   install_file_follow "$vendor" "$dest"
   install_file_follow "$vendor" "$host"
-  echo "uboot.img: $UBOOT_ID unmodified"
+  install_file_follow "$vendor" "$staging"
+  echo "uboot.img: $UBOOT_ID unmodified (staged to sdk/u-boot for pack)"
   bash "$SIZE_HELPER" "$vendor"
   echo "NOTE: bootcmd=boot_android;boot_fit — Linux needs Innohi uboot or serial 'boot_fit'"
   strings "$dest" | grep '^bootcmd=' || true

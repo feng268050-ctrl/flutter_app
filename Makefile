@@ -40,7 +40,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-umtprd rebuild-umtprd build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app alarm alarm-clean l10n l10n-sync l10n-gen l10n-verify
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-umtprd rebuild-umtprd build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app alarm alarm-clean l10n l10n-sync l10n-gen l10n-verify
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -101,7 +101,10 @@ help:
 	@echo "  See docs/build-optimization.md"
 	@echo ""
 	@echo "Dependencies (prebuilt / fetch — run before first make build-rootfs):"
-	@echo "  make extract-linux-sdk SRC=<dir>  # xz split volumes → linux-sdk/ (FORCE=1 to replace)"
+	@echo "  make extract-linux-sdk SRC=<dir>  # xz split volumes → linux-sdk/ (FORCE=1 replace; TRIM=1 trim+squash)"
+	@echo "  make trim-linux-sdk        # whitelist trim + platform squash (owned tree; keeps dl/output)"
+	@echo "  make check-linux-sdk       # fail if forbidden dirs / fat paths remain under linux-sdk/"
+	@echo "  make squash-linux-sdk-platform  # re-apply overlay/kernel + device patches into owned tree"
 	@echo "  make check-prebuilt        # verify prebuilt for enabled defconfig fragments"
 	@echo "  make build-deps            # build-dev-deps + build-runtime-deps"
 	@echo "  make build-dev-deps        # dev host: FLUTTER_SDK + RKNN-Toolkit"
@@ -307,8 +310,18 @@ build-uboot:
 
 # SRC=/path/to/volumes or: make extract-linux-sdk /path/to/volumes
 # FORCE=1 replaces an existing linux-sdk/
+# TRIM=1 runs trim-linux-sdk after extract
 extract-linux-sdk:
-	@SRC='$(SRC)' FORCE='$(FORCE)' DEST='$(DEST)' bash scripts/extract-linux-sdk.sh $(EXTRACT_LINUX_SDK_ARGS)
+	@SRC='$(SRC)' FORCE='$(FORCE)' DEST='$(DEST)' TRIM='$(TRIM)' bash scripts/extract-linux-sdk.sh $(EXTRACT_LINUX_SDK_ARGS)
+
+trim-linux-sdk:
+	@DEST='$(DEST)' CLEAN_OUTPUT='$(CLEAN_OUTPUT)' bash scripts/trim-linux-sdk.sh
+
+check-linux-sdk:
+	@bash scripts/check-linux-sdk-whitelist.sh
+
+squash-linux-sdk-platform:
+	@bash scripts/squash-linux-sdk-platform.sh
 
 check-prebuilt:
 	@bash scripts/check-prebuilt.sh

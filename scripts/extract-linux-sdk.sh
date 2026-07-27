@@ -12,12 +12,14 @@
 # Optional:
 #   FORCE=1   replace an existing linux-sdk/
 #   DEST=…    override extract target (default: <repo>/linux-sdk)
+#   TRIM=1    run make trim-linux-sdk (whitelist + platform squash) after extract
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="${SRC:-${1:-}}"
 DEST="${DEST:-$ROOT/linux-sdk}"
 FORCE="${FORCE:-0}"
+TRIM="${TRIM:-0}"
 
 die() {
   echo "ERROR: $*" >&2
@@ -33,6 +35,7 @@ Usage:
 Options:
   FORCE=1   replace existing linux-sdk/
   DEST=dir  extract target (default: <repo>/linux-sdk)
+  TRIM=1    trim to owned whitelist + squash platform overlay after extract
 EOF
 }
 
@@ -139,7 +142,17 @@ mv "$stage" "$DEST"
 
 echo "extract-linux-sdk: done → $DEST"
 ls -la "$DEST" | head -20
+
+if [[ "$TRIM" == "1" ]]; then
+  echo "extract-linux-sdk: TRIM=1 → trim-linux-sdk"
+  DEST="$DEST" LWS_HMI_SDK_DIR="$DEST" bash "$ROOT/scripts/trim-linux-sdk.sh"
+fi
+
 if [[ "$(cd "$DEST" && pwd)" == "$(cd "$ROOT/linux-sdk" 2>/dev/null && pwd)" ]]; then
   echo "Next (macOS): make docker-volume-init   # or make docker-volume-sync if volume already exists"
-  echo "Next:           make setup && make apply-overlay"
+  if [[ "$TRIM" == "1" ]]; then
+    echo "Next:           make apply-overlay   # product/OEM + third-party packages (platform already squashed)"
+  else
+    echo "Next:           make trim-linux-sdk && make apply-overlay   # or TRIM=1 on extract"
+  fi
 fi

@@ -73,7 +73,7 @@ P3.1  Dart HAL 子包 + 网络栈切换 ✅
 
 P3.2  Linux 模拟器 🔲
     ├─ UTM + Weston (Wayland) + flutter-embedded-linux + HAL
-    ├─ sim+virt OEM pack（第二主板+屏）；可连下位机（Modbus 等）
+    ├─ sim_virt OEM pack（第二主板+屏）；可连下位机（Modbus 等）
     ├─ 平台化：OEM · 通用 boot/rootfs · 自有 linux-sdk
     │   （见 docs/platform-os-oem-sdk-plan.md；gpio/modbus 仍属产品 App）
     └─ 量产显示栈：Weston + eLinux

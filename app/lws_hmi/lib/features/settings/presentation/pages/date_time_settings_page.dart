@@ -69,6 +69,7 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
     try {
       await fn();
       await _load();
+      await widget.services.wallClock.refresh();
     } catch (e) {
       if (mounted) setState(() => _status = '$e');
     } finally {

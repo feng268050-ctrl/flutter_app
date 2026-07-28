@@ -1,11 +1,123 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
+/// lws-ui warn prompt metrics (`FrostPromptDialog` + `dialog_frost_body_prompt`).
+///
+/// On short HMI viewports, [layoutScale] + [FittedBox] keep the card off the
+/// top/bottom edges while shrinking icon / type / gaps together.
+abstract final class WarnDialogMetrics {
+  /// `engineer_mode_entry_dialog_width` / `FrostPromptDialog.standardWidthPx`.
+  static const double minCardWidth = 700;
+
+  /// `WarnDialogUtil.WARN_DIALOG_MAX_WIDTH_FRACTION`.
+  static const double maxWidthFraction = 0.95;
+
+  /// `frost_dialog_prompt_max_height` (`engineer_mode_entry_dialog_height`).
+  static const double maxCardHeightDimen = 680;
+
+  /// Breathing room above/below the card (logical px).
+  static const double verticalEdgeMargin = 48;
+
+  /// Unscaled content budget used to derive [layoutScale].
+  static const double referenceContentHeight = 560;
+
+  /// `frost_dialog_prompt_icon_size` → `engineer_mode_entry_icon_size`.
+  static const double iconSize = 150;
+
+  /// `frost_dialog_prompt_title_text_size`.
+  static const double titleSize = 53;
+
+  /// `prompt_content` textSize in `dialog_frost_body_prompt`.
+  static const double bodySize = 37;
+
+  /// `frost_dialog_prompt_scroll_max_height`.
+  static const double bodyScrollMaxHeight = 148;
+
+  /// `frost_dialog_content_padding` (card chrome).
+  static const double cardPadding = 24;
+
+  /// `frost_dialog_prompt_content_inset`.
+  static const double contentInset = 36;
+
+  /// `frost_dialog_prompt_confirm_button_min_width`.
+  static const double confirmMinWidth = 500;
+
+  /// `frost_action_button_text_size` / `text_size_12`.
+  static const double confirmLabelSize = 29;
+
+  /// Body `lineSpacingExtra` 6dp on 37sp ≈ height multiplier.
+  static const double bodyHeight = (37 + 6) / 37;
+
+  /// Max card height: dimen cap and screen margins.
+  static double maxCardHeight(BuildContext context) {
+    final fromScreen =
+        MediaQuery.sizeOf(context).height - verticalEdgeMargin * 2;
+    return math.min(maxCardHeightDimen, fromScreen);
+  }
+
+  /// Uniform shrink when the viewport cannot fit the lws-ui design height.
+  /// Typical 800-tall HMI panels get an extra compact factor so the card
+  /// does not sit flush against the top/bottom edges.
+  static double layoutScale(BuildContext context) {
+    final budget = maxCardHeight(context);
+    var scale = budget >= referenceContentHeight
+        ? 1.0
+        : (budget / referenceContentHeight).clamp(0.62, 1.0);
+    final screenH = MediaQuery.sizeOf(context).height;
+    if (screenH <= 850) {
+      scale = math.min(scale, 0.82);
+    }
+    return scale;
+  }
+
+  static TextStyle titleStyle({
+    required bool infoStyle,
+    required double scale,
+  }) =>
+      TextStyle(
+        color: infoStyle ? WarnDialogBody.titleBlack : WarnDialogBody.titleRed,
+        fontSize: titleSize * scale,
+        fontWeight: FontWeight.w700,
+        height: 1.0,
+        decoration: TextDecoration.none,
+      );
+
+  static TextStyle bodyStyle({required double scale}) => TextStyle(
+        color: WarnDialogBody.bodyDark,
+        fontSize: bodySize * scale,
+        fontWeight: FontWeight.w400,
+        height: bodyHeight,
+        decoration: TextDecoration.none,
+      );
+
+  /// Mirrors `FrostPromptDialog.resolveTitleBasedWidthPx` via [TextPainter].
+  static double resolveCardWidth(
+    BuildContext context,
+    String title, {
+    required double scale,
+  }) {
+    final screenW = MediaQuery.sizeOf(context).width;
+    final maxW = math.max(minCardWidth * scale, screenW * maxWidthFraction);
+    final minW = minCardWidth * scale;
+    final style = titleStyle(infoStyle: false, scale: scale);
+    final painter = TextPainter(
+      text: TextSpan(text: title, style: style),
+      maxLines: 1,
+      ellipsis: '…',
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final titleBased = painter.width + contentInset * 2 * scale;
+    return titleBased.clamp(minW, maxW);
+  }
+}
+
 /// Warn dialog body matching lws-ui `dialog_frost_body_prompt` + confirm action.
 ///
-/// Layout: centered alarm icon → title → dark body → orange Confirm.
+/// Layout: centered alarm icon → title → body → orange Confirm.
 /// [infoStyle] uses black title (lws-ui INFO_TYPE); otherwise red WARN title.
 class WarnDialogBody extends StatelessWidget {
   const WarnDialogBody({
@@ -44,86 +156,114 @@ class WarnDialogBody extends StatelessWidget {
   /// Body on light frost (lws-ui `text_black`).
   static const bodyDark = Color(0xFF1A1A1A);
 
-  static const iconSize = 120.0;
-  static const titleSize = 32.0;
-  static const bodySize = 20.0;
-
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 560),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Image.asset(
-              iconAsset,
-              width: iconSize,
-              height: iconSize,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: infoStyle ? titleBlack : titleRed,
-              fontSize: titleSize,
-              fontWeight: FontWeight.w700,
-              height: 1.15,
-              decoration: TextDecoration.none,
-            ),
-          ),
-          const SizedBox(height: 20),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 180),
-            child: SingleChildScrollView(
-              child: Text(
-                body,
-                textAlign: TextAlign.start,
-                style: const TextStyle(
-                  color: bodyDark,
-                  fontSize: bodySize,
-                  fontWeight: FontWeight.w400,
-                  height: 1.35,
-                  decoration: TextDecoration.none,
-                ),
+    final scale = WarnDialogMetrics.layoutScale(context);
+    final maxH = WarnDialogMetrics.maxCardHeight(context);
+    final cardW =
+        WarnDialogMetrics.resolveCardWidth(context, title, scale: scale);
+    final pad = WarnDialogMetrics.cardPadding * scale;
+    final inset = WarnDialogMetrics.contentInset * scale;
+    final icon = WarnDialogMetrics.iconSize * scale;
+    final scrollMax = WarnDialogMetrics.bodyScrollMaxHeight * scale;
+    final btnH = CyberDimens.actionButtonHeight * scale;
+    final confirmW = (WarnDialogMetrics.confirmMinWidth * scale).clamp(
+      200.0,
+      cardW - pad * 2,
+    );
+
+    final content = SizedBox(
+      width: cardW,
+      child: Padding(
+        padding: EdgeInsets.all(pad),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: inset),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Image.asset(
+                      iconAsset,
+                      width: icon,
+                      height: icon,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                    ),
+                  ),
+                  SizedBox(height: inset),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: WarnDialogMetrics.titleStyle(
+                      infoStyle: infoStyle,
+                      scale: scale,
+                    ),
+                  ),
+                  SizedBox(height: inset),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: scrollMax),
+                    child: SingleChildScrollView(
+                      child: Text(
+                        body,
+                        textAlign: TextAlign.start,
+                        style: WarnDialogMetrics.bodyStyle(scale: scale),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: inset),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 28),
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 280, maxWidth: 420),
+            Center(
               child: SizedBox(
-                width: double.infinity,
-                height: CyberDimens.actionButtonHeight,
+                width: confirmW,
+                height: btnH,
                 child: _WarnConfirmButton(
                   label: confirmLabel,
+                  labelSize: WarnDialogMetrics.confirmLabelSize * scale,
+                  height: btnH,
                   beforeConfirm: beforeConfirm,
                   onPressed: onConfirm,
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+
+    // Cap height; FittedBox shrinks further if still too tall (Flutter-native).
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: cardW, maxHeight: maxH),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.center,
+        child: content,
       ),
     );
   }
 }
 
-/// Pill-shaped orange confirm (screenshot / FrostPromptConfirmButton).
+/// Pill-shaped orange confirm (lws-ui `FrostPromptConfirmButton`).
 class _WarnConfirmButton extends StatelessWidget {
   const _WarnConfirmButton({
     required this.label,
+    required this.labelSize,
+    required this.height,
     required this.onPressed,
     this.beforeConfirm,
   });
 
   final String label;
+  final double labelSize;
+  final double height;
   final VoidCallback onPressed;
   final Future<void> Function()? beforeConfirm;
 
@@ -140,11 +280,10 @@ class _WarnConfirmButton extends StatelessWidget {
             onPressed();
           }());
         },
-        borderRadius: BorderRadius.circular(CyberDimens.actionButtonHeight / 2),
+        borderRadius: BorderRadius.circular(height / 2),
         child: Ink(
           decoration: BoxDecoration(
-            borderRadius:
-                BorderRadius.circular(CyberDimens.actionButtonHeight / 2),
+            borderRadius: BorderRadius.circular(height / 2),
             border: Border.all(
               color: CyberColors.buttonPrimaryAccent,
               width: CyberDimens.buttonStrokeWidth,
@@ -162,9 +301,9 @@ class _WarnConfirmButton extends StatelessWidget {
           child: Center(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: labelSize,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.none,
               ),

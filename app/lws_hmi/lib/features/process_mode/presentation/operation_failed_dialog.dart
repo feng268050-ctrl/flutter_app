@@ -6,7 +6,8 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 /// lws-ui [FrostStatusDialog] failure / tip mode (`OperationDialogBuilder.openErrorDialog`).
 ///
 /// Singleton-guarded so key-switch + e-stop paths cannot stack dialogs.
-/// Always a solid cream panel — **no** Gaussian / BackdropFilter (Weston).
+/// Chrome: **dark** frost (`FrostTone.DARK`) — charcoal fog, not light cream.
+/// Metrics match `dialog_frost_prompt` + `dialog_frost_body_status`.
 abstract final class OperationFailedDialogHost {
   static bool _showing = false;
 
@@ -45,16 +46,18 @@ Future<void> showOperationFailedDialog(
   required String message,
   String title = DeviceControlFeedbackCopy.operationFailedTitle,
 }) {
+  // lws-ui FrostDialog.prompt default = DARK + blur high + stack fill.
+  // Fake charcoal glass on Weston (same family as prior light tip, dark tint).
   return CyberOverlayHost.show<void>(
     context: context,
     barrierDismissible: true,
     barrierColor: CyberColors.scrim,
     freezePageBackdrop: false,
     useFakeGlass: true,
-    tone: CyberTone.light,
-    blurTint: CyberBlurTint.warm,
+    tone: CyberTone.dark,
+    blurTint: CyberBlurTint.dark,
     sampleMode: CyberBlurSampleMode.firstFrame,
-    intensity: CyberBlurIntensity.transparent,
+    intensity: CyberBlurIntensity.high,
     builder: (dialogContext) => _OperationFailedBody(
       title: title,
       message: message,
@@ -74,18 +77,29 @@ final class _OperationFailedBody extends StatelessWidget {
   final String message;
   final VoidCallback onConfirm;
 
-  static const _maxWidth = 560.0;
+  /// lws-ui default prompt width ≈ screen × 0.62; host caps at 720.
+  static const _maxWidth = 720.0;
+
+  /// `dialog_frost_body_status` icon 80dp.
   static const _iconSize = 80.0;
-  static const _titleSize = 32.0;
-  static const _bodySize = 20.0;
-  static const _titleDark = Color(0xFF1A1A1A);
-  static const _bodyDark = Color(0xFF1A1A1A);
+
+  /// `dialog_frost_prompt` `tv_title` 37sp.
+  static const _titleSize = 37.0;
+
+  /// `frost_dialog_status_content` 33sp.
+  static const _bodySize = 33.0;
+
+  /// `frost_dialog_prompt_confirm_button_min_width` / entry confirm 500dp.
+  static const _confirmMinWidth = 500.0;
 
   @override
   Widget build(BuildContext context) {
+    final screenW = MediaQuery.sizeOf(context).width;
+    final cardW = (screenW * 0.62).clamp(320.0, _maxWidth);
+
     return ConstrainedBox(
       key: const ValueKey('operation-failed-dialog'),
-      constraints: const BoxConstraints(maxWidth: _maxWidth),
+      constraints: BoxConstraints(maxWidth: cardW),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -96,14 +110,28 @@ final class _OperationFailedBody extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: _titleDark,
+              color: CyberColors.textPrimary,
               fontSize: _titleSize,
               fontWeight: FontWeight.w700,
               height: 1.15,
+              letterSpacing: 0.02 * _titleSize,
               decoration: TextDecoration.none,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: CyberDimens.contentPadding),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0x0068686C),
+                  CyberColors.dividerCenter,
+                  Color(0x0068686C),
+                ],
+              ),
+            ),
+            child: SizedBox(height: 1, width: double.infinity),
+          ),
+          const SizedBox(height: CyberDimens.contentPadding),
           const Center(
             child: Image(
               image: AssetImage(ProcessModeAssets.dialogError),
@@ -114,21 +142,41 @@ final class _OperationFailedBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: _bodyDark,
-              fontSize: _bodySize,
-              fontWeight: FontWeight.w400,
-              height: 1.35,
-              decoration: TextDecoration.none,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: CyberColors.textSecondary,
+                fontSize: _bodySize,
+                fontWeight: FontWeight.w400,
+                height: 1.2,
+                // lineSpacingExtra 6dp ≈ +6 on 33sp body.
+                decoration: TextDecoration.none,
+              ),
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: CyberDimens.contentPadding),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0x0068686C),
+                  CyberColors.dividerCenter,
+                  Color(0x0068686C),
+                ],
+              ),
+            ),
+            child: SizedBox(height: 1, width: double.infinity),
+          ),
+          const SizedBox(height: CyberDimens.contentPadding),
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 280, maxWidth: 420),
+              constraints: BoxConstraints(
+                minWidth: (_confirmMinWidth).clamp(200.0, cardW),
+                maxWidth: (_confirmMinWidth).clamp(200.0, cardW),
+              ),
               child: SizedBox(
                 width: double.infinity,
                 child: CyberButton(

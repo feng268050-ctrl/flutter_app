@@ -3,22 +3,21 @@ import 'dart:ui' as ui;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/warn_alarm/presentation/warn_dialog_body.dart';
 
-/// Light alarm prompt chrome: **card-only** Gaussian frost + opaque cream.
+/// Light alarm prompt chrome: **card-only** Gaussian frost + cream wash.
 ///
-/// Outside the panel stays sharp (scrim only). Capture root comes from the
-/// caller’s [CyberBlurBackdropScope] (dialog routes sit outside the scope).
+/// Outside the panel stays sharp (scrim only). Card width comes from
+/// [WarnDialogBody] / [WarnDialogMetrics] (lws-ui title-based width).
 final class WarnFrostShell extends StatefulWidget {
   const WarnFrostShell({
     super.key,
     required this.scope,
     required this.child,
-    this.maxWidth = 560,
   });
 
   final CyberBlurBackdropScopeState? scope;
   final Widget child;
-  final double maxWidth;
 
   /// Cream fallback when capture is unavailable.
   static const creamFallback = Color(0xFFFFFCFA);
@@ -36,6 +35,7 @@ final class WarnFrostShell extends StatefulWidget {
 final class _WarnFrostShellState extends State<WarnFrostShell> {
   ui.Image? _capture;
   final GlobalKey _cardKey = GlobalKey();
+  Size? _lastSampledSize;
 
   @override
   void initState() {
@@ -58,6 +58,10 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
         !boundary.hasSize ||
         self is! RenderBox ||
         !self.hasSize) {
+      return;
+    }
+    final size = self.size;
+    if (_lastSampledSize == size && _capture != null) {
       return;
     }
     try {
@@ -91,6 +95,7 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
       setState(() {
         _capture?.dispose();
         _capture = cropped;
+        _lastSampledSize = size;
       });
     } catch (_) {
       // Keep cream fallback.
@@ -119,15 +124,17 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
   Widget build(BuildContext context) {
     final panel = CyberPanelBorder(tone: CyberTone.light);
     final radius = panel.borderRadius;
+    final maxW =
+        MediaQuery.sizeOf(context).width * WarnDialogMetrics.maxWidthFraction;
+    final maxH = WarnDialogMetrics.maxCardHeight(context);
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Outside: dim only — no blur.
         const ColoredBox(color: CyberColors.scrim),
         Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: widget.maxWidth),
+            constraints: BoxConstraints(maxWidth: maxW, maxHeight: maxH),
             child: ClipRRect(
               key: _cardKey,
               borderRadius: radius,
@@ -142,7 +149,6 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
                 ),
                 child: Stack(
                   children: [
-                    // Card-local Gaussian (opacity 1.0).
                     Positioned.fill(
                       child: _capture != null
                           ? ImageFiltered(
@@ -158,16 +164,15 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
                                 height: double.infinity,
                               ),
                             )
-                          : const ColoredBox(color: WarnFrostShell.creamFallback),
+                          : const ColoredBox(
+                              color: WarnFrostShell.creamFallback,
+                            ),
                     ),
                     const Positioned.fill(
                       child: ColoredBox(color: WarnFrostShell.creamWash),
                     ),
-                    Padding(
-                      padding:
-                          const EdgeInsets.all(CyberDimens.contentPadding),
-                      child: widget.child,
-                    ),
+                    // Child owns lws-ui card padding + content metrics.
+                    widget.child,
                   ],
                 ),
               ),

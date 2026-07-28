@@ -105,6 +105,7 @@ flutter:
     # Product HAL pack (board profile + gpio/modbus catalogs).
     - assets/hal/board_profile.json
     - assets/hal/gpio.json
+    - assets/hal/gpio.sim.json
     - assets/hal/modbus.json
     # Versioned process-library manifest and generated JSON payloads.
     - assets/process-library/

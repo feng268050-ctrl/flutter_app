@@ -37,6 +37,7 @@ import 'package:lws_hmi/features/settings/application/product_keyboard_profile.d
 import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
+import 'package:lws_hmi/features/system_status/presentation/gpio_led_overlay_host.dart';
 import 'package:lws_hmi/features/system_status/presentation/system_status_overlay_host.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
@@ -303,7 +304,11 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   Widget _appBuilder(BuildContext context, Widget? child) {
     return SystemStatusOverlayHost(
       store: _miscSettingsStore,
-      child: _matchFlutterPiDensity(context, child),
+      child: GpioLedOverlayHost(
+        // P3.2 QEMU / sim OEM only — never on ynh960 (or other) hardware.
+        enabled: widget.boardProfile.info.boardId == 'sim',
+        child: _matchFlutterPiDensity(context, child),
+      ),
     );
   }
 

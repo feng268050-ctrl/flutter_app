@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "backend": "sysfs_file",
+  "defaults": {
+    "active_low": false,
+    "blink_on_ms": 1000,
+    "blink_off_ms": 1000
+  },
+  "lines": [
+    {
+      "id": "led_red",
+      "label": "sim_led_red",
+      "path": "/run/hmi/gpio-sim/led_red/value",
+      "roles": ["indicator", "alarm"]
+    },
+    {
+      "id": "led_yellow",
+      "label": "sim_led_yellow",
+      "path": "/run/hmi/gpio-sim/led_yellow/value",
+      "roles": ["indicator"]
+    },
+    {
+      "id": "led_green",
+      "label": "sim_led_green",
+      "path": "/run/hmi/gpio-sim/led_green/value",
+      "roles": ["indicator"]
+    }
+  ],
+  "capabilities": {
+    "set_level": true,
+    "blink": true,
+    "read_level": true
+  }
+}

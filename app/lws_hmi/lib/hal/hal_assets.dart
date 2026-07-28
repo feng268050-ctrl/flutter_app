@@ -5,5 +5,10 @@
 abstract final class HmiHalAssets {
   static const boardProfile = 'assets/hal/board_profile.json';
   static const gpio = 'assets/hal/gpio.json';
+  static const gpioSim = 'assets/hal/gpio.sim.json';
   static const modbus = 'assets/hal/modbus.json';
+
+  /// GPIO catalog for the active board (sim guest uses file-backed gpio-sim).
+  static String gpioForBoard(String boardId) =>
+      boardId == 'sim' ? gpioSim : gpio;
 }

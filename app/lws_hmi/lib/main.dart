@@ -44,7 +44,7 @@ Future<BoardProfile> _loadBoardProfile() async {
 
   final oem = await BoardProfile.loadFile(_kRunBoardProfile);
   return oem.withProductConfigs(
-    gpio: HmiHalAssets.gpio,
+    gpio: HmiHalAssets.gpioForBoard(oem.info.boardId),
     modbus: HmiHalAssets.modbus,
   );
 }

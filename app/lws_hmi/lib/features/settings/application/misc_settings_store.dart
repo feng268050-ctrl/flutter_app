@@ -176,6 +176,10 @@ final class MiscSettingsStore extends ChangeNotifier {
           defaultShowSystemStatusOverlay,
         );
       }
+      // LED overlay is emulator-auto now; drop obsolete preference key.
+      if (map.containsKey('showGpioLedOverlay')) {
+        migrated = true;
+      }
       if (map.containsKey(keyShowGroundLockAlarm)) {
         _showGroundLockAlarm =
             _asBool(map[keyShowGroundLockAlarm], defaultShowGroundLockAlarm);

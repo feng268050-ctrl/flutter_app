@@ -1,6 +1,6 @@
 /// In-memory HAL backends for host unit tests and emergency stubbing.
 ///
-/// P3.2 UTM guests use Linux backends with `board_id=sim`. Force stubs only via
+/// P3.2 QEMU guests use Linux backends with `board_id=sim`. Force stubs only via
 /// `HAL_BACKEND=stub`:
 ///
 /// ```dart

@@ -54,7 +54,7 @@ Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/displa
 
 ## Stub backends (host tests)
 
-P3.2 UTM guests use **Linux** backends with OEM `board_id=sim`. Stub backends are
+P3.2 QEMU guests use **Linux** backends with OEM `board_id=sim`. Stub backends are
 for host unit tests / emergency only:
 
 1. Set `HAL_BACKEND=stub` (board id alone does **not** select stubs).

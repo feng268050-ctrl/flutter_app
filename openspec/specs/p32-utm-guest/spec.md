@@ -2,7 +2,7 @@
 
 ## Purpose
 
-P3.2 same-OS QEMU guest: shared device `Image` + rootfs content + `sim_virt` OEM, host VirGL, product-shaped NICs/USB, no OTG. Capability id keeps historical `utm` name; formal host launcher is `make emulator` (QEMU), not empty UTM.
+P3.2 same-OS **QEMU** guest (capability id `p32-utm-guest` is historical): shared device `Image` + rootfs content + `sim_virt` OEM, host VirGL, product-shaped NICs/USB, no OTG. Formal launcher is `make emulator` (`qemu-system-aarch64`), not UTM.
 ## Requirements
 ### Requirement: Same OS artifacts in emulator
 

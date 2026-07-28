@@ -1,6 +1,8 @@
-# P3.2 emulator — same kernel + same rootfs + OEM switch
+# P3.2 emulator — same kernel + same rootfs + OEM switch (QEMU)
 
 Goal: prove **one OS** (`Image` from `make build-kernel` + `rootfs.img` from `make build-rootfs`) works for multiple board×screen SKUs by swapping **OEM** only. Guest OEM = `sim_virt`. Device OEM = `ynh960_…`. Flutter still starts via `oem-compose` → `hmi.service` → `hmi-launch.sh`.
+
+**Host:** Apple Silicon **QEMU** (`make emulator` / qemu-virgl). An earlier plan used UTM; that path is deprecated — see [`p32-utm-guest.md`](p32-utm-guest.md) (redirect only).
 
 OpenSpec: `openspec/changes/archive/2026-07-28-platform-p32-sim-virt`. Plan contract: platform plan §6.3 (three NICs + USB; no OTG).
 
@@ -147,11 +149,11 @@ SSH: `ssh -p 2222 root@127.0.0.1` (password `rockchip`) → `journalctl -u hmi.s
 ## Not the formal path
 
 - Separate Buildroot `qemu_aarch64` userspace rootfs  
-- Empty UTM VM via `utmctl` only  
+- **UTM** empty VM / `utmctl start` only (superseded by QEMU)  
 - Hand-installed Debian as “done”  
 - Operator-only NIC/USB wiring as the documented default  
 
-Free UTM may still import a disk later; acceptance is **QEMU + same OS artifacts** with the hardware map above.
+Acceptance is **QEMU + same OS artifacts** with the hardware map above.
 
 ## Troubleshooting
 

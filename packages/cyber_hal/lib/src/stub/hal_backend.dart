@@ -11,7 +11,7 @@ enum HalBackendKind {
 /// - Env `HAL_BACKEND=stub` → [HalBackendKind.stub]
 /// - otherwise → [HalBackendKind.linux]
 ///
-/// P3.2 UTM guests use `board_id=sim` with **Linux** backends. [boardId] is
+/// P3.2 QEMU guests use `board_id=sim` with **Linux** backends. [boardId] is
 /// retained for call-site compatibility and is not used for selection.
 HalBackendKind resolveHalBackend({String? boardId, String? env}) {
   final raw = (env ?? Platform.environment['HAL_BACKEND'] ?? '')

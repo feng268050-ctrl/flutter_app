@@ -19,7 +19,7 @@ ensure_oem_mount() {
 	if mountpoint -q "$OEM_ROOT" 2>/dev/null; then
 		return 0
 	fi
-	# Directory mode (UTM Path A bind / unpacked pack): already has manifest.
+	# Directory mode (unpacked pack / bind mount): already has manifest.
 	if [ -f "$OEM_ROOT/manifest.json" ]; then
 		log "using directory OEM_ROOT=$OEM_ROOT (no partition mount)"
 		return 0

@@ -1,5 +1,5 @@
 # sku uboot_id oem_id
 # oem_id = <board>_<panel-…>  (underscore between board and panel; hyphens stay inside panel/resolution)
 ynh960-p800 rockchip-ynh960 ynh960_panel-800x1280
-# P3.2 UTM: do not Rockchip-flash. Use OEM_ID=sim_virt make build-oem / make build-emulator
-# (see docs/p32-utm-guest.md). No uboot_id row — virt boots EDK2/UEFI.
+# P3.2 QEMU guest: do not Rockchip-flash. Use OEM_ID=sim_virt make build-oem / make build-emulator
+# (see docs/p32-emulator.md). No uboot_id row — virt boots QEMU firmware, not board U-Boot.

@@ -51,7 +51,7 @@
 
 ### 1.3 非目标
 
-- 不在 QEMU/UTM 内仿真 RK356x SoC / Mali / MIPI / AIC 模组。  
+- 不在 QEMU 访客内仿真 RK356x SoC / Mali / MIPI / AIC 模组。  
 - 不强制第一天自编译量产 U-Boot（默认继续已验证的瑞芯微/板级 `uboot.img`；源码用 `rockchip-linux/u-boot` 备查）。  
 - 不把 `/opt/hmi` 迁入 OEM（App 仍走 rootfs A/B + `push-app`）。  
 - 不在本计划实现 `app/factory_test`。  
@@ -482,7 +482,7 @@ FACTORY_SKU=ynh960-p800 make flash
 | OEM pack：`board_id=sim` + `screen_id=virt`（`sim_virt`） | 仅 UI 可点、不能带真下位机 |
 | 网桥 + **USB 透传**（BT / 串口 / Wi‑Fi / GPIO 等） | **x86_64 host** 验收路径 |
 
-Apple Silicon 上 **QEMU `virt` + HVF**（`make emulator`）；与板级 `uboot.img` 无关。P3.2 **只做 aarch64**。空 UTM VM / 手装 Debian **不算**验收。
+Apple Silicon 上 **QEMU `virt` + HVF**（`make emulator`）；与板级 `uboot.img` 无关。P3.2 **只做 aarch64**。早期 UTM / 手装 Debian 探路 **不算**验收。
 
 **目标一句话：** 做一个真正能跑、能带下位机的虚拟机环境——能力与接线合同对齐真机，差异只在「机型 / OEM / 外设从哪进来」，不是缺硬件就整页降级的 demo。
 
@@ -555,9 +555,9 @@ gpio/modbus = App assets            同；Modbus←USB-serial 透传
 - 启动：`make build-emulator` 组装 → `make emulator`（`qemu-system-aarch64`）→ compose → **自动** `hmi.service`。  
 - 手册：[`p32-emulator.md`](p32-emulator.md)。
 
-**路径 A — 过渡探路（不替代正式路径）**
+**历史路径 A — 已弃用（原 UTM / 手装 Debian）**
 
-- UTM/Debian 手装同构栈仅作尽早探路；**不算** W4 完成。
+- 早期草稿用 UTM 空 VM / 手装 Debian 探路同构栈；**已由上方 QEMU 正式路径取代**，不算验收、也不再并行维护。
 
 ### 6.6 下位机与外设
 
@@ -581,7 +581,7 @@ gpio/modbus = App assets            同；Modbus←USB-serial 透传
 
 ### 6.8 与主线阶段关系
 
-W0–W3（进仓除外）已完成，不阻塞 W4。W4 以 **路径 B + 外设透传** 为正式里程碑；路径 A 可并行探路。
+W0–W3（进仓除外）已完成。W4 以 **同 OS + OEM + QEMU** 为正式里程碑（已归档）；原 UTM「路径 A」已弃用。
 
 ---
 
@@ -678,7 +678,7 @@ W0 → W4 ✅ 主路径（Linux-in-guest + 网/串口；USB Wi‑Fi/BT ⏸）
 |---|------|------|
 | 1 | **保留目录名 `linux-sdk/`** | 进仓后仍用此名；不改名为 `platform/` |
 | 2 | **OEM 镜像 = ext4** | `make build-oem` 产 ext4 `oem.img`；v1 不做 squashfs |
-| 3 | **P3.2 仅 aarch64 QEMU** | 开发机均为 Apple Silicon；正式路径 `make emulator`（非空 UTM）；不做 x86_64 host 模拟器路径 |
+| 3 | **P3.2 仅 aarch64 QEMU** | 开发机均为 Apple Silicon；正式路径 `make emulator`（**已取代**原 UTM 方案）；不做 x86_64 host 模拟器路径 |
 | 4 | **`product.ini` v1 进 OEM** | 按现状把出厂身份/调参（含 `camera_ip` 等）放入 OEM board 包；运行时仍衔接 HAL 既有路径；**长期归属未来另议** |
 | 5 | **整包改称 `factory.img`** | 取代以单一 `update.img` 为工厂产物的心智；过渡期可 symlink |
 | 6 | **U-Boot / OEM 分目录 + 环境变量选择** | `prebuilt/bootloader/<uboot_id>/` 与 `oem/out/<oem_id>/`；`FACTORY_SKU`（可覆盖 `UBOOT_ID`/`OEM_ID`）驱动 `build-oem` / `build-img` / `flash`；缺文件失败，禁止静默混用 |

@@ -200,7 +200,7 @@
 ## 10. 与主线规划的关系
 
 - 本迁移把主线 [`flutter-linux-hmi-plan.md`](flutter-linux-hmi-plan.md) §5「显示栈(DRM,非 Wayland)」与 §1.1「量产显示栈仍为设备侧 flutter-pi + DRM」**调整为 eLinux(+可能 Weston)**;需在迁移落地后同步更新该文档。
-- 与 **P3.2 模拟器**(UTM + Weston + flutter-embedded-linux)**收敛为同一嵌入器**;若取方案 C,设备与模拟器共用 Weston + eLinux。
+- 与 **P3.2 模拟器**（**QEMU** + Weston + flutter-embedded-linux；原计划 UTM 已弃用）**收敛为同一嵌入器**；设备与模拟器共用 Weston + eLinux。
 - 可与 **P5.1(引擎 3.24→3.41)** 合并评估:换嵌入器与升引擎都涉及 embedder API,一并规划可减少一次大改。
 
 ---

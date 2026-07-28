@@ -1,6 +1,6 @@
 {
   "board_id": "sim",
-  "display_name": "P3.2 UTM guest (sim)",
+  "display_name": "P3.2 QEMU guest (sim)",
   "model_hint": "virt-aarch64",
   "capabilities": [
     "ethernet",

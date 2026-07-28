@@ -76,7 +76,7 @@ P3.2  Linux 模拟器 ✅（W4 / archive/2026-07-28-platform-p32-sim-virt）
     ├─ sim_virt OEM；USB BT/串口；GPIO LED 悬浮层（参考系统状态浮层）
     ├─ 平台化：OEM · 通用 boot/rootfs · 自有 linux-sdk
     │   （见 docs/platform-os-oem-sdk-plan.md；gpio/modbus 仍属产品 App）
-    │   操作见 docs/p32-utm-guest.md
+    │   操作见 docs/p32-emulator.md（原 UTM 方案已改为 QEMU）
     └─ 量产显示栈：Weston + eLinux
         （见 docs/embedder-migration-plan.md）
 

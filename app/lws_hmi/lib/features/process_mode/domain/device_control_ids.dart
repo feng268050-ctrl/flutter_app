@@ -1,10 +1,16 @@
 /// Modbus attribute ids for Quick/Engineer device controls (holding 0x0058).
 abstract final class DeviceControlIds {
+  /// Whole CONTROL_FIELD_1 word (0x0058) — lws-ui single-register halt write.
+  static const controlField1 = 'control.field_1';
+
   static const laserEnable = 'control.laser_enable';
   static const manualGas = 'control.manual_gas';
   static const wireWork = 'control.wire_work';
   static const wireDirection = 'control.wire_direction';
   static const wireManualMode = 'control.wire_manual_mode';
+
+  /// Job-switch bits in [controlField1] (laser/gas/wire/dir/auto).
+  static const controlField1JobBitsMask = 0x1F;
 
   static const laserOn = 'machine.laser_on';
   static const airValveOn = 'machine.air_valve_on';

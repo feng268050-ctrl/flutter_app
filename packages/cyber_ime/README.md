@@ -51,21 +51,21 @@ CyberImeRegionalLayoutRegistry.register(
 - **Keyboard A:** regional letter layer → primary symbols (`123`) → extended (`#+=`) → `ABC`.
 - **Keyboard B:** dedicated pad `1–9 ⌫ / C / - / . 0 00 ⏎` (no `abc` switch).
 
-## Regional layouts (KeyCode + KeyMap)
+## Regional soft layouts
 
-Keyboard A letter arrangements are built from:
+Keyboard A letter arrangements are **phone soft pads** (QWERTY / QWERTZ /
+AZERTY / JIS) from `CyberImeSoftLayouts`, shared by the live panel and Settings
+preview:
 
-1. **`CyberImeKeyCode`** — typewriter-block key identity (US ANSI physical
-   positions as names). **No F1–F12 / NumPad codes** — those stay in
-   eLinux / XKB / `cyber_hal` hardware path.
-2. **`CyberImeKeyMaps`** — per-profile character levels (`base` / `shift` /
-   optional `altGr`) for ANSI US, DE QWERTZ, FR AZERTY, JIS JP.
+- Three letter rows + bottom (`123` / optional language / Space / confirm).
+- No number row, F-keys, Tab/Caps, Ctrl/Alt/AltGr, or NumPad on Keyboard A.
+- Digits/symbols only via `123` / `#+=` layers.
+- QWERTZ/AZERTY accents via long-press; JIS uses romaji composition + candidates.
 
-Soft keycaps and commit text resolve through the KeyMap for the registered
-`CyberImeRegionalProfile`. Physical USB/BT typing continues via XKB using the
-matching layout id (`us` / `de` / `fr` / `jp`); product Settings keeps soft
-KeyMap and XKB preference on the same profile so both paths agree on the
-typewriter block. **Do not** remap HID scancodes in Dart.
+`CyberImeKeyMaps` remains for XKB-aligned character tables (physical/reference).
+Physical USB/BT typing continues via XKB using the matching layout id
+(`us` / `de` / `fr` / `jp`); product Settings keeps soft profile and XKB
+preference on the same selection. **Do not** remap HID scancodes in Dart.
 
 `CyberImeTextField` stays **editable** (`readOnly: false`) and hides any system
 soft keyboard via `TextInput.hide`, so physical keys are not blocked. Soft

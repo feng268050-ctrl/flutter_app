@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
+import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
@@ -31,7 +33,8 @@ final class DeviceControlBar extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         final accent = ProcessModeTokens.tabActiveColor(processType);
-        final laserActive = controller.laserEnable || controller.laserOn;
+        // lws-ui `isOpenLaser()` — session bit only, not emission feedback.
+        final laserActive = controller.laserSessionArmed;
         return Material(
           key: const ValueKey('device-control-bar'),
           color: const Color(0xFF0C0E24),
@@ -79,13 +82,22 @@ final class DeviceControlBar extends StatelessWidget {
                               policy: policy,
                             );
                             if (err != null && context.mounted) {
-                              _toast(context, err.message);
+                              await _handleEnableBlock(
+                                context,
+                                err,
+                                policy: policy,
+                              );
                             }
                           },
                           onDisable: () async {
                             final err = await controller.disableLaser();
                             if (err != null && context.mounted) {
-                              _toast(context, err.message);
+                              _toast(
+                                context,
+                                DeviceControlFeedbackCopy.messageForDisable(
+                                  err,
+                                ),
+                              );
                             }
                           },
                         ),
@@ -114,6 +126,28 @@ final class DeviceControlBar extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _handleEnableBlock(
+    BuildContext context,
+    LaserEnableBlockReason err, {
+    required LaserAlarmPolicySnapshot policy,
+  }) async {
+    if (err == LaserEnableBlockReason.alarmBlocked) {
+      final warn = WarnAlarmScope.maybeOf(context);
+      if (warn != null) {
+        await warn.presentLaserEnableBlock(policy: policy);
+        return;
+      }
+    }
+    if (DeviceControlFeedbackCopy.isSafetyTipBlock(err)) {
+      await OperationFailedDialogHost.show(
+        context,
+        message: DeviceControlFeedbackCopy.tipForLaserEnableBlock(err),
+      );
+      return;
+    }
+    _toast(context, err.message);
   }
 
   void _toast(BuildContext context, String message) {

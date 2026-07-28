@@ -27,7 +27,7 @@ void main() {
       ),
       applier: ProcessParameterApplier(
         modbus: _UnusedModbus(),
-        isSafeToApply: () async => false,
+        interlockFailure: () async => ProcessApplyFailure.unsafeMachineState,
       ),
     );
     await tester.pumpWidget(

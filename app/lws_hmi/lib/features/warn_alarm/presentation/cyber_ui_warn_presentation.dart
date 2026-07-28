@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
 import 'package:lws_hmi/features/warn_alarm/l10n/product_alarm_l10n.dart';
 import 'package:lws_hmi/features/warn_alarm/presentation/warn_dialog_body.dart';
+import 'package:lws_hmi/features/warn_alarm/presentation/warn_frost_shell.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Process-wide CyberUI warn host (single modal at a time).
@@ -158,35 +159,40 @@ final class CyberUiWarnPresentation implements WarnPresentation {
     _showingCode = pending.code;
     _dialogOpen = true;
     onPresented?.call(pending.code);
+
+    // Dialog routes have no scope ancestor — walk the navigator subtree.
+    final scope = _findBlurScope(ctx);
+
     try {
-      // Light frost shell (lws-ui FrostPromptDialog) — fake cream glass on Weston.
-      await CyberOverlayHost.show<void>(
+      await showGeneralDialog<void>(
         context: ctx,
         barrierDismissible: false,
-        barrierColor: CyberColors.scrim,
-        freezePageBackdrop: false,
-        useFakeGlass: true,
-        tone: CyberTone.light,
-        blurTint: CyberBlurTint.warm,
-        sampleMode: CyberBlurSampleMode.firstFrame,
-        intensity: CyberBlurIntensity.high,
-        builder: (dialogContext) {
+        barrierLabel: 'Warn ${pending.code}',
+        barrierColor: Colors.transparent,
+        transitionDuration: Duration.zero,
+        pageBuilder: (dialogContext, animation, secondaryAnimation) {
           final l10n = AppLocalizations.of(dialogContext)!;
-          return WarnDialogBody(
-            title: l10n.alarmTitleFor(
-              pending.code,
-              fallback: pending.entry.title,
+          return Material(
+            type: MaterialType.transparency,
+            child: WarnFrostShell(
+              scope: scope,
+              child: WarnDialogBody(
+                title: l10n.alarmTitleFor(
+                  pending.code,
+                  fallback: pending.entry.title,
+                ),
+                body: l10n.alarmBodyFor(
+                  pending.code,
+                  fallback: pending.entry.body,
+                ),
+                confirmLabel: l10n.confirmText,
+                infoStyle: infoStyleForCode?.call(pending.code) ?? false,
+                beforeConfirm: stopWarnSound,
+                onConfirm: () {
+                  Navigator.of(dialogContext).pop();
+                },
+              ),
             ),
-            body: l10n.alarmBodyFor(
-              pending.code,
-              fallback: pending.entry.body,
-            ),
-            confirmLabel: l10n.confirmText,
-            infoStyle: infoStyleForCode?.call(pending.code) ?? false,
-            beforeConfirm: stopWarnSound,
-            onConfirm: () {
-              Navigator.of(dialogContext).pop();
-            },
           );
         },
       );
@@ -218,4 +224,23 @@ final class _PendingWarn {
   final Completer<void> completer;
 
   String get code => episode.code;
+}
+
+/// Nearest [CyberBlurBackdropScope] under [root] (active page), if any.
+CyberBlurBackdropScopeState? _findBlurScope(BuildContext root) {
+  CyberBlurBackdropScopeState? found;
+  void visit(Element element) {
+    if (found != null) {
+      return;
+    }
+    if (element is StatefulElement &&
+        element.state is CyberBlurBackdropScopeState) {
+      found = element.state as CyberBlurBackdropScopeState;
+      return;
+    }
+    element.visitChildren(visit);
+  }
+
+  root.visitChildElements(visit);
+  return found;
 }

@@ -25,19 +25,23 @@ void main() {
       );
     });
 
-    test('only laser and wire-feeder comm attrs are masked', () {
-      expect(EstopCommAlarmMask.isMaskedCommAttr('alarm.laser_comm'), isTrue);
+    test('laser comm, wire-feeder comm, and H029 attrs are masked', () {
+      expect(EstopCommAlarmMask.isMaskedAttr('alarm.laser_comm'), isTrue);
       expect(
-        EstopCommAlarmMask.isMaskedCommAttr('alarm.wire_feeder_comm'),
+        EstopCommAlarmMask.isMaskedAttr('alarm.wire_feeder_comm'),
         isTrue,
       );
-      expect(EstopCommAlarmMask.isMaskedCommAttr('alarm.gun_comm'), isFalse);
       expect(
-        EstopCommAlarmMask.isMaskedCommAttr('alarm.wire_feeder_current'),
+        EstopCommAlarmMask.isMaskedAttr('alarm.laser_emergency_stop'),
+        isTrue,
+      );
+      expect(EstopCommAlarmMask.isMaskedAttr('alarm.gun_comm'), isFalse);
+      expect(
+        EstopCommAlarmMask.isMaskedAttr('alarm.wire_feeder_current'),
         isFalse,
       );
       expect(
-        EstopCommAlarmMask.isMaskedCommAttr('machine.emergency_stop'),
+        EstopCommAlarmMask.isMaskedAttr('machine.emergency_stop'),
         isFalse,
       );
     });

@@ -252,7 +252,7 @@ final class _LaserEnableReminderBody extends StatefulWidget {
 
 final class _LaserEnableReminderBodyState
     extends State<_LaserEnableReminderBody> {
-  bool _dontShowAgain = false;
+  bool _dontShowAgain = true;
 
   static const _titleDark = Color(0xFF1A1A1A);
   static const _labelMuted = Color(0x80222222);

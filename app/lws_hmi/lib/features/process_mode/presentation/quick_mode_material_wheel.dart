@@ -26,16 +26,18 @@ final class QuickModeMaterialWheel extends StatelessWidget {
         itemCount: materials.length,
         selectedIndex: selectedIndex,
         itemExtent: QuickModePickerDimens.itemHeight,
-        diameterRatio: 5,
-        perspective: 0.002,
-        offAxisFraction: 0.35,
+        diameterRatio: QuickModePickerDimens.wheelDiameterRatio,
+        perspective: QuickModePickerDimens.wheelPerspective,
+        offAxisFraction: 0,
         onChanged: onChanged,
         itemBuilder: (context, index, distance) {
           final selected = distance < 0.5;
           final alpha =
               selected ? 1.0 : (1.0 - distance * 0.2).clamp(0.4, 1.0);
-          final endPad = QuickModePickerDimens.selectedTextPadding +
-              distance * (10 * QuickModePickerDimens.scale);
+          // Left-offset arc: right pad = |d|×10+24 (lws-ui materials wheel).
+          final endPad = selected
+              ? QuickModePickerDimens.arcSelectedPad
+              : QuickModePickerDimens.linearArcPad(distance);
           return Align(
             alignment: Alignment.centerRight,
             child: Padding(

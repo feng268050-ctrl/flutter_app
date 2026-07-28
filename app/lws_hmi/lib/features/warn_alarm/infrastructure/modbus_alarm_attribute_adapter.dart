@@ -11,9 +11,11 @@ const kModbusHealthAlarmCode = 'C001';
 
 /// Maps HAL watches → [AlarmSignalEvent] (+ monitor attribute/health fan-out).
 ///
-/// Applies [EstopCommAlarmMask] so H022/W001 do not rise (popup/history) while
-/// `machine.emergency_stop` is active. Alarm Information / status checks keep
-/// raw Modbus bit values.
+/// Applies [EstopCommAlarmMask] so H022/W001/H029 do not rise (popup/history)
+/// while `machine.emergency_stop` is active. After e-stop release, masked bits
+/// settle then are **level-confirmed** via [ModbusRtuClient.readAttribute]
+/// (Android re-evaluates each poll; our watch is edge-based). Alarm
+/// Information / status checks keep raw Modbus bit values.
 final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
   ModbusAlarmAttributeAdapter({
     required this.modbus,
@@ -33,7 +35,7 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
   StreamSubscription<List<ModbusAttributeChange>>? _sub;
   StreamSubscription<ModbusHealth>? _healthSub;
   /// Last **warn-signal** active per alarm attribute (post e-stop mask for
-  /// H022/W001; raw for all other codes).
+  /// H022/W001/H029; raw for all other codes).
   final Map<String, bool> _activeByAttr = {};
   Map<String, ({String code, String? label})> _meta = {};
   bool _started = false;
@@ -41,6 +43,24 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
   bool _eStopActive = false;
   bool? _rawLaserComm;
   bool? _rawWireFeederComm;
+  bool? _rawLaserEmergencyStop;
+
+  /// H029 seen while machine e-stop held — show after reset even if the bit
+  /// clears on the release edge (product: tip on press, H029 frost after reset).
+  bool _h029DeferredAfterEstop = false;
+
+  /// Bumps when e-stop releases / adapter disposes so delayed resamples cancel.
+  int _estopReleaseResampleGen = 0;
+
+  /// Settle time after e-stop release before re-arming masked alarms from
+  /// cached raw bits (de-energize false-positives often clear within one poll).
+  @visibleForTesting
+  static Duration estopMaskedResampleDelay = const Duration(milliseconds: 400);
+
+  /// How long a deferred H029 frost stays active when the bit already cleared
+  /// on reset (one-shot presentation).
+  @visibleForTesting
+  static Duration h029DeferredOneShotHold = const Duration(milliseconds: 800);
 
   /// Last unhealthy latch for C001 edge detection (`null` = not primed).
   bool? _healthFaultActive;
@@ -162,45 +182,55 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
         _rawLaserComm = c.value == true;
       } else if (c.id == EstopCommAlarmMask.wireFeederCommAttr) {
         _rawWireFeederComm = c.value == true;
+      } else if (c.id == EstopCommAlarmMask.laserEmergencyStopAttr) {
+        _rawLaserEmergencyStop = c.value == true;
       }
     }
 
     final eStopEngaged = !wasEStop && _eStopActive;
     final eStopReleased = wasEStop && !_eStopActive;
 
+    // Latch H029 while e-stop is held (including the engage batch).
+    if (_eStopActive && _rawLaserEmergencyStop == true) {
+      _h029DeferredAfterEstop = true;
+    }
+
     // Pass 2: Alarm Information / status checks — raw values unchanged.
     if (!_monitorCtrl.isClosed) {
       _monitorCtrl.add(changes);
     }
 
-    // Pass 3: e-stop edges force H022/W001 warn-signal transitions only.
+    // Pass 3: e-stop engage forces masked warns inactive. On release, do NOT
+    // immediately re-arm H022/W001 from cached raw — de-energize false
+    // positives often clear on the next poll. H029 is latched separately and
+    // presented after settle even if the bit falls on reset. Settle then
+    // level-confirms via status group read. Same-batch raw updates still flow
+    // through pass 4.
     if (eStopEngaged) {
+      _estopReleaseResampleGen++;
       _syncMaskedEffective(
         EstopCommAlarmMask.laserCommAttr,
         effective: false,
       );
       _syncMaskedEffective(
         EstopCommAlarmMask.wireFeederCommAttr,
+        effective: false,
+      );
+      _syncMaskedEffective(
+        EstopCommAlarmMask.laserEmergencyStopAttr,
         effective: false,
       );
     } else if (eStopReleased) {
-      _syncMaskedEffective(
-        EstopCommAlarmMask.laserCommAttr,
-        effective: _rawLaserComm == true,
-      );
-      _syncMaskedEffective(
-        EstopCommAlarmMask.wireFeederCommAttr,
-        effective: _rawWireFeederComm == true,
-      );
+      _scheduleMaskedResampleAfterEstopRelease();
     }
 
-    // Pass 4: per-attribute signal edges (skip masked if e-stop edged this batch).
-    final skipMaskedSignals = eStopEngaged || eStopReleased;
+    // Pass 4: per-attribute signal edges (skip masked on e-stop engage only).
+    final skipMaskedSignals = eStopEngaged;
     for (final c in changes) {
       if (c.id == EstopCommAlarmMask.emergencyStopAttr) {
         continue;
       }
-      if (EstopCommAlarmMask.isMaskedCommAttr(c.id)) {
+      if (EstopCommAlarmMask.isMaskedAttr(c.id)) {
         if (skipMaskedSignals) {
           continue;
         }
@@ -251,6 +281,89 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
         attributeId: c.id,
         labelHint: meta.label,
       );
+    }
+  }
+
+  void _scheduleMaskedResampleAfterEstopRelease() {
+    final gen = ++_estopReleaseResampleGen;
+    final delay = estopMaskedResampleDelay;
+    // Flutter adaptation of Android per-poll level: after settle, re-read
+    // masked attrs so a stuck-true bit without a change edge still rises.
+    unawaited(_resampleMaskedAfterSettle(gen, delay));
+  }
+
+  Future<void> _resampleMaskedAfterSettle(int gen, Duration delay) async {
+    await Future<void>.delayed(delay);
+    if (gen != _estopReleaseResampleGen ||
+        _eStopActive ||
+        _controller.isClosed) {
+      return;
+    }
+    await _refreshMaskedRawFromHardware();
+    if (gen != _estopReleaseResampleGen ||
+        _eStopActive ||
+        _controller.isClosed) {
+      return;
+    }
+    // H022 / W001: level only (do not latch — false positives while de-energized).
+    _syncMaskedEffective(
+      EstopCommAlarmMask.laserCommAttr,
+      effective: _rawLaserComm == true,
+    );
+    _syncMaskedEffective(
+      EstopCommAlarmMask.wireFeederCommAttr,
+      effective: _rawWireFeederComm == true,
+    );
+    // H029: present after reset if still true OR seen during the press.
+    final deferredH029 = _h029DeferredAfterEstop;
+    final h029Raw = _rawLaserEmergencyStop == true;
+    _h029DeferredAfterEstop = false;
+    final h029 = h029Raw || deferredH029;
+    _syncMaskedEffective(
+      EstopCommAlarmMask.laserEmergencyStopAttr,
+      effective: h029,
+    );
+    // One-shot frost when hardware cleared the bit on reset — allow the warn
+    // queue to show, then fall so Laser Enable is not stuck behind H029.
+    if (deferredH029 && !h029Raw) {
+      final hold = h029DeferredOneShotHold;
+      unawaited(
+        Future<void>.delayed(hold, () {
+          if (gen != _estopReleaseResampleGen ||
+              _controller.isClosed ||
+              _eStopActive) {
+            return;
+          }
+          if (_rawLaserEmergencyStop == true) {
+            return;
+          }
+          _syncMaskedEffective(
+            EstopCommAlarmMask.laserEmergencyStopAttr,
+            effective: false,
+          );
+        }),
+      );
+    }
+  }
+
+  /// Wire-level status group read (not attr cache) after e-stop release.
+  Future<void> _refreshMaskedRawFromHardware() async {
+    try {
+      final status = await modbus.readGroup('status');
+      final laser = status[EstopCommAlarmMask.laserCommAttr];
+      final wire = status[EstopCommAlarmMask.wireFeederCommAttr];
+      final h029 = status[EstopCommAlarmMask.laserEmergencyStopAttr];
+      if (laser != null) {
+        _rawLaserComm = laser == true;
+      }
+      if (wire != null) {
+        _rawWireFeederComm = wire == true;
+      }
+      if (h029 != null) {
+        _rawLaserEmergencyStop = h029 == true;
+      }
+    } catch (_) {
+      // Keep last watch cache when the one-shot group read fails.
     }
   }
 
@@ -328,6 +441,7 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
   }
 
   Future<void> dispose() async {
+    _estopReleaseResampleGen++;
     await _sub?.cancel();
     await _healthSub?.cancel();
     _sub = null;

@@ -54,7 +54,7 @@ void main() {
 
   Future<ProcessLibraryController> seedQuickController(
     _SimModbus modbus, {
-    required Future<bool> Function() isSafeToApply,
+    required Future<ProcessApplyFailure?> Function() interlockFailure,
   }) async {
     final database = sqlite3.openInMemory();
     addTearDown(database.dispose);
@@ -97,7 +97,7 @@ void main() {
       ),
       applier: ProcessParameterApplier(
         modbus: modbus,
-        isSafeToApply: isSafeToApply,
+        interlockFailure: interlockFailure,
       ),
     );
     addTearDown(controller.close);
@@ -136,7 +136,7 @@ void main() {
       ),
       applier: ProcessParameterApplier(
         modbus: modbus,
-        isSafeToApply: () async => true,
+        interlockFailure: () async => null,
       ),
     );
     addTearDown(controller.close);
@@ -150,7 +150,7 @@ void main() {
     final modbus = _SimModbus();
     final controller = await seedQuickController(
       modbus,
-      isSafeToApply: () async => false,
+      interlockFailure: () async => ProcessApplyFailure.unsafeMachineState,
     );
     await tester.pumpWidget(
       AppScope(
@@ -222,7 +222,7 @@ void main() {
     final modbus = _SimModbus();
     final controller = await seedQuickController(
       modbus,
-      isSafeToApply: () async => false,
+      interlockFailure: () async => ProcessApplyFailure.unsafeMachineState,
     );
     await tester.pumpWidget(
       AppScope(
@@ -255,7 +255,7 @@ void main() {
     final modbus = _SimModbus();
     final controller = await seedQuickController(
       modbus,
-      isSafeToApply: () async => true,
+      interlockFailure: () async => null,
     );
     await tester.pumpWidget(
       AppScope(
@@ -284,7 +284,7 @@ void main() {
     final modbus = _SimModbus();
     final controller = await seedQuickController(
       modbus,
-      isSafeToApply: () async => true,
+      interlockFailure: () async => null,
     );
     await tester.pumpWidget(
       AppScope(
@@ -320,7 +320,7 @@ void main() {
     expect(modbus.control['control.laser_enable'], isTrue);
   });
 
-  testWidgets('Quick shows unsafe status when LaserWorkGuard blocks apply',
+  testWidgets('Quick hides unsafe status banner when LaserWorkGuard blocks',
       (tester) async {
     await setDesignSurface(tester);
     final modbus = _SimModbus()
@@ -328,28 +328,41 @@ void main() {
     final services = servicesWith(modbus);
     final controller = await seedQuickController(
       modbus,
-      isSafeToApply: () => LaserWorkGuard.isProcessChangeSafe(services),
+      interlockFailure: () async {
+        final block = await LaserWorkGuard.processChangeBlock(services);
+        return switch (block) {
+          null => null,
+          ProcessChangeBlockReason.statusUnavailable =>
+            ProcessApplyFailure.statusUnavailable,
+          ProcessChangeBlockReason.laserActive =>
+            ProcessApplyFailure.unsafeMachineState,
+          ProcessChangeBlockReason.wireFeeding =>
+            ProcessApplyFailure.wireFeedingActive,
+        };
+      },
     );
     // Mirror status bits for the guard group reads.
     modbus.status[LaserWorkGuard.laserOnAttribute] = false;
     modbus.status[LaserWorkGuard.wireFeedingOnAttribute] = false;
     modbus.control[LaserWorkGuard.laserEnableAttribute] = true;
 
+    // No AppScope: avoids Record Work camera probe timers in this unit test.
     await tester.pumpWidget(
-      AppScope(
-        services: services,
-        child: MaterialApp(
-          home: ProcessLibraryScope(
-            controller: controller,
-            child: const QuickModePage(),
-          ),
+      MaterialApp(
+        home: ProcessLibraryScope(
+          controller: controller,
+          child: const QuickModePage(),
         ),
       ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Laser work in progress'), findsOneWidget);
+    expect(find.text('Laser work in progress'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('quick-mode-status-message')),
+      findsNothing,
+    );
     expect(modbus.groupWrites, 0);
   });
 

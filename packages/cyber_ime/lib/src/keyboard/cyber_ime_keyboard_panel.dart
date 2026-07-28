@@ -16,8 +16,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// Default panel height used for lift (logical pixels).
-/// Typewriter Keyboard A is 5 rows (number + 3 alpha + bottom).
-const double kCyberImePanelHeight = 320;
+/// Soft Keyboard A is 4 rows (+ optional romaji candidate strip).
+const double kCyberImePanelHeight = 300;
+
+const double kCyberImeCandidateBarHeight = 40;
 
 const Color _kCapsLockDotActive = Color(0xFF32D74B);
 
@@ -44,6 +46,7 @@ class CyberImeKeyboardPanel extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         final layout = controller.layout;
+        final showCandidates = controller.hasComposition;
         return Material(
           type: MaterialType.transparency,
           child: SizedBox(
@@ -58,24 +61,36 @@ class CyberImeKeyboardPanel extends StatelessWidget {
                   ),
                 ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(CyberImeKeyboardRows.keyGap),
-                child: CyberImeKeyboardRows(
-                  layout: layout,
-                  keyFace: (key) => CyberImeKeyCap(
-                    keyDef: key,
-                    kind: layout.kind,
-                    shiftOn: controller.shiftActive,
-                    capsLock: controller.capsLock,
-                    altGrOn: controller.altGrOn,
-                    jpInputMode: controller.jpInputMode,
-                    onTap: () => controller.onKeyTap(key),
-                    onShiftLongPress: key.id == CyberImeKeyId.shift
-                        ? controller.onShiftLongPress
-                        : null,
-                    onPopupCommit: controller.commitPopupText,
+              child: Column(
+                children: [
+                  if (showCandidates)
+                    SizedBox(
+                      height: kCyberImeCandidateBarHeight,
+                      width: double.infinity,
+                      child: _CyberImeCandidateBar(controller: controller),
+                    ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(CyberImeKeyboardRows.keyGap),
+                      child: CyberImeKeyboardRows(
+                        layout: layout,
+                        keyFace: (key) => CyberImeKeyCap(
+                          keyDef: key,
+                          kind: layout.kind,
+                          shiftOn: controller.shiftActive,
+                          capsLock: controller.capsLock,
+                          altGrOn: controller.altGrOn,
+                          jpInputMode: controller.jpInputMode,
+                          onTap: () => controller.onKeyTap(key),
+                          onShiftLongPress: key.id == CyberImeKeyId.shift
+                              ? controller.onShiftLongPress
+                              : null,
+                          onPopupCommit: controller.commitPopupText,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
@@ -458,6 +473,16 @@ class CyberImeKeyLabel extends StatelessWidget {
         );
       case CyberImeKeyId.hankakuZenkaku:
         return const Text('半/全', style: TextStyle(fontSize: 11));
+      case CyberImeKeyId.languageToggle:
+        final jp = jpInputMode != CyberImeJpInputMode.english;
+        return Text(
+          jp ? 'ABC' : 'あ',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: jp ? CyberColors.buttonPrimaryAccent : null,
+          ),
+        );
       case CyberImeKeyId.muhenkan:
         return const Text('無変換', style: TextStyle(fontSize: 10));
       case CyberImeKeyId.henkan:
@@ -549,30 +574,7 @@ class CyberImeKeyLabel extends StatelessWidget {
     );
     const primaryStyle = TextStyle(fontSize: 18, fontWeight: FontWeight.w600);
 
-    // Default phone pad: secondary above the letter. Typewriter AltGr (e.g. €):
-    // pin to bottom-right corner so primary stays centered.
-    final cornerAltGr = keyDef.isLetter &&
-        !inKana &&
-        _mapProfile != CyberImeRegionalProfile.defaultSoft;
-    if (cornerAltGr) {
-      const corner = CyberDimens.rectangleButtonCornerRadius;
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          Center(child: Text(label, style: primaryStyle)),
-          Positioned(
-            right: 0,
-            bottom: 0,
-            width: corner * 2,
-            height: corner * 2,
-            child: Center(
-              child: Text(faceSecondary, style: secondaryStyle),
-            ),
-          ),
-        ],
-      );
-    }
-
+    // Soft phone: secondary (if any) sits above the primary glyph.
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -588,6 +590,58 @@ class CyberImeKeyLabel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Romaji preedit + candidate chips above the soft JIS letter pad.
+class _CyberImeCandidateBar extends StatelessWidget {
+  const _CyberImeCandidateBar({required this.controller});
+
+  final CyberImeKeyboardController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final reading = controller.compositionText;
+    final candidates = controller.candidates;
+    final selected = controller.candidateIndex;
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: CyberColors.borderHighlight, width: 0.5),
+        ),
+      ),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: Text(
+                reading,
+                style: const TextStyle(
+                  color: CyberColors.textSecondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          for (var i = 0; i < candidates.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: CyberButton(
+                size: CyberButtonSize.small,
+                variant: i == selected && controller.candidatePickerOpen
+                    ? CyberButtonVariant.primary
+                    : CyberButtonVariant.light,
+                onPressed: () => controller.commitCandidateAt(i),
+                child: Text(candidates[i]),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

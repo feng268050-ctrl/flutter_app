@@ -286,6 +286,45 @@
   "cameraStatusFailed": "失败",
   "systemVersion": "系统版本",
   "processLibVersion": "工艺库版本",
+  "updateProcessLibrary": "更新工艺库",
+  "processLibraryImportTitle": "导入工艺库",
+  "processLibraryScanHint": "将工艺包（manifest.json + 库 JSON）放到 /var/lib/hmi/incoming/process-library/、/userdata/ota/process-library/ 或 U 盘后扫描。",
+  "processLibraryNoPackages": "未找到工艺库导入包。",
+  "processLibraryRescan": "重新扫描",
+  "processLibraryImportAction": "导入",
+  "processLibraryImporting": "正在导入…",
+  "processLibraryModelMatch": "匹配本机型号",
+  "processLibraryModelMismatch": "型号非优先",
+  "processLibraryAuditTitle": "导入报告",
+  "processLibraryAuditImported": "导入成功",
+  "processLibraryAuditCurrent": "已是最新",
+  "processLibraryAuditRejected": "导入被拒绝",
+  "processLibraryAuditNoCompatible": "无适配本机型号的工艺库",
+  "processLibraryAuditFromTo": "版本：{from} → {to}",
+  "@processLibraryAuditFromTo": {
+    "placeholders": {
+      "from": {"type": "String"},
+      "to": {"type": "String"}
+    }
+  },
+  "processLibraryAuditRows": "行数：{count}",
+  "@processLibraryAuditRows": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "processLibraryAuditUsersKept": "保留的用户工艺：{count}",
+  "@processLibraryAuditUsersKept": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "processLibraryAuditPath": "包路径：{path}",
+  "@processLibraryAuditPath": {
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },
   "focusScaleReference": "焦点刻度参考",
   "kernelVersion": "内核版本",
   "autoCheckOtaUpdate": "自动检查更新",
@@ -386,6 +425,8 @@
   "rgbLedText": "RGB 指示灯",
   "rgbLedFooter": "用这些开关测试本机状态指示灯。",
   "safetyLockLabel": "安全锁",
+  "safetyGroundLockNotConnectedMessage": "请连接安全夹后再打开激光。",
+  "safetyGroundLockNotConnectedTitle": "安全夹未连通",
   "safetyLockText": "安全夹",
   "screenBrightnessText": "屏幕亮度",
   "screenDisplayText": "屏幕显示",

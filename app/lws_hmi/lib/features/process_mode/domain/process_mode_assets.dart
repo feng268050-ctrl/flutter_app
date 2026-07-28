@@ -105,6 +105,10 @@ abstract final class ProcessModeAssets {
   static const engineerDataValueBackground =
       'assets/process/engineer_data_value_background.webp';
 
+  /// Frost status dialog glyphs (lws-ui `dialog_succd` / `dialog_error`).
+  static const dialogSuccess = 'assets/process/dialog_succd.webp';
+  static const dialogError = 'assets/process/dialog_error.webp';
+
   static String materialIcon(MaterialType material) {
     switch (material) {
       case MaterialType.stainlessSteel:

@@ -2,35 +2,61 @@ import 'package:flutter/foundation.dart';
 
 /// Soft-keyboard layout profile (Settings Segment + CyberIME Keyboard A).
 ///
-/// Labels: Default / QWERTY / QWERTZ / AZERTY / JIS.
+/// Labels: QWERTY / QWERTZ / AZERTY / JIS.
 /// Distinct from [CyberImeGlobalKind] (english/chinese input language).
 enum CyberImeRegionalProfile {
-  /// Original CyberIME phone letter pad (3 letter rows + bottom).
-  defaultSoft,
+  /// US QWERTY phone soft keyboard (default).
+  qwerty,
 
-  /// US QWERTY typewriter block (ANSI Enter geometry).
-  ansi,
-
-  /// German QWERTZ ISO typewriter block.
+  /// German QWERTZ phone soft keyboard.
   qwertz,
 
-  /// French AZERTY ISO typewriter block.
+  /// French AZERTY phone soft keyboard.
   azerty,
 
-  /// Japanese JIS typewriter (英数 + hiragana/katakana modes).
+  /// Japanese romaji 26-key phone soft keyboard.
   jis;
 
   /// Short Segment label for product Settings choosers.
   String get segmentLabel => switch (this) {
-        CyberImeRegionalProfile.defaultSoft => 'Default',
-        CyberImeRegionalProfile.ansi => 'QWERTY',
+        CyberImeRegionalProfile.qwerty => 'QWERTY',
         CyberImeRegionalProfile.qwertz => 'QWERTZ',
         CyberImeRegionalProfile.azerty => 'AZERTY',
         CyberImeRegionalProfile.jis => 'JIS',
       };
 
-  /// Operator-facing name (same as [segmentLabel] for the five profiles).
+  /// Operator-facing name (same as [segmentLabel]).
   String get displayName => segmentLabel;
+
+  /// Persist id written as `profile=` (only the four soft values).
+  String get confId => name;
+
+  /// Parse persisted / legacy ids. Unknown and empty → [qwerty].
+  ///
+  /// Accepts legacy `default` / `defaultSoft` / `ansi`.
+  static CyberImeRegionalProfile parse(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case null:
+      case '':
+      case 'default':
+      case 'defaultsoft':
+      case 'ansi':
+      case 'qwerty':
+      case 'us':
+        return CyberImeRegionalProfile.qwerty;
+      case 'qwertz':
+      case 'de':
+        return CyberImeRegionalProfile.qwertz;
+      case 'azerty':
+      case 'fr':
+        return CyberImeRegionalProfile.azerty;
+      case 'jis':
+      case 'jp':
+        return CyberImeRegionalProfile.jis;
+      default:
+        return CyberImeRegionalProfile.qwerty;
+    }
+  }
 }
 
 /// App-registered regional layout provider.
@@ -51,7 +77,7 @@ class CyberImeFixedRegionalLayoutProvider
 class CyberImeMutableRegionalLayoutProvider extends ChangeNotifier
     implements CyberImeRegionalLayoutProvider {
   CyberImeMutableRegionalLayoutProvider([
-    CyberImeRegionalProfile initial = CyberImeRegionalProfile.defaultSoft,
+    CyberImeRegionalProfile initial = CyberImeRegionalProfile.qwerty,
   ]) : _profile = initial;
 
   CyberImeRegionalProfile _profile;
@@ -70,7 +96,7 @@ class CyberImeMutableRegionalLayoutProvider extends ChangeNotifier
 abstract final class CyberImeRegionalLayoutRegistry {
   static CyberImeRegionalLayoutProvider _provider =
       const CyberImeFixedRegionalLayoutProvider(
-    CyberImeRegionalProfile.defaultSoft,
+    CyberImeRegionalProfile.qwerty,
   );
 
   static CyberImeRegionalLayoutProvider get provider => _provider;
@@ -78,7 +104,7 @@ abstract final class CyberImeRegionalLayoutRegistry {
   static void register(CyberImeRegionalLayoutProvider? provider) {
     _provider = provider ??
         const CyberImeFixedRegionalLayoutProvider(
-          CyberImeRegionalProfile.defaultSoft,
+          CyberImeRegionalProfile.qwerty,
         );
   }
 }

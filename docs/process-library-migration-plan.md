@@ -1,21 +1,21 @@
 # lws-ui 工艺库迁移方案
 
-**状态：实施中（A–D 含工程师内置预设派生已完成；正式签收、E 的导入包 UI/审计、F 待实施）**  
-**目标阶段：P4.4 本地 HTTP 与数据、P4.6 产品功能迁移**  
-**范围：将 `lws-ui` 的工艺库迁移至 `app/lws_hmi/`，以 SQLite 作为设备端唯一持久化存储。**
+**状态：本地工艺库迁移完成（A–E；内置库已签收，版号与 lws-ui 一致为 `1.0.4-beta`）**  
+**目标阶段：P4.4 本地 HTTP 与数据、P4.6 产品功能迁移（本地库切片）**  
+**范围：将 `lws-ui` 的本地工艺库迁移至 `app/lws_hmi/`，以 SQLite 作为设备端唯一持久化存储。云端下发与视频快照（阶段 F）不计入本次迁移。**
 
 ## 1. 背景与结论
 
 `lws-ui` 的工艺库以 Android Room 表 `t_process_parameters_data` 保存快速模式、工程师模式预设和用户自定义工艺；内置 Excel 在 APK 启动/升级时导入，后续还可由云端下发更新。当前 `L1 Pro.xlsx` 本身只包含快速模式行，工程师模式默认参数由导入后的快速模式数据派生。
 
-`lws-hmi` 已具备 Dart `sqlite3` 依赖和 `/var/lib/hmi/` 持久化约定，告警历史已使用该模式。工艺库数据层、快速/工程师页面、Modbus 应用，以及由 quick 行派生 `engineer_preset` 均已落地。当前 `L1 Pro.xlsx` 已转换并推送为内置 asset；剩余重点是工艺参数正式签收与离线导入 UI。
+`lws-hmi` 已具备 Dart `sqlite3` 依赖和 `/var/lib/hmi/` 持久化约定，告警历史已使用该模式。工艺库数据层、快速/工程师页面、Modbus 应用、由 quick 行派生 `engineer_preset`，以及 USB/OTA 落盘离线导入 UI 与审计报告均已落地。内置库已与 `lws-ui` 同源签收：`L1 Pro.xlsx` / `工艺库_v1.0.4-beta.zip` → `l1-pro.1.0.4-beta.json`（版号暂时保持与 lws-ui 一致）。
 
 **推荐结论：**
 
 - 继续使用 SQLite，但新建独立数据库 `/var/lib/hmi/process-library.db`，不与 `alarm-logs.db` 混用。
 - 不直接复用 Android Room 数据库文件、Java 实体或 Android 的迁移链；迁移其业务语义、数据、Excel 格式和参数规则。
 - Excel 继续作为工艺人员的维护源格式；设备端不解析 Excel。构建时将其校验、转换为版本化 JSON，并在 HMI 首启/升级时事务导入 SQLite。
-- 本地内置库、快速模式、工程师预设派生/用户工艺、Modbus 应用已实现。云同步、录像关联和 Android 用户数据迁移仍为后续切片。
+- 本次迁移仅覆盖本地工艺库（内置/离线导入、Quick/Engineer、Modbus 应用）。云同步、录像参数快照（F）与 Android 现场用户工艺迁移另开切片，不阻塞本次关单。
 
 ## 2. 现状盘点
 
@@ -23,7 +23,7 @@
 |---|---|---|
 | 工艺主表 | Room `t_process_parameters_data` | ✅ `process-library.db` 的 `process_presets` / `process_library_meta` |
 | 存储技术 | SQLite（Room） | ✅ SQLite `sqlite3`（独立工艺库 DB；告警库亦已使用） |
-| 内置库 | `assets/process-library/L1 Pro.xlsx` | 🟡 已生成并推送 `l1-pro.1.0.4-beta.json`（366 条 quick + 派生 engineer_preset）；待正式工艺签收 |
+| 内置库 | `assets/process-library/L1 Pro.xlsx`（与 lws-ui 同源，`工艺库_v1.0.4-beta`） | ✅ 已签收并推送 `l1-pro.1.0.4-beta.json`（366 条 quick + 派生 engineer_preset）；版号与 lws-ui 一致 |
 | 导入行为 | 替换快速模式行；补齐工程师默认项 | ✅ 版本化 JSON 导入、quick 重建、导入时按中位数派生/重建 `engineer_preset`、用户工艺保留 |
 | 数据类型 | 快速 `0`、工程师 `1`、旧自定义 `2`、旧视频 `3` | ✅ 收敛为 `quick`、`engineer_preset`、`user` |
 | 控制输出 | Java → Modbus 寄存器 | ✅ `ProcessParameterApplier` + HAL 22 个 `process.*` 属性批量写入/读回 |
@@ -54,16 +54,16 @@
 - [x] 参数校验与一次性 Modbus 应用。
 - [x] 本地备份/恢复的底层接口（UI 可后置）。
 - [x] 参考 `lws-ui`：由 quick 行按“工艺类型 × 材料”的中位数规则派生 `engineer_preset`，并加入 golden test。
-- [~] 生产工艺库 asset：`l1-pro.1.0.4-beta.json` 已生成并推设备，待工艺负责人正式签收。
-- [ ] USB/OTA 外部导入包 UI 与导入审计报告。
-- [ ] ynh960 真机 Modbus smoke（选参 → 应用 → 读回）。
+- [x] 生产工艺库 asset：`l1-pro.1.0.4-beta.json` 已签收（与 lws-ui `1.0.4-beta` 同源）并推设备。
+- [x] USB/OTA 外部导入包 UI 与导入审计报告（Settings → Device Information → Update Process Library；落盘路径见 §13）。
+- [~] ynh960 真机 Modbus smoke（选参 → 应用 → 读回）：脚本 `scripts/process-library-modbus-smoke.sh`；出光链路已实机确认，完整 smoke 清单仍可按需补跑。
 
-### 3.2 不在首期范围
+### 3.2 不在本次迁移范围
 
-- 云端 WebSocket 下发与双向同步。
-- 工艺视频的上传、关联和播放；录像只应保存不可变的参数快照。
+- **阶段 F：** 云端 WebSocket 下发与双向同步；工艺视频上传/关联/播放与录像参数快照（另开切片）。
 - 直接读取或原地升级 Android Room 数据库。
 - 旧 `dataType=2/3` 的继续写入；新库不再产生这些类型。
+- Android 现场用户自定义工艺的一次性导入（产品未要求则不做）。
 
 ## 4. 架构与分层
 
@@ -256,8 +256,8 @@ CREATE UNIQUE INDEX uq_process_presets_uuid ON process_presets(uuid);
 | [x] | B：资产管线 | Excel 校验/转换、JSON manifest、内置导入器 | 表头/枚举错误拒绝；相同版本不重复导入；升级原子替换 |
 | [x] | C：快速模式 | 筛选页面、摘要、应用 Use Case | 每类工艺正确筛选；HAL 参数映射；设备空闲互锁 |
 | [x] | D：工程师模式 | 页面、用户工艺管理、内置预设中位数派生 | 内置项只读；派生/显式优先；用户工艺 CRUD；升级后用户项保留 |
-| [~] | E：离线更新与恢复 | 备份恢复底层接口已完成；导入包 UI/审计待完成 | 损坏包不影响旧库；回滚；备份可恢复 |
-| [ ] | F：云与视频（后续） | WebSocket 下发、视频参数快照 | 协议兼容、冲突策略、历史快照不变 |
+| [x] | E：离线更新与恢复 | 备份恢复、导入包扫描/导入 UI、审计报告 | 损坏包不影响旧库；回滚；备份可恢复；审计可诊断 |
+| n/a | F：云与视频 | **不计入本次本地工艺库迁移**；另开切片 | — |
 
 每一阶段均应至少包含：SQLite transaction 回滚测试、数据模型/映射单测、UI widget test（若有页面）、以及 ynh960 真机 Modbus smoke test。Dart 变更完成前运行 `flutter analyze` 与相关测试。
 
@@ -286,21 +286,31 @@ Android Room 文件不能作为 Linux HMI 的直接升级源：路径、权限�
 ## 12. 待确认决策
 
 1. **已决：**首期同时提供 Quick 与 Engineer UI；内置 `engineer_preset` 已由 quick 中位数派生落地。
-2. 新系统上线是否必须迁移 Android 设备上已有的用户自定义工艺？
-3. 首期工艺库更新渠道是随固件内置、USB 离线导入，还是必须同步支持云端 WebSocket 下发？
-4. 哪些型号共享一份库，哪些需型号专属库？型号标识以何处为准？
-5. 各 `process.*` 参数的正式范围、空值语义和工艺类型适用矩阵由谁签收？
+2. **已决（本次）：**本地迁移不含 F；云端 WebSocket / 视频快照另开切片。
+3. **已决（本次）：**内置库签收，版号暂时与 lws-ui 一致为 `1.0.4-beta`（Excel/`__source_filename` 同源）。
+4. 新系统上线是否必须迁移 Android 设备上已有的用户自定义工艺？（未要求则跳过）
+5. 哪些型号共享一份库，哪些需型号专属库？型号标识以何处为准？（当前 manifest：`L1 Pro` + `*`）
 
-下一实施优先级：由工艺负责人签收 `L1 Pro` 参数并完成 ynh960 Modbus smoke；随后完成 USB/OTA 外部导入 UI 与审计。
+下一实施优先级（可选补跑，不阻塞本地迁移关单）：ynh960 上 `scripts/process-library-modbus-smoke.sh` 与全工艺类型读回清单；F 云/视频另开切片。
 
 ## 13. 实施记录
 
-2026-07-23 已在 `app/lws_hmi/` 落地阶段 A–D（含 `EngineerPresetDeriver` 与 golden test），以及阶段 E 的备份恢复底层接口：领域模型、SQLite Repository、版本化 JSON 导入、quick→engineer_preset 派生、Quick/Engineer 页面、用户工艺 CRUD、HAL 批量应用/读回、备份恢复和自动化测试。USB/OTA 外部导入包 UI 与审计报告仍按后续切片处理。
+2026-07-23 已在 `app/lws_hmi/` 落地阶段 A–D（含 `EngineerPresetDeriver` 与 golden test），以及阶段 E 的备份恢复底层接口：领域模型、SQLite Repository、版本化 JSON 导入、quick→engineer_preset 派生、Quick/Engineer 页面、用户工艺 CRUD、HAL 批量应用/读回、备份恢复和自动化测试。
 
-仓库已包含 `app/lws_hmi/assets/process-library/L1 Pro.xlsx`，并已转换出 `l1-pro.1.0.4-beta.json` 与 manifest（366 行 `quick`）。导入后还会按材料组派生 `engineer_preset`。该 asset 仅缺少工艺负责人正式签收，不能据此宣称已完成生产参数验收。取得更新的签收 Excel 后执行：
+2026-07-27 完成本地迁移关单决策：F（云/视频）不计入本次范围；内置库确认签收，版号与 lws-ui 一致为 `1.0.4-beta`（Excel 与 `__source_filename` 已比对同源）。
+
+2026-07-27 完成阶段 E 导入包 UI/审计：`ProcessLibraryImporter.importPackageFromDirectory`、`ProcessLibraryPackageScanner`、Settings 设备信息入口与审计对话框。离线包扫描路径：
+
+1. `/var/lib/hmi/incoming/process-library/`（MTP/人工拷贝）
+2. `/userdata/ota/process-library/`（OTA 暂存）
+3. `/run/media/*/*`、`/media/*` 下含 `manifest.json` 的目录（尽力扫描）
+
+包格式与内置 asset 相同：目录内 `manifest.json` + 库 JSON；`source` 可为 `usb`/`ota`。真机只读 smoke：`scripts/process-library-modbus-smoke.sh`。
+
+仓库已包含与 `lws-ui` 同源的 `app/lws_hmi/assets/process-library/L1 Pro.xlsx`（`__source_filename.txt` = `工艺库_v1.0.4-beta.zip`），并已转换出已签收的 `l1-pro.1.0.4-beta.json` 与 manifest（366 行 `quick`）。导入后还会按材料组派生 `engineer_preset`。后续若工艺侧发布新版 Excel，保持与 lws-ui 同版号策略，执行：
 
 ```bash
 python3 scripts/convert-process-library.py /path/to/工艺库_V1.4.xlsx --version 1.4.0 --models "PRODUCT_MODEL"
 ```
 
-`--models` 必须填写设备 `/var/lib/hal/product.ini` 中的 `MODEL` 值（多个值用逗号分隔），不是板卡 `board_id`。转换器会严格校验表头、枚举、范围和快速模式重复组合，并生成版本化 JSON、manifest、行数和 SHA-256。生成结果仍须由工艺负责人签收，并在 ynh960 上完成 Modbus smoke test 后才能作为生产内置库发布。
+`--models` 必须填写设备 `/var/lib/hal/product.ini` 中的 `MODEL` 值（多个值用逗号分隔），不是板卡 `board_id`。转换器会严格校验表头、枚举、范围和快速模式重复组合，并生成版本化 JSON、manifest、行数和 SHA-256。

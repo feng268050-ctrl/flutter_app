@@ -19,21 +19,15 @@ abstract final class CyberImeTypewriterLayouts {
     required CyberImeKeyboardKind kind,
     required List<CyberImeKeyDef> bottomRow,
   }) {
-    final mapProfile = profile == CyberImeRegionalProfile.defaultSoft
-        ? CyberImeRegionalProfile.ansi
-        : profile;
+    final mapProfile = profile;
     final letterRows = switch (profile) {
-      CyberImeRegionalProfile.defaultSoft ||
-      CyberImeRegionalProfile.ansi =>
-        _ansiUs(mapProfile),
+      CyberImeRegionalProfile.qwerty => _ansiUs(mapProfile),
       CyberImeRegionalProfile.qwertz => _isoDe(mapProfile),
       CyberImeRegionalProfile.azerty => _isoFr(mapProfile),
       CyberImeRegionalProfile.jis => _jisJp(mapProfile),
     };
     final bottom = switch (profile) {
-      CyberImeRegionalProfile.ansi ||
-      CyberImeRegionalProfile.defaultSoft =>
-        _ansiModifierRow(bottomRow),
+      CyberImeRegionalProfile.qwerty => _ansiModifierRow(bottomRow),
       CyberImeRegionalProfile.qwertz ||
       CyberImeRegionalProfile.azerty =>
         _isoModifierRow(bottomRow),

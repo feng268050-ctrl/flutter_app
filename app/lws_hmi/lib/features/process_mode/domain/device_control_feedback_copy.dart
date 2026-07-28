@@ -1,4 +1,6 @@
 /// EN feedback strings for Quick/Engineer device controls (lws-ui `values/strings.xml`).
+import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
+
 abstract final class DeviceControlFeedbackCopy {
   static const manualGasOn = 'Manual gas on';
   static const manualGasOff = 'Manual gas turned off';
@@ -30,4 +32,48 @@ abstract final class DeviceControlFeedbackCopy {
 
   /// Sub-hint under Feed (`feed_sub_hold_hint`).
   static const feedHoldHint = 'Hold 3s to keep on';
+
+  /// Record Work cannot start (`unable_to_open_the_camera_title`).
+  static const cameraUnavailable = 'Camera unavailable';
+
+  /// Side ops / More Parameters blocked while laser is open.
+  static const endOfWorkFirst = 'End of work first';
+
+  /// End of work Modbus write / reconcile failed (bus or C001).
+  static const endOfWorkFailed =
+      'End of work failed — check controller link';
+
+  /// Feed / Retract / Auto Wire outside continuous welding.
+  static const wireUnavailableInMode = 'Wire feed unavailable in this mode';
+
+  /// Frost Operation failed title (`operation_failed_text`).
+  static const operationFailedTitle = 'Operation failed';
+
+  /// Key switch off while Laser Enable (`check_key_error_text`).
+  static const keySwitchOffError = 'Key switch is off';
+
+  /// E-stop active (`check_e_stop_state_error`).
+  static const emergencyStopError = 'Device is in E-stop';
+
+  /// User-facing copy when [disableLaser] returns a block reason.
+  static String messageForDisable(LaserEnableBlockReason reason) {
+    return switch (reason) {
+      LaserEnableBlockReason.writeFailed => endOfWorkFailed,
+      _ => reason.message,
+    };
+  }
+
+  /// Tip body for Laser Enable preflight when key / e-stop is not reset.
+  static String tipForLaserEnableBlock(LaserEnableBlockReason reason) {
+    return switch (reason) {
+      LaserEnableBlockReason.keySwitchOff => keySwitchOffError,
+      LaserEnableBlockReason.emergencyStop => emergencyStopError,
+      _ => reason.message,
+    };
+  }
+
+  /// Whether [reason] should use Operation-failed tip (not Toast).
+  static bool isSafetyTipBlock(LaserEnableBlockReason reason) =>
+      reason == LaserEnableBlockReason.keySwitchOff ||
+      reason == LaserEnableBlockReason.emergencyStop;
 }

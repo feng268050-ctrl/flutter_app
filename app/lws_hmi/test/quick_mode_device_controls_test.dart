@@ -7,11 +7,14 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_button.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_device_controls.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  tearDown(ProcessModeToast.resetForTest);
 
   AppServices servicesWith(ModbusRtuClient modbus) {
     return AppServices(
@@ -41,13 +44,15 @@ void main() {
       ..keySwitchOn = true;
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: QuickModeDeviceControls(
-            controller: c,
-            processType: processType,
-            laserPreflight: () => null,
-            onEnableConfirmed: () async {},
-            onDisable: () async {},
+        home: ProcessModeToastLayer(
+          child: Scaffold(
+            body: QuickModeDeviceControls(
+              controller: c,
+              processType: processType,
+              laserPreflight: () => null,
+              onEnableConfirmed: () async {},
+              onDisable: () async {},
+            ),
           ),
         ),
       ),
@@ -63,6 +68,21 @@ void main() {
     );
     expect(find.text('Hold 3s to keep on'), findsOneWidget);
     expect(find.text('Feed'), findsOneWidget);
+    final hint = tester.widget<Text>(
+      find.byKey(const ValueKey('device-control-feed-hold-hint')),
+    );
+    expect(hint.style?.color, ProcessModeOutlineChrome.actionOrange);
+  });
+
+  testWidgets('left and right zone dividers share the same Y', (tester) async {
+    await pumpControls(tester, processType: ProcessType.continuousWelding);
+    final left = tester.getRect(
+      find.byKey(const ValueKey('quick-mode-zone-divider-left')),
+    );
+    final right = tester.getRect(
+      find.byKey(const ValueKey('quick-mode-zone-divider-right')),
+    );
+    expect(left.top, closeTo(right.top, 0.5));
   });
 
   testWidgets('pins left/right groups to screen corners', (tester) async {
@@ -89,7 +109,7 @@ void main() {
     );
   });
 
-  testWidgets('shows Auto Wire / Feed / Retract disabled for cleaning',
+  testWidgets('greys Auto Wire / Feed / Retract outside continuous welding',
       (tester) async {
     await pumpControls(tester, processType: ProcessType.weldCleaning);
 
@@ -102,11 +122,67 @@ void main() {
       find.byKey(const ValueKey('device-control-retract')),
       findsOneWidget,
     );
-    expect(find.text('Auto Wire Feed'), findsOneWidget);
-    expect(find.text('Feed'), findsOneWidget);
+
+    // Engineer outline chrome: idle orange / disabled brown.
+    const idle = ProcessModeOutlineChrome.actionOrange;
+    const disabled = ProcessModeOutlineChrome.disabledForeground;
+    expect(
+      tester.widget<Text>(find.text('Manual Gas')).style?.color,
+      idle,
+    );
+    expect(
+      tester.widget<Text>(find.text('Auto Wire Feed')).style?.color,
+      disabled,
+    );
+    expect(
+      tester.widget<Text>(find.text('Feed')).style?.color,
+      disabled,
+    );
+    expect(
+      tester.widget<Text>(find.text('Retract')).style?.color,
+      disabled,
+    );
   });
 
-  testWidgets('hides side groups while laser is open', (tester) async {
+  testWidgets('ignores Feed tap quietly when wire ops are disabled',
+      (tester) async {
+    await pumpControls(tester, processType: ProcessType.weldCleaning);
+    final center =
+        tester.getCenter(find.byKey(const ValueKey('device-control-feed')));
+    final gesture = await tester.startGesture(center);
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(find.text('Wire feed unavailable in this mode'), findsNothing);
+  });
+
+  testWidgets('enables wire ops in continuous welding', (tester) async {
+    final controller = DeviceControlController(servicesWith(_IdleModbus()))
+      ..keySwitchOn = true
+      ..autoWireFeed = false;
+    await pumpControls(
+      tester,
+      processType: ProcessType.continuousWelding,
+      controller: controller,
+    );
+    // Idle Engineer outline chrome: orange label (not grey / disabled).
+    const idle = ProcessModeOutlineChrome.actionOrange;
+    expect(
+      tester.widget<Text>(find.text('Auto Wire Feed')).style?.color,
+      idle,
+    );
+    expect(
+      tester.widget<Text>(find.text('Feed')).style?.color,
+      idle,
+    );
+    expect(
+      tester.widget<Text>(find.text('Retract')).style?.color,
+      idle,
+    );
+  });
+
+  testWidgets('frosts side groups while laser enable is on (still in tree)',
+      (tester) async {
     final controller = DeviceControlController(servicesWith(_IdleModbus()))
       ..keySwitchOn = true
       ..laserEnable = true;
@@ -117,10 +193,36 @@ void main() {
     );
 
     expect(
-        find.byKey(const ValueKey('device-control-manual-gas')), findsNothing);
-    expect(find.byKey(const ValueKey('device-control-feed')), findsNothing);
+      find.byKey(const ValueKey('device-control-manual-gas')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('device-control-feed')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('laser-enable-region-frost')),
+      findsWidgets,
+    );
     expect(
       find.byKey(const ValueKey('quick-mode-laser-enable')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('emission feedback alone does not open Laser Enable session UI',
+      (tester) async {
+    final controller = DeviceControlController(servicesWith(_IdleModbus()))
+      ..keySwitchOn = true
+      ..laserOn = true
+      ..laserEnable = false;
+    await pumpControls(
+      tester,
+      processType: ProcessType.continuousWelding,
+      controller: controller,
+    );
+
+    expect(find.text('Laser Enable'), findsOneWidget);
+    expect(find.text('End of work'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('device-control-manual-gas')),
       findsOneWidget,
     );
   });

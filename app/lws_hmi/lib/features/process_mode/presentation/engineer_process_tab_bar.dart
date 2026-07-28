@@ -11,10 +11,12 @@ final class EngineerProcessTabBar extends StatelessWidget {
     super.key,
     required this.processType,
     required this.onChanged,
+    this.enabled = true,
   });
 
   final ProcessType processType;
   final ValueChanged<ProcessType> onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -33,18 +35,24 @@ final class EngineerProcessTabBar extends StatelessWidget {
             fit: BoxFit.fill,
           ),
         ),
-        child: Row(
-          children: [
-            for (var i = 0; i < EngineerProcessTabs.types.length; i++)
-              Expanded(
-                flex: ProcessModeDimens.engineerTabWeights[i],
-                child: _EngineerTabItem(
-                  type: EngineerProcessTabs.types[i],
-                  selected: EngineerProcessTabs.types[i] == active,
-                  onTap: () => onChanged(EngineerProcessTabs.types[i]),
-                ),
-              ),
-          ],
+        child: IgnorePointer(
+          ignoring: !enabled,
+          child: Opacity(
+            opacity: enabled ? 1 : 0.45,
+            child: Row(
+              children: [
+                for (var i = 0; i < EngineerProcessTabs.types.length; i++)
+                  Expanded(
+                    flex: ProcessModeDimens.engineerTabWeights[i],
+                    child: _EngineerTabItem(
+                      type: EngineerProcessTabs.types[i],
+                      selected: EngineerProcessTabs.types[i] == active,
+                      onTap: () => onChanged(EngineerProcessTabs.types[i]),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );

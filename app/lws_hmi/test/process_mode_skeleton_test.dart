@@ -91,6 +91,10 @@ void main() {
       find.byKey(const ValueKey('engineer-process-tab-bar')),
       findsOneWidget,
     );
+    expect(
+      tester.getSize(find.byKey(const ValueKey('engineer-process-tab-bar'))),
+      const Size(1280, ProcessModeDimens.engineerTabBarHeight),
+    );
     expect(find.text('Continuous'), findsOneWidget);
     expect(find.text('Spot'), findsOneWidget);
     expect(find.text('Weld Seam'), findsOneWidget);

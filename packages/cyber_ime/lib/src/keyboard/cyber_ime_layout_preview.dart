@@ -11,10 +11,8 @@ import 'package:flutter/material.dart';
 
 /// Read-only CyberIME letter-layout preview (Settings / chooser chrome).
 ///
-/// Builds the same Keyboard A geometry and [CyberImeKeyLabel] faces as the
+/// Builds the same soft Keyboard A geometry and [CyberImeKeyLabel] faces as the
 /// live panel for [profile], without input, popups, or session wiring.
-///
-/// Does not include F-keys or NumPad — matches product soft layouts.
 class CyberImeLayoutPreview extends StatelessWidget {
   const CyberImeLayoutPreview({
     super.key,

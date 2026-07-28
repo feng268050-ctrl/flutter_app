@@ -28,7 +28,7 @@ void main() {
     CyberImeRegionalLayoutRegistry.register(null);
   });
 
-  test('JIS jp mode: 半/全, カナ, Shift small kana, 英数', () {
+  test('JIS soft: language toggle + romaji ka / nihongo', () {
     CyberImeRegionalLayoutRegistry.register(
       CyberImeMutableRegionalLayoutProvider(CyberImeRegionalProfile.jis),
     );
@@ -42,37 +42,42 @@ void main() {
 
     c.onKeyTap(
       const CyberImeKeyDef(
-        id: CyberImeKeyId.hankakuZenkaku,
-        primary: '半/全',
+        id: CyberImeKeyId.languageToggle,
+        primary: 'あ',
       ),
     );
     expect(c.jpInputMode, CyberImeJpInputMode.hiragana);
 
-    final q = CyberImeLayouts.letters(profile: CyberImeRegionalProfile.jis)
-        .rows[1]
-        .keys
-        .firstWhere((k) => k.keyCode == CyberImeKeyCode.keyQ);
-    c.onKeyTap(q);
-    expect(commit.text, 'た');
+    void tapLetter(String upper) {
+      c.onKeyTap(
+        CyberImeKeyDef(
+          id: CyberImeKeyId.letter,
+          primary: upper,
+          isLetter: true,
+        ),
+      );
+    }
 
-    c.onKeyTap(
-      const CyberImeKeyDef(id: CyberImeKeyId.kanaToggle, primary: 'カナ'),
-    );
-    expect(c.jpInputMode, CyberImeJpInputMode.katakana);
-    c.onKeyTap(q);
-    expect(commit.text, 'たタ');
+    tapLetter('K');
+    tapLetter('A');
+    expect(c.compositionText, 'か');
+    expect(commit.text, '');
+    c.onKeyTap(const CyberImeKeyDef(id: CyberImeKeyId.enter, primary: '⏎'));
+    expect(commit.text, 'か');
+    expect(c.hasComposition, isFalse);
 
-    c.onKeyTap(const CyberImeKeyDef(id: CyberImeKeyId.shift, primary: '⇧'));
-    final z = CyberImeLayouts.letters(profile: CyberImeRegionalProfile.jis)
-        .rows[3]
-        .keys
-        .firstWhere((k) => k.keyCode == CyberImeKeyCode.keyZ);
-    c.onKeyTap(z);
-    expect(commit.text, 'たタッ');
-
-    c.onKeyTap(
-      const CyberImeKeyDef(id: CyberImeKeyId.capsLock, primary: '英数'),
-    );
-    expect(c.jpInputMode, CyberImeJpInputMode.english);
+    for (final ch in 'NIHONGO'.split('')) {
+      tapLetter(ch);
+    }
+    expect(c.compositionText, 'にほんご');
+    c.onKeyTap(const CyberImeKeyDef(id: CyberImeKeyId.space, primary: ' '));
+    expect(c.candidatePickerOpen, isTrue);
+    expect(c.candidates, contains('日本語'));
+    // Cycle to 日本語 if not already selected.
+    while (c.selectedCandidate != '日本語') {
+      c.onKeyTap(const CyberImeKeyDef(id: CyberImeKeyId.space, primary: ' '));
+    }
+    c.onKeyTap(const CyberImeKeyDef(id: CyberImeKeyId.enter, primary: '⏎'));
+    expect(commit.text, 'か日本語');
   });
 }

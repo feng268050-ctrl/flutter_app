@@ -10,21 +10,34 @@ import 'package:lws_hmi/features/monitor/application/machine_status_controller.d
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_gauges.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
+/// Manual More Status route name (confirm bar). Distinct from gun-managed.
+const liveMachineStatusManualRouteName = 'manual-live-machine-status';
+
 /// lws-ui [MachineStatusOverlay] — light frost + live PR1 video (not Monitor route).
 ///
 /// Quick Mode “More Status” opens this with a confirm action
-/// (`MachineStatusOverlay.show(context, true)`).
+/// (`MachineStatusOverlay.show(context, true)`). Gun path uses
+/// [WorkStatusDialogHost.showNoConfirmDialog] (`showConfirmButton: false`).
 Future<void> showLiveMachineStatusDialog(
   BuildContext context, {
   IpCameraPreviewPlayerFactory? playerFactory,
   bool showConfirmButton = true,
+  String? routeName,
+  void Function(BuildContext dialogContext)? onDialogContext,
 }) {
   final panel = CyberPanelBorder(tone: CyberTone.light);
   return showDialog<void>(
     context: context,
     barrierDismissible: !showConfirmButton,
     barrierColor: CyberColors.scrim,
+    routeSettings: RouteSettings(
+      name: routeName ??
+          (showConfirmButton
+              ? liveMachineStatusManualRouteName
+              : 'live-machine-status'),
+    ),
     builder: (dialogContext) {
+      onDialogContext?.call(dialogContext);
       // lws-ui `machine_status_dialog_screen_inset` = 2dp.
       const screenInset = 2.0;
       final size = MediaQuery.sizeOf(dialogContext);

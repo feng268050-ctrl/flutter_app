@@ -1,5 +1,7 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 
 /// Compact read-only parameter preview for the matched quick preset.
 final class QuickModeParameterPreview extends StatelessWidget {
@@ -108,14 +110,28 @@ final class QuickModeMoreParametersButton extends StatelessWidget {
       opacity: enabled ? 1 : 0.35,
       child: TextButton.icon(
         key: const ValueKey('quick-mode-more-parameters'),
-        onPressed: enabled ? onPressed : null,
+        onPressed: enabled
+            ? () {
+                CyberClickSoundRegistry.playClick();
+                onPressed();
+              }
+            : null,
         icon: const Icon(Icons.tune, color: Colors.white, size: 20),
         label: const Text(
           'More Parameters',
-          style: TextStyle(color: Colors.white, fontSize: 16),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: ProcessModeDimens.quickTopChromeLabelSize,
+            fontWeight: FontWeight.w500,
+            height: 1.0,
+          ),
         ),
         style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+          // No outer padding so [quickTopChromeInset] matches Record Work.
+          padding: EdgeInsets.zero,
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
         ),
       ),
     );

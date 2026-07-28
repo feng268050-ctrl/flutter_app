@@ -88,7 +88,7 @@ void main() {
       ),
       applier: ProcessParameterApplier(
         modbus: _UnusedModbus(),
-        isSafeToApply: () async => false,
+        interlockFailure: () async => ProcessApplyFailure.unsafeMachineState,
       ),
     );
     addTearDown(controller.close);
@@ -318,6 +318,10 @@ void main() {
     expect(find.text('Quick handoff'), findsOneWidget);
     expect(find.textContaining('42'), findsWidgets);
     expect(find.text('Stainless Steel-2mm'), findsNothing);
+
+    // Tab switch kicks off unawaited Modbus sync; dispose waits while busy.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 600));
   });
 }
 

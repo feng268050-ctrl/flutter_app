@@ -1,10 +1,19 @@
+import 'package:lws_hmi/features/process_library/application/process_parameter_wire_codec.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 enum ProcessApplyFailure {
   busy,
   baselineReadFailed,
+
+  /// Modbus status unavailable (read failed / missing bits).
+  statusUnavailable,
+
+  /// Laser enable or laser emission is active.
   unsafeMachineState,
+
+  /// Wire feeding feedback is on.
+  wireFeedingActive,
   processWriteFailed,
   processReadbackFailed,
   processTypeWriteFailed,
@@ -23,21 +32,39 @@ final class ProcessApplyResult {
 final class ProcessParameterApplier {
   const ProcessParameterApplier({
     required this.modbus,
-    required this.isSafeToApply,
+    required this.interlockFailure,
   });
 
   final ModbusRtuClient modbus;
-  final Future<bool> Function() isSafeToApply;
+
+  /// `null` when safe to apply; otherwise a typed [ProcessApplyFailure].
+  final Future<ProcessApplyFailure?> Function() interlockFailure;
 
   Future<ProcessApplyResult> apply(ProcessPreset preset) async {
     ProcessParameterValidator.validate(preset);
-    try {
-      return await modbus.exclusiveSession(() => _applyExclusive(preset));
-    } catch (_) {
-      return const ProcessApplyResult.failure(
-        ProcessApplyFailure.baselineReadFailed,
-      );
+    var last = const ProcessApplyResult.failure(
+      ProcessApplyFailure.baselineReadFailed,
+    );
+    // Transient RTU gaps are common on enable; retry only baseline/read failures.
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        last = await modbus.exclusiveSession(() => _applyExclusive(preset));
+      } catch (_) {
+        last = const ProcessApplyResult.failure(
+          ProcessApplyFailure.baselineReadFailed,
+        );
+      }
+      if (last.isSuccess ||
+          last.failure != ProcessApplyFailure.baselineReadFailed) {
+        return last;
+      }
+      if (attempt < 2) {
+        await Future<void>.delayed(
+          Duration(milliseconds: 80 * (attempt + 1)),
+        );
+      }
     }
+    return last;
   }
 
   Future<ProcessApplyResult> _applyExclusive(ProcessPreset preset) async {
@@ -47,10 +74,9 @@ final class ProcessParameterApplier {
         ProcessApplyFailure.baselineReadFailed,
       );
     }
-    if (!await isSafeToApply()) {
-      return const ProcessApplyResult.failure(
-        ProcessApplyFailure.unsafeMachineState,
-      );
+    final blocked = await interlockFailure();
+    if (blocked != null) {
+      return ProcessApplyResult.failure(blocked);
     }
     final previousType = (await _readGroup('control'))?['control.process_type'];
     if (previousType is! num) {
@@ -58,11 +84,11 @@ final class ProcessParameterApplier {
         ProcessApplyFailure.baselineReadFailed,
       );
     }
-    final expected = <String, double>{
-      ...baseline,
-      ...preset.parameters.values,
-    };
-    if (!await modbus.writeGroup('process', preset.parameters.values)) {
+    final expected = ProcessParameterWireCodec.buildWriteValues(
+      preset: preset,
+      baseline: baseline,
+    );
+    if (!await modbus.writeGroup('process', expected)) {
       return const ProcessApplyResult.failure(
         ProcessApplyFailure.processWriteFailed,
       );
@@ -75,9 +101,10 @@ final class ProcessParameterApplier {
             : ProcessApplyFailure.partialApply,
       );
     }
+    final modbusType = preset.processType.modbusProcessType;
     if (!await modbus.writeAttribute(
       'control.process_type',
-      preset.processType.wireValue,
+      modbusType,
     )) {
       return ProcessApplyResult.failure(
         await _rollback(baseline, previousType.toInt())
@@ -87,7 +114,7 @@ final class ProcessParameterApplier {
     }
     final typeReadback = (await _readGroup('control'))?['control.process_type'];
     final actualType = typeReadback is num ? typeReadback.toInt() : null;
-    if (actualType != preset.processType.wireValue) {
+    if (actualType != modbusType) {
       return ProcessApplyResult.failure(
         await _rollback(baseline, previousType.toInt())
             ? ProcessApplyFailure.processTypeReadbackFailed

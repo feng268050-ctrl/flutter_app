@@ -3,19 +3,11 @@ import 'package:cyber_ime/src/session/cyber_ime_regional_layout.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
-/// Product-ready regional layout chooser + typewriter preview.
+/// Product-ready regional layout chooser + soft keyboard preview.
 ///
 /// Drop into any series App Settings page. Owns Segment labels, display name,
-/// caption, and [CyberImeLayoutPreview] — not Apply / Restart / HAL / HID
-/// (those stay product-specific).
-///
-/// Example:
-/// ```dart
-/// CyberImeLayoutChooser(
-///   selected: selected,
-///   onSelected: (p) => setState(() => selected = p),
-/// )
-/// ```
+/// caption, footnote, and [CyberImeLayoutPreview] — not Apply / Restart / HAL /
+/// HID (those stay product-specific).
 class CyberImeLayoutChooser extends StatelessWidget {
   const CyberImeLayoutChooser({
     super.key,
@@ -23,8 +15,9 @@ class CyberImeLayoutChooser extends StatelessWidget {
     required this.onSelected,
     this.enabled = true,
     this.profiles = CyberImeRegionalProfile.values,
-    this.previewCaption = 'Typewriter block (no F-keys / NumPad)',
+    this.previewCaption = '软件键盘布局预览',
     this.showDisplayName = true,
+    this.showFootnote = true,
   });
 
   /// Currently highlighted regional profile.
@@ -36,7 +29,7 @@ class CyberImeLayoutChooser extends StatelessWidget {
   /// When false, Segment interaction is ignored.
   final bool enabled;
 
-  /// Profiles offered in the Segment (default: all five).
+  /// Profiles offered in the Segment (default: all four soft layouts).
   final List<CyberImeRegionalProfile> profiles;
 
   /// Small caption above the keyboard preview.
@@ -45,8 +38,23 @@ class CyberImeLayoutChooser extends StatelessWidget {
   /// Show [CyberImeRegionalProfile.displayName] under the Segment.
   final bool showDisplayName;
 
+  /// Show accent / romaji helper under the preview.
+  final bool showFootnote;
+
+  String get _footnote {
+    return switch (selected) {
+      CyberImeRegionalProfile.qwertz ||
+      CyberImeRegionalProfile.azerty =>
+        '长按可输入重音字符',
+      CyberImeRegionalProfile.jis =>
+        '罗马字输入，Space 切换候选，确认键提交',
+      CyberImeRegionalProfile.qwerty => '',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final footnote = _footnote;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -103,6 +111,17 @@ class CyberImeLayoutChooser extends StatelessWidget {
             ),
           ),
         ),
+        if (showFootnote && footnote.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Text(
+              footnote,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.55),
+                fontSize: 13,
+              ),
+            ),
+          ),
       ],
     );
   }

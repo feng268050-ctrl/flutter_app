@@ -130,14 +130,16 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
         children: [
           Align(
             alignment: Alignment.center,
-            child: Opacity(
-              opacity: ringAlpha,
-              child: CustomPaint(
-                size: Size.square(metrics.size),
-                painter: _LaserProgressRingsPainter(
-                  progress: _progress / 100.0,
-                  palette: palette,
-                  metrics: metrics,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: ringAlpha,
+                child: CustomPaint(
+                  size: Size.square(metrics.size),
+                  painter: _LaserProgressRingsPainter(
+                    progress: _progress / 100.0,
+                    palette: palette,
+                    metrics: metrics,
+                  ),
                 ),
               ),
             ),
@@ -145,33 +147,39 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
           Positioned(
             left: metrics.splitTopLeft,
             top: 0,
-            child: Image.asset(
-              ProcessModeAssets.circleSplitBorderTop,
-              width: metrics.splitTopWidth,
-              height: metrics.splitTopHeight,
-              fit: BoxFit.contain,
-              opacity: const AlwaysStoppedAnimation(0.8),
+            child: IgnorePointer(
+              child: Image.asset(
+                ProcessModeAssets.circleSplitBorderTop,
+                width: metrics.splitTopWidth,
+                height: metrics.splitTopHeight,
+                fit: BoxFit.contain,
+                opacity: const AlwaysStoppedAnimation(0.8),
+              ),
             ),
           ),
           Positioned(
             left: metrics.splitLeft,
             top: metrics.splitTop,
-            child: Image.asset(
-              ProcessModeAssets.circleSplitBorder,
-              width: metrics.splitWidth,
-              height: metrics.splitHeight,
-              fit: BoxFit.contain,
-              opacity: const AlwaysStoppedAnimation(0.3),
+            child: IgnorePointer(
+              child: Image.asset(
+                ProcessModeAssets.circleSplitBorder,
+                width: metrics.splitWidth,
+                height: metrics.splitHeight,
+                fit: BoxFit.contain,
+                opacity: const AlwaysStoppedAnimation(0.3),
+              ),
             ),
           ),
           Positioned(
             left: metrics.borderLeft,
             top: metrics.borderTop,
-            child: Image.asset(
-              ProcessModeAssets.circleBorder,
-              width: metrics.borderWidth,
-              height: metrics.borderHeight,
-              fit: BoxFit.contain,
+            child: IgnorePointer(
+              child: Image.asset(
+                ProcessModeAssets.circleBorder,
+                width: metrics.borderWidth,
+                height: metrics.borderHeight,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
           // Digit on circle center; title at original Column slot; kPa +20dp;
@@ -401,23 +409,21 @@ final class _LaserDashboardMetrics {
   double get size => 570 * scale;
   double get height => 603.5 * scale;
   double get outerViewSize => 570 * scale;
-  double get outerCircleStroke => 38 * scale;
-  double get outerProgressStroke => 38 * scale;
 
-  /// Keep the coloured 38dp base rail inside the static white outer trim.
-  /// The trim itself remains at the XML coordinates below; only the rail is
-  /// inset so no dark track can protrude beyond it at either lower endpoint.
-  double get outerTrackRadius =>
-      outerViewSize / 2 - outerCircleStroke - 4 * scale;
+  /// Outer rail matches inner rail (lws-ui mini = 50dp; product: outer = inner).
+  double get outerCircleStroke => 50 * scale;
+  double get outerProgressStroke => 50 * scale;
+
   double get innerViewSize => 514 * scale;
   double get innerCircleStroke => 50 * scale;
   double get innerProgressStroke => 50 * scale;
   double get lineViewSize => 568 * scale;
   double get lineCircleStroke => 50 * scale;
+
+  /// Thin bright highlight (lws-ui `progress_width` 6dp); flush with outer face.
   double get lineProgressStroke => 6 * scale;
 
-  /// The highlight's outside edge sits flush with the outside edge of the
-  /// outer 38dp rail, instead of crossing its visual middle.
+  /// Highlight outside edge stays flush with the outer rail outside edge.
   double get outerHighlightRadius =>
       outerViewSize / 2 - outerCircleStroke / 2 - lineProgressStroke / 2;
 
@@ -441,8 +447,9 @@ final class _LaserDashboardMetrics {
   double get titleSize => 33 * scale;
   double get valueSize => 101 * scale;
   double get unitSize => 25 * scale;
-  double get buttonTextSize => 20 * scale;
-  double get buttonIconSize => 22 * scale;
+  /// +2 over prior 20/22 for readability on the HMI panel.
+  double get buttonTextSize => 22 * scale;
+  double get buttonIconSize => 24 * scale;
   double get buttonIconGap => 4 * scale;
 
   /// Previous Column layout placed the digit center this far above the circle
@@ -474,9 +481,7 @@ final class _LaserProgressRingsPainter extends CustomPainter {
     final fullSweep = _totalDeg * math.pi / 180;
     final progressSweep = fullSweep * progress.clamp(0.0, 1.0);
 
-    // These use CircularSeekBar's actual radius calculation, not the View's
-    // outside diameter: radius = viewSize / 2 - circleStrokeWidth.
-    // This preserves the 19dp inset on the 570dp outer seekbar.
+    // CircularSeekBar radius: viewSize / 2 - circleStrokeWidth.
     _paintRing(
       canvas: canvas,
       center: center,
@@ -488,7 +493,6 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       start: start,
       fullSweep: fullSweep,
       progressSweep: progressSweep,
-      radius: metrics.outerTrackRadius,
     );
 
     // Inner seekbar — its 514dp View and 50dp rail are deliberately not
@@ -519,7 +523,11 @@ final class _LaserProgressRingsPainter extends CustomPainter {
       // lws-ui: this layer is only the 6dp progress highlight, never a dark
       // inactive rail outside the static white trim.
       trackColor: Colors.transparent,
-      progressColors: [palette.lineProgress, palette.lineProgress],
+      // Product: thin bright edge at 75% opacity.
+      progressColors: [
+        palette.lineProgress.withOpacity(0.75),
+        palette.lineProgress.withOpacity(0.75),
+      ],
       start: start,
       fullSweep: fullSweep,
       progressSweep: progressSweep,

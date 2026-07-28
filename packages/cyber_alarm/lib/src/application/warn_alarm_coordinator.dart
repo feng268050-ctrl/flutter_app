@@ -105,6 +105,22 @@ final class WarnAlarmCoordinator {
     }
   }
 
+  /// lws-ui `WarnEpisodeController.requestImmediateShow` for Laser Enable
+  /// preflight: re-open the blocking warn even after operator ack.
+  Future<bool> requestImmediateShow(String code) async {
+    final ep = _episodes[code];
+    if (ep == null || !ep.faultActive) {
+      return false;
+    }
+    if (_showingCode == code || ep.dialogOpen) {
+      return true;
+    }
+    ep.phase = WarnEpisodePhase.faultActive;
+    _enqueueShow(code);
+    await _pumpQueue();
+    return true;
+  }
+
   /// Staging/debug: arm a demo episode ([WarnEpisodePolicy.demoAlarm]).
   ///
   /// Mirrors lws-ui `WarnEpisodeController.armDemoEpisode`. Unknown catalog

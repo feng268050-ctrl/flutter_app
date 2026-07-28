@@ -1,18 +1,14 @@
 import 'package:cyber_ime/src/field/cyber_ime_bottom_row_profile.dart';
 import 'package:cyber_ime/src/field/cyber_ime_field_profile.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_key.dart';
-import 'package:cyber_ime/src/keyboard/cyber_ime_key_code.dart';
-import 'package:cyber_ime/src/keyboard/cyber_ime_key_map.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_layout.dart';
-import 'package:cyber_ime/src/keyboard/cyber_ime_typewriter_layouts.dart';
+import 'package:cyber_ime/src/keyboard/cyber_ime_soft_layouts.dart';
 import 'package:cyber_ime/src/session/cyber_ime_regional_layout.dart';
 
 /// Factory for Keyboard A / B layouts.
 ///
-/// - [CyberImeRegionalProfile.defaultSoft]: original CyberIME phone pad
-/// - ANSI: typewriter block + Ctrl/Alt/Space (Shift layer via KeyMap; no F/NumPad)
-/// - QWERTZ / AZERTY: ISO typewriter + Ctrl/Alt/Space/AltGr (no F-row / NumPad)
-/// - JIS: typewriter block + AltGr (no F-row / NumPad)
+/// Keyboard A letter layouts are phone soft pads from [CyberImeSoftLayouts]
+/// (QWERTY / QWERTZ / AZERTY / JIS). Symbol layers stay shared phone pages.
 abstract final class CyberImeLayouts {
   /// Keyboard A letter layer for the active (or explicit) regional profile.
   static CyberImeLayout letters({
@@ -22,13 +18,10 @@ abstract final class CyberImeLayouts {
   }) {
     final regional =
         profile ?? CyberImeRegionalLayoutRegistry.provider.profile;
-    if (regional == CyberImeRegionalProfile.defaultSoft) {
-      return _phoneDefault(bottomRow: bottomRow, kind: kind);
-    }
-    return CyberImeTypewriterLayouts.build(
+    return CyberImeSoftLayouts.letters(
       regional,
+      bottomRow: bottomRow,
       kind: kind,
-      bottomRow: cyberImeBottomRowKeys(bottomRow),
     );
   }
 
@@ -41,112 +34,19 @@ abstract final class CyberImeLayouts {
     return letters(profile: profile, bottomRow: bottomRow, kind: kind);
   }
 
-  /// Original CyberIME phone QWERTY (3 letter rows + bottom) with digit secondaries.
-  static CyberImeLayout _phoneDefault({
-    required CyberImeBottomRowProfile bottomRow,
-    required CyberImeKeyboardKind kind,
+  static CyberImeLayout symbolsPrimary({
+    CyberImeRegionalProfile? profile,
   }) {
-    const profile = CyberImeRegionalProfile.ansi;
-    const row1Codes = <CyberImeKeyCode>[
-      CyberImeKeyCode.keyQ,
-      CyberImeKeyCode.keyW,
-      CyberImeKeyCode.keyE,
-      CyberImeKeyCode.keyR,
-      CyberImeKeyCode.keyT,
-      CyberImeKeyCode.keyY,
-      CyberImeKeyCode.keyU,
-      CyberImeKeyCode.keyI,
-      CyberImeKeyCode.keyO,
-      CyberImeKeyCode.keyP,
-    ];
-    const row2Codes = <CyberImeKeyCode>[
-      CyberImeKeyCode.keyA,
-      CyberImeKeyCode.keyS,
-      CyberImeKeyCode.keyD,
-      CyberImeKeyCode.keyF,
-      CyberImeKeyCode.keyG,
-      CyberImeKeyCode.keyH,
-      CyberImeKeyCode.keyJ,
-      CyberImeKeyCode.keyK,
-      CyberImeKeyCode.keyL,
-    ];
-    const row3Codes = <CyberImeKeyCode>[
-      CyberImeKeyCode.keyZ,
-      CyberImeKeyCode.keyX,
-      CyberImeKeyCode.keyC,
-      CyberImeKeyCode.keyV,
-      CyberImeKeyCode.keyB,
-      CyberImeKeyCode.keyN,
-      CyberImeKeyCode.keyM,
-    ];
-    const row1Secondaries = <CyberImeKeyCode>[
-      CyberImeKeyCode.digit1,
-      CyberImeKeyCode.digit2,
-      CyberImeKeyCode.digit3,
-      CyberImeKeyCode.digit4,
-      CyberImeKeyCode.digit5,
-      CyberImeKeyCode.digit6,
-      CyberImeKeyCode.digit7,
-      CyberImeKeyCode.digit8,
-      CyberImeKeyCode.digit9,
-      CyberImeKeyCode.digit0,
-    ];
-    const row2Hints = ['~', '!', '@', '#', '%', '"', "'", '*', '?'];
-    const row3Hints = ['(', ')', '-', '_', ':', ';', '/'];
+    final regional =
+        profile ?? CyberImeRegionalLayoutRegistry.provider.profile;
+    final currency = switch (regional) {
+      CyberImeRegionalProfile.qwerty => r'$',
+      CyberImeRegionalProfile.qwertz ||
+      CyberImeRegionalProfile.azerty =>
+        '€',
+      CyberImeRegionalProfile.jis => '￥',
+    };
 
-    CyberImeKeyDef letter(CyberImeKeyCode code, String? secondary) {
-      final primary = CyberImeKeyMaps.resolve(profile, code, shiftOn: true);
-      return CyberImeKeyDef(
-        id: CyberImeKeyId.letter,
-        primary: primary,
-        secondary: secondary,
-        isLetter: true,
-        keyCode: code,
-      );
-    }
-
-    return CyberImeLayout(
-      kind: kind,
-      rows: [
-        CyberImeKeyboardRow([
-          for (var i = 0; i < row1Codes.length; i++)
-            letter(
-              row1Codes[i],
-              CyberImeKeyMaps.resolve(
-                profile,
-                row1Secondaries[i],
-                shiftOn: false,
-              ),
-            ),
-        ]),
-        CyberImeKeyboardRow(
-          [
-            for (var i = 0; i < row2Codes.length; i++)
-              letter(row2Codes[i], row2Hints[i]),
-          ],
-          leadingInsetWeight: 0.5,
-          trailingInsetWeight: 0.5,
-        ),
-        CyberImeKeyboardRow([
-          const CyberImeKeyDef(
-            id: CyberImeKeyId.shift,
-            primary: '⇧',
-            widthWeight: 1.4,
-          ),
-          for (var i = 0; i < row3Codes.length; i++)
-            letter(row3Codes[i], row3Hints[i]),
-          const CyberImeKeyDef(
-            id: CyberImeKeyId.backspace,
-            primary: '⌫',
-            widthWeight: 1.4,
-          ),
-        ]),
-        CyberImeKeyboardRow(cyberImeBottomRowKeys(bottomRow)),
-      ],
-    );
-  }
-
-  static CyberImeLayout symbolsPrimary() {
     CyberImeKeyDef digit(String v) =>
         CyberImeKeyDef(id: CyberImeKeyId.digit, primary: v);
     CyberImeKeyDef symbol(String v) =>
@@ -166,7 +66,7 @@ abstract final class CyberImeLayouts {
           symbol(';'),
           symbol('('),
           symbol(')'),
-          symbol(r'$'),
+          symbol(currency),
           symbol('&'),
           const CyberImeKeyDef(id: CyberImeKeyId.at, primary: '@'),
           symbol('"'),
@@ -175,7 +75,7 @@ abstract final class CyberImeLayouts {
           const CyberImeKeyDef(
             id: CyberImeKeyId.symbolsMore,
             primary: '#+=',
-            widthWeight: 1.4,
+            widthWeight: 1.5,
           ),
           symbol(','),
           symbol('.'),
@@ -189,7 +89,7 @@ abstract final class CyberImeLayouts {
           const CyberImeKeyDef(
             id: CyberImeKeyId.backspace,
             primary: '⌫',
-            widthWeight: 1.2,
+            widthWeight: 1.5,
           ),
         ]),
         CyberImeKeyboardRow(_symbolBottomRow()),
@@ -216,7 +116,7 @@ abstract final class CyberImeLayouts {
           const CyberImeKeyDef(
             id: CyberImeKeyId.modeSwitch,
             primary: '123',
-            widthWeight: 1.4,
+            widthWeight: 1.5,
           ),
           symbol(','),
           symbol('.'),
@@ -230,7 +130,7 @@ abstract final class CyberImeLayouts {
           const CyberImeKeyDef(
             id: CyberImeKeyId.backspace,
             primary: '⌫',
-            widthWeight: 1.2,
+            widthWeight: 1.5,
           ),
         ]),
         CyberImeKeyboardRow(_symbolBottomRow()),
@@ -275,9 +175,9 @@ abstract final class CyberImeLayouts {
         CyberImeKeyDef(
           id: CyberImeKeyId.modeSwitch,
           primary: 'ABC',
-          widthWeight: 1.4,
+          widthWeight: 1.5,
         ),
-        CyberImeKeyDef(id: CyberImeKeyId.space, primary: ' ', widthWeight: 4),
-        CyberImeKeyDef(id: CyberImeKeyId.enter, primary: '⏎', widthWeight: 1.4),
+        CyberImeKeyDef(id: CyberImeKeyId.space, primary: ' ', widthWeight: 5),
+        CyberImeKeyDef(id: CyberImeKeyId.enter, primary: '⏎', widthWeight: 1.8),
       ];
 }

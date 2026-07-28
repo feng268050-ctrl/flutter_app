@@ -83,9 +83,232 @@ void main() {
     expect(modbus.writes, [
       (DeviceControlIds.wireWork, false),
       (DeviceControlIds.laserEnable, true),
+      (DeviceControlIds.controlField1, 0),
+    ]);
+  });
+
+  test('shutdownForExit clears wire direction, work, and laser enable',
+      () async {
+    final modbus = _RecordingModbus();
+    final controller = DeviceControlController(servicesWith(modbus));
+    controller.laserEnable = true;
+    controller.wireWork = true;
+    controller.wireRetracting = true;
+
+    await controller.shutdownForExit();
+
+    expect(controller.laserEnable, isFalse);
+    expect(controller.wireWork, isFalse);
+    expect(controller.wireRetracting, isFalse);
+    expect(modbus.writes, [
+      (DeviceControlIds.wireDirection, false),
       (DeviceControlIds.wireWork, false),
       (DeviceControlIds.laserEnable, false),
     ]);
+  });
+
+  test('dispose requests laser disarm via shutdownForExit', () async {
+    final modbus = _RecordingModbus();
+    final controller = DeviceControlController(servicesWith(modbus))
+      ..laserEnable = true;
+    controller.dispose();
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(
+      modbus.writes.any(
+        (e) => e.$1 == DeviceControlIds.laserEnable && e.$2 == false,
+      ),
+      isTrue,
+    );
+  });
+
+  test('AppServices disarmLaserEnableForSafety writes laser off once', () async {
+    final modbus = _RecordingModbus();
+    final services = AppServices(
+      boardProfile: BoardProfile.fromJsonString('''
+{
+  "schema_version": 1,
+  "board_id": "test",
+  "platform": "linux",
+  "capabilities": ["modbus"],
+  "helpers": {},
+  "configs": {"modbus": "assets/hal/modbus.json"}
+}
+'''),
+      sysInfo: StubSysInfo(),
+      modbusClient: modbus,
+    );
+    expect(services.modbusLiveAllowed, isTrue);
+    await services.disarmLaserEnableForSafety(
+      reason: 'test',
+      oncePerProcess: true,
+    );
+    await services.disarmLaserEnableForSafety(
+      reason: 'test-again',
+      oncePerProcess: true,
+    );
+    final fieldOffWrites = modbus.writes
+        .where((e) => e.$1 == DeviceControlIds.controlField1 && e.$2 == 0)
+        .length;
+    expect(fieldOffWrites, 1);
+  });
+
+  test('key switch off while laser enable closes laser and shows tip immediately',
+      () async {
+    final modbus = _RecordingModbus();
+    final controller = DeviceControlController(servicesWith(modbus))
+      ..keySwitchOn = true
+      ..laserEnable = true;
+    final events = <DeviceControlSafetyEvent>[];
+    controller.onSafetyEvent = events.add;
+
+    controller.applyChanges([
+      const ModbusAttributeChange(
+        id: DeviceControlIds.keySwitchOn,
+        value: false,
+      ),
+    ]);
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    // Tip on key OFF (not after key ON).
+    expect(events, [DeviceControlSafetyEvent.keySwitchOffWhileLaser]);
+    expect(controller.laserEnable, isFalse);
+    expect(
+      modbus.writes.any(
+        (e) => e.$1 == DeviceControlIds.controlField1,
+      ),
+      isTrue,
+    );
+
+    events.clear();
+    controller.applyChanges([
+      const ModbusAttributeChange(
+        id: DeviceControlIds.keySwitchOn,
+        value: true,
+      ),
+    ]);
+    await Future<void>.delayed(Duration.zero);
+    expect(events, isEmpty);
+  });
+
+  test('key off keeps Laser Enable UI off even when Modbus write fails',
+      () async {
+    final modbus = _RecordingModbus()..failWrites = true;
+    final controller = DeviceControlController(servicesWith(modbus))
+      ..keySwitchOn = true
+      ..laserEnable = true;
+    final events = <DeviceControlSafetyEvent>[];
+    controller.onSafetyEvent = events.add;
+
+    controller.applyChanges([
+      const ModbusAttributeChange(
+        id: DeviceControlIds.keySwitchOn,
+        value: false,
+      ),
+    ]);
+    // UI exits Laser Enable synchronously; tip on falling edge.
+    expect(controller.laserEnable, isFalse);
+    expect(events, [DeviceControlSafetyEvent.keySwitchOffWhileLaser]);
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(controller.laserEnable, isFalse);
+
+    events.clear();
+    // Stale control.laser_enable=true while key still off must not re-arm UI
+    // or re-fire the tip.
+    controller.applyChanges([
+      const ModbusAttributeChange(
+        id: DeviceControlIds.laserEnable,
+        value: true,
+      ),
+    ]);
+    expect(controller.laserEnable, isFalse);
+    expect(events, isEmpty);
+
+    controller.applyChanges([
+      const ModbusAttributeChange(
+        id: DeviceControlIds.keySwitchOn,
+        value: true,
+      ),
+    ]);
+    await Future<void>.delayed(Duration.zero);
+    expect(events, isEmpty);
+    expect(controller.laserEnable, isFalse);
+  });
+
+  test('e-stop rising edge halts jobs and shows tip immediately', () async {
+    final modbus = _RecordingModbus();
+    final controller = DeviceControlController(servicesWith(modbus))
+      ..emergencyStop = false
+      ..laserEnable = true
+      ..manualGas = true
+      ..autoWireFeed = true
+      ..wireWork = true;
+    final events = <DeviceControlSafetyEvent>[];
+    controller.onSafetyEvent = events.add;
+
+    controller.applyChanges([
+      const ModbusAttributeChange(
+        id: DeviceControlIds.emergencyStop,
+        value: true,
+      ),
+    ]);
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+
+    // Tip on press (not after reset).
+    expect(events, [DeviceControlSafetyEvent.emergencyStop]);
+    expect(controller.laserEnable, isFalse);
+    expect(controller.manualGas, isFalse);
+    expect(controller.wireWork, isFalse);
+    expect(controller.autoWireFeed, isFalse);
+    expect(
+      modbus.writes,
+      contains((DeviceControlIds.controlField1, 0)),
+    );
+    // Single CONTROL_FIELD_1 write — not five bit RMW round-trips.
+    expect(
+      modbus.writes.where((e) => e.$1 == DeviceControlIds.controlField1).length,
+      1,
+    );
+
+    // Held e-stop must not re-show the tip.
+    events.clear();
+    controller.applyChanges([
+      const ModbusAttributeChange(
+        id: DeviceControlIds.laserOn,
+        value: true,
+      ),
+    ]);
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(events, isEmpty);
+    expect(controller.laserEnable, isFalse);
+    expect(controller.laserOn, isFalse);
+
+    // Reset (release) e-stop → no second tip.
+    controller.applyChanges([
+      const ModbusAttributeChange(
+        id: DeviceControlIds.emergencyStop,
+        value: false,
+      ),
+    ]);
+    await Future<void>.delayed(Duration.zero);
+    expect(events, isEmpty);
+  });
+
+  test('laserSessionArmed follows laserEnable only, not emission feedback', () {
+    final controller =
+        DeviceControlController(servicesWith(_RecordingModbus()));
+    expect(controller.laserSessionArmed, isFalse);
+
+    controller.laserOn = true;
+    expect(controller.laserSessionArmed, isFalse);
+
+    controller.laserEnable = true;
+    expect(controller.laserSessionArmed, isTrue);
+
+    controller.laserEnable = false;
+    expect(controller.laserSessionArmed, isFalse);
+    expect(controller.laserOn, isTrue);
   });
 
   test('laser preflight blocks manual gas before hold', () {
@@ -110,6 +333,7 @@ void main() {
     expect(modbus.writes, [
       (DeviceControlIds.wireWork, false),
       (DeviceControlIds.wireManualMode, false),
+      (DeviceControlIds.wireWork, false),
       (DeviceControlIds.laserEnable, false),
       (DeviceControlIds.wireDirection, true),
       (DeviceControlIds.wireWork, true),
@@ -182,18 +406,60 @@ void main() {
 
 final class _RecordingModbus extends ModbusRtuClient {
   final writes = <(String, Object?)>[];
+  final control = <String, Object?>{};
+  final status = <String, Object?>{};
+  bool failWrites = false;
+
+  @override
+  Future<void> ensurePolling() async {}
 
   @override
   Future<T> exclusiveSession<T>(Future<T> Function() body) => body();
 
   @override
+  Future<Object?> readAttribute(String id) async {
+    if (id == DeviceControlIds.controlField1) {
+      final existing = control[id];
+      if (existing is num) {
+        return existing.toInt();
+      }
+      var word = 0;
+      if (control[DeviceControlIds.laserEnable] == true) word |= 1 << 0;
+      if (control[DeviceControlIds.manualGas] == true) word |= 1 << 1;
+      if (control[DeviceControlIds.wireWork] == true) word |= 1 << 2;
+      if (control[DeviceControlIds.wireDirection] == true) word |= 1 << 3;
+      if (control[DeviceControlIds.wireManualMode] == true) word |= 1 << 4;
+      return word;
+    }
+    return control[id] ?? status[id];
+  }
+
+  @override
   Future<bool> writeAttribute(String id, Object? value) async {
     writes.add((id, value));
+    if (failWrites) {
+      return false;
+    }
+    control[id] = value;
+    if (id == DeviceControlIds.controlField1 && value is num) {
+      final word = value.toInt();
+      control[DeviceControlIds.laserEnable] = (word & (1 << 0)) != 0;
+      control[DeviceControlIds.manualGas] = (word & (1 << 1)) != 0;
+      control[DeviceControlIds.wireWork] = (word & (1 << 2)) != 0;
+      control[DeviceControlIds.wireDirection] = (word & (1 << 3)) != 0;
+      control[DeviceControlIds.wireManualMode] = (word & (1 << 4)) != 0;
+    }
     return true;
   }
 
   @override
-  Future<Map<String, Object?>> readGroup(String group) async => {};
+  Future<Map<String, Object?>> readGroup(String group) async {
+    return switch (group) {
+      'control' => Map<String, Object?>.from(control),
+      'status' => Map<String, Object?>.from(status),
+      _ => <String, Object?>{},
+    };
+  }
 
   @override
   Future<Stream<List<ModbusAttributeChange>>> watchAttributes({

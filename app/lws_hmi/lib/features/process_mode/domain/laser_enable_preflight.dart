@@ -25,49 +25,74 @@ abstract final class LaserEnablePreflight {
     required Set<String> activeAlarmCodes,
     required LaserAlarmPolicySnapshot policy,
   }) {
+    if (firstBlockingAlarmCode(
+          activeAlarmCodes: activeAlarmCodes,
+          policy: policy,
+        ) ==
+        null) {
+      return null;
+    }
+    return LaserEnableBlockReason.alarmBlocked;
+  }
+
+  /// First coded alarm that blocks Laser Enable (lws-ui LaserEnableAlarmGuard
+  /// order: A001 → C002 → L001 → feeder → other).
+  static String? firstBlockingAlarmCode({
+    required Set<String> activeAlarmCodes,
+    required LaserAlarmPolicySnapshot policy,
+  }) {
     final gas = activeAlarmCodes.contains(LaserAlarmPolicy.alarmA001);
     final camera = activeAlarmCodes.contains(LaserAlarmPolicy.alarmC002);
     final lens = activeAlarmCodes.contains(LaserAlarmPolicy.alarmL001);
     final feeder = activeAlarmCodes.contains(LaserAlarmPolicy.alarmW001) ||
         activeAlarmCodes.contains(LaserAlarmPolicy.alarmW002);
-    final other = activeAlarmCodes
-        .any((code) => !LaserAlarmPolicy.isBypassableAlarmCode(code));
+    final otherCodes = activeAlarmCodes
+        .where((code) => !LaserAlarmPolicy.isBypassableAlarmCode(code))
+        .toList()
+      ..sort();
 
+    if (LaserAlarmPolicy.isGasBlocking(
+      gasAlarmActive: gas,
+      allowWorkAfterGasAlarm: policy.allowWorkAfterGasAlarm,
+    )) {
+      return LaserAlarmPolicy.alarmA001;
+    }
+    if (LaserAlarmPolicy.isCameraBlocking(
+      cameraAlarmActive: camera,
+      allowWorkAfterCameraAlarm: policy.allowWorkAfterCameraAlarm,
+    )) {
+      return LaserAlarmPolicy.alarmC002;
+    }
+    if (LaserAlarmPolicy.isLensBlocking(
+      lensAlarmActive: lens,
+      allowWorkAfterLensContamination: policy.allowWorkAfterLensContamination,
+    )) {
+      return LaserAlarmPolicy.alarmL001;
+    }
+    if (LaserAlarmPolicy.isFeederBlocking(
+      feederAlarmActive: feeder,
+      allowWorkAfterFeederAlarm: policy.allowWorkAfterFeederAlarm,
+    )) {
+      return activeAlarmCodes.contains(LaserAlarmPolicy.alarmW001)
+          ? LaserAlarmPolicy.alarmW001
+          : LaserAlarmPolicy.alarmW002;
+    }
+
+    final other = otherCodes.isNotEmpty;
     final readyBlocked = LaserAlarmPolicy.isReadyIndicatorBlocked(
-      gasBlocking: LaserAlarmPolicy.isGasBlocking(
-        gasAlarmActive: gas,
-        allowWorkAfterGasAlarm: policy.allowWorkAfterGasAlarm,
-      ),
-      cameraBlocking: LaserAlarmPolicy.isCameraBlocking(
-        cameraAlarmActive: camera,
-        allowWorkAfterCameraAlarm: policy.allowWorkAfterCameraAlarm,
-      ),
-      lensBlocking: LaserAlarmPolicy.isLensBlocking(
-        lensAlarmActive: lens,
-        allowWorkAfterLensContamination: policy.allowWorkAfterLensContamination,
-      ),
-      feederBlocking: LaserAlarmPolicy.isFeederBlocking(
-        feederAlarmActive: feeder,
-        allowWorkAfterFeederAlarm: policy.allowWorkAfterFeederAlarm,
-      ),
+      gasBlocking: false,
+      cameraBlocking: false,
+      lensBlocking: false,
+      feederBlocking: false,
       otherCodedWarnBlocking: other,
     );
-
-    // Enable preflight: keepLaserOnWhileAlarmed only bypasses "other" coded
-    // alarms (lws-ui LaserEnableAlarmGuard), not bypassable A001/C002/L001/W00x
-    // when their allow-* is false. Ready indicator already applied allow-*.
     if (!readyBlocked) {
       return null;
     }
-    if (other &&
-        !gas &&
-        !camera &&
-        !lens &&
-        !feeder &&
-        policy.keepLaserOnWhileAlarmed) {
+    if (other && policy.keepLaserOnWhileAlarmed) {
       return null;
     }
-    return LaserEnableBlockReason.alarmBlocked;
+    return otherCodes.isEmpty ? null : otherCodes.first;
   }
 
   static bool _isOn(Object? value) => value == true || value == 1;

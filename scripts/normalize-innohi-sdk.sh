@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Keep a single Innohi tree under linux-sdk/innohi/; drop innohi_board mirror.
 # Idempotently retarget device scripts that still mention innohi_board.
-# Usage: called from apply-overlay / prepare-sdk-native.
+# Usage: called from apply-overlay.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

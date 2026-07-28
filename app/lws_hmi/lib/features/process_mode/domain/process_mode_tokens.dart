@@ -128,6 +128,11 @@ abstract final class ProcessModeDimens {
 
   /// Clears the process wheel / left accent for the CNC guide.
   static const double cncGuideLeftInset = 210;
+
+  /// Laser Enable mist for the process wheel only (lws-ui
+  /// `model_wheel_view_content` 260×340). Must not cover gear / thickness.
+  static const double laserEnableProcessFrostWidth = 260;
+  static const double laserEnableProcessFrostHeight = 340;
   static const double cncGuideTopInset = 24;
   static const double cncGuideRightInset = 24;
   static const double cncGuideBottomInset = 24;

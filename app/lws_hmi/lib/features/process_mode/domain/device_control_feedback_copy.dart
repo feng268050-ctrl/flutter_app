@@ -39,6 +39,10 @@ abstract final class DeviceControlFeedbackCopy {
   /// Side ops / More Parameters blocked while laser is open.
   static const endOfWorkFirst = 'End of work first';
 
+  /// End of work Modbus write / reconcile failed (bus or C001).
+  static const endOfWorkFailed =
+      'End of work failed — check controller link';
+
   /// Feed / Retract / Auto Wire outside continuous welding.
   static const wireUnavailableInMode = 'Wire feed unavailable in this mode';
 
@@ -50,6 +54,14 @@ abstract final class DeviceControlFeedbackCopy {
 
   /// E-stop active (`check_e_stop_state_error`).
   static const emergencyStopError = 'Device is in E-stop';
+
+  /// User-facing copy when [disableLaser] returns a block reason.
+  static String messageForDisable(LaserEnableBlockReason reason) {
+    return switch (reason) {
+      LaserEnableBlockReason.writeFailed => endOfWorkFailed,
+      _ => reason.message,
+    };
+  }
 
   /// Tip body for Laser Enable preflight when key / e-stop is not reset.
   static String tipForLaserEnableBlock(LaserEnableBlockReason reason) {

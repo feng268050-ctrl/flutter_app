@@ -262,16 +262,8 @@ final class AppServices {
     try {
       await modbus.ensurePolling();
       final ok = await modbus.exclusiveSession(() async {
-        if (!await modbus.writeAttribute(
-          DeviceControlIds.wireDirection,
-          false,
-        )) {
-          return false;
-        }
-        if (!await modbus.writeAttribute(DeviceControlIds.wireWork, false)) {
-          return false;
-        }
-        return modbus.writeAttribute(DeviceControlIds.laserEnable, false);
+        // Single CONTROL_FIELD_1 write (bits 0–2 / direction off via word clear).
+        return modbus.writeAttribute(DeviceControlIds.controlField1, 0);
       });
       if (ok && oncePerProcess) {
         _startupLaserDisarmDone = true;

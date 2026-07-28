@@ -50,8 +50,8 @@ final class RecordWorkController extends ChangeNotifier {
     }
     _started = true;
     deviceControl.addListener(_onDeviceControlChanged);
-    _lastLaserActive =
-        deviceControl.laserEnable || deviceControl.laserOn;
+    // lws-ui CameraController: encode while laser enable session is on.
+    _lastLaserActive = deviceControl.laserSessionArmed;
 
     if (services == null) {
       _cameraPhase = IpCameraUiPhase.failed;
@@ -108,8 +108,7 @@ final class RecordWorkController extends ChangeNotifier {
     if (_disposed) {
       return;
     }
-    final laserActive =
-        deviceControl.laserEnable || deviceControl.laserOn;
+    final laserActive = deviceControl.laserSessionArmed;
     if (_lastLaserActive == laserActive) {
       return;
     }
@@ -153,8 +152,7 @@ final class RecordWorkController extends ChangeNotifier {
       return;
     }
     final recorder = session.camera.recording;
-    final laserActive =
-        deviceControl.laserEnable || deviceControl.laserOn;
+    final laserActive = deviceControl.laserSessionArmed;
     if (_armed && laserActive) {
       if (recorder.currentStatus.isActive) {
         return;

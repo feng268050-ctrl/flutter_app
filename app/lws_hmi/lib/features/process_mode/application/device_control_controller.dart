@@ -43,6 +43,13 @@ final class DeviceControlController extends ChangeNotifier {
   bool busy = false;
   String? lastError;
 
+  /// Laser Enable **session** armed (lws-ui `DeviceControlData.isOpenLaser()`).
+  ///
+  /// Use for End-of-work button, side-ops hide, record-work sync, and wire
+  /// interlocks. [laserOn] is emission feedback only and must not keep the
+  /// session UI open after a safety disarm.
+  bool get laserSessionArmed => laserEnable;
+
   /// UI hook for Frost Operation-failed dialogs (Quick/Engineer pages).
   void Function(DeviceControlSafetyEvent event)? onSafetyEvent;
 
@@ -243,11 +250,9 @@ final class DeviceControlController extends ChangeNotifier {
     if (keyRose) {
       _keyTipShownThisOff = false;
     }
-    if (!keySwitchOn && laserEnable) {
+    if (!keySwitchOn && laserSessionArmed) {
       if (keyFell) {
-        laserEnable = false;
-        wireWork = false;
-        notifyListeners();
+        _disarmLaserSessionLocally();
         if (!_keyTipShownThisOff) {
           _keyTipShownThisOff = true;
           onSafetyEvent?.call(DeviceControlSafetyEvent.keySwitchOffWhileLaser);
@@ -256,10 +261,20 @@ final class DeviceControlController extends ChangeNotifier {
       } else {
         // Stale control.laser_enable feedback while key is still off — keep UI
         // disarmed without re-spamming Modbus writes.
-        laserEnable = false;
-        wireWork = false;
-        notifyListeners();
+        _disarmLaserSessionLocally();
       }
+    }
+  }
+
+  /// Local session close only (lws-ui failRest=false flip of `laserStatus`).
+  void _disarmLaserSessionLocally() {
+    if (!laserEnable && !wireWork) {
+      return;
+    }
+    laserEnable = false;
+    wireWork = false;
+    if (!_disposed) {
+      notifyListeners();
     }
   }
 
@@ -270,16 +285,20 @@ final class DeviceControlController extends ChangeNotifier {
     wireWork = false;
     autoWireFeed = false;
     wireRetracting = false;
-    // Keep button/session UI from staying on "End of work" via stale
-    // emission feedback while the halt write is still in flight.
+    // Clear emission feedback so re-halt checks / status LEDs do not fight
+    // the local session; UI session itself is [laserEnable] only.
     laserOn = false;
     wireFeedingOn = false;
     airValveOn = false;
-    notifyListeners();
+    if (!_disposed) {
+      notifyListeners();
+    }
   }
 
   bool _shouldReHaltWhileEstopHeld() {
-    if (laserEnable ||
+    // Align EmergencyStopJobHaltPolicy.shouldReHalt: any job request or
+    // emission / feeder / gas feedback still on while e-stop held.
+    if (laserSessionArmed ||
         manualGas ||
         wireWork ||
         autoWireFeed ||
@@ -299,8 +318,9 @@ final class DeviceControlController extends ChangeNotifier {
 
   /// lws-ui `DeviceControlUtils.createHaltAllJobFunctionsConfig` write.
   ///
-  /// Always re-reads control/status after the write attempt so the Laser Enable
-  /// button cannot show closed while the holding register is still armed.
+  /// One holding write to CONTROL_FIELD_1 (0x0058) — not five bit RMW round
+  /// trips. Under e-stop the card often times out; five serial writes were
+  /// starving continuous poll (~seconds) so status bar / Laser Enable lagged.
   Future<void> haltAllJobFunctions() async {
     if (_haltWriteInFlight) {
       return;
@@ -314,33 +334,10 @@ final class DeviceControlController extends ChangeNotifier {
     _applyLocalJobHalt();
     try {
       final ok = await services.modbus.exclusiveSession(() async {
-        if (!await services.modbus.writeAttribute(
-          DeviceControlIds.laserEnable,
-          false,
-        )) {
-          return false;
-        }
-        if (!await services.modbus.writeAttribute(
-          DeviceControlIds.manualGas,
-          false,
-        )) {
-          return false;
-        }
-        if (!await services.modbus.writeAttribute(
-          DeviceControlIds.wireWork,
-          false,
-        )) {
-          return false;
-        }
-        if (!await services.modbus.writeAttribute(
-          DeviceControlIds.wireDirection,
-          false,
-        )) {
-          return false;
-        }
+        // Android packs all five job switches into one CONTROL_FIELD_1 word.
         return services.modbus.writeAttribute(
-          DeviceControlIds.wireManualMode,
-          false,
+          DeviceControlIds.controlField1,
+          0,
         );
       });
       if (!ok) {
@@ -374,11 +371,7 @@ final class DeviceControlController extends ChangeNotifier {
   /// Always leaves the Laser Enable UI disarmed (lws-ui failRest=false on
   /// safety closes). Modbus may still reject writes while the key is off.
   Future<void> forceDisableLaserForSafety() async {
-    laserEnable = false;
-    wireWork = false;
-    if (!_disposed) {
-      notifyListeners();
-    }
+    _disarmLaserSessionLocally();
     for (var i = 0; i < 10 && busy; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
@@ -389,36 +382,20 @@ final class DeviceControlController extends ChangeNotifier {
       notifyListeners();
       try {
         await services.modbus.exclusiveSession(() async {
-          await services.modbus.writeAttribute(
-            DeviceControlIds.wireWork,
-            false,
+          return _writeControlField1ClearingJobBits(
+            clearMask: 0x5, // laser_enable | wire_work
           );
-          await services.modbus.writeAttribute(
-            DeviceControlIds.laserEnable,
-            false,
-          );
-          return true;
         });
       } catch (e) {
         debugPrint('device-control: forceDisableLaserForSafety failed: $e');
       } finally {
         busy = false;
-        laserEnable = false;
-        wireWork = false;
-        if (!_disposed) {
-          notifyListeners();
-        }
+        _disarmLaserSessionLocally();
       }
     }
     // Never re-arm the session from a flaky reconcile while this safety path
     // owns the close (key-off / e-stop callers already cleared UI).
-    if (laserEnable) {
-      laserEnable = false;
-      wireWork = false;
-      if (!_disposed) {
-        notifyListeners();
-      }
-    }
+    _disarmLaserSessionLocally();
   }
 
   /// Pull holding-register job switches from the controller (Laser Enable UI).
@@ -437,6 +414,12 @@ final class DeviceControlController extends ChangeNotifier {
       applyBit(DeviceControlIds.wireManualMode, (v) => autoWireFeed = v);
       applyBit(DeviceControlIds.wireWork, (v) => wireWork = v);
       applyBit(DeviceControlIds.wireDirection, (v) => wireRetracting = v);
+      // Safety paths own the session UI: never re-arm from a stale holding
+      // register while key is off or e-stop is held (lws-ui failRest=false).
+      if ((!keySwitchOn || emergencyStop) && laserEnable) {
+        laserEnable = false;
+        wireWork = false;
+      }
       notifyListeners();
     } catch (e) {
       debugPrint('device-control: control reconcile failed: $e');
@@ -720,29 +703,21 @@ final class DeviceControlController extends ChangeNotifier {
     notifyListeners();
     try {
       final ok = await services.modbus.exclusiveSession(() async {
-        // End of work clears continuous feed/retract before laser enable.
-        if (!await services.modbus.writeAttribute(
-          DeviceControlIds.wireWork,
-          false,
-        )) {
-          return false;
-        }
-        return services.modbus.writeAttribute(
-          DeviceControlIds.laserEnable,
-          false,
+        // One RMW of CONTROL_FIELD_1 — clears laser_enable + wire_work together
+        // (lws-ui single-register switch write). Avoids two bit timeouts that
+        // pause continuous poll under a sticky key/e-stop bus.
+        return _writeControlField1ClearingJobBits(
+          clearMask: 0x5, // bit0 laser_enable | bit2 wire_work
         );
       });
       if (!ok) {
         lastError = LaserEnableBlockReason.writeFailed.message;
         if (keepUiDisarmed) {
-          laserEnable = false;
-          wireWork = false;
+          _disarmLaserSessionLocally();
         }
         return LaserEnableBlockReason.writeFailed;
       }
-      laserEnable = false;
-      wireWork = false;
-      notifyListeners();
+      _disarmLaserSessionLocally();
       busy = false;
       if (!keepUiDisarmed) {
         await _reconcileControlBitsFromHardware();
@@ -755,14 +730,31 @@ final class DeviceControlController extends ChangeNotifier {
     } catch (e) {
       lastError = '$e';
       if (keepUiDisarmed) {
-        laserEnable = false;
-        wireWork = false;
+        _disarmLaserSessionLocally();
       }
       return LaserEnableBlockReason.writeFailed;
     } finally {
       busy = false;
       notifyListeners();
     }
+  }
+
+  /// Clear selected job bits in CONTROL_FIELD_1 with a single holding write.
+  Future<bool> _writeControlField1ClearingJobBits({
+    required int clearMask,
+  }) async {
+    final raw =
+        await services.modbus.readAttribute(DeviceControlIds.controlField1);
+    final word = switch (raw) {
+      int i => i,
+      num n => n.toInt(),
+      _ => 0,
+    };
+    final next = word & ~clearMask & 0xFFFF;
+    return services.modbus.writeAttribute(
+      DeviceControlIds.controlField1,
+      next,
+    );
   }
 
   /// Best-effort Modbus shutdown when leaving Quick/Engineer / disposing /

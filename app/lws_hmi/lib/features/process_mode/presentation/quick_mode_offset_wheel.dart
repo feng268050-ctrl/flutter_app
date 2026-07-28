@@ -2,12 +2,15 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 /// Shared Quick Mode offset wheel: fixed selection chrome, scroll-linked
 /// item styling, and tap-to-position (lws-ui `setClickToPosition(true)`).
 ///
-/// Switch SFX: silent while the finger is down / scrolling; play on release
-/// (scroll idle after a drag, or tap which fires on finger up).
+/// Switch SFX + parent [onChanged]: silent / deferred while the finger is
+/// down. Committing mid-drag rebuilds the parent (e.g. entering CNC Cutting)
+/// and [jumpToItem]s, which aborts the fling — so selection is reported on
+/// scroll-end / tap only.
 final class QuickModeOffsetWheel extends StatefulWidget {
   const QuickModeOffsetWheel({
     super.key,
@@ -79,17 +82,23 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
     super.didUpdateWidget(oldWidget);
     final next = _clamped(widget.selectedIndex);
     final countChanged = oldWidget.itemCount != widget.itemCount;
-    if (countChanged || next != _index) {
-      _index = next;
-      _scrollIndex = next.toDouble();
-      if (_controller.hasClients) {
-        _controller.jumpToItem(next);
-      } else {
-        _controller.removeListener(_onScroll);
-        _controller.dispose();
-        _controller = FixedExtentScrollController(initialItem: next);
-        _controller.addListener(_onScroll);
-      }
+    if (!countChanged && next == _index) {
+      return;
+    }
+    // Mid-drag: keep the finger's local index. Parent still has the pre-drag
+    // selection; jumping would abort continuous swipe (CNC enter/leave).
+    if (_userDragging && !countChanged) {
+      return;
+    }
+    _index = next;
+    _scrollIndex = next.toDouble();
+    if (_controller.hasClients) {
+      _controller.jumpToItem(next);
+    } else {
+      _controller.removeListener(_onScroll);
+      _controller.dispose();
+      _controller = FixedExtentScrollController(initialItem: next);
+      _controller.addListener(_onScroll);
     }
   }
 
@@ -111,6 +120,16 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
     setState(() => _scrollIndex = next);
   }
 
+  void _commitIfNeeded(int index) {
+    if (!widget.enabled) {
+      return;
+    }
+    if (index == widget.selectedIndex) {
+      return;
+    }
+    widget.onChanged(index);
+  }
+
   void _onSelected(int index) {
     if (!widget.enabled) {
       return;
@@ -125,7 +144,12 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
       _index = index;
       _scrollIndex = index.toDouble();
     });
-    widget.onChanged(index);
+    // Defer parent notify while dragging — mid-drag setState in ancestors
+    // (process-type / CNC enter) jumpToItem and kill the gesture.
+    if (_userDragging) {
+      return;
+    }
+    _commitIfNeeded(index);
   }
 
   void _onItemTap(int index) {
@@ -138,7 +162,11 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
     if (!_controller.hasClients) {
       if (index != _index) {
         CyberClickSoundRegistry.playClick();
-        _onSelected(index);
+        setState(() {
+          _index = index;
+          _scrollIndex = index.toDouble();
+        });
+        _commitIfNeeded(index);
       }
       return;
     }
@@ -152,7 +180,7 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
       _index = index;
       _scrollIndex = index.toDouble();
     });
-    widget.onChanged(index);
+    _commitIfNeeded(index);
     _ignoreSelectionCallbacks = true;
     unawaited(
       _controller
@@ -175,11 +203,16 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
         notification.dragDetails != null) {
       _userDragging = true;
       _indexAtDragStart = _index;
-    } else if (notification is ScrollEndNotification && _userDragging) {
+    } else if (notification is UserScrollNotification &&
+        notification.direction == ScrollDirection.idle &&
+        _userDragging) {
+      // Wait for ballistic settle too — ScrollEnd of the drag alone would
+      // commit early and parent jumpToItem would kill the fling (CNC swipe).
       _userDragging = false;
       if (_index != _indexAtDragStart) {
         CyberClickSoundRegistry.playClick();
       }
+      _commitIfNeeded(_index);
     }
     return false;
   }

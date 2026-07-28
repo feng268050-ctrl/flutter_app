@@ -83,8 +83,7 @@ void main() {
     expect(modbus.writes, [
       (DeviceControlIds.wireWork, false),
       (DeviceControlIds.laserEnable, true),
-      (DeviceControlIds.wireWork, false),
-      (DeviceControlIds.laserEnable, false),
+      (DeviceControlIds.controlField1, 0),
     ]);
   });
 
@@ -147,10 +146,10 @@ void main() {
       reason: 'test-again',
       oncePerProcess: true,
     );
-    final laserOffWrites = modbus.writes
-        .where((e) => e.$1 == DeviceControlIds.laserEnable && e.$2 == false)
+    final fieldOffWrites = modbus.writes
+        .where((e) => e.$1 == DeviceControlIds.controlField1 && e.$2 == 0)
         .length;
-    expect(laserOffWrites, 1);
+    expect(fieldOffWrites, 1);
   });
 
   test('key switch off while laser enable closes laser and shows tip immediately',
@@ -176,7 +175,7 @@ void main() {
     expect(controller.laserEnable, isFalse);
     expect(
       modbus.writes.any(
-        (e) => e.$1 == DeviceControlIds.laserEnable && e.$2 == false,
+        (e) => e.$1 == DeviceControlIds.controlField1,
       ),
       isTrue,
     );
@@ -264,13 +263,12 @@ void main() {
     expect(controller.autoWireFeed, isFalse);
     expect(
       modbus.writes,
-      containsAll([
-        (DeviceControlIds.laserEnable, false),
-        (DeviceControlIds.manualGas, false),
-        (DeviceControlIds.wireWork, false),
-        (DeviceControlIds.wireDirection, false),
-        (DeviceControlIds.wireManualMode, false),
-      ]),
+      contains((DeviceControlIds.controlField1, 0)),
+    );
+    // Single CONTROL_FIELD_1 write — not five bit RMW round-trips.
+    expect(
+      modbus.writes.where((e) => e.$1 == DeviceControlIds.controlField1).length,
+      1,
     );
 
     // Held e-stop must not re-show the tip.
@@ -295,6 +293,22 @@ void main() {
     ]);
     await Future<void>.delayed(Duration.zero);
     expect(events, isEmpty);
+  });
+
+  test('laserSessionArmed follows laserEnable only, not emission feedback', () {
+    final controller =
+        DeviceControlController(servicesWith(_RecordingModbus()));
+    expect(controller.laserSessionArmed, isFalse);
+
+    controller.laserOn = true;
+    expect(controller.laserSessionArmed, isFalse);
+
+    controller.laserEnable = true;
+    expect(controller.laserSessionArmed, isTrue);
+
+    controller.laserEnable = false;
+    expect(controller.laserSessionArmed, isFalse);
+    expect(controller.laserOn, isTrue);
   });
 
   test('laser preflight blocks manual gas before hold', () {
@@ -403,12 +417,38 @@ final class _RecordingModbus extends ModbusRtuClient {
   Future<T> exclusiveSession<T>(Future<T> Function() body) => body();
 
   @override
+  Future<Object?> readAttribute(String id) async {
+    if (id == DeviceControlIds.controlField1) {
+      final existing = control[id];
+      if (existing is num) {
+        return existing.toInt();
+      }
+      var word = 0;
+      if (control[DeviceControlIds.laserEnable] == true) word |= 1 << 0;
+      if (control[DeviceControlIds.manualGas] == true) word |= 1 << 1;
+      if (control[DeviceControlIds.wireWork] == true) word |= 1 << 2;
+      if (control[DeviceControlIds.wireDirection] == true) word |= 1 << 3;
+      if (control[DeviceControlIds.wireManualMode] == true) word |= 1 << 4;
+      return word;
+    }
+    return control[id] ?? status[id];
+  }
+
+  @override
   Future<bool> writeAttribute(String id, Object? value) async {
     writes.add((id, value));
     if (failWrites) {
       return false;
     }
     control[id] = value;
+    if (id == DeviceControlIds.controlField1 && value is num) {
+      final word = value.toInt();
+      control[DeviceControlIds.laserEnable] = (word & (1 << 0)) != 0;
+      control[DeviceControlIds.manualGas] = (word & (1 << 1)) != 0;
+      control[DeviceControlIds.wireWork] = (word & (1 << 2)) != 0;
+      control[DeviceControlIds.wireDirection] = (word & (1 << 3)) != 0;
+      control[DeviceControlIds.wireManualMode] = (word & (1 << 4)) != 0;
+    }
     return true;
   }
 

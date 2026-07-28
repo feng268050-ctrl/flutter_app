@@ -293,6 +293,10 @@ final class _LinuxModbusHal implements ModbusHal {
   bool _exclusive = false;
   bool _commandBusy = false;
 
+  /// Serializes [exclusiveSession] so concurrent callers cannot nest
+  /// stop/start polling (nested sessions used to leave polling permanently off).
+  Future<void> _exclusiveChain = Future<void>.value();
+
   /// Recent group-cycle outcomes for slide_window health (true = failure).
   final List<bool> _healthFailures = [];
 
@@ -545,19 +549,32 @@ final class _LinuxModbusHal implements ModbusHal {
   Stream<ModbusHealth> watchHealth() => _healthController.stream;
 
   @override
-  Future<T> exclusiveSession<T>(Future<T> Function() body) async {
-    final wasPolling = _polling;
-    final groups = _pollGroupIds;
-    _exclusive = true;
-    await stopPolling();
-    try {
-      return await body();
-    } finally {
-      _exclusive = false;
-      if (wasPolling) {
-        await startPolling(groupIds: groups);
+  Future<T> exclusiveSession<T>(Future<T> Function() body) {
+    final gate = Completer<void>();
+    final previous = _exclusiveChain;
+    _exclusiveChain = gate.future;
+    return previous.catchError((_) {}).then((_) async {
+      final wasPolling = _polling;
+      final groups = _pollGroupIds == null
+          ? null
+          : List<String>.from(_pollGroupIds!);
+      _exclusive = true;
+      await stopPolling();
+      try {
+        return await body();
+      } finally {
+        _exclusive = false;
+        try {
+          if (wasPolling) {
+            await startPolling(groupIds: groups);
+          }
+        } finally {
+          if (!gate.isCompleted) {
+            gate.complete();
+          }
+        }
       }
-    }
+    });
   }
 
   @override

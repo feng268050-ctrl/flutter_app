@@ -37,6 +37,7 @@ final class _FakeModbus extends ModbusRtuClient {
 
   final _ctrl = StreamController<List<ModbusAttributeChange>>.broadcast();
   final _health = StreamController<ModbusHealth>.broadcast();
+  final Map<String, Object?> attributeValues = {};
   List<String>? lastWatchIds;
 
   @override
@@ -80,7 +81,31 @@ final class _FakeModbus extends ModbusRtuClient {
   @override
   Future<Stream<ModbusHealth>> watchHealth() async => _health.stream;
 
-  void emit(List<ModbusAttributeChange> changes) => _ctrl.add(changes);
+  @override
+  Future<Object?> readAttribute(String id) async => attributeValues[id];
+
+  @override
+  Future<Map<String, Object?>> readGroup(String groupId) async {
+    if (groupId != 'status') {
+      return {};
+    }
+    return {
+      EstopCommAlarmMask.laserCommAttr: attributeValues[EstopCommAlarmMask.laserCommAttr],
+      EstopCommAlarmMask.wireFeederCommAttr:
+          attributeValues[EstopCommAlarmMask.wireFeederCommAttr],
+      EstopCommAlarmMask.laserEmergencyStopAttr:
+          attributeValues[EstopCommAlarmMask.laserEmergencyStopAttr],
+      EstopCommAlarmMask.emergencyStopAttr:
+          attributeValues[EstopCommAlarmMask.emergencyStopAttr],
+    };
+  }
+
+  void emit(List<ModbusAttributeChange> changes) {
+    for (final c in changes) {
+      attributeValues[c.id] = c.value;
+    }
+    _ctrl.add(changes);
+  }
 }
 
 final class _MemLog implements AlarmLogRepository {
@@ -350,6 +375,97 @@ void main() {
       ]);
       await Future<void>.delayed(const Duration(milliseconds: 50));
       expect(events.where((e) => e.code == 'H022'), isEmpty);
+    });
+
+    test('settle level-read re-arms H022 when bit stays true without a change edge',
+        () async {
+      final previousDelay =
+          ModbusAlarmAttributeAdapter.estopMaskedResampleDelay;
+      addTearDown(() {
+        ModbusAlarmAttributeAdapter.estopMaskedResampleDelay = previousDelay;
+      });
+      ModbusAlarmAttributeAdapter.estopMaskedResampleDelay =
+          const Duration(milliseconds: 20);
+
+      // Seed raw H022=true under e-stop (warn path quiet).
+      fake.emit([
+        _change(
+          EstopCommAlarmMask.emergencyStopAttr,
+          true,
+          previous: null,
+          kind: ModbusChangeKind.primed,
+        ),
+        _change(
+          EstopCommAlarmMask.laserCommAttr,
+          true,
+          previous: null,
+          kind: ModbusChangeKind.primed,
+        ),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(events.where((e) => e.code == 'H022'), isEmpty);
+
+      // Release only — no further H022 watch event. Level read still sees true.
+      fake.emit([
+        _change(EstopCommAlarmMask.emergencyStopAttr, false, previous: true),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(events.where((e) => e.code == 'H022'), isEmpty);
+
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(events.where((e) => e.code == 'H022').single.kind,
+          AlarmSignalKind.rising);
+    });
+
+    test('H029 deferred during e-stop rises after reset even if bit clears',
+        () async {
+      final previousDelay =
+          ModbusAlarmAttributeAdapter.estopMaskedResampleDelay;
+      final previousHold =
+          ModbusAlarmAttributeAdapter.h029DeferredOneShotHold;
+      addTearDown(() {
+        ModbusAlarmAttributeAdapter.estopMaskedResampleDelay = previousDelay;
+        ModbusAlarmAttributeAdapter.h029DeferredOneShotHold = previousHold;
+      });
+      ModbusAlarmAttributeAdapter.estopMaskedResampleDelay =
+          const Duration(milliseconds: 20);
+      ModbusAlarmAttributeAdapter.h029DeferredOneShotHold = Duration.zero;
+
+      fake.emit([
+        _change(
+          EstopCommAlarmMask.emergencyStopAttr,
+          true,
+          previous: null,
+          kind: ModbusChangeKind.primed,
+        ),
+        _change(
+          EstopCommAlarmMask.laserEmergencyStopAttr,
+          true,
+          previous: null,
+          kind: ModbusChangeKind.primed,
+        ),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(events.where((e) => e.code == 'H029'), isEmpty);
+
+      // Bit clears on the release edge (common on reset).
+      fake.attributeValues[EstopCommAlarmMask.laserEmergencyStopAttr] = false;
+      fake.emit([
+        _change(EstopCommAlarmMask.emergencyStopAttr, false, previous: true),
+        _change(
+          EstopCommAlarmMask.laserEmergencyStopAttr,
+          false,
+          previous: true,
+        ),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(events.where((e) => e.code == 'H029'), isEmpty);
+
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(
+        events.where((e) => e.code == 'H029' && e.kind == AlarmSignalKind.rising),
+        isNotEmpty,
+      );
     });
 
     test('status checks keep raw bits under e-stop; warn path stays quiet',

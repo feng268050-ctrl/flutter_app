@@ -21,6 +21,7 @@ import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.
 import 'package:lws_hmi/features/process_mode/presentation/cnc_connection_guide.dart';
 import 'package:lws_hmi/features/process_mode/presentation/cnc_exit_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/cnc_running_overlay.dart';
+import 'package:lws_hmi/features/process_mode/presentation/laser_enable_region_frost.dart';
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_reminder_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
@@ -200,7 +201,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     if (type == _processType) {
       return;
     }
-    if (_deviceControl?.laserEnable == true) {
+    if (_deviceControl?.laserSessionArmed == true) {
       // Wheel may have moved locally; snap accents/selection chrome back.
       setState(() {});
       return;
@@ -304,7 +305,7 @@ final class _QuickModePageState extends State<QuickModePage> {
   }
 
   void _onMaterialIndex(int index) {
-    if (_deviceControl?.laserEnable == true) {
+    if (_deviceControl?.laserSessionArmed == true) {
       return;
     }
     final selection = _selection;
@@ -329,7 +330,7 @@ final class _QuickModePageState extends State<QuickModePage> {
   }
 
   void _onGearIndex(int index) {
-    if (_deviceControl?.laserEnable == true) {
+    if (_deviceControl?.laserSessionArmed == true) {
       return;
     }
     final selection = _selection;
@@ -350,7 +351,7 @@ final class _QuickModePageState extends State<QuickModePage> {
   }
 
   void _onDimensionIndex(int index) {
-    if (_deviceControl?.laserEnable == true) {
+    if (_deviceControl?.laserSessionArmed == true) {
       return;
     }
     final selection = _selection;
@@ -579,7 +580,10 @@ final class _QuickModePageState extends State<QuickModePage> {
   Future<void> _disableLaser() async {
     final error = await _deviceControl?.disableLaser();
     if (error != null && mounted) {
-      _showControlMessage(error.message);
+      ProcessModeToast.show(
+        context,
+        DeviceControlFeedbackCopy.messageForDisable(error),
+      );
     }
   }
 
@@ -587,9 +591,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
-    );
+    ProcessModeToast.show(context, message);
   }
 
   Future<int> _focusScaleRef() async {
@@ -613,7 +615,8 @@ final class _QuickModePageState extends State<QuickModePage> {
       return;
     }
     final control = _deviceControl;
-    if (control != null && (control.laserEnable || control.laserOn)) {
+    // Session only — emission feedback alone must not demand End of work.
+    if (control != null && control.laserSessionArmed) {
       _showControlMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
       return;
     }
@@ -662,21 +665,38 @@ final class _QuickModePageState extends State<QuickModePage> {
     final device = _deviceControl;
 
     Widget stackForLaser(bool laserEnable) {
-      // lws-ui: mode/material (+ accent) INVISIBLE; gear/thickness stay visible
-      // with click_enable=false while Laser Enable is on.
+      // lws-ui BlurUtils (Quick only — Engineer has no region frost):
+      // process plate / material / side ops → σ=15 snapshot + hide wheels.
+      // More Parameters → INVISIBLE when armed (not blurred).
+      // Gear / thickness stay sharp with click disabled.
       final selectorsInteractive = !laserEnable;
-      Widget processWheel = Transform.translate(
-        offset: const Offset(0, ProcessModeDimens.quickSelectorNudgeY),
-        child: QuickModeProcessWheel(
-          processType: _processType,
-          onChanged: (type) => unawaited(_onProcessTypeChanged(type)),
-        ),
-      );
-      if (laserEnable) {
-        processWheel = IgnorePointer(
-          child: Opacity(opacity: 0, child: processWheel),
-        );
-      }
+      final processWheel = laserEnable
+          ? Align(
+              alignment: Alignment.centerLeft,
+              child: Transform.translate(
+                offset: const Offset(0, ProcessModeDimens.quickSelectorNudgeY),
+                child: SizedBox(
+                  width: ProcessModeDimens.laserEnableProcessFrostWidth,
+                  height: ProcessModeDimens.laserEnableProcessFrostHeight,
+                  child: LaserEnableRegionFrost(
+                    armed: true,
+                    child: QuickModeProcessWheel(
+                      processType: _processType,
+                      showAccents: false,
+                      onChanged: (type) =>
+                          unawaited(_onProcessTypeChanged(type)),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : Transform.translate(
+              offset: const Offset(0, ProcessModeDimens.quickSelectorNudgeY),
+              child: QuickModeProcessWheel(
+                processType: _processType,
+                onChanged: (type) => unawaited(_onProcessTypeChanged(type)),
+              ),
+            );
 
       return Stack(
         clipBehavior: Clip.none,
@@ -781,14 +801,15 @@ final class _QuickModePageState extends State<QuickModePage> {
                 ),
               ),
             ),
-            if (!laserEnable)
-              Align(
-                alignment: Alignment.centerRight,
-                child: Transform.translate(
-                  offset: const Offset(
-                    0,
-                    ProcessModeDimens.materialVerticalOffset,
-                  ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Transform.translate(
+                offset: const Offset(
+                  0,
+                  ProcessModeDimens.materialVerticalOffset,
+                ),
+                child: LaserEnableRegionFrost(
+                  armed: laserEnable,
                   child: QuickModeMaterialWheel(
                     materials: selection.materials,
                     selectedIndex: materialIndex < 0 ? 0 : materialIndex,
@@ -796,6 +817,7 @@ final class _QuickModePageState extends State<QuickModePage> {
                   ),
                 ),
               ),
+            ),
           ],
           if (!isCnc &&
               controller.initialized &&
@@ -856,7 +878,8 @@ final class _QuickModePageState extends State<QuickModePage> {
         ? scaffoldForLaser(false)
         : AnimatedBuilder(
             animation: device,
-            builder: (context, _) => scaffoldForLaser(device.laserEnable),
+            builder: (context, _) =>
+                scaffoldForLaser(device.laserSessionArmed),
           );
 
     return PopScope(

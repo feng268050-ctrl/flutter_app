@@ -88,8 +88,8 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
-        final laserActive =
-            widget.controller.laserEnable || widget.controller.laserOn;
+        // lws-ui `isOpenLaser()` — session bit only, not emission feedback.
+        final laserActive = widget.controller.laserSessionArmed;
         final thresholds =
             AdvancedSettingsScope.maybeThresholdsOf(context)?.values ??
                 const AdvancedSettingsThresholdValues();
@@ -371,7 +371,11 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                           final err = await widget.controller
                                               .disableLaser();
                                           if (err != null && context.mounted) {
-                                            _toast(context, err.message);
+                                            _toast(
+                                              context,
+                                              DeviceControlFeedbackCopy
+                                                  .messageForDisable(err),
+                                            );
                                           }
                                         }
                                       : null,

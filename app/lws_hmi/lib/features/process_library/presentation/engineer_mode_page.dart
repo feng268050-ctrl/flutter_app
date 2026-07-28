@@ -232,7 +232,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (device != null && device.laserEnable) {
       final err = await device.disableLaser();
       if (err != null && mounted) {
-        ProcessModeToast.show(context, err.message);
+        ProcessModeToast.show(
+          context,
+          DeviceControlFeedbackCopy.messageForDisable(err),
+        );
       }
       return;
     }

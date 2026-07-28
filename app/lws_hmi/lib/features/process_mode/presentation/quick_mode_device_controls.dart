@@ -8,6 +8,7 @@ import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_cop
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/features/process_mode/presentation/laser_enable_region_frost.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_button.dart';
@@ -40,10 +41,9 @@ final class QuickModeDeviceControls extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        final laserOpen = controller.laserEnable || controller.laserOn;
-        // lws-ui: side Manual Gas / Auto Wire / Feed / Retract are INVISIBLE
-        // while Laser Enable is on (blur + hide), not toast-only.
-        final hideSideOps = controller.laserEnable;
+        // lws-ui `isOpenLaser()` — session bit only, not emission feedback.
+        final laserOpen = controller.laserSessionArmed;
+        // lws-ui BlurUtils: side groups get σ=15 snapshot + lock (Quick only).
         final scale =
             ProcessModeDimens.dashboardScaleFor(MediaQuery.sizeOf(context));
         return SizedBox.expand(
@@ -51,11 +51,12 @@ final class QuickModeDeviceControls extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              if (!hideSideOps)
-                Positioned(
-                  left: ProcessModeDimens.quickSideButtonInset * scale,
-                  bottom: ProcessModeDimens.quickSideButtonBottom * scale,
-                  width: ProcessModeDimens.quickSideButtonWidth,
+              Positioned(
+                left: ProcessModeDimens.quickSideButtonInset * scale,
+                bottom: ProcessModeDimens.quickSideButtonBottom * scale,
+                width: ProcessModeDimens.quickSideButtonWidth,
+                child: LaserEnableRegionFrost(
+                  armed: laserOpen,
                   child: Transform.scale(
                     scale: scale,
                     alignment: Alignment.bottomLeft,
@@ -96,11 +97,13 @@ final class QuickModeDeviceControls extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (!hideSideOps)
-                Positioned(
-                  right: ProcessModeDimens.quickSideButtonInset * scale,
-                  bottom: ProcessModeDimens.quickSideButtonBottom * scale,
-                  width: ProcessModeDimens.quickSideButtonWidth,
+              ),
+              Positioned(
+                right: ProcessModeDimens.quickSideButtonInset * scale,
+                bottom: ProcessModeDimens.quickSideButtonBottom * scale,
+                width: ProcessModeDimens.quickSideButtonWidth,
+                child: LaserEnableRegionFrost(
+                  armed: laserOpen,
                   child: Transform.scale(
                     scale: scale,
                     alignment: Alignment.bottomRight,
@@ -149,6 +152,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
               Align(
                 alignment: Alignment.bottomCenter,
                 child: QuickModeLaserButton(
@@ -184,7 +188,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
     );
   }
 
-  bool get _laserOpen => controller.laserEnable || controller.laserOn;
+  bool get _laserOpen => controller.laserSessionArmed;
 
   Future<void> _toggleManualGas(BuildContext context) async {
     if (controller.busy) {

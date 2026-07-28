@@ -7,20 +7,27 @@ import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 /// Quick Mode process-type offset wheel (lws-ui `wheel_view` + accent bands).
 ///
 /// Selection bands stay fixed at page center; labels scroll / tap-to-position.
+/// When [showAccents] is false (Laser Enable frost plate), only the label wheel
+/// is painted — accents are hidden like lws-ui `laserStatus` INVISIBLE bands.
 final class QuickModeProcessWheel extends StatelessWidget {
   const QuickModeProcessWheel({
     super.key,
     required this.processType,
     required this.onChanged,
+    this.showAccents = true,
   });
 
   final ProcessType processType;
   final ValueChanged<ProcessType> onChanged;
 
+  /// When false, omit left/right accent bands (Laser Enable BlurUtils plate).
+  final bool showAccents;
+
   @override
   Widget build(BuildContext context) {
     final accent = ProcessModeTokens.accentFor(processType);
-    final hideSideAccent = processType == ProcessType.cncCutting;
+    final hideSideAccent =
+        !showAccents || processType == ProcessType.cncCutting;
     // CNC: only the solid accent (Android left fill is INVISIBLE). Keep width
     // ≤ cncGuideLeftInset so elevating the wheel above the guide cannot cover
     // the connection panel.
@@ -32,6 +39,55 @@ final class QuickModeProcessWheel extends StatelessWidget {
               0,
               QuickProcessWheelItems.types.length - 1,
             );
+
+    final wheel = SizedBox(
+      key: const ValueKey('quick-mode-process-wheel'),
+      width: ProcessModeDimens.wheelWidth,
+      height: ProcessModeDimens.wheelHeight,
+      child: QuickModeOffsetWheel(
+        itemCount: QuickProcessWheelItems.types.length,
+        selectedIndex: selectedIndex,
+        itemExtent: ProcessModeDimens.wheelItemHeight,
+        diameterRatio: ProcessModeDimens.wheelDiameterRatio,
+        perspective: ProcessModeDimens.wheelPerspective,
+        offAxisFraction: 0,
+        onChanged: (index) => onChanged(QuickProcessWheelItems.types[index]),
+        itemBuilder: (context, index, distance) {
+          final type = QuickProcessWheelItems.types[index];
+          final selected = distance < 0.5;
+          final alpha =
+              selected ? 1.0 : (1.0 - distance * 0.2).clamp(0.4, 1.0);
+          // Right-offset arc: left pad = |d|×10+24 (lws-ui mode wheel).
+          final startPad = selected
+              ? ProcessModeDimens.wheelSelectedPadding
+              : ProcessModeDimens.linearArcPad(distance);
+          return Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: EdgeInsetsDirectional.only(start: startPad),
+              child: Text(
+                ProcessModeLabels.wheelLabel(type),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(alpha),
+                  fontSize: selected
+                      ? ProcessModeDimens.wheelSelectedTextSize
+                      : ProcessModeDimens.wheelUnselectedTextSize,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  height: 1.1,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    if (!showAccents) {
+      // Laser Enable frost plate (lws-ui `model_wheel_view_content` 260×340).
+      return Align(alignment: Alignment.centerLeft, child: wheel);
+    }
 
     return SizedBox.expand(
       child: Stack(
@@ -69,52 +125,7 @@ final class QuickModeProcessWheel extends StatelessWidget {
           Positioned.fill(
             child: Align(
               alignment: Alignment.centerLeft,
-              child: SizedBox(
-                key: const ValueKey('quick-mode-process-wheel'),
-                width: ProcessModeDimens.wheelWidth,
-                height: ProcessModeDimens.wheelHeight,
-                child: QuickModeOffsetWheel(
-                  itemCount: QuickProcessWheelItems.types.length,
-                  selectedIndex: selectedIndex,
-                  itemExtent: ProcessModeDimens.wheelItemHeight,
-                  diameterRatio: ProcessModeDimens.wheelDiameterRatio,
-                  perspective: ProcessModeDimens.wheelPerspective,
-                  offAxisFraction: 0,
-                  onChanged: (index) =>
-                      onChanged(QuickProcessWheelItems.types[index]),
-                  itemBuilder: (context, index, distance) {
-                    final type = QuickProcessWheelItems.types[index];
-                    final selected = distance < 0.5;
-                    final alpha = selected
-                        ? 1.0
-                        : (1.0 - distance * 0.2).clamp(0.4, 1.0);
-                    // Right-offset arc: left pad = |d|×10+24 (lws-ui mode wheel).
-                    final startPad = selected
-                        ? ProcessModeDimens.wheelSelectedPadding
-                        : ProcessModeDimens.linearArcPad(distance);
-                    return Align(
-                      alignment: Alignment.centerLeft,
-                      child: Padding(
-                        padding: EdgeInsetsDirectional.only(start: startPad),
-                        child: Text(
-                          ProcessModeLabels.wheelLabel(type),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(alpha),
-                            fontSize: selected
-                                ? ProcessModeDimens.wheelSelectedTextSize
-                                : ProcessModeDimens.wheelUnselectedTextSize,
-                            fontWeight:
-                                selected ? FontWeight.w600 : FontWeight.w400,
-                            height: 1.1,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+              child: wheel,
             ),
           ),
         ],

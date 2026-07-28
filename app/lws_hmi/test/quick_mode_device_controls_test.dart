@@ -154,7 +154,8 @@ void main() {
     );
   });
 
-  testWidgets('hides side groups while laser enable is on', (tester) async {
+  testWidgets('frosts side groups while laser enable is on (still in tree)',
+      (tester) async {
     final controller = DeviceControlController(servicesWith(_IdleModbus()))
       ..keySwitchOn = true
       ..laserEnable = true;
@@ -166,11 +167,35 @@ void main() {
 
     expect(
       find.byKey(const ValueKey('device-control-manual-gas')),
-      findsNothing,
+      findsOneWidget,
     );
-    expect(find.byKey(const ValueKey('device-control-feed')), findsNothing);
+    expect(find.byKey(const ValueKey('device-control-feed')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('laser-enable-region-frost')),
+      findsWidgets,
+    );
     expect(
       find.byKey(const ValueKey('quick-mode-laser-enable')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('emission feedback alone does not open Laser Enable session UI',
+      (tester) async {
+    final controller = DeviceControlController(servicesWith(_IdleModbus()))
+      ..keySwitchOn = true
+      ..laserOn = true
+      ..laserEnable = false;
+    await pumpControls(
+      tester,
+      processType: ProcessType.continuousWelding,
+      controller: controller,
+    );
+
+    expect(find.text('Laser Enable'), findsOneWidget);
+    expect(find.text('End of work'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('device-control-manual-gas')),
       findsOneWidget,
     );
   });

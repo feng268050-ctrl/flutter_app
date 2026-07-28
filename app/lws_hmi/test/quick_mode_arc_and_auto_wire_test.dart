@@ -41,6 +41,22 @@ void main() {
     );
   });
 
+  test('ensureAutoWireFeedDefault force-writes ON when already true', () async {
+    final modbus = _RecordingModbus();
+    final controller = DeviceControlController(servicesWith(modbus))
+      ..autoWireFeed = true
+      ..keySwitchOn = true;
+
+    await controller.ensureAutoWireFeedDefault();
+    expect(controller.autoWireFeed, isTrue);
+    expect(
+      modbus.writes.any(
+        (e) => e.$1 == DeviceControlIds.wireManualMode && e.$2 == true,
+      ),
+      isTrue,
+    );
+  });
+
   test('ensureAutoWireFeedDefault skips when e-stop active', () async {
     final modbus = _RecordingModbus();
     final controller = DeviceControlController(servicesWith(modbus))
@@ -57,9 +73,9 @@ void main() {
     expect(ProcessModeDimens.linearArcPad(1), 34);
     expect(ProcessModeDimens.linearArcPad(2), 44);
     expect(QuickModePickerDimens.linearArcPad(1), 34);
-    expect(QuickModePickerDimens.unselectedOffset(0), 0);
-    expect(QuickModePickerDimens.unselectedOffset(1), 8);
-    expect(QuickModePickerDimens.unselectedOffset(2), 32);
+    expect(QuickModePickerDimens.unselectedOffset(0), 8);
+    expect(QuickModePickerDimens.unselectedOffset(1), 16);
+    expect(QuickModePickerDimens.unselectedOffset(2), 40);
   });
 }
 

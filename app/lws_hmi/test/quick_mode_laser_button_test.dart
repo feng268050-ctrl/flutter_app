@@ -1,11 +1,24 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_button.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_dashboard.dart';
+import 'package:lws_hmi/features/process_mode/presentation/quick_mode_parameter_preview.dart';
+
+final class _CountingClick implements CyberClickSound {
+  int calls = 0;
+
+  @override
+  Future<void> playClick() async {
+    calls++;
+  }
+}
 
 void main() {
+  tearDown(() => CyberClickSoundRegistry.register(null));
+
   testWidgets('laser trapezoid requires filled hold and release to enable',
       (tester) async {
     var enabled = 0;
@@ -53,6 +66,8 @@ void main() {
 
   testWidgets('open laser uses immediate End of work tap', (tester) async {
     var disabled = 0;
+    final clicks = _CountingClick();
+    CyberClickSoundRegistry.register(clicks);
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
@@ -79,6 +94,63 @@ void main() {
     );
     await tester.pump();
     expect(disabled, 1);
+    expect(clicks.calls, 1);
+  });
+
+  testWidgets('Laser Enable plays click after a completed hold', (tester) async {
+    final clicks = _CountingClick();
+    CyberClickSoundRegistry.register(clicks);
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: QuickModeLaserButton(
+              processType: ProcessType.continuousWelding,
+              laserOpen: false,
+              busy: false,
+              preflight: () => null,
+              onEnableConfirmed: () async {},
+              onDisable: () async {},
+              onBlocked: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const ValueKey('quick-mode-laser-enable'))),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 310));
+    await gesture.up();
+    await tester.pump();
+
+    expect(clicks.calls, 1);
+  });
+
+  testWidgets('More Parameters plays click when enabled', (tester) async {
+    final clicks = _CountingClick();
+    CyberClickSoundRegistry.register(clicks);
+    var presses = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: QuickModeMoreParametersButton(
+            enabled: true,
+            onPressed: () => presses++,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('quick-mode-more-parameters')));
+    await tester.pump();
+
+    expect(presses, 1);
+    expect(clicks.calls, 1);
   });
 
   testWidgets('transparent laser chrome does not steal More Status taps',

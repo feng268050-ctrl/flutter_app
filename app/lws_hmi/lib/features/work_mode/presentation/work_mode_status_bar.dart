@@ -113,11 +113,14 @@ abstract final class WorkModeStatusBarDimens {
   /// lws-ui right_rail `paddingEnd`.
   static const double rightRailPadding = 16;
 
-  /// Gap between the five equipment status groups.
-  static const double itemGap = 16;
+  /// Gap between the five equipment status groups, scaled with their labels.
+  static const double itemGap = 12;
 
-  /// Equipment on/off icons (slightly under lws-ui 36–40 for HMI density).
-  static const double primaryIconSize = 32;
+  /// Equipment on/off icons, scaled with [statusLabelFontSize].
+  static const double primaryIconSize = 38;
+
+  /// Text ↔ icon gap within one equipment status group.
+  static const double statusIconGap = 6;
 
   /// Design size for camera (same as HomeStatusBar `iconSize: 32` on 1280×800).
   static const double trailingIconSize = 32;
@@ -142,13 +145,16 @@ abstract final class WorkModeStatusBarDimens {
 
   static const double edgeLineHeight = 3;
 
-  /// Status labels (under lws-ui `text_size_10` 25sp for HMI density).
-  static const double statusLabelFontSize = 22;
+  /// Five equipment status labels.
+  static const double statusLabelFontSize = 26;
 
-  /// Back label + clock (was 12; bumped for readability on 1280×800).
+  /// Home label; intentionally independent from the clock size.
+  static const double homeLabelFontSize = 24;
+
+  /// Clock size; camera and time retain their existing scale.
   static const double chromeLabelFontSize = 20;
 
-  static const Color background = Color(0xFF1E1E1E);
+  static const Color background = Colors.transparent;
   static const Color label = Color(0xFFFFFFFF);
   static const Color clock = Color(0xFFF2F2F2);
   static const Color backLabelDisabled = Color(0xFF909399);
@@ -244,13 +250,13 @@ final class _WorkModeBackButtonState extends State<_WorkModeBackButton> {
                             ),
                           const SizedBox(width: 8),
                           Text(
-                            'Back',
+                            'Home',
                             maxLines: 1,
                             overflow: TextOverflow.clip,
                             style: TextStyle(
                               color: labelColor,
                               fontSize:
-                                  WorkModeStatusBarDimens.chromeLabelFontSize,
+                                  WorkModeStatusBarDimens.homeLabelFontSize,
                               height: 1,
                             ),
                           ),
@@ -431,7 +437,7 @@ final class _EquipmentStatusItem extends StatelessWidget {
             height: 1,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: WorkModeStatusBarDimens.statusIconGap),
         Image.asset(
           active ? onAsset : offAsset,
           width: iconSize,

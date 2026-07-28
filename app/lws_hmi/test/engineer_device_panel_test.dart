@@ -127,7 +127,7 @@ void main() {
     ProcessModeToast.resetForTest();
   });
 
-  testWidgets('spot welding toasts and keeps wire off', (tester) async {
+  testWidgets('spot welding greys Auto Wire / Feed / Retract', (tester) async {
     final controller =
         DeviceControlController(servicesWith(_RecordingModbus()))
           ..keySwitchOn = true
@@ -157,7 +157,12 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('engineer-panel-auto-wire')));
     await tester.pump();
     expect(controller.autoWireFeed, isFalse);
-    expect(find.text('Wire feed unavailable in this mode'), findsOneWidget);
+    expect(find.text('Wire feed unavailable in this mode'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('engineer-panel-feed')));
+    await tester.pump();
+    expect(controller.wireWork, isFalse);
+    expect(find.text('Wire feed unavailable in this mode'), findsNothing);
   });
 
   testWidgets('Record Work enables when camera is connected', (tester) async {

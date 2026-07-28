@@ -68,6 +68,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   RecordWorkController? _recordWork;
   GunDialogCoordinator? _gunDialogs;
   bool _exiting = false;
+  int _processSwitchGen = 0;
 
   @override
   void initState() {
@@ -165,6 +166,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
               : _processType;
           _setActiveDraft(EngineerModeDraft.fromQuickSource(source));
         });
+        // lws-ui `applyQuickModeEntry`: sync end power from handoff laser power.
+        unawaited(_syncLaserEndPowerFromDraft());
         return;
       }
     }
@@ -192,15 +195,12 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   }
 
   /// Switch process tab: keep each type's in-memory session (lws-ui behavior).
-  Future<void> _onProcessTypeChanged(ProcessType type) async {
+  ///
+  /// UI updates first (Quick Mode pattern). Modbus clear / laser off runs in
+  /// the background so tab chrome is not blocked. Record Work stays armed —
+  /// encode stops when laser session ends (do not [RecordWorkController.stopRecordingForExit]).
+  void _onProcessTypeChanged(ProcessType type) {
     if (type == _processType) {
-      return;
-    }
-    // lws-ui `selectModel`: clear continuous wire, stop record, then laser off.
-    await _deviceControl?.clearContinuousWire();
-    await _recordWork?.stopRecordingForExit();
-    await _deviceControl?.disableLaser();
-    if (!mounted) {
       return;
     }
     final controller = ProcessLibraryScope.of(context);
@@ -219,6 +219,25 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         presets.isEmpty ? null : EngineerModeDraft.fromLibrary(presets.first),
       );
     });
+    final gen = ++_processSwitchGen;
+    unawaited(_syncDeviceForProcessType(type, gen));
+  }
+
+  /// Clears continuous wire, ends laser session, aligns Auto Wire with capability.
+  Future<void> _syncDeviceForProcessType(ProcessType type, int gen) async {
+    await _deviceControl?.clearContinuousWire();
+    if (!mounted || gen != _processSwitchGen) {
+      return;
+    }
+    await _deviceControl?.disableLaser();
+    if (!mounted || gen != _processSwitchGen) {
+      return;
+    }
+    if (type == ProcessType.continuousWelding) {
+      await _deviceControl?.ensureAutoWireFeedDefault();
+    } else if (_deviceControl?.autoWireFeed == true) {
+      await _deviceControl?.setAutoWireFeed(false);
+    }
   }
 
   /// Engineer Back:
@@ -298,9 +317,32 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (draft == null || draft.isReadOnly) {
       return;
     }
+    final previousPower =
+        draft.preset.parameters.values['process.laser_power'];
+    final nextPower = preset.parameters.values['process.laser_power'];
     setState(() {
       _setActiveDraft(draft.copyWith(preset: preset, unsaved: true));
     });
+    // lws-ui InputDialogBuilder.weldingPowerBuilder → syncAndSendLaserTerminationPower.
+    if (nextPower != null && nextPower != previousPower) {
+      unawaited(_syncLaserEndPower(nextPower));
+    }
+  }
+
+  Future<void> _syncLaserEndPowerFromDraft() async {
+    final power = _draft?.preset.parameters.values['process.laser_power'];
+    await _syncLaserEndPower(power);
+  }
+
+  Future<void> _syncLaserEndPower(double? laserPower) async {
+    if (!mounted) {
+      return;
+    }
+    final thresholds = AdvancedSettingsScope.maybeThresholdsOf(context);
+    if (thresholds == null) {
+      return;
+    }
+    await thresholds.syncAndSendLaserTerminationPower(laserPower);
   }
 
   /// Safety dialog + re-apply current draft (Quick enable order parity).
@@ -362,10 +404,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       );
       return false;
     }
-    final thresholds = AdvancedSettingsScope.maybeThresholdsOf(context);
-    if (thresholds != null) {
-      await thresholds.commit(thresholds.values);
-    }
+    // lws-ui sendAdvanceSettingData → syncAndSendLaserTerminationPower.
+    await _syncLaserEndPower(
+      draft.preset.parameters.values['process.laser_power'],
+    );
     return true;
   }
 
@@ -534,7 +576,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
               children: [
                 EngineerProcessTabBar(
                   processType: _processType,
-                  onChanged: (type) => unawaited(_onProcessTypeChanged(type)),
+                  onChanged: _onProcessTypeChanged,
                 ),
                 if (controller.loading && !controller.initialized)
                   const Expanded(
@@ -656,7 +698,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                     'More Favorites',
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 14,
+                                                      fontSize: 16,
                                                     ),
                                                   ),
                                                   const SizedBox(width: 2),

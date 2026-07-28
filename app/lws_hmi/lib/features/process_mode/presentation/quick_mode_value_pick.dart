@@ -60,13 +60,16 @@ abstract final class QuickModePickerDimens {
   static const double wheelDiameterRatio = 100;
   static const double wheelPerspective = 0.001;
 
-  /// Gear/thickness quadratic arc term: `d² × 8` (shifted from selection midline).
+  /// Gear/thickness unselected-row inset toward the dashboard.
   ///
-  /// lws-ui absolute edge pad is `d²×8+24`; applying that as left-edge padding
-  /// on a narrow wheel parks the nearest neighbor left of center. We keep the
-  /// quadratic term as a midline translate instead.
+  /// This is intentionally a Flutter paint transform, rather than layout
+  /// padding: the selected row, accent, scale, and title retain their shared
+  /// centerline. The base inset corrects the near rows' visual drift; the
+  /// quadratic term preserves the outward arc for farther rows.
+  static const double unselectedBaseInset = 8;
+
   static double unselectedOffset(double distance) =>
-      distance * distance * 8;
+      unselectedBaseInset + distance * distance * 8;
 
   /// Mode/material linear arc: `|d| × 10 + 24`.
   static double linearArcPad(double distance) => distance * 10 + 24;
@@ -342,10 +345,9 @@ final class _ValuePickItem extends StatelessWidget {
       );
     }
 
-    // Arc from the selection midline (not from the left/right edge).
-    // Absolute left-pad (d²×8+24) made the nearest neighbor sit left of
-    // center; shift only by the quadratic term toward the dashboard.
-    final shift = distance * distance * 8;
+    // Arc from the selection midline (not from the left/right edge). A small
+    // base inset keeps the nearest rows from appearing to drift outward.
+    final shift = QuickModePickerDimens.unselectedOffset(distance);
     return SizedBox(
       height: QuickModePickerDimens.itemHeight,
       child: Center(

@@ -21,8 +21,8 @@ import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 
 /// Engineer left device panel (lws-ui `engineer_continuous_device_controls`).
 ///
-/// Wire Feed/Retract share Quick's [ManualWireGesture] protocol. Continuous
-/// welding is the only process type with live wire controls.
+/// Wire Feed/Retract use [_EngineerWireActionButton]. Continuous welding is
+/// the only process type with live wire controls.
 final class EngineerDevicePanel extends StatefulWidget {
   const EngineerDevicePanel({
     super.key,
@@ -68,8 +68,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
       widget.processType == ProcessType.continuousWelding ||
       widget.processType == ProcessType.spotWelding;
 
-  bool get _wireCapable =>
-      widget.processType == ProcessType.continuousWelding;
+  bool get _wireCapable => widget.processType == ProcessType.continuousWelding;
 
   @override
   void didUpdateWidget(covariant EngineerDevicePanel oldWidget) {
@@ -85,14 +84,18 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
 
   @override
   Widget build(BuildContext context) {
+    final thresholdsController =
+        AdvancedSettingsScope.maybeThresholdsOf(context);
     return AnimatedBuilder(
-      animation: widget.controller,
+      animation: Listenable.merge([
+        widget.controller,
+        if (thresholdsController != null) thresholdsController,
+      ]),
       builder: (context, _) {
         // lws-ui `isOpenLaser()` — session bit only, not emission feedback.
         final laserActive = widget.controller.laserSessionArmed;
-        final thresholds =
-            AdvancedSettingsScope.maybeThresholdsOf(context)?.values ??
-                const AdvancedSettingsThresholdValues();
+        final thresholds = thresholdsController?.values ??
+            const AdvancedSettingsThresholdValues();
         // Toast mutex only — do not dim peers for laser / non-wire / busy.
         return EngineerFrostPanel(
           key: const ValueKey('engineer-device-panel'),
@@ -186,8 +189,11 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     label: 'Auto Wire Feed',
                                     value: widget.controller.autoWireFeed &&
                                         _wireCapable,
-                                    enabled: true,
+                                    enabled: _wireCapable,
                                     onChanged: (value) async {
+                                      if (!_wireCapable) {
+                                        return;
+                                      }
                                       if (widget.controller.busy) {
                                         _toast(
                                           context,
@@ -200,14 +206,6 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                           context,
                                           DeviceControlFeedbackCopy
                                               .endOfWorkFirst,
-                                        );
-                                        return;
-                                      }
-                                      if (!_wireCapable) {
-                                        _toast(
-                                          context,
-                                          DeviceControlFeedbackCopy
-                                              .wireUnavailableInMode,
                                         );
                                         return;
                                       }
@@ -257,9 +255,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                           label: 'Retract',
                                           icon: Icons.output,
                                           height: _wireButtonsHeight,
-                                          enabled: true,
+                                          enabled: _wireCapable,
                                           laserBlocked: laserActive,
-                                          modeBlocked: !_wireCapable,
+                                          modeBlocked: false,
                                           retract: true,
                                           active: widget.controller.wireWork &&
                                               widget.controller.wireRetracting,
@@ -276,9 +274,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                           label: 'Feed',
                                           icon: Icons.input,
                                           height: _wireButtonsHeight,
-                                          enabled: true,
+                                          enabled: _wireCapable,
                                           laserBlocked: laserActive,
-                                          modeBlocked: !_wireCapable,
+                                          modeBlocked: false,
                                           retract: false,
                                           active: widget.controller.wireWork &&
                                               !widget.controller.wireRetracting,
@@ -293,9 +291,8 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                 const SizedBox(height: _actionGap),
                                 _EngineerDeviceActionButton(
                                   key: const ValueKey('engineer-panel-laser'),
-                                  label: laserActive
-                                      ? 'End Work'
-                                      : 'Enable Laser',
+                                  label:
+                                      laserActive ? 'End Work' : 'Enable Laser',
                                   icon: laserActive
                                       ? Icons.pause
                                       : Icons.ondemand_video,
@@ -319,25 +316,25 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                       );
                                       return;
                                     }
-                                    final before =
-                                        widget.onBeforeEnableLaser;
+                                    final before = widget.onBeforeEnableLaser;
                                     if (before != null) {
                                       final ok = await before();
                                       if (!ok || !context.mounted) {
                                         return;
                                       }
                                     }
-                                    final policy = AdvancedSettingsScope
-                                                .maybeDangerousOf(context)
-                                            ?.policySnapshot ??
-                                        const LaserAlarmPolicySnapshot(
-                                          keepLaserOnWhileAlarmed: false,
-                                          allowWorkAfterCameraAlarm: false,
-                                          allowWorkAfterGasAlarm: false,
-                                          allowWorkAfterLensContamination:
-                                              false,
-                                          allowWorkAfterFeederAlarm: false,
-                                        );
+                                    final policy =
+                                        AdvancedSettingsScope.maybeDangerousOf(
+                                                    context)
+                                                ?.policySnapshot ??
+                                            const LaserAlarmPolicySnapshot(
+                                              keepLaserOnWhileAlarmed: false,
+                                              allowWorkAfterCameraAlarm: false,
+                                              allowWorkAfterGasAlarm: false,
+                                              allowWorkAfterLensContamination:
+                                                  false,
+                                              allowWorkAfterFeederAlarm: false,
+                                            );
                                     final err =
                                         await widget.controller.enableLaser(
                                       warnAlarm:
@@ -750,28 +747,61 @@ final class _EngineerDeviceActionButtonState
                       ),
                     ),
                   ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      widget.icon,
-                      color:
-                          isVisuallyEnabled ? foreground : disabledForeground,
-                      size: iconSize,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      widget.label,
-                      style: TextStyle(
+                if (widget.filled)
+                  Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: Text(
+                          widget.label,
+                          style: TextStyle(
+                            color: isVisuallyEnabled
+                                ? foreground
+                                : disabledForeground,
+                            fontSize: labelSize,
+                            fontWeight: FontWeight.w600,
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        // Match icon left inset to its top/bottom inset.
+                        left: (widget.height - iconSize) / 2,
+                        top: (widget.height - iconSize) / 2,
+                        child: Icon(
+                          widget.icon,
+                          color: isVisuallyEnabled
+                              ? foreground
+                              : disabledForeground,
+                          size: iconSize,
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        widget.icon,
                         color:
                             isVisuallyEnabled ? foreground : disabledForeground,
-                        fontSize: labelSize,
-                        fontWeight: FontWeight.w600,
-                        height: 1.0,
+                        size: iconSize,
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.label,
+                        style: TextStyle(
+                          color: isVisuallyEnabled
+                              ? foreground
+                              : disabledForeground,
+                          fontSize: labelSize,
+                          fontWeight: FontWeight.w600,
+                          height: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),

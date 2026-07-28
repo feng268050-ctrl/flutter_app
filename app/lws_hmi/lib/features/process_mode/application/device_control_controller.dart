@@ -92,9 +92,9 @@ final class DeviceControlController extends ChangeNotifier {
     }
   }
 
-  /// Match lws-ui Quick/Engineer init: force Auto Wire Feed enable when safe.
+  /// Match lws-ui Quick `initData`: always force Auto Wire Feed ON when safe.
   Future<void> ensureAutoWireFeedDefault() async {
-    if (emergencyStop || autoWireFeed) {
+    if (emergencyStop) {
       return;
     }
     await setAutoWireFeed(true);

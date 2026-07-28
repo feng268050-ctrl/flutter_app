@@ -63,8 +63,20 @@ void main() {
     expect(find.text('Key Switch'), findsOneWidget);
     expect(find.text('Gas Flow'), findsOneWidget);
     expect(find.text('E-Stop'), findsOneWidget);
-    expect(find.text('Back'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.text('14:30'), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.text('Home')).style?.fontSize,
+      WorkModeStatusBarDimens.homeLabelFontSize,
+    );
+    expect(
+      tester.widget<Text>(find.text('Gun Switch')).style?.fontSize,
+      WorkModeStatusBarDimens.statusLabelFontSize,
+    );
+    expect(
+      tester.widget<Text>(find.text('14:30')).style?.fontSize,
+      WorkModeStatusBarDimens.chromeLabelFontSize,
+    );
     expect(
         find.byKey(const ValueKey('work-mode-status-camera')), findsOneWidget);
     expect(find.byKey(const ValueKey('cyber-status-wifi')), findsNothing);
@@ -103,6 +115,14 @@ void main() {
 
     expect(find.byKey(const ValueKey('work-mode-status-bar-engineer')),
         findsOneWidget);
+    expect(
+      tester
+          .widget<Material>(
+            find.byKey(const ValueKey('work-mode-status-bar-engineer')),
+          )
+          .color,
+      Colors.transparent,
+    );
     expect(find.text('09:05'), findsOneWidget);
   });
 
@@ -155,7 +175,7 @@ void main() {
       ),
     );
 
-    final label = tester.widget<Text>(find.text('Back'));
+    final label = tester.widget<Text>(find.text('Home'));
     expect(label.style?.color, WorkModeStatusBarDimens.backLabelDisabled);
   });
 
@@ -176,7 +196,7 @@ void main() {
       ),
     );
 
-    final label = tester.widget<Text>(find.text('Back'));
+    final label = tester.widget<Text>(find.text('Home'));
     expect(label.style?.color, Colors.white);
   });
 }

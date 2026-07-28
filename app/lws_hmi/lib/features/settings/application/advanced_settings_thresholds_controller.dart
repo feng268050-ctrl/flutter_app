@@ -113,6 +113,23 @@ final class AdvancedSettingsThresholdsController extends ChangeNotifier {
     }
   }
 
+  /// lws-ui `syncAndSendLaserTerminationPower`:
+  /// `laserEndPower = laserPower × 0.97`, persist, then write thresholds.
+  ///
+  /// When [laserPower] is null, still re-commits current values (enable-laser
+  /// path still pushes advanced settings).
+  Future<void> syncAndSendLaserTerminationPower(double? laserPower) async {
+    final next = laserPower == null
+        ? _values
+        : _values.copyWith(
+            laserEndPower:
+                AdvancedSettingsThresholdValues.laserEndPowerFromProcess(
+              laserPower,
+            ),
+          );
+    await commit(next);
+  }
+
   void _onChanges(List<ModbusAttributeChange> changes) {
     if (_committing) {
       return;

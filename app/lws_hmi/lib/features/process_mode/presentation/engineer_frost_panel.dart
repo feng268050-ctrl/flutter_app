@@ -24,7 +24,9 @@ final class EngineerFrostPanel extends StatelessWidget {
     return CustomPaint(
       foregroundPainter: _EngineerFrostBorderPainter(edge: edge),
       child: CyberCard(
-        sampleMode: CyberBlurSampleMode.realtime,
+        // Static capture — realtime BackdropFilter on two large panels made
+        // Engineer tab switches hitch on the board.
+        sampleMode: CyberBlurSampleMode.firstFrame,
         intensity: CyberBlurIntensity.low,
         blurTint: CyberBlurTint.dark,
         borderRadius: radius,

@@ -233,6 +233,10 @@ abstract final class ProcessModeDimens {
   static const double quickSideOpGapAboveDivider = 27;
   static const double quickSideOpGapBelowDivider = 15;
 
+  /// Reserved height above side buttons so left/right dividers stay level
+  /// when the right column shows “Hold 3s to keep on” (font 21 + 8 pad).
+  static const double feedHoldHintSlotHeight = 29;
+
   /// Thin bright ring radius (lws-ui outer highlight), same formula as
   /// `_LaserDashboardMetrics.outerHighlightRadius`.
   static double outerHighlightRadiusFor(Size viewport) {
@@ -288,7 +292,7 @@ abstract final class ProcessModeDimens {
 
   // --- Engineer tab bar (engineer_tab.xml, weightSum=1280) ---
 
-  static const double engineerTabBarHeight = 88;
+  static const double engineerTabBarHeight = 68;
   static const double engineerTabIconSize = 24;
   static const double engineerTabIconGap = 13;
   static const double engineerTabUnderlineHeight = 1.5;

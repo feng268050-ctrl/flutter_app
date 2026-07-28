@@ -41,9 +41,7 @@ final class EngineerParameterForm extends StatelessWidget {
       if (EngineerParameterVisibility.showsMaterial(preset.processType))
         _MaterialRow(
           material: preset.materialType,
-          label: preset.materialName ??
-              preset.materialType?.englishName ??
-              '—',
+          label: preset.materialName ?? preset.materialType?.englishName ?? '—',
           onTap: () => _guarded(context, (w) => _editMaterial(context, w)),
         ),
       if (EngineerParameterVisibility.showsThickness(preset.processType))
@@ -250,7 +248,7 @@ final class _MaterialRow extends StatelessWidget {
                 'Material Type',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -294,7 +292,7 @@ final class _MaterialRow extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 18,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -348,7 +346,7 @@ final class _ValueRow extends StatelessWidget {
                       presentation.label,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -359,7 +357,7 @@ final class _ValueRow extends StatelessWidget {
                       suffix,
                       style: TextStyle(
                         color: presentation.suffixColor ?? Colors.white,
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -390,7 +388,7 @@ final class _ValueRow extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.w400,
                         ),
                       ),

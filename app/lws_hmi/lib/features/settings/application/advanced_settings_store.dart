@@ -23,6 +23,13 @@ final class AdvancedSettingsThresholdValues {
   static const defaultProperSwingWidth = 0.0;
   static const defaultLaserStartPower = 10.0;
   static const defaultLaserEndPower = 10.0;
+
+  /// lws-ui `LASER_END_POWER_RATIO` / Quick `QUICK_MODE_LASER_END_POWER_RATIO`.
+  static const laserEndPowerRatio = 0.97;
+
+  /// Process laser power → Advanced Settings laser end power.
+  static double laserEndPowerFromProcess(double laserPower) =>
+      laserPower * laserEndPowerRatio;
   static const defaultBlowPressureThreshold = 0.0;
   static const defaultMotorTempAlarm = 70.0;
   static const defaultDriverTempAlarm = 70.0;

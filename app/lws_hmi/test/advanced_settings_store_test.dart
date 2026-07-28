@@ -180,4 +180,17 @@ void main() {
       await dir.delete(recursive: true);
     });
   });
+
+  group('laserEndPowerFromProcess', () {
+    test('matches lws-ui LASER_END_POWER_RATIO 0.97', () {
+      expect(
+        AdvancedSettingsThresholdValues.laserEndPowerFromProcess(100),
+        97,
+      );
+      expect(
+        AdvancedSettingsThresholdValues.laserEndPowerFromProcess(55),
+        closeTo(53.35, 1e-9),
+      );
+    });
+  });
 }

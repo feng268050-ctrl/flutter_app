@@ -565,8 +565,12 @@ final class _QuickModePageState extends State<QuickModePage> {
       _showControlMessage(_statusMessage ?? 'Process apply failed');
       return;
     }
+    // lws-ui QuickProcessParametersDataViewModel.sendAdvanceSettingForLaserEnable:
+    // laserEndPower = process laser × 0.97, then write advanced settings.
     if (thresholds != null) {
-      await thresholds.commit(thresholds.values);
+      await thresholds.syncAndSendLaserTerminationPower(
+        preset.parameters.values['process.laser_power'],
+      );
     }
     final error = await control.enableLaser(
       warnAlarm: warnAlarm,

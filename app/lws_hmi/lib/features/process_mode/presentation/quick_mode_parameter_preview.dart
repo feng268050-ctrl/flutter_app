@@ -1,3 +1,4 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
@@ -109,7 +110,12 @@ final class QuickModeMoreParametersButton extends StatelessWidget {
       opacity: enabled ? 1 : 0.35,
       child: TextButton.icon(
         key: const ValueKey('quick-mode-more-parameters'),
-        onPressed: enabled ? onPressed : null,
+        onPressed: enabled
+            ? () {
+                CyberClickSoundRegistry.playClick();
+                onPressed();
+              }
+            : null,
         icon: const Icon(Icons.tune, color: Colors.white, size: 20),
         label: const Text(
           'More Parameters',

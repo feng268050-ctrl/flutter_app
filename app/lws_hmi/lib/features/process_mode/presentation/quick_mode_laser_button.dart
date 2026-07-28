@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
@@ -120,6 +121,7 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
     }
     _gestureActive = false;
     if (widget.laserOpen) {
+      CyberClickSoundRegistry.playClick();
       unawaited(widget.onDisable());
       setState(() {});
       return;
@@ -127,6 +129,7 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
     if (_commitReady || _hold.value >= 0.999) {
       _hold.value = 0;
       _commitReady = false;
+      CyberClickSoundRegistry.playClick();
       unawaited(widget.onEnableConfirmed());
       setState(() {});
       return;

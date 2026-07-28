@@ -7,6 +7,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_button.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_device_controls.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
@@ -67,6 +68,21 @@ void main() {
     );
     expect(find.text('Hold 3s to keep on'), findsOneWidget);
     expect(find.text('Feed'), findsOneWidget);
+    final hint = tester.widget<Text>(
+      find.byKey(const ValueKey('device-control-feed-hold-hint')),
+    );
+    expect(hint.style?.color, ProcessModeOutlineChrome.actionOrange);
+  });
+
+  testWidgets('left and right zone dividers share the same Y', (tester) async {
+    await pumpControls(tester, processType: ProcessType.continuousWelding);
+    final left = tester.getRect(
+      find.byKey(const ValueKey('quick-mode-zone-divider-left')),
+    );
+    final right = tester.getRect(
+      find.byKey(const ValueKey('quick-mode-zone-divider-right')),
+    );
+    expect(left.top, closeTo(right.top, 0.5));
   });
 
   testWidgets('pins left/right groups to screen corners', (tester) async {
@@ -107,10 +123,12 @@ void main() {
       findsOneWidget,
     );
 
-    final disabled = ProcessModeTokens.sideOperationDisabled;
+    // Engineer outline chrome: idle orange / disabled brown.
+    const idle = ProcessModeOutlineChrome.actionOrange;
+    const disabled = ProcessModeOutlineChrome.disabledForeground;
     expect(
       tester.widget<Text>(find.text('Manual Gas')).style?.color,
-      Colors.white,
+      idle,
     );
     expect(
       tester.widget<Text>(find.text('Auto Wire Feed')).style?.color,
@@ -139,18 +157,27 @@ void main() {
   });
 
   testWidgets('enables wire ops in continuous welding', (tester) async {
-    await pumpControls(tester, processType: ProcessType.continuousWelding);
+    final controller = DeviceControlController(servicesWith(_IdleModbus()))
+      ..keySwitchOn = true
+      ..autoWireFeed = false;
+    await pumpControls(
+      tester,
+      processType: ProcessType.continuousWelding,
+      controller: controller,
+    );
+    // Idle Engineer outline chrome: orange label (not grey / disabled).
+    const idle = ProcessModeOutlineChrome.actionOrange;
     expect(
       tester.widget<Text>(find.text('Auto Wire Feed')).style?.color,
-      Colors.white,
+      idle,
     );
     expect(
       tester.widget<Text>(find.text('Feed')).style?.color,
-      Colors.white,
+      idle,
     );
     expect(
       tester.widget<Text>(find.text('Retract')).style?.color,
-      Colors.white,
+      idle,
     );
   });
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
-import 'package:lws_hmi/features/process_mode/presentation/quick_mode_device_controls.dart';
+import 'package:lws_hmi/features/process_mode/presentation/feed_hold_gradient.dart';
 
 void main() {
   group('FeedHoldGradient.midWidth', () {

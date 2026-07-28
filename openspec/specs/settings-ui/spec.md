@@ -45,6 +45,7 @@ LAN SSH debug SHALL control on-demand LAN/WLAN SSH via `SshDebug` (not persisted
 
 - **WHEN** the operator turns LAN SSH debug on from Settings
 - **THEN** `SshDebug` is asked to enable LAN SSH debug
+
 ### Requirement: Language selection applies UI locale and lists supported endonyms
 
 Language Settings SHALL offer the App-supported locales `en-US`, `zh-CN`, and `zh-TW` with endonym labels (English / 简体中文 / 繁體中文). Selecting a locale SHALL persist via `CommonSettingsStore` and apply both Flutter UI locale and CyberIME language mapping. Language Settings and Common Settings Language summary MUST NOT claim that Language applies only to the soft keyboard once UI localization for that surface has shipped.
@@ -389,6 +390,7 @@ The Settings shell and Settings sub-pages hosted by the shared Settings scaffold
 
 - **WHEN** the operator opens Common Settings → Wi‑Fi (or another Settings scaffold sub-page)
 - **THEN** the sub-page top chrome is the CyberUI page status bar showing back, that page’s title, this product’s current status icons, and a compact clock
+
 ### Requirement: Settings Input includes USB OTG mode
 
 Common Settings → Input SHALL include a **USB OTG** entry that lets the operator choose among modes allowed by `/etc/usb-otg.ini` (`debug` / `mtp` / `host`, or debug-only). Choosing a mode SHALL call `UsbOtg.setMode` (persist + apply). The page MUST NOT depend on cable attach/detach events.
@@ -519,3 +521,19 @@ Device Information MUST NOT show Camera Type or Camera Version. OTA footer contr
 
 - **WHEN** the operator opens Device Information
 - **THEN** a Check for Updates action is visible
+
+### Requirement: RGB LED Settings forces Off on enter
+
+When the operator opens the Common Settings RGB LED page, the App SHALL suppress production RGB LED policy for the duration of the page, force red/yellow/green to Off, and present Off as the selected mode for each color until the operator chooses Steady or Blink. Leaving the page SHALL end the suppress and allow production policy to refresh.
+
+#### Scenario: Settings entry resets indicators
+
+- **WHEN** the operator navigates to the RGB LED settings page
+- **THEN** all three colors are forced Off
+- **AND** production alarm/standby/ready policy does not overwrite manual selections while the page remains open
+
+#### Scenario: Leaving settings resumes policy
+
+- **WHEN** the operator leaves the RGB LED settings page
+- **THEN** production policy resumes and reapplies computed modes
+

@@ -92,7 +92,7 @@ class LwsHmiApp extends StatefulWidget {
   State<LwsHmiApp> createState() => _LwsHmiAppState();
 }
 
-class _LwsHmiAppState extends State<LwsHmiApp> {
+class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
   late final AppServices _services =
       widget.services ?? AppServices(boardProfile: widget.boardProfile);
 
@@ -138,7 +138,18 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
     ),
     applier: ProcessParameterApplier(
       modbus: _services.modbus,
-      isSafeToApply: () => LaserWorkGuard.isProcessChangeSafe(_services),
+      interlockFailure: () async {
+        final block = await LaserWorkGuard.processChangeBlock(_services);
+        return switch (block) {
+          null => null,
+          ProcessChangeBlockReason.statusUnavailable =>
+            ProcessApplyFailure.statusUnavailable,
+          ProcessChangeBlockReason.laserActive =>
+            ProcessApplyFailure.unsafeMachineState,
+          ProcessChangeBlockReason.wireFeeding =>
+            ProcessApplyFailure.wireFeedingActive,
+        };
+      },
     ),
   );
 
@@ -161,6 +172,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _soundEffectStore.warmRead();
     _miscSettingsStore.warmRead();
     _commonSettingsStore.warmRead();
@@ -225,7 +237,23 @@ class _LwsHmiAppState extends State<LwsHmiApp> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Process teardown / embedder detach — leave the laser disarmed.
+    // Do not clear on `paused` (auto-sleep) so a mid-session Laser Enable is
+    // not silently closed when the backlight dims.
+    if (state == AppLifecycleState.detached) {
+      unawaited(
+        _services.disarmLaserEnableForSafety(reason: 'lifecycle-detached'),
+      );
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(
+      _services.disarmLaserEnableForSafety(reason: 'app-dispose'),
+    );
     CyberClickSoundRegistry.register(null);
     CyberImeRegionalLayoutRegistry.register(null);
     CyberImePhysicalKeyboard.register(null);

@@ -27,45 +27,60 @@ void main() {
         modbusClient: modbus,
       );
 
-  group('LaserWorkGuard.isProcessChangeSafe', () {
-    test('true when laser enable/on and wire feed are off', () async {
+  group('LaserWorkGuard.processChangeBlock', () {
+    test('null when laser enable/on and wire feed are off', () async {
       final modbus = _GuardModbus()
         ..control[LaserWorkGuard.laserEnableAttribute] = false
         ..status[LaserWorkGuard.laserOnAttribute] = false
         ..status[LaserWorkGuard.wireFeedingOnAttribute] = 0;
+      expect(
+        await LaserWorkGuard.processChangeBlock(servicesWith(modbus)),
+        isNull,
+      );
       expect(
         await LaserWorkGuard.isProcessChangeSafe(servicesWith(modbus)),
         isTrue,
       );
     });
 
-    test('fail-closed when any interlock bit is on', () async {
+    test('laserActive when laser enable is on', () async {
       final modbus = _GuardModbus()
         ..control[LaserWorkGuard.laserEnableAttribute] = true
         ..status[LaserWorkGuard.laserOnAttribute] = false
         ..status[LaserWorkGuard.wireFeedingOnAttribute] = false;
       expect(
-        await LaserWorkGuard.isProcessChangeSafe(servicesWith(modbus)),
-        isFalse,
+        await LaserWorkGuard.processChangeBlock(servicesWith(modbus)),
+        ProcessChangeBlockReason.laserActive,
       );
     });
 
-    test('fail-closed when a status attribute is missing', () async {
+    test('wireFeeding when wire feed feedback is on', () async {
+      final modbus = _GuardModbus()
+        ..control[LaserWorkGuard.laserEnableAttribute] = false
+        ..status[LaserWorkGuard.laserOnAttribute] = false
+        ..status[LaserWorkGuard.wireFeedingOnAttribute] = true;
+      expect(
+        await LaserWorkGuard.processChangeBlock(servicesWith(modbus)),
+        ProcessChangeBlockReason.wireFeeding,
+      );
+    });
+
+    test('statusUnavailable when a status attribute is missing', () async {
       final modbus = _GuardModbus()
         ..control[LaserWorkGuard.laserEnableAttribute] = false
         ..status[LaserWorkGuard.laserOnAttribute] = false;
       // wire_feeding_on absent → null
       expect(
-        await LaserWorkGuard.isProcessChangeSafe(servicesWith(modbus)),
-        isFalse,
+        await LaserWorkGuard.processChangeBlock(servicesWith(modbus)),
+        ProcessChangeBlockReason.statusUnavailable,
       );
     });
 
-    test('fail-closed when group read throws', () async {
+    test('statusUnavailable when group read throws', () async {
       final modbus = _GuardModbus(throwOnRead: true);
       expect(
-        await LaserWorkGuard.isProcessChangeSafe(servicesWith(modbus)),
-        isFalse,
+        await LaserWorkGuard.processChangeBlock(servicesWith(modbus)),
+        ProcessChangeBlockReason.statusUnavailable,
       );
     });
   });

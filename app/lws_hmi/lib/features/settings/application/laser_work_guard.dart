@@ -4,6 +4,18 @@ import 'package:lws_hmi/features/settings/application/dangerous_operations_setti
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
 
+/// Why process apply / process-type change is blocked (fail-closed).
+enum ProcessChangeBlockReason {
+  /// Modbus group read failed or a required bit was missing.
+  statusUnavailable,
+
+  /// `control.laser_enable` or `machine.laser_on` is on.
+  laserActive,
+
+  /// `machine.wire_feeding_on` is on.
+  wireFeeding,
+}
+
 /// Soft laser-work interrupt (lws-ui `LaserWorkGuard` subset).
 ///
 /// Clears `control.laser_enable` when policy says work is blocked. Full
@@ -14,7 +26,12 @@ abstract final class LaserWorkGuard {
   static const wireFeedingOnAttribute = 'machine.wire_feeding_on';
 
   /// Fail-closed interlock for changing process type or process parameters.
-  static Future<bool> isProcessChangeSafe(AppServices services) async {
+  ///
+  /// Returns `null` when safe; otherwise a typed reason (do not collapse
+  /// Modbus failure / wire feed into "laser work in progress").
+  static Future<ProcessChangeBlockReason?> processChangeBlock(
+    AppServices services,
+  ) async {
     await services.ensureModbusLive();
     Map<String, Object?> control;
     Map<String, Object?> status;
@@ -23,18 +40,29 @@ abstract final class LaserWorkGuard {
       control = await services.modbus.readGroup('control');
       status = await services.modbus.readGroup('status');
     } catch (_) {
-      return false;
+      return ProcessChangeBlockReason.statusUnavailable;
     }
-    final values = [
-      control[laserEnableAttribute],
-      status[laserOnAttribute],
-      status[wireFeedingOnAttribute],
-    ];
-    if (values.any((value) => value == null)) {
-      return false;
+    final laserEnable = control[laserEnableAttribute];
+    final laserOn = status[laserOnAttribute];
+    final wireFeeding = status[wireFeedingOnAttribute];
+    if (laserEnable == null || laserOn == null || wireFeeding == null) {
+      return ProcessChangeBlockReason.statusUnavailable;
     }
-    return values.every((value) => value == false || value == 0);
+    if (_isOn(laserEnable) || _isOn(laserOn)) {
+      return ProcessChangeBlockReason.laserActive;
+    }
+    if (_isOn(wireFeeding)) {
+      return ProcessChangeBlockReason.wireFeeding;
+    }
+    return null;
   }
+
+  /// Fail-closed boolean for call sites that only need safe / not safe.
+  static Future<bool> isProcessChangeSafe(AppServices services) async {
+    return (await processChangeBlock(services)) == null;
+  }
+
+  static bool _isOn(Object? value) => value == true || value == 1;
 
   /// Re-evaluate after a dangerous bypass is turned OFF.
   static Future<void> evaluateAndInterruptIfNeeded({

@@ -97,6 +97,9 @@ void main() {
     await tester.pump();
 
     await tester.tap(find.text('item-2', skipOffstage: false));
+    // onChanged must fire on tap (finger up), not after the settle animation.
+    await tester.pump();
+    expect(selected, 2);
     await tester.pumpAndSettle();
     expect(selected, 2);
   });
@@ -191,5 +194,52 @@ void main() {
     await tester.pumpAndSettle();
     expect(selected, 2);
     expect(clicks.calls, 1);
+  });
+
+  testWidgets('disabled wheel ignores drag and tap', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 600));
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+
+    var selected = 1;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 140,
+              height: 340,
+              child: QuickModeOffsetWheel(
+                itemCount: 5,
+                selectedIndex: selected,
+                itemExtent: 68,
+                enabled: false,
+                onChanged: (index) => selected = index,
+                itemBuilder: (context, index, distance) {
+                  return Center(child: Text('d$index'));
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.drag(
+      find.text('d1'),
+      const Offset(0, -68),
+      warnIfMissed: false,
+    );
+    await tester.pumpAndSettle();
+    expect(selected, 1);
+
+    await tester.tap(
+      find.text('d3', skipOffstage: false),
+      warnIfMissed: false,
+    );
+    await tester.pumpAndSettle();
+    expect(selected, 1);
   });
 }

@@ -54,7 +54,7 @@ void main() {
 
   Future<ProcessLibraryController> seedQuickController(
     _SimModbus modbus, {
-    required Future<bool> Function() isSafeToApply,
+    required Future<ProcessApplyFailure?> Function() interlockFailure,
   }) async {
     final database = sqlite3.openInMemory();
     addTearDown(database.dispose);
@@ -97,7 +97,7 @@ void main() {
       ),
       applier: ProcessParameterApplier(
         modbus: modbus,
-        isSafeToApply: isSafeToApply,
+        interlockFailure: interlockFailure,
       ),
     );
     addTearDown(controller.close);
@@ -136,7 +136,7 @@ void main() {
       ),
       applier: ProcessParameterApplier(
         modbus: modbus,
-        isSafeToApply: () async => true,
+        interlockFailure: () async => null,
       ),
     );
     addTearDown(controller.close);
@@ -150,7 +150,7 @@ void main() {
     final modbus = _SimModbus();
     final controller = await seedQuickController(
       modbus,
-      isSafeToApply: () async => false,
+      interlockFailure: () async => ProcessApplyFailure.unsafeMachineState,
     );
     await tester.pumpWidget(
       AppScope(
@@ -222,7 +222,7 @@ void main() {
     final modbus = _SimModbus();
     final controller = await seedQuickController(
       modbus,
-      isSafeToApply: () async => false,
+      interlockFailure: () async => ProcessApplyFailure.unsafeMachineState,
     );
     await tester.pumpWidget(
       AppScope(
@@ -255,7 +255,7 @@ void main() {
     final modbus = _SimModbus();
     final controller = await seedQuickController(
       modbus,
-      isSafeToApply: () async => true,
+      interlockFailure: () async => null,
     );
     await tester.pumpWidget(
       AppScope(
@@ -284,7 +284,7 @@ void main() {
     final modbus = _SimModbus();
     final controller = await seedQuickController(
       modbus,
-      isSafeToApply: () async => true,
+      interlockFailure: () async => null,
     );
     await tester.pumpWidget(
       AppScope(
@@ -328,7 +328,18 @@ void main() {
     final services = servicesWith(modbus);
     final controller = await seedQuickController(
       modbus,
-      isSafeToApply: () => LaserWorkGuard.isProcessChangeSafe(services),
+      interlockFailure: () async {
+        final block = await LaserWorkGuard.processChangeBlock(services);
+        return switch (block) {
+          null => null,
+          ProcessChangeBlockReason.statusUnavailable =>
+            ProcessApplyFailure.statusUnavailable,
+          ProcessChangeBlockReason.laserActive =>
+            ProcessApplyFailure.unsafeMachineState,
+          ProcessChangeBlockReason.wireFeeding =>
+            ProcessApplyFailure.wireFeedingActive,
+        };
+      },
     );
     // Mirror status bits for the guard group reads.
     modbus.status[LaserWorkGuard.laserOnAttribute] = false;

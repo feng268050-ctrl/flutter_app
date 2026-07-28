@@ -60,6 +60,12 @@ final class _FakeModbus extends ModbusRtuClient {
         label: 'Wire feeder communication',
         address: '0x0011',
       ),
+      _bitAttr(
+        id: EstopCommAlarmMask.laserEmergencyStopAttr,
+        code: 'H029',
+        label: 'Laser emergency stop',
+        address: '0x000E',
+      ),
     ];
   }
 
@@ -194,7 +200,8 @@ void main() {
       await adapter.dispose();
     });
 
-    test('e-stop active blocks H022/W001 rising; H001 still rises', () async {
+    test('e-stop active blocks H022/W001/H029 rising; H001 still rises',
+        () async {
       fake.emit([
         _change(
           EstopCommAlarmMask.emergencyStopAttr,
@@ -209,18 +216,67 @@ void main() {
       fake.emit([
         _change(EstopCommAlarmMask.laserCommAttr, true, previous: false),
         _change(EstopCommAlarmMask.wireFeederCommAttr, true, previous: false),
+        _change(
+          EstopCommAlarmMask.laserEmergencyStopAttr,
+          true,
+          previous: false,
+        ),
         _change('alarm.gun_comm', true, previous: false),
       ]);
       await Future<void>.delayed(Duration.zero);
 
       expect(events.where((e) => e.code == 'H022'), isEmpty);
       expect(events.where((e) => e.code == 'W001'), isEmpty);
+      expect(events.where((e) => e.code == 'H029'), isEmpty);
       expect(events.single.code, 'H001');
       expect(events.single.kind, AlarmSignalKind.rising);
     });
 
-    test('H022 active then e-stop → falling; release with bit true → rising',
+    test('H029 rises only after e-stop settle while bit stays true', () async {
+      final previousDelay =
+          ModbusAlarmAttributeAdapter.estopMaskedResampleDelay;
+      addTearDown(() {
+        ModbusAlarmAttributeAdapter.estopMaskedResampleDelay = previousDelay;
+      });
+      ModbusAlarmAttributeAdapter.estopMaskedResampleDelay = Duration.zero;
+
+      fake.emit([
+        _change(
+          EstopCommAlarmMask.emergencyStopAttr,
+          true,
+          previous: null,
+          kind: ModbusChangeKind.primed,
+        ),
+        _change(
+          EstopCommAlarmMask.laserEmergencyStopAttr,
+          true,
+          previous: null,
+          kind: ModbusChangeKind.primed,
+        ),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(events.where((e) => e.code == 'H029'), isEmpty);
+
+      fake.emit([
+        _change(EstopCommAlarmMask.emergencyStopAttr, false, previous: true),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(events.where((e) => e.code == 'H029'), isEmpty);
+
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+      expect(events.where((e) => e.code == 'H029').single.kind,
+          AlarmSignalKind.rising);
+    });
+
+    test('H022 active then e-stop → falling; release settles then re-arms if raw true',
         () async {
+      final previousDelay =
+          ModbusAlarmAttributeAdapter.estopMaskedResampleDelay;
+      addTearDown(() {
+        ModbusAlarmAttributeAdapter.estopMaskedResampleDelay = previousDelay;
+      });
+      ModbusAlarmAttributeAdapter.estopMaskedResampleDelay = Duration.zero;
+
       fake.emit([
         _change(
           EstopCommAlarmMask.laserCommAttr,
@@ -246,10 +302,54 @@ void main() {
         _change(EstopCommAlarmMask.emergencyStopAttr, false, previous: true),
       ]);
       await Future<void>.delayed(Duration.zero);
+      // Immediate release must not re-arm from cache (settle delay).
+      expect(events.length, beforeRelease);
+
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(const Duration(milliseconds: 1));
       expect(events.length, greaterThan(beforeRelease));
       expect(events.last.code, 'H022');
       expect(events.last.kind, AlarmSignalKind.rising);
       expect(events.last.active, isTrue);
+    });
+
+    test('e-stop release does not re-arm H022 when raw clears during settle',
+        () async {
+      final previousDelay =
+          ModbusAlarmAttributeAdapter.estopMaskedResampleDelay;
+      addTearDown(() {
+        ModbusAlarmAttributeAdapter.estopMaskedResampleDelay = previousDelay;
+      });
+      ModbusAlarmAttributeAdapter.estopMaskedResampleDelay =
+          const Duration(milliseconds: 30);
+
+      fake.emit([
+        _change(
+          EstopCommAlarmMask.emergencyStopAttr,
+          true,
+          previous: null,
+          kind: ModbusChangeKind.primed,
+        ),
+        _change(
+          EstopCommAlarmMask.laserCommAttr,
+          true,
+          previous: null,
+          kind: ModbusChangeKind.primed,
+        ),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(events.where((e) => e.code == 'H022'), isEmpty);
+
+      fake.emit([
+        _change(EstopCommAlarmMask.emergencyStopAttr, false, previous: true),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      // False-positive clears before settle completes.
+      fake.emit([
+        _change(EstopCommAlarmMask.laserCommAttr, false, previous: true),
+      ]);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(events.where((e) => e.code == 'H022'), isEmpty);
     });
 
     test('status checks keep raw bits under e-stop; warn path stays quiet',

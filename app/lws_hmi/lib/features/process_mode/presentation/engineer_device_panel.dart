@@ -11,6 +11,7 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_ramp_chart.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
+import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/record_work_toggle.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
@@ -344,7 +345,25 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                       policy: policy,
                                     );
                                     if (err != null && context.mounted) {
-                                      _toast(context, err.message);
+                                      if (err ==
+                                          LaserEnableBlockReason.alarmBlocked) {
+                                        final warn =
+                                            WarnAlarmScope.maybeOf(context);
+                                        if (warn != null) {
+                                          await warn.presentLaserEnableBlock(
+                                            policy: policy,
+                                          );
+                                        }
+                                      } else if (DeviceControlFeedbackCopy
+                                          .isSafetyTipBlock(err)) {
+                                        await OperationFailedDialogHost.show(
+                                          context,
+                                          message: DeviceControlFeedbackCopy
+                                              .tipForLaserEnableBlock(err),
+                                        );
+                                      } else {
+                                        _toast(context, err.message);
+                                      }
                                     }
                                   },
                                   onPressed: laserActive

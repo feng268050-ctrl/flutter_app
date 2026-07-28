@@ -1,4 +1,6 @@
 /// EN feedback strings for Quick/Engineer device controls (lws-ui `values/strings.xml`).
+import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
+
 abstract final class DeviceControlFeedbackCopy {
   static const manualGasOn = 'Manual gas on';
   static const manualGasOff = 'Manual gas turned off';
@@ -39,4 +41,27 @@ abstract final class DeviceControlFeedbackCopy {
 
   /// Feed / Retract / Auto Wire outside continuous welding.
   static const wireUnavailableInMode = 'Wire feed unavailable in this mode';
+
+  /// Frost Operation failed title (`operation_failed_text`).
+  static const operationFailedTitle = 'Operation failed';
+
+  /// Key switch off while Laser Enable (`check_key_error_text`).
+  static const keySwitchOffError = 'Key switch is off';
+
+  /// E-stop active (`check_e_stop_state_error`).
+  static const emergencyStopError = 'Device is in E-stop';
+
+  /// Tip body for Laser Enable preflight when key / e-stop is not reset.
+  static String tipForLaserEnableBlock(LaserEnableBlockReason reason) {
+    return switch (reason) {
+      LaserEnableBlockReason.keySwitchOff => keySwitchOffError,
+      LaserEnableBlockReason.emergencyStop => emergencyStopError,
+      _ => reason.message,
+    };
+  }
+
+  /// Whether [reason] should use Operation-failed tip (not Toast).
+  static bool isSafetyTipBlock(LaserEnableBlockReason reason) =>
+      reason == LaserEnableBlockReason.keySwitchOff ||
+      reason == LaserEnableBlockReason.emergencyStop;
 }

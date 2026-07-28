@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
@@ -18,6 +20,7 @@ final class QuickModeOffsetWheel extends StatefulWidget {
     this.perspective = 0.001,
     this.offAxisFraction = 0,
     this.fixedAccent,
+    this.enabled = true,
   });
 
   final int itemCount;
@@ -36,6 +39,9 @@ final class QuickModeOffsetWheel extends StatefulWidget {
   /// Drawn behind the wheel at the vertical center; does not scroll.
   final Widget? fixedAccent;
 
+  /// When false, scroll/tap are ignored (lws-ui `switchEnableStatus(false)`).
+  final bool enabled;
+
   @override
   State<QuickModeOffsetWheel> createState() => _QuickModeOffsetWheelState();
 }
@@ -53,7 +59,11 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
   /// Selection when the current drag started (for release SFX).
   int _indexAtDragStart = 0;
 
-  static const Duration _tapDuration = Duration(milliseconds: 400);
+  /// While true, [onSelectedItemChanged] intermediates from a tap animation
+  /// must not re-fire [onChanged] (target was already reported).
+  bool _ignoreSelectionCallbacks = false;
+
+  static const Duration _tapDuration = Duration(milliseconds: 180);
 
   @override
   void initState() {
@@ -102,6 +112,12 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
   }
 
   void _onSelected(int index) {
+    if (!widget.enabled) {
+      return;
+    }
+    if (_ignoreSelectionCallbacks) {
+      return;
+    }
     if (index == _index) {
       return;
     }
@@ -113,6 +129,9 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
   }
 
   void _onItemTap(int index) {
+    if (!widget.enabled) {
+      return;
+    }
     if (index < 0 || index >= widget.itemCount) {
       return;
     }
@@ -126,16 +145,32 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
     if (index == _controller.selectedItem) {
       return;
     }
-    // onTap fires on finger up — play then; animate must not double-fire.
+    // Notify parent immediately (lws-ui click path is sync); suppress
+    // intermediate onSelectedItemChanged while the short settle anim runs.
     CyberClickSoundRegistry.playClick();
-    _controller.animateToItem(
-      index,
-      duration: _tapDuration,
-      curve: Curves.easeOutCubic,
+    setState(() {
+      _index = index;
+      _scrollIndex = index.toDouble();
+    });
+    widget.onChanged(index);
+    _ignoreSelectionCallbacks = true;
+    unawaited(
+      _controller
+          .animateToItem(
+            index,
+            duration: _tapDuration,
+            curve: Curves.easeOutCubic,
+          )
+          .whenComplete(() {
+        _ignoreSelectionCallbacks = false;
+      }),
     );
   }
 
   bool _onScrollNotification(ScrollNotification notification) {
+    if (!widget.enabled) {
+      return false;
+    }
     if (notification is ScrollStartNotification &&
         notification.dragDetails != null) {
       _userDragging = true;
@@ -161,7 +196,7 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
     if (widget.itemCount <= 0) {
       return const SizedBox.shrink();
     }
-    return Stack(
+    final wheel = Stack(
       alignment: Alignment.center,
       children: [
         if (widget.fixedAccent != null)
@@ -179,7 +214,9 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
             diameterRatio: widget.diameterRatio,
             perspective: widget.perspective,
             offAxisFraction: widget.offAxisFraction,
-            physics: const FixedExtentScrollPhysics(),
+            physics: widget.enabled
+                ? const FixedExtentScrollPhysics()
+                : const NeverScrollableScrollPhysics(),
             onSelectedItemChanged: _onSelected,
             childDelegate: ListWheelChildBuilderDelegate(
               childCount: widget.itemCount,
@@ -187,7 +224,7 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
                 final distance = (index - _scrollIndex).abs();
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => _onItemTap(index),
+                  onTap: widget.enabled ? () => _onItemTap(index) : null,
                   child: widget.itemBuilder(context, index, distance),
                 );
               },
@@ -196,5 +233,9 @@ final class _QuickModeOffsetWheelState extends State<QuickModeOffsetWheel> {
         ),
       ],
     );
+    if (widget.enabled) {
+      return wheel;
+    }
+    return AbsorbPointer(child: wheel);
   }
 }

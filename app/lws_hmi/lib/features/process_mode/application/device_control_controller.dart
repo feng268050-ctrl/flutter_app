@@ -8,6 +8,21 @@ import 'package:lws_hmi/features/process_mode/domain/laser_enable_preflight.dart
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
 
+/// Frost Operation-failed / tip triggers from runtime key / e-stop edges.
+///
+/// Tip timing (lws-ui OperationDialogBuilder / EmergencyStopJobHaltPolicy):
+/// - E-stop tip ("Device is in E-stop"): on press.
+/// - Key tip ("Key switch is off"): on key OFF while Laser Enable was on.
+/// Warn frost alarms (e.g. H029) stay deferred until reset via the warn-alarm
+/// adapter — not this enum.
+enum DeviceControlSafetyEvent {
+  /// Key turned OFF while Laser Enable was on; tip once on that falling edge.
+  keySwitchOffWhileLaser,
+
+  /// Machine e-stop pressed; tip dialog once per press (immediate).
+  emergencyStop,
+}
+
 /// Live laser, gas, and manual wire-control writes.
 final class DeviceControlController extends ChangeNotifier {
   DeviceControlController(this.services);
@@ -28,8 +43,19 @@ final class DeviceControlController extends ChangeNotifier {
   bool busy = false;
   String? lastError;
 
+  /// UI hook for Frost Operation-failed dialogs (Quick/Engineer pages).
+  void Function(DeviceControlSafetyEvent event)? onSafetyEvent;
+
   StreamSubscription<List<ModbusAttributeChange>>? _sub;
   bool _started = false;
+  bool _haltWriteInFlight = false;
+  bool _disposed = false;
+
+  /// Latch: tip already shown for the current e-stop press.
+  bool _eStopTipShownThisPress = false;
+
+  /// Latch: tip already shown for the current key-off while Laser Enable.
+  bool _keyTipShownThisOff = false;
 
   Future<void> start() async {
     if (_started) {
@@ -38,7 +64,13 @@ final class DeviceControlController extends ChangeNotifier {
     _started = true;
     try {
       await services.ensureModbusLive();
-      await _refreshSnapshot();
+      if (!await _refreshSnapshot()) {
+        // First group-read can fail while the RTU link is still settling; retry
+        // so we do not leave laserEnable stuck false while the controller is
+        // still armed (UI shows Laser Enable but gun can emit).
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+        await _refreshSnapshot();
+      }
       // lws-ui GeneralOperationsFragment.initData: Auto Wire Feed ON unless
       // e-stop halt (device snapshot often leaves the bit off).
       await ensureAutoWireFeedDefault();
@@ -61,7 +93,8 @@ final class DeviceControlController extends ChangeNotifier {
     await setAutoWireFeed(true);
   }
 
-  Future<void> _refreshSnapshot() async {
+  /// Returns `true` when control+status groups were read successfully.
+  Future<bool> _refreshSnapshot() async {
     try {
       final control = await services.modbus.readGroup('control');
       final status = await services.modbus.readGroup('status');
@@ -77,11 +110,17 @@ final class DeviceControlController extends ChangeNotifier {
       wireFeedingOn = _isOn(status[DeviceControlIds.wireFeedingOn]);
       keySwitchOn = _isOn(status[DeviceControlIds.keySwitchOn]);
       emergencyStop = _isOn(status[DeviceControlIds.emergencyStop]);
-      final data = await services.modbus.readGroup('data');
-      gasPressureKpa = _asDouble(data[DeviceControlIds.blowPressure]);
+      try {
+        final data = await services.modbus.readGroup('data');
+        gasPressureKpa = _asDouble(data[DeviceControlIds.blowPressure]);
+      } catch (_) {
+        // Pressure is non-critical for enable UI; keep prior value.
+      }
       notifyListeners();
+      return true;
     } catch (e) {
       debugPrint('device-control: snapshot failed: $e');
+      return false;
     }
   }
 
@@ -99,6 +138,8 @@ final class DeviceControlController extends ChangeNotifier {
     if (changes.isEmpty) {
       return;
     }
+    final keyWasOn = keySwitchOn;
+    final eStopWas = emergencyStop;
     var changed = false;
     for (final c in changes) {
       final on = c.value == true || c.value == 1;
@@ -163,6 +204,243 @@ final class DeviceControlController extends ChangeNotifier {
     }
     if (changed) {
       notifyListeners();
+    }
+    _handleSafetyEdges(
+      keyWasOn: keyWasOn,
+      eStopWas: eStopWas,
+    );
+  }
+
+  void _handleSafetyEdges({
+    required bool keyWasOn,
+    required bool eStopWas,
+  }) {
+    final eStopRose = !eStopWas && emergencyStop;
+    final eStopFell = eStopWas && !emergencyStop;
+    final keyFell = keyWasOn && !keySwitchOn;
+    final keyRose = !keyWasOn && keySwitchOn;
+
+    // E-stop press: exit Laser Enable UI + halt jobs immediately; tip once.
+    if (eStopFell) {
+      _eStopTipShownThisPress = false;
+    }
+    if (emergencyStop) {
+      if (eStopRose || _shouldReHaltWhileEstopHeld()) {
+        // Apply local halt before the async Modbus write so the Laser Enable
+        // button / side-ops leave the armed session even if RTU is slow.
+        _applyLocalJobHalt();
+        if (eStopRose && !_eStopTipShownThisPress) {
+          _eStopTipShownThisPress = true;
+          onSafetyEvent?.call(DeviceControlSafetyEvent.emergencyStop);
+        }
+        unawaited(_performEmergencyStopHalt());
+      }
+    }
+
+    // Key OFF while Laser Enable: tip immediately + exit Laser Enable UI
+    // (lws-ui deviceStatusListen → checkWorkStatus dialog + switchLaserEnable
+    // failRest=false). Warn-style frost alarms remain separate (after reset).
+    if (keyRose) {
+      _keyTipShownThisOff = false;
+    }
+    if (!keySwitchOn && laserEnable) {
+      if (keyFell) {
+        laserEnable = false;
+        wireWork = false;
+        notifyListeners();
+        if (!_keyTipShownThisOff) {
+          _keyTipShownThisOff = true;
+          onSafetyEvent?.call(DeviceControlSafetyEvent.keySwitchOffWhileLaser);
+        }
+        unawaited(forceDisableLaserForSafety());
+      } else {
+        // Stale control.laser_enable feedback while key is still off — keep UI
+        // disarmed without re-spamming Modbus writes.
+        laserEnable = false;
+        wireWork = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  /// lws-ui `DeviceControlUtils.applyHaltAllJobFunctions` local sync.
+  void _applyLocalJobHalt() {
+    laserEnable = false;
+    manualGas = false;
+    wireWork = false;
+    autoWireFeed = false;
+    wireRetracting = false;
+    // Keep button/session UI from staying on "End of work" via stale
+    // emission feedback while the halt write is still in flight.
+    laserOn = false;
+    wireFeedingOn = false;
+    airValveOn = false;
+    notifyListeners();
+  }
+
+  bool _shouldReHaltWhileEstopHeld() {
+    if (laserEnable ||
+        manualGas ||
+        wireWork ||
+        autoWireFeed ||
+        laserOn ||
+        wireFeedingOn ||
+        airValveOn) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _performEmergencyStopHalt() async {
+    if (!_haltWriteInFlight) {
+      await haltAllJobFunctions();
+    }
+  }
+
+  /// lws-ui `DeviceControlUtils.createHaltAllJobFunctionsConfig` write.
+  ///
+  /// Always re-reads control/status after the write attempt so the Laser Enable
+  /// button cannot show closed while the holding register is still armed.
+  Future<void> haltAllJobFunctions() async {
+    if (_haltWriteInFlight) {
+      return;
+    }
+    _haltWriteInFlight = true;
+    for (var i = 0; i < 10 && busy; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    busy = true;
+    lastError = null;
+    _applyLocalJobHalt();
+    try {
+      final ok = await services.modbus.exclusiveSession(() async {
+        if (!await services.modbus.writeAttribute(
+          DeviceControlIds.laserEnable,
+          false,
+        )) {
+          return false;
+        }
+        if (!await services.modbus.writeAttribute(
+          DeviceControlIds.manualGas,
+          false,
+        )) {
+          return false;
+        }
+        if (!await services.modbus.writeAttribute(
+          DeviceControlIds.wireWork,
+          false,
+        )) {
+          return false;
+        }
+        if (!await services.modbus.writeAttribute(
+          DeviceControlIds.wireDirection,
+          false,
+        )) {
+          return false;
+        }
+        return services.modbus.writeAttribute(
+          DeviceControlIds.wireManualMode,
+          false,
+        );
+      });
+      if (!ok) {
+        lastError = 'Halt write failed';
+        debugPrint('device-control: haltAllJobFunctions write returned false');
+        // Keep local halt even when the write fails — e-stop hardware already
+        // cut outputs; UI must not remain in Laser Enable.
+        _applyLocalJobHalt();
+      }
+    } catch (e) {
+      debugPrint('device-control: haltAllJobFunctions failed: $e');
+      lastError = '$e';
+      _applyLocalJobHalt();
+    } finally {
+      busy = false;
+      _haltWriteInFlight = false;
+      // Reconcile job-control bits only — do not re-read status here or a
+      // transient group-read failure / empty fake can clear e-stop/key while
+      // the halt edge is still being processed.
+      await _reconcileControlBitsFromHardware();
+      // If RTU still reports enable armed after a failed halt write, keep the
+      // local session exited for this e-stop (lws-ui forces local UI off).
+      if (emergencyStop && laserEnable) {
+        _applyLocalJobHalt();
+      }
+    }
+  }
+
+  /// Close Laser Enable even if another write briefly holds [busy].
+  ///
+  /// Always leaves the Laser Enable UI disarmed (lws-ui failRest=false on
+  /// safety closes). Modbus may still reject writes while the key is off.
+  Future<void> forceDisableLaserForSafety() async {
+    laserEnable = false;
+    wireWork = false;
+    if (!_disposed) {
+      notifyListeners();
+    }
+    for (var i = 0; i < 10 && busy; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    final err = await disableLaser(keepUiDisarmed: true);
+    if (err == LaserEnableBlockReason.busy) {
+      // Last resort: write without the busy gate.
+      busy = true;
+      notifyListeners();
+      try {
+        await services.modbus.exclusiveSession(() async {
+          await services.modbus.writeAttribute(
+            DeviceControlIds.wireWork,
+            false,
+          );
+          await services.modbus.writeAttribute(
+            DeviceControlIds.laserEnable,
+            false,
+          );
+          return true;
+        });
+      } catch (e) {
+        debugPrint('device-control: forceDisableLaserForSafety failed: $e');
+      } finally {
+        busy = false;
+        laserEnable = false;
+        wireWork = false;
+        if (!_disposed) {
+          notifyListeners();
+        }
+      }
+    }
+    // Never re-arm the session from a flaky reconcile while this safety path
+    // owns the close (key-off / e-stop callers already cleared UI).
+    if (laserEnable) {
+      laserEnable = false;
+      wireWork = false;
+      if (!_disposed) {
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Pull holding-register job switches from the controller (Laser Enable UI).
+  Future<void> _reconcileControlBitsFromHardware() async {
+    try {
+      final control = await services.modbus.readGroup('control');
+      void applyBit(String id, void Function(bool) set) {
+        final value = control[id];
+        if (value != null) {
+          set(_isOn(value));
+        }
+      }
+
+      applyBit(DeviceControlIds.laserEnable, (v) => laserEnable = v);
+      applyBit(DeviceControlIds.manualGas, (v) => manualGas = v);
+      applyBit(DeviceControlIds.wireManualMode, (v) => autoWireFeed = v);
+      applyBit(DeviceControlIds.wireWork, (v) => wireWork = v);
+      applyBit(DeviceControlIds.wireDirection, (v) => wireRetracting = v);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('device-control: control reconcile failed: $e');
+      // Keep optimistic local bits; live watch will correct when RTU recovers.
     }
   }
 
@@ -431,7 +709,9 @@ final class DeviceControlController extends ChangeNotifier {
     }
   }
 
-  Future<LaserEnableBlockReason?> disableLaser() async {
+  Future<LaserEnableBlockReason?> disableLaser({
+    bool keepUiDisarmed = false,
+  }) async {
     if (busy) {
       return LaserEnableBlockReason.busy;
     }
@@ -454,13 +734,30 @@ final class DeviceControlController extends ChangeNotifier {
       });
       if (!ok) {
         lastError = LaserEnableBlockReason.writeFailed.message;
+        if (keepUiDisarmed) {
+          laserEnable = false;
+          wireWork = false;
+        }
         return LaserEnableBlockReason.writeFailed;
       }
       laserEnable = false;
       wireWork = false;
+      notifyListeners();
+      busy = false;
+      if (!keepUiDisarmed) {
+        await _reconcileControlBitsFromHardware();
+        if (laserEnable) {
+          lastError = LaserEnableBlockReason.writeFailed.message;
+          return LaserEnableBlockReason.writeFailed;
+        }
+      }
       return null;
     } catch (e) {
       lastError = '$e';
+      if (keepUiDisarmed) {
+        laserEnable = false;
+        wireWork = false;
+      }
       return LaserEnableBlockReason.writeFailed;
     } finally {
       busy = false;
@@ -468,35 +765,49 @@ final class DeviceControlController extends ChangeNotifier {
     }
   }
 
-  /// Best-effort Modbus shutdown when leaving Quick/Engineer (Back → home).
+  /// Best-effort Modbus shutdown when leaving Quick/Engineer / disposing /
+  /// process teardown.
   ///
-  /// Stops continuous feed/retract and clears Laser Enable. Waits briefly if
-  /// another write holds [busy], then forces the clear (exit must not skip
-  /// hardware cleanup the way a mid-session busy toast would).
+  /// Product rule: laser emission is allowed only after an explicit Laser
+  /// Enable press. Exit / crash / restart paths must clear the enable bit
+  /// (and stop continuous wire). Retries once on failure.
   Future<void> shutdownForExit() async {
     for (var i = 0; i < 10 && busy; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
     busy = true;
     lastError = null;
-    notifyListeners();
+    if (!_disposed) {
+      notifyListeners();
+    }
     try {
-      await services.modbus.exclusiveSession(() async {
-        // Match lws-ui createCloseFeedOrBackConfig direction reset + wire off.
-        await services.modbus.writeAttribute(
-          DeviceControlIds.wireDirection,
-          false,
-        );
-        await services.modbus.writeAttribute(
-          DeviceControlIds.wireWork,
-          false,
-        );
-        await services.modbus.writeAttribute(
-          DeviceControlIds.laserEnable,
-          false,
-        );
-        return true;
-      });
+      Future<bool> writeOff() => services.modbus.exclusiveSession(() async {
+            if (!await services.modbus.writeAttribute(
+              DeviceControlIds.wireDirection,
+              false,
+            )) {
+              return false;
+            }
+            if (!await services.modbus.writeAttribute(
+              DeviceControlIds.wireWork,
+              false,
+            )) {
+              return false;
+            }
+            return services.modbus.writeAttribute(
+              DeviceControlIds.laserEnable,
+              false,
+            );
+          });
+      var ok = await writeOff();
+      if (!ok) {
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+        ok = await writeOff();
+      }
+      if (!ok) {
+        lastError = 'Laser disarm write failed';
+        debugPrint('device-control: shutdownForExit write returned false');
+      }
     } catch (e) {
       debugPrint('device-control: shutdownForExit failed: $e');
       lastError = '$e';
@@ -505,12 +816,18 @@ final class DeviceControlController extends ChangeNotifier {
       wireWork = false;
       wireRetracting = false;
       busy = false;
-      notifyListeners();
+      if (!_disposed) {
+        notifyListeners();
+      }
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
+    // Fire-and-forget: page/route teardown must still request laser off even
+    // when dispose cannot await (abnormal leave / Navigator pop).
+    unawaited(shutdownForExit());
     unawaited(_sub?.cancel() ?? Future<void>.value());
     super.dispose();
   }

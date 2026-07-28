@@ -93,7 +93,7 @@ void main() {
     );
   });
 
-  testWidgets('shows Auto Wire / Feed / Retract for cleaning without greying',
+  testWidgets('greys Auto Wire / Feed / Retract outside continuous welding',
       (tester) async {
     await pumpControls(tester, processType: ProcessType.weldCleaning);
 
@@ -106,11 +106,27 @@ void main() {
       find.byKey(const ValueKey('device-control-retract')),
       findsOneWidget,
     );
-    expect(find.text('Auto Wire Feed'), findsOneWidget);
-    expect(find.text('Feed'), findsOneWidget);
+
+    final disabled = ProcessModeTokens.sideOperationDisabled;
+    expect(
+      tester.widget<Text>(find.text('Manual Gas')).style?.color,
+      Colors.white,
+    );
+    expect(
+      tester.widget<Text>(find.text('Auto Wire Feed')).style?.color,
+      disabled,
+    );
+    expect(
+      tester.widget<Text>(find.text('Feed')).style?.color,
+      disabled,
+    );
+    expect(
+      tester.widget<Text>(find.text('Retract')).style?.color,
+      disabled,
+    );
   });
 
-  testWidgets('toasts wire unavailable when tapping Feed in cleaning mode',
+  testWidgets('ignores Feed tap quietly when wire ops are disabled',
       (tester) async {
     await pumpControls(tester, processType: ProcessType.weldCleaning);
     final center =
@@ -119,29 +135,26 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(find.text('Wire feed unavailable in this mode'), findsOneWidget);
+    expect(find.text('Wire feed unavailable in this mode'), findsNothing);
   });
 
-  testWidgets('toasts End of work first when tapping Feed while laser open',
-      (tester) async {
-    final controller = DeviceControlController(servicesWith(_IdleModbus()))
-      ..keySwitchOn = true
-      ..laserEnable = true;
-    await pumpControls(
-      tester,
-      processType: ProcessType.continuousWelding,
-      controller: controller,
+  testWidgets('enables wire ops in continuous welding', (tester) async {
+    await pumpControls(tester, processType: ProcessType.continuousWelding);
+    expect(
+      tester.widget<Text>(find.text('Auto Wire Feed')).style?.color,
+      Colors.white,
     );
-    final center =
-        tester.getCenter(find.byKey(const ValueKey('device-control-feed')));
-    final gesture = await tester.startGesture(center);
-    await tester.pump();
-    await gesture.up();
-    await tester.pump();
-    expect(find.text('End of work first'), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.text('Feed')).style?.color,
+      Colors.white,
+    );
+    expect(
+      tester.widget<Text>(find.text('Retract')).style?.color,
+      Colors.white,
+    );
   });
 
-  testWidgets('keeps side groups visible while laser is open', (tester) async {
+  testWidgets('hides side groups while laser enable is on', (tester) async {
     final controller = DeviceControlController(servicesWith(_IdleModbus()))
       ..keySwitchOn = true
       ..laserEnable = true;
@@ -153,29 +166,13 @@ void main() {
 
     expect(
       find.byKey(const ValueKey('device-control-manual-gas')),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.byKey(const ValueKey('device-control-feed')), findsOneWidget);
+    expect(find.byKey(const ValueKey('device-control-feed')), findsNothing);
     expect(
       find.byKey(const ValueKey('quick-mode-laser-enable')),
       findsOneWidget,
     );
-  });
-
-  testWidgets('toasts End of work first when tapping gas while laser open',
-      (tester) async {
-    final controller = DeviceControlController(servicesWith(_IdleModbus()))
-      ..keySwitchOn = true
-      ..laserEnable = true;
-    await pumpControls(
-      tester,
-      processType: ProcessType.continuousWelding,
-      controller: controller,
-    );
-
-    await tester.tap(find.byKey(const ValueKey('device-control-manual-gas')));
-    await tester.pump();
-    expect(find.text('End of work first'), findsOneWidget);
   });
 
   test('side highlight uses transparent-mid-transparent stops', () {

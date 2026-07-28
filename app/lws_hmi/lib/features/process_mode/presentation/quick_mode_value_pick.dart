@@ -112,6 +112,7 @@ final class QuickModeValuePick extends StatelessWidget {
     required this.labelOf,
     required this.onChanged,
     required this.scaleOnLeft,
+    this.interactionEnabled = true,
   });
 
   final ProcessType processType;
@@ -121,6 +122,9 @@ final class QuickModeValuePick extends StatelessWidget {
   final String Function(double value) labelOf;
   final ValueChanged<int> onChanged;
   final bool scaleOnLeft;
+
+  /// lws-ui gear/thickness `click_enable` — false while Laser Enable is on.
+  final bool interactionEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -235,6 +239,7 @@ final class QuickModeValuePick extends StatelessWidget {
                       // accent midline; horizontal arc is EdgeInsets padding
                       // (lws-ui OffsetWheel left/right pad).
                       offAxisFraction: 0,
+                      enabled: interactionEnabled,
                       onChanged: onChanged,
                       fixedAccent: _ValueAccentChip(accent: accent),
                       itemBuilder: (context, index, distance) {
@@ -242,6 +247,7 @@ final class QuickModeValuePick extends StatelessWidget {
                           label: labelOf(values[index]),
                           distance: distance,
                           scaleOnLeft: scaleOnLeft,
+                          dimUnselected: !interactionEnabled,
                         );
                       },
                     ),
@@ -292,20 +298,35 @@ final class _ValuePickItem extends StatelessWidget {
     required this.label,
     required this.distance,
     required this.scaleOnLeft,
+    this.dimUnselected = false,
   });
 
   final String label;
   final double distance;
   final bool scaleOnLeft;
 
+  /// Laser Enable lock: keep selected white, grey the rest.
+  final bool dimUnselected;
+
+  /// Unselected grey while interaction is locked (Laser Enable ON).
+  static const Color _lockedUnselected = Color(0xFF6A6A6A);
+
   @override
   Widget build(BuildContext context) {
     final atCenter = distance < 0.5;
-    final alpha = atCenter ? 1.0 : (1.0 - distance * 0.2).clamp(0.4, 1.0);
+    final Color color;
+    if (atCenter) {
+      color = Colors.white;
+    } else if (dimUnselected) {
+      color = _lockedUnselected;
+    } else {
+      final alpha = (1.0 - distance * 0.2).clamp(0.4, 1.0);
+      color = Colors.white.withOpacity(alpha);
+    }
     final text = Text(
       label,
       style: TextStyle(
-        color: Colors.white.withOpacity(alpha),
+        color: color,
         fontSize: atCenter
             ? QuickModePickerDimens.selectedTextSize
             : QuickModePickerDimens.unselectedTextSize,
@@ -346,12 +367,14 @@ final class QuickModeGearPick extends StatelessWidget {
     required this.gears,
     required this.selectedIndex,
     required this.onChanged,
+    this.interactionEnabled = true,
   });
 
   final ProcessType processType;
   final List<int> gears;
   final int selectedIndex;
   final ValueChanged<int> onChanged;
+  final bool interactionEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -364,6 +387,7 @@ final class QuickModeGearPick extends StatelessWidget {
       labelOf: (value) => value.round().toString(),
       onChanged: onChanged,
       scaleOnLeft: true,
+      interactionEnabled: interactionEnabled,
     );
   }
 }
@@ -378,6 +402,7 @@ final class QuickModeDimensionPick extends StatelessWidget {
     required this.selectedIndex,
     required this.onChanged,
     this.useMmUnit = true,
+    this.interactionEnabled = true,
   });
 
   final ProcessType processType;
@@ -388,6 +413,7 @@ final class QuickModeDimensionPick extends StatelessWidget {
 
   /// Common Settings: Metric → mm labels; Imperial → in labels (values stay mm).
   final bool useMmUnit;
+  final bool interactionEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -400,6 +426,7 @@ final class QuickModeDimensionPick extends StatelessWidget {
       labelOf: (value) => _formatDimension(value, useMmUnit: useMmUnit),
       onChanged: onChanged,
       scaleOnLeft: false,
+      interactionEnabled: interactionEnabled,
     );
   }
 

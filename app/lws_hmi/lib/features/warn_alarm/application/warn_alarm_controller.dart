@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/monitor/domain/active_alarm.dart';
 import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/settings/application/laser_work_guard.dart';
+import 'package:lws_hmi/features/process_mode/domain/laser_enable_preflight.dart';
 import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
 import 'package:lws_hmi/features/warn_alarm/catalog/product_alarm_catalog.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/boot_self_check_warn_gate.dart';
@@ -209,6 +210,31 @@ final class WarnAlarmController {
     await coordinator.clearAllForDebug();
     _publishActive();
     _syncWarnSound();
+  }
+
+  /// lws-ui LaserEnableAlarmGuard: on alarm block, show the blocking warn
+  /// dialog (not a generic "Alarm blocks laser enable" snackbar).
+  ///
+  /// Returns `true` when a warn dialog was already visible or was requested.
+  Future<bool> presentLaserEnableBlock({
+    required LaserAlarmPolicySnapshot policy,
+  }) async {
+    final active = <String>{
+      for (final e in coordinator.episodes.values)
+        if (e.faultActive) e.code,
+    };
+    final code = LaserEnablePreflight.firstBlockingAlarmCode(
+      activeAlarmCodes: active,
+      policy: policy,
+    );
+    if (code == null) {
+      return false;
+    }
+    final showing = coordinator.showingCode;
+    if (showing == code) {
+      return true;
+    }
+    return coordinator.requestImmediateShow(code);
   }
 
   void _publishActive() {

@@ -13,6 +13,7 @@ import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/app/flutter_frame_timing_sampler.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
+import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
@@ -203,6 +204,7 @@ final class AppServices {
   }
 
   bool _commAlarmModeApplied = false;
+  bool _startupLaserDisarmDone = false;
 
   /// Ensure process-wide continuous Modbus polling (no attribute watch).
   ///
@@ -214,7 +216,9 @@ final class AppServices {
   /// Intercepts: [modbusLiveAllowed] false → no-op; [BootSelfCheckGate.isActive]
   /// → no-op until Home self-check `onComplete` (or a later ensure) runs.
   ///
-  /// Also applies product.ini `control_card_comm_alarm_mode` once (C001 window).
+  /// Also applies product.ini `control_card_comm_alarm_mode` once (C001 window)
+  /// and disarms `control.laser_enable` once at process start so a prior crash
+  /// / unclean exit cannot leave the controller armed for emission.
   Future<void> ensureModbusLive() async {
     if (!modbusLiveAllowed) {
       return;
@@ -226,10 +230,57 @@ final class AppServices {
       await modbus.ensurePolling();
       _modbusLiveStarted = true;
       await _applyCommAlarmModeOnce();
+      await disarmLaserEnableForSafety(
+        reason: 'process-start',
+        oncePerProcess: true,
+      );
     } catch (_) {
       if (!_modbusLiveStarted) {
         // leave false so a later retry can succeed
       }
+    }
+  }
+
+  /// Product rule: emission requires an explicit Laser Enable button press.
+  ///
+  /// Clears laser enable + manual wire work. Used on HMI process start, Quick /
+  /// Engineer leave, and process teardown — never while the operator is mid
+  /// Laser Enable session on the work page (callers gate that).
+  Future<void> disarmLaserEnableForSafety({
+    String reason = 'safety',
+    bool oncePerProcess = false,
+  }) async {
+    if (!modbusLiveAllowed) {
+      return;
+    }
+    if (oncePerProcess && _startupLaserDisarmDone) {
+      return;
+    }
+    if (BootSelfCheckGate.isActive) {
+      return;
+    }
+    try {
+      await modbus.ensurePolling();
+      final ok = await modbus.exclusiveSession(() async {
+        if (!await modbus.writeAttribute(
+          DeviceControlIds.wireDirection,
+          false,
+        )) {
+          return false;
+        }
+        if (!await modbus.writeAttribute(DeviceControlIds.wireWork, false)) {
+          return false;
+        }
+        return modbus.writeAttribute(DeviceControlIds.laserEnable, false);
+      });
+      if (ok && oncePerProcess) {
+        _startupLaserDisarmDone = true;
+      }
+      if (!ok) {
+        debugPrint('AppServices: disarm laser ($reason) write returned false');
+      }
+    } catch (e) {
+      debugPrint('AppServices: disarm laser ($reason) failed: $e');
     }
   }
 

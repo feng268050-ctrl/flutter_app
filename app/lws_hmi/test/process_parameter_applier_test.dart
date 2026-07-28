@@ -8,7 +8,7 @@ void main() {
     final modbus = _FakeModbus();
     final applier = ProcessParameterApplier(
       modbus: modbus,
-      isSafeToApply: () async => false,
+      interlockFailure: () async => ProcessApplyFailure.unsafeMachineState,
     );
 
     final result = await applier.apply(_preset());
@@ -21,7 +21,7 @@ void main() {
     final modbus = _FakeModbus();
     final applier = ProcessParameterApplier(
       modbus: modbus,
-      isSafeToApply: () async => true,
+      interlockFailure: () async => null,
     );
 
     final result = await applier.apply(_preset());
@@ -39,7 +39,7 @@ void main() {
     final modbus = _FakeModbus();
     final applier = ProcessParameterApplier(
       modbus: modbus,
-      isSafeToApply: () async => true,
+      interlockFailure: () async => null,
     );
 
     final result = await applier.apply(
@@ -51,11 +51,24 @@ void main() {
     expect(modbus.attributes['process.swing_width'], 0.5);
   });
 
+  test('retries baseline read after transient process group failure', () async {
+    final modbus = _FakeModbus(failBaselineReads: 2);
+    final applier = ProcessParameterApplier(
+      modbus: modbus,
+      interlockFailure: () async => null,
+    );
+
+    final result = await applier.apply(_preset());
+
+    expect(result.isSuccess, isTrue);
+    expect(modbus.processGroupReads, greaterThanOrEqualTo(3));
+  });
+
   test('reports mismatched process readback', () async {
     final modbus = _FakeModbus(mismatchReadback: true);
     final applier = ProcessParameterApplier(
       modbus: modbus,
-      isSafeToApply: () async => true,
+      interlockFailure: () async => null,
     );
 
     final result = await applier.apply(_preset());
@@ -68,7 +81,7 @@ void main() {
     final modbus = _FakeModbus(failNewTypeWrite: true);
     final applier = ProcessParameterApplier(
       modbus: modbus,
-      isSafeToApply: () async => true,
+      interlockFailure: () async => null,
     );
 
     final result = await applier.apply(
@@ -109,6 +122,7 @@ final class _FakeModbus extends ModbusRtuClient {
   _FakeModbus({
     this.mismatchReadback = false,
     this.failNewTypeWrite = false,
+    this.failBaselineReads = 0,
   }) {
     for (final spec in ProcessParameterCatalog.specs) {
       attributes[spec.key] = 10.0;
@@ -118,8 +132,10 @@ final class _FakeModbus extends ModbusRtuClient {
 
   final bool mismatchReadback;
   final bool failNewTypeWrite;
+  final int failBaselineReads;
   final Map<String, Object?> attributes = {};
   int groupWrites = 0;
+  int processGroupReads = 0;
 
   @override
   Future<T> exclusiveSession<T>(Future<T> Function() body) => body();
@@ -136,6 +152,12 @@ final class _FakeModbus extends ModbusRtuClient {
 
   @override
   Future<Map<String, Object?>> readGroup(String groupId) async {
+    if (groupId == 'process') {
+      processGroupReads += 1;
+      if (processGroupReads <= failBaselineReads) {
+        throw StateError('transient process read');
+      }
+    }
     if (!mismatchReadback) {
       return Map<String, Object?>.from(attributes);
     }

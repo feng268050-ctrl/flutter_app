@@ -84,12 +84,20 @@ void main() {
   testWidgets('transparent laser chrome does not steal More Status taps',
       (tester) async {
     var moreTaps = 0;
-    await tester.binding.setSurfaceSize(const Size(1280, 800));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    // Force 1280×800 logical (design canvas). Default test view is 800×600
+    // where More Status and the laser graphic do not overlap.
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(70),
+            child: Container(height: 70, color: Colors.black),
+          ),
           body: Stack(
             children: [
               Center(
@@ -123,7 +131,15 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.byKey(const ValueKey('quick-mode-more-status')));
+    final more = find.byKey(const ValueKey('quick-mode-more-status'));
+    final laser = find.byKey(const ValueKey('quick-mode-laser-enable'));
+    expect(
+      tester.getRect(more).overlaps(tester.getRect(laser)),
+      isTrue,
+      reason: 'test must cover the real status-bar overlap band',
+    );
+
+    await tester.tap(more);
     await tester.pump();
     expect(moreTaps, 1);
   });

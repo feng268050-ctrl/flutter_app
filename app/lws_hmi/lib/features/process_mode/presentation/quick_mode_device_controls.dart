@@ -41,113 +41,114 @@ final class QuickModeDeviceControls extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         final laserOpen = controller.laserEnable || controller.laserOn;
+        // lws-ui: side Manual Gas / Auto Wire / Feed / Retract are INVISIBLE
+        // while Laser Enable is on (blur + hide), not toast-only.
+        final hideSideOps = controller.laserEnable;
         final scale =
             ProcessModeDimens.dashboardScaleFor(MediaQuery.sizeOf(context));
-        // Always keep side ops mounted (toast mutex only — no hide/dim for
-        // laser). Avoids mount/unmount rebuild cost when laser toggles.
         return SizedBox.expand(
           key: const ValueKey('device-control-bar'),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              Positioned(
-                left: ProcessModeDimens.quickSideButtonInset * scale,
-                bottom: ProcessModeDimens.quickSideButtonBottom * scale,
-                width: ProcessModeDimens.quickSideButtonWidth,
-                child: Transform.scale(
-                  scale: scale,
-                  alignment: Alignment.bottomLeft,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _QuickSideToggle(
-                        key: const ValueKey('device-control-manual-gas'),
-                        processType: processType,
-                        iconAsset: ProcessModeAssets.manualGasIcon,
-                        disabledIconAsset: ProcessModeAssets.manualGasIcon,
-                        label: 'Manual Gas',
-                        selected: controller.manualGas,
-                        enabled: true,
-                        onToggle: () => _toggleManualGas(context),
-                      ),
-                      SizedBox(
-                        height: ProcessModeDimens.quickSideOpGapAboveDivider,
-                      ),
-                      _QuickSideDivider(processType: processType),
-                      SizedBox(
-                        height: ProcessModeDimens.quickSideOpGapBelowDivider,
-                      ),
-                      _QuickSideToggle(
-                        key: const ValueKey('device-control-auto-wire-feed'),
-                        processType: processType,
-                        iconAsset: ProcessModeAssets.autoWireFeedOnIcon,
-                        disabledIconAsset:
-                            ProcessModeAssets.autoWireFeedOffIcon,
-                        label: 'Auto Wire Feed',
-                        selected: controller.autoWireFeed && _wireCapable,
-                        // Toast mutex only — never grey for busy / mode / laser.
-                        enabled: true,
-                        onToggle: () => _toggleAutoWire(context),
-                      ),
-                    ],
+              if (!hideSideOps)
+                Positioned(
+                  left: ProcessModeDimens.quickSideButtonInset * scale,
+                  bottom: ProcessModeDimens.quickSideButtonBottom * scale,
+                  width: ProcessModeDimens.quickSideButtonWidth,
+                  child: Transform.scale(
+                    scale: scale,
+                    alignment: Alignment.bottomLeft,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _QuickSideToggle(
+                          key: const ValueKey('device-control-manual-gas'),
+                          processType: processType,
+                          iconAsset: ProcessModeAssets.manualGasIcon,
+                          disabledIconAsset: ProcessModeAssets.manualGasIcon,
+                          label: 'Manual Gas',
+                          selected: controller.manualGas,
+                          enabled: true,
+                          onToggle: () => _toggleManualGas(context),
+                        ),
+                        SizedBox(
+                          height: ProcessModeDimens.quickSideOpGapAboveDivider,
+                        ),
+                        _QuickSideDivider(processType: processType),
+                        SizedBox(
+                          height: ProcessModeDimens.quickSideOpGapBelowDivider,
+                        ),
+                        _QuickSideToggle(
+                          key: const ValueKey('device-control-auto-wire-feed'),
+                          processType: processType,
+                          iconAsset: ProcessModeAssets.autoWireFeedOnIcon,
+                          disabledIconAsset:
+                              ProcessModeAssets.autoWireFeedOffIcon,
+                          label: 'Auto Wire Feed',
+                          selected: controller.autoWireFeed && _wireCapable,
+                          // lws-ui: only continuous welding enables Auto Wire.
+                          enabled: _wireCapable,
+                          onToggle: () => _toggleAutoWire(context),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                right: ProcessModeDimens.quickSideButtonInset * scale,
-                bottom: ProcessModeDimens.quickSideButtonBottom * scale,
-                width: ProcessModeDimens.quickSideButtonWidth,
-                child: Transform.scale(
-                  scale: scale,
-                  alignment: Alignment.bottomRight,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _ManualWireButton(
-                        key: const ValueKey('device-control-feed'),
-                        processType: processType,
-                        label: DeviceControlFeedbackCopy.feedLabel,
-                        iconAsset: ProcessModeAssets.feedIcon,
-                        disabledIconAsset: ProcessModeAssets.feedIcon,
-                        busy: controller.busy,
-                        enabled: true,
-                        laserBlocked: laserOpen,
-                        modeBlocked: !_wireCapable,
-                        retract: false,
-                        active:
-                            controller.wireWork && !controller.wireRetracting,
-                        controller: controller,
-                        onMessage: (message) => _toast(context, message),
-                      ),
-                      SizedBox(
-                        height: ProcessModeDimens.quickSideOpGapAboveDivider,
-                      ),
-                      _QuickSideDivider(processType: processType),
-                      SizedBox(
-                        height: ProcessModeDimens.quickSideOpGapBelowDivider,
-                      ),
-                      _ManualWireButton(
-                        key: const ValueKey('device-control-retract'),
-                        processType: processType,
-                        label: 'Retract',
-                        iconAsset: ProcessModeAssets.retractOnIcon,
-                        disabledIconAsset: ProcessModeAssets.retractOffIcon,
-                        busy: controller.busy,
-                        enabled: true,
-                        laserBlocked: laserOpen,
-                        modeBlocked: !_wireCapable,
-                        retract: true,
-                        active:
-                            controller.wireWork && controller.wireRetracting,
-                        controller: controller,
-                        onMessage: (message) => _toast(context, message),
-                      ),
-                    ],
+              if (!hideSideOps)
+                Positioned(
+                  right: ProcessModeDimens.quickSideButtonInset * scale,
+                  bottom: ProcessModeDimens.quickSideButtonBottom * scale,
+                  width: ProcessModeDimens.quickSideButtonWidth,
+                  child: Transform.scale(
+                    scale: scale,
+                    alignment: Alignment.bottomRight,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _ManualWireButton(
+                          key: const ValueKey('device-control-feed'),
+                          processType: processType,
+                          label: DeviceControlFeedbackCopy.feedLabel,
+                          iconAsset: ProcessModeAssets.feedIcon,
+                          disabledIconAsset: ProcessModeAssets.feedIcon,
+                          busy: controller.busy,
+                          enabled: _wireCapable,
+                          laserBlocked: laserOpen,
+                          retract: false,
+                          active:
+                              controller.wireWork && !controller.wireRetracting,
+                          controller: controller,
+                          onMessage: (message) => _toast(context, message),
+                        ),
+                        SizedBox(
+                          height: ProcessModeDimens.quickSideOpGapAboveDivider,
+                        ),
+                        _QuickSideDivider(processType: processType),
+                        SizedBox(
+                          height: ProcessModeDimens.quickSideOpGapBelowDivider,
+                        ),
+                        _ManualWireButton(
+                          key: const ValueKey('device-control-retract'),
+                          processType: processType,
+                          label: 'Retract',
+                          iconAsset: ProcessModeAssets.retractOnIcon,
+                          disabledIconAsset: ProcessModeAssets.retractOffIcon,
+                          busy: controller.busy,
+                          enabled: _wireCapable,
+                          laserBlocked: laserOpen,
+                          retract: true,
+                          active:
+                              controller.wireWork && controller.wireRetracting,
+                          controller: controller,
+                          onMessage: (message) => _toast(context, message),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
               Align(
                 alignment: Alignment.bottomCenter,
                 child: QuickModeLaserButton(
@@ -157,7 +158,23 @@ final class QuickModeDeviceControls extends StatelessWidget {
                   preflight: laserPreflight,
                   onEnableConfirmed: onEnableConfirmed,
                   onDisable: onDisable,
-                  onBlocked: (message) => _toast(context, message),
+                  onBlocked: (message) {
+                    // Key / E-stop / alarm tips already requested from
+                    // [_laserPreflight] — do not also Toast.
+                    if (message ==
+                            LaserEnableBlockReason.alarmBlocked.message ||
+                        message ==
+                            LaserEnableBlockReason.keySwitchOff.message ||
+                        message ==
+                            LaserEnableBlockReason.emergencyStop.message ||
+                        message ==
+                            DeviceControlFeedbackCopy.keySwitchOffError ||
+                        message ==
+                            DeviceControlFeedbackCopy.emergencyStopError) {
+                      return;
+                    }
+                    _toast(context, message);
+                  },
                 ),
               ),
             ],
@@ -199,16 +216,15 @@ final class QuickModeDeviceControls extends StatelessWidget {
   }
 
   Future<void> _toggleAutoWire(BuildContext context) async {
+    if (!_wireCapable) {
+      return;
+    }
     if (controller.busy) {
       _toast(context, LaserEnableBlockReason.busy.message);
       return;
     }
     if (_laserOpen) {
       _toast(context, DeviceControlFeedbackCopy.endOfWorkFirst);
-      return;
-    }
-    if (!_wireCapable) {
-      _toast(context, DeviceControlFeedbackCopy.wireUnavailableInMode);
       return;
     }
     final enabling = !controller.autoWireFeed;
@@ -360,7 +376,6 @@ final class _ManualWireButton extends StatefulWidget {
     required this.busy,
     required this.enabled,
     required this.laserBlocked,
-    required this.modeBlocked,
     required this.retract,
     required this.active,
     required this.controller,
@@ -375,8 +390,6 @@ final class _ManualWireButton extends StatefulWidget {
   final bool enabled;
   /// Laser open: keep full color, toast on press instead of running wire.
   final bool laserBlocked;
-  /// Non–continuous-weld modes: keep full color, toast instead of greying.
-  final bool modeBlocked;
   final bool retract;
   final bool active;
   final DeviceControlController controller;
@@ -504,6 +517,10 @@ final class _ManualWireButtonState extends State<_ManualWireButton> {
     return Listener(
       behavior: HitTestBehavior.opaque,
       onPointerDown: (_) {
+        // Mode-incapable buttons are greyed (`enabled: false`); ignore quietly.
+        if (!widget.enabled) {
+          return;
+        }
         if (widget.busy) {
           widget.onMessage(LaserEnableBlockReason.busy.message);
           return;
@@ -512,22 +529,18 @@ final class _ManualWireButtonState extends State<_ManualWireButton> {
           widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
           return;
         }
-        if (widget.modeBlocked) {
-          widget.onMessage(DeviceControlFeedbackCopy.wireUnavailableInMode);
-          return;
-        }
         _gesture.pointerDown();
         _syncBandBreath();
       },
       onPointerUp: (_) {
-        if (widget.busy || widget.laserBlocked || widget.modeBlocked) {
+        if (!widget.enabled || widget.busy || widget.laserBlocked) {
           return;
         }
         _gesture.pointerUp();
         _syncBandBreath();
       },
       onPointerCancel: (_) {
-        if (widget.busy || widget.laserBlocked || widget.modeBlocked) {
+        if (!widget.enabled || widget.busy || widget.laserBlocked) {
           return;
         }
         _gesture.pointerUp();

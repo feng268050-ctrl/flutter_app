@@ -169,8 +169,12 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
         children: [
           // Edge shadow behind chrome: covers arc-shoulder voids along the
           // trapezoid rim without changing the WebP button colors.
-          CustomPaint(
-            painter: _LaserTrapezoidRimShadowPainter(scale: scale),
+          // Must IgnorePointer — otherwise the full 564×223 rect steals taps
+          // above the trapezoid (More Status sits in that overlap band).
+          IgnorePointer(
+            child: CustomPaint(
+              painter: _LaserTrapezoidRimShadowPainter(scale: scale),
+            ),
           ),
           IgnorePointer(
             child: Stack(

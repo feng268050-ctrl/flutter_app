@@ -12,6 +12,8 @@ import 'package:lws_hmi/features/process_mode/application/device_control_control
 import 'package:lws_hmi/features/process_mode/application/gun_dialog_coordinator.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_mode_draft.dart';
+import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
+import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_device_panel.dart';
@@ -20,7 +22,9 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.
 import 'package:lws_hmi/features/process_mode/presentation/engineer_parameter_form.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_process_tab_bar.dart';
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_reminder_dialog.dart';
+import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
+import 'package:lws_hmi/features/process_mode/presentation/work_status_dialog_host.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
@@ -81,6 +85,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       final services = AppScope.maybeOf(context);
       if (services != null && _deviceControl == null) {
         _deviceControl = DeviceControlController(services);
+        _deviceControl!.onSafetyEvent = _onDeviceSafetyEvent;
         unawaited(_deviceControl!.start());
         _recordWork = RecordWorkController(
           deviceControl: _deviceControl!,
@@ -113,8 +118,28 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     _gunDialogs?.dispose();
     _gunDialogs = null;
     _recordWork?.dispose();
+    _deviceControl?.onSafetyEvent = null;
     _deviceControl?.dispose();
     super.dispose();
+  }
+
+  void _onDeviceSafetyEvent(DeviceControlSafetyEvent event) {
+    if (!mounted) {
+      return;
+    }
+    WorkStatusDialogHost.closeDialog();
+    final message = switch (event) {
+      DeviceControlSafetyEvent.keySwitchOffWhileLaser =>
+        DeviceControlFeedbackCopy.keySwitchOffError,
+      DeviceControlSafetyEvent.emergencyStop =>
+        DeviceControlFeedbackCopy.emergencyStopError,
+    };
+    unawaited(
+      OperationFailedDialogHost.show(
+        context,
+        message: message,
+      ),
+    );
   }
 
   Future<void> _bootstrap() async {
@@ -196,21 +221,29 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     });
   }
 
-  /// Engineer Back (lws-ui): stop wire + Laser Enable, stop record, then home.
+  /// Engineer Back:
+  /// - Laser Enable on → End of work only (stay on Engineer Mode).
+  /// - Otherwise → home after laser/wire disarm (awaited).
   Future<void> _handleExit() async {
     if (_exiting) {
       return;
     }
+    final device = _deviceControl;
+    if (device != null && device.laserEnable) {
+      final err = await device.disableLaser();
+      if (err != null && mounted) {
+        ProcessModeToast.show(context, err.message);
+      }
+      return;
+    }
     _exiting = true;
     try {
-      // Prefer shutdownForExit over disableLaser: ignores mid-write busy and
-      // always clears continuous feed/retract direction + laser enable.
-      await _deviceControl?.shutdownForExit();
-      await _recordWork?.stopRecordingForExit();
+      final record = _recordWork;
+      await device?.shutdownForExit();
+      await record?.stopRecordingForExit();
       if (!mounted) {
         return;
       }
-      // PopScope(canPop: false) blocks maybePop; force leave after cleanup.
       Navigator.of(context).pop();
     } finally {
       _exiting = false;
@@ -290,6 +323,28 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       LaserEnableReminderGate.suppress(LaserEnableReminderSession.engineer);
     }
 
+    final control = _deviceControl;
+    if (control != null && (control.wireWork || control.wireFeedingOn)) {
+      final wireErr = await control.stopWire();
+      if (wireErr != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(wireErr.message),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return false;
+      }
+    }
+
+    // Clear stale laser_enable so process apply is not blocked as "in progress".
+    if (control != null) {
+      await control.forceDisableLaserForSafety();
+      if (!mounted) {
+        return false;
+      }
+    }
+
     final library = ProcessLibraryScope.of(context);
     final result = await library.apply(draft.preset);
     if (!mounted) {
@@ -329,7 +384,9 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   String _applyFailureMessage(ProcessApplyFailure? failure) {
     return switch (failure) {
       ProcessApplyFailure.busy => 'Apply busy',
+      ProcessApplyFailure.statusUnavailable => 'Check equipment status',
       ProcessApplyFailure.unsafeMachineState => 'Laser work in progress',
+      ProcessApplyFailure.wireFeedingActive => 'Stop wire feed first',
       ProcessApplyFailure.baselineReadFailed => 'Baseline read failed',
       ProcessApplyFailure.processWriteFailed => 'Write failed',
       ProcessApplyFailure.processReadbackFailed => 'Readback mismatch',

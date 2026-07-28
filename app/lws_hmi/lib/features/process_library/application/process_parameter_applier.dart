@@ -5,7 +5,15 @@ import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 enum ProcessApplyFailure {
   busy,
   baselineReadFailed,
+
+  /// Modbus status unavailable (read failed / missing bits).
+  statusUnavailable,
+
+  /// Laser enable or laser emission is active.
   unsafeMachineState,
+
+  /// Wire feeding feedback is on.
+  wireFeedingActive,
   processWriteFailed,
   processReadbackFailed,
   processTypeWriteFailed,
@@ -24,21 +32,39 @@ final class ProcessApplyResult {
 final class ProcessParameterApplier {
   const ProcessParameterApplier({
     required this.modbus,
-    required this.isSafeToApply,
+    required this.interlockFailure,
   });
 
   final ModbusRtuClient modbus;
-  final Future<bool> Function() isSafeToApply;
+
+  /// `null` when safe to apply; otherwise a typed [ProcessApplyFailure].
+  final Future<ProcessApplyFailure?> Function() interlockFailure;
 
   Future<ProcessApplyResult> apply(ProcessPreset preset) async {
     ProcessParameterValidator.validate(preset);
-    try {
-      return await modbus.exclusiveSession(() => _applyExclusive(preset));
-    } catch (_) {
-      return const ProcessApplyResult.failure(
-        ProcessApplyFailure.baselineReadFailed,
-      );
+    var last = const ProcessApplyResult.failure(
+      ProcessApplyFailure.baselineReadFailed,
+    );
+    // Transient RTU gaps are common on enable; retry only baseline/read failures.
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        last = await modbus.exclusiveSession(() => _applyExclusive(preset));
+      } catch (_) {
+        last = const ProcessApplyResult.failure(
+          ProcessApplyFailure.baselineReadFailed,
+        );
+      }
+      if (last.isSuccess ||
+          last.failure != ProcessApplyFailure.baselineReadFailed) {
+        return last;
+      }
+      if (attempt < 2) {
+        await Future<void>.delayed(
+          Duration(milliseconds: 80 * (attempt + 1)),
+        );
+      }
     }
+    return last;
   }
 
   Future<ProcessApplyResult> _applyExclusive(ProcessPreset preset) async {
@@ -48,10 +74,9 @@ final class ProcessParameterApplier {
         ProcessApplyFailure.baselineReadFailed,
       );
     }
-    if (!await isSafeToApply()) {
-      return const ProcessApplyResult.failure(
-        ProcessApplyFailure.unsafeMachineState,
-      );
+    final blocked = await interlockFailure();
+    if (blocked != null) {
+      return ProcessApplyResult.failure(blocked);
     }
     final previousType = (await _readGroup('control'))?['control.process_type'];
     if (previousType is! num) {

@@ -130,14 +130,16 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
         children: [
           Align(
             alignment: Alignment.center,
-            child: Opacity(
-              opacity: ringAlpha,
-              child: CustomPaint(
-                size: Size.square(metrics.size),
-                painter: _LaserProgressRingsPainter(
-                  progress: _progress / 100.0,
-                  palette: palette,
-                  metrics: metrics,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: ringAlpha,
+                child: CustomPaint(
+                  size: Size.square(metrics.size),
+                  painter: _LaserProgressRingsPainter(
+                    progress: _progress / 100.0,
+                    palette: palette,
+                    metrics: metrics,
+                  ),
                 ),
               ),
             ),
@@ -145,33 +147,39 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
           Positioned(
             left: metrics.splitTopLeft,
             top: 0,
-            child: Image.asset(
-              ProcessModeAssets.circleSplitBorderTop,
-              width: metrics.splitTopWidth,
-              height: metrics.splitTopHeight,
-              fit: BoxFit.contain,
-              opacity: const AlwaysStoppedAnimation(0.8),
+            child: IgnorePointer(
+              child: Image.asset(
+                ProcessModeAssets.circleSplitBorderTop,
+                width: metrics.splitTopWidth,
+                height: metrics.splitTopHeight,
+                fit: BoxFit.contain,
+                opacity: const AlwaysStoppedAnimation(0.8),
+              ),
             ),
           ),
           Positioned(
             left: metrics.splitLeft,
             top: metrics.splitTop,
-            child: Image.asset(
-              ProcessModeAssets.circleSplitBorder,
-              width: metrics.splitWidth,
-              height: metrics.splitHeight,
-              fit: BoxFit.contain,
-              opacity: const AlwaysStoppedAnimation(0.3),
+            child: IgnorePointer(
+              child: Image.asset(
+                ProcessModeAssets.circleSplitBorder,
+                width: metrics.splitWidth,
+                height: metrics.splitHeight,
+                fit: BoxFit.contain,
+                opacity: const AlwaysStoppedAnimation(0.3),
+              ),
             ),
           ),
           Positioned(
             left: metrics.borderLeft,
             top: metrics.borderTop,
-            child: Image.asset(
-              ProcessModeAssets.circleBorder,
-              width: metrics.borderWidth,
-              height: metrics.borderHeight,
-              fit: BoxFit.contain,
+            child: IgnorePointer(
+              child: Image.asset(
+                ProcessModeAssets.circleBorder,
+                width: metrics.borderWidth,
+                height: metrics.borderHeight,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
           // Digit on circle center; title at original Column slot; kPa +20dp;
@@ -439,8 +447,9 @@ final class _LaserDashboardMetrics {
   double get titleSize => 33 * scale;
   double get valueSize => 101 * scale;
   double get unitSize => 25 * scale;
-  double get buttonTextSize => 20 * scale;
-  double get buttonIconSize => 22 * scale;
+  /// +2 over prior 20/22 for readability on the HMI panel.
+  double get buttonTextSize => 22 * scale;
+  double get buttonIconSize => 24 * scale;
   double get buttonIconGap => 4 * scale;
 
   /// Previous Column layout placed the digit center this far above the circle

@@ -41,6 +41,7 @@ Portable HAL public types SHALL use system-service vocabulary including at least
 
 - **WHEN** a product App toggles LAN SSH debug
 - **THEN** it SHALL import `SshDebug` from `package:cyber_hal/network` (or `network/ssh_debug.dart`) and MUST NOT require `hal/debug`
+
 ### Requirement: Optional capabilities
 Every HAL domain SHALL be optional. The package SHALL expose capability discovery from board profile (and optional runtime probes). Invoking an absent capability SHALL fail with a structured unsupported error. Valid products include no display, no audio, and/or no network.
 
@@ -241,6 +242,7 @@ Ethernet, Wi‑Fi, system proxy, and **LAN SSH debug (`SshDebug`)** SHALL be gro
 
 - **WHEN** a product App needs LAN SSH debug
 - **THEN** it SHALL be able to import `package:cyber_hal/network/ssh_debug.dart` (or network barrel) without importing `hal/usb_otg`
+
 ### Requirement: Domain package grouping
 
 Related capabilities SHALL be grouped under domain packages with optional sub-imports where naming fits: `hal/network` {ethernet, wifi, proxy, **ssh_debug**}; `hal/output` {**display** {backlight, auto-sleep, **orientation**}, **sound** {volume, button-feedback}}; `hal/input` {keyboard, mouse}; **`hal/usb_otg`**. `hal/gpio` and `hal/modbus` SHALL remain separate top-level modules. Apps MUST be able to import a single subpackage without pulling unused siblings. **`hal/debug` MUST NOT** be the long-term home for SSH or USB OTG.
@@ -293,6 +295,7 @@ Linux backends outside `hal/network` ethernet/wifi apply SHALL meet the same reu
 
 - **WHEN** Demo constructs gpio HAL with a loaded `BoardProfile`
 - **THEN** it SHALL use the profile’s gpio config asset pointer (App-owned `assets/…` URI) and MUST NOT fall back to a hard-coded `packages/cyber_hal/boards/<board>/gpio.json` constant
+
 ### Requirement: Migration from in-app platform
 Existing `app/lws_hmi/lib/platform/**` Linux backends SHALL be movable into the HAL package with App dependency cutover. After cutover, product App code SHALL NOT construct `LinuxWpaWifiController` (etc.) as the long-term pattern.
 
@@ -327,4 +330,18 @@ exercise preparing, recording, stopping, completed, failure, and cancellation.
 - **WHEN** an integrator inspects `IpCameraRecordingRequest`
 - **THEN** it MAY contain source URIs, codec, destination, timeout, and retry policy
 - **AND** it MUST NOT contain Quick Mode, Engineer Mode, process parameters, or product video-database fields
+
+### Requirement: Stub backend only via HAL_BACKEND
+
+Dart HAL Stub backends SHALL be selected only when the environment variable `HAL_BACKEND` is set to `stub` (host unit tests and emergency). Binding selection MUST NOT treat `board_id=sim` as an implicit Stub signal.
+
+#### Scenario: Default sim is Linux-capable selection
+
+- **WHEN** tests or runtime call `resolveHalBackend(boardId: 'sim')` without `HAL_BACKEND`
+- **THEN** the kind SHALL be `linux`
+
+#### Scenario: Host tests force stub
+
+- **WHEN** host tests set `HAL_BACKEND=stub`
+- **THEN** Stub backends SHALL be used for in-memory HAL modules
 

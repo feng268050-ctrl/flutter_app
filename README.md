@@ -152,6 +152,88 @@ make reboot-loader
 make flash
 ```
 
+**P3.2 emulator** — same kernel `Image` + same `rootfs.img` as the board, plus `sim_virt` OEM (not Rockchip flash). Detail: [`docs/p32-emulator.md`](docs/p32-emulator.md).
+
+Colleague / new machine — run **in order** (one command per line). Skip steps already done on that host.
+
+```bash
+# --- A. Repo + SDK (once per machine; same as Quick start) ---
+git lfs install
+git lfs pull
+make extract-linux-sdk SRC=/path/to/rk356x_linux6.1_…
+make trim-linux-sdk
+make check-linux-sdk
+make setup
+make fetch-flutter-sdk
+# macOS only:
+make docker-image
+make docker-volume-init
+
+# --- B. Build deps + OS artifacts (first emulator needs real Image + rootfs) ---
+make build-deps
+make check-prebuilt
+make apply-overlay
+make build-kernel
+make build-rootfs
+
+# --- C. Host emulator tools (once per machine) ---
+# macOS: stock `brew install qemu` has no OpenGL — install qemu-virgl:
+make setup-emulator-qemu
+make fetch-emulator-swgl
+# Host SSH helpers for make devices / shell / push-app (password rockchip):
+#   brew install sshpass          # macOS
+#   sudo apt install sshpass      # Ubuntu
+
+# --- D. Assemble + start ---
+make build-emulator
+make emulator
+```
+
+`make emulator` may prompt for **sudo** (Apple `vmnet` for guest eth0 camera bridge / wlan0). No IP camera on this Mac:
+
+```bash
+EMULATOR_ETH0_BRIDGE=off make emulator
+```
+
+Daily (artifacts already built):
+
+```bash
+make emulator-stop
+make emulator
+```
+
+After App-only changes (guest already booted, `make devices` shows **MODE=EMU**):
+
+```bash
+make build-app
+make push-app
+# Debug (VM Service) — SN=SIM-EMU is a stable alias; table SN may be SIM-0001:
+SN=SIM-EMU make debug-app
+# or: IP=127.0.0.1:2222 make debug-app
+```
+
+After kernel / rootfs / sim OEM changes:
+
+```bash
+make build-kernel
+make build-rootfs
+make build-emulator
+make emulator-stop
+make emulator
+```
+
+`make build-emulator` copies the 600M device `rootfs.img` and grows the **emulator-only** copy to **1536M** (`EMULATOR_ROOTFS_SIZE=`) so `debug-app` / `push-app` have headroom (guest has no userdata partition).
+
+Useful once the guest is up:
+
+```bash
+make devices
+make shell
+ssh -p 2222 root@127.0.0.1
+```
+
+Optional hardware on the host before `make emulator`: plug USB-LAN (IP camera) and/or USB-RS485 (auto-passthrough → guest `/dev/ttyUSB0`). See [`docs/p32-emulator.md`](docs/p32-emulator.md).
+
 **Flutter app** (`app/lws_hmi/`) — `/opt/hmi` is installed during rootfs build:
 
 ```bash
@@ -323,7 +405,7 @@ IP=192.168.1.50 make upgrade    # stream-to-partition; not RockUSB / not online 
 make disconnect 192.168.1.50
 ```
 
-`IP=` selects **registered SSH only** (never USB-SSH). `SN=` selects by **SN** or **ChipID** (`make devices` columns: MODE / SN / ChipID / …). `CHIPID=` selects by ChipID only (multi-board). USB-SSH/SSH **SN** prefers `product.ini` `sn`, else chip ID; **ChipID** is always the chip serial. Android adb / RockUSB loader rows put the adb/SerialNo in both SN and ChipID. `make reboot` works over SSH; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. Product identity keys `brand` / `model` / `sn` come from the OEM seed only — `make set-prop` / `del-prop` refuse them.
+`IP=` selects **registered SSH** or **EMU** (never USB-SSH). `SN=` selects by **SN** or **ChipID** (`make devices` columns: MODE / SN / ChipID / …); **`SN=SIM-EMU`** / **`SN=EMU`** always select the QEMU guest even when the table SN is `product.ini` (e.g. `SIM-0001`). `CHIPID=` selects by ChipID only (multi-board). USB-SSH/SSH/EMU **SN** prefers `product.ini` `sn`, else chip ID; **ChipID** is always the chip serial. Android adb / RockUSB loader rows put the adb/SerialNo in both SN and ChipID. `make reboot` works over SSH/EMU; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. **QEMU** (`make emulator`) appears as ephemeral **MODE=EMU** (`IP=127.0.0.1:2222`) when SSH hostfwd answers — usable with `make shell` / `make push-app` / `make debug-app`, not `make upgrade`. Product identity keys `brand` / `model` / `sn` come from the OEM seed only — `make set-prop` / `del-prop` refuse them.
 Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
 
 `make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) **streams** **`rootfs.img` + the inactive letter’s FIT** into partitions with single-line write progress, arms try-boot, and reboots — **not** RockUSB/`upgrade_tool uf` (use **`make flash`** for GPT / U-Boot) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
@@ -340,11 +422,13 @@ After the board has a rootfs with the P1.5 debug overlay scripts (`hmi-launch.sh
 
 ```bash
 make debug-app                   # SN=... or IP=... when multiple boards
+# QEMU guest (make emulator): SN=SIM-EMU make debug-app
+#                          or: IP=127.0.0.1:2222 make debug-app
 ```
 
-Or open `app/lws_hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH / SSH debug)** from Run and Debug. Pre-launch runs `make debug-host-prepare`: for registered `IP=` / `MODE=SSH` it only checks reachability (no USB ECM); for USB-SSH it configures the host ECM interface (macOS may request `sudo`). Put `IP=` in `.env` so the IDE picks the SSH board. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
+Or open `app/lws_hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH / SSH debug)** from Run and Debug. Pre-launch runs `make debug-host-prepare`: for registered `IP=` / `MODE=SSH` / **`MODE=EMU`** it only checks reachability (no USB ECM); for USB-SSH it configures the host ECM interface (macOS may request `sudo`). Put `IP=` in `.env` so the IDE picks the SSH board. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
 
-`make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/hmi/debug-runtime/`), replaces `/opt/hmi`, and starts the HMI with VM Service over SSH port forwarding (USB-SSH or registered IP). Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make push-app`.
+`make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/hmi/debug-runtime/`), replaces `/opt/hmi`, and starts the HMI with VM Service over SSH port forwarding (USB-SSH, registered IP, or **EMU** hostfwd). Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make push-app`.
 
 Host-only checks:
 
@@ -448,7 +532,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P2.5 | A/B **boot+rootfs** | `parameter` 改表 | `make upgrade` ✅；供 P4.8 OTA 复用 |
 | P3.0 | — | — | **cyber_ui** / **cyber_ime** path 包 🔄（优化中） |
 | P3.1 | systemd-networkd、wpa D-Bus | 开 networkd | **Dart HAL** + **网络栈切换**（L3=networkd）✅ |
-| P3.2 | UTM、Weston、flutter-embedded-linux | 按需 | Linux 模拟器 + HAL |
+| P3.2 | 同 Image + 同 rootfs + OEM 切换 | QEMU | 模拟器验证多板多屏 ✅ W4 主路径；[`docs/p32-emulator.md`](docs/p32-emulator.md)；`make build-emulator` / **`make emulator`** |
 | P3.3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** |
 | P4 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云 🔄；**P4.8 OTA** |
 | P5.0 | — | — | Android 兼容 / APK（App + YNHAPI；非 `cyber_hal`） |
@@ -522,20 +606,11 @@ Rockchip Innohi board binaries and Wi‑Fi/BT firmware live under **`linux-sdk/i
 
 **ynh960 Wi‑Fi/BT chip:** board SDIO is **AIC8800D80** (`c8a1:0082`), not AP6256. Keep `RK_WIFIBT_MODULES` non-empty so `post-wifibt` copies kernel `*.ko` + Innohi firmware; runtime uses `wifibt-bringup.sh` / `rk_wifi_init` (`aic8800_bsp`/`fdrv`/`btlpm`). Kernel fragment: `ynh960-wifibt.config`.
 
-### Innohi SDK-native Linux (`make build-sdk-native`)
-
-Innohi-confirmed path: SDK **`boot.its`** FIT (not `boot-slim.its`), prebuilt loader/uboot, `rockchip_rk3566_rk3568` Buildroot + MainServer.
-
-```bash
-make build-sdk-native      # first time (hours)
-make repack-sdk-native     # kernel + update.img only
-make audit-sdk-native
-make flash-sdk-native      # MaskROM
-```
+### Serial console & board login
 
 **Serial (UART2 / ttyFIQ0, 1500000):** GND + TX↔RX cross. `make serial-console` (quit `Ctrl+]`). Self-test: short TTL TX–RX, type keys — should echo.
 
-**Login (SDK `rockchip_rk3566_rk3568` Buildroot):**
+**Login (Buildroot):**
 
 | User | Password |
 |------|----------|

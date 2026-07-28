@@ -42,8 +42,8 @@ class GpioLedController extends ChangeNotifier {
   GpioHal? _hal;
   final BoardProfile? _profile;
   Future<GpioHal>? _loading;
-  final Map<LedColor, IndicatorMode> _modes = {
-    for (final c in LedColor.values) c: IndicatorMode.off,
+  final Map<LedColor, IndicatorMode?> _modes = {
+    for (final c in LedColor.values) c: null,
   };
   final Map<LedColor, bool> _on = {
     for (final c in LedColor.values) c: false,
@@ -54,7 +54,7 @@ class GpioLedController extends ChangeNotifier {
   bool _watching = false;
   late final GpioLevelListener _levelListener = _onHalLevel;
 
-  IndicatorMode modeOf(LedColor color) => _modes[color]!;
+  IndicatorMode modeOf(LedColor color) => _modes[color] ?? IndicatorMode.off;
 
   /// Logical line level from HAL (active-high after active_low mapping).
   bool isOn(LedColor color) => _on[color]!;
@@ -124,9 +124,32 @@ class GpioLedController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Force all RGB lines Off (cancels blink). Call once at boot before policy.
+  Future<void> resetAllOff() async {
+    try {
+      final hal = await _ensureHal();
+      if (!_watching) {
+        await ensureWatching();
+      }
+      for (final color in LedColor.values) {
+        final line = hal.openLine(color.lineId);
+        await line.setMode(GpioLineMode.off, force: true);
+        _modes[color] = IndicatorMode.off;
+        _on[color] = false;
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('GPIO LED: resetAllOff failed: $e');
+    }
+  }
+
   Future<void> setMode(LedColor color, IndicatorMode mode) async {
-    _modes[color] = mode;
-    notifyListeners();
+    // Skip only after a successful apply of the same mode. Initial cache is
+    // null so the first Off still writes GPIO (boot may leave lines HIGH).
+    // Same-mode skip preserves HAL blink (lws-ui LedIndicatorManager).
+    if (_modes[color] == mode) {
+      return;
+    }
     try {
       final hal = await _ensureHal();
       if (!_watching) {
@@ -135,6 +158,8 @@ class GpioLedController extends ChangeNotifier {
       }
       final line = hal.openLine(color.lineId);
       await line.setMode(_toHalMode(mode));
+      _modes[color] = mode;
+      notifyListeners();
       // Level updates arrive via [GpioLevelListener] from each [GpioLine.set].
     } catch (e) {
       debugPrint('GPIO LED ${color.name}: setMode failed: $e');
@@ -163,7 +188,7 @@ class GpioLedController extends ChangeNotifier {
     }
     _watching = false;
     for (final c in LedColor.values) {
-      _modes[c] = IndicatorMode.off;
+      _modes[c] = null;
       _on[c] = false;
     }
     super.dispose();

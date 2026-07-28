@@ -67,7 +67,7 @@ abstract class GpioLine {
 
   Future<bool> get();
 
-  Future<void> setMode(GpioLineMode mode);
+  Future<void> setMode(GpioLineMode mode, {bool force = false});
 
   GpioLineMode get mode;
 }
@@ -149,7 +149,7 @@ final class _LinuxGpioLine implements GpioLine {
 
   String? _valuePath;
   String? _activeScheme;
-  GpioLineMode _mode = GpioLineMode.off;
+  GpioLineMode? _mode;
   Timer? _blinkTimer;
   bool _blinkPhaseHigh = false;
 
@@ -157,7 +157,7 @@ final class _LinuxGpioLine implements GpioLine {
   String get id => _cfg.id;
 
   @override
-  GpioLineMode get mode => _mode;
+  GpioLineMode get mode => _mode ?? GpioLineMode.off;
 
   String? get activeScheme => _activeScheme;
 
@@ -268,9 +268,15 @@ final class _LinuxGpioLine implements GpioLine {
   }
 
   @override
-  Future<void> setMode(GpioLineMode mode) async {
+  Future<void> setMode(GpioLineMode mode, {bool force = false}) async {
+    // Idempotent only after a real apply. [_mode] starts null so the first
+    // Off still drives the pin (boot may leave indicators HIGH).
+    // Re-entering blink would cancel the timer and force ON → looks steady.
+    // [force] is for boot reset: always rewrite the pin.
+    if (!force && _mode == mode) {
+      return;
+    }
     _cancelBlink();
-    _mode = mode;
     switch (mode) {
       case GpioLineMode.off:
         await set(false);
@@ -287,6 +293,7 @@ final class _LinuxGpioLine implements GpioLine {
         await set(true);
         _scheduleBlinkTick();
     }
+    _mode = mode;
   }
 
   void _scheduleBlinkTick() {

@@ -15,6 +15,7 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gat
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
+import 'package:lws_hmi/gpio/rgb_led_policy_driver.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/linux_bluez_bluetooth_controller.dart';
@@ -145,6 +146,9 @@ final class AppServices {
 
   late final ModbusRtuClient modbus;
   late final GpioLedController leds;
+
+  /// Production RGB policy; set from [LwsHmiApp] after warn-alarm wiring.
+  RgbLedPolicyDriver? rgbLedPolicy;
   late final MediaAudioController audio;
   late final BacklightController backlight;
   late final AutoSleep autoSleep;

@@ -27,6 +27,12 @@ final class AlarmMonitorState extends ChangeNotifier {
   /// Camera ICMP / IP-camera health (`true` = unreachable). Not a Modbus bit.
   bool? cameraCommFault;
 
+  /// A001 cause bits (raw Modbus) for dialog body assembly.
+  bool gasBlowPressureAlarm = false;
+  bool gasInletPressureAlarm = false;
+  bool gasPressureSensorCommAlarm = false;
+  bool gasControlCardExtFlashAlarm = false;
+
   bool healthOk = true;
   String? healthMessage;
 
@@ -98,6 +104,14 @@ final class AlarmMonitorState extends ChangeNotifier {
           gunCommFault = c.value == true;
         case 'alarm.wire_feeder_comm':
           wireFeederCommFault = c.value == true;
+        case 'alarm.shielding_gas_blow_pressure':
+          gasBlowPressureAlarm = c.value == true;
+        case 'alarm.shielding_gas_inlet_pressure':
+          gasInletPressureAlarm = c.value == true;
+        case 'alarm.pressure_sensor_comm':
+          gasPressureSensorCommAlarm = c.value == true;
+        case 'alarm.control_card_ext_flash':
+          gasControlCardExtFlashAlarm = c.value == true;
         default:
           break;
       }

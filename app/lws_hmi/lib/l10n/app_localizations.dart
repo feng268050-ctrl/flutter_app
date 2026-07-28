@@ -266,6 +266,18 @@ abstract class AppLocalizations {
   /// **'Enter minimum gas pressure threshold'**
   String get advancedSettingEnterMinGasPressure;
 
+  /// No description provided for @advancedSettingInletGasPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'Inlet Gas Pressure Threshold'**
+  String get advancedSettingInletGasPressure;
+
+  /// No description provided for @advancedSettingEnterInletGasPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter inlet gas pressure threshold'**
+  String get advancedSettingEnterInletGasPressure;
+
   /// No description provided for @advancedSettingMotorTempAlarmThreshold.
   ///
   /// In en, this message translates to:
@@ -1340,6 +1352,12 @@ abstract class AppLocalizations {
   /// **'Driver Overtemperature'**
   String get driveOvertemperatureAlarmTitle;
 
+  /// No description provided for @driverBoardOvervoltageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver Board Overvoltage'**
+  String get driverBoardOvervoltageTitle;
+
   /// No description provided for @driverModuleOvertemperatureAlarmContent.
   ///
   /// In en, this message translates to:
@@ -1483,6 +1501,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Galvo Motor Stall'**
   String get galvanometerMotorStallAlarmTitle;
+
+  /// No description provided for @galvanometerMotorTrajectoryErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Galvo Motor Trajectory Error'**
+  String get galvanometerMotorTrajectoryErrorTitle;
 
   /// No description provided for @gasPressureLabel.
   ///
@@ -2108,6 +2132,12 @@ abstract class AppLocalizations {
   /// **'Laser Version'**
   String get laserVersion;
 
+  /// No description provided for @lensHeavyContaminationAlarmContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Protective lens is heavily contaminated. Clean or replace it.'**
+  String get lensHeavyContaminationAlarmContent;
+
   /// No description provided for @lensHeavyContaminationAlarmTitle.
   ///
   /// In en, this message translates to:
@@ -2173,6 +2203,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Main Controller–Temperature Board Communication Fault'**
   String get mainControllerTempBoardCommAlarmTitle;
+
+  /// No description provided for @memoryAccessErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory Access Error'**
+  String get memoryAccessErrorTitle;
+
+  /// No description provided for @memoryManagementErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory Management Error'**
+  String get memoryManagementErrorTitle;
 
   /// No description provided for @mmUnit.
   ///
@@ -3380,6 +3422,18 @@ abstract class AppLocalizations {
   /// **'Wi‑Fi'**
   String get wifiWlanLabel;
 
+  /// No description provided for @watchdogResetEventContent.
+  ///
+  /// In en, this message translates to:
+  /// **'The controller restarted after a watchdog reset. If this happens often, contact LaserCyber support.'**
+  String get watchdogResetEventContent;
+
+  /// No description provided for @watchdogResetEventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watchdog Reset'**
+  String get watchdogResetEventTitle;
+
   /// No description provided for @wireFeederCommunicationAlarmContent.
   ///
   /// In en, this message translates to:
@@ -3445,6 +3499,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Work Info'**
   String get workTitle;
+
+  /// No description provided for @zeroPointOffsetAlarmContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero offset is off center. Open Advanced Settings and correct it before continuing precise work.'**
+  String get zeroPointOffsetAlarmContent;
 
   /// No description provided for @zeroPointOffsetAlarmTitle.
   ///

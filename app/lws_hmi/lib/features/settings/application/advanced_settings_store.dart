@@ -12,6 +12,7 @@ final class AdvancedSettingsThresholdValues {
     this.laserStartPower = defaultLaserStartPower,
     this.laserEndPower = defaultLaserEndPower,
     this.blowPressureThreshold = defaultBlowPressureThreshold,
+    this.inletGasPressureThreshold = defaultInletGasPressureThreshold,
     this.motorTempAlarm = defaultMotorTempAlarm,
     this.driverTempAlarm = defaultDriverTempAlarm,
     this.protectiveLensTempAlarm = defaultProtectiveLensTempAlarm,
@@ -31,6 +32,7 @@ final class AdvancedSettingsThresholdValues {
   static double laserEndPowerFromProcess(double laserPower) =>
       laserPower * laserEndPowerRatio;
   static const defaultBlowPressureThreshold = 0.0;
+  static const defaultInletGasPressureThreshold = 0.0;
   static const defaultMotorTempAlarm = 70.0;
   static const defaultDriverTempAlarm = 70.0;
   static const defaultProtectiveLensTempAlarm = 70.0;
@@ -42,6 +44,7 @@ final class AdvancedSettingsThresholdValues {
   final double laserStartPower;
   final double laserEndPower;
   final double blowPressureThreshold;
+  final double inletGasPressureThreshold;
   final double motorTempAlarm;
   final double driverTempAlarm;
   final double protectiveLensTempAlarm;
@@ -54,6 +57,7 @@ final class AdvancedSettingsThresholdValues {
     double? laserStartPower,
     double? laserEndPower,
     double? blowPressureThreshold,
+    double? inletGasPressureThreshold,
     double? motorTempAlarm,
     double? driverTempAlarm,
     double? protectiveLensTempAlarm,
@@ -67,6 +71,8 @@ final class AdvancedSettingsThresholdValues {
       laserEndPower: laserEndPower ?? this.laserEndPower,
       blowPressureThreshold:
           blowPressureThreshold ?? this.blowPressureThreshold,
+      inletGasPressureThreshold:
+          inletGasPressureThreshold ?? this.inletGasPressureThreshold,
       motorTempAlarm: motorTempAlarm ?? this.motorTempAlarm,
       driverTempAlarm: driverTempAlarm ?? this.driverTempAlarm,
       protectiveLensTempAlarm:
@@ -103,6 +109,7 @@ final class AdvancedSettingsStore extends ChangeNotifier {
   static const keyLaserStartPower = 'laserStartPower';
   static const keyLaserEndPower = 'laserEndPower';
   static const keyBlowPressureThreshold = 'blowPressureThreshold';
+  static const keyInletGasPressureThreshold = 'inletGasPressureThreshold';
   static const keyMotorTempAlarm = 'motorTemperatureAlarmThreshold';
   static const keyDriverTempAlarm = 'driverTemperatureAlarmThreshold';
   static const keyProtectiveLensTempAlarm =
@@ -312,6 +319,10 @@ final class AdvancedSettingsStore extends ChangeNotifier {
           map[keyBlowPressureThreshold],
           AdvancedSettingsThresholdValues.defaultBlowPressureThreshold,
         ),
+        inletGasPressureThreshold: _asDouble(
+          map[keyInletGasPressureThreshold],
+          AdvancedSettingsThresholdValues.defaultInletGasPressureThreshold,
+        ),
         motorTempAlarm: _asDouble(
           map[keyMotorTempAlarm],
           AdvancedSettingsThresholdValues.defaultMotorTempAlarm,
@@ -353,6 +364,7 @@ final class AdvancedSettingsStore extends ChangeNotifier {
         keyLaserStartPower: _thresholds.laserStartPower,
         keyLaserEndPower: _thresholds.laserEndPower,
         keyBlowPressureThreshold: _thresholds.blowPressureThreshold,
+        keyInletGasPressureThreshold: _thresholds.inletGasPressureThreshold,
         keyMotorTempAlarm: _thresholds.motorTempAlarm,
         keyDriverTempAlarm: _thresholds.driverTempAlarm,
         keyProtectiveLensTempAlarm: _thresholds.protectiveLensTempAlarm,

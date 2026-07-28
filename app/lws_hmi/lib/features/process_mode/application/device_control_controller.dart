@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/laser_enable_preflight.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
+import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
 
 /// Frost Operation-failed / tip triggers from runtime key / e-stop edges.
 ///
@@ -815,8 +816,17 @@ final class DeviceControlController extends ChangeNotifier {
   }
 
   @override
+  void notifyListeners() {
+    if (!_disposed) {
+      LaserEnableLedHolder.instance.setActive(laserSessionArmed);
+    }
+    super.notifyListeners();
+  }
+
+  @override
   void dispose() {
     _disposed = true;
+    LaserEnableLedHolder.instance.clearLaserEnable();
     // Fire-and-forget: page/route teardown must still request laser off even
     // when dispose cannot await (abnormal leave / Navigator pop).
     unawaited(shutdownForExit());

@@ -41,6 +41,7 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_scope.da
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
+import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
 
 /// Quick Mode: process wheel + material/gear/dimension selection (U3).
 final class QuickModePage extends StatefulWidget {
@@ -69,6 +70,7 @@ final class _QuickModePageState extends State<QuickModePage> {
   void initState() {
     super.initState();
     QuickModeSelectionCarry.clear();
+    LaserEnableLedHolder.instance.setWorkModel(_processType);
     scheduleEnsureModbusLive(context);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -127,6 +129,7 @@ final class _QuickModePageState extends State<QuickModePage> {
 
   @override
   void dispose() {
+    LaserEnableLedHolder.instance.clear();
     _applyDebounce?.cancel();
     _gunDialogs?.dispose();
     _gunDialogs = null;
@@ -221,6 +224,7 @@ final class _QuickModePageState extends State<QuickModePage> {
       unawaited(session?.leaveWithoutExitWrite());
     }
     setState(() => _processType = type);
+    LaserEnableLedHolder.instance.setWorkModel(type);
     _gunDialogs?.setActive(type != ProcessType.cncCutting);
     _rebuildSelection(ProcessLibraryScope.of(context));
     if (type == ProcessType.cncCutting) {

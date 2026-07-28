@@ -20,6 +20,7 @@ abstract final class AdvancedSettingsThresholdCodec {
       case AdvancedSettingsModbusIds.laserEndPower:
         return (ui * laserPowerFactor).round();
       case AdvancedSettingsModbusIds.blowingPressureThreshold:
+      case AdvancedSettingsModbusIds.inletGasPressureThreshold:
         return ui.round();
       case AdvancedSettingsModbusIds.motorTempAlarmThreshold:
       case AdvancedSettingsModbusIds.driverTempAlarmThreshold:

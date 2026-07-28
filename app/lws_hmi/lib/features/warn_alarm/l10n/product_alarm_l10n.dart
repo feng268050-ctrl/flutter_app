@@ -30,14 +30,22 @@ extension ProductAlarmL10n on AppLocalizations {
         return undervoltage24vAlarmTitle;
       case 'H013':
         return galvanometerMotorOvercurrentAlarmTitle;
+      case 'H014':
+        return galvanometerMotorTrajectoryErrorTitle;
       case 'H015':
         return galvanometerMotorStallAlarmTitle;
       case 'H016':
         return mmiOscillatorMalfunctionAlarmTitle;
       case 'H017':
         return hardwareBusErrorAlarmTitle;
+      case 'H018':
+        return memoryManagementErrorTitle;
+      case 'H019':
+        return memoryAccessErrorTitle;
       case 'H020':
         return illegalInstructionAlarmTitle;
+      case 'H021':
+        return watchdogResetEventTitle;
       case 'H022':
         return laserCommunicationAlarmTitle;
       case 'H023':
@@ -58,6 +66,8 @@ extension ProductAlarmL10n on AppLocalizations {
         return positioningLightFaultAlarmTitle;
       case 'H031':
         return narrowPulseProtectionAlarmTitle;
+      case 'H032':
+        return driverBoardOvervoltageTitle;
       case 'H033':
         return environmentTemperatureAlarmTitle;
       case 'H034':
@@ -145,14 +155,22 @@ extension ProductAlarmL10n on AppLocalizations {
         return undervoltage24vAlarmContent;
       case 'H013':
         return galvanometerMotorOvercurrentAlarmContent;
+      case 'H014':
+        return alarmRebootThenSupportContent;
       case 'H015':
         return galvanometerMotorStallAlarmContent;
       case 'H016':
         return mmiOscillatorMalfunctionAlarmContent;
       case 'H017':
         return hardwareBusErrorAlarmContent;
+      case 'H018':
+        return alarmRebootThenSupportContent;
+      case 'H019':
+        return alarmRebootThenSupportContent;
       case 'H020':
         return illegalInstructionAlarmContent;
+      case 'H021':
+        return watchdogResetEventContent;
       case 'H022':
         return laserCommunicationAlarmContent;
       case 'H023':
@@ -173,10 +191,12 @@ extension ProductAlarmL10n on AppLocalizations {
         return positioningLightFaultAlarmContent;
       case 'H031':
         return narrowPulseProtectionAlarmContent;
+      case 'H032':
+        return alarmRebootThenSupportContent;
       case 'H033':
         return environmentTemperatureAlarmContent;
       case 'H034':
-        return alarmRebootThenSupportContent;
+        return zeroPointOffsetAlarmContent;
       case 'E006':
         return pumpModuleOvertemperatureAlarmContent;
       case 'E008':
@@ -204,7 +224,7 @@ extension ProductAlarmL10n on AppLocalizations {
       case 'A001':
         return shieldingGasAlarmContent;
       case 'L001':
-        return alarmRebootThenSupportContent;
+        return lensHeavyContaminationAlarmContent;
       case 'C001':
         return controllerTabletCommAlarmContent;
       case 'C002':

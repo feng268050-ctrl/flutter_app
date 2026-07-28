@@ -21,6 +21,7 @@ final class CyberUiWarnPresentation implements WarnPresentation {
     this.onPresented,
     this.stopWarnSound,
     this.infoStyleForCode,
+    this.bodyForCode,
   });
 
   final GlobalKey<NavigatorState> navigatorKey;
@@ -36,6 +37,9 @@ final class CyberUiWarnPresentation implements WarnPresentation {
 
   /// When true, dialog uses INFO (black) title — dangerous-ops bypass.
   bool Function(String code)? infoStyleForCode;
+
+  /// Optional dynamic body (e.g. A001 cause list). Falls back to catalog l10n.
+  String Function(String code, AppLocalizations l10n)? bodyForCode;
 
   final Queue<_PendingWarn> _queue = Queue<_PendingWarn>();
   String? _showingCode;
@@ -181,10 +185,11 @@ final class CyberUiWarnPresentation implements WarnPresentation {
                   pending.code,
                   fallback: pending.entry.title,
                 ),
-                body: l10n.alarmBodyFor(
-                  pending.code,
-                  fallback: pending.entry.body,
-                ),
+                body: bodyForCode?.call(pending.code, l10n) ??
+                    l10n.alarmBodyFor(
+                      pending.code,
+                      fallback: pending.entry.body,
+                    ),
                 confirmLabel: l10n.confirmText,
                 infoStyle: infoStyleForCode?.call(pending.code) ?? false,
                 beforeConfirm: stopWarnSound,

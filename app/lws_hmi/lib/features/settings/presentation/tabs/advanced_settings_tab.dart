@@ -333,6 +333,42 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               ),
             ),
           ),
+          _cardGap,
+          Padding(
+            padding: _hPad,
+            child: SettingsScaledParam(
+              title: l10n.advancedSettingInletGasPressure,
+              borderGradientCenter: CyberBorderGradientCenter.topBottom,
+              value: v.inletGasPressureThreshold,
+              min: 0,
+              max: 200,
+              onChanged: (n) => preview(
+                v.copyWith(inletGasPressureThreshold: n.roundToDouble()),
+              ),
+              onChangeEnd: (n) => unawaited(
+                commit(
+                  AdvancedSettingsModbusIds.inletGasPressureThreshold,
+                  v.copyWith(inletGasPressureThreshold: n.roundToDouble()),
+                ),
+              ),
+              onValueTap: () => unawaited(
+                _editInt(
+                  title: l10n.advancedSettingInletGasPressure,
+                  hint: l10n.advancedSettingEnterInletGasPressure,
+                  displayValue: v.inletGasPressureThreshold.round(),
+                  displayMin: 0,
+                  displayMax: 200,
+                  signed: false,
+                  onCommitDisplay: (n) => unawaited(
+                    commit(
+                      AdvancedSettingsModbusIds.inletGasPressureThreshold,
+                      v.copyWith(inletGasPressureThreshold: n.toDouble()),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
           SettingsSectionHeader(
             l10n.advancedSettingsGroupTemperatureThresholds,
           ),

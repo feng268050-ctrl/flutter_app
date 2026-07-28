@@ -164,6 +164,8 @@ final class AdvancedSettingsThresholdsController extends ChangeNotifier {
         _values = _values.copyWith(laserEndPower: ui);
       case AdvancedSettingsModbusIds.blowingPressureThreshold:
         _values = _values.copyWith(blowPressureThreshold: ui);
+      case AdvancedSettingsModbusIds.inletGasPressureThreshold:
+        _values = _values.copyWith(inletGasPressureThreshold: ui);
       case AdvancedSettingsModbusIds.motorTempAlarmThreshold:
         _values = _values.copyWith(motorTempAlarm: ui);
       case AdvancedSettingsModbusIds.driverTempAlarmThreshold:
@@ -192,6 +194,8 @@ final class AdvancedSettingsThresholdsController extends ChangeNotifier {
         return v.laserEndPower;
       case AdvancedSettingsModbusIds.blowingPressureThreshold:
         return v.blowPressureThreshold;
+      case AdvancedSettingsModbusIds.inletGasPressureThreshold:
+        return v.inletGasPressureThreshold;
       case AdvancedSettingsModbusIds.motorTempAlarmThreshold:
         return v.motorTempAlarm;
       case AdvancedSettingsModbusIds.driverTempAlarmThreshold:

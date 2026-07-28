@@ -93,6 +93,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get advancedSettingEnterMinGasPressure => '请输入最低气压阈值';
 
   @override
+  String get advancedSettingInletGasPressure => '进气气压阈值';
+
+  @override
+  String get advancedSettingEnterInletGasPressure => '请输入进气气压阈值';
+
+  @override
   String get advancedSettingMotorTempAlarmThreshold => '电机温度报警阈值';
 
   @override
@@ -656,6 +662,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get driveOvertemperatureAlarmTitle => '驱动温度告警';
 
   @override
+  String get driverBoardOvervoltageTitle => '驱动板过压';
+
+  @override
   String get driverModuleOvertemperatureAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
@@ -726,6 +735,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get galvanometerMotorStallAlarmTitle => '振镜电机堵转告警';
+
+  @override
+  String get galvanometerMotorTrajectoryErrorTitle => '振镜电机轨迹异常';
 
   @override
   String get gasPressureLabel => '气压';
@@ -1050,6 +1062,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get laserVersion => '激光器版本';
 
   @override
+  String get lensHeavyContaminationAlarmContent => '保护镜严重脏污，需要清洁或更换保护镜片';
+
+  @override
   String get lensHeavyContaminationAlarmTitle => '镜片脏污告警';
 
   @override
@@ -1081,6 +1096,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mainControllerTempBoardCommAlarmTitle => '主控板与温控板通讯故障';
+
+  @override
+  String get memoryAccessErrorTitle => '内存访问错误';
+
+  @override
+  String get memoryManagementErrorTitle => '内存管理错误';
 
   @override
   String get mmUnit => 'mm';
@@ -1704,6 +1725,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wifiWlanLabel => '无线局域网';
 
   @override
+  String get watchdogResetEventContent => '控制器因看门狗复位而重启。若频繁发生，请联系 LaserCyber 售后。';
+
+  @override
+  String get watchdogResetEventTitle => '看门狗复位事件';
+
+  @override
   String get wireFeederCommunicationAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
@@ -1735,6 +1762,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get workTitle => '工作信息';
+
+  @override
+  String get zeroPointOffsetAlarmContent => '零点偏移偏离中心。请前往高级设置及时校正后再进行精密作业。';
 
   @override
   String get zeroPointOffsetAlarmTitle => '零点偏移告警';
@@ -1833,6 +1863,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get advancedSettingEnterMinGasPressure => '請輸入最低氣壓閾值';
+
+  @override
+  String get advancedSettingInletGasPressure => '進氣氣壓閾值';
+
+  @override
+  String get advancedSettingEnterInletGasPressure => '請輸入進氣氣壓閾值';
 
   @override
   String get advancedSettingMotorTempAlarmThreshold => '電機溫度報警閾值';
@@ -2311,6 +2347,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get driveOvertemperatureAlarmTitle => '驅動溫度告警';
 
   @override
+  String get driverBoardOvervoltageTitle => '驅動板過壓';
+
+  @override
   String get driverModuleOvertemperatureAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
@@ -2363,6 +2402,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get galvanometerMotorStallAlarmTitle => '振鏡電機堵轉告警';
+
+  @override
+  String get galvanometerMotorTrajectoryErrorTitle => '振鏡電機軌跡異常';
 
   @override
   String get gasPressureLabel => '氣壓';
@@ -2611,6 +2653,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get laserReflectedEnergyUpperLimitAlarmContent => '激光反射能量過高。請停止出光，檢查工件角度、裝配間隙與工藝參數。若持續出現，請聯繫 LaserCyber 售後。';
 
   @override
+  String get lensHeavyContaminationAlarmContent => '保護鏡嚴重髒污，需要清潔或更換保護鏡片';
+
+  @override
   String get lensHeavyContaminationAlarmTitle => '鏡片髒污告警';
 
   @override
@@ -2636,6 +2681,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get mainControllerTempBoardCommAlarmTitle => '主控板與溫控板通訊故障';
+
+  @override
+  String get memoryAccessErrorTitle => '內存訪問錯誤';
+
+  @override
+  String get memoryManagementErrorTitle => '內存管理錯誤';
 
   @override
   String get mmiOscillatorMalfunctionAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
@@ -3148,6 +3199,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get wifiWlanLabel => '無線局域網';
 
   @override
+  String get watchdogResetEventContent => '控制器因看門狗復位而重啓。若頻繁發生，請聯繫 LaserCyber 售後。';
+
+  @override
+  String get watchdogResetEventTitle => '看門狗復位事件';
+
+  @override
   String get wireFeederCommunicationAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
@@ -3173,6 +3230,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get wirelessNetworkText => '無線網絡';
+
+  @override
+  String get zeroPointOffsetAlarmContent => '零點偏移偏離中心。請前往高級設置及時校正後再進行精密作業。';
 
   @override
   String get zeroPointOffsetAlarmTitle => '零點偏移告警';

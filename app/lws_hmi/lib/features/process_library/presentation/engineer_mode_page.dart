@@ -28,6 +28,7 @@ import 'package:lws_hmi/features/process_mode/presentation/work_status_dialog_ho
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
+import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
 /// Engineer Mode: five tabs + left device panel + right parameter card.
@@ -78,6 +79,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         initial != null && EngineerProcessTabs.types.contains(initial)
             ? initial
             : ProcessType.continuousWelding;
+    LaserEnableLedHolder.instance.setWorkModel(_processType);
     scheduleEnsureModbusLive(context);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -116,6 +118,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
 
   @override
   void dispose() {
+    LaserEnableLedHolder.instance.clear();
     _gunDialogs?.dispose();
     _gunDialogs = null;
     _recordWork?.dispose();
@@ -219,6 +222,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         presets.isEmpty ? null : EngineerModeDraft.fromLibrary(presets.first),
       );
     });
+    LaserEnableLedHolder.instance.setWorkModel(type);
     final gen = ++_processSwitchGen;
     unawaited(_syncDeviceForProcessType(type, gen));
   }

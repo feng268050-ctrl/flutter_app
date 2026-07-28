@@ -3,6 +3,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
+import 'package:lws_hmi/gpio/rgb_led_decision.dart';
 
 /// Why process apply / process-type change is blocked (fail-closed).
 enum ProcessChangeBlockReason {
@@ -78,31 +79,9 @@ abstract final class LaserWorkGuard {
       for (final e in episodes.values)
         if (e.faultActive) e.code,
     };
-    final gas = active.contains(LaserAlarmPolicy.alarmA001);
-    final camera = active.contains(LaserAlarmPolicy.alarmC002);
-    final lens = active.contains(LaserAlarmPolicy.alarmL001);
-    final feeder = active.contains(LaserAlarmPolicy.alarmW001) ||
-        active.contains(LaserAlarmPolicy.alarmW002);
-    final other = active.any((c) => !LaserAlarmPolicy.isBypassableAlarmCode(c));
-
-    final readyBlocked = LaserAlarmPolicy.isReadyIndicatorBlocked(
-      gasBlocking: LaserAlarmPolicy.isGasBlocking(
-        gasAlarmActive: gas,
-        allowWorkAfterGasAlarm: snap.allowWorkAfterGasAlarm,
-      ),
-      cameraBlocking: LaserAlarmPolicy.isCameraBlocking(
-        cameraAlarmActive: camera,
-        allowWorkAfterCameraAlarm: snap.allowWorkAfterCameraAlarm,
-      ),
-      lensBlocking: LaserAlarmPolicy.isLensBlocking(
-        lensAlarmActive: lens,
-        allowWorkAfterLensContamination: snap.allowWorkAfterLensContamination,
-      ),
-      feederBlocking: LaserAlarmPolicy.isFeederBlocking(
-        feederAlarmActive: feeder,
-        allowWorkAfterFeederAlarm: snap.allowWorkAfterFeederAlarm,
-      ),
-      otherCodedWarnBlocking: other,
+    final readyBlocked = RgbLedDecision.readyIndicatorBlockedFromActive(
+      activeCodes: active,
+      snapshot: snap,
     );
     final blocked = LaserAlarmPolicy.isWorkBlocked(
       keepLaserOnWhileAlarmed: snap.keepLaserOnWhileAlarmed,

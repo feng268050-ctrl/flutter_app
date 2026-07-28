@@ -8,6 +8,8 @@ abstract final class AdvancedSettingsModbusIds {
   static const laserEndPower = 'setting.laser_end_power';
   static const blowingPressureThreshold =
       'setting.blowing_pressure_threshold';
+  static const inletGasPressureThreshold =
+      'setting.inlet_gas_pressure_threshold';
   static const motorTempAlarmThreshold = 'setting.motor_temp_alarm_threshold';
   static const driverTempAlarmThreshold =
       'setting.driver_temp_alarm_threshold';
@@ -25,6 +27,7 @@ abstract final class AdvancedSettingsModbusIds {
     laserStartPower,
     laserEndPower,
     blowingPressureThreshold,
+    inletGasPressureThreshold,
     motorTempAlarmThreshold,
     driverTempAlarmThreshold,
     protectiveLensTempAlarmThreshold,

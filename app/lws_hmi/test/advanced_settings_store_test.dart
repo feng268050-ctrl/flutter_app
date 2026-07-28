@@ -22,6 +22,7 @@ void main() {
       expect(store.allowWorkAfterGasAlarm, isFalse);
       expect(store.allowWorkAfterLensContamination, isFalse);
       expect(store.allowWorkAfterFeederAlarm, isFalse);
+      expect(store.thresholds.inletGasPressureThreshold, 0.0);
       await dir.delete(recursive: true);
     });
 
@@ -45,6 +46,25 @@ void main() {
       expect(decoded['lensContaminationDetectionEnabled'], isFalse);
       expect(decoded['keepLaserOnWhileAlarmed'], isTrue);
       expect(decoded['allowWorkAfterGasAlarm'], isTrue);
+
+      await dir.delete(recursive: true);
+    });
+
+    test('JSON round-trip for inlet gas pressure threshold', () async {
+      final dir = await Directory.systemTemp.createTemp('adv-inlet-');
+      final path = '${dir.path}/advanced-settings.json';
+      final store = AdvancedSettingsStore(preferencePath: path);
+      store.warmRead();
+      await store.setThresholds(
+        store.thresholds.copyWith(inletGasPressureThreshold: 42),
+      );
+
+      final again = AdvancedSettingsStore(preferencePath: path);
+      again.warmRead();
+      expect(again.thresholds.inletGasPressureThreshold, 42);
+
+      final decoded = jsonDecode(await File(path).readAsString()) as Map;
+      expect(decoded['inletGasPressureThreshold'], 42);
 
       await dir.delete(recursive: true);
     });

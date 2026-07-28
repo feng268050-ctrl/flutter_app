@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:cyber_alarm/cyber_alarm.dart';
 import 'package:cyber_hal/ip_camera.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/monitor/domain/active_alarm.dart';
@@ -19,7 +18,10 @@ import 'package:lws_hmi/features/warn_alarm/infrastructure/merging_alarm_signal_
 import 'package:lws_hmi/features/warn_alarm/infrastructure/modbus_alarm_attribute_adapter.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/sqlite_alarm_log_repository.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_sound.dart';
+import 'package:lws_hmi/features/warn_alarm/l10n/product_alarm_l10n.dart';
+import 'package:lws_hmi/features/warn_alarm/l10n/shielding_gas_alarm_message.dart';
 import 'package:lws_hmi/features/warn_alarm/presentation/cyber_ui_warn_presentation.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Owns [WarnAlarmCoordinator] + App adapters for the process lifetime.
 final class WarnAlarmController {
@@ -51,6 +53,7 @@ final class WarnAlarmController {
       navigatorKey: navigatorKey,
       stopWarnSound: () => _sound.stop(),
       infoStyleForCode: _infoStyleForCode,
+      bodyForCode: _bodyForCode,
     );
     _adapter = ModbusAlarmAttributeAdapter(
       modbus: services.modbus,
@@ -130,7 +133,7 @@ final class WarnAlarmController {
     _signalSub = _merged.events.listen((event) {
       _publishActive();
       _syncWarnSound();
-      _maybeInterruptOnCameraEdge(event);
+      _maybeInterruptOnAlarmEdge(event);
     });
     await _adapter.start();
     await _bindCameraAdapter();
@@ -146,6 +149,7 @@ final class WarnAlarmController {
       _publishActive();
       _syncWarnSound();
     });
+    await services.rgbLedPolicy?.start();
   }
 
   Future<void> _bindCameraAdapter() async {
@@ -172,10 +176,7 @@ final class WarnAlarmController {
     }
   }
 
-  void _maybeInterruptOnCameraEdge(AlarmSignalEvent event) {
-    if (event.code != LaserAlarmPolicy.alarmC002) {
-      return;
-    }
+  void _maybeInterruptOnAlarmEdge(AlarmSignalEvent event) {
     if (event.kind != AlarmSignalKind.rising &&
         event.kind != AlarmSignalKind.falling) {
       return;
@@ -193,6 +194,13 @@ final class WarnAlarmController {
     );
   }
 
+  String _bodyForCode(String code, AppLocalizations l10n) {
+    if (code == LaserAlarmPolicy.alarmA001) {
+      return ShieldingGasAlarmMessage.buildDialogContent(l10n, monitor);
+    }
+    return l10n.alarmBodyFor(code);
+  }
+
   /// Host `make alarm CODE=…` — demo episode + warn dialog (catalog code).
   Future<void> triggerDemoAlarm(String code) async {
     final future = coordinator.armDemoEpisode(code);
@@ -203,6 +211,7 @@ final class WarnAlarmController {
     await future;
     _publishActive();
     _syncWarnSound();
+    _maybeInterruptAfterActiveChange();
   }
 
   /// Host `make alarm-clean` — clear restrictions; visible popup unchanged.
@@ -210,6 +219,21 @@ final class WarnAlarmController {
     await coordinator.clearAllForDebug();
     _publishActive();
     _syncWarnSound();
+    _maybeInterruptAfterActiveChange();
+  }
+
+  void _maybeInterruptAfterActiveChange() {
+    final dangerous = _dangerousOperations;
+    if (dangerous == null) {
+      return;
+    }
+    unawaited(
+      LaserWorkGuard.evaluateAndInterruptIfNeeded(
+        services: services,
+        dangerous: dangerous,
+        warnAlarm: this,
+      ),
+    );
   }
 
   /// lws-ui LaserEnableAlarmGuard: on alarm block, show the blocking warn

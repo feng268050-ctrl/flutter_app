@@ -41,6 +41,7 @@ import 'package:lws_hmi/features/system_status/presentation/gpio_led_overlay_hos
 import 'package:lws_hmi/features/system_status/presentation/system_status_overlay_host.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
+import 'package:lws_hmi/gpio/rgb_led_policy_driver.dart';
 import 'package:lws_hmi/l10n/app_locales.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/app_indexed_click_sound.dart';
@@ -168,6 +169,12 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     dangerousOperations: _dangerousOperationsSettings,
   );
 
+  late final RgbLedPolicyDriver _rgbLedPolicy = RgbLedPolicyDriver(
+    services: _services,
+    warnAlarm: _warnAlarm,
+    dangerous: _dangerousOperationsSettings,
+  );
+
   bool _restoreScheduled = false;
 
   @override
@@ -190,6 +197,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
         ),
       );
     };
+    _services.rgbLedPolicy = _rgbLedPolicy;
     CyberClickSoundRegistry.register(_clickSound);
     CyberImeLanguageRegistry.register(
       AppCyberImeLanguageProvider(_commonSettingsStore),
@@ -260,6 +268,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     CyberImePhysicalKeyboard.register(null);
     unawaited(_services.autoSleep.dispose());
     unawaited(_warnAlarm.dispose());
+    unawaited(_rgbLedPolicy.dispose());
     if (widget.miscSettingsStore == null) {
       _miscSettingsStore.dispose();
     }

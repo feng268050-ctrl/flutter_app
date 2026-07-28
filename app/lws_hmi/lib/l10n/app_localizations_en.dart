@@ -93,6 +93,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advancedSettingEnterMinGasPressure => 'Enter minimum gas pressure threshold';
 
   @override
+  String get advancedSettingInletGasPressure => 'Inlet Gas Pressure Threshold';
+
+  @override
+  String get advancedSettingEnterInletGasPressure => 'Enter inlet gas pressure threshold';
+
+  @override
   String get advancedSettingMotorTempAlarmThreshold => 'Motor Temperature Alarm Threshold';
 
   @override
@@ -656,6 +662,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get driveOvertemperatureAlarmTitle => 'Driver Overtemperature';
 
   @override
+  String get driverBoardOvervoltageTitle => 'Driver Board Overvoltage';
+
+  @override
   String get driverModuleOvertemperatureAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
@@ -726,6 +735,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get galvanometerMotorStallAlarmTitle => 'Galvo Motor Stall';
+
+  @override
+  String get galvanometerMotorTrajectoryErrorTitle => 'Galvo Motor Trajectory Error';
 
   @override
   String get gasPressureLabel => 'Gas Pressure';
@@ -1050,6 +1062,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get laserVersion => 'Laser Version';
 
   @override
+  String get lensHeavyContaminationAlarmContent => 'Protective lens is heavily contaminated. Clean or replace it.';
+
+  @override
   String get lensHeavyContaminationAlarmTitle => 'Lens Contamination Alarm';
 
   @override
@@ -1081,6 +1096,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mainControllerTempBoardCommAlarmTitle => 'Main Controller–Temperature Board Communication Fault';
+
+  @override
+  String get memoryAccessErrorTitle => 'Memory Access Error';
+
+  @override
+  String get memoryManagementErrorTitle => 'Memory Management Error';
 
   @override
   String get mmUnit => 'mm';
@@ -1704,6 +1725,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiWlanLabel => 'Wi‑Fi';
 
   @override
+  String get watchdogResetEventContent => 'The controller restarted after a watchdog reset. If this happens often, contact LaserCyber support.';
+
+  @override
+  String get watchdogResetEventTitle => 'Watchdog Reset';
+
+  @override
   String get wireFeederCommunicationAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
@@ -1735,6 +1762,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workTitle => 'Work Info';
+
+  @override
+  String get zeroPointOffsetAlarmContent => 'Zero offset is off center. Open Advanced Settings and correct it before continuing precise work.';
 
   @override
   String get zeroPointOffsetAlarmTitle => 'Zero Offset Alarm';

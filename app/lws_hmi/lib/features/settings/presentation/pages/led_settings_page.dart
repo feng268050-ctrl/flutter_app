@@ -8,6 +8,9 @@ import 'package:lws_hmi/gpio/gpio_led_controller.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// RGB LED test under Display & Sound (moved from Demo).
+///
+/// While this page is open, production [RgbLedPolicyDriver] is suppressed so
+/// manual Steady/Blink/Off is not overwritten by alarm policy.
 class LedSettingsPage extends StatefulWidget {
   const LedSettingsPage({super.key, required this.services});
 
@@ -18,9 +21,35 @@ class LedSettingsPage extends StatefulWidget {
 }
 
 class _LedSettingsPageState extends State<LedSettingsPage> {
-  final Map<LedColor, IndicatorMode> _modes = {
+  late final Map<LedColor, IndicatorMode> _modes = {
     for (final c in LedColor.values) c: IndicatorMode.off,
   };
+
+  @override
+  void initState() {
+    super.initState();
+    // Suppress policy first, then force Off so leftover blink/steady is cleared.
+    widget.services.rgbLedPolicy?.beginManualOverride();
+    unawaited(_resetOnEnter());
+  }
+
+  Future<void> _resetOnEnter() async {
+    await widget.services.leds.resetAllOff();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      for (final c in LedColor.values) {
+        _modes[c] = IndicatorMode.off;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.services.rgbLedPolicy?.endManualOverride();
+    super.dispose();
+  }
 
   Future<void> _setMode(LedColor color, IndicatorMode mode) async {
     setState(() => _modes[color] = mode);

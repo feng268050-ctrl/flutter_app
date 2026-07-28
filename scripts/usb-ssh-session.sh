@@ -50,14 +50,18 @@ usb_ssh_session_select() {
 # Like select, but returns 1 instead of exiting (for debug-host-prepare fallback).
 usb_ssh_session_try_select() {
 	local root="$1"
-	local out line
+	local out line errfile
 	local -a sel=()
+	errfile="$(mktemp "${TMPDIR:-/tmp}/lws-device-select.XXXXXX")"
 	if ! out=$(
 		SN="$SN" CHIPID="$CHIPID" SERIAL="$SERIAL" IP="$IP" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
-			bash "$root/scripts/device-target.sh" --select 2>/dev/null
+			bash "$root/scripts/device-target.sh" --select 2>"$errfile"
 	); then
+		[[ -s "$errfile" ]] && cat "$errfile" >&2
+		rm -f "$errfile"
 		return 1
 	fi
+	rm -f "$errfile"
 	while IFS= read -r line; do
 		[[ -n "$line" ]] && sel+=("$line")
 	done <<<"$out"
@@ -142,7 +146,7 @@ usb_ssh_session_run_ssh() {
 	local target_user="${TARGET_USER:-${LWS_HMI_USB_SSH_USER:-root}}"
 	local target_addr="${TARGET_ADDR:-${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}}"
 	local ssh_pass="${SSH_PASS:-${LWS_HMI_USB_SSH_PASS:-rockchip}}"
-	local control_path
+	local control_path host port
 	control_path="$(usb_ssh_session_control_path "$(usb_ssh_session_control_key "$iface")")"
 	local -a ssh_opts=(
 		-o ConnectTimeout=5
@@ -164,7 +168,11 @@ usb_ssh_session_run_ssh() {
 		done < <(usb_ssh_bind_pair "$iface")
 	fi
 	require_sshpass
-	sshpass -p "$ssh_pass" ssh "${ssh_opts[@]}" "$target_user@$target_addr" "$@"
+	parse_ssh_endpoint "$target_addr" || usb_ssh_session_die "invalid SSH endpoint: $target_addr"
+	host="$_SSH_HOST"
+	port="$_SSH_PORT"
+	ssh_opts+=(-p "$port")
+	sshpass -p "$ssh_pass" ssh "${ssh_opts[@]}" "$target_user@$host" "$@"
 }
 
 usb_ssh_session_run_scp() {
@@ -173,7 +181,7 @@ usb_ssh_session_run_scp() {
 	local target_user="${TARGET_USER:-${LWS_HMI_USB_SSH_USER:-root}}"
 	local target_addr="${TARGET_ADDR:-${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}}"
 	local ssh_pass="${SSH_PASS:-${LWS_HMI_USB_SSH_PASS:-rockchip}}"
-	local attempt status
+	local attempt status host port
 	local control_path
 	control_path="$(usb_ssh_session_control_path "$(usb_ssh_session_control_key "$iface")")"
 	local -a ssh_opts=(
@@ -196,8 +204,24 @@ usb_ssh_session_run_scp() {
 		done < <(usb_ssh_bind_pair "$iface")
 	fi
 	require_sshpass
+	parse_ssh_endpoint "$target_addr" || usb_ssh_session_die "invalid SSH endpoint: $target_addr"
+	host="$_SSH_HOST"
+	port="$_SSH_PORT"
+	# Rewrite remote user@addr: paths to user@host: and pass -P for scp.
+	local -a scp_args=()
+	local a
+	for a in "$@"; do
+		if [[ "$a" == "${target_user}@${target_addr}:"* ]]; then
+			scp_args+=("${target_user}@${host}:${a#${target_user}@${target_addr}:}")
+		elif [[ "$a" == *"@${target_addr}:"* ]]; then
+			scp_args+=("${a/@${target_addr}:/@${host}:}")
+		else
+			scp_args+=("$a")
+		fi
+	done
+	ssh_opts+=(-P "$port")
 	for attempt in 1 2 3; do
-		if sshpass -p "$ssh_pass" scp "${ssh_opts[@]}" "$@"; then
+		if sshpass -p "$ssh_pass" scp "${ssh_opts[@]}" "${scp_args[@]}"; then
 			return 0
 		else
 			status=$?

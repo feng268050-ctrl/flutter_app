@@ -307,6 +307,12 @@ list_devices() {
     device_table_add "$mode" "$serial" "$chip" "$loc" "$iface" "$addr" "$usb"
   done < <(bash "$ROOT/scripts/ssh-devices.sh" --tsv 2>/dev/null || true)
 
+  while IFS=$'\t' read -r mode serial chip loc iface addr usb; do
+    [[ -n "$mode" ]] || continue
+    [[ -n "${chip:-}" ]] || chip="$serial"
+    device_table_add "$mode" "$serial" "$chip" "$loc" "$iface" "$addr" "$usb"
+  done < <(bash "$ROOT/scripts/emulator-devices.sh" --tsv || true)
+
   device_table_print
   warn_sshpass_if_usb_ssh "$(( $(usb_ssh_device_count) + $(ssh_registry_device_count) ))"
 }

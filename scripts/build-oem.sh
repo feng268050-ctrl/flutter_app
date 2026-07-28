@@ -17,7 +17,7 @@ die() {
   exit 1
 }
 
-factory_sku_print
+factory_sku_print_oem
 [[ -d "$PACK_DIR" ]] || die "OEM pack missing: $PACK_DIR"
 [[ -r "$PACK_DIR/manifest.json" ]] || die "missing $PACK_DIR/manifest.json"
 

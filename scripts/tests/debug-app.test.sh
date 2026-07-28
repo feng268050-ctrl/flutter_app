@@ -62,13 +62,20 @@ else
 	echo "OK  hmi.service uses hmi-launch.sh"
 fi
 
-if grep -q 'make emulator' "$ROOT/Makefile"; then
-	echo "FAIL Makefile introduces make emulator" >&2
-	fail=1
+if grep -qE '^emulator:|^setup-emulator-qemu:' "$ROOT/Makefile"; then
+	echo "OK  Makefile has emulator targets"
 else
-	echo "OK  no make emulator target"
+	echo "FAIL Makefile missing emulator / setup-emulator-qemu targets" >&2
+	fail=1
 fi
 
+if grep -q 'SIM-EMU' "$ROOT/scripts/device-target.sh" \
+	&& grep -q 'MODE=EMU' "$ROOT/scripts/debug-host-prepare.sh"; then
+	echo "OK  debug-app selects MODE=EMU (SN=SIM-EMU alias)"
+else
+	echo "FAIL debug-app path missing EMU / SIM-EMU support" >&2
+	fail=1
+fi
 if grep -q 'exec usb_ssh_session_' "$ROOT/scripts/debug-custom-device/run-debug.sh"; then
 	echo "FAIL run-debug.sh tries to exec a shell function" >&2
 	fail=1

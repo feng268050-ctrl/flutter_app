@@ -40,23 +40,14 @@ EOF
 normalize_ip() {
 	local ip="$1"
 	[[ -n "$ip" ]] || return 1
-	# Basic IPv4 check (hostname allowlisted via same path if it has a dot or is localhost)
-	if [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-		printf '%s\n' "$ip"
-		return 0
-	fi
-	if [[ "$ip" =~ ^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$ ]]; then
-		printf '%s\n' "$ip"
-		return 0
-	fi
-	return 1
+	normalize_ssh_endpoint "$ip"
 }
 
 resolve_ip_arg() {
 	local arg="${1:-}"
 	local ip="${arg:-${IP:-${LWS_HMI_IP:-}}}"
 	ip="$(normalize_ip "$ip" 2>/dev/null || true)"
-	[[ -n "$ip" ]] || die "IP required (make connect <ip> or IP=<ip>)"
+	[[ -n "$ip" ]] || die "IP required (make connect <ip> or IP=<ip>; host:port OK for emulator)"
 	printf '%s\n' "$ip"
 }
 
@@ -136,10 +127,12 @@ fetch_identity_via_ssh() {
 	local opt
 
 	require_sshpass
+	parse_ssh_endpoint "$addr" || return 1
 	while IFS= read -r opt; do
 		[[ -n "$opt" ]] && ssh_opts+=("$opt")
 	done < <(remote_ssh_opts)
-	remote_device_identity_via_ssh sshpass -p "$pass" ssh "${ssh_opts[@]}" "$user@$addr" || true
+	ssh_opts+=(-p "$_SSH_PORT")
+	remote_device_identity_via_ssh sshpass -p "$pass" ssh "${ssh_opts[@]}" "$user@$_SSH_HOST" || true
 }
 
 list_ssh_devices() {
@@ -174,12 +167,14 @@ cmd_connect() {
 	local opt
 
 	require_sshpass
-	echo "SSH connect: probing $user@$ip ..."
+	parse_ssh_endpoint "$ip" || die "invalid IP=$ip"
+	echo "SSH connect: probing $user@${_SSH_HOST}:${_SSH_PORT} ..."
 	while IFS= read -r opt; do
 		[[ -n "$opt" ]] && ssh_opts+=("$opt")
 	done < <(remote_ssh_opts)
-	if ! sshpass -p "$pass" ssh "${ssh_opts[@]}" "$user@$ip" true >/dev/null 2>&1; then
-		die "cannot SSH to $user@$ip (reachable? password? sshd listening?)"
+	ssh_opts+=(-p "$_SSH_PORT")
+	if ! sshpass -p "$pass" ssh "${ssh_opts[@]}" "$user@$_SSH_HOST" true >/dev/null 2>&1; then
+		die "cannot SSH to $user@${_SSH_HOST}:${_SSH_PORT} (reachable? password? sshd listening?)"
 	fi
 	live="$(fetch_identity_via_ssh "$ip")"
 	IFS=$'\t' read -r sn chip <<<"${live:-}"

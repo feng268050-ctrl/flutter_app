@@ -276,8 +276,9 @@ sync_kernel_config_fragments() {
     "$configs_dir/lws-hmi-kernel-trim.config" \
     "$configs_dir/lws-hmi-usb-gadget.config" \
     "$configs_dir/lws-hmi-bt-hid.config" \
-    "$configs_dir/lws-hmi-debug-usb.config"
-  for cfg in "$OVERLAY/kernel/rockchip"/ynh960-*.config; do
+    "$configs_dir/lws-hmi-debug-usb.config" \
+    "$configs_dir/ynh960-virt-host.config"
+  for cfg in "$OVERLAY/kernel/rockchip"/*.config; do
     [[ -f "$cfg" ]] || continue
     install_file "$cfg" "$configs_dir/$(basename "$cfg")"
   done
@@ -297,6 +298,7 @@ apply_kernel_patches() {
     "include/drm/drm_drv.h"
     "drivers/gpu/drm/drm_gem.c"
     "drivers/gpu/drm/rockchip/rockchip_drm_drv.c"
+    "drivers/firmware/rockchip_sip.c"
     "drivers/input/touchscreen/gt9xx/gt9xx.c"
     "drivers/input/touchscreen/gt9xx/gt9xx.h"
     "drivers/net/phy/icplus.c"
@@ -341,6 +343,7 @@ restore_kernel_patches() {
     "include/drm/drm_drv.h"
     "drivers/gpu/drm/drm_gem.c"
     "drivers/gpu/drm/rockchip/rockchip_drm_drv.c"
+    "drivers/firmware/rockchip_sip.c"
     "drivers/input/touchscreen/gt9xx/gt9xx.c"
     "drivers/input/touchscreen/gt9xx/gt9xx.h"
     "drivers/net/phy/icplus.c"
@@ -595,7 +598,7 @@ patch_mk_loader() {
     cp -a "$target" "$orig"
   fi
   cp -a "$orig" "$target"
-  echo "overlay: mk-loader.sh → Innohi prebuilt loader (sdk-native verified path)"
+  echo "overlay: mk-loader.sh → Innohi prebuilt loader"
 }
 
 fix_innohi_scripts_buildroot_output_dir() {
@@ -680,8 +683,9 @@ elif [[ "${1:-}" == "--platform-squash" ]]; then
   platform_squash_only=1
 fi
 
-# Owned tree (W3): skip re-applying kernel + stable device script patches unless forced.
-# Third-party / custom BR packages always sync on a normal apply-overlay.
+# Owned tree (W3): skip re-applying kernel *patches* + stable device script
+# patches unless forced. DTS + arch/arm64/configs fragments from
+# overlay/kernel/ still sync every apply (e.g. CONFIG_SND_VIRTIO for P3.2).
 skip_platform_overlay=0
 if [[ "$platform_squash_only" != "1" \
    && -f "$SDK/.lws-owned-tree" \
@@ -698,6 +702,12 @@ run_platform_overlay() {
   patch_30_rootfs
   patch_post_wifibt
   fix_innohi_scripts_buildroot_output_dir
+}
+
+# Always refresh overlay/kernel SoT into the SDK (safe on owned tree).
+sync_kernel_overlay_sources() {
+  sync_kernel_display_dts
+  sync_kernel_config_fragments
 }
 
 if [[ "$platform_squash_only" == "1" ]]; then
@@ -921,6 +931,7 @@ sync_flutter_engine_script
 sync_flutter_elinux_script
 if [[ "$skip_platform_overlay" == "1" ]]; then
   echo "overlay: skip platform kernel/device patches (.lws-owned-tree present; FORCE_PLATFORM_OVERLAY=1 to re-apply)"
+  sync_kernel_overlay_sources
 else
   run_platform_overlay
 fi

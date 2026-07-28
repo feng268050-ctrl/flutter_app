@@ -66,6 +66,26 @@ grep -aFq 'PARTLABEL=rootfs_b' "$FIRMWARE/boot_b.img" \
 restore
 trap - EXIT
 
+# Publish bare Image for P3.2 emulator (same binary packed into FIT).
+IMAGE_SRC=""
+for candidate in \
+	"$SDK/kernel-6.1/arch/arm64/boot/Image" \
+	"$SDK/kernel/arch/arm64/boot/Image"; do
+	if [[ -r "$candidate" ]]; then
+		IMAGE_SRC="$candidate"
+		break
+	fi
+done
+if [[ -n "$IMAGE_SRC" ]]; then
+	mkdir -p "$FIRMWARE"
+	rm -f "$FIRMWARE/Image"
+	cp -Lf "$IMAGE_SRC" "$FIRMWARE/Image"
+	echo "emulator kernel Image: $FIRMWARE/Image"
+	bash "$ROOT/scripts/artifact-size.sh" "$FIRMWARE/Image" || true
+else
+	echo "WARNING: bare Image not found under kernel*/arch/arm64/boot — emulator publish skipped" >&2
+fi
+
 echo "A/B kernel FITs ready:"
 bash "$ROOT/scripts/artifact-size.sh" \
 	"$FIRMWARE/boot.img" "$FIRMWARE/boot_b.img"

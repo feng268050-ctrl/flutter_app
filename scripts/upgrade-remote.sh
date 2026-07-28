@@ -155,6 +155,9 @@ if is_android_emulator_serial "$(device_select_sn)"; then
 	die "Android emulator ($(device_select_sn)) is not supported for upgrade (physical board only; see make devices)"
 fi
 usb_ssh_session_select "$ROOT"
+if is_emulator_ssh_endpoint "${TARGET_ADDR:-}"; then
+	die "QEMU emulator ($TARGET_ADDR) is not supported for upgrade (use make build-emulator + make emulator)"
+fi
 
 if [[ "$OEM_ONLY" == "1" ]]; then
 	MODE_LABEL="OEM-only"

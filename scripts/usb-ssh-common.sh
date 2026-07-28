@@ -31,6 +31,70 @@ is_android_emulator_serial() {
 	esac
 }
 
+# SSH endpoint: host or host:port (IPv4 / simple hostname). Default port 22.
+# Sets _SSH_HOST and _SSH_PORT (callers may read after success).
+parse_ssh_endpoint() {
+	local ep="${1:-}"
+	_SSH_HOST=""
+	_SSH_PORT=22
+	[[ -n "$ep" ]] || return 1
+	# Wrap the full IPv4 in an outer group — repeated (...){3} only keeps the last iter.
+	if [[ "$ep" =~ ^(([0-9]{1,3}\.){3}[0-9]{1,3}):([0-9]{1,5})$ ]]; then
+		_SSH_HOST="${BASH_REMATCH[1]}"
+		_SSH_PORT="${BASH_REMATCH[3]}"
+		return 0
+	fi
+	if [[ "$ep" =~ ^([A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?):([0-9]{1,5})$ ]]; then
+		_SSH_HOST="${BASH_REMATCH[1]}"
+		_SSH_PORT="${BASH_REMATCH[3]}"
+		return 0
+	fi
+	if [[ "$ep" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+		_SSH_HOST="$ep"
+		return 0
+	fi
+	if [[ "$ep" =~ ^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$ ]]; then
+		_SSH_HOST="$ep"
+		return 0
+	fi
+	return 1
+}
+
+normalize_ssh_endpoint() {
+	parse_ssh_endpoint "$1" || return 1
+	if [[ "$_SSH_PORT" == "22" ]]; then
+		printf '%s\n' "$_SSH_HOST"
+	else
+		printf '%s\n' "${_SSH_HOST}:${_SSH_PORT}"
+	fi
+}
+
+# True for QEMU guest hostfwd endpoints (make devices MODE=EMU).
+is_emulator_ssh_endpoint() {
+	local ep="${1:-}"
+	parse_ssh_endpoint "$ep" || return 1
+	case "$_SSH_HOST" in
+	127.0.0.1 | localhost)
+		[[ "$_SSH_PORT" != "22" ]] && return 0
+		;;
+	esac
+	return 1
+}
+
+# TCP check for SSH (ping is wrong for host:port / loopback hostfwd).
+ssh_endpoint_reachable() {
+	local ep="${1:-}" host port
+	parse_ssh_endpoint "$ep" || return 1
+	host="$_SSH_HOST"
+	port="$_SSH_PORT"
+	if command -v nc >/dev/null 2>&1; then
+		nc -z -G 2 "$host" "$port" >/dev/null 2>&1 || nc -z -w 2 "$host" "$port" >/dev/null 2>&1
+		return $?
+	fi
+	# Bash /dev/tcp (macOS bash 3.2 OK)
+	(echo >/dev/tcp/"$host"/"$port") >/dev/null 2>&1
+}
+
 # Device selection: SN (or deprecated SERIAL) matches make devices SN or ChipID columns.
 # CHIPID matches ChipID only (when SN= would be ambiguous across boards).
 device_select_sn() {
@@ -217,9 +281,13 @@ ping_usb_ssh_target() {
 # Background sysrq reboot; remote shell exits immediately (for make reboot / push-app).
 USB_SSH_SYSRQ_REBOOT_CMD='sh -c "(sleep 1; sync; if [ -w /proc/sysrq-trigger ]; then echo 1 >/proc/sys/kernel/sysrq 2>/dev/null; echo b >/proc/sysrq-trigger; elif [ -x /usr/libexec/hmi/shutdown.sh ]; then /usr/libexec/hmi/shutdown.sh reboot; fi) >/dev/console 2>&1 & exit 0"'
 
-# Unbound TCP reachability for registered remote SSH (MODE=SSH).
+# Reachability for registered remote SSH (MODE=SSH) or EMU hostfwd (host:port).
 ping_remote_ssh_target() {
 	local addr="$1"
+	if is_emulator_ssh_endpoint "$addr" || [[ "$addr" == *:* ]]; then
+		ssh_endpoint_reachable "$addr"
+		return $?
+	fi
 	case "$(uname -s)" in
 	Darwin) ping -c 1 -t 2 "$addr" ;;
 	Linux) ping -c 1 -W 2 "$addr" ;;
@@ -240,7 +308,12 @@ remote_ssh_run() {
 	)
 
 	require_sshpass
-	sshpass -p "$ssh_pass" ssh "${ssh_opts[@]}" "$target_user@$target_addr" "$@"
+	parse_ssh_endpoint "$target_addr" || {
+		echo "ERROR: invalid SSH endpoint: $target_addr" >&2
+		return 1
+	}
+	ssh_opts+=(-p "$_SSH_PORT")
+	sshpass -p "$ssh_pass" ssh "${ssh_opts[@]}" "$target_user@$_SSH_HOST" "$@"
 }
 
 remote_ssh_schedule_sysrq_reboot() {

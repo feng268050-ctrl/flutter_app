@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy debug app + runtime to the selected USB-SSH or registered SSH device.
+# Deploy debug app + runtime to the selected USB-SSH, registered SSH, or EMU target.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -13,6 +13,8 @@ DEVICE_APP_STAGE=/var/lib/hmi/debug-app-staging
 DEVICE_RUNTIME_STAGE=/var/lib/hmi/debug-runtime-staging
 RUNTIME_INSTALL=/usr/libexec/hmi/debug-runtime-install.sh
 APP_APPLY=/usr/libexec/hmi/debug-app-apply.sh
+RUNTIME_INSTALL_HOST="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-runtime-install.sh"
+APP_APPLY_HOST="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-apply.sh"
 ENGINE_VER="$(debug_runtime_engine_version "$ROOT")"
 
 die() {
@@ -21,6 +23,8 @@ die() {
 }
 
 [[ -d "$STAGING/opt/hmi/data/flutter_assets" ]] || die "missing debug staging (run: make build-debug-app)"
+[[ -f "$APP_APPLY_HOST" ]] || die "missing host apply script: $APP_APPLY_HOST"
+[[ -f "$RUNTIME_INSTALL_HOST" ]] || die "missing host runtime install: $RUNTIME_INSTALL_HOST"
 
 usb_ssh_session_prepare "$ROOT"
 
@@ -42,6 +46,19 @@ local_manifest="$STAGING/debug-runtime/$ENGINE_VER/manifest.json"
 	|| die "missing debug engine (run: make build-debug-app)"
 [[ -f "$STAGING/debug-runtime/$ENGINE_VER/icudtl.dat" ]] \
 	|| die "missing debug icudtl.dat (run: make build-debug-app)"
+
+# Reclaim leftovers that accumulate on a tight rootfs (esp. emulator without userdata).
+echo "debug-deploy: reclaiming leftover staging trees..."
+usb_ssh_session_run_ssh "$ROOT" "$IFACE" \
+	"rm -rf /opt/hmi.debug-next /var/lib/hmi/push-app-staging /var/lib/hmi/debug-app-staging /var/lib/hmi/debug-runtime-staging"
+
+# Refresh board helpers each deploy (script-only fixes without rootfs rebuild).
+usb_ssh_session_run_ssh "$ROOT" "$IFACE" "mkdir -p /usr/libexec/hmi"
+usb_ssh_session_run_scp "$ROOT" "$IFACE" \
+	"$APP_APPLY_HOST" "$TARGET_USER@$TARGET_ADDR:$APP_APPLY"
+usb_ssh_session_run_scp "$ROOT" "$IFACE" \
+	"$RUNTIME_INSTALL_HOST" "$TARGET_USER@$TARGET_ADDR:$RUNTIME_INSTALL"
+usb_ssh_session_run_ssh "$ROOT" "$IFACE" "chmod 0755 $APP_APPLY $RUNTIME_INSTALL"
 
 # Upload debug runtime when device cache is missing or manifest differs.
 device_manifest_path="/var/lib/hmi/debug-runtime/$ENGINE_VER/manifest.json"
@@ -66,9 +83,6 @@ if [[ "$need_runtime" -eq 1 ]]; then
 	usb_ssh_session_run_scp "$ROOT" "$IFACE" \
 		"$STAGING/debug-runtime/$ENGINE_VER/icudtl.dat" \
 		"$TARGET_USER@$TARGET_ADDR:$DEVICE_RUNTIME_STAGE/icudtl.dat"
-	if ! usb_ssh_session_run_ssh "$ROOT" "$IFACE" "test -x $RUNTIME_INSTALL"; then
-		die "$RUNTIME_INSTALL not found on board (apply overlay, build-rootfs, flash)"
-	fi
 	usb_ssh_session_run_ssh "$ROOT" "$IFACE" "$RUNTIME_INSTALL"
 fi
 
@@ -78,8 +92,5 @@ usb_ssh_session_run_scp "$ROOT" "$IFACE" -r \
 	"$STAGING/opt/hmi/." \
 	"$TARGET_USER@$TARGET_ADDR:$DEVICE_APP_STAGE/"
 
-if ! usb_ssh_session_run_ssh "$ROOT" "$IFACE" "test -x $APP_APPLY"; then
-	die "$APP_APPLY not found on board (apply overlay, build-rootfs, flash)"
-fi
 usb_ssh_session_run_ssh "$ROOT" "$IFACE" "$APP_APPLY"
 echo "debug-deploy: done"

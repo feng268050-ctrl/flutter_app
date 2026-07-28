@@ -35,11 +35,11 @@ uses_docker_volume() {
 # Space-separated basenames (bash 3.2-safe; no mapfile).
 files_for_scope() {
 	case "$1" in
-	boot) echo "boot.img boot_b.img" ;;
+	boot) echo "boot.img boot_b.img Image" ;;
 	rootfs) echo "rootfs.img rootfs.ext2 rootfs.ext4" ;;
 	update) echo "update.img MiniLoaderAll.bin uboot.img misc.img parameter.txt" ;;
 	firmware)
-		echo "update.img boot.img boot_b.img rootfs.img rootfs.ext2 rootfs.ext4 MiniLoaderAll.bin uboot.img misc.img parameter.txt"
+		echo "update.img boot.img boot_b.img Image rootfs.img rootfs.ext2 rootfs.ext4 MiniLoaderAll.bin uboot.img misc.img parameter.txt"
 		;;
 	*)
 		echo "ERROR: unknown export scope: $1" >&2

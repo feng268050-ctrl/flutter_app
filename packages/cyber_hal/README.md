@@ -52,17 +52,18 @@ Sub-imports work without pulling siblings, e.g. `package:cyber_hal/output/displa
 
 **Example / smoke profiles** ship as Flutter package assets (`boards/sim.json`, `boards/portable-smoke.json`). **Product** gpio/modbus/profile JSON ship as **App** assets. Installing under `/usr/share/cyber_hal/` is deferred until a product needs non-Flutter consumers.
 
-## Stub / sim backends (P3.2)
+## Stub backends (host tests)
 
-For host tests and the emulator:
+P3.2 UTM guests use **Linux** backends with OEM `board_id=sim`. Stub backends are
+for host unit tests / emergency only:
 
-1. Load `boards/sim.json` (or any profile with `board_id: sim`).
-2. Select stubs with `resolveHalBackend(boardId: …)` — also honors `HAL_BACKEND=stub` (or `sim`).
-3. Construct `StubBacklight` / `StubVolume` / `StubSysInfo` from `package:cyber_hal/stub.dart`.
+1. Set `HAL_BACKEND=stub` (board id alone does **not** select stubs).
+2. Construct `StubBacklight` / `StubVolume` / `StubSysInfo` from `package:cyber_hal/stub.dart`.
 
 ```dart
 final profile = await BoardProfile.loadAsset('packages/cyber_hal/boards/sim.json');
-if (resolveHalBackend(boardId: profile.info.boardId) == HalBackendKind.stub) {
+// Guest / device: resolveHalBackend() == linux even when boardId is sim.
+if (resolveHalBackend(env: 'stub') == HalBackendKind.stub) {
   final backlight = StubBacklight();
   final volume = StubVolume();
   final autoSleep = StubAutoSleep();
@@ -98,7 +99,7 @@ Boot re-apply is `BoardBindings.restorePersistedSettings` (HAL-owned).
 
 ## Status
 
-OpenSpec `dart-hal-package`: output, input, debug, datetime, sys_info, **gpio**, **modbus**, **bluetooth**, and **network** (networkd L3 + in-HAL proxy apply) Linux backends live here. App may keep thin `lib/platform/**` façades until Demo cutover. Sim/stub profile supports P3.2 emulator prep.
+OpenSpec `dart-hal-package`: output, input, debug, datetime, sys_info, **gpio**, **modbus**, **bluetooth**, and **network** (networkd L3 + in-HAL proxy apply) Linux backends live here. App may keep thin `lib/platform/**` façades until Demo cutover. Package `boards/sim.json` matches the P3.2 guest OEM contract (Linux-in-guest; stubs only via `HAL_BACKEND=stub`).
 
 ## Modbus
 

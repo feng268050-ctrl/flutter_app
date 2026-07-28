@@ -317,12 +317,6 @@ final class BoardBindings {
   }
 
   Future<ModbusHal> modbus({AssetBundle? bundle}) {
-    final asset = profile.resolvedModbusAsset;
-    if (asset == null || asset.isEmpty) {
-      throw const HalIoException(
-        'board profile missing configs.modbus asset path',
-      );
-    }
-    return ModbusHal.fromAsset(asset: asset, bundle: bundle);
+    return ModbusHal.fromProfile(profile, bundle: bundle);
   }
 }

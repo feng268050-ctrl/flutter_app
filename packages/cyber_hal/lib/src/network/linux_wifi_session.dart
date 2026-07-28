@@ -63,6 +63,9 @@ class LinuxWifiSession implements WifiController {
   String? _ipv4AppliedBssid;
   bool _ipv4ApplyInFlight = false;
 
+  /// Cached: null until probed. False = virtio/Ethernet stand-in named wlan0.
+  bool? _ieee80211;
+
   DBusClient? _bus;
   WpaSupplicantDbus? _wpaDbus;
   NetworkdDbus? _netdDbus;
@@ -103,13 +106,28 @@ class LinuxWifiSession implements WifiController {
     }
   }
 
-  Future<void> _ensureDbus() async {
+  Future<void> _ensureDbus({bool needWpa = true}) async {
     if (_bus != null) {
+      if (needWpa && _wpaDbus == null) {
+        _wpaDbus = WpaSupplicantDbus(client: _bus);
+      }
       return;
     }
     _bus = DBusClient.system();
-    _wpaDbus = WpaSupplicantDbus(client: _bus);
     _netdDbus = NetworkdDbus(client: _bus);
+    if (needWpa) {
+      _wpaDbus = WpaSupplicantDbus(client: _bus);
+    }
+  }
+
+  Future<bool> _isIeee80211() async {
+    final cached = _ieee80211;
+    if (cached != null) {
+      return cached;
+    }
+    final v = await wifiIfaceIsIeee80211(iface);
+    _ieee80211 = v;
+    return v;
   }
 
   Future<ProcessResult> _run(List<String> cmd, {bool log = true}) async {
@@ -144,6 +162,17 @@ class LinuxWifiSession implements WifiController {
     _stopWantedWatch();
     unawaited(() async {
       try {
+        if (!await _isIeee80211()) {
+          // Stand-in: radio bring-up is synchronous (no wpa).
+          if (await wifiRadio.isEnabled()) {
+            _stopWantedWatch();
+            _emitRadio(WifiRadioState.on);
+            await _startStatusWatch();
+            await _refreshStatus();
+            await _ensureStandInIpv4(force: true);
+          }
+          return;
+        }
         await _ensureDbus();
         await _wpaDbus!.watchInterface(iface, onChange: () {
           unawaited(_tickWantedFromDbus());
@@ -186,10 +215,13 @@ class LinuxWifiSession implements WifiController {
   }
 
   Future<void> _startStatusWatch() async {
-    await _ensureDbus();
-    await _wpaDbus!.watchInterface(iface, onChange: () {
-      unawaited(_refreshStatus());
-    });
+    final ieee = await _isIeee80211();
+    await _ensureDbus(needWpa: ieee);
+    if (ieee) {
+      await _wpaDbus!.watchInterface(iface, onChange: () {
+        unawaited(_refreshStatus());
+      });
+    }
     await _netdDbus!.watchLink(iface, onChange: () {
       unawaited(_refreshStatus());
     });
@@ -223,8 +255,12 @@ class LinuxWifiSession implements WifiController {
       await _writeWanted(true);
       await _startStatusWatch();
       await _refreshStatus();
-      // Saved network may auto-associate; force a fresh DHCP lease (new gateway).
-      await _ensureIpv4ForCurrentAssoc(force: true);
+      if (await _isIeee80211()) {
+        // Saved network may auto-associate; force a fresh DHCP lease (new gateway).
+        await _ensureIpv4ForCurrentAssoc(force: true);
+      } else {
+        await _ensureStandInIpv4(force: true);
+      }
     } else {
       await _stopStatusWatch();
       try {
@@ -260,7 +296,11 @@ class LinuxWifiSession implements WifiController {
       _emitConn(link);
       if (link.phase == WifiConnectionPhase.connected ||
           link.phase == WifiConnectionPhase.obtainingIp) {
-        unawaited(_ensureIpv4ForCurrentAssoc());
+        if (await _isIeee80211()) {
+          unawaited(_ensureIpv4ForCurrentAssoc());
+        } else {
+          unawaited(_ensureStandInIpv4());
+        }
       } else if (link.phase == WifiConnectionPhase.disconnected) {
         _ipv4AppliedBssid = null;
       }
@@ -269,9 +309,40 @@ class LinuxWifiSession implements WifiController {
     }
   }
 
+  /// Virtio/Ethernet stand-in `wlan0`: DHCP/static via networkd (no wpa).
+  Future<void> _ensureStandInIpv4({bool force = false}) async {
+    if (_radio != WifiRadioState.on || _ipv4ApplyInFlight) {
+      return;
+    }
+    if (!force && _ipv4AppliedBssid == 'stand-in') {
+      return;
+    }
+    _ipv4ApplyInFlight = true;
+    try {
+      await _ensureDbus(needWpa: false);
+      final cfg = await getIpv4Config();
+      final apply = await _applyIpv4(cfg);
+      if (!apply.ok) {
+        debugPrint('wifi: stand-in IPv4 failed: ${apply.message}');
+        return;
+      }
+      _ipv4AppliedBssid = 'stand-in';
+      await _waitForIpv4(
+        ssid: 'virtio',
+        timeout: const Duration(seconds: 30),
+      );
+    } finally {
+      _ipv4ApplyInFlight = false;
+    }
+  }
+
   /// Re-apply L3 when associating to a new BSS (same SSID ≠ same gateway).
   Future<void> _ensureIpv4ForCurrentAssoc({bool force = false}) async {
     if (_radio != WifiRadioState.on || _ipv4ApplyInFlight) {
+      return;
+    }
+    if (!await _isIeee80211()) {
+      await _ensureStandInIpv4(force: force);
       return;
     }
     await _ensureDbus();
@@ -305,6 +376,50 @@ class LinuxWifiSession implements WifiController {
 
   @override
   Future<WifiConnectionState> linkDetails() async {
+    if (!await _isIeee80211()) {
+      await _ensureDbus(needWpa: false);
+      try {
+        final link = await _netdDbus!.readLink(iface);
+        final ipv4 = link.primaryIpv4;
+        final mac = await _readMac();
+        if (ipv4 != null && ipv4.isNotEmpty) {
+          return WifiConnectionState(
+            phase: WifiConnectionPhase.connected,
+            ssid: 'virtio',
+            ipv4: ipv4,
+            prefixLength: link.primaryPrefix,
+            gateway: link.gateway ?? await _readGateway(),
+            dns: link.dns,
+            macAddress: mac,
+            linkSpeedMbps: await _readLinkSpeedMbps(),
+            security: 'open',
+          );
+        }
+        final op = link.operational;
+        if (op == 'routable' ||
+            op == 'carrier' ||
+            op == 'degraded' ||
+            op == 'enslaved') {
+          return WifiConnectionState(
+            phase: WifiConnectionPhase.obtainingIp,
+            ssid: 'virtio',
+            message: 'DHCP…',
+            macAddress: mac,
+          );
+        }
+        return WifiConnectionState(
+          phase: WifiConnectionPhase.disconnected,
+          ssid: 'virtio',
+          macAddress: mac,
+        );
+      } catch (e) {
+        return WifiConnectionState(
+          phase: WifiConnectionPhase.failed,
+          ssid: 'virtio',
+          message: '$e',
+        );
+      }
+    }
     await _ensureDbus();
     final snap = await _wpaDbus!.readIface(iface);
     var phase = WpaCliParse.phaseFromStatus({
@@ -407,6 +522,10 @@ class LinuxWifiSession implements WifiController {
     if (_radio != WifiRadioState.on) {
       return const [];
     }
+    if (!await _isIeee80211()) {
+      // Virtio stand-in: no scan — use USB Wi‑Fi passthrough for real BSS lists.
+      return const [];
+    }
     await _ensureDbus();
     final wpa = _wpaDbus!;
     try {
@@ -458,6 +577,17 @@ class LinuxWifiSession implements WifiController {
       if (_radio != WifiRadioState.on) {
         return;
       }
+    }
+    if (!await _isIeee80211()) {
+      _emitConn(
+        WifiConnectionState(
+          phase: WifiConnectionPhase.failed,
+          ssid: ssid,
+          message:
+              'virtio wlan0 has no 802.11 — plug a USB Wi‑Fi dongle (EMULATOR_USB)',
+        ),
+      );
+      return;
     }
     // Ensure iface is up after a prior disconnect (must not leave link down).
     try {
@@ -593,6 +723,11 @@ class LinuxWifiSession implements WifiController {
   Future<void> disconnect() async {
     assert(WifiLeavePolicy.keepsLinkUp(WifiLeaveKind.disconnect));
     assert(!WifiLeavePolicy.removesSavedNetworks(WifiLeaveKind.disconnect));
+    if (!await _isIeee80211()) {
+      _ipv4AppliedBssid = null;
+      _emitConn(WifiConnectionState.disconnected);
+      return;
+    }
     await _ensureDbus();
     try {
       await _wpaDbus!.disconnect(iface);
@@ -616,6 +751,13 @@ class LinuxWifiSession implements WifiController {
   @override
   Future<void> forget(String ssid) async {
     assert(WifiLeavePolicy.removesSavedNetworks(WifiLeaveKind.forget));
+    if (!await _isIeee80211()) {
+      if (_conn.ssid == ssid) {
+        _ipv4AppliedBssid = null;
+        _emitConn(WifiConnectionState.disconnected);
+      }
+      return;
+    }
     await _ensureDbus();
     final wasCurrent = _conn.ssid == ssid;
     if (wasCurrent) {
@@ -638,6 +780,9 @@ class LinuxWifiSession implements WifiController {
 
   @override
   Future<List<WifiSavedNetwork>> savedNetworks() async {
+    if (!await _isIeee80211()) {
+      return const [];
+    }
     await _ensureDbus();
     final nets = await _wpaDbus!.listNetworks(iface);
     return nets
@@ -680,6 +825,12 @@ class LinuxWifiSession implements WifiController {
   Future<void> syncFromSystem() async {
     try {
       final wanted = await File(wifiWantedPath).exists();
+      if (!await _isIeee80211()) {
+        if (wanted || await wifiRadio.isEnabled()) {
+          await setRadioEnabled(true);
+        }
+        return;
+      }
       if (await _wpaLive()) {
         _stopWantedWatch();
         _emitRadio(WifiRadioState.on);

@@ -5,6 +5,22 @@ import 'package:cyber_hal/src/linux/lws_trace.dart';
 import 'package:cyber_hal/src/network/wpa_supplicant_dbus.dart';
 import 'package:dbus/dbus.dart';
 
+/// True when [iface] is a real IEEE 802.11 netdev (`wireless` / `phy80211`).
+///
+/// P3.2 QEMU renames a virtio-net NIC to `wlan0` as a **role stand-in** — that
+/// path is Ethernet L3 only and must not start `wpa_supplicant`.
+Future<bool> wifiIfaceIsIeee80211(String iface) async {
+  if (iface.isEmpty || iface == 'lo') {
+    return false;
+  }
+  final base = '/sys/class/net/$iface';
+  if (!await Directory(base).exists()) {
+    return false;
+  }
+  return await Directory('$base/wireless').exists() ||
+      await Directory('$base/phy80211').exists();
+}
+
 /// Board-specific Wi‑Fi PHY / radio bring-up (D11b).
 ///
 /// Portable HAL calls this port. Default is [SystemdWifiRadio] (no board
@@ -95,6 +111,15 @@ final class SystemdWifiRadio implements WifiRadio {
   @override
   Future<bool> isEnabled() async {
     try {
+      final ifc = await _resolveIface(fallbackOnly: true);
+      if (!await wifiIfaceIsIeee80211(ifc)) {
+        final wanted = await File(wifiWantedPath).exists();
+        if (!wanted) {
+          return false;
+        }
+        final r = await _run('ip', <String>['-o', 'link', 'show', 'dev', ifc]);
+        return r.exitCode == 0 && '${r.stdout}'.contains('UP');
+      }
       final r = await _run('systemctl', <String>['is-active', wlanUnit]);
       return '${r.stdout}'.trim() == 'active';
     } catch (_) {
@@ -113,10 +138,16 @@ final class SystemdWifiRadio implements WifiRadio {
 
   Future<void> _bringUp() async {
     await modem.ensureRadioHardware();
-    await _ensureWpaConf();
     final ifc = await _resolveIface();
     await _writeIfaceFile(ifc);
     await _run('ip', <String>['link', 'set', ifc, 'up']);
+    if (!await wifiIfaceIsIeee80211(ifc)) {
+      // Virtio / renamed Ethernet stand-in for wifi.station — L3 only.
+      await _writeWanted(true);
+      lwsTrace('wifi-radio: stand-in L3-only $ifc (no IEEE 802.11 / skip wpa)');
+      return;
+    }
+    await _ensureWpaConf();
     // Empty D-Bus-activated stock daemon owns fi.w1.wpa_supplicant1.
     await _run('systemctl', <String>['stop', stockWpaUnit]);
     await _run('systemctl', <String>['reset-failed', wlanUnit]);
@@ -131,8 +162,11 @@ final class SystemdWifiRadio implements WifiRadio {
 
   Future<void> _tearDown() async {
     final ifc = await _resolveIface(fallbackOnly: true);
-    await _run('systemctl', <String>['stop', wlanUnit]);
-    await _run('systemctl', <String>['reset-failed', wlanUnit]);
+    final ieee = await wifiIfaceIsIeee80211(ifc);
+    if (ieee) {
+      await _run('systemctl', <String>['stop', wlanUnit]);
+      await _run('systemctl', <String>['reset-failed', wlanUnit]);
+    }
     if (await Directory('/sys/class/net/$ifc').exists()) {
       await _run('ip', <String>['link', 'set', ifc, 'down']);
     }

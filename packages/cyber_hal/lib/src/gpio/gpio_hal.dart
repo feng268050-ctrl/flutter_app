@@ -8,12 +8,21 @@ import 'package:cyber_hal/src/gpio/gpio_config.dart';
 import 'package:cyber_hal/src/linux/lws_trace.dart';
 import 'package:cyber_hal/src/profile/board_profile.dart';
 
+/// Fired after a successful [GpioLine.set] with the **logical** level
+/// (active-low already applied for the physical write).
+typedef GpioLevelListener = void Function(String lineId, bool logicalHigh);
+
 /// Config-driven GPIO HAL (sysfs / gpio_innohi).
 abstract class GpioHal {
   GpioConfig get config;
 
   /// Open a named line by config id.
   GpioLine openLine(String id);
+
+  /// Observe logical level changes from [GpioLine.set] (including blink ticks).
+  void addLevelListener(GpioLevelListener listener);
+
+  void removeLevelListener(GpioLevelListener listener);
 
   /// Release blink timers / cached paths.
   Future<void> dispose();
@@ -72,6 +81,7 @@ final class _LinuxGpioHal implements GpioHal {
   final GpioConfig config;
 
   final Map<String, _LinuxGpioLine> _open = {};
+  final List<GpioLevelListener> _levelListeners = [];
 
   @override
   GpioLine openLine(String id) {
@@ -87,13 +97,34 @@ final class _LinuxGpioHal implements GpioHal {
       lineCfg,
       defaults: config.defaults,
       capabilities: config.capabilities,
+      onLogicalSet: _emitLevel,
     );
     _open[id] = line;
     return line;
   }
 
   @override
+  void addLevelListener(GpioLevelListener listener) {
+    if (!_levelListeners.contains(listener)) {
+      _levelListeners.add(listener);
+    }
+  }
+
+  @override
+  void removeLevelListener(GpioLevelListener listener) {
+    _levelListeners.remove(listener);
+  }
+
+  void _emitLevel(String lineId, bool logicalHigh) {
+    // Copy in case a listener unregisters during notify.
+    for (final listener in List<GpioLevelListener>.of(_levelListeners)) {
+      listener(lineId, logicalHigh);
+    }
+  }
+
+  @override
   Future<void> dispose() async {
+    _levelListeners.clear();
     for (final line in _open.values) {
       await line.dispose();
     }
@@ -106,12 +137,15 @@ final class _LinuxGpioLine implements GpioLine {
     this._cfg, {
     required GpioDefaults defaults,
     required GpioCapabilities capabilities,
+    required void Function(String lineId, bool logicalHigh) onLogicalSet,
   })  : _defaults = defaults,
-        _capabilities = capabilities;
+        _capabilities = capabilities,
+        _onLogicalSet = onLogicalSet;
 
   final GpioLineConfig _cfg;
   final GpioDefaults _defaults;
   final GpioCapabilities _capabilities;
+  final void Function(String lineId, bool logicalHigh) _onLogicalSet;
 
   String? _valuePath;
   String? _activeScheme;
@@ -186,7 +220,10 @@ final class _LinuxGpioLine implements GpioLine {
     return false;
   }
 
-  Future<void> _trySetDirectionSibling(String valuePath, String direction) async {
+  Future<void> _trySetDirectionSibling(
+    String valuePath,
+    String direction,
+  ) async {
     final dirPath = valuePath.replaceFirst(RegExp(r'/value$'), '/direction');
     final file = File(dirPath);
     if (await file.exists()) {
@@ -211,6 +248,7 @@ final class _LinuxGpioLine implements GpioLine {
     final physical = _physicalHigh(high);
     try {
       await File(path).writeAsString(physical ? '1' : '0');
+      _onLogicalSet(id, high);
     } catch (e) {
       debugPrint('GPIO $id: write $path failed: $e');
     }

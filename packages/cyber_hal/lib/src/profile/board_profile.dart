@@ -43,6 +43,9 @@ abstract final class BoardHelperKeys {
   static const alsaOutputDevice = 'alsa_output_device';
   /// Optional IPC / camera host for boot self-check ICMP (e.g. `192.168.1.100`).
   static const cameraIp = 'camera_ip';
+  /// Override [ModbusTransport.device] from product `modbus.json` (e.g. sim
+  /// USB-RS485 → `/dev/ttyUSB0` while ynh960 keeps `/dev/ttyS5`).
+  static const modbusRtuDevice = 'modbus_rtu_device';
 }
 
 /// Board profile: capabilities, net role→iface, pointers to gpio/modbus configs.

@@ -141,17 +141,24 @@ abstract class ModbusHal {
   }
 
   /// Prefer [BoardProfile.resolvedModbusAsset] when set (D22).
+  /// Applies optional [BoardHelperKeys.modbusRtuDevice] over the asset transport.
   static Future<ModbusHal> fromProfile(
     BoardProfile profile, {
     AssetBundle? bundle,
-  }) {
+  }) async {
     final asset = profile.resolvedModbusAsset;
     if (asset == null || asset.isEmpty) {
       throw const HalIoException(
         'board profile missing configs.modbus asset path',
       );
     }
-    return fromAsset(asset: asset, bundle: bundle);
+    final source = await (bundle ?? rootBundle).loadString(asset);
+    var config = ModbusConfig.fromJsonString(source);
+    final deviceOverride = profile.helper(BoardHelperKeys.modbusRtuDevice);
+    if (deviceOverride != null && deviceOverride.isNotEmpty) {
+      config = config.withTransportDevice(deviceOverride);
+    }
+    return ModbusHal.fromConfig(config);
   }
 }
 

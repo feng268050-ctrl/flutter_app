@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cyber_hal/cyber_hal.dart';
+import 'package:cyber_hal/modbus.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -27,6 +28,31 @@ void main() {
     expect(merged.resolvedGpioAsset, 'assets/hal/gpio.json');
     expect(merged.resolvedModbusAsset, 'assets/hal/modbus.json');
     expect(merged.ifaceFor(NetRole.ethernetPrimary), 'eth0');
+  });
+
+  test('sim OEM sets modbus_rtu_device for USB-serial', () async {
+    final simBoard = Directory.current.path.endsWith('cyber_hal')
+        ? '../../oem/boards/sim/board_profile.json'
+        : 'oem/boards/sim/board_profile.json';
+    final profile = await BoardProfile.loadFile(simBoard);
+    expect(profile.helper(BoardHelperKeys.modbusRtuDevice), '/dev/ttyUSB0');
+  });
+
+  test('ModbusConfig.withTransportDevice overrides path', () {
+    const t = ModbusTransport(
+      type: 'rtu',
+      device: '/dev/ttyS5',
+      baud: 115200,
+    );
+    final cfg = ModbusConfig(
+      version: 1,
+      transport: t,
+      attributes: const [],
+    );
+    final next = cfg.withTransportDevice('/dev/ttyUSB0');
+    expect(next.transport.device, '/dev/ttyUSB0');
+    expect(next.transport.baud, 115200);
+    expect(identical(cfg.withTransportDevice('/dev/ttyS5'), cfg), isTrue);
   });
 
   test('loadFile missing path throws HalIoException', () async {

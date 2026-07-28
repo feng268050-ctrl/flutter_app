@@ -1,9 +1,10 @@
-/// In-memory HAL backends for host tests and the P3.2 emulator.
+/// In-memory HAL backends for host unit tests and emergency stubbing.
 ///
-/// Load `boards/sim.json`, then:
+/// P3.2 UTM guests use Linux backends with `board_id=sim`. Force stubs only via
+/// `HAL_BACKEND=stub`:
 ///
 /// ```dart
-/// if (resolveHalBackend(boardId: profile.info.boardId) == HalBackendKind.stub) {
+/// if (resolveHalBackend() == HalBackendKind.stub) {
 ///   final backlight = StubBacklight();
 ///   final volume = StubVolume();
 ///   final autoSleep = StubAutoSleep();
@@ -11,8 +12,6 @@
 ///   final sysInfo = StubSysInfo();
 /// }
 /// ```
-///
-/// Or set `HAL_BACKEND=stub` without a sim profile.
 library;
 
 export 'package:cyber_hal/src/stub/hal_backend.dart';

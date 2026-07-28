@@ -105,6 +105,29 @@ final class ModbusConfig {
 
   factory ModbusConfig.fromJsonString(String source) =>
       ModbusConfig.fromJson(jsonDecode(source) as Map<String, dynamic>);
+
+  /// Board helper override for the RTU serial path (sim USB-serial, etc.).
+  ModbusConfig withTransportDevice(String device) {
+    if (device.isEmpty || device == transport.device) return this;
+    return ModbusConfig(
+      version: version,
+      transport: ModbusTransport(
+        type: transport.type,
+        device: device,
+        baud: transport.baud,
+        dataBits: transport.dataBits,
+        parity: transport.parity,
+        stopBits: transport.stopBits,
+        unitId: transport.unitId,
+        timeoutMs: transport.timeoutMs,
+        commandIntervalMs: transport.commandIntervalMs,
+      ),
+      attributes: attributes,
+      capabilities: capabilities,
+      poll: poll,
+      groups: groups,
+    );
+  }
 }
 
 final class ModbusTransport {

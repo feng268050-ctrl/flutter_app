@@ -9,7 +9,7 @@ void main() {
       ? 'boards'
       : 'packages/cyber_hal/boards';
 
-  test('sim board profile advertises limited capabilities', () {
+  test('sim board profile advertises guest capabilities', () {
     final json = File('$boardsRoot/sim.json').readAsStringSync();
     final profile = BoardProfile.fromJsonString(json);
     expect(profile.info.boardId, 'sim');
@@ -19,17 +19,23 @@ void main() {
     expect(profile.capabilities.has(Capability.datetime), isTrue);
     expect(profile.capabilities.has(Capability.keyboard), isTrue);
     expect(profile.capabilities.has(Capability.mouse), isTrue);
-    expect(profile.capabilities.has(Capability.gpio), isFalse);
-    expect(profile.capabilities.has(Capability.modbus), isFalse);
-    expect(profile.capabilities.has(Capability.bluetooth), isFalse);
+    expect(profile.capabilities.has(Capability.ethernet), isTrue);
+    expect(profile.capabilities.has(Capability.wifi), isTrue);
+    expect(profile.capabilities.has(Capability.gpio), isTrue);
+    expect(profile.capabilities.has(Capability.modbus), isTrue);
+    expect(profile.capabilities.has(Capability.bluetooth), isTrue);
+    expect(profile.capabilities.has(Capability.sshDebug), isTrue);
+    expect(profile.capabilities.has(Capability.usbOtg), isFalse);
+    expect(profile.ifaceFor(NetRole.ethernetPrimary), 'eth0');
+    expect(profile.ifaceFor(NetRole.wifiStation), 'wlan0');
     expect(profile.gpioConfigAsset, isNull);
     expect(profile.modbusConfigAsset, isNull);
   });
 
-  test('resolveHalBackend selects stub for sim / HAL_BACKEND', () {
-    expect(resolveHalBackend(boardId: 'sim'), HalBackendKind.stub);
+  test('resolveHalBackend: sim is Linux; stub only via HAL_BACKEND', () {
+    expect(resolveHalBackend(boardId: 'sim'), HalBackendKind.linux);
     expect(resolveHalBackend(env: 'stub'), HalBackendKind.stub);
-    expect(resolveHalBackend(env: 'sim'), HalBackendKind.stub);
+    expect(resolveHalBackend(env: 'sim'), HalBackendKind.linux);
     expect(resolveHalBackend(boardId: 'ynh960'), HalBackendKind.linux);
   });
 

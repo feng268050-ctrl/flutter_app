@@ -1,5 +1,7 @@
 #!/bin/sh
 # Atomically replace /opt/hmi with staged debug payload (no automatic restore).
+# Uses rename (mv) instead of cp so peak free space ≈ one payload, not two —
+# critical on the P3.2 emulator (single 600M→grown rootfs, no userdata bind).
 set -eu
 
 STAGE=/var/lib/hmi/debug-app-staging
@@ -24,12 +26,9 @@ log() {
 log "stopping current HMI"
 /usr/libexec/hmi/hmi-stop-and-wait.sh
 
-rm -rf "$NEXT"
-mkdir -p "$NEXT/data"
-cp -a "$STAGE/." "$NEXT/"
+# Drop failed / leftover trees before rename.
+rm -rf "$NEXT" "$DEST"
+# Same filesystem: rename staging → /opt/hmi (no 2× copy).
+mv "$STAGE" "$DEST"
 sync
-rm -rf "$DEST"
-mv "$NEXT" "$DEST"
-sync
-rm -rf "$STAGE"
 log "installed debug payload at $DEST"

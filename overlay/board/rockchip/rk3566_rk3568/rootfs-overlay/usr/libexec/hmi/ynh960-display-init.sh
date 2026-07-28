@@ -1,9 +1,16 @@
 #!/bin/sh
 # Thin rootfs stub — board display-init lives on OEM (W2).
 # param-update.service runs before oem-compose; mount /oem then hand off.
+# Emulator (lws.emulator=1 / virtio oem disk): mount /dev/vdb; skip if no helper (sim).
 set -u
 
 log() { echo "ynh960-display-init: $*"; }
+
+is_emulator() {
+	grep -q 'lws.emulator=1' /proc/cmdline 2>/dev/null && return 0
+	[ -d /sys/firmware/qemu_fw_cfg ] && return 0
+	return 1
+}
 
 setup_by_name_links() {
 	local part name base
@@ -18,8 +25,8 @@ setup_by_name_links() {
 	done
 }
 
-mount_oem() {
-	local dev="/dev/block/by-name/oem"
+mount_oem_dev() {
+	local dev="$1"
 	mkdir -p /oem
 	[ -b "$dev" ] || return 1
 	if mountpoint -q /oem 2>/dev/null; then
@@ -35,6 +42,19 @@ mount_oem() {
 	return 0
 }
 
+mount_oem() {
+	local dev="/dev/block/by-name/oem"
+	if [ -b "$dev" ]; then
+		mount_oem_dev "$dev" && return 0
+	fi
+	# P3.2 QEMU: second virtio disk is oem.img
+	if [ -b /dev/vdb ]; then
+		log "mounting emulator oem disk /dev/vdb"
+		mount_oem_dev /dev/vdb && return 0
+	fi
+	return 1
+}
+
 wait_mmc() {
 	local i
 	for i in $(seq 1 50); do
@@ -44,20 +64,32 @@ wait_mmc() {
 	return 1
 }
 
-wait_mmc || log "eMMC slow — continuing"
-setup_by_name_links
+if is_emulator; then
+	log "emulator boot — skip eMMC wait"
+else
+	wait_mmc || log "eMMC slow — continuing"
+	setup_by_name_links
+fi
+
 mount_oem || {
 	log "ERROR: oem mount failed — cannot run board display-init"
 	exit 1
 }
 
 HELPER=""
+board_id=""
 if [ -f /oem/manifest.json ]; then
 	board_path="$(sed -n 's/.*"board_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /oem/manifest.json | head -1)"
+	board_id="$(sed -n 's/.*"board_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /oem/manifest.json | head -1)"
 	cand="/oem/${board_path}/helpers/display-init.sh"
 	[ -n "$board_path" ] && [ -x "$cand" ] && HELPER="$cand"
 fi
 if [ -z "$HELPER" ] || [ ! -x "$HELPER" ]; then
+	# sim_virt and other packs without lcd/ParamUpdate: mount-only is enough.
+	if [ "$board_id" = "sim" ] || is_emulator; then
+		log "no OEM display-init (board_id=${board_id:-?}) — skip ParamUpdate on emulator/sim"
+		exit 0
+	fi
 	log "OEM display-init missing — cannot continue"
 	exit 1
 fi

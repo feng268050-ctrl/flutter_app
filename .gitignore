@@ -36,3 +36,4 @@ overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi/
 .cursor/*.log
 # OEM build outputs (make build-oem)
 /oem/out/
+prebuilt/emulator-swgl/

@@ -223,12 +223,24 @@ export TZ="$(resolve_hmi_tz)"
 
 # Rockchip post-hook 10-weston overwrites /etc/xdg/weston/weston.ini.
 # Own config via --config under XDG_RUNTIME_DIR (transform + mouse prefs).
+BOARD_ID=""
+if [ -f "${RUN_HMI:-/run/hmi}/oem.env" ]; then
+	# shellcheck disable=SC1090
+	. "${RUN_HMI:-/run/hmi}/oem.env" 2>/dev/null || true
+	BOARD_ID="${BOARD_ID:-}"
+fi
 case "$HMI_ORIENTATION" in
 portrait_up)
 	WESTON_TRANSFORM=normal
 	;;
 *)
-	WESTON_TRANSFORM=rotate-270
+	# Device panel is portrait-native → rotate-270 for landscape UI.
+	# Emulator virt screen is already landscape (sim_virt screen.json).
+	if [ "$BOARD_ID" = "sim" ] || grep -q 'lws.emulator=1' /proc/cmdline 2>/dev/null; then
+		WESTON_TRANSFORM=normal
+	else
+		WESTON_TRANSFORM=rotate-270
+	fi
 	;;
 esac
 
@@ -237,17 +249,133 @@ esac
 WESTON_INI="$XDG_RUNTIME_DIR/weston.ini"
 weston_write_hmi_ini "$WESTON_INI" "$WESTON_TRANSFORM"
 
+is_emulator=0
+if [ "$BOARD_ID" = "sim" ] || grep -q 'lws.emulator=1' /proc/cmdline 2>/dev/null; then
+	is_emulator=1
+fi
+
+WESTON_RENDERER_ARGS=""
+EMU_MESA_LIB=""
+EMU_MESA_SRC=""
+if [ "$is_emulator" -eq 1 ]; then
+	# Host VirGL only: virtio-gpu-gl + Mesa virtio_gpu (no softpipe / pixman GLES).
+	echo "hmi-launch: emulator — DRM: $(ls /sys/class/drm 2>/dev/null | tr '\n' ' ')" >&2
+	if ! dmesg 2>/dev/null | grep -q 'features: +virgl'; then
+		echo "hmi-launch: ERROR: virtio-gpu has no VirGL (need qemu-virgl + virtio-gpu-gl)" >&2
+		echo "hmi-launch: ERROR: host: make setup-emulator-qemu && make emulator" >&2
+		exit 1
+	fi
+	# Stale 9p (host rm -rf while QEMU held the share) leaves an empty mount.
+	if mountpoint -q /run/lws-gl 2>/dev/null || grep -q ' /run/lws-gl ' /proc/mounts 2>/dev/null; then
+		if [ ! -d /run/lws-gl/lib ]; then
+			echo "hmi-launch: emulator — stale empty 9p at /run/lws-gl; remounting" >&2
+			umount /run/lws-gl 2>/dev/null || umount -l /run/lws-gl 2>/dev/null || true
+		fi
+	fi
+	if [ -d /run/lws-gl/lib ]; then
+		EMU_MESA_SRC=/run/lws-gl
+	else
+		mkdir -p /run/lws-gl
+		if mount -t 9p -o trans=virtio,version=9p2000.L,msize=262144 lws_gl /run/lws-gl 2>/dev/null \
+			|| mount -t 9p -o trans=virtio,version=9p2000.L lws_gl /run/lws-gl 2>/dev/null; then
+			EMU_MESA_SRC=/run/lws-gl
+			echo "hmi-launch: emulator — mounted 9p lws_gl → /run/lws-gl" >&2
+		fi
+	fi
+	if [ -z "$EMU_MESA_SRC" ] || [ ! -d "$EMU_MESA_SRC/lib/dri" ]; then
+		echo "hmi-launch: ERROR: no guest Mesa (9p lws_gl) — host: make fetch-emulator-swgl" >&2
+		exit 1
+	fi
+	if [ ! -f "$EMU_MESA_SRC/lib/libweston-14/gl-renderer.so" ] \
+		|| [ ! -f "$EMU_MESA_SRC/lib/libweston-14/drm-backend.so" ]; then
+		echo "hmi-launch: ERROR: missing Mesa-patched Weston modules under $EMU_MESA_SRC/lib/libweston-14" >&2
+		echo "hmi-launch: ERROR: host: make fetch-emulator-swgl" >&2
+		exit 1
+	fi
+	WESTON_RENDERER_ARGS="--renderer=gl"
+fi
+
+# Cache 9p Mesa → tmpfs; bind-mount Mesa over Mali stubs; LD_PRELOAD GBM shims.
+EMU_MESA_DRI=""
+EMU_EGL_VENDOR=""
+EMU_LD_PRELOAD=""
+if [ "$is_emulator" -eq 1 ]; then
+	EMU_MESA_CACHE=/run/lws-gl-cache
+	if [ ! -f "$EMU_MESA_CACHE/lib/dri/virtio_gpu_dri.so" ]; then
+		echo "hmi-launch: emulator — caching Mesa $EMU_MESA_SRC → $EMU_MESA_CACHE" >&2
+		rm -rf "$EMU_MESA_CACHE"
+		mkdir -p "$EMU_MESA_CACHE"
+		cp -a "$EMU_MESA_SRC/lib" "$EMU_MESA_CACHE/"
+		cp -a "$EMU_MESA_SRC/bin" "$EMU_MESA_CACHE/" 2>/dev/null || true
+		if [ -d "$EMU_MESA_SRC/share/glvnd" ]; then
+			mkdir -p "$EMU_MESA_CACHE/share"
+			cp -a "$EMU_MESA_SRC/share/glvnd" "$EMU_MESA_CACHE/share/"
+		fi
+	fi
+	GL_ROOT="$EMU_MESA_CACHE"
+	EMU_MESA_LIB="$GL_ROOT/lib"
+	EMU_MESA_DRI="$GL_ROOT/lib/dri"
+	if [ -d "$GL_ROOT/share/glvnd/egl_vendor.d" ]; then
+		EMU_EGL_VENDOR="$GL_ROOT/share/glvnd/egl_vendor.d"
+	fi
+	if [ ! -f "$EMU_MESA_LIB/libmali-hook.so.1" ]; then
+		echo "hmi-launch: ERROR: missing VirGL mali-hook stub ($EMU_MESA_LIB/libmali-hook.so.1)" >&2
+		echo "hmi-launch: ERROR: host: make fetch-emulator-swgl" >&2
+		exit 1
+	fi
+	# Overlay Mali-linked product binaries/libs with Mesa-patched copies.
+	emu_bind() {
+		src="$1"
+		dst="$2"
+		[ -f "$src" ] && [ -e "$dst" ] || return 0
+		umount "$dst" 2>/dev/null || true
+		mount --bind "$src" "$dst"
+	}
+	emu_bind "$EMU_MESA_LIB/libweston-14/gl-renderer.so" /usr/lib/libweston-14/gl-renderer.so
+	emu_bind "$EMU_MESA_LIB/libweston-14/drm-backend.so" /usr/lib/libweston-14/drm-backend.so
+	emu_bind "$EMU_MESA_LIB/libweston-14.so.0" /usr/lib/libweston-14.so.0
+	emu_bind "$EMU_MESA_LIB/libweston-14.so.0.0.1" /usr/lib/libweston-14.so.0.0.1
+	emu_bind "$EMU_MESA_LIB/libexec_weston.so.0" /usr/lib/weston/libexec_weston.so.0
+	emu_bind "$EMU_MESA_LIB/libexec_weston.so.0.0.0" /usr/lib/weston/libexec_weston.so.0.0.0
+	emu_bind "$EMU_MESA_LIB/libEGL.so.1" /usr/lib/libEGL.so.1
+	emu_bind "$EMU_MESA_LIB/libGLESv2.so.2" /usr/lib/libGLESv2.so.2
+	emu_bind "$EMU_MESA_LIB/libgbm.so.1" /usr/lib/libgbm.so.1
+	emu_bind "$EMU_MESA_LIB/libmali-hook.so.1" /lib/libmali-hook.so.1
+	emu_bind "$EMU_MESA_LIB/libmali-hook.so.1" /usr/lib/libmali-hook.so.1
+	EMU_LD_PRELOAD="$EMU_MESA_LIB/libmali-hook.so.1"
+	echo "hmi-launch: emulator — Mesa VirGL from $GL_ROOT (dri=virtio_gpu)" >&2
+	if [ -x "$GL_ROOT/bin/flutter-wayland-client" ]; then
+		ELINUX_CLIENT="$GL_ROOT/bin/flutter-wayland-client"
+		echo "hmi-launch: emulator — using $ELINUX_CLIENT (Mesa GLES)" >&2
+	fi
+fi
+
 # desktop-shell.so: paints boot-splash.png until Flutter covers it.
-# (kiosk-shell cannot show a background image — only a solid color.)
-weston --config="$WESTON_INI" --backend=drm-backend.so \
-	--shell=desktop-shell.so --idle-time=0 &
+# VirGL + cocoa,gl=es requires GL renderer scanouts (pixman stays invisible).
+# shellcheck disable=SC2086
+if [ "$is_emulator" -eq 1 ] && [ -n "$EMU_MESA_LIB" ]; then
+	env LD_LIBRARY_PATH="$EMU_MESA_LIB${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+		LD_PRELOAD="$EMU_LD_PRELOAD${LD_PRELOAD:+:$LD_PRELOAD}" \
+		LIBGL_DRIVERS_PATH="$EMU_MESA_DRI" \
+		MESA_LOADER_DRIVER_OVERRIDE=virtio_gpu \
+		__EGL_VENDOR_LIBRARY_DIRS="${EMU_EGL_VENDOR:-}" \
+		__EGL_VENDOR_LIBRARY_FILENAMES="${EMU_EGL_VENDOR:+$EMU_EGL_VENDOR/50_mesa.json}" \
+		weston --config="$WESTON_INI" --backend=drm-backend.so \
+		--shell=desktop-shell.so --idle-time=0 $WESTON_RENDERER_ARGS &
+else
+	weston --config="$WESTON_INI" --backend=drm-backend.so \
+		--shell=desktop-shell.so --idle-time=0 $WESTON_RENDERER_ARGS &
+fi
 WESTON_PID=$!
 i=0
 while [ "$i" -lt 50 ]; do
 	if [ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; then
 		break
 	fi
-	# BusyBox may lack fractional sleep; fall back to 1s.
+	if [ "$is_emulator" -eq 1 ] && ! kill -0 "$WESTON_PID" 2>/dev/null; then
+		echo "hmi-launch: ERROR: weston GL/VirGL exited — see journal; no softpipe fallback" >&2
+		exit 1
+	fi
 	sleep 0.1 2>/dev/null || sleep 1
 	i=$((i + 1))
 done
@@ -257,18 +385,38 @@ if [ ! -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; then
 	exit 1
 fi
 
+echo "hmi-launch: emulator — weston=gl dri=virtio_gpu" >&2
+
 # Keep shell as main PID so we can stop Weston when the client exits.
 # Do NOT use --force-scale-factor: on this board it presents FPS but the
 # frame is composited black. Visual DPR is done in Dart (LwsHmiApp).
 set +e
-if [ -n "$ELINUX_LD_LIBRARY_PATH" ]; then
-	env LD_LIBRARY_PATH="$ELINUX_LD_LIBRARY_PATH" \
+if [ "$is_emulator" -eq 1 ] && [ -n "${EMU_MESA_LIB:-}" ]; then
+	env LD_LIBRARY_PATH="$EMU_MESA_LIB${ELINUX_LD_LIBRARY_PATH:+:$ELINUX_LD_LIBRARY_PATH}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+		LD_PRELOAD="$EMU_LD_PRELOAD${LD_PRELOAD:+:$LD_PRELOAD}" \
+		LIBGL_DRIVERS_PATH="$EMU_MESA_DRI" \
+		MESA_LOADER_DRIVER_OVERRIDE=virtio_gpu \
+		__EGL_VENDOR_LIBRARY_DIRS="${EMU_EGL_VENDOR:-}" \
+		__EGL_VENDOR_LIBRARY_FILENAMES="${EMU_EGL_VENDOR:+$EMU_EGL_VENDOR/50_mesa.json}" \
+		"$ELINUX_CLIENT" --bundle="$BUNDLE" --fullscreen
+elif [ -n "$ELINUX_LD_LIBRARY_PATH" ]; then
+	env LD_LIBRARY_PATH="$ELINUX_LD_LIBRARY_PATH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
 		"$ELINUX_CLIENT" --bundle="$BUNDLE" --fullscreen
 else
 	"$ELINUX_CLIENT" --bundle="$BUNDLE" --fullscreen
 fi
 status=$?
 set -e
+if [ "$status" -ne 0 ]; then
+	echo "hmi-launch: flutter-wayland-client exited $status" >&2
+fi
+# On emulator, keep Weston up so the cocoa window is not stuck on
+# "Display output is not active" after a Flutter EGL failure.
+if [ "$is_emulator" -eq 1 ] && [ "$status" -ne 0 ]; then
+	echo "hmi-launch: emulator — leaving Weston running (Flutter failed); fix GLES then: systemctl restart hmi" >&2
+	wait "$WESTON_PID" 2>/dev/null || true
+	exit "$status"
+fi
 kill "$WESTON_PID" 2>/dev/null || true
 wait "$WESTON_PID" 2>/dev/null || true
 exit "$status"

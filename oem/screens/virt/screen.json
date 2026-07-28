@@ -1,0 +1,10 @@
+{
+  "display_name": "QEMU virtio display",
+  "width": 1536,
+  "height": 960,
+  "default_orientation": "landscape_left",
+  "splash": {
+    "notes": "No ParamUpdate / private1; virtio-gpu via Weston. Keep in sync with run-emulator.sh EMULATOR_XRES/YRES defaults (1536×960 ≈ 1.2× panel 1280×800 for MacBook HiDPI)."
+  },
+  "touch_notes": "QEMU virtio pointer/keyboard; no board DT panel timing"
+}

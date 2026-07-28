@@ -1,0 +1,6 @@
+# P3.2 QEMU virtio NIC → eth0 (ethernet.primary). Harmless on device (MAC never appears).
+[Match]
+MACAddress=52:54:00:12:e0:00
+
+[Link]
+Name=eth0

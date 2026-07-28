@@ -1,0 +1,16 @@
+[Unit]
+Description=OpenSSH for P3.2 QEMU emulator (hostfwd)
+DefaultDependencies=yes
+After=network.target
+ConditionKernelCommandLine=lws.emulator=1
+
+[Service]
+Type=simple
+ExecStartPre=/usr/libexec/hmi/ensure-sshd-hostkeys.sh
+ExecStartPre=/bin/mkdir -p /run/sshd
+ExecStart=/usr/sbin/sshd -D -e
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

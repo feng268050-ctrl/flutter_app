@@ -3,6 +3,8 @@ Description=Compose OEM board/screen pack into /run/hmi
 DefaultDependencies=no
 After=param-update.service local-fs.target
 Before=hmi.service mainserver.service
+# Device: param-update mounts /oem. Emulator: that unit is conditioned out;
+# After= is still satisfied, and oem-compose mounts /dev/vdb itself.
 Wants=param-update.service
 
 [Service]

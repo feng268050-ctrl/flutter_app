@@ -1,0 +1,7 @@
+# P3.2 QEMU: DHCP on ethssh (SLIRP hostfwd NIC under vmnet). Harmless on device
+# (MAC 52:54:00:12:22:22 never appears on Rockchip boards).
+[Match]
+MACAddress=52:54:00:12:22:22
+
+[Network]
+DHCP=yes

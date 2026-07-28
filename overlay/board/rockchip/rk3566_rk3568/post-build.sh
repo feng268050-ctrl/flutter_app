@@ -200,3 +200,21 @@ if [ -x "$TARGET_DIR/usr/bin/bluealsa" ]; then
 fi
 
 sh "$(dirname "$0")/install-systemctl-wrapper.sh" "$TARGET_DIR" post-build
+
+# Rockchip device/rockchip/common/scripts/post-hostname.sh sets
+# HOSTNAME=$RK_CHIP-$POST_OS → rk3566rk3568-buildroot, overwriting BR2.
+# Shared product Image is chip-agnostic (P3.2 QEMU + future SoCs).
+HOSTNAME_PRODUCT=buildroot
+echo "$HOSTNAME_PRODUCT" >"$TARGET_DIR/etc/hostname"
+if [ -f "$TARGET_DIR/etc/hosts" ]; then
+	sed -i '/^127\.0\.1\.1/d' "$TARGET_DIR/etc/hosts"
+fi
+echo "127.0.1.1	$HOSTNAME_PRODUCT" >>"$TARGET_DIR/etc/hosts"
+echo "post-build: hostname=$HOSTNAME_PRODUCT (override Rockchip \$RK_CHIP-buildroot)"
+
+# P3.2 emulator GLES: do NOT bake Mesa into device rootfs. Host qemu-virgl +
+# 9p mount of prebuilt/emulator-swgl (see run-emulator.sh / hmi-launch.sh).
+if [ -d "$TARGET_DIR/opt/lws-swgl" ]; then
+	rm -rf "$TARGET_DIR/opt/lws-swgl"
+	echo "post-build: removed /opt/lws-swgl (use host VirGL + 9p Mesa instead)"
+fi

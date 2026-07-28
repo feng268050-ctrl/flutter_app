@@ -1,0 +1,6 @@
+# P3.2 QEMU: SLIRP hostfwd NIC (vmnet builds). Keep unnamed ethN — not in net_roles.
+[Match]
+MACAddress=52:54:00:12:22:22
+
+[Link]
+Name=ethssh

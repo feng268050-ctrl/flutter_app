@@ -1,0 +1,40 @@
+{
+  "board_id": "sim",
+  "display_name": "P3.2 QEMU guest (sim)",
+  "model_hint": "virt-aarch64",
+  "capabilities": [
+    "ethernet",
+    "wifi",
+    "proxy",
+    "bluetooth",
+    "backlight",
+    "volume",
+    "keyboard",
+    "mouse",
+    "gpio",
+    "modbus",
+    "sysInfo",
+    "datetime",
+    "sshDebug"
+  ],
+  "net_roles": {
+    "ethernet.primary": "eth0",
+    "wifi.station": "wlan0"
+  },
+  "storage_mounts": [
+    "/",
+    "/userdata"
+  ],
+  "route_metrics": {
+    "wlan0": 100,
+    "eth0": 2000
+  },
+  "helpers": {
+    "ssh_debug": "/usr/libexec/hmi/enable-ssh-debug.sh",
+    "gpio_sim_leds": "/oem/boards/sim/helpers/gpio-sim-leds.sh",
+    "backlight_preferred_names": "backlight,acpi_video0",
+    "alsa_volume_controls": "Master,PCM,Speaker,Playback",
+    "apply_mouse_settings": "/usr/bin/apply-mouse-settings",
+    "modbus_rtu_device": "/dev/ttyUSB0"
+  }
+}

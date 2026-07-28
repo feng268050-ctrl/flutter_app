@@ -4,6 +4,8 @@ DefaultDependencies=yes
 After=param-update.service local-fs.target
 Wants=param-update.service
 Before=hmi.service
+# Board-only: MIPI/LCD ParamUpdate companion. P3.2 QEMU uses virtio-gpu — no MainServer.
+ConditionKernelCommandLine=!lws.emulator=1
 
 [Service]
 Type=simple

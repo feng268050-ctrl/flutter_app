@@ -40,7 +40,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop build-umtprd rebuild-umtprd build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom sdk-native-prepare build-sdk-native repack-sdk-native audit-sdk-native flash-sdk-native usb-ssh-setup test-debug-app alarm alarm-clean l10n l10n-sync l10n-gen l10n-verify
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-mediamtx rebuild-mediamtx build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom usb-ssh-setup test-debug-app alarm alarm-clean l10n l10n-sync l10n-gen l10n-verify
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -100,6 +100,13 @@ help:
 	@echo "  make sdk-shell             # interactive shell in linux-sdk (native Linux or macOS Docker)"
 	@echo "  See docs/build-optimization.md"
 	@echo ""
+	@echo "Emulator (P3.2 — same Image+rootfs + sim_virt OEM; docs/p32-emulator.md):"
+	@echo "  make setup-emulator-qemu   # once (macOS): install qemu-virgl (host VirGL / ANGLE→Metal)"
+	@echo "  make fetch-emulator-swgl   # once: guest Mesa virtio_gpu → prebuilt/ (9p; FORCE=1 to refetch)"
+	@echo "  make build-emulator        # assemble Image+rootfs+sim_virt oem → output/firmware/emulator/ (grows emulator rootfs copy; EMULATOR_ROOTFS_SIZE=1536M)"
+	@echo "  make emulator              # start QEMU (host VirGL required)"
+	@echo "  make emulator-stop         # stop lws-hmi QEMU guest (not Android Studio)"
+	@echo ""
 	@echo "Dependencies (prebuilt / fetch — run before first make build-rootfs):"
 	@echo "  make extract-linux-sdk SRC=<dir>  # xz split volumes → linux-sdk/ (FORCE=1 replace; TRIM=1 trim+squash)"
 	@echo "  make trim-linux-sdk        # whitelist trim + platform squash (owned tree; keeps dl/output)"
@@ -128,9 +135,9 @@ help:
 	@echo "Debug (device / host — USB-SSH, remote SSH, Flutter, serial):"
 	@echo "  make usb-ssh-setup         # host ECM IP + sshpass doctor (macOS may sudo)"
 	@echo "  make debug-host-prepare    # USB ECM or registered SSH reachability for debug-app/IDE"
-	@echo "  make connect <ip>          # register remote SSH board (MODE=SSH in make devices)"
+	@echo "  make connect <ip>          # register remote SSH board (MODE=SSH; host:port OK for EMU)"
 	@echo "  make disconnect <ip>       # remove registered remote SSH board"
-	@echo "  make devices               # RockUSB + USB-SSH + SSH; columns SN + ChipID"
+	@echo "  make devices               # RockUSB + USB-SSH + SSH + EMU (auto-probe QEMU :2222)"
 	@echo "  make shell                 # interactive device shell (USB-SSH or SSH)"
 	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
 	@echo "  make push-app              # scp app over SSH (USB-SSH or registered IP)"
@@ -151,12 +158,6 @@ help:
 	@echo "  make reboot-loader         # Linux USB-SSH → RockUSB + unregister; Android → adb"
 	@echo "  make flash                 # uf factory.img (FACTORY_SKU); IMAGE= override; Maskrom ul (macOS)"
 	@echo "  make flash-android         # optional: flash Android instead"
-	@echo ""
-	@echo "SDK-native (Innohi baseline, optional):"
-	@echo "  make build-sdk-native      # Innohi SDK-native ynh960 (boot.its, no lws_hmi)"
-	@echo "  make repack-sdk-native     # rebuild kernel+update.img only (after build-sdk-native)"
-	@echo "  make audit-sdk-native      # verify boot.its FIT + SDK loader"
-	@echo "  make flash-sdk-native      # MaskROM flash SDK-native update.img"
 	@echo ""
 	@echo "Misc (infrequent — board params, BR output maintenance):"
 	@echo "  make pull-display-params        # adb: ynh960 LCD/MIPI tables → board/ (+ apply-overlay)"
@@ -184,6 +185,7 @@ help:
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ (no manual export)."
 	@echo "  - Factory: make build-oem then build-img → output/firmware/<sku>/factory.img; make flash."
 	@echo "  - FACTORY_SKU=ynh960-p800 (default); override UBOOT_ID= / OEM_ID=; see board/factory-skus.tsv."
+	@echo "  - Emulator: README Make commands → P3.2 emulator (setup → deps → kernel/rootfs → setup-emulator-qemu → fetch-emulator-swgl → build-emulator → emulator)."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
 
 # --- Setup ---
@@ -192,7 +194,12 @@ setup: apply-overlay
 	@bash scripts/setup-host.sh
 
 apply-overlay:
-	@bash scripts/apply-overlay.sh
+	@# macOS Docker volume: run overlay inside the builder so /work/sdk is updated.
+	@if [ "$$(uname -s)" = Darwin ] && [ "${BUILD_BIND_MOUNT:-}" != "1" ]; then \
+		bash scripts/docker-run.sh true; \
+	else \
+		bash scripts/apply-overlay.sh; \
+	fi
 
 clean-overlay:
 	@bash scripts/apply-overlay.sh --restore
@@ -242,6 +249,9 @@ build: check-prebuilt apply-overlay lunch build-boot-logo build-app build-kernel
 build-kernel:
 	@bash scripts/docker-run.sh bash -lc 'bash /work/lws-hmi/scripts/sync-lunch-config.sh && bash /work/lws-hmi/scripts/build-kernel-ab.sh'
 	@bash scripts/docker-export-artifacts.sh boot
+	@mkdir -p output/firmware/emulator; \
+	 if [ -r output/firmware/Image ]; then cp -Lf output/firmware/Image output/firmware/emulator/Image; \
+	 echo "published output/firmware/emulator/Image"; fi
 
 # Rootfs: Weston + eLinux + Mali wayland-gbm.
 # prepare-rootfs flips Mali/embedder only when the stack stamp differs.
@@ -260,6 +270,23 @@ build-oem:
 
 build-img:
 	@bash scripts/build-img.sh
+
+# --- Emulator (P3.2) ---
+
+setup-emulator-qemu:
+	@bash scripts/setup-emulator-qemu.sh
+
+fetch-emulator-swgl:
+	@bash scripts/fetch-emulator-swgl.sh
+
+build-emulator:
+	@bash scripts/build-emulator.sh
+
+emulator:
+	@bash scripts/run-emulator.sh start
+
+emulator-stop:
+	@bash scripts/run-emulator.sh stop
 
 build-boot-logo:
 	@bash scripts/build-boot-logo.sh
@@ -435,20 +462,6 @@ build-prebuilt:
 export-prebuilt-runtime:
 	@EXPORT_FLUTTER=0 bash scripts/export-prebuilt.sh
 
-# --- SDK-native ---
-
-sdk-native-prepare:
-	@LWS_HMI_SKIP_OVERLAY=1 bash scripts/docker-run.sh bash /work/lws-hmi/scripts/prepare-sdk-native.sh
-
-build-sdk-native:
-	@LWS_HMI_SKIP_OVERLAY=1 BUILD_JOBS=1 LWS_HMI_NO_MAKEFLAGS=1 bash scripts/docker-run.sh bash /work/lws-hmi/scripts/build-sdk-native.sh
-
-repack-sdk-native:
-	@LWS_HMI_SKIP_OVERLAY=1 BUILD_JOBS=1 LWS_HMI_NO_MAKEFLAGS=1 bash scripts/docker-run.sh bash /work/lws-hmi/scripts/repack-sdk-native-img.sh
-
-audit-sdk-native:
-	@bash scripts/audit-sdk-native.sh
-
 serial-console:
 	@bash scripts/serial-console.sh
 
@@ -458,12 +471,6 @@ serial-sniff:
 serial-ports:
 	@bash scripts/serial-console.sh --list
 	@bash -c 'system_profiler SPUSBDataType 2>/dev/null | grep -A5 -iE "ch34|wch|cp210|ftdi|serial|uart" | head -25 || true'
-
-flash-sdk-native: audit-sdk-native
-	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh flash)
-
-sdk-native-rootfix:
-	@LWS_HMI_SKIP_OVERLAY=1 bash scripts/docker-run.sh bash /work/lws-hmi/scripts/build-sdk-native-rootfix.sh
 
 # --- Misc ---
 

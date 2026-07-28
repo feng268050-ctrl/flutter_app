@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "pack_id": "sim_virt",
+  "board_id": "sim",
+  "screen_id": "virt",
+  "board_path": "boards/sim",
+  "screen_path": "screens/virt",
+  "compat": {
+    "os_min": "1.0.0",
+    "soc_family": "virt"
+  }
+}

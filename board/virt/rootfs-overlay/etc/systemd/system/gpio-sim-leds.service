@@ -1,0 +1,15 @@
+[Unit]
+Description=P3.2 gpio-sim LED file backend
+DefaultDependencies=no
+After=run-hmi.mount local-fs.target
+Before=oem-compose.service hmi.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/hmi/gpio-sim-leds-boot.sh
+# Prefer OEM helper when pack is mounted
+ExecStartPost=-/oem/boards/sim/helpers/gpio-sim-leds.sh
+
+[Install]
+WantedBy=multi-user.target

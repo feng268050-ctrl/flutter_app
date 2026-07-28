@@ -36,10 +36,12 @@ if [ -f "$DEST/manifest.json" ] && cmp -s "$STAGE/manifest.json" "$DEST/manifest
 	exit 0
 fi
 
+rm -rf "$DEST"
 mkdir -p "$DEST"
-cp -f "$STAGE/manifest.json" "$DEST/manifest.json"
-cp -f "$STAGE/libflutter_engine.so" "$DEST/libflutter_engine.so"
-cp -f "$STAGE/icudtl.dat" "$DEST/icudtl.dat"
+# Rename (not cp) so peak free space ≈ one engine copy — needed on tight emulator rootfs.
+mv "$STAGE/manifest.json" "$DEST/manifest.json"
+mv "$STAGE/libflutter_engine.so" "$DEST/libflutter_engine.so"
+mv "$STAGE/icudtl.dat" "$DEST/icudtl.dat"
 sync
 rm -rf "$STAGE"
 log "installed debug runtime at $DEST"

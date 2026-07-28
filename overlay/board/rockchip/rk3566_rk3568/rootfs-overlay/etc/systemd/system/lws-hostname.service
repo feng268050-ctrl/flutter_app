@@ -1,0 +1,16 @@
+[Unit]
+Description=Set product hostname (chip-agnostic)
+DefaultDependencies=no
+After=systemd-remount-fs.service
+Before=sysinit.target network-pre.target systemd-hostnamed.service
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/hmi/lws-hostname.sh
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=sysinit.target

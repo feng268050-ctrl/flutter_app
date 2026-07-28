@@ -1,0 +1,6 @@
+# P3.2 QEMU virtio NIC → wlan0 (wifi.station stand-in). Harmless on device.
+[Match]
+MACAddress=52:54:00:12:a0:00
+
+[Link]
+Name=wlan0

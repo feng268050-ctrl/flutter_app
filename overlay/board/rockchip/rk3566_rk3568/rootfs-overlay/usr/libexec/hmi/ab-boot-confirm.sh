@@ -17,6 +17,12 @@ exec >>"$LOG" 2>&1
 
 ab_log "confirm start"
 
+# P3.2 QEMU: single virtio rootfs, no GPT PARTLABELs / misc A/B marker.
+if grep -q 'lws.emulator=1' /proc/cmdline 2>/dev/null; then
+	ab_log "emulator — skip A/B try-boot confirm"
+	exit 0
+fi
+
 if ! ab_slot_marker_valid; then
 	factory_root_letter="$(ab_current_root_letter 2>/dev/null || true)"
 	if [ -z "$factory_root_letter" ]; then

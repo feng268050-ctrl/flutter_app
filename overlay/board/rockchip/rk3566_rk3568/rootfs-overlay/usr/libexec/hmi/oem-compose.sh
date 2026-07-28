@@ -14,11 +14,33 @@ die() { echo "oem-compose: ERROR: $*" >&2; exit 1; }
 
 ensure_oem_mount() {
 	local dev="/dev/block/by-name/oem"
+	local img="${OEM_IMG:-}"
 	mkdir -p "$OEM_ROOT"
 	if mountpoint -q "$OEM_ROOT" 2>/dev/null; then
 		return 0
 	fi
-	[ -b "$dev" ] || die "oem partition missing ($dev) — flash/upgrade oem.img"
+	# Directory mode (UTM Path A bind / unpacked pack): already has manifest.
+	if [ -f "$OEM_ROOT/manifest.json" ]; then
+		log "using directory OEM_ROOT=$OEM_ROOT (no partition mount)"
+		return 0
+	fi
+	# Optional loop-mount of oem.img (virt guest / host probe).
+	if [ -n "$img" ] && [ -f "$img" ]; then
+		mount -t ext4 -o loop,noatime "$img" "$OEM_ROOT" 2>/dev/null \
+			|| mount -o loop,noatime "$img" "$OEM_ROOT" 2>/dev/null \
+			|| die "loop-mount $img -> $OEM_ROOT failed"
+		log "loop-mounted $img -> $OEM_ROOT"
+		return 0
+	fi
+	# P3.2 QEMU: second virtio disk is oem.img
+	if [ -b /dev/vdb ]; then
+		mount -t ext4 -o noatime /dev/vdb "$OEM_ROOT" 2>/dev/null \
+			|| mount -o noatime /dev/vdb "$OEM_ROOT" 2>/dev/null \
+			|| die "mount /dev/vdb -> $OEM_ROOT failed"
+		log "mounted emulator oem disk /dev/vdb -> $OEM_ROOT"
+		return 0
+	fi
+	[ -b "$dev" ] || die "oem partition missing ($dev) — flash/upgrade oem.img (or set OEM_ROOT / OEM_IMG)"
 	mount -t ext4 -o noatime "$dev" "$OEM_ROOT" 2>/dev/null \
 		|| mount -o noatime "$dev" "$OEM_ROOT" 2>/dev/null \
 		|| die "mount $dev -> $OEM_ROOT failed"
@@ -129,6 +151,11 @@ compose_from_root() {
 	} >"$RUN_HMI/oem.env"
 	write_screen_env "$screen_json"
 	merge_product_ini "$product_seed"
+
+	gpio_sim="$(sed -n 's/.*"gpio_sim_leds"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$board_profile" | head -1)"
+	if [ -n "$gpio_sim" ] && [ -x "$gpio_sim" ]; then
+		"$gpio_sim" || warn "gpio_sim_leds helper failed"
+	fi
 
 	log "composed pack=${pack_id:-?} board=${board_id:-?} screen=${screen_id:-?} source=partition"
 	return 0

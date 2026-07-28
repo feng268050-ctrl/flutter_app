@@ -1,0 +1,6 @@
+# P3.2 QEMU host-only / debug NIC → eth1 (sshDebug; not in net_roles). Harmless on device.
+[Match]
+MACAddress=52:54:00:12:d0:00
+
+[Link]
+Name=eth1

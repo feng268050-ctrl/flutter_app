@@ -3,6 +3,8 @@ Description=Apply Micro-USB OTG mode at boot
 DefaultDependencies=no
 After=sysinit.target systemd-udev-settle.service
 Before=multi-user.target
+# P3.2 sim has no OTG; QEMU cmdline carries lws.emulator=1.
+ConditionKernelCommandLine=!lws.emulator=1
 
 [Service]
 Type=oneshot

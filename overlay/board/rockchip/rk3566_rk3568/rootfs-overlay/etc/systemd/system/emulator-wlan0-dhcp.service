@@ -1,0 +1,21 @@
+[Unit]
+Description=P3.2 emulator wlan0 DHCP (virtio wifi.station stand-in / general LAN)
+Documentation=file:///usr/libexec/wpa/wlan0-dhcp.sh
+DefaultDependencies=yes
+After=network-pre.target systemd-udevd.service
+Wants=network.target
+ConditionKernelCommandLine=lws.emulator=1
+# eth0 is the dedicated IP-camera link (product topology) — do not DHCP it here.
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=LWS_WLAN_IFACE=wlan0
+Environment=LWS_DHCP_IN_UNIT=1
+# Virtio stand-in has no wpa — bring link up then DHCP (general LAN / SSH alternate).
+ExecStartPre=/bin/sh -c 'ip link set "$LWS_WLAN_IFACE" up'
+ExecStart=/usr/libexec/wpa/wlan0-dhcp.sh start
+ExecStop=/usr/libexec/wpa/wlan0-dhcp.sh stop
+
+[Install]
+WantedBy=multi-user.target

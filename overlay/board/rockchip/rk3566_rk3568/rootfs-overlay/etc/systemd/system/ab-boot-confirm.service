@@ -4,6 +4,8 @@ Documentation=file:///usr/libexec/hmi/ab-boot-confirm.sh
 DefaultDependencies=no
 After=local-fs.target hmi.service
 Wants=hmi.service
+# P3.2 QEMU: no GPT A/B PARTLABELs / misc marker on virtio rootfs.
+ConditionKernelCommandLine=!lws.emulator=1
 
 [Service]
 Type=oneshot

@@ -24,6 +24,15 @@ if [ -z "$HELPER" ] || [ ! -x "$HELPER" ]; then
 	fi
 fi
 if [ -z "$HELPER" ] || [ ! -x "$HELPER" ]; then
+	if grep -q 'lws.emulator=1' /proc/cmdline 2>/dev/null; then
+		echo "usb-otg-mode: skip on emulator (no OTG)" >&2
+		exit 0
+	fi
+	if [ -f /run/hmi/board_profile.json ] &&
+		grep -q '"board_id"[[:space:]]*:[[:space:]]*"sim"' /run/hmi/board_profile.json 2>/dev/null; then
+		echo "usb-otg-mode: skip on sim board (no usbOtg)" >&2
+		exit 0
+	fi
 	echo "usb-otg-mode: OEM helper missing" >&2
 	exit 1
 fi

@@ -1465,6 +1465,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String get videosTitle => 'Videos';
 
   @override
+  String get processVideoRecordingTime => 'Recording Time';
+
+  @override
+  String get processVideoWorkMode => 'Work Mode';
+
+  @override
+  String get processVideoMaterial => 'Material';
+
+  @override
+  String get processVideoDuration => 'Duration';
+
+  @override
+  String get processVideoOperations => 'Operations';
+
+  @override
+  String get processVideoEmptyTitle => 'No recordings';
+
+  @override
+  String get processVideoEmptySubtitle => 'Record Work videos from Quick or Engineer mode will appear here.';
+
+  @override
+  String get processVideoDeleteConfirmTitle => 'Delete recording?';
+
+  @override
+  String get processVideoDeleteConfirmMessage => 'This removes the video file and its process parameters from this device.';
+
+  @override
+  String get processVideoDetailTitle => 'Video Details';
+
+  @override
+  String get processVideoParametersTitle => 'Parameter recording';
+
+  @override
+  String get processVideoPlaybackFailed => 'Unable to play this recording';
+
+  @override
+  String processVideoLoadedCount(int loaded, int total) {
+    return '$loaded / $total';
+  }
+
+  @override
+  String get recordWorkLabel => 'Record Work';
+
+  @override
+  String get processVideoRecordingTooShort => 'Recording too short — not saved';
+
+  @override
+  String get processVideoSaveFailed => 'Failed to save recording';
+
+  @override
+  String get ipCameraDemoRecordHint => 'Demo only — not listed in Monitor → Videos';
+
+  @override
   String get volumeSetFailed => 'Couldn’t set volume';
 
   @override

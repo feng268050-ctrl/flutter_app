@@ -9,4 +9,5 @@ abstract final class AppRoutes {
   static const quickMode = '/process-library/quick';
   static const engineerMode = '/process-library/engineer';
   static const demo = '/demo';
+  static const processVideoDetail = '/monitor/process-video';
 }

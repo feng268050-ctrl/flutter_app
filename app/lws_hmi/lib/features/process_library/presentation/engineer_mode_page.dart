@@ -13,6 +13,11 @@ import 'package:lws_hmi/features/process_mode/application/gun_dialog_coordinator
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_mode_draft.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_save_handler.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_snapshot_factory.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_snapshot_source.dart';
+import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
+import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
@@ -92,6 +97,12 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         unawaited(_deviceControl!.start());
         _recordWork = RecordWorkController(
           deviceControl: _deviceControl!,
+          snapshotSource: CallbackProcessVideoSnapshotSource(
+            _captureProcessVideoSnapshot,
+          ),
+          saveHandler: ProcessVideoSaveHandler(
+            repository: SqliteProcessVideoRepository(),
+          ),
           onMessage: (message) {
             if (!mounted) {
               return;
@@ -125,6 +136,13 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     _deviceControl?.onSafetyEvent = null;
     _deviceControl?.dispose();
     super.dispose();
+  }
+
+  ProcessVideoSnapshot? _captureProcessVideoSnapshot() {
+    return ProcessVideoSnapshotFactory.fromPreset(
+      processType: _processType,
+      preset: _draft?.preset,
+    );
   }
 
   void _onDeviceSafetyEvent(DeviceControlSafetyEvent event) {

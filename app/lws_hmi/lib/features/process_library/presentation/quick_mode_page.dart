@@ -13,6 +13,11 @@ import 'package:lws_hmi/features/process_mode/application/device_control_control
 import 'package:lws_hmi/features/process_mode/application/gun_dialog_coordinator.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_save_handler.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_snapshot_factory.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_snapshot_source.dart';
+import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
+import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/domain/quick_mode_selection.dart';
@@ -85,6 +90,12 @@ final class _QuickModePageState extends State<QuickModePage> {
           unawaited(_deviceControl!.start());
           _recordWork = RecordWorkController(
             deviceControl: _deviceControl!,
+            snapshotSource: CallbackProcessVideoSnapshotSource(
+              _captureProcessVideoSnapshot,
+            ),
+            saveHandler: ProcessVideoSaveHandler(
+              repository: SqliteProcessVideoRepository(),
+            ),
             onMessage: (message) {
               if (!mounted) {
                 return;
@@ -495,6 +506,14 @@ final class _QuickModePageState extends State<QuickModePage> {
       return;
     }
     _showControlMessage(reason.message);
+  }
+
+  ProcessVideoSnapshot? _captureProcessVideoSnapshot() {
+    return ProcessVideoSnapshotFactory.fromPreset(
+      processType: _processType,
+      preset: _selection?.matched,
+      materialFallback: _selection?.material,
+    );
   }
 
   Future<void> _confirmAndEnableLaser() async {

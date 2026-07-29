@@ -1465,6 +1465,59 @@ class AppLocalizationsZh extends AppLocalizations {
   String get videosTitle => '视频';
 
   @override
+  String get processVideoRecordingTime => '录制时间';
+
+  @override
+  String get processVideoWorkMode => '工作模式';
+
+  @override
+  String get processVideoMaterial => '材料';
+
+  @override
+  String get processVideoDuration => '时长';
+
+  @override
+  String get processVideoOperations => '操作';
+
+  @override
+  String get processVideoEmptyTitle => '暂无录像';
+
+  @override
+  String get processVideoEmptySubtitle => '快速模式或工程师模式中的「录制工作」视频将显示在此处。';
+
+  @override
+  String get processVideoDeleteConfirmTitle => '删除录像？';
+
+  @override
+  String get processVideoDeleteConfirmMessage => '将从本机删除视频文件及其工艺参数记录。';
+
+  @override
+  String get processVideoDetailTitle => '视频详情';
+
+  @override
+  String get processVideoParametersTitle => '参数记录';
+
+  @override
+  String get processVideoPlaybackFailed => '无法播放该录像';
+
+  @override
+  String processVideoLoadedCount(int loaded, int total) {
+    return '$loaded / $total';
+  }
+
+  @override
+  String get recordWorkLabel => '录制工作';
+
+  @override
+  String get processVideoRecordingTooShort => '录像过短，未保存';
+
+  @override
+  String get processVideoSaveFailed => '录像保存失败';
+
+  @override
+  String get ipCameraDemoRecordHint => '仅演示 — 不会出现在监视器 → 视频列表';
+
+  @override
   String get volumeSetFailed => '音量设置失败';
 
   @override
@@ -2989,6 +3042,45 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get videosTitle => '視頻';
+
+  @override
+  String get processVideoRecordingTime => '錄製時間';
+
+  @override
+  String get processVideoDuration => '時長';
+
+  @override
+  String get processVideoEmptyTitle => '暫無錄像';
+
+  @override
+  String get processVideoEmptySubtitle => '快速模式或工程師模式中的「錄製工作」視頻將顯示在此處。';
+
+  @override
+  String get processVideoDeleteConfirmTitle => '刪除錄像？';
+
+  @override
+  String get processVideoDeleteConfirmMessage => '將從本機刪除視頻文件及其工藝參數記錄。';
+
+  @override
+  String get processVideoDetailTitle => '視頻詳情';
+
+  @override
+  String get processVideoParametersTitle => '參數記錄';
+
+  @override
+  String get processVideoPlaybackFailed => '無法播放該錄像';
+
+  @override
+  String get recordWorkLabel => '錄製工作';
+
+  @override
+  String get processVideoRecordingTooShort => '錄像過短，未保存';
+
+  @override
+  String get processVideoSaveFailed => '錄像保存失敗';
+
+  @override
+  String get ipCameraDemoRecordHint => '僅演示 — 不會出現在監視器 → 視頻列表';
 
   @override
   String get volumeSetFailed => '音量設置失敗';

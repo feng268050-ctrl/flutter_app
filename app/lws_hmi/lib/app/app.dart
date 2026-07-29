@@ -13,6 +13,7 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_sco
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
+import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_importer.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
@@ -22,6 +23,7 @@ import 'package:lws_hmi/features/process_library/infrastructure/sqlite_process_l
 import 'package:lws_hmi/features/process_library/presentation/engineer_mode_page.dart';
 import 'package:lws_hmi/features/process_library/presentation/quick_mode_page.dart';
 import 'package:lws_hmi/features/process_mode/domain/quick_mode_selection.dart';
+import 'package:lws_hmi/features/process_video/presentation/process_video_detail_page.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_thresholds_controller.dart';
@@ -422,6 +424,11 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                   );
                                 case AppRoutes.monitor:
                                   page = const MonitorPage();
+                                case AppRoutes.processVideoDetail:
+                                  final videoArgs = settings.arguments;
+                                  page = videoArgs is ProcessVideoDetailArgs
+                                      ? ProcessVideoDetailPage(args: videoArgs)
+                                      : const MonitorPage();
                                 case AppRoutes.quickMode:
                                   page = const QuickModePage();
                                 case AppRoutes.engineerMode:

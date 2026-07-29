@@ -2918,6 +2918,108 @@ abstract class AppLocalizations {
   /// **'Videos'**
   String get videosTitle;
 
+  /// No description provided for @processVideoRecordingTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording Time'**
+  String get processVideoRecordingTime;
+
+  /// No description provided for @processVideoWorkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Work Mode'**
+  String get processVideoWorkMode;
+
+  /// No description provided for @processVideoMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material'**
+  String get processVideoMaterial;
+
+  /// No description provided for @processVideoDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get processVideoDuration;
+
+  /// No description provided for @processVideoOperations.
+  ///
+  /// In en, this message translates to:
+  /// **'Operations'**
+  String get processVideoOperations;
+
+  /// No description provided for @processVideoEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No recordings'**
+  String get processVideoEmptyTitle;
+
+  /// No description provided for @processVideoEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Work videos from Quick or Engineer mode will appear here.'**
+  String get processVideoEmptySubtitle;
+
+  /// No description provided for @processVideoDeleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete recording?'**
+  String get processVideoDeleteConfirmTitle;
+
+  /// No description provided for @processVideoDeleteConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the video file and its process parameters from this device.'**
+  String get processVideoDeleteConfirmMessage;
+
+  /// No description provided for @processVideoDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Video Details'**
+  String get processVideoDetailTitle;
+
+  /// No description provided for @processVideoParametersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Parameter recording'**
+  String get processVideoParametersTitle;
+
+  /// No description provided for @processVideoPlaybackFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to play this recording'**
+  String get processVideoPlaybackFailed;
+
+  /// No description provided for @processVideoLoadedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{loaded} / {total}'**
+  String processVideoLoadedCount(int loaded, int total);
+
+  /// No description provided for @recordWorkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Work'**
+  String get recordWorkLabel;
+
+  /// No description provided for @processVideoRecordingTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording too short — not saved'**
+  String get processVideoRecordingTooShort;
+
+  /// No description provided for @processVideoSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save recording'**
+  String get processVideoSaveFailed;
+
+  /// No description provided for @ipCameraDemoRecordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo only — not listed in Monitor → Videos'**
+  String get ipCameraDemoRecordHint;
+
   /// No description provided for @volumeSetFailed.
   ///
   /// In en, this message translates to:

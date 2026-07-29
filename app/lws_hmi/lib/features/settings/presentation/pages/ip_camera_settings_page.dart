@@ -290,7 +290,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _recordingHint(),
+                    _recordingHint(l10n),
                     key: const Key('ip-camera-record-hint'),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -326,7 +326,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
     }
   }
 
-  String _recordingHint() {
+  String _recordingHint(AppLocalizations l10n) {
     switch (_recording.phase) {
       case IpCameraRecordingPhase.preparing:
         return 'Waiting for RTSP stream…';
@@ -338,7 +338,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
         return _recording.detail ?? 'Recording failed';
       case IpCameraRecordingPhase.completed:
       case IpCameraRecordingPhase.idle:
-        return 'Demo only — saves under /userdata/storage/Videos';
+        return l10n.ipCameraDemoRecordHint;
     }
   }
 

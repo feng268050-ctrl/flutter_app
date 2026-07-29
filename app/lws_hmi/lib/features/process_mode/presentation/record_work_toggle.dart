@@ -4,6 +4,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Quick / Engineer Record Work checkbox row (lws-ui `CameraController`).
 ///
@@ -27,6 +28,7 @@ final class RecordWorkToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final label = AppLocalizations.of(context)?.recordWorkLabel ?? 'Record Work';
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
@@ -34,6 +36,7 @@ final class RecordWorkToggle extends StatelessWidget {
           armed: controller.armed,
           enabled: controller.enabled,
           compact: compact,
+          label: label,
           onChanged: controller.enabled
               ? (value) => unawaited(controller.setArmed(value))
               : null,
@@ -52,12 +55,14 @@ final class _RecordWorkRow extends StatelessWidget {
     required this.armed,
     required this.enabled,
     required this.compact,
+    required this.label,
     required this.onChanged,
   });
 
   final bool armed;
   final bool enabled;
   final bool compact;
+  final String label;
   final ValueChanged<bool>? onChanged;
 
   @override
@@ -86,7 +91,7 @@ final class _RecordWorkRow extends StatelessWidget {
           ),
           SizedBox(width: compact ? 6 : 12),
           Text(
-            'Record Work',
+            label,
             style: TextStyle(
               color: enabled ? Colors.white : const Color(0x66FFFFFF),
               fontSize: labelSize,

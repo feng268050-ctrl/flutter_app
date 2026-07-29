@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cyber_hal/ip_camera.dart';
 import 'package:flutter/foundation.dart';
@@ -8,20 +9,33 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_save_handler.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_snapshot_source.dart';
+import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 
 /// Shared Record Work arm + laser-synced IP-camera recording (Quick + Engineer).
 ///
 /// Matches lws-ui [CameraController]: checkbox arms recording; encode starts
-/// only while armed and laser enable is on. AI-library metadata is deferred.
+/// only while armed and laser enable is on. On successful stop, persists a
+/// process-video row via [saveHandler] when [snapshotSource] supplied a start
+/// snapshot.
+///
+/// 10-minute auto-segment roll (lws-ui [CameraConfig.DEFAULT_VIDEO_DURATION])
+/// is deferred: HAL remux stop/restart while armed+laser is not yet validated
+/// on ynh960; v1 keeps one continuous MP4 per laser session.
 final class RecordWorkController extends ChangeNotifier {
   RecordWorkController({
     required this.deviceControl,
     this.recordingPaths = const IpCameraDemoRecordingPaths(),
+    this.snapshotSource,
+    this.saveHandler,
     this.onMessage,
   });
 
   final DeviceControlController deviceControl;
   final IpCameraDemoRecordingPaths recordingPaths;
+  final ProcessVideoSnapshotSource? snapshotSource;
+  final ProcessVideoSaveHandler? saveHandler;
   final ValueChanged<String>? onMessage;
 
   /// Defaults on (product default); cleared while camera is unreachable.
@@ -33,6 +47,8 @@ final class RecordWorkController extends ChangeNotifier {
   StreamSubscription<IpCameraUiStatus>? _cameraSub;
   bool _started = false;
   bool _disposed = false;
+  ProcessVideoSnapshot? _startSnapshot;
+  String? _activeOutputPath;
 
   bool get armed => _armed;
 
@@ -165,6 +181,9 @@ final class RecordWorkController extends ChangeNotifier {
       _recordSyncInFlight = true;
       try {
         final path = recordingPaths.nextMp4Path();
+        await Directory(File(path).parent.path).create(recursive: true);
+        _startSnapshot = snapshotSource?.capture();
+        _activeOutputPath = path;
         await recorder.start(
           IpCameraRecordingRequest(
             sourceCandidates: [source],
@@ -173,6 +192,8 @@ final class RecordWorkController extends ChangeNotifier {
           ),
         );
       } catch (_) {
+        _startSnapshot = null;
+        _activeOutputPath = null;
         onMessage?.call(DeviceControlFeedbackCopy.cameraUnavailable);
       } finally {
         _recordSyncInFlight = false;
@@ -182,12 +203,44 @@ final class RecordWorkController extends ChangeNotifier {
     if (recorder.currentStatus.isActive) {
       _recordSyncInFlight = true;
       try {
-        await recorder.stop();
+        final result = await recorder.stop();
+        await _persistIfNeeded(result);
       } catch (_) {
         // Best-effort stop.
+        _startSnapshot = null;
+        _activeOutputPath = null;
       } finally {
         _recordSyncInFlight = false;
       }
+    }
+  }
+
+  Future<void> _persistIfNeeded(IpCameraRecordingResult? result) async {
+    final startSnap = _startSnapshot;
+    final path = result?.outputPath ?? _activeOutputPath;
+    _startSnapshot = null;
+    _activeOutputPath = null;
+    final handler = saveHandler;
+    final source = snapshotSource;
+    if (handler == null || source == null || result == null || path == null) {
+      return;
+    }
+    if (startSnap == null) {
+      return;
+    }
+    final snapshot = source.resolveAtSave(startSnap);
+    final outcome = await handler.save(
+      videoPath: path,
+      snapshot: snapshot,
+      bytesWritten: result.bytesWritten,
+      startedAt: result.startedAt,
+      completedAt: result.completedAt,
+    );
+    if (outcome == ProcessVideoSaveOutcome.discardedTooShort) {
+      onMessage?.call('Recording too short — not saved');
+    } else if (outcome == ProcessVideoSaveOutcome.discardedMissingFile ||
+        outcome == ProcessVideoSaveOutcome.failed) {
+      onMessage?.call('Failed to save recording');
     }
   }
 

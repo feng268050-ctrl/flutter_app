@@ -99,6 +99,9 @@ final class _LiveMachineStatusBody extends StatefulWidget {
 
 final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
   static const _titleDark = Color(0xFF1A1A1A);
+  static const _liveGaugeSidePad = 12.0;
+  static const _liveStatusBottomPad = 12.0;
+  static const _liveStatusGap = 8.0;
 
   IpCameraProductSession? _session;
   IpCameraUiStatus _status = IpCameraUiStatus.connecting;
@@ -218,90 +221,98 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
         Expanded(
           child: ColoredBox(
             color: Colors.black,
-            child: Stack(
-              fit: StackFit.expand,
+            child: Column(
               children: [
-                if (_error != null)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  IpCameraPreview(
-                    key: const ValueKey('live-machine-status-preview'),
-                    rtspUrl: rtsp,
-                    linkPhase: _status.phase,
-                    relayReady: relayReady,
-                    playerFactory:
-                        widget.playerFactory ?? createIpCameraPreviewPlayer,
-                  ),
-                // Side gauges — same [CurrentArcGauge] as Monitor › Machine Status.
-                // Panel/size: lws-ui live_monitor 280×250 / circle ≈200dp.
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: _GaugePanel(
-                      child: CurrentArcGauge(
-                        value: machine?.gasPressureKpa ?? 0,
-                        min: 0,
-                        max: 1500,
-                        majorTickEvery: 150,
-                        unit: 'kPa',
-                        titleLine1: l10n?.machineBlowTitle ?? 'Blow',
-                        titleLine2: l10n?.machineBlowContent ?? 'Pressure',
-                        size: _LiveGaugeDimens.gaugeSide,
-                        trackWidth: _LiveGaugeDimens.trackWidth,
-                      ),
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: _GaugePanel(
-                      child: CurrentArcGauge(
-                        value: machine?.laserCurrentA ?? 0,
-                        min: 0,
-                        max: 100,
-                        majorTickEvery: 10,
-                        unit: 'A',
-                        titleLine1: l10n?.machineLaserCurrentTitle ?? 'Laser',
-                        titleLine2:
-                            l10n?.machineLaserCurrentContent ?? 'Current',
-                        size: _LiveGaugeDimens.gaugeSide,
-                        trackWidth: _LiveGaugeDimens.trackWidth,
-                      ),
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                    child: Row(
-                      children: [
-                        for (var i = 0; i < tiles.length; i++) ...[
-                          if (i > 0) const SizedBox(width: 8),
-                          Expanded(
-                            child: _CompactStatusTile(
-                              label: tiles[i].$1,
-                              on: tiles[i].$2,
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (_error != null)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
-                        ],
+                        )
+                      else
+                        IpCameraPreview(
+                          key: const ValueKey('live-machine-status-preview'),
+                          rtspUrl: rtsp,
+                          linkPhase: _status.phase,
+                          relayReady: relayReady,
+                          playerFactory:
+                              widget.playerFactory ?? createIpCameraPreviewPlayer,
+                        ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: _liveGaugeSidePad),
+                          child: _GaugePanel(
+                            child: CurrentArcGauge(
+                              value: machine?.gasPressureKpa ?? 0,
+                              min: 0,
+                              max: 1500,
+                              majorTickEvery: 150,
+                              unit: 'kPa',
+                              titleLine1: l10n?.machineBlowTitle ?? 'Blow',
+                              titleLine2: l10n?.machineBlowContent ?? 'Pressure',
+                              size: _LiveGaugeDimens.gaugeSide,
+                              trackWidth: _LiveGaugeDimens.trackWidth,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding:
+                              const EdgeInsets.only(right: _liveGaugeSidePad),
+                          child: _GaugePanel(
+                            child: CurrentArcGauge(
+                              value: machine?.laserCurrentA ?? 0,
+                              min: 0,
+                              max: 100,
+                              majorTickEvery: 10,
+                              unit: 'A',
+                              titleLine1:
+                                  l10n?.machineLaserCurrentTitle ?? 'Laser',
+                              titleLine2:
+                                  l10n?.machineLaserCurrentContent ?? 'Current',
+                              size: _LiveGaugeDimens.gaugeSide,
+                              trackWidth: _LiveGaugeDimens.trackWidth,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    12,
+                    0,
+                    12,
+                    _liveStatusBottomPad,
+                  ),
+                  child: Row(
+                    children: [
+                      for (var i = 0; i < tiles.length; i++) ...[
+                        if (i > 0) const SizedBox(width: _liveStatusGap),
+                        Expanded(
+                          child: _CompactStatusTile(
+                            label: tiles[i].$1,
+                            on: tiles[i].$2,
+                          ),
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
               ],
@@ -397,6 +408,8 @@ final class _GaugePanel extends StatelessWidget {
 final class _CompactStatusTile extends StatelessWidget {
   const _CompactStatusTile({required this.label, required this.on});
 
+  static const height = 52.0;
+
   final String label;
   final bool? on;
 
@@ -407,7 +420,7 @@ final class _CompactStatusTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final active = on == true;
     return SizedBox(
-      height: 52,
+      height: height,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: active ? _successFill : _idleFill,

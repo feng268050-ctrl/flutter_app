@@ -473,7 +473,8 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     if (DeviceControlFeedbackCopy.isSafetyTipBlock(reason)) {
       // Key / E-stop not reset → tip dialog (not Toast).
-      unawaited(_showSafetyTip(DeviceControlFeedbackCopy.tipForLaserEnableBlock(reason)));
+      unawaited(_showSafetyTip(
+          DeviceControlFeedbackCopy.tipForLaserEnableBlock(reason)));
       return reason.message;
     }
     return reason.message;
@@ -748,6 +749,7 @@ final class _QuickModePageState extends State<QuickModePage> {
               child: RecordWorkToggle(
                 key: const ValueKey('quick-mode-record-work'),
                 controller: _recordWork!,
+                processType: _processType,
                 compact: true,
               ),
             ),
@@ -807,8 +809,7 @@ final class _QuickModePageState extends State<QuickModePage> {
                             ? 'Swing Width ($unit)'
                             : 'Thickness ($unit)',
                         dimensions: selection.dimensions,
-                        selectedIndex:
-                            dimensionIndex < 0 ? 0 : dimensionIndex,
+                        selectedIndex: dimensionIndex < 0 ? 0 : dimensionIndex,
                         onChanged: _onDimensionIndex,
                         useMmUnit: useMm,
                         interactionEnabled: selectorsInteractive,
@@ -905,8 +906,7 @@ final class _QuickModePageState extends State<QuickModePage> {
         ? scaffoldForLaser(false)
         : AnimatedBuilder(
             animation: device,
-            builder: (context, _) =>
-                scaffoldForLaser(device.laserSessionArmed),
+            builder: (context, _) => scaffoldForLaser(device.laserSessionArmed),
           );
 
     return PopScope(

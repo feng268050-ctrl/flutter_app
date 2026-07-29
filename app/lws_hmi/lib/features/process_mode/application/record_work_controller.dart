@@ -45,16 +45,31 @@ final class RecordWorkController extends ChangeNotifier {
   IpCameraUiPhase _cameraPhase = IpCameraUiPhase.connecting;
   IpCameraProductSession? _cameraSession;
   StreamSubscription<IpCameraUiStatus>? _cameraSub;
+  StreamSubscription<IpCameraRecordingStatus>? _recordingSub;
   bool _started = false;
   bool _disposed = false;
   ProcessVideoSnapshot? _startSnapshot;
   String? _activeOutputPath;
+  DateTime? _recordingStartedAt;
 
   bool get armed => _armed;
 
   bool get enabled => _cameraPhase == IpCameraUiPhase.connected;
 
   IpCameraUiPhase get cameraPhase => _cameraPhase;
+
+  /// Set only after media reaches the recorder. This deliberately excludes the
+  /// RTSP preparation phase so the UI timer matches the saved video duration.
+  DateTime? get recordingStartedAt => _recordingStartedAt;
+
+  Duration recordingElapsedAt(DateTime now) {
+    final startedAt = _recordingStartedAt;
+    if (startedAt == null) {
+      return Duration.zero;
+    }
+    final elapsed = now.difference(startedAt);
+    return elapsed.isNegative ? Duration.zero : elapsed;
+  }
 
   /// Bind camera session and laser listener. Idempotent.
   ///
@@ -81,6 +96,11 @@ final class RecordWorkController extends ChangeNotifier {
         return;
       }
       _cameraSession = session;
+      await _recordingSub?.cancel();
+      _recordingSub = session.camera.recording.status.listen(
+        _onRecordingStatus,
+      );
+      _onRecordingStatus(session.camera.recording.currentStatus);
       _applyCameraPhase(session.currentStatus.phase);
       notifyListeners();
       await _cameraSub?.cancel();
@@ -156,6 +176,17 @@ final class RecordWorkController extends ChangeNotifier {
     if (!healthy || (!wasHealthy && healthy)) {
       unawaited(_syncRecordingWithArmedAndLaser());
     }
+  }
+
+  void _onRecordingStatus(IpCameraRecordingStatus status) {
+    final next = status.phase == IpCameraRecordingPhase.recording
+        ? status.startedAt
+        : null;
+    if (_recordingStartedAt == next) {
+      return;
+    }
+    _recordingStartedAt = next;
+    notifyListeners();
   }
 
   /// Start when Record Work is armed and laser enable is on; stop otherwise.
@@ -252,6 +283,7 @@ final class RecordWorkController extends ChangeNotifier {
     _disposed = true;
     deviceControl.removeListener(_onDeviceControlChanged);
     unawaited(_cameraSub?.cancel());
+    unawaited(_recordingSub?.cancel());
     super.dispose();
   }
 }

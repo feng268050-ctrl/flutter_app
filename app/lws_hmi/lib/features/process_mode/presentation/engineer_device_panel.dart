@@ -128,6 +128,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     key: const ValueKey(
                                         'engineer-panel-record-work'),
                                     controller: widget.recordWork,
+                                    processType: widget.processType,
                                     expand: true,
                                   ),
                                 ),

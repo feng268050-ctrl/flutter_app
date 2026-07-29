@@ -82,6 +82,7 @@ void main() {
             body: RecordWorkToggle(
               key: const ValueKey('quick-mode-record-work'),
               controller: record,
+              processType: ProcessType.continuousWelding,
               compact: true,
             ),
           ),

@@ -196,14 +196,22 @@ class WarnDialogBody extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: inset),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: WarnDialogMetrics.titleStyle(
-                      infoStyle: infoStyle,
-                      scale: scale,
+                  // Keep card size; shrink title type so long alarm names stay
+                  // fully visible (no ellipsis) inside the existing width.
+                  SizedBox(
+                    width: double.infinity,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: WarnDialogMetrics.titleStyle(
+                          infoStyle: infoStyle,
+                          scale: scale,
+                        ),
+                      ),
                     ),
                   ),
                   SizedBox(height: inset),
@@ -225,12 +233,27 @@ class WarnDialogBody extends StatelessWidget {
               child: SizedBox(
                 width: confirmW,
                 height: btnH,
-                child: _WarnConfirmButton(
-                  label: confirmLabel,
-                  labelSize: WarnDialogMetrics.confirmLabelSize * scale,
+                child: CyberButton(
+                  variant: CyberButtonVariant.primary,
+                  shape: CyberButtonShape.rounded,
+                  stretch: true,
                   height: btnH,
-                  beforeConfirm: beforeConfirm,
-                  onPressed: onConfirm,
+                  // Stop warn SFX before the click sample (shared audio session).
+                  clickSoundEnabled: false,
+                  onPressed: () {
+                    unawaited(() async {
+                      await beforeConfirm?.call();
+                      CyberClickSoundRegistry.playClick();
+                      onConfirm();
+                    }());
+                  },
+                  child: Text(
+                    confirmLabel,
+                    style: TextStyle(
+                      fontSize: WarnDialogMetrics.confirmLabelSize * scale,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -246,70 +269,6 @@ class WarnDialogBody extends StatelessWidget {
         fit: BoxFit.scaleDown,
         alignment: Alignment.center,
         child: content,
-      ),
-    );
-  }
-}
-
-/// Pill-shaped orange confirm (lws-ui `FrostPromptConfirmButton`).
-class _WarnConfirmButton extends StatelessWidget {
-  const _WarnConfirmButton({
-    required this.label,
-    required this.labelSize,
-    required this.height,
-    required this.onPressed,
-    this.beforeConfirm,
-  });
-
-  final String label;
-  final double labelSize;
-  final double height;
-  final VoidCallback onPressed;
-  final Future<void> Function()? beforeConfirm;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: () {
-          unawaited(() async {
-            // Release warn loop first so click can use the sticky mpg123 session.
-            await beforeConfirm?.call();
-            CyberClickSoundRegistry.playClick();
-            onPressed();
-          }());
-        },
-        borderRadius: BorderRadius.circular(height / 2),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(height / 2),
-            border: Border.all(
-              color: CyberColors.buttonPrimaryAccent,
-              width: CyberDimens.buttonStrokeWidth,
-            ),
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xE6FF9A5C),
-                Color(0xD9FF8A4D),
-                Color(0xCCFF7A3D),
-              ],
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: labelSize,
-                fontWeight: FontWeight.w600,
-                decoration: TextDecoration.none,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

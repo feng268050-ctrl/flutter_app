@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/monitor/application/machine_status_controller.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
@@ -74,6 +75,8 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                     Expanded(
                       child: MonitorGlassCard(
                         padding: const EdgeInsets.all(8),
+                        borderGradientCenter:
+                            CyberBorderGradientCenter.topLeftBottomRight,
                         child: Center(
                           child: CurrentArcGauge(
                             value: s?.gasPressureKpa ?? 0,
@@ -82,13 +85,12 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                             max: 1500,
                             // lws-ui CircleProgressView: scaleInterval = max/10.
                             majorTickEvery: 150,
-                            minorTickEvery: 30,
                             unit: 'kPa',
                             titleLine1: l10n.machineBlowTitle,
                             titleLine2: l10n.machineBlowContent,
                             size: gaugeSize,
                             progressColor: const Color(0xFF4FC3F7),
-                            trackColor: const Color(0xFF2A3550),
+                            trackColor: const Color(0x33FFFFFF),
                           ),
                         ),
                       ),
@@ -97,6 +99,8 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                     Expanded(
                       child: MonitorGlassCard(
                         padding: const EdgeInsets.all(8),
+                        borderGradientCenter:
+                            CyberBorderGradientCenter.bottomLeftTopRight,
                         child: Center(
                           child: CurrentArcGauge(
                             value: s?.laserCurrentA ?? 0,
@@ -105,13 +109,12 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                             max: 100,
                             // lws-ui CircleProgressView: scaleInterval = max/10.
                             majorTickEvery: 10,
-                            minorTickEvery: 2,
                             unit: 'A',
                             titleLine1: l10n.machineLaserCurrentTitle,
                             titleLine2: l10n.machineLaserCurrentContent,
                             size: gaugeSize,
                             progressColor: const Color(0xFF4FC3F7),
-                            trackColor: const Color(0xFF2A3550),
+                            trackColor: const Color(0x33FFFFFF),
                           ),
                         ),
                       ),
@@ -138,14 +141,23 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                         spacing: gap,
                         runSpacing: gap,
                         children: [
-                          for (final tile in tiles)
+                          for (var i = 0; i < tiles.length; i++)
                             SizedBox(
                               width: tileW,
                               height: tileH,
                               child: MonitorStatusTile(
-                                label: tile.$1,
-                                on: tile.$2,
+                                label: tiles[i].$1,
+                                on: tiles[i].$2,
                                 height: tileH,
+                                // Machine Status: diagonal bright edges only.
+                                borderGradientCenter: switch (i % 3) {
+                                  0 => CyberBorderGradientCenter
+                                      .topLeftBottomRight,
+                                  1 => CyberBorderGradientCenter
+                                      .bottomLeftTopRight,
+                                  _ => CyberBorderGradientCenter
+                                      .topRightBottomLeft,
+                                },
                               ),
                             ),
                         ],

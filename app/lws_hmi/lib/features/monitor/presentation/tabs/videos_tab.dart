@@ -27,6 +27,14 @@ class VideosTab extends StatefulWidget {
 
 @visibleForTesting
 class VideosTabState extends State<VideosTab> {
+  static const _leftInset = 24.0;
+  static const _rightInset = 58.0;
+  static const _columnGap = 26.0;
+  static const _headerTop = 35.0;
+  static const _headerBottom = 32.0;
+  static const _rowTop = 35.0;
+  static const _rowBottom = 33.0;
+
   late final ProcessVideoRepository _repo =
       widget.repository ?? SqliteProcessVideoRepository();
   final List<ProcessVideoRecord> _rows = [];
@@ -158,33 +166,47 @@ class VideosTabState extends State<VideosTab> {
         (MediaQuery.sizeOf(context).width / 1280).clamp(0.55, 1.0);
     final headers = <(String, double)>[
       (l10n.processVideoRecordingTime, 232),
-      (l10n.processVideoWorkMode, 196),
-      (l10n.processVideoMaterial, 229),
-      (l10n.processVideoDuration, 157),
+      (l10n.processVideoWorkMode, 232),
+      (l10n.processVideoMaterial, 205),
+      (l10n.processVideoDuration, 130),
       (l10n.processVideoOperations, 0),
     ];
 
     return Column(
       children: [
+        // lws-ui `@drawable/video_process_table_head_bg` — horizontal center glow.
         Container(
-          margin: const EdgeInsets.fromLTRB(24, 16, 48, 0),
-          padding: const EdgeInsets.fromLTRB(12, 28, 12, 24),
-          decoration: BoxDecoration(
-            color: const Color(0x332E3653),
-            borderRadius: BorderRadius.circular(12),
+          margin: const EdgeInsets.fromLTRB(_leftInset, 0, _rightInset, 0),
+          padding: const EdgeInsets.fromLTRB(0, _headerTop, 0, _headerBottom),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                Color(0x006C6C6C),
+                Color(0xFF636385),
+                Color(0x006C6C6C),
+              ],
+            ),
           ),
           child: Row(
             children: [
               for (final (label, width) in headers)
                 if (width > 0)
-                  SizedBox(
-                    width: width * scale,
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                  Padding(
+                    padding: EdgeInsets.only(
+                      right: _columnGap * scale,
+                    ),
+                    child: SizedBox(
+                      width: width * scale,
+                      child: Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
                     ),
                   )
@@ -192,10 +214,11 @@ class VideosTabState extends State<VideosTab> {
                   Expanded(
                     child: Text(
                       label,
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -218,7 +241,12 @@ class VideosTabState extends State<VideosTab> {
                       child: RefreshIndicator(
                         onRefresh: _reload,
                         child: ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(24, 8, 48, 16),
+                          padding: const EdgeInsets.fromLTRB(
+                            _leftInset,
+                            8,
+                            _rightInset,
+                            16,
+                          ),
                           itemCount: _rows.length + 1,
                           itemBuilder: (context, index) {
                             if (index == _rows.length) {
@@ -300,43 +328,75 @@ final class _VideoRow extends StatelessWidget {
   final VoidCallback onDelete;
   final String deleteLabel;
 
+  static const _columnGap = VideosTabState._columnGap;
+
   @override
   Widget build(BuildContext context) {
-    final cells = <(String, double)>[
-      (ProcessVideoFormat.recordingTime(record), 232),
-      (ProcessVideoFormat.workMode(record.processType), 196),
-      (ProcessVideoFormat.material(record), 229),
-      (ProcessVideoFormat.duration(record.durationMs), 157),
+    final cells = <({String text, double width, int maxLines})>[
+      (
+        text: ProcessVideoFormat.recordingTime(record),
+        width: 232,
+        maxLines: 1,
+      ),
+      (
+        text: ProcessVideoFormat.workMode(record.processType),
+        width: 232,
+        maxLines: 2,
+      ),
+      (
+        text: ProcessVideoFormat.material(record),
+        width: 205,
+        maxLines: 1,
+      ),
+      (
+        text: ProcessVideoFormat.duration(record.durationMs),
+        width: 130,
+        maxLines: 1,
+      ),
     ];
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onOpen,
         child: Container(
-          margin: const EdgeInsets.only(bottom: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-          decoration: BoxDecoration(
-            color: const Color(0x222E3653),
-            borderRadius: BorderRadius.circular(8),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: Color(0x33FFFFFF)),
+            ),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              for (final (text, width) in cells)
-                SizedBox(
-                  width: width * scale,
-                  child: Text(
-                    text,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
+              for (var i = 0; i < cells.length; i++)
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: VideosTabState._rowTop,
+                    bottom: VideosTabState._rowBottom,
+                    right: _columnGap * scale,
+                  ),
+                  child: SizedBox(
+                    width: cells[i].width * scale,
+                    child: Text(
+                      cells[i].text,
+                      maxLines: cells[i].maxLines,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        height: cells[i].maxLines > 1 ? 1.15 : 1.0,
+                      ),
+                    ),
                   ),
                 ),
               Expanded(
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: onDelete,
-                    child: Text(deleteLabel),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    child: TextButton(
+                      onPressed: onDelete,
+                      child: Text(deleteLabel),
+                    ),
                   ),
                 ),
               ),

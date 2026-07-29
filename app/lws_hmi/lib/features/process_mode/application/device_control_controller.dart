@@ -82,6 +82,8 @@ final class DeviceControlController extends ChangeNotifier {
       // lws-ui GeneralOperationsFragment.initData: Auto Wire Feed ON unless
       // e-stop halt (device snapshot often leaves the bit off).
       await ensureAutoWireFeedDefault();
+      // lws-ui advanced-settings sync: fixed default manual feed speed 80 mm/s.
+      await ensureManualWireFeedSpeed();
       final stream = await services.modbus.watchAttributes(
         ids: DeviceControlIds.watchIds,
       );
@@ -99,6 +101,21 @@ final class DeviceControlController extends ChangeNotifier {
       return;
     }
     await setAutoWireFeed(true);
+  }
+
+  /// Match lws-ui default `manualWireFeedSpeed` (80 mm/s) on holding 0x0098.
+  Future<void> ensureManualWireFeedSpeed() async {
+    try {
+      final ok = await services.modbus.writeAttribute(
+        DeviceControlIds.manualWireFeedSpeed,
+        DeviceControlIds.manualWireFeedSpeedMmPerS,
+      );
+      if (!ok) {
+        debugPrint('device-control: manual wire feed speed write failed');
+      }
+    } catch (e) {
+      debugPrint('device-control: manual wire feed speed write error: $e');
+    }
   }
 
   /// Returns `true` when control+status groups were read successfully.
@@ -535,6 +552,13 @@ final class DeviceControlController extends ChangeNotifier {
         if (!await services.modbus.writeAttribute(
           DeviceControlIds.laserEnable,
           false,
+        )) {
+          return false;
+        }
+        // Fixed 80 mm/s (lws-ui default) — not process library wire speed.
+        if (!await services.modbus.writeAttribute(
+          DeviceControlIds.manualWireFeedSpeed,
+          DeviceControlIds.manualWireFeedSpeedMmPerS,
         )) {
           return false;
         }

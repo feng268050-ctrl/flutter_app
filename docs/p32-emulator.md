@@ -142,6 +142,14 @@ make build-emulator
 make emulator                     # foreground Terminal (cocoa)
 ```
 
+`fetch-emulator-swgl` builds an aarch64 `libmali-hook` stub via Docker (`arm64v8/debian:bullseye-slim`). If Docker Hub times out (`context deadline exceeded`), use a mirror:
+
+```bash
+EMULATOR_STUB_IMAGE=docker.m.daocloud.io/arm64v8/debian:bullseye-slim make fetch-emulator-swgl
+```
+
+Or set Docker Desktop → Docker Engine → `registry-mirrors`, then `docker pull --platform linux/arm64 arm64v8/debian:bullseye-slim` and retry the default `make fetch-emulator-swgl`.
+
 Optional host VirGL: `EMULATOR_GL=host make emulator` (needs `make setup-emulator-qemu`; may still show the placeholder on macOS).
 
 SSH: `ssh -p 2222 root@127.0.0.1` (password `rockchip`) → `journalctl -u hmi.service -b --no-pager`.

@@ -182,6 +182,7 @@ final class _OperationFailedBody extends StatelessWidget {
                 child: CyberButton(
                   key: const ValueKey('operation-failed-ok'),
                   variant: CyberButtonVariant.primary,
+                  shape: CyberButtonShape.rounded,
                   stretch: true,
                   height: CyberDimens.actionButtonHeight,
                   onPressed: () {

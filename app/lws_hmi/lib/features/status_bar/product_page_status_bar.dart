@@ -2,7 +2,9 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
+import 'package:lws_hmi/features/status_bar/call_back_home_button.dart';
 import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
+import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
 
@@ -13,6 +15,8 @@ class ProductPageStatusBar extends StatelessWidget
     super.key,
     required this.title,
     this.onBack,
+    this.backLabel,
+    this.backAccent = WorkModeAccent.weld,
     this.actions,
     this.bottom,
     this.backgroundColor,
@@ -28,6 +32,15 @@ class ProductPageStatusBar extends StatelessWidget
 
   final String title;
   final VoidCallback? onBack;
+
+  /// When set with [onBack], uses the product [CallBackHomeButton] (icon +
+  /// label + accent press FX) instead of the Material arrow back.
+  ///
+  /// Keep this label fixed (e.g. Home) when [title] changes with tabs.
+  final String? backLabel;
+
+  /// Press / edge accent for [CallBackHomeButton]. Defaults to product orange.
+  final WorkModeAccent backAccent;
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
   final Color? backgroundColor;
@@ -59,9 +72,19 @@ class ProductPageStatusBar extends StatelessWidget
       wifi: wifi,
       bluetooth: bluetooth,
       builder: (context, items) {
+        final useCallBackHome = onBack != null && backLabel != null;
         CyberPageStatusBar buildBar() => CyberPageStatusBar(
               title: title,
-              onBack: onBack,
+              onBack: useCallBackHome ? null : onBack,
+              leading: useCallBackHome
+                  ? CallBackHomeButton(
+                      accent: backAccent,
+                      label: backLabel!,
+                      onPressed: onBack!,
+                    )
+                  : null,
+              leadingWidth:
+                  useCallBackHome ? CallBackHomeButton.railWidth : null,
               statusItems: items,
               actions: actions,
               bottom: bottom,

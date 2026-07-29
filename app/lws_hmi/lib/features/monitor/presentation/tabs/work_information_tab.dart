@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_gauges.dart';
@@ -23,6 +24,9 @@ class WorkInformationTab extends StatelessWidget {
                     title: 'Weld Time Ratio',
                     value: 0,
                     color: const Color(0xFFFF0000),
+                    // Weld → diagonal bright edge.
+                    borderGradientCenter:
+                        CyberBorderGradientCenter.topLeftBottomRight,
                   ),
                 ),
                 const SizedBox(width: 24),
@@ -31,6 +35,8 @@ class WorkInformationTab extends StatelessWidget {
                     title: 'Cut Time Ratio',
                     value: 0,
                     color: const Color(0xFF00A4F2),
+                    // Cut → top↔bottom bright edge.
+                    borderGradientCenter: CyberBorderGradientCenter.topBottom,
                   ),
                 ),
                 const SizedBox(width: 24),
@@ -39,6 +45,8 @@ class WorkInformationTab extends StatelessWidget {
                     title: 'Clean Time Ratio',
                     value: 0,
                     color: const Color(0xFFFF8000),
+                    borderGradientCenter:
+                        CyberBorderGradientCenter.bottomLeftTopRight,
                   ),
                 ),
               ],
@@ -49,26 +57,32 @@ class WorkInformationTab extends StatelessWidget {
             flex: 2,
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: MonitorWorkDataCard(
                     title: 'Laser On Time',
                     value: '-',
                     suffix: 'h',
+                    borderGradientCenter:
+                        CyberBorderGradientCenter.topLeftBottomRight,
                   ),
                 ),
                 const SizedBox(width: 24),
-                const Expanded(
+                Expanded(
                   child: MonitorWorkDataCard(
                     title: 'Welding Consumables',
                     value: '-',
                     suffix: 'm',
+                    // Match Cut: top↔bottom bright edge.
+                    borderGradientCenter: CyberBorderGradientCenter.topBottom,
                   ),
                 ),
                 const SizedBox(width: 24),
-                const Expanded(
+                Expanded(
                   child: MonitorWorkDataCard(
                     title: 'Last Job',
                     value: '-',
+                    borderGradientCenter:
+                        CyberBorderGradientCenter.topRightBottomLeft,
                   ),
                 ),
               ],
@@ -85,16 +99,20 @@ class _PercentCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.color,
+    this.borderGradientCenter =
+        CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   final String title;
   final double value;
   final Color color;
+  final CyberBorderGradientCenter borderGradientCenter;
 
   @override
   Widget build(BuildContext context) {
     return MonitorGlassCard(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      borderGradientCenter: borderGradientCenter,
       child: Column(
         children: [
           Text(
@@ -102,7 +120,7 @@ class _PercentCard extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontSize: 22),
+            style: const TextStyle(color: Colors.white, fontSize: 24),
           ),
           const SizedBox(height: 8),
           Expanded(

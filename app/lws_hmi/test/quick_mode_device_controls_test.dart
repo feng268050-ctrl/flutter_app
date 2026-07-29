@@ -40,8 +40,9 @@ void main() {
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
-    final c = controller ?? DeviceControlController(servicesWith(_IdleModbus()))
-      ..keySwitchOn = true;
+    final services = controller?.services ?? servicesWith(_IdleModbus());
+    final c = controller ??
+        (DeviceControlController(services)..keySwitchOn = true);
     await tester.pumpWidget(
       MaterialApp(
         home: ProcessModeToastLayer(
@@ -58,6 +59,9 @@ void main() {
       ),
     );
     await tester.pump();
+    // Cancel OsWallClock before Flutter's post-test timer invariant.
+    services.wallClock.dispose();
+    await tester.pump(const Duration(milliseconds: 1));
   }
 
   testWidgets('continuous weld Feed shows hold-3s hint', (tester) async {
@@ -198,11 +202,24 @@ void main() {
     );
     expect(find.byKey(const ValueKey('device-control-feed')), findsOneWidget);
     expect(
+      find.byKey(const ValueKey('device-control-feed-hold-hint')),
+      findsOneWidget,
+    );
+    expect(
       find.byKey(const ValueKey('laser-enable-region-frost')),
       findsWidgets,
     );
     expect(
       find.byKey(const ValueKey('quick-mode-laser-enable')),
+      findsOneWidget,
+    );
+
+    // Hold hint must sit inside a frosted region (not a sibling above it).
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('laser-enable-region-frost')),
+        matching: find.byKey(const ValueKey('device-control-feed-hold-hint')),
+      ),
       findsOneWidget,
     );
   });

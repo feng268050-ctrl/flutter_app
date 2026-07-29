@@ -12,6 +12,8 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
     super.key,
     required this.title,
     this.onBack,
+    this.leading,
+    this.leadingWidth,
     this.statusItems = const [],
     this.actions,
     this.bottom,
@@ -25,6 +27,10 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
 
   final String title;
   final VoidCallback? onBack;
+
+  /// When set, replaces the default Material back [IconButton].
+  final Widget? leading;
+  final double? leadingWidth;
   final List<Widget> statusItems;
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
@@ -60,23 +66,38 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
         theme.colorScheme.onSurface;
     final bg = _resolveBackground(context);
 
+    final resolvedLeading = leading ??
+        (onBack == null
+            ? null
+            : IconButton(
+                key: const ValueKey('cyber-page-status-bar-back'),
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Back',
+                onPressed: () {
+                  CyberClickSoundRegistry.playClick();
+                  onBack!();
+                },
+              ));
+
     return AppBar(
       key: const ValueKey('cyber-page-status-bar'),
       title: Text(title),
       centerTitle: true,
       backgroundColor: bg,
       foregroundColor: fg,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.transparent,
+      toolbarHeight: toolbarHeight,
       automaticallyImplyLeading: false,
-      leading: onBack == null
+      leadingWidth: leadingWidth,
+      leading: resolvedLeading == null
           ? null
-          : IconButton(
-              key: const ValueKey('cyber-page-status-bar-back'),
-              icon: const Icon(Icons.arrow_back),
-              tooltip: 'Back',
-              onPressed: () {
-                CyberClickSoundRegistry.playClick();
-                onBack!();
-              },
+          : SizedBox(
+              height: toolbarHeight,
+              width: leadingWidth,
+              child: resolvedLeading,
             ),
       actions: [
         ...?actions,

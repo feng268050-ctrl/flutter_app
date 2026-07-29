@@ -307,6 +307,7 @@ final class _EngineerModeEntryTipsBodyState
               child: CyberButton(
                 key: const ValueKey('engineer-mode-entry-confirm'),
                 variant: CyberButtonVariant.primary,
+                shape: CyberButtonShape.rounded,
                 stretch: true,
                 height: CyberDimens.actionButtonHeight,
                 onPressed: () {

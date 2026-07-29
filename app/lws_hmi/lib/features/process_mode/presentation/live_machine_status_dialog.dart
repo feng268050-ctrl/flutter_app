@@ -244,7 +244,8 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                     playerFactory:
                         widget.playerFactory ?? createIpCameraPreviewPlayer,
                   ),
-                // Side gauges (lws-ui live_monitor left/right cards).
+                // Side gauges — same [CurrentArcGauge] as Monitor › Machine Status.
+                // Panel/size: lws-ui live_monitor 280×250 / circle ≈200dp.
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
@@ -255,12 +256,11 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                         min: 0,
                         max: 1500,
                         majorTickEvery: 150,
-                        minorTickEvery: 30,
                         unit: 'kPa',
                         titleLine1: l10n?.machineBlowTitle ?? 'Blow',
                         titleLine2: l10n?.machineBlowContent ?? 'Pressure',
-                        size: 168,
-                        trackWidth: 12,
+                        size: _LiveGaugeDimens.gaugeSide,
+                        trackWidth: _LiveGaugeDimens.trackWidth,
                       ),
                     ),
                   ),
@@ -275,13 +275,12 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                         min: 0,
                         max: 100,
                         majorTickEvery: 10,
-                        minorTickEvery: 2,
                         unit: 'A',
                         titleLine1: l10n?.machineLaserCurrentTitle ?? 'Laser',
                         titleLine2:
                             l10n?.machineLaserCurrentContent ?? 'Current',
-                        size: 168,
-                        trackWidth: 12,
+                        size: _LiveGaugeDimens.gaugeSide,
+                        trackWidth: _LiveGaugeDimens.trackWidth,
                       ),
                     ),
                   ),
@@ -337,6 +336,24 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
   }
 }
 
+/// lws-ui `laser_live_monitor_gauge_*` (panel size fixed).
+abstract final class _LiveGaugeDimens {
+  static const panelW = 280.0;
+  static const panelH = 250.0;
+
+  /// Prefer a little inset on all sides while keeping L=R and T=B.
+  static double get gaugeSide {
+    const minInset = 8.0;
+    final short = panelH < panelW ? panelH : panelW;
+    return short - 2 * minInset; // 250 - 16 = 234
+  }
+
+  static double get padH => (panelW - gaugeSide) / 2;
+  static double get padV => (panelH - gaugeSide) / 2;
+
+  static const trackWidth = 18.0;
+}
+
 final class _GaugePanel extends StatelessWidget {
   const _GaugePanel({required this.child});
 
@@ -344,15 +361,30 @@ final class _GaugePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0x99000000),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x33FFFFFF)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: child,
+    // Explicit equal insets: left==right (padH), top==bottom (padV).
+    // Panel size stays [panelW]×[panelH].
+    return SizedBox(
+      width: _LiveGaugeDimens.panelW,
+      height: _LiveGaugeDimens.panelH,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0x99000000),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0x33FFFFFF)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            _LiveGaugeDimens.padH,
+            _LiveGaugeDimens.padV,
+            _LiveGaugeDimens.padH,
+            _LiveGaugeDimens.padV,
+          ),
+          child: SizedBox(
+            width: _LiveGaugeDimens.gaugeSide,
+            height: _LiveGaugeDimens.gaugeSide,
+            child: child,
+          ),
+        ),
       ),
     );
   }

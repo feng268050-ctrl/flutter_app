@@ -25,21 +25,37 @@ Or set FLUTTER_SDK to the SDK root with bin/flutter (must match engine $ENGINE_V
 
 	export PATH="$FLUTTER_INSTALL/bin:${HOME}/.pub-cache/bin:$PATH"
 
-	local flutter_version_line
-	flutter_version_line="$("$FLUTTER" --version 2>/dev/null | head -1 || true)"
-	if [[ "$flutter_version_line" != *"$PINNED_VER"* ]]; then
-		local path_flutter
-		path_flutter="$(command -v flutter 2>/dev/null || true)"
-		die "Flutter SDK version mismatch (${purpose} must match rootfs engine $ENGINE_VER).
+	# Prefer the SDK stamp file — `flutter --version` spawns Dart and can fail
+	# on a stale cache lock / SIGPIPE from `head`, which previously surfaced as
+	# a false "version mismatch" even when flutter-sdk/version was correct.
+	local sdk_stamp flutter_version_line flutter_version_err path_flutter detail
+	sdk_stamp="$(read_version_file "$FLUTTER_INSTALL/version" "")"
+	if [[ -n "$sdk_stamp" && "$sdk_stamp" == "$PINNED_VER" ]]; then
+		return 0
+	fi
+
+	flutter_version_err="$(mktemp "${TMPDIR:-/tmp}/flutter-version.XXXXXX")"
+	"$FLUTTER" --version >"$flutter_version_err" 2>&1 || true
+	flutter_version_line="$(head -1 "$flutter_version_err" 2>/dev/null || true)"
+	if [[ "$flutter_version_line" == *"$PINNED_VER"* ]]; then
+		rm -f "$flutter_version_err"
+		return 0
+	fi
+
+	path_flutter="$(command -v flutter 2>/dev/null || true)"
+	detail="$(tr '\n' ' ' <"$flutter_version_err" | head -c 400)"
+	rm -f "$flutter_version_err"
+	die "Flutter SDK version mismatch (${purpose} must match rootfs engine $ENGINE_VER).
 
   Pinned:  Flutter $PINNED_VER ($FLUTTER)
+  Stamp:   ${sdk_stamp:-<missing $FLUTTER_INSTALL/version>}
   Active:  ${flutter_version_line:-<flutter --version failed>}
   PATH:    ${path_flutter:-<not found>}
+  Detail:  ${detail:-<empty>}
 
 Do not use system/PATH flutter (e.g. 3.41.x). Run:
   make fetch-flutter-sdk
   make ${purpose}"
-	fi
 }
 
 # Write a host wrapper that runs a Linux ELF gen_snapshot via Docker.

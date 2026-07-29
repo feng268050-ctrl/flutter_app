@@ -82,7 +82,6 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final m = _monitor ?? WarnAlarmScope.maybeOf(context)?.monitor;
-    final actives = m?.activeAlarms ?? const [];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
@@ -205,6 +204,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               child: Text(
@@ -220,22 +220,31 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                             TextButton(
                               onPressed:
                                   _history.isEmpty ? null : _clearHistory,
+                              style: TextButton.styleFrom(
+                                textStyle: const TextStyle(fontSize: 18),
+                              ),
                               child: Text(l10n.clearAlarmLogs),
                             ),
                           ],
                         ),
-                        if (actives.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            '${l10n.activeAlarmsTitle}: '
-                            '${actives.map((a) => l10n.alarmTitleFor(a.code, fallback: a.label)).join(', ')}',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.65),
-                              fontSize: 13,
+                        const SizedBox(
+                          height: MonitorSectionHeader.dividerTopSpacing,
+                        ),
+                        const SizedBox(
+                          height: MonitorSectionHeader.dividerHeight,
+                          width: double.infinity,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  CyberColors.dividerCenter,
+                                  Color(0x00000000),
+                                ],
+                              ),
                             ),
                           ),
-                        ],
-                        const Divider(color: Colors.white24),
+                        ),
+                        const SizedBox(height: 12),
                         Expanded(
                           child: _history.isEmpty
                               ? Center(
@@ -243,7 +252,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                     l10n.noActiveAlarms,
                                     style: const TextStyle(
                                       color: Colors.white54,
-                                      fontSize: 16,
+                                      fontSize: 20,
                                     ),
                                   ),
                                 )

@@ -222,14 +222,27 @@ patchelf --add-needed libwayland-egl.so.1 "$OUT/bin/flutter-wayland-client" 2>/d
 log "patched emulator flutter-wayland-client → Mesa GLES + wayland-egl"
 
 # Stub libmali-hook: mali_injected BSS + GBM shims Rockchip weston needs.
+# Image must be aarch64 Debian bullseye-class (glibc ≤ Buildroot). Override when
+# Docker Hub times out, e.g.:
+#   EMULATOR_STUB_IMAGE=docker.m.daocloud.io/arm64v8/debian:bullseye-slim
 STUB_SRC="$ROOT/scripts/emulator-mali-hook-stub.c"
+STUB_IMAGE="${EMULATOR_STUB_IMAGE:-arm64v8/debian:bullseye-slim}"
 [[ -f "$STUB_SRC" ]] || die "missing $STUB_SRC"
 if command -v docker >/dev/null 2>&1; then
-	log "building aarch64 libmali-hook stub (GBM shims)"
+	log "building aarch64 libmali-hook stub (GBM shims) image=$STUB_IMAGE"
+	if ! docker image inspect "$STUB_IMAGE" >/dev/null 2>&1; then
+		log "pulling $STUB_IMAGE (Docker Hub often times out — set EMULATOR_STUB_IMAGE to a mirror)"
+		docker pull --platform linux/arm64 "$STUB_IMAGE" \
+			|| die "docker pull failed for $STUB_IMAGE
+  Retry with a mirror, e.g.:
+    EMULATOR_STUB_IMAGE=docker.m.daocloud.io/arm64v8/debian:bullseye-slim make fetch-emulator-swgl
+  Or configure Docker Desktop → Docker Engine → registry-mirrors, then:
+    docker pull --platform linux/arm64 arm64v8/debian:bullseye-slim"
+	fi
 	docker run --rm --platform linux/arm64 \
 		-v "$STUB_SRC:/src/stub.c:ro" \
 		-v "$OUT/lib:/out" \
-		arm64v8/debian:bullseye-slim bash -c \
+		"$STUB_IMAGE" bash -c \
 		'apt-get update -qq && apt-get install -y -qq gcc >/dev/null && gcc -shared -fPIC -o /out/libmali-hook.so.1 /src/stub.c'
 else
 	die "docker required to build aarch64 libmali-hook stub"

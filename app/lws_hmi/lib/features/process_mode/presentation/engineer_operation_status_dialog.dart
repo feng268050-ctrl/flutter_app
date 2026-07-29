@@ -99,6 +99,7 @@ final class _EngineerOperationSuccessBody extends StatelessWidget {
                 child: CyberButton(
                   key: const ValueKey('engineer-operation-success-ok'),
                   variant: CyberButtonVariant.primary,
+                  shape: CyberButtonShape.rounded,
                   stretch: true,
                   height: CyberDimens.actionButtonHeight,
                   onPressed: () {

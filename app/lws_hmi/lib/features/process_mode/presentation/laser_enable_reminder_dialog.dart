@@ -335,6 +335,7 @@ final class _LaserEnableReminderBodyState
               child: CyberButton(
                 key: const ValueKey('laser-enable-reminder-confirm'),
                 variant: CyberButtonVariant.primary,
+                shape: CyberButtonShape.rounded,
                 stretch: true,
                 height: 52,
                 onPressed: () {

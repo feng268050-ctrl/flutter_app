@@ -9,6 +9,12 @@ abstract final class DeviceControlIds {
   static const wireDirection = 'control.wire_direction';
   static const wireManualMode = 'control.wire_manual_mode';
 
+  /// Holding 0x0098 — manual Feed/Retract speed (not process library wire speed).
+  static const manualWireFeedSpeed = 'setting.manual_wire_feed_speed';
+
+  /// lws-ui `DefaultValueUtils` / Advanced Settings default (mm/s).
+  static const manualWireFeedSpeedMmPerS = 80;
+
   /// Job-switch bits in [controlField1] (laser/gas/wire/dir/auto).
   static const controlField1JobBitsMask = 0x1F;
 

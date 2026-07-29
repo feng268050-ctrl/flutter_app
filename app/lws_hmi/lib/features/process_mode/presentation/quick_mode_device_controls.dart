@@ -71,17 +71,18 @@ final class QuickModeDeviceControls extends StatelessWidget {
                       const SizedBox(
                         height: ProcessModeDimens.quickSideOpGapBelowDivider,
                       ),
-                      // Match right-column hold-hint slot so dividers share Y.
-                      if (_wireCapable)
-                        const SizedBox(
-                          height: ProcessModeDimens.feedHoldHintSlotHeight,
-                        ),
+                      // Hint-height spacer inside frost so Manual Gas lines up
+                      // with Feed after the right column includes the hold hint.
                       LaserEnableRegionFrost(
                         armed: laserOpen,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            if (_wireCapable)
+                              const SizedBox(
+                                height: ProcessModeDimens.feedHoldHintSlotHeight,
+                              ),
                             ProcessModeOutlineButton(
                               key: const ValueKey('device-control-manual-gas'),
                               label: 'Manual Gas',
@@ -133,14 +134,14 @@ final class QuickModeDeviceControls extends StatelessWidget {
                       const SizedBox(
                         height: ProcessModeDimens.quickSideOpGapBelowDivider,
                       ),
-                      // Outside frost — keep full-color, not greyed by laser.
-                      if (_wireCapable) const _FeedHoldHintSlot(),
+                      // Include hold hint in frost (lws-ui rightBottomBtnGroup).
                       LaserEnableRegionFrost(
                         armed: laserOpen,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            if (_wireCapable) const _FeedHoldHintSlot(),
                             ProcessModeOutlineWireButton(
                               key: const ValueKey('device-control-feed'),
                               label: DeviceControlFeedbackCopy.feedLabel,
@@ -315,7 +316,7 @@ final class _QuickZoneDivider extends StatelessWidget {
   }
 }
 
-/// Feed hold hint above the right button stack (outside laser frost).
+/// Feed hold hint above Feed/Retract (inside laser frost with those buttons).
 final class _FeedHoldHintSlot extends StatelessWidget {
   const _FeedHoldHintSlot();
 

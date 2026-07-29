@@ -335,6 +335,10 @@ void main() {
       (DeviceControlIds.wireManualMode, false),
       (DeviceControlIds.wireWork, false),
       (DeviceControlIds.laserEnable, false),
+      (
+        DeviceControlIds.manualWireFeedSpeed,
+        DeviceControlIds.manualWireFeedSpeedMmPerS,
+      ),
       (DeviceControlIds.wireDirection, true),
       (DeviceControlIds.wireWork, true),
       (DeviceControlIds.wireDirection, false),
@@ -343,6 +347,21 @@ void main() {
     expect(controller.autoWireFeed, isFalse);
     expect(controller.wireWork, isFalse);
     expect(controller.wireRetracting, isFalse);
+  });
+
+  test('ensureManualWireFeedSpeed writes fixed 80 mm/s', () async {
+    final modbus = _RecordingModbus();
+    final controller = DeviceControlController(servicesWith(modbus));
+
+    await controller.ensureManualWireFeedSpeed();
+
+    expect(modbus.writes, [
+      (
+        DeviceControlIds.manualWireFeedSpeed,
+        DeviceControlIds.manualWireFeedSpeedMmPerS,
+      ),
+    ]);
+    expect(DeviceControlIds.manualWireFeedSpeedMmPerS, 80);
   });
 
   testWidgets('DeviceControlBar shows gas, laser, and wire stub',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/monitor/application/machine_status_controller.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
@@ -74,6 +75,8 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                     Expanded(
                       child: MonitorGlassCard(
                         padding: const EdgeInsets.all(8),
+                        borderGradientCenter:
+                            CyberBorderGradientCenter.topLeftBottomRight,
                         child: Center(
                           child: CurrentArcGauge(
                             value: s?.gasPressureKpa ?? 0,
@@ -96,6 +99,8 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                     Expanded(
                       child: MonitorGlassCard(
                         padding: const EdgeInsets.all(8),
+                        borderGradientCenter:
+                            CyberBorderGradientCenter.bottomLeftTopRight,
                         child: Center(
                           child: CurrentArcGauge(
                             value: s?.laserCurrentA ?? 0,
@@ -136,14 +141,23 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
                         spacing: gap,
                         runSpacing: gap,
                         children: [
-                          for (final tile in tiles)
+                          for (var i = 0; i < tiles.length; i++)
                             SizedBox(
                               width: tileW,
                               height: tileH,
                               child: MonitorStatusTile(
-                                label: tile.$1,
-                                on: tile.$2,
+                                label: tiles[i].$1,
+                                on: tiles[i].$2,
                                 height: tileH,
+                                // Machine Status: diagonal bright edges only.
+                                borderGradientCenter: switch (i % 3) {
+                                  0 => CyberBorderGradientCenter
+                                      .topLeftBottomRight,
+                                  1 => CyberBorderGradientCenter
+                                      .bottomLeftTopRight,
+                                  _ => CyberBorderGradientCenter
+                                      .topRightBottomLeft,
+                                },
                               ),
                             ),
                         ],

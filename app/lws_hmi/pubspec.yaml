@@ -123,6 +123,7 @@ flutter:
     - assets/home/home_monitor.webp
     - assets/home/ai_vision_home.webp
     # Monitor tab icons (from lws-ui DeviceMonitoring mipmaps).
+    - assets/monitor/job_border1.webp
     - assets/monitor/job_icon1.webp
     - assets/monitor/job_icon2.webp
     - assets/monitor/job_icon3.webp

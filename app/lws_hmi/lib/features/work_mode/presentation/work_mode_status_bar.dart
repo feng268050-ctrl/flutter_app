@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/status_bar/call_back_home_button.dart';
 import 'package:lws_hmi/features/status_bar/status_bar_phase.dart';
 import 'package:lws_hmi/features/work_mode/application/work_mode_equipment_status_controller.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_assets.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_equipment_status.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Quick vs Engineer page chrome (not process type).
 enum WorkMode { quick, engineer }
@@ -72,9 +74,12 @@ final class WorkModeStatusBar extends StatelessWidget
               // lws-ui left_rail: fixed 160dp; Back fills the complete slot.
               SizedBox(
                 width: WorkModeStatusBarDimens.sideRailWidth,
-                child: _WorkModeBackButton(
+                child: CallBackHomeButton(
+                  key: const ValueKey('work-mode-status-back'),
                   accent: accent,
                   enabled: backEnabled,
+                  label: AppLocalizations.of(context)?.equipmentStatusHome ??
+                      'Home',
                   onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                 ),
               ),
@@ -173,138 +178,6 @@ abstract final class WorkModeStatusBarDimens {
   static const Color label = Color(0xFFFFFFFF);
   static const Color clock = Color(0xFFF2F2F2);
   static const Color backLabelDisabled = Color(0xFF909399);
-}
-
-/// Left Back rail: idle = transparent + accent edge lines; pressed = translucent
-/// fill; disabled = gray lines + dimmed icon/label (lws-ui EquipmentStatusBar).
-final class _WorkModeBackButton extends StatefulWidget {
-  const _WorkModeBackButton({
-    required this.accent,
-    required this.enabled,
-    required this.onPressed,
-  });
-
-  final WorkModeAccent accent;
-  final bool enabled;
-  final VoidCallback onPressed;
-
-  @override
-  State<_WorkModeBackButton> createState() => _WorkModeBackButtonState();
-}
-
-final class _WorkModeBackButtonState extends State<_WorkModeBackButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = widget.accent;
-    final enabled = widget.enabled;
-    final labelColor =
-        enabled ? Colors.white : WorkModeStatusBarDimens.backLabelDisabled;
-
-    return Column(
-      children: [
-        _AccentEdgeLine(gradient: accent.edgeGradient),
-        Expanded(
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              key: const ValueKey('work-mode-status-back'),
-              onTap: enabled
-                  ? () {
-                      CyberClickSoundRegistry.playClick();
-                      widget.onPressed();
-                    }
-                  : null,
-              onHighlightChanged: enabled
-                  ? (value) {
-                      if (_pressed != value) {
-                        setState(() => _pressed = value);
-                      }
-                    }
-                  : null,
-              splashColor: Colors.transparent,
-              highlightColor: Colors.transparent,
-              hoverColor: Colors.transparent,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: (_pressed && enabled) ? accent.pressGradient : null,
-                ),
-                // Background fills the rail; content group is centered.
-                child: KeyedSubtree(
-                  key: const ValueKey('work-mode-status-back-content'),
-                  child: SizedBox.expand(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal:
-                            WorkModeStatusBarDimens.backHorizontalPadding,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          if (enabled)
-                            Image.asset(
-                              WorkModeAssets.back,
-                              width: WorkModeStatusBarDimens.backIconSize,
-                              height: WorkModeStatusBarDimens.backIconSize,
-                              filterQuality: FilterQuality.medium,
-                            )
-                          else
-                            ColorFiltered(
-                              colorFilter: const ColorFilter.mode(
-                                WorkModeStatusBarDimens.backLabelDisabled,
-                                BlendMode.srcATop,
-                              ),
-                              child: Image.asset(
-                                WorkModeAssets.back,
-                                width: WorkModeStatusBarDimens.backIconSize,
-                                height: WorkModeStatusBarDimens.backIconSize,
-                                filterQuality: FilterQuality.medium,
-                              ),
-                            ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Home',
-                            maxLines: 1,
-                            overflow: TextOverflow.clip,
-                            style: TextStyle(
-                              color: labelColor,
-                              fontSize:
-                                  WorkModeStatusBarDimens.homeLabelFontSize,
-                              height: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        _AccentEdgeLine(gradient: accent.edgeGradient),
-      ],
-    );
-  }
-}
-
-final class _AccentEdgeLine extends StatelessWidget {
-  const _AccentEdgeLine({required this.gradient});
-
-  final LinearGradient gradient;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: WorkModeStatusBarDimens.edgeLineHeight,
-      width: double.infinity,
-      child: DecoratedBox(
-        decoration: BoxDecoration(gradient: gradient),
-      ),
-    );
-  }
 }
 
 final class _WorkModeEquipmentStrip extends StatefulWidget {

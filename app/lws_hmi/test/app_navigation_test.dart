@@ -195,8 +195,6 @@ AppServices _testServices() {
 }
 
 Future<void> _openMonitorAlarmTab(WidgetTester tester) async {
-  await tester.drag(find.byType(TabBar), const Offset(-320, 0));
-  await tester.pumpAndSettle();
   await tester.tap(find.byKey(const ValueKey('monitor-tab-alarm-information')));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));

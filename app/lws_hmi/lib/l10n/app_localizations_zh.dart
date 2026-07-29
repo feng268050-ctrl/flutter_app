@@ -332,6 +332,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiVisionWorkInfoUnavailable => '-';
 
   @override
+  String get liveVideoFailed => '实时视频不可用';
+
+  @override
   String get aiVisualizedLabel => '可视化';
 
   @override
@@ -684,6 +687,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get equipmentStatusBack => '返回';
+
+  @override
+  String get equipmentStatusHome => '主页';
 
   @override
   String get fahrenheitUnit => '℉';
@@ -2073,6 +2079,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get aiVisionVideoPause => '暫停';
 
   @override
+  String get liveVideoFailed => '實時視頻不可用';
+
+  @override
   String get aiVisualizedLabel => '可視化';
 
   @override
@@ -2378,6 +2387,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get environmentTemperatureText => '環境溫度';
+
+  @override
+  String get equipmentStatusHome => '主頁';
 
   @override
   String get fiberDisconnectionAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';

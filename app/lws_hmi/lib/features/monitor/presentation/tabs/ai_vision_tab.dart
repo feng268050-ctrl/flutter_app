@@ -1,13 +1,18 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// lws-ui `fragment_ai_vision` — info panel + choose button + preview box.
 class AiVisionTab extends StatelessWidget {
   const AiVisionTab({super.key});
 
+  /// lws-ui label bar fill `#CC2E3653`.
+  static const _labelBar = Color(0xCC2E3653);
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.all(MonitorDimens.pad),
       child: Row(
@@ -20,23 +25,35 @@ class AiVisionTab extends StatelessWidget {
                 Expanded(
                   child: MonitorGlassCard(
                     padding: const EdgeInsets.fromLTRB(0, 22, 0, 8),
+                    borderGradientCenter:
+                        CyberBorderGradientCenter.topLeftBottomRight,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Padding(
-                          padding: EdgeInsets.fromLTRB(24, 10, 24, 12),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 10, 24, 21),
                           child: Text(
-                            'Work Information',
-                            style: TextStyle(
+                            l10n.deviceMonitorWorkInfoTitle,
+                            style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 26,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 35,
+                              fontWeight: FontWeight.w400,
+                              height: 1.0,
                             ),
                           ),
                         ),
-                        _InfoBlock(label: 'Process Type', value: '-'),
-                        _InfoBlock(label: 'Material Type', value: '-'),
-                        _InfoBlock(label: 'Recording Time', value: '-'),
+                        _InfoBlock(
+                          label: l10n.aiVisionProcessTypeText,
+                          value: l10n.aiVisionWorkInfoUnavailable,
+                        ),
+                        _InfoBlock(
+                          label: l10n.aiVisionMaterialTypeText,
+                          value: l10n.aiVisionWorkInfoUnavailable,
+                        ),
+                        _InfoBlock(
+                          label: l10n.processVideoRecordingTime,
+                          value: l10n.aiVisionWorkInfoUnavailable,
+                        ),
                       ],
                     ),
                   ),
@@ -45,16 +62,23 @@ class AiVisionTab extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   height: 56,
-                  child: FilledButton(
+                  child: CyberButton(
+                    variant: CyberButtonVariant.primary,
+                    shape: CyberButtonShape.rounded,
+                    stretch: true,
+                    borderGradientCenter:
+                        CyberBorderGradientCenter.topLeftBottomRight,
                     onPressed: () {
-                      CyberClickSoundRegistry.playClick();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Choose video — coming soon'),
                         ),
                       );
                     },
-                    child: const Text('Choose Video'),
+                    child: Text(
+                      l10n.aiVisionChooseBtn,
+                      style: const TextStyle(fontSize: 24),
+                    ),
                   ),
                 ),
               ],
@@ -63,56 +87,19 @@ class AiVisionTab extends StatelessWidget {
           const SizedBox(width: 24),
           Expanded(
             child: MonitorGlassCard(
-              padding: EdgeInsets.zero,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Container(color: const Color(0xFF1A1F2E)),
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.visibility_outlined,
-                          size: 72,
-                          color: Colors.white24,
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'AI Vision Preview',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Video + detection overlay after P4.1 / P4.3',
-                          style: TextStyle(color: Colors.white38, fontSize: 14),
-                        ),
-                      ],
-                    ),
+              padding: const EdgeInsets.all(10),
+              borderGradientCenter:
+                  CyberBorderGradientCenter.bottomLeftTopRight,
+              child: Center(
+                child: Text(
+                  l10n.liveVideoFailed,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w500,
                   ),
-                  Positioned(
-                    left: 16,
-                    top: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'HUD',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -130,24 +117,35 @@ class _InfoBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // lws-ui: label on `#CC2E3653` bar; value below — not nested Frost cards.
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            color: const Color(0xCC2E3653),
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 16),
+          ColoredBox(
+            color: AiVisionTab._labelBar,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 31, vertical: 16),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFFE1E1E1),
+                  fontSize: 24,
+                  height: 1.0,
+                ),
+              ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(28, 14, 28, 8),
+            padding: const EdgeInsets.fromLTRB(31, 16, 31, 0),
             child: Text(
               value,
-              style: const TextStyle(color: Colors.white, fontSize: 18),
+              style: const TextStyle(
+                color: Color(0xFFE1E1E1),
+                fontSize: 24,
+                height: 1.0,
+              ),
             ),
           ),
         ],

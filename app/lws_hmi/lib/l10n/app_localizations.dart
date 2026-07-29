@@ -704,6 +704,12 @@ abstract class AppLocalizations {
   /// **'-'**
   String get aiVisionWorkInfoUnavailable;
 
+  /// No description provided for @liveVideoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Live video unavailable'**
+  String get liveVideoFailed;
+
   /// No description provided for @aiVisualizedLabel.
   ///
   /// In en, this message translates to:
@@ -1399,6 +1405,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back'**
   String get equipmentStatusBack;
+
+  /// No description provided for @equipmentStatusHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get equipmentStatusHome;
 
   /// No description provided for @fahrenheitUnit.
   ///

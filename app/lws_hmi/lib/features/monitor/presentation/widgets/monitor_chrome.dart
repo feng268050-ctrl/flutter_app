@@ -18,16 +18,14 @@ abstract final class MonitorDimens {
   static const tileH = 102.0;
   static const workRingH = 250.0;
   static const aiInfoW = 360.0;
-  /// Design target for section titles (lws-ui SectionHeader 24sp).
-  static const sectionTitleSize = 24.0;
-  /// Metric/comm labels — compact for half-width English rows.
-  static const metricLabelSize = 13.0;
-  /// Temperature values — scaled with labels.
-  static const metricValueSize = 18.0;
+  /// Alarm section titles (base 24 + tab-3 content bump).
+  static const sectionTitleSize = 28.0;
+  /// Metric/comm labels — Alarm left panel (+8 vs original 13).
+  static const metricLabelSize = 21.0;
+  /// Temperature values — Alarm left panel (+8 vs original 18).
+  static const metricValueSize = 26.0;
   /// lws-ui `@color/warn_text`.
   static const labelColor = Color(0xFFB0B1C2);
-  static const glass = Color(0x6B000000);
-  static const glassInner = Color(0x33FFFFFF);
 }
 
 class MonitorGlassCard extends StatelessWidget {
@@ -38,6 +36,8 @@ class MonitorGlassCard extends StatelessWidget {
     this.width,
     this.padding = const EdgeInsets.all(MonitorDimens.pad),
     this.margin,
+    this.borderGradientCenter =
+        CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   final Widget child;
@@ -45,26 +45,33 @@ class MonitorGlassCard extends StatelessWidget {
   final double? width;
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry? margin;
+  final CyberBorderGradientCenter borderGradientCenter;
 
   @override
   Widget build(BuildContext context) {
-    final panel = CyberPanelBorder(
-      cornerRadius: MonitorDimens.corner,
-    );
+    final theme = CyberGlassTheme.of(context);
     return Container(
       width: width,
       height: height,
       margin: margin,
-      decoration: BoxDecoration(
-        color: MonitorDimens.glass,
-        borderRadius: panel.borderRadius,
-        border: Border.all(
-          color: panel.flatBorderColor.withOpacity(0.35),
-          width: panel.width,
+      child: CyberOutlinedPanel(
+        clipBehavior: Clip.antiAlias,
+        outline: CyberPanelOutline(
+          style: CyberPanelOutlineStyle.frostGradient,
+          tone: theme.tone,
+          // Match EngineerFrostPanel bright-edge stroke (1.5).
+          width: 1.5,
+          cornerRadius: MonitorDimens.corner,
+          gradientCenter: borderGradientCenter,
+        ),
+        // Transparent fill + Frost bright-edge stroke (settings chrome parity).
+        color: Colors.transparent,
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: Padding(padding: padding, child: child),
         ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(padding: padding, child: child),
     );
   }
 }
@@ -74,18 +81,45 @@ class MonitorSectionHeader extends StatelessWidget {
 
   final String title;
 
+  /// lws-ui `section_header_divider_height`.
+  static const dividerHeight = 1.0;
+
+  /// lws-ui SectionHeader `dividerTopSpacing` default (`frost_dialog_content_padding`).
+  static const dividerTopSpacing = 24.0;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: MonitorDimens.sectionTitleSize,
-          fontWeight: FontWeight.w400,
-          height: 1.1,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: MonitorDimens.sectionTitleSize,
+              fontWeight: FontWeight.w400,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: dividerTopSpacing),
+          // lws-ui `frost_divider_start_aligned`: left (center) → right (edge).
+          const SizedBox(
+            height: dividerHeight,
+            width: double.infinity,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    CyberColors.dividerCenter,
+                    Color(0x00000000),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -292,9 +326,17 @@ class MonitorHealthBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Material(
-      color: const Color(0xFF5D4037),
-      borderRadius: BorderRadius.circular(12),
+    final theme = CyberGlassTheme.of(context);
+    return CyberOutlinedPanel(
+      clipBehavior: Clip.antiAlias,
+      outline: CyberPanelOutline(
+        style: CyberPanelOutlineStyle.frostGradient,
+        tone: theme.tone,
+        width: 1.5,
+        cornerRadius: 12,
+        gradientCenter: CyberBorderGradientCenter.topBottom,
+      ),
+      color: Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
@@ -306,7 +348,7 @@ class MonitorHealthBanner extends StatelessWidget {
                 message?.trim().isNotEmpty == true
                     ? message!
                     : l10n.modbusCommunicationFault,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+                style: const TextStyle(color: Colors.white, fontSize: 18),
               ),
             ),
           ],
@@ -342,7 +384,7 @@ class MonitorAlarmLogRow extends StatelessWidget {
               code,
               style: const TextStyle(
                 color: Color(0xFFFF8A80),
-                fontSize: 15,
+                fontSize: 19,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -355,7 +397,7 @@ class MonitorAlarmLogRow extends StatelessWidget {
                   label,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
-                    fontSize: 15,
+                    fontSize: 19,
                   ),
                 ),
                 if (time != null) ...[
@@ -364,7 +406,7 @@ class MonitorAlarmLogRow extends StatelessWidget {
                     _formatTime(time.toLocal()),
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.45),
-                      fontSize: 12,
+                      fontSize: 16,
                     ),
                   ),
                 ],
@@ -389,17 +431,21 @@ class MonitorStatusTile extends StatelessWidget {
     required this.label,
     this.on,
     this.height,
+    this.borderGradientCenter =
+        CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   final String label;
   final bool? on;
   final double? height;
+  final CyberBorderGradientCenter borderGradientCenter;
 
   @override
   Widget build(BuildContext context) {
     return MonitorGlassCard(
       height: height ?? MonitorDimens.tileH,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      borderGradientCenter: borderGradientCenter,
       child: Row(
         children: [
           Expanded(
@@ -407,7 +453,7 @@ class MonitorStatusTile extends StatelessWidget {
               label,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 18),
+              style: const TextStyle(color: Colors.white, fontSize: 20),
             ),
           ),
           MonitorStatusDot(on: on),
@@ -423,22 +469,27 @@ class MonitorWorkDataCard extends StatelessWidget {
     required this.title,
     required this.value,
     this.suffix = '',
+    this.borderGradientCenter =
+        CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   final String title;
   final String value;
   final String suffix;
+  final CyberBorderGradientCenter borderGradientCenter;
 
   @override
   Widget build(BuildContext context) {
     return MonitorGlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      borderGradientCenter: borderGradientCenter,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final tight = constraints.maxHeight < 140;
-          final titleSize = tight ? 16.0 : 22.0;
-          final valueSize = tight ? 28.0 : 40.0;
-          final suffixSize = tight ? 16.0 : 24.0;
+          // Work Info tab: +2 over prior 16/22, 28/40, 16/24.
+          final titleSize = tight ? 18.0 : 24.0;
+          final valueSize = tight ? 30.0 : 42.0;
+          final suffixSize = tight ? 18.0 : 26.0;
           return FittedBox(
             fit: BoxFit.scaleDown,
             child: ConstrainedBox(

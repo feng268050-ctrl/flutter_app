@@ -332,6 +332,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiVisionWorkInfoUnavailable => '-';
 
   @override
+  String get liveVideoFailed => 'Live video unavailable';
+
+  @override
   String get aiVisualizedLabel => 'Visualized';
 
   @override
@@ -684,6 +687,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get equipmentStatusBack => 'Back';
+
+  @override
+  String get equipmentStatusHome => 'Home';
 
   @override
   String get fahrenheitUnit => '°F';

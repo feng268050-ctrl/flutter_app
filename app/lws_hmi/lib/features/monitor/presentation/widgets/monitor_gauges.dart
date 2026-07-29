@@ -94,7 +94,8 @@ class _PercentArcGaugeState extends State<PercentArcGauge>
     final style = widget.textStyle ??
         TextStyle(
           color: Colors.white,
-          fontSize: widget.size * 0.22,
+          // Work Info tab content: +2 over size-relative base.
+          fontSize: widget.size * 0.22 + 2,
           fontWeight: FontWeight.w700,
         );
     return AnimatedBuilder(
@@ -422,9 +423,10 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
   @override
   Widget build(BuildContext context) {
     final span = (widget.max - widget.min).abs();
+    // Machine Status tab content: +2 over size-relative bases.
     final labelStyle = TextStyle(
       color: widget.tickColor,
-      fontSize: widget.size * (18 / 200),
+      fontSize: widget.size * (18 / 200) + 2,
       fontWeight: FontWeight.w400,
       height: 1.0,
     );
@@ -503,7 +505,7 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
                                 text: _formatValue(v),
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: widget.size * 0.14,
+                                  fontSize: widget.size * 0.14 + 2,
                                   fontWeight: FontWeight.w700,
                                   height: 1.1,
                                 ),
@@ -512,7 +514,7 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
                                 text: ' ${widget.unit}',
                                 style: TextStyle(
                                   color: Colors.white70,
-                                  fontSize: widget.size * 0.07,
+                                  fontSize: widget.size * 0.07 + 2,
                                   fontWeight: FontWeight.w500,
                                   height: 1.1,
                                 ),
@@ -525,7 +527,7 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
                           widget.titleLine1,
                           style: TextStyle(
                             color: Colors.white70,
-                            fontSize: widget.size * 0.055,
+                            fontSize: widget.size * 0.055 + 2,
                             height: 1.15,
                           ),
                         ),
@@ -533,7 +535,7 @@ class _CurrentArcGaugeState extends State<CurrentArcGauge>
                           widget.titleLine2,
                           style: TextStyle(
                             color: Colors.white70,
-                            fontSize: widget.size * 0.055,
+                            fontSize: widget.size * 0.055 + 2,
                             height: 1.15,
                           ),
                         ),

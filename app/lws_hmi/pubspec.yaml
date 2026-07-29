@@ -107,6 +107,8 @@ flutter:
     - assets/hal/gpio.json
     - assets/hal/gpio.sim.json
     - assets/hal/modbus.json
+    # Control-board firmware (checked in under assets/firmware/control-board/).
+    - assets/firmware/
     # Versioned process-library manifest and generated JSON payloads.
     - assets/process-library/
     # Product Home backdrop / heroes (from lws-ui mipmap-mdpi).

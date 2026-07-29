@@ -7,6 +7,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coordinator.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
+import 'package:lws_hmi/features/bundled_firmware/application/bundled_firmware_bootstrap.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
@@ -42,7 +43,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with RouteAware {
   bool _homeBootstrapped = false;
   IpCameraUiStatus _cameraStatus = IpCameraUiStatus.connecting;
   StreamSubscription<IpCameraUiStatus>? _cameraSub;
@@ -69,9 +70,39 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    appRouteObserver.unsubscribe(this);
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      appRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    appRouteObserver.unsubscribe(this);
     unawaited(_cameraSub?.cancel());
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Returning to Home from Settings / Monitor / etc.
+    _maybeCheckBundledFirmware();
+  }
+
+  void _maybeCheckBundledFirmware() {
+    if (!mounted) {
+      return;
+    }
+    final services = AppScope.maybeOf(context);
+    if (services == null || !services.modbusLiveStarted) {
+      return;
+    }
+    unawaited(
+      BundledFirmwareBootstrap.checkAndPromptIfNeeded(context, services),
+    );
   }
 
   /// After first frame: IP camera session (async), optional once-per-boot
@@ -150,24 +181,34 @@ class _HomePageState extends State<HomePage> {
           },
         );
         // #endregion
-        if (!mounted || warn == null) {
-          return;
-        }
-        // Let self-check route fully pop before warn dialogs use the navigator.
-        await Future<void>.delayed(const Duration(milliseconds: 100));
         if (!mounted) {
           return;
         }
-        await warn.start();
-        // #region agent log
-        WarnAlarmDebugLog.log(
-          hypothesisId: 'A',
-          location: 'home_page.dart:afterWarnStart',
-          message: 'warn.start + flush done',
-          data: const {},
+        if (warn != null) {
+          // Let self-check route fully pop before warn dialogs use the navigator.
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+          if (!mounted) {
+            return;
+          }
+          await warn.start();
+          // #region agent log
+          WarnAlarmDebugLog.log(
+            hypothesisId: 'A',
+            location: 'home_page.dart:afterWarnStart',
+            message: 'warn.start + flush done',
+            data: const {},
+          );
+          // #endregion
+          await warn.onPresentationGateOpened();
+        }
+        if (!mounted) {
+          return;
+        }
+        // Bundled control-board firmware: after Modbus (+ warn gate) ready.
+        await BundledFirmwareBootstrap.checkAndPromptIfNeeded(
+          context,
+          services,
         );
-        // #endregion
-        await warn.onPresentationGateOpened();
       }());
     }
 

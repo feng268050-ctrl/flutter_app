@@ -73,6 +73,12 @@ abstract class ModbusHal {
 
   Future<void> writeAttribute(String id, Object? value);
 
+  /// Write contiguous holding registers (FC16) at [address] without group merge/read.
+  ///
+  /// Used for control-board OTA frames that must match lws-ui length (info ≈10
+  /// words, data = header+payload, end ≈14) — not the full catalog group span.
+  Future<void> writeHoldingRegisters(int address, List<int> words);
+
   /// Decoded attribute id → value for attributes in [groupId].
   Future<Map<String, Object?>> readGroup(String groupId);
 
@@ -376,6 +382,28 @@ final class _LinuxModbusHal implements ModbusHal {
       }
       _attrCache[id] = _AttrCacheEntry(value);
       _patchGroupCache(attr, words);
+    } finally {
+      _commandBusy = false;
+    }
+  }
+
+  @override
+  Future<void> writeHoldingRegisters(int address, List<int> words) async {
+    if (words.isEmpty) {
+      return;
+    }
+    if (config.capabilities.writeMultiple != true) {
+      throw const HalUnsupportedException(
+        'modbus write_multiple not advertised',
+      );
+    }
+    final normalized = [for (final w in words) w & 0xFFFF];
+    _commandBusy = true;
+    try {
+      final ok = await _writeHolding(address, normalized);
+      if (!ok) {
+        throw const HalIoException('modbus writeHoldingRegisters failed');
+      }
     } finally {
       _commandBusy = false;
     }

@@ -652,6 +652,7 @@ App deploy without reflash:
 ```bash
 make build-app
 make push-app                  # SN=... or IP=... when multiple devices
+make upgrade-control-board    # push latest control-board bin and trigger upgrade (no version gate)
 make set-prop CAMERA_IP=192.168.1.50   # optional: product tunables over SSH (not brand/model/sn)```
 
 ### macOS Docker Desktop tips

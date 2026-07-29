@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// Named routes for product Home, Settings, Monitor, and hidden Demo.
 ///
 /// Boot self-check is a Home overlay (not a route). Each top-level route calls
@@ -11,3 +13,7 @@ abstract final class AppRoutes {
   static const demo = '/demo';
   static const processVideoDetail = '/monitor/process-video';
 }
+
+/// Observes top-level route pops so Product Home can re-run home prompts.
+final RouteObserver<ModalRoute<void>> appRouteObserver =
+    RouteObserver<ModalRoute<void>>();

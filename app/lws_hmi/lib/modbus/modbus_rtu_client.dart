@@ -189,6 +189,21 @@ class ModbusRtuClient {
     }
   }
 
+  /// Contiguous FC16 write (OTA frames). Soft-fails → false.
+  Future<bool> writeHoldingRegisters(int address, List<int> words) async {
+    try {
+      final hal = await _ensureHal();
+      await hal.writeHoldingRegisters(address, words);
+      return true;
+    } catch (e) {
+      debugPrint(
+        'modbus writeHoldingRegisters(0x${address.toRadixString(16)}, '
+        'n=${words.length}) failed: $e',
+      );
+      return false;
+    }
+  }
+
   /// One Modbus function-16 write for a named holding-register group.
   Future<bool> writeGroup(
     String groupId,

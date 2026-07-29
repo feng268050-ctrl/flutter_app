@@ -53,6 +53,7 @@ import 'package:lws_hmi/features/system_status/presentation/gpio_led_overlay_hos
 import 'package:lws_hmi/features/system_status/presentation/system_status_overlay_host.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
+import 'package:lws_hmi/features/bundled_firmware/infrastructure/sync_firmware_command_watcher.dart';
 import 'package:lws_hmi/gpio/rgb_led_policy_driver.dart';
 import 'package:lws_hmi/l10n/app_locales.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -198,6 +199,12 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     dangerousOperations: _dangerousOperationsSettings,
   );
 
+  late final SyncFirmwareCommandWatcher _syncFirmwareCommandWatcher =
+      SyncFirmwareCommandWatcher(
+    services: _services,
+    navigatorContext: () => _navKey.currentContext,
+  );
+
   late final RgbLedPolicyDriver _rgbLedPolicy = RgbLedPolicyDriver(
     services: _services,
     warnAlarm: _warnAlarm,
@@ -254,6 +261,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       unawaited(_services.restorePersistedSettingsOnce());
       unawaited(_maybeRestoreRoute());
       _services.autoSleep.arm(backlight: _services.backlight);
+      _syncFirmwareCommandWatcher.start();
       unawaited(_startCloudLocalRuntime());
     });
   }
@@ -340,6 +348,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     CyberImePhysicalKeyboard.register(null);
     unawaited(_services.autoSleep.dispose());
     unawaited(_warnAlarm.dispose());
+    unawaited(_syncFirmwareCommandWatcher.dispose());
     unawaited(_rgbLedPolicy.dispose());
     if (widget.miscSettingsStore == null) {
       _miscSettingsStore.dispose();
@@ -494,6 +503,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                             ],
                             builder: _appBuilder,
                             navigatorKey: _navKey,
+                            navigatorObservers: [appRouteObserver],
                             initialRoute: AppRoutes.home,
                             onGenerateRoute: (settings) {
                               final Widget page;

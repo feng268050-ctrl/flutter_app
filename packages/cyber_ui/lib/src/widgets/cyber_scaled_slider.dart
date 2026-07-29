@@ -20,6 +20,7 @@ class CyberScaledSlider extends StatelessWidget {
     this.scaleMaxText,
     this.scaleZeroText = '0',
     this.showZeroLabel,
+    this.scaleLabelFontSize = 12,
   });
 
   final double value;
@@ -39,6 +40,9 @@ class CyberScaledSlider extends StatelessWidget {
   /// When null, shows zero when [min] &lt; 0 &lt; [max] (Frost parity).
   final bool? showZeroLabel;
 
+  /// Min / max / zero scale label size (match sibling title when set).
+  final double scaleLabelFontSize;
+
   bool get _showZero =>
       showZeroLabel ?? (min < 0 && max > 0);
 
@@ -46,11 +50,12 @@ class CyberScaledSlider extends StatelessWidget {
   Widget build(BuildContext context) {
     final labelStyle = TextStyle(
       color: CyberColors.textSecondary,
-      fontSize: 12,
+      fontSize: scaleLabelFontSize,
       height: 1.1,
     );
     final span = max - min;
     final zeroFraction = span == 0 ? 0.0 : (0 - min) / span;
+    final scaleBandHeight = (scaleLabelFontSize * 1.35).clamp(18.0, 36.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -67,7 +72,7 @@ class CyberScaledSlider extends StatelessWidget {
         ),
         if (scaleMinText != null || scaleMaxText != null || _showZero)
           SizedBox(
-            height: 18,
+            height: scaleBandHeight,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final width = constraints.maxWidth;

@@ -17,6 +17,7 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_set
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
 import 'package:lws_hmi/features/system_status/presentation/system_status_card.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
@@ -298,10 +299,14 @@ void main() {
 
   testWidgets('Settings route shows four tabs and Bluetooth entry', (tester) async {
     final services = _testServices();
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       AppScope(
         services: services,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: const SettingsPage(),
         ),
       ),
@@ -309,21 +314,30 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('Device Information'), findsWidgets);
-    expect(find.text('Common Settings'), findsOneWidget);
-    expect(find.text('Advanced Settings'), findsOneWidget);
-    expect(find.text('Custom Home Page'), findsOneWidget);
+    expect(find.text('Device Info'), findsWidgets);
+    expect(find.text('General'), findsOneWidget);
+    expect(find.text('Advanced'), findsOneWidget);
+    expect(find.text('Custom Home'), findsOneWidget);
 
-    await tester.tap(find.text('Common Settings'));
-    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('settings-tab-common')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 220));
 
     expect(find.text('Bluetooth'), findsOneWidget);
     expect(find.text('Wireless Network'), findsOneWidget);
-    expect(find.text('Screen Brightness'), findsOneWidget);
+    expect(find.text('Display'), findsOneWidget);
     expect(find.text('Language'), findsOneWidget);
-    expect(find.text('RGB LED'), findsOneWidget);
     expect(find.text('Debug over USB'), findsNothing);
     expect(find.text('Debug over LAN'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('settings-tab-custom-home')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 220));
+    // Body stays blank until Custom Home lands.
+    expect(find.text('Bluetooth'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    services.wallClock.dispose();
   });
 
   testWidgets('named /demo route resolves', (tester) async {

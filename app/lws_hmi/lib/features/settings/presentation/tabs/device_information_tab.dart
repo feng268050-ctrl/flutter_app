@@ -235,134 +235,151 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
       }
     } catch (_) {}
 
-    return SettingsScrollView(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Identity — lws-ui `top-left-bottom-right`
-        SettingsGroup(
-          borderGradientCenter:
-              CyberBorderGradientCenter.topLeftBottomRight,
-          children: [
-            SettingsValueRow(
-              title: l10n.deviceModel,
-              value: _deviceModel,
-              trailing: IconButton(
-                tooltip: l10n.deviceModel,
-                onPressed: () => unawaited(_openDeviceQr()),
-                icon: const Icon(
-                  Icons.qr_code_2,
-                  color: CyberColors.textPrimary,
-                ),
-              ),
-            ),
-            SettingsValueRow(
-              title: l10n.deviceSn,
-              value: _deviceSn,
-              clickFeedback: false,
-              onTap: () {
-                if (_deviceSnSecretTap.registerTap()) {
-                  unawaited(_showSelectAppEnvDialog(l10n));
-                }
-              },
-            ),
-            SettingsValueRow(title: l10n.gunSn, value: _gunheadSn),
-          ],
-        ),
-        // Versions — lws-ui `bottom-left-top-right`
-        SettingsGroup(
-          borderGradientCenter:
-              CyberBorderGradientCenter.bottomLeftTopRight,
-          children: [
-            SettingsValueRow(
-              title: l10n.systemVersion,
-              value: _systemVersion,
-            ),
-            SettingsValueRow(
-              title: l10n.kernelVersion,
-              value: _kernelVersion,
-            ),
-            SettingsValueRow(
-              title: l10n.processLibVersion,
-              value: _processLibVersion,
-            ),
-            SettingsValueRow(
-              title: l10n.firmwareVersion,
-              value: _controlCardVersion,
-            ),
-            SettingsValueRow(
-              title: l10n.laserVersion,
-              value: _laserVersion,
-            ),
-            SettingsValueRow(
-              title: l10n.wireFeederVersion,
-              value: _wireFeederVersion,
-            ),
-          ],
-        ),
-        // Focus — lws-ui `top-bottom`
-        SettingsGroup(
-          borderGradientCenter: CyberBorderGradientCenter.topBottom,
-          children: [
-            SettingsValueRow(
-              title: l10n.focusScaleReference,
-              value: _focusScaleRef,
-            ),
-          ],
-        ),
-        // Update CTA — Frost pill button + centered auto-check (lws-ui)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            SettingsDimens.inset,
-            16,
-            SettingsDimens.inset,
-            0,
-          ),
-          child: Center(
-            child: SizedBox(
-              width: 340,
-              height: CyberDimens.actionButtonHeight,
-              child: CyberButton(
-                variant: CyberButtonVariant.primary,
-                shape: CyberButtonShape.rounded,
+        Expanded(
+          child: SettingsScrollView(
+            children: [
+              // Identity — lws-ui `top-left-bottom-right`
+              SettingsGroup(
                 borderGradientCenter:
                     CyberBorderGradientCenter.topLeftBottomRight,
-                onPressed: () => unawaited(_checkForUpdates(l10n)),
-                child: Text(l10n.checkUpdate),
+                children: [
+                  SettingsValueRow(
+                    title: l10n.deviceModel,
+                    value: _deviceModel,
+                    trailing: IconButton(
+                      tooltip: l10n.deviceModel,
+                      onPressed: () => unawaited(_openDeviceQr()),
+                      icon: const Icon(
+                        Icons.qr_code_2,
+                        color: CyberColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  SettingsValueRow(
+                    title: l10n.deviceSn,
+                    value: _deviceSn,
+                    clickFeedback: false,
+                    onTap: () {
+                      if (_deviceSnSecretTap.registerTap()) {
+                        unawaited(_showSelectAppEnvDialog(l10n));
+                      }
+                    },
+                  ),
+                  SettingsValueRow(title: l10n.gunSn, value: _gunheadSn),
+                ],
               ),
-            ),
+              // Versions — lws-ui `bottom-left-top-right`
+              SettingsGroup(
+                borderGradientCenter:
+                    CyberBorderGradientCenter.bottomLeftTopRight,
+                children: [
+                  SettingsValueRow(
+                    title: l10n.systemVersion,
+                    value: _systemVersion,
+                  ),
+                  SettingsValueRow(
+                    title: l10n.kernelVersion,
+                    value: _kernelVersion,
+                  ),
+                  SettingsValueRow(
+                    title: l10n.processLibVersion,
+                    value: _processLibVersion,
+                  ),
+                  SettingsValueRow(
+                    title: l10n.firmwareVersion,
+                    value: _controlCardVersion,
+                  ),
+                  SettingsValueRow(
+                    title: l10n.laserVersion,
+                    value: _laserVersion,
+                  ),
+                  SettingsValueRow(
+                    title: l10n.wireFeederVersion,
+                    value: _wireFeederVersion,
+                  ),
+                ],
+              ),
+              // Focus — lws-ui `top-bottom`
+              SettingsGroup(
+                borderGradientCenter: CyberBorderGradientCenter.topBottom,
+                children: [
+                  SettingsValueRow(
+                    title: l10n.focusScaleReference,
+                    value: _focusScaleRef,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            SettingsDimens.inset,
-            14,
-            SettingsDimens.inset,
-            SettingsDimens.inset,
-          ),
-          child: Center(
-            child: Builder(
-              builder: (context) {
-                final misc = MiscSettingsScope.maybeOf(context);
-                if (misc == null) {
-                  return SettingsCheckboxRow(
-                    title: l10n.autoCheckOtaUpdate,
-                    value: false,
-                    onChanged: null,
-                  );
-                }
-                return ListenableBuilder(
-                  listenable: misc,
-                  builder: (context, _) {
-                    return SettingsCheckboxRow(
-                      title: l10n.autoCheckOtaUpdate,
-                      value: misc.autoCheckOtaUpdate,
-                      onChanged: (v) => unawaited(
-                        misc.setAutoCheckOtaUpdate(v ?? false),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+        // Full-width page-color mask under CTAs (lws-ui footer strip; hides
+        // scrolled list at the sides of the centered button/checkbox).
+        ColoredBox(
+          color: const Color(0xFF060720), // SettingsPage.background / tab_bg
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  SettingsDimens.inset,
+                  16,
+                  SettingsDimens.inset,
+                  0,
+                ),
+                child: Center(
+                  child: SizedBox(
+                    width: 340,
+                    height: CyberDimens.actionButtonHeight,
+                    child: CyberButton(
+                      variant: CyberButtonVariant.primary,
+                      shape: CyberButtonShape.rounded,
+                      borderGradientCenter:
+                          CyberBorderGradientCenter.topLeftBottomRight,
+                      onPressed: () => unawaited(_checkForUpdates(l10n)),
+                      child: Text(l10n.checkUpdate),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  SettingsDimens.inset,
+                  14,
+                  SettingsDimens.inset,
+                  SettingsDimens.inset,
+                ),
+                child: Center(
+                  child: Builder(
+                    builder: (context) {
+                      final misc = MiscSettingsScope.maybeOf(context);
+                      if (misc == null) {
+                        return SettingsCheckboxRow(
+                          title: l10n.autoCheckOtaUpdate,
+                          value: false,
+                          onChanged: null,
+                        );
+                      }
+                      return ListenableBuilder(
+                        listenable: misc,
+                        builder: (context, _) {
+                          return SettingsCheckboxRow(
+                            title: l10n.autoCheckOtaUpdate,
+                            value: misc.autoCheckOtaUpdate,
+                            onChanged: (v) => unawaited(
+                              misc.setAutoCheckOtaUpdate(v ?? false),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],

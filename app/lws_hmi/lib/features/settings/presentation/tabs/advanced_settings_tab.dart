@@ -189,7 +189,12 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                       v.copyWith(zeroPointCorrection: 0),
                     ),
                   ),
-                  child: Text(l10n.advancedSettingZeroOffsetAuto),
+                  child: Text(
+                    l10n.advancedSettingZeroOffsetAuto,
+                    style: const TextStyle(
+                      fontSize: SettingsDimens.advancedTitleSize,
+                    ),
+                  ),
                 ),
               ),
               right: SettingsScaledParam(
@@ -560,6 +565,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               SettingsSwitchRow(
                 title: l10n.advancedSettingLensContaminationDetection,
                 subtitle: l10n.advancedSettingLensContaminationDetectionHint,
+                titleFontSize: SettingsDimens.advancedSwitchTitleSize,
+                subtitleFontSize: SettingsDimens.advancedSwitchSubtitleSize,
                 value: ai?.lensContaminationDetectionEnabled ?? true,
                 onChanged: ai == null
                     ? null
@@ -570,6 +577,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               SettingsSwitchRow(
                 title: l10n.advancedSettingZeroPointOffsetDetection,
                 subtitle: l10n.advancedSettingZeroPointOffsetDetectionHint,
+                titleFontSize: SettingsDimens.advancedSwitchTitleSize,
+                subtitleFontSize: SettingsDimens.advancedSwitchSubtitleSize,
                 value: ai?.zeroPointOffsetDetectionEnabled ?? true,
                 onChanged: ai == null
                     ? null
@@ -587,6 +596,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               SettingsSwitchRow(
                 title: l10n.advancedSettingKeepLaserOnWhileAlarmed,
                 subtitle: l10n.advancedSettingKeepLaserOnWhileAlarmedHint,
+                titleFontSize: SettingsDimens.advancedSwitchTitleSize,
+                subtitleFontSize: SettingsDimens.advancedSwitchSubtitleSize,
                 value: dangerous?.keepLaserOnWhileAlarmed ?? false,
                 onChanged: dangerous == null
                     ? null
@@ -597,6 +608,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               SettingsSwitchRow(
                 title: l10n.advancedSettingAllowWorkAfterCameraAlarm,
                 subtitle: l10n.advancedSettingAllowWorkAfterCameraAlarmHint,
+                titleFontSize: SettingsDimens.advancedSwitchTitleSize,
+                subtitleFontSize: SettingsDimens.advancedSwitchSubtitleSize,
                 value: dangerous?.allowWorkAfterCameraAlarm ?? false,
                 onChanged: dangerous == null
                     ? null
@@ -607,6 +620,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               SettingsSwitchRow(
                 title: l10n.advancedSettingAllowWorkAfterGasAlarm,
                 subtitle: l10n.advancedSettingAllowWorkAfterGasAlarmHint,
+                titleFontSize: SettingsDimens.advancedSwitchTitleSize,
+                subtitleFontSize: SettingsDimens.advancedSwitchSubtitleSize,
                 value: dangerous?.allowWorkAfterGasAlarm ?? false,
                 onChanged: dangerous == null
                     ? null
@@ -618,6 +633,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 title: l10n.advancedSettingAllowWorkAfterLensContamination,
                 subtitle:
                     l10n.advancedSettingAllowWorkAfterLensContaminationHint,
+                titleFontSize: SettingsDimens.advancedSwitchTitleSize,
+                subtitleFontSize: SettingsDimens.advancedSwitchSubtitleSize,
                 value: dangerous?.allowWorkAfterLensContamination ?? false,
                 onChanged: dangerous == null
                     ? null
@@ -628,6 +645,8 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               SettingsSwitchRow(
                 title: l10n.advancedSettingAllowWorkAfterFeederAlarm,
                 subtitle: l10n.advancedSettingAllowWorkAfterFeederAlarmHint,
+                titleFontSize: SettingsDimens.advancedSwitchTitleSize,
+                subtitleFontSize: SettingsDimens.advancedSwitchSubtitleSize,
                 value: dangerous?.allowWorkAfterFeederAlarm ?? false,
                 onChanged: dangerous == null
                     ? null

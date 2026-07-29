@@ -16,7 +16,8 @@ abstract final class SettingsDimens {
   static const inset = 24.0;
 
   /// Shared min height for switch / value / nav / slider / control rows.
-  static const rowMinHeight = 64.0;
+  /// Device Info / General (+tabs nested lists).
+  static const rowMinHeight = 70.0;
 
   /// Horizontal + vertical padding inside a settings row.
   static const rowPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 8);
@@ -24,12 +25,33 @@ abstract final class SettingsDimens {
   /// Gap between a settings card and [SettingsHelpFooter] under it.
   /// Preceding [SettingsGroup] must use `bottomInset: 0` so this is the only gap.
   static const helpGap = 8.0;
+
+  /// Device Info / General list title & value (+2 vs prior 18).
+  static const titleSize = 20.0;
+
+  /// Secondary / subtitle / help (+2 vs prior 14).
+  static const subtitleSize = 16.0;
+
+  /// Frost bright-edge stroke — match Monitor / Engineer (1.5).
+  static const borderWidth = 1.5;
+
+  /// Advanced tab body (+6 vs prior 16 title / 18 switch).
+  static const advancedTitleSize = 22.0;
+  static const advancedValueSize = 22.0;
+  static const advancedSwitchTitleSize = 24.0;
+  static const advancedSwitchSubtitleSize = 20.0;
+  static const advancedSectionHeaderSize = 20.0;
 }
 
 class SettingsSectionHeader extends StatelessWidget {
-  const SettingsSectionHeader(this.title, {super.key});
+  const SettingsSectionHeader(
+    this.title, {
+    super.key,
+    this.fontSize = SettingsDimens.advancedSectionHeaderSize,
+  });
 
   final String title;
+  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +67,7 @@ class SettingsSectionHeader extends StatelessWidget {
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: CyberColors.textSecondary,
               letterSpacing: 0.6,
+              fontSize: fontSize,
             ),
       ),
     );
@@ -70,7 +93,7 @@ class SettingsHelpFooter extends StatelessWidget {
 
   static const textStyle = TextStyle(
     color: Colors.white54,
-    fontSize: 14,
+    fontSize: SettingsDimens.subtitleSize,
     height: 1.35,
   );
 
@@ -109,7 +132,7 @@ class SettingsPanel extends StatelessWidget {
       outline: CyberPanelOutline(
         style: CyberPanelOutlineStyle.frostGradient,
         tone: theme.tone,
-        width: theme.borderWidth,
+        width: SettingsDimens.borderWidth,
         cornerRadius: theme.cornerRadius,
         gradientCenter: borderGradientCenter,
       ),
@@ -207,7 +230,7 @@ class SettingsNavRow extends StatelessWidget {
         title: Text(
           title,
           style: const TextStyle(
-            fontSize: 18,
+            fontSize: SettingsDimens.titleSize,
             color: CyberColors.textPrimary,
           ),
         ),
@@ -226,7 +249,7 @@ class SettingsNavRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: CyberColors.textSecondary,
-                    fontSize: 18,
+                    fontSize: SettingsDimens.titleSize,
                   ),
                 ),
               ),
@@ -278,7 +301,7 @@ class SettingsValueRow extends StatelessWidget {
       title: Text(
         title,
         style: const TextStyle(
-          fontSize: 18,
+          fontSize: SettingsDimens.titleSize,
           color: CyberColors.textPrimary,
         ),
       ),
@@ -294,7 +317,7 @@ class SettingsValueRow extends StatelessWidget {
                 textAlign: TextAlign.end,
                 style: const TextStyle(
                   color: CyberColors.textSecondary,
-                  fontSize: 18,
+                  fontSize: SettingsDimens.titleSize,
                 ),
               ),
             ),
@@ -337,12 +360,16 @@ class SettingsSwitchRow extends StatelessWidget {
     this.subtitle,
     required this.value,
     required this.onChanged,
+    this.titleFontSize = SettingsDimens.titleSize,
+    this.subtitleFontSize = SettingsDimens.subtitleSize,
   });
 
   final String title;
   final String? subtitle;
   final bool value;
   final ValueChanged<bool>? onChanged;
+  final double titleFontSize;
+  final double subtitleFontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -353,8 +380,8 @@ class SettingsSwitchRow extends StatelessWidget {
         minVerticalPadding: 0,
         title: Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
+          style: TextStyle(
+            fontSize: titleFontSize,
             color: CyberColors.textPrimary,
           ),
         ),
@@ -362,9 +389,9 @@ class SettingsSwitchRow extends StatelessWidget {
             ? null
             : Text(
                 subtitle!,
-                style: const TextStyle(
+                style: TextStyle(
                   color: CyberColors.textSecondary,
-                  fontSize: 14,
+                  fontSize: subtitleFontSize,
                   height: 1.35,
                 ),
               ),
@@ -408,7 +435,7 @@ class SettingsControlRow extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: SettingsDimens.titleSize,
                       color: CyberColors.textPrimary,
                     ),
                   ),
@@ -417,7 +444,7 @@ class SettingsControlRow extends StatelessWidget {
                     Text(
                       subtitle!,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: SettingsDimens.subtitleSize,
                         color: CyberColors.textSecondary,
                       ),
                     ),
@@ -471,7 +498,7 @@ class SettingsSliderRow extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: SettingsDimens.titleSize,
                       color: CyberColors.textPrimary,
                     ),
                   ),
@@ -480,7 +507,7 @@ class SettingsSliderRow extends StatelessWidget {
                     Text(
                       subtitle!,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: SettingsDimens.subtitleSize,
                         color: CyberColors.textSecondary,
                       ),
                     ),
@@ -528,7 +555,7 @@ class SettingsCheckboxRow extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: SettingsDimens.subtitleSize,
                 color: CyberColors.textPrimary,
               ),
             ),
@@ -629,7 +656,7 @@ class SettingsParamCard extends StatelessWidget {
       outline: CyberPanelOutline(
         style: CyberPanelOutlineStyle.frostGradient,
         tone: theme.tone,
-        width: theme.borderWidth,
+        width: SettingsDimens.borderWidth,
         cornerRadius: theme.cornerRadius,
         gradientCenter: borderGradientCenter,
       ),
@@ -702,7 +729,7 @@ class SettingsScaledParam extends StatelessWidget {
         display,
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: 16,
+          fontSize: SettingsDimens.advancedValueSize,
           color: Colors.white.withOpacity(0.85),
         ),
       ),
@@ -721,7 +748,9 @@ class SettingsScaledParam extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(
+                      fontSize: SettingsDimens.advancedTitleSize,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -755,6 +784,8 @@ class SettingsScaledParam extends StatelessWidget {
             enabled: enabled,
             scaleMinText: scaleMinText ?? min.round().toString(),
             scaleMaxText: scaleMaxText ?? max.round().toString(),
+            // Match Advanced title size (刻度 = 对应文案字号).
+            scaleLabelFontSize: SettingsDimens.advancedTitleSize,
           ),
         ],
       ),

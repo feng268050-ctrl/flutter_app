@@ -9,6 +9,16 @@ import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/app_theme.dart';
 import 'package:lws_hmi/app/hmi_route_restore.dart';
+import 'package:lws_hmi/features/device_registration/device_registration_dialogs.dart';
+import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
+import 'package:lws_hmi/platform/cloud/device_users_client.dart';
+import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
+import 'package:lws_hmi/platform/cloud/cloud_local_runtime.dart';
+import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
+import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
+import 'package:lws_hmi/platform/cloud/cloud_settings_store.dart';
+import 'package:lws_hmi/platform/cloud/device_remote_lock_store.dart';
+import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
@@ -67,6 +77,8 @@ class LwsHmiApp extends StatefulWidget {
     this.advancedSettingsStore,
     this.bootSelfCheckSettings,
     this.processLibraryRepository,
+    this.cloudSettingsStore,
+    this.remoteLockStore,
   });
 
   final BoardProfile boardProfile;
@@ -91,6 +103,12 @@ class LwsHmiApp extends StatefulWidget {
 
   /// Optional in-memory/test repository override.
   final ProcessLibraryRepository? processLibraryRepository;
+
+  /// Optional cloud settings override for tests.
+  final CloudSettingsStore? cloudSettingsStore;
+
+  /// Optional remote lock store override for tests.
+  final DeviceRemoteLockStore? remoteLockStore;
 
   @override
   State<LwsHmiApp> createState() => _LwsHmiAppState();
@@ -127,6 +145,15 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
   late final BootSelfCheckSettings _bootSelfCheckSettings =
       widget.bootSelfCheckSettings ??
           BootSelfCheckSettings(miscStore: _miscSettingsStore);
+
+  late final CloudSettingsStore _cloudSettingsStore =
+      widget.cloudSettingsStore ?? CloudSettingsStore();
+
+  late final DeviceRemoteLockStore _remoteLockStore =
+      widget.remoteLockStore ?? DeviceRemoteLockStore();
+
+  late final ProcessVideoRepository _processVideoRepository =
+      SqliteProcessVideoRepository();
 
   late final ProcessLibraryRepository _processLibraryRepository =
       widget.processLibraryRepository ?? SqliteProcessLibraryRepository();
@@ -177,6 +204,14 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     dangerous: _dangerousOperationsSettings,
   );
 
+  late final CloudLocalRuntime _cloudLocalRuntime = CloudLocalRuntime(
+    services: _services,
+    cloudSettings: _cloudSettingsStore,
+    lockStore: _remoteLockStore,
+    processLibrary: _processLibrary,
+    processVideoRepository: _processVideoRepository,
+  );
+
   bool _restoreScheduled = false;
 
   @override
@@ -189,6 +224,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     _advancedSettingsStore.warmRead();
     _thresholdsController.warmFromStore();
     _bootSelfCheckSettings.warmRead();
+    _cloudSettingsStore.warmRead();
+    _remoteLockStore.warmRead();
     unawaited(_processLibrary.initialize());
     _dangerousOperationsSettings.onBypassDisabled = () {
       unawaited(
@@ -217,7 +254,40 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       unawaited(_services.restorePersistedSettingsOnce());
       unawaited(_maybeRestoreRoute());
       _services.autoSleep.arm(backlight: _services.backlight);
+      unawaited(_startCloudLocalRuntime());
     });
+  }
+
+  Future<void> _startCloudLocalRuntime() async {
+    _cloudLocalRuntime.onAuthError = () {
+      final nav = _navKey.currentContext;
+      if (nav == null || !nav.mounted) {
+        return;
+      }
+      unawaited(
+        DeviceRegistrationDialogs.showRegistration(
+          context: nav,
+          services: _services,
+          onReconnect: () => _cloudLocalRuntime.reprobeAndReconnect(),
+        ),
+      );
+    };
+    _cloudLocalRuntime.onUsersProbe = (DeviceUsersProbeResult result) {
+      if (!result.unbound) {
+        return;
+      }
+      final nav = _navKey.currentContext;
+      if (nav == null || !nav.mounted) {
+        return;
+      }
+      unawaited(
+        DeviceRegistrationDialogs.showBindPrompt(
+          context: nav,
+          services: _services,
+        ),
+      );
+    };
+    await _cloudLocalRuntime.startAfterFirstFrame();
   }
 
   Future<void> _bootstrapKeyboardProfile() async {
@@ -279,6 +349,13 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     _thresholdsController.dispose();
     unawaited(_processLibrary.close());
     _processLibrary.dispose();
+    unawaited(_cloudLocalRuntime.dispose());
+    if (widget.cloudSettingsStore == null) {
+      _cloudSettingsStore.dispose();
+    }
+    if (widget.remoteLockStore == null) {
+      _remoteLockStore.dispose();
+    }
     if (widget.advancedSettingsStore == null) {
       _advancedSettingsStore.dispose();
     }
@@ -355,25 +432,31 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return AppScope(
       services: _services,
-      child: ProcessLibraryScope(
-        controller: _processLibrary,
-        child: WarnAlarmScope(
-          controller: _warnAlarm,
-          child: MiscSettingsScope(
-            store: _miscSettingsStore,
-            child: CommonSettingsScope(
-              store: _commonSettingsStore,
-              child: AdvancedSettingsScope(
-                store: _advancedSettingsStore,
-                aiAssistance: _aiAssistanceSettings,
-                dangerousOperations: _dangerousOperationsSettings,
-                thresholds: _thresholdsController,
-                child: BootSelfCheckScope(
-                  settings: _bootSelfCheckSettings,
-                  child: SoundEffectScope(
-                    store: _soundEffectStore,
-                    clickSound: _clickSound,
-                    child: Listener(
+      child: CloudLocalRuntimeScope(
+        runtime: _cloudLocalRuntime,
+        child: CloudSettingsScope(
+          store: _cloudSettingsStore,
+          child: RemoteLockScope(
+            store: _remoteLockStore,
+            child: ProcessLibraryScope(
+          controller: _processLibrary,
+          child: WarnAlarmScope(
+            controller: _warnAlarm,
+            child: MiscSettingsScope(
+              store: _miscSettingsStore,
+              child: CommonSettingsScope(
+                store: _commonSettingsStore,
+                child: AdvancedSettingsScope(
+                  store: _advancedSettingsStore,
+                  aiAssistance: _aiAssistanceSettings,
+                  dangerousOperations: _dangerousOperationsSettings,
+                  thresholds: _thresholdsController,
+                  child: BootSelfCheckScope(
+                    settings: _bootSelfCheckSettings,
+                    child: SoundEffectScope(
+                      store: _soundEffectStore,
+                      clickSound: _clickSound,
+                      child: Listener(
                       behavior: HitTestBehavior.translucent,
                       onPointerDown: (_) => _noteUserActivity(),
                       onPointerMove: (_) {
@@ -430,17 +513,23 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                       ? ProcessVideoDetailPage(args: videoArgs)
                                       : const MonitorPage();
                                 case AppRoutes.quickMode:
-                                  page = const QuickModePage();
+                                  page = _LockedModeGate(
+                                    lockStore: _remoteLockStore,
+                                    child: const QuickModePage(),
+                                  );
                                 case AppRoutes.engineerMode:
                                   final engineerArgs = settings.arguments;
-                                  page = engineerArgs is EngineerModeRouteArgs
-                                      ? EngineerModePage(
-                                          initialProcessType:
-                                              engineerArgs.processType,
-                                          initialPresetUuid:
-                                              engineerArgs.presetUuid,
-                                        )
-                                      : const EngineerModePage();
+                                  page = _LockedModeGate(
+                                    lockStore: _remoteLockStore,
+                                    child: engineerArgs is EngineerModeRouteArgs
+                                        ? EngineerModePage(
+                                            initialProcessType:
+                                                engineerArgs.processType,
+                                            initialPresetUuid:
+                                                engineerArgs.presetUuid,
+                                          )
+                                        : const EngineerModePage(),
+                                  );
                                 case AppRoutes.demo:
                                   page = _demoPage();
                                 case AppRoutes.home:
@@ -463,6 +552,45 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
           ),
         ),
       ),
+      ),
+      ),
+      ),
     );
   }
+}
+
+/// Blocks Quick/Engineer when remote lock is active.
+final class _LockedModeGate extends StatefulWidget {
+  const _LockedModeGate({
+    required this.lockStore,
+    required this.child,
+  });
+
+  final DeviceRemoteLockStore lockStore;
+  final Widget child;
+
+  @override
+  State<_LockedModeGate> createState() => _LockedModeGateState();
+}
+
+final class _LockedModeGateState extends State<_LockedModeGate> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        return;
+      }
+      final ok = await DeviceRegistrationDialogs.confirmNotLocked(
+        context,
+        widget.lockStore,
+      );
+      if (!ok && mounted) {
+        Navigator.of(context).maybePop();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

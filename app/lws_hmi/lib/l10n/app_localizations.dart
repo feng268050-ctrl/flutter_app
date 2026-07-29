@@ -1970,6 +1970,72 @@ abstract class AppLocalizations {
   /// **'Software update check is not available on this build.'**
   String get otaCheckUnavailable;
 
+  /// No description provided for @cloudEnvironmentTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud Environment'**
+  String get cloudEnvironmentTier;
+
+  /// No description provided for @cloudEnvironmentTierDev.
+  ///
+  /// In en, this message translates to:
+  /// **'Dev'**
+  String get cloudEnvironmentTierDev;
+
+  /// No description provided for @cloudEnvironmentTierTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get cloudEnvironmentTierTest;
+
+  /// No description provided for @cloudEnvironmentTierProd.
+  ///
+  /// In en, this message translates to:
+  /// **'Prod'**
+  String get cloudEnvironmentTierProd;
+
+  /// No description provided for @deviceRegisterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Register This Device'**
+  String get deviceRegisterTitle;
+
+  /// No description provided for @deviceRegisterBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is unrecognized, please scan the QR code with LaserCyber app to register it.'**
+  String get deviceRegisterBody;
+
+  /// No description provided for @deviceRegisterReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect'**
+  String get deviceRegisterReconnect;
+
+  /// No description provided for @deviceBindTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bind This Device'**
+  String get deviceBindTitle;
+
+  /// No description provided for @deviceBindBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the QR code with the LaserCyber app to bind this device.'**
+  String get deviceBindBody;
+
+  /// No description provided for @deviceRemoteLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Locked'**
+  String get deviceRemoteLockTitle;
+
+  /// No description provided for @deviceRemoteLockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has been locked remotely. Contact your administrator to unlock.'**
+  String get deviceRemoteLockBody;
+
   /// No description provided for @screenOffNever.
   ///
   /// In en, this message translates to:
@@ -3253,24 +3319,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connect to Hidden Network'**
   String get wifiHiddenNetworkTitle;
-
-  /// No description provided for @wifiInitDialogConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Go to Settings'**
-  String get wifiInitDialogConfirm;
-
-  /// No description provided for @wifiInitDialogMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Wi‑Fi isn’t connected. Connect to a network to finish setup.'**
-  String get wifiInitDialogMessage;
-
-  /// No description provided for @wifiInitDialogTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Set Up Wi‑Fi'**
-  String get wifiInitDialogTitle;
 
   /// No description provided for @wifiIpAddress.
   ///

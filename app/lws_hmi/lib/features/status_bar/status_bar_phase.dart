@@ -1,5 +1,5 @@
 import 'package:cyber_ui/cyber_ui.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
 import 'package:lws_hmi/platform/wifi/wifi_models.dart';
@@ -50,13 +50,14 @@ CyberCameraLinkStatus mapCameraLinkStatus(IpCameraUiPhase phase) {
   };
 }
 
-/// This product's current status-icon composition: Wi‑Fi · BT · camera.
+/// This product's current status-icon composition: Wi‑Fi · BT · camera · (lock).
 List<Widget> buildProductStatusIconItems({
   required CyberConnectivityIconPhase wifiPhase,
   required CyberConnectivityIconPhase bluetoothPhase,
   required CyberCameraLinkStatus cameraStatus,
   int? wifiSignalDbm,
   double iconSize = 28,
+  bool remoteLocked = false,
 }) {
   return [
     if (wifiPhase != CyberConnectivityIconPhase.hidden)
@@ -77,5 +78,12 @@ List<Widget> buildProductStatusIconItems({
       status: cameraStatus,
       size: iconSize,
     ),
+    if (remoteLocked)
+      Icon(
+        Icons.lock,
+        key: const ValueKey('home-status-remote-lock'),
+        size: iconSize,
+        color: CyberColors.textPrimary,
+      ),
   ];
 }

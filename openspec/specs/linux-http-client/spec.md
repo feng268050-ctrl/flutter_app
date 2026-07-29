@@ -6,7 +6,7 @@ Reusable Dart HTTP(S) client with optional proxy for Demo probe and later produc
 ## Requirements
 ### Requirement: Abstract HTTP client with proxy configuration
 
-The system SHALL provide a reusable Dart `HttpClientController` (name may vary) that persists HTTP(S) proxy settings (enabled, host, port, optional credentials) and performs outbound HTTP(S) requests that honor the proxy when enabled. Callers (Demo and later product HTTP) MUST depend on the abstract API. Proxy passwords MUST NOT be written to info-level logs.
+The system SHALL provide a reusable Dart `HttpClientController` (name may vary) that persists HTTP(S) proxy settings (enabled, host, port, optional credentials) and performs outbound HTTP(S) requests that honor the proxy when enabled. Callers (Demo and product cloud HTTP) MUST depend on the abstract API. The same persisted proxy configuration SHALL be available to the product cloud WebSocket factory so Worker `/ws/device` connections honor the proxy when enabled. Proxy passwords MUST NOT be written to info-level logs.
 
 When the UTC year is before 2025, the Linux HTTP controller SHALL attempt wall-clock sync **via the shared `DateTimeController` TLS entry** (`ensureSaneForTls` or equivalent) before the HTTPS request—not via a private duplicate of the `rdate` / HTTP `Date` ladder as the primary path.
 
@@ -39,4 +39,10 @@ When the UTC year is before 2025, the Linux HTTP controller SHALL attempt wall-c
 
 - **WHEN** DNS fails, TCP fails, or TLS fails
 - **THEN** the result reports an error string and MUST NOT terminate the Flutter process
+
+#### Scenario: Product cloud WebSocket reads same proxy config
+
+- **WHEN** proxy is enabled with host and port
+- **AND** the product cloud stack opens `/ws/device`
+- **THEN** the WebSocket client MUST use the same persisted proxy configuration as `HttpClientController` (enabled path), not an unmanaged direct socket that ignores proxy
 

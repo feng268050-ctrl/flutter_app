@@ -7,6 +7,10 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/device/device_identity_qr.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
+import 'package:lws_hmi/platform/cloud/cloud_environment_tier.dart';
+import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
+import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
+import 'package:lws_hmi/platform/cloud/secret_tap_tracker.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/process_library_import_page.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -38,6 +42,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
 
   String? _brandRaw;
   String? _modelRaw;
+
+  final SecretTapTracker _deviceSnSecretTap = SecretTapTracker();
 
   StreamSubscription<SysInfoUpdate>? _sysSub;
   StreamSubscription<List<ModbusAttributeChange>>? _modbusSub;
@@ -249,7 +255,16 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
                 ),
               ),
             ),
-            SettingsValueRow(title: l10n.deviceSn, value: _deviceSn),
+            SettingsValueRow(
+              title: l10n.deviceSn,
+              value: _deviceSn,
+              clickFeedback: false,
+              onTap: () {
+                if (_deviceSnSecretTap.registerTap()) {
+                  unawaited(_showSelectAppEnvDialog(l10n));
+                }
+              },
+            ),
             SettingsValueRow(title: l10n.gunSn, value: _gunheadSn),
           ],
         ),
@@ -366,5 +381,72 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
         ),
       ],
     );
+  }
+
+  Future<void> _showSelectAppEnvDialog(AppLocalizations l10n) async {
+    final store = CloudSettingsScope.maybeOf(context);
+    if (store == null || !mounted) {
+      return;
+    }
+    final current = store.environmentTier;
+    String labelFor(CloudEnvironmentTier tier) => switch (tier) {
+          CloudEnvironmentTier.dev => l10n.cloudEnvironmentTierDev,
+          CloudEnvironmentTier.test => l10n.cloudEnvironmentTierTest,
+          CloudEnvironmentTier.prod => l10n.cloudEnvironmentTierProd,
+        };
+
+    final chosen = await showCyberDialog<CloudEnvironmentTier>(
+      context: context,
+      builder: (ctx) {
+        // ListTiles stretch to max width; cap like other compact Cyber dialogs.
+        return ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.cloudEnvironmentTier,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: CyberColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              for (var i = 0; i < CloudEnvironmentTier.values.length; i++) ...[
+                if (i > 0)
+                  const Divider(
+                    height: 1,
+                    indent: 8,
+                    endIndent: 8,
+                    color: CyberColors.dividerCenter,
+                  ),
+                SettingsOptionTile(
+                  title: labelFor(CloudEnvironmentTier.values[i]),
+                  selected: CloudEnvironmentTier.values[i] == current,
+                  onTap: () {
+                    Navigator.of(ctx).pop(CloudEnvironmentTier.values[i]);
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+    if (chosen == null || !mounted) {
+      return;
+    }
+    if (chosen == current) {
+      return;
+    }
+    await store.setEnvironmentTier(chosen);
+    if (!mounted) {
+      return;
+    }
+    final runtime = CloudLocalRuntimeScope.maybeOf(context);
+    await runtime?.reprobeAndReconnect();
   }
 }

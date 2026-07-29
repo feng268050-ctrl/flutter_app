@@ -2,7 +2,6 @@
 
 ## Purpose
 Product adoption of CyberUI page status bar chrome on Monitor and Settings (shell and sub-pages), including this product’s current Wi‑Fi · Bluetooth · camera icon composition and shared glyphs with Home.
-
 ## Requirements
 ### Requirement: Non-Home product pages use the CyberUI page status bar
 
@@ -33,7 +32,7 @@ The bar MUST NOT block first paint on Wi‑Fi, Bluetooth, or camera I/O. Status 
 
 ### Requirement: This product composes the current three status icons into the strip
 
-For this product’s current Home / Monitor / Settings adoption, the App SHALL build `CyberHomeStatusBar` `items` as **Wi‑Fi · Bluetooth · camera** (left to right), mapping live radio/adapter/session state into CyberUI icon phases. Wi‑Fi and Bluetooth MUST be hidden when radio/adapter is off. Camera glyph phases SHALL reflect the product IP-camera session UI status and MUST remain resolvable when Home is not mounted. This composition is a **product policy** for the current icon set; it MUST NOT imply that `CyberHomeStatusBar` is limited to three icons forever.
+For this product’s current Home / Monitor / Settings adoption, the App SHALL build `CyberHomeStatusBar` `items` as **Wi‑Fi · Bluetooth · camera** (left to right), mapping live radio/adapter/session state into CyberUI icon phases. Wi‑Fi and Bluetooth MUST be hidden when radio/adapter is off. Camera glyph phases SHALL reflect the product IP-camera session UI status and MUST remain resolvable when Home is not mounted. When remote lock is active, the App SHALL also include a remote-lock indicator in the status chrome (adjacent to the connectivity cluster or as an additional item) so operators can see lock state without opening Settings. This composition is a **product policy** for the current icon set; it MUST NOT imply that `CyberHomeStatusBar` is limited to a fixed icon count forever.
 
 #### Scenario: Current product icon order then clock
 
@@ -55,6 +54,12 @@ For this product’s current Home / Monitor / Settings adoption, the App SHALL b
 - **AND** the operator views Monitor or Settings chrome that uses the CyberUI page status bar
 - **THEN** the camera glyph reflects that session UI status via the CyberUI camera status icon
 
+#### Scenario: Remote lock indicator when locked
+
+- **WHEN** remote lock is active
+- **AND** the operator views Home or page status chrome that includes connectivity icons
+- **THEN** a remote-lock indicator SHALL be visible
+
 ### Requirement: Page and Home status chrome share CyberUI widgets
 
 Monitor/Settings page chrome and Home’s top-right strip SHALL both use CyberUI status-bar widgets (`CyberPageStatusBar` / `CyberHomeStatusBar` and shared icons). The App MUST NOT maintain parallel Home-only or Settings-only glyph or strip forks. Home MAY keep a separate frost hero clock and overlay placement; the page status bar MUST NOT require that hero clock.
@@ -64,3 +69,4 @@ Monitor/Settings page chrome and Home’s top-right strip SHALL both use CyberUI
 - **WHEN** Wi‑Fi is associating or obtaining IP (or radio is starting)
 - **AND** the operator compares Home’s `CyberHomeStatusBar` with Monitor or Settings page status bar trailing icons
 - **THEN** both surfaces render the CyberUI Wi‑Fi status icon in a connecting / in-progress style
+

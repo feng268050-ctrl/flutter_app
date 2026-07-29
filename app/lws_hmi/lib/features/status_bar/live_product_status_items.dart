@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart'
 import 'package:lws_hmi/features/status_bar/status_bar_phase.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
+import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 import 'package:lws_hmi/platform/wifi/wifi_models.dart';
 
 /// Live binder: maps App Wi‑Fi / BT / camera session → CyberUI status icons.
@@ -220,6 +221,8 @@ class _LiveProductStatusItemsState extends State<LiveProductStatusItems> {
   @override
   Widget build(BuildContext context) {
     final camera = widget.cameraStatus ?? _camera;
+    final lockStore = RemoteLockScope.maybeOf(context);
+    final remoteLocked = lockStore?.isLocked ?? false;
     final items = buildProductStatusIconItems(
       wifiPhase: mapWifiStatusBarPhase(
         radio: _wifiRadio,
@@ -233,6 +236,7 @@ class _LiveProductStatusItemsState extends State<LiveProductStatusItems> {
       cameraStatus: mapCameraLinkStatus(camera.phase),
       wifiSignalDbm: _wifiConn.signalDbm,
       iconSize: widget.iconSize,
+      remoteLocked: remoteLocked,
     );
     return widget.builder(context, items);
   }

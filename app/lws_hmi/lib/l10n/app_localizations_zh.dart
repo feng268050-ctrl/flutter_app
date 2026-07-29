@@ -981,6 +981,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get otaCheckUnavailable => '当前版本暂不支持软件更新检查。';
 
   @override
+  String get cloudEnvironmentTier => '云环境';
+
+  @override
+  String get cloudEnvironmentTierDev => '开发';
+
+  @override
+  String get cloudEnvironmentTierTest => '测试';
+
+  @override
+  String get cloudEnvironmentTierProd => '生产';
+
+  @override
+  String get deviceRegisterTitle => '注册此设备';
+
+  @override
+  String get deviceRegisterBody => '无法识别此设备，请使用 LaserCyber App 扫描二维码完成注册。';
+
+  @override
+  String get deviceRegisterReconnect => '重新连接';
+
+  @override
+  String get deviceBindTitle => '绑定此设备';
+
+  @override
+  String get deviceBindBody => '请使用 LaserCyber App 扫描二维码绑定此设备。';
+
+  @override
+  String get deviceRemoteLockTitle => '设备已锁定';
+
+  @override
+  String get deviceRemoteLockBody => '此设备已被远程锁定。请联系管理员解锁。';
+
+  @override
   String get screenOffNever => '永不';
 
   @override
@@ -1635,15 +1668,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get wifiHiddenNetworkTitle => '连接隐藏网络';
-
-  @override
-  String get wifiInitDialogConfirm => '前往设置';
-
-  @override
-  String get wifiInitDialogMessage => '当前未连接无线网络，请先连接无线网络完成初始化。';
-
-  @override
-  String get wifiInitDialogTitle => '设置无线网络';
 
   @override
   String get wifiIpAddress => 'IP 地址';
@@ -2658,6 +2682,39 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get otaCheckUnavailable => '當前版本暫不支持軟件更新檢查。';
 
   @override
+  String get cloudEnvironmentTier => '雲環境';
+
+  @override
+  String get cloudEnvironmentTierDev => '開發';
+
+  @override
+  String get cloudEnvironmentTierTest => '測試';
+
+  @override
+  String get cloudEnvironmentTierProd => '生產';
+
+  @override
+  String get deviceRegisterTitle => '註冊此設備';
+
+  @override
+  String get deviceRegisterBody => '無法識別此設備，請使用 LaserCyber App 掃描二維碼完成註冊。';
+
+  @override
+  String get deviceRegisterReconnect => '重新連接';
+
+  @override
+  String get deviceBindTitle => '綁定此設備';
+
+  @override
+  String get deviceBindBody => '請使用 LaserCyber App 掃描二維碼綁定此設備。';
+
+  @override
+  String get deviceRemoteLockTitle => '設備已鎖定';
+
+  @override
+  String get deviceRemoteLockBody => '此設備已被遠程鎖定。請聯繫管理員解鎖。';
+
+  @override
   String get keyboardText => '鍵盤';
 
   @override
@@ -3182,15 +3239,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get wifiHiddenNetworkTitle => '連接隱藏網絡';
-
-  @override
-  String get wifiInitDialogConfirm => '前往設置';
-
-  @override
-  String get wifiInitDialogMessage => '當前未連接無線網絡，請先連接無線網絡完成初始化。';
-
-  @override
-  String get wifiInitDialogTitle => '設置無線網絡';
 
   @override
   String wifiIpFieldEnterHint(String field) {

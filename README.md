@@ -534,7 +534,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P3.1 | systemd-networkd、wpa D-Bus | 开 networkd | **Dart HAL** + **网络栈切换**（L3=networkd）✅ |
 | P3.2 | 同 Image + 同 rootfs + OEM 切换 | QEMU | 模拟器验证多板多屏 ✅ W4 主路径；[`docs/p32-emulator.md`](docs/p32-emulator.md)；`make build-emulator` / **`make emulator`** |
 | P3.3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** |
-| P4 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云 🔄；**P4.8 OTA** |
+| P4 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云 🔄（非 OTA 切片见 `openspec/changes/align-cloud-local-server`）；**P4.8 OTA** 另计 |
 | P5.0 | — | — | Android 兼容 / APK（App + YNHAPI；非 `cyber_hal`） |
 | P5.1 | flutter SDK + engine + eLinux **三件套升级** | 重编 prebuilt | 3.24 → 3.41；见 [`docs/flutter-linux-hmi-plan.md` §6.5](docs/flutter-linux-hmi-plan.md#65-flutter-engine-版本策略与升级p51) |
 

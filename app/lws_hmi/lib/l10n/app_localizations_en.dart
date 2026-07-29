@@ -981,6 +981,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get otaCheckUnavailable => 'Software update check is not available on this build.';
 
   @override
+  String get cloudEnvironmentTier => 'Cloud Environment';
+
+  @override
+  String get cloudEnvironmentTierDev => 'Dev';
+
+  @override
+  String get cloudEnvironmentTierTest => 'Test';
+
+  @override
+  String get cloudEnvironmentTierProd => 'Prod';
+
+  @override
+  String get deviceRegisterTitle => 'Register This Device';
+
+  @override
+  String get deviceRegisterBody => 'This device is unrecognized, please scan the QR code with LaserCyber app to register it.';
+
+  @override
+  String get deviceRegisterReconnect => 'Reconnect';
+
+  @override
+  String get deviceBindTitle => 'Bind This Device';
+
+  @override
+  String get deviceBindBody => 'Scan the QR code with the LaserCyber app to bind this device.';
+
+  @override
+  String get deviceRemoteLockTitle => 'Device Locked';
+
+  @override
+  String get deviceRemoteLockBody => 'This device has been locked remotely. Contact your administrator to unlock.';
+
+  @override
   String get screenOffNever => 'Never';
 
   @override
@@ -1635,15 +1668,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wifiHiddenNetworkTitle => 'Connect to Hidden Network';
-
-  @override
-  String get wifiInitDialogConfirm => 'Go to Settings';
-
-  @override
-  String get wifiInitDialogMessage => 'Wi‑Fi isn’t connected. Connect to a network to finish setup.';
-
-  @override
-  String get wifiInitDialogTitle => 'Set Up Wi‑Fi';
 
   @override
   String get wifiIpAddress => 'IP Address';

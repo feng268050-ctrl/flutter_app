@@ -259,6 +259,7 @@ class SettingsValueRow extends StatelessWidget {
     this.value,
     this.trailing,
     this.onTap,
+    this.clickFeedback = true,
   });
 
   final String title;
@@ -266,49 +267,65 @@ class SettingsValueRow extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback? onTap;
 
+  /// When false, [onTap] has no click sound and no ink splash (hidden gestures).
+  final bool clickFeedback;
+
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
-      child: ListTile(
-        contentPadding: SettingsDimens.rowPadding,
-        minVerticalPadding: 0,
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            color: CyberColors.textPrimary,
-          ),
+    final tile = ListTile(
+      contentPadding: SettingsDimens.rowPadding,
+      minVerticalPadding: 0,
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          color: CyberColors.textPrimary,
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (value != null && value!.isNotEmpty)
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 220),
-                child: Text(
-                  value!,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                  style: const TextStyle(
-                    color: CyberColors.textSecondary,
-                    fontSize: 18,
-                  ),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (value != null && value!.isNotEmpty)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 220),
+              child: Text(
+                value!,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: const TextStyle(
+                  color: CyberColors.textSecondary,
+                  fontSize: 18,
                 ),
               ),
-            if (trailing != null) ...[
-              const SizedBox(width: 4),
-              trailing!,
-            ],
+            ),
+          if (trailing != null) ...[
+            const SizedBox(width: 4),
+            trailing!,
           ],
-        ),
-        onTap: onTap == null
-            ? null
-            : () {
-                CyberClickSoundRegistry.playClick();
-                onTap!();
-              },
+        ],
       ),
+      onTap: onTap == null
+          ? null
+          : () {
+              if (clickFeedback) {
+                CyberClickSoundRegistry.playClick();
+              }
+              onTap!();
+            },
+    );
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
+      child: clickFeedback || onTap == null
+          ? tile
+          : Theme(
+              data: Theme.of(context).copyWith(
+                splashFactory: NoSplash.splashFactory,
+                highlightColor: Colors.transparent,
+                splashColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+              ),
+              child: tile,
+            ),
     );
   }
 }

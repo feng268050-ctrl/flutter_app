@@ -9,6 +9,8 @@ import 'package:lws_hmi/features/process_video/domain/process_video_models.dart'
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:video_player/video_player.dart';
@@ -310,11 +312,19 @@ final class _ParameterPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final snap = record.snapshot;
+    final unitStore = CommonSettingsScope.maybeOf(context);
+    final unitWire = unitStore?.unit;
+    final isMetric = LengthUnitConvert.isMetric(unitWire);
     final rows = <(String, String)>[
       ('Mode', ProcessVideoFormat.workMode(record.processType)),
       ('Material', ProcessVideoFormat.material(record)),
       if (snap?.thickness != null)
-        ('Thickness', ProcessVideoFormat.parameterValue(snap!.thickness!)),
+        (
+          'Thickness (${LengthUnitConvert.suffix(unitWire)})',
+          ProcessVideoFormat.parameterValue(
+            isMetric ? snap!.thickness! : snap!.thickness! / LengthUnitConvert.mmPerInch,
+          ),
+        ),
       if (snap?.gear != null) ('Gear', '${snap!.gear}'),
     ];
     final params = snap?.parameters.values ?? const <String, double>{};
@@ -322,9 +332,19 @@ final class _ParameterPane extends StatelessWidget {
       if (!_visibleFor(record.processType, entry.key)) {
         continue;
       }
+      final spec = ProcessParameterCatalog.byKey[entry.key];
+      double displayValue = entry.value;
+      if (!isMetric && spec != null) {
+        if (spec.unit == 'mm' || spec.unit == 'mm/s') {
+          displayValue = entry.value / LengthUnitConvert.mmPerInch;
+        }
+      }
       rows.add((
-        ProcessVideoFormat.parameterLabel(entry.key),
-        ProcessVideoFormat.parameterValue(entry.value),
+        ProcessVideoFormat.parameterLabel(
+          entry.key,
+          activeUnitWire: unitWire,
+        ),
+        ProcessVideoFormat.parameterValue(displayValue),
       ));
     }
 

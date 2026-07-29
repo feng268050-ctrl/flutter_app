@@ -1,5 +1,6 @@
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 
 /// Display helpers for Monitor process-video list/detail (lws-ui column labels).
@@ -33,10 +34,16 @@ abstract final class ProcessVideoFormat {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  static String parameterLabel(String key) {
+  static String parameterLabel(
+    String key, {
+    String? activeUnitWire,
+  }) {
     final spec = ProcessParameterCatalog.byKey[key];
     if (spec != null) {
-      return spec.unit.isEmpty ? spec.label : '${spec.label} (${spec.unit})';
+      final unit = spec.unit;
+      final isMetric = LengthUnitConvert.isMetric(activeUnitWire);
+      final displayUnit = isMetric ? unit : _convertUnitForImperial(unit);
+      return displayUnit.isEmpty ? spec.label : '${spec.label} ($displayUnit)';
     }
     return key;
   }
@@ -46,5 +53,16 @@ abstract final class ProcessVideoFormat {
       return value.toInt().toString();
     }
     return value.toStringAsFixed(2);
+  }
+
+  static String _convertUnitForImperial(String unit) {
+    switch (unit) {
+      case 'mm':
+        return 'in';
+      case 'mm/s':
+        return 'in/s';
+      default:
+        return unit;
+    }
   }
 }

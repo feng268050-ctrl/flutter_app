@@ -4,11 +4,25 @@ import 'dart:io';
 import 'package:cyber_hal/src/linux/lws_trace.dart';
 import 'package:cyber_hal/src/network/wpa_supplicant_dbus.dart';
 import 'package:dbus/dbus.dart';
+import 'package:flutter/foundation.dart';
 
-/// True when [iface] is a real IEEE 802.11 netdev (`wireless` / `phy80211`).
+/// True when [uevent] content marks a WLAN netdev (`DEVTYPE=wlan`).
+@visibleForTesting
+bool wifiUeventIsWlan(String uevent) {
+  for (final line in uevent.split('\n')) {
+    if (line.trim() == 'DEVTYPE=wlan') {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// True when [iface] is a real IEEE 802.11 netdev.
 ///
-/// P3.2 QEMU renames a virtio-net NIC to `wlan0` as a **role stand-in** — that
-/// path is Ethernet L3 only and must not start `wpa_supplicant`.
+/// Checks `wireless` / `phy80211` under the iface (and its realpath), then
+/// `uevent` `DEVTYPE=wlan`. P3.2 QEMU renames a virtio-net NIC to `wlan0` as a
+/// **role stand-in** — that path is Ethernet L3 only and must not start
+/// `wpa_supplicant` (no wireless softlinks, no `DEVTYPE=wlan`).
 Future<bool> wifiIfaceIsIeee80211(String iface) async {
   if (iface.isEmpty || iface == 'lo') {
     return false;
@@ -17,8 +31,23 @@ Future<bool> wifiIfaceIsIeee80211(String iface) async {
   if (!await Directory(base).exists()) {
     return false;
   }
-  return await Directory('$base/wireless').exists() ||
-      await Directory('$base/phy80211').exists();
+  if (await Directory('$base/wireless').exists() ||
+      await Directory('$base/phy80211').exists()) {
+    return true;
+  }
+  try {
+    final real = await File(base).resolveSymbolicLinks();
+    if (real != base &&
+        (await Directory('$real/wireless').exists() ||
+            await Directory('$real/phy80211').exists())) {
+      return true;
+    }
+  } catch (_) {}
+  try {
+    return wifiUeventIsWlan(await File('$base/uevent').readAsString());
+  } catch (_) {
+    return false;
+  }
 }
 
 /// Board-specific Wi‑Fi PHY / radio bring-up (D11b).
@@ -239,8 +268,7 @@ final class SystemdWifiRadio implements WifiRadio {
           name.startsWith('usb')) {
         continue;
       }
-      if (await Directory('${entity.path}/wireless').exists() ||
-          await Directory('${entity.path}/phy80211').exists()) {
+      if (await wifiIfaceIsIeee80211(name)) {
         return name;
       }
     }

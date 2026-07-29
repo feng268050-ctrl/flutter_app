@@ -189,7 +189,7 @@ make build-emulator
 make emulator
 ```
 
-`make emulator` may prompt for **sudo** (Apple `vmnet` for guest eth0 camera bridge / wlan0). No IP camera on this Mac:
+`make emulator` may prompt for **sudo** (Apple `vmnet` for guest eth0 camera bridge / eth1 debug). Guest **wlan0** uses Android-like SLIRP (`10.0.2.16`) and does not need vmnet. No IP camera on this Mac:
 
 ```bash
 EMULATOR_ETH0_BRIDGE=off make emulator

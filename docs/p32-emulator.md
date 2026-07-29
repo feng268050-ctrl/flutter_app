@@ -40,7 +40,7 @@ Do **not** hand-assemble a half-empty VM. The launcher always sets:
 | `/dev/vda` rootfs.img | same as device |
 | `/dev/vdb` → `/oem` | `sim_virt` oem.img |
 | `eth0` MAC `52:54:00:12:e0:00` | **IP Camera dedicated link** — bridge host USB-LAN / Ethernet (`EMULATOR_ETH0_IFACE`, auto) |
-| `wlan0` MAC `52:54:00:12:a0:00` | Wi‑Fi role — virtio L3 via host (`vmnet-shared` / DHCP); **not** real 802.11 (see Future) |
+| `wlan0` MAC `52:54:00:12:a0:00` | Wi‑Fi role — virtio L3 via **Android-like SLIRP** (`10.0.2.16` / gw `10.0.2.2` / DNS `10.0.2.3`); **not** real 802.11 (see Future) |
 | `eth1` MAC `52:54:00:12:d0:00` | debug SSH only (not in `net_roles`) |
 | `ethssh` (always) | SLIRP hostfwd `localhost:2222`→`:22` |
 | virtio-sound | host CoreAudio / Pulse / ALSA (`streams=1` playback); guest needs `CONFIG_SND_VIRTIO=y` |
@@ -54,8 +54,8 @@ Naming is via rootfs systemd `.link` files (`20-emulator-*.link`). Those MACs ne
 | Value | Behavior |
 |-------|----------|
 | `auto` (default) | macOS + QEMU with vmnet → `vmnet`; else `user` |
-| `vmnet` | wlan0/eth1 via vmnet; eth0 = bridged camera NIC when available |
-| `user` | wlan0 SLIRP; eth0 still bridged when camera NIC present (unless `EMULATOR_ETH0_BRIDGE=off`) |
+| `vmnet` | eth0/eth1 via vmnet; **wlan0** always Android-like SLIRP `10.0.2.16` |
+| `user` | all product NICs SLIRP; **wlan0** Android-like `10.0.2.16`; eth0 still bridged when camera NIC present (unless `EMULATOR_ETH0_BRIDGE=off`) |
 
 `EMULATOR_ETH0_IFACE=en9` forces the host camera NIC (see `networksetup -listallhardwareports`). Auto-picks **USB \* LAN** when present.
 
@@ -114,7 +114,7 @@ Extra QEMU flags only: `EMULATOR_QEMU_EXTRA=…`.
 | Role | Iface | Emulator behavior |
 |------|-------|-------------------|
 | **IP Camera link** | `eth0` | Host camera Ethernet bridged in (`vmnet-bridged` / `EMULATOR_ETH0_IFACE`); App applies dedicated `/24` static |
-| **Wi‑Fi / general LAN** | `wlan0` | virtio L3 via host + DHCP (no guest SSID join) |
+| **Wi‑Fi / general LAN** | `wlan0` | virtio L3 + DHCP; address space matches [Android Emulator Wi‑Fi](https://developer.android.com/studio/run/emulator-networking-address) (`10.0.2.16`, gw/host `10.0.2.2`, DNS `10.0.2.3`; no guest SSID join) |
 | **SSH hostfwd** | `ethssh` | `localhost:2222` → guest `:22` (not eth0) |
 
 Plug the camera into the Mac with a USB-LAN / Ethernet dongle — do **not** use a guest stub. Example: `EMULATOR_ETH0_IFACE=en9 make emulator` (or rely on USB-LAN auto-detect).

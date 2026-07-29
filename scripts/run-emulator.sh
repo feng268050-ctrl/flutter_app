@@ -3,7 +3,7 @@
 #
 # Default guest hardware is aligned with oem/boards/sim (not a half-configured box):
 #   - 3× virtio-net with fixed MACs → eth0 / wlan0 / eth1 (debug) via systemd .link
-#   - Darwin: vmnet-shared×2 + vmnet-host (debug) + SLIRP hostfwd NIC for SSH
+#   - Darwin: eth0 vmnet (camera) + wlan0 Android-like SLIRP 10.0.2.16 + eth1 vmnet-host + ethssh hostfwd
 #   - USB xHCI + auto passthrough of USB-serial / BT when host devices are present
 #   - virtio-sound → host CoreAudio (macOS) / Pulse|ALSA (Linux)
 #
@@ -34,6 +34,15 @@ MAC_DBG="52:54:00:12:d0:00"
 # Extra SLIRP NIC on vmnet builds — hostfwd only (not in net_roles).
 MAC_SSH="52:54:00:12:22:22"
 ENDPOINT_FILE="$OUT/ssh-endpoint"
+
+# Android Emulator Wi‑Fi address space (Studio 36.5+): guest 10.0.2.16,
+# host/gateway alias 10.0.2.2, DNS 10.0.2.3. Keep other SLIRP NICs off
+# 10.0.2.0/24 so DHCP does not collide across multiple -netdev user.
+# https://developer.android.com/studio/run/emulator-networking-address
+SLIRP_WLAN_ANDROID="net=10.0.2.0/24,host=10.0.2.2,dns=10.0.2.3,dhcpstart=10.0.2.16"
+SLIRP_ETH0_ISOLATED="net=10.0.3.0/24"
+SLIRP_DBG_ISOLATED="net=10.0.4.0/24"
+SLIRP_SSH_ISOLATED="net=10.0.5.0/24"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 log() { echo "emulator: $*"; }
@@ -398,7 +407,7 @@ build_net_args() {
 	case "$mode" in
 	vmnet)
 		USES_VMNET=1
-		log "network: vmnet — eth0=camera link, wlan0=LAN, eth1=debug, ethssh=SSH :${SSH_PORT}"
+		log "network: vmnet — eth0=camera link, wlan0=Android-like SLIRP 10.0.2.16, eth1=debug, ethssh=SSH :${SSH_PORT}"
 		log "note: Apple vmnet needs admin — launcher will use sudo -E for QEMU"
 		if [[ -n "$cam_iface" ]]; then
 			log "eth0: $eth0_desc"
@@ -413,18 +422,20 @@ build_net_args() {
 				-device virtio-net-pci,netdev=n0,mac="$MAC_ETH0"
 			)
 		fi
+		# wlan0: SLIRP (not vmnet-shared) so DHCP matches Android Emulator Wi‑Fi.
 		NET_ARGS+=(
-			-netdev vmnet-shared,id=n1
+			-netdev "user,id=n1,${SLIRP_WLAN_ANDROID}"
 			-device virtio-net-pci,netdev=n1,mac="$MAC_WLAN0"
 			-netdev vmnet-host,id=n2
 			-device virtio-net-pci,netdev=n2,mac="$MAC_DBG"
-			-netdev "user,id=n_ssh,restrict=on,hostfwd=tcp::${SSH_PORT}-:22"
+			-netdev "user,id=n_ssh,restrict=on,${SLIRP_SSH_ISOLATED},hostfwd=tcp::${SSH_PORT}-:22"
 			-device virtio-net-pci,netdev=n_ssh,mac="$MAC_SSH"
 		)
+		log "wlan0: Android-like SLIRP (guest 10.0.2.16 gw/host 10.0.2.2 dns 10.0.2.3)"
 		log "SSH: ssh -p ${SSH_PORT} root@127.0.0.1 (MODE=EMU)"
 		;;
 	user)
-		log "network: user/SLIRP — wlan0 LAN + ethssh SSH :${SSH_PORT}; eth0=camera"
+		log "network: user/SLIRP — wlan0 Android-like 10.0.2.16 + ethssh SSH :${SSH_PORT}; eth0=camera"
 		if [[ -n "$cam_iface" ]]; then
 			USES_VMNET=1
 			log "eth0: $eth0_desc (overrides user-net for camera NIC; needs sudo -E)"
@@ -435,18 +446,19 @@ build_net_args() {
 		else
 			warn "no host camera Ethernet — eth0 restrict SLIRP only (plug USB-LAN + EMULATOR_ETH0_IFACE=…)"
 			NET_ARGS+=(
-				-netdev user,id=n0,restrict=on
+				-netdev "user,id=n0,restrict=on,${SLIRP_ETH0_ISOLATED}"
 				-device virtio-net-pci,netdev=n0,mac="$MAC_ETH0"
 			)
 		fi
 		NET_ARGS+=(
-			-netdev user,id=n1
+			-netdev "user,id=n1,${SLIRP_WLAN_ANDROID}"
 			-device virtio-net-pci,netdev=n1,mac="$MAC_WLAN0"
-			-netdev user,id=n2
+			-netdev "user,id=n2,restrict=on,${SLIRP_DBG_ISOLATED}"
 			-device virtio-net-pci,netdev=n2,mac="$MAC_DBG"
-			-netdev "user,id=n_ssh,restrict=on,hostfwd=tcp::${SSH_PORT}-:22"
+			-netdev "user,id=n_ssh,restrict=on,${SLIRP_SSH_ISOLATED},hostfwd=tcp::${SSH_PORT}-:22"
 			-device virtio-net-pci,netdev=n_ssh,mac="$MAC_SSH"
 		)
+		log "wlan0: Android-like SLIRP (guest 10.0.2.16 gw/host 10.0.2.2 dns 10.0.2.3)"
 		log "SSH: ssh -p ${SSH_PORT} root@127.0.0.1 (MODE=EMU)"
 		;;
 	bridge)

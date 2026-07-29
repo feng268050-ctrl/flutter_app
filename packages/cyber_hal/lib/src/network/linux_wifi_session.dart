@@ -63,7 +63,12 @@ class LinuxWifiSession implements WifiController {
   String? _ipv4AppliedBssid;
   bool _ipv4ApplyInFlight = false;
 
-  /// Cached: null until probed. False = virtio/Ethernet stand-in named wlan0.
+  /// Sticky **true** only after a positive IEEE 802.11 probe.
+  ///
+  /// Negatives are re-checked: ynh960 modem bring-up often creates `wlan0`
+  /// after the first [syncFromSystem] probe — caching `false` forever made
+  /// [linkDetails] report hardcoded SSID `virtio` while networkd already had
+  /// the real station IPv4.
   bool? _ieee80211;
 
   DBusClient? _bus;
@@ -121,12 +126,13 @@ class LinuxWifiSession implements WifiController {
   }
 
   Future<bool> _isIeee80211() async {
-    final cached = _ieee80211;
-    if (cached != null) {
-      return cached;
+    if (_ieee80211 == true) {
+      return true;
     }
     final v = await wifiIfaceIsIeee80211(iface);
-    _ieee80211 = v;
+    if (v) {
+      _ieee80211 = true;
+    }
     return v;
   }
 
@@ -827,6 +833,7 @@ class LinuxWifiSession implements WifiController {
       final wanted = await File(wifiWantedPath).exists();
       if (!await _isIeee80211()) {
         if (wanted || await wifiRadio.isEnabled()) {
+          // Bring-up re-probes IEEE after modem; may flip stand-in → real 802.11.
           await setRadioEnabled(true);
         }
         return;

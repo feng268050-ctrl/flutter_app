@@ -12,7 +12,6 @@ import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 import 'package:lws_hmi/platform/cloud/secret_tap_tracker.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
-import 'package:lws_hmi/features/settings/presentation/pages/process_library_import_page.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
@@ -284,19 +283,6 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             SettingsValueRow(
               title: l10n.processLibVersion,
               value: _processLibVersion,
-            ),
-            SettingsNavRow(
-              title: l10n.updateProcessLibrary,
-              onTap: () {
-                CyberClickSoundRegistry.playClick();
-                unawaited(
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const ProcessLibraryImportPage(),
-                    ),
-                  ),
-                );
-              },
             ),
             SettingsValueRow(
               title: l10n.firmwareVersion,

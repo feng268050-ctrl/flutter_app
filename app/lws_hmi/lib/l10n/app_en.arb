@@ -404,45 +404,6 @@
   "cameraStatusFailed": "Failed",
   "systemVersion": "System Version",
   "processLibVersion": "Process Library Version",
-  "updateProcessLibrary": "Update Process Library",
-  "processLibraryImportTitle": "Import Process Library",
-  "processLibraryScanHint": "Place a package (manifest.json + library JSON) under /var/lib/hmi/incoming/process-library/, /userdata/ota/process-library/, or a USB volume, then scan.",
-  "processLibraryNoPackages": "No process-library packages found.",
-  "processLibraryRescan": "Scan again",
-  "processLibraryImportAction": "Import",
-  "processLibraryImporting": "Importing…",
-  "processLibraryModelMatch": "Matches this device",
-  "processLibraryModelMismatch": "Model not preferred",
-  "processLibraryAuditTitle": "Import report",
-  "processLibraryAuditImported": "Imported successfully",
-  "processLibraryAuditCurrent": "Already up to date",
-  "processLibraryAuditRejected": "Import rejected",
-  "processLibraryAuditNoCompatible": "No compatible library for this model",
-  "processLibraryAuditFromTo": "Version: {from} → {to}",
-  "@processLibraryAuditFromTo": {
-    "placeholders": {
-      "from": {"type": "String"},
-      "to": {"type": "String"}
-    }
-  },
-  "processLibraryAuditRows": "Rows: {count}",
-  "@processLibraryAuditRows": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "processLibraryAuditUsersKept": "User presets kept: {count}",
-  "@processLibraryAuditUsersKept": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
-  "processLibraryAuditPath": "Package: {path}",
-  "@processLibraryAuditPath": {
-    "placeholders": {
-      "path": {"type": "String"}
-    }
-  },
   "focusScaleReference": "Focus Scale Reference",
   "kernelVersion": "Kernel Version",
   "autoCheckOtaUpdate": "Automatically check for updates",

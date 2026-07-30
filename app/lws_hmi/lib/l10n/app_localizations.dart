@@ -2537,7 +2537,7 @@ abstract class AppLocalizations {
   /// No description provided for @rgbLedText.
   ///
   /// In en, this message translates to:
-  /// **'RGB LED'**
+  /// **'LED'**
   String get rgbLedText;
 
   /// No description provided for @rgbLedFooter.

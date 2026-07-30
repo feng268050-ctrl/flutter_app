@@ -1257,7 +1257,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get redLightText => 'Red Pointer';
 
   @override
-  String get rgbLedText => 'RGB LED';
+  String get rgbLedText => 'LED';
 
   @override
   String get rgbLedFooter => 'Use these controls to test the status LED indicators on this device.';

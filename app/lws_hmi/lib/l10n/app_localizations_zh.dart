@@ -1257,7 +1257,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get redLightText => '红光';
 
   @override
-  String get rgbLedText => 'RGB 指示灯';
+  String get rgbLedText => 'LED';
 
   @override
   String get rgbLedFooter => '用这些开关测试本机状态指示灯。';
@@ -1293,7 +1293,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get screenOffTimeText => '息屏时间';
 
   @override
-  String get screenSettings => '屏幕设置';
+  String get screenSettings => '显示';
 
   @override
   String get sensorAbnormalAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
@@ -2865,9 +2865,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get redLightText => '紅光';
 
   @override
-  String get rgbLedText => 'RGB 指示燈';
-
-  @override
   String get rgbLedFooter => '用這些開關測試本機狀態指示燈。';
 
   @override
@@ -2898,7 +2895,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get screenOffTimeText => '息屏時間';
 
   @override
-  String get screenSettings => '屏幕設置';
+  String get screenSettings => '顯示';
 
   @override
   String get sensorAbnormalAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';

@@ -32,6 +32,7 @@ import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.da
 import 'package:lws_hmi/features/process_mode/presentation/work_status_dialog_host.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
+import 'package:lws_hmi/features/statistics/application/work_session_statistics_recorder.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
@@ -71,6 +72,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
 
   bool _bootstrapped = false;
   DeviceControlController? _deviceControl;
+  WorkSessionStatisticsRecorder? _workSessionStatistics;
   RecordWorkController? _recordWork;
   GunDialogCoordinator? _gunDialogs;
   bool _exiting = false;
@@ -92,7 +94,11 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       }
       final services = AppScope.maybeOf(context);
       if (services != null && _deviceControl == null) {
-        _deviceControl = DeviceControlController(services);
+        _workSessionStatistics = WorkSessionStatisticsRecorder();
+        _deviceControl = DeviceControlController(
+          services,
+          workSessionStatistics: _workSessionStatistics,
+        );
         _deviceControl!.onSafetyEvent = _onDeviceSafetyEvent;
         unawaited(_deviceControl!.start());
         _recordWork = RecordWorkController(
@@ -135,6 +141,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     _recordWork?.dispose();
     _deviceControl?.onSafetyEvent = null;
     _deviceControl?.dispose();
+    unawaited(_workSessionStatistics?.dispose() ?? Future<void>.value());
     super.dispose();
   }
 
@@ -339,8 +346,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (draft == null || draft.isReadOnly) {
       return;
     }
-    final previousPower =
-        draft.preset.parameters.values['process.laser_power'];
+    final previousPower = draft.preset.parameters.values['process.laser_power'];
     final nextPower = preset.parameters.values['process.laser_power'];
     setState(() {
       _setActiveDraft(draft.copyWith(preset: preset, unsaved: true));
@@ -366,6 +372,23 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     }
     await thresholds.syncAndSendLaserTerminationPower(laserPower);
   }
+
+  void _configureWorkSessionStatistics(ProcessPreset preset) {
+    _workSessionStatistics?.configureNextSession(
+      modeType: _statisticsModeType(_processType),
+      autoWireFeedEnabled: _processType == ProcessType.continuousWelding &&
+          (_deviceControl?.autoWireFeed ?? false),
+      autoWireFeedSpeedMmPerSecond:
+          preset.parameters.values['process.wire_feeding_speed'] ?? 0,
+      materialType: preset.materialType?.storageValue,
+    );
+  }
+
+  static int _statisticsModeType(ProcessType type) => switch (type) {
+        ProcessType.continuousWelding || ProcessType.spotWelding => 1,
+        ProcessType.handCutting || ProcessType.cncCutting => 2,
+        ProcessType.weldCleaning || ProcessType.wideCleaning => 3,
+      };
 
   /// Safety dialog + re-apply current draft (Quick enable order parity).
   Future<bool> _beforeEnableLaser() async {
@@ -580,52 +603,52 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         unawaited(_handleExit());
       },
       child: Scaffold(
-      backgroundColor: ProcessModeTokens.background,
-      appBar: WorkModeStatusBar(
-        mode: WorkMode.engineer,
-        processType: _processType,
-        onBack: _onBack,
-      ),
-      body: ProcessModeToastLayer(
-        child: CyberBlurBackdropScope(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              const CyberBlurBackdropTarget(
-                child: ColoredBox(color: ProcessModeTokens.background),
-              ),
-              Column(
+        backgroundColor: ProcessModeTokens.background,
+        appBar: WorkModeStatusBar(
+          mode: WorkMode.engineer,
+          processType: _processType,
+          onBack: _onBack,
+        ),
+        body: ProcessModeToastLayer(
+          child: CyberBlurBackdropScope(
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                EngineerProcessTabBar(
-                  processType: _processType,
-                  onChanged: _onProcessTypeChanged,
+                const CyberBlurBackdropTarget(
+                  child: ColoredBox(color: ProcessModeTokens.background),
                 ),
-                if (controller.loading && !controller.initialized)
-                  const Expanded(
-                      child: Center(child: CircularProgressIndicator()))
-                else if (draft == null)
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'No engineer processes for this type',
-                        key: ValueKey('engineer-mode-empty'),
-                        style:
-                            TextStyle(color: Color(0xB3FFFFFF), fontSize: 16),
-                      ),
+                Column(
+                  children: [
+                    EngineerProcessTabBar(
+                      processType: _processType,
+                      onChanged: _onProcessTypeChanged,
                     ),
-                  ),
-                if (draft != null)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            flex: 1,
-                            child: SizedBox(
-                              key: const ValueKey(
-                                  'engineer-device-panel-container'),
+                    if (controller.loading && !controller.initialized)
+                      const Expanded(
+                          child: Center(child: CircularProgressIndicator()))
+                    else if (draft == null)
+                      const Expanded(
+                        child: Center(
+                          child: Text(
+                            'No engineer processes for this type',
+                            key: ValueKey('engineer-mode-empty'),
+                            style: TextStyle(
+                                color: Color(0xB3FFFFFF), fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    if (draft != null)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                flex: 1,
+                                child: SizedBox(
+                                  key: const ValueKey(
+                                      'engineer-device-panel-container'),
                                   child: _deviceControl == null ||
                                           _recordWork == null
                                       ? const SizedBox.shrink()
@@ -634,241 +657,253 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                           recordWork: _recordWork!,
                                           processType: _processType,
                                           preset: draft.preset,
-                                          onBeforeEnableLaser: _beforeEnableLaser,
+                                          onBeforeEnableLaser:
+                                              _beforeEnableLaser,
+                                          onConfigureWorkSession:
+                                              _configureWorkSessionStatistics,
                                         ),
-                            ),
-                          ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            flex: 2,
-                            child: EngineerFrostPanel(
-                              key: const ValueKey('engineer-parameters-panel'),
-                              edge: EngineerFrostEdge.bottomLeftTopRight,
-                              child: Column(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        24, 16, 16, 8),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: InkWell(
-                                            key: const ValueKey(
-                                                'engineer-mode-name'),
-                                            onTap: () {
-                                              CyberClickSoundRegistry
-                                                  .playClick();
-                                              _editName();
-                                            },
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  draft.preset.name,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  'Current Process Name',
-                                                  key: ValueKey(
-                                                    draft.fromQuickHandoff
-                                                        ? 'engineer-mode-draft-uuid'
-                                                        : 'engineer-mode-source-label',
-                                                  ),
-                                                  style: TextStyle(
-                                                    color:
-                                                        accent.withOpacity(0.9),
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        KeyedSubtree(
-                                          key: const ValueKey(
-                                            'engineer-more-favorites',
-                                          ),
-                                          child: InkWell(
-                                            key: _moreFavoritesKey,
-                                            onTap: () {
-                                              CyberClickSoundRegistry
-                                                  .playClick();
-                                              if (_favoritesOpen) {
-                                                return;
-                                              }
-                                              _openFavorites();
-                                            },
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 12,
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  const Text(
-                                                    'More Favorites',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 16,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 2),
-                                                  Icon(
-                                                    _favoritesOpen
-                                                        ? Icons
-                                                            .keyboard_arrow_down
-                                                        : Icons.chevron_right,
-                                                    color: Colors.white,
-                                                    size: 30,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Divider(
-                                    key: const ValueKey(
-                                        'engineer-parameters-header-divider'),
-                                    height: 2,
-                                    thickness: 1,
-                                    color: const Color(0x33FFFFFF),
-                                    indent: 24,
-                                    endIndent: 24,
-                                  ),
-                                  Expanded(
-                                    child: EngineerParameterForm(
-                                      preset: draft.preset,
-                                      readOnly: draft.isReadOnly,
-                                      onChanged: _onDraftChanged,
-                                      onBeginEdit: _beginEditFromBuiltin,
-                                      footer: Padding(
+                                ),
+                              ),
+                              const SizedBox(width: 24),
+                              Expanded(
+                                flex: 2,
+                                child: EngineerFrostPanel(
+                                  key: const ValueKey(
+                                      'engineer-parameters-panel'),
+                                  edge: EngineerFrostEdge.bottomLeftTopRight,
+                                  child: Column(
+                                    children: [
+                                      Padding(
                                         padding: const EdgeInsets.fromLTRB(
-                                          16,
-                                          8,
-                                          0,
-                                          12,
-                                        ),
+                                            24, 16, 16, 8),
                                         child: Row(
                                           children: [
-                                            // lws-ui FrostButton DEFAULT
-                                            // (`engineer_pine_base_btn_style`).
                                             Expanded(
-                                              child: CyberButton(
+                                              child: InkWell(
                                                 key: const ValueKey(
-                                                  'engineer-action-reset-default',
-                                                ),
-                                                stretch: true,
-                                                height: 56,
-                                                // lws-ui FrostButtonShape.ROUNDED
-                                                // (stadium) + top↔bottom rim light.
-                                                shape:
-                                                    CyberButtonShape.rounded,
-                                                borderGradientCenter:
-                                                    CyberBorderGradientCenter
-                                                        .topBottom,
-                                                borderGradientColors:
-                                                    _engineerActionPillBorder,
-                                                strokeWidth: 1.5,
-                                                onPressed: _resetToDefault,
-                                                child: const Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
+                                                    'engineer-mode-name'),
+                                                onTap: () {
+                                                  CyberClickSoundRegistry
+                                                      .playClick();
+                                                  _editName();
+                                                },
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
-                                                    Icon(
-                                                      Icons.restart_alt,
-                                                      size: 20,
+                                                    Text(
+                                                      draft.preset.name,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
                                                     ),
-                                                    SizedBox(width: 8),
-                                                    Flexible(
-                                                      child: Text(
-                                                        'Reset to Default',
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      'Current Process Name',
+                                                      key: ValueKey(
+                                                        draft.fromQuickHandoff
+                                                            ? 'engineer-mode-draft-uuid'
+                                                            : 'engineer-mode-source-label',
+                                                      ),
+                                                      style: TextStyle(
+                                                        color: accent
+                                                            .withOpacity(0.9),
+                                                        fontSize: 13,
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                               ),
                                             ),
-                                            const SizedBox(width: 22),
-                                            Expanded(
-                                              child: CyberButton(
-                                                key: const ValueKey(
-                                                  'engineer-action-save-favorite',
-                                                ),
-                                                stretch: true,
-                                                height: 56,
-                                                shape:
-                                                    CyberButtonShape.rounded,
-                                                borderGradientCenter:
-                                                    CyberBorderGradientCenter
-                                                        .topBottom,
-                                                borderGradientColors:
-                                                    _engineerActionPillBorder,
-                                                strokeWidth: 1.5,
-                                                onPressed: controller.applying
-                                                    ? null
-                                                    : _saveAsFavorite,
-                                                child: const Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.bookmark_add,
-                                                      size: 20,
-                                                    ),
-                                                    SizedBox(width: 8),
-                                                    Flexible(
-                                                      child: Text(
-                                                        'Save as Favorite',
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
+                                            KeyedSubtree(
+                                              key: const ValueKey(
+                                                'engineer-more-favorites',
+                                              ),
+                                              child: InkWell(
+                                                key: _moreFavoritesKey,
+                                                onTap: () {
+                                                  CyberClickSoundRegistry
+                                                      .playClick();
+                                                  if (_favoritesOpen) {
+                                                    return;
+                                                  }
+                                                  _openFavorites();
+                                                },
+                                                child: Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 12,
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      const Text(
+                                                        'More Favorites',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 16,
+                                                        ),
                                                       ),
-                                                    ),
-                                                  ],
+                                                      const SizedBox(width: 2),
+                                                      Icon(
+                                                        _favoritesOpen
+                                                            ? Icons
+                                                                .keyboard_arrow_down
+                                                            : Icons
+                                                                .chevron_right,
+                                                        color: Colors.white,
+                                                        size: 30,
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                    ),
+                                      Divider(
+                                        key: const ValueKey(
+                                            'engineer-parameters-header-divider'),
+                                        height: 2,
+                                        thickness: 1,
+                                        color: const Color(0x33FFFFFF),
+                                        indent: 24,
+                                        endIndent: 24,
+                                      ),
+                                      Expanded(
+                                        child: EngineerParameterForm(
+                                          preset: draft.preset,
+                                          readOnly: draft.isReadOnly,
+                                          onChanged: _onDraftChanged,
+                                          onBeginEdit: _beginEditFromBuiltin,
+                                          footer: Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                              16,
+                                              8,
+                                              0,
+                                              12,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                // lws-ui FrostButton DEFAULT
+                                                // (`engineer_pine_base_btn_style`).
+                                                Expanded(
+                                                  child: CyberButton(
+                                                    key: const ValueKey(
+                                                      'engineer-action-reset-default',
+                                                    ),
+                                                    stretch: true,
+                                                    height: 56,
+                                                    // lws-ui FrostButtonShape.ROUNDED
+                                                    // (stadium) + top↔bottom rim light.
+                                                    shape: CyberButtonShape
+                                                        .rounded,
+                                                    borderGradientCenter:
+                                                        CyberBorderGradientCenter
+                                                            .topBottom,
+                                                    borderGradientColors:
+                                                        _engineerActionPillBorder,
+                                                    strokeWidth: 1.5,
+                                                    onPressed: _resetToDefault,
+                                                    child: const Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          Icons.restart_alt,
+                                                          size: 20,
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        Flexible(
+                                                          child: Text(
+                                                            'Reset to Default',
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 22),
+                                                Expanded(
+                                                  child: CyberButton(
+                                                    key: const ValueKey(
+                                                      'engineer-action-save-favorite',
+                                                    ),
+                                                    stretch: true,
+                                                    height: 56,
+                                                    shape: CyberButtonShape
+                                                        .rounded,
+                                                    borderGradientCenter:
+                                                        CyberBorderGradientCenter
+                                                            .topBottom,
+                                                    borderGradientColors:
+                                                        _engineerActionPillBorder,
+                                                    strokeWidth: 1.5,
+                                                    onPressed:
+                                                        controller.applying
+                                                            ? null
+                                                            : _saveAsFavorite,
+                                                    child: const Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          Icons.bookmark_add,
+                                                          size: 20,
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        Flexible(
+                                                          child: Text(
+                                                            'Save as Favorite',
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
+                  ],
+                ),
               ],
             ),
-          ],
           ),
         ),
       ),
-    ),
     );
   }
 }

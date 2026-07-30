@@ -31,6 +31,7 @@ final class EngineerDevicePanel extends StatefulWidget {
     required this.processType,
     required this.preset,
     this.onBeforeEnableLaser,
+    this.onConfigureWorkSession,
   });
 
   final DeviceControlController controller;
@@ -41,6 +42,9 @@ final class EngineerDevicePanel extends StatefulWidget {
   /// Optional pre-enable hook (safety dialog + re-apply process). Return
   /// `false` to abort laser enable.
   final Future<bool> Function()? onBeforeEnableLaser;
+
+  /// Captures the applied process context immediately before Laser Enable.
+  final ValueChanged<ProcessPreset>? onConfigureWorkSession;
 
   @override
   State<EngineerDevicePanel> createState() => _EngineerDevicePanelState();
@@ -324,6 +328,8 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                         return;
                                       }
                                     }
+                                    widget.onConfigureWorkSession
+                                        ?.call(widget.preset);
                                     final policy =
                                         AdvancedSettingsScope.maybeDangerousOf(
                                                     context)

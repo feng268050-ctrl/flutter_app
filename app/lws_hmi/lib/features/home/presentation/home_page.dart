@@ -11,6 +11,7 @@ import 'package:lws_hmi/features/bundled_firmware/application/bundled_firmware_b
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
+import 'package:lws_hmi/features/home/presentation/custom_home_statistics_panel.dart';
 import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
@@ -47,6 +48,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
   bool _homeBootstrapped = false;
   IpCameraUiStatus _cameraStatus = IpCameraUiStatus.connecting;
   StreamSubscription<IpCameraUiStatus>? _cameraSub;
+  final _customHomeStatisticsKey = GlobalKey<CustomHomeStatisticsPanelState>();
 
   Future<void> _openEngineerMode() async {
     if (!EngineerModeEntryTipGate.isSuppressedThisBoot) {
@@ -90,6 +92,10 @@ class _HomePageState extends State<HomePage> with RouteAware {
   void didPopNext() {
     // Returning to Home from Settings / Monitor / etc.
     _maybeCheckBundledFirmware();
+    final refresh = _customHomeStatisticsKey.currentState?.refresh();
+    if (refresh != null) {
+      unawaited(refresh);
+    }
   }
 
   void _maybeCheckBundledFirmware() {
@@ -380,6 +386,20 @@ class _HomePageState extends State<HomePage> with RouteAware {
                     }
                     unawaited(_openEngineerMode());
                   },
+                ),
+                // The four saved Custom Home statistics keep lws-ui's two
+                // left / two right slots above the quick actions.
+                Positioned(
+                  left: _kQaEdgeInset * sx,
+                  right: _kQaEdgeInset * sx,
+                  bottom: (190 * sy),
+                  height: 124 * sy,
+                  child: CustomHomeStatisticsPanel(
+                    key: _customHomeStatisticsKey,
+                    cardWidth: 200 * sx,
+                    cardHeight: 124 * sy,
+                    cardGap: 12 * sx,
+                  ),
                 ),
                 // Bottom-left: Monitor | Settings (lws-ui box_quick_actions_row).
                 Positioned(

@@ -4,6 +4,8 @@ import 'package:cyber_hal/cyber_hal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterpi_gstreamer_video_player/flutterpi_gstreamer_video_player.dart';
 import 'package:lws_hmi/app/app.dart';
+import 'package:lws_hmi/features/statistics/application/legacy_static_data_migrator.dart';
+import 'package:lws_hmi/features/statistics/infrastructure/sqlite_stats_aggregate_repository.dart';
 import 'package:lws_hmi/hal/hal_assets.dart';
 import 'package:lws_hmi/platform/video_player_elinux/video_player_elinux.dart';
 
@@ -12,6 +14,9 @@ const _kRunBoardProfile = '/run/hmi/board_profile.json';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isLinux) {
+    await _migrateLegacyStatistics();
+  }
   if (Platform.isLinux) {
     final isWayland =
         (Platform.environment['WAYLAND_DISPLAY'] ?? '').trim().isNotEmpty;
@@ -25,6 +30,15 @@ Future<void> main() async {
   }
   final profile = await _loadBoardProfile();
   runApp(LwsHmiApp(boardProfile: profile));
+}
+
+Future<void> _migrateLegacyStatistics() async {
+  final repository = SqliteStatsAggregateRepository();
+  try {
+    await LegacyStaticDataMigrator(repository: repository).run();
+  } finally {
+    await repository.close();
+  }
 }
 
 Future<BoardProfile> _loadBoardProfile() async {

@@ -6,6 +6,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/laser_enable_preflight.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
+import 'package:lws_hmi/features/statistics/application/work_session_statistics_recorder.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
 
@@ -26,9 +27,10 @@ enum DeviceControlSafetyEvent {
 
 /// Live laser, gas, and manual wire-control writes.
 final class DeviceControlController extends ChangeNotifier {
-  DeviceControlController(this.services);
+  DeviceControlController(this.services, {this.workSessionStatistics});
 
   final AppServices services;
+  final WorkSessionStatisticsRecorder? workSessionStatistics;
 
   bool laserEnable = false;
   bool manualGas = false;
@@ -165,6 +167,7 @@ final class DeviceControlController extends ChangeNotifier {
     }
     final keyWasOn = keySwitchOn;
     final eStopWas = emergencyStop;
+    final laserWasEnabled = laserEnable;
     var changed = false;
     for (final c in changes) {
       final on = c.value == true || c.value == 1;
@@ -229,6 +232,9 @@ final class DeviceControlController extends ChangeNotifier {
     }
     if (changed) {
       notifyListeners();
+    }
+    if (laserWasEnabled && !laserEnable) {
+      unawaited(workSessionStatistics?.settle() ?? Future<void>.value());
     }
     _handleSafetyEdges(
       keyWasOn: keyWasOn,
@@ -707,6 +713,7 @@ final class DeviceControlController extends ChangeNotifier {
       }
       laserEnable = true;
       wireWork = false;
+      await workSessionStatistics?.recordLaserEnabled();
       return null;
     } catch (e) {
       lastError = '$e';
@@ -743,6 +750,7 @@ final class DeviceControlController extends ChangeNotifier {
         return LaserEnableBlockReason.writeFailed;
       }
       _disarmLaserSessionLocally();
+      await workSessionStatistics?.settle();
       busy = false;
       if (!keepUiDisarmed) {
         await _reconcileControlBitsFromHardware();
@@ -824,6 +832,8 @@ final class DeviceControlController extends ChangeNotifier {
       if (!ok) {
         lastError = 'Laser disarm write failed';
         debugPrint('device-control: shutdownForExit write returned false');
+      } else {
+        await workSessionStatistics?.settle();
       }
     } catch (e) {
       debugPrint('device-control: shutdownForExit failed: $e');

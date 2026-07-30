@@ -25,12 +25,20 @@ void main() {
     expect(productDeviceModelForQr(null, null), '');
   });
 
-  test('productCameraTypeDisplay maps 1/2 and falls back to dash', () {
+  test('productCameraTypeDisplay maps 1/2; empty defaults to Blue Light', () {
     expect(productCameraTypeDisplay('1'), 'Blue Light');
     expect(productCameraTypeDisplay('2'), 'Red Light');
-    expect(productCameraTypeDisplay(null), kUnavailableDisplay);
-    expect(productCameraTypeDisplay(''), kUnavailableDisplay);
+    expect(productCameraTypeDisplay(null), 'Blue Light');
+    expect(productCameraTypeDisplay(''), 'Blue Light');
+    expect(productCameraTypeDisplay('  '), 'Blue Light');
     expect(productCameraTypeDisplay('9'), kUnavailableDisplay);
+  });
+
+  test('effectiveCameraType defaults empty to 1', () {
+    expect(effectiveCameraType(null), kDefaultCameraType);
+    expect(effectiveCameraType(''), kDefaultCameraType);
+    expect(effectiveCameraType('2'), '2');
+    expect(effectiveCameraType('9'), '9');
   });
 
   test('DeviceIdentityQr v2 payload matches lws-ui shape', () {

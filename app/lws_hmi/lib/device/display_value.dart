@@ -34,11 +34,20 @@ String productDeviceModelForQr(String? brand, String? model) {
   return '$b $m';
 }
 
-/// Camera Type row: `1` → Blue Light, `2` → Red Light; else `-`.
+/// Default `product.ini` `camera_type` when unset (Blue Light).
+const kDefaultCameraType = '1';
+
+/// Empty/missing → [kDefaultCameraType]; otherwise trimmed raw (`1`/`2`/other).
+String effectiveCameraType(String? cameraType) {
+  final v = (cameraType ?? '').trim();
+  return v.isEmpty ? kDefaultCameraType : v;
+}
+
+/// Camera Type row: `1` → Blue Light, `2` → Red Light; empty → default `1`; else `-`.
 ///
 /// Prefer [productCameraTypeDisplayLocalized] when [AppLocalizations] is available.
 String productCameraTypeDisplay(String? cameraType) {
-  switch ((cameraType ?? '').trim()) {
+  switch (effectiveCameraType(cameraType)) {
     case '1':
       return 'Blue Light';
     case '2':
@@ -54,7 +63,7 @@ String productCameraTypeDisplayLocalized(
   required String blueLight,
   required String redLight,
 }) {
-  switch ((cameraType ?? '').trim()) {
+  switch (effectiveCameraType(cameraType)) {
     case '1':
       return blueLight;
     case '2':

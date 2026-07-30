@@ -543,7 +543,8 @@ class CyberImeKeyLabel extends StatelessWidget {
       label = shiftOn
           ? keyDef.primary.toUpperCase()
           : keyDef.primary.toLowerCase();
-      faceSecondary = keyDef.secondary;
+      faceSecondary = keyDef.secondary ??
+          _longPressSecondFunction(keyDef, uppercase: shiftOn);
     } else {
       label = keyDef.primary;
       faceSecondary = keyDef.secondary;
@@ -553,6 +554,7 @@ class CyberImeKeyLabel extends StatelessWidget {
         faceSecondary != null &&
         faceSecondary.isNotEmpty &&
         (keyDef.isLetter ||
+            keyDef.id == CyberImeKeyId.custom ||
             keyDef.id == CyberImeKeyId.commaPeriod ||
             keyDef.keyCode != null);
 
@@ -591,6 +593,29 @@ class CyberImeKeyLabel extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Exposes the first accented long-press option as the key's second
+  /// function. The existing long-press popup still contains every candidate.
+  String? _longPressSecondFunction(
+    CyberImeKeyDef key, {
+    required bool uppercase,
+  }) {
+    final options = key.longPressOptions;
+    if (options == null || options.isEmpty) return null;
+
+    final base = uppercase ? key.primary.toUpperCase() : key.primary.toLowerCase();
+    String? fallback;
+    for (final option in options) {
+      final normalized = uppercase ? option.toUpperCase() : option.toLowerCase();
+      if (normalized == base) continue;
+      fallback ??= option;
+      final matchesCase = uppercase
+          ? option == option.toUpperCase()
+          : option == option.toLowerCase();
+      if (matchesCase) return option;
+    }
+    return fallback;
   }
 }
 
@@ -645,4 +670,3 @@ class _CyberImeCandidateBar extends StatelessWidget {
     );
   }
 }
-

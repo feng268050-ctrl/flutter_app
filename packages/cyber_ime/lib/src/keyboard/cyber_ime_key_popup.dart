@@ -46,6 +46,11 @@ extension CyberImeKeyPopup on CyberImeKeyDef {
     if (isLetter) {
       return [
         primary.toLowerCase(),
+        if (secondary != null &&
+            secondary!.isNotEmpty &&
+            secondary != primary.toLowerCase() &&
+            secondary != primary.toUpperCase())
+          secondary!,
         primary.toUpperCase(),
       ];
     }

@@ -75,10 +75,16 @@ void main() {
       expect(rowLabels(layout, 0).any((l) => RegExp(r'^\d$').hasMatch(l)),
           isFalse,
           reason: '$profile');
-      // Letter faces have no digit secondaries.
+      // QWERTY preserves its existing digit/symbol second-function layer;
+      // other regional letter pads reserve their second-function slot for
+      // explicit long-press candidates.
       for (final key in layout.rows.expand((r) => r.keys)) {
         if (!key.isLetter) continue;
-        expect(key.secondary, isNull, reason: '$profile ${key.primary}');
+        if (profile == CyberImeRegionalProfile.qwerty) {
+          expect(key.secondary, isNotNull, reason: '$profile ${key.primary}');
+        } else {
+          expect(key.secondary, isNull, reason: '$profile ${key.primary}');
+        }
         if (key.longPressOptions != null) {
           expect(
             key.longPressOptions!.any((o) => RegExp(r'^\d$').hasMatch(o)),
@@ -104,6 +110,15 @@ void main() {
     );
     expect(rowLabels(layout, 3).first, '123');
     expect(rowLabels(layout, 3), isNot(contains('.')));
+    expect(
+      layout.rows[0].keys.map((k) => k.secondary).toList(),
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+    );
+    expect(
+      layout.rows[1].keys.map((k) => k.secondary).toList(),
+      ['~', '!', '@', '#', '%', '"', "'", '*', '?'],
+    );
+    expect(layout.rows[0].keys.first.popupOptions(), ['q', '1', 'Q']);
   });
 
   test('QWERTZ soft swaps Y/Z and exposes umlaut long-press', () {

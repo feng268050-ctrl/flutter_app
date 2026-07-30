@@ -222,6 +222,9 @@ final class AppServices {
   ///
   /// Intercepts: [modbusLiveAllowed] false → no-op; [BootSelfCheckGate.isActive]
   /// → no-op until Home self-check `onComplete` (or a later ensure) runs.
+  /// Callers that still issue on-demand reads (`readGroup` / live-cache seed)
+  /// MUST also [BootSelfCheckGate.waitForModbusAccess] — this ensure alone does
+  /// not serialize those one-shots against the self-check snapshot.
   ///
   /// Also applies product.ini `control_card_comm_alarm_mode` once (C001 window)
   /// and disarms `control.laser_enable` once at process start so a prior crash

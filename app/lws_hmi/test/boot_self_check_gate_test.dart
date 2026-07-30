@@ -239,6 +239,21 @@ void main() {
       expect(BootSelfCheckGate.shouldSkip, isFalse);
       expect(BootSelfCheckGate.hasCompletedThisBoot, isFalse);
     });
+
+    test('waitForModbusAccess returns after gate clears', () async {
+      BootSelfCheckGate.setActive(true);
+      var released = false;
+      final waiter = BootSelfCheckGate.waitForModbusAccess(
+        armGrace: Duration.zero,
+        pollInterval: const Duration(milliseconds: 10),
+      ).then((_) => released = true);
+
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(released, isFalse);
+      BootSelfCheckGate.markCompletedInProcess();
+      await waiter;
+      expect(released, isTrue);
+    });
   });
 
   group('BootSelfCheckCoordinator once-per-boot', () {

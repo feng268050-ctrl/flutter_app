@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:cyber_hal/modbus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_live_cache_seed.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/platform/cloud/device_remote_snapshot_modbus_mapper.dart';
 import 'package:lws_hmi/platform/cloud/process_parameters_snapshot_store.dart';
@@ -42,6 +44,11 @@ final class DeviceRemoteLiveCache {
   MonitorStatSnapshot currentSnapshot() => _buildSnapshot();
 
   /// Start HAL watches (idempotent). Call after [AppServices.ensureModbusLive].
+  ///
+  /// Defers Modbus seed/watch until [BootSelfCheckGate] releases the bus —
+  /// concurrent group reads during self-check corrupt RTU framing.
+  /// Prefers [BootSelfCheckLiveCacheSeed] when self-check already read the
+  /// continuous groups. Camera status may still start during self-check.
   Future<void> start() async {
     if (_started) {
       return;
@@ -49,7 +56,29 @@ final class DeviceRemoteLiveCache {
     _started = true;
     processStore.addListener(_onProcessStoreChanged);
 
+    unawaited(_startCameraStatus());
+    await _startModbusWatches();
+    _publishIfChanged();
+  }
+
+  Future<void> _startCameraStatus() async {
     try {
+      final session = await services.ensureIpCamera();
+      _applyCameraStatus(session.camera.currentHealth.isHealthy ? 1 : 0);
+      _cameraSub = session.status.listen((s) {
+        final healthy = s.phase == IpCameraUiPhase.connected;
+        _applyCameraStatus(healthy ? 1 : 0);
+      });
+      unawaited(session.start());
+    } catch (e) {
+      debugPrint('live-cache: camera status failed: $e');
+      _applyCameraStatus(0);
+    }
+  }
+
+  Future<void> _startModbusWatches() async {
+    try {
+      await BootSelfCheckGate.waitForModbusAccess();
       await services.ensureModbusLive();
       final modbus = services.modbus;
       _statusIds
@@ -60,23 +89,45 @@ final class DeviceRemoteLiveCache {
         ..addAll(await modbus.attributeIdsForGroups(const ['data']));
       final ids = <String>{..._statusIds, ..._dataIds}.toList(growable: false);
 
-      // Seed full groups before first SSE publish so deviceData is not a
-      // sparse attr map (phone merges patches; missing keys ≠ null wipe).
-      try {
-        final statusGroup = await modbus.readGroup('status');
+      // Prefer boot self-check group maps; only RTU-read groups that were
+      // missing so the first SSE publish is still a full attr map.
+      final seededStatus = BootSelfCheckLiveCacheSeed.takeStatus();
+      final seededData = BootSelfCheckLiveCacheSeed.takeData();
+      if (seededStatus != null) {
         _statusAttrs
           ..clear()
-          ..addAll(statusGroup);
-      } catch (e) {
-        debugPrint('live-cache: seed status failed: $e');
+          ..addAll(seededStatus);
+        debugPrint(
+          'live-cache: seeded status from boot self-check '
+          '(${seededStatus.length} attrs)',
+        );
+      } else {
+        try {
+          final statusGroup = await modbus.readGroup('status');
+          _statusAttrs
+            ..clear()
+            ..addAll(statusGroup);
+        } catch (e) {
+          debugPrint('live-cache: seed status failed: $e');
+        }
       }
-      try {
-        final dataGroup = await modbus.readGroup('data');
+      if (seededData != null) {
         _dataAttrs
           ..clear()
-          ..addAll(dataGroup);
-      } catch (e) {
-        debugPrint('live-cache: seed data failed: $e');
+          ..addAll(seededData);
+        debugPrint(
+          'live-cache: seeded data from boot self-check '
+          '(${seededData.length} attrs)',
+        );
+      } else {
+        try {
+          final dataGroup = await modbus.readGroup('data');
+          _dataAttrs
+            ..clear()
+            ..addAll(dataGroup);
+        } catch (e) {
+          debugPrint('live-cache: seed data failed: $e');
+        }
       }
 
       final attrStream = await modbus.watchAttributes(ids: ids);
@@ -91,21 +142,6 @@ final class DeviceRemoteLiveCache {
     } catch (e) {
       debugPrint('live-cache: modbus watch failed: $e');
     }
-
-    try {
-      final session = await services.ensureIpCamera();
-      _applyCameraStatus(session.camera.currentHealth.isHealthy ? 1 : 0);
-      _cameraSub = session.status.listen((s) {
-        final healthy = s.phase == IpCameraUiPhase.connected;
-        _applyCameraStatus(healthy ? 1 : 0);
-      });
-      unawaited(session.start());
-    } catch (e) {
-      debugPrint('live-cache: camera status failed: $e');
-      _applyCameraStatus(0);
-    }
-
-    _publishIfChanged();
   }
 
   Future<void> dispose() async {

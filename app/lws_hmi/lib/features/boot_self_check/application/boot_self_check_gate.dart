@@ -1,8 +1,10 @@
+import 'dart:async';
+
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_boot_marker.dart';
 
 /// Process-wide gate so overlapping warn/camera monitors can defer (lws-ui
 /// `BootSelfCheckGate`). [AppServices.ensureModbusLive] also no-ops while
-/// [isActive] so continuous RTU poll does not fight self-check one-shot reads.
+/// [isActive] so continuous RTU poll does not fight self-check group reads.
 ///
 /// Completion is also recorded in [BootSelfCheckBootMarker] so HMI restarts
 /// within the same system boot skip the dialog.
@@ -30,6 +32,38 @@ abstract final class BootSelfCheckGate {
     _completedInProcess = true;
     _active = false;
     BootSelfCheckBootMarker.mark();
+  }
+
+  /// Wait until boot self-check is not issuing Modbus group reads.
+  ///
+  /// Cloud live-cache / other on-demand Modbus callers MUST await this before
+  /// touching the RTU bus: [AppServices.ensureModbusLive] alone is not enough
+  /// because it only suppresses continuous poll, not concurrent `readGroup`.
+  /// When self-check succeeds it offers maps via [BootSelfCheckLiveCacheSeed]
+  /// so the live cache can skip re-seeding those groups.
+  ///
+  /// [armGrace] covers the short gap between App first-frame cloud start and
+  /// Home raising [isActive] for the dialog pipeline.
+  static Future<void> waitForModbusAccess({
+    Duration armGrace = const Duration(seconds: 2),
+    Duration pollInterval = const Duration(milliseconds: 40),
+  }) async {
+    if (isCompletedInProcess || hasCompletedThisBoot) {
+      while (isActive) {
+        await Future<void>.delayed(pollInterval);
+      }
+      return;
+    }
+
+    final armDeadline = DateTime.now().add(armGrace);
+    while (!isActive &&
+        !isCompletedInProcess &&
+        DateTime.now().isBefore(armDeadline)) {
+      await Future<void>.delayed(pollInterval);
+    }
+    while (isActive) {
+      await Future<void>.delayed(pollInterval);
+    }
   }
 
   /// Test / hot-restart hook.

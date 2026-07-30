@@ -105,7 +105,7 @@ Item labels SHOULD align with Monitor → Alarm Information wording where applic
 
 ### Requirement: Async overlapping detection is gated during boot self-check
 
-While boot self-check is active, the App SHALL expose a process gate (`isActive`) so overlapping async **warn popups** MUST NOT present competing dialogs. The product IP-camera session `start()` and Home camera status icon MAY run during self-check because they do not present a blocking popup. When self-check finishes (dialog dismissed or preference disabled), the gate SHALL clear and deferred warn monitors MAY start.
+While boot self-check is active, the App SHALL expose a process gate (`isActive`) so the **global prompt queue** MUST NOT present competing dialogs (warn frost, guidance, remote lock, and other enrolled prompts). The product IP-camera session `start()` and Home camera status icon MAY run during self-check because they do not present a blocking popup. When self-check finishes (dialog dismissed or preference disabled), the gate SHALL clear, the global queue MAY pump, and deferred warn monitors MAY start.
 
 #### Scenario: Gate active during pipeline
 

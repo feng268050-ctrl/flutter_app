@@ -1928,6 +1928,24 @@ abstract class AppLocalizations {
   /// **'Scan the QR code with the LaserCyber app to bind this device.'**
   String get deviceBindBody;
 
+  /// No description provided for @wifiConnectTipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to Wi‑Fi'**
+  String get wifiConnectTipTitle;
+
+  /// No description provided for @wifiConnectTipBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is not connected to Wi‑Fi. Connect a network to use cloud features.'**
+  String get wifiConnectTipBody;
+
+  /// No description provided for @wifiConnectTipOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Wi‑Fi Settings'**
+  String get wifiConnectTipOpenSettings;
+
   /// No description provided for @deviceRemoteLockTitle.
   ///
   /// In en, this message translates to:

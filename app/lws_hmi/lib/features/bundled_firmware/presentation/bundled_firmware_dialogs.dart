@@ -4,56 +4,37 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Confirm / progress / result dialogs for bundled control-board firmware.
+///
+/// Uses standard [CyberOverlayHost] + [CyberPromptContent] chrome.
 abstract final class BundledFirmwareDialogs {
-  static const double _kMaxDialogWidth = 520;
-
-  static Widget _wrapDialog(Widget child) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: _kMaxDialogWidth),
-      child: child,
-    );
-  }
-
   static Future<bool> showConfirm({
     required BuildContext context,
     required String currentVersion,
     required String newVersion,
   }) async {
-    final result = await showCyberDialog<bool>(
+    final result = await CyberOverlayHost.show<bool>(
       context: context,
       barrierDismissible: true,
+      freezePageBackdrop: false,
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
-        return _wrapDialog(
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.bundledFirmwareDialogTitle,
-                style: const TextStyle(
-                  fontSize: 20,
-                  color: CyberColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                l10n.bundledFirmwareDialogMessage(currentVersion, newVersion),
-                style: const TextStyle(color: CyberColors.textSecondary),
-              ),
-              const SizedBox(height: 20),
-              CyberButton(
-                variant: CyberButtonVariant.primary,
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(l10n.okText),
-              ),
-              const SizedBox(height: 8),
-              CyberButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(l10n.cancelText),
-              ),
-            ],
+        return CyberPromptContent(
+          title: l10n.bundledFirmwareDialogTitle,
+          body: Text(
+            l10n.bundledFirmwareDialogMessage(currentVersion, newVersion),
           ),
+          actions: [
+            CyberButton(
+              variant: CyberButtonVariant.secondary,
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancelText),
+            ),
+            CyberButton(
+              variant: CyberButtonVariant.primary,
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.okText),
+            ),
+          ],
         );
       },
     );
@@ -65,30 +46,21 @@ abstract final class BundledFirmwareDialogs {
     required BuildContext context,
     required ValueListenable<int> percent,
   }) {
-    showCyberDialog<void>(
+    CyberOverlayHost.show<void>(
       context: context,
       barrierDismissible: false,
+      freezePageBackdrop: false,
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
         return PopScope(
           canPop: false,
-          child: _wrapDialog(
-            Column(
+          child: CyberPromptContent(
+            title: l10n.bundledFirmwareUpgradingTitle,
+            body: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  l10n.bundledFirmwareUpgradingTitle,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    color: CyberColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  l10n.bundledFirmwareUpgradingMessage,
-                  style: const TextStyle(color: CyberColors.textSecondary),
-                ),
+                Text(l10n.bundledFirmwareUpgradingMessage),
                 const SizedBox(height: 20),
                 ValueListenableBuilder<int>(
                   valueListenable: percent,
@@ -150,35 +122,21 @@ abstract final class BundledFirmwareDialogs {
     required String Function(AppLocalizations) title,
     required String Function(AppLocalizations) message,
   }) {
-    return showCyberDialog<void>(
+    return CyberOverlayHost.show<void>(
       context: context,
+      freezePageBackdrop: false,
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
-        return _wrapDialog(
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                title(l10n),
-                style: const TextStyle(
-                  fontSize: 20,
-                  color: CyberColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                message(l10n),
-                style: const TextStyle(color: CyberColors.textSecondary),
-              ),
-              const SizedBox(height: 20),
-              CyberButton(
-                variant: CyberButtonVariant.primary,
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(l10n.okText),
-              ),
-            ],
-          ),
+        return CyberPromptContent(
+          title: title(l10n),
+          body: Text(message(l10n)),
+          actions: [
+            CyberButton(
+              variant: CyberButtonVariant.primary,
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.okText),
+            ),
+          ],
         );
       },
     );

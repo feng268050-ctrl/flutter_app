@@ -1,0 +1,226 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
+
+void main() {
+  late GlobalKey<NavigatorState> navKey;
+  late bool suppressed;
+
+  Future<void> pumpApp(WidgetTester tester, GlobalPromptQueue queue) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navKey,
+        home: const Scaffold(body: Text('home')),
+      ),
+    );
+    await tester.pump();
+  }
+
+  Future<void> presentLabel(GlobalPromptHost host, String label) async {
+    await showGeneralDialog<void>(
+      context: host.context,
+      barrierDismissible: false,
+      barrierLabel: label,
+      pageBuilder: (ctx, a, b) {
+        return AlertDialog(
+          title: Text(label),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('ok'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  setUp(() {
+    navKey = GlobalKey<NavigatorState>();
+    suppressed = false;
+  });
+
+  testWidgets('FIFO order across two prompts', (tester) async {
+    final queue = GlobalPromptQueue(
+      navigatorKey: navKey,
+      isPumpSuppressed: () => suppressed,
+    );
+    await pumpApp(tester, queue);
+
+    final order = <String>[];
+    final first = queue.enqueue(
+      id: 'a',
+      present: (host) async {
+        order.add('show-a');
+        await presentLabel(host, 'prompt-a');
+        order.add('close-a');
+      },
+    );
+    final second = queue.enqueue(
+      id: 'b',
+      present: (host) async {
+        order.add('show-b');
+        await presentLabel(host, 'prompt-b');
+        order.add('close-b');
+      },
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('prompt-a'), findsOneWidget);
+    expect(find.text('prompt-b'), findsNothing);
+
+    await tester.tap(find.text('ok'));
+    await tester.pumpAndSettle();
+    expect(find.text('prompt-b'), findsOneWidget);
+
+    await tester.tap(find.text('ok'));
+    await tester.pumpAndSettle();
+    await Future.wait([first, second]);
+    expect(order, ['show-a', 'close-a', 'show-b', 'close-b']);
+  });
+
+  testWidgets('dedupe same id pending replaces prior waiter', (tester) async {
+    final queue = GlobalPromptQueue(
+      navigatorKey: navKey,
+      isPumpSuppressed: () => suppressed,
+    );
+    await pumpApp(tester, queue);
+
+    var presents = 0;
+    // Hold first dialog open while second id is queued behind.
+    final gate = Completer<void>();
+    unawaited(
+      queue.enqueue(
+        id: 'hold',
+        present: (host) async {
+          await presentLabel(host, 'hold');
+          await gate.future;
+        },
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    final firstBind = queue.enqueue(
+      id: 'deviceBind',
+      present: (host) async {
+        presents++;
+        await presentLabel(host, 'bind-1');
+      },
+    );
+    final secondBind = queue.enqueue(
+      id: 'deviceBind',
+      present: (host) async {
+        presents++;
+        await presentLabel(host, 'bind-2');
+      },
+    );
+
+    await tester.tap(find.text('ok'));
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('bind-2'), findsOneWidget);
+    expect(find.text('bind-1'), findsNothing);
+
+    await tester.tap(find.text('ok'));
+    await tester.pumpAndSettle();
+    await Future.wait([firstBind, secondBind]);
+    expect(presents, 1);
+  });
+
+  testWidgets('dismiss pending removes without showing', (tester) async {
+    final queue = GlobalPromptQueue(
+      navigatorKey: navKey,
+      isPumpSuppressed: () => suppressed,
+    );
+    await pumpApp(tester, queue);
+
+    final holdDone = Completer<void>();
+    unawaited(
+      queue.enqueue(
+        id: 'hold',
+        present: (host) async {
+          await presentLabel(host, 'hold');
+          holdDone.complete();
+        },
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    final bind = queue.enqueue(
+      id: 'deviceBind',
+      present: (host) async {
+        await presentLabel(host, 'bind');
+      },
+    );
+    await queue.dismiss('deviceBind');
+    await tester.tap(find.text('ok'));
+    await tester.pumpAndSettle();
+    await bind;
+    await holdDone.future;
+    expect(find.text('bind'), findsNothing);
+  });
+
+  testWidgets('dismiss showing closes and pumps next', (tester) async {
+    final queue = GlobalPromptQueue(
+      navigatorKey: navKey,
+      isPumpSuppressed: () => suppressed,
+    );
+    await pumpApp(tester, queue);
+
+    unawaited(
+      queue.enqueue(
+        id: 'a',
+        present: (host) => presentLabel(host, 'prompt-a'),
+      ),
+    );
+    unawaited(
+      queue.enqueue(
+        id: 'b',
+        present: (host) => presentLabel(host, 'prompt-b'),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('prompt-a'), findsOneWidget);
+
+    await queue.dismiss('a');
+    await tester.pumpAndSettle();
+    expect(find.text('prompt-b'), findsOneWidget);
+
+    await tester.tap(find.text('ok'));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('self-check suppress parks then notifyGateChanged pumps',
+      (tester) async {
+    suppressed = true;
+    final queue = GlobalPromptQueue(
+      navigatorKey: navKey,
+      isPumpSuppressed: () => suppressed,
+    );
+    await pumpApp(tester, queue);
+
+    unawaited(
+      queue.enqueue(
+        id: 'a',
+        present: (host) => presentLabel(host, 'prompt-a'),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('prompt-a'), findsNothing);
+
+    suppressed = false;
+    queue.notifyGateChanged();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('prompt-a'), findsOneWidget);
+
+    await tester.tap(find.text('ok'));
+    await tester.pumpAndSettle();
+  });
+}

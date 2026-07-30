@@ -952,6 +952,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceBindBody => 'Scan the QR code with the LaserCyber app to bind this device.';
 
   @override
+  String get wifiConnectTipTitle => 'Connect to Wi‑Fi';
+
+  @override
+  String get wifiConnectTipBody => 'This device is not connected to Wi‑Fi. Connect a network to use cloud features.';
+
+  @override
+  String get wifiConnectTipOpenSettings => 'Wi‑Fi Settings';
+
+  @override
   String get deviceRemoteLockTitle => 'Device Locked';
 
   @override

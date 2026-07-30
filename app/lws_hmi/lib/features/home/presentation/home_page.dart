@@ -7,7 +7,10 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coordinator.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
+import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
+import 'package:lws_hmi/features/global_prompt/wifi_connect_tip_prompt.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/bundled_firmware_bootstrap.dart';
+import 'package:lws_hmi/features/device_registration/device_registration_dialogs.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
@@ -18,6 +21,7 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_mode_entry_t
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
 const double _kDesignW = 1280;
@@ -48,7 +52,21 @@ class _HomePageState extends State<HomePage> with RouteAware {
   IpCameraUiStatus _cameraStatus = IpCameraUiStatus.connecting;
   StreamSubscription<IpCameraUiStatus>? _cameraSub;
 
+  Future<void> _openQuickMode() async {
+    await DeviceRegistrationDialogs.pushNamedIfUnlocked(
+      context,
+      AppRoutes.quickMode,
+    );
+  }
+
   Future<void> _openEngineerMode() async {
+    final ok = await DeviceRegistrationDialogs.confirmNotLocked(
+      context,
+      RemoteLockScope.of(context),
+    );
+    if (!ok || !mounted) {
+      return;
+    }
     if (!EngineerModeEntryTipGate.isSuppressedThisBoot) {
       final result = await showEngineerModeEntryTipsDialog(context);
       if (result == null || !mounted) {
@@ -59,7 +77,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
       }
     }
     if (mounted) {
-      Navigator.of(context).pushNamed(AppRoutes.engineerMode);
+      await Navigator.of(context).pushNamed(AppRoutes.engineerMode);
     }
   }
 
@@ -190,6 +208,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
           if (!mounted) {
             return;
           }
+          GlobalPromptScope.maybeOf(context)?.notifyGateChanged();
           await warn.start();
           // #region agent log
           WarnAlarmDebugLog.log(
@@ -203,6 +222,16 @@ class _HomePageState extends State<HomePage> with RouteAware {
         }
         if (!mounted) {
           return;
+        }
+        // Wi‑Fi tip enrolls async — must not delay warn flush above.
+        final prompts = GlobalPromptScope.maybeOf(context);
+        if (prompts != null) {
+          unawaited(
+            WifiConnectTipPrompt.enqueueIfNeeded(
+              queue: prompts,
+              services: services,
+            ),
+          );
         }
         // Bundled control-board firmware: after Modbus (+ warn gate) ready.
         await BundledFirmwareBootstrap.checkAndPromptIfNeeded(
@@ -356,7 +385,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       );
                       return;
                     }
-                    Navigator.of(context).pushNamed(AppRoutes.quickMode);
+                    unawaited(_openQuickMode());
                   },
                 ),
                 _ModeEntry(

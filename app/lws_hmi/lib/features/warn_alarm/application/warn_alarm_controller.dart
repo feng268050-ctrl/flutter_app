@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:cyber_alarm/cyber_alarm.dart';
 import 'package:cyber_hal/ip_camera.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/monitor/domain/active_alarm.dart';
 import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
@@ -20,6 +20,7 @@ import 'package:lws_hmi/features/warn_alarm/infrastructure/sqlite_alarm_log_repo
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_sound.dart';
 import 'package:lws_hmi/features/warn_alarm/l10n/product_alarm_l10n.dart';
 import 'package:lws_hmi/features/warn_alarm/l10n/shielding_gas_alarm_message.dart';
+import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
 import 'package:lws_hmi/features/warn_alarm/presentation/cyber_ui_warn_presentation.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
@@ -27,7 +28,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 final class WarnAlarmController {
   WarnAlarmController({
     required this.services,
-    required GlobalKey<NavigatorState> navigatorKey,
+    required GlobalPromptQueue promptQueue,
     AlarmCodeCatalog? catalog,
     AlarmLogRepository? logRepository,
     WarnGate? gate,
@@ -50,7 +51,7 @@ final class WarnAlarmController {
           );
         };
     _presentation = CyberUiWarnPresentation(
-      navigatorKey: navigatorKey,
+      promptQueue: promptQueue,
       stopWarnSound: () => _sound.stop(),
       infoStyleForCode: _infoStyleForCode,
       bodyForCode: _bodyForCode,

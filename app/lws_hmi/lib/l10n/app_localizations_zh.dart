@@ -952,6 +952,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceBindBody => '请使用 LaserCyber App 扫描二维码绑定此设备。';
 
   @override
+  String get wifiConnectTipTitle => '连接 Wi‑Fi';
+
+  @override
+  String get wifiConnectTipBody => '当前未连接 Wi‑Fi。连接网络后可使用云端功能。';
+
+  @override
+  String get wifiConnectTipOpenSettings => 'Wi‑Fi 设置';
+
+  @override
   String get deviceRemoteLockTitle => '设备已锁定';
 
   @override
@@ -2603,6 +2612,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get deviceBindBody => '請使用 LaserCyber App 掃描二維碼綁定此設備。';
+
+  @override
+  String get wifiConnectTipTitle => '連接 Wi‑Fi';
+
+  @override
+  String get wifiConnectTipBody => '當前未連接 Wi‑Fi。連接網絡後可使用雲端功能。';
+
+  @override
+  String get wifiConnectTipOpenSettings => 'Wi‑Fi 設置';
 
   @override
   String get deviceRemoteLockTitle => '設備已鎖定';

@@ -9,7 +9,11 @@ import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app/app_theme.dart';
 import 'package:lws_hmi/app/hmi_route_restore.dart';
+import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
 import 'package:lws_hmi/features/device_registration/device_registration_dialogs.dart';
+import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
+import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
+import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/platform/cloud/device_users_client.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
@@ -22,6 +26,7 @@ import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
+import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
@@ -52,6 +57,7 @@ import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
 import 'package:lws_hmi/features/system_status/presentation/gpio_led_overlay_host.dart';
 import 'package:lws_hmi/features/system_status/presentation/system_status_overlay_host.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
+import 'package:lws_hmi/features/warn_alarm/infrastructure/sqlite_alarm_log_repository.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/bundled_firmware/infrastructure/sync_firmware_command_watcher.dart';
 import 'package:lws_hmi/gpio/rgb_led_policy_driver.dart';
@@ -193,9 +199,14 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
 
+  late final GlobalPromptQueue _promptQueue = GlobalPromptQueue(
+    navigatorKey: _navKey,
+    isPumpSuppressed: () => BootSelfCheckGate.isActive,
+  );
+
   late final WarnAlarmController _warnAlarm = WarnAlarmController(
     services: _services,
-    navigatorKey: _navKey,
+    promptQueue: _promptQueue,
     dangerousOperations: _dangerousOperationsSettings,
   );
 
@@ -211,12 +222,19 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     dangerous: _dangerousOperationsSettings,
   );
 
+  final _cameraDeviceInfoCache = CameraDeviceInfoCache();
+
   late final CloudLocalRuntime _cloudLocalRuntime = CloudLocalRuntime(
     services: _services,
     cloudSettings: _cloudSettingsStore,
     lockStore: _remoteLockStore,
     processLibrary: _processLibrary,
     processVideoRepository: _processVideoRepository,
+    commonSettings: _commonSettingsStore,
+    miscSettings: _miscSettingsStore,
+    soundEffectStore: _soundEffectStore,
+    warnLogQuery: ({int? limit}) => _warnAlarm.log.query(limit: limit),
+    cameraVersionFetch: (host) => _cameraDeviceInfoCache.fetch(host),
   );
 
   bool _restoreScheduled = false;
@@ -234,6 +252,10 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     _cloudSettingsStore.warmRead();
     _remoteLockStore.warmRead();
     unawaited(_processLibrary.initialize());
+    final alarmLog = _warnAlarm.log;
+    if (alarmLog is SqliteAlarmLogRepository) {
+      _cloudLocalRuntime.attachAlarmLog(alarmLog);
+    }
     _dangerousOperationsSettings.onBypassDisabled = () {
       unawaited(
         LaserWorkGuard.evaluateAndInterruptIfNeeded(
@@ -268,15 +290,15 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   Future<void> _startCloudLocalRuntime() async {
     _cloudLocalRuntime.onAuthError = () {
-      final nav = _navKey.currentContext;
-      if (nav == null || !nav.mounted) {
-        return;
-      }
       unawaited(
-        DeviceRegistrationDialogs.showRegistration(
-          context: nav,
+        DeviceRegistrationDialogs.enqueueRegistration(
+          queue: _promptQueue,
           services: _services,
           onReconnect: () => _cloudLocalRuntime.reprobeAndReconnect(),
+          onDismissedWithoutReconnect: () =>
+              _cloudLocalRuntime.refreshUsersBindingProbe(
+            notifyAuthError: false,
+          ),
         ),
       );
     };
@@ -284,15 +306,71 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       if (!result.unbound) {
         return;
       }
-      final nav = _navKey.currentContext;
-      if (nav == null || !nav.mounted) {
-        return;
-      }
       unawaited(
-        DeviceRegistrationDialogs.showBindPrompt(
-          context: nav,
+        DeviceRegistrationDialogs.enqueueBindPrompt(
+          queue: _promptQueue,
           services: _services,
         ),
+      );
+    };
+    _cloudLocalRuntime.onClearAlerts = () async {
+      try {
+        await _warnAlarm.clearHistory();
+        return true;
+      } catch (e) {
+        debugPrint('cloud clear_alerts failed: $e');
+        return false;
+      }
+    };
+    _cloudLocalRuntime.onRemoteLockChanged = (locked) async {
+      final nav = _navKey.currentState;
+      if (nav == null) {
+        return;
+      }
+      if (locked) {
+        // Eject Quick / Engineer / Monitor back to home (lws-ui parity).
+        nav.popUntil((route) => route.isFirst);
+        final ctx = nav.context;
+        if (ctx.mounted) {
+          unawaited(
+            DeviceRegistrationDialogs.confirmNotLocked(
+              ctx,
+              _remoteLockStore,
+              queue: _promptQueue,
+            ),
+          );
+        }
+      } else {
+        unawaited(_promptQueue.dismiss(GlobalPromptIds.remoteLock));
+      }
+    };
+    _cloudLocalRuntime.onForcedDisconnect = (reason) async {
+      final nav = _navKey.currentState;
+      final ctx = nav?.context;
+      if (ctx == null || !ctx.mounted) {
+        return;
+      }
+      final l10n = AppLocalizations.of(ctx);
+      final body = reason.trim().isEmpty
+          ? 'Cloud disconnected this device.'
+          : reason.trim();
+      await CyberOverlayHost.show<void>(
+        context: ctx,
+        barrierDismissible: true,
+        freezePageBackdrop: false,
+        builder: (dialogCtx) {
+          return CyberPromptContent(
+            title: 'Disconnected',
+            body: Text(body),
+            actions: [
+              CyberButton(
+                variant: CyberButtonVariant.primary,
+                onPressed: () => Navigator.of(dialogCtx).pop(),
+                child: Text(l10n?.closeText ?? 'Close'),
+              ),
+            ],
+          );
+        },
       );
     };
     await _cloudLocalRuntime.startAfterFirstFrame();
@@ -359,6 +437,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     unawaited(_processLibrary.close());
     _processLibrary.dispose();
     unawaited(_cloudLocalRuntime.dispose());
+    _cameraDeviceInfoCache.dispose();
     if (widget.cloudSettingsStore == null) {
       _cloudSettingsStore.dispose();
     }
@@ -449,7 +528,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
             store: _remoteLockStore,
             child: ProcessLibraryScope(
           controller: _processLibrary,
-          child: WarnAlarmScope(
+          child: GlobalPromptScope(
+            queue: _promptQueue,
+            child: WarnAlarmScope(
             controller: _warnAlarm,
             child: MiscSettingsScope(
               store: _miscSettingsStore,
@@ -514,6 +595,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                         settings.arguments ==
                                             HmiRouteRestore
                                                 .settingsKeyboard,
+                                    cameraDeviceInfoCache:
+                                        _cameraDeviceInfoCache,
                                   );
                                 case AppRoutes.monitor:
                                   page = const MonitorPage();
@@ -523,23 +606,17 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                       ? ProcessVideoDetailPage(args: videoArgs)
                                       : const MonitorPage();
                                 case AppRoutes.quickMode:
-                                  page = _LockedModeGate(
-                                    lockStore: _remoteLockStore,
-                                    child: const QuickModePage(),
-                                  );
+                                  page = const QuickModePage();
                                 case AppRoutes.engineerMode:
                                   final engineerArgs = settings.arguments;
-                                  page = _LockedModeGate(
-                                    lockStore: _remoteLockStore,
-                                    child: engineerArgs is EngineerModeRouteArgs
-                                        ? EngineerModePage(
-                                            initialProcessType:
-                                                engineerArgs.processType,
-                                            initialPresetUuid:
-                                                engineerArgs.presetUuid,
-                                          )
-                                        : const EngineerModePage(),
-                                  );
+                                  page = engineerArgs is EngineerModeRouteArgs
+                                      ? EngineerModePage(
+                                          initialProcessType:
+                                              engineerArgs.processType,
+                                          initialPresetUuid:
+                                              engineerArgs.presetUuid,
+                                        )
+                                      : const EngineerModePage();
                                 case AppRoutes.demo:
                                   page = _demoPage();
                                 case AppRoutes.home:
@@ -565,42 +642,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       ),
       ),
       ),
+      ),
     );
   }
-}
-
-/// Blocks Quick/Engineer when remote lock is active.
-final class _LockedModeGate extends StatefulWidget {
-  const _LockedModeGate({
-    required this.lockStore,
-    required this.child,
-  });
-
-  final DeviceRemoteLockStore lockStore;
-  final Widget child;
-
-  @override
-  State<_LockedModeGate> createState() => _LockedModeGateState();
-}
-
-final class _LockedModeGateState extends State<_LockedModeGate> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) {
-        return;
-      }
-      final ok = await DeviceRegistrationDialogs.confirmNotLocked(
-        context,
-        widget.lockStore,
-      );
-      if (!ok && mounted) {
-        Navigator.of(context).maybePop();
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
 }

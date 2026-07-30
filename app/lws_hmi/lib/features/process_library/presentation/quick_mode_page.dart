@@ -4,6 +4,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/device_registration/device_registration_dialogs.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
@@ -47,6 +48,7 @@ import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
+import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 
 /// Quick Mode: process wheel + material/gear/dimension selection (U3).
 final class QuickModePage extends StatefulWidget {
@@ -647,6 +649,13 @@ final class _QuickModePageState extends State<QuickModePage> {
       _showControlMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
       return;
     }
+    final unlocked = await DeviceRegistrationDialogs.confirmNotLocked(
+      context,
+      RemoteLockScope.of(context),
+    );
+    if (!unlocked || !mounted) {
+      return;
+    }
     if (!EngineerModeEntryTipGate.isSuppressedThisBoot) {
       final result = await showEngineerModeEntryTipsDialog(context);
       if (result == null || !mounted) {
@@ -659,7 +668,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     if (!mounted) {
       return;
     }
-    Navigator.of(context).pushNamed(
+    await Navigator.of(context).pushNamed(
       AppRoutes.engineerMode,
       arguments: EngineerModeRouteArgs(
         processType: _processType,

@@ -8,13 +8,18 @@ import 'package:lws_hmi/features/bundled_firmware/domain/bundled_firmware_versio
 import 'package:lws_hmi/features/bundled_firmware/domain/firmware_upgrade_constants.dart';
 import 'package:lws_hmi/features/bundled_firmware/infrastructure/bundled_firmware_assets.dart';
 import 'package:lws_hmi/features/bundled_firmware/presentation/bundled_firmware_dialogs.dart';
+import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
+import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
+import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
 
 /// Home-only: detect App-bundled control-board firmware and prompt before Modbus flash.
 abstract final class BundledFirmwareBootstrap {
-  static bool _dialogVisible = false;
   static bool _sessionActive = false;
 
   /// Evaluate + optional confirm/upgrade. Safe to call repeatedly from Home.
+  ///
+  /// Enqueues on [GlobalPromptQueue] so confirm/progress cannot stack over
+  /// other prompts.
   static Future<void> checkAndPromptIfNeeded(
     BuildContext context,
     AppServices services,
@@ -22,12 +27,15 @@ abstract final class BundledFirmwareBootstrap {
     if (!context.mounted) {
       return;
     }
-    if (_dialogVisible ||
-        _sessionActive ||
-        FirmwareUpgradeCoordinator.isBusy) {
+    if (_sessionActive || FirmwareUpgradeCoordinator.isBusy) {
       return;
     }
     if (!services.modbusLiveAllowed) {
+      return;
+    }
+
+    final queue = GlobalPromptScope.maybeOf(context);
+    if (queue == null) {
       return;
     }
 
@@ -36,24 +44,31 @@ abstract final class BundledFirmwareBootstrap {
       return;
     }
 
-    _dialogVisible = true;
-    try {
-      final confirmed = await BundledFirmwareDialogs.showConfirm(
-        context: context,
-        currentVersion: '${offer.deviceSw}',
-        newVersion: '${offer.bundledSw}',
-      );
-      if (!confirmed || !context.mounted) {
-        return;
-      }
-      await _runUpgrade(
-        context: context,
-        services: services,
-        offer: offer,
-      );
-    } finally {
-      _dialogVisible = false;
-    }
+    await queue.enqueue(
+      id: GlobalPromptIds.bundledFirmware,
+      present: (host) async {
+        if (_sessionActive || FirmwareUpgradeCoordinator.isBusy) {
+          return;
+        }
+        final ctx = host.context;
+        if (!ctx.mounted) {
+          return;
+        }
+        final confirmed = await BundledFirmwareDialogs.showConfirm(
+          context: ctx,
+          currentVersion: '${offer.deviceSw}',
+          newVersion: '${offer.bundledSw}',
+        );
+        if (!confirmed || !ctx.mounted) {
+          return;
+        }
+        await _runUpgrade(
+          context: ctx,
+          services: services,
+          offer: offer,
+        );
+      },
+    );
   }
 
   /// Dev/ops helper: start bundled control-board firmware upgrade from a
@@ -69,9 +84,7 @@ abstract final class BundledFirmwareBootstrap {
     if (!services.modbusLiveAllowed) {
       return;
     }
-    if (_dialogVisible ||
-        _sessionActive ||
-        FirmwareUpgradeCoordinator.isBusy) {
+    if (_sessionActive || FirmwareUpgradeCoordinator.isBusy) {
       return;
     }
     if (!await firmwareFile.exists()) {

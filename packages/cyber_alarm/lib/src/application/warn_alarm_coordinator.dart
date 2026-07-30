@@ -30,7 +30,10 @@ void _warnDbg(String hypothesisId, String location, String message,
 }
 // #endregion
 
-/// Arms episodes from [AlarmSignalSource], queues presentation, writes history.
+/// Arms episodes from [AlarmSignalSource], requests presentation, writes history.
+///
+/// Modal FIFO is owned by the App global prompt queue via [presentation].
+/// This coordinator only keeps a non-UI [_gateParked] set while [gate] suppresses.
 final class WarnAlarmCoordinator {
   WarnAlarmCoordinator({
     required this.catalog,
@@ -55,14 +58,20 @@ final class WarnAlarmCoordinator {
   final DateTime Function()? now;
 
   final Map<String, WarnEpisode> _episodes = {};
-  final Queue<String> _showQueue = Queue<String>();
+
+  /// Codes that need show after [gate] opens (non-UI park).
+  final LinkedHashSet<String> _gateParked = LinkedHashSet<String>();
+
+  /// Codes with an in-flight or chained [presentation.show].
+  final Set<String> _showRequested = <String>{};
+
   String? _showingCode;
   StreamSubscription<AlarmSignalEvent>? _sub;
   bool _started = false;
 
-  /// Serializes [_pumpQueue] so dialog close + rising edges cannot drain the
-  /// queue concurrently (which dropped follow-up codes like C002).
-  Future<void> _pumpTail = Future<void>.value();
+  /// Serializes [presentation.show] awaits (global queue still owns modal FIFO
+  /// across warn + guidance; this only prevents overlapping show calls).
+  Future<void> _presentChain = Future<void>.value();
 
   Map<String, WarnEpisode> get episodes =>
       Map<String, WarnEpisode>.unmodifiable(_episodes);
@@ -97,11 +106,10 @@ final class WarnAlarmCoordinator {
     } else {
       await presentation.dismiss(code);
       ep.dialogOpen = false;
+      _showRequested.remove(code);
       if (_showingCode == code) {
         _showingCode = null;
       }
-      // Do not pump here — [onPresentationClosed] / in-flight drain continues
-      // the queue. Concurrent pump raced and skipped follow-up dialogs.
     }
   }
 
@@ -112,19 +120,15 @@ final class WarnAlarmCoordinator {
     if (ep == null || !ep.faultActive) {
       return false;
     }
-    if (_showingCode == code || ep.dialogOpen) {
+    if (_showingCode == code || ep.dialogOpen || _showRequested.contains(code)) {
       return true;
     }
     ep.phase = WarnEpisodePhase.faultActive;
-    _enqueueShow(code);
-    await _pumpQueue();
+    await _requestShow(code);
     return true;
   }
 
   /// Staging/debug: arm a demo episode ([WarnEpisodePolicy.demoAlarm]).
-  ///
-  /// Mirrors lws-ui `WarnEpisodeController.armDemoEpisode`. Unknown catalog
-  /// codes are rejected (no soft-fail placeholder).
   Future<void> armDemoEpisode(String code) async {
     final trimmed = code.trim();
     if (trimmed.isEmpty || !catalog.contains(trimmed)) {
@@ -141,10 +145,8 @@ final class WarnAlarmCoordinator {
   }
 
   /// Staging/debug: clear episode restrictions without dismissing a visible warn.
-  ///
-  /// Cancels queued (not yet shown) warns. Mirrors lws-ui `clearAllForDebug`.
   Future<void> clearAllForDebug() async {
-    _showQueue.clear();
+    _gateParked.clear();
     _episodes.clear();
     // Keep [_showingCode] / open overlay; Confirm still closes UI via presentation.
   }
@@ -168,14 +170,12 @@ final class WarnAlarmCoordinator {
     if (code.isEmpty) {
       return;
     }
-    // #region agent log
     _warnDbg('C', 'warn_alarm_coordinator.dart:_onRising', 'rising', {
       'code': code,
       'gateSuppressed': gate.isPresentationSuppressed,
       'existing': _episodes[code]?.faultActive == true,
       'demo': policyOverride?.demoSimulated == true,
     });
-    // #endregion
     final entry = catalog.resolve(code, labelHint: event.labelHint);
     final policy = policyOverride ??
         policyForCode?.call(code) ??
@@ -183,12 +183,11 @@ final class WarnAlarmCoordinator {
 
     final existing = _episodes[code];
     if (existing != null && existing.faultActive) {
-      // Already active — refresh phase for re-arm semantics.
       existing.phase = WarnEpisodePhase.faultActive;
-      // If a prior rising was gated (no show yet), retry enqueue.
-      if (!existing.dialogOpen && _showingCode != code) {
-        _enqueueShow(code);
-        await _pumpQueue();
+      if (!existing.dialogOpen &&
+          _showingCode != code &&
+          !_showRequested.contains(code)) {
+        await _requestShow(code);
       }
       return;
     }
@@ -206,16 +205,13 @@ final class WarnAlarmCoordinator {
         ),
       );
     } catch (e) {
-      // History is best-effort; presentation must still proceed.
       _warnDbg('C', 'warn_alarm_coordinator.dart:_onRising', 'insertRising failed', {
         'code': code,
         'error': e.toString(),
       });
     }
 
-    // Always enqueue; [_pumpQueue] parks while [gate] suppresses presentation.
-    _enqueueShow(code);
-    await _pumpQueue();
+    await _requestShow(code);
   }
 
   Future<void> _onFalling(AlarmSignalEvent event) async {
@@ -227,7 +223,6 @@ final class WarnAlarmCoordinator {
     ep.faultActive = false;
     if (ep.policy.resistExternalAutoClose &&
         ep.phase != WarnEpisodePhase.operatorAcked) {
-      // Keep episode until operator ack.
       return;
     }
     await _teardown(code);
@@ -240,91 +235,100 @@ final class WarnAlarmCoordinator {
       return;
     }
     if (gate.isPresentationSuppressed) {
+      _gateParked.add(code);
       return;
     }
     final entry = catalog.resolve(code, labelHint: event.labelHint);
-    if (ep.dialogOpen || _showingCode == code) {
+    if (ep.dialogOpen || _showingCode == code || _showRequested.contains(code)) {
       await presentation.update(ep, entry);
       return;
     }
     if (ep.phase == WarnEpisodePhase.operatorAcked) {
       ep.phase = WarnEpisodePhase.faultActive;
     }
-    _enqueueShow(code);
-    await _pumpQueue();
+    await _requestShow(code);
   }
 
-  void _enqueueShow(String code) {
-    if (_showQueue.contains(code) || _showingCode == code) {
-      return;
-    }
-    _showQueue.addLast(code);
-  }
-
-  /// Drains the show queue. Calls are serialized on [_pumpTail].
-  Future<void> _pumpQueue() {
-    _pumpTail = _pumpTail.then((_) => _drainShowQueue()).catchError((Object e) {
-      _warnDbg('D', 'warn_alarm_coordinator.dart:_pumpQueue', 'pump chain error', {
-        'error': e.toString(),
-      });
-    });
-    return _pumpTail;
-  }
-
-  Future<void> _drainShowQueue() async {
-    while (_showQueue.isNotEmpty) {
-      if (_showingCode != null) {
-        // In-flight dialog owns the drain; a chained pump will run after.
-        return;
-      }
-      final code = _showQueue.removeFirst();
-      final ep = _episodes[code];
-      if (ep == null || !ep.faultActive) {
-        continue;
-      }
-      // After Confirm, stay silent until reminder / new rising re-arms phase.
-      // (Demo used to re-show here and spam when flushPresentation ran.)
-      if (ep.phase == WarnEpisodePhase.operatorAcked) {
-        continue;
-      }
-      if (gate.isPresentationSuppressed) {
-        // #region agent log
-        _warnDbg('C', 'warn_alarm_coordinator.dart:_pumpQueue', 'parked by gate', {
-          'code': code,
-        });
-        // #endregion
-        _showQueue.addFirst(code);
-        return;
-      }
-      final entry = catalog.resolve(code);
-      // #region agent log
-      _warnDbg('D', 'warn_alarm_coordinator.dart:_pumpQueue', 'calling presentation.show', {
+  Future<void> _requestShow(String code) async {
+    if (gate.isPresentationSuppressed) {
+      _warnDbg('C', 'warn_alarm_coordinator.dart:_requestShow', 'parked by gate', {
         'code': code,
       });
-      // #endregion
-      _showingCode = code;
-      ep.dialogOpen = true;
+      _gateParked.add(code);
+      return;
+    }
+    _gateParked.remove(code);
+
+    final ep = _episodes[code];
+    if (ep == null || !ep.faultActive) {
+      return;
+    }
+    if (ep.phase == WarnEpisodePhase.operatorAcked) {
+      return;
+    }
+    if (_showRequested.contains(code) ||
+        ep.dialogOpen ||
+        _showingCode == code) {
+      return;
+    }
+
+    _showRequested.add(code);
+    final done = Completer<void>();
+    _presentChain = _presentChain.then((_) async {
       try {
-        await presentation.show(ep, entry);
-      } catch (e) {
-        // #region agent log
-        _warnDbg('D', 'warn_alarm_coordinator.dart:_pumpQueue', 'presentation.show threw', {
-          'code': code,
-          'error': e.toString(),
-        });
-        // #endregion
-        ep.dialogOpen = false;
-        if (_showingCode == code) {
-          _showingCode = null;
-        }
-        _enqueueShow(code);
-        // Brief backoff then chained retry via caller/flush; avoid tight loop.
-        return;
+        await _presentOne(code);
       } finally {
-        if (_showingCode == code) {
-          _showingCode = null;
+        _showRequested.remove(code);
+        if (!done.isCompleted) {
+          done.complete();
         }
-        ep.dialogOpen = false;
+      }
+    }).catchError((Object e) {
+      _warnDbg('D', 'warn_alarm_coordinator.dart:_requestShow', 'present chain error', {
+        'code': code,
+        'error': e.toString(),
+      });
+      _showRequested.remove(code);
+      if (!done.isCompleted) {
+        done.complete();
+      }
+    });
+    await done.future;
+  }
+
+  Future<void> _presentOne(String code) async {
+    final ep = _episodes[code];
+    if (ep == null || !ep.faultActive) {
+      return;
+    }
+    if (ep.phase == WarnEpisodePhase.operatorAcked) {
+      return;
+    }
+    if (gate.isPresentationSuppressed) {
+      _gateParked.add(code);
+      return;
+    }
+
+    final entry = catalog.resolve(code);
+    _warnDbg('D', 'warn_alarm_coordinator.dart:_presentOne', 'calling presentation.show', {
+      'code': code,
+    });
+    _showingCode = code;
+    ep.dialogOpen = true;
+    try {
+      await presentation.show(ep, entry);
+    } catch (e) {
+      _warnDbg('D', 'warn_alarm_coordinator.dart:_presentOne', 'presentation.show threw', {
+        'code': code,
+        'error': e.toString(),
+      });
+      if (ep.faultActive && ep.phase != WarnEpisodePhase.operatorAcked) {
+        _gateParked.add(code);
+      }
+    } finally {
+      ep.dialogOpen = false;
+      if (_showingCode == code) {
+        _showingCode = null;
       }
     }
   }
@@ -335,15 +339,13 @@ final class WarnAlarmCoordinator {
     if (ep != null) {
       ep.dialogOpen = false;
     }
+    _showRequested.remove(code);
     if (_showingCode == code) {
       _showingCode = null;
     }
-    await _pumpQueue();
   }
 
   /// Call when [WarnGate] becomes open (e.g. boot self-check finished).
-  ///
-  /// Re-queues fault-active episodes that never presented while gated, then pumps.
   Future<void> flushPresentation() async {
     for (final ep in _episodes.values) {
       if (!ep.faultActive) {
@@ -352,23 +354,30 @@ final class WarnAlarmCoordinator {
       if (ep.phase == WarnEpisodePhase.operatorAcked) {
         continue;
       }
-      if (ep.dialogOpen || _showingCode == ep.code) {
+      if (ep.dialogOpen ||
+          _showingCode == ep.code ||
+          _showRequested.contains(ep.code)) {
         continue;
       }
-      _enqueueShow(ep.code);
+      _gateParked.add(ep.code);
     }
-    await _pumpQueue();
+    final parked = List<String>.from(_gateParked);
+    _gateParked.clear();
+    for (final code in parked) {
+      // Fire without awaiting each — global prompt queue serializes modals.
+      unawaited(_requestShow(code));
+    }
   }
 
   Future<void> _teardown(String code) async {
-    _showQueue.removeWhere((c) => c == code);
+    _gateParked.remove(code);
     final ep = _episodes.remove(code);
     if (ep != null) {
       await presentation.dismiss(code);
     }
+    _showRequested.remove(code);
     if (_showingCode == code) {
       _showingCode = null;
     }
-    await _pumpQueue();
   }
 }

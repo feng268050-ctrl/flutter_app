@@ -6,6 +6,7 @@ import 'package:cyber_hal/stub.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
@@ -47,7 +48,9 @@ void main() {
     dangerous = DangerousOperationsSettings(store);
     warn = WarnAlarmController(
       services: services,
-      navigatorKey: GlobalKey<NavigatorState>(),
+      promptQueue: GlobalPromptQueue(
+        navigatorKey: GlobalKey<NavigatorState>(),
+      ),
       dangerousOperations: dangerous,
     );
     applied = <(LedColor, IndicatorMode)>[];

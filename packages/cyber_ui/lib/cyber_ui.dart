@@ -12,6 +12,7 @@ export 'src/clock/cyber_clock_appearance.dart';
 export 'src/icons/cyber_bluetooth_status_icon.dart';
 export 'src/icons/cyber_camera_link_status.dart';
 export 'src/icons/cyber_camera_status_icon.dart';
+export 'src/icons/cyber_cloud_link_status.dart';
 export 'src/icons/cyber_cloud_status_icon.dart';
 export 'src/icons/cyber_connectivity_icon_phase.dart';
 export 'src/icons/cyber_status_icon_spin.dart';

@@ -1,30 +1,55 @@
+import 'package:cyber_ui/src/icons/cyber_cloud_link_status.dart';
+import 'package:cyber_ui/src/icons/cyber_status_icon_spin.dart';
 import 'package:flutter/material.dart';
 
-/// Status-bar cloud link glyph (device ↔ cloud WebSocket).
+/// Status-bar cloud link glyph (API origin probe → device WebSocket).
 ///
-/// Shown ahead of Wi‑Fi when the LAN is up: dim while waiting for WS,
-/// lit when the device WebSocket is connected.
+/// Shown ahead of Wi‑Fi when the LAN is up. Mirrors [CyberCameraStatusIcon]
+/// corner marks: spinner while linking, cancel when failed, lit when up.
 class CyberCloudStatusIcon extends StatelessWidget {
   const CyberCloudStatusIcon({
     super.key,
-    required this.linked,
+    required this.status,
     this.size = 28,
   });
 
-  /// True when the device cloud WebSocket is connected.
-  final bool linked;
+  final CyberCloudLinkStatus status;
   final double size;
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = switch (status) {
+      CyberCloudLinkStatus.connected => Colors.white,
+      CyberCloudLinkStatus.connecting => Colors.white70,
+      CyberCloudLinkStatus.failed => Colors.white54,
+    };
+
     return SizedBox(
       key: const ValueKey('cyber-status-cloud'),
       width: size,
       height: size,
-      child: Icon(
-        Icons.cloud,
-        size: size * 0.88,
-        color: linked ? Colors.white : Colors.white54,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Icon(Icons.cloud, size: size * 0.88, color: baseColor),
+          if (status == CyberCloudLinkStatus.connecting)
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: CyberStatusIconSpin(size: size * 0.48),
+            ),
+          if (status == CyberCloudLinkStatus.failed)
+            Positioned(
+              right: -3,
+              bottom: -3,
+              child: Icon(
+                Icons.cancel,
+                size: size * 0.48,
+                color: const Color(0xFFE53935),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -51,6 +51,8 @@ final class DeviceWsConnectionManager {
   Stream<DeviceWsState> get stateChanges => _stateCtrl.stream;
   bool get forcedDisconnectSuppressed => _forcedDisconnect;
   bool get authErrorLatched => _authErrorLatch;
+  /// True while a backoff reconnect timer is armed after a non-auth drop.
+  bool get reconnectScheduled => _reconnectTimer != null;
   Uri? get url => _url;
 
   /// Open [wsUrl]. When [resumeAfterAuth] is true, clear the INVALID_SN /
@@ -262,11 +264,12 @@ final class DeviceWsConnectionManager {
       onAuthError?.call();
       return;
     }
-    _setState(DeviceWsState.disconnected);
-    if (_forcedDisconnect || _authErrorLatch || _url == null) {
-      return;
+    // Arm backoff before publishing disconnected so listeners see
+    // [reconnectScheduled] in the same state transition.
+    if (!_forcedDisconnect && !_authErrorLatch && _url != null) {
+      _scheduleReconnect();
     }
-    _scheduleReconnect();
+    _setState(DeviceWsState.disconnected);
   }
 
   void _scheduleReconnect() {
@@ -274,6 +277,7 @@ final class DeviceWsConnectionManager {
     _attempt++;
     final seconds = (_attempt * 2).clamp(2, 60);
     _reconnectTimer = Timer(Duration(seconds: seconds), () {
+      _reconnectTimer = null;
       unawaited(_open());
     });
   }

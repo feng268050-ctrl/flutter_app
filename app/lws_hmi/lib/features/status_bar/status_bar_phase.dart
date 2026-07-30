@@ -2,6 +2,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
+import 'package:lws_hmi/platform/cloud/cloud_link_ui_status.dart';
 import 'package:lws_hmi/platform/wifi/wifi_models.dart';
 
 /// Maps HAL Wi‑Fi radio + connection into a CyberUI status-bar phase.
@@ -50,10 +51,19 @@ CyberCameraLinkStatus mapCameraLinkStatus(IpCameraUiPhase phase) {
   };
 }
 
+/// Maps product cloud UI phase (origin probe + WS) into CyberUI cloud status.
+CyberCloudLinkStatus mapCloudLinkStatus(CloudLinkUiPhase phase) {
+  return switch (phase) {
+    CloudLinkUiPhase.connecting => CyberCloudLinkStatus.connecting,
+    CloudLinkUiPhase.connected => CyberCloudLinkStatus.connected,
+    CloudLinkUiPhase.failed => CyberCloudLinkStatus.failed,
+  };
+}
+
 /// This product's status-icon composition: cloud · Wi‑Fi · BT · camera · (lock).
 ///
-/// Cloud appears only while Wi‑Fi is linked: gray until the device WS is up,
-/// white while WS is connected (dims again on WS drop).
+/// Cloud appears only while Wi‑Fi is linked. Phase covers API origin probe and
+/// device WebSocket (spinner while linking, cancel on failure, lit when up).
 List<Widget> buildProductStatusIconItems({
   required CyberConnectivityIconPhase wifiPhase,
   required CyberConnectivityIconPhase bluetoothPhase,
@@ -61,14 +71,14 @@ List<Widget> buildProductStatusIconItems({
   int? wifiSignalDbm,
   double iconSize = 28,
   bool remoteLocked = false,
-  bool cloudConnected = false,
+  CyberCloudLinkStatus cloudStatus = CyberCloudLinkStatus.connecting,
 }) {
   final wifiLinked = wifiPhase == CyberConnectivityIconPhase.connected;
   return [
     if (wifiLinked)
       CyberCloudStatusIcon(
         key: const ValueKey('home-status-cloud'),
-        linked: cloudConnected,
+        status: cloudStatus,
         size: iconSize,
       ),
     if (wifiPhase != CyberConnectivityIconPhase.hidden)

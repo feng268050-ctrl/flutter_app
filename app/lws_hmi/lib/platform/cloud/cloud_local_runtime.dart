@@ -21,6 +21,7 @@ import 'package:lws_hmi/features/settings/application/common_settings_store.dart
 import 'package:lws_hmi/features/settings/application/misc_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/platform/cloud/cloud_http_client.dart';
+import 'package:lws_hmi/platform/cloud/cloud_link_ui_status.dart';
 import 'package:lws_hmi/platform/cloud/cloud_settings_store.dart';
 import 'package:lws_hmi/platform/cloud/device_ai_report_client.dart';
 import 'package:lws_hmi/platform/cloud/device_api_origin_config.dart';
@@ -72,6 +73,7 @@ final class CloudLocalRuntime {
       cloudHttp: cloudHttp,
       onAuthError: _notifyRegistrationNeeded,
       onStateChanged: (s) {
+        _publishLinkStatus();
         if (s == DeviceWsState.connected) {
           _clearRegistrationPromptLatch();
           unawaited(_onWsConnected());
@@ -167,6 +169,13 @@ final class CloudLocalRuntime {
   /// Short retries measured from Wi‑Fi-up / probe-miss (not from first frame).
   final List<Timer> _postWifiLinkTimers = <Timer>[];
   Timer? _linkFollowUpTimer;
+  CloudLinkUiStatus _linkStatus = CloudLinkUiStatus.connecting;
+  final StreamController<CloudLinkUiStatus> _linkStatusCtrl =
+      StreamController<CloudLinkUiStatus>.broadcast();
+
+  /// Home status-bar cloud phase (origin probe + WS, not WS-only).
+  CloudLinkUiStatus get currentLinkStatus => _linkStatus;
+  Stream<CloudLinkUiStatus> get linkStatusChanges => _linkStatusCtrl.stream;
 
   void _wireLocalHttpHandlers() {
     localHttp.cameraAiAvailable = () async => false;
@@ -402,6 +411,7 @@ final class CloudLocalRuntime {
       return;
     }
     _originPinned = true;
+    _publishLinkStatus();
     final product = await services.ensureProductInfo();
     final sn = product.sn.trim();
     if (sn.isEmpty) {
@@ -420,6 +430,7 @@ final class CloudLocalRuntime {
     await ws.disconnect();
     prober.clearPin();
     _originPinned = false;
+    _publishLinkStatus();
     _clearRegistrationPromptLatch();
     final pin = await prober.probe(cloudSettings.environmentTier);
     if (pin == null) {
@@ -449,6 +460,7 @@ final class CloudLocalRuntime {
         resumeAfterAuth: true,
       );
     }
+    _publishLinkStatus();
   }
 
   Future<void> _ensureCloudLinked({required String reason}) async {
@@ -459,10 +471,12 @@ final class CloudLocalRuntime {
     if (_originPinned || _linkInFlight) {
       if (!_originPinned) {
         _linkFollowUpPending = true;
+        _publishLinkStatus();
       }
       return;
     }
     _linkInFlight = true;
+    _publishLinkStatus();
     try {
       debugPrint('cloud-runtime: ensure link ($reason)');
       await _ensureClockForCloud(reason: reason);
@@ -484,6 +498,7 @@ final class CloudLocalRuntime {
       _cancelPostWifiLinkRetries();
       _linkFollowUpTimer?.cancel();
       _linkFollowUpTimer = null;
+      _publishLinkStatus();
       debugPrint('cloud-runtime: pinned $pin');
       final product = await services.ensureProductInfo();
       final sn = product.sn.trim();
@@ -526,6 +541,7 @@ final class CloudLocalRuntime {
       }
     } finally {
       _linkInFlight = false;
+      _publishLinkStatus();
       _scheduleLinkFollowUpIfNeeded();
     }
   }
@@ -537,24 +553,29 @@ final class CloudLocalRuntime {
     if (services.wifi.currentConnection.phase !=
         WifiConnectionPhase.connected) {
       _linkFollowUpPending = false;
+      _publishLinkStatus();
       return;
     }
     _linkFollowUpPending = false;
     _linkFollowUpTimer?.cancel();
     // Brief gap so DNS/default-route can settle after a failed probe.
     _linkFollowUpTimer = Timer(const Duration(milliseconds: 400), () {
+      _linkFollowUpTimer = null;
       if (_originPinned || _linkInFlight) {
         if (!_originPinned) {
           _linkFollowUpPending = true;
         }
+        _publishLinkStatus();
         return;
       }
       if (services.wifi.currentConnection.phase !=
           WifiConnectionPhase.connected) {
+        _publishLinkStatus();
         return;
       }
       unawaited(_ensureCloudLinked(reason: 'wifi-followup'));
     });
+    _publishLinkStatus();
   }
 
   /// HTTPS / WSS need a sane wall clock (RTC often boots in 2024). Sync before
@@ -584,12 +605,14 @@ final class CloudLocalRuntime {
         _armPostWifiLinkRetries(why: 'wifi-connected');
         unawaited(_ensureCloudLinked(reason: 'wifi-connected'));
       }
+      _publishLinkStatus();
     });
     if (services.wifi.currentConnection.phase ==
         WifiConnectionPhase.connected) {
       _armPostWifiLinkRetries(why: 'wifi-already');
       unawaited(_ensureCloudLinked(reason: 'wifi-already'));
     }
+    _publishLinkStatus();
     // No boot-clock retries: probing without Wi‑Fi only burns DNS failures.
     // Retries are armed from Wi‑Fi-up / probe-miss via [_armPostWifiLinkRetries].
   }
@@ -600,6 +623,7 @@ final class CloudLocalRuntime {
     if (sub != null) {
       unawaited(sub.cancel());
     }
+    _publishLinkStatus();
   }
 
   /// Event-driven retries after Wi‑Fi is up (or after a probe miss while up).
@@ -629,6 +653,7 @@ final class CloudLocalRuntime {
         }),
       );
     }
+    _publishLinkStatus();
   }
 
   void _cancelPostWifiLinkRetries() {
@@ -636,6 +661,7 @@ final class CloudLocalRuntime {
       t.cancel();
     }
     _postWifiLinkTimers.clear();
+    _publishLinkStatus();
   }
 
   void _armMdnsWifiWatch() {
@@ -706,6 +732,53 @@ final class CloudLocalRuntime {
     _registrationPromptNotified = false;
   }
 
+  CloudLinkUiStatus _computeLinkStatus() {
+    switch (ws.state) {
+      case DeviceWsState.connected:
+        return CloudLinkUiStatus.connected;
+      case DeviceWsState.connecting:
+        return CloudLinkUiStatus.connecting;
+      case DeviceWsState.offlineAuthError:
+        return CloudLinkUiStatus.failed;
+      case DeviceWsState.disconnected:
+        break;
+    }
+    if (ws.forcedDisconnectSuppressed || ws.authErrorLatched) {
+      return CloudLinkUiStatus.failed;
+    }
+    // Origin probe / clock sync / users side-path still in flight.
+    if (_linkInFlight) {
+      return CloudLinkUiStatus.connecting;
+    }
+    if (!_originPinned) {
+      // Seeking Worker origin: follow-up or post-wifi retries still armed.
+      // Do not treat [_wifiWaitSub] alone as connecting — after retries
+      // exhaust the icon should show failed until the next attempt starts.
+      if (_linkFollowUpPending ||
+          _linkFollowUpTimer != null ||
+          _postWifiLinkTimers.any((t) => t.isActive)) {
+        return CloudLinkUiStatus.connecting;
+      }
+      return CloudLinkUiStatus.failed;
+    }
+    // Origin pinned; WS idle — reconnect backoff or waiting for wifi resume.
+    if (ws.reconnectScheduled) {
+      return CloudLinkUiStatus.connecting;
+    }
+    return CloudLinkUiStatus.failed;
+  }
+
+  void _publishLinkStatus() {
+    final next = _computeLinkStatus();
+    if (next == _linkStatus) {
+      return;
+    }
+    _linkStatus = next;
+    if (!_linkStatusCtrl.isClosed) {
+      _linkStatusCtrl.add(next);
+    }
+  }
+
   Future<void> dispose() async {
     _cancelCloudLinkRetries();
     _cancelPostWifiLinkRetries();
@@ -720,6 +793,7 @@ final class CloudLocalRuntime {
     monitorAlertsHub.resetForTest();
     await localHttp.stop();
     await ws.dispose();
+    await _linkStatusCtrl.close();
   }
 
   Future<void> _onWsConnected() async {

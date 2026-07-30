@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/status_bar/status_bar_phase.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
+import 'package:lws_hmi/platform/cloud/cloud_link_ui_status.dart';
 import 'package:lws_hmi/platform/wifi/wifi_models.dart';
 
 void main() {
@@ -78,6 +79,23 @@ void main() {
     });
   });
 
+  group('mapCloudLinkStatus', () {
+    test('maps connecting / connected / failed', () {
+      expect(
+        mapCloudLinkStatus(CloudLinkUiPhase.connecting),
+        CyberCloudLinkStatus.connecting,
+      );
+      expect(
+        mapCloudLinkStatus(CloudLinkUiPhase.connected),
+        CyberCloudLinkStatus.connected,
+      );
+      expect(
+        mapCloudLinkStatus(CloudLinkUiPhase.failed),
+        CyberCloudLinkStatus.failed,
+      );
+    });
+  });
+
   group('buildProductStatusIconItems cloud slot', () {
     test('cloud ahead of wifi only when wifi linked', () {
       final idle = buildProductStatusIconItems(
@@ -90,25 +108,39 @@ void main() {
         isFalse,
       );
 
-      final linked = buildProductStatusIconItems(
+      final linking = buildProductStatusIconItems(
         wifiPhase: CyberConnectivityIconPhase.connected,
         bluetoothPhase: CyberConnectivityIconPhase.hidden,
         cameraStatus: CyberCameraLinkStatus.connecting,
-        cloudConnected: false,
+        cloudStatus: CyberCloudLinkStatus.connecting,
       );
-      expect(linked.first.key, const ValueKey('home-status-cloud'));
+      expect(linking.first.key, const ValueKey('home-status-cloud'));
       expect(
-        (linked.first as CyberCloudStatusIcon).linked,
-        isFalse,
+        (linking.first as CyberCloudStatusIcon).status,
+        CyberCloudLinkStatus.connecting,
       );
 
       final online = buildProductStatusIconItems(
         wifiPhase: CyberConnectivityIconPhase.connected,
         bluetoothPhase: CyberConnectivityIconPhase.hidden,
         cameraStatus: CyberCameraLinkStatus.connecting,
-        cloudConnected: true,
+        cloudStatus: CyberCloudLinkStatus.connected,
       );
-      expect((online.first as CyberCloudStatusIcon).linked, isTrue);
+      expect(
+        (online.first as CyberCloudStatusIcon).status,
+        CyberCloudLinkStatus.connected,
+      );
+
+      final failed = buildProductStatusIconItems(
+        wifiPhase: CyberConnectivityIconPhase.connected,
+        bluetoothPhase: CyberConnectivityIconPhase.hidden,
+        cameraStatus: CyberCameraLinkStatus.connecting,
+        cloudStatus: CyberCloudLinkStatus.failed,
+      );
+      expect(
+        (failed.first as CyberCloudStatusIcon).status,
+        CyberCloudLinkStatus.failed,
+      );
     });
   });
 

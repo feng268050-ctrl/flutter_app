@@ -29,28 +29,44 @@ void main() {
     expect(find.byType(CyberWifiSignalBars), findsOneWidget);
   });
 
-  testWidgets('Cloud icon dim when not linked', (tester) async {
+  testWidgets('Cloud icon connecting shows spinner', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: CyberCloudStatusIcon(linked: false),
+          body: CyberCloudStatusIcon(status: CyberCloudLinkStatus.connecting),
         ),
       ),
     );
     final icon = tester.widget<Icon>(find.byIcon(Icons.cloud));
-    expect(icon.color, Colors.white54);
+    expect(icon.color, Colors.white70);
+    expect(find.byType(CyberStatusIconSpin), findsOneWidget);
   });
 
-  testWidgets('Cloud icon lit when linked', (tester) async {
+  testWidgets('Cloud icon lit when connected', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: CyberCloudStatusIcon(linked: true),
+          body: CyberCloudStatusIcon(status: CyberCloudLinkStatus.connected),
         ),
       ),
     );
     final icon = tester.widget<Icon>(find.byIcon(Icons.cloud));
     expect(icon.color, Colors.white);
+    expect(find.byType(CyberStatusIconSpin), findsNothing);
+    expect(find.byIcon(Icons.cancel), findsNothing);
+  });
+
+  testWidgets('Cloud icon failed shows cancel mark', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: CyberCloudStatusIcon(status: CyberCloudLinkStatus.failed),
+        ),
+      ),
+    );
+    final icon = tester.widget<Icon>(find.byIcon(Icons.cloud));
+    expect(icon.color, Colors.white54);
+    expect(find.byIcon(Icons.cancel), findsOneWidget);
   });
 
   testWidgets('Bluetooth connected glyph', (tester) async {

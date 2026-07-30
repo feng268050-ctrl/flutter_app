@@ -61,6 +61,7 @@ import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.da
 import 'package:lws_hmi/features/warn_alarm/infrastructure/sqlite_alarm_log_repository.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/bundled_firmware/infrastructure/sync_firmware_command_watcher.dart';
+import 'package:lws_hmi/features/process_library/infrastructure/upgrade_process_library_command_watcher.dart';
 import 'package:lws_hmi/gpio/rgb_led_policy_driver.dart';
 import 'package:lws_hmi/l10n/app_locales.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -219,6 +220,12 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     navigatorContext: () => _navKey.currentContext,
   );
 
+  late final UpgradeProcessLibraryCommandWatcher
+      _upgradeProcessLibraryCommandWatcher =
+      UpgradeProcessLibraryCommandWatcher(
+    processLibrary: _processLibrary,
+  );
+
   late final RgbLedPolicyDriver _rgbLedPolicy = RgbLedPolicyDriver(
     services: _services,
     warnAlarm: _warnAlarm,
@@ -290,6 +297,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       unawaited(_maybeRestoreRoute());
       _services.autoSleep.arm(backlight: _services.backlight);
       _syncFirmwareCommandWatcher.start();
+      _upgradeProcessLibraryCommandWatcher.start();
       unawaited(_startCloudLocalRuntime());
       _jobRuntimeStatistics.resume();
     });
@@ -442,6 +450,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     unawaited(_jobRuntimeStatistics.dispose());
     unawaited(_warnAlarm.dispose());
     unawaited(_syncFirmwareCommandWatcher.dispose());
+    unawaited(_upgradeProcessLibraryCommandWatcher.dispose());
     unawaited(_rgbLedPolicy.dispose());
     if (widget.miscSettingsStore == null) {
       _miscSettingsStore.dispose();

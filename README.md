@@ -378,6 +378,9 @@ make logs                       # live journal; optional UNIT= TAG= GREP= PRIORI
 make prepare-app-assets         # optional host-only: prune process-library + firmware → assets/.generated/
 make build-app                  # runs prepare-app-assets, then AOT bundle → overlay /opt/hmi
 make push-app                   # SN=... when multiple boards; hot-swap /opt/hmi (no rootfs rebuild)
+make upgrade-control-board      # push latest control-board bin; force upgrade (HMI running)
+make upgrade-process-library    # push process-library for device model; force import (HMI running)
+make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/product.ini (multi-key OK); restarts hmi
 # brand / model / sn are OEM-only — edit oem/boards/<sku>/product.ini (not set-prop / del-prop)
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
@@ -654,6 +657,8 @@ App deploy without reflash:
 make build-app
 make push-app                  # SN=... or IP=... when multiple devices
 make upgrade-control-board    # push latest control-board bin and trigger upgrade (no version gate)
+make upgrade-process-library  # push process-library for device product.ini model; force import
+make reset-process-library    # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make set-prop CAMERA_IP=192.168.1.50   # optional: product tunables over SSH (not brand/model/sn)```
 
 ### macOS Docker Desktop tips

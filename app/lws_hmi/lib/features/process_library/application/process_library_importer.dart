@@ -30,11 +30,12 @@ final class ProcessLibraryImporter {
   final AssetBundle bundle;
   final String manifestAsset;
 
-  Future<ProcessLibraryImportResult> importBundled() async {
+  Future<ProcessLibraryImportResult> importBundled({bool force = false}) async {
     final audit = await _importFromManifest(
       manifestText: await bundle.loadString(manifestAsset),
       packagePath: null,
       defaultSource: 'bundled',
+      force: force,
       loadLibraryBytes: (relative) => _loadAssetBytes(relative),
     );
     return audit.toResult();
@@ -46,9 +47,14 @@ final class ProcessLibraryImporter {
   ///
   /// [defaultSource] is used when the selected library entry omits `source`
   /// (typical values: `usb`, `ota`).
+  ///
+  /// When [force] is true, same-version and older-version skip/reject gates are
+  /// bypassed (host `make upgrade-process-library`); hash, schema, row-count,
+  /// and model-match validation still apply.
   Future<ProcessLibraryImportAudit> importPackageFromDirectory(
     Directory root, {
     String defaultSource = 'usb',
+    bool force = false,
   }) async {
     final manifestFile = File('${root.path}/manifest.json');
     if (!await manifestFile.exists()) {
@@ -65,6 +71,7 @@ final class ProcessLibraryImporter {
         manifestText: await manifestFile.readAsString(),
         packagePath: root.path,
         defaultSource: defaultSource,
+        force: force,
         loadLibraryBytes: (relative) async {
           final cleaned = relative
               .replaceFirst(
@@ -100,6 +107,7 @@ final class ProcessLibraryImporter {
     required String? packagePath,
     required String defaultSource,
     required Future<Uint8List> Function(String relative) loadLibraryBytes,
+    bool force = false,
   }) async {
     final resolvedModel = await _resolveDeviceModel();
     final preservedUserCount = (await repository.list())
@@ -230,7 +238,8 @@ final class ProcessLibraryImporter {
       ProcessParameterValidator.validate(preset);
     }
 
-    if (installed != null &&
+    if (!force &&
+        installed != null &&
         installed.libraryVersion == version &&
         installed.contentSha256 == expectedHash) {
       final existing = (await repository.list())
@@ -251,7 +260,8 @@ final class ProcessLibraryImporter {
           meta: installed,
         );
       }
-    } else if (installed != null &&
+    } else if (!force &&
+        installed != null &&
         _compareVersions(version, installed.libraryVersion) < 0) {
       // Bundled asset older than installed → keep current quietly.
       // External packages → explicit reject for the audit UI.

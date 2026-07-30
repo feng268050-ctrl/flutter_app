@@ -145,6 +145,100 @@ void main() {
     expect((await repository.metaFor('usb'))!.libraryVersion, '2.0.0');
   });
 
+  test('force re-imports same version', () async {
+    await writePackage(version: '2.0.0', source: 'usb');
+    final importer = ProcessLibraryImporter(
+      repository: repository,
+      deviceModel: 'ynh960',
+    );
+    expect(
+      (await importer.importPackageFromDirectory(packageDir)).status,
+      ProcessLibraryImportStatus.imported,
+    );
+    expect(
+      (await importer.importPackageFromDirectory(packageDir)).status,
+      ProcessLibraryImportStatus.current,
+    );
+
+    final forced = await importer.importPackageFromDirectory(
+      packageDir,
+      force: true,
+    );
+    expect(forced.status, ProcessLibraryImportStatus.imported);
+    expect(forced.toVersion, '2.0.0');
+    expect((await repository.metaFor('usb'))!.libraryVersion, '2.0.0');
+  });
+
+  test('force still rejects when no model matches', () async {
+    await writePackage(version: '2.0.0', source: 'usb', model: 'L1 Pro');
+    // Overwrite manifest without wildcard / matching model.
+    await File('${packageDir.path}/manifest.json').writeAsString(
+      jsonEncode({
+        'schema_version': 1,
+        'libraries': [
+          {
+            'source': 'usb',
+            'library_version': '2.0.0',
+            'asset': 'library.json',
+            'content_sha256': sha256
+                .convert(
+                  utf8.encode(
+                    await File('${packageDir.path}/library.json').readAsString(),
+                  ),
+                )
+                .toString(),
+            'supported_models': ['L1 Pro'],
+            'row_count': 1,
+          },
+        ],
+      }),
+    );
+    final importer = ProcessLibraryImporter(
+      repository: repository,
+      deviceModel: 'other-model',
+    );
+
+    final audit = await importer.importPackageFromDirectory(
+      packageDir,
+      force: true,
+    );
+    expect(audit.status, ProcessLibraryImportStatus.noCompatibleLibrary);
+    expect(audit.skippedReason, 'no_compatible_library');
+    expect(await repository.metaFor('usb'), isNull);
+  });
+
+  test('clearAll wipes presets and meta', () async {
+    await writePackage(version: '2.0.0', source: 'usb');
+    final importer = ProcessLibraryImporter(
+      repository: repository,
+      deviceModel: 'ynh960',
+    );
+    expect(
+      (await importer.importPackageFromDirectory(packageDir)).status,
+      ProcessLibraryImportStatus.imported,
+    );
+    await repository.saveUser(
+      ProcessPreset(
+        uuid: 'user-wipe',
+        name: 'Wipe Me',
+        kind: ProcessPresetKind.user,
+        source: 'user',
+        isBuiltin: false,
+        processType: ProcessType.continuousWelding,
+        materialType: MaterialType.stainlessSteel,
+        thickness: 1.5,
+        gear: 1,
+        parameters: ProcessParameters({'process.laser_power': 40}),
+        createdAtMs: 1,
+        updatedAtMs: 1,
+      ),
+    );
+
+    await repository.clearAll();
+    expect(await repository.list(), isEmpty);
+    expect(await repository.metaFor('usb'), isNull);
+  });
+
   test('scanner finds packages under extraRoots', () async {
     await writePackage(version: '3.1.0', source: 'usb');
     final scanner = ProcessLibraryPackageScanner(

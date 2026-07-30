@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -170,6 +171,24 @@ final class ProcessLibraryController extends ChangeNotifier {
 
   /// Refresh in-memory list after external repository writes (e.g. cloud push).
   Future<void> reloadPresets() => _reload();
+
+  /// Host `make upgrade-process-library`: force-import package and refresh list.
+  Future<ProcessLibraryImportAudit> importPackageForced(Directory root) async {
+    final audit = await importer.importPackageFromDirectory(
+      root,
+      force: true,
+    );
+    await _reload();
+    return audit;
+  }
+
+  /// Host `make reset-process-library`: wipe DB then force re-import bundled.
+  Future<ProcessLibraryImportResult> resetAndReimportBundled() async {
+    await repository.clearAll();
+    final result = await importer.importBundled(force: true);
+    await _reload();
+    return result;
+  }
 
   static String _newUuid() {
     final random = Random.secure();

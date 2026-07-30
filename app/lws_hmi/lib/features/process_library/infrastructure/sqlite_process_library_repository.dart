@@ -266,6 +266,20 @@ ON CONFLICT(source) DO UPDATE SET
   }
 
   @override
+  Future<void> clearAll() async {
+    await open();
+    _database.execute('BEGIN IMMEDIATE');
+    try {
+      _database.execute('DELETE FROM process_presets');
+      _database.execute('DELETE FROM process_library_meta');
+      _database.execute('COMMIT');
+    } catch (_) {
+      _database.execute('ROLLBACK');
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> backupTo(String path) async {
     await open();
     final target = File(path);

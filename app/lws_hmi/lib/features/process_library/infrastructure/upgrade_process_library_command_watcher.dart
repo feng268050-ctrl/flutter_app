@@ -162,8 +162,20 @@ final class UpgradeProcessLibraryCommandWatcher {
         'ResetProcessLibrary: status=${result.status.name} '
         'version=${result.meta?.libraryVersion ?? '-'}',
       );
+      if (result.status != ProcessLibraryImportStatus.imported &&
+          result.status != ProcessLibraryImportStatus.current) {
+        debugPrint(
+          'ResetProcessLibrary: previous builtins kept; '
+          'ensure ship assets exist (make build-app && make push-app) '
+          'or use make upgrade-process-library',
+        );
+      }
     } catch (error, stack) {
       debugPrint('ResetProcessLibrary: failed: $error\n$stack');
+      debugPrint(
+        'ResetProcessLibrary: previous builtins kept if present; '
+        'try make upgrade-process-library to recover',
+      );
     }
   }
 }

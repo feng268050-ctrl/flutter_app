@@ -182,10 +182,20 @@ final class ProcessLibraryController extends ChangeNotifier {
     return audit;
   }
 
-  /// Host `make reset-process-library`: wipe DB then force re-import bundled.
+  /// Host `make reset-process-library`: force re-import bundled, then drop user
+  /// rows. Does **not** clear builtins before import succeeds — otherwise a
+  /// missing ship asset leaves an empty library.
   Future<ProcessLibraryImportResult> resetAndReimportBundled() async {
-    await repository.clearAll();
     final result = await importer.importBundled(force: true);
+    if (result.status == ProcessLibraryImportStatus.imported ||
+        result.status == ProcessLibraryImportStatus.current) {
+      await repository.deleteAllUserPresets();
+    } else {
+      debugPrint(
+        'ResetProcessLibrary: bundled reimport failed '
+        '(${result.status.name}); keeping previous library',
+      );
+    }
     await _reload();
     return result;
   }

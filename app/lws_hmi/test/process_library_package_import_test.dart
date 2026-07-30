@@ -239,6 +239,40 @@ void main() {
     expect(await repository.metaFor('usb'), isNull);
   });
 
+  test('deleteAllUserPresets keeps builtins', () async {
+    await writePackage(version: '2.0.0', source: 'usb');
+    final importer = ProcessLibraryImporter(
+      repository: repository,
+      deviceModel: 'ynh960',
+    );
+    expect(
+      (await importer.importPackageFromDirectory(packageDir)).status,
+      ProcessLibraryImportStatus.imported,
+    );
+    await repository.saveUser(
+      ProcessPreset(
+        uuid: 'user-keep-builtins',
+        name: 'User',
+        kind: ProcessPresetKind.user,
+        source: 'user',
+        isBuiltin: false,
+        processType: ProcessType.continuousWelding,
+        materialType: MaterialType.stainlessSteel,
+        thickness: 1.5,
+        gear: 1,
+        parameters: ProcessParameters({'process.laser_power': 40}),
+        createdAtMs: 1,
+        updatedAtMs: 1,
+      ),
+    );
+
+    await repository.deleteAllUserPresets();
+    final left = await repository.list();
+    expect(left.every((p) => p.isBuiltin), isTrue);
+    expect(left, isNotEmpty);
+    expect(await repository.metaFor('usb'), isNotNull);
+  });
+
   test('scanner finds packages under extraRoots', () async {
     await writePackage(version: '3.1.0', source: 'usb');
     final scanner = ProcessLibraryPackageScanner(

@@ -28,6 +28,9 @@ abstract interface class ProcessLibraryRepository {
   /// Delete all presets (including user) and all `process_library_meta` rows.
   Future<void> clearAll();
 
+  /// Delete only user (non-builtin) presets; leave builtins and meta intact.
+  Future<void> deleteAllUserPresets();
+
   Future<void> backupTo(String path);
 
   Future<void> restoreFrom(String path);

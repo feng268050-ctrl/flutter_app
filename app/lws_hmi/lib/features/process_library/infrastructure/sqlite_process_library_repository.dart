@@ -280,6 +280,14 @@ ON CONFLICT(source) DO UPDATE SET
   }
 
   @override
+  Future<void> deleteAllUserPresets() async {
+    await open();
+    _database.execute(
+      "DELETE FROM process_presets WHERE is_builtin = 0 OR kind = 'user'",
+    );
+  }
+
+  @override
   Future<void> backupTo(String path) async {
     await open();
     final target = File(path);

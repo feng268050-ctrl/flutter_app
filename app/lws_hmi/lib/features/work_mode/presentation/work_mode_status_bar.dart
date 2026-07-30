@@ -18,9 +18,11 @@ enum WorkMode { quick, engineer }
 
 /// App-local status bar for Quick / Engineer (lws-ui `EquipmentStatusBar` parity).
 ///
-/// Layout follows lws-ui: fixed, equal 160dp left/right rails and an Expanded
-/// center rail. Back fills the left rail, equipment is centered in the
-/// remaining width, and camera + clock are end-aligned in the right rail.
+/// Layout uses fixed, equal side rails and an Expanded center rail. Back fills
+/// the left rail (label centered). Each equipment status is a label+icon group
+/// with a fixed icon size; inter-group gaps share leftover width equally so
+/// labels stay fully visible when possible. Camera + clock are centered in the
+/// right rail.
 final class WorkModeStatusBar extends StatelessWidget
     implements PreferredSizeWidget {
   const WorkModeStatusBar({
@@ -71,7 +73,7 @@ final class WorkModeStatusBar extends StatelessWidget
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // lws-ui left_rail: fixed 160dp; Back fills the complete slot.
+              // Fixed left rail; Back fills the complete slot.
               SizedBox(
                 width: WorkModeStatusBarDimens.sideRailWidth,
                 child: CallBackHomeButton(
@@ -83,23 +85,18 @@ final class WorkModeStatusBar extends StatelessWidget
                   onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                 ),
               ),
-              // lws-ui center_content: weight=1 + gravity=center.
+              // Label+icon groups: fixed icon size, equal gaps; labels may ellipsize.
               Expanded(
-                child: Center(
-                  child: _WorkModeEquipmentStrip(
-                    status: equipmentStatus,
-                  ),
+                child: _WorkModeEquipmentStrip(
+                  status: equipmentStatus,
                 ),
               ),
-              // lws-ui right_rail: fixed 160dp, end-aligned, 16dp end padding.
+              // Fixed right rail; camera + clock centered (mirror Home).
               SizedBox(
                 width: WorkModeStatusBarDimens.sideRailWidth,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      right: WorkModeStatusBarDimens.rightRailPadding,
-                    ),
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
                     child: _WorkModeTrailing(
                       cameraStatus: cameraStatus,
                       clockNow: resolvedNow,
@@ -130,17 +127,15 @@ abstract final class WorkModeStatusBarDimens {
   /// lws-ui `equipment_status_side_rail_width`.
   static const double sideRailWidth = 160;
 
-  /// lws-ui right_rail `paddingEnd`.
-  static const double rightRailPadding = 16;
+  /// Soft target for inter-group spacing when the center rail has spare width.
+  /// Actual gaps shrink first so labels can stay fully visible.
+  static const double equipmentItemGap = 28;
 
-  /// Gap between the five equipment status groups, scaled with their labels.
-  static const double itemGap = 12;
-
-  /// Equipment on/off icons, scaled with [statusLabelFontSize].
-  static const double primaryIconSize = 38;
+  /// Equipment on/off icons (not scaled by the status-strip layout).
+  static const double primaryIconSize = 50;
 
   /// Text ↔ icon gap within one equipment status group.
-  static const double statusIconGap = 6;
+  static const double statusIconGap = 0;
 
   /// Design size for camera (same as HomeStatusBar `iconSize: 32` on 1280×800).
   static const double trailingIconSize = 32;
@@ -165,8 +160,8 @@ abstract final class WorkModeStatusBarDimens {
 
   static const double edgeLineHeight = 3;
 
-  /// Five equipment status labels.
-  static const double statusLabelFontSize = 26;
+  /// Five equipment status labels (keep compact when icons grow).
+  static const double statusLabelFontSize = 20;
 
   /// Home label; intentionally independent from the clock size.
   static const double homeLabelFontSize = 24;
@@ -242,56 +237,96 @@ final class _WorkModeEquipmentStripState
   @override
   Widget build(BuildContext context) {
     final status = widget.status ?? _status;
-    // Content-width group centered by parent; scaleDown only if the center
-    // rail is too narrow (does not flex-shrink individual items).
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _EquipmentStatusItem(
-            key: const ValueKey('work-mode-gun-switch'),
-            label: 'Gun Switch',
-            onAsset: WorkModeAssets.gunSwitchOn,
-            offAsset: WorkModeAssets.gunSwitchOff,
-            active: status.gunSwitchOn,
-          ),
-          const SizedBox(width: WorkModeStatusBarDimens.itemGap),
-          _EquipmentStatusItem(
-            key: const ValueKey('work-mode-ground-clamp'),
-            label: 'Ground Clamp',
-            onAsset: WorkModeAssets.groundClampOn,
-            offAsset: WorkModeAssets.groundClampOff,
-            active: status.groundClampOn,
-          ),
-          const SizedBox(width: WorkModeStatusBarDimens.itemGap),
-          _EquipmentStatusItem(
-            key: const ValueKey('work-mode-key-switch'),
-            label: 'Key Switch',
-            onAsset: WorkModeAssets.keySwitchOn,
-            offAsset: WorkModeAssets.keySwitchOff,
-            active: status.keySwitchOn,
-          ),
-          const SizedBox(width: WorkModeStatusBarDimens.itemGap),
-          _EquipmentStatusItem(
-            key: const ValueKey('work-mode-gas-flow'),
-            label: 'Gas Flow',
-            onAsset: WorkModeAssets.gasFlowOn,
-            offAsset: WorkModeAssets.gasFlowOff,
-            active: status.gasFlowOn,
-          ),
-          const SizedBox(width: WorkModeStatusBarDimens.itemGap),
-          _EquipmentStatusItem(
-            key: const ValueKey('work-mode-e-stop'),
-            label: 'E-Stop',
-            // lws-ui: triggered → stop_icon; clear → stop_icon_on
-            onAsset: WorkModeAssets.eStopActive,
-            offAsset: WorkModeAssets.eStopIdle,
-            active: status.eStopTriggered,
-          ),
-        ],
+    const specs = <({String key, String label, String on, String off})>[
+      (
+        key: 'work-mode-gun-switch',
+        label: 'Gun Switch',
+        on: WorkModeAssets.gunSwitchOn,
+        off: WorkModeAssets.gunSwitchOff,
       ),
+      (
+        key: 'work-mode-ground-clamp',
+        label: 'Ground Clamp',
+        on: WorkModeAssets.groundClampOn,
+        off: WorkModeAssets.groundClampOff,
+      ),
+      (
+        key: 'work-mode-key-switch',
+        label: 'Key Switch',
+        on: WorkModeAssets.keySwitchOn,
+        off: WorkModeAssets.keySwitchOff,
+      ),
+      (
+        key: 'work-mode-gas-flow',
+        label: 'Gas Flow',
+        on: WorkModeAssets.gasFlowOn,
+        off: WorkModeAssets.gasFlowOff,
+      ),
+      (
+        key: 'work-mode-e-stop',
+        label: 'E-Stop',
+        on: WorkModeAssets.eStopActive,
+        off: WorkModeAssets.eStopIdle,
+      ),
+    ];
+    final active = [
+      status.gunSwitchOn,
+      status.groundClampOn,
+      status.keySwitchOn,
+      status.gasFlowOn,
+      status.eStopTriggered,
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const labelStyle = TextStyle(
+          fontSize: WorkModeStatusBarDimens.statusLabelFontSize,
+          height: 1,
+        );
+        final labelWidths = <double>[
+          for (final spec in specs)
+            () {
+              final painter = TextPainter(
+                text: TextSpan(text: spec.label, style: labelStyle),
+                maxLines: 1,
+                textDirection: TextDirection.ltr,
+              )..layout();
+              return painter.width;
+            }(),
+        ];
+        final iconBlock = WorkModeStatusBarDimens.primaryIconSize +
+            WorkModeStatusBarDimens.statusIconGap;
+        final contentWidth = labelWidths.fold<double>(0, (a, b) => a + b) +
+            iconBlock * specs.length;
+        final gapCount = specs.length - 1;
+        final free = constraints.maxWidth - contentWidth;
+        // Prefer full labels: shrink gaps first. Ellipsize only if still tight.
+        final gap = free >= 0 ? free / gapCount : 0.0;
+        final maxLabelWidth = free >= 0
+            ? double.infinity
+            : ((constraints.maxWidth - iconBlock * specs.length) / specs.length)
+                .clamp(16.0, 400.0);
+
+        return Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              for (var i = 0; i < specs.length; i++) ...[
+                if (i > 0) SizedBox(width: gap),
+                _EquipmentStatusItem(
+                  key: ValueKey(specs[i].key),
+                  label: specs[i].label,
+                  onAsset: specs[i].on,
+                  offAsset: specs[i].off,
+                  active: active[i],
+                  maxLabelWidth: maxLabelWidth,
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -303,26 +338,37 @@ final class _EquipmentStatusItem extends StatelessWidget {
     required this.onAsset,
     required this.offAsset,
     required this.active,
+    required this.maxLabelWidth,
   });
 
   final String label;
   final String onAsset;
   final String offAsset;
   final bool active;
+  final double maxLabelWidth;
 
   @override
   Widget build(BuildContext context) {
     final iconSize = WorkModeStatusBarDimens.primaryIconSize;
+    // Label + icon stay one group; icon size is fixed (not parent-scaled).
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: WorkModeStatusBarDimens.label,
-            fontSize: WorkModeStatusBarDimens.statusLabelFontSize,
-            height: 1,
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxLabelWidth),
+          child: Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            overflow: maxLabelWidth.isFinite
+                ? TextOverflow.ellipsis
+                : TextOverflow.visible,
+            style: const TextStyle(
+              color: WorkModeStatusBarDimens.label,
+              fontSize: WorkModeStatusBarDimens.statusLabelFontSize,
+              height: 1,
+            ),
           ),
         ),
         const SizedBox(width: WorkModeStatusBarDimens.statusIconGap),

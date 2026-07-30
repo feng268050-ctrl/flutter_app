@@ -82,18 +82,53 @@ void main() {
     expect(find.byKey(const ValueKey('cyber-status-wifi')), findsNothing);
     expect(find.byKey(const ValueKey('cyber-status-bt')), findsNothing);
 
-    // lws-ui geometry: fixed 160dp side rails keep the equipment group on the
-    // screen center; trailing content is end-aligned with 16dp padding.
+    // Side rails; camera+clock centered; label+icon groups with equal flexible
+    // gaps (prefer full labels over a fixed 28 gap).
     expect(
       tester.getSize(find.byKey(const ValueKey('work-mode-status-back'))).width,
       WorkModeStatusBarDimens.sideRailWidth,
     );
-    final first = tester.getRect(
+    final gun = tester.getRect(
       find.byKey(const ValueKey('work-mode-gun-switch')),
     );
-    final last = tester.getRect(find.byKey(const ValueKey('work-mode-e-stop')));
-    expect((first.left + last.right) / 2, closeTo(640, 1));
-    expect(tester.getTopRight(find.text('14:30')).dx, closeTo(1264, 1));
+    final ground = tester.getRect(
+      find.byKey(const ValueKey('work-mode-ground-clamp')),
+    );
+    final key = tester.getRect(
+      find.byKey(const ValueKey('work-mode-key-switch')),
+    );
+    final gas = tester.getRect(
+      find.byKey(const ValueKey('work-mode-gas-flow')),
+    );
+    final eStop = tester.getRect(
+      find.byKey(const ValueKey('work-mode-e-stop')),
+    );
+    expect((gun.left + eStop.right) / 2, closeTo(640, 2));
+    final camera = tester.getRect(
+      find.byKey(const ValueKey('work-mode-status-camera')),
+    );
+    final clock = tester.getRect(find.text('14:30'));
+    final trailingMid = (camera.left + clock.right) / 2;
+    expect(
+      trailingMid,
+      closeTo(1280 - WorkModeStatusBarDimens.sideRailWidth / 2, 2),
+    );
+    // Full English labels stay visible at design width.
+    expect(find.text('Gun Switch'), findsOneWidget);
+    expect(find.text('Ground Clamp'), findsOneWidget);
+    expect(find.text('Key Switch'), findsOneWidget);
+    expect(find.text('Gas Flow'), findsOneWidget);
+    expect(find.text('E-Stop'), findsOneWidget);
+    final gaps = [
+      ground.left - gun.right,
+      key.left - ground.right,
+      gas.left - key.right,
+      eStop.left - gas.right,
+    ];
+    for (final gap in gaps) {
+      expect(gap, closeTo(gaps.first, 0.5));
+    }
+    expect(gun.height, closeTo(WorkModeStatusBarDimens.primaryIconSize, 1));
   });
 
   testWidgets('WorkModeStatusBar swaps e-stop assets by latch', (tester) async {

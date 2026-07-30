@@ -13,8 +13,9 @@ Unless a capability **specially documents** an exemption, process-wide operator 
 #### Scenario: Remote lock uses the queue
 
 - **WHEN** remote lock feedback must be shown (cloud lock or locked entry gate)
-- **THEN** the lock prompt SHALL be enqueued on the global prompt queue
+- **THEN** the lock prompt SHALL be enqueued on the global prompt queue with stable id `remoteLock`
 - **AND** MUST NOT bypass the queue with a direct overlay host
+- **AND** unlock MUST `dismiss('remoteLock')`
 
 #### Scenario: Exemption must be explicit
 
@@ -62,6 +63,13 @@ Operator confirm/cancel on the dialog itself remains valid and MUST also complet
 - **THEN** that entry MUST be removed from the queue
 - **AND** MUST NOT appear later solely because it was previously enqueued
 
+#### Scenario: Dismiss showing by id
+
+- **WHEN** a prompt with id `H001` is currently visible
+- **AND** the App calls `dismiss('H001')`
+- **THEN** the visible dialog MUST close
+- **AND** the queue SHALL proceed to the next pending entry if any
+
 #### Scenario: Dismiss showing remote lock on unlock
 
 - **WHEN** a prompt with id `remoteLock` is pending or visible
@@ -71,13 +79,18 @@ Operator confirm/cancel on the dialog itself remains valid and MUST also complet
 
 ### Requirement: Warn presentation uses the global prompt queue
 
-Warn/alarm frost dialogs SHALL be shown by enqueuing onto the App global prompt queue through the `WarnPresentation` port. The App MUST NOT maintain a separate warn-only UI modal FIFO. The `cyber_alarm` coordinator MUST NOT maintain a second modal presentation drain queue for showing dialogs.
+Warn/alarm frost dialogs SHALL be shown by enqueuing onto the App global prompt queue through the `WarnPresentation` port. The App MUST NOT maintain a separate warn-only UI modal FIFO (`CyberUiWarnPresentation` internal queue or equivalent). The `cyber_alarm` coordinator MUST NOT maintain a second modal presentation drain queue for showing dialogs.
 
 #### Scenario: Warn show goes through global queue
 
 - **WHEN** the coordinator requests presentation for alarm code `H001`
 - **THEN** the warn frost dialog SHALL be hosted as a global prompt queue entry
 - **AND** MUST NOT open via a parallel private warn UI queue
+
+#### Scenario: Legacy warn UI queue removed
+
+- **WHEN** this capability is implemented
+- **THEN** the product warn host MUST NOT contain a separate `Queue` of pending warn dialogs used as a second modal pump
 
 ### Requirement: Boot self-check suppresses global prompt pump
 

@@ -105,7 +105,7 @@ Item labels SHOULD align with Monitor → Alarm Information wording where applic
 
 ### Requirement: Async overlapping detection is gated during boot self-check
 
-While boot self-check is active, the App SHALL expose a process gate (`isActive`) so the **global prompt queue** MUST NOT present competing dialogs (warn frost, guidance, remote lock, and other enrolled prompts). The product IP-camera session `start()` and Home camera status icon MAY run during self-check because they do not present a blocking popup. When self-check finishes (dialog dismissed or preference disabled), the gate SHALL clear, the global queue MAY pump, and deferred warn monitors MAY start.
+While boot self-check is active, the App SHALL expose a process gate (`isActive`) so the **global prompt queue** MUST NOT present competing dialogs (warn frost, Home guidance, remote lock, and other enrolled prompts). The product IP-camera session `start()` and Home camera status icon MAY run during self-check because they do not present a blocking popup. When self-check finishes (dialog dismissed or preference disabled), the gate SHALL clear and deferred prompts MAY present via the **global prompt queue** without a guidance-then-alarm phase barrier. Deferred warn monitors MAY start after the gate clears.
 
 #### Scenario: Gate active during pipeline
 
@@ -116,7 +116,8 @@ While boot self-check is active, the App SHALL expose a process gate (`isActive`
 
 - **WHEN** boot self-check completes
 - **THEN** the gate SHALL be inactive
-- **AND** subsequent product warn monitors MAY run per their own rules
+- **AND** subsequent warn and guidance prompts MAY enqueue and present via the global prompt queue in FIFO order
+- **AND** warn presentation MUST NOT wait for network/cloud guidance enrollment to complete
 
 #### Scenario: Camera status icon may run during self-check
 
@@ -137,7 +138,7 @@ Common Settings → Misc “Show Startup Self-Check” SHALL read and write the 
 
 ### Requirement: Boot self-check suppresses warn presentation
 
-While the boot self-check overlay is active, the product App MUST gate `cyber_alarm` so it does not present new modal warn dialogs for Modbus-backed alarm onsets. Self-check item evaluation MAY continue to use the same Alarm Information semantics for pass/fail tiles. After self-check completes (success or operator-dismissed failure path per existing rules), normal warn presentation SHALL resume for subsequent onsets.
+While the boot self-check overlay is active, the product App MUST gate `cyber_alarm` so it does not present new modal warn dialogs for Modbus-backed alarm onsets. Self-check item evaluation MAY continue to use the same Alarm Information semantics for pass/fail tiles. After self-check completes (success or operator-dismissed failure path per existing rules), normal warn presentation SHALL resume for subsequent onsets via the global prompt queue and MUST NOT remain suppressed for guidance/network readiness.
 
 #### Scenario: Alarm during self-check does not popup
 
@@ -145,11 +146,12 @@ While the boot self-check overlay is active, the product App MUST gate `cyber_al
 - **AND** a Modbus `alarm.*` attribute becomes true
 - **THEN** the App MUST NOT show a modal warn dialog for that onset during the active self-check session
 
-#### Scenario: After self-check resumes warns
+#### Scenario: After self-check resumes warns without guidance barrier
 
 - **WHEN** boot self-check has finished
-- **AND** a later rising edge occurs for a catalogued alarm code
-- **THEN** warn presentation MAY show a modal dialog for that onset
+- **AND** a rising edge occurs for a catalogued alarm code (or flush presents a parked episode)
+- **THEN** warn presentation MAY show a modal dialog via the global prompt queue
+- **AND** MUST NOT wait for Wi‑Fi or cloud guidance prompts to enroll or finish
 
 ### Requirement: Boot self-check dialog copy uses App localization
 

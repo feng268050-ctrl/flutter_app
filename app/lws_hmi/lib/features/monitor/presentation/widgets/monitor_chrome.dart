@@ -64,8 +64,8 @@ class MonitorGlassCard extends StatelessWidget {
           cornerRadius: MonitorDimens.corner,
           gradientCenter: borderGradientCenter,
         ),
-        // Transparent fill + Frost bright-edge stroke (settings chrome parity).
-        color: Colors.transparent,
+        // Same frosted panel fill as SettingsPanel / SettingsGroup.
+        color: Colors.white.withOpacity(0.06),
         child: SizedBox(
           width: width,
           height: height,
@@ -336,7 +336,7 @@ class MonitorHealthBanner extends StatelessWidget {
         cornerRadius: 12,
         gradientCenter: CyberBorderGradientCenter.topBottom,
       ),
-      color: Colors.transparent,
+      color: Colors.white.withOpacity(0.06),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(

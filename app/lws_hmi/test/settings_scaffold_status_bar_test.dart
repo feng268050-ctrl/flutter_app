@@ -18,5 +18,11 @@ void main() {
     expect(find.byType(ProductPageStatusBar), findsOneWidget);
     expect(find.text('Wi‑Fi'), findsOneWidget);
     expect(find.byKey(const ValueKey('cyber-status-bar-clock')), findsOneWidget);
+
+    // Match Quick / Engineer WorkModeStatusBarDimens.chromeLabelFontSize.
+    final clock = tester.widget<Text>(
+      find.byKey(const ValueKey('cyber-status-bar-clock')),
+    );
+    expect(clock.style?.fontSize, 20);
   });
 }

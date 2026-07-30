@@ -5,6 +5,7 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart'
 import 'package:lws_hmi/features/status_bar/call_back_home_button.dart';
 import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
+import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
 
@@ -73,6 +74,10 @@ class ProductPageStatusBar extends StatelessWidget
       bluetooth: bluetooth,
       builder: (context, items) {
         final useCallBackHome = onBack != null && backLabel != null;
+        final theme = Theme.of(context);
+        final clockFg = foregroundColor ??
+            theme.appBarTheme.foregroundColor ??
+            theme.colorScheme.onSurface;
         CyberPageStatusBar buildBar() => CyberPageStatusBar(
               title: title,
               onBack: useCallBackHome ? null : onBack,
@@ -92,6 +97,13 @@ class ProductPageStatusBar extends StatelessWidget
               foregroundColor: foregroundColor,
               toolbarHeight: toolbarHeight,
               clockNow: nowFn,
+              // Match Quick / Engineer [WorkModeStatusBar] clock size.
+              clockStyle: TextStyle(
+                color: clockFg,
+                fontSize: WorkModeStatusBarDimens.chromeLabelFontSize,
+                height: 1,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             );
         if (listenable == null) {
           return buildBar();

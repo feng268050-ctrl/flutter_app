@@ -594,6 +594,13 @@ class _ModeEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
+    final scale = (height / 280).clamp(0.5, 2.0);
+    final labelBandH = labelHeight.clamp(24.0, height * 0.45);
+    final fontSize = (labelHeight * 0.28).clamp(18.0, 36.0);
+    const textHeightFactor = 1.05;
+    final labelDrop = 6 * scale;
+    // Image overhangs the mode-entry top edge by 8 design units.
+    final heroTop = -8 * scale;
     return Positioned(
       left: left,
       top: top,
@@ -607,12 +614,12 @@ class _ModeEntry extends StatelessWidget {
             onTap();
           },
           borderRadius: BorderRadius.circular(18),
-          child: ClipRect(
-            child: Stack(
+          child: Stack(
               alignment: Alignment.topCenter,
+              clipBehavior: Clip.none,
               children: [
                 Positioned(
-                  top: 12 * (height / 280).clamp(0.5, 2.0),
+                  top: heroTop,
                   width: heroSize.clamp(48, width),
                   height: heroSize.clamp(48, height * 0.85),
                   child: Image.asset(
@@ -631,26 +638,30 @@ class _ModeEntry extends StatelessWidget {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  height: labelHeight.clamp(24, height * 0.45),
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        textLabel,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: (labelHeight * 0.28).clamp(18.0, 36.0),
-                          fontWeight: FontWeight.w700,
-                          height: 1.05,
-                          shadows: const [
-                            Shadow(
-                              color: Color(0x99000000),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
+                  height: labelBandH,
+                  child: Transform.translate(
+                    // Drop label 6 design units; keep the label band geometry.
+                    offset: Offset(0, labelDrop),
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          textLabel,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.w700,
+                            height: textHeightFactor,
+                            shadows: const [
+                              Shadow(
+                                color: Color(0x99000000),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -658,7 +669,6 @@ class _ModeEntry extends StatelessWidget {
                 ),
               ],
             ),
-          ),
         ),
       ),
     );

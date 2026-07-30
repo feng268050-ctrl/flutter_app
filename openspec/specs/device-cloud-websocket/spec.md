@@ -8,12 +8,18 @@ Outbound device WebSocket to the pinned Worker origin: lifecycle, unified envelo
 
 ### Requirement: Network-driven WebSocket lifecycle
 
-After first frame, when a suitable network is available and an API origin is pinned, the system SHALL connect to `/ws/device` using a proxy-aware WebSocket client. Connectivity loss MUST close or reset the session; recovery MUST reconnect unless forced-disconnect suppression is active. The system MUST NOT start the device WebSocket from `main()` before the first frame.
+After first frame, when a suitable network is available and an API origin is pinned, the system SHALL connect to `/ws/device` using a proxy-aware WebSocket client. Connectivity loss MUST close or reset the session; recovery MUST reconnect unless forced-disconnect suppression is active. The system MUST NOT start the device WebSocket from `main()` before the first frame. While connected, the client SHALL enable WebSocket protocol ping/pong (default interval 30s, matching lws-ui) so idle proxies and NAT timeouts do not leave a half-open session without reconnect.
 
 #### Scenario: Connect after pin and network available
 
 - **WHEN** a pinned API origin exists and a suitable network is available after first frame
 - **THEN** the system MUST attempt a WebSocket connection to the derived `/ws/device` URL
+
+#### Scenario: Transport keepalive detects dead sockets
+
+- **WHEN** the device WebSocket is connected
+- **THEN** the client MUST send protocol-level ping frames on a bounded interval
+- **AND** a missed pong MUST close the socket so backoff reconnect can run (unless forced-disconnect or auth latch is active)
 
 #### Scenario: Forced disconnect suppresses auto-reconnect
 

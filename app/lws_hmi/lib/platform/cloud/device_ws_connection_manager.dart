@@ -22,12 +22,18 @@ final class DeviceWsConnectionManager {
     this.onMessage,
     this.onStateChanged,
     this.onAuthError,
+    this.pingInterval = defaultPingInterval,
   });
+
+  /// Match lws-ui OkHttp `pingInterval(30s)` — protocol ping/pong keeps
+  /// proxies/NAT from idle-dropping the socket; missed pong closes → reconnect.
+  static const Duration defaultPingInterval = Duration(seconds: 30);
 
   final CloudHttpClient cloudHttp;
   DeviceWsMessageHandler? onMessage;
   void Function(DeviceWsState state)? onStateChanged;
   void Function()? onAuthError;
+  final Duration? pingInterval;
 
   WebSocket? _socket;
   Uri? _url;
@@ -38,10 +44,14 @@ final class DeviceWsConnectionManager {
   int _attempt = 0;
   Timer? _reconnectTimer;
   StreamSubscription? _sub;
+  final StreamController<DeviceWsState> _stateCtrl =
+      StreamController<DeviceWsState>.broadcast();
 
   DeviceWsState get state => _state;
+  Stream<DeviceWsState> get stateChanges => _stateCtrl.stream;
   bool get forcedDisconnectSuppressed => _forcedDisconnect;
   bool get authErrorLatched => _authErrorLatch;
+  Uri? get url => _url;
 
   /// Open [wsUrl]. When [resumeAfterAuth] is true, clear the INVALID_SN /
   /// 401 latch so a SN that became valid (mobile registration) can connect.
@@ -78,6 +88,23 @@ final class DeviceWsConnectionManager {
     }
   }
 
+  /// Network-recovery reconnect: keeps auth / forced latches intact.
+  Future<void> reconnectIfIdle() async {
+    if (_disposed ||
+        _url == null ||
+        _forcedDisconnect ||
+        _authErrorLatch ||
+        _state == DeviceWsState.connected ||
+        _state == DeviceWsState.connecting ||
+        _state == DeviceWsState.offlineAuthError) {
+      return;
+    }
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _attempt = 0;
+    await _open();
+  }
+
   Future<void> disconnect({bool forced = false}) async {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
@@ -112,10 +139,14 @@ final class DeviceWsConnectionManager {
     _disposed = true;
     _reconnectTimer?.cancel();
     await _closeSocket();
+    await _stateCtrl.close();
   }
 
   Future<void> _open() async {
     if (_disposed || _url == null) {
+      return;
+    }
+    if (_forcedDisconnect || _authErrorLatch) {
       return;
     }
     await _closeSocket();
@@ -131,10 +162,13 @@ final class DeviceWsConnectionManager {
       ).timeout(const Duration(seconds: 20));
       // WebSocket takes ownership; do not force-close client here.
       client = null;
+      socket.pingInterval = pingInterval;
       _socket = socket;
       _attempt = 0;
       _setState(DeviceWsState.connected);
-      debugPrint('device-ws: connected $_url');
+      debugPrint(
+        'device-ws: connected $_url pingInterval=$pingInterval',
+      );
       _sub = socket.listen(
         _onData,
         onError: (Object e) {
@@ -260,6 +294,9 @@ final class DeviceWsConnectionManager {
     final prev = _state;
     _state = next;
     debugPrint('device-ws: state $prev → $next url=$_url');
+    if (!_stateCtrl.isClosed) {
+      _stateCtrl.add(next);
+    }
     onStateChanged?.call(next);
   }
 }

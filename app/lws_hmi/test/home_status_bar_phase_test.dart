@@ -1,4 +1,5 @@
 import 'package:cyber_ui/cyber_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/status_bar/status_bar_phase.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
@@ -74,6 +75,40 @@ void main() {
         ),
         CyberConnectivityIconPhase.onIdle,
       );
+    });
+  });
+
+  group('buildProductStatusIconItems cloud slot', () {
+    test('cloud ahead of wifi only when wifi linked', () {
+      final idle = buildProductStatusIconItems(
+        wifiPhase: CyberConnectivityIconPhase.onIdle,
+        bluetoothPhase: CyberConnectivityIconPhase.hidden,
+        cameraStatus: CyberCameraLinkStatus.connecting,
+      );
+      expect(
+        idle.any((w) => w.key == const ValueKey('home-status-cloud')),
+        isFalse,
+      );
+
+      final linked = buildProductStatusIconItems(
+        wifiPhase: CyberConnectivityIconPhase.connected,
+        bluetoothPhase: CyberConnectivityIconPhase.hidden,
+        cameraStatus: CyberCameraLinkStatus.connecting,
+        cloudConnected: false,
+      );
+      expect(linked.first.key, const ValueKey('home-status-cloud'));
+      expect(
+        (linked.first as CyberCloudStatusIcon).linked,
+        isFalse,
+      );
+
+      final online = buildProductStatusIconItems(
+        wifiPhase: CyberConnectivityIconPhase.connected,
+        bluetoothPhase: CyberConnectivityIconPhase.hidden,
+        cameraStatus: CyberCameraLinkStatus.connecting,
+        cloudConnected: true,
+      );
+      expect((online.first as CyberCloudStatusIcon).linked, isTrue);
     });
   });
 

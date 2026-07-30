@@ -302,6 +302,7 @@ apply_kernel_patches() {
     "drivers/input/touchscreen/gt9xx/gt9xx.c"
     "drivers/input/touchscreen/gt9xx/gt9xx.h"
     "drivers/net/phy/icplus.c"
+    "drivers/rtc/rtc-rk808.c"
   )
   kernel="$(kernel_source_dir)"
   patch_dir="$OVERLAY/kernel/patches"
@@ -347,6 +348,7 @@ restore_kernel_patches() {
     "drivers/input/touchscreen/gt9xx/gt9xx.c"
     "drivers/input/touchscreen/gt9xx/gt9xx.h"
     "drivers/net/phy/icplus.c"
+    "drivers/rtc/rtc-rk808.c"
   )
   kernel="$(kernel_source_dir)"
   for relative in "${patched_files[@]}"; do

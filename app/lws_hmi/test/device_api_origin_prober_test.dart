@@ -19,9 +19,28 @@ void main() {
     });
 
     final prober = DeviceApiOriginProber(http: http);
+    final sw = Stopwatch()..start();
     final pin = await prober.probe(CloudEnvironmentTier.test);
     // Faster hyurl wins — same as lws-ui invokeAny / mobile raceOnce.
     expect(pin?.toString(), 'https://lasercyber.hyurl.com/test');
+    // Must not wait for the slower sibling (80ms).
+    expect(sw.elapsedMilliseconds, lessThan(60));
+  });
+
+  test('all-fail probe round ends within default 2s budget', () async {
+    final http = _FakeHttp((url) async {
+      await Future<void>.delayed(const Duration(seconds: 10));
+      return const HttpProbeResult(ok: true, statusCode: 200);
+    });
+    final prober = DeviceApiOriginProber(http: http);
+    final sw = Stopwatch()..start();
+    final pin = await prober.probe(CloudEnvironmentTier.test);
+    expect(pin, isNull);
+    expect(sw.elapsedMilliseconds, lessThan(2500));
+    expect(
+      DeviceApiOriginProber.defaultTimeout,
+      const Duration(seconds: 2),
+    );
   });
 
   test('probe falls back when only secondary is reachable', () async {

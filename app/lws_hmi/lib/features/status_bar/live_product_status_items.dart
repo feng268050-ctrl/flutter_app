@@ -7,6 +7,8 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart'
 import 'package:lws_hmi/features/status_bar/status_bar_phase.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_controller.dart';
 import 'package:lws_hmi/platform/bluetooth/bluetooth_models.dart';
+import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
+import 'package:lws_hmi/platform/cloud/device_ws_connection_manager.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 import 'package:lws_hmi/platform/wifi/wifi_models.dart';
 
@@ -39,6 +41,7 @@ class _LiveProductStatusItemsState extends State<LiveProductStatusItems> {
   List<BluetoothRemoteDevice> _btDevices = const [];
   BluetoothPairingChallenge? _btChallenge;
   IpCameraUiStatus _camera = IpCameraUiStatus.connecting;
+  DeviceWsState _wsState = DeviceWsState.disconnected;
 
   StreamSubscription<WifiRadioState>? _wifiRadioSub;
   StreamSubscription<WifiConnectionState>? _wifiConnSub;
@@ -46,6 +49,7 @@ class _LiveProductStatusItemsState extends State<LiveProductStatusItems> {
   StreamSubscription<List<BluetoothRemoteDevice>>? _btDevicesSub;
   StreamSubscription<BluetoothPairingChallenge?>? _btChallengeSub;
   StreamSubscription<IpCameraUiStatus>? _cameraSub;
+  StreamSubscription<DeviceWsState>? _wsSub;
   Timer? _wifiSignalTimer;
   WifiController? _wifi;
 
@@ -133,9 +137,27 @@ class _LiveProductStatusItemsState extends State<LiveProductStatusItems> {
       unawaited(_bindCamera(services));
     }
 
+    _bindCloudWs();
+
     if (mounted) {
       setState(() {});
     }
+  }
+
+  void _bindCloudWs() {
+    final runtime = CloudLocalRuntimeScope.maybeOf(context);
+    final ws = runtime?.ws;
+    if (ws == null) {
+      _wsState = DeviceWsState.disconnected;
+      return;
+    }
+    _wsState = ws.state;
+    unawaited(_wsSub?.cancel());
+    _wsSub = ws.stateChanges.listen((s) {
+      if (mounted) {
+        setState(() => _wsState = s);
+      }
+    });
   }
 
   Future<void> _bindCamera(AppServices services) async {
@@ -204,12 +226,14 @@ class _LiveProductStatusItemsState extends State<LiveProductStatusItems> {
     await _btDevicesSub?.cancel();
     await _btChallengeSub?.cancel();
     await _cameraSub?.cancel();
+    await _wsSub?.cancel();
     _wifiRadioSub = null;
     _wifiConnSub = null;
     _btAdapterSub = null;
     _btDevicesSub = null;
     _btChallengeSub = null;
     _cameraSub = null;
+    _wsSub = null;
   }
 
   @override
@@ -237,6 +261,7 @@ class _LiveProductStatusItemsState extends State<LiveProductStatusItems> {
       wifiSignalDbm: _wifiConn.signalDbm,
       iconSize: widget.iconSize,
       remoteLocked: remoteLocked,
+      cloudConnected: _wsState == DeviceWsState.connected,
     );
     return widget.builder(context, items);
   }

@@ -29,6 +29,30 @@ void main() {
     expect(find.byType(CyberWifiSignalBars), findsOneWidget);
   });
 
+  testWidgets('Cloud icon dim when not linked', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: CyberCloudStatusIcon(linked: false),
+        ),
+      ),
+    );
+    final icon = tester.widget<Icon>(find.byIcon(Icons.cloud));
+    expect(icon.color, Colors.white54);
+  });
+
+  testWidgets('Cloud icon lit when linked', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: CyberCloudStatusIcon(linked: true),
+        ),
+      ),
+    );
+    final icon = tester.widget<Icon>(find.byIcon(Icons.cloud));
+    expect(icon.color, Colors.white);
+  });
+
   testWidgets('Bluetooth connected glyph', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

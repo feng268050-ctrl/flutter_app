@@ -16,7 +16,7 @@ Prefer **Flutter / Material** structure (`Card`, `Material`/`InkWell`,
 | Controls | `CyberSwitch`, `CyberCheckbox`, `CyberSlider`, `CyberScaledSlider`, `CyberSegmentedControl`, `CyberNumericStepper`, `CyberCapsuleSlider`, `CyberHoldConfirm`, `CyberPressRipple` |
 | Audio chrome | `CyberVolumeSlider`, `CyberIconFlankedSlider`, `CyberAudioPlayerCard` |
 | Dialog | `showCyberDialog`, `CyberModal`, `CyberOverlayHost`, `CyberPromptContent`, `showCyberUsbOtgModeDialog` / `CyberUsbOtgModeCopy`, `CyberKeyboardAvoidingLift` / `CyberKeyboardInsets` (IME card lift), `CyberLiftedPanel` (raw) |
-| Status icons | `CyberWifiStatusIcon`, `CyberBluetoothStatusIcon`, `CyberCameraStatusIcon` |
+| Status icons | `CyberCloudStatusIcon`, `CyberWifiStatusIcon`, `CyberBluetoothStatusIcon`, `CyberCameraStatusIcon` |
 | Clock | `CyberClockAppearance`, `CyberClockNotes` (glyph-clip limits) |
 | Sound | `CyberClickSound` + `CyberClickSoundRegistry` |
 

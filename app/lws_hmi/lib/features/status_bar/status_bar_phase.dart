@@ -50,7 +50,10 @@ CyberCameraLinkStatus mapCameraLinkStatus(IpCameraUiPhase phase) {
   };
 }
 
-/// This product's current status-icon composition: Wi‑Fi · BT · camera · (lock).
+/// This product's status-icon composition: cloud · Wi‑Fi · BT · camera · (lock).
+///
+/// Cloud appears only while Wi‑Fi is linked: gray until the device WS is up,
+/// white while WS is connected (dims again on WS drop).
 List<Widget> buildProductStatusIconItems({
   required CyberConnectivityIconPhase wifiPhase,
   required CyberConnectivityIconPhase bluetoothPhase,
@@ -58,8 +61,16 @@ List<Widget> buildProductStatusIconItems({
   int? wifiSignalDbm,
   double iconSize = 28,
   bool remoteLocked = false,
+  bool cloudConnected = false,
 }) {
+  final wifiLinked = wifiPhase == CyberConnectivityIconPhase.connected;
   return [
+    if (wifiLinked)
+      CyberCloudStatusIcon(
+        key: const ValueKey('home-status-cloud'),
+        linked: cloudConnected,
+        size: iconSize,
+      ),
     if (wifiPhase != CyberConnectivityIconPhase.hidden)
       CyberWifiStatusIcon(
         key: const ValueKey('home-status-wifi'),

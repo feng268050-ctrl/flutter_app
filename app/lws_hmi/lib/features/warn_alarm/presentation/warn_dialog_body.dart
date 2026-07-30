@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 
 /// lws-ui warn prompt metrics (`FrostPromptDialog` + `dialog_frost_body_prompt`).
 ///
-/// On short HMI viewports, [layoutScale] + [FittedBox] keep the card off the
-/// top/bottom edges while shrinking icon / type / gaps together.
+/// On short HMI viewports, [layoutScale] + [FittedBox] shrink content to fit
+/// within [verticalEdgeMargin] while the shell keeps the card centered.
 abstract final class WarnDialogMetrics {
   /// `engineer_mode_entry_dialog_width` / `FrostPromptDialog.standardWidthPx`.
   static const double minCardWidth = 700;
@@ -18,8 +18,9 @@ abstract final class WarnDialogMetrics {
   /// `frost_dialog_prompt_max_height` (`engineer_mode_entry_dialog_height`).
   static const double maxCardHeightDimen = 680;
 
-  /// Breathing room above/below the card (logical px).
-  static const double verticalEdgeMargin = 48;
+  /// Breathing room above/below the card (logical px). Card stays centered;
+  /// keep this tight so short HMI panels do not show large empty bands.
+  static const double verticalEdgeMargin = 16;
 
   /// Unscaled content budget used to derive [layoutScale].
   static const double referenceContentHeight = 560;
@@ -58,19 +59,14 @@ abstract final class WarnDialogMetrics {
     return math.min(maxCardHeightDimen, fromScreen);
   }
 
-  /// Uniform shrink when the viewport cannot fit the lws-ui design height.
-  /// Typical 800-tall HMI panels get an extra compact factor so the card
-  /// does not sit flush against the top/bottom edges.
+  /// Uniform shrink only when the viewport cannot fit the design height.
+  /// No extra short-panel compact factor — that left large centered gaps.
   static double layoutScale(BuildContext context) {
     final budget = maxCardHeight(context);
-    var scale = budget >= referenceContentHeight
-        ? 1.0
-        : (budget / referenceContentHeight).clamp(0.62, 1.0);
-    final screenH = MediaQuery.sizeOf(context).height;
-    if (screenH <= 850) {
-      scale = math.min(scale, 0.82);
+    if (budget >= referenceContentHeight) {
+      return 1.0;
     }
-    return scale;
+    return (budget / referenceContentHeight).clamp(0.72, 1.0);
   }
 
   static TextStyle titleStyle({
@@ -78,6 +74,7 @@ abstract final class WarnDialogMetrics {
     required double scale,
   }) =>
       TextStyle(
+        // WARN → red; INFO (e.g. Allow Work After Camera Alarm) → black.
         color: infoStyle ? WarnDialogBody.titleBlack : WarnDialogBody.titleRed,
         fontSize: titleSize * scale,
         fontWeight: FontWeight.w700,
@@ -118,7 +115,9 @@ abstract final class WarnDialogMetrics {
 /// Warn dialog body matching lws-ui `dialog_frost_body_prompt` + confirm action.
 ///
 /// Layout: centered alarm icon → title → body → orange Confirm.
-/// [infoStyle] uses black title (lws-ui INFO_TYPE); otherwise red WARN title.
+/// [infoStyle] (lws-ui INFO_TYPE): orange info icon + black title — used when a
+/// bypassable alarm is allowed (e.g. Allow Work After Camera Alarm → C002).
+/// Otherwise WARN: red siren + red title.
 class WarnDialogBody extends StatelessWidget {
   const WarnDialogBody({
     super.key,
@@ -142,10 +141,14 @@ class WarnDialogBody extends StatelessWidget {
   /// Stop warn loop before click (single mpg123 session — mutual exclusion).
   final Future<void> Function()? beforeConfirm;
 
-  /// When true, title is black (dangerous-ops bypass INFO).
+  /// When true, INFO chrome (bypassable alarm allowed to continue work).
   final bool infoStyle;
 
-  static const iconAsset = 'assets/warn/alarm_warn_icon.webp';
+  /// lws-ui `alarm_warn_icon` (WARN_TYPE).
+  static const warnIconAsset = 'assets/warn/alarm_warn_icon.webp';
+
+  /// lws-ui `alarm_info_icon` (INFO_TYPE / yellow-orange warning).
+  static const infoIconAsset = 'assets/warn/alarm_info_icon.webp';
 
   /// Bright warn red (lws-ui WARN_TYPE title).
   static const titleRed = Color(0xFFFF0000);
@@ -171,6 +174,7 @@ class WarnDialogBody extends StatelessWidget {
       200.0,
       cardW - pad * 2,
     );
+    final iconAsset = infoStyle ? infoIconAsset : warnIconAsset;
 
     final content = SizedBox(
       width: cardW,

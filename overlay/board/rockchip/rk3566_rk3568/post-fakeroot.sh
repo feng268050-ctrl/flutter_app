@@ -34,13 +34,13 @@ link_unit() {
 	ln -sf "/etc/systemd/system/$unit" "$WANTS/$unit"
 }
 
-for unit in input-event-daemon.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service dhcpcd.service log-guardian.service usbdevice.service ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
+for unit in input-event-daemon.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service dhcpcd.service log-guardian.service usbdevice.service ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
 	disable_unit "$unit"
 done
 
 # preset-all may re-link units with [Install]; explicit disable clears all wants.
 if command -v systemctl >/dev/null 2>&1; then
-	for unit in input-event-daemon.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service dhcpcd.service log-guardian.service usbdevice.service ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
+	for unit in input-event-daemon.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service dhcpcd.service log-guardian.service usbdevice.service ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
 		systemctl --root="$TARGET_DIR" disable "$unit" >/dev/null 2>&1 || true
 	done
 	systemctl --root="$TARGET_DIR" mask usbdevice.service >/dev/null 2>&1 || true

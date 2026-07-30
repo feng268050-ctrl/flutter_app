@@ -27,7 +27,6 @@ RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}"
 
 ENGINE_DIR="$ROOT/prebuilt/flutter-engine/${ENGINE_VER}/arm64-${RUNTIME_MODE}"
 ELINUX_DIR="$ROOT/prebuilt/flutter-embedded-linux/${ELINUX_VER}"
-MEDIAMTX_DIR="$ROOT/prebuilt/mediamtx/linux-arm64"
 RKNN_RT_DIR="$ROOT/prebuilt/rknn-rt"
 GST_EXPORT="$ROOT/prebuilt/gstreamer/target"
 PLATFORM_EXPORT="$ROOT/prebuilt/platform-packages/target"
@@ -111,10 +110,7 @@ if has_include "lws_hmi_wayland.config"; then
   fi
 fi
 
-if has_include "lws_hmi_mediamtx.config"; then
-  require_prebuilt "mediamtx" "$MEDIAMTX_DIR" \
-    "make build-mediamtx / make build-runtime-deps" || missing=1
-fi
+# mediamtx: App-owned under /opt/hmi/bin (make build-app); not a rootfs prebuilt gate.
 
 if has_include "lws_hmi_npu.config"; then
   require_prebuilt "rknn-rt" "$RKNN_RT_DIR" \

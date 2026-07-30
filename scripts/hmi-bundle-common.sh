@@ -193,6 +193,19 @@ hmi_bundle_assemble() {
 		"$@"
 }
 
+# Install product MediaMTX into App tree ($1 = DEST root, e.g. overlay /opt/hmi).
+hmi_bundle_install_mediamtx() {
+	local dest="$1"
+	local src="$ROOT/prebuilt/mediamtx/linux-arm64/mediamtx"
+	local stamp="$ROOT/prebuilt/mediamtx/linux-arm64/.lws-prebuilt"
+
+	[[ -f "$stamp" && -x "$src" ]] \
+		|| die "mediamtx prebuilt missing ($src). Run: make build-mediamtx"
+	mkdir -p "$dest/bin"
+	install -m 0755 "$src" "$dest/bin/mediamtx"
+	echo "hmi-bundle: installed $dest/bin/mediamtx"
+}
+
 # Install release layout into DEST (/opt/hmi overlay): lib/libapp.so + data/flutter_assets.
 hmi_bundle_install_release() {
 	local assets_src="$APP_DIR/build/hmi_bundle/release"
@@ -226,6 +239,8 @@ hmi_bundle_install_release() {
 		"$DEST/data/flutter_assets/icudtl.dat" \
 		"$DEST/data/flutter_assets/app.so" \
 		"$DEST/data/flutter_assets/kernel_blob.bin"
+
+	hmi_bundle_install_mediamtx "$DEST"
 
 	printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >"$DEST/runtime-mode.json"
 }
@@ -287,6 +302,8 @@ EOF
 	# eLinux DartProject expects ICU at <bundle>/data/icudtl.dat.
 	mkdir -p "$hmi_staging/data"
 	cp -f "$icu_src" "$hmi_staging/data/icudtl.dat"
+
+	hmi_bundle_install_mediamtx "$hmi_staging"
 
 	echo "Debug staging ready at $staging"
 	echo "  app:     $hmi_staging/data/flutter_assets/kernel_blob.bin"

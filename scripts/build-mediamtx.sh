@@ -23,23 +23,16 @@ read_tag() {
 TAG="$(read_tag)"
 TAG_NO_V="${TAG#v}"
 REPO="${MEDIAMTX_REPO:-https://github.com/bluenviron/mediamtx.git}"
-OVERLAY_BIN="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/bin/mediamtx"
 # Upstream renamed linux_arm64v8 → linux_arm64 around the 1.12+ releases.
 RELEASE_URL_PRIMARY="https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG_NO_V}_linux_arm64.tar.gz"
 RELEASE_URL_LEGACY="https://github.com/bluenviron/mediamtx/releases/download/${TAG}/mediamtx_${TAG_NO_V}_linux_arm64v8.tar.gz"
 CACHE_TAR="$SRC_ROOT/mediamtx_${TAG_NO_V}_linux_arm64.tar.gz"
 
-sync_mediamtx_overlay() {
-  if [[ -x "$OUT_DIR/mediamtx" ]]; then
-    mkdir -p "$(dirname "$OVERLAY_BIN")"
-    install -m 0755 "$OUT_DIR/mediamtx" "$OVERLAY_BIN"
-    echo "build-mediamtx: synced → $OVERLAY_BIN"
-  fi
-}
+# App-owned: binary stays in prebuilt/ and is copied into /opt/hmi/bin by make build-app.
+# Do not sync into rootfs-overlay.
 
 if prebuilt_ready "$OUT_DIR" && [[ "$FORCE" != "1" ]]; then
-  echo "build-mediamtx: prebuilt ready at $OUT_DIR"
-  sync_mediamtx_overlay
+  echo "build-mediamtx: prebuilt ready at $OUT_DIR (App ships via make build-app)"
   exit 0
 fi
 
@@ -76,7 +69,6 @@ download_release() {
   fi
   chmod 755 "$OUT_DIR/mediamtx"
   prebuilt_stamp "$OUT_DIR" "${TAG}-linux-arm64"
-  sync_mediamtx_overlay
   bash "$ROOT/scripts/sync-prebuilt-manifest.sh"
   echo "build-mediamtx: release → $OUT_DIR/mediamtx"
 }
@@ -116,7 +108,6 @@ build_from_source() {
   )
   chmod 755 "$OUT_DIR/mediamtx"
   prebuilt_stamp "$OUT_DIR" "${TAG}-linux-arm64"
-  sync_mediamtx_overlay
   bash "$ROOT/scripts/sync-prebuilt-manifest.sh"
   echo "build-mediamtx: wrote $OUT_DIR/mediamtx (${TAG}-linux-arm64)"
 }

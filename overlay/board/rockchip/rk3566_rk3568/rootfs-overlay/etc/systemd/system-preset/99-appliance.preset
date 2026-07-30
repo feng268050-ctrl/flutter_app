@@ -1,5 +1,6 @@
 # Processed by systemd preset-all during rootfs image build (after 80-buildroot.preset).
-# Keep sshd/mediamtx installable on demand; do not auto-start at boot (Plan A §3.6).
+# Keep sshd installable on demand; do not auto-start at boot (Plan A §3.6).
+# MediaMTX is App-owned (no mediamtx.service).
 # emulator-sshd / emulator-wlan0-dhcp / lws-hostname: QEMU only (Condition).
 disable lws-hmi-debug-boot.service
 disable sshd.service
@@ -8,7 +9,6 @@ disable ssh-debug-lan.service
 disable wlan-wpa.service
 disable wlan-dhcp.service
 disable eth0-network.service
-disable mediamtx.service
 disable bluetooth.service
 disable wifibt-init.service
 disable wpa_supplicant.service

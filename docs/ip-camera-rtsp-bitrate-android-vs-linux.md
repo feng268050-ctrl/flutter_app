@@ -16,7 +16,7 @@
 | **Linux 曾落后** | `clock_in_out=output` 时 remux ≈ **1.5–2.3 Mbps**，伴 **`mmc_rx_crc_error` 上千** + RTP missed |
 | **根因（已修）** | RMII 参考时钟方向错误：SoC 出 50 MHz（`output`）与板级「PHY 出时钟」不符 → MAC 层 CRC 丢帧 |
 | **修复** | 完整对齐 Android / `rk3568-evb2` RMII input：`clock_in_out=input` + `SCLK_GMAC1` parent=`gmac1_clkin@50M`，并删除 SoC `assigned-clock-rates` |
-| **修复后 Linux** | PR1/PR0 remux ≈ **3.3–3.6 Mbps**，wire ≈ **3.8–4.1**，MMC CRC Δ **0**，RTP missed **0**（停 hmi/mediamtx 单消费者） |
+| **修复后 Linux** | PR1/PR0 remux ≈ **3.3–3.6 Mbps**，wire ≈ **3.8–4.1**，MMC CRC Δ **0**，RTP missed **0**（停 hmi 单消费者；App 子进程 mediamtx 随之退出） |
 
 **一句话：** 差距不在相机、也不在 ffmpeg；在 **Linux DTS 的 RMII 时钟布线**。只改 `clock_in_out` 字符串不够，必须连同 `assigned-clock-parents` / `gmac1_clkin` 一起改。
 
@@ -44,7 +44,7 @@ scripts/measure-ip-camera-rtsp.sh 12
 SERIAL=<adb-serial> STREAMS="PR1 PR0" TRANSPORTS="udp tcp" \
   scripts/measure-ip-camera-rtsp-adb.sh 12
 
-# Linux 板（默认停 hmi+mediamtx，单消费者）
+# Linux 板（默认停 hmi，单消费者；App mediamtx 子进程随之退出）
 SN=<product-sn> STREAMS="PR1 PR0" TRANSPORTS="udp" \
   scripts/measure-ip-camera-rtsp-ssh.sh 12
 
@@ -55,7 +55,7 @@ SN=<product-sn> STREAMS="PR1 PR1 PR1 PR0" \
 
 ### 2.2 通过标准（建议）
 
-在 **停 `hmi`/`mediamtx`**、相机 `192.168.1.100`、板 eth0 `192.168.1.234/24`、100 M 全双工、ping &lt;1 ms 0% loss 前提下：
+在 **停 `hmi`**、相机 `192.168.1.100`、板 eth0 `192.168.1.234/24`、100 M 全双工、ping &lt;1 ms 0% loss 前提下：
 
 | 指标 | 健康 | 异常（本坑典型） |
 |------|------|------------------|
@@ -109,7 +109,7 @@ ethtool -S eth0 | grep -E 'mmc_rx_crc_error|mmc_rx_udp_err'
 
 ### 3.2 Linux 修复后（2026-07-22，完整 `input` + `gmac1_clkin`）
 
-连续 4 次（停 hmi/mediamtx，ffmpeg `-t 12`）：
+连续 4 次（停 hmi，ffmpeg `-t 12`）：
 
 | 轮次 | 流 | remux | wire | MMC CRC Δ | RTP missed |
 |------|----|-------|------|-----------|------------|
@@ -180,7 +180,9 @@ ethtool -S eth0 | grep -E 'mmc_rx_crc_error|mmc_rx_udp_err'
 | `overlay/.../eth0-tune.sh` | stmmac/sysctl/RPS/pause；**禁止 ring resize** |
 | `overlay/.../90-eth0-ipc-tune.rules` | eth0 出现时触发 tune |
 | `overlay/kernel/patches/0005-icplus-ip101a-disable-aps-ynh960.patch` | IP101G 关 APS |
-| `overlay/.../render-mediamtx-config.sh` | 上游 RTSP transport 策略 |
+| `app/lws_hmi/.../media_mtx_config_writer.dart` | 上游 RTSP transport 策略（`/run/hmi/mediamtx.yaml`；原 rootfs `render-mediamtx-config.sh` 已退役） |
+| `app/lws_hmi/.../ip_camera_mediamtx_relay.dart` | App 经 `cyber_pm` 拉起 `/opt/hmi/bin/mediamtx` |
+| `packages/cyber_pm/` | 通用子进程监护 |
 | `app/lws_hmi/.../ip_camera_eth0_path.dart` | 避免无谓 reconfigure |
 | `app/lws_hmi/.../ip_camera_product_session.dart` | 忽略自有 apply 期间 flap |
 
@@ -193,3 +195,4 @@ ethtool -S eth0 | grep -E 'mmc_rx_crc_error|mmc_rx_udp_err'
 | 2026-07-21 | 初版：Mac / Android / Linux 对比与假说 |
 | 2026-07-22 | stmmac `flow_ctrl`/`watchdog` 与测量脚本；发现 **MMC CRC** 与 sysfs 误导 |
 | 2026-07-22 | **根因确认并修复：** 完整 RMII `clock_in_out=input` + `gmac1_clkin`；Linux 对齐 Android；文档改为验收手册 + 踩坑记录 |
+| 2026-07-30 | MediaMTX App 化：测量停 `hmi`（子进程随之退出）；配置/二进制锚点改 App |

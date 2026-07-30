@@ -93,3 +93,13 @@ rm -f \
 	"$TARGET_DIR/usr/libexec/bluetooth/bt-hid-heal.sh" \
 	"$TARGET_DIR/usr/libexec/bluetooth/bt-hid-heal-loop.sh"
 rm -rf "$TARGET_DIR/run/bt-hid" "$TARGET_DIR/var/run/bt-hid"
+
+# MediaMTX moved to App (/opt/hmi/bin via cyber_pm). Incremental target/ keeps
+# former overlay binary/unit/helper after rsync --delete of overlay sources.
+disable_unit "mediamtx.service"
+rm -f \
+	"$SYSTEMD_DIR/mediamtx.service" \
+	"$TARGET_DIR/usr/lib/systemd/system/mediamtx.service" \
+	"$TARGET_DIR/usr/bin/mediamtx" \
+	"$TARGET_DIR/usr/libexec/hmi/render-mediamtx-config.sh"
+rm -rf "$TARGET_DIR/etc/mediamtx"

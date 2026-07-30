@@ -14,7 +14,7 @@
 | **镜像** | 开发与量产 **同一份** `update.img`；无 `LWS_HMI_DEV`、无 sysinit 早期配网 |
 | **systemd** | **保留 systemd 作 PID 1**；平台库链接 **`libsystemd.so`**（`sd_event`），与 init 解耦（§3.6） |
 | **工程调试** | 串口 `ttyFIQ0` + `make serial-console`；远程 SSH 仅 §7.7 按需 |
-| **禁止** | `debug-boot`、内核 `ip=` bootargs、默认 enable `sshd`/`mediamtx`/`bluetoothd` |
+| **禁止** | `debug-boot`、内核 `ip=` bootargs、默认 enable `sshd`/`bluetoothd`（MediaMTX 已无 rootfs unit） |
 | **`multi-user.target`** | 仅表示「应用可启」，非多用户登录；HMI 可 root 运行 |
 
 ---
@@ -52,7 +52,7 @@ systemd-analyze critical-chain hmi.service
 verify-env                         # §3.4 平台栈（RKNPU2 / wifibt / prep 组件）
 ```
 
-**`verify-boot` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` + `lws-hmi-pwrkey-poweroff` enabled；`sshd`/`sshd.socket`/`mediamtx`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；22 未监听；`network-generator` masked；pwrkey input 存在且服务 active；`flutter-wayland-client` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
+**`verify-boot` 期望**：`hmi` + `mainserver` + `lws-hmi-performance` + `lws-hmi-pwrkey-poweroff` enabled；`sshd`/`sshd.socket`/`bluetooth`/`wifibt-init`/`wpa_supplicant`/`network`/`log-guardian` 未链接；无 rootfs `mediamtx.service` / `/usr/bin/mediamtx`；22 未监听；`network-generator` masked；pwrkey input 存在且服务 active；`flutter-wayland-client` running；CPU/devfreq governor 为 `performance`（WARN 若否）。
 
 **秒表**（填 §6 表格）：上电 → logo；上电 → multi-user；上电 → 首页首帧。
 

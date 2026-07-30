@@ -514,34 +514,27 @@ else
 fi
 
 echo ""
-echo "--- mediamtx (P1 prep — binary may be staged; start only after IPC ping, §7.5) ---"
+echo "--- mediamtx (App-owned under /opt/hmi/bin; not a rootfs unit) ---"
 if [ -x /usr/bin/mediamtx ]; then
-	pass "mediamtx binary staged in /usr/bin"
+	fail "/usr/bin/mediamtx still in rootfs (should be /opt/hmi/bin/mediamtx)"
 else
-	prep_ok "mediamtx binary not in rootfs"
+	pass "/usr/bin/mediamtx absent from rootfs"
 fi
-if pidof mediamtx >/dev/null 2>&1; then
-	fail "mediamtx process running (should not auto-start @ P1)"
+if [ -e /etc/systemd/system/mediamtx.service ]; then
+	fail "mediamtx.service still present in rootfs"
 else
-	pass "mediamtx not running"
+	pass "mediamtx.service absent"
 fi
-if command -v systemctl >/dev/null 2>&1; then
-	state="$(systemctl is-enabled mediamtx.service 2>/dev/null || echo disabled)"
-	case "$state" in
-	enabled|enabled-runtime)
-		fail "mediamtx.service enabled ($state) — run: systemctl disable mediamtx.service"
-		;;
-	static)
-		pass "mediamtx.service static (on-demand; no [Install])"
-		;;
-	*)
-		pass "mediamtx.service not enabled @ boot ($state)"
-		;;
-	esac
+if [ -x /opt/hmi/bin/mediamtx ]; then
+	pass "App mediamtx at /opt/hmi/bin/mediamtx"
+else
+	prep_ok "App mediamtx not installed yet (make build-app / push-app)"
 fi
 wants="/etc/systemd/system/multi-user.target.wants/mediamtx.service"
 if [ -L "$wants" ] || [ -f "$wants" ]; then
 	fail "mediamtx.service linked in multi-user.target.wants"
+else
+	pass "mediamtx.service not in multi-user wants"
 fi
 
 echo ""

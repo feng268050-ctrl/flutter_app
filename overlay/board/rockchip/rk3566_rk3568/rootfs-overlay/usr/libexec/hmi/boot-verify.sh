@@ -20,7 +20,7 @@ else
 	fail "missing $WANTS"
 fi
 
-for unit in lws-hmi-debug-boot.service ssh-debug-usb.service mediamtx.service sshd.service sshd.socket ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
+for unit in lws-hmi-debug-boot.service ssh-debug-usb.service sshd.service sshd.socket ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service; do
 	if [ -e "$WANTS/$unit" ]; then
 		fail "$unit still enabled in multi-user.target.wants"
 	else
@@ -65,7 +65,7 @@ done
 
 echo ""
 echo "--- other *.wants (sshd.socket etc.) ---"
-for unit in lws-hmi-debug-boot.service ssh-debug-usb.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
+for unit in lws-hmi-debug-boot.service ssh-debug-usb.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
 	found=""
 	for wants_dir in /etc/systemd/system/*.wants; do
 		[ -d "$wants_dir" ] || continue
@@ -223,11 +223,16 @@ else
 fi
 
 echo ""
-echo "--- mediamtx ---"
-if pidof mediamtx >/dev/null 2>&1; then
-	fail "mediamtx process running"
+echo "--- mediamtx (App-owned; no rootfs unit) ---"
+if [ -e /etc/systemd/system/mediamtx.service ]; then
+	fail "mediamtx.service still present"
 else
-	pass "mediamtx not running"
+	pass "mediamtx.service absent"
+fi
+if [ -x /usr/bin/mediamtx ]; then
+	fail "/usr/bin/mediamtx still in rootfs"
+else
+	pass "/usr/bin/mediamtx absent"
 fi
 
 echo ""

@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cyber_hal/ip_camera.dart';
+import 'package:cyber_pm/cyber_pm.dart';
 import 'package:flutter/foundation.dart';
+import 'package:lws_hmi/features/ip_camera/application/media_mtx_config_writer.dart';
 
 enum IpCameraRelayPhase { stopped, starting, running, error }
 
@@ -32,18 +34,25 @@ abstract class IpCameraMediaMtxRelay {
 
 final class LinuxIpCameraMediaMtxRelay implements IpCameraMediaMtxRelay {
   LinuxIpCameraMediaMtxRelay({
-    this.renderHelper = '/usr/libexec/hmi/render-mediamtx-config.sh',
-    this.unit = 'mediamtx.service',
+    this.executable = '/opt/hmi/bin/mediamtx',
     this.localHost = '127.0.0.1',
     this.port = 8554,
-    Future<ProcessResult> Function(String exe, List<String> args)? run,
-  }) : _run = run ?? ((exe, args) => Process.run(exe, args));
+    MediaMtxConfigWriter? configWriter,
+    ProcessSupervisor? supervisor,
+  })  : _configWriter = configWriter ?? MediaMtxConfigWriter(),
+        _supervisor = supervisor ??
+            ProcessSupervisor(
+              restartPolicy: const RestartPolicy.onFailure(
+                delay: Duration(seconds: 3),
+              ),
+              logSink: (line) => debugPrint(line),
+            );
 
-  final String renderHelper;
-  final String unit;
+  final String executable;
   final String localHost;
   final int port;
-  final Future<ProcessResult> Function(String exe, List<String> args) _run;
+  final MediaMtxConfigWriter _configWriter;
+  final ProcessSupervisor _supervisor;
 
   IpCameraRelayStatus _status = IpCameraRelayStatus.stopped;
   Future<void>? _ensureInFlight;
@@ -100,27 +109,35 @@ final class LinuxIpCameraMediaMtxRelay implements IpCameraMediaMtxRelay {
       _status = const IpCameraRelayStatus(phase: IpCameraRelayPhase.starting);
     }
     try {
-      final host = upstream.pr0.host;
-      await _run(renderHelper, <String>[host]);
-
-      // If systemd already has the unit, skip start (avoids queued job stalls).
-      final already = await _isActive();
-      if (!already) {
-        final start = await _run('systemctl', <String>['start', unit]);
-        if (start.exitCode != 0) {
-          _status = IpCameraRelayStatus(
-            phase: IpCameraRelayPhase.error,
-            detail: 'systemctl start failed (${start.exitCode})',
-          );
-          return;
-        }
+      if (_supervisor.isRunning) {
+        _status = const IpCameraRelayStatus(phase: IpCameraRelayPhase.running);
+        return;
       }
 
-      final activeOut = await _activeState();
-      if (activeOut != 'active') {
+      final exeFile = File(executable);
+      if (!await exeFile.exists()) {
         _status = IpCameraRelayStatus(
           phase: IpCameraRelayPhase.error,
-          detail: 'mediamtx not active ($activeOut)',
+          detail: 'mediamtx missing at $executable (make build-app)',
+        );
+        return;
+      }
+
+      final host = upstream.pr0.host;
+      final cfg = await _configWriter.write(cameraHost: host);
+      await _supervisor.start(
+        executable: executable,
+        arguments: <String>[cfg.path],
+        workingDirectory: File(executable).parent.path,
+        logPrefix: 'mediamtx',
+      );
+
+      // Brief settle: child must still be alive.
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (!_supervisor.isRunning) {
+        _status = const IpCameraRelayStatus(
+          phase: IpCameraRelayPhase.error,
+          detail: 'mediamtx exited immediately',
         );
         return;
       }
@@ -134,23 +151,10 @@ final class LinuxIpCameraMediaMtxRelay implements IpCameraMediaMtxRelay {
     }
   }
 
-  Future<bool> _isActive() async {
-    return (await _activeState()) == 'active';
-  }
-
-  Future<String> _activeState() async {
-    final active = await _run('systemctl', <String>['is-active', unit]);
-    return active.stdout.toString().trim();
-  }
-
   @override
   Future<void> stop() async {
-    if (!Platform.isLinux) {
-      _status = IpCameraRelayStatus.stopped;
-      return;
-    }
     try {
-      await _run('systemctl', <String>['stop', unit]);
+      await _supervisor.stop();
     } catch (e) {
       debugPrint('ip_camera mediamtx stop failed: $e');
     }

@@ -23,7 +23,6 @@ DISABLE_AT_BOOT=(
 	lws-hmi-pwrkey-poweroff.service
 	lws-hmi-serial-stty.service
 	lws-hmi-usb-otg-role-boot.service
-	mediamtx.service
 	sshd.service
 	sshd.socket
 	ssh-debug-lan.service

@@ -3,7 +3,6 @@
 ## Purpose
 TBD - created by archiving change p1-linux-flutter-platform. Update Purpose after archive.
 ## Requirements
-
 ### Requirement: Plan A minimal systemd is PID 1
 
 The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL ship `libsystemd.so` for the eLinux HMI (`sd_event`); libsystemd availability does not by itself mandate systemd as init, but both are enabled via `lws_hmi_systemd.config`. **P3.1 / D11:** the image SHALL enable **systemd-networkd** and **systemd-resolved**. It MUST keep systemd-timesyncd, systemd-logind, and polkit packages disabled per that config.
@@ -20,7 +19,7 @@ The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL shi
 
 ### Requirement: hmi.service auto-starts the HMI after local-fs only
 
-The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/usr/bin/eLinux HMI --release -o landscape_left /opt/hmi` with `Nice=-5`, restart on failure, and MUST depend only on `local-fs.target` and `cpu-performance.service` — not on `network-online.target`, `mediamtx.service`, or `systemd-udev-settle.service`.
+The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/usr/bin/eLinux HMI --release -o landscape_left /opt/hmi` with `Nice=-5`, restart on failure, and MUST depend only on `local-fs.target` and `cpu-performance.service` — not on `network-online.target` or `systemd-udev-settle.service`. The HMI MUST NOT depend on a rootfs `mediamtx.service` (MediaMTX is App-owned under `/opt/hmi`).
 
 #### Scenario: hmi enabled at image build
 
@@ -30,7 +29,7 @@ The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/us
 #### Scenario: verify-boot confirms Plan A boot chain
 
 - **WHEN** operator runs `verify-boot` on device after flash
-- **THEN** output reports PASS for hmi/mainserver/performance/pwrkey enabled and mediamtx/sshd/wpa_supplicant/network not in multi-user wants
+- **THEN** output reports PASS for hmi/mainserver/performance/pwrkey enabled and sshd/wpa_supplicant/network not in multi-user wants
 
 #### Scenario: HMI starts automatically
 
@@ -53,12 +52,7 @@ Post-build hook SHALL enable `hmi.service`, `mainserver.service` (Innohi display
 
 ### Requirement: Non-critical services disabled at image build
 
-Post-build hook SHALL disable `mediamtx.service`, `sshd.service`, `sshd.socket`, `bluetooth.service`, `wifibt-init.service`, `wpa_supplicant.service`, `network.service`, and `log-guardian.service` from all `*.wants` directories. `systemd-network-generator.service` SHALL be masked. `08-systemd-finalize.sh` SHALL undo SDK post-hook re-enables (e.g. `log-guardian`).
-
-#### Scenario: mediamtx not auto-started
-
-- **WHEN** P1 device boots
-- **THEN** `mediamtx` process is not running and unit is not in multi-user wants
+Post-build hook SHALL disable `sshd.service`, `sshd.socket`, `bluetooth.service`, `wifibt-init.service`, `wpa_supplicant.service`, `network.service`, and `log-guardian.service` from all `*.wants` directories. `systemd-network-generator.service` SHALL be masked. `08-systemd-finalize.sh` SHALL undo SDK post-hook re-enables (e.g. `log-guardian`). The image MUST NOT ship a product `mediamtx.service` unit.
 
 #### Scenario: sshd not listening by default
 
@@ -69,6 +63,12 @@ Post-build hook SHALL disable `mediamtx.service`, `sshd.service`, `sshd.socket`,
 
 - **WHEN** P1 device reaches multi-user target
 - **THEN** `wifibt-init.service`, `wpa_supplicant.service`, and `network.service` are not in multi-user wants
+
+#### Scenario: mediamtx not a boot unit
+
+- **WHEN** P1 device boots
+- **THEN** no `mediamtx.service` unit is enabled in multi-user wants
+- **AND** a mediamtx process MUST NOT be running solely because of boot (App may start it later after IPC is healthy)
 
 ### Requirement: journald uses volatile storage
 
@@ -199,3 +199,4 @@ Plan A SHALL continue to leave `network.service` and `dhcpcd.service` out of `mu
 
 - **WHEN** inspecting `hmi.service`
 - **THEN** it does not require `network-online.target`
+

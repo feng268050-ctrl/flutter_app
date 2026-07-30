@@ -2,7 +2,7 @@
 
 目标：在 **lws-hmi** Buildroot 基线上，用 **Weston + flutter-embedded-linux** 跑 Flutter UI；建设可复用的 **嵌入式 OS**：共用 **CyberUI** 框架与 **Dart HAL（`cyber_hal`）**，主板/屏幕以 **OEM board·screen pack** 插拔，**产品顶层 App 可分叉**（`gpio`/`modbus` 目录属 App，不进 OEM）。按 **P1→P5** 增量交付（见下表）。显示栈细节与切换命令见 [`embedder-migration-plan.md`](embedder-migration-plan.md)。平台化（OEM / 自有 SDK / P3.2 虚拟机）见 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md)。
 
-**能力原则**：**产品能力不少于 lws-ui**；**Linux** 平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**P5.0** 保留 Android 兼容构建（**App/APK + YNHAPI**，不扩展 `cyber_hal`）；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md)（已归档）。
+**能力原则**：**产品能力不少于 lws-ui**；**Linux** 平台层长期为 **Buildroot + Dart HAL（`cyber_hal`）**；UI 为 **CyberUI**（初期 Frosted Glass，设计可换）；**产品子进程**（MediaMTX、日后 AI daemon）经 **`cyber_pm`** 由 App 监护，**不**默认进通用 rootfs；**P5.0** 保留 Android 兼容构建（**App/APK + YNHAPI**，不扩展 `cyber_hal`）；算法/拓扑/模型尽量复用。逐项对照见 **§11.5**。HAL 设计见 OpenSpec [`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md)（已归档）。MediaMTX App 化见 [`app-owned-mediamtx-cyber-pm`](../openspec/changes/app-owned-mediamtx-cyber-pm/)。
 
 **板级范围（当前）**：**ynh960 / ynh962 / ynh961** 同产品线三档（RK3566 → RK3568B2 → RK3568）；**P1～P4 以 ynh960 验收**。中长期目标是 **少量不同主板 + 不同屏幕** 共用 OS 契约与 CyberUI，而非每产品从零开始。Rockchip SDK `**rk3566_rk3568`** profile 见 **§3.0**。
 
@@ -20,8 +20,8 @@
 | **Linux P3.0 — UI 框架 + IME** | Flutter 重写 UI 框架与 IME：**CyberUI** + **CyberIME**（`packages/` path 包；初期 Frosted Glass，API 面向可换设计）；骨架已落地，持续优化中 | 🔄 |
 | **Linux P3.1 — HAL 硬件抽象层** | **Dart HAL 子包** + **systemd-networkd 网络栈切换**（wpa D-Bus + networkd L3；无 Rust/`hald`）。设计：[`dart-hal-package`](../openspec/changes/archive/2026-07-18-dart-hal-package/design.md) | ✅ |
 | **Linux P3.2 — Linux 模拟器** | 同 `Image` + 同 rootfs 内容 + OEM `sim_virt`；QEMU + VirGL 自动 `hmi.service`；细则 [`platform-os-oem-sdk-plan.md`](platform-os-oem-sdk-plan.md) §6 / W4；操作 [`p32-emulator.md`](p32-emulator.md)；OpenSpec `archive/2026-07-28-platform-p32-sim-virt` | ✅ |
-| **Linux P3.3 — AI 库迁移** | 迁入 `libai.so` + RKNN 配置 | 🔲 |
-| **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务等（原 P5 业务；子阶段见 **§1.2**） | 🔄 |
+| **Linux P3.3 — AI 库迁移** | 迁入 `libai.so` / AI daemon + RKNN；App 经 **`cyber_pm`** 监护（对齐 lws-ui） | 🔲 |
+| **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务等（原 P5 业务；子阶段见 **§1.2**）；IPC MediaMTX 已 App 化 | 🔄 |
 | **Linux P5.0 — Android 兼容** | Flutter App 打 **APK**；Modbus / GPIO / Wi‑Fi / BT 等在 **App 侧**接 Android / `YNHAPI`（**不**往 `cyber_hal` 加 Android 后端） | 🔲 |
 | **Linux P5.1 — 升级 Flutter Engine** | flutter-engine / SDK / flutter-embedded-linux：**3.24 → 3.41**（2026 代） | 🔲 |
 
@@ -80,12 +80,16 @@ P3.2  Linux 模拟器 ✅（W4 / archive/2026-07-28-platform-p32-sim-virt）
     └─ 量产显示栈：Weston + eLinux
         （见 docs/embedder-migration-plan.md）
 
-P3.3  AI → libai.so 🔲
-    ├─ 迁移 lensinspector；Linux aarch64 libai.so + RKNN
+P3.3  AI → libai.so / daemon 🔲
+    ├─ 迁移 lensinspector；Linux aarch64 算法库 + RKNN
+    ├─ 产品路径对齐 lws-ui：App 经 **cyber_pm** 监护 AI 子进程（非 systemd wants）
     └─ 板端 smoke；业务叠框 UI 在 P4
 
 P4  业务迁移（子阶段见 §1.2）🔄
     ├─ 已交付切片：产品 Home / Settings / Monitor（告警温度）/ 开机自检 / 系统状态卡等
+    ├─ **IPC MediaMTX**：产品运行时 — `/opt/hmi/bin/mediamtx` + Dart YAML + `cyber_pm`
+    │   （OpenSpec `app-owned-mediamtx-cyber-pm`）；**不进**通用 rootfs
+    ├─ packages/cyber_pm — 可复用子进程监护（MediaMTX 已用；AI 复用）
     ├─ 进行中：P4.2 网络与状态栏、P4.6 其余业务页；云服务 / `:5580`（OpenSpec `align-cloud-local-server`）已落地非 OTA 切片；P4.1 / P4.3～P4.5 / P4.7～P4.8 未开始
     └─ 依赖 CyberUI（优化中）+ HAL（设置/硬件页）
 
@@ -94,7 +98,10 @@ P5.0  Android 兼容 🔲
     └─ Modbus / GPIO / Wi‑Fi / BT 等 App 侧适配；make build-apk / push-apk
 
 P5.1  Flutter Engine / SDK / flutter-embedded-linux 升级 🔲
-    ├─ 3.24 → 3.41 代；三件套#GStreamer-video-player)
+    └─ 3.24 → 3.41 代；三件套（SDK + engine + eLinux）重编
+
+参考链接：
+- eLinux / GStreamer video_player（预览栈）
 - [RKNN-Toolkit2](https://github.com/airockchip/rknn-toolkit2) — 模型转换
 - lws-hmi `README.md` — ynh960 显示参数、Docker 构建
 - lws-ui `native/lensinspector` — RKNN YOLO 参考实现
@@ -102,11 +109,11 @@ P5.1  Flutter Engine / SDK / flutter-embedded-linux 升级 🔲
 - lws-ui `docs/project-architecture-summary.md`、`docs/root-docs-index.md` — 实装与文档索引
 - lws-ui `scripts/make/convert-rknn.sh` — RKNN 模型转换流水线
 - lws-ui `docs/camera-eth0-topology.md`、`docs/dual-stream-summary.md`、`docs/network-api-reference.md` — PR0/PR1 与 MediaMTX LAN URL
-- lws-ui `MediaMtxConfigRenderer.java` / `MediaMtxRelayUrls.java` — YAML 与 URL 规范
+- lws-ui `MediaMtxConfigRenderer.java` / `MediaMtxRelayUrls.java` — YAML 与 URL 规范（Linux：`MediaMtxConfigWriter` + `/opt/hmi/bin/mediamtx`）
 - lws-ui `AdbRemoteDebugHelper.java` / `POST /v1/adb` — SSH 隐藏调试对标（§7.7）
 - lws-ui `docs/frostui.md`、`FrostBlurViewSupport.kt` — Frost 冻结/live 语义对照（§6.3）
 - Rockchip SDK `buildroot/configs/rockchip_rk3566_rk3568_defconfig` — 当前臃肿基线（对照用）
 
 ---
 
-**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 与 P3.1（`cyber_hal` + networkd）已完成**。**进行中**：**P3.0 CyberUI/IME**（优化）、**P4**（含 **P4.2** 网络与状态栏、**P4.6** 业务页切片）。其后仍待：**P3.3 libai**、P4 其余子阶段、**P5.0 Android（App/APK + YNHAPI，非 `cyber_hal`）**、**P5.1 Engine 升级**。**P3.2 模拟器主路径已落地**（USB Wi‑Fi/BT ⏸）。Linux 平台层长期为 **`cyber_hal` + Buildroot**；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。
+**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 与 P3.1（`cyber_hal` + networkd）已完成**；**IPC MediaMTX 已 App 化（`cyber_pm` + `/opt/hmi/bin`）**。**进行中**：**P3.0 CyberUI/IME**（优化）、**P4**（含 **P4.2** 网络与状态栏、**P4.6** 业务页切片）。其后仍待：**P3.3 libai/daemon**（复用 `cyber_pm`）、P4 其余子阶段、**P5.0 Android（App/APK + YNHAPI，非 `cyber_hal`）**、**P5.1 Engine 升级**。**P3.2 模拟器主路径已落地**（USB Wi‑Fi/BT ⏸）。Linux 平台层长期为 **`cyber_hal` + Buildroot**；产品附属进程用 **`cyber_pm`**；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。

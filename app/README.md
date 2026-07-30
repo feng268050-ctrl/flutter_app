@@ -17,7 +17,8 @@ make build-deps        # build-dev-deps + runtime prebuilt
 make check-prebuilt
 ```
 
-- **Runtime** (`make build-runtime-deps`): flutter-engine, display runners, **gstreamer (MPP+RTSP)**, mediamtx, OpenCV sources, `prebuilt/rknn-rt`
+- **Runtime** (`make build-runtime-deps`): flutter-engine, display runners, **gstreamer (MPP+RTSP)**, OpenCV sources, `prebuilt/rknn-rt`
+- **MediaMTX** (product): `make build-mediamtx` → `prebuilt/`; shipped as `/opt/hmi/bin/mediamtx` by `make build-app` (App `cyber_pm` child — not rootfs)
 - **Dev host** (`make build-dev-deps`): `FLUTTER_SDK`, RKNN-Toolkit（仅 x86 转模型）
 - **`make build-rootfs`** 安装 defconfig 已接入的 prebuilt；`check-prebuilt` 校验全部 runtime 项
 

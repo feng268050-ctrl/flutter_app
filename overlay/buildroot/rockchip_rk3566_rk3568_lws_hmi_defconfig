@@ -24,7 +24,8 @@
 # --- enable when feature is merged (not a separate make target) ---
 #include "chips/lws_hmi_npu.config"
 #include "chips/lws_hmi_gst_rtsp.config"
-#include "chips/lws_hmi_mediamtx.config"
+# MediaMTX is App-owned (/opt/hmi/bin via make build-app); not a rootfs fragment.
+# #include "chips/lws_hmi_mediamtx.config"
 # Alarm Logs (sqlite3) + Modbus/YAML/Avahi — build or prebuilt via apply-overlay swap.
 #include "chips/lws_hmi_platform.config"
 

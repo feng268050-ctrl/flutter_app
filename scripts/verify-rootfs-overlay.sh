@@ -31,7 +31,7 @@ check_systemd_wants() {
 	fi
 	ls -la "$wants" 2>/dev/null || true
 
-	for unit in input-event-daemon.service lws-hmi-debug-boot.service ssh-debug-usb.service mediamtx.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
+	for unit in input-event-daemon.service lws-hmi-debug-boot.service ssh-debug-usb.service sshd.service sshd.socket bluetooth.service wifibt-init.service wpa_supplicant.service network.service log-guardian.service ssh-debug-lan.service wlan-wpa.service wlan-dhcp.service eth0-network.service; do
 		if unit_wants_link "$unit"; then
 			echo "FAIL: $unit still enabled in $label" >&2
 			missing=1
@@ -628,14 +628,23 @@ EOF
 		fi
 	done
 
-	if [[ -x "$target/usr/libexec/hmi/render-mediamtx-config.sh" ]] && \
-		grep -q 'camera/pr0' "$target/usr/libexec/hmi/render-mediamtx-config.sh" 2>/dev/null && \
-		grep -q 'sourceOnDemand: no' "$target/usr/libexec/hmi/render-mediamtx-config.sh" 2>/dev/null && \
-		grep -q 'rtspTransport: udp' "$target/usr/libexec/hmi/render-mediamtx-config.sh" 2>/dev/null; then
-		echo "OK:  render-mediamtx-config.sh (PR0/PR1 + eager pull + udp)"
-	else
-		echo "FAIL: render-mediamtx-config.sh missing, stub, or missing path tunables" >&2
+	if [[ -e "$target/usr/libexec/hmi/render-mediamtx-config.sh" ]]; then
+		echo "FAIL: render-mediamtx-config.sh must not ship in rootfs (App-owned MediaMTX)" >&2
 		missing=1
+	else
+		echo "OK:  render-mediamtx-config.sh absent (App Dart writer)"
+	fi
+	if [[ -e "$target/usr/bin/mediamtx" ]]; then
+		echo "FAIL: /usr/bin/mediamtx must not ship in rootfs (use /opt/hmi/bin)" >&2
+		missing=1
+	else
+		echo "OK:  /usr/bin/mediamtx absent"
+	fi
+	if [[ -e "$target/etc/systemd/system/mediamtx.service" ]]; then
+		echo "FAIL: mediamtx.service must not ship in rootfs" >&2
+		missing=1
+	else
+		echo "OK:  mediamtx.service absent"
 	fi
 
 	if [[ -x "$target/usr/libexec/hmi/enable-ssh-debug.sh" && -x "$target/usr/libexec/hmi/disable-ssh-debug.sh" ]]; then

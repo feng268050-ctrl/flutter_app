@@ -6,7 +6,7 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 - **What:** Buildroot-based **embedded appliance OS** for Innohi boards (benchmark: **ynh960/961/962**) + Flutter HMI (`app/lws_hmi/`). Direction: shared **CyberUI** + **`cyber_hal`** Dart package (submodule/packages), per-product Apps, board profiles for new motherboards/panels. **No** Rust `hald` Platform API.
 - **Board SKUs (current line):** ynh960 → RK3566 (entry); ynh962 → RK3568B2 (mid); ynh961 → RK3568 (high). Same product line; **one firmware image is the near-term goal** for this line. **Validate on ynh960** — no per-SKU defconfig fork yet. Future products may use different boards/screens via packs + HAL package.
-- **Phase roadmap:** See `docs/flutter-linux-hmi-plan.md` §1 (P1–P2.5 + **P3.1 HAL** done; **P3.2** W4 archived — same Image+rootfs+OEM via QEMU, `openspec/changes/archive/2026-07-28-platform-p32-sim-virt`, [`docs/p32-emulator.md`](docs/p32-emulator.md); **P3.0 CyberUI/IME** and **P4** in progress; next P3.3 AI, remaining P4 slices, P5.0 Android App/APK — not `cyber_hal` Android backends, P5.1 engine). HAL design: `openspec/changes/archive/2026-07-18-dart-hal-package/`. `cyber_hal` is Linux (+ stub) only.
+- **Phase roadmap:** See `docs/flutter-linux-hmi-plan.md` §1 (P1–P2.5 + **P3.1 HAL** done; **P3.2** W4 archived; **P3.0 CyberUI/IME** and **P4** in progress — IPC **MediaMTX App-owned** via `cyber_pm` + `/opt/hmi/bin`; next **P3.3 AI** reuses `cyber_pm`, remaining P4 slices, P5.0 Android App/APK — not `cyber_hal` Android backends, P5.1 engine). HAL design: `openspec/changes/archive/2026-07-18-dart-hal-package/`. `cyber_hal` is Linux (+ stub) only.
 - **Hosts:** Linux builds natively in `linux-sdk/`; macOS uses Docker `linux/amd64` + a Docker volume for the SDK tree.
 - **Outputs:** `output/firmware/boot.img` (FIT for `rootfs_a`), `boot_b.img` (same kernel, FIT for `rootfs_b`), `rootfs.img`, per-SKU `output/firmware/<sku>/factory.img` (oem+uboot+A/B), and migration symlink `update.img` → default sku `factory.img`; Linux also has artifacts under `linux-sdk/output/firmware/`.
 - **Scope:** Active Buildroot packages follow `#include` lines in `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig`.
@@ -104,6 +104,8 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `oem/**` sim_virt only | included by `make build-emulator`; or `OEM_ID=sim_virt make build-oem` |
 | `overlay/.../oem-compose*` | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `packages/cyber_hal` profile APIs / App OEM load path | `make build-app`, `make push-app` |
+| `packages/cyber_pm` (process supervisor) | `make build-app`, `make push-app` (host: `dart test` in package) |
+| `prebuilt/mediamtx/**`, `scripts/build-mediamtx.sh`, App MediaMTX relay / `/opt/hmi/bin` | `make build-mediamtx` (if prebuilt missing), `make build-app`, `make push-app`; purge old rootfs binary/unit: `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `board/parameter-buildroot-fit.txt` (GPT / A/B) | `make apply-overlay`, `make build-oem`, `make build-img`, `make flash` (repartition once) |
 | A/B upgrade helpers (`overlay/.../ab-*.sh`, `ab-boot-confirm.service`) | First adoption: `make apply-overlay`, `make build-rootfs`, `make build-oem`, `make build-img`, `make flash`; existing P2.4 board: `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `scripts/upgrade-remote.sh`, `scripts/stream-file-progress.py`, or Makefile `upgrade` only (board already has P2.4 overlay + A/B GPT) | `make upgrade` (or `OEM_ONLY=1 make upgrade`); no firmware rebuild unless image inputs are stale |
@@ -162,7 +164,10 @@ Keep long command examples in **README.md**; keep agent-only rules (rebuild bloc
 
 | Path | Role |
 |------|------|
-| `app/lws_hmi/` | Flutter HMI → `overlay/.../opt/hmi` |
+| `app/lws_hmi/` | Flutter HMI → `overlay/.../opt/hmi`（含产品 `bin/`，如 mediamtx） |
+| `packages/cyber_hal/` | Dart HAL path 包 |
+| `packages/cyber_pm/` | 子进程监护（MediaMTX、日后 AI） |
+| `packages/cyber_ui/` / `cyber_ime/` / `cyber_alarm/` | UI / IME / 告警引擎 |
 | `overlay/.../rootfs-overlay/` | Rootfs overlay (systemd, scripts, `/opt/hmi` staging) |
 | `overlay/buildroot/` | Defconfig fragments, package pins |
 | `overlay/kernel/` | DTS / kernel config |

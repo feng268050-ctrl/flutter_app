@@ -482,7 +482,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 
 | Bucket | Command | What |
 |--------|---------|------|
-| **Runtime** (`build-runtime-deps`) | Board / `libai.so` stack | Flutter、**GStreamer/MPP**、MediaMTX、OpenCV、RKNN runtime |
+| **Runtime** (`build-runtime-deps`) | Board stack | Flutter、**GStreamer/MPP**、OpenCV、RKNN runtime（MediaMTX 走 `build-mediamtx` + **`build-app`** → `/opt/hmi/bin`） |
 | **Dev host** (`build-dev-deps`) | x86 上编应用、转模型 | `FLUTTER_SDK`（交叉编 Dart）、RKNN-Toolkit（ONNX→`.rknn`） |
 
 `make build-deps` = `build-dev-deps` + `build-runtime-deps`（engine 编译需要 host Flutter SDK）。
@@ -494,7 +494,7 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | 组件 | 产出位置 | 板上角色 |
 |------|----------|----------|
 | flutter-engine / eLinux | `prebuilt/flutter-*` | HMI 显示栈 |
-| mediamtx | `prebuilt/mediamtx/` + fs-overlay `usr/bin/` | RTSP 中继（**相机 ping 通后** App 启动；默认不在 wants） |
+| mediamtx | `prebuilt/mediamtx/` → **`/opt/hmi/bin/mediamtx`** (`make build-app`) | RTSP 中继（产品 App 子进程；**相机就绪后**由 HMI 拉起） |
 | umtprd | `prebuilt/umtprd/` + fs-overlay `usr/bin/` | USB MTP gadget（`mode=mtp`；`make build-umtprd`） |
 | btop | `prebuilt/btop/` + fs-overlay `usr/bin/` | SSH 按需系统监视（官方 aarch64 musl 静态包；`make fetch-btop`） |
 | **GStreamer + MPP** | Buildroot + `prebuilt/gstreamer/` | RTSP 预览/取帧 |
@@ -537,16 +537,16 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P3.0 | — | — | **cyber_ui** / **cyber_ime** path 包 🔄（优化中） |
 | P3.1 | systemd-networkd、wpa D-Bus | 开 networkd | **Dart HAL** + **网络栈切换**（L3=networkd）✅ |
 | P3.2 | 同 Image + 同 rootfs + OEM 切换 | QEMU | 模拟器验证多板多屏 ✅ W4 主路径；[`docs/p32-emulator.md`](docs/p32-emulator.md)；`make build-emulator` / **`make emulator`** |
-| P3.3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai.so** |
-| P4 | GStreamer、MediaMTX、sqlite、Avahi | ✓ | 业务 UI、:5580、云 🔄（非 OTA 切片见 `openspec/changes/align-cloud-local-server`）；**P4.8 OTA** 另计 |
+| P3.3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai / AI daemon**（经 `cyber_pm`） |
+| P4 | GStreamer、sqlite、Avahi；**MediaMTX → App `/opt/hmi/bin`** | GStreamer ✓ | 业务 UI、:5580、云 🔄；MediaMTX 已 App 化（`cyber_pm`）；**P4.8 OTA** 另计 |
 | P5.0 | — | — | Android 兼容 / APK（App + YNHAPI；非 `cyber_hal`） |
 | P5.1 | flutter SDK + engine + eLinux **三件套升级** | 重编 prebuilt | 3.24 → 3.41；见 [`docs/flutter-linux-hmi-plan.md` §6.5](docs/flutter-linux-hmi-plan.md#65-flutter-engine-版本策略与升级p51) |
 
 权威阶段表与旧号映射：[`docs/flutter-linux-hmi-plan.md` §1](docs/flutter-linux-hmi-plan.md)。HAL 设计：[`openspec/changes/archive/2026-07-18-dart-hal-package/`](openspec/changes/archive/2026-07-18-dart-hal-package/)。
 
-Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`；P4 保留 `render-mediamtx-config.sh`（`mediamtx.service` ExecStartPre）。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** `systemctl start`）由 Flutter App 内 `MediaMtxRelayCoordinator` / HAL·platform channel 触发，不再打包 shell stub。
+Overlay 脚本（P1 启动链）：`boot-verify.sh`、`env-verify.sh`（§3.4 平台栈）、`ynh960-display-init.sh`、`set-performance-mode.sh`。eth0 配网、SSH 调试、**mediamtx 启停**（**IPC ping 通后** App 经 `cyber_pm` 拉起 `/opt/hmi/bin/mediamtx`）由 Flutter 产品 session 触发。日志：`make logs GREP=mediamtx`。
 
-仍待移植：**lensinspector 源码**、`probe-dual-stream.sh`、完整 mediamtx YAML 渲染逻辑、IPC 专链 eth0 配网（Dart/脚本移植 lws-ui `CameraEth0Configurator`，**P4.1**）。
+仍待移植：lensinspector / AI daemon、`probe-dual-stream.sh`、IPC 专链 eth0 配网细节（**P4.1**）。
 
 ### Git LFS (required)
 
@@ -720,7 +720,7 @@ Upstream SDK **only** copies LCD params for Ubuntu/Debian rootfs, **not** for Bu
 | `AGENTS.md` | AI agent 工作流 + 改动后的重新构建指引 |
 | `scripts/build-{boot-logo,flutter-app}.sh` | Logo / App 构建脚本 |
 | `overlay/.../rootfs-overlay/etc/systemd/` | `hmi.service`、journald volatile 等 |
-| `overlay/.../06-systemd.sh` | 镜像构建时 enable hmi / disable mediamtx·sshd |
+| `overlay/.../06-systemd.sh` | 镜像构建时 enable hmi / disable sshd 等 |
 | `overlay/.../05-display.sh` | Buildroot post-rootfs install hook |
 | `overlay/.../check-sdk.sh` | Skip ext4/WSL guards when `LWS_HMI_DOCKER=1` |
 | `docker/Dockerfile` | Ubuntu 22.04 + Rockchip build dependencies |

@@ -111,7 +111,9 @@ make apply-overlay            # defconfig: *_rtsp → *_prebuilt when export rea
 make build-rootfs             # assemble rootfs (no gst/platform recompile)
 ```
 
-Flutter/mediamtx follow the same rule: `make build-runtime-deps` (or granular `build-flutter-*`) **before** `make build-rootfs`.
+Flutter follows the same rule: `make build-runtime-deps` (or granular `build-flutter-*`) **before** `make build-rootfs`.
+
+**MediaMTX** is **App-owned** (not a rootfs package): `make build-mediamtx` fills `prebuilt/mediamtx/`; `make build-app` copies it to `/opt/hmi/bin/mediamtx`. It is **not** required by `check-prebuilt` / `build-rootfs`.
 
 `make export-prebuilt` remains a convenience re-export (flutter + runtime); normal flow does not require rootfs first.
 

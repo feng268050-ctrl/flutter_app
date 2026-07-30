@@ -92,12 +92,12 @@ ensure_ffmpeg() {
 
 maybe_stop_services() {
   if [[ "$STOP_SERVICES" != "1" ]]; then
-    echo "==> STOP_SERVICES=0 — leaving hmi/mediamtx running (multi-consumer path)"
-    remote 'systemctl is-active hmi mediamtx 2>/dev/null || true'
+    echo "==> STOP_SERVICES=0 — leaving hmi running (App may hold mediamtx child)"
+    remote 'systemctl is-active hmi 2>/dev/null || true; pidof mediamtx 2>/dev/null || true'
     return 0
   fi
-  echo "==> stopping hmi + mediamtx for single-consumer measure"
-  remote 'systemctl stop hmi mediamtx 2>/dev/null || true; sleep 1; systemctl is-active hmi mediamtx 2>/dev/null || true'
+  echo "==> stopping hmi (stops App-owned mediamtx child) for single-consumer measure"
+  remote 'systemctl stop hmi 2>/dev/null || true; pkill -x mediamtx 2>/dev/null || true; sleep 1; systemctl is-active hmi 2>/dev/null || true; pidof mediamtx 2>/dev/null || true'
   # Best-effort kill leftover gst/ffmpeg consumers of camera.
   remote 'pkill -f "gst-launch|ffmpeg.*192.168.1.100|ffmpeg.*rtsp" 2>/dev/null || true'
 }
@@ -269,7 +269,7 @@ debug_ndjson "HA" "stmmac_and_tune_state" \
 debug_ndjson "HF" "coalesce_state" \
   "{\"rx_usecs\":\"${rx_usecs_val}\",\"set_rx_usecs\":\"${SET_RX_USECS:-}\"}"
 debug_ndjson "HB" "pre_measure_services" \
-  "{\"stop_services\":${STOP_SERVICES},\"hmi_mediamtx\":\"$(remote 'systemctl is-active hmi mediamtx 2>/dev/null | tr \"\\n\" \",\"' | tr -d '\r')\"}"
+  "{\"stop_services\":${STOP_SERVICES},\"hmi\":\"$(remote 'systemctl is-active hmi 2>/dev/null' | tr -d '\r')\",\"mediamtx_pid\":\"$(remote 'pidof mediamtx 2>/dev/null' | tr -d '\r')\"}"
 
 fail=0
 for stream in $STREAMS; do

@@ -2,11 +2,10 @@
 
 ## Purpose
 TBD - created by archiving change p1-linux-flutter-platform. Update Purpose after archive.
-
 ## Requirements
 ### Requirement: lws_hmi Buildroot defconfig is the default rootfs profile for ynh960
 
-The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the SDK Buildroot configs tree, composed from `base/base.config`, `lws_hmi_{base,systemd,network,flutter,bt,npu,font,build,toolchain_external}.config`, `rk3566_rk3568_aarch64.config`, `gpu/gpu.config`, `wifibt/wireless.config`, `wifibt/bt.config`, and `powermanager.config`. P1 SHALL `#include` `lws_hmi_npu.config` to gate RKNPU runtime overlay staging (`make fetch-rknn-rt`); P3+ fragments (`lws_hmi_gst_*`, `lws_hmi_mediamtx`, `lws_hmi_platform`) SHALL remain commented out until those phases are enabled. The ynh960 board configuration SHALL set `RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"` (resolving to `rockchip_rk3566_rk3568_lws_hmi`) and `RK_ROOTFS_SYSTEM_BUILDROOT=y`.
+The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the SDK Buildroot configs tree, composed from `base/base.config`, `lws_hmi_{base,systemd,network,flutter,bt,npu,font,build,toolchain_external}.config`, `rk3566_rk3568_aarch64.config`, `gpu/gpu.config`, `wifibt/wireless.config`, `wifibt/bt.config`, and `powermanager.config`. P1 SHALL `#include` `lws_hmi_npu.config` to gate RKNPU runtime overlay staging (`make fetch-rknn-rt`). Product MediaMTX SHALL NOT be gated by an included `lws_hmi_mediamtx` rootfs fragment (App ships the binary under `/opt/hmi`). Other deferred fragments (`lws_hmi_gst_*`, `lws_hmi_platform`) remain as documented by their owning phases. The ynh960 board configuration SHALL set `RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"` (resolving to `rockchip_rk3566_rk3568_lws_hmi`) and `RK_ROOTFS_SYSTEM_BUILDROOT=y`.
 
 #### Scenario: ynh960 lunch selects lws_hmi defconfig
 
@@ -27,6 +26,11 @@ The build system SHALL provide `rockchip_rk3566_rk3568_lws_hmi_defconfig` in the
 
 - **WHEN** developer runs `make build-rootfs` after overlay apply
 - **THEN** Buildroot completes without missing defconfig or package errors and `scripts/verify-rootfs-overlay.sh` reports PASS
+
+#### Scenario: mediamtx not a rootfs fragment gate
+
+- **WHEN** the active product defconfig is inspected after this change
+- **THEN** it MUST NOT `#include` `chips/lws_hmi_mediamtx.config` as a required rootfs packaging step
 
 ### Requirement: EVB demo packages are excluded from lws_hmi image
 
@@ -368,3 +372,4 @@ The host build documentation and Make help SHALL describe the owned-SDK workflow
 
 - **WHEN** `make apply-overlay` runs on an owned (trimmed) tree
 - **THEN** overlay Flutter / libserialport / bluez-alsa / font package recipes are still copied into the SDK Buildroot package directories
+

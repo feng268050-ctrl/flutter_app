@@ -93,7 +93,7 @@ On `command.disconnect`, the system MUST close the socket, MUST suppress auto-re
 
 ### Requirement: Full device WebSocket command matrix
 
-The device WebSocket SHALL implement the lws-ui command set for envelope `v=1` frames: unsolicited `device.online`; request/response pairs for stat, process push, process library/parameters CRUD, video list/upload/delete; lock/unlock/disconnect without typed ack; and OTA check/update with protocol-shaped acknowledgements.
+The device WebSocket SHALL implement the lws-ui command set for envelope `v=1` frames: unsolicited `device.online`; request/response pairs for stat, process push, process library/parameters CRUD, video list/upload/delete; lock/unlock/disconnect without typed ack; and OTA check/update with protocol-shaped acknowledgements. Unknown types MUST be logged without crashing. Legacy `connected` and inbound `ack` MUST be ignored.
 
 #### Scenario: Envelope version mismatch discarded
 

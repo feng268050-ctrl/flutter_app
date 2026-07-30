@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/process_library/application/process_library_sco
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
 import 'package:lws_hmi/features/process_library/infrastructure/sqlite_process_library_repository.dart';
 import 'package:lws_hmi/features/process_library/presentation/process_library_page.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:sqlite3/sqlite3.dart';
 
@@ -32,6 +33,8 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: ProcessLibraryScope(
           controller: controller,
           child: const ProcessLibraryPage(

@@ -20,7 +20,8 @@ final class ProcessLibraryImporter {
     this.deviceModel = '',
     this.deviceModelLoader,
     AssetBundle? bundle,
-    this.manifestAsset = 'assets/process-library/manifest.json',
+    this.manifestAsset =
+        'assets/.generated/process-library/manifest.json',
   }) : bundle = bundle ?? rootBundle;
 
   final ProcessLibraryRepository repository;
@@ -66,6 +67,14 @@ final class ProcessLibraryImporter {
         defaultSource: defaultSource,
         loadLibraryBytes: (relative) async {
           final cleaned = relative
+              .replaceFirst(
+                RegExp(r'^assets/\.generated/process-library/'),
+                '',
+              )
+              .replaceFirst(
+                RegExp(r'^assets/\.generated/process-libraries/'),
+                '',
+              )
               .replaceFirst(RegExp(r'^assets/process-library/'), '')
               .replaceFirst(RegExp(r'^/+'), '');
           final file = File('${root.path}/$cleaned');
@@ -497,15 +506,13 @@ final class ProcessLibraryImporter {
 
   static int _compareVersions(String left, String right) {
     List<int> parts(String value) {
-      if (!RegExp(r'^\d+(\.\d+){0,2}([-+][0-9A-Za-z.-]+)?$').hasMatch(value)) {
+      // Accept legacy prerelease suffixes (e.g. 1.0.4-beta) already in DB;
+      // new ship assets use numeric-only versions (no alpha/beta).
+      final numeric = value.split(RegExp(r'[-+]')).first;
+      if (!RegExp(r'^\d+(\.\d+){0,2}$').hasMatch(numeric)) {
         throw FormatException('Invalid process library version: $value');
       }
-      return value
-          .split(RegExp(r'[-+]'))
-          .first
-          .split('.')
-          .map(int.parse)
-          .toList();
+      return numeric.split('.').map(int.parse).toList();
     }
 
     final a = parts(left);

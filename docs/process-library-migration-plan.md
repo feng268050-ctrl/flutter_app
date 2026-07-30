@@ -1,6 +1,6 @@
 # lws-ui 工艺库迁移方案
 
-**状态：本地工艺库迁移完成（A–E；内置库已签收，版号与 lws-ui 一致为 `1.0.4-beta`）**  
+**状态：本地工艺库迁移完成（A–E）；源布局为 `process-library/<model>/<version>.xlsx`，当前签收版号 `1.0.4`（无 alpha/beta 后缀）**  
 **目标阶段：P4.4 本地 HTTP 与数据、P4.6 产品功能迁移（本地库切片）**  
 **范围：将 `lws-ui` 的本地工艺库迁移至 `app/lws_hmi/`，以 SQLite 作为设备端唯一持久化存储。云端下发与视频快照（阶段 F）不计入本次迁移。**
 
@@ -93,9 +93,10 @@ app/lws_hmi/lib/features/process_library/
   application/      # 查询、保存、导入、应用 Use Case
   infrastructure/   # SQLite、JSON asset/导入器、HAL 写入适配器
   presentation/     # 快速模式与工程师模式页面
-app/lws_hmi/assets/process-library/
+app/lws_hmi/assets/process-library/<model>/<version>.xlsx   # 源（多版本并存）
+app/lws_hmi/assets/.generated/process-library/              # build 生成（gitignore）
   manifest.json
-  l1-pro.<version>.json
+  <model>/<version>.json
 ```
 
 UI、导入器和 SQLite Repository 均不得直接操作 Modbus；已实现的 `ProcessParameterApplier` 负责将已校验的领域参数映射为 HAL 属性并写入设备。
@@ -192,9 +193,9 @@ CREATE UNIQUE INDEX uq_process_presets_uuid ON process_presets(uuid);
 
 设备运行时使用 JSON，而不是解析 `.xlsx`：
 
-1. 构建工具读取 `.xlsx`，检查表头、必填字段、枚举、单位、数值范围和重复组合。
-2. 工具生成规范化 JSON、`manifest.json` 和 SHA-256。
-3. Flutter 将 JSON 作为 asset 打包；设备启动时读取清单比较 `library_version` 与 hash。
+1. 构建时校验、转换、生成清单与哈希（`make prepare-app-assets`：从 `process-library/<model>/*.xlsx` 取每型号最新版）
+2. 工具生成规范化 JSON、`manifest.json` 和 SHA-256 到 `assets/.generated/process-library/`（不进 git）
+3. Flutter 将生成目录作为 asset 打包；设备启动时读取清单比较 `library_version` 与 hash
 4. 新版本完整校验成功后，在一个 transaction 中替换可替换的内置行，再更新 `process_library_meta`。
 
 这样保留 Excel 维护流程，同时避免 Linux Flutter 端引入 Excel 解析依赖及其运行时失败面。
@@ -307,10 +308,19 @@ Android Room 文件不能作为 Linux HMI 的直接升级源：路径、权限�
 
 包格式与内置 asset 相同：目录内 `manifest.json` + 库 JSON；`source` 可为 `usb`/`ota`。真机只读 smoke：`scripts/process-library-modbus-smoke.sh`。
 
-仓库已包含与 `lws-ui` 同源的 `app/lws_hmi/assets/process-library/L1 Pro.xlsx`（`__source_filename.txt` = `工艺库_v1.0.4-beta.zip`），并已转换出已签收的 `l1-pro.1.0.4-beta.json` 与 manifest（366 行 `quick`）。导入后还会按材料组派生 `engineer_preset`。后续若工艺侧发布新版 Excel，保持与 lws-ui 同版号策略，执行：
+仓库工艺库源为 `app/lws_hmi/assets/process-library/<model>/<version>.xlsx`（多版本多文件并存；`L1 Pro` → `L1_Pro`；版号可带或不带 `v` 前缀）。`make prepare-app-assets` / `make build-app` 仅转换每型号最新 semver，写入 gitignored 的 `assets/.generated/process-library/`。默认内置库随 App 发版，不依赖网络下载。
+
+后续若工艺侧发布新版 Excel，放入对应型号目录（保留旧文件），例如：
 
 ```bash
-python3 scripts/convert-process-library.py /path/to/工艺库_V1.4.xlsx --version 1.4.0 --models "PRODUCT_MODEL"
+# 直接放置：app/lws_hmi/assets/process-library/L1_Pro/1.5.0.xlsx
+make prepare-app-assets   # 或 make build-app（会自动 prepare）
 ```
 
-`--models` 必须填写设备 `/var/lib/hal/product.ini` 中的 `MODEL` 值（多个值用逗号分隔），不是板卡 `board_id`。转换器会严格校验表头、枚举、范围和快速模式重复组合，并生成版本化 JSON、manifest、行数和 SHA-256。
+单文件调试转换仍可用：
+
+```bash
+python3 scripts/convert-process-library.py path/to.xlsx --version 1.5.0 --models "L1 Pro" --output-dir /tmp/pl-out
+```
+
+`--models` 必须填写设备 `/var/lib/hal/product.ini` 中的 `MODEL` 值（多个值用逗号分隔），不是板卡 `board_id`。转换器会严格校验表头、枚举、范围和快速模式重复组合，并生成版本化 JSON、行数和 SHA-256（ship 路径由 prepare 写 manifest）。

@@ -18,6 +18,8 @@ die() {
 
 hmi_bundle_init_flutter build-app
 
+bash "$ROOT/scripts/prepare-hmi-ship-assets.sh"
+
 cd "$APP_DIR"
 "$FLUTTER" pub get
 

@@ -81,6 +81,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | What changed | Commands |
 |--------------|----------|
 | `app/lws_hmi/**`, `scripts/build-app.sh`, `scripts/hmi-bundle-common.sh`, `scripts/push-app.sh` | `make build-app`, `make push-app` |
+| `app/lws_hmi/assets/process-library/**`, `app/lws_hmi/assets/firmware/control-board/**`, `scripts/prepare-hmi-ship-assets.sh`, `scripts/convert-process-library.py` | `make build-app` (runs prepare); or host-only `make prepare-app-assets` before local flutter test/IDE |
 | `app/lws_hmi/lib/l10n/*.arb` (parent ARBs) | `make l10n` (then `make build-app` / `make push-app` to ship) |
 | `scripts/flutter/l10n*.sh`, `sync_l10n_child_arbs.py`, `zh_s2t.py` | none for firmware; exercise `make l10n` / `make l10n-verify` |
 | Bake app into rootfs / A/B image (release or no push path) | `make build-app`, `make build-rootfs`, `make upgrade` |

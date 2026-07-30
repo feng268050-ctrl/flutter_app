@@ -375,7 +375,8 @@ After one firmware flash with USB plug-ssh support:
 ```bash
 make shell                      # interactive root shell; SN=... when multiple boards
 make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL=1
-make build-app
+make prepare-app-assets         # optional host-only: prune process-library + firmware → assets/.generated/
+make build-app                  # runs prepare-app-assets, then AOT bundle → overlay /opt/hmi
 make push-app                   # SN=... when multiple boards; hot-swap /opt/hmi (no rootfs rebuild)
 make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/product.ini (multi-key OK); restarts hmi
 # brand / model / sn are OEM-only — edit oem/boards/<sku>/product.ini (not set-prop / del-prop)

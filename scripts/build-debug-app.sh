@@ -17,6 +17,8 @@ die() {
 
 hmi_bundle_init_flutter build-debug-app
 
+bash "$ROOT/scripts/prepare-hmi-ship-assets.sh"
+
 cd "$APP_DIR"
 "$FLUTTER" pub get
 

@@ -2,10 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:lws_hmi/features/bundled_firmware/domain/bundled_firmware_version_gate.dart';
 
-/// Discovers bundled `assets/firmware/control-board/LSW01H*.bin` and picks the
-/// newest SW.
+/// Discovers ship-tree `assets/.generated/firmware/control-board/LSW01H*.bin`
+/// (from prepare) and picks the newest SW.
 abstract final class BundledFirmwareAssets {
-  static const assetPrefix = 'assets/firmware/control-board/';
+  /// Ship tree from `make prepare-app-assets` (newest SW per HW).
+  static const assetPrefix = 'assets/.generated/firmware/control-board/';
 
   /// Returns the asset key for the newest valid bin, or null if none.
   ///

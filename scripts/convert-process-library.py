@@ -323,57 +323,225 @@ def convert(rows: list[list[str]], version: str) -> list[dict[str, object]]:
     return presets
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("xlsx", type=Path)
-    parser.add_argument("--version", required=True)
-    parser.add_argument(
-        "--models",
-        required=True,
-        help="comma-separated product.ini MODEL values, or *",
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=Path("app/lws_hmi/assets/process-library"),
-    )
-    args = parser.parse_args()
-    if not re.fullmatch(r"\d+(?:\.\d+){0,2}(?:[-+][0-9A-Za-z.-]+)?", args.version):
-        raise ValueError(f"invalid semantic version: {args.version!r}")
-    presets = convert(xlsx_rows(args.xlsx), args.version)
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    asset_name = f"l1-pro.{args.version}.json"
+VERSION_RE = re.compile(r"^\d+(?:\.\d+){0,2}$")
+# Flutter ship asset key prefix (must match pubspec + ProcessLibraryImporter).
+DEFAULT_ASSET_KEY_PREFIX = "assets/.generated/process-library"
+
+
+def normalize_version_basename(stem: str) -> str:
+    """Strip optional leading v/V from an Excel basename stem."""
+    if len(stem) >= 2 and stem[0] in "vV" and stem[1].isdigit():
+        return stem[1:]
+    return stem
+
+
+def compare_versions(left: str, right: str) -> int:
+    """Numeric semver compare aligned with Dart ProcessLibraryImporter._compareVersions."""
+    if not VERSION_RE.fullmatch(left) or not VERSION_RE.fullmatch(right):
+        raise ValueError(f"invalid semantic version: {left!r} / {right!r}")
+
+    def parts(value: str) -> list[int]:
+        return [int(p) for p in value.split("+", 1)[0].split("-", 1)[0].split(".")]
+
+    a = parts(left)
+    b = parts(right)
+    for i in range(3):
+        ai = a[i] if i < len(a) else 0
+        bi = b[i] if i < len(b) else 0
+        if ai != bi:
+            return (ai > bi) - (ai < bi)
+    # Match Dart ProcessLibraryImporter._compareVersions: equal when numeric parts match.
+    return 0
+
+
+def model_dir_to_product_model(dirname: str) -> str:
+    return dirname.replace("_", " ")
+
+
+def write_library_json(
+    *,
+    xlsx: Path,
+    version: str,
+    output_dir: Path,
+    relative_json: str,
+) -> tuple[str, str, int]:
+    """Write versioned JSON under output_dir; return (relative path, sha256, row_count)."""
+    if not VERSION_RE.fullmatch(version):
+        raise ValueError(f"invalid semantic version: {version!r}")
+    presets = convert(xlsx_rows(xlsx), version)
+    dest = output_dir / relative_json
+    dest.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "schema_version": 1,
-        "library_version": args.version,
+        "library_version": version,
         "presets": presets,
     }
     payload_bytes = (
         json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
         + "\n"
     ).encode("utf-8")
-    (args.output_dir / asset_name).write_bytes(payload_bytes)
+    dest.write_bytes(payload_bytes)
     digest = hashlib.sha256(payload_bytes).hexdigest()
-    manifest = {
-        "schema_version": 1,
-        "libraries": [
+    return relative_json.replace("\\", "/"), digest, len(presets)
+
+
+def ship_from_process_libraries(
+    source_root: Path,
+    output_dir: Path,
+    asset_key_prefix: str = DEFAULT_ASSET_KEY_PREFIX,
+) -> int:
+    """Convert newest Excel per model dir into output_dir + ship-only manifest."""
+    if not source_root.is_dir():
+        raise ValueError(f"missing process-library root: {source_root}")
+
+    libraries: list[dict] = []
+    model_dirs = sorted(
+        p for p in source_root.iterdir() if p.is_dir() and not p.name.startswith(".")
+    )
+    if not model_dirs:
+        raise ValueError(f"no model directories under {source_root}")
+
+    for model_dir in model_dirs:
+        unexpected = [
+            p.name
+            for p in model_dir.iterdir()
+            if p.is_file() and p.suffix.lower() != ".xlsx" and not p.name.startswith(".")
+        ]
+        if unexpected:
+            raise ValueError(
+                f"{model_dir}: unexpected non-xlsx files: {', '.join(sorted(unexpected))}"
+            )
+        candidates: list[tuple[str, Path]] = []
+        for xlsx in model_dir.glob("*.xlsx"):
+            version = normalize_version_basename(xlsx.stem)
+            if not VERSION_RE.fullmatch(version):
+                raise ValueError(f"invalid version basename: {xlsx.name}")
+            candidates.append((version, xlsx))
+        if not candidates:
+            raise ValueError(f"{model_dir}: no .xlsx files")
+        candidates.sort(key=lambda item: item[0], reverse=False)
+        # Pick newest via compare_versions (stable against naive string sort).
+        best_version, best_xlsx = candidates[0]
+        for version, path in candidates[1:]:
+            if compare_versions(version, best_version) > 0:
+                best_version, best_xlsx = version, path
+
+        product_model = model_dir_to_product_model(model_dir.name)
+        relative_json = f"{model_dir.name}/{best_version}.json"
+        asset_rel, digest, row_count = write_library_json(
+            xlsx=best_xlsx,
+            version=best_version,
+            output_dir=output_dir,
+            relative_json=relative_json,
+        )
+        prefix = asset_key_prefix.rstrip("/")
+        libraries.append(
             {
                 "source": "bundled",
-                "library_version": args.version,
-                "asset": f"assets/process-library/{asset_name}",
+                "library_version": best_version,
+                "asset": f"{prefix}/{asset_rel}",
                 "content_sha256": digest,
-                "supported_models": [
-                    value.strip() for value in args.models.split(",") if value.strip()
-                ],
-                "row_count": len(presets),
+                "supported_models": [product_model],
+                "row_count": row_count,
             }
-        ],
-    }
-    (args.output_dir / "manifest.json").write_text(
+        )
+        print(
+            f"ship {model_dir.name}: {best_xlsx.name} -> {asset_rel} "
+            f"({row_count} rows, sha256={digest})"
+        )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    manifest = {"schema_version": 1, "libraries": libraries}
+    (output_dir / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    print(f"generated {asset_name}: {len(presets)} rows, sha256={digest}")
+    print(f"wrote {output_dir / 'manifest.json'} ({len(libraries)} libraries)")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Validate process-library xlsx and generate HMI JSON / ship assets."
+    )
+    parser.add_argument(
+        "xlsx",
+        type=Path,
+        nargs="?",
+        help="single workbook (omit when using --ship-from)",
+    )
+    parser.add_argument("--version", help="library_version for single-workbook mode")
+    parser.add_argument(
+        "--models",
+        help="comma-separated product.ini MODEL values, or * (single-workbook mode)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("app/lws_hmi/assets/.generated/process-library"),
+    )
+    parser.add_argument(
+        "--model-dir",
+        help="model directory name for JSON path (default: first --models with spaces→_)",
+    )
+    parser.add_argument(
+        "--asset-key-prefix",
+        default=DEFAULT_ASSET_KEY_PREFIX,
+        help="Flutter asset key prefix written into manifest.json",
+    )
+    parser.add_argument(
+        "--ship-from",
+        type=Path,
+        help="process-library root: convert newest xlsx per model into --output-dir",
+    )
+    parser.add_argument(
+        "--no-manifest",
+        action="store_true",
+        help="single-workbook mode: write JSON only (no manifest.json)",
+    )
+    args = parser.parse_args()
+
+    if args.ship_from is not None:
+        return ship_from_process_libraries(
+            args.ship_from,
+            args.output_dir,
+            asset_key_prefix=args.asset_key_prefix,
+        )
+
+    if args.xlsx is None or args.version is None or args.models is None:
+        raise ValueError("xlsx, --version, and --models are required unless --ship-from")
+
+    models = [value.strip() for value in args.models.split(",") if value.strip()]
+    if not models:
+        raise ValueError("--models must list at least one model")
+    model_dir = args.model_dir or models[0].replace(" ", "_")
+    relative_json = f"{model_dir}/{args.version}.json"
+    asset_rel, digest, row_count = write_library_json(
+        xlsx=args.xlsx,
+        version=args.version,
+        output_dir=args.output_dir,
+        relative_json=relative_json,
+    )
+    if not args.no_manifest:
+        prefix = args.asset_key_prefix.rstrip("/")
+        manifest = {
+            "schema_version": 1,
+            "libraries": [
+                {
+                    "source": "bundled",
+                    "library_version": args.version,
+                    "asset": f"{prefix}/{asset_rel}",
+                    "content_sha256": digest,
+                    "supported_models": models,
+                    "row_count": row_count,
+                }
+            ],
+        }
+        (args.output_dir / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    print(f"generated {asset_rel}: {row_count} rows, sha256={digest}")
     return 0
 
 

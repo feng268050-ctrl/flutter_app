@@ -111,10 +111,11 @@ flutter:
     - assets/hal/gpio.json
     - assets/hal/gpio.sim.json
     - assets/hal/modbus.json
-    # Control-board firmware (checked in under assets/firmware/control-board/).
-    - assets/firmware/
-    # Versioned process-library manifest and generated JSON payloads.
-    - assets/process-library/
+    # Ship-only (make prepare-app-assets / build-app): newest firmware per HW +
+    # newest process-library JSON per model. Sources: assets/firmware/control-board/
+    # and assets/process-library/<model>/*.xlsx (not declared here).
+    - assets/.generated/firmware/
+    - assets/.generated/process-library/
     # Product Home backdrop / heroes (from lws-ui mipmap-mdpi).
     - assets/home/home_back.webp
     - assets/home/home_left_1m.webp

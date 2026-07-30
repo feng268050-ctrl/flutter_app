@@ -52,7 +52,7 @@ void main() {
 
       final clone = EngineerPresetDeriver.cloneAsEngineerPreset(
         source,
-        libraryVersion: '1.0.4-beta',
+        libraryVersion: '1.0.4',
         nowMs: 1,
       );
 

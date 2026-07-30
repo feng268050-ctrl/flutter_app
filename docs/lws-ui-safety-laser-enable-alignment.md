@@ -37,7 +37,7 @@
 
 ## 3. 已对齐 / 已验收方向的行为（tip 与安全关断）
 
-操作员 tip（Frost Operation-failed，无高斯模糊）与急停作业 halt：
+操作员 tip（Frost Operation-failed，卡片局部高斯模糊 + 浅 tint 背景透视）与急停作业 halt：
 
 
 | 事件 | 立刻 | Tip（Operation failed） | 告警 frost（H029 等） |
@@ -89,7 +89,7 @@
 
 | 类型 | 载体 | 时机 |
 |------|------|------|
-| Tip | `DeviceControlSafetyEvent` → Operation-failed 实心霜 | E-stop 按下；钥匙关（Laser Enable 曾开） |
+| Tip | `DeviceControlSafetyEvent` → Operation-failed 深色霜（卡片局部高斯 + 背景透视） | E-stop 按下；钥匙关（Laser Enable 曾开） |
 | 告警 | `WarnAlarmCoordinator` + frost warn | 码位有效边沿；急停相关 mask 在复位 + settle + 电平读后 |
 
 禁止再次把 tip 延到「开关复位」来「代替」告警，或把 H022 误 rising 当成 tip。

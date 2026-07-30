@@ -78,6 +78,7 @@ final class _CallBackHomeButtonState extends State<CallBackHomeButton> {
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         if (enabled)
@@ -101,14 +102,16 @@ final class _CallBackHomeButtonState extends State<CallBackHomeButton> {
                             ),
                           ),
                         const SizedBox(width: 8),
-                        Text(
-                          widget.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.clip,
-                          style: TextStyle(
-                            color: labelColor,
-                            fontSize: _kHomeLabelFontSize,
-                            height: 1,
+                        Flexible(
+                          child: Text(
+                            widget.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: labelColor,
+                              fontSize: _kHomeLabelFontSize,
+                              height: 1,
+                            ),
                           ),
                         ),
                       ],

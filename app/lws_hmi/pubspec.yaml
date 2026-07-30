@@ -141,6 +141,8 @@ flutter:
     - assets/settings/common_settings.webp
     - assets/settings/settings.webp
     - assets/settings/placeholder.webp
+    # Custom Home editor shell + card frames (lws-ui mipmap-xxxhdpi WebP stack).
+    - assets/settings/custom_home/
     # Work-mode status bar icons (from lws-ui EquipmentStatusBar mipmaps).
     - assets/work-mode/
     # Process-mode chrome (Quick wheel / Engineer tabs; from lws-ui mipmap-xxxhdpi).

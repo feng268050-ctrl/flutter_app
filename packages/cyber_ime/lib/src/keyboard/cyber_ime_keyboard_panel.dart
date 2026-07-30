@@ -71,7 +71,8 @@ class CyberImeKeyboardPanel extends StatelessWidget {
                     ),
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.all(CyberImeKeyboardRows.keyGap),
+                      padding:
+                          const EdgeInsets.all(CyberImeKeyboardRows.keyGap),
                       child: CyberImeKeyboardRows(
                         layout: layout,
                         keyFace: (key) => CyberImeKeyCap(
@@ -132,6 +133,10 @@ class CyberImeKeyCap extends StatefulWidget {
 class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
   OverlayEntry? _fallbackPopupEntry;
   ValueNotifier<CyberImeAlternatePopupData?>? _scopedPopup;
+
+  /// Drives [CyberButton] Frost ripple while parent owns the pointer
+  /// (lws-ui `PressInteraction` emit for alternate long-press keys).
+  final ValueNotifier<Offset?> _externalPress = ValueNotifier<Offset?>(null);
   int _selectedIndex = 0;
   Timer? _longPressTimer;
   int? _activePointer;
@@ -161,6 +166,7 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
   @override
   void dispose() {
     _longPressTimer?.cancel();
+    _externalPress.dispose();
     _removePopup();
     super.dispose();
   }
@@ -232,8 +238,7 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
         if (overlayBox == null || !overlayBox.hasSize) {
           return const SizedBox.shrink();
         }
-        final origin =
-            keyBox.localToGlobal(Offset.zero, ancestor: overlayBox);
+        final origin = keyBox.localToGlobal(Offset.zero, ancestor: overlayBox);
         return Positioned(
           left: origin.dx + keyBox.size.width / 2,
           top: origin.dy - kCyberImeAlternatePopupOffsetAboveKey,
@@ -273,6 +278,8 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
   void _onPointerDown(PointerDownEvent e) {
     if (!_usesAlternateGestures) return;
     _activePointer = e.pointer;
+    // Hotspot for Frost LIGHT ripple (same as ImeKeyGestures PressInteraction).
+    _externalPress.value = e.position;
     _longPressTimer?.cancel();
     final box = context.findRenderObject() as RenderBox?;
     _keyWidth = box?.size.width ?? 0;
@@ -305,6 +312,7 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
     _longPressTimer?.cancel();
     _longPressTimer = null;
     _activePointer = null;
+    _externalPress.value = null;
     if (_popupActive) {
       final options = widget.keyDef.popupOptions();
       if (commitPopup && options.isNotEmpty) {
@@ -314,7 +322,7 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
       }
       _removePopup();
     } else if (commitPopup) {
-      // Short tap — AbsorbPointer blocks CyberButton sound; play here.
+      // Short tap — parent owns gestures; play click like FrostButton.
       CyberClickSoundRegistry.playClick();
       widget.onTap();
     }
@@ -328,6 +336,9 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
   Widget _buildButton({
     required VoidCallback? onPressed,
     VoidCallback? onLongPress,
+    bool inkWellGestures = true,
+    ValueNotifier<Offset?>? externalPress,
+    bool clickSoundEnabled = true,
   }) {
     final variant =
         _isPrimary ? CyberButtonVariant.primary : CyberButtonVariant.light;
@@ -344,6 +355,9 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
       variant: variant,
       onPressed: onPressed,
       onLongPress: onLongPress,
+      inkWellGestures: inkWellGestures,
+      externalPress: externalPress,
+      clickSoundEnabled: clickSoundEnabled,
       foregroundColor: accent ? CyberColors.buttonPrimaryAccent : null,
       child: CyberImeKeyLabel(
         keyDef: widget.keyDef,
@@ -359,14 +373,19 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
     late final Widget keyBody;
 
     if (_usesAlternateGestures) {
+      // Parent owns hit testing (long-press popup); CyberButton still shows
+      // Frost LIGHT ripple via [externalPress] (lws-ui PressInteraction).
       keyBody = Listener(
         behavior: HitTestBehavior.opaque,
         onPointerDown: _onPointerDown,
         onPointerMove: _onPointerMove,
         onPointerUp: _onPointerUp,
         onPointerCancel: _onPointerCancel,
-        child: AbsorbPointer(
-          child: _buildButton(onPressed: () {}),
+        child: _buildButton(
+          onPressed: () {},
+          inkWellGestures: false,
+          externalPress: _externalPress,
+          clickSoundEnabled: false,
         ),
       );
     } else if (widget.keyDef.id == CyberImeKeyId.shift) {
@@ -439,28 +458,28 @@ class CyberImeKeyLabel extends StatelessWidget {
       case CyberImeKeyId.shift:
         return Icon(
           Icons.arrow_upward,
-          size: 22,
+          size: 30,
           color: shiftOn ? CyberColors.buttonPrimaryAccent : null,
         );
       case CyberImeKeyId.altGr:
         return Text(
           'AltGr',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 19,
             fontWeight: FontWeight.w600,
             color: altGrOn ? CyberColors.buttonPrimaryAccent : null,
           ),
         );
       case CyberImeKeyId.control:
-        return const Text('Ctrl', style: TextStyle(fontSize: 12));
+        return const Text('Ctrl', style: TextStyle(fontSize: 20));
       case CyberImeKeyId.alt:
-        return const Text('Alt', style: TextStyle(fontSize: 12));
+        return const Text('Alt', style: TextStyle(fontSize: 20));
       case CyberImeKeyId.capsLock:
         if (keyDef.primary.contains('英')) {
           return Text(
             '英数',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
               color: shiftOn ? CyberColors.buttonPrimaryAccent : null,
             ),
@@ -468,33 +487,32 @@ class CyberImeKeyLabel extends StatelessWidget {
         }
         return Icon(
           Icons.keyboard_capslock,
-          size: 20,
+          size: 28,
           color: shiftOn ? CyberColors.buttonPrimaryAccent : null,
         );
       case CyberImeKeyId.hankakuZenkaku:
-        return const Text('半/全', style: TextStyle(fontSize: 11));
+        return const Text('半/全', style: TextStyle(fontSize: 19));
       case CyberImeKeyId.languageToggle:
         final jp = jpInputMode != CyberImeJpInputMode.english;
         return Text(
           jp ? 'ABC' : 'あ',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 22,
             fontWeight: FontWeight.w600,
             color: jp ? CyberColors.buttonPrimaryAccent : null,
           ),
         );
       case CyberImeKeyId.muhenkan:
-        return const Text('無変換', style: TextStyle(fontSize: 10));
+        return const Text('無変換', style: TextStyle(fontSize: 18));
       case CyberImeKeyId.henkan:
-        return const Text('変換', style: TextStyle(fontSize: 11));
+        return const Text('変換', style: TextStyle(fontSize: 19));
       case CyberImeKeyId.kanaToggle:
-        final kanaLabel = jpInputMode == CyberImeJpInputMode.hiragana
-            ? 'かな'
-            : 'カナ';
+        final kanaLabel =
+            jpInputMode == CyberImeJpInputMode.hiragana ? 'かな' : 'カナ';
         return Text(
           kanaLabel,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 19,
             fontWeight: FontWeight.w600,
             color: jpInputMode != CyberImeJpInputMode.english
                 ? CyberColors.buttonPrimaryAccent
@@ -502,13 +520,13 @@ class CyberImeKeyLabel extends StatelessWidget {
           ),
         );
       case CyberImeKeyId.tab:
-        return const Text('Tab', style: TextStyle(fontSize: 12));
+        return const Text('Tab', style: TextStyle(fontSize: 20));
       case CyberImeKeyId.backspace:
-        return const Icon(Icons.backspace_outlined, size: 22);
+        return const Icon(Icons.backspace_outlined, size: 30);
       case CyberImeKeyId.enter:
-        return const Icon(Icons.keyboard_return, size: 22);
+        return const Icon(Icons.keyboard_return, size: 30);
       case CyberImeKeyId.space:
-        return const Text('space', style: TextStyle(fontSize: 14));
+        return const Text('space', style: TextStyle(fontSize: 22));
       default:
         break;
     }
@@ -540,9 +558,8 @@ class CyberImeKeyLabel extends StatelessWidget {
         faceSecondary = keyDef.secondary;
       }
     } else if (keyDef.isLetter) {
-      label = shiftOn
-          ? keyDef.primary.toUpperCase()
-          : keyDef.primary.toLowerCase();
+      label =
+          shiftOn ? keyDef.primary.toUpperCase() : keyDef.primary.toLowerCase();
       faceSecondary = keyDef.secondary ??
           _longPressSecondFunction(keyDef, uppercase: shiftOn);
     } else {
@@ -562,7 +579,7 @@ class CyberImeKeyLabel extends StatelessWidget {
       return Text(
         label,
         style: TextStyle(
-          fontSize: label.length > 2 ? 13 : 18,
+          fontSize: label.length > 2 ? 21 : 26,
           fontWeight: FontWeight.w600,
         ),
       );
@@ -570,11 +587,11 @@ class CyberImeKeyLabel extends StatelessWidget {
 
     final secondaryStyle = TextStyle(
       color: CyberColors.textSecondary,
-      fontSize: keyDef.isLetter || inKana ? 11 : 10,
+      fontSize: keyDef.isLetter || inKana ? 19 : 18,
       fontWeight: FontWeight.w500,
       height: 1,
     );
-    const primaryStyle = TextStyle(fontSize: 18, fontWeight: FontWeight.w600);
+    const primaryStyle = TextStyle(fontSize: 26, fontWeight: FontWeight.w600);
 
     // Soft phone: secondary (if any) sits above the primary glyph.
     return Stack(
@@ -604,10 +621,12 @@ class CyberImeKeyLabel extends StatelessWidget {
     final options = key.longPressOptions;
     if (options == null || options.isEmpty) return null;
 
-    final base = uppercase ? key.primary.toUpperCase() : key.primary.toLowerCase();
+    final base =
+        uppercase ? key.primary.toUpperCase() : key.primary.toLowerCase();
     String? fallback;
     for (final option in options) {
-      final normalized = uppercase ? option.toUpperCase() : option.toLowerCase();
+      final normalized =
+          uppercase ? option.toUpperCase() : option.toLowerCase();
       if (normalized == base) continue;
       fallback ??= option;
       final matchesCase = uppercase
@@ -647,7 +666,7 @@ class _CyberImeCandidateBar extends StatelessWidget {
                 reading,
                 style: const TextStyle(
                   color: CyberColors.textSecondary,
-                  fontSize: 16,
+                  fontSize: 24,
                   fontWeight: FontWeight.w600,
                 ),
               ),

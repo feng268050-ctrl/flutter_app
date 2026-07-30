@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'package:cyber_ui/src/sound/cyber_click_sound.dart';
@@ -15,24 +17,59 @@ enum CyberButtonSize { regular, small }
 /// uses [CyberDimens.rectangleButtonCornerRadius].
 enum CyberButtonShape { rounded, rectangle }
 
-/// Frost-styled button (Material [InkWell] + shape; lws-ui `FrostButton`).
+/// Press tokens from lws-ui `FrostButtonPressDefaults`.
+abstract final class CyberButtonPressDefaults {
+  /// Resting alpha for [CyberButtonVariant.standard] / [secondary] (225/255).
+  static const restingAlpha = 225 / 255;
+
+  static const pressedAlpha = 1.0;
+  static const disabledOpacity = 0.45;
+
+  /// White ripple for DEFAULT / PRIMARY (`0x3D`).
+  static const defaultRipple = Color(0x3DFFFFFF);
+
+  /// White ripple for SECONDARY (`0x2A`).
+  static const secondaryRipple = Color(0x2AFFFFFF);
+
+  /// Black ripple for LIGHT IME keycaps (`0x33`).
+  static const lightRipple = Color(0x33000000);
+
+  static const pressIn = Duration(milliseconds: 70);
+  static const pressOut = Duration(milliseconds: 140);
+
+  /// Bounded ripple expand (Android [RippleDrawable] / Material ink).
+  static const rippleExpand = Duration(milliseconds: 225);
+  static const rippleFade = Duration(milliseconds: 200);
+
+  static Color rippleColor(CyberButtonVariant variant) => switch (variant) {
+        CyberButtonVariant.light => lightRipple,
+        CyberButtonVariant.secondary => secondaryRipple,
+        CyberButtonVariant.standard ||
+        CyberButtonVariant.primary =>
+          defaultRipple,
+      };
+
+  static double restingFaceAlpha(CyberButtonVariant variant) =>
+      switch (variant) {
+        CyberButtonVariant.primary || CyberButtonVariant.light => pressedAlpha,
+        CyberButtonVariant.standard ||
+        CyberButtonVariant.secondary =>
+          restingAlpha,
+      };
+}
+
+/// Frost-styled button (Material [InkRipple] + shape; lws-ui `FrostButton`).
 ///
-/// Default variant is [CyberButtonVariant.standard] (dark glass). Use
-/// [CyberButtonVariant.primary] for confirm CTAs.
+/// Press feedback matches `FrostButtonPressFeedback`:
+/// - Bounded ripple clipped to the button radius.
+/// - LIGHT → black ripple; PRIMARY/DEFAULT → white `0x3D`; SECONDARY → `0x2A`.
+/// - DEFAULT/SECONDARY face alpha 225→255 (70ms in / 140ms out); LIGHT/PRIMARY
+///   stay at full opacity (ripple is the visible cue — same as IME).
 ///
-/// Default [shape] is [CyberButtonShape.rectangle] (existing HMI CTAs).
-/// Frost XML defaults to rounded/pill — set [CyberButtonShape.rounded]
-/// for parity (e.g. Device Information Check for Updates).
-///
-/// [borderGradientCenter] defaults to Frost button default
-/// (`top-left-bottom-right`); Settings CTAs SHOULD vary this like cards.
-///
-/// Layout:
-/// - Default: intrinsic width, fixed [size]/[height] height.
-/// - [stretch]: max width + fixed height (Settings full-bleed CTAs in lists).
-/// - [expand]: fill parent box (IME keycaps). Do **not** use inside
-///   unbounded scroll children.
-class CyberButton extends StatelessWidget {
+/// IME alternate long-press keys set [inkWellGestures] false and drive
+/// [externalPress] (global hotspot while down, `null` when up) so ripple still
+/// runs while the parent owns the pointer (lws-ui `PressInteraction` emit).
+class CyberButton extends StatefulWidget {
   const CyberButton({
     super.key,
     required this.onPressed,
@@ -46,10 +83,11 @@ class CyberButton extends StatelessWidget {
     this.height,
     this.foregroundColor,
     this.onLongPress,
-    this.borderGradientCenter =
-        CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
     this.borderGradientColors,
     this.strokeWidth,
+    this.inkWellGestures = true,
+    this.externalPress,
   });
 
   final VoidCallback? onPressed;
@@ -83,48 +121,135 @@ class CyberButton extends StatelessWidget {
   /// Stroke width override; defaults to [CyberDimens.buttonStrokeWidth].
   final double? strokeWidth;
 
-  static const _disabledOpacity = 0.45;
+  /// When false, [InkWell] does not own taps — parent drives [externalPress]
+  /// (IME letter keys with alternate long-press).
+  final bool inkWellGestures;
+
+  /// Global press hotspot while down; `null` when released. Only used when
+  /// [inkWellGestures] is false.
+  final ValueNotifier<Offset?>? externalPress;
+
+  @override
+  State<CyberButton> createState() => _CyberButtonState();
+}
+
+class _CyberButtonState extends State<CyberButton>
+    with TickerProviderStateMixin {
+  final GlobalKey _hostKey = GlobalKey();
+  late final AnimationController _rippleExpand;
+  late final AnimationController _rippleFade;
+  Offset _rippleOrigin = Offset.zero;
+  bool _inkHighlighted = false;
+
+  bool get _enabled => widget.onPressed != null;
+
+  bool get _externalDown =>
+      widget.externalPress != null && widget.externalPress!.value != null;
+
+  bool get _pressed => _inkHighlighted || _externalDown;
+
+  @override
+  void initState() {
+    super.initState();
+    _rippleExpand = AnimationController(
+      vsync: this,
+      duration: CyberButtonPressDefaults.rippleExpand,
+    );
+    _rippleFade = AnimationController(
+      vsync: this,
+      duration: CyberButtonPressDefaults.rippleFade,
+      value: 1,
+    );
+    widget.externalPress?.addListener(_onExternalPress);
+  }
+
+  @override
+  void didUpdateWidget(covariant CyberButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.externalPress != widget.externalPress) {
+      oldWidget.externalPress?.removeListener(_onExternalPress);
+      widget.externalPress?.addListener(_onExternalPress);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.externalPress?.removeListener(_onExternalPress);
+    _rippleExpand.dispose();
+    _rippleFade.dispose();
+    super.dispose();
+  }
+
+  void _onExternalPress() {
+    if (!mounted || widget.inkWellGestures || !_enabled) {
+      return;
+    }
+    final hotspot = widget.externalPress?.value;
+    if (hotspot != null) {
+      _rippleOrigin = _hotspotInHost(hotspot);
+      _rippleFade.value = 1;
+      _rippleExpand.forward(from: 0);
+    } else {
+      if (_rippleExpand.status != AnimationStatus.completed) {
+        _rippleExpand.value = 1;
+      }
+      _rippleFade.reverse(from: _rippleFade.value);
+    }
+    setState(() {});
+  }
+
+  Offset _hotspotInHost(Offset globalPosition) {
+    final box = _hostKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      return Offset.zero;
+    }
+    final local = box.globalToLocal(globalPosition);
+    return Offset(
+      local.dx.clamp(0.0, box.size.width),
+      local.dy.clamp(0.0, box.size.height),
+    );
+  }
+
+  void _handleTap() {
+    if (widget.onPressed == null) return;
+    if (widget.clickSoundEnabled) {
+      CyberClickSoundRegistry.playClick();
+    }
+    widget.onPressed!();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    final resolvedHeight = height ??
-        (size == CyberButtonSize.small
+    final enabled = _enabled;
+    final resolvedHeight = widget.height ??
+        (widget.size == CyberButtonSize.small
             ? CyberDimens.actionButtonSmallHeight
             : CyberDimens.actionButtonHeight);
-    final hPad = (expand || stretch)
+    final hPad = (widget.expand || widget.stretch)
         ? 0.0
-        : (size == CyberButtonSize.small
+        : (widget.size == CyberButtonSize.small
             ? CyberDimens.actionButtonSmallPaddingHorizontal
             : CyberDimens.actionButtonPaddingHorizontal);
-    final cornerRadius = shape == CyberButtonShape.rounded
+    final cornerRadius = widget.shape == CyberButtonShape.rounded
         ? resolvedHeight / 2
         : CyberDimens.rectangleButtonCornerRadius;
     final radius = BorderRadius.circular(cornerRadius);
-    final textColor = foregroundColor ?? _foreground(variant);
-    final fontSize = size == CyberButtonSize.small
+    final textColor = widget.foregroundColor ?? _foreground(widget.variant);
+    final fontSize = widget.size == CyberButtonSize.small
         ? CyberDimens.actionButtonSmallFontSize
         : CyberDimens.actionButtonFontSize;
 
-    void handleTap() {
-      if (onPressed == null) return;
-      if (clickSoundEnabled) {
-        CyberClickSoundRegistry.playClick();
-      }
-      onPressed!();
-    }
-
     final outline = CyberPanelOutline(
       style: CyberPanelOutlineStyle.frostGradient,
-      tone: variant == CyberButtonVariant.light
+      tone: widget.variant == CyberButtonVariant.light
           ? CyberTone.light
           : CyberTone.dark,
-      width: strokeWidth ?? CyberDimens.buttonStrokeWidth,
+      width: widget.strokeWidth ?? CyberDimens.buttonStrokeWidth,
       cornerRadius: cornerRadius,
-      gradientCenter: borderGradientCenter,
+      gradientCenter: widget.borderGradientCenter,
       gradientColorsOverride:
-          borderGradientColors ?? _borderGradientColors(variant),
-      uniformColor: _borderFlat(variant),
+          widget.borderGradientColors ?? _borderGradientColors(widget.variant),
+      uniformColor: _borderFlat(widget.variant),
     );
 
     final label = DefaultTextStyle(
@@ -135,19 +260,19 @@ class CyberButton extends StatelessWidget {
         height: 1.0,
       ),
       child: IconTheme(
-        data: IconThemeData(color: textColor, size: expand ? 22 : 20),
-        child: child,
+        data: IconThemeData(color: textColor, size: widget.expand ? 22 : 20),
+        child: widget.child,
       ),
     );
 
     final fillDecoration = BoxDecoration(
       borderRadius: radius,
-      color: _solidFill(variant),
-      gradient: _fillGradient(variant),
+      color: _solidFill(widget.variant),
+      gradient: _fillGradient(widget.variant),
     );
 
     final Widget face;
-    if (expand || stretch) {
+    if (widget.expand || widget.stretch) {
       face = Stack(
         fit: StackFit.passthrough,
         children: [
@@ -185,15 +310,23 @@ class CyberButton extends StatelessWidget {
       );
     }
 
-    final body = Opacity(
-      opacity: enabled ? 1 : _disabledOpacity,
+    final resting = CyberButtonPressDefaults.restingFaceAlpha(widget.variant);
+    final faceAlpha = !enabled
+        ? CyberButtonPressDefaults.disabledOpacity
+        : (_pressed ? CyberButtonPressDefaults.pressedAlpha : resting);
+
+    final body = AnimatedOpacity(
+      duration: _pressed
+          ? CyberButtonPressDefaults.pressIn
+          : CyberButtonPressDefaults.pressOut,
+      opacity: faceAlpha,
       child: face,
     );
 
     Widget childBox = body;
-    if (expand) {
+    if (widget.expand) {
       childBox = SizedBox.expand(child: body);
-    } else if (stretch) {
+    } else if (widget.stretch) {
       childBox = SizedBox(
         width: double.infinity,
         height: resolvedHeight,
@@ -201,17 +334,65 @@ class CyberButton extends StatelessWidget {
       );
     }
 
+    final ripple = CyberButtonPressDefaults.rippleColor(widget.variant);
+    final useInkWell = widget.inkWellGestures && enabled;
+    final showExternalRipple = !widget.inkWellGestures;
+
+    // Face + optional external foreground ripple (IME PressInteraction path).
+    Widget surfaced = childBox;
+    if (showExternalRipple) {
+      surfaced = Stack(
+        fit: StackFit.passthrough,
+        children: [
+          childBox,
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ClipRRect(
+                borderRadius: radius,
+                clipBehavior: Clip.antiAlias,
+                child: AnimatedBuilder(
+                  animation: Listenable.merge([_rippleExpand, _rippleFade]),
+                  builder: (context, _) => CustomPaint(
+                    painter: _BoundedPressRipplePainter(
+                      origin: _rippleOrigin,
+                      progress: _rippleExpand.value,
+                      opacity: _rippleFade.value,
+                      color: ripple,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     final button = Material(
+      key: _hostKey,
       color: Colors.transparent,
-      child: InkWell(
-        onTap: enabled ? handleTap : null,
-        onLongPress: enabled ? onLongPress : null,
-        borderRadius: radius,
-        child: childBox,
-      ),
+      borderRadius: radius,
+      clipBehavior: Clip.antiAlias,
+      child: useInkWell
+          ? InkWell(
+              onTap: _handleTap,
+              onLongPress: widget.onLongPress,
+              onHighlightChanged: (v) {
+                if (_inkHighlighted == v) {
+                  return;
+                }
+                setState(() => _inkHighlighted = v);
+              },
+              borderRadius: radius,
+              splashColor: ripple,
+              highlightColor: Colors.transparent,
+              splashFactory: InkRipple.splashFactory,
+              child: surfaced,
+            )
+          : surfaced,
     );
 
-    if (expand || stretch) {
+    if (widget.expand || widget.stretch) {
       return button;
     }
     // Shrink-wrap to label; [Align] widthFactor avoids [Ink]/[Container]
@@ -235,7 +416,8 @@ class CyberButton extends StatelessWidget {
   static Color _borderFlat(CyberButtonVariant variant) => switch (variant) {
         CyberButtonVariant.primary => CyberColors.buttonPrimaryBorderMid,
         CyberButtonVariant.light => CyberColors.lightBorderHighlight,
-        CyberButtonVariant.standard || CyberButtonVariant.secondary =>
+        CyberButtonVariant.standard ||
+        CyberButtonVariant.secondary =>
           CyberColors.borderUniform,
       };
 
@@ -271,7 +453,8 @@ class CyberButton extends StatelessWidget {
               CyberColors.lightFillBottom,
             ],
           ),
-        CyberButtonVariant.standard || CyberButtonVariant.secondary =>
+        CyberButtonVariant.standard ||
+        CyberButtonVariant.secondary =>
           const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -282,4 +465,55 @@ class CyberButton extends StatelessWidget {
             ],
           ),
       };
+}
+
+/// Bounded radial press ripple — Flutter stand-in for Compose `rememberRipple`
+/// / Android [RippleDrawable] mask used by Frost IME keycaps.
+final class _BoundedPressRipplePainter extends CustomPainter {
+  const _BoundedPressRipplePainter({
+    required this.origin,
+    required this.progress,
+    required this.opacity,
+    required this.color,
+  });
+
+  final Offset origin;
+  final double progress;
+  final double opacity;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0 || opacity <= 0 || size.isEmpty) {
+      return;
+    }
+    final cover = _coverRadius(origin, size);
+    canvas.drawCircle(
+      origin,
+      cover * progress,
+      Paint()
+        ..color = color.withOpacity((color.opacity * opacity).clamp(0.0, 1.0)),
+    );
+  }
+
+  static double _coverRadius(Offset origin, Size size) {
+    final corners = <Offset>[
+      Offset.zero,
+      Offset(size.width, 0),
+      Offset(0, size.height),
+      Offset(size.width, size.height),
+    ];
+    var maxDist = 0.0;
+    for (final c in corners) {
+      maxDist = math.max(maxDist, (c - origin).distance);
+    }
+    return maxDist;
+  }
+
+  @override
+  bool shouldRepaint(covariant _BoundedPressRipplePainter oldDelegate) =>
+      oldDelegate.origin != origin ||
+      oldDelegate.progress != progress ||
+      oldDelegate.opacity != opacity ||
+      oldDelegate.color != color;
 }

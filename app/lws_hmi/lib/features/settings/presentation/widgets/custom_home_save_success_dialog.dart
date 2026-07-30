@@ -9,8 +9,8 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 
 /// Full Custom Home page capture for tip frost (includes metric cards).
 ///
-/// Distinct from [CyberBlurBackdropTarget], which only holds the halo so
-/// card chrome can sample a clean backdrop.
+/// Custom Home editor chrome itself uses WebP stacks (not realtime blur);
+/// this scope exists so the save tip can still Gaussian-frost a page shot.
 final class CustomHomePageCaptureScope extends InheritedWidget {
   const CustomHomePageCaptureScope({
     super.key,

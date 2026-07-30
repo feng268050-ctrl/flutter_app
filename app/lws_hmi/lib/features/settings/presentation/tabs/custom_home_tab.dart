@@ -1,10 +1,14 @@
-import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/custom_home_save_success_dialog.dart';
 
 /// Flutter recreation of lws-ui's eight-card Custom Home editor.
+///
+/// Keep only two pre-cut WebPs: [custom_back] for the upper plate halo, and
+/// [item_car_border_true] for selected cards. The full-panel rim and candidate
+/// card plates are drawn in code (thin grey stroke / translucent white fill).
+/// Whole cards sit at alpha 0.8 so the panel plate shows through.
 ///
 /// The first four cards are the Home dashboard selection; dragging a card
 /// changes its order in memory, and Save persists the layout only (never
@@ -25,11 +29,18 @@ class CustomHomeTab extends StatefulWidget {
   /// Gap between Save Changes bottom and the painted panel bottom edge.
   static const saveToContainerBottom = 28.0;
 
-  /// Outer panel edge inset (matches screen L/R margin).
+  /// Outer panel edge inset (matches screen L/R margin / lws-ui 24dp).
   static const containerHorizontalInset = 24.0;
 
-  /// Frost bright-edge stroke — same as Settings / Monitor (1.5).
-  static const containerBorderWidth = 1.5;
+  /// lws-ui [fragment_dashboard] `custom_back` plate height.
+  static const backPlateHeight = 240.0;
+
+  /// Soft rim around the full editor panel (replaces `custom_back_border.webp`).
+  static const panelBorderRadius = 18.0;
+  static const panelBorderWidth = 1.25;
+  static const panelBorderColor = Color(0xCEACACAC);
+
+  static const _assetBack = 'assets/settings/custom_home/custom_back.webp';
 
   @override
   State<CustomHomeTab> createState() => _CustomHomeTabState();
@@ -75,74 +86,64 @@ class _CustomHomeTabState extends State<CustomHomeTab> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final haloHeight =
-            (constraints.maxWidth * 223 / 1230).clamp(150.0, 223.0);
-        final candidateGap = (haloHeight - 54 - 80 + 3).clamp(3.0, 120.0);
-        final blurToken = Object.hashAll(_metrics.map((m) => m.index));
-        // Halo-only target for card chrome; SettingsPage owns the full-screen
-        // capture used by Save tip frost and background mist.
-        return CyberBlurBackdropScope(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              CyberBlurBackdropTarget(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    const ColoredBox(color: Color(0xFF060720)),
-                    Positioned(
-                      left: CustomHomeTab.containerHorizontalInset,
-                      right: CustomHomeTab.containerHorizontalInset,
-                      top: CustomHomeTab.containerTopInset,
-                      bottom: CustomHomeTab.containerBottomInset,
-                      child: CyberOutlinedPanel(
-                        clipBehavior: Clip.none,
-                        outline: const CyberPanelOutline(
-                          style: CyberPanelOutlineStyle.frostGradient,
-                          width: CustomHomeTab.containerBorderWidth,
-                          cornerRadius: 18,
-                          gradientCenter:
-                              CyberBorderGradientCenter.topLeftBottomRight,
-                        ),
-                        color: const Color(0x220D1234),
-                        child: const SizedBox.expand(),
-                      ),
+        // Space between the two card rows: plate height drives candidate gap
+        // the same way the old halo height did.
+        final candidateGap =
+            (CustomHomeTab.backPlateHeight - 54 - 80 + 3).clamp(3.0, 120.0);
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            // Base plate — deep blue-purple under the upper edit region.
+            Positioned(
+              left: CustomHomeTab.containerHorizontalInset,
+              right: CustomHomeTab.containerHorizontalInset,
+              top: CustomHomeTab.containerTopInset,
+              height: CustomHomeTab.backPlateHeight,
+              child: Image.asset(
+                CustomHomeTab._assetBack,
+                fit: BoxFit.fill,
+                filterQuality: FilterQuality.medium,
+              ),
+            ),
+            // Soft edge highlight around the full panel (drawn, not an asset).
+            Positioned(
+              left: CustomHomeTab.containerHorizontalInset,
+              right: CustomHomeTab.containerHorizontalInset,
+              top: CustomHomeTab.containerTopInset,
+              bottom: CustomHomeTab.containerBottomInset,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      CustomHomeTab.panelBorderRadius,
                     ),
-                    Positioned(
-                      top: CustomHomeTab.containerTopInset,
-                      left: CustomHomeTab.containerHorizontalInset,
-                      right: CustomHomeTab.containerHorizontalInset,
-                      height: haloHeight,
-                      child: Image.asset(
-                        'assets/process/custom_home_halo.webp',
-                        fit: BoxFit.fill,
-                        filterQuality: FilterQuality.medium,
-                      ),
+                    border: Border.all(
+                      color: CustomHomeTab.panelBorderColor,
+                      width: CustomHomeTab.panelBorderWidth,
                     ),
-                  ],
+                  ),
                 ),
               ),
-              Positioned(
-                top: CustomHomeTab.containerTopInset + 54,
-                left: 54,
-                right: 54,
-                height: candidateGap + 160,
-                child: _MetricGrid(
-                  metrics: _metrics,
-                  candidateTop: candidateGap + 80,
-                  blurSampleToken: blurToken,
-                  onReorder: _move,
-                ),
+            ),
+            Positioned(
+              top: CustomHomeTab.containerTopInset + 54,
+              left: 54,
+              right: 54,
+              height: candidateGap + 160,
+              child: _MetricGrid(
+                metrics: _metrics,
+                candidateTop: candidateGap + 80,
+                onReorder: _move,
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: CustomHomeTab.containerBottomInset +
-                    CustomHomeTab.saveToContainerBottom,
-                child: Center(child: _SaveButton(onPressed: _save)),
-              ),
-            ],
-          ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: CustomHomeTab.containerBottomInset +
+                  CustomHomeTab.saveToContainerBottom,
+              child: Center(child: _SaveButton(onPressed: _save)),
+            ),
+          ],
         );
       },
     );
@@ -156,13 +157,11 @@ class _MetricGrid extends StatefulWidget {
   const _MetricGrid({
     required this.metrics,
     required this.candidateTop,
-    required this.blurSampleToken,
     required this.onReorder,
   });
 
   final List<CustomHomeMetric> metrics;
   final double candidateTop;
-  final Object blurSampleToken;
   final void Function(CustomHomeMetric source, CustomHomeMetric target)
       onReorder;
 
@@ -245,7 +244,6 @@ class _MetricGridState extends State<_MetricGrid> {
                   active: index < 4,
                   width: cardWidth,
                   dimmed: widget.metrics[index] == dragging,
-                  blurSampleToken: widget.blurSampleToken,
                   onPointerDown: (event, size) =>
                       _startDrag(widget.metrics[index], event, size),
                   onPointerMove: (event) => _updateDrag(event, cardWidth),
@@ -259,16 +257,14 @@ class _MetricGridState extends State<_MetricGrid> {
                 width: _dragSize.width,
                 height: _dragSize.height,
                 child: IgnorePointer(
+                  // lws-ui CardAdapter: scale 1.05 + alpha dip while dragging.
                   child: Transform.scale(
                     scale: 1.05,
-                    child: Opacity(
-                      opacity: 0.8,
-                      child: _CardFace(
-                        metric: dragging,
-                        active: widget.metrics.indexOf(dragging) < 4,
-                        width: _dragSize.width,
-                        blurSampleToken: widget.blurSampleToken,
-                      ),
+                    child: _CardFace(
+                      metric: dragging,
+                      active: widget.metrics.indexOf(dragging) < 4,
+                      width: _dragSize.width,
+                      opacity: 0.64,
                     ),
                   ),
                 ),
@@ -330,7 +326,6 @@ class _MetricDragCard extends StatelessWidget {
     required this.active,
     required this.width,
     required this.dimmed,
-    required this.blurSampleToken,
     required this.onPointerDown,
     required this.onPointerMove,
     required this.onPointerEnd,
@@ -340,7 +335,6 @@ class _MetricDragCard extends StatelessWidget {
   final bool active;
   final double width;
   final bool dimmed;
-  final Object blurSampleToken;
   final void Function(PointerDownEvent event, Size size) onPointerDown;
   final ValueChanged<PointerMoveEvent> onPointerMove;
   final ValueChanged<PointerEvent> onPointerEnd;
@@ -359,12 +353,12 @@ class _MetricDragCard extends StatelessWidget {
         onPointerCancel: onPointerEnd,
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 100),
+          // Slot left behind while the floating face is dragged.
           opacity: dimmed ? 0.24 : 1,
           child: _CardFace(
             metric: metric,
             active: active,
             width: width,
-            blurSampleToken: blurSampleToken,
           ),
         ),
       ),
@@ -377,22 +371,52 @@ class _CardFace extends StatelessWidget {
     required this.metric,
     required this.active,
     required this.width,
-    required this.blurSampleToken,
+    this.opacity = _restAlpha,
   });
 
   final CustomHomeMetric metric;
   final bool active;
   final double width;
-  final Object blurSampleToken;
+
+  /// Defaults to [_restAlpha]; drag feedback passes a slightly lower value.
+  final double opacity;
 
   static const _cardHeight = 80.0;
-  static const _corner = 14.0;
+
+  /// Resting card opacity — lws-ui `item_card` `android:alpha="0.8"`.
+  static const _restAlpha = 0.8;
+
+  /// Matches `item_car_border_true.webp` corner radius at 80dp card height.
+  static const _cardRadius = 14.0;
+
+  /// Candidate fill — `item_car_border_false.webp` center ≈ white @ alpha 10/255.
+  static const _candidateFill = Color(0x0AFFFFFF);
+
+  static const _assetActive =
+      'assets/settings/custom_home/item_car_border_true.webp';
 
   @override
   Widget build(BuildContext context) {
-    final label = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      child: Center(
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        key: ValueKey('custom-home-card-${metric.name}'),
+        width: width,
+        height: _cardHeight,
+        alignment: Alignment.center,
+        decoration: active
+            ? const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(_assetActive),
+                  fit: BoxFit.fill,
+                  filterQuality: FilterQuality.medium,
+                ),
+              )
+            : BoxDecoration(
+                color: _candidateFill,
+                borderRadius: BorderRadius.circular(_cardRadius),
+              ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         child: Text(
           _label(metric),
           textAlign: TextAlign.center,
@@ -404,39 +428,6 @@ class _CardFace extends StatelessWidget {
             height: 1.05,
           ),
         ),
-      ),
-    );
-
-    return Container(
-      key: ValueKey('custom-home-card-${metric.name}'),
-      width: width,
-      height: _cardHeight,
-      alignment: Alignment.center,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (active)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(_corner),
-              child: CyberBackdropBlur(
-                // Same frost fill as CyberModal / Zero Offset dialog.
-                sampleMode: CyberBlurSampleMode.onChange,
-                intensity: CyberBlurIntensity.high,
-                blurTint: CyberBlurTint.dark,
-                sampleToken: blurSampleToken,
-                child: const SizedBox.expand(),
-              ),
-            )
-          else
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                color: Color(0x9C11152D),
-                borderRadius: BorderRadius.all(Radius.circular(_corner)),
-              ),
-            ),
-          CustomPaint(foregroundPainter: _CardBorderPainter(active: active)),
-          label,
-        ],
       ),
     );
   }
@@ -451,44 +442,4 @@ class _CardFace extends StatelessWidget {
         CustomHomeMetric.weekOverWeekLaser => 'Laser Time vs Last Week',
         CustomHomeMetric.favoriteMaterial => 'Favorite Material',
       };
-}
-
-/// Solid selection rim for the first four slots, dashed candidate rim for the
-/// remaining cards, matching lws-ui's `item_car_border_true/false` semantics.
-final class _CardBorderPainter extends CustomPainter {
-  const _CardBorderPainter({required this.active});
-
-  final bool active;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      const Radius.circular(14),
-    );
-    final paint = Paint()
-      ..color = active ? const Color(0xD3E7EAFF) : const Color(0x778D98C8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = active ? 1.4 : 1;
-    if (active) {
-      canvas.drawRRect(rect.deflate(0.7), paint);
-      return;
-    }
-    final path = Path()..addRRect(rect.deflate(0.5));
-    for (final metric in path.computeMetrics()) {
-      for (var offset = 0.0; offset < metric.length; offset += 8) {
-        canvas.drawPath(
-          metric.extractPath(
-            offset,
-            (offset + 4).clamp(0, metric.length).toDouble(),
-          ),
-          paint,
-        );
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _CardBorderPainter oldDelegate) =>
-      oldDelegate.active != active;
 }

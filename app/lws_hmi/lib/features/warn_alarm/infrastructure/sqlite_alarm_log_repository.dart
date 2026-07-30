@@ -49,6 +49,12 @@ final class SqliteAlarmLogRepository implements AlarmLogRepository {
   bool _openFailed = false;
   final _ctrl = StreamController<List<AlarmLogEntry>>.broadcast();
 
+  /// LAN Monitor alerts SSE: fired after a successful rising-edge insert (with id).
+  void Function(AlarmLogEntry entry)? onWarnInserted;
+
+  /// LAN Monitor alerts SSE: fired after history clear.
+  VoidCallback? onWarnCleared;
+
   /// Opens DB if needed. Returns false when SQLite is unavailable (soft-fail).
   Future<bool> _ensureOpen() async {
     if (_loaded && _db != null) {
@@ -111,17 +117,18 @@ CREATE TABLE IF NOT EXISTS $kAlarmLogsTable (
     }
     final rows = limit == null
         ? db.select(
-            'SELECT code, content, timestamp FROM $kAlarmLogsTable '
+            'SELECT id, code, content, timestamp, level FROM $kAlarmLogsTable '
             'ORDER BY timestamp DESC',
           )
         : db.select(
-            'SELECT code, content, timestamp FROM $kAlarmLogsTable '
+            'SELECT id, code, content, timestamp, level FROM $kAlarmLogsTable '
             'ORDER BY timestamp DESC LIMIT ?',
             [limit],
           );
     return [
       for (final row in rows)
         AlarmLogEntry(
+          id: row['id'] as int?,
           code: row['code'] as String? ?? '',
           title: row['content'] as String? ?? '',
           label: row['content'] as String?,
@@ -129,6 +136,7 @@ CREATE TABLE IF NOT EXISTS $kAlarmLogsTable (
             (row['timestamp'] as int?) ?? 0,
             isUtc: true,
           ),
+          level: row['level'] as int?,
         ),
     ];
   }
@@ -157,7 +165,18 @@ CREATE TABLE IF NOT EXISTS $kAlarmLogsTable (
           levelForCode(entry.code),
         ],
       );
+      final idRow = db.select('SELECT last_insert_rowid() AS id');
+      final id = idRow.isEmpty ? null : idRow.first['id'] as int?;
       _emit();
+      final inserted = AlarmLogEntry(
+        id: id,
+        code: entry.code,
+        title: entry.title,
+        label: entry.label,
+        timestamp: entry.timestamp,
+        level: entry.level ?? levelForCode(entry.code),
+      );
+      onWarnInserted?.call(inserted);
     } catch (e) {
       // Soft-fail: missing libsqlite3 / disk errors must not block warn UI.
       debugPrint('alarm-log sqlite: insertRising failed: $e');
@@ -185,6 +204,7 @@ CREATE TABLE IF NOT EXISTS $kAlarmLogsTable (
       }
       _db!.execute('DELETE FROM $kAlarmLogsTable');
       _emit();
+      onWarnCleared?.call();
     } catch (e) {
       debugPrint('alarm-log sqlite: clear failed: $e');
     }

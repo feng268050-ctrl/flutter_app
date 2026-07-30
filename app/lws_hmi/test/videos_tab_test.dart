@@ -141,6 +141,30 @@ final class _MemRepo implements ProcessVideoRepository {
   }
 
   @override
+  Future<ProcessVideoListPage> query(ProcessVideoListQuery q) async {
+    final sorted = await list(limit: 500, offset: 0);
+    return ProcessVideoListPage(list: sorted, total: sorted.length);
+  }
+
+  @override
+  Future<ProcessVideoRecord?> findByVideoId(String videoId) async {
+    for (final row in _rows) {
+      if (row.videoId == videoId) return row;
+    }
+    return null;
+  }
+
+  @override
+  Future<bool> updateUploadState({
+    required String videoId,
+    required int uploadStatus,
+    required int uploadProgress,
+    String? coverUrl,
+    String? videoUrl,
+  }) async =>
+      true;
+
+  @override
   Future<ProcessVideoRecord?> getById(int id) async {
     for (final row in _rows) {
       if (row.id == id) {
@@ -154,6 +178,13 @@ final class _MemRepo implements ProcessVideoRepository {
   Future<bool> deleteById(int id) async {
     final before = _rows.length;
     _rows.removeWhere((r) => r.id == id);
+    return _rows.length < before;
+  }
+
+  @override
+  Future<bool> deleteByVideoId(String videoId) async {
+    final before = _rows.length;
+    _rows.removeWhere((r) => r.videoId == videoId);
     return _rows.length < before;
   }
 }

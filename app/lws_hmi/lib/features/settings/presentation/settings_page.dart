@@ -1,6 +1,7 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/keyboard_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/advanced_settings_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/common_settings_tab.dart';
@@ -17,10 +18,14 @@ class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
     this.openKeyboardOnLaunch = false,
+    this.cameraDeviceInfoCache,
   });
 
   /// When true (post–XKB restart restore), open Common → Keyboard once.
   final bool openKeyboardOnLaunch;
+
+  /// Shared camera version cache (cloud WS + Camera settings).
+  final CameraDeviceInfoCache? cameraDeviceInfoCache;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -87,7 +92,10 @@ class _SettingsPageState extends State<SettingsPage>
         physics: const NeverScrollableScrollPhysics(),
         children: [
           DeviceInformationTab(services: services),
-          CommonSettingsTab(services: services),
+          CommonSettingsTab(
+            services: services,
+            cameraDeviceInfoCache: widget.cameraDeviceInfoCache,
+          ),
           const AdvancedSettingsTab(),
           const CustomHomeTab(),
         ],

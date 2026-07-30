@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cyber_hal/ip_camera.dart';
 import 'package:cyber_hal/network.dart';
+import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_eth0_path.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_mediamtx_relay.dart';
@@ -10,6 +11,24 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart'
 
 /// Default IPC address (lws-ui / product.ini fallback).
 const kDefaultIpCameraHost = '192.168.1.100';
+
+/// Trimmed `camera_ip` from product.ini, or [kDefaultIpCameraHost] when empty.
+String effectiveCameraHost(ProductInfo product) {
+  final t = product.cameraIp().trim();
+  if (t.isNotEmpty) {
+    return t;
+  }
+  return kDefaultIpCameraHost;
+}
+
+/// Resolve host from a raw product.ini value (same rules as [effectiveCameraHost]).
+String effectiveCameraHostFromRaw(String? productCameraIp) {
+  final t = productCameraIp?.trim();
+  if (t != null && t.isNotEmpty) {
+    return t;
+  }
+  return kDefaultIpCameraHost;
+}
 
 /// LWS product façade: one [IpCameraController] + eth0 path + MediaMTX + UI phases.
 final class IpCameraProductSession {
@@ -41,7 +60,7 @@ final class IpCameraProductSession {
     IpCameraController? cameraOverride,
     IpCameraProbe? probe,
   }) {
-    final host = _resolveHost(productCameraIp);
+    final host = effectiveCameraHostFromRaw(productCameraIp);
     final camera = cameraOverride ??
         LinuxIpCameraController(
           cameraHost: host,
@@ -55,14 +74,6 @@ final class IpCameraProductSession {
       eth0Path: eth0Path,
       relay: relay,
     );
-  }
-
-  static String _resolveHost(String? productCameraIp) {
-    final t = productCameraIp?.trim();
-    if (t != null && t.isNotEmpty) {
-      return t;
-    }
-    return kDefaultIpCameraHost;
   }
 
   final IpCameraController camera;

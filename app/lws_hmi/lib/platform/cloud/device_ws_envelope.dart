@@ -46,6 +46,10 @@ final class DeviceWsEnvelope {
         return null;
       }
       final v = map['v'] is num ? (map['v'] as num).toInt() : 1;
+      // lws-ui: PROTOCOL_VERSION must be 1.
+      if (v != 1) {
+        return null;
+      }
       final id = map['id']?.toString() ?? '';
       final ts = map['ts'] is num
           ? (map['ts'] as num).toInt()

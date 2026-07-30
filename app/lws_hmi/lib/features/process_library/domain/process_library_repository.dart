@@ -20,6 +20,9 @@ abstract interface class ProcessLibraryRepository {
     required String source,
     required ProcessLibraryMeta meta,
     required List<ProcessPreset> presets,
+    /// When true, delete all quick/engineer builtins regardless of prior source
+    /// (cloud push parity with Android wipe of dataType 0+1).
+    bool wipeAllBuiltinSources = false,
   });
 
   Future<void> backupTo(String path);

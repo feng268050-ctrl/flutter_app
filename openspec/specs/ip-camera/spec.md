@@ -173,7 +173,7 @@ The Camera settings page SHALL show a first read-only **Status** row whose trail
 
 ### Requirement: Camera settings shows Camera Type and Camera Version
 
-The Camera settings page SHALL show **Camera Type** as the second row and **Camera Version** as the third row (after Status). Camera Type SHALL use `product.ini` `camera_type` via HAL (`1` → `Blue Light`, `2` → `Red Light`; empty/invalid → `-`). Camera Version SHALL display the camera software version from a bounded device-info read (HTTP `GET …/System/deviceinfo` `appVersion` or equivalent product helper), or `-` when unavailable. The page MUST NOT show Camera IP or Preview URL rows.
+The Camera settings page SHALL show **Camera Type** as the second row and **Camera Version** as the third row (after Status). Camera Type SHALL use `product.ini` `camera_type` via HAL (`1` → `Blue Light`, `2` → `Red Light`; empty/invalid → `-`). Camera Version SHALL display the camera software version from a bounded device-info read (HTTP `GET …/System/deviceinfo` with Basic Auth `admin:admin`, then normalize `appVersion`: strip leading `v`/`V`, cut at first ` build`/` BUILD`), or `-` when unavailable. The same authenticated, normalized value SHALL feed cloud WS `deviceInfo.cameraVersion` via a shared per-host cache. Host resolution SHALL use trimmed `product.ini` `camera_ip`, falling back to `192.168.1.100` when empty. The page MUST NOT show Camera IP or Preview URL rows.
 
 #### Scenario: Camera type blue light
 
@@ -209,7 +209,7 @@ When the product MediaMTX relay is running, the system SHALL expose a stable LAN
 
 ### Requirement: Optional camera HTTP proxy is deferred unless required
 
-A Wi‑Fi-facing HTTP reverse proxy to the camera module HTTP API (lws-ui `:9000`) is OPTIONAL for the first cloud/LAN slice. If eth0 isolation still requires tablet-mediated HTTP access for mobile tooling, the product SHALL add the proxy in a follow-up task within this change; otherwise it MAY remain unimplemented without blocking `:5580` or RTSP advertise.
+A Wi‑Fi-facing HTTP reverse proxy to the camera module HTTP API (lws-ui `:9000`) remains **deferred** and is not part of `device-local-http-api` on `:5580`. Camera LAN control that IS in scope for `:5580` includes `POST /v1/camera/record`, `POST /v1/camera/show-overlay`, and `GET /v1/camera/ai` (see `device-local-http-api`). Live preview remains RTSP `:8554`. If eth0 isolation later requires tablet-mediated IPC HTTP for mobile tooling, the product MAY add the `:9000` proxy without blocking `:5580` or RTSP.
 
 #### Scenario: Missing proxy does not block local HTTP health
 

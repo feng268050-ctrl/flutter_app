@@ -196,6 +196,7 @@ ON process_presets(kind, process_type, name);
     required String source,
     required ProcessLibraryMeta meta,
     required List<ProcessPreset> presets,
+    bool wipeAllBuiltinSources = false,
   }) async {
     await open();
     if (presets.any((preset) =>
@@ -209,11 +210,18 @@ ON process_presets(kind, process_type, name);
     }
     _database.execute('BEGIN IMMEDIATE');
     try {
-      _database.execute(
-        "DELETE FROM process_presets WHERE source = ? AND is_builtin = 1 "
-        "AND kind IN ('quick', 'engineer_preset')",
-        [source],
-      );
+      if (wipeAllBuiltinSources) {
+        _database.execute(
+          "DELETE FROM process_presets WHERE is_builtin = 1 "
+          "AND kind IN ('quick', 'engineer_preset')",
+        );
+      } else {
+        _database.execute(
+          "DELETE FROM process_presets WHERE source = ? AND is_builtin = 1 "
+          "AND kind IN ('quick', 'engineer_preset')",
+          [source],
+        );
+      }
       for (final preset in presets) {
         final conflicts = _database.select(
           'SELECT source, is_builtin FROM process_presets '

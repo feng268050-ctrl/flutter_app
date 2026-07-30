@@ -31,9 +31,9 @@
 
 - [x] 5.1 Embed shelf (or equivalent) server on `0.0.0.0:5580`; non-fatal bind failure; lifecycle with App
 - [x] 5.2 Implement `GET /lasercyber` and `ApiResult` helper
-- [x] 5.3 Wire `/v1/videos` list/read/stream/delete/upload to local process-video backend (as available)
+- [x] 5.3 Wire `/v1/videos` list/read/stream/delete/upload to local process-video backend (as available) — **errata:** upload/`videoId`/filters completed 2026-07-30; see [errata.md](errata.md)
 - [x] 5.4 Wire `/v1/process-library` and `/v1/process-parameters/*` to shared process-library backend
-- [x] 5.5 Add monitor/camera routes or structured not-implemented responses; map `POST /v1/adb` to LAN SSH debug
+- [x] 5.5 Add monitor/camera routes or structured not-implemented responses; map `POST /v1/adb` to LAN SSH debug — **errata:** SSE/camera/adb `data:null` completed 2026-07-30; see [errata.md](errata.md)
 - [x] 5.6 Host/integration smoke: curl health + one JSON route on emulator or board
 
 ## 6. mDNS and camera LAN

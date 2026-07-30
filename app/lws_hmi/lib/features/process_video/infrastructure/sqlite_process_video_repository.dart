@@ -153,6 +153,135 @@ INSERT INTO $kTable (
   }
 
   @override
+  Future<ProcessVideoListPage> query(ProcessVideoListQuery q) async {
+    try {
+      if (!await _ensureOpen()) {
+        return const ProcessVideoListPage(list: [], total: 0);
+      }
+      final where = <String>[];
+      final args = <Object?>[];
+      if (q.processType != null) {
+        where.add('process_type = ?');
+        args.add(q.processType);
+      }
+      if (q.materialType != null) {
+        where.add('material_type = ?');
+        args.add(q.materialType);
+      }
+      if (q.uploadStatus != null) {
+        where.add('upload_status = ?');
+        args.add(q.uploadStatus);
+      } else if (q.excludeNotInitiatedWhenUploadStatusUnset) {
+        where.add('upload_status != 0');
+      }
+      final startMs = _dayStartMs(q.startDateYmd);
+      final endMs = _dayEndMs(q.endDateYmd);
+      if (startMs != null) {
+        where.add('create_time_ms >= ?');
+        args.add(startMs);
+      }
+      if (endMs != null) {
+        where.add('create_time_ms <= ?');
+        args.add(endMs);
+      }
+      final whereSql = where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}';
+      final order = q.orderAsc ? 'ASC' : 'DESC';
+      final page = q.page < 1 ? 1 : q.page;
+      final pageSize = q.pageSize.clamp(1, 100);
+      final offset = (page - 1) * pageSize;
+      final totalRow = _db!.select(
+        'SELECT COUNT(*) AS c FROM $kTable $whereSql',
+        args,
+      ).first;
+      final total = totalRow['c'] as int;
+      final rows = _db!.select(
+        'SELECT * FROM $kTable $whereSql '
+        'ORDER BY create_time_ms $order LIMIT ? OFFSET ?',
+        [...args, pageSize, offset],
+      );
+      return ProcessVideoListPage(
+        list: [for (final row in rows) _fromRow(row)],
+        total: total,
+      );
+    } catch (e) {
+      debugPrint('process-video sqlite: query failed: $e');
+      return const ProcessVideoListPage(list: [], total: 0);
+    }
+  }
+
+  static int? _dayStartMs(String? ymd) {
+    if (ymd == null || ymd.isEmpty) return null;
+    final parts = ymd.split('-');
+    if (parts.length != 3) return null;
+    final y = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    final d = int.tryParse(parts[2]);
+    if (y == null || m == null || d == null) return null;
+    return DateTime(y, m, d).millisecondsSinceEpoch;
+  }
+
+  static int? _dayEndMs(String? ymd) {
+    if (ymd == null || ymd.isEmpty) return null;
+    final parts = ymd.split('-');
+    if (parts.length != 3) return null;
+    final y = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    final d = int.tryParse(parts[2]);
+    if (y == null || m == null || d == null) return null;
+    return DateTime(y, m, d, 23, 59, 59, 999).millisecondsSinceEpoch;
+  }
+
+  @override
+  Future<ProcessVideoRecord?> findByVideoId(String videoId) async {
+    try {
+      if (!await _ensureOpen() || videoId.isEmpty) {
+        return null;
+      }
+      final rows = _db!.select(
+        'SELECT * FROM $kTable WHERE video_id = ? LIMIT 1',
+        [videoId],
+      );
+      if (rows.isEmpty) {
+        return null;
+      }
+      return _fromRow(rows.first);
+    } catch (e) {
+      debugPrint('process-video sqlite: findByVideoId failed: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> updateUploadState({
+    required String videoId,
+    required int uploadStatus,
+    required int uploadProgress,
+    String? coverUrl,
+    String? videoUrl,
+  }) async {
+    try {
+      if (!await _ensureOpen()) {
+        return false;
+      }
+      _db!.execute(
+        '''
+UPDATE $kTable SET
+  upload_status = ?,
+  upload_progress = ?,
+  cover_url = COALESCE(?, cover_url),
+  video_url = COALESCE(?, video_url)
+WHERE video_id = ?
+''',
+        [uploadStatus, uploadProgress, coverUrl, videoUrl, videoId],
+      );
+      return true;
+    } catch (e) {
+      debugPrint('process-video sqlite: updateUploadState failed: $e');
+      return false;
+    }
+  }
+
+  @override
   Future<int> count() async {
     try {
       if (!await _ensureOpen()) {
@@ -207,6 +336,15 @@ INSERT INTO $kTable (
       debugPrint('process-video sqlite: deleteById failed: $e');
       return false;
     }
+  }
+
+  @override
+  Future<bool> deleteByVideoId(String videoId) async {
+    final row = await findByVideoId(videoId);
+    if (row?.id == null) {
+      return false;
+    }
+    return deleteById(row!.id!);
   }
 
   @override

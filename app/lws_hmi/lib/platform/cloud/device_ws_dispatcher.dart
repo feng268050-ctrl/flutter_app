@@ -5,7 +5,7 @@ import 'package:lws_hmi/platform/cloud/device_ws_connection_manager.dart';
 import 'package:lws_hmi/platform/cloud/device_ws_envelope.dart';
 import 'package:lws_hmi/platform/lws_trace.dart';
 
-/// Dispatches non-OTA device WebSocket commands.
+/// Dispatches device WebSocket commands (lws-ui parity).
 final class DeviceWsDispatcher {
   DeviceWsDispatcher({
     required this.ws,
@@ -15,39 +15,56 @@ final class DeviceWsDispatcher {
     this.onClearAlerts,
     this.onProcessParam,
     this.onProcessLib,
+    this.onProcessLibraryRequest,
+    this.onProcessParametersRequest,
+    this.onProcessParametersCreate,
+    this.onProcessParametersUpdate,
+    this.onProcessParametersDelete,
+    this.onProcessParametersSetDefault,
     this.onVideoListRequest,
     this.onUploadVideo,
     this.onDeleteVideo,
+    this.onRemoteLockChanged,
+    this.onForcedDisconnect,
+    this.onLockSafetyStop,
   });
 
   final DeviceWsConnectionManager ws;
   final DeviceRemoteLockStore lockStore;
   final DeviceRemoteSnapshotPacker snapshotPacker;
 
-  /// Returns current snapshot map for online/stat.
   Future<Map<String, Object?>> Function()? snapshotLoader;
 
-  Future<void> Function()? onClearAlerts;
-  Future<void> Function(Object? payload)? onProcessParam;
-  Future<void> Function(Object? payload)? onProcessLib;
+  Future<bool> Function()? onClearAlerts;
+  /// Returns null on success; non-null = failure message.
+  Future<String?> Function(Object? payload)? onProcessParam;
+  Future<String?> Function(Object? payload)? onProcessLib;
+  Future<void> Function(DeviceWsEnvelope request)? onProcessLibraryRequest;
+  Future<void> Function(DeviceWsEnvelope request)? onProcessParametersRequest;
+  Future<void> Function(DeviceWsEnvelope request)? onProcessParametersCreate;
+  Future<void> Function(DeviceWsEnvelope request)? onProcessParametersUpdate;
+  Future<void> Function(DeviceWsEnvelope request)? onProcessParametersDelete;
+  Future<void> Function(DeviceWsEnvelope request)? onProcessParametersSetDefault;
   Future<void> Function(DeviceWsEnvelope request)? onVideoListRequest;
   Future<void> Function(DeviceWsEnvelope request)? onUploadVideo;
   Future<void> Function(DeviceWsEnvelope request)? onDeleteVideo;
 
+  /// Called after lock flag persists (`true` = locked).
+  Future<void> Function(bool locked)? onRemoteLockChanged;
+
+  /// Best-effort Modbus safety stop when locking.
+  Future<void> Function()? onLockSafetyStop;
+
+  /// After forced disconnect (UI notice).
+  Future<void> Function(String reason)? onForcedDisconnect;
+
   Future<void> handle(DeviceWsEnvelope envelope) async {
+    debugPrint(
+      'device-ws: recv type=${envelope.type} id=${envelope.id}',
+    );
+
     if (envelope.isOtaRelated) {
-      lwsTrace('device-ws: OTA no-op type=${envelope.type}');
-      await ws.send(
-        DeviceWsEnvelope.build(
-          type: '${envelope.type}_ack',
-          id: envelope.id,
-          payload: {
-            'ok': false,
-            'unsupported': true,
-            'reason': 'ota_deferred',
-          },
-        ),
-      );
+      await _handleOta(envelope);
       return;
     }
 
@@ -56,38 +73,183 @@ final class DeviceWsDispatcher {
         await _sendStat(envelope.id);
       case 'command.lock':
         await lockStore.setLocked(true);
-        await _ack(envelope, ok: true);
+        try {
+          await onLockSafetyStop?.call();
+        } catch (e) {
+          debugPrint('device-ws: lock safety stop failed: $e');
+        }
+        try {
+          await onRemoteLockChanged?.call(true);
+        } catch (e) {
+          debugPrint('device-ws: lock UI callback failed: $e');
+        }
       case 'command.unlock':
         await lockStore.setLocked(false);
-        await _ack(envelope, ok: true);
+        try {
+          await onRemoteLockChanged?.call(false);
+        } catch (e) {
+          debugPrint('device-ws: unlock UI callback failed: $e');
+        }
       case 'command.clear_alerts':
-        await onClearAlerts?.call();
-        await _ack(envelope, ok: true);
+        final ok = await onClearAlerts?.call() ?? false;
+        await sendDataAck(
+          type: 'command.clear_alerts_ack',
+          requestId: envelope.id,
+          success: ok,
+          message: ok ? 'ok' : 'clear_alerts_failed',
+        );
       case 'command.disconnect':
+        final reason = envelope.payload is Map
+            ? (envelope.payload as Map)['reason']?.toString() ?? ''
+            : '';
         await ws.disconnect(forced: true);
+        try {
+          await onForcedDisconnect?.call(reason);
+        } catch (e) {
+          debugPrint('device-ws: disconnect notice failed: $e');
+        }
       case 'command.send_process_param':
-        await onProcessParam?.call(envelope.payload);
-        await _ack(envelope, ok: true);
+        final err = await onProcessParam?.call(envelope.payload);
+        await sendProcessAck(
+          type: 'command.send_process_param_ack',
+          requestId: envelope.id,
+          code: err == null ? 200 : 500,
+          message: err ?? 'ok',
+        );
       case 'command.send_process_lib':
-        await onProcessLib?.call(envelope.payload);
-        await _ack(envelope, ok: true);
+        final err = await onProcessLib?.call(envelope.payload);
+        await sendProcessAck(
+          type: 'command.send_process_lib_ack',
+          requestId: envelope.id,
+          code: err == null ? 200 : 500,
+          message: err ?? 'ok',
+        );
+      case 'command.process_library_request':
+        await onProcessLibraryRequest?.call(envelope);
+      case 'command.process_parameters_request':
+        await onProcessParametersRequest?.call(envelope);
+      case 'command.process_parameters_create':
+        await onProcessParametersCreate?.call(envelope);
+      case 'command.process_parameters_update':
+        await onProcessParametersUpdate?.call(envelope);
+      case 'command.process_parameters_delete':
+        await onProcessParametersDelete?.call(envelope);
+      case 'command.process_parameters_set_default':
+        await onProcessParametersSetDefault?.call(envelope);
       case 'command.video_list_request':
         await onVideoListRequest?.call(envelope);
       case 'command.upload_video':
         await onUploadVideo?.call(envelope);
       case 'command.delete_video':
         await onDeleteVideo?.call(envelope);
+      case 'command.error':
+        debugPrint(
+          'device-ws: command.error id=${envelope.id} payload=${envelope.payload}',
+        );
+      case 'connected':
+      case 'ack':
+        break;
       default:
-        debugPrint('device-ws: unhandled type=${envelope.type}');
+        debugPrint(
+          'device-ws: unhandled type=${envelope.type} '
+          'id=${envelope.id} payload=${envelope.payload}',
+        );
+    }
+  }
+
+  Future<void> _handleOta(DeviceWsEnvelope envelope) async {
+    lwsTrace('device-ws: OTA unsupported type=${envelope.type}');
+    switch (envelope.type) {
+      case 'command.check_update':
+        await ws.send(
+          DeviceWsEnvelope.build(
+            type: 'command.check_update_ack',
+            payload: {
+              'request_id': envelope.id,
+              'data': {
+                'ok': false,
+                'has_update': false,
+                'error_code': 'ota_not_supported',
+                'error_message': 'OTA apply not available on this HMI build',
+              },
+            },
+          ),
+        );
+      case 'command.update_system':
+        await ws.send(
+          DeviceWsEnvelope.build(
+            type: 'command.update_system_ack',
+            payload: {
+              'request_id': envelope.id,
+              'data': {
+                'ok': false,
+                'started': false,
+                'error_code': 'ota_not_supported',
+                'error_message': 'OTA apply not available on this HMI build',
+              },
+            },
+          ),
+        );
+      case 'device.update_progress':
+        // Inbound progress is ignored; we never emit progress without a pipeline.
+        break;
+      default:
+        break;
     }
   }
 
   Future<void> sendOnline() async {
     final snap = await _loadSnapshot();
-    await ws.send(
+    final info = snap['deviceInfo'];
+    final sn = info is Map ? info['sn'] : null;
+    final envelope = DeviceWsEnvelope.build(
+      type: 'device.online',
+      payload: {'stat': snap},
+    );
+    final json = envelope.encode();
+    debugPrint(
+      'device-ws: send device.online sn=$sn state=${ws.state} jsonLen=${json.length}',
+    );
+    await ws.send(envelope);
+  }
+
+  Future<void> sendProcessAck({
+    required String type,
+    required String requestId,
+    required int code,
+    required String message,
+  }) {
+    return ws.send(
       DeviceWsEnvelope.build(
-        type: 'device.online',
-        payload: {'stat': snap},
+        type: type,
+        payload: {
+          'request_id': requestId,
+          'code': code,
+          'message': message,
+        },
+      ),
+    );
+  }
+
+  Future<void> sendDataAck({
+    required String type,
+    required String requestId,
+    required bool success,
+    required String message,
+    String? createdId,
+  }) {
+    final data = <String, Object?>{
+      'success': success,
+      'message': message,
+      if (createdId != null) 'id': createdId,
+    };
+    return ws.send(
+      DeviceWsEnvelope.build(
+        type: type,
+        payload: {
+          'request_id': requestId,
+          'data': data,
+        },
       ),
     );
   }
@@ -97,8 +259,10 @@ final class DeviceWsDispatcher {
     await ws.send(
       DeviceWsEnvelope.build(
         type: 'command.stat_response',
-        id: requestId,
-        payload: {'stat': snap},
+        payload: {
+          'request_id': requestId,
+          'data': snap,
+        },
       ),
     );
   }
@@ -112,16 +276,6 @@ final class DeviceWsDispatcher {
       deviceSn: '',
       brand: '',
       model: '',
-    );
-  }
-
-  Future<void> _ack(DeviceWsEnvelope envelope, {required bool ok}) async {
-    await ws.send(
-      DeviceWsEnvelope.build(
-        type: '${envelope.type}_ack',
-        id: envelope.id,
-        payload: {'ok': ok},
-      ),
     );
   }
 }

@@ -5,7 +5,8 @@ import 'package:lws_hmi/platform/cloud/cloud_environment_tier.dart';
 import 'package:lws_hmi/platform/cloud/device_api_origin_config.dart';
 import 'package:lws_hmi/platform/http/http_client_controller.dart';
 
-/// Concurrently probes candidate Worker bases; pins first success in-memory.
+/// Concurrent reachability probe for Worker API candidates (lws-ui
+/// `DeviceApiOriginProber` parity): first success wins and cancels waiting.
 final class DeviceApiOriginProber {
   DeviceApiOriginProber({
     required this.http,
@@ -24,7 +25,7 @@ final class DeviceApiOriginProber {
     _pinned = null;
   }
 
-  /// Probe [tier] candidates; returns pinned base or null.
+  /// Probe [tier] candidates concurrently; returns pinned base or null.
   Future<Uri?> probe(CloudEnvironmentTier tier) async {
     final generation = ++_generation;
     final candidates = DeviceApiOriginConfig.orderedCandidateBases(tier);
@@ -71,8 +72,9 @@ final class DeviceApiOriginProber {
       }());
     }
 
+    // Slightly above per-probe timeout (lws-ui INVOKE_ANY_TIMEOUT_SEC = 6).
     return completer.future.timeout(
-      timeout + const Duration(seconds: 2),
+      timeout + const Duration(seconds: 1),
       onTimeout: () => won ? _pinned : null,
     );
   }
@@ -86,7 +88,7 @@ final class DeviceApiOriginProber {
         maxBodyBytes: 256,
         timeout: timeout,
       );
-      // Any HTTP response (even 4xx) means the origin is reachable.
+      // Any HTTP response (even 4xx) means the origin is reachable (lws-ui).
       return result.statusCode != null && result.statusCode! > 0;
     } catch (e) {
       debugPrint('api-origin: probe failed $base: $e');

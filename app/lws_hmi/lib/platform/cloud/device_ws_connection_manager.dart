@@ -43,19 +43,32 @@ final class DeviceWsConnectionManager {
   bool get forcedDisconnectSuppressed => _forcedDisconnect;
   bool get authErrorLatched => _authErrorLatch;
 
-  Future<void> connect(Uri wsUrl) async {
+  /// Open [wsUrl]. When [resumeAfterAuth] is true, clear the INVALID_SN /
+  /// 401 latch so a SN that became valid (mobile registration) can connect.
+  Future<void> connect(
+    Uri wsUrl, {
+    bool resumeAfterAuth = false,
+  }) async {
     if (_disposed) {
       return;
     }
+    if (resumeAfterAuth) {
+      _authErrorLatch = false;
+      _forcedDisconnect = false;
+      _attempt = 0;
+    }
     _url = wsUrl;
     if (_forcedDisconnect || _authErrorLatch) {
-      lwsTrace('device-ws: connect skipped (suppressed)');
+      debugPrint(
+        'device-ws: connect skipped '
+        '(forced=$_forcedDisconnect authLatch=$_authErrorLatch) url=$wsUrl',
+      );
       return;
     }
     await _open();
   }
 
-  /// User-driven reconnect after registration dialog.
+  /// User-driven reconnect after registration dialog (last URL).
   Future<void> reconnectClearingAuthLatch() async {
     _authErrorLatch = false;
     _forcedDisconnect = false;
@@ -78,10 +91,18 @@ final class DeviceWsConnectionManager {
   Future<void> send(DeviceWsEnvelope envelope) async {
     final socket = _socket;
     if (socket == null || _state != DeviceWsState.connected) {
+      debugPrint(
+        'device-ws: send dropped type=${envelope.type} '
+        'state=$_state socket=${socket != null}',
+      );
       return;
     }
     try {
-      socket.add(envelope.encode());
+      final json = envelope.encode();
+      socket.add(json);
+      debugPrint(
+        'device-ws: sent type=${envelope.type} id=${envelope.id} jsonLen=${json.length}',
+      );
     } catch (e) {
       debugPrint('device-ws: send failed: $e');
     }
@@ -113,6 +134,7 @@ final class DeviceWsConnectionManager {
       _socket = socket;
       _attempt = 0;
       _setState(DeviceWsState.connected);
+      debugPrint('device-ws: connected $_url');
       _sub = socket.listen(
         _onData,
         onError: (Object e) {
@@ -121,23 +143,63 @@ final class DeviceWsConnectionManager {
         },
         onDone: () {
           final code = socket.closeCode;
+          final reason = socket.closeReason;
+          debugPrint(
+            'device-ws: closed code=$code reason=$reason url=$_url',
+          );
           final auth = code == 401 || code == 4401;
           unawaited(_handleFailure(auth: auth));
         },
         cancelOnError: true,
       );
-    } on HandshakeException catch (e) {
-      debugPrint('device-ws: handshake failed: $e');
-      final auth = e.toString().contains('401');
-      await _handleFailure(auth: auth);
     } catch (e) {
-      final msg = e.toString();
       debugPrint('device-ws: connect failed: $e');
-      final auth = msg.contains('401') || msg.contains('HTTP status code: 401');
+      final auth = await _classifyConnectFailure(e, _url!);
       await _handleFailure(auth: auth);
     } finally {
       client?.close(force: true);
     }
+  }
+
+  /// Dart [WebSocket.connect] on HTTP 401 often throws
+  /// `WebSocketException: … was not upgraded to websocket` with **no** "401"
+  /// in the message — so we HTTP-GET the same path to classify INVALID_SN.
+  Future<bool> _classifyConnectFailure(Object e, Uri wsUrl) async {
+    final msg = e.toString();
+    if (msg.contains('401') ||
+        msg.contains('4401') ||
+        msg.toLowerCase().contains('invalid_sn')) {
+      return true;
+    }
+    final looksLikeFailedUpgrade = e is WebSocketException ||
+        e is HandshakeException ||
+        msg.contains('not upgraded') ||
+        msg.contains('HandshakeException');
+    if (!looksLikeFailedUpgrade) {
+      return false;
+    }
+    try {
+      final httpUrl = wsUrl.replace(
+        scheme: wsUrl.scheme == 'wss' ? 'https' : 'http',
+        fragment: '',
+      );
+      final resp = await cloudHttp.getJson(
+        httpUrl,
+        timeout: const Duration(seconds: 8),
+      );
+      if (resp.statusCode == 401) {
+        return true;
+      }
+      final body = resp.body.toLowerCase();
+      if (body.contains('invalid_sn') ||
+          body.contains('invalid device serial') ||
+          body.contains('"code":401')) {
+        return true;
+      }
+    } catch (probeErr) {
+      debugPrint('device-ws: auth classify probe failed: $probeErr');
+    }
+    return false;
   }
 
   void _onData(dynamic data) {
@@ -195,7 +257,9 @@ final class DeviceWsConnectionManager {
     if (_state == next) {
       return;
     }
+    final prev = _state;
     _state = next;
+    debugPrint('device-ws: state $prev → $next url=$_url');
     onStateChanged?.call(next);
   }
 }

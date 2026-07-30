@@ -36,3 +36,17 @@ Each product surface that displays live Modbus fields (including Device Informat
 - **WHEN** Device Information and Monitor Alarm telemetry are both subscribed
 - **THEN** the HAL SHALL deliver filtered change lists to each subscriber according to that subscriber’s `ids`
 - **AND** there SHALL still be a single continuous poll scheduler on the shared HAL instance
+
+### Requirement: Remote live cache may watch continuous groups for LAN/cloud snapshot
+The product App MAY run **one** App-owned live cache (e.g. `DeviceRemoteLiveCache`) that subscribes via `watchAttributes` with an **explicit** id list covering all attributes in continuous Modbus groups (`status` and `data`) for LAN Monitor SSE and/or remote snapshot reuse. That cache MUST NOT replace per-UI-surface narrow id watches. Its lifecycle MUST be bound to cloud/LAN runtime (not to `ensureModbusLive`). It MUST NOT call `readGroup` / on-demand register reads on a fixed SSE sample timer. A one-shot `readGroup('status')` / `readGroup('data')` (or equivalent) **at cache start** to seed the attr maps before the first SSE publish is ALLOWED and SHOULD be used so the first `deviceData` is not a sparse partial. Mapping HAL attrs → wire `deviceStatus` / `deviceData` MUST use the shared packer that emits lws-ui camelCase and register-scale `*TempRaw` (see `device-local-http-api`). Multiple UI watches and the live cache MAY coexist on the same HAL continuous poll.
+
+#### Scenario: Live cache and Monitor UI watch together
+- **WHEN** Monitor Machine Status is subscribed with a narrow id list
+- **AND** the remote live cache is subscribed with full continuous `status`+`data` ids
+- **THEN** both subscriptions SHALL receive filtered change lists from the single continuous poll
+- **AND** Monitor SSE `stat` updates MUST follow live-cache mapped changes (not a second Modbus poll)
+
+#### Scenario: Live cache seeds data group at start
+- **WHEN** the remote live cache starts
+- **THEN** it SHOULD populate `status` and `data` attr maps from a one-shot group read (or an equivalent full prime) before or with the first Monitor SSE `stat`
+- **AND** subsequent updates MUST still come from `watchAttributes` / health (not a 100 ms sample timer)

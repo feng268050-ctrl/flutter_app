@@ -122,6 +122,18 @@ class ModbusRtuClient {
     } catch (_) {}
   }
 
+  /// Attribute ids belonging to [groupIds] (via HAL config group membership).
+  Future<List<String>> attributeIdsForGroups(Iterable<String> groupIds) async {
+    final hal = await _ensureHal();
+    final ids = <String>{};
+    for (final g in groupIds) {
+      for (final a in hal.config.attributesForGroup(g)) {
+        ids.add(a.id);
+      }
+    }
+    return ids.toList(growable: false);
+  }
+
   /// Per-subscriber attribute watch; bind [ids] to this surface's interests.
   Future<Stream<List<ModbusAttributeChange>>> watchAttributes({
     Iterable<String>? ids,

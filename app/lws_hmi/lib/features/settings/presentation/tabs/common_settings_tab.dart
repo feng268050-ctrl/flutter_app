@@ -7,6 +7,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
+import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
@@ -29,9 +30,14 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Common Settings — CyberUI untitled cards (nav rows → sub-pages).
 class CommonSettingsTab extends StatefulWidget {
-  const CommonSettingsTab({super.key, required this.services});
+  const CommonSettingsTab({
+    super.key,
+    required this.services,
+    this.cameraDeviceInfoCache,
+  });
 
   final AppServices services;
+  final CameraDeviceInfoCache? cameraDeviceInfoCache;
 
   @override
   State<CommonSettingsTab> createState() => _CommonSettingsTabState();
@@ -356,7 +362,10 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
               title: l10n.ipCameraText,
               onTap: () => pushSettingsPage(
                 context,
-                IpCameraSettingsPage(services: services),
+                IpCameraSettingsPage(
+                  services: services,
+                  deviceInfoCache: widget.cameraDeviceInfoCache,
+                ),
               ),
             ),
           ],

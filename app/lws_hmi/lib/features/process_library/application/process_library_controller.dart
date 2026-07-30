@@ -5,6 +5,8 @@ import 'package:lws_hmi/features/process_library/application/process_library_imp
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_repository.dart';
+import 'package:lws_hmi/platform/cloud/device_remote_snapshot_modbus_mapper.dart';
+import 'package:lws_hmi/platform/cloud/process_parameters_snapshot_store.dart';
 
 final class ProcessLibraryController extends ChangeNotifier {
   ProcessLibraryController({
@@ -145,7 +147,16 @@ final class ProcessLibraryController extends ChangeNotifier {
     _applying = true;
     _notify();
     try {
-      return await applier.apply(preset);
+      final result = await applier.apply(preset);
+      if (result.isSuccess) {
+        ProcessParametersSnapshotStore.instance.updateFromPreset(
+          preset,
+          DeviceRemoteSnapshotModbusMapper.processParametersFromGroup(
+            Map<String, Object?>.from(preset.parameters.values),
+          ),
+        );
+      }
+      return result;
     } finally {
       _applying = false;
       _notify();
@@ -156,6 +167,9 @@ final class ProcessLibraryController extends ChangeNotifier {
     _presets = await repository.list();
     _notify();
   }
+
+  /// Refresh in-memory list after external repository writes (e.g. cloud push).
+  Future<void> reloadPresets() => _reload();
 
   static String _newUuid() {
     final random = Random.secure();

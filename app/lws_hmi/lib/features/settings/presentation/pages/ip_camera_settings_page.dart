@@ -20,6 +20,7 @@ class IpCameraSettingsPage extends StatefulWidget {
     required this.services,
     this.recordingPaths = const IpCameraDemoRecordingPaths(),
     this.previewPlayerFactory = createIpCameraPreviewPlayer,
+    this.deviceInfoCache,
   });
 
   final AppServices services;
@@ -27,6 +28,9 @@ class IpCameraSettingsPage extends StatefulWidget {
 
   /// Injected in widget tests to avoid real `video_player` RTSP init hangs.
   final IpCameraPreviewPlayerFactory previewPlayerFactory;
+
+  /// Shared with cloud WS snapshot when provided by the app; otherwise owned.
+  final CameraDeviceInfoCache? deviceInfoCache;
 
   @override
   State<IpCameraSettingsPage> createState() => _IpCameraSettingsPageState();
@@ -51,11 +55,15 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
 
   String? _cameraTypeRaw;
   String _cameraVersion = kUnavailableDisplay;
-  final _versionCache = CameraDeviceInfoCache();
+  late final CameraDeviceInfoCache _versionCache;
+  late final bool _ownsVersionCache;
 
   @override
   void initState() {
     super.initState();
+    final shared = widget.deviceInfoCache;
+    _ownsVersionCache = shared == null;
+    _versionCache = shared ?? CameraDeviceInfoCache();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _routeSettleTimer = Timer(const Duration(milliseconds: 400), () {
         if (mounted) {
@@ -72,11 +80,9 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
       if (mounted) {
         setState(() => _cameraTypeRaw = product.cameraType());
       }
-      final host = product.cameraIp();
-      if (host.isNotEmpty) {
-        final version = await _versionCache.fetch(host);
-        if (mounted) setState(() => _cameraVersion = version);
-      }
+      final host = effectiveCameraHost(product);
+      final version = await _versionCache.fetch(host);
+      if (mounted) setState(() => _cameraVersion = version);
     } catch (_) {}
 
     try {
@@ -212,7 +218,9 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
     _routeSettleTimer?.cancel();
     unawaited(_sub?.cancel());
     unawaited(_recSub?.cancel());
-    _versionCache.dispose();
+    if (_ownsVersionCache) {
+      _versionCache.dispose();
+    }
     super.dispose();
   }
 

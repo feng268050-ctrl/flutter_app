@@ -34,4 +34,4 @@
 ## 6. Verification
 
 - [x] 6.1 Run `flutter analyze` and targeted tests under `app/lws_hmi/`
-- [ ] 6.2 Device smoke (ynh960): Quick Record Work → laser on/off → Videos row → play → delete; confirm Settings demo clip not listed
+- [x] 6.2 Device smoke (ynh960): Quick Record Work → laser on/off → Videos row → play → delete; confirm Settings demo clip not listed

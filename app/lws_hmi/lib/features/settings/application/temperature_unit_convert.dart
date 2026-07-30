@@ -11,6 +11,9 @@ abstract final class TemperatureUnitConvert {
   static int celsiusToFahrenheit(int celsius) =>
       (celsius * 9 / 5 + 32).round();
 
+  static double celsiusToFahrenheitDouble(double celsius) =>
+      celsius * 9 / 5 + 32;
+
   static int fahrenheitToCelsius(int fahrenheit) =>
       ((fahrenheit - 32) * 5 / 9).round();
 
@@ -18,6 +21,14 @@ abstract final class TemperatureUnitConvert {
   static String toDisplay(int celsius, String? unitWire) {
     if (isMetric(unitWire)) return '$celsius';
     return '${celsiusToFahrenheit(celsius)}';
+  }
+
+  /// Live sensor value with unit suffix (one decimal; lws-ui `formatSensorCelsius`).
+  static String formatSensorCelsius(double celsius, String? unitWire) {
+    if (isMetric(unitWire)) {
+      return '${celsius.toStringAsFixed(1)} °C';
+    }
+    return '${celsiusToFahrenheitDouble(celsius).toStringAsFixed(1)} °F';
   }
 
   /// Slider scale endpoint label with unit suffix.

@@ -1,4 +1,5 @@
 import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/features/settings/application/temperature_unit_convert.dart';
 
 enum TempTrend { none, up, down }
 
@@ -8,7 +9,23 @@ class TempSeries {
   bool _overTemp = false;
 
   TempTrend trend = TempTrend.none;
-  String display = kUnavailableDisplay;
+
+  /// Last sample in Celsius (`null` = unavailable).
+  double? get lastCelsius => _last;
+
+  bool get overTemp => _overTemp;
+
+  /// Metric (°C) display for callers that do not pass a unit preference.
+  String get display => displayFor(null);
+
+  /// Formats the stored Celsius sample for [unitWire] (Common Settings).
+  String displayFor(String? unitWire) {
+    if (_last == null) {
+      return _overTemp ? 'OVER TEMP' : kUnavailableDisplay;
+    }
+    final text = TemperatureUnitConvert.formatSensorCelsius(_last!, unitWire);
+    return _overTemp ? '$text · OVER TEMP' : text;
+  }
 
   void setCelsius(double? celsius, {bool? overTemp}) {
     if (overTemp != null) {
@@ -17,7 +34,6 @@ class TempSeries {
     if (celsius == null) {
       trend = TempTrend.none;
       _last = null;
-      display = _overTemp ? 'OVER TEMP' : kUnavailableDisplay;
       return;
     }
     if (_last != null) {
@@ -30,18 +46,10 @@ class TempSeries {
       }
     }
     _last = celsius;
-    final text = '${celsius.toStringAsFixed(1)} °C';
-    display = _overTemp ? '$text · OVER TEMP' : text;
   }
 
   void setOverTemp(bool overTemp) {
     _overTemp = overTemp;
-    if (_last == null) {
-      display = overTemp ? 'OVER TEMP' : kUnavailableDisplay;
-      return;
-    }
-    final text = '${_last!.toStringAsFixed(1)} °C';
-    display = overTemp ? '$text · OVER TEMP' : text;
   }
 }
 

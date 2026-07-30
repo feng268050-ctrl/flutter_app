@@ -36,4 +36,21 @@ void main() {
       80,
     );
   });
+
+  test('formatSensorCelsius follows Common Settings unit', () {
+    expect(
+      TemperatureUnitConvert.formatSensorCelsius(
+        25.1,
+        CommonSettingsStore.unitMetric,
+      ),
+      '25.1 °C',
+    );
+    expect(
+      TemperatureUnitConvert.formatSensorCelsius(
+        25.1,
+        CommonSettingsStore.unitImperial,
+      ),
+      '77.2 °F',
+    );
+  });
 }

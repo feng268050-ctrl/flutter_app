@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/temperature_unit_convert.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 
@@ -304,16 +307,37 @@ class MonitorTempMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasValue = series.display != '-' && !series.display.startsWith('OVER');
-    final value = overTemp && series.display.contains('°C')
-        ? series.display.split(' · ').first
-        : series.display;
+    final common = CommonSettingsScope.maybeOf(context);
     final l10n = AppLocalizations.of(context)!;
-    return MonitorMetricCard(
-      value: overTemp && !hasValue ? l10n.overTempLabel : value,
-      label: label,
-      fault: overTemp,
-      hasValue: hasValue || overTemp,
+
+    Widget card() {
+      final unit = common?.unit;
+      final hasValue = series.lastCelsius != null;
+      final String value;
+      if (overTemp && !hasValue) {
+        value = l10n.overTempLabel;
+      } else if (hasValue) {
+        value = TemperatureUnitConvert.formatSensorCelsius(
+          series.lastCelsius!,
+          unit,
+        );
+      } else {
+        value = kUnavailableDisplay;
+      }
+      return MonitorMetricCard(
+        value: value,
+        label: label,
+        fault: overTemp,
+        hasValue: hasValue || overTemp,
+      );
+    }
+
+    if (common == null) {
+      return card();
+    }
+    return ListenableBuilder(
+      listenable: common,
+      builder: (context, _) => card(),
     );
   }
 }

@@ -1,5 +1,4 @@
-import 'dart:ui';
-
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
@@ -14,6 +13,23 @@ class CustomHomeTab extends StatefulWidget {
   const CustomHomeTab({super.key, this.store});
 
   final CustomHomeLayoutStore? store;
+
+  /// Gap between the painted panel bottom edge and the stack bottom.
+  /// Matches [containerHorizontalInset] (screen L/R margin).
+  static const containerBottomInset = 24.0;
+
+  /// Gap between the tab strip and the large panel top.
+  /// Matches [containerHorizontalInset] (screen L/R margin).
+  static const containerTopInset = 24.0;
+
+  /// Gap between Save Changes bottom and the painted panel bottom edge.
+  static const saveToContainerBottom = 28.0;
+
+  /// Outer panel edge inset (matches screen L/R margin).
+  static const containerHorizontalInset = 24.0;
+
+  /// Frost bright-edge stroke — same as Settings / Monitor (1.5).
+  static const containerBorderWidth = 1.5;
 
   @override
   State<CustomHomeTab> createState() => _CustomHomeTabState();
@@ -64,76 +80,76 @@ class _CustomHomeTabState extends State<CustomHomeTab> {
         final haloHeight =
             (constraints.maxWidth * 223 / 1230).clamp(150.0, 223.0);
         final candidateGap = (haloHeight - 54 - 80 + 3).clamp(3.0, 120.0);
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            const ColoredBox(color: Color(0xFF060720)),
-            const CustomPaint(painter: _CustomHomeContainerPainter()),
-            Positioned(
-              top: 0,
-              left: 24,
-              right: 24,
-              height: haloHeight,
-              child: Image.asset(
-                'assets/process/custom_home_halo.webp',
-                fit: BoxFit.fill,
-                filterQuality: FilterQuality.medium,
+        final blurToken = Object.hashAll(_metrics.map((m) => m.index));
+        // Capture halo under CyberBlurBackdropTarget so display cards can
+        // freeze a real frosted sample (live BackdropFilter is unreliable on
+        // eLinux / Weston).
+        return CyberBlurBackdropScope(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              CyberBlurBackdropTarget(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const ColoredBox(color: Color(0xFF060720)),
+                    Positioned(
+                      left: CustomHomeTab.containerHorizontalInset,
+                      right: CustomHomeTab.containerHorizontalInset,
+                      top: CustomHomeTab.containerTopInset,
+                      bottom: CustomHomeTab.containerBottomInset,
+                      child: CyberOutlinedPanel(
+                        clipBehavior: Clip.none,
+                        outline: const CyberPanelOutline(
+                          style: CyberPanelOutlineStyle.frostGradient,
+                          width: CustomHomeTab.containerBorderWidth,
+                          cornerRadius: 18,
+                          gradientCenter:
+                              CyberBorderGradientCenter.topLeftBottomRight,
+                        ),
+                        color: const Color(0x220D1234),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                    Positioned(
+                      top: CustomHomeTab.containerTopInset,
+                      left: CustomHomeTab.containerHorizontalInset,
+                      right: CustomHomeTab.containerHorizontalInset,
+                      height: haloHeight,
+                      child: Image.asset(
+                        'assets/process/custom_home_halo.webp',
+                        fit: BoxFit.fill,
+                        filterQuality: FilterQuality.medium,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Positioned(
-              top: 54,
-              left: 54,
-              right: 54,
-              height: candidateGap + 160,
-              child: _MetricGrid(
-                metrics: _metrics,
-                candidateTop: candidateGap + 80,
-                onReorder: _move,
+              Positioned(
+                top: CustomHomeTab.containerTopInset + 54,
+                left: 54,
+                right: 54,
+                height: candidateGap + 160,
+                child: _MetricGrid(
+                  metrics: _metrics,
+                  candidateTop: candidateGap + 80,
+                  blurSampleToken: blurToken,
+                  onReorder: _move,
+                ),
               ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 34,
-              child: Center(child: _SaveButton(onPressed: _save)),
-            ),
-          ],
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: CustomHomeTab.containerBottomInset +
+                    CustomHomeTab.saveToContainerBottom,
+                child: Center(child: _SaveButton(onPressed: _save)),
+              ),
+            ],
+          ),
         );
       },
     );
   }
-}
-
-/// Code-drawn outer container. The halo itself remains the approved artwork.
-final class _CustomHomeContainerPainter extends CustomPainter {
-  const _CustomHomeContainerPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const horizontalInset = 24.0;
-    final panel = RRect.fromRectAndRadius(
-      Rect.fromLTWH(horizontalInset, 0, size.width - horizontalInset * 2,
-          size.height - 18),
-      const Radius.circular(18),
-    );
-    canvas.drawRRect(
-      panel,
-      Paint()
-        ..color = const Color(0x220D1234)
-        ..style = PaintingStyle.fill,
-    );
-    canvas.drawRRect(
-      panel,
-      Paint()
-        ..color = const Color(0x88929BD1)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _CustomHomeContainerPainter oldDelegate) =>
-      false;
 }
 
 /// A two-row, four-column drag surface. Unlike generic [Draggable], this
@@ -143,11 +159,13 @@ class _MetricGrid extends StatefulWidget {
   const _MetricGrid({
     required this.metrics,
     required this.candidateTop,
+    required this.blurSampleToken,
     required this.onReorder,
   });
 
   final List<CustomHomeMetric> metrics;
   final double candidateTop;
+  final Object blurSampleToken;
   final void Function(CustomHomeMetric source, CustomHomeMetric target)
       onReorder;
 
@@ -230,6 +248,7 @@ class _MetricGridState extends State<_MetricGrid> {
                   active: index < 4,
                   width: cardWidth,
                   dimmed: widget.metrics[index] == dragging,
+                  blurSampleToken: widget.blurSampleToken,
                   onPointerDown: (event, size) =>
                       _startDrag(widget.metrics[index], event, size),
                   onPointerMove: (event) => _updateDrag(event, cardWidth),
@@ -251,6 +270,7 @@ class _MetricGridState extends State<_MetricGrid> {
                         metric: dragging,
                         active: widget.metrics.indexOf(dragging) < 4,
                         width: _dragSize.width,
+                        blurSampleToken: widget.blurSampleToken,
                       ),
                     ),
                   ),
@@ -313,6 +333,7 @@ class _MetricDragCard extends StatelessWidget {
     required this.active,
     required this.width,
     required this.dimmed,
+    required this.blurSampleToken,
     required this.onPointerDown,
     required this.onPointerMove,
     required this.onPointerEnd,
@@ -322,6 +343,7 @@ class _MetricDragCard extends StatelessWidget {
   final bool active;
   final double width;
   final bool dimmed;
+  final Object blurSampleToken;
   final void Function(PointerDownEvent event, Size size) onPointerDown;
   final ValueChanged<PointerMoveEvent> onPointerMove;
   final ValueChanged<PointerEvent> onPointerEnd;
@@ -341,7 +363,12 @@ class _MetricDragCard extends StatelessWidget {
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 100),
           opacity: dimmed ? 0.24 : 1,
-          child: _CardFace(metric: metric, active: active, width: width),
+          child: _CardFace(
+            metric: metric,
+            active: active,
+            width: width,
+            blurSampleToken: blurSampleToken,
+          ),
         ),
       ),
     );
@@ -349,69 +376,69 @@ class _MetricDragCard extends StatelessWidget {
 }
 
 class _CardFace extends StatelessWidget {
-  const _CardFace(
-      {required this.metric, required this.active, required this.width});
+  const _CardFace({
+    required this.metric,
+    required this.active,
+    required this.width,
+    required this.blurSampleToken,
+  });
 
   final CustomHomeMetric metric;
   final bool active;
   final double width;
+  final Object blurSampleToken;
+
+  static const _cardHeight = 80.0;
+  static const _corner = 14.0;
 
   @override
   Widget build(BuildContext context) {
+    final label = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: Center(
+        child: Text(
+          _label(metric),
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 25,
+            height: 1.05,
+          ),
+        ),
+      ),
+    );
+
     return Container(
       key: ValueKey('custom-home-card-${metric.name}'),
       width: width,
-      height: 80,
+      height: _cardHeight,
       alignment: Alignment.center,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  // Match the Settings chrome's blue-black translucent glass.
-                  color: active
-                      ? const Color(0xB80B0E2C)
-                      : const Color(0x9C11152D),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: active
-                      ? const [
-                          BoxShadow(
-                            color: Color(0x994E5AB0),
-                            blurRadius: 12,
-                            spreadRadius: 1,
-                          ),
-                          BoxShadow(
-                            color: Color(0x66FFFFFF),
-                            blurRadius: 2,
-                            spreadRadius: -1,
-                          ),
-                        ]
-                      : null,
-                ),
+          if (active)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(_corner),
+              child: CyberBackdropBlur(
+                // Same frost fill as CyberModal / Zero Offset dialog.
+                sampleMode: CyberBlurSampleMode.onChange,
+                intensity: CyberBlurIntensity.high,
+                blurTint: CyberBlurTint.dark,
+                sampleToken: blurSampleToken,
+                child: const SizedBox.expand(),
+              ),
+            )
+          else
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                color: Color(0x9C11152D),
+                borderRadius: BorderRadius.all(Radius.circular(_corner)),
               ),
             ),
-          ),
           CustomPaint(foregroundPainter: _CardBorderPainter(active: active)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: Center(
-              child: Text(
-                _label(metric),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  height: 1.05,
-                ),
-              ),
-            ),
-          ),
+          label,
         ],
       ),
     );

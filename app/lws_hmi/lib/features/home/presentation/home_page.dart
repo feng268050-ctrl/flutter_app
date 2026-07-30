@@ -36,6 +36,11 @@ const double _kQaLabelMarginTop = 10;
 const double _kQaCorner = 18;
 const double _kQaCardText = 20;
 
+/// Custom Home statistics cards on the product Home (design dp @ 1280×800).
+const double _kStatCardH = 124;
+const double _kStatCardGap = 20;
+const double _kStatToQaGap = 20;
+
 /// Product Home: backdrop, animated plates, Quick/Engineer, bottom quick actions.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -387,67 +392,69 @@ class _HomePageState extends State<HomePage> with RouteAware {
                     unawaited(_openEngineerMode());
                   },
                 ),
-                // The four saved Custom Home statistics keep lws-ui's two
-                // left / two right slots above the quick actions.
+                // Stats row + fixed gap + quick actions (gap must be exact
+                // design dp — do not infer from separate Positioned bottoms).
                 Positioned(
                   left: _kQaEdgeInset * sx,
                   right: _kQaEdgeInset * sx,
-                  bottom: (190 * sy),
-                  height: 124 * sy,
-                  child: CustomHomeStatisticsPanel(
-                    key: _customHomeStatisticsKey,
-                    cardWidth: 200 * sx,
-                    cardHeight: 124 * sy,
-                    cardGap: 12 * sx,
-                  ),
-                ),
-                // Bottom-left: Monitor | Settings (lws-ui box_quick_actions_row).
-                Positioned(
-                  left: _kQaEdgeInset * sx,
                   bottom: _kQaEdgeInset * sy,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _HomeQuickActionSquare(
-                        scaleX: sx,
-                        scaleY: sy,
-                        iconAsset: HomeAssets.monitorIcon,
-                        label: l10n.homeMonitorLabel,
-                        labelFontSize: qaLabelSize,
-                        onPressed: () {
-                          Navigator.of(context).pushNamed(AppRoutes.monitor);
-                        },
+                      SizedBox(
+                        height: _kStatCardH * sy,
+                        child: CustomHomeStatisticsPanel(
+                          key: _customHomeStatisticsKey,
+                          cardWidth: 200 * sx,
+                          cardHeight: _kStatCardH * sy,
+                          cardGap: _kStatCardGap * sx,
+                        ),
                       ),
-                      SizedBox(width: _kQaPairGap * sx),
-                      _HomeQuickActionSquare(
-                        scaleX: sx,
-                        scaleY: sy,
-                        iconAsset: HomeAssets.settingsIcon,
-                        label: l10n.homeSettingsLabel,
-                        labelFontSize: qaLabelSize,
-                        onPressed: () {
-                          Navigator.of(context).pushNamed(AppRoutes.settings);
-                        },
+                      SizedBox(height: _kStatToQaGap * sy),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _HomeQuickActionSquare(
+                            scaleX: sx,
+                            scaleY: sy,
+                            iconAsset: HomeAssets.monitorIcon,
+                            label: l10n.homeMonitorLabel,
+                            labelFontSize: qaLabelSize,
+                            onPressed: () {
+                              Navigator.of(context)
+                                  .pushNamed(AppRoutes.monitor);
+                            },
+                          ),
+                          SizedBox(width: _kQaPairGap * sx),
+                          _HomeQuickActionSquare(
+                            scaleX: sx,
+                            scaleY: sy,
+                            iconAsset: HomeAssets.settingsIcon,
+                            label: l10n.homeSettingsLabel,
+                            labelFontSize: qaLabelSize,
+                            onPressed: () {
+                              Navigator.of(context)
+                                  .pushNamed(AppRoutes.settings);
+                            },
+                          ),
+                          const Spacer(),
+                          _HomeQuickActionAiVision(
+                            scaleX: sx,
+                            scaleY: sy,
+                            labelFontSize: qaLabelSize,
+                            l10n: l10n,
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(l10n.aiVisionComingSoon),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ),
-                // Bottom-right: AI Vision wide card (lws-ui box_buttons_ai_vision).
-                Positioned(
-                  right: _kQaEdgeInset * sx,
-                  bottom: _kQaEdgeInset * sy,
-                  child: _HomeQuickActionAiVision(
-                    scaleX: sx,
-                    scaleY: sy,
-                    labelFontSize: qaLabelSize,
-                    l10n: l10n,
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.aiVisionComingSoon),
-                        ),
-                      );
-                    },
                   ),
                 ),
               ],

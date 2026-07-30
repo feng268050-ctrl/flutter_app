@@ -55,7 +55,7 @@ void main() {
                 child: CustomHomeStatisticsPanel(
                   cardWidth: 200,
                   cardHeight: 124,
-                  cardGap: 12,
+                  cardGap: 20,
                   layoutStore: layoutStore,
                   repository: repository,
                 ),

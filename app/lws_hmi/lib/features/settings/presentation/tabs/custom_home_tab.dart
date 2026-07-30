@@ -52,9 +52,7 @@ class _CustomHomeTabState extends State<CustomHomeTab> {
       await _store.saveOrder(_metrics);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Save failed')),
-        );
+        await showCustomHomeSaveFailureDialog(context);
       }
       return;
     }
@@ -81,9 +79,8 @@ class _CustomHomeTabState extends State<CustomHomeTab> {
             (constraints.maxWidth * 223 / 1230).clamp(150.0, 223.0);
         final candidateGap = (haloHeight - 54 - 80 + 3).clamp(3.0, 120.0);
         final blurToken = Object.hashAll(_metrics.map((m) => m.index));
-        // Capture halo under CyberBlurBackdropTarget so display cards can
-        // freeze a real frosted sample (live BackdropFilter is unreliable on
-        // eLinux / Weston).
+        // Halo-only target for card chrome; SettingsPage owns the full-screen
+        // capture used by Save tip frost and background mist.
         return CyberBlurBackdropScope(
           child: Stack(
             fit: StackFit.expand,

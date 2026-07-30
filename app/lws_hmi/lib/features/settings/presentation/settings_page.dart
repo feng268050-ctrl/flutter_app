@@ -6,6 +6,7 @@ import 'package:lws_hmi/features/settings/presentation/tabs/advanced_settings_ta
 import 'package:lws_hmi/features/settings/presentation/tabs/common_settings_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/custom_home_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/device_information_tab.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/custom_home_save_success_dialog.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/status_bar/product_top_tabs.dart';
@@ -62,6 +63,8 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late int _currentTabIndex;
   bool _keyboardPushed = false;
+  final GlobalKey _pageCaptureKey =
+      GlobalKey(debugLabel: 'settingsPageCapture');
 
   @override
   void initState() {
@@ -88,38 +91,44 @@ class _SettingsPageState extends State<SettingsPage> {
     final services = AppScope.of(context);
     final tabLabels = SettingsPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    return Scaffold(
-      backgroundColor: SettingsPage.background,
-      appBar: ProductPageStatusBar(
-        title: tabLabels[_currentTabIndex],
-        backgroundColor: SettingsPage.background,
-        foregroundColor: Colors.white,
-        toolbarHeight: WorkModeStatusBarDimens.height,
-        backLabel: l10n.equipmentStatusHome,
-        backAccent: WorkModeAccent.weld,
-        onBack: canPop ? () => Navigator.of(context).maybePop() : null,
-        bottom: ProductTopTabs(
-          labels: tabLabels,
-          tabs: SettingsPage._tabs,
-          currentIndex: _currentTabIndex,
-          layout: ProductTopTabLayout.lwsUi,
-          onSelected: (index) {
-            if (index == _currentTabIndex) {
-              return;
-            }
-            CyberClickSoundRegistry.playClick();
-            setState(() => _currentTabIndex = index);
-          },
+    return CustomHomePageCaptureScope(
+      boundaryKey: _pageCaptureKey,
+      child: RepaintBoundary(
+        key: _pageCaptureKey,
+        child: Scaffold(
+          backgroundColor: SettingsPage.background,
+          appBar: ProductPageStatusBar(
+            title: tabLabels[_currentTabIndex],
+            backgroundColor: SettingsPage.background,
+            foregroundColor: Colors.white,
+            toolbarHeight: WorkModeStatusBarDimens.height,
+            backLabel: l10n.equipmentStatusHome,
+            backAccent: WorkModeAccent.weld,
+            onBack: canPop ? () => Navigator.of(context).maybePop() : null,
+            bottom: ProductTopTabs(
+              labels: tabLabels,
+              tabs: SettingsPage._tabs,
+              currentIndex: _currentTabIndex,
+              layout: ProductTopTabLayout.lwsUi,
+              onSelected: (index) {
+                if (index == _currentTabIndex) {
+                  return;
+                }
+                CyberClickSoundRegistry.playClick();
+                setState(() => _currentTabIndex = index);
+              },
+            ),
+          ),
+          body: IndexedStack(
+            index: _currentTabIndex,
+            children: [
+              DeviceInformationTab(services: services),
+              CommonSettingsTab(services: services),
+              const AdvancedSettingsTab(),
+              const CustomHomeTab(),
+            ],
+          ),
         ),
-      ),
-      body: IndexedStack(
-        index: _currentTabIndex,
-        children: [
-          DeviceInformationTab(services: services),
-          CommonSettingsTab(services: services),
-          const AdvancedSettingsTab(),
-          const CustomHomeTab(),
-        ],
       ),
     );
   }

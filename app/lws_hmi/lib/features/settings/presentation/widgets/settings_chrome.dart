@@ -48,17 +48,21 @@ class SettingsSectionHeader extends StatelessWidget {
     this.title, {
     super.key,
     this.fontSize = SettingsDimens.advancedSectionHeaderSize,
+    this.topInset = SettingsDimens.inset,
   });
 
   final String title;
   final double fontSize;
 
+  /// Space above the title (card → title). First group keeps [SettingsDimens.inset].
+  final double topInset;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         SettingsDimens.inset,
-        SettingsDimens.inset,
+        topInset,
         SettingsDimens.inset,
         8,
       ),

@@ -7,8 +7,7 @@ enum ProductTopTabLayout {
   /// Monitor: text centered; icon pinned with equal L/T/B inset.
   monitorPinnedIcon,
 
-  /// lws-ui `tab_item_layout`: icon + label as one centered cluster;
-  /// strip uses `tabGravity=center` when tabs fit.
+  /// Settings (lws-ui sizes): text centered; icon pinned with equal L/T/B inset.
   lwsUi,
 }
 
@@ -27,20 +26,17 @@ final class ProductTopTabs extends StatefulWidget
   static const borderAsset = 'assets/monitor/job_border1.webp';
   static const sidePadding = 4.0;
 
-  /// Monitor strip height (slightly under lws-ui 80).
-  static const monitorHeight = 78.0;
+  /// Monitor strip height (slightly under lws-ui; −10 vs prior 78).
+  static const monitorHeight = 68.0;
 
-  /// lws-ui `view_top_tab` TabLayout height.
-  static const lwsUiHeight = 80.0;
+  /// Settings strip height (aligned with Monitor).
+  static const lwsUiHeight = 68.0;
 
   /// Monitor min width (wider than lws-ui 236 for fontSize 24).
   static const monitorMinTabWidth = 280.0;
 
   /// lws-ui `top_tab_item_width`.
   static const lwsUiMinTabWidth = 236.0;
-
-  /// lws-ui `TopTabView` horizontal budget beyond icon + gap.
-  static const lwsUiHorizontalPad = 48.0;
 
   final List<String> labels;
   final List<({Key key, String iconAsset})> tabs;
@@ -130,11 +126,13 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
         maxLines: 1,
         textDirection: TextDirection.ltr,
       )..layout();
-      final content = painter.width +
-          _ProductTopTabItem.lwsUiIconSize +
-          _ProductTopTabItem.iconTextGap +
-          ProductTopTabs.lwsUiHorizontalPad;
-      return math.max(ProductTopTabs.lwsUiMinTabWidth, content);
+      const iconSize = _ProductTopTabItem.lwsUiIconSize;
+      final iconInset = (ProductTopTabs.lwsUiHeight - iconSize) / 2;
+      final side = iconInset + iconSize + _ProductTopTabItem.iconTextGap;
+      return math.max(
+        ProductTopTabs.lwsUiMinTabWidth,
+        painter.width + 2 * side,
+      );
     }
 
     final painter = TextPainter(
@@ -274,6 +272,7 @@ final class _ProductTopTabItem extends StatelessWidget {
   }
 
   Widget _buildLwsUi(Color color) {
+    final iconInset = (stripHeight - lwsUiIconSize) / 2;
     final textPainter = TextPainter(
       text: TextSpan(
         text: label,
@@ -286,40 +285,40 @@ final class _ProductTopTabItem extends StatelessWidget {
       maxLines: 1,
       textDirection: TextDirection.ltr,
     )..layout();
-    // lws-ui `tabIndicatorFullWidth=false`: underline = icon + gap + label.
-    final underlineWidth =
-        lwsUiIconSize + iconTextGap + textPainter.width;
+    // Underline tracks the centered label (icon is pinned separately).
+    final underlineWidth = textPainter.width;
 
     return Stack(
       fit: StackFit.expand,
       children: [
         Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                iconAsset,
-                width: lwsUiIconSize,
-                height: lwsUiIconSize,
-                color: color,
-                colorBlendMode: BlendMode.srcIn,
-                errorBuilder: (_, __, ___) =>
-                    Icon(Icons.circle, size: 18, color: color),
-              ),
-              const SizedBox(width: iconTextGap),
-              Text(
-                label,
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: color,
-                  fontSize: lwsUiFontSize,
-                  fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-                  height: 1.0,
-                ),
-              ),
-            ],
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontSize: lwsUiFontSize,
+              fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
+              height: 1.0,
+            ),
+          ),
+        ),
+        Positioned(
+          left: iconInset,
+          top: iconInset,
+          width: lwsUiIconSize,
+          height: lwsUiIconSize,
+          child: Image.asset(
+            iconAsset,
+            width: lwsUiIconSize,
+            height: lwsUiIconSize,
+            color: color,
+            colorBlendMode: BlendMode.srcIn,
+            errorBuilder: (_, __, ___) =>
+                Icon(Icons.circle, size: 18, color: color),
           ),
         ),
         Align(

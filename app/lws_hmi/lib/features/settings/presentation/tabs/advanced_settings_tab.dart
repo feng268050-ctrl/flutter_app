@@ -232,7 +232,10 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               ),
             ),
           ),
-          SettingsSectionHeader(l10n.advancedSettingsGroupPowerThresholds),
+          SettingsSectionHeader(
+            l10n.advancedSettingsGroupPowerThresholds,
+            topInset: 36,
+          ),
           Padding(
             padding: _hPad,
             child: SettingsParamRow(
@@ -376,6 +379,7 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
           ),
           SettingsSectionHeader(
             l10n.advancedSettingsGroupTemperatureThresholds,
+            topInset: 36,
           ),
           Padding(
             padding: _hPad,
@@ -557,7 +561,10 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               ),
             ),
           ),
-          SettingsSectionHeader(l10n.advancedSettingsGroupAiAssistance),
+          SettingsSectionHeader(
+            l10n.advancedSettingsGroupAiAssistance,
+            topInset: 36,
+          ),
           SettingsGroup(
             bottomInset: 0,
             borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
@@ -588,7 +595,10 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
               ),
             ],
           ),
-          SettingsSectionHeader(l10n.advancedSettingsGroupDangerousOperations),
+          SettingsSectionHeader(
+            l10n.advancedSettingsGroupDangerousOperations,
+            topInset: 36,
+          ),
           SettingsGroup(
             borderGradientCenter:
                 CyberBorderGradientCenter.bottomLeftTopRight,

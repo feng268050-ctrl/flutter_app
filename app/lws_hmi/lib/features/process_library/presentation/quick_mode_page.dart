@@ -45,6 +45,7 @@ import 'package:lws_hmi/features/settings/application/common_settings_scope.dart
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
+import 'package:lws_hmi/features/statistics/application/work_session_statistics_recorder.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
@@ -65,6 +66,7 @@ final class _QuickModePageState extends State<QuickModePage> {
   String? _lastAppliedUuid;
   String? _statusMessage;
   DeviceControlController? _deviceControl;
+  WorkSessionStatisticsRecorder? _workSessionStatistics;
   RecordWorkController? _recordWork;
   CncSessionController? _cncSession;
   GunDialogCoordinator? _gunDialogs;
@@ -86,7 +88,11 @@ final class _QuickModePageState extends State<QuickModePage> {
       final services = AppScope.maybeOf(context);
       if (services != null) {
         if (_deviceControl == null) {
-          _deviceControl = DeviceControlController(services);
+          _workSessionStatistics = WorkSessionStatisticsRecorder();
+          _deviceControl = DeviceControlController(
+            services,
+            workSessionStatistics: _workSessionStatistics,
+          );
           _deviceControl!.addListener(_onDeviceControlChanged);
           _deviceControl!.onSafetyEvent = _onDeviceSafetyEvent;
           unawaited(_deviceControl!.start());
@@ -150,6 +156,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     _deviceControl?.onSafetyEvent = null;
     _deviceControl?.removeListener(_onDeviceControlChanged);
     _deviceControl?.dispose();
+    unawaited(_workSessionStatistics?.dispose() ?? Future<void>.value());
     _cncSession?.removeListener(_onCncSessionChanged);
     _cncSession?.dispose();
     super.dispose();
@@ -475,7 +482,8 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     if (DeviceControlFeedbackCopy.isSafetyTipBlock(reason)) {
       // Key / E-stop not reset → tip dialog (not Toast).
-      unawaited(_showSafetyTip(DeviceControlFeedbackCopy.tipForLaserEnableBlock(reason)));
+      unawaited(_showSafetyTip(
+          DeviceControlFeedbackCopy.tipForLaserEnableBlock(reason)));
       return reason.message;
     }
     return reason.message;
@@ -597,6 +605,10 @@ final class _QuickModePageState extends State<QuickModePage> {
         preset.parameters.values['process.laser_power'],
       );
     }
+    _configureWorkSessionStatistics(
+      preset: preset,
+      autoWireFeedEnabled: control.autoWireFeed,
+    );
     final error = await control.enableLaser(
       warnAlarm: warnAlarm,
       policy: policy,
@@ -605,6 +617,27 @@ final class _QuickModePageState extends State<QuickModePage> {
       await _handleLaserEnableBlock(error);
     }
   }
+
+  void _configureWorkSessionStatistics({
+    required ProcessPreset preset,
+    required bool autoWireFeedEnabled,
+  }) {
+    _workSessionStatistics?.configureNextSession(
+      modeType: _statisticsModeType(_processType),
+      // Only continuous-weld automatic process feed is consumable usage.
+      autoWireFeedEnabled:
+          _processType == ProcessType.continuousWelding && autoWireFeedEnabled,
+      autoWireFeedSpeedMmPerSecond:
+          preset.parameters.values['process.wire_feeding_speed'] ?? 0,
+      materialType: preset.materialType?.storageValue,
+    );
+  }
+
+  static int _statisticsModeType(ProcessType type) => switch (type) {
+        ProcessType.continuousWelding || ProcessType.spotWelding => 1,
+        ProcessType.handCutting || ProcessType.cncCutting => 2,
+        ProcessType.weldCleaning || ProcessType.wideCleaning => 3,
+      };
 
   Future<void> _disableLaser() async {
     final error = await _deviceControl?.disableLaser();
@@ -757,6 +790,7 @@ final class _QuickModePageState extends State<QuickModePage> {
               child: RecordWorkToggle(
                 key: const ValueKey('quick-mode-record-work'),
                 controller: _recordWork!,
+                processType: _processType,
                 compact: true,
               ),
             ),
@@ -816,8 +850,7 @@ final class _QuickModePageState extends State<QuickModePage> {
                             ? 'Swing Width ($unit)'
                             : 'Thickness ($unit)',
                         dimensions: selection.dimensions,
-                        selectedIndex:
-                            dimensionIndex < 0 ? 0 : dimensionIndex,
+                        selectedIndex: dimensionIndex < 0 ? 0 : dimensionIndex,
                         onChanged: _onDimensionIndex,
                         useMmUnit: useMm,
                         interactionEnabled: selectorsInteractive,
@@ -914,8 +947,7 @@ final class _QuickModePageState extends State<QuickModePage> {
         ? scaffoldForLaser(false)
         : AnimatedBuilder(
             animation: device,
-            builder: (context, _) =>
-                scaffoldForLaser(device.laserSessionArmed),
+            builder: (context, _) => scaffoldForLaser(device.laserSessionArmed),
           );
 
     return PopScope(

@@ -14,6 +14,7 @@ import 'package:lws_hmi/features/device_registration/device_registration_dialogs
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
+import 'package:lws_hmi/features/home/presentation/custom_home_statistics_panel.dart';
 import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
@@ -39,6 +40,11 @@ const double _kQaLabelMarginTop = 10;
 const double _kQaCorner = 18;
 const double _kQaCardText = 20;
 
+/// Custom Home statistics cards on the product Home (design dp @ 1280×800).
+const double _kStatCardH = 124;
+const double _kStatCardGap = 20;
+const double _kStatToQaGap = 20;
+
 /// Product Home: backdrop, animated plates, Quick/Engineer, bottom quick actions.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -51,6 +57,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
   bool _homeBootstrapped = false;
   IpCameraUiStatus _cameraStatus = IpCameraUiStatus.connecting;
   StreamSubscription<IpCameraUiStatus>? _cameraSub;
+  final _customHomeStatisticsKey = GlobalKey<CustomHomeStatisticsPanelState>();
 
   Future<void> _openQuickMode() async {
     await DeviceRegistrationDialogs.pushNamedIfUnlocked(
@@ -108,6 +115,10 @@ class _HomePageState extends State<HomePage> with RouteAware {
   void didPopNext() {
     // Returning to Home from Settings / Monitor / etc.
     _maybeCheckBundledFirmware();
+    final refresh = _customHomeStatisticsKey.currentState?.refresh();
+    if (refresh != null) {
+      unawaited(refresh);
+    }
   }
 
   void _maybeCheckBundledFirmware() {
@@ -410,53 +421,69 @@ class _HomePageState extends State<HomePage> with RouteAware {
                     unawaited(_openEngineerMode());
                   },
                 ),
-                // Bottom-left: Monitor | Settings (lws-ui box_quick_actions_row).
+                // Stats row + fixed gap + quick actions (gap must be exact
+                // design dp — do not infer from separate Positioned bottoms).
                 Positioned(
                   left: _kQaEdgeInset * sx,
-                  bottom: _kQaEdgeInset * sy,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _HomeQuickActionSquare(
-                        scaleX: sx,
-                        scaleY: sy,
-                        iconAsset: HomeAssets.monitorIcon,
-                        label: l10n.homeMonitorLabel,
-                        labelFontSize: qaLabelSize,
-                        onPressed: () {
-                          Navigator.of(context).pushNamed(AppRoutes.monitor);
-                        },
-                      ),
-                      SizedBox(width: _kQaPairGap * sx),
-                      _HomeQuickActionSquare(
-                        scaleX: sx,
-                        scaleY: sy,
-                        iconAsset: HomeAssets.settingsIcon,
-                        label: l10n.homeSettingsLabel,
-                        labelFontSize: qaLabelSize,
-                        onPressed: () {
-                          Navigator.of(context).pushNamed(AppRoutes.settings);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                // Bottom-right: AI Vision wide card (lws-ui box_buttons_ai_vision).
-                Positioned(
                   right: _kQaEdgeInset * sx,
                   bottom: _kQaEdgeInset * sy,
-                  child: _HomeQuickActionAiVision(
-                    scaleX: sx,
-                    scaleY: sy,
-                    labelFontSize: qaLabelSize,
-                    l10n: l10n,
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.aiVisionComingSoon),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        height: _kStatCardH * sy,
+                        child: CustomHomeStatisticsPanel(
+                          key: _customHomeStatisticsKey,
+                          cardWidth: 200 * sx,
+                          cardHeight: _kStatCardH * sy,
+                          cardGap: _kStatCardGap * sx,
                         ),
-                      );
-                    },
+                      ),
+                      SizedBox(height: _kStatToQaGap * sy),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _HomeQuickActionSquare(
+                            scaleX: sx,
+                            scaleY: sy,
+                            iconAsset: HomeAssets.monitorIcon,
+                            label: l10n.homeMonitorLabel,
+                            labelFontSize: qaLabelSize,
+                            onPressed: () {
+                              Navigator.of(context)
+                                  .pushNamed(AppRoutes.monitor);
+                            },
+                          ),
+                          SizedBox(width: _kQaPairGap * sx),
+                          _HomeQuickActionSquare(
+                            scaleX: sx,
+                            scaleY: sy,
+                            iconAsset: HomeAssets.settingsIcon,
+                            label: l10n.homeSettingsLabel,
+                            labelFontSize: qaLabelSize,
+                            onPressed: () {
+                              Navigator.of(context)
+                                  .pushNamed(AppRoutes.settings);
+                            },
+                          ),
+                          const Spacer(),
+                          _HomeQuickActionAiVision(
+                            scaleX: sx,
+                            scaleY: sy,
+                            labelFontSize: qaLabelSize,
+                            l10n: l10n,
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(l10n.aiVisionComingSoon),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -596,6 +623,13 @@ class _ModeEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
+    final scale = (height / 280).clamp(0.5, 2.0);
+    final labelBandH = labelHeight.clamp(24.0, height * 0.45);
+    final fontSize = (labelHeight * 0.28).clamp(18.0, 36.0);
+    const textHeightFactor = 1.05;
+    final labelDrop = 6 * scale;
+    // Image overhangs the mode-entry top edge by 8 design units.
+    final heroTop = -8 * scale;
     return Positioned(
       left: left,
       top: top,
@@ -609,12 +643,12 @@ class _ModeEntry extends StatelessWidget {
             onTap();
           },
           borderRadius: BorderRadius.circular(18),
-          child: ClipRect(
-            child: Stack(
+          child: Stack(
               alignment: Alignment.topCenter,
+              clipBehavior: Clip.none,
               children: [
                 Positioned(
-                  top: 12 * (height / 280).clamp(0.5, 2.0),
+                  top: heroTop,
                   width: heroSize.clamp(48, width),
                   height: heroSize.clamp(48, height * 0.85),
                   child: Image.asset(
@@ -633,26 +667,30 @@ class _ModeEntry extends StatelessWidget {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  height: labelHeight.clamp(24, height * 0.45),
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        textLabel,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: (labelHeight * 0.28).clamp(18.0, 36.0),
-                          fontWeight: FontWeight.w700,
-                          height: 1.05,
-                          shadows: const [
-                            Shadow(
-                              color: Color(0x99000000),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
+                  height: labelBandH,
+                  child: Transform.translate(
+                    // Drop label 6 design units; keep the label band geometry.
+                    offset: Offset(0, labelDrop),
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          textLabel,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.w700,
+                            height: textHeightFactor,
+                            shadows: const [
+                              Shadow(
+                                color: Color(0x99000000),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -660,7 +698,6 @@ class _ModeEntry extends StatelessWidget {
                 ),
               ],
             ),
-          ),
         ),
       ),
     );

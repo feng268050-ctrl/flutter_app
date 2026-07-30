@@ -64,6 +64,30 @@ void main() {
     kb.dispose();
   });
 
+  testWidgets('symbol key shows its implemented second function', (tester) async {
+    final ctrl = TextEditingController();
+    final kb = CyberImeKeyboardController(
+      fieldType: CyberImeFieldType.text,
+      commit: CyberImeControllerCommit(ctrl),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CyberImeKeyboardPanel(controller: kb),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('123'));
+    await tester.pump();
+
+    // The apostrophe key has an existing backtick second function. It must be
+    // visible on the keycap, not only available from its long-press popup.
+    expect(find.text('`'), findsOneWidget);
+    kb.dispose();
+  });
+
   testWidgets('DE regional profile shows QWERTZ letter caps', (tester) async {
     CyberImeRegionalLayoutRegistry.register(
       const CyberImeFixedRegionalLayoutProvider(CyberImeRegionalProfile.qwertz),
@@ -86,6 +110,10 @@ void main() {
 
     expect(find.text('z'), findsWidgets); // physical Y → z
     expect(find.text('y'), findsWidgets); // physical Z → y
+    expect(find.text('ä'), findsOneWidget);
+    expect(find.text('ö'), findsOneWidget);
+    expect(find.text('ü'), findsOneWidget);
+    expect(find.text('ß'), findsOneWidget);
     expect(find.text('F1'), findsNothing);
     expect(find.text('F12'), findsNothing);
     // No dedicated numpad chrome on Keyboard A.
@@ -246,8 +274,9 @@ void main() {
     );
 
     expect(find.text('q'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-    expect(find.text('!'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
+    expect(find.text('!'), findsOneWidget);
+    expect(find.text('('), findsOneWidget);
     expect(find.byIcon(Icons.arrow_upward), findsWidgets);
     expect(find.byIcon(Icons.backspace_outlined), findsOneWidget);
     expect(find.byIcon(Icons.keyboard_return), findsOneWidget);
@@ -266,7 +295,48 @@ void main() {
     expect(find.byIcon(Icons.keyboard_return), findsOneWidget);
     expect(find.text('z'), findsWidgets);
     expect(find.text('y'), findsWidgets);
+    expect(find.text('ä'), findsOneWidget);
+    expect(find.text('ö'), findsOneWidget);
+    expect(find.text('ü'), findsOneWidget);
+    expect(find.text('ß'), findsOneWidget);
     expect(find.text('Ctrl'), findsNothing);
+  });
+
+  testWidgets('AZERTY panel and preview show accented second functions',
+      (tester) async {
+    CyberImeRegionalLayoutRegistry.register(
+      const CyberImeFixedRegionalLayoutProvider(CyberImeRegionalProfile.azerty),
+    );
+    addTearDown(() => CyberImeRegionalLayoutRegistry.register(null));
+
+    final ctrl = TextEditingController();
+    final kb = CyberImeKeyboardController(
+      fieldType: CyberImeFieldType.text,
+      commit: CyberImeControllerCommit(ctrl),
+    );
+    addTearDown(kb.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: CyberImeKeyboardPanel(controller: kb)),
+      ),
+    );
+
+    for (final character in ['à', 'é', 'ô', 'ç']) {
+      expect(find.text(character), findsOneWidget);
+    }
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: CyberImeLayoutPreview(profile: CyberImeRegionalProfile.azerty),
+        ),
+      ),
+    );
+
+    for (final character in ['à', 'é', 'ô', 'ç']) {
+      expect(find.text(character), findsOneWidget);
+    }
   });
 
   testWidgets('CyberImeLayoutChooser switches Segment and preview',

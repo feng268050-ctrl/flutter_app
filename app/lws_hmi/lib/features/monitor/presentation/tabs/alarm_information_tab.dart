@@ -157,8 +157,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                 children: [
                                   Expanded(
                                     child: MonitorTempMetricCard(
-                                      series:
-                                          m?.protectiveMirror ?? _emptyTemp,
+                                      series: m?.protectiveMirror ?? _emptyTemp,
                                       label: l10n.protectiveMirrorTempLabel,
                                       overTemp:
                                           m?.protectiveMirrorOverTemp ?? false,
@@ -169,8 +168,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                     child: MonitorTempMetricCard(
                                       series: m?.collimator ?? _emptyTemp,
                                       label: l10n.collimatorTempLabel,
-                                      overTemp:
-                                          m?.collimatorOverTemp ?? false,
+                                      overTemp: m?.collimatorOverTemp ?? false,
                                     ),
                                   ),
                                 ],
@@ -199,33 +197,18 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                 Expanded(
                   flex: 468,
                   child: MonitorGlassCard(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                l10n.alarmLogsTitle,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: MonitorDimens.sectionTitleSize,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.1,
-                                ),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed:
-                                  _history.isEmpty ? null : _clearHistory,
-                              style: TextButton.styleFrom(
-                                textStyle: const TextStyle(fontSize: 18),
-                              ),
-                              child: Text(l10n.clearAlarmLogs),
-                            ),
-                          ],
+                        Text(
+                          l10n.alarmLogsTitle,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: MonitorDimens.sectionTitleSize,
+                            fontWeight: FontWeight.w400,
+                            height: 1.1,
+                          ),
                         ),
                         const SizedBox(
                           height: MonitorSectionHeader.dividerTopSpacing,
@@ -244,7 +227,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Expanded(
                           child: _history.isEmpty
                               ? Center(
@@ -256,12 +239,8 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                     ),
                                   ),
                                 )
-                              : ListView.separated(
+                              : ListView.builder(
                                   itemCount: _history.length,
-                                  separatorBuilder: (_, __) => Divider(
-                                    height: 1,
-                                    color: Colors.white.withOpacity(0.1),
-                                  ),
                                   itemBuilder: (context, i) {
                                     final row = _history[i];
                                     return MonitorAlarmLogRow(
@@ -274,6 +253,44 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                     );
                                   },
                                 ),
+                        ),
+                        const SizedBox(height: 16),
+                        // lws-ui `fragment_warn_log` bottom Clear pill.
+                        Center(
+                          child: CyberButton(
+                            variant: CyberButtonVariant.secondary,
+                            shape: CyberButtonShape.rounded,
+                            height: 54,
+                            clickSoundEnabled: false,
+                            onPressed: _history.isEmpty ? null : _clearHistory,
+                            foregroundColor: CyberColors.buttonSecondaryText,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Image.asset(
+                                  'assets/warn/alarm_button_icon.webp',
+                                  width: 28,
+                                  height: 28,
+                                  color: CyberColors.buttonSecondaryText,
+                                  colorBlendMode: BlendMode.srcIn,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.delete_outline,
+                                    size: 28,
+                                    color: CyberColors.buttonSecondaryText,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  l10n.clearAlarmLogs,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w600,
+                                    color: CyberColors.buttonSecondaryText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),

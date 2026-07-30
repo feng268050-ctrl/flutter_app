@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('default variant is standard (not primary orange)', (tester) async {
+  testWidgets('default variant is standard (not primary orange)',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -36,7 +37,8 @@ void main() {
     expect(decoration.gradient, isNull);
   });
 
-  testWidgets('secondary matches standard chrome with red label', (tester) async {
+  testWidgets('secondary matches standard chrome with red label',
+      (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -82,6 +84,33 @@ void main() {
     expect(CyberDimens.cornerRadius, 28);
   });
 
+  test('press ripple colors match FrostButtonPressDefaults', () {
+    expect(
+      CyberButtonPressDefaults.rippleColor(CyberButtonVariant.light),
+      const Color(0x33000000),
+    );
+    expect(
+      CyberButtonPressDefaults.rippleColor(CyberButtonVariant.primary),
+      const Color(0x3DFFFFFF),
+    );
+    expect(
+      CyberButtonPressDefaults.rippleColor(CyberButtonVariant.standard),
+      const Color(0x3DFFFFFF),
+    );
+    expect(
+      CyberButtonPressDefaults.rippleColor(CyberButtonVariant.secondary),
+      const Color(0x2AFFFFFF),
+    );
+    expect(
+      CyberButtonPressDefaults.restingFaceAlpha(CyberButtonVariant.light),
+      1.0,
+    );
+    expect(
+      CyberButtonPressDefaults.restingFaceAlpha(CyberButtonVariant.standard),
+      225 / 255,
+    );
+  });
+
   testWidgets('rounded shape uses pill corner radius', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -100,7 +129,8 @@ void main() {
     expect(decoration.borderRadius, BorderRadius.circular(29));
   });
 
-  testWidgets('default layout is intrinsic width (not full-bleed)', (tester) async {
+  testWidgets('default layout is intrinsic width (not full-bleed)',
+      (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

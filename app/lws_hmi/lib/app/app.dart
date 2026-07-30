@@ -56,6 +56,7 @@ import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
 import 'package:lws_hmi/features/system_status/presentation/gpio_led_overlay_host.dart';
 import 'package:lws_hmi/features/system_status/presentation/system_status_overlay_host.dart';
+import 'package:lws_hmi/features/statistics/application/job_runtime_statistics_recorder.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/sqlite_alarm_log_repository.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
@@ -67,10 +68,12 @@ import 'package:lws_hmi/ui/cyber/app_indexed_click_sound.dart';
 import 'package:lws_hmi/ui/demo/p2_demo_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-/// eLinux on ynh960 reports ~1.358 DPR (logical ≈942×589 on 1280×800).
+/// The existing QEMU screen is the visual reference: DPR 1.358 on its
+/// 1536×960 output. The physical ynh960 panel is 1280×800 at the same size,
+/// so it needs 1/1.2 its DPR to keep every DP control the same physical size.
 /// Weston+eLinux defaults to DPR 1.0; `--force-scale-factor` blacks the frame.
-/// Scale the widget tree instead so icons/buttons/text match prior density.
-const double _kFlutterPiDevicePixelRatio = 1.3582342954159592;
+const double _kSimulatorReferenceDevicePixelRatio = 1.3582342954159592;
+const double _kSimulatorReferenceLongEdgePx = 1536;
 
 /// Root MaterialApp: Home launcher, Settings, Monitor, hidden Demo.
 class LwsHmiApp extends StatefulWidget {
@@ -224,6 +227,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   final _cameraDeviceInfoCache = CameraDeviceInfoCache();
 
+  late final JobRuntimeStatisticsRecorder _jobRuntimeStatistics =
+      JobRuntimeStatisticsRecorder();
+
   late final CloudLocalRuntime _cloudLocalRuntime = CloudLocalRuntime(
     services: _services,
     cloudSettings: _cloudSettingsStore,
@@ -285,6 +291,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       _services.autoSleep.arm(backlight: _services.backlight);
       _syncFirmwareCommandWatcher.start();
       unawaited(_startCloudLocalRuntime());
+      _jobRuntimeStatistics.resume();
     });
   }
 
@@ -405,6 +412,13 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _jobRuntimeStatistics.resume();
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_jobRuntimeStatistics.pause());
+    }
     // Process teardown / embedder detach — leave the laser disarmed.
     // Do not clear on `paused` (auto-sleep) so a mid-session Laser Enable is
     // not silently closed when the backlight dims.
@@ -425,6 +439,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     CyberImeRegionalLayoutRegistry.register(null);
     CyberImePhysicalKeyboard.register(null);
     unawaited(_services.autoSleep.dispose());
+    unawaited(_jobRuntimeStatistics.dispose());
     unawaited(_warnAlarm.dispose());
     unawaited(_syncFirmwareCommandWatcher.dispose());
     unawaited(_rgbLedPolicy.dispose());
@@ -470,20 +485,25 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     );
   }
 
-  /// When embedder DPR is ~1 (Weston path), layout at reference logical size
-  /// and FittedBox-scale up so physical pixels match reference density.
+  /// When embedder DPR is ~1 (Weston path), scale the widget tree to match the
+  /// existing simulator's physical density.
   Widget _matchFlutterPiDensity(BuildContext context, Widget? child) {
     final content = child ?? const SizedBox.shrink();
     final mq = MediaQuery.of(context);
     final dpr = mq.devicePixelRatio;
+    final isSimulator = widget.boardProfile.info.boardId == 'sim';
+    final targetDpr = isSimulator
+        ? _kSimulatorReferenceDevicePixelRatio
+        : _kSimulatorReferenceDevicePixelRatio *
+            (mq.size.longestSide / _kSimulatorReferenceLongEdgePx);
     // Already at reference density (or host/test with other DPR) — no-op.
-    if ((dpr - _kFlutterPiDevicePixelRatio).abs() < 0.05) {
+    if ((dpr - targetDpr).abs() < 0.05) {
       return content;
     }
     if ((dpr - 1.0).abs() > 0.05) {
       return content;
     }
-    final scale = _kFlutterPiDevicePixelRatio / dpr;
+    final scale = targetDpr / dpr;
     final logical = Size(mq.size.width / scale, mq.size.height / scale);
     return SizedBox(
       width: mq.size.width,
@@ -527,109 +547,125 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
           child: RemoteLockScope(
             store: _remoteLockStore,
             child: ProcessLibraryScope(
-          controller: _processLibrary,
-          child: GlobalPromptScope(
-            queue: _promptQueue,
-            child: WarnAlarmScope(
-            controller: _warnAlarm,
-            child: MiscSettingsScope(
-              store: _miscSettingsStore,
-              child: CommonSettingsScope(
-                store: _commonSettingsStore,
-                child: AdvancedSettingsScope(
-                  store: _advancedSettingsStore,
-                  aiAssistance: _aiAssistanceSettings,
-                  dangerousOperations: _dangerousOperationsSettings,
-                  thresholds: _thresholdsController,
-                  child: BootSelfCheckScope(
-                    settings: _bootSelfCheckSettings,
-                    child: SoundEffectScope(
-                      store: _soundEffectStore,
-                      clickSound: _clickSound,
-                      child: Listener(
-                      behavior: HitTestBehavior.translucent,
-                      onPointerDown: (_) => _noteUserActivity(),
-                      onPointerMove: (_) {
-                        // Moves reset idle only while awake; blanked wake is double-tap.
-                        if (!_services.autoSleep.isBlanked) {
-                          _noteUserActivity();
-                        }
-                      },
-                      child: ListenableBuilder(
-                        listenable: _commonSettingsStore,
-                        builder: (context, _) {
-                          return MaterialApp(
-                            title: 'HMI',
-                            theme: buildAppTheme(),
-                            scrollBehavior: const AppScrollBehavior(),
-                            locale: _commonSettingsStore.locale,
-                            supportedLocales: kAppSupportedLocales,
-                            localeListResolutionCallback:
-                                (locales, supported) {
-                              final preferred =
-                                  locales == null || locales.isEmpty
-                                      ? null
-                                      : locales.first;
-                              return resolveAppLocale(
-                                    preferred,
-                                    supported,
-                                  ) ??
-                                  supported.first;
-                            },
-                            localizationsDelegates: const [
-                              AppLocalizations.delegate,
-                              GlobalMaterialLocalizations.delegate,
-                              GlobalWidgetsLocalizations.delegate,
-                              GlobalCupertinoLocalizations.delegate,
-                            ],
-                            builder: _appBuilder,
-                            navigatorKey: _navKey,
-                            navigatorObservers: [appRouteObserver],
-                            initialRoute: AppRoutes.home,
-                            onGenerateRoute: (settings) {
-                              final Widget page;
-                              switch (settings.name) {
-                                case AppRoutes.settings:
-                                  page = SettingsPage(
-                                    openKeyboardOnLaunch:
-                                        settings.arguments ==
-                                            HmiRouteRestore
-                                                .settingsKeyboard,
-                                    cameraDeviceInfoCache:
-                                        _cameraDeviceInfoCache,
+              controller: _processLibrary,
+              child: GlobalPromptScope(
+                queue: _promptQueue,
+                child: WarnAlarmScope(
+                  controller: _warnAlarm,
+                  child: MiscSettingsScope(
+                    store: _miscSettingsStore,
+                    child: CommonSettingsScope(
+                      store: _commonSettingsStore,
+                      child: AdvancedSettingsScope(
+                        store: _advancedSettingsStore,
+                        aiAssistance: _aiAssistanceSettings,
+                        dangerousOperations: _dangerousOperationsSettings,
+                        thresholds: _thresholdsController,
+                        child: BootSelfCheckScope(
+                          settings: _bootSelfCheckSettings,
+                          child: SoundEffectScope(
+                            store: _soundEffectStore,
+                            clickSound: _clickSound,
+                            child: Listener(
+                              behavior: HitTestBehavior.translucent,
+                              onPointerDown: (_) => _noteUserActivity(),
+                              onPointerMove: (_) {
+                                // Moves reset idle only while awake; blanked wake is double-tap.
+                                if (!_services.autoSleep.isBlanked) {
+                                  _noteUserActivity();
+                                }
+                              },
+                              child: ListenableBuilder(
+                                listenable: _commonSettingsStore,
+                                builder: (context, _) {
+                                  return MaterialApp(
+                                    title: 'HMI',
+                                    theme: buildAppTheme(),
+                                    scrollBehavior: const AppScrollBehavior(),
+                                    locale: _commonSettingsStore.locale,
+                                    supportedLocales: kAppSupportedLocales,
+                                    localeListResolutionCallback:
+                                        (locales, supported) {
+                                      final preferred =
+                                          locales == null || locales.isEmpty
+                                              ? null
+                                              : locales.first;
+                                      return resolveAppLocale(
+                                            preferred,
+                                            supported,
+                                          ) ??
+                                          supported.first;
+                                    },
+                                    localizationsDelegates: const [
+                                      AppLocalizations.delegate,
+                                      GlobalMaterialLocalizations.delegate,
+                                      GlobalWidgetsLocalizations.delegate,
+                                      GlobalCupertinoLocalizations.delegate,
+                                    ],
+                                    builder: _appBuilder,
+                                    navigatorKey: _navKey,
+                                    navigatorObservers: [appRouteObserver],
+                                    initialRoute: AppRoutes.home,
+                                    onGenerateRoute: (settings) {
+                                      final Widget page;
+                                      switch (settings.name) {
+                                        case AppRoutes.settings:
+                                          page = SettingsPage(
+                                            openKeyboardOnLaunch: settings
+                                                    .arguments ==
+                                                HmiRouteRestore
+                                                    .settingsKeyboard,
+                                            cameraDeviceInfoCache:
+                                                _cameraDeviceInfoCache,
+                                          );
+                                        case AppRoutes.monitor:
+                                          page = const MonitorPage();
+                                        case AppRoutes.processVideoDetail:
+                                          final videoArgs = settings.arguments;
+                                          page = videoArgs
+                                                  is ProcessVideoDetailArgs
+                                              ? ProcessVideoDetailPage(
+                                                  args: videoArgs)
+                                              : const MonitorPage();
+                                        case AppRoutes.quickMode:
+                                          page = _LockedModeGate(
+                                            lockStore: _remoteLockStore,
+                                            child: const QuickModePage(),
+                                          );
+                                        case AppRoutes.engineerMode:
+                                          final engineerArgs =
+                                              settings.arguments;
+                                          page = _LockedModeGate(
+                                            lockStore: _remoteLockStore,
+                                            child: engineerArgs
+                                                    is EngineerModeRouteArgs
+                                                ? EngineerModePage(
+                                                    initialProcessType:
+                                                        engineerArgs
+                                                            .processType,
+                                                    initialPresetUuid:
+                                                        engineerArgs
+                                                            .presetUuid,
+                                                  )
+                                                : const EngineerModePage(),
+                                          );
+                                        case AppRoutes.demo:
+                                          page = _demoPage();
+                                        case AppRoutes.home:
+                                        default:
+                                          page = const HomePage();
+                                      }
+                                      return buildAppPageRoute(
+                                        settings: settings,
+                                        child: page,
+                                      );
+                                    },
                                   );
-                                case AppRoutes.monitor:
-                                  page = const MonitorPage();
-                                case AppRoutes.processVideoDetail:
-                                  final videoArgs = settings.arguments;
-                                  page = videoArgs is ProcessVideoDetailArgs
-                                      ? ProcessVideoDetailPage(args: videoArgs)
-                                      : const MonitorPage();
-                                case AppRoutes.quickMode:
-                                  page = const QuickModePage();
-                                case AppRoutes.engineerMode:
-                                  final engineerArgs = settings.arguments;
-                                  page = engineerArgs is EngineerModeRouteArgs
-                                      ? EngineerModePage(
-                                          initialProcessType:
-                                              engineerArgs.processType,
-                                          initialPresetUuid:
-                                              engineerArgs.presetUuid,
-                                        )
-                                      : const EngineerModePage();
-                                case AppRoutes.demo:
-                                  page = _demoPage();
-                                case AppRoutes.home:
-                                default:
-                                  page = const HomePage();
-                              }
-                              return buildAppPageRoute(
-                                settings: settings,
-                                child: page,
-                              );
-                            },
-                          );
-                        },
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -639,10 +675,42 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
           ),
         ),
       ),
-      ),
-      ),
-      ),
-      ),
     );
   }
+}
+
+/// Blocks Quick/Engineer when remote lock is active.
+final class _LockedModeGate extends StatefulWidget {
+  const _LockedModeGate({
+    required this.lockStore,
+    required this.child,
+  });
+
+  final DeviceRemoteLockStore lockStore;
+  final Widget child;
+
+  @override
+  State<_LockedModeGate> createState() => _LockedModeGateState();
+}
+
+final class _LockedModeGateState extends State<_LockedModeGate> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        return;
+      }
+      final ok = await DeviceRegistrationDialogs.confirmNotLocked(
+        context,
+        widget.lockStore,
+      );
+      if (!ok && mounted) {
+        Navigator.of(context).maybePop();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

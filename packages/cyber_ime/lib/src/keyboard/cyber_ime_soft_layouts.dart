@@ -24,11 +24,13 @@ abstract final class CyberImeSoftLayouts {
 
   static CyberImeKeyDef _letter(
     String ch, {
+    String? secondary,
     List<String>? longPressOptions,
   }) {
     return CyberImeKeyDef(
       id: CyberImeKeyId.letter,
       primary: ch.toUpperCase(),
+      secondary: secondary,
       isLetter: true,
       longPressOptions: longPressOptions,
     );
@@ -48,14 +50,25 @@ abstract final class CyberImeSoftLayouts {
     required CyberImeBottomRowProfile bottomRow,
     required CyberImeKeyboardKind kind,
   }) {
+    const row1 = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'];
+    const row1Secondaries = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+    const row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'];
+    const row2Secondaries = ['~', '!', '@', '#', '%', '"', "'", '*', '?'];
+    const row3 = ['Z', 'X', 'C', 'V', 'B', 'N', 'M'];
+    const row3Secondaries = ['(', ')', '-', '_', ':', ';', '/'];
+
     return CyberImeLayout(
       kind: kind,
       rows: [
         CyberImeKeyboardRow([
-          for (final c in 'QWERTYUIOP'.split('')) _letter(c),
+          for (var i = 0; i < row1.length; i++)
+            _letter(row1[i], secondary: row1Secondaries[i]),
         ]),
         CyberImeKeyboardRow(
-          [for (final c in 'ASDFGHJKL'.split('')) _letter(c)],
+          [
+            for (var i = 0; i < row2.length; i++)
+              _letter(row2[i], secondary: row2Secondaries[i]),
+          ],
           leadingInsetWeight: 0.5,
           trailingInsetWeight: 0.5,
         ),
@@ -65,7 +78,8 @@ abstract final class CyberImeSoftLayouts {
             primary: '⇧',
             widthWeight: 1.5,
           ),
-          for (final c in 'ZXCVBNM'.split('')) _letter(c),
+          for (var i = 0; i < row3.length; i++)
+            _letter(row3[i], secondary: row3Secondaries[i]),
           const CyberImeKeyDef(
             id: CyberImeKeyId.backspace,
             primary: '⌫',

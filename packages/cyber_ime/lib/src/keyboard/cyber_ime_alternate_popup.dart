@@ -11,7 +11,7 @@ const double kCyberImeKeyMinHeight = 44;
 const double kCyberImeKeyGap = 12;
 
 /// lws-ui `ime_key_alternate_popup_text_size`.
-const double kCyberImeAlternatePopupTextSize = 28;
+const double kCyberImeAlternatePopupTextSize = 36;
 
 /// Floating alternate-key popup state (anchored above a keycap).
 class CyberImeAlternatePopupData {

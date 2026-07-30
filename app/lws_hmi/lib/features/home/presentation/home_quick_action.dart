@@ -12,7 +12,8 @@ const String kHomeQuickActionLabelSizeRef = 'Settings';
 const Color _kLabelIdle = Color(0xFFFFFFFF);
 const Color _kLabelPressed = Color(0xB3FFFFFF);
 
-/// Frost tile ripple: `FrostButtonTileRipple` → argb(0x3D, 255, 255, 255).
+/// lws-ui `FrostButtonTileRipple` → argb(0x3D, 255, 255, 255) ≈ 24% white.
+/// Shared with Quick / Engineer `FrostRippleClickEntry` (mask shape differs).
 const Color _kTileRipple = Color(0x3DFFFFFF);
 
 /// Font size so [kHomeQuickActionLabelSizeRef] fits [cardWidth] with equal
@@ -41,14 +42,18 @@ double homeQuickActionLabelFontSize(double cardWidth) {
   return lo;
 }
 
-/// Home quick-action tile — Material stand-in for lws-ui
+/// Home quick-action tile — Flutter stand-in for lws-ui
 /// `FrostQuickActionEntry` + nested `FrostCardView`.
 ///
-/// Matches Android behavior:
-/// - Whole entry is the press target (card + caption).
-/// - Ripple lives only on the card host (`CardRippleHost`), from the press
-///   hotspot (`setHotspot`), clipped to the rounded card — not the label.
-/// - Caption uses pressed → `#B3FFFFFF` (duplicate-parent-state ColorStateList).
+/// Architecture (matches Android):
+/// - Outer entry is the press target (card + caption) — like
+///   `FrostQuickActionEntry` with `duplicateParentStateEnabled`.
+/// - Glass [CyberCard] is appearance only (no own gestures).
+/// - Transparent [_CardRippleHost] sits **above** the card and hosts
+///   Material [InkRipple] (= Android `setForeground(RippleDrawable)`).
+/// - Hotspot is mapped into host-local coords on press (`setHotspot`).
+///
+/// Not the looping Quick/Engineer WebP halo — those are separate assets.
 class HomeQuickAction extends StatefulWidget {
   const HomeQuickAction({
     super.key,
@@ -91,8 +96,8 @@ class HomeQuickAction extends StatefulWidget {
 }
 
 class _HomeQuickActionState extends State<HomeQuickAction> {
-  final GlobalKey _cardKey = GlobalKey();
-  BuildContext? _inkContext;
+  final GlobalKey _rippleHostKey = GlobalKey();
+  BuildContext? _rippleMaterialContext;
   InteractiveInkFeature? _splash;
   bool _pressed = false;
 
@@ -110,23 +115,37 @@ class _HomeQuickActionState extends State<HomeQuickAction> {
     setState(() => _pressed = value);
   }
 
-  void _createSplash(Offset globalPosition) {
-    final inkContext = _inkContext;
-    final box = _cardKey.currentContext?.findRenderObject() as RenderBox?;
+  /// Entry press → ripple-host local coords (lws-ui `updateRippleHotspot`).
+  Offset _hotspotInHost(Offset globalPosition) {
+    final box = _rippleHostKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      return Offset(widget.cardWidth / 2, widget.cardHeight / 2);
+    }
+    final local = box.globalToLocal(globalPosition);
+    return Offset(
+      local.dx.clamp(0.0, box.size.width),
+      local.dy.clamp(0.0, box.size.height),
+    );
+  }
+
+  bool _tryCreateSplash(Offset globalPosition) {
+    final inkContext = _rippleMaterialContext;
+    final box = _rippleHostKey.currentContext?.findRenderObject() as RenderBox?;
     if (inkContext == null || box == null || !box.hasSize) {
-      return;
+      return false;
     }
     final controller = Material.maybeOf(inkContext);
     if (controller == null) {
-      return;
+      return false;
     }
     _splash?.dispose();
-    final local = box.globalToLocal(globalPosition);
+    final hotspot = _hotspotInHost(globalPosition);
     final radius = BorderRadius.circular(widget.cornerRadius);
+    // InkRipple ≈ Android RippleDrawable (bounded by rounded mask).
     _splash = InkRipple.splashFactory.create(
       controller: controller,
       referenceBox: box,
-      position: local,
+      position: hotspot,
       color: _kTileRipple,
       textDirection: Directionality.of(inkContext),
       containedInkWell: true,
@@ -135,16 +154,20 @@ class _HomeQuickActionState extends State<HomeQuickAction> {
         _splash = null;
       },
     );
+    return true;
   }
 
   void _handleTapDown(TapDownDetails details) {
     _setPressed(true);
-    // Card Material must be laid out before Material.of / referenceBox.
+    if (_tryCreateSplash(details.globalPosition)) {
+      return;
+    }
+    // First layout: Material/host may not be ready until the next frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_pressed) {
         return;
       }
-      _createSplash(details.globalPosition);
+      _tryCreateSplash(details.globalPosition);
     });
   }
 
@@ -172,6 +195,7 @@ class _HomeQuickActionState extends State<HomeQuickAction> {
     final fontSize =
         widget.labelFontSize ?? homeQuickActionLabelFontSize(widget.cardWidth);
 
+    // Outer entry = press target (card + caption), like FrostQuickActionEntry.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: _handleTapDown,
@@ -181,29 +205,30 @@ class _HomeQuickActionState extends State<HomeQuickAction> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // CardRippleHost: glass chrome + ink clipped to rounded card.
-          Material(
-            color: Colors.transparent,
-            borderRadius: radius,
-            clipBehavior: Clip.antiAlias,
-            child: Builder(
-              builder: (inkContext) {
-                _inkContext = inkContext;
-                return SizedBox(
-                  key: _cardKey,
+          SizedBox(
+            width: widget.cardWidth,
+            height: widget.cardHeight,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Appearance only — CyberCard does not own gestures.
+                CyberCard(
                   width: widget.cardWidth,
                   height: widget.cardHeight,
-                  child: CyberCard(
-                    width: widget.cardWidth,
-                    height: widget.cardHeight,
-                    sampleMode: widget.sampleMode,
-                    intensity: widget.blurIntensity,
-                    blurTint: widget.blurTint,
-                    borderRadius: radius,
-                    child: widget.child,
-                  ),
-                );
-              },
+                  sampleMode: widget.sampleMode,
+                  intensity: widget.blurIntensity,
+                  blurTint: widget.blurTint,
+                  borderRadius: radius,
+                  child: widget.child,
+                ),
+                // CardRippleHost: transparent foreground above the glass card
+                // (= Android FrameLayout + setForeground(RippleDrawable)).
+                _CardRippleHost(
+                  hostKey: _rippleHostKey,
+                  borderRadius: radius,
+                  onMaterialContext: (ctx) => _rippleMaterialContext = ctx,
+                ),
+              ],
             ),
           ),
           SizedBox(height: widget.labelMarginTop),
@@ -222,6 +247,42 @@ class _HomeQuickActionState extends State<HomeQuickAction> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Transparent ripple host above the glass card.
+///
+/// Ink paints on this [Material] only — content stays null (card unchanged),
+/// clip + [borderRadius] act as the rounded white mask from
+/// `FrostButtonTileRipple.createTileRippleForeground`.
+final class _CardRippleHost extends StatelessWidget {
+  const _CardRippleHost({
+    required this.hostKey,
+    required this.borderRadius,
+    required this.onMaterialContext,
+  });
+
+  final GlobalKey hostKey;
+  final BorderRadius borderRadius;
+  final ValueChanged<BuildContext> onMaterialContext;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Material(
+        key: hostKey,
+        type: MaterialType.transparency,
+        borderRadius: borderRadius,
+        clipBehavior: Clip.antiAlias,
+        child: Builder(
+          builder: (materialContext) {
+            onMaterialContext(materialContext);
+            // Empty child: ripple content is null; mask = this clipped Material.
+            return const SizedBox.expand();
+          },
+        ),
       ),
     );
   }

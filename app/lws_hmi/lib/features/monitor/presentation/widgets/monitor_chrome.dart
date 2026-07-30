@@ -21,12 +21,16 @@ abstract final class MonitorDimens {
   static const tileH = 102.0;
   static const workRingH = 250.0;
   static const aiInfoW = 360.0;
+
   /// Alarm section titles (base 24 + tab-3 content bump).
   static const sectionTitleSize = 28.0;
+
   /// Metric/comm labels — Alarm left panel (+8 vs original 13).
   static const metricLabelSize = 21.0;
+
   /// Temperature values — Alarm left panel (+8 vs original 18).
   static const metricValueSize = 26.0;
+
   /// lws-ui `@color/warn_text`.
   static const labelColor = Color(0xFFB0B1C2);
 }
@@ -39,8 +43,7 @@ class MonitorGlassCard extends StatelessWidget {
     this.width,
     this.padding = const EdgeInsets.all(MonitorDimens.pad),
     this.margin,
-    this.borderGradientCenter =
-        CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   final Widget child;
@@ -67,8 +70,8 @@ class MonitorGlassCard extends StatelessWidget {
           cornerRadius: MonitorDimens.corner,
           gradientCenter: borderGradientCenter,
         ),
-        // Transparent fill + Frost bright-edge stroke (settings chrome parity).
-        color: Colors.transparent,
+        // Same frosted panel fill as SettingsPanel / SettingsGroup.
+        color: Colors.white.withOpacity(0.06),
         child: SizedBox(
           width: width,
           height: height,
@@ -162,8 +165,7 @@ class MonitorStatusDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // On → green center; unknown/off → idle gray (lws-ui machine tiles).
-    final state =
-        on == true ? CyberStatusState.success : CyberStatusState.idle;
+    final state = on == true ? CyberStatusState.success : CyberStatusState.idle;
     return CyberStatusIndicator(
       state: state,
       variant: CyberStatusVariant.dot,
@@ -360,7 +362,7 @@ class MonitorHealthBanner extends StatelessWidget {
         cornerRadius: 12,
         gradientCenter: CyberBorderGradientCenter.topBottom,
       ),
-      color: Colors.transparent,
+      color: Colors.white.withOpacity(0.06),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
@@ -394,48 +396,72 @@ class MonitorAlarmLogRow extends StatelessWidget {
   final String label;
   final DateTime? timestamp;
 
+  /// lws-ui `item_warn_log` / `#FF0000`.
+  static const titleRed = Color(0xFFFF0000);
+
+  /// Row siren (lws-ui `warn_icon`).
+  static const iconAsset = 'assets/warn/warn_icon.webp';
+
   @override
   Widget build(BuildContext context) {
     final time = timestamp;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(10, 10, 8, 0),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 56,
-            child: Text(
-              code,
-              style: const TextStyle(
-                color: Color(0xFFFF8A80),
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 19,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 6, right: 6),
+                child: Image.asset(
+                  iconAsset,
+                  width: 24,
+                  height: 24,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.medium,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 24,
+                    color: titleRed,
                   ),
                 ),
-                if (time != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatTime(time.toLocal()),
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.45),
-                      fontSize: 16,
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    '$code $label',
+                    style: const TextStyle(
+                      color: titleRed,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
                     ),
                   ),
-                ],
-              ],
+                ),
+              ),
+            ],
+          ),
+          if (time != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 30, top: 2),
+              child: Text(
+                _formatTime(time.toLocal()),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w400,
+                  height: 1.2,
+                ),
+              ),
             ),
+          const SizedBox(height: 10),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: Colors.white.withOpacity(0.12),
           ),
         ],
       ),
@@ -445,7 +471,7 @@ class MonitorAlarmLogRow extends StatelessWidget {
   static String _formatTime(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');
     return '${t.year}-${two(t.month)}-${two(t.day)} '
-        '${two(t.hour)}:${two(t.minute)}';
+        '${two(t.hour)}:${two(t.minute)}:${two(t.second)}';
   }
 }
 
@@ -455,8 +481,7 @@ class MonitorStatusTile extends StatelessWidget {
     required this.label,
     this.on,
     this.height,
-    this.borderGradientCenter =
-        CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   final String label;
@@ -493,8 +518,7 @@ class MonitorWorkDataCard extends StatelessWidget {
     required this.title,
     required this.value,
     this.suffix = '',
-    this.borderGradientCenter =
-        CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   final String title;

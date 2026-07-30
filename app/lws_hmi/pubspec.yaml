@@ -100,8 +100,12 @@ flutter:
     - assets/audio/shanghai_tan.mp3
     # Warn dialog loop (lws-ui res/raw/warn_mp3.mp3).
     - assets/audio/warn_mp3.mp3
-    # Warn dialog icon (lws-ui mipmap alarm_warn_icon).
+    # Warn dialog icons (lws-ui mipmap alarm_warn_icon / alarm_info_icon).
     - assets/warn/alarm_warn_icon.webp
+    - assets/warn/alarm_info_icon.webp
+    # Alarm log row siren + Clear pill trash (lws-ui warn_icon / alarm_button_icon).
+    - assets/warn/warn_icon.webp
+    - assets/warn/alarm_button_icon.webp
     # Product HAL pack (board profile + gpio/modbus catalogs).
     - assets/hal/board_profile.json
     - assets/hal/gpio.json
@@ -131,6 +135,11 @@ flutter:
     - assets/monitor/job_icon3.webp
     - assets/monitor/videos_icon.webp
     - assets/monitor/ai_vision_tab.webp
+    # Settings top-tab icons (from lws-ui DeviceSetting mipmaps; Custom Home deferred).
+    - assets/settings/device_info.webp
+    - assets/settings/common_settings.webp
+    - assets/settings/settings.webp
+    - assets/settings/placeholder.webp
     # Work-mode status bar icons (from lws-ui EquipmentStatusBar mipmaps).
     - assets/work-mode/
     # Process-mode chrome (Quick wheel / Engineer tabs; from lws-ui mipmap-xxxhdpi).

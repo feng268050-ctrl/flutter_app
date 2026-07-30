@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
@@ -5,6 +7,8 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/presentation/process_video_detail_page.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 void main() {
@@ -54,6 +58,66 @@ void main() {
     expect(find.text('Aluminum Alloy'), findsOneWidget);
     expect(find.text('Unable to play this recording'), findsOneWidget);
   });
+
+  testWidgets(
+    'detail shows mm-based parameters as in when CommonSettings unit is Imperial',
+    (tester) async {
+      final repo = _MemRepo()
+        ..seed(
+          ProcessVideoRecord(
+            id: 3,
+            videoId: 'v3',
+            videoPath: '/no/such/process-video.mp4',
+            processType: ProcessType.continuousWelding,
+            materialType: MaterialType.aluminumAlloy,
+            processParametersJson: ProcessVideoSnapshot(
+              processType: ProcessType.continuousWelding,
+              materialType: MaterialType.aluminumAlloy,
+              thickness: 5, // 5mm -> 0.20in
+              parameters: ProcessParameters({
+                // Swing width unit is `mm` in ProcessParameterCatalog.
+                'process.swing_width': 5,
+              }),
+            ).toJsonString(),
+            fileSize: 1,
+            durationMs: 4000,
+            createTimeMs: 1,
+          ),
+        );
+
+      final tmpDir = await Directory.systemTemp.createTemp('lws-hmi-test-');
+      final store = CommonSettingsStore(
+        preferencePath: '${tmpDir.path}/common-settings.json',
+      );
+      await store.setUnit(CommonSettingsStore.unitImperial);
+
+      await tester.pumpWidget(
+        CommonSettingsScope(
+          store: store,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            home: ProcessVideoDetailPage(
+              args: ProcessVideoDetailArgs(recordId: 3, repository: repo),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Give _load() a moment.
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      });
+      await tester.pump();
+
+      expect(find.text('Thickness (in)'), findsOneWidget);
+      expect(find.text('Swing width (in)'), findsOneWidget);
+      // 5mm / 25 = 0.2 -> parameterValue renders 2 decimals => 0.20
+      expect(find.text('0.20'), findsWidgets);
+    },
+  );
 }
 
 final class _MemRepo implements ProcessVideoRepository {

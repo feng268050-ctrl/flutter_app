@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/wifi_settings_page.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
 import 'package:lws_hmi/platform/wifi/wifi_models.dart';
 
 /// Once-per-process Wi‑Fi connect tip on the global prompt queue.
@@ -18,40 +19,76 @@ abstract final class WifiConnectTipPrompt {
     _enqueuedThisProcess = false;
   }
 
-  /// Enqueue when Wi‑Fi radio is on/starting but not connected. No-op if
+  /// True while status-bar Wi‑Fi would show connecting/connected — tip is for
+  /// radio-on idle / disconnected / failed only.
+  @visibleForTesting
+  static bool suppressesTip({
+    required WifiRadioState radio,
+    required WifiConnectionPhase phase,
+  }) {
+    if (radio == WifiRadioState.starting) {
+      return true;
+    }
+    return phase == WifiConnectionPhase.associating ||
+        phase == WifiConnectionPhase.obtainingIp ||
+        phase == WifiConnectionPhase.connected;
+  }
+
+  /// Enqueue when Wi‑Fi radio is on but not connecting/connected. No-op if
   /// already enqueued this process or not eligible.
   static Future<void> enqueueIfNeeded({
     required GlobalPromptQueue queue,
     required AppServices services,
+  }) {
+    return enqueueForWifi(
+      queue: queue,
+      wifi: services.wifi,
+      present: (host) => _present(host, services),
+    );
+  }
+
+  /// Testable enroll path (no [AppServices] / wall-clock side effects).
+  @visibleForTesting
+  static Future<void> enqueueForWifi({
+    required GlobalPromptQueue queue,
+    required WifiController wifi,
+    required Future<void> Function(GlobalPromptHost host) present,
   }) async {
     if (_enqueuedThisProcess) {
       return;
     }
-    final radio = services.wifi.currentRadio;
-    final conn = services.wifi.currentConnection;
-    final radioUp =
-        radio == WifiRadioState.on || radio == WifiRadioState.starting;
-    if (!radioUp) {
+    final radio = wifi.currentRadio;
+    final conn = wifi.currentConnection;
+    if (radio != WifiRadioState.on) {
       return;
     }
-    if (conn.phase == WifiConnectionPhase.connected) {
+    if (suppressesTip(radio: radio, phase: conn.phase)) {
       return;
     }
     _enqueuedThisProcess = true;
 
-    // Drop pending/showing tip as soon as Wi‑Fi associates (broadcast stream).
-    final autoClose = services.wifi.connection.listen((state) {
-      if (state.phase == WifiConnectionPhase.connected) {
+    // Drop pending/showing tip once Wi‑Fi is connecting or associated.
+    void maybeDismiss(WifiRadioState r, WifiConnectionPhase phase) {
+      if (suppressesTip(radio: r, phase: phase)) {
         unawaited(queue.dismiss(GlobalPromptIds.wifiConnect));
       }
+    }
+
+    final autoCloseConn = wifi.connection.listen((state) {
+      maybeDismiss(wifi.currentRadio, state.phase);
+    });
+    final autoCloseRadio = wifi.radio.listen((r) {
+      maybeDismiss(r, wifi.currentConnection.phase);
     });
     try {
       await queue.enqueue(
         id: GlobalPromptIds.wifiConnect,
-        present: (host) => _present(host, services),
+        present: present,
       );
     } finally {
-      await autoClose.cancel();
+      // Do not await cancel — dismiss may run inside a sync stream callback.
+      unawaited(autoCloseConn.cancel());
+      unawaited(autoCloseRadio.cancel());
     }
   }
 
@@ -63,8 +100,10 @@ abstract final class WifiConnectTipPrompt {
     if (!context.mounted) {
       return;
     }
-    if (services.wifi.currentConnection.phase ==
-        WifiConnectionPhase.connected) {
+    if (suppressesTip(
+      radio: services.wifi.currentRadio,
+      phase: services.wifi.currentConnection.phase,
+    )) {
       return;
     }
 

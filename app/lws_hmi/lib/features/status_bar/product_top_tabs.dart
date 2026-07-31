@@ -11,7 +11,8 @@ enum ProductTopTabLayout {
   lwsUi,
 }
 
-/// Shared product top-tab strip (lws-ui `TopTabView` / `job_border1`).
+/// Shared product top-tab strip (lws-ui `TopTabView` / `job_border1` chrome).
+/// Tab glyphs are Material [IconData]; only the strip border remains a WebP.
 final class ProductTopTabs extends StatefulWidget
     implements PreferredSizeWidget {
   const ProductTopTabs({
@@ -39,7 +40,7 @@ final class ProductTopTabs extends StatefulWidget
   static const lwsUiMinTabWidth = 236.0;
 
   final List<String> labels;
-  final List<({Key key, String iconAsset})> tabs;
+  final List<({Key key, IconData icon})> tabs;
   final int currentIndex;
   final ValueChanged<int> onSelected;
   final ProductTopTabLayout layout;
@@ -167,7 +168,7 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
         child: _ProductTopTabItem(
           key: widget.tabs[i].key,
           label: widget.labels[i],
-          iconAsset: widget.tabs[i].iconAsset,
+          icon: widget.tabs[i].icon,
           selected: i == widget.currentIndex,
           layout: widget.layout,
           stripHeight: widget.height,
@@ -231,7 +232,7 @@ final class _ProductTopTabItem extends StatelessWidget {
   const _ProductTopTabItem({
     super.key,
     required this.label,
-    required this.iconAsset,
+    required this.icon,
     required this.selected,
     required this.layout,
     required this.stripHeight,
@@ -240,13 +241,13 @@ final class _ProductTopTabItem extends StatelessWidget {
 
   static const monitorIconSize = 31.0;
   static const monitorFontSize = 24.0;
-  static const lwsUiIconSize = 24.0;
+  static const lwsUiIconSize = 31.0;
   static const lwsUiFontSize = 27.0;
   static const iconTextGap = 6.0;
   static const unselectedLwsUi = Color(0xFF94A3B8);
 
   final String label;
-  final String iconAsset;
+  final IconData icon;
   final bool selected;
   final ProductTopTabLayout layout;
   final double stripHeight;
@@ -311,15 +312,7 @@ final class _ProductTopTabItem extends StatelessWidget {
           top: iconInset,
           width: lwsUiIconSize,
           height: lwsUiIconSize,
-          child: Image.asset(
-            iconAsset,
-            width: lwsUiIconSize,
-            height: lwsUiIconSize,
-            color: color,
-            colorBlendMode: BlendMode.srcIn,
-            errorBuilder: (_, __, ___) =>
-                Icon(Icons.circle, size: 18, color: color),
-          ),
+          child: Icon(icon, size: lwsUiIconSize, color: color),
         ),
         Align(
           alignment: Alignment.bottomCenter,
@@ -361,15 +354,7 @@ final class _ProductTopTabItem extends StatelessWidget {
           top: iconInset,
           width: monitorIconSize,
           height: monitorIconSize,
-          child: Image.asset(
-            iconAsset,
-            width: monitorIconSize,
-            height: monitorIconSize,
-            color: color,
-            colorBlendMode: BlendMode.srcIn,
-            errorBuilder: (_, __, ___) =>
-                Icon(Icons.circle, size: 23, color: color),
-          ),
+          child: Icon(icon, size: monitorIconSize, color: color),
         ),
         Positioned(
           left: 14,

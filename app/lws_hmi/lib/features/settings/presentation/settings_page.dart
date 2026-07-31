@@ -35,22 +35,22 @@ class SettingsPage extends StatefulWidget {
   /// Shared page chrome fill — lws-ui `tab_bg` (#060720).
   static const background = Color(0xFF060720);
 
-  static const _tabs = <({Key key, String iconAsset})>[
+  static const _tabs = <({Key key, IconData icon})>[
     (
       key: ValueKey('settings-tab-device-info'),
-      iconAsset: 'assets/settings/device_info.webp',
+      icon: Icons.info_outline,
     ),
     (
       key: ValueKey('settings-tab-common'),
-      iconAsset: 'assets/settings/common_settings.webp',
+      icon: Icons.settings,
     ),
     (
       key: ValueKey('settings-tab-advanced'),
-      iconAsset: 'assets/settings/settings.webp',
+      icon: Icons.tune,
     ),
     (
       key: ValueKey('settings-tab-custom-home'),
-      iconAsset: 'assets/settings/placeholder.webp',
+      icon: Icons.home_outlined,
     ),
   ];
 

@@ -133,18 +133,8 @@ flutter:
     - assets/home/home_settings.webp
     - assets/home/home_monitor.webp
     - assets/home/ai_vision_home.webp
-    # Monitor tab icons (from lws-ui DeviceMonitoring mipmaps).
+    # Monitor top-tab strip border (tab icons use Material Icons).
     - assets/monitor/job_border1.webp
-    - assets/monitor/job_icon1.webp
-    - assets/monitor/job_icon2.webp
-    - assets/monitor/job_icon3.webp
-    - assets/monitor/videos_icon.webp
-    - assets/monitor/ai_vision_tab.webp
-    # Settings top-tab icons (from lws-ui DeviceSetting mipmaps; Custom Home deferred).
-    - assets/settings/device_info.webp
-    - assets/settings/common_settings.webp
-    - assets/settings/settings.webp
-    - assets/settings/placeholder.webp
     # Custom Home editor shell + card frames (lws-ui mipmap-xxxhdpi WebP stack).
     - assets/settings/custom_home/
     # Work-mode status bar icons (from lws-ui EquipmentStatusBar mipmaps).

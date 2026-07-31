@@ -15,33 +15,33 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 /// Product Monitor — five tabs aligned with lws-ui DeviceMonitoring (Material).
 ///
 /// Tab changes are tap-only (no swipe), matching lws-ui FragmentShowHideTabHost.
-/// Tab leading icons match lws-ui `job_icon*` / `videos_icon` / `ai_vision_home`.
+/// Tab leading icons use Material Icons (replacing lws-ui WebP mipmaps).
 class MonitorPage extends StatefulWidget {
   const MonitorPage({super.key});
 
   /// Shared page chrome fill — lws-ui `tab_bg` (#060720).
   static const background = Color(0xFF060720);
 
-  static const _tabs = <({Key key, String iconAsset})>[
+  static const _tabs = <({Key key, IconData icon})>[
     (
       key: ValueKey('monitor-tab-work-information'),
-      iconAsset: 'assets/monitor/job_icon1.webp',
+      icon: Icons.assessment_outlined,
     ),
     (
       key: ValueKey('monitor-tab-machine-status'),
-      iconAsset: 'assets/monitor/job_icon2.webp',
+      icon: Icons.account_tree_outlined,
     ),
     (
       key: ValueKey('monitor-tab-alarm-information'),
-      iconAsset: 'assets/monitor/job_icon3.webp',
+      icon: Icons.warning_amber_rounded,
     ),
     (
       key: ValueKey('monitor-tab-videos'),
-      iconAsset: 'assets/monitor/videos_icon.webp',
+      icon: Icons.movie_outlined,
     ),
     (
       key: ValueKey('monitor-tab-ai-vision'),
-      iconAsset: 'assets/monitor/ai_vision_tab.webp',
+      icon: Icons.visibility_outlined,
     ),
   ];
 

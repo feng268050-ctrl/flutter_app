@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
+import 'package:lws_hmi/features/process_video/presentation/process_video_dialogs.dart';
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
@@ -123,25 +124,8 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
     if (record?.id == null) {
       return;
     }
-    final l10n = AppLocalizations.of(context)!;
     CyberClickSoundRegistry.playClick();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.processVideoDeleteConfirmTitle),
-        content: Text(l10n.processVideoDeleteConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.cancelText),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.deleteText),
-          ),
-        ],
-      ),
-    );
+    final ok = await showProcessVideoDeleteDialog(context: context);
     if (ok != true) {
       return;
     }
@@ -149,6 +133,15 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
     if (mounted) {
       Navigator.of(context).pop(true);
     }
+  }
+
+  Future<void> _upload() async {
+    if (_record?.id == null) {
+      return;
+    }
+    CyberClickSoundRegistry.playClick();
+    // UI only — cloud upload pipeline lands later.
+    await showProcessVideoUploadDialog(context: context);
   }
 
   @override
@@ -198,10 +191,12 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
                               record: record,
                               title: l10n.processVideoParametersTitle,
                               backLabel: l10n.equipmentStatusBack,
+                              uploadLabel: l10n.uploadText,
                               deleteLabel: l10n.deleteText,
                               labelWidth: 230 * scale,
                               onBack: () =>
                                   Navigator.of(context).maybePop(),
+                              onUpload: () => unawaited(_upload()),
                               onDelete: () => unawaited(_delete()),
                             ),
                           ),
@@ -223,24 +218,28 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
   }
 }
 
-/// Left column: Back + Frost param card + Delete (lws-ui Activity).
+/// Left column: Back + Frost param card + Upload / Delete (lws-ui Activity).
 final class _ParameterColumn extends StatelessWidget {
   const _ParameterColumn({
     required this.record,
     required this.title,
     required this.backLabel,
+    required this.uploadLabel,
     required this.deleteLabel,
     required this.labelWidth,
     required this.onBack,
+    required this.onUpload,
     required this.onDelete,
   });
 
   final ProcessVideoRecord record;
   final String title;
   final String backLabel;
+  final String uploadLabel;
   final String deleteLabel;
   final double labelWidth;
   final VoidCallback onBack;
+  final VoidCallback onUpload;
   final VoidCallback onDelete;
 
   @override
@@ -295,19 +294,32 @@ final class _ParameterColumn extends StatelessWidget {
                     ),
                   ),
                   Center(
-                    child: CyberButton(
-                      size: CyberButtonSize.medium,
-                      variant: CyberButtonVariant.secondary,
-                      shape: CyberButtonShape.rounded,
-                      borderGradientCenter:
-                          CyberBorderGradientCenter.topLeftBottomRight,
-                      onPressed: onDelete,
-                      child: Text(
-                        deleteLabel,
-                        style: const TextStyle(
-                          color: CyberColors.buttonSecondaryText,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CyberButton(
+                          size: CyberButtonSize.medium,
+                          variant: CyberButtonVariant.primary,
+                          shape: CyberButtonShape.rounded,
+                          onPressed: onUpload,
+                          child: Text(uploadLabel),
                         ),
-                      ),
+                        const SizedBox(width: 16),
+                        CyberButton(
+                          size: CyberButtonSize.medium,
+                          variant: CyberButtonVariant.secondary,
+                          shape: CyberButtonShape.rounded,
+                          borderGradientCenter:
+                              CyberBorderGradientCenter.topLeftBottomRight,
+                          onPressed: onDelete,
+                          child: Text(
+                            deleteLabel,
+                            style: const TextStyle(
+                              color: CyberColors.buttonSecondaryText,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

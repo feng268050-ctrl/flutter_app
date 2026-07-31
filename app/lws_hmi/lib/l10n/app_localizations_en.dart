@@ -66,6 +66,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advancedSettingZeroOffsetAuto => 'Auto';
 
   @override
+  String get advancedSettingAutoZeroOffsetTitle => 'Auto Zero Offset';
+
+  @override
+  String get advancedSettingAutoZeroOffsetMessage => 'Aim the welding gun at a safe area and hold the trigger, then tap Auto. Auto temporarily enables laser output; the trigger fires the laser. Wait for the progress bar to finish automatic zero-offset correction.';
+
+  @override
   String get advancedSettingEnterZeroOffset => 'Enter zero offset';
 
   @override
@@ -255,6 +261,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiVisionReinferBtn => 'Re-detect';
+
+  @override
+  String get aiVisionReplaceBtn => 'Replace';
 
   @override
   String get aiVisionSelectBtn => 'Select';
@@ -483,6 +492,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearAlarmLogs => 'Clear';
+
+  @override
+  String get alarmLogsClearedTitle => 'Cleared';
+
+  @override
+  String get alarmLogsClearedMessage => 'Done';
 
   @override
   String get closeText => 'Close';
@@ -1476,6 +1491,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get processVideoDeleteConfirmMessage => 'This removes the video file and its process parameters from this device.';
+
+  @override
+  String get processVideoUploadConfirmTitle => 'Upload recording?';
+
+  @override
+  String get processVideoUploadConfirmMessage => 'Upload this video and its process parameters to the cloud. Make sure the device is online.';
+
+  @override
+  String get uploadText => 'Upload';
 
   @override
   String get processVideoDetailTitle => 'Video Details';

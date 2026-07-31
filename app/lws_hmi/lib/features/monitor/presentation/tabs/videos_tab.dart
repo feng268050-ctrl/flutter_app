@@ -6,11 +6,12 @@ import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
+import 'package:lws_hmi/features/process_video/presentation/process_video_dialogs.dart';
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
 import 'package:lws_hmi/features/status_bar/product_top_tabs.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// lws-ui `fragment_process_video` — local recordings list (no upload).
+/// lws-ui `fragment_process_video` — local recordings list (Upload UI only).
 class VideosTab extends StatefulWidget {
   const VideosTab({
     super.key,
@@ -124,38 +125,27 @@ class VideosTabState extends State<VideosTab> {
     }
   }
 
-  Future<bool> _confirmDelete(ProcessVideoRecord record) async {
-    final l10n = AppLocalizations.of(context)!;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.processVideoDeleteConfirmTitle),
-        content: Text(l10n.processVideoDeleteConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.cancelText),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.deleteText),
-          ),
-        ],
-      ),
-    );
-    return ok == true;
-  }
+  Future<bool> _confirmDelete() => showProcessVideoDeleteDialog(context: context);
 
   Future<void> _delete(ProcessVideoRecord record) async {
     if (record.id == null) {
       return;
     }
     CyberClickSoundRegistry.playClick();
-    if (!await _confirmDelete(record)) {
+    if (!await _confirmDelete()) {
       return;
     }
     await _repo.deleteById(record.id!);
     await _reload();
+  }
+
+  Future<void> _upload(ProcessVideoRecord record) async {
+    if (record.id == null) {
+      return;
+    }
+    CyberClickSoundRegistry.playClick();
+    // UI only — cloud upload pipeline lands later.
+    await showProcessVideoUploadDialog(context: context);
   }
 
   Future<void> _openDetail(ProcessVideoRecord record) async {
@@ -225,7 +215,9 @@ class VideosTabState extends State<VideosTab> {
                               record: row,
                               scale: scale,
                               onOpen: () => unawaited(_openDetail(row)),
+                              onUpload: () => unawaited(_upload(row)),
                               onDelete: () => unawaited(_delete(row)),
+                              uploadLabel: l10n.uploadText,
                               deleteLabel: l10n.deleteText,
                             );
                           },
@@ -400,14 +392,18 @@ final class _VideoRow extends StatelessWidget {
     required this.record,
     required this.scale,
     required this.onOpen,
+    required this.onUpload,
     required this.onDelete,
+    required this.uploadLabel,
     required this.deleteLabel,
   });
 
   final ProcessVideoRecord record;
   final double scale;
   final VoidCallback onOpen;
+  final VoidCallback onUpload;
   final VoidCallback onDelete;
+  final String uploadLabel;
   final String deleteLabel;
 
   @override
@@ -472,10 +468,30 @@ final class _VideoRow extends StatelessWidget {
                     ),
                   ),
                 Expanded(
-                  child: Center(
-                    child: TextButton(
-                      onPressed: onDelete,
-                      child: Text(deleteLabel),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                          onPressed: onUpload,
+                          child: Text(uploadLabel),
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                          onPressed: onDelete,
+                          child: Text(deleteLabel),
+                        ),
+                      ],
                     ),
                   ),
                 ),

@@ -140,7 +140,7 @@ void main() {
       WorkStatusDialogHost.cancelPendingClose();
     });
 
-    test('Enable OFF clears Quick latch so held gun can re-edge', () {
+    test('Enable OFF clears latch when resetGunLatchOnEnableOff', () {
       coord = GunDialogCoordinator(
         deviceControl: device,
         services: services,

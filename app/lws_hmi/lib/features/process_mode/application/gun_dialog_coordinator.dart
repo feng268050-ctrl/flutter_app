@@ -9,16 +9,17 @@ import 'package:lws_hmi/features/process_mode/presentation/safety_ground_lock_pr
 import 'package:lws_hmi/features/process_mode/presentation/work_status_dialog_host.dart';
 
 /// Coordinates gun-switch edges with Live Monitor + safety-ground prompt
-/// (lws-ui Quick/Engineer gun ↔ dialog linkage).
+/// (Engineer Mode gun ↔ dialog linkage).
 ///
-/// CNC pages must not start this coordinator (or must [setActive] false).
+/// Quick Mode does **not** host this coordinator. CNC pages must not start it
+/// (or must [setActive] false).
 final class GunDialogCoordinator {
   GunDialogCoordinator({
     required this.deviceControl,
     required this.services,
     required this.contextGetter,
     required this.showGroundLockAlarmGetter,
-    this.resetGunLatchOnEnableOff = true,
+    this.resetGunLatchOnEnableOff = false,
     this.closeOnEnableOffImmediate = true,
   });
 
@@ -31,8 +32,8 @@ final class GunDialogCoordinator {
   /// Reads Misc `showGroundLockAlarm`.
   final bool Function() showGroundLockAlarmGetter;
 
-  /// Quick Mode clears edge latch on Enable OFF so a held gun reopens after
-  /// re-Enable (lws-ui `GeneralOperationsFragment.lastIsGunSwitchOn = null`).
+  /// When true, clears edge latch on Enable OFF so a held gun can re-edge after
+  /// re-Enable. Engineer keeps the latch (`false`).
   final bool resetGunLatchOnEnableOff;
 
   /// When true, Enable OFF cancels pending close and dismisses gun-managed
@@ -80,7 +81,7 @@ final class GunDialogCoordinator {
     }
   }
 
-  /// Pause edge handling (e.g. Quick Mode switched to CNC).
+  /// Pause edge handling (e.g. host left the process page).
   void setActive(bool active) {
     if (_active == active) {
       return;
@@ -192,7 +193,7 @@ final class GunDialogCoordinator {
       return;
     }
 
-    // Match Engineer/Quick cache listeners: gun edges only while Enable ON.
+    // Gun edges only while Enable ON (matches Engineer cache listeners).
     if (!laserEnable) {
       return;
     }

@@ -40,9 +40,21 @@ Product features must **not** use bare `BackdropFilter` — go through Cyber\* w
 | `secondary` | `SECONDARY` | Same as `standard` | `#FF5A52` |
 | `light` | `LIGHT` | Light glass gradient | White |
 
-Sizes: regular 58× pad 24; small 40× pad 20; stroke 1; rectangle radius 14;
-label **18** (regular) / **14** (small) — matches HMI settings chrome (not Android
-design-canvas 29sp).
+### Size tiers (height fixed; width customizable)
+
+Selecting a tier locks **height** (and default horizontal padding / label size).
+Width is not locked — wrap with `SizedBox(width: …)`, use `stretch: true`, or
+`expand: true` (IME). Shape: `rectangle` → radius **14**; `rounded` → pill
+(`height / 2`). Prefer `CyberButtonSize.medium` over deprecated `regular`.
+
+| Size | Height | Rectangle r | Capsule r | Default pad H | Label |
+|------|--------|-------------|-----------|---------------|-------|
+| `small` | **40** | 14 | 20 | 20 | **14** |
+| `medium` (**default**) | **58** | 14 | 29 | 24 | **18** |
+| `large` | **72** | 14 | 36 | 28 | **22** |
+
+Stroke remains **1**. Escape hatch: `height:` overrides the tier height for
+non-standard chrome (e.g. 36dp chips).
 
 ## Sample-mode defaults
 

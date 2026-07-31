@@ -17,6 +17,7 @@ void main() {
     );
     final button = tester.widget<CyberButton>(find.byType(CyberButton));
     expect(button.variant, CyberButtonVariant.standard);
+    expect(button.size, CyberButtonSize.medium);
   });
 
   testWidgets('primary uses solid primary fill decoration', (tester) async {
@@ -74,13 +75,20 @@ void main() {
     expect(decos[0].gradient?.colors, decos[1].gradient?.colors);
   });
 
-  test('button dimens match Frost heights; label matches HMI chrome', () {
-    expect(CyberDimens.actionButtonHeight, 58);
+  test('button dimens match small / medium / large tiers', () {
     expect(CyberDimens.actionButtonSmallHeight, 40);
+    expect(CyberDimens.actionButtonMediumHeight, 58);
+    expect(CyberDimens.actionButtonLargeHeight, 72);
+    expect(CyberDimens.actionButtonHeight, CyberDimens.actionButtonMediumHeight);
     expect(CyberDimens.buttonStrokeWidth, 1.0);
     expect(CyberDimens.rectangleButtonCornerRadius, 14);
-    expect(CyberDimens.actionButtonFontSize, 18);
     expect(CyberDimens.actionButtonSmallFontSize, 14);
+    expect(CyberDimens.actionButtonMediumFontSize, 18);
+    expect(CyberDimens.actionButtonLargeFontSize, 22);
+    expect(CyberDimens.actionButtonFontSize, 18);
+    expect(CyberDimens.actionButtonSmallPaddingHorizontal, 20);
+    expect(CyberDimens.actionButtonMediumPaddingHorizontal, 24);
+    expect(CyberDimens.actionButtonLargePaddingHorizontal, 28);
     expect(CyberDimens.cornerRadius, 28);
   });
 
@@ -129,6 +137,25 @@ void main() {
     expect(decoration.borderRadius, BorderRadius.circular(29));
   });
 
+  testWidgets('large rounded pill corner is height/2', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CyberButton(
+            size: CyberButtonSize.large,
+            shape: CyberButtonShape.rounded,
+            onPressed: _noop,
+            child: const Text('Large'),
+          ),
+        ),
+      ),
+    );
+    final deco = tester.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final decoration = deco.decoration as BoxDecoration;
+    expect(decoration.borderRadius, BorderRadius.circular(36));
+    expect(tester.getSize(find.byType(CyberButton)).height, 72);
+  });
+
   testWidgets('default layout is intrinsic width (not full-bleed)',
       (tester) async {
     await tester.pumpWidget(
@@ -154,6 +181,7 @@ void main() {
     final size = tester.getSize(find.byType(CyberButton));
     expect(size.width, lessThan(800));
     expect(size.width, greaterThan(100));
+    expect(size.height, 58);
   });
 
   testWidgets('DefaultTextStyle uses size-appropriate font', (tester) async {
@@ -163,13 +191,19 @@ void main() {
           body: Column(
             children: [
               CyberButton(
+                size: CyberButtonSize.medium,
                 onPressed: _noop,
-                child: const Text('Regular'),
+                child: const Text('Medium'),
               ),
               CyberButton(
                 size: CyberButtonSize.small,
                 onPressed: _noop,
                 child: const Text('Small'),
+              ),
+              CyberButton(
+                size: CyberButtonSize.large,
+                onPressed: _noop,
+                child: const Text('Large'),
               ),
             ],
           ),
@@ -180,7 +214,36 @@ void main() {
         .widgetList<DefaultTextStyle>(find.byType(DefaultTextStyle))
         .map((w) => w.style.fontSize)
         .toList();
-    expect(styles, containsAll(<double>[18, 14]));
+    expect(styles, containsAll(<double>[18, 14, 22]));
+  });
+
+  testWidgets('deprecated regular size matches medium height and font',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              CyberButton(
+                key: const Key('medium'),
+                size: CyberButtonSize.medium,
+                onPressed: _noop,
+                child: const Text('M'),
+              ),
+              // ignore: deprecated_member_use_from_same_package
+              CyberButton(
+                key: const Key('regular'),
+                size: CyberButtonSize.regular,
+                onPressed: _noop,
+                child: const Text('R'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    expect(tester.getSize(find.byKey(const Key('medium'))).height, 58);
+    expect(tester.getSize(find.byKey(const Key('regular'))).height, 58);
   });
 }
 

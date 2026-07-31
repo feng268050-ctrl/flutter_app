@@ -11,7 +11,15 @@ import 'package:cyber_ui/src/theme/cyber_tone.dart';
 /// Frost `FrostButton` variants (`DEFAULT` → [standard]).
 enum CyberButtonVariant { standard, primary, secondary, light }
 
-enum CyberButtonSize { regular, small }
+enum CyberButtonSize {
+  small,
+  medium,
+  large,
+
+  /// Alias for [medium] — prefer [medium] in new code.
+  @Deprecated('Use CyberButtonSize.medium')
+  regular,
+}
 
 /// Frost `FrostButtonShape` — [rounded] is pill (half-height); [rectangle]
 /// uses [CyberDimens.rectangleButtonCornerRadius].
@@ -75,7 +83,7 @@ class CyberButton extends StatefulWidget {
     required this.onPressed,
     required this.child,
     this.variant = CyberButtonVariant.standard,
-    this.size = CyberButtonSize.regular,
+    this.size = CyberButtonSize.medium,
     this.shape = CyberButtonShape.rectangle,
     this.clickSoundEnabled = true,
     this.expand = false,
@@ -105,7 +113,7 @@ class CyberButton extends StatefulWidget {
   /// When true, take max cross-axis width with fixed button height.
   final bool stretch;
 
-  /// Overrides [size] height when set (e.g. match a 36dp value chip).
+  /// Overrides [size] height when set (escape hatch for non-tier heights).
   final double? height;
 
   /// Optional label/icon color override (e.g. IME accent backspace).
@@ -221,23 +229,15 @@ class _CyberButtonState extends State<CyberButton>
   @override
   Widget build(BuildContext context) {
     final enabled = _enabled;
-    final resolvedHeight = widget.height ??
-        (widget.size == CyberButtonSize.small
-            ? CyberDimens.actionButtonSmallHeight
-            : CyberDimens.actionButtonHeight);
-    final hPad = (widget.expand || widget.stretch)
-        ? 0.0
-        : (widget.size == CyberButtonSize.small
-            ? CyberDimens.actionButtonSmallPaddingHorizontal
-            : CyberDimens.actionButtonPaddingHorizontal);
+    final tier = _resolvedSize(widget.size);
+    final resolvedHeight = widget.height ?? _heightFor(tier);
+    final hPad = (widget.expand || widget.stretch) ? 0.0 : _padHFor(tier);
     final cornerRadius = widget.shape == CyberButtonShape.rounded
         ? resolvedHeight / 2
         : CyberDimens.rectangleButtonCornerRadius;
     final radius = BorderRadius.circular(cornerRadius);
     final textColor = widget.foregroundColor ?? _foreground(widget.variant);
-    final fontSize = widget.size == CyberButtonSize.small
-        ? CyberDimens.actionButtonSmallFontSize
-        : CyberDimens.actionButtonFontSize;
+    final fontSize = _fontSizeFor(tier);
 
     final outline = CyberPanelOutline(
       style: CyberPanelOutlineStyle.frostGradient,
@@ -403,6 +403,50 @@ class _CyberButtonState extends State<CyberButton>
       heightFactor: 1.0,
       child: button,
     );
+  }
+
+  /// Maps deprecated `CyberButtonSize.regular` onto [CyberButtonSize.medium].
+  static CyberButtonSize _resolvedSize(CyberButtonSize size) {
+    if (size == CyberButtonSize.small) {
+      return CyberButtonSize.small;
+    }
+    if (size == CyberButtonSize.large) {
+      return CyberButtonSize.large;
+    }
+    return CyberButtonSize.medium;
+  }
+
+  static double _heightFor(CyberButtonSize tier) {
+    final t = _resolvedSize(tier);
+    if (t == CyberButtonSize.small) {
+      return CyberDimens.actionButtonSmallHeight;
+    }
+    if (t == CyberButtonSize.large) {
+      return CyberDimens.actionButtonLargeHeight;
+    }
+    return CyberDimens.actionButtonMediumHeight;
+  }
+
+  static double _padHFor(CyberButtonSize tier) {
+    final t = _resolvedSize(tier);
+    if (t == CyberButtonSize.small) {
+      return CyberDimens.actionButtonSmallPaddingHorizontal;
+    }
+    if (t == CyberButtonSize.large) {
+      return CyberDimens.actionButtonLargePaddingHorizontal;
+    }
+    return CyberDimens.actionButtonMediumPaddingHorizontal;
+  }
+
+  static double _fontSizeFor(CyberButtonSize tier) {
+    final t = _resolvedSize(tier);
+    if (t == CyberButtonSize.small) {
+      return CyberDimens.actionButtonSmallFontSize;
+    }
+    if (t == CyberButtonSize.large) {
+      return CyberDimens.actionButtonLargeFontSize;
+    }
+    return CyberDimens.actionButtonMediumFontSize;
   }
 
   static Color _foreground(CyberButtonVariant variant) => switch (variant) {

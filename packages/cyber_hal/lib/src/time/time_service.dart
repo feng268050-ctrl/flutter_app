@@ -47,13 +47,14 @@ class TimeSyncPrefs {
     'America/Los_Angeles',
   ];
 
-  /// Default when preference file is missing: network (heal TLS on first boot).
+  /// Default when preference file is missing: manual (hardware RTC / operator).
+  /// Network NTP is opt-in via Settings Automatic — many appliances never go online.
   static TimeSyncMode modeFromToken(String? raw) {
     final token = (raw ?? '').trim().toLowerCase();
-    if (token == 'manual') {
-      return TimeSyncMode.manual;
+    if (token == 'network') {
+      return TimeSyncMode.network;
     }
-    return TimeSyncMode.network;
+    return TimeSyncMode.manual;
   }
 
   static String modeToToken(TimeSyncMode mode) {

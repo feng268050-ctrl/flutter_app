@@ -33,6 +33,11 @@ void main() {
     );
   }
 
+  test('missing sync_mode preference defaults to manual', () async {
+    final dt = controller();
+    expect(await dt.getSyncMode(), TimeSyncMode.manual);
+  });
+
   test('setSyncMode(network) calls timedatectl set-ntp true', () async {
     final dt = controller();
     await dt.setSyncMode(TimeSyncMode.network);

@@ -379,7 +379,8 @@ class LinuxDateTimeController implements DateTimeController {
 
   Future<bool> _writeRtc() async {
     try {
-      final r = await _run('hwclock', ['-w', '-u']);
+      // BusyBox hwclock: -f DEV (not util-linux --rtc).
+      final r = await _run('hwclock', ['-w', '-u', '-f', '/dev/rtc0']);
       return r.exitCode == 0;
     } catch (_) {
       return false;

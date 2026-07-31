@@ -20,7 +20,7 @@ class DateTimeSettingsPage extends StatefulWidget {
 }
 
 class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
-  TimeSyncMode _mode = TimeSyncMode.network;
+  TimeSyncMode _mode = TimeSyncMode.manual;
   String _timezone = 'Asia/Shanghai';
   DateTime _now = DateTime.now();
   String? _status;

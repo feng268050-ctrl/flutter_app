@@ -9,22 +9,27 @@ Constraints:
 - Do not gate `hmi.service` on `network-online` or timesync lock (boot KPI / first frame).
 - Keep Plan A minimal systemd: enable timesyncd only; still no logind / polkit / chrony.
 - Existing HAL prefs (`/var/lib/hal/datetime.conf` `sync_mode=manual|network`) and Settings Auto/Manual UI stay the product contract.
+- Boot device tree is in the FIT / `overlay/kernel` — **not** oem (see `docs/linux-sdk-vendor-import.md`).
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Ship and enable `systemd-timesyncd` so NTP corrects drift whenever the network can reach default NTP servers.
-- Map HAL sync mode ↔ OS NTP (`set-ntp true/false`).
-- Preserve one-shot ladder for stale-clock / TLS emergency before timesyncd has locked.
-- Update specs/docs that still require timesyncd to stay off.
+- Wall clock works **offline** from the **external PCF8563** on i2c5 @0x51 + manual Settings (product default).
+- Leave RK809 PMIC RTC unregistered (`CONFIG_RTC_DRV_RK808` unset; RC-slow).
+- Ship timesyncd only as **opt-in** Automatic when the user networks the device.
+- Periodically persist system → RTC without requiring NTP (`rtc-systohc.timer`).
+- CN-reachable NTP servers when Automatic is used.
 
 **Non-Goals:**
 
-- chrony or custom NTP pool UI / cloud NTP policy.
-- Enabling DNSSEC or DNSOverTLS (still unsafe on first boot before sync).
-- Changing Settings UI layout beyond existing Auto/Manual behavior.
+- Fixing motherboard XIN/XOUT crystal for RK809 (not field-modifiable; unused for wall clock).
+- Putting boot RTC DT nodes in `oem/` (FIT loads before `/oem`).
+- Requiring network/NTP for normal timekeeping.
+- chrony or cloud NTP policy UI.
+- Enabling DNSSEC/DoT.
 - Making HMI wait for NTP at boot.
+- Claiming crystal-perfect absolute time offline (ppm drift remains a hardware limit).
 
 ## Decisions
 
@@ -34,11 +39,11 @@ Constraints:
 - **Why:** Already on systemd stack (networkd/resolved); smallest dependency; `timedatectl` / `timedate1` NTP properties work without extra packages.
 - **Alternatives:** chrony (heavier, better for multi-source / offline — not needed yet); keep one-shot only (status quo — clock drifts).
 
-### D2: Preset-enable at image build
+### D2: timesyncd installed, disabled at boot; external RTC + rtc-systohc
 
-- **Choice:** `enable systemd-timesyncd.service` in `99-appliance.preset` (same pattern as networkd/resolved).
-- **Why:** Survive `preset-all` during rootfs; no App-owned start path required.
-- **Note:** timesyncd starts with network; if no route yet it waits — fine. `hmi.service` stays local-fs only.
+- **Choice:** Package timesyncd but `disable` at preset. Enable `rtc-systohc.timer` for offline `hwclock -w`. Bind external `nxp,pcf8563` @ i2c5 0x51 via `ynh960-rtc.dtsi`. **Unset `CONFIG_RTC_DRV_RK808`** so the slow PMIC RTC never registers (MFD regulators stay). Keep any `0008` reenable patch removed.
+- **Why:** Measured: PMIC RTC ~15% slow; external chip ACKs and tracks arch_timer 1:1. Relying only on vendor `if (1) return` in `rtc-rk808.c` failed on flashed images where that gate was absent/reverted — Kconfig unset is deterministic. rk3566 EVB2 base omitted `rtc@51`; ynh960 overlay must add it. Fake-hwclock is unnecessary once the real RTC is `rtc0`.
+- **Note:** `hmi.service` stays local-fs only. DT change is kernel/FIT, not OEM.
 
 ### D3: HAL sync mode drives `timedatectl set-ntp`
 
@@ -52,11 +57,11 @@ Constraints:
 - **Why:** timesyncd can take minutes / need DNS; TLS probes need a fast path when RTC is years off. Avoid fighting timesyncd on every Settings tick when already sane (`onlyIfStale` no-op stays).
 - **Optional later:** After NTP is enabled, Sync Now MAY also poke timesyncd / wait briefly — not required for v1 if ladder still works.
 
-### D5: Default NTP servers / no custom conf unless needed
+### D5: CN-reachable NTP servers (not Google FallbackNTP)
 
-- **Choice:** Use timesyncd defaults (vendor/fallback NTP); add an overlay drop-in only if Buildroot/Rockchip defaults are empty or wrong for CN networks.
-- **Why:** Avoid inventing a server list without field data; revisit if lock fails on ynh960 LAN.
-- **Verify on device:** `timedatectl timesync-status` / `System clock synchronized: yes` after eth0/wlan has DNS+route.
+- **Choice:** Overlay drop-in `etc/systemd/timesyncd.conf.d/10-appliance.conf` with `NTP=ntp.aliyun.com ntp.tencent.com ntp.ntsc.ac.cn` and `FallbackNTP=cn.pool.ntp.org time.cloudflare.com`.
+- **Why:** Buildroot/systemd compile-time FallbackNTP is `time*.google.com`. On ynh960 CN LAN those UDP/123 queries time out (`Packet count: 0`, `System clock synchronized: no`) while HTTP works — clock then drifts. Lab: Aliyun NTP locks within seconds (`synchronized: yes`, ~1 min correction).
+- **Alternatives:** Keep Google defaults (fails in CN); chrony with same servers (heavier).
 
 ### D6: DNSSEC stays off
 
@@ -66,7 +71,7 @@ Constraints:
 ### D7: Package rebuild required
 
 - **Choice:** Document `bash scripts/br-make-packages.sh systemd systemd` (or project-standard systemd rebuild) after flipping the Kconfig bit — `build-rootfs` alone will not rebuild systemd.
-- **Why:** Same gotcha as other BR2_PACKAGE_SYSTEMD_* flips.
+- **Why:** Same gotcha as other BR2_PACKAGE_SYSTEMD_* flips. NTP server drop-in is overlay-only (no systemd package rebuild).
 
 ## Risks / Trade-offs
 
@@ -78,11 +83,7 @@ Constraints:
 
 ## Migration Plan
 
-1. Flip Buildroot fragment + preset + HAL NTP wiring + docs.
-2. Rebuild systemd package, rootfs, upgrade board.
-3. Verify: `systemctl is-enabled systemd-timesyncd`; after network, `timedatectl` shows NTP yes and eventually synchronized yes; Settings Manual disables NTP.
-4. Rollback: unset TIMESYNCD, remove preset enable, rebuild systemd/rootfs (HAL `set-ntp` calls become no-ops / fail soft if binary absent).
-
-## Open Questions
-
-- None blocking: use stock NTP servers first; add CN-friendly pool drop-in only if ynh960 fails to lock in lab.
+1. `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`
+2. `make build-kernel` (DT + HCTOSYS fragment)
+3. `make build-rootfs` / `make upgrade` (rtc-systohc + drop fake-hwclock)
+4. On device: `rtc0` = `rtc-pcf8563`; rate ~1.0 vs arch_timer; `hwclock -r` survives reboot.

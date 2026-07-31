@@ -1,0 +1,13 @@
+# Offline systohc: without NTP, the kernel often leaves STA_UNSYNC set and does
+# not periodically copy CLOCK_REALTIME → RTC. Appliances that never go online
+# still need the external PCF8563 (only rtc0 after CONFIG_RTC_DRV_RK808 unset)
+# to track the running clock across reboot.
+[Unit]
+Description=Write system wall clock to hardware RTC
+DefaultDependencies=no
+After=local-fs.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/hwclock -w -u -f /dev/rtc0

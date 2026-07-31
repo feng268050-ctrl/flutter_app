@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodic hardware RTC systohc (offline-friendly)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

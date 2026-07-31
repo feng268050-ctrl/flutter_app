@@ -241,7 +241,8 @@ sync_kernel_display_dts() {
     "$kernel_dts/lws-hmi-ynh960-own-gpio.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-uart5-gmac.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-uart7-pwm.dtsi" \
-    "$kernel_dts/lws-hmi-ynh960-npu-vop.dtsi"
+    "$kernel_dts/lws-hmi-ynh960-npu-vop.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-rtc.dtsi"
   [[ -x "$gen_script" ]] || chmod +x "$gen_script"
   bash "$gen_script"
   if [[ ! -f "$customer_dtsi.orig" ]]; then
@@ -259,7 +260,8 @@ sync_kernel_display_dts() {
     "$OVERLAY/kernel/rockchip/ynh960-own-gpio.dtsi" "ynh960-own-gpio.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-uart5-gmac.dtsi" "ynh960-uart5-gmac.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-uart7-pwm.dtsi" "ynh960-uart7-pwm.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-npu-vop.dtsi" "ynh960-npu-vop.dtsi"
+    "$OVERLAY/kernel/rockchip/ynh960-npu-vop.dtsi" "ynh960-npu-vop.dtsi" \
+    "$OVERLAY/kernel/rockchip/ynh960-rtc.dtsi" "ynh960-rtc.dtsi"
 }
 
 sync_kernel_config_fragments() {
@@ -304,6 +306,8 @@ apply_kernel_patches() {
     "drivers/input/touchscreen/gt9xx/gt9xx.c"
     "drivers/input/touchscreen/gt9xx/gt9xx.h"
     "drivers/net/phy/icplus.c"
+    # Restore from .lws-hmi.orig even with no active patch: keep vendor
+    # `if (1) return -EINVAL` (PMIC RTC probe off). Do not re-add 0008.
     "drivers/rtc/rtc-rk808.c"
   )
   kernel="$(kernel_source_dir)"

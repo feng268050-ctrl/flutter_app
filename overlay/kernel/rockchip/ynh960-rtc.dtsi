@@ -1,0 +1,14 @@
+// ynh960: external RTC on i2c5 @0x51 (same as RK3568 EVB2 `rtc@51`).
+// Measured: chip ACKs; `pcf8563` rate matches arch_timer. RK809 PMIC RTC is
+// RC-slow — ynh960-rtc.config unsets CONFIG_RTC_DRV_RK808 so this node is rtc0.
+// rk3566-evb2 base that ynh960 includes omits rtc@51 — add here.
+// Boot DT cannot live in oem/ (FIT loads before /oem). Git SoT: overlay/kernel.
+&i2c5 {
+	status = "okay";
+
+	rtc_pcf8563: rtc@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		status = "okay";
+	};
+};

@@ -701,11 +701,35 @@ EOF
 		echo "FAIL: preset must enable systemd-resolved.service (D11 DNS)" >&2
 		missing=1
 	fi
-	if grep -qE '^enable[[:space:]]+systemd-timesyncd\.service' \
+	if grep -qE '^disable[[:space:]]+systemd-timesyncd\.service' \
 		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
-		echo "OK:  preset enables systemd-timesyncd.service"
+		echo "OK:  preset disables systemd-timesyncd.service (RTC-first; NTP opt-in)"
 	else
-		echo "FAIL: preset must enable systemd-timesyncd.service (NTP)" >&2
+		echo "FAIL: preset must disable systemd-timesyncd.service (NTP is Settings opt-in)" >&2
+		missing=1
+	fi
+	if grep -qE '^enable[[:space:]]+rtc-systohc\.timer' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null && \
+		[[ -f "$target/etc/systemd/system/rtc-systohc.service" ]] && \
+		[[ -f "$target/etc/systemd/system/rtc-systohc.timer" ]]; then
+		echo "OK:  rtc-systohc.timer enabled (external RTC systohc; offline-friendly)"
+	else
+		echo "FAIL: missing rtc-systohc units or preset enable" >&2
+		missing=1
+	fi
+	if grep -qE 'fake-hwclock' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null || \
+		[[ -f "$target/etc/systemd/system/fake-hwclock-load.service" ]] || \
+		[[ -f "$target/usr/libexec/hmi/fake-hwclock.sh" ]]; then
+		echo "FAIL: fake-hwclock must be removed (use external pcf8563 RTC)" >&2
+		missing=1
+	fi
+	if [[ -f "$target/etc/systemd/timesyncd.conf.d/10-appliance.conf" ]] && \
+		grep -qE 'ntp\.aliyun\.com' \
+		"$target/etc/systemd/timesyncd.conf.d/10-appliance.conf" 2>/dev/null; then
+		echo "OK:  timesyncd.conf.d prefers CN NTP servers (for opt-in Automatic)"
+	else
+		echo "FAIL: missing timesyncd.conf.d/10-appliance.conf with CN NTP" >&2
 		missing=1
 	fi
 

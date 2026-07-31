@@ -11,8 +11,11 @@ enum ProductTopTabLayout {
   lwsUi,
 }
 
-/// Shared product top-tab strip (lws-ui `TopTabView` / `job_border1` chrome).
-/// Tab glyphs are Material [IconData]; only the strip border remains a WebP.
+/// Shared product top-tab strip (Settings legacy layout / Monitor).
+///
+/// Strip fill follows [ThemeData.scaffoldBackgroundColor] (theme gray), not
+/// the former lws-ui `job_border1` navy plate. A hairline under the strip
+/// matches Settings / Monitor card inset ([dividerInset]).
 final class ProductTopTabs extends StatefulWidget
     implements PreferredSizeWidget {
   const ProductTopTabs({
@@ -24,8 +27,12 @@ final class ProductTopTabs extends StatefulWidget
     this.layout = ProductTopTabLayout.monitorPinnedIcon,
   });
 
-  static const borderAsset = 'assets/monitor/job_border1.webp';
   static const sidePadding = 4.0;
+
+  /// Hairline under the strip — matches Settings / Monitor card inset (24).
+  static const dividerThickness = 1.0;
+  static const dividerColor = Color(0x33FFFFFF);
+  static const dividerInset = 24.0;
 
   /// Monitor strip height (slightly under lws-ui; −10 vs prior 78).
   static const monitorHeight = 68.0;
@@ -50,7 +57,8 @@ final class ProductTopTabs extends StatefulWidget
       : monitorHeight;
 
   @override
-  Size get preferredSize => Size.fromHeight(height);
+  Size get preferredSize =>
+      Size.fromHeight(height + dividerThickness);
 
   @override
   State<ProductTopTabs> createState() => _ProductTopTabsState();
@@ -181,48 +189,60 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
   @override
   Widget build(BuildContext context) {
     final widths = _tabWidths();
-    return SizedBox(
-      height: widget.height,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(ProductTopTabs.borderAsset),
-            fit: BoxFit.fill,
-          ),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // lws-ui `tabGravity=center`: center the group when it fits.
-            if (widget.layout == ProductTopTabLayout.lwsUi) {
-              final total = widths.fold<double>(0, (a, b) => a + b) +
-                  ProductTopTabs.sidePadding * 2;
-              if (total <= constraints.maxWidth) {
-                return Padding(
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: widget.height,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // lws-ui `tabGravity=center`: center the group when it fits.
+                if (widget.layout == ProductTopTabLayout.lwsUi) {
+                  final total = widths.fold<double>(0, (a, b) => a + b) +
+                      ProductTopTabs.sidePadding * 2;
+                  if (total <= constraints.maxWidth) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: ProductTopTabs.sidePadding,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (var i = 0; i < widget.tabs.length; i++)
+                            _tabAt(i, widths[i]),
+                        ],
+                      ),
+                    );
+                  }
+                }
+
+                return ListView.builder(
+                  controller: _scrollController,
+                  scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(
                     horizontal: ProductTopTabs.sidePadding,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      for (var i = 0; i < widget.tabs.length; i++)
-                        _tabAt(i, widths[i]),
-                    ],
-                  ),
+                  itemCount: widget.tabs.length,
+                  itemBuilder: (context, i) => _tabAt(i, widths[i]),
                 );
-              }
-            }
-
-            return ListView.builder(
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: ProductTopTabs.sidePadding,
+              },
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: ProductTopTabs.dividerInset,
+            ),
+            child: ColoredBox(
+              color: ProductTopTabs.dividerColor,
+              child: SizedBox(
+                height: ProductTopTabs.dividerThickness,
+                width: double.infinity,
               ),
-              itemCount: widget.tabs.length,
-              itemBuilder: (context, i) => _tabAt(i, widths[i]),
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

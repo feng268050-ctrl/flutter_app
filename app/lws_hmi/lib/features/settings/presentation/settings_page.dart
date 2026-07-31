@@ -10,7 +10,6 @@ import 'package:lws_hmi/features/settings/presentation/tabs/device_information_t
 import 'package:lws_hmi/features/settings/presentation/widgets/custom_home_save_success_dialog.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
-import 'package:lws_hmi/features/status_bar/product_top_tabs.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -18,7 +17,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 /// Product Settings shell — four tabs; Custom Home body is blank for now.
 ///
 /// Tab changes are tap-only (no swipe) — same anti-mis-touch rule as Monitor.
-/// Chrome matches lws-ui `DeviceSettingActivity` + `TopTabView`.
+/// Top tabs use equal-width Material chrome aligned with card insets.
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
@@ -31,9 +30,6 @@ class SettingsPage extends StatefulWidget {
 
   /// Shared camera version cache (cloud WS + Camera settings).
   final CameraDeviceInfoCache? cameraDeviceInfoCache;
-
-  /// Shared page chrome fill — lws-ui `tab_bg` (#060720).
-  static const background = Color(0xFF060720);
 
   static const _tabs = <({Key key, IconData icon})>[
     (
@@ -96,6 +92,8 @@ class _SettingsPageState extends State<SettingsPage> {
     final services = AppScope.of(context);
     final tabLabels = SettingsPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
+    // Theme blueGrey dark surface (pre–tab_bg gray), not lws-ui #060720.
+    final pageBg = Theme.of(context).scaffoldBackgroundColor;
     return CyberBlurBackdropScope(
       child: CustomHomePageCaptureScope(
         boundaryKey: _pageCaptureKey,
@@ -103,25 +101,23 @@ class _SettingsPageState extends State<SettingsPage> {
           key: _pageCaptureKey,
           child: CyberBlurBackdropTarget(
             child: Scaffold(
-              backgroundColor: SettingsPage.background,
+              backgroundColor: pageBg,
               appBar: ProductPageStatusBar(
                 title: tabLabels[_currentTabIndex],
-                backgroundColor: SettingsPage.background,
+                backgroundColor: pageBg,
                 foregroundColor: Colors.white,
                 toolbarHeight: WorkModeStatusBarDimens.height,
                 backLabel: l10n.equipmentStatusHome,
                 backAccent: WorkModeAccent.weld,
                 onBack: canPop ? () => Navigator.of(context).maybePop() : null,
-                bottom: ProductTopTabs(
+                bottom: SettingsTopTabs(
                   labels: tabLabels,
                   tabs: SettingsPage._tabs,
                   currentIndex: _currentTabIndex,
-                  layout: ProductTopTabLayout.lwsUi,
                   onSelected: (index) {
                     if (index == _currentTabIndex) {
                       return;
                     }
-                    CyberClickSoundRegistry.playClick();
                     setState(() => _currentTabIndex = index);
                   },
                 ),

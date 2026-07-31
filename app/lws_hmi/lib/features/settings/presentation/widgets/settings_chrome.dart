@@ -35,8 +35,17 @@ abstract final class SettingsDimens {
   /// Secondary / subtitle / help (+2 vs prior 14).
   static const subtitleSize = 16.0;
 
-  /// Frost bright-edge stroke — match Monitor / Engineer (1.5).
+  /// Uniform bright-edge stroke (no frost gradient).
   static const borderWidth = 1.5;
+
+  /// Soft drop shadow for card depth on dark Settings chrome.
+  static const cardShadow = [
+    BoxShadow(
+      color: Color(0x66000000),
+      blurRadius: 16,
+      offset: Offset(0, 6),
+    ),
+  ];
 
   /// Advanced tab body (+6 vs prior 16 title / 18 switch).
   static const advancedTitleSize = 22.0;
@@ -44,6 +53,151 @@ abstract final class SettingsDimens {
   static const advancedSwitchTitleSize = 24.0;
   static const advancedSwitchSubtitleSize = 20.0;
   static const advancedSectionHeaderSize = 20.0;
+}
+
+/// Settings page Material-style top tabs (equal width, no rounded strip chrome).
+///
+/// L/R inset matches [SettingsDimens.inset] so the tab track, hairline, and
+/// setting cards share the same outer edges. Every tab centers icon+label in
+/// its equal-width cell; selection = bright label/icon + full-cell indicator.
+final class SettingsTopTabs extends StatelessWidget
+    implements PreferredSizeWidget {
+  const SettingsTopTabs({
+    super.key,
+    required this.labels,
+    required this.tabs,
+    required this.currentIndex,
+    required this.onSelected,
+  });
+
+  static const tabHeight = 68.0;
+  static const dividerThickness = 1.0;
+  static const iconSize = 31.0;
+  static const labelSize = 27.0;
+  static const iconTextGap = 6.0;
+  static const indicatorHeight = 2.0;
+  static const unselected = Color(0xFF94A3B8);
+  static const dividerColor = Color(0x33FFFFFF);
+
+  final List<String> labels;
+  final List<({Key key, IconData icon})> tabs;
+  final int currentIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Size get preferredSize =>
+      const Size.fromHeight(tabHeight + dividerThickness);
+
+  @override
+  Widget build(BuildContext context) {
+    assert(labels.length == tabs.length);
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: tabHeight,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: SettingsDimens.inset,
+              ),
+              child: Row(
+                children: [
+                  for (var i = 0; i < tabs.length; i++)
+                    Expanded(
+                      child: _SettingsTopTabItem(
+                        key: tabs[i].key,
+                        label: labels[i],
+                        icon: tabs[i].icon,
+                        selected: i == currentIndex,
+                        onTap: () => onSelected(i),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          // Hairline matches card L/R — same [SettingsDimens.inset] as tabs.
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: SettingsDimens.inset),
+            child: ColoredBox(
+              color: dividerColor,
+              child: SizedBox(height: dividerThickness, width: double.infinity),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+final class _SettingsTopTabItem extends StatelessWidget {
+  const _SettingsTopTabItem({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? Colors.white : SettingsTopTabs.unselected;
+    final labelStyle = TextStyle(
+      color: color,
+      fontSize: SettingsTopTabs.labelSize,
+      fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
+      height: 1.0,
+    );
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          CyberClickSoundRegistry.playClick();
+          onTap();
+        },
+        // Stretch so the indicator spans the full equal-width tab cell;
+        // outer cell edges match [SettingsDimens.inset] with the cards.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, size: SettingsTopTabs.iconSize, color: color),
+                      const SizedBox(width: SettingsTopTabs.iconTextGap),
+                      Text(
+                        label,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: labelStyle,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              height: SettingsTopTabs.indicatorHeight,
+              color: selected ? Colors.white : Colors.transparent,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class SettingsSectionHeader extends StatelessWidget {
@@ -120,6 +274,9 @@ class SettingsHelpFooter extends StatelessWidget {
 
 /// Settings group shell — Material [Card] outline, border-only (Frost
 /// `transparent` blur: no live [BackdropFilter]).
+///
+/// Uniform bright edge + drop shadow (no frost gradient stroke).
+/// [borderGradientCenter] is retained for call-site compatibility but ignored.
 class SettingsPanel extends StatelessWidget {
   const SettingsPanel({
     super.key,
@@ -134,17 +291,24 @@ class SettingsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = CyberGlassTheme.of(context);
-    return CyberOutlinedPanel(
-      clipBehavior: Clip.none,
-      outline: CyberPanelOutline(
-        style: CyberPanelOutlineStyle.frostGradient,
-        tone: theme.tone,
-        width: SettingsDimens.borderWidth,
-        cornerRadius: theme.cornerRadius,
-        gradientCenter: borderGradientCenter,
+    final radius = BorderRadius.circular(theme.cornerRadius);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: SettingsDimens.cardShadow,
       ),
-      color: Colors.white.withOpacity(0.06),
-      child: child,
+      child: CyberOutlinedPanel(
+        clipBehavior: Clip.none,
+        outline: CyberPanelOutline(
+          style: CyberPanelOutlineStyle.uniform,
+          tone: theme.tone,
+          width: SettingsDimens.borderWidth,
+          cornerRadius: theme.cornerRadius,
+          uniformColor: CyberColors.borderUniform,
+        ),
+        color: Colors.white.withOpacity(0.06),
+        child: child,
+      ),
     );
   }
 }
@@ -154,9 +318,9 @@ class SettingsPanel extends StatelessWidget {
 /// Outer margin: [SettingsDimens.inset] on left/right/bottom so group gap
 /// equals distance to screen edges. Pair with [SettingsScrollView] top inset.
 ///
-/// Pass [borderGradientCenter] so adjacent cards follow lws-ui Frost habit
-/// (not one shared diagonal). Set [bottomInset] to `0` when a following
-/// [SettingsSectionHeader] already supplies the vertical gap.
+/// [borderGradientCenter] is unused (uniform outline); kept for call sites.
+/// Set [bottomInset] to `0` when a following [SettingsSectionHeader] already
+/// supplies the vertical gap.
 class SettingsGroup extends StatelessWidget {
   const SettingsGroup({
     super.key,
@@ -641,8 +805,10 @@ Future<T?> pushSettingsPage<T>(BuildContext context, Widget page) {
   );
 }
 
-/// Bordered param panel — same frost outline chrome as [SettingsPanel]
+/// Bordered param panel — same uniform outline + depth as [SettingsPanel]
 /// (lws-ui Advanced nested `FrostCardView`).
+///
+/// [borderGradientCenter] is retained for call-site compatibility but ignored.
 class SettingsParamCard extends StatelessWidget {
   const SettingsParamCard({
     super.key,
@@ -659,16 +825,23 @@ class SettingsParamCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = CyberGlassTheme.of(context);
-    return CyberOutlinedPanel(
-      outline: CyberPanelOutline(
-        style: CyberPanelOutlineStyle.frostGradient,
-        tone: theme.tone,
-        width: SettingsDimens.borderWidth,
-        cornerRadius: theme.cornerRadius,
-        gradientCenter: borderGradientCenter,
+    final radius = BorderRadius.circular(theme.cornerRadius);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: SettingsDimens.cardShadow,
       ),
-      color: Colors.white.withOpacity(0.06),
-      child: Padding(padding: padding, child: child),
+      child: CyberOutlinedPanel(
+        outline: CyberPanelOutline(
+          style: CyberPanelOutlineStyle.uniform,
+          tone: theme.tone,
+          width: SettingsDimens.borderWidth,
+          cornerRadius: theme.cornerRadius,
+          uniformColor: CyberColors.borderUniform,
+        ),
+        color: Colors.white.withOpacity(0.06),
+        child: Padding(padding: padding, child: child),
+      ),
     );
   }
 }

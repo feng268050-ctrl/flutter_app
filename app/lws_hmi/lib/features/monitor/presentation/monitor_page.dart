@@ -19,9 +19,6 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 class MonitorPage extends StatefulWidget {
   const MonitorPage({super.key});
 
-  /// Shared page chrome fill — lws-ui `tab_bg` (#060720).
-  static const background = Color(0xFF060720);
-
   static const _tabs = <({Key key, IconData icon})>[
     (
       key: ValueKey('monitor-tab-work-information'),
@@ -72,11 +69,13 @@ class _MonitorPageState extends State<MonitorPage> {
     final l10n = AppLocalizations.of(context)!;
     final tabLabels = MonitorPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
+    // Theme blueGrey dark surface (same as Settings), not lws-ui #060720.
+    final pageBg = Theme.of(context).scaffoldBackgroundColor;
     return Scaffold(
-      backgroundColor: MonitorPage.background,
+      backgroundColor: pageBg,
       appBar: ProductPageStatusBar(
         title: tabLabels[_currentTabIndex],
-        backgroundColor: MonitorPage.background,
+        backgroundColor: pageBg,
         foregroundColor: Colors.white,
         toolbarHeight: WorkModeStatusBarDimens.height,
         // Home stays fixed; title follows the selected Monitor tab.

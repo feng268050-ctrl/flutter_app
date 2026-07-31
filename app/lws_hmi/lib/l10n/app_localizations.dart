@@ -2966,6 +2966,12 @@ abstract class AppLocalizations {
   /// **'Video Details'**
   String get processVideoDetailTitle;
 
+  /// No description provided for @processVideoBackToVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Videos'**
+  String get processVideoBackToVideos;
+
   /// No description provided for @processVideoParametersTitle.
   ///
   /// In en, this message translates to:

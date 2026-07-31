@@ -16,6 +16,8 @@ void main() {
 
   testWidgets('detail opens with fixture record and missing file soft-fails',
       (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final repo = _MemRepo()
       ..seed(
         ProcessVideoRecord(
@@ -52,7 +54,8 @@ void main() {
     });
     await tester.pump();
 
-    expect(find.text('Video Details'), findsOneWidget);
+    expect(find.byKey(const ValueKey('call-back-home-button')), findsOneWidget);
+    expect(find.text('Back'), findsOneWidget);
     expect(find.text('Parameter recording'), findsOneWidget);
     expect(find.text('Continuous Welding'), findsOneWidget);
     expect(find.text('Aluminum Alloy'), findsOneWidget);
@@ -62,34 +65,44 @@ void main() {
   testWidgets(
     'detail shows mm-based parameters as in when CommonSettings unit is Imperial',
     (tester) async {
-      final repo = _MemRepo()
-        ..seed(
-          ProcessVideoRecord(
-            id: 3,
-            videoId: 'v3',
-            videoPath: '/no/such/process-video.mp4',
-            processType: ProcessType.continuousWelding,
-            materialType: MaterialType.aluminumAlloy,
-            processParametersJson: ProcessVideoSnapshot(
+      await tester.binding.setSurfaceSize(const Size(1280, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      late final _MemRepo repo;
+      late final CommonSettingsStore store;
+      await tester.runAsync(() async {
+        repo = _MemRepo()
+          ..seed(
+            ProcessVideoRecord(
+              id: 3,
+              videoId: 'v3',
+              videoPath: '/no/such/process-video.mp4',
               processType: ProcessType.continuousWelding,
               materialType: MaterialType.aluminumAlloy,
-              thickness: 5, // 5mm -> 0.20in
-              parameters: ProcessParameters({
-                // Swing width unit is `mm` in ProcessParameterCatalog.
-                'process.swing_width': 5,
-              }),
-            ).toJsonString(),
-            fileSize: 1,
-            durationMs: 4000,
-            createTimeMs: 1,
-          ),
+              processParametersJson: ProcessVideoSnapshot(
+                processType: ProcessType.continuousWelding,
+                materialType: MaterialType.aluminumAlloy,
+                thickness: 5, // 5mm -> 0.20in
+                parameters: ProcessParameters({
+                  'process.swing_width': 5,
+                }),
+              ).toJsonString(),
+              fileSize: 1,
+              durationMs: 4000,
+              createTimeMs: 1,
+            ),
+          );
+        final tmpDir = await Directory.systemTemp.createTemp('lws-hmi-test-');
+        addTearDown(() {
+          try {
+            tmpDir.deleteSync(recursive: true);
+          } catch (_) {}
+        });
+        store = CommonSettingsStore(
+          preferencePath: '${tmpDir.path}/common-settings.json',
         );
-
-      final tmpDir = await Directory.systemTemp.createTemp('lws-hmi-test-');
-      final store = CommonSettingsStore(
-        preferencePath: '${tmpDir.path}/common-settings.json',
-      );
-      await store.setUnit(CommonSettingsStore.unitImperial);
+        await store.setUnit(CommonSettingsStore.unitImperial);
+      });
 
       await tester.pumpWidget(
         CommonSettingsScope(
@@ -104,18 +117,17 @@ void main() {
           ),
         ),
       );
-      await tester.pump();
-
-      // Give _load() a moment.
       await tester.runAsync(() async {
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await Future<void>.delayed(const Duration(milliseconds: 50));
       });
       await tester.pump();
 
-      expect(find.text('Thickness (in)'), findsOneWidget);
-      expect(find.text('Swing width (in)'), findsOneWidget);
+      expect(find.text('Thickness:'), findsOneWidget);
+      expect(find.text('Swing width:'), findsOneWidget);
       // 5mm / 25 = 0.2 -> parameterValue renders 2 decimals => 0.20
-      expect(find.text('0.20'), findsWidgets);
+      // Value + unit share one Text.rich, so match the combined span text.
+      expect(find.textContaining('0.20'), findsWidgets);
+      expect(find.textContaining(' in'), findsWidgets);
     },
   );
 }

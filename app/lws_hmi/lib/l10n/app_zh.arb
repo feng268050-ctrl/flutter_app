@@ -478,6 +478,7 @@
   "processVideoDeleteConfirmTitle": "删除录像？",
   "processVideoDeleteConfirmMessage": "将从本机删除视频文件及其工艺参数记录。",
   "processVideoDetailTitle": "视频详情",
+  "processVideoBackToVideos": "返回视频列表",
   "processVideoParametersTitle": "参数记录",
   "processVideoPlaybackFailed": "无法播放该录像",
   "processVideoLoadedCount": "{loaded} / {total}",

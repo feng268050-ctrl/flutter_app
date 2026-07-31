@@ -5,17 +5,20 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
-import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
+import 'package:lws_hmi/features/status_bar/call_back_home_button.dart';
+import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
+import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:video_player/video_player.dart';
 
-/// lws-ui `ProcessVideoDetailsActivity` — local playback + parameter panel.
+/// lws-ui `ProcessVideoDetailsActivity` — left params + right fixed player.
 final class ProcessVideoDetailPage extends StatefulWidget {
   const ProcessVideoDetailPage({
     super.key,
@@ -29,6 +32,12 @@ final class ProcessVideoDetailPage extends StatefulWidget {
 }
 
 final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
+  /// Page padding — lws-ui `frost_dialog_content_padding`.
+  static const _pagePad = 24.0;
+
+  /// Right player column — lws-ui fixed `716dp` (scaled to viewport).
+  static const _playerDesignWidth = 716.0;
+
   late final ProcessVideoRepository _repo =
       widget.args.repository ?? SqliteProcessVideoRepository();
   ProcessVideoRecord? _record;
@@ -155,21 +164,9 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final record = _record;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
-      appBar: ProductPageStatusBar(
-        title: l10n.processVideoDetailTitle,
-        backgroundColor: Colors.black87,
-        foregroundColor: Colors.white,
-        onBack: () => Navigator.of(context).maybePop(),
-        actions: [
-          if (record != null)
-            TextButton(
-              onPressed: () => unawaited(_delete()),
-              child: Text(l10n.deleteText),
-            ),
-        ],
-      ),
+      backgroundColor: ProcessModeTokens.background,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : record == null
@@ -179,154 +176,242 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
                     style: const TextStyle(color: Colors.white54),
                   ),
                 )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: _PlayerPane(
-                        player: _player,
-                        error: _error,
-                        failedLabel: l10n.processVideoPlaybackFailed,
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    final scale =
+                        (constraints.maxWidth / 1280).clamp(0.55, 1.0);
+                    final minParams = 360.0 * scale;
+                    final gap = _pagePad * scale;
+                    var playerWidth = _playerDesignWidth * scale;
+                    final maxPlayer =
+                        constraints.maxWidth - gap - minParams;
+                    if (playerWidth > maxPlayer) {
+                      playerWidth = maxPlayer.clamp(200.0, playerWidth);
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.all(_pagePad),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: _ParameterColumn(
+                              record: record,
+                              title: l10n.processVideoParametersTitle,
+                              backLabel: l10n.equipmentStatusBack,
+                              deleteLabel: l10n.deleteText,
+                              labelWidth: 230 * scale,
+                              onBack: () =>
+                                  Navigator.of(context).maybePop(),
+                              onDelete: () => unawaited(_delete()),
+                            ),
+                          ),
+                          SizedBox(width: gap),
+                          SizedBox(
+                            width: playerWidth,
+                            child: _PlayerPane(
+                              player: _player,
+                              error: _error,
+                              failedLabel: l10n.processVideoPlaybackFailed,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: _ParameterPane(
-                        record: record,
-                        title: l10n.processVideoParametersTitle,
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
     );
   }
 }
 
-final class _PlayerPane extends StatelessWidget {
-  const _PlayerPane({
-    required this.player,
-    required this.error,
-    required this.failedLabel,
-  });
-
-  final VideoPlayerController? player;
-  final String? error;
-  final String failedLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = player;
-    if (controller == null || !controller.value.isInitialized) {
-      return Center(
-        child: Text(
-          error == null ? '…' : failedLabel,
-          style: const TextStyle(color: Colors.white54, fontSize: 16),
-        ),
-      );
-    }
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: ValueListenableBuilder<VideoPlayerValue>(
-        valueListenable: controller,
-        builder: (context, value, _) {
-          return Column(
-            children: [
-              Expanded(
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio:
-                        value.aspectRatio == 0 ? 16 / 9 : value.aspectRatio,
-                    child: VideoPlayer(controller),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      CyberClickSoundRegistry.playClick();
-                      final pos =
-                          value.position - const Duration(seconds: 5);
-                      unawaited(controller.seekTo(
-                        pos < Duration.zero ? Duration.zero : pos,
-                      ));
-                    },
-                    icon: const Icon(Icons.replay_5, color: Colors.white),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      CyberClickSoundRegistry.playClick();
-                      if (value.isPlaying) {
-                        unawaited(controller.pause());
-                      } else {
-                        unawaited(controller.play());
-                      }
-                    },
-                    icon: Icon(
-                      value.isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: Colors.white,
-                      size: 36,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      CyberClickSoundRegistry.playClick();
-                      final pos =
-                          value.position + const Duration(seconds: 5);
-                      final end = value.duration;
-                      unawaited(controller.seekTo(pos > end ? end : pos));
-                    },
-                    icon: const Icon(Icons.forward_5, color: Colors.white),
-                  ),
-                ],
-              ),
-              VideoProgressIndicator(
-                controller,
-                allowScrubbing: true,
-                colors: const VideoProgressColors(
-                  playedColor: Colors.white70,
-                  bufferedColor: Colors.white24,
-                  backgroundColor: Colors.white10,
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-final class _ParameterPane extends StatelessWidget {
-  const _ParameterPane({
+/// Left column: Back + Frost param card + Delete (lws-ui Activity).
+final class _ParameterColumn extends StatelessWidget {
+  const _ParameterColumn({
     required this.record,
     required this.title,
+    required this.backLabel,
+    required this.deleteLabel,
+    required this.labelWidth,
+    required this.onBack,
+    required this.onDelete,
   });
 
   final ProcessVideoRecord record;
   final String title;
+  final String backLabel;
+  final String deleteLabel;
+  final double labelWidth;
+  final VoidCallback onBack;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: SizedBox(
+            width: CallBackHomeButton.railWidth,
+            height: WorkModeStatusBarDimens.height,
+            child: CallBackHomeButton(
+              accent: WorkModeAccent.weld,
+              label: backLabel,
+              onPressed: onBack,
+            ),
+          ),
+        ),
+        const SizedBox(height: 19),
+        Expanded(
+          child: CyberOutlinedPanel(
+            outline: const CyberPanelOutline(
+              style: CyberPanelOutlineStyle.frostGradient,
+              gradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
+              width: 1.5,
+              cornerRadius: CyberDimens.cornerRadius,
+            ),
+            color: Colors.white.withOpacity(0.06),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 22, 0, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 24),
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w500,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 21),
+                  Expanded(
+                    child: _ParameterList(
+                      record: record,
+                      labelWidth: labelWidth,
+                    ),
+                  ),
+                  Center(
+                    child: CyberButton(
+                      size: CyberButtonSize.medium,
+                      variant: CyberButtonVariant.secondary,
+                      shape: CyberButtonShape.rounded,
+                      borderGradientCenter:
+                          CyberBorderGradientCenter.topLeftBottomRight,
+                      onPressed: onDelete,
+                      child: Text(
+                        deleteLabel,
+                        style: const TextStyle(
+                          color: CyberColors.buttonSecondaryText,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+final class _ParameterList extends StatelessWidget {
+  const _ParameterList({
+    required this.record,
+    required this.labelWidth,
+  });
+
+  final ProcessVideoRecord record;
+  final double labelWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _buildRows(context);
+    return ListView.builder(
+      padding: const EdgeInsets.only(right: 10, bottom: 16),
+      itemCount: rows.length,
+      itemBuilder: (context, index) {
+        final row = rows[index];
+        final unit = row.unit;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(23, 16, 0, 16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: labelWidth,
+                child: Text(
+                  '${row.label}:',
+                  style: _dataStyle,
+                ),
+              ),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: row.value, style: _dataStyle),
+                      if (unit != null && unit.isNotEmpty)
+                        TextSpan(
+                          text: ' $unit',
+                          style: _dataStyle.copyWith(
+                            color: const Color(0xFFE1E1E1),
+                          ),
+                        ),
+                    ],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  static const _dataStyle = TextStyle(
+    color: Color(0xFFE1E1E1),
+    fontSize: 22,
+    height: 1.15,
+  );
+
+  List<({String label, String value, String? unit})> _buildRows(
+    BuildContext context,
+  ) {
     final snap = record.snapshot;
     final unitStore = CommonSettingsScope.maybeOf(context);
     final unitWire = unitStore?.unit;
     final isMetric = LengthUnitConvert.isMetric(unitWire);
-    final rows = <(String, String)>[
-      ('Mode', ProcessVideoFormat.workMode(record.processType)),
-      ('Material', ProcessVideoFormat.material(record)),
-      if (snap?.thickness != null)
-        (
-          'Thickness (${LengthUnitConvert.suffix(unitWire)})',
-          ProcessVideoFormat.parameterValue(
-            isMetric ? snap!.thickness! : snap!.thickness! / LengthUnitConvert.mmPerInch,
-          ),
-        ),
-      if (snap?.gear != null) ('Gear', '${snap!.gear}'),
+    final rows = <({String label, String value, String? unit})>[
+      (
+        label: 'Mode',
+        value: ProcessVideoFormat.workMode(record.processType),
+        unit: null,
+      ),
+      (
+        label: 'Material',
+        value: ProcessVideoFormat.material(record),
+        unit: null,
+      ),
     ];
+    if (snap?.thickness != null) {
+      final raw = snap!.thickness!;
+      final display = isMetric ? raw : raw / LengthUnitConvert.mmPerInch;
+      rows.add((
+        label: 'Thickness',
+        value: ProcessVideoFormat.parameterValue(display),
+        unit: LengthUnitConvert.suffix(unitWire),
+      ));
+    }
+    if (snap?.gear != null) {
+      rows.add((label: 'Gear', value: '${snap!.gear}', unit: null));
+    }
     final params = snap?.parameters.values ?? const <String, double>{};
     for (final entry in params.entries) {
       if (!_visibleFor(record.processType, entry.key)) {
@@ -340,76 +425,234 @@ final class _ParameterPane extends StatelessWidget {
         }
       }
       rows.add((
-        ProcessVideoFormat.parameterLabel(
+        label: ProcessVideoFormat.parameterLabelPlain(entry.key),
+        value: ProcessVideoFormat.parameterValue(displayValue),
+        unit: ProcessVideoFormat.parameterUnit(
           entry.key,
           activeUnitWire: unitWire,
         ),
-        ProcessVideoFormat.parameterValue(displayValue),
       ));
     }
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(0, 16, 16, 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0x332E3653),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: ListView.separated(
-              itemCount: rows.length,
-              separatorBuilder: (_, __) => const Divider(color: Colors.white12),
-              itemBuilder: (context, index) {
-                final (label, value) = rows[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          label,
-                          style: const TextStyle(
-                            color: Colors.white60,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        value,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
+    return rows;
   }
 
   static bool _visibleFor(ProcessType type, String key) {
-    // Show catalog keys that exist; hide empty-noise for CNC with no params.
     if (type == ProcessType.cncCutting && key.startsWith('process.')) {
       return true;
     }
     return ProcessParameterCatalog.byKey.containsKey(key);
+  }
+}
+
+/// Right player card — fixed-width Frost panel with tap-to-show transport.
+final class _PlayerPane extends StatefulWidget {
+  const _PlayerPane({
+    required this.player,
+    required this.error,
+    required this.failedLabel,
+  });
+
+  final VideoPlayerController? player;
+  final String? error;
+  final String failedLabel;
+
+  @override
+  State<_PlayerPane> createState() => _PlayerPaneState();
+}
+
+final class _PlayerPaneState extends State<_PlayerPane> {
+  bool _controlsVisible = false;
+  Timer? _hideTimer;
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    super.dispose();
+  }
+
+  void _toggleControls() {
+    setState(() => _controlsVisible = !_controlsVisible);
+    _hideTimer?.cancel();
+    if (_controlsVisible) {
+      _hideTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() => _controlsVisible = false);
+        }
+      });
+    }
+  }
+
+  void _bumpHideTimer() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() => _controlsVisible = false);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CyberOutlinedPanel(
+      outline: const CyberPanelOutline(
+        style: CyberPanelOutlineStyle.frostGradient,
+        gradientCenter: CyberBorderGradientCenter.bottomLeftTopRight,
+        width: 1.5,
+        cornerRadius: CyberDimens.cornerRadius,
+      ),
+      color: Colors.white.withOpacity(0.06),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: _buildBody(),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    final controller = widget.player;
+    if (controller == null || !controller.value.isInitialized) {
+      return Center(
+        child: Text(
+          widget.error == null ? '…' : widget.failedLabel,
+          style: const TextStyle(color: Colors.white54, fontSize: 16),
+        ),
+      );
+    }
+
+    return ValueListenableBuilder<VideoPlayerValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _toggleControls,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ColoredBox(
+                color: Colors.black,
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio:
+                        value.aspectRatio == 0 ? 16 / 9 : value.aspectRatio,
+                    child: VideoPlayer(controller),
+                  ),
+                ),
+              ),
+              if (_controlsVisible) ...[
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _TransportButton(
+                        size: CyberDimens.actionButtonMediumHeight,
+                        icon: Icons.replay_5,
+                        iconSize: 24,
+                        onPressed: () {
+                          CyberClickSoundRegistry.playClick();
+                          _bumpHideTimer();
+                          final pos =
+                              value.position - const Duration(seconds: 5);
+                          unawaited(controller.seekTo(
+                            pos < Duration.zero ? Duration.zero : pos,
+                          ));
+                        },
+                      ),
+                      const SizedBox(width: 32),
+                      _TransportButton(
+                        size: 88,
+                        icon: value.isPlaying
+                            ? Icons.pause
+                            : Icons.play_arrow,
+                        iconSize: 42,
+                        onPressed: () {
+                          CyberClickSoundRegistry.playClick();
+                          _bumpHideTimer();
+                          if (value.isPlaying) {
+                            unawaited(controller.pause());
+                          } else {
+                            unawaited(controller.play());
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 32),
+                      _TransportButton(
+                        size: CyberDimens.actionButtonMediumHeight,
+                        icon: Icons.forward_5,
+                        iconSize: 24,
+                        onPressed: () {
+                          CyberClickSoundRegistry.playClick();
+                          _bumpHideTimer();
+                          final pos =
+                              value.position + const Duration(seconds: 5);
+                          final end = value.duration;
+                          unawaited(
+                            controller.seekTo(pos > end ? end : pos),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: ColoredBox(
+                    color: const Color(0xCC000000),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      child: VideoProgressIndicator(
+                        controller,
+                        allowScrubbing: true,
+                        padding: EdgeInsets.zero,
+                        colors: const VideoProgressColors(
+                          playedColor: Colors.white70,
+                          bufferedColor: Colors.white24,
+                          backgroundColor: Colors.white10,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+final class _TransportButton extends StatelessWidget {
+  const _TransportButton({
+    required this.size,
+    required this.icon,
+    required this.iconSize,
+    required this.onPressed,
+  });
+
+  final double size;
+  final IconData icon;
+  final double iconSize;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Material(
+        color: const Color(0x66FFFFFF),
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: Icon(icon, color: Colors.white, size: iconSize),
+        ),
+      ),
+    );
   }
 }

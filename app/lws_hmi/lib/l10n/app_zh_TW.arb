@@ -317,6 +317,7 @@
   "pleaseWait": "請稍候…",
   "positioningLightFaultAlarmContent": "紅光（定位光）故障。請檢查指示光是否正常；若不亮，請聯繫 LaserCyber 售後。",
   "processLibVersion": "工藝庫版本",
+  "processVideoBackToVideos": "返回視頻列表",
   "processVideoDeleteConfirmMessage": "將從本機刪除視頻文件及其工藝參數記錄。",
   "processVideoDeleteConfirmTitle": "刪除錄像？",
   "processVideoDetailTitle": "視頻詳情",

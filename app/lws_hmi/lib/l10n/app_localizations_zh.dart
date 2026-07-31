@@ -1481,6 +1481,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processVideoDetailTitle => '视频详情';
 
   @override
+  String get processVideoBackToVideos => '返回视频列表';
+
+  @override
   String get processVideoParametersTitle => '参数记录';
 
   @override
@@ -3031,6 +3034,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get processVideoDetailTitle => '視頻詳情';
+
+  @override
+  String get processVideoBackToVideos => '返回視頻列表';
 
   @override
   String get processVideoParametersTitle => '參數記錄';

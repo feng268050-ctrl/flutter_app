@@ -1481,6 +1481,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get processVideoDetailTitle => 'Video Details';
 
   @override
+  String get processVideoBackToVideos => 'Back to Videos';
+
+  @override
   String get processVideoParametersTitle => 'Parameter recording';
 
   @override

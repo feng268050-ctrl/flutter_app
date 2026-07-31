@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/process_video/domain/process_video_models.dart'
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
+import 'package:lws_hmi/features/status_bar/product_top_tabs.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// lws-ui `fragment_process_video` — local recordings list (no upload).
@@ -27,13 +28,28 @@ class VideosTab extends StatefulWidget {
 
 @visibleForTesting
 class VideosTabState extends State<VideosTab> {
-  static const _leftInset = 24.0;
-  static const _rightInset = 58.0;
+  /// Match Monitor tab hairline / card inset ([ProductTopTabs.dividerInset]).
+  static const _leftInset = ProductTopTabs.dividerInset;
+  static const _rightInset = ProductTopTabs.dividerInset;
+
+  /// Shared column widths (design dp @ 1280) — header and data must match.
+  static const _colRecordingTime = 232.0;
+  static const _colProcess = 232.0;
+  static const _colMaterial = 205.0;
+  static const _colDuration = 130.0;
   static const _columnGap = 26.0;
+
+  /// Original table-head vertical padding (lws-ui head band height).
   static const _headerTop = 35.0;
   static const _headerBottom = 32.0;
-  static const _rowTop = 35.0;
-  static const _rowBottom = 33.0;
+
+  /// Row band height (design): vertical rhythm between video entries.
+  static const _rowMinHeight = 86.0;
+
+  /// Subtle lift over page chrome (not a gradient plate).
+  static const _headerFill = Color(0x1AFFFFFF);
+  static const _headerDivider = Color(0x55FFFFFF);
+  static const _rowDivider = Color(0x22FFFFFF);
 
   late final ProcessVideoRepository _repo =
       widget.repository ?? SqliteProcessVideoRepository();
@@ -164,65 +180,20 @@ class VideosTabState extends State<VideosTab> {
     final l10n = AppLocalizations.of(context)!;
     final scale =
         (MediaQuery.sizeOf(context).width / 1280).clamp(0.55, 1.0);
-    final headers = <(String, double)>[
-      (l10n.processVideoRecordingTime, 232),
-      (l10n.processVideoWorkMode, 232),
-      (l10n.processVideoMaterial, 205),
-      (l10n.processVideoDuration, 130),
-      (l10n.processVideoOperations, 0),
-    ];
 
     return Column(
       children: [
-        // lws-ui `@drawable/video_process_table_head_bg` — horizontal center glow.
-        Container(
-          margin: const EdgeInsets.fromLTRB(_leftInset, 0, _rightInset, 0),
-          padding: const EdgeInsets.fromLTRB(0, _headerTop, 0, _headerBottom),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                Color(0x006C6C6C),
-                Color(0xFF636385),
-                Color(0x006C6C6C),
-              ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(_leftInset, 0, _rightInset, 0),
+          child: _VideoTableHeader(
+            scale: scale,
+            labels: (
+              recordingTime: l10n.processVideoRecordingTime,
+              process: l10n.processVideoWorkMode,
+              material: l10n.processVideoMaterial,
+              duration: l10n.processVideoDuration,
+              operations: l10n.processVideoOperations,
             ),
-          ),
-          child: Row(
-            children: [
-              for (final (label, width) in headers)
-                if (width > 0)
-                  Padding(
-                    padding: EdgeInsets.only(
-                      right: _columnGap * scale,
-                    ),
-                    child: SizedBox(
-                      width: width * scale,
-                      child: Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-            ],
           ),
         ),
         Expanded(
@@ -243,29 +214,12 @@ class VideosTabState extends State<VideosTab> {
                         child: ListView.builder(
                           padding: const EdgeInsets.fromLTRB(
                             _leftInset,
-                            8,
+                            0,
                             _rightInset,
-                            16,
+                            8,
                           ),
-                          itemCount: _rows.length + 1,
+                          itemCount: _rows.length,
                           itemBuilder: (context, index) {
-                            if (index == _rows.length) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                child: Center(
-                                  child: Text(
-                                    l10n.processVideoLoadedCount(
-                                      _rows.length,
-                                      _total,
-                                    ),
-                                    style: const TextStyle(
-                                      color: Colors.white38,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }
                             final row = _rows[index];
                             return _VideoRow(
                               record: row,
@@ -279,8 +233,136 @@ class VideosTabState extends State<VideosTab> {
                       ),
                     ),
         ),
-        const SizedBox(height: 24),
+        // Pinned footer: loaded / total (pagination progress).
+        if (!_loading)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 4, 0, 16),
+            child: Text(
+              l10n.processVideoLoadedCount(_rows.length, _total),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white38,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        const SizedBox(height: 8),
       ],
+    );
+  }
+}
+
+/// Static column labels — not interactive (no Tab / sort / press state).
+final class _VideoTableHeader extends StatelessWidget {
+  const _VideoTableHeader({
+    required this.scale,
+    required this.labels,
+  });
+
+  final double scale;
+  final ({
+    String recordingTime,
+    String process,
+    String material,
+    String duration,
+    String operations,
+  }) labels;
+
+  @override
+  Widget build(BuildContext context) {
+    const style = TextStyle(
+      color: Colors.white,
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      height: 1.0,
+    );
+    return ColoredBox(
+      color: VideosTabState._headerFill,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              0,
+              VideosTabState._headerTop,
+              0,
+              VideosTabState._headerBottom,
+            ),
+            child: Row(
+              children: [
+                _HeaderCell(
+                  width: VideosTabState._colRecordingTime * scale,
+                  gap: VideosTabState._columnGap * scale,
+                  label: labels.recordingTime,
+                  style: style,
+                ),
+                _HeaderCell(
+                  width: VideosTabState._colProcess * scale,
+                  gap: VideosTabState._columnGap * scale,
+                  label: labels.process,
+                  style: style,
+                ),
+                _HeaderCell(
+                  width: VideosTabState._colMaterial * scale,
+                  gap: VideosTabState._columnGap * scale,
+                  label: labels.material,
+                  style: style,
+                ),
+                _HeaderCell(
+                  width: VideosTabState._colDuration * scale,
+                  gap: VideosTabState._columnGap * scale,
+                  label: labels.duration,
+                  style: style,
+                ),
+                Expanded(
+                  child: Text(
+                    labels.operations,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: style,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const ColoredBox(
+            color: VideosTabState._headerDivider,
+            child: SizedBox(height: 1, width: double.infinity),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+final class _HeaderCell extends StatelessWidget {
+  const _HeaderCell({
+    required this.width,
+    required this.gap,
+    required this.label,
+    required this.style,
+  });
+
+  final double width;
+  final double gap;
+  final String label;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(right: gap),
+      child: SizedBox(
+        width: width,
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        ),
+      ),
     );
   }
 }
@@ -328,29 +410,27 @@ final class _VideoRow extends StatelessWidget {
   final VoidCallback onDelete;
   final String deleteLabel;
 
-  static const _columnGap = VideosTabState._columnGap;
-
   @override
   Widget build(BuildContext context) {
     final cells = <({String text, double width, int maxLines})>[
       (
         text: ProcessVideoFormat.recordingTime(record),
-        width: 232,
+        width: VideosTabState._colRecordingTime,
         maxLines: 1,
       ),
       (
         text: ProcessVideoFormat.workMode(record.processType),
-        width: 232,
+        width: VideosTabState._colProcess,
         maxLines: 2,
       ),
       (
         text: ProcessVideoFormat.material(record),
-        width: 205,
+        width: VideosTabState._colMaterial,
         maxLines: 1,
       ),
       (
         text: ProcessVideoFormat.duration(record.durationMs),
-        width: 130,
+        width: VideosTabState._colDuration,
         maxLines: 1,
       ),
     ];
@@ -358,49 +438,49 @@ final class _VideoRow extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onOpen,
-        child: Container(
-          decoration: const BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: Color(0x33FFFFFF)),
-            ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: VideosTabState._rowMinHeight,
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              for (var i = 0; i < cells.length; i++)
-                Padding(
-                  padding: EdgeInsets.only(
-                    top: VideosTabState._rowTop,
-                    bottom: VideosTabState._rowBottom,
-                    right: _columnGap * scale,
-                  ),
-                  child: SizedBox(
-                    width: cells[i].width * scale,
-                    child: Text(
-                      cells[i].text,
-                      maxLines: cells[i].maxLines,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        height: cells[i].maxLines > 1 ? 1.15 : 1.0,
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: VideosTabState._rowDivider),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                for (final cell in cells)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      right: VideosTabState._columnGap * scale,
+                    ),
+                    child: SizedBox(
+                      width: cell.width * scale,
+                      child: Text(
+                        cell.text,
+                        textAlign: TextAlign.center,
+                        maxLines: cell.maxLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          height: cell.maxLines > 1 ? 1.15 : 1.0,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 18),
+                Expanded(
+                  child: Center(
                     child: TextButton(
                       onPressed: onDelete,
                       child: Text(deleteLabel),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

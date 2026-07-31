@@ -10,6 +10,7 @@ import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_ramp_chart.dart';
+import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
 import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dialog.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
@@ -507,73 +508,131 @@ final class _EngineerWireActionButton extends StatefulWidget {
 }
 
 final class _EngineerWireActionButtonState
-    extends State<_EngineerWireActionButton> {
+    extends State<_EngineerWireActionButton>
+    with SingleTickerProviderStateMixin {
   late final ManualWireGesture _gesture = ManualWireGesture(
     controller: widget.controller,
     retract: widget.retract,
     isEnabled: () => widget.enabled,
     isActive: () => widget.active,
     onMessage: widget.onMessage,
-    onVisualChanged: () {
-      if (mounted) {
-        setState(() {});
-      }
-    },
+    onVisualChanged: _onGestureVisual,
   );
+
+  FeedHoldProgressController? _feedProgress;
+  bool _wasLatched = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.retract) {
+      _feedProgress = FeedHoldProgressController(
+        vsync: this,
+        onChanged: () {
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        onFillCompleted: () {
+          if (!mounted) {
+            return;
+          }
+          _gesture.promoteContinuousFeedIfHolding();
+        },
+      );
+    }
+  }
+
+  void _onGestureVisual() {
+    if (!mounted) {
+      return;
+    }
+    final progress = _feedProgress;
+    if (progress != null) {
+      final latched = _gesture.latched;
+      if (latched && !_wasLatched) {
+        progress.onLatched();
+      } else if (!latched && _wasLatched) {
+        progress.reset();
+      }
+      _wasLatched = latched;
+    }
+    setState(() {});
+  }
 
   @override
   void dispose() {
+    _feedProgress?.dispose();
     _gesture.dispose();
     super.dispose();
+  }
+
+  void _pointerDown() {
+    if (widget.controller.busy) {
+      widget.onMessage(LaserEnableBlockReason.busy.message);
+      return;
+    }
+    if (widget.laserBlocked) {
+      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
+      return;
+    }
+    if (widget.modeBlocked) {
+      widget.onMessage(DeviceControlFeedbackCopy.wireUnavailableInMode);
+      return;
+    }
+    if (!widget.enabled) {
+      return;
+    }
+    CyberClickSoundRegistry.playClick();
+    final progress = _feedProgress;
+    if (progress != null && !_gesture.latched && !widget.active) {
+      progress.onPressStart();
+    }
+    _gesture.pointerDown();
+  }
+
+  void _pointerUp() {
+    if (widget.controller.busy ||
+        widget.laserBlocked ||
+        widget.modeBlocked) {
+      return;
+    }
+    final wasLatched = _gesture.latched;
+    _gesture.pointerUp();
+    final progress = _feedProgress;
+    if (progress == null || wasLatched || _gesture.latched) {
+      return;
+    }
+    progress.onPressEndEarly();
   }
 
   @override
   Widget build(BuildContext context) {
     const actionOrange = Color(0xFFF46E01);
-    final highlight = widget.enabled && (widget.active || _gesture.pressed);
-    final foreground = highlight ? Colors.white : actionOrange;
+    const idleFill = Color(0xFF2C1923);
+    final latched = !widget.retract && _gesture.latched;
+    final progress = _feedProgress;
+    final filling = progress != null && progress.showsFill;
+    final solidHighlight = widget.enabled &&
+        (widget.retract
+            ? (widget.active || _gesture.pressed || _gesture.holdingRun)
+            : (latched ||
+                (widget.active && !filling && !_gesture.pressed)));
+    final onFill = solidHighlight || filling;
+    final foreground = onFill ? Colors.white : actionOrange;
     final disabledForeground = const Color(0xFF7D3E2B);
     const labelSize = 16.0;
+    final label = latched
+        ? DeviceControlFeedbackCopy.continuousFeedLabel
+        : widget.label;
     return Semantics(
       button: true,
       enabled: widget.enabled,
-      label: widget.label,
+      label: label,
       child: Listener(
-        onPointerDown: (_) {
-          if (widget.controller.busy) {
-            widget.onMessage(LaserEnableBlockReason.busy.message);
-            return;
-          }
-          if (widget.laserBlocked) {
-            widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
-            return;
-          }
-          if (widget.modeBlocked) {
-            widget.onMessage(DeviceControlFeedbackCopy.wireUnavailableInMode);
-            return;
-          }
-          if (!widget.enabled) {
-            return;
-          }
-          CyberClickSoundRegistry.playClick();
-          _gesture.pointerDown();
-        },
-        onPointerUp: (_) {
-          if (widget.controller.busy ||
-              widget.laserBlocked ||
-              widget.modeBlocked) {
-            return;
-          }
-          _gesture.pointerUp();
-        },
-        onPointerCancel: (_) {
-          if (widget.controller.busy ||
-              widget.laserBlocked ||
-              widget.modeBlocked) {
-            return;
-          }
-          _gesture.pointerUp();
-        },
+        onPointerDown: (_) => _pointerDown(),
+        onPointerUp: (_) => _pointerUp(),
+        onPointerCancel: (_) => _pointerUp(),
         child: Opacity(
           opacity: widget.enabled ? 1 : 0.55,
           child: Container(
@@ -581,31 +640,49 @@ final class _EngineerWireActionButtonState
             alignment: Alignment.center,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              color: highlight ? actionOrange : const Color(0xFF2C1923),
+              color: solidHighlight ? actionOrange : idleFill,
               border: Border.all(
                 color: actionOrange,
                 width: 1.5,
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  widget.icon,
-                  color: widget.enabled ? foreground : disabledForeground,
-                  size: labelSize,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    color: widget.enabled ? foreground : disabledForeground,
-                    fontSize: labelSize,
-                    fontWeight: FontWeight.w600,
-                    height: 1.0,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (filling)
+                    FeedHoldProgressFill(
+                      progress: progress.value,
+                      radius: 14,
+                      color: actionOrange,
+                    ),
+                  if (latched) const FeedContinuousRipple(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        widget.icon,
+                        color:
+                            widget.enabled ? foreground : disabledForeground,
+                        size: labelSize,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: widget.enabled
+                              ? foreground
+                              : disabledForeground,
+                          fontSize: labelSize,
+                          fontWeight: FontWeight.w600,
+                          height: 1.0,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

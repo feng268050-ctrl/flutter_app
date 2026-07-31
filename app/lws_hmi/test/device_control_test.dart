@@ -325,6 +325,7 @@ void main() {
 
   test('wire controls use direction, work, and auto-feed bits', () async {
     final modbus = _RecordingModbus();
+    modbus.control[DeviceControlIds.processWireFeedingSpeed] = 10;
     final controller = DeviceControlController(servicesWith(modbus));
 
     expect(await controller.setAutoWireFeed(false), isNull);
@@ -333,16 +334,23 @@ void main() {
     expect(modbus.writes, [
       (DeviceControlIds.wireWork, false),
       (DeviceControlIds.wireManualMode, false),
-      (DeviceControlIds.wireWork, false),
-      (DeviceControlIds.laserEnable, false),
       (
         DeviceControlIds.manualWireFeedSpeed,
         DeviceControlIds.manualWireFeedSpeedMmPerS,
       ),
-      (DeviceControlIds.wireDirection, true),
-      (DeviceControlIds.wireWork, true),
-      (DeviceControlIds.wireDirection, false),
-      (DeviceControlIds.wireWork, false),
+      (
+        DeviceControlIds.manualDrawStringSpeed,
+        DeviceControlIds.manualDrawStringSpeedMmPerS,
+      ),
+      (
+        DeviceControlIds.processWireFeedingSpeed,
+        DeviceControlIds.manualWireFeedSpeedMmPerS,
+      ),
+      // wire=1 dir=1 auto=0 → 0b1100
+      (DeviceControlIds.controlField1, 0x0C),
+      // stop: wire off, auto still off
+      (DeviceControlIds.controlField1, 0x00),
+      (DeviceControlIds.processWireFeedingSpeed, 10),
     ]);
     expect(controller.autoWireFeed, isFalse);
     expect(controller.wireWork, isFalse);

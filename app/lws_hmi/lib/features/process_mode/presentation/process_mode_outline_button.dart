@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
+import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
 
 /// Engineer Retract/Feed outline chrome — reused by Quick Mode side ops.
@@ -106,33 +107,122 @@ final class ProcessModeOutlineWireButton extends StatefulWidget {
 }
 
 final class _ProcessModeOutlineWireButtonState
-    extends State<ProcessModeOutlineWireButton> {
+    extends State<ProcessModeOutlineWireButton>
+    with SingleTickerProviderStateMixin {
   late final ManualWireGesture _gesture = ManualWireGesture(
     controller: widget.controller,
     retract: widget.retract,
     isEnabled: () => widget.enabled,
     isActive: () => widget.active,
     onMessage: widget.onMessage,
-    onVisualChanged: () {
-      if (mounted) {
-        setState(() {});
-      }
-    },
+    onVisualChanged: _onGestureVisual,
   );
+
+  FeedHoldProgressController? _feedProgress;
+  bool _wasLatched = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.retract) {
+      _feedProgress = FeedHoldProgressController(
+        vsync: this,
+        onChanged: () {
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        onFillCompleted: () {
+          if (!mounted) {
+            return;
+          }
+          // Align continuous-feed latch with fill reaching 1.
+          _gesture.promoteContinuousFeedIfHolding();
+        },
+      );
+    }
+  }
+
+  void _onGestureVisual() {
+    if (!mounted) {
+      return;
+    }
+    final progress = _feedProgress;
+    if (progress != null) {
+      final latched = _gesture.latched;
+      if (latched && !_wasLatched) {
+        progress.onLatched();
+      } else if (!latched && _wasLatched) {
+        progress.reset();
+      }
+      _wasLatched = latched;
+    }
+    setState(() {});
+  }
 
   @override
   void dispose() {
+    _feedProgress?.dispose();
     _gesture.dispose();
     super.dispose();
   }
 
+  void _pointerDown() {
+    if (!widget.enabled) {
+      return;
+    }
+    if (widget.controller.busy) {
+      widget.onMessage(LaserEnableBlockReason.busy.message);
+      return;
+    }
+    if (widget.laserBlocked) {
+      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
+      return;
+    }
+    CyberClickSoundRegistry.playClick();
+    final progress = _feedProgress;
+    // Tap-to-stop continuous feed: no new fill; gesture handles stop on up.
+    if (progress != null && !_gesture.latched && !widget.active) {
+      progress.onPressStart();
+    }
+    _gesture.pointerDown();
+  }
+
+  void _pointerUp() {
+    if (!widget.enabled ||
+        widget.controller.busy ||
+        widget.laserBlocked) {
+      return;
+    }
+    final wasLatched = _gesture.latched;
+    _gesture.pointerUp();
+    final progress = _feedProgress;
+    if (progress == null) {
+      return;
+    }
+    if (wasLatched || _gesture.latched) {
+      // Continuous feed: solid face; do not reverse fill.
+      return;
+    }
+    progress.onPressEndEarly();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Continuous feed (latched): solid bright orange stays after release.
     final latched = !widget.retract && _gesture.latched;
-    final highlight = widget.enabled &&
-        (widget.active || _gesture.pressed || _gesture.holdingRun || latched);
+    final progress = _feedProgress;
+    final filling = progress != null && progress.showsFill;
+    // Feed: keep idle chrome while L→R fill runs; solid only when latched /
+    // continuous. Retract: pressed highlight as before.
+    final solidHighlight = widget.enabled &&
+        (widget.retract
+            ? (widget.active || _gesture.pressed || _gesture.holdingRun)
+            : (latched ||
+                (widget.active && !filling && !_gesture.pressed)));
     final label = latched
-        ? (widget.latchedLabel ?? widget.label)
+        ? (widget.latchedLabel ??
+            DeviceControlFeedbackCopy.continuousFeedLabel)
         : widget.label;
 
     return Semantics(
@@ -141,45 +231,20 @@ final class _ProcessModeOutlineWireButtonState
       label: label,
       child: Listener(
         behavior: HitTestBehavior.opaque,
-        onPointerDown: (_) {
-          if (!widget.enabled) {
-            return;
-          }
-          if (widget.controller.busy) {
-            widget.onMessage(LaserEnableBlockReason.busy.message);
-            return;
-          }
-          if (widget.laserBlocked) {
-            widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
-            return;
-          }
-          CyberClickSoundRegistry.playClick();
-          _gesture.pointerDown();
-        },
-        onPointerUp: (_) {
-          if (!widget.enabled ||
-              widget.controller.busy ||
-              widget.laserBlocked) {
-            return;
-          }
-          _gesture.pointerUp();
-        },
-        onPointerCancel: (_) {
-          if (!widget.enabled ||
-              widget.controller.busy ||
-              widget.laserBlocked) {
-            return;
-          }
-          _gesture.pointerUp();
-        },
+        onPointerDown: (_) => _pointerDown(),
+        onPointerUp: (_) => _pointerUp(),
+        onPointerCancel: (_) => _pointerUp(),
         child: Opacity(
           opacity: widget.enabled ? 1 : 0.55,
           child: _OutlineFace(
             height: widget.height,
-            highlight: highlight,
+            highlight: solidHighlight,
             enabled: widget.enabled,
             leading: widget.leading,
             label: label,
+            progress: filling ? progress.value : 0,
+            progressForcesReadableLabel: filling,
+            continuousRipple: latched,
           ),
         ),
       ),
@@ -194,6 +259,9 @@ final class _OutlineFace extends StatelessWidget {
     required this.enabled,
     required this.leading,
     required this.label,
+    this.progress = 0,
+    this.progressForcesReadableLabel = false,
+    this.continuousRipple = false,
   });
 
   final double height;
@@ -201,12 +269,16 @@ final class _OutlineFace extends StatelessWidget {
   final bool enabled;
   final Widget leading;
   final String label;
+  final double progress;
+  final bool progressForcesReadableLabel;
+  final bool continuousRipple;
 
   @override
   Widget build(BuildContext context) {
+    final onFill = highlight || progressForcesReadableLabel;
     final foreground = !enabled
         ? ProcessModeOutlineChrome.disabledForeground
-        : (highlight
+        : (onFill
             ? Colors.white
             : ProcessModeOutlineChrome.actionOrange);
     // Vertically centered; nudge 10px left so long labels don't cover the icon.
@@ -226,33 +298,43 @@ final class _OutlineFace extends StatelessWidget {
           width: ProcessModeOutlineChrome.strokeWidth,
         ),
       ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Center(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: foreground,
-                fontSize: ProcessModeOutlineChrome.labelSize,
-                fontWeight: FontWeight.w600,
-                height: 1.0,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(ProcessModeOutlineChrome.radius),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (progress > 0)
+              FeedHoldProgressFill(
+                progress: progress,
+                radius: ProcessModeOutlineChrome.radius,
+                color: ProcessModeOutlineChrome.actionOrange,
+              ),
+            if (continuousRipple) const FeedContinuousRipple(),
+            Center(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: foreground,
+                  fontSize: ProcessModeOutlineChrome.labelSize,
+                  fontWeight: FontWeight.w600,
+                  height: 1.0,
+                ),
               ),
             ),
-          ),
-          Positioned(
-            left: iconLeft,
-            top: iconTop,
-            width: ProcessModeOutlineChrome.iconSize,
-            height: ProcessModeOutlineChrome.iconSize,
-            child: ColorFiltered(
-              colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
-              child: leading,
+            Positioned(
+              left: iconLeft,
+              top: iconTop,
+              width: ProcessModeOutlineChrome.iconSize,
+              height: ProcessModeOutlineChrome.iconSize,
+              child: ColorFiltered(
+                colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
+                child: leading,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

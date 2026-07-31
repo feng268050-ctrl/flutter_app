@@ -101,9 +101,10 @@ void main() {
 
       gesture.pointerUp();
       async.flushMicrotasks();
-      // Latched: release does not stop.
+      // Latched: release does not stop — solid Continuous Feed stays on.
       expect(messages, [DeviceControlFeedbackCopy.feedOngoing]);
       expect(gesture.latched, isTrue);
+      expect(controller.wireWork, isTrue);
 
       gesture.pointerDown();
       gesture.pointerUp();
@@ -116,6 +117,73 @@ void main() {
         ],
       );
       expect(gesture.latched, isFalse);
+      gesture.dispose();
+    });
+  });
+
+  test('release after full 3s hold keeps continuous feed without timer race',
+      () {
+    fakeAsync((async) {
+      final modbus = _RecordingModbus();
+      final controller = DeviceControlController(servicesWith(modbus))
+        ..keySwitchOn = true;
+      final messages = <String>[];
+      final gesture = ManualWireGesture(
+        controller: controller,
+        retract: false,
+        isEnabled: () => true,
+        isActive: () => controller.wireWork && !controller.wireRetracting,
+        onMessage: messages.add,
+        onVisualChanged: () {},
+      );
+
+      gesture.pointerDown();
+      // Hold-run starts at 500ms; advance to just under latch timer fire,
+      // then release with wall-clock ≥ 3s via promote path on up.
+      async.elapse(const Duration(milliseconds: 500));
+      async.flushMicrotasks();
+      expect(controller.wireWork, isTrue);
+      expect(gesture.latched, isFalse);
+
+      async.elapse(const Duration(milliseconds: 2500));
+      async.flushMicrotasks();
+      // Timer fires during the 2500ms elapse (total 3000 from down).
+      expect(gesture.latched, isTrue);
+
+      gesture.pointerUp();
+      async.flushMicrotasks();
+      expect(gesture.latched, isTrue);
+      expect(controller.wireWork, isTrue);
+      expect(messages, [DeviceControlFeedbackCopy.feedOngoing]);
+      gesture.dispose();
+    });
+  });
+
+  test('fill-complete promote latches while still holding', () {
+    fakeAsync((async) {
+      final modbus = _RecordingModbus();
+      final controller = DeviceControlController(servicesWith(modbus))
+        ..keySwitchOn = true;
+      final gesture = ManualWireGesture(
+        controller: controller,
+        retract: false,
+        isEnabled: () => true,
+        isActive: () => controller.wireWork && !controller.wireRetracting,
+        onMessage: (_) {},
+        onVisualChanged: () {},
+      );
+
+      gesture.pointerDown();
+      async.elapse(DeviceControlTiming.wireHoldToRun);
+      async.flushMicrotasks();
+      expect(gesture.latched, isFalse);
+
+      gesture.promoteContinuousFeedIfHolding();
+      expect(gesture.latched, isTrue);
+
+      gesture.pointerUp();
+      expect(gesture.latched, isTrue);
+      expect(controller.wireWork, isTrue);
       gesture.dispose();
     });
   });

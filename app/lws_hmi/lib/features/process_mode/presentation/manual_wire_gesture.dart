@@ -34,6 +34,10 @@ final class ManualWireGesture {
   bool pressed = false;
   bool _runningFromHold = false;
   bool _latchedFeed = false;
+  /// True once the 3s latch window elapsed while still pressed, but
+  /// [startWire] has not finished yet — promote as soon as hold-run starts.
+  bool _latchDue = false;
+  DateTime? _pressStartedAt;
 
   /// Android `startFeedClick`: hold-run after 500ms, before 3s latch.
   bool get holdingRun => pressed && _runningFromHold && !_latchedFeed;
@@ -55,6 +59,30 @@ final class ManualWireGesture {
     }
   }
 
+  /// Enter continuous feed if still holding and wire is already running.
+  ///
+  /// Called from the 3s timer and from Feed L→R fill completion so the solid
+  /// / Continuous Feed chrome cannot race behind a cancelled timer on release.
+  void promoteContinuousFeedIfHolding() {
+    if (retract || !pressed || _latchedFeed) {
+      return;
+    }
+    if (_runningFromHold) {
+      _enterContinuousFeed();
+    } else {
+      _latchDue = true;
+    }
+  }
+
+  void _enterContinuousFeed() {
+    if (_latchedFeed) {
+      return;
+    }
+    _latchedFeed = true;
+    onMessage(DeviceControlFeedbackCopy.feedOngoing);
+    onVisualChanged();
+  }
+
   void pointerDown() {
     if (!isEnabled()) {
       return;
@@ -69,30 +97,35 @@ final class ManualWireGesture {
     pressed = true;
     _runningFromHold = false;
     _latchedFeed = false;
+    _latchDue = false;
+    _pressStartedAt = DateTime.now();
+    // Latch window aligns with Feed L→R fill: 3s from press, not from
+    // startWire completion (which would slip past the visual fill).
+    if (!retract) {
+      _latchTimer = Timer(DeviceControlTiming.wireFeedLatchDelay, () {
+        promoteContinuousFeedIfHolding();
+      });
+    }
     _holdTimer = Timer(DeviceControlTiming.wireHoldToRun, () async {
       if (!pressed) {
         return;
       }
       final error = await controller.startWire(retract: retract);
       if (error != null) {
+        _latchTimer?.cancel();
+        _latchTimer = null;
         onMessage(_failureMessage(error));
         return;
       }
-      _runningFromHold = true;
-      if (!retract) {
-        _latchTimer = Timer(
-          DeviceControlTiming.wireFeedLatchDelay -
-              DeviceControlTiming.wireHoldToRun,
-          () {
-            if (pressed) {
-              _latchedFeed = true;
-              onMessage(DeviceControlFeedbackCopy.feedOngoing);
-              onVisualChanged();
-            }
-          },
-        );
+      if (!pressed) {
+        return;
       }
-      onVisualChanged();
+      _runningFromHold = true;
+      if (!retract && _latchDue) {
+        _enterContinuousFeed();
+      } else {
+        onVisualChanged();
+      }
     });
     onVisualChanged();
   }
@@ -101,7 +134,18 @@ final class ManualWireGesture {
     if (!pressed) {
       return;
     }
+    // Promote latch before cancelling the timer: releasing exactly at the 3s
+    // mark must keep continuous feed (solid Continuous Feed), not reverse.
+    if (!retract &&
+        _runningFromHold &&
+        !_latchedFeed &&
+        _pressStartedAt != null &&
+        DateTime.now().difference(_pressStartedAt!) >=
+            DeviceControlTiming.wireFeedLatchDelay) {
+      _enterContinuousFeed();
+    }
     pressed = false;
+    _pressStartedAt = null;
     _holdTimer?.cancel();
     _holdTimer = null;
     _latchTimer?.cancel();

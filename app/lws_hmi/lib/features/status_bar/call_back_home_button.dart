@@ -29,7 +29,7 @@ final class CallBackHomeButton extends StatefulWidget {
   State<CallBackHomeButton> createState() => _CallBackHomeButtonState();
 }
 
-const _kBackIconSize = 28.0;
+const _kBackIconSize = 34.0;
 const _kBackHorizontalPadding = 12.0;
 const _kEdgeLineHeight = 3.0;
 const _kHomeLabelFontSize = 24.0;

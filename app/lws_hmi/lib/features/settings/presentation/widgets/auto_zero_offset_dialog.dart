@@ -30,6 +30,9 @@ Future<bool> showAutoZeroOffsetDialog({
           SizedBox(
             width: 168,
             child: CyberButton(
+              size: CyberButtonSize.medium,
+              shape: CyberButtonShape.rounded,
+              stretch: true,
               variant: CyberButtonVariant.secondary,
               onPressed: () => Navigator.pop(ctx, false),
               child: Text(l10n.cancelText),
@@ -38,6 +41,9 @@ Future<bool> showAutoZeroOffsetDialog({
           SizedBox(
             width: 168,
             child: CyberButton(
+              size: CyberButtonSize.medium,
+              shape: CyberButtonShape.rounded,
+              stretch: true,
               variant: CyberButtonVariant.primary,
               onPressed: () => Navigator.pop(ctx, true),
               child: Text(l10n.confirmText),

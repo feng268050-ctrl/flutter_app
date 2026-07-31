@@ -868,8 +868,7 @@ class SettingsScaledParam extends StatelessWidget {
         CyberBorderGradientCenter.topLeftBottomRight,
   });
 
-  /// Matches lws-ui `advanced_setting_value_box` (36dp); Auto trailing
-  /// stretches to the same height.
+  /// Matches lws-ui `advanced_setting_value_box` (36dp).
   static const headerControlHeight = 36.0;
 
   final String title;

@@ -326,10 +326,10 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
               width: 280,
               child: CyberButton(
                 key: const ValueKey('live-machine-status-confirm'),
+                size: CyberButtonSize.medium,
                 variant: CyberButtonVariant.primary,
                 shape: CyberButtonShape.rounded,
                 stretch: true,
-                height: 44,
                 onPressed: widget.onConfirm,
                 child: const Text(
                   'Got it',

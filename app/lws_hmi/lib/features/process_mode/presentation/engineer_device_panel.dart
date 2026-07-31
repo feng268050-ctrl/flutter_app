@@ -59,9 +59,14 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   /// Gap from frost panel top to ramp header.
   static const _panelTopInset = 2.0;
 
-  /// Shared gap: Retract↔Feed, wire↔Laser, checkboxes↔wire, Laser↔panel bottom
-  /// (bottom comes from [Padding] `bottom: 20` on the frost panel).
+  /// Gap from Enable Laser to frost panel bottom.
+  static const _panelBottomInset = 25.0;
+
+  /// Shared gap: Retract↔Feed (horizontal), checkboxes↔wire.
   static const _actionGap = 20.0;
+
+  /// Vertical gap: Retract/Feed row ↔ Enable Laser.
+  static const _wireToLaserGap = 25.0;
 
   /// Engineer checkbox face (Material default is 18).
   static const _checkboxSize = 24.0;
@@ -69,9 +74,11 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   /// Match right-panel parameter row height ([EngineerParameterForm] rows).
   static const _checkboxRowHeight = 86.0;
 
-  /// Retract / Feed / Enable Laser face heights (unchanged).
-  static const _wireButtonsHeight = 45.0;
-  static const _laserButtonHeight = 55.0;
+  /// Retract / Feed — CyberButton medium height (style/width unchanged).
+  static const _wireButtonsHeight = CyberDimens.actionButtonMediumHeight;
+
+  /// Enable Laser — CyberButton large height (style/width unchanged).
+  static const _laserButtonHeight = CyberDimens.actionButtonLargeHeight;
 
   bool get _showRamp =>
       widget.processType == ProcessType.continuousWelding ||
@@ -110,7 +117,12 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
           key: const ValueKey('engineer-device-panel'),
           edge: EngineerFrostEdge.topLeftBottomRight,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, _panelTopInset, 20, 20),
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              _panelTopInset,
+              20,
+              _panelBottomInset,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -302,7 +314,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: _actionGap),
+                          const SizedBox(height: _wireToLaserGap),
                           _EngineerDeviceActionButton(
                             key: const ValueKey('engineer-panel-laser'),
                             label: laserActive ? 'End Work' : 'Enable Laser',

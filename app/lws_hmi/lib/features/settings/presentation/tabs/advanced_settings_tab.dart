@@ -183,16 +183,10 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 trailing: CyberButton(
                   variant: CyberButtonVariant.primary,
                   size: CyberButtonSize.small,
-                  height: SettingsScaledParam.headerControlHeight,
                   onPressed: () => unawaited(showAutoZeroOffsetDialog(
                     context: context,
                   )),
-                  child: Text(
-                    l10n.advancedSettingZeroOffsetAuto,
-                    style: const TextStyle(
-                      fontSize: SettingsDimens.advancedTitleSize,
-                    ),
-                  ),
+                  child: Text(l10n.advancedSettingZeroOffsetAuto),
                 ),
               ),
               right: SettingsScaledParam(

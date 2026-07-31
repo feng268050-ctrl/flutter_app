@@ -475,7 +475,10 @@ final class _VideoRow extends StatelessWidget {
                       children: [
                         TextButton(
                           style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
+                            minimumSize: const Size(
+                              0,
+                              CyberDimens.actionButtonMediumHeight,
+                            ),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                           ),
@@ -484,7 +487,10 @@ final class _VideoRow extends StatelessWidget {
                         ),
                         TextButton(
                           style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
+                            minimumSize: const Size(
+                              0,
+                              CyberDimens.actionButtonMediumHeight,
+                            ),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                           ),

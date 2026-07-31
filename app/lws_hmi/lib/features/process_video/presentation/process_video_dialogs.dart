@@ -35,6 +35,8 @@ Future<bool> _showProcessVideoPrompt({
           SizedBox(
             width: 168,
             child: CyberButton(
+              size: CyberButtonSize.medium,
+              stretch: true,
               variant: CyberButtonVariant.secondary,
               onPressed: () => Navigator.pop(ctx, false),
               child: Text(l10n.cancelText),
@@ -43,6 +45,8 @@ Future<bool> _showProcessVideoPrompt({
           SizedBox(
             width: 168,
             child: CyberButton(
+              size: CyberButtonSize.medium,
+              stretch: true,
               variant: CyberButtonVariant.primary,
               onPressed: () => Navigator.pop(ctx, true),
               child: Text(confirmLabel),

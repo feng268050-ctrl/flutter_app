@@ -1,3 +1,4 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 
@@ -75,7 +76,7 @@ final class _CncDialogButton extends StatelessWidget {
       onTap: onPressed,
       child: SizedBox(
         width: 160,
-        height: 56,
+        height: CyberDimens.actionButtonMediumHeight,
         child: DecoratedBox(
           decoration: const BoxDecoration(
             image: DecorationImage(

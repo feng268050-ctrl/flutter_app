@@ -18,7 +18,9 @@ abstract final class ProcessModeOutlineChrome {
   static const double iconSize = 34.0;
   static const double radius = 14.0;
   static const double strokeWidth = 1.5;
-  static const double defaultHeight = 62.0;
+
+  /// CyberButton medium face height (Quick side ops).
+  static const double defaultHeight = CyberDimens.actionButtonMediumHeight;
 }
 
 /// Tap outline button (Quick Manual Gas / Auto Wire).

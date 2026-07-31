@@ -12,6 +12,8 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 ///
 /// Closed: hold until the clipped radial ripple fills, then release to confirm.
 /// Open: a short press immediately requests End of work.
+///
+/// Trapezoid chrome keeps the original WebP gradient plate; glyphs are Material.
 final class QuickModeLaserButton extends StatefulWidget {
   const QuickModeLaserButton({
     super.key,
@@ -184,62 +186,62 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
               fit: StackFit.expand,
               children: [
                 Image.asset(_background, fit: BoxFit.fill),
-                  Positioned(
-                    top: 68 * scale,
-                    left: 0,
-                    right: 0,
-                    child: Icon(
-                      widget.laserOpen
-                          ? Icons.pause_circle_outline
-                          : Icons.play_circle_outline,
-                      key: const ValueKey('quick-mode-laser-enable-icon'),
+                Positioned(
+                  top: 68 * scale,
+                  left: 0,
+                  right: 0,
+                  child: Icon(
+                    widget.laserOpen
+                        ? Icons.pause_circle_outline
+                        : Icons.play_circle_outline,
+                    key: const ValueKey('quick-mode-laser-enable-icon'),
+                    color: Colors.white,
+                    size: ProcessModeDimens.quickLaserButtonIconSize * scale,
+                  ),
+                ),
+                Positioned(
+                  top: 147 * scale,
+                  left: 0,
+                  right: 0,
+                  child: Text(
+                    widget.laserOpen ? 'End of work' : 'Laser Enable',
+                    key: const ValueKey('quick-mode-laser-enable-label'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
                       color: Colors.white,
-                      size: ProcessModeDimens.quickLaserButtonIconSize * scale,
+                      fontSize:
+                          ProcessModeDimens.quickLaserButtonLabelSize * scale,
+                      height: 1,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  Positioned(
-                    top: 147 * scale,
-                    left: 0,
-                    right: 0,
-                    child: Text(
-                      widget.laserOpen ? 'End of work' : 'Laser Enable',
-                      key: const ValueKey('quick-mode-laser-enable-label'),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize:
-                            ProcessModeDimens.quickLaserButtonLabelSize * scale,
-                        height: 1,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            // Hits + ripple stay trapezoid-clipped so More Status remains tappable.
-            ClipPath(
-              clipper: const _QuickLaserTrapezoidClipper(),
-              child: Listener(
-                behavior: HitTestBehavior.opaque,
-                onPointerDown: _pointerDown,
-                onPointerMove: _pointerMove,
-                onPointerUp: _pointerUp,
-                onPointerCancel: (_) => _cancelGesture(),
-                child: AnimatedBuilder(
-                  animation: _hold,
-                  builder: (context, _) => CustomPaint(
-                    painter: _HoldRipplePainter(
-                      origin: _origin,
-                      progress: _hold.value,
-                      pressed: _gestureActive && widget.laserOpen,
-                    ),
+          ),
+          // Hits + ripple stay trapezoid-clipped so More Status remains tappable.
+          ClipPath(
+            clipper: const _QuickLaserTrapezoidClipper(),
+            child: Listener(
+              behavior: HitTestBehavior.opaque,
+              onPointerDown: _pointerDown,
+              onPointerMove: _pointerMove,
+              onPointerUp: _pointerUp,
+              onPointerCancel: (_) => _cancelGesture(),
+              child: AnimatedBuilder(
+                animation: _hold,
+                builder: (context, _) => CustomPaint(
+                  painter: _HoldRipplePainter(
+                    origin: _origin,
+                    progress: _hold.value,
+                    pressed: _gestureActive && widget.laserOpen,
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -330,7 +332,8 @@ final class _LaserTrapezoidRimShadowPainter extends CustomPainter {
     // against the trapezoid → a filled edge band (not a centered stroke that
     // straddles into chrome).
     final outward = band * 0.85;
-    final topLeftOut = Offset(v.topLeft.dx - outward * 0.35, v.topLeft.dy - outward);
+    final topLeftOut =
+        Offset(v.topLeft.dx - outward * 0.35, v.topLeft.dy - outward);
     final topRightOut =
         Offset(v.topRight.dx + outward * 0.35, v.topRight.dy - outward);
     final leftEnd = Offset.lerp(v.topLeft, v.bottomLeft, 0.55)!;

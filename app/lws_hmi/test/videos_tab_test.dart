@@ -73,6 +73,9 @@ void main() {
         ),
       );
 
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -89,6 +92,13 @@ void main() {
     expect(find.text('01:05'), findsOneWidget);
     expect(find.text('Upload'), findsOneWidget);
 
+    await tester.tap(find.text('Upload'));
+    await tester.pumpAndSettle();
+    expect(find.text('Upload recording?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(repo.countSync(), 1);
+
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
     expect(find.text('Delete recording?'), findsOneWidget);
@@ -98,7 +108,8 @@ void main() {
 
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Delete').last);
+    // Confirm uses CyberButton primary labeled Delete.
+    await tester.tap(find.text('Delete').last);
     await tester.pumpAndSettle();
     expect(repo.countSync(), 0);
     expect(find.text('No recordings'), findsOneWidget);
@@ -180,6 +191,9 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Upload'));
+    await tester.pumpAndSettle();
+    expect(find.text('Upload recording?'), findsOneWidget);
+    await tester.tap(find.text('Upload').last);
     await tester.pump();
     expect(find.text('Uploading cover…'), findsOneWidget);
     finish.complete();

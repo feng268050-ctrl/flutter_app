@@ -621,7 +621,7 @@ final class _OrangePillButton extends StatelessWidget {
         onPressed();
       },
       child: Container(
-        height: CyberDimens.actionButtonHeight,
+        height: CyberDimens.actionButtonMediumHeight,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(999),
           gradient: const LinearGradient(

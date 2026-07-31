@@ -212,6 +212,18 @@ abstract class AppLocalizations {
   /// **'Auto'**
   String get advancedSettingZeroOffsetAuto;
 
+  /// No description provided for @advancedSettingAutoZeroOffsetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Zero Offset'**
+  String get advancedSettingAutoZeroOffsetTitle;
+
+  /// No description provided for @advancedSettingAutoZeroOffsetMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Aim the welding gun at a safe area and hold the trigger, then tap Auto. Auto temporarily enables laser output; the trigger fires the laser. Wait for the progress bar to finish automatic zero-offset correction.'**
+  String get advancedSettingAutoZeroOffsetMessage;
+
   /// No description provided for @advancedSettingEnterZeroOffset.
   ///
   /// In en, this message translates to:
@@ -577,6 +589,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Re-detect'**
   String get aiVisionReinferBtn;
+
+  /// No description provided for @aiVisionReplaceBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get aiVisionReplaceBtn;
 
   /// No description provided for @aiVisionSelectBtn.
   ///
@@ -997,6 +1015,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear'**
   String get clearAlarmLogs;
+
+  /// No description provided for @alarmLogsClearedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleared'**
+  String get alarmLogsClearedTitle;
+
+  /// No description provided for @alarmLogsClearedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get alarmLogsClearedMessage;
 
   /// No description provided for @closeText.
   ///
@@ -2960,11 +2990,35 @@ abstract class AppLocalizations {
   /// **'This removes the video file and its process parameters from this device.'**
   String get processVideoDeleteConfirmMessage;
 
+  /// No description provided for @processVideoUploadConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload recording?'**
+  String get processVideoUploadConfirmTitle;
+
+  /// No description provided for @processVideoUploadConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload this video and its process parameters to the cloud. Make sure the device is online.'**
+  String get processVideoUploadConfirmMessage;
+
+  /// No description provided for @uploadText.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get uploadText;
+
   /// No description provided for @processVideoDetailTitle.
   ///
   /// In en, this message translates to:
   /// **'Video Details'**
   String get processVideoDetailTitle;
+
+  /// No description provided for @processVideoBackToVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Videos'**
+  String get processVideoBackToVideos;
 
   /// No description provided for @processVideoParametersTitle.
   ///

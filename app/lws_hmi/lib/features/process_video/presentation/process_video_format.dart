@@ -40,12 +40,32 @@ abstract final class ProcessVideoFormat {
   }) {
     final spec = ProcessParameterCatalog.byKey[key];
     if (spec != null) {
-      final unit = spec.unit;
-      final isMetric = LengthUnitConvert.isMetric(activeUnitWire);
-      final displayUnit = isMetric ? unit : _convertUnitForImperial(unit);
-      return displayUnit.isEmpty ? spec.label : '${spec.label} ($displayUnit)';
+      final unit = parameterUnit(key, activeUnitWire: activeUnitWire);
+      return unit.isEmpty ? spec.label : '${spec.label} ($unit)';
     }
     return key;
+  }
+
+  /// Plain catalog label without unit (lws-ui detail rows use a separate unit).
+  static String parameterLabelPlain(String key) {
+    return ProcessParameterCatalog.byKey[key]?.label ?? key;
+  }
+
+  /// Display unit for [key], or empty when the parameter is unitless.
+  static String parameterUnit(
+    String key, {
+    String? activeUnitWire,
+  }) {
+    final spec = ProcessParameterCatalog.byKey[key];
+    if (spec == null) {
+      return '';
+    }
+    final unit = spec.unit;
+    if (unit.isEmpty) {
+      return '';
+    }
+    final isMetric = LengthUnitConvert.isMetric(activeUnitWire);
+    return isMetric ? unit : _convertUnitForImperial(unit);
   }
 
   static String parameterValue(num value) {

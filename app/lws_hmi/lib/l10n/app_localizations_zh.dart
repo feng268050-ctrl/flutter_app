@@ -66,6 +66,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get advancedSettingZeroOffsetAuto => '自动';
 
   @override
+  String get advancedSettingAutoZeroOffsetTitle => '自动零点校正';
+
+  @override
+  String get advancedSettingAutoZeroOffsetMessage => '请将焊枪对准安全区域并按住扳机，然后点击自动。自动过程会临时允许出光，扳机触发激光。请等待进度条完成自动零点校正。';
+
+  @override
   String get advancedSettingEnterZeroOffset => '请输入零点校正';
 
   @override
@@ -255,6 +261,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get aiVisionReinferBtn => '重新检测';
+
+  @override
+  String get aiVisionReplaceBtn => '更换';
 
   @override
   String get aiVisionSelectBtn => '选择';
@@ -483,6 +492,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get clearAlarmLogs => '清除';
+
+  @override
+  String get alarmLogsClearedTitle => '已清除';
+
+  @override
+  String get alarmLogsClearedMessage => '完成';
 
   @override
   String get closeText => '关闭';
@@ -1478,7 +1493,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processVideoDeleteConfirmMessage => '将从本机删除视频文件及其工艺参数记录。';
 
   @override
+  String get processVideoUploadConfirmTitle => '上传录像？';
+
+  @override
+  String get processVideoUploadConfirmMessage => '将把该视频及其工艺参数上传到云端。请确保设备已联网。';
+
+  @override
+  String get uploadText => '上传';
+
+  @override
   String get processVideoDetailTitle => '视频详情';
+
+  @override
+  String get processVideoBackToVideos => '返回视频列表';
 
   @override
   String get processVideoParametersTitle => '参数记录';
@@ -1891,6 +1918,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get advancedSettingZeroOffsetAuto => '自動';
 
   @override
+  String get advancedSettingAutoZeroOffsetTitle => '自動零點校正';
+
+  @override
+  String get advancedSettingAutoZeroOffsetMessage => '請將焊槍對準安全區域並按住扳機，然後點擊自動。自動過程會臨時允許出光，扳機觸發激光。請等待進度條完成自動零點校正。';
+
+  @override
   String get advancedSettingEnterZeroOffset => '請輸入零點校正';
 
   @override
@@ -2049,6 +2082,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get aiVisionReinferBtn => '重新檢測';
+
+  @override
+  String get aiVisionReplaceBtn => '更換';
 
   @override
   String get aiVisionSelectBtn => '選擇';
@@ -3050,7 +3086,19 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get processVideoDeleteConfirmMessage => '將從本機刪除視頻文件及其工藝參數記錄。';
 
   @override
+  String get processVideoUploadConfirmTitle => '上傳錄像？';
+
+  @override
+  String get processVideoUploadConfirmMessage => '將把該視頻及其工藝參數上傳到雲端。請確保設備已聯網。';
+
+  @override
+  String get uploadText => '上傳';
+
+  @override
   String get processVideoDetailTitle => '視頻詳情';
+
+  @override
+  String get processVideoBackToVideos => '返回視頻列表';
 
   @override
   String get processVideoParametersTitle => '參數記錄';

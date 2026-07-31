@@ -149,7 +149,7 @@ HAL mid-session writes SHALL use `/var/lib/{wpa_supplicant,network,bluetooth,hal
 
 ### Requirement: Physical keyboard layout via XKB pref
 
-Physical USB/BT HID keyboard layout SHALL be applied through eLinux HMI / libxkbcommon (XKB). `hal/input/keyboard` SHALL expose get/set/list layout APIs that persist layout (via `/etc/default/keyboard` and/or `/var/lib/hal/keyboard.conf`). For v1, applying a new layout SHALL take effect by restarting `hmi.service` so XKB is rebuilt at keyboard init. After that restart, the product App SHALL restore navigation to the previous route/page (brief flash is acceptable; most devices rarely change layout). Soft-keyboard layouts remain CyberIME and MUST NOT be implemented as Dart remapping of HID scancodes. A eLinux HMI mtime hot-reload path MAY be added later as a non-blocking enhancement. **Product Settings SHALL offer at least the US / DE / FR / JP layouts** corresponding to ANSI / QWERTZ / AZERTY / JIS profiles; Demo-only layouts (e.g. `ru`) MAY remain available to Demo surfaces without appearing in the product Segment.
+Physical USB/BT HID keyboard layout SHALL be applied through eLinux HMI / libxkbcommon (XKB). `hal/input/keyboard` SHALL expose get/set/list layout APIs that persist layout (via `/etc/default/keyboard` and/or `/var/lib/hal/keyboard.conf`). For v1, applying a new layout SHALL take effect by restarting `hmi.service` so XKB is rebuilt at keyboard init. After that restart, the product App SHALL restore navigation to the previous route/page (brief flash is acceptable; most devices rarely change layout). Soft-keyboard layouts remain CyberIME and MUST NOT be implemented as Dart remapping of HID scancodes. A eLinux HMI mtime hot-reload path MAY be added later as a non-blocking enhancement. **Product Settings SHALL offer the US / DE / FR layouts** corresponding to QWERTY / QWERTZ / AZERTY profiles; Demo-only layouts (e.g. `ru`) MAY remain available to Demo surfaces without appearing in the product Segment. Legacy Japanese (`jp`) preferences MAY still be readable but MUST NOT appear in product `listLayouts` and MUST migrate to QWERTY in the App.
 
 #### Scenario: US to Russian
 
@@ -168,7 +168,7 @@ Physical USB/BT HID keyboard layout SHALL be applied through eLinux HMI / libxkb
 
 ### Requirement: Product physical layouts include US DE FR JP
 
-`hal/input/keyboard` `listLayouts` used by the product Keyboard settings SHALL include XKB layouts covering at least English US (`us`), German (`de`), French (`fr`), and Japanese (`jp`, with model suitable for JIS such as `jp106`). Display names SHOULD align with the product profile labels. Soft-keyboard rendering remains CyberIME; physical text MUST continue to go through XKB, not Dart scancode remapping.
+`hal/input/keyboard` `listLayouts` used by the product Keyboard settings SHALL include XKB layouts covering at least English US (`us`), German (`de`), and French (`fr`). Display names SHOULD align with the product profile labels. Soft-keyboard rendering remains CyberIME; physical text MUST continue to go through XKB, not Dart scancode remapping. Japanese (`jp`) MUST NOT be listed for product selection.
 
 #### Scenario: listLayouts contains four product ids
 

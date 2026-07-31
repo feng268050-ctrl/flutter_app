@@ -36,6 +36,7 @@ import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/statistics/application/work_session_statistics_recorder.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
 /// Engineer Mode: five tabs + left device panel + right parameter card.
@@ -44,10 +45,14 @@ final class EngineerModePage extends StatefulWidget {
     super.key,
     this.initialProcessType,
     this.initialPresetUuid,
+    this.fromQuickHandoff = false,
   });
 
   final ProcessType? initialProcessType;
   final String? initialPresetUuid;
+
+  /// Quick Mode "More Parameters" entry — status bar shows Back (not Home).
+  final bool fromQuickHandoff;
 
   @override
   State<EngineerModePage> createState() => _EngineerModePageState();
@@ -598,6 +603,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     final controller = ProcessLibraryScope.of(context);
     final draft = _draft;
     final accent = ProcessModeTokens.tabActiveColor(_processType);
+    // Theme blueGrey dark surface (same as Settings/Monitor), not lws-ui #060720.
+    final pageBg = Theme.of(context).scaffoldBackgroundColor;
 
     return PopScope(
       canPop: false,
@@ -608,10 +615,13 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         unawaited(_handleExit());
       },
       child: Scaffold(
-        backgroundColor: ProcessModeTokens.background,
+        backgroundColor: pageBg,
         appBar: WorkModeStatusBar(
           mode: WorkMode.engineer,
           processType: _processType,
+          backLabel: widget.fromQuickHandoff
+              ? (AppLocalizations.of(context)?.equipmentStatusBack ?? 'Back')
+              : (AppLocalizations.of(context)?.equipmentStatusHome ?? 'Home'),
           onBack: _onBack,
         ),
         body: ProcessModeToastLayer(
@@ -619,8 +629,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                const CyberBlurBackdropTarget(
-                  child: ColoredBox(color: ProcessModeTokens.background),
+                CyberBlurBackdropTarget(
+                  child: ColoredBox(color: pageBg),
                 ),
                 Column(
                   children: [

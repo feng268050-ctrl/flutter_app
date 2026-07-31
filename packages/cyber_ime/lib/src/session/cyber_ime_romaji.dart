@@ -1,6 +1,6 @@
 import 'package:cyber_ime/src/session/cyber_ime_jp_input_mode.dart';
 
-/// Local romaji → hiragana converter + tiny word candidates (soft JIS).
+/// Local romaji → hiragana converter + tiny word candidates (utility API).
 ///
 /// Not a full IME dictionary — enough for acceptance (`ka`, `nihongo`) and
 /// replaceable later.

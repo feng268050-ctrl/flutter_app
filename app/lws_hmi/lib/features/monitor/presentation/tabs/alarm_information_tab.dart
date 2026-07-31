@@ -8,6 +8,7 @@ import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dar
 import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/l10n/product_alarm_l10n.dart';
+import 'package:lws_hmi/features/warn_alarm/presentation/alarm_logs_cleared_dialog.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// lws-ui `fragment_warn_info` — left status/temps + right history + live actives.
@@ -76,6 +77,10 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
     }
     CyberClickSoundRegistry.playClick();
     await warn.clearHistory();
+    if (!mounted) {
+      return;
+    }
+    await showAlarmLogsClearedDialog(context: context);
   }
 
   @override
@@ -258,9 +263,9 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                         // lws-ui `fragment_warn_log` bottom Clear pill.
                         Center(
                           child: CyberButton(
+                            size: CyberButtonSize.medium,
                             variant: CyberButtonVariant.secondary,
                             shape: CyberButtonShape.rounded,
-                            height: 54,
                             clickSoundEnabled: false,
                             onPressed: _history.isEmpty ? null : _clearHistory,
                             foregroundColor: CyberColors.buttonSecondaryText,

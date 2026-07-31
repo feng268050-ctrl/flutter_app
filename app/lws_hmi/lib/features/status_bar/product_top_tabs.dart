@@ -11,7 +11,11 @@ enum ProductTopTabLayout {
   lwsUi,
 }
 
-/// Shared product top-tab strip (lws-ui `TopTabView` / `job_border1`).
+/// Shared product top-tab strip (Settings legacy layout / Monitor).
+///
+/// Strip fill follows [ThemeData.scaffoldBackgroundColor] (theme gray), not
+/// the former lws-ui `job_border1` navy plate. A hairline under the strip
+/// matches Settings / Monitor card inset ([dividerInset]).
 final class ProductTopTabs extends StatefulWidget
     implements PreferredSizeWidget {
   const ProductTopTabs({
@@ -23,8 +27,12 @@ final class ProductTopTabs extends StatefulWidget
     this.layout = ProductTopTabLayout.monitorPinnedIcon,
   });
 
-  static const borderAsset = 'assets/monitor/job_border1.webp';
   static const sidePadding = 4.0;
+
+  /// Hairline under the strip — matches Settings / Monitor card inset (24).
+  static const dividerThickness = 1.0;
+  static const dividerColor = Color(0x33FFFFFF);
+  static const dividerInset = 24.0;
 
   /// Monitor strip height (slightly under lws-ui; −10 vs prior 78).
   static const monitorHeight = 68.0;
@@ -39,7 +47,7 @@ final class ProductTopTabs extends StatefulWidget
   static const lwsUiMinTabWidth = 236.0;
 
   final List<String> labels;
-  final List<({Key key, String iconAsset})> tabs;
+  final List<({Key key, IconData icon})> tabs;
   final int currentIndex;
   final ValueChanged<int> onSelected;
   final ProductTopTabLayout layout;
@@ -49,7 +57,8 @@ final class ProductTopTabs extends StatefulWidget
       : monitorHeight;
 
   @override
-  Size get preferredSize => Size.fromHeight(height);
+  Size get preferredSize =>
+      Size.fromHeight(height + dividerThickness);
 
   @override
   State<ProductTopTabs> createState() => _ProductTopTabsState();
@@ -167,7 +176,7 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
         child: _ProductTopTabItem(
           key: widget.tabs[i].key,
           label: widget.labels[i],
-          iconAsset: widget.tabs[i].iconAsset,
+          icon: widget.tabs[i].icon,
           selected: i == widget.currentIndex,
           layout: widget.layout,
           stripHeight: widget.height,
@@ -180,48 +189,60 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
   @override
   Widget build(BuildContext context) {
     final widths = _tabWidths();
-    return SizedBox(
-      height: widget.height,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(ProductTopTabs.borderAsset),
-            fit: BoxFit.fill,
-          ),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // lws-ui `tabGravity=center`: center the group when it fits.
-            if (widget.layout == ProductTopTabLayout.lwsUi) {
-              final total = widths.fold<double>(0, (a, b) => a + b) +
-                  ProductTopTabs.sidePadding * 2;
-              if (total <= constraints.maxWidth) {
-                return Padding(
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: widget.height,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // lws-ui `tabGravity=center`: center the group when it fits.
+                if (widget.layout == ProductTopTabLayout.lwsUi) {
+                  final total = widths.fold<double>(0, (a, b) => a + b) +
+                      ProductTopTabs.sidePadding * 2;
+                  if (total <= constraints.maxWidth) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: ProductTopTabs.sidePadding,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (var i = 0; i < widget.tabs.length; i++)
+                            _tabAt(i, widths[i]),
+                        ],
+                      ),
+                    );
+                  }
+                }
+
+                return ListView.builder(
+                  controller: _scrollController,
+                  scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(
                     horizontal: ProductTopTabs.sidePadding,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      for (var i = 0; i < widget.tabs.length; i++)
-                        _tabAt(i, widths[i]),
-                    ],
-                  ),
+                  itemCount: widget.tabs.length,
+                  itemBuilder: (context, i) => _tabAt(i, widths[i]),
                 );
-              }
-            }
-
-            return ListView.builder(
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: ProductTopTabs.sidePadding,
+              },
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: ProductTopTabs.dividerInset,
+            ),
+            child: ColoredBox(
+              color: ProductTopTabs.dividerColor,
+              child: SizedBox(
+                height: ProductTopTabs.dividerThickness,
+                width: double.infinity,
               ),
-              itemCount: widget.tabs.length,
-              itemBuilder: (context, i) => _tabAt(i, widths[i]),
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -231,7 +252,7 @@ final class _ProductTopTabItem extends StatelessWidget {
   const _ProductTopTabItem({
     super.key,
     required this.label,
-    required this.iconAsset,
+    required this.icon,
     required this.selected,
     required this.layout,
     required this.stripHeight,
@@ -240,13 +261,13 @@ final class _ProductTopTabItem extends StatelessWidget {
 
   static const monitorIconSize = 31.0;
   static const monitorFontSize = 24.0;
-  static const lwsUiIconSize = 24.0;
+  static const lwsUiIconSize = 31.0;
   static const lwsUiFontSize = 27.0;
   static const iconTextGap = 6.0;
   static const unselectedLwsUi = Color(0xFF94A3B8);
 
   final String label;
-  final String iconAsset;
+  final IconData icon;
   final bool selected;
   final ProductTopTabLayout layout;
   final double stripHeight;
@@ -311,15 +332,7 @@ final class _ProductTopTabItem extends StatelessWidget {
           top: iconInset,
           width: lwsUiIconSize,
           height: lwsUiIconSize,
-          child: Image.asset(
-            iconAsset,
-            width: lwsUiIconSize,
-            height: lwsUiIconSize,
-            color: color,
-            colorBlendMode: BlendMode.srcIn,
-            errorBuilder: (_, __, ___) =>
-                Icon(Icons.circle, size: 18, color: color),
-          ),
+          child: Icon(icon, size: lwsUiIconSize, color: color),
         ),
         Align(
           alignment: Alignment.bottomCenter,
@@ -361,15 +374,7 @@ final class _ProductTopTabItem extends StatelessWidget {
           top: iconInset,
           width: monitorIconSize,
           height: monitorIconSize,
-          child: Image.asset(
-            iconAsset,
-            width: monitorIconSize,
-            height: monitorIconSize,
-            color: color,
-            colorBlendMode: BlendMode.srcIn,
-            errorBuilder: (_, __, ___) =>
-                Icon(Icons.circle, size: 23, color: color),
-          ),
+          child: Icon(icon, size: monitorIconSize, color: color),
         ),
         Positioned(
           left: 14,

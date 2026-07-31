@@ -11,8 +11,7 @@ import 'package:cyber_ime/src/session/cyber_ime_regional_layout.dart';
 /// exist on physical boards (Tab / Caps / Shift / Ctrl / Alt / AltGr / Space /
 /// Enter / Backspace) are kept on the soft layout. Form-factor differs per
 /// profile: ANSI Enter + long left Shift + Ctrl/Alt/Space bottom; ISO short
-/// left Shift + intl key + Ctrl/Alt/Space/AltGr bottom; JIS ¥ / 半角全角 +
-/// 無変換/変換/かな bottom.
+/// left Shift + intl key + Ctrl/Alt/Space/AltGr bottom.
 abstract final class CyberImeTypewriterLayouts {
   static CyberImeLayout build(
     CyberImeRegionalProfile profile, {
@@ -24,14 +23,12 @@ abstract final class CyberImeTypewriterLayouts {
       CyberImeRegionalProfile.qwerty => _ansiUs(mapProfile),
       CyberImeRegionalProfile.qwertz => _isoDe(mapProfile),
       CyberImeRegionalProfile.azerty => _isoFr(mapProfile),
-      CyberImeRegionalProfile.jis => _jisJp(mapProfile),
     };
     final bottom = switch (profile) {
       CyberImeRegionalProfile.qwerty => _ansiModifierRow(bottomRow),
       CyberImeRegionalProfile.qwertz ||
       CyberImeRegionalProfile.azerty =>
         _isoModifierRow(bottomRow),
-      CyberImeRegionalProfile.jis => _jisModifierRow(bottomRow),
     };
     return CyberImeLayout(
       kind: kind,
@@ -101,40 +98,6 @@ abstract final class CyberImeTypewriterLayouts {
               k.id != CyberImeKeyId.commaPeriod,
         )
         .toList();
-  }
-
-  /// JIS modifier row: Ctrl | Alt | 無変換 | Space | 変換 | かな | Ctrl.
-  ///
-  /// No Win/Menu. No AltGr (JIS soft uses Shift + jp input mode instead).
-  static List<CyberImeKeyDef> _jisModifierRow(List<CyberImeKeyDef> fieldBottom) {
-    final extras = _fieldExtras(fieldBottom);
-    return [
-      _ctrl(1.0),
-      _alt(1.0),
-      const CyberImeKeyDef(
-        id: CyberImeKeyId.muhenkan,
-        primary: '無変換',
-        widthWeight: 1.35,
-      ),
-      const CyberImeKeyDef(
-        id: CyberImeKeyId.space,
-        primary: ' ',
-        widthWeight: 4.0,
-      ),
-      const CyberImeKeyDef(
-        id: CyberImeKeyId.henkan,
-        primary: '変換',
-        widthWeight: 1.2,
-      ),
-      const CyberImeKeyDef(
-        id: CyberImeKeyId.kanaToggle,
-        primary: 'カナ',
-        secondary: 'かな',
-        widthWeight: 1.35,
-      ),
-      ...extras,
-      _ctrl(1.0),
-    ];
   }
 
   /// ANSI US — number/symbol row, QWERTY, Tab/Caps/Shift/Enter, long left Shift.
@@ -245,49 +208,6 @@ abstract final class CyberImeTypewriterLayouts {
           _char(p, CyberImeKeyCode.period), // :
           _char(p, CyberImeKeyCode.slash), // !
           _shift(1.6),
-        ]),
-      ];
-
-  /// JIS JP — 半角/全角 + ¥; @ [ on top letter row; ] on home; \ on shift row.
-  static List<CyberImeKeyboardRow> _jisJp(CyberImeRegionalProfile p) => [
-        CyberImeKeyboardRow([
-          const CyberImeKeyDef(
-            id: CyberImeKeyId.hankakuZenkaku,
-            primary: '半/全',
-            widthWeight: 1.3,
-          ),
-          for (final c in _digits) _char(p, c),
-          _char(p, CyberImeKeyCode.minus),
-          _char(p, CyberImeKeyCode.equal),
-          _char(p, CyberImeKeyCode.yen),
-          _backspace(1.5),
-        ]),
-        CyberImeKeyboardRow([
-          _tab(1.4),
-          for (final c in _rowQwerty) _char(p, c),
-          _char(p, CyberImeKeyCode.bracketLeft), // @
-          _char(p, CyberImeKeyCode.bracketRight), // [
-        ]),
-        CyberImeKeyboardRow([
-          const CyberImeKeyDef(
-            id: CyberImeKeyId.capsLock,
-            primary: '英数',
-            widthWeight: 1.7,
-          ),
-          for (final c in _rowAsdf) _char(p, c),
-          _char(p, CyberImeKeyCode.semicolon),
-          _char(p, CyberImeKeyCode.quote),
-          _char(p, CyberImeKeyCode.backslash), // ]
-          _enter(1.6),
-        ]),
-        CyberImeKeyboardRow([
-          _shift(1.5),
-          for (final c in _rowZxcv) _char(p, c),
-          _char(p, CyberImeKeyCode.comma),
-          _char(p, CyberImeKeyCode.period),
-          _char(p, CyberImeKeyCode.slash),
-          _char(p, CyberImeKeyCode.intlBackslash), // \ _
-          _shift(1.8),
         ]),
       ];
 

@@ -63,12 +63,11 @@ class MonitorGlassCard extends StatelessWidget {
       child: CyberOutlinedPanel(
         clipBehavior: Clip.antiAlias,
         outline: CyberPanelOutline(
-          style: CyberPanelOutlineStyle.frostGradient,
+          style: CyberPanelOutlineStyle.uniform,
           tone: theme.tone,
-          // Match EngineerFrostPanel bright-edge stroke (1.5).
-          width: 1.5,
+          width: 1.0,
           cornerRadius: MonitorDimens.corner,
-          gradientCenter: borderGradientCenter,
+          uniformColor: CyberColors.borderUniform,
         ),
         // Same frosted panel fill as SettingsPanel / SettingsGroup.
         color: Colors.white.withOpacity(0.06),
@@ -356,11 +355,11 @@ class MonitorHealthBanner extends StatelessWidget {
     return CyberOutlinedPanel(
       clipBehavior: Clip.antiAlias,
       outline: CyberPanelOutline(
-        style: CyberPanelOutlineStyle.frostGradient,
+        style: CyberPanelOutlineStyle.uniform,
         tone: theme.tone,
-        width: 1.5,
+        width: 1.0,
         cornerRadius: 12,
-        gradientCenter: CyberBorderGradientCenter.topBottom,
+        uniformColor: CyberColors.borderUniform,
       ),
       color: Colors.white.withOpacity(0.06),
       child: Padding(

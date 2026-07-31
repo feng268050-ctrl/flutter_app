@@ -169,7 +169,7 @@ class WarnDialogBody extends StatelessWidget {
     final inset = WarnDialogMetrics.contentInset * scale;
     final icon = WarnDialogMetrics.iconSize * scale;
     final scrollMax = WarnDialogMetrics.bodyScrollMaxHeight * scale;
-    final btnH = CyberDimens.actionButtonHeight * scale;
+    final btnH = CyberDimens.actionButtonMediumHeight;
     final confirmW = (WarnDialogMetrics.confirmMinWidth * scale).clamp(
       200.0,
       cardW - pad * 2,
@@ -238,6 +238,7 @@ class WarnDialogBody extends StatelessWidget {
                 width: confirmW,
                 height: btnH,
                 child: CyberButton(
+                  size: CyberButtonSize.medium,
                   variant: CyberButtonVariant.primary,
                   shape: CyberButtonShape.rounded,
                   stretch: true,

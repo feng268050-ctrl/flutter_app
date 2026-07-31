@@ -18,6 +18,7 @@ final class RecordWorkToggle extends StatelessWidget {
     required this.processType,
     this.compact = false,
     this.expand = false,
+    this.checkboxSize = Checkbox.width,
   });
 
   final RecordWorkController controller;
@@ -28,6 +29,9 @@ final class RecordWorkToggle extends StatelessWidget {
 
   /// Engineer left panel: fill parent row height.
   final bool expand;
+
+  /// Checkbox face size (Engineer uses 24; default Material 18).
+  final double checkboxSize;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +44,7 @@ final class RecordWorkToggle extends StatelessWidget {
           armed: controller.armed,
           enabled: controller.enabled,
           compact: compact,
+          checkboxSize: checkboxSize,
           label: label,
           recordingStartedAt: controller.recordingStartedAt,
           timerColor: ProcessModeTokens.tabActiveColor(processType),
@@ -48,7 +53,12 @@ final class RecordWorkToggle extends StatelessWidget {
               : null,
         );
         if (expand) {
-          return SizedBox.expand(child: row);
+          return SizedBox.expand(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: row,
+            ),
+          );
         }
         return row;
       },
@@ -61,6 +71,7 @@ final class _RecordWorkRow extends StatelessWidget {
     required this.armed,
     required this.enabled,
     required this.compact,
+    required this.checkboxSize,
     required this.label,
     required this.recordingStartedAt,
     required this.timerColor,
@@ -70,6 +81,7 @@ final class _RecordWorkRow extends StatelessWidget {
   final bool armed;
   final bool enabled;
   final bool compact;
+  final double checkboxSize;
   final String label;
   final DateTime? recordingStartedAt;
   final Color timerColor;
@@ -94,6 +106,7 @@ final class _RecordWorkRow extends StatelessWidget {
               opacity: enabled ? 1 : 0.45,
               child: CyberCheckbox(
                 value: armed,
+                size: checkboxSize,
                 onChanged: enabled && onChanged != null ? (_) {} : null,
                 clickSoundEnabled: false,
               ),

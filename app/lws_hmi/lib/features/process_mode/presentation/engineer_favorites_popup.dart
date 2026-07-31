@@ -4,6 +4,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_anchored_popup_layout.dart';
+import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
 
 /// Anchored favorites list (lws-ui `DataPopupBuilder.moreCommonBuilder`).
 ///
@@ -113,6 +114,9 @@ final class _EngineerFavoritesPopup extends StatelessWidget {
                 sampleMode: CyberBlurSampleMode.realtime,
                 intensity: CyberBlurIntensity.high,
                 blurTint: CyberBlurTint.dark,
+                outlineStyle: CyberPanelOutlineStyle.uniform,
+                borderWidth: EngineerFrostPanel.edgeWidth,
+                borderColor: EngineerFrostPanel.edgeColor,
                 width: _popupWidth,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: _maxHeight),

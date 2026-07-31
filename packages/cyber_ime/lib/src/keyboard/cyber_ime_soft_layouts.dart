@@ -18,7 +18,6 @@ abstract final class CyberImeSoftLayouts {
       CyberImeRegionalProfile.qwerty => _qwerty(bottomRow: bottomRow, kind: kind),
       CyberImeRegionalProfile.qwertz => _qwertz(bottomRow: bottomRow, kind: kind),
       CyberImeRegionalProfile.azerty => _azerty(bottomRow: bottomRow, kind: kind),
-      CyberImeRegionalProfile.jis => _jis(bottomRow: bottomRow, kind: kind),
     };
   }
 
@@ -36,14 +35,8 @@ abstract final class CyberImeSoftLayouts {
     );
   }
 
-  static List<CyberImeKeyDef> _bottom(
-    CyberImeBottomRowProfile bottomRow, {
-    bool includeLanguage = false,
-  }) {
-    return cyberImeSoftBottomRowKeys(
-      bottomRow,
-      includeLanguageToggle: includeLanguage,
-    );
+  static List<CyberImeKeyDef> _bottom(CyberImeBottomRowProfile bottomRow) {
+    return cyberImeSoftBottomRowKeys(bottomRow);
   }
 
   static CyberImeLayout _qwerty({
@@ -95,27 +88,81 @@ abstract final class CyberImeSoftLayouts {
     required CyberImeBottomRowProfile bottomRow,
     required CyberImeKeyboardKind kind,
   }) {
+    // Second-function glyphs follow the DE phone reference by key (L→R).
+    // Ö / Ä are long-press variants of O / A, not resident keys.
+    const row1 = ['Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O', 'P'];
+    const row1Secondaries = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+    const row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'];
+    const row2Secondaries = ['@', '#', '€', '_', '&', '-', '+', '(', ')'];
+    const row3 = ['Y', 'X', 'C', 'V', 'B', 'N', 'M'];
+    const row3Secondaries = ['*', '"', "'", ':', ';', '!', '?'];
+
     return CyberImeLayout(
       kind: kind,
       rows: [
         CyberImeKeyboardRow([
-          for (final c in 'QWERTZUIOP'.split(''))
+          for (var i = 0; i < row1.length; i++)
             _letter(
-              c,
-              longPressOptions: switch (c) {
-                'U' => const ['u', 'ü', 'U', 'Ü'],
-                'O' => const ['o', 'ö', 'O', 'Ö'],
+              row1[i],
+              secondary: row1Secondaries[i],
+              longPressOptions: switch (row1[i]) {
+                'E' => const [
+                    'e',
+                    'é',
+                    'è',
+                    'ê',
+                    'E',
+                    'É',
+                    'È',
+                    'Ê',
+                  ],
+                'U' => const [
+                    'u',
+                    'ü',
+                    'ú',
+                    'ù',
+                    'û',
+                    'U',
+                    'Ü',
+                    'Ú',
+                    'Ù',
+                    'Û',
+                  ],
+                'O' => const [
+                    'o',
+                    'ö',
+                    'ó',
+                    'ò',
+                    'ô',
+                    'O',
+                    'Ö',
+                    'Ó',
+                    'Ò',
+                    'Ô',
+                  ],
                 _ => null,
               },
             ),
         ]),
         CyberImeKeyboardRow(
           [
-            for (final c in 'ASDFGHJKL'.split(''))
+            for (var i = 0; i < row2.length; i++)
               _letter(
-                c,
-                longPressOptions: switch (c) {
-                  'A' => const ['a', 'ä', 'A', 'Ä'],
+                row2[i],
+                secondary: row2Secondaries[i],
+                longPressOptions: switch (row2[i]) {
+                  'A' => const [
+                      'a',
+                      'ä',
+                      'á',
+                      'à',
+                      'â',
+                      'A',
+                      'Ä',
+                      'Á',
+                      'À',
+                      'Â',
+                    ],
                   'S' => const ['s', 'ß', 'S', 'ẞ'],
                   _ => null,
                 },
@@ -130,7 +177,8 @@ abstract final class CyberImeSoftLayouts {
             primary: '⇧',
             widthWeight: 1.5,
           ),
-          for (final c in 'YXCVBNM'.split('')) _letter(c),
+          for (var i = 0; i < row3.length; i++)
+            _letter(row3[i], secondary: row3Secondaries[i]),
           const CyberImeKeyDef(
             id: CyberImeKeyId.backspace,
             primary: '⌫',
@@ -146,14 +194,24 @@ abstract final class CyberImeSoftLayouts {
     required CyberImeBottomRowProfile bottomRow,
     required CyberImeKeyboardKind kind,
   }) {
+    // Second-function glyphs follow the FR phone reference by row (L→R), not
+    // by QWERTY letter pairing. Accents stay on long-press popups.
+    const row1 = ['A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'];
+    const row1Secondaries = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+    const row2 = ['Q', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M'];
+    const row2Secondaries = ['@', '#', '€', '_', '&', '-', '+', '(', ')', '/'];
+    const row3 = ['W', 'X', 'C', 'V', 'B', 'N'];
+    const row3Secondaries = ['*', '"', "'", ':', ';', '!'];
+
     return CyberImeLayout(
       kind: kind,
       rows: [
         CyberImeKeyboardRow([
-          for (final c in 'AZERTYUIOP'.split(''))
+          for (var i = 0; i < row1.length; i++)
             _letter(
-              c,
-              longPressOptions: switch (c) {
+              row1[i],
+              secondary: row1Secondaries[i],
+              longPressOptions: switch (row1[i]) {
                 'A' => const ['a', 'à', 'â', 'æ', 'A', 'À', 'Â', 'Æ'],
                 'E' => const [
                     'e',
@@ -173,11 +231,8 @@ abstract final class CyberImeSoftLayouts {
             ),
         ]),
         CyberImeKeyboardRow([
-          for (final c in 'QSDFGHJKLM'.split(''))
-            _letter(
-              c,
-              longPressOptions: c == 'C' ? const ['c', 'ç', 'C', 'Ç'] : null,
-            ),
+          for (var i = 0; i < row2.length; i++)
+            _letter(row2[i], secondary: row2Secondaries[i]),
         ]),
         CyberImeKeyboardRow([
           const CyberImeKeyDef(
@@ -185,14 +240,17 @@ abstract final class CyberImeSoftLayouts {
             primary: '⇧',
             widthWeight: 1.5,
           ),
-          for (final c in 'WXCVBN'.split(''))
+          for (var i = 0; i < row3.length; i++)
             _letter(
-              c,
-              longPressOptions: c == 'C' ? const ['c', 'ç', 'C', 'Ç'] : null,
+              row3[i],
+              secondary: row3Secondaries[i],
+              longPressOptions:
+                  row3[i] == 'C' ? const ['c', 'ç', 'C', 'Ç'] : null,
             ),
           const CyberImeKeyDef(
             id: CyberImeKeyId.custom,
             primary: "'",
+            secondary: '?',
             widthWeight: 1,
           ),
           const CyberImeKeyDef(
@@ -206,36 +264,4 @@ abstract final class CyberImeSoftLayouts {
     );
   }
 
-  static CyberImeLayout _jis({
-    required CyberImeBottomRowProfile bottomRow,
-    required CyberImeKeyboardKind kind,
-  }) {
-    return CyberImeLayout(
-      kind: kind,
-      rows: [
-        CyberImeKeyboardRow([
-          for (final c in 'QWERTYUIOP'.split('')) _letter(c),
-        ]),
-        CyberImeKeyboardRow(
-          [for (final c in 'ASDFGHJKL'.split('')) _letter(c)],
-          leadingInsetWeight: 0.5,
-          trailingInsetWeight: 0.5,
-        ),
-        CyberImeKeyboardRow([
-          const CyberImeKeyDef(
-            id: CyberImeKeyId.shift,
-            primary: '⇧',
-            widthWeight: 1.5,
-          ),
-          for (final c in 'ZXCVBNM'.split('')) _letter(c),
-          const CyberImeKeyDef(
-            id: CyberImeKeyId.backspace,
-            primary: '⌫',
-            widthWeight: 1.5,
-          ),
-        ]),
-        CyberImeKeyboardRow(_bottom(bottomRow, includeLanguage: true)),
-      ],
-    );
-  }
 }

@@ -11,7 +11,6 @@ import 'package:lws_hmi/features/process_library/application/process_parameter_a
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
-import 'package:lws_hmi/features/process_mode/application/gun_dialog_coordinator.dart';
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_save_handler.dart';
@@ -39,7 +38,6 @@ import 'package:lws_hmi/features/process_mode/presentation/engineer_mode_entry_t
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_material_wheel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_parameter_preview.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_process_wheel.dart';
-import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_value_pick.dart';
 import 'package:lws_hmi/features/process_mode/presentation/record_work_toggle.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
@@ -70,7 +68,6 @@ final class _QuickModePageState extends State<QuickModePage> {
   WorkSessionStatisticsRecorder? _workSessionStatistics;
   RecordWorkController? _recordWork;
   CncSessionController? _cncSession;
-  GunDialogCoordinator? _gunDialogs;
   bool _exiting = false;
 
   /// Bumps on each accepted mode switch so stale Modbus sync is ignored.
@@ -117,7 +114,6 @@ final class _QuickModePageState extends State<QuickModePage> {
             },
           );
           unawaited(_recordWork!.start(services));
-          _startGunDialogCoordinator(services);
         }
         if (_cncSession == null) {
           _cncSession = CncSessionController(services);
@@ -134,29 +130,10 @@ final class _QuickModePageState extends State<QuickModePage> {
     });
   }
 
-  void _startGunDialogCoordinator(AppServices services) {
-    final device = _deviceControl;
-    if (device == null || _gunDialogs != null) {
-      return;
-    }
-    _gunDialogs = GunDialogCoordinator(
-      deviceControl: device,
-      services: services,
-      contextGetter: () => mounted ? context : null,
-      showGroundLockAlarmGetter: () =>
-          MiscSettingsScope.maybeOf(context)?.showGroundLockAlarm ?? false,
-      resetGunLatchOnEnableOff: true,
-    );
-    unawaited(_gunDialogs!.start());
-    _gunDialogs!.setActive(_processType != ProcessType.cncCutting);
-  }
-
   @override
   void dispose() {
     LaserEnableLedHolder.instance.clear();
     _applyDebounce?.cancel();
-    _gunDialogs?.dispose();
-    _gunDialogs = null;
     _recordWork?.dispose();
     _deviceControl?.onSafetyEvent = null;
     _deviceControl?.removeListener(_onDeviceControlChanged);
@@ -250,7 +227,6 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     setState(() => _processType = type);
     LaserEnableLedHolder.instance.setWorkModel(type);
-    _gunDialogs?.setActive(type != ProcessType.cncCutting);
     _rebuildSelection(ProcessLibraryScope.of(context));
     if (type == ProcessType.cncCutting) {
       unawaited(session?.enter() ?? _enterCncWhenReady());

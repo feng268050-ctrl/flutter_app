@@ -638,12 +638,15 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                                 _cameraDeviceInfoCache,
                                           );
                                         case AppRoutes.monitor:
-                                          final monitorArgs = settings.arguments;
-                                          page = monitorArgs is int
-                                              ? MonitorPage(
-                                                  initialTabIndex: monitorArgs,
-                                                )
-                                              : const MonitorPage();
+                                          final monitorArgs =
+                                              settings.arguments;
+                                          page = MonitorPage(
+                                            initialTabIndex: monitorArgs
+                                                    is MonitorRouteArgs
+                                                ? monitorArgs.initialTabIndex
+                                                : MonitorPage
+                                                    .tabWorkInformation,
+                                          );
                                         case AppRoutes.processVideoDetail:
                                           final videoArgs = settings.arguments;
                                           page = videoArgs
@@ -672,6 +675,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                                     initialPresetUuid:
                                                         engineerArgs
                                                             .presetUuid,
+                                                    fromQuickHandoff: true,
                                                   )
                                                 : const EngineerModePage(),
                                           );

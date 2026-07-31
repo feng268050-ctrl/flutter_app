@@ -8,6 +8,7 @@ import 'package:lws_hmi/features/process_video/application/process_video_upload_
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
+import 'package:lws_hmi/features/process_video/presentation/process_video_dialogs.dart';
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
@@ -146,34 +147,15 @@ class VideosTabState extends State<VideosTab> {
     return runtime.uploadProcessVideo;
   }
 
-  Future<bool> _confirmDelete(ProcessVideoRecord record) async {
-    final l10n = AppLocalizations.of(context)!;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.processVideoDeleteConfirmTitle),
-        content: Text(l10n.processVideoDeleteConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.cancelText),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.deleteText),
-          ),
-        ],
-      ),
-    );
-    return ok == true;
-  }
+  Future<bool> _confirmDelete() =>
+      showProcessVideoDeleteDialog(context: context);
 
   Future<void> _delete(ProcessVideoRecord record) async {
     if (record.id == null) {
       return;
     }
     CyberClickSoundRegistry.playClick();
-    if (!await _confirmDelete(record)) {
+    if (!await _confirmDelete()) {
       return;
     }
     await _repo.deleteById(record.id!);
@@ -187,12 +169,18 @@ class VideosTabState extends State<VideosTab> {
       _toast(l10n.processVideoAlreadyUploaded);
       return;
     }
+    if (!_canUpload(record)) {
+      return;
+    }
+    if (!await showProcessVideoUploadDialog(context: context)) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
     final uploader = _resolveUploader();
     if (uploader == null) {
       _toast(l10n.processVideoUploadFailed);
-      return;
-    }
-    if (!_canUpload(record)) {
       return;
     }
 

@@ -1,7 +1,5 @@
 /// Asset paths for work-mode chrome (migrated from lws-ui mipmaps).
 abstract final class WorkModeAssets {
-  static const back = 'assets/work-mode/back.webp';
-
   static const gunSwitchOn = 'assets/work-mode/gun_switch.webp';
   static const gunSwitchOff = 'assets/work-mode/gun_switch_off.webp';
 

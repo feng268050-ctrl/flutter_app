@@ -15,36 +15,42 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 /// Product Monitor — five tabs aligned with lws-ui DeviceMonitoring (Material).
 ///
 /// Tab changes are tap-only (no swipe), matching lws-ui FragmentShowHideTabHost.
-/// Tab leading icons match lws-ui `job_icon*` / `videos_icon` / `ai_vision_home`.
+/// Tab leading icons use Material Icons (replacing lws-ui WebP mipmaps).
 class MonitorPage extends StatefulWidget {
-  const MonitorPage({super.key, this.initialTabIndex = 0});
+  const MonitorPage({
+    super.key,
+    this.initialTabIndex = tabWorkInformation,
+  });
 
-  /// 0=work … 4=AI Vision (Home AI Vision entry uses 4).
+  static const tabWorkInformation = 0;
+  static const tabMachineStatus = 1;
+  static const tabAlarmInformation = 2;
+  static const tabVideos = 3;
+  static const tabAiVision = 4;
+
+  /// Selected tab when the route opens (clamped to valid range).
   final int initialTabIndex;
 
-  /// Shared page chrome fill — lws-ui `tab_bg` (#060720).
-  static const background = Color(0xFF060720);
-
-  static const _tabs = <({Key key, String iconAsset})>[
+  static const _tabs = <({Key key, IconData icon})>[
     (
       key: ValueKey('monitor-tab-work-information'),
-      iconAsset: 'assets/monitor/job_icon1.webp',
+      icon: Icons.assessment_outlined,
     ),
     (
       key: ValueKey('monitor-tab-machine-status'),
-      iconAsset: 'assets/monitor/job_icon2.webp',
+      icon: Icons.account_tree_outlined,
     ),
     (
       key: ValueKey('monitor-tab-alarm-information'),
-      iconAsset: 'assets/monitor/job_icon3.webp',
+      icon: Icons.warning_amber_rounded,
     ),
     (
       key: ValueKey('monitor-tab-videos'),
-      iconAsset: 'assets/monitor/videos_icon.webp',
+      icon: Icons.movie_outlined,
     ),
     (
       key: ValueKey('monitor-tab-ai-vision'),
-      iconAsset: 'assets/monitor/ai_vision_tab.webp',
+      icon: Icons.visibility_outlined,
     ),
   ];
 
@@ -60,12 +66,28 @@ class MonitorPage extends StatefulWidget {
   State<MonitorPage> createState() => _MonitorPageState();
 }
 
+/// Optional [Navigator] arguments for [AppRoutes.monitor].
+final class MonitorRouteArgs {
+  const MonitorRouteArgs({this.initialTabIndex = MonitorPage.tabWorkInformation});
+
+  /// Opens Monitor on the AI Vision tab (Home quick-action entry).
+  static const aiVision = MonitorRouteArgs(
+    initialTabIndex: MonitorPage.tabAiVision,
+  );
+
+  final int initialTabIndex;
+}
+
 class _MonitorPageState extends State<MonitorPage> {
-  late int _currentTabIndex = widget.initialTabIndex.clamp(0, MonitorPage._tabs.length - 1);
+  late int _currentTabIndex;
 
   @override
   void initState() {
     super.initState();
+    _currentTabIndex = widget.initialTabIndex.clamp(
+      0,
+      MonitorPage._tabs.length - 1,
+    );
     // Route-level ensure: Alarm tab is lazy and must not be the only starter.
     scheduleEnsureModbusLive(context);
   }
@@ -75,11 +97,13 @@ class _MonitorPageState extends State<MonitorPage> {
     final l10n = AppLocalizations.of(context)!;
     final tabLabels = MonitorPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
+    // Theme blueGrey dark surface (same as Settings), not lws-ui #060720.
+    final pageBg = Theme.of(context).scaffoldBackgroundColor;
     return Scaffold(
-      backgroundColor: MonitorPage.background,
+      backgroundColor: pageBg,
       appBar: ProductPageStatusBar(
         title: tabLabels[_currentTabIndex],
-        backgroundColor: MonitorPage.background,
+        backgroundColor: pageBg,
         foregroundColor: Colors.white,
         toolbarHeight: WorkModeStatusBarDimens.height,
         // Home stays fixed; title follows the selected Monitor tab.
@@ -107,7 +131,7 @@ class _MonitorPageState extends State<MonitorPage> {
           const MachineStatusTab(),
           const AlarmInformationTab(),
           const VideosTab(),
-          AiVisionTab(visible: _currentTabIndex == 4),
+          AiVisionTab(visible: _currentTabIndex == MonitorPage.tabAiVision),
         ],
       ),
     );

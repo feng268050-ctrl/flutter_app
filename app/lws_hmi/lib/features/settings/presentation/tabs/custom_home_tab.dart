@@ -1,3 +1,4 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
@@ -283,38 +284,16 @@ class _SaveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
+    return SizedBox(
+      width: 340,
+      child: CyberButton(
         key: const ValueKey('custom-home-save'),
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(999),
-        child: Ink(
-          width: 192,
-          height: 54,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFFF853E), Color(0xFFFF5C09)],
-            ),
-            border: Border.all(color: const Color(0xFFFFB070), width: 1.2),
-            boxShadow: const [
-              BoxShadow(color: Color(0x66FF5C09), blurRadius: 12),
-            ],
-          ),
-          child: const Center(
-            child: Text(
-              'Save Changes',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
+        size: CyberButtonSize.medium,
+        variant: CyberButtonVariant.primary,
+        shape: CyberButtonShape.rounded,
+        stretch: true,
+        onPressed: onPressed,
+        child: const Text('Save Changes'),
       ),
     );
   }

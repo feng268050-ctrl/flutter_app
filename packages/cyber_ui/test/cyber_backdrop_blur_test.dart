@@ -129,6 +129,52 @@ void main() {
     controller.dispose();
   });
 
+  testWidgets('firstFrame uses injected backdropScope outside InheritedWidget',
+      (tester) async {
+    final scopeKey = GlobalKey<CyberBlurBackdropScopeState>();
+    Widget buildTree() {
+      return MaterialApp(
+        home: Scaffold(
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              CyberBlurBackdropScope(
+                key: scopeKey,
+                child: const CyberBlurBackdropTarget(
+                  child: ColoredBox(
+                    color: Colors.orange,
+                    child: SizedBox.expand(),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: SizedBox(
+                  height: 80,
+                  width: double.infinity,
+                  child: CyberBackdropBlur(
+                    sampleMode: CyberBlurSampleMode.firstFrame,
+                    backdropScope: scopeKey.currentState,
+                    child: const Center(child: Text('kbd')),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildTree());
+    await tester.pumpWidget(buildTree());
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('kbd'), findsOneWidget);
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.byType(ImageFiltered), findsOneWidget);
+  });
+
   test('controller generation bumps on requestSample', () {
     final c = CyberBackdropBlurController();
     expect(c.generation, 0);

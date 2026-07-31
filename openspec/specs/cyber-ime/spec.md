@@ -99,13 +99,13 @@ CyberIME SHALL commit characters, backspace, and enter/submit through a document
 - **WHEN** no backdrop hook is registered
 - **THEN** keyboard show/hide and typing still function
 
-### Requirement: Keyboard A supports four regional soft layouts
+### Requirement: Keyboard A supports three regional soft layouts
 
-CyberIME Keyboard A SHALL provide selectable **phone soft** arrangements for QWERTY, QWERTZ, AZERTY, and JIS (romaji 26-key). Layout selection MUST be driven by an App-registered profile/layout provider (or the shared product keyboard preference). Soft layouts MUST be three letter rows plus one bottom function row and MUST NOT include an F1–F12 row, number row, Tab/Caps/Ctrl/Alt/AltGr chrome, typewriter Enter geometry, or a right-hand numeric keypad.
+CyberIME Keyboard A SHALL provide selectable **phone soft** arrangements for QWERTY, QWERTZ, and AZERTY. Layout selection MUST be driven by an App-registered profile/layout provider (or the shared product keyboard preference). Soft layouts MUST be three letter rows plus one bottom function row and MUST NOT include an F1–F12 row, number row, Tab/Caps/Ctrl/Alt/AltGr chrome, typewriter Enter geometry, or a right-hand numeric keypad.
 
-Digits and punctuation on Keyboard A MUST come from the shared `123` / `#+=` symbol layers only — not as letter-key digit secondaries. QWERTZ/AZERTY MAY expose accent characters via long-press popups. Soft JIS MUST support a language toggle (英数 ↔ 罗马字), romaji→hiragana composition, Space candidate cycling, and confirm-to-commit.
+Digits and punctuation on Keyboard A MUST come from the shared `123` / `#+=` symbol layers only — not as letter-key digit secondaries. QWERTZ/AZERTY MAY expose accent characters via long-press popups.
 
-`CyberImeKeyMaps` MAY remain as XKB-aligned character tables for physical/reference use. Soft letter faces and commits for the phone pads are driven by the soft layout specs (and romaji engine for JIS Japanese mode), not by typewriter KeyMap kana glyphs.
+`CyberImeKeyMaps` MAY remain as XKB-aligned character tables for physical/reference use. Soft letter faces and commits for the phone pads are driven by the soft layout specs.
 
 #### Scenario: Profile switches QWERTY to QWERTZ
 
@@ -117,7 +117,4 @@ Digits and punctuation on Keyboard A MUST come from the shared `123` / `#+=` sym
 - **WHEN** Keyboard A is shown for any regional profile
 - **THEN** the panel MUST NOT render a dedicated 9-key numeric keypad block, number row, or Ctrl/Alt/AltGr row
 
-#### Scenario: Soft JIS romaji commit
-
-- **WHEN** soft JIS Japanese mode is active and the operator types `ka` then confirms
-- **THEN** `か` is committed to the field
+Legacy soft JIS / romaji composition MUST NOT be offered as a selectable Keyboard A profile. Persisted `jis` / `jp` ids MUST migrate to QWERTY.

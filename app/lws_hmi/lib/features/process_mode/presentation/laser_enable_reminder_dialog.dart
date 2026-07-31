@@ -334,10 +334,10 @@ final class _LaserEnableReminderBodyState
               width: double.infinity,
               child: CyberButton(
                 key: const ValueKey('laser-enable-reminder-confirm'),
+                size: CyberButtonSize.medium,
                 variant: CyberButtonVariant.primary,
                 shape: CyberButtonShape.rounded,
                 stretch: true,
-                height: 52,
                 onPressed: () {
                   CyberClickSoundRegistry.playClick();
                   Navigator.of(context).pop(

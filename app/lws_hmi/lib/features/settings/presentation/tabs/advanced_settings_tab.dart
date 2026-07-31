@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_store.da
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/temperature_unit_convert.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/auto_zero_offset_dialog.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
@@ -18,7 +19,7 @@ import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 /// Thresholds: Modbus watch/write via [AdvancedSettingsThresholdsController].
 /// Temperature fields store °C; display follows Common Settings unit (°C/°F).
 /// Value chips open CyberIME numeric dialogs (lws-ui FrostNumericInputDialog).
-/// Zero Offset Auto is local reset only (full Auto procedure out of scope).
+/// Zero Offset Auto opens the confirm dialog (AI procedure wired later).
 class AdvancedSettingsTab extends StatefulWidget {
   const AdvancedSettingsTab({super.key});
 
@@ -182,19 +183,10 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 trailing: CyberButton(
                   variant: CyberButtonVariant.primary,
                   size: CyberButtonSize.small,
-                  height: SettingsScaledParam.headerControlHeight,
-                  onPressed: () => unawaited(
-                    commit(
-                      AdvancedSettingsModbusIds.zeroPointCorrection,
-                      v.copyWith(zeroPointCorrection: 0),
-                    ),
-                  ),
-                  child: Text(
-                    l10n.advancedSettingZeroOffsetAuto,
-                    style: const TextStyle(
-                      fontSize: SettingsDimens.advancedTitleSize,
-                    ),
-                  ),
+                  onPressed: () => unawaited(showAutoZeroOffsetDialog(
+                    context: context,
+                  )),
+                  child: Text(l10n.advancedSettingZeroOffsetAuto),
                 ),
               ),
               right: SettingsScaledParam(

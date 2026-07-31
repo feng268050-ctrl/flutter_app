@@ -67,6 +67,10 @@ final class DeviceControlController extends ChangeNotifier {
   /// Latch: tip already shown for the current key-off while Laser Enable.
   bool _keyTipShownThisOff = false;
 
+  /// Process `0x0068` saved across a manual Feed/Retract so we can restore it.
+  int? _savedProcessWireSpeedMmPerS;
+  bool _processWireSpeedBoosted = false;
+
   Future<void> start() async {
     if (_started) {
       return;
@@ -106,18 +110,128 @@ final class DeviceControlController extends ChangeNotifier {
   }
 
   /// Match lws-ui default `manualWireFeedSpeed` (80 mm/s) on holding 0x0098.
+  ///
+  /// Best-effort: a transient C001 / UART glitch must not block entering the
+  /// work page. The register often already holds 80 from a prior successful
+  /// write (verified on-device).
   Future<void> ensureManualWireFeedSpeed() async {
+    Future<bool> once() async {
+      try {
+        return await services.modbus.writeAttribute(
+          DeviceControlIds.manualWireFeedSpeed,
+          DeviceControlIds.manualWireFeedSpeedMmPerS,
+        );
+      } catch (e) {
+        debugPrint('device-control: manual wire feed speed write error: $e');
+        return false;
+      }
+    }
+
+    if (await once()) {
+      return;
+    }
+    debugPrint('device-control: manual wire feed speed write failed; retrying');
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!await once()) {
+      debugPrint('device-control: manual wire feed speed write failed');
+    }
+  }
+
+  Future<bool> _softWriteSpeed(String id, int mmPerS, String label) async {
     try {
-      final ok = await services.modbus.writeAttribute(
-        DeviceControlIds.manualWireFeedSpeed,
-        DeviceControlIds.manualWireFeedSpeedMmPerS,
-      );
+      final ok = await services.modbus.writeAttribute(id, mmPerS);
       if (!ok) {
-        debugPrint('device-control: manual wire feed speed write failed');
+        debugPrint('device-control: $label write soft-failed');
+      }
+      return ok;
+    } catch (e) {
+      debugPrint('device-control: $label write error: $e');
+      return false;
+    }
+  }
+
+  /// Best-effort speeds before latching wire_work.
+  ///
+  /// Writes:
+  /// - `0x0098` manual feed = 80 (lws-ui advanced default)
+  /// - `0x0099` manual retract = 15 (lws-ui default)
+  /// - `0x0068` process wire speed = 80 (some firmwares drive manual Feed from
+  ///   the process register; presets are often ~10 mm/s — verified bab69…)
+  Future<void> _assertManualWireSpeedsBestEffort() async {
+    await _softWriteSpeed(
+      DeviceControlIds.manualWireFeedSpeed,
+      DeviceControlIds.manualWireFeedSpeedMmPerS,
+      'manual feed speed (0x0098)',
+    );
+    await _softWriteSpeed(
+      DeviceControlIds.manualDrawStringSpeed,
+      DeviceControlIds.manualDrawStringSpeedMmPerS,
+      'manual draw speed (0x0099)',
+    );
+    try {
+      if (!_processWireSpeedBoosted) {
+        final raw = await services.modbus.readAttribute(
+          DeviceControlIds.processWireFeedingSpeed,
+        );
+        _savedProcessWireSpeedMmPerS = switch (raw) {
+          int i => i,
+          num n => n.toInt(),
+          _ => null,
+        };
+        _processWireSpeedBoosted = true;
       }
     } catch (e) {
-      debugPrint('device-control: manual wire feed speed write error: $e');
+      debugPrint('device-control: process wire speed read error: $e');
+      _processWireSpeedBoosted = true;
     }
+    await _softWriteSpeed(
+      DeviceControlIds.processWireFeedingSpeed,
+      DeviceControlIds.manualWireFeedSpeedMmPerS,
+      'process wire speed (0x0068)',
+    );
+  }
+
+  Future<void> _restoreProcessWireSpeedBestEffort() async {
+    if (!_processWireSpeedBoosted) {
+      return;
+    }
+    final saved = _savedProcessWireSpeedMmPerS;
+    _processWireSpeedBoosted = false;
+    _savedProcessWireSpeedMmPerS = null;
+    if (saved == null) {
+      return;
+    }
+    await _softWriteSpeed(
+      DeviceControlIds.processWireFeedingSpeed,
+      saved,
+      'restore process wire speed (0x0068)',
+    );
+  }
+
+  /// lws-ui `createDeviceControlSwitchData`: one CONTROL_FIELD_1 word.
+  ///
+  /// Bits: laser=0, gas/auto preserved from local snapshot, wire/dir as args.
+  Future<bool> _writePackedWireControl({
+    required bool run,
+    required bool retract,
+  }) async {
+    var word = 0;
+    if (manualGas) {
+      word |= 1 << 1;
+    }
+    if (run) {
+      word |= 1 << 2;
+    }
+    if (run && retract) {
+      word |= 1 << 3;
+    }
+    if (autoWireFeed) {
+      word |= 1 << 4;
+    }
+    return services.modbus.writeAttribute(
+      DeviceControlIds.controlField1,
+      word,
+    );
   }
 
   /// Returns `true` when control+status groups were read successfully.
@@ -547,34 +661,12 @@ final class DeviceControlController extends ChangeNotifier {
     notifyListeners();
     try {
       final ok = await services.modbus.exclusiveSession(() async {
-        // Any feed/retract first clears continuous latch (lws-ui close then open).
-        if (!await services.modbus.writeAttribute(
-          DeviceControlIds.wireWork,
-          false,
-        )) {
-          return false;
-        }
-        // lws-ui's createOpenFeedConfig/createBackFeedConfig force laser off.
-        if (!await services.modbus.writeAttribute(
-          DeviceControlIds.laserEnable,
-          false,
-        )) {
-          return false;
-        }
-        // Fixed 80 mm/s (lws-ui default) — not process library wire speed.
-        if (!await services.modbus.writeAttribute(
-          DeviceControlIds.manualWireFeedSpeed,
-          DeviceControlIds.manualWireFeedSpeedMmPerS,
-        )) {
-          return false;
-        }
-        if (!await services.modbus.writeAttribute(
-          DeviceControlIds.wireDirection,
-          retract,
-        )) {
-          return false;
-        }
-        return services.modbus.writeAttribute(DeviceControlIds.wireWork, true);
+        // Speeds first (best-effort): 0x0098 / 0x0099 / process 0x0068.
+        // On bab69fb413f57411, 0x0098 already held 80 while process 0x0068
+        // stayed at the preset (~10) and manual Feed felt that slow.
+        await _assertManualWireSpeedsBestEffort();
+        // lws-ui openFeed/openBackFeed: one CONTROL_FIELD_1 word (not bit RMW).
+        return _writePackedWireControl(run: true, retract: retract);
       });
       if (!ok) {
         lastError = 'Wire control write failed';
@@ -606,14 +698,13 @@ final class DeviceControlController extends ChangeNotifier {
     notifyListeners();
     try {
       final ok = await services.modbus.exclusiveSession(() async {
-        // lws-ui `createCloseFeedOrBackConfig` resets direction to feed.
-        if (!await services.modbus.writeAttribute(
-          DeviceControlIds.wireDirection,
-          false,
-        )) {
-          return false;
-        }
-        return services.modbus.writeAttribute(DeviceControlIds.wireWork, false);
+        // lws-ui closeFeedOrBack: wire off, direction feed, laser off.
+        final cleared = await _writePackedWireControl(
+          run: false,
+          retract: false,
+        );
+        await _restoreProcessWireSpeedBestEffort();
+        return cleared;
       });
       if (!ok) {
         lastError = 'Wire control write failed';

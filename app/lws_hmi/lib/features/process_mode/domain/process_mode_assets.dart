@@ -49,16 +49,6 @@ abstract final class ProcessModeAssets {
   static const scaleLeft = 'assets/process/scale_left.webp';
   static const scaleRight = 'assets/process/scale_right.webp';
 
-  /// Quick-mode side operation icons (lws-ui mipmap-xxxhdpi).
-  static const manualGasIcon = 'assets/process/manual_air_supply_white_on.webp';
-  static const autoWireFeedOnIcon =
-      'assets/process/gas_delivery_enable_white_on.webp';
-  static const autoWireFeedOffIcon =
-      'assets/process/gas_delivery_enable_white_off.webp';
-  static const feedIcon = 'assets/process/entering_silk.webp';
-  static const retractOnIcon = 'assets/process/retreat_white_on.webp';
-  static const retractOffIcon = 'assets/process/retreat_white_off.webp';
-
   /// CNC connection guide / running overlay (lws-ui mipmap-xxxhdpi).
   static const cncBg = 'assets/process/cnc_bg.webp';
   static const cncStep1 = 'assets/process/cnc_step_1.webp';

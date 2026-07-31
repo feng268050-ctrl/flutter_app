@@ -28,8 +28,10 @@ Mount: kernel uses `root=PARTLABEL=rootfs_a` or `rootfs_b`. Prefer PARTLABEL ove
 | Content | Where | Size (product budget) |
 |---------|--------|------------------------|
 | Buildroot system + libs (P5) | `/` rootfs | **≤ ~500 MiB** in flash image |
-| Flutter `/opt/hmi` | `/` rootfs | App AOT + assets；**may include product binaries** (e.g. MediaMTX ~44 MiB under `bin/`) via `push-app` |
+| Flutter `/opt/hmi` | `/` rootfs | App AOT + assets；**may include product binaries** (MediaMTX, `lws_ai_daemon` + libs) via `push-app` |
 | RKNN models | **`/userdata/models/`** | userdata (not rootfs) |
+| AI daemon workdir | **`/var/lib/hmi/ai/`** | durable App state |
+| AI control sockets | **`/run/hmi/ai/`** | tmpfs (`cmd.sock` / `evt.sock`) |
 | Online OTA download / staged apply | **`/userdata/ota/`** | userdata (not rootfs); not used for full images by `make upgrade` |
 | PR0 录像 / sqlite | `/userdata/…` | userdata |
 

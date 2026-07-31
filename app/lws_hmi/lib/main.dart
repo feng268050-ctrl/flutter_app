@@ -4,6 +4,7 @@ import 'package:cyber_hal/cyber_hal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterpi_gstreamer_video_player/flutterpi_gstreamer_video_player.dart';
 import 'package:lws_hmi/app/app.dart';
+import 'package:lws_hmi/features/ai/application/ai_daemon_supervisor.dart';
 import 'package:lws_hmi/features/statistics/application/legacy_static_data_migrator.dart';
 import 'package:lws_hmi/features/statistics/infrastructure/sqlite_stats_aggregate_repository.dart';
 import 'package:lws_hmi/hal/hal_assets.dart';
@@ -27,6 +28,8 @@ Future<void> main() async {
       // eLinux GStreamer texture plugin.
       FlutterpiVideoPlayer.registerWith();
     }
+    // P3.3 smoke: App-owned AI daemon (non-fatal if binary not shipped yet).
+    await AiDaemonSupervisor().ensureStarted();
   }
   final profile = await _loadBoardProfile();
   runApp(LwsHmiApp(boardProfile: profile));

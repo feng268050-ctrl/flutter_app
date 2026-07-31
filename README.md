@@ -114,6 +114,8 @@ make build-flutter-embedded-linux
 make build-gstreamer
 make build-platform-packages
 make build-mediamtx
+make build-opencv
+make build-ai
 make build-umtprd
 make fetch-btop
 ```
@@ -498,17 +500,20 @@ Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 | umtprd | `prebuilt/umtprd/` + fs-overlay `usr/bin/` | USB MTP gadget（`mode=mtp`；`make build-umtprd`） |
 | btop | `prebuilt/btop/` + fs-overlay `usr/bin/` | SSH 按需系统监视（官方 aarch64 musl 静态包；`make fetch-btop`） |
 | **GStreamer + MPP** | Buildroot + `prebuilt/gstreamer/` | RTSP 预览/取帧 |
-| OpenCV + ximgproc | `.cache/opencv/` | 编进 `libai.so` |
-| RKNN runtime | `prebuilt/rknn-rt/` + SDK rknpu2 | NPU 推理 |
+| OpenCV + ximgproc | `.cache/opencv/` sources → `make build-opencv` → `prebuilt/opencv/linux-arm64/` | 链进 `lws_ai_daemon` |
+| AI daemon | `native/lws_ai` → `make build-ai` → `prebuilt/ai/` → **`build-app` → `/opt/hmi`** | App 经 `cyber_pm` 监护 |
+| RKNN runtime | `prebuilt/rknn-rt/` + SDK rknpu2 | NPU 推理（rootfs + AI 链接） |
 | **P2/P3/P5 平台库** | `prebuilt/platform-packages/` | libmodbus、yaml-cpp、sqlite、avahi |
 
-另：P1 通过 `make fetch-rknn-rt` 将 SDK `external/rknpu2` 的 `librknnrt.so` + `rknn_server` 同步进 fs-overlay（本 SDK 无 `BR2_PACKAGE_RKNPU2` 包）。`prebuilt/rknn-rt` 供 P3 `libai.so` 交叉链接。
+另：P1 通过 `make fetch-rknn-rt` 将 SDK `external/rknpu2` 的 `librknnrt.so` + `rknn_server` 同步进 fs-overlay（本 SDK 无 `BR2_PACKAGE_RKNPU2` 包）。`prebuilt/rknn-rt` 供 `make build-ai` 交叉链接；daemon 本身不进 rootfs。
 
 | Target | 作用 |
 |--------|------|
-| `make build-runtime-deps` | 上表全部（含 GStreamer、btop） |
+| `make build-runtime-deps` | 上表全部（含 GStreamer、btop、opencv、ai） |
 | `make build-platform-packages` | libmodbus + yaml-cpp + sqlite + avahi |
 | `make fetch-opencv` / `fetch-opencv-ximgproc` | OpenCV 源码 |
+| `make build-opencv` | aarch64 OpenCV → `prebuilt/opencv/linux-arm64` |
+| `make build-ai` | `lws_ai_daemon` → `prebuilt/ai/linux-arm64`（需 opencv + rknn-rt） |
 | `make fetch-rknn-rt` | aarch64 `librknnrt.so` |
 | `make fetch-btop` | aarch64 musl `btop` → prebuilt + fs-overlay |
 | `make build-umtprd` | aarch64 static `umtprd` → prebuilt + fs-overlay（MTP） |
@@ -537,7 +542,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P3.0 | — | — | **cyber_ui** / **cyber_ime** path 包 🔄（优化中） |
 | P3.1 | systemd-networkd、wpa D-Bus | 开 networkd | **Dart HAL** + **网络栈切换**（L3=networkd）✅ |
 | P3.2 | 同 Image + 同 rootfs + OEM 切换 | QEMU | 模拟器验证多板多屏 ✅ W4 主路径；[`docs/p32-emulator.md`](docs/p32-emulator.md)；`make build-emulator` / **`make emulator`** |
-| P3.3 | OpenCV、yaml-cpp、RKNN | ✓ | **libai / AI daemon**（经 `cyber_pm`） |
+| P3.3 | OpenCV、yaml-cpp、RKNN、`native/lws_ai` | ✓（`build-opencv` / `build-ai`） | **`lws_ai_daemon` via `cyber_pm`**（OpenSpec `app-owned-ai-daemon`）🔄 |
 | P4 | GStreamer、sqlite、Avahi；**MediaMTX → App `/opt/hmi/bin`** | GStreamer ✓ | 业务 UI、:5580、云 🔄；MediaMTX 已 App 化（`cyber_pm`）；**P4.8 OTA** 另计 |
 | P5.0 | — | — | Android 兼容 / APK（App + YNHAPI；非 `cyber_hal`） |
 | P5.1 | flutter SDK + engine + eLinux **三件套升级** | 重编 prebuilt | 3.24 → 3.41；见 [`docs/flutter-linux-hmi-plan.md` §6.5](docs/flutter-linux-hmi-plan.md#65-flutter-engine-版本策略与升级p51) |

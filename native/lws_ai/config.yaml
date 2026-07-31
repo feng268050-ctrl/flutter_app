@@ -1,0 +1,145 @@
+# ═══════════════════════════════════════════════════════════════
+# COREDEX — RK3566 激光焊接枪  镜片防护系统  配置文件
+# det-only：仅污点检测 RKNN + 镜片污染规则
+# ═══════════════════════════════════════════════════════════════
+
+camera:
+  optical_center_x: 0
+  optical_center_y: 0
+
+models:
+  det:
+    enabled: true    # 污点目标检测 (det_raw_head.rknn)
+
+algorithm:
+  # 污点检测：固定 ROI 700×700@(565,110) resize 到 stain_input_size（默认 640×640），见 docs/训练推理后处理对齐说明.md §3/§9
+  stain_input_size: [640, 640]
+  stain_conf_thresh: 0.25
+  stain_nms_thresh: 0.45
+  # NMS 后写入 JSON/回调的最大框数；须 >0（如 100）。0=不截断，离线易出现大量框
+  stain_max_det: 25
+  stain_score_mode: logits   # det_raw_head 必须为 logits
+  use_rknn_io_mem: true
+
+# 等级规则用 stain_detection 圆 mask；检测预处理 ROI 固定于 infer_stain（565,110,700），本文件不新增 ROI/mask 键
+stain_detection:
+  window_time_ms: 200
+  mask_center_x: 885
+  mask_center_y: 430
+  mask_radius_px: 280
+  mask_ref_width: 1920
+  mask_ref_height: 1080
+  level2_min_frames: 2
+  level1_min_frames: 2
+  consecutive_frames_thresh: 2
+
+scheduler:
+  # Legacy knobs (kept for compatibility). Current scheduler is frame-driven.
+  check_interval_sec: 8
+  substream_infer_interval_sec: 0.5
+  locked_timeout_sec: 300
+  stain_valid_sec: 600
+
+debug:
+  debug_dir: debug_data
+  max_images: 200
+
+# Shared OpenCV detect settings (zero_point, lens_det, edgedrawing).
+opencv_detect:
+  enable_red_frame_gate: false
+
+# opencv_stain_detect (OpenCV stain detect; JNI nativeOpencvStainDetectFrom*).
+# Fixed square ROI + enhance-invert-erode pipeline (no OSD mask / no blue-line valid band).
+opencv_stain_detect:
+  # Deprecated/no-op for fixed ROI. Kept so older configs remain parse-compatible.
+  osd_mask:
+    max_width: 850
+    max_height: 140
+  fixed_roi:
+    x: 650
+    y: 100
+    width: 640
+    height: 640
+  preprocess:
+    enhance_clahe_clip: 2.5
+    enhance_alpha: 1.15
+    enhance_beta: 12
+    invert_thresh: 80
+    # Method-1: whiten inverted-gray fringe above this before binary_thresh_inv (higher = keep more dark pixels).
+    strict_invert_thresh: 110
+    # Reject when strict_inverted has exactly N horizontal dash blobs (l01-l03 wash). 0=off.
+    strict_invert_dirty_reject:
+      enabled: true
+      reject_dark_blob_count: 2
+      dark_max_value: 200
+      dark_min_area: 900
+      dark_min_width: 75
+      dark_min_height: 14
+      dark_max_height: 28
+      dark_min_aspect: 4.0
+    # One global median denoise on ROI grayscale before invert (0=off, odd 3/5/7).
+    gray_global_denoise_kernel: 5
+    min_blob_area: 40
+    open_kernel: 3
+    global_erode_kernel: 9
+    # Deprecated: dynamic erode loop replaced by red_bright_region HSV split mask.
+    erode_max_iterations: 0
+    erode_kernel: 3
+    red_bright_region:
+      s_min: 75
+      v_min: 40
+      red_hue_lo: 12
+      red_hue_hi: 168
+      magenta_hue_lo: 118
+      magenta_hue_hi: 168
+      morph_kernel: 3
+      dilate_iterations: 4
+      target_min_width_px: 350
+      target_min_height_px: 225
+      # Reject purple/white glare (l006 ~0.33; l001-l003 <= ~0.07). 0=off.
+      reject_v200_fraction_max: 0.15
+      # Optional low-saturation white glare gate (0=off).
+      reject_white_fraction_max: 0.0
+      # Reject top ROI wash: full-frame centroid y below this (l006 ~327; l001-l003 ~482+). 0=off.
+      reject_centroid_y_min_full: 400
+    # Halo spread gate on lens_det red_bright targets (analysis window = target bbox + margin).
+    halo_spread_gate:
+      enabled: false
+      analysis_margin_px: 40
+      core_v_min: 250
+      halo_v_min: 180
+      halo_v_max: 250
+      reject_fwhm_halo_w_frac_max: 0.82
+      reject_halo_score_max: 0.0
+    min_relative_area_vs_largest: 0.08
+    min_centroid_dist_from_largest_px: 75.0
+    # Method A: distance-transform neck width; cut when below this (px).
+    neck_split_max_width_px: 60.0
+    neck_split_min_width_px: 10.0
+    # When >= min_split_regions blobs remain, drop bbox smaller than this (px).
+    multi_blob_min_target_width_px: 40
+    multi_blob_min_target_height_px: 40
+    # When >= min_split_regions blobs remain, drop blobs farther than this from largest centroid (px).
+    multi_blob_max_centroid_dist_from_largest_px: 120.0
+    neck_cut_line_thickness_px: 5
+    global_erode_island_slot_margin_px: 16
+    min_split_regions: 1
+    # Step-10 global erode: only exactly 1 connected region is a valid target.
+    max_split_regions: 1
+    # Require this many consecutive native-ok samples before treating detection as valid (1 = any single ok frame).
+    min_consecutive_ok_frames: 1
+    blue_min_consecutive_ok_frames: 1
+    min_target_area_px: 150
+    global_erode_min_target_area_px: 150
+    global_erode_min_target_height_px: 65
+    red_above_min_target_height_px: 40
+    global_erode_reject_two_targets_centroid_dist_px: 300
+    red_above_line:
+      bright_gray_threshold: 240
+      line_margin_px: 4
+      min_above_fraction: 0.5
+    min_target_width_px: 15
+    min_target_height_px: 15
+    # Deprecated: superseded by shared red-frame gate (overexposed / invalid_non_red).
+    max_saturated_white_area_px: 640000
+  # Deprecated (ignored): valid_region.bright_* and ref_* blue-line fallback keys.

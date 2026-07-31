@@ -206,6 +206,34 @@ hmi_bundle_install_mediamtx() {
 	echo "hmi-bundle: installed $dest/bin/mediamtx"
 }
 
+# Install App-owned AI daemon (+ companion libs) into /opt/hmi.
+# Soft-skips when prebuilt missing so daily App iteration is not blocked; set
+# LWS_HMI_REQUIRE_AI=1 to fail the bundle (release gate).
+hmi_bundle_install_ai() {
+	local dest="$1"
+	local src_dir="$ROOT/prebuilt/ai/linux-arm64"
+	local src="$src_dir/lws_ai_daemon"
+	local stamp="$src_dir/.lws-prebuilt"
+
+	if [[ ! -f "$stamp" || ! -x "$src" ]]; then
+		if [[ "${LWS_HMI_REQUIRE_AI:-0}" == "1" ]]; then
+			die "AI prebuilt missing ($src). Run: make build-opencv && make build-ai"
+		fi
+		echo "hmi-bundle: skip AI daemon (missing $src; make build-ai)"
+		return 0
+	fi
+	mkdir -p "$dest/bin" "$dest/lib"
+	install -m 0755 "$src" "$dest/bin/lws_ai_daemon"
+	if [[ -d "$src_dir/lib" ]]; then
+		local f
+		for f in "$src_dir/lib"/*; do
+			[[ -e "$f" ]] || continue
+			cp -a "$f" "$dest/lib/"
+		done
+	fi
+	echo "hmi-bundle: installed $dest/bin/lws_ai_daemon"
+}
+
 # Install release layout into DEST (/opt/hmi overlay): lib/libapp.so + data/flutter_assets.
 hmi_bundle_install_release() {
 	local assets_src="$APP_DIR/build/hmi_bundle/release"
@@ -241,6 +269,7 @@ hmi_bundle_install_release() {
 		"$DEST/data/flutter_assets/kernel_blob.bin"
 
 	hmi_bundle_install_mediamtx "$DEST"
+	hmi_bundle_install_ai "$DEST"
 
 	printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >"$DEST/runtime-mode.json"
 }
@@ -304,6 +333,7 @@ EOF
 	cp -f "$icu_src" "$hmi_staging/data/icudtl.dat"
 
 	hmi_bundle_install_mediamtx "$hmi_staging"
+	hmi_bundle_install_ai "$hmi_staging"
 
 	echo "Debug staging ready at $staging"
 	echo "  app:     $hmi_staging/data/flutter_assets/kernel_blob.bin"

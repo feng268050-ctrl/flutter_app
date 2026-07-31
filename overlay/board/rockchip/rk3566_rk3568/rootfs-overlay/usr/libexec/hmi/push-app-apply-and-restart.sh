@@ -7,6 +7,7 @@ set -eu
 STAGE=/var/lib/hmi/push-app-staging
 LIB="$STAGE/lib/libapp.so"
 ASSETS="$STAGE/data/flutter_assets"
+STAGE_BIN="$STAGE/bin"
 NEXT_LIB=/opt/hmi/lib/.libapp.so.push-next
 ASSETS_DIR=/opt/hmi/data/flutter_assets
 NEXT_ASSETS=/opt/hmi/data/.flutter_assets.push-next
@@ -43,11 +44,27 @@ set_status running
 
 log "installing libapp.so and flutter_assets before restart"
 rm -f /var/lib/hmi/debug-app.pid /var/lib/hmi/debug-app.vm-service
-mkdir -p /opt/hmi/lib /opt/hmi/data/flutter_assets
+mkdir -p /opt/hmi/lib /opt/hmi/bin /opt/hmi/data/flutter_assets
 rm -rf "$NEXT_LIB" "$NEXT_ASSETS" "$OLD_ASSETS"
 install -D -m 0644 "$LIB" "$NEXT_LIB"
 mkdir -p "$NEXT_ASSETS"
 cp -a "$ASSETS/." "$NEXT_ASSETS/"
+# Product binaries / shared libs from the same build-app tree (MediaMTX, AI, OpenCV…).
+if [ -d "$STAGE_BIN" ]; then
+	log "installing /opt/hmi/bin companions"
+	cp -a "$STAGE_BIN/." /opt/hmi/bin/
+	chmod 0755 /opt/hmi/bin/* 2>/dev/null || true
+fi
+# Copy every staged lib except the AOT payload (installed atomically below).
+if [ -d "$STAGE/lib" ]; then
+	log "installing /opt/hmi/lib companions"
+	for f in "$STAGE/lib"/*; do
+		[ -e "$f" ] || continue
+		base="$(basename "$f")"
+		[ "$base" = "libapp.so" ] && continue
+		cp -a "$f" /opt/hmi/lib/
+	done
+fi
 sync
 
 mv -f "$NEXT_LIB" /opt/hmi/lib/libapp.so

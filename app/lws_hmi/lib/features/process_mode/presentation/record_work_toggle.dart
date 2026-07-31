@@ -53,7 +53,12 @@ final class RecordWorkToggle extends StatelessWidget {
               : null,
         );
         if (expand) {
-          return SizedBox.expand(child: row);
+          return SizedBox.expand(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: row,
+            ),
+          );
         }
         return row;
       },

@@ -7,7 +7,6 @@ import 'package:lws_hmi/features/process_mode/application/device_control_control
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
-import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_ramp_chart.dart';
 import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
@@ -55,7 +54,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   bool _rampOpen = false;
 
   /// Fixed ramp accordion strip (header + divider).
-  static const _rampHeaderHeight = 50.0;
+  static const _rampHeaderHeight = 65.0;
 
   /// Gap from frost panel top to ramp header.
   static const _panelTopInset = 2.0;
@@ -66,6 +65,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
 
   /// Engineer checkbox face (Material default is 18).
   static const _checkboxSize = 24.0;
+
+  /// Match right-panel parameter row height ([EngineerParameterForm] rows).
+  static const _checkboxRowHeight = 86.0;
 
   /// Retract / Feed / Enable Laser face heights (unchanged).
   static const _wireButtonsHeight = 45.0;
@@ -127,12 +129,13 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Checkboxes fill leftover height so wire/laser
-                          // always stay fully visible at the bottom.
+                          // Fixed 86px rows (same as right parameter rows).
+                          // Spacer below keeps Retract/Feed/Laser pinned.
                           Expanded(
                             child: Column(
                               children: [
-                                Expanded(
+                                SizedBox(
+                                  height: _checkboxRowHeight,
                                   child: RecordWorkToggle(
                                     key: const ValueKey(
                                         'engineer-panel-record-work'),
@@ -144,7 +147,8 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                 ),
                                 const Divider(
                                     color: Color(0x33FFFFFF), height: 1),
-                                Expanded(
+                                SizedBox(
+                                  height: _checkboxRowHeight,
                                   child: _CheckRow(
                                     key: const ValueKey(
                                         'engineer-panel-manual-gas'),
@@ -194,7 +198,8 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                 ),
                                 const Divider(
                                     color: Color(0x33FFFFFF), height: 1),
-                                Expanded(
+                                SizedBox(
+                                  height: _checkboxRowHeight,
                                   child: _CheckRow(
                                     key: const ValueKey(
                                         'engineer-panel-auto-wire'),
@@ -248,6 +253,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                 ),
                                 const Divider(
                                     color: Color(0x33FFFFFF), height: 1),
+                                const Spacer(),
                               ],
                             ),
                           ),
@@ -392,7 +398,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                           top: 0,
                           bottom: _laserButtonHeight,
                           child: ColoredBox(
-                            color: ProcessModeTokens.background,
+                            color: Theme.of(context).scaffoldBackgroundColor,
                             child: EngineerRampChart(
                               processType: widget.processType,
                               preset: widget.preset,
@@ -439,33 +445,36 @@ final class _CheckRow extends StatelessWidget {
                 onChanged!(!value);
               }
             : null,
-        child: Row(
-          children: [
-            IgnorePointer(
-              child: Opacity(
-                opacity: enabled ? 1 : 0.45,
-                child: CyberCheckbox(
-                  value: value,
-                  size: checkboxSize,
-                  // Visual only — row InkWell owns the tap.
-                  onChanged: enabled && onChanged != null ? (_) {} : null,
-                  clickSoundEnabled: false,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Row(
+            children: [
+              IgnorePointer(
+                child: Opacity(
+                  opacity: enabled ? 1 : 0.45,
+                  child: CyberCheckbox(
+                    value: value,
+                    size: checkboxSize,
+                    // Visual only — row InkWell owns the tap.
+                    onChanged: enabled && onChanged != null ? (_) {} : null,
+                    clickSoundEnabled: false,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: enabled ? Colors.white : const Color(0x66FFFFFF),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w500,
-                  height: 1.0,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: enabled ? Colors.white : const Color(0x66FFFFFF),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w500,
+                    height: 1.0,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -598,6 +598,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     final controller = ProcessLibraryScope.of(context);
     final draft = _draft;
     final accent = ProcessModeTokens.tabActiveColor(_processType);
+    // Theme blueGrey dark surface (same as Settings/Monitor), not lws-ui #060720.
+    final pageBg = Theme.of(context).scaffoldBackgroundColor;
 
     return PopScope(
       canPop: false,
@@ -608,7 +610,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         unawaited(_handleExit());
       },
       child: Scaffold(
-        backgroundColor: ProcessModeTokens.background,
+        backgroundColor: pageBg,
         appBar: WorkModeStatusBar(
           mode: WorkMode.engineer,
           processType: _processType,
@@ -622,8 +624,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                const CyberBlurBackdropTarget(
-                  child: ColoredBox(color: ProcessModeTokens.background),
+                CyberBlurBackdropTarget(
+                  child: ColoredBox(color: pageBg),
                 ),
                 Column(
                   children: [

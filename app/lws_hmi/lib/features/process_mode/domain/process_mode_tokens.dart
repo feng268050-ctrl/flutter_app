@@ -8,7 +8,8 @@ import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dar
 
 /// Shared colors / geometry for Quick + Engineer process chrome (lws-ui).
 abstract final class ProcessModeTokens {
-  /// lws-ui `engineer_base_background_color` / quick activity bg.
+  /// Quick Mode root fill (lws-ui `engineer_base_background_color` / quick bg).
+  /// Engineer / Settings / Monitor use [ThemeData.scaffoldBackgroundColor].
   static const Color background = Color(0xFF060720);
 
   /// Quick activity root uses near-black; keep shell aligned with engineer.

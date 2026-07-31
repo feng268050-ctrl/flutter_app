@@ -81,7 +81,7 @@ final class EngineerParameterForm extends StatelessWidget {
             child: Divider(
               height: 2,
               thickness: 2,
-              color: Color(0xFF1A1B32),
+              color: Color(0x33FFFFFF),
             ),
           ),
         );

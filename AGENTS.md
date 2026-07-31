@@ -6,7 +6,7 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 - **What:** Buildroot-based **embedded appliance OS** for Innohi boards (benchmark: **ynh960/961/962**) + Flutter HMI (`app/lws_hmi/`). Direction: shared **CyberUI** + **`cyber_hal`** Dart package (submodule/packages), per-product Apps, board profiles for new motherboards/panels. **No** Rust `hald` Platform API.
 - **Board SKUs (current line):** ynh960 → RK3566 (entry); ynh962 → RK3568B2 (mid); ynh961 → RK3568 (high). Same product line; **one firmware image is the near-term goal** for this line. **Validate on ynh960** — no per-SKU defconfig fork yet. Future products may use different boards/screens via packs + HAL package.
-- **Phase roadmap:** See `docs/flutter-linux-hmi-plan.md` §1 (P1–P2.5 + **P3.1 HAL** done; **P3.2** W4 archived; **P3.0 CyberUI/IME** and **P4** in progress — IPC **MediaMTX App-owned** via `cyber_pm` + `/opt/hmi/bin`; next **P3.3 AI** reuses `cyber_pm`, remaining P4 slices, P5.0 Android App/APK — not `cyber_hal` Android backends, P5.1 engine). HAL design: `openspec/changes/archive/2026-07-18-dart-hal-package/`. `cyber_hal` is Linux (+ stub) only.
+- **Phase roadmap:** See `docs/flutter-linux-hmi-plan.md` §1 (P1–P2.5 + **P3.1 HAL** done; **P3.2** W4 archived; **P3.0 CyberUI/IME** and **P4** in progress — IPC **MediaMTX** + **P3.3 AI daemon** App-owned via `cyber_pm` + `/opt/hmi/bin`; remaining P4 slices, P5.0 Android App/APK — not `cyber_hal` Android backends, P5.1 engine). HAL design: `openspec/changes/archive/2026-07-18-dart-hal-package/`. `cyber_hal` is Linux (+ stub) only.
 - **Hosts:** Linux builds natively in `linux-sdk/`; macOS uses Docker `linux/amd64` + a Docker volume for the SDK tree.
 - **Outputs:** `output/firmware/boot.img` (FIT for `rootfs_a`), `boot_b.img` (same kernel, FIT for `rootfs_b`), `rootfs.img`, per-SKU `output/firmware/<sku>/factory.img` (oem+uboot+A/B), and migration symlink `update.img` → default sku `factory.img`; Linux also has artifacts under `linux-sdk/output/firmware/`.
 - **Scope:** Active Buildroot packages follow `#include` lines in `overlay/buildroot/rockchip_rk3566_rk3568_lws_hmi_defconfig`.
@@ -106,6 +106,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `packages/cyber_hal` profile APIs / App OEM load path | `make build-app`, `make push-app` |
 | `packages/cyber_pm` (process supervisor) | `make build-app`, `make push-app` (host: `dart test` in package) |
 | `prebuilt/mediamtx/**`, `scripts/build-mediamtx.sh`, App MediaMTX relay / `/opt/hmi/bin` | `make build-mediamtx` (if prebuilt missing), `make build-app`, `make push-app`; purge old rootfs binary/unit: `make apply-overlay`, `make build-rootfs`, `make upgrade` |
+| `native/lws_ai/**`, `scripts/build-opencv.sh`, `scripts/build-ai.sh`, `prebuilt/opencv/**`, `prebuilt/ai/**`, App `AiDaemonSupervisor` | `make fetch-opencv`, `make fetch-opencv-ximgproc`, `make fetch-rknn-rt`, `make build-opencv`, `make build-ai`, `make build-app`, `make push-app` (release gate: `LWS_HMI_REQUIRE_AI=1 make build-app`) |
 | `board/parameter-buildroot-fit.txt` (GPT / A/B) | `make apply-overlay`, `make build-oem`, `make build-img`, `make flash` (repartition once) |
 | A/B upgrade helpers (`overlay/.../ab-*.sh`, `ab-boot-confirm.service`) | First adoption: `make apply-overlay`, `make build-rootfs`, `make build-oem`, `make build-img`, `make flash`; existing P2.4 board: `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `scripts/upgrade-remote.sh`, `scripts/stream-file-progress.py`, or Makefile `upgrade` only (board already has P2.4 overlay + A/B GPT) | `make upgrade` (or `OEM_ONLY=1 make upgrade`); no firmware rebuild unless image inputs are stale |
@@ -115,6 +116,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | Host device registry/reboot paths (`scripts/ssh-devices.sh`, `scripts/emulator-devices.sh`, `scripts/flash-usb.sh`, `scripts/usb-ssh-*.sh`, `scripts/device-target.sh`) | no firmware rebuild; exercise `make devices` (SN + ChipID + EMU) / `SN=` or `CHIPID=` / `IP=127.0.0.1:2222` selection / `make reboot` / `make reboot-loader` |
 | `product.ini` host tooling (`scripts/set-product-prop.sh`, `scripts/del-product-prop.sh`, Makefile `set-prop` / `del-prop`) | none (host SSH mutate tunables only; brand/model/sn refused); exercise `make set-prop` / `make del-prop` (multi-board: `SN=` / `CHIPID=` / `IP=`) |
 | Demo alarm host tooling (`scripts/trigger-alarm.sh`, Makefile `alarm` / `alarm-clean`) | none (host SSH writes `/run/hmi/demo-alarm.cmd`); board needs HMI with watcher (`make build-app` + `make push-app` once if app is stale); exercise `make alarm CODE=L001` / `make alarm-clean` |
+| AI offline RKNN smoke (`scripts/smoke-ai-offline-infer.sh`, Makefile `smoke-ai`, `native/lws_ai/assets/img/stain_demo*.jpg`, `native/lws_ai/tools/smoke/`) | none (host uploads demo JPG + talks to `/run/hmi/ai/cmd.sock`); board needs AI daemon (`make build-app` + `make push-app` once if stale); exercise `make smoke-ai` |
 | Alarm history SQLite (`SqliteAlarmLogRepository`, `/var/lib/hmi/alarm-logs.db`) | none beyond shipping App (`make build-app` / `make push-app`); board needs rootfs `libsqlite3` (already via platform packages) |
 | Overlay `read-device-serial.sh` (product.ini `sn` preference) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | Release / factory artifact | Build all changed inputs + `make build-oem`, then `make build-img`; for hardware validation: `make reboot-loader`, `make flash` (`FACTORY_SKU=` / `IMAGE=`) |
@@ -166,7 +168,8 @@ Keep long command examples in **README.md**; keep agent-only rules (rebuild bloc
 |------|------|
 | `app/lws_hmi/` | Flutter HMI → `overlay/.../opt/hmi`（含产品 `bin/`，如 mediamtx） |
 | `packages/cyber_hal/` | Dart HAL path 包 |
-| `packages/cyber_pm/` | 子进程监护（MediaMTX、日后 AI） |
+| `packages/cyber_pm/` | 子进程监护（MediaMTX、AI daemon） |
+| `native/lws_ai/` | AI C++（`lws_ai_daemon`）；产物经 `make build-ai` → `/opt/hmi` |
 | `packages/cyber_ui/` / `cyber_ime/` / `cyber_alarm/` | UI / IME / 告警引擎 |
 | `overlay/.../rootfs-overlay/` | Rootfs overlay (systemd, scripts, `/opt/hmi` staging) |
 | `overlay/buildroot/` | Defconfig fragments, package pins |

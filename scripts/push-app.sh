@@ -28,7 +28,7 @@ usage() {
 	cat <<EOF
 Usage: $0
 
-Deploy libapp.so + flutter_assets to /opt/hmi over SSH, then restart hmi.service.
+Deploy libapp.so + flutter_assets (+ product bin/lib companions when present) to /opt/hmi over SSH, then restart hmi.service.
 
 Env:
   SN / LWS_HMI_SN              select board when multiple devices
@@ -113,8 +113,25 @@ cleanup() { rm -rf "$STAGE"; }
 trap cleanup EXIT
 
 echo "Transferring libapp.so..."
-remote "rm -rf $STAGING && mkdir -p $STAGING/lib $STAGING/data/flutter_assets"
+remote "rm -rf $STAGING && mkdir -p $STAGING/lib $STAGING/bin $STAGING/data/flutter_assets"
 upload_with_progress "$LIBAPP" "$STAGING/lib/libapp.so"
+
+# Product companions (MediaMTX, AI daemon + OpenCV/RKNN .so) from the same build-app tree.
+if [[ -d "$OVERLAY_HMI/bin" ]]; then
+	echo "Transferring /opt/hmi/bin companions..."
+	BIN_TAR="$STAGE/hmi-bin.tar"
+	tar -C "$OVERLAY_HMI/bin" -cf "$BIN_TAR" .
+	upload_with_progress "$BIN_TAR" "$STAGING/hmi-bin.tar"
+	remote "tar -xf '$STAGING/hmi-bin.tar' -C '$STAGING/bin' && rm -f '$STAGING/hmi-bin.tar' && chmod 0755 '$STAGING/bin'/* 2>/dev/null || true"
+fi
+if [[ -d "$OVERLAY_HMI/lib" ]]; then
+	echo "Transferring /opt/hmi/lib companions (excl. libapp.so)..."
+	LIB_TAR="$STAGE/hmi-lib.tar"
+	# Exclude libapp.so — already staged above as the AOT payload.
+	tar -C "$OVERLAY_HMI/lib" --exclude='libapp.so' -cf "$LIB_TAR" .
+	upload_with_progress "$LIB_TAR" "$STAGING/hmi-lib.tar"
+	remote "tar -xf '$STAGING/hmi-lib.tar' -C '$STAGING/lib' && rm -f '$STAGING/hmi-lib.tar'"
+fi
 
 echo "Transferring flutter_assets..."
 ASSETS_TAR="$STAGE/flutter_assets.tar"

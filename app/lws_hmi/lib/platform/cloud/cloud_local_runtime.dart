@@ -11,6 +11,7 @@ import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_demo_recording_paths.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:cyber_hal/ip_camera.dart';
+import 'package:lws_hmi/features/ai/application/ai_daemon_supervisor.dart';
 import 'package:lws_hmi/features/process_library/application/engineer_preset_deriver.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
@@ -116,6 +117,7 @@ final class CloudLocalRuntime {
       sshDebug: services.sshDebug,
       monitorStatHub: monitorStatHub,
       monitorAlertsHub: monitorAlertsHub,
+      cameraAiPublisher: AiDaemonSupervisor.instance.cameraAiPublisher,
     );
     final videoRepo =
         processVideoRepository ?? SqliteProcessVideoRepository();
@@ -191,7 +193,7 @@ final class CloudLocalRuntime {
   Stream<CloudLinkUiStatus> get linkStatusChanges => _linkStatusCtrl.stream;
 
   void _wireLocalHttpHandlers() {
-    localHttp.cameraAiAvailable = () async => false;
+    localHttp.cameraAiAvailable = () async => AiDaemonSupervisor.instance.isReady;
     localHttp.cameraShowOverlayHandler = null;
     localHttp.cameraRecordHandler = (switchValue) async {
       try {

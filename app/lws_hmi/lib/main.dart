@@ -28,8 +28,8 @@ Future<void> main() async {
       // eLinux GStreamer texture plugin.
       FlutterpiVideoPlayer.registerWith();
     }
-    // P3.3 smoke: App-owned AI daemon (non-fatal if binary not shipped yet).
-    await AiDaemonSupervisor().ensureStarted();
+    // P3.3+: App-owned AI daemon (non-fatal if binary not shipped yet).
+    await AiDaemonSupervisor.instance.ensureStarted();
   }
   final profile = await _loadBoardProfile();
   runApp(LwsHmiApp(boardProfile: profile));

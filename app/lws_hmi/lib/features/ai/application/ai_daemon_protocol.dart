@@ -14,11 +14,22 @@ final class AiDaemonProtocol {
   }
 
   static Map<String, Object?> pingRequest({String? id, int? tsMs}) {
+    return cmd('ping', id: id, tsMs: tsMs);
+  }
+
+  /// Build a JSON-Lines cmd request (`type` + optional fields + `id`/`ts_ms`).
+  static Map<String, Object?> cmd(
+    String type, {
+    Map<String, Object?> fields = const {},
+    String? id,
+    int? tsMs,
+  }) {
     return <String, Object?>{
       'v': 1,
-      'type': 'ping',
+      'type': type,
       'id': id ?? newId(),
       'ts_ms': tsMs ?? DateTime.now().millisecondsSinceEpoch,
+      ...fields,
     };
   }
 

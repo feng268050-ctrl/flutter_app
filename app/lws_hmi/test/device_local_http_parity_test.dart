@@ -206,6 +206,28 @@ void main() {
       expect(body, 'camera_ai_unavailable');
     });
 
+    test('GET /v1/camera/ai SSE idle when available', () async {
+      http.cameraAiAvailable = () async => true;
+      final client = HttpClient();
+      final req = await client.getUrl(
+        Uri.parse('http://127.0.0.1:$port/v1/camera/ai'),
+      );
+      final resp = await req.close();
+      expect(resp.statusCode, 200);
+      expect(
+        resp.headers.value(HttpHeaders.contentTypeHeader),
+        contains('text/event-stream'),
+      );
+      final first = await resp
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .take(3)
+          .toList();
+      expect(first[0], 'event: idle');
+      expect(first[1], startsWith('data: '));
+      client.close(force: true);
+    });
+
     test('POST /v1/camera/record', () async {
       final resp = await postJson('/v1/camera/record', {'switch': 'on'});
       final body = jsonDecode(await resp.transform(utf8.decoder).join());

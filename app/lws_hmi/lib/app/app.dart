@@ -42,6 +42,7 @@ import 'package:lws_hmi/features/process_video/presentation/process_video_detail
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_thresholds_controller.dart';
+import 'package:lws_hmi/features/ai/application/live_weld_stream_detect_coordinator.dart';
 import 'package:lws_hmi/features/settings/application/ai_assistance_settings.dart';
 import 'package:lws_hmi/features/settings/application/app_cyber_ime_language_provider.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
@@ -143,6 +144,12 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   late final AiAssistanceSettings _aiAssistanceSettings =
       AiAssistanceSettings(_advancedSettingsStore);
+
+  late final LiveWeldStreamDetectCoordinator _liveWeldStreamDetect =
+      LiveWeldStreamDetectCoordinator(
+    services: _services,
+    aiAssistance: _aiAssistanceSettings,
+  );
 
   late final DangerousOperationsSettings _dangerousOperationsSettings =
       DangerousOperationsSettings(_advancedSettingsStore);
@@ -299,6 +306,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       _syncFirmwareCommandWatcher.start();
       _upgradeProcessLibraryCommandWatcher.start();
       unawaited(_startCloudLocalRuntime());
+      unawaited(_liveWeldStreamDetect.start());
       _jobRuntimeStatistics.resume();
     });
   }
@@ -456,6 +464,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       _miscSettingsStore.dispose();
     }
     _aiAssistanceSettings.dispose();
+    unawaited(_liveWeldStreamDetect.stop());
     _dangerousOperationsSettings.dispose();
     _thresholdsController.dispose();
     unawaited(_processLibrary.close());

@@ -13,6 +13,7 @@ import 'package:lws_hmi/platform/local_http/api_result.dart';
 import 'package:lws_hmi/platform/local_http/local_http_video_row.dart';
 import 'package:lws_hmi/platform/local_http/monitor_alerts_sse_hub.dart';
 import 'package:lws_hmi/platform/local_http/monitor_stat_sse_hub.dart';
+import 'package:lws_hmi/features/ai/application/camera_ai_http_publisher.dart';
 import 'package:lws_hmi/platform/local_http/multipart_form_data.dart';
 import 'package:lws_hmi/platform/lws_trace.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
@@ -54,11 +55,13 @@ final class DeviceLocalHttpServer {
     this.sshDebug,
     MonitorStatSseHub? monitorStatHub,
     MonitorAlertsSseHub? monitorAlertsHub,
+    CameraAiHttpPublisher? cameraAiPublisher,
     this.cameraRecordHandler,
     this.cameraShowOverlayHandler,
     this.cameraAiAvailable,
   })  : monitorStatHub = monitorStatHub ?? MonitorStatSseHub(),
-        monitorAlertsHub = monitorAlertsHub ?? MonitorAlertsSseHub();
+        monitorAlertsHub = monitorAlertsHub ?? MonitorAlertsSseHub(),
+        cameraAiPublisher = cameraAiPublisher ?? CameraAiHttpPublisher();
 
   final int port;
   ProcessVideoRepository? processVideoRepository;
@@ -67,6 +70,7 @@ final class DeviceLocalHttpServer {
 
   final MonitorStatSseHub monitorStatHub;
   final MonitorAlertsSseHub monitorAlertsHub;
+  final CameraAiHttpPublisher cameraAiPublisher;
 
   /// `switch` is `on` or `off`.
   Future<LocalHttpCameraActionResult> Function(String switchValue)?
@@ -1053,11 +1057,41 @@ final class DeviceLocalHttpServer {
       );
       return;
     }
-    await _writePlain(
-      request,
-      HttpStatus.serviceUnavailable,
-      'camera_ai_unavailable',
+
+    final sub = cameraAiPublisher.acquire();
+
+    request.response.statusCode = HttpStatus.ok;
+    request.response.headers.set(
+      HttpHeaders.contentTypeHeader,
+      'text/event-stream; charset=utf-8',
     );
+    request.response.headers.set(HttpHeaders.cacheControlHeader, 'no-cache');
+    request.response.headers.set(HttpHeaders.connectionHeader, 'keep-alive');
+    request.response.headers.set('X-Accel-Buffering', 'no');
+    request.response.bufferOutput = false;
+
+    var closed = false;
+    unawaited(request.response.done.then((_) {
+      closed = true;
+      sub.closeFromClient();
+    }));
+
+    try {
+      await for (final frame in sub.frames) {
+        if (closed) {
+          break;
+        }
+        request.response.add(frame);
+        await request.response.flush();
+      }
+    } catch (e) {
+      debugPrint('local-http: camera ai sse end: $e');
+    } finally {
+      sub.closeFromClient();
+      try {
+        await request.response.close();
+      } catch (_) {}
+    }
   }
 
   // --- ADB -------------------------------------------------------------------

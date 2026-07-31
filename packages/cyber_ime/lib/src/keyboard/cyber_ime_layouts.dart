@@ -8,7 +8,8 @@ import 'package:cyber_ime/src/session/cyber_ime_regional_layout.dart';
 /// Factory for Keyboard A / B layouts.
 ///
 /// Keyboard A letter layouts are phone soft pads from [CyberImeSoftLayouts]
-/// (QWERTY / QWERTZ / AZERTY). Symbol layers stay shared phone pages.
+/// (QWERTY / QWERTZ / AZERTY). Symbol layers are shared for QWERTY/QWERTZ;
+/// AZERTY uses FR phone 123 / multifunction pages.
 abstract final class CyberImeLayouts {
   /// Keyboard A letter layer for the active (or explicit) regional profile.
   static CyberImeLayout letters({
@@ -39,11 +40,15 @@ abstract final class CyberImeLayouts {
   }) {
     final regional =
         profile ?? CyberImeRegionalLayoutRegistry.provider.profile;
+    if (regional == CyberImeRegionalProfile.azerty) {
+      return _azertySymbolsPrimary();
+    }
+
     final currency = switch (regional) {
       CyberImeRegionalProfile.qwerty => r'$',
       CyberImeRegionalProfile.qwertz ||
       CyberImeRegionalProfile.azerty =>
-        '€',
+        '€', // azerty returns earlier; kept for exhaustiveness
     };
 
     CyberImeKeyDef digit(String v) =>
@@ -96,7 +101,15 @@ abstract final class CyberImeLayouts {
     );
   }
 
-  static CyberImeLayout symbolsExtended() {
+  static CyberImeLayout symbolsExtended({
+    CyberImeRegionalProfile? profile,
+  }) {
+    final regional =
+        profile ?? CyberImeRegionalLayoutRegistry.provider.profile;
+    if (regional == CyberImeRegionalProfile.azerty) {
+      return _azertySymbolsExtended();
+    }
+
     CyberImeKeyDef symbol(String v) =>
         CyberImeKeyDef(id: CyberImeKeyId.custom, primary: v);
 
@@ -126,6 +139,100 @@ abstract final class CyberImeLayouts {
             primary: "'",
             secondary: '`',
           ),
+          const CyberImeKeyDef(
+            id: CyberImeKeyId.backspace,
+            primary: '⌫',
+            widthWeight: 1.5,
+          ),
+        ]),
+        CyberImeKeyboardRow(_symbolBottomRow()),
+      ],
+    );
+  }
+
+  /// FR AZERTY numbers page (123) — reference figure 2.
+  static CyberImeLayout _azertySymbolsPrimary() {
+    CyberImeKeyDef digit(String v) =>
+        CyberImeKeyDef(id: CyberImeKeyId.digit, primary: v);
+    CyberImeKeyDef symbol(String v) =>
+        CyberImeKeyDef(id: CyberImeKeyId.custom, primary: v);
+
+    return CyberImeLayout(
+      kind: CyberImeKeyboardKind.symbolsPrimary,
+      rows: [
+        CyberImeKeyboardRow([
+          for (final d in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'])
+            digit(d),
+        ]),
+        CyberImeKeyboardRow([
+          for (final s in ['@', '#', '€', '_', '&', '-', '+', '(', ')', '/'])
+            symbol(s),
+        ]),
+        CyberImeKeyboardRow([
+          // Wide left switch into the multifunction page; face matches the
+          // FR reference (= \ <), not the shared #+ = label.
+          const CyberImeKeyDef(
+            id: CyberImeKeyId.symbolsMore,
+            primary: r'= \ <',
+            widthWeight: 1.5,
+          ),
+          for (final s in ['*', '"', "'", ':', ';', '!', '?']) symbol(s),
+          const CyberImeKeyDef(
+            id: CyberImeKeyId.backspace,
+            primary: '⌫',
+            widthWeight: 1.5,
+          ),
+        ]),
+        CyberImeKeyboardRow(_symbolBottomRow()),
+      ],
+    );
+  }
+
+  /// FR AZERTY multifunction page (#+=) — reference figure 3.
+  static CyberImeLayout _azertySymbolsExtended() {
+    CyberImeKeyDef symbol(String v) =>
+        CyberImeKeyDef(id: CyberImeKeyId.custom, primary: v);
+
+    return CyberImeLayout(
+      kind: CyberImeKeyboardKind.symbolsExtended,
+      rows: [
+        CyberImeKeyboardRow([
+          for (final s in [
+            '~',
+            '`',
+            '|',
+            '•',
+            '√',
+            'π',
+            '÷',
+            '×',
+            '¶',
+            'Δ',
+          ])
+            symbol(s),
+        ]),
+        CyberImeKeyboardRow([
+          for (final s in [
+            '£',
+            '¢',
+            '¥',
+            r'$',
+            '^',
+            '°',
+            '=',
+            '{',
+            '}',
+            r'\',
+          ])
+            symbol(s),
+        ]),
+        CyberImeKeyboardRow([
+          const CyberImeKeyDef(
+            id: CyberImeKeyId.modeSwitch,
+            primary: '!?#',
+            widthWeight: 1.5,
+          ),
+          for (final s in ['%', '©', '®', '™', '✓', '[', ']']) symbol(s),
           const CyberImeKeyDef(
             id: CyberImeKeyId.backspace,
             primary: '⌫',

@@ -77,16 +77,11 @@ void main() {
       expect(rowLabels(layout, 0).any((l) => RegExp(r'^\d$').hasMatch(l)),
           isFalse,
           reason: '$profile');
-      // QWERTY preserves its existing digit/symbol second-function layer;
-      // other regional letter pads reserve their second-function slot for
-      // explicit long-press candidates.
+      // Soft letter pads expose digit/symbol second-function faces; accent /
+      // umlaut variants stay on long-press popups.
       for (final key in layout.rows.expand((r) => r.keys)) {
         if (!key.isLetter) continue;
-        if (profile == CyberImeRegionalProfile.qwerty) {
-          expect(key.secondary, isNotNull, reason: '$profile ${key.primary}');
-        } else {
-          expect(key.secondary, isNull, reason: '$profile ${key.primary}');
-        }
+        expect(key.secondary, isNotNull, reason: '$profile ${key.primary}');
         if (key.longPressOptions != null) {
           expect(
             key.longPressOptions!.any((o) => RegExp(r'^\d$').hasMatch(o)),
@@ -123,16 +118,37 @@ void main() {
     expect(layout.rows[0].keys.first.popupOptions(), ['q', '1', 'Q']);
   });
 
-  test('QWERTZ soft swaps Y/Z and exposes umlaut long-press', () {
+  test('QWERTZ soft letter order, secondaries, and umlaut long-press', () {
     final layout =
         CyberImeLayouts.letters(profile: CyberImeRegionalProfile.qwertz);
     expect(rowLabels(layout, 0), 'QWERTZUIOP'.split(''));
+    expect(rowLabels(layout, 1), 'ASDFGHJKL'.split(''));
     expect(
       layout.rows[2].keys.where((k) => k.isLetter).map((k) => k.primary).toList(),
       'YXCVBNM'.split(''),
     );
+    expect(
+      layout.rows[0].keys.map((k) => k.secondary).toList(),
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+    );
+    expect(
+      layout.rows[1].keys.map((k) => k.secondary).toList(),
+      ['@', '#', '€', '_', '&', '-', '+', '(', ')'],
+    );
+    expect(
+      layout.rows[2].keys.where((k) => k.isLetter).map((k) => k.secondary).toList(),
+      ['*', '"', "'", ':', ';', '!', '?'],
+    );
     final a = layout.rows[1].keys.firstWhere((k) => k.primary == 'A');
-    expect(a.popupOptions(), containsAll(['a', 'ä', 'A', 'Ä']));
+    expect(a.popupOptions(), containsAll(['a', 'ä', 'á', 'à', 'â', 'A', 'Ä']));
+    final o = layout.rows[0].keys.firstWhere((k) => k.primary == 'O');
+    expect(o.popupOptions(), containsAll(['ö', 'ó', 'ò', 'ô', 'Ö']));
+    final u = layout.rows[0].keys.firstWhere((k) => k.primary == 'U');
+    expect(u.popupOptions(), containsAll(['ü', 'ú', 'ù', 'û', 'Ü']));
+    final s = layout.rows[1].keys.firstWhere((k) => k.primary == 'S');
+    expect(s.popupOptions(), containsAll(['ß', 'ẞ']));
+    final e = layout.rows[0].keys.firstWhere((k) => k.primary == 'E');
+    expect(e.popupOptions(), containsAll(['é', 'è', 'ê', 'É']));
   });
 
   test('AZERTY soft letter order and apostrophe', () {
@@ -143,6 +159,54 @@ void main() {
     expect(rowLabels(layout, 2), contains("'"));
     final e = layout.rows[0].keys.firstWhere((k) => k.primary == 'E');
     expect(e.popupOptions(), containsAll(['é', 'è', 'ê', 'ë', 'É']));
+    expect(
+      layout.rows[0].keys.map((k) => k.secondary).toList(),
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+    );
+    expect(
+      layout.rows[1].keys.map((k) => k.secondary).toList(),
+      ['@', '#', '€', '_', '&', '-', '+', '(', ')', '/'],
+    );
+    expect(
+      layout.rows[2].keys
+          .where((k) => k.isLetter || k.primary == "'")
+          .map((k) => k.secondary)
+          .toList(),
+      ['*', '"', "'", ':', ';', '!', '?'],
+    );
+  });
+
+  test('AZERTY symbols pages match FR phone reference', () {
+    final primary =
+        CyberImeLayouts.symbolsPrimary(profile: CyberImeRegionalProfile.azerty);
+    expect(rowLabels(primary, 0), '1234567890'.split(''));
+    expect(
+      rowLabels(primary, 1),
+      ['@', '#', '€', '_', '&', '-', '+', '(', ')', '/'],
+    );
+    expect(primary.rows[2].keys.first.id, CyberImeKeyId.symbolsMore);
+    expect(primary.rows[2].keys.first.primary, r'= \ <');
+    expect(
+      primary.rows[2].keys.skip(1).take(7).map((k) => k.primary).toList(),
+      ['*', '"', "'", ':', ';', '!', '?'],
+    );
+
+    final extended = CyberImeLayouts.symbolsExtended(
+      profile: CyberImeRegionalProfile.azerty,
+    );
+    expect(
+      rowLabels(extended, 0),
+      ['~', '`', '|', '•', '√', 'π', '÷', '×', '¶', 'Δ'],
+    );
+    expect(
+      rowLabels(extended, 1),
+      ['£', '¢', '¥', r'$', '^', '°', '=', '{', '}', r'\'],
+    );
+    expect(extended.rows[2].keys.first.primary, '!?#');
+    expect(
+      extended.rows[2].keys.skip(1).take(7).map((k) => k.primary).toList(),
+      ['%', '©', '®', '™', '✓', '[', ']'],
+    );
   });
 
   test('romaji converts ka and nihongo', () {

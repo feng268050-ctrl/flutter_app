@@ -110,10 +110,9 @@ void main() {
 
     expect(find.text('z'), findsWidgets); // physical Y → z
     expect(find.text('y'), findsWidgets); // physical Z → y
-    expect(find.text('ä'), findsOneWidget);
-    expect(find.text('ö'), findsOneWidget);
-    expect(find.text('ü'), findsOneWidget);
-    expect(find.text('ß'), findsOneWidget);
+    for (final character in ['1', '@', '€', '*', '?']) {
+      expect(find.text(character), findsWidgets);
+    }
     expect(find.text('F1'), findsNothing);
     expect(find.text('F12'), findsNothing);
     // No dedicated numpad chrome on Keyboard A.
@@ -227,8 +226,10 @@ void main() {
     final gesture = await tester.startGesture(rect.center);
     await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
     expect(find.text('ä'), findsWidgets);
-    // Options [a, ä, A, Ä] — second quarter commits ä.
-    await gesture.moveTo(Offset(rect.left + rect.width * 0.35, rect.center.dy));
+    // Options [a, ä, á, …] — select index 1 (ä).
+    await gesture.moveTo(
+      Offset(rect.left + rect.width * (1.5 / 10), rect.center.dy),
+    );
     await tester.pump();
     await gesture.up();
     await tester.pump();
@@ -314,14 +315,13 @@ void main() {
     expect(find.byIcon(Icons.keyboard_return), findsOneWidget);
     expect(find.text('z'), findsWidgets);
     expect(find.text('y'), findsWidgets);
-    expect(find.text('ä'), findsOneWidget);
-    expect(find.text('ö'), findsOneWidget);
-    expect(find.text('ü'), findsOneWidget);
-    expect(find.text('ß'), findsOneWidget);
+    for (final character in ['1', '@', '€', '*', '?']) {
+      expect(find.text(character), findsWidgets);
+    }
     expect(find.text('Ctrl'), findsNothing);
   });
 
-  testWidgets('AZERTY panel and preview show accented second functions',
+  testWidgets('AZERTY panel and preview show FR second-function faces',
       (tester) async {
     CyberImeRegionalLayoutRegistry.register(
       const CyberImeFixedRegionalLayoutProvider(CyberImeRegionalProfile.azerty),
@@ -341,9 +341,19 @@ void main() {
       ),
     );
 
-    for (final character in ['à', 'é', 'ô', 'ç']) {
-      expect(find.text(character), findsOneWidget);
+    for (final character in ['1', '€', '@', '*', '?']) {
+      expect(find.text(character), findsWidgets);
     }
+
+    await tester.tap(find.text('123'));
+    await tester.pump();
+    expect(find.text(r'= \ <'), findsOneWidget);
+    expect(find.text('€'), findsOneWidget);
+
+    await tester.tap(find.text(r'= \ <'));
+    await tester.pump();
+    expect(find.text('!?#'), findsOneWidget);
+    expect(find.text('™'), findsOneWidget);
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -353,8 +363,8 @@ void main() {
       ),
     );
 
-    for (final character in ['à', 'é', 'ô', 'ç']) {
-      expect(find.text(character), findsOneWidget);
+    for (final character in ['1', '€', '@', '*', '?']) {
+      expect(find.text(character), findsWidgets);
     }
   });
 

@@ -535,10 +535,15 @@ class CyberImeKeyLabel extends StatelessWidget {
             keyDef.keyCode != null);
 
     if (!showSecondary) {
+      final fontSize = label.length > 4
+          ? 16.0
+          : label.length > 2
+              ? 21.0
+              : 26.0;
       return Text(
         label,
         style: TextStyle(
-          fontSize: label.length > 2 ? 21 : 26,
+          fontSize: fontSize,
           fontWeight: FontWeight.w600,
         ),
       );

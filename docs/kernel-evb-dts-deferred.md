@@ -26,14 +26,15 @@ Use this table when a feature lands and dmesg warnings become symptoms. **Sympto
 | Boot log / symptom | Likely cause | Phase | Impact today (P1) | Fix direction |
 |--------------------|--------------|-------|-------------------|---------------|
 | `arm-scmi … protocol 17/22 not active` | TF-A does not expose optional SCMI protocols | — | None; CRU/PMIC path still works | Ignore unless using SCMI-based idle/DVFS |
-| `rockchip-vop2 … no regulator (vop)` | EVB OPP expects named `vop` rail; ynh960 uses RK817 | P1 polish / P3 | Display works; VOP OPP/dynamic voltage scaling missing | Add `&vop { vop-supply = <&vdd_logic>; };` (see `rk3566-rk817-tablet.dts`) |
+| `rockchip-vop2 … no regulator (vop)` | EVB OPP expects named `vop` rail; ynh960 uses RK817 | **fixed P3.3** | Was: VOP OPP missing | [`ynh960-npu-vop.dtsi`](../overlay/kernel/rockchip/ynh960-npu-vop.dtsi): `&vop { vop-supply = <&vdd_logic>; }` |
 | `dw-mipi-dsi … failed to find panel: -517` | `EPROBE_DEFER` during early probe | P1 | Normal if panel lights after ParamUpdate | If panel stays black: check `ynh960-display.dtsi`, `960_lcd_param_rk356x.txt`, ParamUpdate |
-| `Failed to initialize dvfs info cpu0` | No valid `vdd_cpu` regulator after EVB bucks removed; `&cpu0` only has `reg-name` | P2/P3 | CPU runs but fine-grained cpufreq/DVFS may be degraded | Map `&cpu0 { cpu-supply = <&…>; }` to actual CPU buck on ynh960 (schematic / Innohi); may be RK817 DCDC or external buck |
-| `rockchip,bus bus-npu … no regulator (pvtm)` / `failed to get OPP table` | NPU bus OPP / leakage tables tied to EVB PMIC naming | **P3** (RKNPU) | NPU DVFS incomplete | Align NPU `pvtm-supply` / OPP with RK817 (`vdd_npu` exists on rk809); reference `rk3566-rk817-tablet.dts` |
-| `RKNPU … can't request region` / `IRQ npu_irq not found` | RKNPU MMIO/IRQ node mismatch or conflict with EVB fragment | **P3** | RKNN runtime may fail probe | Verify `&rknpu` status, memory region, interrupts in board DTS; enable `lws_hmi_npu.config`; compare working RK3566 RKNPU dtsi |
+| `Failed to initialize dvfs info cpu0` | No valid `vdd_cpu` regulator after EVB bucks removed; `&cpu0` only has `reg-name` | **fixed P1** (evb-trim) | Was: CPU pinned ~1104 MHz | [`ynh960-evb-trim.dtsi`](../overlay/kernel/rockchip/ynh960-evb-trim.dtsi): `&xz3215` + `&cpu0 { cpu-supply = <&vdd_cpu_1>; }` |
+| `rockchip,bus bus-npu … no regulator (pvtm)` / `failed to get OPP table` | EVB leaves `pvtm-supply` commented; driver asks OPP for consumer `pvtm` | **fixed P3.3** | Was: NPU **bus** OPP incomplete (`fde40000.npu` itself still ran) | [`ynh960-npu-vop.dtsi`](../overlay/kernel/rockchip/ynh960-npu-vop.dtsi): `pvtm-supply = <&vdd_cpu_1>` (not `vdd_npu`; that rail is already `rknpu-supply`). `Failed to get leakage` on bus-npu alone is expected (opp-table has no leakage cell) |
+| `RKNPU … IRQ npu_irq not found` | SoC `&rknpu` has `interrupts` but no `interrupt-names`; 6.1 driver tries by-name first | **fixed P3.3** | Was: error log then index fallback | [`ynh960-npu-vop.dtsi`](../overlay/kernel/rockchip/ynh960-npu-vop.dtsi): `interrupt-names = "npu_irq"` |
+| `RKNPU … can't request region` | IOMMU mode: `devm_ioremap_resource` EBUSY → driver remaps via `devm_ioremap` | — | Harmless noise when `iommu is enabled` | **Accepted**; do not “fix” via DT. Driver change only if we want quieter logs |
 | `mpp_rkvenc … Failed to get leakage` | Encoder OPP/leakage from EVB tables | **P5** (RTSP/record) | HW encode may be limited | Innohi/MPP dtsi for ynh960; enable when mediamtx path needs encode |
 | `mpp_rkvdec2 … shared_niu_a/h is not found` | Missing NIU reset lines in DT for rkvdec2 | **P5** | HW decode may fail | Add reset/clock resources per Rockchip MPP binding for ynh960 |
-| `rockchip-dmc … failed to get vop pn to msch rl` | DMC ↔ VOP bandwidth coupling (follows VOP regulator) | P2/P5 | DMC fixed freq still works | Fix `vop-supply` first; then revisit DMC devfreq if bandwidth tuning needed |
+| `rockchip-dmc … failed to get vop pn to msch rl` | DMC ↔ VOP bandwidth coupling (follows VOP regulator) | P2/P5 | DMC fixed freq still works | Re-check after P3.3 `vop-supply`; if still noisy, revisit DMC devfreq separately |
 | `mdio_bus stmmac-1: MDIO device at address 0 is missing` / `__stmmac_open: Cannot attach to PHY` | EVB `phy@0` / wrong reset (UART5) | **P2.1** | `eth0` exists, cannot attach PHY | [`ynh960-uart5-gmac.dtsi`](../overlay/kernel/rockchip/ynh960-uart5-gmac.dtsi): `gpio4 PB3` reset, `phy@1` `reg=<1>`; pin name with `10-gmac.link` |
 | `Failed to reset the dma` / `stmmac_hw_setup` after PHY `stmmac-1:01` OK | Still EVB **RGMII** (`init for RGMII`, 125 MHz); product is **RMII** like ynh512/518 | **P2.1** | PHY OK; `ip link set eth0 up` → Connection timed out | Same dtsi: `phy-mode="rmii"`, 50 MHz clocks, RMII pinctrl; drop `tx_delay`/`rx_delay` |
 | `pin gpio3-20 already requested by fe6b0000.serial; cannot claim for fe700020.pwm` | EVB `&uart7` (m1 on gpio3 PC4/PC5) vs customer LED `&pwm14`/`&pwm15` on same pads | **P2.1 fixed** | pwm14 probe failed (LED PWM only; panel BL is pwm4) | [`ynh960-uart7-pwm.dtsi`](../overlay/kernel/rockchip/ynh960-uart7-pwm.dtsi) disables unused `&uart7` |
@@ -69,8 +70,14 @@ On serial console (USB unplugged for accurate port-22 KPI):
 # Should be gone:
 dmesg | grep -E 'fan53555|spi-nand'
 
-# Still OK (until deferred row fixed):
-dmesg | grep -E 'fiq_debugger|vop2|dvfs info cpu0|RKNPU|own-gpio|stmmac-1'
+# P3.3 NPU/VOP (after ynh960-npu-vop.dtsi):
+dmesg | grep -E 'bus-npu|no regulator \(pvtm\)|no regulator \(vop\)|npu_irq'
+# Expect: no pvtm/vop regulator errors; no IRQ npu_irq not found
+ls /sys/devices/platform/bus-npu/devfreq 2>/dev/null
+test -e /proc/device-tree/bus-npu/pvtm-supply && echo pvtm-supply=ok
+
+# Other residual (until deferred row fixed):
+dmesg | grep -E 'fiq_debugger|own-gpio|stmmac-1'
 
 verify-boot
 ```
@@ -81,7 +88,8 @@ verify-boot
 
 | Path | Role |
 |------|------|
-| `overlay/kernel/rockchip/ynh960-evb-trim.dtsi` | P1 EVB node disable |
+| `overlay/kernel/rockchip/ynh960-npu-vop.dtsi` | P3.3: bus-npu `pvtm-supply`, VOP `vop-supply`, RKNPU `interrupt-names` |
+| `overlay/kernel/rockchip/ynh960-evb-trim.dtsi` | P1 EVB node disable + CPU `cpu-supply` |
 | `overlay/kernel/rockchip/ynh960-own-gpio.dtsi` | P2: own-gpio pinmux fix vs gmac1 |
 | `overlay/kernel/rockchip/ynh960-uart5-gmac.dtsi` | P2.1: RMII + `gpio4 PB3` reset + MDIO addr 1 (drop EVB RGMII / UART5 reset) |
 | `overlay/kernel/rockchip/ynh960-uart7-pwm.dtsi` | P2.1: disable unused uart7 so pwm14/15 can claim gpio3 PC4/PC5 |
@@ -97,6 +105,7 @@ verify-boot
 
 | Date | Change |
 |------|--------|
+| 2026-07-31 | P3.3: `ynh960-npu-vop.dtsi` — bus-npu `pvtm-supply`→`vdd_cpu_1`, VOP `vop-supply`→`vdd_logic`, RKNPU `interrupt-names=npu_irq`; document IOMMU mem-region noise as accepted |
 | 2026-07-15 | P2.1 USB keyboard userspace: xkeyboard-config + Compose stubs; flutter-pi patches 0001–0003 (arrows / NumLock LED / key-repeat); `FLUTTER_PI_APPLY_PACKAGE_PATCHES` for `SITE_METHOD=local` |
 | 2026-07-15 | P2.1 USB keyboard: re-enable `usbhost_dwc3` + `u2phy0_host` for 1 mm expansion; DWC3 dual-role; restore `USB_HOST_PWREN*` under RMII |
 | 2026-07-15 | P2.1: uart5-gmac — switch EVB RGMII → product **RMII** (sibling clocks/pinctrl); keep `gpio4 PB3` + `rgmii_phy1` @ MDIO `reg=<1>`; `eth0` via `10-gmac.link` |

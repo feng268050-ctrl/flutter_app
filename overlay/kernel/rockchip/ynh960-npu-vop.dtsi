@@ -1,0 +1,22 @@
+// ynh960: close EVB→product gaps for NPU bus OPP, VOP OPP, and RKNPU IRQ naming.
+// Git SoT: overlay/kernel/rockchip/ynh960-npu-vop.dtsi
+//
+// Live board (pre-fix): bus-npu missing pvtm-supply → OPP init fails;
+// vop missing vop-supply; rknpu has interrupts but no interrupt-names
+// so platform_get_irq_byname("npu_irq") logs -ENXIO before index fallback.
+// Reference: rk3566-rk817-tablet.dts (&bus_npu / &vop). CPU buck is xz3215
+// vdd_cpu_1 (same as ynh960-evb-trim.dtsi cpu-supply).
+
+&bus_npu {
+	bus-supply = <&vdd_logic>;
+	pvtm-supply = <&vdd_cpu_1>;
+	status = "okay";
+};
+
+&vop {
+	vop-supply = <&vdd_logic>;
+};
+
+&rknpu {
+	interrupt-names = "npu_irq";
+};

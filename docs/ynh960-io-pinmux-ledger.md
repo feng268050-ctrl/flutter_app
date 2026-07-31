@@ -139,6 +139,7 @@ cat /var/lib/hal/mouse.conf 2>/dev/null || true
 | `ynh960-touch.dtsi` | Goodix only |
 | `ynh960-display.dtsi` | MIPI 面板 |
 | `ynh960-evb-trim.dtsi` | 关掉板无件的 EVB 节点（**勿**关 fiq-debugger） |
+| `ynh960-npu-vop.dtsi` | P3.3：bus-npu `pvtm-supply`、VOP `vop-supply`、RKNPU `npu_irq` 命名 |
 
 路径均在 `overlay/kernel/rockchip/`。
 

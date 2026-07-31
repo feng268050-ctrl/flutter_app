@@ -12,6 +12,7 @@ final class R2StsCredentials {
     required this.bucket,
     required this.endpoint,
     this.region = 'auto',
+    this.publicBaseUrl,
   });
 
   final String accessKeyId;
@@ -20,6 +21,9 @@ final class R2StsCredentials {
   final String bucket;
   final String endpoint;
   final String region;
+
+  /// HTTPS prefix for public object URLs (`public_base_url` from STS).
+  final String? publicBaseUrl;
 
   /// Redacted summary safe for info logs.
   String get logSafe =>
@@ -65,8 +69,14 @@ final class DeviceR2StsClient {
       final token =
           (d['sessionToken'] ?? d['session_token'])?.toString() ?? '';
       final bucket = (d['bucket'] ?? d['bucketName'])?.toString() ?? '';
-      final endpoint = (d['endpoint'] ?? d['accountEndpoint'])?.toString() ?? '';
+      final endpoint = (d['endpoint'] ?? d['accountEndpoint'] ?? d['endpoint_url'])
+              ?.toString() ??
+          '';
       final region = (d['region'] ?? 'auto').toString();
+      final publicBase = (d['public_base_url'] ??
+              d['publicBaseUrl'] ??
+              d['publicBase'])
+          ?.toString();
       if (accessKeyId.isEmpty || secret.isEmpty || bucket.isEmpty) {
         return null;
       }
@@ -77,6 +87,9 @@ final class DeviceR2StsClient {
         bucket: bucket,
         endpoint: endpoint,
         region: region,
+        publicBaseUrl: (publicBase == null || publicBase.trim().isEmpty)
+            ? null
+            : publicBase.trim(),
       );
     } catch (_) {
       return null;

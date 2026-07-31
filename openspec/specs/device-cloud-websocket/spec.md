@@ -131,13 +131,32 @@ The system SHALL handle: `command.send_process_param`, `command.send_process_lib
 
 ### Requirement: Video list filters and upload lifecycle
 
-`command.video_list_request` MUST honor `page` (default 1), `page_size` (default 10, max 100), optional filters (`process_type`, `material_type`, `start_date`, `end_date`, `order`, `upload_status`), and when `upload_status` is omitted MUST exclude `uploadStatus == 0`. `command.upload_video` MUST ack acceptance when upload starts (`videoId`), emit `video.uploading` progress, and emit `video.metadata` after successful catalog registration. `command.delete_video` MUST read `video_id` (prefer snake) and use stable error messages (`missing_video_id`, `video_not_found`, …).
+`command.video_list_request` MUST honor `page` (default 1), `page_size` (default 10, max 100), optional filters (`process_type`, `material_type`, `start_date`, `end_date`, `order`, `upload_status`), and when `upload_status` is omitted MUST exclude `uploadStatus == 0`. `command.upload_video` MUST ack acceptance when upload starts (`videoId`), then run the shared cover-then-media coordinator (see below / `process-video-cloud-upload`), emit `video.uploading` progress, and emit `video.metadata` after cover and after successful catalog registration. `command.delete_video` MUST read `video_id` (prefer snake) and use stable error messages (`missing_video_id`, `video_not_found`, …).
 
 #### Scenario: Upload ack before completion
 
 - **WHEN** `command.upload_video` names an existing local video and upload is started
 - **THEN** the device MUST send `command.upload_video_ack` with success before upload finishes
 - **AND** MUST later emit `video.uploading` and, on success, `video.metadata`
+
+### Requirement: Process-video WebSocket upload uses cover-then-media coordinator
+
+When `command.upload_video` requests cloud upload, the system SHALL acknowledge acceptance promptly, then run the shared process-video cloud upload coordinator: cover when still `uploadStatus == 0` (emit `video.metadata` on cover success), then media PutObject with throttled `video.uploading` progress (0→100), finishing at `uploadStatus == 3` with a forced final `video.uploading`. Device-local `POST /v1/videos` multipart ingest remains a separate LAN API that writes the process-video index only and does not by itself perform Worker/R2 upload.
+
+#### Scenario: Upload command early ack
+
+- **WHEN** `command.upload_video` names a known local `videoId` and upload can start
+- **THEN** the device MUST ack acceptance/start before PutObject completes
+
+#### Scenario: Cover then video
+
+- **WHEN** the named row is still at `uploadStatus == 0`
+- **THEN** cover upload MUST complete (or fail the run) before video PutObject begins
+
+#### Scenario: Mid-upload progress to remote
+
+- **WHEN** media PutObject is in progress after early ack
+- **THEN** the device MUST emit one or more `video.uploading` frames with increasing `uploadProgress` before the terminal 100% frame
 
 ### Requirement: OTA WebSocket protocol without apply
 

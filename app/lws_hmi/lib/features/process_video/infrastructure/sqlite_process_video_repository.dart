@@ -252,6 +252,26 @@ INSERT INTO $kTable (
   }
 
   @override
+  Future<List<ProcessVideoRecord>> listPendingCoverUploads({
+    int limit = 50,
+  }) async {
+    try {
+      if (!await _ensureOpen()) {
+        return const [];
+      }
+      final rows = _db!.select(
+        'SELECT * FROM $kTable WHERE upload_status = 0 '
+        'ORDER BY create_time_ms DESC LIMIT ?',
+        [limit.clamp(1, 200)],
+      );
+      return [for (final row in rows) _fromRow(row)];
+    } catch (e) {
+      debugPrint('process-video sqlite: listPendingCoverUploads failed: $e');
+      return const [];
+    }
+  }
+
+  @override
   Future<bool> updateUploadState({
     required String videoId,
     required int uploadStatus,

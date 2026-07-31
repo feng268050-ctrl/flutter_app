@@ -19,6 +19,7 @@ final class ProcessVideoSaveHandler {
     required this.repository,
     this.minDuration = const Duration(milliseconds: 1000),
     this.defaultResolution = '1920x1080',
+    this.afterSave,
     Random? random,
   }) : _random = random ?? Random.secure();
 
@@ -26,6 +27,9 @@ final class ProcessVideoSaveHandler {
   final Duration minDuration;
   final String defaultResolution;
   final Random _random;
+
+  /// Optional cloud cover enqueue (lws-ui CoverWorker after insert).
+  final Future<void> Function(ProcessVideoRecord saved)? afterSave;
 
   Future<ProcessVideoSaveOutcome> save({
     required String videoPath,
@@ -53,7 +57,7 @@ final class ProcessVideoSaveHandler {
         return ProcessVideoSaveOutcome.discardedTooShort;
       }
       await repository.open();
-      await repository.insert(
+      final saved = await repository.insert(
         ProcessVideoRecord(
           videoId: _newVideoId(),
           videoPath: videoPath,
@@ -66,6 +70,14 @@ final class ProcessVideoSaveHandler {
           createTimeMs: completedAt.toUtc().millisecondsSinceEpoch,
         ),
       );
+      final hook = afterSave;
+      if (hook != null) {
+        try {
+          await hook(saved);
+        } catch (e) {
+          debugPrint('process-video afterSave failed: $e');
+        }
+      }
       return ProcessVideoSaveOutcome.saved;
     } catch (e) {
       debugPrint('process-video save failed: $e');

@@ -3002,6 +3002,42 @@ abstract class AppLocalizations {
   /// **'Failed to save recording'**
   String get processVideoSaveFailed;
 
+  /// No description provided for @processVideoUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get processVideoUpload;
+
+  /// No description provided for @processVideoUploadingCover.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading cover…'**
+  String get processVideoUploadingCover;
+
+  /// No description provided for @processVideoUploadingVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading video {percent}%'**
+  String processVideoUploadingVideo(int percent);
+
+  /// No description provided for @processVideoUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed'**
+  String get processVideoUploadFailed;
+
+  /// No description provided for @processVideoUploadDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload complete'**
+  String get processVideoUploadDone;
+
+  /// No description provided for @processVideoAlreadyUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Already uploaded'**
+  String get processVideoAlreadyUploaded;
+
   /// No description provided for @ipCameraDemoRecordHint.
   ///
   /// In en, this message translates to:

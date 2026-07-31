@@ -1501,6 +1501,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processVideoSaveFailed => '录像保存失败';
 
   @override
+  String get processVideoUpload => '上传';
+
+  @override
+  String get processVideoUploadingCover => '正在上传封面…';
+
+  @override
+  String processVideoUploadingVideo(int percent) {
+    return '正在上传视频 $percent%';
+  }
+
+  @override
+  String get processVideoUploadFailed => '上传失败';
+
+  @override
+  String get processVideoUploadDone => '上传完成';
+
+  @override
+  String get processVideoAlreadyUploaded => '已上传';
+
+  @override
   String get ipCameraDemoRecordHint => '仅演示 — 不会出现在监视器 → 视频列表';
 
   @override
@@ -3046,6 +3066,26 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get processVideoSaveFailed => '錄像保存失敗';
+
+  @override
+  String get processVideoUpload => '上傳';
+
+  @override
+  String get processVideoUploadingCover => '正在上傳封面…';
+
+  @override
+  String processVideoUploadingVideo(int percent) {
+    return '正在上傳視頻 $percent%';
+  }
+
+  @override
+  String get processVideoUploadFailed => '上傳失敗';
+
+  @override
+  String get processVideoUploadDone => '上傳完成';
+
+  @override
+  String get processVideoAlreadyUploaded => '已上傳';
 
   @override
   String get ipCameraDemoRecordHint => '僅演示 — 不會出現在監視器 → 視頻列表';

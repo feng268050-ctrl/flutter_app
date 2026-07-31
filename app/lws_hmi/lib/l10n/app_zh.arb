@@ -490,6 +490,19 @@
   "recordWorkLabel": "录制工作",
   "processVideoRecordingTooShort": "录像过短，未保存",
   "processVideoSaveFailed": "录像保存失败",
+  "processVideoUpload": "上传",
+  "processVideoUploadingCover": "正在上传封面…",
+  "processVideoUploadingVideo": "正在上传视频 {percent}%",
+  "@processVideoUploadingVideo": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "processVideoUploadFailed": "上传失败",
+  "processVideoUploadDone": "上传完成",
+  "processVideoAlreadyUploaded": "已上传",
   "ipCameraDemoRecordHint": "仅演示 — 不会出现在监视器 → 视频列表",
   "volumeSetFailed": "音量设置失败",
   "volumeSettingText": "音量",

@@ -639,6 +639,19 @@
   "recordWorkLabel": "Record Work",
   "processVideoRecordingTooShort": "Recording too short — not saved",
   "processVideoSaveFailed": "Failed to save recording",
+  "processVideoUpload": "Upload",
+  "processVideoUploadingCover": "Uploading cover…",
+  "processVideoUploadingVideo": "Uploading video {percent}%",
+  "@processVideoUploadingVideo": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "processVideoUploadFailed": "Upload failed",
+  "processVideoUploadDone": "Upload complete",
+  "processVideoAlreadyUploaded": "Already uploaded",
   "ipCameraDemoRecordHint": "Demo only — not listed in Monitor → Videos",
   "volumeSetFailed": "Couldn’t set volume",
   "volumeSettingText": "Volume",

@@ -80,9 +80,12 @@ final class CloudHttpClient {
       };
       merged.forEach(req.headers.set);
       if (bodyBytes != null) {
+        req.contentLength = bodyBytes.length;
         req.add(bodyBytes);
       } else if (bodyText != null) {
-        req.write(bodyText);
+        final encoded = utf8.encode(bodyText);
+        req.contentLength = encoded.length;
+        req.add(encoded);
       }
       final resp = await req.close().timeout(timeout);
       final bytes = <int>[];

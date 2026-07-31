@@ -206,6 +206,25 @@ hmi_bundle_install_mediamtx() {
 	echo "hmi-bundle: installed $dest/bin/mediamtx"
 }
 
+# Install aarch64 static ffmpeg for process-video JPEG covers (soft-skip if absent).
+# Sources: prebuilt/ffmpeg/linux-arm64/ffmpeg, else .cache/ffmpeg-android/ffmpeg.
+hmi_bundle_install_ffmpeg() {
+	local dest="$1"
+	local src=""
+	if [[ -x "$ROOT/prebuilt/ffmpeg/linux-arm64/ffmpeg" ]]; then
+		src="$ROOT/prebuilt/ffmpeg/linux-arm64/ffmpeg"
+	elif [[ -x "$ROOT/.cache/ffmpeg-android/ffmpeg" ]]; then
+		src="$ROOT/.cache/ffmpeg-android/ffmpeg"
+	fi
+	if [[ -z "$src" ]]; then
+		echo "hmi-bundle: skip ffmpeg (place aarch64 static at prebuilt/ffmpeg/linux-arm64/ffmpeg or .cache/ffmpeg-android/ffmpeg)"
+		return 0
+	fi
+	mkdir -p "$dest/bin"
+	install -m 0755 "$src" "$dest/bin/ffmpeg"
+	echo "hmi-bundle: installed $dest/bin/ffmpeg"
+}
+
 # Install App-owned AI daemon (+ companion libs) into /opt/hmi.
 # Soft-skips when prebuilt missing so daily App iteration is not blocked; set
 # LWS_HMI_REQUIRE_AI=1 to fail the bundle (release gate).
@@ -269,6 +288,7 @@ hmi_bundle_install_release() {
 		"$DEST/data/flutter_assets/kernel_blob.bin"
 
 	hmi_bundle_install_mediamtx "$DEST"
+	hmi_bundle_install_ffmpeg "$DEST"
 	hmi_bundle_install_ai "$DEST"
 
 	printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >"$DEST/runtime-mode.json"
@@ -333,6 +353,7 @@ EOF
 	cp -f "$icu_src" "$hmi_staging/data/icudtl.dat"
 
 	hmi_bundle_install_mediamtx "$hmi_staging"
+	hmi_bundle_install_ffmpeg "$hmi_staging"
 	hmi_bundle_install_ai "$hmi_staging"
 
 	echo "Debug staging ready at $staging"

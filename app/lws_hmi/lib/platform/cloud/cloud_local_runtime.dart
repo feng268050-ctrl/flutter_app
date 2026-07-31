@@ -15,8 +15,10 @@ import 'package:lws_hmi/features/process_library/application/engineer_preset_der
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_cloud_upload_coordinator.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
+import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
@@ -115,6 +117,16 @@ final class CloudLocalRuntime {
       monitorStatHub: monitorStatHub,
       monitorAlertsHub: monitorAlertsHub,
     );
+    final videoRepo =
+        processVideoRepository ?? SqliteProcessVideoRepository();
+    processVideoUpload = ProcessVideoCloudUploadCoordinator(
+      services: services,
+      repository: videoRepo,
+      prober: prober,
+      r2StsClient: r2StsClient,
+      r2PutClient: r2PutClient,
+      ws: ws,
+    );
     mdns = DeviceMdnsAdvertise();
     _wireLocalHttpHandlers();
     _installDefaultHandlers();
@@ -149,6 +161,7 @@ final class CloudLocalRuntime {
   late final MonitorAlertsSseHub monitorAlertsHub;
   late final DeviceRemoteLiveCache liveCache;
   late final DeviceLocalHttpServer localHttp;
+  late final ProcessVideoCloudUploadCoordinator processVideoUpload;
   late final DeviceMdnsAdvertise mdns;
 
   void Function()? onAuthError;
@@ -412,6 +425,7 @@ final class CloudLocalRuntime {
     }
     _originPinned = true;
     _publishLinkStatus();
+    unawaited(processVideoUpload.enqueuePendingCovers());
     final product = await services.ensureProductInfo();
     final sn = product.sn.trim();
     if (sn.isEmpty) {
@@ -441,6 +455,7 @@ final class CloudLocalRuntime {
     }
     _originPinned = true;
     _cancelCloudLinkRetries();
+    unawaited(processVideoUpload.enqueuePendingCovers());
     final product = await services.ensureProductInfo();
     final sn = product.sn.trim().isEmpty ? 'UNKNOWN' : product.sn.trim();
     if (sn != 'UNKNOWN') {
@@ -499,6 +514,7 @@ final class CloudLocalRuntime {
       _linkFollowUpTimer?.cancel();
       _linkFollowUpTimer = null;
       _publishLinkStatus();
+      unawaited(processVideoUpload.enqueuePendingCovers());
       debugPrint('cloud-runtime: pinned $pin');
       final product = await services.ensureProductInfo();
       final sn = product.sn.trim();
@@ -1068,25 +1084,6 @@ final class CloudLocalRuntime {
         'processParametersJson': r.snapshot?.toJsonString(),
       };
 
-  Map<String, Object?> _videoMetadataPayload(
-    ProcessVideoRecord r, {
-    required String videoUrl,
-  }) =>
-      {
-        'videoId': r.videoId,
-        'processParametersJson': r.snapshot?.toJsonString(),
-        'processType': r.processType.wireValue,
-        'materialType': r.materialType?.storageValue,
-        'fileSize': r.fileSize,
-        'duration': r.durationMs,
-        'createTime': r.createTimeMs,
-        'resolution': r.resolution,
-        'uploadStatus': ProcessVideoUploadStatus.videoUploaded,
-        'uploadProgress': 100,
-        'coverUrl': r.coverUrl ?? '',
-        'videoUrl': videoUrl,
-      };
-
   Future<ProcessVideoRecord?> _findVideoByUuid(String videoId) async {
     final repo = processVideoRepository;
     if (repo == null || videoId.isEmpty) {
@@ -1106,7 +1103,7 @@ final class CloudLocalRuntime {
         type: 'command.upload_video_ack',
         requestId: request.id,
         success: false,
-        message: 'missing videoId',
+        message: 'missing_videoId',
       );
       return;
     }
@@ -1120,8 +1117,7 @@ final class CloudLocalRuntime {
       );
       return;
     }
-    final pin = prober.pinnedBase;
-    if (pin == null) {
+    if (prober.pinnedBase == null) {
       await dispatcher.sendDataAck(
         type: 'command.upload_video_ack',
         requestId: request.id,
@@ -1130,13 +1126,21 @@ final class CloudLocalRuntime {
       );
       return;
     }
-    final file = File(row.videoPath);
-    if (!await file.exists()) {
+    if (!await File(row.videoPath).exists()) {
       await dispatcher.sendDataAck(
         type: 'command.upload_video_ack',
         requestId: request.id,
         success: false,
         message: 'file_missing',
+      );
+      return;
+    }
+    if (row.uploadStatus == ProcessVideoUploadStatus.videoUploaded) {
+      await dispatcher.sendDataAck(
+        type: 'command.upload_video_ack',
+        requestId: request.id,
+        success: false,
+        message: 'already_uploaded',
       );
       return;
     }
@@ -1146,86 +1150,20 @@ final class CloudLocalRuntime {
       type: 'command.upload_video_ack',
       requestId: request.id,
       success: true,
-      message: 'accepted',
+      message: '',
     );
-
-    try {
-      final sts = await r2StsClient.fetchSts(pinnedBase: pin);
-      if (sts == null) {
-        debugPrint('cloud-runtime: upload sts_failed after accept');
-        return;
-      }
-      await processVideoRepository?.updateUploadState(
-        videoId: videoId,
-        uploadStatus: ProcessVideoUploadStatus.videoUploading,
-        uploadProgress: 0,
-      );
-      await ws.send(
-        DeviceWsEnvelope.build(
-          type: 'video.uploading',
-          payload: {
-            'videoId': videoId,
-            'uploadStatus': ProcessVideoUploadStatus.videoUploading,
-            'uploadProgress': 0,
-            'videoUrl': '',
-          },
-        ),
-      );
-      final bytes = await file.readAsBytes();
-      final objectKey = 'process-videos/${row.videoId}.mp4';
-      final putOk = await r2PutClient.putObject(
-        credentials: sts,
-        objectKey: objectKey,
-        bytes: bytes,
-        contentType: 'video/mp4',
-      );
-      if (!putOk) {
-        debugPrint('cloud-runtime: r2_put_failed after accept');
-        return;
-      }
-      final videoUrl =
-          '${sts.endpoint.replaceAll(RegExp(r'/+$'), '')}/${sts.bucket}/$objectKey';
-      await videoMetadataClient.uploadVideoAndProcessData(
-        pinnedBase: pin,
-        body: {
-          'videoId': videoId,
-          'videoUrl': videoUrl,
-          'processType': row.processType.wireValue,
-          'materialType': row.materialType?.storageValue,
-          'createTime': row.createTimeMs,
-          'fileSize': row.fileSize,
-          'duration': row.durationMs,
-          'resolution': row.resolution,
-          'processParametersJson': row.snapshot?.toJsonString(),
-        },
-      );
-      await processVideoRepository?.updateUploadState(
-        videoId: videoId,
-        uploadStatus: ProcessVideoUploadStatus.videoUploaded,
-        uploadProgress: 100,
-        videoUrl: videoUrl,
-      );
-      await ws.send(
-        DeviceWsEnvelope.build(
-          type: 'video.uploading',
-          payload: {
-            'videoId': videoId,
-            'uploadStatus': ProcessVideoUploadStatus.videoUploaded,
-            'uploadProgress': 100,
-            'videoUrl': videoUrl,
-          },
-        ),
-      );
-      await ws.send(
-        DeviceWsEnvelope.build(
-          type: 'video.metadata',
-          payload: _videoMetadataPayload(row, videoUrl: videoUrl),
-        ),
-      );
-    } catch (e) {
-      debugPrint('cloud-runtime: upload video failed after accept: $e');
-    }
+    unawaited(processVideoUpload.uploadVideo(videoId));
   }
+
+  /// Monitor / Record Work: enqueue cover drain or full upload.
+  Future<void> notifyProcessVideoSaved() =>
+      processVideoUpload.enqueuePendingCovers();
+
+  Future<bool> uploadProcessVideo(
+    String videoId, {
+    ProcessVideoUploadListener? listener,
+  }) =>
+      processVideoUpload.uploadVideo(videoId, listener: listener);
 
   Future<void> _handleDeleteVideo(DeviceWsEnvelope request) async {
     final payload = request.payload;

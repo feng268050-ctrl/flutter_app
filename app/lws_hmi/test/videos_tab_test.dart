@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
@@ -33,6 +35,8 @@ void main() {
   });
 
   testWidgets('empty Videos tab', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -48,6 +52,8 @@ void main() {
   });
 
   testWidgets('populated row and cancel delete', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final repo = _MemRepo()
       ..seed(
         ProcessVideoRecord(
@@ -81,6 +87,7 @@ void main() {
     expect(find.text('Spot Welding'), findsOneWidget);
     expect(find.text('Carbon Steel'), findsOneWidget);
     expect(find.text('01:05'), findsOneWidget);
+    expect(find.text('Upload'), findsOneWidget);
 
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
@@ -95,6 +102,89 @@ void main() {
     await tester.pumpAndSettle();
     expect(repo.countSync(), 0);
     expect(find.text('No recordings'), findsOneWidget);
+  });
+
+  testWidgets('Upload disabled when already uploaded', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repo = _MemRepo()
+      ..seed(
+        ProcessVideoRecord(
+          id: 1,
+          videoId: 'done',
+          videoPath: '/tmp/done.mp4',
+          processType: ProcessType.spotWelding,
+          processParametersJson: '{}',
+          fileSize: 1,
+          durationMs: 1000,
+          createTimeMs: 1,
+          uploadStatus: ProcessVideoUploadStatus.videoUploaded,
+        ),
+      );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: VideosTab(repository: repo),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final upload = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Upload'),
+    );
+    expect(upload.onPressed, isNull);
+  });
+
+  testWidgets('Upload shows progress then done', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repo = _MemRepo()
+      ..seed(
+        ProcessVideoRecord(
+          id: 2,
+          videoId: 'up1',
+          videoPath: '/tmp/up.mp4',
+          processType: ProcessType.continuousWelding,
+          processParametersJson: '{}',
+          fileSize: 1,
+          durationMs: 2000,
+          createTimeMs: 2,
+          uploadStatus: ProcessVideoUploadStatus.coverUploaded,
+        ),
+      );
+    final finish = Completer<void>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: VideosTab(
+            repository: repo,
+            uploadVideo: (videoId, {listener}) async {
+              listener?.onMetadataPhaseStarted();
+              await finish.future;
+              listener?.onVideoProgress(40);
+              listener?.onVideoProgress(100);
+              listener?.onFinishedSuccess();
+              return true;
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Upload'));
+    await tester.pump();
+    expect(find.text('Uploading cover…'), findsOneWidget);
+    finish.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Upload complete'), findsOneWidget);
   });
 }
 
@@ -153,6 +243,15 @@ final class _MemRepo implements ProcessVideoRepository {
     }
     return null;
   }
+
+  @override
+  Future<List<ProcessVideoRecord>> listPendingCoverUploads({
+    int limit = 50,
+  }) async =>
+      _rows
+          .where((r) => r.uploadStatus == 0)
+          .take(limit)
+          .toList(growable: false);
 
   @override
   Future<bool> updateUploadState({

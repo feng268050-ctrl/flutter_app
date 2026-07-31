@@ -1,10 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
+import 'package:lws_hmi/platform/cloud/cloud_headers.dart';
 import 'package:lws_hmi/platform/cloud/cloud_http_client.dart';
 import 'package:lws_hmi/platform/cloud/device_r2_sts_client.dart';
 import 'package:lws_hmi/platform/lws_trace.dart';
+
+/// Byte progress during streaming PutObject (`readSoFar` / `totalBytes`).
+typedef R2PutByteProgress = void Function(int readSoFar, int totalBytes);
 
 /// Minimal S3-compatible PutObject using STS credentials (R2).
 final class DeviceR2PutObjectClient {
@@ -12,11 +18,83 @@ final class DeviceR2PutObjectClient {
 
   final CloudHttpClient cloudHttp;
 
+  /// In-memory PutObject (cover JPEG). Uses payload SHA-256.
   Future<bool> putObject({
     required R2StsCredentials credentials,
     required String objectKey,
     required List<int> bytes,
     String contentType = 'application/octet-stream',
+  }) {
+    return _put(
+      credentials: credentials,
+      objectKey: objectKey,
+      contentType: contentType,
+      contentLength: bytes.length,
+      payloadHash: sha256.convert(bytes).toString(),
+      writeBody: (req) async {
+        req.add(bytes);
+      },
+    );
+  }
+
+  /// Streaming file PutObject with optional byte progress (lws-ui video path).
+  ///
+  /// Uses `UNSIGNED-PAYLOAD` so the body can stream without buffering the
+  /// whole MP4 (AWS/R2 SigV4). Cover uploads should keep [putObject].
+  Future<bool> putFile({
+    required R2StsCredentials credentials,
+    required String objectKey,
+    required File file,
+    String contentType = 'application/octet-stream',
+    R2PutByteProgress? onProgress,
+  }) async {
+    if (!await file.exists()) {
+      debugPrint('r2-put: file missing ${file.path}');
+      return false;
+    }
+    final total = await file.length();
+    if (total <= 0) {
+      debugPrint('r2-put: empty file ${file.path}');
+      return false;
+    }
+    return _put(
+      credentials: credentials,
+      objectKey: objectKey,
+      contentType: contentType,
+      contentLength: total,
+      payloadHash: 'UNSIGNED-PAYLOAD',
+      writeBody: (req) async {
+        final raf = await file.open();
+        try {
+          const chunkSize = 64 * 1024;
+          var read = 0;
+          onProgress?.call(0, total);
+          while (true) {
+            final chunk = await raf.read(chunkSize);
+            if (chunk.isEmpty) {
+              break;
+            }
+            req.add(chunk);
+            read += chunk.length;
+            onProgress?.call(read, total);
+          }
+          if (read < total) {
+            onProgress?.call(total, total);
+          }
+        } finally {
+          await raf.close();
+        }
+      },
+    );
+  }
+
+  Future<bool> _put({
+    required R2StsCredentials credentials,
+    required String objectKey,
+    required String contentType,
+    required int contentLength,
+    required String payloadHash,
+    required Future<void> Function(HttpClientRequest req) writeBody,
   }) async {
     final endpoint = credentials.endpoint.trim();
     if (endpoint.isEmpty) {
@@ -37,7 +115,6 @@ final class DeviceR2PutObjectClient {
     final now = DateTime.now().toUtc();
     final amzDate = _amzDate(now);
     final dateStamp = _dateStamp(now);
-    final payloadHash = sha256.convert(bytes).toString();
     final region = credentials.region.isEmpty ? 'auto' : credentials.region;
     final scope = '$dateStamp/$region/s3/aws4_request';
 
@@ -93,31 +170,50 @@ final class DeviceR2PutObjectClient {
       headers['x-amz-security-token'] = credentials.sessionToken;
     }
 
-    lwsTrace('r2-put: ${credentials.logSafe} key=$objectKey bytes=${bytes.length}');
-    final resp = await cloudHttp.request(
-      method: 'PUT',
-      url: uri,
-      headers: headers,
-      bodyBytes: bytes,
-      timeout: const Duration(seconds: 120),
-      maxBodyBytes: 1024,
+    lwsTrace(
+      'r2-put: ${credentials.logSafe} key=$objectKey bytes=$contentLength',
     );
-    return resp.ok;
-  }
 
-  Future<bool> putFile({
-    required R2StsCredentials credentials,
-    required String objectKey,
-    required File file,
-    String contentType = 'application/octet-stream',
-  }) async {
-    final bytes = await file.readAsBytes();
-    return putObject(
-      credentials: credentials,
-      objectKey: objectKey,
-      bytes: bytes,
-      contentType: contentType,
-    );
+    HttpClient? client;
+    try {
+      client = await cloudHttp.openClient(
+        timeout: Duration(
+          seconds: math.max(120, (contentLength / (256 * 1024)).ceil() + 60),
+        ),
+      );
+      final timeout = Duration(
+        seconds: math.max(120, (contentLength / (128 * 1024)).ceil() + 60),
+      );
+      final req = await client.openUrl('PUT', uri).timeout(timeout);
+      final merged = {
+        ...CloudHeaders.forRequest(appVersion: cloudHttp.appVersion),
+        ...headers,
+      };
+      merged.forEach(req.headers.set);
+      req.contentLength = contentLength;
+      await writeBody(req);
+      final resp = await req.close().timeout(timeout);
+      final bodyBytes = <int>[];
+      await for (final chunk in resp) {
+        if (bodyBytes.length >= 1024) {
+          break;
+        }
+        bodyBytes.addAll(chunk.take(1024 - bodyBytes.length));
+      }
+      final ok = resp.statusCode >= 200 && resp.statusCode < 300;
+      if (!ok) {
+        debugPrint(
+          'r2-put: failed status=${resp.statusCode} '
+          'body=${utf8.decode(bodyBytes, allowMalformed: true)}',
+        );
+      }
+      return ok;
+    } catch (e) {
+      debugPrint('r2-put: exception $e');
+      return false;
+    } finally {
+      client?.close(force: true);
+    }
   }
 
   static String _amzDate(DateTime utc) {

@@ -18,6 +18,7 @@ import 'package:lws_hmi/features/process_video/application/process_video_snapsho
 import 'package:lws_hmi/features/process_video/application/process_video_snapshot_source.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
+import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
@@ -108,6 +109,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
           ),
           saveHandler: ProcessVideoSaveHandler(
             repository: SqliteProcessVideoRepository(),
+            afterSave: (_) async {
+              final runtime = CloudLocalRuntimeScope.maybeOf(context);
+              await runtime?.notifyProcessVideoSaved();
+            },
           ),
           onMessage: (message) {
             if (!mounted) {

@@ -155,6 +155,15 @@ final class _MemRepo implements ProcessVideoRepository {
   }
 
   @override
+  Future<List<ProcessVideoRecord>> listPendingCoverUploads({
+    int limit = 50,
+  }) async =>
+      _rows
+          .where((r) => r.uploadStatus == 0)
+          .take(limit)
+          .toList(growable: false);
+
+  @override
   Future<bool> updateUploadState({
     required String videoId,
     required int uploadStatus,

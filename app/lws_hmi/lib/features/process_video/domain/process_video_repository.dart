@@ -51,6 +51,9 @@ abstract interface class ProcessVideoRepository {
 
   Future<ProcessVideoRecord?> findByVideoId(String videoId);
 
+  /// Rows still waiting for cover upload (`upload_status == 0`).
+  Future<List<ProcessVideoRecord>> listPendingCoverUploads({int limit = 50});
+
   Future<bool> updateUploadState({
     required String videoId,
     required int uploadStatus,

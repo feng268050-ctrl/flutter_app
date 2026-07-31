@@ -1501,6 +1501,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get processVideoSaveFailed => 'Failed to save recording';
 
   @override
+  String get processVideoUpload => 'Upload';
+
+  @override
+  String get processVideoUploadingCover => 'Uploading cover…';
+
+  @override
+  String processVideoUploadingVideo(int percent) {
+    return 'Uploading video $percent%';
+  }
+
+  @override
+  String get processVideoUploadFailed => 'Upload failed';
+
+  @override
+  String get processVideoUploadDone => 'Upload complete';
+
+  @override
+  String get processVideoAlreadyUploaded => 'Already uploaded';
+
+  @override
   String get ipCameraDemoRecordHint => 'Demo only — not listed in Monitor → Videos';
 
   @override

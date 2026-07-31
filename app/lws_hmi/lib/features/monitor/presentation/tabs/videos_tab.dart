@@ -3,21 +3,33 @@ import 'dart:async';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_cloud_upload_coordinator.dart';
+import 'package:lws_hmi/features/process_video/application/process_video_upload_gating.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
 
-/// lws-ui `fragment_process_video` — local recordings list (no upload).
+typedef ProcessVideoUploadInvoker = Future<bool> Function(
+  String videoId, {
+  ProcessVideoUploadListener? listener,
+});
+
+/// lws-ui `fragment_process_video` — local recordings list with Upload.
 class VideosTab extends StatefulWidget {
   const VideosTab({
     super.key,
     this.repository,
+    this.uploadVideo,
   });
 
   /// Injected in widget tests; production uses [SqliteProcessVideoRepository].
   final ProcessVideoRepository? repository;
+
+  /// Injected in widget tests; production uses [CloudLocalRuntimeScope].
+  final ProcessVideoUploadInvoker? uploadVideo;
 
   static const pageSize = 10;
 
@@ -41,6 +53,7 @@ class VideosTabState extends State<VideosTab> {
   int _total = 0;
   bool _loading = true;
   bool _loadingMore = false;
+  String? _uploadingVideoId;
 
   @override
   void initState() {
@@ -108,6 +121,31 @@ class VideosTabState extends State<VideosTab> {
     }
   }
 
+  bool _isUploadingRow(ProcessVideoRecord record) {
+    if (_uploadingVideoId == record.videoId) {
+      return true;
+    }
+    final runtime = CloudLocalRuntimeScope.maybeOf(context);
+    return runtime?.processVideoUpload.isUploading(record.videoId) ?? false;
+  }
+
+  bool _canUpload(ProcessVideoRecord record) =>
+      ProcessVideoUploadGating.canStartUpload(
+        uploadStatus: record.uploadStatus,
+        isUploadingThisRow: _isUploadingRow(record),
+      );
+
+  ProcessVideoUploadInvoker? _resolveUploader() {
+    if (widget.uploadVideo != null) {
+      return widget.uploadVideo;
+    }
+    final runtime = CloudLocalRuntimeScope.maybeOf(context);
+    if (runtime == null) {
+      return null;
+    }
+    return runtime.uploadProcessVideo;
+  }
+
   Future<bool> _confirmDelete(ProcessVideoRecord record) async {
     final l10n = AppLocalizations.of(context)!;
     final ok = await showDialog<bool>(
@@ -140,6 +178,109 @@ class VideosTabState extends State<VideosTab> {
     }
     await _repo.deleteById(record.id!);
     await _reload();
+  }
+
+  Future<void> _upload(ProcessVideoRecord record) async {
+    CyberClickSoundRegistry.playClick();
+    final l10n = AppLocalizations.of(context)!;
+    if (record.uploadStatus == ProcessVideoUploadStatus.videoUploaded) {
+      _toast(l10n.processVideoAlreadyUploaded);
+      return;
+    }
+    final uploader = _resolveUploader();
+    if (uploader == null) {
+      _toast(l10n.processVideoUploadFailed);
+      return;
+    }
+    if (!_canUpload(record)) {
+      return;
+    }
+
+    setState(() => _uploadingVideoId = record.videoId);
+
+    final phase = ValueNotifier<_UploadUiPhase>(_UploadUiPhase.cover);
+    final percent = ValueNotifier<int>(0);
+    var dialogOpen = true;
+
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) {
+          final dlgL10n = AppLocalizations.of(ctx)!;
+          return PopScope(
+            canPop: false,
+            child: AlertDialog(
+              title: Text(dlgL10n.processVideoUpload),
+              content: AnimatedBuilder(
+                animation: Listenable.merge([phase, percent]),
+                builder: (_, __) {
+                  final label = phase.value == _UploadUiPhase.cover
+                      ? dlgL10n.processVideoUploadingCover
+                      : dlgL10n.processVideoUploadingVideo(percent.value);
+                  final progress = phase.value == _UploadUiPhase.cover
+                      ? null
+                      : (percent.value.clamp(0, 100) / 100.0);
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(label),
+                      const SizedBox(height: 16),
+                      LinearProgressIndicator(value: progress),
+                    ],
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ).whenComplete(() => dialogOpen = false),
+    );
+
+    final listener = _UploadDialogListener(
+      onCover: () => phase.value = _UploadUiPhase.cover,
+      onProgress: (p) {
+        phase.value = _UploadUiPhase.video;
+        percent.value = p;
+      },
+    );
+
+    var ok = false;
+    var errorMessage = l10n.processVideoUploadFailed;
+    try {
+      ok = await uploader(record.videoId, listener: listener);
+      if (listener.errorMessage != null && listener.errorMessage!.isNotEmpty) {
+        errorMessage = _mapUploadError(l10n, listener.errorMessage!);
+      }
+    } catch (_) {
+      ok = false;
+    }
+
+    if (mounted && dialogOpen) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+    phase.dispose();
+    percent.dispose();
+
+    if (!mounted) {
+      return;
+    }
+    setState(() => _uploadingVideoId = null);
+    await _reload();
+    _toast(ok ? l10n.processVideoUploadDone : errorMessage);
+  }
+
+  String _mapUploadError(AppLocalizations l10n, String code) {
+    if (code == 'already_uploaded') {
+      return l10n.processVideoAlreadyUploaded;
+    }
+    return l10n.processVideoUploadFailed;
+  }
+
+  void _toast(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _openDetail(ProcessVideoRecord record) async {
@@ -251,7 +392,8 @@ class VideosTabState extends State<VideosTab> {
                           itemBuilder: (context, index) {
                             if (index == _rows.length) {
                               return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 child: Center(
                                   child: Text(
                                     l10n.processVideoLoadedCount(
@@ -271,7 +413,10 @@ class VideosTabState extends State<VideosTab> {
                               record: row,
                               scale: scale,
                               onOpen: () => unawaited(_openDetail(row)),
+                              onUpload: () => unawaited(_upload(row)),
                               onDelete: () => unawaited(_delete(row)),
+                              uploadEnabled: _canUpload(row),
+                              uploadLabel: l10n.processVideoUpload,
                               deleteLabel: l10n.deleteText,
                             );
                           },
@@ -282,6 +427,33 @@ class VideosTabState extends State<VideosTab> {
         const SizedBox(height: 24),
       ],
     );
+  }
+}
+
+enum _UploadUiPhase { cover, video }
+
+final class _UploadDialogListener implements ProcessVideoUploadListener {
+  _UploadDialogListener({
+    required this.onCover,
+    required this.onProgress,
+  });
+
+  final VoidCallback onCover;
+  final ValueChanged<int> onProgress;
+  String? errorMessage;
+
+  @override
+  void onMetadataPhaseStarted() => onCover();
+
+  @override
+  void onVideoProgress(int percent) => onProgress(percent);
+
+  @override
+  void onFinishedSuccess() {}
+
+  @override
+  void onFinishedError(String message) {
+    errorMessage = message;
   }
 }
 
@@ -318,14 +490,20 @@ final class _VideoRow extends StatelessWidget {
     required this.record,
     required this.scale,
     required this.onOpen,
+    required this.onUpload,
     required this.onDelete,
+    required this.uploadEnabled,
+    required this.uploadLabel,
     required this.deleteLabel,
   });
 
   final ProcessVideoRecord record;
   final double scale;
   final VoidCallback onOpen;
+  final VoidCallback onUpload;
   final VoidCallback onDelete;
+  final bool uploadEnabled;
+  final String uploadLabel;
   final String deleteLabel;
 
   static const _columnGap = VideosTabState._columnGap;
@@ -393,9 +571,19 @@ final class _VideoRow extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 18),
-                    child: TextButton(
-                      onPressed: onDelete,
-                      child: Text(deleteLabel),
+                    child: Wrap(
+                      spacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: uploadEnabled ? onUpload : null,
+                          child: Text(uploadLabel),
+                        ),
+                        TextButton(
+                          onPressed: onDelete,
+                          child: Text(deleteLabel),
+                        ),
+                      ],
                     ),
                   ),
                 ),

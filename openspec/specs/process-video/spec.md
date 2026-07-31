@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Local process-video index for Quick/Engineer Record Work: SQLite rows with frozen process-parameter snapshots, newest-first paging, and local file delete. Cloud upload and HAL product coupling are out of scope.
+Local process-video index for Quick/Engineer Record Work: SQLite rows with frozen process-parameter snapshots, newest-first paging, and local file delete. When Worker origin is pinned, successful inserts SHALL enqueue cover upload (see `process-video-cloud-upload`). HAL product coupling remains out of scope.
 
 ## Requirements
 
@@ -73,3 +73,12 @@ Process-video persistence MUST live in the App layer. `cyber_hal` IP-camera reco
 - **WHEN** HAL recording completes
 - **THEN** the HAL result exposes file/path/timing/size style fields only
 - **AND** the App maps those into the process-video row
+
+### Requirement: Enqueue cover after successful local insert when pinned
+
+After a successful process-video insert from Record Work, when Worker API origin is pinned, the App SHALL enqueue cover upload for pending rows (`uploadStatus == 0`). Missing pin MUST NOT fail the local insert.
+
+#### Scenario: Pinned enqueue
+
+- **WHEN** Record Work save inserts a row and pinned origin is available
+- **THEN** cover upload for pending rows MUST be scheduled

@@ -30,6 +30,7 @@ final class WorkModeStatusBar extends StatelessWidget
     required this.mode,
     this.processType = ProcessType.continuousWelding,
     this.backEnabled = true,
+    this.backLabel,
     this.equipmentStatus,
     this.cameraStatus,
     this.onBack,
@@ -44,6 +45,9 @@ final class WorkModeStatusBar extends StatelessWidget
 
   /// When false, Back uses gray chrome and does not navigate.
   final bool backEnabled;
+
+  /// Left-rail caption. Defaults to Home; Engineer←Quick uses Back.
+  final String? backLabel;
 
   final WorkModeEquipmentStatus? equipmentStatus;
   final IpCameraUiStatus? cameraStatus;
@@ -80,7 +84,8 @@ final class WorkModeStatusBar extends StatelessWidget
                   key: const ValueKey('work-mode-status-back'),
                   accent: accent,
                   enabled: backEnabled,
-                  label: AppLocalizations.of(context)?.equipmentStatusHome ??
+                  label: backLabel ??
+                      AppLocalizations.of(context)?.equipmentStatusHome ??
                       'Home',
                   onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                 ),

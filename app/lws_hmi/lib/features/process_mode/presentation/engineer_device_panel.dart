@@ -300,8 +300,8 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   label:
                                       laserActive ? 'End Work' : 'Enable Laser',
                                   icon: laserActive
-                                      ? Icons.pause
-                                      : Icons.ondemand_video,
+                                      ? Icons.pause_circle_outline
+                                      : Icons.play_circle_outline,
                                   height: _laserButtonHeight,
                                   filled: true,
                                   laserOn: laserActive,
@@ -622,6 +622,7 @@ final class _EngineerWireActionButtonState
     final foreground = onFill ? Colors.white : actionOrange;
     final disabledForeground = const Color(0xFF7D3E2B);
     const labelSize = 16.0;
+    const iconSize = 34.0;
     final label = latched
         ? DeviceControlFeedbackCopy.continuousFeedLabel
         : widget.label;
@@ -665,7 +666,7 @@ final class _EngineerWireActionButtonState
                         widget.icon,
                         color:
                             widget.enabled ? foreground : disabledForeground,
-                        size: labelSize,
+                        size: iconSize,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -783,9 +784,9 @@ final class _EngineerDeviceActionButtonState
     final foreground = widget.filled ? Colors.white : actionOrange;
     final disabledForeground =
         widget.filled ? const Color(0x99FFFFFF) : const Color(0xFF7D3E2B);
-    // Icon height matches label font size (wire smaller; laser larger).
+    // Label scales with filled/outline; icons stay 34 (match Quick side ops).
     final labelSize = widget.filled ? 22.0 : 16.0;
-    final iconSize = labelSize;
+    const iconSize = 34.0;
     return Semantics(
       button: true,
       enabled: canPress,

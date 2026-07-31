@@ -655,6 +655,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                                     initialPresetUuid:
                                                         engineerArgs
                                                             .presetUuid,
+                                                    fromQuickHandoff: true,
                                                   )
                                                 : const EngineerModePage(),
                                           );

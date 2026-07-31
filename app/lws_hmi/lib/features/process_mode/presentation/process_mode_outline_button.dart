@@ -13,9 +13,9 @@ abstract final class ProcessModeOutlineChrome {
   static const Color actionOrange = Color(0xFFF46E01);
   static const Color idleFill = Color(0xFF2C1923);
   static const Color disabledForeground = Color(0xFF7D3E2B);
-  /// Quick side ops: +6 vs Engineer wire face (16).
+  /// Quick side ops / Engineer action icons (unified).
   static const double labelSize = 22.0;
-  static const double iconSize = 22.0;
+  static const double iconSize = 34.0;
   static const double radius = 14.0;
   static const double strokeWidth = 1.5;
   static const double defaultHeight = 62.0;

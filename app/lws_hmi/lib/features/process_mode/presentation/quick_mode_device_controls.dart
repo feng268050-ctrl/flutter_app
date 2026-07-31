@@ -5,7 +5,6 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
-import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_region_frost.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_button.dart';
@@ -86,8 +85,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                             ProcessModeOutlineButton(
                               key: const ValueKey('device-control-manual-gas'),
                               label: 'Manual Gas',
-                              leading:
-                                  _assetIcon(ProcessModeAssets.manualGasIcon),
+                              leading: _materialIcon(Icons.air),
                               selected: controller.manualGas,
                               enabled: true,
                               onPressed: () =>
@@ -98,11 +96,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               key: const ValueKey(
                                   'device-control-auto-wire-feed'),
                               label: 'Auto Wire Feed',
-                              leading: _assetIcon(
-                                _wireCapable
-                                    ? ProcessModeAssets.autoWireFeedOnIcon
-                                    : ProcessModeAssets.autoWireFeedOffIcon,
-                              ),
+                              leading: _materialIcon(Icons.sync),
                               selected:
                                   controller.autoWireFeed && _wireCapable,
                               enabled: _wireCapable,
@@ -147,7 +141,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               label: DeviceControlFeedbackCopy.feedLabel,
                               latchedLabel:
                                   DeviceControlFeedbackCopy.continuousFeedLabel,
-                              leading: _assetIcon(ProcessModeAssets.feedIcon),
+                              leading: _materialIcon(Icons.input),
                               enabled: _wireCapable,
                               laserBlocked: laserOpen,
                               retract: false,
@@ -161,11 +155,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                             ProcessModeOutlineWireButton(
                               key: const ValueKey('device-control-retract'),
                               label: 'Retract',
-                              leading: _assetIcon(
-                                _wireCapable
-                                    ? ProcessModeAssets.retractOnIcon
-                                    : ProcessModeAssets.retractOffIcon,
-                              ),
+                              leading: _materialIcon(Icons.output),
                               enabled: _wireCapable,
                               laserBlocked: laserOpen,
                               retract: true,
@@ -217,12 +207,12 @@ final class QuickModeDeviceControls extends StatelessWidget {
 
   bool get _laserOpen => controller.laserSessionArmed;
 
-  static Widget _assetIcon(String asset) {
-    return Image.asset(
-      asset,
-      width: ProcessModeOutlineChrome.iconSize,
-      height: ProcessModeOutlineChrome.iconSize,
-      fit: BoxFit.contain,
+  /// White glyph; [_OutlineFace] tints via [ColorFiltered] like the old WebPs.
+  static Widget _materialIcon(IconData icon) {
+    return Icon(
+      icon,
+      size: ProcessModeOutlineChrome.iconSize,
+      color: Colors.white,
     );
   }
 

@@ -2,6 +2,9 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
+import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
+import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Shared Settings chrome (lws-ui InsetList / FrostCard → CyberUI).
 ///
@@ -841,7 +844,8 @@ class SettingsScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    const background = Color(0xFF060720);
+    final l10n = AppLocalizations.of(context)!;
+    final background = Theme.of(context).scaffoldBackgroundColor;
     return CyberBlurBackdropScope(
       child: CyberBlurBackdropTarget(
         child: Scaffold(
@@ -849,6 +853,13 @@ class SettingsScaffold extends StatelessWidget {
           appBar: ProductPageStatusBar(
             title: title,
             actions: actions,
+            backgroundColor: background,
+            foregroundColor: Colors.white,
+            toolbarHeight: WorkModeStatusBarDimens.height,
+            // Product CallBackHomeButton: Home → home icon, Back → arrow_back.
+            // Nested settings pop → "Back".
+            backLabel: l10n.equipmentStatusBack,
+            backAccent: WorkModeAccent.weld,
             onBack: canPop ? () => Navigator.of(context).maybePop() : null,
           ),
           body: body,

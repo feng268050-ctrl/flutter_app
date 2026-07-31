@@ -124,6 +124,9 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               body: IndexedStack(
                 index: _currentTabIndex,
+                // Material elevation shadows on settings cards paint outside
+                // the card bounds; do not clip them at the tab layer.
+                clipBehavior: Clip.none,
                 children: [
                   DeviceInformationTab(services: services),
                   CommonSettingsTab(

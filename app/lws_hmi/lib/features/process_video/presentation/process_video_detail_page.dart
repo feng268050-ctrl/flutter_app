@@ -263,10 +263,10 @@ final class _ParameterColumn extends StatelessWidget {
         Expanded(
           child: CyberOutlinedPanel(
             outline: const CyberPanelOutline(
-              style: CyberPanelOutlineStyle.frostGradient,
-              gradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
-              width: 1.5,
+              style: CyberPanelOutlineStyle.uniform,
+              width: 1.0,
               cornerRadius: CyberDimens.cornerRadius,
+              uniformColor: CyberColors.borderUniform,
             ),
             color: Colors.white.withOpacity(0.06),
             child: Padding(
@@ -507,10 +507,10 @@ final class _PlayerPaneState extends State<_PlayerPane> {
   Widget build(BuildContext context) {
     return CyberOutlinedPanel(
       outline: const CyberPanelOutline(
-        style: CyberPanelOutlineStyle.frostGradient,
-        gradientCenter: CyberBorderGradientCenter.bottomLeftTopRight,
-        width: 1.5,
+        style: CyberPanelOutlineStyle.uniform,
+        width: 1.0,
         cornerRadius: CyberDimens.cornerRadius,
+        uniformColor: CyberColors.borderUniform,
       ),
       color: Colors.white.withOpacity(0.06),
       child: Padding(

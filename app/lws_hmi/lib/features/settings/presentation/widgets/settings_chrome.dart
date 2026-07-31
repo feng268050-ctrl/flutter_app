@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,10 +15,15 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 /// Device Information / Common Settings / Wi‑Fi / Camera MUST NOT use
 /// [SettingsSectionHeader] — keep group names as Dart comments only.
 
-/// Screen-edge inset and inter-group gap (lws-ui settings `padding="24dp"`).
-/// Top / bottom / left / right / group-to-group must all use this value.
+/// Screen-edge inset (lws-ui settings `padding="24dp"`).
+///
+/// Inter-group gap uses [groupGap] (larger than [inset]) so card drop shadows
+/// have room; L/R still match [inset].
 abstract final class SettingsDimens {
   static const inset = 24.0;
+
+  /// Vertical space between stacked settings cards (shadow breathing room).
+  static const groupGap = 40.0;
 
   /// Shared min height for switch / value / nav / slider / control rows.
   /// Device Info / General (+tabs nested lists).
@@ -35,15 +42,67 @@ abstract final class SettingsDimens {
   /// Secondary / subtitle / help (+2 vs prior 14).
   static const subtitleSize = 16.0;
 
-  /// Uniform bright-edge stroke (no frost gradient).
-  static const borderWidth = 1.5;
+  /// Uniform 1px bright rim on all four sides, with an equal soft highlight
+  /// halo (no top-only gradient).
+  static const borderWidth = 1.0;
+  static const cardBorder = Color(0x66FFFFFF);
+  static const cardHighlightGlow = Color(0x33FFFFFF);
 
-  /// Soft drop shadow for card depth on dark Settings chrome.
-  static const cardShadow = [
+  /// Inner edge shade fading toward the plate center. Wider than row text
+  /// padding ([rowPadding] 20) so the vignette can cross into content.
+  static const innerShadowWidth = 28.0;
+  /// Edge → mid → clear opacities: 47% → 25% → 0%.
+  static const innerShadowEdge = Color(0x78000000);
+  static const innerShadowMid = Color(0x40000000);
+
+  /// Surface lift is intentionally non-uniform: brighter at the top, darker at
+  /// the bottom. The gradient makes the whole plate read as a solid foreground
+  /// mass instead of a flat fill surrounded by a bright wire.
+  static const faceTopLift = 0.135;
+  static const faceMiddleLift = 0.105;
+  static const faceBottomLift = 0.080;
+
+  /// A small dark under-plate remains visible below the foreground plate and
+  /// gives it an actual visual thickness rather than relying on blur alone.
+  static const depthLipOffset = 5.0;
+
+  /// Soft shade cast from the depth lip onto the page (under-plate → background).
+  static const depthLipShadow = <BoxShadow>[
     BoxShadow(
-      color: Color(0x66000000),
+      color: Color(0xCC000000),
+      offset: Offset(0, 3),
+      blurRadius: 8,
+      spreadRadius: 0,
+    ),
+  ];
+
+  /// Outward ambient shade: ~20px band on all sides (edge → transparent).
+  static const outerAmbientExtent = 20.0;
+  static const outerAmbientEdge = Color(0xA6000000);
+  static const outerAmbientMid = Color(0x4D000000);
+  static const outerAmbientMidSoft = Color(0x24000000);
+  static const outerAmbientTopEdge = Color(0x52000000);
+  static const outerAmbientSideEdge = Color(0x7A000000);
+
+  /// Compact contact shadow around the front plate (matches ~20px outer band).
+  static const cardShadow = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x10000000),
+      offset: Offset(0, -1),
+      blurRadius: 6,
+      spreadRadius: -2,
+    ),
+    BoxShadow(
+      color: Color(0xD9000000),
+      offset: Offset(0, 3),
+      blurRadius: 8,
+      spreadRadius: 0,
+    ),
+    BoxShadow(
+      color: Color(0x8F000000),
+      offset: Offset(0, 8),
       blurRadius: 16,
-      offset: Offset(0, 6),
+      spreadRadius: -2,
     ),
   ];
 
@@ -272,10 +331,9 @@ class SettingsHelpFooter extends StatelessWidget {
   }
 }
 
-/// Settings group shell — Material [Card] outline, border-only (Frost
-/// `transparent` blur: no live [BackdropFilter]).
+/// Settings group shell — lifted face, depth lip, dual outer shadows, and
+/// an inward-fading inner-edge shade under a soft four-side rim.
 ///
-/// Uniform bright edge + drop shadow (no frost gradient stroke).
 /// [borderGradientCenter] is retained for call-site compatibility but ignored.
 class SettingsPanel extends StatelessWidget {
   const SettingsPanel({
@@ -290,44 +348,374 @@ class SettingsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CyberGlassTheme.of(context);
-    final radius = BorderRadius.circular(theme.cornerRadius);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: SettingsDimens.cardShadow,
-      ),
-      child: CyberOutlinedPanel(
-        clipBehavior: Clip.none,
-        outline: CyberPanelOutline(
-          style: CyberPanelOutlineStyle.uniform,
-          tone: theme.tone,
-          width: SettingsDimens.borderWidth,
-          cornerRadius: theme.cornerRadius,
-          uniformColor: CyberColors.borderUniform,
+    final glass = CyberGlassTheme.of(context);
+    final corner = glass.cornerRadius;
+    final radius = BorderRadius.circular(corner);
+    final pageBg = Theme.of(context).scaffoldBackgroundColor;
+
+    final faceTop =
+        Color.lerp(pageBg, Colors.white, SettingsDimens.faceTopLift)!;
+    final faceMiddle =
+        Color.lerp(pageBg, Colors.white, SettingsDimens.faceMiddleLift)!;
+    final faceBottom =
+        Color.lerp(pageBg, Colors.white, SettingsDimens.faceBottomLift)!;
+    final depthLip = Color.lerp(pageBg, Colors.black, 0.48)!;
+    final depthLipRim = Color.lerp(pageBg, Colors.white, 0.055)!;
+
+    // The offset under-plate supplies a visible thickness at the bottom. The
+    // front plate then carries the lit surface, four-side rim, and cast shadow.
+    // Outer ambient gradients sit behind both plates and fade away from the
+    // rim into the page chrome.
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: CustomPaint(
+            painter: _SettingsOuterAmbientPainter(
+              cornerRadius: corner,
+              extent: SettingsDimens.outerAmbientExtent,
+              topEdge: SettingsDimens.outerAmbientTopEdge,
+              sideEdge: SettingsDimens.outerAmbientSideEdge,
+              bottomEdge: SettingsDimens.outerAmbientEdge,
+              mid: SettingsDimens.outerAmbientMid,
+              midSoft: SettingsDimens.outerAmbientMidSoft,
+            ),
+          ),
         ),
-        color: Colors.white.withOpacity(0.06),
-        child: child,
-      ),
+        Positioned.fill(
+          child: Transform.translate(
+            offset: const Offset(0, SettingsDimens.depthLipOffset),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: depthLip,
+                borderRadius: radius,
+                border: Border.all(color: depthLipRim),
+                boxShadow: SettingsDimens.depthLipShadow,
+              ),
+            ),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            boxShadow: SettingsDimens.cardShadow,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(borderRadius: radius),
+            clipBehavior: Clip.antiAlias,
+            child: Ink(
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.0, 0.46, 1.0],
+                  colors: [faceTop, faceMiddle, faceBottom],
+                ),
+              ),
+              child: CustomPaint(
+                foregroundPainter: _SettingsDepthEdgePainter(
+                  baseRim: SettingsDimens.cardBorder,
+                  highlightGlow: SettingsDimens.cardHighlightGlow,
+                  width: SettingsDimens.borderWidth,
+                  cornerRadius: corner,
+                  innerShadowWidth: SettingsDimens.innerShadowWidth,
+                  innerShadowEdge: SettingsDimens.innerShadowEdge,
+                  innerShadowMid: SettingsDimens.innerShadowMid,
+                ),
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
+  }
+}
+
+/// Soft shade outside the plate: a ~20px band fading away from each edge.
+final class _SettingsOuterAmbientPainter extends CustomPainter {
+  const _SettingsOuterAmbientPainter({
+    required this.cornerRadius,
+    required this.extent,
+    required this.topEdge,
+    required this.sideEdge,
+    required this.bottomEdge,
+    required this.mid,
+    required this.midSoft,
+  });
+
+  final double cornerRadius;
+  final double extent;
+  final Color topEdge;
+  final Color sideEdge;
+  final Color bottomEdge;
+  final Color mid;
+  final Color midSoft;
+
+  static const _clear = Color(0x00000000);
+  static const _stops = <double>[0.0, 0.40, 1.0];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || extent <= 0) {
+      return;
+    }
+
+    // Keep the outward bands outside the plate so they only shade the page.
+    final plate = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(cornerRadius),
+    );
+    final bounds = Rect.fromLTRB(
+      -extent,
+      -extent,
+      size.width + extent,
+      size.height + extent,
+    );
+    final outside = Path()
+      ..addRect(bounds)
+      ..addRRect(plate)
+      ..fillType = PathFillType.evenOdd;
+
+    canvas.save();
+    canvas.clipPath(outside);
+
+    const blur = ui.MaskFilter.blur(ui.BlurStyle.normal, 1.5);
+
+    // Top ↑ (lighter)
+    canvas.drawRect(
+      Rect.fromLTWH(0, -extent, size.width, extent),
+      Paint()
+        ..isAntiAlias = true
+        ..maskFilter = blur
+        ..shader = ui.Gradient.linear(
+          const Offset(0, 0),
+          Offset(0, -extent),
+          [topEdge, midSoft, _clear],
+          _stops,
+        ),
+    );
+
+    // Bottom ↓
+    canvas.drawRect(
+      Rect.fromLTWH(0, size.height, size.width, extent),
+      Paint()
+        ..isAntiAlias = true
+        ..maskFilter = blur
+        ..shader = ui.Gradient.linear(
+          Offset(0, size.height),
+          Offset(0, size.height + extent),
+          [bottomEdge, mid, _clear],
+          _stops,
+        ),
+    );
+
+    // Left ← / Right →
+    canvas.drawRect(
+      Rect.fromLTWH(-extent, 0, extent, size.height),
+      Paint()
+        ..isAntiAlias = true
+        ..maskFilter = blur
+        ..shader = ui.Gradient.linear(
+          const Offset(0, 0),
+          Offset(-extent, 0),
+          [sideEdge, midSoft, _clear],
+          _stops,
+        ),
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(size.width, 0, extent, size.height),
+      Paint()
+        ..isAntiAlias = true
+        ..maskFilter = blur
+        ..shader = ui.Gradient.linear(
+          Offset(size.width, 0),
+          Offset(size.width + extent, 0),
+          [sideEdge, midSoft, _clear],
+          _stops,
+        ),
+    );
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _SettingsOuterAmbientPainter oldDelegate) {
+    return oldDelegate.cornerRadius != cornerRadius ||
+        oldDelegate.extent != extent ||
+        oldDelegate.topEdge != topEdge ||
+        oldDelegate.sideEdge != sideEdge ||
+        oldDelegate.bottomEdge != bottomEdge ||
+        oldDelegate.mid != mid ||
+        oldDelegate.midSoft != midSoft;
+  }
+}
+
+/// Uniform four-side 1px rim + equal soft highlight halo, plus an
+/// inward-fading edge shade (vignette).
+final class _SettingsDepthEdgePainter extends CustomPainter {
+  const _SettingsDepthEdgePainter({
+    required this.baseRim,
+    required this.highlightGlow,
+    required this.width,
+    required this.cornerRadius,
+    required this.innerShadowWidth,
+    required this.innerShadowEdge,
+    required this.innerShadowMid,
+  });
+
+  final Color baseRim;
+  final Color highlightGlow;
+  final double width;
+  final double cornerRadius;
+  final double innerShadowWidth;
+  final Color innerShadowEdge;
+  final Color innerShadowMid;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (width <= 0 || size.isEmpty) {
+      return;
+    }
+
+    final inset = width * 0.5;
+    final rect = Rect.fromLTRB(
+      inset,
+      inset,
+      size.width - inset,
+      size.height - inset,
+    );
+    final innerRadius = cornerRadius > inset ? cornerRadius - inset : 0.0;
+    final rrect = RRect.fromRectAndRadius(
+      rect,
+      Radius.circular(innerRadius),
+    );
+
+    _paintInnerShadow(canvas, size, rrect);
+
+    // Soft equal highlight on all four sides (not a neon wire, not top-lit).
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width * 2.5
+        ..color = highlightGlow
+        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 1.5)
+        ..isAntiAlias = true,
+    );
+
+    // Crisp equal-brightness contour.
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width
+        ..color = baseRim
+        ..isAntiAlias = true,
+    );
+  }
+
+  /// Soft shade hugging all four edges, fading toward the plate center.
+  void _paintInnerShadow(Canvas canvas, Size size, RRect clip) {
+    final band = innerShadowWidth;
+    if (band <= 0) {
+      return;
+    }
+    final stops = const <double>[0.0, 0.42, 1.0];
+    final colors = <Color>[
+      innerShadowEdge,
+      innerShadowMid,
+      const Color(0x00000000),
+    ];
+
+    canvas.save();
+    canvas.clipRRect(clip);
+
+    // Top → down
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, band),
+      Paint()
+        ..isAntiAlias = true
+        ..shader = ui.Gradient.linear(
+          Offset(0, 0),
+          Offset(0, band),
+          colors,
+          stops,
+        ),
+    );
+    // Bottom → up
+    canvas.drawRect(
+      Rect.fromLTWH(0, size.height - band, size.width, band),
+      Paint()
+        ..isAntiAlias = true
+        ..shader = ui.Gradient.linear(
+          Offset(0, size.height),
+          Offset(0, size.height - band),
+          colors,
+          stops,
+        ),
+    );
+    // Left → right
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, band, size.height),
+      Paint()
+        ..isAntiAlias = true
+        ..shader = ui.Gradient.linear(
+          Offset(0, 0),
+          Offset(band, 0),
+          colors,
+          stops,
+        ),
+    );
+    // Right → left
+    canvas.drawRect(
+      Rect.fromLTWH(size.width - band, 0, band, size.height),
+      Paint()
+        ..isAntiAlias = true
+        ..shader = ui.Gradient.linear(
+          Offset(size.width, 0),
+          Offset(size.width - band, 0),
+          colors,
+          stops,
+        ),
+    );
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _SettingsDepthEdgePainter oldDelegate) {
+    return oldDelegate.baseRim != baseRim ||
+        oldDelegate.highlightGlow != highlightGlow ||
+        oldDelegate.width != width ||
+        oldDelegate.cornerRadius != cornerRadius ||
+        oldDelegate.innerShadowWidth != innerShadowWidth ||
+        oldDelegate.innerShadowEdge != innerShadowEdge ||
+        oldDelegate.innerShadowMid != innerShadowMid;
   }
 }
 
 /// Untitled settings group ([SettingsPanel] + inset dividers).
 ///
-/// Outer margin: [SettingsDimens.inset] on left/right/bottom so group gap
-/// equals distance to screen edges. Pair with [SettingsScrollView] top inset.
+/// Outer margin: [SettingsDimens.inset] L/R, [SettingsDimens.groupGap] bottom
+/// so stacked cards leave room for soft cast shadows. Pair with
+/// [SettingsScrollView] top inset.
 ///
 /// [borderGradientCenter] is unused (uniform outline); kept for call sites.
-/// Set [bottomInset] to `0` when a following [SettingsSectionHeader] already
-/// supplies the vertical gap.
+/// Set [bottomInset] to `0` when a following [SettingsSectionHeader] / help
+/// footer already supplies the vertical gap.
 class SettingsGroup extends StatelessWidget {
   const SettingsGroup({
     super.key,
     required this.children,
     this.borderGradientCenter =
         CyberBorderGradientCenter.topLeftBottomRight,
-    this.bottomInset = SettingsDimens.inset,
+    this.bottomInset = SettingsDimens.groupGap,
   });
 
   final List<Widget> children;
@@ -805,7 +1193,7 @@ Future<T?> pushSettingsPage<T>(BuildContext context, Widget page) {
   );
 }
 
-/// Bordered param panel — same uniform outline + depth as [SettingsPanel]
+/// Bordered param panel — same top-lit edge + shadow chrome as [SettingsPanel]
 /// (lws-ui Advanced nested `FrostCardView`).
 ///
 /// [borderGradientCenter] is retained for call-site compatibility but ignored.
@@ -824,24 +1212,9 @@ class SettingsParamCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = CyberGlassTheme.of(context);
-    final radius = BorderRadius.circular(theme.cornerRadius);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: SettingsDimens.cardShadow,
-      ),
-      child: CyberOutlinedPanel(
-        outline: CyberPanelOutline(
-          style: CyberPanelOutlineStyle.uniform,
-          tone: theme.tone,
-          width: SettingsDimens.borderWidth,
-          cornerRadius: theme.cornerRadius,
-          uniformColor: CyberColors.borderUniform,
-        ),
-        color: Colors.white.withOpacity(0.06),
-        child: Padding(padding: padding, child: child),
-      ),
+    return SettingsPanel(
+      borderGradientCenter: borderGradientCenter,
+      child: Padding(padding: padding, child: child),
     );
   }
 }

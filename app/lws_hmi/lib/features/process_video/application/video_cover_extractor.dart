@@ -44,15 +44,16 @@ final class VideoCoverExtractor {
     final out = File('${dir.path}/$videoId.jpg');
     final bin = resolveFfmpegPath(override: ffmpegPath);
     try {
+      // Do not put -ss before -i: input seek jumps to the nearest keyframe,
+      // which is often not display frame 0 (Android MMR uses t≈0 decode).
       final result = await Process.run(bin, [
         '-y',
         '-hide_banner',
         '-loglevel',
         'error',
-        '-ss',
-        '0',
         '-i',
         videoPath,
+        '-an',
         '-frames:v',
         '1',
         '-q:v',

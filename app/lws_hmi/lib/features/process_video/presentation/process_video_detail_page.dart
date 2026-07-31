@@ -5,6 +5,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/features/process_video/application/video_cover_extractor.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
@@ -33,8 +34,12 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
       widget.args.repository ?? SqliteProcessVideoRepository();
   ProcessVideoRecord? _record;
   VideoPlayerController? _player;
+  File? _poster;
   String? _error;
   bool _loading = true;
+  /// eLinux GStreamer often stays black until the first play; keep JPEG poster
+  /// until the operator starts playback.
+  bool _playbackStarted = false;
 
   @override
   void initState() {
@@ -68,6 +73,7 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
         }
       });
       if (!missing) {
+        unawaited(_loadPoster(row));
         await _initPlayer(row.videoPath);
       }
     } catch (e) {
@@ -79,6 +85,19 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
         _loading = false;
       });
     }
+  }
+
+  Future<void> _loadPoster(ProcessVideoRecord row) async {
+    try {
+      final cover = await VideoCoverExtractor().extractFirstFrameJpeg(
+        videoPath: row.videoPath,
+        videoId: row.videoId,
+      );
+      if (!mounted || cover == null || !cover.existsSync()) {
+        return;
+      }
+      setState(() => _poster = cover);
+    } catch (_) {}
   }
 
   Future<void> _initPlayer(String path) async {
@@ -93,6 +112,7 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
     try {
       await controller.initialize();
       await controller.setLooping(false);
+      await controller.seekTo(Duration.zero);
       if (!mounted) {
         await controller.dispose();
         return;
@@ -107,6 +127,13 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
         setState(() => _error = 'playback');
       }
     }
+  }
+
+  void _onPlaybackStarted() {
+    if (_playbackStarted || !mounted) {
+      return;
+    }
+    setState(() => _playbackStarted = true);
   }
 
   Future<void> _delete() async {
@@ -186,8 +213,11 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
                       flex: 3,
                       child: _PlayerPane(
                         player: _player,
+                        poster: _poster,
+                        showPoster: !_playbackStarted,
                         error: _error,
                         failedLabel: l10n.processVideoPlaybackFailed,
+                        onPlaybackStarted: _onPlaybackStarted,
                       ),
                     ),
                     Expanded(
@@ -206,18 +236,26 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
 final class _PlayerPane extends StatelessWidget {
   const _PlayerPane({
     required this.player,
+    required this.poster,
+    required this.showPoster,
     required this.error,
     required this.failedLabel,
+    required this.onPlaybackStarted,
   });
 
   final VideoPlayerController? player;
+  final File? poster;
+  final bool showPoster;
   final String? error;
   final String failedLabel;
+  final VoidCallback onPlaybackStarted;
 
   @override
   Widget build(BuildContext context) {
     final controller = player;
-    if (controller == null || !controller.value.isInitialized) {
+    final hasPoster = poster != null && poster!.existsSync();
+    final ready = controller != null && controller.value.isInitialized;
+    if (!ready && !hasPoster) {
       return Center(
         child: Text(
           error == null ? '…' : failedLabel,
@@ -225,77 +263,135 @@ final class _PlayerPane extends StatelessWidget {
         ),
       );
     }
+
+    final aspect = ready && controller.value.aspectRatio != 0
+        ? controller.value.aspectRatio
+        : 16 / 9;
+
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: ValueListenableBuilder<VideoPlayerValue>(
-        valueListenable: controller,
-        builder: (context, value, _) {
-          return Column(
-            children: [
-              Expanded(
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio:
-                        value.aspectRatio == 0 ? 16 / 9 : value.aspectRatio,
-                    child: VideoPlayer(controller),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+      child: ready
+          ? ValueListenableBuilder<VideoPlayerValue>(
+              valueListenable: controller,
+              builder: (context, value, _) {
+                final ar =
+                    value.aspectRatio == 0 ? aspect : value.aspectRatio;
+                return _playerColumn(
+                  aspectRatio: ar,
+                  ready: true,
+                  controller: controller,
+                  hasPoster: hasPoster,
+                  value: value,
+                );
+              },
+            )
+          : _playerColumn(
+              aspectRatio: aspect,
+              ready: false,
+              controller: null,
+              hasPoster: hasPoster,
+              value: null,
+            ),
+    );
+  }
+
+  Widget _playerColumn({
+    required double aspectRatio,
+    required bool ready,
+    required VideoPlayerController? controller,
+    required bool hasPoster,
+    required VideoPlayerValue? value,
+  }) {
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: aspectRatio,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  IconButton(
-                    onPressed: () {
-                      CyberClickSoundRegistry.playClick();
-                      final pos =
-                          value.position - const Duration(seconds: 5);
-                      unawaited(controller.seekTo(
-                        pos < Duration.zero ? Duration.zero : pos,
-                      ));
-                    },
-                    icon: const Icon(Icons.replay_5, color: Colors.white),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      CyberClickSoundRegistry.playClick();
-                      if (value.isPlaying) {
-                        unawaited(controller.pause());
-                      } else {
-                        unawaited(controller.play());
-                      }
-                    },
-                    icon: Icon(
-                      value.isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: Colors.white,
-                      size: 36,
+                  // Keep VideoPlayer mounted under the cover so eLinux can
+                  // attach the texture before the first play().
+                  if (ready && controller != null) VideoPlayer(controller),
+                  // Opaque cover until the operator starts playback — avoids a
+                  // flash of black/garbage texture before JPEG is ready.
+                  if (showPoster)
+                    const ColoredBox(color: Colors.black),
+                  if (showPoster && hasPoster)
+                    IgnorePointer(
+                      child: Image.file(
+                        poster!,
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      CyberClickSoundRegistry.playClick();
-                      final pos =
-                          value.position + const Duration(seconds: 5);
-                      final end = value.duration;
-                      unawaited(controller.seekTo(pos > end ? end : pos));
-                    },
-                    icon: const Icon(Icons.forward_5, color: Colors.white),
-                  ),
                 ],
               ),
-              VideoProgressIndicator(
-                controller,
-                allowScrubbing: true,
-                colors: const VideoProgressColors(
-                  playedColor: Colors.white70,
-                  bufferedColor: Colors.white24,
-                  backgroundColor: Colors.white10,
+            ),
+          ),
+        ),
+        if (ready && controller != null && value != null) ...[
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () {
+                  CyberClickSoundRegistry.playClick();
+                  final pos = value.position - const Duration(seconds: 5);
+                  unawaited(controller.seekTo(
+                    pos < Duration.zero ? Duration.zero : pos,
+                  ));
+                },
+                icon: const Icon(Icons.replay_5, color: Colors.white),
+              ),
+              IconButton(
+                onPressed: () {
+                  CyberClickSoundRegistry.playClick();
+                  if (value.isPlaying) {
+                    unawaited(controller.pause());
+                  } else {
+                    final restartFromStart =
+                        showPoster && value.position > Duration.zero;
+                    onPlaybackStarted();
+                    unawaited(() async {
+                      if (restartFromStart) {
+                        await controller.seekTo(Duration.zero);
+                      }
+                      await controller.play();
+                    }());
+                  }
+                },
+                icon: Icon(
+                  value.isPlaying ? Icons.pause : Icons.play_arrow,
+                  color: Colors.white,
+                  size: 36,
                 ),
               ),
+              IconButton(
+                onPressed: () {
+                  CyberClickSoundRegistry.playClick();
+                  final pos = value.position + const Duration(seconds: 5);
+                  final end = value.duration;
+                  onPlaybackStarted();
+                  unawaited(controller.seekTo(pos > end ? end : pos));
+                },
+                icon: const Icon(Icons.forward_5, color: Colors.white),
+              ),
             ],
-          );
-        },
-      ),
+          ),
+          VideoProgressIndicator(
+            controller,
+            allowScrubbing: true,
+            colors: const VideoProgressColors(
+              playedColor: Colors.white70,
+              bufferedColor: Colors.white24,
+              backgroundColor: Colors.white10,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

@@ -43,6 +43,28 @@ if ! strings "$PLUGIN" | grep -q 'Video size unknown after preroll'; then
 	echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
 	exit 1
 fi
+# Local MP4: sync=TRUE + synced handoff (1×); system clock required.
+if ! strings "$PLUGIN" | grep -q 'VOD file sink uses clock sync'; then
+	echo "lws-hmi-sync-flutter-elinux: ERROR $PLUGIN missing VOD clock-sync marker" >&2
+	echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+	exit 1
+fi
+if ! strings "$PLUGIN" | grep -q 'VOD BufferProbe defers to synced handoff'; then
+	echo "lws-hmi-sync-flutter-elinux: ERROR $PLUGIN missing VOD probe-defer marker" >&2
+	echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+	exit 1
+fi
+if ! strings "$PLUGIN" | grep -q 'VOD pipeline uses system clock for sync'; then
+	echo "lws-hmi-sync-flutter-elinux: ERROR $PLUGIN missing VOD system-clock marker" >&2
+	echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+	exit 1
+fi
+# play() re-applies rate 1.0; vendored source skips the no-op FLUSH seek.
+if ! strings "$PLUGIN" | grep -q 'SetPlaybackRate: skip no-op rate seek'; then
+	echo "lws-hmi-sync-flutter-elinux: ERROR $PLUGIN missing no-op rate-seek skip marker" >&2
+	echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+	exit 1
+fi
 
 install -d "$TARGET_DIR/usr/bin" "$TARGET_DIR/usr/lib"
 install -m 0755 "$CLIENT" "$TARGET_DIR/usr/bin/flutter-wayland-client"

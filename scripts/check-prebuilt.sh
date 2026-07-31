@@ -108,6 +108,36 @@ if has_include "lws_hmi_wayland.config"; then
     echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
     missing=1
   fi
+  # Local MP4: sink sync=TRUE + handoff (1×); BufferProbe must not push early.
+  if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
+    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
+      grep -q 'VOD file sink uses clock sync'; then
+    echo "ERROR: libvideo_player_plugin.so missing VOD clock-sync marker" >&2
+    echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+    missing=1
+  fi
+  if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
+    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
+      grep -q 'VOD BufferProbe defers to synced handoff'; then
+    echo "ERROR: libvideo_player_plugin.so missing VOD handoff-defer probe marker" >&2
+    echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+    missing=1
+  fi
+  if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
+    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
+      grep -q 'VOD pipeline uses system clock for sync'; then
+    echo "ERROR: libvideo_player_plugin.so missing VOD system-clock marker" >&2
+    echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+    missing=1
+  fi
+  # play() always re-applies rate 1.0; no-op FLUSH seek races first play.
+  if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
+    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
+      grep -q 'SetPlaybackRate: skip no-op rate seek'; then
+    echo "ERROR: libvideo_player_plugin.so missing no-op rate-seek skip marker" >&2
+    echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+    missing=1
+  fi
 fi
 
 # mediamtx: App-owned under /opt/hmi/bin (make build-app); not a rootfs prebuilt gate.

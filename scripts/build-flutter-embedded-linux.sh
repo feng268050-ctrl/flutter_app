@@ -114,19 +114,25 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 EOF
 
-  # Video-player fixes (0002 folds former 0003–0005 live-RTSP / MPP changes).
+  # Video-player: install full LWS-vendored sources (0002/0006/0007 folded in).
+  # Do NOT regex-patch the tree — prior Python/unified diffs kept breaking on dirty cache.
   ELINUX_VP_PATCHDIR=/work/lws-hmi/overlay/buildroot/package/flutter-embedded-linux
-  apply_vp_patch() {
-    local marker=\"\$1\" patch=\"\$2\"
-    if [[ -f \"\$patch\" ]] && ! grep -q \"\$marker\" \\
-      \"\$SRC/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux/gst_video_player.cc\" 2>/dev/null; then
-      echo \"flutter-embedded-linux: applying \$(basename \"\$patch\")\"
-      (cd \"\$SRC\" && patch -p1 < \"\$patch\")
-    fi
-  }
-  apply_vp_patch 'Live RTSP often has no negotiated caps' \\
-    \"\$ELINUX_VP_PATCHDIR/0002-video-player-live-rtsp.patch\"
-  # 0003–0005 retired: content merged into 0002 (markers still checked by check-prebuilt).
+  VP_DIR=\"\$SRC/examples/flutter-video-player-plugin/flutter/plugins/video_player/elinux\"
+  install -m 0644 \"\$ELINUX_VP_PATCHDIR/gst_video_player.cc\" \"\$VP_DIR/gst_video_player.cc\"
+  install -m 0644 \"\$ELINUX_VP_PATCHDIR/gst_video_player.h\" \"\$VP_DIR/gst_video_player.h\"
+  echo \"flutter-embedded-linux: installed vendored gst_video_player.{cc,h}\"
+  # Sanity: required product markers must be present in the vendored tree.
+  for marker in \\
+    'Live RTSP often has no negotiated caps' \\
+    'MppElementSetup: mppvideodec format=RGBA' \\
+    'VOD file sink uses clock sync' \\
+    'VOD BufferProbe defers to synced handoff' \\
+    'VOD handoff skip when paused' \\
+    'VOD pipeline uses system clock for sync' \\
+    'SetPlaybackRate: skip no-op rate seek'; do
+    grep -q \"\$marker\" \"\$VP_DIR/gst_video_player.cc\" \\
+      || { echo \"ERROR: vendored gst_video_player.cc missing: \$marker\" >&2; exit 1; }
+  done
 
   rm -rf \"\$BUILD\"
   mkdir -p \"\$BUILD\"

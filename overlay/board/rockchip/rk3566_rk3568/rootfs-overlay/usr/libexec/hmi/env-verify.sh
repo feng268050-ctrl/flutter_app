@@ -200,6 +200,28 @@ if systemctl is-enabled systemd-resolved.service >/dev/null 2>&1; then
 else
 	fail "systemd-resolved.service not enabled (preset 99-appliance)"
 fi
+timesyncd_bin=""
+for p in /lib/systemd/systemd-timesyncd /usr/lib/systemd/systemd-timesyncd; do
+	if [ -x "$p" ]; then
+		timesyncd_bin=$p
+		break
+	fi
+done
+if [ -n "$timesyncd_bin" ]; then
+	pass "systemd-timesyncd binary ($timesyncd_bin)"
+else
+	fail "systemd-timesyncd binary missing (BR2_PACKAGE_SYSTEMD_TIMESYNCD; br-make-packages systemd systemd)"
+fi
+if systemctl cat systemd-timesyncd.service >/dev/null 2>&1; then
+	pass "systemd-timesyncd.service unit present"
+else
+	fail "systemd-timesyncd.service unit missing"
+fi
+if systemctl is-enabled systemd-timesyncd.service >/dev/null 2>&1; then
+	pass "systemd-timesyncd.service enabled"
+else
+	fail "systemd-timesyncd.service not enabled (preset 99-appliance)"
+fi
 if [ -L /etc/resolv.conf ]; then
 	_resolv_link="$(readlink /etc/resolv.conf)"
 	case "$_resolv_link" in

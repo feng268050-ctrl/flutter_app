@@ -282,6 +282,7 @@ final class BoardBindings {
     }
     try {
       await dt.applyPersistedTimezone();
+      await dt.applyPersistedSyncMode();
       await dt.ensureSaneForTls();
       if (await dt.getSyncMode() == TimeSyncMode.network) {
         await dt.syncFromNetwork(onlyIfStale: true);

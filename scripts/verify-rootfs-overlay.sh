@@ -701,6 +701,13 @@ EOF
 		echo "FAIL: preset must enable systemd-resolved.service (D11 DNS)" >&2
 		missing=1
 	fi
+	if grep -qE '^enable[[:space:]]+systemd-timesyncd\.service' \
+		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
+		echo "OK:  preset enables systemd-timesyncd.service"
+	else
+		echo "FAIL: preset must enable systemd-timesyncd.service (NTP)" >&2
+		missing=1
+	fi
 
 	echo ""
 	echo "--- D11 networkd + resolved + wpa D-Bus (no legacy L3) ---"

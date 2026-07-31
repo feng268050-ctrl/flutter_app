@@ -57,7 +57,33 @@ class LinuxDateTimeController implements DateTimeController {
     await upsertKeyValueConfFile(preferencePath, {
       TimeSyncPrefs.keySyncMode: token,
     });
+    await _applyOsNtp(mode == TimeSyncMode.network);
     lwsTrace('datetime: sync mode → $token');
+  }
+
+  /// Apply persisted sync mode to OS NTP (`timedatectl set-ntp`).
+  ///
+  /// Call on HMI bring-up so upgrades with timesyncd do not leave NTP stuck off
+  /// when prefs say `network`.
+  Future<void> applyPersistedSyncMode() async {
+    final mode = await getSyncMode();
+    await _applyOsNtp(mode == TimeSyncMode.network);
+  }
+
+  /// Best-effort `timedatectl set-ntp`; no-op when timedatectl/timesyncd absent.
+  Future<void> _applyOsNtp(bool enable) async {
+    final flag = enable ? 'true' : 'false';
+    try {
+      final r = await _run('timedatectl', ['set-ntp', flag]);
+      if (r.exitCode == 0) {
+        lwsTrace('datetime: set-ntp → $flag');
+      } else {
+        final err = ((r.stderr as String?) ?? (r.stdout as String?) ?? '').trim();
+        lwsTrace('datetime: set-ntp $flag failed: $err');
+      }
+    } catch (e) {
+      lwsTrace('datetime: set-ntp unavailable: $e');
+    }
   }
 
   @override
@@ -119,6 +145,9 @@ class LinuxDateTimeController implements DateTimeController {
     final stamp =
         '${_pad4(local.year)}-${_pad2(local.month)}-${_pad2(local.day)} '
         '${_pad2(local.hour)}:${_pad2(local.minute)}:${_pad2(local.second)}';
+
+    // timedatectl refuses set-time while NTP is on; drop NTP before writing.
+    await _applyOsNtp(false);
 
     var ok = false;
     final td = await _run('timedatectl', ['set-time', stamp]);

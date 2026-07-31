@@ -841,15 +841,19 @@ class SettingsScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    return Scaffold(
-      appBar: ProductPageStatusBar(
-        title: title,
-        actions: actions,
-        onBack: canPop
-            ? () => Navigator.of(context).maybePop()
-            : null,
+    const background = Color(0xFF060720);
+    return CyberBlurBackdropScope(
+      child: CyberBlurBackdropTarget(
+        child: Scaffold(
+          backgroundColor: background,
+          appBar: ProductPageStatusBar(
+            title: title,
+            actions: actions,
+            onBack: canPop ? () => Navigator.of(context).maybePop() : null,
+          ),
+          body: body,
+        ),
       ),
-      body: body,
     );
   }
 }

@@ -62,7 +62,6 @@ abstract final class CyberImeKeyMaps {
       CyberImeRegionalProfile.qwerty => ansiUs,
       CyberImeRegionalProfile.qwertz => isoDe,
       CyberImeRegionalProfile.azerty => isoFr,
-      CyberImeRegionalProfile.jis => jisJp,
     };
   }
 
@@ -248,82 +247,5 @@ abstract final class CyberImeKeyMaps {
     CyberImeKeyCode.slash: CyberImeCharLevel(base: '!', shift: '§'),
     CyberImeKeyCode.intlBackslash: CyberImeCharLevel(base: '<', shift: '>'),
     CyberImeKeyCode.yen: CyberImeCharLevel(base: '*', shift: 'µ'),
-  };
-
-  /// JIS JP — Latin 英数 + hiragana (`kana` / `kanaShift`). Katakana via mode.
-  static const Map<CyberImeKeyCode, CyberImeCharLevel> jisJp = {
-    CyberImeKeyCode.grave: CyberImeCharLevel(base: '半'),
-    CyberImeKeyCode.digit1:
-        CyberImeCharLevel(base: '1', shift: '!', kana: 'ぬ'),
-    CyberImeKeyCode.digit2:
-        CyberImeCharLevel(base: '2', shift: '"', kana: 'ふ'),
-    CyberImeKeyCode.digit3:
-        CyberImeCharLevel(base: '3', shift: '#', kana: 'あ', kanaShift: 'ぁ'),
-    CyberImeKeyCode.digit4:
-        CyberImeCharLevel(base: '4', shift: r'$', kana: 'う', kanaShift: 'ぅ'),
-    CyberImeKeyCode.digit5:
-        CyberImeCharLevel(base: '5', shift: '%', kana: 'え', kanaShift: 'ぇ'),
-    CyberImeKeyCode.digit6:
-        CyberImeCharLevel(base: '6', shift: '&', kana: 'お', kanaShift: 'ぉ'),
-    CyberImeKeyCode.digit7:
-        CyberImeCharLevel(base: '7', shift: "'", kana: 'や', kanaShift: 'ゃ'),
-    CyberImeKeyCode.digit8:
-        CyberImeCharLevel(base: '8', shift: '(', kana: 'ゆ', kanaShift: 'ゅ'),
-    CyberImeKeyCode.digit9:
-        CyberImeCharLevel(base: '9', shift: ')', kana: 'よ', kanaShift: 'ょ'),
-    CyberImeKeyCode.digit0:
-        CyberImeCharLevel(base: '0', shift: '~', kana: 'わ', kanaShift: 'を'),
-    CyberImeKeyCode.minus:
-        CyberImeCharLevel(base: '-', shift: '=', kana: 'ほ'),
-    CyberImeKeyCode.equal:
-        CyberImeCharLevel(base: '^', shift: '~', kana: 'へ'),
-    CyberImeKeyCode.yen:
-        CyberImeCharLevel(base: '¥', shift: '|', kana: 'ー'),
-    CyberImeKeyCode.keyQ: CyberImeCharLevel(base: 'q', shift: 'Q', kana: 'た'),
-    CyberImeKeyCode.keyW: CyberImeCharLevel(base: 'w', shift: 'W', kana: 'て'),
-    CyberImeKeyCode.keyE:
-        CyberImeCharLevel(base: 'e', shift: 'E', kana: 'い', kanaShift: 'ぃ'),
-    CyberImeKeyCode.keyR: CyberImeCharLevel(base: 'r', shift: 'R', kana: 'す'),
-    CyberImeKeyCode.keyT: CyberImeCharLevel(base: 't', shift: 'T', kana: 'か'),
-    CyberImeKeyCode.keyY: CyberImeCharLevel(base: 'y', shift: 'Y', kana: 'ん'),
-    CyberImeKeyCode.keyU: CyberImeCharLevel(base: 'u', shift: 'U', kana: 'な'),
-    CyberImeKeyCode.keyI: CyberImeCharLevel(base: 'i', shift: 'I', kana: 'に'),
-    CyberImeKeyCode.keyO: CyberImeCharLevel(base: 'o', shift: 'O', kana: 'ら'),
-    CyberImeKeyCode.keyP: CyberImeCharLevel(base: 'p', shift: 'P', kana: 'せ'),
-    CyberImeKeyCode.bracketLeft:
-        CyberImeCharLevel(base: '@', shift: '`', kana: '゛'),
-    CyberImeKeyCode.bracketRight:
-        CyberImeCharLevel(base: '[', shift: '{', kana: '「', kanaShift: '゜'),
-    CyberImeKeyCode.keyA: CyberImeCharLevel(base: 'a', shift: 'A', kana: 'ち'),
-    CyberImeKeyCode.keyS: CyberImeCharLevel(base: 's', shift: 'S', kana: 'と'),
-    CyberImeKeyCode.keyD: CyberImeCharLevel(base: 'd', shift: 'D', kana: 'し'),
-    CyberImeKeyCode.keyF: CyberImeCharLevel(base: 'f', shift: 'F', kana: 'は'),
-    CyberImeKeyCode.keyG: CyberImeCharLevel(base: 'g', shift: 'G', kana: 'き'),
-    CyberImeKeyCode.keyH: CyberImeCharLevel(base: 'h', shift: 'H', kana: 'く'),
-    CyberImeKeyCode.keyJ: CyberImeCharLevel(base: 'j', shift: 'J', kana: 'ま'),
-    CyberImeKeyCode.keyK: CyberImeCharLevel(base: 'k', shift: 'K', kana: 'の'),
-    CyberImeKeyCode.keyL: CyberImeCharLevel(base: 'l', shift: 'L', kana: 'り'),
-    CyberImeKeyCode.semicolon:
-        CyberImeCharLevel(base: ';', shift: '+', kana: 'れ'),
-    CyberImeKeyCode.quote:
-        CyberImeCharLevel(base: ':', shift: '*', kana: 'け'),
-    CyberImeKeyCode.backslash:
-        CyberImeCharLevel(base: ']', shift: '}', kana: 'む', kanaShift: '」'),
-    CyberImeKeyCode.keyZ:
-        CyberImeCharLevel(base: 'z', shift: 'Z', kana: 'つ', kanaShift: 'っ'),
-    CyberImeKeyCode.keyX: CyberImeCharLevel(base: 'x', shift: 'X', kana: 'さ'),
-    CyberImeKeyCode.keyC: CyberImeCharLevel(base: 'c', shift: 'C', kana: 'そ'),
-    CyberImeKeyCode.keyV: CyberImeCharLevel(base: 'v', shift: 'V', kana: 'ひ'),
-    CyberImeKeyCode.keyB: CyberImeCharLevel(base: 'b', shift: 'B', kana: 'こ'),
-    CyberImeKeyCode.keyN: CyberImeCharLevel(base: 'n', shift: 'N', kana: 'み'),
-    CyberImeKeyCode.keyM: CyberImeCharLevel(base: 'm', shift: 'M', kana: 'も'),
-    CyberImeKeyCode.comma:
-        CyberImeCharLevel(base: ',', shift: '<', kana: 'ね', kanaShift: '、'),
-    CyberImeKeyCode.period:
-        CyberImeCharLevel(base: '.', shift: '>', kana: 'る', kanaShift: '。'),
-    CyberImeKeyCode.slash:
-        CyberImeCharLevel(base: '/', shift: '?', kana: 'め', kanaShift: '・'),
-    CyberImeKeyCode.intlBackslash:
-        CyberImeCharLevel(base: r'\', shift: '_', kana: 'ろ'),
   };
 }

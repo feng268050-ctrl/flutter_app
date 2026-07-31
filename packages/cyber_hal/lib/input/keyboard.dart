@@ -52,7 +52,8 @@ final class KeyboardLayout {
   final String model;
   final String? displayName;
 
-  /// Soft CyberIME profile id: `default` / `ansi` / `qwertz` / `azerty` / `jis`.
+  /// Soft CyberIME profile id: `qwerty` / `qwertz` / `azerty`
+  /// (legacy `default` / `ansi` / `jis` migrate on read).
   /// Persisted as `profile=` in keyboard.conf (not sent to XKB).
   final String softProfile;
 

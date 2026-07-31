@@ -28,12 +28,11 @@ XKBOPTIONS=""
     expect(layout.id, 'us');
   });
 
-  test('listLayouts includes product us/de/fr/jp and demo ru', () async {
+  test('listLayouts includes product us/de/fr and demo ru (no jp)', () async {
     final kbd = LinuxKeyboard(applyRestart: false);
     final ids = (await kbd.listLayouts()).map((e) => e.id).toList();
-    expect(ids, containsAll(['us', 'de', 'fr', 'jp', 'ru']));
-    expect((await kbd.listLayouts()).firstWhere((e) => e.id == 'jp').model,
-        'jp106');
+    expect(ids, containsAll(['us', 'de', 'fr', 'ru']));
+    expect(ids, isNot(contains('jp')));
   });
 
   test('setLayout writes pref; restart optional', () async {
@@ -63,9 +62,14 @@ XKBOPTIONS=""
     await kbd.restartToApply();
     expect(restarts, 1);
 
-    await kbd.setLayout(LinuxKeyboard.jp);
-    expect((await pref.readAsString()).contains('layout=jp'), isTrue);
-    expect((await pref.readAsString()).contains('model=jp106'), isTrue);
+    await kbd.setLayout(LinuxKeyboard.fr);
+    expect((await pref.readAsString()).contains('layout=fr'), isTrue);
     expect(restarts, 2);
+  });
+
+  test('legacy jp conf still parses with jp106 model', () {
+    final layout = parseKeyboardConf('layout=jp\nmodel=jp106\n');
+    expect(layout.id, 'jp');
+    expect(layout.model, 'jp106');
   });
 }

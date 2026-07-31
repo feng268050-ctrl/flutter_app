@@ -21,6 +21,36 @@ class CyberBlurBackdropScope extends StatefulWidget {
         ?.state;
   }
 
+  /// Resolve a capture root for overlays / dialogs that sit outside the scope.
+  ///
+  /// Prefers an ancestor, then walks the root [Navigator] subtree (page under
+  /// dialog routes). Does not register an InheritedWidget dependency.
+  static CyberBlurBackdropScopeState? resolve(BuildContext context) {
+    final ancestor =
+        context.findAncestorStateOfType<CyberBlurBackdropScopeState>();
+    if (ancestor != null) {
+      return ancestor;
+    }
+
+    final nav = Navigator.maybeOf(context, rootNavigator: true);
+    final searchContext = nav?.context ?? context;
+    CyberBlurBackdropScopeState? found;
+    void visit(Element element) {
+      if (found != null) {
+        return;
+      }
+      if (element is StatefulElement &&
+          element.state is CyberBlurBackdropScopeState) {
+        found = element.state as CyberBlurBackdropScopeState;
+        return;
+      }
+      element.visitChildren(visit);
+    }
+
+    searchContext.visitChildElements(visit);
+    return found;
+  }
+
   @override
   State<CyberBlurBackdropScope> createState() => CyberBlurBackdropScopeState();
 }

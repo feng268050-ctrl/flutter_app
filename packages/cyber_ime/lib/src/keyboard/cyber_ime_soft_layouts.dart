@@ -18,7 +18,6 @@ abstract final class CyberImeSoftLayouts {
       CyberImeRegionalProfile.qwerty => _qwerty(bottomRow: bottomRow, kind: kind),
       CyberImeRegionalProfile.qwertz => _qwertz(bottomRow: bottomRow, kind: kind),
       CyberImeRegionalProfile.azerty => _azerty(bottomRow: bottomRow, kind: kind),
-      CyberImeRegionalProfile.jis => _jis(bottomRow: bottomRow, kind: kind),
     };
   }
 
@@ -36,14 +35,8 @@ abstract final class CyberImeSoftLayouts {
     );
   }
 
-  static List<CyberImeKeyDef> _bottom(
-    CyberImeBottomRowProfile bottomRow, {
-    bool includeLanguage = false,
-  }) {
-    return cyberImeSoftBottomRowKeys(
-      bottomRow,
-      includeLanguageToggle: includeLanguage,
-    );
+  static List<CyberImeKeyDef> _bottom(CyberImeBottomRowProfile bottomRow) {
+    return cyberImeSoftBottomRowKeys(bottomRow);
   }
 
   static CyberImeLayout _qwerty({
@@ -206,36 +199,4 @@ abstract final class CyberImeSoftLayouts {
     );
   }
 
-  static CyberImeLayout _jis({
-    required CyberImeBottomRowProfile bottomRow,
-    required CyberImeKeyboardKind kind,
-  }) {
-    return CyberImeLayout(
-      kind: kind,
-      rows: [
-        CyberImeKeyboardRow([
-          for (final c in 'QWERTYUIOP'.split('')) _letter(c),
-        ]),
-        CyberImeKeyboardRow(
-          [for (final c in 'ASDFGHJKL'.split('')) _letter(c)],
-          leadingInsetWeight: 0.5,
-          trailingInsetWeight: 0.5,
-        ),
-        CyberImeKeyboardRow([
-          const CyberImeKeyDef(
-            id: CyberImeKeyId.shift,
-            primary: '⇧',
-            widthWeight: 1.5,
-          ),
-          for (final c in 'ZXCVBNM'.split('')) _letter(c),
-          const CyberImeKeyDef(
-            id: CyberImeKeyId.backspace,
-            primary: '⌫',
-            widthWeight: 1.5,
-          ),
-        ]),
-        CyberImeKeyboardRow(_bottom(bottomRow, includeLanguage: true)),
-      ],
-    );
-  }
 }

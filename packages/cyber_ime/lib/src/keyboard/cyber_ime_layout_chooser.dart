@@ -29,7 +29,7 @@ class CyberImeLayoutChooser extends StatelessWidget {
   /// When false, Segment interaction is ignored.
   final bool enabled;
 
-  /// Profiles offered in the Segment (default: all four soft layouts).
+  /// Profiles offered in the Segment (default: all three soft layouts).
   final List<CyberImeRegionalProfile> profiles;
 
   /// Small caption above the keyboard preview.
@@ -46,8 +46,6 @@ class CyberImeLayoutChooser extends StatelessWidget {
       CyberImeRegionalProfile.qwertz ||
       CyberImeRegionalProfile.azerty =>
         '长按可输入重音字符',
-      CyberImeRegionalProfile.jis =>
-        '罗马字输入，Space 切换候选，确认键提交',
       CyberImeRegionalProfile.qwerty => '',
     };
   }
@@ -91,23 +89,30 @@ class CyberImeLayoutChooser extends StatelessWidget {
           ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Card(
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: Text(
-                    previewCaption,
-                    style: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 13,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: DecoratedBox(
+              // Border only — opaque Card fill would block BackdropFilter 透视.
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: Text(
+                      previewCaption,
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
-                ),
-                CyberImeLayoutPreview(profile: selected),
-              ],
+                  CyberImeLayoutPreview(profile: selected),
+                ],
+              ),
             ),
           ),
         ),

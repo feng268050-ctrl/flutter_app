@@ -1,7 +1,7 @@
-/// Soft JIS input mode (英数 / ひらがな / カタカナ).
+/// Japanese input mode (英数 / ひらがな / カタカナ) for JP key labels.
 ///
-/// Orthogonal to [CyberImeGlobalKind] (EN/ZH). Only applies when the regional
-/// profile is [CyberImeRegionalProfile.jis].
+/// Orthogonal to [CyberImeGlobalKind] (EN/ZH). Retained for key-cap rendering
+/// and future physical-JP wiring; soft Keyboard A no longer exposes a JIS profile.
 enum CyberImeJpInputMode {
   /// Latin alphanumeric (英数) — KeyMap base/shift.
   english,

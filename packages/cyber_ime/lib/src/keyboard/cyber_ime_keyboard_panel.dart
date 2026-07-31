@@ -16,10 +16,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// Default panel height used for lift (logical pixels).
-/// Soft Keyboard A is 4 rows (+ optional romaji candidate strip).
+/// Soft Keyboard A is 4 rows.
 const double kCyberImePanelHeight = 300;
-
-const double kCyberImeCandidateBarHeight = 40;
 
 const Color _kCapsLockDotActive = Color(0xFF32D74B);
 
@@ -46,52 +44,28 @@ class CyberImeKeyboardPanel extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         final layout = controller.layout;
-        final showCandidates = controller.hasComposition;
         return Material(
           type: MaterialType.transparency,
           child: SizedBox(
             height: height,
             width: double.infinity,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: CyberColors.borderHighlight,
-                    width: 0.5,
-                  ),
+            child: Padding(
+              padding: const EdgeInsets.all(CyberImeKeyboardRows.keyGap),
+              child: CyberImeKeyboardRows(
+                layout: layout,
+                keyFace: (key) => CyberImeKeyCap(
+                  keyDef: key,
+                  kind: layout.kind,
+                  shiftOn: controller.shiftActive,
+                  capsLock: controller.capsLock,
+                  altGrOn: controller.altGrOn,
+                  jpInputMode: controller.jpInputMode,
+                  onTap: () => controller.onKeyTap(key),
+                  onShiftLongPress: key.id == CyberImeKeyId.shift
+                      ? controller.onShiftLongPress
+                      : null,
+                  onPopupCommit: controller.commitPopupText,
                 ),
-              ),
-              child: Column(
-                children: [
-                  if (showCandidates)
-                    SizedBox(
-                      height: kCyberImeCandidateBarHeight,
-                      width: double.infinity,
-                      child: _CyberImeCandidateBar(controller: controller),
-                    ),
-                  Expanded(
-                    child: Padding(
-                      padding:
-                          const EdgeInsets.all(CyberImeKeyboardRows.keyGap),
-                      child: CyberImeKeyboardRows(
-                        layout: layout,
-                        keyFace: (key) => CyberImeKeyCap(
-                          keyDef: key,
-                          kind: layout.kind,
-                          shiftOn: controller.shiftActive,
-                          capsLock: controller.capsLock,
-                          altGrOn: controller.altGrOn,
-                          jpInputMode: controller.jpInputMode,
-                          onTap: () => controller.onKeyTap(key),
-                          onShiftLongPress: key.id == CyberImeKeyId.shift
-                              ? controller.onShiftLongPress
-                              : null,
-                          onPopupCommit: controller.commitPopupText,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
@@ -531,32 +505,17 @@ class CyberImeKeyLabel extends StatelessWidget {
         break;
     }
 
-    final effectiveJp = _mapProfile == CyberImeRegionalProfile.jis
-        ? jpInputMode
-        : CyberImeJpInputMode.english;
-
     String label;
     String? faceSecondary;
-    final inKana = effectiveJp == CyberImeJpInputMode.hiragana ||
-        effectiveJp == CyberImeJpInputMode.katakana;
 
     if (keyDef.keyCode != null) {
       final level = CyberImeKeyMaps.level(_mapProfile, keyDef.keyCode!);
       label = level.resolve(
         shiftOn: shiftOn,
         altGrOn: altGrOn,
-        jpMode: effectiveJp,
+        jpMode: jpInputMode,
       );
-      if (inKana &&
-          !shiftOn &&
-          level.kanaShift != null &&
-          level.kanaShift!.isNotEmpty) {
-        faceSecondary = effectiveJp == CyberImeJpInputMode.katakana
-            ? cyberImeToKatakana(level.kanaShift!)
-            : level.kanaShift;
-      } else if (!inKana) {
-        faceSecondary = keyDef.secondary;
-      }
+      faceSecondary = keyDef.secondary;
     } else if (keyDef.isLetter) {
       label =
           shiftOn ? keyDef.primary.toUpperCase() : keyDef.primary.toLowerCase();
@@ -587,7 +546,7 @@ class CyberImeKeyLabel extends StatelessWidget {
 
     final secondaryStyle = TextStyle(
       color: CyberColors.textSecondary,
-      fontSize: keyDef.isLetter || inKana ? 19 : 18,
+      fontSize: keyDef.isLetter ? 19 : 18,
       fontWeight: FontWeight.w500,
       height: 1,
     );
@@ -635,57 +594,5 @@ class CyberImeKeyLabel extends StatelessWidget {
       if (matchesCase) return option;
     }
     return fallback;
-  }
-}
-
-/// Romaji preedit + candidate chips above the soft JIS letter pad.
-class _CyberImeCandidateBar extends StatelessWidget {
-  const _CyberImeCandidateBar({required this.controller});
-
-  final CyberImeKeyboardController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final reading = controller.compositionText;
-    final candidates = controller.candidates;
-    final selected = controller.candidateIndex;
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: CyberColors.borderHighlight, width: 0.5),
-        ),
-      ),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Center(
-              child: Text(
-                reading,
-                style: const TextStyle(
-                  color: CyberColors.textSecondary,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-          for (var i = 0; i < candidates.length; i++)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: CyberButton(
-                size: CyberButtonSize.small,
-                variant: i == selected && controller.candidatePickerOpen
-                    ? CyberButtonVariant.primary
-                    : CyberButtonVariant.light,
-                onPressed: () => controller.commitCandidateAt(i),
-                child: Text(candidates[i]),
-              ),
-            ),
-        ],
-      ),
-    );
   }
 }

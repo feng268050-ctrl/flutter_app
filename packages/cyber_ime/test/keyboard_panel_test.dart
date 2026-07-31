@@ -259,8 +259,27 @@ void main() {
 
     expect(find.byType(CyberImeKeyboardBackdrop), findsOneWidget);
     expect(find.byType(CyberBackdropBlur), findsOneWidget);
+    expect(find.byType(CyberImeKeyboardTopEdge), findsOneWidget);
     expect(find.text('q'), findsOneWidget);
     kb.dispose();
+  });
+
+  testWidgets('CyberImeLayoutPreview paints shared backdrop under keys',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ColoredBox(
+            color: Colors.teal,
+            child: CyberImeLayoutPreview(profile: CyberImeRegionalProfile.qwerty),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(CyberImeKeyboardBackdrop), findsOneWidget);
+    expect(find.byType(BackdropFilter), findsOneWidget);
+    expect(find.byType(CyberButton), findsWidgets);
   });
 
   testWidgets('CyberImeLayoutPreview shows soft QWERTY without typewriter chrome',

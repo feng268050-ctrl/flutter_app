@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 /// Soft-keyboard layout profile (Settings Segment + CyberIME Keyboard A).
 ///
-/// Labels: QWERTY / QWERTZ / AZERTY / JIS.
+/// Labels: QWERTY / QWERTZ / AZERTY.
 /// Distinct from [CyberImeGlobalKind] (english/chinese input language).
 enum CyberImeRegionalProfile {
   /// US QWERTY phone soft keyboard (default).
@@ -12,23 +12,19 @@ enum CyberImeRegionalProfile {
   qwertz,
 
   /// French AZERTY phone soft keyboard.
-  azerty,
-
-  /// Japanese romaji 26-key phone soft keyboard.
-  jis;
+  azerty;
 
   /// Short Segment label for product Settings choosers.
   String get segmentLabel => switch (this) {
         CyberImeRegionalProfile.qwerty => 'QWERTY',
         CyberImeRegionalProfile.qwertz => 'QWERTZ',
         CyberImeRegionalProfile.azerty => 'AZERTY',
-        CyberImeRegionalProfile.jis => 'JIS',
       };
 
   /// Operator-facing name (same as [segmentLabel]).
   String get displayName => segmentLabel;
 
-  /// Persist id written as `profile=` (only the four soft values).
+  /// Persist id written as `profile=` (only the three soft values).
   String get confId => name;
 
   /// Parse persisted / legacy ids. Unknown and empty → [qwerty].
@@ -52,7 +48,7 @@ enum CyberImeRegionalProfile {
         return CyberImeRegionalProfile.azerty;
       case 'jis':
       case 'jp':
-        return CyberImeRegionalProfile.jis;
+        return CyberImeRegionalProfile.qwerty;
       default:
         return CyberImeRegionalProfile.qwerty;
     }

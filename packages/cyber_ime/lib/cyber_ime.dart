@@ -18,6 +18,7 @@ export 'src/keyboard/cyber_ime_keyboard_backdrop.dart';
 export 'src/keyboard/cyber_ime_keyboard_controller.dart';
 export 'src/keyboard/cyber_ime_keyboard_panel.dart';
 export 'src/keyboard/cyber_ime_keyboard_rows.dart';
+export 'src/keyboard/cyber_ime_keyboard_top_edge.dart';
 export 'src/keyboard/cyber_ime_layout.dart';
 export 'src/keyboard/cyber_ime_layout_chooser.dart';
 export 'src/keyboard/cyber_ime_layout_preview.dart';

@@ -8,7 +8,7 @@ import 'package:cyber_ime/src/session/cyber_ime_regional_layout.dart';
 /// Factory for Keyboard A / B layouts.
 ///
 /// Keyboard A letter layouts are phone soft pads from [CyberImeSoftLayouts]
-/// (QWERTY / QWERTZ / AZERTY / JIS). Symbol layers stay shared phone pages.
+/// (QWERTY / QWERTZ / AZERTY). Symbol layers stay shared phone pages.
 abstract final class CyberImeLayouts {
   /// Keyboard A letter layer for the active (or explicit) regional profile.
   static CyberImeLayout letters({
@@ -44,7 +44,6 @@ abstract final class CyberImeLayouts {
       CyberImeRegionalProfile.qwertz ||
       CyberImeRegionalProfile.azerty =>
         '€',
-      CyberImeRegionalProfile.jis => '￥',
     };
 
     CyberImeKeyDef digit(String v) =>

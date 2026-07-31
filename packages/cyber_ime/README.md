@@ -54,13 +54,13 @@ CyberImeRegionalLayoutRegistry.register(
 ## Regional soft layouts
 
 Keyboard A letter arrangements are **phone soft pads** (QWERTY / QWERTZ /
-AZERTY / JIS) from `CyberImeSoftLayouts`, shared by the live panel and Settings
+AZERTY) from `CyberImeSoftLayouts`, shared by the live panel and Settings
 preview:
 
-- Three letter rows + bottom (`123` / optional language / Space / confirm).
+- Three letter rows + bottom (`123` / Space / confirm).
 - No number row, F-keys, Tab/Caps, Ctrl/Alt/AltGr, or NumPad on Keyboard A.
 - Digits/symbols only via `123` / `#+=` layers.
-- QWERTZ/AZERTY accents via long-press; JIS uses romaji composition + candidates.
+- QWERTZ/AZERTY accents via long-press.
 
 `CyberImeKeyMaps` remains for XKB-aligned character tables (physical/reference).
 Physical USB/BT typing continues via XKB using the matching layout id
@@ -92,7 +92,6 @@ printable key, Backspace, Delete, or arrow key stays down (cancels if a real
 | ANSI Shift layer | KeyMap `base`/`shift` + long-press slide popup | Shift via XKB |
 | QWERTZ ISO | Short left Shift + `<`; ü ö ä #; Ctrl/Alt/Space/AltGr; Y/Z via KeyMap | XKB `de` |
 | AZERTY AltGr | Long-press secondaries + AltGr layer approximate third level | Full AltGr via XKB |
-| JIS 半/全・無変換・変換・カナ | Soft keys + `CyberImeJpInputMode` (英数/ひらがな/カタカナ); Shift = small kana | XKB `jp` + `jp106` |
 | Preview | `CyberImeLayoutChooser` / `CyberImeLayoutPreview` | Same KeyMap labels |
 
 ## ChineseGlobal (deferred)
@@ -116,6 +115,9 @@ wrap with a full-screen absorber — see lws-ui `docs/IME.md`.
 ## Composition with CyberUI
 
 `cyber_ime` depends on `cyber_ui` for frost chrome:
-- Panel backdrop: `CyberBackdropBlur` (realtime Gaussian)
+- Panel backdrop: `CyberImeKeyboardBackdrop` → `CyberBackdropBlur`
+  - In-page preview: Flutter `BackdropFilter` (realtime)
+  - Root Overlay (Weston): `firstFrame` capture via page `CyberBlurBackdropScope`
+- Keycaps: translucent `CyberButtonVariant.light` only — **no** per-key blur
 - Keycaps: `CyberButton` (`expand: true`) — LIGHT glass letters; PRIMARY Enter;
   LIGHT + accent label for Backspace/Clear (lws-ui `FrostButton` / `ImeKeyCap`)

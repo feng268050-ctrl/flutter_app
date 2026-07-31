@@ -41,6 +41,7 @@ class CyberBackdropBlur extends StatefulWidget {
     this.tint,
     this.captureScaleFactor = 3,
     this.clipBehavior = Clip.antiAlias,
+    this.backdropScope,
   });
 
   final Widget child;
@@ -73,6 +74,11 @@ class CyberBackdropBlur extends StatefulWidget {
   final double captureScaleFactor;
 
   final Clip clipBehavior;
+
+  /// Capture root when this widget sits outside [CyberBlurBackdropScope]
+  /// (e.g. root [Overlay] / dialog route). Prefer Flutter [BackdropFilter]
+  /// via [CyberBlurSampleMode.realtime] when still in the page tree.
+  final CyberBlurBackdropScopeState? backdropScope;
 
   @override
   State<CyberBackdropBlur> createState() => _CyberBackdropBlurState();
@@ -175,7 +181,7 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
       return;
     }
 
-    final scope = CyberBlurBackdropScope.maybeOf(context);
+    final scope = widget.backdropScope ?? CyberBlurBackdropScope.maybeOf(context);
     final boundary = scope?.renderBoundary;
     if (boundary == null || !boundary.hasSize) {
       if (mounted) {

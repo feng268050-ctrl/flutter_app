@@ -1,6 +1,7 @@
 import 'package:cyber_ime/src/field/cyber_ime_bottom_row_profile.dart';
 import 'package:cyber_ime/src/field/cyber_ime_field_profile.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_key.dart';
+import 'package:cyber_ime/src/keyboard/cyber_ime_keyboard_backdrop.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_keyboard_panel.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_keyboard_rows.dart';
 import 'package:cyber_ime/src/keyboard/cyber_ime_layout.dart';
@@ -13,6 +14,9 @@ import 'package:flutter/material.dart';
 ///
 /// Builds the same soft Keyboard A geometry and [CyberImeKeyLabel] faces as the
 /// live panel for [profile], without input, popups, or session wiring.
+///
+/// Glass: one [CyberImeKeyboardBackdrop] under translucent keycaps (no per-key
+/// blur). Prefers Flutter [BackdropFilter] realtime sampling in the page tree.
 class CyberImeLayoutPreview extends StatelessWidget {
   const CyberImeLayoutPreview({
     super.key,
@@ -21,6 +25,7 @@ class CyberImeLayoutPreview extends StatelessWidget {
     this.bottomRow = CyberImeBottomRowProfile.defaults,
     this.kind = CyberImeKeyboardKind.englishGlobal,
     this.layout,
+    this.showBackdrop = true,
   });
 
   /// Regional soft layout to preview (may differ from the live registry).
@@ -33,6 +38,9 @@ class CyberImeLayoutPreview extends StatelessWidget {
   /// Optional explicit layout; when null, built from [profile] / [bottomRow].
   final CyberImeLayout? layout;
 
+  /// When true, paints the shared Gaussian frost plate under the keys.
+  final bool showBackdrop;
+
   CyberImeLayout get _layout =>
       layout ??
       CyberImeLayouts.letters(
@@ -44,29 +52,39 @@ class CyberImeLayoutPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolved = _layout;
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: IgnorePointer(
-        child: Padding(
-          padding: const EdgeInsets.all(CyberImeKeyboardRows.keyGap),
-          child: CyberImeKeyboardRows(
-            layout: resolved,
-            keyFace: (key) => CyberButton(
-              onPressed: null,
-              expand: true,
-              variant: key.id == CyberImeKeyId.enter
-                  ? CyberButtonVariant.primary
-                  : CyberButtonVariant.light,
-              child: CyberImeKeyLabel(
-                keyDef: key,
-                shiftOn: false,
-                profile: profile,
-              ),
+    final keys = IgnorePointer(
+      child: Padding(
+        padding: const EdgeInsets.all(CyberImeKeyboardRows.keyGap),
+        child: CyberImeKeyboardRows(
+          layout: resolved,
+          keyFace: (key) => CyberButton(
+            onPressed: null,
+            expand: true,
+            variant: key.id == CyberImeKeyId.enter
+                ? CyberButtonVariant.primary
+                : CyberButtonVariant.light,
+            child: CyberImeKeyLabel(
+              keyDef: key,
+              shiftOn: false,
+              profile: profile,
             ),
           ),
         ),
       ),
+    );
+
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: showBackdrop
+          ? Stack(
+              fit: StackFit.expand,
+              children: [
+                const CyberImeKeyboardBackdrop(),
+                keys,
+              ],
+            )
+          : keys,
     );
   }
 }

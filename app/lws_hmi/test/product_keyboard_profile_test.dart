@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/settings/application/product_keyboard_profile.dart';
 
 void main() {
-  test('four segment labels', () {
+  test('three segment labels', () {
     expect(
       ProductKeyboardProfile.values.map((e) => e.segmentLabel).toList(),
-      ['QWERTY', 'QWERTZ', 'AZERTY', 'JIS'],
+      ['QWERTY', 'QWERTZ', 'AZERTY'],
     );
   });
 
@@ -18,7 +18,7 @@ void main() {
     }
   });
 
-  test('legacy default/ansi migrate to qwerty', () {
+  test('legacy default/ansi/jis/jp migrate to qwerty', () {
     expect(
       ProductKeyboardProfile.fromConfProfile('default'),
       ProductKeyboardProfile.qwerty,
@@ -27,10 +27,18 @@ void main() {
       ProductKeyboardProfile.fromConfProfile('ansi'),
       ProductKeyboardProfile.qwerty,
     );
+    expect(
+      ProductKeyboardProfile.fromConfProfile('jis'),
+      ProductKeyboardProfile.qwerty,
+    );
+    expect(
+      ProductKeyboardProfile.fromConfProfile('jp'),
+      ProductKeyboardProfile.qwerty,
+    );
     expect(ProductKeyboardProfile.qwerty.confProfileId, 'qwerty');
   });
 
-  test('XKB id alone still maps DE/FR/JP/US', () {
+  test('XKB id alone still maps DE/FR/US', () {
     expect(
       ProductKeyboardProfile.fromLayout(const KeyboardLayout(id: 'de')),
       ProductKeyboardProfile.qwertz,
@@ -39,10 +47,9 @@ void main() {
       ProductKeyboardProfile.fromLayout(const KeyboardLayout(id: 'us')),
       ProductKeyboardProfile.qwerty,
     );
-  });
-
-  test('JIS uses jp106 model', () {
-    expect(ProductKeyboardProfile.jis.xkbLayout.id, 'jp');
-    expect(ProductKeyboardProfile.jis.xkbLayout.model, 'jp106');
+    expect(
+      ProductKeyboardProfile.fromLayout(const KeyboardLayout(id: 'jp')),
+      ProductKeyboardProfile.qwerty,
+    );
   });
 }

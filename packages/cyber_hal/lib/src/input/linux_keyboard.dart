@@ -48,6 +48,8 @@ class LinuxKeyboard implements Keyboard {
     model: 'pc105',
     displayName: 'ISO FR (AZERTY)',
   );
+
+  /// Legacy JIS XKB id — no longer offered in [listLayouts]; kept for conf reads.
   static const jp = KeyboardLayout(
     id: 'jp',
     model: 'jp106',
@@ -62,7 +64,7 @@ class LinuxKeyboard implements Keyboard {
 
   @override
   Future<List<KeyboardLayout>> listLayouts() async =>
-      const <KeyboardLayout>[us, de, fr, jp, ru];
+      const <KeyboardLayout>[us, de, fr, ru];
 
   @override
   Future<KeyboardLayout> getLayout() async {

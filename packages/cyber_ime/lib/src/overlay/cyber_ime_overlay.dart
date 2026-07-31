@@ -7,6 +7,7 @@ import 'package:cyber_ime/src/overlay/cyber_ime_overlay_scope.dart';
 import 'package:cyber_ime/src/session/cyber_ime_action.dart';
 import 'package:cyber_ime/src/session/cyber_ime_commit.dart';
 import 'package:cyber_ime/src/session/cyber_ime_session.dart';
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
 export 'package:cyber_ime/src/overlay/cyber_ime_overlay_scope.dart';
@@ -44,6 +45,8 @@ abstract final class CyberImeOverlay {
     VoidCallback? onHidden,
   }) {
     final overlayState = Overlay.of(context, rootOverlay: true);
+    // Overlay / dialog routes sit outside the page scope — resolve from tree.
+    final backdropScope = CyberBlurBackdropScope.resolve(context);
     final imeSession = session ?? CyberImeSession.shared;
     final commit = CyberImeControllerCommit(controller);
     final kb = CyberImeKeyboardController(
@@ -87,7 +90,13 @@ abstract final class CyberImeOverlay {
                     fit: StackFit.expand,
                     children: [
                       // 1) One blur plate — samples UI behind the keyboard band.
-                      const CyberImeKeyboardBackdrop(),
+                      // Weston Overlay: use firstFrame capture (realtime → black).
+                      CyberImeKeyboardBackdrop(
+                        sampleMode: backdropScope != null
+                            ? CyberBlurSampleMode.firstFrame
+                            : CyberBlurSampleMode.realtime,
+                        backdropScope: backdropScope,
+                      ),
                       // 2) Transparent chrome + translucent keycaps (no blur).
                       Listener(
                         behavior: HitTestBehavior.opaque,

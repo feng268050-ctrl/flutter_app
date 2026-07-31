@@ -10,8 +10,10 @@ void main() {
     expect(CyberImeRegionalProfile.parse('default'), CyberImeRegionalProfile.qwerty);
     expect(CyberImeRegionalProfile.parse('ansi'), CyberImeRegionalProfile.qwerty);
     expect(CyberImeRegionalProfile.parse(''), CyberImeRegionalProfile.qwerty);
+    expect(CyberImeRegionalProfile.parse('jis'), CyberImeRegionalProfile.qwerty);
+    expect(CyberImeRegionalProfile.parse('jp'), CyberImeRegionalProfile.qwerty);
     expect(CyberImeRegionalProfile.values.map((e) => e.segmentLabel).toList(),
-        ['QWERTY', 'QWERTZ', 'AZERTY', 'JIS']);
+        ['QWERTY', 'QWERTZ', 'AZERTY']);
   });
 
   test('DE KeyMap swaps Y/Z vs US', () {
@@ -141,16 +143,6 @@ void main() {
     expect(rowLabels(layout, 2), contains("'"));
     final e = layout.rows[0].keys.firstWhere((k) => k.primary == 'E');
     expect(e.popupOptions(), containsAll(['é', 'è', 'ê', 'ë', 'É']));
-  });
-
-  test('JIS soft has language toggle, no physical JP chrome', () {
-    final layout =
-        CyberImeLayouts.letters(profile: CyberImeRegionalProfile.jis);
-    final ids = layout.rows.expand((r) => r.keys).map((k) => k.id).toList();
-    expect(ids, contains(CyberImeKeyId.languageToggle));
-    expect(ids, isNot(contains(CyberImeKeyId.hankakuZenkaku)));
-    expect(ids, isNot(contains(CyberImeKeyId.muhenkan)));
-    expect(rowLabels(layout, 0), 'QWERTYUIOP'.split(''));
   });
 
   test('romaji converts ka and nihongo', () {

@@ -113,11 +113,11 @@ abstract final class CyberImeOverlay {
                   valueListenable: popup,
                   builder: (context, data, _) {
                     if (data == null) return const SizedBox.shrink();
-                    return Positioned(
-                      left: data.anchor.dx,
-                      top: data.anchor.dy,
-                      child: FractionalTranslation(
-                        translation: const Offset(-0.5, 0),
+                    return Positioned.fill(
+                      child: CustomSingleChildLayout(
+                        delegate: CyberImeAlternatePopupPositionDelegate(
+                          preferredKeyTopCenter: data.anchor,
+                        ),
                         child: IgnorePointer(
                           child: CyberImeAlternatePopup(
                             options: data.options,

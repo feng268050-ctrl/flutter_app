@@ -39,6 +39,54 @@ void main() {
     });
   });
 
+  group('cyberImeClampAlternatePopupLeft', () {
+    test('keeps 2px inset at left and right edges', () {
+      expect(
+        cyberImeClampAlternatePopupLeft(
+          preferredCenterX: 20,
+          childWidth: 160,
+          parentWidth: 800,
+        ),
+        2,
+      );
+      expect(
+        cyberImeClampAlternatePopupLeft(
+          preferredCenterX: 780,
+          childWidth: 160,
+          parentWidth: 800,
+        ),
+        800 - 160 - 2,
+      );
+    });
+
+    test('centers when child is wider than the safe area', () {
+      expect(
+        cyberImeClampAlternatePopupLeft(
+          preferredCenterX: 400,
+          childWidth: 798,
+          parentWidth: 800,
+        ),
+        (800 - 798) / 2,
+      );
+    });
+  });
+
+  group('cyberImeAlternatePopupTop', () {
+    test('uses offset when popup is shorter than the lift', () {
+      expect(
+        cyberImeAlternatePopupTop(keyTopY: 200, popupHeight: 40),
+        200 - kCyberImeAlternatePopupOffsetAboveKey,
+      );
+    });
+
+    test('lifts further so a tall popup does not overlap the key', () {
+      expect(
+        cyberImeAlternatePopupTop(keyTopY: 200, popupHeight: 70),
+        200 - 70,
+      );
+    });
+  });
+
   testWidgets('Keyboard A toggles to symbols and back', (tester) async {
     final ctrl = TextEditingController();
     final kb = CyberImeKeyboardController(
@@ -64,12 +112,13 @@ void main() {
     kb.dispose();
   });
 
-  testWidgets('symbol key shows its implemented second function', (tester) async {
+  testWidgets('quote key keeps backtick for long-press only', (tester) async {
     final ctrl = TextEditingController();
     final kb = CyberImeKeyboardController(
       fieldType: CyberImeFieldType.text,
       commit: CyberImeControllerCommit(ctrl),
     );
+    addTearDown(kb.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -82,10 +131,22 @@ void main() {
     await tester.tap(find.text('123'));
     await tester.pump();
 
-    // The apostrophe key has an existing backtick second function. It must be
-    // visible on the keycap, not only available from its long-press popup.
-    expect(find.text('`'), findsOneWidget);
-    kb.dispose();
+    final quoteFinder = find.byWidgetPredicate(
+      (w) =>
+          w is CyberImeKeyCap &&
+          w.keyDef.primary == "'" &&
+          w.keyDef.secondary == '`',
+    );
+    expect(quoteFinder, findsOneWidget);
+    // lws-ui: custom secondary is not painted on the key face.
+    expect(find.text('`'), findsNothing);
+
+    final rect = tester.getRect(quoteFinder);
+    final gesture = await tester.startGesture(rect.center);
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    expect(find.text('`'), findsWidgets);
+    await gesture.up();
+    await tester.pump();
   });
 
   testWidgets('DE regional profile shows QWERTZ letter caps', (tester) async {
@@ -174,6 +235,51 @@ void main() {
     await tester.pump();
     expect(ctrl.text, 'q');
     kb.dispose();
+  });
+
+  testWidgets('edge-key alternate popup keeps 2px screen inset', (tester) async {
+    final ctrl = TextEditingController();
+    final kb = CyberImeKeyboardController(
+      fieldType: CyberImeFieldType.text,
+      commit: CyberImeControllerCommit(ctrl),
+    );
+    addTearDown(kb.dispose);
+
+    await tester.binding.setSurfaceSize(const Size(800, 480));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: CyberImeKeyboardPanel(controller: kb, height: 300),
+          ),
+        ),
+      ),
+    );
+
+    final keyFinder = find.byWidgetPredicate(
+      (w) => w is CyberImeKeyCap && w.keyDef.primary == 'Q',
+    );
+    final rect = tester.getRect(keyFinder);
+    final gesture = await tester.startGesture(rect.center);
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+
+    final popup = find.byType(CyberImeAlternatePopup);
+    expect(popup, findsOneWidget);
+    final popupRect = tester.getRect(popup);
+    expect(popupRect.left, greaterThanOrEqualTo(kCyberImeAlternatePopupEdgeInset));
+    expect(
+      popupRect.right,
+      lessThanOrEqualTo(800 - kCyberImeAlternatePopupEdgeInset),
+    );
+    // Keyboard sits at the bottom — popup must clear the keycap vertically.
+    expect(popupRect.bottom, lessThanOrEqualTo(rect.top + 0.5));
+    expect(popupRect.height, lessThan(100));
+
+    await gesture.up();
+    await tester.pump();
   });
 
   testWidgets('letter long-press slide right commits uppercase', (tester) async {
@@ -341,19 +447,20 @@ void main() {
       ),
     );
 
-    for (final character in ['1', '€', '@', '*', '?']) {
+    for (final character in ['1', '€', '@', '*']) {
       expect(find.text(character), findsWidgets);
     }
 
     await tester.tap(find.text('123'));
     await tester.pump();
-    expect(find.text(r'= \ <'), findsOneWidget);
-    expect(find.text('€'), findsOneWidget);
+    expect(find.text('#+='), findsOneWidget);
+    expect(find.text(r'$'), findsOneWidget);
 
-    await tester.tap(find.text(r'= \ <'));
+    await tester.tap(find.text('#+='));
     await tester.pump();
-    expect(find.text('!?#'), findsOneWidget);
-    expect(find.text('™'), findsOneWidget);
+    expect(find.text('123'), findsWidgets);
+    expect(find.text('€'), findsOneWidget);
+    expect(find.text('['), findsOneWidget);
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -363,7 +470,7 @@ void main() {
       ),
     );
 
-    for (final character in ['1', '€', '@', '*', '?']) {
+    for (final character in ['1', '€', '@', '*']) {
       expect(find.text(character), findsWidgets);
     }
   });

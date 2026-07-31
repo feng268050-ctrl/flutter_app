@@ -165,10 +165,8 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
       return null;
     }
     final origin = stackBox.globalToLocal(keyBox.localToGlobal(Offset.zero));
-    return Offset(
-      origin.dx + keyBox.size.width / 2,
-      origin.dy - kCyberImeAlternatePopupOffsetAboveKey,
-    );
+    // Keycap top-center; vertical lift is applied after popup height is known.
+    return Offset(origin.dx + keyBox.size.width / 2, origin.dy);
   }
 
   void _showAlternatePopup() {
@@ -213,11 +211,14 @@ class _CyberImeKeyCapState extends State<CyberImeKeyCap> {
           return const SizedBox.shrink();
         }
         final origin = keyBox.localToGlobal(Offset.zero, ancestor: overlayBox);
-        return Positioned(
-          left: origin.dx + keyBox.size.width / 2,
-          top: origin.dy - kCyberImeAlternatePopupOffsetAboveKey,
-          child: FractionalTranslation(
-            translation: const Offset(-0.5, 0),
+        return SizedBox.expand(
+          child: CustomSingleChildLayout(
+            delegate: CyberImeAlternatePopupPositionDelegate(
+              preferredKeyTopCenter: Offset(
+                origin.dx + keyBox.size.width / 2,
+                origin.dy,
+              ),
+            ),
             child: IgnorePointer(
               child: CyberImeAlternatePopup(
                 options: options,
@@ -529,8 +530,9 @@ class CyberImeKeyLabel extends StatelessWidget {
     final showSecondary = !altGrOn &&
         faceSecondary != null &&
         faceSecondary.isNotEmpty &&
+        // lws-ui `showSecondaryHint`: letters + comma/period only — custom
+        // keys (e.g. quote → backtick) keep secondary for long-press popup.
         (keyDef.isLetter ||
-            keyDef.id == CyberImeKeyId.custom ||
             keyDef.id == CyberImeKeyId.commaPeriod ||
             keyDef.keyCode != null);
 
@@ -539,38 +541,45 @@ class CyberImeKeyLabel extends StatelessWidget {
           ? 16.0
           : label.length > 2
               ? 21.0
-              : 26.0;
+              : kCyberImeKeyPrimaryTextSize;
       return Text(
         label,
         style: TextStyle(
           fontSize: fontSize,
           fontWeight: FontWeight.w600,
+          height: 1,
         ),
       );
     }
 
+    // lws-ui: secondary 14 + primary 28, lineHeight == fontSize, no gap →
+    // content ≈ 42; FrostButton centers the column so each side ≈ 12.5 on a
+    // ~67dp key face.
     final secondaryStyle = TextStyle(
       color: CyberColors.textSecondary,
-      fontSize: keyDef.isLetter ? 19 : 18,
+      fontSize: kCyberImeKeySecondaryHintTextSize,
       fontWeight: FontWeight.w500,
       height: 1,
     );
-    const primaryStyle = TextStyle(fontSize: 26, fontWeight: FontWeight.w600);
+    const primaryStyle = TextStyle(
+      fontSize: kCyberImeKeyPrimaryTextSize,
+      fontWeight: FontWeight.w600,
+      height: 1,
+    );
 
-    // Soft phone: secondary (if any) sits above the primary glyph.
-    return Stack(
-      fit: StackFit.expand,
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Center(child: Text(label, style: primaryStyle)),
-        Positioned(
-          top: 2,
-          left: 0,
-          right: 0,
-          child: Text(
-            faceSecondary,
-            textAlign: TextAlign.center,
-            style: secondaryStyle,
-          ),
+        Text(
+          faceSecondary,
+          textAlign: TextAlign.center,
+          style: secondaryStyle,
+        ),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: primaryStyle,
         ),
       ],
     );

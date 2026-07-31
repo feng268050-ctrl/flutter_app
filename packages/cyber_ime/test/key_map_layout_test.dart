@@ -176,37 +176,46 @@ void main() {
     );
   });
 
-  test('AZERTY symbols pages match FR phone reference', () {
-    final primary =
-        CyberImeLayouts.symbolsPrimary(profile: CyberImeRegionalProfile.azerty);
-    expect(rowLabels(primary, 0), '1234567890'.split(''));
-    expect(
-      rowLabels(primary, 1),
-      ['@', '#', '€', '_', '&', '-', '+', '(', ')', '/'],
-    );
-    expect(primary.rows[2].keys.first.id, CyberImeKeyId.symbolsMore);
-    expect(primary.rows[2].keys.first.primary, r'= \ <');
-    expect(
-      primary.rows[2].keys.skip(1).take(7).map((k) => k.primary).toList(),
-      ['*', '"', "'", ':', ';', '!', '?'],
-    );
+  test('shared symbols pages are identical across regional profiles', () {
+    List<String> labels(CyberImeLayout layout, int row) =>
+        layout.rows[row].keys.map((k) => k.primary).toList();
 
-    final extended = CyberImeLayouts.symbolsExtended(
-      profile: CyberImeRegionalProfile.azerty,
-    );
-    expect(
-      rowLabels(extended, 0),
-      ['~', '`', '|', '•', '√', 'π', '÷', '×', '¶', 'Δ'],
-    );
-    expect(
-      rowLabels(extended, 1),
-      ['£', '¢', '¥', r'$', '^', '°', '=', '{', '}', r'\'],
-    );
-    expect(extended.rows[2].keys.first.primary, '!?#');
-    expect(
-      extended.rows[2].keys.skip(1).take(7).map((k) => k.primary).toList(),
-      ['%', '©', '®', '™', '✓', '[', ']'],
-    );
+    for (final profile in CyberImeRegionalProfile.values) {
+      final primary = CyberImeLayouts.symbolsPrimary(profile: profile);
+      expect(labels(primary, 0), '1234567890'.split(''), reason: '$profile');
+      expect(
+        labels(primary, 1),
+        ['-', '/', ':', ';', '(', ')', r'$', '&', '@', '"'],
+        reason: '$profile',
+      );
+      expect(primary.rows[2].keys.first.id, CyberImeKeyId.symbolsMore);
+      expect(primary.rows[2].keys.first.primary, '#+=');
+      expect(
+        primary.rows[2].keys.skip(1).take(5).map((k) => k.primary).toList(),
+        [',', '.', '?', '!', "'"],
+      );
+      expect(
+        primary.rows[2].keys.firstWhere((k) => k.primary == "'").secondary,
+        '`',
+      );
+
+      final extended = CyberImeLayouts.symbolsExtended(profile: profile);
+      expect(
+        labels(extended, 0),
+        ['[', ']', '{', '}', '#', '%', '^', '*', '+', '='],
+        reason: '$profile',
+      );
+      expect(
+        labels(extended, 1),
+        ['_', r'\', '|', '~', '<', '>', '€', '£', '¥', '•'],
+        reason: '$profile',
+      );
+      expect(extended.rows[2].keys.first.primary, '123');
+      expect(
+        extended.rows[2].keys.firstWhere((k) => k.primary == "'").secondary,
+        '`',
+      );
+    }
   });
 
   test('romaji converts ka and nihongo', () {

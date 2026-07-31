@@ -111,10 +111,19 @@ abstract final class ProcessModeDimens {
   static const double wheelWidth = 520 / 3; // 173.333…
   static const double wheelHeight = 680 / 3; // 226.666…
   static const double wheelItemHeight = 168 / 3; // 56 — was 136/3; more row gap
-  static const double wheelSelectedTextSize = 56 / 3; // 18.666…
-  static const double wheelUnselectedTextSize = 16;
-  static const double wheelAccentBandWidth = 400;
-  static const double wheelAccentSolidWidth = 550 / 3; // 183.333…
+  /// Mode / material selected label (+4 vs frozen 56/3).
+  static const double wheelSelectedTextSize = 56 / 3 + 4; // 22.666…
+  /// Mode / material unselected label (+4 vs frozen 16).
+  static const double wheelUnselectedTextSize = 20;
+  /// Full-page mode / material highlight length (lws-ui 400dp) plus a little
+  /// past the scale *image* box so the fill peak meets the visible ticks after
+  /// [QuickModePickerDimens.scaleImageVisualScale] shrinks the asset.
+  static const double wheelAccentBandWidth = 410;
+  /// Solid label segment — mode / material accent under the labels.
+  static const double wheelAccentSolidWidth = 255;
+
+  /// Gap between mode label end and the gear scale (ticks stay clear).
+  static const double wheelLabelToScaleGap = 12;
 
   /// lws-ui OffsetWheel: selected equal L/R pad (`selectedTextMarginBottomTop`).
   static const double wheelSelectedPadding = 24;

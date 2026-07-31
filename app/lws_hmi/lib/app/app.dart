@@ -628,7 +628,15 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                                 _cameraDeviceInfoCache,
                                           );
                                         case AppRoutes.monitor:
-                                          page = const MonitorPage();
+                                          final monitorArgs =
+                                              settings.arguments;
+                                          page = MonitorPage(
+                                            initialTabIndex: monitorArgs
+                                                    is MonitorRouteArgs
+                                                ? monitorArgs.initialTabIndex
+                                                : MonitorPage
+                                                    .tabWorkInformation,
+                                          );
                                         case AppRoutes.processVideoDetail:
                                           final videoArgs = settings.arguments;
                                           page = videoArgs

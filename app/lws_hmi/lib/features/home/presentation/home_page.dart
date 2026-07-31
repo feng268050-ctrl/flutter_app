@@ -15,6 +15,7 @@ import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/home/presentation/home_clock.dart';
 import 'package:lws_hmi/features/home/presentation/home_quick_action.dart';
 import 'package:lws_hmi/features/home/presentation/custom_home_statistics_panel.dart';
+import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
 import 'package:lws_hmi/features/status_bar/live_product_status_items.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
@@ -450,8 +451,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
                             iconAsset: HomeAssets.monitorIcon,
                             label: l10n.homeMonitorLabel,
                             labelFontSize: qaLabelSize,
-                            onPressed: () {
-                              Navigator.of(context)
+                            onPressed: () async {
+                              await Navigator.of(context)
                                   .pushNamed(AppRoutes.monitor);
                             },
                           ),
@@ -462,8 +463,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
                             iconAsset: HomeAssets.settingsIcon,
                             label: l10n.homeSettingsLabel,
                             labelFontSize: qaLabelSize,
-                            onPressed: () {
-                              Navigator.of(context)
+                            onPressed: () async {
+                              await Navigator.of(context)
                                   .pushNamed(AppRoutes.settings);
                             },
                           ),
@@ -473,11 +474,10 @@ class _HomePageState extends State<HomePage> with RouteAware {
                             scaleY: sy,
                             labelFontSize: qaLabelSize,
                             l10n: l10n,
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(l10n.aiVisionComingSoon),
-                                ),
+                            onPressed: () async {
+                              await Navigator.of(context).pushNamed(
+                                AppRoutes.monitor,
+                                arguments: MonitorRouteArgs.aiVision,
                               );
                             },
                           ),
@@ -719,7 +719,7 @@ class _HomeQuickActionSquare extends StatelessWidget {
   final String iconAsset;
   final String label;
   final double labelFontSize;
-  final VoidCallback onPressed;
+  final HomeQuickActionCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -768,7 +768,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
   final double scaleY;
   final double labelFontSize;
   final AppLocalizations l10n;
-  final VoidCallback onPressed;
+  final HomeQuickActionCallback onPressed;
 
   @override
   Widget build(BuildContext context) {

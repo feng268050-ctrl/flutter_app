@@ -1,9 +1,17 @@
+import 'dart:async';
+import 'dart:ui' show lerpDouble;
+
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
 /// Design tokens from lws-ui `home_quick_action_*` / `home_stat_card_corner_radius`.
 const double kHomeQuickActionCorner = 18;
 const double kHomeQuickActionLabelMarginTop = 10;
+
+/// Press: scale 1.0 → 0.94 over 90ms, then ~30ms settle before activate.
+const double kHomeQaPressScale = 0.94;
+const int kHomeQaPressMs = 90;
+const int kHomeQaPressHoldMs = 30;
 
 /// Caption reference used to size all home quick-action labels equally.
 const String kHomeQuickActionLabelSizeRef = 'Settings';
@@ -12,9 +20,12 @@ const String kHomeQuickActionLabelSizeRef = 'Settings';
 const Color _kLabelIdle = Color(0xFFFFFFFF);
 const Color _kLabelPressed = Color(0xB3FFFFFF);
 
-/// lws-ui `FrostButtonTileRipple` → argb(0x3D, 255, 255, 255) ≈ 24% white.
-/// Shared with Quick / Engineer `FrostRippleClickEntry` (mask shape differs).
-const Color _kTileRipple = Color(0x3DFFFFFF);
+/// Semi-transparent dark press overlay on the glass card.
+const Color _kPressOverlay = Color(0x66000000);
+
+/// Called after press settle. Return the [Navigator] push [Future] when
+/// navigating so the tile stays at press scale until the route pops.
+typedef HomeQuickActionCallback = FutureOr<void> Function();
 
 /// Font size so [kHomeQuickActionLabelSizeRef] fits [cardWidth] with equal
 /// side inset (~11% each side) so the caption is not clipped.
@@ -45,13 +56,11 @@ double homeQuickActionLabelFontSize(double cardWidth) {
 /// Home quick-action tile — Flutter stand-in for lws-ui
 /// `FrostQuickActionEntry` + nested `FrostCardView`.
 ///
-/// Architecture (matches Android):
-/// - Outer entry is the press target (card + caption) — like
-///   `FrostQuickActionEntry` with `duplicateParentStateEnabled`.
+/// Architecture:
+/// - Outer entry is the press target (card + caption).
 /// - Glass [CyberCard] is appearance only (no own gestures).
-/// - Transparent [_CardRippleHost] sits **above** the card and hosts
-///   Material [InkRipple] (= Android `setForeground(RippleDrawable)`).
-/// - Hotspot is mapped into host-local coords on press (`setHotspot`).
+/// - Card scales about its center (1.0 → [kHomeQaPressScale]) on press,
+///   with a semi-transparent dark overlay (no Material ink ripple).
 ///
 /// Not the looping Quick/Engineer WebP halo — those are separate assets.
 class HomeQuickAction extends StatefulWidget {
@@ -75,7 +84,7 @@ class HomeQuickAction extends StatefulWidget {
   final double cardWidth;
   final double cardHeight;
   final String label;
-  final VoidCallback onPressed;
+  final HomeQuickActionCallback onPressed;
   final Widget child;
 
   /// Defaults to [cardWidth] (square tiles). Wide AI Vision passes its card width.
@@ -95,103 +104,82 @@ class HomeQuickAction extends StatefulWidget {
   State<HomeQuickAction> createState() => _HomeQuickActionState();
 }
 
-class _HomeQuickActionState extends State<HomeQuickAction> {
-  final GlobalKey _rippleHostKey = GlobalKey();
-  BuildContext? _rippleMaterialContext;
-  InteractiveInkFeature? _splash;
-  bool _pressed = false;
+class _HomeQuickActionState extends State<HomeQuickAction>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pressController;
+  late final Animation<double> _pressCurve;
 
-  void _activate() {
-    if (widget.clickSoundEnabled) {
-      CyberClickSoundRegistry.playClick();
-    }
-    widget.onPressed();
-  }
+  /// Guards overlapping activate / cancel.
+  int _gestureEpoch = 0;
 
-  void _setPressed(bool value) {
-    if (_pressed == value) {
-      return;
-    }
-    setState(() => _pressed = value);
-  }
-
-  /// Entry press → ripple-host local coords (lws-ui `updateRippleHotspot`).
-  Offset _hotspotInHost(Offset globalPosition) {
-    final box = _rippleHostKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) {
-      return Offset(widget.cardWidth / 2, widget.cardHeight / 2);
-    }
-    final local = box.globalToLocal(globalPosition);
-    return Offset(
-      local.dx.clamp(0.0, box.size.width),
-      local.dy.clamp(0.0, box.size.height),
+  @override
+  void initState() {
+    super.initState();
+    _pressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: kHomeQaPressMs),
     );
-  }
-
-  bool _tryCreateSplash(Offset globalPosition) {
-    final inkContext = _rippleMaterialContext;
-    final box = _rippleHostKey.currentContext?.findRenderObject() as RenderBox?;
-    if (inkContext == null || box == null || !box.hasSize) {
-      return false;
-    }
-    final controller = Material.maybeOf(inkContext);
-    if (controller == null) {
-      return false;
-    }
-    _splash?.dispose();
-    final hotspot = _hotspotInHost(globalPosition);
-    final radius = BorderRadius.circular(widget.cornerRadius);
-    // InkRipple ≈ Android RippleDrawable (bounded by rounded mask).
-    _splash = InkRipple.splashFactory.create(
-      controller: controller,
-      referenceBox: box,
-      position: hotspot,
-      color: _kTileRipple,
-      textDirection: Directionality.of(inkContext),
-      containedInkWell: true,
-      borderRadius: radius,
-      onRemoved: () {
-        _splash = null;
-      },
+    _pressCurve = CurvedAnimation(
+      parent: _pressController,
+      curve: Curves.easeOut,
+      reverseCurve: Curves.easeOut,
     );
-    return true;
-  }
-
-  void _handleTapDown(TapDownDetails details) {
-    _setPressed(true);
-    if (_tryCreateSplash(details.globalPosition)) {
-      return;
-    }
-    // First layout: Material/host may not be ready until the next frame.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_pressed) {
-        return;
-      }
-      _tryCreateSplash(details.globalPosition);
-    });
-  }
-
-  void _handleTapUp(TapUpDetails details) {
-    _setPressed(false);
-    _splash?.confirm();
-  }
-
-  void _handleTapCancel() {
-    _setPressed(false);
-    _splash?.cancel();
   }
 
   @override
   void dispose() {
-    _splash?.dispose();
+    _pressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _activate(int epoch) async {
+    if (widget.clickSoundEnabled) {
+      CyberClickSoundRegistry.playClick();
+    }
+
+    // Finish press if the finger lifted early.
+    if (_pressController.status != AnimationStatus.completed) {
+      await _pressController.forward();
+    }
+    if (!mounted || epoch != _gestureEpoch) {
+      return;
+    }
+
+    await Future<void>.delayed(
+      const Duration(milliseconds: kHomeQaPressHoldMs),
+    );
+    if (!mounted || epoch != _gestureEpoch) {
+      return;
+    }
+
+    try {
+      await widget.onPressed();
+    } finally {
+      if (mounted && epoch == _gestureEpoch) {
+        await _pressController.reverse();
+      }
+    }
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    _gestureEpoch++;
+    _pressController.forward();
+  }
+
+  void _handleTapCancel() {
+    _gestureEpoch++;
+    _pressController.reverse();
+  }
+
+  void _handleTap() {
+    final epoch = _gestureEpoch;
+    unawaited(_activate(epoch));
   }
 
   @override
   Widget build(BuildContext context) {
     final captionWidth = widget.labelWidth ?? widget.cardWidth;
     final radius = BorderRadius.circular(widget.cornerRadius);
-    final labelColor = _pressed ? _kLabelPressed : _kLabelIdle;
     final fontSize =
         widget.labelFontSize ?? homeQuickActionLabelFontSize(widget.cardWidth);
 
@@ -199,90 +187,72 @@ class _HomeQuickActionState extends State<HomeQuickAction> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: _handleTapDown,
-      onTapUp: _handleTapUp,
       onTapCancel: _handleTapCancel,
-      onTap: _activate,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: widget.cardWidth,
-            height: widget.cardHeight,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Appearance only — CyberCard does not own gestures.
-                CyberCard(
+      onTap: _handleTap,
+      child: AnimatedBuilder(
+        animation: _pressCurve,
+        builder: (context, child) {
+          final t = _pressCurve.value;
+          final scale = lerpDouble(1.0, kHomeQaPressScale, t)!;
+          final labelColor = Color.lerp(_kLabelIdle, _kLabelPressed, t)!;
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Transform.scale(
+                scale: scale,
+                alignment: Alignment.center,
+                child: SizedBox(
                   width: widget.cardWidth,
                   height: widget.cardHeight,
-                  sampleMode: widget.sampleMode,
-                  intensity: widget.blurIntensity,
-                  blurTint: widget.blurTint,
-                  borderRadius: radius,
-                  child: widget.child,
+                  child: ClipRRect(
+                    borderRadius: radius,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Appearance only — CyberCard does not own gestures.
+                        CyberCard(
+                          width: widget.cardWidth,
+                          height: widget.cardHeight,
+                          sampleMode: widget.sampleMode,
+                          intensity: widget.blurIntensity,
+                          blurTint: widget.blurTint,
+                          borderRadius: radius,
+                          child: widget.child,
+                        ),
+                        // Press: semi-transparent dark overlay.
+                        IgnorePointer(
+                          child: ColoredBox(
+                            color: Color.lerp(
+                              const Color(0x00000000),
+                              _kPressOverlay,
+                              t,
+                            )!,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                // CardRippleHost: transparent foreground above the glass card
-                // (= Android FrameLayout + setForeground(RippleDrawable)).
-                _CardRippleHost(
-                  hostKey: _rippleHostKey,
-                  borderRadius: radius,
-                  onMaterialContext: (ctx) => _rippleMaterialContext = ctx,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: widget.labelMarginTop),
-          SizedBox(
-            width: captionWidth,
-            child: Text(
-              widget.label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: labelColor,
-                fontSize: fontSize,
-                fontWeight: FontWeight.w500,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Transparent ripple host above the glass card.
-///
-/// Ink paints on this [Material] only — content stays null (card unchanged),
-/// clip + [borderRadius] act as the rounded white mask from
-/// `FrostButtonTileRipple.createTileRippleForeground`.
-final class _CardRippleHost extends StatelessWidget {
-  const _CardRippleHost({
-    required this.hostKey,
-    required this.borderRadius,
-    required this.onMaterialContext,
-  });
-
-  final GlobalKey hostKey;
-  final BorderRadius borderRadius;
-  final ValueChanged<BuildContext> onMaterialContext;
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: Material(
-        key: hostKey,
-        type: MaterialType.transparency,
-        borderRadius: borderRadius,
-        clipBehavior: Clip.antiAlias,
-        child: Builder(
-          builder: (materialContext) {
-            onMaterialContext(materialContext);
-            // Empty child: ripple content is null; mask = this clipped Material.
-            return const SizedBox.expand();
-          },
-        ),
+              SizedBox(height: widget.labelMarginTop),
+              SizedBox(
+                width: captionWidth,
+                child: Text(
+                  widget.label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: labelColor,
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

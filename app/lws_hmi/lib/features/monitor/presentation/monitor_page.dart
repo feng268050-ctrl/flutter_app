@@ -17,7 +17,19 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 /// Tab changes are tap-only (no swipe), matching lws-ui FragmentShowHideTabHost.
 /// Tab leading icons use Material Icons (replacing lws-ui WebP mipmaps).
 class MonitorPage extends StatefulWidget {
-  const MonitorPage({super.key});
+  const MonitorPage({
+    super.key,
+    this.initialTabIndex = tabWorkInformation,
+  });
+
+  static const tabWorkInformation = 0;
+  static const tabMachineStatus = 1;
+  static const tabAlarmInformation = 2;
+  static const tabVideos = 3;
+  static const tabAiVision = 4;
+
+  /// Selected tab when the route opens (clamped to valid range).
+  final int initialTabIndex;
 
   static const _tabs = <({Key key, IconData icon})>[
     (
@@ -54,12 +66,28 @@ class MonitorPage extends StatefulWidget {
   State<MonitorPage> createState() => _MonitorPageState();
 }
 
+/// Optional [Navigator] arguments for [AppRoutes.monitor].
+final class MonitorRouteArgs {
+  const MonitorRouteArgs({this.initialTabIndex = MonitorPage.tabWorkInformation});
+
+  /// Opens Monitor on the AI Vision tab (Home quick-action entry).
+  static const aiVision = MonitorRouteArgs(
+    initialTabIndex: MonitorPage.tabAiVision,
+  );
+
+  final int initialTabIndex;
+}
+
 class _MonitorPageState extends State<MonitorPage> {
-  int _currentTabIndex = 0;
+  late int _currentTabIndex;
 
   @override
   void initState() {
     super.initState();
+    _currentTabIndex = widget.initialTabIndex.clamp(
+      0,
+      MonitorPage._tabs.length - 1,
+    );
     // Route-level ensure: Alarm tab is lazy and must not be the only starter.
     scheduleEnsureModbusLive(context);
   }

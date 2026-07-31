@@ -1,9 +1,13 @@
+## 0. Prerequisite
+
+- [ ] 0.1 Confirm `openspec/changes/multi-board-fit-dt` (platform W5) packaging + ynh960 regression is done — **do not start §1 until then**
+
 ## 1. Baseline and tip lock
 
 - [ ] 1.1 Confirm current owned tree is `SUBLEVEL=99` and inventory Rockchip/Innohi-only paths vs vanilla 6.1.99
 - [ ] 1.2 Re-read kernel.org 6.1 LTS tip; lock target `6.1.<tip>` with floor ≥ 6.1.180 (or adopt vendor SDK base if already ≥ floor)
 - [ ] 1.3 Document the pin in `docs/linux-sdk-vendor-import.md` and/or `overlay/kernel/` pin file
-- [ ] 1.4 List product overlay patches (`0001–0008`) and DTS/config fragments that must rebase
+- [ ] 1.4 List product overlay patches and **all inventoried board** DTS/config fragments that must rebase (multi-board FIT layout)
 
 ## 2. Stable merge into owned kernel-6.1
 

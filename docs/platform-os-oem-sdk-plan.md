@@ -38,6 +38,7 @@
 | `linux-sdk/` | ✅ W3：白名单/trim/squash/薄 overlay 已归档；**暂不进仓**；DT git 真相源仍为 `overlay/kernel/`（见 `docs/linux-sdk-vendor-import.md`） |
 | 定制方式 | 平台 kernel/device squash 进本地树；**DT/fragment 同事同步走 overlay**；第三方 BR 包仍 overlay；产品/OEM 仍 `apply-overlay` |
 | P3.2 | ✅ W4：QEMU + 同 Image/rootfs + `sim_virt`；三网卡 + USB 串口；GPIO LED 浮层；**无 OTG**；USB Wi‑Fi/BT 真机同款 ⏸（archived: `openspec/changes/archive/2026-07-28-platform-p32-sim-virt`） |
+| 多 DT FIT | 🔲 **W5**：同 SoC 族 `boot.img` 多 FDT / named conf；选 DT 在 U-Boot；**先于** `kernel-61-lts-rebase`（`openspec/changes/multi-board-fit-dt`） |
 
 ### 1.2 结论（本计划采纳）
 
@@ -281,7 +282,7 @@ oem          = 模组 bringup、屏参、HAL profile、v1 product.ini
 
 | 项 | 做法 |
 |----|------|
-| 一族多板 | 同一 kernel config；每板一份 DTS/DTSI（现 `overlay/kernel/rockchip/ynh960-*.dtsi` → 迁入自有 SDK `device`/`kernel` 树） |
+| 一族多板 | 同一 kernel config；每板一份 DTS/DTSI；**同一 FIT 多 FDT + named conf**（平台 **W5** / `multi-board-fit-dt`）；现 `overlay/kernel/rockchip/ynh960-*.dtsi` → 迁入自有 SDK `device`/`kernel` 树 |
 | 换屏 | 优先 screen pack + 用户态 ParamUpdate/替代方案；若必须改 panel-timing DT，则 **新 FIT**（属 OS 版本），不是只刷 OEM |
 | 裁剪 | 保持现有 `ynh960-kernel-trim` 思路；按 SoC 族维护一份 trim，避免 EVB 驱动膨胀 |
 | U-Boot | 量产继续预编译瑞芯微/板级 `uboot.img`；源码树 `rockchip-linux/u-boot` 进自有 SDK 备查；**非** Innohi 源码依赖 |
@@ -621,7 +622,14 @@ W4  P3.2 虚拟机（同 kernel+rootfs + OEM 切换）           ✅
     ├─ ⏸ USB Wi‑Fi / USB BT 真机同款
     └─ archived: openspec/changes/archive/2026-07-28-platform-p32-sim-virt
 
-W5  （另案）Factory Test App                             ⏸
+W5  多设备树 FIT（一族多板 boot 包装）                    🔲
+    ├─ 同一 SoC 族 Image + N 颗 FDT + named FIT conf（board_id）
+    ├─ U-Boot 选 conf；OEM 只对齐 board_id，启动 DT 仍在 FIT
+    ├─ 默认 conf=ynh960；961/962 DTS 可随后插入同一 inventory
+    ├─ **先于** kernel 6.1 LTS rebase / 大块 overlay 补丁升级
+    └─ change: openspec/changes/multi-board-fit-dt
+
+W6  （另案）Factory Test App                             ⏸
     └─ 复用 OEM profile；gpio/modbus 仍按产测需求另定
 ```
 
@@ -631,6 +639,7 @@ W5  （另案）Factory Test App                             ⏸
 W0 → W1 → W2 ✅ 已完成
 W0 → W3 ✅（进仓⏸）
 W0 → W4 ✅ 主路径（Linux-in-guest + 网/串口；USB Wi‑Fi/BT ⏸）
+W4 → W5 🔲 多 DT FIT（阻塞 kernel-61-lts-rebase 实施）
 ```
 
 ---

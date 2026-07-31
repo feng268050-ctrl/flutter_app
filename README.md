@@ -388,6 +388,7 @@ make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/product
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
+make smoke-ai                   # upload stain demo JPG; offline RKNN via AI daemon sock (HMI running)
 make del-prop CAMERA_IP         # remove one tunable key; restarts hmi if changed
 make upgrade                    # A/B stream inactive FIT+rootfs (board already on P2.4 GPT)
 ```

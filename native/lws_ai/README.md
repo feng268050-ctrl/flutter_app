@@ -42,6 +42,15 @@ Spawn example (App does this via `AiDaemonSupervisor`):
   --sock-dir /run/hmi/ai
 ```
 
+## Board smoke (offline RKNN)
+
+Demo images live under `assets/img/` (`stain_demo.jpg`, letterboxed `stain_demo_1920x1080.jpg`).
+Helpers under `tools/smoke/`. From repo root (USB-SSH / SSH board, HMI running):
+
+```text
+make smoke-ai
+```
+
 ## CMake notes
 
 - Linux builds enable `lws_ai_daemon` (`BUILD_LWS_AI_DAEMON=ON`).

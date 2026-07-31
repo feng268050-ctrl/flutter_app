@@ -28,6 +28,7 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_set
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
 import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
+import 'package:lws_hmi/features/monitor/presentation/ai_vision_video_choose_page.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_importer.dart';
@@ -637,7 +638,12 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                                 _cameraDeviceInfoCache,
                                           );
                                         case AppRoutes.monitor:
-                                          page = const MonitorPage();
+                                          final monitorArgs = settings.arguments;
+                                          page = monitorArgs is int
+                                              ? MonitorPage(
+                                                  initialTabIndex: monitorArgs,
+                                                )
+                                              : const MonitorPage();
                                         case AppRoutes.processVideoDetail:
                                           final videoArgs = settings.arguments;
                                           page = videoArgs
@@ -645,6 +651,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                               ? ProcessVideoDetailPage(
                                                   args: videoArgs)
                                               : const MonitorPage();
+                                        case AppRoutes.aiVisionChoose:
+                                          page = const AiVisionVideoChoosePage();
                                         case AppRoutes.quickMode:
                                           page = _LockedModeGate(
                                             lockStore: _remoteLockStore,

@@ -91,7 +91,7 @@ P4  业务迁移（子阶段见 §1.2）🔄
     ├─ **IPC MediaMTX**：产品运行时 — `/opt/hmi/bin/mediamtx` + Dart YAML + `cyber_pm`
     │   （OpenSpec `app-owned-mediamtx-cyber-pm`）；**不进**通用 rootfs
     ├─ packages/cyber_pm — 可复用子进程监护（MediaMTX 已用；AI 复用）
-    ├─ 进行中：P4.2 网络与状态栏、P4.6 其余业务页；云服务 / `:5580`（OpenSpec `align-cloud-local-server`）已落地非 OTA 切片；P4.1 / P4.3～P4.5 / P4.7～P4.8 未开始
+    ├─ 进行中：P4.2 网络与状态栏、P4.6 其余业务页；云服务 / `:5580`（OpenSpec `align-cloud-local-server`）已落地非 OTA 切片；AI Vision / process-video AI SSE（`ai-vision-and-process-video-ai`）已落地最小可交付；P4.1 / P4.3～P4.5 / P4.7～P4.8 未开始
     └─ 依赖 CyberUI（优化中）+ HAL（设置/硬件页）
 
 P5.0  Android 兼容 🔲

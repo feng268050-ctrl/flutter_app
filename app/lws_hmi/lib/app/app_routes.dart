@@ -12,6 +12,7 @@ abstract final class AppRoutes {
   static const engineerMode = '/process-library/engineer';
   static const demo = '/demo';
   static const processVideoDetail = '/monitor/process-video';
+  static const aiVisionChoose = '/monitor/ai-vision/choose';
 }
 
 /// Observes top-level route pops so Product Home can re-run home prompts.

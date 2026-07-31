@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/ai/application/ai_inference_sse_hub.dart';
 import 'package:lws_hmi/features/ai/application/ai_inference_sse_json.dart';
 import 'package:lws_hmi/features/ai/application/opencv_stain_detect_mapper.dart';
@@ -22,6 +23,10 @@ final class CameraAiHttpPublisher {
   String? _activeSessionSource;
   int _lastImageWidth = 0;
   int _lastImageHeight = 0;
+
+  /// Latest mapped sample for on-device overlay (UI).
+  final ValueNotifier<AiInferenceRunningSample?> lastSample =
+      ValueNotifier<AiInferenceRunningSample?>(null);
 
   AiInferenceSseHub get hub => _hub;
 
@@ -100,6 +105,7 @@ final class CameraAiHttpPublisher {
     _activeSessionSource = null;
     _lastImageWidth = 0;
     _lastImageHeight = 0;
+    lastSample.value = null;
     _hub.resetForTest();
   }
 
@@ -116,6 +122,7 @@ final class CameraAiHttpPublisher {
       source: source,
       searchRoots: roots,
     );
+    lastSample.value = sample;
     _hub.publishRunning(sample);
   }
 

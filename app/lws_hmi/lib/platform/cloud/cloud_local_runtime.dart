@@ -194,6 +194,8 @@ final class CloudLocalRuntime {
 
   void _wireLocalHttpHandlers() {
     localHttp.cameraAiAvailable = () async => AiDaemonSupervisor.instance.isReady;
+    localHttp.processVideoAiAvailable =
+        () async => AiDaemonSupervisor.instance.isReady;
     localHttp.cameraShowOverlayHandler = null;
     localHttp.cameraRecordHandler = (switchValue) async {
       try {

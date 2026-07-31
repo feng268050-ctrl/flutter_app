@@ -14,6 +14,9 @@ import 'package:lws_hmi/platform/local_http/local_http_video_row.dart';
 import 'package:lws_hmi/platform/local_http/monitor_alerts_sse_hub.dart';
 import 'package:lws_hmi/platform/local_http/monitor_stat_sse_hub.dart';
 import 'package:lws_hmi/features/ai/application/camera_ai_http_publisher.dart';
+import 'package:lws_hmi/features/ai/application/ai_daemon_supervisor.dart';
+import 'package:lws_hmi/features/ai/application/process_video_ai_session.dart';
+import 'package:lws_hmi/features/ai/application/process_video_ai_timeline.dart';
 import 'package:lws_hmi/platform/local_http/multipart_form_data.dart';
 import 'package:lws_hmi/platform/lws_trace.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
@@ -59,9 +62,13 @@ final class DeviceLocalHttpServer {
     this.cameraRecordHandler,
     this.cameraShowOverlayHandler,
     this.cameraAiAvailable,
+    this.processVideoAiAvailable,
+    ProcessVideoAiSessionRegistry? processVideoAiRegistry,
   })  : monitorStatHub = monitorStatHub ?? MonitorStatSseHub(),
         monitorAlertsHub = monitorAlertsHub ?? MonitorAlertsSseHub(),
-        cameraAiPublisher = cameraAiPublisher ?? CameraAiHttpPublisher();
+        cameraAiPublisher = cameraAiPublisher ?? CameraAiHttpPublisher(),
+        processVideoAiRegistry =
+            processVideoAiRegistry ?? ProcessVideoAiSessionRegistry.instance;
 
   final int port;
   ProcessVideoRepository? processVideoRepository;
@@ -71,6 +78,7 @@ final class DeviceLocalHttpServer {
   final MonitorStatSseHub monitorStatHub;
   final MonitorAlertsSseHub monitorAlertsHub;
   final CameraAiHttpPublisher cameraAiPublisher;
+  final ProcessVideoAiSessionRegistry processVideoAiRegistry;
 
   /// `switch` is `on` or `off`.
   Future<LocalHttpCameraActionResult> Function(String switchValue)?
@@ -79,8 +87,11 @@ final class DeviceLocalHttpServer {
   Future<LocalHttpCameraActionResult> Function(Map<String, Object?> body)?
       cameraShowOverlayHandler;
 
-  /// When false/null, `GET /v1/camera/ai` returns plain-text 503.
+  /// When null, camera AI is treated as unavailable.
   Future<bool> Function()? cameraAiAvailable;
+
+  /// When null, falls back to [AiDaemonSupervisor.instance.isReady].
+  Future<bool> Function()? processVideoAiAvailable;
 
   HttpServer? _server;
   bool get isRunning => _server != null;
@@ -196,31 +207,12 @@ final class DeviceLocalHttpServer {
 
     final aiReplay = RegExp(r'^/v1/videos/([^/]+)/ai/replay$').firstMatch(path);
     if (aiReplay != null && request.method == 'GET') {
-      await _writeJson(
-        request,
-        HttpStatus.notFound,
-        ApiResult.fail('ai_replay_not_found', code: 404),
-      );
+      await _videoAiReplay(request, repo, Uri.decodeComponent(aiReplay.group(1)!));
       return;
     }
     final aiLive = RegExp(r'^/v1/videos/([^/]+)/ai$').firstMatch(path);
     if (aiLive != null && request.method == 'GET') {
-      final videoId = Uri.decodeComponent(aiLive.group(1)!);
-      await repo.open();
-      final row = await repo.findByVideoId(videoId);
-      if (row == null) {
-        await _writeJson(
-          request,
-          HttpStatus.notFound,
-          ApiResult.fail('video_not_found', code: 404),
-        );
-        return;
-      }
-      await _writePlain(
-        request,
-        HttpStatus.serviceUnavailable,
-        'process_video_ai_unavailable',
-      );
+      await _videoAiSse(request, repo, Uri.decodeComponent(aiLive.group(1)!));
       return;
     }
 
@@ -1036,6 +1028,175 @@ final class DeviceLocalHttpServer {
         HttpStatus.badRequest,
         ApiResult.fail('invalid_show_overlay_request', code: 400),
       );
+    }
+  }
+
+  Future<void> _videoAiReplay(
+    HttpRequest request,
+    ProcessVideoRepository repo,
+    String videoId,
+  ) async {
+    await repo.open();
+    final row = await repo.findByVideoId(videoId);
+    if (row == null) {
+      await _writeJson(
+        request,
+        HttpStatus.notFound,
+        ApiResult.fail('video_not_found', code: 404),
+      );
+      return;
+    }
+    final source = File(row.videoPath);
+    if (!await source.exists()) {
+      await _writeJson(
+        request,
+        HttpStatus.notFound,
+        ApiResult.fail('video_not_found', code: 404),
+      );
+      return;
+    }
+    final cacheKey = ProcessVideoAiInferencePaths.cacheKey(row, source);
+    final timelineFile = ProcessVideoAiInferencePaths.timelineJson(row, cacheKey);
+    ProcessVideoAiTimeline? timeline =
+        processVideoAiRegistry.peekByCacheKey(cacheKey)?.timeline;
+    if (timeline == null || timeline.snapshotFrames().isEmpty) {
+      timeline = await ProcessVideoAiTimelinePersistence.load(timelineFile);
+    }
+    if (timeline == null) {
+      await _writeJson(
+        request,
+        HttpStatus.notFound,
+        ApiResult.fail('ai_replay_not_found', code: 404),
+      );
+      return;
+    }
+    final generatedAt = await timelineFile.exists()
+        ? (await timelineFile.lastModified()).millisecondsSinceEpoch
+        : DateTime.now().millisecondsSinceEpoch;
+    await _writeJson(
+      request,
+      HttpStatus.ok,
+      ApiResult.ok(
+        data: ProcessVideoAiReplayJson.replayData(
+          videoId: videoId,
+          generatedAtMs: generatedAt,
+          timeline: timeline,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _videoAiSse(
+    HttpRequest request,
+    ProcessVideoRepository repo,
+    String videoId,
+  ) async {
+    await repo.open();
+    final row = await repo.findByVideoId(videoId);
+    if (row == null) {
+      await _writeJson(
+        request,
+        HttpStatus.notFound,
+        ApiResult.fail('video_not_found', code: 404),
+      );
+      return;
+    }
+    var available = false;
+    final check = processVideoAiAvailable;
+    if (check != null) {
+      try {
+        available = await check();
+      } catch (_) {
+        available = false;
+      }
+    } else {
+      available = AiDaemonSupervisor.instance.isReady;
+    }
+    if (!available) {
+      await _writePlain(
+        request,
+        HttpStatus.serviceUnavailable,
+        'process_video_ai_unavailable',
+      );
+      return;
+    }
+    final source = File(row.videoPath);
+    if (!await source.exists() || await source.length() <= 0) {
+      await _writePlain(
+        request,
+        HttpStatus.serviceUnavailable,
+        'process_video_ai_unavailable',
+      );
+      return;
+    }
+    final session = processVideoAiRegistry.acquire(
+      record: row,
+      sourceFile: source,
+      holder: ProcessVideoAiHolder.http,
+    );
+    if (session == null) {
+      await _writePlain(
+        request,
+        HttpStatus.serviceUnavailable,
+        'process_video_ai_unavailable',
+      );
+      return;
+    }
+    if (!session.isRunning) {
+      session.start();
+    }
+    final sub = session.acquireSseSubscriber();
+    if (sub == null) {
+      processVideoAiRegistry.release(session, ProcessVideoAiHolder.http);
+      await _writePlain(
+        request,
+        HttpStatus.serviceUnavailable,
+        'process_video_ai_unavailable',
+      );
+      return;
+    }
+
+    request.response.statusCode = HttpStatus.ok;
+    request.response.headers.set(
+      HttpHeaders.contentTypeHeader,
+      'text/event-stream; charset=utf-8',
+    );
+    request.response.headers.set(HttpHeaders.cacheControlHeader, 'no-cache');
+    request.response.headers.set(HttpHeaders.connectionHeader, 'keep-alive');
+    request.response.headers.set('X-Accel-Buffering', 'no');
+    request.response.bufferOutput = false;
+
+    var closed = false;
+    var released = false;
+    void releaseOnce() {
+      if (released) {
+        return;
+      }
+      released = true;
+      sub.closeFromClient();
+      processVideoAiRegistry.release(session, ProcessVideoAiHolder.http);
+    }
+
+    unawaited(request.response.done.then((_) {
+      closed = true;
+      releaseOnce();
+    }));
+
+    try {
+      await for (final frame in sub.frames) {
+        if (closed) {
+          break;
+        }
+        request.response.add(frame);
+        await request.response.flush();
+      }
+    } catch (e) {
+      debugPrint('local-http: process video ai sse end: $e');
+    } finally {
+      releaseOnce();
+      try {
+        await request.response.close();
+      } catch (_) {}
     }
   }
 

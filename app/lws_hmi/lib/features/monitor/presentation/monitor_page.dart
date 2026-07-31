@@ -17,7 +17,10 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 /// Tab changes are tap-only (no swipe), matching lws-ui FragmentShowHideTabHost.
 /// Tab leading icons match lws-ui `job_icon*` / `videos_icon` / `ai_vision_home`.
 class MonitorPage extends StatefulWidget {
-  const MonitorPage({super.key});
+  const MonitorPage({super.key, this.initialTabIndex = 0});
+
+  /// 0=work … 4=AI Vision (Home AI Vision entry uses 4).
+  final int initialTabIndex;
 
   /// Shared page chrome fill — lws-ui `tab_bg` (#060720).
   static const background = Color(0xFF060720);
@@ -58,7 +61,7 @@ class MonitorPage extends StatefulWidget {
 }
 
 class _MonitorPageState extends State<MonitorPage> {
-  int _currentTabIndex = 0;
+  late int _currentTabIndex = widget.initialTabIndex.clamp(0, MonitorPage._tabs.length - 1);
 
   @override
   void initState() {
@@ -99,12 +102,12 @@ class _MonitorPageState extends State<MonitorPage> {
       ),
       body: IndexedStack(
         index: _currentTabIndex,
-        children: const [
-          WorkInformationTab(),
-          MachineStatusTab(),
-          AlarmInformationTab(),
-          VideosTab(),
-          AiVisionTab(),
+        children: [
+          const WorkInformationTab(),
+          const MachineStatusTab(),
+          const AlarmInformationTab(),
+          const VideosTab(),
+          AiVisionTab(visible: _currentTabIndex == 4),
         ],
       ),
     );

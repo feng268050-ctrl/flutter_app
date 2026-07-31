@@ -35,3 +35,13 @@ When laser enable / laser-on becomes active and AI lens-contamination assistance
 - **WHEN** laser turns OFF while weld StreamDetect is running
 - **THEN** the App MUST stop the weld detect session
 - **AND** SSE subscribers MUST receive `event: stop` with `reason` `laser_off` when a session was active
+
+### Requirement: AI Vision live vs weld holder arbitration
+
+When AI Vision live preview requests StreamDetect with `sessionSource: ai_vision_live`, the system SHALL not start if the weld holder (`live_stain_detect`) is already running. When weld starts while AI Vision live was active, weld configuration MUST take priority and prior SSE session stop MAY use `preview_stopped`.
+
+#### Scenario: Weld priority
+
+- **WHEN** weld StreamDetect is running
+- **AND** AI Vision live reconcile wants to start
+- **THEN** AI Vision live MUST skip starting StreamDetect

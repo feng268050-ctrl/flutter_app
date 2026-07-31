@@ -474,10 +474,9 @@ class _HomePageState extends State<HomePage> with RouteAware {
                             labelFontSize: qaLabelSize,
                             l10n: l10n,
                             onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(l10n.aiVisionComingSoon),
-                                ),
+                              Navigator.of(context).pushNamed(
+                                AppRoutes.monitor,
+                                arguments: 4,
                               );
                             },
                           ),

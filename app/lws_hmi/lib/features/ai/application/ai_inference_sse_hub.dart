@@ -3,17 +3,33 @@ import 'dart:convert';
 
 import 'package:lws_hmi/features/ai/application/ai_inference_sse_json.dart';
 
-/// Fan-out SSE for live camera AI (`GET /v1/camera/ai`).
+/// Fan-out SSE for live camera AI (`GET /v1/camera/ai`) or process-video AI.
 ///
-/// Connection-relative [timestampMs]; idle every [idleInterval].
+/// Live: connection-relative [timestampMs]. Process video: media-timeline ms.
 final class AiInferenceSseHub {
   AiInferenceSseHub({
     this.idleInterval = const Duration(seconds: 15),
     DateTime Function()? now,
-  }) : _now = now ?? DateTime.now;
+    this.mediaTimeline = false,
+    int Function()? mediaPositionMs,
+  })  : _now = now ?? DateTime.now,
+        _mediaPositionMs = mediaPositionMs;
+
+  /// Process-video hub: idle/start at 0; running/stop use media [contextMs].
+  factory AiInferenceSseHub.forProcessVideo({
+    required int Function() mediaPositionMs,
+    Duration idleInterval = const Duration(seconds: 15),
+  }) =>
+      AiInferenceSseHub(
+        idleInterval: idleInterval,
+        mediaTimeline: true,
+        mediaPositionMs: mediaPositionMs,
+      );
 
   final Duration idleInterval;
   final DateTime Function() _now;
+  final bool mediaTimeline;
+  final int Function()? _mediaPositionMs;
 
   static const queueCapacity = 64;
 
@@ -69,12 +85,13 @@ final class AiInferenceSseHub {
   void notifySessionStopped({
     required String sessionId,
     required String reason,
+    int? contextMs,
   }) {
     if (_activeSession?.sessionId == sessionId) {
       _activeSession = null;
     }
     for (final sub in List<AiInferenceSseSubscriber>.from(_subscribers)) {
-      final ts = sub.connectionTimelineMs(_now());
+      final ts = _timestampMs(sub, contextMs: contextMs);
       sub.offer(
         _encodeEvent(
           'stop',
@@ -92,16 +109,20 @@ final class AiInferenceSseHub {
     _activeSession = null;
   }
 
-  void publishRunning(AiInferenceRunningSample sample) {
-    final sessionId = _activeSession?.sessionId;
+  void publishRunning(
+    AiInferenceRunningSample sample, {
+    int? contextMs,
+    String? sessionId,
+  }) {
+    final sid = sessionId ?? _activeSession?.sessionId;
     for (final sub in List<AiInferenceSseSubscriber>.from(_subscribers)) {
-      final ts = sub.connectionTimelineMs(_now());
+      final ts = _timestampMs(sub, contextMs: contextMs);
       sub.offer(
         _encodeEvent(
           'running',
           AiInferenceSseJson.runningData(
             timestampMs: ts,
-            sessionId: sessionId,
+            sessionId: sid,
             success: sample.success,
             code: sample.code,
             level: sample.level,
@@ -158,7 +179,9 @@ final class AiInferenceSseHub {
     }
     final active = _activeSession != null;
     for (final sub in List<AiInferenceSseSubscriber>.from(_subscribers)) {
-      final ts = sub.connectionTimelineMs(_now());
+      final ts = mediaTimeline
+          ? (_mediaPositionMs?.call() ?? 0).clamp(0, 1 << 30)
+          : sub.connectionTimelineMs(_now());
       sub.offer(
         _encodeEvent(
           'idle',
@@ -171,12 +194,22 @@ final class AiInferenceSseHub {
     }
   }
 
+  int _timestampMs(AiInferenceSseSubscriber sub, {int? contextMs}) {
+    if (mediaTimeline) {
+      final ctx = contextMs ?? _mediaPositionMs?.call() ?? 0;
+      return ctx < 0 ? 0 : ctx;
+    }
+    return sub.connectionTimelineMs(_now());
+  }
+
   List<int> _encodeStart(
     AiInferenceSseSubscriber sub,
     AiInferenceSessionStart session, {
     required bool replay,
   }) {
-    final ts = replay ? 0 : sub.connectionTimelineMs(_now());
+    final ts = mediaTimeline
+        ? 0
+        : (replay ? 0 : sub.connectionTimelineMs(_now()));
     return _encodeEvent(
       'start',
       AiInferenceSseJson.startData(

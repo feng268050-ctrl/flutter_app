@@ -15,7 +15,14 @@ final class LiveWeldStreamDetectCoordinator {
     required this.aiAssistance,
     AiDaemonSupervisor? supervisor,
     this.rtspUrl = 'rtsp://127.0.0.1:8554/camera/pr1',
-  }) : _supervisor = supervisor ?? AiDaemonSupervisor.instance;
+  }) : _supervisor = supervisor ?? AiDaemonSupervisor.instance {
+    _instance = this;
+  }
+
+  static LiveWeldStreamDetectCoordinator? _instance;
+
+  /// Shared instance for dual-holder arbitration (AI Vision live yields to weld).
+  static LiveWeldStreamDetectCoordinator? get maybeInstance => _instance;
 
   final AppServices services;
   final AiAssistanceSettings aiAssistance;

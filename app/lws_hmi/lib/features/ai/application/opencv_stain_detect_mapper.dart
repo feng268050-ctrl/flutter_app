@@ -10,6 +10,25 @@ final class OpencvStainDetectMapper {
   static const overlayStatus = 'STAIN_DETECT';
   static const markerRadiusPx = 24.0;
   static const liveSource = 'live_stain_detect';
+  static const offlineSource = 'offline_stain_detect';
+
+  AiInferenceRunningSample fromSummaryJson({
+    required String summaryJson,
+    required String source,
+    required int imageWidth,
+    required int imageHeight,
+    List<Directory> searchRoots = const [],
+  }) {
+    return fromDetectResult(
+      event: <String, dynamic>{
+        'summaryJson': summaryJson,
+        'imageWidth': imageWidth,
+        'imageHeight': imageHeight,
+      },
+      source: source,
+      searchRoots: searchRoots,
+    );
+  }
 
   AiInferenceRunningSample fromDetectResult({
     required Map<String, dynamic> event,

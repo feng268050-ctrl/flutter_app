@@ -4,7 +4,10 @@ import 'dart:io';
 import 'package:cyber_pm/cyber_pm.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/ai/application/ai_daemon_protocol.dart';
+import 'package:lws_hmi/features/ai/application/ai_inference_sse_json.dart';
 import 'package:lws_hmi/features/ai/application/camera_ai_http_publisher.dart';
+import 'package:lws_hmi/features/ai/application/opencv_stain_detect_mapper.dart';
+import 'package:lws_hmi/features/ai/application/process_video_ai_frame_sampler.dart';
 
 /// App-owned AI daemon lifecycle: spawn via [cyber_pm], Unix sockets, StreamDetect cmds.
 final class AiDaemonSupervisor {
@@ -301,6 +304,84 @@ final class AiDaemonSupervisor {
     } catch (e) {
       debugPrint('[ai_daemon] stream_detect_stop failed: $e');
       return false;
+    }
+  }
+
+  /// Offline JPG stain detect (process-video samples).
+  Future<AiInferenceRunningSample> offlineInferOpencvStainJpg({
+    required String imagePath,
+    required String outputDir,
+    String source = OpencvStainDetectMapper.offlineSource,
+    OpencvStainDetectMapper mapper = const OpencvStainDetectMapper(),
+  }) async {
+    if (!_sockets.isConnected) {
+      return AiInferenceRunningSample(
+        success: false,
+        code: -1,
+        level: -1,
+        status: 'ERROR',
+        message: 'daemon_not_connected',
+        imageWidth: 0,
+        imageHeight: 0,
+        source: source,
+        boxes: const [],
+      );
+    }
+    try {
+      await Directory(outputDir).create(recursive: true);
+      final resp = await _sockets.request(
+        AiDaemonProtocol.cmd(
+          'offline_infer_opencv_stain_jpg',
+          fields: <String, Object?>{
+            'image_path': imagePath,
+            'output_dir': outputDir,
+          },
+        ),
+      );
+      final jpeg = File(imagePath);
+      final size = JpegSize.fromFile(jpeg);
+      final w = size?.width ?? 0;
+      final h = size?.height ?? 0;
+      if (resp['ok'] != true) {
+        return AiInferenceRunningSample(
+          success: false,
+          code: -1,
+          level: -1,
+          status: 'ERROR',
+          message: resp['message']?.toString() ??
+              resp['code']?.toString() ??
+              'offline_infer_failed',
+          imageWidth: w,
+          imageHeight: h,
+          source: source,
+          boxes: const [],
+        );
+      }
+      final summary = resp['summary_json']?.toString() ?? '';
+      return mapper.fromSummaryJson(
+        summaryJson: summary,
+        source: source,
+        imageWidth: w,
+        imageHeight: h,
+        searchRoots: [
+          Directory(outputDir),
+          Directory(workdir),
+          Directory('$workdir/lens_guard'),
+        ],
+      );
+    } catch (e) {
+      debugPrint('[ai_daemon] offline_infer_opencv_stain_jpg failed: $e');
+      return AiInferenceRunningSample(
+        success: false,
+        code: -1,
+        level: -1,
+        status: 'ERROR',
+        message: e.toString(),
+        imageWidth: 0,
+        imageHeight: 0,
+        source: source,
+        boxes: const [],
+      );
     }
   }
 

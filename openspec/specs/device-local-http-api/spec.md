@@ -77,13 +77,20 @@ Path segments after `/v1/videos/` SHALL be the business **`videoId`** (not a SQL
 
 ### Requirement: Process video AI routes
 
-`GET /v1/videos/:videoId/ai` SHALL stream AI SSE when a process-video AI backend is available. When unavailable, the response MUST be HTTP `503` with plain text `process_video_ai_unavailable` (not `ApiResult`). Unknown video → `video_not_found`. `GET /v1/videos/:videoId/ai/replay` SHALL return replay JSON when cached; otherwise `ai_replay_not_found`.
+`GET /v1/videos/:videoId/ai` SHALL return Server-Sent Events per capability **`process-video-ai-sse`** when the App AI daemon is ready and the video exists with a readable file; otherwise HTTP `503` plain text `process_video_ai_unavailable` (not `ApiResult`). Unknown video → `video_not_found`. On success `Content-Type` MUST be `text/event-stream; charset=utf-8` and `running.timestampMs` MUST be media-relative. `GET /v1/videos/:videoId/ai/replay` SHALL return `ApiResult` with timeline frames when available; otherwise `ai_replay_not_found`.
 
 #### Scenario: AI unavailable plain text
 
 - **WHEN** a known video exists and process-video AI is not available
 - **AND** a client calls `GET /v1/videos/:videoId/ai`
 - **THEN** the status MUST be 503 and the body MUST be exactly `process_video_ai_unavailable`
+
+#### Scenario: Process video AI SSE when available
+
+- **WHEN** the AI daemon is ready
+- **AND** a client calls `GET /v1/videos/{id}/ai` for an existing video with a readable file
+- **THEN** the status MUST be 200
+- **AND** `Content-Type` MUST be `text/event-stream; charset=utf-8`
 
 ### Requirement: Process library LAN API
 

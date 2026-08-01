@@ -40,7 +40,9 @@ Also verify mounted-root / misc protection via board preflight:
 
 ## Staged apply still works (online OTA contract)
 
-1. Stage a valid bundle under `/userdata/ota/` (`boot.img`, `boot_b.img`, `rootfs.img`, digests, manifest) — same layout as before
+**Today (P2.5 helpers):** digest / `.sha256` (and optional manifest) under `/userdata/ota/` — integrity only, not product authenticity.
+
+1. Stage a valid bundle under `/userdata/ota/` (`boot.img`, `boot_b.img`, `rootfs.img`, digests, manifest)
 2. Run `/usr/libexec/hmi/ab-upgrade-apply.sh` (or the session copy under `/userdata/ota/`)
 3. Expect: digest verify → `dd` → arm try-boot → reboot
 
@@ -49,5 +51,7 @@ Corrupt staged digest:
 1. Stage a corrupt `boot.img` or wrong digest under `/userdata/ota/`
 2. Run staged apply
 3. Expect: `apply.status=fail`; **active letter unchanged**; prefs intact; no uboot rewrite
+
+**P4.8 product OTA (planned):** same A/B write model; gate is **Ed25519 `*.img.sig` only** — no separate product digest / `.sha256` check. See [`storage-layout.md`](storage-layout.md) OTA section.
 
 App-only development is outside this A/B upgrade path; use `make build-app` followed by `make push-app`.

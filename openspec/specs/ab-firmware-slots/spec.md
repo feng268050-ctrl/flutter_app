@@ -35,14 +35,19 @@ The platform SHALL persist the **active** slot letter, **try-boot** letter, and 
 
 The platform SHALL support two full-system apply modes that share the same A/B safety invariants (inactive letter only; derive running letter from the block device mounted as `/`; require misc `active` agreement; reject pending try-boot; compare resolved block devices before writing; MUST NOT format userdata; MUST NOT delete subsystem userdata trees under `/userdata/{wpa_supplicant,network,bluetooth,hmi}`; MUST NOT overwrite the mounted root; MUST NOT rewrite U-Boot or MiniLoader).
 
-**Staged apply** (online / product OTA): Board helpers SHALL accept a firmware bundle under **`/userdata/ota/`**, require hash-valid slot FITs **`boot.img` / `boot_b.img`** and **`rootfs.img`** (with digests), write rootfs only to the inactive `rootfs_*`, back up the running FIT from `boot` to `boot_b`, place the inactive letter’s FIT in `boot`, optionally apply **oem** when present, arm try-boot, and reboot.
+**Staged apply** (online / product OTA): Board helpers SHALL accept a firmware bundle under **`/userdata/ota/`**, require slot FITs **`boot.img` / `boot_b.img`** and **`rootfs.img`** each accompanied by a detached **Ed25519** signature (`*.img.sig`) that verifies against the device-embedded pubkey over the complete image bytes (hash-then-sign), write rootfs only to the inactive `rootfs_*`, back up the running FIT from `boot` to `boot_b`, place the inactive letter’s FIT in `boot`, optionally apply **oem** (also Ed25519-signed when present), arm try-boot, and reboot. Product OTA SHALL use Ed25519 verify as the sole pre-write authenticity/integrity gate and SHALL NOT require a separate `.sha256` / digest check (or unsigned digest/manifest) as authorization to write.
 
 **Stream apply** (developer `make upgrade` over SSH): The board SHALL accept host-orchestrated streams of **`rootfs.img`** and **only the inactive letter’s FIT** (plus optional oem) directly into the inactive rootfs device and the try-boot FIT path on `boot` (after backing up the running FIT to `boot_b`), then arm try-boot and reboot. Stream apply MUST NOT require full firmware images to be staged under `/userdata/ota/` before writing. Incomplete or failed streams MUST NOT arm try-boot.
 
 #### Scenario: Successful staged full-system apply includes kernel
 
-- **WHEN** a valid bundle with `boot.img` / `boot_b.img` and `rootfs.img` is staged under `/userdata/ota/` and staged apply succeeds
+- **WHEN** a valid Ed25519-signed bundle with `boot.img` / `boot_b.img` and `rootfs.img` (and matching `*.sig`) is staged under `/userdata/ota/` and staged apply succeeds
 - **THEN** both inactive boot and inactive rootfs are written, try-boot is armed, and the device reboots toward that letter
+
+#### Scenario: Bad or missing image signature refuses write
+
+- **WHEN** any required staged image fails Ed25519 verification against the embedded pubkey (corrupt bytes, or wrong/missing `*.sig`)
+- **THEN** the active letter and slot marker remain unchanged, no partition write for that apply proceeds past the gate, and apply exits non-zero
 
 #### Scenario: Successful stream apply writes during transfer
 
@@ -51,7 +56,7 @@ The platform SHALL support two full-system apply modes that share the same A/B s
 
 #### Scenario: Bad staged package leaves active letter intact
 
-- **WHEN** any required staged image fails checksum or write verification
+- **WHEN** any required staged image fails Ed25519 verification or write verification
 - **THEN** the active letter and slot marker remain unchanged and apply exits non-zero
 
 #### Scenario: Incomplete stream does not arm try-boot
@@ -71,12 +76,12 @@ The platform SHALL support two full-system apply modes that share the same A/B s
 
 ### Requirement: Storage layout documents stream upgrade vs staged OTA
 
-`docs/storage-layout.md` (and related upgrade docs) SHALL document that developer **`make upgrade`** uses **stream-to-partition** over SSH, while **online OTA** uses **download / stage under `/userdata/ota/` then digest-verified apply**, and that userdata prefs must not be wiped by either path.
+`docs/storage-layout.md` (and related upgrade docs) SHALL document that developer **`make upgrade`** uses **stream-to-partition** over SSH, while **online OTA** uses **download / stage under `/userdata/ota/` then Ed25519-signed image verified apply** (detached `*.sig` per full img; single-level full firmware, HMI with rootfs), and that userdata prefs must not be wiped by either path.
 
 #### Scenario: Storage layout distinguishes the two paths
 
 - **WHEN** a developer reads `docs/storage-layout.md` after this change
-- **THEN** the doc states stream-to-partition for `make upgrade` and download-then-write staging for online OTA, both preserving userdata
+- **THEN** the doc states stream-to-partition for `make upgrade` and download-then-Ed25519-verify staging for online OTA, both preserving userdata
 
 ### Requirement: Boot confirm commits or rolls back the letter pair
 

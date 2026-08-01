@@ -539,12 +539,12 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 |------|------------|-----------------|----------------------------|
 | P1 | flutter、RKNPU2、Wi‑Fi/BT、GPU | ✓ | Hello World、hmi 自启 ✅ |
 | P2 | libmodbus、ALSA、wpa、BlueZ… | ✓ | 硬件设施准备（含原 P2.1～P2.3）✅ |
-| P2.5 | A/B **boot+rootfs** | `parameter` 改表 | `make upgrade` ✅；供 P4.8 OTA 复用 |
+| P2.5 | A/B **boot+rootfs** | `parameter` 改表 | `make upgrade` ✅（开发流式）；供 **P4.8 整机 A/B + Ed25519** 复用 |
 | P3.0 | — | — | **cyber_ui** / **cyber_ime** path 包 🔄（优化中） |
 | P3.1 | systemd-networkd、wpa D-Bus | 开 networkd | **Dart HAL** + **网络栈切换**（L3=networkd）✅ |
 | P3.2 | 同 Image + 同 rootfs + OEM 切换 | QEMU | 模拟器验证多板多屏 ✅ W4 主路径；[`docs/p32-emulator.md`](docs/p32-emulator.md)；`make build-emulator` / **`make emulator`** |
 | P3.3 | OpenCV、yaml-cpp、RKNN、`native/lws_ai` | ✓（`build-opencv` / `build-ai`） | **`lws_ai_daemon` via `cyber_pm`**（OpenSpec `app-owned-ai-daemon`）🔄 |
-| P4 | GStreamer、sqlite、Avahi；**MediaMTX → App `/opt/hmi/bin`** | GStreamer ✓ | 业务 UI、:5580、云 🔄；MediaMTX 已 App 化（`cyber_pm`）；**P4.8 OTA** 另计 |
+| P4 | GStreamer、sqlite、Avahi；**MediaMTX → App `/opt/hmi/bin`** | GStreamer ✓ | 业务 UI、:5580、云 🔄；MediaMTX 已 App 化（`cyber_pm`）；**P4.8 整机 A/B + Ed25519**（一级；HMI 随 rootfs）另计 |
 | P5.0 | — | — | Android 兼容 / APK（App + YNHAPI；非 `cyber_hal`） |
 | P5.1 | flutter SDK + engine + eLinux **三件套升级** | 重编 prebuilt | 3.24 → 3.41；见 [`docs/flutter-linux-hmi-plan.md` §6.5](docs/flutter-linux-hmi-plan.md#65-flutter-engine-版本策略与升级p51) |
 

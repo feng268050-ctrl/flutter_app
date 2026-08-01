@@ -123,18 +123,32 @@ Notes:
 
 ### `make upgrade` vs `make flash` vs online OTA
 
-| Component | `make upgrade` (dev SSH) | Online OTA (P4.8 / P5.8) | `make flash` |
-|-----------|--------------------------|--------------------------|--------------|
-| Kernel FIT | **Stream** inactive letter’s FIT → `boot` (after `boot`→`boot_b` backup) | Stage under `/userdata/ota/`, digest, then `dd` | Yes |
-| Rootfs | **Stream** → inactive `rootfs_*` | Stage, digest, then `dd` | Yes |
-| oem (optional) | **Stream** when packaged | Stage when packaged | Yes |
+| Component | `make upgrade` (dev SSH) | Online OTA (P4.8) | `make flash` |
+|-----------|--------------------------|-------------------|--------------|
+| Kernel FIT | **Stream** inactive letter’s FIT → `boot` (after `boot`→`boot_b` backup) | Stage under `/userdata/ota/` + `*.sig`, **Ed25519 verify**, then `dd` | Yes |
+| Rootfs | **Stream** → inactive `rootfs_*` | Stage + `*.sig`, Ed25519 verify, then `dd` | Yes |
+| oem (optional) | **Stream** when packaged | Stage + `*.sig` when packaged | Yes |
 | U-Boot / MiniLoader | **No** | **No** | Yes |
 | GPT / `parameter` | **No** | **No** | Yes |
 | userdata / prefs | **Never wipe** | **Never wipe** | Factory reset |
-| Full images under `/userdata/ota/` | **No** (helpers/status only) | **Yes** (download then apply) | N/A |
+| Full images under `/userdata/ota/` | **No** (helpers/status only) | **Yes** (download then signed apply) | N/A |
 
-- **P2.5 — paired A/B boot+rootfs**: **`make upgrade`** = **stream-to-partition** over USB-SSH or LAN SSH (one operator wait aligned with write progress). Host needs both FITs built locally; only the inactive letter’s FIT is transferred. **userdata preserved.**
-- **P4.8 / P5.8 — product OTA**: download (or local package) → **`/userdata/ota/`** → digest-verified **`ab-upgrade-apply.sh`** staged apply. Same A/B safety model; different transport UX. Developer app-only iteration remains `make push-app`.
+- **P2.5 — paired A/B boot+rootfs**: **`make upgrade`** = **stream-to-partition** over USB-SSH or LAN SSH (one operator wait aligned with write progress). Host needs both FITs built locally; only the inactive letter’s FIT is transferred. **userdata preserved.** Dev-only; not product OTA and not a substitute for signature gates.
+- **P4.8 — product OTA (single-level full firmware)**: download (or local package) → **`/userdata/ota/`** → **Ed25519-verify each complete image** (detached `*.img.sig`; hash-then-sign over the whole file) → **`ab-upgrade-apply.sh`** writes only the **inactive** letter; **userdata not wiped**. Payload = `boot.img` + `boot_b.img` + `rootfs.img` (optional `oem.img`); **HMI (`/opt/hmi`) updates with rootfs** — no product App-only / two-level OTA. **No separate `.sha256` / digest gate** on the product path (verify already authenticates integrity). `manifest.json` (if kept) is UX metadata only, **not** a trust root. Refuse apply until pubkey verify succeeds. Device pubkey e.g. `/etc/hmi/ota-ed25519.pub`; private key only on publish host/HSM.
+- Staging layout (product OTA):
+
+```text
+/userdata/ota/
+  boot.img
+  boot.img.sig
+  boot_b.img
+  boot_b.img.sig
+  rootfs.img
+  rootfs.img.sig
+  [oem.img / oem.img.sig]
+```
+
+- **`make push-app`**: developer hot-swap of `/opt/hmi` over SSH — **not** product OTA.
 - **Full `update.img` via `make flash`**: factory / first GPT change / U-Boot / intentional **full reset**; not the day-to-day upgrade path after P2.5.
 
 ## Changing layout

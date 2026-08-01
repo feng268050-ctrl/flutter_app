@@ -1,6 +1,6 @@
 ## 1. Prerequisites
 
-- [ ] 1.1 Depend on `hal-secrets-kek-provider` abstract Secrets API (fake/interim acceptable for host tests)
+- [ ] 1.1 Depend on `hal-secrets-kek-provider` abstract Secrets API (host fake / emu software fallback OK for tests; hardware uses OP-TEE)
 - [ ] 1.2 Define Wi‑Fi vault file format (version, per-SSID map, AAD purpose `wifi-psk`) + host encode/decode tests
 
 ## 2. HAL vault + wpa integration
@@ -15,7 +15,7 @@
 
 - [ ] 3.1 Adjust `run-wpa.sh` or post-start helper if inject must run before HMI
 - [ ] 3.2 Document vault path in `docs/storage-layout.md`; conf template stays PSK-free
-- [ ] 3.3 Wi‑Fi vault security notes + cross-link to Secrets change (interim vs OP-TEE)
+- [ ] 3.3 Wi‑Fi vault security notes + cross-link to Secrets change (hardware-first; emu software fallback)
 
 ## 4. Verification
 

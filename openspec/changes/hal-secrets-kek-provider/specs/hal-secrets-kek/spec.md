@@ -16,21 +16,35 @@
 - **AND** unseal is attempted with AAD `A'`
 - **THEN** unseal fails and MUST NOT return the original plaintext
 
-### Requirement: Backends include OP-TEE preferred and interim software
+### Requirement: Hardware OP-TEE is the production Secrets backend
 
-The system SHALL support at least two backends selectable by board profile or equivalent configuration: (1) **OP-TEE-backed** sealing that uses platform secure storage / HUK-derived protection when available, and (2) **interim software** device-bound sealing for bring-up. The active backend SHALL be queryable (e.g. backend id) without exposing keys. The interim backend MUST be documented as insufficient alone for EN 18031 / RED Delegated Regulation (EU) 2022/30 presumption of conformity.
+On real appliance board profiles (e.g. ynh960/961/962), the Secrets provider SHALL use an **OP-TEE-backed** implementation that relies on platform secure storage / HUK-derived protection. Product images SHALL include the OP-TEE client stack required for that backend. The active backend SHALL be queryable without exposing keys and SHALL report a hardware-bound / OP-TEE backend identifier when OP-TEE is in use. There SHALL NOT be a separate “bring-up” software mode used as the normal path on those hardware profiles.
 
-#### Scenario: Interim backend identifiable
+#### Scenario: Hardware profile uses OP-TEE
 
-- **WHEN** the interim software backend is active
-- **THEN** the provider reports an interim backend identifier
-- **AND** product security notes state it is not RED-presumption-grade alone
-
-#### Scenario: OP-TEE backend when configured
-
-- **WHEN** the board profile selects the OP-TEE backend and OP-TEE client stack is available
-- **THEN** seal/unseal succeeds using the OP-TEE-backed implementation
+- **WHEN** Secrets is constructed for a real-board product profile and OP-TEE is available
+- **THEN** seal/unseal uses the OP-TEE-backed implementation
 - **AND** the provider reports a hardware-bound / OP-TEE backend identifier
+
+#### Scenario: No dual prod policy on hardware
+
+- **WHEN** a real-board product profile is active
+- **THEN** the default Secrets backend is not software-only
+
+### Requirement: Software KEK only when hardware is unavailable
+
+A software device-bound KEK backend MAY be used only when hardware TEE is unavailable, including emulator / sim board profiles, host unit-test fakes, or an explicit profile that documents hardware absence. When the software fallback is active, the provider SHALL report a distinct software-fallback backend identifier. Product security notes SHALL state that software fallback is not the field production path on real boards.
+
+#### Scenario: Emulator uses software fallback
+
+- **WHEN** Secrets is constructed for an emulator or sim profile without OP-TEE
+- **THEN** seal/unseal MAY use the software fallback backend
+- **AND** the provider reports a software-fallback backend identifier
+
+#### Scenario: Host fake for tests
+
+- **WHEN** host unit tests use the in-memory fake provider
+- **THEN** seal/unseal round-trips succeed without TEE hardware
 
 ### Requirement: No desktop keyring dependency
 
@@ -40,12 +54,3 @@ The Secrets provider MUST NOT require gnome-keyring, libsecret, KWallet, or a lo
 
 - **WHEN** seal/unseal is invoked on the appliance without a desktop session
 - **THEN** the operation does not depend on a userspace keyring daemon
-
-### Requirement: Host-testable fake provider
-
-The package SHALL provide a fake or in-memory Secrets provider for host unit tests that round-trips seal/unseal without OP-TEE hardware.
-
-#### Scenario: Fake provider in tests
-
-- **WHEN** host unit tests use the fake provider
-- **THEN** seal/unseal round-trips succeed without TEE hardware

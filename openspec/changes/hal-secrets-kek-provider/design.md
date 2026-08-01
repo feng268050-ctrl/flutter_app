@@ -1,87 +1,89 @@
 ## Context
 
-Appliance secrets (Wi‑Fi PSK vault first) need a single KEK/seal service. Desktop keyrings are unsuitable. Rockchip SDK has OP-TEE-related hooks; product HMI does not yet expose a HAL Secrets API. Sibling change `wifi-credential-secure-storage` owns the Wi‑Fi vault format and wpa `mem_only_psk` inject; **this change owns the KEK layer** those vaults call.
+Appliance secrets (Wi‑Fi PSK vault first) need a single KEK/seal service. Desktop keyrings are unsuitable. Rockchip SDK has OP-TEE-related hooks; product HMI does not yet expose a HAL Secrets API. Sibling change `wifi-credential-secure-storage` owns the Wi‑Fi vault; **this change owns the KEK layer**.
 
-Constraints: Flutter 3.24 / Dart HAL; RK3566/3568 boards; root often present in debug builds; no TPM on this line.
+**Policy:** One production standard — **hardware (OP-TEE) first on real boards**. Software KEK is **only** a fallback when TEE hardware/stack is unavailable (emulator, host tests, sim profile). There is **no** separate “bring-up interim” track for product images.
+
+Constraints: Flutter 3.24 / Dart HAL; RK3566/3568 boards; no TPM on this line.
 
 ## Goals / Non-Goals
 
 **Goals:**
 - Abstract `Secrets` / `KekProvider` in `cyber_hal` (seal/unseal with AAD)
-- OP-TEE-backed production path (PKCS#11 TA and/or dedicated TA + HUK secure storage)
-- Interim software KEK for bring-up, clearly marked
-- Board profile selection; unit-testable fakes for host
-- Document threat model and RED interim disclaimer
+- OP-TEE-backed sealing as the **default and required** path on appliance hardware
+- Software device-bound KEK **only** when hardware TEE is unavailable (emulator / sim / host fake)
+- Auto-detect or board-profile probe: hardware → else fallback
+- Unit-testable fake provider for host
+- Threat-model docs (hardware vs fallback scope)
 
 **Non-Goals:**
-- Operator-facing Keychain UI
-- gnome-keyring / libsecret / macOS Keychain
-- Full Wi‑Fi vault / `mem_only_psk` (belongs to `wifi-credential-secure-storage`)
-- Full-disk encryption; shipping Notified Body dossier
-- Mandatory external SE chip in v1 (optional later backend)
+- Dual “dev vs prod” crypto policies on the same hardware SKU
+- Operator-facing Keychain UI; gnome-keyring / libsecret
+- Wi‑Fi vault / `mem_only_psk` (→ `wifi-credential-secure-storage`)
+- Full-disk encryption; Notified Body dossier in-repo
+- Mandatory discrete SE chip in v1 (optional later backend behind same API)
 
 ## Decisions
 
-### D1 — Thin seal API, not a full PKCS#11 facade for Apps
+### D1 — Thin seal API
 
-**Choice:** HAL exposes something like `seal({aad, plaintext}) → blob` and `unseal({aad, blob}) → plaintext` (plus optional `backendId` / `isHardwareBound`). Wi‑Fi vault and future callers use only this.
+**Choice:** `seal({aad, plaintext}) → blob`, `unseal({aad, blob}) → plaintext`, plus `backendId` / `isHardwareBound`.
 
-**Why:** Apps must not depend on Cryptoki details; backends can swap (interim → TEE → SE).
+**Why:** Callers never touch Cryptoki; backends swap without App changes.
 
-**Alternatives:** Expose raw PKCS#11 to Flutter — rejected (heavy, easy to misuse). Per-feature crypto — rejected (duplication).
+### D2 — Hardware first, single production standard
 
-### D2 — Prefer OP-TEE PKCS#11 TA when viable; else small wrap TA
+**Choice:** On ynh960/961/962 (and any real-board profile), Secrets **MUST** use OP-TEE (PKCS#11 TA and/or minimal seal TA + HUK secure storage). Product builds MUST enable tee-supplicant / client packages. Failure to initialize TEE on hardware is an **error** (or explicit degraded mode with loud logging) — not a quiet “interim prod” default.
 
-**Choice:** Spike order: (1) tee-supplicant + libteec present, (2) PKCS#11 TA usable for AES key wrap / secret key objects, (3) if PKCS#11 too heavy or missing on vendor image, ship a minimal “seal” TA using OP-TEE secure storage (REE FS or RPMB).
+**Why:** User requirement — no bring-up/production split; RED/SSM story is hardware-bound.
 
-**Why:** PKCS#11 is the standard reusable HSM API; a tiny TA is a fallback with less surface.
+**Alternatives:** Interim-as-default until spike — rejected.
 
-**Alternatives:** Only custom TA — works but less reusable for OpenSSL/certs later. Only software — insufficient for RED production path.
+### D3 — Software only when hardware unavailable
 
-### D3 — HUK + secure storage backend
+**Choice:** Software HKDF KEK (`backendId = software_fallback`) allowed only when:
+- board/profile is emulator / `sim_virt` / host unit-test fake, **or**
+- runtime TEE probe fails **and** profile explicitly allows fallback (emulator), **or**
+- host CI without TEE.
 
-**Choice:** Production TEE path MUST rely on platform HUK-derived secure storage (prefer **RPMB** when eMMC supports it; otherwise REE FS encrypted by OP-TEE with documented residual risk). Interim software KEK MUST NOT read OTP HUK from Linux userspace (if impossible, treat as interim only).
+Real hardware profiles SHOULD **fail closed** (or refuse seal) if TEE is missing rather than silently using software — exact fail-closed vs allowlist decided at implement after spike, but **must not** treat software as normal product path.
 
-**Why:** Device-bound, non-exportable root is the SSM story.
+**Why:** Emulator still needs vault tests; field units must not ship software-as-default.
 
-### D4 — Interim software KEK
+### D4 — OP-TEE shape
 
-**Choice:** HKDF (or equivalent) from stable device identifiers available to Linux (e.g. serial / chip id from existing product/hal paths) + optional salt file under restricted userdata. `backendId = interim_software`. Debug log may state backend name only.
-
-**Why:** Unblocks vault development before TEE image is ready.
+**Choice:** Spike: tee-supplicant + libteec → prefer PKCS#11 TA for wrap; else minimal seal TA. Prefer **RPMB** secure storage when eMMC supports it; else OP-TEE REE FS with documented residual risk.
 
 ### D5 — No desktop keyring
 
-**Choice:** Explicitly out of scope; do not add libsecret.
+**Choice:** Out of scope.
 
-### D6 — Relationship to Wi‑Fi vault change
+### D6 — Wi‑Fi vault consumes this API
 
-**Choice:** `wifi-credential-secure-storage` **consumes** this API for wrap/unwrap of vault DEK (or per-secret seal). OP-TEE spike and TeeKekProvider live **here**; Wi‑Fi change keeps vault format, migration, inject, mem_only_psk.
+**Choice:** Vault seals via abstract Secrets only; no duplicate KEK in Wi‑Fi module.
 
-**Why:** Separation of concerns; other secrets reuse KEK without Wi‑Fi coupling.
+### D7 — Dart ↔ native
 
-### D7 — Dart ↔ native bridge
-
-**Choice:** Prefer calling OP-TEE from a small native helper or FFI in `cyber_hal` (decision after spike: pure Dart cannot link libteec). Host tests use in-memory fake provider.
+**Choice:** FFI or small native helper for OP-TEE; host tests use in-memory fake (counts as “hardware unavailable”).
 
 ## Risks / Trade-offs
 
-- [Vendor OP-TEE binary without usable PKCS#11 / HUK] → Fall back to custom TA or keep interim; escalate to Innohi for RPMB/HUK bring-up.
-- [RPMB not provisioned] → REE FS secure storage with documented weakness vs offline disk clone.
-- [FFI/ABI churn with Flutter embedder] → Isolate TEE calls behind `cyber_hal` Linux-only implementation; stub elsewhere.
-- [Apps call unseal too widely] → Keep API Linux/HAL-internal; App uses Wi‑Fi controller only for PSK flows.
-- [Interim mistaken for production] → Spec + board flag `secrets.backend=interim|optee`; release gate prefers optee when RED path required.
+- [OP-TEE not ready on current product image] → Treat as **blocker for hardware SKU**, not an excuse to default software on device; escalate Innohi / enable packages in this change’s overlay tasks.
+- [RPMB unprovisioned] → REE FS under OP-TEE still hardware-bound via HUK; document offline-clone residual risk.
+- [Silent software fallback on hardware] → Forbidden as default; probe + profile gates; tests assert hardware profile selects OP-TEE.
+- [FFI/embedder churn] → Isolate behind `cyber_hal` Linux impl.
+- [Emulator vault not transferable to device] → Expected; re-seal or re-enter secrets on hardware.
 
 ## Migration Plan
 
-1. Land API + interim backend + fakes/tests.
-2. Complete OP-TEE spike; enable client packages on images that support it.
-3. Point Wi‑Fi vault at Secrets API (sibling change).
-4. When OP-TEE green: switch board profile default; re-seal existing vault DEKs (version bump).
-5. Rollback: flip profile to interim (accept weaker security) or require re-entry of Wi‑Fi PSKs after wipe.
+1. Spike and enable OP-TEE client on product images.
+2. Land API + OP-TEE backend + fake/software fallback for emu/tests.
+3. Board bindings: hardware profiles → OP-TEE; sim/emulator → software fallback.
+4. Wi‑Fi vault consumes API; if any early software-sealed blobs exist on a device that later gains TEE, re-seal under hardware backend (version bump) or force re-entry.
+5. Rollback of TEE stack on hardware = product incident, not “switch to interim prod.”
 
 ## Open Questions
 
-- Vendor vs mainline OP-TEE on ynh960 factory images (spike).
-- PKCS#11 TA present or custom seal TA only.
-- Whether seal runs only in HMI process or also a privileged `/usr/libexec` helper for early boot Wi‑Fi inject.
+- Fail-closed vs explicit `allow_software_fallback=1` on rare hardware bring-up jigs (default: fail-closed for product profiles).
+- Vendor vs mainline OP-TEE; PKCS#11 vs custom TA.
+- Early-boot seal helper vs in-HMI only.

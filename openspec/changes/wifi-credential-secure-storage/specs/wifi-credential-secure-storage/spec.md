@@ -19,7 +19,7 @@ The system SHALL store Wi‑Fi operator passphrases / PSKs in an encrypted crede
 
 ### Requirement: Vault sealing uses HAL Secrets API
 
-The Wi‑Fi credential vault MUST obtain seal/unseal from the abstract HAL Secrets / KEK provider. It MUST NOT embed a separate OP-TEE or software KEK implementation. Backend selection (OP-TEE vs interim) is owned by `hal-secrets-kek`.
+The Wi‑Fi credential vault MUST obtain seal/unseal from the abstract HAL Secrets / KEK provider. It MUST NOT embed a separate OP-TEE or software KEK implementation. Backend selection (hardware OP-TEE vs software fallback when TEE unavailable) is owned by `hal-secrets-kek`.
 
 #### Scenario: Vault calls abstract Secrets
 
@@ -55,11 +55,11 @@ On upgrade or first run after this capability is enabled, if `wpa_supplicant.con
 - **THEN** vault contains a secret for `Home`
 - **AND** the plaintext `psk=` line for `Home` is removed from conf
 
-### Requirement: Wi-Fi notes defer RED KEK claims to Secrets change
+### Requirement: Wi-Fi notes defer KEK policy to Secrets change
 
-Wi‑Fi vault security notes SHALL reference `hal-secrets-kek-provider` for KEK backend policy and SHALL NOT claim that Wi‑Fi vault alone completes RED / EN 18031 presumption when only the interim Secrets backend is active.
+Wi‑Fi vault security notes SHALL reference `hal-secrets-kek-provider` for hardware-first KEK policy and SHALL NOT claim that Wi‑Fi vault alone completes RED / EN 18031 presumption.
 
 #### Scenario: Notes cross-link Secrets change
 
 - **WHEN** an implementer reads Wi‑Fi vault security notes
-- **THEN** they are directed to the Secrets/KEK change for interim vs OP-TEE production path
+- **THEN** they are directed to the Secrets/KEK change for OP-TEE vs emulator software-fallback policy

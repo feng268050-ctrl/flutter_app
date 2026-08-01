@@ -7,7 +7,7 @@ Wi‑Fi PSKs today land in plaintext in `wpa_supplicant.conf` under userdata (`c
 - Introduce a **secure Wi‑Fi credential vault**: per-SSID secrets as encrypted blobs on userdata; plaintext PSK MUST NOT remain in `wpa_supplicant.conf` after SaveConfig
 - Use wpa `mem_only_psk=1` (or equivalent) so SaveConfig never writes passphrase/PSK to the conf file
 - At connect / selectSaved / boot restore: unseal via HAL Secrets → inject PSK into the matching wpa network via D-Bus → associate; never log PSK
-- **Depend on** sibling change `hal-secrets-kek-provider` for KEK seal/unseal (OP-TEE preferred, interim software for bring-up) — this change does **not** own Tee/KekProvider implementation
+- **Depend on** sibling change `hal-secrets-kek-provider` for KEK seal/unseal (hardware OP-TEE on real boards; software only when TEE unavailable e.g. emulator) — this change does **not** own Tee/KekProvider implementation
 - One-shot **migration**: existing plaintext `psk=` entries moved into the vault and stripped from conf
 - Forget deletes both the wpa network and the vault entry
 - Technical-file oriented notes for Wi‑Fi vault threat model — not a self-declaration of conformity

@@ -2,7 +2,7 @@
 
 Today PSKs are written by wpa `SaveConfig` into `/var/lib/wpa_supplicant/wpa_supplicant.conf` (→ `/userdata/wpa_supplicant/`), mode `600`. HAL passes the operator passphrase as D-Bus Network `psk`. Multi-profile My Networks is already in place.
 
-**Dependency:** KEK seal/unseal, OP-TEE vs interim backends, and board selection are owned by sibling change **`hal-secrets-kek-provider`** (`hal-secrets-kek`). This change owns the Wi‑Fi-specific vault, `mem_only_psk`, inject into wpa, and migration from plaintext conf.
+**Dependency:** KEK seal/unseal (hardware-first OP-TEE; software fallback only when hardware unavailable) is owned by sibling change **`hal-secrets-kek-provider`** (`hal-secrets-kek`). This change owns the Wi‑Fi-specific vault, `mem_only_psk`, inject into wpa, and migration from plaintext conf.
 
 Stakeholders: product security / EU RED readiness; HAL Wi‑Fi; overlay wpa unit. Constraints: Flutter/HAL on Linux appliance; no NetworkManager; wpa still needs plaintext PSK **in memory** to associate.
 
@@ -13,7 +13,7 @@ Stakeholders: product security / EU RED readiness; HAL Wi‑Fi; overlay wpa unit
 - No passphrase/PSK persisted in `wpa_supplicant.conf` after connect/SaveConfig
 - Decrypt/unseal → inject at connect / selectSaved / post-wpa-start restore
 - Migrate existing plaintext conf entries; Forget clears vault + network
-- Wi‑Fi-specific threat-model notes (point to Secrets change for KEK/RED interim disclaimer)
+- Wi‑Fi-specific threat-model notes (point to Secrets change for hardware-first KEK policy)
 
 **Non-Goals:**
 - Implementing OP-TEE / KekProvider / PKCS#11 (→ `hal-secrets-kek-provider`)
@@ -38,7 +38,7 @@ Stakeholders: product security / EU RED readiness; HAL Wi‑Fi; overlay wpa unit
 
 ### D3 — KEK via HAL Secrets (not duplicated here)
 
-**Choice:** Vault calls abstract Secrets seal/unseal for wrapping vault payload or per-SSID secrets. Backend (OP-TEE vs interim) is selected by board profile in the Secrets change.
+**Choice:** Vault calls abstract Secrets seal/unseal for wrapping vault payload or per-SSID secrets. Backend (OP-TEE on hardware; software only for emu/sim) is selected by the Secrets change.
 
 **Why:** Single KEK story for Wi‑Fi and future secrets; avoids two Tee integrations.
 
@@ -64,7 +64,7 @@ Stakeholders: product security / EU RED readiness; HAL Wi‑Fi; overlay wpa unit
 
 ## Risks / Trade-offs
 
-- [Secrets change not yet applied] → Implement vault against abstract Secrets + fake/interim; block production OP-TEE path on Secrets spike.
+- [Secrets change not yet applied / TEE missing on hardware] → Vault blocks on abstract Secrets; hardware SKU requires OP-TEE Secrets backend (emulator may use software fallback).
 - [SaveConfig writes psk if mem_only_psk omitted] → Assert conf scrub in tests; migration rewriter.
 - [Boot inject race] → After wpa D-Bus up; retry.
 - [Factory wipe] → Userdata wipe clears vault; recovery = re-enter PSK.

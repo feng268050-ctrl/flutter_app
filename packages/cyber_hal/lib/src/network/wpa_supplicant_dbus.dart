@@ -504,11 +504,57 @@ class WpaSupplicantDbus {
     );
   }
 
-  /// Enable + SelectNetwork for an existing configured SSID (no credential rewrite).
+  /// Inject [psk] into an existing network with `mem_only_psk=1` so SaveConfig
+  /// does not persist plaintext into the conf file.
   ///
-  /// Restores Auto Join ([Enabled]) on sibling networks afterward — SelectNetwork
-  /// disables others as a side effect.
-  Future<bool> selectSavedBySsid(String iface, String ssid) async {
+  /// MUST NOT log [psk].
+  Future<void> injectMemOnlyPsk(DBusObjectPath path, String psk) async {
+    if (psk.isEmpty) {
+      throw ArgumentError('psk must be non-empty');
+    }
+    final net = DBusRemoteObject(_client, name: busName, path: path);
+    await net.setProperty(
+      'fi.w1.wpa_supplicant1.Network',
+      'Properties',
+      DBusDict.stringVariant({
+        'psk': DBusString(psk),
+        'mem_only_psk': const DBusUint32(1),
+      }),
+    );
+  }
+
+  /// Unseal-and-inject helper: for each Auto Join ([Enabled]) network whose
+  /// SSID has a vault secret, inject PSK into memory.
+  Future<int> injectVaultSecretsForAutoJoin(
+    String iface, {
+    required Future<String?> Function(String ssid) lookupPsk,
+  }) async {
+    final nets = await listNetworks(iface);
+    var n = 0;
+    for (final net in nets.where((e) => e.enabled)) {
+      final psk = await lookupPsk(net.ssid);
+      if (psk == null || psk.isEmpty) {
+        continue;
+      }
+      try {
+        await injectMemOnlyPsk(net.path, psk);
+        n++;
+      } catch (_) {}
+    }
+    return n;
+  }
+
+  /// Enable + SelectNetwork for an existing configured SSID.
+  ///
+  /// When [psk] is non-null/non-empty, injects it with `mem_only_psk=1` before
+  /// select so association works without plaintext conf. Restores Auto Join
+  /// ([Enabled]) on sibling networks afterward — SelectNetwork disables others
+  /// as a side effect.
+  Future<bool> selectSavedBySsid(
+    String iface,
+    String ssid, {
+    String? psk,
+  }) async {
     final target = ssid.trim();
     if (target.isEmpty) {
       return false;
@@ -525,6 +571,9 @@ class WpaSupplicantDbus {
       connectingSsid: target,
     );
     final net = match.first;
+    if (psk != null && psk.isNotEmpty) {
+      await injectMemOnlyPsk(net.path, psk);
+    }
     await setNetworkEnabled(net.path, true);
     await selectNetwork(iface, net.path);
     await _restoreEnabledNetworks(
@@ -624,6 +673,10 @@ class WpaSupplicantDbus {
   ///
   /// [hidden] sets `scan_ssid=1` so wpa actively probes non-broadcast SSIDs.
   /// [requiresPsk] rejects empty PSK instead of falling through to `key_mgmt=NONE`.
+  ///
+  /// When [psk] is set, [memOnlyPsk] (default true) sets `mem_only_psk=1` so
+  /// SaveConfig does not write plaintext `psk=` into the conf file. Callers
+  /// MUST persist the secret in the Wi‑Fi credential vault before connecting.
   Future<DBusObjectPath> connectNetwork(
     String iface, {
     required String ssid,
@@ -631,6 +684,7 @@ class WpaSupplicantDbus {
     String? bssid,
     bool hidden = false,
     bool requiresPsk = false,
+    bool memOnlyPsk = true,
   }) async {
     final obj = await _ifaceObject(iface);
     final target = ssid.trim();
@@ -663,6 +717,9 @@ class WpaSupplicantDbus {
     }
     if (hasPsk) {
       conf['psk'] = DBusString(psk);
+      if (memOnlyPsk) {
+        conf['mem_only_psk'] = const DBusUint32(1);
+      }
     } else {
       conf['key_mgmt'] = DBusString('NONE');
     }

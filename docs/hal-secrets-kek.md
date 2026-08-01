@@ -68,7 +68,8 @@ whole-disk+same-SoC identity clones.
 
 - Product App Wi‑Fi UI should not import Secrets; Wi‑Fi HAL internals call
   `BoardBindings.secrets()`.
-- Do not store PSKs in plaintext conf once vault lands (sibling change).
+- Do not store PSKs in plaintext conf — Wi‑Fi vault owns at-rest secrets
+  ([`docs/wifi-credential-vault.md`](wifi-credential-vault.md)).
 - To enable OP-TEE later: set `"secrets_backend": "optee"` in
   `oem/boards/<id>/board_profile.json`, rebuild OEM / upgrade, and provision a
   BL32-matched seal TA.

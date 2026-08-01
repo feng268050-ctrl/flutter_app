@@ -92,6 +92,16 @@ If uncompressed rootfs on device ever approaches **~900 MiB**, bump `0x00200000`
 - `/var/lib/bluetooth` → `/userdata/bluetooth`
 - `/var/lib/hmi` → `/userdata/hmi`
 
+Notable files under `/var/lib/wpa_supplicant` (Wi‑Fi; persist across `make upgrade` / `push-app`):
+
+| File | Role |
+|------|------|
+| `wpa_supplicant.conf` | Non-secret network metadata (SSID, `key_mgmt`, Auto Join / `disabled`, `scan_ssid`, …). **Must not** contain plaintext `psk=` / passphrase after vault migration. Seed template is PSK-free. |
+| `credentials.vault` | Encrypted Wi‑Fi PSK vault (HAL Secrets seal; AAD purpose `wifi-psk`). See [`docs/wifi-credential-vault.md`](wifi-credential-vault.md). |
+| `wifi-wanted` | Radio-wanted marker for HAL restore |
+| `wlan0-ipv4` (etc.) | Per-iface IPv4 prefs |
+| `wpa_supplicant.log` | wpa runtime log |
+
 Notable files under `/var/lib/hmi` (persist across `make upgrade` / `push-app`):
 
 | File | Role |

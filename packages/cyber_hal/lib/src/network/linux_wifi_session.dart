@@ -7,6 +7,8 @@ import 'package:cyber_hal/src/network/networkd_dbus.dart';
 import 'package:cyber_hal/src/network/networkd_ipv4_apply.dart';
 import 'package:cyber_hal/src/network/primary_network.dart';
 import 'package:cyber_hal/src/network/wifi_controller.dart';
+import 'package:cyber_hal/src/network/wifi_credential_migration.dart';
+import 'package:cyber_hal/src/network/wifi_credential_vault.dart';
 import 'package:cyber_hal/src/network/wifi_leave_policy.dart';
 import 'package:cyber_hal/src/network/wifi_link_parse.dart';
 import 'package:cyber_hal/src/network/wifi_models.dart';
@@ -15,6 +17,7 @@ import 'package:cyber_hal/src/network/wpa_cli_parse.dart';
 import 'package:cyber_hal/src/network/wpa_supplicant_dbus.dart'
     show WpaScanResult, WpaSupplicantDbus, wpaSecurityLabel;
 import 'package:cyber_hal/src/profile/board_profile.dart';
+import 'package:cyber_hal/src/secrets/kek_provider.dart';
 import 'package:dbus/dbus.dart';
 import 'package:flutter/foundation.dart';
 
@@ -22,6 +25,9 @@ import 'package:flutter/foundation.dart';
 ///
 /// Prefer constructing via [BoardBindings.wifiSession].
 /// Product path uses [WpaSupplicantDbus] only — no runtime `wpa_cli`.
+///
+/// PSK at rest lives in [WifiCredentialVault] (HAL Secrets); conf stays
+/// metadata-only via `mem_only_psk=1`.
 class LinuxWifiSession implements WifiController {
   LinuxWifiSession({
     this.profile,
@@ -31,6 +37,9 @@ class LinuxWifiSession implements WifiController {
     String? wifiWantedPath,
     Map<String, int>? routeMetrics,
     this.prefRoot = '/var/lib/wpa_supplicant',
+    KekProvider? secrets,
+    WifiCredentialVault? vault,
+    String? wpaConfPath,
   })  : iface = iface ??
             profile?.ifaceFor(NetRole.wifiStation) ??
             'wlan0',
@@ -42,7 +51,15 @@ class LinuxWifiSession implements WifiController {
               prefRoot: prefRoot,
             ),
         wifiWantedPath = wifiWantedPath ??
-            '$prefRoot/wifi-wanted';
+            '$prefRoot/wifi-wanted',
+        wpaConfPath = wpaConfPath ?? '$prefRoot/wpa_supplicant.conf',
+        vault = vault ??
+            (secrets != null
+                ? WifiCredentialVault(
+                    secrets: secrets,
+                    path: '$prefRoot/credentials.vault',
+                  )
+                : null);
 
   final BoardProfile? profile;
   final String iface;
@@ -50,7 +67,12 @@ class LinuxWifiSession implements WifiController {
   final String ipv4Path;
   final String wifiWantedPath;
   final String prefRoot;
+  final String wpaConfPath;
   final Map<String, int> _routeMetrics;
+
+  /// Null only in host stubs without Secrets — product path always injects via
+  /// [BoardBindings.wifiSession].
+  final WifiCredentialVault? vault;
 
   final _radioCtrl = StreamController<WifiRadioState>.broadcast();
   final _connCtrl = StreamController<WifiConnectionState>.broadcast();
@@ -128,6 +150,35 @@ class LinuxWifiSession implements WifiController {
     }
   }
 
+  /// One-shot plaintext conf → vault, then inject Auto Join secrets into wpa.
+  ///
+  /// Safe to call whenever wpa D-Bus is ready (idempotent migration).
+  Future<void> _prepareVaultAndInject() async {
+    final v = vault;
+    if (v == null || _wpaDbus == null) {
+      return;
+    }
+    try {
+      final n = await WpaConfPskMigration.migrateFile(
+        confPath: wpaConfPath,
+        vault: v,
+      );
+      if (n > 0) {
+        debugPrint('wifi: migrated $n plaintext PSK(s) into credential vault');
+      }
+    } catch (e) {
+      debugPrint('wifi: vault migration failed: $e');
+    }
+    try {
+      await _wpaDbus!.injectVaultSecretsForAutoJoin(
+        iface,
+        lookupPsk: v.get,
+      );
+    } catch (e) {
+      debugPrint('wifi: vault inject failed: $e');
+    }
+  }
+
   Future<bool> _isIeee80211() async {
     if (_ieee80211 == true) {
       return true;
@@ -200,6 +251,7 @@ class LinuxWifiSession implements WifiController {
       if (await _wpaLive()) {
         _stopWantedWatch();
         _emitRadio(WifiRadioState.on);
+        await _prepareVaultAndInject();
         await _startStatusWatch();
         await _refreshStatus();
       } else if (_radio == WifiRadioState.starting) {
@@ -263,13 +315,14 @@ class LinuxWifiSession implements WifiController {
       _emitRadio(WifiRadioState.on);
       await _writeWanted(true);
       await _startStatusWatch();
-      await _refreshStatus();
       if (await _isIeee80211()) {
+        await _prepareVaultAndInject();
         // Saved network may auto-associate; force a fresh DHCP lease (new gateway).
         await _ensureIpv4ForCurrentAssoc(force: true);
       } else {
         await _ensureStandInIpv4(force: true);
       }
+      await _refreshStatus();
     } else {
       await _stopStatusWatch();
       try {
@@ -612,7 +665,12 @@ class LinuxWifiSession implements WifiController {
     );
     await _ensureDbus();
     try {
+      final hasPsk = psk != null && psk.isNotEmpty;
+      if (hasPsk && vault != null) {
+        await vault!.put(ssid, psk!);
+      }
       // Multi-profile: connectNetwork keeps other saved SSIDs (My Networks).
+      // mem_only_psk=1 (default) — vault holds the secret; conf stays scrubbed.
       await _wpaDbus!.connectNetwork(
         iface,
         ssid: ssid,
@@ -781,6 +839,11 @@ class LinuxWifiSession implements WifiController {
     try {
       await _wpaDbus!.removeNetworksBySsid(iface, ssid);
       await _wpaDbus!.saveConfig(iface);
+      try {
+        await vault?.delete(ssid);
+      } catch (e) {
+        debugPrint('wifi: vault delete failed: $e');
+      }
     } catch (e) {
       debugPrint('wifi: forget dbus: $e');
       rethrow;
@@ -840,7 +903,17 @@ class LinuxWifiSession implements WifiController {
       ),
     );
     await _ensureDbus();
-    final ok = await _wpaDbus!.selectSavedBySsid(iface, ssid);
+    String? vaultPsk;
+    try {
+      vaultPsk = await vault?.get(ssid);
+    } catch (e) {
+      debugPrint('wifi: vault get failed: $e');
+    }
+    final ok = await _wpaDbus!.selectSavedBySsid(
+      iface,
+      ssid,
+      psk: vaultPsk,
+    );
     if (!ok) {
       _emitConn(WifiConnectionState.disconnected);
       return false;
@@ -935,6 +1008,7 @@ class LinuxWifiSession implements WifiController {
       if (await _wpaLive()) {
         _stopWantedWatch();
         _emitRadio(WifiRadioState.on);
+        await _prepareVaultAndInject();
         await _startStatusWatch();
         await _refreshStatus();
         return;

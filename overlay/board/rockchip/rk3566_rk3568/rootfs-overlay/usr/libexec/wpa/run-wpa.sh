@@ -56,4 +56,7 @@ if busctl status fi.w1.wpa_supplicant1 >/dev/null 2>&1; then
 fi
 
 echo "run-wpa: starting wpa_supplicant (D-Bus -u) on $IFACE" >&2
+# PSK inject for Auto Join is HAL-owned (WifiCredentialVault) after D-Bus is
+# ready — not done here — so HMI / syncFromSystem / setRadioEnabled can unseal
+# via Secrets. Conf stays PSK-free (mem_only_psk); see docs/wifi-credential-vault.md.
 exec /usr/sbin/wpa_supplicant -u -i "$IFACE" -c "$WPA_CONF" -D nl80211,wext -f "$WPA_LOG"

@@ -189,20 +189,31 @@ final class BoardBindings {
     );
   }
 
-  LinuxWifi wifi({WifiRadio? radio}) {
+  LinuxWifi wifi({
+    WifiRadio? radio,
+    KekProvider? secrets,
+  }) {
     return LinuxWifi(
       profile: profile,
       radio: radio ?? wifiRadio(),
       routeMetrics: profile.routeMetrics,
+      secrets: secrets ?? this.secrets(),
     );
   }
 
   /// Stream Wi‑Fi session for Demo / Settings (radio + Streams + metrics).
-  LinuxWifiSession wifiSession({WifiRadio? radio}) {
+  ///
+  /// Injects [secrets] so the Wi‑Fi credential vault seals via abstract KEK
+  /// (App UI must not import `cyber_hal/secrets.dart`).
+  LinuxWifiSession wifiSession({
+    WifiRadio? radio,
+    KekProvider? secrets,
+  }) {
     return LinuxWifiSession(
       profile: profile,
       wifiRadio: radio ?? wifiRadio(),
       routeMetrics: profile.routeMetrics,
+      secrets: secrets ?? this.secrets(),
     );
   }
 

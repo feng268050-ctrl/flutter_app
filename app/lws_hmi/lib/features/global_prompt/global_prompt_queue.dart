@@ -9,14 +9,22 @@ final class GlobalPromptHost {
     required this.context,
     required this.id,
     required void Function() requestClose,
-  }) : _requestClose = requestClose;
+    required void Function() markClosed,
+  })  : _requestClose = requestClose,
+        _markClosed = markClosed;
 
   final BuildContext context;
   final String id;
   final void Function() _requestClose;
+  final void Function() _markClosed;
 
   /// Programmatic close of the visible prompt (pops the modal route).
   void close() => _requestClose();
+
+  /// Call when the presenter has already removed its modal route (e.g. Confirm
+  /// [Navigator.pop]) so a later [GlobalPromptQueue.dismiss] does not pop the
+  /// underlying page.
+  void markClosed() => _markClosed();
 }
 
 /// Process-wide FIFO prompt modal host (guidance + warn frost).
@@ -39,6 +47,13 @@ final class GlobalPromptQueue {
   final Queue<_PendingPrompt> _queue = Queue<_PendingPrompt>();
   String? _showingId;
   bool _dialogOpen = false;
+
+  /// True while the presenter's modal route is still on the navigator.
+  ///
+  /// Cleared by [GlobalPromptHost.markClosed] / [GlobalPromptHost.close] so
+  /// [dismiss] after a self-[Navigator.pop] cannot pop the page underneath
+  /// (`canPop` stays true for pushed product routes).
+  bool _modalRouteActive = false;
   Completer<void>? _showingCompleter;
   Future<void> _pumpTail = Future<void>.value();
 
@@ -90,10 +105,18 @@ final class GlobalPromptQueue {
       return false;
     });
     if (_showingId == id && _dialogOpen) {
-      final nav = _navigatorKey.currentState;
-      if (nav != null && nav.canPop()) {
-        nav.pop();
-      }
+      _popModalIfActive();
+    }
+  }
+
+  void _popModalIfActive() {
+    if (!_modalRouteActive) {
+      return;
+    }
+    _modalRouteActive = false;
+    final nav = _navigatorKey.currentState;
+    if (nav != null && nav.canPop()) {
+      nav.pop();
     }
   }
 
@@ -135,16 +158,15 @@ final class GlobalPromptQueue {
     final showingCompleter = Completer<void>();
     _showingId = pending.id;
     _dialogOpen = true;
+    _modalRouteActive = true;
     _showingCompleter = showingCompleter;
 
     final host = GlobalPromptHost(
       context: ctx,
       id: pending.id,
-      requestClose: () {
-        final nav = _navigatorKey.currentState;
-        if (nav != null && nav.canPop()) {
-          nav.pop();
-        }
+      requestClose: _popModalIfActive,
+      markClosed: () {
+        _modalRouteActive = false;
       },
     );
 
@@ -153,6 +175,7 @@ final class GlobalPromptQueue {
     } catch (e, st) {
       debugPrint('global-prompt: present failed id=${pending.id}: $e\n$st');
     } finally {
+      _modalRouteActive = false;
       _dialogOpen = false;
       _showingId = null;
       _showingCompleter = null;

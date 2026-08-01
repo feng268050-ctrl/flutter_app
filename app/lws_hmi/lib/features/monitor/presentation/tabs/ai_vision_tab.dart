@@ -648,8 +648,11 @@ class _AiVisionTabState extends State<AiVisionTab> {
           ),
           const SizedBox(width: 24),
           Expanded(
+            // Opaque faceFill covers the glass plate so pad ≠ frosted wallpaper
+            // rim; SettingsPanel still paints four-side outer ambient / rim.
             child: MonitorGlassCard(
               padding: const EdgeInsets.all(10),
+              faceFill: const Color(0xFF101018),
               borderGradientCenter:
                   CyberBorderGradientCenter.bottomLeftTopRight,
               child: ClipRRect(
@@ -724,11 +727,11 @@ class _AiVisionTabState extends State<AiVisionTab> {
                       ),
                       if (showDetect)
                         Center(
-                          child: _PreviewActionButton(
-                            label: l10n.aiVisionDetectBtn,
+                          child: MonitorFrostActionButton(
                             variant: CyberButtonVariant.primary,
                             onPressed: () =>
                                 unawaited(_startDetect(force: false)),
+                            child: Text(l10n.aiVisionDetectBtn),
                           ),
                         ),
                       if (showPostEos)
@@ -736,17 +739,17 @@ class _AiVisionTabState extends State<AiVisionTab> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              _PreviewActionButton(
-                                label: l10n.aiVisionVideoReplay,
+                              MonitorFrostActionButton(
                                 variant: CyberButtonVariant.light,
                                 onPressed: () => unawaited(_startReplay()),
+                                child: Text(l10n.aiVisionVideoReplay),
                               ),
                               const SizedBox(width: 24),
-                              _PreviewActionButton(
-                                label: l10n.aiVisionReinferBtn,
+                              MonitorFrostActionButton(
                                 variant: CyberButtonVariant.light,
                                 onPressed: () =>
                                     unawaited(_startDetect(force: true)),
+                                child: Text(l10n.aiVisionReinferBtn),
                               ),
                             ],
                           ),
@@ -784,36 +787,6 @@ class _AiVisionTabState extends State<AiVisionTab> {
   }
 }
 
-class _PreviewActionButton extends StatelessWidget {
-  const _PreviewActionButton({
-    required this.label,
-    required this.onPressed,
-    this.variant = CyberButtonVariant.primary,
-  });
-
-  final String label;
-  final VoidCallback onPressed;
-  final CyberButtonVariant variant;
-
-  @override
-  Widget build(BuildContext context) {
-    // Do not wrap CyberButton in a shorter SizedBox — that clips glyphs.
-    // Extra child Padding + oversized Text also fights CyberButton's own pad.
-    return CyberButton(
-      variant: variant,
-      shape: CyberButtonShape.rounded,
-      borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
-      clickSoundEnabled: true,
-      onPressed: onPressed,
-      child: Text(
-        label,
-        softWrap: false,
-        overflow: TextOverflow.visible,
-        style: const TextStyle(fontSize: 24, height: 1.0),
-      ),
-    );
-  }
-}
 
 class _InfoBlock extends StatelessWidget {
   const _InfoBlock({required this.label, required this.value});

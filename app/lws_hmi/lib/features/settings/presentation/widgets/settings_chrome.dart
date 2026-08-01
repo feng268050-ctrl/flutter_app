@@ -344,6 +344,7 @@ class SettingsPanel extends StatelessWidget {
     this.borderGradientCenter =
         CyberBorderGradientCenter.topLeftBottomRight,
     this.borderRadius,
+    this.elevated = true,
   });
 
   final Widget child;
@@ -351,6 +352,9 @@ class SettingsPanel extends StatelessWidget {
 
   /// When null, uses [CyberGlassTheme.cornerRadius].
   final BorderRadius? borderRadius;
+
+  /// When false, skip lip cast + contact shadow (compact frost pills / chips).
+  final bool elevated;
 
   @override
   Widget build(BuildContext context) {
@@ -375,22 +379,23 @@ class SettingsPanel extends StatelessWidget {
             ),
           ),
         ),
-        Positioned.fill(
-          child: Transform.translate(
-            offset: const Offset(0, SettingsDimens.depthLipOffset),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: radius,
-                boxShadow: SettingsDimens.depthLipShadow,
+        if (elevated)
+          Positioned.fill(
+            child: Transform.translate(
+              offset: const Offset(0, SettingsDimens.depthLipOffset),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: radius,
+                  boxShadow: SettingsDimens.depthLipShadow,
+                ),
               ),
             ),
           ),
-        ),
         DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: radius,
-            boxShadow: SettingsDimens.cardShadow,
+            boxShadow: elevated ? SettingsDimens.cardShadow : const [],
           ),
           child: ClipRRect(
             borderRadius: radius,

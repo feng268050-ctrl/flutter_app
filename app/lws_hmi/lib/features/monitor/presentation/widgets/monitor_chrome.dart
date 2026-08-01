@@ -10,6 +10,11 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 /// Design tokens aligned with lws-ui Monitor / Frost glass stand-ins.
 abstract final class MonitorDimens {
   static const pad = 24.0;
+
+  /// Matches [SettingsDimens.outerAmbientExtent] — layout gutter so panel
+  /// outer glow can paint without being clipped by scroll/flex ancestors.
+  static const outerAmbientExtent = 20.0;
+
   static const corner = 18.0;
   static const metricH = 88.0;
   static const leftPanelW = 740.0;
@@ -50,6 +55,7 @@ class MonitorGlassCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(MonitorDimens.pad),
     this.margin,
     this.frosted = true,
+    this.faceFill,
     this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
 
@@ -61,11 +67,31 @@ class MonitorGlassCard extends StatelessWidget {
 
   /// When false, light inset fill only (no capture frost / depth shells).
   final bool frosted;
+
+  /// Full-bleed under-plate inside the glass clip (ignores [padding]).
+  ///
+  /// Use for media / preview cards so [padding] does not leave a frosted
+  /// wallpaper rim (“透视边”) while outer ambient / rim depth still paint.
+  final Color? faceFill;
+
   final CyberBorderGradientCenter borderGradientCenter;
 
   @override
   Widget build(BuildContext context) {
-    final content = Padding(padding: padding, child: child);
+    final padded = Padding(padding: padding, child: child);
+    final Widget content;
+    if (faceFill != null) {
+      // Under-plate must fill the ClipRRect; padding applies only to [child].
+      content = Stack(
+        fit: StackFit.passthrough,
+        children: [
+          Positioned.fill(child: ColoredBox(color: faceFill!)),
+          padded,
+        ],
+      );
+    } else {
+      content = padded;
+    }
     final panelChild = (width != null || height != null)
         ? SizedBox(width: width, height: height, child: content)
         : content;
@@ -92,6 +118,53 @@ class MonitorGlassCard extends StatelessWidget {
       height: height,
       margin: margin,
       child: body,
+    );
+  }
+}
+
+/// Monitor action pill — frost plate + transparent-face [CyberButton].
+///
+/// Used by Alarms Clear and AI Vision Replace / Re-detect (same component).
+/// [CyberButton.paintFill] is off so the [SettingsPanel] blur shows through;
+/// [SettingsPanel.elevated] is off so lip/contact shadows do not read as a
+/// solid embossed chip over the preview.
+class MonitorFrostActionButton extends StatelessWidget {
+  const MonitorFrostActionButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.variant = CyberButtonVariant.standard,
+    this.clickSoundEnabled = true,
+    this.borderGradientCenter =
+        CyberBorderGradientCenter.topLeftBottomRight,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget child;
+  final CyberButtonVariant variant;
+  final bool clickSoundEnabled;
+  final CyberBorderGradientCenter borderGradientCenter;
+
+  static const height = CyberDimens.actionButtonMediumHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(height / 2);
+    return SettingsPanel(
+      elevated: false,
+      borderRadius: radius,
+      borderGradientCenter: borderGradientCenter,
+      child: CyberButton(
+        size: CyberButtonSize.medium,
+        variant: variant,
+        shape: CyberButtonShape.rounded,
+        height: height,
+        paintFill: false,
+        clickSoundEnabled: clickSoundEnabled,
+        borderGradientCenter: borderGradientCenter,
+        onPressed: onPressed,
+        child: child,
+      ),
     );
   }
 }

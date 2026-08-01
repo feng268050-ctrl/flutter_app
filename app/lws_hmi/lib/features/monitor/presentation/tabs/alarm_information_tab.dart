@@ -88,8 +88,14 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
     final l10n = AppLocalizations.of(context)!;
     final m = _monitor ?? WarnAlarmScope.maybeOf(context)?.monitor;
 
+    // Page edge + ambient gutter ≈ MonitorDimens.pad (24). Outer glow paints
+    // inside the gutter (SettingsGroup pattern); Clip.none lets inner edges
+    // bleed into the column gap without a hard truncate.
+    const ambient = MonitorDimens.outerAmbientExtent;
+    const pageEdge = MonitorDimens.pad - ambient;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+      padding: const EdgeInsets.fromLTRB(pageEdge, 0, pageEdge, 16),
       child: Column(
         children: [
           Expanded(
@@ -99,6 +105,15 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                 Expanded(
                   flex: 740,
                   child: SingleChildScrollView(
+                    // Default hardEdge clips SettingsPanel outer ambient.
+                    clipBehavior: Clip.none,
+                    // L/R gutters keep glow inside the viewport; top matches pad.
+                    padding: const EdgeInsets.fromLTRB(
+                      ambient,
+                      ambient,
+                      ambient,
+                      0,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -198,106 +213,114 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 24),
+                // Face-to-face gap ≈ pad: each column already reserves [ambient].
+                const SizedBox(width: MonitorDimens.pad - ambient),
                 Expanded(
                   flex: 468,
-                  child: MonitorGlassCard(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          l10n.alarmLogsTitle,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: MonitorDimens.sectionTitleSize,
-                            fontWeight: FontWeight.w400,
-                            height: 1.1,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      ambient,
+                      ambient,
+                      ambient,
+                      0,
+                    ),
+                    child: MonitorGlassCard(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            l10n.alarmLogsTitle,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: MonitorDimens.sectionTitleSize,
+                              fontWeight: FontWeight.w400,
+                              height: 1.1,
+                            ),
                           ),
-                        ),
-                        const SizedBox(
-                          height: MonitorSectionHeader.dividerTopSpacing,
-                        ),
-                        const SizedBox(
-                          height: MonitorSectionHeader.dividerHeight,
-                          width: double.infinity,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  CyberColors.dividerCenter,
-                                  Color(0x00000000),
+                          const SizedBox(
+                            height: MonitorSectionHeader.dividerTopSpacing,
+                          ),
+                          const SizedBox(
+                            height: MonitorSectionHeader.dividerHeight,
+                            width: double.infinity,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    CyberColors.dividerCenter,
+                                    Color(0x00000000),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Expanded(
+                            child: _history.isEmpty
+                                ? Center(
+                                    child: Text(
+                                      l10n.noActiveAlarms,
+                                      style: const TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 20,
+                                      ),
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    clipBehavior: Clip.none,
+                                    itemCount: _history.length,
+                                    itemBuilder: (context, i) {
+                                      final row = _history[i];
+                                      return MonitorAlarmLogRow(
+                                        code: row.code,
+                                        label: l10n.alarmTitleFor(
+                                          row.code,
+                                          fallback: row.displayLabel,
+                                        ),
+                                        timestamp: row.timestamp,
+                                      );
+                                    },
+                                  ),
+                          ),
+                          const SizedBox(height: 16),
+                          // lws-ui `fragment_warn_log` bottom Clear pill.
+                          Center(
+                            child: MonitorFrostActionButton(
+                              variant: CyberButtonVariant.secondary,
+                              clickSoundEnabled: false,
+                              onPressed:
+                                  _history.isEmpty ? null : _clearHistory,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    'assets/warn/alarm_button_icon.webp',
+                                    width: 28,
+                                    height: 28,
+                                    color: CyberColors.buttonSecondaryText,
+                                    colorBlendMode: BlendMode.srcIn,
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.delete_outline,
+                                      size: 28,
+                                      color: CyberColors.buttonSecondaryText,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    l10n.clearAlarmLogs,
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w600,
+                                      color: CyberColors.buttonSecondaryText,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: _history.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    l10n.noActiveAlarms,
-                                    style: const TextStyle(
-                                      color: Colors.white54,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                )
-                              : ListView.builder(
-                                  itemCount: _history.length,
-                                  itemBuilder: (context, i) {
-                                    final row = _history[i];
-                                    return MonitorAlarmLogRow(
-                                      code: row.code,
-                                      label: l10n.alarmTitleFor(
-                                        row.code,
-                                        fallback: row.displayLabel,
-                                      ),
-                                      timestamp: row.timestamp,
-                                    );
-                                  },
-                                ),
-                        ),
-                        const SizedBox(height: 16),
-                        // lws-ui `fragment_warn_log` bottom Clear pill.
-                        Center(
-                          child: CyberButton(
-                            size: CyberButtonSize.medium,
-                            variant: CyberButtonVariant.secondary,
-                            shape: CyberButtonShape.rounded,
-                            clickSoundEnabled: false,
-                            onPressed: _history.isEmpty ? null : _clearHistory,
-                            foregroundColor: CyberColors.buttonSecondaryText,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Image.asset(
-                                  'assets/warn/alarm_button_icon.webp',
-                                  width: 28,
-                                  height: 28,
-                                  color: CyberColors.buttonSecondaryText,
-                                  colorBlendMode: BlendMode.srcIn,
-                                  errorBuilder: (_, __, ___) => const Icon(
-                                    Icons.delete_outline,
-                                    size: 28,
-                                    color: CyberColors.buttonSecondaryText,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  l10n.clearAlarmLogs,
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w600,
-                                    color: CyberColors.buttonSecondaryText,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

@@ -1,0 +1,2 @@
+# OP-TEE TA build intermediates (shipped binary lives in prebuilt/ + overlay)
+ta/out/

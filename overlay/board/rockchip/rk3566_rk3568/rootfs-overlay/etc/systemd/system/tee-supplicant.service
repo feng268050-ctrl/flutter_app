@@ -1,0 +1,21 @@
+[Unit]
+Description=OP-TEE Client Supplicant
+Documentation=https://github.com/OP-TEE/optee_client
+DefaultDependencies=yes
+After=local-fs.target
+# Outside HMI cgroup — available before / with Secrets consumers.
+Before=hmi.service
+
+[Service]
+Type=simple
+# optee-client 4.x: device is a positional arg; -d/--daemonize forks (do not use
+# with Type=simple). SysV S30tee-supplicant's "-d /dev/teepriv0" was the old
+# meaning of -d=device.
+ExecStart=/usr/sbin/tee-supplicant /dev/teepriv0
+Restart=on-failure
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

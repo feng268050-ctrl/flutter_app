@@ -88,6 +88,7 @@ link_unit serial-stty.service
 link_unit pwrkey-poweroff.service
 link_unit ab-boot-confirm.service
 link_unit oem-compose.service
+link_unit tee-supplicant.service
 link_unit hmi.service
 
 ln -sf /dev/null "$SYSTEMD_DIR/systemd-network-generator.service"

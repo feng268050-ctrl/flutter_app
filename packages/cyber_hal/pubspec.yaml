@@ -2,7 +2,7 @@ name: cyber_hal
 description: >
   Portable Dart HAL for LWS appliance HMIs — board profiles, Linux backends,
   and optional modules (network, output, input, ip_camera, gpio, modbus,
-  bluetooth, sys_info, datetime, debug). No Rust hald / IPC daemon.
+  bluetooth, sys_info, datetime, debug, secrets/KEK). No Rust hald / IPC daemon.
 version: 0.1.0
 publish_to: 'none'
 
@@ -18,6 +18,8 @@ dependencies:
   ffi: ^2.1.0
   bluez: ^0.8.3
   dbus: ^0.7.12
+  # Software-fallback KEK (emulator/sim/host); not used on OP-TEE product path.
+  cryptography: ^2.7.0
 
 dev_dependencies:
   flutter_test:

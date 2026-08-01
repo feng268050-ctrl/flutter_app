@@ -2,6 +2,7 @@
   "board_id": "portable-smoke",
   "display_name": "Portability smoke (no ynh960 paths)",
   "model_hint": "doc-only",
+  "secrets_backend": "software",
   "capabilities": [
     "ethernet",
     "wifi",

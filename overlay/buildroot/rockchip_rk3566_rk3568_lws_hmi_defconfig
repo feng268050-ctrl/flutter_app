@@ -29,5 +29,8 @@
 # Alarm Logs (sqlite3) + Modbus/YAML/Avahi — build or prebuilt via apply-overlay swap.
 #include "chips/lws_hmi_platform.config"
 
+# OP-TEE client (tee-supplicant + libteec) for HAL Secrets / KEK.
+#include "chips/lws_hmi_optee.config"
+
 #include "chips/lws_hmi_build.config"
 #include "chips/lws_hmi_toolchain_external.config"

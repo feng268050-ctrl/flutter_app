@@ -2,6 +2,7 @@
   "board_id": "sim",
   "display_name": "P3.2 QEMU guest (sim)",
   "model_hint": "virt-aarch64",
+  "secrets_backend": "software",
   "capabilities": [
     "ethernet",
     "wifi",

@@ -1,0 +1,11 @@
+// ynh960: OP-TEE client DT node so CONFIG_OPTEE binds (/dev/tee0, /dev/teepriv0).
+// Vendor BL32 (bl32-v2.15) is already in the trust chain; Linux EVB DTS omitted this.
+// See openspec/changes/hal-secrets-kek-provider/notes.md.
+/ {
+	firmware {
+		optee: optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+		};
+	};
+};

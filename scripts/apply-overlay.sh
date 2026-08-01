@@ -104,7 +104,9 @@ sync_fs_overlay() {
     return 0
   fi
   mkdir -p "$BR_OVERLAY_ROOT"
-  # Plan A: etc/ (systemd) + usr/ (scripts) + var/ (persistent prefs, e.g. wpa/http-proxy).
+  # Plan A: etc/ (systemd) + usr/ (scripts, merged-usr libs) + var/ (prefs).
+  # Do NOT sync a top-level lib/ — Buildroot merged-/usr rejects overlay /lib.
+  # OP-TEE TAs live under usr/lib/optee_armtz/ (→ /lib/optee_armtz on target).
   # system/etc from sync_display_params; opt/hmi from sync_hmi_app_overlay.
   # Use rsync --delete so removed overlay files (e.g. lws-hmi-debug-boot.service) do not linger in the SDK tree.
   for sub in etc usr var; do
@@ -120,6 +122,14 @@ sync_fs_overlay() {
       echo "overlay: synced $BR_OVERLAY_ROOT/$sub"
     fi
   done
+  # Drop any stale non-merged /lib from earlier mistaken syncs.
+  if [[ -d "$BR_OVERLAY_ROOT/lib" ]]; then
+    rm -rf "$BR_OVERLAY_ROOT/lib"
+    echo "overlay: removed non-merged $BR_OVERLAY_ROOT/lib (use usr/lib/)"
+  fi
+  if [[ -d "$OVERLAY_FS/lib" ]]; then
+    echo "WARNING: $OVERLAY_FS/lib present but ignored (merged /usr); move to usr/lib/" >&2
+  fi
   local purge_src="$OVERLAY/board/rockchip/rk3566_rk3568/purge-retired-rootfs-artifacts.sh"
   if [[ -f "$purge_src" ]]; then
     sh "$purge_src" "$BR_OVERLAY_ROOT"
@@ -242,7 +252,8 @@ sync_kernel_display_dts() {
     "$kernel_dts/lws-hmi-ynh960-uart5-gmac.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-uart7-pwm.dtsi" \
     "$kernel_dts/lws-hmi-ynh960-npu-vop.dtsi" \
-    "$kernel_dts/lws-hmi-ynh960-rtc.dtsi"
+    "$kernel_dts/lws-hmi-ynh960-rtc.dtsi" \
+    "$kernel_dts/lws-hmi-ynh960-optee.dtsi"
   [[ -x "$gen_script" ]] || chmod +x "$gen_script"
   bash "$gen_script"
   if [[ ! -f "$customer_dtsi.orig" ]]; then
@@ -261,7 +272,8 @@ sync_kernel_display_dts() {
     "$OVERLAY/kernel/rockchip/ynh960-uart5-gmac.dtsi" "ynh960-uart5-gmac.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-uart7-pwm.dtsi" "ynh960-uart7-pwm.dtsi" \
     "$OVERLAY/kernel/rockchip/ynh960-npu-vop.dtsi" "ynh960-npu-vop.dtsi" \
-    "$OVERLAY/kernel/rockchip/ynh960-rtc.dtsi" "ynh960-rtc.dtsi"
+    "$OVERLAY/kernel/rockchip/ynh960-rtc.dtsi" "ynh960-rtc.dtsi" \
+    "$OVERLAY/kernel/rockchip/ynh960-optee.dtsi" "ynh960-optee.dtsi"
 }
 
 sync_kernel_config_fragments() {
@@ -774,7 +786,7 @@ if [[ "$restore_all" == "1" || "$restore_check_sdk" == "1" ]]; then
     rm -f "$POST_HOOKS_DIR/31-strip-fstab.sh"
     rm -f "$POST_HOOKS_DIR/91-weston-ini.sh"
     rm -rf "$SDK/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay"
-    for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter_weston.config lws_hmi_wayland.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
+    for f in lws_hmi_base.config lws_hmi_systemd.config lws_hmi_network.config lws_hmi_npu.config lws_hmi_flutter_weston.config lws_hmi_wayland.config lws_hmi_font.config lws_hmi_bt.config lws_hmi_gst_rtsp.config lws_hmi_optee.config lws_hmi_build.config lws_hmi_toolchain_external.config lws_hmi_gst_prebuilt.config lws_hmi_platform_prebuilt.config; do
       rm -f "$BR_CHIPS_DIR/$f"
     done
     for f in rockchip_rk3566_rk3568_lws_hmi_defconfig; do

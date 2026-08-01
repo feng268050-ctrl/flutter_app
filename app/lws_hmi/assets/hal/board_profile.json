@@ -3,6 +3,7 @@
   "display_name": "Innohi ynh960",
   "model_hint": "RK3566",
   "_comment": "Migration fallback only. Shipping devices load OEM /run/hmi/board_profile.json; gpio/modbus stay App assets via withProductConfigs.",
+  "secrets_backend": "software",
   "capabilities": [
     "ethernet",
     "wifi",

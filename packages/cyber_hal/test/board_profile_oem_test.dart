@@ -18,6 +18,11 @@ void main() {
         '/oem/boards/ynh960/helpers/wifibt-bringup.sh');
   });
 
+  test('ynh960 OEM sets secrets_backend software', () async {
+    final profile = await BoardProfile.loadFile(oemBoard);
+    expect(profile.secretsBackend, 'software');
+  });
+
   test('withProductConfigs merges App gpio/modbus assets', () async {
     final oem = await BoardProfile.loadFile(oemBoard);
     final merged = oem.withProductConfigs(

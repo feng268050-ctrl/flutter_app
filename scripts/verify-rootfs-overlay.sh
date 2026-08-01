@@ -40,7 +40,7 @@ check_systemd_wants() {
 		fi
 	done
 
-	for unit in hmi.service oem-compose.service mainserver.service cpu-performance.service pwrkey-poweroff.service usb-otg-role-boot.service ab-boot-confirm.service; do
+	for unit in hmi.service oem-compose.service mainserver.service cpu-performance.service pwrkey-poweroff.service usb-otg-role-boot.service ab-boot-confirm.service tee-supplicant.service; do
 		if unit_wants_link "$unit"; then
 			echo "OK:  $unit enabled in $label"
 		else
@@ -268,7 +268,7 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/hmi ---"
-	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh oem-compose.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-gadget-usb-state.sh usb-mtp-start.sh usb-mtp-stop.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh change-orientation.sh bind-prefs.sh push-app-apply-and-restart.sh hmi-launch.sh; do
+	for f in boot-verify.sh env-verify.sh ynh960-display-init.sh oem-compose.sh set-performance-mode.sh serial-console-stty.sh ensure-sshd-hostkeys.sh usb-plug-ssh-recover.sh pwrkey-poweroff.sh pre-poweroff.sh shutdown.sh systemctl-poweroff-wrapper.sh reboot-loader read-device-serial.sh hmi-stop-and-wait.sh usb-otg-mode.sh usb-gadget-usb-state.sh usb-mtp-start.sh usb-mtp-stop.sh usb-plug-ssh-vbus-check.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh lan-ssh-run.sh enable-ssh-debug.sh disable-ssh-debug.sh change-orientation.sh bind-prefs.sh push-app-apply-and-restart.sh hmi-launch.sh secrets-seal secrets-seal-ca; do
 		if [[ -x "$libexec_hmi/$f" ]]; then
 			echo "OK:  hmi/$f"
 		else
@@ -280,6 +280,13 @@ run_check() {
 		echo "OK:  usr/bin/umtprd"
 	else
 		echo "FAIL: usr/bin/umtprd missing (make build-umtprd)" >&2
+		missing=1
+	fi
+	if [[ -f "$target/usr/lib/optee_armtz/b8e4f2a1-9c3d-4e6f-8a1b-2c3d4e5f6071.ta" ]] \
+		|| [[ -f "$target/lib/optee_armtz/b8e4f2a1-9c3d-4e6f-8a1b-2c3d4e5f6071.ta" ]]; then
+		echo "OK:  usr/lib/optee_armtz seal TA"
+	else
+		echo "FAIL: seal TA missing (make build-secrets-seal)" >&2
 		missing=1
 	fi
 	if [[ -f "$libexec_hmi/paths.sh" ]]; then

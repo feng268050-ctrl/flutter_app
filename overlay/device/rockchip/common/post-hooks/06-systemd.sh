@@ -105,6 +105,11 @@ if [ -f "$TARGET_DIR/etc/systemd/system/usb-otg-role-boot.service" ]; then
 	echo "post-systemd: enabled usb-otg-role-boot.service"
 fi
 
+if [ -f "$TARGET_DIR/etc/systemd/system/tee-supplicant.service" ]; then
+	link_unit tee-supplicant.service
+	echo "post-systemd: enabled tee-supplicant.service"
+fi
+
 # Do not block boot KPI; start after home or from App (§6.4).
 for unit in "${DISABLE_AT_BOOT[@]}"; do
 	if [ -f "$TARGET_DIR/etc/systemd/system/$unit" ] || \

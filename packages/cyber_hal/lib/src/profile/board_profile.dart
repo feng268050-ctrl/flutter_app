@@ -59,6 +59,7 @@ final class BoardProfile {
     this.storageMounts = const ['/', '/userdata'],
     this.routeMetrics = const {},
     this.helpers = const {},
+    this.secretsBackend,
   });
 
   final BoardInfo info;
@@ -73,6 +74,12 @@ final class BoardProfile {
 
   /// Board Process / sysfs paths keyed by [BoardHelperKeys] (D22).
   final Map<String, String> helpers;
+
+  /// Preferred Secrets backend: `software` or `optee` (see package secrets).
+  ///
+  /// JSON key `secrets_backend`. When null, [BoardBindings] uses board-id
+  /// heuristics (sim/emu → software; else → optee).
+  final String? secretsBackend;
 
   String? ifaceFor(NetRole role) => netRoles[role];
 
@@ -167,6 +174,7 @@ final class BoardProfile {
       storageMounts: storageMounts,
       routeMetrics: routeMetrics,
       helpers: helpers,
+      secretsBackend: secretsBackend,
     );
   }
 
@@ -227,6 +235,12 @@ final class BoardProfile {
       });
     }
 
+    String? secretsBackend;
+    final secretsRaw = json['secrets_backend'];
+    if (secretsRaw is String && secretsRaw.trim().isNotEmpty) {
+      secretsBackend = secretsRaw.trim();
+    }
+
     return BoardProfile(
       info: BoardInfo(
         boardId: boardId,
@@ -240,6 +254,7 @@ final class BoardProfile {
       storageMounts: mounts.isEmpty ? const ['/', '/userdata'] : mounts,
       routeMetrics: metrics,
       helpers: helpers,
+      secretsBackend: secretsBackend,
     );
   }
 

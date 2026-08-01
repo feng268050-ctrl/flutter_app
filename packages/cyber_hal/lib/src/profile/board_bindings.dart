@@ -6,6 +6,7 @@ import 'package:cyber_hal/input.dart';
 import 'package:cyber_hal/modbus.dart';
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_hal/output.dart';
+import 'package:cyber_hal/secrets.dart';
 import 'package:cyber_hal/usb_otg.dart';
 import 'package:cyber_hal/src/output/output_prefs.dart';
 import 'package:cyber_hal/src/core/errors.dart';
@@ -25,6 +26,37 @@ final class BoardBindings {
   const BoardBindings(this.profile);
 
   final BoardProfile profile;
+
+  /// Board ids that default to software KEK when `secrets_backend` is omitted.
+  static const _softwareSecretsBoardIds = <String>{
+    'sim',
+    'portable-smoke',
+  };
+
+  /// True when [boardId] is emulator/sim (or host smoke) — software Secrets OK
+  /// as the unset-profile default.
+  static bool allowsSoftwareSecretsFallback(String boardId) {
+    final id = boardId.trim().toLowerCase();
+    if (_softwareSecretsBoardIds.contains(id)) {
+      return true;
+    }
+    return id.startsWith('sim_') || id.contains('virt') || id.contains('emu');
+  }
+
+  /// Resolve profile `secrets_backend` (or board-id heuristic when unset).
+  ///
+  /// Returns [SecretsBackendPreference.software] or
+  /// [SecretsBackendPreference.optee].
+  static String resolveSecretsBackend(BoardProfile profile) {
+    final parsed = SecretsBackendPreference.tryParse(profile.secretsBackend);
+    if (parsed != null) {
+      return parsed;
+    }
+    if (allowsSoftwareSecretsFallback(profile.info.boardId)) {
+      return SecretsBackendPreference.software;
+    }
+    return SecretsBackendPreference.optee;
+  }
 
   LinuxSysInfo sysInfo({
     DeviceSnReader deviceSnReader = const DeviceSnReader(),
@@ -337,5 +369,38 @@ final class BoardBindings {
 
   Future<ModbusHal> modbus({AssetBundle? bundle}) {
     return ModbusHal.fromProfile(profile, bundle: bundle);
+  }
+
+  /// Secrets / KEK seal provider.
+  ///
+  /// Selection is owned by OEM [BoardProfile.secretsBackend]
+  /// (`software` | `optee`). When omitted, sim/emu boards → software; other
+  /// board ids → OP-TEE. Pass [override] for host tests (e.g. [FakeKekProvider]).
+  ///
+  /// Product Wi‑Fi UI MUST NOT import `cyber_hal/secrets.dart`; Wi‑Fi HAL may
+  /// consume this internally without exposing Secrets as a required App import.
+  KekProvider secrets({
+    KekProvider? override,
+    DeviceBindingMaterialReader? materialReader,
+    ChipIdReader? chipIdReader,
+    DeviceSnReader? deviceSnReader,
+    String? opteeHelperPath,
+    OpteeSealRunner? opteeRunner,
+  }) {
+    if (override != null) {
+      return override;
+    }
+    final backend = resolveSecretsBackend(profile);
+    if (backend == SecretsBackendPreference.software) {
+      return SoftwareFallbackKekProvider(
+        materialReader: materialReader,
+        chipIdReader: chipIdReader,
+        deviceSnReader: deviceSnReader,
+      );
+    }
+    return OpteeKekProvider(
+      helperPath: opteeHelperPath ?? OpteeKekProvider.defaultHelperPath,
+      runner: opteeRunner,
+    );
   }
 }

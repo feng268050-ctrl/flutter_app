@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/features/monitor/presentation/monitor_page.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
@@ -127,11 +126,13 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
       (l10n.processVideoOperations, 0),
     ];
 
+    // Match Monitor page chrome (theme surface, not legacy #060720).
+    final pageBg = Theme.of(context).scaffoldBackgroundColor;
     return Scaffold(
-      backgroundColor: MonitorPage.background,
+      backgroundColor: pageBg,
       appBar: ProductPageStatusBar(
         title: l10n.aiVisionChooseBtn,
-        backgroundColor: MonitorPage.background,
+        backgroundColor: pageBg,
         foregroundColor: Colors.white,
         toolbarHeight: WorkModeStatusBarDimens.height,
         backLabel: l10n.aiVisionTitle,

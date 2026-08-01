@@ -10,7 +10,7 @@ import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.d
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
-/// Wireless Network — lws-ui WifiActivity parity (switch + connected + scan list).
+/// Wireless Network — switch + connected + My Networks + Other Networks.
 class WifiSettingsPage extends StatefulWidget {
   const WifiSettingsPage({super.key, required this.services});
 
@@ -27,6 +27,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
   late WifiRadioState _radio = widget.services.wifi.currentRadio;
   late WifiConnectionState _conn = widget.services.wifi.currentConnection;
   List<WifiAccessPoint> _scanned = const [];
+  List<WifiSavedNetwork> _saved = const [];
   String? _busy;
   String? _error;
   Timer? _scanTimer;
@@ -45,7 +46,10 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
       setState(() => _radio = s);
       _syncScanTimer();
       if (s != WifiRadioState.on && s != WifiRadioState.starting) {
-        setState(() => _scanned = const []);
+        setState(() {
+          _scanned = const [];
+          _saved = const [];
+        });
       } else if (s == WifiRadioState.on && prev != WifiRadioState.on) {
         // Covers syncFromSystem / external radio-up (not nested in _guard).
         unawaited(_scan(retries: 3));
@@ -124,6 +128,10 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
         await Future<void>.delayed(const Duration(seconds: 1));
       }
     }
+    List<WifiSavedNetwork> saved = const [];
+    try {
+      saved = await _wifi.savedNetworks();
+    } catch (_) {}
     if (!mounted) return;
     setState(() {
       // Keep last good list on a transient empty result so the UI does not
@@ -131,13 +139,9 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
       if (aps.isNotEmpty || _scanned.isEmpty) {
         _scanned = aps;
       }
+      _saved = saved;
     });
   }
-
-  List<WifiAccessPoint> get _available => WifiApList.available(
-        scanned: _scanned,
-        connectedSsid: _radioOn && _conn.isAssociated ? _conn.ssid : null,
-      );
 
   IconData _signalIcon(int? dbm) {
     final s = dbm ?? -100;
@@ -159,11 +163,18 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
       context,
       WifiDetailsPage(services: widget.services),
     );
+    if (mounted && _radioOn) {
+      unawaited(_scan(retries: 1));
+    }
   }
 
-  Future<void> _connectAp(WifiAccessPoint ap) async {
+  Future<void> _tapNetwork(WifiAccessPoint ap, {required bool fromSaved}) async {
     if (_conn.isAssociated && _conn.ssid == ap.ssid) {
       await _openDetails();
+      return;
+    }
+    if (fromSaved) {
+      await _connectSaved(ap.ssid);
       return;
     }
     if (ap.isOpen) {
@@ -184,6 +195,51 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
     );
     if (psk == null || !mounted) return;
     await _connectWithProgress(ssid: ap.ssid, psk: psk);
+  }
+
+  Future<void> _connectSaved(String ssid) async {
+    if (!mounted) return;
+    setState(() => _error = null);
+    try {
+      await showCyberBusyDialog<void>(
+        context: context,
+        title: AppLocalizations.of(context)!.wifiStatusConnecting,
+        work: () async {
+          final ok = await _wifi.selectSaved(ssid);
+          if (!ok) {
+            throw StateError('saved network not found');
+          }
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      WifiAccessPoint? match;
+      for (final ap in _scanned) {
+        if (ap.ssid == ssid) {
+          match = ap;
+          break;
+        }
+      }
+      final secured = match?.secured ?? true;
+      if (!secured) {
+        await _connectWithProgress(ssid: ssid, psk: null);
+        return;
+      }
+      final l10n = AppLocalizations.of(context)!;
+      final psk = await showCyberImeInputDialog(
+        context: context,
+        title: ssid,
+        fieldType: CyberImeFieldType.wifi,
+        label: l10n.wifiDialogPasswordLabel,
+        hint: l10n.wifiDialogPasswordLabel,
+        obscureText: true,
+        confirmLabel: l10n.confirmText,
+        requireNonEmpty: true,
+        emptyErrorText: l10n.wifiToastPasswordRequired,
+      );
+      if (psk == null || !mounted) return;
+      await _connectWithProgress(ssid: ssid, psk: psk);
+    }
   }
 
   Future<void> _connectWithProgress({
@@ -279,7 +335,13 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
     final l10n = AppLocalizations.of(context)!;
     final connected =
         _conn.isAssociated && _conn.ssid != null && _conn.ssid!.isNotEmpty;
-    final nearby = _available.take(20).toList();
+    final parts = WifiApList.partitionMyAndOther(
+      saved: _saved,
+      scanned: _scanned,
+      connectedSsid: connected ? _conn.ssid : null,
+    );
+    final my = parts.myNetworks;
+    final other = parts.otherNetworks.take(20).toList();
 
     return SettingsScaffold(
       title: l10n.wirelessNetworkText,
@@ -291,7 +353,6 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
         },
         child: SettingsScrollView(
           children: [
-            // Switch + connected — lws-ui `top-left-bottom-right`
             SettingsGroup(
               borderGradientCenter:
                   CyberBorderGradientCenter.topLeftBottomRight,
@@ -332,41 +393,74 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                 ),
               ),
             if (_radioOn) ...[
-              // Nearby networks — same SettingsGroup chrome as Bluetooth.
+              SettingsSectionHeader(l10n.wifiMyNetworks),
               SettingsGroup(
                 borderGradientCenter:
                     CyberBorderGradientCenter.bottomLeftTopRight,
                 children: [
-                  if (_busy != null && nearby.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(
+                  if (my.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 16,
                       ),
                       child: Text(
-                        'Scanning…',
-                        style: TextStyle(
-                          color: CyberColors.textPrimary,
-                          fontSize: 18,
-                        ),
-                      ),
-                    )
-                  else if (nearby.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
-                      child: Text(
-                        'No networks found',
-                        style: TextStyle(
+                        l10n.wifiNoSavedNetworks,
+                        style: const TextStyle(
                           color: CyberColors.textPrimary,
                           fontSize: 18,
                         ),
                       ),
                     )
                   else
-                    for (final ap in nearby)
+                    for (final ap in my)
+                      _WifiNetworkRow(
+                        ssid: ap.ssid,
+                        secured: ap.secured,
+                        showConnectedBadge: false,
+                        signalIcon: _signalIcon(ap.signalDbm),
+                        onTap: _busy != null
+                            ? null
+                            : () => unawaited(
+                                  _tapNetwork(ap, fromSaved: true),
+                                ),
+                      ),
+                ],
+              ),
+              SettingsSectionHeader(l10n.wifiOtherNetworks),
+              SettingsGroup(
+                borderGradientCenter: CyberBorderGradientCenter.topBottom,
+                children: [
+                  if (_busy != null && other.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      child: Text(
+                        l10n.wifiScanning,
+                        style: const TextStyle(
+                          color: CyberColors.textPrimary,
+                          fontSize: 18,
+                        ),
+                      ),
+                    )
+                  else if (other.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      child: Text(
+                        l10n.wifiNoOtherNetworks,
+                        style: const TextStyle(
+                          color: CyberColors.textPrimary,
+                          fontSize: 18,
+                        ),
+                      ),
+                    )
+                  else
+                    for (final ap in other)
                       _WifiNetworkRow(
                         ssid: ap.ssid,
                         secured: !ap.isOpen,
@@ -374,7 +468,9 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                         signalIcon: _signalIcon(ap.signalDbm),
                         onTap: _busy != null
                             ? null
-                            : () => unawaited(_connectAp(ap)),
+                            : () => unawaited(
+                                  _tapNetwork(ap, fromSaved: false),
+                                ),
                       ),
                 ],
               ),
@@ -402,8 +498,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
   }
 }
 
-/// lws-ui `include_wifi_network_row`: SSID · optional connected badge ·
-/// lock + signal on the trailing edge — no chevron.
+/// SSID · optional connected badge · lock + signal — no chevron.
 class _WifiNetworkRow extends StatelessWidget {
   const _WifiNetworkRow({
     required this.ssid,

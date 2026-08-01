@@ -5,6 +5,7 @@
 # Pref keys (same as eth0-ipv4 / wlan0-ipv4):
 #   mode=dhcp|static
 #   address=  prefix=  gateway=  dns=
+#   dns_mode=automatic|manual  (optional; non-empty dns under dhcp ⇒ manual)
 #
 # Product contract (dart-hal D11): L3 is systemd-networkd only.
 # DNS is systemd-resolved (networkd → resolved → /etc/resolv.conf stub).
@@ -16,7 +17,8 @@
 #
 # KEEP IN LOCKSTEP with Dart NetworkdIpv4Apply.renderNetworkFile —
 # contract tests: packages/cyber_hal/test/networkd_ipv4_apply_test.dart
-# (RouteMetric, Domains=~., [DHCPv4] UseDNS, static [Route] Metric).
+# (RouteMetric, Domains=~., [DHCPv4] UseDNS, static [Route] Metric,
+#  DHCP+manual DNS UseDNS=no).
 set -eu
 
 IFACE="${1:-}"
@@ -60,6 +62,7 @@ address=
 prefix=24
 gateway=
 dns=
+dns_mode=
 if [ -f "$PREF" ]; then
 	# shellcheck disable=SC2162
 	while IFS='=' read key val; do
@@ -70,10 +73,24 @@ if [ -f "$PREF" ]; then
 		address) address="$(echo "$val" | tr -d '[:space:]')" ;;
 		prefix) prefix="$(echo "$val" | tr -d '[:space:]')" ;;
 		gateway) gateway="$(echo "$val" | tr -d '[:space:]')" ;;
-		dns) dns="$(echo "$val" | tr -d '[:space:]')" ;;
+		dns) dns="$(echo "$val" | tr -d '\r')" ;;
+		dns_mode) dns_mode="$(echo "$val" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')" ;;
 		esac
 	done <"$PREF"
 fi
+
+# Trim dns and decide manual override (explicit dns_mode or legacy non-empty dns).
+dns="$(echo "$dns" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+manual_dns=0
+case "$dns_mode" in
+manual) [ -n "$dns" ] && manual_dns=1 ;;
+automatic|auto) manual_dns=0 ;;
+*)
+	if [ -n "$dns" ]; then
+		manual_dns=1
+	fi
+	;;
+esac
 
 METRIC="$(route_metric_for "$IFACE")"
 # Prefer this link's DNS for unqualified lookups when metric is "wifi-like"
@@ -105,7 +122,7 @@ mkdir -p /etc/systemd/network
 		echo "IPv6AcceptRA=no"
 		echo "LinkLocalAddressing=no"
 		echo "Address=${address}/${prefix:-24}"
-		if [ -n "$dns" ]; then
+		if [ "$manual_dns" -eq 1 ]; then
 			echo "DNS=${dns}"
 		fi
 		if [ "$DNS_DEFAULT_ROUTE" -eq 1 ]; then
@@ -122,12 +139,19 @@ mkdir -p /etc/systemd/network
 		echo "DHCP=yes"
 		# Prefer IPv4 for the appliance Demo / camera LAN.
 		echo "IPv6AcceptRA=no"
+		if [ "$manual_dns" -eq 1 ]; then
+			echo "DNS=${dns}"
+		fi
 		if [ "$DNS_DEFAULT_ROUTE" -eq 1 ]; then
 			echo "Domains=~."
 		fi
 		echo
 		echo "[DHCPv4]"
-		echo "UseDNS=yes"
+		if [ "$manual_dns" -eq 1 ]; then
+			echo "UseDNS=no"
+		else
+			echo "UseDNS=yes"
+		fi
 		echo "RouteMetric=${METRIC}"
 		;;
 	esac

@@ -1742,7 +1742,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiMacAddress => 'MAC Address';
 
   @override
+  String get wifiMyNetworks => 'My Networks';
+
+  @override
   String get wifiNetworkText => 'Wi‑Fi';
+
+  @override
+  String get wifiNoOtherNetworks => 'No networks found';
+
+  @override
+  String get wifiNoSavedNetworks => 'No saved networks';
 
   @override
   String get wifiNotAvailable => 'Unavailable';
@@ -1751,7 +1760,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiOpenSystemSettingsHint => 'This network is managed by system Wi‑Fi. Open system settings to forget it completely.';
 
   @override
+  String get wifiOtherNetworks => 'Other Networks';
+
+  @override
+  String get wifiOthersSection => 'Others';
+
+  @override
   String get wifiRouter => 'Router';
+
+  @override
+  String get wifiScanning => 'Scanning…';
 
   @override
   String get wifiSecurity => 'Security';
@@ -1791,6 +1809,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wifiSubnetMask => 'Subnet Mask';
+
+  @override
+  String get wifiAutoJoin => 'Auto Join';
+
+  @override
+  String get wifiAutomatic => 'Automatic';
+
+  @override
+  String get wifiConfigureDns => 'Configure DNS';
+
+  @override
+  String get wifiConfigureIp => 'Configure IP';
+
+  @override
+  String get wifiDnsServers => 'DNS Servers';
+
+  @override
+  String get wifiIpv4AddressSection => 'IPv4 Address';
+
+  @override
+  String get wifiManual => 'Manual';
+
+  @override
+  String get wifiAddDnsServer => 'Add DNS Server';
+
+  @override
+  String get wifiRemoveDnsServer => 'Remove';
+
+  @override
+  String get wifiMaxDnsServers => 'You can add up to 3 DNS servers';
 
   @override
   String get wifiToastAddCanceledBySystem => 'Adding Wi‑Fi was canceled by the system';

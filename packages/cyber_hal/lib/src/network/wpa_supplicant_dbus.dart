@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dbus/dbus.dart';
+import 'package:cyber_hal/src/network/wifi_multi_profile_policy.dart';
 
 /// Thin client for `fi.w1.wpa_supplicant1` (requires `wpa_supplicant -u`).
 class WpaSupplicantDbus {
@@ -341,7 +342,7 @@ class WpaSupplicantDbus {
     }
   }
 
-  /// Configured networks on [iface] (D-Bus `Networks` + SSID property).
+  /// Configured networks on [iface] (D-Bus `Networks` + SSID / Enabled).
   Future<List<WpaConfiguredNetwork>> listNetworks(String iface) async {
     final obj = await _ifaceObject(iface);
     final v = await obj.getProperty(
@@ -358,8 +359,10 @@ class WpaSupplicantDbus {
       if (child is! DBusObjectPath) {
         continue;
       }
-      final ssid = await _readNetworkSsid(child);
-      if (ssid == null || ssid.isEmpty || ssid == 'any') {
+      final info = await _readNetworkInfo(child);
+      if (info == null ||
+          info.ssid.isEmpty ||
+          info.ssid == 'any') {
         index++;
         continue;
       }
@@ -367,12 +370,35 @@ class WpaSupplicantDbus {
         WpaConfiguredNetwork(
           path: child,
           networkId: index,
-          ssid: ssid,
+          ssid: info.ssid,
+          enabled: info.enabled,
         ),
       );
       index++;
     }
     return out;
+  }
+
+  Future<({String ssid, bool enabled})?> _readNetworkInfo(
+    DBusObjectPath path,
+  ) async {
+    final ssid = await _readNetworkSsid(path);
+    if (ssid == null) {
+      return null;
+    }
+    var enabled = true;
+    try {
+      final net = DBusRemoteObject(_client, name: busName, path: path);
+      final en = await net.getProperty(
+        'fi.w1.wpa_supplicant1.Network',
+        'Enabled',
+        signature: DBusSignature('b'),
+      );
+      if (en is DBusBoolean) {
+        enabled = en.value;
+      }
+    } catch (_) {}
+    return (ssid: ssid, enabled: enabled);
   }
 
   Future<String?> _readNetworkSsid(DBusObjectPath path) async {
@@ -435,6 +461,106 @@ class WpaSupplicantDbus {
     return n;
   }
 
+  /// Set Auto Join for all configured networks matching [ssid].
+  ///
+  /// Maps to D-Bus Network.Enabled (persisted via SaveConfig as disabled=0/1).
+  Future<int> setAutoJoinBySsid(
+    String iface,
+    String ssid, {
+    required bool enabled,
+  }) async {
+    final target = ssid.trim();
+    if (target.isEmpty) {
+      return 0;
+    }
+    final nets = await listNetworks(iface);
+    var n = 0;
+    for (final net in nets.where((e) => e.ssid == target)) {
+      await setNetworkEnabled(net.path, enabled);
+      n++;
+    }
+    if (n > 0) {
+      await saveConfig(iface);
+    }
+    return n;
+  }
+
+  Future<void> setNetworkEnabled(DBusObjectPath path, bool enabled) async {
+    final net = DBusRemoteObject(_client, name: busName, path: path);
+    await net.setProperty(
+      'fi.w1.wpa_supplicant1.Network',
+      'Enabled',
+      DBusBoolean(enabled),
+    );
+  }
+
+  Future<void> selectNetwork(String iface, DBusObjectPath path) async {
+    final obj = await _ifaceObject(iface);
+    await obj.callMethod(
+      'fi.w1.wpa_supplicant1.Interface',
+      'SelectNetwork',
+      [path],
+      replySignature: DBusSignature(''),
+    );
+  }
+
+  /// Enable + SelectNetwork for an existing configured SSID (no credential rewrite).
+  ///
+  /// Restores Auto Join ([Enabled]) on sibling networks afterward — SelectNetwork
+  /// disables others as a side effect.
+  Future<bool> selectSavedBySsid(String iface, String ssid) async {
+    final target = ssid.trim();
+    if (target.isEmpty) {
+      return false;
+    }
+    final nets = await listNetworks(iface);
+    final match = nets.where((e) => e.ssid == target);
+    if (match.isEmpty) {
+      return false;
+    }
+    final keepEnabledPaths = WifiMultiProfilePolicy.siblingPathsToRestore(
+      before: nets.map(
+        (n) => (path: n.path.value, ssid: n.ssid, enabled: n.enabled),
+      ),
+      connectingSsid: target,
+    );
+    final net = match.first;
+    await setNetworkEnabled(net.path, true);
+    await selectNetwork(iface, net.path);
+    await _restoreEnabledNetworks(
+      iface,
+      keepEnabledPaths: keepEnabledPaths,
+      exceptPath: net.path,
+    );
+    try {
+      await saveConfig(iface);
+    } catch (_) {}
+    return true;
+  }
+
+  /// After [SelectNetwork], re-enable sibling networks that were Auto Join on.
+  Future<void> _restoreEnabledNetworks(
+    String iface, {
+    required Set<String> keepEnabledPaths,
+    required DBusObjectPath exceptPath,
+  }) async {
+    if (keepEnabledPaths.isEmpty) {
+      return;
+    }
+    final nets = await listNetworks(iface);
+    for (final n in nets) {
+      if (n.path.value == exceptPath.value) {
+        continue;
+      }
+      if (!keepEnabledPaths.contains(n.path.value)) {
+        continue;
+      }
+      try {
+        await setNetworkEnabled(n.path, true);
+      } catch (_) {}
+    }
+  }
+
   /// Disable CurrentNetwork (if any) so Disconnect does not immediately reassoc.
   Future<void> disableCurrentNetwork(String iface) async {
     final obj = await _ifaceObject(iface);
@@ -489,11 +615,12 @@ class WpaSupplicantDbus {
     }
   }
 
-  /// Add network + SelectNetwork (+ SaveConfig). Returns network path.
+  /// Add or replace one SSID profile, SelectNetwork, SaveConfig. Returns path.
   ///
-  /// **Appliance policy:** replaces existing configured networks (`RemoveAllNetworks`)
-  /// so only one SSID is selected — intentional for single-network HMI, not a
-  /// multi-profile manager. SaveConfig is always attempted after SelectNetwork.
+  /// **Multi-profile:** other saved SSIDs are kept. Matching [ssid] entries are
+  /// replaced so credentials/flags stay fresh. [SelectNetwork] disables siblings
+  /// temporarily; Auto Join ([Enabled]=true) is restored on those siblings after
+  /// select so My Networks remains multi-entry.
   ///
   /// [hidden] sets `scan_ssid=1` so wpa actively probes non-broadcast SSIDs.
   /// [requiresPsk] rejects empty PSK instead of falling through to `key_mgmt=NONE`.
@@ -506,9 +633,22 @@ class WpaSupplicantDbus {
     bool requiresPsk = false,
   }) async {
     final obj = await _ifaceObject(iface);
-    await removeAllNetworks(iface);
+    final target = ssid.trim();
+    final existing = await listNetworks(iface);
+    final keepEnabledPaths = WifiMultiProfilePolicy.siblingPathsToRestore(
+      before: existing.map(
+        (n) => (path: n.path.value, ssid: n.ssid, enabled: n.enabled),
+      ),
+      connectingSsid: target,
+    );
+
+    // Replace prior profile(s) for this SSID only — keep other remembered nets.
+    for (final n in existing.where((e) => e.ssid == target)) {
+      await removeNetwork(iface, n.path);
+    }
+
     final conf = <String, DBusValue>{
-      'ssid': DBusString(ssid),
+      'ssid': DBusString(target.isEmpty ? ssid : target),
     };
     if (hidden) {
       // uint32 — required for hidden / non-broadcast SSIDs.
@@ -538,6 +678,11 @@ class WpaSupplicantDbus {
       'SelectNetwork',
       [path],
       replySignature: DBusSignature(''),
+    );
+    await _restoreEnabledNetworks(
+      iface,
+      keepEnabledPaths: keepEnabledPaths,
+      exceptPath: path,
     );
     // Kick an active Probe Request for the non-broadcast SSID.
     if (hidden) {
@@ -617,6 +762,7 @@ final class WpaConfiguredNetwork {
     required this.path,
     required this.networkId,
     required this.ssid,
+    this.enabled = true,
   });
 
   final DBusObjectPath path;
@@ -624,6 +770,9 @@ final class WpaConfiguredNetwork {
   /// Stable index within the current Networks list (not wpa_cli id).
   final int networkId;
   final String ssid;
+
+  /// D-Bus Network.Enabled — false means Auto Join off / disabled.
+  final bool enabled;
 }
 
 final class WpaIfaceSnapshot {

@@ -612,7 +612,7 @@ class LinuxWifiSession implements WifiController {
     );
     await _ensureDbus();
     try {
-      // Appliance single-network policy: connectNetwork replaces selection.
+      // Multi-profile: connectNetwork keeps other saved SSIDs (My Networks).
       await _wpaDbus!.connectNetwork(
         iface,
         ssid: ssid,
@@ -680,12 +680,16 @@ class LinuxWifiSession implements WifiController {
 
   Future<({bool ok, String? message})> _applyIpv4(WlanIpv4Config cfg) async {
     final apply = NetworkdIpv4Apply();
+    final manualDns = cfg.dnsMode == WlanDnsMode.manual && cfg.dns.isNotEmpty
+        ? cfg.dns
+        : null;
     try {
       if (cfg.mode == WlanIpv4Mode.dhcp) {
         await apply.apply(
           iface: iface,
           mode: 'dhcp',
           routeMetric: _metric,
+          dns: manualDns,
           prefPath: ipv4Path,
         );
       } else {
@@ -696,7 +700,7 @@ class LinuxWifiSession implements WifiController {
           address: cfg.address,
           prefix: '${cfg.prefixLength}',
           gateway: cfg.gateway.isNotEmpty ? cfg.gateway : null,
-          dns: cfg.dns.isNotEmpty ? cfg.dns : null,
+          dns: manualDns,
           prefPath: ipv4Path,
         );
       }
@@ -795,8 +799,95 @@ class LinuxWifiSession implements WifiController {
     await _ensureDbus();
     final nets = await _wpaDbus!.listNetworks(iface);
     return nets
-        .map((n) => WifiSavedNetwork(networkId: n.networkId, ssid: n.ssid))
+        .map(
+          (n) => WifiSavedNetwork(
+            networkId: n.networkId,
+            ssid: n.ssid,
+            autoJoin: n.enabled,
+          ),
+        )
         .toList();
+  }
+
+  @override
+  Future<void> setAutoJoin(String ssid, {required bool enabled}) async {
+    if (!await _isIeee80211()) {
+      return;
+    }
+    await _ensureDbus();
+    await _wpaDbus!.setAutoJoinBySsid(iface, ssid, enabled: enabled);
+  }
+
+  @override
+  Future<bool> selectSaved(String ssid) async {
+    if (_radio != WifiRadioState.on) {
+      await setRadioEnabled(true);
+      if (_radio != WifiRadioState.on) {
+        return false;
+      }
+    }
+    if (!await _isIeee80211()) {
+      return false;
+    }
+    try {
+      await NetworkdIpv4Apply().setLink(iface: iface, up: true);
+    } catch (_) {}
+    _ipv4AppliedBssid = null;
+    _emitConn(
+      WifiConnectionState(
+        phase: WifiConnectionPhase.associating,
+        ssid: ssid,
+      ),
+    );
+    await _ensureDbus();
+    final ok = await _wpaDbus!.selectSavedBySsid(iface, ssid);
+    if (!ok) {
+      _emitConn(WifiConnectionState.disconnected);
+      return false;
+    }
+
+    final deadline = DateTime.now().add(const Duration(seconds: 25));
+    while (DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      final snap = await _wpaDbus!.readIface(iface);
+      if (snap.wpaStateToken == 'COMPLETED') {
+        _emitConn(
+          WifiConnectionState(
+            phase: WifiConnectionPhase.obtainingIp,
+            ssid: ssid,
+            bssid: snap.bssid,
+          ),
+        );
+        final ipCfg = await getIpv4Config();
+        final apply = await _applyIpv4(ipCfg);
+        if (!apply.ok) {
+          final msg = apply.message ?? 'DHCP/static IP failed';
+          debugPrint('wifi: $msg');
+          _emitConn(
+            WifiConnectionState(
+              phase: WifiConnectionPhase.failed,
+              ssid: ssid,
+              message: msg,
+            ),
+          );
+          return true;
+        }
+        _ipv4AppliedBssid = snap.bssid?.toLowerCase();
+        await _waitForIpv4(
+          ssid: ssid,
+          timeout: const Duration(seconds: 50),
+        );
+        return true;
+      }
+    }
+    _emitConn(
+      WifiConnectionState(
+        phase: WifiConnectionPhase.failed,
+        ssid: ssid,
+        message: 'association timeout',
+      ),
+    );
+    return true;
   }
 
   @override

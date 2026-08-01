@@ -1,26 +1,4 @@
-# wifi-connected-details Specification
-
-## Purpose
-
-Wi-Fi Details page for connected hotspots: Auto Join, inline Configure IP / Configure DNS, link metadata, and Forget (lws-ui WifiDetails parity evolved for Settings chrome).
-
-## Requirements
-
-### Requirement: Connected hotspot opens a Wi-Fi Details page
-
-When Wi‑Fi is associated with a non-empty SSID, the Wi‑Fi settings surface SHALL navigate to a **Wi‑Fi Details** page for that hotspot (lws-ui `WifiDetails` parity) instead of using a bottom sheet as the primary details UX. The Details page title SHALL be the SSID when available. Details chrome SHALL use CyberUI / shared Settings scaffold (page status bar) consistent with other Settings sub-pages. Operator-visible strings SHALL use AppLocalizations.
-
-#### Scenario: Connected row opens Details
-
-- **WHEN** Wi‑Fi is connected to SSID `Office`
-- **AND** the operator taps the connected network row on the Wi‑Fi page
-- **THEN** the App opens the Wi‑Fi Details page titled `Office`
-
-#### Scenario: Details replaces bottom-sheet primary path
-
-- **WHEN** the operator inspects the connected hotspot from Wi‑Fi settings
-- **THEN** the primary navigation target is the Wi‑Fi Details page
-- **AND** MUST NOT rely on a modal bottom sheet as the only details surface
+## MODIFIED Requirements
 
 ### Requirement: Wi-Fi Details shows link and addressing fields
 
@@ -76,6 +54,8 @@ The Wi‑Fi Details page SHALL provide **Forget Network** (confirm via CyberUI d
 - **THEN** HAL `setIpv4Config` (or equivalent) is invoked with the updated addressing
 - **AND** the App does not require navigating to a separate IP Settings page to apply
 
+## ADDED Requirements
+
 ### Requirement: Auto Join switch controls saved-network auto-reconnect
 
 The Details Auto Join switch SHALL reflect and set whether the current SSID’s saved wpa network is allowed to auto-reconnect (HAL Auto Join / `disabled` mapping). Toggling SHALL persist via HAL and survive process restart for that saved SSID.
@@ -121,3 +101,11 @@ Configure DNS **Automatic** SHALL use DNS from DHCP / networkd without operator-
 
 - **WHEN** Configure DNS is Automatic
 - **THEN** the plus affordance is not offered for adding DNS servers
+
+## REMOVED Requirements
+
+### Requirement: Wi-Fi IP Settings edits DHCP or static addressing
+
+**Reason:** IPv4 / DNS editing moves onto the Wi‑Fi Details page (inline Configure IP / Configure DNS). A dedicated IP Settings page is no longer the primary or required editor.
+
+**Migration:** Implement Configure IP / Configure DNS and Manual field editors on `WifiDetailsPage`; remove or stop linking `WifiIpSettingsPage` from Settings / Demo.

@@ -12,8 +12,9 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 ///
 /// Interactive rows call [CyberClickSoundRegistry.playClick].
 ///
-/// Device Information / Common Settings / Wi‑Fi / Camera MUST NOT use
+/// Device Information / Common Settings / Camera MUST NOT use
 /// [SettingsSectionHeader] — keep group names as Dart comments only.
+/// Wi‑Fi list/details MAY use section headers (My Networks / IPv4 / DNS).
 
 /// Screen-edge inset (lws-ui settings `padding="24dp"`).
 ///

@@ -68,6 +68,30 @@ void main() {
       expect(body, contains('DNS=10.0.0.1'));
     });
 
+    test('dhcp manual dns uses UseDNS=no', () {
+      final body = NetworkdIpv4Apply.renderNetworkFile(
+        iface: 'wlan0',
+        mode: 'dhcp',
+        routeMetric: 100,
+        dns: '1.1.1.1 8.8.8.8',
+      );
+      expect(body, contains('DHCP=yes'));
+      expect(body, contains('DNS=1.1.1.1 8.8.8.8'));
+      expect(body, contains('UseDNS=no'));
+      expect(body, isNot(contains('UseDNS=yes')));
+      expect(body, contains('Domains=~.'));
+    });
+
+    test('dhcp automatic dns keeps UseDNS=yes', () {
+      final body = NetworkdIpv4Apply.renderNetworkFile(
+        iface: 'wlan0',
+        mode: 'dhcp',
+        routeMetric: 100,
+      );
+      expect(body, contains('UseDNS=yes'));
+      expect(body, isNot(contains('\nDNS=')));
+    });
+
     test('defaultRouteMetric prefers wifi', () {
       expect(NetworkdIpv4Apply.defaultRouteMetric('wlan0'), 100);
       expect(NetworkdIpv4Apply.defaultRouteMetric('eth0'), 2000);

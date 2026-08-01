@@ -115,7 +115,7 @@ class LinuxWifi implements Wifi {
       await _closeIfOwned(wpa);
     }
     // Keep link up for rescan / reconnect (D11b Demo parity). Do not
-    // RemoveAllNetworks — that is forget/connect appliance replacement only.
+    // RemoveAllNetworks — forget removes by SSID; connect keeps other profiles.
     try {
       await _apply.setLink(iface: iface, up: true);
       await Process.run('networkctl', ['reconfigure', iface]);

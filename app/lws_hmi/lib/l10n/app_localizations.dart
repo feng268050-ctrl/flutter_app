@@ -3464,11 +3464,29 @@ abstract class AppLocalizations {
   /// **'MAC Address'**
   String get wifiMacAddress;
 
+  /// No description provided for @wifiMyNetworks.
+  ///
+  /// In en, this message translates to:
+  /// **'My Networks'**
+  String get wifiMyNetworks;
+
   /// No description provided for @wifiNetworkText.
   ///
   /// In en, this message translates to:
   /// **'Wi‑Fi'**
   String get wifiNetworkText;
+
+  /// No description provided for @wifiNoOtherNetworks.
+  ///
+  /// In en, this message translates to:
+  /// **'No networks found'**
+  String get wifiNoOtherNetworks;
+
+  /// No description provided for @wifiNoSavedNetworks.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved networks'**
+  String get wifiNoSavedNetworks;
 
   /// No description provided for @wifiNotAvailable.
   ///
@@ -3482,11 +3500,29 @@ abstract class AppLocalizations {
   /// **'This network is managed by system Wi‑Fi. Open system settings to forget it completely.'**
   String get wifiOpenSystemSettingsHint;
 
+  /// No description provided for @wifiOtherNetworks.
+  ///
+  /// In en, this message translates to:
+  /// **'Other Networks'**
+  String get wifiOtherNetworks;
+
+  /// No description provided for @wifiOthersSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get wifiOthersSection;
+
   /// No description provided for @wifiRouter.
   ///
   /// In en, this message translates to:
   /// **'Router'**
   String get wifiRouter;
+
+  /// No description provided for @wifiScanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning…'**
+  String get wifiScanning;
 
   /// No description provided for @wifiSecurity.
   ///
@@ -3565,6 +3601,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Subnet Mask'**
   String get wifiSubnetMask;
+
+  /// No description provided for @wifiAutoJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Join'**
+  String get wifiAutoJoin;
+
+  /// No description provided for @wifiAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get wifiAutomatic;
+
+  /// No description provided for @wifiConfigureDns.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure DNS'**
+  String get wifiConfigureDns;
+
+  /// No description provided for @wifiConfigureIp.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure IP'**
+  String get wifiConfigureIp;
+
+  /// No description provided for @wifiDnsServers.
+  ///
+  /// In en, this message translates to:
+  /// **'DNS Servers'**
+  String get wifiDnsServers;
+
+  /// No description provided for @wifiIpv4AddressSection.
+  ///
+  /// In en, this message translates to:
+  /// **'IPv4 Address'**
+  String get wifiIpv4AddressSection;
+
+  /// No description provided for @wifiManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get wifiManual;
+
+  /// No description provided for @wifiAddDnsServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Add DNS Server'**
+  String get wifiAddDnsServer;
+
+  /// No description provided for @wifiRemoveDnsServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get wifiRemoveDnsServer;
+
+  /// No description provided for @wifiMaxDnsServers.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add up to 3 DNS servers'**
+  String get wifiMaxDnsServers;
 
   /// No description provided for @wifiToastAddCanceledBySystem.
   ///

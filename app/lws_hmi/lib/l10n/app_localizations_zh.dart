@@ -1742,7 +1742,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wifiMacAddress => 'MAC 地址';
 
   @override
+  String get wifiMyNetworks => '我的网络';
+
+  @override
   String get wifiNetworkText => '无线网络';
+
+  @override
+  String get wifiNoOtherNetworks => '未找到网络';
+
+  @override
+  String get wifiNoSavedNetworks => '暂无已保存网络';
 
   @override
   String get wifiNotAvailable => '不可用';
@@ -1751,7 +1760,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wifiOpenSystemSettingsHint => '该网络由系统无线网络管理，请打开系统设置完成彻底忽略。';
 
   @override
+  String get wifiOtherNetworks => '其他网络';
+
+  @override
+  String get wifiOthersSection => '其他';
+
+  @override
   String get wifiRouter => '路由器';
+
+  @override
+  String get wifiScanning => '正在扫描…';
 
   @override
   String get wifiSecurity => '安全类型';
@@ -1791,6 +1809,36 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get wifiSubnetMask => '子网掩码';
+
+  @override
+  String get wifiAutoJoin => '自动加入';
+
+  @override
+  String get wifiAutomatic => '自动';
+
+  @override
+  String get wifiConfigureDns => '配置 DNS';
+
+  @override
+  String get wifiConfigureIp => '配置 IP';
+
+  @override
+  String get wifiDnsServers => 'DNS 服务器';
+
+  @override
+  String get wifiIpv4AddressSection => 'IPv4 地址';
+
+  @override
+  String get wifiManual => '手动';
+
+  @override
+  String get wifiAddDnsServer => '添加 DNS 服务器';
+
+  @override
+  String get wifiRemoveDnsServer => '移除';
+
+  @override
+  String get wifiMaxDnsServers => '最多可添加 3 个 DNS 服务器';
 
   @override
   String get wifiToastAddCanceledBySystem => '系统已取消添加无线网络。';
@@ -3308,10 +3356,25 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get wifiLinkSpeed => '鏈路速率';
 
   @override
+  String get wifiMyNetworks => '我的網絡';
+
+  @override
   String get wifiNetworkText => '無線網絡';
 
   @override
+  String get wifiNoOtherNetworks => '未找到網絡';
+
+  @override
+  String get wifiNoSavedNetworks => '暫無已保存網絡';
+
+  @override
   String get wifiOpenSystemSettingsHint => '該網絡由系統無線網絡管理，請打開系統設置完成徹底忽略。';
+
+  @override
+  String get wifiOtherNetworks => '其他網絡';
+
+  @override
+  String get wifiScanning => '正在掃描…';
 
   @override
   String get wifiSecurity => '安全類型';
@@ -3345,6 +3408,24 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get wifiSubnetMask => '子網掩碼';
+
+  @override
+  String get wifiAutoJoin => '自動加入';
+
+  @override
+  String get wifiAutomatic => '自動';
+
+  @override
+  String get wifiDnsServers => 'DNS 服務器';
+
+  @override
+  String get wifiManual => '手動';
+
+  @override
+  String get wifiAddDnsServer => '添加 DNS 服務器';
+
+  @override
+  String get wifiMaxDnsServers => '最多可添加 3 個 DNS 服務器';
 
   @override
   String get wifiToastAddCanceledBySystem => '系統已取消添加無線網絡。';

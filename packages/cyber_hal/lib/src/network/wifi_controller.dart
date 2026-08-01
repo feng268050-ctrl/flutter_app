@@ -22,10 +22,8 @@ abstract class WifiController {
   /// [bssid] optionally pins a BSS (Demo leaves null so same-SSID can roam).
   /// [requiresPsk] when true, empty PSK fails instead of treating the AP as open.
   ///
-  /// Appliance policy: [connect] may replace the wpa network selection (single
-  /// active network) via [WpaSupplicantDbus.connectNetwork] — that is intentional
-  /// for this product line, not a general multi-profile manager. Config is always
-  /// SaveConfig'd after select.
+  /// Multi-profile: [connect] adds/updates this SSID and selects it without wiping
+  /// other saved networks (My Networks). Config is SaveConfig'd after select.
   Future<void> connect({
     required String ssid,
     String? psk,
@@ -41,6 +39,14 @@ abstract class WifiController {
   Future<void> forget(String ssid);
 
   Future<List<WifiSavedNetwork>> savedNetworks();
+
+  /// Persist Auto Join for [ssid] (wpa Network.Enabled / disabled).
+  Future<void> setAutoJoin(String ssid, {required bool enabled});
+
+  /// Associate using an already-saved wpa network (no PSK re-entry).
+  ///
+  /// Returns false when [ssid] is not in the configured network list.
+  Future<bool> selectSaved(String ssid);
 
   Future<WlanIpv4Config> getIpv4Config();
 

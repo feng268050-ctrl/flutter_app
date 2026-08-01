@@ -36,6 +36,9 @@ final class NetworkdIpv4Apply {
   static bool dnsDefaultRoutePreferred(int routeMetric) => routeMetric < 1000;
 
   /// Pure render for tests / dry-run.
+  ///
+  /// When [dns] is non-empty under DHCP, emits Manual DNS override
+  /// (`UseDNS=no` + `DNS=`) so lease DNS does not win.
   static String renderNetworkFile({
     required String iface,
     required String mode,
@@ -55,6 +58,7 @@ final class NetworkdIpv4Apply {
 
     final m = mode.trim().toLowerCase();
     final preferDns = dnsDefaultRoutePreferred(routeMetric);
+    final manualDns = dns != null && dns.isNotEmpty;
     if (m == 'static') {
       if (address == null || address.isEmpty) {
         throw ArgumentError('static mode requires address');
@@ -67,7 +71,7 @@ final class NetworkdIpv4Apply {
       buf.writeln('IPv6AcceptRA=no');
       buf.writeln('LinkLocalAddressing=no');
       buf.writeln('Address=$address/$prefix');
-      if (dns != null && dns.isNotEmpty) {
+      if (manualDns) {
         buf.writeln('DNS=$dns');
       }
       if (preferDns) {
@@ -84,13 +88,16 @@ final class NetworkdIpv4Apply {
       buf
         ..writeln('DHCP=yes')
         ..writeln('IPv6AcceptRA=no');
+      if (manualDns) {
+        buf.writeln('DNS=$dns');
+      }
       if (preferDns) {
         buf.writeln('Domains=~.');
       }
       buf
         ..writeln()
         ..writeln('[DHCPv4]')
-        ..writeln('UseDNS=yes')
+        ..writeln(manualDns ? 'UseDNS=no' : 'UseDNS=yes')
         ..writeln('RouteMetric=$routeMetric');
     }
     return buf.toString();
@@ -196,8 +203,12 @@ final class NetworkdIpv4Apply {
     if (gateway != null && gateway.isNotEmpty) {
       lines.add('gateway=$gateway');
     }
-    if (dns != null && dns.isNotEmpty) {
+    final manualDns = dns != null && dns.isNotEmpty;
+    lines.add('dns_mode=${manualDns ? 'manual' : 'automatic'}');
+    if (manualDns) {
       lines.add('dns=$dns');
+    } else {
+      lines.add('dns=');
     }
     await file.writeAsString('${lines.join('\n')}\n');
   }

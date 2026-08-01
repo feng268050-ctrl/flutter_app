@@ -137,6 +137,12 @@ class _FakeWifi implements WifiController {
   Future<List<WifiSavedNetwork>> savedNetworks() async => const [];
 
   @override
+  Future<void> setAutoJoin(String ssid, {required bool enabled}) async {}
+
+  @override
+  Future<bool> selectSaved(String ssid) async => false;
+
+  @override
   Future<WlanIpv4Config> getIpv4Config() async => WlanIpv4Config.dhcpDefault;
 
   @override

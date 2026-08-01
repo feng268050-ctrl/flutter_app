@@ -246,11 +246,16 @@ final class LinuxPrimaryNetworkController implements PrimaryNetworkController {
     );
     try {
       final cfg = await wifiCtrl.getIpv4Config();
+      final manualDns =
+          cfg.dnsMode == WlanDnsMode.manual && cfg.dns.isNotEmpty
+              ? cfg.dns
+              : null;
       if (cfg.mode == WlanIpv4Mode.dhcp) {
         await _apply.apply(
           iface: iface,
           mode: 'dhcp',
           routeMetric: metric,
+          dns: manualDns,
         );
       } else {
         await _apply.apply(
@@ -260,7 +265,7 @@ final class LinuxPrimaryNetworkController implements PrimaryNetworkController {
           address: cfg.address,
           prefix: '${cfg.prefixLength}',
           gateway: cfg.gateway.isNotEmpty ? cfg.gateway : null,
-          dns: cfg.dns.isNotEmpty ? cfg.dns : null,
+          dns: manualDns,
         );
       }
     } catch (e) {

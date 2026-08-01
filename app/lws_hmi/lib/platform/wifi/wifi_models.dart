@@ -10,6 +10,7 @@ export 'package:cyber_hal/network.dart'
         WifiLinkParse,
         WifiRadioState,
         WifiSavedNetwork,
+        WlanDnsMode,
         WlanIpv4Config,
         WlanIpv4Mode,
         WlanIpv4Store,

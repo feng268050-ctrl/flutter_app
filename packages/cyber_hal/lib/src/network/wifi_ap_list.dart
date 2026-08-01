@@ -35,4 +35,57 @@ class WifiApList {
     }
     return deduped.where((ap) => ap.ssid != connected).toList();
   }
+
+  /// Partition scan + saved into My Networks / Other Networks.
+  ///
+  /// My Networks: unique saved SSIDs (enriched with scan signal/flags when
+  /// visible). Other Networks: scanned SSIDs not in the saved set, excluding
+  /// [connectedSsid] (shown in the top connected group).
+  static ({
+    List<WifiAccessPoint> myNetworks,
+    List<WifiAccessPoint> otherNetworks,
+  }) partitionMyAndOther({
+    required Iterable<WifiSavedNetwork> saved,
+    required Iterable<WifiAccessPoint> scanned,
+    String? connectedSsid,
+  }) {
+    final connected = connectedSsid?.trim();
+    final scanBySsid = <String, WifiAccessPoint>{};
+    for (final ap in strongestBySsid(scanned)) {
+      scanBySsid[ap.ssid] = ap;
+    }
+
+    final savedSsids = <String>{};
+    final my = <WifiAccessPoint>[];
+    for (final n in saved) {
+      final ssid = n.ssid.trim();
+      if (ssid.isEmpty || savedSsids.contains(ssid)) {
+        continue;
+      }
+      savedSsids.add(ssid);
+      final scannedAp = scanBySsid[ssid];
+      my.add(
+        scannedAp ??
+            WifiAccessPoint(
+              ssid: ssid,
+              flags: '[WPA2-PSK]',
+            ),
+      );
+    }
+
+    final other = <WifiAccessPoint>[];
+    for (final ap in strongestBySsid(scanned)) {
+      if (savedSsids.contains(ap.ssid)) {
+        continue;
+      }
+      if (connected != null &&
+          connected.isNotEmpty &&
+          ap.ssid == connected) {
+        continue;
+      }
+      other.add(ap);
+    }
+
+    return (myNetworks: my, otherNetworks: other);
+  }
 }

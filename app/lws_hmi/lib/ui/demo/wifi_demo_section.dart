@@ -335,7 +335,10 @@ class _WifiDemoSectionState extends State<WifiDemoSection>
                               address: addr,
                               prefixLength: int.parse(prefixText),
                               gateway: _staticGw.text.trim(),
-                              dns: _staticDns.text.trim(),
+                              dnsMode: WlanDnsMode.manual,
+                              dnsServers: WlanIpv4Config.splitDnsServers(
+                                _staticDns.text.trim(),
+                              ),
                             );
                           }();
                     await widget.controller.setIpv4Config(cfg);

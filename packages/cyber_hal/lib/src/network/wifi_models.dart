@@ -11,6 +11,9 @@ enum WifiConnectionPhase {
 
 enum WlanIpv4Mode { dhcp, staticMode }
 
+/// Operator DNS preference for wlan0 (independent of [WlanIpv4Mode]).
+enum WlanDnsMode { automatic, manual }
+
 class WifiAccessPoint {
   const WifiAccessPoint({
     required this.ssid,
@@ -44,10 +47,17 @@ class WifiAccessPoint {
 }
 
 class WifiSavedNetwork {
-  const WifiSavedNetwork({required this.networkId, required this.ssid});
+  const WifiSavedNetwork({
+    required this.networkId,
+    required this.ssid,
+    this.autoJoin = true,
+  });
 
   final int networkId;
   final String ssid;
+
+  /// When false, wpa will not auto-select this network (`disabled` / Enabled=false).
+  final bool autoJoin;
 }
 
 class WlanIpv4Config {
@@ -56,30 +66,65 @@ class WlanIpv4Config {
     this.address = '',
     this.prefixLength = 24,
     this.gateway = '',
-    this.dns = '',
+    this.dnsMode = WlanDnsMode.automatic,
+    this.dnsServers = const [],
   });
+
+  /// Legacy single-string DNS ctor — treats non-empty [dns] as Manual.
+  factory WlanIpv4Config.withDnsString({
+    required WlanIpv4Mode mode,
+    String address = '',
+    int prefixLength = 24,
+    String gateway = '',
+    String dns = '',
+  }) {
+    final servers = splitDnsServers(dns);
+    return WlanIpv4Config(
+      mode: mode,
+      address: address,
+      prefixLength: prefixLength,
+      gateway: gateway,
+      dnsMode:
+          servers.isNotEmpty ? WlanDnsMode.manual : WlanDnsMode.automatic,
+      dnsServers: servers,
+    );
+  }
 
   final WlanIpv4Mode mode;
   final String address;
   final int prefixLength;
   final String gateway;
-  final String dns;
+  final WlanDnsMode dnsMode;
+  final List<String> dnsServers;
+
+  /// Space-joined DNS servers (legacy single-string consumers).
+  String get dns => dnsServers.join(' ');
 
   static const dhcpDefault = WlanIpv4Config(mode: WlanIpv4Mode.dhcp);
+
+  static List<String> splitDnsServers(String raw) {
+    return raw
+        .split(RegExp(r'[\s,]+'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+  }
 
   WlanIpv4Config copyWith({
     WlanIpv4Mode? mode,
     String? address,
     int? prefixLength,
     String? gateway,
-    String? dns,
+    WlanDnsMode? dnsMode,
+    List<String>? dnsServers,
   }) {
     return WlanIpv4Config(
       mode: mode ?? this.mode,
       address: address ?? this.address,
       prefixLength: prefixLength ?? this.prefixLength,
       gateway: gateway ?? this.gateway,
-      dns: dns ?? this.dns,
+      dnsMode: dnsMode ?? this.dnsMode,
+      dnsServers: dnsServers ?? this.dnsServers,
     );
   }
 }
@@ -188,21 +233,38 @@ class WlanIpv4Store {
         ? WlanIpv4Mode.staticMode
         : WlanIpv4Mode.dhcp;
     final prefix = int.tryParse(map['prefix'] ?? '') ?? 24;
+    final servers = WlanIpv4Config.splitDnsServers(map['dns'] ?? '');
+    final dnsModeToken = (map['dns_mode'] ?? '').toLowerCase();
+    final WlanDnsMode dnsMode;
+    if (dnsModeToken == 'manual') {
+      dnsMode = WlanDnsMode.manual;
+    } else if (dnsModeToken == 'automatic' || dnsModeToken == 'auto') {
+      dnsMode = WlanDnsMode.automatic;
+    } else if (servers.isNotEmpty && mode == WlanIpv4Mode.staticMode) {
+      // Legacy prefs: non-empty dns under static ⇒ Manual.
+      dnsMode = WlanDnsMode.manual;
+    } else {
+      dnsMode = WlanDnsMode.automatic;
+    }
     return WlanIpv4Config(
       mode: mode,
       address: map['address'] ?? '',
       prefixLength: prefix.clamp(0, 32),
       gateway: map['gateway'] ?? '',
-      dns: map['dns'] ?? '',
+      dnsMode: dnsMode,
+      dnsServers: servers,
     );
   }
 
   static String serialize(WlanIpv4Config c) {
     final mode = c.mode == WlanIpv4Mode.staticMode ? 'static' : 'dhcp';
+    final dnsMode =
+        c.dnsMode == WlanDnsMode.manual ? 'manual' : 'automatic';
     return 'mode=$mode\n'
         'address=${c.address}\n'
         'prefix=${c.prefixLength}\n'
         'gateway=${c.gateway}\n'
+        'dns_mode=$dnsMode\n'
         'dns=${c.dns}\n';
   }
 }

@@ -74,14 +74,37 @@ network id / ssid / bssid / flags
         address: '10.0.0.8',
         prefixLength: 24,
         gateway: '10.0.0.1',
-        dns: '1.1.1.1',
+        dnsMode: WlanDnsMode.manual,
+        dnsServers: ['1.1.1.1'],
       );
       final back = WlanIpv4Store.parse(WlanIpv4Store.serialize(staticCfg));
       expect(back.mode, WlanIpv4Mode.staticMode);
       expect(back.address, '10.0.0.8');
       expect(back.prefixLength, 24);
       expect(back.gateway, '10.0.0.1');
+      expect(back.dnsMode, WlanDnsMode.manual);
       expect(back.dns, '1.1.1.1');
+      expect(back.dnsServers, ['1.1.1.1']);
+    });
+
+    test('legacy static dns infers manual', () {
+      final back = WlanIpv4Store.parse(
+        'mode=static\naddress=10.0.0.8\nprefix=24\ngateway=10.0.0.1\ndns=8.8.8.8\n',
+      );
+      expect(back.dnsMode, WlanDnsMode.manual);
+      expect(back.dnsServers, ['8.8.8.8']);
+    });
+
+    test('round-trips multi dns manual under dhcp', () {
+      const cfg = WlanIpv4Config(
+        mode: WlanIpv4Mode.dhcp,
+        dnsMode: WlanDnsMode.manual,
+        dnsServers: ['1.1.1.1', '8.8.8.8'],
+      );
+      final back = WlanIpv4Store.parse(WlanIpv4Store.serialize(cfg));
+      expect(back.mode, WlanIpv4Mode.dhcp);
+      expect(back.dnsMode, WlanDnsMode.manual);
+      expect(back.dnsServers, ['1.1.1.1', '8.8.8.8']);
     });
   });
 
@@ -121,6 +144,23 @@ network id / ssid / bssid / flags
       final all = WifiApList.strongestBySsid(aps);
       expect(all.first.ssid, 'Cafe');
       expect(all.first.signalDbm, -40);
+    });
+
+    test('partitionMyAndOther separates saved and scan', () {
+      const saved = [
+        WifiSavedNetwork(networkId: 0, ssid: 'Home'),
+      ];
+      const scanned = [
+        WifiAccessPoint(ssid: 'Home', signalDbm: -40),
+        WifiAccessPoint(ssid: 'Cafe', signalDbm: -55),
+      ];
+      final parts = WifiApList.partitionMyAndOther(
+        saved: saved,
+        scanned: scanned,
+        connectedSsid: 'Home',
+      );
+      expect(parts.myNetworks.map((a) => a.ssid), ['Home']);
+      expect(parts.otherNetworks.map((a) => a.ssid), ['Cafe']);
     });
   });
 

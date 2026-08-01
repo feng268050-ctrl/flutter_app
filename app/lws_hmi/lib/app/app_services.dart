@@ -95,6 +95,7 @@ final class AppServices {
     this.buttonFeedback = buttonFeedback ?? b.buttonFeedback(mediaAudio: audio);
     ethernet = ethernetController ?? b.ethernetSession();
     wifi = wifiController ?? b.wifiSession();
+    primaryNetwork = b.primaryNetwork(wifi: wifi, ethernet: ethernet);
     dateTime = dateTimeController ?? b.dateTime();
     wallClock = OsWallClock(dateTime)..start();
     http = httpClientController ??
@@ -155,6 +156,7 @@ final class AppServices {
   late final ButtonFeedback buttonFeedback;
   late final EthernetController ethernet;
   late final WifiController wifi;
+  late final PrimaryNetworkController primaryNetwork;
   late final DateTimeController dateTime;
   late final OsWallClock wallClock;
   late final HttpClientController http;
@@ -334,6 +336,15 @@ final class AppServices {
       await wallClock.refresh();
     } catch (_) {
       // Soft-fail: Settings/Demo keep defaults.
+    }
+    // Product policy: this App uses Wi‑Fi as the internet uplink (eth = camera).
+    try {
+      await primaryNetwork.load();
+      if (await primaryNetwork.getPrimaryRole() == null) {
+        await primaryNetwork.setPrimaryRole(NetRole.wifiStation);
+      }
+    } catch (_) {
+      // Soft-fail: board metric order remains until prefs exist.
     }
   }
 }

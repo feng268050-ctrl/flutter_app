@@ -4,6 +4,7 @@ import 'package:cyber_hal/network/wifi.dart';
 import 'package:cyber_hal/src/core/net_role.dart';
 import 'package:cyber_hal/src/network/networkd_dbus.dart';
 import 'package:cyber_hal/src/network/networkd_ipv4_apply.dart';
+import 'package:cyber_hal/src/network/primary_network.dart';
 import 'package:cyber_hal/src/network/wifi_radio.dart';
 import 'package:cyber_hal/src/network/wpa_supplicant_dbus.dart';
 import 'package:cyber_hal/src/profile/board_profile.dart';
@@ -39,10 +40,12 @@ class LinuxWifi implements Wifi {
     return 'wlan0';
   }
 
-  int get _metric =>
-      _routeMetrics[iface] ??
-      profile?.routeMetricFor(iface) ??
-      NetworkdIpv4Apply.defaultRouteMetric(iface);
+  int get _metric => PrimaryNetworkPolicy.effectiveMetric(
+        iface: iface,
+        role: NetRole.wifiStation,
+        profile: profile,
+        routeMetrics: _routeMetrics,
+      );
 
   String get _prefPath => '$prefRoot/$iface-ipv4';
 

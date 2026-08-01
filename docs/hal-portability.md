@@ -57,7 +57,7 @@ Legend: **OS** = required on image; **Profile** = declare in `BoardProfile`;
 | **OS** | `wpa_supplicant` built with D-Bus (`-u`); unit that runs `-u -i <iface>` (default name **`wlan-wpa.service`**, override `helpers.wifi_wlan_unit`) |
 | **OS** | Mask/stop empty stock `wpa_supplicant.service` so it does not steal `fi.w1.wpa_supplicant1` |
 | **OS** | `ip` on PATH |
-| **Profile** | `net_roles` → ifaces (**prefer `eth0` / `wlan0`**); optional `route_metrics` (Wi‑Fi lower = preferred) |
+| **Profile** | `net_roles` → ifaces; optional `route_metrics` (board defaults). **Product** chooses the internet uplink via [PrimaryNetworkController] (`getPrimaryRole` / `setPrimaryRole`) → `/var/lib/network/primary.conf`; same board may use Wi‑Fi or Ethernet as primary. |
 | **Helper** | `wifi_modem` — **required when wireless netdev is not present at boot** (SDIO/USB/UART combo firmware). See [`network-stack.md`](network-stack.md) § Modem bring-up |
 | **Helper** | `wifi_wlan_unit` — only if unit name ≠ `wlan-wpa.service` |
 | **Helper** | `apply_proxy` — optional override; default is in-HAL env/profile/systemd drop-in apply |

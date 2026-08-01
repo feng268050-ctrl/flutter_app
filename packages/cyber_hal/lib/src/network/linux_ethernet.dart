@@ -2,6 +2,7 @@ import 'package:cyber_hal/network/ethernet.dart';
 import 'package:cyber_hal/src/core/net_role.dart';
 import 'package:cyber_hal/src/network/networkd_dbus.dart';
 import 'package:cyber_hal/src/network/networkd_ipv4_apply.dart';
+import 'package:cyber_hal/src/network/primary_network.dart';
 import 'package:cyber_hal/src/profile/board_profile.dart';
 
 /// Ethernet L3 via in-package networkd apply; **status via networkd D-Bus** (D11b).
@@ -33,10 +34,12 @@ class LinuxEthernet implements Ethernet {
     }
   }
 
-  int _metric(String iface) =>
-      _routeMetrics[iface] ??
-      profile?.routeMetricFor(iface) ??
-      NetworkdIpv4Apply.defaultRouteMetric(iface);
+  int _metric(String iface) => PrimaryNetworkPolicy.effectiveMetric(
+        iface: iface,
+        role: NetRole.ethernetPrimary,
+        profile: profile,
+        routeMetrics: _routeMetrics,
+      );
 
   String _prefPath(String iface) => '$prefRoot/$iface-ipv4';
 

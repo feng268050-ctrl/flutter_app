@@ -7,6 +7,7 @@ import 'package:cyber_hal/src/network/ethernet_controller.dart';
 import 'package:cyber_hal/src/network/ethernet_models.dart';
 import 'package:cyber_hal/src/network/networkd_dbus.dart';
 import 'package:cyber_hal/src/network/networkd_ipv4_apply.dart';
+import 'package:cyber_hal/src/network/primary_network.dart';
 import 'package:cyber_hal/src/network/wifi_link_parse.dart';
 import 'package:cyber_hal/src/profile/board_profile.dart';
 import 'package:dbus/dbus.dart';
@@ -61,10 +62,12 @@ class LinuxEthernetSession implements EthernetController {
 
   static const _wantedWatchMaxTicks = 120;
 
-  int get _metric =>
-      _routeMetrics[iface] ??
-      profile?.routeMetricFor(iface) ??
-      NetworkdIpv4Apply.defaultRouteMetric(iface);
+  int get _metric => PrimaryNetworkPolicy.effectiveMetric(
+        iface: iface,
+        role: NetRole.ethernetPrimary,
+        profile: profile,
+        routeMetrics: _routeMetrics,
+      );
 
   @override
   EthAdminState get currentAdmin => _admin;

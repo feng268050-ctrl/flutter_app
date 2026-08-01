@@ -200,6 +200,20 @@ final class BoardBindings {
 
   String wifiIface() => profile.ifaceFor(NetRole.wifiStation) ?? 'wlan0';
 
+  /// Product primary uplink (get/set). Pass live sessions so [setPrimaryRole]
+  /// can re-apply RouteMetric on Wi‑Fi / Ethernet.
+  LinuxPrimaryNetworkController primaryNetwork({
+    WifiController? wifi,
+    EthernetController? ethernet,
+  }) {
+    return LinuxPrimaryNetworkController(
+      profile: profile,
+      wifi: wifi,
+      ethernet: ethernet,
+    );
+  }
+
+
   /// Default [SystemdBluezStack]; optional modem from helpers.
   /// HOGP/evdev heal is in-controller (not a board script).
   BtStack btStack() {

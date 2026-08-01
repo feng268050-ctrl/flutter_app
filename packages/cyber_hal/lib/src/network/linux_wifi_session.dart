@@ -5,6 +5,7 @@ import 'package:cyber_hal/src/core/net_role.dart';
 import 'package:cyber_hal/src/linux/lws_trace.dart';
 import 'package:cyber_hal/src/network/networkd_dbus.dart';
 import 'package:cyber_hal/src/network/networkd_ipv4_apply.dart';
+import 'package:cyber_hal/src/network/primary_network.dart';
 import 'package:cyber_hal/src/network/wifi_controller.dart';
 import 'package:cyber_hal/src/network/wifi_leave_policy.dart';
 import 'package:cyber_hal/src/network/wifi_link_parse.dart';
@@ -77,10 +78,12 @@ class LinuxWifiSession implements WifiController {
 
   static const _wantedWatchMaxTicks = 120;
 
-  int get _metric =>
-      _routeMetrics[iface] ??
-      profile?.routeMetricFor(iface) ??
-      NetworkdIpv4Apply.defaultRouteMetric(iface);
+  int get _metric => PrimaryNetworkPolicy.effectiveMetric(
+        iface: iface,
+        role: NetRole.wifiStation,
+        profile: profile,
+        routeMetrics: _routeMetrics,
+      );
 
   @override
   WifiRadioState get currentRadio => _radio;

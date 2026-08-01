@@ -94,3 +94,33 @@ Constraints:
 1. Exact U-Boot API on Innohi prebuilt (`bootm#conf-…` vs scripted `iminfo` / env) — resolve in spike task.
 2. Whether factory packs a **board-specific default conf** into U-Boot env at `build-img` time while still shipping the full multi-FDT FIT for field OTA.
 3. When ynh961/ynh962 DTS work is scheduled relative to first multi-conf ship (packaging does not require them).
+
+## Open-question resolutions (spike)
+
+### Q1 — Innohi prebuilt U-Boot FIT conf selection (2026-08-01)
+
+**Evidence (no serial required for v1 default path):** `prebuilt/bootloader/rockchip-ynh960/uboot.img` strings include:
+
+- `boot_fit` / `boot_fit [addr]` — “Boot FIT Image from memory or boot/recovery partition”
+- Standard FIT help: `addr#<conf_uname> - configuration specification`
+- Runtime messages: `Using '%s' configuration`, `Could not find configuration node`, `/configurations`
+
+**Chosen mechanism (v1):**
+
+| Path | Behavior |
+|------|----------|
+| ynh960 / validation | FIT `configurations.default = "ynh960"`. Stock `bootcmd` → `boot_fit` (no `#conf`) loads the **default** conf — same operator flow as the old anonymous `conf`. |
+| Future non-default board | Prefer `bootm <fit_addr>#<board_id>` (conf uname = `board_id`). Optional factory bake: set U-Boot env (e.g. `lws_fit_conf=<board_id>`) and a one-line boot script/`bootcmd` wrapper that invokes `bootm …#${lws_fit_conf}` — **without** rebuilding U-Boot source. |
+| Not required for W5 land | Device serial proof of `#ynh960` when it is already the default; smoke on upgraded ynh960 via §5 is enough. |
+
+### Q2 — Factory default conf vs one-firmware OTA
+
+**Choice:** Ship **one** multi-FDT FIT for the SoC family (OTA-uniform). Factory/SKU selects conf via FIT **default** (today: only `ynh960` in inventory) or later via **env** (`lws_fit_conf`), not via per-SKU different FIT payloads. Do not bake board-specific FITs that drop other boards’ FDTs.
+
+### Q3 — ynh961 / ynh962 DTS schedule
+
+**Choice:** Packaging lands with inventory = `ynh960` only. Adding 961/962 is a follow-on: append `board_id` to `board/rk356x-fit-boards.txt` + overlay DTS; no ITS hand-rewrite (generator).
+
+### Q2.3 — If prebuilt cannot select non-default conf
+
+**Fallback (does not block multi-FDT packaging):** keep full multi-FDT Image for OTA; for that SKU only, document a factory U-Boot env/script patch or (last resort) a SKU pack-time default conf name written into env. Self-built product U-Boot remains out of scope unless env/script proves impossible on hardware.

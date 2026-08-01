@@ -34,9 +34,31 @@ fi
 
 board_path="$(sed -n 's/.*"board_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PACK_DIR/manifest.json" | head -1)"
 screen_path="$(sed -n 's/.*"screen_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PACK_DIR/manifest.json" | head -1)"
+board_id="$(sed -n 's/.*"board_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PACK_DIR/manifest.json" | head -1)"
+soc_family="$(sed -n 's/.*"soc_family"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$PACK_DIR/manifest.json" | head -1)"
 [[ -n "$board_path" && -n "$screen_path" ]] || die "manifest missing board_path/screen_path"
 [[ -d "$OEM_SRC/$board_path" ]] || die "board path missing: $OEM_SRC/$board_path"
 [[ -d "$OEM_SRC/$screen_path" ]] || die "screen path missing: $OEM_SRC/$screen_path"
+
+# W5: product OEM board_id must match a FIT conf in the SoC-family inventory.
+# Emulator/virt packs are exempt (bare Image + QEMU DT — not product FIT).
+INVENTORY="$ROOT/board/rk356x-fit-boards.txt"
+if [[ -n "$board_id" && "$soc_family" != "virt" && -r "$INVENTORY" ]]; then
+  if ! awk -v id="$board_id" '
+    {
+      sub(/#.*/, "");
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "");
+      if ($0 == id) found=1
+    }
+    END { exit found ? 0 : 1 }
+  ' "$INVENTORY"; then
+    die "OEM board_id='$board_id' not in FIT inventory $INVENTORY (must equal FIT conf name; no startup DTB under oem/)"
+  fi
+  if find "$OEM_SRC/$board_path" "$OEM_SRC/$screen_path" -type f \( -name '*.dtb' -o -name '*.dtbo' \) 2>/dev/null | grep -q .; then
+    die "OEM pack must not ship startup DTB/DTBO under board/screen paths (DT lives in boot FIT)"
+  fi
+  echo "OEM board_id=$board_id aligns with FIT inventory"
+fi
 
 STAGE="$(mktemp -d /tmp/lws-hmi-oem-stage.XXXXXX)"
 cleanup() {

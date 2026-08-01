@@ -2,9 +2,7 @@
 
 ## Purpose
 Whitelist, trim, vendor-import records, size/forbid gates, and owned-tree layout for the Rockchip platform `linux-sdk/` (still gitignored until S4).
-
 ## Requirements
-
 ### Requirement: linux-sdk whitelist and size gate
 
 The repository SHALL provide a tracked whitelist (`board/linux-sdk-whitelist.txt` or equivalent) describing keep roots, forbidden top-level directories, and external slim/keep rules for the owned Rockchip `linux-sdk/` tree. A host script (`make check-linux-sdk` / `scripts/check-linux-sdk-whitelist.sh`) SHALL fail when forbidden directories or known oversized blobs remain under `linux-sdk/`, and SHALL print a size summary. The gate SHALL ignore Buildroot download/output caches (`buildroot/dl/`, `buildroot/output/`, `output/`) when judging source-tree size band.
@@ -71,3 +69,14 @@ The repository `.gitignore` MUST continue to ignore `linux-sdk/`. This change MU
 
 - **WHEN** a developer inspects repo-root `.gitignore`
 - **THEN** a `linux-sdk/` ignore rule is present
+
+### Requirement: Multi-board DTS inventory in overlay SoT
+
+Until S4 commit of `linux-sdk/`, git SoT under `overlay/kernel/` SHALL support **multiple** product board DTS/DTSI sets for the SoC family (not only `ynh960-*` includes). `apply-overlay` / squash SHALL install all inventoried board device-tree sources needed to build the corresponding DTBs for the shared family `Image`. Colleagues MUST sync board DT changes via overlay PRs the same way as today’s ynh960 fragments.
+
+#### Scenario: Overlay lists more than one board target
+
+- **WHEN** the SoC-family board inventory contains more than one board id
+- **THEN** `overlay/kernel/` (and apply-overlay wiring) SHALL provide the DTS/DTSI inputs for each listed board
+- **AND** `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` SHALL install those inputs into the owned SDK tree used by `make build-kernel`
+

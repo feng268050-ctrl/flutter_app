@@ -2,7 +2,7 @@
 
 Shipped product kernels report **Linux 6.1.99** (Rockchip/Innohi `kernel-6.1` tree; device confirmed 2026-07-31). Upstream **6.1 LTS** tip at audit time was **6.1.180** — about **81** stable point releases (~two years) of security and bug fixes behind. The Linux kernel CVE team does **not** support cherry-picking individual CVE commits as the primary remediation; distributors are expected to track the LTS tip. Staying on 6.1.99 leaves known High findings (e.g. Bluetooth/tap-tun related CVEs fixed only after 6.1.99) and a large undocumented backlog of stable fixes that never listed a CVE ID in the ChangeLog.
 
-**Prerequisite:** Land platform **W5** multi-configuration FIT packaging (`openspec/changes/multi-board-fit-dt`) **before** implementing this rebase, so LTS work rebases the multi-board overlay/FIT layout instead of the legacy single-FDT ITS.
+**Prerequisite:** ~~Blocked on~~ **Unblocked by** platform **W5** multi-configuration FIT packaging (`openspec/changes/multi-board-fit-dt`, packaging + ynh960 regression done 2026-08-01). LTS work rebases the multi-board overlay/FIT layout (`board/rk356x-fit-boards.txt` + `overlay/kernel/`), not the legacy single-FDT ITS.
 
 ## What Changes
 

@@ -93,7 +93,7 @@ help:
 	@echo "  make l10n-sync             # regenerate en_US/zh_CN/zh_TW child ARBs only"
 	@echo "  make l10n-gen              # flutter gen-l10n only"
 	@echo "  make l10n-verify           # fail if ARBs / AppLocalizations drift"
-	@echo "  make build-kernel          # dual FIT → output/firmware/boot.img + boot_b.img (exports; for upgrade)"
+	@echo "  make build-kernel          # dual multi-conf FIT → boot.img + boot_b.img (+ bare Image)"
 	@echo "  make build-rootfs          # rootfs → output/firmware/rootfs.img (Weston + eLinux + Mali wayland-gbm)"
 	@echo "  make prepare-rootfs        # ensure Buildroot stack → Weston (no rootfs.img pack)"
 	@echo "  make build-oem             # pack oem/out/<oem_id>/oem.img (FACTORY_SKU / OEM_ID)"

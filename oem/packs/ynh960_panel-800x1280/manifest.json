@@ -8,5 +8,6 @@
   "compat": {
     "os_min": "1.0.0",
     "soc_family": "rk356x"
-  }
+  },
+  "notes": "board_id equals boot FIT conf name (board/rk356x-fit-boards.txt); startup DT is not in OEM"
 }

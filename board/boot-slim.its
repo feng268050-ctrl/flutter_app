@@ -1,6 +1,7 @@
 /*
- * lws-hmi: boot FIT without resource.img (~6 MiB smaller) — fits 64 MiB boot partition.
- * No signature block (unsigned FIT — matches non-secure uboot).
+ * Legacy single-FDT slim FIT (no resource.img). Superseded for product builds by
+ * board/boot-multi.its (W5 multi-conf; see board/rk356x-fit-boards.txt).
+ * Kept for reference / size experiments only — lunch uses RK_BOOT_FIT_ITS_NAME=boot-multi.its.
  */
 /dts-v1/;
 / {

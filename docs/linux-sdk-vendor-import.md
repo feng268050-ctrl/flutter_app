@@ -62,19 +62,36 @@ exists (`FORCE_PLATFORM_OVERLAY=1` to force re-apply).
 
 | Layer | Role |
 |-------|------|
-| **`overlay/kernel/`** | **Git source of truth** for ynh960 DTS/DTSI fragments, kconfig fragments, and kernel patches that this product owns |
+| **`overlay/kernel/`** | **Git source of truth** for product board DTS/DTSI fragments (ynh960 today; later ynh961/ynh962), kconfig fragments, and kernel patches |
+| **`board/rk356x-fit-boards.txt`** | SoC-family **FIT board inventory** — one `board_id` per line; drives multi-conf ITS generation (`scripts/generate-boot-fit-its.sh`) |
 | **`linux-sdk/.../dts/rockchip/`** | Local build tree after squash / `FORCE_PLATFORM_OVERLAY=1`; not a sync channel |
 | **`oem/`** | **Not** for boot DTBs. U-Boot loads FIT (kernel+DT) before `/oem` is mounted. OEM may carry runtime LCD params (`screens/.../lcd/`), profile identity, helpers — never the startup device tree |
+
+### Multi-configuration boot FIT (platform W5)
+
+`make build-kernel` packs **one** shared `Image` plus **N** flattened DTs into dual A/B FITs (`boot.img` / `boot_b.img`) using `board/boot-multi.its` (generated from the inventory; active via `RK_BOOT_FIT_ITS_NAME="boot-multi.its"`).
+
+| Rule | Detail |
+|------|--------|
+| Conf name | Equals product `board_id` / OEM `manifest.json` `board_id` (default / first ship: `ynh960`) |
+| FDT node | `fdt-<board_id>` in the ITS; DTB file is `rockchip/<board_id>.dtb` |
+| Selection | U-Boot **before** Linux: Innohi `boot_fit` boots the FIT **default** conf; non-default boards use `bootm <addr>#<board_id>` (or factory env — see `openspec/changes/multi-board-fit-dt/design.md`) |
+| Emulator | P3.2 still uses bare `Image` + QEMU `virt` DT — **no** `sim` / `conf-sim` in the product FIT |
+| OEM | Declares which conf that SKU expects; does **not** supply startup DTB |
+
+Inspect / gate: `scripts/verify-boot-fit.sh <firmware-dir>` lists conf names, fails on missing inventory DTBs or oversized FIT.
 
 **Workflow for DT / kernel fragment changes (shareable):**
 
 ```text
 1. Edit overlay/kernel/rockchip/*.dtsi|*.config (and patches under overlay/kernel/patches/)
-2. Commit those overlay paths in this repo
-3. On each machine with an owned SDK:
+2. If adding a product board to the shared Image FIT: append board_id to board/rk356x-fit-boards.txt
+   and land that board’s DTS under overlay/kernel/ (then regenerate ITS via apply-overlay / generate script)
+3. Commit those overlay (+ inventory) paths in this repo
+4. On each machine with an owned SDK:
      FORCE_PLATFORM_OVERLAY=1 make apply-overlay
    # or: make squash-linux-sdk-platform
-4. make build-kernel
+5. make build-kernel
    make upgrade   # (and build-rootfs when rootfs also changed)
 ```
 

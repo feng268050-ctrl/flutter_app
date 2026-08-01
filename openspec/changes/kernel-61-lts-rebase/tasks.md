@@ -1,6 +1,7 @@
 ## 0. Prerequisite
 
-- [ ] 0.1 Confirm `openspec/changes/multi-board-fit-dt` (platform W5) packaging + ynh960 regression is done — **do not start §1 until then**
+- [x] 0.1 Confirm `openspec/changes/multi-board-fit-dt` (platform W5) packaging + ynh960 regression (§5) is done — **unblocked 2026-08-01; may start §1**
+
 
 ## 1. Baseline and tip lock
 

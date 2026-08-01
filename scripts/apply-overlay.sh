@@ -877,6 +877,13 @@ install_file "$BOARD_DIR/parameter-ynh960-android-gpt.txt" "$CHIPS_DIR/parameter
 install_file "$BOARD_DIR/parameter-ynh960-android-stock.txt" "$CHIP_DIR/parameter-ynh960-android-stock.txt"
 install_file "$BOARD_DIR/boot-slim.its" "$CHIP_DIR/boot-slim.its"
 install_file "$BOARD_DIR/boot-slim.its" "$CHIPS_DIR/boot-slim.its"
+# W5 multi-conf ITS (inventory → generate → install). Active via RK_BOOT_FIT_ITS_NAME.
+bash "$ROOT/scripts/generate-boot-fit-its.sh" \
+	"$BOARD_DIR/rk356x-fit-boards.txt" "$BOARD_DIR/boot-multi.its"
+install_file "$BOARD_DIR/boot-multi.its" "$CHIP_DIR/boot-multi.its"
+install_file "$BOARD_DIR/boot-multi.its" "$CHIPS_DIR/boot-multi.its"
+install_file "$BOARD_DIR/rk356x-fit-boards.txt" "$CHIP_DIR/rk356x-fit-boards.txt"
+install_file "$BOARD_DIR/rk356x-fit-boards.txt" "$CHIPS_DIR/rk356x-fit-boards.txt"
 install_file "$BOARD_DIR/package-file-ynh960-linux-ab" "$CHIP_DIR/package-file-ynh960-linux-ab"
 install_file "$BOARD_DIR/package-file-ynh960-linux-ab" "$CHIPS_DIR/package-file-ynh960-linux-ab"
 

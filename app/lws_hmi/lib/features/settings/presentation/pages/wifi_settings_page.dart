@@ -283,140 +283,120 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
 
     return SettingsScaffold(
       title: l10n.wirelessNetworkText,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Switch + connected — lws-ui `top-left-bottom-right`
-          SettingsGroup(
-            borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
-            children: [
-              SettingsSwitchRow(
-                title: l10n.wifiWlanLabel,
-                value: _radioOn,
-                onChanged: _busy != null
-                    ? null
-                    : (v) => unawaited(
-                          _guard(() async {
-                            await _wifi.setRadioEnabled(v);
-                            if (v) await _scan(retries: 3, managed: false);
-                          }),
-                        ),
-              ),
-              if (connected)
-                _WifiNetworkRow(
-                  ssid: _conn.ssid!,
-                  secured: _connSecured(),
-                  showConnectedBadge: true,
-                  signalIcon: _signalIcon(_conn.signalDbm),
-                  onTap: () => unawaited(_openDetails()),
-                )
-              else if (_radioOn)
-                SettingsValueRow(
-                  title: l10n.notConnected,
-                  value: null,
+      body: RefreshIndicator(
+        color: CyberColors.buttonPrimaryAccent,
+        onRefresh: () async {
+          if (!_radioOn) return;
+          await _scan(retries: 3);
+        },
+        child: SettingsScrollView(
+          children: [
+            // Switch + connected — lws-ui `top-left-bottom-right`
+            SettingsGroup(
+              borderGradientCenter:
+                  CyberBorderGradientCenter.topLeftBottomRight,
+              children: [
+                SettingsSwitchRow(
+                  title: l10n.wifiWlanLabel,
+                  value: _radioOn,
+                  onChanged: _busy != null
+                      ? null
+                      : (v) => unawaited(
+                            _guard(() async {
+                              await _wifi.setRadioEnabled(v);
+                              if (v) await _scan(retries: 3, managed: false);
+                            }),
+                          ),
                 ),
-            ],
-          ),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: Colors.redAccent),
-              ),
+                if (connected)
+                  _WifiNetworkRow(
+                    ssid: _conn.ssid!,
+                    secured: _connSecured(),
+                    showConnectedBadge: true,
+                    signalIcon: _signalIcon(_conn.signalDbm),
+                    onTap: () => unawaited(_openDetails()),
+                  )
+                else if (_radioOn)
+                  SettingsValueRow(
+                    title: l10n.notConnected,
+                    value: null,
+                  ),
+              ],
             ),
-          if (_radioOn) ...[
-            // Scan list card (lws-ui weight=1 FrostCard + RecyclerView)
-            Expanded(
-              child: Padding(
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+              ),
+            if (_radioOn) ...[
+              // Nearby networks — same SettingsGroup chrome as Bluetooth.
+              SettingsGroup(
+                borderGradientCenter:
+                    CyberBorderGradientCenter.bottomLeftTopRight,
+                children: [
+                  if (_busy != null && nearby.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      child: Text(
+                        'Scanning…',
+                        style: TextStyle(
+                          color: CyberColors.textPrimary,
+                          fontSize: 18,
+                        ),
+                      ),
+                    )
+                  else if (nearby.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      child: Text(
+                        'No networks found',
+                        style: TextStyle(
+                          color: CyberColors.textPrimary,
+                          fontSize: 18,
+                        ),
+                      ),
+                    )
+                  else
+                    for (final ap in nearby)
+                      _WifiNetworkRow(
+                        ssid: ap.ssid,
+                        secured: !ap.isOpen,
+                        showConnectedBadge: false,
+                        signalIcon: _signalIcon(ap.signalDbm),
+                        onTap: _busy != null
+                            ? null
+                            : () => unawaited(_connectAp(ap)),
+                      ),
+                ],
+              ),
+              Padding(
                 padding: const EdgeInsets.fromLTRB(
                   SettingsDimens.inset,
                   0,
                   SettingsDimens.inset,
                   SettingsDimens.inset,
                 ),
-                child: SettingsPanel(
-                  borderGradientCenter:
-                      CyberBorderGradientCenter.bottomLeftTopRight,
-                  child: RefreshIndicator(
-                    color: CyberColors.buttonPrimaryAccent,
-                    onRefresh: () => _scan(retries: 3),
-                    child: ListView(
-                      physics: const BouncingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics(),
-                      ),
-                      children: [
-                        if (_busy != null && nearby.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 16,
-                            ),
-                            child: Text(
-                              'Scanning…',
-                              style: TextStyle(
-                                color: CyberColors.textPrimary,
-                                fontSize: 18,
-                              ),
-                            ),
-                          )
-                        else if (nearby.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 16,
-                            ),
-                            child: Text(
-                              'No networks found',
-                              style: TextStyle(
-                                color: CyberColors.textPrimary,
-                                fontSize: 18,
-                              ),
-                            ),
-                          )
-                        else
-                          for (var i = 0; i < nearby.length; i++) ...[
-                            _WifiNetworkRow(
-                              ssid: nearby[i].ssid,
-                              secured: !nearby[i].isOpen,
-                              showConnectedBadge: false,
-                              signalIcon: _signalIcon(nearby[i].signalDbm),
-                              onTap: _busy != null
-                                  ? null
-                                  : () => unawaited(_connectAp(nearby[i])),
-                            ),
-                            if (i < nearby.length - 1)
-                              const Divider(
-                                height: 1,
-                                indent: 20,
-                                endIndent: 20,
-                                color: CyberColors.dividerCenter,
-                              ),
-                          ],
-                      ],
-                    ),
+                child: Center(
+                  child: CyberButton(
+                    onPressed: _busy != null
+                        ? null
+                        : () => unawaited(_joinHidden()),
+                    child: Text(l10n.wifiHiddenNetworkConnect),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                SettingsDimens.inset,
-                0,
-                SettingsDimens.inset,
-                SettingsDimens.inset,
-              ),
-              child: Center(
-                child: CyberButton(
-                  onPressed:
-                      _busy != null ? null : () => unawaited(_joinHidden()),
-                  child: Text(l10n.wifiHiddenNetworkConnect),
-                ),
-              ),
-            ),
-          ] else
-            const Spacer(),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }

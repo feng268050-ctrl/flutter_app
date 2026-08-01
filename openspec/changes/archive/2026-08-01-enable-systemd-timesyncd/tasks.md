@@ -28,7 +28,7 @@
 
 ## 4. Device verification
 
-- [ ] 4.1 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade`
-- [ ] 4.2 Live board: `rtc0` = pcf8563; rate ~1.0; NTP active by default + rtc-systohc
-- [ ] 4.3 Confirm Settings Automatic (default) syncs when networked; Manual stays on RTC
+- [x] 4.1 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade`
+- [x] 4.2 Live board: `rtc0` = pcf8563; rate ~1.0; NTP active by default + rtc-systohc
+- [x] 4.3 Confirm Settings Automatic (default) syncs when networked; Manual stays on RTC
 - [x] 4.4 Product rule: do not require network for offline wall clock (external RTC)

@@ -18,8 +18,8 @@ Constraints:
 - Wall clock works **offline** from the **external PCF8563** on i2c5 @0x51 (RTC accuracy without network).
 - Leave RK809 PMIC RTC unregistered (`CONFIG_RTC_DRV_RK808` unset; RC-slow).
 - Ship timesyncd **enabled by default** (Settings Automatic on; HAL `sync_mode` defaults to `network`).
-- Periodically persist system → RTC without requiring NTP (`rtc-systohc.timer`) so offline reboot stays sane.
-- NTP server preference: `pool.ntp.org`, then Cloudflare → Google → Aliyun.
+- Periodically persist system → RTC without requiring NTP (`rtc-systohc.timer` → `hwclock -w -u -f /dev/rtc0`) so offline reboot stays sane.
+- NTP: overlay seed `pool.ntp.org` → Cloudflare → Google → Aliyun; runtime curated `20-hmi-ntp.conf` after HMI bring-up.
 
 **Non-Goals:**
 
@@ -53,14 +53,14 @@ Constraints:
 
 ### D4: Keep one-shot ladder as bootstrap + primary link-up nudge
 
-- **Choice:** `syncFromNetwork` / `ensureSaneForTls` keep the existing helper/rdate/HTTP ladder for immediate correction when year < 2025 (or explicit Sync Now). Continuous correction is timesyncd. Additionally, `NetworkTimeSyncWatcher` listens only to the **primary** network from `PrimaryNetworkResolver` (lowest `route_metrics`) and calls `syncFromNetwork` on that iface’s IPv4 rising edge when Automatic is on.
-- **Why:** timesyncd can take minutes / need DNS; TLS probes need a fast path when RTC is years off; operators expect “uplink just connected → clock corrects soon.” On ynh960, eth0 is the camera LAN (high metric) and must not trigger NTP; Wi‑Fi is the internet path (low metric).
+- **Choice:** `syncFromNetwork` / `ensureSaneForTls` keep the existing helper/rdate/HTTP ladder for immediate correction when year < 2025 (or explicit Sync Now). Continuous correction is timesyncd via `setSyncMode` / `applyPersistedSyncMode` → `timedatectl set-ntp` (ladder itself does **not** toggle NTP). Additionally, `NetworkTimeSyncWatcher` listens only to the **product primary** from `PrimaryNetworkController` (`/var/lib/network/primary.conf`, else lowest board `route_metrics`) and calls `syncFromNetwork` on that iface’s IPv4 rising edge when Automatic is on. Non-primary ifaces (e.g. camera Ethernet) are ignored.
+- **Why:** timesyncd can take minutes / need DNS; TLS probes need a fast path when RTC is years off; operators expect “uplink just connected → clock corrects soon.” Product `setPrimaryRole` owns which iface is internet; board metrics are fallbacks only.
 - **Optional later:** After NTP is enabled, Sync Now MAY also poke timesyncd / wait briefly — not required for v1 if ladder still works.
 
-### D5: NTP server preference (pool → Cloudflare → Google → Aliyun)
+### D5: NTP server preference (seed + runtime curated drop-in)
 
-- **Choice:** Overlay drop-in `etc/systemd/timesyncd.conf.d/10-appliance.conf` with `NTP=pool.ntp.org` and `FallbackNTP=time.cloudflare.com time.google.com ntp.aliyun.com`.
-- **Why:** Product preference order; `pool.ntp.org` is the primary. Fallbacks cover regions where the pool is slow or blocked.
+- **Choice:** Overlay seed `etc/systemd/timesyncd.conf.d/10-appliance.conf` with `NTP=pool.ntp.org` and `FallbackNTP=time.cloudflare.com time.google.com ntp.aliyun.com`. After HMI/HAL bring-up, `applyPersistedNtpServer` writes `/etc/systemd/timesyncd.conf.d/20-hmi-ntp.conf` with `NTP=<persisted primary>` (default `pool.ntp.org`) and `FallbackNTP=` the remaining curated presets (also Windows, Apple, Tencent, `cn.pool.ntp.org`), then restarts timesyncd (soft-fail).
+- **Why:** Seed covers first boot before App runs; runtime drop-in matches Settings picker (`NtpServerCatalog`) without baking every hostname into the image overlay.
 - **Alternatives:** CN-only Aliyun-first (previous opt-in lab config); chrony with same servers (heavier).
 
 ### D6: DNSSEC stays off

@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Reusable Dart `DateTimeController` for wall clock, timezone, sync mode (manual / network; default network), and network time sync (`systemd-timesyncd` + one-shot ladder + RTC), shared by Demo and product Settings.
+Reusable Dart `DateTimeController` for wall clock, timezone, sync mode (manual / network; default network), OS NTP via `setSyncMode`/`applyPersistedSyncMode`, one-shot ladder + primary link-up, and external RTC persist (`hwclock -f /dev/rtc0`).
 ## Requirements
 ### Requirement: Abstract date/time controller
 
-The HMI SHALL provide a reusable Dart `DateTimeController` (name may vary) that exposes wall-clock get/set, timezone get/set, sync mode get/set (`manual` | `network`), and network time sync. Callers (Demo and later product Settings) MUST depend on the abstract API. Linux SHALL implement the controller via system tools (`date` / `timedatectl` / `hwclock`) and the shared network sync helper path. Unit-testable fakes MUST be sufficient for host tests without a board.
+The HMI SHALL provide a reusable Dart `DateTimeController` (name may vary) that exposes wall-clock get/set, timezone get/set, sync mode get/set (`manual` | `network`), and network time sync. Callers (Demo and later product Settings) MUST depend on the abstract API. Linux SHALL implement the controller via system tools (`date` / `timedatectl` / `hwclock`) and the shared network sync helper path. Unit-testable fakes MUST be sufficient for host tests without a board. Default sync mode when no preference exists SHALL be **`network`** (Settings Automatic on). On ynh960, offline wall clock SHALL use the external PCF8563 RTC (not the RK809 PMIC RTC); network NTP MUST NOT be required for offline operation, but SHALL be enabled by default when the device can reach NTP.
 
 #### Scenario: Default sync mode is network
 
@@ -20,7 +20,7 @@ The HMI SHALL provide a reusable Dart `DateTimeController` (name may vary) that 
 
 ### Requirement: Manual wall-clock set
 
-The controller SHALL allow setting the system wall clock from a civil date/time and SHALL persist the value to the hardware RTC when `hwclock` is available. Applying a manual wall-clock set SHALL set sync mode to `manual`. Failures SHALL return a structured error and MUST NOT terminate the Flutter process.
+The controller SHALL allow setting the system wall clock from a civil date/time and SHALL persist the value to the hardware RTC via `hwclock -f /dev/rtc0` when `hwclock` is available. Applying a manual wall-clock set SHALL disable OS NTP before writing time, then set sync mode to `manual` (which keeps NTP off). Failures SHALL return a structured error and MUST NOT terminate the Flutter process.
 
 #### Scenario: Manual set updates system time
 
@@ -30,12 +30,22 @@ The controller SHALL allow setting the system wall clock from a civil date/time 
 #### Scenario: Manual set writes RTC when possible
 
 - **WHEN** a manual set succeeds and `hwclock` is available
-- **THEN** the implementation attempts `hwclock` write so a later reboot can restore the time
+- **THEN** the implementation attempts `hwclock -f /dev/rtc0` write so a later reboot can restore the time
 
 #### Scenario: Manual set switches mode to manual
 
 - **WHEN** the caller successfully applies a manual wall-clock set while mode was `network`
 - **THEN** persisted sync mode becomes `manual`
+- **AND** OS NTP is disabled
+
+### Requirement: Manual sync mode disables OS NTP
+
+When sync mode is `manual`, Linux SHALL disable OS NTP (`timedatectl set-ntp false` or equivalent) so timesyncd does not overwrite the operator-set time. TLS emergency one-shot sync (`ensureSaneForTls`) MUST still be allowed without changing persisted mode.
+
+#### Scenario: Manual mode turns NTP off
+
+- **WHEN** the caller sets sync mode to `manual`
+- **THEN** OS NTP is disabled and a subsequent `timedatectl` (or equivalent) shows NTP inactive
 
 ### Requirement: Timezone get and set
 
@@ -75,7 +85,7 @@ HAL MUST NOT use standalone `time-sync-mode` or `timezone` files (under `/var/li
 
 ### Requirement: Network time sync
 
-When sync mode is `network` (the product default when prefs are absent), or when the caller explicitly requests sync, Linux SHALL enable OS NTP via `systemd-timesyncd` (`timedatectl set-ntp true` or equivalent). The primary NTP server SHALL be the persisted `ntp_server` preference (default `pool.ntp.org`); Linux SHALL write `/etc/systemd/timesyncd.conf.d/20-hmi-ntp.conf` with `NTP=<primary>` and `FallbackNTP=` remaining curated presets, then restart timesyncd when Automatic is on (soft-fail if absent). For immediate correction (explicit Sync Now / Settings Automatic toggle, or TLS emergency when the UTC year is before 2025), the controller SHALL still attempt the shared one-shot ladder: existing board helper (`sync-time` / successor) if present, else `rdate`, else HTTP `Date` header parsing, then write RTC via `hwclock` when available. Sync SHALL be best-effort: failure returns a structured result and MUST NOT crash the HMI. When `onlyIfStale` is requested, sync MAY no-op if the UTC year is already in the sane window (2025–2030 inclusive). Offline wall clock MUST remain correct via the external RTC when NTP is unreachable.
+When sync mode is `network` (the product default when prefs are absent), Linux SHALL enable OS NTP via `systemd-timesyncd` through `setSyncMode(network)` and HMI/HAL bring-up `applyPersistedSyncMode` (`timedatectl set-ntp true` or equivalent; soft-fail if absent). `syncFromNetwork` / Sync Now SHALL run the one-shot ladder only and MUST NOT itself toggle OS NTP. The primary NTP server SHALL be the persisted `ntp_server` preference (default `pool.ntp.org`); Linux SHALL write `/etc/systemd/timesyncd.conf.d/20-hmi-ntp.conf` with `NTP=<primary>` and `FallbackNTP=` remaining curated presets, then restart timesyncd (soft-fail if absent). The image seed `10-appliance.conf` (pool → Cloudflare → Google → Aliyun) covers first boot before App runs. For immediate correction (explicit Sync Now / Settings Automatic toggle, primary link-up while Automatic, or TLS emergency when the UTC year is before 2025), the controller SHALL attempt the shared one-shot ladder: existing board helper (`sync-time` / successor) if present, else `rdate`, else HTTP `Date` header parsing, then write RTC via `hwclock -f /dev/rtc0` when available. Sync SHALL be best-effort: failure returns a structured result and MUST NOT crash the HMI. When `onlyIfStale` is requested, sync MAY no-op if the UTC year is already in the sane window (2025–2030 inclusive). Offline wall clock MUST remain correct via the external RTC when NTP is unreachable.
 
 #### Scenario: Sync Now succeeds with connectivity
 
@@ -92,11 +102,36 @@ When sync mode is `network` (the product default when prefs are absent), or when
 - **WHEN** `syncFromNetwork(onlyIfStale: true)` is called and the UTC year is already in 2025–2030
 - **THEN** the implementation MUST NOT churn network sync and reports success (or no-op success)
 
+#### Scenario: Network mode enables OS NTP
+
+- **WHEN** sync mode is set to `network` (or bring-up applies persisted `network` / default with no prefs)
+- **THEN** the implementation enables OS NTP (`timedatectl set-ntp true` or equivalent)
+
 #### Scenario: Link-up triggers immediate one-shot sync when Automatic
 
 - **WHEN** sync mode is `network` and the **primary** network (product [PrimaryNetworkController] / `/var/lib/network/primary.conf`, else lowest board `route_metrics`) gains a usable IPv4 address (offline → online)
 - **THEN** the implementation attempts `syncFromNetwork` without requiring a stale UTC year
+- **AND** Manual sync mode MUST NOT trigger that link-up sync
 - **AND** a non-primary interface gaining IPv4 (e.g. camera Ethernet) MUST NOT trigger that sync
+
+### Requirement: Offline external RTC without NTP
+
+Linux on ynh960 SHALL persist and restore wall clock via the external PCF8563-compatible RTC (`rtc0` after DT bind and with `CONFIG_RTC_DRV_RK808` unset) without requiring NTP or the RK809 PMIC RTC. The image SHALL enable `rtc-systohc.timer` whose service runs `hwclock -w -u -f /dev/rtc0`.
+
+#### Scenario: rtc-systohc timer enabled
+
+- **WHEN** the appliance image is built
+- **THEN** `rtc-systohc.timer` is enabled by preset
+- **AND** `rtc-systohc.service` runs `hwclock -w -u -f /dev/rtc0`
+
+### Requirement: Appliance NTP seed drop-in
+
+The image SHALL ship `etc/systemd/timesyncd.conf.d/10-appliance.conf` with primary `NTP=pool.ntp.org` and `FallbackNTP` ordered Cloudflare → Google → Aliyun. Runtime curated preference overrides via `20-hmi-ntp.conf` as described under Network time sync / Curated NTP server preference.
+
+#### Scenario: Seed prefers pool then Cloudflare Google Aliyun
+
+- **WHEN** the rootfs overlay timesyncd seed drop-in is inspected
+- **THEN** it lists `pool.ntp.org` as primary NTP and Cloudflare, Google, and Aliyun as fallbacks in that order
 
 ### Requirement: Product selects primary network role
 

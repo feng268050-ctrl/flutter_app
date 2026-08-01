@@ -5,7 +5,7 @@ TBD - created by archiving change p1-linux-flutter-platform. Update Purpose afte
 ## Requirements
 ### Requirement: Plan A minimal systemd is PID 1
 
-The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL ship `libsystemd.so` for the eLinux HMI (`sd_event`); libsystemd availability does not by itself mandate systemd as init, but both are enabled via `lws_hmi_systemd.config`. **P3.1 / D11:** the image SHALL enable **systemd-networkd** and **systemd-resolved**. The image SHALL ship and preset-**enable** **systemd-timesyncd** (Settings Automatic NTP default on). It MUST keep systemd-logind and polkit packages disabled per that config.
+The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL ship `libsystemd.so` for the eLinux HMI (`sd_event`); libsystemd availability does not by itself mandate systemd as init, but both are enabled via `lws_hmi_systemd.config`. **P3.1 / D11:** the image SHALL enable **systemd-networkd** and **systemd-resolved**. The image SHALL ship **systemd-timesyncd** and the appliance preset MUST **enable** `systemd-timesyncd.service` at boot (Settings Automatic NTP default on). On ynh960, the image MUST use the external PCF8563-compatible RTC on i2c5 @0x51 for HCTOSYS/SYSTOHC and MUST NOT register the RK809 PMIC RTC (`CONFIG_RTC_DRV_RK808` unset in the ynh960 kernel fragment). It MUST keep systemd-logind and polkit packages disabled per that config. chrony MUST remain unset.
 
 #### Scenario: systemd is init
 
@@ -17,9 +17,30 @@ The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL shi
 - **WHEN** the appliance image reaches multi-user target after the D11 network cutover
 - **THEN** `systemd-networkd` and `systemd-resolved` are enabled (preset) and provide L3 addressing and DNS
 
+#### Scenario: timesyncd enabled by default
+
+- **WHEN** the appliance image reaches multi-user target with default datetime prefs
+- **THEN** `systemd-timesyncd` is enabled by preset
+- **AND** `hmi.service` MUST NOT depend on `time-sync.target` or `network-online.target`
+
+### Requirement: External RTC systohc without NTP
+
+Post-build / overlay SHALL enable `rtc-systohc.timer` and SHALL ship `rtc-systohc.service` that runs `hwclock -w -u -f /dev/rtc0` so the external RTC tracks the running clock when NTP is off or unreachable. The image MUST NOT ship fake-hwclock load/save units. Preset MUST also `enable systemd-timesyncd.service`. `verify-env` SHALL report timesyncd binary/unit present and enabled-by-preset as PASS (warn if unexpectedly disabled).
+
+#### Scenario: rtc-systohc in appliance preset
+
+- **WHEN** the rootfs overlay preset `99-appliance.preset` is inspected
+- **THEN** it contains `enable rtc-systohc.timer`
+- **AND** it contains `enable systemd-timesyncd.service`
+
+#### Scenario: verify-env accepts enabled timesyncd
+
+- **WHEN** operator runs `verify-env` on a device built with timesyncd enabled
+- **THEN** the script reports that the timesyncd unit/binary is present and that the service is enabled by preset (or warns if unexpectedly disabled)
+
 ### Requirement: hmi.service auto-starts the HMI after local-fs only
 
-The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/usr/bin/eLinux HMI --release -o landscape_left /opt/hmi` with `Nice=-5`, restart on failure, and MUST depend only on `local-fs.target` and `cpu-performance.service` — not on `network-online.target` or `systemd-udev-settle.service`. The HMI MUST NOT depend on a rootfs `mediamtx.service` (MediaMTX is App-owned under `/opt/hmi`).
+The `hmi.service` unit SHALL be enabled in `multi-user.target.wants`, start `/usr/bin/eLinux HMI --release -o landscape_left /opt/hmi` with `Nice=-5`, restart on failure, and MUST depend only on `local-fs.target` and `cpu-performance.service` — not on `network-online.target`, `time-sync.target`, or `systemd-udev-settle.service`. The HMI MUST NOT depend on a rootfs `mediamtx.service` (MediaMTX is App-owned under `/opt/hmi`).
 
 #### Scenario: hmi enabled at image build
 

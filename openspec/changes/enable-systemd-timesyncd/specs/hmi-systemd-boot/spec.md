@@ -24,7 +24,7 @@ The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL shi
 
 ### Requirement: External RTC systohc without NTP
 
-Post-build / overlay SHALL enable `rtc-systohc.timer` and SHALL ship `rtc-systohc.service` that runs `hwclock -w -u` so the external RTC tracks the running clock when NTP is off or unreachable. The image MUST NOT ship fake-hwclock load/save units.
+Post-build / overlay SHALL enable `rtc-systohc.timer` and SHALL ship `rtc-systohc.service` that runs `hwclock -w -u -f /dev/rtc0` so the external RTC tracks the running clock when NTP is off or unreachable. The image MUST NOT ship fake-hwclock load/save units.
 
 #### Scenario: rtc-systohc in appliance preset
 

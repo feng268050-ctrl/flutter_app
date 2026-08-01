@@ -8,8 +8,9 @@ ynh960 product boards have an **external RTC** on **i2c5 @0x51** (PCF8563-compat
 - In `ynh960-rtc.config`: **unset `CONFIG_RTC_DRV_RK808`** (PMIC RTC must not register), enable `CONFIG_RTC_DRV_PCF8563`, HCTOSYS/SYSTOHC → `rtc0` (the external chip as the only RTC).
 - Keep `0008-rk808-rtc-reenable-probe.patch` **removed** (do not re-enable PMIC RTC via source patch).
 - Restore `rtc-systohc.timer` (`hwclock -w -f /dev/rtc0`); remove fake-hwclock units/script.
-- Enable timesyncd **by default**; NTP servers: `pool.ntp.org`, then Cloudflare → Google → Aliyun.
-- Default HAL sync mode **network** (Automatic on); Manual / `setWallClock` turns NTP off.
+- Enable timesyncd **by default**; seed NTP: `pool.ntp.org`, then Cloudflare → Google → Aliyun; HMI bring-up writes curated `20-hmi-ntp.conf`.
+- Default HAL sync mode **network** (Automatic on); Manual / `setWallClock` turns NTP off; OS NTP toggled only via `setSyncMode` / bring-up (not `syncFromNetwork`).
+- Primary link-up sync via `PrimaryNetworkController` / `primary.conf` (not board-metric-only resolver).
 
 ## Capabilities
 

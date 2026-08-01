@@ -314,43 +314,50 @@ class _HomePageState extends State<HomePage> with RouteAware {
           return CyberBlurBackdropScope(
             child: Stack(
               fit: StackFit.expand,
+              // Let SettingsPanel outer ambient (~20dp) paint past card bounds.
+              clipBehavior: Clip.none,
               children: [
-                CyberBlurBackdropTarget(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      const _HomeBackdrop(),
-                      _HomeAnimatedPlate(
-                        asset: HomeAssets.leftAnimated,
-                        fallback: HomeAssets.leftStatic,
-                        left: -60 * sx,
-                        top: -90 * sy,
-                        width: 600 * sx,
-                        height: 600 * sy,
-                      ),
-                      _HomeAnimatedPlate(
-                        asset: HomeAssets.rightAnimated,
-                        fallback: HomeAssets.rightStatic,
-                        left: 740 * sx,
-                        top: -90 * sy,
-                        width: 600 * sx,
-                        height: 600 * sy,
-                      ),
-                      _PositionedAsset(
-                        asset: HomeAssets.leftStatic,
-                        left: 53 * sx,
-                        top: 55 * sy,
-                        width: 375 * sx,
-                        height: 280 * sy,
-                      ),
-                      _PositionedAsset(
-                        asset: HomeAssets.rightStatic,
-                        left: 853 * sx,
-                        top: 55 * sy,
-                        width: 375 * sx,
-                        height: 280 * sy,
-                      ),
-                    ],
+                // Positioned.fill so the capture target matches the page
+                // stack size (non-positioned Target was smaller than the
+                // card layer on the emulator — rightmost frost cropped empty).
+                Positioned.fill(
+                  child: CyberBlurBackdropTarget(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        const _HomeBackdrop(),
+                        _HomeAnimatedPlate(
+                          asset: HomeAssets.leftAnimated,
+                          fallback: HomeAssets.leftStatic,
+                          left: -60 * sx,
+                          top: -90 * sy,
+                          width: 600 * sx,
+                          height: 600 * sy,
+                        ),
+                        _HomeAnimatedPlate(
+                          asset: HomeAssets.rightAnimated,
+                          fallback: HomeAssets.rightStatic,
+                          left: 740 * sx,
+                          top: -90 * sy,
+                          width: 600 * sx,
+                          height: 600 * sy,
+                        ),
+                        _PositionedAsset(
+                          asset: HomeAssets.leftStatic,
+                          left: 53 * sx,
+                          top: 55 * sy,
+                          width: 375 * sx,
+                          height: 280 * sy,
+                        ),
+                        _PositionedAsset(
+                          asset: HomeAssets.rightStatic,
+                          left: 853 * sx,
+                          top: 55 * sy,
+                          width: 375 * sx,
+                          height: 280 * sy,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 // Top clock — slightly below vertical center of the design frame.
@@ -434,6 +441,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Custom Home metric cards — same SettingsPanel frost +
+                      // corner-split inner/outer ambient as Settings groups.
                       SizedBox(
                         height: _kStatCardH * sy,
                         child: CustomHomeStatisticsPanel(

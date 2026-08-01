@@ -1,8 +1,10 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
@@ -49,22 +51,13 @@ abstract final class SettingsDimens {
   static const cardBorder = Color(0x66FFFFFF);
   static const cardHighlightGlow = Color(0x33FFFFFF);
 
-  /// Inner edge shade fading toward the plate center. Wider than row text
-  /// padding ([rowPadding] 20) so the vignette can cross into content.
+  /// Inner shade: plate RRect deflated in steps (edge → clear). Wider than
+  /// row text padding ([rowPadding] 20) so the vignette can cross content.
   static const innerShadowWidth = 28.0;
-  /// Edge → mid → clear opacities: 47% → 25% → 0%.
   static const innerShadowEdge = Color(0x78000000);
-  static const innerShadowMid = Color(0x40000000);
 
-  /// Surface lift is intentionally non-uniform: brighter at the top, darker at
-  /// the bottom. The gradient makes the whole plate read as a solid foreground
-  /// mass instead of a flat fill surrounded by a bright wire.
-  static const faceTopLift = 0.135;
-  static const faceMiddleLift = 0.105;
-  static const faceBottomLift = 0.080;
-
-  /// A small dark under-plate remains visible below the foreground plate and
-  /// gives it an actual visual thickness rather than relying on blur alone.
+  /// Offset used only for the transparent lip twin that carries [depthLipShadow]
+  /// (no opaque under-fill — that blocked frost see-through).
   static const depthLipOffset = 5.0;
 
   /// Soft shade cast from the depth lip onto the page (under-plate → background).
@@ -77,13 +70,9 @@ abstract final class SettingsDimens {
     ),
   ];
 
-  /// Outward ambient shade: ~20px band on all sides (edge → transparent).
+  /// Outer shade: plate RRect inflated in steps (edge → transparent).
   static const outerAmbientExtent = 20.0;
   static const outerAmbientEdge = Color(0xA6000000);
-  static const outerAmbientMid = Color(0x4D000000);
-  static const outerAmbientMidSoft = Color(0x24000000);
-  static const outerAmbientTopEdge = Color(0x52000000);
-  static const outerAmbientSideEdge = Color(0x7A000000);
 
   /// Compact contact shadow around the front plate (matches ~20px outer band).
   static const cardShadow = <BoxShadow>[
@@ -139,6 +128,9 @@ final class SettingsTopTabs extends StatelessWidget
   static const unselected = Color(0xFF94A3B8);
   static const dividerColor = Color(0x33FFFFFF);
 
+  /// Opaque tab strip — no wallpaper see-through under the tabs.
+  static const background = CyberColors.fillSolidTop;
+
   final List<String> labels;
   final List<({Key key, IconData icon})> tabs;
   final int currentIndex;
@@ -152,7 +144,7 @@ final class SettingsTopTabs extends StatelessWidget
   Widget build(BuildContext context) {
     assert(labels.length == tabs.length);
     return ColoredBox(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: background,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -332,8 +324,17 @@ class SettingsHelpFooter extends StatelessWidget {
   }
 }
 
-/// Settings group shell — lifted face, depth lip, dual outer shadows, and
-/// an inward-fading inner-edge shade under a soft four-side rim.
+/// Settings group shell — frosted face + depth chrome (replaces the old
+/// opaque scaffold→white gradient plate).
+///
+/// Face: [CyberBackdropBlur] [followLayout]/[low]/[dark] (lws-ui home-stat
+/// frost). Realtime [BackdropFilter] composites black on Weston, so capture
+/// from [CyberBlurBackdropScope] is required; [followLayout] offsets a shared
+/// blurred backdrop as the panel scrolls so perspective stays correct.
+///
+/// Depth (flat, raised glass): outer shade = inflated RRect shells; inner
+/// shade = deflated RRect shells; both fade with distance. Plus transparent
+/// lip cast, contact [cardShadow], and a uniform bright rim. No solid fill.
 ///
 /// [borderGradientCenter] is retained for call-site compatibility but ignored.
 class SettingsPanel extends StatelessWidget {
@@ -342,31 +343,26 @@ class SettingsPanel extends StatelessWidget {
     required this.child,
     this.borderGradientCenter =
         CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderRadius,
   });
 
   final Widget child;
   final CyberBorderGradientCenter borderGradientCenter;
 
+  /// When null, uses [CyberGlassTheme.cornerRadius].
+  final BorderRadius? borderRadius;
+
   @override
   Widget build(BuildContext context) {
     final glass = CyberGlassTheme.of(context);
-    final corner = glass.cornerRadius;
-    final radius = BorderRadius.circular(corner);
-    final pageBg = Theme.of(context).scaffoldBackgroundColor;
+    final radius =
+        borderRadius ?? BorderRadius.circular(glass.cornerRadius);
+    final corner = radius.topLeft.x;
 
-    final faceTop =
-        Color.lerp(pageBg, Colors.white, SettingsDimens.faceTopLift)!;
-    final faceMiddle =
-        Color.lerp(pageBg, Colors.white, SettingsDimens.faceMiddleLift)!;
-    final faceBottom =
-        Color.lerp(pageBg, Colors.white, SettingsDimens.faceBottomLift)!;
-    final depthLip = Color.lerp(pageBg, Colors.black, 0.48)!;
-    final depthLipRim = Color.lerp(pageBg, Colors.white, 0.055)!;
-
-    // The offset under-plate supplies a visible thickness at the bottom. The
-    // front plate then carries the lit surface, four-side rim, and cast shadow.
-    // Outer ambient gradients sit behind both plates and fade away from the
-    // rim into the page chrome.
+    // No opaque under-plate: a filled lip behind the frost read as solid face
+    // fill. Keep its cast shadow on a transparent twin so depth is unchanged.
+    // Do not use StackFit.expand — Settings groups live in scroll views with
+    // unbounded height; expand → Infinity/NaN transforms and a blank body.
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -375,11 +371,7 @@ class SettingsPanel extends StatelessWidget {
             painter: _SettingsOuterAmbientPainter(
               cornerRadius: corner,
               extent: SettingsDimens.outerAmbientExtent,
-              topEdge: SettingsDimens.outerAmbientTopEdge,
-              sideEdge: SettingsDimens.outerAmbientSideEdge,
-              bottomEdge: SettingsDimens.outerAmbientEdge,
-              mid: SettingsDimens.outerAmbientMid,
-              midSoft: SettingsDimens.outerAmbientMidSoft,
+              edge: SettingsDimens.outerAmbientEdge,
             ),
           ),
         ),
@@ -388,9 +380,8 @@ class SettingsPanel extends StatelessWidget {
             offset: const Offset(0, SettingsDimens.depthLipOffset),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: depthLip,
+                color: Colors.transparent,
                 borderRadius: radius,
-                border: Border.all(color: depthLipRim),
                 boxShadow: SettingsDimens.depthLipShadow,
               ),
             ),
@@ -401,23 +392,16 @@ class SettingsPanel extends StatelessWidget {
             borderRadius: radius,
             boxShadow: SettingsDimens.cardShadow,
           ),
-          child: Material(
-            color: Colors.transparent,
-            elevation: 0,
-            shadowColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: radius),
-            clipBehavior: Clip.antiAlias,
-            child: Ink(
-              decoration: BoxDecoration(
-                borderRadius: radius,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0.0, 0.46, 1.0],
-                  colors: [faceTop, faceMiddle, faceBottom],
-                ),
-              ),
+          child: ClipRRect(
+            borderRadius: radius,
+            child: CyberBackdropBlur(
+              // Capture once, offset on scroll (Weston realtime → black).
+              // Slightly under lws-ui LOW (12) so wallpaper detail still reads.
+              sampleMode: CyberBlurSampleMode.followLayout,
+              intensity: CyberBlurIntensity.low,
+              sigmaX: 7,
+              sigmaY: 7,
+              blurTint: CyberBlurTint.dark,
               child: CustomPaint(
                 foregroundPainter: _SettingsDepthEdgePainter(
                   baseRim: SettingsDimens.cardBorder,
@@ -426,7 +410,6 @@ class SettingsPanel extends StatelessWidget {
                   cornerRadius: corner,
                   innerShadowWidth: SettingsDimens.innerShadowWidth,
                   innerShadowEdge: SettingsDimens.innerShadowEdge,
-                  innerShadowMid: SettingsDimens.innerShadowMid,
                 ),
                 child: child,
               ),
@@ -438,28 +421,37 @@ class SettingsPanel extends StatelessWidget {
   }
 }
 
-/// Soft shade outside the plate: a ~20px band fading away from each edge.
+/// Annular RRect shells between [inner] (inclusive outer) and [outer].
+Path _rrectRing(RRect outer, RRect inner) {
+  return Path()
+    ..fillType = PathFillType.evenOdd
+    ..addRRect(outer)
+    ..addRRect(inner);
+}
+
+/// Opacity falloff for flat depth shells: strong at the plate edge, clear afar.
+double _shellOpacity(double edgeAlpha, double t) {
+  // Ease-out so the near-edge band stays readable without a hard cliff.
+  final u = t.clamp(0.0, 1.0);
+  final falloff = (1.0 - u) * (1.0 - u);
+  return edgeAlpha * falloff;
+}
+
+/// Outer ambient: inflate the plate RRect in steps; each shell fades out.
+///
+/// Flat raised look — same rounded-rect silhouette as the plate, larger.
 final class _SettingsOuterAmbientPainter extends CustomPainter {
   const _SettingsOuterAmbientPainter({
     required this.cornerRadius,
     required this.extent,
-    required this.topEdge,
-    required this.sideEdge,
-    required this.bottomEdge,
-    required this.mid,
-    required this.midSoft,
+    required this.edge,
   });
+
+  static const _steps = 10;
 
   final double cornerRadius;
   final double extent;
-  final Color topEdge;
-  final Color sideEdge;
-  final Color bottomEdge;
-  final Color mid;
-  final Color midSoft;
-
-  static const _clear = Color(0x00000000);
-  static const _stops = <double>[0.0, 0.40, 1.0];
+  final Color edge;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -467,98 +459,35 @@ final class _SettingsOuterAmbientPainter extends CustomPainter {
       return;
     }
 
-    // Keep the outward bands outside the plate so they only shade the page.
+    final cr = cornerRadius
+        .clamp(0.0, math.min(size.width, size.height) / 2.0)
+        .toDouble();
     final plate = RRect.fromRectAndRadius(
       Offset.zero & size,
-      Radius.circular(cornerRadius),
+      Radius.circular(cr),
     );
-    final bounds = Rect.fromLTRB(
-      -extent,
-      -extent,
-      size.width + extent,
-      size.height + extent,
-    );
-    final outside = Path()
-      ..addRect(bounds)
-      ..addRRect(plate)
-      ..fillType = PathFillType.evenOdd;
+    final edgeAlpha = edge.opacity;
+    var prev = plate;
+    final paint = Paint()..isAntiAlias = true;
 
-    canvas.save();
-    canvas.clipPath(outside);
-
-    const blur = ui.MaskFilter.blur(ui.BlurStyle.normal, 1.5);
-
-    // Top ↑ (lighter)
-    canvas.drawRect(
-      Rect.fromLTWH(0, -extent, size.width, extent),
-      Paint()
-        ..isAntiAlias = true
-        ..maskFilter = blur
-        ..shader = ui.Gradient.linear(
-          const Offset(0, 0),
-          Offset(0, -extent),
-          [topEdge, midSoft, _clear],
-          _stops,
-        ),
-    );
-
-    // Bottom ↓
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height, size.width, extent),
-      Paint()
-        ..isAntiAlias = true
-        ..maskFilter = blur
-        ..shader = ui.Gradient.linear(
-          Offset(0, size.height),
-          Offset(0, size.height + extent),
-          [bottomEdge, mid, _clear],
-          _stops,
-        ),
-    );
-
-    // Left ← / Right →
-    canvas.drawRect(
-      Rect.fromLTWH(-extent, 0, extent, size.height),
-      Paint()
-        ..isAntiAlias = true
-        ..maskFilter = blur
-        ..shader = ui.Gradient.linear(
-          const Offset(0, 0),
-          Offset(-extent, 0),
-          [sideEdge, midSoft, _clear],
-          _stops,
-        ),
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(size.width, 0, extent, size.height),
-      Paint()
-        ..isAntiAlias = true
-        ..maskFilter = blur
-        ..shader = ui.Gradient.linear(
-          Offset(size.width, 0),
-          Offset(size.width + extent, 0),
-          [sideEdge, midSoft, _clear],
-          _stops,
-        ),
-    );
-
-    canvas.restore();
+    for (var i = 1; i <= _steps; i++) {
+      final t = i / _steps;
+      final next = plate.inflate(extent * t);
+      paint.color = edge.withOpacity(_shellOpacity(edgeAlpha, t - 0.5 / _steps));
+      canvas.drawPath(_rrectRing(next, prev), paint);
+      prev = next;
+    }
   }
 
   @override
   bool shouldRepaint(covariant _SettingsOuterAmbientPainter oldDelegate) {
     return oldDelegate.cornerRadius != cornerRadius ||
         oldDelegate.extent != extent ||
-        oldDelegate.topEdge != topEdge ||
-        oldDelegate.sideEdge != sideEdge ||
-        oldDelegate.bottomEdge != bottomEdge ||
-        oldDelegate.mid != mid ||
-        oldDelegate.midSoft != midSoft;
+        oldDelegate.edge != edge;
   }
 }
 
-/// Uniform four-side 1px rim + equal soft highlight halo, plus an
-/// inward-fading edge shade (vignette).
+/// Uniform 1px rim + soft highlight, plus inner shade from deflated RRects.
 final class _SettingsDepthEdgePainter extends CustomPainter {
   const _SettingsDepthEdgePainter({
     required this.baseRim,
@@ -567,8 +496,9 @@ final class _SettingsDepthEdgePainter extends CustomPainter {
     required this.cornerRadius,
     required this.innerShadowWidth,
     required this.innerShadowEdge,
-    required this.innerShadowMid,
   });
+
+  static const _innerSteps = 10;
 
   final Color baseRim;
   final Color highlightGlow;
@@ -576,7 +506,6 @@ final class _SettingsDepthEdgePainter extends CustomPainter {
   final double cornerRadius;
   final double innerShadowWidth;
   final Color innerShadowEdge;
-  final Color innerShadowMid;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -597,7 +526,7 @@ final class _SettingsDepthEdgePainter extends CustomPainter {
       Radius.circular(innerRadius),
     );
 
-    _paintInnerShadow(canvas, size, rrect);
+    _paintInnerShadow(canvas, rrect);
 
     // Soft equal highlight on all four sides (not a neon wire, not top-lit).
     canvas.drawRRect(
@@ -621,70 +550,40 @@ final class _SettingsDepthEdgePainter extends CustomPainter {
     );
   }
 
-  /// Soft shade hugging all four edges, fading toward the plate center.
-  void _paintInnerShadow(Canvas canvas, Size size, RRect clip) {
+  /// Inner shade: deflate the plate RRect in steps; each shell fades inward.
+  void _paintInnerShadow(Canvas canvas, RRect rim) {
     final band = innerShadowWidth;
     if (band <= 0) {
       return;
     }
-    final stops = const <double>[0.0, 0.42, 1.0];
-    final colors = <Color>[
-      innerShadowEdge,
-      innerShadowMid,
-      const Color(0x00000000),
-    ];
+
+    final maxInset = math.min(
+      band,
+      math.min(rim.width, rim.height) / 2.0 - 0.5,
+    );
+    if (maxInset <= 0) {
+      return;
+    }
 
     canvas.save();
-    canvas.clipRRect(clip);
+    canvas.clipRRect(rim);
 
-    // Top → down
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, band),
-      Paint()
-        ..isAntiAlias = true
-        ..shader = ui.Gradient.linear(
-          Offset(0, 0),
-          Offset(0, band),
-          colors,
-          stops,
-        ),
-    );
-    // Bottom → up
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height - band, size.width, band),
-      Paint()
-        ..isAntiAlias = true
-        ..shader = ui.Gradient.linear(
-          Offset(0, size.height),
-          Offset(0, size.height - band),
-          colors,
-          stops,
-        ),
-    );
-    // Left → right
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, band, size.height),
-      Paint()
-        ..isAntiAlias = true
-        ..shader = ui.Gradient.linear(
-          Offset(0, 0),
-          Offset(band, 0),
-          colors,
-          stops,
-        ),
-    );
-    // Right → left
-    canvas.drawRect(
-      Rect.fromLTWH(size.width - band, 0, band, size.height),
-      Paint()
-        ..isAntiAlias = true
-        ..shader = ui.Gradient.linear(
-          Offset(size.width, 0),
-          Offset(size.width - band, 0),
-          colors,
-          stops,
-        ),
-    );
+    final edgeAlpha = innerShadowEdge.opacity;
+    var prev = rim;
+    final paint = Paint()..isAntiAlias = true;
+
+    for (var i = 1; i <= _innerSteps; i++) {
+      final t = i / _innerSteps;
+      final next = rim.deflate(maxInset * t);
+      if (next.outerRect.isEmpty) {
+        break;
+      }
+      paint.color = innerShadowEdge.withOpacity(
+        _shellOpacity(edgeAlpha, t - 0.5 / _innerSteps),
+      );
+      canvas.drawPath(_rrectRing(prev, next), paint);
+      prev = next;
+    }
 
     canvas.restore();
   }
@@ -696,8 +595,7 @@ final class _SettingsDepthEdgePainter extends CustomPainter {
         oldDelegate.width != width ||
         oldDelegate.cornerRadius != cornerRadius ||
         oldDelegate.innerShadowWidth != innerShadowWidth ||
-        oldDelegate.innerShadowEdge != innerShadowEdge ||
-        oldDelegate.innerShadowMid != innerShadowMid;
+        oldDelegate.innerShadowEdge != innerShadowEdge;
   }
 }
 
@@ -1374,6 +1272,28 @@ class SettingsParamRow extends StatelessWidget {
   }
 }
 
+/// Home wallpaper used as Settings capture root / page backdrop.
+class SettingsHomeBackdrop extends StatelessWidget {
+  const SettingsHomeBackdrop({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final size = MediaQuery.sizeOf(context);
+    return Image.asset(
+      HomeAssets.backdrop,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      filterQuality: FilterQuality.medium,
+      cacheWidth: (size.width * dpr).round().clamp(640, 1920),
+      cacheHeight: (size.height * dpr).round().clamp(400, 1200),
+      errorBuilder: (_, __, ___) =>
+          const ColoredBox(color: Color(0xFF1A1A1A)),
+    );
+  }
+}
+
 class SettingsScaffold extends StatelessWidget {
   const SettingsScaffold({
     super.key,
@@ -1390,25 +1310,34 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final l10n = AppLocalizations.of(context)!;
-    final background = Theme.of(context).scaffoldBackgroundColor;
+    // Capture root = Home wallpaper; body (SettingsPanel) stays outside so
+    // followLayout frost samples the backdrop, not the panel itself.
     return CyberBlurBackdropScope(
-      child: CyberBlurBackdropTarget(
-        child: Scaffold(
-          backgroundColor: background,
-          appBar: ProductPageStatusBar(
-            title: title,
-            actions: actions,
-            backgroundColor: background,
-            foregroundColor: Colors.white,
-            toolbarHeight: WorkModeStatusBarDimens.height,
-            // Product CallBackHomeButton: Home → home icon, Back → arrow_back.
-            // Nested settings pop → "Back".
-            backLabel: l10n.equipmentStatusBack,
-            backAccent: WorkModeAccent.weld,
-            onBack: canPop ? () => Navigator.of(context).maybePop() : null,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CyberBlurBackdropTarget(
+              child: SettingsHomeBackdrop(),
+            ),
           ),
-          body: body,
-        ),
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: ProductPageStatusBar(
+              title: title,
+              actions: actions,
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              toolbarHeight: WorkModeStatusBarDimens.height,
+              // Product CallBackHomeButton: Home → home icon, Back → arrow_back.
+              // Nested settings pop → "Back".
+              backLabel: l10n.equipmentStatusBack,
+              backAccent: WorkModeAccent.weld,
+              onBack: canPop ? () => Navigator.of(context).maybePop() : null,
+            ),
+            body: body,
+          ),
+        ],
       ),
     );
   }

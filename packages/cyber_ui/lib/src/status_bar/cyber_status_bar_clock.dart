@@ -11,12 +11,16 @@ class CyberStatusBarClock extends StatefulWidget {
     super.key,
     this.style,
     this.now,
+    this.use24HourFormat = true,
   });
 
   final TextStyle? style;
 
   /// Injected for tests / OS wall clock; defaults to [DateTime.now].
   final DateTime Function()? now;
+
+  /// When false, shows 12-hour time via [TimeOfDay.format].
+  final bool use24HourFormat;
 
   @override
   State<CyberStatusBarClock> createState() => _CyberStatusBarClockState();
@@ -28,16 +32,28 @@ class _CyberStatusBarClockState extends State<CyberStatusBarClock> {
 
   DateTime get _now => widget.now?.call() ?? DateTime.now();
 
-  static String _format(DateTime t) {
-    final h = t.hour.toString().padLeft(2, '0');
-    final m = t.minute.toString().padLeft(2, '0');
-    return '$h:$m';
+  String _format(DateTime t) {
+    try {
+      final tod = TimeOfDay.fromDateTime(t);
+      return MaterialLocalizations.of(context).formatTimeOfDay(
+        tod,
+        alwaysUse24HourFormat: widget.use24HourFormat,
+      );
+    } catch (_) {
+      final h = t.hour.toString().padLeft(2, '0');
+      final m = t.minute.toString().padLeft(2, '0');
+      return '$h:$m';
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    _text = _format(_now);
+    _text = '';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _text = _format(_now));
+    });
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
   }
 
@@ -54,9 +70,16 @@ class _CyberStatusBarClockState extends State<CyberStatusBarClock> {
   @override
   void didUpdateWidget(CyberStatusBarClock oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.now != widget.now) {
+    if (oldWidget.now != widget.now ||
+        oldWidget.use24HourFormat != widget.use24HourFormat) {
       _onTick();
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _onTick();
   }
 
   @override

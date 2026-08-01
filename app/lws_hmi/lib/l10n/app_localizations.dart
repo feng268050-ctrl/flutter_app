@@ -1196,6 +1196,66 @@ abstract class AppLocalizations {
   /// **'Automatic'**
   String get dateTimeAutomatic;
 
+  /// No description provided for @dateTimeNtpServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Server'**
+  String get dateTimeNtpServer;
+
+  /// No description provided for @dateTimeNtpPool.
+  ///
+  /// In en, this message translates to:
+  /// **'NTP Pool'**
+  String get dateTimeNtpPool;
+
+  /// No description provided for @dateTimeNtpCloudflare.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare'**
+  String get dateTimeNtpCloudflare;
+
+  /// No description provided for @dateTimeNtpGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google'**
+  String get dateTimeNtpGoogle;
+
+  /// No description provided for @dateTimeNtpAliyun.
+  ///
+  /// In en, this message translates to:
+  /// **'Aliyun'**
+  String get dateTimeNtpAliyun;
+
+  /// No description provided for @dateTimeNtpWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'Windows'**
+  String get dateTimeNtpWindows;
+
+  /// No description provided for @dateTimeNtpApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple'**
+  String get dateTimeNtpApple;
+
+  /// No description provided for @dateTimeNtpTencent.
+  ///
+  /// In en, this message translates to:
+  /// **'Tencent'**
+  String get dateTimeNtpTencent;
+
+  /// No description provided for @dateTimeNtpCnPool.
+  ///
+  /// In en, this message translates to:
+  /// **'China NTP Pool'**
+  String get dateTimeNtpCnPool;
+
+  /// No description provided for @dateTimeTimezoneGeoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t set time zone from network location'**
+  String get dateTimeTimezoneGeoFailed;
+
   /// No description provided for @dateTimeModeAuto.
   ///
   /// In en, this message translates to:
@@ -1255,6 +1315,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Time'**
   String get dateTimeSetTime;
+
+  /// No description provided for @dateTimeUse24HourFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 24-Hour Format'**
+  String get dateTimeUse24HourFormat;
 
   /// No description provided for @dateTimeSetTimeZone.
   ///

@@ -36,6 +36,7 @@ class HomeClock extends StatefulWidget {
     this.blurTint = CyberBlurTint.warm,
     this.now,
     this.listenable,
+    this.use24HourFormat = true,
   });
 
   /// Design text size (product Home: 120; lws-ui XML: 150sp).
@@ -53,6 +54,9 @@ class HomeClock extends StatefulWidget {
   /// When set, rebuilds clock text when the listenable notifies.
   final Listenable? listenable;
 
+  /// When false, shows 12-hour time (localized meridiem when context allows).
+  final bool use24HourFormat;
+
   @override
   State<HomeClock> createState() => _HomeClockState();
 }
@@ -68,7 +72,7 @@ class _HomeClockState extends State<HomeClock> {
   @override
   void initState() {
     super.initState();
-    _text = _format(_now);
+    _text = _formatFallback(_now);
     _secondTimer = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
     widget.listenable?.addListener(_onExternalTick);
     if (widget.sampleMode != CyberBlurSampleMode.realtime) {
@@ -77,11 +81,9 @@ class _HomeClockState extends State<HomeClock> {
   }
 
   @override
-  void dispose() {
-    widget.listenable?.removeListener(_onExternalTick);
-    _secondTimer?.cancel();
-    _frozen?.dispose();
-    super.dispose();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _onTick();
   }
 
   @override
@@ -90,6 +92,10 @@ class _HomeClockState extends State<HomeClock> {
     if (oldWidget.listenable != widget.listenable) {
       oldWidget.listenable?.removeListener(_onExternalTick);
       widget.listenable?.addListener(_onExternalTick);
+    }
+    if (oldWidget.use24HourFormat != widget.use24HourFormat ||
+        oldWidget.now != widget.now) {
+      _onTick();
     }
     if (oldWidget.sampleMode != widget.sampleMode) {
       if (widget.sampleMode == CyberBlurSampleMode.realtime) {
@@ -102,10 +108,32 @@ class _HomeClockState extends State<HomeClock> {
     }
   }
 
-  static String _format(DateTime t) {
+  static String _formatFallback(DateTime t) {
     final h = t.hour.toString().padLeft(2, '0');
     final m = t.minute.toString().padLeft(2, '0');
     return '$h:$m';
+  }
+
+  String _format(DateTime t) {
+    if (!mounted) {
+      return _formatFallback(t);
+    }
+    try {
+      return MaterialLocalizations.of(context).formatTimeOfDay(
+        TimeOfDay.fromDateTime(t),
+        alwaysUse24HourFormat: widget.use24HourFormat,
+      );
+    } catch (_) {
+      return _formatFallback(t);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.listenable?.removeListener(_onExternalTick);
+    _secondTimer?.cancel();
+    _frozen?.dispose();
+    super.dispose();
   }
 
   void _onExternalTick() => _onTick();

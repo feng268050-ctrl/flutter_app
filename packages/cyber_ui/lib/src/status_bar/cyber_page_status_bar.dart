@@ -24,6 +24,7 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
     this.toolbarHeight = kToolbarHeight,
     this.clockNow,
     this.clockStyle,
+    this.use24HourFormat = true,
   });
 
   final String title;
@@ -46,6 +47,9 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
 
   /// When null, uses [TextTheme.titleMedium] + [foregroundColor].
   final TextStyle? clockStyle;
+
+  /// Forwarded to [CyberStatusBarClock.use24HourFormat].
+  final bool use24HourFormat;
 
   @override
   Size get preferredSize {
@@ -117,6 +121,7 @@ class CyberPageStatusBar extends StatelessWidget implements PreferredSizeWidget 
               if (statusItems.isNotEmpty) SizedBox(width: clockGap),
               CyberStatusBarClock(
                 now: clockNow,
+                use24HourFormat: use24HourFormat,
                 style: clockStyle ??
                     theme.textTheme.titleMedium?.copyWith(
                       color: fg,

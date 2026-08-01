@@ -105,6 +105,8 @@ final class WorkModeStatusBar extends StatelessWidget
                     child: _WorkModeTrailing(
                       cameraStatus: cameraStatus,
                       clockNow: resolvedNow,
+                      use24HourFormat:
+                          services?.wallClock.use24HourFormat ?? true,
                     ),
                   ),
                 ),
@@ -392,10 +394,12 @@ final class _WorkModeTrailing extends StatefulWidget {
   const _WorkModeTrailing({
     this.cameraStatus,
     this.clockNow,
+    this.use24HourFormat = true,
   });
 
   final IpCameraUiStatus? cameraStatus;
   final DateTime Function()? clockNow;
+  final bool use24HourFormat;
 
   @override
   State<_WorkModeTrailing> createState() => _WorkModeTrailingState();
@@ -482,6 +486,7 @@ final class _WorkModeTrailingState extends State<_WorkModeTrailing> {
           const SizedBox(width: 10),
           CyberStatusBarClock(
             now: widget.clockNow,
+            use24HourFormat: widget.use24HourFormat,
             style: const TextStyle(
               color: WorkModeStatusBarDimens.clock,
               fontSize: WorkModeStatusBarDimens.chromeLabelFontSize,

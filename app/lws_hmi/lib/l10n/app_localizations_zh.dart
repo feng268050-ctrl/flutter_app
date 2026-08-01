@@ -584,6 +584,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dateTimeAutomatic => '自动';
 
   @override
+  String get dateTimeNtpServer => '时间服务器';
+
+  @override
+  String get dateTimeNtpPool => 'NTP Pool';
+
+  @override
+  String get dateTimeNtpCloudflare => 'Cloudflare';
+
+  @override
+  String get dateTimeNtpGoogle => 'Google';
+
+  @override
+  String get dateTimeNtpAliyun => '阿里云';
+
+  @override
+  String get dateTimeNtpWindows => 'Windows';
+
+  @override
+  String get dateTimeNtpApple => 'Apple';
+
+  @override
+  String get dateTimeNtpTencent => '腾讯';
+
+  @override
+  String get dateTimeNtpCnPool => '中国 NTP Pool';
+
+  @override
+  String get dateTimeTimezoneGeoFailed => '无法根据网络位置设置时区';
+
+  @override
   String get dateTimeModeAuto => '自动';
 
   @override
@@ -612,6 +642,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dateTimeSetTime => '时间';
+
+  @override
+  String get dateTimeUse24HourFormat => '使用 24 小时制';
 
   @override
   String get dateTimeSetTimeZone => '时区';
@@ -2349,6 +2382,21 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dateTimeAutomatic => '自動';
 
   @override
+  String get dateTimeNtpServer => '時間服務器';
+
+  @override
+  String get dateTimeNtpAliyun => '阿裏雲';
+
+  @override
+  String get dateTimeNtpTencent => '騰訊';
+
+  @override
+  String get dateTimeNtpCnPool => '中國 NTP Pool';
+
+  @override
+  String get dateTimeTimezoneGeoFailed => '無法根據網絡位置設置時區';
+
+  @override
   String get dateTimeModeAuto => '自動';
 
   @override
@@ -2374,6 +2422,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get dateTimeSetTime => '時間';
+
+  @override
+  String get dateTimeUse24HourFormat => '使用 24 小時制';
 
   @override
   String get dateTimeSetTimeZone => '時區';

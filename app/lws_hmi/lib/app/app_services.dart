@@ -168,6 +168,7 @@ final class AppServices {
 
   bool _restoreStarted = false;
   bool _modbusLiveStarted = false;
+  NetworkTimeSyncWatcher? _networkTimeSyncWatcher;
 
   IpCameraProductSession? _ipCamera;
   Future<IpCameraProductSession>? _ipCameraFuture;
@@ -346,6 +347,19 @@ final class AppServices {
     } catch (_) {
       // Soft-fail: board metric order remains until prefs exist.
     }
+    // After wifi/eth syncFromSystem, watch primary IPv4 rising edges.
+    _networkTimeSyncWatcher ??= NetworkTimeSyncWatcher(
+      dateTime: dateTime,
+      wifi: wifi,
+      ethernet: ethernet,
+      primaryNetwork: primaryNetwork,
+    )..start();
+  }
+
+  /// Cancel link-up NTP watcher (optional; process exit is enough on appliance).
+  void disposeNetworkTimeSyncWatcher() {
+    _networkTimeSyncWatcher?.dispose();
+    _networkTimeSyncWatcher = null;
   }
 }
 

@@ -9,7 +9,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
-/// Date & Time hub — Automatic sync + manual date/time/zone rows.
+/// Date & Time hub — Automatic sync + NTP server + auto timezone + manual rows.
 class DateTimeSettingsPage extends StatefulWidget {
   const DateTimeSettingsPage({super.key, required this.services});
 
@@ -20,8 +20,11 @@ class DateTimeSettingsPage extends StatefulWidget {
 }
 
 class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
-  TimeSyncMode _mode = TimeSyncMode.manual;
+  TimeSyncMode _mode = TimeSyncMode.network;
   String _timezone = 'Asia/Shanghai';
+  String _ntpServerId = NtpServerCatalog.defaultId;
+  bool _autoTimezone = false;
+  bool _use24Hour = true;
   DateTime _now = DateTime.now();
   String? _status;
   bool _busy = false;
@@ -42,11 +45,17 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
     try {
       final mode = await _dt.getSyncMode();
       final tz = await _dt.getTimezone();
+      final ntp = await _dt.getNtpServerId();
+      final autoTz = await _dt.getAutoTimezone();
+      final use24 = await _dt.getUse24HourFormat();
       final now = await _dt.now();
       if (!mounted) return;
       setState(() {
         _mode = mode;
         _timezone = tz.isNotEmpty ? tz : 'Asia/Shanghai';
+        _ntpServerId = ntp;
+        _autoTimezone = autoTz;
+        _use24Hour = use24;
         _now = now;
       });
     } catch (e) {
@@ -86,6 +95,30 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
         await _dt.setSyncMode(TimeSyncMode.manual);
       }
     });
+  }
+
+  Future<void> _setAutoTimezone(bool enabled) async {
+    final geoFailedMsg =
+        AppLocalizations.of(context)?.dateTimeTimezoneGeoFailed;
+    setState(() {
+      _busy = true;
+      _status = null;
+    });
+    try {
+      final r = await _dt.setAutoTimezone(enabled);
+      await _load();
+      await widget.services.wallClock.refresh();
+      if (enabled && !r.ok && mounted) {
+        setState(() {
+          _status = geoFailedMsg ??
+              (r.message.isNotEmpty ? r.message : 'timezone geo lookup failed');
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _status = '$e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _pickDate(AppLocalizations l10n) async {
@@ -140,13 +173,45 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
       '${_now.day.toString().padLeft(2, '0')}';
 
   String get _timeLabel =>
-      '${_now.hour.toString().padLeft(2, '0')}:'
-      '${_now.minute.toString().padLeft(2, '0')}';
+      TimeDisplayFormat.formatHm(_now, use24Hour: _use24Hour);
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final automatic = _mode == TimeSyncMode.network;
+    final ntpPreset = NtpServerCatalog.byId(_ntpServerId) ??
+        NtpServerCatalog.presets.first;
+    final syncChildren = <Widget>[
+      SettingsSwitchRow(
+        title: l10n.dateTimeAutomatic,
+        value: automatic,
+        onChanged: _busy ? null : (v) => unawaited(_setAutomatic(v)),
+      ),
+    ];
+    if (automatic) {
+      syncChildren.add(
+        SettingsNavRow(
+          title: l10n.dateTimeNtpServer,
+          value: ntpServerLabel(l10n, ntpPreset),
+          onTap: _busy
+              ? null
+              : () => pushSettingsPage(
+                    context,
+                    _NtpServerPickerPage(
+                      currentId: _ntpServerId,
+                      presets: _dt.listNtpServerPresets(),
+                      onSelected: (id) => unawaited(
+                        _run(() async {
+                          await _dt.setNtpServerId(id);
+                          await _dt.syncFromNetwork();
+                        }),
+                      ),
+                    ),
+                  ),
+        ),
+      );
+    }
+
     return SettingsScaffold(
       title: l10n.dateTimeSettings,
       body: SettingsScrollView(
@@ -154,14 +219,12 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
           SettingsGroup(
             borderGradientCenter:
                 CyberBorderGradientCenter.bottomLeftTopRight,
+            children: syncChildren,
+          ),
+          SettingsGroup(
+            borderGradientCenter:
+                CyberBorderGradientCenter.topLeftBottomRight,
             children: [
-              SettingsSwitchRow(
-                title: l10n.dateTimeAutomatic,
-                value: automatic,
-                onChanged: _busy
-                    ? null
-                    : (v) => unawaited(_setAutomatic(v)),
-              ),
               SettingsNavRow(
                 title: l10n.dateTimeSetDate,
                 value: _dateLabel,
@@ -176,10 +239,30 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
                     ? null
                     : () => unawaited(_pickTime(l10n)),
               ),
+              SettingsSwitchRow(
+                title: l10n.dateTimeUse24HourFormat,
+                value: _use24Hour,
+                onChanged: _busy
+                    ? null
+                    : (v) =>
+                        unawaited(_run(() => _dt.setUse24HourFormat(v))),
+              ),
+            ],
+          ),
+          SettingsGroup(
+            borderGradientCenter:
+                CyberBorderGradientCenter.bottomLeftTopRight,
+            children: [
+              SettingsSwitchRow(
+                title: l10n.dateTimeAutoTimeZone,
+                value: _autoTimezone,
+                onChanged:
+                    _busy ? null : (v) => unawaited(_setAutoTimezone(v)),
+              ),
               SettingsNavRow(
                 title: l10n.dateTimeSetTimeZone,
                 value: _timezone,
-                onTap: _busy
+                onTap: _autoTimezone || _busy
                     ? null
                     : () => pushSettingsPage(
                           context,
@@ -207,6 +290,68 @@ class _DateTimeSettingsPageState extends State<DateTimeSettingsPage> {
                 style: const TextStyle(color: Colors.redAccent),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+String ntpServerLabel(AppLocalizations l10n, NtpServerPreset preset) {
+  switch (preset.labelKey) {
+    case 'ntpPool':
+      return l10n.dateTimeNtpPool;
+    case 'cloudflare':
+      return l10n.dateTimeNtpCloudflare;
+    case 'google':
+      return l10n.dateTimeNtpGoogle;
+    case 'aliyun':
+      return l10n.dateTimeNtpAliyun;
+    case 'windows':
+      return l10n.dateTimeNtpWindows;
+    case 'apple':
+      return l10n.dateTimeNtpApple;
+    case 'tencent':
+      return l10n.dateTimeNtpTencent;
+    case 'cnPool':
+      return l10n.dateTimeNtpCnPool;
+    default:
+      return preset.id;
+  }
+}
+
+class _NtpServerPickerPage extends StatelessWidget {
+  const _NtpServerPickerPage({
+    required this.currentId,
+    required this.presets,
+    required this.onSelected,
+  });
+
+  final String currentId;
+  final List<NtpServerPreset> presets;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return SettingsScaffold(
+      title: l10n.dateTimeNtpServer,
+      body: SettingsScrollView(
+        children: [
+          SettingsGroup(
+            borderGradientCenter:
+                CyberBorderGradientCenter.bottomLeftTopRight,
+            children: [
+              for (final p in presets)
+                SettingsOptionTile(
+                  title: '${ntpServerLabel(l10n, p)} (${p.id})',
+                  selected: p.id == currentId,
+                  onTap: () {
+                    onSelected(p.id);
+                    Navigator.of(context).pop();
+                  },
+                ),
+            ],
+          ),
         ],
       ),
     );

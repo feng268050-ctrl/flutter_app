@@ -366,6 +366,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       sampleMode: CyberBlurSampleMode.realtime,
                       now: () => AppScope.of(context).wallClock.now,
                       listenable: AppScope.of(context).wallClock,
+                      use24HourFormat:
+                          AppScope.of(context).wallClock.use24HourFormat,
                     ),
                   ),
                 ),

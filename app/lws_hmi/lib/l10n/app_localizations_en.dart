@@ -584,6 +584,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateTimeAutomatic => 'Automatic';
 
   @override
+  String get dateTimeNtpServer => 'Time Server';
+
+  @override
+  String get dateTimeNtpPool => 'NTP Pool';
+
+  @override
+  String get dateTimeNtpCloudflare => 'Cloudflare';
+
+  @override
+  String get dateTimeNtpGoogle => 'Google';
+
+  @override
+  String get dateTimeNtpAliyun => 'Aliyun';
+
+  @override
+  String get dateTimeNtpWindows => 'Windows';
+
+  @override
+  String get dateTimeNtpApple => 'Apple';
+
+  @override
+  String get dateTimeNtpTencent => 'Tencent';
+
+  @override
+  String get dateTimeNtpCnPool => 'China NTP Pool';
+
+  @override
+  String get dateTimeTimezoneGeoFailed => 'Couldn’t set time zone from network location';
+
+  @override
   String get dateTimeModeAuto => 'Auto';
 
   @override
@@ -612,6 +642,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dateTimeSetTime => 'Time';
+
+  @override
+  String get dateTimeUse24HourFormat => 'Use 24-Hour Format';
 
   @override
   String get dateTimeSetTimeZone => 'Time Zone';

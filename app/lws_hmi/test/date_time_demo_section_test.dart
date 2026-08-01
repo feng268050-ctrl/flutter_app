@@ -49,6 +49,49 @@ class _FakeDateTimeController implements DateTimeController {
   }
 
   @override
+  List<NtpServerPreset> listNtpServerPresets() => NtpServerCatalog.presets;
+
+  String ntpServerId = NtpServerCatalog.defaultId;
+
+  @override
+  Future<String> getNtpServerId() async => ntpServerId;
+
+  @override
+  Future<void> setNtpServerId(String id) async {
+    ntpServerId = NtpServerCatalog.normalizeId(id);
+  }
+
+  bool autoTimezone = false;
+
+  @override
+  Future<bool> getAutoTimezone() async => autoTimezone;
+
+  @override
+  Future<TimeSyncResult> setAutoTimezone(bool enabled) async {
+    autoTimezone = enabled;
+    if (enabled) {
+      return syncTimezoneFromNetwork();
+    }
+    return const TimeSyncResult(ok: true, message: 'off');
+  }
+
+  @override
+  Future<TimeSyncResult> syncTimezoneFromNetwork() async {
+    timezone = 'Asia/Shanghai';
+    return const TimeSyncResult(ok: true, message: 'fake geo');
+  }
+
+  bool use24Hour = true;
+
+  @override
+  Future<bool> getUse24HourFormat() async => use24Hour;
+
+  @override
+  Future<void> setUse24HourFormat(bool enabled) async {
+    use24Hour = enabled;
+  }
+
+  @override
   Future<List<TimezoneEntry>> listTimezoneEntries() async {
     return const [
       TimezoneEntry(id: 'UTC', utcOffsetLabel: 'UTC+00:00'),

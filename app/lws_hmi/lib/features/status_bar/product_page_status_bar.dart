@@ -97,6 +97,7 @@ class ProductPageStatusBar extends StatelessWidget
               foregroundColor: foregroundColor,
               toolbarHeight: toolbarHeight,
               clockNow: nowFn,
+              use24HourFormat: services?.wallClock.use24HourFormat ?? true,
               // Match Quick / Engineer [WorkModeStatusBar] clock size.
               clockStyle: TextStyle(
                 color: clockFg,

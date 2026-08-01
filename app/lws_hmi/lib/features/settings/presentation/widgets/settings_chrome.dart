@@ -17,13 +17,13 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Screen-edge inset (lws-ui settings `padding="24dp"`).
 ///
-/// Inter-group gap uses [groupGap] (larger than [inset]) so card drop shadows
-/// have room; L/R still match [inset].
+/// Inter-group gap ([groupGap]) matches [inset] so card stacking rhythm equals
+/// L/R page margins ([SettingsScrollView] top uses the same value).
 abstract final class SettingsDimens {
   static const inset = 24.0;
 
-  /// Vertical space between stacked settings cards (shadow breathing room).
-  static const groupGap = 40.0;
+  /// Vertical space between stacked settings cards (= [inset]).
+  static const groupGap = inset;
 
   /// Shared min height for switch / value / nav / slider / control rows.
   /// Device Info / General (+tabs nested lists).
@@ -703,8 +703,7 @@ final class _SettingsDepthEdgePainter extends CustomPainter {
 /// Untitled settings group ([SettingsPanel] + inset dividers).
 ///
 /// Outer margin: [SettingsDimens.inset] L/R, [SettingsDimens.groupGap] bottom
-/// so stacked cards leave room for soft cast shadows. Pair with
-/// [SettingsScrollView] top inset.
+/// (same as edge inset). Pair with [SettingsScrollView] top inset.
 ///
 /// [borderGradientCenter] is unused (uniform outline); kept for call sites.
 /// Set [bottomInset] to `0` when a following [SettingsSectionHeader] / help

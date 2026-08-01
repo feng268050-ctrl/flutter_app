@@ -281,6 +281,57 @@ void main() {
     await hal.close();
   });
 
+  test('catch-up delivers stable attrs after partial prime + silent readGroup',
+      () async {
+    // Repro: status primes the watcher first; data lands via readGroup (no dirty
+    // set); later polls see unchanged temps → without catch-up UI stays `-`.
+    final config = _testConfig(intervalMs: 30);
+    final fake = FakeModbusRtuTransport(config.transport);
+    fake.inputByStart[0x0000] = _statusWords(firmware: 1, gunAlarm: 0);
+    // Data group fails on the first poll cycles.
+    fake.inputByStart.remove(0x0060);
+
+    final hal = ModbusHal.fromConfig(config, transport: fake);
+    final events = <List<ModbusAttributeChange>>[];
+    final sub = hal
+        .watchAttributes(ids: ['alarm.gun_comm', 'alarm.gun_motor_temp'])
+        .listen(events.add);
+
+    await hal.startPolling();
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+
+    expect(events, isNotEmpty);
+    final earlyIds = events.expand((b) => b).map((c) => c.id).toSet();
+    expect(earlyIds, contains('alarm.gun_comm'));
+    expect(earlyIds, isNot(contains('alarm.gun_motor_temp')));
+
+    // Silent cache fill (boot self-check / live-cache seed path).
+    fake.inputByStart[0x0060] = _dataWords(motorRaw: 332);
+    await hal.readGroup('data');
+    await Future<void>.delayed(Duration.zero);
+
+    final afterSeed = events.expand((b) => b).map((c) => c.id).toSet();
+    expect(afterSeed, contains('alarm.gun_motor_temp'));
+    final temp = events
+        .expand((b) => b)
+        .lastWhere((c) => c.id == 'alarm.gun_motor_temp');
+    expect(temp.value, closeTo(33.2, 0.01));
+    expect(temp.previous, isNull);
+
+    // Unchanged polls must not be required for the value to appear.
+    final before = events.length;
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    final tempAgain = events
+        .skip(before)
+        .expand((b) => b)
+        .where((c) => c.id == 'alarm.gun_motor_temp');
+    expect(tempAgain, isEmpty);
+
+    await sub.cancel();
+    await hal.stopPolling();
+    await hal.close();
+  });
+
   test('concurrent watchAttributes filter by subscriber ids', () async {
     final config = _testConfig(intervalMs: 30);
     final fake = FakeModbusRtuTransport(config.transport);

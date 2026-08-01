@@ -282,6 +282,13 @@ final class _WatchListener {
   final Set<String>? ids;
   final StreamController<List<ModbusAttributeChange>> controller;
   bool primed = false;
+
+  /// Attribute ids already pushed to this subscriber (prime / change / catch-up).
+  ///
+  /// Needed when the first prime only covers a subset of the cache (e.g. status
+  /// group before data) and later polls see unchanged values — without catch-up
+  /// those attrs would never be delivered until they change.
+  final Set<String> deliveredIds = {};
 }
 
 final class _LinuxModbusHal implements ModbusHal {
@@ -517,6 +524,11 @@ final class _LinuxModbusHal implements ModbusHal {
       _attrCache[attr.id] = _AttrCacheEntry(value);
       result[attr.id] = value;
     }
+    // readGroup updates cache without producing poll dirty sets — flush any
+    // undelivered watched attrs so late watchers / partial primes catch up.
+    if (_watchers.isNotEmpty) {
+      _dispatchWatch(const [], hadSuccessfulRead: true);
+    }
     return result;
   }
 
@@ -565,6 +577,7 @@ final class _LinuxModbusHal implements ModbusHal {
         final prime = _buildPrime(listener.ids);
         if (prime != null && prime.isNotEmpty) {
           listener.primed = true;
+          _markDelivered(listener, prime);
           controller.add(prime);
         }
       },
@@ -695,13 +708,17 @@ final class _LinuxModbusHal implements ModbusHal {
         final prime = _buildPrime(w.ids);
         if (prime != null && prime.isNotEmpty) {
           w.primed = true;
+          _markDelivered(w, prime);
           w.controller.add(prime);
         }
         continue;
       }
       final filtered = _filterChanges(dirty, w.ids);
-      if (filtered.isNotEmpty) {
-        w.controller.add(filtered);
+      final catchUp = _catchUpUndelivered(w);
+      final batch = _mergeWatchBatch(filtered, catchUp);
+      if (batch.isNotEmpty) {
+        _markDelivered(w, batch);
+        w.controller.add(batch);
       }
     }
   }
@@ -725,6 +742,55 @@ final class _LinuxModbusHal implements ModbusHal {
       }
     }
     return out.isEmpty ? null : out;
+  }
+
+  /// Cached attrs in [w]'s filter that were never pushed to this subscriber.
+  List<ModbusAttributeChange> _catchUpUndelivered(_WatchListener w) {
+    if (_attrCache.isEmpty) return const [];
+    final out = <ModbusAttributeChange>[];
+    final now = DateTime.now();
+    for (final entry in _attrCache.entries) {
+      if (w.ids != null && !w.ids!.contains(entry.key)) continue;
+      if (w.deliveredIds.contains(entry.key)) continue;
+      out.add(
+        ModbusAttributeChange(
+          id: entry.key,
+          value: entry.value.value,
+          previous: null,
+          kind: ModbusChangeKind.primed,
+        ),
+      );
+      if (_isActiveAlarmValue(entry.value.value)) {
+        _lastNotifyAt[entry.key] = now;
+      }
+    }
+    return out;
+  }
+
+  /// Prefer dirty (change/reminder) over catch-up for the same id.
+  List<ModbusAttributeChange> _mergeWatchBatch(
+    List<ModbusAttributeChange> dirty,
+    List<ModbusAttributeChange> catchUp,
+  ) {
+    if (catchUp.isEmpty) return dirty;
+    if (dirty.isEmpty) return catchUp;
+    final dirtyIds = {for (final c in dirty) c.id};
+    final merged = List<ModbusAttributeChange>.from(dirty);
+    for (final c in catchUp) {
+      if (!dirtyIds.contains(c.id)) {
+        merged.add(c);
+      }
+    }
+    return merged;
+  }
+
+  void _markDelivered(
+    _WatchListener w,
+    List<ModbusAttributeChange> batch,
+  ) {
+    for (final c in batch) {
+      w.deliveredIds.add(c.id);
+    }
   }
 
   List<ModbusAttributeChange> _filterChanges(

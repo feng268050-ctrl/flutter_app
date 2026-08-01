@@ -297,9 +297,13 @@ final class BoardBindings {
     try {
       await dt.applyPersistedTimezone();
       await dt.applyPersistedSyncMode();
+      await dt.applyPersistedNtpServer();
       await dt.ensureSaneForTls();
       if (await dt.getSyncMode() == TimeSyncMode.network) {
         await dt.syncFromNetwork(onlyIfStale: true);
+      }
+      if (await dt.getAutoTimezone()) {
+        await dt.syncTimezoneFromNetwork();
       }
     } catch (e) {
       debugPrint('restore: datetime: $e');

@@ -15,6 +15,7 @@ class LinuxDateTimeController implements DateTimeController {
     this.preferencePath = TimeSyncPrefs.datetimeConf,
     this.legacySyncModePath = TimeSyncPrefs.legacySyncModePath,
     this.legacyTimezonePath = TimeSyncPrefs.legacyTimezonePath,
+    this.timesyncdDropInPath = TimeSyncPrefs.timesyncdDropInPath,
     this.helperPath = '',
     DateTimeProcessRunner? runProcess,
   }) : _run = runProcess ?? ((exe, args) => Process.run(exe, args));
@@ -22,6 +23,7 @@ class LinuxDateTimeController implements DateTimeController {
   final String preferencePath;
   final String legacySyncModePath;
   final String legacyTimezonePath;
+  final String timesyncdDropInPath;
   final String helperPath;
   final DateTimeProcessRunner _run;
 
@@ -70,6 +72,12 @@ class LinuxDateTimeController implements DateTimeController {
     await _applyOsNtp(mode == TimeSyncMode.network);
   }
 
+  /// Write timesyncd drop-in from persisted [getNtpServerId] and restart unit.
+  Future<void> applyPersistedNtpServer() async {
+    final id = await getNtpServerId();
+    await _writeTimesyncdDropIn(id);
+  }
+
   /// Best-effort `timedatectl set-ntp`; no-op when timedatectl/timesyncd absent.
   Future<void> _applyOsNtp(bool enable) async {
     final flag = enable ? 'true' : 'false';
@@ -84,6 +92,154 @@ class LinuxDateTimeController implements DateTimeController {
     } catch (e) {
       lwsTrace('datetime: set-ntp unavailable: $e');
     }
+  }
+
+  @override
+  List<NtpServerPreset> listNtpServerPresets() =>
+      List<NtpServerPreset>.unmodifiable(NtpServerCatalog.presets);
+
+  @override
+  Future<String> getNtpServerId() async {
+    final map = await _prefsMap();
+    return NtpServerCatalog.normalizeId(map[TimeSyncPrefs.keyNtpServer]);
+  }
+
+  @override
+  Future<void> setNtpServerId(String id) async {
+    final normalized = NtpServerCatalog.normalizeId(id);
+    await _ensureLegacyImported();
+    await upsertKeyValueConfFile(preferencePath, {
+      TimeSyncPrefs.keyNtpServer: normalized,
+    });
+    await _writeTimesyncdDropIn(normalized);
+    lwsTrace('datetime: ntp_server → $normalized');
+  }
+
+  Future<void> _writeTimesyncdDropIn(String primaryId) async {
+    final body = NtpServerCatalog.renderTimesyncdDropIn(primaryId);
+    try {
+      final f = File(timesyncdDropInPath);
+      await f.parent.create(recursive: true);
+      await f.writeAsString(body, flush: true);
+    } catch (e) {
+      lwsTrace('datetime: timesyncd drop-in write failed: $e');
+      return;
+    }
+    try {
+      final r = await _run('systemctl', ['restart', 'systemd-timesyncd.service']);
+      if (r.exitCode != 0) {
+        final err = ((r.stderr as String?) ?? (r.stdout as String?) ?? '').trim();
+        lwsTrace('datetime: timesyncd restart failed: $err');
+      }
+    } catch (e) {
+      lwsTrace('datetime: timesyncd restart unavailable: $e');
+    }
+  }
+
+  @override
+  Future<bool> getAutoTimezone() async {
+    final map = await _prefsMap();
+    return TimeSyncPrefs.autoTimezoneFromToken(
+      map[TimeSyncPrefs.keyAutoTimezone],
+    );
+  }
+
+  @override
+  Future<TimeSyncResult> setAutoTimezone(bool enabled) async {
+    await _ensureLegacyImported();
+    await upsertKeyValueConfFile(preferencePath, {
+      TimeSyncPrefs.keyAutoTimezone: TimeSyncPrefs.autoTimezoneToToken(enabled),
+    });
+    lwsTrace('datetime: auto_timezone → $enabled');
+    if (enabled) {
+      return syncTimezoneFromNetwork();
+    }
+    return const TimeSyncResult(ok: true, message: 'auto_timezone off');
+  }
+
+  @override
+  Future<TimeSyncResult> syncTimezoneFromNetwork() async {
+    // Prefer HTTP (works when TLS clock is still wrong). WorldTimeAPI is sunset.
+    Future<TimeSyncResult?> tryWget({
+      required String url,
+      required String? Function(String body) parse,
+      required String label,
+    }) async {
+      try {
+        final r = await _run('wget', [
+          '-q',
+          '-O',
+          '-',
+          '-T',
+          '10',
+          url,
+        ]);
+        if (r.exitCode != 0) {
+          final err =
+              ((r.stderr as String?) ?? (r.stdout as String?) ?? '').trim();
+          lwsTrace('datetime: $label wget exit ${r.exitCode}: $err');
+          return null;
+        }
+        final tz = parse((r.stdout as String?) ?? '');
+        if (tz == null) {
+          lwsTrace('datetime: $label parse failed');
+          return null;
+        }
+        await setTimezone(tz);
+        return TimeSyncResult(ok: true, message: 'timezone via $label → $tz');
+      } catch (e) {
+        lwsTrace('datetime: $label failed: $e');
+        return null;
+      }
+    }
+
+    final ipApiJson = await tryWget(
+      url: 'http://ip-api.com/json/?fields=status,message,timezone',
+      parse: TimezoneGeoParse.fromJsonTimezoneField,
+      label: 'ip-api json',
+    );
+    if (ipApiJson != null) {
+      return ipApiJson;
+    }
+
+    final ipApiLine = await tryWget(
+      url: 'http://ip-api.com/line/?fields=timezone',
+      parse: TimezoneGeoParse.fromPlainTimezone,
+      label: 'ip-api line',
+    );
+    if (ipApiLine != null) {
+      return ipApiLine;
+    }
+
+    // HTTPS last — may fail if wall clock is still pre-TLS-sane.
+    final ipapi = await tryWget(
+      url: 'https://ipapi.co/timezone/',
+      parse: TimezoneGeoParse.fromPlainTimezone,
+      label: 'ipapi.co',
+    );
+    if (ipapi != null) {
+      return ipapi;
+    }
+
+    return const TimeSyncResult(
+      ok: false,
+      message: 'timezone geo lookup failed',
+    );
+  }
+
+  @override
+  Future<bool> getUse24HourFormat() async {
+    final map = await _prefsMap();
+    return TimeSyncPrefs.use24HourFromToken(map[TimeSyncPrefs.keyUse24Hour]);
+  }
+
+  @override
+  Future<void> setUse24HourFormat(bool enabled) async {
+    await _ensureLegacyImported();
+    await upsertKeyValueConfFile(preferencePath, {
+      TimeSyncPrefs.keyUse24Hour: TimeSyncPrefs.use24HourToToken(enabled),
+    });
+    lwsTrace('datetime: use_24h → $enabled');
   }
 
   @override

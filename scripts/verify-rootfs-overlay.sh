@@ -701,11 +701,11 @@ EOF
 		echo "FAIL: preset must enable systemd-resolved.service (D11 DNS)" >&2
 		missing=1
 	fi
-	if grep -qE '^disable[[:space:]]+systemd-timesyncd\.service' \
+	if grep -qE '^enable[[:space:]]+systemd-timesyncd\.service' \
 		"$target/etc/systemd/system-preset/99-appliance.preset" 2>/dev/null; then
-		echo "OK:  preset disables systemd-timesyncd.service (RTC-first; NTP opt-in)"
+		echo "OK:  preset enables systemd-timesyncd.service (Automatic NTP default on)"
 	else
-		echo "FAIL: preset must disable systemd-timesyncd.service (NTP is Settings opt-in)" >&2
+		echo "FAIL: preset must enable systemd-timesyncd.service (Automatic NTP default on)" >&2
 		missing=1
 	fi
 	if grep -qE '^enable[[:space:]]+rtc-systohc\.timer' \
@@ -725,11 +725,17 @@ EOF
 		missing=1
 	fi
 	if [[ -f "$target/etc/systemd/timesyncd.conf.d/10-appliance.conf" ]] && \
+		grep -qE '^NTP=pool\.ntp\.org' \
+		"$target/etc/systemd/timesyncd.conf.d/10-appliance.conf" 2>/dev/null && \
+		grep -qE 'time\.cloudflare\.com' \
+		"$target/etc/systemd/timesyncd.conf.d/10-appliance.conf" 2>/dev/null && \
+		grep -qE 'time\.google\.com' \
+		"$target/etc/systemd/timesyncd.conf.d/10-appliance.conf" 2>/dev/null && \
 		grep -qE 'ntp\.aliyun\.com' \
 		"$target/etc/systemd/timesyncd.conf.d/10-appliance.conf" 2>/dev/null; then
-		echo "OK:  timesyncd.conf.d prefers CN NTP servers (for opt-in Automatic)"
+		echo "OK:  timesyncd.conf.d NTP=pool.ntp.org; FallbackNTP=cloudflare→google→aliyun"
 	else
-		echo "FAIL: missing timesyncd.conf.d/10-appliance.conf with CN NTP" >&2
+		echo "FAIL: missing timesyncd.conf.d/10-appliance.conf with pool→CF→Google→Aliyun" >&2
 		missing=1
 	fi
 

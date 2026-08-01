@@ -2,21 +2,21 @@
 
 ### Requirement: Abstract date/time controller
 
-The HMI SHALL provide a reusable Dart `DateTimeController` (name may vary) that exposes wall-clock get/set, timezone get/set, sync mode get/set (`manual` | `network`), and network time sync. Callers (Demo and later product Settings) MUST depend on the abstract API. Linux SHALL implement the controller via system tools (`date` / `timedatectl` / `hwclock` when present) and the shared network sync helper path. Unit-testable fakes MUST be sufficient for host tests without a board. Default sync mode when no preference exists SHALL be **`manual`**. On ynh960, offline wall clock SHALL use the external PCF8563 RTC (not the RK809 PMIC RTC); network NTP MUST NOT be required for normal offline operation.
+The HMI SHALL provide a reusable Dart `DateTimeController` (name may vary) that exposes wall-clock get/set, timezone get/set, sync mode get/set (`manual` | `network`), and network time sync. Callers (Demo and later product Settings) MUST depend on the abstract API. Linux SHALL implement the controller via system tools (`date` / `timedatectl` / `hwclock` when present) and the shared network sync helper path. Unit-testable fakes MUST be sufficient for host tests without a board. Default sync mode when no preference exists SHALL be **`network`** (Settings Automatic on). On ynh960, offline wall clock SHALL use the external PCF8563 RTC (not the RK809 PMIC RTC); network NTP MUST NOT be required for offline operation, but SHALL be enabled by default when the device can reach NTP.
 
-#### Scenario: Default sync mode is manual
+#### Scenario: Default sync mode is network
 
 - **WHEN** no persisted sync-mode preference exists
-- **THEN** `getSyncMode` returns `manual`
+- **THEN** `getSyncMode` returns `network`
 
 #### Scenario: Sync mode persists
 
-- **WHEN** the caller sets sync mode to `network` and later restarts the HMI process
-- **THEN** `getSyncMode` returns `network`
+- **WHEN** the caller sets sync mode to `manual` and later restarts the HMI process
+- **THEN** `getSyncMode` returns `manual`
 
 ### Requirement: Network time sync
 
-When sync mode is `network`, or when the caller explicitly requests sync, Linux SHALL enable OS NTP via `systemd-timesyncd` (`timedatectl set-ntp true` or equivalent) as an **opt-in** convenience when the network can reach NTP. For immediate correction (explicit Sync Now / Settings Automatic toggle, or TLS emergency when the UTC year is before 2025), the controller SHALL still attempt the shared one-shot ladder: existing board helper (`sync-time` / successor) if present, else `rdate`, else HTTP `Date` header parsing, then attempt `hwclock` write when a usable RTC device exists. Sync SHALL be best-effort: failure returns a structured result and MUST NOT crash the HMI. When `onlyIfStale` is requested, the one-shot ladder MAY no-op if the UTC year is already in the sane window (2025–2030 inclusive). Product wall-clock operation MUST remain correct for offline devices that never enable network sync (external RTC + manual set).
+When sync mode is `network` (the product default), or when the caller explicitly requests sync, Linux SHALL enable OS NTP via `systemd-timesyncd` (`timedatectl set-ntp true` or equivalent) so the wall clock stays synchronized when the network can reach NTP. For immediate correction (explicit Sync Now / Settings Automatic toggle, or TLS emergency when the UTC year is before 2025), the controller SHALL still attempt the shared one-shot ladder: existing board helper (`sync-time` / successor) if present, else `rdate`, else HTTP `Date` header parsing, then attempt `hwclock` write when a usable RTC device exists. Sync SHALL be best-effort: failure returns a structured result and MUST NOT crash the HMI. When `onlyIfStale` is requested, the one-shot ladder MAY no-op if the UTC year is already in the sane window (2025–2030 inclusive). Offline devices MUST still keep correct time via the external RTC when NTP is unreachable.
 
 #### Scenario: Sync Now succeeds with connectivity
 
@@ -35,8 +35,15 @@ When sync mode is `network`, or when the caller explicitly requests sync, Linux 
 
 #### Scenario: Network mode enables OS NTP
 
-- **WHEN** sync mode is set to `network`
+- **WHEN** sync mode is set to `network` (or defaults to `network` with no prefs)
 - **THEN** the implementation enables OS NTP (`timedatectl set-ntp true` or equivalent) so `systemd-timesyncd` can synchronize the clock when reachable
+
+#### Scenario: Link-up triggers immediate one-shot sync
+
+- **WHEN** sync mode is `network` and the **primary** network (lowest RouteMetric among board `net_roles`) transitions to having a usable IPv4 address
+- **THEN** the implementation attempts `syncFromNetwork` (one-shot ladder) without requiring the UTC year to be stale
+- **AND** Manual sync mode MUST NOT trigger that link-up sync
+- **AND** a non-primary iface (e.g. camera Ethernet with higher metric) MUST NOT trigger that sync
 
 ## ADDED Requirements
 
@@ -56,9 +63,27 @@ When sync mode is `manual`, or when a successful manual wall-clock set switches 
 
 ### Requirement: Offline external RTC without NTP
 
-Linux on ynh960 SHALL persist and restore wall clock via the external PCF8563-compatible RTC (`rtc0` after DT bind and with `CONFIG_RTC_DRV_RK808` unset) without requiring NTP or the RK809 PMIC RTC. Manual set and optional Automatic NTP MUST still update the running system clock and write the RTC when the UTC year is sane.
+Linux on ynh960 SHALL persist and restore wall clock via the external PCF8563-compatible RTC (`rtc0` after DT bind and with `CONFIG_RTC_DRV_RK808` unset) without requiring NTP or the RK809 PMIC RTC. Manual set and Automatic NTP MUST still update the running system clock and write the RTC when the UTC year is sane.
 
 #### Scenario: rtc-systohc timer enabled
 
 - **WHEN** the appliance image is built
 - **THEN** `rtc-systohc.timer` is enabled by preset
+
+### Requirement: Appliance NTP server preference
+
+The image SHALL ship `etc/systemd/timesyncd.conf.d/10-appliance.conf` (or equivalent) with primary `NTP=pool.ntp.org` and `FallbackNTP` ordered Cloudflare → Google → Aliyun (`time.cloudflare.com`, `time.google.com`, `ntp.aliyun.com`). Runtime product preference MAY override via `/etc/systemd/timesyncd.conf.d/20-hmi-ntp.conf` with a curated primary and remaining presets as fallbacks (HAL `ntp_server`).
+
+#### Scenario: timesyncd drop-in prefers pool then Cloudflare Google Aliyun
+
+- **WHEN** the rootfs overlay timesyncd drop-in is inspected
+- **THEN** it lists `pool.ntp.org` as primary NTP and Cloudflare, Google, and Aliyun as fallbacks in that order
+
+### Requirement: Automatic timezone from IP (product Settings)
+
+HAL datetime SHALL support optional `auto_timezone` (default off) and `syncTimezoneFromNetwork` via public IP geolocation (HTTP ip-api.com, then HTTPS ipapi.co). No GPS.
+
+#### Scenario: Auto timezone off by default
+
+- **WHEN** prefs omit `auto_timezone`
+- **THEN** `getAutoTimezone` returns false

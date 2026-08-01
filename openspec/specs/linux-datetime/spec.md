@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Reusable Dart `DateTimeController` for wall clock, timezone, sync mode (manual / network), and network time sync (rdate / HTTP Date / `wlan0-time-sync.sh` + RTC), shared by Demo and later product Settings.
+Reusable Dart `DateTimeController` for wall clock, timezone, sync mode (manual / network; default network), and network time sync (`systemd-timesyncd` + one-shot ladder + RTC), shared by Demo and product Settings.
 ## Requirements
 ### Requirement: Abstract date/time controller
 
@@ -52,6 +52,9 @@ Linux datetime preferences SHALL persist in a single file `/var/lib/hal/datetime
 
 - `sync_mode` — `manual` | `network` (default `network` when absent)
 - `timezone` — IANA timezone id (empty/missing falls through to timedatectl / `UTC` as today)
+- `ntp_server` — primary NTP hostname from the curated preset catalog (default `pool.ntp.org` when absent/unknown)
+- `auto_timezone` — `0` | `1` (default off when absent)
+- `use_24h` — `0` | `1` (default on when absent; App display preference only)
 
 HAL MUST NOT use standalone `time-sync-mode` or `timezone` files (under `/var/lib/hal/` or legacy `/var/lib/hmi/`) as the primary write path. When `datetime.conf` is missing both keys but a legacy file exists under `/var/lib/hal/` or `/var/lib/hmi/`, the controller SHALL one-shot import that value into `/var/lib/hal/datetime.conf` before serving reads/writes.
 
@@ -72,7 +75,7 @@ HAL MUST NOT use standalone `time-sync-mode` or `timezone` files (under `/var/li
 
 ### Requirement: Network time sync
 
-When sync mode is `network`, or when the caller explicitly requests sync, the controller SHALL attempt to obtain time from the network using the shared ladder: existing board helper (`wlan0-time-sync.sh` or successor) if present, else `rdate`, else HTTP `Date` header parsing, then write RTC via `hwclock` when available. Sync SHALL be best-effort: failure returns a structured result and MUST NOT crash the HMI. When `onlyIfStale` is requested, sync MAY no-op if the UTC year is already in the sane window (2025–2030 inclusive, matching the board helper).
+When sync mode is `network` (the product default when prefs are absent), or when the caller explicitly requests sync, Linux SHALL enable OS NTP via `systemd-timesyncd` (`timedatectl set-ntp true` or equivalent). The primary NTP server SHALL be the persisted `ntp_server` preference (default `pool.ntp.org`); Linux SHALL write `/etc/systemd/timesyncd.conf.d/20-hmi-ntp.conf` with `NTP=<primary>` and `FallbackNTP=` remaining curated presets, then restart timesyncd when Automatic is on (soft-fail if absent). For immediate correction (explicit Sync Now / Settings Automatic toggle, or TLS emergency when the UTC year is before 2025), the controller SHALL still attempt the shared one-shot ladder: existing board helper (`sync-time` / successor) if present, else `rdate`, else HTTP `Date` header parsing, then write RTC via `hwclock` when available. Sync SHALL be best-effort: failure returns a structured result and MUST NOT crash the HMI. When `onlyIfStale` is requested, sync MAY no-op if the UTC year is already in the sane window (2025–2030 inclusive). Offline wall clock MUST remain correct via the external RTC when NTP is unreachable.
 
 #### Scenario: Sync Now succeeds with connectivity
 
@@ -89,6 +92,21 @@ When sync mode is `network`, or when the caller explicitly requests sync, the co
 - **WHEN** `syncFromNetwork(onlyIfStale: true)` is called and the UTC year is already in 2025–2030
 - **THEN** the implementation MUST NOT churn network sync and reports success (or no-op success)
 
+#### Scenario: Link-up triggers immediate one-shot sync when Automatic
+
+- **WHEN** sync mode is `network` and the **primary** network (product [PrimaryNetworkController] / `/var/lib/network/primary.conf`, else lowest board `route_metrics`) gains a usable IPv4 address (offline → online)
+- **THEN** the implementation attempts `syncFromNetwork` without requiring a stale UTC year
+- **AND** a non-primary interface gaining IPv4 (e.g. camera Ethernet) MUST NOT trigger that sync
+
+### Requirement: Product selects primary network role
+
+HAL network SHALL expose get/set for the product primary uplink as a [NetRole] (`wifi.station` / `ethernet.primary`), persisted under `/var/lib/network/primary.conf`. Setting primary SHALL update effective RouteMetric (primary preferred, others secondary) so OS routing matches. Board `route_metrics` remain defaults only when the product preference is absent.
+
+#### Scenario: Product sets ethernet as primary
+
+- **WHEN** the product App calls `setPrimaryRole(ethernet.primary)` on a board that maps that role to an iface
+- **THEN** a later `getPrimaryRole` returns `ethernet.primary` and ranked primary iface is that ethernet iface
+
 ### Requirement: TLS emergency sync respects survival over mode purity
 
 The controller SHALL provide an `ensureSaneForTls` (name may vary) entry used by HTTPS clients. When the UTC year is before 2025, it MUST attempt network sync even if persisted mode is `manual`, and MUST NOT change the persisted sync mode solely because of that emergency sync.
@@ -97,4 +115,46 @@ The controller SHALL provide an `ensureSaneForTls` (name may vary) entry used by
 
 - **WHEN** sync mode is `manual` and UTC year is before 2025 and `ensureSaneForTls` is invoked
 - **THEN** the implementation attempts network sync and leaves persisted mode as `manual`
+
+### Requirement: Curated NTP server preference
+
+`DateTimeController` SHALL expose a curated NTP preset list and get/set for the primary `ntp_server` id (hostname). Unknown or empty preference SHALL normalize to `pool.ntp.org`. Setting the preference SHALL persist `ntp_server` in `/var/lib/hal/datetime.conf` and apply the timesyncd drop-in described under Network time sync. Settings Automatic MAY surface a server picker when sync mode is `network`.
+
+#### Scenario: Default NTP server is pool.ntp.org
+
+- **WHEN** no `ntp_server` preference exists
+- **THEN** `getNtpServerId` returns `pool.ntp.org`
+
+#### Scenario: Selecting Cloudflare writes drop-in
+
+- **WHEN** the caller sets NTP server id to `time.cloudflare.com`
+- **THEN** `/etc/systemd/timesyncd.conf.d/20-hmi-ntp.conf` contains `NTP=time.cloudflare.com` and `FallbackNTP` listing the other curated presets including `pool.ntp.org`
+
+### Requirement: Automatic timezone from IP geolocation
+
+`DateTimeController` SHALL persist `auto_timezone` (`0`|`1`, default off) and expose get/set plus `syncTimezoneFromNetwork`. Enabling auto timezone SHALL attempt IP-based timezone detection over HTTP first (e.g. ip-api.com), with optional HTTPS fallback, and apply `setTimezone` on success. Failure MUST leave the current timezone unchanged, MUST NOT flip `auto_timezone` off, and MUST return a structured failure. Bring-up and primary link-up MAY call `syncTimezoneFromNetwork` when `auto_timezone=1`. Settings SHALL hide or disable the manual Time Zone row while auto timezone is on. GPS/GNSS is out of scope.
+
+#### Scenario: Auto timezone defaults off
+
+- **WHEN** no `auto_timezone` preference exists
+- **THEN** `getAutoTimezone` returns false
+
+#### Scenario: Enable auto timezone applies geo zone
+
+- **WHEN** the caller enables auto timezone and a geo API returns an IANA zone
+- **THEN** the system timezone becomes that zone and `auto_timezone=1` is persisted
+
+#### Scenario: Geo failure keeps preference and zone
+
+- **WHEN** auto timezone is enabled and geo lookup fails
+- **THEN** `auto_timezone` remains enabled, timezone is unchanged, and the result reports failure
+
+### Requirement: 24-hour display preference
+
+`DateTimeController` SHALL persist `use_24h` (`0`|`1`, default on) for App clock display. This preference MUST NOT change the OS locale or NTP behavior.
+
+#### Scenario: Default is 24-hour
+
+- **WHEN** no `use_24h` preference exists
+- **THEN** `getUse24HourFormat` returns true
 

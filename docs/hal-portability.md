@@ -110,7 +110,9 @@ Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl`
 | Need | Detail |
 |------|--------|
 | **OS** | `date` and/or `timedatectl`; `hwclock` for RTC write; preferably `rdate` and/or `wget` for network ladder |
-| **Prefs** | `/var/lib/hal/datetime.conf` — `sync_mode` (`manual` \| `network`), `timezone` (IANA) |
+| **Prefs** | `/var/lib/hal/datetime.conf` — `sync_mode` (`manual` \| `network`, default `network`), `timezone` (IANA), `ntp_server` (primary hostname, default `pool.ntp.org`), `auto_timezone` (`0` \| `1`, default off), `use_24h` (`0` \| `1`, default on) |
+| **NTP drop-in** | Runtime `/etc/systemd/timesyncd.conf.d/20-hmi-ntp.conf` (`NTP=` + `FallbackNTP=` from curated presets); image seed `10-appliance.conf` |
+| **Auto TZ** | Optional IP geolocation (`syncTimezoneFromNetwork`: ip-api.com HTTP → ipapi.co HTTPS); no GPS |
 | **Helper** | `sync_time` — **optional** override binary; default ladder is in-HAL |
 
 ### `hal/sys_info`

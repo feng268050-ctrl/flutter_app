@@ -217,12 +217,13 @@ if systemctl cat systemd-timesyncd.service >/dev/null 2>&1; then
 else
 	fail "systemd-timesyncd.service unit missing"
 fi
-# Preset disables timesyncd at boot — wall clock is rk808 RTC + manual set.
-# Settings Automatic may timedatectl set-ntp true (starts the unit on demand).
+# Preset enables timesyncd at boot — Settings Automatic is on by default.
+# Manual mode / setWallClock calls timedatectl set-ntp false (stops the unit).
+# Offline wall clock still uses external PCF8563 (rtc0) + rtc-systohc.
 if systemctl is-enabled systemd-timesyncd.service >/dev/null 2>&1; then
-	warn "systemd-timesyncd.service enabled (product default is disabled; NTP is opt-in)"
+	pass "systemd-timesyncd.service enabled by preset (Automatic NTP default on)"
 else
-	pass "systemd-timesyncd.service disabled by preset (RTC-first; NTP opt-in)"
+	warn "systemd-timesyncd.service disabled (product default is enabled; Automatic on)"
 fi
 if [ -L /etc/resolv.conf ]; then
 	_resolv_link="$(readlink /etc/resolv.conf)"

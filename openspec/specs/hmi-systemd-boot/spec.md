@@ -5,7 +5,7 @@ TBD - created by archiving change p1-linux-flutter-platform. Update Purpose afte
 ## Requirements
 ### Requirement: Plan A minimal systemd is PID 1
 
-The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL ship `libsystemd.so` for the eLinux HMI (`sd_event`); libsystemd availability does not by itself mandate systemd as init, but both are enabled via `lws_hmi_systemd.config`. **P3.1 / D11:** the image SHALL enable **systemd-networkd** and **systemd-resolved**. It MUST keep systemd-timesyncd, systemd-logind, and polkit packages disabled per that config.
+The P1 image SHALL use systemd as PID 1 (init and service manager) and SHALL ship `libsystemd.so` for the eLinux HMI (`sd_event`); libsystemd availability does not by itself mandate systemd as init, but both are enabled via `lws_hmi_systemd.config`. **P3.1 / D11:** the image SHALL enable **systemd-networkd** and **systemd-resolved**. The image SHALL ship and preset-**enable** **systemd-timesyncd** (Settings Automatic NTP default on). It MUST keep systemd-logind and polkit packages disabled per that config.
 
 #### Scenario: systemd is init
 

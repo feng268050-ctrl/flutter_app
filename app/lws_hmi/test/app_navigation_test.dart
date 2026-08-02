@@ -15,6 +15,7 @@ import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_boo
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coordinator.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
 import 'package:lws_hmi/features/home/presentation/home_page.dart';
+import 'package:lws_hmi/features/safety_tips/application/safety_tips_coordinator.dart';
 import 'package:lws_hmi/features/settings/presentation/settings_page.dart';
 import 'package:lws_hmi/features/system_status/presentation/system_status_card.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -209,11 +210,13 @@ void main() {
     BootSelfCheckBootMarker.pathOverrideForTest =
         '${markerDir.path}/boot-self-check-done';
     BootSelfCheckCoordinator.resetForTest();
+    SafetyTipsCoordinator.resetForTest(skipGate: true);
   });
 
   tearDown(() async {
     BootSelfCheckCoordinator.resetForTest();
     BootSelfCheckBootMarker.resetForTest();
+    SafetyTipsCoordinator.resetForTest();
     if (markerDir.existsSync()) {
       await markerDir.delete(recursive: true);
     }

@@ -14,6 +14,7 @@ import 'package:lws_hmi/features/device_registration/device_registration_dialogs
 import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
+import 'package:lws_hmi/features/safety_tips/application/safety_tips_gate.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/platform/cloud/device_users_client.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
@@ -213,7 +214,10 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   late final GlobalPromptQueue _promptQueue = GlobalPromptQueue(
     navigatorKey: _navKey,
-    isPumpSuppressed: () => BootSelfCheckGate.isActive,
+    // lws-ui: no AutoDialog / home prompts until SafetyTips done and
+    // BootSelfCheck completed (HomePromptQueue + BootSelfCheckGate).
+    isPumpSuppressed: () =>
+        SafetyTipsGate.isActive || !BootSelfCheckGate.isCompletedInProcess,
   );
 
   late final WarnAlarmController _warnAlarm = WarnAlarmController(
@@ -369,9 +373,11 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       }
     };
     _cloudLocalRuntime.onForcedDisconnect = (reason) async {
+      // Do not overlay Safety Tips / Boot Self-Check.
+      await BootSelfCheckGate.waitUntilCompletedInProcess();
       final nav = _navKey.currentState;
       final ctx = nav?.context;
-      if (ctx == null || !ctx.mounted) {
+      if (ctx == null || !ctx.mounted || SafetyTipsGate.isActive) {
         return;
       }
       final l10n = AppLocalizations.of(ctx);

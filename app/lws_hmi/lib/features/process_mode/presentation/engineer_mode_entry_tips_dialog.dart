@@ -336,16 +336,19 @@ final class _EngineerModeEntryTipsBodyState
               children: [
                 IgnorePointer(
                   child: SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: Checkbox(
-                      value: _dontShowAgain,
-                      activeColor: _checkboxGreen,
-                      checkColor: Colors.white,
-                      side: const BorderSide(color: _labelMuted, width: 1.5),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      onChanged: (_) {},
+                    width: CyberDimens.checkboxLargeSize,
+                    height: CyberDimens.checkboxLargeSize,
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: Checkbox(
+                        value: _dontShowAgain,
+                        activeColor: _checkboxGreen,
+                        checkColor: Colors.white,
+                        side: const BorderSide(color: _labelMuted, width: 1.5),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        onChanged: (_) {},
+                      ),
                     ),
                   ),
                 ),

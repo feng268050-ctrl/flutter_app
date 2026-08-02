@@ -1013,7 +1013,11 @@ class SettingsCheckboxRow extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CyberCheckbox(value: value, onChanged: onChanged),
+            CyberCheckbox(
+              value: value,
+              size: CyberDimens.checkboxSmallSize,
+              onChanged: onChanged,
+            ),
             Text(
               title,
               style: const TextStyle(

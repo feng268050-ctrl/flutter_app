@@ -68,8 +68,8 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   /// Vertical gap: Retract/Feed row ↔ Enable Laser.
   static const _wireToLaserGap = 25.0;
 
-  /// Engineer checkbox face (Material default is 18).
-  static const _checkboxSize = 24.0;
+  /// Engineer checkbox face — large tier.
+  static const _checkboxSize = CyberDimens.checkboxLargeSize;
 
   /// Match right-panel parameter row height ([EngineerParameterForm] rows).
   static const _checkboxRowHeight = 86.0;
@@ -438,7 +438,7 @@ final class _CheckRow extends StatelessWidget {
     required this.value,
     required this.enabled,
     required this.onChanged,
-    this.checkboxSize = Checkbox.width,
+    this.checkboxSize = CyberDimens.checkboxSmallSize,
   });
 
   final String label;

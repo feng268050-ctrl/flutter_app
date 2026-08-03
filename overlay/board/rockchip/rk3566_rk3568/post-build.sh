@@ -89,16 +89,51 @@ echo "post-build: purged Flutter JIT orphans under opt/hmi (if leftover)"
 rm -f "$TARGET_DIR"/opt/hmi/lib/librknnrt.so*
 echo "post-build: purged opt/hmi librknnrt.so duplicate (if leftover)"
 
-# systemd hwdb: keep compiled /usr/lib/udev/hwdb.bin (immutable-image layout);
-# drop *.hwdb sources (~8 MiB). Empty /etc hwdb inputs so first-boot
-# systemd-hwdb-update.service does not regenerate from nothing.
-if [ -d "$TARGET_DIR/usr/lib/udev/hwdb.d" ]; then
-	rm -f "$TARGET_DIR"/usr/lib/udev/hwdb.d/*
+# systemd hwdb: ship compiled /usr/lib/udev/hwdb.bin only (~−8 MiB sources).
+# Buildroot finalize runs `systemd-hwdb update --usr` *before* this script, and
+# `make rootfs-ext2` re-runs finalize (phony). A prior purge that left target
+# without *.hwdb causes that update to *delete* hwdb.bin — so re-seed from the
+# systemd build tree when needed, rebuild bin, then drop sources again.
+_hwdb_d="$TARGET_DIR/usr/lib/udev/hwdb.d"
+_hwdb_bin="$TARGET_DIR/usr/lib/udev/hwdb.bin"
+_hwdb_src=""
+for _d in "$TARGET_DIR"/../build/systemd-[0-9]*/hwdb.d; do
+	if [ -d "$_d" ] && ls "$_d"/*.hwdb >/dev/null 2>&1; then
+		_hwdb_src="$_d"
+		break
+	fi
+done
+_need_hwdb_rebuild=0
+if [ ! -s "$_hwdb_bin" ]; then
+	_need_hwdb_rebuild=1
+fi
+if [ "$_need_hwdb_rebuild" = 1 ]; then
+	if [ -z "$_hwdb_src" ]; then
+		echo "post-build: ERROR missing hwdb.bin and no systemd-*/hwdb.d to rebuild" >&2
+		exit 1
+	fi
+	mkdir -p "$_hwdb_d"
+	cp -a "$_hwdb_src"/. "$_hwdb_d"/
+	_hwdb_tool="$TARGET_DIR/../host/bin/systemd-hwdb"
+	if [ ! -x "$_hwdb_tool" ]; then
+		echo "post-build: ERROR missing host systemd-hwdb at $_hwdb_tool" >&2
+		exit 1
+	fi
+	"$_hwdb_tool" update --root "$TARGET_DIR" --strict --usr
+	echo "post-build: rebuilt usr/lib/udev/hwdb.bin from $_hwdb_src"
+fi
+if [ ! -s "$_hwdb_bin" ]; then
+	echo "post-build: ERROR usr/lib/udev/hwdb.bin missing after hwdb ensure" >&2
+	exit 1
+fi
+if [ -d "$_hwdb_d" ]; then
+	rm -f "$_hwdb_d"/*
 fi
 if [ -d "$TARGET_DIR/etc/udev/hwdb.d" ]; then
 	rm -f "$TARGET_DIR"/etc/udev/hwdb.d/*.hwdb
 fi
 rm -f "$TARGET_DIR/etc/udev/hwdb.bin"
+unset _hwdb_d _hwdb_bin _hwdb_src _hwdb_tool _need_hwdb_rebuild _d
 echo "post-build: purged udev hwdb.d sources (kept usr/lib/udev/hwdb.bin)"
 
 # Optional second Flutter app (factory_test): same no-engine / no-JIT rules.

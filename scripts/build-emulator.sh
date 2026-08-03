@@ -11,6 +11,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="$ROOT/output/firmware/emulator"
 FW="$ROOT/output/firmware"
+# shellcheck source=app-select.sh
+source "$ROOT/scripts/app-select.sh"
+app_select_resolve
 EMU_ROOTFS_SIZE="${EMULATOR_ROOTFS_SIZE:-1536M}"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
@@ -35,7 +38,12 @@ done
 [[ -n "$IMAGE" ]] || die "missing $FW/Image — run: make build-kernel (publishes bare Image with FITs)"
 
 # Rootfs
-ROOTFS="$FW/rootfs.img"
+ROOTFS="$APP_ROOTFS_IMG"
+[[ -f "$ROOTFS" ]] || ROOTFS="$FW/rootfs.img"
+[[ -f "$ROOTFS" ]] || {
+	echo "ERROR: missing $APP_ROOTFS_IMG — run: APP=$APP make build-rootfs" >&2
+	exit 1
+}
 [[ -r "$ROOTFS" ]] || die "missing $ROOTFS — run: make build-rootfs"
 
 log "staging $OUT"

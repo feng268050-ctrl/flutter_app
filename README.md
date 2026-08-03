@@ -136,10 +136,10 @@ make show-config
 Firmware stage outputs:
 
 - `make build-kernel` builds two independently hashed FIT images containing the same Linux kernel: `boot.img` selects `rootfs_a`, while `boot_b.img` selects `rootfs_b`. Publishes both to `output/firmware/`.
-- `make build-rootfs` builds `rootfs.img` (Weston + `flutter-wayland-client` + Mali `wayland-gbm`) and publishes it to `output/firmware/`. Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`.
+- `make build-rootfs` builds `rootfs.img` (Weston + `flutter-wayland-client` + Mali `wayland-gbm`) and publishes it to `output/firmware/<APP>/` (default `APP=lws_hmi`). Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`.
 - `make prepare-rootfs` flips Buildroot stack prep (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. `build-rootfs` calls prepare first (skips when stamp + binaries already match).
-- `make build-img` does **not** compile the kernel or rootfs. It requires `make build-oem`, then packages loader, U-Boot, misc, both FIT images, rootfs, and **oem** into `output/firmware/<FACTORY_SKU>/factory.img` (default sku `ynh960-p800`) and refreshes `output/firmware/update.img` as a symlink for `make flash`.
-- Full-system `make upgrade` does **not** transfer `factory.img`. It **streams** `rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), defaults to streaming resolved `oem.img` when present (`OEM_IMG= make upgrade` to skip oem), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). Wait for the device to finish restarting before reconnecting.
+- `make build-img` does **not** compile the kernel or rootfs. It requires `make build-oem`, then packages loader, U-Boot, misc, both FIT images, APP-scoped rootfs, and **oem** into `output/firmware/<APP>/<FACTORY_SKU>/factory.img` (default APP `lws_hmi`, sku `ynh960-p800`) and refreshes `output/firmware/update.img` as a symlink for `make flash`.
+- Full-system `make upgrade` does **not** transfer `factory.img`. It **streams** `output/firmware/<APP>/rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), defaults to streaming resolved `oem.img` when present (`OEM_IMG= make upgrade` to skip oem), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). Wait for the device to finish restarting before reconnecting.
 - OEM-only (board helpers / profile / screen pack): `make build-oem` then `OEM_ONLY=1 make upgrade` — streams `oem.img` only and plain-reboots (no A/B letter switch). Set `OEM_ONLY=1` in `.env` for repeated OEM iteration.
 
 ### Daily iteration — by what you changed
@@ -380,7 +380,11 @@ make logs                       # live journal; optional UNIT= TAG= GREP= PRIORI
 make prepare-app-assets         # optional host-only: prune process-library + firmware → assets/.generated/
 make build-app                  # *_hmi AOT → overlay /opt/hmi; APP=factory_test → /opt/factory_test
 make push-app                   # SN=... when multiple boards; hot-swap selected APP
-APP=…                           # app/ dir; HMI apps use suffix _hmi → /opt/hmi (default: lws_hmi; one HMI per rootfs)
+APP=…                           # app/ dir; *_hmi→/opt/hmi; rootfs→output/firmware/<APP>/; factory→…/<APP>/<sku>/
+make build-rootfs               # → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)
+make upgrade                    # streams APP rootfs + shared FITs (same APP= as build-rootfs)
+make build-img                  # → output/firmware/<APP>/<FACTORY_SKU>/factory.img
+make flash                      # uf that factory (APP= + FACTORY_SKU=); IMAGE= override
 make upgrade-control-board      # push latest control-board bin; force upgrade (HMI running)
 make upgrade-process-library    # push process-library for device model; force import (HMI running)
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)

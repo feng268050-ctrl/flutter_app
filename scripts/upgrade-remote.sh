@@ -10,6 +10,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/usb-ssh-session.sh
 source "$ROOT/scripts/usb-ssh-session.sh"
+# shellcheck source=scripts/app-select.sh
+source "$ROOT/scripts/app-select.sh"
+app_select_resolve
 # shellcheck source=scripts/factory-sku.sh
 source "$ROOT/scripts/factory-sku.sh"
 
@@ -63,14 +66,17 @@ Does not stage full images under /userdata/ota/ (unlike online OTA).
 For app-only iteration, use make push-app.
 
 Env (also in repo-root `.env`; command-line env overrides `.env`):
+  APP                       Flutter product under app/ (default: lws_hmi);
+                            rootfs from output/firmware/<APP>/rootfs.img
   SN / LWS_HMI_SN           select board when multiple devices
   IP / LWS_HMI_IP           registered SSH only (make connect <ip>)
-  LWS_HMI_FIRMWARE_DIR      default: output/firmware
+  LWS_HMI_FIRMWARE_DIR      default: output/firmware (shared boot FITs)
   FACTORY_SKU / OEM_ID      resolve default oem.img (see board/factory-skus.tsv)
   OEM_IMG                   oem.img path; unset=auto from FACTORY_SKU; empty=skip oem
   OEM_ONLY                  0|1 — 1 = oem partition only (requires oem.img)
 
 Examples:
+  APP=cnc_hmi make upgrade
   OEM_ONLY=1 make upgrade
   OEM_IMG= make upgrade          # full upgrade without oem
   OEM_IMG=/path/oem.img make upgrade
@@ -193,18 +199,20 @@ fi
 
 BOOT_IMG="$FIRMWARE/boot.img"
 BOOT_B_IMG="$FIRMWARE/boot_b.img"
-ROOTFS_IMG="$FIRMWARE/rootfs.img"
+ROOTFS_IMG=""
 
 if [[ "$OEM_ONLY" != "1" ]]; then
 	[[ -f "$BOOT_IMG" ]] || die "missing $BOOT_IMG — run: make build-kernel"
 	[[ -f "$BOOT_B_IMG" ]] || die "missing $BOOT_B_IMG — run: make build-kernel"
-	[[ -f "$ROOTFS_IMG" ]] || {
-		if [[ -f "$ROOT/output/firmware/rootfs.ext2" ]]; then
-			ROOTFS_IMG="$ROOT/output/firmware/rootfs.ext2"
-		else
-			die "missing $FIRMWARE/rootfs.img — run: make build-rootfs"
+	for candidate in "$APP_ROOTFS_IMG" "$FIRMWARE/rootfs.img" \
+		"$APP_FIRMWARE_DIR/rootfs.ext2" "$FIRMWARE/rootfs.ext2"; do
+		if [[ -f "$candidate" ]]; then
+			ROOTFS_IMG="$candidate"
+			break
 		fi
-	}
+	done
+	[[ -n "$ROOTFS_IMG" ]] || die "missing $APP_ROOTFS_IMG — run: APP=$APP make build-rootfs"
+	echo "upgrade: APP=$APP rootfs=$ROOTFS_IMG"
 fi
 
 echo "Bundle (host check):"
@@ -213,6 +221,7 @@ if [[ "$OEM_ONLY" == "1" ]]; then
 else
 	ls -lh "$BOOT_IMG" "$BOOT_B_IMG" "$ROOTFS_IMG" ${OEM_IMG:+"$OEM_IMG"}
 	bash "$ROOT/scripts/verify-firmware-partitions.sh" "$FIRMWARE" "$ROOT/board/parameter-buildroot-fit.txt" \
+		"$ROOTFS_IMG" \
 		|| die "bundle exceeds GPT slot sizes"
 fi
 

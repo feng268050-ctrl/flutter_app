@@ -97,13 +97,13 @@ help:
 	@echo "  make l10n                  # sync child ARBs + flutter gen-l10n (app/lws_hmi)"
 	@echo "  make l10n-sync             # regenerate en_US/zh_CN/zh_TW child ARBs only"
 	@echo "  make l10n-gen              # flutter gen-l10n only"
-	@echo "  APP=…                     # app/ dir; *_hmi → /opt/hmi (one HMI/rootfs); default lws_hmi"
+	@echo "  APP=…                     # app/ dir; *_hmi→/opt/hmi; rootfs/factory under output/firmware/<APP>/ (default lws_hmi)"
 	@echo "  make l10n-verify           # fail if ARBs / AppLocalizations drift"
 	@echo "  make build-kernel          # dual multi-conf FIT → boot.img + boot_b.img (+ bare Image)"
-	@echo "  make build-rootfs          # rootfs → output/firmware/rootfs.img (Weston + eLinux + Mali wayland-gbm)"
+	@echo "  make build-rootfs          # rootfs → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)"
 	@echo "  make prepare-rootfs        # ensure Buildroot stack → Weston (no rootfs.img pack)"
 	@echo "  make build-oem             # pack oem/out/<oem_id>/oem.img (FACTORY_SKU / OEM_ID)"
-	@echo "  make build-img             # pack factory.img (+ update.img symlink); needs build-oem"
+	@echo "  make build-img             # pack output/firmware/<APP>/<sku>/factory.img; needs build-oem"
 	@echo "  make sdk-shell             # interactive shell in linux-sdk (native Linux or macOS Docker)"
 	@echo "  See docs/build-optimization.md"
 	@echo ""
@@ -159,7 +159,7 @@ help:
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
 	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
 	@echo "  make smoke-ai              # upload stain demo JPG; offline RKNN infer via AI daemon sock"
-	@echo "  make upgrade               # SSH stream: inactive FIT+rootfs (+oem); env OEM_ONLY=1 for oem-only"
+	@echo "  make upgrade               # SSH stream: inactive FIT+APP rootfs (+oem); env OEM_ONLY=1 for oem-only"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
 	@echo "  make serial-console        # TTL UART ttyFIQ0 @ 1500000 (quit Ctrl+])"
@@ -170,7 +170,7 @@ help:
 	@echo "  make audit                 # pre-flight before make flash"
 	@echo "  make reboot                # Linux → USB-SSH/SSH sysrq + unregister; Android → adb"
 	@echo "  make reboot-loader         # Linux USB-SSH → RockUSB + unregister; Android → adb"
-	@echo "  make flash                 # uf factory.img (FACTORY_SKU); IMAGE= override; Maskrom ul (macOS)"
+	@echo "  make flash                 # uf factory.img (APP+FACTORY_SKU); IMAGE= override; Maskrom ul (macOS)"
 	@echo "  make flash-android         # optional: flash Android instead"
 	@echo ""
 	@echo "Misc (infrequent — board params, BR output maintenance):"
@@ -197,7 +197,8 @@ help:
 	@echo "  - Daily A/B: make build-kernel and/or build-rootfs then make upgrade (no build-img)."
 	@echo "  - OEM-only (helpers/profile): make build-oem && OEM_ONLY=1 make upgrade"
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ (no manual export)."
-	@echo "  - Factory: make build-oem then build-img → output/firmware/<sku>/factory.img; make flash."
+	@echo "  - Factory: make build-oem then build-img → output/firmware/<APP>/<sku>/factory.img; make flash."
+	@echo "  - APP= selects HMI product: overlay /opt/hmi + host rootfs/factory under output/firmware/<APP>/."
 	@echo "  - FACTORY_SKU=ynh960-p800 (default); override UBOOT_ID= / OEM_ID=; see board/factory-skus.tsv."
 	@echo "  - Emulator: README Make commands → P3.2 emulator (setup → deps → kernel/rootfs → setup-emulator-qemu → fetch-emulator-swgl → build-emulator → emulator)."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
@@ -276,7 +277,7 @@ build-rootfs: prepare-rootfs
 	@bash scripts/docker-run.sh ./build.sh rootfs
 	@bash scripts/lws-hmi-rootfs-postprocess.sh
 	@bash scripts/verify-rootfs-overlay.sh
-	@bash scripts/docker-export-artifacts.sh rootfs
+	@APP='$(APP)' bash scripts/docker-export-artifacts.sh rootfs
 
 # Stack ensure only (check-prebuilt + overlay + Mali/embedder). Idempotent.
 prepare-rootfs:
@@ -286,7 +287,7 @@ build-oem:
 	@bash scripts/build-oem.sh
 
 build-img:
-	@bash scripts/build-img.sh
+	@APP='$(APP)' bash scripts/build-img.sh
 
 # --- Emulator (P3.2) ---
 
@@ -297,7 +298,7 @@ fetch-emulator-swgl:
 	@bash scripts/fetch-emulator-swgl.sh
 
 build-emulator:
-	@bash scripts/build-emulator.sh
+	@APP='$(APP)' bash scripts/build-emulator.sh
 
 emulator:
 	@bash scripts/run-emulator.sh start
@@ -596,7 +597,7 @@ del-prop:
 	@$(call WITH_DOTENV,bash scripts/del-product-prop.sh $(filter-out del-prop,$(MAKECMDGOALS)) $(MAKEOVERRIDES))
 
 upgrade:
-	@$(call WITH_DOTENV,bash scripts/upgrade-remote.sh)
+	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/upgrade-remote.sh)
 
 reboot:
 	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh reboot)
@@ -608,7 +609,7 @@ loader:
 	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh loader)
 
 flash:
-	@$(call WITH_DOTENV,$(FLASH_ENV) bash scripts/flash-usb.sh flash)
+	@$(call WITH_DOTENV,$(FLASH_ENV) APP='$(APP)' bash scripts/flash-usb.sh flash)
 
 ANDROID_IMG ?= $(CURDIR)/images/android/update.img
 

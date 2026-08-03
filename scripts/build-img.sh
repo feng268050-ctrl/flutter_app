@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Pack output/firmware/<sku>/factory.img from existing loader + dual FIT + rootfs + oem.
+# Pack output/firmware/<APP>/<sku>/factory.img from loader + dual FIT + APP rootfs + oem.
 # Does NOT rebuild kernel or rootfs — run make build-kernel / build-rootfs / build-oem first.
 # Migration: also refreshes output/firmware/update.img as a symlink to factory.img.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/app-select.sh
+source "$ROOT/scripts/app-select.sh"
+app_select_resolve
 # shellcheck source=scripts/factory-sku.sh
 source "$ROOT/scripts/factory-sku.sh"
 
@@ -49,9 +52,9 @@ publish_factory_artifacts() {
   local src_update="$1"
   mkdir -p "$FACTORY_OUT_DIR" "$OUT_FIRMWARE" "$ROOT/images/linux"
   install_file_follow "$src_update" "$FACTORY_IMG"
-  # Migration: update.img → selected sku factory.img (symlink when possible).
+  # Migration: update.img → <APP>/<sku>/factory.img
   rm -f "$UPDATE_IMG"
-  ln -sfn "$FACTORY_SKU/factory.img" "$UPDATE_IMG"
+  ln -sfn "$APP/$FACTORY_SKU/factory.img" "$UPDATE_IMG"
   # Real copy for Finder / cp -a convenience.
   rm -f "$ROOT/images/linux/update.img" "$ROOT/images/linux/factory.img"
   cp -fL "$FACTORY_IMG" "$ROOT/images/linux/factory.img"
@@ -62,17 +65,19 @@ publish_factory_artifacts() {
   install_file_follow "$FACTORY_UBOOT_IMG" "$FACTORY_OUT_DIR/uboot.img"
   install_file_follow "$FACTORY_LOADER_BIN" "$FACTORY_OUT_DIR/MiniLoaderAll.bin"
   {
+    echo "app=$APP"
     echo "factory_sku=$FACTORY_SKU"
     echo "uboot_id=$UBOOT_ID"
     echo "oem_id=$OEM_ID"
     echo "git_rev=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
     echo "uboot=$FACTORY_UBOOT_IMG"
     echo "oem=$FACTORY_OEM_IMG"
+    echo "rootfs=$APP_ROOTFS_IMG"
     echo "factory_img=$FACTORY_IMG"
   } >"$FACTORY_OUT_DIR/manifest.txt"
   echo "factory.img ready: $FACTORY_IMG"
   bash "$SIZE_HELPER" "$FACTORY_IMG"
-  echo "update.img symlink: $UPDATE_IMG -> $FACTORY_SKU/factory.img"
+  echo "update.img symlink: $UPDATE_IMG -> $APP/$FACTORY_SKU/factory.img"
 }
 
 ensure_sdk_loader() {
@@ -169,10 +174,24 @@ pack_in_sdk() {
 
   [[ -r "$firmware/boot.img" ]] || die "boot.img (rootfs_a FIT) missing — run make build-kernel (does not rebuild here)"
   [[ -r "$firmware/boot_b.img" ]] || die "boot_b.img (rootfs_b FIT) missing — run make build-kernel (does not rebuild here)"
-  rootfs_img="$firmware/rootfs.img"
-  [[ -r "$rootfs_img" ]] || rootfs_img="$(find "$sdk/buildroot/output" -name 'rootfs.ext2' -print -quit 2>/dev/null || true)"
+
+  # Stage APP-scoped host rootfs into SDK flat path (Rockchip updateimg expects basename).
+  rootfs_img=""
+  for candidate in "$APP_ROOTFS_IMG" "$OUT_FIRMWARE/rootfs.img" "$APP_FIRMWARE_DIR/rootfs.ext2"; do
+    if [[ -f "$candidate" ]]; then
+      rootfs_img="$candidate"
+      break
+    fi
+  done
+  if [[ -z "$rootfs_img" ]]; then
+    rootfs_img="$(find "$sdk/buildroot/output" -name 'rootfs.ext2' -print -quit 2>/dev/null || true)"
+  fi
   [[ -n "$rootfs_img" && -r "$rootfs_img" ]] \
-    || die "rootfs missing — run make build-rootfs (does not rebuild here)"
+    || die "rootfs missing — run: APP=$APP make build-rootfs (does not rebuild here)"
+  mkdir -p "$firmware"
+  install_file_follow "$rootfs_img" "$firmware/rootfs.img"
+  rootfs_img="$firmware/rootfs.img"
+  echo "build-img: APP=$APP staged rootfs from host → $firmware/rootfs.img"
 
   boot_bytes="$(wc -c <"$firmware/boot.img" | tr -d ' ')"
   echo "Firmware inputs:"
@@ -182,12 +201,12 @@ pack_in_sdk() {
     die "boot.img is ${boot_bytes} bytes — Linux boot partition is 64 MiB"
   fi
 
-  bash "$ROOT/scripts/verify-firmware-partitions.sh" "$firmware" "$PARAM"
+  bash "$ROOT/scripts/verify-firmware-partitions.sh" "$firmware" "$PARAM" "$rootfs_img"
 
   echo ""
-  echo "Linux factory.img: SKU=$FACTORY_SKU loader+uboot+oem + hash-valid A/B FITs"
+  echo "Linux factory.img: APP=$APP SKU=$FACTORY_SKU loader+uboot+oem + hash-valid A/B FITs"
   echo "A/B GPT: boot←boot.img(rootfs_a), boot_b←boot_b.img(rootfs_b)"
-  echo "Flash: FACTORY_SKU=$FACTORY_SKU make flash; later: make upgrade (SSH, boot+rootfs+oem)"
+  echo "Flash: APP=$APP FACTORY_SKU=$FACTORY_SKU make flash; later: make upgrade (SSH, boot+rootfs+oem)"
   echo "Note: PARTNAME=boot required (vendor U-Boot); not boot_a — see docs/ab-slot-misc.md"
   echo ""
 
@@ -205,7 +224,7 @@ fi
 
 export LWS_HMI_PACK_IMG=1
 bash "$ROOT/scripts/docker-run.sh" \
-  env LWS_HMI_PACK_IMG=1 FACTORY_SKU="$FACTORY_SKU" UBOOT_ID="$UBOOT_ID" OEM_ID="$OEM_ID" \
+  env LWS_HMI_PACK_IMG=1 APP="$APP" FACTORY_SKU="$FACTORY_SKU" UBOOT_ID="$UBOOT_ID" OEM_ID="$OEM_ID" \
   bash /work/lws-hmi/scripts/build-img.sh
 
 bash "$ROOT/scripts/docker-export-artifacts.sh" update
@@ -213,12 +232,12 @@ bash "$ROOT/scripts/docker-export-artifacts.sh" update
 if [[ -r "$FACTORY_IMG" || -r "$UPDATE_IMG" ]]; then
   if [[ -r "$FACTORY_IMG" ]]; then
     rm -f "$UPDATE_IMG"
-    ln -sfn "$FACTORY_SKU/factory.img" "$UPDATE_IMG"
+    ln -sfn "$APP/$FACTORY_SKU/factory.img" "$UPDATE_IMG"
   elif [[ -r "$UPDATE_IMG" && ! -e "$FACTORY_IMG" ]]; then
     mkdir -p "$FACTORY_OUT_DIR"
     cp -fL "$UPDATE_IMG" "$FACTORY_IMG"
     rm -f "$UPDATE_IMG"
-    ln -sfn "$FACTORY_SKU/factory.img" "$UPDATE_IMG"
+    ln -sfn "$APP/$FACTORY_SKU/factory.img" "$UPDATE_IMG"
   fi
   echo ""
   echo "Host firmware ready:"

@@ -51,7 +51,14 @@ FACTORY_UBOOT_IMG="$FACTORY_UBOOT_DIR/uboot.img"
 FACTORY_LOADER_BIN="$FACTORY_UBOOT_DIR/MiniLoaderAll.bin"
 FACTORY_OEM_OUT_DIR="$ROOT/oem/out/$OEM_ID"
 FACTORY_OEM_IMG="$FACTORY_OEM_OUT_DIR/oem.img"
-FACTORY_OUT_DIR="$ROOT/output/firmware/$FACTORY_SKU"
+
+# Per-APP factory output (rootfs is product-specific; boot FITs stay shared).
+if [[ -z "${APP_FIRMWARE_DIR:-}" ]]; then
+	# shellcheck source=app-select.sh
+	source "$ROOT/scripts/app-select.sh"
+	app_select_resolve
+fi
+FACTORY_OUT_DIR="$APP_FIRMWARE_DIR/$FACTORY_SKU"
 FACTORY_IMG="$FACTORY_OUT_DIR/factory.img"
 
 factory_sku_require_uboot() {
@@ -64,7 +71,7 @@ factory_sku_require_oem() {
 }
 
 factory_sku_print() {
-  echo "FACTORY_SKU=$FACTORY_SKU UBOOT_ID=$UBOOT_ID OEM_ID=$OEM_ID"
+  echo "FACTORY_SKU=$FACTORY_SKU UBOOT_ID=$UBOOT_ID OEM_ID=$OEM_ID APP=${APP:-lws_hmi}"
   echo "  uboot: $FACTORY_UBOOT_IMG"
   echo "  oem:   $FACTORY_OEM_IMG"
   echo "  out:   $FACTORY_IMG"

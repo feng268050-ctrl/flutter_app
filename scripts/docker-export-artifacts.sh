@@ -5,14 +5,18 @@
 # Linux / bind-mount: copy from linux-sdk/output/firmware to repo output/firmware.
 #
 # Scopes (avoid full-tree --delete so boot/rootfs exports do not clobber each other):
-#   boot     — boot.img + boot_b.img
-#   rootfs   — rootfs.img (+ rootfs.ext2 / rootfs.ext4 if present)
+#   boot     — boot.img + boot_b.img (shared output/firmware/)
+#   rootfs   — rootfs.img → output/firmware/<APP>/ (product-specific)
 #   update   — update.img (+ loader/uboot/misc/parameter when present)
 #   firmware — all known flash/upgrade inputs (legacy full sync)
 #   output   — full linux-sdk/output/ (legacy; still ends with firmware publish)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=app-select.sh
+source "$ROOT/scripts/app-select.sh"
+app_select_resolve
+
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 IMAGE="${DOCKER_IMAGE:-lws-hmi-builder:22.04}"
 PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
@@ -49,19 +53,37 @@ files_for_scope() {
 }
 
 publish_sizes() {
-	local lws_fw="$ROOT/output/firmware"
+	local dir="$1"
+	shift
 	local f
 	local any=0
 	for f in "$@"; do
-		if [[ -r "$lws_fw/$f" ]]; then
+		if [[ -r "$dir/$f" ]]; then
 			any=1
-			bash "$SIZE_HELPER" "$lws_fw/$f"
+			bash "$SIZE_HELPER" "$dir/$f"
 		fi
 	done
 	[[ "$any" -eq 1 ]] || {
-		echo "ERROR: no exported files under $lws_fw for: $*" >&2
+		echo "ERROR: no exported files under $dir for: $*" >&2
 		return 1
 	}
+}
+
+# Move flat host rootfs.* into output/firmware/<APP>/; refresh migration symlink.
+promote_rootfs_to_app() {
+	local flat="$ROOT/output/firmware"
+	local f
+	mkdir -p "$APP_FIRMWARE_DIR"
+	for f in rootfs.img rootfs.ext2 rootfs.ext4; do
+		if [[ -e "$flat/$f" && ! -L "$flat/$f" ]]; then
+			rm -f "$APP_FIRMWARE_DIR/$f"
+			mv -f "$flat/$f" "$APP_FIRMWARE_DIR/$f"
+		fi
+	done
+	if [[ -e "$APP_FIRMWARE_DIR/rootfs.img" ]]; then
+		ln -sfn "$APP/rootfs.img" "$flat/rootfs.img"
+		echo "firmware-export: APP=$APP → $APP_ROOTFS_IMG (symlink $flat/rootfs.img)"
+	fi
 }
 
 # Copy listed firmware basenames from SDK firmware dir → host paths (dereference).
@@ -87,7 +109,6 @@ publish_from_host_sdk() {
 		echo "ERROR: none of [$*] found under $src_fw — build step incomplete?" >&2
 		return 1
 	}
-	publish_sizes "$@"
 }
 
 publish_from_volume() {
@@ -133,8 +154,32 @@ publish_from_volume() {
 				exit 1
 			fi
 		'
+}
 
-	publish_sizes "$@"
+finish_publish() {
+	local scope="$1"
+	shift
+	case "$scope" in
+	rootfs | firmware)
+		promote_rootfs_to_app
+		publish_sizes "$APP_FIRMWARE_DIR" rootfs.img rootfs.ext2 rootfs.ext4 || true
+		if [[ "$scope" == firmware ]]; then
+			publish_sizes "$ROOT/output/firmware" boot.img boot_b.img Image update.img \
+				MiniLoaderAll.bin uboot.img misc.img parameter.txt || true
+		fi
+		# Require at least rootfs.img for rootfs scope.
+		if [[ "$scope" == rootfs ]]; then
+			[[ -r "$APP_ROOTFS_IMG" ]] || {
+				echo "ERROR: missing $APP_ROOTFS_IMG after export" >&2
+				return 1
+			}
+			bash "$SIZE_HELPER" "$APP_ROOTFS_IMG"
+		fi
+		;;
+	*)
+		publish_sizes "$ROOT/output/firmware" "$@"
+		;;
+	esac
 }
 
 export_output_from_volume() {
@@ -148,6 +193,8 @@ export_output_from_volume() {
 		rsync -rlptD --no-xattrs --omit-dir-times --info=progress2 /work/sdk/output/ /dest/
 	# shellcheck disable=SC2086
 	publish_from_volume "$host_sdk" $(files_for_scope firmware)
+	# shellcheck disable=SC2086
+	finish_publish firmware $(files_for_scope firmware)
 }
 
 main() {
@@ -191,6 +238,8 @@ main() {
 		# shellcheck disable=SC2086
 		publish_from_host_sdk "$host_sdk" $(files_for_scope "$scope")
 	fi
+	# shellcheck disable=SC2086
+	finish_publish "$scope" $(files_for_scope "$scope")
 }
 
 main "$@"

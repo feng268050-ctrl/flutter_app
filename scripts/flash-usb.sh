@@ -22,7 +22,7 @@ UPGRADE_TOOL="$UPGRADE_TOOL_DIR/upgrade_tool"
 SDK="$ROOT/linux-sdk"
 LWS_FIRMWARE_DIR="$ROOT/output/firmware"
 SDK_FIRMWARE_DIR="$SDK/output/firmware"
-# Prefer per-sku factory.img; fall back to migration update.img symlink/path.
+# Prefer per-APP per-sku factory.img; fall back to migration update.img symlink/path.
 _DEFAULT_FLASH_IMG="$FACTORY_IMG"
 [[ -r "$_DEFAULT_FLASH_IMG" ]] || _DEFAULT_FLASH_IMG="$LWS_FIRMWARE_DIR/update.img"
 UPDATE_IMG="${UPDATE_IMG:-${LWS_HMI_UPDATE_IMG:-${IMAGE:-$_DEFAULT_FLASH_IMG}}}"

@@ -8,13 +8,13 @@ Developer SSH full-system A/B upgrade (`make upgrade`): stream firmware into ina
 
 The repository SHALL provide **`make upgrade`** that selects a Linux target the same way as **`make push-app`** (**USB-SSH** and/or registered **`MODE=SSH`** via `SN=` / `IP=`), performs a **stream-to-partition** full-system upgrade over SSH, and returns successfully as soon as board `arm-reboot` is started (reboot requested). It SHALL NOT wait for SSH disconnect, post-reboot SSH, or claim that boot health was verified.
 
-For the stream path, the host SHALL: preflight the active/inactive letter and refuse unsafe slot state; stream **`rootfs.img`** into the inactive `rootfs_*` partition while transferring; stream **only the inactive letter’s FIT** (`boot.img` for letter A, `boot_b.img` for letter B) into the try-boot FIT path on `boot` after the running FIT is backed up to `boot_b`; optionally stream **oem** when packaged; then arm try-boot and reboot. Default full-system mode MUST update the inactive **boot and rootfs** letter pair (kernel + rootfs).
+For the stream path, the host SHALL: preflight the active/inactive letter and refuse unsafe slot state; stream **`rootfs.img`** from `output/firmware/<APP>/rootfs.img` (default `APP=lws_hmi`) into the inactive `rootfs_*` partition while transferring; stream **only the inactive letter’s FIT** (`boot.img` for letter A, `boot_b.img` for letter B) from shared `output/firmware/` into the try-boot FIT path on `boot` after the running FIT is backed up to `boot_b`; optionally stream **oem** when packaged; then arm try-boot and reboot. Default full-system mode MUST update the inactive **boot and rootfs** letter pair (kernel + rootfs).
 
 **`make upgrade` MUST NOT** stage full firmware images under `/userdata/ota/` before writing (status/logs/tiny helpers may use that directory). **`make upgrade` MUST NOT** enter RockUSB loader mode or invoke Rockchip `upgrade_tool uf` / `flash-usb.sh` upgrade. Online / product OTA download-then-write is out of scope for this command and SHALL use the separate staged apply path.
 
 #### Scenario: Upgrade over USB-SSH updates kernel and rootfs
 
-- **WHEN** exactly one USB-SSH device is available and the host runs `make upgrade` after successful kernel/rootfs builds that produced the dual FITs and `rootfs.img`
+- **WHEN** exactly one USB-SSH device is available and the host runs `make upgrade` after successful kernel/rootfs builds that produced the dual FITs and `output/firmware/<APP>/rootfs.img`
 - **THEN** bytes are written to the inactive rootfs and try-boot FIT path during transfer (not via a post-transfer full-image userdata stage), the board requests reboot without using RockUSB, and the command returns as soon as `arm-reboot` is started without waiting for SSH disconnect or for SSH to become reachable again
 
 #### Scenario: Upgrade over registered LAN SSH
@@ -29,7 +29,7 @@ For the stream path, the host SHALL: preflight the active/inactive letter and re
 
 ### Requirement: Host refuses upgrade when required bundle images are missing
 
-Before streaming, the host upgrade command SHALL verify that required artifacts exist for the inactive letter: **`rootfs.img`**, the inactive letter’s FIT (`boot.img` and/or `boot_b.img` as needed after preflight), and that image sizes fit GPT slot capacities. It SHALL fail fast with a clear error if they are missing (e.g. instruct to run `make build-kernel` / `make build-rootfs`).
+Before streaming, the host upgrade command SHALL verify that required artifacts exist for the inactive letter: **`output/firmware/<APP>/rootfs.img`** (default `APP=lws_hmi`), the inactive letter’s FIT (`boot.img` and/or `boot_b.img` under shared `output/firmware/` as needed after preflight), and that image sizes fit GPT slot capacities. It SHALL fail fast with a clear error if they are missing (e.g. instruct to run `make build-kernel` / `APP=<APP> make build-rootfs`).
 
 #### Scenario: Missing boot.img
 
@@ -38,8 +38,8 @@ Before streaming, the host upgrade command SHALL verify that required artifacts 
 
 #### Scenario: Missing rootfs.img
 
-- **WHEN** the host runs full-system `make upgrade` and `rootfs.img` is absent
-- **THEN** the command exits non-zero without writing any boot or rootfs slot on the device
+- **WHEN** the host runs full-system `make upgrade` and `output/firmware/<APP>/rootfs.img` is absent
+- **THEN** the command exits non-zero without writing any boot or rootfs slot on the device and MUST mention `build-rootfs`
 
 ### Requirement: Host reports apply failure without claiming success
 

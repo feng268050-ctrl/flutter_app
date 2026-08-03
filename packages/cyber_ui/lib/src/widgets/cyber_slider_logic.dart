@@ -16,6 +16,12 @@ abstract final class CyberSliderLogic {
   static const snapEscapeDistance = 12.0;
   static const thumbDragOverflow = 8.0;
 
+  /// Drag value chip above thumb (Settings brightness / volume).
+  static const dragValueBubbleHeight = 32.0;
+  static const dragValueBubbleGap = 4.0;
+  static const dragValueBubbleSlot =
+      dragValueBubbleHeight + dragValueBubbleGap;
+
   static double fractionFromValue(double value, double min, double max) {
     if (max == min) {
       return 0;

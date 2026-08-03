@@ -29,8 +29,7 @@ class CyberIconFlankedSlider extends StatelessWidget {
   final Widget? trailing;
   final bool showDragValueLabel;
 
-  static double get _trackHeight =>
-      CyberSliderLogic.touchHeight + CyberSliderLogic.thumbDragOverflow * 2;
+  static double get _trackHeight => CyberSliderLogic.touchHeight;
 
   @override
   Widget build(BuildContext context) {

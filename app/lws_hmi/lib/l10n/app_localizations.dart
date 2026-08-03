@@ -1136,6 +1136,24 @@ abstract class AppLocalizations {
   /// **'Custom Home'**
   String get customHomePage;
 
+  /// No description provided for @customHomeSelectFourCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select 4 cards'**
+  String get customHomeSelectFourCards;
+
+  /// No description provided for @customHomeReplacementSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get customHomeReplacementSelected;
+
+  /// No description provided for @customHomeSelectReplaceCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a card to replace'**
+  String get customHomeSelectReplaceCard;
+
   /// No description provided for @cuttingProportionText.
   ///
   /// In en, this message translates to:

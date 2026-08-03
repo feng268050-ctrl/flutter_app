@@ -554,6 +554,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customHomePage => 'Custom Home';
 
   @override
+  String get customHomeSelectFourCards => 'Please select 4 cards';
+
+  @override
+  String get customHomeReplacementSelected => 'Selected';
+
+  @override
+  String get customHomeSelectReplaceCard => 'Please select a card to replace';
+
+  @override
   String get cuttingProportionText => 'Cutting Ratio';
 
   @override

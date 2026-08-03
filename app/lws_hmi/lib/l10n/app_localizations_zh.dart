@@ -554,6 +554,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get customHomePage => '自定义首页';
 
   @override
+  String get customHomeSelectFourCards => '请先选择 4 张卡片';
+
+  @override
+  String get customHomeReplacementSelected => '已选择';
+
+  @override
+  String get customHomeSelectReplaceCard => '请选择替换的卡片';
+
+  @override
   String get cuttingProportionText => '切割占比';
 
   @override
@@ -2422,6 +2431,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get customHomePage => '自定義首頁';
+
+  @override
+  String get customHomeSelectFourCards => '請先選擇 4 張卡片';
+
+  @override
+  String get customHomeReplacementSelected => '已選擇';
+
+  @override
+  String get customHomeSelectReplaceCard => '請選擇替換的卡片';
 
   @override
   String get cuttingProportionText => '切割佔比';

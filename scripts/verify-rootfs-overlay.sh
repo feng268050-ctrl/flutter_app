@@ -573,6 +573,14 @@ EOF
 	else
 		echo "OK:  opt/hmi/data/icudtl.dat absent (system icu)"
 	fi
+	for jit in kernel_blob.bin isolate_snapshot_data vm_snapshot_data; do
+		if [[ -f "$target/opt/hmi/data/flutter_assets/$jit" ]]; then
+			echo "FAIL: opt/hmi/data/flutter_assets/$jit present (release AOT only; post-build must purge)" >&2
+			missing=1
+		else
+			echo "OK:  opt/hmi/data/flutter_assets/$jit absent (no JIT in product rootfs)"
+		fi
+	done
 	if [[ -f "$target/usr/lib/libflutter_engine.so" ]]; then
 		system_sz="$(stat -c%s "$target/usr/lib/libflutter_engine.so" 2>/dev/null || stat -f%z "$target/usr/lib/libflutter_engine.so")"
 		echo "OK:  usr/lib/libflutter_engine.so ($system_sz bytes)"

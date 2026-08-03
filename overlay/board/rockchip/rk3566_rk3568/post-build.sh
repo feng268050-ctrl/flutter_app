@@ -77,6 +77,14 @@ rm -f \
 	"$TARGET_DIR/opt/hmi/lib/libflutter_engine.so" \
 	"$TARGET_DIR/opt/hmi/data/icudtl.dat"
 
+# Release /opt/hmi is AOT (libapp.so). Buildroot overlay rsync into incremental
+# target/ has no --delete, so stale JIT blobs from older packaging can linger.
+rm -f \
+	"$TARGET_DIR/opt/hmi/data/flutter_assets/kernel_blob.bin" \
+	"$TARGET_DIR/opt/hmi/data/flutter_assets/isolate_snapshot_data" \
+	"$TARGET_DIR/opt/hmi/data/flutter_assets/vm_snapshot_data"
+echo "post-build: purged Flutter JIT orphans under opt/hmi (if leftover)"
+
 
 # Retired Kind C helpers — HAL owns persist/restore for most prefs.
 # apply-mouse-settings is kept: Weston needs ini rewrite + HMI restart.

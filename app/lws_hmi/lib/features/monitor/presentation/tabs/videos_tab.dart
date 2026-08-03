@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
+import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_cloud_upload_coordinator.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_upload_gating.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
@@ -520,6 +521,16 @@ final class _VideoRow extends StatelessWidget {
         maxLines: 1,
       ),
     ];
+    final uploadStyle = TextStyle(
+      fontSize: 18 * scale.clamp(0.75, 1.0),
+      fontWeight: FontWeight.w600,
+      color: Colors.white,
+    );
+    final deleteStyle = TextStyle(
+      fontSize: 18 * scale.clamp(0.75, 1.0),
+      fontWeight: FontWeight.w600,
+      color: CyberColors.buttonSecondaryText,
+    );
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -542,8 +553,10 @@ final class _VideoRow extends StatelessWidget {
                   ),
                   child: SizedBox(
                     width: cells[i].width * scale,
+                    // Match header [TextAlign.center] so columns line up.
                     child: Text(
                       cells[i].text,
+                      textAlign: TextAlign.center,
                       maxLines: cells[i].maxLines,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -555,21 +568,26 @@ final class _VideoRow extends StatelessWidget {
                   ),
                 ),
               Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    child: Wrap(
-                      spacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: VideosTabState._rowTop * 0.35,
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        TextButton(
+                        MonitorFrostActionButton(
+                          variant: CyberButtonVariant.standard,
                           onPressed: uploadEnabled ? onUpload : null,
-                          child: Text(uploadLabel),
+                          child: Text(uploadLabel, style: uploadStyle),
                         ),
-                        TextButton(
+                        SizedBox(width: 12 * scale),
+                        MonitorFrostActionButton(
+                          variant: CyberButtonVariant.secondary,
                           onPressed: onDelete,
-                          child: Text(deleteLabel),
+                          child: Text(deleteLabel, style: deleteStyle),
                         ),
                       ],
                     ),

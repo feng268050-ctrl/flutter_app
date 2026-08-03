@@ -133,7 +133,13 @@ final class SettingsTopTabs extends StatelessWidget
   static const background = CyberColors.fillSolidTop;
 
   final List<String> labels;
-  final List<({Key key, IconData icon})> tabs;
+  final List<
+      ({
+        Key key,
+        IconData icon,
+        double iconLeftNudge,
+        bool balanceIconLabelGap,
+      })> tabs;
   final int currentIndex;
   final ValueChanged<int> onSelected;
   final Color? backgroundColor;
@@ -164,6 +170,8 @@ final class SettingsTopTabs extends StatelessWidget
                         label: labels[i],
                         icon: tabs[i].icon,
                         selected: i == currentIndex,
+                        iconLeftNudge: tabs[i].iconLeftNudge,
+                        balanceIconLabelGap: tabs[i].balanceIconLabelGap,
                         onTap: () => onSelected(i),
                       ),
                     ),
@@ -192,12 +200,19 @@ final class _SettingsTopTabItem extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.onTap,
+    this.iconLeftNudge = 0,
+    this.balanceIconLabelGap = false,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
+  /// Negative shifts icon left from the equal L/T inset.
+  final double iconLeftNudge;
+
+  /// When true, icon left inset equals the gap between icon and centered label.
+  final bool balanceIconLabelGap;
 
   @override
   Widget build(BuildContext context) {
@@ -220,42 +235,59 @@ final class _SettingsTopTabItem extends StatelessWidget {
         },
         // Stretch so the indicator spans the full equal-width tab cell;
         // outer cell edges match [SettingsDimens.inset] with the cards.
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Center(
-              child: Text(
-                label,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            var iconLeft = iconInset + iconLeftNudge;
+            if (balanceIconLabelGap) {
+              final painter = TextPainter(
+                text: TextSpan(text: label, style: labelStyle),
                 maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: labelStyle,
-              ),
-            ),
-            Positioned(
-              left: iconInset,
-              top: iconInset,
-              width: SettingsTopTabs.iconSize,
-              height: SettingsTopTabs.iconSize,
-              child: Icon(
-                icon,
-                size: SettingsTopTabs.iconSize,
-                color: color,
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: SettingsTopTabs.indicatorHeight,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOut,
-                color: selected ? Colors.white : Colors.transparent,
-              ),
-            ),
-          ],
+                ellipsis: '…',
+                textDirection: Directionality.of(context),
+              )..layout(maxWidth: constraints.maxWidth);
+              final textLeft = (constraints.maxWidth - painter.width) / 2;
+              // left == (textLeft - iconRight) ⇒ left == gap to label.
+              iconLeft = ((textLeft - SettingsTopTabs.iconSize) / 2)
+                  .clamp(0.0, double.infinity);
+            }
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Center(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: labelStyle,
+                  ),
+                ),
+                Positioned(
+                  left: iconLeft,
+                  top: iconInset,
+                  width: SettingsTopTabs.iconSize,
+                  height: SettingsTopTabs.iconSize,
+                  child: Icon(
+                    icon,
+                    size: SettingsTopTabs.iconSize,
+                    color: color,
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: SettingsTopTabs.indicatorHeight,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOut,
+                    color: selected ? Colors.white : Colors.transparent,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -460,17 +492,28 @@ class SettingsPanel extends StatelessWidget {
             borderRadius: radius,
             boxShadow: elevated ? cardShadow : const [],
           ),
-          child: ClipRRect(
-            borderRadius: radius,
-            child: CyberBackdropBlur(
-              // Capture frost (Weston realtime → black). Settings/Monitor use
-              // dialog-grade HIGH (23), same as boot self-check / tip cards.
-              sampleMode: blurSampleMode,
-              intensity: blurIntensity,
-              sigmaX: blurSigma,
-              sigmaY: blurSigma,
-              blurTint: CyberBlurTint.dark,
-              child: CustomPaint(
+          // Frost / gradient stay rounded-clipped; [child] may paint outside
+          // (e.g. CyberSlider drag value bubble above the first settings row).
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: radius,
+                  child: CyberBackdropBlur(
+                    sampleMode: blurSampleMode,
+                    intensity: blurIntensity,
+                    sigmaX: blurSigma,
+                    sigmaY: blurSigma,
+                    blurTint: CyberBlurTint.dark,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(gradient: surfaceGradient),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
+              ),
+              CustomPaint(
                 foregroundPainter: _SettingsDepthEdgePainter(
                   baseRim: rimColor,
                   highlightGlow: SettingsDimens.cardHighlightGlow,
@@ -483,12 +526,9 @@ class SettingsPanel extends StatelessWidget {
                   innerHighlightWidth: innerHighlightWidth,
                   innerHighlightColor: innerHighlightColor,
                 ),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(gradient: surfaceGradient),
-                  child: child,
-                ),
+                child: child,
               ),
-            ),
+            ],
           ),
         ),
       ],

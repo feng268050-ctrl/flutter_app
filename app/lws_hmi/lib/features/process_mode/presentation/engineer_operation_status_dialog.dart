@@ -1,25 +1,19 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// lws-ui [FrostStatusDialog] success mode (`OperationDialogBuilder.openSuccessDialog`).
 ///
-/// Title + success glyph + message + OK — light frost chrome (same family as
-/// warn / engineer entry tips).
+/// Title + success glyph + message + OK — toast-like cream fill (no page透视),
+/// with title / body / action dividers like `dialog_frost_prompt`.
 Future<void> showEngineerOperationSuccessDialog(
   BuildContext context, {
   required String message,
   String title = 'Success',
 }) {
-  return CyberOverlayHost.show<void>(
+  return TipDialogHost.showSuccess<void>(
     context: context,
     barrierDismissible: true,
-    barrierColor: CyberColors.scrim,
-    freezePageBackdrop: false,
-    useFakeGlass: true,
-    tone: CyberTone.light,
-    blurTint: CyberBlurTint.warm,
-    sampleMode: CyberBlurSampleMode.firstFrame,
-    intensity: CyberBlurIntensity.high,
     builder: (dialogContext) => _EngineerOperationSuccessBody(
       title: title,
       message: message,
@@ -68,7 +62,9 @@ final class _EngineerOperationSuccessBody extends StatelessWidget {
               decoration: TextDecoration.none,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: CyberDimens.contentPadding),
+          const TipFrostDivider(),
+          const SizedBox(height: CyberDimens.contentPadding),
           const Center(
             child: Image(
               image: AssetImage('assets/process/dialog_succd.webp'),
@@ -90,7 +86,9 @@ final class _EngineerOperationSuccessBody extends StatelessWidget {
               decoration: TextDecoration.none,
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: CyberDimens.contentPadding),
+          const TipFrostDivider(),
+          const SizedBox(height: CyberDimens.contentPadding),
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 280, maxWidth: 420),

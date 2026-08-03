@@ -12,7 +12,12 @@ const Color _kDisclaimerLink = Color(0xFF324BF3);
 const double _kScreenPad = 30;
 
 /// Card content insets from lws-ui (`50/50/50/32`).
-const EdgeInsets _kCardPad = EdgeInsets.fromLTRB(50, 50, 50, 32);
+///
+/// Horizontal pad is applied to title / scroll *content* / footer — not around
+/// the scroll viewport — so the scrollbar sits flush on the frost card edge.
+const double _kCardPadH = 50;
+const double _kCardPadTop = 50;
+const double _kCardPadBottom = 32;
 
 /// Shows Safety Tips; Product Disclaimer is nested via the footer link.
 ///
@@ -66,7 +71,13 @@ class _SafetyTipsShell extends StatelessWidget {
                 blurTint: CyberBlurTint.dark,
                 useFakeGlass: false,
                 borderRadius: panel.borderRadius,
-                padding: _kCardPad,
+                // No horizontal pad here — keeps scrollbar on the card rim.
+                padding: const EdgeInsets.fromLTRB(
+                  0,
+                  _kCardPadTop,
+                  0,
+                  _kCardPadBottom,
+                ),
                 child: _SafetyTipsBody(mode: mode),
               ),
             ),
@@ -129,118 +140,129 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: CyberColors.textPrimary,
-            fontSize: 37,
-            fontWeight: FontWeight.w700,
-            height: 1.15,
-            decoration: TextDecoration.none,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _kCardPadH),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: CyberColors.textPrimary,
+              fontSize: 37,
+              fontWeight: FontWeight.w700,
+              height: 1.15,
+              decoration: TextDecoration.none,
+            ),
           ),
         ),
         const SizedBox(height: 40),
         Expanded(
-          child: SingleChildScrollView(
-            physics: const ClampingScrollPhysics(),
-            child: Text(
-              content,
-              style: const TextStyle(
-                color: CyberColors.textPrimary,
-                fontSize: 29,
-                height: 1.35,
-                fontWeight: FontWeight.w400,
-                decoration: TextDecoration.none,
+          // Scrollbar tracks the full card width (flush to the frost edge);
+          // body text keeps the 50dp horizontal inset.
+          child: Scrollbar(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: _kCardPadH),
+              child: Text(
+                content,
+                style: const TextStyle(
+                  color: CyberColors.textPrimary,
+                  fontSize: 29,
+                  height: 1.35,
+                  fontWeight: FontWeight.w400,
+                  decoration: TextDecoration.none,
+                ),
               ),
             ),
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  CyberCheckbox(
-                    key: ValueKey(
-                      isTips
-                          ? 'safety-tips-agree-cb'
-                          : 'product-disclaimer-agree-cb',
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _kCardPadH),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    CyberCheckbox(
+                      key: ValueKey(
+                        isTips
+                            ? 'safety-tips-agree-cb'
+                            : 'product-disclaimer-agree-cb',
+                      ),
+                      value: _agreed,
+                      size: CyberDimens.checkboxLargeSize,
+                      onChanged: (v) {
+                        setState(() => _agreed = v ?? false);
+                      },
                     ),
-                    value: _agreed,
-                    size: CyberDimens.checkboxLargeSize,
-                    onChanged: (v) {
-                      setState(() => _agreed = v ?? false);
-                    },
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: isTips
-                        ? Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                checkboxLabel,
-                                style: const TextStyle(
-                                  color: CyberColors.textPrimary,
-                                  fontSize: 29,
-                                  height: 1.25,
-                                  decoration: TextDecoration.none,
-                                ),
-                              ),
-                              // lws-ui: ` “` + Product Disclaimer. + `”`
-                              GestureDetector(
-                                key: const ValueKey(
-                                  'safety-tips-disclaimer-link',
-                                ),
-                                onTap: _openDisclaimer,
-                                child: Text(
-                                  ' “${l10n.safetyTipsInfoUse}”',
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: isTips
+                          ? Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  checkboxLabel,
                                   style: const TextStyle(
-                                    color: _kDisclaimerLink,
+                                    color: CyberColors.textPrimary,
                                     fontSize: 29,
                                     height: 1.25,
-                                    fontWeight: FontWeight.w700,
                                     decoration: TextDecoration.none,
                                   ),
                                 ),
+                                // lws-ui: ` “` + Product Disclaimer. + `”`
+                                GestureDetector(
+                                  key: const ValueKey(
+                                    'safety-tips-disclaimer-link',
+                                  ),
+                                  onTap: _openDisclaimer,
+                                  child: Text(
+                                    ' “${l10n.safetyTipsInfoUse}”',
+                                    style: const TextStyle(
+                                      color: _kDisclaimerLink,
+                                      fontSize: 29,
+                                      height: 1.25,
+                                      fontWeight: FontWeight.w700,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              checkboxLabel,
+                              style: const TextStyle(
+                                color: CyberColors.textPrimary,
+                                fontSize: 29,
+                                height: 1.25,
+                                decoration: TextDecoration.none,
                               ),
-                            ],
-                          )
-                        : Text(
-                            checkboxLabel,
-                            style: const TextStyle(
-                              color: CyberColors.textPrimary,
-                              fontSize: 29,
-                              height: 1.25,
-                              decoration: TextDecoration.none,
                             ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: CyberDimens.contentPadding),
-            SizedBox(
-              width: 163,
-              child: CyberButton(
-                key: ValueKey(
-                  isTips
-                      ? 'safety-tips-agree-btn'
-                      : 'product-disclaimer-agree-btn',
+                    ),
+                  ],
                 ),
-                size: CyberButtonSize.medium,
-                variant: CyberButtonVariant.primary,
-                shape: CyberButtonShape.rounded,
-                stretch: true,
-                onPressed: _agreed ? _onAgree : null,
-                child: Text(l10n.safetyTipsAgree),
               ),
-            ),
-          ],
+              const SizedBox(width: CyberDimens.contentPadding),
+              SizedBox(
+                width: 163,
+                child: CyberButton(
+                  key: ValueKey(
+                    isTips
+                        ? 'safety-tips-agree-btn'
+                        : 'product-disclaimer-agree-btn',
+                  ),
+                  size: CyberButtonSize.medium,
+                  variant: CyberButtonVariant.primary,
+                  shape: CyberButtonShape.rounded,
+                  stretch: true,
+                  onPressed: _agreed ? _onAgree : null,
+                  child: Text(l10n.safetyTipsAgree),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

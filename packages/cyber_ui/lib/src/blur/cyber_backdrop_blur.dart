@@ -44,6 +44,7 @@ class CyberBackdropBlur extends StatefulWidget {
     this.captureScaleFactor = 3,
     this.clipBehavior = Clip.antiAlias,
     this.backdropScope,
+    this.captureTarget = CyberBlurCaptureTarget.surface,
   });
 
   final Widget child;
@@ -84,6 +85,10 @@ class CyberBackdropBlur extends StatefulWidget {
   /// via [CyberBlurSampleMode.realtime] when still in the page tree.
   final CyberBlurBackdropScopeState? backdropScope;
 
+  /// Surface captured from [backdropScope]. IME overlays use [currentPage]
+  /// so their frost includes the active page's visible content.
+  final CyberBlurCaptureTarget captureTarget;
+
   @override
   State<CyberBackdropBlur> createState() => _CyberBackdropBlurState();
 }
@@ -101,10 +106,10 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
   int _captureRetryCount = 0;
 
   ScrollPosition? _scrollPosition;
-  bool _followGeomScheduled = false;
   Offset _followOrigin = Offset.zero;
   Size _followBackdropSize = Size.zero;
   double _followScale = 1;
+  double? _followScrollPixelsAtOrigin;
 
   double get _sigmaX => widget.sigmaX ?? widget.intensity.sigma;
   double get _sigmaY => widget.sigmaY ?? widget.intensity.sigma;
@@ -188,40 +193,15 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
     if (identical(next, _scrollPosition)) {
       return;
     }
-    _scrollPosition?.removeListener(_onScrollMetrics);
     _scrollPosition = next;
-    _scrollPosition?.addListener(_onScrollMetrics);
+    _updateFollowGeometry();
   }
 
-  void _unbindScrollPosition() {
-    _scrollPosition?.removeListener(_onScrollMetrics);
-    _scrollPosition = null;
-  }
-
-  void _onScrollMetrics() {
-    if (!_isFollowLayout || !mounted) {
-      return;
-    }
-    _scheduleFollowGeometry();
-  }
-
-  void _scheduleFollowGeometry() {
-    if (_followGeomScheduled) {
-      return;
-    }
-    _followGeomScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _followGeomScheduled = false;
-      if (!mounted || !_isFollowLayout) {
-        return;
-      }
-      _updateFollowGeometry();
-    });
-  }
+  void _unbindScrollPosition() => _scrollPosition = null;
 
   void _updateFollowGeometry() {
     final scope = _scope;
-    final boundary = scope?.renderBoundary;
+    final boundary = scope?.renderBoundaryFor(widget.captureTarget);
     if (boundary == null || !boundary.hasSize || _followBlurred == null) {
       return;
     }
@@ -250,6 +230,7 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
     setState(() {
       _followOrigin = origin;
       _followBackdropSize = backdropSize;
+      _followScrollPixelsAtOrigin = _scrollPosition?.pixels;
     });
   }
 
@@ -277,6 +258,48 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
     _useFakeGlass = false;
     _followOrigin = Offset.zero;
     _followBackdropSize = Size.zero;
+    _followScrollPixelsAtOrigin = null;
+  }
+
+  Offset _followScrollTranslation() {
+    final position = _scrollPosition;
+    final initialPixels = _followScrollPixelsAtOrigin;
+    if (position == null || initialPixels == null) {
+      return Offset.zero;
+    }
+    final delta = position.pixels - initialPixels;
+    return switch (position.axisDirection) {
+      AxisDirection.down => Offset(0, delta),
+      AxisDirection.up => Offset(0, -delta),
+      AxisDirection.right => Offset(delta, 0),
+      AxisDirection.left => Offset(-delta, 0),
+    };
+  }
+
+  Widget _followLayoutImage() {
+    final image = RawImage(
+      image: _followBlurred,
+      width: _followBackdropSize.width,
+      height: _followBackdropSize.height,
+      fit: BoxFit.fill,
+      filterQuality: FilterQuality.medium,
+    );
+    final position = _scrollPosition;
+    if (position == null || _followScrollPixelsAtOrigin == null) {
+      return image;
+    }
+    // ScrollPosition notifies before the next paint. Counter-translate the
+    // shared backdrop in that same frame, rather than waiting for a
+    // post-frame global-coordinate measurement that visibly jumps on a
+    // FittedBox-scaled simulator.
+    return AnimatedBuilder(
+      animation: position,
+      child: image,
+      builder: (context, child) => Transform.translate(
+        offset: _followScrollTranslation(),
+        child: child!,
+      ),
+    );
   }
 
   void _scheduleCapture({required int settlePasses}) {
@@ -314,11 +337,11 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
     }
 
     final scope = _scope;
-    final boundary = scope?.renderBoundary;
+    final boundary = scope?.renderBoundaryFor(widget.captureTarget);
     if (boundary == null || !boundary.hasSize) {
-      if (mounted) {
-        setState(() => _useFakeGlass = true);
-      }
+      _enableFakeGlass(
+        scope == null ? 'scope-missing' : 'capture-target-unavailable',
+      );
       return;
     }
 
@@ -383,7 +406,7 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
           return;
         }
         if (mounted) {
-          setState(() => _useFakeGlass = true);
+          _enableFakeGlass('crop-out-of-bounds', details: 'src=$src');
         }
         return;
       }
@@ -399,11 +422,15 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
       // Wallpaper Image often paints after the first settle passes on the
       // embedder — a successful crop of an all-black buffer reads as an
       // opaque plate. Retry a few frames before accepting black.
-      if (cropMean < 2.0 && _captureRetryCount < 12) {
-        _captureRetryCount++;
+      if (cropMean < 2.0) {
         cropped.dispose();
-        _capturePending = false;
-        _scheduleCapture(settlePasses: 1);
+        if (_captureRetryCount < 12) {
+          _captureRetryCount++;
+          _capturePending = false;
+          _scheduleCapture(settlePasses: 1);
+          return;
+        }
+        _enableFakeGlass('capture-all-black', details: 'mean=$cropMean');
         return;
       }
 
@@ -413,10 +440,8 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
         _followBlurred = null;
         _useFakeGlass = false;
       });
-    } catch (_) {
-      if (mounted) {
-        setState(() => _useFakeGlass = true);
-      }
+    } catch (error, stackTrace) {
+      _enableFakeGlass('capture-exception', details: '$error\n$stackTrace');
     } finally {
       _capturePending = false;
     }
@@ -430,9 +455,7 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
     try {
       final scope = _scope;
       if (scope == null) {
-        if (mounted) {
-          setState(() => _useFakeGlass = true);
-        }
+        _enableFakeGlass('scope-missing');
         return;
       }
 
@@ -440,7 +463,10 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
       final scale = (dpr / widget.captureScaleFactor).clamp(0.25, dpr);
       _followScale = scale;
 
-      final full = await scope.acquireFullCapture(pixelRatio: scale);
+      final full = await scope.acquireFullCapture(
+        pixelRatio: scale,
+        target: widget.captureTarget,
+      );
       if (!mounted) {
         return;
       }
@@ -451,9 +477,7 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
           _scheduleCapture(settlePasses: 1);
           return;
         }
-        if (mounted) {
-          setState(() => _useFakeGlass = true);
-        }
+        _enableFakeGlass('capture-target-unavailable');
         return;
       }
 
@@ -461,11 +485,15 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
       if (!mounted) {
         return;
       }
-      if (mean < 2.0 && _captureRetryCount < 12) {
-        _captureRetryCount++;
-        scope.invalidateFullCapture();
-        _capturePending = false;
-        _scheduleCapture(settlePasses: 1);
+      if (mean < 2.0) {
+        if (_captureRetryCount < 12) {
+          _captureRetryCount++;
+          scope.invalidateFullCapture();
+          _capturePending = false;
+          _scheduleCapture(settlePasses: 1);
+          return;
+        }
+        _enableFakeGlass('capture-all-black', details: 'mean=$mean');
         return;
       }
 
@@ -476,12 +504,15 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
         pixelRatio: scale,
         sigmaX: _sigmaX * scale,
         sigmaY: _sigmaY * scale,
+        target: widget.captureTarget,
       );
       if (!mounted || blurred == null) {
         if (_captureRetryCount < 12) {
           _captureRetryCount++;
           _capturePending = false;
           _scheduleCapture(settlePasses: 1);
+        } else {
+          _enableFakeGlass('blurred-capture-unavailable');
         }
         return;
       }
@@ -500,13 +531,24 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
       });
       _bindScrollPosition();
       _updateFollowGeometry();
-    } catch (_) {
-      if (mounted) {
-        setState(() => _useFakeGlass = true);
-      }
+    } catch (error, stackTrace) {
+      _enableFakeGlass(
+        'follow-layout-exception',
+        details: '$error\n$stackTrace',
+      );
     } finally {
       _capturePending = false;
     }
+  }
+
+  void _enableFakeGlass(String reason, {String? details}) {
+    if (!mounted) return;
+    debugPrint(
+      'cyber-backdrop: fake-glass reason=$reason '
+      'mode=${widget.sampleMode.name} target=${widget.captureTarget.name} '
+      'retry=$_captureRetryCount${details == null ? '' : ' $details'}',
+    );
+    setState(() => _useFakeGlass = true);
   }
 
   static bool get _inWidgetTest {
@@ -560,8 +602,7 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
       fit: StackFit.passthrough,
       clipBehavior: Clip.hardEdge,
       children: [
-        if (blurOn &&
-            widget.sampleMode == CyberBlurSampleMode.realtime)
+        if (blurOn && widget.sampleMode == CyberBlurSampleMode.realtime)
           Positioned.fill(
             child: BackdropFilter(
               filter: ui.ImageFilter.blur(
@@ -578,12 +619,7 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
             top: -_followOrigin.dy,
             width: _followBackdropSize.width,
             height: _followBackdropSize.height,
-            child: RawImage(
-              image: _followBlurred,
-              width: _followBackdropSize.width,
-              height: _followBackdropSize.height,
-              fit: BoxFit.fill,
-            ),
+            child: _followLayoutImage(),
           )
         else if (blurOn && _frozen != null)
           Positioned.fill(

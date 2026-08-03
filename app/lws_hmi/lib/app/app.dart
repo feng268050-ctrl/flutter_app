@@ -23,6 +23,7 @@ import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_settings_store.dart';
 import 'package:lws_hmi/platform/cloud/device_remote_lock_store.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
@@ -384,10 +385,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       final body = reason.trim().isEmpty
           ? 'Cloud disconnected this device.'
           : reason.trim();
-      await CyberOverlayHost.show<void>(
+      await TipDialogHost.showDarkPrompt<void>(
         context: ctx,
         barrierDismissible: true,
-        freezePageBackdrop: false,
         builder: (dialogCtx) {
           return CyberPromptContent(
             title: 'Disconnected',

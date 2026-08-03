@@ -33,6 +33,12 @@ const PageTransitionsTheme kAppPageTransitionsTheme = PageTransitionsTheme(
   },
 );
 
+/// Forward (enter) fade duration for [buildAppPageRoute].
+const Duration kAppPageEnterDuration = Duration(milliseconds: 280);
+
+/// Reverse (pop) fade duration for [buildAppPageRoute].
+const Duration kAppPageExitDuration = Duration(milliseconds: 240);
+
 class _FadePageTransitionsBuilder extends PageTransitionsBuilder {
   const _FadePageTransitionsBuilder();
 
@@ -57,8 +63,8 @@ Route<dynamic> buildAppPageRoute({
 }) {
   return PageRouteBuilder<dynamic>(
     settings: settings,
-    transitionDuration: const Duration(milliseconds: 280),
-    reverseTransitionDuration: const Duration(milliseconds: 240),
+    transitionDuration: kAppPageEnterDuration,
+    reverseTransitionDuration: kAppPageExitDuration,
     pageBuilder: (context, animation, secondaryAnimation) => child,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(

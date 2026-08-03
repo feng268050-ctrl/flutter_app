@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
+import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/custom_home_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/custom_home_save_success_dialog.dart';
 
 void main() {
-  testWidgets('pointer drag immediately reorders custom-home cards',
+  testWidgets('cancel then add moves a card between Custom Home zones',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -22,19 +23,83 @@ void main() {
     );
     await tester.pump();
 
-    final wire = find.byKey(const ValueKey('custom-home-card-wireConsumption'));
-    final laser =
-        find.byKey(const ValueKey('custom-home-card-laserOnDuration'));
-    final wireStart = tester.getTopLeft(wire);
-    final laserStart = tester.getCenter(laser);
+    expect(find.text('Selected 4/4'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('custom-home-remove-wireConsumption')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Selected 3/4'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('custom-home-save')));
+    await tester.pump();
+    expect(find.text('Please select 4 cards'), findsOneWidget);
+    ProcessModeToast.resetForTest();
 
-    final gesture = await tester.startGesture(tester.getCenter(wire));
-    await gesture.moveTo(laserStart);
-    await tester.pump(const Duration(milliseconds: 240));
-    await gesture.up();
-    await tester.pump(const Duration(milliseconds: 240));
+    await tester.tap(
+      find.byKey(const ValueKey('custom-home-card-wireConsumption')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Selected 4/4'), findsOneWidget);
+  });
 
-    expect(tester.getTopLeft(wire), isNot(wireStart));
+  testWidgets('full Custom Home selection enters replace mode then swaps',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    addTearDown(ProcessModeToast.resetForTest);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CustomHomeTab(
+            store: CustomHomeLayoutStore(
+              preferencePath: '/tmp/custom-home-layout-replace-test.json',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(
+      find.byKey(const ValueKey('custom-home-card-cutRatio')),
+    );
+    await tester.pump();
+    expect(find.text('Please select a card to replace'), findsOneWidget);
+    expect(find.text('Selected'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('custom-home-card-cutRatio')),
+        matching: find.byIcon(Icons.check_rounded),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('custom-home-card-cleanRatio')),
+    );
+    await tester.pump();
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('custom-home-card-cutRatio')),
+        matching: find.byIcon(Icons.add_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('custom-home-card-cleanRatio')),
+        matching: find.byIcon(Icons.check_rounded),
+      ),
+      findsOneWidget,
+    );
+    await tester.pump(const Duration(milliseconds: 120));
+    await tester.tap(
+      find.byKey(const ValueKey('custom-home-card-wireConsumption')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Selected 4/4'), findsOneWidget);
+    expect(find.byKey(const ValueKey('custom-home-remove-cleanRatio')),
+        findsOneWidget);
+    ProcessModeToast.resetForTest();
   });
 
   testWidgets('Custom Home success tip auto-dismisses after 1.5 seconds',

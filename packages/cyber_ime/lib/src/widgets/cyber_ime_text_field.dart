@@ -10,6 +10,25 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// Carries the initiating page's blur scope across a dialog route.
+class CyberImeBackdropScope extends InheritedWidget {
+  const CyberImeBackdropScope({
+    super.key,
+    required this.backdropScope,
+    required super.child,
+  });
+
+  final CyberBlurBackdropScopeState? backdropScope;
+
+  static CyberBlurBackdropScopeState? maybeOf(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<CyberImeBackdropScope>()
+      ?.backdropScope;
+
+  @override
+  bool updateShouldNotify(CyberImeBackdropScope oldWidget) =>
+      backdropScope != oldWidget.backdropScope;
+}
+
 /// Text field that suppresses the system soft keyboard and opens CyberIME.
 ///
 /// Editable (not [TextField.readOnly]) so physical USB/BT keys from
@@ -34,6 +53,7 @@ class CyberImeTextField extends StatefulWidget {
     this.action = CyberImeAction.done,
     this.onAction,
     this.style,
+    this.backdropScope,
   });
 
   final CyberImeFieldType fieldType;
@@ -49,6 +69,9 @@ class CyberImeTextField extends StatefulWidget {
   final CyberImeAction action;
   final VoidCallback? onAction;
   final TextStyle? style;
+
+  /// Page scope to sample when this field is hosted by a dialog route.
+  final CyberBlurBackdropScopeState? backdropScope;
 
   @override
   State<CyberImeTextField> createState() => _CyberImeTextFieldState();
@@ -214,6 +237,9 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
     SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
     _handle = CyberImeOverlay.show(
       context: context,
+      backdropScope: widget.backdropScope ??
+          CyberImeBackdropScope.maybeOf(context) ??
+          CyberBlurBackdropScope.maybeOf(context),
       fieldType: widget.fieldType,
       controller: widget.controller,
       session: widget.session,

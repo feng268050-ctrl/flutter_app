@@ -8,10 +8,13 @@ import 'package:flutter/material.dart';
 /// Fills the keyboard band only — keycaps and panel chrome sit **above** this
 /// layer and MUST NOT add their own [CyberBackdropBlur].
 ///
-/// Prefer Flutter [BackdropFilter] ([CyberBlurSampleMode.realtime]) when this
-/// widget is still in the page tree (Settings preview). Root [Overlay] entries
-/// on Weston paint black with realtime blur — pass [backdropScope] from the
-/// caller's [CyberBlurBackdropScope] and use [CyberBlurSampleMode.firstFrame].
+/// Sampling policy:
+/// - With a [CyberBlurBackdropScope], use [CyberBlurSampleMode.followLayout]
+///   so the keyboard band samples the page backdrop with aligned perspective.
+/// - Without a scope, fall back to [CyberBlurSampleMode.realtime].
+///
+/// Root [Overlay] entries on Weston paint black with realtime blur, so callers
+/// should pass [backdropScope] from the page scope instead of forcing realtime.
 ///
 /// Paints a top center-bright gradient hairline (两边向中间渐变亮边).
 class CyberImeKeyboardBackdrop extends StatelessWidget {
@@ -19,14 +22,17 @@ class CyberImeKeyboardBackdrop extends StatelessWidget {
     super.key,
     this.intensity = CyberBlurIntensity.high,
     this.blurTint = CyberBlurTint.dark,
-    this.sampleMode = CyberBlurSampleMode.realtime,
+    this.sampleMode,
     this.backdropScope,
     this.showTopEdge = true,
   });
 
   final CyberBlurIntensity intensity;
   final CyberBlurTint blurTint;
-  final CyberBlurSampleMode sampleMode;
+
+  /// Explicit sampling override. When null, the backdrop uses follow-layout
+  /// sampling if a capture scope is available, otherwise realtime blur.
+  final CyberBlurSampleMode? sampleMode;
 
   /// Page capture root when showing from a root Overlay (outside the scope).
   final CyberBlurBackdropScopeState? backdropScope;
@@ -36,11 +42,18 @@ class CyberImeKeyboardBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedScope =
+        backdropScope ?? CyberBlurBackdropScope.maybeOf(context);
+    final resolvedSampleMode = sampleMode ??
+        (resolvedScope != null
+            ? CyberBlurSampleMode.followLayout
+            : CyberBlurSampleMode.realtime);
     final blur = CyberBackdropBlur(
-      sampleMode: sampleMode,
+      sampleMode: resolvedSampleMode,
       intensity: intensity,
       blurTint: blurTint,
-      backdropScope: backdropScope,
+      backdropScope: resolvedScope,
+      captureTarget: CyberBlurCaptureTarget.currentPage,
       // Empty child: blur + tint only; layout lives in [CyberImeKeyboardPanel].
       child: const SizedBox.expand(),
     );

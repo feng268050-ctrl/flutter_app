@@ -73,7 +73,9 @@ final class WarnAlarmController {
       onTrigger: triggerDemoAlarm,
       onClean: clearDemoAlarms,
     );
-    // After coordinator exists: SFX only when a dialog is on screen.
+    // After coordinator exists: SFX only when the warn modal is on screen
+    // ([CyberUiWarnPresentation.showingCode]), not when the episode is merely
+    // queued behind Wi‑Fi / register / other global prompts.
     _presentation.onPresented = (_) => _syncWarnSound();
     _presentation.onClosed = (code) {
       unawaited(() async {
@@ -130,7 +132,7 @@ final class WarnAlarmController {
       monitor.applyHealth(h);
       _syncWarnSound();
     });
-    // SFX follows visible dialog (onPresented / showingCode), not raw edges alone.
+    // SFX follows the visible warn modal only (not queued episodes).
     _signalSub = _merged.events.listen((event) {
       _publishActive();
       _syncWarnSound();
@@ -283,12 +285,14 @@ final class WarnAlarmController {
 
   /// SFX lifecycle: tied to the **visible** warn dialog only.
   ///
-  /// Play while [WarnAlarmCoordinator.showingCode] is set, that episode is
-  /// still alerting (fault active, not operator-acked), and not INFO-styled.
-  /// Queued / background faults MUST NOT start sound — no dialog, no SFX.
-  /// Confirm / dismiss clears [showingCode] → stop.
+  /// Use [CyberUiWarnPresentation.showingCode] (set when the frost modal is
+  /// actually presented), **not** [WarnAlarmCoordinator.showingCode]. The
+  /// coordinator marks an episode "showing" as soon as it enters the present
+  /// chain — including while [GlobalPromptQueue] still has Wi‑Fi / register /
+  /// other guidance ahead. Queued faults must not start SFX.
+  /// Confirm / dismiss clears presentation showing → stop.
   void _syncWarnSound() {
-    final showing = coordinator.showingCode;
+    final showing = _presentation.showingCode;
     if (showing == null) {
       if (_sound.isActive) {
         unawaited(_sound.stop());

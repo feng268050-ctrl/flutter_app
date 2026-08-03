@@ -237,7 +237,8 @@ void main() {
     kb.dispose();
   });
 
-  testWidgets('edge-key alternate popup keeps 2px screen inset', (tester) async {
+  testWidgets('edge-key alternate popup keeps 2px screen inset',
+      (tester) async {
     final ctrl = TextEditingController();
     final kb = CyberImeKeyboardController(
       fieldType: CyberImeFieldType.text,
@@ -269,7 +270,8 @@ void main() {
     final popup = find.byType(CyberImeAlternatePopup);
     expect(popup, findsOneWidget);
     final popupRect = tester.getRect(popup);
-    expect(popupRect.left, greaterThanOrEqualTo(kCyberImeAlternatePopupEdgeInset));
+    expect(
+        popupRect.left, greaterThanOrEqualTo(kCyberImeAlternatePopupEdgeInset));
     expect(
       popupRect.right,
       lessThanOrEqualTo(800 - kCyberImeAlternatePopupEdgeInset),
@@ -282,7 +284,8 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('letter long-press slide right commits uppercase', (tester) async {
+  testWidgets('letter long-press slide right commits uppercase',
+      (tester) async {
     final ctrl = TextEditingController();
     final kb = CyberImeKeyboardController(
       fieldType: CyberImeFieldType.text,
@@ -378,7 +381,8 @@ void main() {
         home: Scaffold(
           body: ColoredBox(
             color: Colors.teal,
-            child: CyberImeLayoutPreview(profile: CyberImeRegionalProfile.qwerty),
+            child:
+                CyberImeLayoutPreview(profile: CyberImeRegionalProfile.qwerty),
           ),
         ),
       ),
@@ -389,7 +393,43 @@ void main() {
     expect(find.byType(CyberButton), findsWidgets);
   });
 
-  testWidgets('CyberImeLayoutPreview shows soft QWERTY without typewriter chrome',
+  testWidgets('keyboard backdrop uses followLayout when capture scope exists',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: CyberBlurBackdropScope(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: CyberBlurBackdropTarget(
+                  child: ColoredBox(color: Colors.teal),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 300,
+                child: CyberImeKeyboardBackdrop(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final blur = tester.widget<CyberBackdropBlur>(
+      find.byType(CyberBackdropBlur),
+    );
+    expect(blur.sampleMode, CyberBlurSampleMode.followLayout);
+    expect(blur.backdropScope, isNotNull);
+    expect(blur.captureTarget, CyberBlurCaptureTarget.currentPage);
+    expect(find.byType(BackdropFilter), findsNothing);
+  });
+
+  testWidgets(
+      'CyberImeLayoutPreview shows soft QWERTY without typewriter chrome',
       (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
@@ -501,6 +541,27 @@ void main() {
     expect(selected, CyberImeRegionalProfile.qwertz);
     expect(find.text('长按可输入重音字符'), findsOneWidget);
     expect(find.text('Ctrl'), findsNothing);
+  });
+
+  testWidgets(
+      'CyberImeLayoutChooser can render selector without nested preview',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CyberImeLayoutChooser(
+            selected: CyberImeRegionalProfile.qwerty,
+            showPreview: false,
+            showFootnote: false,
+            onSelected: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('QWERTY'), findsWidgets);
+    expect(find.text('软件键盘布局预览'), findsNothing);
+    expect(find.byType(CyberImeLayoutPreview), findsNothing);
   });
 
   testWidgets('password visibility toggle works while IME is open',

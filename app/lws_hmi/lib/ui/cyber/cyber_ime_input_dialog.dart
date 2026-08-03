@@ -15,11 +15,13 @@ Future<String?> showCyberImeInputDialog({
   bool obscureText = false,
   String confirmLabel = 'OK',
   CyberImeSession? session,
+
   /// When true, Enter / confirm do nothing if the field is empty (lws-ui Wi‑Fi).
   bool requireNonEmpty = false,
   String emptyErrorText = 'Required',
 }) async {
   final imeSession = session ?? CyberImeSession.shared;
+  final backdropScope = CyberBlurBackdropScope.maybeOf(context);
   final ctrl = TextEditingController(text: initial);
   final result = await CyberOverlayHost.show<String?>(
     context: context,
@@ -38,6 +40,7 @@ Future<String?> showCyberImeInputDialog({
         hint: hint,
         confirmLabel: confirmLabel,
         session: imeSession,
+        backdropScope: backdropScope,
         requireNonEmpty: requireNonEmpty,
         emptyErrorText: emptyErrorText,
       );
@@ -57,6 +60,7 @@ class _CyberImeInputDialogBody extends StatefulWidget {
     required this.session,
     required this.requireNonEmpty,
     required this.emptyErrorText,
+    this.backdropScope,
     this.label,
     this.hint,
   });
@@ -71,6 +75,7 @@ class _CyberImeInputDialogBody extends StatefulWidget {
   final CyberImeSession session;
   final bool requireNonEmpty;
   final String emptyErrorText;
+  final CyberBlurBackdropScopeState? backdropScope;
 
   @override
   State<_CyberImeInputDialogBody> createState() =>
@@ -103,6 +108,7 @@ class _CyberImeInputDialogBodyState extends State<_CyberImeInputDialogBody> {
             obscureText: widget.obscureText,
             autofocus: true,
             session: widget.session,
+            backdropScope: widget.backdropScope,
             decoration: InputDecoration(
               labelText: widget.label,
               hintText: widget.hint,
@@ -116,7 +122,8 @@ class _CyberImeInputDialogBodyState extends State<_CyberImeInputDialogBody> {
                 borderSide: BorderSide(color: CyberColors.textPrimary),
               ),
             ),
-            style: const TextStyle(color: CyberColors.textPrimary, fontSize: 18),
+            style:
+                const TextStyle(color: CyberColors.textPrimary, fontSize: 18),
             onAction: _trySubmit,
           ),
         ],
@@ -146,6 +153,7 @@ Future<bool> showCyberImeFormDialog({
   CyberImeSession? session,
 }) async {
   final imeSession = session ?? CyberImeSession.shared;
+  final backdropScope = CyberBlurBackdropScope.maybeOf(context);
   final ok = await CyberOverlayHost.show<bool>(
     context: context,
     sampleMode: CyberBlurSampleMode.realtime,
@@ -154,24 +162,27 @@ Future<bool> showCyberImeFormDialog({
     keyboardHeight: imeSession.keyboardHeightListenable,
     keyboardMargin: imeSession.margin,
     builder: (ctx) {
-      return CyberPromptContent(
-        title: title,
-        body: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: fields,
+      return CyberImeBackdropScope(
+        backdropScope: backdropScope,
+        child: CyberPromptContent(
+          title: title,
+          body: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: fields,
+          ),
+          actions: [
+            CyberButton(
+              variant: CyberButtonVariant.secondary,
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            CyberButton(
+              variant: CyberButtonVariant.primary,
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(confirmLabel),
+            ),
+          ],
         ),
-        actions: [
-          CyberButton(
-            variant: CyberButtonVariant.secondary,
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          CyberButton(
-            variant: CyberButtonVariant.primary,
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(confirmLabel),
-          ),
-        ],
       );
     },
   );

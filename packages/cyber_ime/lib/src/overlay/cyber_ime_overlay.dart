@@ -39,14 +39,18 @@ abstract final class CyberImeOverlay {
     VoidCallback? onAction,
     VoidCallback? onPasswordReveal,
     double panelHeight = kCyberImePanelHeight,
+
+    /// Active page scope captured at the field site. Dialog/overlay contexts
+    /// must pass this explicitly; never search the root Navigator for one.
+    CyberBlurBackdropScopeState? backdropScope,
+
     /// Called after each successful key commit so the host can keep focus.
     VoidCallback? onKeyActivity,
+
     /// Invoked when the keyboard is hidden (scrim tap or [CyberImeOverlayHandle.hide]).
     VoidCallback? onHidden,
   }) {
     final overlayState = Overlay.of(context, rootOverlay: true);
-    // Overlay / dialog routes sit outside the page scope — resolve from tree.
-    final backdropScope = CyberBlurBackdropScope.resolve(context);
     final imeSession = session ?? CyberImeSession.shared;
     final commit = CyberImeControllerCommit(controller);
     final kb = CyberImeKeyboardController(
@@ -90,11 +94,9 @@ abstract final class CyberImeOverlay {
                     fit: StackFit.expand,
                     children: [
                       // 1) One blur plate — samples UI behind the keyboard band.
-                      // Weston Overlay: use firstFrame capture (realtime → black).
+                      // Weston Overlay: pass the page scope so the backdrop can
+                      // use follow-layout sampling (realtime → black).
                       CyberImeKeyboardBackdrop(
-                        sampleMode: backdropScope != null
-                            ? CyberBlurSampleMode.firstFrame
-                            : CyberBlurSampleMode.realtime,
                         backdropScope: backdropScope,
                       ),
                       // 2) Transparent chrome + translucent keycaps (no blur).

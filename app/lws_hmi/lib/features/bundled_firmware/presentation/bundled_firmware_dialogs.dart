@@ -2,20 +2,21 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Confirm / progress / result dialogs for bundled control-board firmware.
 ///
-/// Uses standard [CyberOverlayHost] + [CyberPromptContent] chrome.
+/// Confirm/progress use Startup Self-Check frost; success = cream pass tip;
+/// failure = charcoal error tip.
 abstract final class BundledFirmwareDialogs {
   static Future<bool> showConfirm({
     required BuildContext context,
     required String currentVersion,
     required String newVersion,
   }) async {
-    final result = await CyberOverlayHost.show<bool>(
+    final result = await TipDialogHost.showDarkPrompt<bool>(
       context: context,
       barrierDismissible: true,
-      freezePageBackdrop: false,
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
         return CyberPromptContent(
@@ -46,10 +47,9 @@ abstract final class BundledFirmwareDialogs {
     required BuildContext context,
     required ValueListenable<int> percent,
   }) {
-    CyberOverlayHost.show<void>(
+    TipDialogHost.showDarkPrompt<void>(
       context: context,
       barrierDismissible: false,
-      freezePageBackdrop: false,
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
         return PopScope(
@@ -102,34 +102,34 @@ abstract final class BundledFirmwareDialogs {
   }
 
   static Future<void> showSuccess(BuildContext context) {
-    return _showResult(
+    return TipDialogHost.showSuccess<void>(
       context: context,
-      title: (l10n) => l10n.bundledFirmwareSuccessTitle,
-      message: (l10n) => l10n.bundledFirmwareSuccessMessage,
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return CyberPromptContent(
+          tone: CyberTone.light,
+          title: l10n.bundledFirmwareSuccessTitle,
+          body: Text(l10n.bundledFirmwareSuccessMessage),
+          actions: [
+            CyberButton(
+              variant: CyberButtonVariant.primary,
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.okText),
+            ),
+          ],
+        );
+      },
     );
   }
 
   static Future<void> showFailed(BuildContext context) {
-    return _showResult(
+    return TipDialogHost.showError<void>(
       context: context,
-      title: (l10n) => l10n.bundledFirmwareFailedTitle,
-      message: (l10n) => l10n.bundledFirmwareFailedMessage,
-    );
-  }
-
-  static Future<void> _showResult({
-    required BuildContext context,
-    required String Function(AppLocalizations) title,
-    required String Function(AppLocalizations) message,
-  }) {
-    return CyberOverlayHost.show<void>(
-      context: context,
-      freezePageBackdrop: false,
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
         return CyberPromptContent(
-          title: title(l10n),
-          body: Text(message(l10n)),
+          title: l10n.bundledFirmwareFailedTitle,
+          body: Text(l10n.bundledFirmwareFailedMessage),
           actions: [
             CyberButton(
               variant: CyberButtonVariant.primary,

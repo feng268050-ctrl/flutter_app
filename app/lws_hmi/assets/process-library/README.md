@@ -25,3 +25,7 @@ assets/.generated/process-library/manifest.json
 ```
 
 (example: `L1_Pro/1.0.4.json` — same model/version names as the source Excel).
+
+Flutter packs only direct files under each `pubspec.yaml` asset directory, so
+prepare also rewrites the `# BEGIN/END generated-ship-assets` block to list
+each `<model>/` subdirectory (plus `firmware/control-board/`).

@@ -82,5 +82,47 @@ for hw, (sw, path) in sorted(best.items()):
     print(f"ship firmware HW={hw} SW={sw}: {path.name}")
 PY
 
+# Flutter 3.24 packs only direct files under each pubspec asset directory
+# entry (not recursive). Rewrite model-subdir lines between markers.
+PUBSPEC="$APP_DIR/pubspec.yaml"
+MARKER_BEGIN='# BEGIN generated-ship-assets'
+MARKER_END='# END generated-ship-assets'
+[[ -f "$PUBSPEC" ]] || die "missing $PUBSPEC"
+grep -qF "$MARKER_BEGIN" "$PUBSPEC" || die "missing $MARKER_BEGIN in pubspec.yaml"
+grep -qF "$MARKER_END" "$PUBSPEC" || die "missing $MARKER_END in pubspec.yaml"
+
+PROC_ASSET_LINES=$'    - assets/.generated/firmware/control-board/\n    - assets/.generated/process-library/'
+while IFS= read -r model_dir; do
+	[[ -n "$model_dir" ]] || continue
+	PROC_ASSET_LINES+=$'\n'"    - assets/.generated/process-library/${model_dir}/"
+done < <(
+	find "$PROC_OUT" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | LC_ALL=C sort
+)
+
+export PUBSPEC MARKER_BEGIN MARKER_END PROC_ASSET_LINES
+python3 - <<'PY'
+import os
+from pathlib import Path
+
+pubspec = Path(os.environ["PUBSPEC"])
+begin = os.environ["MARKER_BEGIN"]
+end = os.environ["MARKER_END"]
+body = os.environ["PROC_ASSET_LINES"].rstrip("\n")
+text = pubspec.read_text()
+i = text.find(begin)
+j = text.find(end)
+if i < 0 or j < 0 or j < i:
+    raise SystemExit(f"markers not found in {pubspec}")
+i_line = text.rfind("\n", 0, i) + 1
+j_line = text.find("\n", j)
+if j_line < 0:
+    j_line = len(text)
+else:
+    j_line += 1
+replacement = f"    {begin}\n{body}\n    {end}\n"
+pubspec.write_text(text[:i_line] + replacement + text[j_line:])
+print(f"updated pubspec ship assets:\n{body}")
+PY
+
 echo "OK: ship assets ready"
 ls -la "$PROC_OUT" "$FW_OUT"

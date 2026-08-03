@@ -15,6 +15,20 @@ abstract final class MonitorDimens {
   /// outer glow can paint without being clipped by scroll/flex ancestors.
   static const outerAmbientExtent = 20.0;
 
+  /// One shared light source for Monitor: top-left is illuminated, while
+  /// right/bottom receive tight contact depth instead of an all-around halo.
+  static const panelOuterShadowExtent = SettingsDimens.outerAmbientExtent;
+  static const panelOuterShadowEdge = SettingsDimens.outerAmbientEdge;
+  static const panelRim = SettingsDimens.panelRim;
+  static const panelHighlight = SettingsDimens.panelHighlight;
+  static const panelInnerHighlight = Color(0x30FFFFFF);
+  static const panelSurfaceGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0x2EFFFFFF), Color(0x18000000)],
+  );
+  static const panelDepthLipShadow = SettingsDimens.depthLipShadow;
+  static const panelCardShadow = SettingsDimens.cardShadow;
   static const corner = 18.0;
   static const metricH = 88.0;
   static const leftPanelW = 740.0;
@@ -44,8 +58,12 @@ abstract final class MonitorDimens {
 /// Monitor panel shell — same frost + depth chrome as [SettingsPanel].
 ///
 /// Requires an ancestor [CyberBlurBackdropScope] with Home wallpaper capture
-/// (see [MonitorPage]). Set [frosted] false for nested cells inside an outer
-/// glass section (Alarm metrics) to avoid double blur.
+/// (see [MonitorPage]).
+///
+/// Glass model matches CyberIME (keyboard backdrop + keycaps):
+/// - [frosted] true → section plate with Gaussian frost (like keyboard backdrop).
+/// - [frosted] false → nested tile with translucent fill only (like keycaps);
+///   no second [CyberBackdropBlur], so wallpaper 透视 does not punch through.
 class MonitorGlassCard extends StatelessWidget {
   const MonitorGlassCard({
     super.key,
@@ -65,7 +83,7 @@ class MonitorGlassCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry? margin;
 
-  /// When false, light inset fill only (no capture frost / depth shells).
+  /// When false, keycap-style inset glass only (no capture frost / depth shells).
   final bool frosted;
 
   /// Full-bleed under-plate inside the glass clip (ignores [padding]).
@@ -100,15 +118,51 @@ class MonitorGlassCard extends StatelessWidget {
       body = SettingsPanel(
         borderRadius: BorderRadius.circular(MonitorDimens.corner),
         borderGradientCenter: borderGradientCenter,
+        innerShadowWidth: 0,
+        outerAmbientExtent: MonitorDimens.panelOuterShadowExtent,
+        outerAmbientEdge: MonitorDimens.panelOuterShadowEdge,
+        depthLipOffset: Offset.zero,
+        depthLipShadow: MonitorDimens.panelDepthLipShadow,
+        cardShadow: MonitorDimens.panelCardShadow,
+        lightFromTopLeft: true,
+        rimColor: MonitorDimens.panelRim,
+        lightRim: MonitorDimens.panelHighlight,
+        innerHighlightWidth: 6,
+        innerHighlightColor: MonitorDimens.panelInnerHighlight,
+        surfaceGradient: MonitorDimens.panelSurfaceGradient,
+        // Section plates keep the shared wallpaper perspective. Only nested
+        // status cards use the local opaque fill below and never sample it.
+        blurIntensity: CyberBlurIntensity.low,
+        blurSigma: 7,
         child: panelChild,
       );
     } else {
+      // IME keycap model: one Gaussian base lives in the outer section plate;
+      // this card adds only a translucent light face + normal rim. Do not add
+      // a second wallpaper sample here, otherwise every status card gains its
+      // own moving background perspective.
+      final radius = BorderRadius.circular(MonitorDimens.corner);
       body = DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(MonitorDimens.corner),
+          borderRadius: radius,
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              CyberColors.lightFillTop,
+              CyberColors.lightFillMid,
+              CyberColors.lightFillBottom,
+            ],
+          ),
+          border: Border.all(
+            color: CyberColors.borderUniform,
+            width: CyberDimens.borderWidth,
+          ),
         ),
-        child: panelChild,
+        child: ClipRRect(
+          borderRadius: radius,
+          child: panelChild,
+        ),
       );
     }
     // Stretch to the parent's max width so short labels do not shrink the
@@ -135,8 +189,7 @@ class MonitorFrostActionButton extends StatelessWidget {
     required this.child,
     this.variant = CyberButtonVariant.standard,
     this.clickSoundEnabled = true,
-    this.borderGradientCenter =
-        CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   final VoidCallback? onPressed;
@@ -154,6 +207,9 @@ class MonitorFrostActionButton extends StatelessWidget {
       elevated: false,
       borderRadius: radius,
       borderGradientCenter: borderGradientCenter,
+      lightFromTopLeft: true,
+      rimColor: MonitorDimens.panelRim,
+      lightRim: MonitorDimens.panelHighlight,
       child: CyberButton(
         size: CyberButtonSize.medium,
         variant: variant,
@@ -282,7 +338,7 @@ class MonitorMetricCard extends StatelessWidget {
     final kind = !hasValue
         ? MonitorIndicatorKind.idle
         : (fault ? MonitorIndicatorKind.failure : MonitorIndicatorKind.success);
-    // Nested inside Alarm section [MonitorGlassCard] — no second frost layer.
+    // Nested inside Alarm section frost — keycap face, no second blur.
     return MonitorGlassCard(
       frosted: false,
       height: MonitorDimens.metricH,
@@ -354,7 +410,7 @@ class MonitorCommCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Nested inside Alarm section [MonitorGlassCard] — no second frost layer.
+    // Nested inside Alarm section frost — keycap face, no second blur.
     return MonitorGlassCard(
       frosted: false,
       height: MonitorDimens.metricH,

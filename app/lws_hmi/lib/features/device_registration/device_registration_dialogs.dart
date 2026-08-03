@@ -11,6 +11,7 @@ import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/device_remote_lock_store.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 /// Registration / bind / remote-lock prompts for cloud device identity
@@ -65,10 +66,9 @@ abstract final class DeviceRegistrationDialogs {
       return;
     }
     var reconnected = false;
-    await CyberOverlayHost.show<void>(
+    await TipDialogHost.showDarkPrompt<void>(
       context: context,
       barrierDismissible: false,
-      freezePageBackdrop: false,
       builder: (ctx) {
         return CyberPromptContent(
           title: l10n.deviceRegisterTitle,
@@ -133,10 +133,9 @@ abstract final class DeviceRegistrationDialogs {
     if (!context.mounted) {
       return;
     }
-    await CyberOverlayHost.show<void>(
+    await TipDialogHost.showDarkPrompt<void>(
       context: context,
       barrierDismissible: false,
-      freezePageBackdrop: false,
       builder: (ctx) {
         return CyberPromptContent(
           title: l10n.deviceBindTitle,
@@ -250,10 +249,9 @@ abstract final class DeviceRegistrationDialogs {
       );
       return;
     }
-    await CyberOverlayHost.show<void>(
+    await TipDialogHost.showDarkPrompt<void>(
       context: context,
       barrierDismissible: false,
-      freezePageBackdrop: false,
       builder: (ctx) {
         return CyberPromptContent(
           title: l10n.deviceRemoteLockTitle,

@@ -45,54 +45,62 @@ abstract final class SettingsDimens {
   /// Secondary / subtitle / help (+2 vs prior 14).
   static const subtitleSize = 16.0;
 
-  /// Uniform 1px bright rim on all four sides, with an equal soft highlight
-  /// halo (no top-only gradient).
+  /// Shared raised-panel shadow treatment: tight right/bottom contact shade
+  /// plus a wider, low-opacity right-bottom environment cast.
   static const borderWidth = 1.0;
   static const cardBorder = Color(0x66FFFFFF);
   static const cardHighlightGlow = Color(0x33FFFFFF);
+  static const panelRim = Color(0x38FFFFFF);
+  static const panelHighlight = Color(0x54FFFFFF);
 
-  /// Inner shade: plate RRect deflated in steps (edge → clear). Wider than
-  /// row text padding ([rowPadding] 20) so the vignette can cross content.
-  static const innerShadowWidth = 28.0;
-  static const innerShadowEdge = Color(0x78000000);
+  /// Settings and Monitor share a flat glass face; depth is external only.
+  /// Keep the legacy color token for opt-in callers, but no inset vignette.
+  static const innerShadowWidth = 0.0;
+  static const innerShadowEdge = Color(0x00000000);
 
-  /// Offset used only for the transparent lip twin that carries [depthLipShadow]
-  /// (no opaque under-fill — that blocked frost see-through).
-  static const depthLipOffset = 5.0;
+  /// Monitor-aligned contact shadows already carry their own directional
+  /// offsets; no extra vertical translation is needed.
+  static const depthLipOffset = 0.0;
 
   /// Soft shade cast from the depth lip onto the page (under-plate → background).
   static const depthLipShadow = <BoxShadow>[
     BoxShadow(
-      color: Color(0xCC000000),
-      offset: Offset(0, 3),
-      blurRadius: 8,
-      spreadRadius: 0,
+      color: Color(0x8A000000),
+      offset: Offset(5, 1),
+      blurRadius: 5,
+      spreadRadius: -1,
+    ),
+    BoxShadow(
+      color: Color(0x92000000),
+      offset: Offset(0.5, 5),
+      blurRadius: 6,
+      spreadRadius: -1,
     ),
   ];
 
   /// Outer shade: plate RRect inflated in steps (edge → transparent).
-  static const outerAmbientExtent = 20.0;
-  static const outerAmbientEdge = Color(0xA6000000);
+  static const outerAmbientExtent = 14.0;
+  static const outerAmbientEdge = Color(0x54000000);
 
   /// Compact contact shadow around the front plate (matches ~20px outer band).
   static const cardShadow = <BoxShadow>[
     BoxShadow(
-      color: Color(0x10000000),
-      offset: Offset(0, -1),
-      blurRadius: 6,
-      spreadRadius: -2,
+      color: Color(0x70000000),
+      offset: Offset(5, 1.5),
+      blurRadius: 7,
+      spreadRadius: -1,
     ),
     BoxShadow(
-      color: Color(0xD9000000),
-      offset: Offset(0, 3),
+      color: Color(0x78000000),
+      offset: Offset(1, 5),
       blurRadius: 8,
-      spreadRadius: 0,
+      spreadRadius: -1,
     ),
     BoxShadow(
-      color: Color(0x8F000000),
-      offset: Offset(0, 8),
-      blurRadius: 16,
-      spreadRadius: -2,
+      color: Color(0x42000000),
+      offset: Offset(8, 10),
+      blurRadius: 18,
+      spreadRadius: -3,
     ),
   ];
 
@@ -117,6 +125,7 @@ final class SettingsTopTabs extends StatelessWidget
     required this.tabs,
     required this.currentIndex,
     required this.onSelected,
+    this.backgroundColor,
   });
 
   static const tabHeight = 68.0;
@@ -128,23 +137,23 @@ final class SettingsTopTabs extends StatelessWidget
   static const unselected = Color(0xFF94A3B8);
   static const dividerColor = Color(0x33FFFFFF);
 
-  /// Opaque tab strip — no wallpaper see-through under the tabs.
+  /// Default tab-strip fill for callers that do not use a page wallpaper.
   static const background = CyberColors.fillSolidTop;
 
   final List<String> labels;
   final List<({Key key, IconData icon})> tabs;
   final int currentIndex;
   final ValueChanged<int> onSelected;
+  final Color? backgroundColor;
 
   @override
-  Size get preferredSize =>
-      const Size.fromHeight(tabHeight + dividerThickness);
+  Size get preferredSize => const Size.fromHeight(tabHeight + dividerThickness);
 
   @override
   Widget build(BuildContext context) {
     assert(labels.length == tabs.length);
     return ColoredBox(
-      color: background,
+      color: backgroundColor ?? background,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -341,10 +350,25 @@ class SettingsPanel extends StatelessWidget {
   const SettingsPanel({
     super.key,
     required this.child,
-    this.borderGradientCenter =
-        CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
     this.borderRadius,
     this.elevated = true,
+    this.innerShadowWidth = SettingsDimens.innerShadowWidth,
+    this.innerShadowEdge = SettingsDimens.innerShadowEdge,
+    this.outerAmbientExtent = SettingsDimens.outerAmbientExtent,
+    this.outerAmbientEdge = SettingsDimens.outerAmbientEdge,
+    this.depthLipOffset = const Offset(0, SettingsDimens.depthLipOffset),
+    this.depthLipShadow = SettingsDimens.depthLipShadow,
+    this.cardShadow = SettingsDimens.cardShadow,
+    this.lightFromTopLeft = true,
+    this.rimColor = SettingsDimens.panelRim,
+    this.lightRim = SettingsDimens.panelHighlight,
+    this.innerHighlightWidth = 0,
+    this.innerHighlightColor = const Color(0x00FFFFFF),
+    this.surfaceGradient,
+    this.blurSampleMode = CyberBlurSampleMode.followLayout,
+    this.blurIntensity = CyberBlurIntensity.low,
+    this.blurSigma = 7,
   });
 
   final Widget child;
@@ -356,11 +380,47 @@ class SettingsPanel extends StatelessWidget {
   /// When false, skip lip cast + contact shadow (compact frost pills / chips).
   final bool elevated;
 
+  /// Per-surface depth tuning. Monitor uses a clean face and a tighter,
+  /// lighter outer falloff without changing the Settings page treatment.
+  final double innerShadowWidth;
+  final Color innerShadowEdge;
+  final double outerAmbientExtent;
+  final Color outerAmbientEdge;
+  final Offset depthLipOffset;
+  final List<BoxShadow> depthLipShadow;
+  final List<BoxShadow> cardShadow;
+
+  /// Uses one top-left light source: a continuous low-opacity rim with a
+  /// highlight that naturally fades toward bottom-right. Ambient shade is
+  /// weighted toward right/bottom.
+  final bool lightFromTopLeft;
+  final Color rimColor;
+  final Color lightRim;
+  final double innerHighlightWidth;
+  final Color innerHighlightColor;
+
+  /// Optional translucent front-surface layer above the frost capture.
+  final Gradient? surfaceGradient;
+
+  /// How the face samples wallpaper frost.
+  ///
+  /// Default [followLayout] (capture + [ImageFilter.blur]) — required on
+  /// Weston/QEMU where [CyberBlurSampleMode.realtime] / [BackdropFilter]
+  /// composites black. Prefer [realtime] only where the compositor is known
+  /// good (e.g. Android).
+  final CyberBlurSampleMode blurSampleMode;
+
+  /// Panel-local Gaussian strength. Monitor uses dialog-grade frost so page
+  /// imagery dissolves into material tone instead of reading as perspective.
+  final CyberBlurIntensity blurIntensity;
+
+  /// Gaussian sigma for [CyberBackdropBlur] (lws-ui LOW ≈ 12).
+  final double blurSigma;
+
   @override
   Widget build(BuildContext context) {
     final glass = CyberGlassTheme.of(context);
-    final radius =
-        borderRadius ?? BorderRadius.circular(glass.cornerRadius);
+    final radius = borderRadius ?? BorderRadius.circular(glass.cornerRadius);
     final corner = radius.topLeft.x;
 
     // No opaque under-plate: a filled lip behind the frost read as solid face
@@ -374,20 +434,21 @@ class SettingsPanel extends StatelessWidget {
           child: CustomPaint(
             painter: _SettingsOuterAmbientPainter(
               cornerRadius: corner,
-              extent: SettingsDimens.outerAmbientExtent,
-              edge: SettingsDimens.outerAmbientEdge,
+              extent: outerAmbientExtent,
+              edge: outerAmbientEdge,
+              lightFromTopLeft: lightFromTopLeft,
             ),
           ),
         ),
         if (elevated)
           Positioned.fill(
             child: Transform.translate(
-              offset: const Offset(0, SettingsDimens.depthLipOffset),
+              offset: depthLipOffset,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: Colors.transparent,
                   borderRadius: radius,
-                  boxShadow: SettingsDimens.depthLipShadow,
+                  boxShadow: depthLipShadow,
                 ),
               ),
             ),
@@ -395,28 +456,35 @@ class SettingsPanel extends StatelessWidget {
         DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: radius,
-            boxShadow: elevated ? SettingsDimens.cardShadow : const [],
+            boxShadow: elevated ? cardShadow : const [],
           ),
           child: ClipRRect(
             borderRadius: radius,
             child: CyberBackdropBlur(
-              // Capture once, offset on scroll (Weston realtime → black).
-              // Slightly under lws-ui LOW (12) so wallpaper detail still reads.
-              sampleMode: CyberBlurSampleMode.followLayout,
-              intensity: CyberBlurIntensity.low,
-              sigmaX: 7,
-              sigmaY: 7,
+              // Capture frost (Weston realtime → black). Home cards may bump
+              // [blurSigma] toward lws-ui LOW (12) for milkier glass.
+              sampleMode: blurSampleMode,
+              intensity: blurIntensity,
+              sigmaX: blurSigma,
+              sigmaY: blurSigma,
               blurTint: CyberBlurTint.dark,
               child: CustomPaint(
                 foregroundPainter: _SettingsDepthEdgePainter(
-                  baseRim: SettingsDimens.cardBorder,
+                  baseRim: rimColor,
                   highlightGlow: SettingsDimens.cardHighlightGlow,
                   width: SettingsDimens.borderWidth,
                   cornerRadius: corner,
-                  innerShadowWidth: SettingsDimens.innerShadowWidth,
-                  innerShadowEdge: SettingsDimens.innerShadowEdge,
+                  innerShadowWidth: innerShadowWidth,
+                  innerShadowEdge: innerShadowEdge,
+                  lightFromTopLeft: lightFromTopLeft,
+                  lightRim: lightRim,
+                  innerHighlightWidth: innerHighlightWidth,
+                  innerHighlightColor: innerHighlightColor,
                 ),
-                child: child,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(gradient: surfaceGradient),
+                  child: child,
+                ),
               ),
             ),
           ),
@@ -450,6 +518,7 @@ final class _SettingsOuterAmbientPainter extends CustomPainter {
     required this.cornerRadius,
     required this.extent,
     required this.edge,
+    required this.lightFromTopLeft,
   });
 
   static const _steps = 10;
@@ -457,6 +526,7 @@ final class _SettingsOuterAmbientPainter extends CustomPainter {
   final double cornerRadius;
   final double extent;
   final Color edge;
+  final bool lightFromTopLeft;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -472,13 +542,34 @@ final class _SettingsOuterAmbientPainter extends CustomPainter {
       Radius.circular(cr),
     );
     final edgeAlpha = edge.opacity;
+    final outerBounds = plate.inflate(extent).outerRect;
     var prev = plate;
     final paint = Paint()..isAntiAlias = true;
 
     for (var i = 1; i <= _steps; i++) {
       final t = i / _steps;
       final next = plate.inflate(extent * t);
-      paint.color = edge.withOpacity(_shellOpacity(edgeAlpha, t - 0.5 / _steps));
+      final opacity = _shellOpacity(edgeAlpha, t - 0.5 / _steps);
+      if (lightFromTopLeft) {
+        // Keep the lit top-left free of an outer halo. A small lower-left
+        // contact shade leads naturally into the right/bottom back shadow.
+        paint
+          ..color = Colors.white
+          ..shader = ui.Gradient.linear(
+            outerBounds.topLeft,
+            outerBounds.bottomRight,
+            [
+              Colors.transparent,
+              edge.withOpacity(opacity * 0.22),
+              edge.withOpacity(opacity),
+            ],
+            const [0.0, 0.55, 1.0],
+          );
+      } else {
+        paint
+          ..shader = null
+          ..color = edge.withOpacity(opacity);
+      }
       canvas.drawPath(_rrectRing(next, prev), paint);
       prev = next;
     }
@@ -488,7 +579,8 @@ final class _SettingsOuterAmbientPainter extends CustomPainter {
   bool shouldRepaint(covariant _SettingsOuterAmbientPainter oldDelegate) {
     return oldDelegate.cornerRadius != cornerRadius ||
         oldDelegate.extent != extent ||
-        oldDelegate.edge != edge;
+        oldDelegate.edge != edge ||
+        oldDelegate.lightFromTopLeft != lightFromTopLeft;
   }
 }
 
@@ -501,6 +593,10 @@ final class _SettingsDepthEdgePainter extends CustomPainter {
     required this.cornerRadius,
     required this.innerShadowWidth,
     required this.innerShadowEdge,
+    required this.lightFromTopLeft,
+    required this.lightRim,
+    required this.innerHighlightWidth,
+    required this.innerHighlightColor,
   });
 
   static const _innerSteps = 10;
@@ -511,6 +607,10 @@ final class _SettingsDepthEdgePainter extends CustomPainter {
   final double cornerRadius;
   final double innerShadowWidth;
   final Color innerShadowEdge;
+  final bool lightFromTopLeft;
+  final Color lightRim;
+  final double innerHighlightWidth;
+  final Color innerHighlightColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -533,18 +633,35 @@ final class _SettingsDepthEdgePainter extends CustomPainter {
 
     _paintInnerShadow(canvas, rrect);
 
-    // Soft equal highlight on all four sides (not a neon wire, not top-lit).
-    canvas.drawRRect(
-      rrect,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = width * 2.5
-        ..color = highlightGlow
-        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 1.5)
-        ..isAntiAlias = true,
-    );
+    if (lightFromTopLeft) {
+      _paintDirectionalInnerHighlight(canvas, rrect);
+      _paintDirectionalContinuousRim(canvas, rrect);
+    } else {
+      // Soft equal highlight on all four sides (not a neon wire, not top-lit).
+      canvas.drawRRect(
+        rrect,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = width * 2.5
+          ..color = highlightGlow
+          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 1.5)
+          ..isAntiAlias = true,
+      );
 
-    // Crisp equal-brightness contour.
+      // Crisp equal-brightness contour.
+      canvas.drawRRect(
+        rrect,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = width
+          ..color = baseRim
+          ..isAntiAlias = true,
+      );
+    }
+  }
+
+  void _paintDirectionalContinuousRim(Canvas canvas, RRect rrect) {
+    // A full 1px low-opacity contour remains continuous around the plate.
     canvas.drawRRect(
       rrect,
       Paint()
@@ -553,6 +670,65 @@ final class _SettingsDepthEdgePainter extends CustomPainter {
         ..color = baseRim
         ..isAntiAlias = true,
     );
+
+    // Overlay an RRect-stroke shader, not clipped segments. It begins with
+    // soft light at top-left and decays continuously toward bottom-right.
+    final bounds = rrect.outerRect;
+    final lightStroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..shader = ui.Gradient.linear(
+        bounds.topLeft,
+        bounds.bottomRight,
+        [
+          lightRim,
+          lightRim.withOpacity(lightRim.opacity * 0.32),
+          Colors.transparent,
+        ],
+        const [0.0, 0.52, 1.0],
+      )
+      ..isAntiAlias = true;
+    canvas.drawRRect(rrect, lightStroke);
+  }
+
+  void _paintDirectionalInnerHighlight(Canvas canvas, RRect rim) {
+    final band = innerHighlightWidth;
+    if (band <= 0 || innerHighlightColor.opacity <= 0) {
+      return;
+    }
+    final maxInset = math.min(
+      band,
+      math.min(rim.width, rim.height) / 2.0 - 0.5,
+    );
+    if (maxInset <= 0) {
+      return;
+    }
+
+    // Use the same rounded-rect geometry as the rim. The gradient is clipped
+    // by its curved ring, so the soft top-left light remains continuous.
+    final bounds = rim.outerRect;
+    final paint = Paint()..isAntiAlias = true;
+    var previous = rim;
+    for (var i = 1; i <= 4; i++) {
+      final t = i / 4;
+      final next = rim.deflate(maxInset * t);
+      final opacity = (1.0 - t) * (1.0 - t);
+      paint.shader = ui.Gradient.linear(
+        bounds.topLeft,
+        bounds.bottomRight,
+        [
+          innerHighlightColor
+              .withOpacity(innerHighlightColor.opacity * opacity),
+          innerHighlightColor.withOpacity(
+            innerHighlightColor.opacity * opacity * 0.2,
+          ),
+          Colors.transparent,
+        ],
+        const [0.0, 0.52, 1.0],
+      );
+      canvas.drawPath(_rrectRing(previous, next), paint);
+      previous = next;
+    }
   }
 
   /// Inner shade: deflate the plate RRect in steps; each shell fades inward.
@@ -600,7 +776,11 @@ final class _SettingsDepthEdgePainter extends CustomPainter {
         oldDelegate.width != width ||
         oldDelegate.cornerRadius != cornerRadius ||
         oldDelegate.innerShadowWidth != innerShadowWidth ||
-        oldDelegate.innerShadowEdge != innerShadowEdge;
+        oldDelegate.innerShadowEdge != innerShadowEdge ||
+        oldDelegate.lightFromTopLeft != lightFromTopLeft ||
+        oldDelegate.lightRim != lightRim ||
+        oldDelegate.innerHighlightWidth != innerHighlightWidth ||
+        oldDelegate.innerHighlightColor != innerHighlightColor;
   }
 }
 
@@ -616,8 +796,7 @@ class SettingsGroup extends StatelessWidget {
   const SettingsGroup({
     super.key,
     required this.children,
-    this.borderGradientCenter =
-        CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
     this.bottomInset = SettingsDimens.groupGap,
   });
 
@@ -1109,8 +1288,7 @@ class SettingsParamCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
-    this.borderGradientCenter =
-        CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   final Widget child;
@@ -1144,8 +1322,7 @@ class SettingsScaledParam extends StatelessWidget {
     this.trailing,
     this.enabled = true,
     this.onValueTap,
-    this.borderGradientCenter =
-        CyberBorderGradientCenter.topLeftBottomRight,
+    this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
 
   /// Matches lws-ui `advanced_setting_value_box` (36dp).
@@ -1297,8 +1474,7 @@ class SettingsHomeBackdrop extends StatelessWidget {
       filterQuality: FilterQuality.medium,
       cacheWidth: (size.width * dpr).round().clamp(640, 1920),
       cacheHeight: (size.height * dpr).round().clamp(400, 1200),
-      errorBuilder: (_, __, ___) =>
-          const ColoredBox(color: Color(0xFF1A1A1A)),
+      errorBuilder: (_, __, ___) => const ColoredBox(color: Color(0xFF1A1A1A)),
     );
   }
 }

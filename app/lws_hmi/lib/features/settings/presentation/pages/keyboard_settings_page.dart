@@ -151,6 +151,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
       body: SettingsScrollView(
         children: [
           SettingsGroup(
+            bottomInset: SettingsDimens.helpGap,
             borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             children: [
               Padding(
@@ -158,6 +159,8 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
                 child: CyberImeLayoutChooser(
                   selected: _selected.imeProfile,
                   enabled: !_busy,
+                  showPreview: false,
+                  showFootnote: false,
                   onSelected: (p) {
                     CyberClickSoundRegistry.playClick();
                     setState(() {
@@ -183,6 +186,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
               ),
             ],
           ),
+          _KeyboardLayoutPreviewSection(profile: _selected.imeProfile),
           const SettingsHelpFooter(
             'Attach a physical keyboard that matches the selected '
             'specification. A mismatch may make some keys produce unexpected '
@@ -191,8 +195,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
           ),
           const SettingsSectionHeader('Physical Keyboard'),
           SettingsGroup(
-            borderGradientCenter:
-                CyberBorderGradientCenter.bottomLeftTopRight,
+            borderGradientCenter: CyberBorderGradientCenter.bottomLeftTopRight,
             children: [
               SettingsValueRow(
                 title: 'Status',
@@ -200,6 +203,53 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KeyboardLayoutPreviewSection extends StatelessWidget {
+  const _KeyboardLayoutPreviewSection({
+    required this.profile,
+  });
+
+  final CyberImeRegionalProfile profile;
+
+  String get _footnote {
+    return switch (profile) {
+      CyberImeRegionalProfile.qwertz ||
+      CyberImeRegionalProfile.azerty =>
+        '长按可输入重音字符',
+      CyberImeRegionalProfile.qwerty => '',
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final footnote = _footnote;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        SettingsDimens.inset,
+        0,
+        SettingsDimens.inset,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          CyberImeLayoutPreviewCard(profile: profile),
+          if (footnote.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+              child: Text(
+                footnote,
+                style: const TextStyle(
+                  color: Color(0x8CFFFFFF),
+                  fontSize: 13,
+                ),
+              ),
+            ),
         ],
       ),
     );

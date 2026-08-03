@@ -12,12 +12,20 @@ import 'package:cyber_ui/src/theme/cyber_tone.dart';
 enum CyberButtonVariant { standard, primary, secondary, light }
 
 enum CyberButtonSize {
+  /// Compact trailing actions (height 38).
+  mini,
+
+  /// Default dialog / settings / monitor CTA (height 56).
   small,
+
+  /// Process-mode outline / wire actions (height 66).
   medium,
+
+  /// Primary hold / enable actions (height 80).
   large,
 
-  /// Alias for [medium] — prefer [medium] in new code.
-  @Deprecated('Use CyberButtonSize.medium')
+  /// Alias for [small] — prefer [small] in new code.
+  @Deprecated('Use CyberButtonSize.small')
   regular,
 }
 
@@ -83,7 +91,7 @@ class CyberButton extends StatefulWidget {
     required this.onPressed,
     required this.child,
     this.variant = CyberButtonVariant.standard,
-    this.size = CyberButtonSize.medium,
+    this.size = CyberButtonSize.small,
     this.shape = CyberButtonShape.rectangle,
     this.clickSoundEnabled = true,
     this.expand = false,
@@ -410,48 +418,61 @@ class _CyberButtonState extends State<CyberButton>
     );
   }
 
-  /// Maps deprecated `CyberButtonSize.regular` onto [CyberButtonSize.medium].
+  /// Maps deprecated `CyberButtonSize.regular` onto [CyberButtonSize.small].
   static CyberButtonSize _resolvedSize(CyberButtonSize size) {
-    if (size == CyberButtonSize.small) {
-      return CyberButtonSize.small;
+    if (size == CyberButtonSize.mini) {
+      return CyberButtonSize.mini;
+    }
+    if (size == CyberButtonSize.medium) {
+      return CyberButtonSize.medium;
     }
     if (size == CyberButtonSize.large) {
       return CyberButtonSize.large;
     }
-    return CyberButtonSize.medium;
+    // [small] and deprecated [regular].
+    return CyberButtonSize.small;
   }
 
   static double _heightFor(CyberButtonSize tier) {
     final t = _resolvedSize(tier);
-    if (t == CyberButtonSize.small) {
-      return CyberDimens.actionButtonSmallHeight;
+    if (t == CyberButtonSize.mini) {
+      return CyberDimens.actionButtonMiniHeight;
+    }
+    if (t == CyberButtonSize.medium) {
+      return CyberDimens.actionButtonMediumHeight;
     }
     if (t == CyberButtonSize.large) {
       return CyberDimens.actionButtonLargeHeight;
     }
-    return CyberDimens.actionButtonMediumHeight;
+    return CyberDimens.actionButtonSmallHeight;
   }
 
   static double _padHFor(CyberButtonSize tier) {
     final t = _resolvedSize(tier);
-    if (t == CyberButtonSize.small) {
-      return CyberDimens.actionButtonSmallPaddingHorizontal;
+    if (t == CyberButtonSize.mini) {
+      return CyberDimens.actionButtonMiniPaddingHorizontal;
+    }
+    if (t == CyberButtonSize.medium) {
+      return CyberDimens.actionButtonMediumPaddingHorizontal;
     }
     if (t == CyberButtonSize.large) {
       return CyberDimens.actionButtonLargePaddingHorizontal;
     }
-    return CyberDimens.actionButtonMediumPaddingHorizontal;
+    return CyberDimens.actionButtonSmallPaddingHorizontal;
   }
 
   static double _fontSizeFor(CyberButtonSize tier) {
     final t = _resolvedSize(tier);
-    if (t == CyberButtonSize.small) {
-      return CyberDimens.actionButtonSmallFontSize;
+    if (t == CyberButtonSize.mini) {
+      return CyberDimens.actionButtonMiniFontSize;
+    }
+    if (t == CyberButtonSize.medium) {
+      return CyberDimens.actionButtonMediumFontSize;
     }
     if (t == CyberButtonSize.large) {
       return CyberDimens.actionButtonLargeFontSize;
     }
-    return CyberDimens.actionButtonMediumFontSize;
+    return CyberDimens.actionButtonSmallFontSize;
   }
 
   static Color _foreground(CyberButtonVariant variant) => switch (variant) {

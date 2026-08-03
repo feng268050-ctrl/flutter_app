@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_dashboard.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -11,8 +12,11 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: const Scaffold(
           body: Center(
             child: QuickModeLaserDashboard(
               processType: ProcessType.continuousWelding,
@@ -35,6 +39,11 @@ void main() {
     expect(find.text('Live Machine Status'), findsOneWidget);
     expect(find.byKey(const ValueKey('live-machine-status-confirm')),
         findsOneWidget);
+    // Alarm Welding-Gun temps under the gauges.
+    expect(find.text('Motor'), findsWidgets);
+    expect(find.text('Motor Driver'), findsOneWidget);
+    expect(find.text('Protective Mirror'), findsOneWidget);
+    expect(find.text('Collimator'), findsOneWidget);
     // Must not route to Monitor.
     expect(find.text('Machine Status'), findsNothing);
 

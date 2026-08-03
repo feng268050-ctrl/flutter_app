@@ -3,11 +3,18 @@ import 'dart:async';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
+import 'package:lws_hmi/features/home/application/temp_series.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
+import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/monitor/application/machine_status_controller.dart';
+import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_gauges.dart';
+import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
+import 'package:lws_hmi/features/settings/application/temperature_unit_convert.dart';
+import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
+import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Manual More Status route name (confirm bar). Distinct from gun-managed.
@@ -100,8 +107,14 @@ final class _LiveMachineStatusBody extends StatefulWidget {
 final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
   static const _titleDark = Color(0xFF1A1A1A);
   static const _liveGaugeSidePad = 12.0;
-  static const _liveStatusBottomPad = 12.0;
+  /// Equal: above gauges and below status tiles.
+  static const _liveEdgeGap = 12.0;
   static const _liveStatusGap = 8.0;
+  static const _metricGap = 8.0;
+  static const _gaugeToMetricsGap = 10.0;
+
+  /// Shared empty series when [WarnAlarmScope] is absent (tests / early bind).
+  static final _emptyTemp = TempSeries();
 
   IpCameraProductSession? _session;
   IpCameraUiStatus _status = IpCameraUiStatus.connecting;
@@ -218,6 +231,7 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
           ),
         ),
         const SizedBox(height: 12),
+
         Expanded(
           child: ColoredBox(
             color: Colors.black,
@@ -250,46 +264,78 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                           playerFactory:
                               widget.playerFactory ?? createIpCameraPreviewPlayer,
                         ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: _liveGaugeSidePad),
-                          child: _GaugePanel(
-                            child: CurrentArcGauge(
-                              value: machine?.gasPressureKpa ?? 0,
-                              min: 0,
-                              max: 1500,
-                              majorTickEvery: 150,
-                              unit: 'kPa',
-                              titleLine1: l10n?.machineBlowTitle ?? 'Blow',
-                              titleLine2: l10n?.machineBlowContent ?? 'Pressure',
-                              size: _LiveGaugeDimens.gaugeSide,
-                              trackWidth: _LiveGaugeDimens.trackWidth,
+                      // Top gap == status bottom gap; temps fill middle remainder.
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: _liveEdgeGap),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: _liveGaugeSidePad,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _GaugePanel(
+                                  child: CurrentArcGauge(
+                                    value: machine?.gasPressureKpa ?? 0,
+                                    min: 0,
+                                    max: 1500,
+                                    majorTickEvery: 150,
+                                    unit: 'kPa',
+                                    titleLine1:
+                                        l10n?.machineBlowTitle ?? 'Blow',
+                                    titleLine2:
+                                        l10n?.machineBlowContent ?? 'Pressure',
+                                    size: _LiveGaugeDimens.gaugeSide,
+                                    trackWidth: _LiveGaugeDimens.trackWidth,
+                                  ),
+                                ),
+                                const Spacer(),
+                                _GaugePanel(
+                                  child: CurrentArcGauge(
+                                    value: machine?.laserCurrentA ?? 0,
+                                    min: 0,
+                                    max: 100,
+                                    majorTickEvery: 10,
+                                    unit: 'A',
+                                    titleLine1:
+                                        l10n?.machineLaserCurrentTitle ??
+                                            'Laser',
+                                    titleLine2:
+                                        l10n?.machineLaserCurrentContent ??
+                                            'Current',
+                                    size: _LiveGaugeDimens.gaugeSide,
+                                    trackWidth: _LiveGaugeDimens.trackWidth,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Padding(
-                          padding:
-                              const EdgeInsets.only(right: _liveGaugeSidePad),
-                          child: _GaugePanel(
-                            child: CurrentArcGauge(
-                              value: machine?.laserCurrentA ?? 0,
-                              min: 0,
-                              max: 100,
-                              majorTickEvery: 10,
-                              unit: 'A',
-                              titleLine1:
-                                  l10n?.machineLaserCurrentTitle ?? 'Laser',
-                              titleLine2:
-                                  l10n?.machineLaserCurrentContent ?? 'Current',
-                              size: _LiveGaugeDimens.gaugeSide,
-                              trackWidth: _LiveGaugeDimens.trackWidth,
+                          const SizedBox(height: _gaugeToMetricsGap),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: _liveGaugeSidePad,
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  SizedBox(
+                                    width: _LiveGaugeDimens.panelW,
+                                    child: _MotorTempMetrics(l10n: l10n),
+                                  ),
+                                  const Spacer(),
+                                  SizedBox(
+                                    width: _LiveGaugeDimens.panelW,
+                                    child: _LensTempMetrics(l10n: l10n),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
+                          const SizedBox(height: _liveStatusGap),
+                        ],
                       ),
                     ],
                   ),
@@ -299,7 +345,7 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                     12,
                     0,
                     12,
-                    _liveStatusBottomPad,
+                    _liveEdgeGap,
                   ),
                   child: Row(
                     children: [
@@ -326,7 +372,7 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
               width: 280,
               child: CyberButton(
                 key: const ValueKey('live-machine-status-confirm'),
-                size: CyberButtonSize.medium,
+                size: CyberButtonSize.small,
                 variant: CyberButtonVariant.primary,
                 shape: CyberButtonShape.rounded,
                 stretch: true,
@@ -345,6 +391,191 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
       ],
     );
   }
+}
+
+/// Left column under Gas Pressure: Motor + Motor Driver (adaptive height).
+final class _MotorTempMetrics extends StatelessWidget {
+  const _MotorTempMetrics({required this.l10n});
+
+  final AppLocalizations? l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return _AlarmTempPair(
+      builder: (monitor) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _LiveTempMetricCard(
+              series: monitor?.motor ?? _LiveMachineStatusBodyState._emptyTemp,
+              label: l10n?.motorTempLabel ?? 'Motor',
+              overTemp: monitor?.gunMotorOverTemp ?? false,
+            ),
+          ),
+          const SizedBox(height: _LiveMachineStatusBodyState._metricGap),
+          Expanded(
+            child: _LiveTempMetricCard(
+              series: monitor?.motorDriver ??
+                  _LiveMachineStatusBodyState._emptyTemp,
+              label: l10n?.motorDriverTempLabel ?? 'Motor Driver',
+              overTemp: monitor?.driverOverTemp ?? false,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Right column under Laser Current: Protective Mirror + Collimator.
+final class _LensTempMetrics extends StatelessWidget {
+  const _LensTempMetrics({required this.l10n});
+
+  final AppLocalizations? l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return _AlarmTempPair(
+      builder: (monitor) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _LiveTempMetricCard(
+              series: monitor?.protectiveMirror ??
+                  _LiveMachineStatusBodyState._emptyTemp,
+              label: l10n?.protectiveMirrorTempLabel ?? 'Protective Mirror',
+              overTemp: monitor?.protectiveMirrorOverTemp ?? false,
+            ),
+          ),
+          const SizedBox(height: _LiveMachineStatusBodyState._metricGap),
+          Expanded(
+            child: _LiveTempMetricCard(
+              series:
+                  monitor?.collimator ?? _LiveMachineStatusBodyState._emptyTemp,
+              label: l10n?.collimatorTempLabel ?? 'Collimator',
+              overTemp: monitor?.collimatorOverTemp ?? false,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+final class _AlarmTempPair extends StatelessWidget {
+  const _AlarmTempPair({required this.builder});
+
+  final Widget Function(AlarmMonitorState? monitor) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    final monitor = WarnAlarmScope.maybeOf(context)?.monitor;
+    if (monitor == null) {
+      return builder(null);
+    }
+    return ListenableBuilder(
+      listenable: monitor,
+      builder: (context, _) => builder(monitor),
+    );
+  }
+}
+
+/// Live More Status temp row: name left, value right; no status light.
+///
+/// Panel chrome matches [_GaugePanel]. Label turns white when a reading exists.
+final class _LiveTempMetricCard extends StatelessWidget {
+  const _LiveTempMetricCard({
+    required this.series,
+    required this.label,
+    required this.overTemp,
+  });
+
+  final TempSeries series;
+  final String label;
+  final bool overTemp;
+
+  static const _idleLabel = Color(0xFFB0B1C2);
+  static const _faultValue = Color(0xFFFF8A80);
+
+  @override
+  Widget build(BuildContext context) {
+    final common = CommonSettingsScope.maybeOf(context);
+    final l10n = AppLocalizations.of(context);
+
+    Widget card() {
+      final unit = common?.unit;
+      final hasValue = series.lastCelsius != null;
+      final String value;
+      if (overTemp && !hasValue) {
+        value = l10n?.overTempLabel ?? 'Over Temp';
+      } else if (hasValue) {
+        value = TemperatureUnitConvert.formatSensorCelsius(
+          series.lastCelsius!,
+          unit,
+        );
+      } else {
+        value = kUnavailableDisplay;
+      }
+      final labelActive = hasValue || overTemp;
+      return SizedBox.expand(
+        child: DecoratedBox(
+          decoration: _LivePanelChrome.decoration,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: labelActive ? Colors.white : _idleLabel,
+                      fontSize: MonitorDimens.metricLabelSize,
+                      fontWeight: FontWeight.w400,
+                      height: 1.15,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  value,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: overTemp ? _faultValue : Colors.white,
+                    fontSize: MonitorDimens.metricValueSize,
+                    fontWeight: FontWeight.w400,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (common == null) {
+      return card();
+    }
+    return ListenableBuilder(
+      listenable: common,
+      builder: (context, _) => card(),
+    );
+  }
+}
+
+/// Shared frosted-black panel chrome for gauges + live temp cards.
+abstract final class _LivePanelChrome {
+  static const fill = Color(0x99000000);
+  static const border = Color(0x33FFFFFF);
+  static const radius = 14.0;
+
+  static BoxDecoration get decoration => BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: border),
+      );
 }
 
 /// lws-ui `laser_live_monitor_gauge_*` (panel size fixed).
@@ -378,11 +609,7 @@ final class _GaugePanel extends StatelessWidget {
       width: _LiveGaugeDimens.panelW,
       height: _LiveGaugeDimens.panelH,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: const Color(0x99000000),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0x33FFFFFF)),
-        ),
+        decoration: _LivePanelChrome.decoration,
         child: Padding(
           padding: EdgeInsets.fromLTRB(
             _LiveGaugeDimens.padH,

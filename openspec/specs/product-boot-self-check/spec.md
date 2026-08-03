@@ -93,9 +93,16 @@ Item labels SHOULD align with Monitor → Alarm Information wording where applic
 
 #### Scenario: Modbus unavailable fails Modbus items
 
-- **WHEN** Modbus self-check is not available (no link / host stub)
+- **WHEN** Modbus self-check is not available (no link / host stub) after the readiness retry budget elapses
 - **THEN** Modbus-backed items SHALL be marked **fail**
 - **AND** the pipeline SHALL still complete without a camera item
+
+#### Scenario: Modbus not-yet-ready is retried before failing
+
+- **WHEN** the first Modbus snapshot is not usable (port not open, empty groups, or `device.type` not ready)
+- **THEN** the pipeline SHALL retry Modbus group reads within a bounded readiness budget while rows may remain in checking
+- **AND** evaluation SHALL use the first usable snapshot if one arrives before the budget elapses
+- **AND** real alarm / over-temp bits on a usable snapshot SHALL still mark the corresponding items **fail**
 
 #### Scenario: Camera is not part of boot self-check
 

@@ -13,6 +13,14 @@ import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 abstract final class BootSelfCheckModbusSnapshotReader {
   static const defaultTimeout = Duration(seconds: 3);
 
+  /// How long to keep retrying while the bus / controller is not ready.
+  ///
+  /// Control-board RTU often comes up a few seconds after HMI Home; a single
+  /// early read would mark every item Fault and (with warn gated) show no alarm.
+  static const defaultReadyBudget = Duration(seconds: 5);
+
+  static const defaultRetryInterval = Duration(milliseconds: 400);
+
   /// Soft-fails to [modbusAvailable]=false when neither group yields values.
   static Future<BootSelfCheckModbusSnapshot> read(
     ModbusRtuClient modbus, {
@@ -80,5 +88,44 @@ abstract final class BootSelfCheckModbusSnapshotReader {
       modbusAvailable: anyOk,
       controllerReady: ready,
     );
+  }
+
+  /// Retries [read] until [BootSelfCheckModbusSnapshot.isUsable] or the budget
+  /// elapses / [shouldCancel] returns true.
+  ///
+  /// Returns the last snapshot (usable or not). Does not treat a ready
+  /// controller with real alarm bits as "not ready" — those evaluate as fail.
+  static Future<BootSelfCheckModbusSnapshot> readUntilReady(
+    ModbusRtuClient modbus, {
+    Duration timeout = defaultTimeout,
+    Duration readyBudget = defaultReadyBudget,
+    Duration retryInterval = defaultRetryInterval,
+    bool Function()? shouldCancel,
+  }) async {
+    final deadline = DateTime.now().add(readyBudget);
+    BootSelfCheckModbusSnapshot snapshot = const BootSelfCheckModbusSnapshot(
+      values: {},
+      modbusAvailable: false,
+      controllerReady: false,
+    );
+
+    while (true) {
+      if (shouldCancel?.call() == true) {
+        return snapshot;
+      }
+
+      snapshot = await read(modbus, timeout: timeout);
+      if (snapshot.isUsable) {
+        return snapshot;
+      }
+
+      if (shouldCancel?.call() == true) {
+        return snapshot;
+      }
+      if (!DateTime.now().isBefore(deadline)) {
+        return snapshot;
+      }
+      await Future<void>.delayed(retryInterval);
+    }
   }
 }

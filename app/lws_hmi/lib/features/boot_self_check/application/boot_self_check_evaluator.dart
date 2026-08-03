@@ -36,6 +36,10 @@ final class BootSelfCheckModbusSnapshot {
   final bool modbusAvailable;
   final bool controllerReady;
 
+  /// True when Modbus yielded values and the lower controller reports a valid
+  /// device type — safe to evaluate pass/fail (vs "not ready yet").
+  bool get isUsable => modbusAvailable && controllerReady;
+
   Object? operator [](String id) => values[id];
 
   static bool isControllerReady(Object? deviceType) {

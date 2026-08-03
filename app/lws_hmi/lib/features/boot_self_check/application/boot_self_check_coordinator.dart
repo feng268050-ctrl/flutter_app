@@ -137,10 +137,13 @@ abstract final class BootSelfCheckCoordinator {
     required AppServices services,
     required BootSelfCheckSession session,
   }) async {
-    // Kick off Modbus snapshot in parallel with the first Checking… rows.
-    // Camera reachability is owned by IpCameraProductSession (status icon).
-    final snapshotFuture =
-        BootSelfCheckModbusSnapshotReader.read(services.modbus);
+    // Retry Modbus until the controller is usable (or budget elapses) in
+    // parallel with the first Checking… rows. Camera reachability is owned by
+    // IpCameraProductSession (status icon).
+    final snapshotFuture = BootSelfCheckModbusSnapshotReader.readUntilReady(
+      services.modbus,
+      shouldCancel: () => session.dismissed,
+    );
 
     BootSelfCheckModbusSnapshot? snapshot;
 
@@ -155,6 +158,13 @@ abstract final class BootSelfCheckCoordinator {
       final sw = Stopwatch()..start();
 
       snapshot ??= await snapshotFuture;
+      if (!snapshot.isUsable) {
+        debugPrint(
+          'boot-self-check: modbus not ready '
+          '(available=${snapshot.modbusAvailable} '
+          'controller=${snapshot.controllerReady})',
+        );
+      }
 
       final status = BootSelfCheckEvaluator.evaluateItem(
         item: item,

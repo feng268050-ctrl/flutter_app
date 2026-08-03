@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_hal/modbus.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,16 +15,22 @@ class _GroupModbus extends ModbusRtuClient {
     this.data = const {},
     this.failStatus = false,
     this.failData = false,
+    this.openResult = true,
   }) : super();
 
-  final Map<String, Object?> status;
-  final Map<String, Object?> data;
+  Map<String, Object?> status;
+  Map<String, Object?> data;
   final bool failStatus;
   final bool failData;
+  bool openResult;
   final List<String> readGroups = <String>[];
+  int openCalls = 0;
 
   @override
-  Future<bool> open() async => true;
+  Future<bool> open() async {
+    openCalls++;
+    return openResult;
+  }
 
   @override
   Future<Map<String, Object?>> readGroup(String groupId) async {
@@ -48,33 +56,38 @@ class _GroupModbus extends ModbusRtuClient {
   }
 }
 
+Map<String, Object?> _readyStatus({int deviceType = 1}) => {
+      BootSelfCheckModbusIds.deviceType: deviceType,
+      BootSelfCheckModbusIds.laserComm: false,
+      BootSelfCheckModbusIds.gunComm: false,
+      BootSelfCheckModbusIds.wireFeederComm: false,
+      MonitorModbusIds.motorOverTemp: false,
+      MonitorModbusIds.driverOverTemp: false,
+      MonitorModbusIds.protectiveMirrorOverTemp: false,
+      MonitorModbusIds.collimatorOverTemp: false,
+    };
+
+Map<String, Object?> get _readyData => {
+      MonitorModbusIds.motorTemp: 25,
+      MonitorModbusIds.motorDriverTemp: 26,
+      MonitorModbusIds.protectiveMirrorTemp: 27,
+      MonitorModbusIds.collimatorTemp: 28,
+    };
+
 void main() {
   tearDown(BootSelfCheckLiveCacheSeed.resetForTest);
 
   test('reads status+data groups and offers live-cache seed', () async {
     final modbus = _GroupModbus(
-      status: {
-        BootSelfCheckModbusIds.deviceType: 1,
-        BootSelfCheckModbusIds.laserComm: false,
-        BootSelfCheckModbusIds.gunComm: false,
-        BootSelfCheckModbusIds.wireFeederComm: false,
-        MonitorModbusIds.motorOverTemp: false,
-        MonitorModbusIds.driverOverTemp: false,
-        MonitorModbusIds.protectiveMirrorOverTemp: false,
-        MonitorModbusIds.collimatorOverTemp: false,
-      },
-      data: {
-        MonitorModbusIds.motorTemp: 25,
-        MonitorModbusIds.motorDriverTemp: 26,
-        MonitorModbusIds.protectiveMirrorTemp: 27,
-        MonitorModbusIds.collimatorTemp: 28,
-      },
+      status: _readyStatus(),
+      data: _readyData,
     );
 
     final snap = await BootSelfCheckModbusSnapshotReader.read(modbus);
     expect(modbus.readGroups, ['status', 'data']);
     expect(snap.modbusAvailable, isTrue);
     expect(snap.controllerReady, isTrue);
+    expect(snap.isUsable, isTrue);
     expect(snap[BootSelfCheckModbusIds.deviceType], 1);
     expect(snap[MonitorModbusIds.motorTemp], 25);
 
@@ -92,7 +105,88 @@ void main() {
     final modbus = _GroupModbus(failStatus: true, failData: true);
     final snap = await BootSelfCheckModbusSnapshotReader.read(modbus);
     expect(snap.modbusAvailable, isFalse);
+    expect(snap.isUsable, isFalse);
     expect(BootSelfCheckLiveCacheSeed.takeStatus(), isNull);
     expect(BootSelfCheckLiveCacheSeed.takeData(), isNull);
+  });
+
+  test('readUntilReady retries until controller is usable', () async {
+    final modbus = _GroupModbus(openResult: false);
+    var flips = 0;
+    // Flip open + payload after a couple of failed attempts.
+    unawaited(
+      Future<void>.delayed(const Duration(milliseconds: 50), () {
+        flips++;
+        modbus.openResult = true;
+        modbus.status = _readyStatus();
+        modbus.data = _readyData;
+      }),
+    );
+
+    final snap = await BootSelfCheckModbusSnapshotReader.readUntilReady(
+      modbus,
+      readyBudget: const Duration(seconds: 2),
+      retryInterval: const Duration(milliseconds: 20),
+    );
+
+    expect(flips, 1);
+    expect(modbus.openCalls, greaterThan(1));
+    expect(snap.isUsable, isTrue);
+    expect(snap[BootSelfCheckModbusIds.deviceType], 1);
+  });
+
+  test('readUntilReady retries when device.type not yet ready', () async {
+    final modbus = _GroupModbus(
+      status: _readyStatus(deviceType: 0),
+      data: _readyData,
+    );
+
+    unawaited(
+      Future<void>.delayed(const Duration(milliseconds: 40), () {
+        modbus.status = _readyStatus(deviceType: 2);
+      }),
+    );
+
+    final snap = await BootSelfCheckModbusSnapshotReader.readUntilReady(
+      modbus,
+      readyBudget: const Duration(seconds: 2),
+      retryInterval: const Duration(milliseconds: 20),
+    );
+
+    expect(snap.isUsable, isTrue);
+    expect(snap[BootSelfCheckModbusIds.deviceType], 2);
+  });
+
+  test('readUntilReady gives up after budget when still unavailable', () async {
+    final modbus = _GroupModbus(openResult: false);
+
+    final snap = await BootSelfCheckModbusSnapshotReader.readUntilReady(
+      modbus,
+      readyBudget: const Duration(milliseconds: 80),
+      retryInterval: const Duration(milliseconds: 20),
+    );
+
+    expect(snap.isUsable, isFalse);
+    expect(modbus.openCalls, greaterThan(1));
+  });
+
+  test('readUntilReady stops early when cancelled', () async {
+    final modbus = _GroupModbus(openResult: false);
+    var cancelled = false;
+    unawaited(
+      Future<void>.delayed(const Duration(milliseconds: 30), () {
+        cancelled = true;
+      }),
+    );
+
+    final snap = await BootSelfCheckModbusSnapshotReader.readUntilReady(
+      modbus,
+      readyBudget: const Duration(seconds: 5),
+      retryInterval: const Duration(milliseconds: 20),
+      shouldCancel: () => cancelled,
+    );
+
+    expect(snap.isUsable, isFalse);
+    expect(modbus.openCalls, lessThan(20));
   });
 }

@@ -1,12 +1,12 @@
 import 'dart:async';
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
-import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_models.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_repository.dart';
 import 'package:lws_hmi/features/statistics/infrastructure/sqlite_stats_aggregate_repository.dart';
@@ -129,15 +129,13 @@ _HomeStatisticDisplay _displayValue(
         ),
         unit: LengthUnitConvert.suffix(unitWire),
       ),
-    CustomHomeMetric.laserOnDuration => _HomeStatisticDisplay(
+    CustomHomeMetric.laserOnDuration => _durationDisplay(
         title: 'Total Laser-on Time',
-        number: (totalLaserSeconds ~/ 3600).toString(),
-        unit: 'h',
+        seconds: totalLaserSeconds,
       ),
-    CustomHomeMetric.jobRuntime => _HomeStatisticDisplay(
+    CustomHomeMetric.jobRuntime => _durationDisplay(
         title: 'Job Runtime',
-        number: ((aggregate?.jobRuntimeSecondsTotal ?? 0) ~/ 60).toString(),
-        unit: 'min',
+        seconds: aggregate?.jobRuntimeSecondsTotal ?? 0,
       ),
     CustomHomeMetric.weldRatio => _HomeStatisticDisplay(
         title: 'Welding Ratio',
@@ -159,7 +157,7 @@ _HomeStatisticDisplay _displayValue(
       ),
     CustomHomeMetric.weekOverWeekLaser => _HomeStatisticDisplay(
         title: 'Laser Time vs Last Week',
-        number: _weekOverWeekPercent(aggregate).toString(),
+        number: weekOverWeekLaserPercent(aggregate).toString(),
         unit: '%',
       ),
     CustomHomeMetric.favoriteMaterial => _HomeStatisticDisplay(
@@ -169,6 +167,29 @@ _HomeStatisticDisplay _displayValue(
   };
 }
 
+_HomeStatisticDisplay _durationDisplay({
+  required String title,
+  required int seconds,
+}) {
+  final formatted = formatCustomHomeDurationSeconds(seconds);
+  return _HomeStatisticDisplay(
+    title: title,
+    number: formatted.number,
+    unit: formatted.unit,
+  );
+}
+
+/// Custom Home time metrics: under 1h → minutes; 1h and above → whole hours
+/// (e.g. 75 min → `1` + `h`).
+@visibleForTesting
+({String number, String unit}) formatCustomHomeDurationSeconds(int seconds) {
+  final safe = seconds < 0 ? 0 : seconds;
+  if (safe >= 3600) {
+    return (number: (safe ~/ 3600).toString(), unit: 'h');
+  }
+  return (number: (safe ~/ 60).toString(), unit: 'min');
+}
+
 int _ratioPercent(int portionSeconds, int totalSeconds) {
   if (totalSeconds <= 0 || portionSeconds <= 0) {
     return 0;
@@ -176,7 +197,12 @@ int _ratioPercent(int portionSeconds, int totalSeconds) {
   return (portionSeconds * 100 / totalSeconds).truncate();
 }
 
-int _weekOverWeekPercent(StatsAggregate? aggregate) {
+/// Week-over-week laser-on increase % for Custom Home "较上周增加出光时长".
+///
+/// Aligns with lws-ui intent: last week 0 → 100/0; equal → 0; increase →
+/// truncated growth %; decrease → 0 (never a negative percentage).
+@visibleForTesting
+int weekOverWeekLaserPercent(StatsAggregate? aggregate) {
   if (aggregate == null) {
     return 0;
   }
@@ -186,8 +212,13 @@ int _weekOverWeekPercent(StatsAggregate? aggregate) {
   final previousWeek = (aggregate.weekAnchorLaserOnSecondsTotal -
           aggregate.prevWeekAnchorLaserOnSecondsTotal)
       .clamp(0, 1 << 31);
+  // Last week had no laser-on time.
   if (previousWeek == 0) {
     return currentWeek > 0 ? 100 : 0;
+  }
+  // Equal or down vs last week → 0% (card is "increase", not signed delta).
+  if (currentWeek <= previousWeek) {
+    return 0;
   }
   return ((currentWeek - previousWeek) * 100 / previousWeek).truncate();
 }
@@ -237,76 +268,78 @@ final class _HomeStatisticCard extends StatelessWidget {
     final titleSize = (height * 0.19).clamp(13.0, 22.0);
     final numberSize = (height * 0.52).clamp(28.0, 58.0);
     final unitSize = (height * 0.27).clamp(16.0, 30.0);
-    // SettingsPanel: followLayout frost + inflate/deflate RRect depth shells.
     return SizedBox(
       width: width,
       height: height,
-      child: SettingsPanel(
+      child: CyberCard(
+        sampleMode: CyberBlurSampleMode.realtime,
+        intensity: CyberBlurIntensity.low,
+        blurTint: CyberBlurTint.dark,
         borderRadius: BorderRadius.circular(18),
-        child: SizedBox.expand(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              width * 0.09,
-              height * 0.10,
-              width * 0.07,
-              height * 0.05,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: value.isRatio
-                        ? _RatioValue(
-                            value: value.number,
-                            numberSize: numberSize,
-                          )
-                        : FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: RichText(
-                              maxLines: 1,
-                              text: TextSpan(
-                                children: [
+        borderColor: const Color(0x99CBD3F3),
+        borderWidth: 1.2,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            width * 0.09,
+            height * 0.10,
+            width * 0.07,
+            height * 0.05,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: value.isRatio
+                      ? _RatioValue(
+                          value: value.number,
+                          numberSize: numberSize,
+                        )
+                      : FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: RichText(
+                            maxLines: 1,
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: value.number,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: numberSize,
+                                    height: 1,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (value.unit != null)
                                   TextSpan(
-                                    text: value.number,
+                                    text: ' ${value.unit}',
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: numberSize,
+                                      fontSize: unitSize,
                                       height: 1,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  if (value.unit != null)
-                                    TextSpan(
-                                      text: ' ${value.unit}',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: unitSize,
-                                        height: 1,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                ],
-                              ),
+                              ],
                             ),
                           ),
-                  ),
+                        ),
                 ),
-                Text(
-                  value.title,
-                  maxLines: compact ? 1 : 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: titleSize,
-                    height: 1.05,
-                    fontWeight: FontWeight.w500,
-                  ),
+              ),
+              Text(
+                value.title,
+                maxLines: compact ? 1 : 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: titleSize,
+                  height: 1.05,
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

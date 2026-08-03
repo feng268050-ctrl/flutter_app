@@ -845,6 +845,9 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                               overflow:
                                                                   TextOverflow
                                                                       .ellipsis,
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
                                                               style: TextStyle(
                                                                 fontSize: 24,
                                                               ),
@@ -897,6 +900,9 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                               overflow:
                                                                   TextOverflow
                                                                       .ellipsis,
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
                                                               style: TextStyle(
                                                                 fontSize: 24,
                                                               ),

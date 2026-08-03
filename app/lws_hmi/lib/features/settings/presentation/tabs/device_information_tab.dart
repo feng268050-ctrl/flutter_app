@@ -199,7 +199,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             ),
             const SizedBox(height: 20),
             CyberButton(
-              size: CyberButtonSize.medium,
+              size: CyberButtonSize.small,
               shape: CyberButtonShape.rounded,
               onPressed: () => Navigator.of(ctx).pop(),
               child: Text(l10n.closeText),
@@ -322,7 +322,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             child: SizedBox(
               width: 340,
               child: CyberButton(
-                size: CyberButtonSize.medium,
+                size: CyberButtonSize.small,
                 variant: CyberButtonVariant.primary,
                 shape: CyberButtonShape.rounded,
                 stretch: true,
@@ -407,7 +407,8 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
               for (var i = 0; i < CloudEnvironmentTier.values.length; i++) ...[
                 if (i > 0)
                   const Divider(
-                    height: 1,
+                    height: SettingsDimens.sectionDividerHeight,
+                    thickness: SettingsDimens.sectionDividerHeight,
                     indent: 8,
                     endIndent: 8,
                     color: CyberColors.dividerCenter,

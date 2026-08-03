@@ -508,7 +508,8 @@ class _TimezonePickerPageState extends State<_TimezonePickerPage> {
                               ),
                               itemCount: _filtered.length,
                               separatorBuilder: (_, __) => const Divider(
-                                height: 1,
+                                height: SettingsDimens.sectionDividerHeight,
+                                thickness: SettingsDimens.sectionDividerHeight,
                                 indent: 20,
                                 endIndent: 20,
                                 color: CyberColors.dividerCenter,

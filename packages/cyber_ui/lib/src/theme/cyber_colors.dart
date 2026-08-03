@@ -49,5 +49,7 @@ abstract final class CyberColors {
 
   static const buttonSecondaryText = Color(0xFFFF5A52);
 
-  static const dividerCenter = Color(0x9968686C);
+  /// Frost section hairline center stop (was mid-gray `0x9968686C` — too soft
+  /// on Monitor/Settings frost plates). Matches [borderUniform] opacity.
+  static const dividerCenter = Color(0xB3FFFFFF);
 }

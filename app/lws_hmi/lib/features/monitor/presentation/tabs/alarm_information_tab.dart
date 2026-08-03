@@ -249,8 +249,10 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                 gradient: LinearGradient(
                                   colors: [
                                     CyberColors.dividerCenter,
+                                    CyberColors.dividerCenter,
                                     Color(0x00000000),
                                   ],
+                                  stops: [0.0, 0.4, 1.0],
                                 ),
                               ),
                             ),

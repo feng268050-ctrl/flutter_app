@@ -36,7 +36,7 @@ make flash                 # 使用 host 上 output/firmware/update.img
 | `make build-img` | **是** | 自动 `docker-export-artifacts` |
 | `make build-kernel` | **是**（firmware 片段） | 自动 export；改 kernel 后通常还要 `build-img` |
 | `make build` | **是** | 全流水线含 `build-img` |
-| `make docker-volume-pull` | 是 | 仅 legacy：导出完整 `linux-sdk/output/` |
+| `make docker-volume-pull` | 是 | legacy：等同 `SCOPE=firmware` → `output/firmware/`（不再镜像到 host `linux-sdk/output/`） |
 
 Linux 原生构建：无 Docker volume，跳过 export；`output/firmware/` 直接在 host SDK 下。
 

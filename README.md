@@ -343,7 +343,7 @@ make build-img
 
 This produces `output/firmware/<FACTORY_SKU>/factory.img` (default `ynh960-p800`) and a migration `update.img` symlink. To test the release image on hardware, then run `make reboot-loader` and `make flash`.
 
-Linux hosts: firmware is under `linux-sdk/output/firmware/` as well as `output/firmware/` after export steps.
+Canonical host artifacts live under `output/firmware/` only. SDK `linux-sdk/output/firmware/` is a transient pack staging area (Linux moves files out on export; macOS Docker keeps them only inside the volume).
 
 ### Flash and device (macOS)
 
@@ -480,7 +480,7 @@ make migrate-buildroot-output
 
 Agent-oriented rebuild mapping: [`AGENTS.md`](AGENTS.md).
 
-`make build-kernel` / `make build-rootfs` / `make build-img` each publish their matching files under `output/firmware/` from the Docker volume (macOS). Manual `make docker-export-artifacts` is legacy; prefer `SCOPE=boot|rootfs|update|firmware` only when debugging. `make docker-volume-pull` is a legacy alias for full `linux-sdk/output/` export.
+`make build-kernel` / `make build-rootfs` / `make build-img` each publish matching files under `output/firmware/` (macOS: from the Docker volume; Linux: moved out of `linux-sdk/output/firmware/`). No second host copy under `linux-sdk/output/`. Manual `make docker-export-artifacts` is legacy; `make docker-volume-pull` is an alias for `SCOPE=firmware`.
 
 ---
 
@@ -613,7 +613,7 @@ Boot KPI 优化阶段与状态表：[`docs/boot-kpi-optimization.md`](docs/boot-
 
 On **macOS**, builds use a Docker volume for the SDK (not a bind mount from APFS). Bind-mounting during Buildroot often **crashes Docker Desktop** (`BUILD_BIND_MOUNT=1` to force, not recommended).
 
-On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under `linux-sdk/`; firmware lands in `linux-sdk/output/`.
+On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under `linux-sdk/`; firmware is then moved to repo-root `output/firmware/`.
 
 ### `innohi/` / WiFi-BT firmware errors
 

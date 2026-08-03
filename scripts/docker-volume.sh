@@ -187,8 +187,8 @@ cmd_sync() {
 }
 
 cmd_pull() {
-	# Legacy name — full output/ + firmware/ export to host.
-	bash "$ROOT/scripts/docker-export-artifacts.sh" output
+	# Legacy name — publish firmware to repo-root output/firmware/ only.
+	bash "$ROOT/scripts/docker-export-artifacts.sh" firmware
 }
 
 cmd_export() {

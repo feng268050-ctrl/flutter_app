@@ -172,6 +172,15 @@ pack_in_sdk() {
   ensure_sdk_oem "$firmware"
   install_misc "$sdk" "$firmware"
 
+  # Host output/firmware/ is canonical after export; stage back into SDK for Rockchip pack.
+  mkdir -p "$firmware"
+  for f in boot.img boot_b.img Image; do
+    if [[ -r "$OUT_FIRMWARE/$f" ]]; then
+      install_file_follow "$OUT_FIRMWARE/$f" "$firmware/$f"
+      echo "build-img: staged $f from host → $firmware/$f"
+    fi
+  done
+
   [[ -r "$firmware/boot.img" ]] || die "boot.img (rootfs_a FIT) missing — run make build-kernel (does not rebuild here)"
   [[ -r "$firmware/boot_b.img" ]] || die "boot_b.img (rootfs_b FIT) missing — run make build-kernel (does not rebuild here)"
 
@@ -188,7 +197,6 @@ pack_in_sdk() {
   fi
   [[ -n "$rootfs_img" && -r "$rootfs_img" ]] \
     || die "rootfs missing — run: APP=$APP make build-rootfs (does not rebuild here)"
-  mkdir -p "$firmware"
   install_file_follow "$rootfs_img" "$firmware/rootfs.img"
   rootfs_img="$firmware/rootfs.img"
   echo "build-img: APP=$APP staged rootfs from host → $firmware/rootfs.img"

@@ -110,6 +110,7 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
   Size _followBackdropSize = Size.zero;
   double _followScale = 1;
   double? _followScrollPixelsAtOrigin;
+  bool _followGeometryScheduled = false;
 
   double get _sigmaX => widget.sigmaX ?? widget.intensity.sigma;
   double get _sigmaY => widget.sigmaY ?? widget.intensity.sigma;
@@ -194,10 +195,29 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
       return;
     }
     _scrollPosition = next;
-    _updateFollowGeometry();
+    _scheduleFollowGeometryUpdate();
   }
 
   void _unbindScrollPosition() => _scrollPosition = null;
+
+  /// [didChangeDependencies] can run while a parent [FittedBox] is still
+  /// laying out.  Reading [RenderBox.localToGlobal] at that point walks the
+  /// unfinished ancestor and throws "RenderBox was not laid out".  Coalesce
+  /// geometry reads until after layout; scroll paint still stays continuous
+  /// through [_followScrollTranslation].
+  void _scheduleFollowGeometryUpdate() {
+    if (!_isFollowLayout || _followGeometryScheduled) {
+      return;
+    }
+    _followGeometryScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _followGeometryScheduled = false;
+      if (!mounted || !_isFollowLayout) {
+        return;
+      }
+      _updateFollowGeometry();
+    });
+  }
 
   void _updateFollowGeometry() {
     final scope = _scope;
@@ -208,13 +228,23 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
 
     final self = context.findRenderObject();
     if (self is! RenderBox ||
+        !self.attached ||
+        !boundary.attached ||
         !self.hasSize ||
         !self.size.width.isFinite ||
         !self.size.height.isFinite) {
       return;
     }
 
-    final origin = boundary.globalToLocal(self.localToGlobal(Offset.zero));
+    // hasSize only validates the two endpoints.  During route transitions a
+    // scaled ancestor can still be between layout passes, so converting
+    // coordinates may fail even when both endpoint boxes look valid.
+    final Offset origin;
+    try {
+      origin = boundary.globalToLocal(self.localToGlobal(Offset.zero));
+    } on StateError {
+      return;
+    }
     final backdropSize = Size(
       _followBlurred!.width / _followScale,
       _followBlurred!.height / _followScale,
@@ -530,7 +560,7 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
         );
       });
       _bindScrollPosition();
-      _updateFollowGeometry();
+      _scheduleFollowGeometryUpdate();
     } catch (error, stackTrace) {
       _enableFakeGlass(
         'follow-layout-exception',

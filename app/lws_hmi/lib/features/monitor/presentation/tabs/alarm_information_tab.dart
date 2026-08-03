@@ -257,31 +257,36 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                           ),
                           const SizedBox(height: 8),
                           Expanded(
-                            child: _history.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      l10n.noActiveAlarms,
-                                      style: const TextStyle(
-                                        color: Colors.white54,
-                                        fontSize: 20,
-                                      ),
-                                    ),
-                                  )
-                                : ListView.builder(
-                                    clipBehavior: Clip.none,
-                                    itemCount: _history.length,
-                                    itemBuilder: (context, i) {
-                                      final row = _history[i];
-                                      return MonitorAlarmLogRow(
-                                        code: row.code,
-                                        label: l10n.alarmTitleFor(
-                                          row.code,
-                                          fallback: row.displayLabel,
+                            // Keep rows below the Alarm Logs divider while
+                            // scrolling; their content must not paint behind
+                            // the fixed title area.
+                            child: ClipRect(
+                              child: _history.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        l10n.noActiveAlarms,
+                                        style: const TextStyle(
+                                          color: Colors.white54,
+                                          fontSize: 20,
                                         ),
-                                        timestamp: row.timestamp,
-                                      );
-                                    },
-                                  ),
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      clipBehavior: Clip.hardEdge,
+                                      itemCount: _history.length,
+                                      itemBuilder: (context, i) {
+                                        final row = _history[i];
+                                        return MonitorAlarmLogRow(
+                                          code: row.code,
+                                          label: l10n.alarmTitleFor(
+                                            row.code,
+                                            fallback: row.displayLabel,
+                                          ),
+                                          timestamp: row.timestamp,
+                                        );
+                                      },
+                                    ),
+                            ),
                           ),
                           const SizedBox(height: 16),
                           // lws-ui `fragment_warn_log` bottom Clear pill.

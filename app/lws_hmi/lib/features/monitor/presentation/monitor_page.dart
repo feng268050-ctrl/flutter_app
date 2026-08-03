@@ -69,7 +69,8 @@ class MonitorPage extends StatefulWidget {
 
 /// Optional [Navigator] arguments for [AppRoutes.monitor].
 final class MonitorRouteArgs {
-  const MonitorRouteArgs({this.initialTabIndex = MonitorPage.tabWorkInformation});
+  const MonitorRouteArgs(
+      {this.initialTabIndex = MonitorPage.tabWorkInformation});
 
   /// Opens Monitor on the AI Vision tab (Home quick-action entry).
   static const aiVision = MonitorRouteArgs(
@@ -106,15 +107,31 @@ class _MonitorPageState extends State<MonitorPage> {
         children: [
           const Positioned.fill(
             child: CyberBlurBackdropTarget(
-              child: SettingsHomeBackdrop(),
+              // Tone down the wallpaper's broad specular bands only on
+              // Monitor, preserving enough contrast for panel cast shadows.
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  SettingsHomeBackdrop(),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0x16000000), Color(0x26000000)],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           Scaffold(
             backgroundColor: Colors.transparent,
             appBar: ProductPageStatusBar(
               title: tabLabels[_currentTabIndex],
-              // Opaque chrome — no wallpaper透视 on status / top tabs.
-              backgroundColor: ProductTopTabs.background,
+              // Keep one continuous wallpaper behind Monitor's status and tabs.
+              backgroundColor: Colors.transparent,
               foregroundColor: Colors.white,
               toolbarHeight: WorkModeStatusBarDimens.height,
               // Home stays fixed; title follows the selected Monitor tab.
@@ -126,6 +143,7 @@ class _MonitorPageState extends State<MonitorPage> {
                 tabs: MonitorPage._tabs,
                 currentIndex: _currentTabIndex,
                 layout: ProductTopTabLayout.monitorPinnedIcon,
+                backgroundColor: Colors.transparent,
                 onSelected: (index) {
                   if (index == _currentTabIndex) {
                     return;
@@ -135,19 +153,21 @@ class _MonitorPageState extends State<MonitorPage> {
                 },
               ),
             ),
-            body: IndexedStack(
-              index: _currentTabIndex,
-              // Outer ambient on SettingsPanel paints past card bounds.
-              clipBehavior: Clip.none,
-              children: [
-                const WorkInformationTab(),
-                const MachineStatusTab(),
-                const AlarmInformationTab(),
-                const VideosTab(),
-                AiVisionTab(
-                  visible: _currentTabIndex == MonitorPage.tabAiVision,
-                ),
-              ],
+            // Scaffold already starts body layout at the custom Tab divider.
+            // Clip there so scroll content cannot paint into the Tab strip.
+            body: ClipRect(
+              child: IndexedStack(
+                index: _currentTabIndex,
+                children: [
+                  const WorkInformationTab(),
+                  const MachineStatusTab(),
+                  const AlarmInformationTab(),
+                  const VideosTab(),
+                  AiVisionTab(
+                    visible: _currentTabIndex == MonitorPage.tabAiVision,
+                  ),
+                ],
+              ),
             ),
           ),
         ],

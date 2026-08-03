@@ -26,6 +26,7 @@ final class ProductTopTabs extends StatefulWidget
     required this.currentIndex,
     required this.onSelected,
     this.layout = ProductTopTabLayout.monitorPinnedIcon,
+    this.backgroundColor,
   });
 
   /// Opaque tab strip — matches Settings top tabs.
@@ -56,13 +57,15 @@ final class ProductTopTabs extends StatefulWidget
   final ValueChanged<int> onSelected;
   final ProductTopTabLayout layout;
 
-  double get height => layout == ProductTopTabLayout.lwsUi
-      ? lwsUiHeight
-      : monitorHeight;
+  /// Optional page backdrop. Monitor keeps this transparent so the shared
+  /// wallpaper continues behind the status bar and tab strip.
+  final Color? backgroundColor;
+
+  double get height =>
+      layout == ProductTopTabLayout.lwsUi ? lwsUiHeight : monitorHeight;
 
   @override
-  Size get preferredSize =>
-      Size.fromHeight(height + dividerThickness);
+  Size get preferredSize => Size.fromHeight(height + dividerThickness);
 
   @override
   State<ProductTopTabs> createState() => _ProductTopTabsState();
@@ -76,7 +79,8 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
   void initState() {
     super.initState();
     _syncItemKeys();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureSelectedVisible());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _ensureSelectedVisible());
   }
 
   @override
@@ -194,7 +198,7 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
   Widget build(BuildContext context) {
     final widths = _tabWidths();
     return ColoredBox(
-      color: ProductTopTabs.background,
+      color: widget.backgroundColor ?? ProductTopTabs.background,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

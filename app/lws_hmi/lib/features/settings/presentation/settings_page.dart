@@ -7,7 +7,6 @@ import 'package:lws_hmi/features/settings/presentation/tabs/advanced_settings_ta
 import 'package:lws_hmi/features/settings/presentation/tabs/common_settings_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/custom_home_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/device_information_tab.dart';
-import 'package:lws_hmi/features/settings/presentation/widgets/custom_home_save_success_dialog.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
@@ -64,8 +63,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late int _currentTabIndex;
   bool _keyboardPushed = false;
-  final GlobalKey _pageCaptureKey =
-      GlobalKey(debugLabel: 'settingsPageCapture');
 
   @override
   void initState() {
@@ -94,61 +91,58 @@ class _SettingsPageState extends State<SettingsPage> {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     // Blur capture root = Home wallpaper so SettingsPanel frost samples it.
     return CyberBlurBackdropScope(
-      child: CustomHomePageCaptureScope(
-        boundaryKey: _pageCaptureKey,
-        child: RepaintBoundary(
-          key: _pageCaptureKey,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              const Positioned.fill(
-                child: CyberBlurBackdropTarget(
-                  child: SettingsHomeBackdrop(),
-                ),
-              ),
-              Scaffold(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CyberBlurBackdropTarget(
+              child: SettingsHomeBackdrop(),
+            ),
+          ),
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: ProductPageStatusBar(
+              title: tabLabels[_currentTabIndex],
+              // Share the page wallpaper across status bar, tabs, and body.
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              toolbarHeight: WorkModeStatusBarDimens.height,
+              backLabel: l10n.equipmentStatusHome,
+              backAccent: WorkModeAccent.weld,
+              onBack:
+                  canPop ? () => Navigator.of(context).maybePop() : null,
+              bottom: SettingsTopTabs(
+                labels: tabLabels,
+                tabs: SettingsPage._tabs,
+                currentIndex: _currentTabIndex,
                 backgroundColor: Colors.transparent,
-                appBar: ProductPageStatusBar(
-                  title: tabLabels[_currentTabIndex],
-                  // Match [SettingsTopTabs.background] — no wallpaper透视 on chrome.
-                  backgroundColor: SettingsTopTabs.background,
-                  foregroundColor: Colors.white,
-                  toolbarHeight: WorkModeStatusBarDimens.height,
-                  backLabel: l10n.equipmentStatusHome,
-                  backAccent: WorkModeAccent.weld,
-                  onBack: canPop ? () => Navigator.of(context).maybePop() : null,
-                  bottom: SettingsTopTabs(
-                    labels: tabLabels,
-                    tabs: SettingsPage._tabs,
-                    currentIndex: _currentTabIndex,
-                    onSelected: (index) {
-                      if (index == _currentTabIndex) {
-                        return;
-                      }
-                      setState(() => _currentTabIndex = index);
-                    },
+                onSelected: (index) {
+                  if (index == _currentTabIndex) {
+                    return;
+                  }
+                  setState(() => _currentTabIndex = index);
+                },
+              ),
+            ),
+            // Scaffold starts body layout at the custom Tab divider.
+                // Clip there so Settings content cannot enter the tab strip.
+                body: ClipRect(
+                  child: IndexedStack(
+                    index: _currentTabIndex,
+                    children: [
+                      DeviceInformationTab(services: services),
+                      CommonSettingsTab(
+                        services: services,
+                        cameraDeviceInfoCache: widget.cameraDeviceInfoCache,
+                      ),
+                      const AdvancedSettingsTab(),
+                      const CustomHomeTab(),
+                    ],
                   ),
-                ),
-                body: IndexedStack(
-                  index: _currentTabIndex,
-                  // Material elevation shadows on settings cards paint outside
-                  // the card bounds; do not clip them at the tab layer.
-                  clipBehavior: Clip.none,
-                  children: [
-                    DeviceInformationTab(services: services),
-                    CommonSettingsTab(
-                      services: services,
-                      cameraDeviceInfoCache: widget.cameraDeviceInfoCache,
-                    ),
-                    const AdvancedSettingsTab(),
-                    const CustomHomeTab(),
-                  ],
                 ),
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

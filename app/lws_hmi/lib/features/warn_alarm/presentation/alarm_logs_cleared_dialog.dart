@@ -2,16 +2,15 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// lws-ui Alarm Logs Clear success tip (`FrostStatusDialog` Cleared / Done / OK).
 Future<void> showAlarmLogsClearedDialog({
   required BuildContext context,
 }) {
-  return CyberOverlayHost.show<void>(
+  return TipDialogHost.showSuccess<void>(
     context: context,
     barrierDismissible: true,
-    barrierColor: CyberColors.scrim,
-    freezePageBackdrop: false,
     builder: (dialogContext) {
       final l10n = AppLocalizations.of(dialogContext)!;
       return _AlarmLogsClearedBody(
@@ -41,6 +40,8 @@ final class _AlarmLogsClearedBody extends StatelessWidget {
   static const _iconSize = 80.0;
   static const _titleSize = 32.0;
   static const _bodySize = 20.0;
+  static const _titleDark = Color(0xFF1A1A1A);
+  static const _bodyDark = Color(0xFF1A1A1A);
 
   @override
   Widget build(BuildContext context) {
@@ -57,14 +58,16 @@ final class _AlarmLogsClearedBody extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: CyberColors.textPrimary,
+              color: _titleDark,
               fontSize: _titleSize,
               fontWeight: FontWeight.w700,
               height: 1.15,
               decoration: TextDecoration.none,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: CyberDimens.contentPadding),
+          const TipFrostDivider(),
+          const SizedBox(height: CyberDimens.contentPadding),
           const Center(
             child: Image(
               image: AssetImage(ProcessModeAssets.dialogSuccess),
@@ -79,14 +82,16 @@ final class _AlarmLogsClearedBody extends StatelessWidget {
             message,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: CyberColors.textPrimary,
+              color: _bodyDark,
               fontSize: _bodySize,
               fontWeight: FontWeight.w400,
               height: 1.35,
               decoration: TextDecoration.none,
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: CyberDimens.contentPadding),
+          const TipFrostDivider(),
+          const SizedBox(height: CyberDimens.contentPadding),
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 280, maxWidth: 420),

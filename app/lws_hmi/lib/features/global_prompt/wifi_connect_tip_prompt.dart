@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/settings/presentation/pages/wifi_settings_page.
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
 import 'package:lws_hmi/platform/wifi/wifi_models.dart';
+import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Once-per-process Wi‑Fi connect tip on the global prompt queue.
 abstract final class WifiConnectTipPrompt {
@@ -108,10 +109,9 @@ abstract final class WifiConnectTipPrompt {
     }
 
     final l10n = AppLocalizations.of(context)!;
-    await CyberOverlayHost.show<void>(
+    await TipDialogHost.showDarkPrompt<void>(
       context: context,
       barrierDismissible: false,
-      freezePageBackdrop: false,
       builder: (ctx) {
         return CyberPromptContent(
           title: l10n.wifiConnectTipTitle,

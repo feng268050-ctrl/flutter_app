@@ -42,6 +42,8 @@ abstract final class CyberOverlayHost {
     Color barrierColor = Colors.transparent,
     bool freezePageBackdrop = true,
     CyberBackdropBlurController? pageBackdropController,
+    /// Override the default 720×640 panel cap (e.g. wide Important Reminder).
+    BoxConstraints? constraints,
     /// Keyboard panel height. When non-null, card is recentered / pinned in the
     /// remaining viewport (not blindly translated by full keyboard height).
     ValueListenable<double>? keyboardHeight,
@@ -53,13 +55,15 @@ abstract final class CyberOverlayHost {
       pageBackdropController?.requestSample();
     }
     final panel = CyberPanelBorder(tone: tone);
+    final panelConstraints =
+        constraints ?? const BoxConstraints(maxWidth: 720, maxHeight: 640);
     return showDialog<T>(
       context: context,
       barrierDismissible: barrierDismissible,
       barrierColor: barrierColor,
       builder: (dialogContext) {
         Widget chrome = ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720, maxHeight: 640),
+          constraints: panelConstraints,
           child: ClipRRect(
             borderRadius: panel.borderRadius,
             child: DecoratedBox(
@@ -107,21 +111,36 @@ abstract final class CyberOverlayHost {
   }
 }
 
-/// Simple title + actions prompt content for [CyberOverlayHost].
+/// Simple title + body + actions prompt content for tip / Cyber overlays.
+///
+/// Layout matches lws-ui `dialog_frost_prompt.xml`: title → divider → body →
+/// divider → actions.
 class CyberPromptContent extends StatelessWidget {
   const CyberPromptContent({
     super.key,
     required this.title,
     this.body,
     this.actions = const <Widget>[],
+    this.tone = CyberTone.dark,
   });
 
   final String title;
   final Widget? body;
   final List<Widget> actions;
 
+  /// [CyberTone.light] uses dark ink on cream success tips.
+  final CyberTone tone;
+
+  static const _titleDark = Color(0xFF1A1A1A);
+  static const _bodyDark = Color(0xCC1A1A1A);
+  static const _titleSize = 37.0;
+  static const _bodySize = 33.0;
+
   @override
   Widget build(BuildContext context) {
+    final light = tone == CyberTone.light;
+    final titleColor = light ? _titleDark : CyberColors.textPrimary;
+    final bodyColor = light ? _bodyDark : CyberColors.textSecondary;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -129,22 +148,36 @@ class CyberPromptContent extends StatelessWidget {
         Text(
           title,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: CyberColors.textPrimary,
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: titleColor,
+            fontSize: _titleSize,
+            fontWeight: FontWeight.w700,
+            height: 1.15,
+            letterSpacing: 0.02 * _titleSize,
             decoration: TextDecoration.none,
           ),
         ),
         if (body != null) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: CyberDimens.contentPadding),
+          const _CyberPromptDivider(),
+          const SizedBox(height: CyberDimens.contentPadding),
           DefaultTextStyle(
-            style: const TextStyle(color: CyberColors.textSecondary, fontSize: 16),
+            style: TextStyle(
+              color: bodyColor,
+              fontSize: _bodySize,
+              height: 1.2,
+              fontWeight: FontWeight.w400,
+              decoration: TextDecoration.none,
+            ),
             child: body!,
           ),
         ],
         if (actions.isNotEmpty) ...[
-          const SizedBox(height: 24),
+          const SizedBox(height: CyberDimens.contentPadding),
+          const _CyberPromptDivider(),
+          const SizedBox(height: CyberDimens.contentPadding),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -156,6 +189,26 @@ class CyberPromptContent extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _CyberPromptDivider extends StatelessWidget {
+  const _CyberPromptDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0x0068686C),
+            CyberColors.dividerCenter,
+            Color(0x0068686C),
+          ],
+        ),
+      ),
+      child: SizedBox(height: 1, width: double.infinity),
     );
   }
 }

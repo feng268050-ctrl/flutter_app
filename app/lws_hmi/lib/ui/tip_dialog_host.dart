@@ -89,16 +89,26 @@ abstract final class TipDialogHost {
     bool barrierDismissible = true,
     BoxConstraints? constraints,
     String barrierLabel = 'Tip',
+    /// Matches light overlay foreground `paddingTop/Bottom` 20dp.
+    EdgeInsetsGeometry padding =
+        const EdgeInsets.symmetric(vertical: 20),
   }) {
     return _showCaptureFrost<T>(
       context: context,
       builder: builder,
       barrierDismissible: barrierDismissible,
       barrierLabel: barrierLabel,
-      constraints: constraints ?? const BoxConstraints(maxWidth: 700, maxHeight: 640),
+      constraints: constraints ??
+          const BoxConstraints(
+            minWidth: 700,
+            maxWidth: 700,
+            minHeight: 480,
+            maxHeight: 680,
+          ),
       tone: CyberTone.light,
       wash: const Color(0xD9FFFCFA),
       fallback: const Color(0xFFFFFCFA),
+      padding: padding,
     );
   }
 
@@ -111,6 +121,8 @@ abstract final class TipDialogHost {
     required CyberTone tone,
     required Color wash,
     required Color fallback,
+    EdgeInsetsGeometry padding =
+        const EdgeInsets.all(CyberDimens.contentPadding),
   }) {
     final scope = context.findAncestorStateOfType<CyberBlurBackdropScopeState>();
     final panel = CyberPanelBorder(tone: tone);
@@ -144,6 +156,7 @@ abstract final class TipDialogHost {
                       panel: panel,
                       wash: wash,
                       fallback: fallback,
+                      padding: padding,
                       child: builder(dialogContext),
                     ),
                   ),
@@ -168,6 +181,7 @@ final class _TipFrostCard extends StatefulWidget {
     required this.wash,
     required this.fallback,
     required this.child,
+    this.padding = const EdgeInsets.all(CyberDimens.contentPadding),
   });
 
   final CyberBlurBackdropScopeState? scope;
@@ -175,6 +189,7 @@ final class _TipFrostCard extends StatefulWidget {
   final Color wash;
   final Color fallback;
   final Widget child;
+  final EdgeInsetsGeometry padding;
 
   static const blurSigma = 23.0;
 
@@ -267,47 +282,62 @@ final class _TipFrostCardState extends State<_TipFrostCard> {
   @override
   Widget build(BuildContext context) {
     final radius = widget.panel.borderRadius;
-    return ClipRRect(
-      key: _cardKey,
-      borderRadius: radius,
-      clipBehavior: Clip.antiAlias,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          border: Border.all(
-            color: widget.panel.flatBorderColor,
-            width: widget.panel.width,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tightWidth = constraints.maxWidth.isFinite &&
+            constraints.maxWidth < double.infinity;
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: tightWidth ? constraints.maxWidth : 0,
+            maxWidth: constraints.maxWidth,
+            minHeight: constraints.minHeight,
+            maxHeight: constraints.maxHeight,
           ),
-        ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: _capture != null
-                  ? ImageFiltered(
-                      imageFilter: ui.ImageFilter.blur(
-                        sigmaX: _TipFrostCard.blurSigma,
-                        sigmaY: _TipFrostCard.blurSigma,
-                        tileMode: TileMode.clamp,
-                      ),
-                      child: RawImage(
-                        image: _capture,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                      ),
-                    )
-                  : ColoredBox(color: widget.fallback),
+          child: ClipRRect(
+            key: _cardKey,
+            borderRadius: radius,
+            clipBehavior: Clip.antiAlias,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                border: Border.all(
+                  color: widget.panel.flatBorderColor,
+                  width: widget.panel.width,
+                ),
+              ),
+              child: Stack(
+                fit: StackFit.passthrough,
+                children: [
+                  Positioned.fill(
+                    child: _capture != null
+                        ? ImageFiltered(
+                            imageFilter: ui.ImageFilter.blur(
+                              sigmaX: _TipFrostCard.blurSigma,
+                              sigmaY: _TipFrostCard.blurSigma,
+                              tileMode: TileMode.clamp,
+                            ),
+                            child: RawImage(
+                              image: _capture,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
+                          )
+                        : ColoredBox(color: widget.fallback),
+                  ),
+                  Positioned.fill(
+                    child: ColoredBox(color: widget.wash),
+                  ),
+                  Padding(
+                    padding: widget.padding,
+                    child: widget.child,
+                  ),
+                ],
+              ),
             ),
-            Positioned.fill(
-              child: ColoredBox(color: widget.wash),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(CyberDimens.contentPadding),
-              child: widget.child,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

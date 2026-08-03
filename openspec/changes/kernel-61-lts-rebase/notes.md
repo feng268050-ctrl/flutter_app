@@ -91,7 +91,7 @@ Conflict resolver one-shot: `openspec/changes/kernel-61-lts-rebase/resolve-remai
 | NPU | `[drm] Initialized rknpu 0.9.8` |
 | Notes | Early `Call trace` WARN stacks from `rockchip_combphy` reset + pinctrl gpio (non-fatal; board stayed up). Rootfs also needed `external/rkwifibt/.../wl_cfg80211.c` `cfg80211_port_authorized` gate → `6.1.100`. |
 | Floor coverage | Tip **6.1.180** ≥ floor; post-6.1.99 High stable content included by full tip merge (no cherry-pick CI). |
-| Optional 4.4 | Skipped (kconfig trim follow-up only). |
+| Optional 4.4 | **Done 2026-08-03** — NFS/SUNRPC client stack disabled in `ynh960-kernel-trim.config`; 9P kept via later `emulator-virtio.config`; BT/CFG80211/USB_GADGET/MODULES/IO_URING left on (product need). |
 
 ## Post-acceptance: silent audio (2026-08-03)
 
@@ -102,3 +102,11 @@ Conflict resolver one-shot: `openspec/changes/kernel-61-lts-rebase/resolve-remai
 | Evidence | Boot WARN `pin 37 already requested by fe410000.i2s; switch mux … to GPIO`; LRCK GPIO stuck `hi` during play |
 | Fix | Overlay `0012-pinctrl-rockchip-keep-mux-on-shared-gpio-request.patch` — if pin already has mux owner + non-GPIO mux, keep mux (warn `keep mux … (shared GPIOD_ASIS)`); `scripts/apply-overlay.sh` lists `pinctrl-rockchip.c` |
 | Verify | After `build-kernel` + `upgrade`: dmesg keep-mux; LRCK samples `hi`/`lo` during `mpg123`; audible path restored |
+
+## 4.4 kconfig attack-surface trim (2026-08-03)
+
+| Item | Detail |
+|------|--------|
+| Change | Extend `overlay/kernel/rockchip/ynh960-kernel-trim.config`: disable `NFS_FS` / NFSv2–v4 / `LOCKD` / `SUNRPC*` client stack |
+| Keep | Product: BT, CFG80211, USB_GADGET, MODULES, IO_URING, USER_NS, NETFILTER; emulator: 9P/virtio re-enabled by later `emulator-virtio.config` |
+| Verify | Volume `.config` + device `/proc/config.gz`: `# CONFIG_NFS_FS is not set`; `uname -r` 6.1.180; `hmi.service` active after upgrade |

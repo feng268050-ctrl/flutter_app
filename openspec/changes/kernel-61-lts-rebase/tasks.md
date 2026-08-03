@@ -29,4 +29,4 @@
 - [x] 4.1 Deploy via `make upgrade` (A/B FIT + rootfs as required); confirm try-boot and `uname -r` == pin
 - [x] 4.2 Smoke ynh960: HMI/Weston, Ethernet, Wi‑Fi and/or BT module load, USB gadget SSH, display/touch, NPU/VOP DT wiring as applicable
 - [x] 4.3 Record acceptance notes (pin version + date); spot-check that post-6.1.99 High examples are covered by the version floor (no cherry-pick CI required)
-- [ ] 4.4 Optional follow-up only: trim unused kconfig attack surface via existing trim fragments (must not replace LTS merge)
+- [x] 4.4 Optional follow-up only: trim unused kconfig attack surface via existing trim fragments (must not replace LTS merge) — **NFS/SUNRPC client stack off in `ynh960-kernel-trim.config` (2026-08-03); 9P kept via `emulator-virtio.config`**

@@ -632,7 +632,7 @@ class _AiVisionTabState extends State<AiVisionTab> {
                     variant: CyberButtonVariant.primary,
                     shape: CyberButtonShape.rounded,
                     stretch: true,
-                    height: 56,
+                    size: CyberButtonSize.small,
                     borderGradientCenter:
                         CyberBorderGradientCenter.topLeftBottomRight,
                     onPressed: () => unawaited(_chooseVideo()),

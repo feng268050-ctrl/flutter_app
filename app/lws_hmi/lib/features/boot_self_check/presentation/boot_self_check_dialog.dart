@@ -94,23 +94,24 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                       children: [
                         CyberCheckbox(
                           value: session.dontShowAgain,
-                          size: CyberDimens.checkboxSmallSize,
+                          size: CyberDimens.checkboxLargeSize,
                           onChanged: (v) {
                             onUserInteracted?.call();
                             session.setDontShowAgain(v ?? false);
                           },
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             l10n.bootSelfCheckDontShowAgain,
                             style: const TextStyle(
                               color: CyberColors.textSecondary,
-                              fontSize: 16,
+                              fontSize: 22,
                             ),
                           ),
                         ),
                         CyberButton(
+                          variant: CyberButtonVariant.primary,
                           onPressed: () {
                             onUserInteracted?.call();
                             onClose();

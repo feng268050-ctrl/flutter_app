@@ -263,7 +263,7 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                         width: 250 * metrics.scale,
                         child: CyberButton(
                           key: const ValueKey('quick-mode-more-status'),
-                          size: CyberButtonSize.medium,
+                          size: CyberButtonSize.small,
                           variant: CyberButtonVariant.standard,
                           shape: CyberButtonShape.rounded,
                           stretch: true,
@@ -276,8 +276,8 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                             Color(0xAA86868C),
                             Color(0x66000000),
                           ],
-                          // Medium face height only; width stays 250×scale.
-                          height: CyberDimens.actionButtonMediumHeight,
+                          // Small face height only; width stays 250×scale.
+                          height: CyberDimens.actionButtonSmallHeight,
                           onPressed: widget.onMoreStatus ??
                               () => unawaited(
                                     showLiveMachineStatusDialog(context),

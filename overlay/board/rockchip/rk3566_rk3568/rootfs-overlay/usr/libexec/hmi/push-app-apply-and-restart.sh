@@ -55,6 +55,8 @@ if [ -d "$STAGE_BIN" ]; then
 	cp -a "$STAGE_BIN/." /opt/hmi/bin/
 	chmod 0755 /opt/hmi/bin/* 2>/dev/null || true
 fi
+# Covers/AI samples use rootfs extract-video-frame — drop retired App ffmpeg.
+rm -f /opt/hmi/bin/ffmpeg
 # Copy every staged lib except the AOT payload (installed atomically below).
 if [ -d "$STAGE/lib" ]; then
 	log "installing /opt/hmi/lib companions"

@@ -4,6 +4,10 @@
 # Same methodology as scripts/measure-ip-camera-rtsp.sh / measure-ip-camera-rtsp-adb.sh:
 # on-device ffmpeg remux (-c copy → mpegts) size ÷ duration → Mbps.
 #
+# NOTE: This host helper pushes a temp ffmpeg to the board (/tmp/ffmpeg by default).
+# That is out of the product HMI contract — Monitor covers / AI Vision samples use
+# rootfs /usr/libexec/hmi/extract-video-frame (GStreamer), not /opt/hmi/bin/ffmpeg.
+#
 # Doc / acceptance: docs/ip-camera-rtsp-bitrate-android-vs-linux.md
 # Healthy board (after RMII clock_in_out=input fix): remux ≥~3.3 Mbps,
 # mmc_crc_delta≈0, rtp_missed≈0 (STOP_SERVICES=1).

@@ -617,6 +617,18 @@ EOF
 	else
 		echo "OK:  opt/hmi/lib/librknnrt.so absent (system RKNN)"
 	fi
+	if [[ -e "$target/opt/hmi/bin/ffmpeg" ]]; then
+		echo "FAIL: opt/hmi/bin/ffmpeg present (covers/AI samples use extract-video-frame)" >&2
+		missing=1
+	else
+		echo "OK:  opt/hmi/bin/ffmpeg absent (GStreamer frame extract)"
+	fi
+	if [[ -x "$target/usr/libexec/hmi/extract-video-frame" ]]; then
+		echo "OK:  usr/libexec/hmi/extract-video-frame present"
+	else
+		echo "FAIL: usr/libexec/hmi/extract-video-frame missing" >&2
+		missing=1
+	fi
 
 	echo ""
 	echo "--- systemd udev hwdb (bin only) ---"

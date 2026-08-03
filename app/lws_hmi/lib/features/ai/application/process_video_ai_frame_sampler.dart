@@ -4,15 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/process_video/application/video_cover_extractor.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
 
-/// Extracts a JPEG frame at a media timestamp via bundled ffmpeg.
+/// Extracts a JPEG frame at a media timestamp via rootfs GStreamer helper.
 final class ProcessVideoAiFrameSampler {
   ProcessVideoAiFrameSampler({
     this.workdir,
-    this.ffmpegPath,
+    this.helperPath,
   });
 
   final String? workdir;
-  final String? ffmpegPath;
+  final String? helperPath;
 
   Future<File?> extractJpegAt({
     required String videoPath,
@@ -28,7 +28,44 @@ final class ProcessVideoAiFrameSampler {
     );
     await dir.create(recursive: true);
     final out = File('${dir.path}/sample_${sampleMs.clamp(0, 1 << 30)}.jpg');
-    final bin = VideoCoverExtractor.resolveFfmpegPath(override: ffmpegPath);
+
+    if (VideoCoverExtractor.useFfmpegFallback) {
+      return _extractWithFfmpeg(
+        videoPath: videoPath,
+        out: out,
+        sampleMs: sampleMs,
+      );
+    }
+
+    final bin = VideoCoverExtractor.resolveHelperPath(override: helperPath);
+    try {
+      final result = await Process.run(bin, [
+        videoPath,
+        out.path,
+        '$sampleMs',
+      ]).timeout(const Duration(seconds: 45));
+      if (result.exitCode != 0 || !await out.exists() || await out.length() <= 0) {
+        debugPrint(
+          'process-video-ai: extract-video-frame failed ms=$sampleMs '
+          'code=${result.exitCode} stderr=${result.stderr}',
+        );
+        return null;
+      }
+      return out;
+    } catch (e) {
+      debugPrint('process-video-ai: extract failed ms=$sampleMs: $e');
+      return null;
+    }
+  }
+
+  Future<File?> _extractWithFfmpeg({
+    required String videoPath,
+    required File out,
+    required int sampleMs,
+  }) async {
+    final bundled = File(VideoCoverExtractor.bundledFfmpegPath);
+    final bin =
+        bundled.existsSync() ? VideoCoverExtractor.bundledFfmpegPath : 'ffmpeg';
     final ss = (sampleMs / 1000.0).toStringAsFixed(3);
     try {
       final result = await Process.run(bin, [
@@ -50,14 +87,14 @@ final class ProcessVideoAiFrameSampler {
       ]).timeout(const Duration(seconds: 30));
       if (result.exitCode != 0 || !await out.exists() || await out.length() <= 0) {
         debugPrint(
-          'process-video-ai: ffmpeg sample failed ms=$sampleMs '
-          'code=${result.exitCode} stderr=${result.stderr}',
+          'process-video-ai: ffmpeg fallback failed ms=$sampleMs '
+          'code=${result.exitCode}',
         );
         return null;
       }
       return out;
     } catch (e) {
-      debugPrint('process-video-ai: extract failed ms=$sampleMs: $e');
+      debugPrint('process-video-ai: ffmpeg fallback failed ms=$sampleMs: $e');
       return null;
     }
   }

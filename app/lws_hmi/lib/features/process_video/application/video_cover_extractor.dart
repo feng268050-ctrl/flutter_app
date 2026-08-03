@@ -5,30 +5,34 @@ import 'package:lws_hmi/platform/os_paths.dart';
 
 /// Extracts a JPEG cover frame from a local MP4 (lws-ui `VideoCoverExtractor`).
 ///
-/// Prefers App-bundled `/opt/hmi/bin/ffmpeg` (board rootfs has no ffmpeg).
+/// Uses rootfs GStreamer helper [/usr/libexec/hmi/extract-video-frame]
+/// (not App-bundled ffmpeg).
 final class VideoCoverExtractor {
   VideoCoverExtractor({
     this.coversDir,
-    this.ffmpegPath,
+    this.helperPath,
   });
 
   final String? coversDir;
 
-  /// Override for tests; production resolves via [resolveFfmpegPath].
-  final String? ffmpegPath;
+  /// Override for tests; production resolves via [resolveHelperPath].
+  final String? helperPath;
 
+  static const bundledHelperPath = '/usr/libexec/hmi/extract-video-frame';
+
+  /// Optional legacy ffmpeg path (only when [useFfmpegFallback] is true).
   static const bundledFfmpegPath = '/opt/hmi/bin/ffmpeg';
 
-  /// Prefer App companion binary, then PATH `ffmpeg`.
-  static String resolveFfmpegPath({String? override}) {
+  /// Transition flag: set `LWS_HMI_COVER_FFMPEG=1` to use bundled ffmpeg.
+  /// Default off — product path is GStreamer.
+  static bool get useFfmpegFallback =>
+      Platform.environment['LWS_HMI_COVER_FFMPEG'] == '1';
+
+  static String resolveHelperPath({String? override}) {
     if (override != null && override.isNotEmpty) {
       return override;
     }
-    final bundled = File(bundledFfmpegPath);
-    if (bundled.existsSync()) {
-      return bundledFfmpegPath;
-    }
-    return 'ffmpeg';
+    return bundledHelperPath;
   }
 
   Future<File?> extractFirstFrameJpeg({
@@ -42,10 +46,43 @@ final class VideoCoverExtractor {
     final dir = Directory(coversDir ?? '${OsPaths.varHmi}/video-covers');
     await dir.create(recursive: true);
     final out = File('${dir.path}/$videoId.jpg');
-    final bin = resolveFfmpegPath(override: ffmpegPath);
+    // Reuse cache — avoid spawning MPP JPEG encode on every detail open
+    // (concurrent with video_player MPP decode has caused HMI SIGSEGV).
+    if (await out.exists() && await out.length() > 0) {
+      return out;
+    }
+
+    if (useFfmpegFallback) {
+      return _extractWithFfmpeg(videoPath: videoPath, out: out);
+    }
+
+    final bin = resolveHelperPath(override: helperPath);
     try {
-      // Do not put -ss before -i: input seek jumps to the nearest keyframe,
-      // which is often not display frame 0 (Android MMR uses t≈0 decode).
+      final result = await Process.run(bin, [
+        videoPath,
+        out.path,
+      ]).timeout(const Duration(seconds: 45));
+      if (result.exitCode != 0 || !await out.exists() || await out.length() <= 0) {
+        debugPrint(
+          'video-cover: extract-video-frame failed bin=$bin '
+          'code=${result.exitCode} stderr=${result.stderr}',
+        );
+        return null;
+      }
+      return out;
+    } catch (e) {
+      debugPrint('video-cover: extract failed bin=$bin: $e');
+    }
+    return null;
+  }
+
+  Future<File?> _extractWithFfmpeg({
+    required String videoPath,
+    required File out,
+  }) async {
+    final bundled = File(bundledFfmpegPath);
+    final bin = bundled.existsSync() ? bundledFfmpegPath : 'ffmpeg';
+    try {
       final result = await Process.run(bin, [
         '-y',
         '-hide_banner',
@@ -64,15 +101,14 @@ final class VideoCoverExtractor {
       ]).timeout(const Duration(seconds: 45));
       if (result.exitCode != 0 || !await out.exists() || await out.length() <= 0) {
         debugPrint(
-          'video-cover: ffmpeg failed bin=$bin code=${result.exitCode} '
-          'stderr=${result.stderr}',
+          'video-cover: ffmpeg fallback failed bin=$bin code=${result.exitCode}',
         );
         return null;
       }
       return out;
     } catch (e) {
-      debugPrint('video-cover: extract failed bin=$bin: $e');
+      debugPrint('video-cover: ffmpeg fallback failed: $e');
+      return null;
     }
-    return null;
   }
 }

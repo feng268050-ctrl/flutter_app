@@ -478,3 +478,13 @@ The shared product rootfs SHALL NOT install the multi-vendor Rockchip/Innohi Wiâ
 - **THEN** staging `target/usr/lib/firmware` MUST NOT contain `fw_bcm*` blobs from the multi-chip dump
 - **AND** AIC8800D80 product firmware MUST NOT be required to live under rootfs for Wiâ€‘Fi bring-up success
 
+### Requirement: Product HMI does not ship ffmpeg for frame extract
+
+After `gstreamer-frame-extract` is implemented, the product HMI image / App bundle SHALL NOT require `/opt/hmi/bin/ffmpeg` for process-video covers or AI Vision offline frame samples. Rootfs GStreamer MUST provide the elements needed for the documented extract helper pipeline.
+
+#### Scenario: Bundle without product ffmpeg
+
+- **WHEN** `make build-app` produces `/opt/hmi` for a release tip with frame-extract cutover complete
+- **THEN** product cover and AI sample paths MUST work without installing ffmpeg into `/opt/hmi/bin`
+- **AND** host-only measurement scripts MAY still use a separate ffmpeg binary outside the product HMI contract
+

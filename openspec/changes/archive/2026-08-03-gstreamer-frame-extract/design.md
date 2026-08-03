@@ -68,5 +68,23 @@ After board smoke (cover + one AI sample session), drop `hmi_bundle_install_ffmp
 
 ## Open Questions
 
-- Exact pipeline element set on ≥1.28.5 + rockchipmpp (spike).
+- ~~Exact pipeline element set on ≥1.28.5 + rockchipmpp (spike).~~ → Resolved (spike 2026-08-03).
 - Whether cover scale-down (Android 720px max edge) stays in ffmpeg-equivalent `videoscale` or remains optional.
+
+## Spike notes (locked pipeline)
+
+Device tip: GStreamer **1.28.5**, `mppjpegenc` present (software `jpegenc` **not** in harden allowlist — do not require it).
+
+Working single-frame encode (shell proof):
+
+```text
+filesrc ! decodebin ! videoconvert ! video/x-raw,format=NV12 !
+videorate drop-only=true ! video/x-raw,framerate=1/1000 !
+mppjpegenc rc-mode=fixqp q-factor=80 ! filesink
+```
+
+Without `videorate` / single-buffer limit, `mppjpegenc` + `filesink` concatenates many JPEGs into one huge file. Default CBR (`bps=0`) asserts in `mpp_enc` on RK3566 — always use `rc-mode=fixqp` for stills.
+
+Product helper: `native/extract_video_frame/extract_video_frame.c` → `/usr/libexec/hmi/extract-video-frame` (appsink + optional ACCURATE seek; KEY_UNIT fallback). Required elements already on tip: `filesrc`, `decodebin`, `videoconvert`, `videorate`, `mppjpegenc`, `appsink`.
+
+**HMI stability:** Do not overlap helper MPP encode with eLinux `video_player` MPP decode (Videos detail must serialize cover extract then player init; reuse `/var/lib/hmi/video-covers/` cache).

@@ -206,11 +206,17 @@ hmi_bundle_install_mediamtx() {
 	echo "hmi-bundle: installed $dest/bin/mediamtx"
 }
 
-# Install aarch64 static ffmpeg for process-video JPEG covers (soft-skip if absent).
+# Optional aarch64 static ffmpeg (legacy cover/AI frame extract).
+# Product path uses rootfs /usr/libexec/hmi/extract-video-frame (GStreamer).
+# Enable only with HMI_BUNDLE_INSTALL_FFMPEG=1 (host measure scripts stay separate).
 # Sources: prebuilt/ffmpeg/linux-arm64/ffmpeg, else .cache/ffmpeg-android/ffmpeg.
 hmi_bundle_install_ffmpeg() {
 	local dest="$1"
 	local src=""
+	if [[ "${HMI_BUNDLE_INSTALL_FFMPEG:-0}" != "1" ]]; then
+		echo "hmi-bundle: skip ffmpeg (covers/AI samples use extract-video-frame; set HMI_BUNDLE_INSTALL_FFMPEG=1 to force)"
+		return 0
+	fi
 	if [[ -x "$ROOT/prebuilt/ffmpeg/linux-arm64/ffmpeg" ]]; then
 		src="$ROOT/prebuilt/ffmpeg/linux-arm64/ffmpeg"
 	elif [[ -x "$ROOT/.cache/ffmpeg-android/ffmpeg" ]]; then
@@ -293,7 +299,8 @@ hmi_bundle_install_release() {
 		"$DEST/data/flutter_assets/app.so" \
 		"$DEST/data/flutter_assets/kernel_blob.bin"
 
-	# Product companions (MediaMTX / ffmpeg / AI) only for HMI apps (*_hmi → /opt/hmi).
+	# Product companions (MediaMTX / AI; optional ffmpeg) for HMI apps (*_hmi → /opt/hmi).
+	# Frame extract uses rootfs /usr/libexec/hmi/extract-video-frame (GStreamer).
 	if [[ "${APP_IS_HMI:-${APP_IS_PRODUCT_HMI:-0}}" == "1" ]]; then
 		hmi_bundle_install_mediamtx "$DEST"
 		hmi_bundle_install_ffmpeg "$DEST"

@@ -89,6 +89,11 @@ echo "post-build: purged Flutter JIT orphans under opt/hmi (if leftover)"
 rm -f "$TARGET_DIR"/opt/hmi/lib/librknnrt.so*
 echo "post-build: purged opt/hmi librknnrt.so duplicate (if leftover)"
 
+# Covers/AI frame extract uses /usr/libexec/hmi/extract-video-frame (GStreamer).
+# Incremental target/ retains App-bundled ffmpeg after bundle cutover — drop it.
+rm -f "$TARGET_DIR/opt/hmi/bin/ffmpeg"
+echo "post-build: purged opt/hmi/bin/ffmpeg (if leftover)"
+
 # systemd hwdb: ship compiled /usr/lib/udev/hwdb.bin only (~−8 MiB sources).
 # Buildroot finalize runs `systemd-hwdb update --usr` *before* this script, and
 # `make rootfs-ext2` re-runs finalize (phony). A prior purge that left target

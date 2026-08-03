@@ -18,7 +18,7 @@ final class RecordWorkToggle extends StatelessWidget {
     required this.processType,
     this.compact = false,
     this.expand = false,
-    this.checkboxSize = Checkbox.width,
+    this.checkboxSize = CyberDimens.checkboxSmallSize,
   });
 
   final RecordWorkController controller;
@@ -30,7 +30,7 @@ final class RecordWorkToggle extends StatelessWidget {
   /// Engineer left panel: fill parent row height.
   final bool expand;
 
-  /// Checkbox face size (Engineer uses 24; default Material 18).
+  /// Checkbox face size (Engineer: large; Quick: small).
   final double checkboxSize;
 
   @override

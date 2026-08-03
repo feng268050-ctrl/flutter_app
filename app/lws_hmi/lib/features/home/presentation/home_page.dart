@@ -7,6 +7,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_coordinator.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
+import 'package:lws_hmi/features/safety_tips/application/safety_tips_coordinator.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
 import 'package:lws_hmi/features/global_prompt/wifi_connect_tip_prompt.dart';
 import 'package:lws_hmi/features/bundled_firmware/application/bundled_firmware_bootstrap.dart';
@@ -254,16 +255,33 @@ class _HomePageState extends State<HomePage> with RouteAware {
     }
 
     final settings = BootSelfCheckScope.maybeOf(context)?.settings;
-    if (settings == null) {
-      startModbusLive();
-      return;
+
+    void continueAfterSafetyTips() {
+      if (!mounted) {
+        return;
+      }
+      // lws-ui: MainActivity home resume → BootSelfCheck before home prompts.
+      if (settings == null) {
+        BootSelfCheckGate.markCompletedInProcess();
+        GlobalPromptScope.maybeOf(context)?.notifyGateChanged();
+        startModbusLive();
+        return;
+      }
+      unawaited(
+        BootSelfCheckCoordinator.startWhenHomeEntered(
+          context: context,
+          services: services,
+          settings: settings,
+          onComplete: startModbusLive,
+        ),
+      );
     }
+
+    // lws-ui: Splash → SafetyTips → Main → BootSelfCheck → home prompts.
     unawaited(
-      BootSelfCheckCoordinator.startWhenHomeEntered(
+      SafetyTipsCoordinator.showWhenHomeEntered(
         context: context,
-        services: services,
-        settings: settings,
-        onComplete: startModbusLive,
+        onComplete: continueAfterSafetyTips,
       ),
     );
   }
@@ -314,43 +332,50 @@ class _HomePageState extends State<HomePage> with RouteAware {
           return CyberBlurBackdropScope(
             child: Stack(
               fit: StackFit.expand,
+              // Let SettingsPanel outer ambient (~20dp) paint past card bounds.
+              clipBehavior: Clip.none,
               children: [
-                CyberBlurBackdropTarget(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      const _HomeBackdrop(),
-                      _HomeAnimatedPlate(
-                        asset: HomeAssets.leftAnimated,
-                        fallback: HomeAssets.leftStatic,
-                        left: -60 * sx,
-                        top: -90 * sy,
-                        width: 600 * sx,
-                        height: 600 * sy,
-                      ),
-                      _HomeAnimatedPlate(
-                        asset: HomeAssets.rightAnimated,
-                        fallback: HomeAssets.rightStatic,
-                        left: 740 * sx,
-                        top: -90 * sy,
-                        width: 600 * sx,
-                        height: 600 * sy,
-                      ),
-                      _PositionedAsset(
-                        asset: HomeAssets.leftStatic,
-                        left: 53 * sx,
-                        top: 55 * sy,
-                        width: 375 * sx,
-                        height: 280 * sy,
-                      ),
-                      _PositionedAsset(
-                        asset: HomeAssets.rightStatic,
-                        left: 853 * sx,
-                        top: 55 * sy,
-                        width: 375 * sx,
-                        height: 280 * sy,
-                      ),
-                    ],
+                // Positioned.fill so the capture target matches the page
+                // stack size (non-positioned Target was smaller than the
+                // card layer on the emulator — rightmost frost cropped empty).
+                Positioned.fill(
+                  child: CyberBlurBackdropTarget(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        const _HomeBackdrop(),
+                        _HomeAnimatedPlate(
+                          asset: HomeAssets.leftAnimated,
+                          fallback: HomeAssets.leftStatic,
+                          left: -60 * sx,
+                          top: -90 * sy,
+                          width: 600 * sx,
+                          height: 600 * sy,
+                        ),
+                        _HomeAnimatedPlate(
+                          asset: HomeAssets.rightAnimated,
+                          fallback: HomeAssets.rightStatic,
+                          left: 740 * sx,
+                          top: -90 * sy,
+                          width: 600 * sx,
+                          height: 600 * sy,
+                        ),
+                        _PositionedAsset(
+                          asset: HomeAssets.leftStatic,
+                          left: 53 * sx,
+                          top: 55 * sy,
+                          width: 375 * sx,
+                          height: 280 * sy,
+                        ),
+                        _PositionedAsset(
+                          asset: HomeAssets.rightStatic,
+                          left: 853 * sx,
+                          top: 55 * sy,
+                          width: 375 * sx,
+                          height: 280 * sy,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 // Top clock — slightly below vertical center of the design frame.
@@ -434,6 +459,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Custom Home metric cards — same SettingsPanel frost +
+                      // corner-split inner/outer ambient as Settings groups.
                       SizedBox(
                         height: _kStatCardH * sy,
                         child: CustomHomeStatisticsPanel(

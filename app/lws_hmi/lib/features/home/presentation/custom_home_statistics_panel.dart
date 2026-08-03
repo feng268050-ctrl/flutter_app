@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_models.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_repository.dart';
 import 'package:lws_hmi/features/statistics/infrastructure/sqlite_stats_aggregate_repository.dart';
@@ -237,78 +237,76 @@ final class _HomeStatisticCard extends StatelessWidget {
     final titleSize = (height * 0.19).clamp(13.0, 22.0);
     final numberSize = (height * 0.52).clamp(28.0, 58.0);
     final unitSize = (height * 0.27).clamp(16.0, 30.0);
+    // SettingsPanel: followLayout frost + inflate/deflate RRect depth shells.
     return SizedBox(
       width: width,
       height: height,
-      child: CyberCard(
-        sampleMode: CyberBlurSampleMode.realtime,
-        intensity: CyberBlurIntensity.low,
-        blurTint: CyberBlurTint.dark,
+      child: SettingsPanel(
         borderRadius: BorderRadius.circular(18),
-        borderColor: const Color(0x99CBD3F3),
-        borderWidth: 1.2,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            width * 0.09,
-            height * 0.10,
-            width * 0.07,
-            height * 0.05,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: value.isRatio
-                      ? _RatioValue(
-                          value: value.number,
-                          numberSize: numberSize,
-                        )
-                      : FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: RichText(
-                            maxLines: 1,
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: value.number,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: numberSize,
-                                    height: 1,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                if (value.unit != null)
+        child: SizedBox.expand(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              width * 0.09,
+              height * 0.10,
+              width * 0.07,
+              height * 0.05,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: value.isRatio
+                        ? _RatioValue(
+                            value: value.number,
+                            numberSize: numberSize,
+                          )
+                        : FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: RichText(
+                              maxLines: 1,
+                              text: TextSpan(
+                                children: [
                                   TextSpan(
-                                    text: ' ${value.unit}',
+                                    text: value.number,
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: unitSize,
+                                      fontSize: numberSize,
                                       height: 1,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                              ],
+                                  if (value.unit != null)
+                                    TextSpan(
+                                      text: ' ${value.unit}',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: unitSize,
+                                        height: 1,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
+                  ),
                 ),
-              ),
-              Text(
-                value.title,
-                maxLines: compact ? 1 : 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: titleSize,
-                  height: 1.05,
-                  fontWeight: FontWeight.w500,
+                Text(
+                  value.title,
+                  maxLines: compact ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: titleSize,
+                    height: 1.05,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

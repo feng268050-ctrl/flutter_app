@@ -42,6 +42,14 @@ abstract final class CyberDimens {
   /// Alias for [actionButtonMediumFontSize].
   static const actionButtonFontSize = actionButtonMediumFontSize;
 
+  // --- Checkbox face tiers (small / large) ---
+
+  /// Small checkbox face edge length (20).
+  static const checkboxSmallSize = 20.0;
+
+  /// Large checkbox face edge length (28).
+  static const checkboxLargeSize = 28.0;
+
   static const dialogFadeInMs = 220;
   static const dialogFadeOutMs = 160;
 }

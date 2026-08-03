@@ -96,6 +96,7 @@ class CyberButton extends StatefulWidget {
     this.strokeWidth,
     this.inkWellGestures = true,
     this.externalPress,
+    this.paintFill = true,
   });
 
   final VoidCallback? onPressed;
@@ -105,6 +106,10 @@ class CyberButton extends StatefulWidget {
   final CyberButtonSize size;
   final CyberButtonShape shape;
   final bool clickSoundEnabled;
+
+  /// When false, skip solid/gradient face fill so an under-plate frost shows
+  /// through (e.g. Monitor action pills on [CyberBackdropBlur]).
+  final bool paintFill;
 
   /// When true, fill parent constraints (IME keycaps). Unbounded parents
   /// (e.g. [ListView] children) MUST NOT set this — use [stretch] instead.
@@ -267,8 +272,8 @@ class _CyberButtonState extends State<CyberButton>
 
     final fillDecoration = BoxDecoration(
       borderRadius: radius,
-      color: _solidFill(widget.variant),
-      gradient: _fillGradient(widget.variant),
+      color: widget.paintFill ? _solidFill(widget.variant) : null,
+      gradient: widget.paintFill ? _fillGradient(widget.variant) : null,
     );
 
     final Widget face;

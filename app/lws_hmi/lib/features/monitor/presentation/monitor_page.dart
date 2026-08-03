@@ -6,6 +6,7 @@ import 'package:lws_hmi/features/monitor/presentation/tabs/alarm_information_tab
 import 'package:lws_hmi/features/monitor/presentation/tabs/machine_status_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/work_information_tab.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/status_bar/product_top_tabs.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
@@ -97,41 +98,58 @@ class _MonitorPageState extends State<MonitorPage> {
     final l10n = AppLocalizations.of(context)!;
     final tabLabels = MonitorPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    // Theme blueGrey dark surface (same as Settings), not lws-ui #060720.
-    final pageBg = Theme.of(context).scaffoldBackgroundColor;
-    return Scaffold(
-      backgroundColor: pageBg,
-      appBar: ProductPageStatusBar(
-        title: tabLabels[_currentTabIndex],
-        backgroundColor: pageBg,
-        foregroundColor: Colors.white,
-        toolbarHeight: WorkModeStatusBarDimens.height,
-        // Home stays fixed; title follows the selected Monitor tab.
-        backLabel: l10n.equipmentStatusHome,
-        backAccent: WorkModeAccent.weld,
-        onBack: canPop ? () => Navigator.of(context).maybePop() : null,
-        bottom: ProductTopTabs(
-          labels: tabLabels,
-          tabs: MonitorPage._tabs,
-          currentIndex: _currentTabIndex,
-          layout: ProductTopTabLayout.monitorPinnedIcon,
-          onSelected: (index) {
-            if (index == _currentTabIndex) {
-              return;
-            }
-            CyberClickSoundRegistry.playClick();
-            setState(() => _currentTabIndex = index);
-          },
-        ),
-      ),
-      body: IndexedStack(
-        index: _currentTabIndex,
+    // Capture root = Home wallpaper so MonitorGlassCard → SettingsPanel frost
+    // samples it (same stack as SettingsPage).
+    return CyberBlurBackdropScope(
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          const WorkInformationTab(),
-          const MachineStatusTab(),
-          const AlarmInformationTab(),
-          const VideosTab(),
-          AiVisionTab(visible: _currentTabIndex == MonitorPage.tabAiVision),
+          const Positioned.fill(
+            child: CyberBlurBackdropTarget(
+              child: SettingsHomeBackdrop(),
+            ),
+          ),
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: ProductPageStatusBar(
+              title: tabLabels[_currentTabIndex],
+              // Opaque chrome — no wallpaper透视 on status / top tabs.
+              backgroundColor: ProductTopTabs.background,
+              foregroundColor: Colors.white,
+              toolbarHeight: WorkModeStatusBarDimens.height,
+              // Home stays fixed; title follows the selected Monitor tab.
+              backLabel: l10n.equipmentStatusHome,
+              backAccent: WorkModeAccent.weld,
+              onBack: canPop ? () => Navigator.of(context).maybePop() : null,
+              bottom: ProductTopTabs(
+                labels: tabLabels,
+                tabs: MonitorPage._tabs,
+                currentIndex: _currentTabIndex,
+                layout: ProductTopTabLayout.monitorPinnedIcon,
+                onSelected: (index) {
+                  if (index == _currentTabIndex) {
+                    return;
+                  }
+                  CyberClickSoundRegistry.playClick();
+                  setState(() => _currentTabIndex = index);
+                },
+              ),
+            ),
+            body: IndexedStack(
+              index: _currentTabIndex,
+              // Outer ambient on SettingsPanel paints past card bounds.
+              clipBehavior: Clip.none,
+              children: [
+                const WorkInformationTab(),
+                const MachineStatusTab(),
+                const AlarmInformationTab(),
+                const VideosTab(),
+                AiVisionTab(
+                  visible: _currentTabIndex == MonitorPage.tabAiVision,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
 /// Item layout for [ProductTopTabs].
@@ -13,9 +14,9 @@ enum ProductTopTabLayout {
 
 /// Shared product top-tab strip (Settings legacy layout / Monitor).
 ///
-/// Strip fill follows [ThemeData.scaffoldBackgroundColor] (theme gray), not
-/// the former lws-ui `job_border1` navy plate. A hairline under the strip
-/// matches Settings / Monitor card inset ([dividerInset]).
+/// Opaque strip ([background]) so Home wallpaper does not show through.
+/// A hairline under the strip matches Settings / Monitor card inset
+/// ([dividerInset]).
 final class ProductTopTabs extends StatefulWidget
     implements PreferredSizeWidget {
   const ProductTopTabs({
@@ -26,6 +27,9 @@ final class ProductTopTabs extends StatefulWidget
     required this.onSelected,
     this.layout = ProductTopTabLayout.monitorPinnedIcon,
   });
+
+  /// Opaque tab strip — matches Settings top tabs.
+  static const background = CyberColors.fillSolidTop;
 
   static const sidePadding = 4.0;
 
@@ -190,7 +194,7 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
   Widget build(BuildContext context) {
     final widths = _tabWidths();
     return ColoredBox(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: ProductTopTabs.background,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

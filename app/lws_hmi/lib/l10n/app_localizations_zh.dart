@@ -1233,6 +1233,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pleaseWait => '请稍候…';
 
   @override
+  String get productDisclaimerContent => '尊敬的用户：感谢您选择我们的手持激光焊接产品。在使用本产品前，我们强烈建议您仔细阅读本免责声明，并严格遵守用户手册中的所有说明和安全措施。\n\n1. 安全警告\n激光设备可能对眼睛和皮肤造成严重伤害。在操作过程中，请始终佩戴适当的个人防护装备（PPE），包括但不限于激光防护眼镜和手套，以确保您的安全。\n\n2. 操作说明\n请确保您已充分理解并能够遵守产品手册中的所有操作流程和安全指南。使用不当可能导致设备损坏或人身伤害。\n\n3. 不当操作\n对于用户未遵循产品手册中的说明或未采取适当安全措施而导致的任何伤害或损失，本公司概不负责。\n\n4. 维护\n请定期检查并维护产品，以确保其处于良好工作状态。由于产品维护不当造成的任何事故，本公司不承担责任。\n\n5. 责任免责声明\n虽然本公司提供了全面的使用说明和安全措施，但对于因用户操作不当或违反手册规定而造成的任何伤害或损坏，本公司保留免责权利。我们强烈建议用户在使用本产品前，充分了解并遵守所有相关安全法规和操作标准。\n\n6. 适用法律\n本免责声明的解释、适用和争议解决，应受本公司总部所在地法律管辖。\n\n7. 完整协议\n本免责声明构成您与本公司之间的完整协议，并取代此前任何口头或书面理解或协议。';
+
+  @override
+  String get productDisclaimerInfo => '我已阅读并同意以上内容';
+
+  @override
+  String get productDisclaimerTitle => '产品免责声明';
+
+  @override
   String get positioningLightFaultAlarmContent => '红光（定位光）故障。请检查指示光是否正常；若不亮，请联系 LaserCyber 售后。';
 
   @override
@@ -1321,6 +1330,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get safetyLockText => '安全夹';
+
+  @override
+  String get safetyTipsAgree => '同意';
+
+  @override
+  String get safetyTipsContent => '1. 焊接过程中，请确保周围没有其他人员、反光物体或易燃材料。\n\n2. 请确保安全夹牢固夹在焊接工作台上；不要将安全夹夹在焊枪支架、喷嘴、送丝组件等部位。\n\n3. 请佩戴专业防护眼镜、口罩、耳塞以及耐高温手套。\n\n4. 在安装和调试设备时，激光操作结束后务必将激光切换到关闭位置。\n\n5. 请确保设备已正确接地；接地回路任一环节中断都可能造成人身伤害。\n\n6. 请确保过滤装置通风良好，并及时清除异物或污垢。';
+
+  @override
+  String get safetyTipsInfo => '我已阅读以上内容和';
+
+  @override
+  String get safetyTipsInfoUse => '产品使用免责声明。';
+
+  @override
+  String get safetyTipsTitle => '安全操作提示';
 
   @override
   String get screenBrightnessText => '屏幕亮度';
@@ -2951,6 +2975,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get pleaseWait => '請稍候…';
 
   @override
+  String get productDisclaimerContent => '尊敬的用戶：感謝您選擇我們的手持激光焊接產品。在使用本產品前，我們強烈建議您仔細閱讀本免責聲明，並嚴格遵守用戶手冊中的所有說明和安全措施。\n\n1. 安全警告\n激光設備可能對眼睛和皮膚造成嚴重傷害。在操作過程中，請始終佩戴適當的個人防護裝備（PPE），包括但不限於激光防護眼鏡和手套，以確保您的安全。\n\n2. 操作說明\n請確保您已充分理解並能夠遵守產品手冊中的所有操作流程和安全指南。使用不當可能導致設備損壞或人身傷害。\n\n3. 不當操作\n對於用戶未遵循產品手冊中的說明或未採取適當安全措施而導致的任何傷害或損失，本公司概不負責。\n\n4. 維護\n請定期檢查並維護產品，以確保其處於良好工作狀態。由於產品維護不當造成的任何事故，本公司不承擔責任。\n\n5. 責任免責聲明\n雖然本公司提供了全面的使用說明和安全措施，但對於因用戶操作不當或違反手冊規定而造成的任何傷害或損壞，本公司保留免責權利。我們強烈建議用戶在使用本產品前，充分瞭解並遵守所有相關安全法規和操作標準。\n\n6. 適用法律\n本免責聲明的解釋、適用和爭議解決，應受本公司總部所在地法律管轄。\n\n7. 完整協議\n本免責聲明構成您與本公司之間的完整協議，並取代此前任何口頭或書面理解或協議。';
+
+  @override
+  String get productDisclaimerInfo => '我已閱讀並同意以上內容';
+
+  @override
+  String get productDisclaimerTitle => '產品免責聲明';
+
+  @override
   String get positioningLightFaultAlarmContent => '紅光（定位光）故障。請檢查指示光是否正常；若不亮，請聯繫 LaserCyber 售後。';
 
   @override
@@ -3033,6 +3066,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get safetyLockText => '安全夾';
+
+  @override
+  String get safetyTipsContent => '1. 焊接過程中，請確保周圍沒有其他人員、反光物體或易燃材料。\n\n2. 請確保安全夾牢固夾在焊接工作臺上；不要將安全夾夾在焊槍支架、噴嘴、送絲組件等部位。\n\n3. 請佩戴專業防護眼鏡、口罩、耳塞以及耐高溫手套。\n\n4. 在安裝和調試設備時，激光操作結束後務必將激光切換到關閉位置。\n\n5. 請確保設備已正確接地；接地迴路任一環節中斷都可能造成人身傷害。\n\n6. 請確保過濾設備通風良好，並及時清除異物或污垢。';
+
+  @override
+  String get safetyTipsInfo => '我已閱讀以上內容和';
+
+  @override
+  String get safetyTipsInfoUse => '產品使用免責聲明。';
 
   @override
   String get screenDisplayText => '屏幕顯示';

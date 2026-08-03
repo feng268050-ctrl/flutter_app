@@ -92,52 +92,60 @@ class _SettingsPageState extends State<SettingsPage> {
     final services = AppScope.of(context);
     final tabLabels = SettingsPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    // Theme blueGrey dark surface (pre–tab_bg gray), not lws-ui #060720.
-    final pageBg = Theme.of(context).scaffoldBackgroundColor;
+    // Blur capture root = Home wallpaper so SettingsPanel frost samples it.
     return CyberBlurBackdropScope(
       child: CustomHomePageCaptureScope(
         boundaryKey: _pageCaptureKey,
         child: RepaintBoundary(
           key: _pageCaptureKey,
-          child: CyberBlurBackdropTarget(
-            child: Scaffold(
-              backgroundColor: pageBg,
-              appBar: ProductPageStatusBar(
-                title: tabLabels[_currentTabIndex],
-                backgroundColor: pageBg,
-                foregroundColor: Colors.white,
-                toolbarHeight: WorkModeStatusBarDimens.height,
-                backLabel: l10n.equipmentStatusHome,
-                backAccent: WorkModeAccent.weld,
-                onBack: canPop ? () => Navigator.of(context).maybePop() : null,
-                bottom: SettingsTopTabs(
-                  labels: tabLabels,
-                  tabs: SettingsPage._tabs,
-                  currentIndex: _currentTabIndex,
-                  onSelected: (index) {
-                    if (index == _currentTabIndex) {
-                      return;
-                    }
-                    setState(() => _currentTabIndex = index);
-                  },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              const Positioned.fill(
+                child: CyberBlurBackdropTarget(
+                  child: SettingsHomeBackdrop(),
                 ),
               ),
-              body: IndexedStack(
-                index: _currentTabIndex,
-                // Material elevation shadows on settings cards paint outside
-                // the card bounds; do not clip them at the tab layer.
-                clipBehavior: Clip.none,
-                children: [
-                  DeviceInformationTab(services: services),
-                  CommonSettingsTab(
-                    services: services,
-                    cameraDeviceInfoCache: widget.cameraDeviceInfoCache,
+              Scaffold(
+                backgroundColor: Colors.transparent,
+                appBar: ProductPageStatusBar(
+                  title: tabLabels[_currentTabIndex],
+                  // Match [SettingsTopTabs.background] — no wallpaper透视 on chrome.
+                  backgroundColor: SettingsTopTabs.background,
+                  foregroundColor: Colors.white,
+                  toolbarHeight: WorkModeStatusBarDimens.height,
+                  backLabel: l10n.equipmentStatusHome,
+                  backAccent: WorkModeAccent.weld,
+                  onBack: canPop ? () => Navigator.of(context).maybePop() : null,
+                  bottom: SettingsTopTabs(
+                    labels: tabLabels,
+                    tabs: SettingsPage._tabs,
+                    currentIndex: _currentTabIndex,
+                    onSelected: (index) {
+                      if (index == _currentTabIndex) {
+                        return;
+                      }
+                      setState(() => _currentTabIndex = index);
+                    },
                   ),
-                  const AdvancedSettingsTab(),
-                  const CustomHomeTab(),
-                ],
+                ),
+                body: IndexedStack(
+                  index: _currentTabIndex,
+                  // Material elevation shadows on settings cards paint outside
+                  // the card bounds; do not clip them at the tab layer.
+                  clipBehavior: Clip.none,
+                  children: [
+                    DeviceInformationTab(services: services),
+                    CommonSettingsTab(
+                      services: services,
+                      cameraDeviceInfoCache: widget.cameraDeviceInfoCache,
+                    ),
+                    const AdvancedSettingsTab(),
+                    const CustomHomeTab(),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

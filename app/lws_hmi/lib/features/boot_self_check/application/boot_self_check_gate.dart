@@ -34,6 +34,21 @@ abstract final class BootSelfCheckGate {
     BootSelfCheckBootMarker.mark();
   }
 
+  /// Wait until Home bootstrap has finished self-check (or skipped it).
+  ///
+  /// Use before presenting non-queue dialogs that must not appear over Safety
+  /// Tips / Boot Self-Check (lws-ui home prompts wait on the same condition).
+  static Future<void> waitUntilCompletedInProcess({
+    Duration pollInterval = const Duration(milliseconds: 40),
+  }) async {
+    while (!_completedInProcess) {
+      await Future<void>.delayed(pollInterval);
+    }
+    while (_active) {
+      await Future<void>.delayed(pollInterval);
+    }
+  }
+
   /// Wait until boot self-check is not issuing Modbus group reads.
   ///
   /// Cloud live-cache / other on-demand Modbus callers MUST await this before

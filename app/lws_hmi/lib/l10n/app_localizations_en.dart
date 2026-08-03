@@ -1233,6 +1233,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseWait => 'Please wait…';
 
   @override
+  String get productDisclaimerContent => 'Dear User: Thank you for choosing our handheld laser welding product. Before using this product, we strongly recommend that you read this disclaimer carefully and strictly adhere to all instructions and safety measures provided in the user manual.\n\n1. Safety Warning\nLaser equipment can cause severe damage to the eyes and skin. During operation, please always wear appropriate Personal Protective Equipment (PPE), including but not limited to laser safety goggles and gloves, to ensure your safety.\n\n2. Operating Instructions\nPlease ensure that you fully understand and are able to comply with all operating procedures and safety guidelines in the product manual. Improper use may result in equipment damage or personal injury.\n\n3. Improper Operation\nThe Company shall not be held liable for any injury or loss resulting from the user\'s failure to follow the instructions in the product manual or failure to take appropriate safety measures.\n\n4. Maintenance\nPlease inspect and maintain the product regularly to ensure it is in good working condition. The Company is not responsible for any accidents caused by improper maintenance of the product.\n\n5. Disclaimer of Liability\nWhile the Company provides comprehensive usage instructions and safety measures, it reserves the right to disclaim liability for any injury or damage caused by improper user operation or violations of the manual. We strongly advise users to understand and comply with all relevant safety regulations and operating standards before using this product.\n\n6. Governing Law\nThe interpretation, application, and dispute resolution of this Disclaimer shall be governed by the laws of the jurisdiction where the Company is headquartered.\n\n7. Entire Agreement\nThis Disclaimer constitutes the entire agreement between you and the Company and supersedes any prior oral or written understandings or agreements.';
+
+  @override
+  String get productDisclaimerInfo => 'I have read and agree to the above content';
+
+  @override
+  String get productDisclaimerTitle => 'Product Disclaimer';
+
+  @override
   String get positioningLightFaultAlarmContent => 'The red pointer (aiming beam) has a fault. Check whether the aiming beam is on; if not, contact LaserCyber support.';
 
   @override
@@ -1321,6 +1330,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get safetyLockText => 'Safety Clamp';
+
+  @override
+  String get safetyTipsAgree => 'AGREE';
+
+  @override
+  String get safetyTipsContent => '1. Ensure there are no other personnel, reflective objects, or flammable materials nearby during welding.\n\n2. Ensure the safety clamp is securely fastened to the welding table; do not clamp the safety lock onto the welding torch holder, nozzle, wire feed assembly, etc.\n\n3. Ensure you wear professional protective eyewear, a mask, earplugs, and high-temperature resistant gloves.\n\n4. When installing and debugging the equipment, always switch the laser to the off position after laser operation.\n\n5. Ensure the equipment is properly grounded; interruption at any point in the grounding circuit may result in personal injury.\n\n6. Ensure the filter is well-ventilated; promptly remove any foreign objects or dirt.';
+
+  @override
+  String get safetyTipsInfo => 'I have read the above content and the';
+
+  @override
+  String get safetyTipsInfoUse => 'Product Use Disclaimer.';
+
+  @override
+  String get safetyTipsTitle => 'Safety Operation Tips';
 
   @override
   String get screenBrightnessText => 'Brightness';

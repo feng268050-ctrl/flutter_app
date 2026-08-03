@@ -25,7 +25,7 @@ Prefer **Flutter / Material** structure (`Card`, `Material`/`InkWell`,
 | Scheme | Modes | Engine | Typical use |
 |--------|--------|--------|-------------|
 | **Realtime Gaussian (default chrome)** | `CyberBlurSampleMode.realtime` | Material `BackdropFilter` + `ImageFilter.blur` | `CyberCard` on Home / live panels |
-| **Static sampling (FrostUI)** | `firstFrame`, `onChange` | Capture via `CyberBlurBackdropScope`, freeze bitmap | Dialogs / overlays (`firstFrame` default) |
+| **Static sampling (FrostUI)** | `firstFrame`, `onChange`, `followLayout` | Capture via `CyberBlurBackdropScope`; `followLayout` offsets a shared blurred snapshot while scrolling | Dialogs (`firstFrame`); scrollable Settings panels (`followLayout`) |
 
 `CyberBlurIntensity.transparent` = border-only (no blur, no tint overlay) — settings Frost `TRANSPARENT` cards.
 

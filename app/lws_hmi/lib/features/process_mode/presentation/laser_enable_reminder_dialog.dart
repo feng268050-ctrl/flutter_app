@@ -367,16 +367,19 @@ final class _LaserEnableReminderBodyState
               children: [
                 IgnorePointer(
                   child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      value: _dontShowAgain,
-                      activeColor: _checkboxGreen,
-                      checkColor: Colors.white,
-                      side: const BorderSide(color: _labelMuted, width: 1.5),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      onChanged: (_) {},
+                    width: CyberDimens.checkboxLargeSize,
+                    height: CyberDimens.checkboxLargeSize,
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: Checkbox(
+                        value: _dontShowAgain,
+                        activeColor: _checkboxGreen,
+                        checkColor: Colors.white,
+                        side: const BorderSide(color: _labelMuted, width: 1.5),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        onChanged: (_) {},
+                      ),
                     ),
                   ),
                 ),

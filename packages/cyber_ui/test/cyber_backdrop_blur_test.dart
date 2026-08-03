@@ -182,4 +182,52 @@ void main() {
     expect(c.generation, 1);
     c.dispose();
   });
+
+  testWidgets('followLayout re-crops while list scrolls', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CyberBlurBackdropScope(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const CyberBlurBackdropTarget(
+                  child: ColoredBox(color: Colors.deepPurple),
+                ),
+                ListView.builder(
+                  itemCount: 12,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: SizedBox(
+                        height: 80,
+                        child: CyberBackdropBlur(
+                          sampleMode: CyberBlurSampleMode.followLayout,
+                          intensity: CyberBlurIntensity.low,
+                          blurTint: CyberBlurTint.dark,
+                          child: Center(child: Text('row-$index')),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('row-0'), findsOneWidget);
+    expect(find.byType(RawImage), findsWidgets);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -240));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    // followLayout keeps the shared pre-blurred RawImage while offset updates.
+    expect(find.byType(RawImage), findsWidgets);
+  });
 }

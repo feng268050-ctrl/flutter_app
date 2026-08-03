@@ -1,14 +1,20 @@
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/temperature_unit_convert.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:cyber_ui/cyber_ui.dart';
 
 /// Design tokens aligned with lws-ui Monitor / Frost glass stand-ins.
 abstract final class MonitorDimens {
   static const pad = 24.0;
+
+  /// Matches [SettingsDimens.outerAmbientExtent] — layout gutter so panel
+  /// outer glow can paint without being clipped by scroll/flex ancestors.
+  static const outerAmbientExtent = 20.0;
+
   static const corner = 18.0;
   static const metricH = 88.0;
   static const leftPanelW = 740.0;
@@ -35,6 +41,11 @@ abstract final class MonitorDimens {
   static const labelColor = Color(0xFFB0B1C2);
 }
 
+/// Monitor panel shell — same frost + depth chrome as [SettingsPanel].
+///
+/// Requires an ancestor [CyberBlurBackdropScope] with Home wallpaper capture
+/// (see [MonitorPage]). Set [frosted] false for nested cells inside an outer
+/// glass section (Alarm metrics) to avoid double blur.
 class MonitorGlassCard extends StatelessWidget {
   const MonitorGlassCard({
     super.key,
@@ -43,6 +54,8 @@ class MonitorGlassCard extends StatelessWidget {
     this.width,
     this.padding = const EdgeInsets.all(MonitorDimens.pad),
     this.margin,
+    this.frosted = true,
+    this.faceFill,
     this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
 
@@ -51,31 +64,106 @@ class MonitorGlassCard extends StatelessWidget {
   final double? width;
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry? margin;
+
+  /// When false, light inset fill only (no capture frost / depth shells).
+  final bool frosted;
+
+  /// Full-bleed under-plate inside the glass clip (ignores [padding]).
+  ///
+  /// Use for media / preview cards so [padding] does not leave a frosted
+  /// wallpaper rim (“透视边”) while outer ambient / rim depth still paint.
+  final Color? faceFill;
+
   final CyberBorderGradientCenter borderGradientCenter;
 
   @override
   Widget build(BuildContext context) {
-    final theme = CyberGlassTheme.of(context);
+    final padded = Padding(padding: padding, child: child);
+    final Widget content;
+    if (faceFill != null) {
+      // Under-plate must fill the ClipRRect; padding applies only to [child].
+      content = Stack(
+        fit: StackFit.passthrough,
+        children: [
+          Positioned.fill(child: ColoredBox(color: faceFill!)),
+          padded,
+        ],
+      );
+    } else {
+      content = padded;
+    }
+    final panelChild = (width != null || height != null)
+        ? SizedBox(width: width, height: height, child: content)
+        : content;
+    final Widget body;
+    if (frosted) {
+      body = SettingsPanel(
+        borderRadius: BorderRadius.circular(MonitorDimens.corner),
+        borderGradientCenter: borderGradientCenter,
+        child: panelChild,
+      );
+    } else {
+      body = DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(MonitorDimens.corner),
+        ),
+        child: panelChild,
+      );
+    }
+    // Stretch to the parent's max width so short labels do not shrink the
+    // frost plate (Work Info data cards). Keep height optional for scroll.
     return Container(
-      width: width,
+      width: width ?? double.infinity,
       height: height,
       margin: margin,
-      child: CyberOutlinedPanel(
-        clipBehavior: Clip.antiAlias,
-        outline: CyberPanelOutline(
-          style: CyberPanelOutlineStyle.uniform,
-          tone: theme.tone,
-          width: 1.0,
-          cornerRadius: MonitorDimens.corner,
-          uniformColor: CyberColors.borderUniform,
-        ),
-        // Same frosted panel fill as SettingsPanel / SettingsGroup.
-        color: Colors.white.withOpacity(0.06),
-        child: SizedBox(
-          width: width,
-          height: height,
-          child: Padding(padding: padding, child: child),
-        ),
+      child: body,
+    );
+  }
+}
+
+/// Monitor action pill — frost plate + transparent-face [CyberButton].
+///
+/// Used by Alarms Clear and AI Vision Replace / Re-detect (same component).
+/// [CyberButton.paintFill] is off so the [SettingsPanel] blur shows through;
+/// [SettingsPanel.elevated] is off so lip/contact shadows do not read as a
+/// solid embossed chip over the preview.
+class MonitorFrostActionButton extends StatelessWidget {
+  const MonitorFrostActionButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.variant = CyberButtonVariant.standard,
+    this.clickSoundEnabled = true,
+    this.borderGradientCenter =
+        CyberBorderGradientCenter.topLeftBottomRight,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget child;
+  final CyberButtonVariant variant;
+  final bool clickSoundEnabled;
+  final CyberBorderGradientCenter borderGradientCenter;
+
+  static const height = CyberDimens.actionButtonMediumHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(height / 2);
+    return SettingsPanel(
+      elevated: false,
+      borderRadius: radius,
+      borderGradientCenter: borderGradientCenter,
+      child: CyberButton(
+        size: CyberButtonSize.medium,
+        variant: variant,
+        shape: CyberButtonShape.rounded,
+        height: height,
+        paintFill: false,
+        clickSoundEnabled: clickSoundEnabled,
+        borderGradientCenter: borderGradientCenter,
+        onPressed: onPressed,
+        child: child,
       ),
     );
   }
@@ -194,7 +282,9 @@ class MonitorMetricCard extends StatelessWidget {
     final kind = !hasValue
         ? MonitorIndicatorKind.idle
         : (fault ? MonitorIndicatorKind.failure : MonitorIndicatorKind.success);
+    // Nested inside Alarm section [MonitorGlassCard] — no second frost layer.
     return MonitorGlassCard(
+      frosted: false,
       height: MonitorDimens.metricH,
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Row(
@@ -264,7 +354,9 @@ class MonitorCommCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Nested inside Alarm section [MonitorGlassCard] — no second frost layer.
     return MonitorGlassCard(
+      frosted: false,
       height: MonitorDimens.metricH,
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Row(
@@ -530,62 +622,71 @@ class MonitorWorkDataCard extends StatelessWidget {
     return MonitorGlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       borderGradientCenter: borderGradientCenter,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final tight = constraints.maxHeight < 140;
-          // Work Info tab: +2 over prior 16/22, 28/40, 16/24.
-          final titleSize = tight ? 18.0 : 24.0;
-          final valueSize = tight ? 30.0 : 42.0;
-          final suffixSize = tight ? 18.0 : 26.0;
-          return FittedBox(
-            fit: BoxFit.scaleDown,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.white, fontSize: titleSize),
-                  ),
-                  SizedBox(height: tight ? 6 : 12),
-                  Row(
+      // Expand so SettingsPanel frost fills the Expanded cell; FittedBox alone
+      // would shrink the plate to the short title/value intrinsic width.
+      child: SizedBox.expand(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final tight = constraints.maxHeight < 140;
+            // Work Info tab: +2 over prior 16/22, 28/40, 16/24.
+            final titleSize = tight ? 18.0 : 24.0;
+            final valueSize = tight ? 30.0 : 42.0;
+            final suffixSize = tight ? 18.0 : 26.0;
+            return Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        value,
+                        title,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: valueSize,
-                          fontWeight: FontWeight.w700,
+                          fontSize: titleSize,
                         ),
                       ),
-                      if (suffix.isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        Padding(
-                          padding: EdgeInsets.only(bottom: tight ? 2 : 6),
-                          child: Text(
-                            suffix,
+                      SizedBox(height: tight ? 6 : 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            value,
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: suffixSize,
+                              fontSize: valueSize,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                        ),
-                      ],
+                          if (suffix.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Padding(
+                              padding: EdgeInsets.only(bottom: tight ? 2 : 6),
+                              child: Text(
+                                suffix,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: suffixSize,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

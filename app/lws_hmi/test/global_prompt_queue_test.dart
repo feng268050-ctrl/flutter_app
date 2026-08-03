@@ -195,6 +195,77 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets(
+      'dismiss after dialog self-pop does not pop the product page',
+      (tester) async {
+    final queue = GlobalPromptQueue(
+      navigatorKey: navKey,
+      isPumpSuppressed: () => suppressed,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navKey,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const Scaffold(
+                      body: Text('detail-page'),
+                    ),
+                  ),
+                );
+              },
+              child: const Text('open-detail'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open-detail'));
+    await tester.pumpAndSettle();
+    expect(find.text('detail-page'), findsOneWidget);
+
+    unawaited(
+      queue.enqueue(
+        id: 'warn',
+        present: (host) async {
+          await showGeneralDialog<void>(
+            context: host.context,
+            barrierDismissible: false,
+            barrierLabel: 'warn',
+            pageBuilder: (ctx, a, b) {
+              return AlertDialog(
+                title: const Text('warn-dialog'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('confirm'),
+                  ),
+                ],
+              );
+            },
+          );
+          // Mimic warn Confirm → onClosed → acknowledgeOperator → dismiss
+          // while present() has not returned yet.
+          host.markClosed();
+          await queue.dismiss('warn');
+        },
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('warn-dialog'), findsOneWidget);
+
+    await tester.tap(find.text('confirm'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('warn-dialog'), findsNothing);
+    expect(find.text('detail-page'), findsOneWidget);
+    expect(find.text('open-detail'), findsNothing);
+  });
+
   testWidgets('self-check suppress parks then notifyGateChanged pumps',
       (tester) async {
     suppressed = true;

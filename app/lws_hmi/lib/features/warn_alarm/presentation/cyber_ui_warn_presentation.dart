@@ -58,7 +58,14 @@ final class CyberUiWarnPresentation implements WarnPresentation {
   }
 
   @override
-  Future<void> dismiss(String code) => promptQueue.dismiss(code);
+  Future<void> dismiss(String code) async {
+    // Confirm already cleared [_showingCode]; skip so ack → dismiss cannot
+    // Navigator.pop the product page underneath the closed dialog.
+    if (_showingCode != code) {
+      return;
+    }
+    await promptQueue.dismiss(code);
+  }
 
   @override
   Future<void> update(WarnEpisode episode, AlarmCodeEntry entry) async {
@@ -113,6 +120,9 @@ final class CyberUiWarnPresentation implements WarnPresentation {
         },
       );
     } finally {
+      // Modal route is gone (Confirm / programmatic close). Mark before
+      // [onClosed] → acknowledgeOperator → dismiss, which must not pop again.
+      host.markClosed();
       final closed = _showingCode;
       _showingCode = null;
       if (closed != null) {

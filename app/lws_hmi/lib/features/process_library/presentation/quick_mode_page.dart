@@ -156,10 +156,10 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     WorkStatusDialogHost.closeDialog();
     final message = switch (event) {
-      DeviceControlSafetyEvent.keySwitchOffWhileLaser =>
-        DeviceControlFeedbackCopy.keySwitchOffError,
       DeviceControlSafetyEvent.emergencyStop =>
         DeviceControlFeedbackCopy.emergencyStopError,
+      DeviceControlSafetyEvent.keySwitchOff =>
+        DeviceControlFeedbackCopy.keySwitchOffError,
     };
     unawaited(
       OperationFailedDialogHost.show(

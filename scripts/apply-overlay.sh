@@ -25,7 +25,11 @@ BR_PKG_FLUTTER_ELINUX="$SDK/buildroot/package/flutter-embedded-linux"
 BR_PKG_LIBSERIALPORT="$SDK/buildroot/package/libserialport"
 BR_PKG_BLUEZ5_UTILS="$SDK/buildroot/package/bluez5_utils"
 BR_PKG_SOURCE_HAN_SANS_CN="$SDK/buildroot/package/source-han-sans/source-han-sans-cn"
+BR_PKG_MESON="$SDK/buildroot/package/meson"
+BR_PKG_GSTREAMER1="$SDK/buildroot/package/gstreamer1"
 LWS_ROCKCHIP_BLUEZ_PATCH_STASH=".lws-rockchip-bluez-patch-disabled"
+LWS_ROCKCHIP_GST_PATCH_STASH=".lws-rockchip-gst-patches-disabled"
+LWS_ROCKCHIP_MESON_PATCH_STASH=".lws-rockchip-meson-patches-disabled"
 BR_OVERLAY_ROOT="$SDK/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay"
 BR_OVERLAY="$BR_OVERLAY_ROOT/system/etc"
 OVERLAY_FS="$OVERLAY/board/rockchip/rk3566_rk3568/rootfs-overlay"
@@ -576,6 +580,114 @@ sync_source_han_sans_cn_package() {
   install_file "$src" "$BR_PKG_SOURCE_HAN_SANS_CN/source-han-sans-cn.mk"
 }
 
+# GStreamer 1.28.5 needs host Meson ≥ 1.4; SDK ships 1.3.1.
+# Rockchip meson patches target 1.3.x — stash them when applying the overlay pin.
+sync_meson_package() {
+  local src_dir="$OVERLAY/buildroot/package/meson"
+  local pkg="$BR_PKG_MESON"
+  local stash="$pkg/$LWS_ROCKCHIP_MESON_PATCH_STASH"
+  if [[ ! -f "$src_dir/meson.mk" ]]; then
+    return 0
+  fi
+  if [[ ! -d "$pkg" ]]; then
+    echo "overlay: skip meson (package missing)" >&2
+    return 0
+  fi
+  if [[ -f "$pkg/meson.mk" && ! -f "$pkg/meson.mk.orig" ]]; then
+    cp -a "$pkg/meson.mk" "$pkg/meson.mk.orig"
+  fi
+  if [[ -f "$pkg/meson.hash" && ! -f "$pkg/meson.hash.orig" ]]; then
+    cp -a "$pkg/meson.hash" "$pkg/meson.hash.orig"
+  fi
+  install_file "$src_dir/meson.mk" "$pkg/meson.mk"
+  install_file "$src_dir/meson.hash" "$pkg/meson.hash"
+  mkdir -p "$stash"
+  shopt -s nullglob
+  local moved=0
+  local p
+  for p in "$pkg"/*.patch; do
+    mv "$p" "$stash/"
+    moved=1
+  done
+  shopt -u nullglob
+  if [[ "$moved" == 1 ]]; then
+    echo "overlay: stashed Rockchip meson patches (overlay Meson ≥ 1.4)"
+  fi
+  echo "overlay: meson package synced ($(grep -E '^MESON_VERSION' "$pkg/meson.mk" | awk '{print $3}'))"
+}
+
+# Product GStreamer pin (1.28.5+). Sync recipe files and stash Rockchip 1.22.x patches
+# that do not apply to the locked tip (MPP path lives in gstreamer1-rockchip).
+sync_gstreamer1_package() {
+  local src_root="$OVERLAY/buildroot/package/gstreamer1"
+  local pkg_root="$BR_PKG_GSTREAMER1"
+  if [[ ! -d "$src_root" ]]; then
+    return 0
+  fi
+  if [[ ! -d "$pkg_root" ]]; then
+    echo "overlay: skip gstreamer1 (package tree missing)" >&2
+    return 0
+  fi
+  local pkg
+  for pkg in gstreamer1 gst1-plugins-base gst1-plugins-good gst1-plugins-bad; do
+    local src="$src_root/$pkg"
+    local dst="$pkg_root/$pkg"
+    if [[ ! -d "$src" || ! -d "$dst" ]]; then
+      echo "overlay: skip gstreamer1/$pkg (src or dst missing)" >&2
+      continue
+    fi
+    local f
+    shopt -s nullglob
+    for f in "$src"/*; do
+      local base
+      base="$(basename "$f")"
+      case "$base" in
+        *.patch) continue ;;
+      esac
+      if [[ -f "$dst/$base" && ! -f "$dst/$base.orig" ]]; then
+        case "$base" in
+          *.mk|Config.in|gst.sh) cp -a "$dst/$base" "$dst/$base.orig" ;;
+        esac
+      fi
+      install_file "$f" "$dst/$base"
+    done
+    shopt -u nullglob
+    local stash="$dst/$LWS_ROCKCHIP_GST_PATCH_STASH"
+    mkdir -p "$stash"
+    local moved=0
+    shopt -s nullglob
+    for f in "$dst"/*.patch; do
+      mv "$f" "$stash/"
+      moved=1
+    done
+    shopt -u nullglob
+    if [[ "$moved" == 1 ]]; then
+      echo "overlay: stashed Rockchip patches for gstreamer1/$pkg (1.28 tip)"
+    fi
+  done
+  local ver
+  ver="$(grep -E '^GSTREAMER1_VERSION' "$pkg_root/gstreamer1/gstreamer1.mk" | awk '{print $3}')"
+  echo "overlay: gstreamer1 family synced (GSTREAMER1_VERSION=${ver:-unknown})"
+}
+
+# Force -Drga=enabled for mppvideodec RGBA/scale (see package comment).
+sync_gstreamer1_rockchip_package() {
+  local src="$OVERLAY/buildroot/package/rockchip/gstreamer1-rockchip/gstreamer1-rockchip.mk"
+  local dst="$SDK/buildroot/package/rockchip/gstreamer1-rockchip/gstreamer1-rockchip.mk"
+  if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  if [[ ! -f "$dst" ]]; then
+    echo "overlay: skip gstreamer1-rockchip (package missing)" >&2
+    return 0
+  fi
+  if [[ ! -f "${dst}.orig" ]]; then
+    cp -a "$dst" "${dst}.orig"
+  fi
+  install_file "$src" "$dst"
+  echo "overlay: gstreamer1-rockchip.mk synced (RGA always enabled)"
+}
+
 sync_boot_logo() {
   bash "$ROOT/scripts/build-boot-logo.sh"
   local kernel_dir="$SDK/kernel"
@@ -983,6 +1095,9 @@ sync_libserialport_package
 sync_bluez5_utils_stock
 sync_bluez_alsa_package
 sync_source_han_sans_cn_package
+sync_meson_package
+sync_gstreamer1_package
+sync_gstreamer1_rockchip_package
 patch_buildroot_config
 bash "$ROOT/scripts/normalize-innohi-sdk.sh"
 bash "$ROOT/scripts/sync-prebuilt-overlays.sh"

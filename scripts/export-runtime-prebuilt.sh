@@ -79,6 +79,21 @@ did=0
 
 if [[ "${EXPORT_GST}" == "1" ]]; then
   require_path "gstreamer" "$TARGET/usr/bin/gst-launch-1.0"
+  require_path "gstreamer" "$TARGET/usr/bin/gst-inspect-1.0"
+  require_path "gstreamer" "$TARGET/usr/lib/libgstreamer-1.0.so.0.2805.0"
+  require_path "gstreamer" "$TARGET/usr/lib/gstreamer-1.0/libgstrockchipmpp.so"
+  # Refuse known-stale 1.22.9 tools (82944-byte gst-inspect) left in BR target
+  # after a version bump — pairs with 1.28 libs as GST_CAT_DEFAULT errors.
+  gst_inspect_sz="$(wc -c <"$TARGET/usr/bin/gst-inspect-1.0" | tr -d ' ')"
+  if [[ "$gst_inspect_sz" == "82944" ]]; then
+    die "gst-inspect-1.0 in BR target looks like stale 1.22.9 ($gst_inspect_sz bytes) — FORCE=1 make build-gstreamer with tools enabled"
+  fi
+  # Preview needs RGA-backed mppvideodec (format/width/height). Without it,
+  # Flutter texture path falls back to CPU NV12→RGBA (~1fps on RK3566).
+  if strings "$TARGET/usr/lib/gstreamer-1.0/libgstrockchipmpp.so" 2>/dev/null |
+    grep -q 'RGA disabled at compile time'; then
+    die "libgstrockchipmpp.so built without RGA — set BR2_PREFER_ROCKCHIP_RGA=y and FORCE=1 make build-gstreamer"
+  fi
   GST_DEST="$ROOT/prebuilt/gstreamer/target"
   rm -rf "$GST_DEST"
   echo "export-runtime-prebuilt: gstreamer → $GST_DEST"
@@ -103,6 +118,62 @@ if [[ "${EXPORT_GST}" == "1" ]]; then
     usr/lib/libgstbase-1.0.so* \
     usr/lib/libgstcodecparsers-1.0.so* \
     usr/share/gstreamer-1.0
+  # Drop leftover prior-ABI sonames from BR target (e.g. *.so.0.2209.0 after 1.28 bump).
+  if [[ -d "$GST_DEST/usr/lib" ]]; then
+    find "$GST_DEST/usr/lib" \( -name '*.so.*.2209.*' -o -name '*.so.0.2209.0' \) -delete
+  fi
+  # H4: keep only product plugin set (RTSP preview + MP4 remux + MPP + ALSA).
+  # Compile-time trim is preferred; this strips leftovers still present in BR target.
+  if [[ -d "$GST_DEST/usr/lib/gstreamer-1.0" ]]; then
+    keep_plugins=(
+      libgstalsa.so
+      libgstapp.so
+      libgstaudioconvert.so
+      libgstaudioparsers.so
+      libgstaudioresample.so
+      libgstautodetect.so
+      libgstcoreelements.so
+      libgstcoretracers.so
+      libgstfaad.so
+      libgstisomp4.so
+      libgstkms.so
+      libgstogg.so
+      libgstpbtypes.so
+      libgstplayback.so
+      libgstrockchipmpp.so
+      libgstrtp.so
+      libgstrtpmanager.so
+      libgstrtsp.so
+      libgstsdpelem.so
+      libgsttcp.so
+      libgsttypefindfunctions.so
+      libgstudp.so
+      libgstvideoconvertscale.so
+      libgstvideoparsersbad.so
+      libgstvideorate.so
+      libgstvolume.so
+      libgstvorbis.so
+    )
+    shopt -s nullglob
+    for f in "$GST_DEST/usr/lib/gstreamer-1.0"/*; do
+      base="$(basename "$f")"
+      case "$base" in
+        *.so|*.so.*) ;;
+        *) continue ;;
+      esac
+      keep=0
+      for k in "${keep_plugins[@]}"; do
+        if [[ "$base" == "$k" || "$base" == "$k".* ]]; then
+          keep=1
+          break
+        fi
+      done
+      if [[ "$keep" != 1 ]]; then
+        rm -f "$f"
+      fi
+    done
+    shopt -u nullglob
+  fi
   prebuilt_stamp "$GST_DEST" "$GST_VER"
   did=1
 fi

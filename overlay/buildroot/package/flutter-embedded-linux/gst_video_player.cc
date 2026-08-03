@@ -231,9 +231,17 @@ void GstVideoPlayer::MppElementSetup(GstElement* playbin, GstElement* element,
   if (!name || !g_str_has_prefix(name, "mppvideodec")) {
     return;
   }
-  // GstMppVideoDecFormat: RGBA=11. Scale preview to 960x540 for headroom.
-  g_object_set(element, "arm-afbc", FALSE, "dma-feature", FALSE, "format", 11,
-               "width", 960, "height", 540, NULL);
+  // RGA-backed convert+scale (needs gstreamer1-rockchip built with -Drga=enabled).
+  g_object_set(element, "arm-afbc", FALSE, "dma-feature", FALSE, NULL);
+  if (!g_object_class_find_property(G_OBJECT_GET_CLASS(element), "format")) {
+    std::cerr << "MppElementSetup: mppvideodec has no format property "
+                 "(rockchipmpp built without RGA) — expect slow software convert"
+              << std::endl;
+    return;
+  }
+  const GstVideoFormat rgba = gst_video_format_from_string("RGBA");
+  g_object_set(element, "format", static_cast<gint>(rgba), "width", 960,
+               "height", 540, NULL);
   std::cerr << "MppElementSetup: mppvideodec format=RGBA 960x540" << std::endl;
 }
 
@@ -253,6 +261,13 @@ bool GstVideoPlayer::CreatePipeline() {
   }
   g_signal_connect(gst_.playbin, "element-setup", G_CALLBACK(MppElementSetup),
                    this);
+  // Avoid playsink inserting missing 'deinterlace' (not in our plugin set).
+  {
+    guint flags = 0;
+    g_object_get(gst_.playbin, "flags", &flags, NULL);
+    flags &= ~static_cast<guint>(1u << 9);  // GST_PLAY_FLAG_DEINTERLACE
+    g_object_set(gst_.playbin, "flags", flags, NULL);
+  }
   gst_.video_convert = gst_element_factory_make("videoconvert", "videoconvert");
   if (!gst_.video_convert) {
     std::cerr << "Failed to create a videoconvert" << std::endl;

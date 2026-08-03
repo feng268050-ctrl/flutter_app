@@ -23,7 +23,6 @@ GST_PACKAGES=(
   gst1-plugins-base
   gst1-plugins-good
   gst1-plugins-bad
-  gst1-plugins-ugly
 )
 
 staging_has_gst_pc() {

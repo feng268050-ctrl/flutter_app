@@ -286,7 +286,7 @@ The boot chain configuration used by the product image SHALL load the active let
 
 ### Requirement: Product image includes the GStreamer/MPP live IP-camera preview runtime
 
-The lws_hmi product rootfs SHALL include the runtime needed for the Flutter HMI to decode and render the local MediaMTX RTSP preview: GStreamer core, RTSP/RTP transports, required H.264/H.265 parsing, and Rockchip MPP hardware decode integration. The product rootfs SHALL include a flutter-embedded-linux client linked with the Sony eLinux GStreamer video player plugin and install its required shared library. The active product defconfig SHALL include `lws_hmi_gst_rtsp.config` or its generated prebuilt equivalent. This runtime is required by the IP Camera settings preview and MUST NOT remain deferred/commented out after this change.
+The lws_hmi product rootfs SHALL include the runtime needed for the Flutter HMI to decode and render the local MediaMTX RTSP preview: overlay-pinned GStreamer core (≥ **1.28.5** per `buildroot-gstreamer-security`), RTSP/RTP transports, required H.264/H.265 parsing, and Rockchip MPP hardware decode integration. The product rootfs SHALL include a flutter-embedded-linux client linked with the Sony eLinux GStreamer video player plugin and install its required shared library. The active product defconfig SHALL include `lws_hmi_gst_rtsp.config` or its generated prebuilt equivalent. This runtime is required by the IP Camera settings preview and MUST NOT remain deferred/commented out after this change.
 
 #### Scenario: Rootfs contains the preview runtime
 
@@ -294,6 +294,7 @@ The lws_hmi product rootfs SHALL include the runtime needed for the Flutter HMI 
 - **THEN** the required GStreamer shared libraries and RTSP/RTP plugins SHALL be present
 - **AND** Rockchip MPP decode integration SHALL be available
 - **AND** the eLinux video player plugin SHALL be registered for the App
+- **AND** GStreamer core version SHALL be ≥ 1.28.5
 
 #### Scenario: Product image contains its video texture plugin
 
@@ -313,6 +314,15 @@ The lws_hmi product rootfs SHALL include the runtime needed for the Flutter HMI 
 - **WHEN** the App runs on a host/emulator without the device GStreamer plugin
 - **THEN** the preview wrapper SHALL fail softly or use a host stub
 - **AND** Settings navigation MUST remain usable
+
+### Requirement: Rootfs ships overlay-pinned GStreamer ≥ 1.28.5
+
+The lws_hmi product rootfs SHALL include the GStreamer/MPP live preview and recording runtime built from the overlay-pinned GStreamer stack required by `buildroot-gstreamer-security` (core and co-versioned plugins at least **1.28.5**), not the vendor SDK default of **1.22.9**. Functional presence requirements for RTSP preview, MPP decode, eLinux video player plugin, and MP4 remux remain in force.
+
+#### Scenario: rootfs GStreamer version is pinned
+
+- **WHEN** a product rootfs built after this change is inspected
+- **THEN** `gst-inspect-1.0 --version` or `libgstreamer-1.0.so` reports the overlay-pinned version ≥ 1.28.5 (not `1.22.9`)
 
 ### Requirement: Product image includes encoded RTSP recording runtime
 

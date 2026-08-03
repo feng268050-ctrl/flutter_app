@@ -100,6 +100,9 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               selected:
                                   controller.autoWireFeed && _wireCapable,
                               enabled: _wireCapable,
+                              // Keep legacy icon inset; other three side ops
+                              // use equal left/top padding (nudge 0).
+                              iconLeftNudge: -10,
                               onPressed: () =>
                                   unawaited(_toggleAutoWire(context)),
                             ),

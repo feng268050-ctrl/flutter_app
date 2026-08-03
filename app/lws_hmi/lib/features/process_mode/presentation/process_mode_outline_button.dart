@@ -33,6 +33,8 @@ final class ProcessModeOutlineButton extends StatelessWidget {
     required this.enabled,
     required this.onPressed,
     this.height = ProcessModeOutlineChrome.defaultHeight,
+    /// Negative shifts icon left (Auto Wire keeps legacy −10).
+    this.iconLeftNudge = 0,
   });
 
   final String label;
@@ -41,6 +43,7 @@ final class ProcessModeOutlineButton extends StatelessWidget {
   final bool enabled;
   final VoidCallback? onPressed;
   final double height;
+  final double iconLeftNudge;
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +71,7 @@ final class ProcessModeOutlineButton extends StatelessWidget {
               enabled: enabled,
               leading: leading,
               label: label,
+              iconLeftNudge: iconLeftNudge,
             ),
           ),
         ),
@@ -215,12 +219,13 @@ final class _ProcessModeOutlineWireButtonState
     final latched = !widget.retract && _gesture.latched;
     final progress = _feedProgress;
     final filling = progress != null && progress.showsFill;
-    // Feed: keep idle chrome while L→R fill runs; solid only when latched /
-    // continuous. Retract: pressed highlight as before.
+    // Feed: Retract-like pressed solid until L→R fill starts (≥200ms); idle
+    // chrome while filling; solid when latched / continuous. Retract: pressed.
     final solidHighlight = widget.enabled &&
         (widget.retract
             ? (widget.active || _gesture.pressed || _gesture.holdingRun)
             : (latched ||
+                (_gesture.pressed && !filling) ||
                 (widget.active && !filling && !_gesture.pressed)));
     final label = latched
         ? (widget.latchedLabel ??
@@ -247,6 +252,8 @@ final class _ProcessModeOutlineWireButtonState
             progress: filling ? progress.value : 0,
             progressForcesReadableLabel: filling,
             continuousRipple: latched,
+            // Continuous Feed chrome: label only (no leading icon).
+            showLeading: !latched,
           ),
         ),
       ),
@@ -264,6 +271,8 @@ final class _OutlineFace extends StatelessWidget {
     this.progress = 0,
     this.progressForcesReadableLabel = false,
     this.continuousRipple = false,
+    this.iconLeftNudge = 0,
+    this.showLeading = true,
   });
 
   final double height;
@@ -274,6 +283,8 @@ final class _OutlineFace extends StatelessWidget {
   final double progress;
   final bool progressForcesReadableLabel;
   final bool continuousRipple;
+  final double iconLeftNudge;
+  final bool showLeading;
 
   @override
   Widget build(BuildContext context) {
@@ -283,10 +294,10 @@ final class _OutlineFace extends StatelessWidget {
         : (onFill
             ? Colors.white
             : ProcessModeOutlineChrome.actionOrange);
-    // Vertically centered; nudge 10px left so long labels don't cover the icon.
+    // Vertically centered; left inset matches top unless [iconLeftNudge].
     final iconTop =
         (height - ProcessModeOutlineChrome.iconSize) / 2;
-    final iconLeft = iconTop - 10;
+    final iconLeft = iconTop + iconLeftNudge;
     return Container(
       height: height,
       width: double.infinity,
@@ -325,16 +336,17 @@ final class _OutlineFace extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned(
-              left: iconLeft,
-              top: iconTop,
-              width: ProcessModeOutlineChrome.iconSize,
-              height: ProcessModeOutlineChrome.iconSize,
-              child: ColorFiltered(
-                colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
-                child: leading,
+            if (showLeading)
+              Positioned(
+                left: iconLeft,
+                top: iconTop,
+                width: ProcessModeOutlineChrome.iconSize,
+                height: ProcessModeOutlineChrome.iconSize,
+                child: ColorFiltered(
+                  colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
+                  child: leading,
+                ),
               ),
-            ),
           ],
         ),
       ),

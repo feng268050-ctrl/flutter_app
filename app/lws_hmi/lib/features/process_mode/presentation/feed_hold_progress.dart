@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 
 /// Feed hold L→R fill progress (press → 3s latch window).
 ///
-/// Forward lasts [DeviceControlTiming.wireFeedLatchDelay]. Early release
-/// reverses to 0 over the elapsed hold time. Latch snaps to 1 and stops.
+/// Fill starts after [DeviceControlTiming.wireFeedProgressDelay] so a short
+/// tap can show Retract-like pressed chrome first. Forward then runs for the
+/// remaining latch window and completes with the 3s latch. Early release
+/// reverses to 0 over the elapsed fill time. Latch snaps to 1 and stops.
 final class FeedHoldProgressController {
   FeedHoldProgressController({
     required TickerProvider vsync,
@@ -12,7 +16,7 @@ final class FeedHoldProgressController {
     this.onFillCompleted,
   }) : _controller = AnimationController(
           vsync: vsync,
-          duration: DeviceControlTiming.wireFeedLatchDelay,
+          duration: _fillDuration,
         ) {
     _controller.addListener(_notify);
     _controller.addStatusListener(_onStatus);
@@ -25,7 +29,12 @@ final class FeedHoldProgressController {
 
   final AnimationController _controller;
 
+  Timer? _startDelay;
   bool _latched = false;
+
+  static Duration get _fillDuration =>
+      DeviceControlTiming.wireFeedLatchDelay -
+      DeviceControlTiming.wireFeedProgressDelay;
 
   Animation<double> get animation => _controller;
 
@@ -48,19 +57,32 @@ final class FeedHoldProgressController {
     }
   }
 
-  /// Start 0→1 over the 3s latch window.
-  void onPressStart() {
-    _latched = false;
+  void _beginFill() {
+    if (_latched) {
+      return;
+    }
     _controller.stop();
-    _controller.duration = DeviceControlTiming.wireFeedLatchDelay;
+    _controller.duration = _fillDuration;
     _controller.forward(from: 0);
   }
 
-  /// Early release: reverse to 0 over the time already held.
-  ///
-  /// Duration matches the linear forward so far (`value * 3s`), equivalent to
-  /// wall-clock hold when the fill runs on time.
+  /// Arm fill after [DeviceControlTiming.wireFeedProgressDelay].
+  void onPressStart() {
+    _latched = false;
+    _startDelay?.cancel();
+    _controller.stop();
+    _controller.value = 0;
+    _notify();
+    _startDelay = Timer(
+      DeviceControlTiming.wireFeedProgressDelay,
+      _beginFill,
+    );
+  }
+
+  /// Early release: cancel pending delay, or reverse fill over time already held.
   void onPressEndEarly() {
+    _startDelay?.cancel();
+    _startDelay = null;
     if (_latched) {
       return;
     }
@@ -71,9 +93,7 @@ final class FeedHoldProgressController {
       return;
     }
     final reverseMs =
-        (value * DeviceControlTiming.wireFeedLatchDelay.inMilliseconds)
-            .round()
-            .clamp(1, 3000);
+        (value * _fillDuration.inMilliseconds).round().clamp(1, 3000);
     _controller.stop();
     _controller.animateTo(
       0,
@@ -84,6 +104,8 @@ final class FeedHoldProgressController {
 
   /// Hold reached continuous-feed latch — solid face takes over.
   void onLatched() {
+    _startDelay?.cancel();
+    _startDelay = null;
     _latched = true;
     _controller.stop();
     _controller.value = 1;
@@ -92,6 +114,8 @@ final class FeedHoldProgressController {
 
   /// Tap-to-stop continuous feed or hard reset.
   void reset() {
+    _startDelay?.cancel();
+    _startDelay = null;
     _latched = false;
     _controller.stop();
     _controller.value = 0;
@@ -99,6 +123,7 @@ final class FeedHoldProgressController {
   }
 
   void dispose() {
+    _startDelay?.cancel();
     _controller.removeListener(_notify);
     _controller.removeStatusListener(_onStatus);
     _controller.dispose();

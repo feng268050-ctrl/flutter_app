@@ -4,7 +4,7 @@ import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
 
 void main() {
-  testWidgets('Feed hold progress fills over 3s then latches without reverse',
+  testWidgets('Feed hold progress waits 200ms then fills to latch at 3s',
       (tester) async {
     late FeedHoldProgressController progress;
     await tester.pumpWidget(
@@ -20,11 +20,20 @@ void main() {
     expect(progress.value, 0);
     expect(progress.showsFill, isFalse);
 
-    await tester.pump(const Duration(milliseconds: 1500));
+    // Still in pressed-only window — no fill yet.
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(progress.value, 0);
+    expect(progress.showsFill, isFalse);
+
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(progress.value, 0);
+
+    // Mid fill (~1.4s into the 2.8s fill ⇒ ~0.5).
+    await tester.pump(const Duration(milliseconds: 1400));
     expect(progress.value, closeTo(0.5, 0.05));
     expect(progress.showsFill, isTrue);
 
-    await tester.pump(const Duration(milliseconds: 1500));
+    await tester.pump(const Duration(milliseconds: 1400));
     expect(progress.value, closeTo(1.0, 0.02));
 
     progress.onLatched();
@@ -38,7 +47,7 @@ void main() {
     expect(progress.latched, isTrue);
   });
 
-  testWidgets('early release reverses over the held duration', (tester) async {
+  testWidgets('release before 200ms never starts fill', (tester) async {
     late FeedHoldProgressController progress;
     await tester.pumpWidget(
       MaterialApp(
@@ -50,14 +59,35 @@ void main() {
 
     progress.onPressStart();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1200));
+    await tester.pump(const Duration(milliseconds: 100));
+    progress.onPressEndEarly();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(progress.value, 0);
+    expect(progress.showsFill, isFalse);
+  });
+
+  testWidgets('early release reverses over the held fill duration', (tester) async {
+    late FeedHoldProgressController progress;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: _Harness(
+          onReady: (c) => progress = c,
+        ),
+      ),
+    );
+
+    progress.onPressStart();
+    await tester.pump();
+    await tester.pump(DeviceControlTiming.wireFeedProgressDelay);
+    await tester.pump(const Duration(milliseconds: 1120));
     final peak = progress.value;
     expect(peak, closeTo(0.4, 0.08));
 
     progress.onPressEndEarly();
     await tester.pump();
-    // Hold was ~1.2s → reverse lasts ~1.2s; midway should still be visible.
-    await tester.pump(const Duration(milliseconds: 600));
+    // Hold fill was ~1.12s of 2.8s → reverse lasts ~1.12s.
+    await tester.pump(const Duration(milliseconds: 560));
     expect(progress.value, lessThan(peak));
     expect(progress.value, greaterThan(0.05));
 

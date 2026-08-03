@@ -101,6 +101,19 @@ fi
 rm -f "$TARGET_DIR/etc/udev/hwdb.bin"
 echo "post-build: purged udev hwdb.d sources (kept usr/lib/udev/hwdb.bin)"
 
+# Optional second Flutter app (factory_test): same no-engine / no-JIT rules.
+if [[ -d "$TARGET_DIR/opt/factory_test" ]]; then
+	rm -f \
+		"$TARGET_DIR/opt/factory_test/lib/libflutter_engine.so" \
+		"$TARGET_DIR/opt/factory_test/data/icudtl.dat"
+	rm -f \
+		"$TARGET_DIR/opt/factory_test/data/flutter_assets/kernel_blob.bin" \
+		"$TARGET_DIR/opt/factory_test/data/flutter_assets/isolate_snapshot_data" \
+		"$TARGET_DIR/opt/factory_test/data/flutter_assets/vm_snapshot_data"
+	rm -f "$TARGET_DIR"/opt/factory_test/lib/librknnrt.so*
+	echo "post-build: purged Flutter orphans under opt/factory_test (if leftover)"
+fi
+
 # Retired Kind C helpers — HAL owns persist/restore for most prefs.
 # apply-mouse-settings is kept: Weston needs ini rewrite + HMI restart.
 rm -f \

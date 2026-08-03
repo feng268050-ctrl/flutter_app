@@ -378,8 +378,9 @@ After one firmware flash with USB plug-ssh support:
 make shell                      # interactive root shell; SN=... when multiple boards
 make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL=1
 make prepare-app-assets         # optional host-only: prune process-library + firmware → assets/.generated/
-make build-app                  # runs prepare-app-assets, then AOT bundle → overlay /opt/hmi
-make push-app                   # SN=... when multiple boards; hot-swap /opt/hmi (no rootfs rebuild)
+make build-app                  # *_hmi AOT → overlay /opt/hmi; APP=factory_test → /opt/factory_test
+make push-app                   # SN=... when multiple boards; hot-swap selected APP
+APP=…                           # app/ dir; HMI apps use suffix _hmi → /opt/hmi (default: lws_hmi; one HMI per rootfs)
 make upgrade-control-board      # push latest control-board bin; force upgrade (HMI running)
 make upgrade-process-library    # push process-library for device model; force import (HMI running)
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)

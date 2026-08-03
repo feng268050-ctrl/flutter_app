@@ -34,7 +34,9 @@ make build-app
 Or from repo root:
 
 ```bash
-make build-app   # libapp.so + assets only → overlay /opt/hmi
+make build-app   # libapp.so + assets → overlay /opt/hmi (any APP=*_hmi; default lws_hmi)
+# APP=cnc_hmi make build-app          # also → /opt/hmi (replaces previous HMI in overlay)
+# APP=factory_test make build-app     # → overlay /opt/factory_test
 ```
 
 **Must use pinned Flutter `3.24.4`** (`make fetch-flutter-sdk`); `build-app.sh` refuses a mismatched SDK (e.g. host `flutter` 3.41.x). AOT `libapp.so` and rootfs `libflutter_engine.so` **must be the same engine version** or the HMI exits/hangs with little or no UI.

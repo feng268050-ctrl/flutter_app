@@ -10,7 +10,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="$ROOT/app/lws_hmi"
+# Prefer APP_DIR from app-select / build-app; default product HMI.
+APP_DIR="${APP_DIR:-$ROOT/app/lws_hmi}"
 GEN="$APP_DIR/assets/.generated"
 PROC_SRC="$APP_DIR/assets/process-library"
 FW_SRC="$APP_DIR/assets/firmware/control-board"

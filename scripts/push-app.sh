@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
-# Deploy HMI app artifacts to target over USB-SSH or registered remote SSH (make push-app).
-# USB-SSH and LAN SSH share this path; only transport selection differs.
+# Deploy Flutter app artifacts to target over USB-SSH or registered remote SSH (make push-app).
+# Convention: *_hmi → /opt/hmi + hmi.service restart; other APP → /opt/<APP> (no hmi restart).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/usb-ssh-session.sh
 source "$ROOT/scripts/usb-ssh-session.sh"
+# shellcheck source=scripts/app-select.sh
+source "$ROOT/scripts/app-select.sh"
+
+app_select_resolve
 
 STAGING="/var/lib/hmi/push-app-staging"
 APPLY_SCRIPT="/usr/libexec/hmi/push-app-apply-and-restart.sh"
 APPLY_SCRIPT_HOST="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/push-app-apply-and-restart.sh"
 APPLY_LOG="/var/lib/hmi/push-app-restart.log"
 APPLY_STATUS="/var/lib/hmi/push-app-apply.status"
-OVERLAY_HMI="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi"
-LIBAPP="$OVERLAY_HMI/lib/libapp.so"
-ASSETS="$OVERLAY_HMI/data/flutter_assets"
+OVERLAY_APP_TREE="$OVERLAY_APP"
+LIBAPP="$OVERLAY_APP_TREE/lib/libapp.so"
+ASSETS="$OVERLAY_APP_TREE/data/flutter_assets"
 # Detach apply: LAN SSH over Wi-Fi must not hold the session through hmi stop
 # (legacy images killed wpa/dhcp in the hmi cgroup). Same poll path for USB/LAN.
 APPLY_WAIT_SEC="${PUSH_APP_APPLY_WAIT_SEC:-120}"
@@ -28,19 +32,23 @@ usage() {
 	cat <<EOF
 Usage: $0
 
-Deploy libapp.so + flutter_assets (+ product bin/lib companions when present) to /opt/hmi over SSH, then restart hmi.service.
+Deploy libapp.so + flutter_assets for APP (default: lws_hmi).
+  APP=*_hmi    → /opt/hmi (+ companions), then restart hmi.service
+  APP=<other>  → /opt/<APP> only (no hmi.service restart)
 
 Env:
+  APP                            Flutter project under app/ (default: lws_hmi).
+                                 HMI apps MUST use suffix _hmi (install path /opt/hmi).
   SN / LWS_HMI_SN              select board when multiple devices
   IP / LWS_HMI_IP                registered SSH only (make connect <ip>)
   LWS_HMI_USB_SSH_PASS           root password (default: rockchip)
   PUSH_APP_WAIT_SEC              ping wait before deploy (default: 30)
   PUSH_APP_APPLY_WAIT_SEC        wait for detached apply (default: 120)
 
-Prereq: make build-app (artifacts in overlay opt/hmi)
+Prereq: APP=\$APP make build-app (artifacts in overlay $DEVICE_APP)
 Host: sshpass required (see error message if missing)
 
-The board must include the DRM GEM teardown fix before using in-place restart.
+The board must include the DRM GEM teardown fix before using in-place HMI restart.
 EOF
 }
 
@@ -92,18 +100,52 @@ render_wait_line() {
 	wait_line_rendered=1
 }
 
+# Stage overlay release tree onto the board under $1 (remote staging dir).
+stage_overlay_tree() {
+	local staging="$1"
+
+	echo "Transferring libapp.so..."
+	remote "rm -rf $staging && mkdir -p $staging/lib $staging/bin $staging/data/flutter_assets"
+	upload_with_progress "$LIBAPP" "$staging/lib/libapp.so"
+
+	if [[ -d "$OVERLAY_APP_TREE/bin" ]]; then
+		echo "Transferring $DEVICE_APP/bin companions..."
+		BIN_TAR="$STAGE/app-bin.tar"
+		tar -C "$OVERLAY_APP_TREE/bin" -cf "$BIN_TAR" .
+		upload_with_progress "$BIN_TAR" "$staging/app-bin.tar"
+		remote "tar -xf '$staging/app-bin.tar' -C '$staging/bin' && rm -f '$staging/app-bin.tar' && chmod 0755 '$staging/bin'/* 2>/dev/null || true"
+	fi
+	if [[ -d "$OVERLAY_APP_TREE/lib" ]]; then
+		echo "Transferring $DEVICE_APP/lib companions (excl. libapp.so)..."
+		LIB_TAR="$STAGE/app-lib.tar"
+		tar -C "$OVERLAY_APP_TREE/lib" --exclude='libapp.so' -cf "$LIB_TAR" .
+		upload_with_progress "$LIB_TAR" "$staging/app-lib.tar"
+		remote "tar -xf '$staging/app-lib.tar' -C '$staging/lib' && rm -f '$staging/app-lib.tar'"
+	fi
+
+	echo "Transferring flutter_assets..."
+	ASSETS_TAR="$STAGE/flutter_assets.tar"
+	tar -C "$ASSETS" -cf "$ASSETS_TAR" .
+	upload_with_progress "$ASSETS_TAR" "$staging/flutter_assets.tar"
+	remote "tar -xf '$staging/flutter_assets.tar' -C '$staging/data/flutter_assets' && rm -f '$staging/flutter_assets.tar'"
+
+	if [[ -f "$OVERLAY_APP_TREE/runtime-mode.json" ]]; then
+		upload_with_progress "$OVERLAY_APP_TREE/runtime-mode.json" "$staging/runtime-mode.json"
+	fi
+}
+
 [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && usage && exit 0
 
-[[ -f "$LIBAPP" ]] || die "missing $LIBAPP (run: make build-app)"
-[[ -d "$ASSETS" ]] || die "missing $ASSETS (run: make build-app)"
+[[ -f "$LIBAPP" ]] || die "missing $LIBAPP (run: APP=$APP make build-app)"
+[[ -d "$ASSETS" ]] || die "missing $ASSETS (run: APP=$APP make build-app)"
 
 usb_ssh_session_load_env "$ROOT"
 usb_ssh_session_select "$ROOT"
 
 if usb_ssh_session_is_remote; then
-	echo "SSH push-app: target=$TARGET_USER@$TARGET_ADDR"
+	echo "SSH push-app: APP=$APP target=$TARGET_USER@$TARGET_ADDR → $DEVICE_APP"
 else
-	echo "USB-SSH push-app: iface=$IFACE target=$TARGET_USER@$TARGET_ADDR"
+	echo "USB-SSH push-app: APP=$APP iface=$IFACE target=$TARGET_USER@$TARGET_ADDR → $DEVICE_APP"
 fi
 usb_ssh_session_configure_link
 usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
@@ -112,32 +154,20 @@ STAGE="$(mktemp -d "${TMPDIR:-/tmp}/hmi-push-app.XXXXXX")"
 cleanup() { rm -rf "$STAGE"; }
 trap cleanup EXIT
 
-echo "Transferring libapp.so..."
-remote "rm -rf $STAGING && mkdir -p $STAGING/lib $STAGING/bin $STAGING/data/flutter_assets"
-upload_with_progress "$LIBAPP" "$STAGING/lib/libapp.so"
-
-# Product companions (MediaMTX, AI daemon + OpenCV/RKNN .so) from the same build-app tree.
-if [[ -d "$OVERLAY_HMI/bin" ]]; then
-	echo "Transferring /opt/hmi/bin companions..."
-	BIN_TAR="$STAGE/hmi-bin.tar"
-	tar -C "$OVERLAY_HMI/bin" -cf "$BIN_TAR" .
-	upload_with_progress "$BIN_TAR" "$STAGING/hmi-bin.tar"
-	remote "tar -xf '$STAGING/hmi-bin.tar' -C '$STAGING/bin' && rm -f '$STAGING/hmi-bin.tar' && chmod 0755 '$STAGING/bin'/* 2>/dev/null || true"
-fi
-if [[ -d "$OVERLAY_HMI/lib" ]]; then
-	echo "Transferring /opt/hmi/lib companions (excl. libapp.so)..."
-	LIB_TAR="$STAGE/hmi-lib.tar"
-	# Exclude libapp.so — already staged above as the AOT payload.
-	tar -C "$OVERLAY_HMI/lib" --exclude='libapp.so' -cf "$LIB_TAR" .
-	upload_with_progress "$LIB_TAR" "$STAGING/hmi-lib.tar"
-	remote "tar -xf '$STAGING/hmi-lib.tar' -C '$STAGING/lib' && rm -f '$STAGING/hmi-lib.tar'"
+# --- Non-HMI apps: tar overlay tree → DEVICE_APP (no hmi.service restart) ---
+if [[ "$APP_IS_HMI" != "1" ]]; then
+	echo "push-app: non-HMI APP=$APP → $DEVICE_APP (no hmi.service restart)"
+	APP_TAR="$STAGE/app-tree.tar"
+	tar -C "$OVERLAY_APP_TREE" -cf "$APP_TAR" .
+	remote "rm -rf '$DEVICE_APP' && mkdir -p '$DEVICE_APP'"
+	upload_with_progress "$APP_TAR" "/tmp/push-app-$APP_OPT_NAME.tar"
+	remote "tar -xf '/tmp/push-app-$APP_OPT_NAME.tar' -C '$DEVICE_APP' && rm -f '/tmp/push-app-$APP_OPT_NAME.tar' && chmod 0755 '$DEVICE_APP/bin'/* 2>/dev/null || true"
+	echo "push-app: done (APP=$APP → $DEVICE_APP; hmi.service not restarted)."
+	exit 0
 fi
 
-echo "Transferring flutter_assets..."
-ASSETS_TAR="$STAGE/flutter_assets.tar"
-tar -C "$ASSETS" -cf "$ASSETS_TAR" .
-upload_with_progress "$ASSETS_TAR" "$STAGING/flutter_assets.tar"
-remote "tar -xf '$STAGING/flutter_assets.tar' -C '$STAGING/data/flutter_assets' && rm -f '$STAGING/flutter_assets.tar'"
+# --- Product HMI: existing apply helper + hmi.service restart ---
+stage_overlay_tree "$STAGING"
 
 echo "Installing staged app and restarting hmi.service..."
 if [[ ! -f "$APPLY_SCRIPT_HOST" ]]; then

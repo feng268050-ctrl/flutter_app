@@ -610,6 +610,41 @@ EOF
 	fi
 	unset _hwdb_src _f
 
+	# Optional second Flutter app (factory_test) when source tree exists.
+	if [[ -f "$ROOT/app/factory_test/pubspec.yaml" ]]; then
+		echo ""
+		echo "--- /opt/factory_test (optional Flutter app — no engine) ---"
+		for f in \
+			"$target/opt/factory_test/lib/libapp.so" \
+			"$target/opt/factory_test/data/flutter_assets/AssetManifest.bin"; do
+			if [[ -e "$f" ]]; then
+				echo "OK:  ${f#$target/}"
+			else
+				echo "FAIL: missing ${f#$target/} (app/factory_test present; run: make build-rootfs)" >&2
+				missing=1
+			fi
+		done
+		if [[ -f "$target/opt/factory_test/lib/libflutter_engine.so" ]]; then
+			echo "FAIL: opt/factory_test/lib/libflutter_engine.so present (engine belongs in /usr/lib only)" >&2
+			missing=1
+		else
+			echo "OK:  opt/factory_test/lib/libflutter_engine.so absent (system engine)"
+		fi
+		if [[ -f "$target/opt/factory_test/data/icudtl.dat" ]]; then
+			echo "FAIL: opt/factory_test/data/icudtl.dat present (use /usr/share/flutter on rootfs)" >&2
+			missing=1
+		else
+			echo "OK:  opt/factory_test/data/icudtl.dat absent (system icu)"
+		fi
+		for jit in kernel_blob.bin isolate_snapshot_data vm_snapshot_data; do
+			if [[ -f "$target/opt/factory_test/data/flutter_assets/$jit" ]]; then
+				echo "FAIL: opt/factory_test/data/flutter_assets/$jit present (release AOT only)" >&2
+				missing=1
+			else
+				echo "OK:  opt/factory_test/data/flutter_assets/$jit absent (no JIT)"
+			fi
+		done
+	fi
 	if [[ -f "$target/usr/lib/libflutter_engine.so" ]]; then
 		system_sz="$(stat -c%s "$target/usr/lib/libflutter_engine.so" 2>/dev/null || stat -f%z "$target/usr/lib/libflutter_engine.so")"
 		echo "OK:  usr/lib/libflutter_engine.so ($system_sz bytes)"

@@ -293,9 +293,12 @@ hmi_bundle_install_release() {
 		"$DEST/data/flutter_assets/app.so" \
 		"$DEST/data/flutter_assets/kernel_blob.bin"
 
-	hmi_bundle_install_mediamtx "$DEST"
-	hmi_bundle_install_ffmpeg "$DEST"
-	hmi_bundle_install_ai "$DEST"
+	# Product companions (MediaMTX / ffmpeg / AI) only for HMI apps (*_hmi → /opt/hmi).
+	if [[ "${APP_IS_HMI:-${APP_IS_PRODUCT_HMI:-0}}" == "1" ]]; then
+		hmi_bundle_install_mediamtx "$DEST"
+		hmi_bundle_install_ffmpeg "$DEST"
+		hmi_bundle_install_ai "$DEST"
+	fi
 
 	printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >"$DEST/runtime-mode.json"
 }

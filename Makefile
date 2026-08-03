@@ -14,6 +14,9 @@ BOARD ?= ynh960
 CHIP ?= rk3566_rk3568
 DEFCONFIG ?= ynh960_defconfig
 
+# Flutter project under app/ (build-app / push-app / build-rootfs). Default product HMI.
+APP ?= lws_hmi
+
 # USB flash / adb / remote SSH (override when multiple devices connected)
 SN ?=
 CHIPID ?=
@@ -47,6 +50,7 @@ endif
 define WITH_DOTENV
 bash -c 'set -euo pipefail; \
   __ENV_SN="$${SN-}"; __ENV_CHIPID="$${CHIPID-}"; __ENV_SERIAL="$${SERIAL-}"; __ENV_IP="$${IP-}"; __ENV_IMAGE="$${IMAGE-}"; \
+  __ENV_APP="$${APP-}"; \
   __ENV_OEM_ONLY="$${OEM_ONLY-}"; \
   if [[ -n "$${OEM_IMG+x}" ]]; then __ENV_OEM_IMG_SET=1; __ENV_OEM_IMG="$${OEM_IMG-}"; else __ENV_OEM_IMG_SET=0; fi; \
   __ENV_FLUTTER_SDK="$${FLUTTER_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
@@ -57,6 +61,7 @@ bash -c 'set -euo pipefail; \
   [[ -n "$$__ENV_SERIAL" ]] && export SERIAL="$$__ENV_SERIAL"; \
   [[ -n "$$__ENV_IP" ]] && export IP="$$__ENV_IP"; \
   [[ -n "$$__ENV_IMAGE" ]] && export IMAGE="$$__ENV_IMAGE"; \
+  [[ -n "$$__ENV_APP" ]] && export APP="$$__ENV_APP"; \
   [[ -n "$$__ENV_OEM_ONLY" ]] && export OEM_ONLY="$$__ENV_OEM_ONLY"; \
   [[ "$$__ENV_OEM_IMG_SET" == 1 ]] && export OEM_IMG="$$__ENV_OEM_IMG"; \
   [[ -n "$$__ENV_FLUTTER_SDK" ]] && export FLUTTER_SDK="$$__ENV_FLUTTER_SDK"; \
@@ -86,12 +91,13 @@ help:
 	@echo "  make lunch                 # select ynh960 + lws_hmi Buildroot profile in SDK"
 	@echo "  make show-config           # print RK_* lines from output/.config"
 	@echo "  make build-boot-logo       # board/logo → logo.bmp (kernel FIT splash)"
-	@echo "  make build-app             # release HMI (AOT) → fs-overlay /opt/hmi + apply-overlay"
+	@echo "  make build-app             # release AOT → fs-overlay (*_hmi→/opt/hmi; else /opt/<APP>)"
 	@echo "  make prepare-app-assets    # prune/convert process-library + firmware → assets/.generated/"
 	@echo "  make build-debug-app       # debug app bundle → .cache (make debug-app / IDE; rarely run alone)"
 	@echo "  make l10n                  # sync child ARBs + flutter gen-l10n (app/lws_hmi)"
 	@echo "  make l10n-sync             # regenerate en_US/zh_CN/zh_TW child ARBs only"
 	@echo "  make l10n-gen              # flutter gen-l10n only"
+	@echo "  APP=…                     # app/ dir; *_hmi → /opt/hmi (one HMI/rootfs); default lws_hmi"
 	@echo "  make l10n-verify           # fail if ARBs / AppLocalizations drift"
 	@echo "  make build-kernel          # dual multi-conf FIT → boot.img + boot_b.img (+ bare Image)"
 	@echo "  make build-rootfs          # rootfs → output/firmware/rootfs.img (Weston + eLinux + Mali wayland-gbm)"
@@ -144,7 +150,7 @@ help:
 	@echo "  make devices               # RockUSB + USB-SSH + SSH + EMU (auto-probe QEMU :2222)"
 	@echo "  make shell                 # interactive device shell (USB-SSH or SSH)"
 	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
-	@echo "  make push-app              # scp app over SSH (USB-SSH or registered IP)"
+	@echo "  make push-app              # scp APP over SSH (*_hmi→/opt/hmi+hmi restart; else /opt/<id>)"
 	@echo "  make upgrade-control-board # push latest control-board bin and trigger upgrade (no version gate)"
 	@echo "  make upgrade-process-library # push process-library for device model; force import (no version gate)"
 	@echo "  make reset-process-library # clear process-library DB via HMI watcher; re-import bundled (no restart)"
@@ -263,7 +269,10 @@ build-kernel:
 
 # Rootfs: Weston + eLinux + Mali wayland-gbm.
 # prepare-rootfs flips Mali/embedder only when the stack stamp differs.
+# Ensures APP (default lws_hmi) + auto factory_test when app/factory_test exists.
 build-rootfs: prepare-rootfs
+	@APP='$(APP)' bash scripts/ensure-rootfs-apps.sh
+	@bash scripts/apply-overlay.sh
 	@bash scripts/docker-run.sh ./build.sh rootfs
 	@bash scripts/lws-hmi-rootfs-postprocess.sh
 	@bash scripts/verify-rootfs-overlay.sh
@@ -300,7 +309,8 @@ build-boot-logo:
 	@bash scripts/build-boot-logo.sh
 
 build-app:
-	@bash scripts/build-app.sh
+	@APP='$(APP)' bash scripts/build-app.sh
+	@bash scripts/apply-overlay.sh
 
 prepare-app-assets:
 	@bash scripts/prepare-hmi-ship-assets.sh
@@ -317,8 +327,6 @@ l10n-gen:
 
 l10n-verify:
 	@bash scripts/flutter/l10n_verify.sh
-
-	@bash scripts/apply-overlay.sh
 
 build-debug-app:
 	@bash scripts/build-debug-app.sh
@@ -543,7 +551,7 @@ usb-ssh-setup:
 	@$(call WITH_DOTENV,bash scripts/usb-ssh-host-setup.sh)
 
 push-app:
-	@$(call WITH_DOTENV,bash scripts/push-app.sh)
+	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/push-app.sh)
 
 # Push latest bundled control-board firmware (host helper).
 # Device-side: app watches /run/hmi/upgrade-control-board.cmd and runs upgrade

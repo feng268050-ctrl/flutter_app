@@ -63,11 +63,8 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   /// Gap from frost panel top to ramp header.
   static const _panelTopInset = 2.0;
 
-  /// Shared gap: Retract↔Feed (horizontal), checkboxes↔wire.
+  /// Shared gap: Retract↔Feed (horizontal only).
   static const _actionGap = 20.0;
-
-  /// Vertical gap: Retract/Feed row ↔ Enable Laser.
-  static const _wireToLaserGap = 25.0;
 
   /// Engineer checkbox face — large tier.
   static const _checkboxSize = CyberDimens.checkboxLargeSize;
@@ -81,9 +78,15 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   /// Enable Laser — CyberButton large height (style/width unchanged).
   static const _laserButtonHeight = CyberDimens.actionButtonLargeHeight;
 
+  /// Top divider strip on last-three tabs (above Record Work).
+  static const _topFunctionDividerHeight = 16.0;
+
   bool get _showRamp =>
       widget.processType == ProcessType.continuousWelding ||
       widget.processType == ProcessType.spotWelding;
+
+  /// Last three engineer tabs (Clean / Wide Clean / Cut) — no ramp strip.
+  bool get _showTopFunctionDivider => !_showRamp;
 
   bool get _wireCapable => widget.processType == ProcessType.continuousWelding;
 
@@ -142,135 +145,138 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Fixed 86px rows (same as right parameter rows).
-                          // Spacer below keeps Retract/Feed/Laser pinned.
-                          Expanded(
-                            child: Column(
-                              children: [
-                                SizedBox(
-                                  height: _checkboxRowHeight,
-                                  child: RecordWorkToggle(
-                                    key: const ValueKey(
-                                        'engineer-panel-record-work'),
-                                    controller: widget.recordWork,
-                                    processType: widget.processType,
-                                    expand: true,
-                                    checkboxSize: _checkboxSize,
-                                  ),
+                          // Last 3 tabs: 16px divider above Record Work.
+                          if (_showTopFunctionDivider)
+                            const SizedBox(
+                              key: ValueKey('engineer-panel-top-divider'),
+                              height: _topFunctionDividerHeight,
+                              child: Center(
+                                child: Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: Color(0x33FFFFFF),
                                 ),
-                                const Divider(
-                                    color: Color(0x33FFFFFF), height: 1),
-                                SizedBox(
-                                  height: _checkboxRowHeight,
-                                  child: _CheckRow(
-                                    key: const ValueKey(
-                                        'engineer-panel-manual-gas'),
-                                    label: 'Manual Gas',
-                                    value: widget.controller.manualGas,
-                                    enabled: true,
-                                    checkboxSize: _checkboxSize,
-                                    onChanged: (value) async {
-                                      if (widget.controller.busy) {
-                                        _toast(
-                                          context,
-                                          LaserEnableBlockReason.busy.message,
-                                        );
-                                        return;
-                                      }
-                                      if (laserActive) {
-                                        _toast(
-                                          context,
-                                          DeviceControlFeedbackCopy
-                                              .endOfWorkFirst,
-                                        );
-                                        return;
-                                      }
-                                      final err = await widget.controller
-                                          .setManualGas(value);
-                                      if (!context.mounted) {
-                                        return;
-                                      }
-                                      if (err != null) {
-                                        _toast(
-                                          context,
-                                          widget.controller.lastError ??
-                                              err.message,
-                                        );
-                                        return;
-                                      }
-                                      _toast(
-                                        context,
-                                        value
-                                            ? DeviceControlFeedbackCopy
-                                                .manualGasOn
-                                            : DeviceControlFeedbackCopy
-                                                .manualGasOff,
-                                      );
-                                    },
-                                  ),
-                                ),
-                                const Divider(
-                                    color: Color(0x33FFFFFF), height: 1),
-                                SizedBox(
-                                  height: _checkboxRowHeight,
-                                  child: _CheckRow(
-                                    key: const ValueKey(
-                                        'engineer-panel-auto-wire'),
-                                    label: 'Auto Wire Feed',
-                                    value: widget.controller.autoWireFeed &&
-                                        _wireCapable,
-                                    enabled: _wireCapable,
-                                    checkboxSize: _checkboxSize,
-                                    onChanged: (value) async {
-                                      if (!_wireCapable) {
-                                        return;
-                                      }
-                                      if (widget.controller.busy) {
-                                        _toast(
-                                          context,
-                                          LaserEnableBlockReason.busy.message,
-                                        );
-                                        return;
-                                      }
-                                      if (laserActive) {
-                                        _toast(
-                                          context,
-                                          DeviceControlFeedbackCopy
-                                              .endOfWorkFirst,
-                                        );
-                                        return;
-                                      }
-                                      final err = await widget.controller
-                                          .setAutoWireFeed(value);
-                                      if (!context.mounted) {
-                                        return;
-                                      }
-                                      if (err != null) {
-                                        _toast(
-                                          context,
-                                          widget.controller.lastError ??
-                                              err.message,
-                                        );
-                                        return;
-                                      }
-                                      _toast(
-                                        context,
-                                        value
-                                            ? DeviceControlFeedbackCopy
-                                                .autoWireFeedOn
-                                            : DeviceControlFeedbackCopy
-                                                .autoWireFeedOff,
-                                      );
-                                    },
-                                  ),
-                                ),
-                                const Divider(
-                                    color: Color(0x33FFFFFF), height: 1),
-                                const Spacer(),
-                              ],
+                              ),
+                            ),
+                          // Fixed 86px checkbox rows (same as right parameter rows).
+                          SizedBox(
+                            height: _checkboxRowHeight,
+                            child: RecordWorkToggle(
+                              key: const ValueKey(
+                                  'engineer-panel-record-work'),
+                              controller: widget.recordWork,
+                              processType: widget.processType,
+                              expand: true,
+                              checkboxSize: _checkboxSize,
                             ),
                           ),
-                          const SizedBox(height: _actionGap),
+                          const Divider(
+                              color: Color(0x33FFFFFF), height: 1),
+                          SizedBox(
+                            height: _checkboxRowHeight,
+                            child: _CheckRow(
+                              key: const ValueKey(
+                                  'engineer-panel-manual-gas'),
+                              label: 'Manual Gas',
+                              value: widget.controller.manualGas,
+                              enabled: true,
+                              checkboxSize: _checkboxSize,
+                              onChanged: (value) async {
+                                if (widget.controller.busy) {
+                                  _toast(
+                                    context,
+                                    LaserEnableBlockReason.busy.message,
+                                  );
+                                  return;
+                                }
+                                if (laserActive) {
+                                  _toast(
+                                    context,
+                                    DeviceControlFeedbackCopy.endOfWorkFirst,
+                                  );
+                                  return;
+                                }
+                                final err = await widget.controller
+                                    .setManualGas(value);
+                                if (!context.mounted) {
+                                  return;
+                                }
+                                if (err != null) {
+                                  _toast(
+                                    context,
+                                    widget.controller.lastError ??
+                                        err.message,
+                                  );
+                                  return;
+                                }
+                                _toast(
+                                  context,
+                                  value
+                                      ? DeviceControlFeedbackCopy.manualGasOn
+                                      : DeviceControlFeedbackCopy
+                                          .manualGasOff,
+                                );
+                              },
+                            ),
+                          ),
+                          const Divider(
+                              color: Color(0x33FFFFFF), height: 1),
+                          SizedBox(
+                            height: _checkboxRowHeight,
+                            child: _CheckRow(
+                              key: const ValueKey(
+                                  'engineer-panel-auto-wire'),
+                              label: 'Auto Wire Feed',
+                              value: widget.controller.autoWireFeed &&
+                                  _wireCapable,
+                              enabled: _wireCapable,
+                              checkboxSize: _checkboxSize,
+                              onChanged: (value) async {
+                                if (!_wireCapable) {
+                                  return;
+                                }
+                                if (widget.controller.busy) {
+                                  _toast(
+                                    context,
+                                    LaserEnableBlockReason.busy.message,
+                                  );
+                                  return;
+                                }
+                                if (laserActive) {
+                                  _toast(
+                                    context,
+                                    DeviceControlFeedbackCopy.endOfWorkFirst,
+                                  );
+                                  return;
+                                }
+                                final err = await widget.controller
+                                    .setAutoWireFeed(value);
+                                if (!context.mounted) {
+                                  return;
+                                }
+                                if (err != null) {
+                                  _toast(
+                                    context,
+                                    widget.controller.lastError ??
+                                        err.message,
+                                  );
+                                  return;
+                                }
+                                _toast(
+                                  context,
+                                  value
+                                      ? DeviceControlFeedbackCopy
+                                          .autoWireFeedOn
+                                      : DeviceControlFeedbackCopy
+                                          .autoWireFeedOff,
+                                );
+                              },
+                            ),
+                          ),
+                          const Divider(
+                              color: Color(0x33FFFFFF), height: 1),
+                          // Equal flex above / below Retract·Feed.
+                          const Spacer(),
                           SizedBox(
                             height: _wireButtonsHeight,
                             child: Row(
@@ -291,7 +297,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     controller: widget.controller,
                                     onMessage: (message) =>
                                         _toast(context, message),
-                                    iconLeftNudge: -7,
+                                    iconLeftNudge: -20,
                                   ),
                                 ),
                                 const SizedBox(width: _actionGap),
@@ -311,12 +317,13 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     controller: widget.controller,
                                     onMessage: (message) =>
                                         _toast(context, message),
+                                    iconLeftNudge: -10,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: _wireToLaserGap),
+                          const Spacer(),
                           _EngineerDeviceActionButton(
                             key: const ValueKey('engineer-panel-laser'),
                             label: laserActive ? 'End Work' : 'Enable Laser',
@@ -645,7 +652,7 @@ final class _EngineerWireActionButtonState
     final onFill = solidHighlight || filling;
     final foreground = onFill ? Colors.white : actionOrange;
     final disabledForeground = const Color(0xFF7D3E2B);
-    const labelSize = 16.0;
+    const labelSize = 20.0;
     const iconSize = 26.0;
     final label = latched
         ? DeviceControlFeedbackCopy.continuousFeedLabel
@@ -683,9 +690,11 @@ final class _EngineerWireActionButtonState
                       color: actionOrange,
                     ),
                   if (latched) const FeedContinuousRipple(),
+                  // Label centered; icon left inset = top/bottom inset.
                   Center(
                     child: Text(
                       label,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: widget.enabled
                             ? foreground
@@ -699,15 +708,14 @@ final class _EngineerWireActionButtonState
                   // Continuous Feed: label only (match Quick Mode).
                   if (!latched)
                     Positioned(
-                      // Match icon left inset to its top/bottom inset,
-                      // then apply optional [iconLeftNudge] (e.g. Retract −7).
                       left: (widget.height - iconSize) / 2 +
                           widget.iconLeftNudge,
                       top: (widget.height - iconSize) / 2,
                       child: Icon(
                         widget.icon,
-                        color:
-                            widget.enabled ? foreground : disabledForeground,
+                        color: widget.enabled
+                            ? foreground
+                            : disabledForeground,
                         size: iconSize,
                       ),
                     ),
@@ -861,13 +869,14 @@ final class _EngineerDeviceActionButtonState
                       ),
                     ),
                   ),
-                // Icon left inset = top/bottom inset; label centered.
+                // Label centered; icon left inset = top/bottom inset.
                 Stack(
                   fit: StackFit.expand,
                   children: [
                     Center(
                       child: Text(
                         widget.label,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           color: isVisuallyEnabled
                               ? foreground

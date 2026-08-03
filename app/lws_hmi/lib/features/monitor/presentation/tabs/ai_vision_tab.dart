@@ -24,6 +24,7 @@ import 'package:lws_hmi/features/process_video/presentation/process_video_format
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/process_parameters_snapshot_store.dart';
+import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
 
 /// lws-ui `fragment_ai_vision` — Work Info + Choose; preview-stack actions.
@@ -65,13 +66,18 @@ class _AiVisionTabState extends State<AiVisionTab> {
   Timer? _playPauseHideTimer;
   VoidCallback? _playbackListener;
 
+  /// Player page = AI Vision tab selected. Leave tab → release MPP.
+  bool get _onPlayerPage => widget.visible;
+
+  bool get _showLivePreview => _onPlayerPage && _selected == null;
+
   @override
   void initState() {
     super.initState();
     ProcessParametersSnapshotStore.instance.addListener(_onSnapshotChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.visible) {
-        _ensureLive();
+      if (_onPlayerPage && _selected == null) {
+        unawaited(_startLiveOnPlayerPage());
       }
     });
   }
@@ -84,11 +90,15 @@ class _AiVisionTabState extends State<AiVisionTab> {
     }
     if (widget.visible) {
       if (_selected == null) {
-        _ensureLive();
+        unawaited(_startLiveOnPlayerPage());
       }
-    } else {
-      unawaited(_liveDetect?.setActive(false));
+      if (mounted) {
+        setState(() {});
+      }
+      return;
     }
+    // Left the AI Vision player page (Monitor tab switch) — release players.
+    unawaited(_leavePlayerPage());
   }
 
   @override
@@ -100,12 +110,52 @@ class _AiVisionTabState extends State<AiVisionTab> {
     AiDaemonSupervisor.instance.cameraAiPublisher.lastSample
         .removeListener(_onLiveSample);
     _detachSession();
-    _disposePlayback();
+    final playbackRelease = _disposePlayback();
+    MppVideoRouteGate.scheduleRelease(() => playbackRelease);
     _overlay.dispose();
     if (widget.repository == null) {
       unawaited(_repo.close());
     }
     super.dispose();
+  }
+
+  /// Entering the player page: wait for prior release, then live RTSP + detect.
+  Future<void> _startLiveOnPlayerPage() async {
+    await MppVideoRouteGate.beforeAcquire();
+    if (!mounted || !_onPlayerPage || _selected != null) {
+      return;
+    }
+    _ensureLiveDetectOnly();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  /// Leaving the player page: stop live detect + dispose VOD / unmount RTSP.
+  Future<void> _leavePlayerPage() async {
+    final release = _releaseDecoders();
+    MppVideoRouteGate.scheduleRelease(() => release);
+    await release;
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _releaseDecoders() async {
+    unawaited(_liveDetect?.setActive(false));
+    AiDaemonSupervisor.instance.cameraAiPublisher.lastSample
+        .removeListener(_onLiveSample);
+    _setOverlay(AiVisionOverlayState.idle);
+    if (_mode == AiVisionSelectedUiMode.playback) {
+      _mode = AiVisionSelectedUiMode.idleReadyToDetect;
+      _stopOverlayTicks();
+    }
+    await _disposePlayback();
+    if (mounted) {
+      setState(() {});
+    }
+    await WidgetsBinding.instance.endOfFrame;
+    await WidgetsBinding.instance.endOfFrame;
   }
 
   void _setOverlay(AiVisionOverlayState next) {
@@ -121,8 +171,8 @@ class _AiVisionTabState extends State<AiVisionTab> {
     }
   }
 
-  void _ensureLive() {
-    if (!mounted || _selected != null || !widget.visible) {
+  void _ensureLiveDetectOnly() {
+    if (!mounted || _selected != null || !_onPlayerPage) {
       return;
     }
     final ai = AdvancedSettingsScope.maybeAiOf(context);
@@ -134,17 +184,21 @@ class _AiVisionTabState extends State<AiVisionTab> {
     AiDaemonSupervisor.instance.cameraAiPublisher.lastSample
       ..removeListener(_onLiveSample)
       ..addListener(_onLiveSample);
+    // Keep STAIN_DETECT HUD up so operators see AI is running (boxes optional).
+    if (!_overlay.value.hasHud) {
+      _setOverlay(AiVisionOverlayState.stainDetectActive());
+    }
   }
 
   void _onLiveSample() {
-    if (_selected != null || !mounted) {
+    if (_selected != null || !mounted || !_onPlayerPage) {
       return;
     }
     final sample =
         AiDaemonSupervisor.instance.cameraAiPublisher.lastSample.value;
-    // lws-ui live: only draw when stain has a target; otherwise clear overlay.
+    // lws-ui live: boxes only with a stain target; HUD stays STAIN_DETECT.
     if (sample == null || !sample.success || sample.boxes.isEmpty) {
-      _setOverlay(AiVisionOverlayState.idle);
+      _setOverlay(AiVisionOverlayState.stainDetectActive());
       return;
     }
     _setOverlay(AiVisionOverlayState.fromSample(sample));
@@ -208,7 +262,7 @@ class _AiVisionTabState extends State<AiVisionTab> {
     }
   }
 
-  void _disposePlayback() {
+  Future<void> _disposePlayback() async {
     final c = _playback;
     _playback = null;
     _playing = false;
@@ -217,7 +271,17 @@ class _AiVisionTabState extends State<AiVisionTab> {
       if (listener != null) {
         c.removeListener(listener);
       }
-      unawaited(c.dispose());
+      final released = () async {
+        try {
+          await c.pause();
+        } catch (_) {}
+        try {
+          await c.dispose();
+        } catch (_) {}
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }();
+      MppVideoRouteGate.scheduleRelease(() => released);
+      await released;
     }
     _playbackListener = null;
   }
@@ -270,7 +334,7 @@ class _AiVisionTabState extends State<AiVisionTab> {
     _stopOverlayTicks();
     _playPauseHideTimer?.cancel();
     _detachSession();
-    _disposePlayback();
+    unawaited(_disposePlayback());
     if (!mounted) {
       return;
     }
@@ -284,22 +348,44 @@ class _AiVisionTabState extends State<AiVisionTab> {
   }
 
   Future<void> _chooseVideo() async {
+    // Do not release players here — Select Video is not leaving the player page.
+    // Release happens on tab leave / when applying a selected offline video.
     final picked = await Navigator.of(context).pushNamed(
       AppRoutes.aiVisionChoose,
     );
-    if (!mounted || picked is! ProcessVideoRecord) {
+    if (!mounted) {
       return;
     }
-    await _applySelected(picked);
+    if (picked is ProcessVideoRecord) {
+      await _applySelected(picked);
+      return;
+    }
   }
 
   Future<void> _applySelected(ProcessVideoRecord record) async {
     _stopOverlayTicks();
     _detachSession();
-    _disposePlayback();
+    await _disposePlayback();
+    // Leaving live preview mode on this page — drop RTSP before cover/VOD.
     await _liveDetect?.setActive(false);
     AiDaemonSupervisor.instance.cameraAiPublisher.lastSample
         .removeListener(_onLiveSample);
+
+    if (mounted) {
+      setState(() {
+        _selected = record;
+        _coverFile = null;
+        _replayFrames = const [];
+        _showPlayPause = false;
+        _mode = AiVisionSelectedUiMode.idleReadyToDetect;
+      });
+    }
+    await WidgetsBinding.instance.endOfFrame;
+    await WidgetsBinding.instance.endOfFrame;
+    await MppVideoRouteGate.beforeAcquire();
+    if (!mounted || !identical(_selected, record)) {
+      return;
+    }
 
     File? cover;
     try {
@@ -311,20 +397,17 @@ class _AiVisionTabState extends State<AiVisionTab> {
 
     final source = File(record.videoPath);
     final cacheKey = ProcessVideoAiInferencePaths.cacheKey(record, source);
-    final timelineFile =
+    final timelinePath =
         ProcessVideoAiInferencePaths.timelineJson(record, cacheKey);
     final hasTimeline =
-        await ProcessVideoAiTimelinePersistence.hasReplayData(timelineFile);
+        await ProcessVideoAiTimelinePersistence.hasReplayData(timelinePath);
 
-    if (!mounted) {
+    if (!mounted || !identical(_selected, record)) {
       return;
     }
     final l10n = AppLocalizations.of(context)!;
     setState(() {
-      _selected = record;
       _coverFile = cover;
-      _replayFrames = const [];
-      _showPlayPause = false;
       _mode = hasTimeline
           ? AiVisionSelectedUiMode.idleDetectionComplete
           : AiVisionSelectedUiMode.idleReadyToDetect;
@@ -344,7 +427,11 @@ class _AiVisionTabState extends State<AiVisionTab> {
     if (_playback != null && _playback!.value.isInitialized) {
       return _playback;
     }
-    _disposePlayback();
+    await _disposePlayback();
+    await MppVideoRouteGate.beforeAcquire();
+    if (!mounted || !_onPlayerPage) {
+      return null;
+    }
     final file = File(record.videoPath);
     if (!await file.exists()) {
       return null;
@@ -663,7 +750,10 @@ class _AiVisionTabState extends State<AiVisionTab> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      if (_selected == null)
+                      if (!_onPlayerPage)
+                        // Other Monitor tab selected — player page released.
+                        const ColoredBox(color: Color(0xFF101018))
+                      else if (_showLivePreview)
                         IpCameraPreview(
                           rtspUrl: Uri.parse(widget.liveRtspUrl),
                           linkPhase: IpCameraUiPhase.connected,
@@ -685,6 +775,14 @@ class _AiVisionTabState extends State<AiVisionTab> {
                           _coverFile != null &&
                           _coverFile!.existsSync())
                         Image.file(_coverFile!, fit: BoxFit.contain)
+                      else if (_selected != null)
+                        const Center(
+                          child: SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
                       else
                         Center(
                           child: Text(
@@ -696,35 +794,6 @@ class _AiVisionTabState extends State<AiVisionTab> {
                             ),
                           ),
                         ),
-                      ValueListenableBuilder<AiVisionOverlayState>(
-                        valueListenable: _overlay,
-                        builder: (context, overlay, _) {
-                          return Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              if (overlay.hasBoxes)
-                                CustomPaint(
-                                  painter: _AiBoxesPainter(
-                                    overlay: overlay,
-                                    videoSize:
-                                        _playback?.value.isInitialized == true
-                                            ? _playback!.value.size
-                                            : null,
-                                  ),
-                                ),
-                              if (overlay.hasHud)
-                                Positioned(
-                                  top: 12,
-                                  right: 12,
-                                  child: _AiHudCard(
-                                    overlay: overlay,
-                                    l10n: l10n,
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
                       if (showDetect)
                         Center(
                           child: MonitorFrostActionButton(
@@ -775,6 +844,42 @@ class _AiVisionTabState extends State<AiVisionTab> {
                             ),
                           ),
                         ),
+                      // AI HUD/boxes last: above media + chrome so VideoPlayer
+                      // / cover cannot cover the overlay.
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: ValueListenableBuilder<AiVisionOverlayState>(
+                            valueListenable: _overlay,
+                            builder: (context, overlay, _) {
+                              return Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  if (overlay.hasBoxes)
+                                    CustomPaint(
+                                      painter: _AiBoxesPainter(
+                                        overlay: overlay,
+                                        videoSize: _playback
+                                                    ?.value.isInitialized ==
+                                                true
+                                            ? _playback!.value.size
+                                            : null,
+                                      ),
+                                    ),
+                                  if (overlay.hasHud)
+                                    Positioned(
+                                      top: 12,
+                                      right: 12,
+                                      child: _AiHudCard(
+                                        overlay: overlay,
+                                        l10n: l10n,
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -849,20 +954,38 @@ class _AiHudCard extends StatelessWidget {
     if (statusLine == null && detailLine == null) {
       return const SizedBox.shrink();
     }
-    return MonitorGlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
-      child: DefaultTextStyle(
-        style: const TextStyle(color: Colors.white, fontSize: 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (statusLine != null) Text(statusLine),
-            if (statusLine != null && detailLine != null)
-              const SizedBox(height: 4),
-            if (detailLine != null) Text(detailLine),
-          ],
+    // Do not use MonitorGlassCard here: it forces width:infinity and nested
+    // frost samples empty over VideoPlayer — HUD vanishes. Semi-opaque Material
+    // sizes to content (top-right chip) and stays visible on Texture video.
+    final radius = BorderRadius.circular(MonitorDimens.corner);
+    return Material(
+      color: const Color(0xCC121828),
+      elevation: 2,
+      shadowColor: Colors.black54,
+      borderRadius: radius,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          border: Border.all(
+            color: CyberColors.borderUniform,
+            width: CyberDimens.borderWidth,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: DefaultTextStyle(
+            style: const TextStyle(color: Colors.white, fontSize: 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (statusLine != null) Text(statusLine),
+                if (statusLine != null && detailLine != null)
+                  const SizedBox(height: 4),
+                if (detailLine != null) Text(detailLine),
+              ],
+            ),
+          ),
         ),
       ),
     );

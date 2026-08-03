@@ -22,6 +22,24 @@ void main() {
     expect(s.hasBoxes, isFalse);
   });
 
+  test('no-target stain sample keeps STAIN_DETECT HUD without boxes', () {
+    final sample = AiInferenceRunningSample(
+      success: false,
+      code: -3,
+      level: -1,
+      status: 'ERROR',
+      message: 'insufficient_regions_after_erode',
+      imageWidth: 1920,
+      imageHeight: 1080,
+      source: OpencvStainDetectMapper.offlineSource,
+      boxes: const [],
+    );
+    final s = AiVisionOverlayState.fromSample(sample);
+    expect(s.hudStatus, 'STAIN_DETECT');
+    expect(s.hasHud, isTrue);
+    expect(s.hasBoxes, isFalse);
+  });
+
   test('stain sample suppresses result detail', () {
     final sample = AiInferenceRunningSample(
       success: true,

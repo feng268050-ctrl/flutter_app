@@ -73,10 +73,10 @@ final class AiVisionOverlayState {
   /// Map a running sample the way `AiVisionFragment` binds stain/live HUD.
   factory AiVisionOverlayState.fromSample(AiInferenceRunningSample sample) {
     if (!sample.success || sample.boxes.isEmpty) {
-      // No target: hide boxes; keep engine-ish status only when STAIN_DETECT idle.
-      if (sample.status == OpencvStainDetectMapper.overlayStatus) {
-        return AiVisionOverlayState(
-          hudStatus: OpencvStainDetectMapper.overlayStatus,
+      // No target is normal (OpenCV -3 / empty boxes). Keep STAIN_DETECT HUD;
+      // do not hide the overlay or show ERROR for ordinary miss frames.
+      if (_isStainDetectSample(sample)) {
+        return AiVisionOverlayState.stainDetectActive(
           imageWidth: sample.imageWidth,
           imageHeight: sample.imageHeight,
         );
@@ -110,5 +110,16 @@ final class AiVisionOverlayState {
       imageWidth: sample.imageWidth,
       imageHeight: sample.imageHeight,
     );
+  }
+
+  static bool _isStainDetectSample(AiInferenceRunningSample sample) {
+    if (sample.source == OpencvStainDetectMapper.offlineSource ||
+        sample.source == OpencvStainDetectMapper.liveSource) {
+      return true;
+    }
+    final status = sample.status.trim();
+    return status == OpencvStainDetectMapper.overlayStatus ||
+        status == 'ERROR' ||
+        status == 'CLEAN';
   }
 }

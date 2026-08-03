@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
+import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
 
 abstract interface class IpCameraPreviewPlayer implements Listenable {
@@ -139,9 +140,22 @@ class _IpCameraPreviewState extends State<IpCameraPreview> {
     if (mounted) {
       setState(() {});
     }
-    await previous?.dispose();
+    if (previous != null) {
+      // Register with the route gate so VOD/pages wait for MPP teardown.
+      final released = previous.dispose().catchError((Object _) {});
+      MppVideoRouteGate.scheduleRelease(() async {
+        await released;
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+      await released;
+    }
 
     if (url == null || generation != _generation || !mounted) {
+      return;
+    }
+
+    await MppVideoRouteGate.beforeAcquire();
+    if (generation != _generation || !mounted) {
       return;
     }
 
@@ -194,8 +208,15 @@ class _IpCameraPreviewState extends State<IpCameraPreview> {
   void dispose() {
     _generation++;
     final player = _player;
+    _player = null;
     player?.removeListener(_onPlayerChanged);
-    unawaited(player?.dispose());
+    if (player != null) {
+      final released = player.dispose().catchError((Object _) {});
+      MppVideoRouteGate.scheduleRelease(() async {
+        await released;
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+    }
     super.dispose();
   }
 

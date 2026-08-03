@@ -18,9 +18,14 @@ import 'package:lws_hmi/features/status_bar/call_back_home_button.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
 
 /// lws-ui `ProcessVideoDetailsActivity` — left params + right fixed player.
+///
+/// Own route (separate from Monitor / AI Vision). Acquires MPP only after
+/// [MppVideoRouteGate.beforeAcquire]; releases on pop / dispose so the previous
+/// page's decoder is never concurrent.
 final class ProcessVideoDetailPage extends StatefulWidget {
   const ProcessVideoDetailPage({
     super.key,
@@ -51,6 +56,7 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
   /// eLinux GStreamer often stays black until the first play; keep JPEG poster
   /// until the operator starts playback.
   bool _playbackStarted = false;
+  bool _releasing = false;
 
   @override
   void initState() {
@@ -84,7 +90,16 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
         }
       });
       if (!missing) {
-        unawaited(_loadPoster(row));
+        // Cover (possibly MPP JPEG helper) then VOD — never overlap, and wait
+        // for Monitor/AI to finish route release first.
+        await _loadPoster(row);
+        if (!mounted) {
+          return;
+        }
+        await MppVideoRouteGate.beforeAcquire();
+        if (!mounted) {
+          return;
+        }
         await _initPlayer(row.videoPath);
       }
     } catch (e) {
@@ -123,7 +138,7 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
     try {
       await controller.initialize();
       await controller.setLooping(false);
-      await controller.seekTo(Duration.zero);
+      // No seekTo(0) after init — eLinux qtdemux has errored under MPP load.
       if (!mounted) {
         await controller.dispose();
         return;
@@ -147,6 +162,40 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
     setState(() => _playbackStarted = true);
   }
 
+  Future<void> _releasePlayer() async {
+    final player = _player;
+    if (player == null) {
+      return;
+    }
+    _player = null;
+    if (mounted) {
+      setState(() {});
+    }
+    try {
+      await player.pause();
+    } catch (_) {}
+    try {
+      await player.dispose();
+    } catch (_) {}
+  }
+
+  Future<void> _handleBack({Object? result}) async {
+    if (_releasing) {
+      return;
+    }
+    _releasing = true;
+    final release = _releasePlayer();
+    MppVideoRouteGate.scheduleRelease(() => release);
+    try {
+      await release;
+    } finally {
+      _releasing = false;
+    }
+    if (mounted) {
+      Navigator.of(context).pop(result);
+    }
+  }
+
   Future<void> _delete() async {
     final record = _record;
     if (record?.id == null) {
@@ -159,7 +208,7 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
     }
     await _repo.deleteById(record!.id!);
     if (mounted) {
-      Navigator.of(context).pop(true);
+      await _handleBack(result: true);
     }
   }
 
@@ -174,7 +223,18 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
 
   @override
   void dispose() {
-    unawaited(_player?.dispose() ?? Future<void>.value());
+    final player = _player;
+    _player = null;
+    if (player != null) {
+      MppVideoRouteGate.scheduleRelease(() async {
+        try {
+          await player.pause();
+        } catch (_) {}
+        try {
+          await player.dispose();
+        } catch (_) {}
+      });
+    }
     if (widget.args.repository == null) {
       unawaited(_repo.close());
     }
@@ -186,65 +246,73 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
     final l10n = AppLocalizations.of(context)!;
     final record = _record;
 
-    return Scaffold(
-      backgroundColor: ProcessModeTokens.background,
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : record == null
-              ? Center(
-                  child: Text(
-                    l10n.processVideoPlaybackFailed,
-                    style: const TextStyle(color: Colors.white54),
+    return PopScope(
+      canPop: _player == null && !_releasing,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          return;
+        }
+        unawaited(_handleBack());
+      },
+      child: Scaffold(
+        backgroundColor: ProcessModeTokens.background,
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : record == null
+                ? Center(
+                    child: Text(
+                      l10n.processVideoPlaybackFailed,
+                      style: const TextStyle(color: Colors.white54),
+                    ),
+                  )
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final scale =
+                          (constraints.maxWidth / 1280).clamp(0.55, 1.0);
+                      final minParams = 360.0 * scale;
+                      final gap = _pagePad * scale;
+                      var playerWidth = _playerDesignWidth * scale;
+                      final maxPlayer =
+                          constraints.maxWidth - gap - minParams;
+                      if (playerWidth > maxPlayer) {
+                        playerWidth = maxPlayer.clamp(200.0, playerWidth);
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.all(_pagePad),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _ParameterColumn(
+                                record: record,
+                                title: l10n.processVideoParametersTitle,
+                                backLabel: l10n.equipmentStatusBack,
+                                uploadLabel: l10n.uploadText,
+                                deleteLabel: l10n.deleteText,
+                                labelWidth: 230 * scale,
+                                onBack: () => unawaited(_handleBack()),
+                                onUpload: () => unawaited(_upload()),
+                                onDelete: () => unawaited(_delete()),
+                              ),
+                            ),
+                            SizedBox(width: gap),
+                            SizedBox(
+                              width: playerWidth,
+                              child: _PlayerPane(
+                                player: _player,
+                                poster: _poster,
+                                showPoster: !_playbackStarted,
+                                error: _error,
+                                failedLabel: l10n.processVideoPlaybackFailed,
+                                onPlaybackStarted: _onPlaybackStarted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                )
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    final scale =
-                        (constraints.maxWidth / 1280).clamp(0.55, 1.0);
-                    final minParams = 360.0 * scale;
-                    final gap = _pagePad * scale;
-                    var playerWidth = _playerDesignWidth * scale;
-                    final maxPlayer =
-                        constraints.maxWidth - gap - minParams;
-                    if (playerWidth > maxPlayer) {
-                      playerWidth = maxPlayer.clamp(200.0, playerWidth);
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.all(_pagePad),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: _ParameterColumn(
-                              record: record,
-                              title: l10n.processVideoParametersTitle,
-                              backLabel: l10n.equipmentStatusBack,
-                              uploadLabel: l10n.uploadText,
-                              deleteLabel: l10n.deleteText,
-                              labelWidth: 230 * scale,
-                              onBack: () =>
-                                  Navigator.of(context).maybePop(),
-                              onUpload: () => unawaited(_upload()),
-                              onDelete: () => unawaited(_delete()),
-                            ),
-                          ),
-                          SizedBox(width: gap),
-                          SizedBox(
-                            width: playerWidth,
-                            child: _PlayerPane(
-                              player: _player,
-                              poster: _poster,
-                              showPoster: !_playbackStarted,
-                              error: _error,
-                              failedLabel: l10n.processVideoPlaybackFailed,
-                              onPlaybackStarted: _onPlaybackStarted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+      ),
     );
   }
 }

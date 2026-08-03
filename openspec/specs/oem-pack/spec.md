@@ -190,3 +190,12 @@ OEM pack `manifest.json` (and thus on-device `/oem/manifest.json`) SHALL declare
 - **THEN** it SHALL export board profile / screen env as today
 - **AND** it MUST NOT replace the kernel’s loaded device tree from OEM contents
 
+### Requirement: build-oem includes board radio firmware when present
+
+When a board pack contains `radio/firmware/`, `make build-oem` SHALL install that tree into the OEM image under the board path so runtime bring-up can read it from `/oem` without relying on rootfs multi-vendor firmware dumps.
+
+#### Scenario: Radio subtree packed into oem.img
+
+- **WHEN** the board pack includes `radio/manifest.json` and `radio/firmware/` and `make build-oem` runs
+- **THEN** those paths MUST appear under the corresponding `/oem/boards/<board_id>/radio/` in the oem image
+

@@ -20,7 +20,9 @@ else
 fi
 
 # Innohi tooling expects /system/lib/modules; post-wifibt deposits .ko under vendor/.
+# Combo firmware comes from the OEM radio pack at runtime (not copied here).
 install -d "$TARGET_DIR/vendor/lib/modules"
+install -d "$TARGET_DIR/vendor/etc/firmware"
 install -d "$TARGET_DIR/system/lib"
 if [[ ! -e "$TARGET_DIR/system/lib/modules" ]]; then
 	ln -sfn /vendor/lib/modules "$TARGET_DIR/system/lib/modules"

@@ -1,0 +1,16 @@
+{
+  "chip": "AIC8800D80",
+  "sdio_id": "c8a1:0082",
+  "vendor": "AIC",
+  "firmware_dir": "firmware",
+  "files": [
+    "fmacfw_8800d80_u02.bin",
+    "lmacfw_rf_8800d80_u02.bin",
+    "fw_adid_8800d80_u02.bin",
+    "fw_patch_8800d80_u02.bin",
+    "fw_patch_table_8800d80_u02.bin",
+    "aic_userconfig_8800d80.txt",
+    "aic_userconfig.txt"
+  ],
+  "notes": "ynh960 onboard combo Wi-Fi/BT module firmware (RED-scoped). Kernel modules stay on the OS image."
+}

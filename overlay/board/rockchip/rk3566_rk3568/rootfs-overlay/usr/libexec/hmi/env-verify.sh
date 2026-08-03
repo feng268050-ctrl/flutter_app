@@ -391,12 +391,28 @@ if command -v hciattach >/dev/null 2>&1; then
 else
 	warn "hciattach missing (AIC BT UART attach may fail)"
 fi
-if [ -f /vendor/etc/firmware/fmacfw_8800d80_u02.bin ] || \
+# Combo firmware: OEM radio pack (not rootfs kitchen sink /lib/firmware/brcm).
+OEM_RADIO_FW="${OEM_RADIO_FW:-/oem/boards/ynh960/radio/firmware}"
+if [ -f "$OEM_RADIO_FW/fmacfw_8800d80_u02.bin" ]; then
+	pass "OEM radio AIC8800D80 firmware ($OEM_RADIO_FW)"
+elif [ -f /vendor/etc/firmware/fmacfw_8800d80_u02.bin ] || \
 	[ -f /system/etc/firmware/fmacfw_8800d80_u02.bin ] || \
 	[ -f /lib/firmware/fmacfw_8800d80_u02.bin ]; then
-	pass "AIC8800D80 firmware present"
+	# Symlink from bringup into AIC_FW_PATH still OK if target is OEM.
+	_fw=""
+	for cand in /vendor/etc/firmware /system/etc/firmware /lib/firmware; do
+		[ -f "$cand/fmacfw_8800d80_u02.bin" ] || continue
+		_fw="$cand/fmacfw_8800d80_u02.bin"
+		break
+	done
+	if [ -n "$_fw" ] && [ -L "$_fw" ]; then
+		pass "AIC8800D80 firmware linked at $_fw → $(readlink "$_fw")"
+	else
+		warn "fmacfw_8800d80_u02.bin under firmware dirs but OEM radio pack missing ($OEM_RADIO_FW)"
+	fi
+	unset _fw
 else
-	warn "fmacfw_8800d80_u02.bin not found under firmware dirs"
+	fail "OEM radio firmware missing ($OEM_RADIO_FW/fmacfw_8800d80_u02.bin) — make build-oem && OEM_ONLY=1 make upgrade"
 fi
 if [ -f /var/lib/wpa_supplicant/wpa_supplicant.conf ]; then
 	pass "wpa_supplicant.conf seed present"

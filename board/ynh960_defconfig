@@ -17,9 +17,10 @@ RK_USB_ADBD=n
 
 RK_BUILDROOT_BASE_CFG="rk3566_rk3568_lws_hmi"
 RK_WIFIBT=y
-# Keep MODULES non-empty so post-wifibt runs (copies all kernel *.ko →
-# /vendor/lib/modules + Innohi firmware → /vendor/etc/firmware). On-board
-# radio is AIC8800D80 (SDIO c8a1:0082); runtime uses wifibt-bringup.sh /
-# rk_wifi_init, not bcmdhd. CHIP value only selects optional Broadcom build.
+# Keep MODULES non-empty so post-wifibt runs (copies kernel *.ko →
+# /vendor/lib/modules). CHIP is mirrored into RK_WIFIBT_MODULES when
+# RK_WIFIBT_ON_BOARD; use a non-AP6/RTL/CYW token so Broadcom bcmdhd +
+# fw_bcm* are NOT built/copied. Combo firmware lives in the OEM radio pack.
+# On-board radio is AIC8800D80 (SDIO c8a1:0082); runtime uses wifibt-bringup.sh.
 RK_WIFIBT_ON_BOARD=y
-RK_WIFIBT_CHIP="AP6256"
+RK_WIFIBT_CHIP="AIC8800D80"

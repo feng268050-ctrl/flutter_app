@@ -380,6 +380,36 @@ run_check() {
 		echo "FAIL: aic8800_fdrv.ko missing — enable ynh960 wifibt kernel config, rebuild kernel+rootfs" >&2
 		missing=1
 	fi
+	# Combo firmware lives in OEM radio pack — rootfs must not carry kitchen sink
+	# or leftover AIC blobs from older Innohi dumps.
+	_fw_hit=""
+	for _fw_dir in \
+		"$target/usr/lib/firmware" \
+		"$target/lib/firmware" \
+		"$target/vendor/etc/firmware" \
+		"$target/system/etc/firmware"; do
+		[[ -d "$_fw_dir" ]] || continue
+		_fw_real="$(readlink -f "$_fw_dir" 2>/dev/null || echo "$_fw_dir")"
+		[[ -d "$_fw_real" ]] || continue
+		if compgen -G "$_fw_real/fw_bcm*" >/dev/null 2>&1; then
+			_fw_hit="${_fw_hit}fw_bcm* under ${_fw_real#"$target"} "
+		fi
+	done
+	if [[ -n "$_fw_hit" ]]; then
+		echo "FAIL: Wi-Fi/BT kitchen-sink firmware present ($_fw_hit)— OEM radio pack owns combo FW" >&2
+		missing=1
+	else
+		echo "OK:  no fw_bcm* kitchen-sink under firmware dirs"
+	fi
+	if compgen -G "$target/vendor/lib/modules/bcmdhd*.ko" >/dev/null 2>&1 || \
+		compgen -G "$target/lib/modules/bcmdhd*.ko" >/dev/null 2>&1 || \
+		compgen -G "$target/lib/modules/*/bcmdhd*.ko" >/dev/null 2>&1; then
+		echo "FAIL: bcmdhd*.ko present — not selected for this product line" >&2
+		missing=1
+	else
+		echo "OK:  bcmdhd*.ko absent"
+	fi
+	unset _fw_hit _fw_dir _fw_real
 	if [[ -x "$target/usr/bin/rk_wifi_init" ]]; then
 		echo "OK:  usr/bin/rk_wifi_init"
 	else

@@ -71,6 +71,21 @@ cp -f "$PACK_DIR/manifest.json" "$STAGE/manifest.json"
 cp -a "$OEM_SRC/$board_path"/. "$STAGE/$board_path"/
 cp -a "$OEM_SRC/$screen_path"/. "$STAGE/$screen_path"/
 
+# Board radio pack (optional): firmware keep-set under radio/firmware/ is copied
+# with the board path above. Fail closed if a manifest exists without blobs.
+radio_fw="$STAGE/$board_path/radio/firmware"
+radio_manifest="$STAGE/$board_path/radio/manifest.json"
+if [[ -f "$radio_manifest" ]]; then
+  [[ -d "$radio_fw" ]] || die "radio/manifest.json present but missing $board_path/radio/firmware/"
+  if ! compgen -G "$radio_fw/*" >/dev/null 2>&1; then
+    die "radio/firmware/ is empty under $board_path (pack keep-set required)"
+  fi
+  if find "$STAGE/$board_path/radio" -type f -name '*.ko' 2>/dev/null | grep -q .; then
+    die "OEM radio pack must not ship kernel modules (*.ko) under radio/"
+  fi
+  echo "OEM radio pack: $board_path/radio ($(du -sh "$radio_fw" | awk '{print $1}'))"
+fi
+
 mkdir -p "$FACTORY_OEM_OUT_DIR"
 OUT="$FACTORY_OEM_IMG"
 rm -f "$OUT"

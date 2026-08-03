@@ -59,7 +59,7 @@ Profile (`oem/boards/ynh960/board_profile.json`):
 What it does (Innohi AIC8800D80 SDIO + UART combo — **illustrative**, not portable):
 
 1. `rfkill unblock` wifi/bluetooth
-2. Symlink vendor firmware into paths the driver searches
+2. Link OEM `radio/firmware/` keep-set into `CONFIG_AIC_FW_PATH` (`/vendor/etc/firmware`)
 3. Exit early if a wireless netdev already exists
 4. Detect SDIO vendor `c8a1` (AIC); **rebind** the SDIO MMC host once so
    `mmc-pwrseq` resets a combo that can stay enumerated but ignore CMD52/53

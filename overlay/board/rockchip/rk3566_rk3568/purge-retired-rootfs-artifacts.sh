@@ -103,3 +103,53 @@ rm -f \
 	"$TARGET_DIR/usr/bin/mediamtx" \
 	"$TARGET_DIR/usr/libexec/hmi/render-mediamtx-config.sh"
 rm -rf "$TARGET_DIR/etc/mediamtx"
+
+# Wi-Fi/BT kitchen-sink firmware + Broadcom modules belong to OEM radio pack /
+# unused chip paths — purge incremental leftovers from older post-wifibt dumps.
+_fw_dirs="
+	$TARGET_DIR/usr/lib/firmware
+	$TARGET_DIR/lib/firmware
+	$TARGET_DIR/vendor/etc/firmware
+	$TARGET_DIR/system/etc/firmware
+"
+for _d in $_fw_dirs; do
+	[ -d "$_d" ] || continue
+	# Resolve symlink targets once (vendor↔lib hardlink/symlink trees).
+	_real="$(readlink -f "$_d" 2>/dev/null || echo "$_d")"
+	[ -d "$_real" ] || continue
+	# Multi-vendor Rockchip/Innohi dumps (Broadcom/Cypress/RK/AIC/Realtek/…).
+	# Product combo blobs live in OEM radio/; keep non-radio firmware elsewhere.
+	find "$_real" -maxdepth 1 -type f \( \
+		-name 'fw_*' -o \
+		-name 'fmacfw*' -o \
+		-name 'lmacfw*' -o \
+		-name 'aic_*' -o \
+		-name 'rtl*' -o \
+		-name '*.hcd' -o \
+		-name 'nvram*' -o \
+		-name 'clm_*' -o \
+		-name 'BCM*' -o \
+		-name 'brcm*' -o \
+		-name 'cyfmac*' -o \
+		-name 'RT2870*' -o \
+		-name 'wifi_efuse*' -o \
+		-name 'ssv6051*' -o \
+		-name 'AP6*' -o \
+		-name 'SYN*' -o \
+		-name 'otp.bin*' -o \
+		-name 'BT_Firmware.mk' -o \
+		-name 'config.txt' -o \
+		-name 'fw_info.txt' -o \
+		-name 'readme.txt' \
+		\) -delete 2>/dev/null || true
+	rm -rf "$_real/rtlbt" "$_real/brcm" 2>/dev/null || true
+done
+# Broadcom out-of-tree modules not selected for this product line.
+for _ko_dir in \
+	"$TARGET_DIR/vendor/lib/modules" \
+	"$TARGET_DIR/system/lib/modules" \
+	"$TARGET_DIR/lib/modules"; do
+	[ -d "$_ko_dir" ] || continue
+	find "$_ko_dir" -maxdepth 3 -type f -name 'bcmdhd*.ko' -delete 2>/dev/null || true
+done
+echo "post-build: purged Wi-Fi/BT kitchen-sink firmware + bcmdhd*.ko (if leftover)"

@@ -35,16 +35,30 @@ rewrite_file() {
   fi
 }
 
-# Collapse dual-tree firmware fallback once both arms point at innohi/rootfs.
+# Prefer OEM radio pack: never re-introduce Innohi kitchen-sink firmware copies.
+# If a dual-tree or single-tree dump block remains, replace with oem-radio stub.
 collapse_wifibt_fw() {
   local f="$1"
   [[ -f "$f" ]] || return 0
   python3 - "$f" <<'PY'
 import sys
+
 path = sys.argv[1]
 with open(path, encoding="utf-8") as fh:
     text = fh.read()
-redundant = """\tINNOHI_FW="${CROOT}/innohi/rootfs/system/etc/firmware"
+
+oem = """\t# lws-hmi: post-wifibt oem-radio — no rootfs kitchen-sink firmware
+\t# Combo module blobs ship in the board OEM radio pack (make build-oem).
+\t# Keep an empty vendor firmware dir so path aliases remain valid.
+\tmkdir -p ${CROOT}/buildroot/output/${RK_BUILDROOT_CFG}/target/vendor/etc/firmware/
+"""
+
+if "post-wifibt oem-radio — no rootfs kitchen-sink firmware" in text:
+    sys.exit(0)
+
+patterns = [
+    # dual-tree collapsed both arms to innohi
+    """\tINNOHI_FW="${CROOT}/innohi/rootfs/system/etc/firmware"
 \tif [ ! -d "$INNOHI_FW" ]; then
 \t\tINNOHI_FW="${CROOT}/innohi/rootfs/system/etc/firmware"
 \tfi
@@ -52,24 +66,44 @@ redundant = """\tINNOHI_FW="${CROOT}/innohi/rootfs/system/etc/firmware"
 \t\tcp -rf "$INNOHI_FW"/* \\
 \t\t\t${CROOT}/buildroot/output/${RK_BUILDROOT_CFG}/target/vendor/etc/firmware/
 \tfi
-"""
-simple = """\t# lws-hmi: post-wifibt innohi single-tree
+""",
+    """\t# lws-hmi: post-wifibt innohi single-tree
 \tINNOHI_FW="${CROOT}/innohi/rootfs/system/etc/firmware"
 \tif [ -d "$INNOHI_FW" ] && ls "$INNOHI_FW"/* >/dev/null 2>&1; then
 \t\tcp -rf "$INNOHI_FW"/* \\
 \t\t\t${CROOT}/buildroot/output/${RK_BUILDROOT_CFG}/target/vendor/etc/firmware/
 \tfi
-"""
-if redundant not in text:
+""",
+]
+
+changed = False
+for p in patterns:
+    if p in text:
+        text = text.replace(p, oem, 1)
+        changed = True
+        break
+
+if not changed:
     sys.exit(0)
-text = text.replace(redundant, simple, 1)
+
 text = text.replace(
-    "# lws-hmi: post-wifibt innohi fix",
-    "# lws-hmi: post-wifibt innohi single-tree",
+    "# lws-hmi: post-wifibt innohi fix\n",
+    "",
 )
+text = text.replace(
+    "# lws-hmi: post-wifibt innohi single-tree\n",
+    "",
+)
+if "lws-hmi: post-wifibt oem-radio" not in text:
+    text = text.replace(
+        "build_wifibt()\n{",
+        "build_wifibt()\n{\n\t# lws-hmi: post-wifibt oem-radio",
+        1,
+    )
+
 with open(path, "w", encoding="utf-8") as fh:
     fh.write(text)
-print("normalize-innohi-sdk: collapsed post-wifibt firmware block")
+print("normalize-innohi-sdk: replaced Innohi FW dump with oem-radio stub")
 PY
 }
 
@@ -85,4 +119,4 @@ shopt -u nullglob
 
 collapse_wifibt_fw "$SDK/device/rockchip/common/scripts/post-wifibt.sh"
 
-echo "normalize-innohi-sdk: done (single tree: innohi/)"
+echo "normalize-innohi-sdk: done (single tree: innohi/; Wi-Fi FW → OEM radio)"

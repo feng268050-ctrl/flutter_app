@@ -9,6 +9,13 @@ log() {
 
 MODULE_DIRS="/vendor/lib/modules /system/lib/modules /lib/modules /usr/lib/modules"
 BT_TTY="${LWS_BT_TTY:-}"
+# Board pack root (…/boards/<id>); radio keep-set lives under radio/firmware/.
+BOARD_DIR="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
+OEM_RADIO_FW="${LWS_OEM_RADIO_FW:-$BOARD_DIR/radio/firmware}"
+# Driver CONFIG_AIC_FW_PATH (see ynh960-wifibt.config).
+AIC_FW_PATH="${LWS_AIC_FW_PATH:-/vendor/etc/firmware}"
+# Transitional only: LWS_WIFIBT_ALLOW_VENDOR_FW=1 accepts pre-existing vendor dump.
+ALLOW_VENDOR_FW="${LWS_WIFIBT_ALLOW_VENDOR_FW:-0}"
 
 wait_wlan() {
 	i=0
@@ -98,20 +105,52 @@ insmod_one() {
 }
 
 ensure_firmware_links() {
-	if [ -d /vendor/etc/firmware ]; then
+	# Prefer OEM radio pack (authoritative). Symlink keep-set into AIC_FW_PATH
+	# so CONFIG_AIC_FW_PATH / historical /lib/firmware expectations resolve.
+	if [ -f "$OEM_RADIO_FW/fmacfw_8800d80_u02.bin" ]; then
+		mkdir -p "$AIC_FW_PATH"
+		for f in "$OEM_RADIO_FW"/*; do
+			[ -e "$f" ] || continue
+			ln -sfn "$f" "$AIC_FW_PATH/$(basename "$f")" 2>/dev/null || \
+				cp -f "$f" "$AIC_FW_PATH/$(basename "$f")" 2>/dev/null || true
+		done
 		mkdir -p /system/etc
 		[ -e /system/etc/firmware ] || \
-			ln -sfn /vendor/etc/firmware /system/etc/firmware 2>/dev/null || true
-		[ -e /lib/firmware ] || \
-			ln -sfn /vendor/etc/firmware /lib/firmware 2>/dev/null || true
-	fi
-	for cand in /vendor/etc/firmware /system/etc/firmware /lib/firmware; do
-		[ -d "$cand" ] || continue
-		if [ -f "$cand/fmacfw_8800d80_u02.bin" ] || \
-			[ -f "$cand/aic_userconfig_8800d80.txt" ]; then
-			log "AIC8800D80 firmware present under $cand"
+			ln -sfn "$AIC_FW_PATH" /system/etc/firmware 2>/dev/null || true
+		# /lib/firmware may already be a real dir (Buildroot); prefer symlink when absent.
+		if [ ! -e /lib/firmware ]; then
+			ln -sfn "$AIC_FW_PATH" /lib/firmware 2>/dev/null || true
+		elif [ -d /lib/firmware ] && [ ! -L /lib/firmware ]; then
+			for f in "$OEM_RADIO_FW"/*; do
+				[ -e "$f" ] || continue
+				base="$(basename "$f")"
+				[ -e "/lib/firmware/$base" ] || \
+					ln -sfn "$f" "/lib/firmware/$base" 2>/dev/null || true
+			done
 		fi
-	done
+		log "OEM radio firmware linked from $OEM_RADIO_FW → $AIC_FW_PATH"
+		return 0
+	fi
+
+	log "OEM radio firmware missing under $OEM_RADIO_FW"
+	if [ "$ALLOW_VENDOR_FW" = "1" ]; then
+		log "LWS_WIFIBT_ALLOW_VENDOR_FW=1 — trying vendor dump fallback"
+		if [ -d /vendor/etc/firmware ]; then
+			mkdir -p /system/etc
+			[ -e /system/etc/firmware ] || \
+				ln -sfn /vendor/etc/firmware /system/etc/firmware 2>/dev/null || true
+			[ -e /lib/firmware ] || \
+				ln -sfn /vendor/etc/firmware /lib/firmware 2>/dev/null || true
+		fi
+		for cand in /vendor/etc/firmware /system/etc/firmware /lib/firmware; do
+			[ -d "$cand" ] || continue
+			if [ -f "$cand/fmacfw_8800d80_u02.bin" ]; then
+				log "AIC8800D80 firmware present under $cand (vendor fallback)"
+				return 0
+			fi
+		done
+	fi
+	return 1
 }
 
 bt_tty() {
@@ -267,7 +306,10 @@ if command -v rfkill >/dev/null 2>&1; then
 	rfkill unblock bluetooth 2>/dev/null || true
 fi
 
-ensure_firmware_links
+if ! ensure_firmware_links; then
+	log "soft-fail: no OEM radio firmware (Wi-Fi/BT unavailable; HMI continues)"
+	exit 1
+fi
 dump_sdio
 
 # Wi‑Fi often comes up at boot before deferred BT. Do not skip HCI attach.

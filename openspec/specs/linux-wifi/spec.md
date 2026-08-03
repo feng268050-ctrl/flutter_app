@@ -3,10 +3,7 @@
 ## Purpose
 
 Linux Wi-Fi client stack for the HMI: on-demand wpa_supplicant, wlan0 DHCP/static IPv4, and a reusable Dart `WifiController` abstraction (no NetworkManager).
-
 ## Requirements
-
-
 ### Requirement: Abstract Wi-Fi controller API for Linux client
 
 The system SHALL provide a reusable Dart `WifiController` abstraction that exposes radio enablement, scan of visible networks, connect/disconnect/forget (including hidden SSIDs), wlan0 IPv4 mode, and connection status streams. Linux SHALL implement the abstraction using on-demand wpa_supplicant control without NetworkManager. Callers MUST depend on the abstract type, not the Linux concrete class.
@@ -131,6 +128,7 @@ Saved networks SHALL persist in a wpa_supplicant configuration under `/var/lib/w
 
 - **WHEN** a PSK-protected network was saved and the device reboots with Wi-Fi enabled
 - **THEN** association can complete using the vault-injected PSK without the operator re-entering the passphrase
+
 ### Requirement: Settings daemons outside HMI cgroup
 
 Long-lived Wi‑Fi and wlan0 DHCP processes SHALL run under dedicated systemd units (`wlan-wpa.service`, `wlan-dhcp.service`) that are not part of `hmi.service`'s cgroup. Enabling Wi‑Fi from the HMI MUST start those units (or equivalent escaped helpers) and MUST NOT leave `wpa_supplicant` started solely as a child of the HMI process tree.
@@ -153,3 +151,18 @@ When Wi‑Fi radio is enabled successfully, the system SHALL create `/var/lib/wp
 
 - **WHEN** the operator disables Wi‑Fi radio
 - **THEN** `/var/lib/wpa_supplicant/wifi-wanted` is absent and the Wi‑Fi stack is torn down
+
+### Requirement: Wi-Fi modem bring-up loads firmware from OEM radio pack
+
+On boards that use an OEM `helpers.wifi_modem` (or equivalent) for combo Wi‑Fi/BT, the bring-up path SHALL treat the board OEM `radio/firmware/` directory as the authoritative source of module firmware blobs, ensuring driver search paths can resolve the required AIC (or board-specific) files. Bring-up MUST NOT depend on a rootfs multi-vendor firmware kitchen sink. Missing OEM radio firmware MUST soft-fail without crashing the HMI process.
+
+#### Scenario: ynh960 bringup finds fmacfw under OEM
+
+- **WHEN** `/oem` is mounted with the ynh960 radio pack and Wi‑Fi modem bring-up runs
+- **THEN** the helper MUST successfully resolve `fmacfw_8800d80_u02.bin` via the OEM radio pack (directly or via symlink/bind into the driver firmware path)
+
+#### Scenario: Missing OEM radio does not crash HMI
+
+- **WHEN** OEM radio firmware is absent and modem bring-up is invoked
+- **THEN** bring-up MUST fail soft (log / non-zero) and the HMI App process MUST remain running
+

@@ -684,7 +684,7 @@ patch_post_wifibt() {
   cp -a "$target.orig" "$target"
   bash "$OVERLAY/device/rockchip/common/scripts/patch-post-wifibt.sh" \
     "$target"
-  echo "overlay: patched $target (CROOT + innohi firmware fallback)"
+  echo "overlay: patched $target (CROOT + OEM radio; no Innohi FW dump)"
 }
 
 patch_buildroot_config() {

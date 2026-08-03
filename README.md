@@ -619,7 +619,7 @@ On **Linux**, `make lunch` / `make build-rootfs` run `./build.sh` directly under
 
 Rockchip Innohi board binaries and Wi‑Fi/BT firmware live under **`linux-sdk/innohi/`** (vendor drop; not in git). `make apply-overlay` runs `normalize-innohi-sdk` to drop any legacy `innohi_board/` mirror and retarget scripts to `innohi/rootfs`. **lws_hmi** skips Innohi **MainServer** autostart (Plan A uses systemd + `hmi.service`). If `build-rootfs` fails on missing `rk_wifi_init` / firmware, re-extract the SDK (ensure `linux-sdk/innohi/rootfs` exists) and run `make apply-overlay` again (macOS: auto before each Docker build).
 
-**ynh960 Wi‑Fi/BT chip:** board SDIO is **AIC8800D80** (`c8a1:0082`), not AP6256. Keep `RK_WIFIBT_MODULES` non-empty so `post-wifibt` copies kernel `*.ko` + Innohi firmware; runtime uses `wifibt-bringup.sh` / `rk_wifi_init` (`aic8800_bsp`/`fdrv`/`btlpm`). Kernel fragment: `ynh960-wifibt.config`.
+**ynh960 Wi‑Fi/BT chip:** board SDIO is **AIC8800D80** (`c8a1:0082`). `RK_WIFIBT_CHIP="AIC8800D80"` keeps `post-wifibt` running for kernel `*.ko` → `/vendor/lib/modules` without Broadcom `AP6256`/`bcmdhd`/`fw_bcm*` dumps. Combo firmware ships in the OEM radio pack (`oem/boards/ynh960/radio/`); runtime uses `wifibt-bringup.sh` / `rk_wifi_init` (`aic8800_bsp`/`fdrv`/`btlpm`). Kernel fragment: `ynh960-wifibt.config`.
 
 ### Serial console & board login
 

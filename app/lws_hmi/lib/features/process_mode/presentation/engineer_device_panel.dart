@@ -46,6 +46,10 @@ final class EngineerDevicePanel extends StatefulWidget {
   /// Captures the applied process context immediately before Laser Enable.
   final ValueChanged<ProcessPreset>? onConfigureWorkSession;
 
+  /// Gap from Enable Laser to frost panel bottom.
+  /// Shared with right-panel Reset/Save so button bottoms stay flush.
+  static const panelBottomInset = 25.0;
+
   @override
   State<EngineerDevicePanel> createState() => _EngineerDevicePanelState();
 }
@@ -58,9 +62,6 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
 
   /// Gap from frost panel top to ramp header.
   static const _panelTopInset = 2.0;
-
-  /// Gap from Enable Laser to frost panel bottom.
-  static const _panelBottomInset = 25.0;
 
   /// Shared gap: Retract↔Feed (horizontal), checkboxes↔wire.
   static const _actionGap = 20.0;
@@ -121,7 +122,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
               20,
               _panelTopInset,
               20,
-              _panelBottomInset,
+              EngineerDevicePanel.panelBottomInset,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -290,6 +291,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     controller: widget.controller,
                                     onMessage: (message) =>
                                         _toast(context, message),
+                                    iconLeftNudge: -7,
                                   ),
                                 ),
                                 const SizedBox(width: _actionGap),
@@ -438,7 +440,7 @@ final class _CheckRow extends StatelessWidget {
     required this.value,
     required this.enabled,
     required this.onChanged,
-    this.checkboxSize = CyberDimens.checkboxSmallSize,
+    this.checkboxSize = CyberDimens.checkboxLargeSize,
   });
 
   final String label;
@@ -507,6 +509,7 @@ final class _EngineerWireActionButton extends StatefulWidget {
     required this.active,
     required this.controller,
     required this.onMessage,
+    this.iconLeftNudge = 0,
   });
 
   final String label;
@@ -519,6 +522,8 @@ final class _EngineerWireActionButton extends StatefulWidget {
   final bool active;
   final DeviceControlController controller;
   final ValueChanged<String> onMessage;
+  /// Negative shifts icon left from the equal L/T inset.
+  final double iconLeftNudge;
 
   @override
   State<_EngineerWireActionButton> createState() =>
@@ -635,12 +640,13 @@ final class _EngineerWireActionButtonState
         (widget.retract
             ? (widget.active || _gesture.pressed || _gesture.holdingRun)
             : (latched ||
+                (_gesture.pressed && !filling) ||
                 (widget.active && !filling && !_gesture.pressed)));
     final onFill = solidHighlight || filling;
     final foreground = onFill ? Colors.white : actionOrange;
     final disabledForeground = const Color(0xFF7D3E2B);
     const labelSize = 16.0;
-    const iconSize = 34.0;
+    const iconSize = 26.0;
     final label = latched
         ? DeviceControlFeedbackCopy.continuousFeedLabel
         : widget.label;
@@ -677,29 +683,34 @@ final class _EngineerWireActionButtonState
                       color: actionOrange,
                     ),
                   if (latched) const FeedContinuousRipple(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
+                  Center(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: widget.enabled
+                            ? foreground
+                            : disabledForeground,
+                        fontSize: labelSize,
+                        fontWeight: FontWeight.w600,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                  // Continuous Feed: label only (match Quick Mode).
+                  if (!latched)
+                    Positioned(
+                      // Match icon left inset to its top/bottom inset,
+                      // then apply optional [iconLeftNudge] (e.g. Retract −7).
+                      left: (widget.height - iconSize) / 2 +
+                          widget.iconLeftNudge,
+                      top: (widget.height - iconSize) / 2,
+                      child: Icon(
                         widget.icon,
                         color:
                             widget.enabled ? foreground : disabledForeground,
                         size: iconSize,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        label,
-                        style: TextStyle(
-                          color: widget.enabled
-                              ? foreground
-                              : disabledForeground,
-                          fontSize: labelSize,
-                          fontWeight: FontWeight.w600,
-                          height: 1.0,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
                 ],
               ),
             ),
@@ -850,49 +861,12 @@ final class _EngineerDeviceActionButtonState
                       ),
                     ),
                   ),
-                if (widget.filled)
-                  Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Center(
-                        child: Text(
-                          widget.label,
-                          style: TextStyle(
-                            color: isVisuallyEnabled
-                                ? foreground
-                                : disabledForeground,
-                            fontSize: labelSize,
-                            fontWeight: FontWeight.w600,
-                            height: 1.0,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        // Match icon left inset to its top/bottom inset.
-                        left: (widget.height - iconSize) / 2,
-                        top: (widget.height - iconSize) / 2,
-                        child: Icon(
-                          widget.icon,
-                          color: isVisuallyEnabled
-                              ? foreground
-                              : disabledForeground,
-                          size: iconSize,
-                        ),
-                      ),
-                    ],
-                  )
-                else
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        widget.icon,
-                        color:
-                            isVisuallyEnabled ? foreground : disabledForeground,
-                        size: iconSize,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
+                // Icon left inset = top/bottom inset; label centered.
+                Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Center(
+                      child: Text(
                         widget.label,
                         style: TextStyle(
                           color: isVisuallyEnabled
@@ -903,8 +877,20 @@ final class _EngineerDeviceActionButtonState
                           height: 1.0,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    Positioned(
+                      left: (widget.height - iconSize) / 2,
+                      top: (widget.height - iconSize) / 2,
+                      child: Icon(
+                        widget.icon,
+                        color: isVisuallyEnabled
+                            ? foreground
+                            : disabledForeground,
+                        size: iconSize,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

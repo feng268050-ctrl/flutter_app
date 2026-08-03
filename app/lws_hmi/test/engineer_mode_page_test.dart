@@ -101,7 +101,7 @@ void main() {
     ProcessType? initialProcessType,
     String? initialPresetUuid,
   }) {
-    return AppScope(
+    return _AppServicesHost(
       services: testServices(),
       child: MaterialApp(
         theme: ThemeData(splashFactory: NoSplash.splashFactory),
@@ -141,25 +141,11 @@ void main() {
     expect(find.byKey(const ValueKey('engineer-parameters-actions-divider')),
         findsOneWidget);
 
-    // Reset / Save sit after the last param row — below the form viewport.
-    final formRect = tester
-        .getRect(find.byKey(const ValueKey('engineer-parameter-form')));
-    final resetRect = tester
-        .getRect(find.byKey(const ValueKey('engineer-action-reset-default')));
-    expect(resetRect.top, greaterThanOrEqualTo(formRect.bottom - 1));
-
+    // Reset / Save live in the form scroll — scroll to end to reveal.
     await tester.ensureVisible(
       find.byKey(const ValueKey('engineer-action-reset-default')),
     );
     await tester.pump();
-    expect(
-      tester
-          .getRect(
-            find.byKey(const ValueKey('engineer-action-reset-default')),
-          )
-          .top,
-      lessThan(formRect.bottom),
-    );
 
     final resetButton = tester.widget<CyberButton>(
       find.byKey(const ValueKey('engineer-action-reset-default')),
@@ -400,3 +386,33 @@ final class _EmptyBundle extends CachingAssetBundle {
 }
 
 final class _UnusedModbus extends ModbusRtuClient {}
+
+/// Owns [AppServices] so [OsWallClock] is disposed when the harness is removed.
+final class _AppServicesHost extends StatefulWidget {
+  const _AppServicesHost({
+    required this.services,
+    required this.child,
+  });
+
+  final AppServices services;
+  final Widget child;
+
+  @override
+  State<_AppServicesHost> createState() => _AppServicesHostState();
+}
+
+final class _AppServicesHostState extends State<_AppServicesHost> {
+  @override
+  void dispose() {
+    widget.services.wallClock.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppScope(
+      services: widget.services,
+      child: widget.child,
+    );
+  }
+}

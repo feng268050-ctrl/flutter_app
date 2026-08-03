@@ -10,9 +10,8 @@ import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 
 /// Catalog-driven engineer parameter form (row label + tappable value pill).
 ///
-/// Optional [footer] (Reset / Save as Favorite) sits after the last parameter
-/// row so it only appears after scrolling the right panel to the bottom —
-/// matching lws-ui `EngineerParameterScrollView`.
+/// Optional [footer] (e.g. Reset / Save) scrolls with the parameter list and
+/// is reached only after scrolling to the end of the form.
 final class EngineerParameterForm extends StatelessWidget {
   const EngineerParameterForm({
     super.key,
@@ -105,9 +104,13 @@ final class EngineerParameterForm extends StatelessWidget {
 
     // Scrollable column (not lazy ListView) so footer actions stay mounted
     // off-screen — user scrolls the right panel to reach Reset / Save.
+    // Footer supplies its own bottom inset when present.
     return SingleChildScrollView(
       key: const ValueKey('engineer-parameter-form'),
-      padding: const EdgeInsets.only(right: 16, bottom: 20),
+      padding: EdgeInsets.only(
+        right: 16,
+        bottom: footer == null ? 20 : 0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: children,

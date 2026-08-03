@@ -89,6 +89,17 @@ echo "post-build: purged Flutter JIT orphans under opt/hmi (if leftover)"
 rm -f "$TARGET_DIR"/opt/hmi/lib/librknnrt.so*
 echo "post-build: purged opt/hmi librknnrt.so duplicate (if leftover)"
 
+# systemd hwdb: keep compiled /usr/lib/udev/hwdb.bin (immutable-image layout);
+# drop *.hwdb sources (~8 MiB). Empty /etc hwdb inputs so first-boot
+# systemd-hwdb-update.service does not regenerate from nothing.
+if [ -d "$TARGET_DIR/usr/lib/udev/hwdb.d" ]; then
+	rm -f "$TARGET_DIR"/usr/lib/udev/hwdb.d/*
+fi
+if [ -d "$TARGET_DIR/etc/udev/hwdb.d" ]; then
+	rm -f "$TARGET_DIR"/etc/udev/hwdb.d/*.hwdb
+fi
+rm -f "$TARGET_DIR/etc/udev/hwdb.bin"
+echo "post-build: purged udev hwdb.d sources (kept usr/lib/udev/hwdb.bin)"
 
 # Retired Kind C helpers — HAL owns persist/restore for most prefs.
 # apply-mouse-settings is kept: Weston needs ini rewrite + HMI restart.

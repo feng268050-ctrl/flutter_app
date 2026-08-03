@@ -587,6 +587,29 @@ EOF
 	else
 		echo "OK:  opt/hmi/lib/librknnrt.so absent (system RKNN)"
 	fi
+
+	echo ""
+	echo "--- systemd udev hwdb (bin only) ---"
+	if [[ -f "$target/usr/lib/udev/hwdb.bin" ]]; then
+		echo "OK:  usr/lib/udev/hwdb.bin present"
+	else
+		echo "FAIL: usr/lib/udev/hwdb.bin missing (BR2_PACKAGE_SYSTEMD_HWDB)" >&2
+		missing=1
+	fi
+	_hwdb_src=""
+	while IFS= read -r -d '' _f; do
+		_hwdb_src="${_hwdb_src}${_f#"$target"/}"$'\n'
+	done < <(find "$target/usr/lib/udev/hwdb.d" "$target/etc/udev/hwdb.d" \
+		-type f -name '*.hwdb' -print0 2>/dev/null || true)
+	if [[ -n "$_hwdb_src" ]]; then
+		echo "FAIL: hwdb.d sources must not ship (post-build keeps bin only):" >&2
+		printf '%s' "$_hwdb_src" >&2
+		missing=1
+	else
+		echo "OK:  no *.hwdb under usr/lib/udev/hwdb.d or etc/udev/hwdb.d"
+	fi
+	unset _hwdb_src _f
+
 	if [[ -f "$target/usr/lib/libflutter_engine.so" ]]; then
 		system_sz="$(stat -c%s "$target/usr/lib/libflutter_engine.so" 2>/dev/null || stat -f%z "$target/usr/lib/libflutter_engine.so")"
 		echo "OK:  usr/lib/libflutter_engine.so ($system_sz bytes)"

@@ -1,0 +1,38 @@
+From: lws-hmi kernel overlay
+Subject: 0012-pinctrl-rockchip-keep-mux-on-shared-gpio-request.patch
+
+pinctrl: rockchip: do not remux pins that already have a non-GPIO owner
+
+Upstream 6.1.y replaced gpio_set_direction with gpio_request_enable. The
+Rockchip i2s-tdm driver gets i2s-lrck with GPIOD_ASIS so it can sample
+EXT_PORT without reclaiming the pin. With gpio_request_enable, every
+gpiod_get() forces RK_FUNC_GPIO and breaks I2S LRCK (PCM runs, no sound).
+
+When the pin already has a mux owner and a non-GPIO mux, keep that mux
+(warn once) instead of switching to GPIO.
+
+---
+ drivers/pinctrl/pinctrl-rockchip.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/pinctrl/pinctrl-rockchip.c b/drivers/pinctrl/pinctrl-rockchip.c
+--- a/drivers/pinctrl/pinctrl-rockchip.c
++++ b/drivers/pinctrl/pinctrl-rockchip.c
+@@ -4235,10 +4235,16 @@ static int rockchip_pmx_gpio_request_enable(struct pinctrl_dev *pctldev,
+ 	mux = rockchip_get_mux(bank, pin);
+ 	desc = pin_desc_get(pctldev, offset);
+ 	if (offset < 2048 && !test_bit(offset, bitmap) && desc->mux_owner && mux) {
+ 		set_bit(offset, bitmap);
+-		WARN(1, "pin %u already requested by %s; switch mux %d to GPIO\n",
++		WARN(1, "pin %u already requested by %s; keep mux %d (shared GPIOD_ASIS)\n",
+ 		     offset, desc->mux_owner, mux);
++		/*
++		 * I2S LRCK (and similar) use GPIOD_ASIS to read EXT_PORT while
++		 * the pin stays in its peripheral mux. Remuxing to GPIO here
++		 * kills the interface (e.g. silent RK809 codec on rk356x).
++		 */
++		return 0;
+ 	}
+ 
+ 	return rockchip_set_mux(bank, offset - bank->pin_base, RK_FUNC_GPIO);
+ }

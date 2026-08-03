@@ -1,17 +1,10 @@
-From: lws-hmi <lws-hmi@local>
-Subject: [PATCH] firmware: rockchip_sip: do not SMC without Rockchip DT
+From: lws-hmi kernel overlay
+Subject: 0007-rockchip-sip-skip-smc-without-rockchip-dt.patch
 
-Rockchip SIP helpers always emit `smc` (EL3/ATF). QEMU virt uses PSCI
-via HVC and has no Rockchip ATF; an unconditional SMC is UND and panics
-(e.g. rockchip_gem_get_ddr_info during DRM init).
-
-If the root DT compatible list has no "rockchip,*" entry, return
-SIP_RET_NOT_SUPPORTED instead of invoking SMC. Device trees for this
-product line keep rockchip,rk3566 / rk3568 on the root node.
-
+diff -ruN a/drivers/firmware/rockchip_sip.c b/drivers/firmware/rockchip_sip.c
 --- a/drivers/firmware/rockchip_sip.c
 +++ b/drivers/firmware/rockchip_sip.c
-@@ -34,6 +34,7 @@
+@@ -14,6 +14,7 @@
  #include <linux/arm-smccc.h>
  #include <linux/io.h>
  #include <linux/module.h>
@@ -19,7 +12,7 @@ product line keep rockchip,rk3566 / rk3568 on the root node.
  #include <linux/rockchip/rockchip_sip.h>
  #include <asm/cputype.h>
  #ifdef CONFIG_ARM
-@@ -55,12 +56,43 @@
+@@ -34,12 +35,43 @@
  
  #define SIZE_PAGE(n)	((n) << 12)
  
@@ -54,13 +47,12 @@ product line keep rockchip,rk3566 / rk3568 on the root node.
  						unsigned long arg2)
  {
  	struct arm_smccc_res res;
- 
++
 +	if (!rockchip_sip_el3_present()) {
 +		res.a0 = SIP_RET_NOT_SUPPORTED;
 +		res.a1 = res.a2 = res.a3 = 0;
 +		return res;
 +	}
-+
+ 
  	arm_smccc_smc(function_id, arg0, arg1, arg2, 0, 0, 0, 0, &res);
  	return res;
- }

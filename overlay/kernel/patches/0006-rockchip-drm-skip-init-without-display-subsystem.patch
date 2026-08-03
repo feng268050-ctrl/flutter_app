@@ -1,21 +1,10 @@
-From: lws-hmi <lws-hmi@local>
-Subject: [PATCH] drm/rockchip: skip init without display-subsystem (QEMU virt)
+From: lws-hmi kernel overlay
+Subject: 0006-rockchip-drm-skip-init-without-display-subsystem.patch
 
-The shared product-line Image also boots under QEMU (-machine virt) for
-P3.2. rockchip_drm_init always calls rockchip_gem_get_ddr_info() → SIP
-SMC into ATF. On virt there is no EL3/ATF, so the SMC is an undefined
-instruction and kills kernel_init ("Attempted to kill init").
-
-Skip the whole Rockchip DRM bring-up when DT has no
-rockchip,display-subsystem (device always has it; QEMU dummy-virt does
-not). Emulator display is virtio-gpu.
-
+diff -ruN a/drivers/gpu/drm/rockchip/rockchip_drm_drv.c b/drivers/gpu/drm/rockchip/rockchip_drm_drv.c
 --- a/drivers/gpu/drm/rockchip/rockchip_drm_drv.c
 +++ b/drivers/gpu/drm/rockchip/rockchip_drm_drv.c
-@@ -2567,10 +2567,22 @@ static int __init rockchip_drm_init(void)
- {
- 	int ret;
- 
+@@ -2571,6 +2571,18 @@
  	if (drm_firmware_drivers_only())
  		return -ENODEV;
  
@@ -34,5 +23,3 @@ not). Emulator display is virtio-gpu.
  	num_rockchip_sub_drivers = 0;
  #if IS_ENABLED(CONFIG_DRM_ROCKCHIP_VVOP)
  	ADD_ROCKCHIP_SUB_DRIVER(vvop_platform_driver, CONFIG_DRM_ROCKCHIP_VVOP);
- #else
- 	ADD_ROCKCHIP_SUB_DRIVER(vop_platform_driver, CONFIG_ROCKCHIP_VOP);

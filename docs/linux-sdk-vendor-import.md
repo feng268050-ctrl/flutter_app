@@ -55,6 +55,24 @@ exists (`FORCE_PLATFORM_OVERLAY=1` to force re-apply).
 **Third-party / custom Buildroot packages stay on overlay** — do not move
 `overlay/buildroot/package/**` or `overlay/third-party/**` into `linux-sdk`.
 
+## Kernel 6.1 LTS pin
+
+Owned `linux-sdk/kernel-6.1` tracks the Linux **6.1.y** long-term stable line.
+Product policy (see `openspec/changes/kernel-61-lts-rebase`): catch up via **full
+stable merge**, not a primary CVE cherry-pick stack under `overlay/kernel/patches/`.
+
+| Field | Value |
+|-------|--------|
+| Pin (`uname -r` / `Makefile` `SUBLEVEL`) | **6.1.180** |
+| Floor | ≥ 6.1.180 |
+| Locked | 2026-08-03 from [kernel.org releases.json](https://www.kernel.org/releases.json) (`longterm` 6.1.180) |
+| Git-readable pin file | [`overlay/kernel/KERNEL_6_1_SUBLEVEL`](../overlay/kernel/KERNEL_6_1_SUBLEVEL) (one integer = `SUBLEVEL`) |
+
+Until `linux-sdk/` is committed, colleagues without a populated SDK still learn the
+expected release from that overlay pin file and this section. After a tip bump,
+update **both** this table and `KERNEL_6_1_SUBLEVEL`, then re-apply overlay and
+rebuild the dual FIT.
+
 ## Device tree / kernel fragments (until S4)
 
 `linux-sdk/` is **not** in git. Colleagues cannot sync edits that live only under

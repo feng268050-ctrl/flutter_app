@@ -315,9 +315,13 @@ apply_kernel_patches() {
     "drivers/gpu/drm/drm_gem.c"
     "drivers/gpu/drm/rockchip/rockchip_drm_drv.c"
     "drivers/firmware/rockchip_sip.c"
+    "drivers/gpu/arm/midgard/mali_malisw.h"
+    "drivers/gpu/arm/bifrost/mali_malisw.h"
+    "drivers/gpu/drm/rockchip/rockchip_post_csc.c"
     "drivers/input/touchscreen/gt9xx/gt9xx.c"
     "drivers/input/touchscreen/gt9xx/gt9xx.h"
     "drivers/net/phy/icplus.c"
+    "drivers/pinctrl/pinctrl-rockchip.c"
     # Restore from .lws-hmi.orig even with no active patch: keep vendor
     # `if (1) return -EINVAL` (PMIC RTC probe off). Do not re-add 0008.
     "drivers/rtc/rtc-rk808.c"
@@ -363,9 +367,13 @@ restore_kernel_patches() {
     "drivers/gpu/drm/drm_gem.c"
     "drivers/gpu/drm/rockchip/rockchip_drm_drv.c"
     "drivers/firmware/rockchip_sip.c"
+    "drivers/gpu/arm/midgard/mali_malisw.h"
+    "drivers/gpu/arm/bifrost/mali_malisw.h"
+    "drivers/gpu/drm/rockchip/rockchip_post_csc.c"
     "drivers/input/touchscreen/gt9xx/gt9xx.c"
     "drivers/input/touchscreen/gt9xx/gt9xx.h"
     "drivers/net/phy/icplus.c"
+    "drivers/pinctrl/pinctrl-rockchip.c"
     "drivers/rtc/rtc-rk808.c"
   )
   kernel="$(kernel_source_dir)"

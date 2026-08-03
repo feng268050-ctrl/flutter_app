@@ -1,45 +1,10 @@
-From: lws-hmi <lws-hmi@local>
-Subject: [PATCH] drm/gem: recover corrupted Rockchip object funcs
+From: lws-hmi kernel overlay
+Subject: 0001-drm-gem-handle-objects-without-funcs-on-release.patch
 
-Repeated flutter-pi teardown can expose a Rockchip BSP memory corruption
-where a live GEM object's funcs pointer is either NULL or replaced by a
-stale slab pointer.  The generic release callback then branches through
-an invalid close address, observed as ASCII data in the program counter.
-
-Let drivers with one GEM object type publish a canonical funcs table.
-Repair Rockchip objects from that immutable table before release or free,
-and tolerate a transient NULL/invalid object or corrupted obj->dev pointer
-during handle deletion.
-
---- a/include/drm/drm_drv.h
-+++ b/include/drm/drm_drv.h
-@@ -34,6 +34,7 @@
- 
- struct drm_file;
- struct drm_gem_object;
-+struct drm_gem_object_funcs;
- struct drm_master;
- struct drm_minor;
- struct dma_buf;
-@@ -298,6 +299,15 @@ struct drm_driver {
- 	struct drm_gem_object *(*gem_create_object)(struct drm_device *dev,
- 						    size_t size);
- 
-+	/**
-+	 * @gem_object_funcs:
-+	 *
-+	 * Optional canonical GEM object functions for drivers whose objects all
-+	 * share one immutable function table. The GEM core uses this to recover
-+	 * an object whose funcs pointer was corrupted during driver teardown.
-+	 */
-+	const struct drm_gem_object_funcs *gem_object_funcs;
-+
- 	/**
- 	 * @prime_handle_to_fd:
- 	 *
+diff -ruN a/drivers/gpu/drm/drm_gem.c b/drivers/gpu/drm/drm_gem.c
 --- a/drivers/gpu/drm/drm_gem.c
 +++ b/drivers/gpu/drm/drm_gem.c
-@@ -228,18 +228,56 @@ drm_gem_object_handle_put_unlocked(struct drm_gem_object *obj)
+@@ -226,6 +226,36 @@
  		drm_gem_object_put(obj);
  }
  
@@ -76,13 +41,16 @@ during handle deletion.
  /*
   * Called at device or object close to release the file's
   * handle references on objects.
-  */
+@@ -233,15 +263,23 @@
  static int
  drm_gem_object_release_handle(int id, void *ptr, void *data)
  {
 +	const struct drm_gem_object_funcs *funcs;
  	struct drm_file *file_priv = data;
  	struct drm_gem_object *obj = ptr;
+ 
+ 	if (drm_WARN_ON(obj->dev, !data))
+ 		return 0;
  
 -	if (obj->funcs->close)
 -		obj->funcs->close(obj, file_priv);
@@ -91,14 +59,15 @@ during handle deletion.
 +				    obj);
 +		return 0;
 +	}
-+
+ 
 +	funcs = drm_gem_object_get_funcs(obj);
 +	if (funcs && funcs->close)
 +		funcs->close(obj, file_priv);
- 
++
  	drm_prime_remove_buf_handle(&file_priv->prime, id);
  	drm_vma_node_revoke(&obj->vma_node, file_priv);
-@@ -955,13 +990,18 @@ EXPORT_SYMBOL(drm_gem_object_release);
+ 
+@@ -960,13 +998,18 @@
  void
  drm_gem_object_free(struct kref *kref)
  {
@@ -106,22 +75,23 @@ during handle deletion.
  	struct drm_gem_object *obj =
  		container_of(kref, struct drm_gem_object, refcount);
  
-+	if (WARN_ON(!drm_gem_object_has_valid_device(obj)))
-+		return;
-+
 -	if (WARN_ON(!obj->funcs->free))
-+	funcs = drm_gem_object_get_funcs(obj);
-+	if (WARN_ON(!funcs || !funcs->free))
++	if (WARN_ON(!drm_gem_object_has_valid_device(obj)))
  		return;
  
 -	obj->funcs->free(obj);
++	funcs = drm_gem_object_get_funcs(obj);
++	if (WARN_ON(!funcs || !funcs->free))
++		return;
++
 +	funcs->free(obj);
  }
  EXPORT_SYMBOL(drm_gem_object_free);
  
+diff -ruN a/drivers/gpu/drm/rockchip/rockchip_drm_drv.c b/drivers/gpu/drm/rockchip/rockchip_drm_drv.c
 --- a/drivers/gpu/drm/rockchip/rockchip_drm_drv.c
 +++ b/drivers/gpu/drm/rockchip/rockchip_drm_drv.c
-@@ -2298,6 +2298,7 @@ static struct drm_driver rockchip_drm_driver = {
+@@ -2298,6 +2298,7 @@
  	.postclose		= rockchip_drm_postclose,
  	.lastclose		= rockchip_drm_lastclose,
  	.open			= rockchip_drm_open,
@@ -129,3 +99,30 @@ during handle deletion.
  	.dumb_create		= rockchip_gem_dumb_create,
  	.prime_handle_to_fd	= drm_gem_prime_handle_to_fd,
  	.prime_fd_to_handle	= drm_gem_prime_fd_to_handle,
+diff -ruN a/include/drm/drm_drv.h b/include/drm/drm_drv.h
+--- a/include/drm/drm_drv.h
++++ b/include/drm/drm_drv.h
+@@ -34,6 +34,7 @@
+ 
+ struct drm_file;
+ struct drm_gem_object;
++struct drm_gem_object_funcs;
+ struct drm_master;
+ struct drm_minor;
+ struct dma_buf;
+@@ -297,6 +298,15 @@
+ 	 */
+ 	struct drm_gem_object *(*gem_create_object)(struct drm_device *dev,
+ 						    size_t size);
++
++	/**
++	 * @gem_object_funcs:
++	 *
++	 * Optional canonical GEM object functions for drivers whose objects all
++	 * share one immutable function table. The GEM core uses this to recover
++	 * an object whose funcs pointer was corrupted during driver teardown.
++	 */
++	const struct drm_gem_object_funcs *gem_object_funcs;
+ 
+ 	/**
+ 	 * @prime_handle_to_fd:

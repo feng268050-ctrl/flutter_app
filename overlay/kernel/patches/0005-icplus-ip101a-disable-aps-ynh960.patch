@@ -1,11 +1,13 @@
+From: lws-hmi kernel overlay
+Subject: 0005-icplus-ip101a-disable-aps-ynh960.patch
+
+diff -ruN a/drivers/net/phy/icplus.c b/drivers/net/phy/icplus.c
 --- a/drivers/net/phy/icplus.c
 +++ b/drivers/net/phy/icplus.c
-@@ -271,14 +271,22 @@
- 
- out:
+@@ -273,12 +273,20 @@
  	return phy_restore_page(phydev, oldpage, err);
-+}
-+
+ }
+ 
 +/* ynh960 RMII dedicated IPC: APS (reg16 bit1) correlates with a ~2.5 Mbps
 + * RTSP UDP ceiling and high RTP sequence loss. Keep the PHY fully awake.
 + * Shared by IP101A and IP101G (board binds IP101G).
@@ -13,8 +15,8 @@
 +static int ip101a_g_disable_aps(struct phy_device *phydev)
 +{
 +	return phy_clear_bits(phydev, IP10XX_SPEC_CTRL_STATUS, IP101A_G_APS_ON);
- }
- 
++}
++
  static int ip101a_config_init(struct phy_device *phydev)
  {
  	int ret;
@@ -25,14 +27,14 @@
  	if (ret)
  		return ret;
  
-@@ -289,6 +297,10 @@
+@@ -288,6 +296,10 @@
+ static int ip101g_config_init(struct phy_device *phydev)
  {
  	int ret;
- 
++
 +	ret = ip101a_g_disable_aps(phydev);
 +	if (ret)
 +		return ret;
-+
+ 
  	/* Enable the PHY counters */
  	ret = phy_modify_paged(phydev, 1, IP101G_P1_CNT_CTRL,
- 			       CNT_CTRL_RX_EN, CNT_CTRL_RX_EN);

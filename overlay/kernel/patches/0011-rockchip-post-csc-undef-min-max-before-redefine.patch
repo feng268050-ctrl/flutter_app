@@ -1,0 +1,20 @@
+From: lws-hmi kernel overlay
+Subject: 0011-rockchip-post-csc-undef-min-max-before-redefine.patch
+
+diff -ruN a/drivers/gpu/drm/rockchip/rockchip_post_csc.c b/drivers/gpu/drm/rockchip/rockchip_post_csc.c
+--- a/drivers/gpu/drm/rockchip/rockchip_post_csc.c
++++ b/drivers/gpu/drm/rockchip/rockchip_post_csc.c
+@@ -38,6 +38,13 @@
+ /* r,g,b color temp div coef, range [-128,128] for 10bit data */
+ #define PQ_CSC_TEMP_OFFSET_DIV_COEF		2
+ 
++/* LWS: avoid clash with linux/minmax.h after 6.1.180 */
++#ifdef MAX
++#undef MAX
++#endif
++#ifdef MIN
++#undef MIN
++#endif
+ #define	MAX(a, b)				((a) > (b) ? (a) : (b))
+ #define	MIN(a, b)				((a) < (b) ? (a) : (b))
+ #define	CLIP(x, min_v, max_v)			MIN(MAX(x, min_v), max_v)

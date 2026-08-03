@@ -52,7 +52,7 @@ Width is not locked — wrap with `SizedBox(width: …)`, use `stretch: true`, o
 | `mini` | **38** | 14 | 19 | 20 | **14** |
 | `small` (**default**) | **56** | 14 | 28 | 20 | **14** |
 | `medium` | **66** | 14 | 33 | 24 | **18** |
-| `large` | **80** | 14 | 40 | 28 | **22** |
+| `large` | **86** | 14 | 43 | 28 | **22** |
 
 Stroke remains **1**. Escape hatch: `height:` overrides the tier height for
 non-standard chrome (e.g. 36dp chips).

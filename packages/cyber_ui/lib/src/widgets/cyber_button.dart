@@ -21,7 +21,7 @@ enum CyberButtonSize {
   /// Process-mode outline / wire actions (height 66).
   medium,
 
-  /// Primary hold / enable actions (height 80).
+  /// Primary hold / enable actions (height 86).
   large,
 
   /// Alias for [small] — prefer [small] in new code.

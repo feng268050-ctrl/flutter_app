@@ -34,8 +34,8 @@ abstract final class CyberDimens {
   static const actionButtonMediumPaddingHorizontal = 24.0;
   static const actionButtonMediumFontSize = 18.0;
 
-  /// Large tier height (80) — primary hold / enable actions.
-  static const actionButtonLargeHeight = 80.0;
+  /// Large tier height (86) — primary hold / enable actions.
+  static const actionButtonLargeHeight = 86.0;
   static const actionButtonLargePaddingHorizontal = 28.0;
   static const actionButtonLargeFontSize = 22.0;
 

@@ -79,7 +79,7 @@ void main() {
     expect(CyberDimens.actionButtonMiniHeight, 38);
     expect(CyberDimens.actionButtonSmallHeight, 56);
     expect(CyberDimens.actionButtonMediumHeight, 66);
-    expect(CyberDimens.actionButtonLargeHeight, 80);
+    expect(CyberDimens.actionButtonLargeHeight, 86);
     expect(CyberDimens.actionButtonHeight, CyberDimens.actionButtonSmallHeight);
     expect(CyberDimens.buttonStrokeWidth, 1.0);
     expect(CyberDimens.rectangleButtonCornerRadius, 14);
@@ -155,8 +155,8 @@ void main() {
     );
     final deco = tester.widget<DecoratedBox>(find.byType(DecoratedBox));
     final decoration = deco.decoration as BoxDecoration;
-    expect(decoration.borderRadius, BorderRadius.circular(40));
-    expect(tester.getSize(find.byType(CyberButton)).height, 80);
+    expect(decoration.borderRadius, BorderRadius.circular(43));
+    expect(tester.getSize(find.byType(CyberButton)).height, 86);
   });
 
   testWidgets('default layout is intrinsic width (not full-bleed)',

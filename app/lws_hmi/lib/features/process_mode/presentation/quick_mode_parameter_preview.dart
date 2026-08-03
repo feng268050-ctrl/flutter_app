@@ -116,7 +116,11 @@ final class QuickModeMoreParametersButton extends StatelessWidget {
                 onPressed();
               }
             : null,
-        icon: const Icon(Icons.tune, color: Colors.white, size: 20),
+        icon: const Icon(
+          Icons.tune,
+          color: Colors.white,
+          size: CyberDimens.checkboxLargeSize,
+        ),
         label: const Text(
           'More Parameters',
           style: TextStyle(

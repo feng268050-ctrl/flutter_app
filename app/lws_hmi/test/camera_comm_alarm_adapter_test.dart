@@ -198,8 +198,10 @@ void main() {
     });
 
     test('sound helper only applies when a dialog is showing', () async {
-      // Policy may mark C002 as WARN-eligible, but without showingCode the
-      // controller must not start SFX (see _syncWarnSound).
+      // Policy may mark C002 as WARN-eligible, but without a *presented*
+      // dialog (CyberUiWarnPresentation.showingCode) the controller must not
+      // start SFX — coordinator.showingCode alone (queued behind Wi‑Fi tip)
+      // is insufficient (see _syncWarnSound).
       final audio = _FakeAudio();
       final sfx = WarnAlarmSound(audio);
       expect(sfx.isActive, isFalse);

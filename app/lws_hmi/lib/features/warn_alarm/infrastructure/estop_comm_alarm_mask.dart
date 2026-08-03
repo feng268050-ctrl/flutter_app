@@ -1,13 +1,16 @@
-/// Pure e-stop mask for Modbus alarm bits that must not frost-popup while the
-/// machine e-stop is held.
+/// Safety-state mask for Modbus alarm bits that must not frost-popup while the
+/// machine is intentionally de-energized.
 ///
 /// - H022 / W001: bits may read true because hardware is de-energized
 ///   (lws-ui `applyEmergencyStopCommAlarmReset` parity).
+/// - H022: the laser is also intentionally de-energized while the key switch
+///   is OFF. It is re-evaluated only after the key switch is restored.
 /// - H029: laser emergency-stop alarm is an alarm-type dialog; product policy
 ///   shows it only after the machine e-stop button is reset (tip
 ///   "Device is in E-stop" is separate, on press).
 abstract final class EstopCommAlarmMask {
   static const String emergencyStopAttr = 'machine.emergency_stop';
+  static const String keySwitchOnAttr = 'machine.key_switch_on';
   static const String laserCommAttr = 'alarm.laser_comm';
   static const String wireFeederCommAttr = 'alarm.wire_feeder_comm';
   static const String laserEmergencyStopAttr = 'alarm.laser_emergency_stop';
@@ -28,4 +31,12 @@ abstract final class EstopCommAlarmMask {
     required bool eStopActive,
   }) =>
       raw && !eStopActive;
+
+  /// H022 alone is additionally suppressed while the key switch is OFF.
+  static bool laserCommEffectiveActive({
+    required bool raw,
+    required bool eStopActive,
+    required bool keySwitchOn,
+  }) =>
+      raw && !eStopActive && keySwitchOn;
 }

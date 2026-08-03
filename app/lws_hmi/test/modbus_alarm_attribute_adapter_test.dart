@@ -90,13 +90,16 @@ final class _FakeModbus extends ModbusRtuClient {
       return {};
     }
     return {
-      EstopCommAlarmMask.laserCommAttr: attributeValues[EstopCommAlarmMask.laserCommAttr],
+      EstopCommAlarmMask.laserCommAttr:
+          attributeValues[EstopCommAlarmMask.laserCommAttr],
       EstopCommAlarmMask.wireFeederCommAttr:
           attributeValues[EstopCommAlarmMask.wireFeederCommAttr],
       EstopCommAlarmMask.laserEmergencyStopAttr:
           attributeValues[EstopCommAlarmMask.laserEmergencyStopAttr],
       EstopCommAlarmMask.emergencyStopAttr:
           attributeValues[EstopCommAlarmMask.emergencyStopAttr],
+      EstopCommAlarmMask.keySwitchOnAttr:
+          attributeValues[EstopCommAlarmMask.keySwitchOnAttr],
     };
   }
 
@@ -163,7 +166,8 @@ void main() {
     await adapter.start();
 
     fake.emit([
-      _change('alarm.gun_comm', true, previous: null, kind: ModbusChangeKind.primed),
+      _change('alarm.gun_comm', true,
+          previous: null, kind: ModbusChangeKind.primed),
     ]);
     await Future<void>.delayed(Duration.zero);
     expect(events.single.kind, AlarmSignalKind.rising);
@@ -293,7 +297,8 @@ void main() {
           AlarmSignalKind.rising);
     });
 
-    test('H022 active then e-stop → falling; release settles then re-arms if raw true',
+    test(
+        'H022 active then e-stop → falling; release settles then re-arms if raw true',
         () async {
       final previousDelay =
           ModbusAlarmAttributeAdapter.estopMaskedResampleDelay;
@@ -338,6 +343,44 @@ void main() {
       expect(events.last.active, isTrue);
     });
 
+    test('key switch off suppresses only H022; restore settles then re-arms',
+        () async {
+      final previousDelay =
+          ModbusAlarmAttributeAdapter.estopMaskedResampleDelay;
+      addTearDown(() {
+        ModbusAlarmAttributeAdapter.estopMaskedResampleDelay = previousDelay;
+      });
+      ModbusAlarmAttributeAdapter.estopMaskedResampleDelay = Duration.zero;
+
+      fake.emit([
+        _change(
+          EstopCommAlarmMask.keySwitchOnAttr,
+          false,
+          previous: true,
+        ),
+        _change(EstopCommAlarmMask.laserCommAttr, true, previous: false),
+        _change('alarm.gun_comm', true, previous: false),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(events.where((e) => e.code == 'H022'), isEmpty);
+      expect(events.where((e) => e.code == 'H001').single.kind,
+          AlarmSignalKind.rising);
+
+      fake.emit([
+        _change(
+          EstopCommAlarmMask.keySwitchOnAttr,
+          true,
+          previous: false,
+        ),
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(events.where((e) => e.code == 'H022'), isEmpty);
+
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+      expect(events.where((e) => e.code == 'H022').single.kind,
+          AlarmSignalKind.rising);
+    });
+
     test('e-stop release does not re-arm H022 when raw clears during settle',
         () async {
       final previousDelay =
@@ -377,7 +420,8 @@ void main() {
       expect(events.where((e) => e.code == 'H022'), isEmpty);
     });
 
-    test('settle level-read re-arms H022 when bit stays true without a change edge',
+    test(
+        'settle level-read re-arms H022 when bit stays true without a change edge',
         () async {
       final previousDelay =
           ModbusAlarmAttributeAdapter.estopMaskedResampleDelay;
@@ -421,8 +465,7 @@ void main() {
         () async {
       final previousDelay =
           ModbusAlarmAttributeAdapter.estopMaskedResampleDelay;
-      final previousHold =
-          ModbusAlarmAttributeAdapter.h029DeferredOneShotHold;
+      final previousHold = ModbusAlarmAttributeAdapter.h029DeferredOneShotHold;
       addTearDown(() {
         ModbusAlarmAttributeAdapter.estopMaskedResampleDelay = previousDelay;
         ModbusAlarmAttributeAdapter.h029DeferredOneShotHold = previousHold;
@@ -463,7 +506,8 @@ void main() {
 
       await Future<void>.delayed(const Duration(milliseconds: 40));
       expect(
-        events.where((e) => e.code == 'H029' && e.kind == AlarmSignalKind.rising),
+        events
+            .where((e) => e.code == 'H029' && e.kind == AlarmSignalKind.rising),
         isNotEmpty,
       );
     });
@@ -480,7 +524,8 @@ void main() {
       ]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(events.where((e) => e.code == 'H022' || e.code == 'W001'), isEmpty);
+      expect(
+          events.where((e) => e.code == 'H022' || e.code == 'W001'), isEmpty);
       expect(monitor.laserCommFault, isTrue);
       expect(monitor.wireFeederCommFault, isTrue);
 

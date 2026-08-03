@@ -12,8 +12,9 @@ const kModbusHealthAlarmCode = 'C001';
 /// Maps HAL watches → [AlarmSignalEvent] (+ monitor attribute/health fan-out).
 ///
 /// Applies [EstopCommAlarmMask] so H022/W001/H029 do not rise (popup/history)
-/// while `machine.emergency_stop` is active. After e-stop release, masked bits
-/// settle then are **level-confirmed** via [ModbusRtuClient.readAttribute]
+/// while `machine.emergency_stop` is active; H022 is also suppressed while
+/// `machine.key_switch_on` is false. After either safety state releases, the
+/// relevant bit settles then is **level-confirmed** via [ModbusRtuClient.readAttribute]
 /// (Android re-evaluates each poll; our watch is edge-based). Alarm
 /// Information / status checks keep raw Modbus bit values.
 final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
@@ -34,6 +35,7 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
 
   StreamSubscription<List<ModbusAttributeChange>>? _sub;
   StreamSubscription<ModbusHealth>? _healthSub;
+
   /// Last **warn-signal** active per alarm attribute (post e-stop mask for
   /// H022/W001/H029; raw for all other codes).
   final Map<String, bool> _activeByAttr = {};
@@ -41,6 +43,7 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
   bool _started = false;
 
   bool _eStopActive = false;
+  bool _keySwitchOn = true;
   bool? _rawLaserComm;
   bool? _rawWireFeederComm;
   bool? _rawLaserEmergencyStop;
@@ -51,6 +54,10 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
 
   /// Bumps when e-stop releases / adapter disposes so delayed resamples cancel.
   int _estopReleaseResampleGen = 0;
+
+  /// Bumps when the key switch returns ON / adapter disposes so delayed H022
+  /// resamples cancel.
+  int _keySwitchReleaseResampleGen = 0;
 
   /// Settle time after e-stop release before re-arming masked alarms from
   /// cached raw bits (de-energize false-positives often clear within one poll).
@@ -104,6 +111,7 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
         ...MonitorModbusIds.overTempIds,
         ..._meta.keys,
         EstopCommAlarmMask.emergencyStopAttr,
+        EstopCommAlarmMask.keySwitchOnAttr,
       }.toList(growable: false);
       if (ids.isNotEmpty) {
         final stream = await modbus.watchAttributes(ids: ids);
@@ -173,11 +181,14 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
     }
 
     final wasEStop = _eStopActive;
+    final wasKeySwitchOn = _keySwitchOn;
 
     // Pass 1: update e-stop latch + raw masked bits from the whole batch.
     for (final c in changes) {
       if (c.id == EstopCommAlarmMask.emergencyStopAttr) {
         _eStopActive = c.value == true;
+      } else if (c.id == EstopCommAlarmMask.keySwitchOnAttr) {
+        _keySwitchOn = c.value == true;
       } else if (c.id == EstopCommAlarmMask.laserCommAttr) {
         _rawLaserComm = c.value == true;
       } else if (c.id == EstopCommAlarmMask.wireFeederCommAttr) {
@@ -189,6 +200,8 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
 
     final eStopEngaged = !wasEStop && _eStopActive;
     final eStopReleased = wasEStop && !_eStopActive;
+    final keySwitchTurnedOff = wasKeySwitchOn && !_keySwitchOn;
+    final keySwitchRestored = !wasKeySwitchOn && _keySwitchOn;
 
     // Latch H029 while e-stop is held (including the engage batch).
     if (_eStopActive && _rawLaserEmergencyStop == true) {
@@ -224,21 +237,41 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
       _scheduleMaskedResampleAfterEstopRelease();
     }
 
-    // Pass 4: per-attribute signal edges (skip masked on e-stop engage only).
-    final skipMaskedSignals = eStopEngaged;
+    // Key OFF intentionally removes laser power. Only H022 is suppressed;
+    // all other faults retain their existing behavior.
+    if (keySwitchTurnedOff) {
+      _keySwitchReleaseResampleGen++;
+      _syncMaskedEffective(
+        EstopCommAlarmMask.laserCommAttr,
+        effective: false,
+      );
+    } else if (keySwitchRestored && !_eStopActive) {
+      _scheduleLaserCommResampleAfterKeySwitchRestore();
+    }
+
+    // Pass 4: per-attribute signal edges.
     for (final c in changes) {
       if (c.id == EstopCommAlarmMask.emergencyStopAttr) {
         continue;
       }
       if (EstopCommAlarmMask.isMaskedAttr(c.id)) {
-        if (skipMaskedSignals) {
+        final skipForSafetyTransition = eStopEngaged ||
+            (c.id == EstopCommAlarmMask.laserCommAttr &&
+                (keySwitchTurnedOff || keySwitchRestored));
+        if (skipForSafetyTransition) {
           continue;
         }
         final raw = c.value == true;
-        final effective = EstopCommAlarmMask.effectiveActive(
-          raw: raw,
-          eStopActive: _eStopActive,
-        );
+        final effective = c.id == EstopCommAlarmMask.laserCommAttr
+            ? EstopCommAlarmMask.laserCommEffectiveActive(
+                raw: raw,
+                eStopActive: _eStopActive,
+                keySwitchOn: _keySwitchOn,
+              )
+            : EstopCommAlarmMask.effectiveActive(
+                raw: raw,
+                eStopActive: _eStopActive,
+              );
         final reminder = c.kind == ModbusChangeKind.reminder;
         _emitEffectiveSignal(
           attributeId: c.id,
@@ -290,6 +323,32 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
     // Flutter adaptation of Android per-poll level: after settle, re-read
     // masked attrs so a stuck-true bit without a change edge still rises.
     unawaited(_resampleMaskedAfterSettle(gen, delay));
+  }
+
+  void _scheduleLaserCommResampleAfterKeySwitchRestore() {
+    final gen = ++_keySwitchReleaseResampleGen;
+    unawaited(_resampleLaserCommAfterKeySwitchRestore(gen));
+  }
+
+  Future<void> _resampleLaserCommAfterKeySwitchRestore(int gen) async {
+    await Future<void>.delayed(estopMaskedResampleDelay);
+    if (gen != _keySwitchReleaseResampleGen ||
+        _eStopActive ||
+        !_keySwitchOn ||
+        _controller.isClosed) {
+      return;
+    }
+    await _refreshMaskedRawFromHardware();
+    if (gen != _keySwitchReleaseResampleGen ||
+        _eStopActive ||
+        !_keySwitchOn ||
+        _controller.isClosed) {
+      return;
+    }
+    _syncMaskedEffective(
+      EstopCommAlarmMask.laserCommAttr,
+      effective: _rawLaserComm == true,
+    );
   }
 
   Future<void> _resampleMaskedAfterSettle(int gen, Duration delay) async {
@@ -442,6 +501,7 @@ final class ModbusAlarmAttributeAdapter implements AlarmSignalSource {
 
   Future<void> dispose() async {
     _estopReleaseResampleGen++;
+    _keySwitchReleaseResampleGen++;
     await _sub?.cancel();
     await _healthSub?.cancel();
     _sub = null;

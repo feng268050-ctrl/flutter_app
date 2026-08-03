@@ -118,8 +118,13 @@ flutter:
     # Ship-only (make prepare-app-assets / build-app): newest firmware per HW +
     # newest process-library JSON per model. Sources: assets/firmware/control-board/
     # and assets/process-library/<model>/*.xlsx (not declared here).
-    - assets/.generated/firmware/
+    # Flutter packs only *direct* files under each listed dir — model subdirs
+    # are rewritten by prepare-hmi-ship-assets.sh between the markers below.
+    # BEGIN generated-ship-assets
+    - assets/.generated/firmware/control-board/
     - assets/.generated/process-library/
+    - assets/.generated/process-library/L1_Pro/
+    # END generated-ship-assets
     # Product Home backdrop / heroes (from lws-ui mipmap-mdpi).
     - assets/home/home_back.webp
     - assets/home/home_left_1m.webp

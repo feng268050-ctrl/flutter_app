@@ -33,7 +33,7 @@ final class ProcessModeOutlineButton extends StatelessWidget {
     required this.enabled,
     required this.onPressed,
     this.height = ProcessModeOutlineChrome.defaultHeight,
-    /// Negative shifts icon left (Auto Wire keeps legacy −10).
+    /// Negative shifts icon left from the equal L/T inset.
     this.iconLeftNudge = 0,
   });
 
@@ -294,10 +294,7 @@ final class _OutlineFace extends StatelessWidget {
         : (onFill
             ? Colors.white
             : ProcessModeOutlineChrome.actionOrange);
-    // Vertically centered; left inset matches top unless [iconLeftNudge].
-    final iconTop =
-        (height - ProcessModeOutlineChrome.iconSize) / 2;
-    final iconLeft = iconTop + iconLeftNudge;
+    final iconInset = (height - ProcessModeOutlineChrome.iconSize) / 2;
     return Container(
       height: height,
       width: double.infinity,
@@ -323,11 +320,13 @@ final class _OutlineFace extends StatelessWidget {
                 color: ProcessModeOutlineChrome.actionOrange,
               ),
             if (continuousRipple) const FeedContinuousRipple(),
+            // Label centered in the button; leading icon left inset = top inset.
             Center(
               child: Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   color: foreground,
                   fontSize: ProcessModeOutlineChrome.labelSize,
@@ -338,8 +337,8 @@ final class _OutlineFace extends StatelessWidget {
             ),
             if (showLeading)
               Positioned(
-                left: iconLeft,
-                top: iconTop,
+                left: iconInset + iconLeftNudge,
+                top: iconInset,
                 width: ProcessModeOutlineChrome.iconSize,
                 height: ProcessModeOutlineChrome.iconSize,
                 child: ColorFiltered(

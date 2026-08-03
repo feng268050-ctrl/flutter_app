@@ -282,23 +282,34 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                               () => unawaited(
                                     showLiveMachineStatusDialog(context),
                                   ),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
+                          child: SizedBox(
+                            height: CyberDimens.actionButtonSmallHeight,
+                            width: double.infinity,
+                            child: Stack(
+                              fit: StackFit.expand,
                               children: [
-                                Text(
-                                  'More Status',
-                                  style: TextStyle(
-                                    fontSize: metrics.buttonTextSize,
-                                    fontWeight: FontWeight.w600,
+                                Center(
+                                  child: Text(
+                                    'More Status',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: metrics.buttonTextSize,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                                SizedBox(width: metrics.buttonIconGap),
-                                Icon(
-                                  Icons.chevron_right,
-                                  size: metrics.buttonIconSize,
+                                Positioned(
+                                  // Trailing chevron: right inset = top inset.
+                                  right: (CyberDimens.actionButtonSmallHeight -
+                                          metrics.buttonIconSize) /
+                                      2,
+                                  top: (CyberDimens.actionButtonSmallHeight -
+                                          metrics.buttonIconSize) /
+                                      2,
+                                  child: Icon(
+                                    Icons.chevron_right,
+                                    size: metrics.buttonIconSize,
+                                  ),
                                 ),
                               ],
                             ),

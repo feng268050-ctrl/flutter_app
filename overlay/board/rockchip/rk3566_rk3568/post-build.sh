@@ -85,6 +85,10 @@ rm -f \
 	"$TARGET_DIR/opt/hmi/data/flutter_assets/vm_snapshot_data"
 echo "post-build: purged Flutter JIT orphans under opt/hmi (if leftover)"
 
+# RKNN runtime is system-owned at /usr/lib; do not keep a duplicate under /opt/hmi.
+rm -f "$TARGET_DIR"/opt/hmi/lib/librknnrt.so*
+echo "post-build: purged opt/hmi librknnrt.so duplicate (if leftover)"
+
 
 # Retired Kind C helpers — HAL owns persist/restore for most prefs.
 # apply-mouse-settings is kept: Weston needs ini rewrite + HMI restart.

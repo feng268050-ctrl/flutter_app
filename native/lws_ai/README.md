@@ -19,15 +19,17 @@ make build-ai
 Outputs:
 
 - `prebuilt/opencv/linux-arm64/` — aarch64 OpenCV install
-- `prebuilt/ai/linux-arm64/lws_ai_daemon` (+ companion `.so` under `lib/`)
+- `prebuilt/ai/linux-arm64/lws_ai_daemon` (+ OpenCV companion `.so` under `lib/`; **not** `librknnrt.so`)
 
-`make build-app` copies the daemon into `/opt/hmi/bin` and libs into `/opt/hmi/lib`.
+`make build-app` copies the daemon into `/opt/hmi/bin` and OpenCV libs into `/opt/hmi/lib`.
+RKNN runtime stays on the product rootfs at `/usr/lib/librknnrt.so` (`make fetch-rknn-rt`).
 
 ## Runtime (board)
 
 ```text
 /opt/hmi/bin/lws_ai_daemon
-/opt/hmi/lib/…
+/opt/hmi/lib/…            # OpenCV (etc.); not librknnrt.so
+/usr/lib/librknnrt.so     # system RKNN (shared with rknn_server)
 /run/hmi/ai/cmd.sock
 /run/hmi/ai/evt.sock
 /var/lib/hmi/ai/          # workdir

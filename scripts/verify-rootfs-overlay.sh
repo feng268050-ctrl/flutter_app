@@ -581,6 +581,12 @@ EOF
 			echo "OK:  opt/hmi/data/flutter_assets/$jit absent (no JIT in product rootfs)"
 		fi
 	done
+	if [[ -f "$target/opt/hmi/lib/librknnrt.so" ]]; then
+		echo "FAIL: opt/hmi/lib/librknnrt.so present (use /usr/lib only; build-ai must not stage it)" >&2
+		missing=1
+	else
+		echo "OK:  opt/hmi/lib/librknnrt.so absent (system RKNN)"
+	fi
 	if [[ -f "$target/usr/lib/libflutter_engine.so" ]]; then
 		system_sz="$(stat -c%s "$target/usr/lib/libflutter_engine.so" 2>/dev/null || stat -f%z "$target/usr/lib/libflutter_engine.so")"
 		echo "OK:  usr/lib/libflutter_engine.so ($system_sz bytes)"

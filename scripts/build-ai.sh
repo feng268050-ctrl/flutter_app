@@ -152,7 +152,9 @@ rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR/lib"
 install -m 0755 "$DAEMON_BIN" "$OUT_DIR/lws_ai_daemon"
 
-# Stage OpenCV + RKNN shared libs beside the install tree for /opt/hmi/lib.
+# Stage OpenCV (+ optional yaml-cpp) beside the install tree for /opt/hmi/lib.
+# librknnrt.so stays on the product rootfs at /usr/lib (make fetch-rknn-rt);
+# do not duplicate it under /opt/hmi — daemon resolves via the system linker.
 copy_so() {
   local f="$1"
   [[ -f "$f" ]] || return 0
@@ -162,12 +164,12 @@ shopt -s nullglob
 for f in "$OPENCV_DIR"/lib/libopencv_*.so*; do
   copy_so "$f"
 done
-copy_so "$RKNN_SO"
 # yaml-cpp is often static via FetchContent; if a .so appears, stage it.
 for f in "$BUILD_DIR/cmake"/_deps/yaml-cpp-build/libyaml-cpp.so*; do
   copy_so "$f"
 done
 shopt -u nullglob
+rm -f "$OUT_DIR"/lib/librknnrt.so*
 
 prebuilt_stamp "$OUT_DIR" "lws_ai-${LIB_VERSION}-linux-arm64"
 bash "$ROOT/scripts/sync-prebuilt-manifest.sh" 2>/dev/null || true

@@ -65,6 +65,9 @@ if [ -d "$STAGE/lib" ]; then
 		cp -a "$f" /opt/hmi/lib/
 	done
 fi
+# System RKNN lives in /usr/lib; drop any legacy App-bundled copy so
+# LD_LIBRARY_PATH=/opt/hmi/lib cannot shadow it.
+rm -f /opt/hmi/lib/librknnrt.so*
 sync
 
 mv -f "$NEXT_LIB" /opt/hmi/lib/libapp.so

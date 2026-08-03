@@ -244,12 +244,18 @@ hmi_bundle_install_ai() {
 	mkdir -p "$dest/bin" "$dest/lib"
 	install -m 0755 "$src" "$dest/bin/lws_ai_daemon"
 	if [[ -d "$src_dir/lib" ]]; then
-		local f
+		local f base
 		for f in "$src_dir/lib"/*; do
 			[[ -e "$f" ]] || continue
+			base="$(basename "$f")"
+			# System RKNN is /usr/lib/librknnrt.so — never App-bundle it.
+			case "$base" in
+			librknnrt.so | librknnrt.so.*) continue ;;
+			esac
 			cp -a "$f" "$dest/lib/"
 		done
 	fi
+	rm -f "$dest"/lib/librknnrt.so*
 	echo "hmi-bundle: installed $dest/bin/lws_ai_daemon"
 }
 

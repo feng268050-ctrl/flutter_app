@@ -435,7 +435,6 @@ The product rootfs SHALL ship the compiled systemd hardware database at `/usr/li
 - **WHEN** `verify-rootfs-overlay.sh` inspects a staging `target/` that lacks `/usr/lib/udev/hwdb.bin` while the product profile enables systemd hwdb
 - **THEN** verification MUST fail
 
-
 ### Requirement: Rootfs verify optional factory_test app tree
 
 When repo `app/factory_test/pubspec.yaml` exists, `scripts/verify-rootfs-overlay.sh` after `make build-rootfs` SHALL require staging `target/opt/factory_test/lib/libapp.so` and `target/opt/factory_test/data/flutter_assets` release assets. That tree MUST NOT contain `libflutter_engine.so` or `icudtl.dat` under the app prefix, and MUST NOT contain Flutter JIT blobs (`kernel_blob.bin`, `isolate_snapshot_data`, `vm_snapshot_data`) under `data/flutter_assets/`. When `app/factory_test` is absent, verification MUST NOT require `/opt/factory_test`.
@@ -449,4 +448,13 @@ When repo `app/factory_test/pubspec.yaml` exists, `scripts/verify-rootfs-overlay
 
 - **WHEN** `app/factory_test` does not exist
 - **THEN** verification MUST NOT fail solely due to missing `/opt/factory_test`
+
+### Requirement: Kernel FIT ships pinned 6.1 LTS version
+
+Product firmware images that include the kernel FIT (`boot.img` / `boot_b.img`) SHALL embed a Linux kernel whose release string is the documented 6.1.y LTS pin from `kernel-61-lts-security` (minimum `6.1.180`, not `6.1.99`). Rootfs module directories shipped with that image MUST match the same kernel ABI/release as the FIT.
+
+#### Scenario: uname after factory or upgrade image
+
+- **WHEN** a ynh960 board boots a firmware image built after this change (via flash or A/B upgrade)
+- **THEN** `uname -r` reports the pinned `6.1.<tip>` and loadable product modules match that release
 

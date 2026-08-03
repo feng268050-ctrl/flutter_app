@@ -18,19 +18,19 @@ final class RecordWorkToggle extends StatelessWidget {
     required this.processType,
     this.compact = false,
     this.expand = false,
-    this.checkboxSize = CyberDimens.checkboxSmallSize,
+    this.checkboxSize = CyberDimens.checkboxLargeSize,
   });
 
   final RecordWorkController controller;
   final ProcessType processType;
 
-  /// Quick Mode top-left: intrinsic width, smaller label.
+  /// Quick Mode top-left: intrinsic width.
   final bool compact;
 
   /// Engineer left panel: fill parent row height.
   final bool expand;
 
-  /// Checkbox face size (Engineer: large; Quick: small).
+  /// Checkbox face size (unified large tier = 28).
   final double checkboxSize;
 
   @override
@@ -112,7 +112,7 @@ final class _RecordWorkRow extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(width: compact ? 6 : 12),
+          const SizedBox(width: 12),
           Text(
             label,
             style: TextStyle(

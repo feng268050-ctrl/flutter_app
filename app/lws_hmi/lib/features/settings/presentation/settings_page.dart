@@ -30,22 +30,36 @@ class SettingsPage extends StatefulWidget {
   /// Shared camera version cache (cloud WS + Camera settings).
   final CameraDeviceInfoCache? cameraDeviceInfoCache;
 
-  static const _tabs = <({Key key, IconData icon})>[
+  static const _tabs = <({
+    Key key,
+    IconData icon,
+    double iconLeftNudge,
+    bool balanceIconLabelGap,
+  })>[
     (
       key: ValueKey('settings-tab-device-info'),
       icon: Icons.info_outline,
+      iconLeftNudge: 0,
+      balanceIconLabelGap: false,
     ),
     (
       key: ValueKey('settings-tab-common'),
       icon: Icons.settings,
+      iconLeftNudge: 0,
+      balanceIconLabelGap: false,
     ),
     (
       key: ValueKey('settings-tab-advanced'),
       icon: Icons.tune,
+      iconLeftNudge: 0,
+      balanceIconLabelGap: false,
     ),
     (
       key: ValueKey('settings-tab-custom-home'),
       icon: Icons.home_outlined,
+      iconLeftNudge: 0,
+      // Icon left inset == gap between icon and centered label.
+      balanceIconLabelGap: true,
     ),
   ];
 

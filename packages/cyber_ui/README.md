@@ -45,13 +45,14 @@ Product features must **not** use bare `BackdropFilter` — go through Cyber\* w
 Selecting a tier locks **height** (and default horizontal padding / label size).
 Width is not locked — wrap with `SizedBox(width: …)`, use `stretch: true`, or
 `expand: true` (IME). Shape: `rectangle` → radius **14**; `rounded` → pill
-(`height / 2`). Prefer `CyberButtonSize.medium` over deprecated `regular`.
+(`height / 2`). Prefer `CyberButtonSize.small` over deprecated `regular`.
 
 | Size | Height | Rectangle r | Capsule r | Default pad H | Label |
 |------|--------|-------------|-----------|---------------|-------|
-| `small` | **40** | 14 | 20 | 20 | **14** |
-| `medium` (**default**) | **58** | 14 | 29 | 24 | **18** |
-| `large` | **72** | 14 | 36 | 28 | **22** |
+| `mini` | **38** | 14 | 19 | 20 | **14** |
+| `small` (**default**) | **56** | 14 | 28 | 20 | **14** |
+| `medium` | **66** | 14 | 33 | 24 | **18** |
+| `large` | **86** | 14 | 43 | 28 | **22** |
 
 Stroke remains **1**. Escape hatch: `height:` overrides the tier height for
 non-standard chrome (e.g. 36dp chips).

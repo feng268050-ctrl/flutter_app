@@ -15,8 +15,8 @@ abstract final class MonitorDimens {
   /// outer glow can paint without being clipped by scroll/flex ancestors.
   static const outerAmbientExtent = 20.0;
 
-  /// One shared light source for Monitor: top-left is illuminated, while
-  /// right/bottom receive tight contact depth instead of an all-around halo.
+  /// Outer ambient / contact shadows: equal on all four sides (shared with
+  /// [SettingsDimens] — no top-left / bottom-right directional bias).
   static const panelOuterShadowExtent = SettingsDimens.outerAmbientExtent;
   static const panelOuterShadowEdge = SettingsDimens.outerAmbientEdge;
   static const panelRim = SettingsDimens.panelRim;
@@ -124,7 +124,7 @@ class MonitorGlassCard extends StatelessWidget {
         depthLipOffset: Offset.zero,
         depthLipShadow: MonitorDimens.panelDepthLipShadow,
         cardShadow: MonitorDimens.panelCardShadow,
-        lightFromTopLeft: true,
+        lightFromTopLeft: false,
         rimColor: MonitorDimens.panelRim,
         lightRim: MonitorDimens.panelHighlight,
         innerHighlightWidth: 6,
@@ -132,8 +132,8 @@ class MonitorGlassCard extends StatelessWidget {
         surfaceGradient: MonitorDimens.panelSurfaceGradient,
         // Section plates keep the shared wallpaper perspective. Only nested
         // status cards use the local opaque fill below and never sample it.
-        blurIntensity: CyberBlurIntensity.low,
-        blurSigma: 7,
+        blurIntensity: CyberBlurIntensity.high,
+        blurSigma: 23,
         child: panelChild,
       );
     } else {
@@ -198,7 +198,7 @@ class MonitorFrostActionButton extends StatelessWidget {
   final bool clickSoundEnabled;
   final CyberBorderGradientCenter borderGradientCenter;
 
-  static const height = CyberDimens.actionButtonMediumHeight;
+  static const height = CyberDimens.actionButtonSmallHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -207,11 +207,11 @@ class MonitorFrostActionButton extends StatelessWidget {
       elevated: false,
       borderRadius: radius,
       borderGradientCenter: borderGradientCenter,
-      lightFromTopLeft: true,
+      lightFromTopLeft: false,
       rimColor: MonitorDimens.panelRim,
       lightRim: MonitorDimens.panelHighlight,
       child: CyberButton(
-        size: CyberButtonSize.medium,
+        size: CyberButtonSize.small,
         variant: variant,
         shape: CyberButtonShape.rounded,
         height: height,
@@ -230,8 +230,8 @@ class MonitorSectionHeader extends StatelessWidget {
 
   final String title;
 
-  /// lws-ui `section_header_divider_height`.
-  static const dividerHeight = 1.0;
+  /// Shared with Settings — [SettingsDimens.sectionDividerHeight].
+  static const dividerHeight = SettingsDimens.sectionDividerHeight;
 
   /// lws-ui SectionHeader `dividerTopSpacing` default (`frost_dialog_content_padding`).
   static const dividerTopSpacing = 24.0;
@@ -253,7 +253,7 @@ class MonitorSectionHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: dividerTopSpacing),
-          // lws-ui `frost_divider_start_aligned`: left (center) → right (edge).
+          // lws-ui `frost_divider_start_aligned`: longer solid mid, then fade.
           const SizedBox(
             height: dividerHeight,
             width: double.infinity,
@@ -262,8 +262,10 @@ class MonitorSectionHeader extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     CyberColors.dividerCenter,
+                    CyberColors.dividerCenter,
                     Color(0x00000000),
                   ],
+                  stops: [0.0, 0.4, 1.0],
                 ),
               ),
             ),
@@ -411,6 +413,12 @@ class MonitorCommCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Nested inside Alarm section frost — keycap face, no second blur.
+    // Idle → muted label; pass → white; fault → warn red (same as temp value).
+    final labelColor = switch (kind) {
+      MonitorIndicatorKind.idle => MonitorDimens.labelColor,
+      MonitorIndicatorKind.success => Colors.white,
+      MonitorIndicatorKind.failure => const Color(0xFFFF8A80),
+    };
     return MonitorGlassCard(
       frosted: false,
       height: MonitorDimens.metricH,
@@ -425,8 +433,8 @@ class MonitorCommCard extends StatelessWidget {
                 label,
                 maxLines: 1,
                 softWrap: false,
-                style: const TextStyle(
-                  color: MonitorDimens.labelColor,
+                style: TextStyle(
+                  color: labelColor,
                   fontSize: MonitorDimens.metricLabelSize,
                   fontWeight: FontWeight.w400,
                   height: 1.15,
@@ -457,14 +465,14 @@ class MonitorTempMetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final common = CommonSettingsScope.maybeOf(context);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     Widget card() {
       final unit = common?.unit;
       final hasValue = series.lastCelsius != null;
       final String value;
       if (overTemp && !hasValue) {
-        value = l10n.overTempLabel;
+        value = l10n?.overTempLabel ?? 'Over Temp';
       } else if (hasValue) {
         value = TemperatureUnitConvert.formatSensorCelsius(
           series.lastCelsius!,

@@ -127,7 +127,7 @@ final class _LaserEnableReminderBodyState
               width: double.infinity,
               child: CyberButton(
                 key: const ValueKey('laser-enable-reminder-confirm'),
-                size: CyberButtonSize.medium,
+                size: CyberButtonSize.small,
                 variant: CyberButtonVariant.primary,
                 shape: CyberButtonShape.rounded,
                 stretch: true,
@@ -176,12 +176,12 @@ final class _LaserEnableReminderBodyState
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 12),
                 const Text(
                   'Don’t show again this session',
                   style: TextStyle(
                     color: _labelMuted,
-                    fontSize: 13,
+                    fontSize: 22,
                     height: 1.2,
                     decoration: TextDecoration.none,
                   ),

@@ -76,7 +76,7 @@ final class _CncDialogButton extends StatelessWidget {
       onTap: onPressed,
       child: SizedBox(
         width: 160,
-        height: CyberDimens.actionButtonMediumHeight,
+        height: CyberDimens.actionButtonSmallHeight,
         child: DecoratedBox(
           decoration: const BoxDecoration(
             image: DecorationImage(

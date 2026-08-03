@@ -263,7 +263,7 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                         width: 250 * metrics.scale,
                         child: CyberButton(
                           key: const ValueKey('quick-mode-more-status'),
-                          size: CyberButtonSize.medium,
+                          size: CyberButtonSize.small,
                           variant: CyberButtonVariant.standard,
                           shape: CyberButtonShape.rounded,
                           stretch: true,
@@ -276,29 +276,40 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                             Color(0xAA86868C),
                             Color(0x66000000),
                           ],
-                          // Medium face height only; width stays 250×scale.
-                          height: CyberDimens.actionButtonMediumHeight,
+                          // Small face height only; width stays 250×scale.
+                          height: CyberDimens.actionButtonSmallHeight,
                           onPressed: widget.onMoreStatus ??
                               () => unawaited(
                                     showLiveMachineStatusDialog(context),
                                   ),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
+                          child: SizedBox(
+                            height: CyberDimens.actionButtonSmallHeight,
+                            width: double.infinity,
+                            child: Stack(
+                              fit: StackFit.expand,
                               children: [
-                                Text(
-                                  'More Status',
-                                  style: TextStyle(
-                                    fontSize: metrics.buttonTextSize,
-                                    fontWeight: FontWeight.w600,
+                                Center(
+                                  child: Text(
+                                    'More Status',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: metrics.buttonTextSize,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                                SizedBox(width: metrics.buttonIconGap),
-                                Icon(
-                                  Icons.chevron_right,
-                                  size: metrics.buttonIconSize,
+                                Positioned(
+                                  // Trailing chevron: right inset = top inset.
+                                  right: (CyberDimens.actionButtonSmallHeight -
+                                          metrics.buttonIconSize) /
+                                      2,
+                                  top: (CyberDimens.actionButtonSmallHeight -
+                                          metrics.buttonIconSize) /
+                                      2,
+                                  child: Icon(
+                                    Icons.chevron_right,
+                                    size: metrics.buttonIconSize,
+                                  ),
                                 ),
                               ],
                             ),

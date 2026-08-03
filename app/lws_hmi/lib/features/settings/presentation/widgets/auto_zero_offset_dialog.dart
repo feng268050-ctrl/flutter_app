@@ -22,7 +22,7 @@ Future<bool> showAutoZeroOffsetDialog({
           SizedBox(
             width: 168,
             child: CyberButton(
-              size: CyberButtonSize.medium,
+              size: CyberButtonSize.small,
               shape: CyberButtonShape.rounded,
               stretch: true,
               variant: CyberButtonVariant.secondary,
@@ -33,7 +33,7 @@ Future<bool> showAutoZeroOffsetDialog({
           SizedBox(
             width: 168,
             child: CyberButton(
-              size: CyberButtonSize.medium,
+              size: CyberButtonSize.small,
               shape: CyberButtonShape.rounded,
               stretch: true,
               variant: CyberButtonVariant.primary,

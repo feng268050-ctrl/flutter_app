@@ -197,7 +197,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                         setState(() => _agreed = v ?? false);
                       },
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: isTips
                           ? Wrap(
@@ -253,7 +253,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                         ? 'safety-tips-agree-btn'
                         : 'product-disclaimer-agree-btn',
                   ),
-                  size: CyberButtonSize.medium,
+                  size: CyberButtonSize.small,
                   variant: CyberButtonVariant.primary,
                   shape: CyberButtonShape.rounded,
                   stretch: true,

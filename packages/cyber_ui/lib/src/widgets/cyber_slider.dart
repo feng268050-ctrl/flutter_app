@@ -281,8 +281,8 @@ class _CyberSliderState extends State<CyberSlider>
   @override
   Widget build(BuildContext context) {
     final overflow = CyberSliderLogic.thumbDragOverflow;
-    // Resting thumb height only — expanded thumb + drag bubble paint outside
-    // via [Clip.none] (parents such as SettingsPanel must also allow overflow).
+    // Resting thumb height only — drag bubble paints above via [Clip.none]
+    // (SettingsPanel frosts stay clipped; content layer allows overflow).
     final touchH = CyberSliderLogic.touchHeight;
 
     return SizedBox(
@@ -309,6 +309,7 @@ class _CyberSliderState extends State<CyberSlider>
 
           return Stack(
             clipBehavior: Clip.none,
+            alignment: Alignment.center,
             children: [
               Listener(
                 behavior: HitTestBehavior.opaque,
@@ -342,7 +343,8 @@ class _CyberSliderState extends State<CyberSlider>
                 Positioned(
                   left: (thumbCx - _CyberSliderDragValueBubble.width / 2)
                       .clamp(0.0, width - _CyberSliderDragValueBubble.width),
-                  top: -_CyberSliderDragValueBubble.height,
+                  top: -_CyberSliderDragValueBubble.height -
+                      _CyberSliderDragValueBubble.gapBelow,
                   child: _CyberSliderDragValueBubble(label: label),
                 ),
             ],
@@ -357,8 +359,10 @@ class _CyberSliderState extends State<CyberSlider>
 class _CyberSliderDragValueBubble extends StatelessWidget {
   const _CyberSliderDragValueBubble({required this.label});
 
-  static const width = 44.0;
-  static const height = 28.0;
+  static const width = 48.0;
+  static const height = CyberSliderLogic.dragValueBubbleHeight;
+  static const gapBelow = CyberSliderLogic.dragValueBubbleGap;
+  static const slotHeight = CyberSliderLogic.dragValueBubbleSlot;
 
   final String label;
 
@@ -367,23 +371,21 @@ class _CyberSliderDragValueBubble extends StatelessWidget {
     return SizedBox(
       width: width,
       height: height,
-      child: Center(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: CyberColors.fillSolidTop,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: CyberColors.borderHighlight),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: CyberColors.textPrimary,
-                height: 1.1,
-              ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: CyberColors.fillSolidTop,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: CyberColors.borderHighlight),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: CyberColors.textPrimary,
+              height: 1.0,
             ),
           ),
         ),

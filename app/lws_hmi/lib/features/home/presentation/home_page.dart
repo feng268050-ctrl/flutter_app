@@ -459,8 +459,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Custom Home metric cards — same SettingsPanel frost +
-                      // corner-split inner/outer ambient as Settings groups.
+                      // Custom Home metric cards — CyberCard frost frozen at
+                      // firstFrame so left/right WebP plates keep ~30+ fps.
                       SizedBox(
                         height: _kStatCardH * sy,
                         child: CustomHomeStatisticsPanel(
@@ -563,26 +563,32 @@ class _HomeAnimatedPlate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dpr = MediaQuery.devicePixelRatioOf(context);
-    final cache = (width * dpr).round().clamp(200, 720);
+    // Both animated WebP assets have a 200×200 source canvas. Requesting
+    // their larger on-screen dimensions makes every 30fps frame upsample on
+    // the UI/raster path before it is composited.
+    const animationDecodeSize = 200;
     return Positioned(
       left: left,
       top: top,
       width: width,
       height: height,
-      child: Image.asset(
-        asset,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.medium,
-        gaplessPlayback: true,
-        cacheWidth: cache,
-        cacheHeight: cache,
-        errorBuilder: (_, __, ___) => Image.asset(
-          fallback,
+      child: RepaintBoundary(
+        child: Image.asset(
+          asset,
           fit: BoxFit.contain,
-          cacheWidth: cache,
-          cacheHeight: cache,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          // Mipmaps add work but no detail because the source is already
+          // smaller than its display region.
+          filterQuality: FilterQuality.low,
+          gaplessPlayback: true,
+          cacheWidth: animationDecodeSize,
+          cacheHeight: animationDecodeSize,
+          errorBuilder: (_, __, ___) => Image.asset(
+            fallback,
+            fit: BoxFit.contain,
+            cacheWidth: animationDecodeSize,
+            cacheHeight: animationDecodeSize,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
         ),
       ),
     );
@@ -762,7 +768,7 @@ class _HomeQuickActionSquare extends StatelessWidget {
       cornerRadius: _kQaCorner * s,
       labelMarginTop: _kQaLabelMarginTop * scaleY,
       labelFontSize: labelFontSize,
-      sampleMode: CyberBlurSampleMode.realtime,
+      sampleMode: CyberBlurSampleMode.firstFrame,
       label: label,
       onPressed: onPressed,
       child: Center(
@@ -816,7 +822,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
       labelFontSize: labelFontSize,
       cornerRadius: _kQaCorner * s,
       labelMarginTop: _kQaLabelMarginTop * scaleY,
-      sampleMode: CyberBlurSampleMode.realtime,
+      sampleMode: CyberBlurSampleMode.firstFrame,
       label: l10n.homeAiVisionLabel,
       onPressed: onPressed,
       child: Row(

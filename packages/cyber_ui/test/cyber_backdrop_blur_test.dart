@@ -46,7 +46,8 @@ void main() {
     expect(find.text('glass'), findsOneWidget);
   });
 
-  testWidgets('firstFrame without scope falls back to fake glass', (tester) async {
+  testWidgets('firstFrame without scope falls back to fake glass',
+      (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -229,5 +230,51 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     // followLayout keeps the shared pre-blurred RawImage while offset updates.
     expect(find.byType(RawImage), findsWidgets);
+  });
+
+  testWidgets('followLayout defers geometry through a FittedBox layout',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CyberBlurBackdropScope(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const CyberBlurBackdropTarget(
+                  child: ColoredBox(color: Colors.deepPurple),
+                ),
+                FittedBox(
+                  fit: BoxFit.contain,
+                  child: SizedBox(
+                    width: 400,
+                    height: 600,
+                    child: ListView(
+                      children: const [
+                        SizedBox(
+                          height: 120,
+                          child: CyberBackdropBlur(
+                            sampleMode: CyberBlurSampleMode.followLayout,
+                            intensity: CyberBlurIntensity.low,
+                            child: Center(child: Text('fitted frost')),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('fitted frost'), findsOneWidget);
   });
 }

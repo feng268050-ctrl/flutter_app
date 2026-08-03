@@ -75,6 +75,13 @@ final class _EngineerTabItem extends StatelessWidget {
     final activeColor = ProcessModeTokens.tabActiveColor(type);
     final labelColor =
         selected ? activeColor : ProcessModeTokens.tabInactiveText;
+    const iconSize = ProcessModeDimens.engineerTabIconSize;
+    // Left inset matches top/bottom inset to the tab edge (same as ProductTopTabs).
+    final iconInset =
+        (ProcessModeDimens.engineerTabBarHeight - iconSize) / 2;
+    // Cutting glyph optical center sits a bit right — nudge left.
+    final iconLeft = iconInset +
+        (type == ProcessType.handCutting ? -7.0 : 0.0);
 
     return InkWell(
       key: ValueKey('engineer-tab-${type.name}'),
@@ -82,48 +89,51 @@ final class _EngineerTabItem extends StatelessWidget {
         CyberClickSoundRegistry.playClick();
         onTap();
       },
-      child: Column(
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  selected
-                      ? EngineerProcessTabs.iconOn(type)
-                      : EngineerProcessTabs.iconOff(type),
-                  width: ProcessModeDimens.engineerTabIconSize,
-                  height: ProcessModeDimens.engineerTabIconSize,
-                  filterQuality: FilterQuality.medium,
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: ProcessModeDimens.engineerTabUnderlineHeight,
+            child: Center(
+              child: Text(
+                ProcessModeLabels.engineerTabLabel(type),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: labelColor,
+                  fontSize: ProcessModeDimens.engineerTabLabelSize,
+                  height: 1.0,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 ),
-                const SizedBox(width: ProcessModeDimens.engineerTabIconGap),
-                Flexible(
-                  child: Text(
-                    ProcessModeLabels.engineerTabLabel(type),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: labelColor,
-                      fontSize: ProcessModeDimens.engineerTabLabelSize,
-                      height: 1.0,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: ProcessModeDimens.engineerTabUnderlineInset,
+          Positioned(
+            left: iconLeft,
+            top: iconInset,
+            width: iconSize,
+            height: iconSize,
+            child: Image.asset(
+              selected
+                  ? EngineerProcessTabs.iconOn(type)
+                  : EngineerProcessTabs.iconOff(type),
+              width: iconSize,
+              height: iconSize,
+              filterQuality: FilterQuality.medium,
             ),
-            child: SizedBox(
-              height: ProcessModeDimens.engineerTabUnderlineHeight,
-              width: double.infinity,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: selected ? activeColor : Colors.transparent,
-                ),
+          ),
+          Positioned(
+            left: ProcessModeDimens.engineerTabUnderlineInset,
+            right: ProcessModeDimens.engineerTabUnderlineInset,
+            bottom: 0,
+            height: ProcessModeDimens.engineerTabUnderlineHeight,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: selected ? activeColor : Colors.transparent,
               ),
             ),
           ),

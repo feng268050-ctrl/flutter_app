@@ -25,6 +25,25 @@ void main() {
       );
     });
 
+    test('key switch off suppresses H022 only', () {
+      expect(
+        EstopCommAlarmMask.laserCommEffectiveActive(
+          raw: true,
+          eStopActive: false,
+          keySwitchOn: false,
+        ),
+        isFalse,
+      );
+      expect(
+        EstopCommAlarmMask.laserCommEffectiveActive(
+          raw: true,
+          eStopActive: false,
+          keySwitchOn: true,
+        ),
+        isTrue,
+      );
+    });
+
     test('laser comm, wire-feeder comm, and H029 attrs are masked', () {
       expect(EstopCommAlarmMask.isMaskedAttr('alarm.laser_comm'), isTrue);
       expect(

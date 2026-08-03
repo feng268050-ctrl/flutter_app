@@ -45,60 +45,52 @@ abstract final class SettingsDimens {
   /// Secondary / subtitle / help (+2 vs prior 14).
   static const subtitleSize = 16.0;
 
-  /// Shared raised-panel shadow treatment: tight right/bottom contact shade
-  /// plus a wider, low-opacity right-bottom environment cast.
+  /// Shared raised-panel shadow: even contact + ambient on all four sides
+  /// (no top-left / bottom-right directional bias).
   static const borderWidth = 1.0;
   static const cardBorder = Color(0x66FFFFFF);
   static const cardHighlightGlow = Color(0x33FFFFFF);
-  static const panelRim = Color(0x38FFFFFF);
+  /// Crisp equal-brightness plate contour (was `0x38` — too soft on frost).
+  static const panelRim = Color(0x77FFFFFF);
   static const panelHighlight = Color(0x54FFFFFF);
+
+  /// Section / row hairline — shared by Settings cards and Monitor headers.
+  static const sectionDividerHeight = 2.0;
 
   /// Settings and Monitor share a flat glass face; depth is external only.
   /// Keep the legacy color token for opt-in callers, but no inset vignette.
   static const innerShadowWidth = 0.0;
   static const innerShadowEdge = Color(0x00000000);
 
-  /// Monitor-aligned contact shadows already carry their own directional
-  /// offsets; no extra vertical translation is needed.
+  /// Omnidirectional contact shadows (offset zero — matches all edges).
   static const depthLipOffset = 0.0;
 
   /// Soft shade cast from the depth lip onto the page (under-plate → background).
   static const depthLipShadow = <BoxShadow>[
     BoxShadow(
       color: Color(0x8A000000),
-      offset: Offset(5, 1),
-      blurRadius: 5,
-      spreadRadius: -1,
-    ),
-    BoxShadow(
-      color: Color(0x92000000),
-      offset: Offset(0.5, 5),
+      offset: Offset.zero,
       blurRadius: 6,
       spreadRadius: -1,
     ),
   ];
 
-  /// Outer shade: plate RRect inflated in steps (edge → transparent).
+  /// Outer shade: plate RRect inflated in steps (edge → transparent), equal
+  /// on all sides when [SettingsPanel.lightFromTopLeft] is false.
   static const outerAmbientExtent = 14.0;
   static const outerAmbientEdge = Color(0x54000000);
 
-  /// Compact contact shadow around the front plate (matches ~20px outer band).
+  /// Compact contact shadow around the front plate (all sides equal).
   static const cardShadow = <BoxShadow>[
     BoxShadow(
       color: Color(0x70000000),
-      offset: Offset(5, 1.5),
-      blurRadius: 7,
-      spreadRadius: -1,
-    ),
-    BoxShadow(
-      color: Color(0x78000000),
-      offset: Offset(1, 5),
+      offset: Offset.zero,
       blurRadius: 8,
       spreadRadius: -1,
     ),
     BoxShadow(
       color: Color(0x42000000),
-      offset: Offset(8, 10),
+      offset: Offset.zero,
       blurRadius: 18,
       spreadRadius: -3,
     ),
@@ -141,7 +133,13 @@ final class SettingsTopTabs extends StatelessWidget
   static const background = CyberColors.fillSolidTop;
 
   final List<String> labels;
-  final List<({Key key, IconData icon})> tabs;
+  final List<
+      ({
+        Key key,
+        IconData icon,
+        double iconLeftNudge,
+        bool balanceIconLabelGap,
+      })> tabs;
   final int currentIndex;
   final ValueChanged<int> onSelected;
   final Color? backgroundColor;
@@ -172,6 +170,8 @@ final class SettingsTopTabs extends StatelessWidget
                         label: labels[i],
                         icon: tabs[i].icon,
                         selected: i == currentIndex,
+                        iconLeftNudge: tabs[i].iconLeftNudge,
+                        balanceIconLabelGap: tabs[i].balanceIconLabelGap,
                         onTap: () => onSelected(i),
                       ),
                     ),
@@ -200,12 +200,19 @@ final class _SettingsTopTabItem extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.onTap,
+    this.iconLeftNudge = 0,
+    this.balanceIconLabelGap = false,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
+  /// Negative shifts icon left from the equal L/T inset.
+  final double iconLeftNudge;
+
+  /// When true, icon left inset equals the gap between icon and centered label.
+  final bool balanceIconLabelGap;
 
   @override
   Widget build(BuildContext context) {
@@ -216,6 +223,9 @@ final class _SettingsTopTabItem extends StatelessWidget {
       fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
       height: 1.0,
     );
+    // Left inset matches top/bottom inset to the tab edge (ProductTopTabs).
+    final iconInset =
+        (SettingsTopTabs.tabHeight - SettingsTopTabs.iconSize) / 2;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -225,36 +235,59 @@ final class _SettingsTopTabItem extends StatelessWidget {
         },
         // Stretch so the indicator spans the full equal-width tab cell;
         // outer cell edges match [SettingsDimens.inset] with the cards.
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(icon, size: SettingsTopTabs.iconSize, color: color),
-                      const SizedBox(width: SettingsTopTabs.iconTextGap),
-                      Text(
-                        label,
-                        maxLines: 1,
-                        softWrap: false,
-                        style: labelStyle,
-                      ),
-                    ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            var iconLeft = iconInset + iconLeftNudge;
+            if (balanceIconLabelGap) {
+              final painter = TextPainter(
+                text: TextSpan(text: label, style: labelStyle),
+                maxLines: 1,
+                ellipsis: '…',
+                textDirection: Directionality.of(context),
+              )..layout(maxWidth: constraints.maxWidth);
+              final textLeft = (constraints.maxWidth - painter.width) / 2;
+              // left == (textLeft - iconRight) ⇒ left == gap to label.
+              iconLeft = ((textLeft - SettingsTopTabs.iconSize) / 2)
+                  .clamp(0.0, double.infinity);
+            }
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Center(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: labelStyle,
                   ),
                 ),
-              ),
-            ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              height: SettingsTopTabs.indicatorHeight,
-              color: selected ? Colors.white : Colors.transparent,
-            ),
-          ],
+                Positioned(
+                  left: iconLeft,
+                  top: iconInset,
+                  width: SettingsTopTabs.iconSize,
+                  height: SettingsTopTabs.iconSize,
+                  child: Icon(
+                    icon,
+                    size: SettingsTopTabs.iconSize,
+                    color: color,
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: SettingsTopTabs.indicatorHeight,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOut,
+                    color: selected ? Colors.white : Colors.transparent,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -336,14 +369,16 @@ class SettingsHelpFooter extends StatelessWidget {
 /// Settings group shell — frosted face + depth chrome (replaces the old
 /// opaque scaffold→white gradient plate).
 ///
-/// Face: [CyberBackdropBlur] [followLayout]/[low]/[dark] (lws-ui home-stat
-/// frost). Realtime [BackdropFilter] composites black on Weston, so capture
-/// from [CyberBlurBackdropScope] is required; [followLayout] offsets a shared
-/// blurred backdrop as the panel scrolls so perspective stays correct.
+/// Face: [CyberBackdropBlur] [followLayout]/[high]/sigma 23 (dialog-grade
+/// frost, same as boot self-check). Realtime [BackdropFilter] composites black
+/// on Weston, so capture from [CyberBlurBackdropScope] is required;
+/// [followLayout] offsets a shared blurred backdrop as the panel scrolls so
+/// perspective stays correct.
 ///
 /// Depth (flat, raised glass): outer shade = inflated RRect shells; inner
 /// shade = deflated RRect shells; both fade with distance. Plus transparent
-/// lip cast, contact [cardShadow], and a uniform bright rim. No solid fill.
+/// lip cast, contact [cardShadow], and an equal bright rim on all sides.
+/// No solid fill.
 ///
 /// [borderGradientCenter] is retained for call-site compatibility but ignored.
 class SettingsPanel extends StatelessWidget {
@@ -360,15 +395,15 @@ class SettingsPanel extends StatelessWidget {
     this.depthLipOffset = const Offset(0, SettingsDimens.depthLipOffset),
     this.depthLipShadow = SettingsDimens.depthLipShadow,
     this.cardShadow = SettingsDimens.cardShadow,
-    this.lightFromTopLeft = true,
+    this.lightFromTopLeft = false,
     this.rimColor = SettingsDimens.panelRim,
     this.lightRim = SettingsDimens.panelHighlight,
     this.innerHighlightWidth = 0,
     this.innerHighlightColor = const Color(0x00FFFFFF),
     this.surfaceGradient,
     this.blurSampleMode = CyberBlurSampleMode.followLayout,
-    this.blurIntensity = CyberBlurIntensity.low,
-    this.blurSigma = 7,
+    this.blurIntensity = CyberBlurIntensity.high,
+    this.blurSigma = 23,
   });
 
   final Widget child;
@@ -390,9 +425,9 @@ class SettingsPanel extends StatelessWidget {
   final List<BoxShadow> depthLipShadow;
   final List<BoxShadow> cardShadow;
 
-  /// Uses one top-left light source: a continuous low-opacity rim with a
-  /// highlight that naturally fades toward bottom-right. Ambient shade is
-  /// weighted toward right/bottom.
+  /// When true, ambient/rim are biased top-left lit / bottom-right shaded.
+  /// Default false: equal outer ambient + equal rim on all four sides so
+  /// bottom-right depth matches top-left.
   final bool lightFromTopLeft;
   final Color rimColor;
   final Color lightRim;
@@ -410,11 +445,10 @@ class SettingsPanel extends StatelessWidget {
   /// good (e.g. Android).
   final CyberBlurSampleMode blurSampleMode;
 
-  /// Panel-local Gaussian strength. Monitor uses dialog-grade frost so page
-  /// imagery dissolves into material tone instead of reading as perspective.
+  /// Panel-local Gaussian strength (dialog-grade HIGH with Settings/Monitor).
   final CyberBlurIntensity blurIntensity;
 
-  /// Gaussian sigma for [CyberBackdropBlur] (lws-ui LOW ≈ 12).
+  /// Gaussian sigma for [CyberBackdropBlur] (lws-ui HIGH = 23).
   final double blurSigma;
 
   @override
@@ -458,17 +492,28 @@ class SettingsPanel extends StatelessWidget {
             borderRadius: radius,
             boxShadow: elevated ? cardShadow : const [],
           ),
-          child: ClipRRect(
-            borderRadius: radius,
-            child: CyberBackdropBlur(
-              // Capture frost (Weston realtime → black). Home cards may bump
-              // [blurSigma] toward lws-ui LOW (12) for milkier glass.
-              sampleMode: blurSampleMode,
-              intensity: blurIntensity,
-              sigmaX: blurSigma,
-              sigmaY: blurSigma,
-              blurTint: CyberBlurTint.dark,
-              child: CustomPaint(
+          // Frost / gradient stay rounded-clipped; [child] may paint outside
+          // (e.g. CyberSlider drag value bubble above the first settings row).
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: radius,
+                  child: CyberBackdropBlur(
+                    sampleMode: blurSampleMode,
+                    intensity: blurIntensity,
+                    sigmaX: blurSigma,
+                    sigmaY: blurSigma,
+                    blurTint: CyberBlurTint.dark,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(gradient: surfaceGradient),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
+              ),
+              CustomPaint(
                 foregroundPainter: _SettingsDepthEdgePainter(
                   baseRim: rimColor,
                   highlightGlow: SettingsDimens.cardHighlightGlow,
@@ -481,12 +526,9 @@ class SettingsPanel extends StatelessWidget {
                   innerHighlightWidth: innerHighlightWidth,
                   innerHighlightColor: innerHighlightColor,
                 ),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(gradient: surfaceGradient),
-                  child: child,
-                ),
+                child: child,
               ),
-            ),
+            ],
           ),
         ),
       ],
@@ -812,7 +854,8 @@ class SettingsGroup extends StatelessWidget {
       if (i < children.length - 1) {
         items.add(
           const Divider(
-            height: 1,
+            height: SettingsDimens.sectionDividerHeight,
+            thickness: SettingsDimens.sectionDividerHeight,
             indent: 20,
             endIndent: 20,
             color: CyberColors.dividerCenter,
@@ -1194,13 +1237,14 @@ class SettingsCheckboxRow extends StatelessWidget {
           children: [
             CyberCheckbox(
               value: value,
-              size: CyberDimens.checkboxSmallSize,
+              size: CyberDimens.checkboxLargeSize,
               onChanged: onChanged,
             ),
+            const SizedBox(width: 12),
             Text(
               title,
               style: const TextStyle(
-                fontSize: SettingsDimens.subtitleSize,
+                fontSize: 22,
                 color: CyberColors.textPrimary,
               ),
             ),
@@ -1279,7 +1323,7 @@ Future<T?> pushSettingsPage<T>(BuildContext context, Widget page) {
   );
 }
 
-/// Bordered param panel — same top-lit edge + shadow chrome as [SettingsPanel]
+/// Bordered param panel — same equal-edge shadow chrome as [SettingsPanel]
 /// (lws-ui Advanced nested `FrostCardView`).
 ///
 /// [borderGradientCenter] is retained for call-site compatibility but ignored.

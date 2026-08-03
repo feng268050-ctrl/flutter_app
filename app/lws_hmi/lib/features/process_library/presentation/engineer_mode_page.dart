@@ -168,10 +168,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     }
     WorkStatusDialogHost.closeDialog();
     final message = switch (event) {
-      DeviceControlSafetyEvent.keySwitchOffWhileLaser =>
-        DeviceControlFeedbackCopy.keySwitchOffError,
       DeviceControlSafetyEvent.emergencyStop =>
         DeviceControlFeedbackCopy.emergencyStopError,
+      DeviceControlSafetyEvent.keySwitchOff =>
+        DeviceControlFeedbackCopy.keySwitchOffError,
     };
     unawaited(
       OperationFailedDialogHost.show(
@@ -800,12 +800,15 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                           readOnly: draft.isReadOnly,
                                           onChanged: _onDraftChanged,
                                           onBeginEdit: _beginEditFromBuiltin,
+                                          // Scroll with parameters — visible
+                                          // only after scrolling to the end.
                                           footer: Padding(
                                             padding: const EdgeInsets.fromLTRB(
                                               16,
                                               8,
                                               0,
-                                              12,
+                                              EngineerDevicePanel
+                                                  .panelBottomInset,
                                             ),
                                             child: Row(
                                               children: [
@@ -817,7 +820,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                       'engineer-action-reset-default',
                                                     ),
                                                     stretch: true,
-                                                    height: 56,
+                                                    size: CyberButtonSize.small,
                                                     // lws-ui FrostButtonShape.ROUNDED
                                                     // (stadium) + top↔bottom rim light.
                                                     shape: CyberButtonShape
@@ -829,28 +832,38 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                         _engineerActionPillBorder,
                                                     strokeWidth: 1.5,
                                                     onPressed: _resetToDefault,
-                                                    child: const Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Icon(
-                                                          Icons.restart_alt,
-                                                          size: 20,
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        Flexible(
-                                                          child: Text(
-                                                            'Reset to Default',
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
+                                                    child: const SizedBox(
+                                                      height: CyberDimens
+                                                          .actionButtonSmallHeight,
+                                                      width: double.infinity,
+                                                      child: Stack(
+                                                        children: [
+                                                          Center(
+                                                            child: Text(
+                                                              'Reset to Default',
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                              style: TextStyle(
+                                                                fontSize: 24,
+                                                              ),
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ],
+                                                          Positioned(
+                                                            // height 56, icon 34 → inset 11.
+                                                            left: 11,
+                                                            top: 11,
+                                                            child: Icon(
+                                                              Icons.restart_alt,
+                                                              size: 34,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
@@ -861,7 +874,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                       'engineer-action-save-favorite',
                                                     ),
                                                     stretch: true,
-                                                    height: 56,
+                                                    size: CyberButtonSize.small,
                                                     shape: CyberButtonShape
                                                         .rounded,
                                                     borderGradientCenter:
@@ -874,28 +887,38 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                         controller.applying
                                                             ? null
                                                             : _saveAsFavorite,
-                                                    child: const Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Icon(
-                                                          Icons.bookmark_add,
-                                                          size: 20,
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        Flexible(
-                                                          child: Text(
-                                                            'Save as Favorite',
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
+                                                    child: const SizedBox(
+                                                      height: CyberDimens
+                                                          .actionButtonSmallHeight,
+                                                      width: double.infinity,
+                                                      child: Stack(
+                                                        children: [
+                                                          Center(
+                                                            child: Text(
+                                                              'Save as Favorite',
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                              style: TextStyle(
+                                                                fontSize: 24,
+                                                              ),
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ],
+                                                          Positioned(
+                                                            left: 11,
+                                                            top: 11,
+                                                            child: Icon(
+                                                              Icons
+                                                                  .bookmark_add,
+                                                              size: 34,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
                                                 ),

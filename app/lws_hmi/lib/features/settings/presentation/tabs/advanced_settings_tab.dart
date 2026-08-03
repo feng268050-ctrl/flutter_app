@@ -182,7 +182,7 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                 ),
                 trailing: CyberButton(
                   variant: CyberButtonVariant.primary,
-                  size: CyberButtonSize.small,
+                  size: CyberButtonSize.mini,
                   onPressed: () => unawaited(showAutoZeroOffsetDialog(
                     context: context,
                   )),

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
@@ -144,8 +145,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final upload = tester.widget<TextButton>(
-      find.widgetWithText(TextButton, 'Upload'),
+    final upload = tester.widget<CyberButton>(
+      find.widgetWithText(CyberButton, 'Upload'),
     );
     expect(upload.onPressed, isNull);
   });

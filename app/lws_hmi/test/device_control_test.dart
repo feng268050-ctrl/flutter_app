@@ -121,7 +121,8 @@ void main() {
     );
   });
 
-  test('AppServices disarmLaserEnableForSafety writes laser off once', () async {
+  test('AppServices disarmLaserEnableForSafety writes laser off once',
+      () async {
     final modbus = _RecordingModbus();
     final services = AppServices(
       boardProfile: BoardProfile.fromJsonString('''
@@ -152,8 +153,7 @@ void main() {
     expect(fieldOffWrites, 1);
   });
 
-  test('key switch off while laser enable closes laser and shows tip immediately',
-      () async {
+  test('key switch off closes laser and shows an immediate tip', () async {
     final modbus = _RecordingModbus();
     final controller = DeviceControlController(servicesWith(modbus))
       ..keySwitchOn = true
@@ -170,14 +170,20 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(const Duration(milliseconds: 20));
 
-    // Tip on key OFF (not after key ON).
-    expect(events, [DeviceControlSafetyEvent.keySwitchOffWhileLaser]);
+    // Key OFF disarms immediately and presents its safety tip once.
+    expect(events, [DeviceControlSafetyEvent.keySwitchOff]);
     expect(controller.laserEnable, isFalse);
     expect(
       modbus.writes.any(
         (e) => e.$1 == DeviceControlIds.controlField1,
       ),
       isTrue,
+    );
+
+    // Retrying enable remains blocked while the key is off.
+    expect(
+      controller.preflightLaserEnable(),
+      LaserEnableBlockReason.keySwitchOff,
     );
 
     events.clear();
@@ -206,9 +212,9 @@ void main() {
         value: false,
       ),
     ]);
-    // UI exits Laser Enable synchronously; tip on falling edge.
+    // UI exits Laser Enable synchronously and presents the edge tip.
     expect(controller.laserEnable, isFalse);
-    expect(events, [DeviceControlSafetyEvent.keySwitchOffWhileLaser]);
+    expect(events, [DeviceControlSafetyEvent.keySwitchOff]);
     await Future<void>.delayed(const Duration(milliseconds: 30));
     expect(controller.laserEnable, isFalse);
 

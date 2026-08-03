@@ -10,19 +10,19 @@ import 'package:lws_hmi/features/statistics/application/work_session_statistics_
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_controller.dart';
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
 
-/// Frost Operation-failed / tip triggers from runtime key / e-stop edges.
+/// Frost Operation-failed / tip triggers from runtime safety edges.
 ///
 /// Tip timing (lws-ui OperationDialogBuilder / EmergencyStopJobHaltPolicy):
 /// - E-stop tip ("Device is in E-stop"): on press.
-/// - Key tip ("Key switch is off"): on key OFF while Laser Enable was on.
+/// - Key switch OFF tip ("Key switch is off"): on switch-off.
 /// Warn frost alarms (e.g. H029) stay deferred until reset via the warn-alarm
 /// adapter — not this enum.
 enum DeviceControlSafetyEvent {
-  /// Key turned OFF while Laser Enable was on; tip once on that falling edge.
-  keySwitchOffWhileLaser,
-
   /// Machine e-stop pressed; tip dialog once per press (immediate).
   emergencyStop,
+
+  /// Key switch turned OFF; tip dialog once per switch-off (immediate).
+  keySwitchOff,
 }
 
 /// Live laser, gas, and manual wire-control writes.
@@ -63,9 +63,6 @@ final class DeviceControlController extends ChangeNotifier {
 
   /// Latch: tip already shown for the current e-stop press.
   bool _eStopTipShownThisPress = false;
-
-  /// Latch: tip already shown for the current key-off while Laser Enable.
-  bool _keyTipShownThisOff = false;
 
   /// Process `0x0068` saved across a manual Feed/Retract so we can restore it.
   int? _savedProcessWireSpeedMmPerS;
@@ -363,7 +360,6 @@ final class DeviceControlController extends ChangeNotifier {
     final eStopRose = !eStopWas && emergencyStop;
     final eStopFell = eStopWas && !emergencyStop;
     final keyFell = keyWasOn && !keySwitchOn;
-    final keyRose = !keyWasOn && keySwitchOn;
 
     // E-stop press: exit Laser Enable UI + halt jobs immediately; tip once.
     if (eStopFell) {
@@ -382,19 +378,17 @@ final class DeviceControlController extends ChangeNotifier {
       }
     }
 
-    // Key OFF while Laser Enable: tip immediately + exit Laser Enable UI
-    // (lws-ui deviceStatusListen → checkWorkStatus dialog + switchLaserEnable
-    // failRest=false). Warn-style frost alarms remain separate (after reset).
-    if (keyRose) {
-      _keyTipShownThisOff = false;
+    // Key OFF is a non-alarm safety tip, matching the E-stop interaction.
+    // H022 remains separately masked by the warn-alarm adapter while the key
+    // switch is OFF, so this does not create an alarm popup/history entry.
+    if (keyFell) {
+      onSafetyEvent?.call(DeviceControlSafetyEvent.keySwitchOff);
     }
+
+    // Key OFF also closes an active Laser Enable session immediately.
     if (!keySwitchOn && laserSessionArmed) {
       if (keyFell) {
         _disarmLaserSessionLocally();
-        if (!_keyTipShownThisOff) {
-          _keyTipShownThisOff = true;
-          onSafetyEvent?.call(DeviceControlSafetyEvent.keySwitchOffWhileLaser);
-        }
         unawaited(forceDisableLaserForSafety());
       } else {
         // Stale control.laser_enable feedback while key is still off — keep UI

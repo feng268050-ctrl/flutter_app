@@ -174,7 +174,7 @@ final class _OperationFailedBody extends StatelessWidget {
                   variant: CyberButtonVariant.primary,
                   shape: CyberButtonShape.rounded,
                   stretch: true,
-                  height: CyberDimens.actionButtonMediumHeight,
+                  height: CyberDimens.actionButtonSmallHeight,
                   onPressed: () {
                     CyberClickSoundRegistry.playClick();
                     onConfirm();

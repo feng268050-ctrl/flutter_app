@@ -329,7 +329,7 @@ final class _ParameterColumn extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CyberButton(
-                          size: CyberButtonSize.medium,
+                          size: CyberButtonSize.small,
                           variant: CyberButtonVariant.primary,
                           shape: CyberButtonShape.rounded,
                           onPressed: onUpload,
@@ -337,7 +337,7 @@ final class _ParameterColumn extends StatelessWidget {
                         ),
                         const SizedBox(width: 16),
                         CyberButton(
-                          size: CyberButtonSize.medium,
+                          size: CyberButtonSize.small,
                           variant: CyberButtonVariant.secondary,
                           shape: CyberButtonShape.rounded,
                           borderGradientCenter:

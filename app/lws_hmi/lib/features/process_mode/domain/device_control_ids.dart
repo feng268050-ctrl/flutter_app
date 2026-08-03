@@ -90,4 +90,7 @@ abstract final class DeviceControlTiming {
   static const Duration wireHoldToRun = Duration(milliseconds: 500);
   static const Duration wirePulseDuration = Duration(milliseconds: 500);
   static const Duration wireFeedLatchDelay = Duration(milliseconds: 3000);
+
+  /// Feed: pressed chrome like Retract until this delay, then L→R fill.
+  static const Duration wireFeedProgressDelay = Duration(milliseconds: 200);
 }

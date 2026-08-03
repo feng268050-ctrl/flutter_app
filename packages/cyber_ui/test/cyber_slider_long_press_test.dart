@@ -119,7 +119,8 @@ void main() {
 
     expect(find.text('50'), findsNothing);
 
-    final hold = await tester.startGesture(tester.getCenter(find.byType(CyberSlider)));
+    final hold =
+        await tester.startGesture(tester.getCenter(find.byType(CyberSlider)));
     await tester.pump(
       const Duration(milliseconds: CyberSliderLogic.longPressThresholdMs),
     );

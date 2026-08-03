@@ -370,7 +370,7 @@ class _SaveButton extends StatelessWidget {
       width: 340,
       child: CyberButton(
         key: const ValueKey('custom-home-save'),
-        size: CyberButtonSize.medium,
+        size: CyberButtonSize.small,
         variant: CyberButtonVariant.primary,
         shape: CyberButtonShape.rounded,
         stretch: true,

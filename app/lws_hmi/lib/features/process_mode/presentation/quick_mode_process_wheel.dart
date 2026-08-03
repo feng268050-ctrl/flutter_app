@@ -41,24 +41,29 @@ final class QuickModeProcessWheel extends StatelessWidget {
               QuickProcessWheelItems.types.length - 1,
             );
 
-    // Frost plate keeps the smaller lws-ui wheel width; otherwise match solid.
-    final labelBandWidth = showAccents
-        ? ProcessModeDimens.wheelAccentSolidWidth
-        : ProcessModeDimens.wheelWidth;
-
-    // Selected copy may use up to the gear scale (minus a small gap).
+    // Selected copy may use up to the gear scale (minus a small gap). Do not
+    // clamp to the solid accent width — that ellipsized "Continuous Welding".
     final pageSize = MediaQuery.sizeOf(context);
     final highlightR = ProcessModeDimens.outerHighlightRadiusFor(pageSize);
     final scaleLeft = pageSize.width / 2 +
         QuickModePickerDimens.gearPickCenterFromPageCenter(highlightR) -
         QuickModePickerDimens.pickWidth / 2 +
         QuickModePickerDimens.scaleInwardInset;
+    final roomToScale = (scaleLeft -
+            ProcessModeDimens.wheelSelectedPadding -
+            ProcessModeDimens.wheelLabelToScaleGap)
+        .clamp(80.0, pageSize.width / 2)
+        .toDouble();
+    // Frost plate keeps the smaller lws-ui wheel width; otherwise widen the
+    // label band so selected text is not clipped by the solid accent box.
+    final labelBandWidth = showAccents
+        ? (ProcessModeDimens.wheelAccentSolidWidth >
+                roomToScale + ProcessModeDimens.wheelSelectedPadding
+            ? ProcessModeDimens.wheelAccentSolidWidth
+            : roomToScale + ProcessModeDimens.wheelSelectedPadding)
+        : ProcessModeDimens.wheelWidth;
     final selectedTextMaxWidth = showAccents
-        ? (scaleLeft -
-                ProcessModeDimens.wheelSelectedPadding -
-                ProcessModeDimens.wheelLabelToScaleGap)
-            .clamp(80.0, labelBandWidth - ProcessModeDimens.wheelSelectedPadding)
-            .toDouble()
+        ? roomToScale
         : labelBandWidth - ProcessModeDimens.wheelSelectedPadding;
 
     final wheel = SizedBox(

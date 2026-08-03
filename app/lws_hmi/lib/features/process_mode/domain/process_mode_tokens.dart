@@ -110,7 +110,9 @@ abstract final class ProcessModeDimens {
   // Fixed logical px (lws-ui design values frozen for Flutter HMI).
 
   static const double wheelWidth = 520 / 3; // 173.333…
-  static const double wheelHeight = 680 / 3; // 226.666…
+  /// Tall enough for ±2 full rows after [wheelItemHeight] grew to 56
+  /// (was 680/3 ≈ 227, which clipped the second neighbor e.g. Weld Seam Cleaning).
+  static const double wheelHeight = 280;
   static const double wheelItemHeight = 168 / 3; // 56 — was 136/3; more row gap
   /// Mode / material selected label (+4 vs frozen 56/3).
   static const double wheelSelectedTextSize = 56 / 3 + 4; // 22.666…
@@ -231,10 +233,10 @@ abstract final class ProcessModeDimens {
   static const double quickLaserRimShadowBlur = 8;
 
   /// Side ops (Manual Gas / Auto Wire / Feed / Retract) — lws-ui styles.
-  static const double quickSideButtonWidth = 264;
+  static const double quickSideButtonWidth = 269;
   static const double quickSideButtonInset = 30;
-  /// Lower than lws-ui 35.5 so wheels sit farther above the four side buttons.
-  static const double quickSideButtonBottom = 12;
+  /// Match [quickSideButtonInset] so bottom edge equals left/right screen gap.
+  static const double quickSideButtonBottom = 30;
   static const double quickSideOpIconSize = 24;
   static const double quickSideOpLabelSize = 27;
   static const double quickSideOpIconGap = 6;
@@ -303,7 +305,8 @@ abstract final class ProcessModeDimens {
   // --- Engineer tab bar (engineer_tab.xml, weightSum=1280) ---
 
   static const double engineerTabBarHeight = 68;
-  static const double engineerTabIconSize = 24;
+  /// Match Settings / Monitor / Product top tabs.
+  static const double engineerTabIconSize = 31;
   static const double engineerTabIconGap = 13;
   static const double engineerTabUnderlineHeight = 1.5;
   static const double engineerTabUnderlineInset = 18;

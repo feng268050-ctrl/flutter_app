@@ -17,6 +17,7 @@ class CyberImeLayoutChooser extends StatelessWidget {
     this.profiles = CyberImeRegionalProfile.values,
     this.previewCaption = '软件键盘布局预览',
     this.showDisplayName = true,
+    this.showPreview = true,
     this.showFootnote = true,
   });
 
@@ -37,6 +38,9 @@ class CyberImeLayoutChooser extends StatelessWidget {
 
   /// Show [CyberImeRegionalProfile.displayName] under the Segment.
   final bool showDisplayName;
+
+  /// Show the keyboard preview under the Segment.
+  final bool showPreview;
 
   /// Show accent / romaji helper under the preview.
   final bool showFootnote;
@@ -87,36 +91,15 @@ class CyberImeLayoutChooser extends StatelessWidget {
               ),
             ),
           ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: DecoratedBox(
-              // Border only — opaque Card fill would block BackdropFilter 透视.
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    child: Text(
-                      previewCaption,
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  CyberImeLayoutPreview(profile: selected),
-                ],
-              ),
+        if (showPreview)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: CyberImeLayoutPreviewCard(
+              profile: selected,
+              previewCaption: previewCaption,
             ),
           ),
-        ),
-        if (showFootnote && footnote.isNotEmpty)
+        if (showPreview && showFootnote && footnote.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
             child: Text(
@@ -128,6 +111,52 @@ class CyberImeLayoutChooser extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Border-only preview chrome around [CyberImeLayoutPreview].
+///
+/// Keep this outside opaque/frosted parent panels when possible. The keyboard
+/// backdrop inside the preview can then sample the page backdrop directly
+/// instead of sampling an already-frosted Settings group face.
+class CyberImeLayoutPreviewCard extends StatelessWidget {
+  const CyberImeLayoutPreviewCard({
+    super.key,
+    required this.profile,
+    this.previewCaption = '软件键盘布局预览',
+  });
+
+  final CyberImeRegionalProfile profile;
+  final String previewCaption;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: DecoratedBox(
+        // Border only — opaque fill would block backdrop 透视.
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white24),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(
+                previewCaption,
+                style: const TextStyle(
+                  color: Colors.white54,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            CyberImeLayoutPreview(profile: profile),
+          ],
+        ),
+      ),
     );
   }
 }

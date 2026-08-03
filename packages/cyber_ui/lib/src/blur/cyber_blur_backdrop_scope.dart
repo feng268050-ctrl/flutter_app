@@ -3,6 +3,15 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+/// Which capture surface a frosted consumer reads from.
+enum CyberBlurCaptureTarget {
+  /// The explicit [CyberBlurBackdropTarget] content used by normal cards.
+  surface,
+
+  /// The complete visible page behind an overlay such as CyberIME.
+  currentPage,
+}
+
 /// Page-level host: descendants (including sibling glass/clock) can resolve the
 /// capture [boundaryKey] via [CyberBlurBackdropScope.maybeOf].
 ///
@@ -23,51 +32,25 @@ class CyberBlurBackdropScope extends StatefulWidget {
         ?.state;
   }
 
-  /// Resolve a capture root for overlays / dialogs that sit outside the scope.
-  ///
-  /// Prefers an ancestor, then walks the root [Navigator] subtree (page under
-  /// dialog routes). Does not register an InheritedWidget dependency.
-  static CyberBlurBackdropScopeState? resolve(BuildContext context) {
-    final ancestor =
-        context.findAncestorStateOfType<CyberBlurBackdropScopeState>();
-    if (ancestor != null) {
-      return ancestor;
-    }
-
-    final nav = Navigator.maybeOf(context, rootNavigator: true);
-    final searchContext = nav?.context ?? context;
-    CyberBlurBackdropScopeState? found;
-    void visit(Element element) {
-      if (found != null) {
-        return;
-      }
-      if (element is StatefulElement &&
-          element.state is CyberBlurBackdropScopeState) {
-        found = element.state as CyberBlurBackdropScopeState;
-        return;
-      }
-      element.visitChildren(visit);
-    }
-
-    searchContext.visitChildElements(visit);
-    return found;
-  }
-
   @override
   State<CyberBlurBackdropScope> createState() => CyberBlurBackdropScopeState();
 }
 
 class CyberBlurBackdropScopeState extends State<CyberBlurBackdropScope> {
   final GlobalKey boundaryKey = GlobalKey(debugLabel: 'cyberBlurBackdrop');
+  final GlobalKey keyboardBoundaryKey =
+      GlobalKey(debugLabel: 'cyberKeyboardBackdrop');
 
   ui.Image? _sharedFull;
   double? _sharedPixelRatio;
+  CyberBlurCaptureTarget? _sharedTarget;
   Future<ui.Image?>? _inflightCapture;
 
   ui.Image? _sharedBlurred;
   double? _blurredSigmaX;
   double? _blurredSigmaY;
   double? _blurredPixelRatio;
+  CyberBlurCaptureTarget? _blurredTarget;
   Future<ui.Image?>? _inflightBlur;
 
   RenderRepaintBoundary? get renderBoundary {
@@ -75,11 +58,28 @@ class CyberBlurBackdropScopeState extends State<CyberBlurBackdropScope> {
     return object is RenderRepaintBoundary ? object : null;
   }
 
+  /// Capture boundary for an overlay that must sample the entire active page,
+  /// not just its wallpaper or other decorative surface.
+  RenderRepaintBoundary? get keyboardRenderBoundary {
+    final object = keyboardBoundaryKey.currentContext?.findRenderObject();
+    return object is RenderRepaintBoundary ? object : null;
+  }
+
+  RenderRepaintBoundary? renderBoundaryFor(CyberBlurCaptureTarget target) =>
+      switch (target) {
+        CyberBlurCaptureTarget.surface => renderBoundary,
+        CyberBlurCaptureTarget.currentPage => keyboardRenderBoundary,
+      };
+
   /// Shared downscaled backdrop snapshot. Ownership stays with this scope —
   /// do not dispose the returned image.
-  Future<ui.Image?> acquireFullCapture({required double pixelRatio}) async {
+  Future<ui.Image?> acquireFullCapture({
+    required double pixelRatio,
+    CyberBlurCaptureTarget target = CyberBlurCaptureTarget.surface,
+  }) async {
     if (_sharedFull != null &&
         _sharedPixelRatio == pixelRatio &&
+        _sharedTarget == target &&
         _sharedFull!.width > 0 &&
         _sharedFull!.height > 0) {
       return _sharedFull;
@@ -87,12 +87,14 @@ class CyberBlurBackdropScopeState extends State<CyberBlurBackdropScope> {
 
     if (_inflightCapture != null) {
       await _inflightCapture;
-      if (_sharedFull != null && _sharedPixelRatio == pixelRatio) {
+      if (_sharedFull != null &&
+          _sharedPixelRatio == pixelRatio &&
+          _sharedTarget == target) {
         return _sharedFull;
       }
     }
 
-    final boundary = renderBoundary;
+    final boundary = renderBoundaryFor(target);
     if (boundary == null || !boundary.hasSize) {
       return null;
     }
@@ -113,6 +115,7 @@ class CyberBlurBackdropScopeState extends State<CyberBlurBackdropScope> {
       _blurredPixelRatio = null;
       _sharedFull = image;
       _sharedPixelRatio = pixelRatio;
+      _sharedTarget = target;
       return image;
     } finally {
       _inflightCapture = null;
@@ -125,9 +128,11 @@ class CyberBlurBackdropScopeState extends State<CyberBlurBackdropScope> {
     required double pixelRatio,
     required double sigmaX,
     required double sigmaY,
+    CyberBlurCaptureTarget target = CyberBlurCaptureTarget.surface,
   }) async {
     if (_sharedBlurred != null &&
         _blurredPixelRatio == pixelRatio &&
+        _blurredTarget == target &&
         _blurredSigmaX == sigmaX &&
         _blurredSigmaY == sigmaY) {
       return _sharedBlurred;
@@ -137,13 +142,15 @@ class CyberBlurBackdropScopeState extends State<CyberBlurBackdropScope> {
       await _inflightBlur;
       if (_sharedBlurred != null &&
           _blurredPixelRatio == pixelRatio &&
+          _blurredTarget == target &&
           _blurredSigmaX == sigmaX &&
           _blurredSigmaY == sigmaY) {
         return _sharedBlurred;
       }
     }
 
-    final full = await acquireFullCapture(pixelRatio: pixelRatio);
+    final full =
+        await acquireFullCapture(pixelRatio: pixelRatio, target: target);
     if (full == null) {
       return null;
     }
@@ -161,6 +168,7 @@ class CyberBlurBackdropScopeState extends State<CyberBlurBackdropScope> {
       _blurredSigmaX = sigmaX;
       _blurredSigmaY = sigmaY;
       _blurredPixelRatio = pixelRatio;
+      _blurredTarget = target;
       return blurred;
     } finally {
       _inflightBlur = null;
@@ -172,11 +180,13 @@ class CyberBlurBackdropScopeState extends State<CyberBlurBackdropScope> {
     _sharedFull?.dispose();
     _sharedFull = null;
     _sharedPixelRatio = null;
+    _sharedTarget = null;
     _sharedBlurred?.dispose();
     _sharedBlurred = null;
     _blurredSigmaX = null;
     _blurredSigmaY = null;
     _blurredPixelRatio = null;
+    _blurredTarget = null;
   }
 
   static Future<ui.Image> _blurImage(
@@ -211,12 +221,19 @@ class CyberBlurBackdropScopeState extends State<CyberBlurBackdropScope> {
   Widget build(BuildContext context) {
     return _CyberBlurBackdropScopeInherited(
       state: this,
-      child: widget.child,
+      // A dedicated IME target covers every currently visible page layer.
+      // The IME overlay is mounted outside this subtree, so it cannot sample
+      // itself or the dialog route that requested it.
+      child: RepaintBoundary(
+        key: keyboardBoundaryKey,
+        child: widget.child,
+      ),
     );
   }
 }
 
-/// Capture root — wallpaper / GIFs only (lws-ui `FrostCaptureTarget` content).
+/// Capture root for regular card frost (lws-ui `FrostCaptureTarget` content).
+/// CyberIME uses [CyberBlurCaptureTarget.currentPage] instead.
 class CyberBlurBackdropTarget extends StatelessWidget {
   const CyberBlurBackdropTarget({
     super.key,

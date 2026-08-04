@@ -1,6 +1,7 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// lws-ui `safety_black` full-screen backdrop behind the frost card.
 const Color _kSafetyBlack = Color(0xFF060720);
@@ -147,7 +148,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: CyberColors.textPrimary,
-              fontSize: 37,
+              fontSize: AppTypography.largeDialogTitleSize,
               fontWeight: FontWeight.w700,
               height: 1.15,
               decoration: TextDecoration.none,
@@ -166,7 +167,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                 content,
                 style: const TextStyle(
                   color: CyberColors.textPrimary,
-                  fontSize: 29,
+                  fontSize: AppTypography.pageTitleSize,
                   height: 1.35,
                   fontWeight: FontWeight.w400,
                   decoration: TextDecoration.none,
@@ -207,7 +208,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                                   checkboxLabel,
                                   style: const TextStyle(
                                     color: CyberColors.textPrimary,
-                                    fontSize: 29,
+                                    fontSize: AppTypography.pageTitleSize,
                                     height: 1.25,
                                     decoration: TextDecoration.none,
                                   ),
@@ -222,7 +223,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                                     ' “${l10n.safetyTipsInfoUse}”',
                                     style: const TextStyle(
                                       color: _kDisclaimerLink,
-                                      fontSize: 29,
+                                      fontSize: AppTypography.pageTitleSize,
                                       height: 1.25,
                                       fontWeight: FontWeight.w700,
                                       decoration: TextDecoration.none,
@@ -235,7 +236,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                               checkboxLabel,
                               style: const TextStyle(
                                 color: CyberColors.textPrimary,
-                                fontSize: 29,
+                                fontSize: AppTypography.pageTitleSize,
                                 height: 1.25,
                                 decoration: TextDecoration.none,
                               ),

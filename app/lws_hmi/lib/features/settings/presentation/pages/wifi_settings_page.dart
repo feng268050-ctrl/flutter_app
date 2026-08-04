@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/settings/presentation/pages/wifi_details_page.d
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Wireless Network — switch + connected + My Networks + Other Networks.
 class WifiSettingsPage extends StatefulWidget {
@@ -408,7 +409,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                         l10n.wifiNoSavedNetworks,
                         style: const TextStyle(
                           color: CyberColors.textPrimary,
-                          fontSize: 18,
+                          fontSize: AppTypography.bodySize,
                         ),
                       ),
                     )
@@ -441,7 +442,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                         l10n.wifiScanning,
                         style: const TextStyle(
                           color: CyberColors.textPrimary,
-                          fontSize: 18,
+                          fontSize: AppTypography.bodySize,
                         ),
                       ),
                     )
@@ -455,7 +456,7 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                         l10n.wifiNoOtherNetworks,
                         style: const TextStyle(
                           color: CyberColors.textPrimary,
-                          fontSize: 18,
+                          fontSize: AppTypography.bodySize,
                         ),
                       ),
                     )
@@ -532,7 +533,7 @@ class _WifiNetworkRow extends StatelessWidget {
                 ssid,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: AppTypography.bodySize,
                   color: CyberColors.textPrimary,
                 ),
               ),

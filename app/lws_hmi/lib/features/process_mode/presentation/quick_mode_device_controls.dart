@@ -10,6 +10,7 @@ import 'package:lws_hmi/features/process_mode/presentation/laser_enable_region_f
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_button.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_button.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Quick-mode bottom composition: left/right side ops + center trapezoid.
 ///
@@ -324,7 +325,7 @@ final class _FeedHoldHintSlot extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: ProcessModeOutlineChrome.actionOrange,
-            fontSize: 21,
+            fontSize: AppTypography.controlSize,
             height: 1.0,
             fontWeight: FontWeight.w400,
           ),

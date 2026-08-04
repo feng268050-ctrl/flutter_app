@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/process_mode/domain/engineer_parameter_visibili
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_material_popup.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Catalog-driven engineer parameter form (row label + tappable value pill).
 ///
@@ -251,7 +252,7 @@ final class _MaterialRow extends StatelessWidget {
                 'Material Type',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
+                  fontSize: AppTypography.controlSize,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -295,7 +296,7 @@ final class _MaterialRow extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 20,
+                                fontSize: AppTypography.controlSize,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -349,7 +350,7 @@ final class _ValueRow extends StatelessWidget {
                       presentation.label,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: AppTypography.controlSize,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -360,7 +361,7 @@ final class _ValueRow extends StatelessWidget {
                       suffix,
                       style: TextStyle(
                         color: presentation.suffixColor ?? Colors.white,
-                        fontSize: 20,
+                        fontSize: AppTypography.controlSize,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -391,7 +392,7 @@ final class _ValueRow extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 20,
+                          fontSize: AppTypography.controlSize,
                           fontWeight: FontWeight.w400,
                         ),
                       ),

@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
@@ -39,11 +40,11 @@ abstract final class SettingsDimens {
   /// Preceding [SettingsGroup] must use `bottomInset: 0` so this is the only gap.
   static const helpGap = 8.0;
 
-  /// Device Info / General list title & value (+2 vs prior 18).
-  static const titleSize = 20.0;
+  /// Device Info / General list title & value → [AppTypography.control].
+  static const titleSize = AppTypography.controlSize;
 
-  /// Secondary / subtitle / help (+2 vs prior 14).
-  static const subtitleSize = 16.0;
+  /// Secondary / subtitle / help → [AppTypography.supporting].
+  static const subtitleSize = AppTypography.supportingSize;
 
   /// Shared raised-panel shadow: even contact + ambient on all four sides
   /// (no top-left / bottom-right directional bias).
@@ -98,12 +99,12 @@ abstract final class SettingsDimens {
     ),
   ];
 
-  /// Advanced tab body (+6 vs prior 16 title / 18 switch).
-  static const advancedTitleSize = 22.0;
-  static const advancedValueSize = 22.0;
-  static const advancedSwitchTitleSize = 24.0;
-  static const advancedSwitchSubtitleSize = 20.0;
-  static const advancedSectionHeaderSize = 20.0;
+  /// Advanced tab body — mapped to AppTypography roles.
+  static const advancedTitleSize = AppTypography.sectionTitleSize;
+  static const advancedValueSize = AppTypography.sectionTitleSize;
+  static const advancedSwitchTitleSize = AppTypography.navigationSize;
+  static const advancedSwitchSubtitleSize = AppTypography.controlSize;
+  static const advancedSectionHeaderSize = AppTypography.controlSize;
 }
 
 /// Settings page Material-style top tabs (equal width, no rounded strip chrome).
@@ -125,7 +126,7 @@ final class SettingsTopTabs extends StatelessWidget
   static const tabHeight = 68.0;
   static const dividerThickness = 1.0;
   static const iconSize = 31.0;
-  static const labelSize = 27.0;
+  static const labelSize = AppTypography.navigationSize;
   static const iconTextGap = 6.0;
   static const indicatorHeight = 2.0;
   static const unselected = Color(0xFF94A3B8);
@@ -367,7 +368,7 @@ class SettingsHelpFooter extends StatelessWidget {
 
 /// Settings / Monitor plate under [SettingsBlurredPageShell].
 ///
-/// Page shell owns the single Gaussian ([ImageFiltered] σ12) between wallpaper
+/// Page shell owns the single Gaussian ([ImageFiltered] σ30) between wallpaper
 /// and chrome. Plates here are **tint + contact shadow + rim only** — no second
 /// [BackdropFilter] / [CyberBackdropBlur] (avoids duplicate blur cost).
 ///
@@ -375,9 +376,9 @@ class SettingsHelpFooter extends StatelessWidget {
 /// Depth matches lasercyber-mobile community cards ([AppCardShadowShell]):
 /// [BoxDecoration.boxShadow] outside the clipped face, not [Material.elevation].
 abstract final class SettingsPerspectiveChrome {
-  /// Same as Custom Home selected cards / [CyberBlurIntensity.low.sigma].
+  /// Gaussian between Settings wallpaper and foreground chrome.
   /// Owned by [SettingsBlurredPageShell], not by [face].
-  static const blurSigma = 12.0;
+  static const blurSigma = 30.0;
   static const blurIntensity = CyberBlurIntensity.low;
   static const blurTint = CyberBlurTint.dark;
 
@@ -448,7 +449,7 @@ abstract final class SettingsPerspectiveChrome {
 /// page [ImageFiltered] owns the only Gaussian) and skips the legacy
 /// multi-layer depth ambient / lip painters.
 ///
-/// Elsewhere: face uses [CyberBackdropBlur] [followLayout] / [high] / sigma 23.
+/// Elsewhere: face uses [CyberBackdropBlur] [followLayout] / [high] / sigma 30.
 ///
 /// Depth (flat, raised glass): outer shade = inflated RRect shells; inner
 /// shade = deflated RRect shells; both fade with distance. Plus transparent
@@ -478,7 +479,7 @@ class SettingsPanel extends StatelessWidget {
     this.surfaceGradient,
     this.blurSampleMode = CyberBlurSampleMode.followLayout,
     this.blurIntensity = CyberBlurIntensity.high,
-    this.blurSigma = 23,
+    this.blurSigma = 30,
   });
 
   final Widget child;
@@ -524,7 +525,7 @@ class SettingsPanel extends StatelessWidget {
   /// Ignored under [SettingsPageBackdropBlur] ([SettingsPerspectiveChrome]).
   final CyberBlurIntensity blurIntensity;
 
-  /// Gaussian sigma for [CyberBackdropBlur] (lws-ui HIGH = 23).
+  /// Gaussian sigma for [CyberBackdropBlur] (page shell uses σ30).
   /// Ignored under [SettingsPageBackdropBlur] (page shell owns sigma).
   final double blurSigma;
 
@@ -1340,7 +1341,7 @@ class SettingsCheckboxRow extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                fontSize: 22,
+                fontSize: AppTypography.sectionTitleSize,
                 color: CyberColors.textPrimary,
               ),
             ),
@@ -1629,7 +1630,7 @@ class SettingsPageBackdropBlur extends InheritedWidget {
     required super.child,
   });
 
-  /// Page [ImageFiltered] sigma ([SettingsPerspectiveChrome.blurSigma] = 12).
+  /// Page [ImageFiltered] sigma ([SettingsPerspectiveChrome.blurSigma] = 30).
   final double sigma;
 
   static SettingsPageBackdropBlur? maybeOf(BuildContext context) {
@@ -1647,7 +1648,7 @@ class SettingsPageBackdropBlur extends InheritedWidget {
 ///
 /// Capture for tip/IME frost stays on the sharp [CyberBlurBackdropTarget].
 /// The blurred wallpaper is the **only** Widget Gaussian between background
-/// and foreground (σ = Custom Home low = 12). Panels use
+/// and foreground (σ30). Panels use
 /// [SettingsPerspectiveChrome] tint/rim/shadow only — no second BackdropFilter.
 class SettingsBlurredPageShell extends StatelessWidget {
   const SettingsBlurredPageShell({
@@ -1659,7 +1660,7 @@ class SettingsBlurredPageShell extends StatelessWidget {
 
   final Widget child;
 
-  /// Page wallpaper Gaussian sigma (Custom Home low = 12).
+  /// Page wallpaper Gaussian sigma (foreground ↔ background).
   final double blurSigma;
 
   /// Wallpaper under capture + blur layer. Called twice (sharp + blurred).
@@ -1770,7 +1771,7 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final l10n = AppLocalizations.of(context)!;
-    // Page ImageFiltered (σ12) + perspective plates (tint/rim only).
+    // Page ImageFiltered (σ30) + perspective plates (tint/rim only).
     return SettingsBlurredPageShell(
       child: Scaffold(
         backgroundColor: Colors.transparent,

@@ -18,6 +18,7 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_scope.da
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Engineer left device panel (lws-ui `engineer_continuous_device_controls`).
 ///
@@ -489,7 +490,7 @@ final class _CheckRow extends StatelessWidget {
                   label,
                   style: TextStyle(
                     color: enabled ? Colors.white : const Color(0x66FFFFFF),
-                    fontSize: 22,
+                    fontSize: AppTypography.sectionTitleSize,
                     fontWeight: FontWeight.w500,
                     height: 1.0,
                   ),
@@ -653,7 +654,7 @@ final class _EngineerWireActionButtonState
     final onFill = solidHighlight || filling;
     final foreground = onFill ? Colors.white : actionOrange;
     final disabledForeground = const Color(0xFF7D3E2B);
-    const labelSize = 20.0;
+    const labelSize = AppTypography.controlSize;
     const iconSize = 26.0;
     final label = latched
         ? DeviceControlFeedbackCopy.continuousFeedLabel
@@ -823,7 +824,7 @@ final class _EngineerDeviceActionButtonState
     final disabledForeground =
         widget.filled ? const Color(0x99FFFFFF) : const Color(0xFF7D3E2B);
     // Label scales with filled/outline; icons stay 34 (match Quick side ops).
-    final labelSize = widget.filled ? 22.0 : 16.0;
+    final labelSize = widget.filled ? AppTypography.sectionTitleSize : AppTypography.supportingSize;
     const iconSize = 34.0;
     return Semantics(
       button: true,

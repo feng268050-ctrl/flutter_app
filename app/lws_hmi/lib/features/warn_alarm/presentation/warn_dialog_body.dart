@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// lws-ui warn prompt metrics (`FrostPromptDialog` + `dialog_frost_body_prompt`).
 ///
@@ -31,14 +32,14 @@ abstract final class WarnDialogMetrics {
   /// `frost_dialog_prompt_icon_size` → `engineer_mode_entry_icon_size`.
   static const double iconSize = 150;
 
-  /// `frost_dialog_prompt_title_text_size`.
-  static const double titleSize = 53;
+  /// `frost_dialog_prompt_title_text_size` → [AppTypography.criticalTitle].
+  static const double titleSize = AppTypography.criticalTitleSize;
 
   /// Absolute floor only for pathological titles (prefer fit over this).
-  static const double minTitleSize = 18;
+  static const double minTitleSize = AppTypography.bodySize;
 
-  /// `prompt_content` textSize in `dialog_frost_body_prompt`.
-  static const double bodySize = 37;
+  /// `prompt_content` → [AppTypography.largeDialogTitle] (special large body).
+  static const double bodySize = AppTypography.largeDialogTitleSize;
 
   /// `frost_dialog_prompt_scroll_max_height`.
   static const double bodyScrollMaxHeight = 148;
@@ -53,7 +54,7 @@ abstract final class WarnDialogMetrics {
   static const double confirmHeight = 58;
 
   /// `frost_action_button_text_size` / `text_size_12`.
-  static const double confirmLabelSize = 29;
+  static const double confirmLabelSize = AppTypography.pageTitleSize;
 
   /// Body `lineSpacingExtra` 6dp on 37sp ≈ height multiplier.
   static const double bodyHeight = (37 + 6) / 37;

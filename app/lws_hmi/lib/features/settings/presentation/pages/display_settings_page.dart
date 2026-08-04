@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Display settings — brightness slider + auto screen-off dropdown.
 class DisplaySettingsPage extends StatefulWidget {
@@ -119,7 +120,7 @@ class _DisplaySettingsPageState extends State<DisplaySettingsPage> {
                     isDense: true,
                     dropdownColor: CyberColors.fillSolidMid,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: AppTypography.bodySize,
                       color: CyberColors.textPrimary,
                     ),
                     iconEnabledColor: CyberColors.textSecondary,

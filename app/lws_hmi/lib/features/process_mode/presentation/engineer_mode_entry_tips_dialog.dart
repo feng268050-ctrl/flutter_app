@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Process-lifetime suppress for the engineer entry tip (not persisted).
@@ -67,11 +68,11 @@ final class _EngineerModeEntryTipsBodyState
   /// `engineer_mode_entry_icon_size` / `frost_dialog_prompt_icon_size`.
   static const _iconSize = 150.0;
 
-  /// `frost_dialog_prompt_title_text_size`.
-  static const _titleSize = 53.0;
+  /// `frost_dialog_prompt_title_text_size` → [AppTypography.criticalTitle].
+  static const _titleSize = AppTypography.criticalTitleSize;
 
-  /// `dialog_frost_body_prompt` content `textSize`.
-  static const _bodySize = 37.0;
+  /// `dialog_frost_body_prompt` content → [AppTypography.largeDialogTitle].
+  static const _bodySize = AppTypography.largeDialogTitleSize;
 
   /// `frost_dialog_prompt_content_inset` / `engineer_mode_entry_dialog_content_padding`.
   static const _contentInset = 36.0;
@@ -204,9 +205,9 @@ final class _EngineerModeEntryTipsBodyState
                       ),
                     );
                   },
-                  child: const Text(
+                  child: Text(
                     'Confirm & Enter',
-                    style: TextStyle(fontSize: 28),
+                    style: AppTypography.pageTitle,
                   ),
                 ),
               ),
@@ -251,7 +252,7 @@ final class _EngineerModeEntryTipsBodyState
                     'Don’t show again this session',
                     style: TextStyle(
                       color: _labelMuted,
-                      fontSize: 22,
+                      fontSize: AppTypography.sectionTitleSize,
                       decoration: TextDecoration.none,
                     ),
                   ),

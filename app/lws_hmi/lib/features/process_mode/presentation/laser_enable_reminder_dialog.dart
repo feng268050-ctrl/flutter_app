@@ -5,6 +5,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Result of the laser-enable Important Reminder dialog.
 final class LaserEnableReminderResult {
@@ -81,7 +82,7 @@ final class _LaserEnableReminderBodyState
           textAlign: TextAlign.center,
           style: TextStyle(
             color: _titleDark,
-            fontSize: 26,
+            fontSize: AppTypography.navigationSize,
             fontWeight: FontWeight.w700,
             height: 1.1,
             decoration: TextDecoration.none,
@@ -140,7 +141,7 @@ final class _LaserEnableReminderBodyState
                 child: const Text(
                   'Yes — I’ve completed the safety checks above',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15),
+                  style: TextStyle(fontSize: AppTypography.captionSize),
                 ),
               ),
             ),
@@ -181,7 +182,7 @@ final class _LaserEnableReminderBodyState
                   'Don’t show again this session',
                   style: TextStyle(
                     color: _labelMuted,
-                    fontSize: 22,
+                    fontSize: AppTypography.sectionTitleSize,
                     height: 1.2,
                     decoration: TextDecoration.none,
                   ),
@@ -243,7 +244,7 @@ final class _ReminderCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: _tipDark,
-                    fontSize: 14,
+                    fontSize: AppTypography.captionSize,
                     height: 1.25,
                     fontWeight: FontWeight.w500,
                     decoration: TextDecoration.none,

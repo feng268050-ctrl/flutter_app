@@ -26,6 +26,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/process_parameters_snapshot_store.dart';
 import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// lws-ui `fragment_ai_vision` — Work Info + Choose; preview-stack actions.
 class AiVisionTab extends StatefulWidget {
@@ -690,7 +691,7 @@ class _AiVisionTabState extends State<AiVisionTab> {
                             l10n.deviceMonitorWorkInfoTitle,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 35,
+                              fontSize: AppTypography.largeDialogTitleSize,
                               fontWeight: FontWeight.w400,
                               height: 1.0,
                             ),
@@ -726,7 +727,7 @@ class _AiVisionTabState extends State<AiVisionTab> {
                     child: Text(
                       l10n.aiVisionChooseBtn,
                       softWrap: false,
-                      style: const TextStyle(fontSize: 24, height: 1.0),
+                      style: const TextStyle(fontSize: AppTypography.navigationSize, height: 1.0),
                     ),
                   ),
                 ),
@@ -790,7 +791,7 @@ class _AiVisionTabState extends State<AiVisionTab> {
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.white70,
-                              fontSize: 24,
+                              fontSize: AppTypography.navigationSize,
                             ),
                           ),
                         ),
@@ -914,7 +915,7 @@ class _InfoBlock extends StatelessWidget {
                 label,
                 style: const TextStyle(
                   color: Color(0xFFE1E1E1),
-                  fontSize: 24,
+                  fontSize: AppTypography.navigationSize,
                   height: 1.0,
                 ),
               ),
@@ -926,7 +927,7 @@ class _InfoBlock extends StatelessWidget {
               value,
               style: const TextStyle(
                 color: Color(0xFFE1E1E1),
-                fontSize: 24,
+                fontSize: AppTypography.navigationSize,
                 height: 1.0,
               ),
             ),
@@ -974,7 +975,7 @@ class _AiHudCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: DefaultTextStyle(
-            style: const TextStyle(color: Colors.white, fontSize: 18),
+            style: const TextStyle(color: Colors.white, fontSize: AppTypography.bodySize),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -1056,7 +1057,7 @@ class _AiBoxesPainter extends CustomPainter {
       }
       labelStyle.text = TextSpan(
         text: label,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
+        style: const TextStyle(color: Colors.white, fontSize: AppTypography.supportingSize),
       );
       labelStyle.layout();
       final padH = labelStyle.height * 0.35;

@@ -10,6 +10,7 @@ import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// lws-ui `AiVisionVideoChooseActivity` — table pick → [ProcessVideoRecord].
 class AiVisionVideoChoosePage extends StatefulWidget {
@@ -168,7 +169,7 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 22,
+                            fontSize: AppTypography.sectionTitleSize,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -181,7 +182,7 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 22,
+                          fontSize: AppTypography.sectionTitleSize,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -198,7 +199,7 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
                           l10n.processVideoEmptyTitle,
                           style: const TextStyle(
                             color: Colors.white54,
-                            fontSize: 18,
+                            fontSize: AppTypography.bodySize,
                           ),
                         ),
                       )
@@ -277,7 +278,7 @@ final class _ChooseRow extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 20),
+                  style: const TextStyle(color: Colors.white, fontSize: AppTypography.controlSize),
                 ),
               ),
             ),
@@ -294,7 +295,7 @@ final class _ChooseRow extends StatelessWidget {
                   selectLabel,
                   softWrap: false,
                   overflow: TextOverflow.visible,
-                  style: const TextStyle(fontSize: 20, height: 1.0),
+                  style: const TextStyle(fontSize: AppTypography.controlSize, height: 1.0),
                 ),
               ),
             ),

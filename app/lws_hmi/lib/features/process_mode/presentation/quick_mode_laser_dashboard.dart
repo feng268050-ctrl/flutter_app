@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
@@ -457,11 +458,11 @@ final class _LaserDashboardMetrics {
   double get contentTop => 50 * scale;
   double get contentGap => 5 * scale;
   double get buttonGap => 16.5 * scale;
-  double get titleSize => 33 * scale;
+  double get titleSize => AppTypography.dialogTitleSize * scale;
   double get valueSize => 101 * scale;
-  double get unitSize => 25 * scale;
+  double get unitSize => AppTypography.navigationSize * scale;
   /// +2 over prior 20/22 for readability on the HMI panel.
-  double get buttonTextSize => 22 * scale;
+  double get buttonTextSize => AppTypography.sectionTitleSize * scale;
   double get buttonIconSize => 24 * scale;
   double get buttonIconGap => 4 * scale;
 

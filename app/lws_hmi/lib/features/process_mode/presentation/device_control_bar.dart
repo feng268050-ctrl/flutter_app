@@ -10,6 +10,7 @@ import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dial
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Bottom device-control strip: manual gas + hold-to-enable laser + wire stubs.
 ///
@@ -115,7 +116,7 @@ final class DeviceControlBar extends StatelessWidget {
                       key: const ValueKey('device-control-error'),
                       style: const TextStyle(
                         color: Color(0xFFFF8A80),
-                        fontSize: 12,
+                        fontSize: AppTypography.microSize,
                       ),
                     ),
                   ],
@@ -176,7 +177,7 @@ final class _ManualGasSwitch extends StatelessWidget {
       dense: true,
       title: const Text(
         'Manual Gas',
-        style: TextStyle(color: Colors.white, fontSize: 14),
+        style: TextStyle(color: Colors.white, fontSize: AppTypography.captionSize),
       ),
       value: value,
       onChanged: enabled ? onChanged : null,
@@ -303,7 +304,7 @@ final class _LaserHoldButtonState extends State<_LaserHoldButton> {
                   label,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: AppTypography.supportingSize,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -340,7 +341,7 @@ final class _WireFeedStub extends StatelessWidget {
           const Text(
             'Wire: protocol TBD',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 10),
+            style: TextStyle(color: Colors.white70, fontSize: AppTypography.microSize),
           ),
         ],
       ),

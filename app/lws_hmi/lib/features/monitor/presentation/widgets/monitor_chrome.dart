@@ -1,5 +1,6 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
@@ -42,14 +43,14 @@ abstract final class MonitorDimens {
   static const workRingH = 250.0;
   static const aiInfoW = 360.0;
 
-  /// Alarm section titles (base 24 + tab-3 content bump).
-  static const sectionTitleSize = 28.0;
+  /// Alarm / section titles → [AppTypography.pageTitle].
+  static const sectionTitleSize = AppTypography.pageTitleSize;
 
-  /// Metric/comm labels — Alarm left panel (+8 vs original 13).
-  static const metricLabelSize = 21.0;
+  /// Metric/comm labels → [AppTypography.control].
+  static const metricLabelSize = AppTypography.controlSize;
 
-  /// Temperature values — Alarm left panel (+8 vs original 18).
-  static const metricValueSize = 26.0;
+  /// Temperature / metric values → [AppTypography.metricValue].
+  static const metricValueSize = AppTypography.metricValueSize;
 
   /// lws-ui `@color/warn_text`.
   static const labelColor = Color(0xFFB0B1C2);
@@ -58,7 +59,7 @@ abstract final class MonitorDimens {
 /// Monitor panel shell — same chrome as [SettingsPanel].
 ///
 /// Under [SettingsBlurredPageShell] (see [MonitorPage]): plates use
-/// [SettingsPerspectiveChrome] (tint + rim; page ImageFiltered owns σ12).
+/// [SettingsPerspectiveChrome] (tint + rim; page ImageFiltered owns σ30).
 ///
 /// Outside that shell:
 /// - [frosted] true → [SettingsPanel] capture frost.
@@ -132,7 +133,7 @@ class MonitorGlassCard extends StatelessWidget {
         // Ignored under SettingsBlurredPageShell ([SettingsPerspectiveChrome]).
         surfaceGradient: MonitorDimens.panelSurfaceGradient,
         blurIntensity: CyberBlurIntensity.high,
-        blurSigma: 23,
+        blurSigma: 30,
         child: panelChild,
       );
     } else if (pagePerspective) {
@@ -544,7 +545,7 @@ class MonitorHealthBanner extends StatelessWidget {
                 message?.trim().isNotEmpty == true
                     ? message!
                     : l10n.modbusCommunicationFault,
-                style: const TextStyle(color: Colors.white, fontSize: 18),
+                style: const TextStyle(color: Colors.white, fontSize: AppTypography.bodySize),
               ),
             ),
           ],
@@ -605,7 +606,7 @@ class MonitorAlarmLogRow extends StatelessWidget {
                     '$code $label',
                     style: const TextStyle(
                       color: titleRed,
-                      fontSize: 22,
+                      fontSize: AppTypography.sectionTitleSize,
                       fontWeight: FontWeight.w600,
                       height: 1.2,
                     ),
@@ -621,7 +622,7 @@ class MonitorAlarmLogRow extends StatelessWidget {
                 _formatTime(time.toLocal()),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 22,
+                  fontSize: AppTypography.sectionTitleSize,
                   fontWeight: FontWeight.w400,
                   height: 1.2,
                 ),
@@ -672,7 +673,7 @@ class MonitorStatusTile extends StatelessWidget {
               label,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 20),
+              style: const TextStyle(color: Colors.white, fontSize: AppTypography.controlSize),
             ),
           ),
           MonitorStatusDot(on: on),

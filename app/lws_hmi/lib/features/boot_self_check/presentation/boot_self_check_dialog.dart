@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_session.dart';
 import 'package:lws_hmi/features/boot_self_check/domain/boot_self_check_item.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Max height for the item list before it scrolls (lws-ui `maxHeight="420dp"`).
 const double _kItemListMaxHeight = 420;
@@ -42,7 +43,7 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: CyberColors.textPrimary,
-                      fontSize: 28,
+                      fontSize: AppTypography.pageTitleSize,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -68,7 +69,7 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                                   row.item.labelFor(l10n),
                                   style: const TextStyle(
                                     color: CyberColors.textPrimary,
-                                    fontSize: 18,
+                                    fontSize: AppTypography.bodySize,
                                   ),
                                 ),
                               ),
@@ -76,7 +77,7 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                                 row.status.labelFor(l10n),
                                 style: TextStyle(
                                   color: _statusColor(row.status),
-                                  fontSize: 16,
+                                  fontSize: AppTypography.supportingSize,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -106,7 +107,7 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                             l10n.bootSelfCheckDontShowAgain,
                             style: const TextStyle(
                               color: CyberColors.textSecondary,
-                              fontSize: 22,
+                              fontSize: AppTypography.sectionTitleSize,
                             ),
                           ),
                         ),

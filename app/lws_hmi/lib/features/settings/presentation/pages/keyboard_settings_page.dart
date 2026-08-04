@@ -9,6 +9,7 @@ import 'package:lws_hmi/app/hmi_route_restore.dart';
 import 'package:lws_hmi/features/settings/application/product_keyboard_profile.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Keyboard settings: soft layout Segment + preview + physical keyboard status.
 class KeyboardSettingsPage extends StatefulWidget {
@@ -91,7 +92,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
             const Text(
               'Apply keyboard layout?',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: AppTypography.controlSize,
                 color: CyberColors.textPrimary,
               ),
             ),
@@ -246,7 +247,7 @@ class _KeyboardLayoutPreviewSection extends StatelessWidget {
                 footnote,
                 style: const TextStyle(
                   color: Color(0x8CFFFFFF),
-                  fontSize: 13,
+                  fontSize: AppTypography.microSize,
                 ),
               ),
             ),

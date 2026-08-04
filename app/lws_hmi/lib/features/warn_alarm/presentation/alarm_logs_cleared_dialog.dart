@@ -1,5 +1,6 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
@@ -38,8 +39,8 @@ final class _AlarmLogsClearedBody extends StatelessWidget {
 
   static const _maxWidth = 560.0;
   static const _iconSize = 80.0;
-  static const _titleSize = 32.0;
-  static const _bodySize = 20.0;
+  static const _titleSize = AppTypography.dialogTitleSize;
+  static const _bodySize = AppTypography.controlSize;
   static const _titleDark = Color(0xFF1A1A1A);
   static const _bodyDark = Color(0xFF1A1A1A);
 

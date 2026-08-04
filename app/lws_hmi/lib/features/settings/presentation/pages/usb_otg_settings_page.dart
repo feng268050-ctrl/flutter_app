@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Common Settings → Input → USB OTG: persist + apply Micro-USB mode.
 class UsbOtgSettingsPage extends StatefulWidget {
@@ -144,7 +145,7 @@ class _UsbOtgSettingsPageState extends State<UsbOtgSettingsPage> {
               ),
               child: Text(
                 _error!,
-                style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+                style: const TextStyle(color: Colors.redAccent, fontSize: AppTypography.captionSize),
               ),
             ),
         ],

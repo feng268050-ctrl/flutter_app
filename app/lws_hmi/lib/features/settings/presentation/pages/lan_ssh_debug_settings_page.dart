@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// SSH debug toggle over LAN (Settings → Network, after HTTP Proxy).
 class LanSshDebugSettingsPage extends StatefulWidget {
@@ -90,7 +91,7 @@ class _LanSshDebugSettingsPageState extends State<LanSshDebugSettingsPage> {
               ),
               child: Text(
                 _error!,
-                style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+                style: const TextStyle(color: Colors.redAccent, fontSize: AppTypography.captionSize),
               ),
             ),
           SettingsHelpFooter(l10n.sshDebugFooter),

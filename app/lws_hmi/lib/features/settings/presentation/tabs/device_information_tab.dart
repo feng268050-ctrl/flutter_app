@@ -16,6 +16,7 @@ import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.d
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Device Information — CyberUI untitled cards (lws-ui Frost parity).
 class DeviceInformationTab extends StatefulWidget {
@@ -188,7 +189,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             Text(
               l10n.checkUpdate,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: AppTypography.controlSize,
                 color: CyberColors.textPrimary,
               ),
             ),
@@ -398,7 +399,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
                 l10n.cloudEnvironmentTier,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 22,
+                  fontSize: AppTypography.sectionTitleSize,
                   fontWeight: FontWeight.w600,
                   color: CyberColors.textPrimary,
                 ),

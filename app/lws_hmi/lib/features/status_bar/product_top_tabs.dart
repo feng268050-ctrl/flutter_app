@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Item layout for [ProductTopTabs].
 enum ProductTopTabLayout {
@@ -268,9 +269,9 @@ final class _ProductTopTabItem extends StatelessWidget {
   });
 
   static const monitorIconSize = 31.0;
-  static const monitorFontSize = 24.0;
+  static const monitorFontSize = AppTypography.navigationSize;
   static const lwsUiIconSize = 31.0;
-  static const lwsUiFontSize = 27.0;
+  static const lwsUiFontSize = AppTypography.navigationSize;
   static const iconTextGap = 6.0;
   static const unselectedLwsUi = Color(0xFF94A3B8);
 

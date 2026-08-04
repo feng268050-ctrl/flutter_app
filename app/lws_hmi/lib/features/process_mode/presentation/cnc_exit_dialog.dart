@@ -1,6 +1,7 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Confirm leaving CNC running mode (lws-ui `CNCExitDialog`).
 Future<bool> showCncExitDialog(BuildContext context) async {
@@ -28,7 +29,7 @@ Future<bool> showCncExitDialog(BuildContext context) async {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
+                    fontSize: AppTypography.sectionTitleSize,
                     fontWeight: FontWeight.w600,
                     height: 1.0,
                   ),
@@ -89,7 +90,7 @@ final class _CncDialogButton extends StatelessWidget {
               label,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: AppTypography.controlSize,
                 fontWeight: FontWeight.w600,
                 height: 1.0,
               ),

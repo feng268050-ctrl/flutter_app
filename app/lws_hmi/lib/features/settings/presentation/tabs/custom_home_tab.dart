@@ -5,6 +5,7 @@ import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/custom_home_save_success_dialog.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Eight-card Custom Home editor.
 ///
@@ -255,7 +256,7 @@ class _SelectionGrid extends StatelessWidget {
                 'CANDIDATES',
                 style: TextStyle(
                   color: Color(0xFFD4D9E5),
-                  fontSize: 17,
+                  fontSize: AppTypography.supportingSize,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.5,
                 ),
@@ -272,7 +273,7 @@ class _SelectionGrid extends StatelessWidget {
                     'SELECTED ON HOME',
                     style: TextStyle(
                       color: Color(0xFFD4D9E5),
-                      fontSize: 17,
+                      fontSize: AppTypography.supportingSize,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.5,
                     ),
@@ -284,7 +285,7 @@ class _SelectionGrid extends StatelessWidget {
                       color: selected.length == 4
                           ? const Color(0xFFBBD1FF)
                           : const Color(0xFFD4D9E5),
-                      fontSize: 16,
+                      fontSize: AppTypography.supportingSize,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -435,7 +436,7 @@ class _MetricSelectionCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: selected ? Colors.white : const Color(0xFFF1F4FB),
-                    fontSize: 18,
+                    fontSize: AppTypography.bodySize,
                     fontWeight: FontWeight.w500,
                     height: 1.1,
                   ),
@@ -459,7 +460,7 @@ class _MetricSelectionCard extends StatelessWidget {
                   'Selected',
               style: const TextStyle(
                 color: Color(0xFFFFD7B9),
-                fontSize: 12,
+                fontSize: AppTypography.microSize,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.4,
               ),
@@ -642,7 +643,7 @@ class _SlotBadge extends StatelessWidget {
         '$slot',
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 16,
+          fontSize: AppTypography.supportingSize,
           fontWeight: FontWeight.w600,
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// lws-ui [FrostStatusDialog] success mode (`OperationDialogBuilder.openSuccessDialog`).
@@ -35,8 +36,8 @@ final class _EngineerOperationSuccessBody extends StatelessWidget {
 
   static const _maxWidth = 560.0;
   static const _iconSize = 80.0;
-  static const _titleSize = 32.0;
-  static const _bodySize = 20.0;
+  static const _titleSize = AppTypography.dialogTitleSize;
+  static const _bodySize = AppTypography.controlSize;
   static const _bodyDark = Color(0xFF1A1A1A);
   static const _titleDark = Color(0xFF1A1A1A);
 

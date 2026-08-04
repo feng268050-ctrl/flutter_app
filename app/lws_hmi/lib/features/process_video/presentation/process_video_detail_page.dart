@@ -20,6 +20,7 @@ import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dar
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// lws-ui `ProcessVideoDetailsActivity` — left params + right fixed player.
 ///
@@ -379,7 +380,7 @@ final class _ParameterColumn extends StatelessWidget {
                       title,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 26,
+                        fontSize: AppTypography.navigationSize,
                         fontWeight: FontWeight.w500,
                         height: 1.0,
                       ),
@@ -488,7 +489,7 @@ final class _ParameterList extends StatelessWidget {
 
   static const _dataStyle = TextStyle(
     color: Color(0xFFE1E1E1),
-    fontSize: 22,
+    fontSize: AppTypography.sectionTitleSize,
     height: 1.15,
   );
 
@@ -634,7 +635,7 @@ final class _PlayerPaneState extends State<_PlayerPane> {
       return Center(
         child: Text(
           widget.error == null ? '…' : widget.failedLabel,
-          style: const TextStyle(color: Colors.white54, fontSize: 16),
+          style: const TextStyle(color: Colors.white54, fontSize: AppTypography.supportingSize),
         ),
       );
     }

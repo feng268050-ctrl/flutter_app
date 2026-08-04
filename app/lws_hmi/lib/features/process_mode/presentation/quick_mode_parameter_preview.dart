@@ -2,6 +2,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Compact read-only parameter preview for the matched quick preset.
 final class QuickModeParameterPreview extends StatelessWidget {
@@ -30,7 +31,7 @@ final class QuickModeParameterPreview extends StatelessWidget {
         width: 280,
         child: Text(
           'No matching process',
-          style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
+          style: TextStyle(color: Color(0x99FFFFFF), fontSize: AppTypography.captionSize),
         ),
       );
     }
@@ -42,7 +43,7 @@ final class QuickModeParameterPreview extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 16,
+          fontSize: AppTypography.supportingSize,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -67,13 +68,13 @@ final class QuickModeParameterPreview extends StatelessWidget {
                   spec.label,
                   style: const TextStyle(
                     color: Color(0xB3FFFFFF),
-                    fontSize: 13,
+                    fontSize: AppTypography.microSize,
                   ),
                 ),
               ),
               Text(
                 '$number ${spec.unit}',
-                style: const TextStyle(color: Colors.white, fontSize: 13),
+                style: const TextStyle(color: Colors.white, fontSize: AppTypography.microSize),
               ),
             ],
           ),

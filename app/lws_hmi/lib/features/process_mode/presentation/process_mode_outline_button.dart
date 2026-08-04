@@ -1,5 +1,6 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
@@ -14,7 +15,7 @@ abstract final class ProcessModeOutlineChrome {
   static const Color idleFill = Color(0xFF2C1923);
   static const Color disabledForeground = Color(0xFF7D3E2B);
   /// Quick side ops / Engineer action icons (unified).
-  static const double labelSize = 22.0;
+  static const double labelSize = AppTypography.sectionTitleSize;
   static const double iconSize = 34.0;
   static const double radius = 14.0;
   static const double strokeWidth = 1.5;

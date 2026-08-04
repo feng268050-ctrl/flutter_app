@@ -16,6 +16,7 @@ import 'package:lws_hmi/features/settings/application/temperature_unit_convert.d
 import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Manual More Status route name (confirm bar). Distinct from gun-managed.
 const liveMachineStatusManualRouteName = 'manual-live-machine-status';
@@ -223,7 +224,7 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: _titleDark,
-              fontSize: 28,
+              fontSize: AppTypography.pageTitleSize,
               fontWeight: FontWeight.w700,
               height: 1.15,
               decoration: TextDecoration.none,
@@ -250,7 +251,7 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.white70,
-                                fontSize: 16,
+                                fontSize: AppTypography.supportingSize,
                               ),
                             ),
                           ),
@@ -380,7 +381,7 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                 child: const Text(
                   'Got it',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: AppTypography.controlSize,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -664,7 +665,7 @@ final class _CompactStatusTile extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: AppTypography.bodySize,
                 fontWeight: FontWeight.w600,
                 height: 1.1,
               ),

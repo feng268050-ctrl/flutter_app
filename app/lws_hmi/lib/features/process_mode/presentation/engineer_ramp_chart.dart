@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Accordion header for the engineer left-panel ramp chart (lws-ui).
 final class EngineerRampAccordionHeader extends StatelessWidget {
@@ -35,7 +36,7 @@ final class EngineerRampAccordionHeader extends StatelessWidget {
                     'Ramp Chart',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 22,
+                      fontSize: AppTypography.sectionTitleSize,
                       fontWeight: FontWeight.w500,
                       height: 1.0,
                     ),
@@ -291,7 +292,7 @@ final class _RampChartPainter extends CustomPainter {
           text: label.text,
           style: TextStyle(
             color: label.color,
-            fontSize: 12,
+            fontSize: AppTypography.microSize,
             fontWeight: FontWeight.w500,
           ),
         ),

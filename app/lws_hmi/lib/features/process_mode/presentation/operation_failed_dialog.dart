@@ -1,5 +1,6 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
@@ -74,11 +75,11 @@ final class _OperationFailedBody extends StatelessWidget {
   /// `dialog_frost_body_status` icon 80dp.
   static const _iconSize = 80.0;
 
-  /// `dialog_frost_prompt` `tv_title` 37sp.
-  static const _titleSize = 37.0;
+  /// `dialog_frost_prompt` `tv_title` → [AppTypography.largeDialogTitle].
+  static const _titleSize = AppTypography.largeDialogTitleSize;
 
-  /// `frost_dialog_status_content` 33sp.
-  static const _bodySize = 33.0;
+  /// `frost_dialog_status_content` → [AppTypography.dialogTitle].
+  static const _bodySize = AppTypography.dialogTitleSize;
 
   /// `frost_dialog_prompt_confirm_button_min_width` / entry confirm 500dp.
   static const _confirmMinWidth = 500.0;

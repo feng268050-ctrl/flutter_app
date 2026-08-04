@@ -13,6 +13,7 @@ import 'package:lws_hmi/features/process_video/presentation/process_video_dialog
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 typedef ProcessVideoUploadInvoker = Future<bool> Function(
   String videoId, {
@@ -325,7 +326,7 @@ class VideosTabState extends State<VideosTab> {
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 22,
+                              fontSize: AppTypography.sectionTitleSize,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -338,7 +339,7 @@ class VideosTabState extends State<VideosTab> {
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 22,
+                            fontSize: AppTypography.sectionTitleSize,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -403,7 +404,7 @@ class VideosTabState extends State<VideosTab> {
                                     ),
                                     style: const TextStyle(
                                       color: Colors.white38,
-                                      fontSize: 13,
+                                      fontSize: AppTypography.microSize,
                                     ),
                                   ),
                                 ),
@@ -473,12 +474,12 @@ final class _EmptyState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             l10n.processVideoEmptyTitle,
-            style: const TextStyle(color: Colors.white54, fontSize: 18),
+            style: const TextStyle(color: Colors.white54, fontSize: AppTypography.bodySize),
           ),
           const SizedBox(height: 8),
           Text(
             l10n.processVideoEmptySubtitle,
-            style: const TextStyle(color: Colors.white38, fontSize: 14),
+            style: const TextStyle(color: Colors.white38, fontSize: AppTypography.captionSize),
           ),
         ],
       ),
@@ -534,12 +535,12 @@ final class _VideoRow extends StatelessWidget {
       ),
     ];
     final uploadStyle = TextStyle(
-      fontSize: 18 * scale.clamp(0.75, 1.0),
+      fontSize: AppTypography.bodySize * scale.clamp(0.75, 1.0),
       fontWeight: FontWeight.w600,
       color: Colors.white,
     );
     final deleteStyle = TextStyle(
-      fontSize: 18 * scale.clamp(0.75, 1.0),
+      fontSize: AppTypography.bodySize * scale.clamp(0.75, 1.0),
       fontWeight: FontWeight.w600,
       color: CyberColors.buttonSecondaryText,
     );
@@ -573,7 +574,7 @@ final class _VideoRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 15,
+                        fontSize: AppTypography.captionSize,
                         height: cells[i].maxLines > 1 ? 1.15 : 1.0,
                       ),
                     ),

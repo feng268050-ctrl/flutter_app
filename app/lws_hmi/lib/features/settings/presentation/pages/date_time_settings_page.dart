@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Date & Time hub — Automatic sync + NTP server + auto timezone + manual rows.
 class DateTimeSettingsPage extends StatefulWidget {
@@ -441,7 +442,7 @@ class _TimezonePickerPageState extends State<_TimezonePickerPage> {
               session: _ime,
               style: const TextStyle(
                 color: CyberColors.textPrimary,
-                fontSize: 18,
+                fontSize: AppTypography.bodySize,
               ),
               decoration: InputDecoration(
                 hintText: l10n.timezoneSearchHint,
@@ -498,7 +499,7 @@ class _TimezonePickerPageState extends State<_TimezonePickerPage> {
                                 'No time zones found',
                                 style: TextStyle(
                                   color: CyberColors.textPrimary,
-                                  fontSize: 18,
+                                  fontSize: AppTypography.bodySize,
                                 ),
                               ),
                             )
@@ -588,13 +589,13 @@ Future<TimeOfDay?> showCyberTimePicker({
 int _daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
 
 TextStyle get _pickerWheelStyle => const TextStyle(
-      fontSize: 32,
+      fontSize: AppTypography.dialogTitleSize,
       fontWeight: FontWeight.w500,
       color: CyberColors.textPrimary,
     );
 
 TextStyle get _pickerSeparatorStyle => const TextStyle(
-      fontSize: 45,
+      fontSize: AppTypography.displaySize,
       color: CyberColors.textPrimary,
       height: 1,
     );
@@ -840,7 +841,7 @@ class _CyberTimePickerBodyState extends State<_CyberTimePickerBody> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
                     ':',
-                    style: _pickerSeparatorStyle.copyWith(fontSize: 53),
+                    style: _pickerSeparatorStyle.copyWith(fontSize: AppTypography.criticalTitleSize),
                   ),
                 ),
                 Expanded(

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
@@ -265,9 +266,12 @@ final class _HomeStatisticCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = width < 160 || height < 100;
-    final titleSize = (height * 0.19).clamp(13.0, 22.0);
-    final numberSize = (height * 0.52).clamp(28.0, 58.0);
-    final unitSize = (height * 0.27).clamp(16.0, 30.0);
+    final titleSize =
+        (height * 0.19).clamp(AppTypography.microSize, AppTypography.sectionTitleSize);
+    final numberSize =
+        (height * 0.52).clamp(AppTypography.pageTitleSize, AppTypography.criticalTitleSize);
+    final unitSize =
+        (height * 0.27).clamp(AppTypography.supportingSize, AppTypography.pageTitleSize);
     return SizedBox(
       width: width,
       height: height,

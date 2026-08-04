@@ -1,6 +1,7 @@
 import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Shows a Cyber frosted input dialog with CyberIME (system IME suppressed).
 ///
@@ -123,7 +124,7 @@ class _CyberImeInputDialogBodyState extends State<_CyberImeInputDialogBody> {
               ),
             ),
             style:
-                const TextStyle(color: CyberColors.textPrimary, fontSize: 18),
+                const TextStyle(color: CyberColors.textPrimary, fontSize: AppTypography.bodySize),
             onAction: _trySubmit,
           ),
         ],

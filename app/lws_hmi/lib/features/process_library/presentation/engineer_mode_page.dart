@@ -39,6 +39,7 @@ import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dar
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Engineer Mode: five tabs + left device panel + right parameter card.
 final class EngineerModePage extends StatefulWidget {
@@ -642,7 +643,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                         'No engineer processes for this type',
                         key: ValueKey('engineer-mode-empty'),
                         style: TextStyle(
-                            color: Color(0xB3FFFFFF), fontSize: 16),
+                            color: Color(0xB3FFFFFF), fontSize: AppTypography.supportingSize),
                       ),
                     ),
                   ),
@@ -707,7 +708,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                       TextOverflow.ellipsis,
                                                   style: const TextStyle(
                                                     color: Colors.white,
-                                                    fontSize: 18,
+                                                    fontSize: AppTypography.bodySize,
                                                     fontWeight:
                                                         FontWeight.w600,
                                                   ),
@@ -723,7 +724,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                       style: TextStyle(
                                                         color: accent
                                                             .withOpacity(0.9),
-                                                        fontSize: 13,
+                                                        fontSize: AppTypography.microSize,
                                                       ),
                                                     ),
                                                   ],
@@ -758,7 +759,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                         'More Favorites',
                                                         style: TextStyle(
                                                           color: Colors.white,
-                                                          fontSize: 21,
+                                                          fontSize: AppTypography.controlSize,
                                                         ),
                                                       ),
                                                       const SizedBox(width: 2),
@@ -843,7 +844,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                                   TextAlign
                                                                       .center,
                                                               style: TextStyle(
-                                                                fontSize: 24,
+                                                                fontSize: AppTypography.navigationSize,
                                                               ),
                                                             ),
                                                           ),
@@ -898,7 +899,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                                   TextAlign
                                                                       .center,
                                                               style: TextStyle(
-                                                                fontSize: 24,
+                                                                fontSize: AppTypography.navigationSize,
                                                               ),
                                                             ),
                                                           ),

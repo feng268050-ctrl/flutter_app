@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
@@ -66,8 +67,8 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
 
   static const _maxWidth = 720.0;
   static const _iconSize = 80.0;
-  static const _titleSize = 37.0;
-  static const _bodySize = 33.0;
+  static const _titleSize = AppTypography.largeDialogTitleSize;
+  static const _bodySize = AppTypography.dialogTitleSize;
   static const _confirmMinWidth = 500.0;
   static const _titleDark = Color(0xFF1A1A1A);
   static const _bodyDark = Color(0xCC1A1A1A);
@@ -211,9 +212,8 @@ final class _OrangePillButton extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           label,
-          style: const TextStyle(
+          style: AppTypography.dialogTitle.copyWith(
             color: Colors.white,
-            fontSize: 32,
             height: 1,
             fontWeight: FontWeight.w400,
             decoration: TextDecoration.none,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 
 abstract interface class IpCameraPreviewPlayer implements Listenable {
   Future<void> initialize();
@@ -308,7 +309,7 @@ class _Placeholder extends StatelessWidget {
             child: Text(
               label,
               textAlign: TextAlign.center,
-              style: TextStyle(color: color, fontSize: 14),
+              style: TextStyle(color: color, fontSize: AppTypography.captionSize),
             ),
           ),
           if (action != null) ...[

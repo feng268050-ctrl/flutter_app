@@ -33,6 +33,7 @@ import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.da
 import 'package:lws_hmi/features/process_mode/presentation/work_status_dialog_host.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/statistics/application/work_session_statistics_recorder.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
@@ -603,8 +604,6 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     final controller = ProcessLibraryScope.of(context);
     final draft = _draft;
     final accent = ProcessModeTokens.tabActiveColor(_processType);
-    // Theme blueGrey dark surface (same as Settings/Monitor), not lws-ui #060720.
-    final pageBg = Theme.of(context).scaffoldBackgroundColor;
 
     return PopScope(
       canPop: false,
@@ -614,110 +613,105 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         }
         unawaited(_handleExit());
       },
-      child: Scaffold(
-        backgroundColor: pageBg,
-        appBar: WorkModeStatusBar(
-          mode: WorkMode.engineer,
-          processType: _processType,
-          backLabel: widget.fromQuickHandoff
-              ? (AppLocalizations.of(context)?.equipmentStatusBack ?? 'Back')
-              : (AppLocalizations.of(context)?.equipmentStatusHome ?? 'Home'),
-          onBack: _onBack,
-        ),
-        body: ProcessModeToastLayer(
-          child: CyberBlurBackdropScope(
-            child: Stack(
-              fit: StackFit.expand,
+      // Same stack as Settings / Monitor: home wallpaper → page blur → chrome.
+      child: SettingsBlurredPageShell(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: WorkModeStatusBar(
+            mode: WorkMode.engineer,
+            processType: _processType,
+            backLabel: widget.fromQuickHandoff
+                ? (AppLocalizations.of(context)?.equipmentStatusBack ?? 'Back')
+                : (AppLocalizations.of(context)?.equipmentStatusHome ?? 'Home'),
+            onBack: _onBack,
+          ),
+          body: ProcessModeToastLayer(
+            child: Column(
               children: [
-                CyberBlurBackdropTarget(
-                  child: ColoredBox(color: pageBg),
+                EngineerProcessTabBar(
+                  processType: _processType,
+                  onChanged: _onProcessTypeChanged,
                 ),
-                Column(
-                  children: [
-                    EngineerProcessTabBar(
-                      processType: _processType,
-                      onChanged: _onProcessTypeChanged,
-                    ),
-                    if (controller.loading && !controller.initialized)
-                      const Expanded(
-                          child: Center(child: CircularProgressIndicator()))
-                    else if (draft == null)
-                      const Expanded(
-                        child: Center(
-                          child: Text(
-                            'No engineer processes for this type',
-                            key: ValueKey('engineer-mode-empty'),
-                            style: TextStyle(
-                                color: Color(0xB3FFFFFF), fontSize: 16),
-                          ),
-                        ),
+                if (controller.loading && !controller.initialized)
+                  const Expanded(
+                      child: Center(child: CircularProgressIndicator()))
+                else if (draft == null)
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'No engineer processes for this type',
+                        key: ValueKey('engineer-mode-empty'),
+                        style: TextStyle(
+                            color: Color(0xB3FFFFFF), fontSize: 16),
                       ),
-                    if (draft != null)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(
-                                flex: 1,
-                                child: SizedBox(
-                                  key: const ValueKey(
-                                      'engineer-device-panel-container'),
-                                  child: _deviceControl == null ||
-                                          _recordWork == null
-                                      ? const SizedBox.shrink()
-                                      : EngineerDevicePanel(
-                                          controller: _deviceControl!,
-                                          recordWork: _recordWork!,
-                                          processType: _processType,
-                                          preset: draft.preset,
-                                          onBeforeEnableLaser:
-                                              _beforeEnableLaser,
-                                          onConfigureWorkSession:
-                                              _configureWorkSessionStatistics,
-                                        ),
-                                ),
-                              ),
-                              const SizedBox(width: 24),
-                              Expanded(
-                                flex: 2,
-                                child: EngineerFrostPanel(
-                                  key: const ValueKey(
-                                      'engineer-parameters-panel'),
-                                  edge: EngineerFrostEdge.bottomLeftTopRight,
-                                  child: Column(
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            24, 16, 16, 8),
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: InkWell(
-                                                key: const ValueKey(
-                                                    'engineer-mode-name'),
-                                                onTap: () {
-                                                  CyberClickSoundRegistry
-                                                      .playClick();
-                                                  _editName();
-                                                },
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      draft.preset.name,
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 18,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                    ),
+                    ),
+                  ),
+                if (draft != null)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: SizedBox(
+                              key: const ValueKey(
+                                  'engineer-device-panel-container'),
+                              child: _deviceControl == null ||
+                                      _recordWork == null
+                                  ? const SizedBox.shrink()
+                                  : EngineerDevicePanel(
+                                      controller: _deviceControl!,
+                                      recordWork: _recordWork!,
+                                      processType: _processType,
+                                      preset: draft.preset,
+                                      onBeforeEnableLaser:
+                                          _beforeEnableLaser,
+                                      onConfigureWorkSession:
+                                          _configureWorkSessionStatistics,
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            flex: 2,
+                            child: EngineerFrostPanel(
+                              key: const ValueKey(
+                                  'engineer-parameters-panel'),
+                              edge: EngineerFrostEdge.bottomLeftTopRight,
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        24, 16, 16, 8),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: InkWell(
+                                            key: const ValueKey(
+                                                'engineer-mode-name'),
+                                            onTap: () {
+                                              CyberClickSoundRegistry
+                                                  .playClick();
+                                              _editName();
+                                            },
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  draft.preset.name,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 18,
+                                                    fontWeight:
+                                                        FontWeight.w600,
+                                                  ),
+                                                ),
                                                     const SizedBox(height: 4),
                                                     Text(
                                                       'Current Process Name',
@@ -764,7 +758,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                         'More Favorites',
                                                         style: TextStyle(
                                                           color: Colors.white,
-                                                          fontSize: 16,
+                                                          fontSize: 21,
                                                         ),
                                                       ),
                                                       const SizedBox(width: 2),
@@ -937,8 +931,6 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                       ),
                   ],
                 ),
-              ],
-            ),
           ),
         ),
       ),

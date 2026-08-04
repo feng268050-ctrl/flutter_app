@@ -1,4 +1,3 @@
-import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
@@ -103,60 +102,49 @@ class _SettingsPageState extends State<SettingsPage> {
     final services = AppScope.of(context);
     final tabLabels = SettingsPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    // Blur capture root = Home wallpaper so SettingsPanel frost samples it.
-    return CyberBlurBackdropScope(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          const Positioned.fill(
-            child: CyberBlurBackdropTarget(
-              child: SettingsHomeBackdrop(),
-            ),
-          ),
-          Scaffold(
+    // Sharp wallpaper → page ImageFiltered blur → panels with rim only (no fill).
+    return SettingsBlurredPageShell(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: ProductPageStatusBar(
+          title: tabLabels[_currentTabIndex],
+          // Share the page wallpaper across status bar, tabs, and body.
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          toolbarHeight: WorkModeStatusBarDimens.height,
+          backLabel: l10n.equipmentStatusHome,
+          backAccent: WorkModeAccent.weld,
+          onBack: canPop ? () => Navigator.of(context).maybePop() : null,
+          bottom: SettingsTopTabs(
+            labels: tabLabels,
+            tabs: SettingsPage._tabs,
+            currentIndex: _currentTabIndex,
             backgroundColor: Colors.transparent,
-            appBar: ProductPageStatusBar(
-              title: tabLabels[_currentTabIndex],
-              // Share the page wallpaper across status bar, tabs, and body.
-              backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              toolbarHeight: WorkModeStatusBarDimens.height,
-              backLabel: l10n.equipmentStatusHome,
-              backAccent: WorkModeAccent.weld,
-              onBack:
-                  canPop ? () => Navigator.of(context).maybePop() : null,
-              bottom: SettingsTopTabs(
-                labels: tabLabels,
-                tabs: SettingsPage._tabs,
-                currentIndex: _currentTabIndex,
-                backgroundColor: Colors.transparent,
-                onSelected: (index) {
-                  if (index == _currentTabIndex) {
-                    return;
-                  }
-                  setState(() => _currentTabIndex = index);
-                },
+            onSelected: (index) {
+              if (index == _currentTabIndex) {
+                return;
+              }
+              setState(() => _currentTabIndex = index);
+            },
+          ),
+        ),
+        // Scaffold starts body layout at the custom Tab divider.
+        // Clip there so Settings content cannot enter the tab strip.
+        body: ClipRect(
+          child: IndexedStack(
+            index: _currentTabIndex,
+            children: [
+              DeviceInformationTab(services: services),
+              CommonSettingsTab(
+                services: services,
+                cameraDeviceInfoCache: widget.cameraDeviceInfoCache,
               ),
-            ),
-            // Scaffold starts body layout at the custom Tab divider.
-                // Clip there so Settings content cannot enter the tab strip.
-                body: ClipRect(
-                  child: IndexedStack(
-                    index: _currentTabIndex,
-                    children: [
-                      DeviceInformationTab(services: services),
-                      CommonSettingsTab(
-                        services: services,
-                        cameraDeviceInfoCache: widget.cameraDeviceInfoCache,
-                      ),
-                      const AdvancedSettingsTab(),
-                      const CustomHomeTab(),
-                    ],
-                  ),
-                ),
-              ),
+              const AdvancedSettingsTab(),
+              const CustomHomeTab(),
             ],
           ),
+        ),
+      ),
     );
   }
 }

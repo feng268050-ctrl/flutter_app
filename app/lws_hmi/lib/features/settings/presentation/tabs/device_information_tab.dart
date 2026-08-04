@@ -411,7 +411,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
                     thickness: SettingsDimens.sectionDividerHeight,
                     indent: 8,
                     endIndent: 8,
-                    color: CyberColors.dividerCenter,
+                    color: SettingsDimens.sectionDividerColor,
                   ),
                 SettingsOptionTile(
                   title: labelFor(CloudEnvironmentTier.values[i]),

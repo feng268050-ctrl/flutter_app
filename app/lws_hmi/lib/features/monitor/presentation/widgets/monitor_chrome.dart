@@ -55,15 +55,14 @@ abstract final class MonitorDimens {
   static const labelColor = Color(0xFFB0B1C2);
 }
 
-/// Monitor panel shell — same frost + depth chrome as [SettingsPanel].
+/// Monitor panel shell — same chrome as [SettingsPanel].
 ///
-/// Requires an ancestor [CyberBlurBackdropScope] with Home wallpaper capture
-/// (see [MonitorPage]).
+/// Under [SettingsBlurredPageShell] (see [MonitorPage]): plates use
+/// [SettingsPerspectiveChrome] (tint + rim; page ImageFiltered owns σ12).
 ///
-/// Glass model matches CyberIME (keyboard backdrop + keycaps):
-/// - [frosted] true → section plate with Gaussian frost (like keyboard backdrop).
-/// - [frosted] false → nested tile with translucent fill only (like keycaps);
-///   no second [CyberBackdropBlur], so wallpaper 透视 does not punch through.
+/// Outside that shell:
+/// - [frosted] true → [SettingsPanel] capture frost.
+/// - [frosted] false → keycap-style translucent light fill + border.
 class MonitorGlassCard extends StatelessWidget {
   const MonitorGlassCard({
     super.key,
@@ -96,6 +95,7 @@ class MonitorGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pagePerspective = SettingsPageBackdropBlur.maybeOf(context) != null;
     final padded = Padding(padding: padding, child: child);
     final Widget content;
     if (faceFill != null) {
@@ -129,18 +129,33 @@ class MonitorGlassCard extends StatelessWidget {
         lightRim: MonitorDimens.panelHighlight,
         innerHighlightWidth: 6,
         innerHighlightColor: MonitorDimens.panelInnerHighlight,
+        // Ignored under SettingsBlurredPageShell ([SettingsPerspectiveChrome]).
         surfaceGradient: MonitorDimens.panelSurfaceGradient,
-        // Section plates keep the shared wallpaper perspective. Only nested
-        // status cards use the local opaque fill below and never sample it.
         blurIntensity: CyberBlurIntensity.high,
         blurSigma: 23,
         child: panelChild,
       );
+    } else if (pagePerspective) {
+      // Nested tile: face under content; rim above so rows cannot break stroke.
+      body = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: SettingsPerspectiveChrome.face(
+              cornerRadius: MonitorDimens.corner,
+              borderGradientCenter: borderGradientCenter,
+            ),
+          ),
+          panelChild,
+          Positioned.fill(
+            child: SettingsPerspectiveChrome.rim(
+              cornerRadius: MonitorDimens.corner,
+            ),
+          ),
+        ],
+      );
     } else {
-      // IME keycap model: one Gaussian base lives in the outer section plate;
-      // this card adds only a translucent light face + normal rim. Do not add
-      // a second wallpaper sample here, otherwise every status card gains its
-      // own moving background perspective.
+      // IME keycap model when the page still uses per-panel frost.
       final radius = BorderRadius.circular(MonitorDimens.corner);
       body = DecoratedBox(
         decoration: BoxDecoration(
@@ -253,7 +268,7 @@ class MonitorSectionHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: dividerTopSpacing),
-          // lws-ui `frost_divider_start_aligned`: longer solid mid, then fade.
+          // lws-ui `frost_divider_start_aligned`: solid mid, then fade L→R.
           const SizedBox(
             height: dividerHeight,
             width: double.infinity,
@@ -261,8 +276,8 @@ class MonitorSectionHeader extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    CyberColors.dividerCenter,
-                    CyberColors.dividerCenter,
+                    SettingsDimens.sectionDividerColor,
+                    SettingsDimens.sectionDividerColor,
                     Color(0x00000000),
                   ],
                   stops: [0.0, 0.4, 1.0],
@@ -613,10 +628,10 @@ class MonitorAlarmLogRow extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 10),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: Colors.white.withOpacity(0.12),
+          const Divider(
+            height: SettingsDimens.sectionDividerHeight,
+            thickness: SettingsDimens.sectionDividerHeight,
+            color: SettingsDimens.sectionDividerColor,
           ),
         ],
       ),

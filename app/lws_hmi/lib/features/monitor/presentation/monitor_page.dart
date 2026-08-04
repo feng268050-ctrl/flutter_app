@@ -99,78 +99,67 @@ class _MonitorPageState extends State<MonitorPage> {
     final l10n = AppLocalizations.of(context)!;
     final tabLabels = MonitorPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    // Capture root = Home wallpaper so MonitorGlassCard → SettingsPanel frost
-    // samples it (same stack as SettingsPage).
-    return CyberBlurBackdropScope(
-      child: Stack(
+    // Same shell as Settings: page Widget blur + Custom Home panel faces.
+    return SettingsBlurredPageShell(
+      backdropBuilder: () => const Stack(
         fit: StackFit.expand,
         children: [
-          const Positioned.fill(
-            child: CyberBlurBackdropTarget(
-              // Tone down the wallpaper's broad specular bands only on
-              // Monitor, preserving enough contrast for panel cast shadows.
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  SettingsHomeBackdrop(),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0x16000000), Color(0x26000000)],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Scaffold(
-            backgroundColor: Colors.transparent,
-            appBar: ProductPageStatusBar(
-              title: tabLabels[_currentTabIndex],
-              // Keep one continuous wallpaper behind Monitor's status and tabs.
-              backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              toolbarHeight: WorkModeStatusBarDimens.height,
-              // Home stays fixed; title follows the selected Monitor tab.
-              backLabel: l10n.equipmentStatusHome,
-              backAccent: WorkModeAccent.weld,
-              onBack: canPop ? () => Navigator.of(context).maybePop() : null,
-              bottom: ProductTopTabs(
-                labels: tabLabels,
-                tabs: MonitorPage._tabs,
-                currentIndex: _currentTabIndex,
-                layout: ProductTopTabLayout.monitorPinnedIcon,
-                backgroundColor: Colors.transparent,
-                onSelected: (index) {
-                  if (index == _currentTabIndex) {
-                    return;
-                  }
-                  CyberClickSoundRegistry.playClick();
-                  setState(() => _currentTabIndex = index);
-                },
-              ),
-            ),
-            // Scaffold already starts body layout at the custom Tab divider.
-            // Clip there so scroll content cannot paint into the Tab strip.
-            body: ClipRect(
-              child: IndexedStack(
-                index: _currentTabIndex,
-                children: [
-                  const WorkInformationTab(),
-                  const MachineStatusTab(),
-                  const AlarmInformationTab(),
-                  const VideosTab(),
-                  AiVisionTab(
-                    visible: _currentTabIndex == MonitorPage.tabAiVision,
-                  ),
-                ],
+          SettingsHomeBackdrop(),
+          // Tone down wallpaper specular bands on Monitor only.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0x16000000), Color(0x26000000)],
               ),
             ),
           ),
         ],
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: ProductPageStatusBar(
+          title: tabLabels[_currentTabIndex],
+          // Keep one continuous wallpaper behind Monitor's status and tabs.
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          toolbarHeight: WorkModeStatusBarDimens.height,
+          // Home stays fixed; title follows the selected Monitor tab.
+          backLabel: l10n.equipmentStatusHome,
+          backAccent: WorkModeAccent.weld,
+          onBack: canPop ? () => Navigator.of(context).maybePop() : null,
+          bottom: ProductTopTabs(
+            labels: tabLabels,
+            tabs: MonitorPage._tabs,
+            currentIndex: _currentTabIndex,
+            layout: ProductTopTabLayout.monitorPinnedIcon,
+            backgroundColor: Colors.transparent,
+            onSelected: (index) {
+              if (index == _currentTabIndex) {
+                return;
+              }
+              CyberClickSoundRegistry.playClick();
+              setState(() => _currentTabIndex = index);
+            },
+          ),
+        ),
+        // Scaffold already starts body layout at the custom Tab divider.
+        // Clip there so scroll content cannot paint into the Tab strip.
+        body: ClipRect(
+          child: IndexedStack(
+            index: _currentTabIndex,
+            children: [
+              const WorkInformationTab(),
+              const MachineStatusTab(),
+              const AlarmInformationTab(),
+              const VideosTab(),
+              AiVisionTab(
+                visible: _currentTabIndex == MonitorPage.tabAiVision,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

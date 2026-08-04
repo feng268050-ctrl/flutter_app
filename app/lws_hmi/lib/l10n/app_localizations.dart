@@ -446,7 +446,7 @@ abstract class AppLocalizations {
   /// No description provided for @aiDetectionLabel.
   ///
   /// In en, this message translates to:
-  /// **'AI Detection'**
+  /// **'Detection'**
   String get aiDetectionLabel;
 
   /// No description provided for @aiOverlayClsDisabled.

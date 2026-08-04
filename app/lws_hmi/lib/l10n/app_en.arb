@@ -64,7 +64,7 @@
   "advancedSettingsGroupOffsetCorrection": "Offset & Correction",
   "advancedSettingsGroupPowerThresholds": "Power Thresholds",
   "advancedSettingsGroupTemperatureThresholds": "Temperature Thresholds",
-  "aiDetectionLabel": "AI Detection",
+  "aiDetectionLabel": "Detection",
   "aiOverlayClsDisabled": "Class: disabled",
   "aiOverlayClsMetal": "Metal",
   "aiOverlayClsOther": "Other",

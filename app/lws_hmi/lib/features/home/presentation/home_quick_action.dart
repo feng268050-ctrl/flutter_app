@@ -218,6 +218,11 @@ class _HomeQuickActionState extends State<HomeQuickAction>
                           intensity: widget.blurIntensity,
                           blurTint: widget.blurTint,
                           borderRadius: radius,
+                          // Flat 1px rim — same as Settings/Monitor plates
+                          // (no frost HL / gradient stroke).
+                          outlineStyle: CyberPanelOutlineStyle.uniform,
+                          borderWidth: 1,
+                          borderColor: Color(0x4DFFFFFF), // 30% white
                           child: widget.child,
                         ),
                         // Press: semi-transparent dark overlay.

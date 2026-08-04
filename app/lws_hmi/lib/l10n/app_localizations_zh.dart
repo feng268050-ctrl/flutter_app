@@ -193,7 +193,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get advancedSettingsGroupTemperatureThresholds => '温度阈值';
 
   @override
-  String get aiDetectionLabel => 'AI检测';
+  String get aiDetectionLabel => '检测';
 
   @override
   String get aiOverlayClsDisabled => '分类：未启用';
@@ -2201,7 +2201,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get advancedSettingsGroupTemperatureThresholds => '溫度閾值';
 
   @override
-  String get aiDetectionLabel => 'AI檢測';
+  String get aiDetectionLabel => '檢測';
 
   @override
   String get aiOverlayClsDisabled => '分類：未啓用';

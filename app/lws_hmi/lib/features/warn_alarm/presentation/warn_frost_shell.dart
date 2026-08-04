@@ -7,8 +7,12 @@ import 'package:lws_hmi/features/warn_alarm/presentation/warn_dialog_body.dart';
 
 /// Light alarm prompt chrome: **card-only** Gaussian frost + cream wash.
 ///
-/// Outside the panel stays sharp (scrim only). Card width comes from
-/// [WarnDialogBody] / [WarnDialogMetrics] (lws-ui title-based width).
+/// Outside the panel stays sharp (scrim only). Card **shrink-wraps** to
+/// [WarnDialogBody] (do not expand to max height — that left a huge empty
+/// band above the icon).
+///
+/// Cream frost matches lws-ui `FrostTone.LIGHT`:
+/// capture → [ImageFilter.blur] → warm intensity overlay → cream (`#FFFCFA`) wash.
 final class WarnFrostShell extends StatefulWidget {
   const WarnFrostShell({
     super.key,
@@ -19,14 +23,21 @@ final class WarnFrostShell extends StatefulWidget {
   final CyberBlurBackdropScopeState? scope;
   final Widget child;
 
-  /// Cream fallback when capture is unavailable.
-  static const creamFallback = Color(0xFFFFFCFA);
+  /// Opaque-enough cream when capture is unavailable (`#FFFCFA`).
+  static const creamFallback = Color(0xE6FFFCFA);
 
-  /// Cream wash over card-local Gaussian (blur layer itself is opacity 1.0).
-  static const creamWash = Color(0xD9FFFCFA);
+  /// Cream wash over blur — 奶油白, translucent so page color shows through.
+  /// Heavier than intensity overlay alone; lighter than solid white.
+  static const creamWash = Color(0xB3FFFCFA);
 
-  /// Gaussian sigma (~lws-ui HIGH dialog frost).
-  static const blurSigma = 23.0;
+  /// Warm white overlay from lws-ui LIGHT → EXTREME (`0x50` + warm RGB).
+  static Color get warmOverlay => cyberBlurOverlayColor(
+        intensity: CyberBlurIntensity.extreme,
+        tint: CyberBlurTint.warm,
+      );
+
+  /// Gaussian sigma — lws-ui LIGHT / EXTREME dialog frost.
+  static const blurSigma = 25.0;
 
   @override
   State<WarnFrostShell> createState() => _WarnFrostShellState();
@@ -128,6 +139,16 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
         MediaQuery.sizeOf(context).width * WarnDialogMetrics.maxWidthFraction;
     final maxH = WarnDialogMetrics.maxCardHeight(context);
 
+    // Re-sample if layout settled to a new card size (first frame often empty).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final box = _cardKey.currentContext?.findRenderObject();
+      if (box is RenderBox &&
+          box.hasSize &&
+          _lastSampledSize != box.size) {
+        unawaited(_sampleCard());
+      }
+    });
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -147,7 +168,10 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
                     width: panel.width,
                   ),
                 ),
+                // [StackFit.loose] shrink-wraps to [WarnDialogBody] — never
+                // expand to maxH (passthrough caused the huge top gap).
                 child: Stack(
+                  fit: StackFit.loose,
                   children: [
                     Positioned.fill(
                       child: _capture != null
@@ -168,10 +192,14 @@ final class _WarnFrostShellState extends State<WarnFrostShell> {
                               color: WarnFrostShell.creamFallback,
                             ),
                     ),
+                    // Warm intensity overlay (lws-ui EXTREME + WARM).
+                    Positioned.fill(
+                      child: ColoredBox(color: WarnFrostShell.warmOverlay),
+                    ),
+                    // Cream 奶油白 wash (`#FFFCFA`) — not pure white.
                     const Positioned.fill(
                       child: ColoredBox(color: WarnFrostShell.creamWash),
                     ),
-                    // Child owns lws-ui card padding + content metrics.
                     widget.child,
                   ],
                 ),

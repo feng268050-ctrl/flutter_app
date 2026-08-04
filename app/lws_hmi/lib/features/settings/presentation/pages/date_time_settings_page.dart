@@ -512,7 +512,7 @@ class _TimezonePickerPageState extends State<_TimezonePickerPage> {
                                 thickness: SettingsDimens.sectionDividerHeight,
                                 indent: 20,
                                 endIndent: 20,
-                                color: CyberColors.dividerCenter,
+                                color: SettingsDimens.sectionDividerColor,
                               ),
                               itemBuilder: (context, index) {
                                 final e = _filtered[index];

@@ -41,13 +41,12 @@ Future<EngineerModeEntryTipsResult?> showEngineerModeEntryTipsDialog(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Engineer mode entry tips',
-    // lws-ui: min width 700dp, grow for title (`resolveTitleBasedWidthPx`),
-    // minHeight 480dp, maxHeight 680dp.
+    // Width: 600dp floor (title-based grow). Height: 400–600.
     constraints: BoxConstraints(
       minWidth: width,
       maxWidth: width,
-      minHeight: 480,
-      maxHeight: 680,
+      minHeight: 400,
+      maxHeight: 600,
     ),
     builder: (dialogContext) => const _EngineerModeEntryTipsBody(),
   );
@@ -83,8 +82,8 @@ final class _EngineerModeEntryTipsBodyState
   /// `frost_dialog_prompt_dont_show_again_inset`.
   static const _dontShowAgainInset = 14.0;
 
-  /// `engineer_mode_entry_dialog_width` floor.
-  static const _minCardWidth = 700.0;
+  /// Engineer entry dialog width floor.
+  static const _minCardWidth = 600.0;
 
   /// `WarnDialogUtil.WARN_DIALOG_MAX_WIDTH_FRACTION`.
   static const _maxWidthFraction = 0.95;

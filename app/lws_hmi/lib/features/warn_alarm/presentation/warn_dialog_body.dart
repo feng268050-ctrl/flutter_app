@@ -6,24 +6,27 @@ import 'package:flutter/material.dart';
 
 /// lws-ui warn prompt metrics (`FrostPromptDialog` + `dialog_frost_body_prompt`).
 ///
-/// On short HMI viewports, [layoutScale] + [FittedBox] shrink content to fit
-/// within [verticalEdgeMargin] while the shell keeps the card centered.
+/// Card size is **unified** for all warn alarms:
+/// - width = [minCardWidth] (725) capped to 95% screen
+/// - height ∈ [[minCardHeight], [maxCardHeightDimen]] with content centered
+///
+/// Fonts scale with card width; title is further fitted so one line shows the
+/// full string (no ellipsis) inside the content band.
 abstract final class WarnDialogMetrics {
-  /// `engineer_mode_entry_dialog_width` / `FrostPromptDialog.standardWidthPx`.
-  static const double minCardWidth = 700;
+  /// Warn alarm card width (design canvas).
+  static const double minCardWidth = 725;
 
   /// `WarnDialogUtil.WARN_DIALOG_MAX_WIDTH_FRACTION`.
   static const double maxWidthFraction = 0.95;
 
+  /// `frost_dialog_prompt_min_height`.
+  static const double minCardHeight = 480;
+
   /// `frost_dialog_prompt_max_height` (`engineer_mode_entry_dialog_height`).
   static const double maxCardHeightDimen = 680;
 
-  /// Breathing room above/below the card (logical px). Card stays centered;
-  /// keep this tight so short HMI panels do not show large empty bands.
+  /// Breathing room above/below the card (logical px).
   static const double verticalEdgeMargin = 16;
-
-  /// Unscaled content budget used to derive [layoutScale].
-  static const double referenceContentHeight = 560;
 
   /// `frost_dialog_prompt_icon_size` → `engineer_mode_entry_icon_size`.
   static const double iconSize = 150;
@@ -31,20 +34,23 @@ abstract final class WarnDialogMetrics {
   /// `frost_dialog_prompt_title_text_size`.
   static const double titleSize = 53;
 
+  /// Absolute floor only for pathological titles (prefer fit over this).
+  static const double minTitleSize = 18;
+
   /// `prompt_content` textSize in `dialog_frost_body_prompt`.
   static const double bodySize = 37;
 
   /// `frost_dialog_prompt_scroll_max_height`.
   static const double bodyScrollMaxHeight = 148;
 
-  /// `frost_dialog_content_padding` (card chrome).
-  static const double cardPadding = 24;
-
-  /// `frost_dialog_prompt_content_inset`.
+  /// `frost_dialog_prompt_content_inset` / shell + body horizontal pad.
   static const double contentInset = 36;
 
   /// `frost_dialog_prompt_confirm_button_min_width`.
   static const double confirmMinWidth = 500;
+
+  /// `frost_action_button_height`.
+  static const double confirmHeight = 58;
 
   /// `frost_action_button_text_size` / `text_size_12`.
   static const double confirmLabelSize = 29;
@@ -59,56 +65,89 @@ abstract final class WarnDialogMetrics {
     return math.min(maxCardHeightDimen, fromScreen);
   }
 
-  /// Uniform shrink only when the viewport cannot fit the design height.
-  /// No extra short-panel compact factor — that left large centered gaps.
-  static double layoutScale(BuildContext context) {
-    final budget = maxCardHeight(context);
-    if (budget >= referenceContentHeight) {
+  /// Min card height, never above [maxCardHeight].
+  static double minCardHeightFor(BuildContext context) {
+    return math.min(minCardHeight, maxCardHeight(context));
+  }
+
+  /// Unified warn card width (725), capped to 95% of screen.
+  static double resolveCardWidth(BuildContext context) {
+    final screenW = MediaQuery.sizeOf(context).width;
+    return math.min(minCardWidth, screenW * maxWidthFraction);
+  }
+
+  /// Scale all chrome when the card is narrower than the 725 design canvas.
+  static double layoutScale(double cardWidth) {
+    if (cardWidth >= minCardWidth) {
       return 1.0;
     }
-    return (budget / referenceContentHeight).clamp(0.72, 1.0);
+    return (cardWidth / minCardWidth).clamp(0.72, 1.0);
   }
 
   static TextStyle titleStyle({
     required bool infoStyle,
-    required double scale,
+    required double fontSize,
   }) =>
       TextStyle(
         // WARN → red; INFO (e.g. Allow Work After Camera Alarm) → black.
         color: infoStyle ? WarnDialogBody.titleBlack : WarnDialogBody.titleRed,
-        fontSize: titleSize * scale,
+        fontSize: fontSize,
         fontWeight: FontWeight.w700,
         height: 1.0,
         decoration: TextDecoration.none,
       );
 
-  static TextStyle bodyStyle({required double scale}) => TextStyle(
+  static TextStyle bodyStyle({required double fontSize}) => TextStyle(
         color: WarnDialogBody.bodyDark,
-        fontSize: bodySize * scale,
+        fontSize: fontSize,
         fontWeight: FontWeight.w400,
         height: bodyHeight,
         decoration: TextDecoration.none,
       );
 
-  /// Mirrors `FrostPromptDialog.resolveTitleBasedWidthPx` via [TextPainter].
-  static double resolveCardWidth(
-    BuildContext context,
-    String title, {
-    required double scale,
+  /// Title band width inside the card (content inset on both sides).
+  static double titleMaxWidth(double cardWidth, double scale) =>
+      cardWidth - contentInset * 2 * scale;
+
+  /// Font size so [title] fits on **one full line** inside [maxWidth].
+  ///
+  /// Starts from the design size ([titleSize] × layout scale) and shrinks from
+  /// measured [TextPainter] width until it fits — no ellipsis. Prefer not to
+  /// go below [minTitleSize], but will if that is the only way to keep one line.
+  static double resolveTitleFontSize({
+    required BuildContext context,
+    required String title,
+    required double maxWidth,
+    required bool infoStyle,
+    required double layoutScale,
   }) {
-    final screenW = MediaQuery.sizeOf(context).width;
-    final maxW = math.max(minCardWidth * scale, screenW * maxWidthFraction);
-    final minW = minCardWidth * scale;
-    final style = titleStyle(infoStyle: false, scale: scale);
-    final painter = TextPainter(
-      text: TextSpan(text: title, style: style),
-      maxLines: 1,
-      ellipsis: '…',
-      textDirection: Directionality.of(context),
-      textScaler: MediaQuery.textScalerOf(context),
-    )..layout();
-    final titleBased = painter.width + contentInset * 2 * scale;
-    return titleBased.clamp(minW, maxW);
+    final design = titleSize * layoutScale;
+    if (title.isEmpty || maxWidth <= 0) {
+      return design;
+    }
+
+    var size = design;
+    for (var i = 0; i < 12; i++) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: title,
+          style: titleStyle(infoStyle: infoStyle, fontSize: size),
+        ),
+        maxLines: 1,
+        textDirection: Directionality.of(context),
+        textScaler: TextScaler.noScaling,
+      )..layout();
+      if (painter.width <= maxWidth) {
+        return size;
+      }
+      // Shrink past [minTitleSize] when needed so the full title stays on one line.
+      final next = size * maxWidth / painter.width;
+      if ((size - next).abs() < 0.05) {
+        return next;
+      }
+      size = next;
+    }
+    return size;
   }
 }
 
@@ -161,118 +200,127 @@ class WarnDialogBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scale = WarnDialogMetrics.layoutScale(context);
+    final cardW = WarnDialogMetrics.resolveCardWidth(context);
+    final scale = WarnDialogMetrics.layoutScale(cardW);
+    final minH = WarnDialogMetrics.minCardHeightFor(context);
     final maxH = WarnDialogMetrics.maxCardHeight(context);
-    final cardW =
-        WarnDialogMetrics.resolveCardWidth(context, title, scale: scale);
-    final pad = WarnDialogMetrics.cardPadding * scale;
     final inset = WarnDialogMetrics.contentInset * scale;
     final icon = WarnDialogMetrics.iconSize * scale;
     final scrollMax = WarnDialogMetrics.bodyScrollMaxHeight * scale;
-    final btnH = CyberDimens.actionButtonSmallHeight;
+    final btnH = WarnDialogMetrics.confirmHeight * scale;
+    final bodyFont = WarnDialogMetrics.bodySize * scale;
+    final confirmFont = WarnDialogMetrics.confirmLabelSize * scale;
+    final titleMax = WarnDialogMetrics.titleMaxWidth(cardW, scale);
+    final titleFont = WarnDialogMetrics.resolveTitleFontSize(
+      context: context,
+      title: title,
+      maxWidth: titleMax,
+      infoStyle: infoStyle,
+      layoutScale: scale,
+    );
     final confirmW = (WarnDialogMetrics.confirmMinWidth * scale).clamp(
       200.0,
-      cardW - pad * 2,
+      cardW - inset * 2,
     );
     final iconAsset = infoStyle ? infoIconAsset : warnIconAsset;
 
-    final content = SizedBox(
-      width: cardW,
-      child: Padding(
-        padding: EdgeInsets.all(pad),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: inset),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Image.asset(
-                      iconAsset,
-                      width: icon,
-                      height: icon,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
-                    ),
-                  ),
-                  SizedBox(height: inset),
-                  // Keep card size; shrink title type so long alarm names stay
-                  // fully visible (no ellipsis) inside the existing width.
-                  SizedBox(
-                    width: double.infinity,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        softWrap: false,
-                        style: WarnDialogMetrics.titleStyle(
-                          infoStyle: infoStyle,
-                          scale: scale,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: inset),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: scrollMax),
-                    child: SingleChildScrollView(
-                      child: Text(
-                        body,
-                        textAlign: TextAlign.start,
-                        style: WarnDialogMetrics.bodyStyle(scale: scale),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: inset),
-                ],
+    // lws-ui: content inset on shell (top/bottom) + body/action (start/end).
+    // Top-aligned (not vertically centered) so minHeight slack stays at the
+    // bottom — avoids a large empty band above the alarm icon.
+    final content = Padding(
+      padding: EdgeInsets.fromLTRB(inset, inset, inset, inset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Image.asset(
+              iconAsset,
+              width: icon,
+              height: icon,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+          SizedBox(height: inset),
+          // Reserve the design title band height so fitted (smaller) fonts
+          // do not shrink the card — keeps warn dialogs height-unified.
+          SizedBox(
+            height: WarnDialogMetrics.titleSize * scale,
+            width: double.infinity,
+            child: Center(
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.visible,
+                textScaler: TextScaler.noScaling,
+                style: WarnDialogMetrics.titleStyle(
+                  infoStyle: infoStyle,
+                  fontSize: titleFont,
+                ),
               ),
             ),
-            Center(
-              child: SizedBox(
-                width: confirmW,
+          ),
+          SizedBox(height: inset),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: scrollMax),
+            child: SingleChildScrollView(
+              child: Text(
+                body,
+                textAlign: TextAlign.start,
+                style: WarnDialogMetrics.bodyStyle(fontSize: bodyFont),
+              ),
+            ),
+          ),
+          // Explicit gap before Confirm (lws-ui body marginBottom = content inset).
+          // Keeps the button from painting over the last body line.
+          SizedBox(height: inset),
+          Center(
+            child: SizedBox(
+              width: confirmW,
+              height: btnH,
+              child: CyberButton(
+                size: CyberButtonSize.small,
+                variant: CyberButtonVariant.primary,
+                shape: CyberButtonShape.rounded,
+                stretch: true,
                 height: btnH,
-                child: CyberButton(
-                  size: CyberButtonSize.small,
-                  variant: CyberButtonVariant.primary,
-                  shape: CyberButtonShape.rounded,
-                  stretch: true,
-                  height: btnH,
-                  // Stop warn SFX before the click sample (shared audio session).
-                  clickSoundEnabled: false,
-                  onPressed: () {
-                    unawaited(() async {
-                      await beforeConfirm?.call();
-                      CyberClickSoundRegistry.playClick();
-                      onConfirm();
-                    }());
-                  },
-                  child: Text(
-                    confirmLabel,
-                    style: TextStyle(
-                      fontSize: WarnDialogMetrics.confirmLabelSize * scale,
-                      fontWeight: FontWeight.w600,
-                    ),
+                // Stop warn SFX before the click sample (shared audio session).
+                clickSoundEnabled: false,
+                onPressed: () {
+                  unawaited(() async {
+                    await beforeConfirm?.call();
+                    CyberClickSoundRegistry.playClick();
+                    onConfirm();
+                  }());
+                },
+                child: Text(
+                  confirmLabel,
+                  style: TextStyle(
+                    fontSize: confirmFont,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
 
-    // Cap height; FittedBox shrinks further if still too tall (Flutter-native).
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: cardW, maxHeight: maxH),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.center,
+    // minHeight 480 like lws-ui. Column packs from the top under the min
+    // constraint so slack stays below Confirm (never a void above the icon).
+    return SizedBox(
+      width: cardW,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: cardW,
+          maxWidth: cardW,
+          minHeight: minH,
+          maxHeight: maxH,
+        ),
         child: content,
       ),
     );

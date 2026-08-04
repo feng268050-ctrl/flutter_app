@@ -102,10 +102,11 @@ Behavior:
 - `hmi-launch` starts Weston + `flutter-wayland-client` with the cached debug engine; ICU is at `/opt/hmi/data/icudtl.dat`.
 - Return to release: `make build-app` then `make push-app`.
 
-Optional prebuilt debug engine (instead of flutter assemble + gen_snapshot cache):
+Debug engine prebuilt lives at `prebuilt/flutter-engine/<ver>/arm64-debug/` and **is committed** alongside `arm64-release` so clones can `make debug-app` without a multi-hour engine rebuild. Refresh both when bumping the Flutter pin:
 
 ```bash
-FLUTTER_ENGINE_RUNTIME_MODE=debug make build-flutter-engine
+FORCE=1 make build-flutter-engine
+FLUTTER_ENGINE_RUNTIME_MODE=debug FORCE=1 make build-flutter-engine
 ```
 
 Host smoke test (no device):

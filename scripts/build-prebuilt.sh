@@ -183,7 +183,7 @@ else
 fi
 
 bash "$ROOT/scripts/sync-prebuilt-manifest.sh"
-echo "build-prebuilt: done — commit prebuilt/ (engine) to skip Flutter recompile on clone"
+echo "build-prebuilt: done — commit prebuilt/flutter-engine/<ver>/arm64-{release,debug}/ to skip engine recompile on clone"
 echo "  engine: $ENGINE_PREBUILT"
 if [[ "$PACK_FLUTTER_SDK" == "1" ]]; then
   echo "  flutter-sdk: $SDK_PREBUILT_INSTALL"

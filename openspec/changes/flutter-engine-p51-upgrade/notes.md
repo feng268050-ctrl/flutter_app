@@ -45,7 +45,11 @@ Inventory (unchanged shape): `scripts/fetch-flutter-sdk.sh`, `fetch-flutter-engi
 - **Done:** `make build-app` → `/opt/hmi` with engine **3.41.9**.
 - **Done:** `make build-rootfs` → `output/firmware/lws_hmi/rootfs.img` (600 MiB); `verify-rootfs-overlay: PASS`.
 - **Done:** `make upgrade` to USB-SSH board; device has `/etc/hmi/flutter-engine.version=3.41.9`, `libflutter_engine.so`, `flutter-wayland-client`, ICU symlink; `hmi.service` **active**; Home boot-self-check + MediaMTX camera paths in journal.
-- Remaining: task **4.3** `make debug-app` / Custom Device + DevTools ( **`make push-app` already OK** on the new pin).
+- Remaining: task **4.3** `make debug-app` / Custom Device + DevTools.
+  - Root cause of emulator `Invalid kernel binary format version`: no `arm64-debug` prebuilt; resolve fell back to stale `app/lws_hmi/build/flutter_assets/libflutter_engine.so` (3.24-era) while `kernel_blob` was built with SDK **3.41.9**. Hardened `debug-runtime-common.sh` to require `prebuilt/.../arm64-debug` only.
+  - **Policy:** commit both `arm64-release` and `arm64-debug` under `prebuilt/flutter-engine/<ver>/`; `build-runtime-deps` builds both.
+  - **Done:** `FLUTTER_ENGINE_RUNTIME_MODE=debug FORCE=1 make build-flutter-engine` → `prebuilt/flutter-engine/3.41.9/arm64-debug` (~97M). Makefile/`br-compile-flutter` now pass runtime mode into Buildroot (Kconfig no longer silently forces release).
+  - **Done:** `make build-debug-app` + `SN=SIM-0001 make debug-app` on emulator — first app visible; no kernel/engine mismatch.
 
 ## Fallback (task 1.5)
 

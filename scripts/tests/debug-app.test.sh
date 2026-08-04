@@ -176,9 +176,9 @@ fi
 
 if grep -q 'Dart VM service is listening on' \
 	"$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/hmi/debug-app-run.sh"; then
-	echo "OK  debug-app-run matches Flutter 3.24 VM Service output"
+	echo "OK  debug-app-run matches Flutter VM Service output"
 else
-	echo "FAIL debug-app-run misses Flutter 3.24 VM Service output" >&2
+	echo "FAIL debug-app-run misses Flutter VM Service output" >&2
 	fail=1
 fi
 

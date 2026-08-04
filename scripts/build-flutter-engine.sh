@@ -65,9 +65,12 @@ echo "flutter-engine $VERSION: using tarball $TARBALL"
 echo "flutter-engine $VERSION: host Flutter SDK (for gen_snapshot build) ..."
 bash "$ROOT/scripts/fetch-flutter-sdk.sh"
 
-echo "flutter-engine $VERSION: compiling in Buildroot ..."
+echo "flutter-engine $VERSION: compiling in Buildroot (runtime_mode=$RUNTIME_MODE) ..."
+export FLUTTER_ENGINE_RUNTIME_MODE="$RUNTIME_MODE"
 bash "$ROOT/scripts/br-compile-flutter.sh" flutter-engine
 
-PACK_PI=0 PACK_FLUTTER_SDK=0 bash "$ROOT/scripts/build-prebuilt.sh"
+PACK_PI=0 PACK_FLUTTER_SDK=0 \
+  FLUTTER_ENGINE_RUNTIME_MODE="$RUNTIME_MODE" \
+  bash "$ROOT/scripts/build-prebuilt.sh"
 
 echo "flutter-engine $VERSION: prebuilt at $ENGINE_PREBUILT"

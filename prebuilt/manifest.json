@@ -7,5 +7,5 @@
   "platform-packages": "1",
   "flutter-sdk": "3.41.9",
   "flutter-engine": "3.41.9-arm64-release",
-  "flutter-embedded-linux": null
+  "flutter-embedded-linux": "42d3d75a56"
 }

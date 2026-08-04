@@ -90,50 +90,38 @@ EOF
 
 debug_runtime_resolve_host_paths() {
 	local root="$1"
-	local engine icu bundle_engine bundle_icu version legacy_engine legacy_icu
+	local engine icu version prebuilt_dir
 	version="$(debug_runtime_engine_version "$root")"
+	prebuilt_dir="$(debug_runtime_mode_dir "$root")"
 
-	if engine="$(debug_runtime_host_engine "$root" 2>/dev/null)" && icu="$(debug_runtime_host_icu "$root" 2>/dev/null)"; then
+	# Only accept the versioned arm64-debug prebuilt. Do NOT fall back to
+	# .cache/debug-app-staging or app/.../flutter_assets — those often retain a
+	# prior-generation libflutter_engine.so (e.g. 3.24) after a pin bump and
+	# then get re-labeled as the new ENGINE_VER, causing:
+	#   Dart Error: Can't load Kernel binary: Invalid kernel binary format version.
+	if engine="$(debug_runtime_host_engine "$root" 2>/dev/null)" && \
+		icu="$(debug_runtime_host_icu "$root" 2>/dev/null)"; then
 		echo "$engine"
 		echo "$icu"
 		return 0
 	fi
 
-	bundle_engine="$root/.cache/debug-app-staging/debug-runtime/${version}/libflutter_engine.so"
-	bundle_icu="$root/.cache/debug-app-staging/debug-runtime/${version}/icudtl.dat"
-	if [[ -f "$bundle_engine" && -f "$bundle_icu" ]]; then
-		echo "$bundle_engine"
-		echo "$bundle_icu"
-		return 0
-	fi
-
-	# Legacy leftover from older host toolchains (still valid arm64 debug .so).
-	legacy_engine="$root/app/lws_hmi/build/flutter_assets/libflutter_engine.so"
-	legacy_icu="$root/app/lws_hmi/build/flutter_assets/icudtl.dat"
-	if [[ -f "$legacy_engine" && -f "$legacy_icu" ]]; then
-		echo "$legacy_engine"
-		echo "$legacy_icu"
-		return 0
-	fi
-
-	# ICU is identical across modes — allow release prebuilt ICU with legacy engine.
-	if [[ -f "$legacy_engine" ]]; then
-		legacy_icu="$root/prebuilt/flutter-engine/${version}/arm64-release/target/usr/share/flutter/release/data/icudtl.dat"
-		if [[ -f "$legacy_icu" ]]; then
-			echo "$legacy_engine"
-			echo "$legacy_icu"
-			return 0
-		fi
-	fi
-
 	cat >&2 <<EOF
 ERROR: debug engine/ICU not found for Flutter ${version}.
 
-Build the matching arm64-debug prebuilt:
-  FLUTTER_ENGINE_RUNTIME_MODE=debug make build-flutter-engine
+Expected prebuilt:
+  ${prebuilt_dir}/target/usr/lib/libflutter_engine.so
+  ${prebuilt_dir}/target/usr/share/flutter/debug/data/icudtl.dat
 
-Or stage a debug build after the debug engine exists:
+Build the matching arm64-debug engine (do not reuse release or stale cache):
+  FLUTTER_ENGINE_RUNTIME_MODE=debug FORCE=1 make build-flutter-engine
+
+Commit the result under prebuilt/flutter-engine/${version}/arm64-debug/ (same as arm64-release)
+so teammates can make debug-app without a multi-hour rebuild.
+
+Then:
   make build-debug-app
+  make debug-app
 EOF
 	return 1
 }

@@ -109,7 +109,7 @@ make build-dev-deps
 make build-runtime-deps
 make fetch-flutter-sdk
 make build-flutter-engine
-make build-flutter-embedded-linux
+FLUTTER_ENGINE_RUNTIME_MODE=debug make build-flutter-engine
 make build-flutter-embedded-linux
 make build-gstreamer
 make build-platform-packages
@@ -121,6 +121,7 @@ make build-extract-video-frame
 make fetch-btop
 ```
 
+`make build-runtime-deps` already builds **both** `arm64-release` and `arm64-debug` engine prebuilts (commit both under `prebuilt/flutter-engine/<ver>/`).
 Force refresh a bucket: `make rebuild-deps`, `make rebuild-runtime-deps`, etc.
 
 `make build-flutter-embedded-linux` is required for the **default** Weston image (`make build-rootfs`). The alternate `make build-rootfs` needs `make build-flutter-embedded-linux` instead.

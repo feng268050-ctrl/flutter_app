@@ -125,7 +125,7 @@ help:
 	@echo "  make build-runtime-deps    # runtime: flutter, gstreamer, mediamtx, opencv, ai, btop, rknn-rt"
 	@echo "  make build-gstreamer       # runtime: MPP + GStreamer → prebuilt/ (before build-rootfs)"
 	@echo "  make build-platform-packages # runtime: libmodbus, yaml-cpp, sqlite, avahi → prebuilt/"
-	@echo "  make build-flutter-engine  # runtime: compile engine → prebuilt/ (needs fetch first)"
+	@echo "  make build-flutter-engine  # runtime: release engine → prebuilt/…/arm64-release (also: FLUTTER_ENGINE_RUNTIME_MODE=debug)"
 	@echo "  make fetch-flutter-engine  # runtime: engine sources → .cache/flutter-engine/"
 	@echo "  make build-flutter-embedded-linux  # Weston image: eLinux Wayland client → prebuilt/"
 	@echo "  make build-mediamtx        # runtime: mediamtx arm64 → prebuilt/ (App /opt/hmi)"
@@ -387,10 +387,16 @@ rebuild-deps:
 	@FORCE=1 bash scripts/build-deps.sh
 
 build-flutter-engine:
-	@bash scripts/build-flutter-engine.sh
+	@FLUTTER_ENGINE_RUNTIME_MODE='$(FLUTTER_ENGINE_RUNTIME_MODE)' \
+		FORCE='$(FORCE)' \
+		FLUTTER_ENGINE_VERSION='$(FLUTTER_ENGINE_VERSION)' \
+		bash scripts/build-flutter-engine.sh
 
 rebuild-flutter-engine:
-	@FORCE=1 bash scripts/build-flutter-engine.sh
+	@FLUTTER_ENGINE_RUNTIME_MODE='$(FLUTTER_ENGINE_RUNTIME_MODE)' \
+		FORCE=1 \
+		FLUTTER_ENGINE_VERSION='$(FLUTTER_ENGINE_VERSION)' \
+		bash scripts/build-flutter-engine.sh
 
 fetch-flutter-engine:
 	@bash scripts/fetch-flutter-engine.sh

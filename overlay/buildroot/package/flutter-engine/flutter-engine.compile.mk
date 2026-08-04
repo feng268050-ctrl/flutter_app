@@ -56,12 +56,16 @@ FLUTTER_ENGINE_TARGET_ARCH = x64
 FLUTTER_ENGINE_TARGET_TRIPPLE = x86_64-unknown-linux-gnu
 endif
 
+# Host may pass FLUTTER_ENGINE_RUNTIME_MODE=debug|profile|release on the make
+# command line (scripts/br-compile-flutter.sh). Command-line wins over Kconfig.
+ifeq ($(filter command line environment,$(origin FLUTTER_ENGINE_RUNTIME_MODE)),)
 ifeq ($(FLUTTER_ENGINE_RUNTIME_MODE_PROFILE),y)
 FLUTTER_ENGINE_RUNTIME_MODE=profile
 else ifeq ($(BR2_ENABLE_RUNTIME_DEBUG),y)
 FLUTTER_ENGINE_RUNTIME_MODE=debug
 else
 FLUTTER_ENGINE_RUNTIME_MODE=release
+endif
 endif
 
 FLUTTER_ENGINE_BUILD_DIR = \

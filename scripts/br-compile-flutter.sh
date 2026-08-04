@@ -96,6 +96,8 @@ if [[ ! -d "$OUT" ]]; then
 	echo "  Run: make lunch" >&2
 	exit 1
 fi
-make O="$OUT" -j"${JOBS}" "${PKG}-dirclean" "${PKG}"
+make O="$OUT" -j"${JOBS}" \
+	FLUTTER_ENGINE_RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}" \
+	"${PKG}-dirclean" "${PKG}"
 
-echo "br-compile-flutter: ${PKG} package build finished"
+echo "br-compile-flutter: ${PKG} package build finished (runtime_mode=${FLUTTER_ENGINE_RUNTIME_MODE:-release})"

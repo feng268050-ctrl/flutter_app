@@ -82,7 +82,7 @@ if ! mv "$NEXT_ASSETS" "$ASSETS_DIR"; then
 fi
 rm -rf "$OLD_ASSETS"
 
-ENGINE_VER="$(cat /etc/hmi/flutter-engine.version 2>/dev/null || echo 3.24.4)"
+ENGINE_VER="$(cat /etc/hmi/flutter-engine.version 2>/dev/null || echo 3.41.9)"
 printf '%s\n' "{\"mode\":\"release\",\"engine_version\":\"${ENGINE_VER}\"}" >/opt/hmi/runtime-mode.json
 sync
 

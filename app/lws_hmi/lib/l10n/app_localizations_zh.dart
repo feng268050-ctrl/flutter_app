@@ -56,10 +56,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get advancedSettingAutoZeroOffsetMessage =>
-      '请将焊枪对准安全区域并按住扳机，然后点击自动。自动过程会临时允许出光，扳机触发激光。请等待进度条完成自动零点校正。';
+      '请将枪头对准安全区域并按住扳机后再点击「自动」。自动校正会临时开启激光使能，真实出光由扳机触发，请等待进度条完成零点校正。';
 
   @override
-  String get advancedSettingAutoZeroOffsetTitle => '自动零点校正';
+  String get advancedSettingAutoZeroOffsetTitle => '零点偏移自动校正';
 
   @override
   String get advancedSettingCollimatingLensTempAlarmThreshold => '聚焦镜温度报警阈值';
@@ -373,7 +373,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get alarmLogsClearedMessage => '完成';
 
   @override
-  String get alarmLogsClearedTitle => '已清除';
+  String get alarmLogsClearedTitle => '清除成功';
 
   @override
   String get alarmLogsTitle => '告警日志';
@@ -624,7 +624,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get currentAlarmText => '电流报警';
 
   @override
-  String get currentProcessName => '当前工艺名称';
+  String get currentProcessName => '当前工艺参数名称';
 
   @override
   String get customHomePage => '自定义首页';
@@ -753,7 +753,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceBindBody => '请使用 LaserCyber App 扫描二维码绑定此设备。';
 
   @override
-  String get deviceBindTitle => '绑定此设备';
+  String get deviceBindTitle => '绑定本设备';
 
   @override
   String get deviceControlAutoWireFeedOff => '送丝已关闭';
@@ -765,7 +765,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceControlCameraUnavailable => '相机不可用';
 
   @override
-  String get deviceControlContinuousFeedLabel => '连续送丝';
+  String get deviceControlContinuousFeedLabel => '持续送丝';
 
   @override
   String get deviceControlEmergencyStopError => '设备处于急停状态';
@@ -777,10 +777,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceControlEndOfWorkFirst => '请先结束工作';
 
   @override
-  String get deviceControlFeedHoldHint => '长按 3 秒保持开启';
+  String get deviceControlFeedHoldHint => '长按3秒保持';
 
   @override
-  String get deviceControlFeedOngoing => '送丝中…';
+  String get deviceControlFeedOngoing => '送丝进行中';
 
   @override
   String get deviceControlFeedPulseSuccess => '送丝+已启动';
@@ -804,7 +804,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceControlRetractPulseSuccess => '送丝已启动';
 
   @override
-  String get deviceControlStopFeed => '停止送丝+';
+  String get deviceControlStopFeed => '结束送丝+';
 
   @override
   String get deviceControlWireUnavailableInMode => '当前模式不可送丝';
@@ -840,7 +840,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceRegisterReconnect => '重新连接';
 
   @override
-  String get deviceRegisterTitle => '注册此设备';
+  String get deviceRegisterTitle => '注册本设备';
 
   @override
   String get deviceRemoteLockBody => '此设备已被远程锁定。请联系管理员解锁。';
@@ -868,10 +868,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get doneText => '完成';
 
   @override
-  String get dontShowAgain => '不再显示';
+  String get dontShowAgain => '以后不再显示';
 
   @override
-  String get dontShowAgainThisSession => '本次不再显示';
+  String get dontShowAgainThisSession => '本次会话内不再显示';
 
   @override
   String get driveOvertemperatureAlarmContent =>
@@ -891,7 +891,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get driverModuleOvertemperatureAlarmTitle => '驱动模块超温告警';
 
   @override
-  String get eStopLabel => '急停';
+  String get eStopLabel => '急停状态';
 
   @override
   String get editProcess => '编辑工艺';
@@ -910,7 +910,7 @@ class AppLocalizationsZh extends AppLocalizations {
       '工程师模式提供面向熟练用户的高级参数自定义。建议先熟悉设备工作方式，再进行精细调整。';
 
   @override
-  String get engineerModeEntryConfirm => '确认并进入';
+  String get engineerModeEntryConfirm => '确认进入';
 
   @override
   String get engineerModeEntryTitle => '工程师模式提示';
@@ -973,7 +973,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fiberTemperatureUpperLimitClearedTitle => '光纤温度超上限解除';
 
   @override
-  String get firmwareVersion => '控制板版本';
+  String get firmwareVersion => '固件版本';
 
   @override
   String get flashErrorAlarmContent =>
@@ -990,7 +990,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get flashUnencryptedAlarmTitle => 'FLASH 未加密告警';
 
   @override
-  String get focusScaleReference => '焦点刻度参考';
+  String get focusScaleReference => '对焦刻度参考值';
 
   @override
   String get frontLightPdVoltageText => '前向光PD电压';
@@ -1013,7 +1013,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get galvanometerMotorTrajectoryErrorTitle => '振镜电机轨迹异常';
 
   @override
-  String get gasFlowLabel => '气体流量';
+  String get gasFlowLabel => '通气状态';
 
   @override
   String get gasPressureLabel => '气压';
@@ -1025,7 +1025,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gotItText => '知道了';
 
   @override
-  String get groundClampLabel => '接地夹';
+  String get groundClampLabel => '安全夹';
 
   @override
   String get gunHeadCommunicationAlarmContent =>
@@ -1051,7 +1051,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gunSn => '枪头 SN';
 
   @override
-  String get gunSwitchLabel => '焊枪开关';
+  String get gunSwitchLabel => '激光枪开关';
 
   @override
   String get hardwareBusErrorAlarmContent =>
@@ -1112,7 +1112,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get httpProxySaveSuccess => '代理设置已保存';
 
   @override
-  String get httpProxySettingsTitle => '代理';
+  String get httpProxySettingsTitle => 'HTTP 代理';
 
   @override
   String get httpProxyStatusIncomplete => '开启（未完成）';
@@ -1133,7 +1133,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get httpProxyTestSuccess => '连接成功';
 
   @override
-  String get httpProxyTitle => '代理';
+  String get httpProxyTitle => 'HTTP 代理';
 
   @override
   String get httpProxyUsername => '用户名';
@@ -1197,7 +1197,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get ipCameraText => '摄像头';
+  String get ipCameraText => '相机';
 
   @override
   String get jobRuntime => '作业时长';
@@ -1279,7 +1279,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get laserEmergencyStopAlarmTitle => '激光器急停告警';
 
   @override
-  String get laserEnable => '激光使能';
+  String get laserEnable => '开启激光';
 
   @override
   String get laserEnableBlockAlarmBlocked => '告警阻止激光使能';
@@ -1306,28 +1306,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get laserEnableReminderConfirm => '是的 — 我已完成以上安全检查';
 
   @override
-  String get laserEnableReminderFocus => '请将焊枪焦距刻度调至所示数值。';
+  String get laserEnableReminderFocus => '请将枪头对焦刻度调整至指定参考值。';
 
   @override
-  String get laserEnableReminderNozzleClean => '请确认已拆除激光管与铜嘴。';
+  String get laserEnableReminderNozzleClean => '请确认您已移除激光管及铜喷嘴。';
 
   @override
-  String get laserEnableReminderNozzleCut => '请确认已安装切割铜嘴。';
+  String get laserEnableReminderNozzleCut => '请确认您已安装切割铜喷嘴。';
 
   @override
-  String get laserEnableReminderNozzleWeld => '请确认已安装焊接铜嘴。';
+  String get laserEnableReminderNozzleWeld => '请确认您已安装焊接铜喷嘴。';
 
   @override
   String get laserEnableReminderPpe => '请确认已佩戴激光防护装备。';
 
   @override
-  String get laserEnableReminderTitle => '重要提示';
+  String get laserEnableReminderTitle => '重要提醒';
 
   @override
   String get laserOff => '关闭激光';
 
   @override
-  String get liveMachineStatusTitle => '实时设备状态';
+  String get liveMachineStatusTitle => '机台实时状态';
 
   @override
   String get laserOnLabel => '激光';
@@ -1417,7 +1417,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mainControllerTempBoardCommAlarmTitle => '主控板与温控板通讯故障';
 
   @override
-  String get manualGas => '手动吹气';
+  String get manualGas => '手动送气';
 
   @override
   String get materialAluminumAlloy => '铝合金';
@@ -1484,7 +1484,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get monitorWeldingConsumables => '焊接耗材';
 
   @override
-  String get moreFavorites => '更多收藏';
+  String get moreFavorites => '更多常用工艺';
 
   @override
   String get motorCableOpenAlarmContent =>
@@ -1611,22 +1611,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paramBackDrawSpeedCatalog => '回抽速度';
 
   @override
-  String get paramBlowingDelay => '提前送气';
+  String get paramBlowingDelay => '吹气延时';
 
   @override
   String get paramBlowingDelayCatalog => '吹气延时';
 
   @override
-  String get paramGasOffDelay => '延时关气';
+  String get paramGasOffDelay => '关气延时';
 
   @override
   String get paramGasOffDelayCatalog => '关气延时';
 
   @override
-  String get paramGasPostFlow => '延时关气';
+  String get paramGasPostFlow => '关气延时';
 
   @override
-  String get paramGasPreFlow => '提前送气';
+  String get paramGasPreFlow => '吹气延时';
 
   @override
   String get paramLaserDutyCycle => '激光占空比';
@@ -1659,16 +1659,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paramPiercingPower => '穿孔功率';
 
   @override
-  String get paramPowerRampDown => '功率下降';
+  String get paramPowerRampDown => '功率缓降';
 
   @override
-  String get paramPowerRampUp => '功率爬升';
+  String get paramPowerRampUp => '功率缓升';
 
   @override
-  String get paramRampDownTime => '下降时间';
+  String get paramRampDownTime => '功率缓降';
 
   @override
-  String get paramRampUpTime => '爬升时间';
+  String get paramRampUpTime => '功率缓升';
 
   @override
   String get paramRefeedDelay => '补丝延时';
@@ -1683,13 +1683,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paramRetractSpeed => '回抽速度';
 
   @override
-  String get paramScanFrequency => '扫描频率';
+  String get paramScanFrequency => '摆动频率';
 
   @override
-  String get paramScanWidth => '扫描宽度';
+  String get paramScanWidth => '摆动宽度';
 
   @override
-  String get paramSpotWeldDuration => '点焊时长';
+  String get paramSpotWeldDuration => '点焊持续';
 
   @override
   String get paramSpotWeldInterval => '点焊间隔';
@@ -1701,7 +1701,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paramSpotWeldingIntervalCatalog => '点焊间隔';
 
   @override
-  String get paramSwingFrequency => '扫描频率';
+  String get paramSwingFrequency => '摆动频率';
 
   @override
   String get paramSwingFrequencyCatalog => '摆动频率';
@@ -1822,7 +1822,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get processTabContinuous => '连续';
+  String get processTabContinuous => '连续焊接';
 
   @override
   String get processTabCutting => '切割';
@@ -1831,16 +1831,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processTabSpot => '点焊';
 
   @override
-  String get processTabWeldSeam => '焊缝';
+  String get processTabWeldSeam => '焊道清洗';
 
   @override
-  String get processTabWideArea => '超宽';
+  String get processTabWideArea => '宽幅清洗';
 
   @override
-  String get processTypeCncCutting => 'CNC 切割';
+  String get processTypeCncCutting => 'CNC切割';
 
   @override
-  String get processTypeContinuousWelding => '连续焊';
+  String get processTypeContinuousWelding => '连续焊接';
 
   @override
   String get processTypeHandCutting => '切割';
@@ -1852,10 +1852,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processTypeSpotWelding => '点焊';
 
   @override
-  String get processTypeWeldCleaning => '焊缝清洗';
+  String get processTypeWeldCleaning => '焊道清洗';
 
   @override
-  String get processTypeWideCleaning => '超宽清洗';
+  String get processTypeWideCleaning => '宽幅清洗';
 
   @override
   String get processVideoAlreadyUploaded => '已上传';
@@ -1934,10 +1934,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processVideoWorkMode => '工作模式';
 
   @override
-  String get processWheelCncCutting => 'CNC 切割';
+  String get processWheelCncCutting => 'CNC切割';
 
   @override
-  String get processWheelContinuousWelding => '连续焊';
+  String get processWheelContinuousWelding => '连续焊接';
 
   @override
   String get processWheelHandCutting => '切割';
@@ -1946,10 +1946,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processWheelSpotWelding => '点焊';
 
   @override
-  String get processWheelWeldCleaning => '焊缝清洗';
+  String get processWheelWeldCleaning => '焊道清洗';
 
   @override
-  String get processWheelWideCleaning => '大面积清洗';
+  String get processWheelWideCleaning => '宽幅清洗';
 
   @override
   String get productDisclaimerContent =>
@@ -2045,7 +2045,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resetToDefault => '恢复默认';
 
   @override
-  String get retract => '回抽';
+  String get retract => '退丝';
 
   @override
   String get retryText => '重试';
@@ -2100,7 +2100,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get saveSucceeded => '保存成功';
 
   @override
-  String get savedSuccessfully => '已保存';
+  String get savedSuccessfully => '保存成功';
 
   @override
   String get screenBrightnessText => '屏幕亮度';
@@ -2124,7 +2124,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get screenOffTimeText => '息屏时间';
 
   @override
-  String get screenSettings => '显示';
+  String get screenSettings => '屏幕设置';
 
   @override
   String get selectProcessPrompt => '选择工艺以查看参数。';
@@ -2705,6 +2705,119 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get zeroPointOffsetAlarmTitle => '零点偏移告警';
+
+  @override
+  String get bluetoothDiscoverable => '可被发现';
+
+  @override
+  String get bluetoothMyDevices => '我的设备';
+
+  @override
+  String get bluetoothNoDevicesFound => '未找到设备';
+
+  @override
+  String get bluetoothNoPairedDevices => '暂无已配对设备';
+
+  @override
+  String get bluetoothOtherDevices => '其他设备';
+
+  @override
+  String get bluetoothPaired => '已配对';
+
+  @override
+  String get bluetoothScan => '扫描';
+
+  @override
+  String get bluetoothScanning => '正在扫描…';
+
+  @override
+  String get bluetoothStopScan => '停止';
+
+  @override
+  String get bluetoothThisDevice => '本机';
+
+  @override
+  String get cncConnectionGuideNote => '说明：连接建立后，后续调节将通过 CNC 进行。';
+
+  @override
+  String get cncConnectionGuideStep1 => '1.请确认 RS485 通讯连接正常。';
+
+  @override
+  String get cncConnectionGuideStep2 => '2.请确认切割喷嘴传感器线缆连接正常。';
+
+  @override
+  String get cncConnectionGuideStep3 => '3.请确认焊枪与固定装置的连接是牢固的。';
+
+  @override
+  String get cncConnectionGuideTitle => '连接设备指引';
+
+  @override
+  String get cncModeActiveMessage => 'CNC 模式已激活\n请在 CNC 设备上操作';
+
+  @override
+  String get deviceControlUnavailable => '设备控制不可用';
+
+  @override
+  String dimensionWithUnit(String label, String unit) {
+    return '$label ($unit)';
+  }
+
+  @override
+  String get exitCncModeConfirmTitle => '退出 CNC 模式？';
+
+  @override
+  String get exitCncModeLabel => '退出 CNC 模式';
+
+  @override
+  String get ipCameraRecordAction => '录制';
+
+  @override
+  String get ipCameraRecordingFailed => '录制失败';
+
+  @override
+  String get ipCameraRecordingFinalizing => '正在完成…';
+
+  @override
+  String get ipCameraRecordingInProgress => '录制进行中';
+
+  @override
+  String get ipCameraWaitingForRtsp => '正在等待 RTSP 流…';
+
+  @override
+  String get materialTypeLabel => '材料类型';
+
+  @override
+  String get moreParametersLabel => '更多参数';
+
+  @override
+  String get moreStatusLabel => '更多监测';
+
+  @override
+  String get noTimeZonesFound => '未找到时区';
+
+  @override
+  String get rampChartLabel => '爬坡图';
+
+  @override
+  String get stopText => '停止';
+
+  @override
+  String get usbOtgDebugOnlyLockedHelp => '本产品仅支持 USB 调试模式，无法切换。';
+
+  @override
+  String get usbOtgModeDebugDescription =>
+      '用 USB 线将本机连接到电脑，用于远程支持和软件更新。技师需要从 PC 操作设备时请保持此模式。';
+
+  @override
+  String get usbOtgModeHostDescription =>
+      '通过 USB 转接器接入键盘、鼠标或其他配件。需要在本机使用额外输入设备时选择此模式。';
+
+  @override
+  String get usbOtgModeMtpDescription =>
+      '将本机连接到电脑以互相复制照片和文件。电脑上会显示为名为“LWS Storage”的设备。';
+
+  @override
+  String get valueNotSet => '未设置';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -3482,6 +3595,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get driverModuleOvertemperatureAlarmTitle => '驅動模塊超溫告警';
 
   @override
+  String get eStopLabel => '急停狀態';
+
+  @override
   String get editProcess => '編輯工藝';
 
   @override
@@ -3791,6 +3907,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get laserEmergencyStopAlarmContent => '激光器急停已觸發。請鬆開急停並復位設備後再繼續作業。';
 
   @override
+  String get laserEnable => '開啓激光';
+
+  @override
   String get laserEnableBlockEmergencyStop => '請先解除急停';
 
   @override
@@ -3948,6 +4067,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get monitorWeldTimeRatio => '焊接時間佔比';
 
   @override
+  String get moreFavorites => '更多常用工藝';
+
+  @override
   String get motorCableOpenAlarmContent =>
       '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
@@ -4100,6 +4222,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get paramPiercingFrequency => '穿孔頻率';
+
+  @override
+  String get paramPowerRampDown => '功率緩降';
+
+  @override
+  String get paramPowerRampUp => '功率緩升';
 
   @override
   String get paramRampDownTime => '下降時間';
@@ -4436,6 +4564,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get resetToDefault => '恢復默認';
+
+  @override
+  String get retract => '退絲';
 
   @override
   String get retryText => '重試';
@@ -4942,4 +5073,94 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get zeroPointOffsetAlarmTitle => '零點偏移告警';
+
+  @override
+  String get bluetoothDiscoverable => '可被發現';
+
+  @override
+  String get bluetoothMyDevices => '我的設備';
+
+  @override
+  String get bluetoothNoDevicesFound => '未找到設備';
+
+  @override
+  String get bluetoothNoPairedDevices => '暫無已配對設備';
+
+  @override
+  String get bluetoothOtherDevices => '其他設備';
+
+  @override
+  String get bluetoothPaired => '已配對';
+
+  @override
+  String get bluetoothScan => '掃描';
+
+  @override
+  String get bluetoothScanning => '正在掃描…';
+
+  @override
+  String get bluetoothThisDevice => '本機';
+
+  @override
+  String get cncConnectionGuideNote => '注意：連接完成後，後續調整請在 CNC 上進行。';
+
+  @override
+  String get cncConnectionGuideStep1 => '1. 確認 RS485 連接。';
+
+  @override
+  String get cncConnectionGuideStep2 => '2. 確認切割噴嘴傳感器線纜。';
+
+  @override
+  String get cncConnectionGuideStep3 => '3. 確認焊槍與夾具已牢固連接。';
+
+  @override
+  String get cncConnectionGuideTitle => '連接指南';
+
+  @override
+  String get cncModeActiveMessage => 'CNC 模式已激活\n請在 CNC 設備上操作';
+
+  @override
+  String get deviceControlUnavailable => '設備控制不可用';
+
+  @override
+  String get ipCameraRecordAction => '錄製';
+
+  @override
+  String get ipCameraRecordingFailed => '錄製失敗';
+
+  @override
+  String get ipCameraRecordingInProgress => '正在錄製…';
+
+  @override
+  String get materialTypeLabel => '材料類型';
+
+  @override
+  String get moreParametersLabel => '更多參數';
+
+  @override
+  String get moreStatusLabel => '更多狀態';
+
+  @override
+  String get noTimeZonesFound => '未找到時區';
+
+  @override
+  String get rampChartLabel => '斜坡圖表';
+
+  @override
+  String get usbOtgDebugOnlyLockedHelp => '本產品僅支持 USB 調試模式，無法切換。';
+
+  @override
+  String get usbOtgModeDebugDescription =>
+      '用 USB 線將本機連接到電腦，用於遠程支持和軟件更新。技師需要從 PC 操作設備時請保持此模式。';
+
+  @override
+  String get usbOtgModeHostDescription =>
+      '通過 USB 轉接器接入鍵盤、鼠標或其他配件。需要在本機使用額外輸入設備時選擇此模式。';
+
+  @override
+  String get usbOtgModeMtpDescription =>
+      '將本機連接到電腦以互相複製照片和文件。電腦上會顯示爲名爲“LWS Storage”的設備。';
+
+  @override
+  String get valueNotSet => '未設置';
 }

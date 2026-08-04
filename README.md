@@ -633,7 +633,24 @@ Rockchip Innohi board binaries and Wi‑Fi/BT firmware live under **`linux-sdk/i
 
 ### Serial console & board login
 
-**Serial (UART2 / ttyFIQ0, 1500000):** GND + TX↔RX cross. `make serial-console` (quit `Ctrl+]`). Self-test: short TTL TX–RX, type keys — should echo.
+**Serial console (host USB adapter):**
+
+| `MODE` | Backend | Default baud | Quit | Typical use |
+|--------|---------|--------------|------|-------------|
+| `TTL` (default) | pyserial miniterm | `1500000` | `Ctrl+]` | USB-TTL → board UART2 / `ttyFIQ0` |
+| `RS485` | pyserial curses hex console | `115200` | `Esc` or `:q` | USB-RS485; RX hex + bottom TX bar |
+| `RS232` | pyserial curses hex console | `115200` | `Esc` or `:q` | USB-RS232; RX hex + bottom TX bar |
+
+```bash
+make serial-console
+MODE=TTL make serial-console
+MODE=RS485 make serial-console
+MODE=RS232 SERIAL_BAUD=9600 make serial-console
+MODE=RS485 LOG=/tmp/uart.log make serial-console
+make serial-ports
+```
+
+`SERIAL_PORT=` auto-picks `/dev/cu.usb*` when unset; `SERIAL_BAUD=` overrides baud in all modes. RS485/RS232 open a **split UI**: scrolling RX hex (one line per idle gap, default `SERIAL_TIMESTAMP_TIMEOUT=5` ms) and a fixed bottom **`TX>`** bar — type hex (`01 03 …` or `0103`) and press Enter to send. Optional `LOG=` / `SERIAL_LOG=` (+ `SERIAL_LOG_APPEND=1`). No host `tio` required. Electrical RS-485 vs RS-232 is the adapter. TTL wiring: GND + TX↔RX cross (3.3V only). Self-test: short TTL TX–RX, type keys — should echo.
 
 **Login (Buildroot):**
 

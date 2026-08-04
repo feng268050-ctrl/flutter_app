@@ -16,6 +16,9 @@ import 'package:lws_hmi/features/settings/application/temperature_unit_convert.d
 import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Manual More Status route name (confirm bar). Distinct from gun-managed.
 const liveMachineStatusManualRouteName = 'manual-live-machine-status';
@@ -133,7 +136,10 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
   Future<void> _bind() async {
     final services = AppScope.maybeOf(context);
     if (services == null || !mounted) {
-      setState(() => _error = 'Camera unavailable');
+      setState(
+        () => _error =
+            AppLocalizations.of(context)!.deviceControlCameraUnavailable,
+      );
       return;
     }
 
@@ -192,7 +198,8 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     // lws-ui `real_time_machine_status_text` (not Monitor tab title).
-    const liveTitle = 'Live Machine Status';
+    final liveTitle =
+        l10n?.liveMachineStatusTitle ?? 'Live Machine Status';
 
     final session = _session;
     // lws-ui LaserLiveMonitorOverlayFragment uses PR1; fall back to PR0.
@@ -206,24 +213,22 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
       (l10n?.safetyLockLabel ?? 'Safety Lock', machine?.safetyLockOn),
       (l10n?.gunSwitchLabel ?? 'Gun Switch', machine?.gunSwitchOn),
       (l10n?.redLightLabel ?? 'Red Light', machine?.redLightOn),
-      // Live-monitor copy (lws-ui live row); not the shorter Monitor label.
-      ('Wire Feeder', machine?.wireFeedingOn),
+      (l10n?.wireFeedingText ?? 'Wire Feeder', machine?.wireFeedingOn),
     ];
 
     return Column(
       key: const ValueKey('live-machine-status-dialog'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Text(
             liveTitle,
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
+            style: context.hmiTypography.pageTitle.copyWith(
               color: _titleDark,
-              fontSize: 28,
               fontWeight: FontWeight.w700,
               height: 1.15,
               decoration: TextDecoration.none,
@@ -248,9 +253,8 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                             child: Text(
                               _error!,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
+                              style: context.hmiTypography.supporting.copyWith(
                                 color: Colors.white70,
-                                fontSize: 16,
                               ),
                             ),
                           ),
@@ -368,23 +372,15 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
         if (widget.showConfirmButton) ...[
           const SizedBox(height: 10),
           Center(
-            child: SizedBox(
+            child: HmiButton(
+              key: const ValueKey('live-machine-status-confirm'),
+              label: l10n?.gotItText ?? 'Got It',
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.fixed,
               width: 280,
-              child: CyberButton(
-                key: const ValueKey('live-machine-status-confirm'),
-                size: CyberButtonSize.small,
-                variant: CyberButtonVariant.primary,
-                shape: CyberButtonShape.rounded,
-                stretch: true,
-                onPressed: widget.onConfirm,
-                child: const Text(
-                  'Got it',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              variant: CyberButtonVariant.primary,
+              shape: CyberButtonShape.rounded,
+              onPressed: widget.onConfirm,
             ),
           ),
         ],
@@ -662,9 +658,8 @@ final class _CompactStatusTile extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: context.hmiTypography.body.copyWith(
                 color: Colors.white,
-                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 height: 1.1,
               ),

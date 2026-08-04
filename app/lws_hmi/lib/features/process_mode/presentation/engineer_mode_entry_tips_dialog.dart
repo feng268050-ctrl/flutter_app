@@ -2,6 +2,9 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Process-lifetime suppress for the engineer entry tip (not persisted).
@@ -36,7 +39,11 @@ final class EngineerModeEntryTipsResult {
 Future<EngineerModeEntryTipsResult?> showEngineerModeEntryTipsDialog(
   BuildContext context,
 ) {
-  final width = _EngineerModeEntryTipsBodyState.resolveCardWidth(context);
+  final l10n = AppLocalizations.of(context)!;
+  final width = _EngineerModeEntryTipsBodyState.resolveCardWidth(
+    context,
+    l10n.engineerModeEntryTitle,
+  );
   return TipDialogHost.showLightPrompt<EngineerModeEntryTipsResult>(
     context: context,
     barrierDismissible: true,
@@ -62,16 +69,16 @@ final class _EngineerModeEntryTipsBody extends StatefulWidget {
 
 final class _EngineerModeEntryTipsBodyState
     extends State<_EngineerModeEntryTipsBody> {
-  bool _dontShowAgain = true;
+  bool _dontShowAgain = false;
 
   /// `engineer_mode_entry_icon_size` / `frost_dialog_prompt_icon_size`.
   static const _iconSize = 150.0;
 
-  /// `frost_dialog_prompt_title_text_size`.
-  static const _titleSize = 53.0;
+  /// `frost_dialog_prompt_title_text_size` → [AppTypography.criticalTitle].
+  static const _titleSize = AppTypography.criticalTitleSize;
 
-  /// `dialog_frost_body_prompt` content `textSize`.
-  static const _bodySize = 37.0;
+  /// `dialog_frost_body_prompt` content → [AppTypography.largeDialogTitle].
+  static const _bodySize = AppTypography.largeDialogTitleSize;
 
   /// `frost_dialog_prompt_content_inset` / `engineer_mode_entry_dialog_content_padding`.
   static const _contentInset = 36.0;
@@ -88,26 +95,19 @@ final class _EngineerModeEntryTipsBodyState
   /// `WarnDialogUtil.WARN_DIALOG_MAX_WIDTH_FRACTION`.
   static const _maxWidthFraction = 0.95;
 
-  static const _title = 'Engineer Mode Notice';
-
-  static const _body =
-      'Engineer Mode unlocks advanced parameter customization '
-      'for experienced users. We recommend learning how the '
-      'machine works before making fine adjustments.';
-
   static const _bodyDark = Color(0xFF1A1A1A);
   static const _labelMuted = Color(0x80222222);
   static const _titleOrange = Color(0xFFF37535);
   static const _checkboxGreen = Color(0xFF34C759);
 
   /// Mirrors lws-ui `FrostPromptDialog.resolveTitleBasedWidthPx`.
-  static double resolveCardWidth(BuildContext context) {
+  static double resolveCardWidth(BuildContext context, String title) {
     final screenW = MediaQuery.sizeOf(context).width;
     final maxW = math.max(_minCardWidth, screenW * _maxWidthFraction);
     final painter = TextPainter(
-      text: const TextSpan(
-        text: _title,
-        style: TextStyle(
+      text: TextSpan(
+        text: title,
+        style: const TextStyle(
           fontSize: _titleSize,
           fontWeight: FontWeight.w700,
           height: 1.0,
@@ -122,6 +122,21 @@ final class _EngineerModeEntryTipsBodyState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final titleStyle = context.hmiTypography.criticalTitle.copyWith(
+      color: _titleOrange,
+      fontWeight: FontWeight.w700,
+      height: 1.0,
+      decoration: TextDecoration.none,
+    );
+    final bodyBase = context.hmiTypography.importantDialogTitle;
+    final bodySize = bodyBase.fontSize ?? _bodySize;
+    final bodyStyle = bodyBase.copyWith(
+      color: _bodyDark,
+      fontWeight: FontWeight.w400,
+      height: (bodySize + 6) / bodySize,
+      decoration: TextDecoration.none,
+    );
     return Padding(
       // Body/action XMLs add horizontal content inset on top of shell padding.
       padding: const EdgeInsets.symmetric(horizontal: _contentInset),
@@ -142,22 +157,16 @@ final class _EngineerModeEntryTipsBodyState
           const SizedBox(height: _contentInset),
           // Card width follows the title; FittedBox is a safety net for
           // locales / text scale that still overflow the 95% screen cap.
-          const SizedBox(
+          SizedBox(
             width: double.infinity,
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                _title,
+                l10n.engineerModeEntryTitle,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 softWrap: false,
-                style: TextStyle(
-                  color: _titleOrange,
-                  fontSize: _titleSize,
-                  fontWeight: FontWeight.w700,
-                  height: 1.0,
-                  decoration: TextDecoration.none,
-                ),
+                style: titleStyle,
               ),
             ),
           ),
@@ -168,16 +177,9 @@ final class _EngineerModeEntryTipsBodyState
           Expanded(
             child: SingleChildScrollView(
               child: Text(
-                _body,
+                l10n.engineerModeEntryBody,
                 textAlign: TextAlign.start,
-                style: const TextStyle(
-                  color: _bodyDark,
-                  fontSize: _bodySize,
-                  fontWeight: FontWeight.w400,
-                  // Android `lineSpacingExtra` 6dp on 37sp.
-                  height: (_bodySize + 6) / _bodySize,
-                  decoration: TextDecoration.none,
-                ),
+                style: bodyStyle,
               ),
             ),
           ),
@@ -204,9 +206,9 @@ final class _EngineerModeEntryTipsBodyState
                       ),
                     );
                   },
-                  child: const Text(
-                    'Confirm & Enter',
-                    style: TextStyle(fontSize: 28),
+                  child: Text(
+                    l10n.engineerModeEntryConfirm,
+                    style: AppTypography.pageTitle,
                   ),
                 ),
               ),
@@ -247,11 +249,10 @@ final class _EngineerModeEntryTipsBodyState
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Don’t show again this session',
-                    style: TextStyle(
+                  Text(
+                    l10n.dontShowAgainThisSession,
+                    style: context.hmiTypography.sectionTitle.copyWith(
                       color: _labelMuted,
-                      fontSize: 22,
                       decoration: TextDecoration.none,
                     ),
                   ),

@@ -1,6 +1,8 @@
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Reusable “current network” panel for Demo / Settings.
 class WifiConnectedPanel extends StatelessWidget {
@@ -17,45 +19,54 @@ class WifiConnectedPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final muted = TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 14);
+    final l10n = AppLocalizations.of(context)!;
+    final typography = context.hmiTypography;
+    final muted = typography.caption.copyWith(
+      color: Colors.white.withOpacity(0.65),
+    );
     final title = connection.ssid?.isNotEmpty == true
         ? connection.ssid!
-        : '(associating…)';
+        : l10n.wifiAssociatingPlaceholder;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: typography.body.copyWith(
             color: Colors.white,
-            fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 4),
-        Text('Phase: ${connection.phase.name}', style: muted),
+        Text('${l10n.wifiPhase}: ${connection.phase.name}', style: muted),
         if (connection.ipv4 != null && connection.ipv4!.isNotEmpty)
           Text(
-            'IPv4: ${connection.ipv4}'
+            '${l10n.wifiIpv4}: ${connection.ipv4}'
             '${connection.prefixLength != null ? '/${connection.prefixLength}' : ''}',
             style: muted,
           ),
         if (connection.gateway != null && connection.gateway!.isNotEmpty)
-          Text('Gateway: ${connection.gateway}', style: muted),
+          Text('${l10n.wifiGateway}: ${connection.gateway}', style: muted),
         if (connection.dns != null && connection.dns!.isNotEmpty)
-          Text('DNS: ${connection.dns}', style: muted),
+          Text('${l10n.wifiDns}: ${connection.dns}', style: muted),
         if (connection.bssid != null && connection.bssid!.isNotEmpty)
-          Text('BSSID: ${connection.bssid}', style: muted),
+          Text('${l10n.wifiBssid}: ${connection.bssid}', style: muted),
         if (connection.frequencyMhz != null)
-          Text('Frequency: ${connection.frequencyMhz} MHz', style: muted),
+          Text(
+            '${l10n.wifiFrequency}: ${connection.frequencyMhz} MHz',
+            style: muted,
+          ),
         if (connection.signalDbm != null)
-          Text('Signal: ${connection.signalDbm} dBm', style: muted),
+          Text(
+            '${l10n.wifiSignal}: ${connection.signalDbm} dBm',
+            style: muted,
+          ),
         if (connection.phase == WifiConnectionPhase.failed &&
             connection.message != null &&
             connection.message!.isNotEmpty)
           Text(
             connection.message!,
-            style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+            style: typography.caption.copyWith(color: Colors.redAccent),
           )
         else if (connection.message != null &&
             connection.message!.isNotEmpty &&
@@ -71,7 +82,7 @@ class WifiConnectedPanel extends StatelessWidget {
                   CyberClickSoundRegistry.playClick();
                   onDisconnect!();
                 },
-                child: const Text('Disconnect'),
+                child: Text(l10n.wifiDisconnect),
               ),
             if (onForget != null &&
                 connection.ssid != null &&
@@ -81,7 +92,7 @@ class WifiConnectedPanel extends StatelessWidget {
                   CyberClickSoundRegistry.playClick();
                   onForget!();
                 },
-                child: Text('Forget ${connection.ssid}'),
+                child: Text(l10n.wifiForgetSsid(connection.ssid!)),
               ),
           ],
         ),
@@ -96,18 +107,19 @@ class WifiAvailableList extends StatelessWidget {
     super.key,
     required this.accessPoints,
     this.onConnect,
-    this.emptyLabel = '(no networks — Scan)',
+    this.emptyLabel,
   });
 
   final List<WifiAccessPoint> accessPoints;
   final void Function(WifiAccessPoint ap)? onConnect;
-  final String emptyLabel;
+  final String? emptyLabel;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (accessPoints.isEmpty) {
       return Text(
-        emptyLabel,
+        emptyLabel ?? l10n.wifiNoNetworksScan,
         style: TextStyle(color: Colors.white.withOpacity(0.5)),
       );
     }
@@ -132,7 +144,7 @@ class WifiAvailableList extends StatelessWidget {
                         CyberClickSoundRegistry.playClick();
                         onConnect!(ap);
                       },
-                      child: const Text('Connect'),
+                      child: Text(l10n.wifiDialogConnect),
                     ),
             ),
           )

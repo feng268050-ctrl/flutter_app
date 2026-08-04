@@ -21,7 +21,9 @@ import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_device_panel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+import 'package:lws_hmi/l10n/app_localizations_en.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -97,6 +99,8 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SizedBox(
             width: 400,
@@ -136,6 +140,8 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: ProcessModeToastLayer(
           child: Scaffold(
             body: SizedBox(
@@ -157,12 +163,12 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('engineer-panel-auto-wire')));
     await tester.pump();
     expect(controller.autoWireFeed, isFalse);
-    expect(find.text('Wire feed unavailable in this mode'), findsNothing);
+    expect(find.text('Wire Feed Unavailable In This Mode'), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('engineer-panel-feed')));
     await tester.pump();
     expect(controller.wireWork, isFalse);
-    expect(find.text('Wire feed unavailable in this mode'), findsNothing);
+    expect(find.text('Wire Feed Unavailable In This Mode'), findsNothing);
   });
 
   testWidgets('Record Work enables when camera is connected', (tester) async {
@@ -176,6 +182,8 @@ void main() {
       AppScope(
         services: services,
         child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: SizedBox(
               width: 400,
@@ -220,6 +228,8 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SizedBox(
             width: 400,
@@ -258,6 +268,8 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SizedBox(
             width: 400,
@@ -284,6 +296,7 @@ void main() {
       final modbus = _RecordingModbus();
       final controller = DeviceControlController(servicesWith(modbus))
         ..keySwitchOn = true;
+      final l10n = AppLocalizationsEn();
       final gesture = ManualWireGesture(
         controller: controller,
         retract: false,
@@ -291,6 +304,7 @@ void main() {
         isActive: () => false,
         onMessage: (_) {},
         onVisualChanged: () {},
+        l10n: () => l10n,
       );
 
       gesture.pointerDown();
@@ -300,10 +314,14 @@ void main() {
       async.flushMicrotasks();
 
       final wireWrites = modbus.writes
-          .where((e) => e.$1 == DeviceControlIds.wireWork)
+          .where((e) => e.$1 == DeviceControlIds.controlField1)
           .map((e) => e.$2)
           .toList();
-      expect(wireWrites, containsAllInOrder([true, false]));
+      // Packed CONTROL_FIELD_1: bit2 wire-run on, then off after pulse.
+      expect(wireWrites, isNotEmpty);
+      expect(wireWrites.first, isA<int>());
+      expect((wireWrites.first as int) & (1 << 2), isNonZero);
+      expect((wireWrites.last as int) & (1 << 2), 0);
       gesture.dispose();
     });
   });
@@ -320,6 +338,9 @@ final class _RecordingModbus extends ModbusRtuClient {
     writes.add((id, value));
     return true;
   }
+
+  @override
+  Future<Object?> readAttribute(String id) async => null;
 
   @override
   Future<Map<String, Object?>> readGroup(String group) async => {};

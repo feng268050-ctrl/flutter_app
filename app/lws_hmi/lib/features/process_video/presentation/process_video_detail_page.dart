@@ -20,6 +20,7 @@ import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dar
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// lws-ui `ProcessVideoDetailsActivity` — left params + right fixed player.
 ///
@@ -377,9 +378,8 @@ final class _ParameterColumn extends StatelessWidget {
                     padding: const EdgeInsets.only(left: 24),
                     child: Text(
                       title,
-                      style: const TextStyle(
+                      style: context.hmiTypography.navigation.copyWith(
                         color: Colors.white,
-                        fontSize: 26,
                         fontWeight: FontWeight.w500,
                         height: 1.0,
                       ),
@@ -443,6 +443,10 @@ final class _ParameterList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rows = _buildRows(context);
+    final dataStyle = context.hmiTypography.sectionTitle.copyWith(
+      color: const Color(0xFFE1E1E1),
+      height: 1.15,
+    );
     return ListView.builder(
       padding: const EdgeInsets.only(right: 10, bottom: 16),
       itemCount: rows.length,
@@ -458,18 +462,18 @@ final class _ParameterList extends StatelessWidget {
                 width: labelWidth,
                 child: Text(
                   '${row.label}:',
-                  style: _dataStyle,
+                  style: dataStyle,
                 ),
               ),
               Expanded(
                 child: Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: row.value, style: _dataStyle),
+                      TextSpan(text: row.value, style: dataStyle),
                       if (unit != null && unit.isNotEmpty)
                         TextSpan(
                           text: ' $unit',
-                          style: _dataStyle.copyWith(
+                          style: dataStyle.copyWith(
                             color: const Color(0xFFE1E1E1),
                           ),
                         ),
@@ -486,28 +490,23 @@ final class _ParameterList extends StatelessWidget {
     );
   }
 
-  static const _dataStyle = TextStyle(
-    color: Color(0xFFE1E1E1),
-    fontSize: 22,
-    height: 1.15,
-  );
-
   List<({String label, String value, String? unit})> _buildRows(
     BuildContext context,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final snap = record.snapshot;
     final unitStore = CommonSettingsScope.maybeOf(context);
     final unitWire = unitStore?.unit;
     final isMetric = LengthUnitConvert.isMetric(unitWire);
     final rows = <({String label, String value, String? unit})>[
       (
-        label: 'Mode',
-        value: ProcessVideoFormat.workMode(record.processType),
+        label: l10n.processVideoWorkMode,
+        value: ProcessVideoFormat.workMode(record.processType, l10n),
         unit: null,
       ),
       (
-        label: 'Material',
-        value: ProcessVideoFormat.material(record),
+        label: l10n.processVideoMaterial,
+        value: ProcessVideoFormat.material(record, l10n),
         unit: null,
       ),
     ];
@@ -515,13 +514,13 @@ final class _ParameterList extends StatelessWidget {
       final raw = snap!.thickness!;
       final display = isMetric ? raw : raw / LengthUnitConvert.mmPerInch;
       rows.add((
-        label: 'Thickness',
+        label: l10n.thicknessLabel,
         value: ProcessVideoFormat.parameterValue(display),
         unit: LengthUnitConvert.suffix(unitWire),
       ));
     }
     if (snap?.gear != null) {
-      rows.add((label: 'Gear', value: '${snap!.gear}', unit: null));
+      rows.add((label: l10n.gearLabel, value: '${snap!.gear}', unit: null));
     }
     final params = snap?.parameters.values ?? const <String, double>{};
     for (final entry in params.entries) {
@@ -536,7 +535,7 @@ final class _ParameterList extends StatelessWidget {
         }
       }
       rows.add((
-        label: ProcessVideoFormat.parameterLabelPlain(entry.key),
+        label: ProcessVideoFormat.parameterLabelPlain(entry.key, l10n),
         value: ProcessVideoFormat.parameterValue(displayValue),
         unit: ProcessVideoFormat.parameterUnit(
           entry.key,
@@ -634,7 +633,7 @@ final class _PlayerPaneState extends State<_PlayerPane> {
       return Center(
         child: Text(
           widget.error == null ? '…' : widget.failedLabel,
-          style: const TextStyle(color: Colors.white54, fontSize: 16),
+          style: context.hmiTypography.supporting.copyWith(color: Colors.white54),
         ),
       );
     }

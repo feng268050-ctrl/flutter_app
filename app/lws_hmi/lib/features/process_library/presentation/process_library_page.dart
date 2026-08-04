@@ -3,6 +3,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
+import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -56,14 +57,13 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                 if (controller.lastError != null)
                   MaterialBanner(
                     content: Text(
-                      'Process library update failed. '
-                      'The last installed library is still in use.\n'
+                      '${l10n.processLibraryUpdateFailed}\n'
                       '${controller.lastError}',
                     ),
                     actions: [
                       TextButton(
                         onPressed: controller.initialize,
-                        child: const Text('Retry'),
+                        child: Text(l10n.retryText),
                       ),
                     ],
                   ),
@@ -78,6 +78,7 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
   }
 
   Widget _buildQuick(ProcessLibraryController controller) {
+    final l10n = AppLocalizations.of(context)!;
     final all = controller.quickPresets(processType: _processType).toList();
     final materials = all
         .map((preset) => preset.materialType)
@@ -136,10 +137,10 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
             child: ListView(
               children: [
                 _enumDropdown<ProcessType>(
-                  label: 'Process type',
+                  label: l10n.processTypeLabel,
                   value: _processType,
                   values: ProcessType.values,
-                  text: (value) => value.label,
+                  text: (value) => value.localizedLabel(l10n),
                   onChanged: (value) => setState(() {
                     _processType = value;
                     _material = null;
@@ -149,10 +150,10 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                   }),
                 ),
                 _enumDropdown<MaterialType>(
-                  label: 'Material',
+                  label: l10n.materialLabel,
                   value: materials.contains(_material) ? _material : null,
                   values: materials,
-                  text: (value) => value.label,
+                  text: (value) => value.localizedLabel(l10n),
                   onChanged: (value) => setState(() {
                     _material = value;
                     _thickness = null;
@@ -161,7 +162,7 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                   }),
                 ),
                 _enumDropdown<double>(
-                  label: useSwingWidth ? 'Swing width' : 'Thickness',
+                  label: useSwingWidth ? l10n.swingWidthLabel : l10n.thicknessLabel,
                   value: dimensions.contains(_thickness) ? _thickness : null,
                   values: dimensions,
                   text: (value) => '$value mm',
@@ -172,7 +173,7 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                   }),
                 ),
                 _enumDropdown<int>(
-                  label: 'Gear',
+                  label: l10n.gearLabel,
                   value: gears.contains(_gear) ? _gear : null,
                   values: gears,
                   text: (value) => '$value',
@@ -183,7 +184,7 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                 ),
                 if (matches.length > 1)
                   _enumDropdown<ProcessPreset>(
-                    label: 'Preset',
+                    label: l10n.presetLabel,
                     value: _selected,
                     values: matches,
                     text: (value) => value.name,
@@ -197,8 +198,8 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
             child: _PresetDetails(
               preset: selectedPreset,
               emptyMessage: all.isEmpty
-                  ? 'No compatible quick-mode process library is installed.'
-                  : 'Complete the selection to preview parameters.',
+                  ? l10n.processLibraryNotInstalled
+                  : l10n.completeSelectionToPreview,
               onApply: selectedPreset == null || controller.applying
                   ? null
                   : () => _apply(controller, selectedPreset),
@@ -210,6 +211,7 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
   }
 
   Widget _buildEngineer(ProcessLibraryController controller) {
+    final l10n = AppLocalizations.of(context)!;
     final presets =
         controller.engineerPresets(processType: _processType).toList();
     ProcessPreset? selected;
@@ -231,10 +233,10 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
             child: Column(
               children: [
                 _enumDropdown<ProcessType>(
-                  label: 'Process type',
+                  label: l10n.processTypeLabel,
                   value: _processType,
                   values: ProcessType.values,
-                  text: (value) => value.label,
+                  text: (value) => value.localizedLabel(l10n),
                   onChanged: (value) => setState(() {
                     _processType = value;
                     _selected = null;
@@ -245,13 +247,13 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                   child: FilledButton.icon(
                     onPressed: () => _editUser(controller),
                     icon: const Icon(Icons.add),
-                    label: const Text('New user process'),
+                    label: Text(l10n.newUserProcess),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
                   child: presets.isEmpty
-                      ? const Center(child: Text('No processes'))
+                      ? Center(child: Text(l10n.noProcesses))
                       : ListView.builder(
                           itemCount: presets.length,
                           itemBuilder: (context, index) {
@@ -260,7 +262,7 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                               selected: preset.uuid == selected?.uuid,
                               title: Text(preset.name),
                               subtitle: Text(
-                                preset.isBuiltin ? 'Built-in' : 'User',
+                                preset.isBuiltin ? l10n.builtInLabel : l10n.userPresetLabel,
                               ),
                               trailing: preset.isBuiltin
                                   ? const Icon(Icons.lock_outline)
@@ -277,7 +279,7 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
           Expanded(
             child: _PresetDetails(
               preset: selectedPreset,
-              emptyMessage: 'Select a process to view its parameters.',
+              emptyMessage: l10n.selectProcessPrompt,
               onApply: selectedPreset == null || controller.applying
                   ? null
                   : () => _apply(controller, selectedPreset),
@@ -293,7 +295,7 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                           }
                         },
                         icon: const Icon(Icons.copy),
-                        label: const Text('Copy as user process'),
+                        label: Text(l10n.copyAsUserProcess),
                       ),
                       if (!selectedPreset.isBuiltin) ...[
                         OutlinedButton.icon(
@@ -302,13 +304,13 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
                             existing: selectedPreset,
                           ),
                           icon: const Icon(Icons.edit),
-                          label: const Text('Edit'),
+                          label: Text(l10n.editText),
                         ),
                         OutlinedButton.icon(
                           onPressed: () =>
                               _deleteUser(controller, selectedPreset),
                           icon: const Icon(Icons.delete_outline),
-                          label: const Text('Delete'),
+                          label: Text(l10n.deleteText),
                         ),
                       ],
                     ],
@@ -349,12 +351,13 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
     ProcessLibraryController controller,
     ProcessPreset preset,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     ProcessApplyResult result;
     try {
       result = await controller.apply(preset);
     } catch (error) {
       if (mounted) {
-        _message('Apply failed: $error');
+        _message(l10n.processApplyFailedGeneric('$error'));
       }
       return;
     }
@@ -363,8 +366,8 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
     }
     _message(
       result.isSuccess
-          ? 'Process applied and verified.'
-          : 'Process was not applied: ${result.failure!.name}',
+          ? l10n.processAppliedVerified
+          : l10n.processApplyFailedNamed(result.failure!.name),
     );
   }
 
@@ -401,7 +404,7 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
       }
     } catch (error) {
       if (mounted) {
-        _message('Save failed: $error');
+        _message(AppLocalizations.of(context)!.processSaveFailed('$error'));
       }
     }
   }
@@ -438,6 +441,7 @@ final class _PresetDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final value = preset;
     if (value == null) {
       return Center(child: Text(emptyMessage));
@@ -448,8 +452,8 @@ final class _PresetDetails extends StatelessWidget {
         Text(value.name, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 8),
         Text(
-          '${value.processType.label} · '
-          '${value.materialName ?? value.materialType?.label ?? 'Any material'}',
+          '${value.processType.localizedLabel(l10n)} · '
+          '${value.materialName ?? value.materialType?.localizedLabel(l10n) ?? l10n.anyMaterialLabel}',
         ),
         const SizedBox(height: 12),
         Expanded(
@@ -459,7 +463,7 @@ final class _PresetDetails extends StatelessWidget {
                 if (value.parameters.values[spec.key] case final number?)
                   ListTile(
                     dense: true,
-                    title: Text(spec.label),
+                    title: Text(localizedProcessParameterLabel(l10n, spec.key)),
                     trailing: Text('$number ${spec.unit}'),
                   ),
             ],
@@ -470,7 +474,7 @@ final class _PresetDetails extends StatelessWidget {
         FilledButton.icon(
           onPressed: onApply,
           icon: const Icon(Icons.send),
-          label: const Text('Apply to device'),
+          label: Text(l10n.applyToDevice),
         ),
       ],
     );
@@ -527,9 +531,11 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
       title: Text(
-          widget.initial.name.isEmpty ? 'New user process' : 'Edit process'),
+        widget.initial.name.isEmpty ? l10n.newUserProcess : l10n.editProcess,
+      ),
       content: SizedBox(
         width: 720,
         height: 540,
@@ -537,15 +543,18 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
           children: [
             TextField(
               controller: _name,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(labelText: l10n.processNameFieldLabel),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<ProcessType>(
               initialValue: _processType,
-              decoration: const InputDecoration(labelText: 'Process type'),
+              decoration: InputDecoration(labelText: l10n.processTypeLabel),
               items: [
                 for (final value in ProcessType.values)
-                  DropdownMenuItem(value: value, child: Text(value.label)),
+                  DropdownMenuItem(
+                    value: value,
+                    child: Text(value.localizedLabel(l10n)),
+                  ),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -556,18 +565,21 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
             const SizedBox(height: 12),
             DropdownButtonFormField<MaterialType>(
               initialValue: _materialType,
-              decoration: const InputDecoration(labelText: 'Material'),
+              decoration: InputDecoration(labelText: l10n.materialLabel),
               items: [
                 for (final value in MaterialType.values)
-                  DropdownMenuItem(value: value, child: Text(value.label)),
+                  DropdownMenuItem(
+                    value: value,
+                    child: Text(value.localizedLabel(l10n)),
+                  ),
               ],
               onChanged: (value) => setState(() => _materialType = value),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _materialName,
-              decoration: const InputDecoration(
-                labelText: 'Custom material name',
+              decoration: InputDecoration(
+                labelText: l10n.customMaterialName,
               ),
             ),
             const SizedBox(height: 12),
@@ -579,7 +591,7 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     decoration:
-                        const InputDecoration(labelText: 'Thickness (mm)'),
+                        InputDecoration(labelText: l10n.thicknessMmLabel),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -587,7 +599,7 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
                   child: TextField(
                     controller: _gear,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Gear'),
+                    decoration: InputDecoration(labelText: l10n.gearLabel),
                   ),
                 ),
               ],
@@ -601,7 +613,8 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: '${spec.label} (${spec.unit})',
+                    labelText:
+                        '${localizedProcessParameterLabel(l10n, spec.key)} (${spec.unit})',
                     helperText: '${spec.min} – ${spec.max}',
                   ),
                 ),
@@ -612,11 +625,11 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l10n.cancelText),
         ),
         FilledButton(
           onPressed: _save,
-          child: const Text('Save'),
+          child: Text(l10n.httpProxySave),
         ),
       ],
     );

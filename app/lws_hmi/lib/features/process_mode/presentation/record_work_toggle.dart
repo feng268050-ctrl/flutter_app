@@ -6,6 +6,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Quick / Engineer Record Work checkbox row (lws-ui `CameraController`).
 ///
@@ -89,8 +90,9 @@ final class _RecordWorkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelSize =
-        compact ? ProcessModeDimens.quickTopChromeLabelSize : 22.0;
+    final labelSize = compact
+        ? ProcessModeDimens.quickTopChromeLabelSize
+        : context.hmiTypography.processAction.fontSize!;
     return InkWell(
       onTap: enabled && onChanged != null
           ? () {
@@ -199,9 +201,8 @@ final class _RecordWorkElapsedState extends State<_RecordWorkElapsed> {
     return Text(
       '$minutes:$seconds',
       key: const ValueKey('record-work-elapsed'),
-      style: TextStyle(
+      style: context.hmiTypography.body.copyWith(
         color: widget.color,
-        fontSize: 18,
         fontFeatures: const [FontFeature.tabularFigures()],
         height: 1,
       ),

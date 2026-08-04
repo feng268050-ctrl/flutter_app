@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_offset_wheel.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
@@ -13,7 +15,7 @@ import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 abstract final class QuickModePickerDimens {
   static const double pickWidth = 560 / 3; // 186.666…
   static const double titleHeight = 32;
-  static const double titleTextSize = 58 / 3; // 19.333…
+  static const double titleTextSize = AppTypography.controlSize;
   static const double titleScaleGap = 16;
   /// lws-ui `quick_mode_picker_scale_height` / scale ImageView height.
   static const double scaleHeight = 402;
@@ -26,12 +28,14 @@ abstract final class QuickModePickerDimens {
   static const double valueWheelWidth = 280 / 3; // 93.333…
   static const double materialWidth = 640 / 3; // 213.333…
   static const double materialHeight = 240;
-  /// Material wheel labels (+4 vs gear/thickness [selectedTextSize]).
-  static const double materialSelectedTextSize = 56 / 3 + 4; // 22.666…
-  static const double materialUnselectedTextSize = 20;
+  /// Material wheel labels → sectionTitle / control.
+  static const double materialSelectedTextSize =
+      AppTypography.sectionTitleSize;
+  static const double materialUnselectedTextSize =
+      AppTypography.controlSize;
   static const double itemHeight = 168 / 3; // 56 — was 136/3; more row gap
-  static const double selectedTextSize = 56 / 3; // 18.666…
-  static const double unselectedTextSize = 16;
+  static const double selectedTextSize = AppTypography.bodySize;
+  static const double unselectedTextSize = AppTypography.supportingSize;
   static const double selectedTextPadding = 16;
   static const Color titleColor = Colors.white;
 
@@ -386,7 +390,7 @@ final class QuickModeGearPick extends StatelessWidget {
     return QuickModeValuePick(
       key: const ValueKey('quick-mode-gear-pick'),
       processType: processType,
-      title: 'Gear',
+      title: AppLocalizations.of(context)!.gearLabel,
       values: [for (final gear in gears) gear.toDouble()],
       selectedIndex: selectedIndex,
       labelOf: (value) => value.round().toString(),

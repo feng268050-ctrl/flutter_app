@@ -72,16 +72,16 @@ class _LedSettingsPageState extends State<LedSettingsPage> {
             children: [
               for (final color in LedColor.values)
                 SettingsControlRow(
-                  title: _colorTitle(color),
+                  title: _colorTitle(color, l10n),
                   control: CyberSegmentedControl<IndicatorMode>(
                     segments: [
-                      const ButtonSegment(
+                      ButtonSegment(
                         value: IndicatorMode.steadyOn,
-                        label: Text('Steady'),
+                        label: Text(l10n.ledModeSteady),
                       ),
-                      const ButtonSegment(
+                      ButtonSegment(
                         value: IndicatorMode.blink,
-                        label: Text('Blink'),
+                        label: Text(l10n.ledModeBlink),
                       ),
                       ButtonSegment(
                         value: IndicatorMode.off,
@@ -103,14 +103,14 @@ class _LedSettingsPageState extends State<LedSettingsPage> {
     );
   }
 
-  static String _colorTitle(LedColor color) {
+  static String _colorTitle(LedColor color, AppLocalizations l10n) {
     switch (color) {
       case LedColor.red:
-        return 'Red';
+        return l10n.ledColorRed;
       case LedColor.yellow:
-        return 'Yellow';
+        return l10n.ledColorYellow;
       case LedColor.green:
-        return 'Green';
+        return l10n.ledColorGreen;
     }
   }
 }

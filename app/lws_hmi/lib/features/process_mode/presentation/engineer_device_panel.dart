@@ -18,6 +18,8 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_scope.da
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Engineer left device panel (lws-ui `engineer_continuous_device_controls`).
 ///
@@ -113,6 +115,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
         if (thresholdsController != null) thresholdsController,
       ]),
       builder: (context, _) {
+        final l10n = AppLocalizations.of(context)!;
         // lws-ui `isOpenLaser()` — session bit only, not emission feedback.
         final laserActive = widget.controller.laserSessionArmed;
         final thresholds = thresholdsController?.values ??
@@ -178,7 +181,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                             child: _CheckRow(
                               key: const ValueKey(
                                   'engineer-panel-manual-gas'),
-                              label: 'Manual Gas',
+                              label: l10n.manualGas,
                               value: widget.controller.manualGas,
                               enabled: true,
                               checkboxSize: _checkboxSize,
@@ -186,14 +189,17 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                 if (widget.controller.busy) {
                                   _toast(
                                     context,
-                                    LaserEnableBlockReason.busy.message,
+                                    LaserEnableBlockReason.busy
+                                        .localizedMessage(l10n),
                                   );
                                   return;
                                 }
                                 if (laserActive) {
                                   _toast(
                                     context,
-                                    DeviceControlFeedbackCopy.endOfWorkFirst,
+                                    DeviceControlFeedbackCopy.endOfWorkFirst(
+                                      l10n,
+                                    ),
                                   );
                                   return;
                                 }
@@ -206,16 +212,19 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   _toast(
                                     context,
                                     widget.controller.lastError ??
-                                        err.message,
+                                        err.localizedMessage(l10n),
                                   );
                                   return;
                                 }
                                 _toast(
                                   context,
                                   value
-                                      ? DeviceControlFeedbackCopy.manualGasOn
-                                      : DeviceControlFeedbackCopy
-                                          .manualGasOff,
+                                      ? DeviceControlFeedbackCopy.manualGasOn(
+                                          l10n,
+                                        )
+                                      : DeviceControlFeedbackCopy.manualGasOff(
+                                          l10n,
+                                        ),
                                 );
                               },
                             ),
@@ -227,7 +236,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                             child: _CheckRow(
                               key: const ValueKey(
                                   'engineer-panel-auto-wire'),
-                              label: 'Auto Wire Feed',
+                              label: l10n.autoWireFeed,
                               value: widget.controller.autoWireFeed &&
                                   _wireCapable,
                               enabled: _wireCapable,
@@ -239,14 +248,17 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                 if (widget.controller.busy) {
                                   _toast(
                                     context,
-                                    LaserEnableBlockReason.busy.message,
+                                    LaserEnableBlockReason.busy
+                                        .localizedMessage(l10n),
                                   );
                                   return;
                                 }
                                 if (laserActive) {
                                   _toast(
                                     context,
-                                    DeviceControlFeedbackCopy.endOfWorkFirst,
+                                    DeviceControlFeedbackCopy.endOfWorkFirst(
+                                      l10n,
+                                    ),
                                   );
                                   return;
                                 }
@@ -259,7 +271,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   _toast(
                                     context,
                                     widget.controller.lastError ??
-                                        err.message,
+                                        err.localizedMessage(l10n),
                                   );
                                   return;
                                 }
@@ -267,9 +279,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   context,
                                   value
                                       ? DeviceControlFeedbackCopy
-                                          .autoWireFeedOn
+                                          .autoWireFeedOn(l10n)
                                       : DeviceControlFeedbackCopy
-                                          .autoWireFeedOff,
+                                          .autoWireFeedOff(l10n),
                                 );
                               },
                             ),
@@ -286,7 +298,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   child: _EngineerWireActionButton(
                                     key: const ValueKey(
                                         'engineer-panel-retract'),
-                                    label: 'Retract',
+                                    label: l10n.retract,
                                     icon: Icons.output,
                                     height: _wireButtonsHeight,
                                     enabled: _wireCapable,
@@ -298,7 +310,6 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     controller: widget.controller,
                                     onMessage: (message) =>
                                         _toast(context, message),
-                                    iconLeftNudge: -20,
                                   ),
                                 ),
                                 const SizedBox(width: _actionGap),
@@ -306,7 +317,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   child: _EngineerWireActionButton(
                                     key: const ValueKey(
                                         'engineer-panel-feed'),
-                                    label: 'Feed',
+                                    label: DeviceControlFeedbackCopy.feedLabel(
+                                      l10n,
+                                    ),
                                     icon: Icons.input,
                                     height: _wireButtonsHeight,
                                     enabled: _wireCapable,
@@ -318,7 +331,6 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     controller: widget.controller,
                                     onMessage: (message) =>
                                         _toast(context, message),
-                                    iconLeftNudge: -10,
                                   ),
                                 ),
                               ],
@@ -327,7 +339,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                           const Spacer(),
                           _EngineerDeviceActionButton(
                             key: const ValueKey('engineer-panel-laser'),
-                            label: laserActive ? 'End Work' : 'Enable Laser',
+                            label: laserActive
+                                ? l10n.endOfWork
+                                : l10n.laserEnable,
                             icon: laserActive
                                 ? Icons.pause_circle_outline
                                 : Icons.play_circle_outline,
@@ -339,14 +353,16 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                               if (widget.controller.busy) {
                                 _toast(
                                   context,
-                                  LaserEnableBlockReason.busy.message,
+                                  LaserEnableBlockReason.busy
+                                      .localizedMessage(l10n),
                                 );
                                 return;
                               }
                               if (widget.controller.manualGas) {
                                 _toast(
                                   context,
-                                  LaserEnableBlockReason.manualGasOn.message,
+                                  LaserEnableBlockReason.manualGasOn
+                                      .localizedMessage(l10n),
                                 );
                                 return;
                               }
@@ -389,10 +405,13 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   await OperationFailedDialogHost.show(
                                     context,
                                     message: DeviceControlFeedbackCopy
-                                        .tipForLaserEnableBlock(err),
+                                        .tipForLaserEnableBlock(l10n, err),
                                   );
                                 } else {
-                                  _toast(context, err.message);
+                                  _toast(
+                                    context,
+                                    err.localizedMessage(l10n),
+                                  );
                                 }
                               }
                             },
@@ -404,7 +423,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                       _toast(
                                         context,
                                         DeviceControlFeedbackCopy
-                                            .messageForDisable(err),
+                                            .messageForDisable(l10n, err),
                                       );
                                     }
                                   }
@@ -487,9 +506,8 @@ final class _CheckRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
+                  style: context.hmiTypography.sectionTitle.copyWith(
                     color: enabled ? Colors.white : const Color(0x66FFFFFF),
-                    fontSize: 22,
                     fontWeight: FontWeight.w500,
                     height: 1.0,
                   ),
@@ -517,7 +535,6 @@ final class _EngineerWireActionButton extends StatefulWidget {
     required this.active,
     required this.controller,
     required this.onMessage,
-    this.iconLeftNudge = 0,
   });
 
   final String label;
@@ -530,8 +547,6 @@ final class _EngineerWireActionButton extends StatefulWidget {
   final bool active;
   final DeviceControlController controller;
   final ValueChanged<String> onMessage;
-  /// Negative shifts icon left from the equal L/T inset.
-  final double iconLeftNudge;
 
   @override
   State<_EngineerWireActionButton> createState() =>
@@ -548,6 +563,7 @@ final class _EngineerWireActionButtonState
     isActive: () => widget.active,
     onMessage: widget.onMessage,
     onVisualChanged: _onGestureVisual,
+    l10n: () => AppLocalizations.of(context)!,
   );
 
   FeedHoldProgressController? _feedProgress;
@@ -599,16 +615,21 @@ final class _EngineerWireActionButtonState
   }
 
   void _pointerDown() {
+    final l10n = AppLocalizations.of(context)!;
     if (widget.controller.busy) {
-      widget.onMessage(LaserEnableBlockReason.busy.message);
+      widget.onMessage(
+        LaserEnableBlockReason.busy.localizedMessage(l10n),
+      );
       return;
     }
     if (widget.laserBlocked) {
-      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
+      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst(l10n));
       return;
     }
     if (widget.modeBlocked) {
-      widget.onMessage(DeviceControlFeedbackCopy.wireUnavailableInMode);
+      widget.onMessage(
+        DeviceControlFeedbackCopy.wireUnavailableInMode(l10n),
+      );
       return;
     }
     if (!widget.enabled) {
@@ -639,6 +660,7 @@ final class _EngineerWireActionButtonState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const actionOrange = Color(0xFFF46E01);
     const idleFill = Color(0xFF2C1923);
     final latched = !widget.retract && _gesture.latched;
@@ -653,10 +675,10 @@ final class _EngineerWireActionButtonState
     final onFill = solidHighlight || filling;
     final foreground = onFill ? Colors.white : actionOrange;
     final disabledForeground = const Color(0xFF7D3E2B);
-    const labelSize = 20.0;
+    final labelSize = context.hmiTypography.settingsRowTitle.fontSize!;
     const iconSize = 26.0;
     final label = latched
-        ? DeviceControlFeedbackCopy.continuousFeedLabel
+        ? DeviceControlFeedbackCopy.continuousFeedLabel(l10n)
         : widget.label;
     return Semantics(
       button: true,
@@ -691,35 +713,83 @@ final class _EngineerWireActionButtonState
                       color: actionOrange,
                     ),
                   if (latched) const FeedContinuousRipple(),
-                  // Label centered; icon left inset = top/bottom inset.
-                  Center(
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
+                  // Continuous Feed: label only. Else [gap][icon][gap][text][gap]
+                  // so left inset equals icon↔label spacing; icon+text H-aligned.
+                  // Text is never ellipsized — shrink icon/gaps first if needed.
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final style = TextStyle(
                         color: widget.enabled
                             ? foreground
                             : disabledForeground,
                         fontSize: labelSize,
                         fontWeight: FontWeight.w600,
                         height: 1.0,
-                      ),
-                    ),
+                      );
+                      if (latched) {
+                        return Center(
+                          child: Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            softWrap: false,
+                            style: style,
+                          ),
+                        );
+                      }
+                      final painter = TextPainter(
+                        text: TextSpan(text: label, style: style),
+                        maxLines: 1,
+                        textDirection: TextDirection.ltr,
+                      )..layout();
+                      final textW = painter.width;
+                      var drawIcon = iconSize;
+                      var gap = (constraints.maxWidth - drawIcon - textW) / 3;
+                      if (gap < 0) {
+                        // Keep full label; shrink icon, then gaps to zero.
+                        drawIcon = (constraints.maxWidth - textW)
+                            .clamp(0.0, iconSize);
+                        gap = (constraints.maxWidth - drawIcon - textW) / 3;
+                        if (gap < 0) {
+                          gap = 0;
+                          drawIcon = (constraints.maxWidth - textW)
+                              .clamp(0.0, iconSize);
+                        }
+                      }
+                      final row = Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(width: gap),
+                          if (drawIcon > 0)
+                            SizedBox(
+                              width: drawIcon,
+                              height: drawIcon,
+                              child: Icon(
+                                widget.icon,
+                                color: widget.enabled
+                                    ? foreground
+                                    : disabledForeground,
+                                size: drawIcon,
+                              ),
+                            ),
+                          SizedBox(width: gap),
+                          Text(
+                            label,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: style,
+                          ),
+                          SizedBox(width: gap),
+                        ],
+                      );
+                      // Scale down only if the panel is too narrow for full text.
+                      return FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.center,
+                        child: row,
+                      );
+                    },
                   ),
-                  // Continuous Feed: label only (match Quick Mode).
-                  if (!latched)
-                    Positioned(
-                      left: (widget.height - iconSize) / 2 +
-                          widget.iconLeftNudge,
-                      top: (widget.height - iconSize) / 2,
-                      child: Icon(
-                        widget.icon,
-                        color: widget.enabled
-                            ? foreground
-                            : disabledForeground,
-                        size: iconSize,
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -823,7 +893,10 @@ final class _EngineerDeviceActionButtonState
     final disabledForeground =
         widget.filled ? const Color(0x99FFFFFF) : const Color(0xFF7D3E2B);
     // Label scales with filled/outline; icons stay 34 (match Quick side ops).
-    final labelSize = widget.filled ? 22.0 : 16.0;
+    final typography = context.hmiTypography;
+    final labelSize = widget.filled
+        ? typography.sectionTitle.fontSize!
+        : typography.supporting.fontSize!;
     const iconSize = 34.0;
     return Semantics(
       button: true,

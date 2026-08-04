@@ -1,12 +1,15 @@
 import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
+import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_parameter_presentation.dart';
 import 'package:lws_hmi/features/process_mode/domain/engineer_parameter_visibility.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_material_popup.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Catalog-driven engineer parameter form (row label + tappable value pill).
 ///
@@ -34,19 +37,20 @@ final class EngineerParameterForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final keys =
         EngineerParameterVisibility.parameterKeysFor(preset.processType);
     final rows = <Widget>[
       if (EngineerParameterVisibility.showsMaterial(preset.processType))
         _MaterialRow(
           material: preset.materialType,
-          label: preset.materialName ?? preset.materialType?.englishName ?? '—',
+          label: preset.displayMaterialLabel(l10n),
           onTap: () => _guarded(context, (w) => _editMaterial(context, w)),
         ),
       if (EngineerParameterVisibility.showsThickness(preset.processType))
         _ValueRow(
-          presentation: const EngineerParameterPresentation(
-            label: 'Material Thickness',
+          presentation: EngineerParameterPresentation(
+            label: l10n.materialThickness,
           ),
           value: preset.thickness == null
               ? '—'
@@ -60,6 +64,7 @@ final class EngineerParameterForm extends StatelessWidget {
             presentation: EngineerParameterPresentation.forKey(
               key,
               preset.processType,
+              l10n,
             ),
             value: preset.parameters.values[key] == null
                 ? '—'
@@ -168,9 +173,10 @@ final class EngineerParameterForm extends StatelessWidget {
     BuildContext context,
     ProcessPreset working,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final text = await showCyberImeInputDialog(
       context: context,
-      title: 'Thickness',
+      title: l10n.thicknessLabel,
       fieldType: CyberImeFieldType.signedDecimal,
       initial: working.thickness?.toString() ?? '',
       label: 'mm',
@@ -191,9 +197,11 @@ final class EngineerParameterForm extends StatelessWidget {
     ProcessPreset working,
     ProcessParameterSpec spec,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final presentation = EngineerParameterPresentation.forKey(
       spec.key,
       working.processType,
+      l10n,
     );
     final current = working.parameters.values[spec.key];
     final text = await showCyberImeInputDialog(
@@ -246,12 +254,12 @@ final class _MaterialRow extends StatelessWidget {
         padding: const EdgeInsets.only(left: 24),
         child: Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
-                'Material Type',
-                style: TextStyle(
+                AppLocalizations.of(context)?.materialTypeLabel ??
+                    'Material Type',
+                style: context.hmiTypography.settingsRowTitle.copyWith(
                   color: Colors.white,
-                  fontSize: 20,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -293,10 +301,9 @@ final class _MaterialRow extends StatelessWidget {
                               textAlign: TextAlign.center,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: context.hmiTypography.sectionTitle.copyWith(
                                 color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w400,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
@@ -347,9 +354,8 @@ final class _ValueRow extends StatelessWidget {
                   Flexible(
                     child: Text(
                       presentation.label,
-                      style: const TextStyle(
+                      style: context.hmiTypography.settingsRowTitle.copyWith(
                         color: Colors.white,
-                        fontSize: 20,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -358,9 +364,8 @@ final class _ValueRow extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       suffix,
-                      style: TextStyle(
+                      style: context.hmiTypography.settingsRowTitle.copyWith(
                         color: presentation.suffixColor ?? Colors.white,
-                        fontSize: 20,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -389,9 +394,8 @@ final class _ValueRow extends StatelessWidget {
                       child: Text(
                         value,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: context.hmiTypography.settingsRowTitle.copyWith(
                           color: Colors.white,
-                          fontSize: 20,
                           fontWeight: FontWeight.w400,
                         ),
                       ),

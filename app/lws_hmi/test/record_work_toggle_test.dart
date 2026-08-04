@@ -18,6 +18,7 @@ import 'package:lws_hmi/features/process_mode/application/device_control_control
 import 'package:lws_hmi/features/process_mode/application/record_work_controller.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/record_work_toggle.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 void main() {
@@ -79,6 +80,9 @@ void main() {
       AppScope(
         services: services,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Scaffold(
             body: RecordWorkToggle(
               key: const ValueKey('quick-mode-record-work'),
@@ -99,6 +103,9 @@ void main() {
       ),
       findsOneWidget,
     );
+    // Cancel OsWallClock before Flutter's post-test timer invariant.
+    services.wallClock.dispose();
+    await tester.pump(const Duration(milliseconds: 1));
   });
 }
 

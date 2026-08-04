@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_importer.dart';
@@ -15,12 +18,33 @@ import 'package:lws_hmi/features/process_mode/domain/quick_mode_selection.dart';
 import 'package:lws_hmi/features/process_mode/domain/quick_mode_selection_carry.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_value_pick.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+import 'package:lws_hmi/platform/cloud/device_remote_lock_store.dart';
+import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   tearDown(QuickModeSelectionCarry.clear);
+
+  Widget wrapQuick(
+    Widget child, {
+    RouteFactory? onGenerateRoute,
+  }) {
+    final lockPath =
+        '${Directory.systemTemp.path}/remote-lock-qm-${identityHashCode(Object())}.json';
+    final lock = DeviceRemoteLockStore(preferencePath: lockPath)..warmRead();
+    return RemoteLockScope(
+      store: lock,
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        onGenerateRoute: onGenerateRoute,
+        home: child,
+      ),
+    );
+  }
 
   Future<void> setDesignSurface(WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
@@ -88,8 +112,8 @@ void main() {
     await setDesignSurface(tester);
     final controller = await seedController();
     await tester.pumpWidget(
-      MaterialApp(
-        home: ProcessLibraryScope(
+      wrapQuick(
+        ProcessLibraryScope(
           controller: controller,
           child: const QuickModePage(),
         ),
@@ -107,7 +131,7 @@ void main() {
         findsOneWidget);
     expect(find.byKey(const ValueKey('quick-mode-laser-dashboard')),
         findsOneWidget);
-    expect(find.text('Stainless Steel'), findsWidgets);
+    expect(find.text('Stainless steel'), findsWidgets);
 
     final dashboardCenter = tester.getCenter(
       find.byKey(const ValueKey('quick-mode-laser-dashboard')),
@@ -202,8 +226,8 @@ void main() {
     await setDesignSurface(tester);
     final controller = await seedController();
     await tester.pumpWidget(
-      MaterialApp(
-        home: ProcessLibraryScope(
+      wrapQuick(
+        ProcessLibraryScope(
           controller: controller,
           child: const QuickModePage(),
         ),
@@ -219,19 +243,19 @@ void main() {
     final material = find.byKey(const ValueKey('quick-mode-material-wheel'));
     await tester.drag(material, Offset(0, -QuickModePickerDimens.itemHeight));
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Carbon Steel'), findsWidgets);
+    expect(find.text('Carbon steel'), findsWidgets);
 
-    await tester.tap(find.text('Spot Welding', skipOffstage: false));
+    await tester.tap(find.text('Spot welding', skipOffstage: false));
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Spot Welding'), findsWidgets);
+    expect(find.text('Spot welding'), findsWidgets);
   });
 
   testWidgets('More Parameters navigates with draft uuid', (tester) async {
     await setDesignSurface(tester);
     final controller = await seedController();
     await tester.pumpWidget(
-      MaterialApp(
-        home: ProcessLibraryScope(
+      wrapQuick(
+        ProcessLibraryScope(
           controller: controller,
           child: const QuickModePage(),
         ),
@@ -274,8 +298,8 @@ void main() {
     await setDesignSurface(tester);
     final controller = await seedController();
     await tester.pumpWidget(
-      MaterialApp(
-        home: ProcessLibraryScope(
+      wrapQuick(
+        ProcessLibraryScope(
           controller: controller,
           child: const QuickModePage(),
         ),
@@ -289,7 +313,19 @@ void main() {
       const Offset(0, -ProcessModeDimens.wheelItemHeight * 5),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    // Fallback: keep nudging until CNC chrome appears (ListWheel physics).
+    for (var i = 0;
+        i < 8 && find.byKey(const ValueKey('quick-mode-cnc-guide')).evaluate().isEmpty;
+        i++) {
+      await tester.drag(
+        find.byKey(const ValueKey('quick-mode-process-wheel')),
+        const Offset(0, -ProcessModeDimens.wheelItemHeight),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
 
     expect(find.byKey(const ValueKey('quick-mode-cnc-guide')), findsOneWidget);
     expect(

@@ -206,9 +206,9 @@ void main() {
         findsOneWidget);
     expect(find.byKey(const ValueKey('home-stat-jobRuntime')), findsOneWidget);
     expect(find.text('Cutting Ratio'), findsOneWidget);
-    expect(find.text('Total Wire Consumption'), findsOneWidget);
-    expect(find.text('Total Laser-on Time'), findsOneWidget);
-    expect(find.text('Job Runtime'), findsOneWidget);
+    expect(find.text('Total wire consumption'), findsOneWidget);
+    expect(find.text('Total laser-on time'), findsOneWidget);
+    expect(find.text('Job runtime'), findsOneWidget);
     // Wire length 240 mm; laser 120s → 2 min; job 180s → 3 min.
     expect(find.text('240'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);

@@ -18,7 +18,7 @@ void main() {
                 body: Center(
                   child: ElevatedButton(
                     onPressed: () =>
-                        ProcessModeToast.show(context, 'Manual gas on'),
+                        ProcessModeToast.show(context, 'Manual Gas On'),
                     child: const Text('Go'),
                   ),
                 ),
@@ -36,7 +36,7 @@ void main() {
     final toast = find.byKey(const ValueKey('process-mode-toast'));
     expect(toast, findsOneWidget);
     final text = tester.widget<Text>(toast);
-    expect(text.data, 'Manual gas on');
+    expect(text.data, 'Manual Gas On');
     expect(text.style?.fontSize, ProcessModeToast.textSize);
     expect(text.style?.color, ProcessModeToast.textColor);
 

@@ -185,14 +185,18 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
         }
         if (result != null) {
           setState(() => _lastSavedPath = result.outputPath);
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Saved: ${result.outputPath}')),
+            SnackBar(
+              content: Text(l10n.ipCameraRecordingSaved(result.outputPath)),
+            ),
           );
         }
       } catch (e) {
         if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Stop error: $e')),
+            SnackBar(content: Text(l10n.ipCameraStopError('$e'))),
           );
         }
       } finally {
@@ -205,8 +209,9 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
 
     final recordSource = session.previewPr0;
     if (_status.phase != IpCameraUiPhase.connected || recordSource == null) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Camera not connected')),
+        SnackBar(content: Text(l10n.ipCameraCameraNotConnected)),
       );
       return;
     }
@@ -232,18 +237,23 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
       }
       if (status.phase == IpCameraRecordingPhase.failed &&
           status.detail != 'cancelled') {
+        final l10n = AppLocalizations.of(context)!;
+        final detail = status.detail;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Record failed${status.detail != null ? ': ${status.detail}' : ''}',
+              detail != null
+                  ? l10n.ipCameraRecordError(detail)
+                  : l10n.ipCameraPreviewFailed,
             ),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Record error: $e')),
+          SnackBar(content: Text(l10n.ipCameraRecordError('$e'))),
         );
       }
     } finally {
@@ -356,7 +366,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Text(
-                'Saved: $_lastSavedPath',
+                l10n.ipCameraRecordingSaved(_lastSavedPath!),
                 key: const Key('ip-camera-saved-path'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -372,24 +382,24 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
         return l10n.cancelText;
       case IpCameraRecordingPhase.recording:
       case IpCameraRecordingPhase.stopping:
-        return 'Stop';
+        return l10n.stopText;
       case IpCameraRecordingPhase.idle:
       case IpCameraRecordingPhase.completed:
       case IpCameraRecordingPhase.failed:
-        return 'Record';
+        return l10n.ipCameraRecordAction;
     }
   }
 
   String _recordingHint(AppLocalizations l10n) {
     switch (_recording.phase) {
       case IpCameraRecordingPhase.preparing:
-        return 'Waiting for RTSP stream…';
+        return l10n.ipCameraWaitingForRtsp;
       case IpCameraRecordingPhase.recording:
-        return 'Recording…';
+        return l10n.ipCameraRecordingInProgress;
       case IpCameraRecordingPhase.stopping:
-        return 'Finalizing…';
+        return l10n.ipCameraRecordingFinalizing;
       case IpCameraRecordingPhase.failed:
-        return _recording.detail ?? 'Recording failed';
+        return _recording.detail ?? l10n.ipCameraRecordingFailed;
       case IpCameraRecordingPhase.completed:
       case IpCameraRecordingPhase.idle:
         return l10n.ipCameraDemoRecordHint;

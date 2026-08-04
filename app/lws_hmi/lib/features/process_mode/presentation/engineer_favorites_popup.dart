@@ -5,6 +5,7 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_anchored_popup_layout.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Anchored favorites list (lws-ui `DataPopupBuilder.moreCommonBuilder`).
 ///
@@ -170,10 +171,8 @@ final class _EngineerFavoritesPopup extends StatelessWidget {
                                     preset.name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color:
-                                          isSelected ? accent : Colors.white,
-                                      fontSize: 18,
+                                    style: context.hmiTypography.body.copyWith(
+                                      color: isSelected ? accent : Colors.white,
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),

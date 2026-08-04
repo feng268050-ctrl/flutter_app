@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Shared Feed/Retract pointer protocol for Quick and Engineer panels.
 ///
@@ -19,6 +20,7 @@ final class ManualWireGesture {
     required this.isActive,
     required this.onMessage,
     required this.onVisualChanged,
+    required this.l10n,
   });
 
   final DeviceControlController controller;
@@ -27,6 +29,7 @@ final class ManualWireGesture {
   final bool Function() isActive;
   final void Function(String message) onMessage;
   final void Function() onVisualChanged;
+  final AppLocalizations Function() l10n;
 
   Timer? _holdTimer;
   Timer? _latchTimer;
@@ -79,7 +82,7 @@ final class ManualWireGesture {
       return;
     }
     _latchedFeed = true;
-    onMessage(DeviceControlFeedbackCopy.feedOngoing);
+    onMessage(DeviceControlFeedbackCopy.feedOngoing(l10n()));
     onVisualChanged();
   }
 
@@ -163,8 +166,8 @@ final class ManualWireGesture {
         unawaited(
           _stopWithMessage(
             retract
-                ? DeviceControlFeedbackCopy.feedStopped
-                : DeviceControlFeedbackCopy.feedPulseSuccess,
+                ? DeviceControlFeedbackCopy.feedStopped(l10n())
+                : DeviceControlFeedbackCopy.feedPulseSuccess(l10n()),
           ),
         );
       }
@@ -186,7 +189,7 @@ final class ManualWireGesture {
     }
     _latchedFeed = false;
     _runningFromHold = false;
-    onMessage(DeviceControlFeedbackCopy.stopFeed);
+    onMessage(DeviceControlFeedbackCopy.stopFeed(l10n()));
     onVisualChanged();
   }
 
@@ -198,8 +201,8 @@ final class ManualWireGesture {
     }
     onMessage(
       retract
-          ? DeviceControlFeedbackCopy.retractPulseSuccess
-          : DeviceControlFeedbackCopy.feedPulseSuccess,
+          ? DeviceControlFeedbackCopy.retractPulseSuccess(l10n())
+          : DeviceControlFeedbackCopy.feedPulseSuccess(l10n()),
     );
     _pulseTimer?.cancel();
     _pulseTimer = Timer(DeviceControlTiming.wirePulseDuration, () {
@@ -218,10 +221,11 @@ final class ManualWireGesture {
   }
 
   String _failureMessage(LaserEnableBlockReason error) {
+    final loc = l10n();
     // Wire ops map write failures to the generic lws-ui operation_failed toast.
     if (error == LaserEnableBlockReason.writeFailed) {
-      return DeviceControlFeedbackCopy.operationFailed;
+      return DeviceControlFeedbackCopy.operationFailed(loc);
     }
-    return controller.lastError ?? error.message;
+    return controller.lastError ?? error.localizedMessage(loc);
   }
 }

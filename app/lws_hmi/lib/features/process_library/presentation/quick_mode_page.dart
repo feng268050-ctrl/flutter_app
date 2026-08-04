@@ -48,7 +48,9 @@ import 'package:lws_hmi/features/statistics/application/work_session_statistics_
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Quick Mode: process wheel + material/gear/dimension selection (U3).
 final class QuickModePage extends StatefulWidget {
@@ -96,6 +98,7 @@ final class _QuickModePageState extends State<QuickModePage> {
           unawaited(_deviceControl!.start());
           _recordWork = RecordWorkController(
             deviceControl: _deviceControl!,
+            resolveL10n: () => AppLocalizations.of(context)!,
             snapshotSource: CallbackProcessVideoSnapshotSource(
               _captureProcessVideoSnapshot,
             ),
@@ -155,11 +158,12 @@ final class _QuickModePageState extends State<QuickModePage> {
       return;
     }
     WorkStatusDialogHost.closeDialog();
+    final l10n = AppLocalizations.of(context)!;
     final message = switch (event) {
       DeviceControlSafetyEvent.emergencyStop =>
-        DeviceControlFeedbackCopy.emergencyStopError,
+        DeviceControlFeedbackCopy.emergencyStopError(l10n),
       DeviceControlSafetyEvent.keySwitchOff =>
-        DeviceControlFeedbackCopy.keySwitchOffError,
+        DeviceControlFeedbackCopy.keySwitchOffError(l10n),
     };
     unawaited(
       OperationFailedDialogHost.show(
@@ -215,7 +219,9 @@ final class _QuickModePageState extends State<QuickModePage> {
     if (_processType == ProcessType.cncCutting &&
         session != null &&
         session.runningOverlay) {
-      _showControlMessage('Turn off CNC first.');
+      _showControlMessage(
+        AppLocalizations.of(context)!.turnOffCncFirst,
+      );
       setState(() {});
       return;
     }
@@ -272,7 +278,9 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     final session = _cncSession;
     if (session != null && session.blocksNavigation) {
-      _showControlMessage('Turn off CNC first.');
+      _showControlMessage(
+        AppLocalizations.of(context)!.turnOffCncFirst,
+      );
       return;
     }
     final device = _deviceControl;
@@ -408,29 +416,42 @@ final class _QuickModePageState extends State<QuickModePage> {
     final message = _applyFailureMessage(result.failure);
     setState(() => _statusMessage = message);
     // Prefer toast/snackbar — do not paint a persistent red corner banner.
-    if (message != 'Baseline read failed' &&
-        message != 'Laser work in progress' &&
-        message != 'Check equipment status' &&
-        message != 'Stop wire feed first') {
+    final silent = switch (result.failure) {
+      ProcessApplyFailure.baselineReadFailed ||
+      ProcessApplyFailure.unsafeMachineState ||
+      ProcessApplyFailure.statusUnavailable ||
+      ProcessApplyFailure.wireFeedingActive =>
+        true,
+      _ => false,
+    };
+    if (!silent) {
       _showControlMessage(message);
     }
     return false;
   }
 
   String _applyFailureMessage(ProcessApplyFailure? failure) {
+    final l10n = AppLocalizations.of(context)!;
     return switch (failure) {
-      ProcessApplyFailure.busy => 'Apply busy',
-      ProcessApplyFailure.statusUnavailable => 'Check equipment status',
-      ProcessApplyFailure.unsafeMachineState => 'Laser work in progress',
-      ProcessApplyFailure.wireFeedingActive => 'Stop wire feed first',
-      ProcessApplyFailure.baselineReadFailed => 'Baseline read failed',
-      ProcessApplyFailure.processWriteFailed => 'Write failed',
-      ProcessApplyFailure.processReadbackFailed => 'Readback mismatch',
-      ProcessApplyFailure.processTypeWriteFailed => 'Process type write failed',
+      ProcessApplyFailure.busy => l10n.processApplyFailureBusy,
+      ProcessApplyFailure.statusUnavailable =>
+        l10n.processApplyFailureStatusUnavailable,
+      ProcessApplyFailure.unsafeMachineState =>
+        l10n.processApplyFailureUnsafeMachineState,
+      ProcessApplyFailure.wireFeedingActive =>
+        l10n.processApplyFailureWireFeedingActive,
+      ProcessApplyFailure.baselineReadFailed =>
+        l10n.processApplyFailureBaselineReadFailed,
+      ProcessApplyFailure.processWriteFailed =>
+        l10n.processApplyFailureProcessWriteFailed,
+      ProcessApplyFailure.processReadbackFailed =>
+        l10n.processApplyFailureProcessReadbackFailed,
+      ProcessApplyFailure.processTypeWriteFailed =>
+        l10n.processApplyFailureProcessTypeWriteFailed,
       ProcessApplyFailure.processTypeReadbackFailed =>
-        'Process type readback failed',
-      ProcessApplyFailure.partialApply => 'Partial apply',
-      null => 'Apply failed',
+        l10n.processApplyFailureProcessTypeReadbackMismatch,
+      ProcessApplyFailure.partialApply => l10n.processApplyFailurePartialApply,
+      null => l10n.processApplyFailureGeneric,
     };
   }
 
@@ -448,8 +469,10 @@ final class _QuickModePageState extends State<QuickModePage> {
   String? _laserPreflight() {
     final control = _deviceControl;
     if (control == null) {
-      return 'Device control unavailable';
+      return AppLocalizations.of(context)?.deviceControlUnavailable ??
+          'Device control unavailable';
     }
+    final l10n = AppLocalizations.of(context)!;
     final reason = control.preflightLaserEnable(
       warnAlarm: WarnAlarmScope.maybeOf(context),
       policy: _laserPolicy(),
@@ -459,15 +482,15 @@ final class _QuickModePageState extends State<QuickModePage> {
     }
     if (reason == LaserEnableBlockReason.alarmBlocked) {
       unawaited(_presentLaserEnableAlarmBlock());
-      return reason.message;
+      return reason.localizedMessage(l10n);
     }
     if (DeviceControlFeedbackCopy.isSafetyTipBlock(reason)) {
       // Key / E-stop not reset → tip dialog (not Toast).
       unawaited(_showSafetyTip(
-          DeviceControlFeedbackCopy.tipForLaserEnableBlock(reason)));
-      return reason.message;
+          DeviceControlFeedbackCopy.tipForLaserEnableBlock(l10n, reason)));
+      return reason.localizedMessage(l10n);
     }
-    return reason.message;
+    return reason.localizedMessage(l10n);
   }
 
   Future<void> _showSafetyTip(String message) async {
@@ -486,17 +509,18 @@ final class _QuickModePageState extends State<QuickModePage> {
   }
 
   Future<void> _handleLaserEnableBlock(LaserEnableBlockReason reason) async {
+    final l10n = AppLocalizations.of(context)!;
     if (reason == LaserEnableBlockReason.alarmBlocked) {
       await _presentLaserEnableAlarmBlock();
       return;
     }
     if (DeviceControlFeedbackCopy.isSafetyTipBlock(reason)) {
       await _showSafetyTip(
-        DeviceControlFeedbackCopy.tipForLaserEnableBlock(reason),
+        DeviceControlFeedbackCopy.tipForLaserEnableBlock(l10n, reason),
       );
       return;
     }
-    _showControlMessage(reason.message);
+    _showControlMessage(reason.localizedMessage(l10n));
   }
 
   ProcessVideoSnapshot? _captureProcessVideoSnapshot() {
@@ -511,7 +535,10 @@ final class _QuickModePageState extends State<QuickModePage> {
     final control = _deviceControl;
     final preset = _selection?.matched;
     if (control == null || preset == null) {
-      _showControlMessage('Select a valid process preset first');
+      _showControlMessage(
+        AppLocalizations.of(context)?.selectValidProcessPresetFirst ??
+            'Select A Valid Process Preset First',
+      );
       return;
     }
     final pre = control.preflightLaserEnable(
@@ -576,7 +603,11 @@ final class _QuickModePageState extends State<QuickModePage> {
       return;
     }
     if (!applied) {
-      _showControlMessage(_statusMessage ?? 'Process apply failed');
+      _showControlMessage(
+        _statusMessage ??
+            (AppLocalizations.of(context)?.processApplyFailureGeneric ??
+                'Apply Failed'),
+      );
       return;
     }
     // lws-ui QuickProcessParametersDataViewModel.sendAdvanceSettingForLaserEnable:
@@ -623,9 +654,10 @@ final class _QuickModePageState extends State<QuickModePage> {
   Future<void> _disableLaser() async {
     final error = await _deviceControl?.disableLaser();
     if (error != null && mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ProcessModeToast.show(
         context,
-        DeviceControlFeedbackCopy.messageForDisable(error),
+        DeviceControlFeedbackCopy.messageForDisable(l10n, error),
       );
     }
   }
@@ -660,7 +692,11 @@ final class _QuickModePageState extends State<QuickModePage> {
     final control = _deviceControl;
     // Session only — emission feedback alone must not demand End of work.
     if (control != null && control.laserSessionArmed) {
-      _showControlMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
+      _showControlMessage(
+        DeviceControlFeedbackCopy.endOfWorkFirst(
+          AppLocalizations.of(context)!,
+        ),
+      );
       return;
     }
     final unlocked = await DeviceRegistrationDialogs.confirmNotLocked(
@@ -825,11 +861,13 @@ final class _QuickModePageState extends State<QuickModePage> {
                     final unitStore = CommonSettingsScope.maybeOf(context);
                     Widget pick(bool useMm) {
                       final unit = useMm ? 'mm' : 'in';
+                      final l10n = AppLocalizations.of(context)!;
+                      final label = selection.useSwingWidth
+                          ? l10n.swingWidthLabel
+                          : l10n.thicknessLabel;
                       return QuickModeDimensionPick(
                         processType: _processType,
-                        title: selection.useSwingWidth
-                            ? 'Swing Width ($unit)'
-                            : 'Thickness ($unit)',
+                        title: l10n.dimensionWithUnit(label, unit),
                         dimensions: selection.dimensions,
                         selectedIndex: dimensionIndex < 0 ? 0 : dimensionIndex,
                         onChanged: _onDimensionIndex,
@@ -873,13 +911,12 @@ final class _QuickModePageState extends State<QuickModePage> {
               controller.initialized &&
               selection != null &&
               selection.materials.isEmpty)
-            const Center(
+            Center(
               child: Text(
-                'No compatible quick-mode process library is installed.',
-                key: ValueKey('quick-mode-empty-library'),
-                style: TextStyle(
-                  color: Color(0xB3FFFFFF),
-                  fontSize: 16,
+                AppLocalizations.of(context)!.processLibraryNotInstalled,
+                key: const ValueKey('quick-mode-empty-library'),
+                style: context.hmiTypography.supporting.copyWith(
+                  color: const Color(0xB3FFFFFF),
                 ),
               ),
             ),

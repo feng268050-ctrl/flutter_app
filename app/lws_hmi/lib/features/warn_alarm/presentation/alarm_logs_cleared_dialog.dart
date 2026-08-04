@@ -1,5 +1,6 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
@@ -38,13 +39,23 @@ final class _AlarmLogsClearedBody extends StatelessWidget {
 
   static const _maxWidth = 560.0;
   static const _iconSize = 80.0;
-  static const _titleSize = 32.0;
-  static const _bodySize = 20.0;
   static const _titleDark = Color(0xFF1A1A1A);
   static const _bodyDark = Color(0xFF1A1A1A);
 
   @override
   Widget build(BuildContext context) {
+    final titleStyle = context.hmiTypography.dialogTitle.copyWith(
+      color: _titleDark,
+      fontWeight: FontWeight.w700,
+      height: 1.15,
+      decoration: TextDecoration.none,
+    );
+    final bodyStyle = context.hmiTypography.settingsRowTitle.copyWith(
+      color: _bodyDark,
+      fontWeight: FontWeight.w400,
+      height: 1.35,
+      decoration: TextDecoration.none,
+    );
     return ConstrainedBox(
       key: const ValueKey('alarm-logs-cleared-dialog'),
       constraints: const BoxConstraints(maxWidth: _maxWidth),
@@ -57,13 +68,7 @@ final class _AlarmLogsClearedBody extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _titleDark,
-              fontSize: _titleSize,
-              fontWeight: FontWeight.w700,
-              height: 1.15,
-              decoration: TextDecoration.none,
-            ),
+            style: titleStyle,
           ),
           const SizedBox(height: CyberDimens.contentPadding),
           const TipFrostDivider(),
@@ -81,13 +86,7 @@ final class _AlarmLogsClearedBody extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: _bodyDark,
-              fontSize: _bodySize,
-              fontWeight: FontWeight.w400,
-              height: 1.35,
-              decoration: TextDecoration.none,
-            ),
+            style: bodyStyle,
           ),
           const SizedBox(height: CyberDimens.contentPadding),
           const TipFrostDivider(),

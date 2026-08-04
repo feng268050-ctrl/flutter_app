@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Full-screen CNC running shell (lws-ui `CNCRunning`).
 final class CncRunningOverlay extends StatelessWidget {
@@ -14,6 +16,7 @@ final class CncRunningOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return SizedBox.expand(
       child: Material(
         key: const ValueKey('quick-mode-cnc-running'),
@@ -36,12 +39,12 @@ final class CncRunningOverlay extends StatelessWidget {
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 44),
-                const Text(
-                  'CNC Mode Active\nOperate on the CNC equipment',
+                Text(
+                  l10n?.cncModeActiveMessage ??
+                      'CNC Mode Active\nOperate on the CNC equipment',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: context.hmiTypography.pageTitle.copyWith(
                     color: Colors.white,
-                    fontSize: 28,
                     height: 1.3,
                     fontWeight: FontWeight.w500,
                   ),
@@ -59,12 +62,11 @@ final class CncRunningOverlay extends StatelessWidget {
                           fit: BoxFit.fill,
                         ),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          'Exit CNC Mode',
-                          style: TextStyle(
+                          l10n?.exitCncModeLabel ?? 'Exit CNC Mode',
+                          style: context.hmiTypography.sectionTitle.copyWith(
                             color: Colors.white,
-                            fontSize: 22,
                             fontWeight: FontWeight.w600,
                             height: 1.0,
                           ),

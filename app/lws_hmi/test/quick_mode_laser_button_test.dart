@@ -6,6 +6,7 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_button.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_dashboard.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_parameter_preview.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 final class _CountingClick implements CyberClickSound {
   int calls = 0;
@@ -26,6 +27,8 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Center(
             child: QuickModeLaserButton(
@@ -72,6 +75,8 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Center(
             child: QuickModeLaserButton(
@@ -88,7 +93,7 @@ void main() {
       ),
     );
 
-    expect(find.text('End of work'), findsOneWidget);
+    expect(find.text('End Work'), findsOneWidget);
     await tester.tap(
       find.byKey(const ValueKey('quick-mode-laser-enable')),
     );
@@ -104,6 +109,8 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Center(
             child: QuickModeLaserButton(
@@ -137,6 +144,8 @@ void main() {
     var presses = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: QuickModeMoreParametersButton(
             enabled: true,
@@ -165,6 +174,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           appBar: PreferredSize(
             preferredSize: const Size.fromHeight(70),

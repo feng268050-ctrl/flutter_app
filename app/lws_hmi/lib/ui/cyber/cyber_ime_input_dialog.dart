@@ -1,6 +1,10 @@
 import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Shows a Cyber frosted input dialog with CyberIME (system IME suppressed).
 ///
@@ -13,13 +17,14 @@ Future<String?> showCyberImeInputDialog({
   String? hint,
   String? label,
   bool obscureText = false,
-  String confirmLabel = 'OK',
+  String? confirmLabel,
   CyberImeSession? session,
 
   /// When true, Enter / confirm do nothing if the field is empty (lws-ui Wi‑Fi).
   bool requireNonEmpty = false,
-  String emptyErrorText = 'Required',
+  String? emptyErrorText,
 }) async {
+  final l10n = AppLocalizations.of(context);
   final imeSession = session ?? CyberImeSession.shared;
   final backdropScope = CyberBlurBackdropScope.maybeOf(context);
   final ctrl = TextEditingController(text: initial);
@@ -38,11 +43,11 @@ Future<String?> showCyberImeInputDialog({
         obscureText: obscureText,
         label: label,
         hint: hint,
-        confirmLabel: confirmLabel,
+        confirmLabel: confirmLabel ?? l10n?.okText ?? 'OK',
         session: imeSession,
         backdropScope: backdropScope,
         requireNonEmpty: requireNonEmpty,
-        emptyErrorText: emptyErrorText,
+        emptyErrorText: emptyErrorText ?? l10n?.requiredFieldText ?? 'Required',
       );
     },
   );
@@ -123,21 +128,27 @@ class _CyberImeInputDialogBodyState extends State<_CyberImeInputDialogBody> {
               ),
             ),
             style:
-                const TextStyle(color: CyberColors.textPrimary, fontSize: 18),
+                context.hmiTypography.body.copyWith(color: CyberColors.textPrimary),
             onAction: _trySubmit,
           ),
         ],
       ),
       actions: [
-        CyberButton(
+        HmiButton(
+          label: AppLocalizations.of(context)!.cancelText,
+          size: HmiButtonSize.medium,
+          widthPolicy: HmiButtonWidthPolicy.equal,
+          width: 168,
           variant: CyberButtonVariant.secondary,
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
         ),
-        CyberButton(
+        HmiButton(
+          label: widget.confirmLabel,
+          size: HmiButtonSize.medium,
+          widthPolicy: HmiButtonWidthPolicy.equal,
+          width: 168,
           variant: CyberButtonVariant.primary,
           onPressed: _trySubmit,
-          child: Text(widget.confirmLabel),
         ),
       ],
     );
@@ -149,9 +160,11 @@ Future<bool> showCyberImeFormDialog({
   required BuildContext context,
   required String title,
   required List<Widget> fields,
-  String confirmLabel = 'Save',
+  String? confirmLabel,
   CyberImeSession? session,
 }) async {
+  final l10n = AppLocalizations.of(context);
+  final resolvedConfirm = confirmLabel ?? l10n?.httpProxySave ?? 'Save';
   final imeSession = session ?? CyberImeSession.shared;
   final backdropScope = CyberBlurBackdropScope.maybeOf(context);
   final ok = await CyberOverlayHost.show<bool>(
@@ -171,15 +184,21 @@ Future<bool> showCyberImeFormDialog({
             children: fields,
           ),
           actions: [
-            CyberButton(
+            HmiButton(
+              label: AppLocalizations.of(ctx)?.cancelText ?? 'Cancel',
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.equal,
+              width: 168,
               variant: CyberButtonVariant.secondary,
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
             ),
-            CyberButton(
+            HmiButton(
+              label: resolvedConfirm,
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.equal,
+              width: 168,
               variant: CyberButtonVariant.primary,
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text(confirmLabel),
             ),
           ],
         ),

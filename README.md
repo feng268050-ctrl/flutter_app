@@ -251,7 +251,10 @@ make upgrade
 ```bash
 make l10n
 make l10n-verify
+make check-typography
 ```
+
+Checks bare `fontSize: N` and business `AppTypography.*Size` (theme / specialty allowlist).
 
 **Boot splash** (`board/logo/`):
 

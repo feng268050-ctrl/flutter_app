@@ -1,9 +1,10 @@
+import 'dart:ui' as ui;
+
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-
-/// lws-ui `safety_black` full-screen backdrop behind the frost card.
-const Color _kSafetyBlack = Color(0xFF060720);
 
 /// Blue link color from lws-ui `activity_safety_tips.xml` (`#324BF3`).
 const Color _kDisclaimerLink = Color(0xFF324BF3);
@@ -27,7 +28,8 @@ Future<void> showSafetyTipsDialog({required BuildContext context}) {
     context: context,
     barrierDismissible: false,
     barrierLabel: 'Safety Tips',
-    barrierColor: _kSafetyBlack,
+    // Shell paints home wallpaper; keep route barrier clear.
+    barrierColor: Colors.transparent,
     transitionDuration: const Duration(milliseconds: 180),
     pageBuilder: (dialogContext, animation, secondaryAnimation) {
       return FadeTransition(
@@ -40,7 +42,7 @@ Future<void> showSafetyTipsDialog({required BuildContext context}) {
 
 enum _SafetyTipsMode { tips, disclaimer }
 
-/// Full-bleed shell: black stage + near-fullscreen Cyber frost card.
+/// Full-bleed shell: home wallpaper → σ30 page blur → Settings/Monitor card.
 class _SafetyTipsShell extends StatelessWidget {
   const _SafetyTipsShell({required this.mode});
 
@@ -48,41 +50,56 @@ class _SafetyTipsShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final panel = CyberPanelBorder(tone: CyberTone.dark);
+    final corner = CyberGlassTheme.of(context).cornerRadius;
+    const sigma = SettingsPerspectiveChrome.blurSigma;
+
     return Material(
       type: MaterialType.transparency,
-      child: ColoredBox(
-        color: _kSafetyBlack,
-        child: Padding(
-          padding: const EdgeInsets.all(_kScreenPad),
-          child: ClipRRect(
-            borderRadius: panel.borderRadius,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: panel.borderRadius,
-                border: Border.all(
-                  color: panel.flatBorderColor,
-                  width: panel.width,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(child: SettingsHomeBackdrop()),
+          // Sole Gaussian between home wallpaper and the frost container.
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ImageFiltered(
+                imageFilter: ui.ImageFilter.blur(
+                  sigmaX: sigma,
+                  sigmaY: sigma,
+                  tileMode: ui.TileMode.clamp,
                 ),
-              ),
-              child: CyberModal(
-                sampleMode: CyberBlurSampleMode.realtime,
-                intensity: CyberBlurIntensity.high,
-                blurTint: CyberBlurTint.dark,
-                useFakeGlass: false,
-                borderRadius: panel.borderRadius,
-                // No horizontal pad here — keeps scrollbar on the card rim.
-                padding: const EdgeInsets.fromLTRB(
-                  0,
-                  _kCardPadTop,
-                  0,
-                  _kCardPadBottom,
-                ),
-                child: _SafetyTipsBody(mode: mode),
+                child: const SettingsHomeBackdrop(),
               ),
             ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.all(_kScreenPad),
+            child: Stack(
+              // Allow [SettingsPerspectiveChrome.cardShadow] outside the face.
+              clipBehavior: Clip.none,
+              fit: StackFit.expand,
+              children: [
+                Positioned.fill(
+                  child: SettingsPerspectiveChrome.face(
+                    cornerRadius: corner,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    0,
+                    _kCardPadTop,
+                    0,
+                    _kCardPadBottom,
+                  ),
+                  child: _SafetyTipsBody(mode: mode),
+                ),
+                Positioned.fill(
+                  child: SettingsPerspectiveChrome.rim(cornerRadius: corner),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -107,7 +124,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
       context: context,
       barrierDismissible: false,
       barrierLabel: 'Product Disclaimer',
-      barrierColor: _kSafetyBlack,
+      barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 180),
       pageBuilder: (dialogContext, animation, secondaryAnimation) {
         return FadeTransition(
@@ -145,9 +162,8 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
           child: Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: context.hmiTypography.importantDialogTitle.copyWith(
               color: CyberColors.textPrimary,
-              fontSize: 37,
               fontWeight: FontWeight.w700,
               height: 1.15,
               decoration: TextDecoration.none,
@@ -164,9 +180,8 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
               padding: const EdgeInsets.symmetric(horizontal: _kCardPadH),
               child: Text(
                 content,
-                style: const TextStyle(
+                style: context.hmiTypography.pageTitle.copyWith(
                   color: CyberColors.textPrimary,
-                  fontSize: 29,
                   height: 1.35,
                   fontWeight: FontWeight.w400,
                   decoration: TextDecoration.none,
@@ -205,9 +220,8 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                               children: [
                                 Text(
                                   checkboxLabel,
-                                  style: const TextStyle(
+                                  style: context.hmiTypography.pageTitle.copyWith(
                                     color: CyberColors.textPrimary,
-                                    fontSize: 29,
                                     height: 1.25,
                                     decoration: TextDecoration.none,
                                   ),
@@ -220,9 +234,8 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                                   onTap: _openDisclaimer,
                                   child: Text(
                                     ' “${l10n.safetyTipsInfoUse}”',
-                                    style: const TextStyle(
+                                    style: context.hmiTypography.pageTitle.copyWith(
                                       color: _kDisclaimerLink,
-                                      fontSize: 29,
                                       height: 1.25,
                                       fontWeight: FontWeight.w700,
                                       decoration: TextDecoration.none,
@@ -233,9 +246,8 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                             )
                           : Text(
                               checkboxLabel,
-                              style: const TextStyle(
+                              style: context.hmiTypography.pageTitle.copyWith(
                                 color: CyberColors.textPrimary,
-                                fontSize: 29,
                                 height: 1.25,
                                 decoration: TextDecoration.none,
                               ),

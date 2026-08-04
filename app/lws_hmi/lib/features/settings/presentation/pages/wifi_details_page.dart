@@ -8,6 +8,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Wi‑Fi Details — Auto Join / IPv4 / DNS / others (inline edit).
 class WifiDetailsPage extends StatefulWidget {
@@ -342,8 +343,7 @@ class _WifiDetailsPageState extends State<WifiDetailsPage> {
           children: [
             Text(
               l10n.wifiForgetNetwork,
-              style: const TextStyle(
-                fontSize: 20,
+              style: context.hmiTypography.settingsRowTitle.copyWith(
                 color: CyberColors.textPrimary,
               ),
             ),

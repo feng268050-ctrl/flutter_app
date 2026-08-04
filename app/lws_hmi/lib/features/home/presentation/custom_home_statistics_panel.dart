@@ -2,14 +2,17 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
+import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_models.dart';
 import 'package:lws_hmi/features/statistics/domain/stats_aggregate_repository.dart';
 import 'package:lws_hmi/features/statistics/infrastructure/sqlite_stats_aggregate_repository.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// The four persisted Custom Home slots rendered on the product Home page.
 ///
@@ -83,12 +86,13 @@ class CustomHomeStatisticsPanelState extends State<CustomHomeStatisticsPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final unitWire = CommonSettingsScope.maybeOf(context)?.unit;
     final cards = _metrics
         .map((metric) => _HomeStatisticCard(
               key: ValueKey('home-stat-${metric.name}'),
               metric: metric,
-              value: _displayValue(metric, _aggregate, unitWire),
+              value: _displayValue(l10n, metric, _aggregate, unitWire),
               width: widget.cardWidth,
               height: widget.cardHeight,
             ))
@@ -108,6 +112,7 @@ class CustomHomeStatisticsPanelState extends State<CustomHomeStatisticsPanel> {
 }
 
 _HomeStatisticDisplay _displayValue(
+  AppLocalizations l10n,
   CustomHomeMetric metric,
   StatsAggregate? aggregate,
   String? unitWire,
@@ -122,7 +127,7 @@ _HomeStatisticDisplay _displayValue(
 
   return switch (metric) {
     CustomHomeMetric.wireConsumption => _HomeStatisticDisplay(
-        title: 'Total Wire Consumption',
+        title: l10n.totalWireConsumption,
         number: LengthUnitConvert.formatMm(
           (aggregate?.wireFeedLengthMmTotal ?? 0).toDouble(),
           unitWire: unitWire,
@@ -130,39 +135,39 @@ _HomeStatisticDisplay _displayValue(
         unit: LengthUnitConvert.suffix(unitWire),
       ),
     CustomHomeMetric.laserOnDuration => _durationDisplay(
-        title: 'Total Laser-on Time',
+        title: l10n.totalLaserOnTime,
         seconds: totalLaserSeconds,
       ),
     CustomHomeMetric.jobRuntime => _durationDisplay(
-        title: 'Job Runtime',
+        title: l10n.jobRuntime,
         seconds: aggregate?.jobRuntimeSecondsTotal ?? 0,
       ),
     CustomHomeMetric.weldRatio => _HomeStatisticDisplay(
-        title: 'Welding Ratio',
+        title: l10n.weldingProportionText,
         number: _ratioPercent(modeSeconds, totalLaserSeconds).toString(),
         unit: '%',
         isRatio: true,
       ),
     CustomHomeMetric.cutRatio => _HomeStatisticDisplay(
-        title: 'Cutting Ratio',
+        title: l10n.cuttingProportionText,
         number: _ratioPercent(modeSeconds, totalLaserSeconds).toString(),
         unit: '%',
         isRatio: true,
       ),
     CustomHomeMetric.cleanRatio => _HomeStatisticDisplay(
-        title: 'Cleaning Ratio',
+        title: l10n.washProportionText,
         number: _ratioPercent(modeSeconds, totalLaserSeconds).toString(),
         unit: '%',
         isRatio: true,
       ),
     CustomHomeMetric.weekOverWeekLaser => _HomeStatisticDisplay(
-        title: 'Laser Time vs Last Week',
+        title: l10n.laserTimeVsLastWeek,
         number: weekOverWeekLaserPercent(aggregate).toString(),
         unit: '%',
       ),
     CustomHomeMetric.favoriteMaterial => _HomeStatisticDisplay(
-        title: 'Favorite Material',
-        number: _materialName(aggregate?.favoriteMaterialType),
+        title: l10n.favoriteMaterial,
+        number: _materialName(l10n, aggregate?.favoriteMaterialType),
       ),
   };
 }
@@ -223,12 +228,12 @@ int weekOverWeekLaserPercent(StatsAggregate? aggregate) {
   return ((currentWeek - previousWeek) * 100 / previousWeek).truncate();
 }
 
-String _materialName(int? storageValue) {
+String _materialName(AppLocalizations l10n, int? storageValue) {
   if (storageValue == null) {
     return '—';
   }
   try {
-    return MaterialType.fromStorageValue(storageValue).englishName;
+    return MaterialType.fromStorageValue(storageValue).localizedLabel(l10n);
   } on FormatException {
     return '—';
   }
@@ -265,9 +270,12 @@ final class _HomeStatisticCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = width < 160 || height < 100;
-    final titleSize = (height * 0.19).clamp(13.0, 22.0);
-    final numberSize = (height * 0.52).clamp(28.0, 58.0);
-    final unitSize = (height * 0.27).clamp(16.0, 30.0);
+    final titleSize =
+        (height * 0.19).clamp(AppTypography.microSize, AppTypography.sectionTitleSize);
+    final numberSize =
+        (height * 0.52).clamp(AppTypography.pageTitleSize, AppTypography.criticalTitleSize);
+    final unitSize =
+        (height * 0.27).clamp(AppTypography.supportingSize, AppTypography.pageTitleSize);
     return SizedBox(
       width: width,
       height: height,

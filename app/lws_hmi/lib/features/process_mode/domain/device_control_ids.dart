@@ -1,3 +1,5 @@
+import 'package:lws_hmi/l10n/app_localizations.dart';
+
 /// Modbus attribute ids for Quick/Engineer device controls (holding 0x0058).
 abstract final class DeviceControlIds {
   /// Whole CONTROL_FIELD_1 word (0x0058) — lws-ui single-register halt write.
@@ -62,22 +64,29 @@ enum LaserEnableBlockReason {
 }
 
 extension LaserEnableBlockReasonMessage on LaserEnableBlockReason {
-  String get message {
+  /// English fallback for non-UI / lastError identity; prefer [localizedMessage].
+  String get message => localizedMessage(null);
+
+  /// User-visible copy. Falls back to English when [l10n] is null.
+  String localizedMessage(AppLocalizations? l10n) {
     switch (this) {
       case LaserEnableBlockReason.statusUnavailable:
-        return 'Check equipment status';
+        return l10n?.laserEnableBlockStatusUnavailable ??
+            'Check Equipment Status';
       case LaserEnableBlockReason.emergencyStop:
-        return 'Release E-Stop first';
+        return l10n?.laserEnableBlockEmergencyStop ?? 'Release E-stop First';
       case LaserEnableBlockReason.keySwitchOff:
-        return 'Turn key switch on';
+        return l10n?.laserEnableBlockKeySwitchOff ?? 'Turn Key Switch On';
       case LaserEnableBlockReason.manualGasOn:
-        return 'Turn off Manual Gas first';
+        return l10n?.laserEnableBlockManualGasOn ??
+            'Turn Off Manual Gas First';
       case LaserEnableBlockReason.alarmBlocked:
-        return 'Alarm blocks laser enable';
+        return l10n?.laserEnableBlockAlarmBlocked ??
+            'Alarm Blocks Laser Enable';
       case LaserEnableBlockReason.writeFailed:
-        return 'Laser enable write failed';
+        return l10n?.laserEnableBlockWriteFailed ?? 'Laser Enable Write Failed';
       case LaserEnableBlockReason.busy:
-        return 'Control busy';
+        return l10n?.laserEnableBlockBusy ?? 'Control Busy';
     }
   }
 }

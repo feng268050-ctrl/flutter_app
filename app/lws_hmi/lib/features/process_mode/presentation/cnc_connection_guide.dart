@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Quick-mode CNC connection guide (lws-ui `CNCCutFragment`).
 ///
@@ -34,6 +36,7 @@ final class CncConnectionGuide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DecoratedBox(
       key: const ValueKey('quick-mode-cnc-guide'),
       decoration: BoxDecoration(
@@ -50,12 +53,11 @@ final class CncConnectionGuide extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 22),
-            const Text(
-              'Connection Guide',
+            Text(
+              l10n?.cncConnectionGuideTitle ?? 'Connection Guide',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: context.hmiTypography.displayAction.copyWith(
                 color: Colors.white,
-                fontSize: 44,
                 height: 1.0,
                 fontWeight: FontWeight.w500,
               ),
@@ -70,7 +72,8 @@ final class CncConnectionGuide extends StatelessWidget {
                   child: _CncStepColumn(
                     stepAsset: ProcessModeAssets.cncStep1,
                     statusAsset: _statusAsset,
-                    label: '1. Verify the RS485 connection.',
+                    label: l10n?.cncConnectionGuideStep1 ??
+                        '1. Verify the RS485 connection.',
                     imageHeight: _stepImageHeight,
                   ),
                 ),
@@ -79,7 +82,8 @@ final class CncConnectionGuide extends StatelessWidget {
                   child: _CncStepColumn(
                     stepAsset: ProcessModeAssets.cncStep2,
                     statusAsset: null,
-                    label: '2. Verify the cutting nozzle sensor cable.',
+                    label: l10n?.cncConnectionGuideStep2 ??
+                        '2. Verify the cutting nozzle sensor cable.',
                     imageHeight: _stepImageHeight,
                   ),
                 ),
@@ -88,7 +92,7 @@ final class CncConnectionGuide extends StatelessWidget {
                   child: _CncStepColumn(
                     stepAsset: ProcessModeAssets.cncStep2,
                     statusAsset: null,
-                    label:
+                    label: l10n?.cncConnectionGuideStep3 ??
                         '3. Confirm that the welding gun and fixture are securely connected.',
                     imageHeight: _stepImageHeight,
                   ),
@@ -96,14 +100,14 @@ final class CncConnectionGuide extends StatelessWidget {
               ],
             ),
             const Spacer(),
-            const Padding(
-              padding: EdgeInsets.only(bottom: 20),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
               child: Text(
-                'Note: After connecting, further adjustments are made on the CNC.',
+                l10n?.cncConnectionGuideNote ??
+                    'Note: After connecting, further adjustments are made on the CNC.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: context.hmiTypography.body.copyWith(
                   color: Colors.white,
-                  fontSize: 18,
                   height: 1.2,
                 ),
               ),
@@ -154,9 +158,8 @@ final class _CncStepColumn extends StatelessWidget {
         Text(
           label,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: context.hmiTypography.supporting.copyWith(
             color: Colors.white,
-            fontSize: 16,
             height: 1.25,
           ),
         ),

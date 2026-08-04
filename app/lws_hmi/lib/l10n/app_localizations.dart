@@ -179,6 +179,102 @@ abstract class AppLocalizations {
   /// **'Allowing laser output with a contaminated protective lens may damage the device. Enable only if AI detection is inaccurate.'**
   String get advancedSettingAllowWorkAfterLensContaminationHint;
 
+  /// No description provided for @advancedSettingAutoZeroOffsetMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Aim the welding gun at a safe area and hold the trigger, then tap Auto. Auto temporarily enables laser output; the trigger fires the laser. Wait for the progress bar to finish automatic zero-offset correction.'**
+  String get advancedSettingAutoZeroOffsetMessage;
+
+  /// No description provided for @advancedSettingAutoZeroOffsetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Zero Offset'**
+  String get advancedSettingAutoZeroOffsetTitle;
+
+  /// No description provided for @advancedSettingCollimatingLensTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Collimating Lens Temperature Alarm Threshold'**
+  String get advancedSettingCollimatingLensTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingDriverTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver Temperature Alarm Threshold'**
+  String get advancedSettingDriverTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingEnterCollimatingLensTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Collimating Lens Temperature Alarm Threshold'**
+  String get advancedSettingEnterCollimatingLensTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingEnterDriverTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Driver Temperature Alarm Threshold'**
+  String get advancedSettingEnterDriverTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingEnterInletGasPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Inlet Gas Pressure Threshold'**
+  String get advancedSettingEnterInletGasPressure;
+
+  /// No description provided for @advancedSettingEnterLaserEndPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Laser End Power'**
+  String get advancedSettingEnterLaserEndPower;
+
+  /// No description provided for @advancedSettingEnterLaserStartPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Laser Start Power'**
+  String get advancedSettingEnterLaserStartPower;
+
+  /// No description provided for @advancedSettingEnterMinGasPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Minimum Gas Pressure Threshold'**
+  String get advancedSettingEnterMinGasPressure;
+
+  /// No description provided for @advancedSettingEnterMotorTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Motor Temperature Alarm Threshold'**
+  String get advancedSettingEnterMotorTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingEnterProtectiveLensTempAlarmThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Protective Lens Temperature Alarm Threshold'**
+  String get advancedSettingEnterProtectiveLensTempAlarmThreshold;
+
+  /// No description provided for @advancedSettingEnterScanWidthCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Scan Width Correction'**
+  String get advancedSettingEnterScanWidthCorrection;
+
+  /// No description provided for @advancedSettingEnterTempAlarmRecoveryHysteresis.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Temperature Alarm Recovery Hysteresis'**
+  String get advancedSettingEnterTempAlarmRecoveryHysteresis;
+
+  /// No description provided for @advancedSettingEnterZeroOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Zero Offset'**
+  String get advancedSettingEnterZeroOffset;
+
+  /// No description provided for @advancedSettingInletGasPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'Inlet Gas Pressure Threshold'**
+  String get advancedSettingInletGasPressure;
+
   /// No description provided for @advancedSettingKeepLaserOnWhileAlarmed.
   ///
   /// In en, this message translates to:
@@ -190,6 +286,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'When enabled, coded alarms won’t automatically turn off the laser while you’re already welding. Warning dialogs still appear. Use only when the risk is acceptable.'**
   String get advancedSettingKeepLaserOnWhileAlarmedHint;
+
+  /// No description provided for @advancedSettingLaserEndPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser End Power'**
+  String get advancedSettingLaserEndPower;
+
+  /// No description provided for @advancedSettingLaserStartPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser Start Power'**
+  String get advancedSettingLaserStartPower;
 
   /// No description provided for @advancedSettingLensContaminationDetection.
   ///
@@ -203,95 +311,11 @@ abstract class AppLocalizations {
   /// **'Uses the camera and AI to watch the protective lens during work and warn when contamination is detected. Turn off only if detection is inaccurate or unavailable.'**
   String get advancedSettingLensContaminationDetectionHint;
 
-  /// No description provided for @advancedSettingZeroOffset.
-  ///
-  /// In en, this message translates to:
-  /// **'Zero Offset'**
-  String get advancedSettingZeroOffset;
-
-  /// No description provided for @advancedSettingZeroOffsetAuto.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto'**
-  String get advancedSettingZeroOffsetAuto;
-
-  /// No description provided for @advancedSettingAutoZeroOffsetTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto Zero Offset'**
-  String get advancedSettingAutoZeroOffsetTitle;
-
-  /// No description provided for @advancedSettingAutoZeroOffsetMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Aim the welding gun at a safe area and hold the trigger, then tap Auto. Auto temporarily enables laser output; the trigger fires the laser. Wait for the progress bar to finish automatic zero-offset correction.'**
-  String get advancedSettingAutoZeroOffsetMessage;
-
-  /// No description provided for @advancedSettingEnterZeroOffset.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter zero offset'**
-  String get advancedSettingEnterZeroOffset;
-
-  /// No description provided for @advancedSettingScanWidthCorrection.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan Width Correction'**
-  String get advancedSettingScanWidthCorrection;
-
-  /// No description provided for @advancedSettingEnterScanWidthCorrection.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter scan width correction'**
-  String get advancedSettingEnterScanWidthCorrection;
-
-  /// No description provided for @advancedSettingLaserStartPower.
-  ///
-  /// In en, this message translates to:
-  /// **'Laser Start Power'**
-  String get advancedSettingLaserStartPower;
-
-  /// No description provided for @advancedSettingEnterLaserStartPower.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter laser start power'**
-  String get advancedSettingEnterLaserStartPower;
-
-  /// No description provided for @advancedSettingLaserEndPower.
-  ///
-  /// In en, this message translates to:
-  /// **'Laser End Power'**
-  String get advancedSettingLaserEndPower;
-
-  /// No description provided for @advancedSettingEnterLaserEndPower.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter laser end power'**
-  String get advancedSettingEnterLaserEndPower;
-
   /// No description provided for @advancedSettingMinGasPressure.
   ///
   /// In en, this message translates to:
   /// **'Min. Gas Pressure'**
   String get advancedSettingMinGasPressure;
-
-  /// No description provided for @advancedSettingEnterMinGasPressure.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter minimum gas pressure threshold'**
-  String get advancedSettingEnterMinGasPressure;
-
-  /// No description provided for @advancedSettingInletGasPressure.
-  ///
-  /// In en, this message translates to:
-  /// **'Inlet Gas Pressure Threshold'**
-  String get advancedSettingInletGasPressure;
-
-  /// No description provided for @advancedSettingEnterInletGasPressure.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter inlet gas pressure threshold'**
-  String get advancedSettingEnterInletGasPressure;
 
   /// No description provided for @advancedSettingMotorTempAlarmThreshold.
   ///
@@ -299,65 +323,11 @@ abstract class AppLocalizations {
   /// **'Motor Temperature Alarm Threshold'**
   String get advancedSettingMotorTempAlarmThreshold;
 
-  /// No description provided for @advancedSettingEnterMotorTempAlarmThreshold.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter motor temperature alarm threshold'**
-  String get advancedSettingEnterMotorTempAlarmThreshold;
-
-  /// No description provided for @advancedSettingDriverTempAlarmThreshold.
-  ///
-  /// In en, this message translates to:
-  /// **'Driver Temperature Alarm Threshold'**
-  String get advancedSettingDriverTempAlarmThreshold;
-
-  /// No description provided for @advancedSettingEnterDriverTempAlarmThreshold.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter driver temperature alarm threshold'**
-  String get advancedSettingEnterDriverTempAlarmThreshold;
-
   /// No description provided for @advancedSettingProtectiveLensTempAlarmThreshold.
   ///
   /// In en, this message translates to:
   /// **'Protective Lens Temperature Alarm Threshold'**
   String get advancedSettingProtectiveLensTempAlarmThreshold;
-
-  /// No description provided for @advancedSettingEnterProtectiveLensTempAlarmThreshold.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter protective lens temperature alarm threshold'**
-  String get advancedSettingEnterProtectiveLensTempAlarmThreshold;
-
-  /// No description provided for @advancedSettingCollimatingLensTempAlarmThreshold.
-  ///
-  /// In en, this message translates to:
-  /// **'Collimating Lens Temperature Alarm Threshold'**
-  String get advancedSettingCollimatingLensTempAlarmThreshold;
-
-  /// No description provided for @advancedSettingEnterCollimatingLensTempAlarmThreshold.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter collimating lens temperature alarm threshold'**
-  String get advancedSettingEnterCollimatingLensTempAlarmThreshold;
-
-  /// No description provided for @advancedSettingTempAlarmRecoveryHysteresis.
-  ///
-  /// In en, this message translates to:
-  /// **'Temperature Alarm Recovery Hysteresis'**
-  String get advancedSettingTempAlarmRecoveryHysteresis;
-
-  /// No description provided for @advancedSettingEnterTempAlarmRecoveryHysteresis.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter temperature alarm recovery hysteresis'**
-  String get advancedSettingEnterTempAlarmRecoveryHysteresis;
-
-  /// No description provided for @advancedSettingValueRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Value is required'**
-  String get advancedSettingValueRequired;
 
   /// No description provided for @advancedSettingScale0Celsius.
   ///
@@ -383,17 +353,47 @@ abstract class AppLocalizations {
   /// **'85℃'**
   String get advancedSettingScale85Celsius;
 
+  /// No description provided for @advancedSettingScanWidthCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Width Correction'**
+  String get advancedSettingScanWidthCorrection;
+
   /// No description provided for @advancedSettingShowBootSelfCheck.
   ///
   /// In en, this message translates to:
   /// **'Show Startup Self-Check'**
   String get advancedSettingShowBootSelfCheck;
 
+  /// No description provided for @advancedSettingTempAlarmRecoveryHysteresis.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature Alarm Recovery Hysteresis'**
+  String get advancedSettingTempAlarmRecoveryHysteresis;
+
   /// No description provided for @advancedSettingText.
   ///
   /// In en, this message translates to:
   /// **'Advanced'**
   String get advancedSettingText;
+
+  /// No description provided for @advancedSettingValueRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Value Is Required'**
+  String get advancedSettingValueRequired;
+
+  /// No description provided for @advancedSettingZeroOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero Offset'**
+  String get advancedSettingZeroOffset;
+
+  /// No description provided for @advancedSettingZeroOffsetAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get advancedSettingZeroOffsetAuto;
 
   /// No description provided for @advancedSettingZeroPointOffsetDetection.
   ///
@@ -548,7 +548,7 @@ abstract class AppLocalizations {
   /// No description provided for @aiVisionComingSoon.
   ///
   /// In en, this message translates to:
-  /// **'AI Vision — coming soon'**
+  /// **'AI Vision — Coming Soon'**
   String get aiVisionComingSoon;
 
   /// No description provided for @aiVisionDetectBtn.
@@ -725,12 +725,6 @@ abstract class AppLocalizations {
   /// **'-'**
   String get aiVisionWorkInfoUnavailable;
 
-  /// No description provided for @liveVideoFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Live video unavailable'**
-  String get liveVideoFailed;
-
   /// No description provided for @aiVisualizedLabel.
   ///
   /// In en, this message translates to:
@@ -761,10 +755,22 @@ abstract class AppLocalizations {
   /// **'Wire Feeder'**
   String get alarmInfoWireFeeder;
 
+  /// No description provided for @alarmLogsClearedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get alarmLogsClearedMessage;
+
+  /// No description provided for @alarmLogsClearedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleared'**
+  String get alarmLogsClearedTitle;
+
   /// No description provided for @alarmLogsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Alarm Logs'**
+  /// **'Alarm Log'**
   String get alarmLogsTitle;
 
   /// No description provided for @alarmRebootThenSupportContent.
@@ -779,6 +785,24 @@ abstract class AppLocalizations {
   /// **'Alarms'**
   String get alarmTitle;
 
+  /// No description provided for @anyMaterialLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Any Material'**
+  String get anyMaterialLabel;
+
+  /// No description provided for @applyToDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply To Device'**
+  String get applyToDevice;
+
+  /// No description provided for @autoCheckOtaUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically check for updates'**
+  String get autoCheckOtaUpdate;
+
   /// No description provided for @autoOtaUpdateDialogMessage.
   ///
   /// In en, this message translates to:
@@ -790,6 +814,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update Available'**
   String get autoOtaUpdateDialogTitle;
+
+  /// No description provided for @autoWireFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Wire Feed'**
+  String get autoWireFeed;
 
   /// No description provided for @blowOnLabel.
   ///
@@ -808,6 +838,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shielding Gas Pressure'**
   String get blowingAirPressureText;
+
+  /// No description provided for @bluetoothAsSpeaker.
+  ///
+  /// In en, this message translates to:
+  /// **'As A Speaker'**
+  String get bluetoothAsSpeaker;
 
   /// No description provided for @bluetoothCloseFailedText.
   ///
@@ -850,12 +886,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bluetooth'**
   String get bluetoothText;
-
-  /// No description provided for @bluetoothAsSpeaker.
-  ///
-  /// In en, this message translates to:
-  /// **'As a Speaker'**
-  String get bluetoothAsSpeaker;
 
   /// No description provided for @bootSelfCheckClose.
   ///
@@ -904,6 +934,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skipped'**
   String get bootSelfCheckStatusSkipped;
+
+  /// No description provided for @builtInLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-In'**
+  String get builtInLabel;
 
   /// No description provided for @bundledFirmwareDialogMessage.
   ///
@@ -965,6 +1001,12 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get callBackHomeTitle;
 
+  /// No description provided for @cameraChangeOverlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Overlay'**
+  String get cameraChangeOverlay;
+
   /// No description provided for @cameraCommStatusText.
   ///
   /// In en, this message translates to:
@@ -982,6 +1024,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Camera Communication Alarm'**
   String get cameraCommunicationAlarmTitle;
+
+  /// No description provided for @cameraOverlayApplyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t apply overlay'**
+  String get cameraOverlayApplyFailed;
+
+  /// No description provided for @cameraOverlayEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Overlay'**
+  String get cameraOverlayEnable;
+
+  /// No description provided for @cameraOverlayPositionX.
+  ///
+  /// In en, this message translates to:
+  /// **'Position X'**
+  String get cameraOverlayPositionX;
+
+  /// No description provided for @cameraOverlayPositionY.
+  ///
+  /// In en, this message translates to:
+  /// **'Position Y'**
+  String get cameraOverlayPositionY;
+
+  /// No description provided for @cameraStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get cameraStatus;
+
+  /// No description provided for @cameraStatusEstablishing.
+  ///
+  /// In en, this message translates to:
+  /// **'Establishing…'**
+  String get cameraStatusEstablishing;
+
+  /// No description provided for @cameraStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get cameraStatusFailed;
+
+  /// No description provided for @cameraType.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Type'**
+  String get cameraType;
+
+  /// No description provided for @cameraTypeBlueLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue Light'**
+  String get cameraTypeBlueLight;
+
+  /// No description provided for @cameraTypeRedLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Red Light'**
+  String get cameraTypeRedLight;
+
+  /// No description provided for @cameraVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Version'**
+  String get cameraVersion;
 
   /// No description provided for @cancelText.
   ///
@@ -1019,23 +1127,35 @@ abstract class AppLocalizations {
   /// **'Clear'**
   String get clearAlarmLogs;
 
-  /// No description provided for @alarmLogsClearedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Cleared'**
-  String get alarmLogsClearedTitle;
-
-  /// No description provided for @alarmLogsClearedMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Done'**
-  String get alarmLogsClearedMessage;
-
   /// No description provided for @closeText.
   ///
   /// In en, this message translates to:
   /// **'Close'**
   String get closeText;
+
+  /// No description provided for @cloudEnvironmentTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud Environment'**
+  String get cloudEnvironmentTier;
+
+  /// No description provided for @cloudEnvironmentTierDev.
+  ///
+  /// In en, this message translates to:
+  /// **'Dev'**
+  String get cloudEnvironmentTierDev;
+
+  /// No description provided for @cloudEnvironmentTierProd.
+  ///
+  /// In en, this message translates to:
+  /// **'Prod'**
+  String get cloudEnvironmentTierProd;
+
+  /// No description provided for @cloudEnvironmentTierTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get cloudEnvironmentTierTest;
 
   /// No description provided for @coldWaterInterlockAlarmContent.
   ///
@@ -1103,11 +1223,23 @@ abstract class AppLocalizations {
   /// **'Show Safety Clamp Alarm'**
   String get commonSettingsShowSafetyGroundLockAlarm;
 
+  /// No description provided for @completeSelectionToPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the selection to preview parameters.'**
+  String get completeSelectionToPreview;
+
   /// No description provided for @confirmText.
   ///
   /// In en, this message translates to:
   /// **'Confirm'**
   String get confirmText;
+
+  /// No description provided for @connectSafetyClampBeforeLaser.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the safety clamp before enabling the laser.'**
+  String get connectSafetyClampBeforeLaser;
 
   /// No description provided for @connectedText.
   ///
@@ -1127,11 +1259,23 @@ abstract class AppLocalizations {
   /// **'Control Board Communication Error'**
   String get controllerTabletCommAlarmTitle;
 
+  /// No description provided for @copyAsUserProcess.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy As User Process'**
+  String get copyAsUserProcess;
+
   /// No description provided for @currentAlarmText.
   ///
   /// In en, this message translates to:
   /// **'Current Alarm'**
   String get currentAlarmText;
+
+  /// No description provided for @currentProcessName.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Process Name'**
+  String get currentProcessName;
 
   /// No description provided for @customHomePage.
   ///
@@ -1139,23 +1283,29 @@ abstract class AppLocalizations {
   /// **'Custom Home'**
   String get customHomePage;
 
-  /// No description provided for @customHomeSelectFourCards.
-  ///
-  /// In en, this message translates to:
-  /// **'Please select 4 cards'**
-  String get customHomeSelectFourCards;
-
   /// No description provided for @customHomeReplacementSelected.
   ///
   /// In en, this message translates to:
   /// **'Selected'**
   String get customHomeReplacementSelected;
 
+  /// No description provided for @customHomeSelectFourCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Please Select 4 Cards'**
+  String get customHomeSelectFourCards;
+
   /// No description provided for @customHomeSelectReplaceCard.
   ///
   /// In en, this message translates to:
-  /// **'Please select a card to replace'**
+  /// **'Please Select A Card To Replace'**
   String get customHomeSelectReplaceCard;
+
+  /// No description provided for @customMaterialName.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Material Name'**
+  String get customMaterialName;
 
   /// No description provided for @cuttingProportionText.
   ///
@@ -1217,66 +1367,6 @@ abstract class AppLocalizations {
   /// **'Automatic'**
   String get dateTimeAutomatic;
 
-  /// No description provided for @dateTimeNtpServer.
-  ///
-  /// In en, this message translates to:
-  /// **'Time Server'**
-  String get dateTimeNtpServer;
-
-  /// No description provided for @dateTimeNtpPool.
-  ///
-  /// In en, this message translates to:
-  /// **'NTP Pool'**
-  String get dateTimeNtpPool;
-
-  /// No description provided for @dateTimeNtpCloudflare.
-  ///
-  /// In en, this message translates to:
-  /// **'Cloudflare'**
-  String get dateTimeNtpCloudflare;
-
-  /// No description provided for @dateTimeNtpGoogle.
-  ///
-  /// In en, this message translates to:
-  /// **'Google'**
-  String get dateTimeNtpGoogle;
-
-  /// No description provided for @dateTimeNtpAliyun.
-  ///
-  /// In en, this message translates to:
-  /// **'Aliyun'**
-  String get dateTimeNtpAliyun;
-
-  /// No description provided for @dateTimeNtpWindows.
-  ///
-  /// In en, this message translates to:
-  /// **'Windows'**
-  String get dateTimeNtpWindows;
-
-  /// No description provided for @dateTimeNtpApple.
-  ///
-  /// In en, this message translates to:
-  /// **'Apple'**
-  String get dateTimeNtpApple;
-
-  /// No description provided for @dateTimeNtpTencent.
-  ///
-  /// In en, this message translates to:
-  /// **'Tencent'**
-  String get dateTimeNtpTencent;
-
-  /// No description provided for @dateTimeNtpCnPool.
-  ///
-  /// In en, this message translates to:
-  /// **'China NTP Pool'**
-  String get dateTimeNtpCnPool;
-
-  /// No description provided for @dateTimeTimezoneGeoFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn’t set time zone from network location'**
-  String get dateTimeTimezoneGeoFailed;
-
   /// No description provided for @dateTimeModeAuto.
   ///
   /// In en, this message translates to:
@@ -1288,6 +1378,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manual'**
   String get dateTimeModeManual;
+
+  /// No description provided for @dateTimeNtpAliyun.
+  ///
+  /// In en, this message translates to:
+  /// **'Aliyun'**
+  String get dateTimeNtpAliyun;
+
+  /// No description provided for @dateTimeNtpApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple'**
+  String get dateTimeNtpApple;
+
+  /// No description provided for @dateTimeNtpCloudflare.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare'**
+  String get dateTimeNtpCloudflare;
+
+  /// No description provided for @dateTimeNtpCnPool.
+  ///
+  /// In en, this message translates to:
+  /// **'China Ntp Pool'**
+  String get dateTimeNtpCnPool;
+
+  /// No description provided for @dateTimeNtpGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google'**
+  String get dateTimeNtpGoogle;
+
+  /// No description provided for @dateTimeNtpPool.
+  ///
+  /// In en, this message translates to:
+  /// **'Ntp Pool'**
+  String get dateTimeNtpPool;
+
+  /// No description provided for @dateTimeNtpServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Server'**
+  String get dateTimeNtpServer;
+
+  /// No description provided for @dateTimeNtpTencent.
+  ///
+  /// In en, this message translates to:
+  /// **'Tencent'**
+  String get dateTimeNtpTencent;
+
+  /// No description provided for @dateTimeNtpWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'Windows'**
+  String get dateTimeNtpWindows;
 
   /// No description provided for @dateTimePermissionDenied.
   ///
@@ -1322,7 +1466,7 @@ abstract class AppLocalizations {
   /// No description provided for @dateTimeSetDate.
   ///
   /// In en, this message translates to:
-  /// **'Date'**
+  /// **'Set Date'**
   String get dateTimeSetDate;
 
   /// No description provided for @dateTimeSetFailed.
@@ -1334,19 +1478,13 @@ abstract class AppLocalizations {
   /// No description provided for @dateTimeSetTime.
   ///
   /// In en, this message translates to:
-  /// **'Time'**
+  /// **'Set Time'**
   String get dateTimeSetTime;
-
-  /// No description provided for @dateTimeUse24HourFormat.
-  ///
-  /// In en, this message translates to:
-  /// **'Use 24-Hour Format'**
-  String get dateTimeUse24HourFormat;
 
   /// No description provided for @dateTimeSetTimeZone.
   ///
   /// In en, this message translates to:
-  /// **'Time Zone'**
+  /// **'Set Time Zone'**
   String get dateTimeSetTimeZone;
 
   /// No description provided for @dateTimeSettings.
@@ -1355,17 +1493,23 @@ abstract class AppLocalizations {
   /// **'Date & Time'**
   String get dateTimeSettings;
 
-  /// No description provided for @timezoneSearchHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Search by name or UTC offset'**
-  String get timezoneSearchHint;
-
   /// No description provided for @dateTimeTimezoneApplyFailed.
   ///
   /// In en, this message translates to:
   /// **'Couldn’t update time zone'**
   String get dateTimeTimezoneApplyFailed;
+
+  /// No description provided for @dateTimeTimezoneGeoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t set time zone from network location'**
+  String get dateTimeTimezoneGeoFailed;
+
+  /// No description provided for @dateTimeUse24HourFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 24-Hour Format'**
+  String get dateTimeUse24HourFormat;
 
   /// No description provided for @defaultLabel.
   ///
@@ -1378,6 +1522,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get deleteText;
+
+  /// No description provided for @deviceBindBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the QR code with the LaserCyber app to bind this device.'**
+  String get deviceBindBody;
+
+  /// No description provided for @deviceBindTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bind This Device'**
+  String get deviceBindTitle;
+
+  /// No description provided for @deviceControlAutoWireFeedOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Wire Feed Turned Off'**
+  String get deviceControlAutoWireFeedOff;
+
+  /// No description provided for @deviceControlAutoWireFeedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Wire Feed Enabled'**
+  String get deviceControlAutoWireFeedOn;
+
+  /// No description provided for @deviceControlCameraUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Unavailable'**
+  String get deviceControlCameraUnavailable;
+
+  /// No description provided for @deviceControlContinuousFeedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous Feed'**
+  String get deviceControlContinuousFeedLabel;
+
+  /// No description provided for @deviceControlEmergencyStopError.
+  ///
+  /// In en, this message translates to:
+  /// **'Device is in E-stop'**
+  String get deviceControlEmergencyStopError;
+
+  /// No description provided for @deviceControlEndOfWorkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'End of work failed — check controller link'**
+  String get deviceControlEndOfWorkFailed;
+
+  /// No description provided for @deviceControlEndOfWorkFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'End Of Work First'**
+  String get deviceControlEndOfWorkFirst;
+
+  /// No description provided for @deviceControlFeedHoldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold 3s to keep on'**
+  String get deviceControlFeedHoldHint;
+
+  /// No description provided for @deviceControlFeedOngoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding…'**
+  String get deviceControlFeedOngoing;
+
+  /// No description provided for @deviceControlFeedPulseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed+ Started'**
+  String get deviceControlFeedPulseSuccess;
+
+  /// No description provided for @deviceControlFeedStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed Stopped'**
+  String get deviceControlFeedStopped;
+
+  /// No description provided for @deviceControlKeySwitchOffError.
+  ///
+  /// In en, this message translates to:
+  /// **'Key switch is off'**
+  String get deviceControlKeySwitchOffError;
+
+  /// No description provided for @deviceControlManualGasOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Gas Turned Off'**
+  String get deviceControlManualGasOff;
+
+  /// No description provided for @deviceControlManualGasOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Gas On'**
+  String get deviceControlManualGasOn;
+
+  /// No description provided for @deviceControlOperationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation Failed'**
+  String get deviceControlOperationFailed;
+
+  /// No description provided for @deviceControlRetractPulseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed Started'**
+  String get deviceControlRetractPulseSuccess;
+
+  /// No description provided for @deviceControlStopFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Feed+'**
+  String get deviceControlStopFeed;
+
+  /// No description provided for @deviceControlWireUnavailableInMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Wire Feed Unavailable In This Mode'**
+  String get deviceControlWireUnavailableInMode;
 
   /// No description provided for @deviceInformation.
   ///
@@ -1427,6 +1691,36 @@ abstract class AppLocalizations {
   /// **'Work Info'**
   String get deviceMonitorWorkInfoTitle;
 
+  /// No description provided for @deviceRegisterBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is unrecognized, please scan the QR code with LaserCyber app to register it.'**
+  String get deviceRegisterBody;
+
+  /// No description provided for @deviceRegisterReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect'**
+  String get deviceRegisterReconnect;
+
+  /// No description provided for @deviceRegisterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Register This Device'**
+  String get deviceRegisterTitle;
+
+  /// No description provided for @deviceRemoteLockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has been locked remotely. Contact your administrator to unlock.'**
+  String get deviceRemoteLockBody;
+
+  /// No description provided for @deviceRemoteLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Locked'**
+  String get deviceRemoteLockTitle;
+
   /// No description provided for @deviceSettingText.
   ///
   /// In en, this message translates to:
@@ -1457,11 +1751,23 @@ abstract class AppLocalizations {
   /// **'Diode Short Circuit Cleared'**
   String get diodeShortCircuitErrorClearedTitle;
 
+  /// No description provided for @doneText.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get doneText;
+
   /// No description provided for @dontShowAgain.
   ///
   /// In en, this message translates to:
   /// **'Don’t show again'**
   String get dontShowAgain;
+
+  /// No description provided for @dontShowAgainThisSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t show again this session'**
+  String get dontShowAgainThisSession;
 
   /// No description provided for @driveOvertemperatureAlarmContent.
   ///
@@ -1493,11 +1799,53 @@ abstract class AppLocalizations {
   /// **'Driver Module Overtemperature'**
   String get driverModuleOvertemperatureAlarmTitle;
 
+  /// No description provided for @eStopLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'E-Stop'**
+  String get eStopLabel;
+
+  /// No description provided for @editProcess.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Process'**
+  String get editProcess;
+
+  /// No description provided for @editText.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get editText;
+
   /// No description provided for @emptyText.
   ///
   /// In en, this message translates to:
   /// **''**
   String get emptyText;
+
+  /// No description provided for @endOfWork.
+  ///
+  /// In en, this message translates to:
+  /// **'End Work'**
+  String get endOfWork;
+
+  /// No description provided for @engineerModeEntryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Engineer mode unlocks advanced parameter customization for experienced users. We recommend learning how the machine works before making fine adjustments.'**
+  String get engineerModeEntryBody;
+
+  /// No description provided for @engineerModeEntryConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm & Enter'**
+  String get engineerModeEntryConfirm;
+
+  /// No description provided for @engineerModeEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Engineer Mode Notice'**
+  String get engineerModeEntryTitle;
 
   /// No description provided for @environmentTemperatureAlarmContent.
   ///
@@ -1529,6 +1877,30 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get equipmentStatusHome;
 
+  /// No description provided for @ethernetLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get ethernetLink;
+
+  /// No description provided for @ethernetManualIp.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual IP'**
+  String get ethernetManualIp;
+
+  /// No description provided for @ethernetPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefix'**
+  String get ethernetPrefix;
+
+  /// No description provided for @ethernetText.
+  ///
+  /// In en, this message translates to:
+  /// **'Ethernet'**
+  String get ethernetText;
+
   /// No description provided for @fahrenheitUnit.
   ///
   /// In en, this message translates to:
@@ -1540,6 +1912,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fault'**
   String get failStatus;
+
+  /// No description provided for @favoriteMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite Material'**
+  String get favoriteMaterial;
+
+  /// No description provided for @feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed'**
+  String get feed;
 
   /// No description provided for @fiberDisconnectionAlarmContent.
   ///
@@ -1574,7 +1958,7 @@ abstract class AppLocalizations {
   /// No description provided for @firmwareVersion.
   ///
   /// In en, this message translates to:
-  /// **'Control Board Version'**
+  /// **'Firmware Version'**
   String get firmwareVersion;
 
   /// No description provided for @flashErrorAlarmContent.
@@ -1600,6 +1984,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'FLASH Unencrypted'**
   String get flashUnencryptedAlarmTitle;
+
+  /// No description provided for @focusScaleReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus Scale Reference'**
+  String get focusScaleReference;
 
   /// No description provided for @frontLightPdVoltageText.
   ///
@@ -1637,11 +2027,35 @@ abstract class AppLocalizations {
   /// **'Galvo Motor Trajectory Error'**
   String get galvanometerMotorTrajectoryErrorTitle;
 
+  /// No description provided for @gasFlowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas Flow'**
+  String get gasFlowLabel;
+
   /// No description provided for @gasPressureLabel.
   ///
   /// In en, this message translates to:
   /// **'Gas Pressure'**
   String get gasPressureLabel;
+
+  /// No description provided for @gearLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear'**
+  String get gearLabel;
+
+  /// No description provided for @gotItText.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get gotItText;
+
+  /// No description provided for @groundClampLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety Clamp'**
+  String get groundClampLabel;
 
   /// No description provided for @gunHeadCommunicationAlarmContent.
   ///
@@ -1702,6 +2116,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hardware Bus Error'**
   String get hardwareBusErrorAlarmTitle;
+
+  /// No description provided for @holdToEnableLaser.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold To Enable Laser'**
+  String get holdToEnableLaser;
 
   /// No description provided for @homeAiVisionLabel.
   ///
@@ -1802,7 +2222,7 @@ abstract class AppLocalizations {
   /// No description provided for @httpProxySettingsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Proxy'**
+  /// **'HTTP Proxy'**
   String get httpProxySettingsTitle;
 
   /// No description provided for @httpProxyStatusIncomplete.
@@ -1844,7 +2264,7 @@ abstract class AppLocalizations {
   /// No description provided for @httpProxyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Proxy'**
+  /// **'HTTP Proxy'**
   String get httpProxyTitle;
 
   /// No description provided for @httpProxyUsername.
@@ -1907,101 +2327,59 @@ abstract class AppLocalizations {
   /// **'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.'**
   String get internalHumidityUpperLimitAlarmContent;
 
+  /// No description provided for @ipCameraCameraNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Not Connected'**
+  String get ipCameraCameraNotConnected;
+
+  /// No description provided for @ipCameraDemoRecordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo only — not listed in Monitor → Videos'**
+  String get ipCameraDemoRecordHint;
+
+  /// No description provided for @ipCameraEstablishingVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Establishing Video…'**
+  String get ipCameraEstablishingVideo;
+
+  /// No description provided for @ipCameraPreviewFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview Failed'**
+  String get ipCameraPreviewFailed;
+
+  /// No description provided for @ipCameraRecordError.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Error: {error}'**
+  String ipCameraRecordError(String error);
+
+  /// No description provided for @ipCameraRecordingSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved: {path}'**
+  String ipCameraRecordingSaved(String path);
+
+  /// No description provided for @ipCameraStopError.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Error: {error}'**
+  String ipCameraStopError(String error);
+
   /// No description provided for @ipCameraText.
   ///
   /// In en, this message translates to:
   /// **'Camera'**
   String get ipCameraText;
 
-  /// No description provided for @cameraType.
+  /// No description provided for @jobRuntime.
   ///
   /// In en, this message translates to:
-  /// **'Camera Type'**
-  String get cameraType;
-
-  /// No description provided for @cameraVersion.
-  ///
-  /// In en, this message translates to:
-  /// **'Camera Version'**
-  String get cameraVersion;
-
-  /// No description provided for @cameraTypeBlueLight.
-  ///
-  /// In en, this message translates to:
-  /// **'Blue Light'**
-  String get cameraTypeBlueLight;
-
-  /// No description provided for @cameraTypeRedLight.
-  ///
-  /// In en, this message translates to:
-  /// **'Red Light'**
-  String get cameraTypeRedLight;
-
-  /// No description provided for @cameraStatus.
-  ///
-  /// In en, this message translates to:
-  /// **'Status'**
-  String get cameraStatus;
-
-  /// No description provided for @cameraStatusEstablishing.
-  ///
-  /// In en, this message translates to:
-  /// **'Establishing…'**
-  String get cameraStatusEstablishing;
-
-  /// No description provided for @cameraStatusFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed'**
-  String get cameraStatusFailed;
-
-  /// No description provided for @cameraChangeOverlay.
-  ///
-  /// In en, this message translates to:
-  /// **'Change Overlay'**
-  String get cameraChangeOverlay;
-
-  /// No description provided for @cameraOverlayEnable.
-  ///
-  /// In en, this message translates to:
-  /// **'Enable Overlay'**
-  String get cameraOverlayEnable;
-
-  /// No description provided for @cameraOverlayPositionX.
-  ///
-  /// In en, this message translates to:
-  /// **'Position X'**
-  String get cameraOverlayPositionX;
-
-  /// No description provided for @cameraOverlayPositionY.
-  ///
-  /// In en, this message translates to:
-  /// **'Position Y'**
-  String get cameraOverlayPositionY;
-
-  /// No description provided for @cameraOverlayApplyFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn’t apply overlay'**
-  String get cameraOverlayApplyFailed;
-
-  /// No description provided for @systemVersion.
-  ///
-  /// In en, this message translates to:
-  /// **'System Version'**
-  String get systemVersion;
-
-  /// No description provided for @processLibVersion.
-  ///
-  /// In en, this message translates to:
-  /// **'Process Library Version'**
-  String get processLibVersion;
-
-  /// No description provided for @focusScaleReference.
-  ///
-  /// In en, this message translates to:
-  /// **'Focus Scale Reference'**
-  String get focusScaleReference;
+  /// **'Job Runtime'**
+  String get jobRuntime;
 
   /// No description provided for @kernelVersion.
   ///
@@ -2009,113 +2387,47 @@ abstract class AppLocalizations {
   /// **'Kernel Version'**
   String get kernelVersion;
 
-  /// No description provided for @autoCheckOtaUpdate.
+  /// No description provided for @keySwitchLabel.
   ///
   /// In en, this message translates to:
-  /// **'Automatically check for updates'**
-  String get autoCheckOtaUpdate;
+  /// **'Key Switch'**
+  String get keySwitchLabel;
 
-  /// No description provided for @otaCheckUnavailable.
+  /// No description provided for @keyboardApplyConfirmBody.
   ///
   /// In en, this message translates to:
-  /// **'Software update check is not available on this build.'**
-  String get otaCheckUnavailable;
+  /// **'Saves the selected layout and restarts HMI so soft CyberIME and physical keyboard both take effect. This page will reopen after relaunch.'**
+  String get keyboardApplyConfirmBody;
 
-  /// No description provided for @cloudEnvironmentTier.
+  /// No description provided for @keyboardApplyConfirmTitle.
   ///
   /// In en, this message translates to:
-  /// **'Cloud Environment'**
-  String get cloudEnvironmentTier;
+  /// **'Apply Keyboard Layout?'**
+  String get keyboardApplyConfirmTitle;
 
-  /// No description provided for @cloudEnvironmentTierDev.
+  /// No description provided for @keyboardLayoutHelp.
   ///
   /// In en, this message translates to:
-  /// **'Dev'**
-  String get cloudEnvironmentTierDev;
+  /// **'Attach a physical keyboard that matches the selected specification. A mismatch may make some keys produce unexpected characters.'**
+  String get keyboardLayoutHelp;
 
-  /// No description provided for @cloudEnvironmentTierTest.
+  /// No description provided for @keyboardLongPressAccentHint.
   ///
   /// In en, this message translates to:
-  /// **'Test'**
-  String get cloudEnvironmentTierTest;
+  /// **'Long-Press For Accented Characters'**
+  String get keyboardLongPressAccentHint;
 
-  /// No description provided for @cloudEnvironmentTierProd.
+  /// No description provided for @keyboardNotDetected.
   ///
   /// In en, this message translates to:
-  /// **'Prod'**
-  String get cloudEnvironmentTierProd;
+  /// **'Not Detected'**
+  String get keyboardNotDetected;
 
-  /// No description provided for @deviceRegisterTitle.
+  /// No description provided for @keyboardPhysicalSection.
   ///
   /// In en, this message translates to:
-  /// **'Register This Device'**
-  String get deviceRegisterTitle;
-
-  /// No description provided for @deviceRegisterBody.
-  ///
-  /// In en, this message translates to:
-  /// **'This device is unrecognized, please scan the QR code with LaserCyber app to register it.'**
-  String get deviceRegisterBody;
-
-  /// No description provided for @deviceRegisterReconnect.
-  ///
-  /// In en, this message translates to:
-  /// **'Reconnect'**
-  String get deviceRegisterReconnect;
-
-  /// No description provided for @deviceBindTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Bind This Device'**
-  String get deviceBindTitle;
-
-  /// No description provided for @deviceBindBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan the QR code with the LaserCyber app to bind this device.'**
-  String get deviceBindBody;
-
-  /// No description provided for @wifiConnectTipTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect to Wi‑Fi'**
-  String get wifiConnectTipTitle;
-
-  /// No description provided for @wifiConnectTipBody.
-  ///
-  /// In en, this message translates to:
-  /// **'This device is not connected to Wi‑Fi. Connect a network to use cloud features.'**
-  String get wifiConnectTipBody;
-
-  /// No description provided for @wifiConnectTipOpenSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Wi‑Fi Settings'**
-  String get wifiConnectTipOpenSettings;
-
-  /// No description provided for @deviceRemoteLockTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Device Locked'**
-  String get deviceRemoteLockTitle;
-
-  /// No description provided for @deviceRemoteLockBody.
-  ///
-  /// In en, this message translates to:
-  /// **'This device has been locked remotely. Contact your administrator to unlock.'**
-  String get deviceRemoteLockBody;
-
-  /// No description provided for @screenOffNever.
-  ///
-  /// In en, this message translates to:
-  /// **'Never'**
-  String get screenOffNever;
-
-  /// No description provided for @syncNow.
-  ///
-  /// In en, this message translates to:
-  /// **'Sync Now'**
-  String get syncNow;
+  /// **'Physical Keyboard'**
+  String get keyboardPhysicalSection;
 
   /// No description provided for @keyboardText.
   ///
@@ -2150,7 +2462,7 @@ abstract class AppLocalizations {
   /// No description provided for @languagePreferenceUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Language preference unavailable.'**
+  /// **'Language Preference Unavailable.'**
   String get languagePreferenceUnavailable;
 
   /// No description provided for @languageSettingText.
@@ -2213,6 +2525,108 @@ abstract class AppLocalizations {
   /// **'Laser E-Stop Alarm'**
   String get laserEmergencyStopAlarmTitle;
 
+  /// No description provided for @laserEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Laser'**
+  String get laserEnable;
+
+  /// No description provided for @laserEnableBlockAlarmBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Alarm Blocks Laser Enable'**
+  String get laserEnableBlockAlarmBlocked;
+
+  /// No description provided for @laserEnableBlockBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Control Busy'**
+  String get laserEnableBlockBusy;
+
+  /// No description provided for @laserEnableBlockEmergencyStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Release E-stop First'**
+  String get laserEnableBlockEmergencyStop;
+
+  /// No description provided for @laserEnableBlockKeySwitchOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn Key Switch On'**
+  String get laserEnableBlockKeySwitchOff;
+
+  /// No description provided for @laserEnableBlockManualGasOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn Off Manual Gas First'**
+  String get laserEnableBlockManualGasOn;
+
+  /// No description provided for @laserEnableBlockStatusUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Equipment Status'**
+  String get laserEnableBlockStatusUnavailable;
+
+  /// No description provided for @laserEnableBlockWriteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser Enable Write Failed'**
+  String get laserEnableBlockWriteFailed;
+
+  /// No description provided for @laserEnableReminderConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes — I\'ve Completed The Safety Checks Above'**
+  String get laserEnableReminderConfirm;
+
+  /// No description provided for @laserEnableReminderFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the welding gun focus scale to the indicated value.'**
+  String get laserEnableReminderFocus;
+
+  /// No description provided for @laserEnableReminderNozzleClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm the laser tube and copper nozzle have been removed.'**
+  String get laserEnableReminderNozzleClean;
+
+  /// No description provided for @laserEnableReminderNozzleCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm the cutting copper nozzle is installed.'**
+  String get laserEnableReminderNozzleCut;
+
+  /// No description provided for @laserEnableReminderNozzleWeld.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm the welding copper nozzle is installed.'**
+  String get laserEnableReminderNozzleWeld;
+
+  /// No description provided for @laserEnableReminderPpe.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm you\'re wearing laser protective equipment.'**
+  String get laserEnableReminderPpe;
+
+  /// No description provided for @laserEnableReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Important'**
+  String get laserEnableReminderTitle;
+
+  /// No description provided for @laserOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser Off'**
+  String get laserOff;
+
+  /// No description provided for @liveMachineStatusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Machine Status'**
+  String get liveMachineStatusTitle;
+
   /// No description provided for @laserOnLabel.
   ///
   /// In en, this message translates to:
@@ -2261,11 +2675,47 @@ abstract class AppLocalizations {
   /// **'Laser'**
   String get laserText;
 
+  /// No description provided for @laserTimeVsLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser Time Vs Last Week'**
+  String get laserTimeVsLastWeek;
+
   /// No description provided for @laserVersion.
   ///
   /// In en, this message translates to:
   /// **'Laser Version'**
   String get laserVersion;
+
+  /// No description provided for @ledColorGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get ledColorGreen;
+
+  /// No description provided for @ledColorRed.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get ledColorRed;
+
+  /// No description provided for @ledColorYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow'**
+  String get ledColorYellow;
+
+  /// No description provided for @ledModeBlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Blink'**
+  String get ledModeBlink;
+
+  /// No description provided for @ledModeSteady.
+  ///
+  /// In en, this message translates to:
+  /// **'Steady'**
+  String get ledModeSteady;
 
   /// No description provided for @lensHeavyContaminationAlarmContent.
   ///
@@ -2278,6 +2728,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lens Contamination Alarm'**
   String get lensHeavyContaminationAlarmTitle;
+
+  /// No description provided for @liveVideoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Live video unavailable'**
+  String get liveVideoFailed;
 
   /// No description provided for @loadingText.
   ///
@@ -2339,6 +2795,60 @@ abstract class AppLocalizations {
   /// **'Main Controller–Temperature Board Communication Fault'**
   String get mainControllerTempBoardCommAlarmTitle;
 
+  /// No description provided for @manualGas.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Gas'**
+  String get manualGas;
+
+  /// No description provided for @materialAluminumAlloy.
+  ///
+  /// In en, this message translates to:
+  /// **'Aluminum Alloy'**
+  String get materialAluminumAlloy;
+
+  /// No description provided for @materialBrass.
+  ///
+  /// In en, this message translates to:
+  /// **'Brass'**
+  String get materialBrass;
+
+  /// No description provided for @materialCarbonSteel.
+  ///
+  /// In en, this message translates to:
+  /// **'Carbon Steel'**
+  String get materialCarbonSteel;
+
+  /// No description provided for @materialCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get materialCustom;
+
+  /// No description provided for @materialGalvanizedSheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Galvanized Sheet'**
+  String get materialGalvanizedSheet;
+
+  /// No description provided for @materialLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Material'**
+  String get materialLabel;
+
+  /// No description provided for @materialStainlessSteel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stainless Steel'**
+  String get materialStainlessSteel;
+
+  /// No description provided for @materialThickness.
+  ///
+  /// In en, this message translates to:
+  /// **'Material Thickness'**
+  String get materialThickness;
+
   /// No description provided for @memoryAccessErrorTitle.
   ///
   /// In en, this message translates to:
@@ -2372,14 +2882,56 @@ abstract class AppLocalizations {
   /// No description provided for @modbusCommunicationFault.
   ///
   /// In en, this message translates to:
-  /// **'Modbus communication fault'**
+  /// **'Modbus Communication Fault'**
   String get modbusCommunicationFault;
+
+  /// No description provided for @monitorCleanTimeRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean Time Ratio'**
+  String get monitorCleanTimeRatio;
+
+  /// No description provided for @monitorCutTimeRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut Time Ratio'**
+  String get monitorCutTimeRatio;
+
+  /// No description provided for @monitorLaserOnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser On Time'**
+  String get monitorLaserOnTime;
+
+  /// No description provided for @monitorLastJob.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Job'**
+  String get monitorLastJob;
 
   /// No description provided for @monitorNavLabel.
   ///
   /// In en, this message translates to:
   /// **'Monitor'**
   String get monitorNavLabel;
+
+  /// No description provided for @monitorWeldTimeRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Weld Time Ratio'**
+  String get monitorWeldTimeRatio;
+
+  /// No description provided for @monitorWeldingConsumables.
+  ///
+  /// In en, this message translates to:
+  /// **'Welding Consumables'**
+  String get monitorWeldingConsumables;
+
+  /// No description provided for @moreFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'More Favorites'**
+  String get moreFavorites;
 
   /// No description provided for @motorCableOpenAlarmContent.
   ///
@@ -2411,11 +2963,47 @@ abstract class AppLocalizations {
   /// **'Motor'**
   String get motorTempLabel;
 
+  /// No description provided for @mouseButtonLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get mouseButtonLeft;
+
+  /// No description provided for @mouseButtonRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get mouseButtonRight;
+
+  /// No description provided for @mouseNaturalScrolling.
+  ///
+  /// In en, this message translates to:
+  /// **'Natural Scrolling'**
+  String get mouseNaturalScrolling;
+
+  /// No description provided for @mousePointerSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Pointer Size'**
+  String get mousePointerSize;
+
+  /// No description provided for @mousePrimaryButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary Button'**
+  String get mousePrimaryButton;
+
   /// No description provided for @mouseText.
   ///
   /// In en, this message translates to:
   /// **'Mouse'**
   String get mouseText;
+
+  /// No description provided for @mouseTrackingSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking Speed'**
+  String get mouseTrackingSpeed;
 
   /// No description provided for @narrowPulseProtectionAlarmContent.
   ///
@@ -2441,16 +3029,46 @@ abstract class AppLocalizations {
   /// **'Network'**
   String get networkSettings;
 
+  /// No description provided for @newUserProcess.
+  ///
+  /// In en, this message translates to:
+  /// **'New User Process'**
+  String get newUserProcess;
+
   /// No description provided for @noActiveAlarms.
   ///
   /// In en, this message translates to:
-  /// **'No active alarms'**
+  /// **'No Active Alarms'**
   String get noActiveAlarms;
+
+  /// No description provided for @noEngineerProcesses.
+  ///
+  /// In en, this message translates to:
+  /// **'No Engineer Processes For This Type'**
+  String get noEngineerProcesses;
+
+  /// No description provided for @noMatchingProcess.
+  ///
+  /// In en, this message translates to:
+  /// **'No Matching Process'**
+  String get noMatchingProcess;
+
+  /// No description provided for @noMoreFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'No More Favorites'**
+  String get noMoreFavorites;
+
+  /// No description provided for @noProcesses.
+  ///
+  /// In en, this message translates to:
+  /// **'No Processes'**
+  String get noProcesses;
 
   /// No description provided for @noSignedProcessLibrary.
   ///
   /// In en, this message translates to:
-  /// **'No signed process library installed'**
+  /// **'No Signed Process Library Installed'**
   String get noSignedProcessLibrary;
 
   /// No description provided for @notConnected.
@@ -2468,7 +3086,7 @@ abstract class AppLocalizations {
   /// No description provided for @notPersistedYet.
   ///
   /// In en, this message translates to:
-  /// **'Not persisted yet'**
+  /// **'Not Persisted Yet'**
   String get notPersistedYet;
 
   /// No description provided for @offLabel.
@@ -2488,6 +3106,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On'**
   String get onLabel;
+
+  /// No description provided for @otaCheckUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Software update check is not available on this build.'**
+  String get otaCheckUnavailable;
 
   /// No description provided for @otaUpgradeStatusApk.
   ///
@@ -2522,8 +3146,272 @@ abstract class AppLocalizations {
   /// No description provided for @overTempLabel.
   ///
   /// In en, this message translates to:
-  /// **'OVER TEMP'**
+  /// **'Over Temp'**
   String get overTempLabel;
+
+  /// No description provided for @paramBackDrawLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Retract Length'**
+  String get paramBackDrawLength;
+
+  /// No description provided for @paramBackDrawLengthCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Retract Length'**
+  String get paramBackDrawLengthCatalog;
+
+  /// No description provided for @paramBackDrawSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retract Speed'**
+  String get paramBackDrawSpeed;
+
+  /// No description provided for @paramBackDrawSpeedCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Retract Speed'**
+  String get paramBackDrawSpeedCatalog;
+
+  /// No description provided for @paramBlowingDelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas Pre-Flow'**
+  String get paramBlowingDelay;
+
+  /// No description provided for @paramBlowingDelayCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas Pre-Flow'**
+  String get paramBlowingDelayCatalog;
+
+  /// No description provided for @paramGasOffDelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas Post-Flow'**
+  String get paramGasOffDelay;
+
+  /// No description provided for @paramGasOffDelayCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas Post-Flow'**
+  String get paramGasOffDelayCatalog;
+
+  /// No description provided for @paramGasPostFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas Post-Flow'**
+  String get paramGasPostFlow;
+
+  /// No description provided for @paramGasPreFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas Pre-Flow'**
+  String get paramGasPreFlow;
+
+  /// No description provided for @paramLaserDutyCycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser Duty Cycle'**
+  String get paramLaserDutyCycle;
+
+  /// No description provided for @paramLaserFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser Frequency'**
+  String get paramLaserFrequency;
+
+  /// No description provided for @paramLaserOffDelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser-Off Delay'**
+  String get paramLaserOffDelay;
+
+  /// No description provided for @paramLaserPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser Power'**
+  String get paramLaserPower;
+
+  /// No description provided for @paramLightOffDelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser-Off Delay'**
+  String get paramLightOffDelay;
+
+  /// No description provided for @paramLightOffDelayCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Light Off Delay'**
+  String get paramLightOffDelayCatalog;
+
+  /// No description provided for @paramPiercingDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Piercing Duration'**
+  String get paramPiercingDuration;
+
+  /// No description provided for @paramPiercingDutyCycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Piercing Duty Cycle'**
+  String get paramPiercingDutyCycle;
+
+  /// No description provided for @paramPiercingFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'Piercing Frequency'**
+  String get paramPiercingFrequency;
+
+  /// No description provided for @paramPiercingPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Piercing Power'**
+  String get paramPiercingPower;
+
+  /// No description provided for @paramPowerRampDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Ramp-Down Time'**
+  String get paramPowerRampDown;
+
+  /// No description provided for @paramPowerRampUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Ramp-Up Time'**
+  String get paramPowerRampUp;
+
+  /// No description provided for @paramRampDownTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Ramp-Down Time'**
+  String get paramRampDownTime;
+
+  /// No description provided for @paramRampUpTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Ramp-Up Time'**
+  String get paramRampUpTime;
+
+  /// No description provided for @paramRefeedDelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-Feed Delay'**
+  String get paramRefeedDelay;
+
+  /// No description provided for @paramRefeedLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-Feed Length'**
+  String get paramRefeedLength;
+
+  /// No description provided for @paramRetractLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Retract Length'**
+  String get paramRetractLength;
+
+  /// No description provided for @paramRetractSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retract Speed'**
+  String get paramRetractSpeed;
+
+  /// No description provided for @paramScanFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Frequency'**
+  String get paramScanFrequency;
+
+  /// No description provided for @paramScanWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Width'**
+  String get paramScanWidth;
+
+  /// No description provided for @paramSpotWeldDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Spot Weld Duration'**
+  String get paramSpotWeldDuration;
+
+  /// No description provided for @paramSpotWeldInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Spot Weld Interval'**
+  String get paramSpotWeldInterval;
+
+  /// No description provided for @paramSpotWeldingDurationCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Spot Welding Duration'**
+  String get paramSpotWeldingDurationCatalog;
+
+  /// No description provided for @paramSpotWeldingIntervalCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Spot Welding Interval'**
+  String get paramSpotWeldingIntervalCatalog;
+
+  /// No description provided for @paramSwingFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Frequency'**
+  String get paramSwingFrequency;
+
+  /// No description provided for @paramSwingFrequencyCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Frequency'**
+  String get paramSwingFrequencyCatalog;
+
+  /// No description provided for @paramSwingWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Width'**
+  String get paramSwingWidth;
+
+  /// No description provided for @paramWireFeedSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wire Feed Speed'**
+  String get paramWireFeedSpeed;
+
+  /// No description provided for @paramWireFeedingDelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Wire Feed Delay'**
+  String get paramWireFeedingDelay;
+
+  /// No description provided for @paramWireFeedingSpeedCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Wire Feed Speed'**
+  String get paramWireFeedingSpeedCatalog;
+
+  /// No description provided for @paramWireFillingDelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-Feed Delay'**
+  String get paramWireFillingDelay;
+
+  /// No description provided for @paramWireFillingDelayCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-Feed Delay'**
+  String get paramWireFillingDelayCatalog;
+
+  /// No description provided for @paramWireFillingLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-Feed Length'**
+  String get paramWireFillingLength;
+
+  /// No description provided for @paramWireFillingLengthCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-Feed Length'**
+  String get paramWireFillingLengthCatalog;
 
   /// No description provided for @passStatus.
   ///
@@ -2531,29 +3419,17 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get passStatus;
 
+  /// No description provided for @pleaseTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Please Try Again'**
+  String get pleaseTryAgain;
+
   /// No description provided for @pleaseWait.
   ///
   /// In en, this message translates to:
   /// **'Please wait…'**
   String get pleaseWait;
-
-  /// No description provided for @productDisclaimerContent.
-  ///
-  /// In en, this message translates to:
-  /// **'Dear User: Thank you for choosing our handheld laser welding product. Before using this product, we strongly recommend that you read this disclaimer carefully and strictly adhere to all instructions and safety measures provided in the user manual.\n\n1. Safety Warning\nLaser equipment can cause severe damage to the eyes and skin. During operation, please always wear appropriate Personal Protective Equipment (PPE), including but not limited to laser safety goggles and gloves, to ensure your safety.\n\n2. Operating Instructions\nPlease ensure that you fully understand and are able to comply with all operating procedures and safety guidelines in the product manual. Improper use may result in equipment damage or personal injury.\n\n3. Improper Operation\nThe Company shall not be held liable for any injury or loss resulting from the user\'s failure to follow the instructions in the product manual or failure to take appropriate safety measures.\n\n4. Maintenance\nPlease inspect and maintain the product regularly to ensure it is in good working condition. The Company is not responsible for any accidents caused by improper maintenance of the product.\n\n5. Disclaimer of Liability\nWhile the Company provides comprehensive usage instructions and safety measures, it reserves the right to disclaim liability for any injury or damage caused by improper user operation or violations of the manual. We strongly advise users to understand and comply with all relevant safety regulations and operating standards before using this product.\n\n6. Governing Law\nThe interpretation, application, and dispute resolution of this Disclaimer shall be governed by the laws of the jurisdiction where the Company is headquartered.\n\n7. Entire Agreement\nThis Disclaimer constitutes the entire agreement between you and the Company and supersedes any prior oral or written understandings or agreements.'**
-  String get productDisclaimerContent;
-
-  /// No description provided for @productDisclaimerInfo.
-  ///
-  /// In en, this message translates to:
-  /// **'I have read and agree to the above content'**
-  String get productDisclaimerInfo;
-
-  /// No description provided for @productDisclaimerTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Product Disclaimer'**
-  String get productDisclaimerTitle;
 
   /// No description provided for @positioningLightFaultAlarmContent.
   ///
@@ -2566,6 +3442,414 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Red Pointer Fault'**
   String get positioningLightFaultAlarmTitle;
+
+  /// No description provided for @presetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset'**
+  String get presetLabel;
+
+  /// No description provided for @processAppliedVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Applied And Verified.'**
+  String get processAppliedVerified;
+
+  /// No description provided for @processApplyFailedGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Failed: {error}'**
+  String processApplyFailedGeneric(String error);
+
+  /// No description provided for @processApplyFailedNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Was Not Applied: {failure}'**
+  String processApplyFailedNamed(String failure);
+
+  /// No description provided for @processApplyFailureBaselineReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Baseline Read Failed'**
+  String get processApplyFailureBaselineReadFailed;
+
+  /// No description provided for @processApplyFailureBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Busy'**
+  String get processApplyFailureBusy;
+
+  /// No description provided for @processApplyFailureGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Failed'**
+  String get processApplyFailureGeneric;
+
+  /// No description provided for @processApplyFailurePartialApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial Apply'**
+  String get processApplyFailurePartialApply;
+
+  /// No description provided for @processApplyFailureProcessReadbackFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Readback Mismatch'**
+  String get processApplyFailureProcessReadbackFailed;
+
+  /// No description provided for @processApplyFailureProcessTypeReadbackMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Type Readback Mismatch'**
+  String get processApplyFailureProcessTypeReadbackMismatch;
+
+  /// No description provided for @processApplyFailureProcessTypeWriteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Type Write Failed'**
+  String get processApplyFailureProcessTypeWriteFailed;
+
+  /// No description provided for @processApplyFailureProcessWriteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Write Failed'**
+  String get processApplyFailureProcessWriteFailed;
+
+  /// No description provided for @processApplyFailureStatusUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Equipment Status'**
+  String get processApplyFailureStatusUnavailable;
+
+  /// No description provided for @processApplyFailureUnsafeMachineState.
+  ///
+  /// In en, this message translates to:
+  /// **'Laser Work In Progress'**
+  String get processApplyFailureUnsafeMachineState;
+
+  /// No description provided for @processApplyFailureWireFeedingActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Wire Feed First'**
+  String get processApplyFailureWireFeedingActive;
+
+  /// No description provided for @processLibVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Library Version'**
+  String get processLibVersion;
+
+  /// No description provided for @processLibraryNotInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'No compatible quick-mode process library is installed.'**
+  String get processLibraryNotInstalled;
+
+  /// No description provided for @processLibraryUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Process library update failed. The last installed library is still in use.'**
+  String get processLibraryUpdateFailed;
+
+  /// No description provided for @processNameFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get processNameFieldLabel;
+
+  /// No description provided for @processNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Name'**
+  String get processNameLabel;
+
+  /// No description provided for @processNameMaxLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Name Must Be 32 Characters Or Fewer'**
+  String get processNameMaxLength;
+
+  /// No description provided for @processParameterName.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Name'**
+  String get processParameterName;
+
+  /// No description provided for @processSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Failed: {error}'**
+  String processSaveFailed(String error);
+
+  /// No description provided for @processTabContinuous.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous'**
+  String get processTabContinuous;
+
+  /// No description provided for @processTabCutting.
+  ///
+  /// In en, this message translates to:
+  /// **'Cutting'**
+  String get processTabCutting;
+
+  /// No description provided for @processTabSpot.
+  ///
+  /// In en, this message translates to:
+  /// **'Spot'**
+  String get processTabSpot;
+
+  /// No description provided for @processTabWeldSeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Weld Seam'**
+  String get processTabWeldSeam;
+
+  /// No description provided for @processTabWideArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Wide-Area'**
+  String get processTabWideArea;
+
+  /// No description provided for @processTypeCncCutting.
+  ///
+  /// In en, this message translates to:
+  /// **'CNC Cutting'**
+  String get processTypeCncCutting;
+
+  /// No description provided for @processTypeContinuousWelding.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous Welding'**
+  String get processTypeContinuousWelding;
+
+  /// No description provided for @processTypeHandCutting.
+  ///
+  /// In en, this message translates to:
+  /// **'Cutting'**
+  String get processTypeHandCutting;
+
+  /// No description provided for @processTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Process Type'**
+  String get processTypeLabel;
+
+  /// No description provided for @processTypeSpotWelding.
+  ///
+  /// In en, this message translates to:
+  /// **'Spot Welding'**
+  String get processTypeSpotWelding;
+
+  /// No description provided for @processTypeWeldCleaning.
+  ///
+  /// In en, this message translates to:
+  /// **'Weld Seam Cleaning'**
+  String get processTypeWeldCleaning;
+
+  /// No description provided for @processTypeWideCleaning.
+  ///
+  /// In en, this message translates to:
+  /// **'Wide-Area Cleaning'**
+  String get processTypeWideCleaning;
+
+  /// No description provided for @processVideoAlreadyUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded'**
+  String get processVideoAlreadyUploaded;
+
+  /// No description provided for @processVideoBackToVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Back To Videos'**
+  String get processVideoBackToVideos;
+
+  /// No description provided for @processVideoDeleteConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the video file and its process parameters from this device.'**
+  String get processVideoDeleteConfirmMessage;
+
+  /// No description provided for @processVideoDeleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Recording?'**
+  String get processVideoDeleteConfirmTitle;
+
+  /// No description provided for @processVideoDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Video Details'**
+  String get processVideoDetailTitle;
+
+  /// No description provided for @processVideoDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get processVideoDuration;
+
+  /// No description provided for @processVideoEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Work videos from Quick or Engineer mode will appear here.'**
+  String get processVideoEmptySubtitle;
+
+  /// No description provided for @processVideoEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No Recordings'**
+  String get processVideoEmptyTitle;
+
+  /// No description provided for @processVideoLoadedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{loaded} / {total}'**
+  String processVideoLoadedCount(int loaded, int total);
+
+  /// No description provided for @processVideoMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material'**
+  String get processVideoMaterial;
+
+  /// No description provided for @processVideoOperations.
+  ///
+  /// In en, this message translates to:
+  /// **'Operations'**
+  String get processVideoOperations;
+
+  /// No description provided for @processVideoParametersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Parameter Recording'**
+  String get processVideoParametersTitle;
+
+  /// No description provided for @processVideoPlaybackFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to play this recording'**
+  String get processVideoPlaybackFailed;
+
+  /// No description provided for @processVideoRecordingTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording Time'**
+  String get processVideoRecordingTime;
+
+  /// No description provided for @processVideoRecordingTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording Too Short — Not Saved'**
+  String get processVideoRecordingTooShort;
+
+  /// No description provided for @processVideoSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed To Save Recording'**
+  String get processVideoSaveFailed;
+
+  /// No description provided for @processVideoUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get processVideoUpload;
+
+  /// No description provided for @processVideoUploadConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload this video and its process parameters to the cloud. Make sure the device is online.'**
+  String get processVideoUploadConfirmMessage;
+
+  /// No description provided for @processVideoUploadConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Recording?'**
+  String get processVideoUploadConfirmTitle;
+
+  /// No description provided for @processVideoUploadDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Complete'**
+  String get processVideoUploadDone;
+
+  /// No description provided for @processVideoUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Failed'**
+  String get processVideoUploadFailed;
+
+  /// No description provided for @processVideoUploadingCover.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading Cover…'**
+  String get processVideoUploadingCover;
+
+  /// No description provided for @processVideoUploadingVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading Video {percent}%'**
+  String processVideoUploadingVideo(int percent);
+
+  /// No description provided for @processVideoWorkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Work Mode'**
+  String get processVideoWorkMode;
+
+  /// No description provided for @processWheelCncCutting.
+  ///
+  /// In en, this message translates to:
+  /// **'CNC Cutting'**
+  String get processWheelCncCutting;
+
+  /// No description provided for @processWheelContinuousWelding.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous Welding'**
+  String get processWheelContinuousWelding;
+
+  /// No description provided for @processWheelHandCutting.
+  ///
+  /// In en, this message translates to:
+  /// **'Cutting'**
+  String get processWheelHandCutting;
+
+  /// No description provided for @processWheelSpotWelding.
+  ///
+  /// In en, this message translates to:
+  /// **'Spot Welding'**
+  String get processWheelSpotWelding;
+
+  /// No description provided for @processWheelWeldCleaning.
+  ///
+  /// In en, this message translates to:
+  /// **'Weld Seam Cleaning'**
+  String get processWheelWeldCleaning;
+
+  /// No description provided for @processWheelWideCleaning.
+  ///
+  /// In en, this message translates to:
+  /// **'Wide-Area Cleaning'**
+  String get processWheelWideCleaning;
+
+  /// No description provided for @productDisclaimerContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Dear User: Thank you for choosing our handheld laser welding product. Before using this product, we strongly recommend that you read this disclaimer carefully and strictly adhere to all instructions and safety measures provided in the user manual.\n\n1. Safety Warning\nLaser equipment can cause severe damage to the eyes and skin. During operation, please always wear appropriate Personal Protective Equipment (PPE), including but not limited to laser safety goggles and gloves, to ensure your safety.\n\n2. Operating Instructions\nPlease ensure that you fully understand and are able to comply with all operating procedures and safety guidelines in the product manual. Improper use may result in equipment damage or personal injury.\n\n3. Improper Operation\nThe Company shall not be held liable for any injury or loss resulting from the user\'s failure to follow the instructions in the product manual or failure to take appropriate safety measures.\n\n4. Maintenance\nPlease inspect and maintain the product regularly to ensure it is in good working condition. The Company is not responsible for any accidents caused by improper maintenance of the product.\n\n5. Disclaimer of Liability\nWhile the Company provides comprehensive usage instructions and safety measures, it reserves the right to disclaim liability for any injury or damage caused by improper user operation or violations of the manual. We strongly advise users to understand and comply with all relevant safety regulations and operating standards before using this product.\n\n6. Governing Law\nThe interpretation, application, and dispute resolution of this Disclaimer shall be governed by the laws of the jurisdiction where the Company is headquartered.\n\n7. Entire Agreement\nThis Disclaimer constitutes the entire agreement between you and the Company and supersedes any prior oral or written understandings or agreements.'**
+  String get productDisclaimerContent;
+
+  /// No description provided for @productDisclaimerInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'I have read and agree to the above'**
+  String get productDisclaimerInfo;
+
+  /// No description provided for @productDisclaimerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Disclaimer'**
+  String get productDisclaimerTitle;
 
   /// No description provided for @protectiveLensOvertemperatureAlarmContent.
   ///
@@ -2669,6 +3953,12 @@ abstract class AppLocalizations {
   /// **'Abnormal Quiescent Current'**
   String get quiescentCurrentAbnormalAlarmTitle;
 
+  /// No description provided for @recordWorkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Work'**
+  String get recordWorkLabel;
+
   /// No description provided for @redLightCurrentAlarmContent.
   ///
   /// In en, this message translates to:
@@ -2699,11 +3989,35 @@ abstract class AppLocalizations {
   /// **'Red Pointer'**
   String get redLightText;
 
-  /// No description provided for @rgbLedText.
+  /// No description provided for @requiredFieldText.
   ///
   /// In en, this message translates to:
-  /// **'LED'**
-  String get rgbLedText;
+  /// **'Required'**
+  String get requiredFieldText;
+
+  /// No description provided for @resetComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Complete'**
+  String get resetComplete;
+
+  /// No description provided for @resetToDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset To Default'**
+  String get resetToDefault;
+
+  /// No description provided for @retract.
+  ///
+  /// In en, this message translates to:
+  /// **'Retract'**
+  String get retract;
+
+  /// No description provided for @retryText.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retryText;
 
   /// No description provided for @rgbLedFooter.
   ///
@@ -2711,11 +4025,11 @@ abstract class AppLocalizations {
   /// **'Use these controls to test the status LED indicators on this device.'**
   String get rgbLedFooter;
 
-  /// No description provided for @safetyLockLabel.
+  /// No description provided for @rgbLedText.
   ///
   /// In en, this message translates to:
-  /// **'Safety Lock'**
-  String get safetyLockLabel;
+  /// **'LED'**
+  String get rgbLedText;
 
   /// No description provided for @safetyGroundLockNotConnectedMessage.
   ///
@@ -2729,6 +4043,12 @@ abstract class AppLocalizations {
   /// **'Safety Clamp Disconnected'**
   String get safetyGroundLockNotConnectedTitle;
 
+  /// No description provided for @safetyLockLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety Lock'**
+  String get safetyLockLabel;
+
   /// No description provided for @safetyLockText.
   ///
   /// In en, this message translates to:
@@ -2738,32 +4058,68 @@ abstract class AppLocalizations {
   /// No description provided for @safetyTipsAgree.
   ///
   /// In en, this message translates to:
-  /// **'AGREE'**
+  /// **'Agree'**
   String get safetyTipsAgree;
 
   /// No description provided for @safetyTipsContent.
   ///
   /// In en, this message translates to:
-  /// **'1. Ensure there are no other personnel, reflective objects, or flammable materials nearby during welding.\n\n2. Ensure the safety clamp is securely fastened to the welding table; do not clamp the safety lock onto the welding torch holder, nozzle, wire feed assembly, etc.\n\n3. Ensure you wear professional protective eyewear, a mask, earplugs, and high-temperature resistant gloves.\n\n4. When installing and debugging the equipment, always switch the laser to the off position after laser operation.\n\n5. Ensure the equipment is properly grounded; interruption at any point in the grounding circuit may result in personal injury.\n\n6. Ensure the filter is well-ventilated; promptly remove any foreign objects or dirt.'**
+  /// **'1. Keep bystanders, reflective objects, and flammable materials away during welding.\n\n2. Attach the safety clamp securely to the worktable — not to the welding gun holder, nozzle, or wire-feed assembly.\n\n3. Wear proper protective eyewear, a face mask, earplugs, and heat-resistant gloves.\n\n4. During installation and setup, always switch the laser off after use.\n\n5. Ensure the equipment is properly grounded. A break anywhere in the ground circuit can cause injury.\n\n6. Keep filters well ventilated and clear of debris or dirt.'**
   String get safetyTipsContent;
 
   /// No description provided for @safetyTipsInfo.
   ///
   /// In en, this message translates to:
-  /// **'I have read the above content and the'**
+  /// **'I have read the above and the'**
   String get safetyTipsInfo;
 
   /// No description provided for @safetyTipsInfoUse.
   ///
   /// In en, this message translates to:
-  /// **'Product Use Disclaimer.'**
+  /// **'Product Disclaimer.'**
   String get safetyTipsInfoUse;
 
   /// No description provided for @safetyTipsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Safety Operation Tips'**
+  /// **'Safety Tips'**
   String get safetyTipsTitle;
+
+  /// No description provided for @saveAsFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Save As Favorite'**
+  String get saveAsFavorite;
+
+  /// No description provided for @selectValidProcessPresetFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Select A Valid Process Preset First'**
+  String get selectValidProcessPresetFirst;
+
+  /// No description provided for @saveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChanges;
+
+  /// No description provided for @saveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Failed'**
+  String get saveFailed;
+
+  /// No description provided for @saveSucceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Succeeded'**
+  String get saveSucceeded;
+
+  /// No description provided for @savedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get savedSuccessfully;
 
   /// No description provided for @screenBrightnessText.
   ///
@@ -2776,6 +4132,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Display'**
   String get screenDisplayText;
+
+  /// No description provided for @screenOffNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get screenOffNever;
 
   /// No description provided for @screenOffOption10Min.
   ///
@@ -2807,6 +4169,12 @@ abstract class AppLocalizations {
   /// **'Display'**
   String get screenSettings;
 
+  /// No description provided for @selectProcessPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a process to view its parameters.'**
+  String get selectProcessPrompt;
+
   /// No description provided for @sensorAbnormalAlarmContent.
   ///
   /// In en, this message translates to:
@@ -2830,6 +4198,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sensor Channel Deviation'**
   String get sensorChannelDeviationAlarmTitle;
+
+  /// No description provided for @settingsMayRestartApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Some of the settings may restart the application.'**
+  String get settingsMayRestartApp;
 
   /// No description provided for @settingsNavLabel.
   ///
@@ -2975,29 +4349,41 @@ abstract class AppLocalizations {
   /// **'Sound'**
   String get soundSettings;
 
-  /// No description provided for @sshDebugText.
-  ///
-  /// In en, this message translates to:
-  /// **'SSH Debug'**
-  String get sshDebugText;
-
   /// No description provided for @sshDebugFooter.
   ///
   /// In en, this message translates to:
   /// **'When enabled, you can connect to this device over the network for remote troubleshooting. Turns off after reboot. USB debugging is set separately under USB OTG.'**
   String get sshDebugFooter;
 
-  /// No description provided for @settingsMayRestartApp.
+  /// No description provided for @sshDebugText.
   ///
   /// In en, this message translates to:
-  /// **'Some of the settings may restart the application.'**
-  String get settingsMayRestartApp;
+  /// **'SSH Debug'**
+  String get sshDebugText;
 
   /// No description provided for @straightTrackTemperatureAlarmContent.
   ///
   /// In en, this message translates to:
   /// **'Inspect the collimating lens. If the collimating lens has burn marks, replace it immediately.'**
   String get straightTrackTemperatureAlarmContent;
+
+  /// No description provided for @swingWidthLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Width'**
+  String get swingWidthLabel;
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Now'**
+  String get syncNow;
+
+  /// No description provided for @systemVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'System Version'**
+  String get systemVersion;
 
   /// No description provided for @tempBoardRefrigerationCommAlarmContent.
   ///
@@ -3010,6 +4396,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Temperature Board–Cooling Communication Fault'**
   String get tempBoardRefrigerationCommAlarmTitle;
+
+  /// No description provided for @thicknessLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Thickness'**
+  String get thicknessLabel;
+
+  /// No description provided for @thicknessMmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Thickness (Mm)'**
+  String get thicknessMmLabel;
+
+  /// No description provided for @timezoneSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or UTC offset'**
+  String get timezoneSearchHint;
+
+  /// No description provided for @totalLaserOnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Laser-On Time'**
+  String get totalLaserOnTime;
+
+  /// No description provided for @totalWireConsumption.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Wire Consumption'**
+  String get totalWireConsumption;
+
+  /// No description provided for @turnOffCncFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off CNC first.'**
+  String get turnOffCncFirst;
 
   /// No description provided for @unavailable.
   ///
@@ -3071,6 +4493,12 @@ abstract class AppLocalizations {
   /// **'Unit'**
   String get unitSettingText;
 
+  /// No description provided for @uploadText.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get uploadText;
+
   /// No description provided for @usbOtgModeDebug.
   ///
   /// In en, this message translates to:
@@ -3086,182 +4514,26 @@ abstract class AppLocalizations {
   /// No description provided for @usbOtgModeMtp.
   ///
   /// In en, this message translates to:
-  /// **'MTP'**
+  /// **'Mtp'**
   String get usbOtgModeMtp;
 
   /// No description provided for @usbOtgText.
   ///
   /// In en, this message translates to:
-  /// **'USB OTG'**
+  /// **'USB Otg'**
   String get usbOtgText;
+
+  /// No description provided for @userPresetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get userPresetLabel;
 
   /// No description provided for @videosTitle.
   ///
   /// In en, this message translates to:
   /// **'Videos'**
   String get videosTitle;
-
-  /// No description provided for @processVideoRecordingTime.
-  ///
-  /// In en, this message translates to:
-  /// **'Recording Time'**
-  String get processVideoRecordingTime;
-
-  /// No description provided for @processVideoWorkMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Work Mode'**
-  String get processVideoWorkMode;
-
-  /// No description provided for @processVideoMaterial.
-  ///
-  /// In en, this message translates to:
-  /// **'Material'**
-  String get processVideoMaterial;
-
-  /// No description provided for @processVideoDuration.
-  ///
-  /// In en, this message translates to:
-  /// **'Duration'**
-  String get processVideoDuration;
-
-  /// No description provided for @processVideoOperations.
-  ///
-  /// In en, this message translates to:
-  /// **'Operations'**
-  String get processVideoOperations;
-
-  /// No description provided for @processVideoEmptyTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'No recordings'**
-  String get processVideoEmptyTitle;
-
-  /// No description provided for @processVideoEmptySubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Record Work videos from Quick or Engineer mode will appear here.'**
-  String get processVideoEmptySubtitle;
-
-  /// No description provided for @processVideoDeleteConfirmTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete recording?'**
-  String get processVideoDeleteConfirmTitle;
-
-  /// No description provided for @processVideoDeleteConfirmMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'This removes the video file and its process parameters from this device.'**
-  String get processVideoDeleteConfirmMessage;
-
-  /// No description provided for @processVideoUploadConfirmTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload recording?'**
-  String get processVideoUploadConfirmTitle;
-
-  /// No description provided for @processVideoUploadConfirmMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload this video and its process parameters to the cloud. Make sure the device is online.'**
-  String get processVideoUploadConfirmMessage;
-
-  /// No description provided for @uploadText.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload'**
-  String get uploadText;
-
-  /// No description provided for @processVideoDetailTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Video Details'**
-  String get processVideoDetailTitle;
-
-  /// No description provided for @processVideoBackToVideos.
-  ///
-  /// In en, this message translates to:
-  /// **'Back to Videos'**
-  String get processVideoBackToVideos;
-
-  /// No description provided for @processVideoParametersTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Parameter recording'**
-  String get processVideoParametersTitle;
-
-  /// No description provided for @processVideoPlaybackFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to play this recording'**
-  String get processVideoPlaybackFailed;
-
-  /// No description provided for @processVideoLoadedCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{loaded} / {total}'**
-  String processVideoLoadedCount(int loaded, int total);
-
-  /// No description provided for @recordWorkLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Record Work'**
-  String get recordWorkLabel;
-
-  /// No description provided for @processVideoRecordingTooShort.
-  ///
-  /// In en, this message translates to:
-  /// **'Recording too short — not saved'**
-  String get processVideoRecordingTooShort;
-
-  /// No description provided for @processVideoSaveFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to save recording'**
-  String get processVideoSaveFailed;
-
-  /// No description provided for @processVideoUpload.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload'**
-  String get processVideoUpload;
-
-  /// No description provided for @processVideoUploadingCover.
-  ///
-  /// In en, this message translates to:
-  /// **'Uploading cover…'**
-  String get processVideoUploadingCover;
-
-  /// No description provided for @processVideoUploadingVideo.
-  ///
-  /// In en, this message translates to:
-  /// **'Uploading video {percent}%'**
-  String processVideoUploadingVideo(int percent);
-
-  /// No description provided for @processVideoUploadFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload failed'**
-  String get processVideoUploadFailed;
-
-  /// No description provided for @processVideoUploadDone.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload complete'**
-  String get processVideoUploadDone;
-
-  /// No description provided for @processVideoAlreadyUploaded.
-  ///
-  /// In en, this message translates to:
-  /// **'Already uploaded'**
-  String get processVideoAlreadyUploaded;
-
-  /// No description provided for @ipCameraDemoRecordHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Demo only — not listed in Monitor → Videos'**
-  String get ipCameraDemoRecordHint;
 
   /// No description provided for @volumeSetFailed.
   ///
@@ -3311,6 +4583,18 @@ abstract class AppLocalizations {
   /// **'Cleaning Ratio'**
   String get washProportionText;
 
+  /// No description provided for @watchdogResetEventContent.
+  ///
+  /// In en, this message translates to:
+  /// **'The controller restarted after a watchdog reset. If this happens often, contact LaserCyber support.'**
+  String get watchdogResetEventContent;
+
+  /// No description provided for @watchdogResetEventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watchdog Reset'**
+  String get watchdogResetEventTitle;
+
   /// No description provided for @waterTemperatureUpperLimitAlarmContent.
   ///
   /// In en, this message translates to:
@@ -3329,6 +4613,12 @@ abstract class AppLocalizations {
   /// **'Welding Ratio'**
   String get weldingProportionText;
 
+  /// No description provided for @wifiAddDnsServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Dns Server'**
+  String get wifiAddDnsServer;
+
   /// No description provided for @wifiAdvancedSettings.
   ///
   /// In en, this message translates to:
@@ -3346,6 +4636,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apply'**
   String get wifiApply;
+
+  /// No description provided for @wifiAssociatingPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'(Associating…)'**
+  String get wifiAssociatingPlaceholder;
+
+  /// No description provided for @wifiAutoJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Join'**
+  String get wifiAutoJoin;
+
+  /// No description provided for @wifiAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get wifiAutomatic;
+
+  /// No description provided for @wifiBssid.
+  ///
+  /// In en, this message translates to:
+  /// **'Bssid'**
+  String get wifiBssid;
+
+  /// No description provided for @wifiConfigureDns.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure Dns'**
+  String get wifiConfigureDns;
+
+  /// No description provided for @wifiConfigureIp.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure IP'**
+  String get wifiConfigureIp;
+
+  /// No description provided for @wifiConnectTipBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is not connected to Wi‑Fi. Connect a network to use cloud features.'**
+  String get wifiConnectTipBody;
+
+  /// No description provided for @wifiConnectTipOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Wi-Fi Settings'**
+  String get wifiConnectTipOpenSettings;
+
+  /// No description provided for @wifiConnectTipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect To Wi-Fi'**
+  String get wifiConnectTipTitle;
 
   /// No description provided for @wifiDetailsTitle.
   ///
@@ -3383,6 +4727,12 @@ abstract class AppLocalizations {
   /// **'Network Name'**
   String get wifiDialogSsidLabel;
 
+  /// No description provided for @wifiDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get wifiDisconnect;
+
   /// No description provided for @wifiDns.
   ///
   /// In en, this message translates to:
@@ -3400,6 +4750,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'DNS 2'**
   String get wifiDns2;
+
+  /// No description provided for @wifiDnsServers.
+  ///
+  /// In en, this message translates to:
+  /// **'Dns Servers'**
+  String get wifiDnsServers;
 
   /// No description provided for @wifiEditIpConfig.
   ///
@@ -3466,6 +4822,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn’t fully forget this network'**
   String get wifiForgetPartialFailed;
+
+  /// No description provided for @wifiForgetSsid.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget {ssid}'**
+  String wifiForgetSsid(String ssid);
 
   /// No description provided for @wifiForgetSuccess.
   ///
@@ -3539,6 +4901,18 @@ abstract class AppLocalizations {
   /// **'Hide IP Settings'**
   String get wifiIpSettingsHide;
 
+  /// No description provided for @wifiIpv4.
+  ///
+  /// In en, this message translates to:
+  /// **'Ipv4'**
+  String get wifiIpv4;
+
+  /// No description provided for @wifiIpv4AddressSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Ipv4 Address'**
+  String get wifiIpv4AddressSection;
+
   /// No description provided for @wifiJoinSsidFormat.
   ///
   /// In en, this message translates to:
@@ -3563,6 +4937,18 @@ abstract class AppLocalizations {
   /// **'MAC Address'**
   String get wifiMacAddress;
 
+  /// No description provided for @wifiManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get wifiManual;
+
+  /// No description provided for @wifiMaxDnsServers.
+  ///
+  /// In en, this message translates to:
+  /// **'You Can Add Up To 3 DNS Servers'**
+  String get wifiMaxDnsServers;
+
   /// No description provided for @wifiMyNetworks.
   ///
   /// In en, this message translates to:
@@ -3575,16 +4961,22 @@ abstract class AppLocalizations {
   /// **'Wi‑Fi'**
   String get wifiNetworkText;
 
+  /// No description provided for @wifiNoNetworksScan.
+  ///
+  /// In en, this message translates to:
+  /// **'(No Networks — Scan)'**
+  String get wifiNoNetworksScan;
+
   /// No description provided for @wifiNoOtherNetworks.
   ///
   /// In en, this message translates to:
-  /// **'No networks found'**
+  /// **'No Networks Found'**
   String get wifiNoOtherNetworks;
 
   /// No description provided for @wifiNoSavedNetworks.
   ///
   /// In en, this message translates to:
-  /// **'No saved networks'**
+  /// **'No Saved Networks'**
   String get wifiNoSavedNetworks;
 
   /// No description provided for @wifiNotAvailable.
@@ -3610,6 +5002,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Others'**
   String get wifiOthersSection;
+
+  /// No description provided for @wifiPhase.
+  ///
+  /// In en, this message translates to:
+  /// **'Phase'**
+  String get wifiPhase;
+
+  /// No description provided for @wifiRemoveDnsServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get wifiRemoveDnsServer;
 
   /// No description provided for @wifiRouter.
   ///
@@ -3646,6 +5050,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'WPA3'**
   String get wifiSecurityWpa3;
+
+  /// No description provided for @wifiSignal.
+  ///
+  /// In en, this message translates to:
+  /// **'Signal'**
+  String get wifiSignal;
 
   /// No description provided for @wifiSignalStrength.
   ///
@@ -3700,66 +5110,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Subnet Mask'**
   String get wifiSubnetMask;
-
-  /// No description provided for @wifiAutoJoin.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto Join'**
-  String get wifiAutoJoin;
-
-  /// No description provided for @wifiAutomatic.
-  ///
-  /// In en, this message translates to:
-  /// **'Automatic'**
-  String get wifiAutomatic;
-
-  /// No description provided for @wifiConfigureDns.
-  ///
-  /// In en, this message translates to:
-  /// **'Configure DNS'**
-  String get wifiConfigureDns;
-
-  /// No description provided for @wifiConfigureIp.
-  ///
-  /// In en, this message translates to:
-  /// **'Configure IP'**
-  String get wifiConfigureIp;
-
-  /// No description provided for @wifiDnsServers.
-  ///
-  /// In en, this message translates to:
-  /// **'DNS Servers'**
-  String get wifiDnsServers;
-
-  /// No description provided for @wifiIpv4AddressSection.
-  ///
-  /// In en, this message translates to:
-  /// **'IPv4 Address'**
-  String get wifiIpv4AddressSection;
-
-  /// No description provided for @wifiManual.
-  ///
-  /// In en, this message translates to:
-  /// **'Manual'**
-  String get wifiManual;
-
-  /// No description provided for @wifiAddDnsServer.
-  ///
-  /// In en, this message translates to:
-  /// **'Add DNS Server'**
-  String get wifiAddDnsServer;
-
-  /// No description provided for @wifiRemoveDnsServer.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove'**
-  String get wifiRemoveDnsServer;
-
-  /// No description provided for @wifiMaxDnsServers.
-  ///
-  /// In en, this message translates to:
-  /// **'You can add up to 3 DNS servers'**
-  String get wifiMaxDnsServers;
 
   /// No description provided for @wifiToastAddCanceledBySystem.
   ///
@@ -3845,18 +5195,6 @@ abstract class AppLocalizations {
   /// **'Wi‑Fi'**
   String get wifiWlanLabel;
 
-  /// No description provided for @watchdogResetEventContent.
-  ///
-  /// In en, this message translates to:
-  /// **'The controller restarted after a watchdog reset. If this happens often, contact LaserCyber support.'**
-  String get watchdogResetEventContent;
-
-  /// No description provided for @watchdogResetEventTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Watchdog Reset'**
-  String get watchdogResetEventTitle;
-
   /// No description provided for @wireFeederCommunicationAlarmContent.
   ///
   /// In en, this message translates to:
@@ -3881,6 +5219,12 @@ abstract class AppLocalizations {
   /// **'Wire Feeder Current Alarm'**
   String get wireFeederCurrentAlarmTitle;
 
+  /// No description provided for @wireFeederVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Wire Feeder Version'**
+  String get wireFeederVersion;
+
   /// No description provided for @wireFeedingLabel.
   ///
   /// In en, this message translates to:
@@ -3898,12 +5242,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wire Feeder'**
   String get wireFeedingText;
-
-  /// No description provided for @wireFeederVersion.
-  ///
-  /// In en, this message translates to:
-  /// **'Wire Feeder Version'**
-  String get wireFeederVersion;
 
   /// No description provided for @wirelessNetworkText.
   ///
@@ -3934,6 +5272,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Zero Offset Alarm'**
   String get zeroPointOffsetAlarmTitle;
+
+  /// No description provided for @bluetoothDiscoverable.
+  ///
+  /// In en, this message translates to:
+  /// **'Discoverable'**
+  String get bluetoothDiscoverable;
+
+  /// No description provided for @bluetoothMyDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'My Devices'**
+  String get bluetoothMyDevices;
+
+  /// No description provided for @bluetoothNoDevicesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No Devices Found'**
+  String get bluetoothNoDevicesFound;
+
+  /// No description provided for @bluetoothNoPairedDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'No Paired Devices'**
+  String get bluetoothNoPairedDevices;
+
+  /// No description provided for @bluetoothOtherDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'Other Devices'**
+  String get bluetoothOtherDevices;
+
+  /// No description provided for @bluetoothPaired.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired'**
+  String get bluetoothPaired;
+
+  /// No description provided for @bluetoothScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan'**
+  String get bluetoothScan;
+
+  /// No description provided for @bluetoothScanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning…'**
+  String get bluetoothScanning;
+
+  /// No description provided for @bluetoothStopScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get bluetoothStopScan;
+
+  /// No description provided for @bluetoothThisDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This Device'**
+  String get bluetoothThisDevice;
+
+  /// No description provided for @cncConnectionGuideNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note: After connecting, further adjustments are made on the CNC.'**
+  String get cncConnectionGuideNote;
+
+  /// No description provided for @cncConnectionGuideStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Verify the RS485 connection.'**
+  String get cncConnectionGuideStep1;
+
+  /// No description provided for @cncConnectionGuideStep2.
+  ///
+  /// In en, this message translates to:
+  /// **'2. Verify the cutting nozzle sensor cable.'**
+  String get cncConnectionGuideStep2;
+
+  /// No description provided for @cncConnectionGuideStep3.
+  ///
+  /// In en, this message translates to:
+  /// **'3. Confirm that the welding gun and fixture are securely connected.'**
+  String get cncConnectionGuideStep3;
+
+  /// No description provided for @cncConnectionGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection Guide'**
+  String get cncConnectionGuideTitle;
+
+  /// No description provided for @cncModeActiveMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'CNC Mode Active\nOperate on the CNC equipment'**
+  String get cncModeActiveMessage;
+
+  /// No description provided for @deviceControlUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Control Unavailable'**
+  String get deviceControlUnavailable;
+
+  /// No description provided for @dimensionWithUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} ({unit})'**
+  String dimensionWithUnit(String label, String unit);
+
+  /// No description provided for @exitCncModeConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit CNC Mode?'**
+  String get exitCncModeConfirmTitle;
+
+  /// No description provided for @exitCncModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit CNC Mode'**
+  String get exitCncModeLabel;
+
+  /// No description provided for @ipCameraRecordAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get ipCameraRecordAction;
+
+  /// No description provided for @ipCameraRecordingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording Failed'**
+  String get ipCameraRecordingFailed;
+
+  /// No description provided for @ipCameraRecordingFinalizing.
+  ///
+  /// In en, this message translates to:
+  /// **'Finalizing…'**
+  String get ipCameraRecordingFinalizing;
+
+  /// No description provided for @ipCameraRecordingInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording…'**
+  String get ipCameraRecordingInProgress;
+
+  /// No description provided for @ipCameraWaitingForRtsp.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting For RTSP Stream…'**
+  String get ipCameraWaitingForRtsp;
+
+  /// No description provided for @materialTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Material Type'**
+  String get materialTypeLabel;
+
+  /// No description provided for @moreParametersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'More Parameters'**
+  String get moreParametersLabel;
+
+  /// No description provided for @moreStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'More Status'**
+  String get moreStatusLabel;
+
+  /// No description provided for @noTimeZonesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No Time Zones Found'**
+  String get noTimeZonesFound;
+
+  /// No description provided for @rampChartLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ramp Chart'**
+  String get rampChartLabel;
+
+  /// No description provided for @stopText.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get stopText;
+
+  /// No description provided for @usbOtgDebugOnlyLockedHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'This product only supports Debug over USB. The mode cannot be changed.'**
+  String get usbOtgDebugOnlyLockedHelp;
+
+  /// No description provided for @usbOtgModeDebugDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect this machine to a computer with a USB cable for remote support and software updates. Keep this mode when a technician needs to work on the device from a PC.'**
+  String get usbOtgModeDebugDescription;
+
+  /// No description provided for @usbOtgModeHostDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Plug in a USB keyboard, mouse, or other accessories with a USB adapter. Use this when you need extra input devices on the machine itself.'**
+  String get usbOtgModeHostDescription;
+
+  /// No description provided for @usbOtgModeMtpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect this machine to a computer to copy photos and files back and forth. On the computer it appears as a device named “LWS Storage”.'**
+  String get usbOtgModeMtpDescription;
+
+  /// No description provided for @valueNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Set'**
+  String get valueNotSet;
 }
 
 class _AppLocalizationsDelegate

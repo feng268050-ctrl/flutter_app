@@ -1,7 +1,9 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Engineer Mode process-type tab bar (lws-ui `EngineerTab`, five tabs).
 ///
@@ -72,16 +74,14 @@ final class _EngineerTabItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final activeColor = ProcessModeTokens.tabActiveColor(type);
     final labelColor =
         selected ? activeColor : ProcessModeTokens.tabInactiveText;
     const iconSize = ProcessModeDimens.engineerTabIconSize;
-    // Left inset matches top/bottom inset to the tab edge (same as ProductTopTabs).
+    // Left inset = top/bottom inset to the tab edge (same as ProductTopTabs).
     final iconInset =
         (ProcessModeDimens.engineerTabBarHeight - iconSize) / 2;
-    // Cutting glyph optical center sits a bit right — nudge left.
-    final iconLeft = iconInset +
-        (type == ProcessType.handCutting ? -7.0 : 0.0);
 
     return InkWell(
       key: ValueKey('engineer-tab-${type.name}'),
@@ -99,13 +99,12 @@ final class _EngineerTabItem extends StatelessWidget {
             bottom: ProcessModeDimens.engineerTabUnderlineHeight,
             child: Center(
               child: Text(
-                ProcessModeLabels.engineerTabLabel(type),
+                ProcessModeLabels.engineerTabLabel(type, l10n),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: context.hmiTypography.processTabLabel.copyWith(
                   color: labelColor,
-                  fontSize: ProcessModeDimens.engineerTabLabelSize,
                   height: 1.0,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 ),
@@ -113,7 +112,7 @@ final class _EngineerTabItem extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: iconLeft,
+            left: iconInset,
             top: iconInset,
             width: iconSize,
             height: iconSize,

@@ -25,6 +25,8 @@ import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
 const double _kDesignW = 1280;
@@ -39,7 +41,7 @@ const double _kQaWideInner = 244;
 const double _kQaIconStartPad = 24;
 const double _kQaLabelMarginTop = 10;
 const double _kQaCorner = 18;
-const double _kQaCardText = 20;
+const double _kQaCardText = AppTypography.controlSize;
 
 /// Custom Home statistics cards on the product Home (design dp @ 1280×800).
 const double _kStatCardH = 124;
@@ -386,7 +388,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                   child: Align(
                     alignment: const Alignment(0, 0.35),
                     child: HomeClock(
-                      fontSize: 120 * sx,
+                      fontSize: HmiDisplayTypography.clockSize * sx,
                       sampleMode: CyberBlurSampleMode.realtime,
                       now: () => AppScope.of(context).wallClock.now,
                       listenable: AppScope.of(context).wallClock,
@@ -658,7 +660,10 @@ class _ModeEntry extends StatelessWidget {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final scale = (height / 280).clamp(0.5, 2.0);
     final labelBandH = labelHeight.clamp(24.0, height * 0.45);
-    final fontSize = (labelHeight * 0.28).clamp(18.0, 36.0);
+    final fontSize = (labelHeight * 0.28).clamp(
+      AppTypography.bodySize,
+      AppTypography.largeDialogTitleSize,
+    );
     const textHeightFactor = 1.05;
     final labelDrop = 6 * scale;
     // Image overhangs the mode-entry top edge by 8 design units.
@@ -812,7 +817,10 @@ class _HomeQuickActionAiVision extends StatelessWidget {
     final icon = _kQaIcon * s;
     final padStart = _kQaIconStartPad * scaleX;
     // Icon↔text gap matches leading inset (left edge → icon).
-    final textSize = (_kQaCardText * s).clamp(14.0, 22.0);
+    final textSize = (_kQaCardText * s).clamp(
+      AppTypography.captionSize,
+      AppTypography.sectionTitleSize,
+    );
     final dpr = MediaQuery.devicePixelRatioOf(context);
     return HomeQuickAction(
       cardWidth: width,

@@ -109,7 +109,7 @@ class _HttpProxySettingsPageState extends State<HttpProxySettingsPage> {
               ),
               SettingsNavRow(
                 title: l10n.httpProxyHost,
-                value: _host.isEmpty ? 'Not Set' : _host,
+                value: _host.isEmpty ? l10n.valueNotSet : _host,
                 onTap: _busy
                     ? null
                     : () => _editField(

@@ -99,8 +99,9 @@ class _MonitorPageState extends State<MonitorPage> {
     final l10n = AppLocalizations.of(context)!;
     final tabLabels = MonitorPage._tabLabels(l10n);
     final canPop = ModalRoute.of(context)?.canPop ?? false;
-    // Same shell as Settings: page Widget blur + Custom Home panel faces.
+    // Same shell as Settings: page Widget blur (σ30) + Custom Home panel faces.
     return SettingsBlurredPageShell(
+      blurSigma: SettingsPerspectiveChrome.blurSigma,
       backdropBuilder: () => const Stack(
         fit: StackFit.expand,
         children: [

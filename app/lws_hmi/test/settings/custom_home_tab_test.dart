@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/custom_home_tab.dart';
@@ -12,6 +13,9 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: CustomHomeTab(
             store: CustomHomeLayoutStore(
@@ -31,7 +35,7 @@ void main() {
     expect(find.text('Selected 3/4'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('custom-home-save')));
     await tester.pump();
-    expect(find.text('Please select 4 cards'), findsOneWidget);
+    expect(find.text('Please Select 4 Cards'), findsOneWidget);
     ProcessModeToast.resetForTest();
 
     await tester.tap(
@@ -48,6 +52,9 @@ void main() {
     addTearDown(ProcessModeToast.resetForTest);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: CustomHomeTab(
             store: CustomHomeLayoutStore(
@@ -63,7 +70,7 @@ void main() {
       find.byKey(const ValueKey('custom-home-card-cutRatio')),
     );
     await tester.pump();
-    expect(find.text('Please select a card to replace'), findsOneWidget);
+    expect(find.text('Please Select A Card To Replace'), findsOneWidget);
     expect(find.text('Selected'), findsOneWidget);
     expect(
       find.descendant(
@@ -108,6 +115,9 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -141,6 +151,9 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -156,7 +169,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Save Failed'), findsOneWidget);
-    expect(find.text('Please try again'), findsOneWidget);
+    expect(find.text('Please Try Again'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('custom-home-save-success-ok')));
     await tester.pumpAndSettle();

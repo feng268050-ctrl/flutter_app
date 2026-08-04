@@ -11,6 +11,7 @@ import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_device_controls.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +46,8 @@ void main() {
         (DeviceControlController(services)..keySwitchOn = true);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: ProcessModeToastLayer(
           child: Scaffold(
             body: QuickModeDeviceControls(
@@ -157,7 +160,7 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(find.text('Wire feed unavailable in this mode'), findsNothing);
+    expect(find.text('Wire Feed Unavailable In This Mode'), findsNothing);
   });
 
   testWidgets('enables wire ops in continuous welding', (tester) async {
@@ -236,8 +239,8 @@ void main() {
       controller: controller,
     );
 
-    expect(find.text('Laser Enable'), findsOneWidget);
-    expect(find.text('End of work'), findsNothing);
+    expect(find.text('Enable Laser'), findsOneWidget);
+    expect(find.text('End Work'), findsNothing);
     expect(
       find.byKey(const ValueKey('device-control-manual-gas')),
       findsOneWidget,

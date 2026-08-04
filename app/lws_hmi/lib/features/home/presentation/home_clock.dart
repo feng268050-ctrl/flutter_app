@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:cyber_ui/cyber_ui.dart';
+import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 
 /// Design tokens from lws-ui `FrostClockAppearance` / `frostui_clock_colors.xml`.
 ///
@@ -30,7 +31,7 @@ abstract final class HomeClockTokens {
 class HomeClock extends StatefulWidget {
   const HomeClock({
     super.key,
-    this.fontSize = 120,
+    this.fontSize = HmiDisplayTypography.clockSize,
     this.sampleMode = CyberBlurSampleMode.realtime,
     this.blurIntensity = CyberBlurIntensity.extreme,
     this.blurTint = CyberBlurTint.warm,

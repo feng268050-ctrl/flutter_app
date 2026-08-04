@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Ethernet — phone-style settings (not Demo forms).
 class EthernetSettingsPage extends StatefulWidget {
@@ -75,17 +76,18 @@ class _EthernetSettingsPageState extends State<EthernetSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final on = _admin == EthAdminState.on || _admin == EthAdminState.starting;
     return SettingsScaffold(
-      title: 'Ethernet',
+      title: l10n.ethernetText,
       body: SettingsScrollView(
         children: [
-          const SettingsSectionHeader('Ethernet'),
+          SettingsSectionHeader(l10n.ethernetText),
           SettingsGroup(
             borderGradientCenter: CyberBorderGradientCenter.topLeftBottomRight,
             children: [
               SettingsSwitchRow(
-                title: 'Ethernet',
+                title: l10n.ethernetText,
                 value: on,
                 onChanged: _busy
                     ? null
@@ -99,7 +101,7 @@ class _EthernetSettingsPageState extends State<EthernetSettingsPage> {
               ListTile(
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                title: const Text('Link'),
+                title: Text(l10n.ethernetLink),
                 trailing: Text(
                   _link.phase.name,
                   style: TextStyle(color: Colors.white.withOpacity(0.55)),
@@ -109,7 +111,7 @@ class _EthernetSettingsPageState extends State<EthernetSettingsPage> {
                 ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  title: const Text('IP Address'),
+                  title: Text(l10n.wifiIpAddress),
                   trailing: Text(
                     _ipv4.address,
                     style: TextStyle(color: Colors.white.withOpacity(0.55)),
@@ -125,14 +127,14 @@ class _EthernetSettingsPageState extends State<EthernetSettingsPage> {
                 style: const TextStyle(color: Colors.redAccent),
               ),
             ),
-          const SettingsSectionHeader('Configure IP'),
+          SettingsSectionHeader(l10n.wifiConfigureIp),
           SettingsGroup(
             borderGradientCenter:
                 CyberBorderGradientCenter.bottomLeftTopRight,
             children: [
               SettingsNavRow(
-                title: 'DHCP',
-                value: _ipv4.mode == EthIpv4Mode.dhcp ? 'Selected' : null,
+                title: l10n.wifiIpModeDhcp,
+                value: _ipv4.mode == EthIpv4Mode.dhcp ? l10n.customHomeReplacementSelected : null,
                 onTap: _busy
                     ? null
                     : () => unawaited(
@@ -143,9 +145,9 @@ class _EthernetSettingsPageState extends State<EthernetSettingsPage> {
                         ),
               ),
               SettingsNavRow(
-                title: 'Manual',
+                title: l10n.wifiManual,
                 value:
-                    _ipv4.mode == EthIpv4Mode.staticMode ? 'Selected' : null,
+                    _ipv4.mode == EthIpv4Mode.staticMode ? l10n.customHomeReplacementSelected : null,
                 onTap: _busy ? null : _editStatic,
               ),
             ],
@@ -156,6 +158,7 @@ class _EthernetSettingsPageState extends State<EthernetSettingsPage> {
   }
 
   Future<void> _editStatic() async {
+    final l10n = AppLocalizations.of(context)!;
     final addr = TextEditingController(text: _ipv4.address);
     final prefix = TextEditingController(text: '${_ipv4.prefixLength}');
     final gw = TextEditingController(text: _ipv4.gateway);
@@ -175,35 +178,36 @@ class _EthernetSettingsPageState extends State<EthernetSettingsPage> {
 
     final ok = await showCyberImeFormDialog(
       context: context,
-      title: 'Manual IP',
+      title: l10n.ethernetManualIp,
+      confirmLabel: l10n.httpProxySave,
       session: ime,
       fields: [
         CyberImeTextField(
           fieldType: CyberImeFieldType.text,
           controller: addr,
           session: ime,
-          decoration: deco('IP Address'),
+          decoration: deco(l10n.wifiIpAddress),
           style: const TextStyle(color: CyberColors.textPrimary),
         ),
         CyberImeTextField(
           fieldType: CyberImeFieldType.number,
           controller: prefix,
           session: ime,
-          decoration: deco('Prefix'),
+          decoration: deco(l10n.ethernetPrefix),
           style: const TextStyle(color: CyberColors.textPrimary),
         ),
         CyberImeTextField(
           fieldType: CyberImeFieldType.text,
           controller: gw,
           session: ime,
-          decoration: deco('Router'),
+          decoration: deco(l10n.wifiRouter),
           style: const TextStyle(color: CyberColors.textPrimary),
         ),
         CyberImeTextField(
           fieldType: CyberImeFieldType.text,
           controller: dns,
           session: ime,
-          decoration: deco('DNS'),
+          decoration: deco(l10n.wifiDns),
           style: const TextStyle(color: CyberColors.textPrimary),
         ),
       ],

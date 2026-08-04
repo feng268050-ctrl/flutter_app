@@ -57,8 +57,8 @@ void main() {
     expect(find.byKey(const ValueKey('call-back-home-button')), findsOneWidget);
     expect(find.text('Back'), findsOneWidget);
     expect(find.text('Parameter recording'), findsOneWidget);
-    expect(find.text('Continuous Welding'), findsOneWidget);
-    expect(find.text('Aluminum Alloy'), findsOneWidget);
+    expect(find.text('Continuous welding'), findsOneWidget);
+    expect(find.text('Aluminum alloy'), findsOneWidget);
     expect(find.text('Unable to play this recording'), findsOneWidget);
   });
 

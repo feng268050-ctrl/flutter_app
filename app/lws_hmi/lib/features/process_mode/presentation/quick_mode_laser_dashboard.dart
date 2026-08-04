@@ -3,10 +3,14 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/live_machine_status_dialog.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Center laser instrument cluster — Flutter port of lws-ui `LaserProgress`.
 ///
@@ -217,7 +221,8 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                     right: 0,
                     child: IgnorePointer(
                       child: Text(
-                        'Gas Pressure',
+                        AppLocalizations.of(context)?.gasPressureLabel ??
+                            'Gas Pressure',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: const Color(0xCCFFFFFF),
@@ -261,13 +266,15 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                       // is not clipped by the circular pressure face.
                       child: SizedBox(
                         width: 250 * metrics.scale,
-                        child: CyberButton(
+                        child: HmiButton(
                           key: const ValueKey('quick-mode-more-status'),
-                          size: CyberButtonSize.small,
+                          label: AppLocalizations.of(context)
+                                  ?.moreStatusLabel ??
+                              'More Status',
+                          size: HmiButtonSize.small,
+                          widthPolicy: HmiButtonWidthPolicy.fill,
                           variant: CyberButtonVariant.standard,
                           shape: CyberButtonShape.rounded,
-                          stretch: true,
-                          // 1.5px frost rim + diagonal HL (engineer Reset/Save).
                           strokeWidth: 1.5,
                           borderGradientCenter:
                               CyberBorderGradientCenter.topBottom,
@@ -276,44 +283,15 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                             Color(0xAA86868C),
                             Color(0x66000000),
                           ],
-                          // Small face height only; width stays 250×scale.
-                          height: CyberDimens.actionButtonSmallHeight,
+                          trailing: Icon(
+                            Icons.chevron_right,
+                            size: metrics.buttonIconSize,
+                            color: Colors.white,
+                          ),
                           onPressed: widget.onMoreStatus ??
                               () => unawaited(
                                     showLiveMachineStatusDialog(context),
                                   ),
-                          child: SizedBox(
-                            height: CyberDimens.actionButtonSmallHeight,
-                            width: double.infinity,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Center(
-                                  child: Text(
-                                    'More Status',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: metrics.buttonTextSize,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  // Trailing chevron: right inset = top inset.
-                                  right: (CyberDimens.actionButtonSmallHeight -
-                                          metrics.buttonIconSize) /
-                                      2,
-                                  top: (CyberDimens.actionButtonSmallHeight -
-                                          metrics.buttonIconSize) /
-                                      2,
-                                  child: Icon(
-                                    Icons.chevron_right,
-                                    size: metrics.buttonIconSize,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ),
                       ),
                     ),
@@ -457,11 +435,11 @@ final class _LaserDashboardMetrics {
   double get contentTop => 50 * scale;
   double get contentGap => 5 * scale;
   double get buttonGap => 16.5 * scale;
-  double get titleSize => 33 * scale;
+  double get titleSize => AppTypography.dialogTitleSize * scale;
   double get valueSize => 101 * scale;
-  double get unitSize => 25 * scale;
+  double get unitSize => AppTypography.navigationSize * scale;
   /// +2 over prior 20/22 for readability on the HMI panel.
-  double get buttonTextSize => 22 * scale;
+  double get buttonTextSize => AppTypography.sectionTitleSize * scale;
   double get buttonIconSize => 24 * scale;
   double get buttonIconGap => 4 * scale;
 

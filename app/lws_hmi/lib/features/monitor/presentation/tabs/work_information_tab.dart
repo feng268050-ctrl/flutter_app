@@ -4,6 +4,8 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_gauges.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// lws-ui `WorkInfoFragment` — 3 percent gauges + 3 data cards.
 class WorkInformationTab extends StatelessWidget {
@@ -11,6 +13,7 @@ class WorkInformationTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.all(MonitorDimens.pad),
       child: Column(
@@ -21,7 +24,7 @@ class WorkInformationTab extends StatelessWidget {
               children: [
                 Expanded(
                   child: _PercentCard(
-                    title: 'Weld Time Ratio',
+                    title: l10n.monitorWeldTimeRatio,
                     value: 0,
                     color: const Color(0xFFFF0000),
                     // Weld → diagonal bright edge.
@@ -32,7 +35,7 @@ class WorkInformationTab extends StatelessWidget {
                 const SizedBox(width: 24),
                 Expanded(
                   child: _PercentCard(
-                    title: 'Cut Time Ratio',
+                    title: l10n.monitorCutTimeRatio,
                     value: 0,
                     color: const Color(0xFF00A4F2),
                     // Cut → top↔bottom bright edge.
@@ -42,7 +45,7 @@ class WorkInformationTab extends StatelessWidget {
                 const SizedBox(width: 24),
                 Expanded(
                   child: _PercentCard(
-                    title: 'Clean Time Ratio',
+                    title: l10n.monitorCleanTimeRatio,
                     value: 0,
                     color: const Color(0xFFFF8000),
                     borderGradientCenter:
@@ -59,7 +62,7 @@ class WorkInformationTab extends StatelessWidget {
               children: [
                 Expanded(
                   child: MonitorWorkDataCard(
-                    title: 'Laser On Time',
+                    title: l10n.monitorLaserOnTime,
                     value: '-',
                     suffix: 'h',
                     borderGradientCenter:
@@ -69,7 +72,7 @@ class WorkInformationTab extends StatelessWidget {
                 const SizedBox(width: 24),
                 Expanded(
                   child: MonitorWorkDataCard(
-                    title: 'Welding Consumables',
+                    title: l10n.monitorWeldingConsumables,
                     value: '-',
                     suffix: 'm',
                     // Match Cut: top↔bottom bright edge.
@@ -79,7 +82,7 @@ class WorkInformationTab extends StatelessWidget {
                 const SizedBox(width: 24),
                 Expanded(
                   child: MonitorWorkDataCard(
-                    title: 'Last Job',
+                    title: l10n.monitorLastJob,
                     value: '-',
                     borderGradientCenter:
                         CyberBorderGradientCenter.topRightBottomLeft,
@@ -120,7 +123,7 @@ class _PercentCard extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontSize: 24),
+            style: context.hmiTypography.navigation.copyWith(color: Colors.white),
           ),
           const SizedBox(height: 8),
           Expanded(

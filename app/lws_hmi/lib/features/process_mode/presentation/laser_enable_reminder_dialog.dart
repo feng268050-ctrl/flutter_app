@@ -4,7 +4,11 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
     hide MaterialType;
 import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Result of the laser-enable Important Reminder dialog.
 final class LaserEnableReminderResult {
@@ -58,7 +62,7 @@ final class _LaserEnableReminderBody extends StatefulWidget {
 
 final class _LaserEnableReminderBodyState
     extends State<_LaserEnableReminderBody> {
-  bool _dontShowAgain = true;
+  bool _dontShowAgain = false;
 
   static const _titleDark = Color(0xFF1A1A1A);
   static const _labelMuted = Color(0x80222222);
@@ -66,6 +70,7 @@ final class _LaserEnableReminderBodyState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final showFocus =
         LaserEnableReminderCopy.showsFocusScale(widget.processType);
     final focusAsset =
@@ -76,12 +81,11 @@ final class _LaserEnableReminderBodyState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'Important',
+        Text(
+          l10n.laserEnableReminderTitle,
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: context.hmiTypography.navigation.copyWith(
             color: _titleDark,
-            fontSize: 26,
             fontWeight: FontWeight.w700,
             height: 1.1,
             decoration: TextDecoration.none,
@@ -96,23 +100,24 @@ final class _LaserEnableReminderBodyState
             Expanded(
               child: _ReminderCard(
                 asset: ProcessModeAssets.laserReminderProtection,
-                tip: 'Confirm you’re wearing laser protective equipment.',
+                tip: l10n.laserEnableReminderPpe,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _ReminderCard(
                 asset: LaserEnableReminderCopy.nozzleAsset(widget.processType),
-                tip: LaserEnableReminderCopy.nozzleTip(widget.processType),
+                tip: LaserEnableReminderCopy.nozzleTip(
+                  widget.processType,
+                  l10n,
+                ),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _ReminderCard(
                 asset: showFocus && focusAsset.isNotEmpty ? focusAsset : null,
-                tip: showFocus
-                    ? 'Set the welding gun focus scale to the indicated value.'
-                    : null,
+                tip: showFocus ? l10n.laserEnableReminderFocus : null,
               ),
             ),
           ],
@@ -123,26 +128,19 @@ final class _LaserEnableReminderBodyState
         Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 360, maxWidth: 560),
-            child: SizedBox(
-              width: double.infinity,
-              child: CyberButton(
-                key: const ValueKey('laser-enable-reminder-confirm'),
-                size: CyberButtonSize.small,
-                variant: CyberButtonVariant.primary,
-                shape: CyberButtonShape.rounded,
-                stretch: true,
-                onPressed: () {
-                  CyberClickSoundRegistry.playClick();
-                  Navigator.of(context).pop(
-                    LaserEnableReminderResult(dontShowAgain: _dontShowAgain),
-                  );
-                },
-                child: const Text(
-                  'Yes — I’ve completed the safety checks above',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15),
-                ),
-              ),
+            child: HmiButton(
+              key: const ValueKey('laser-enable-reminder-confirm'),
+              label: l10n.laserEnableReminderConfirm,
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.fill,
+              variant: CyberButtonVariant.primary,
+              shape: CyberButtonShape.rounded,
+              onPressed: () {
+                CyberClickSoundRegistry.playClick();
+                Navigator.of(context).pop(
+                  LaserEnableReminderResult(dontShowAgain: _dontShowAgain),
+                );
+              },
             ),
           ),
         ),
@@ -177,11 +175,10 @@ final class _LaserEnableReminderBodyState
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Don’t show again this session',
-                  style: TextStyle(
+                Text(
+                  l10n.dontShowAgainThisSession,
+                  style: context.hmiTypography.sectionTitle.copyWith(
                     color: _labelMuted,
-                    fontSize: 22,
                     height: 1.2,
                     decoration: TextDecoration.none,
                   ),
@@ -241,9 +238,8 @@ final class _ReminderCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: context.hmiTypography.caption.copyWith(
                     color: _tipDark,
-                    fontSize: 14,
                     height: 1.25,
                     fontWeight: FontWeight.w500,
                     decoration: TextDecoration.none,

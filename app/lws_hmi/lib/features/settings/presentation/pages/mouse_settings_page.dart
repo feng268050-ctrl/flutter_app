@@ -63,7 +63,7 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
             bottomInset: 0,
             children: [
               SettingsSwitchRow(
-                title: 'Natural Scrolling',
+                title: l10n.mouseNaturalScrolling,
                 value: _settings.naturalScroll,
                 onChanged: _busy
                     ? null
@@ -72,7 +72,7 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
                         ),
               ),
               SettingsSliderRow(
-                title: 'Tracking Speed',
+                title: l10n.mouseTrackingSpeed,
                 child: CyberSlider(
                   value:
                       _settings.pointerSpeedPercent.toDouble().clamp(0, 100),
@@ -95,7 +95,7 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
                 ),
               ),
               SettingsSliderRow(
-                title: 'Pointer Size',
+                title: l10n.mousePointerSize,
                 child: CyberSlider(
                   value: _settings.pointerSizePercent.toDouble().clamp(0, 100),
                   min: 0,
@@ -117,16 +117,16 @@ class _MouseSettingsPageState extends State<MouseSettingsPage> {
                 ),
               ),
               SettingsControlRow(
-                title: 'Primary Button',
+                title: l10n.mousePrimaryButton,
                 control: CyberSegmentedControl<MousePrimaryButton>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: MousePrimaryButton.left,
-                      label: Text('Left'),
+                      label: Text(l10n.mouseButtonLeft),
                     ),
                     ButtonSegment(
                       value: MousePrimaryButton.right,
-                      label: Text('Right'),
+                      label: Text(l10n.mouseButtonRight),
                     ),
                   ],
                   selected: {_settings.primaryButton},

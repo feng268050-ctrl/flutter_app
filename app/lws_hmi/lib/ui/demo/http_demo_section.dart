@@ -143,7 +143,6 @@ class _HttpDemoSectionState extends State<HttpDemoSection> {
           style: TextStyle(
             color: Colors.white.withOpacity(0.85),
             fontSize: 14,
-            fontFamily: 'monospace',
           ),
         ),
       ],

@@ -135,7 +135,7 @@ abstract final class SafetyGroundLockPrompt {
               child: WarnDialogBody(
                 title: l10n?.safetyGroundLockNotConnectedTitle ??
                     'Safety Clamp Disconnected',
-                body: l10n?.safetyGroundLockNotConnectedMessage ??
+                body: l10n?.connectSafetyClampBeforeLaser ??
                     'Connect the safety clamp before enabling the laser.',
                 confirmLabel: l10n?.confirmText ?? 'Confirm',
                 infoStyle: true,

@@ -10,6 +10,7 @@ import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// lws-ui `AiVisionVideoChooseActivity` — table pick → [ProcessVideoRecord].
 class AiVisionVideoChoosePage extends StatefulWidget {
@@ -166,9 +167,8 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
                         child: Text(
                           label,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: context.hmiTypography.sectionTitle.copyWith(
                             color: Colors.white,
-                            fontSize: 22,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -179,9 +179,8 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
                       child: Text(
                         label,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: context.hmiTypography.sectionTitle.copyWith(
                           color: Colors.white,
-                          fontSize: 22,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -196,9 +195,8 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
                     ? Center(
                         child: Text(
                           l10n.processVideoEmptyTitle,
-                          style: const TextStyle(
+                          style: context.hmiTypography.body.copyWith(
                             color: Colors.white54,
-                            fontSize: 18,
                           ),
                         ),
                       )
@@ -251,10 +249,11 @@ final class _ChooseRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final cells = <({String text, double width})>[
       (text: ProcessVideoFormat.recordingTime(record), width: 232),
-      (text: ProcessVideoFormat.workMode(record.processType), width: 232),
-      (text: ProcessVideoFormat.material(record), width: 205),
+      (text: ProcessVideoFormat.workMode(record.processType, l10n), width: 232),
+      (text: ProcessVideoFormat.material(record, l10n), width: 205),
       (text: ProcessVideoFormat.duration(record.durationMs), width: 130),
     ];
     return Container(
@@ -277,7 +276,7 @@ final class _ChooseRow extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 20),
+                  style: context.hmiTypography.settingsRowTitle.copyWith(color: Colors.white),
                 ),
               ),
             ),
@@ -294,7 +293,7 @@ final class _ChooseRow extends StatelessWidget {
                   selectLabel,
                   softWrap: false,
                   overflow: TextOverflow.visible,
-                  style: const TextStyle(fontSize: 20, height: 1.0),
+                  style: context.hmiTypography.settingsRowTitle.copyWith(height: 1.0),
                 ),
               ),
             ),

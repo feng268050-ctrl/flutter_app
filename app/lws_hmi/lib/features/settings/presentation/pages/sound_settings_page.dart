@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/settings/application/sound_effect_scope.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Sound settings — volume slider + sound-effect dropdown.
 class SoundSettingsPage extends StatefulWidget {
@@ -89,8 +90,7 @@ class _SoundSettingsPageState extends State<SoundSettingsPage> {
                     value: _effectIndex,
                     isDense: true,
                     dropdownColor: CyberColors.fillSolidMid,
-                    style: const TextStyle(
-                      fontSize: 18,
+                    style: context.hmiTypography.body.copyWith(
                       color: CyberColors.textPrimary,
                     ),
                     iconEnabledColor: CyberColors.textSecondary,

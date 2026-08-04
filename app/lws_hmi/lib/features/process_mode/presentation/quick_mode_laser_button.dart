@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Quick-mode trapezoid laser button nested in the dashboard's lower opening.
 ///
@@ -160,6 +161,7 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final scale =
         ProcessModeDimens.dashboardScaleFor(MediaQuery.sizeOf(context));
     final size = _buttonSize(context);
@@ -204,7 +206,7 @@ final class _QuickModeLaserButtonState extends State<QuickModeLaserButton>
                   left: 0,
                   right: 0,
                   child: Text(
-                    widget.laserOpen ? 'End of work' : 'Laser Enable',
+                    widget.laserOpen ? l10n.endOfWork : l10n.laserEnable,
                     key: const ValueKey('quick-mode-laser-enable-label'),
                     textAlign: TextAlign.center,
                     style: TextStyle(

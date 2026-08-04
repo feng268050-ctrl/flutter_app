@@ -1,7 +1,10 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Compact read-only parameter preview for the matched quick preset.
 final class QuickModeParameterPreview extends StatelessWidget {
@@ -25,24 +28,24 @@ final class QuickModeParameterPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final value = preset;
     if (value == null) {
-      return const SizedBox(
-        key: ValueKey('quick-mode-parameter-preview-empty'),
+      return SizedBox(
+        key: const ValueKey('quick-mode-parameter-preview-empty'),
         width: 280,
         child: Text(
-          'No matching process',
-          style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
+          AppLocalizations.of(context)!.noMatchingProcess,
+          style: context.hmiTypography.caption.copyWith(color: const Color(0x99FFFFFF)),
         ),
       );
     }
 
+    final l10n = AppLocalizations.of(context)!;
     final rows = <Widget>[
       Text(
         value.name,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
+        style: context.hmiTypography.supporting.copyWith(
           color: Colors.white,
-          fontSize: 16,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -64,16 +67,15 @@ final class QuickModeParameterPreview extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  spec.label,
-                  style: const TextStyle(
-                    color: Color(0xB3FFFFFF),
-                    fontSize: 13,
+                  localizedProcessParameterLabel(l10n, key),
+                  style: context.hmiTypography.technicalMeta.copyWith(
+                    color: const Color(0xB3FFFFFF),
                   ),
                 ),
               ),
               Text(
                 '$number ${spec.unit}',
-                style: const TextStyle(color: Colors.white, fontSize: 13),
+                style: context.hmiTypography.technicalMeta.copyWith(color: Colors.white),
               ),
             ],
           ),
@@ -121,9 +123,10 @@ final class QuickModeMoreParametersButton extends StatelessWidget {
           color: Colors.white,
           size: CyberDimens.checkboxLargeSize,
         ),
-        label: const Text(
-          'More Parameters',
-          style: TextStyle(
+        label: Text(
+          AppLocalizations.of(context)?.moreParametersLabel ??
+              'More Parameters',
+          style: const TextStyle(
             color: Colors.white,
             fontSize: ProcessModeDimens.quickTopChromeLabelSize,
             fontWeight: FontWeight.w500,

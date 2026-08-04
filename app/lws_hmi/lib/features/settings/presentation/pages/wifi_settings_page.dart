@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/settings/presentation/pages/wifi_details_page.d
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Wireless Network — switch + connected + My Networks + Other Networks.
 class WifiSettingsPage extends StatefulWidget {
@@ -406,9 +407,8 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                       ),
                       child: Text(
                         l10n.wifiNoSavedNetworks,
-                        style: const TextStyle(
+                        style: context.hmiTypography.body.copyWith(
                           color: CyberColors.textPrimary,
-                          fontSize: 18,
                         ),
                       ),
                     )
@@ -439,9 +439,8 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                       ),
                       child: Text(
                         l10n.wifiScanning,
-                        style: const TextStyle(
+                        style: context.hmiTypography.body.copyWith(
                           color: CyberColors.textPrimary,
-                          fontSize: 18,
                         ),
                       ),
                     )
@@ -453,9 +452,8 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                       ),
                       child: Text(
                         l10n.wifiNoOtherNetworks,
-                        style: const TextStyle(
+                        style: context.hmiTypography.body.copyWith(
                           color: CyberColors.textPrimary,
-                          fontSize: 18,
                         ),
                       ),
                     )
@@ -531,8 +529,7 @@ class _WifiNetworkRow extends StatelessWidget {
               child: Text(
                 ssid,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: context.hmiTypography.body.copyWith(
                   color: CyberColors.textPrimary,
                 ),
               ),

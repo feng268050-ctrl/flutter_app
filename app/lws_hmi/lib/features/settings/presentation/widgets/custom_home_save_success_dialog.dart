@@ -2,7 +2,11 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 enum _CustomHomeSaveStatus { success, failure }
@@ -66,24 +70,36 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
 
   static const _maxWidth = 720.0;
   static const _iconSize = 80.0;
-  static const _titleSize = 37.0;
-  static const _bodySize = 33.0;
   static const _confirmMinWidth = 500.0;
   static const _titleDark = Color(0xFF1A1A1A);
   static const _bodyDark = Color(0xCC1A1A1A);
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final screenW = MediaQuery.sizeOf(context).width;
     final cardW = (screenW * 0.62).clamp(320.0, _maxWidth);
     final success = status == _CustomHomeSaveStatus.success;
-    final title = success ? 'Save Succeeded' : 'Save Failed';
-    final message = success ? 'Done' : 'Please try again';
+    final title = success ? l10n.saveSucceeded : l10n.saveFailed;
+    final message = success ? l10n.doneText : l10n.pleaseTryAgain;
     final icon = success
         ? ProcessModeAssets.dialogSuccess
         : ProcessModeAssets.dialogError;
     final textColor = success ? _titleDark : CyberColors.textPrimary;
     final bodyColor = success ? _bodyDark : CyberColors.textPrimary;
+    final titleStyle = context.hmiTypography.dialogTitle.copyWith(
+      color: textColor,
+      fontWeight: FontWeight.w700,
+      height: 1.15,
+      letterSpacing: 0.02 * (context.hmiTypography.dialogTitle.fontSize ?? 0),
+      decoration: TextDecoration.none,
+    );
+    final messageStyle = context.hmiTypography.body.copyWith(
+      color: bodyColor,
+      fontWeight: FontWeight.w400,
+      height: 1.2,
+      decoration: TextDecoration.none,
+    );
 
     return ConstrainedBox(
       key: const ValueKey('custom-home-save-success-dialog'),
@@ -97,14 +113,7 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: textColor,
-              fontSize: _titleSize,
-              fontWeight: FontWeight.w700,
-              height: 1.15,
-              letterSpacing: 0.02 * _titleSize,
-              decoration: TextDecoration.none,
-            ),
+            style: titleStyle,
           ),
           const SizedBox(height: CyberDimens.contentPadding),
           const DecoratedBox(
@@ -135,13 +144,7 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
             child: Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: bodyColor,
-                fontSize: _bodySize,
-                fontWeight: FontWeight.w400,
-                height: 1.2,
-                decoration: TextDecoration.none,
-              ),
+              style: messageStyle,
             ),
           ),
           const SizedBox(height: CyberDimens.contentPadding),
@@ -164,61 +167,18 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
                 minWidth: _confirmMinWidth.clamp(200.0, cardW),
                 maxWidth: _confirmMinWidth.clamp(200.0, cardW),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                child: _OrangePillButton(
-                  label: 'OK',
-                  onPressed: onConfirm,
-                ),
+              child: HmiButton(
+                key: const ValueKey('custom-home-save-success-ok'),
+                label: l10n.okText,
+                size: HmiButtonSize.medium,
+                widthPolicy: HmiButtonWidthPolicy.fill,
+                variant: CyberButtonVariant.primary,
+                shape: CyberButtonShape.rounded,
+                onPressed: onConfirm,
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-final class _OrangePillButton extends StatelessWidget {
-  const _OrangePillButton({required this.label, required this.onPressed});
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      key: const ValueKey('custom-home-save-success-ok'),
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        CyberClickSoundRegistry.playClick();
-        onPressed();
-      },
-      child: Container(
-        height: CyberDimens.actionButtonSmallHeight,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFF853E), Color(0xFFFF5C09)],
-          ),
-          border: Border.all(color: const Color(0xFFFFB070), width: 1.4),
-          boxShadow: const [
-            BoxShadow(color: Color(0x66FF5C09), blurRadius: 12),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 32,
-            height: 1,
-            fontWeight: FontWeight.w400,
-            decoration: TextDecoration.none,
-          ),
-        ),
       ),
     );
   }

@@ -1,7 +1,9 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
@@ -14,7 +16,7 @@ abstract final class ProcessModeOutlineChrome {
   static const Color idleFill = Color(0xFF2C1923);
   static const Color disabledForeground = Color(0xFF7D3E2B);
   /// Quick side ops / Engineer action icons (unified).
-  static const double labelSize = 22.0;
+  static const double labelSize = AppTypography.sectionTitleSize;
   static const double iconSize = 34.0;
   static const double radius = 14.0;
   static const double strokeWidth = 1.5;
@@ -33,8 +35,6 @@ final class ProcessModeOutlineButton extends StatelessWidget {
     required this.enabled,
     required this.onPressed,
     this.height = ProcessModeOutlineChrome.defaultHeight,
-    /// Negative shifts icon left from the equal L/T inset.
-    this.iconLeftNudge = 0,
   });
 
   final String label;
@@ -43,7 +43,6 @@ final class ProcessModeOutlineButton extends StatelessWidget {
   final bool enabled;
   final VoidCallback? onPressed;
   final double height;
-  final double iconLeftNudge;
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +70,6 @@ final class ProcessModeOutlineButton extends StatelessWidget {
               enabled: enabled,
               leading: leading,
               label: label,
-              iconLeftNudge: iconLeftNudge,
             ),
           ),
         ),
@@ -122,6 +120,7 @@ final class _ProcessModeOutlineWireButtonState
     isActive: () => widget.active,
     onMessage: widget.onMessage,
     onVisualChanged: _onGestureVisual,
+    l10n: () => AppLocalizations.of(context)!,
   );
 
   FeedHoldProgressController? _feedProgress;
@@ -178,11 +177,15 @@ final class _ProcessModeOutlineWireButtonState
       return;
     }
     if (widget.controller.busy) {
-      widget.onMessage(LaserEnableBlockReason.busy.message);
+      widget.onMessage(
+        LaserEnableBlockReason.busy.localizedMessage(
+          AppLocalizations.of(context)!,
+        ),
+      );
       return;
     }
     if (widget.laserBlocked) {
-      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
+      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst(AppLocalizations.of(context)!));
       return;
     }
     CyberClickSoundRegistry.playClick();
@@ -227,9 +230,10 @@ final class _ProcessModeOutlineWireButtonState
             : (latched ||
                 (_gesture.pressed && !filling) ||
                 (widget.active && !filling && !_gesture.pressed)));
+    final l10n = AppLocalizations.of(context)!;
     final label = latched
         ? (widget.latchedLabel ??
-            DeviceControlFeedbackCopy.continuousFeedLabel)
+            DeviceControlFeedbackCopy.continuousFeedLabel(l10n))
         : widget.label;
 
     return Semantics(
@@ -271,7 +275,6 @@ final class _OutlineFace extends StatelessWidget {
     this.progress = 0,
     this.progressForcesReadableLabel = false,
     this.continuousRipple = false,
-    this.iconLeftNudge = 0,
     this.showLeading = true,
   });
 
@@ -283,7 +286,6 @@ final class _OutlineFace extends StatelessWidget {
   final double progress;
   final bool progressForcesReadableLabel;
   final bool continuousRipple;
-  final double iconLeftNudge;
   final bool showLeading;
 
   @override
@@ -294,7 +296,12 @@ final class _OutlineFace extends StatelessWidget {
         : (onFill
             ? Colors.white
             : ProcessModeOutlineChrome.actionOrange);
-    final iconInset = (height - ProcessModeOutlineChrome.iconSize) / 2;
+    final style = TextStyle(
+      color: foreground,
+      fontSize: ProcessModeOutlineChrome.labelSize,
+      fontWeight: FontWeight.w600,
+      height: 1.0,
+    );
     return Container(
       height: height,
       width: double.infinity,
@@ -320,32 +327,72 @@ final class _OutlineFace extends StatelessWidget {
                 color: ProcessModeOutlineChrome.actionOrange,
               ),
             if (continuousRipple) const FeedContinuousRipple(),
-            // Label centered in the button; leading icon left inset = top inset.
-            Center(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: foreground,
-                  fontSize: ProcessModeOutlineChrome.labelSize,
-                  fontWeight: FontWeight.w600,
-                  height: 1.0,
-                ),
-              ),
+            // [gap][icon][gap][text][gap]: left inset = icon↔label spacing.
+            // Full label always — shrink icon/gaps before scaling the row.
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (!showLeading) {
+                  return Center(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      softWrap: false,
+                      textAlign: TextAlign.center,
+                      style: style,
+                    ),
+                  );
+                }
+                const iconSize = ProcessModeOutlineChrome.iconSize;
+                final painter = TextPainter(
+                  text: TextSpan(text: label, style: style),
+                  maxLines: 1,
+                  textDirection: TextDirection.ltr,
+                )..layout();
+                final textW = painter.width;
+                var drawIcon = iconSize;
+                var gap = (constraints.maxWidth - drawIcon - textW) / 3;
+                if (gap < 0) {
+                  drawIcon =
+                      (constraints.maxWidth - textW).clamp(0.0, iconSize);
+                  gap = (constraints.maxWidth - drawIcon - textW) / 3;
+                  if (gap < 0) {
+                    gap = 0;
+                    drawIcon =
+                        (constraints.maxWidth - textW).clamp(0.0, iconSize);
+                  }
+                }
+                final row = Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(width: gap),
+                    if (drawIcon > 0)
+                      SizedBox(
+                        width: drawIcon,
+                        height: drawIcon,
+                        child: ColorFiltered(
+                          colorFilter:
+                              ColorFilter.mode(foreground, BlendMode.srcIn),
+                          child: leading,
+                        ),
+                      ),
+                    SizedBox(width: gap),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: style,
+                    ),
+                    SizedBox(width: gap),
+                  ],
+                );
+                return FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.center,
+                  child: row,
+                );
+              },
             ),
-            if (showLeading)
-              Positioned(
-                left: iconInset + iconLeftNudge,
-                top: iconInset,
-                width: ProcessModeOutlineChrome.iconSize,
-                height: ProcessModeOutlineChrome.iconSize,
-                child: ColorFiltered(
-                  colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
-                  child: leading,
-                ),
-              ),
           ],
         ),
       ),

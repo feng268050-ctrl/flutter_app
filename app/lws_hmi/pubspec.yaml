@@ -16,8 +16,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-# System Version continues lws-ui (last Android: 1.0.37+1037). See lib/app_version.dart.
-version: 1.0.38+1038
+# System Version: 5-digit build = major*10000+minor*100+patch (1.0.40 → 10040). See lib/app_version.dart.
+version: 1.0.40+10040
 
 environment:
   sdk: ^3.5.0

@@ -1,8 +1,8 @@
 /// Product **System Version** (Flutter HMI `versionName`).
 ///
-/// Continues the lws-ui Android sequence (`versionName` 1.0.37 / `versionCode`
-/// 1037). Keep in sync with `pubspec.yaml` `version:` (name+build).
-const String kSystemVersion = '1.0.38';
+/// Keep in sync with `pubspec.yaml` `version:` (name+build).
+/// Build number is 5 digits: major*10000 + minor*100 + patch (1.0.40 → 10040).
+const String kSystemVersion = '1.0.40';
 
 /// Product build number (`versionCode` / pubspec `+N`).
-const int kSystemVersionCode = 1038;
+const int kSystemVersionCode = 10040;

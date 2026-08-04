@@ -9,7 +9,7 @@ import 'package:lws_hmi/app/hmi_route_restore.dart';
 import 'package:lws_hmi/features/settings/application/product_keyboard_profile.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Keyboard settings: soft layout Segment + preview + physical keyboard status.
 class KeyboardSettingsPage extends StatefulWidget {
@@ -93,8 +93,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
           children: [
             Text(
               l10n.keyboardApplyConfirmTitle,
-              style: const TextStyle(
-                fontSize: AppTypography.controlSize,
+              style: context.hmiTypography.settingsRowTitle.copyWith(
                 color: CyberColors.textPrimary,
               ),
             ),
@@ -245,9 +244,8 @@ class _KeyboardLayoutPreviewSection extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
               child: Text(
                 footnote,
-                style: const TextStyle(
-                  color: Color(0x8CFFFFFF),
-                  fontSize: AppTypography.microSize,
+                style: context.hmiTypography.technicalMeta.copyWith(
+                  color: const Color(0x8CFFFFFF),
                 ),
               ),
             ),

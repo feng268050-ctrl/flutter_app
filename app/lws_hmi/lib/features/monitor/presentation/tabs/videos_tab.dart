@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_cloud_upload_coordinator.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_upload_gating.dart';
@@ -286,17 +286,17 @@ class VideosTabState extends State<VideosTab> {
     }
   }
 
-  static const _headingStyle = TextStyle(
-    color: Colors.white,
-    fontSize: AppTypography.sectionTitleSize,
-    fontWeight: FontWeight.w500,
-  );
+  TextStyle _headingStyle(BuildContext context) =>
+      context.hmiTypography.sectionTitle.copyWith(
+        color: Colors.white,
+        fontWeight: FontWeight.w500,
+      );
 
-  static const _cellStyle = TextStyle(
-    color: Colors.white,
-    fontSize: AppTypography.captionSize,
-    height: 1.15,
-  );
+  TextStyle _cellStyle(BuildContext context) =>
+      context.hmiTypography.caption.copyWith(
+        color: Colors.white,
+        height: 1.15,
+      );
 
   List<DataColumn> _columns(AppLocalizations l10n) => [
         DataColumn(
@@ -331,7 +331,12 @@ class VideosTabState extends State<VideosTab> {
         ),
       ];
 
-  DataRow _dataRow(ProcessVideoRecord row, AppLocalizations l10n) {
+  DataRow _dataRow(
+    BuildContext context,
+    ProcessVideoRecord row,
+    AppLocalizations l10n,
+  ) {
+    final typography = context.hmiTypography;
     return DataRow(
       onSelectChanged: (_) => unawaited(_openDetail(row)),
       cells: [
@@ -377,8 +382,7 @@ class VideosTabState extends State<VideosTab> {
                     : null,
                 child: Text(
                   l10n.processVideoUpload,
-                  style: const TextStyle(
-                    fontSize: AppTypography.bodySize,
+                  style: typography.body.copyWith(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
@@ -390,8 +394,7 @@ class VideosTabState extends State<VideosTab> {
                 onPressed: () => unawaited(_delete(row)),
                 child: Text(
                   l10n.deleteText,
-                  style: const TextStyle(
-                    fontSize: AppTypography.bodySize,
+                  style: typography.body.copyWith(
                     fontWeight: FontWeight.w600,
                     color: CyberColors.buttonSecondaryText,
                   ),
@@ -405,6 +408,7 @@ class VideosTabState extends State<VideosTab> {
   }
 
   Widget _themedTable({
+    required BuildContext context,
     required ThemeData theme,
     required AppLocalizations l10n,
     required List<DataRow> rows,
@@ -412,10 +416,10 @@ class VideosTabState extends State<VideosTab> {
     return Theme(
       data: theme.copyWith(
         dataTableTheme: DataTableThemeData(
-          headingTextStyle: _headingStyle.copyWith(
-            fontSize: AppTypography.captionSize,
+          headingTextStyle: _headingStyle(context).copyWith(
+            fontSize: context.hmiTypography.caption.fontSize,
           ),
-          dataTextStyle: _cellStyle,
+          dataTextStyle: _cellStyle(context),
           dividerThickness: 1,
           headingRowColor: WidgetStateProperty.all(Colors.transparent),
           dataRowColor: WidgetStateProperty.all(Colors.transparent),
@@ -462,6 +466,7 @@ class VideosTabState extends State<VideosTab> {
                               return SizedBox(
                                 width: constraints.maxWidth,
                                 child: _themedTable(
+                                  context: context,
                                   theme: theme,
                                   l10n: l10n,
                                   rows: const [],
@@ -498,11 +503,12 @@ class VideosTabState extends State<VideosTab> {
                               child: SizedBox(
                                 width: tableWidth,
                                 child: _themedTable(
+                                  context: context,
                                   theme: theme,
                                   l10n: l10n,
                                   rows: [
                                     for (final row in _rows)
-                                      _dataRow(row, l10n),
+                                      _dataRow(context, row, l10n),
                                   ],
                                 ),
                               ),
@@ -517,9 +523,8 @@ class VideosTabState extends State<VideosTab> {
             padding: const EdgeInsets.only(bottom: 16),
             child: Text(
               l10n.processVideoLoadedCount(_rows.length, _total),
-              style: const TextStyle(
+              style: context.hmiTypography.technicalMeta.copyWith(
                 color: Colors.white38,
-                fontSize: AppTypography.microSize,
               ),
             ),
           )
@@ -572,17 +577,15 @@ final class _EmptyState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             l10n.processVideoEmptyTitle,
-            style: const TextStyle(
+            style: context.hmiTypography.body.copyWith(
               color: Colors.white54,
-              fontSize: AppTypography.bodySize,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             l10n.processVideoEmptySubtitle,
-            style: const TextStyle(
+            style: context.hmiTypography.caption.copyWith(
               color: Colors.white38,
-              fontSize: AppTypography.captionSize,
             ),
           ),
         ],

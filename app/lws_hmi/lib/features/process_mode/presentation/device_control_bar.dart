@@ -11,7 +11,7 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_scope.da
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Bottom device-control strip: manual gas + hold-to-enable laser + wire stubs.
 ///
@@ -119,9 +119,8 @@ final class DeviceControlBar extends StatelessWidget {
                     Text(
                       controller.lastError!,
                       key: const ValueKey('device-control-error'),
-                      style: const TextStyle(
-                        color: Color(0xFFFF8A80),
-                        fontSize: AppTypography.microSize,
+                      style: context.hmiTypography.technicalMeta.copyWith(
+                        color: const Color(0xFFFF8A80),
                       ),
                     ),
                   ],
@@ -185,7 +184,7 @@ final class _ManualGasSwitch extends StatelessWidget {
       dense: true,
       title: Text(
         l10n.manualGas,
-        style: const TextStyle(color: Colors.white, fontSize: AppTypography.captionSize),
+        style: context.hmiTypography.caption.copyWith(color: Colors.white),
       ),
       value: value,
       onChanged: enabled ? onChanged : null,
@@ -313,9 +312,8 @@ final class _LaserHoldButtonState extends State<_LaserHoldButton> {
               Center(
                 child: Text(
                   label,
-                  style: const TextStyle(
+                  style: context.hmiTypography.supporting.copyWith(
                     color: Colors.white,
-                    fontSize: AppTypography.supportingSize,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -350,10 +348,10 @@ final class _WireFeedStub extends StatelessWidget {
             onPressed: null,
             child: Text(l10n.retract),
           ),
-          const Text(
+          Text(
             'Wire: protocol TBD',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: AppTypography.microSize),
+            style: context.hmiTypography.technicalMeta.copyWith(color: Colors.white70),
           ),
         ],
       ),

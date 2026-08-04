@@ -7,6 +7,7 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_scope.dart';
 import 'package:lws_hmi/features/process_library/application/process_parameter_applier.dart';
+import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/application/gun_dialog_coordinator.dart';
@@ -37,9 +38,11 @@ import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.d
 import 'package:lws_hmi/features/statistics/application/work_session_statistics_recorder.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Engineer Mode: five tabs + left device panel + right parameter card.
 final class EngineerModePage extends StatefulWidget {
@@ -661,8 +664,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                       child: Text(
                         l10n.noEngineerProcesses,
                         key: const ValueKey('engineer-mode-empty'),
-                        style: const TextStyle(
-                            color: Color(0xB3FFFFFF), fontSize: AppTypography.supportingSize),
+                        style: context.hmiTypography.supporting.copyWith(
+                            color: const Color(0xB3FFFFFF)),
                       ),
                     ),
                   ),
@@ -704,8 +707,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                 children: [
                                   Padding(
                                     padding: const EdgeInsets.fromLTRB(
-                                        24, 16, 16, 8),
-                                    child: Row(
+                                        24, 0, 16, 0),
+                                    child: SizedBox(
+                                      height: 86,
+                                      child: Row(
                                       children: [
                                         Expanded(
                                           child: InkWell(
@@ -717,22 +722,28 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                               _editName();
                                             },
                                             child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  draft.preset.name,
+                                                  draft.preset
+                                                      .displayProcessName(
+                                                          l10n),
                                                   maxLines: 1,
                                                   overflow:
                                                       TextOverflow.ellipsis,
-                                                  style: const TextStyle(
+                                                  style: context
+                                                      .hmiTypography
+                                                      .navigation
+                                                      .copyWith(
                                                     color: Colors.white,
-                                                    fontSize: AppTypography.bodySize,
                                                     fontWeight:
                                                         FontWeight.w600,
                                                   ),
                                                 ),
-                                                    const SizedBox(height: 4),
+                                                    const SizedBox(height: 6),
                                                     Text(
                                                       l10n.currentProcessName,
                                                       key: ValueKey(
@@ -740,10 +751,14 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                             ? 'engineer-mode-draft-uuid'
                                                             : 'engineer-mode-source-label',
                                                       ),
-                                                      style: TextStyle(
+                                                      style: context
+                                                          .hmiTypography
+                                                          .caption
+                                                          .copyWith(
                                                         color: accent
                                                             .withOpacity(0.9),
-                                                        fontSize: AppTypography.microSize,
+                                                        fontWeight:
+                                                            FontWeight.w500,
                                                       ),
                                                     ),
                                                   ],
@@ -776,9 +791,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                     children: [
                                                       Text(
                                                         l10n.moreFavorites,
-                                                        style: const TextStyle(
+                                                        style: context.hmiTypography.settingsRowTitle.copyWith(
                                                           color: Colors.white,
-                                                          fontSize: AppTypography.controlSize,
                                                         ),
                                                       ),
                                                       const SizedBox(width: 2),
@@ -798,6 +812,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                             ),
                                           ],
                                         ),
+                                      ),
                                       ),
                                       Divider(
                                         key: const ValueKey(
@@ -829,14 +844,14 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                 // lws-ui FrostButton DEFAULT
                                                 // (`engineer_pine_base_btn_style`).
                                                 Expanded(
-                                                  child: CyberButton(
+                                                  child: HmiButton(
                                                     key: const ValueKey(
                                                       'engineer-action-reset-default',
                                                     ),
-                                                    stretch: true,
-                                                    size: CyberButtonSize.small,
-                                                    // lws-ui FrostButtonShape.ROUNDED
-                                                    // (stadium) + top↔bottom rim light.
+                                                    label: l10n.resetToDefault,
+                                                    size: HmiButtonSize.large,
+                                                    widthPolicy:
+                                                        HmiButtonWidthPolicy.fill,
                                                     shape: CyberButtonShape
                                                         .rounded,
                                                     borderGradientCenter:
@@ -845,50 +860,20 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                     borderGradientColors:
                                                         _engineerActionPillBorder,
                                                     strokeWidth: 1.5,
+                                                    icon: Icons.restart_alt,
                                                     onPressed: _resetToDefault,
-                                                    child: SizedBox(
-                                                      height: CyberDimens
-                                                          .actionButtonSmallHeight,
-                                                      width: double.infinity,
-                                                      child: Stack(
-                                                        children: [
-                                                          Center(
-                                                            child: Text(
-                                                              l10n.resetToDefault,
-                                                              maxLines: 1,
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .ellipsis,
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                              style: const TextStyle(
-                                                                fontSize: AppTypography.navigationSize,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          Positioned(
-                                                            // height 56, icon 34 → inset 11.
-                                                            left: 11,
-                                                            top: 11,
-                                                            child: Icon(
-                                                              Icons.restart_alt,
-                                                              size: 34,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
                                                   ),
                                                 ),
                                                 const SizedBox(width: 22),
                                                 Expanded(
-                                                  child: CyberButton(
+                                                  child: HmiButton(
                                                     key: const ValueKey(
                                                       'engineer-action-save-favorite',
                                                     ),
-                                                    stretch: true,
-                                                    size: CyberButtonSize.small,
+                                                    label: l10n.saveAsFavorite,
+                                                    size: HmiButtonSize.large,
+                                                    widthPolicy:
+                                                        HmiButtonWidthPolicy.fill,
                                                     shape: CyberButtonShape
                                                         .rounded,
                                                     borderGradientCenter:
@@ -897,43 +882,11 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                     borderGradientColors:
                                                         _engineerActionPillBorder,
                                                     strokeWidth: 1.5,
+                                                    icon: Icons.bookmark_add,
                                                     onPressed:
                                                         controller.applying
                                                             ? null
                                                             : _saveAsFavorite,
-                                                    child: SizedBox(
-                                                      height: CyberDimens
-                                                          .actionButtonSmallHeight,
-                                                      width: double.infinity,
-                                                      child: Stack(
-                                                        children: [
-                                                          Center(
-                                                            child: Text(
-                                                              l10n.saveAsFavorite,
-                                                              maxLines: 1,
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .ellipsis,
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                              style: const TextStyle(
-                                                                fontSize: AppTypography.navigationSize,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          Positioned(
-                                                            left: 11,
-                                                            top: 11,
-                                                            child: Icon(
-                                                              Icons
-                                                                  .bookmark_add,
-                                                              size: 34,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
                                                   ),
                                                 ),
                                               ],

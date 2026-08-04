@@ -11,7 +11,7 @@ import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_button.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Quick-mode bottom composition: left/right side ops + center trapezoid.
 ///
@@ -103,7 +103,6 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               selected:
                                   controller.autoWireFeed && _wireCapable,
                               enabled: _wireCapable,
-                              iconLeftNudge: -15,
                               onPressed: () =>
                                   unawaited(_toggleAutoWire(context, l10n)),
                             ),
@@ -342,9 +341,8 @@ final class _FeedHoldHintSlot extends StatelessWidget {
           DeviceControlFeedbackCopy.feedHoldHint(l10n),
           key: const ValueKey('device-control-feed-hold-hint'),
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: context.hmiTypography.settingsRowTitle.copyWith(
             color: ProcessModeOutlineChrome.actionOrange,
-            fontSize: AppTypography.controlSize,
             height: 1.0,
             fontWeight: FontWeight.w400,
           ),

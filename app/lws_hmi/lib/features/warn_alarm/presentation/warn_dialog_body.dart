@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 
 /// lws-ui warn prompt metrics (`FrostPromptDialog` + `dialog_frost_body_prompt`).
 ///
@@ -41,8 +43,8 @@ abstract final class WarnDialogMetrics {
   /// `prompt_content` → [AppTypography.largeDialogTitle] (special large body).
   static const double bodySize = AppTypography.largeDialogTitleSize;
 
-  /// `frost_dialog_prompt_scroll_max_height`.
-  static const double bodyScrollMaxHeight = 148;
+  /// `frost_dialog_prompt_scroll_max_height` (tightened for hero confirm 72).
+  static const double bodyScrollMaxHeight = 134;
 
   /// `frost_dialog_prompt_content_inset` / shell + body horizontal pad.
   static const double contentInset = 36;
@@ -51,10 +53,10 @@ abstract final class WarnDialogMetrics {
   static const double confirmMinWidth = 500;
 
   /// `frost_action_button_height`.
-  static const double confirmHeight = 58;
+  static const double confirmHeight = 72; // HmiButton hero
 
   /// `frost_action_button_text_size` / `text_size_12`.
-  static const double confirmLabelSize = AppTypography.pageTitleSize;
+  static const double confirmLabelSize = AppTypography.navigationSize; // hero / 24
 
   /// Body `lineSpacingExtra` 6dp on 37sp ≈ height multiplier.
   static const double bodyHeight = (37 + 6) / 37;
@@ -208,9 +210,7 @@ class WarnDialogBody extends StatelessWidget {
     final inset = WarnDialogMetrics.contentInset * scale;
     final icon = WarnDialogMetrics.iconSize * scale;
     final scrollMax = WarnDialogMetrics.bodyScrollMaxHeight * scale;
-    final btnH = WarnDialogMetrics.confirmHeight * scale;
     final bodyFont = WarnDialogMetrics.bodySize * scale;
-    final confirmFont = WarnDialogMetrics.confirmLabelSize * scale;
     final titleMax = WarnDialogMetrics.titleMaxWidth(cardW, scale);
     final titleFont = WarnDialogMetrics.resolveTitleFontSize(
       context: context,
@@ -281,13 +281,12 @@ class WarnDialogBody extends StatelessWidget {
           Center(
             child: SizedBox(
               width: confirmW,
-              height: btnH,
-              child: CyberButton(
-                size: CyberButtonSize.small,
+              child: HmiButton(
+                label: confirmLabel,
+                size: HmiButtonSize.hero,
+                widthPolicy: HmiButtonWidthPolicy.fill,
                 variant: CyberButtonVariant.primary,
                 shape: CyberButtonShape.rounded,
-                stretch: true,
-                height: btnH,
                 // Stop warn SFX before the click sample (shared audio session).
                 clickSoundEnabled: false,
                 onPressed: () {
@@ -297,13 +296,6 @@ class WarnDialogBody extends StatelessWidget {
                     onConfirm();
                   }());
                 },
-                child: Text(
-                  confirmLabel,
-                  style: TextStyle(
-                    fontSize: confirmFont,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
               ),
             ),
           ),

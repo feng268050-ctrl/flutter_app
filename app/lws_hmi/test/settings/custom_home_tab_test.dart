@@ -35,7 +35,7 @@ void main() {
     expect(find.text('Selected 3/4'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('custom-home-save')));
     await tester.pump();
-    expect(find.text('Please select 4 cards'), findsOneWidget);
+    expect(find.text('Please Select 4 Cards'), findsOneWidget);
     ProcessModeToast.resetForTest();
 
     await tester.tap(
@@ -70,7 +70,7 @@ void main() {
       find.byKey(const ValueKey('custom-home-card-cutRatio')),
     );
     await tester.pump();
-    expect(find.text('Please select a card to replace'), findsOneWidget);
+    expect(find.text('Please Select A Card To Replace'), findsOneWidget);
     expect(find.text('Selected'), findsOneWidget);
     expect(
       find.descendant(
@@ -135,14 +135,14 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 180));
 
-    expect(find.text('Save succeeded'), findsOneWidget);
+    expect(find.text('Save Succeeded'), findsOneWidget);
     expect(find.text('Done'), findsOneWidget);
     expect(find.byKey(const ValueKey('custom-home-save-success-ok')),
         findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 1500));
     await tester.pumpAndSettle();
-    expect(find.text('Save succeeded'), findsNothing);
+    expect(find.text('Save Succeeded'), findsNothing);
   });
 
   testWidgets('Custom Home failure tip uses failure copy and dismisses',
@@ -168,11 +168,11 @@ void main() {
     await tester.tap(find.text('Show failure tip'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Save failed'), findsOneWidget);
-    expect(find.text('Please try again'), findsOneWidget);
+    expect(find.text('Save Failed'), findsOneWidget);
+    expect(find.text('Please Try Again'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('custom-home-save-success-ok')));
     await tester.pumpAndSettle();
-    expect(find.text('Save failed'), findsNothing);
+    expect(find.text('Save Failed'), findsNothing);
   });
 }

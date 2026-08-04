@@ -28,6 +28,9 @@ import 'package:lws_hmi/platform/cloud/process_parameters_snapshot_store.dart';
 import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// lws-ui `fragment_ai_vision` — Work Info + Choose; preview-stack actions.
 class AiVisionTab extends StatefulWidget {
@@ -690,9 +693,8 @@ class _AiVisionTabState extends State<AiVisionTab> {
                           padding: const EdgeInsets.fromLTRB(24, 10, 24, 21),
                           child: Text(
                             l10n.deviceMonitorWorkInfoTitle,
-                            style: const TextStyle(
+                            style: context.hmiTypography.importantDialogTitle.copyWith(
                               color: Colors.white,
-                              fontSize: AppTypography.largeDialogTitleSize,
                               fontWeight: FontWeight.w400,
                               height: 1.0,
                             ),
@@ -715,22 +717,15 @@ class _AiVisionTabState extends State<AiVisionTab> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: CyberButton(
-                    variant: CyberButtonVariant.primary,
-                    shape: CyberButtonShape.rounded,
-                    stretch: true,
-                    size: CyberButtonSize.small,
-                    borderGradientCenter:
-                        CyberBorderGradientCenter.topLeftBottomRight,
-                    onPressed: () => unawaited(_chooseVideo()),
-                    child: Text(
-                      l10n.aiVisionChooseBtn,
-                      softWrap: false,
-                      style: const TextStyle(fontSize: AppTypography.navigationSize, height: 1.0),
-                    ),
-                  ),
+                HmiButton(
+                  label: l10n.aiVisionChooseBtn,
+                  size: HmiButtonSize.large,
+                  widthPolicy: HmiButtonWidthPolicy.fill,
+                  variant: CyberButtonVariant.primary,
+                  shape: CyberButtonShape.rounded,
+                  borderGradientCenter:
+                      CyberBorderGradientCenter.topLeftBottomRight,
+                  onPressed: () => unawaited(_chooseVideo()),
                 ),
               ],
             ),
@@ -790,9 +785,8 @@ class _AiVisionTabState extends State<AiVisionTab> {
                           child: Text(
                             l10n.aiVisionSelectVideoFirst,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: context.hmiTypography.navigation.copyWith(
                               color: Colors.white70,
-                              fontSize: AppTypography.navigationSize,
                             ),
                           ),
                         ),
@@ -914,9 +908,8 @@ class _InfoBlock extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 31, vertical: 16),
               child: Text(
                 label,
-                style: const TextStyle(
-                  color: Color(0xFFE1E1E1),
-                  fontSize: AppTypography.navigationSize,
+                style: context.hmiTypography.navigation.copyWith(
+                  color: const Color(0xFFE1E1E1),
                   height: 1.0,
                 ),
               ),
@@ -926,9 +919,8 @@ class _InfoBlock extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(31, 16, 31, 0),
             child: Text(
               value,
-              style: const TextStyle(
-                color: Color(0xFFE1E1E1),
-                fontSize: AppTypography.navigationSize,
+              style: context.hmiTypography.navigation.copyWith(
+                color: const Color(0xFFE1E1E1),
                 height: 1.0,
               ),
             ),
@@ -976,7 +968,7 @@ class _AiHudCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: DefaultTextStyle(
-            style: const TextStyle(color: Colors.white, fontSize: AppTypography.bodySize),
+            style: context.hmiTypography.body.copyWith(color: Colors.white),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -1058,7 +1050,7 @@ class _AiBoxesPainter extends CustomPainter {
       }
       labelStyle.text = TextSpan(
         text: label,
-        style: const TextStyle(color: Colors.white, fontSize: AppTypography.supportingSize),
+        style: AppTypography.supporting.copyWith(color: Colors.white),
       );
       labelStyle.layout();
       final padH = labelStyle.height * 0.35;

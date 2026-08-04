@@ -9,7 +9,7 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_material_popup.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Catalog-driven engineer parameter form (row label + tappable value pill).
 ///
@@ -44,9 +44,7 @@ final class EngineerParameterForm extends StatelessWidget {
       if (EngineerParameterVisibility.showsMaterial(preset.processType))
         _MaterialRow(
           material: preset.materialType,
-          label: preset.materialName ??
-              preset.materialType?.localizedLabel(l10n) ??
-              '—',
+          label: preset.displayMaterialLabel(l10n),
           onTap: () => _guarded(context, (w) => _editMaterial(context, w)),
         ),
       if (EngineerParameterVisibility.showsThickness(preset.processType))
@@ -260,9 +258,8 @@ final class _MaterialRow extends StatelessWidget {
               child: Text(
                 AppLocalizations.of(context)?.materialTypeLabel ??
                     'Material Type',
-                style: const TextStyle(
+                style: context.hmiTypography.settingsRowTitle.copyWith(
                   color: Colors.white,
-                  fontSize: AppTypography.controlSize,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -304,10 +301,9 @@ final class _MaterialRow extends StatelessWidget {
                               textAlign: TextAlign.center,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: context.hmiTypography.sectionTitle.copyWith(
                                 color: Colors.white,
-                                fontSize: AppTypography.controlSize,
-                                fontWeight: FontWeight.w400,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
@@ -358,9 +354,8 @@ final class _ValueRow extends StatelessWidget {
                   Flexible(
                     child: Text(
                       presentation.label,
-                      style: const TextStyle(
+                      style: context.hmiTypography.settingsRowTitle.copyWith(
                         color: Colors.white,
-                        fontSize: AppTypography.controlSize,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -369,9 +364,8 @@ final class _ValueRow extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       suffix,
-                      style: TextStyle(
+                      style: context.hmiTypography.settingsRowTitle.copyWith(
                         color: presentation.suffixColor ?? Colors.white,
-                        fontSize: AppTypography.controlSize,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -400,9 +394,8 @@ final class _ValueRow extends StatelessWidget {
                       child: Text(
                         value,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: context.hmiTypography.settingsRowTitle.copyWith(
                           color: Colors.white,
-                          fontSize: AppTypography.controlSize,
                           fontWeight: FontWeight.w400,
                         ),
                       ),

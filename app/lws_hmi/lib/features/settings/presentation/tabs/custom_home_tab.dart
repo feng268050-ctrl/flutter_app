@@ -5,7 +5,9 @@ import 'package:lws_hmi/features/home/domain/custom_home_layout.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/custom_home_save_success_dialog.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Eight-card Custom Home editor.
 ///
@@ -249,14 +251,13 @@ class _SelectionGrid extends StatelessWidget {
         return Stack(
           clipBehavior: Clip.none,
           children: [
-            const Positioned(
+            Positioned(
               left: 0,
               top: 0,
               child: Text(
                 'CANDIDATES',
-                style: TextStyle(
-                  color: Color(0xFFD4D9E5),
-                  fontSize: AppTypography.supportingSize,
+                style: context.hmiTypography.supporting.copyWith(
+                  color: const Color(0xFFD4D9E5),
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.5,
                 ),
@@ -269,11 +270,10 @@ class _SelectionGrid extends StatelessWidget {
               height: _sectionLabelHeight,
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     'SELECTED ON HOME',
-                    style: TextStyle(
-                      color: Color(0xFFD4D9E5),
-                      fontSize: AppTypography.supportingSize,
+                    style: context.hmiTypography.supporting.copyWith(
+                      color: const Color(0xFFD4D9E5),
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.5,
                     ),
@@ -281,11 +281,10 @@ class _SelectionGrid extends StatelessWidget {
                   const Spacer(),
                   Text(
                     'Selected ${selected.length}/4',
-                    style: TextStyle(
+                    style: context.hmiTypography.supporting.copyWith(
                       color: selected.length == 4
                           ? const Color(0xFFBBD1FF)
                           : const Color(0xFFD4D9E5),
-                      fontSize: AppTypography.supportingSize,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -367,17 +366,15 @@ class _SaveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return HmiButton(
+      key: const ValueKey('custom-home-save'),
+      label: AppLocalizations.of(context)!.saveChanges,
+      size: HmiButtonSize.large,
+      widthPolicy: HmiButtonWidthPolicy.fixed,
       width: 340,
-      child: CyberButton(
-        key: const ValueKey('custom-home-save'),
-        size: CyberButtonSize.small,
-        variant: CyberButtonVariant.primary,
-        shape: CyberButtonShape.rounded,
-        stretch: true,
-        onPressed: onPressed,
-        child: Text(AppLocalizations.of(context)!.saveChanges),
-      ),
+      variant: CyberButtonVariant.primary,
+      shape: CyberButtonShape.rounded,
+      onPressed: onPressed,
     );
   }
 }
@@ -435,9 +432,8 @@ class _MetricSelectionCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: context.hmiTypography.body.copyWith(
                     color: selected ? Colors.white : const Color(0xFFF1F4FB),
-                    fontSize: AppTypography.bodySize,
                     fontWeight: FontWeight.w500,
                     height: 1.1,
                   ),
@@ -459,9 +455,8 @@ class _MetricSelectionCard extends StatelessWidget {
             child: Text(
               AppLocalizations.of(context)?.customHomeReplacementSelected ??
                   'Selected',
-              style: const TextStyle(
-                color: Color(0xFFFFD7B9),
-                fontSize: AppTypography.microSize,
+              style: context.hmiTypography.technicalMeta.copyWith(
+                color: const Color(0xFFFFD7B9),
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.4,
               ),
@@ -643,9 +638,8 @@ class _SlotBadge extends StatelessWidget {
       ),
       child: Text(
         '$slot',
-        style: const TextStyle(
+        style: context.hmiTypography.supporting.copyWith(
           color: Colors.white,
-          fontSize: AppTypography.supportingSize,
           fontWeight: FontWeight.w600,
         ),
       ),

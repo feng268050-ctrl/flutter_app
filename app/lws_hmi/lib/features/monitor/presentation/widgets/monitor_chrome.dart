@@ -1,6 +1,7 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
@@ -261,9 +262,8 @@ class MonitorSectionHeader extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: context.hmiTypography.pageTitle.copyWith(
               color: Colors.white,
-              fontSize: MonitorDimens.sectionTitleSize,
               fontWeight: FontWeight.w400,
               height: 1.1,
             ),
@@ -379,9 +379,8 @@ class MonitorMetricCard extends StatelessWidget {
                         value,
                         maxLines: 1,
                         softWrap: false,
-                        style: TextStyle(
+                        style: context.hmiTypography.metricValue.copyWith(
                           color: fault ? const Color(0xFFFF8A80) : Colors.white,
-                          fontSize: MonitorDimens.metricValueSize,
                           fontWeight: FontWeight.w400,
                           height: 1.1,
                         ),
@@ -396,9 +395,8 @@ class MonitorMetricCard extends StatelessWidget {
                     label,
                     maxLines: 1,
                     softWrap: false,
-                    style: const TextStyle(
+                    style: context.hmiTypography.metricLabel.copyWith(
                       color: MonitorDimens.labelColor,
-                      fontSize: MonitorDimens.metricLabelSize,
                       fontWeight: FontWeight.w400,
                       height: 1.15,
                     ),
@@ -545,7 +543,7 @@ class MonitorHealthBanner extends StatelessWidget {
                 message?.trim().isNotEmpty == true
                     ? message!
                     : l10n.modbusCommunicationFault,
-                style: const TextStyle(color: Colors.white, fontSize: AppTypography.bodySize),
+                style: context.hmiTypography.body.copyWith(color: Colors.white),
               ),
             ),
           ],
@@ -604,9 +602,8 @@ class MonitorAlarmLogRow extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     '$code $label',
-                    style: const TextStyle(
+                    style: context.hmiTypography.sectionTitle.copyWith(
                       color: titleRed,
-                      fontSize: AppTypography.sectionTitleSize,
                       fontWeight: FontWeight.w600,
                       height: 1.2,
                     ),
@@ -620,9 +617,8 @@ class MonitorAlarmLogRow extends StatelessWidget {
               padding: const EdgeInsets.only(left: 30, top: 2),
               child: Text(
                 _formatTime(time.toLocal()),
-                style: const TextStyle(
+                style: context.hmiTypography.sectionTitle.copyWith(
                   color: Colors.white,
-                  fontSize: AppTypography.sectionTitleSize,
                   fontWeight: FontWeight.w400,
                   height: 1.2,
                 ),
@@ -673,7 +669,7 @@ class MonitorStatusTile extends StatelessWidget {
               label,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: AppTypography.controlSize),
+              style: context.hmiTypography.settingsRowTitle.copyWith(color: Colors.white),
             ),
           ),
           MonitorStatusDot(on: on),

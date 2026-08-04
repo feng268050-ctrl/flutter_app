@@ -6,7 +6,9 @@ import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Result of the laser-enable Important Reminder dialog.
 final class LaserEnableReminderResult {
@@ -82,9 +84,8 @@ final class _LaserEnableReminderBodyState
         Text(
           l10n.laserEnableReminderTitle,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: context.hmiTypography.navigation.copyWith(
             color: _titleDark,
-            fontSize: AppTypography.navigationSize,
             fontWeight: FontWeight.w700,
             height: 1.1,
             decoration: TextDecoration.none,
@@ -127,26 +128,19 @@ final class _LaserEnableReminderBodyState
         Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 360, maxWidth: 560),
-            child: SizedBox(
-              width: double.infinity,
-              child: CyberButton(
-                key: const ValueKey('laser-enable-reminder-confirm'),
-                size: CyberButtonSize.small,
-                variant: CyberButtonVariant.primary,
-                shape: CyberButtonShape.rounded,
-                stretch: true,
-                onPressed: () {
-                  CyberClickSoundRegistry.playClick();
-                  Navigator.of(context).pop(
-                    LaserEnableReminderResult(dontShowAgain: _dontShowAgain),
-                  );
-                },
-                child: Text(
-                  l10n.laserEnableReminderConfirm,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: AppTypography.captionSize),
-                ),
-              ),
+            child: HmiButton(
+              key: const ValueKey('laser-enable-reminder-confirm'),
+              label: l10n.laserEnableReminderConfirm,
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.fill,
+              variant: CyberButtonVariant.primary,
+              shape: CyberButtonShape.rounded,
+              onPressed: () {
+                CyberClickSoundRegistry.playClick();
+                Navigator.of(context).pop(
+                  LaserEnableReminderResult(dontShowAgain: _dontShowAgain),
+                );
+              },
             ),
           ),
         ),
@@ -183,9 +177,8 @@ final class _LaserEnableReminderBodyState
                 const SizedBox(width: 12),
                 Text(
                   l10n.dontShowAgainThisSession,
-                  style: const TextStyle(
+                  style: context.hmiTypography.sectionTitle.copyWith(
                     color: _labelMuted,
-                    fontSize: AppTypography.sectionTitleSize,
                     height: 1.2,
                     decoration: TextDecoration.none,
                   ),
@@ -245,9 +238,8 @@ final class _ReminderCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: context.hmiTypography.caption.copyWith(
                     color: _tipDark,
-                    fontSize: AppTypography.captionSize,
                     height: 1.25,
                     fontWeight: FontWeight.w500,
                     decoration: TextDecoration.none,

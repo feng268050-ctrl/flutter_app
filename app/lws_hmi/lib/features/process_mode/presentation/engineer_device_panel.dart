@@ -19,7 +19,7 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_store.da
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Engineer left device panel (lws-ui `engineer_continuous_device_controls`).
 ///
@@ -310,7 +310,6 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     controller: widget.controller,
                                     onMessage: (message) =>
                                         _toast(context, message),
-                                    iconLeftNudge: -20,
                                   ),
                                 ),
                                 const SizedBox(width: _actionGap),
@@ -332,7 +331,6 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                     controller: widget.controller,
                                     onMessage: (message) =>
                                         _toast(context, message),
-                                    iconLeftNudge: -10,
                                   ),
                                 ),
                               ],
@@ -508,9 +506,8 @@ final class _CheckRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
+                  style: context.hmiTypography.sectionTitle.copyWith(
                     color: enabled ? Colors.white : const Color(0x66FFFFFF),
-                    fontSize: AppTypography.sectionTitleSize,
                     fontWeight: FontWeight.w500,
                     height: 1.0,
                   ),
@@ -538,7 +535,6 @@ final class _EngineerWireActionButton extends StatefulWidget {
     required this.active,
     required this.controller,
     required this.onMessage,
-    this.iconLeftNudge = 0,
   });
 
   final String label;
@@ -551,8 +547,6 @@ final class _EngineerWireActionButton extends StatefulWidget {
   final bool active;
   final DeviceControlController controller;
   final ValueChanged<String> onMessage;
-  /// Negative shifts icon left from the equal L/T inset.
-  final double iconLeftNudge;
 
   @override
   State<_EngineerWireActionButton> createState() =>
@@ -681,7 +675,7 @@ final class _EngineerWireActionButtonState
     final onFill = solidHighlight || filling;
     final foreground = onFill ? Colors.white : actionOrange;
     final disabledForeground = const Color(0xFF7D3E2B);
-    const labelSize = AppTypography.controlSize;
+    final labelSize = context.hmiTypography.settingsRowTitle.fontSize!;
     const iconSize = 26.0;
     final label = latched
         ? DeviceControlFeedbackCopy.continuousFeedLabel(l10n)
@@ -719,35 +713,83 @@ final class _EngineerWireActionButtonState
                       color: actionOrange,
                     ),
                   if (latched) const FeedContinuousRipple(),
-                  // Label centered; icon left inset = top/bottom inset.
-                  Center(
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
+                  // Continuous Feed: label only. Else [gap][icon][gap][text][gap]
+                  // so left inset equals icon↔label spacing; icon+text H-aligned.
+                  // Text is never ellipsized — shrink icon/gaps first if needed.
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final style = TextStyle(
                         color: widget.enabled
                             ? foreground
                             : disabledForeground,
                         fontSize: labelSize,
                         fontWeight: FontWeight.w600,
                         height: 1.0,
-                      ),
-                    ),
+                      );
+                      if (latched) {
+                        return Center(
+                          child: Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            softWrap: false,
+                            style: style,
+                          ),
+                        );
+                      }
+                      final painter = TextPainter(
+                        text: TextSpan(text: label, style: style),
+                        maxLines: 1,
+                        textDirection: TextDirection.ltr,
+                      )..layout();
+                      final textW = painter.width;
+                      var drawIcon = iconSize;
+                      var gap = (constraints.maxWidth - drawIcon - textW) / 3;
+                      if (gap < 0) {
+                        // Keep full label; shrink icon, then gaps to zero.
+                        drawIcon = (constraints.maxWidth - textW)
+                            .clamp(0.0, iconSize);
+                        gap = (constraints.maxWidth - drawIcon - textW) / 3;
+                        if (gap < 0) {
+                          gap = 0;
+                          drawIcon = (constraints.maxWidth - textW)
+                              .clamp(0.0, iconSize);
+                        }
+                      }
+                      final row = Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(width: gap),
+                          if (drawIcon > 0)
+                            SizedBox(
+                              width: drawIcon,
+                              height: drawIcon,
+                              child: Icon(
+                                widget.icon,
+                                color: widget.enabled
+                                    ? foreground
+                                    : disabledForeground,
+                                size: drawIcon,
+                              ),
+                            ),
+                          SizedBox(width: gap),
+                          Text(
+                            label,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: style,
+                          ),
+                          SizedBox(width: gap),
+                        ],
+                      );
+                      // Scale down only if the panel is too narrow for full text.
+                      return FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.center,
+                        child: row,
+                      );
+                    },
                   ),
-                  // Continuous Feed: label only (match Quick Mode).
-                  if (!latched)
-                    Positioned(
-                      left: (widget.height - iconSize) / 2 +
-                          widget.iconLeftNudge,
-                      top: (widget.height - iconSize) / 2,
-                      child: Icon(
-                        widget.icon,
-                        color: widget.enabled
-                            ? foreground
-                            : disabledForeground,
-                        size: iconSize,
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -851,7 +893,10 @@ final class _EngineerDeviceActionButtonState
     final disabledForeground =
         widget.filled ? const Color(0x99FFFFFF) : const Color(0xFF7D3E2B);
     // Label scales with filled/outline; icons stay 34 (match Quick side ops).
-    final labelSize = widget.filled ? AppTypography.sectionTitleSize : AppTypography.supportingSize;
+    final typography = context.hmiTypography;
+    final labelSize = widget.filled
+        ? typography.sectionTitle.fontSize!
+        : typography.supporting.fontSize!;
     const iconSize = 34.0;
     return Semantics(
       button: true,

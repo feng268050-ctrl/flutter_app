@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/application/cnc_session_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Quick-mode CNC connection guide (lws-ui `CNCCutFragment`).
@@ -56,9 +56,8 @@ final class CncConnectionGuide extends StatelessWidget {
             Text(
               l10n?.cncConnectionGuideTitle ?? 'Connection Guide',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: context.hmiTypography.displayAction.copyWith(
                 color: Colors.white,
-                fontSize: AppTypography.displaySize,
                 height: 1.0,
                 fontWeight: FontWeight.w500,
               ),
@@ -107,9 +106,8 @@ final class CncConnectionGuide extends StatelessWidget {
                 l10n?.cncConnectionGuideNote ??
                     'Note: After connecting, further adjustments are made on the CNC.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: context.hmiTypography.body.copyWith(
                   color: Colors.white,
-                  fontSize: AppTypography.bodySize,
                   height: 1.2,
                 ),
               ),
@@ -160,9 +158,8 @@ final class _CncStepColumn extends StatelessWidget {
         Text(
           label,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: context.hmiTypography.supporting.copyWith(
             color: Colors.white,
-            fontSize: AppTypography.supportingSize,
             height: 1.25,
           ),
         ),

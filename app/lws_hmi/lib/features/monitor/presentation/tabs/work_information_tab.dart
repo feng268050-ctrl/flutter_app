@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_gauges.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// lws-ui `WorkInfoFragment` — 3 percent gauges + 3 data cards.
 class WorkInformationTab extends StatelessWidget {
@@ -123,7 +123,7 @@ class _PercentCard extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontSize: AppTypography.navigationSize),
+            style: context.hmiTypography.navigation.copyWith(color: Colors.white),
           ),
           const SizedBox(height: 8),
           Expanded(

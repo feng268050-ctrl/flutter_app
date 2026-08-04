@@ -2,7 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
@@ -162,9 +162,8 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
           child: Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: context.hmiTypography.importantDialogTitle.copyWith(
               color: CyberColors.textPrimary,
-              fontSize: AppTypography.largeDialogTitleSize,
               fontWeight: FontWeight.w700,
               height: 1.15,
               decoration: TextDecoration.none,
@@ -181,9 +180,8 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
               padding: const EdgeInsets.symmetric(horizontal: _kCardPadH),
               child: Text(
                 content,
-                style: const TextStyle(
+                style: context.hmiTypography.pageTitle.copyWith(
                   color: CyberColors.textPrimary,
-                  fontSize: AppTypography.pageTitleSize,
                   height: 1.35,
                   fontWeight: FontWeight.w400,
                   decoration: TextDecoration.none,
@@ -222,9 +220,8 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                               children: [
                                 Text(
                                   checkboxLabel,
-                                  style: const TextStyle(
+                                  style: context.hmiTypography.pageTitle.copyWith(
                                     color: CyberColors.textPrimary,
-                                    fontSize: AppTypography.pageTitleSize,
                                     height: 1.25,
                                     decoration: TextDecoration.none,
                                   ),
@@ -237,9 +234,8 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                                   onTap: _openDisclaimer,
                                   child: Text(
                                     ' “${l10n.safetyTipsInfoUse}”',
-                                    style: const TextStyle(
+                                    style: context.hmiTypography.pageTitle.copyWith(
                                       color: _kDisclaimerLink,
-                                      fontSize: AppTypography.pageTitleSize,
                                       height: 1.25,
                                       fontWeight: FontWeight.w700,
                                       decoration: TextDecoration.none,
@@ -250,9 +246,8 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                             )
                           : Text(
                               checkboxLabel,
-                              style: const TextStyle(
+                              style: context.hmiTypography.pageTitle.copyWith(
                                 color: CyberColors.textPrimary,
-                                fontSize: AppTypography.pageTitleSize,
                                 height: 1.25,
                                 decoration: TextDecoration.none,
                               ),

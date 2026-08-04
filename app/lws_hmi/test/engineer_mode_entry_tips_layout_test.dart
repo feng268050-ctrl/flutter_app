@@ -32,7 +32,7 @@ void main() {
       findsOneWidget,
     );
     // Full title — not ellipsized ("Engineer Mode No…").
-    expect(find.text('Engineer mode notice'), findsOneWidget);
+    expect(find.text('Engineer Mode Notice'), findsOneWidget);
     expect(
       find.textContaining('before making fine adjustments.'),
       findsOneWidget,

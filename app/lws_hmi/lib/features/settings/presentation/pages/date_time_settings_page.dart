@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Date & Time hub — Automatic sync + NTP server + auto timezone + manual rows.
 class DateTimeSettingsPage extends StatefulWidget {
@@ -440,9 +440,8 @@ class _TimezonePickerPageState extends State<_TimezonePickerPage> {
               fieldType: CyberImeFieldType.text,
               controller: _searchCtrl,
               session: _ime,
-              style: const TextStyle(
+              style: context.hmiTypography.body.copyWith(
                 color: CyberColors.textPrimary,
-                fontSize: AppTypography.bodySize,
               ),
               decoration: InputDecoration(
                 hintText: l10n.timezoneSearchHint,
@@ -499,9 +498,8 @@ class _TimezonePickerPageState extends State<_TimezonePickerPage> {
                                 AppLocalizations.of(context)
                                         ?.noTimeZonesFound ??
                                     'No Time Zones Found',
-                                style: const TextStyle(
+                                style: context.hmiTypography.body.copyWith(
                                   color: CyberColors.textPrimary,
-                                  fontSize: AppTypography.bodySize,
                                 ),
                               ),
                             )
@@ -590,18 +588,6 @@ Future<TimeOfDay?> showCyberTimePicker({
 
 int _daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
 
-TextStyle get _pickerWheelStyle => const TextStyle(
-      fontSize: AppTypography.dialogTitleSize,
-      fontWeight: FontWeight.w500,
-      color: CyberColors.textPrimary,
-    );
-
-TextStyle get _pickerSeparatorStyle => const TextStyle(
-      fontSize: AppTypography.displaySize,
-      color: CyberColors.textPrimary,
-      height: 1,
-    );
-
 class _CyberDatePickerBody extends StatefulWidget {
   const _CyberDatePickerBody({
     required this.title,
@@ -662,6 +648,14 @@ class _CyberDatePickerBodyState extends State<_CyberDatePickerBody> {
   Widget build(BuildContext context) {
     final yearCount = widget.lastYear - widget.firstYear + 1;
     final dayCount = _daysInMonth(_year, _month);
+    final pickerWheelStyle = context.hmiTypography.dialogTitle.copyWith(
+      fontWeight: FontWeight.w500,
+      color: CyberColors.textPrimary,
+    );
+    final pickerSeparatorStyle = context.hmiTypography.displayAction.copyWith(
+      color: CyberColors.textPrimary,
+      height: 1,
+    );
     return SizedBox(
       width: _kPickerDialogWidth,
       child: CyberPromptContent(
@@ -690,13 +684,13 @@ class _CyberDatePickerBodyState extends State<_CyberDatePickerBody> {
                         Center(
                           child: Text(
                             '${widget.firstYear + i}',
-                            style: _pickerWheelStyle,
+                            style: pickerWheelStyle,
                           ),
                         ),
                     ],
                   ),
                 ),
-                Text('-', style: _pickerSeparatorStyle),
+                Text('-', style: pickerSeparatorStyle),
                 Expanded(
                   flex: 3,
                   child: CupertinoPicker(
@@ -715,13 +709,13 @@ class _CyberDatePickerBodyState extends State<_CyberDatePickerBody> {
                         Center(
                           child: Text(
                             m.toString().padLeft(2, '0'),
-                            style: _pickerWheelStyle,
+                            style: pickerWheelStyle,
                           ),
                         ),
                     ],
                   ),
                 ),
-                Text('-', style: _pickerSeparatorStyle),
+                Text('-', style: pickerSeparatorStyle),
                 Expanded(
                   flex: 3,
                   child: CupertinoPicker(
@@ -738,7 +732,7 @@ class _CyberDatePickerBodyState extends State<_CyberDatePickerBody> {
                         Center(
                           child: Text(
                             d.toString().padLeft(2, '0'),
-                            style: _pickerWheelStyle,
+                            style: pickerWheelStyle,
                           ),
                         ),
                     ],
@@ -809,6 +803,14 @@ class _CyberTimePickerBodyState extends State<_CyberTimePickerBody> {
 
   @override
   Widget build(BuildContext context) {
+    final pickerWheelStyle = context.hmiTypography.dialogTitle.copyWith(
+      fontWeight: FontWeight.w500,
+      color: CyberColors.textPrimary,
+    );
+    final pickerSeparatorStyle = context.hmiTypography.criticalTitle.copyWith(
+      color: CyberColors.textPrimary,
+      height: 1,
+    );
     return SizedBox(
       width: _kPickerDialogWidth,
       child: CyberPromptContent(
@@ -833,7 +835,7 @@ class _CyberTimePickerBodyState extends State<_CyberTimePickerBody> {
                         Center(
                           child: Text(
                             h.toString().padLeft(2, '0'),
-                            style: _pickerWheelStyle,
+                            style: pickerWheelStyle,
                           ),
                         ),
                     ],
@@ -843,7 +845,7 @@ class _CyberTimePickerBodyState extends State<_CyberTimePickerBody> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
                     ':',
-                    style: _pickerSeparatorStyle.copyWith(fontSize: AppTypography.criticalTitleSize),
+                    style: pickerSeparatorStyle,
                   ),
                 ),
                 Expanded(
@@ -859,7 +861,7 @@ class _CyberTimePickerBodyState extends State<_CyberTimePickerBody> {
                         Center(
                           child: Text(
                             m.toString().padLeft(2, '0'),
-                            style: _pickerWheelStyle,
+                            style: pickerWheelStyle,
                           ),
                         ),
                     ],

@@ -50,7 +50,7 @@ import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dar
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Quick Mode: process wheel + material/gear/dimension selection (U3).
 final class QuickModePage extends StatefulWidget {
@@ -915,9 +915,8 @@ final class _QuickModePageState extends State<QuickModePage> {
               child: Text(
                 AppLocalizations.of(context)!.processLibraryNotInstalled,
                 key: const ValueKey('quick-mode-empty-library'),
-                style: const TextStyle(
-                  color: Color(0xB3FFFFFF),
-                  fontSize: AppTypography.supportingSize,
+                style: context.hmiTypography.supporting.copyWith(
+                  color: const Color(0xB3FFFFFF),
                 ),
               ),
             ),

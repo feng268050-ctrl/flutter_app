@@ -1,8 +1,10 @@
 import 'package:cyber_ime/cyber_ime.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Shows a Cyber frosted input dialog with CyberIME (system IME suppressed).
 ///
@@ -126,21 +128,27 @@ class _CyberImeInputDialogBodyState extends State<_CyberImeInputDialogBody> {
               ),
             ),
             style:
-                const TextStyle(color: CyberColors.textPrimary, fontSize: AppTypography.bodySize),
+                context.hmiTypography.body.copyWith(color: CyberColors.textPrimary),
             onAction: _trySubmit,
           ),
         ],
       ),
       actions: [
-        CyberButton(
+        HmiButton(
+          label: AppLocalizations.of(context)!.cancelText,
+          size: HmiButtonSize.medium,
+          widthPolicy: HmiButtonWidthPolicy.equal,
+          width: 168,
           variant: CyberButtonVariant.secondary,
           onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context)!.cancelText),
         ),
-        CyberButton(
+        HmiButton(
+          label: widget.confirmLabel,
+          size: HmiButtonSize.medium,
+          widthPolicy: HmiButtonWidthPolicy.equal,
+          width: 168,
           variant: CyberButtonVariant.primary,
           onPressed: _trySubmit,
-          child: Text(widget.confirmLabel),
         ),
       ],
     );
@@ -176,15 +184,21 @@ Future<bool> showCyberImeFormDialog({
             children: fields,
           ),
           actions: [
-            CyberButton(
+            HmiButton(
+              label: AppLocalizations.of(ctx)?.cancelText ?? 'Cancel',
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.equal,
+              width: 168,
               variant: CyberButtonVariant.secondary,
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text(AppLocalizations.of(ctx)?.cancelText ?? 'Cancel'),
             ),
-            CyberButton(
+            HmiButton(
+              label: resolvedConfirm,
+              size: HmiButtonSize.medium,
+              widthPolicy: HmiButtonWidthPolicy.equal,
+              width: 168,
               variant: CyberButtonVariant.primary,
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text(resolvedConfirm),
             ),
           ],
         ),

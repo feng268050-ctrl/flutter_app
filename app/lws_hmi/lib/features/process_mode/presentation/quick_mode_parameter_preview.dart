@@ -4,7 +4,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dar
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Compact read-only parameter preview for the matched quick preset.
 final class QuickModeParameterPreview extends StatelessWidget {
@@ -33,7 +33,7 @@ final class QuickModeParameterPreview extends StatelessWidget {
         width: 280,
         child: Text(
           AppLocalizations.of(context)!.noMatchingProcess,
-          style: const TextStyle(color: Color(0x99FFFFFF), fontSize: AppTypography.captionSize),
+          style: context.hmiTypography.caption.copyWith(color: const Color(0x99FFFFFF)),
         ),
       );
     }
@@ -44,9 +44,8 @@ final class QuickModeParameterPreview extends StatelessWidget {
         value.name,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
+        style: context.hmiTypography.supporting.copyWith(
           color: Colors.white,
-          fontSize: AppTypography.supportingSize,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -69,15 +68,14 @@ final class QuickModeParameterPreview extends StatelessWidget {
               Expanded(
                 child: Text(
                   localizedProcessParameterLabel(l10n, key),
-                  style: const TextStyle(
-                    color: Color(0xB3FFFFFF),
-                    fontSize: AppTypography.microSize,
+                  style: context.hmiTypography.technicalMeta.copyWith(
+                    color: const Color(0xB3FFFFFF),
                   ),
                 ),
               ),
               Text(
                 '$number ${spec.unit}',
-                style: const TextStyle(color: Colors.white, fontSize: AppTypography.microSize),
+                style: context.hmiTypography.technicalMeta.copyWith(color: Colors.white),
               ),
             ],
           ),

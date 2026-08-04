@@ -1,7 +1,7 @@
 import 'package:cyber_hal/network.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Reusable “current network” panel for Demo / Settings.
@@ -20,7 +20,10 @@ class WifiConnectedPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final muted = TextStyle(color: Colors.white.withOpacity(0.65), fontSize: AppTypography.captionSize);
+    final typography = context.hmiTypography;
+    final muted = typography.caption.copyWith(
+      color: Colors.white.withOpacity(0.65),
+    );
     final title = connection.ssid?.isNotEmpty == true
         ? connection.ssid!
         : l10n.wifiAssociatingPlaceholder;
@@ -29,9 +32,8 @@ class WifiConnectedPanel extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: typography.body.copyWith(
             color: Colors.white,
-            fontSize: AppTypography.bodySize,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -64,7 +66,7 @@ class WifiConnectedPanel extends StatelessWidget {
             connection.message!.isNotEmpty)
           Text(
             connection.message!,
-            style: const TextStyle(color: Colors.redAccent, fontSize: AppTypography.captionSize),
+            style: typography.caption.copyWith(color: Colors.redAccent),
           )
         else if (connection.message != null &&
             connection.message!.isNotEmpty &&

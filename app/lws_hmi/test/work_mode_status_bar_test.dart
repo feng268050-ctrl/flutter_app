@@ -63,10 +63,10 @@ void main() {
     );
 
     expect(find.text('Gun Switch'), findsOneWidget);
-    expect(find.text('Ground clamp'), findsOneWidget);
-    expect(find.text('Key switch'), findsOneWidget);
-    expect(find.text('Gas flow'), findsOneWidget);
-    expect(find.text('E-stop'), findsOneWidget);
+    expect(find.text('Safety Clamp'), findsOneWidget);
+    expect(find.text('Key Switch'), findsOneWidget);
+    expect(find.text('Gas Flow'), findsOneWidget);
+    expect(find.text('E-Stop'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('14:30'), findsOneWidget);
     expect(
@@ -119,10 +119,10 @@ void main() {
     );
     // Full English labels stay visible at design width.
     expect(find.text('Gun Switch'), findsOneWidget);
-    expect(find.text('Ground clamp'), findsOneWidget);
-    expect(find.text('Key switch'), findsOneWidget);
-    expect(find.text('Gas flow'), findsOneWidget);
-    expect(find.text('E-stop'), findsOneWidget);
+    expect(find.text('Safety Clamp'), findsOneWidget);
+    expect(find.text('Key Switch'), findsOneWidget);
+    expect(find.text('Gas Flow'), findsOneWidget);
+    expect(find.text('E-Stop'), findsOneWidget);
     final gaps = [
       ground.left - gun.right,
       key.left - ground.right,
@@ -203,7 +203,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('Ground clamp'), findsOneWidget);
+    expect(find.text('Safety Clamp'), findsOneWidget);
     expect(find.byKey(const ValueKey('cyber-status-wifi')), findsNothing);
   });
 

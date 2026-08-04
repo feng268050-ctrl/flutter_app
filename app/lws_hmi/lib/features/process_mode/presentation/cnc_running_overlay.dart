@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Full-screen CNC running shell (lws-ui `CNCRunning`).
@@ -43,9 +43,8 @@ final class CncRunningOverlay extends StatelessWidget {
                   l10n?.cncModeActiveMessage ??
                       'CNC Mode Active\nOperate on the CNC equipment',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: context.hmiTypography.pageTitle.copyWith(
                     color: Colors.white,
-                    fontSize: AppTypography.pageTitleSize,
                     height: 1.3,
                     fontWeight: FontWeight.w500,
                   ),
@@ -66,9 +65,8 @@ final class CncRunningOverlay extends StatelessWidget {
                       child: Center(
                         child: Text(
                           l10n?.exitCncModeLabel ?? 'Exit CNC Mode',
-                          style: const TextStyle(
+                          style: context.hmiTypography.sectionTitle.copyWith(
                             color: Colors.white,
-                            fontSize: AppTypography.sectionTitleSize,
                             fontWeight: FontWeight.w600,
                             height: 1.0,
                           ),

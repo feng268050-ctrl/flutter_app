@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
@@ -122,6 +123,20 @@ final class _EngineerModeEntryTipsBodyState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final titleStyle = context.hmiTypography.criticalTitle.copyWith(
+      color: _titleOrange,
+      fontWeight: FontWeight.w700,
+      height: 1.0,
+      decoration: TextDecoration.none,
+    );
+    final bodyBase = context.hmiTypography.importantDialogTitle;
+    final bodySize = bodyBase.fontSize ?? _bodySize;
+    final bodyStyle = bodyBase.copyWith(
+      color: _bodyDark,
+      fontWeight: FontWeight.w400,
+      height: (bodySize + 6) / bodySize,
+      decoration: TextDecoration.none,
+    );
     return Padding(
       // Body/action XMLs add horizontal content inset on top of shell padding.
       padding: const EdgeInsets.symmetric(horizontal: _contentInset),
@@ -151,13 +166,7 @@ final class _EngineerModeEntryTipsBodyState
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 softWrap: false,
-                style: const TextStyle(
-                  color: _titleOrange,
-                  fontSize: _titleSize,
-                  fontWeight: FontWeight.w700,
-                  height: 1.0,
-                  decoration: TextDecoration.none,
-                ),
+                style: titleStyle,
               ),
             ),
           ),
@@ -170,14 +179,7 @@ final class _EngineerModeEntryTipsBodyState
               child: Text(
                 l10n.engineerModeEntryBody,
                 textAlign: TextAlign.start,
-                style: const TextStyle(
-                  color: _bodyDark,
-                  fontSize: _bodySize,
-                  fontWeight: FontWeight.w400,
-                  // Android `lineSpacingExtra` 6dp on 37sp.
-                  height: (_bodySize + 6) / _bodySize,
-                  decoration: TextDecoration.none,
-                ),
+                style: bodyStyle,
               ),
             ),
           ),
@@ -249,9 +251,8 @@ final class _EngineerModeEntryTipsBodyState
                   const SizedBox(width: 12),
                   Text(
                     l10n.dontShowAgainThisSession,
-                    style: const TextStyle(
+                    style: context.hmiTypography.sectionTitle.copyWith(
                       color: _labelMuted,
-                      fontSize: AppTypography.sectionTitleSize,
                       decoration: TextDecoration.none,
                     ),
                   ),

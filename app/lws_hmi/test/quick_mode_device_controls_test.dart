@@ -73,7 +73,7 @@ void main() {
       find.byKey(const ValueKey('device-control-feed-hold-hint')),
       findsOneWidget,
     );
-    expect(find.text('Hold 3s To Keep On'), findsOneWidget);
+    expect(find.text('Hold 3s to keep on'), findsOneWidget);
     expect(find.text('Feed'), findsOneWidget);
     final hint = tester.widget<Text>(
       find.byKey(const ValueKey('device-control-feed-hold-hint')),
@@ -239,8 +239,8 @@ void main() {
       controller: controller,
     );
 
-    expect(find.text('Laser Enable'), findsOneWidget);
-    expect(find.text('End Of Work'), findsNothing);
+    expect(find.text('Enable Laser'), findsOneWidget);
+    expect(find.text('End Work'), findsNothing);
     expect(
       find.byKey(const ValueKey('device-control-manual-gas')),
       findsOneWidget,

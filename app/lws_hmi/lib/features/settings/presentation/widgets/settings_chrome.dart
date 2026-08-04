@@ -5,6 +5,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
@@ -40,10 +41,10 @@ abstract final class SettingsDimens {
   /// Preceding [SettingsGroup] must use `bottomInset: 0` so this is the only gap.
   static const helpGap = 8.0;
 
-  /// Device Info / General list title & value → [AppTypography.control].
+  /// Device Info / General list title & value → [HmiTypography.settingsRowTitle].
   static const titleSize = AppTypography.controlSize;
 
-  /// Secondary / subtitle / help → [AppTypography.supporting].
+  /// Secondary / subtitle / help → [HmiTypography.supporting].
   static const subtitleSize = AppTypography.supportingSize;
 
   /// Shared raised-panel shadow: even contact + ambient on all four sides
@@ -126,6 +127,7 @@ final class SettingsTopTabs extends StatelessWidget
   static const tabHeight = 68.0;
   static const dividerThickness = 1.0;
   static const iconSize = 31.0;
+  /// Primary tab label size — mirrors [HmiTypography.primaryTabLabel] (24).
   static const labelSize = AppTypography.navigationSize;
   static const iconTextGap = 6.0;
   static const indicatorHeight = 2.0;
@@ -217,9 +219,8 @@ final class _SettingsTopTabItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = selected ? Colors.white : SettingsTopTabs.unselected;
-    final labelStyle = TextStyle(
+    final labelStyle = context.hmiTypography.primaryTabLabel.copyWith(
       color: color,
-      fontSize: SettingsTopTabs.labelSize,
       fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
       height: 1.0,
     );
@@ -361,7 +362,12 @@ class SettingsHelpFooter extends StatelessWidget {
         SettingsDimens.inset,
         bottomInset,
       ),
-      child: Text(text, style: textStyle),
+      child: Text(
+        text,
+        style: context.hmiTypography.supporting.copyWith(
+          color: Colors.white54,
+        ),
+      ),
     );
   }
 }
@@ -1010,8 +1016,7 @@ class SettingsNavRow extends StatelessWidget {
         leading: leading,
         title: Text(
           title,
-          style: const TextStyle(
-            fontSize: SettingsDimens.titleSize,
+          style: context.hmiTypography.settingsRowTitle.copyWith(
             color: CyberColors.textPrimary,
           ),
         ),
@@ -1028,9 +1033,8 @@ class SettingsNavRow extends StatelessWidget {
                 child: Text(
                   value!,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: context.hmiTypography.settingsRowValue.copyWith(
                     color: CyberColors.textSecondary,
-                    fontSize: SettingsDimens.titleSize,
                   ),
                 ),
               ),
@@ -1081,8 +1085,7 @@ class SettingsValueRow extends StatelessWidget {
       minVerticalPadding: 0,
       title: Text(
         title,
-        style: const TextStyle(
-          fontSize: SettingsDimens.titleSize,
+        style: context.hmiTypography.settingsRowTitle.copyWith(
           color: CyberColors.textPrimary,
         ),
       ),
@@ -1096,9 +1099,8 @@ class SettingsValueRow extends StatelessWidget {
                 value!,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,
-                style: const TextStyle(
+                style: context.hmiTypography.settingsRowValue.copyWith(
                   color: CyberColors.textSecondary,
-                  fontSize: SettingsDimens.titleSize,
                 ),
               ),
             ),
@@ -1154,6 +1156,16 @@ class SettingsSwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final typography = context.hmiTypography;
+    final titleStyle = typography.settingsRowTitle.copyWith(
+      fontSize: titleFontSize,
+      color: CyberColors.textPrimary,
+    );
+    final subtitleStyle = typography.supporting.copyWith(
+      fontSize: subtitleFontSize,
+      color: CyberColors.textSecondary,
+      height: 1.35,
+    );
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
       child: ListTile(
@@ -1161,20 +1173,13 @@ class SettingsSwitchRow extends StatelessWidget {
         minVerticalPadding: 0,
         title: Text(
           title,
-          style: TextStyle(
-            fontSize: titleFontSize,
-            color: CyberColors.textPrimary,
-          ),
+          style: titleStyle,
         ),
         subtitle: subtitle == null
             ? null
             : Text(
                 subtitle!,
-                style: TextStyle(
-                  color: CyberColors.textSecondary,
-                  fontSize: subtitleFontSize,
-                  height: 1.35,
-                ),
+                style: subtitleStyle,
               ),
         trailing: CyberSwitch(
           value: value,
@@ -1215,8 +1220,7 @@ class SettingsControlRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: SettingsDimens.titleSize,
+                    style: context.hmiTypography.settingsRowTitle.copyWith(
                       color: CyberColors.textPrimary,
                     ),
                   ),
@@ -1224,8 +1228,7 @@ class SettingsControlRow extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle!,
-                      style: const TextStyle(
-                        fontSize: SettingsDimens.subtitleSize,
+                      style: context.hmiTypography.supporting.copyWith(
                         color: CyberColors.textSecondary,
                       ),
                     ),
@@ -1278,8 +1281,7 @@ class SettingsSliderRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: SettingsDimens.titleSize,
+                    style: context.hmiTypography.settingsRowTitle.copyWith(
                       color: CyberColors.textPrimary,
                     ),
                   ),
@@ -1287,8 +1289,7 @@ class SettingsSliderRow extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle!,
-                      style: const TextStyle(
-                        fontSize: SettingsDimens.subtitleSize,
+                      style: context.hmiTypography.supporting.copyWith(
                         color: CyberColors.textSecondary,
                       ),
                     ),
@@ -1340,8 +1341,7 @@ class SettingsCheckboxRow extends StatelessWidget {
             const SizedBox(width: 12),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: AppTypography.sectionTitleSize,
+              style: context.hmiTypography.sectionTitle.copyWith(
                 color: CyberColors.textPrimary,
               ),
             ),
@@ -1373,7 +1373,9 @@ class SettingsOptionTile extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       title: Text(
         title,
-        style: const TextStyle(color: CyberColors.textPrimary),
+        style: context.hmiTypography.settingsRowTitle.copyWith(
+          color: CyberColors.textPrimary,
+        ),
       ),
       trailing: selected
           ? const Icon(Icons.check, color: CyberColors.buttonPrimaryAccent)
@@ -1525,9 +1527,7 @@ class SettingsScaledParam extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: SettingsDimens.advancedTitleSize,
-                    ),
+                    style: context.hmiTypography.sectionTitle,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),

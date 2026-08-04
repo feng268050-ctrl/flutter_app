@@ -7,7 +7,7 @@ import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_anchored_popup_layout.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_frost_panel.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Anchored material list (lws-ui `DataPopupBuilder.materialsBuilder`).
 ///
@@ -137,10 +137,8 @@ final class _EngineerMaterialPopup extends StatelessWidget {
                                 Expanded(
                                   child: Text(
                                     material.localizedLabel(l10n),
-                                    style: TextStyle(
-                                      color:
-                                          isSelected ? accent : Colors.white,
-                                      fontSize: AppTypography.bodySize,
+                                    style: context.hmiTypography.body.copyWith(
+                                      color: isSelected ? accent : Colors.white,
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),

@@ -20,7 +20,7 @@ import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dar
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// lws-ui `ProcessVideoDetailsActivity` — left params + right fixed player.
 ///
@@ -378,9 +378,8 @@ final class _ParameterColumn extends StatelessWidget {
                     padding: const EdgeInsets.only(left: 24),
                     child: Text(
                       title,
-                      style: const TextStyle(
+                      style: context.hmiTypography.navigation.copyWith(
                         color: Colors.white,
-                        fontSize: AppTypography.navigationSize,
                         fontWeight: FontWeight.w500,
                         height: 1.0,
                       ),
@@ -444,6 +443,10 @@ final class _ParameterList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rows = _buildRows(context);
+    final dataStyle = context.hmiTypography.sectionTitle.copyWith(
+      color: const Color(0xFFE1E1E1),
+      height: 1.15,
+    );
     return ListView.builder(
       padding: const EdgeInsets.only(right: 10, bottom: 16),
       itemCount: rows.length,
@@ -459,18 +462,18 @@ final class _ParameterList extends StatelessWidget {
                 width: labelWidth,
                 child: Text(
                   '${row.label}:',
-                  style: _dataStyle,
+                  style: dataStyle,
                 ),
               ),
               Expanded(
                 child: Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: row.value, style: _dataStyle),
+                      TextSpan(text: row.value, style: dataStyle),
                       if (unit != null && unit.isNotEmpty)
                         TextSpan(
                           text: ' $unit',
-                          style: _dataStyle.copyWith(
+                          style: dataStyle.copyWith(
                             color: const Color(0xFFE1E1E1),
                           ),
                         ),
@@ -486,12 +489,6 @@ final class _ParameterList extends StatelessWidget {
       },
     );
   }
-
-  static const _dataStyle = TextStyle(
-    color: Color(0xFFE1E1E1),
-    fontSize: AppTypography.sectionTitleSize,
-    height: 1.15,
-  );
 
   List<({String label, String value, String? unit})> _buildRows(
     BuildContext context,
@@ -636,7 +633,7 @@ final class _PlayerPaneState extends State<_PlayerPane> {
       return Center(
         child: Text(
           widget.error == null ? '…' : widget.failedLabel,
-          style: const TextStyle(color: Colors.white54, fontSize: AppTypography.supportingSize),
+          style: context.hmiTypography.supporting.copyWith(color: Colors.white54),
         ),
       );
     }

@@ -35,14 +35,35 @@ void main() {
         ProcessType.continuousWelding,
         AppLocalizationsEn(),
       ),
-      'Continuous welding',
+      'Continuous Welding',
+    );
+    expect(
+      ProcessModeLabels.engineerTabLabel(
+        ProcessType.continuousWelding,
+        AppLocalizationsEn(),
+      ),
+      'Continuous',
+    );
+    expect(
+      ProcessModeLabels.engineerTabLabel(
+        ProcessType.spotWelding,
+        AppLocalizationsEn(),
+      ),
+      'Spot',
     );
     expect(
       ProcessModeLabels.engineerTabLabel(
         ProcessType.weldCleaning,
         AppLocalizationsEn(),
       ),
-      'Weld seam',
+      'Weld Seam',
+    );
+    expect(
+      ProcessModeLabels.engineerTabLabel(
+        ProcessType.wideCleaning,
+        AppLocalizationsEn(),
+      ),
+      'Wide-Area',
     );
     expect(EngineerProcessTabs.types, hasLength(5));
     expect(QuickProcessWheelItems.types, hasLength(6));
@@ -60,7 +81,7 @@ void main() {
 
     expect(find.byKey(const ValueKey('quick-mode-process-wheel')),
         findsOneWidget);
-    expect(find.text('Continuous welding'), findsWidgets);
+    expect(find.text('Continuous Welding'), findsWidgets);
     expect(find.text('Gun Switch'), findsOneWidget);
   });
 
@@ -109,8 +130,8 @@ void main() {
     );
     expect(find.text('Continuous'), findsOneWidget);
     expect(find.text('Spot'), findsOneWidget);
-    expect(find.text('Weld seam'), findsOneWidget);
-    expect(find.text('Wide-area'), findsOneWidget);
+    expect(find.text('Weld Seam'), findsOneWidget);
+    expect(find.text('Wide-Area'), findsOneWidget);
     expect(find.text('Cutting'), findsOneWidget);
     expect(find.textContaining('CNC'), findsNothing);
 

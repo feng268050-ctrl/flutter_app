@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_session.dart';
 import 'package:lws_hmi/features/boot_self_check/domain/boot_self_check_item.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Max height for the item list before it scrolls (lws-ui `maxHeight="420dp"`).
 const double _kItemListMaxHeight = 420;
@@ -41,9 +41,8 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                   Text(
                     l10n.bootSelfCheckDialogTitle,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: context.hmiTypography.pageTitle.copyWith(
                       color: CyberColors.textPrimary,
-                      fontSize: AppTypography.pageTitleSize,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -67,17 +66,15 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   row.item.labelFor(l10n),
-                                  style: const TextStyle(
+                                  style: context.hmiTypography.body.copyWith(
                                     color: CyberColors.textPrimary,
-                                    fontSize: AppTypography.bodySize,
                                   ),
                                 ),
                               ),
                               Text(
                                 row.status.labelFor(l10n),
-                                style: TextStyle(
+                                style: context.hmiTypography.supporting.copyWith(
                                   color: _statusColor(row.status),
-                                  fontSize: AppTypography.supportingSize,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -105,9 +102,8 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                         Expanded(
                           child: Text(
                             l10n.bootSelfCheckDontShowAgain,
-                            style: const TextStyle(
+                            style: context.hmiTypography.sectionTitle.copyWith(
                               color: CyberColors.textSecondary,
-                              fontSize: AppTypography.sectionTitleSize,
                             ),
                           ),
                         ),

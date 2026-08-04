@@ -11,7 +11,7 @@ import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/l10n/product_alarm_l10n.dart';
 import 'package:lws_hmi/features/warn_alarm/presentation/alarm_logs_cleared_dialog.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// lws-ui `fragment_warn_info` — left status/temps + right history + live actives.
 ///
@@ -269,9 +269,8 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                   ? Center(
                                       child: Text(
                                         l10n.noActiveAlarms,
-                                        style: const TextStyle(
+                                        style: context.hmiTypography.settingsRowTitle.copyWith(
                                           color: Colors.white54,
-                                          fontSize: AppTypography.controlSize,
                                         ),
                                       ),
                                     )
@@ -318,8 +317,7 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                                   const SizedBox(width: 4),
                                   Text(
                                     l10n.clearAlarmLogs,
-                                    style: const TextStyle(
-                                      fontSize: AppTypography.sectionTitleSize,
+                                    style: context.hmiTypography.sectionTitle.copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: CyberColors.buttonSecondaryText,
                                     ),

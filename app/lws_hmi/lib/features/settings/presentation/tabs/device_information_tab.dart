@@ -16,7 +16,9 @@ import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.d
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Device Information — CyberUI untitled cards (lws-ui Frost parity).
 class DeviceInformationTab extends StatefulWidget {
@@ -188,8 +190,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
           children: [
             Text(
               l10n.checkUpdate,
-              style: const TextStyle(
-                fontSize: AppTypography.controlSize,
+              style: context.hmiTypography.settingsRowTitle.copyWith(
                 color: CyberColors.textPrimary,
               ),
             ),
@@ -320,18 +321,16 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
             0,
           ),
           child: Center(
-            child: SizedBox(
+            child: HmiButton(
+              label: l10n.checkUpdate,
+              size: HmiButtonSize.large,
+              widthPolicy: HmiButtonWidthPolicy.fixed,
               width: 340,
-              child: CyberButton(
-                size: CyberButtonSize.small,
-                variant: CyberButtonVariant.primary,
-                shape: CyberButtonShape.rounded,
-                stretch: true,
-                borderGradientCenter:
-                    CyberBorderGradientCenter.topLeftBottomRight,
-                onPressed: () => unawaited(_checkForUpdates(l10n)),
-                child: Text(l10n.checkUpdate),
-              ),
+              variant: CyberButtonVariant.primary,
+              shape: CyberButtonShape.rounded,
+              borderGradientCenter:
+                  CyberBorderGradientCenter.topLeftBottomRight,
+              onPressed: () => unawaited(_checkForUpdates(l10n)),
             ),
           ),
         ),
@@ -398,8 +397,7 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
               Text(
                 l10n.cloudEnvironmentTier,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: AppTypography.sectionTitleSize,
+                style: context.hmiTypography.sectionTitle.copyWith(
                   fontWeight: FontWeight.w600,
                   color: CyberColors.textPrimary,
                 ),

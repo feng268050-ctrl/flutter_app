@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:cyber_hal/sys_info.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 enum _MetricTrend { none, up, down }
 
@@ -16,7 +16,6 @@ class SystemStatusCard extends StatefulWidget {
 }
 
 class _SystemStatusCardState extends State<SystemStatusCard> {
-  static const _fontSize = AppTypography.supportingSize;
   static const _rowHeight = 26.0;
   static const _arrowSlot = 18.0;
 
@@ -183,8 +182,7 @@ class _SystemStatusCardState extends State<SystemStatusCard> {
       ('UP', _uptime(snap?.uptime)),
     ];
 
-    final baseStyle = AppTypography.supporting.copyWith(
-      fontSize: _fontSize,
+    final baseStyle = context.hmiTypography.supporting.copyWith(
       height: 1.0,
       color: Colors.white.withOpacity(0.82),
       shadows: const [

@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
 
 /// Item layout for [ProductTopTabs].
 enum ProductTopTabLayout {
@@ -131,12 +131,13 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
   }
 
   double _tabWidthFor(String label) {
+    final tabFontSize = context.hmiTypography.navigation.fontSize!;
     if (widget.layout == ProductTopTabLayout.lwsUi) {
       final painter = TextPainter(
         text: TextSpan(
           text: label,
-          style: const TextStyle(
-            fontSize: _ProductTopTabItem.lwsUiFontSize,
+          style: TextStyle(
+            fontSize: tabFontSize,
             fontWeight: FontWeight.w500,
             height: 1.0,
           ),
@@ -156,8 +157,8 @@ final class _ProductTopTabsState extends State<ProductTopTabs> {
     final painter = TextPainter(
       text: TextSpan(
         text: label,
-        style: const TextStyle(
-          fontSize: _ProductTopTabItem.monitorFontSize,
+        style: TextStyle(
+          fontSize: tabFontSize,
           fontWeight: FontWeight.w500,
           height: 1.0,
         ),
@@ -269,9 +270,7 @@ final class _ProductTopTabItem extends StatelessWidget {
   });
 
   static const monitorIconSize = 31.0;
-  static const monitorFontSize = AppTypography.navigationSize;
   static const lwsUiIconSize = 31.0;
-  static const lwsUiFontSize = AppTypography.navigationSize;
   static const iconTextGap = 6.0;
   static const unselectedLwsUi = Color(0xFF94A3B8);
 
@@ -295,23 +294,21 @@ final class _ProductTopTabItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: layout == ProductTopTabLayout.lwsUi
-            ? _buildLwsUi(color)
-            : _buildMonitorPinned(color),
+            ? _buildLwsUi(context, color)
+            : _buildMonitorPinned(context, color),
       ),
     );
   }
 
-  Widget _buildLwsUi(Color color) {
+  Widget _buildLwsUi(BuildContext context, Color color) {
+    final labelStyle = context.hmiTypography.primaryTabLabel.copyWith(
+      color: color,
+      fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
+      height: 1.0,
+    );
     final iconInset = (stripHeight - lwsUiIconSize) / 2;
     final textPainter = TextPainter(
-      text: TextSpan(
-        text: label,
-        style: TextStyle(
-          fontSize: lwsUiFontSize,
-          fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-          height: 1.0,
-        ),
-      ),
+      text: TextSpan(text: label, style: labelStyle),
       maxLines: 1,
       textDirection: TextDirection.ltr,
     )..layout();
@@ -328,12 +325,7 @@ final class _ProductTopTabItem extends StatelessWidget {
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: color,
-              fontSize: lwsUiFontSize,
-              fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-              height: 1.0,
-            ),
+            style: labelStyle,
           ),
         ),
         Positioned(
@@ -360,7 +352,12 @@ final class _ProductTopTabItem extends StatelessWidget {
     );
   }
 
-  Widget _buildMonitorPinned(Color color) {
+  Widget _buildMonitorPinned(BuildContext context, Color color) {
+    final labelStyle = context.hmiTypography.primaryTabLabel.copyWith(
+      color: color,
+      fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
+      height: 1.0,
+    );
     final iconInset = (stripHeight - monitorIconSize) / 2;
     return Stack(
       children: [
@@ -370,12 +367,7 @@ final class _ProductTopTabItem extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             softWrap: false,
-            style: TextStyle(
-              color: color,
-              fontSize: monitorFontSize,
-              fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-              height: 1.0,
-            ),
+            style: labelStyle,
           ),
         ),
         Positioned(

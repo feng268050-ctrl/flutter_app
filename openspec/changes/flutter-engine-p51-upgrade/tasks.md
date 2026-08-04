@@ -25,6 +25,6 @@
 
 - [x] 4.1 `make build-rootfs` + `make upgrade` (or equivalent); confirm device engine/ICU and `flutter-wayland-client`
 - [x] 4.2 Smoke: Home UI, Settings MediaMTX preview, input/orientation, boot KPI sanity
-- [ ] 4.3 Verify `make push-app` and `make debug-app` / Custom Device + DevTools on the new pin
+- [x] 4.3 Verify `make push-app` and `make debug-app` / Custom Device + DevTools on the new pin
 - [x] 4.4 Update `docs/flutter-linux-hmi-plan.md` P5.1 status and README/AGENTS pin references; fix stale 3.24.4 / old eLinux hash docs
 - [x] 4.5 Note coordination with `gstreamer-security-upgrade` if both land (rebuild eLinux after final GStreamer)

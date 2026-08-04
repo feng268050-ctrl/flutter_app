@@ -44,7 +44,8 @@ The lws_hmi defconfig MUST NOT include Weston, Chromium, camera, benchmark, test
 #### Scenario: adbd not installed
 
 - **WHEN** P1 rootfs is built and inspected
-- **THEN** `adbd` package is not present in rootfs
+- **THEN** `adbd` MUST NOT be present under `/usr/bin`, `/sbin`, or `/system/bin`, and `/etc/profile.d/adbd.sh` MUST NOT remain
+- **AND** board `post-build.sh` SHALL remove those paths when incremental Buildroot `target/` reuse would otherwise keep them after `BR2_PACKAGE_ANDROID_ADBD` is unset
 
 ### Requirement: Platform stack packages are present
 

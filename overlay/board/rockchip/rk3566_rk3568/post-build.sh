@@ -181,6 +181,15 @@ fi
 rm -f "$TARGET_DIR/usr/bin/flutter-pi"
 echo "post-build: purged flutter-pi (if leftover)"
 
+# P1 forbids Android adbd; package is unset but incremental target/ may keep
+# usr/bin/adbd + profile.d from an older lunch / EVB bake.
+rm -f \
+	"$TARGET_DIR/usr/bin/adbd" \
+	"$TARGET_DIR/sbin/adbd" \
+	"$TARGET_DIR/system/bin/adbd" \
+	"$TARGET_DIR/etc/profile.d/adbd.sh"
+echo "post-build: purged adbd (if leftover)"
+
 # Prebuilt avahi-daemon skips Buildroot AVAHI_USERS. Users table should create
 # the account; this is an idempotent safety net if mkusers did not run.
 if [ -x "$TARGET_DIR/usr/sbin/avahi-daemon" ]; then

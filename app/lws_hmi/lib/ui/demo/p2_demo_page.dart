@@ -99,11 +99,8 @@ class _P2DemoPageState extends State<P2DemoPage> {
   String _feederCommStatus = kUnavailableDisplay;
   String _modbusLink = kUnavailableDisplay;
 
-  bool _audioPlaying = false;
-  double _volumePercent = 80;
   double _brightnessPercent = 80;
 
-  StreamSubscription<bool>? _playingSub;
   StreamSubscription<SysInfoUpdate>? _sysInfoSub;
   StreamSubscription<List<ModbusAttributeChange>>? _modbusAttrSub;
   StreamSubscription<ModbusHealth>? _modbusHealthSub;
@@ -156,12 +153,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
         LinuxBluezBluetoothController();
     _keyboard = bindings?.keyboard() ?? LinuxKeyboard();
     _mouse = bindings?.mouse() ?? LinuxMouseSettingsController();
-    _playingSub = _audio.playing.listen((playing) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _audioPlaying = playing);
-    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_loadAfterFirstFrame());
     });
@@ -236,13 +227,11 @@ class _P2DemoPageState extends State<P2DemoPage> {
       if (widget.skipPlatformSections) {
         return;
       }
-      final vol = await _audio.getVolumePercent();
       final bri = await _backlight.getBrightnessPercent();
       if (!mounted) {
         return;
       }
       setState(() {
-        _volumePercent = vol.toDouble();
         _brightnessPercent = bri.toDouble();
       });
     } catch (_) {
@@ -316,19 +305,7 @@ class _P2DemoPageState extends State<P2DemoPage> {
     return base;
   }
 
-  Future<void> _toggleAudio() async {
-    if (_audio.isPlaying || _audioPlaying) {
-      await _audio.stop();
-      return;
-    }
-    await _audio.playAsset(MediaAudioController.shanghaiTanAsset);
-  }
-
   /// Slider paint is local only; hardware apply runs on [onChangeEnd] (OS-style).
-  void _onVolumeUi(double value) {
-    _volumePercent = value;
-  }
-
   void _onBrightnessUi(double value) {
     _brightnessPercent = value;
   }
@@ -358,7 +335,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
     unawaited(_modbusAttrSub?.cancel() ?? Future<void>.value());
     unawaited(_modbusHealthSub?.cancel() ?? Future<void>.value());
     unawaited(_sysInfo.close());
-    unawaited(_playingSub?.cancel() ?? Future<void>.value());
     final bri = _queuedBrightness;
     if (bri != null) {
       unawaited(_backlight.setBrightnessPercent(bri));
@@ -457,41 +433,6 @@ class _P2DemoPageState extends State<P2DemoPage> {
             _InfoTile(label: 'Gun Comm Status', value: _gunCommAlarm),
             _InfoTile(label: 'Feeder Comm Status', value: _feederCommStatus),
             if (!widget.skipPlatformSections) ...[
-              const SizedBox(height: 24),
-              const Text(
-                'Speaker',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Track: shanghai_tan.mp3 (ALSA / mpg123)',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: FilledButton(
-                  onPressed: () => unawaited(_toggleAudio()),
-                  child: Text(_audioPlaying ? 'Stop' : 'Play'),
-                ),
-              ),
-              const SizedBox(height: 8),
-              _PercentSlider(
-                label: 'Volume',
-                value: _volumePercent,
-                onChanged: _onVolumeUi,
-                onChangeEnd: (v) {
-                  _volumePercent = v;
-                  unawaited(_audio.setVolumePercent(v.round()));
-                },
-              ),
               const SizedBox(height: 24),
               const Text(
                 'Backlight',

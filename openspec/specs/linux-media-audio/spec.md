@@ -22,9 +22,9 @@ The HMI SHALL provide a reusable `MediaAudioController` (name may vary; behavior
 
 On Linux/eLinux HMI, the media audio implementation SHALL produce audible output through the board speaker path using ALSA (plugin or ALSA-backed helper process). Volume percent SHALL map to the ALSA mixer and/or player gain so that increasing the percent increases loudness under normal amp configuration.
 
-#### Scenario: Demo track plays on device
+#### Scenario: Bundled asset plays on device
 
-- **WHEN** the controller plays `assets/audio/shanghai_tan.mp3` on ynh960 with ALSA stack present
+- **WHEN** the controller plays a product-owned bundled asset (for example `assets/audio/warn_mp3.mp3` or a click-effect clip) on ynh960 with ALSA stack present
 - **THEN** the track is audible on the speaker without crashing the HMI process
 
 #### Scenario: Missing audio device does not crash app

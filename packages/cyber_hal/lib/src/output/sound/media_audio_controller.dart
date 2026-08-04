@@ -1,8 +1,5 @@
 /// Reusable media playback + volume API (Linux ALSA now; Android later).
 abstract class MediaAudioController {
-  /// Bundled demo track (lws-ui `shanghai_tan.mp3`).
-  static const shanghaiTanAsset = 'assets/audio/shanghai_tan.mp3';
-
   bool get isPlaying;
 
   /// Warn loop is armed on the sticky session (`_loopPath` / SoundPool stream).

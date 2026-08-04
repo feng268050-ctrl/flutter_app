@@ -95,12 +95,12 @@ The host build script SHALL use `hmi-bundle (flutter assemble) build --arch=arm6
 - **WHEN** developer runs `make build-app`
 - **THEN** `lib/libapp.so` and `data/flutter_assets/` are installed under overlay `opt/hmi/` (assembled from `hmi-bundle (flutter assemble)` output; engine not copied into bundle)
 
-### Requirement: Shanghai tan test track is bundled as a Flutter asset
+### Requirement: Product audio assets exclude copyrighted demo tracks
 
-The Flutter app SHALL ship `assets/audio/shanghai_tan.mp3` (sourced from lws-ui `res/raw/shanghai_tan.mp3`) in the eLinux HMI bundle so the demo can play it offline on device.
+The Flutter app MUST NOT ship `assets/audio/shanghai_tan.mp3` (or other copyrighted third-party demo music) in the eLinux HMI bundle. Speaker smoke and media play-test SHALL use product-owned short clips (click effects / warn loop) or Settings volume controls, not a bundled commercial track.
 
-#### Scenario: Asset present in bundle
+#### Scenario: Shanghai tan absent from bundle
 
 - **WHEN** `make build-app` completes and the overlay `/opt/hmi` tree is inspected
-- **THEN** the shanghai tan mp3 is present under the bundled flutter assets path
+- **THEN** `shanghai_tan.mp3` MUST NOT be present under the bundled flutter assets path
 

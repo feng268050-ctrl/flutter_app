@@ -706,6 +706,18 @@ EOF
 		echo "FAIL: flutter-pi binary must not ship" >&2
 		missing=1
 	fi
+	if [[ -e "$target/usr/bin/adbd" || -e "$target/sbin/adbd" || -e "$target/system/bin/adbd" ]]; then
+		echo "FAIL: adbd binary must not ship (P1; post-build must purge leftovers)" >&2
+		missing=1
+	else
+		echo "OK:  adbd binary absent"
+	fi
+	if [[ -e "$target/etc/profile.d/adbd.sh" ]]; then
+		echo "FAIL: etc/profile.d/adbd.sh must not ship" >&2
+		missing=1
+	else
+		echo "OK:  etc/profile.d/adbd.sh absent"
+	fi
 	if [[ -f "$target/etc/display-stack" || -f "$target/etc/hmi/display-stack" ]]; then
 		echo "FAIL: retired display-stack stamp must not ship" >&2
 		missing=1

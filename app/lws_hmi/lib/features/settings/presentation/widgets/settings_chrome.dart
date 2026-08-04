@@ -4,7 +4,6 @@ import 'dart:ui' as ui;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
@@ -41,11 +40,11 @@ abstract final class SettingsDimens {
   /// Preceding [SettingsGroup] must use `bottomInset: 0` so this is the only gap.
   static const helpGap = 8.0;
 
-  /// Device Info / General list title & value → [HmiTypography.settingsRowTitle].
-  static const titleSize = AppTypography.controlSize;
+  /// Device Info / General list title & value → [HmiTypography.settingsRowTitle] (20).
+  static const titleSize = 20.0;
 
-  /// Secondary / subtitle / help → [HmiTypography.supporting].
-  static const subtitleSize = AppTypography.supportingSize;
+  /// Secondary / subtitle / help → [HmiTypography.supporting] (16).
+  static const subtitleSize = 16.0;
 
   /// Shared raised-panel shadow: even contact + ambient on all four sides
   /// (no top-left / bottom-right directional bias).
@@ -100,12 +99,12 @@ abstract final class SettingsDimens {
     ),
   ];
 
-  /// Advanced tab body — mapped to AppTypography roles.
-  static const advancedTitleSize = AppTypography.sectionTitleSize;
-  static const advancedValueSize = AppTypography.sectionTitleSize;
-  static const advancedSwitchTitleSize = AppTypography.navigationSize;
-  static const advancedSwitchSubtitleSize = AppTypography.controlSize;
-  static const advancedSectionHeaderSize = AppTypography.controlSize;
+  /// Advanced tab body — ladder sizes matching HmiTypography roles.
+  static const advancedTitleSize = 22.0; // sectionTitle
+  static const advancedValueSize = 22.0; // sectionTitle
+  static const advancedSwitchTitleSize = 24.0; // navigation / primaryTabLabel
+  static const advancedSwitchSubtitleSize = 20.0; // control / settingsRowTitle
+  static const advancedSectionHeaderSize = 20.0; // control
 }
 
 /// Settings page Material-style top tabs (equal width, no rounded strip chrome).
@@ -128,7 +127,7 @@ final class SettingsTopTabs extends StatelessWidget
   static const dividerThickness = 1.0;
   static const iconSize = 31.0;
   /// Primary tab label size — mirrors [HmiTypography.primaryTabLabel] (24).
-  static const labelSize = AppTypography.navigationSize;
+  static const labelSize = 24.0;
   static const iconTextGap = 6.0;
   static const indicatorHeight = 2.0;
   static const unselected = Color(0xFF94A3B8);

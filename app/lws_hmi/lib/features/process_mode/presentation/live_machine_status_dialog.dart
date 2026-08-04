@@ -479,6 +479,8 @@ final class _AlarmTempPair extends StatelessWidget {
 /// Live More Status temp row: name left, value right; no status light.
 ///
 /// Panel chrome matches [_GaugePanel]. Label turns white when a reading exists.
+/// Value is smaller than Monitor metrics so long labels (e.g. Protective Mirror)
+/// stay fully visible. Trend arrows compare against the previous sample.
 final class _LiveTempMetricCard extends StatelessWidget {
   const _LiveTempMetricCard({
     required this.series,
@@ -492,6 +494,12 @@ final class _LiveTempMetricCard extends StatelessWidget {
 
   static const _idleLabel = Color(0xFFB0B1C2);
   static const _faultValue = Color(0xFFFF8A80);
+  static const _trendUp = Color(0xFFFF5A5A);
+  static const _trendDown = Color(0xFF3DDC84);
+  static const _trendIdle = Color(0x40FFFFFF);
+
+  /// Smaller than [MonitorDimens.metricValueSize] so left labels fit (body 18).
+  static const _valueSize = 18.0;
 
   @override
   Widget build(BuildContext context) {
@@ -513,17 +521,22 @@ final class _LiveTempMetricCard extends StatelessWidget {
         value = kUnavailableDisplay;
       }
       final labelActive = hasValue || overTemp;
+      // With a live reading, wrap multi-word labels one word per line
+      // (e.g. Protective Mirror → two lines) so the value/arrows keep room.
+      final displayLabel =
+          hasValue ? label.trim().replaceAll(RegExp(r'\s+'), '\n') : label;
       return SizedBox.expand(
         child: DecoratedBox(
           decoration: _LivePanelChrome.decoration,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
-                    label,
-                    maxLines: 1,
+                    displayLabel,
+                    maxLines: 2,
+                    softWrap: true,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: labelActive ? Colors.white : _idleLabel,
@@ -533,13 +546,24 @@ final class _LiveTempMetricCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                // No arrows when unavailable (dash only) or before first delta.
+                if (hasValue && series.trend != TempTrend.none) ...[
+                  const SizedBox(width: 6),
+                  _TempTrendArrows(
+                    trend: series.trend,
+                    upColor: _trendUp,
+                    downColor: _trendDown,
+                    idleColor: _trendIdle,
+                  ),
+                  const SizedBox(width: 2),
+                ],
                 Text(
                   value,
                   maxLines: 1,
+                  softWrap: false,
                   style: TextStyle(
                     color: overTemp ? _faultValue : Colors.white,
-                    fontSize: MonitorDimens.metricValueSize,
+                    fontSize: _valueSize,
                     fontWeight: FontWeight.w400,
                     height: 1.1,
                   ),
@@ -557,6 +581,54 @@ final class _LiveTempMetricCard extends StatelessWidget {
     return ListenableBuilder(
       listenable: common,
       builder: (context, _) => card(),
+    );
+  }
+}
+
+/// Stacked ↑ / ↓ beside the temperature: red up = rise, green down = fall.
+final class _TempTrendArrows extends StatelessWidget {
+  const _TempTrendArrows({
+    required this.trend,
+    required this.upColor,
+    required this.downColor,
+    required this.idleColor,
+  });
+
+  final TempTrend trend;
+  final Color upColor;
+  final Color downColor;
+  final Color idleColor;
+
+  static const _size = 22.0;
+  static const _slotH = 28.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: _size,
+      height: _slotH,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            top: -6,
+            child: Icon(
+              Icons.arrow_drop_up,
+              size: _size,
+              color: trend == TempTrend.up ? upColor : idleColor,
+            ),
+          ),
+          Positioned(
+            bottom: -6,
+            child: Icon(
+              Icons.arrow_drop_down,
+              size: _size,
+              color: trend == TempTrend.down ? downColor : idleColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

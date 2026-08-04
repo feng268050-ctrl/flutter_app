@@ -268,8 +268,12 @@ abstract final class ProcessModeDimens {
   static const double quickSelectorNudgeY = -25;
 
   /// Quick Mode top chrome: Record Work (left) / More Parameters (right).
-  /// Equal screen-edge inset; same [quickTopChromeTop] for a shared baseline.
+  /// Horizontal inset from the screen edge. Vertical placement is the band
+  /// from the status bar to the Thickness title
+  /// ([QuickModePickerDimens.topChromeBandHeight]) so both controls share one
+  /// centered baseline.
   static const double quickTopChromeInset = 40;
+  /// Fallback top inset when gear/thickness pickers are not shown (CNC / empty).
   static const double quickTopChromeTop = 20;
   static const double quickTopChromeLabelSize =
       AppTypography.navigationSize;

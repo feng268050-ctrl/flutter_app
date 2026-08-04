@@ -784,43 +784,62 @@ final class _QuickModePageState extends State<QuickModePage> {
               ),
             );
 
-      return Stack(
-        clipBehavior: Clip.none,
-        children: [
-          processWheel,
-          if (isCnc)
-            Positioned(
-              left: ProcessModeDimens.cncGuideLeftInset,
-              top: ProcessModeDimens.cncGuideTopInset,
-              right: ProcessModeDimens.cncGuideRightInset,
-              bottom: ProcessModeDimens.cncGuideBottomInset,
-              child: CncConnectionGuide(
-                linkStatus: cncSession?.linkStatus ?? CncLinkStatus.connecting,
-              ),
-            ),
-          if (controller.loading && !controller.initialized)
-            const Center(child: CircularProgressIndicator()),
-          if (!isCnc && device != null && _recordWork != null)
-            Positioned(
-              top: ProcessModeDimens.quickTopChromeTop,
-              left: ProcessModeDimens.quickTopChromeInset,
-              child: RecordWorkToggle(
-                key: const ValueKey('quick-mode-record-work'),
-                controller: _recordWork!,
-                processType: _processType,
-                compact: true,
-              ),
-            ),
-          if (showPickers) ...[
-            if (!laserEnable)
-              Positioned(
-                top: ProcessModeDimens.quickTopChromeTop,
-                right: ProcessModeDimens.quickTopChromeInset,
-                child: QuickModeMoreParametersButton(
-                  enabled: selection.matched != null,
-                  onPressed: _openEngineerDraft,
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final chromeBandH = showPickers
+              ? QuickModePickerDimens.topChromeBandHeight(
+                  constraints.maxHeight,
+                )
+              : ProcessModeDimens.quickTopChromeTop +
+                  CyberDimens.checkboxLargeSize;
+
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              processWheel,
+              if (isCnc)
+                Positioned(
+                  left: ProcessModeDimens.cncGuideLeftInset,
+                  top: ProcessModeDimens.cncGuideTopInset,
+                  right: ProcessModeDimens.cncGuideRightInset,
+                  bottom: ProcessModeDimens.cncGuideBottomInset,
+                  child: CncConnectionGuide(
+                    linkStatus:
+                        cncSession?.linkStatus ?? CncLinkStatus.connecting,
+                  ),
                 ),
-              ),
+              if (controller.loading && !controller.initialized)
+                const Center(child: CircularProgressIndicator()),
+              // Record Work + More Parameters share one baseline, vertically
+              // centered in the blank between status bar and Thickness title.
+              if (!isCnc &&
+                  ((device != null && _recordWork != null) ||
+                      (showPickers && !laserEnable)))
+                Positioned(
+                  top: 0,
+                  left: ProcessModeDimens.quickTopChromeInset,
+                  right: ProcessModeDimens.quickTopChromeInset,
+                  height: chromeBandH,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (device != null && _recordWork != null)
+                        RecordWorkToggle(
+                          key: const ValueKey('quick-mode-record-work'),
+                          controller: _recordWork!,
+                          processType: _processType,
+                          compact: true,
+                        ),
+                      const Spacer(),
+                      if (showPickers && !laserEnable)
+                        QuickModeMoreParametersButton(
+                          enabled: selection.matched != null,
+                          onPressed: _openEngineerDraft,
+                        ),
+                    ],
+                  ),
+                ),
+              if (showPickers) ...[
             Center(
               child: QuickModeLaserDashboard(
                 processType: _processType,
@@ -936,7 +955,9 @@ final class _QuickModePageState extends State<QuickModePage> {
                 onExitPressed: _onCncExitPressed,
               ),
             ),
-        ],
+            ],
+          );
+        },
       );
     }
 

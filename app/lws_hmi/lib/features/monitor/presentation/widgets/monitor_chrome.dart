@@ -1,6 +1,5 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
@@ -44,14 +43,14 @@ abstract final class MonitorDimens {
   static const workRingH = 250.0;
   static const aiInfoW = 360.0;
 
-  /// Alarm / section titles → [AppTypography.pageTitle].
-  static const sectionTitleSize = AppTypography.pageTitleSize;
+  /// Alarm / section titles → [HmiTypography.pageTitle] (28).
+  static const sectionTitleSize = 28.0;
 
-  /// Metric/comm labels → [AppTypography.control].
-  static const metricLabelSize = AppTypography.controlSize;
+  /// Metric/comm labels → [HmiTypography.metricLabel] (20).
+  static const metricLabelSize = 20.0;
 
-  /// Temperature / metric values → [AppTypography.metricValue].
-  static const metricValueSize = AppTypography.metricValueSize;
+  /// Temperature / metric values → [HmiTypography.metricValue] (28).
+  static const metricValueSize = 28.0;
 
   /// lws-ui `@color/warn_text`.
   static const labelColor = Color(0xFFB0B1C2);

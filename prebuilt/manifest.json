@@ -5,7 +5,7 @@
   "rknn-rt": "sdk-rknpu2",
   "gstreamer": null,
   "platform-packages": "1",
-  "flutter-sdk": "3.24.4",
-  "flutter-engine": "3.24.4-arm64-release",
-  "flutter-embedded-linux": "db49896cf2"
+  "flutter-sdk": "3.41.9",
+  "flutter-engine": "3.41.9-arm64-release",
+  "flutter-embedded-linux": null
 }

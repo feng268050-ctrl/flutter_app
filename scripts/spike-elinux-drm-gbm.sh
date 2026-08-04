@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # E0 spike: cross-compile Sony flutter-embedded-linux DRM-GBM runner against
-# our Flutter 3.24.4 engine, using Buildroot staging as sysroot.
+# our Flutter 3.41.9 engine, using Buildroot staging as sysroot.
 #
 # Usage:
 #   bash scripts/spike-elinux-drm-gbm.sh           # build
@@ -13,9 +13,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SPIKE_CACHE="${SPIKE_CACHE:-$ROOT/.cache/elinux-spike}"
 SRC="$SPIKE_CACHE/flutter-embedded-linux"
 OUT="$SPIKE_CACHE/out-drm-gbm"
-TAG="${ELINUX_TAG:-db49896cf2}"
-REPO="${ELINUX_REPO:-https://github.com/sony/flutter-embedded-linux.git}"
-ENGINE_SO="$ROOT/prebuilt/flutter-engine/3.24.4/arm64-release/target/usr/lib/libflutter_engine.so"
+TAG="${ELINUX_TAG:-42d3d75a56}"
+REPO="${ELINUX_REPO:-https://github.com/flutter-elinux/flutter-embedded-linux.git}"
+ENGINE_SO="$ROOT/prebuilt/flutter-engine/3.41.9/arm64-release/target/usr/lib/libflutter_engine.so"
 
 IFACE="${IFACE:-en12}"
 ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
@@ -64,7 +64,7 @@ cmd_build() {
     SRC=/work/lws-hmi/.cache/elinux-spike/flutter-embedded-linux
     BUILD=/work/lws-hmi/.cache/elinux-spike/out-drm-gbm/cmake-build
     TOOLCHAIN=/work/lws-hmi/.cache/elinux-spike/out-drm-gbm/aarch64-toolchain.cmake
-    ENGINE_SO=/work/lws-hmi/prebuilt/flutter-engine/3.24.4/arm64-release/target/usr/lib/libflutter_engine.so
+    ENGINE_SO=/work/lws-hmi/prebuilt/flutter-engine/3.41.9/arm64-release/target/usr/lib/libflutter_engine.so
 
     export PATH=\"\$HOST/bin:\$PATH\"
     export PKG_CONFIG=\"\$HOST/bin/pkg-config\"

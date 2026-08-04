@@ -23,7 +23,7 @@
 | **Linux P3.3 — AI 库迁移** | `native/lws_ai` + `lws_ai_daemon` + RKNN；App 经 **`cyber_pm`** 监护；OpenSpec `app-owned-ai-daemon` | 🔄 |
 | **Linux P4 — UI 界面与业务迁移** | 焊机 App：快速模式 / 工程师 / 监视器 / 设置等；告警、录像、AI、云服务等（原 P5 业务；子阶段见 **§1.2**）；IPC MediaMTX 已 App 化 | 🔄 |
 | **Linux P5.0 — Android 兼容** | Flutter App 打 **APK**；Modbus / GPIO / Wi‑Fi / BT 等在 **App 侧**接 Android / `YNHAPI`（**不**往 `cyber_hal` 加 Android 后端） | 🔲 |
-| **Linux P5.1 — 升级 Flutter Engine** | flutter-engine / SDK / flutter-embedded-linux：**3.24 → 3.41**（2026 代） | 🔲 |
+| **Linux P5.1 — 升级 Flutter Engine** | flutter-engine / SDK / flutter-embedded-linux：**3.41.9** + eLinux **42d3d75a56** | ✅ |
 
 
 状态图例：✅ 完成 · 🔄 进行中 · 🔲 未开始
@@ -114,7 +114,7 @@ P5.0  Android 兼容 🔲
     ├─ Flutter App 双目标 APK；平台能力走 Android / YNHAPI（非 cyber_hal）
     └─ Modbus / GPIO / Wi‑Fi / BT 等 App 侧适配；make build-apk / push-apk
 
-P5.1  Flutter Engine / SDK / flutter-embedded-linux 升级 🔲
+P5.1  Flutter Engine / SDK / flutter-embedded-linux 升级 ✅（3.41.9 + 42d3d75a56）
     └─ 3.24 → 3.41 代；三件套（SDK + engine + eLinux）重编
 
 参考链接：
@@ -134,4 +134,4 @@ P5.1  Flutter Engine / SDK / flutter-embedded-linux 升级 🔲
 
 ---
 
-**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 与 P3.1（`cyber_hal` + networkd）已完成**；**IPC MediaMTX 已 App 化（`cyber_pm` + `/opt/hmi/bin`）**；**P3.3 AI daemon 脚手架进行中**（`native/lws_ai` + `cyber_pm` smoke）。**进行中**：**P3.0 CyberUI/IME**（优化）、**P4**（含 **P4.2** 网络与状态栏、**P4.6** 业务页切片）。其后仍待：P3.3 板端验收与 P4 AI UI、P4 其余子阶段、**P4.8 统一整机 OTA**（OpenSpec `unified-ota-cyber-ota`）、**P5.0 Android（App/APK + YNHAPI，非 `cyber_hal`）**、**P5.1 Engine 升级**。**P3.2 模拟器主路径已落地**（USB Wi‑Fi/BT ⏸）。Linux 平台层长期为 **`cyber_hal` + Buildroot**；产品附属进程用 **`cyber_pm`**；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。
+**总结**：**能力不少于 lws-ui**（§11.5）。**P1～P2.5 与 P3.1（`cyber_hal` + networkd）已完成**；**IPC MediaMTX 已 App 化（`cyber_pm` + `/opt/hmi/bin`）**；**P3.3 AI daemon 脚手架进行中**（`native/lws_ai` + `cyber_pm` smoke）。**P5.1 Engine 三件套已完成**（**3.41.9** + eLinux **42d3d75a56**）。**进行中**：**P3.0 CyberUI/IME**（优化）、**P4**（含 **P4.2** 网络与状态栏、**P4.6** 业务页切片）。其后仍待：P3.3 板端验收与 P4 AI UI、P4 其余子阶段、**P4.8 统一整机 OTA**（OpenSpec `unified-ota-cyber-ota`）、**P5.0 Android（App/APK + YNHAPI，非 `cyber_hal`）**。**P3.2 模拟器主路径已落地**（USB Wi‑Fi/BT ⏸）。Linux 平台层长期为 **`cyber_hal` + Buildroot**；产品附属进程用 **`cyber_pm`**；UI 框架名 CyberUI（初期 Frosted Glass）。旧阶段号见 **§1.4**。以 lws-ui 实装为准，openspec 作补充（§11.7）。

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:cyber_hal/modbus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 
 /// Modbus + camera ids for Monitor → Machine Status (lws-ui fragment parity).

@@ -20,65 +20,82 @@ flutter-pi)
 	;;
 esac
 
+# On macOS host, enter Docker once. Do not nest docker-run from inside the
+# builder: that would exec native-run and point LWS_HMI_SDK_DIR at repo
+# linux-sdk/ instead of the Docker volume /work/sdk.
+if [[ "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1" && ! -f /.dockerenv ]]; then
+	exec bash "$ROOT/scripts/docker-run.sh" \
+		env LWS_HMI_DOCKER=1 \
+		BUILD_JOBS="${JOBS}" \
+		BR_OUTPUT="${BR_OUTPUT}" \
+		bash /work/lws-hmi/scripts/br-compile-flutter.sh "$PKG"
+fi
+
 echo "br-compile-flutter: building ${PKG} (compile.mk) in buildroot output ${BR_OUTPUT} ..."
 
-bash "$ROOT/scripts/docker-run.sh" bash -lc "
-  set -euo pipefail
-  HMI_ROOT=\"\${LWS_HMI_ROOT:?LWS_HMI_ROOT not set}\"
-  SDK_DIR=\"\${LWS_HMI_SDK_DIR:?LWS_HMI_SDK_DIR not set}\"
-  # shellcheck source=scripts/build-env.sh
-  source \"\${HMI_ROOT}/scripts/build-env.sh\"
-  export LWS_HMI_DOCKER=1 LWS_HMI_ROOT=\"\${HMI_ROOT}\"
-  setup_build_env
-  PKG='${PKG}'
-  SDK_PKG=\"\${SDK_DIR}/buildroot/package/\${PKG}\"
-  COMPILE_MK=\"\${HMI_ROOT}/overlay/buildroot/package/\${PKG}/\${PKG}.compile.mk\"
-  ACTIVE_MK=\"\${SDK_PKG}/\${PKG}.mk\"
-  BACKUP=\"\${SDK_PKG}/\${PKG}.mk.lws-prebuilt-swap\"
+HMI_ROOT="${LWS_HMI_ROOT:-$ROOT}"
+if [[ -z "${LWS_HMI_SDK_DIR:-}" ]]; then
+	if [[ -d /work/sdk/buildroot ]]; then
+		LWS_HMI_SDK_DIR=/work/sdk
+	else
+		LWS_HMI_SDK_DIR="$ROOT/linux-sdk"
+	fi
+fi
+export LWS_HMI_ROOT="$HMI_ROOT" LWS_HMI_SDK_DIR
 
-  if [[ ! -f \"\$COMPILE_MK\" ]]; then
-    echo \"ERROR: missing \$COMPILE_MK\" >&2
-    exit 1
-  fi
-  if [[ ! -f \"\$ACTIVE_MK\" ]]; then
-    echo \"ERROR: missing \$ACTIVE_MK (run: make apply-overlay)\" >&2
-    exit 1
-  fi
+# shellcheck source=scripts/build-env.sh
+source "$HMI_ROOT/scripts/build-env.sh"
+export LWS_HMI_DOCKER="${LWS_HMI_DOCKER:-1}"
+setup_build_env
 
-  cp -a \"\$ACTIVE_MK\" \"\$BACKUP\"
-  cp -a \"\$COMPILE_MK\" \"\$ACTIVE_MK\"
+SDK_PKG="${LWS_HMI_SDK_DIR}/buildroot/package/${PKG}"
+COMPILE_MK="${HMI_ROOT}/overlay/buildroot/package/${PKG}/${PKG}.compile.mk"
+ACTIVE_MK="${SDK_PKG}/${PKG}.mk"
+BACKUP="${SDK_PKG}/${PKG}.mk.lws-prebuilt-swap"
 
-  restore_patches() {
-    local stash=\"\${SDK_PKG}/.lws-prebuilt-patches-disabled\"
-    [[ -d \"\$stash\" ]] || return 0
-    shopt -s nullglob
-    for p in \"\$stash\"/*.patch; do mv \"\$p\" \"\$SDK_PKG/\"; done
-    shopt -u nullglob
-    rmdir \"\$stash\" 2>/dev/null || true
-  }
-  stash_patches() {
-    local stash=\"\${SDK_PKG}/.lws-prebuilt-patches-disabled\"
-    mkdir -p \"\$stash\"
-    shopt -s nullglob
-    for p in \"\${SDK_PKG}\"/*.patch; do mv \"\$p\" \"\$stash/\"; done
-    shopt -u nullglob
-  }
+if [[ ! -f "$COMPILE_MK" ]]; then
+	echo "ERROR: missing $COMPILE_MK" >&2
+	exit 1
+fi
+if [[ ! -f "$ACTIVE_MK" ]]; then
+	echo "ERROR: missing $ACTIVE_MK (run: make apply-overlay)" >&2
+	exit 1
+fi
 
-  restore_patches
+cp -a "$ACTIVE_MK" "$BACKUP"
+cp -a "$COMPILE_MK" "$ACTIVE_MK"
 
-  restore() {
-    [[ -f \"\$BACKUP\" ]] && mv -f \"\$BACKUP\" \"\$ACTIVE_MK\"
-    stash_patches
-  }
-  trap restore EXIT
+restore_patches() {
+	local stash="${SDK_PKG}/.lws-prebuilt-patches-disabled"
+	[[ -d "$stash" ]] || return 0
+	shopt -s nullglob
+	for p in "$stash"/*.patch; do mv "$p" "$SDK_PKG/"; done
+	shopt -u nullglob
+	rmdir "$stash" 2>/dev/null || true
+}
+stash_patches() {
+	local stash="${SDK_PKG}/.lws-prebuilt-patches-disabled"
+	mkdir -p "$stash"
+	shopt -s nullglob
+	for p in "${SDK_PKG}"/*.patch; do mv "$p" "$stash/"; done
+	shopt -u nullglob
+}
 
-  cd \"\${SDK_DIR}/buildroot\"
-  OUT=output/${BR_OUTPUT}
-  if [[ ! -d \"\$OUT\" ]]; then
-    echo 'ERROR: Buildroot output missing — run: make lunch' >&2
-    exit 1
-  fi
-  make O=\"\$OUT\" -j${JOBS} \${PKG}-dirclean \${PKG}
-"
+restore_patches
+
+restore() {
+	[[ -f "$BACKUP" ]] && mv -f "$BACKUP" "$ACTIVE_MK"
+	stash_patches
+}
+trap restore EXIT
+
+cd "${LWS_HMI_SDK_DIR}/buildroot"
+OUT="output/${BR_OUTPUT}"
+if [[ ! -d "$OUT" ]]; then
+	echo "ERROR: Buildroot output missing at ${LWS_HMI_SDK_DIR}/buildroot/${OUT}" >&2
+	echo "  Run: make lunch" >&2
+	exit 1
+fi
+make O="$OUT" -j"${JOBS}" "${PKG}-dirclean" "${PKG}"
 
 echo "br-compile-flutter: ${PKG} package build finished"

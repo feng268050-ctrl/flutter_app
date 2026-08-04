@@ -12,7 +12,7 @@ debug_runtime_root() {
 
 debug_runtime_engine_version() {
 	local root="$1"
-	read_version_file "$root/overlay/buildroot/flutter-engine.version" "3.24.4"
+	read_version_file "$root/overlay/buildroot/flutter-engine.version" "3.41.9"
 }
 
 debug_runtime_mode_dir() {

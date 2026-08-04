@@ -1,0 +1,28 @@
+From: lws-hmi overlay
+Subject: [PATCH] remove explicit x11 dependency (Flutter 3.41 monorepo)
+
+This is superfluous and may conflict with the actual rendering system used in
+gtk3 (e.g. wayland.) Refreshed for the foreach(_pkg_configs) layout in 3.41.x.
+
+Upstream intent: https://github.com/flutter/flutter/issues/123073
+---
+ engine/src/flutter/shell/platform/linux/config/BUILD.gn | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/engine/src/flutter/shell/platform/linux/config/BUILD.gn b/engine/src/flutter/shell/platform/linux/config/BUILD.gn
+index 1111111..2222222 100644
+--- a/engine/src/flutter/shell/platform/linux/config/BUILD.gn
++++ b/engine/src/flutter/shell/platform/linux/config/BUILD.gn
+@@ -5,12 +5,8 @@
+ import("//build/config/linux/pkg_config.gni")
+ import("//flutter/shell/platform/glfw/config.gni")
+ 
+ _pkg_configs = [
+-  {
+-    name = "x11"
+-    package = "x11"
+-  },
+   {
+     name = "gtk"
+     package = "gtk+-3.0"
+   },

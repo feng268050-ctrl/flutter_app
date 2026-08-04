@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:cyber_hal/cyber_hal.dart';
-import 'package:cyber_hal/modbus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_evaluator.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_live_cache_seed.dart';

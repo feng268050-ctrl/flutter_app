@@ -8,7 +8,8 @@
 # Maintainers: populate via make build-flutter-engine / make build-runtime-deps, or commit
 # artifacts from a one-off upstream SDK compile when bumping version pins.
 
-FLUTTER_ENGINE_VERSION = 3.24.4
+FLUTTER_ENGINE_VERSION = 3.41.9
+
 
 FLUTTER_ENGINE_SITE =
 FLUTTER_ENGINE_SOURCE =

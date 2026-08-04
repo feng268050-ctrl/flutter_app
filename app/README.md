@@ -7,7 +7,7 @@ Buildroot ships the Flutter **engine** (and optional DRM runner) from in-tree pa
 - `overlay/buildroot/flutter-engine.version`
 - `overlay/buildroot/package/flutter-engine/flutter-engine.mk` (`FLUTTER_ENGINE_VERSION`)
 
-Current pin: **Flutter 3.24.4** (through P3.x). **P5.1** upgrades SDK + engine (+ display runner as needed) together per [`docs/flutter-linux-hmi-plan.md` §6.5](../docs/flutter-linux-hmi-plan.md#65-flutter-engine-版本策略与升级p51). UI kit: **CyberUI** (P3.0); platform: **Dart HAL package** (P3.1).
+Current pin: **Flutter 3.41.9** (P5.1 triplet: SDK + engine + eLinux `42d3d75a56`). See [`docs/flutter-linux-hmi-plan.md` §6.5](../docs/flutter-linux-hmi-plan.md#65-flutter-engine-版本策略与升级p51). UI kit: **CyberUI** (P3.0); platform: **Dart HAL package** (P3.1).
 
 ### Prefetch (before `make build-rootfs`)
 
@@ -39,7 +39,7 @@ make build-app   # libapp.so + assets → overlay /opt/hmi (any APP=*_hmi; defau
 # APP=factory_test make build-app     # → overlay /opt/factory_test
 ```
 
-**Must use pinned Flutter `3.24.4`** (`make fetch-flutter-sdk`); `build-app.sh` refuses a mismatched SDK (e.g. host `flutter` 3.41.x). AOT `libapp.so` and rootfs `libflutter_engine.so` **must be the same engine version** or the HMI exits/hangs with little or no UI.
+**Must use pinned Flutter `3.41.9`** (`make fetch-flutter-sdk`); `build-app.sh` refuses a mismatched SDK. AOT `libapp.so` and rootfs `libflutter_engine.so` **must be the same engine version** or the HMI exits/hangs with little or no UI.
 
 ```bash
 make build-rootfs        # installs flutter-engine to /usr/lib (prebuilt)
@@ -70,7 +70,7 @@ Started by `hmi.service`: `/usr/libexec/hmi/hmi-launch.sh` (release embedder fro
 
 ## P1.5 device debugging (USB-SSH)
 
-Pinned toolchain: **Flutter 3.24.4** (`make fetch-flutter-sdk`). Debug/release via `flutter assemble`.
+Pinned toolchain: **Flutter 3.41.9** (`make fetch-flutter-sdk`). Debug/release via `flutter assemble`.
 
 **Display stack:** `make debug-app` works on the **Weston** image (`flutter-wayland-client` + cached debug engine via `LD_LIBRARY_PATH`). Board overlay scripts must include this Weston debug path (`make apply-overlay` → `make build-rootfs` → `make upgrade` once if the board is older than this change). Restore release AOT with `make build-app` then `make push-app`.
 
@@ -144,9 +144,9 @@ OpenSpec: `openspec/changes/p2-modbus-gpio/`.
 ## Troubleshooting (splash logo stuck)
 
 1. On device: `diagnose-hmi` — check `journalctl -u hmi` for engine/AOT errors.
-2. Common cause: **`libapp.so` built with wrong host Flutter** (e.g. 3.41.x) while rootfs engine is **3.24.4**. Rebuild app with pinned SDK only:
+2. Common cause: **`libapp.so` built with wrong host Flutter** while rootfs engine is pinned **3.41.9**. Rebuild app with pinned SDK only:
    ```bash
-   make fetch-flutter-sdk    # host; repopulates ~/Downloads/flutter-sdk-3.24.4/install
+   make fetch-flutter-sdk    # host; ensures flutter-sdk/ is 3.41.9
    make build-app
    make build-rootfs
    make build-img

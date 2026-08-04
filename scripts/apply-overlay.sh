@@ -413,6 +413,9 @@ sync_buildroot_chip_configs() {
 
 sync_flutter_engine_package() {
   local src="$OVERLAY/buildroot/package/flutter-engine/flutter-engine.mk"
+  local dot="$OVERLAY/buildroot/package/flutter-engine/dot-gclient"
+  local patch_src="$OVERLAY/buildroot/package/flutter-engine"
+  local stash="$BR_PKG_FLUTTER_ENGINE/$LWS_PREBUILT_PATCHES_DIR"
   if [[ ! -f "$src" ]]; then
     return 0
   fi
@@ -421,6 +424,19 @@ sync_flutter_engine_package() {
       "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk.orig"
   fi
   install_file "$src" "$BR_PKG_FLUTTER_ENGINE/flutter-engine.mk"
+  if [[ -f "$dot" ]]; then
+    install_file "$dot" "$BR_PKG_FLUTTER_ENGINE/dot-gclient"
+  fi
+  # Monorepo-era Buildroot patches (engine/src/… paths). Keep them in the
+  # prebuilt-disabled stash so compile.mk can restore them; drop legacy paths.
+  mkdir -p "$stash"
+  rm -f "$BR_PKG_FLUTTER_ENGINE"/*.patch "$stash"/*.patch
+  shopt -s nullglob
+  local p
+  for p in "$patch_src"/000*.patch; do
+    install_file "$p" "$stash/$(basename "$p")"
+  done
+  shopt -u nullglob
   disable_br_package_patches "$BR_PKG_FLUTTER_ENGINE" "flutter-engine"
 }
 

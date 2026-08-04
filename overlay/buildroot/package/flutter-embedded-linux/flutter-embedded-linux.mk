@@ -6,7 +6,7 @@
 
 # prebuilt/flutter-embedded-linux/<tag>/ must exist before build-rootfs-weston.
 
-FLUTTER_EMBEDDED_LINUX_VERSION = db49896cf2
+FLUTTER_EMBEDDED_LINUX_VERSION = 42d3d75a56
 
 # Prebuilt-only: no download (see flutter-engine.mk).
 FLUTTER_EMBEDDED_LINUX_SITE =

@@ -9,7 +9,7 @@
 # Sets: FLUTTER_INSTALL, FLUTTER, PINNED_VER, ENGINE_VER (caller must set ROOT).
 hmi_bundle_init_flutter() {
 	local purpose="${1:-build}"
-	PINNED_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-sdk.version" "3.24.4")"
+	PINNED_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-sdk.version" "3.41.9")"
 	ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "$PINNED_VER")"
 
 	FLUTTER_INSTALL="$(bash "$ROOT/scripts/link-flutter-sdk.sh" --print)"

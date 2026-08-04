@@ -425,7 +425,7 @@ Commands that intentionally restart the Linux board automatically remove its mat
 
 ### Debug iteration (USB plug-ssh / remote SSH, P1.5)
 
-First time on a host (pinned Flutter 3.24.4 + `sshpass`):
+First time on a host (pinned Flutter 3.41.9 + `sshpass`):
 
 ```bash
 make debug-setup
@@ -554,7 +554,7 @@ Force refresh: `make rebuild-deps` / `rebuild-dev-deps` / `rebuild-runtime-deps`
 | P3.3 | OpenCV、yaml-cpp、RKNN、`native/lws_ai` | ✓（`build-opencv` / `build-ai`） | **`lws_ai_daemon` via `cyber_pm`**（OpenSpec `app-owned-ai-daemon`）🔄 |
 | P4 | GStreamer、sqlite、Avahi；**MediaMTX → App `/opt/hmi/bin`** | GStreamer ✓ | 业务 UI、:5580、云 🔄；MediaMTX 已 App 化（`cyber_pm`）；**P4.8 整机 A/B + Ed25519**（一级；HMI 随 rootfs）另计 |
 | P5.0 | — | — | Android 兼容 / APK（App + YNHAPI；非 `cyber_hal`） |
-| P5.1 | flutter SDK + engine + eLinux **三件套升级** | 重编 prebuilt | 3.24 → 3.41；见 [`docs/flutter-linux-hmi-plan.md` §6.5](docs/flutter-linux-hmi-plan.md#65-flutter-engine-版本策略与升级p51) |
+| P5.1 | flutter SDK + engine + eLinux **三件套升级** | 重编 prebuilt | **3.41.9** + eLinux **42d3d75a56**；见 [`docs/flutter-linux-hmi-plan.md` §6.5](docs/flutter-linux-hmi-plan.md#65-flutter-engine-版本策略与升级p51) |
 
 权威阶段表与旧号映射：[`docs/flutter-linux-hmi-plan.md` §1](docs/flutter-linux-hmi-plan.md)。HAL 设计：[`openspec/changes/archive/2026-07-18-dart-hal-package/`](openspec/changes/archive/2026-07-18-dart-hal-package/)。
 

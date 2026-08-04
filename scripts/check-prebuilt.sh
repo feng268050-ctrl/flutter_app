@@ -19,8 +19,8 @@ has_include() {
   def_includes | grep -qF "#include \"chips/$1\""
 }
 
-ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.24.4")"
-ELINUX_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-embedded-linux.version" "db49896cf2")"
+ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.41.9")"
+ELINUX_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-embedded-linux.version" "42d3d75a56")"
 GST_VER="$(read_version_file "$ROOT/overlay/third-party/gstreamer.version" "rockchip-mpp-gst-rtsp")"
 OPENCV_VER="$(read_version_file "$ROOT/overlay/third-party/opencv.version" "4.5.5")"
 RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}"
@@ -77,63 +77,69 @@ if has_include "lws_hmi_wayland.config"; then
   fi
   # Live RTSP preview needs 0002-video-player-live-rtsp.patch (null caps /
   # NO_PREROLL). Unpatched plugin SIGSEGVs in GetVideoSize during initialize.
+  # Prefer grep -a over `strings`: macOS Xcode strings breaks when the parent
+  # was wrapped with Homebrew `stdbuf` (DYLD_INSERT_LIBRARIES=libstdbuf).
+  _vp_has() {
+    local so="$1" marker="$2"
+    grep -a -F -q -- "$marker" "$so" 2>/dev/null
+  }
   if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
-    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
-      grep -q 'Video size unknown after preroll'; then
+    ! _vp_has "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" \
+      'Video size unknown after preroll'; then
     echo "ERROR: libvideo_player_plugin.so missing live-RTSP patch marker" >&2
     echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
     missing=1
   fi
   # Flutter play() always setPlaybackSpeed → flush seek stalls live RTSP (black preview).
   if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
-    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
-      grep -q 'skip flush-seek for live/unseekable'; then
+    ! _vp_has "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" \
+      'skip flush-seek for live/unseekable'; then
     echo "ERROR: libvideo_player_plugin.so missing live-seek patch marker" >&2
     echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
     missing=1
   fi
   # Non-blocking Create(): must not g_usleep-poll for live caps on platform thread.
   if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
-    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
-      grep -q 'using 960x540 placeholder'; then
+    ! _vp_has "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" \
+      'using 960x540 placeholder'; then
     echo "ERROR: libvideo_player_plugin.so missing nonblock-init marker" >&2
     echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
     missing=1
   fi
   # MPP hardware RGBA — software videoconvert is ~1fps on RK3566.
   if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
-    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
-      grep -q 'MppElementSetup: mppvideodec format=RGBA'; then
+    ! _vp_has "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" \
+      'MppElementSetup: mppvideodec format=RGBA'; then
     echo "ERROR: libvideo_player_plugin.so missing MPP RGBA setup marker" >&2
     echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
     missing=1
   fi
   # Local MP4: sink sync=TRUE + handoff (1×); BufferProbe must not push early.
   if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
-    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
-      grep -q 'VOD file sink uses clock sync'; then
+    ! _vp_has "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" \
+      'VOD file sink uses clock sync'; then
     echo "ERROR: libvideo_player_plugin.so missing VOD clock-sync marker" >&2
     echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
     missing=1
   fi
   if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
-    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
-      grep -q 'VOD BufferProbe defers to synced handoff'; then
+    ! _vp_has "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" \
+      'VOD BufferProbe defers to synced handoff'; then
     echo "ERROR: libvideo_player_plugin.so missing VOD handoff-defer probe marker" >&2
     echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
     missing=1
   fi
   if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
-    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
-      grep -q 'VOD pipeline uses system clock for sync'; then
+    ! _vp_has "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" \
+      'VOD pipeline uses system clock for sync'; then
     echo "ERROR: libvideo_player_plugin.so missing VOD system-clock marker" >&2
     echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
     missing=1
   fi
   # play() always re-applies rate 1.0; no-op FLUSH seek races first play.
   if [[ -f "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" ]] && \
-    ! strings "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" | \
-      grep -q 'SetPlaybackRate: skip no-op rate seek'; then
+    ! _vp_has "$ELINUX_DIR/usr/lib/libvideo_player_plugin.so" \
+      'SetPlaybackRate: skip no-op rate seek'; then
     echo "ERROR: libvideo_player_plugin.so missing no-op rate-seek skip marker" >&2
     echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
     missing=1

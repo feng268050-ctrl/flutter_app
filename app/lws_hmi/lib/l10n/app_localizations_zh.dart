@@ -1,3 +1,5 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -10,7 +12,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get activeAlarmsTitle => '当前告警';
 
   @override
-  String get adFeedbackCommunicationAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get adFeedbackCommunicationAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get adFeedbackCommunicationAlarmTitle => 'AD 反馈通讯告警';
@@ -27,37 +30,43 @@ class AppLocalizationsZh extends AppLocalizations {
   String get advancedSettingAllowWorkAfterCameraAlarm => '摄像头告警后允许作业';
 
   @override
-  String get advancedSettingAllowWorkAfterCameraAlarmHint => '摄像头通讯异常时将无法使用 AI 自动检测功能';
+  String get advancedSettingAllowWorkAfterCameraAlarmHint =>
+      '摄像头通讯异常时将无法使用 AI 自动检测功能';
 
   @override
   String get advancedSettingAllowWorkAfterFeederAlarm => '送丝机告警后允许作业';
 
   @override
-  String get advancedSettingAllowWorkAfterFeederAlarmHint => '送丝机异常时连续焊接模式将无法正常工作，但其他模式可以继续工作。';
+  String get advancedSettingAllowWorkAfterFeederAlarmHint =>
+      '送丝机异常时连续焊接模式将无法正常工作，但其他模式可以继续工作。';
 
   @override
   String get advancedSettingAllowWorkAfterGasAlarm => '保护气告警后允许作业';
 
   @override
-  String get advancedSettingAllowWorkAfterGasAlarmHint => '保护气异常时强制允许出光可能会损坏设备，仅应在确定无影响时打开。';
+  String get advancedSettingAllowWorkAfterGasAlarmHint =>
+      '保护气异常时强制允许出光可能会损坏设备，仅应在确定无影响时打开。';
 
   @override
   String get advancedSettingAllowWorkAfterLensContamination => '保护镜脏污告警后允许作业';
 
   @override
-  String get advancedSettingAllowWorkAfterLensContaminationHint => '保护镜脏污时强制允许出光可能会损坏设备，仅应在 AI 检测不准时打开。';
+  String get advancedSettingAllowWorkAfterLensContaminationHint =>
+      '保护镜脏污时强制允许出光可能会损坏设备，仅应在 AI 检测不准时打开。';
 
   @override
   String get advancedSettingKeepLaserOnWhileAlarmed => '告警时保持出光';
 
   @override
-  String get advancedSettingKeepLaserOnWhileAlarmedHint => '开启后，作业过程中出现编码告警时不会自动关光，告警弹窗仍会显示。仅应在明确风险可控时使用。';
+  String get advancedSettingKeepLaserOnWhileAlarmedHint =>
+      '开启后，作业过程中出现编码告警时不会自动关光，告警弹窗仍会显示。仅应在明确风险可控时使用。';
 
   @override
   String get advancedSettingLensContaminationDetection => '镜片污染检测';
 
   @override
-  String get advancedSettingLensContaminationDetectionHint => '作业时通过摄像头与 AI 监测保护镜脏污情况，发现污染时提示处理。仅在检测不准或不可用时关闭。';
+  String get advancedSettingLensContaminationDetectionHint =>
+      '作业时通过摄像头与 AI 监测保护镜脏污情况，发现污染时提示处理。仅在检测不准或不可用时关闭。';
 
   @override
   String get advancedSettingZeroOffset => '零点校正';
@@ -69,7 +78,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get advancedSettingAutoZeroOffsetTitle => '自动零点校正';
 
   @override
-  String get advancedSettingAutoZeroOffsetMessage => '请将焊枪对准安全区域并按住扳机，然后点击自动。自动过程会临时允许出光，扳机触发激光。请等待进度条完成自动零点校正。';
+  String get advancedSettingAutoZeroOffsetMessage =>
+      '请将焊枪对准安全区域并按住扳机，然后点击自动。自动过程会临时允许出光，扳机触发激光。请等待进度条完成自动零点校正。';
 
   @override
   String get advancedSettingEnterZeroOffset => '请输入零点校正';
@@ -120,13 +130,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get advancedSettingProtectiveLensTempAlarmThreshold => '保护镜温度报警阈值';
 
   @override
-  String get advancedSettingEnterProtectiveLensTempAlarmThreshold => '请输入保护镜温度报警阈值';
+  String get advancedSettingEnterProtectiveLensTempAlarmThreshold =>
+      '请输入保护镜温度报警阈值';
 
   @override
   String get advancedSettingCollimatingLensTempAlarmThreshold => '聚焦镜温度报警阈值';
 
   @override
-  String get advancedSettingEnterCollimatingLensTempAlarmThreshold => '请输入聚焦镜温度报警阈值';
+  String get advancedSettingEnterCollimatingLensTempAlarmThreshold =>
+      '请输入聚焦镜温度报警阈值';
 
   @override
   String get advancedSettingTempAlarmRecoveryHysteresis => '温度报警恢复差值';
@@ -159,7 +171,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get advancedSettingZeroPointOffsetDetection => '零点偏移检测';
 
   @override
-  String get advancedSettingZeroPointOffsetDetectionHint => '通过 AI 判断光斑是否居中，零点偏移时提示校正。若不需要此类告警可关闭。';
+  String get advancedSettingZeroPointOffsetDetectionHint =>
+      '通过 AI 判断光斑是否居中，零点偏移时提示校正。若不需要此类告警可关闭。';
 
   @override
   String get advancedSettings => '高级设置';
@@ -347,7 +360,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiVisualizedLabel => '可视化';
 
   @override
-  String get alarmFaultClearedContent => '该故障已解除，可继续作业。若频繁出现，请联系 LaserCyber 售后。';
+  String get alarmFaultClearedContent =>
+      '该故障已解除，可继续作业。若频繁出现，请联系 LaserCyber 售后。';
 
   @override
   String get alarmInfoLaserDevice => '激光设备';
@@ -362,7 +376,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get alarmLogsTitle => '告警日志';
 
   @override
-  String get alarmRebootThenSupportContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get alarmRebootThenSupportContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get alarmTitle => '告警信息';
@@ -433,7 +448,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bootSelfCheckStatusSkipped => '跳过';
 
   @override
-  String bundledFirmwareDialogMessage(String currentVersion, String newVersion) {
+  String bundledFirmwareDialogMessage(
+      String currentVersion, String newVersion) {
     return '检测到新控制板固件（当前 $currentVersion → $newVersion）。\n请保持设备通电，升级过程中请勿操作。';
   }
 
@@ -470,7 +486,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cameraCommStatusText => '摄像头通讯状态';
 
   @override
-  String get cameraCommunicationAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get cameraCommunicationAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get cameraCommunicationAlarmTitle => '摄像头通讯告警';
@@ -503,7 +520,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get closeText => '关闭';
 
   @override
-  String get coldWaterInterlockAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get coldWaterInterlockAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get coldWaterInterlockAlarmTitle => '冷水互锁告警';
@@ -542,7 +560,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connectedText => '已连接';
 
   @override
-  String get controllerTabletCommAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get controllerTabletCommAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get controllerTabletCommAlarmTitle => '控制板通讯故障';
@@ -704,7 +723,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deviceSn => '设备 SN';
 
   @override
-  String get diodeShortCircuitAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get diodeShortCircuitAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get diodeShortCircuitAlarmTitle => '二极管短路故障';
@@ -716,7 +736,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dontShowAgain => '不再显示';
 
   @override
-  String get driveOvertemperatureAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get driveOvertemperatureAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get driveOvertemperatureAlarmTitle => '驱动温度告警';
@@ -725,7 +746,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get driverBoardOvervoltageTitle => '驱动板过压';
 
   @override
-  String get driverModuleOvertemperatureAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get driverModuleOvertemperatureAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get driverModuleOvertemperatureAlarmTitle => '驱动模块超温告警';
@@ -734,7 +756,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get emptyText => '';
 
   @override
-  String get environmentTemperatureAlarmContent => '环境温度超出允许范围。请改善车间温控；若读数明显异常，请联系 LaserCyber 售后。';
+  String get environmentTemperatureAlarmContent =>
+      '环境温度超出允许范围。请改善车间温控；若读数明显异常，请联系 LaserCyber 售后。';
 
   @override
   String get environmentTemperatureAlarmTitle => '环境温度告警';
@@ -755,13 +778,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get failStatus => '故障';
 
   @override
-  String get fiberDisconnectionAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get fiberDisconnectionAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get fiberDisconnectionAlarmTitle => '光纤断开告警';
 
   @override
-  String get fiberTemperatureUpperLimitAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get fiberTemperatureUpperLimitAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get fiberTemperatureUpperLimitAlarmTitle => '光纤温度超上限告警';
@@ -773,13 +798,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get firmwareVersion => '控制板版本';
 
   @override
-  String get flashErrorAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get flashErrorAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get flashErrorAlarmTitle => 'FLASH 错误告警';
 
   @override
-  String get flashUnencryptedAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get flashUnencryptedAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get flashUnencryptedAlarmTitle => 'FLASH 未加密告警';
@@ -788,13 +815,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get frontLightPdVoltageText => '前向光PD电压';
 
   @override
-  String get galvanometerMotorOvercurrentAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get galvanometerMotorOvercurrentAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get galvanometerMotorOvercurrentAlarmTitle => '振镜电机过流告警';
 
   @override
-  String get galvanometerMotorStallAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get galvanometerMotorStallAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get galvanometerMotorStallAlarmTitle => '振镜电机堵转告警';
@@ -806,7 +835,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gasPressureLabel => '气压';
 
   @override
-  String get gunHeadCommunicationAlarmContent => '主机与焊枪通讯失败。请检查枪头线缆与接头；重新连接后若仍报警，请联系 LaserCyber 售后。';
+  String get gunHeadCommunicationAlarmContent =>
+      '主机与焊枪通讯失败。请检查枪头线缆与接头；重新连接后若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get gunHeadCommunicationAlarmTitle => '枪头通讯告警';
@@ -815,7 +845,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gunHeadCommunicationText => '枪头通讯状态';
 
   @override
-  String get gunHeadMotorOvertemperatureAlarmContent => '焊枪电机过温。请暂停作业并等待冷却；若再次出现，请联系 LaserCyber 售后。';
+  String get gunHeadMotorOvertemperatureAlarmContent =>
+      '焊枪电机过温。请暂停作业并等待冷却；若再次出现，请联系 LaserCyber 售后。';
 
   @override
   String get gunHeadMotorOvertemperatureAlarmTitle => '枪头电机过温告警';
@@ -830,7 +861,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gunSwitchLabel => '焊枪开关';
 
   @override
-  String get hardwareBusErrorAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get hardwareBusErrorAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get hardwareBusErrorAlarmTitle => '硬件总线错误告警';
@@ -920,7 +952,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get httpProxyValidationUsernameRequired => 'Basic 认证需要用户名';
 
   @override
-  String get illegalInstructionAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get illegalInstructionAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get illegalInstructionAlarmTitle => '非法指令告警';
@@ -937,7 +970,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get internalHumidityExceedsTheUpperLimitAlarmTitle => '内部湿度超上限告警';
 
   @override
-  String get internalHumidityUpperLimitAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get internalHumidityUpperLimitAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get ipCameraText => '摄像头';
@@ -1051,13 +1085,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get languageSettingText => '语言';
 
   @override
-  String get laserCommunicationAlarmContent => '请确认已经按下了 Reset 按钮。若依旧没有恢复，请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get laserCommunicationAlarmContent =>
+      '请确认已经按下了 Reset 按钮。若依旧没有恢复，请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get laserCommunicationAlarmTitle => '激光器通讯告警';
 
   @override
-  String get laserCurrentAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get laserCurrentAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get laserCurrentAlarmTitle => '激光器电流告警';
@@ -1066,7 +1102,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get laserCurrentLabel => '激光电流';
 
   @override
-  String get laserDriverCommunicationAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get laserDriverCommunicationAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get laserDriverCommunicationAlarmTitle => '激光器驱动通讯告警';
@@ -1081,7 +1118,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get laserOnLabel => '激光';
 
   @override
-  String get laserOutputEnergyLowerLimitAlarmContent => '激光输出能量过低。请检查保护镜与工艺功率设置。若持续出现，请联系 LaserCyber 售后。';
+  String get laserOutputEnergyLowerLimitAlarmContent =>
+      '激光输出能量过低。请检查保护镜与工艺功率设置。若持续出现，请联系 LaserCyber 售后。';
 
   @override
   String get laserOutputEnergyLowerLimitAlarmTitle => '激光输出能量低于下限告警';
@@ -1090,7 +1128,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get laserOutputEnergyLowerLimitClearedTitle => '激光输出能量低于下限解除';
 
   @override
-  String get laserReflectedEnergyUpperLimitAlarmContent => '激光反射能量过高。请停止出光，检查工件角度、装配间隙与工艺参数。若持续出现，请联系 LaserCyber 售后。';
+  String get laserReflectedEnergyUpperLimitAlarmContent =>
+      '激光反射能量过高。请停止出光，检查工件角度、装配间隙与工艺参数。若持续出现，请联系 LaserCyber 售后。';
 
   @override
   String get laserReflectedEnergyUpperLimitAlarmTitle => '激光反射能量超上限告警';
@@ -1135,7 +1174,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get machineTitle => '机台状态';
 
   @override
-  String get mainControllerTempBoardCommAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get mainControllerTempBoardCommAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get mainControllerTempBoardCommAlarmTitle => '主控板与温控板通讯故障';
@@ -1150,7 +1190,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mmUnit => 'mm';
 
   @override
-  String get mmiOscillatorMalfunctionAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get mmiOscillatorMalfunctionAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get mmiOscillatorMalfunctionAlarmTitle => 'MMI 振荡器故障告警';
@@ -1162,7 +1203,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get monitorNavLabel => '设备监控';
 
   @override
-  String get motorCableOpenAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get motorCableOpenAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get motorCableOpenAlarmTitle => '电机连接线开路告警';
@@ -1180,7 +1222,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mouseText => '鼠标';
 
   @override
-  String get narrowPulseProtectionAlarmContent => '已触发窄脉冲保护。请调整工艺参数后重试；若反复出现，请联系 LaserCyber 售后。';
+  String get narrowPulseProtectionAlarmContent =>
+      '已触发窄脉冲保护。请调整工艺参数后重试；若反复出现，请联系 LaserCyber 售后。';
 
   @override
   String get narrowPulseProtectionAlarmTitle => '窄脉冲保护告警';
@@ -1242,7 +1285,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pleaseWait => '请稍候…';
 
   @override
-  String get productDisclaimerContent => '尊敬的用户：感谢您选择我们的手持激光焊接产品。在使用本产品前，我们强烈建议您仔细阅读本免责声明，并严格遵守用户手册中的所有说明和安全措施。\n\n1. 安全警告\n激光设备可能对眼睛和皮肤造成严重伤害。在操作过程中，请始终佩戴适当的个人防护装备（PPE），包括但不限于激光防护眼镜和手套，以确保您的安全。\n\n2. 操作说明\n请确保您已充分理解并能够遵守产品手册中的所有操作流程和安全指南。使用不当可能导致设备损坏或人身伤害。\n\n3. 不当操作\n对于用户未遵循产品手册中的说明或未采取适当安全措施而导致的任何伤害或损失，本公司概不负责。\n\n4. 维护\n请定期检查并维护产品，以确保其处于良好工作状态。由于产品维护不当造成的任何事故，本公司不承担责任。\n\n5. 责任免责声明\n虽然本公司提供了全面的使用说明和安全措施，但对于因用户操作不当或违反手册规定而造成的任何伤害或损坏，本公司保留免责权利。我们强烈建议用户在使用本产品前，充分了解并遵守所有相关安全法规和操作标准。\n\n6. 适用法律\n本免责声明的解释、适用和争议解决，应受本公司总部所在地法律管辖。\n\n7. 完整协议\n本免责声明构成您与本公司之间的完整协议，并取代此前任何口头或书面理解或协议。';
+  String get productDisclaimerContent =>
+      '尊敬的用户：感谢您选择我们的手持激光焊接产品。在使用本产品前，我们强烈建议您仔细阅读本免责声明，并严格遵守用户手册中的所有说明和安全措施。\n\n1. 安全警告\n激光设备可能对眼睛和皮肤造成严重伤害。在操作过程中，请始终佩戴适当的个人防护装备（PPE），包括但不限于激光防护眼镜和手套，以确保您的安全。\n\n2. 操作说明\n请确保您已充分理解并能够遵守产品手册中的所有操作流程和安全指南。使用不当可能导致设备损坏或人身伤害。\n\n3. 不当操作\n对于用户未遵循产品手册中的说明或未采取适当安全措施而导致的任何伤害或损失，本公司概不负责。\n\n4. 维护\n请定期检查并维护产品，以确保其处于良好工作状态。由于产品维护不当造成的任何事故，本公司不承担责任。\n\n5. 责任免责声明\n虽然本公司提供了全面的使用说明和安全措施，但对于因用户操作不当或违反手册规定而造成的任何伤害或损坏，本公司保留免责权利。我们强烈建议用户在使用本产品前，充分了解并遵守所有相关安全法规和操作标准。\n\n6. 适用法律\n本免责声明的解释、适用和争议解决，应受本公司总部所在地法律管辖。\n\n7. 完整协议\n本免责声明构成您与本公司之间的完整协议，并取代此前任何口头或书面理解或协议。';
 
   @override
   String get productDisclaimerInfo => '我已阅读并同意以上内容';
@@ -1251,7 +1295,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get productDisclaimerTitle => '产品免责声明';
 
   @override
-  String get positioningLightFaultAlarmContent => '红光（定位光）故障。请检查指示光是否正常；若不亮，请联系 LaserCyber 售后。';
+  String get positioningLightFaultAlarmContent =>
+      '红光（定位光）故障。请检查指示光是否正常；若不亮，请联系 LaserCyber 售后。';
 
   @override
   String get positioningLightFaultAlarmTitle => '定位光故障告警';
@@ -1275,7 +1320,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pumpCurrentText => '泵源电流';
 
   @override
-  String get pumpModuleOvertemperatureAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get pumpModuleOvertemperatureAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get pumpModuleOvertemperatureAlarmTitle => '泵浦模块超温告警';
@@ -1284,13 +1330,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pumpModuleOvertemperatureClearedTitle => '泵浦模块超温解除';
 
   @override
-  String get pumpSourceTemperatureAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get pumpSourceTemperatureAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get pumpSourceTemperatureAlarmTitle => '泵源温度告警';
 
   @override
-  String get pumpSourceVoltageAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get pumpSourceVoltageAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get pumpSourceVoltageAlarmTitle => '泵源电压告警';
@@ -1302,13 +1350,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pumpTemperatureText => '泵源温度';
 
   @override
-  String get quiescentCurrentAbnormalAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get quiescentCurrentAbnormalAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get quiescentCurrentAbnormalAlarmTitle => '静态电流异常告警';
 
   @override
-  String get redLightCurrentAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get redLightCurrentAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get redLightCurrentAlarmTitle => '红光电流告警';
@@ -1344,7 +1394,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get safetyTipsAgree => '同意';
 
   @override
-  String get safetyTipsContent => '1. 焊接过程中，请确保周围没有其他人员、反光物体或易燃材料。\n\n2. 请确保安全夹牢固夹在焊接工作台上；不要将安全夹夹在焊枪支架、喷嘴、送丝组件等部位。\n\n3. 请佩戴专业防护眼镜、口罩、耳塞以及耐高温手套。\n\n4. 在安装和调试设备时，激光操作结束后务必将激光切换到关闭位置。\n\n5. 请确保设备已正确接地；接地回路任一环节中断都可能造成人身伤害。\n\n6. 请确保过滤装置通风良好，并及时清除异物或污垢。';
+  String get safetyTipsContent =>
+      '1. 焊接过程中，请确保周围没有其他人员、反光物体或易燃材料。\n\n2. 请确保安全夹牢固夹在焊接工作台上；不要将安全夹夹在焊枪支架、喷嘴、送丝组件等部位。\n\n3. 请佩戴专业防护眼镜、口罩、耳塞以及耐高温手套。\n\n4. 在安装和调试设备时，激光操作结束后务必将激光切换到关闭位置。\n\n5. 请确保设备已正确接地；接地回路任一环节中断都可能造成人身伤害。\n\n6. 请确保过滤装置通风良好，并及时清除异物或污垢。';
 
   @override
   String get safetyTipsInfo => '我已阅读以上内容和';
@@ -1377,13 +1428,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get screenSettings => '显示';
 
   @override
-  String get sensorAbnormalAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get sensorAbnormalAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get sensorAbnormalAlarmTitle => '传感器异常告警';
 
   @override
-  String get sensorChannelDeviationAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get sensorChannelDeviationAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get sensorChannelDeviationAlarmTitle => '传感器通道偏差告警';
@@ -1419,7 +1472,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get shieldingGasAlarmCausePressureCheck => '气压检测异常';
 
   @override
-  String get shieldingGasAlarmContent => '请检查保护气是否开启、气瓶是否缺气。如确认无误后机器仍报警，请联系售后服务。';
+  String get shieldingGasAlarmContent =>
+      '请检查保护气是否开启、气瓶是否缺气。如确认无误后机器仍报警，请联系售后服务。';
 
   @override
   String shieldingGasAlarmEngineerCheckMessage(String reason) {
@@ -1472,7 +1526,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sshDebugText => 'SSH 调试';
 
   @override
-  String get sshDebugFooter => '开启后，可通过网络远程连接本机进行排查。重启后会自动关闭。USB 调试请在 USB OTG 中单独设置。';
+  String get sshDebugFooter =>
+      '开启后，可通过网络远程连接本机进行排查。重启后会自动关闭。USB 调试请在 USB OTG 中单独设置。';
 
   @override
   String get settingsMayRestartApp => '部分设置可能会重启应用。';
@@ -1481,7 +1536,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get straightTrackTemperatureAlarmContent => '检查聚焦镜。若聚焦镜有明显烧痕，请立即更换。';
 
   @override
-  String get tempBoardRefrigerationCommAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get tempBoardRefrigerationCommAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get tempBoardRefrigerationCommAlarmTitle => '温控板与制冷系统通讯故障';
@@ -1490,7 +1546,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unavailable => '不可用';
 
   @override
-  String get undervoltage24vAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get undervoltage24vAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get undervoltage24vAlarmTitle => '24V 欠压告警';
@@ -1641,7 +1698,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get washProportionText => '清洗占比';
 
   @override
-  String get waterTemperatureUpperLimitAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get waterTemperatureUpperLimitAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get waterTemperatureUpperLimitAlarmTitle => '水温超上限告警';
@@ -1916,19 +1974,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wifiWlanLabel => '无线局域网';
 
   @override
-  String get watchdogResetEventContent => '控制器因看门狗复位而重启。若频繁发生，请联系 LaserCyber 售后。';
+  String get watchdogResetEventContent =>
+      '控制器因看门狗复位而重启。若频繁发生，请联系 LaserCyber 售后。';
 
   @override
   String get watchdogResetEventTitle => '看门狗复位事件';
 
   @override
-  String get wireFeederCommunicationAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get wireFeederCommunicationAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get wireFeederCommunicationAlarmTitle => '送丝机通讯告警';
 
   @override
-  String get wireFeederCurrentAlarmContent => '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
+  String get wireFeederCurrentAlarmContent =>
+      '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
   @override
   String get wireFeederCurrentAlarmTitle => '送丝机电流告警';
@@ -1963,20 +2024,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
 /// The translations for Chinese, as used in China (`zh_CN`).
 class AppLocalizationsZhCn extends AppLocalizationsZh {
-  AppLocalizationsZhCn(): super('zh_CN');
-
-
+  AppLocalizationsZhCn() : super('zh_CN');
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
 class AppLocalizationsZhTw extends AppLocalizationsZh {
-  AppLocalizationsZhTw(): super('zh_TW');
+  AppLocalizationsZhTw() : super('zh_TW');
 
   @override
   String get activeAlarmsTitle => '當前告警';
 
   @override
-  String get adFeedbackCommunicationAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get adFeedbackCommunicationAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get adFeedbackCommunicationAlarmTitle => 'AD 反饋通訊告警';
@@ -1993,37 +2053,43 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get advancedSettingAllowWorkAfterCameraAlarm => '攝像頭告警後允許作業';
 
   @override
-  String get advancedSettingAllowWorkAfterCameraAlarmHint => '攝像頭通訊異常時將無法使用 AI 自動檢測功能';
+  String get advancedSettingAllowWorkAfterCameraAlarmHint =>
+      '攝像頭通訊異常時將無法使用 AI 自動檢測功能';
 
   @override
   String get advancedSettingAllowWorkAfterFeederAlarm => '送絲機告警後允許作業';
 
   @override
-  String get advancedSettingAllowWorkAfterFeederAlarmHint => '送絲機異常時連續焊接模式將無法正常工作，但其他模式可以繼續工作。';
+  String get advancedSettingAllowWorkAfterFeederAlarmHint =>
+      '送絲機異常時連續焊接模式將無法正常工作，但其他模式可以繼續工作。';
 
   @override
   String get advancedSettingAllowWorkAfterGasAlarm => '保護氣告警後允許作業';
 
   @override
-  String get advancedSettingAllowWorkAfterGasAlarmHint => '保護氣異常時強制允許出光可能會損壞設備，僅應在確定無影響時打開。';
+  String get advancedSettingAllowWorkAfterGasAlarmHint =>
+      '保護氣異常時強制允許出光可能會損壞設備，僅應在確定無影響時打開。';
 
   @override
   String get advancedSettingAllowWorkAfterLensContamination => '保護鏡髒污告警後允許作業';
 
   @override
-  String get advancedSettingAllowWorkAfterLensContaminationHint => '保護鏡髒污時強制允許出光可能會損壞設備，僅應在 AI 檢測不準時打開。';
+  String get advancedSettingAllowWorkAfterLensContaminationHint =>
+      '保護鏡髒污時強制允許出光可能會損壞設備，僅應在 AI 檢測不準時打開。';
 
   @override
   String get advancedSettingKeepLaserOnWhileAlarmed => '告警時保持出光';
 
   @override
-  String get advancedSettingKeepLaserOnWhileAlarmedHint => '開啓後，作業過程中出現編碼告警時不會自動關光，告警彈窗仍會顯示。僅應在明確風險可控時使用。';
+  String get advancedSettingKeepLaserOnWhileAlarmedHint =>
+      '開啓後，作業過程中出現編碼告警時不會自動關光，告警彈窗仍會顯示。僅應在明確風險可控時使用。';
 
   @override
   String get advancedSettingLensContaminationDetection => '鏡片污染檢測';
 
   @override
-  String get advancedSettingLensContaminationDetectionHint => '作業時通過攝像頭與 AI 監測保護鏡髒污情況，發現污染時提示處理。僅在檢測不準或不可用時關閉。';
+  String get advancedSettingLensContaminationDetectionHint =>
+      '作業時通過攝像頭與 AI 監測保護鏡髒污情況，發現污染時提示處理。僅在檢測不準或不可用時關閉。';
 
   @override
   String get advancedSettingZeroOffset => '零點校正';
@@ -2035,7 +2101,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get advancedSettingAutoZeroOffsetTitle => '自動零點校正';
 
   @override
-  String get advancedSettingAutoZeroOffsetMessage => '請將焊槍對準安全區域並按住扳機，然後點擊自動。自動過程會臨時允許出光，扳機觸發激光。請等待進度條完成自動零點校正。';
+  String get advancedSettingAutoZeroOffsetMessage =>
+      '請將焊槍對準安全區域並按住扳機，然後點擊自動。自動過程會臨時允許出光，扳機觸發激光。請等待進度條完成自動零點校正。';
 
   @override
   String get advancedSettingEnterZeroOffset => '請輸入零點校正';
@@ -2083,13 +2150,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get advancedSettingProtectiveLensTempAlarmThreshold => '保護鏡溫度報警閾值';
 
   @override
-  String get advancedSettingEnterProtectiveLensTempAlarmThreshold => '請輸入保護鏡溫度報警閾值';
+  String get advancedSettingEnterProtectiveLensTempAlarmThreshold =>
+      '請輸入保護鏡溫度報警閾值';
 
   @override
   String get advancedSettingCollimatingLensTempAlarmThreshold => '聚焦鏡溫度報警閾值';
 
   @override
-  String get advancedSettingEnterCollimatingLensTempAlarmThreshold => '請輸入聚焦鏡溫度報警閾值';
+  String get advancedSettingEnterCollimatingLensTempAlarmThreshold =>
+      '請輸入聚焦鏡溫度報警閾值';
 
   @override
   String get advancedSettingTempAlarmRecoveryHysteresis => '溫度報警恢復差值';
@@ -2110,7 +2179,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get advancedSettingZeroPointOffsetDetection => '零點偏移檢測';
 
   @override
-  String get advancedSettingZeroPointOffsetDetectionHint => '通過 AI 判斷光斑是否居中，零點偏移時提示校正。若不需要此類告警可關閉。';
+  String get advancedSettingZeroPointOffsetDetectionHint =>
+      '通過 AI 判斷光斑是否居中，零點偏移時提示校正。若不需要此類告警可關閉。';
 
   @override
   String get advancedSettings => '高級設置';
@@ -2264,7 +2334,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get aiVisualizedLabel => '可視化';
 
   @override
-  String get alarmFaultClearedContent => '該故障已解除，可繼續作業。若頻繁出現，請聯繫 LaserCyber 售後。';
+  String get alarmFaultClearedContent =>
+      '該故障已解除，可繼續作業。若頻繁出現，請聯繫 LaserCyber 售後。';
 
   @override
   String get alarmInfoLaserDevice => '激光設備';
@@ -2279,7 +2350,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get alarmLogsTitle => '告警日誌';
 
   @override
-  String get alarmRebootThenSupportContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get alarmRebootThenSupportContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String autoOtaUpdateDialogMessage(String version) {
@@ -2341,7 +2413,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get bootSelfCheckStatusSkipped => '跳過';
 
   @override
-  String bundledFirmwareDialogMessage(String currentVersion, String newVersion) {
+  String bundledFirmwareDialogMessage(
+      String currentVersion, String newVersion) {
     return '檢測到新控制板固件（當前 $currentVersion → $newVersion）。\n請保持設備通電，升級過程中請勿操作。';
   }
 
@@ -2367,7 +2440,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get cameraCommStatusText => '攝像頭通訊狀態';
 
   @override
-  String get cameraCommunicationAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get cameraCommunicationAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get cameraCommunicationAlarmTitle => '攝像頭通訊告警';
@@ -2385,7 +2459,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get closeText => '關閉';
 
   @override
-  String get coldWaterInterlockAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get coldWaterInterlockAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get coldWaterInterlockAlarmTitle => '冷水互鎖告警';
@@ -2421,7 +2496,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get connectedText => '已連接';
 
   @override
-  String get controllerTabletCommAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get controllerTabletCommAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get controllerTabletCommAlarmTitle => '控制板通訊故障';
@@ -2559,7 +2635,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get deviceSn => '設備 SN';
 
   @override
-  String get diodeShortCircuitAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get diodeShortCircuitAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get diodeShortCircuitAlarmTitle => '二極管短路故障';
@@ -2571,7 +2648,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get dontShowAgain => '不再顯示';
 
   @override
-  String get driveOvertemperatureAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get driveOvertemperatureAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get driveOvertemperatureAlarmTitle => '驅動溫度告警';
@@ -2580,13 +2658,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get driverBoardOvervoltageTitle => '驅動板過壓';
 
   @override
-  String get driverModuleOvertemperatureAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get driverModuleOvertemperatureAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get driverModuleOvertemperatureAlarmTitle => '驅動模塊超溫告警';
 
   @override
-  String get environmentTemperatureAlarmContent => '環境溫度超出允許範圍。請改善車間溫控；若讀數明顯異常，請聯繫 LaserCyber 售後。';
+  String get environmentTemperatureAlarmContent =>
+      '環境溫度超出允許範圍。請改善車間溫控；若讀數明顯異常，請聯繫 LaserCyber 售後。';
 
   @override
   String get environmentTemperatureAlarmTitle => '環境溫度告警';
@@ -2598,13 +2678,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get equipmentStatusHome => '主頁';
 
   @override
-  String get fiberDisconnectionAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get fiberDisconnectionAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get fiberDisconnectionAlarmTitle => '光纖斷開告警';
 
   @override
-  String get fiberTemperatureUpperLimitAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get fiberTemperatureUpperLimitAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get fiberTemperatureUpperLimitAlarmTitle => '光纖溫度超上限告警';
@@ -2613,25 +2695,29 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get fiberTemperatureUpperLimitClearedTitle => '光纖溫度超上限解除';
 
   @override
-  String get flashErrorAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get flashErrorAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get flashErrorAlarmTitle => 'FLASH 錯誤告警';
 
   @override
-  String get flashUnencryptedAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get flashUnencryptedAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get frontLightPdVoltageText => '前向光PD電壓';
 
   @override
-  String get galvanometerMotorOvercurrentAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get galvanometerMotorOvercurrentAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get galvanometerMotorOvercurrentAlarmTitle => '振鏡電機過流告警';
 
   @override
-  String get galvanometerMotorStallAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get galvanometerMotorStallAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get galvanometerMotorStallAlarmTitle => '振鏡電機堵轉告警';
@@ -2643,7 +2729,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get gasPressureLabel => '氣壓';
 
   @override
-  String get gunHeadCommunicationAlarmContent => '主機與焊槍通訊失敗。請檢查槍頭線纜與接頭；重新連接後若仍報警，請聯繫 LaserCyber 售後。';
+  String get gunHeadCommunicationAlarmContent =>
+      '主機與焊槍通訊失敗。請檢查槍頭線纜與接頭；重新連接後若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get gunHeadCommunicationAlarmTitle => '槍頭通訊告警';
@@ -2652,7 +2739,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get gunHeadCommunicationText => '槍頭通訊狀態';
 
   @override
-  String get gunHeadMotorOvertemperatureAlarmContent => '焊槍電機過溫。請暫停作業並等待冷卻；若再次出現，請聯繫 LaserCyber 售後。';
+  String get gunHeadMotorOvertemperatureAlarmContent =>
+      '焊槍電機過溫。請暫停作業並等待冷卻；若再次出現，請聯繫 LaserCyber 售後。';
 
   @override
   String get gunHeadMotorOvertemperatureAlarmTitle => '槍頭電機過溫告警';
@@ -2667,7 +2755,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get gunSwitchLabel => '焊槍開關';
 
   @override
-  String get hardwareBusErrorAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get hardwareBusErrorAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get hardwareBusErrorAlarmTitle => '硬件總線錯誤告警';
@@ -2733,13 +2822,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get httpProxyValidationUsernameRequired => 'Basic 認證需要用戶名';
 
   @override
-  String get illegalInstructionAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get illegalInstructionAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get internalHumidityExceedsTheUpperLimitAlarmTitle => '內部溼度超上限告警';
 
   @override
-  String get internalHumidityUpperLimitAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get internalHumidityUpperLimitAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get ipCameraText => '攝像頭';
@@ -2838,13 +2929,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get languageSettingText => '語言';
 
   @override
-  String get laserCommunicationAlarmContent => '請確認已經按下了 Reset 按鈕。若依舊沒有恢復，請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get laserCommunicationAlarmContent =>
+      '請確認已經按下了 Reset 按鈕。若依舊沒有恢復，請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get laserCommunicationAlarmTitle => '激光器通訊告警';
 
   @override
-  String get laserCurrentAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get laserCurrentAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get laserCurrentAlarmTitle => '激光器電流告警';
@@ -2853,7 +2946,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get laserCurrentLabel => '激光電流';
 
   @override
-  String get laserDriverCommunicationAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get laserDriverCommunicationAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get laserDriverCommunicationAlarmTitle => '激光器驅動通訊告警';
@@ -2862,7 +2956,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get laserEmergencyStopAlarmContent => '激光器急停已觸發。請鬆開急停並復位設備後再繼續作業。';
 
   @override
-  String get laserOutputEnergyLowerLimitAlarmContent => '激光輸出能量過低。請檢查保護鏡與工藝功率設置。若持續出現，請聯繫 LaserCyber 售後。';
+  String get laserOutputEnergyLowerLimitAlarmContent =>
+      '激光輸出能量過低。請檢查保護鏡與工藝功率設置。若持續出現，請聯繫 LaserCyber 售後。';
 
   @override
   String get laserOutputEnergyLowerLimitAlarmTitle => '激光輸出能量低於下限告警';
@@ -2871,7 +2966,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get laserOutputEnergyLowerLimitClearedTitle => '激光輸出能量低於下限解除';
 
   @override
-  String get laserReflectedEnergyUpperLimitAlarmContent => '激光反射能量過高。請停止出光，檢查工件角度、裝配間隙與工藝參數。若持續出現，請聯繫 LaserCyber 售後。';
+  String get laserReflectedEnergyUpperLimitAlarmContent =>
+      '激光反射能量過高。請停止出光，檢查工件角度、裝配間隙與工藝參數。若持續出現，請聯繫 LaserCyber 售後。';
 
   @override
   String get lensHeavyContaminationAlarmContent => '保護鏡嚴重髒污，需要清潔或更換保護鏡片';
@@ -2898,7 +2994,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get machineTitle => '機臺狀態';
 
   @override
-  String get mainControllerTempBoardCommAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get mainControllerTempBoardCommAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get mainControllerTempBoardCommAlarmTitle => '主控板與溫控板通訊故障';
@@ -2910,7 +3007,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get memoryManagementErrorTitle => '內存管理錯誤';
 
   @override
-  String get mmiOscillatorMalfunctionAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get mmiOscillatorMalfunctionAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get mmiOscillatorMalfunctionAlarmTitle => 'MMI 振盪器故障告警';
@@ -2922,7 +3020,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get monitorNavLabel => '設備監控';
 
   @override
-  String get motorCableOpenAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get motorCableOpenAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get motorCableOpenAlarmTitle => '電機連接線開路告警';
@@ -2940,7 +3039,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get mouseText => '鼠標';
 
   @override
-  String get narrowPulseProtectionAlarmContent => '已觸發窄脈衝保護。請調整工藝參數後重試；若反覆出現，請聯繫 LaserCyber 售後。';
+  String get narrowPulseProtectionAlarmContent =>
+      '已觸發窄脈衝保護。請調整工藝參數後重試；若反覆出現，請聯繫 LaserCyber 售後。';
 
   @override
   String get narrowPulseProtectionAlarmTitle => '窄脈衝保護告警';
@@ -2993,7 +3093,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get pleaseWait => '請稍候…';
 
   @override
-  String get productDisclaimerContent => '尊敬的用戶：感謝您選擇我們的手持激光焊接產品。在使用本產品前，我們強烈建議您仔細閱讀本免責聲明，並嚴格遵守用戶手冊中的所有說明和安全措施。\n\n1. 安全警告\n激光設備可能對眼睛和皮膚造成嚴重傷害。在操作過程中，請始終佩戴適當的個人防護裝備（PPE），包括但不限於激光防護眼鏡和手套，以確保您的安全。\n\n2. 操作說明\n請確保您已充分理解並能夠遵守產品手冊中的所有操作流程和安全指南。使用不當可能導致設備損壞或人身傷害。\n\n3. 不當操作\n對於用戶未遵循產品手冊中的說明或未採取適當安全措施而導致的任何傷害或損失，本公司概不負責。\n\n4. 維護\n請定期檢查並維護產品，以確保其處於良好工作狀態。由於產品維護不當造成的任何事故，本公司不承擔責任。\n\n5. 責任免責聲明\n雖然本公司提供了全面的使用說明和安全措施，但對於因用戶操作不當或違反手冊規定而造成的任何傷害或損壞，本公司保留免責權利。我們強烈建議用戶在使用本產品前，充分瞭解並遵守所有相關安全法規和操作標準。\n\n6. 適用法律\n本免責聲明的解釋、適用和爭議解決，應受本公司總部所在地法律管轄。\n\n7. 完整協議\n本免責聲明構成您與本公司之間的完整協議，並取代此前任何口頭或書面理解或協議。';
+  String get productDisclaimerContent =>
+      '尊敬的用戶：感謝您選擇我們的手持激光焊接產品。在使用本產品前，我們強烈建議您仔細閱讀本免責聲明，並嚴格遵守用戶手冊中的所有說明和安全措施。\n\n1. 安全警告\n激光設備可能對眼睛和皮膚造成嚴重傷害。在操作過程中，請始終佩戴適當的個人防護裝備（PPE），包括但不限於激光防護眼鏡和手套，以確保您的安全。\n\n2. 操作說明\n請確保您已充分理解並能夠遵守產品手冊中的所有操作流程和安全指南。使用不當可能導致設備損壞或人身傷害。\n\n3. 不當操作\n對於用戶未遵循產品手冊中的說明或未採取適當安全措施而導致的任何傷害或損失，本公司概不負責。\n\n4. 維護\n請定期檢查並維護產品，以確保其處於良好工作狀態。由於產品維護不當造成的任何事故，本公司不承擔責任。\n\n5. 責任免責聲明\n雖然本公司提供了全面的使用說明和安全措施，但對於因用戶操作不當或違反手冊規定而造成的任何傷害或損壞，本公司保留免責權利。我們強烈建議用戶在使用本產品前，充分瞭解並遵守所有相關安全法規和操作標準。\n\n6. 適用法律\n本免責聲明的解釋、適用和爭議解決，應受本公司總部所在地法律管轄。\n\n7. 完整協議\n本免責聲明構成您與本公司之間的完整協議，並取代此前任何口頭或書面理解或協議。';
 
   @override
   String get productDisclaimerInfo => '我已閱讀並同意以上內容';
@@ -3002,7 +3103,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get productDisclaimerTitle => '產品免責聲明';
 
   @override
-  String get positioningLightFaultAlarmContent => '紅光（定位光）故障。請檢查指示光是否正常；若不亮，請聯繫 LaserCyber 售後。';
+  String get positioningLightFaultAlarmContent =>
+      '紅光（定位光）故障。請檢查指示光是否正常；若不亮，請聯繫 LaserCyber 售後。';
 
   @override
   String get protectiveLensOvertemperatureAlarmContent => '如果保護鏡出現明顯燒痕，請立即更換。';
@@ -3023,7 +3125,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get pumpCurrentText => '泵源電流';
 
   @override
-  String get pumpModuleOvertemperatureAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get pumpModuleOvertemperatureAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get pumpModuleOvertemperatureAlarmTitle => '泵浦模塊超溫告警';
@@ -3032,13 +3135,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get pumpModuleOvertemperatureClearedTitle => '泵浦模塊超溫解除';
 
   @override
-  String get pumpSourceTemperatureAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get pumpSourceTemperatureAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get pumpSourceTemperatureAlarmTitle => '泵源溫度告警';
 
   @override
-  String get pumpSourceVoltageAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get pumpSourceVoltageAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get pumpSourceVoltageAlarmTitle => '泵源電壓告警';
@@ -3050,13 +3155,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get pumpTemperatureText => '泵源溫度';
 
   @override
-  String get quiescentCurrentAbnormalAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get quiescentCurrentAbnormalAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get quiescentCurrentAbnormalAlarmTitle => '靜態電流異常告警';
 
   @override
-  String get redLightCurrentAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get redLightCurrentAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get redLightCurrentAlarmTitle => '紅光電流告警';
@@ -3086,7 +3193,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get safetyLockText => '安全夾';
 
   @override
-  String get safetyTipsContent => '1. 焊接過程中，請確保周圍沒有其他人員、反光物體或易燃材料。\n\n2. 請確保安全夾牢固夾在焊接工作臺上；不要將安全夾夾在焊槍支架、噴嘴、送絲組件等部位。\n\n3. 請佩戴專業防護眼鏡、口罩、耳塞以及耐高溫手套。\n\n4. 在安裝和調試設備時，激光操作結束後務必將激光切換到關閉位置。\n\n5. 請確保設備已正確接地；接地迴路任一環節中斷都可能造成人身傷害。\n\n6. 請確保過濾設備通風良好，並及時清除異物或污垢。';
+  String get safetyTipsContent =>
+      '1. 焊接過程中，請確保周圍沒有其他人員、反光物體或易燃材料。\n\n2. 請確保安全夾牢固夾在焊接工作臺上；不要將安全夾夾在焊槍支架、噴嘴、送絲組件等部位。\n\n3. 請佩戴專業防護眼鏡、口罩、耳塞以及耐高溫手套。\n\n4. 在安裝和調試設備時，激光操作結束後務必將激光切換到關閉位置。\n\n5. 請確保設備已正確接地；接地迴路任一環節中斷都可能造成人身傷害。\n\n6. 請確保過濾設備通風良好，並及時清除異物或污垢。';
 
   @override
   String get safetyTipsInfo => '我已閱讀以上內容和';
@@ -3113,13 +3221,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get screenSettings => '顯示';
 
   @override
-  String get sensorAbnormalAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get sensorAbnormalAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get sensorAbnormalAlarmTitle => '傳感器異常告警';
 
   @override
-  String get sensorChannelDeviationAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get sensorChannelDeviationAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get sensorChannelDeviationAlarmTitle => '傳感器通道偏差告警';
@@ -3155,7 +3265,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get shieldingGasAlarmCausePressureCheck => '氣壓檢測異常';
 
   @override
-  String get shieldingGasAlarmContent => '請檢查保護氣是否開啓、氣瓶是否缺氣。如確認無誤後機器仍報警，請聯繫售後服務。';
+  String get shieldingGasAlarmContent =>
+      '請檢查保護氣是否開啓、氣瓶是否缺氣。如確認無誤後機器仍報警，請聯繫售後服務。';
 
   @override
   String shieldingGasAlarmEngineerCheckMessage(String reason) {
@@ -3188,7 +3299,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get sshDebugText => 'SSH 調試';
 
   @override
-  String get sshDebugFooter => '開啓後，可通過網絡遠程連接本機進行排查。重啓後會自動關閉。USB 調試請在 USB OTG 中單獨設置。';
+  String get sshDebugFooter =>
+      '開啓後，可通過網絡遠程連接本機進行排查。重啓後會自動關閉。USB 調試請在 USB OTG 中單獨設置。';
 
   @override
   String get settingsMayRestartApp => '部分設置可能會重啓應用。';
@@ -3197,13 +3309,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get straightTrackTemperatureAlarmContent => '檢查聚焦鏡。若聚焦鏡有明顯燒痕，請立即更換。';
 
   @override
-  String get tempBoardRefrigerationCommAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get tempBoardRefrigerationCommAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get tempBoardRefrigerationCommAlarmTitle => '溫控板與製冷系統通訊故障';
 
   @override
-  String get undervoltage24vAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get undervoltage24vAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get undervoltage24vAlarmTitle => '24V 欠壓告警';
@@ -3316,7 +3430,8 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get washProportionText => '清洗佔比';
 
   @override
-  String get waterTemperatureUpperLimitAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get waterTemperatureUpperLimitAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get waterTemperatureUpperLimitAlarmTitle => '水溫超上限告警';
@@ -3530,19 +3645,22 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get wifiWlanLabel => '無線局域網';
 
   @override
-  String get watchdogResetEventContent => '控制器因看門狗復位而重啓。若頻繁發生，請聯繫 LaserCyber 售後。';
+  String get watchdogResetEventContent =>
+      '控制器因看門狗復位而重啓。若頻繁發生，請聯繫 LaserCyber 售後。';
 
   @override
   String get watchdogResetEventTitle => '看門狗復位事件';
 
   @override
-  String get wireFeederCommunicationAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get wireFeederCommunicationAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get wireFeederCommunicationAlarmTitle => '送絲機通訊告警';
 
   @override
-  String get wireFeederCurrentAlarmContent => '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
+  String get wireFeederCurrentAlarmContent =>
+      '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
   @override
   String get wireFeederCurrentAlarmTitle => '送絲機電流告警';

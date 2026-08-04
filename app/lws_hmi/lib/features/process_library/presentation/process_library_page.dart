@@ -330,7 +330,7 @@ final class _ProcessLibraryPageState extends State<ProcessLibraryPage> {
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<T>(
         key: ValueKey(value),
-        value: value,
+        initialValue: value,
         decoration: InputDecoration(labelText: label),
         items: [
           for (final item in values)
@@ -541,7 +541,7 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<ProcessType>(
-              value: _processType,
+              initialValue: _processType,
               decoration: const InputDecoration(labelText: 'Process type'),
               items: [
                 for (final value in ProcessType.values)
@@ -555,7 +555,7 @@ final class _ProcessPresetEditorState extends State<_ProcessPresetEditor> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<MaterialType>(
-              value: _materialType,
+              initialValue: _materialType,
               decoration: const InputDecoration(labelText: 'Material'),
               items: [
                 for (final value in MaterialType.values)

@@ -1,3 +1,5 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -10,10 +12,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activeAlarmsTitle => 'Active Alarms';
 
   @override
-  String get adFeedbackCommunicationAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get adFeedbackCommunicationAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
-  String get adFeedbackCommunicationAlarmTitle => 'AD Feedback Communication Alarm';
+  String get adFeedbackCommunicationAlarmTitle =>
+      'AD Feedback Communication Alarm';
 
   @override
   String adbRemoteDebugEnabled(int port) {
@@ -24,40 +28,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adbRemoteDebugFailed => 'Failed to enable ADB remote debugging';
 
   @override
-  String get advancedSettingAllowWorkAfterCameraAlarm => 'Allow Work After Camera Alarm';
+  String get advancedSettingAllowWorkAfterCameraAlarm =>
+      'Allow Work After Camera Alarm';
 
   @override
-  String get advancedSettingAllowWorkAfterCameraAlarmHint => 'If camera communication fails, AI auto-detection will be unavailable.';
+  String get advancedSettingAllowWorkAfterCameraAlarmHint =>
+      'If camera communication fails, AI auto-detection will be unavailable.';
 
   @override
-  String get advancedSettingAllowWorkAfterFeederAlarm => 'Allow Work After Feeder Alarm';
+  String get advancedSettingAllowWorkAfterFeederAlarm =>
+      'Allow Work After Feeder Alarm';
 
   @override
-  String get advancedSettingAllowWorkAfterFeederAlarmHint => 'Continuous welding won’t work properly if the wire feeder is abnormal, but other modes can continue.';
+  String get advancedSettingAllowWorkAfterFeederAlarmHint =>
+      'Continuous welding won’t work properly if the wire feeder is abnormal, but other modes can continue.';
 
   @override
-  String get advancedSettingAllowWorkAfterGasAlarm => 'Allow Work After Gas Alarm';
+  String get advancedSettingAllowWorkAfterGasAlarm =>
+      'Allow Work After Gas Alarm';
 
   @override
-  String get advancedSettingAllowWorkAfterGasAlarmHint => 'Allowing laser output with abnormal shielding gas may damage the device. Enable only when you’re sure it’s safe.';
+  String get advancedSettingAllowWorkAfterGasAlarmHint =>
+      'Allowing laser output with abnormal shielding gas may damage the device. Enable only when you’re sure it’s safe.';
 
   @override
-  String get advancedSettingAllowWorkAfterLensContamination => 'Allow Work After Lens Contamination';
+  String get advancedSettingAllowWorkAfterLensContamination =>
+      'Allow Work After Lens Contamination';
 
   @override
-  String get advancedSettingAllowWorkAfterLensContaminationHint => 'Allowing laser output with a contaminated protective lens may damage the device. Enable only if AI detection is inaccurate.';
+  String get advancedSettingAllowWorkAfterLensContaminationHint =>
+      'Allowing laser output with a contaminated protective lens may damage the device. Enable only if AI detection is inaccurate.';
 
   @override
-  String get advancedSettingKeepLaserOnWhileAlarmed => 'Keep Laser On During Alarms';
+  String get advancedSettingKeepLaserOnWhileAlarmed =>
+      'Keep Laser On During Alarms';
 
   @override
-  String get advancedSettingKeepLaserOnWhileAlarmedHint => 'When enabled, coded alarms won’t automatically turn off the laser while you’re already welding. Warning dialogs still appear. Use only when the risk is acceptable.';
+  String get advancedSettingKeepLaserOnWhileAlarmedHint =>
+      'When enabled, coded alarms won’t automatically turn off the laser while you’re already welding. Warning dialogs still appear. Use only when the risk is acceptable.';
 
   @override
-  String get advancedSettingLensContaminationDetection => 'Lens Contamination Detection';
+  String get advancedSettingLensContaminationDetection =>
+      'Lens Contamination Detection';
 
   @override
-  String get advancedSettingLensContaminationDetectionHint => 'Uses the camera and AI to watch the protective lens during work and warn when contamination is detected. Turn off only if detection is inaccurate or unavailable.';
+  String get advancedSettingLensContaminationDetectionHint =>
+      'Uses the camera and AI to watch the protective lens during work and warn when contamination is detected. Turn off only if detection is inaccurate or unavailable.';
 
   @override
   String get advancedSettingZeroOffset => 'Zero Offset';
@@ -69,7 +85,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advancedSettingAutoZeroOffsetTitle => 'Auto Zero Offset';
 
   @override
-  String get advancedSettingAutoZeroOffsetMessage => 'Aim the welding gun at a safe area and hold the trigger, then tap Auto. Auto temporarily enables laser output; the trigger fires the laser. Wait for the progress bar to finish automatic zero-offset correction.';
+  String get advancedSettingAutoZeroOffsetMessage =>
+      'Aim the welding gun at a safe area and hold the trigger, then tap Auto. Auto temporarily enables laser output; the trigger fires the laser. Wait for the progress bar to finish automatic zero-offset correction.';
 
   @override
   String get advancedSettingEnterZeroOffset => 'Enter zero offset';
@@ -78,7 +95,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advancedSettingScanWidthCorrection => 'Scan Width Correction';
 
   @override
-  String get advancedSettingEnterScanWidthCorrection => 'Enter scan width correction';
+  String get advancedSettingEnterScanWidthCorrection =>
+      'Enter scan width correction';
 
   @override
   String get advancedSettingLaserStartPower => 'Laser Start Power';
@@ -96,43 +114,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advancedSettingMinGasPressure => 'Min. Gas Pressure';
 
   @override
-  String get advancedSettingEnterMinGasPressure => 'Enter minimum gas pressure threshold';
+  String get advancedSettingEnterMinGasPressure =>
+      'Enter minimum gas pressure threshold';
 
   @override
   String get advancedSettingInletGasPressure => 'Inlet Gas Pressure Threshold';
 
   @override
-  String get advancedSettingEnterInletGasPressure => 'Enter inlet gas pressure threshold';
+  String get advancedSettingEnterInletGasPressure =>
+      'Enter inlet gas pressure threshold';
 
   @override
-  String get advancedSettingMotorTempAlarmThreshold => 'Motor Temperature Alarm Threshold';
+  String get advancedSettingMotorTempAlarmThreshold =>
+      'Motor Temperature Alarm Threshold';
 
   @override
-  String get advancedSettingEnterMotorTempAlarmThreshold => 'Enter motor temperature alarm threshold';
+  String get advancedSettingEnterMotorTempAlarmThreshold =>
+      'Enter motor temperature alarm threshold';
 
   @override
-  String get advancedSettingDriverTempAlarmThreshold => 'Driver Temperature Alarm Threshold';
+  String get advancedSettingDriverTempAlarmThreshold =>
+      'Driver Temperature Alarm Threshold';
 
   @override
-  String get advancedSettingEnterDriverTempAlarmThreshold => 'Enter driver temperature alarm threshold';
+  String get advancedSettingEnterDriverTempAlarmThreshold =>
+      'Enter driver temperature alarm threshold';
 
   @override
-  String get advancedSettingProtectiveLensTempAlarmThreshold => 'Protective Lens Temperature Alarm Threshold';
+  String get advancedSettingProtectiveLensTempAlarmThreshold =>
+      'Protective Lens Temperature Alarm Threshold';
 
   @override
-  String get advancedSettingEnterProtectiveLensTempAlarmThreshold => 'Enter protective lens temperature alarm threshold';
+  String get advancedSettingEnterProtectiveLensTempAlarmThreshold =>
+      'Enter protective lens temperature alarm threshold';
 
   @override
-  String get advancedSettingCollimatingLensTempAlarmThreshold => 'Collimating Lens Temperature Alarm Threshold';
+  String get advancedSettingCollimatingLensTempAlarmThreshold =>
+      'Collimating Lens Temperature Alarm Threshold';
 
   @override
-  String get advancedSettingEnterCollimatingLensTempAlarmThreshold => 'Enter collimating lens temperature alarm threshold';
+  String get advancedSettingEnterCollimatingLensTempAlarmThreshold =>
+      'Enter collimating lens temperature alarm threshold';
 
   @override
-  String get advancedSettingTempAlarmRecoveryHysteresis => 'Temperature Alarm Recovery Hysteresis';
+  String get advancedSettingTempAlarmRecoveryHysteresis =>
+      'Temperature Alarm Recovery Hysteresis';
 
   @override
-  String get advancedSettingEnterTempAlarmRecoveryHysteresis => 'Enter temperature alarm recovery hysteresis';
+  String get advancedSettingEnterTempAlarmRecoveryHysteresis =>
+      'Enter temperature alarm recovery hysteresis';
 
   @override
   String get advancedSettingValueRequired => 'Value is required';
@@ -159,7 +189,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advancedSettingZeroPointOffsetDetection => 'Zero Offset Detection';
 
   @override
-  String get advancedSettingZeroPointOffsetDetectionHint => 'Uses AI to check whether the laser spot is centered. You’ll be prompted to correct zero offset when it drifts. Turn off only if you don’t need this alert.';
+  String get advancedSettingZeroPointOffsetDetectionHint =>
+      'Uses AI to check whether the laser spot is centered. You’ll be prompted to correct zero offset when it drifts. Turn off only if you don’t need this alert.';
 
   @override
   String get advancedSettings => 'Advanced';
@@ -177,7 +208,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advancedSettingsGroupPowerThresholds => 'Power Thresholds';
 
   @override
-  String get advancedSettingsGroupTemperatureThresholds => 'Temperature Thresholds';
+  String get advancedSettingsGroupTemperatureThresholds =>
+      'Temperature Thresholds';
 
   @override
   String get aiDetectionLabel => 'AI Detection';
@@ -254,7 +286,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiVisionNavLabel => 'AI Vision';
 
   @override
-  String get aiVisionOfflineInferenceNotAvailable => 'Offline analysis isn’t available in the current AI library';
+  String get aiVisionOfflineInferenceNotAvailable =>
+      'Offline analysis isn’t available in the current AI library';
 
   @override
   String get aiVisionProcessTypeText => 'Process Type';
@@ -277,7 +310,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get aiVisionStreamFailurePlayerTimeout => 'Player connection or stream timed out';
+  String get aiVisionStreamFailurePlayerTimeout =>
+      'Player connection or stream timed out';
 
   @override
   String aiVisionStreamFailureRtspEvent(String message) {
@@ -290,13 +324,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get aiVisionStreamFailureSurfaceUnavailable => 'Video surface isn’t ready';
+  String get aiVisionStreamFailureSurfaceUnavailable =>
+      'Video surface isn’t ready';
 
   @override
   String get aiVisionStreamFailureUnknown => 'Unknown reason';
 
   @override
-  String get aiVisionStreamFailureUnsupportedVideo => 'Unsupported video codec or decoder failed to start';
+  String get aiVisionStreamFailureUnsupportedVideo =>
+      'Unsupported video codec or decoder failed to start';
 
   @override
   String get aiVisionTitle => 'AI Vision';
@@ -347,7 +383,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiVisualizedLabel => 'Visualized';
 
   @override
-  String get alarmFaultClearedContent => 'This fault has cleared. You can resume work. If it happens often, contact LaserCyber support.';
+  String get alarmFaultClearedContent =>
+      'This fault has cleared. You can resume work. If it happens often, contact LaserCyber support.';
 
   @override
   String get alarmInfoLaserDevice => 'Laser';
@@ -362,7 +399,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alarmLogsTitle => 'Alarm Logs';
 
   @override
-  String get alarmRebootThenSupportContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get alarmRebootThenSupportContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get alarmTitle => 'Alarms';
@@ -433,7 +471,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bootSelfCheckStatusSkipped => 'Skipped';
 
   @override
-  String bundledFirmwareDialogMessage(String currentVersion, String newVersion) {
+  String bundledFirmwareDialogMessage(
+      String currentVersion, String newVersion) {
     return 'A newer control board firmware is available ($currentVersion → $newVersion).\nKeep power connected and don’t operate the device during the upgrade.';
   }
 
@@ -441,7 +480,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bundledFirmwareDialogTitle => 'Control Board Firmware Update';
 
   @override
-  String get bundledFirmwareFailedMessage => 'Control board firmware update failed. Try again later.';
+  String get bundledFirmwareFailedMessage =>
+      'Control board firmware update failed. Try again later.';
 
   @override
   String get bundledFirmwareFailedTitle => 'Firmware Update Failed';
@@ -452,13 +492,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get bundledFirmwareSuccessMessage => 'Control board firmware has been updated.';
+  String get bundledFirmwareSuccessMessage =>
+      'Control board firmware has been updated.';
 
   @override
   String get bundledFirmwareSuccessTitle => 'Firmware Updated';
 
   @override
-  String get bundledFirmwareUpgradingMessage => 'Keep power connected and don’t operate the device during the upgrade.';
+  String get bundledFirmwareUpgradingMessage =>
+      'Keep power connected and don’t operate the device during the upgrade.';
 
   @override
   String get bundledFirmwareUpgradingTitle => 'Updating Control Board Firmware';
@@ -470,7 +512,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cameraCommStatusText => 'Camera Comm';
 
   @override
-  String get cameraCommunicationAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get cameraCommunicationAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get cameraCommunicationAlarmTitle => 'Camera Communication Alarm';
@@ -503,13 +546,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeText => 'Close';
 
   @override
-  String get coldWaterInterlockAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get coldWaterInterlockAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get coldWaterInterlockAlarmTitle => 'Coolant Interlock Alarm';
 
   @override
-  String get collimatingLensOvertemperatureAlarmTitle => 'Collimating Lens Overtemperature';
+  String get collimatingLensOvertemperatureAlarmTitle =>
+      'Collimating Lens Overtemperature';
 
   @override
   String get collimatorTempLabel => 'Collimator';
@@ -533,7 +578,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonSettingsGroupNetwork => 'Network';
 
   @override
-  String get commonSettingsShowSafetyGroundLockAlarm => 'Show Safety Clamp Alarm';
+  String get commonSettingsShowSafetyGroundLockAlarm =>
+      'Show Safety Clamp Alarm';
 
   @override
   String get confirmText => 'Confirm';
@@ -542,10 +588,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectedText => 'Connected';
 
   @override
-  String get controllerTabletCommAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get controllerTabletCommAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
-  String get controllerTabletCommAlarmTitle => 'Control Board Communication Error';
+  String get controllerTabletCommAlarmTitle =>
+      'Control Board Communication Error';
 
   @override
   String get currentAlarmText => 'Current Alarm';
@@ -620,7 +668,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateTimeNtpCnPool => 'China NTP Pool';
 
   @override
-  String get dateTimeTimezoneGeoFailed => 'Couldn’t set time zone from network location';
+  String get dateTimeTimezoneGeoFailed =>
+      'Couldn’t set time zone from network location';
 
   @override
   String get dateTimeModeAuto => 'Auto';
@@ -629,10 +678,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateTimeModeManual => 'Manual';
 
   @override
-  String get dateTimePermissionDenied => 'Missing system permission to change date/time';
+  String get dateTimePermissionDenied =>
+      'Missing system permission to change date/time';
 
   @override
-  String get dateTimeSearchTimezoneHint => 'Search time zone (e.g. Asia/Shanghai)';
+  String get dateTimeSearchTimezoneHint =>
+      'Search time zone (e.g. Asia/Shanghai)';
 
   @override
   String get dateTimeSelectDate => 'Select Date';
@@ -704,19 +755,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceSn => 'Device SN';
 
   @override
-  String get diodeShortCircuitAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get diodeShortCircuitAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get diodeShortCircuitAlarmTitle => 'Diode Short Circuit';
 
   @override
-  String get diodeShortCircuitErrorClearedTitle => 'Diode Short Circuit Cleared';
+  String get diodeShortCircuitErrorClearedTitle =>
+      'Diode Short Circuit Cleared';
 
   @override
   String get dontShowAgain => 'Don’t show again';
 
   @override
-  String get driveOvertemperatureAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get driveOvertemperatureAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get driveOvertemperatureAlarmTitle => 'Driver Overtemperature';
@@ -725,16 +779,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get driverBoardOvervoltageTitle => 'Driver Board Overvoltage';
 
   @override
-  String get driverModuleOvertemperatureAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get driverModuleOvertemperatureAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
-  String get driverModuleOvertemperatureAlarmTitle => 'Driver Module Overtemperature';
+  String get driverModuleOvertemperatureAlarmTitle =>
+      'Driver Module Overtemperature';
 
   @override
   String get emptyText => '';
 
   @override
-  String get environmentTemperatureAlarmContent => 'Ambient temperature is out of the allowed range. Improve workshop cooling/heating. If the reading looks wrong, contact LaserCyber support.';
+  String get environmentTemperatureAlarmContent =>
+      'Ambient temperature is out of the allowed range. Improve workshop cooling/heating. If the reading looks wrong, contact LaserCyber support.';
 
   @override
   String get environmentTemperatureAlarmTitle => 'Ambient Temperature Alarm';
@@ -755,31 +812,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failStatus => 'Fault';
 
   @override
-  String get fiberDisconnectionAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get fiberDisconnectionAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get fiberDisconnectionAlarmTitle => 'Fiber Disconnected';
 
   @override
-  String get fiberTemperatureUpperLimitAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get fiberTemperatureUpperLimitAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get fiberTemperatureUpperLimitAlarmTitle => 'Fiber Temperature High';
 
   @override
-  String get fiberTemperatureUpperLimitClearedTitle => 'Fiber Temperature High Cleared';
+  String get fiberTemperatureUpperLimitClearedTitle =>
+      'Fiber Temperature High Cleared';
 
   @override
   String get firmwareVersion => 'Control Board Version';
 
   @override
-  String get flashErrorAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get flashErrorAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get flashErrorAlarmTitle => 'FLASH Error';
 
   @override
-  String get flashUnencryptedAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get flashUnencryptedAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get flashUnencryptedAlarmTitle => 'FLASH Unencrypted';
@@ -788,37 +850,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get frontLightPdVoltageText => 'Forward PD Voltage';
 
   @override
-  String get galvanometerMotorOvercurrentAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get galvanometerMotorOvercurrentAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
-  String get galvanometerMotorOvercurrentAlarmTitle => 'Galvo Motor Overcurrent';
+  String get galvanometerMotorOvercurrentAlarmTitle =>
+      'Galvo Motor Overcurrent';
 
   @override
-  String get galvanometerMotorStallAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get galvanometerMotorStallAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get galvanometerMotorStallAlarmTitle => 'Galvo Motor Stall';
 
   @override
-  String get galvanometerMotorTrajectoryErrorTitle => 'Galvo Motor Trajectory Error';
+  String get galvanometerMotorTrajectoryErrorTitle =>
+      'Galvo Motor Trajectory Error';
 
   @override
   String get gasPressureLabel => 'Gas Pressure';
 
   @override
-  String get gunHeadCommunicationAlarmContent => 'Communication between the host and the welding gun failed. Check the gun cable and connectors. If the alarm continues after reconnecting, contact LaserCyber support.';
+  String get gunHeadCommunicationAlarmContent =>
+      'Communication between the host and the welding gun failed. Check the gun cable and connectors. If the alarm continues after reconnecting, contact LaserCyber support.';
 
   @override
-  String get gunHeadCommunicationAlarmTitle => 'Welding Gun Communication Alarm';
+  String get gunHeadCommunicationAlarmTitle =>
+      'Welding Gun Communication Alarm';
 
   @override
   String get gunHeadCommunicationText => 'Gun Comm';
 
   @override
-  String get gunHeadMotorOvertemperatureAlarmContent => 'The welding gun motor is overheating. Pause work and let it cool. If the alarm returns, contact LaserCyber support.';
+  String get gunHeadMotorOvertemperatureAlarmContent =>
+      'The welding gun motor is overheating. Pause work and let it cool. If the alarm returns, contact LaserCyber support.';
 
   @override
-  String get gunHeadMotorOvertemperatureAlarmTitle => 'Welding Gun Motor Overtemperature';
+  String get gunHeadMotorOvertemperatureAlarmTitle =>
+      'Welding Gun Motor Overtemperature';
 
   @override
   String get gunHeadSwitchText => 'Gun Switch';
@@ -830,7 +900,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gunSwitchLabel => 'Gun Switch';
 
   @override
-  String get hardwareBusErrorAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get hardwareBusErrorAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get hardwareBusErrorAlarmTitle => 'Hardware Bus Error';
@@ -917,10 +988,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get httpProxyValidationPortInvalid => 'Port must be 1–65535';
 
   @override
-  String get httpProxyValidationUsernameRequired => 'Username is required for Basic auth';
+  String get httpProxyValidationUsernameRequired =>
+      'Username is required for Basic auth';
 
   @override
-  String get illegalInstructionAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get illegalInstructionAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get illegalInstructionAlarmTitle => 'Illegal Instruction';
@@ -934,10 +1007,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get internalHumidityExceedsTheUpperLimitAlarmTitle => 'Internal Humidity High';
+  String get internalHumidityExceedsTheUpperLimitAlarmTitle =>
+      'Internal Humidity High';
 
   @override
-  String get internalHumidityUpperLimitAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get internalHumidityUpperLimitAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get ipCameraText => 'Camera';
@@ -979,7 +1054,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoCheckOtaUpdate => 'Automatically check for updates';
 
   @override
-  String get otaCheckUnavailable => 'Software update check is not available on this build.';
+  String get otaCheckUnavailable =>
+      'Software update check is not available on this build.';
 
   @override
   String get cloudEnvironmentTier => 'Cloud Environment';
@@ -997,7 +1073,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceRegisterTitle => 'Register This Device';
 
   @override
-  String get deviceRegisterBody => 'This device is unrecognized, please scan the QR code with LaserCyber app to register it.';
+  String get deviceRegisterBody =>
+      'This device is unrecognized, please scan the QR code with LaserCyber app to register it.';
 
   @override
   String get deviceRegisterReconnect => 'Reconnect';
@@ -1006,13 +1083,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceBindTitle => 'Bind This Device';
 
   @override
-  String get deviceBindBody => 'Scan the QR code with the LaserCyber app to bind this device.';
+  String get deviceBindBody =>
+      'Scan the QR code with the LaserCyber app to bind this device.';
 
   @override
   String get wifiConnectTipTitle => 'Connect to Wi‑Fi';
 
   @override
-  String get wifiConnectTipBody => 'This device is not connected to Wi‑Fi. Connect a network to use cloud features.';
+  String get wifiConnectTipBody =>
+      'This device is not connected to Wi‑Fi. Connect a network to use cloud features.';
 
   @override
   String get wifiConnectTipOpenSettings => 'Wi‑Fi Settings';
@@ -1021,7 +1100,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceRemoteLockTitle => 'Device Locked';
 
   @override
-  String get deviceRemoteLockBody => 'This device has been locked remotely. Contact your administrator to unlock.';
+  String get deviceRemoteLockBody =>
+      'This device has been locked remotely. Contact your administrator to unlock.';
 
   @override
   String get screenOffNever => 'Never';
@@ -1033,7 +1113,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keyboardText => 'Keyboard';
 
   @override
-  String get languageAppliesToUi => 'Applies to the product UI language and soft keyboard.';
+  String get languageAppliesToUi =>
+      'Applies to the product UI language and soft keyboard.';
 
   @override
   String get languageOptionChinese => '简体中文';
@@ -1045,19 +1126,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageOptionTraditionalChinese => '繁體中文';
 
   @override
-  String get languagePreferenceUnavailable => 'Language preference unavailable.';
+  String get languagePreferenceUnavailable =>
+      'Language preference unavailable.';
 
   @override
   String get languageSettingText => 'Language';
 
   @override
-  String get laserCommunicationAlarmContent => 'Confirm that the Reset button has been pressed. If it still doesn’t recover, power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get laserCommunicationAlarmContent =>
+      'Confirm that the Reset button has been pressed. If it still doesn’t recover, power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get laserCommunicationAlarmTitle => 'Laser Communication Alarm';
 
   @override
-  String get laserCurrentAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get laserCurrentAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get laserCurrentAlarmTitle => 'Laser Current Alarm';
@@ -1066,13 +1150,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get laserCurrentLabel => 'Laser Current';
 
   @override
-  String get laserDriverCommunicationAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get laserDriverCommunicationAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
-  String get laserDriverCommunicationAlarmTitle => 'Laser Driver Communication Alarm';
+  String get laserDriverCommunicationAlarmTitle =>
+      'Laser Driver Communication Alarm';
 
   @override
-  String get laserEmergencyStopAlarmContent => 'Laser E-stop is active. Release the emergency stop and reset the machine before continuing.';
+  String get laserEmergencyStopAlarmContent =>
+      'Laser E-stop is active. Release the emergency stop and reset the machine before continuing.';
 
   @override
   String get laserEmergencyStopAlarmTitle => 'Laser E-Stop Alarm';
@@ -1081,22 +1168,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get laserOnLabel => 'Laser';
 
   @override
-  String get laserOutputEnergyLowerLimitAlarmContent => 'Laser output energy is below the limit. Check the protective lens and process power setting. If it continues, contact LaserCyber support.';
+  String get laserOutputEnergyLowerLimitAlarmContent =>
+      'Laser output energy is below the limit. Check the protective lens and process power setting. If it continues, contact LaserCyber support.';
 
   @override
   String get laserOutputEnergyLowerLimitAlarmTitle => 'Laser Output Energy Low';
 
   @override
-  String get laserOutputEnergyLowerLimitClearedTitle => 'Output Energy Low Cleared';
+  String get laserOutputEnergyLowerLimitClearedTitle =>
+      'Output Energy Low Cleared';
 
   @override
-  String get laserReflectedEnergyUpperLimitAlarmContent => 'Reflected laser energy is too high. Stop emission and check workpiece angle, joint fit-up, and process parameters. If it continues, contact LaserCyber support.';
+  String get laserReflectedEnergyUpperLimitAlarmContent =>
+      'Reflected laser energy is too high. Stop emission and check workpiece angle, joint fit-up, and process parameters. If it continues, contact LaserCyber support.';
 
   @override
-  String get laserReflectedEnergyUpperLimitAlarmTitle => 'Reflected Laser Energy High';
+  String get laserReflectedEnergyUpperLimitAlarmTitle =>
+      'Reflected Laser Energy High';
 
   @override
-  String get laserReflectedEnergyUpperLimitClearedTitle => 'Reflected Energy High Cleared';
+  String get laserReflectedEnergyUpperLimitClearedTitle =>
+      'Reflected Energy High Cleared';
 
   @override
   String get laserText => 'Laser';
@@ -1105,7 +1197,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get laserVersion => 'Laser Version';
 
   @override
-  String get lensHeavyContaminationAlarmContent => 'Protective lens is heavily contaminated. Clean or replace it.';
+  String get lensHeavyContaminationAlarmContent =>
+      'Protective lens is heavily contaminated. Clean or replace it.';
 
   @override
   String get lensHeavyContaminationAlarmTitle => 'Lens Contamination Alarm';
@@ -1135,10 +1228,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get machineTitle => 'Machine Status';
 
   @override
-  String get mainControllerTempBoardCommAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get mainControllerTempBoardCommAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
-  String get mainControllerTempBoardCommAlarmTitle => 'Main Controller–Temperature Board Communication Fault';
+  String get mainControllerTempBoardCommAlarmTitle =>
+      'Main Controller–Temperature Board Communication Fault';
 
   @override
   String get memoryAccessErrorTitle => 'Memory Access Error';
@@ -1150,7 +1245,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mmUnit => 'mm';
 
   @override
-  String get mmiOscillatorMalfunctionAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get mmiOscillatorMalfunctionAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get mmiOscillatorMalfunctionAlarmTitle => 'MMI Oscillator Fault';
@@ -1162,7 +1258,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monitorNavLabel => 'Monitor';
 
   @override
-  String get motorCableOpenAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get motorCableOpenAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get motorCableOpenAlarmTitle => 'Motor Cable Open';
@@ -1180,7 +1277,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mouseText => 'Mouse';
 
   @override
-  String get narrowPulseProtectionAlarmContent => 'Narrow-pulse protection was triggered. Adjust process parameters and try again. If it keeps happening, contact LaserCyber support.';
+  String get narrowPulseProtectionAlarmContent =>
+      'Narrow-pulse protection was triggered. Adjust process parameters and try again. If it keeps happening, contact LaserCyber support.';
 
   @override
   String get narrowPulseProtectionAlarmTitle => 'Narrow Pulse Protection';
@@ -1242,25 +1340,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseWait => 'Please wait…';
 
   @override
-  String get productDisclaimerContent => 'Dear User: Thank you for choosing our handheld laser welding product. Before using this product, we strongly recommend that you read this disclaimer carefully and strictly adhere to all instructions and safety measures provided in the user manual.\n\n1. Safety Warning\nLaser equipment can cause severe damage to the eyes and skin. During operation, please always wear appropriate Personal Protective Equipment (PPE), including but not limited to laser safety goggles and gloves, to ensure your safety.\n\n2. Operating Instructions\nPlease ensure that you fully understand and are able to comply with all operating procedures and safety guidelines in the product manual. Improper use may result in equipment damage or personal injury.\n\n3. Improper Operation\nThe Company shall not be held liable for any injury or loss resulting from the user\'s failure to follow the instructions in the product manual or failure to take appropriate safety measures.\n\n4. Maintenance\nPlease inspect and maintain the product regularly to ensure it is in good working condition. The Company is not responsible for any accidents caused by improper maintenance of the product.\n\n5. Disclaimer of Liability\nWhile the Company provides comprehensive usage instructions and safety measures, it reserves the right to disclaim liability for any injury or damage caused by improper user operation or violations of the manual. We strongly advise users to understand and comply with all relevant safety regulations and operating standards before using this product.\n\n6. Governing Law\nThe interpretation, application, and dispute resolution of this Disclaimer shall be governed by the laws of the jurisdiction where the Company is headquartered.\n\n7. Entire Agreement\nThis Disclaimer constitutes the entire agreement between you and the Company and supersedes any prior oral or written understandings or agreements.';
+  String get productDisclaimerContent =>
+      'Dear User: Thank you for choosing our handheld laser welding product. Before using this product, we strongly recommend that you read this disclaimer carefully and strictly adhere to all instructions and safety measures provided in the user manual.\n\n1. Safety Warning\nLaser equipment can cause severe damage to the eyes and skin. During operation, please always wear appropriate Personal Protective Equipment (PPE), including but not limited to laser safety goggles and gloves, to ensure your safety.\n\n2. Operating Instructions\nPlease ensure that you fully understand and are able to comply with all operating procedures and safety guidelines in the product manual. Improper use may result in equipment damage or personal injury.\n\n3. Improper Operation\nThe Company shall not be held liable for any injury or loss resulting from the user\'s failure to follow the instructions in the product manual or failure to take appropriate safety measures.\n\n4. Maintenance\nPlease inspect and maintain the product regularly to ensure it is in good working condition. The Company is not responsible for any accidents caused by improper maintenance of the product.\n\n5. Disclaimer of Liability\nWhile the Company provides comprehensive usage instructions and safety measures, it reserves the right to disclaim liability for any injury or damage caused by improper user operation or violations of the manual. We strongly advise users to understand and comply with all relevant safety regulations and operating standards before using this product.\n\n6. Governing Law\nThe interpretation, application, and dispute resolution of this Disclaimer shall be governed by the laws of the jurisdiction where the Company is headquartered.\n\n7. Entire Agreement\nThis Disclaimer constitutes the entire agreement between you and the Company and supersedes any prior oral or written understandings or agreements.';
 
   @override
-  String get productDisclaimerInfo => 'I have read and agree to the above content';
+  String get productDisclaimerInfo =>
+      'I have read and agree to the above content';
 
   @override
   String get productDisclaimerTitle => 'Product Disclaimer';
 
   @override
-  String get positioningLightFaultAlarmContent => 'The red pointer (aiming beam) has a fault. Check whether the aiming beam is on; if not, contact LaserCyber support.';
+  String get positioningLightFaultAlarmContent =>
+      'The red pointer (aiming beam) has a fault. Check whether the aiming beam is on; if not, contact LaserCyber support.';
 
   @override
   String get positioningLightFaultAlarmTitle => 'Red Pointer Fault';
 
   @override
-  String get protectiveLensOvertemperatureAlarmContent => 'If the protective lens shows burn marks, replace it immediately.';
+  String get protectiveLensOvertemperatureAlarmContent =>
+      'If the protective lens shows burn marks, replace it immediately.';
 
   @override
-  String get protectiveLensOvertemperatureAlarmTitle => 'Protective Lens Overtemperature';
+  String get protectiveLensOvertemperatureAlarmTitle =>
+      'Protective Lens Overtemperature';
 
   @override
   String get protectiveMirrorTempLabel => 'Protective Mirror';
@@ -1275,22 +1378,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pumpCurrentText => 'Pump Current';
 
   @override
-  String get pumpModuleOvertemperatureAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get pumpModuleOvertemperatureAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
-  String get pumpModuleOvertemperatureAlarmTitle => 'Pump Module Overtemperature';
+  String get pumpModuleOvertemperatureAlarmTitle =>
+      'Pump Module Overtemperature';
 
   @override
-  String get pumpModuleOvertemperatureClearedTitle => 'Pump Module Overtemperature Cleared';
+  String get pumpModuleOvertemperatureClearedTitle =>
+      'Pump Module Overtemperature Cleared';
 
   @override
-  String get pumpSourceTemperatureAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get pumpSourceTemperatureAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get pumpSourceTemperatureAlarmTitle => 'Pump Temperature Alarm';
 
   @override
-  String get pumpSourceVoltageAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get pumpSourceVoltageAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get pumpSourceVoltageAlarmTitle => 'Pump Voltage Alarm';
@@ -1302,13 +1410,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pumpTemperatureText => 'Pump Temperature';
 
   @override
-  String get quiescentCurrentAbnormalAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get quiescentCurrentAbnormalAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get quiescentCurrentAbnormalAlarmTitle => 'Abnormal Quiescent Current';
 
   @override
-  String get redLightCurrentAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get redLightCurrentAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get redLightCurrentAlarmTitle => 'Red Pointer Current Alarm';
@@ -1326,13 +1436,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rgbLedText => 'LED';
 
   @override
-  String get rgbLedFooter => 'Use these controls to test the status LED indicators on this device.';
+  String get rgbLedFooter =>
+      'Use these controls to test the status LED indicators on this device.';
 
   @override
   String get safetyLockLabel => 'Safety Lock';
 
   @override
-  String get safetyGroundLockNotConnectedMessage => 'Connect the safety clamp before enabling the laser.';
+  String get safetyGroundLockNotConnectedMessage =>
+      'Connect the safety clamp before enabling the laser.';
 
   @override
   String get safetyGroundLockNotConnectedTitle => 'Safety Clamp Disconnected';
@@ -1344,7 +1456,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get safetyTipsAgree => 'AGREE';
 
   @override
-  String get safetyTipsContent => '1. Ensure there are no other personnel, reflective objects, or flammable materials nearby during welding.\n\n2. Ensure the safety clamp is securely fastened to the welding table; do not clamp the safety lock onto the welding torch holder, nozzle, wire feed assembly, etc.\n\n3. Ensure you wear professional protective eyewear, a mask, earplugs, and high-temperature resistant gloves.\n\n4. When installing and debugging the equipment, always switch the laser to the off position after laser operation.\n\n5. Ensure the equipment is properly grounded; interruption at any point in the grounding circuit may result in personal injury.\n\n6. Ensure the filter is well-ventilated; promptly remove any foreign objects or dirt.';
+  String get safetyTipsContent =>
+      '1. Ensure there are no other personnel, reflective objects, or flammable materials nearby during welding.\n\n2. Ensure the safety clamp is securely fastened to the welding table; do not clamp the safety lock onto the welding torch holder, nozzle, wire feed assembly, etc.\n\n3. Ensure you wear professional protective eyewear, a mask, earplugs, and high-temperature resistant gloves.\n\n4. When installing and debugging the equipment, always switch the laser to the off position after laser operation.\n\n5. Ensure the equipment is properly grounded; interruption at any point in the grounding circuit may result in personal injury.\n\n6. Ensure the filter is well-ventilated; promptly remove any foreign objects or dirt.';
 
   @override
   String get safetyTipsInfo => 'I have read the above content and the';
@@ -1377,13 +1490,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get screenSettings => 'Display';
 
   @override
-  String get sensorAbnormalAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get sensorAbnormalAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get sensorAbnormalAlarmTitle => 'Sensor Fault';
 
   @override
-  String get sensorChannelDeviationAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get sensorChannelDeviationAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get sensorChannelDeviationAlarmTitle => 'Sensor Channel Deviation';
@@ -1407,19 +1522,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
-  String get shieldingGasAlarmCauseBlowPressure => 'Shielding gas pressure too low';
+  String get shieldingGasAlarmCauseBlowPressure =>
+      'Shielding gas pressure too low';
 
   @override
-  String get shieldingGasAlarmCauseDeviceService => 'Equipment fault, please contact after-sales service';
+  String get shieldingGasAlarmCauseDeviceService =>
+      'Equipment fault, please contact after-sales service';
 
   @override
-  String get shieldingGasAlarmCauseInletPressure => 'Inlet gas pressure too low';
+  String get shieldingGasAlarmCauseInletPressure =>
+      'Inlet gas pressure too low';
 
   @override
-  String get shieldingGasAlarmCausePressureCheck => 'Gas pressure check abnormal';
+  String get shieldingGasAlarmCausePressureCheck =>
+      'Gas pressure check abnormal';
 
   @override
-  String get shieldingGasAlarmContent => 'Please check if the shielding gas is on and if the gas cylinder is low. If the machine still alarms after confirming these are correct, please contact after-sales service.';
+  String get shieldingGasAlarmContent =>
+      'Please check if the shielding gas is on and if the gas cylinder is low. If the machine still alarms after confirming these are correct, please contact after-sales service.';
 
   @override
   String shieldingGasAlarmEngineerCheckMessage(String reason) {
@@ -1472,25 +1592,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sshDebugText => 'SSH Debug';
 
   @override
-  String get sshDebugFooter => 'When enabled, you can connect to this device over the network for remote troubleshooting. Turns off after reboot. USB debugging is set separately under USB OTG.';
+  String get sshDebugFooter =>
+      'When enabled, you can connect to this device over the network for remote troubleshooting. Turns off after reboot. USB debugging is set separately under USB OTG.';
 
   @override
-  String get settingsMayRestartApp => 'Some of the settings may restart the application.';
+  String get settingsMayRestartApp =>
+      'Some of the settings may restart the application.';
 
   @override
-  String get straightTrackTemperatureAlarmContent => 'Inspect the collimating lens. If the collimating lens has burn marks, replace it immediately.';
+  String get straightTrackTemperatureAlarmContent =>
+      'Inspect the collimating lens. If the collimating lens has burn marks, replace it immediately.';
 
   @override
-  String get tempBoardRefrigerationCommAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get tempBoardRefrigerationCommAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
-  String get tempBoardRefrigerationCommAlarmTitle => 'Temperature Board–Cooling Communication Fault';
+  String get tempBoardRefrigerationCommAlarmTitle =>
+      'Temperature Board–Cooling Communication Fault';
 
   @override
   String get unavailable => 'Unavailable';
 
   @override
-  String get undervoltage24vAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get undervoltage24vAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get undervoltage24vAlarmTitle => '24 V Undervoltage';
@@ -1508,10 +1634,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unitOptionMetric => 'MM';
 
   @override
-  String get unitPersistedFooter => 'Choose Metric (°C, mm) or Imperial (°F, in) for values shown on this device.';
+  String get unitPersistedFooter =>
+      'Choose Metric (°C, mm) or Imperial (°F, in) for values shown on this device.';
 
   @override
-  String get unitPreferenceUnavailable => 'Unit settings are temporarily unavailable.';
+  String get unitPreferenceUnavailable =>
+      'Unit settings are temporarily unavailable.';
 
   @override
   String get unitSettingText => 'Unit';
@@ -1550,19 +1678,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get processVideoEmptyTitle => 'No recordings';
 
   @override
-  String get processVideoEmptySubtitle => 'Record Work videos from Quick or Engineer mode will appear here.';
+  String get processVideoEmptySubtitle =>
+      'Record Work videos from Quick or Engineer mode will appear here.';
 
   @override
   String get processVideoDeleteConfirmTitle => 'Delete recording?';
 
   @override
-  String get processVideoDeleteConfirmMessage => 'This removes the video file and its process parameters from this device.';
+  String get processVideoDeleteConfirmMessage =>
+      'This removes the video file and its process parameters from this device.';
 
   @override
   String get processVideoUploadConfirmTitle => 'Upload recording?';
 
   @override
-  String get processVideoUploadConfirmMessage => 'Upload this video and its process parameters to the cloud. Make sure the device is online.';
+  String get processVideoUploadConfirmMessage =>
+      'Upload this video and its process parameters to the cloud. Make sure the device is online.';
 
   @override
   String get uploadText => 'Upload';
@@ -1614,7 +1745,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get processVideoAlreadyUploaded => 'Already uploaded';
 
   @override
-  String get ipCameraDemoRecordHint => 'Demo only — not listed in Monitor → Videos';
+  String get ipCameraDemoRecordHint =>
+      'Demo only — not listed in Monitor → Videos';
 
   @override
   String get volumeSetFailed => 'Couldn’t set volume';
@@ -1641,7 +1773,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get washProportionText => 'Cleaning Ratio';
 
   @override
-  String get waterTemperatureUpperLimitAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get waterTemperatureUpperLimitAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get waterTemperatureUpperLimitAlarmTitle => 'Water Temperature High';
@@ -1692,7 +1825,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiEditIpSuccess => 'IP configuration saved';
 
   @override
-  String get wifiErrorAddNotAllowed => 'Request denied. Allow Wi‑Fi suggestions for this app.';
+  String get wifiErrorAddNotAllowed =>
+      'Request denied. Allow Wi‑Fi suggestions for this app.';
 
   @override
   String get wifiErrorDuplicateProfile => 'This Wi‑Fi profile already exists';
@@ -1709,7 +1843,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wifiErrorTooManyProfiles => 'Too many saved Wi‑Fi profiles for this app';
+  String get wifiErrorTooManyProfiles =>
+      'Too many saved Wi‑Fi profiles for this app';
 
   @override
   String get wifiForgetConfirmMessage => 'Forget this network and disconnect?';
@@ -1790,7 +1925,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiNotAvailable => 'Unavailable';
 
   @override
-  String get wifiOpenSystemSettingsHint => 'This network is managed by system Wi‑Fi. Open system settings to forget it completely.';
+  String get wifiOpenSystemSettingsHint =>
+      'This network is managed by system Wi‑Fi. Open system settings to forget it completely.';
 
   @override
   String get wifiOtherNetworks => 'Other Networks';
@@ -1820,13 +1956,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiSignalStrength => 'Signal Strength';
 
   @override
-  String get wifiStaticIpConflict => 'IP address conflicts with another interface';
+  String get wifiStaticIpConflict =>
+      'IP address conflicts with another interface';
 
   @override
   String get wifiStaticIpGatewaySubnet => 'Gateway must be on the same subnet';
 
   @override
-  String get wifiStaticIpIncomplete => 'Please fill in all required static IP fields';
+  String get wifiStaticIpIncomplete =>
+      'Please fill in all required static IP fields';
 
   @override
   String get wifiStaticIpInvalid => 'Invalid static IP configuration';
@@ -1874,7 +2012,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiMaxDnsServers => 'You can add up to 3 DNS servers';
 
   @override
-  String get wifiToastAddCanceledBySystem => 'Adding Wi‑Fi was canceled by the system';
+  String get wifiToastAddCanceledBySystem =>
+      'Adding Wi‑Fi was canceled by the system';
 
   @override
   String get wifiToastAddedConnecting => 'Network added. Connecting…';
@@ -1886,7 +2025,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiToastConnectionFailed => 'Connection failed';
 
   @override
-  String get wifiToastDetailsOnlyWhenConnected => 'Details are only available for the connected network';
+  String get wifiToastDetailsOnlyWhenConnected =>
+      'Details are only available for the connected network';
 
   @override
   String get wifiToastInvalidBssid => 'Invalid BSSID format';
@@ -1898,13 +2038,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiToastPasswordRequired => 'Password is required';
 
   @override
-  String get wifiToastProfileExistsConnecting => 'This network is already saved. Connecting…';
+  String get wifiToastProfileExistsConnecting =>
+      'This network is already saved. Connecting…';
 
   @override
-  String get wifiToastProfileSavedUseSystem => 'Profile saved. Connect from the system Wi‑Fi list.';
+  String get wifiToastProfileSavedUseSystem =>
+      'Profile saved. Connect from the system Wi‑Fi list.';
 
   @override
-  String get wifiToastRequiresSystemPrivilege => 'System Wi‑Fi permission required. Install this app as a privileged system app.';
+  String get wifiToastRequiresSystemPrivilege =>
+      'System Wi‑Fi permission required. Install this app as a privileged system app.';
 
   @override
   String get wifiToastSsidRequired => 'Network name is required';
@@ -1916,19 +2059,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wifiWlanLabel => 'Wi‑Fi';
 
   @override
-  String get watchdogResetEventContent => 'The controller restarted after a watchdog reset. If this happens often, contact LaserCyber support.';
+  String get watchdogResetEventContent =>
+      'The controller restarted after a watchdog reset. If this happens often, contact LaserCyber support.';
 
   @override
   String get watchdogResetEventTitle => 'Watchdog Reset';
 
   @override
-  String get wireFeederCommunicationAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get wireFeederCommunicationAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
-  String get wireFeederCommunicationAlarmTitle => 'Wire Feeder Communication Alarm';
+  String get wireFeederCommunicationAlarmTitle =>
+      'Wire Feeder Communication Alarm';
 
   @override
-  String get wireFeederCurrentAlarmContent => 'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
+  String get wireFeederCurrentAlarmContent =>
+      'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
   @override
   String get wireFeederCurrentAlarmTitle => 'Wire Feeder Current Alarm';
@@ -1955,7 +2102,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workTitle => 'Work Info';
 
   @override
-  String get zeroPointOffsetAlarmContent => 'Zero offset is off center. Open Advanced Settings and correct it before continuing precise work.';
+  String get zeroPointOffsetAlarmContent =>
+      'Zero offset is off center. Open Advanced Settings and correct it before continuing precise work.';
 
   @override
   String get zeroPointOffsetAlarmTitle => 'Zero Offset Alarm';
@@ -1963,7 +2111,5 @@ class AppLocalizationsEn extends AppLocalizations {
 
 /// The translations for English, as used in the United States (`en_US`).
 class AppLocalizationsEnUs extends AppLocalizationsEn {
-  AppLocalizationsEnUs(): super('en_US');
-
-
+  AppLocalizationsEnUs() : super('en_US');
 }

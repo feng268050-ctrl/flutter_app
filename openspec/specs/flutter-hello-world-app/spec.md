@@ -6,7 +6,7 @@ Flutter HMI app at `app/lws_hmi/` for the eLinux HMI ARM64 (meta-flutter layout)
 ## Requirements
 ### Requirement: Flutter Hello World project exists in repository
 
-The repository SHALL contain a Flutter application at `app/lws_hmi/` configured for the eLinux HMI ARM64 release builds (meta-flutter layout), with documentation for engine/eLinux HMI version alignment (Flutter 3.24.4 / eLinux HMI 37bd977).
+The repository SHALL contain a Flutter application at `app/lws_hmi/` configured for the eLinux HMI ARM64 release builds (meta-flutter layout), with documentation for engine/eLinux HMI version alignment (Flutter **3.41.9** / eLinux **42d3d75a56**).
 
 #### Scenario: Project structure present
 

@@ -11,7 +11,7 @@ read_ver() {
 	if [ -f "$HMI_ROOT/overlay/buildroot/flutter-embedded-linux.version" ]; then
 		tr -d '[:space:]' <"$HMI_ROOT/overlay/buildroot/flutter-embedded-linux.version"
 	else
-		echo "db49896cf2"
+		echo "42d3d75a56"
 	fi
 }
 

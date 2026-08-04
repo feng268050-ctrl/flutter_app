@@ -13,8 +13,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SPIKE_CACHE="${SPIKE_CACHE:-$ROOT/.cache/elinux-spike}"
 SRC="$SPIKE_CACHE/flutter-embedded-linux"
 OUT="$SPIKE_CACHE/out-wayland"
-TAG="${ELINUX_TAG:-db49896cf2}"
-REPO="${ELINUX_REPO:-https://github.com/sony/flutter-embedded-linux.git}"
+TAG="${ELINUX_TAG:-42d3d75a56}"
+REPO="${ELINUX_REPO:-https://github.com/flutter-elinux/flutter-embedded-linux.git}"
 
 IFACE="${IFACE:-en12}"
 ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
@@ -56,7 +56,7 @@ cmd_build() {
     SRC=/work/lws-hmi/.cache/elinux-spike/flutter-embedded-linux
     BUILD=/work/lws-hmi/.cache/elinux-spike/out-wayland/cmake-build
     TOOLCHAIN=/work/lws-hmi/.cache/elinux-spike/out-wayland/aarch64-toolchain.cmake
-    ENGINE_SO=/work/lws-hmi/prebuilt/flutter-engine/3.24.4/arm64-release/target/usr/lib/libflutter_engine.so
+    ENGINE_SO=/work/lws-hmi/prebuilt/flutter-engine/3.41.9/arm64-release/target/usr/lib/libflutter_engine.so
 
     export PATH=\"\$HOST/bin:\$PATH\"
     export PKG_CONFIG=\"\$HOST/bin/pkg-config\"

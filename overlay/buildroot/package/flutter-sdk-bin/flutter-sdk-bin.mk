@@ -5,15 +5,17 @@
 ################################################################################
 
 # Host SDK for `make build-flutter-engine` (compile path). Not used by build-rootfs.
-FLUTTER_SDK_BIN_VERSION = 3.24.4
+FLUTTER_SDK_BIN_VERSION = 3.41.9
+
 
 LWS_HMI_ROOT ?= $(TOPDIR)/../..
 FLUTTER_SDK_BIN_LINKED = $(LWS_HMI_ROOT)/flutter-sdk
-FLUTTER_SDK_BIN_CACHE = $(LWS_HMI_ROOT)/.cache/flutter-sdk/install
-ifeq ($(wildcard $(FLUTTER_SDK_BIN_LINKED)/.lws-precache-done),)
-FLUTTER_SDK_BIN_SITE = $(FLUTTER_SDK_BIN_CACHE)
-else
+# Linux x86_64 SDK for Buildroot host package (Docker on macOS uses this path).
+FLUTTER_SDK_BIN_CACHE = $(LWS_HMI_ROOT)/.cache/flutter-sdk/install-linux
+ifeq ($(wildcard $(FLUTTER_SDK_BIN_CACHE)/.lws-precache-done),)
 FLUTTER_SDK_BIN_SITE = $(FLUTTER_SDK_BIN_LINKED)
+else
+FLUTTER_SDK_BIN_SITE = $(FLUTTER_SDK_BIN_CACHE)
 endif
 FLUTTER_SDK_BIN_SITE_METHOD = local
 FLUTTER_SDK_BIN_LICENSE = BSD-3-Clause

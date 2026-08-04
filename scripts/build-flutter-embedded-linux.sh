@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Cross-compile Sony flutter-embedded-linux Wayland client → prebuilt/.
+# Cross-compile flutter-embedded-linux Wayland client → prebuilt/.
+# Default upstream: community flutter-elinux fork (Sony maintenance ended).
 # Requires wayland in Buildroot staging (chips/lws_hmi_wayland.config once).
 #
 # Usage:
@@ -11,8 +12,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/prebuilt-common.sh"
 
 VERSION_FILE="$ROOT/overlay/buildroot/flutter-embedded-linux.version"
-VERSION="$(read_version_file "$VERSION_FILE" "db49896cf2")"
-REPO="${ELINUX_REPO:-https://github.com/sony/flutter-embedded-linux.git}"
+VERSION="$(read_version_file "$VERSION_FILE" "42d3d75a56")"
+REPO="${ELINUX_REPO:-https://github.com/flutter-elinux/flutter-embedded-linux.git}"
 FORCE="${FORCE:-0}"
 
 CACHE="$ROOT/.cache/flutter-embedded-linux"
@@ -21,7 +22,7 @@ BUILD_HOST="$CACHE/out-wayland"
 PREBUILT="$ROOT/prebuilt/flutter-embedded-linux/${VERSION}"
 GST_VIDEO_STAMP="$PREBUILT/.lws-gstreamer-video-player"
 
-ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.24.4")"
+ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.41.9")"
 RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}"
 ENGINE_SO="$ROOT/prebuilt/flutter-engine/${ENGINE_VER}/arm64-${RUNTIME_MODE}/target/usr/lib/libflutter_engine.so"
 # Some exports place the .so at the prebuilt root.
@@ -37,7 +38,7 @@ if prebuilt_ready "$PREBUILT" &&
 fi
 
 if [[ "$FORCE" == "1" ]]; then
-  rm -rf "$BUILD_HOST" "$PREBUILT"
+  rm -rf "$BUILD_HOST" "$PREBUILT" "$SRC"
 fi
 
 if [[ ! -f "$ENGINE_SO" ]]; then
@@ -46,7 +47,23 @@ if [[ ! -f "$ENGINE_SO" ]]; then
   exit 1
 fi
 
+need_clone=0
 if [[ ! -d "$SRC/.git" ]]; then
+  need_clone=1
+else
+  remote_url="$(git -C "$SRC" remote get-url origin 2>/dev/null || true)"
+  head_sha="$(git -C "$SRC" rev-parse HEAD 2>/dev/null || true)"
+  # Tag/branch tip for VERSION (may already be detached at that commit).
+  want_sha="$(git -C "$SRC" rev-parse "refs/tags/${VERSION}^{commit}" 2>/dev/null \
+    || git -C "$SRC" rev-parse "refs/heads/${VERSION}" 2>/dev/null \
+    || true)"
+  if [[ -z "$want_sha" ]] || [[ "$head_sha" != "$want_sha" ]] || [[ "$remote_url" != "$REPO" ]]; then
+    echo "flutter-embedded-linux: cache src stale (want $REPO @$VERSION); recloning ..."
+    need_clone=1
+  fi
+fi
+if [[ "$need_clone" == "1" ]]; then
+  rm -rf "$SRC"
   echo "flutter-embedded-linux: cloning $REPO @ $VERSION ..."
   mkdir -p "$CACHE"
   git clone --depth 1 --branch "$VERSION" "$REPO" "$SRC"

@@ -16,7 +16,7 @@ read_flutter_version() {
     tr -d '[:space:]' < "$VERSION_FILE"
     return 0
   fi
-  echo "3.24.4"
+  echo "3.41.9"
 }
 
 default_flutter_sdk_dir() {

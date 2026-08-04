@@ -1,0 +1,27 @@
+---
+description: Pin Flutter/Material APIs to 3.41.9 — match the shipped SDK/engine
+globs: app/lws_hmi/**/*.dart,packages/**/*.dart
+alwaysApply: false
+---
+
+# Flutter 3.41.9 API pin
+
+This repo builds and ships with **Flutter 3.41.9** (`flutter-sdk/`, `make build-app`; engine + eLinux triplet). Do **not** apply Material / widget APIs from newer Flutter docs (3.44+) or stale 3.24-only guidance.
+
+## Rules
+
+- Target API surface = **3.41.9** (Dart **3.11.x**).
+- Prefer matching existing widgets in `app/lws_hmi/lib/` over “current best practice” from latest Flutter marketing docs.
+- After Dart UI changes, verify with the pinned SDK (`make build-app` or `flutter-sdk/bin/flutter analyze` in `app/lws_hmi/`). Host/`fvm`/IDE Flutter newer than 3.41.9 is not authoritative for this product.
+
+## Known trap: `DropdownButtonFormField`
+
+```dart
+// ✅ GOOD — Flutter 3.41.x (FormField initialValue)
+DropdownButtonFormField<T>(initialValue: selected, ...)
+
+// ❌ BAD — 3.24-era `value:`; removed / renamed on 3.41.x
+DropdownButtonFormField<T>(value: selected, ...)
+```
+
+Use the APIs accepted by the pinned 3.41.9 SDK (`flutter analyze`), not older agent rules that locked `value:`.

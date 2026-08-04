@@ -28,8 +28,8 @@ if [[ "${LWS_HMI_DOCKER:-}" == "1" && "${PACK_FLUTTER_SDK:-1}" == "1" ]]; then
   echo "build-prebuilt: skipping flutter-sdk export inside Docker (use host: make fetch-flutter-sdk)"
   PACK_FLUTTER_SDK=0
 fi
-ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.24.4")"
-SDK_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-sdk.version" "3.24.4")"
+ENGINE_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.41.9")"
+SDK_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-sdk.version" "3.41.9")"
 RUNTIME_MODE="${FLUTTER_ENGINE_RUNTIME_MODE:-release}"
 MARKER=".lws-precache-done"
 

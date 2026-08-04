@@ -7,7 +7,7 @@ APP_DIR="$ROOT/app/lws_hmi"
 # shellcheck source=prebuilt-common.sh
 source "$ROOT/scripts/prebuilt-common.sh"
 
-PINNED_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-sdk.version" "3.24.4")"
+PINNED_VER="$(read_version_file "$ROOT/overlay/buildroot/flutter-sdk.version" "3.41.9")"
 FLUTTER_INSTALL="$(bash "$ROOT/scripts/link-flutter-sdk.sh" --print)"
 FLUTTER="$FLUTTER_INSTALL/bin/flutter"
 

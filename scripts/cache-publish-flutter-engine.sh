@@ -8,7 +8,7 @@ source "$ROOT/scripts/prebuilt-common.sh"
 source "$ROOT/scripts/cache-mirror.sh"
 cache_mirror_load_env "$ROOT"
 
-VERSION="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.24.4")"
+VERSION="$(read_version_file "$ROOT/overlay/buildroot/flutter-engine.version" "3.41.9")"
 TARBALL="$ROOT/.cache/flutter-engine/flutter-${VERSION}.tar.gz"
 TARBALL_NAME="$(basename "$TARBALL")"
 

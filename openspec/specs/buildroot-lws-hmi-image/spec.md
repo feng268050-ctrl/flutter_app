@@ -101,7 +101,7 @@ Buildroot overlay packages for the eLinux HMI and flutter-engine SHALL copy from
 #### Scenario: engine version pinned
 
 - **WHEN** developer inspects version pins
-- **THEN** `overlay/buildroot/flutter-engine.version` and `overlay/buildroot/eLinux HMI.version` document the active pins (Flutter 3.24.4 / commit 37bd977)
+- **THEN** `overlay/buildroot/flutter-engine.version`, `overlay/buildroot/flutter-sdk.version`, and `overlay/buildroot/flutter-embedded-linux.version` document the active pins (Flutter **3.41.9** / eLinux **42d3d75a56**)
 
 ### Requirement: Rootfs overlay and LCD display params are applied
 

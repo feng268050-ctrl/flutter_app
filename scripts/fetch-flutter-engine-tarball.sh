@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Download flutter-engine sources and pack .cache/flutter-engine/flutter-<ver>.tar.gz
 # (replaces SDK gen-tarball with resume + retry; gen-tarball always wipes scratch).
+#
+# Layout (Flutter monorepo, matching Buildroot package/flutter-engine):
+#   scratch/src/.gclient  → flutter/flutter.git@<ver>
+#   scratch/src/engine/... after gclient sync
+#   tarball = contents of scratch/src/
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -16,6 +21,7 @@ VERSION="${5:?engine version}"
 
 DL_DIR="$(dirname "$TARBALL")"
 TARBALL_NAME="$(basename "$TARBALL")"
+SRC="$SCRATCH/src"
 
 message() {
   printf '>>> flutter-engine %s %s\n' "$VERSION" "$1"
@@ -58,17 +64,17 @@ fi
 mkdir -p "$DL_DIR"
 
 resume=0
-if [[ -f "$SCRATCH/.gclient" && -d "$SCRATCH/src/flutter" ]]; then
+if [[ -f "$SRC/.gclient" && -d "$SRC/engine" ]]; then
   resume=1
-  message "Resuming gclient sync in $SCRATCH"
+  message "Resuming gclient sync in $SRC"
 else
   rm -rf "$SCRATCH"
-  mkdir -p "$SCRATCH"
-  message "Downloading"
+  mkdir -p "$SRC"
+  message "Downloading (flutter/flutter monorepo @$VERSION)"
 fi
 
 (
-  cd "$SCRATCH"
+  cd "$SRC"
   if [[ "$resume" != "1" ]]; then
     sed "s%!FLUTTER_VERSION!%${VERSION}%g" "$DOT_GCLIENT" >.gclient
   fi

@@ -21,7 +21,7 @@
 #
 # There is no hash provided, as the gn binary (used for configuration) relies
 # on the .git directories. As such, a reproducible tarball is not possible.
-FLUTTER_ENGINE_VERSION = 3.24.4
+FLUTTER_ENGINE_VERSION = 3.41.9
 
 # There is nothing for Buildroot to download. This is handled by gclient.
 FLUTTER_ENGINE_SITE =
@@ -44,7 +44,7 @@ FLUTTER_ENGINE_DEPENDENCIES = \
 
 # Dispatch all architectures of flutter
 # FLUTTER_ENGINE_TARGET_TRIPPLE must match the directory name found in
-# buildtools/linux-x64/clang/lib/clang/*/lib
+# engine/src/flutter/buildtools/linux-x64/clang/lib/clang/*/lib
 ifeq ($(BR2_aarch64),y)
 FLUTTER_ENGINE_TARGET_ARCH = arm64
 FLUTTER_ENGINE_TARGET_TRIPPLE = aarch64-unknown-linux-gnu
@@ -65,13 +65,13 @@ FLUTTER_ENGINE_RUNTIME_MODE=release
 endif
 
 FLUTTER_ENGINE_BUILD_DIR = \
-	$(@D)/out/linux_$(FLUTTER_ENGINE_RUNTIME_MODE)_$(FLUTTER_ENGINE_TARGET_ARCH)
+	$(@D)/engine/src/out/linux_$(FLUTTER_ENGINE_RUNTIME_MODE)_$(FLUTTER_ENGINE_TARGET_ARCH)
 
 FLUTTER_ENGINE_INSTALL_FILES = libflutter_engine.so
 
 # Flutter engine includes a bundled patched clang that must be used for
 # compiling or else there are linking errors.
-FLUTTER_ENGINE_CLANG_PATH = $(@D)/flutter/buildtools/linux-x64/clang
+FLUTTER_ENGINE_CLANG_PATH = $(@D)/engine/src/flutter/buildtools/linux-x64/clang
 
 FLUTTER_ENGINE_CONF_OPTS = \
 	--clang \
@@ -79,6 +79,7 @@ FLUTTER_ENGINE_CONF_OPTS = \
 	--linux-cpu $(FLUTTER_ENGINE_TARGET_ARCH) \
 	--no-build-embedder-examples \
 	--no-clang-static-analyzer \
+	--no-default-linux-sysroot \
 	--no-enable-unittests \
 	--no-goma \
 	--no-prebuilt-dart-sdk \
@@ -100,10 +101,10 @@ endif
 ifeq ($(BR2_CCACHE),y)
 define FLUTTER_ENGINE_COMPILER_PATH_FIXUP
 	$(SED) "s%cc =.*%cc = \"$(HOST_DIR)/bin/ccache $(FLUTTER_ENGINE_CLANG_PATH)/bin/clang\""%g \
-		$(@D)/build/toolchain/custom/BUILD.gn
+		$(@D)/engine/src/build/toolchain/custom/BUILD.gn
 
 	$(SED) "s%cxx =.*%cxx = \"$(HOST_DIR)/bin/ccache $(FLUTTER_ENGINE_CLANG_PATH)/bin/clang++\""%g \
-		$(@D)/build/toolchain/custom/BUILD.gn
+		$(@D)/engine/src/build/toolchain/custom/BUILD.gn
 endef
 FLUTTER_ENGINE_PRE_CONFIGURE_HOOKS += FLUTTER_ENGINE_COMPILER_PATH_FIXUP
 endif
@@ -130,7 +131,6 @@ endif
 
 ifeq ($(BR2_PACKAGE_HAS_LIBGLES),y)
 FLUTTER_ENGINE_DEPENDENCIES += libgles
-FLUTTER_ENGINE_CONF_OPTS += --enable-impeller-3d
 endif
 
 ifeq ($(BR2_PACKAGE_LIBGLFW),y)
@@ -147,9 +147,11 @@ else
 FLUTTER_ENGINE_CONF_OPTS += --disable-desktop-embeddings
 endif
 
-# There is no --disable-vulkan option
+# There is no --disable-vulkan option.
+# --enable-impeller-vulkan / --enable-impeller-3d were removed from flutter/tools/gn
+# (Impeller backends always on; impeller-3d/scene removed).
 ifeq ($(BR2_PACKAGE_MESA3D_VULKAN_DRIVER),y)
-FLUTTER_ENGINE_CONF_OPTS += --enable-vulkan --enable-impeller-vulkan
+FLUTTER_ENGINE_CONF_OPTS += --enable-vulkan
 endif
 
 ifeq ($(BR2_PACKAGE_XORG7)$(BR2_PACKAGE_LIBXCB),yy)
@@ -157,10 +159,10 @@ FLUTTER_ENGINE_DEPENDENCIES += libxcb
 else
 define FLUTTER_ENGINE_VULKAN_X11_SUPPORT_FIXUP
 	$(SED) "s%vulkan_use_x11.*%vulkan_use_x11 = false%g" -i \
-		$(@D)/flutter/build_overrides/vulkan_headers.gni
+		$(@D)/engine/src/build_overrides/vulkan_headers.gni
 
 	$(SED) "s%ozone_platform_x11.*%ozone_platform_x11 = false%g" \
-		$(@D)/build/config/BUILDCONFIG.gn
+		$(@D)/engine/src/build/config/BUILDCONFIG.gn
 endef
 FLUTTER_ENGINE_PRE_CONFIGURE_HOOKS += FLUTTER_ENGINE_VULKAN_X11_SUPPORT_FIXUP
 endif
@@ -170,10 +172,10 @@ FLUTTER_ENGINE_DEPENDENCIES += wayland
 else
 define FLUTTER_ENGINE_VULKAN_WAYLAND_SUPPORT_FIXUP
 	$(SED) "s%vulkan_use_wayland.*%vulkan_use_wayland = false%g" \
-		$(@D)/flutter/build_overrides/vulkan_headers.gni
+		$(@D)/engine/src/build_overrides/vulkan_headers.gni
 
 	$(SED) "s%ozone_platform_wayland.*%ozone_platform_wayland = false%g" \
-		$(@D)/build/config/BUILDCONFIG.gn
+		$(@D)/engine/src/build/config/BUILDCONFIG.gn
 endef
 FLUTTER_ENGINE_PRE_CONFIGURE_HOOKS += FLUTTER_ENGINE_VULKAN_WAYLAND_SUPPORT_FIXUP
 endif
@@ -210,7 +212,7 @@ FLUTTER_ENGINE_PRE_CONFIGURE_HOOKS += FLUTTER_ENGINE_BOOTSTRAP_DEPOT_VPYTHON
 # We must set the home directory to the sdk directory or else flutter will
 # place .dart, and .flutter in ~/.
 define FLUTTER_ENGINE_CONFIGURE_CMDS
-	cd $(@D) && \
+	cd $(@D)/engine/src && \
 		rm -rf $(FLUTTER_ENGINE_BUILD_DIR) && \
 		CURL_HOME=$(LWS_HMI_CURL_HOME) \
 		PATH=$(HOST_DIR)/share/depot_tools:$(BR_PATH) \
@@ -221,7 +223,7 @@ define FLUTTER_ENGINE_CONFIGURE_CMDS
 endef
 
 define FLUTTER_ENGINE_BUILD_CMDS
-	cd $(@D) && \
+	cd $(@D)/engine/src && \
 		CURL_HOME=$(LWS_HMI_CURL_HOME) \
 		PATH=$(HOST_DIR)/share/depot_tools:$(BR_PATH) \
 		PUB_CACHE=$(FLUTTER_SDK_BIN_PUB_CACHE) \

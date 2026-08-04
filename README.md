@@ -251,6 +251,7 @@ make upgrade
 ```bash
 make l10n
 make l10n-verify
+make check-typography
 ```
 
 **Boot splash** (`board/logo/`):

@@ -1955,6 +1955,36 @@ abstract class AppLocalizations {
   /// **'Failed'**
   String get cameraStatusFailed;
 
+  /// No description provided for @cameraChangeOverlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Overlay'**
+  String get cameraChangeOverlay;
+
+  /// No description provided for @cameraOverlayEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Overlay'**
+  String get cameraOverlayEnable;
+
+  /// No description provided for @cameraOverlayPositionX.
+  ///
+  /// In en, this message translates to:
+  /// **'Position X'**
+  String get cameraOverlayPositionX;
+
+  /// No description provided for @cameraOverlayPositionY.
+  ///
+  /// In en, this message translates to:
+  /// **'Position Y'**
+  String get cameraOverlayPositionY;
+
+  /// No description provided for @cameraOverlayApplyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t apply overlay'**
+  String get cameraOverlayApplyFailed;
+
   /// No description provided for @systemVersion.
   ///
   /// In en, this message translates to:

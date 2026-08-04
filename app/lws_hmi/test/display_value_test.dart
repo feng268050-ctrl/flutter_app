@@ -18,6 +18,13 @@ void main() {
     expect(productDeviceModelDisplay(null, 'YNH960'), '- YNH960');
   });
 
+  test('cameraOverlayDeviceName matches Device Model; empty when both missing', () {
+    expect(cameraOverlayDeviceName('Innohi', 'YNH960'), 'Innohi YNH960');
+    expect(cameraOverlayDeviceName('Innohi', null), 'Innohi -');
+    expect(cameraOverlayDeviceName(null, null), '');
+    expect(cameraOverlayDeviceName('', '  '), '');
+  });
+
   test('productDeviceModelForQr omits dash placeholders', () {
     expect(productDeviceModelForQr('Innohi', 'YNH960'), 'Innohi YNH960');
     expect(productDeviceModelForQr('Innohi', null), 'Innohi');

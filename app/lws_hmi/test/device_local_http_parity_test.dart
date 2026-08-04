@@ -246,6 +246,30 @@ void main() {
       expect(body['message'], 'show_overlay_unavailable');
     });
 
+    test('POST /v1/camera/show-overlay success when wired', () async {
+      http.cameraShowOverlayHandler = (body) async {
+        return LocalHttpCameraActionResult.success(
+          data: {
+            'enable': body['enable'],
+            'positionx': body['positionx'] ?? 10,
+            'positiony': body['positiony'] ?? 10,
+            'machineModel': 'Laser-01',
+            'nameoverlayy': 60,
+          },
+        );
+      };
+      final resp = await postJson('/v1/camera/show-overlay', {
+        'enable': 1,
+        'positionx': 10,
+        'positiony': 10,
+      });
+      final body = jsonDecode(await resp.transform(utf8.decoder).join());
+      expect(resp.statusCode, 200);
+      expect(body['success'], isTrue);
+      expect(body['data']['enable'], 1);
+      expect(body['data']['machineModel'], 'Laser-01');
+    });
+
     test('GET /v1/monitor/stat SSE first event', () async {
       final client = HttpClient();
       final req = await client.getUrl(

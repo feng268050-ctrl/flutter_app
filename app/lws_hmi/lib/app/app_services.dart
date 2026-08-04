@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/app/flutter_frame_timing_sampler.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_gate.dart';
+import 'package:lws_hmi/features/ip_camera/application/camera_show_overlay_applier.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/gpio/gpio_led_controller.dart';
@@ -165,6 +166,11 @@ final class AppServices {
   late final BluetoothController bluetooth;
   late final Keyboard keyboard;
   late final MouseSettingsController mouse;
+
+  /// Shared camera OSD apply path (Settings dialog + LAN HTTP).
+  CameraShowOverlayApplier get cameraShowOverlay =>
+      _cameraShowOverlay ??= CameraShowOverlayApplier();
+  CameraShowOverlayApplier? _cameraShowOverlay;
 
   bool _restoreStarted = false;
   bool _modbusLiveStarted = false;
@@ -360,6 +366,11 @@ final class AppServices {
   void disposeNetworkTimeSyncWatcher() {
     _networkTimeSyncWatcher?.dispose();
     _networkTimeSyncWatcher = null;
+  }
+
+  void disposeCameraShowOverlay() {
+    _cameraShowOverlay?.dispose();
+    _cameraShowOverlay = null;
   }
 }
 

@@ -998,6 +998,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cameraStatusFailed => '失败';
 
   @override
+  String get cameraChangeOverlay => '更改叠加层';
+
+  @override
+  String get cameraOverlayEnable => '启用叠加层';
+
+  @override
+  String get cameraOverlayPositionX => '位置 X';
+
+  @override
+  String get cameraOverlayPositionY => '位置 Y';
+
+  @override
+  String get cameraOverlayApplyFailed => '无法应用叠加层';
+
+  @override
   String get systemVersion => '系统版本';
 
   @override
@@ -2855,6 +2870,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get cameraStatusFailed => '失敗';
+
+  @override
+  String get cameraChangeOverlay => '更改疊加層';
+
+  @override
+  String get cameraOverlayEnable => '啓用疊加層';
+
+  @override
+  String get cameraOverlayApplyFailed => '無法應用疊加層';
 
   @override
   String get systemVersion => '系統版本';

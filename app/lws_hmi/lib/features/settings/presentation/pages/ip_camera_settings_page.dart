@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_device_info_cache.dart';
+import 'package:lws_hmi/features/ip_camera/application/camera_show_overlay_applier.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_demo_recording_paths.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_mediamtx_relay.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
+import 'package:lws_hmi/features/ip_camera/presentation/camera_overlay_dialog.dart';
 import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -57,6 +59,8 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
   String _cameraVersion = kUnavailableDisplay;
   late final CameraDeviceInfoCache _versionCache;
   late final bool _ownsVersionCache;
+  CameraShowOverlayParams? _lastOverlay;
+  String? _overlayCameraHost;
 
   @override
   void initState() {
@@ -78,7 +82,10 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
     try {
       final product = await widget.services.ensureProductInfo();
       if (mounted) {
-        setState(() => _cameraTypeRaw = product.cameraType());
+        setState(() {
+          _cameraTypeRaw = product.cameraType();
+          _overlayCameraHost = effectiveCameraHost(product);
+        });
       }
       final host = effectiveCameraHost(product);
       final version = await _versionCache.fetch(host);
@@ -94,6 +101,7 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
         _session = session;
         _status = session.currentStatus;
         _recording = session.camera.recording.currentStatus;
+        _overlayCameraHost = session.camera.cameraHost;
       });
       await _sub?.cancel();
       _sub = session.status.listen((s) {
@@ -125,6 +133,38 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
       if (mounted) {
         setState(() => _error = '$e');
       }
+    }
+  }
+
+  Future<void> _openOverlayDialog() async {
+    String host = _overlayCameraHost ??
+        (_session?.camera.cameraHost.isNotEmpty == true
+            ? _session!.camera.cameraHost
+            : kDefaultIpCameraHost);
+    var deviceName = '';
+    try {
+      final product = await widget.services.ensureProductInfo();
+      host = effectiveCameraHost(product);
+      deviceName = cameraOverlayDeviceName(product.brand, product.model);
+      if (mounted) {
+        setState(() => _overlayCameraHost = host);
+      }
+    } catch (_) {}
+    if (!mounted) {
+      return;
+    }
+    final applied = await showCameraOverlayDialog(
+      context: context,
+      applier: widget.services.cameraShowOverlay,
+      cameraHost: host,
+      machineModel: deviceName,
+      initial: _lastOverlay,
+    );
+    if (!mounted) {
+      return;
+    }
+    if (applied != null) {
+      setState(() => _lastOverlay = applied);
     }
   }
 
@@ -288,6 +328,12 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Row(
               children: [
+                FilledButton(
+                  key: const Key('ip-camera-change-overlay'),
+                  onPressed: () => unawaited(_openOverlayDialog()),
+                  child: Text(l10n.cameraChangeOverlay),
+                ),
+                const SizedBox(width: 12),
                 FilledButton(
                   key: const Key('ip-camera-record-button'),
                   onPressed: session == null || _recordBusy

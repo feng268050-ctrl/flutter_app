@@ -1039,6 +1039,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cameraStatusFailed => 'Failed';
 
   @override
+  String get cameraChangeOverlay => 'Change Overlay';
+
+  @override
+  String get cameraOverlayEnable => 'Enable Overlay';
+
+  @override
+  String get cameraOverlayPositionX => 'Position X';
+
+  @override
+  String get cameraOverlayPositionY => 'Position Y';
+
+  @override
+  String get cameraOverlayApplyFailed => 'Couldn’t apply overlay';
+
+  @override
   String get systemVersion => 'System Version';
 
   @override

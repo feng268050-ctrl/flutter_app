@@ -8,9 +8,11 @@ import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/app_version.dart';
 import 'package:lws_hmi/device/display_value.dart';
+import 'package:lws_hmi/features/ip_camera/application/camera_show_overlay_applier.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_demo_recording_paths.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:cyber_hal/ip_camera.dart';
+import 'package:cyber_hal/sys_info.dart';
 import 'package:lws_hmi/features/ai/application/ai_daemon_supervisor.dart';
 import 'package:lws_hmi/features/process_library/application/engineer_preset_deriver.dart';
 import 'package:lws_hmi/features/process_library/application/process_library_controller.dart';
@@ -196,7 +198,41 @@ final class CloudLocalRuntime {
     localHttp.cameraAiAvailable = () async => AiDaemonSupervisor.instance.isReady;
     localHttp.processVideoAiAvailable =
         () async => AiDaemonSupervisor.instance.isReady;
-    localHttp.cameraShowOverlayHandler = null;
+    localHttp.cameraShowOverlayHandler = (body) async {
+      final params = CameraShowOverlayParams.tryParse(
+        enableRaw: body['enable'],
+        positionXRaw: body['positionx'],
+        positionYRaw: body['positiony'],
+      );
+      if (params == null) {
+        return LocalHttpCameraActionResult.fail(
+          'invalid_show_overlay_request',
+          httpStatus: HttpStatus.badRequest,
+        );
+      }
+      try {
+        final product = await services.ensureProductInfo();
+        final host = effectiveCameraHost(product);
+        final result = await services.cameraShowOverlay.apply(
+          cameraHost: host,
+          machineModel: cameraOverlayDeviceName(product.brand, product.model),
+          params: params,
+        );
+        if (!result.ok) {
+          return LocalHttpCameraActionResult.fail(
+            result.message,
+            httpStatus: result.httpStatus,
+          );
+        }
+        return LocalHttpCameraActionResult.success(data: result.dataMap());
+      } catch (e) {
+        debugPrint('local-http: camera show-overlay failed: $e');
+        return LocalHttpCameraActionResult.fail(
+          'camera_unreachable',
+          httpStatus: HttpStatus.serviceUnavailable,
+        );
+      }
+    };
     localHttp.cameraRecordHandler = (switchValue) async {
       try {
         final session = await services.ensureIpCamera();

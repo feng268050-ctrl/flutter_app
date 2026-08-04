@@ -18,6 +18,14 @@ String productDeviceModelDisplay(String? brand, String? model) {
   return joined;
 }
 
+/// NameOverlay text: same string as Device Information → Device Model.
+///
+/// When both brand and model are missing, returns empty (do not burn `-` onto OSD).
+String cameraOverlayDeviceName(String? brand, String? model) {
+  final display = productDeviceModelDisplay(brand, model);
+  return display == kUnavailableDisplay ? '' : display;
+}
+
 /// Model field for QR / identity payloads (no `-` placeholders).
 String productDeviceModelForQr(String? brand, String? model) {
   final b = (brand ?? '').trim();

@@ -10,6 +10,7 @@ import 'package:lws_hmi/features/process_mode/presentation/operation_failed_dial
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Bottom device-control strip: manual gas + hold-to-enable laser + wire stubs.
@@ -33,6 +34,7 @@ final class DeviceControlBar extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final l10n = AppLocalizations.of(context)!;
         final accent = ProcessModeTokens.tabActiveColor(processType);
         // lws-ui `isOpenLaser()` — session bit only, not emission feedback.
         final laserActive = controller.laserSessionArmed;
@@ -50,12 +52,13 @@ final class DeviceControlBar extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _ManualGasSwitch(
+                          l10n: l10n,
                           enabled: !laserActive && !controller.busy,
                           value: controller.manualGas,
                           onChanged: (value) async {
                             final err = await controller.setManualGas(value);
                             if (err != null && context.mounted) {
-                              _toast(context, err.message);
+                              _toast(context, err.localizedMessage(l10n));
                             }
                           },
                         ),
@@ -64,6 +67,7 @@ final class DeviceControlBar extends StatelessWidget {
                       Expanded(
                         flex: 2,
                         child: _LaserHoldButton(
+                          l10n: l10n,
                           accent: accent,
                           laserOn: laserActive,
                           busy: controller.busy || controller.manualGas,
@@ -96,6 +100,7 @@ final class DeviceControlBar extends StatelessWidget {
                               _toast(
                                 context,
                                 DeviceControlFeedbackCopy.messageForDisable(
+                                  l10n,
                                   err,
                                 ),
                               );
@@ -134,6 +139,7 @@ final class DeviceControlBar extends StatelessWidget {
     LaserEnableBlockReason err, {
     required LaserAlarmPolicySnapshot policy,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     if (err == LaserEnableBlockReason.alarmBlocked) {
       final warn = WarnAlarmScope.maybeOf(context);
       if (warn != null) {
@@ -144,11 +150,11 @@ final class DeviceControlBar extends StatelessWidget {
     if (DeviceControlFeedbackCopy.isSafetyTipBlock(err)) {
       await OperationFailedDialogHost.show(
         context,
-        message: DeviceControlFeedbackCopy.tipForLaserEnableBlock(err),
+        message: DeviceControlFeedbackCopy.tipForLaserEnableBlock(l10n, err),
       );
       return;
     }
-    _toast(context, err.message);
+    _toast(context, err.localizedMessage(l10n));
   }
 
   void _toast(BuildContext context, String message) {
@@ -160,11 +166,13 @@ final class DeviceControlBar extends StatelessWidget {
 
 final class _ManualGasSwitch extends StatelessWidget {
   const _ManualGasSwitch({
+    required this.l10n,
     required this.enabled,
     required this.value,
     required this.onChanged,
   });
 
+  final AppLocalizations l10n;
   final bool enabled;
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -175,9 +183,9 @@ final class _ManualGasSwitch extends StatelessWidget {
       key: const ValueKey('device-control-manual-gas'),
       contentPadding: EdgeInsets.zero,
       dense: true,
-      title: const Text(
-        'Manual Gas',
-        style: TextStyle(color: Colors.white, fontSize: AppTypography.captionSize),
+      title: Text(
+        l10n.manualGas,
+        style: const TextStyle(color: Colors.white, fontSize: AppTypography.captionSize),
       ),
       value: value,
       onChanged: enabled ? onChanged : null,
@@ -189,6 +197,7 @@ final class _ManualGasSwitch extends StatelessWidget {
 /// Flutter hold-to-enable laser (replaces Android trapezoid long-press).
 final class _LaserHoldButton extends StatefulWidget {
   const _LaserHoldButton({
+    required this.l10n,
     required this.accent,
     required this.laserOn,
     required this.busy,
@@ -196,6 +205,7 @@ final class _LaserHoldButton extends StatefulWidget {
     required this.onDisable,
   });
 
+  final AppLocalizations l10n;
   final Color accent;
   final bool laserOn;
   final bool busy;
@@ -255,7 +265,8 @@ final class _LaserHoldButtonState extends State<_LaserHoldButton> {
 
   @override
   Widget build(BuildContext context) {
-    final label = widget.laserOn ? 'Laser Off' : 'Hold to Enable Laser';
+    final label =
+        widget.laserOn ? widget.l10n.laserOff : widget.l10n.holdToEnableLaser;
     return Listener(
       key: const ValueKey('device-control-laser'),
       onPointerDown: (_) {
@@ -323,6 +334,7 @@ final class _WireFeedStub extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Opacity(
       opacity: 0.4,
       child: Column(
@@ -331,12 +343,12 @@ final class _WireFeedStub extends StatelessWidget {
         children: [
           OutlinedButton(
             onPressed: null,
-            child: const Text('Feed'),
+            child: Text(DeviceControlFeedbackCopy.feedLabel(l10n)),
           ),
           const SizedBox(height: 4),
           OutlinedButton(
             onPressed: null,
-            child: const Text('Retract'),
+            child: Text(l10n.retract),
           ),
           const Text(
             'Wire: protocol TBD',

@@ -134,7 +134,10 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
   Future<void> _bind() async {
     final services = AppScope.maybeOf(context);
     if (services == null || !mounted) {
-      setState(() => _error = 'Camera unavailable');
+      setState(
+        () => _error =
+            AppLocalizations.of(context)!.deviceControlCameraUnavailable,
+      );
       return;
     }
 
@@ -193,7 +196,8 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     // lws-ui `real_time_machine_status_text` (not Monitor tab title).
-    const liveTitle = 'Live Machine Status';
+    final liveTitle =
+        l10n?.liveMachineStatusTitle ?? 'Live machine status';
 
     final session = _session;
     // lws-ui LaserLiveMonitorOverlayFragment uses PR1; fall back to PR0.
@@ -207,16 +211,15 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
       (l10n?.safetyLockLabel ?? 'Safety Lock', machine?.safetyLockOn),
       (l10n?.gunSwitchLabel ?? 'Gun Switch', machine?.gunSwitchOn),
       (l10n?.redLightLabel ?? 'Red Light', machine?.redLightOn),
-      // Live-monitor copy (lws-ui live row); not the shorter Monitor label.
-      ('Wire Feeder', machine?.wireFeedingOn),
+      (l10n?.wireFeedingText ?? 'Wire Feeder', machine?.wireFeedingOn),
     ];
 
     return Column(
       key: const ValueKey('live-machine-status-dialog'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Text(
             liveTitle,
             textAlign: TextAlign.center,
@@ -378,9 +381,9 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                 shape: CyberButtonShape.rounded,
                 stretch: true,
                 onPressed: widget.onConfirm,
-                child: const Text(
-                  'Got it',
-                  style: TextStyle(
+                child: Text(
+                  l10n?.gotItText ?? 'Got it',
+                  style: const TextStyle(
                     fontSize: AppTypography.controlSize,
                     fontWeight: FontWeight.w600,
                   ),

@@ -18,6 +18,7 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_scope.da
 import 'package:lws_hmi/features/settings/application/advanced_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/laser_alarm_policy.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Engineer left device panel (lws-ui `engineer_continuous_device_controls`).
@@ -114,6 +115,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
         if (thresholdsController != null) thresholdsController,
       ]),
       builder: (context, _) {
+        final l10n = AppLocalizations.of(context)!;
         // lws-ui `isOpenLaser()` — session bit only, not emission feedback.
         final laserActive = widget.controller.laserSessionArmed;
         final thresholds = thresholdsController?.values ??
@@ -179,7 +181,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                             child: _CheckRow(
                               key: const ValueKey(
                                   'engineer-panel-manual-gas'),
-                              label: 'Manual Gas',
+                              label: l10n.manualGas,
                               value: widget.controller.manualGas,
                               enabled: true,
                               checkboxSize: _checkboxSize,
@@ -187,14 +189,17 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                 if (widget.controller.busy) {
                                   _toast(
                                     context,
-                                    LaserEnableBlockReason.busy.message,
+                                    LaserEnableBlockReason.busy
+                                        .localizedMessage(l10n),
                                   );
                                   return;
                                 }
                                 if (laserActive) {
                                   _toast(
                                     context,
-                                    DeviceControlFeedbackCopy.endOfWorkFirst,
+                                    DeviceControlFeedbackCopy.endOfWorkFirst(
+                                      l10n,
+                                    ),
                                   );
                                   return;
                                 }
@@ -207,16 +212,19 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   _toast(
                                     context,
                                     widget.controller.lastError ??
-                                        err.message,
+                                        err.localizedMessage(l10n),
                                   );
                                   return;
                                 }
                                 _toast(
                                   context,
                                   value
-                                      ? DeviceControlFeedbackCopy.manualGasOn
-                                      : DeviceControlFeedbackCopy
-                                          .manualGasOff,
+                                      ? DeviceControlFeedbackCopy.manualGasOn(
+                                          l10n,
+                                        )
+                                      : DeviceControlFeedbackCopy.manualGasOff(
+                                          l10n,
+                                        ),
                                 );
                               },
                             ),
@@ -228,7 +236,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                             child: _CheckRow(
                               key: const ValueKey(
                                   'engineer-panel-auto-wire'),
-                              label: 'Auto Wire Feed',
+                              label: l10n.autoWireFeed,
                               value: widget.controller.autoWireFeed &&
                                   _wireCapable,
                               enabled: _wireCapable,
@@ -240,14 +248,17 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                 if (widget.controller.busy) {
                                   _toast(
                                     context,
-                                    LaserEnableBlockReason.busy.message,
+                                    LaserEnableBlockReason.busy
+                                        .localizedMessage(l10n),
                                   );
                                   return;
                                 }
                                 if (laserActive) {
                                   _toast(
                                     context,
-                                    DeviceControlFeedbackCopy.endOfWorkFirst,
+                                    DeviceControlFeedbackCopy.endOfWorkFirst(
+                                      l10n,
+                                    ),
                                   );
                                   return;
                                 }
@@ -260,7 +271,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   _toast(
                                     context,
                                     widget.controller.lastError ??
-                                        err.message,
+                                        err.localizedMessage(l10n),
                                   );
                                   return;
                                 }
@@ -268,9 +279,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   context,
                                   value
                                       ? DeviceControlFeedbackCopy
-                                          .autoWireFeedOn
+                                          .autoWireFeedOn(l10n)
                                       : DeviceControlFeedbackCopy
-                                          .autoWireFeedOff,
+                                          .autoWireFeedOff(l10n),
                                 );
                               },
                             ),
@@ -287,7 +298,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   child: _EngineerWireActionButton(
                                     key: const ValueKey(
                                         'engineer-panel-retract'),
-                                    label: 'Retract',
+                                    label: l10n.retract,
                                     icon: Icons.output,
                                     height: _wireButtonsHeight,
                                     enabled: _wireCapable,
@@ -307,7 +318,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   child: _EngineerWireActionButton(
                                     key: const ValueKey(
                                         'engineer-panel-feed'),
-                                    label: 'Feed',
+                                    label: DeviceControlFeedbackCopy.feedLabel(
+                                      l10n,
+                                    ),
                                     icon: Icons.input,
                                     height: _wireButtonsHeight,
                                     enabled: _wireCapable,
@@ -328,7 +341,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                           const Spacer(),
                           _EngineerDeviceActionButton(
                             key: const ValueKey('engineer-panel-laser'),
-                            label: laserActive ? 'End Work' : 'Enable Laser',
+                            label: laserActive
+                                ? l10n.endOfWork
+                                : l10n.laserEnable,
                             icon: laserActive
                                 ? Icons.pause_circle_outline
                                 : Icons.play_circle_outline,
@@ -340,14 +355,16 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                               if (widget.controller.busy) {
                                 _toast(
                                   context,
-                                  LaserEnableBlockReason.busy.message,
+                                  LaserEnableBlockReason.busy
+                                      .localizedMessage(l10n),
                                 );
                                 return;
                               }
                               if (widget.controller.manualGas) {
                                 _toast(
                                   context,
-                                  LaserEnableBlockReason.manualGasOn.message,
+                                  LaserEnableBlockReason.manualGasOn
+                                      .localizedMessage(l10n),
                                 );
                                 return;
                               }
@@ -390,10 +407,13 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                   await OperationFailedDialogHost.show(
                                     context,
                                     message: DeviceControlFeedbackCopy
-                                        .tipForLaserEnableBlock(err),
+                                        .tipForLaserEnableBlock(l10n, err),
                                   );
                                 } else {
-                                  _toast(context, err.message);
+                                  _toast(
+                                    context,
+                                    err.localizedMessage(l10n),
+                                  );
                                 }
                               }
                             },
@@ -405,7 +425,7 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                                       _toast(
                                         context,
                                         DeviceControlFeedbackCopy
-                                            .messageForDisable(err),
+                                            .messageForDisable(l10n, err),
                                       );
                                     }
                                   }
@@ -549,6 +569,7 @@ final class _EngineerWireActionButtonState
     isActive: () => widget.active,
     onMessage: widget.onMessage,
     onVisualChanged: _onGestureVisual,
+    l10n: () => AppLocalizations.of(context)!,
   );
 
   FeedHoldProgressController? _feedProgress;
@@ -600,16 +621,21 @@ final class _EngineerWireActionButtonState
   }
 
   void _pointerDown() {
+    final l10n = AppLocalizations.of(context)!;
     if (widget.controller.busy) {
-      widget.onMessage(LaserEnableBlockReason.busy.message);
+      widget.onMessage(
+        LaserEnableBlockReason.busy.localizedMessage(l10n),
+      );
       return;
     }
     if (widget.laserBlocked) {
-      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
+      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst(l10n));
       return;
     }
     if (widget.modeBlocked) {
-      widget.onMessage(DeviceControlFeedbackCopy.wireUnavailableInMode);
+      widget.onMessage(
+        DeviceControlFeedbackCopy.wireUnavailableInMode(l10n),
+      );
       return;
     }
     if (!widget.enabled) {
@@ -640,6 +666,7 @@ final class _EngineerWireActionButtonState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const actionOrange = Color(0xFFF46E01);
     const idleFill = Color(0xFF2C1923);
     final latched = !widget.retract && _gesture.latched;
@@ -657,7 +684,7 @@ final class _EngineerWireActionButtonState
     const labelSize = AppTypography.controlSize;
     const iconSize = 26.0;
     final label = latched
-        ? DeviceControlFeedbackCopy.continuousFeedLabel
+        ? DeviceControlFeedbackCopy.continuousFeedLabel(l10n)
         : widget.label;
     return Semantics(
       button: true,

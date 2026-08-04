@@ -145,14 +145,18 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
         }
         if (result != null) {
           setState(() => _lastSavedPath = result.outputPath);
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Saved: ${result.outputPath}')),
+            SnackBar(
+              content: Text(l10n.ipCameraRecordingSaved(result.outputPath)),
+            ),
           );
         }
       } catch (e) {
         if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Stop error: $e')),
+            SnackBar(content: Text(l10n.ipCameraStopError('$e'))),
           );
         }
       } finally {
@@ -165,8 +169,9 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
 
     final recordSource = session.previewPr0;
     if (_status.phase != IpCameraUiPhase.connected || recordSource == null) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Camera not connected')),
+        SnackBar(content: Text(l10n.ipCameraCameraNotConnected)),
       );
       return;
     }
@@ -192,18 +197,23 @@ class _IpCameraSettingsPageState extends State<IpCameraSettingsPage> {
       }
       if (status.phase == IpCameraRecordingPhase.failed &&
           status.detail != 'cancelled') {
+        final l10n = AppLocalizations.of(context)!;
+        final detail = status.detail;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Record failed${status.detail != null ? ': ${status.detail}' : ''}',
+              detail != null
+                  ? l10n.ipCameraRecordError(detail)
+                  : l10n.ipCameraPreviewFailed,
             ),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Record error: $e')),
+          SnackBar(content: Text(l10n.ipCameraRecordError('$e'))),
         );
       }
     } finally {

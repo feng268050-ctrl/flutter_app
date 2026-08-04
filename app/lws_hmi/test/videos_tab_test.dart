@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/l10n/app_localizations_en.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
@@ -31,8 +32,9 @@ void main() {
       createTimeMs: DateTime.utc(2026, 7, 28, 10, 5).millisecondsSinceEpoch,
     );
     expect(ProcessVideoFormat.duration(125000), '02:05');
-    expect(ProcessVideoFormat.workMode(ProcessType.spotWelding), 'Spot Welding');
-    expect(ProcessVideoFormat.material(record), 'Stainless Steel');
+    final l10n = AppLocalizationsEn();
+    expect(ProcessVideoFormat.workMode(ProcessType.spotWelding, l10n), 'Spot welding');
+    expect(ProcessVideoFormat.material(record, l10n), 'Stainless steel');
   });
 
   testWidgets('empty Videos tab', (tester) async {
@@ -88,8 +90,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Spot Welding'), findsOneWidget);
-    expect(find.text('Carbon Steel'), findsOneWidget);
+    expect(find.text('Spot welding'), findsOneWidget);
+    expect(find.text('Carbon steel'), findsOneWidget);
     expect(find.text('01:05'), findsOneWidget);
     expect(find.text('Upload'), findsOneWidget);
 

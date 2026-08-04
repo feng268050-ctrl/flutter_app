@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/laser_enable_region_frost.dart';
+import 'package:lws_hmi/l10n/app_localizations_en.dart';
 
 void main() {
   setUp(LaserEnableRegionFrost.debugResetCaptureQueue);
@@ -107,19 +108,24 @@ void main() {
   });
 
   test('disable failure copy is distinct from enable writeFailed', () {
+    final l10n = AppLocalizationsEn();
     expect(
       DeviceControlFeedbackCopy.messageForDisable(
+        l10n,
         LaserEnableBlockReason.writeFailed,
       ),
-      DeviceControlFeedbackCopy.endOfWorkFailed,
+      DeviceControlFeedbackCopy.endOfWorkFailed(l10n),
     );
     expect(
-      DeviceControlFeedbackCopy.messageForDisable(LaserEnableBlockReason.busy),
-      LaserEnableBlockReason.busy.message,
+      DeviceControlFeedbackCopy.messageForDisable(
+        l10n,
+        LaserEnableBlockReason.busy,
+      ),
+      LaserEnableBlockReason.busy.localizedMessage(l10n),
     );
     expect(
-      LaserEnableBlockReason.writeFailed.message,
-      isNot(DeviceControlFeedbackCopy.endOfWorkFailed),
+      LaserEnableBlockReason.writeFailed.localizedMessage(l10n),
+      isNot(DeviceControlFeedbackCopy.endOfWorkFailed(l10n)),
     );
   });
 }

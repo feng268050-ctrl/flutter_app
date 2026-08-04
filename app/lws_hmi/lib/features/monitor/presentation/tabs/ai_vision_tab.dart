@@ -14,6 +14,7 @@ import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
 import 'package:lws_hmi/features/monitor/presentation/ai_vision_overlay_state.dart';
 import 'package:lws_hmi/features/monitor/presentation/ai_vision_selected_ui_mode.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
+import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_video/application/video_cover_extractor.dart';
@@ -620,8 +621,8 @@ class _AiVisionTabState extends State<AiVisionTab> {
     final selected = _selected;
     if (selected != null) {
       return (
-        ProcessVideoFormat.workMode(selected.processType),
-        ProcessVideoFormat.material(selected),
+        ProcessVideoFormat.workMode(selected.processType, l10n),
+        ProcessVideoFormat.material(selected, l10n),
         ProcessVideoFormat.recordingTime(selected),
       );
     }
@@ -637,7 +638,7 @@ class _AiVisionTabState extends State<AiVisionTab> {
     final pt = snap['processType'];
     if (pt is int) {
       try {
-        process = ProcessModeLabels.wheelLabel(ProcessType.fromWireValue(pt));
+        process = ProcessModeLabels.wheelLabel(ProcessType.fromWireValue(pt), l10n);
       } catch (_) {}
     }
     String material = l10n.aiVisionWorkInfoUnavailable;
@@ -648,7 +649,7 @@ class _AiVisionTabState extends State<AiVisionTab> {
       final mt = snap['materialType'];
       if (mt is int) {
         try {
-          material = MaterialType.fromStorageValue(mt).englishName;
+          material = MaterialType.fromStorageValue(mt).localizedLabel(l10n);
         } catch (_) {}
       }
     }

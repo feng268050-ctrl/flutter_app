@@ -376,7 +376,7 @@ class _SaveButton extends StatelessWidget {
         shape: CyberButtonShape.rounded,
         stretch: true,
         onPressed: onPressed,
-        child: const Text('Save Changes'),
+        child: Text(AppLocalizations.of(context)!.saveChanges),
       ),
     );
   }
@@ -409,6 +409,7 @@ class _MetricSelectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final enabled = !inputLocked;
     final candidateDisabled =
         (!selected && onAdd == null) || (selected && replacementActive);
@@ -430,7 +431,7 @@ class _MetricSelectionCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  _label(metric),
+                  _label(l10n, metric),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -559,15 +560,16 @@ class _MetricSelectionCard extends StatelessWidget {
         CustomHomeMetric.favoriteMaterial => Icons.inventory_2_outlined,
       };
 
-  static String _label(CustomHomeMetric metric) => switch (metric) {
-        CustomHomeMetric.wireConsumption => 'Total Wire Consumption',
-        CustomHomeMetric.laserOnDuration => 'Total Laser-on Time',
-        CustomHomeMetric.jobRuntime => 'Job Runtime',
-        CustomHomeMetric.weldRatio => 'Welding Ratio',
-        CustomHomeMetric.cutRatio => 'Cutting Ratio',
-        CustomHomeMetric.cleanRatio => 'Cleaning Ratio',
-        CustomHomeMetric.weekOverWeekLaser => 'Laser Time vs Last Week',
-        CustomHomeMetric.favoriteMaterial => 'Favorite Material',
+  static String _label(AppLocalizations l10n, CustomHomeMetric metric) =>
+      switch (metric) {
+        CustomHomeMetric.wireConsumption => l10n.totalWireConsumption,
+        CustomHomeMetric.laserOnDuration => l10n.totalLaserOnTime,
+        CustomHomeMetric.jobRuntime => l10n.jobRuntime,
+        CustomHomeMetric.weldRatio => l10n.weldingProportionText,
+        CustomHomeMetric.cutRatio => l10n.cuttingProportionText,
+        CustomHomeMetric.cleanRatio => l10n.washProportionText,
+        CustomHomeMetric.weekOverWeekLaser => l10n.laserTimeVsLastWeek,
+        CustomHomeMetric.favoriteMaterial => l10n.favoriteMaterial,
       };
 }
 

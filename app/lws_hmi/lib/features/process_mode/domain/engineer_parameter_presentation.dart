@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Engineer-mode row title + optional colored `(Tn)` / `(P)` suffix (lws-ui).
 ///
@@ -24,6 +26,7 @@ final class EngineerParameterPresentation {
   static EngineerParameterPresentation forKey(
     String key,
     ProcessType processType,
+    AppLocalizations l10n,
   ) {
     final welding = processType == ProcessType.continuousWelding ||
         processType == ProcessType.spotWelding;
@@ -31,64 +34,63 @@ final class EngineerParameterPresentation {
 
     switch (key) {
       case 'process.spot_welding_interval':
-        return const EngineerParameterPresentation(
-          label: 'Spot Weld Interval',
+        return EngineerParameterPresentation(
+          label: l10n.paramSpotWeldInterval,
           suffix: '(T1)',
           suffixColor: _t1Blue,
         );
       case 'process.spot_welding_duration':
-        return const EngineerParameterPresentation(
-          label: 'Spot Weld Duration',
+        return EngineerParameterPresentation(
+          label: l10n.paramSpotWeldDuration,
           suffix: '(T2)',
           suffixColor: _t3Weld,
         );
       case 'process.blowing_delay':
-        return const EngineerParameterPresentation(label: 'Gas Pre-Flow');
+        return EngineerParameterPresentation(label: l10n.paramGasPreFlow);
       case 'process.power_ramp_up_duration':
         return EngineerParameterPresentation(
-          label: 'Ramp-Up Time',
+          label: l10n.paramRampUpTime,
           suffix: continuous ? '(T2)' : null,
           suffixColor: continuous ? _t2Orange : null,
         );
       case 'process.laser_power':
         return EngineerParameterPresentation(
-          label: 'Laser Power',
+          label: l10n.paramLaserPower,
           suffix: welding ? '(P)' : null,
         );
       case 'process.power_ramp_down_duration':
         return EngineerParameterPresentation(
-          label: 'Ramp-Down Time',
+          label: l10n.paramRampDownTime,
           suffix: continuous ? '(T3)' : null,
           suffixColor: continuous ? _t3Weld : null,
         );
       case 'process.gas_off_delay':
         return EngineerParameterPresentation(
-          label: 'Gas Post-Flow',
+          label: l10n.paramGasPostFlow,
           suffix: continuous ? '(T4)' : null,
           suffixColor: continuous ? _t4Blue : null,
         );
       case 'process.swing_frequency':
-        return const EngineerParameterPresentation(label: 'Scan Frequency');
+        return EngineerParameterPresentation(label: l10n.paramScanFrequency);
       case 'process.swing_width':
         return EngineerParameterPresentation(
-          label: welding ? 'Scan Width' : 'Swing width',
+          label: welding ? l10n.paramScanWidth : l10n.swingWidthLabel,
         );
       case 'process.wire_feeding_speed':
-        return const EngineerParameterPresentation(label: 'Wire Feed Speed');
+        return EngineerParameterPresentation(label: l10n.paramWireFeedSpeed);
       case 'process.light_off_delay':
-        return const EngineerParameterPresentation(label: 'Laser-Off Delay');
+        return EngineerParameterPresentation(label: l10n.paramLaserOffDelay);
       case 'process.back_draw_length':
-        return const EngineerParameterPresentation(label: 'Retract Length');
+        return EngineerParameterPresentation(label: l10n.paramRetractLength);
       case 'process.back_draw_speed':
-        return const EngineerParameterPresentation(label: 'Retract Speed');
+        return EngineerParameterPresentation(label: l10n.paramRetractSpeed);
       case 'process.wire_filling_length':
-        return const EngineerParameterPresentation(label: 'Re-feed Length');
+        return EngineerParameterPresentation(label: l10n.paramRefeedLength);
       case 'process.wire_filling_delay':
-        return const EngineerParameterPresentation(label: 'Re-feed Delay');
+        return EngineerParameterPresentation(label: l10n.paramRefeedDelay);
       default:
-        final spec = ProcessParameterCatalog.byKey[key];
         return EngineerParameterPresentation(
-          label: spec?.label ?? key,
+          label: localizedProcessParameterLabel(l10n, key),
         );
     }
   }

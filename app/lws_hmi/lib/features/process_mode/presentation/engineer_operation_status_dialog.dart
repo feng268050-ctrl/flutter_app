@@ -1,6 +1,7 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// lws-ui [FrostStatusDialog] success mode (`OperationDialogBuilder.openSuccessDialog`).
@@ -43,6 +44,7 @@ final class _EngineerOperationSuccessBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return ConstrainedBox(
       key: const ValueKey('engineer-operation-success'),
       constraints: const BoxConstraints(maxWidth: _maxWidth),
@@ -105,7 +107,7 @@ final class _EngineerOperationSuccessBody extends StatelessWidget {
                     CyberClickSoundRegistry.playClick();
                     onConfirm();
                   },
-                  child: const Text('OK'),
+                  child: Text(l10n.okText),
                 ),
               ),
             ),

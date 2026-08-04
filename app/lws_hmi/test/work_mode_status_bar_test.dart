@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_library/presentation/engineer_mode_page.dart';
@@ -40,6 +41,9 @@ void main() {
     await setDesignSurface(tester);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           appBar: WorkModeStatusBar(
             mode: WorkMode.quick,
@@ -59,10 +63,10 @@ void main() {
     );
 
     expect(find.text('Gun Switch'), findsOneWidget);
-    expect(find.text('Ground Clamp'), findsOneWidget);
-    expect(find.text('Key Switch'), findsOneWidget);
-    expect(find.text('Gas Flow'), findsOneWidget);
-    expect(find.text('E-Stop'), findsOneWidget);
+    expect(find.text('Ground clamp'), findsOneWidget);
+    expect(find.text('Key switch'), findsOneWidget);
+    expect(find.text('Gas flow'), findsOneWidget);
+    expect(find.text('E-stop'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('14:30'), findsOneWidget);
     expect(
@@ -115,10 +119,10 @@ void main() {
     );
     // Full English labels stay visible at design width.
     expect(find.text('Gun Switch'), findsOneWidget);
-    expect(find.text('Ground Clamp'), findsOneWidget);
-    expect(find.text('Key Switch'), findsOneWidget);
-    expect(find.text('Gas Flow'), findsOneWidget);
-    expect(find.text('E-Stop'), findsOneWidget);
+    expect(find.text('Ground clamp'), findsOneWidget);
+    expect(find.text('Key switch'), findsOneWidget);
+    expect(find.text('Gas flow'), findsOneWidget);
+    expect(find.text('E-stop'), findsOneWidget);
     final gaps = [
       ground.left - gun.right,
       key.left - ground.right,
@@ -135,6 +139,9 @@ void main() {
     await setDesignSurface(tester);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           appBar: WorkModeStatusBar(
             mode: WorkMode.engineer,
@@ -167,6 +174,9 @@ void main() {
     final controller = await createEmptyProcessLibraryController(tester);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: wrapWithProcessLibrary(controller, const QuickModePage()),
       ),
     );
@@ -184,13 +194,16 @@ void main() {
     final controller = await createEmptyProcessLibraryController(tester);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: wrapWithProcessLibrary(controller, const EngineerModePage()),
       ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('Ground Clamp'), findsOneWidget);
+    expect(find.text('Ground clamp'), findsOneWidget);
     expect(find.byKey(const ValueKey('cyber-status-wifi')), findsNothing);
   });
 
@@ -198,6 +211,9 @@ void main() {
     await setDesignSurface(tester);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           appBar: WorkModeStatusBar(
             mode: WorkMode.quick,
@@ -219,6 +235,9 @@ void main() {
     await setDesignSurface(tester);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           appBar: WorkModeStatusBar(
             mode: WorkMode.quick,

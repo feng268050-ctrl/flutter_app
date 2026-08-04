@@ -1,6 +1,7 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Confirm leaving CNC running mode (lws-ui `CNCExitDialog`).
@@ -9,6 +10,7 @@ Future<bool> showCncExitDialog(BuildContext context) async {
     context: context,
     barrierDismissible: false,
     builder: (dialogContext) {
+      final l10n = AppLocalizations.of(dialogContext)!;
       return Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 120),
@@ -40,13 +42,13 @@ Future<bool> showCncExitDialog(BuildContext context) async {
                   children: [
                     _CncDialogButton(
                       key: const ValueKey('quick-mode-cnc-exit-confirm'),
-                      label: 'Confirm',
+                      label: l10n.confirmText,
                       onPressed: () => Navigator.pop(dialogContext, true),
                     ),
                     const SizedBox(width: 42),
                     _CncDialogButton(
                       key: const ValueKey('quick-mode-cnc-exit-cancel'),
-                      label: 'Cancel',
+                      label: l10n.cancelText,
                       onPressed: () => Navigator.pop(dialogContext, false),
                     ),
                   ],

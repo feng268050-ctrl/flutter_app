@@ -2,6 +2,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Engineer Mode process-type tab bar (lws-ui `EngineerTab`, five tabs).
 ///
@@ -72,6 +73,7 @@ final class _EngineerTabItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final activeColor = ProcessModeTokens.tabActiveColor(type);
     final labelColor =
         selected ? activeColor : ProcessModeTokens.tabInactiveText;
@@ -99,7 +101,7 @@ final class _EngineerTabItem extends StatelessWidget {
             bottom: ProcessModeDimens.engineerTabUnderlineHeight,
             child: Center(
               child: Text(
-                ProcessModeLabels.engineerTabLabel(type),
+                ProcessModeLabels.engineerTabLabel(type, l10n),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,

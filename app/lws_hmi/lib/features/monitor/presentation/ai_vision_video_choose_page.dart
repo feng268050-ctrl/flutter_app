@@ -252,10 +252,11 @@ final class _ChooseRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final cells = <({String text, double width})>[
       (text: ProcessVideoFormat.recordingTime(record), width: 232),
-      (text: ProcessVideoFormat.workMode(record.processType), width: 232),
-      (text: ProcessVideoFormat.material(record), width: 205),
+      (text: ProcessVideoFormat.workMode(record.processType, l10n), width: 232),
+      (text: ProcessVideoFormat.material(record, l10n), width: 205),
       (text: ProcessVideoFormat.duration(record.durationMs), width: 130),
     ];
     return Container(

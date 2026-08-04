@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/mpp_video_route_gate.dart';
 import 'package:video_player/video_player.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
@@ -223,17 +224,18 @@ class _IpCameraPreviewState extends State<IpCameraPreview> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (widget.linkPhase == IpCameraUiPhase.failed) {
-      return const _Placeholder(
+      return _Placeholder(
         icon: Icons.videocam_off,
-        label: 'Camera unavailable',
-        color: Color(0xFFE53935),
+        label: l10n.deviceControlCameraUnavailable,
+        color: const Color(0xFFE53935),
       );
     }
     if (!_canPreview) {
-      return const _Placeholder(
+      return _Placeholder(
         icon: Icons.hourglass_top,
-        label: 'Establishing video…',
+        label: l10n.ipCameraEstablishingVideo,
         showSpinner: true,
       );
     }
@@ -242,20 +244,20 @@ class _IpCameraPreviewState extends State<IpCameraPreview> {
     if (error != null) {
       return _Placeholder(
         icon: Icons.videocam_off,
-        label: 'Preview failed\n$error',
+        label: '${l10n.ipCameraPreviewFailed}\n$error',
         color: const Color(0xFFE53935),
         action: TextButton(
           onPressed: () => unawaited(_replacePlayer(widget.rtspUrl)),
-          child: const Text('Retry'),
+          child: Text(l10n.retryText),
         ),
       );
     }
 
     final player = _player;
     if (_starting || player == null || !player.isInitialized) {
-      return const _Placeholder(
+      return _Placeholder(
         icon: Icons.hourglass_top,
-        label: 'Establishing video…',
+        label: l10n.ipCameraEstablishingVideo,
         showSpinner: true,
       );
     }

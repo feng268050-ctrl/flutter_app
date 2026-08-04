@@ -111,6 +111,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         unawaited(_deviceControl!.start());
         _recordWork = RecordWorkController(
           deviceControl: _deviceControl!,
+          resolveL10n: () => AppLocalizations.of(context)!,
           snapshotSource: CallbackProcessVideoSnapshotSource(
             _captureProcessVideoSnapshot,
           ),
@@ -169,11 +170,12 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       return;
     }
     WorkStatusDialogHost.closeDialog();
+    final l10n = AppLocalizations.of(context)!;
     final message = switch (event) {
       DeviceControlSafetyEvent.emergencyStop =>
-        DeviceControlFeedbackCopy.emergencyStopError,
+        DeviceControlFeedbackCopy.emergencyStopError(l10n),
       DeviceControlSafetyEvent.keySwitchOff =>
-        DeviceControlFeedbackCopy.keySwitchOffError,
+        DeviceControlFeedbackCopy.keySwitchOffError(l10n),
     };
     unawaited(
       OperationFailedDialogHost.show(
@@ -292,9 +294,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (device != null && device.laserEnable) {
       final err = await device.disableLaser();
       if (err != null && mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ProcessModeToast.show(
           context,
-          DeviceControlFeedbackCopy.messageForDisable(err),
+          DeviceControlFeedbackCopy.messageForDisable(l10n, err),
         );
       }
       return;
@@ -320,8 +323,9 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     final presets =
         controller.engineerPresets(processType: _processType).toList();
     if (presets.isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No more favorites')),
+        SnackBar(content: Text(l10n.noMoreFavorites)),
       );
       return;
     }
@@ -453,9 +457,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       return false;
     }
     if (result.failure != null) {
+      final failureL10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_applyFailureMessage(result.failure)),
+          content: Text(_applyFailureMessage(failureL10n, result.failure)),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -483,20 +488,30 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     }
   }
 
-  String _applyFailureMessage(ProcessApplyFailure? failure) {
+  String _applyFailureMessage(
+    AppLocalizations l10n,
+    ProcessApplyFailure? failure,
+  ) {
     return switch (failure) {
-      ProcessApplyFailure.busy => 'Apply busy',
-      ProcessApplyFailure.statusUnavailable => 'Check equipment status',
-      ProcessApplyFailure.unsafeMachineState => 'Laser work in progress',
-      ProcessApplyFailure.wireFeedingActive => 'Stop wire feed first',
-      ProcessApplyFailure.baselineReadFailed => 'Baseline read failed',
-      ProcessApplyFailure.processWriteFailed => 'Write failed',
-      ProcessApplyFailure.processReadbackFailed => 'Readback mismatch',
-      ProcessApplyFailure.processTypeWriteFailed => 'Process type write failed',
+      ProcessApplyFailure.busy => l10n.processApplyFailureBusy,
+      ProcessApplyFailure.statusUnavailable =>
+        l10n.processApplyFailureStatusUnavailable,
+      ProcessApplyFailure.unsafeMachineState =>
+        l10n.processApplyFailureUnsafeMachineState,
+      ProcessApplyFailure.wireFeedingActive =>
+        l10n.processApplyFailureWireFeedingActive,
+      ProcessApplyFailure.baselineReadFailed =>
+        l10n.processApplyFailureBaselineReadFailed,
+      ProcessApplyFailure.processWriteFailed =>
+        l10n.processApplyFailureProcessWriteFailed,
+      ProcessApplyFailure.processReadbackFailed =>
+        l10n.processApplyFailureProcessReadbackFailed,
+      ProcessApplyFailure.processTypeWriteFailed =>
+        l10n.processApplyFailureProcessTypeWriteFailed,
       ProcessApplyFailure.processTypeReadbackFailed =>
-        'Process type readback mismatch',
-      ProcessApplyFailure.partialApply => 'Partial apply',
-      null => 'Apply failed',
+        l10n.processApplyFailureProcessTypeReadbackMismatch,
+      ProcessApplyFailure.partialApply => l10n.processApplyFailurePartialApply,
+      null => l10n.processApplyFailureGeneric,
     };
   }
 
@@ -527,7 +542,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       return;
     }
     // lws-ui `ToastUtils.showShort(R.string.reset_data_successfully)`.
-    ProcessModeToast.show(context, 'Reset complete');
+    ProcessModeToast.show(context, AppLocalizations.of(context)!.resetComplete);
   }
 
   Future<void> _saveAsFavorite() async {
@@ -535,9 +550,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (draft == null) {
       return;
     }
+    final l10n = AppLocalizations.of(context)!;
     final name = await showCyberImeInputDialog(
       context: context,
-      title: 'Process Parameter Name',
+      title: l10n.processParameterName,
       fieldType: CyberImeFieldType.text,
       initial: draft.preset.name,
       requireNonEmpty: true,
@@ -552,7 +568,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (trimmed.length > 32) {
       ProcessModeToast.show(
         context,
-        'Name must be 32 characters or fewer',
+        l10n.processNameMaxLength,
       );
       return;
     }
@@ -568,7 +584,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         _setActiveDraft(EngineerModeDraft.fromLibrary(saved));
       });
       // lws-ui `ToastUtils.showShort(R.string.saved_successfully)`.
-      ProcessModeToast.show(context, 'Saved');
+      ProcessModeToast.show(context, l10n.savedSuccessfully);
     } catch (_) {
       // Keep session draft; Save as Favorite is the only persist path.
     }
@@ -587,9 +603,10 @@ final class _EngineerModePageState extends State<EngineerModePage> {
       }
       working = unlocked;
     }
+    final l10n = AppLocalizations.of(context)!;
     final name = await showCyberImeInputDialog(
       context: context,
-      title: 'Process name',
+      title: l10n.processNameLabel,
       fieldType: CyberImeFieldType.text,
       initial: working.name,
       requireNonEmpty: true,
@@ -602,6 +619,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = ProcessLibraryScope.of(context);
     final draft = _draft;
     final accent = ProcessModeTokens.tabActiveColor(_processType);
@@ -614,8 +632,9 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         }
         unawaited(_handleExit());
       },
-      // Same stack as Settings / Monitor: home wallpaper → page blur → chrome.
+      // Same stack as Settings / Monitor: home wallpaper → σ30 page blur → chrome.
       child: SettingsBlurredPageShell(
+        blurSigma: SettingsPerspectiveChrome.blurSigma,
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: WorkModeStatusBar(
@@ -637,12 +656,12 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                   const Expanded(
                       child: Center(child: CircularProgressIndicator()))
                 else if (draft == null)
-                  const Expanded(
+                  Expanded(
                     child: Center(
                       child: Text(
-                        'No engineer processes for this type',
-                        key: ValueKey('engineer-mode-empty'),
-                        style: TextStyle(
+                        l10n.noEngineerProcesses,
+                        key: const ValueKey('engineer-mode-empty'),
+                        style: const TextStyle(
                             color: Color(0xB3FFFFFF), fontSize: AppTypography.supportingSize),
                       ),
                     ),
@@ -715,7 +734,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                 ),
                                                     const SizedBox(height: 4),
                                                     Text(
-                                                      'Current Process Name',
+                                                      l10n.currentProcessName,
                                                       key: ValueKey(
                                                         draft.fromQuickHandoff
                                                             ? 'engineer-mode-draft-uuid'
@@ -755,9 +774,9 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                     mainAxisSize:
                                                         MainAxisSize.min,
                                                     children: [
-                                                      const Text(
-                                                        'More Favorites',
-                                                        style: TextStyle(
+                                                      Text(
+                                                        l10n.moreFavorites,
+                                                        style: const TextStyle(
                                                           color: Colors.white,
                                                           fontSize: AppTypography.controlSize,
                                                         ),
@@ -827,7 +846,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                         _engineerActionPillBorder,
                                                     strokeWidth: 1.5,
                                                     onPressed: _resetToDefault,
-                                                    child: const SizedBox(
+                                                    child: SizedBox(
                                                       height: CyberDimens
                                                           .actionButtonSmallHeight,
                                                       width: double.infinity,
@@ -835,7 +854,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                         children: [
                                                           Center(
                                                             child: Text(
-                                                              'Reset to Default',
+                                                              l10n.resetToDefault,
                                                               maxLines: 1,
                                                               overflow:
                                                                   TextOverflow
@@ -843,7 +862,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                               textAlign:
                                                                   TextAlign
                                                                       .center,
-                                                              style: TextStyle(
+                                                              style: const TextStyle(
                                                                 fontSize: AppTypography.navigationSize,
                                                               ),
                                                             ),
@@ -882,7 +901,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                         controller.applying
                                                             ? null
                                                             : _saveAsFavorite,
-                                                    child: const SizedBox(
+                                                    child: SizedBox(
                                                       height: CyberDimens
                                                           .actionButtonSmallHeight,
                                                       width: double.infinity,
@@ -890,7 +909,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                         children: [
                                                           Center(
                                                             child: Text(
-                                                              'Save as Favorite',
+                                                              l10n.saveAsFavorite,
                                                               maxLines: 1,
                                                               overflow:
                                                                   TextOverflow
@@ -898,7 +917,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                               textAlign:
                                                                   TextAlign
                                                                       .center,
-                                                              style: TextStyle(
+                                                              style: const TextStyle(
                                                                 fontSize: AppTypography.navigationSize,
                                                               ),
                                                             ),

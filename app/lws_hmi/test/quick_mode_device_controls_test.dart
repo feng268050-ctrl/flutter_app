@@ -11,6 +11,7 @@ import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_device_controls.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +46,8 @@ void main() {
         (DeviceControlController(services)..keySwitchOn = true);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: ProcessModeToastLayer(
           child: Scaffold(
             body: QuickModeDeviceControls(
@@ -131,11 +134,11 @@ void main() {
     const idle = ProcessModeOutlineChrome.actionOrange;
     const disabled = ProcessModeOutlineChrome.disabledForeground;
     expect(
-      tester.widget<Text>(find.text('Manual Gas')).style?.color,
+      tester.widget<Text>(find.text('Manual gas')).style?.color,
       idle,
     );
     expect(
-      tester.widget<Text>(find.text('Auto Wire Feed')).style?.color,
+      tester.widget<Text>(find.text('Auto wire feed')).style?.color,
       disabled,
     );
     expect(
@@ -172,7 +175,7 @@ void main() {
     // Idle Engineer outline chrome: orange label (not grey / disabled).
     const idle = ProcessModeOutlineChrome.actionOrange;
     expect(
-      tester.widget<Text>(find.text('Auto Wire Feed')).style?.color,
+      tester.widget<Text>(find.text('Auto wire feed')).style?.color,
       idle,
     );
     expect(
@@ -236,7 +239,7 @@ void main() {
       controller: controller,
     );
 
-    expect(find.text('Laser Enable'), findsOneWidget);
+    expect(find.text('Laser enable'), findsOneWidget);
     expect(find.text('End of work'), findsNothing);
     expect(
       find.byKey(const ValueKey('device-control-manual-gas')),

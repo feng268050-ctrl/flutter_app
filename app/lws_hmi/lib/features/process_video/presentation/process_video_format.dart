@@ -1,13 +1,16 @@
+import 'package:lws_hmi/features/process_library/domain/process_library_l10n.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Display helpers for Monitor process-video list/detail (lws-ui column labels).
 abstract final class ProcessVideoFormat {
-  static String workMode(ProcessType type) => ProcessModeLabels.wheelLabel(type);
+  static String workMode(ProcessType type, AppLocalizations l10n) =>
+      ProcessModeLabels.wheelLabel(type, l10n);
 
-  static String material(ProcessVideoRecord record) {
+  static String material(ProcessVideoRecord record, AppLocalizations l10n) {
     final snap = record.snapshot;
     final name = snap?.materialName?.trim();
     if (name != null && name.isNotEmpty) {
@@ -17,7 +20,7 @@ abstract final class ProcessVideoFormat {
     if (material == null) {
       return '—';
     }
-    return material.englishName;
+    return material.localizedLabel(l10n);
   }
 
   static String recordingTime(ProcessVideoRecord record) {
@@ -36,19 +39,20 @@ abstract final class ProcessVideoFormat {
 
   static String parameterLabel(
     String key, {
+    required AppLocalizations l10n,
     String? activeUnitWire,
   }) {
-    final spec = ProcessParameterCatalog.byKey[key];
-    if (spec != null) {
-      final unit = parameterUnit(key, activeUnitWire: activeUnitWire);
-      return unit.isEmpty ? spec.label : '${spec.label} ($unit)';
+    final label = localizedProcessParameterLabel(l10n, key);
+    final unit = parameterUnit(key, activeUnitWire: activeUnitWire);
+    if (ProcessParameterCatalog.byKey[key] == null) {
+      return key;
     }
-    return key;
+    return unit.isEmpty ? label : '$label ($unit)';
   }
 
   /// Plain catalog label without unit (lws-ui detail rows use a separate unit).
-  static String parameterLabelPlain(String key) {
-    return ProcessParameterCatalog.byKey[key]?.label ?? key;
+  static String parameterLabelPlain(String key, AppLocalizations l10n) {
+    return localizedProcessParameterLabel(l10n, key);
   }
 
   /// Display unit for [key], or empty when the parameter is unitless.

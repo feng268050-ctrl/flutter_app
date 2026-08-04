@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/process_mode/presentation/engineer_mode_entry_tips_dialog.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 void main() {
   testWidgets('engineer tip shows full title and body (no clip)', (tester) async {
@@ -9,6 +10,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(
@@ -29,7 +32,7 @@ void main() {
       findsOneWidget,
     );
     // Full title — not ellipsized ("Engineer Mode No…").
-    expect(find.text('Engineer Mode Notice'), findsOneWidget);
+    expect(find.text('Engineer mode notice'), findsOneWidget);
     expect(
       find.textContaining('before making fine adjustments.'),
       findsOneWidget,

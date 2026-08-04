@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_offset_wheel.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_value_pick.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
@@ -26,6 +27,7 @@ final class QuickModeProcessWheel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final accent = ProcessModeTokens.accentFor(processType);
     final hideSideAccent =
         !showAccents || processType == ProcessType.cncCutting;
@@ -88,7 +90,7 @@ final class QuickModeProcessWheel extends StatelessWidget {
               ? ProcessModeDimens.wheelSelectedPadding
               : ProcessModeDimens.linearArcPad(distance);
           final label = Text(
-            ProcessModeLabels.wheelLabel(type),
+            ProcessModeLabels.wheelLabel(type, l10n),
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.ellipsis,
@@ -111,7 +113,7 @@ final class QuickModeProcessWheel extends StatelessWidget {
                 child: SizedBox(
                   width: selectedTextMaxWidth,
                   child: Text(
-                    ProcessModeLabels.wheelLabel(type),
+                    ProcessModeLabels.wheelLabel(type, l10n),
                     maxLines: 1,
                     softWrap: false,
                     overflow: TextOverflow.ellipsis,

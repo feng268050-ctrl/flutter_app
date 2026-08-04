@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Which work-mode shell opened the laser-enable Important Reminder.
 enum LaserEnableReminderSession { quick, engineer }
@@ -38,13 +39,13 @@ abstract final class LaserEnableReminderGate {
 /// Mode-specific copy + illustrations for the Important Reminder dialog.
 abstract final class LaserEnableReminderCopy {
   /// Card 2 tip (lws-ui `LaserEnableReminderCopy.nozzleTipResId`).
-  static String nozzleTip(ProcessType processType) {
+  static String nozzleTip(ProcessType processType, AppLocalizations l10n) {
     return switch (processType) {
       ProcessType.handCutting || ProcessType.cncCutting =>
-        'Confirm the cutting copper nozzle is installed.',
+        l10n.laserEnableReminderNozzleCut,
       ProcessType.weldCleaning || ProcessType.wideCleaning =>
-        'Confirm the laser tube and copper nozzle have been removed.',
-      _ => 'Confirm the welding copper nozzle is installed.',
+        l10n.laserEnableReminderNozzleClean,
+      _ => l10n.laserEnableReminderNozzleWeld,
     };
   }
 

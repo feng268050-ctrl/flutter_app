@@ -2,9 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/l10n/app_localizations_en.dart';
 
 void main() {
   tearDown(LaserEnableReminderGate.resetForTest);
+
+  final l10n = AppLocalizationsEn();
 
   test('weld modes use welding nozzle copy and show focus scale', () {
     for (final type in [
@@ -12,7 +15,7 @@ void main() {
       ProcessType.spotWelding,
     ]) {
       expect(
-        LaserEnableReminderCopy.nozzleTip(type),
+        LaserEnableReminderCopy.nozzleTip(type, l10n),
         contains('welding copper nozzle'),
       );
       expect(
@@ -25,7 +28,7 @@ void main() {
 
   test('hand cut uses cutting nozzle and blanks focus scale', () {
     expect(
-      LaserEnableReminderCopy.nozzleTip(ProcessType.handCutting),
+      LaserEnableReminderCopy.nozzleTip(ProcessType.handCutting, l10n),
       contains('cutting copper nozzle'),
     );
     expect(
@@ -44,7 +47,7 @@ void main() {
       ProcessType.wideCleaning,
     ]) {
       expect(
-        LaserEnableReminderCopy.nozzleTip(type),
+        LaserEnableReminderCopy.nozzleTip(type, l10n),
         contains('removed'),
       );
       expect(LaserEnableReminderCopy.showsFocusScale(type), isFalse);

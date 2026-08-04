@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// lws-ui [FrostStatusDialog] failure / tip mode (`OperationDialogBuilder.openErrorDialog`).
@@ -24,16 +25,17 @@ abstract final class OperationFailedDialogHost {
   static Future<void> show(
     BuildContext context, {
     required String message,
-    String title = DeviceControlFeedbackCopy.operationFailedTitle,
+    String? title,
   }) async {
     if (_showing || !context.mounted) {
       return;
     }
     _showing = true;
     try {
+      final l10n = AppLocalizations.of(context)!;
       await showOperationFailedDialog(
         context,
-        title: title,
+        title: title ?? DeviceControlFeedbackCopy.operationFailedTitle(l10n),
         message: message,
       );
     } finally {
@@ -45,13 +47,14 @@ abstract final class OperationFailedDialogHost {
 Future<void> showOperationFailedDialog(
   BuildContext context, {
   required String message,
-  String title = DeviceControlFeedbackCopy.operationFailedTitle,
+  String? title,
 }) {
+  final l10n = AppLocalizations.of(context)!;
   return TipDialogHost.showError<void>(
     context: context,
     barrierDismissible: true,
     builder: (dialogContext) => _OperationFailedBody(
-      title: title,
+      title: title ?? DeviceControlFeedbackCopy.operationFailedTitle(l10n),
       message: message,
       onConfirm: () => Navigator.of(dialogContext).pop(),
     ),
@@ -86,6 +89,7 @@ final class _OperationFailedBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final screenW = MediaQuery.sizeOf(context).width;
     final cardW = (screenW * 0.62).clamp(320.0, _maxWidth);
 
@@ -180,7 +184,7 @@ final class _OperationFailedBody extends StatelessWidget {
                     CyberClickSoundRegistry.playClick();
                     onConfirm();
                   },
-                  child: const Text('OK'),
+                  child: Text(l10n.okText),
                 ),
               ),
             ),

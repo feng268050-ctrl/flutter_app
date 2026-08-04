@@ -14,6 +14,7 @@ import 'package:lws_hmi/features/process_library/infrastructure/sqlite_process_l
 import 'package:lws_hmi/features/process_library/presentation/engineer_mode_page.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 import 'package:sqlite3/sqlite3.dart';
 
@@ -104,6 +105,9 @@ void main() {
     return _AppServicesHost(
       services: testServices(),
       child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         theme: ThemeData(splashFactory: NoSplash.splashFactory),
         home: ProcessLibraryScope(
           controller: controller,
@@ -127,7 +131,7 @@ void main() {
     expect(
         find.byKey(const ValueKey('engineer-parameter-form')), findsOneWidget);
     expect(find.text('Stainless Steel-2mm'), findsOneWidget);
-    expect(find.text('Current Process Name'), findsOneWidget);
+    expect(find.text('Current process name'), findsOneWidget);
     expect(find.byKey(const ValueKey('engineer-action-copy')), findsNothing);
     expect(find.byKey(const ValueKey('engineer-action-save')), findsNothing);
     expect(find.byKey(const ValueKey('engineer-action-reset')), findsNothing);
@@ -216,7 +220,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 80));
 
-    expect(find.text('More Favorites'), findsOneWidget);
+    expect(find.text('More favorites'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('engineer-more-favorites')));
     await tester.pump();

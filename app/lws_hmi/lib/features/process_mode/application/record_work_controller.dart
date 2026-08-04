@@ -12,6 +12,7 @@ import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_cop
 import 'package:lws_hmi/features/process_video/application/process_video_save_handler.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_snapshot_source.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Shared Record Work arm + laser-synced IP-camera recording (Quick + Engineer).
 ///
@@ -30,6 +31,7 @@ final class RecordWorkController extends ChangeNotifier {
     this.snapshotSource,
     this.saveHandler,
     this.onMessage,
+    this.resolveL10n,
   });
 
   final DeviceControlController deviceControl;
@@ -37,6 +39,7 @@ final class RecordWorkController extends ChangeNotifier {
   final ProcessVideoSnapshotSource? snapshotSource;
   final ProcessVideoSaveHandler? saveHandler;
   final ValueChanged<String>? onMessage;
+  final AppLocalizations Function()? resolveL10n;
 
   /// Defaults on (product default); cleared while camera is unreachable.
   bool _armed = true;
@@ -206,7 +209,7 @@ final class RecordWorkController extends ChangeNotifier {
       }
       final source = session.previewPr0;
       if (_cameraPhase != IpCameraUiPhase.connected || source == null) {
-        onMessage?.call(DeviceControlFeedbackCopy.cameraUnavailable);
+        onMessage?.call(_cameraUnavailableMessage());
         return;
       }
       _recordSyncInFlight = true;
@@ -225,7 +228,7 @@ final class RecordWorkController extends ChangeNotifier {
       } catch (_) {
         _startSnapshot = null;
         _activeOutputPath = null;
-        onMessage?.call(DeviceControlFeedbackCopy.cameraUnavailable);
+        onMessage?.call(_cameraUnavailableMessage());
       } finally {
         _recordSyncInFlight = false;
       }
@@ -273,6 +276,14 @@ final class RecordWorkController extends ChangeNotifier {
         outcome == ProcessVideoSaveOutcome.failed) {
       onMessage?.call('Failed to save recording');
     }
+  }
+
+  String _cameraUnavailableMessage() {
+    final loc = resolveL10n?.call();
+    if (loc != null) {
+      return DeviceControlFeedbackCopy.cameraUnavailable(loc);
+    }
+    return 'Camera unavailable';
   }
 
   @override

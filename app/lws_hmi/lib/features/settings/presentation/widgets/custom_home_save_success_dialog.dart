@@ -4,6 +4,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 enum _CustomHomeSaveStatus { success, failure }
@@ -75,11 +76,12 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final screenW = MediaQuery.sizeOf(context).width;
     final cardW = (screenW * 0.62).clamp(320.0, _maxWidth);
     final success = status == _CustomHomeSaveStatus.success;
-    final title = success ? 'Save Succeeded' : 'Save Failed';
-    final message = success ? 'Done' : 'Please try again';
+    final title = success ? l10n.saveSucceeded : l10n.saveFailed;
+    final message = success ? l10n.doneText : l10n.pleaseTryAgain;
     final icon = success
         ? ProcessModeAssets.dialogSuccess
         : ProcessModeAssets.dialogError;
@@ -168,7 +170,7 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: _OrangePillButton(
-                  label: 'OK',
+                  label: l10n.okText,
                   onPressed: onConfirm,
                 ),
               ),

@@ -245,34 +245,35 @@ final class _WorkModeEquipmentStripState
   @override
   Widget build(BuildContext context) {
     final status = widget.status ?? _status;
-    const specs = <({String key, String label, String on, String off})>[
+    final l10n = AppLocalizations.of(context)!;
+    final specs = <({String key, String label, String on, String off})>[
       (
         key: 'work-mode-gun-switch',
-        label: 'Gun Switch',
+        label: l10n.gunSwitchLabel,
         on: WorkModeAssets.gunSwitchOn,
         off: WorkModeAssets.gunSwitchOff,
       ),
       (
         key: 'work-mode-ground-clamp',
-        label: 'Ground Clamp',
+        label: l10n.groundClampLabel,
         on: WorkModeAssets.groundClampOn,
         off: WorkModeAssets.groundClampOff,
       ),
       (
         key: 'work-mode-key-switch',
-        label: 'Key Switch',
+        label: l10n.keySwitchLabel,
         on: WorkModeAssets.keySwitchOn,
         off: WorkModeAssets.keySwitchOff,
       ),
       (
         key: 'work-mode-gas-flow',
-        label: 'Gas Flow',
+        label: l10n.gasFlowLabel,
         on: WorkModeAssets.gasFlowOn,
         off: WorkModeAssets.gasFlowOff,
       ),
       (
         key: 'work-mode-e-stop',
-        label: 'E-Stop',
+        label: l10n.eStopLabel,
         on: WorkModeAssets.eStopActive,
         off: WorkModeAssets.eStopIdle,
       ),

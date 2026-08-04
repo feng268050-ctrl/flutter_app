@@ -496,19 +496,20 @@ final class _ParameterList extends StatelessWidget {
   List<({String label, String value, String? unit})> _buildRows(
     BuildContext context,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final snap = record.snapshot;
     final unitStore = CommonSettingsScope.maybeOf(context);
     final unitWire = unitStore?.unit;
     final isMetric = LengthUnitConvert.isMetric(unitWire);
     final rows = <({String label, String value, String? unit})>[
       (
-        label: 'Mode',
-        value: ProcessVideoFormat.workMode(record.processType),
+        label: l10n.processVideoWorkMode,
+        value: ProcessVideoFormat.workMode(record.processType, l10n),
         unit: null,
       ),
       (
-        label: 'Material',
-        value: ProcessVideoFormat.material(record),
+        label: l10n.processVideoMaterial,
+        value: ProcessVideoFormat.material(record, l10n),
         unit: null,
       ),
     ];
@@ -516,13 +517,13 @@ final class _ParameterList extends StatelessWidget {
       final raw = snap!.thickness!;
       final display = isMetric ? raw : raw / LengthUnitConvert.mmPerInch;
       rows.add((
-        label: 'Thickness',
+        label: l10n.thicknessLabel,
         value: ProcessVideoFormat.parameterValue(display),
         unit: LengthUnitConvert.suffix(unitWire),
       ));
     }
     if (snap?.gear != null) {
-      rows.add((label: 'Gear', value: '${snap!.gear}', unit: null));
+      rows.add((label: l10n.gearLabel, value: '${snap!.gear}', unit: null));
     }
     final params = snap?.parameters.values ?? const <String, double>{};
     for (final entry in params.entries) {
@@ -537,7 +538,7 @@ final class _ParameterList extends StatelessWidget {
         }
       }
       rows.add((
-        label: ProcessVideoFormat.parameterLabelPlain(entry.key),
+        label: ProcessVideoFormat.parameterLabelPlain(entry.key, l10n),
         value: ProcessVideoFormat.parameterValue(displayValue),
         unit: ProcessVideoFormat.parameterUnit(
           entry.key,

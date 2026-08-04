@@ -294,7 +294,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Work Information'), findsWidgets);
-    expect(find.text('Weld Time Ratio'), findsOneWidget);
+    expect(find.text('Weld time ratio'), findsOneWidget);
     await _openMonitorAlarmTab(tester);
 
     expect(find.text('Motor Temperature'), findsOneWidget);

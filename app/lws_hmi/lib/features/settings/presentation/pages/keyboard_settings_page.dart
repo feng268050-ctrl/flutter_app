@@ -69,13 +69,15 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
   }
 
   Future<void> _refreshPresence() async {
+    final l10n = AppLocalizations.of(context);
+    final notDetected = l10n?.keyboardNotDetected ?? 'Not detected';
     try {
       final line = await const UsbHidKeyboardProbe().statusLine();
       if (!mounted) return;
-      setState(() => _presence = line ?? 'Not detected');
+      setState(() => _presence = line ?? notDetected);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _presence = 'Not detected');
+      setState(() => _presence = notDetected);
     }
   }
 
@@ -89,19 +91,17 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Apply keyboard layout?',
-              style: TextStyle(
+            Text(
+              l10n.keyboardApplyConfirmTitle,
+              style: const TextStyle(
                 fontSize: AppTypography.controlSize,
                 color: CyberColors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Saves the selected layout and restarts HMI so soft CyberIME and '
-              'physical keyboard both take effect. This page will reopen after '
-              'relaunch.',
-              style: TextStyle(color: CyberColors.textSecondary),
+            Text(
+              l10n.keyboardApplyConfirmBody,
+              style: const TextStyle(color: CyberColors.textSecondary),
             ),
             const SizedBox(height: 20),
             CyberButton(
@@ -128,8 +128,9 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
       await _keyboard.restartToApply();
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Apply failed: $e')),
+          SnackBar(content: Text(l10n.processApplyFailedGeneric('$e'))),
         );
         setState(() => _busy = false);
       }
@@ -181,25 +182,23 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
                     variant: CyberButtonVariant.primary,
                     onPressed:
                         (_busy || !dirty) ? null : () => unawaited(_apply()),
-                    child: const Text('Apply'),
+                    child: Text(l10n.wifiApply),
                   ),
                 ),
               ),
             ],
           ),
           _KeyboardLayoutPreviewSection(profile: _selected.imeProfile),
-          const SettingsHelpFooter(
-            'Attach a physical keyboard that matches the selected '
-            'specification. A mismatch may make some keys produce unexpected '
-            'characters.',
+          SettingsHelpFooter(
+            l10n.keyboardLayoutHelp,
             bottomInset: 0,
           ),
-          const SettingsSectionHeader('Physical Keyboard'),
+          SettingsSectionHeader(l10n.keyboardPhysicalSection),
           SettingsGroup(
             borderGradientCenter: CyberBorderGradientCenter.bottomLeftTopRight,
             children: [
               SettingsValueRow(
-                title: 'Status',
+                title: l10n.cameraStatus,
                 value: _presence,
               ),
             ],
@@ -217,18 +216,19 @@ class _KeyboardLayoutPreviewSection extends StatelessWidget {
 
   final CyberImeRegionalProfile profile;
 
-  String get _footnote {
+  String _footnote(AppLocalizations l10n) {
     return switch (profile) {
       CyberImeRegionalProfile.qwertz ||
       CyberImeRegionalProfile.azerty =>
-        '长按可输入重音字符',
+        l10n.keyboardLongPressAccentHint,
       CyberImeRegionalProfile.qwerty => '',
     };
   }
 
   @override
   Widget build(BuildContext context) {
-    final footnote = _footnote;
+    final l10n = AppLocalizations.of(context)!;
+    final footnote = _footnote(l10n);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         SettingsDimens.inset,

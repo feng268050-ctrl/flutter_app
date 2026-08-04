@@ -3,6 +3,7 @@ import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_offset_wheel.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/length_unit_convert.dart';
@@ -389,7 +390,7 @@ final class QuickModeGearPick extends StatelessWidget {
     return QuickModeValuePick(
       key: const ValueKey('quick-mode-gear-pick'),
       processType: processType,
-      title: 'Gear',
+      title: AppLocalizations.of(context)!.gearLabel,
       values: [for (final gear in gears) gear.toDouble()],
       selectedIndex: selectedIndex,
       labelOf: (value) => value.round().toString(),

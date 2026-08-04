@@ -1,16 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/l10n/app_localizations_en.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_library/presentation/engineer_mode_page.dart';
 import 'package:lws_hmi/features/process_library/presentation/quick_mode_page.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
-import 'package:lws_hmi/features/process_mode/presentation/engineer_process_tab_bar.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_process_wheel.dart';
 
 import 'process_library_test_harness.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  Widget wrapApp(Widget home) {
+    return MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('en'),
+      home: home,
+    );
+  }
 
   Future<void> setDesignSurface(WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 800));
@@ -21,12 +31,18 @@ void main() {
 
   test('ProcessModeLabels match lws-ui English names', () {
     expect(
-      ProcessModeLabels.wheelLabel(ProcessType.continuousWelding),
-      'Continuous Welding',
+      ProcessModeLabels.wheelLabel(
+        ProcessType.continuousWelding,
+        AppLocalizationsEn(),
+      ),
+      'Continuous welding',
     );
     expect(
-      ProcessModeLabels.engineerTabLabel(ProcessType.weldCleaning),
-      'Weld Seam',
+      ProcessModeLabels.engineerTabLabel(
+        ProcessType.weldCleaning,
+        AppLocalizationsEn(),
+      ),
+      'Weld seam',
     );
     expect(EngineerProcessTabs.types, hasLength(5));
     expect(QuickProcessWheelItems.types, hasLength(6));
@@ -37,16 +53,14 @@ void main() {
     await setDesignSurface(tester);
     final controller = await createEmptyProcessLibraryController(tester);
     await tester.pumpWidget(
-      MaterialApp(
-        home: wrapWithProcessLibrary(controller, const QuickModePage()),
-      ),
+      wrapApp(wrapWithProcessLibrary(controller, const QuickModePage())),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.byKey(const ValueKey('quick-mode-process-wheel')),
         findsOneWidget);
-    expect(find.text('Continuous Welding'), findsWidgets);
+    expect(find.text('Continuous welding'), findsWidgets);
     expect(find.text('Gun Switch'), findsOneWidget);
   });
 
@@ -55,8 +69,8 @@ void main() {
     await setDesignSurface(tester);
     var selected = ProcessType.continuousWelding;
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
+      wrapApp(
+        Scaffold(
           body: QuickModeProcessWheel(
             processType: selected,
             onChanged: (type) => selected = type,
@@ -80,9 +94,7 @@ void main() {
     await setDesignSurface(tester);
     final controller = await createEmptyProcessLibraryController(tester);
     await tester.pumpWidget(
-      MaterialApp(
-        home: wrapWithProcessLibrary(controller, const EngineerModePage()),
-      ),
+      wrapApp(wrapWithProcessLibrary(controller, const EngineerModePage())),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
@@ -97,8 +109,8 @@ void main() {
     );
     expect(find.text('Continuous'), findsOneWidget);
     expect(find.text('Spot'), findsOneWidget);
-    expect(find.text('Weld Seam'), findsOneWidget);
-    expect(find.text('Wide-Area'), findsOneWidget);
+    expect(find.text('Weld seam'), findsOneWidget);
+    expect(find.text('Wide-area'), findsOneWidget);
     expect(find.text('Cutting'), findsOneWidget);
     expect(find.textContaining('CNC'), findsNothing);
 
@@ -115,8 +127,8 @@ void main() {
     await setDesignSurface(tester);
     final controller = await createEmptyProcessLibraryController(tester);
     await tester.pumpWidget(
-      MaterialApp(
-        home: wrapWithProcessLibrary(
+      wrapApp(
+        wrapWithProcessLibrary(
           controller,
           const EngineerModePage(
             initialProcessType: ProcessType.handCutting,

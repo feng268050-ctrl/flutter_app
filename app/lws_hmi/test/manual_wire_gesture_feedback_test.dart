@@ -8,9 +8,12 @@ import 'package:lws_hmi/features/process_mode/application/device_control_control
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
+import 'package:lws_hmi/l10n/app_localizations_en.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 void main() {
+  final l10n = AppLocalizationsEn();
+
   AppServices servicesWith(ModbusRtuClient modbus) {
     return AppServices(
       boardProfile: BoardProfile.fromJsonString('''
@@ -26,26 +29,41 @@ void main() {
     );
   }
 
+  ManualWireGesture gestureFor({
+    required DeviceControlController controller,
+    required bool retract,
+    required void Function(String) onMessage,
+    bool Function()? isActive,
+    void Function()? onVisualChanged,
+  }) {
+    return ManualWireGesture(
+      controller: controller,
+      retract: retract,
+      isEnabled: () => true,
+      isActive: isActive ?? () => false,
+      onMessage: onMessage,
+      onVisualChanged: onVisualChanged ?? () {},
+      l10n: () => l10n,
+    );
+  }
+
   test('short press feed toasts Feed+ started', () {
     fakeAsync((async) {
       final modbus = _RecordingModbus();
       final controller = DeviceControlController(servicesWith(modbus))
         ..keySwitchOn = true;
       final messages = <String>[];
-      final gesture = ManualWireGesture(
+      final gesture = gestureFor(
         controller: controller,
         retract: false,
-        isEnabled: () => true,
-        isActive: () => false,
         onMessage: messages.add,
-        onVisualChanged: () {},
       );
 
       gesture.pointerDown();
       gesture.pointerUp();
       async.flushMicrotasks();
 
-      expect(messages, [DeviceControlFeedbackCopy.feedPulseSuccess]);
+      expect(messages, [DeviceControlFeedbackCopy.feedPulseSuccess(l10n)]);
       gesture.dispose();
     });
   });
@@ -56,20 +74,17 @@ void main() {
       final controller = DeviceControlController(servicesWith(modbus))
         ..keySwitchOn = true;
       final messages = <String>[];
-      final gesture = ManualWireGesture(
+      final gesture = gestureFor(
         controller: controller,
         retract: true,
-        isEnabled: () => true,
-        isActive: () => false,
         onMessage: messages.add,
-        onVisualChanged: () {},
       );
 
       gesture.pointerDown();
       gesture.pointerUp();
       async.flushMicrotasks();
 
-      expect(messages, [DeviceControlFeedbackCopy.retractPulseSuccess]);
+      expect(messages, [DeviceControlFeedbackCopy.retractPulseSuccess(l10n)]);
       gesture.dispose();
     });
   });
@@ -82,10 +97,9 @@ void main() {
       final messages = <String>[];
       var visuals = 0;
       late final ManualWireGesture gesture;
-      gesture = ManualWireGesture(
+      gesture = gestureFor(
         controller: controller,
         retract: false,
-        isEnabled: () => true,
         isActive: () => controller.wireWork && !controller.wireRetracting,
         onMessage: messages.add,
         onVisualChanged: () => visuals++,
@@ -94,7 +108,7 @@ void main() {
       gesture.pointerDown();
       async.elapse(DeviceControlTiming.wireFeedLatchDelay);
       async.flushMicrotasks();
-      expect(messages, [DeviceControlFeedbackCopy.feedOngoing]);
+      expect(messages, [DeviceControlFeedbackCopy.feedOngoing(l10n)]);
       expect(gesture.latched, isTrue);
       expect(gesture.holdingRun, isFalse);
       expect(visuals, greaterThan(0));
@@ -102,7 +116,7 @@ void main() {
       gesture.pointerUp();
       async.flushMicrotasks();
       // Latched: release does not stop — solid Continuous Feed stays on.
-      expect(messages, [DeviceControlFeedbackCopy.feedOngoing]);
+      expect(messages, [DeviceControlFeedbackCopy.feedOngoing(l10n)]);
       expect(gesture.latched, isTrue);
       expect(controller.wireWork, isTrue);
 
@@ -112,8 +126,8 @@ void main() {
       expect(
         messages,
         [
-          DeviceControlFeedbackCopy.feedOngoing,
-          DeviceControlFeedbackCopy.stopFeed,
+          DeviceControlFeedbackCopy.feedOngoing(l10n),
+          DeviceControlFeedbackCopy.stopFeed(l10n),
         ],
       );
       expect(gesture.latched, isFalse);
@@ -128,13 +142,11 @@ void main() {
       final controller = DeviceControlController(servicesWith(modbus))
         ..keySwitchOn = true;
       final messages = <String>[];
-      final gesture = ManualWireGesture(
+      final gesture = gestureFor(
         controller: controller,
         retract: false,
-        isEnabled: () => true,
         isActive: () => controller.wireWork && !controller.wireRetracting,
         onMessage: messages.add,
-        onVisualChanged: () {},
       );
 
       gesture.pointerDown();
@@ -154,7 +166,7 @@ void main() {
       async.flushMicrotasks();
       expect(gesture.latched, isTrue);
       expect(controller.wireWork, isTrue);
-      expect(messages, [DeviceControlFeedbackCopy.feedOngoing]);
+      expect(messages, [DeviceControlFeedbackCopy.feedOngoing(l10n)]);
       gesture.dispose();
     });
   });
@@ -164,13 +176,11 @@ void main() {
       final modbus = _RecordingModbus();
       final controller = DeviceControlController(servicesWith(modbus))
         ..keySwitchOn = true;
-      final gesture = ManualWireGesture(
+      final gesture = gestureFor(
         controller: controller,
         retract: false,
-        isEnabled: () => true,
         isActive: () => controller.wireWork && !controller.wireRetracting,
         onMessage: (_) {},
-        onVisualChanged: () {},
       );
 
       gesture.pointerDown();
@@ -200,6 +210,9 @@ final class _RecordingModbus extends ModbusRtuClient {
     writes.add((id, value));
     return true;
   }
+
+  @override
+  Future<Object?> readAttribute(String id) async => null;
 
   @override
   Future<Map<String, Object?>> readGroup(String group) async => {};

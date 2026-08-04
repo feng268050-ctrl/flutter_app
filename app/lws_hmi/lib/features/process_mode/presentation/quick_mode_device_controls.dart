@@ -10,6 +10,7 @@ import 'package:lws_hmi/features/process_mode/presentation/laser_enable_region_f
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_outline_button.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/process_mode/presentation/quick_mode_laser_button.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Quick-mode bottom composition: left/right side ops + center trapezoid.
@@ -42,6 +43,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
+        final l10n = AppLocalizations.of(context)!;
         // lws-ui `isOpenLaser()` — session bit only, not emission feedback.
         final laserOpen = controller.laserSessionArmed;
         // lws-ui BlurUtils: side groups get σ=15 snapshot + lock (Quick only).
@@ -85,25 +87,25 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               ),
                             ProcessModeOutlineButton(
                               key: const ValueKey('device-control-manual-gas'),
-                              label: 'Manual Gas',
+                              label: l10n.manualGas,
                               leading: _materialIcon(Icons.air),
                               selected: controller.manualGas,
                               enabled: true,
                               onPressed: () =>
-                                  unawaited(_toggleManualGas(context)),
+                                  unawaited(_toggleManualGas(context, l10n)),
                             ),
                             const SizedBox(height: _sideButtonGap),
                             ProcessModeOutlineButton(
                               key: const ValueKey(
                                   'device-control-auto-wire-feed'),
-                              label: 'Auto Wire Feed',
+                              label: l10n.autoWireFeed,
                               leading: _materialIcon(Icons.sync),
                               selected:
                                   controller.autoWireFeed && _wireCapable,
                               enabled: _wireCapable,
                               iconLeftNudge: -15,
                               onPressed: () =>
-                                  unawaited(_toggleAutoWire(context)),
+                                  unawaited(_toggleAutoWire(context, l10n)),
                             ),
                           ],
                         ),
@@ -137,12 +139,14 @@ final class QuickModeDeviceControls extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            if (_wireCapable) const _FeedHoldHintSlot(),
+                            if (_wireCapable) _FeedHoldHintSlot(l10n: l10n),
                             ProcessModeOutlineWireButton(
                               key: const ValueKey('device-control-feed'),
-                              label: DeviceControlFeedbackCopy.feedLabel,
+                              label: DeviceControlFeedbackCopy.feedLabel(l10n),
                               latchedLabel:
-                                  DeviceControlFeedbackCopy.continuousFeedLabel,
+                                  DeviceControlFeedbackCopy.continuousFeedLabel(
+                                l10n,
+                              ),
                               leading: _materialIcon(Icons.input),
                               enabled: _wireCapable,
                               laserBlocked: laserOpen,
@@ -156,7 +160,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                             const SizedBox(height: _sideButtonGap),
                             ProcessModeOutlineWireButton(
                               key: const ValueKey('device-control-retract'),
-                              label: 'Retract',
+                              label: l10n.retract,
                               leading: _materialIcon(Icons.output),
                               enabled: _wireCapable,
                               laserBlocked: laserOpen,
@@ -185,15 +189,22 @@ final class QuickModeDeviceControls extends StatelessWidget {
                   onDisable: onDisable,
                   onBlocked: (message) {
                     if (message ==
-                            LaserEnableBlockReason.alarmBlocked.message ||
+                            LaserEnableBlockReason.alarmBlocked
+                                .localizedMessage(l10n) ||
                         message ==
-                            LaserEnableBlockReason.keySwitchOff.message ||
+                            LaserEnableBlockReason.keySwitchOff
+                                .localizedMessage(l10n) ||
                         message ==
-                            LaserEnableBlockReason.emergencyStop.message ||
+                            LaserEnableBlockReason.emergencyStop
+                                .localizedMessage(l10n) ||
                         message ==
-                            DeviceControlFeedbackCopy.keySwitchOffError ||
+                            DeviceControlFeedbackCopy.keySwitchOffError(
+                              l10n,
+                            ) ||
                         message ==
-                            DeviceControlFeedbackCopy.emergencyStopError) {
+                            DeviceControlFeedbackCopy.emergencyStopError(
+                              l10n,
+                            )) {
                       return;
                     }
                     _toast(context, message);
@@ -218,13 +229,16 @@ final class QuickModeDeviceControls extends StatelessWidget {
     );
   }
 
-  Future<void> _toggleManualGas(BuildContext context) async {
+  Future<void> _toggleManualGas(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
     if (controller.busy) {
-      _toast(context, LaserEnableBlockReason.busy.message);
+      _toast(context, LaserEnableBlockReason.busy.localizedMessage(l10n));
       return;
     }
     if (_laserOpen) {
-      _toast(context, DeviceControlFeedbackCopy.endOfWorkFirst);
+      _toast(context, DeviceControlFeedbackCopy.endOfWorkFirst(l10n));
       return;
     }
     final enabling = !controller.manualGas;
@@ -235,28 +249,31 @@ final class QuickModeDeviceControls extends StatelessWidget {
     if (error != null) {
       _toast(
         context,
-        controller.lastError ?? error.message,
+        controller.lastError ?? error.localizedMessage(l10n),
       );
       return;
     }
     _toast(
       context,
       enabling
-          ? DeviceControlFeedbackCopy.manualGasOn
-          : DeviceControlFeedbackCopy.manualGasOff,
+          ? DeviceControlFeedbackCopy.manualGasOn(l10n)
+          : DeviceControlFeedbackCopy.manualGasOff(l10n),
     );
   }
 
-  Future<void> _toggleAutoWire(BuildContext context) async {
+  Future<void> _toggleAutoWire(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
     if (!_wireCapable) {
       return;
     }
     if (controller.busy) {
-      _toast(context, LaserEnableBlockReason.busy.message);
+      _toast(context, LaserEnableBlockReason.busy.localizedMessage(l10n));
       return;
     }
     if (_laserOpen) {
-      _toast(context, DeviceControlFeedbackCopy.endOfWorkFirst);
+      _toast(context, DeviceControlFeedbackCopy.endOfWorkFirst(l10n));
       return;
     }
     final enabling = !controller.autoWireFeed;
@@ -267,15 +284,15 @@ final class QuickModeDeviceControls extends StatelessWidget {
     if (error != null) {
       _toast(
         context,
-        controller.lastError ?? error.message,
+        controller.lastError ?? error.localizedMessage(l10n),
       );
       return;
     }
     _toast(
       context,
       enabling
-          ? DeviceControlFeedbackCopy.autoWireFeedOn
-          : DeviceControlFeedbackCopy.autoWireFeedOff,
+          ? DeviceControlFeedbackCopy.autoWireFeedOn(l10n)
+          : DeviceControlFeedbackCopy.autoWireFeedOff(l10n),
     );
   }
 
@@ -310,7 +327,9 @@ final class _QuickZoneDivider extends StatelessWidget {
 
 /// Feed hold hint above Feed/Retract (inside laser frost with those buttons).
 final class _FeedHoldHintSlot extends StatelessWidget {
-  const _FeedHoldHintSlot();
+  const _FeedHoldHintSlot({required this.l10n});
+
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -320,7 +339,7 @@ final class _FeedHoldHintSlot extends StatelessWidget {
       child: Align(
         alignment: Alignment.topCenter,
         child: Text(
-          DeviceControlFeedbackCopy.feedHoldHint,
+          DeviceControlFeedbackCopy.feedHoldHint(l10n),
           key: const ValueKey('device-control-feed-hold-hint'),
           textAlign: TextAlign.center,
           style: const TextStyle(

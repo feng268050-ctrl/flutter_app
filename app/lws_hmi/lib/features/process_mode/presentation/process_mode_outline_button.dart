@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_mode/application/device_control_controller.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_feedback_copy.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/process_mode/domain/device_control_ids.dart';
 import 'package:lws_hmi/features/process_mode/presentation/feed_hold_progress.dart';
 import 'package:lws_hmi/features/process_mode/presentation/manual_wire_gesture.dart';
@@ -123,6 +124,7 @@ final class _ProcessModeOutlineWireButtonState
     isActive: () => widget.active,
     onMessage: widget.onMessage,
     onVisualChanged: _onGestureVisual,
+    l10n: () => AppLocalizations.of(context)!,
   );
 
   FeedHoldProgressController? _feedProgress;
@@ -179,11 +181,15 @@ final class _ProcessModeOutlineWireButtonState
       return;
     }
     if (widget.controller.busy) {
-      widget.onMessage(LaserEnableBlockReason.busy.message);
+      widget.onMessage(
+        LaserEnableBlockReason.busy.localizedMessage(
+          AppLocalizations.of(context)!,
+        ),
+      );
       return;
     }
     if (widget.laserBlocked) {
-      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst);
+      widget.onMessage(DeviceControlFeedbackCopy.endOfWorkFirst(AppLocalizations.of(context)!));
       return;
     }
     CyberClickSoundRegistry.playClick();
@@ -228,9 +234,10 @@ final class _ProcessModeOutlineWireButtonState
             : (latched ||
                 (_gesture.pressed && !filling) ||
                 (widget.active && !filling && !_gesture.pressed)));
+    final l10n = AppLocalizations.of(context)!;
     final label = latched
         ? (widget.latchedLabel ??
-            DeviceControlFeedbackCopy.continuousFeedLabel)
+            DeviceControlFeedbackCopy.continuousFeedLabel(l10n))
         : widget.label;
 
     return Semantics(

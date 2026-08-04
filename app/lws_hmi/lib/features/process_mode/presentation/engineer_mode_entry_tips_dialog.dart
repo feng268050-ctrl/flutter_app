@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Process-lifetime suppress for the engineer entry tip (not persisted).
@@ -37,7 +38,11 @@ final class EngineerModeEntryTipsResult {
 Future<EngineerModeEntryTipsResult?> showEngineerModeEntryTipsDialog(
   BuildContext context,
 ) {
-  final width = _EngineerModeEntryTipsBodyState.resolveCardWidth(context);
+  final l10n = AppLocalizations.of(context)!;
+  final width = _EngineerModeEntryTipsBodyState.resolveCardWidth(
+    context,
+    l10n.engineerModeEntryTitle,
+  );
   return TipDialogHost.showLightPrompt<EngineerModeEntryTipsResult>(
     context: context,
     barrierDismissible: true,
@@ -89,26 +94,19 @@ final class _EngineerModeEntryTipsBodyState
   /// `WarnDialogUtil.WARN_DIALOG_MAX_WIDTH_FRACTION`.
   static const _maxWidthFraction = 0.95;
 
-  static const _title = 'Engineer Mode Notice';
-
-  static const _body =
-      'Engineer Mode unlocks advanced parameter customization '
-      'for experienced users. We recommend learning how the '
-      'machine works before making fine adjustments.';
-
   static const _bodyDark = Color(0xFF1A1A1A);
   static const _labelMuted = Color(0x80222222);
   static const _titleOrange = Color(0xFFF37535);
   static const _checkboxGreen = Color(0xFF34C759);
 
   /// Mirrors lws-ui `FrostPromptDialog.resolveTitleBasedWidthPx`.
-  static double resolveCardWidth(BuildContext context) {
+  static double resolveCardWidth(BuildContext context, String title) {
     final screenW = MediaQuery.sizeOf(context).width;
     final maxW = math.max(_minCardWidth, screenW * _maxWidthFraction);
     final painter = TextPainter(
-      text: const TextSpan(
-        text: _title,
-        style: TextStyle(
+      text: TextSpan(
+        text: title,
+        style: const TextStyle(
           fontSize: _titleSize,
           fontWeight: FontWeight.w700,
           height: 1.0,
@@ -123,6 +121,7 @@ final class _EngineerModeEntryTipsBodyState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       // Body/action XMLs add horizontal content inset on top of shell padding.
       padding: const EdgeInsets.symmetric(horizontal: _contentInset),
@@ -143,16 +142,16 @@ final class _EngineerModeEntryTipsBodyState
           const SizedBox(height: _contentInset),
           // Card width follows the title; FittedBox is a safety net for
           // locales / text scale that still overflow the 95% screen cap.
-          const SizedBox(
+          SizedBox(
             width: double.infinity,
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                _title,
+                l10n.engineerModeEntryTitle,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 softWrap: false,
-                style: TextStyle(
+                style: const TextStyle(
                   color: _titleOrange,
                   fontSize: _titleSize,
                   fontWeight: FontWeight.w700,
@@ -169,7 +168,7 @@ final class _EngineerModeEntryTipsBodyState
           Expanded(
             child: SingleChildScrollView(
               child: Text(
-                _body,
+                l10n.engineerModeEntryBody,
                 textAlign: TextAlign.start,
                 style: const TextStyle(
                   color: _bodyDark,
@@ -206,7 +205,7 @@ final class _EngineerModeEntryTipsBodyState
                     );
                   },
                   child: Text(
-                    'Confirm & Enter',
+                    l10n.engineerModeEntryConfirm,
                     style: AppTypography.pageTitle,
                   ),
                 ),
@@ -248,9 +247,9 @@ final class _EngineerModeEntryTipsBodyState
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Don’t show again this session',
-                    style: TextStyle(
+                  Text(
+                    l10n.dontShowAgainThisSession,
+                    style: const TextStyle(
                       color: _labelMuted,
                       fontSize: AppTypography.sectionTitleSize,
                       decoration: TextDecoration.none,

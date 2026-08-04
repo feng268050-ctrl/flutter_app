@@ -7,6 +7,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Shared colors / geometry for Quick + Engineer process chrome (lws-ui).
 abstract final class ProcessModeTokens {
@@ -328,42 +329,30 @@ abstract final class ProcessModeDimens {
   static const List<int> engineerTabWeights = [290, 214, 282, 284, 210];
 }
 
-/// Display strings aligned with lws-ui [ModelConstant] English labels.
+/// Display strings aligned with lws-ui [ModelConstant] labels.
 abstract final class ProcessModeLabels {
-  /// Quick-mode wheel labels (full English names).
-  static String wheelLabel(ProcessType type) {
-    switch (type) {
-      case ProcessType.continuousWelding:
-        return 'Continuous Welding';
-      case ProcessType.spotWelding:
-        return 'Spot Welding';
-      case ProcessType.weldCleaning:
-        return 'Weld Seam Cleaning';
-      case ProcessType.wideCleaning:
-        return 'Wide-Area Cleaning';
-      case ProcessType.handCutting:
-        return 'Cutting';
-      case ProcessType.cncCutting:
-        return 'CNC Cutting';
-    }
+  /// Quick-mode wheel labels (full names).
+  static String wheelLabel(ProcessType type, AppLocalizations l10n) {
+    return switch (type) {
+      ProcessType.continuousWelding => l10n.processWheelContinuousWelding,
+      ProcessType.spotWelding => l10n.processWheelSpotWelding,
+      ProcessType.weldCleaning => l10n.processWheelWeldCleaning,
+      ProcessType.wideCleaning => l10n.processWheelWideCleaning,
+      ProcessType.handCutting => l10n.processWheelHandCutting,
+      ProcessType.cncCutting => l10n.processWheelCncCutting,
+    };
   }
 
-  /// Engineer tab short English labels (fit tab background partitions).
-  static String engineerTabLabel(ProcessType type) {
-    switch (type) {
-      case ProcessType.continuousWelding:
-        return 'Continuous';
-      case ProcessType.spotWelding:
-        return 'Spot';
-      case ProcessType.weldCleaning:
-        return 'Weld Seam';
-      case ProcessType.wideCleaning:
-        return 'Wide-Area';
-      case ProcessType.handCutting:
-        return 'Cutting';
-      case ProcessType.cncCutting:
-        return 'CNC Cutting';
-    }
+  /// Engineer tab short labels (fit tab background partitions).
+  static String engineerTabLabel(ProcessType type, AppLocalizations l10n) {
+    return switch (type) {
+      ProcessType.continuousWelding => l10n.processTabContinuous,
+      ProcessType.spotWelding => l10n.processTabSpot,
+      ProcessType.weldCleaning => l10n.processTabWeldSeam,
+      ProcessType.wideCleaning => l10n.processTabWideArea,
+      ProcessType.handCutting => l10n.processTabCutting,
+      ProcessType.cncCutting => l10n.processWheelCncCutting,
+    };
   }
 }
 

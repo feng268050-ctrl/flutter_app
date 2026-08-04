@@ -512,6 +512,7 @@ final class _VideoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final cells = <({String text, double width, int maxLines})>[
       (
         text: ProcessVideoFormat.recordingTime(record),
@@ -519,12 +520,12 @@ final class _VideoRow extends StatelessWidget {
         maxLines: 1,
       ),
       (
-        text: ProcessVideoFormat.workMode(record.processType),
+        text: ProcessVideoFormat.workMode(record.processType, l10n),
         width: 232,
         maxLines: 2,
       ),
       (
-        text: ProcessVideoFormat.material(record),
+        text: ProcessVideoFormat.material(record, l10n),
         width: 205,
         maxLines: 1,
       ),

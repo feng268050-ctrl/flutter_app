@@ -4,6 +4,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
     hide MaterialType;
 import 'package:lws_hmi/features/process_mode/domain/laser_enable_reminder_copy.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
 
@@ -67,6 +68,7 @@ final class _LaserEnableReminderBodyState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final showFocus =
         LaserEnableReminderCopy.showsFocusScale(widget.processType);
     final focusAsset =
@@ -77,10 +79,10 @@ final class _LaserEnableReminderBodyState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'Important',
+        Text(
+          l10n.laserEnableReminderTitle,
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             color: _titleDark,
             fontSize: AppTypography.navigationSize,
             fontWeight: FontWeight.w700,
@@ -97,23 +99,24 @@ final class _LaserEnableReminderBodyState
             Expanded(
               child: _ReminderCard(
                 asset: ProcessModeAssets.laserReminderProtection,
-                tip: 'Confirm you’re wearing laser protective equipment.',
+                tip: l10n.laserEnableReminderPpe,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _ReminderCard(
                 asset: LaserEnableReminderCopy.nozzleAsset(widget.processType),
-                tip: LaserEnableReminderCopy.nozzleTip(widget.processType),
+                tip: LaserEnableReminderCopy.nozzleTip(
+                  widget.processType,
+                  l10n,
+                ),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _ReminderCard(
                 asset: showFocus && focusAsset.isNotEmpty ? focusAsset : null,
-                tip: showFocus
-                    ? 'Set the welding gun focus scale to the indicated value.'
-                    : null,
+                tip: showFocus ? l10n.laserEnableReminderFocus : null,
               ),
             ),
           ],
@@ -138,10 +141,10 @@ final class _LaserEnableReminderBodyState
                     LaserEnableReminderResult(dontShowAgain: _dontShowAgain),
                   );
                 },
-                child: const Text(
-                  'Yes — I’ve completed the safety checks above',
+                child: Text(
+                  l10n.laserEnableReminderConfirm,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: AppTypography.captionSize),
+                  style: const TextStyle(fontSize: AppTypography.captionSize),
                 ),
               ),
             ),
@@ -178,9 +181,9 @@ final class _LaserEnableReminderBodyState
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Don’t show again this session',
-                  style: TextStyle(
+                Text(
+                  l10n.dontShowAgainThisSession,
+                  style: const TextStyle(
                     color: _labelMuted,
                     fontSize: AppTypography.sectionTitleSize,
                     height: 1.2,

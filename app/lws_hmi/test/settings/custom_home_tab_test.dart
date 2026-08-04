@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/features/home/application/custom_home_layout_store.dart';
 import 'package:lws_hmi/features/process_mode/presentation/process_mode_toast.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/custom_home_tab.dart';
@@ -12,6 +13,9 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: CustomHomeTab(
             store: CustomHomeLayoutStore(
@@ -48,6 +52,9 @@ void main() {
     addTearDown(ProcessModeToast.resetForTest);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: CustomHomeTab(
             store: CustomHomeLayoutStore(
@@ -108,6 +115,9 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -125,14 +135,14 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 180));
 
-    expect(find.text('Save Succeeded'), findsOneWidget);
+    expect(find.text('Save succeeded'), findsOneWidget);
     expect(find.text('Done'), findsOneWidget);
     expect(find.byKey(const ValueKey('custom-home-save-success-ok')),
         findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 1500));
     await tester.pumpAndSettle();
-    expect(find.text('Save Succeeded'), findsNothing);
+    expect(find.text('Save succeeded'), findsNothing);
   });
 
   testWidgets('Custom Home failure tip uses failure copy and dismisses',
@@ -141,6 +151,9 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -155,11 +168,11 @@ void main() {
     await tester.tap(find.text('Show failure tip'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Save Failed'), findsOneWidget);
+    expect(find.text('Save failed'), findsOneWidget);
     expect(find.text('Please try again'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('custom-home-save-success-ok')));
     await tester.pumpAndSettle();
-    expect(find.text('Save Failed'), findsNothing);
+    expect(find.text('Save failed'), findsNothing);
   });
 }

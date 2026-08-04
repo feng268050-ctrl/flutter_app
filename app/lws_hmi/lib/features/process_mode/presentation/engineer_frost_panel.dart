@@ -1,10 +1,12 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 
-/// App-local FrostCard parity for Engineer Mode content panels.
+/// App-local content panel for Engineer Mode — same chrome as Settings plates
+/// under [SettingsBlurredPageShell] ([SettingsPerspectiveChrome]).
 ///
-/// Solid 1px bright edge (no frost gradient). [edge] is retained for call-site
-/// compatibility but ignored.
+/// [edge] maps to [SettingsPanel.borderGradientCenter] for call-site
+/// compatibility (uniform rim ignores gradient direction).
 enum EngineerFrostEdge { topLeftBottomRight, bottomLeftTopRight }
 
 final class EngineerFrostPanel extends StatelessWidget {
@@ -18,22 +20,20 @@ final class EngineerFrostPanel extends StatelessWidget {
   final EngineerFrostEdge edge;
 
   /// Shared solid bright-edge stroke across Engineer / Monitor panels.
-  static const edgeWidth = 1.0;
-  static const edgeColor = CyberColors.borderUniform;
+  static const edgeWidth = SettingsPerspectiveChrome.strokeWidth;
+  static const edgeColor = SettingsPerspectiveChrome.strokeColor;
 
   @override
   Widget build(BuildContext context) {
-    const radius = BorderRadius.all(Radius.circular(16));
-    return CyberCard(
-      // Static capture — realtime BackdropFilter on two large panels made
-      // Engineer tab switches hitch on the board.
-      sampleMode: CyberBlurSampleMode.firstFrame,
-      intensity: CyberBlurIntensity.low,
-      blurTint: CyberBlurTint.dark,
-      borderRadius: radius,
-      outlineStyle: CyberPanelOutlineStyle.uniform,
-      borderWidth: edgeWidth,
-      borderColor: edgeColor,
+    final center = switch (edge) {
+      EngineerFrostEdge.topLeftBottomRight =>
+        CyberBorderGradientCenter.topLeftBottomRight,
+      EngineerFrostEdge.bottomLeftTopRight =>
+        CyberBorderGradientCenter.bottomLeftTopRight,
+    };
+    return SettingsPanel(
+      borderRadius: const BorderRadius.all(Radius.circular(16)),
+      borderGradientCenter: center,
       child: child,
     );
   }

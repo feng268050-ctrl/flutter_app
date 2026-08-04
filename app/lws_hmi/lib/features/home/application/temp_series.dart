@@ -41,9 +41,8 @@ class TempSeries {
         trend = TempTrend.up;
       } else if (celsius < _last!) {
         trend = TempTrend.down;
-      } else {
-        trend = TempTrend.none;
       }
+      // Equal: keep previous trend (sticky until rise/fall or clear).
     }
     _last = celsius;
   }

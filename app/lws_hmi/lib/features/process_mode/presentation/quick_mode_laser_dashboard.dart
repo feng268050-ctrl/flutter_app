@@ -8,6 +8,7 @@ import 'package:lws_hmi/features/process_library/domain/process_library_models.d
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
 import 'package:lws_hmi/features/process_mode/presentation/live_machine_status_dialog.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Center laser instrument cluster — Flutter port of lws-ui `LaserProgress`.
 ///
@@ -218,7 +219,8 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                     right: 0,
                     child: IgnorePointer(
                       child: Text(
-                        'Gas Pressure',
+                        AppLocalizations.of(context)?.gasPressureLabel ??
+                            'Gas Pressure',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: const Color(0xCCFFFFFF),
@@ -291,7 +293,9 @@ final class _QuickModeLaserDashboardState extends State<QuickModeLaserDashboard>
                               children: [
                                 Center(
                                   child: Text(
-                                    'More Status',
+                                    AppLocalizations.of(context)
+                                            ?.moreStatusLabel ??
+                                        'More Status',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: metrics.buttonTextSize,

@@ -34,7 +34,7 @@ void main() {
     expect(ProcessVideoFormat.duration(125000), '02:05');
     final l10n = AppLocalizationsEn();
     expect(ProcessVideoFormat.workMode(ProcessType.spotWelding, l10n), 'Spot welding');
-    expect(ProcessVideoFormat.material(record, l10n), 'Stainless steel');
+    expect(ProcessVideoFormat.material(record, l10n), 'Stainless Steel');
   });
 
   testWidgets('empty Videos tab', (tester) async {
@@ -52,6 +52,12 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('No recordings'), findsOneWidget);
+    // Column headers stay visible with zero recordings.
+    expect(find.text('Recording Time'), findsOneWidget);
+    expect(find.text('Work Mode'), findsOneWidget);
+    expect(find.text('Material'), findsOneWidget);
+    expect(find.text('Duration'), findsOneWidget);
+    expect(find.text('Operations'), findsOneWidget);
   });
 
   testWidgets('populated row and cancel delete', (tester) async {
@@ -76,9 +82,6 @@ void main() {
         ),
       );
 
-    await tester.binding.setSurfaceSize(const Size(1280, 800));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -91,7 +94,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Spot welding'), findsOneWidget);
-    expect(find.text('Carbon steel'), findsOneWidget);
+    expect(find.text('Carbon Steel'), findsOneWidget);
     expect(find.text('01:05'), findsOneWidget);
     expect(find.text('Upload'), findsOneWidget);
 

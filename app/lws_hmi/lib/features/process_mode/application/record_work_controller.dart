@@ -271,10 +271,17 @@ final class RecordWorkController extends ChangeNotifier {
       completedAt: result.completedAt,
     );
     if (outcome == ProcessVideoSaveOutcome.discardedTooShort) {
-      onMessage?.call('Recording too short — not saved');
+      final loc = resolveL10n?.call();
+      onMessage?.call(
+        loc?.processVideoRecordingTooShort ??
+            'Recording too short — not saved',
+      );
     } else if (outcome == ProcessVideoSaveOutcome.discardedMissingFile ||
         outcome == ProcessVideoSaveOutcome.failed) {
-      onMessage?.call('Failed to save recording');
+      final loc = resolveL10n?.call();
+      onMessage?.call(
+        loc?.processVideoSaveFailed ?? 'Failed to save recording',
+      );
     }
   }
 
@@ -283,7 +290,7 @@ final class RecordWorkController extends ChangeNotifier {
     if (loc != null) {
       return DeviceControlFeedbackCopy.cameraUnavailable(loc);
     }
-    return 'Camera unavailable';
+    return 'Camera Unavailable';
   }
 
   @override

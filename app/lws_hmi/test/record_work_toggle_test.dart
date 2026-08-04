@@ -103,6 +103,9 @@ void main() {
       ),
       findsOneWidget,
     );
+    // Cancel OsWallClock before Flutter's post-test timer invariant.
+    services.wallClock.dispose();
+    await tester.pump(const Duration(milliseconds: 1));
   });
 }
 

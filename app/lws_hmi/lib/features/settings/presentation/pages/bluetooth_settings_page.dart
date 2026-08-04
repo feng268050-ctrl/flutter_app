@@ -95,12 +95,12 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
               ),
               if (on && _info.name.isNotEmpty)
                 SettingsValueRow(
-                  title: 'This Device',
+                  title: l10n.bluetoothThisDevice,
                   value: _info.name,
                 ),
               if (on)
                 SettingsSwitchRow(
-                  title: 'Discoverable',
+                  title: l10n.bluetoothDiscoverable,
                   value: _info.discoverable,
                   onChanged: (v) => unawaited(
                     _run(() async {
@@ -142,7 +142,7 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    'MY DEVICES',
+                    l10n.bluetoothMyDevices,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           color: CyberColors.textSecondary,
                           letterSpacing: 0.6,
@@ -173,7 +173,11 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                               ),
                             );
                           },
-                    child: Text(_scanning ? 'Stop' : 'Scan'),
+                    child: Text(
+                      _scanning
+                          ? l10n.bluetoothStopScan
+                          : l10n.bluetoothScan,
+                    ),
                   ),
                 ],
               ),
@@ -183,19 +187,23 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                   CyberBorderGradientCenter.bottomLeftTopRight,
               children: [
                 if (paired.isEmpty)
-                  const ListTile(
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     title: Text(
-                      'No paired devices',
-                      style: TextStyle(color: CyberColors.textPrimary),
+                      l10n.bluetoothNoPairedDevices,
+                      style: const TextStyle(color: CyberColors.textPrimary),
                     ),
                   )
                 else
                   for (final d in paired)
                     SettingsNavRow(
                       title: d.name.isNotEmpty ? d.name : d.address,
-                      value: d.connected ? l10n.connectedText : 'Paired',
+                      value: d.connected
+                          ? l10n.connectedText
+                          : l10n.bluetoothPaired,
                       showChevron: false,
                       onTap: () => unawaited(
                         _run(
@@ -220,7 +228,7 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'OTHER DEVICES',
+                  l10n.bluetoothOtherDevices,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: CyberColors.textSecondary,
                         letterSpacing: 0.6,
@@ -238,7 +246,9 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                       vertical: 12,
                     ),
                     title: Text(
-                      _scanning ? 'Scanning…' : 'No devices found',
+                      _scanning
+                          ? l10n.bluetoothScanning
+                          : l10n.bluetoothNoDevicesFound,
                       style: const TextStyle(color: CyberColors.textPrimary),
                     ),
                   )

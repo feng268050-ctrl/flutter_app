@@ -493,11 +493,13 @@ class _TimezonePickerPageState extends State<_TimezonePickerPage> {
                       borderGradientCenter:
                           CyberBorderGradientCenter.topLeftBottomRight,
                       child: _filtered.isEmpty
-                          ? const Padding(
-                              padding: EdgeInsets.all(20),
+                          ? Padding(
+                              padding: const EdgeInsets.all(20),
                               child: Text(
-                                'No time zones found',
-                                style: TextStyle(
+                                AppLocalizations.of(context)
+                                        ?.noTimeZonesFound ??
+                                    'No Time Zones Found',
+                                style: const TextStyle(
                                   color: CyberColors.textPrimary,
                                   fontSize: AppTypography.bodySize,
                                 ),

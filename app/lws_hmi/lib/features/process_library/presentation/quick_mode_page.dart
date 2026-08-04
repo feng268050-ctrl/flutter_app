@@ -416,29 +416,42 @@ final class _QuickModePageState extends State<QuickModePage> {
     final message = _applyFailureMessage(result.failure);
     setState(() => _statusMessage = message);
     // Prefer toast/snackbar — do not paint a persistent red corner banner.
-    if (message != 'Baseline read failed' &&
-        message != 'Laser work in progress' &&
-        message != 'Check equipment status' &&
-        message != 'Stop wire feed first') {
+    final silent = switch (result.failure) {
+      ProcessApplyFailure.baselineReadFailed ||
+      ProcessApplyFailure.unsafeMachineState ||
+      ProcessApplyFailure.statusUnavailable ||
+      ProcessApplyFailure.wireFeedingActive =>
+        true,
+      _ => false,
+    };
+    if (!silent) {
       _showControlMessage(message);
     }
     return false;
   }
 
   String _applyFailureMessage(ProcessApplyFailure? failure) {
+    final l10n = AppLocalizations.of(context)!;
     return switch (failure) {
-      ProcessApplyFailure.busy => 'Apply busy',
-      ProcessApplyFailure.statusUnavailable => 'Check equipment status',
-      ProcessApplyFailure.unsafeMachineState => 'Laser work in progress',
-      ProcessApplyFailure.wireFeedingActive => 'Stop wire feed first',
-      ProcessApplyFailure.baselineReadFailed => 'Baseline read failed',
-      ProcessApplyFailure.processWriteFailed => 'Write failed',
-      ProcessApplyFailure.processReadbackFailed => 'Readback mismatch',
-      ProcessApplyFailure.processTypeWriteFailed => 'Process type write failed',
+      ProcessApplyFailure.busy => l10n.processApplyFailureBusy,
+      ProcessApplyFailure.statusUnavailable =>
+        l10n.processApplyFailureStatusUnavailable,
+      ProcessApplyFailure.unsafeMachineState =>
+        l10n.processApplyFailureUnsafeMachineState,
+      ProcessApplyFailure.wireFeedingActive =>
+        l10n.processApplyFailureWireFeedingActive,
+      ProcessApplyFailure.baselineReadFailed =>
+        l10n.processApplyFailureBaselineReadFailed,
+      ProcessApplyFailure.processWriteFailed =>
+        l10n.processApplyFailureProcessWriteFailed,
+      ProcessApplyFailure.processReadbackFailed =>
+        l10n.processApplyFailureProcessReadbackFailed,
+      ProcessApplyFailure.processTypeWriteFailed =>
+        l10n.processApplyFailureProcessTypeWriteFailed,
       ProcessApplyFailure.processTypeReadbackFailed =>
-        'Process type readback failed',
-      ProcessApplyFailure.partialApply => 'Partial apply',
-      null => 'Apply failed',
+        l10n.processApplyFailureProcessTypeReadbackMismatch,
+      ProcessApplyFailure.partialApply => l10n.processApplyFailurePartialApply,
+      null => l10n.processApplyFailureGeneric,
     };
   }
 
@@ -456,7 +469,8 @@ final class _QuickModePageState extends State<QuickModePage> {
   String? _laserPreflight() {
     final control = _deviceControl;
     if (control == null) {
-      return 'Device control unavailable';
+      return AppLocalizations.of(context)?.deviceControlUnavailable ??
+          'Device control unavailable';
     }
     final l10n = AppLocalizations.of(context)!;
     final reason = control.preflightLaserEnable(
@@ -523,7 +537,7 @@ final class _QuickModePageState extends State<QuickModePage> {
     if (control == null || preset == null) {
       _showControlMessage(
         AppLocalizations.of(context)?.selectValidProcessPresetFirst ??
-            'Select a valid process preset first',
+            'Select A Valid Process Preset First',
       );
       return;
     }
@@ -589,7 +603,11 @@ final class _QuickModePageState extends State<QuickModePage> {
       return;
     }
     if (!applied) {
-      _showControlMessage(_statusMessage ?? 'Process apply failed');
+      _showControlMessage(
+        _statusMessage ??
+            (AppLocalizations.of(context)?.processApplyFailureGeneric ??
+                'Apply Failed'),
+      );
       return;
     }
     // lws-ui QuickProcessParametersDataViewModel.sendAdvanceSettingForLaserEnable:
@@ -843,11 +861,13 @@ final class _QuickModePageState extends State<QuickModePage> {
                     final unitStore = CommonSettingsScope.maybeOf(context);
                     Widget pick(bool useMm) {
                       final unit = useMm ? 'mm' : 'in';
+                      final l10n = AppLocalizations.of(context)!;
+                      final label = selection.useSwingWidth
+                          ? l10n.swingWidthLabel
+                          : l10n.thicknessLabel;
                       return QuickModeDimensionPick(
                         processType: _processType,
-                        title: selection.useSwingWidth
-                            ? 'Swing Width ($unit)'
-                            : 'Thickness ($unit)',
+                        title: l10n.dimensionWithUnit(label, unit),
                         dimensions: selection.dimensions,
                         selectedIndex: dimensionIndex < 0 ? 0 : dimensionIndex,
                         onChanged: _onDimensionIndex,

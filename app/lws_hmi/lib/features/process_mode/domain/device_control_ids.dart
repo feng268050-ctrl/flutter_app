@@ -72,21 +72,21 @@ extension LaserEnableBlockReasonMessage on LaserEnableBlockReason {
     switch (this) {
       case LaserEnableBlockReason.statusUnavailable:
         return l10n?.laserEnableBlockStatusUnavailable ??
-            'Check equipment status';
+            'Check Equipment Status';
       case LaserEnableBlockReason.emergencyStop:
-        return l10n?.laserEnableBlockEmergencyStop ?? 'Release E-stop first';
+        return l10n?.laserEnableBlockEmergencyStop ?? 'Release E-stop First';
       case LaserEnableBlockReason.keySwitchOff:
-        return l10n?.laserEnableBlockKeySwitchOff ?? 'Turn key switch on';
+        return l10n?.laserEnableBlockKeySwitchOff ?? 'Turn Key Switch On';
       case LaserEnableBlockReason.manualGasOn:
         return l10n?.laserEnableBlockManualGasOn ??
-            'Turn off manual gas first';
+            'Turn Off Manual Gas First';
       case LaserEnableBlockReason.alarmBlocked:
         return l10n?.laserEnableBlockAlarmBlocked ??
-            'Alarm blocks laser enable';
+            'Alarm Blocks Laser Enable';
       case LaserEnableBlockReason.writeFailed:
-        return l10n?.laserEnableBlockWriteFailed ?? 'Laser enable write failed';
+        return l10n?.laserEnableBlockWriteFailed ?? 'Laser Enable Write Failed';
       case LaserEnableBlockReason.busy:
-        return l10n?.laserEnableBlockBusy ?? 'Control busy';
+        return l10n?.laserEnableBlockBusy ?? 'Control Busy';
     }
   }
 }

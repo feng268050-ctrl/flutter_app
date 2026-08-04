@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_routes.dart';
+import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_cloud_upload_coordinator.dart';
 import 'package:lws_hmi/features/process_video/application/process_video_upload_gating.dart';
@@ -13,7 +14,6 @@ import 'package:lws_hmi/features/process_video/presentation/process_video_dialog
 import 'package:lws_hmi/features/process_video/presentation/process_video_format.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 
 typedef ProcessVideoUploadInvoker = Future<bool> Function(
   String videoId, {
@@ -21,6 +21,8 @@ typedef ProcessVideoUploadInvoker = Future<bool> Function(
 });
 
 /// lws-ui `fragment_process_video` — local recordings list with Upload.
+///
+/// Body uses Material [DataTable] under the column header strip.
 class VideosTab extends StatefulWidget {
   const VideosTab({
     super.key,
@@ -42,13 +44,7 @@ class VideosTab extends StatefulWidget {
 
 @visibleForTesting
 class VideosTabState extends State<VideosTab> {
-  static const _leftInset = 24.0;
-  static const _rightInset = 58.0;
-  static const _columnGap = 26.0;
-  static const _headerTop = 35.0;
-  static const _headerBottom = 32.0;
-  static const _rowTop = 35.0;
-  static const _rowBottom = 33.0;
+  static const _horizontalInset = 24.0;
 
   late final ProcessVideoRepository _repo =
       widget.repository ?? SqliteProcessVideoRepository();
@@ -290,89 +286,193 @@ class VideosTabState extends State<VideosTab> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final scale =
-        (MediaQuery.sizeOf(context).width / 1280).clamp(0.55, 1.0);
-    final headers = <(String, double)>[
-      (l10n.processVideoRecordingTime, 232),
-      (l10n.processVideoWorkMode, 232),
-      (l10n.processVideoMaterial, 205),
-      (l10n.processVideoDuration, 130),
-      (l10n.processVideoOperations, 0),
-    ];
+  static const _headingStyle = TextStyle(
+    color: Colors.white,
+    fontSize: AppTypography.sectionTitleSize,
+    fontWeight: FontWeight.w500,
+  );
 
-    return Column(
-      children: [
-        // Column labels + center→sides fade hairline (no header fill).
-        Padding(
-          padding: const EdgeInsets.fromLTRB(_leftInset, _headerTop, _rightInset, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+  static const _cellStyle = TextStyle(
+    color: Colors.white,
+    fontSize: AppTypography.captionSize,
+    height: 1.15,
+  );
+
+  List<DataColumn> _columns(AppLocalizations l10n) => [
+        DataColumn(
+          label: Text(
+            l10n.processVideoRecordingTime,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        DataColumn(
+          label: Text(
+            l10n.processVideoWorkMode,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        DataColumn(
+          label: Text(
+            l10n.processVideoMaterial,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        DataColumn(
+          label: Text(
+            l10n.processVideoDuration,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        DataColumn(
+          label: Text(
+            l10n.processVideoOperations,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ];
+
+  DataRow _dataRow(ProcessVideoRecord row, AppLocalizations l10n) {
+    return DataRow(
+      onSelectChanged: (_) => unawaited(_openDetail(row)),
+      cells: [
+        DataCell(
+          Text(
+            ProcessVideoFormat.recordingTime(row),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        DataCell(
+          Text(
+            ProcessVideoFormat.workMode(row.processType, l10n),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        DataCell(
+          Text(
+            ProcessVideoFormat.material(row, l10n),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        DataCell(
+          Text(
+            ProcessVideoFormat.duration(row.durationMs),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        DataCell(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  for (final (label, width) in headers)
-                    if (width > 0)
-                      Padding(
-                        padding: EdgeInsets.only(
-                          right: _columnGap * scale,
-                        ),
-                        child: SizedBox(
-                          width: width * scale,
-                          child: Text(
-                            label,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: AppTypography.sectionTitleSize,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      Expanded(
-                        child: Text(
-                          label,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: AppTypography.sectionTitleSize,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                ],
+              MonitorFrostActionButton(
+                variant: CyberButtonVariant.standard,
+                onPressed: _canUpload(row)
+                    ? () => unawaited(_upload(row))
+                    : null,
+                child: Text(
+                  l10n.processVideoUpload,
+                  style: const TextStyle(
+                    fontSize: AppTypography.bodySize,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-              SizedBox(height: _headerBottom),
-              const SizedBox(
-                height: 1,
-                width: double.infinity,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [
-                        Color(0x00FFFFFF),
-                        Color(0xB3FFFFFF),
-                        Color(0x00FFFFFF),
-                      ],
-                      stops: [0.0, 0.5, 1.0],
-                    ),
+              const SizedBox(width: 12),
+              MonitorFrostActionButton(
+                variant: CyberButtonVariant.secondary,
+                onPressed: () => unawaited(_delete(row)),
+                child: Text(
+                  l10n.deleteText,
+                  style: const TextStyle(
+                    fontSize: AppTypography.bodySize,
+                    fontWeight: FontWeight.w600,
+                    color: CyberColors.buttonSecondaryText,
                   ),
                 ),
               ),
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _themedTable({
+    required ThemeData theme,
+    required AppLocalizations l10n,
+    required List<DataRow> rows,
+  }) {
+    return Theme(
+      data: theme.copyWith(
+        dataTableTheme: DataTableThemeData(
+          headingTextStyle: _headingStyle.copyWith(
+            fontSize: AppTypography.captionSize,
+          ),
+          dataTextStyle: _cellStyle,
+          dividerThickness: 1,
+          headingRowColor: WidgetStateProperty.all(Colors.transparent),
+          dataRowColor: WidgetStateProperty.all(Colors.transparent),
+          headingRowHeight: 48,
+          dataRowMinHeight: 64,
+          dataRowMaxHeight: 88,
+        ),
+        dividerColor: const Color(0x33FFFFFF),
+      ),
+      child: DataTable(
+        showCheckboxColumn: false,
+        columnSpacing: 24,
+        horizontalMargin: 8,
+        columns: _columns(l10n),
+        rows: rows,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    return Column(
+      children: [
         Expanded(
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _rows.isEmpty
-                  ? _EmptyState(l10n: l10n)
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Header stays visible with zero recordings.
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            _horizontalInset,
+                            8,
+                            _horizontalInset,
+                            0,
+                          ),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              return SizedBox(
+                                width: constraints.maxWidth,
+                                child: _themedTable(
+                                  theme: theme,
+                                  l10n: l10n,
+                                  rows: const [],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        Expanded(child: _EmptyState(l10n: l10n)),
+                      ],
+                    )
                   : NotificationListener<ScrollNotification>(
                       onNotification: (n) {
                         if (n.metrics.pixels >=
@@ -383,50 +483,48 @@ class VideosTabState extends State<VideosTab> {
                       },
                       child: RefreshIndicator(
                         onRefresh: _reload,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(
-                            _leftInset,
-                            8,
-                            _rightInset,
-                            16,
-                          ),
-                          itemCount: _rows.length + 1,
-                          itemBuilder: (context, index) {
-                            if (index == _rows.length) {
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                                child: Center(
-                                  child: Text(
-                                    l10n.processVideoLoadedCount(
-                                      _rows.length,
-                                      _total,
-                                    ),
-                                    style: const TextStyle(
-                                      color: Colors.white38,
-                                      fontSize: AppTypography.microSize,
-                                    ),
-                                  ),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final tableWidth =
+                                constraints.maxWidth - _horizontalInset * 2;
+                            return SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.fromLTRB(
+                                _horizontalInset,
+                                8,
+                                _horizontalInset,
+                                16,
+                              ),
+                              child: SizedBox(
+                                width: tableWidth,
+                                child: _themedTable(
+                                  theme: theme,
+                                  l10n: l10n,
+                                  rows: [
+                                    for (final row in _rows)
+                                      _dataRow(row, l10n),
+                                  ],
                                 ),
-                              );
-                            }
-                            final row = _rows[index];
-                            return _VideoRow(
-                              record: row,
-                              scale: scale,
-                              onOpen: () => unawaited(_openDetail(row)),
-                              onUpload: () => unawaited(_upload(row)),
-                              onDelete: () => unawaited(_delete(row)),
-                              uploadEnabled: _canUpload(row),
-                              uploadLabel: l10n.processVideoUpload,
-                              deleteLabel: l10n.deleteText,
+                              ),
                             );
                           },
                         ),
                       ),
                     ),
         ),
-        const SizedBox(height: 24),
+        if (!_loading && _rows.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(
+              l10n.processVideoLoadedCount(_rows.length, _total),
+              style: const TextStyle(
+                color: Colors.white38,
+                fontSize: AppTypography.microSize,
+              ),
+            ),
+          )
+        else
+          const SizedBox(height: 24),
       ],
     );
   }
@@ -474,143 +572,20 @@ final class _EmptyState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             l10n.processVideoEmptyTitle,
-            style: const TextStyle(color: Colors.white54, fontSize: AppTypography.bodySize),
+            style: const TextStyle(
+              color: Colors.white54,
+              fontSize: AppTypography.bodySize,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             l10n.processVideoEmptySubtitle,
-            style: const TextStyle(color: Colors.white38, fontSize: AppTypography.captionSize),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-final class _VideoRow extends StatelessWidget {
-  const _VideoRow({
-    required this.record,
-    required this.scale,
-    required this.onOpen,
-    required this.onUpload,
-    required this.onDelete,
-    required this.uploadEnabled,
-    required this.uploadLabel,
-    required this.deleteLabel,
-  });
-
-  final ProcessVideoRecord record;
-  final double scale;
-  final VoidCallback onOpen;
-  final VoidCallback onUpload;
-  final VoidCallback onDelete;
-  final bool uploadEnabled;
-  final String uploadLabel;
-  final String deleteLabel;
-
-  static const _columnGap = VideosTabState._columnGap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final cells = <({String text, double width, int maxLines})>[
-      (
-        text: ProcessVideoFormat.recordingTime(record),
-        width: 232,
-        maxLines: 1,
-      ),
-      (
-        text: ProcessVideoFormat.workMode(record.processType, l10n),
-        width: 232,
-        maxLines: 2,
-      ),
-      (
-        text: ProcessVideoFormat.material(record, l10n),
-        width: 205,
-        maxLines: 1,
-      ),
-      (
-        text: ProcessVideoFormat.duration(record.durationMs),
-        width: 130,
-        maxLines: 1,
-      ),
-    ];
-    final uploadStyle = TextStyle(
-      fontSize: AppTypography.bodySize * scale.clamp(0.75, 1.0),
-      fontWeight: FontWeight.w600,
-      color: Colors.white,
-    );
-    final deleteStyle = TextStyle(
-      fontSize: AppTypography.bodySize * scale.clamp(0.75, 1.0),
-      fontWeight: FontWeight.w600,
-      color: CyberColors.buttonSecondaryText,
-    );
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onOpen,
-        child: Container(
-          decoration: const BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: Color(0x33FFFFFF)),
+            style: const TextStyle(
+              color: Colors.white38,
+              fontSize: AppTypography.captionSize,
             ),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              for (var i = 0; i < cells.length; i++)
-                Padding(
-                  padding: EdgeInsets.only(
-                    top: VideosTabState._rowTop,
-                    bottom: VideosTabState._rowBottom,
-                    right: _columnGap * scale,
-                  ),
-                  child: SizedBox(
-                    width: cells[i].width * scale,
-                    // Match header [TextAlign.center] so columns line up.
-                    child: Text(
-                      cells[i].text,
-                      textAlign: TextAlign.center,
-                      maxLines: cells[i].maxLines,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: AppTypography.captionSize,
-                        height: cells[i].maxLines > 1 ? 1.15 : 1.0,
-                      ),
-                    ),
-                  ),
-                ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: VideosTabState._rowTop * 0.35,
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        MonitorFrostActionButton(
-                          variant: CyberButtonVariant.standard,
-                          onPressed: uploadEnabled ? onUpload : null,
-                          child: Text(uploadLabel, style: uploadStyle),
-                        ),
-                        SizedBox(width: 12 * scale),
-                        MonitorFrostActionButton(
-                          variant: CyberButtonVariant.secondary,
-                          onPressed: onDelete,
-                          child: Text(deleteLabel, style: deleteStyle),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }

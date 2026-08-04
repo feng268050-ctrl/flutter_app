@@ -68,7 +68,7 @@ final class _EngineerModeEntryTipsBody extends StatefulWidget {
 
 final class _EngineerModeEntryTipsBodyState
     extends State<_EngineerModeEntryTipsBody> {
-  bool _dontShowAgain = true;
+  bool _dontShowAgain = false;
 
   /// `engineer_mode_entry_icon_size` / `frost_dialog_prompt_icon_size`.
   static const _iconSize = 150.0;

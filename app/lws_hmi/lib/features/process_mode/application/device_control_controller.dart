@@ -590,7 +590,7 @@ final class DeviceControlController extends ChangeNotifier {
         );
       });
       if (!ok) {
-        lastError = 'Manual gas write failed';
+        lastError = 'Manual Gas Write Failed';
         return LaserEnableBlockReason.writeFailed;
       }
       manualGas = enabled;

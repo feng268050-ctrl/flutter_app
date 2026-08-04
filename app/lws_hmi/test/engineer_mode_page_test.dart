@@ -131,7 +131,7 @@ void main() {
     expect(
         find.byKey(const ValueKey('engineer-parameter-form')), findsOneWidget);
     expect(find.text('Stainless Steel-2mm'), findsOneWidget);
-    expect(find.text('Current process name'), findsOneWidget);
+    expect(find.text('Current Process Name'), findsOneWidget);
     expect(find.byKey(const ValueKey('engineer-action-copy')), findsNothing);
     expect(find.byKey(const ValueKey('engineer-action-save')), findsNothing);
     expect(find.byKey(const ValueKey('engineer-action-reset')), findsNothing);
@@ -220,7 +220,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 80));
 
-    expect(find.text('More favorites'), findsOneWidget);
+    expect(find.text('More Favorites'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('engineer-more-favorites')));
     await tester.pump();

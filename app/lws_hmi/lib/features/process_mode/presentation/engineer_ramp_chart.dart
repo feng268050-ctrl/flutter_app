@@ -5,6 +5,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/app/theme/app_typography.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Accordion header for the engineer left-panel ramp chart (lws-ui).
 final class EngineerRampAccordionHeader extends StatelessWidget {
@@ -31,10 +32,11 @@ final class EngineerRampAccordionHeader extends StatelessWidget {
             },
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Ramp Chart',
-                    style: TextStyle(
+                    AppLocalizations.of(context)?.rampChartLabel ??
+                        'Ramp Chart',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: AppTypography.sectionTitleSize,
                       fontWeight: FontWeight.w500,

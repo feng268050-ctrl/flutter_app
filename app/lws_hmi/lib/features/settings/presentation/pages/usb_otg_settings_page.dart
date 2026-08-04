@@ -66,19 +66,10 @@ class _UsbOtgSettingsPageState extends State<UsbOtgSettingsPage> {
       };
 
   /// Plain-language help for the selected mode (ordinary operators).
-  String _description(UsbOtgMode m) => switch (m) {
-        UsbOtgMode.debug =>
-          'Connect this machine to a computer with a USB cable for remote '
-              'support and software updates. Keep this mode when a technician '
-              'needs to work on the device from a PC.',
-        UsbOtgMode.mtp =>
-          'Connect this machine to a computer to copy photos and files back '
-              'and forth. On the computer it appears as a device named '
-              '“LWS Storage”.',
-        UsbOtgMode.host =>
-          'Plug in a USB keyboard, mouse, or other accessories with a USB '
-              'adapter. Use this when you need extra input devices on the '
-              'machine itself.',
+  String _description(AppLocalizations l10n, UsbOtgMode m) => switch (m) {
+        UsbOtgMode.debug => l10n.usbOtgModeDebugDescription,
+        UsbOtgMode.mtp => l10n.usbOtgModeMtpDescription,
+        UsbOtgMode.host => l10n.usbOtgModeHostDescription,
       };
 
   Future<void> _setMode(UsbOtgMode mode) async {
@@ -130,9 +121,8 @@ class _UsbOtgSettingsPageState extends State<UsbOtgSettingsPage> {
             ),
             SettingsHelpFooter(
               locked
-                  ? 'This product only supports Debug over USB. The mode '
-                      'cannot be changed.'
-                  : _description(_mode),
+                  ? l10n.usbOtgDebugOnlyLockedHelp
+                  : _description(l10n, _mode),
             ),
           ],
           if (_error != null)

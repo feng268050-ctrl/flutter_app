@@ -125,9 +125,10 @@ final class QuickModeMoreParametersButton extends StatelessWidget {
           color: Colors.white,
           size: CyberDimens.checkboxLargeSize,
         ),
-        label: const Text(
-          'More Parameters',
-          style: TextStyle(
+        label: Text(
+          AppLocalizations.of(context)?.moreParametersLabel ??
+              'More Parameters',
+          style: const TextStyle(
             color: Colors.white,
             fontSize: ProcessModeDimens.quickTopChromeLabelSize,
             fontWeight: FontWeight.w500,

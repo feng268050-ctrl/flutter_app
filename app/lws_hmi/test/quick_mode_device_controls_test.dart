@@ -73,7 +73,7 @@ void main() {
       find.byKey(const ValueKey('device-control-feed-hold-hint')),
       findsOneWidget,
     );
-    expect(find.text('Hold 3s to keep on'), findsOneWidget);
+    expect(find.text('Hold 3s To Keep On'), findsOneWidget);
     expect(find.text('Feed'), findsOneWidget);
     final hint = tester.widget<Text>(
       find.byKey(const ValueKey('device-control-feed-hold-hint')),
@@ -134,11 +134,11 @@ void main() {
     const idle = ProcessModeOutlineChrome.actionOrange;
     const disabled = ProcessModeOutlineChrome.disabledForeground;
     expect(
-      tester.widget<Text>(find.text('Manual gas')).style?.color,
+      tester.widget<Text>(find.text('Manual Gas')).style?.color,
       idle,
     );
     expect(
-      tester.widget<Text>(find.text('Auto wire feed')).style?.color,
+      tester.widget<Text>(find.text('Auto Wire Feed')).style?.color,
       disabled,
     );
     expect(
@@ -160,7 +160,7 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pump();
-    expect(find.text('Wire feed unavailable in this mode'), findsNothing);
+    expect(find.text('Wire Feed Unavailable In This Mode'), findsNothing);
   });
 
   testWidgets('enables wire ops in continuous welding', (tester) async {
@@ -175,7 +175,7 @@ void main() {
     // Idle Engineer outline chrome: orange label (not grey / disabled).
     const idle = ProcessModeOutlineChrome.actionOrange;
     expect(
-      tester.widget<Text>(find.text('Auto wire feed')).style?.color,
+      tester.widget<Text>(find.text('Auto Wire Feed')).style?.color,
       idle,
     );
     expect(
@@ -239,8 +239,8 @@ void main() {
       controller: controller,
     );
 
-    expect(find.text('Laser enable'), findsOneWidget);
-    expect(find.text('End of work'), findsNothing);
+    expect(find.text('Laser Enable'), findsOneWidget);
+    expect(find.text('End Of Work'), findsNothing);
     expect(
       find.byKey(const ValueKey('device-control-manual-gas')),
       findsOneWidget,

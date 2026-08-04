@@ -256,10 +256,11 @@ final class _MaterialRow extends StatelessWidget {
         padding: const EdgeInsets.only(left: 24),
         child: Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
-                'Material Type',
-                style: TextStyle(
+                AppLocalizations.of(context)?.materialTypeLabel ??
+                    'Material Type',
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: AppTypography.controlSize,
                   fontWeight: FontWeight.w400,

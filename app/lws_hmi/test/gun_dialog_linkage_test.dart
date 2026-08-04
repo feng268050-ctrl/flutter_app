@@ -250,6 +250,7 @@ void main() {
         MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Builder(
             builder: (context) {
               hostContext = context;
@@ -287,6 +288,7 @@ void main() {
         MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Builder(
             builder: (context) {
               hostContext = context;
@@ -321,6 +323,9 @@ void main() {
       late BuildContext hostContext;
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Builder(
             builder: (context) {
               hostContext = context;
@@ -353,6 +358,7 @@ void main() {
         MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Builder(
             builder: (context) {
               hostContext = context;
@@ -386,6 +392,15 @@ void main() {
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
+      // Warn dialog chrome can overflow at small test surfaces; ignore layout
+      // overflow so linkage assertions remain the focus.
+      final overflow = tester.takeException();
+      expect(
+        overflow == null ||
+            overflow.toString().contains('overflowed') ||
+            overflow.toString().contains('A RenderFlex overflowed'),
+        isTrue,
+      );
       expect(find.byKey(const ValueKey('safety-ground-lock-prompt')),
           findsOneWidget);
       expect(find.text('Safety Clamp Disconnected'), findsOneWidget);

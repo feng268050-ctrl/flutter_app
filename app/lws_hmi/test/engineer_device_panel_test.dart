@@ -163,12 +163,12 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('engineer-panel-auto-wire')));
     await tester.pump();
     expect(controller.autoWireFeed, isFalse);
-    expect(find.text('Wire feed unavailable in this mode'), findsNothing);
+    expect(find.text('Wire Feed Unavailable In This Mode'), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('engineer-panel-feed')));
     await tester.pump();
     expect(controller.wireWork, isFalse);
-    expect(find.text('Wire feed unavailable in this mode'), findsNothing);
+    expect(find.text('Wire Feed Unavailable In This Mode'), findsNothing);
   });
 
   testWidgets('Record Work enables when camera is connected', (tester) async {

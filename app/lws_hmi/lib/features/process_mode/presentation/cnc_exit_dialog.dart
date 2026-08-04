@@ -26,10 +26,10 @@ Future<bool> showCncExitDialog(BuildContext context) async {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Exit CNC mode?',
+                Text(
+                  l10n.exitCncModeConfirmTitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: AppTypography.sectionTitleSize,
                     fontWeight: FontWeight.w600,

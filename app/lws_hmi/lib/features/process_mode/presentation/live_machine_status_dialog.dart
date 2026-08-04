@@ -197,7 +197,7 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
     final l10n = AppLocalizations.of(context);
     // lws-ui `real_time_machine_status_text` (not Monitor tab title).
     final liveTitle =
-        l10n?.liveMachineStatusTitle ?? 'Live machine status';
+        l10n?.liveMachineStatusTitle ?? 'Live Machine Status';
 
     final session = _session;
     // lws-ui LaserLiveMonitorOverlayFragment uses PR1; fall back to PR0.
@@ -382,7 +382,7 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
                 stretch: true,
                 onPressed: widget.onConfirm,
                 child: Text(
-                  l10n?.gotItText ?? 'Got it',
+                  l10n?.gotItText ?? 'Got It',
                   style: const TextStyle(
                     fontSize: AppTypography.controlSize,
                     fontWeight: FontWeight.w600,

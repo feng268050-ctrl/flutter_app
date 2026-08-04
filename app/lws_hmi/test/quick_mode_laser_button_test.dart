@@ -93,7 +93,7 @@ void main() {
       ),
     );
 
-    expect(find.text('End of work'), findsOneWidget);
+    expect(find.text('End Of Work'), findsOneWidget);
     await tester.tap(
       find.byKey(const ValueKey('quick-mode-laser-enable')),
     );

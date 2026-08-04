@@ -144,7 +144,7 @@ help:
 	@echo "  rebuild-*                  # FORCE=1 refresh (e.g. make rebuild-runtime-deps)"
 	@echo ""
 	@echo "Debug (device / host — USB-SSH, remote SSH, Flutter, serial):"
-	@echo "  make usb-ssh-setup         # host ECM IP + sshpass doctor (macOS may sudo)"
+	@echo "  make usb-ssh-setup         # host ECM/RNDIS IP + sshpass doctor (Win: Admin; macOS may sudo)"
 	@echo "  make debug-host-prepare    # USB ECM or registered SSH reachability for debug-app/IDE"
 	@echo "  make connect <ip>          # register remote SSH board (MODE=SSH; host:port OK for EMU)"
 	@echo "  make disconnect <ip>       # remove registered remote SSH board"

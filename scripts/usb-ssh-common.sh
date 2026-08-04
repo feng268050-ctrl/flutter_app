@@ -4,11 +4,39 @@
 set -euo pipefail
 
 USB_SSH_HOST_ADDR="${LWS_HMI_USB_HOST_ADDR:-192.168.55.2}"
+_USB_SSH_COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# darwin | linux | windows | unknown
+usb_ssh_host_os() {
+	case "$(uname -s)" in
+	Darwin) echo darwin ;;
+	Linux) echo linux ;;
+	MINGW* | MSYS* | CYGWIN*) echo windows ;;
+	*) echo unknown ;;
+	esac
+}
+
+usb_ssh_windows_ps1() {
+	local ps1="$_USB_SSH_COMMON_DIR/usb-ssh-windows.ps1"
+	local winpath="$ps1"
+	command -v powershell.exe >/dev/null 2>&1 || {
+		echo "ERROR: powershell.exe not found (required for Windows USB-SSH)" >&2
+		return 1
+	}
+	[[ -f "$ps1" ]] || {
+		echo "ERROR: missing $ps1" >&2
+		return 1
+	}
+	if command -v cygpath >/dev/null 2>&1; then
+		winpath="$(cygpath -w "$ps1")"
+	fi
+	powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$winpath" "$@"
+}
 
 sshpass_install_hint() {
-	case "$(uname -s)" in
-	Darwin) echo "  install: brew install esolitos/ipa/sshpass" ;;
-	Linux)
+	case "$(usb_ssh_host_os)" in
+	darwin) echo "  install: brew install esolitos/ipa/sshpass" ;;
+	linux)
 		if command -v apt-get >/dev/null 2>&1; then
 			echo "  install: sudo apt install sshpass"
 		elif command -v dnf >/dev/null 2>&1; then
@@ -18,6 +46,10 @@ sshpass_install_hint() {
 		else
 			echo "  install: sshpass (use your distro package manager)"
 		fi
+		;;
+	windows)
+		echo "  install (MSYS2): pacman -S sshpass"
+		echo "  or: scoop install sshpass / choco install sshpass"
 		;;
 	*) echo "  install: sshpass (non-interactive SSH password for USB-SSH)" ;;
 	esac
@@ -217,11 +249,12 @@ warn_sshpass_if_usb_ssh() {
 # Print two lines: -o  then  Key=val  (append to ssh/scp argv with while-read).
 usb_ssh_bind_pair() {
 	local iface="$1"
-	case "$(uname -s)" in
-	Linux)
+	case "$(usb_ssh_host_os)" in
+	linux | windows)
+		# Bind by host USB link address (iface name may contain spaces on Windows).
 		printf '%s\n' "-o" "BindAddress=${USB_SSH_HOST_ADDR}"
 		;;
-	Darwin)
+	darwin)
 		printf '%s\n' "-o" "BindInterface=${iface}"
 		;;
 	*)
@@ -233,9 +266,9 @@ usb_ssh_bind_pair() {
 configure_usb_ssh_host_addr() {
 	local iface="$1"
 	local host_addr="$USB_SSH_HOST_ADDR"
-	local hint="Run 'make usb-ssh-setup' in an interactive terminal first."
-	case "$(uname -s)" in
-	Darwin)
+	local hint="Run 'make usb-ssh-setup' in an interactive terminal first (may need Administrator on Windows)."
+	case "$(usb_ssh_host_os)" in
+	darwin)
 		if ifconfig "$iface" 2>/dev/null | grep -qE "inet ${host_addr}[ /]"; then
 			return 0
 		fi
@@ -249,7 +282,7 @@ configure_usb_ssh_host_addr() {
 			return 1
 		fi
 		;;
-	Linux)
+	linux)
 		if ip -4 addr show dev "$iface" 2>/dev/null | grep -qE "inet ${host_addr}/"; then
 			return 0
 		fi
@@ -266,15 +299,36 @@ configure_usb_ssh_host_addr() {
 			return 1
 		fi
 		;;
+	windows)
+		if usb_ssh_windows_ps1 -Action has-ip -Alias "$iface" -HostAddress "$host_addr" >/dev/null 2>&1; then
+			return 0
+		fi
+		if usb_ssh_windows_ps1 -Action set-ip -Alias "$iface" -HostAddress "$host_addr" -PrefixLength 24 >/dev/null 2>&1; then
+			return 0
+		fi
+		echo "ERROR: interface '$iface' needs host address $host_addr/24. $hint" >&2
+		echo "  Board gadget should appear as Remote NDIS / Ethernet after Rockchip USB drivers are installed." >&2
+		return 1
+		;;
+	*)
+		echo "ERROR: unsupported host OS for USB-SSH address config: $(uname -s)" >&2
+		return 1
+		;;
 	esac
 }
 
 ping_usb_ssh_target() {
 	local iface="$1"
 	local addr="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
-	case "$(uname -s)" in
-	Darwin) ping -c 1 -t 2 -b "$iface" "$addr" ;;
-	Linux) ping -c 1 -W 2 -I "$iface" "$addr" ;;
+	case "$(usb_ssh_host_os)" in
+	darwin) ping -c 1 -t 2 -b "$iface" "$addr" ;;
+	linux) ping -c 1 -W 2 -I "$iface" "$addr" ;;
+	windows)
+		usb_ssh_windows_ps1 -Action ping \
+			-HostAddress "$USB_SSH_HOST_ADDR" \
+			-TargetAddress "$addr"
+		;;
+	*) return 1 ;;
 	esac
 }
 
@@ -288,10 +342,11 @@ ping_remote_ssh_target() {
 		ssh_endpoint_reachable "$addr"
 		return $?
 	fi
-	case "$(uname -s)" in
-	Darwin) ping -c 1 -t 2 "$addr" ;;
-	Linux) ping -c 1 -W 2 "$addr" ;;
-	*) ping -c 1 "$addr" ;;
+	case "$(usb_ssh_host_os)" in
+	darwin) ping -c 1 -t 2 "$addr" ;;
+	linux) ping -c 1 -W 2 "$addr" ;;
+	windows) ping -n 1 -w 2000 "$addr" >/dev/null 2>&1 ;;
+	*) ping -c 1 "$addr" >/dev/null 2>&1 || ping -n 1 "$addr" >/dev/null 2>&1 ;;
 	esac
 }
 

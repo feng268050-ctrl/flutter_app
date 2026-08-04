@@ -646,6 +646,19 @@ Tool: vendored at `tools/upgrade_tool/{macos,linux,windows}/` (see [`tools/upgra
 - **Linux (x86_64):** udev access to USB vendor `2207` (or run as root).
 - **Windows:** Rockchip DriverAssistant + run Make from **Git Bash** or **MSYS2** (not PowerShell/`cmd`).
 
+### USB-SSH (macOS / Linux / Windows)
+
+Host side of board `g_ether` plug-ssh (`192.168.55.1` ↔ host `192.168.55.2`):
+
+```bash
+make usb-ssh-setup          # find RNDIS/ECM gadget NIC + set host IP (Windows may need Admin)
+make devices                # expect MODE=USB-SSH
+make shell                  # or push-app / reboot-loader
+```
+
+- **Windows:** install Rockchip USB / Remote NDIS drivers so a new Ethernet adapter appears; use Git Bash/MSYS2; install `sshpass` (`pacman -S sshpass` on MSYS2) for password SSH used by Make helpers. Discovery/IP uses [`scripts/usb-ssh-windows.ps1`](scripts/usb-ssh-windows.ps1).
+- **Linux / macOS:** same Make targets; Linux host USB-SSH is implemented but should be verified on your PC (`lsusb` → `2207:0019`, new netdev, then `make usb-ssh-setup`).
+
 MaskROM recovery (device not visible after loader upload — loader reboot drops USB briefly):
 
 ```bash

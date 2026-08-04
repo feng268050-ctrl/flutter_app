@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# List USB-SSH (ECM gadget) devices for make devices / push-app / reboot / reboot-loader.
+# List USB-SSH (ECM/RNDIS gadget) devices for make devices / push-app / reboot / reboot-loader.
+# Hosts: macOS, Linux, Windows (Git Bash/MSYS2 + PowerShell helper).
 # Output: TSV rows — MODE, SN, ChipID, LocationID, IFACE, IP, USB
 set -euo pipefail
 
@@ -368,10 +369,20 @@ darwin_gadget_ifaces() {
 	done < <(networksetup -listallhardwareports 2>/dev/null || true)
 }
 
+windows_list_usb_ssh() {
+	# PowerShell emits full TSV rows (MODE SN ChipID LocationID IFACE IP USB).
+	usb_ssh_windows_ps1 \
+		-Action list \
+		-Vid "$GADGET_VID" \
+		-PidSsh "$GADGET_PID" \
+		-PidMtp "$MTP_PID" \
+		-TargetAddress "$USB_SSH_ADDR" 2>/dev/null || true
+}
+
 network_reachable_usb_ssh() {
 	local addr="$USB_SSH_ADDR" iface="" serial="-" pass loc="-" candid
-	case "$(uname -s)" in
-	Darwin)
+	case "$(usb_ssh_host_os)" in
+	darwin)
 		while IFS= read -r candid; do
 			[[ -n "$candid" ]] || continue
 			configure_usb_ssh_host_addr "$candid" 2>/dev/null || true
@@ -381,7 +392,7 @@ network_reachable_usb_ssh() {
 			fi
 		done < <(darwin_gadget_ifaces | awk 'NF && !seen[$0]++')
 		;;
-	Linux)
+	linux)
 		local en
 		for en in /sys/class/net/*; do
 			en="$(basename "$en")"
@@ -392,6 +403,18 @@ network_reachable_usb_ssh() {
 				break
 			fi
 		done
+		;;
+	windows)
+		while IFS=$'\t' read -r _mode _sn _chip _loc candid _ip _usb; do
+			[[ "$_mode" == "$USB_SSH_MODE" ]] || continue
+			[[ -n "$candid" && "$candid" != "-" ]] || continue
+			configure_usb_ssh_host_addr "$candid" 2>/dev/null || true
+			if ping_usb_ssh_target "$candid" >/dev/null 2>&1; then
+				iface="$candid"
+				loc="$_loc"
+				break
+			fi
+		done < <(windows_list_usb_ssh || true)
 		;;
 	esac
 	[[ -n "$iface" ]] || return 1
@@ -419,9 +442,10 @@ network_reachable_usb_ssh() {
 
 list_usb_ssh_devices() {
 	local rows=""
-	case "$(uname -s)" in
-	Linux) rows="$(linux_list_usb_ssh || true)" ;;
-	Darwin) rows="$(macos_list_usb_ssh || true)" ;;
+	case "$(usb_ssh_host_os)" in
+	linux) rows="$(linux_list_usb_ssh || true)" ;;
+	darwin) rows="$(macos_list_usb_ssh || true)" ;;
+	windows) rows="$(windows_list_usb_ssh || true)" ;;
 	esac
 	if [[ -z "$rows" ]]; then
 		rows="$(network_reachable_usb_ssh || true)"

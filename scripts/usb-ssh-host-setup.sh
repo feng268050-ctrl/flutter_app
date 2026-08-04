@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# Mac/Linux: find USB ECM/RNDIS gadget NIC and set host IP for plug-ssh (192.168.55.2).
+# Mac/Linux/Windows: find USB ECM/RNDIS gadget NIC and set host IP for plug-ssh (192.168.55.2).
 set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/usb-ssh-common.sh
+source "$ROOT/scripts/usb-ssh-common.sh"
 
 HOST_ADDR="${LWS_HMI_USB_HOST_ADDR:-192.168.55.2}"
 TARGET_ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
@@ -15,12 +19,14 @@ usage() {
 	cat <<EOF
 Usage: $0 [--ping-only]
 
-Find the USB gadget ethernet interface (Mac: often en10 "RNDIS/Ethernet Gadget")
-and configure host $HOST_ADDR/$MASK for board $TARGET_ADDR.
+Find the USB gadget ethernet interface (Mac: often en10 "RNDIS/Ethernet Gadget";
+Windows: Remote NDIS / Ethernet after Rockchip drivers) and configure host
+$HOST_ADDR/$MASK for board $TARGET_ADDR.
 
-Do NOT type literal "enX" — run this script or see "Hardware Port" below.
+Do NOT type literal "enX" — run this script or see Hardware Port / adapter name.
 
-Prereq (board, serial): /usr/libexec/hmi/usb-plug-ssh-start.sh
+Prereq (board): /usr/libexec/hmi/usb-plug-ssh-start.sh (or plug-ssh already active)
+Windows host: Rockchip USB / RNDIS drivers; Git Bash or MSYS2; may need Administrator for IP.
 EOF
 }
 
@@ -63,18 +69,30 @@ find_linux_usb_gadget_iface() {
 	return 1
 }
 
+find_windows_usb_gadget_iface() {
+	local mode sn chip loc iface addr usb
+	while IFS=$'\t' read -r mode sn chip loc iface addr usb; do
+		[[ "$mode" == "USB-SSH" ]] || continue
+		[[ -n "$iface" && "$iface" != "-" ]] || continue
+		echo "$iface"
+		return 0
+	done < <(USB_SSH_SKIP_ENRICH=1 bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null || true)
+	return 1
+}
+
 find_iface() {
-	case "$(uname -s)" in
-	Darwin) find_mac_usb_gadget_iface ;;
-	Linux) find_linux_usb_gadget_iface ;;
+	case "$(usb_ssh_host_os)" in
+	darwin) find_mac_usb_gadget_iface ;;
+	linux) find_linux_usb_gadget_iface ;;
+	windows) find_windows_usb_gadget_iface ;;
 	*) die "unsupported OS: $(uname -s)" ;;
 	esac
 }
 
 configure_host() {
 	local iface="$1"
-	case "$(uname -s)" in
-	Darwin)
+	case "$(usb_ssh_host_os)" in
+	darwin)
 		if ifconfig "$iface" 2>/dev/null | grep -q "inet ${HOST_ADDR} "; then
 			echo "Host $iface already has $HOST_ADDR"
 		else
@@ -88,7 +106,7 @@ configure_host() {
 		# Router on the "LWS" / RNDIS service, clear it.
 		_usb_ssh_darwin_clear_gadget_gateway "$iface"
 		;;
-	Linux)
+	linux)
 		if ip -4 addr show dev "$iface" 2>/dev/null | grep -q "inet ${HOST_ADDR}/"; then
 			echo "Host $iface already has $HOST_ADDR"
 			return 0
@@ -98,6 +116,17 @@ configure_host() {
 			|| sudo ip addr replace "${HOST_ADDR}/${MASK}" dev "$iface"
 		sudo ip link set "$iface" up
 		;;
+	windows)
+		if usb_ssh_windows_ps1 -Action has-ip -Alias "$iface" -HostAddress "$HOST_ADDR" >/dev/null 2>&1; then
+			echo "Host '$iface' already has $HOST_ADDR"
+			return 0
+		fi
+		echo "Setting $HOST_ADDR/$MASK on '$iface' (Administrator may be required) ..."
+		if ! usb_ssh_windows_ps1 -Action set-ip -Alias "$iface" -HostAddress "$HOST_ADDR" -PrefixLength "$MASK"; then
+			die "could not set $HOST_ADDR on '$iface'. Re-run Git Bash as Administrator after Rockchip/RNDIS drivers are installed."
+		fi
+		echo "Host '$iface' now has $HOST_ADDR/$MASK"
+		;;
 	esac
 }
 
@@ -105,7 +134,7 @@ configure_host() {
 _usb_ssh_darwin_clear_gadget_gateway() {
 	local iface="$1"
 	local port="" info router
-	[[ "$(uname -s)" == "Darwin" ]] || return 0
+	[[ "$(usb_ssh_host_os)" == "darwin" ]] || return 0
 	command -v networksetup >/dev/null 2>&1 || return 0
 	port="$(networksetup -listallhardwareports 2>/dev/null \
 		| awk -v d="$iface" '
@@ -131,21 +160,27 @@ _usb_ssh_darwin_clear_gadget_gateway() {
 
 ping_target() {
 	local iface="$1"
-	case "$(uname -s)" in
-	Darwin) ping -c 2 -t 2 -b "$iface" "$TARGET_ADDR" ;;
-	Linux) ping -c 2 -W 2 -I "$iface" "$TARGET_ADDR" ;;
+	case "$(usb_ssh_host_os)" in
+	darwin) ping -c 2 -t 2 -b "$iface" "$TARGET_ADDR" ;;
+	linux) ping -c 2 -W 2 -I "$iface" "$TARGET_ADDR" ;;
+	windows)
+		usb_ssh_windows_ps1 -Action ping \
+			-HostAddress "$HOST_ADDR" \
+			-TargetAddress "$TARGET_ADDR"
+		;;
 	esac
 }
 
 echo "=== USB plug-ssh host setup ==="
-echo "Looking for USB gadget ethernet (not Wi‑Fi en0) ..."
+echo "Looking for USB gadget ethernet (not Wi‑Fi) ..."
 IFACE="$(find_iface)" || die "No USB gadget NIC found.
 
-Plug OTG USB into Mac, then on board run:
+Plug OTG USB into the host PC, ensure the board plug-ssh is up:
   /usr/libexec/hmi/usb-plug-ssh-start.sh
 
-List ports manually:
-  networksetup -listallhardwareports | grep -A1 -iE 'RNDIS|Gadget|LWS|Innohi'"
+Windows: install Rockchip USB / Remote NDIS drivers, then check Adapter settings for a new Ethernet/RNDIS device.
+macOS: networksetup -listallhardwareports | grep -A1 -iE 'RNDIS|Gadget|LWS|Innohi'
+Linux: ip -br link; lsusb | grep 2207"
 
 echo "Using interface: $IFACE"
 [[ "$PING_ONLY" -eq 1 ]] || configure_host "$IFACE"
@@ -154,14 +189,19 @@ echo ""
 echo "Ping board at $TARGET_ADDR ..."
 if ping_target "$IFACE"; then
 	echo ""
-	sn="$(bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 | awk -F'\t' '{print $2}')"
-	chip="$(bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 | awk -F'\t' '{print $3}')"
+	sn="$(USB_SSH_SKIP_ENRICH=1 bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 | awk -F'\t' '{print $2}')"
+	chip="$(USB_SSH_SKIP_ENRICH=1 bash "$(dirname "${BASH_SOURCE[0]}")/usb-ssh-devices.sh" --tsv 2>/dev/null | head -1 | awk -F'\t' '{print $3}')"
 	[[ -n "$sn" && "$sn" != "-" ]] && echo "Board SN: $sn"
 	[[ -n "$chip" && "$chip" != "-" && "$chip" != "$sn" ]] && echo "Board ChipID: $chip"
 	echo ""
 	echo "OK — try: ssh root@${TARGET_ADDR}   (password: rockchip)"
 	echo "     or: make push-app"
 	echo "     or: make reboot-loader   (SN not required when only one board)"
+	if [[ "$(usb_ssh_host_os)" == windows ]] && ! command -v sshpass >/dev/null 2>&1; then
+		echo ""
+		echo "NOTE: install sshpass for make push-app / reboot-loader password login:"
+		sshpass_install_hint
+	fi
 	exit 0
 fi
 

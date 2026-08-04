@@ -738,11 +738,11 @@
       }
     }
   },
-  "processTabContinuous": "Continuous Welding",
+  "processTabContinuous": "Continuous",
   "processTabCutting": "Cutting",
-  "processTabSpot": "Spot Welding",
-  "processTabWeldSeam": "Weld Seam Cleaning",
-  "processTabWideArea": "Wide-Area Cleaning",
+  "processTabSpot": "Spot",
+  "processTabWeldSeam": "Weld Seam",
+  "processTabWideArea": "Wide-Area",
   "processTypeCncCutting": "CNC Cutting",
   "processTypeContinuousWelding": "Continuous Welding",
   "processTypeHandCutting": "Cutting",

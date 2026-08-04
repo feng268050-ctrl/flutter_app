@@ -3554,7 +3554,7 @@ abstract class AppLocalizations {
   /// No description provided for @processTabContinuous.
   ///
   /// In en, this message translates to:
-  /// **'Continuous Welding'**
+  /// **'Continuous'**
   String get processTabContinuous;
 
   /// No description provided for @processTabCutting.
@@ -3566,19 +3566,19 @@ abstract class AppLocalizations {
   /// No description provided for @processTabSpot.
   ///
   /// In en, this message translates to:
-  /// **'Spot Welding'**
+  /// **'Spot'**
   String get processTabSpot;
 
   /// No description provided for @processTabWeldSeam.
   ///
   /// In en, this message translates to:
-  /// **'Weld Seam Cleaning'**
+  /// **'Weld Seam'**
   String get processTabWeldSeam;
 
   /// No description provided for @processTabWideArea.
   ///
   /// In en, this message translates to:
-  /// **'Wide-Area Cleaning'**
+  /// **'Wide-Area'**
   String get processTabWideArea;
 
   /// No description provided for @processTypeCncCutting.

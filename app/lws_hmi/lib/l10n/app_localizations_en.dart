@@ -1893,19 +1893,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get processTabContinuous => 'Continuous Welding';
+  String get processTabContinuous => 'Continuous';
 
   @override
   String get processTabCutting => 'Cutting';
 
   @override
-  String get processTabSpot => 'Spot Welding';
+  String get processTabSpot => 'Spot';
 
   @override
-  String get processTabWeldSeam => 'Weld Seam Cleaning';
+  String get processTabWeldSeam => 'Weld Seam';
 
   @override
-  String get processTabWideArea => 'Wide-Area Cleaning';
+  String get processTabWideArea => 'Wide-Area';
 
   @override
   String get processTypeCncCutting => 'CNC Cutting';

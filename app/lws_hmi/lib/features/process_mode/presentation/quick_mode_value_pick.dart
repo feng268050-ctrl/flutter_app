@@ -42,6 +42,18 @@ abstract final class QuickModePickerDimens {
   /// Title sits on the scale's vertical centerline; optional downward nudge.
   static const double titleNudgeY = 60;
 
+  /// Body height below the status bar → band from y=0 to the Thickness title
+  /// (after [titleNudgeY]). Used to vertically center Record Work / More
+  /// Parameters with equal top/bottom gaps in that blank region.
+  static double topChromeBandHeight(double bodyHeight) {
+    const pickTotal =
+        titleHeight + titleScaleGap + scaleHeight + bottomPadding;
+    final pickCenterY =
+        bodyHeight / 2 + ProcessModeDimens.pickerVerticalFromPageCenter;
+    final titleTop = pickCenterY - pickTotal / 2 + titleNudgeY;
+    return titleTop.clamp(0.0, bodyHeight);
+  }
+
   /// Selection band width — chip centered on the selected value.
   static const double accentWidth =
       selectedTextPadding * 2 + selectedTextSize * 2.5;

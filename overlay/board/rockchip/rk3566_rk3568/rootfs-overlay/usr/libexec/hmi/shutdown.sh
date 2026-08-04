@@ -29,6 +29,17 @@ sysrq() {
 	return 1
 }
 
+# RK809/RK817 SYS_CFG3 bit0 = DEV_OFF. SysRq/PSCI alone can freeze the SoC
+# while the PMIC stays ON (off=0x00), so PWRON cannot cold-boot until rails
+# are hard-killed. Vendor rk8xx_device_shutdown() skips RK809/817.
+rk809_dev_off() {
+	if [ -w /sys/rk8xx/rk8xx_dbg ]; then
+		echo w f4 01 >/sys/rk8xx/rk8xx_dbg 2>/dev/null || return 1
+		return 0
+	fi
+	return 1
+}
+
 if [ ! -x /usr/bin/systemctl.real ]; then
 	log "missing /usr/bin/systemctl.real"
 	exit 1
@@ -46,6 +57,8 @@ sleep 0.5
 
 case "$mode" in
 poweroff|halt)
+	log "rk809 DEV_OFF"
+	rk809_dev_off || log "rk809 DEV_OFF unavailable; falling back to SysRq"
 	log "sysrq poweroff"
 	if sysrq o; then
 		sleep 5

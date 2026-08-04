@@ -733,13 +733,17 @@ EOF
 	if [[ "$has_weston" -eq 1 ]]; then
 		echo "OK:  weston image (flutter-wayland-client)"
 		# Unpatched GStreamer video plugin SIGSEGVs on live RTSP initialize.
+		# Prefer grep -a over `strings | grep` (pipefail + early match → SIGPIPE 141
+		# false-FAIL). Same helper pattern as scripts/check-prebuilt.sh.
 		vp="$target/usr/lib/libvideo_player_plugin.so"
+		_vp_has() { grep -a -F -q -- "$2" "$1" 2>/dev/null; }
 		if [[ -f "$vp" ]]; then
-			if ! strings "$vp" | grep -q 'Video size unknown after preroll'; then
+			if ! _vp_has "$vp" 'Video size unknown after preroll'; then
 				echo "FAIL: $vp missing live-RTSP patch (will segfault in IP Camera)" >&2
 				missing=1
-			elif ! strings "$vp" | grep -q 'MppElementSetup: mppvideodec format=RGBA'; then
+			elif ! _vp_has "$vp" 'MppElementSetup: mppvideodec format=RGBA'; then
 				echo "FAIL: $vp missing MPP RGBA patch" >&2
+				echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
 				missing=1
 			else
 				echo "OK:  libvideo_player_plugin.so has live-RTSP + MPP RGBA markers"

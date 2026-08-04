@@ -46,17 +46,30 @@ ensure_oem_mount() {
 		|| die "mount $dev -> $OEM_ROOT failed"
 }
 
-# Merge OEM seed into runtime product.ini.
-# brand/model/sn: always from OEM when present in seed (SKU identity).
+# Merge OEM seed into runtime product.ini (tunables only).
+# brand/model/sn are ignored — identity lives in Vendor Storage (make write-identity).
 # Other keys: fill only when runtime key is absent or blank (preserve operator).
 merge_product_ini() {
 	local seed="$1"
-	local key val cur line force
+	local key val cur line
 	[ -f "$seed" ] || return 0
 	mkdir -p "$VAR_HAL"
 	if [ ! -f "$PRODUCT_INI" ]; then
-		cp -f "$seed" "$PRODUCT_INI"
-		log "seeded $PRODUCT_INI from OEM"
+		# Seed without identity keys (even if present in OEM file).
+		tmp="$(mktemp "${PRODUCT_INI}.XXXXXX")"
+		while IFS= read -r line || [ -n "$line" ]; do
+			case "$line" in
+			'' | \#*) printf '%s\n' "$line" >>"$tmp"; continue ;;
+			esac
+			key="${line%%=*}"
+			key="$(printf '%s' "$key" | tr -d '[:space:]')"
+			case "$key" in
+			brand | model | sn) continue ;;
+			esac
+			printf '%s\n' "$line" >>"$tmp"
+		done <"$seed"
+		mv -f "$tmp" "$PRODUCT_INI"
+		log "seeded $PRODUCT_INI from OEM (identity keys omitted)"
 		return 0
 	fi
 	while IFS= read -r line || [ -n "$line" ]; do
@@ -67,16 +80,12 @@ merge_product_ini() {
 		val="${line#*=}"
 		key="$(printf '%s' "$key" | tr -d '[:space:]')"
 		[ -n "$key" ] || continue
-		force=0
 		case "$key" in
-		brand | model | sn) force=1 ;;
+		brand | model | sn) continue ;;
 		esac
 		cur="$(grep -E "^[[:space:]]*${key}[[:space:]]*=" "$PRODUCT_INI" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true)"
 		cur="$(printf '%s' "$cur" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-		if [ "$force" -eq 0 ] && [ -n "$cur" ]; then
-			continue
-		fi
-		if [ "$force" -eq 1 ] && [ "$cur" = "$val" ]; then
+		if [ -n "$cur" ]; then
 			continue
 		fi
 		# Drop existing key then append seed value.
@@ -84,11 +93,7 @@ merge_product_ini() {
 		grep -vE "^[[:space:]]*${key}[[:space:]]*=" "$PRODUCT_INI" >"$tmp" 2>/dev/null || true
 		printf '%s=%s\n' "$key" "$val" >>"$tmp"
 		mv -f "$tmp" "$PRODUCT_INI"
-		if [ "$force" -eq 1 ]; then
-			log "applied OEM identity $key from seed"
-		else
-			log "filled empty $key from OEM seed"
-		fi
+		log "filled empty $key from OEM seed"
 	done <"$seed"
 }
 

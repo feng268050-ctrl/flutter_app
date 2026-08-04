@@ -43,7 +43,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom usb-ssh-setup test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop write-identity upgrade reboot reboot-loader loader flash flash-android watch-maskrom usb-ssh-setup test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -160,6 +160,7 @@ help:
 	@echo "  make reset-process-library # clear process-library DB via HMI watcher; re-import bundled (no restart)"
 	@echo "  make set-prop KEY=val ...  # upsert product.ini tunables (not brand/model/sn); restart hmi"
 	@echo "  make del-prop KEY          # remove one tunable key (not brand/model/sn); restart hmi if changed"
+	@echo "  make write-identity …      # Vendor Storage BRAND/MODEL/PRODUCT_SN (FORCE=1 overwrite); restart hmi"
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
 	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
 	@echo "  make smoke-ai              # upload stain demo JPG; offline RKNN infer via AI daemon sock"
@@ -192,6 +193,8 @@ help:
 	@echo "  LWS_HMI_CACHE_URL=...      # optional HTTP mirror of the same layout"
 	@echo "  SN=<sn|chipid>             # select device by SN or ChipID (flash / USB-SSH / SSH)"
 	@echo "  CHIPID=<chipid>            # select by ChipID only (multi-board)"
+	@echo "  PRODUCT_SN=<sn>            # write-identity product serial (alias IDENTITY_SN=; not selection SN=)"
+	@echo "  FORCE=1                    # write-identity: overwrite non-empty Vendor Storage SN"
 	@echo "  IP=<addr>                  # registered SSH only (not USB-SSH); make connect first"
 	@echo "  IMAGE=<path>               # firmware image for make flash"
 	@echo "  DOCKER_IMAGE=$(DOCKER_IMAGE)"
@@ -579,7 +582,7 @@ push-app:
 upgrade-control-board:
 	@$(call WITH_DOTENV,FIRMWARE_BIN='$(FIRMWARE_BIN)' bash scripts/upgrade-control-board.sh)
 
-# Push process-library matched to device product.ini model (host helper).
+# Push process-library matched to device Vendor Storage model (host helper).
 # Device-side: app watches /run/hmi/upgrade-process-library.cmd and force-imports.
 upgrade-process-library:
 	@chmod +x scripts/upgrade-process-library.sh
@@ -614,6 +617,14 @@ set-prop:
 del-prop:
 	@chmod +x scripts/del-product-prop.sh
 	@$(call WITH_DOTENV,bash scripts/del-product-prop.sh $(filter-out del-prop,$(MAKECMDGOALS)) $(MAKEOVERRIDES))
+
+# Write brand/model/product SN into Vendor Storage (SSH). Selection: SN=/CHIPID=/IP=.
+# Payload: BRAND= MODEL= PRODUCT_SN= (alias IDENTITY_SN=). FORCE=1 to overwrite SN.
+# Pass via MAKEOVERRIDES only — do NOT wrap BRAND='$(BRAND)' inside WITH_DOTENV's
+# bash -c '…' (single quotes break on MODEL='L1 Pro' and silently no-op).
+write-identity:
+	@chmod +x scripts/write-identity.sh
+	@$(call WITH_DOTENV,bash scripts/write-identity.sh $(MAKEOVERRIDES))
 
 # Print selected APP pubspec versionName+build (host-only; default APP=lws_hmi).
 version:

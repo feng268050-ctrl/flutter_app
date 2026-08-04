@@ -1,5 +1,6 @@
 # ynh960 lws-hmi factory image: hash-valid FIT per rootfs letter.
 # NAME	PATH
+# Intentionally omit vendor0–vendor3 — Vendor Storage must survive make flash.
 package-file	package-file
 parameter	parameter.txt
 bootloader	MiniLoaderAll.bin

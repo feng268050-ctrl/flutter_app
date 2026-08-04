@@ -77,16 +77,16 @@ final class SysInfoSnapshot {
     this.panelRefreshHz,
   });
 
-  /// Product SN (`product.ini` `sn` or chip ID); null if empty.
+  /// Product SN (Vendor Storage or chip ID); null if empty.
   final String? serialNumber;
 
-  /// Chip / SoC serial (never factory `product.ini` `sn`); null if empty.
+  /// Chip / SoC serial (never Vendor Storage / product.ini `sn`); null if empty.
   final String? chipId;
 
-  /// Factory brand from `product.ini`; null if empty.
+  /// Factory brand from Vendor Storage; null if empty.
   final String? brand;
 
-  /// Factory product model from `product.ini` (not DT [boardModel]); null if empty.
+  /// Factory product model from Vendor Storage (not DT [boardModel]); null if empty.
   final String? model;
 
   final String? boardModel;
@@ -193,7 +193,7 @@ class DeviceSnReader {
   /// Placeholder returned on any failure (App may use its own display constant).
   final String unavailableDisplay;
 
-  /// Product SN (product.ini `sn` preferred, else chip ID).
+  /// Product SN (Vendor Storage preferred, else chip ID).
   Future<String> read() => _run(const <String>[]);
 
   /// Chip / SoC ID only (`read-serial --chip-id`).
@@ -219,7 +219,7 @@ class DeviceSnReader {
   }
 }
 
-/// Linux [SysInfo] from procfs/sysfs + `product.ini` / `read-serial`.
+/// Linux [SysInfo] from procfs/sysfs + Vendor Storage / `product.ini` tunables.
 class LinuxSysInfo implements SysInfo {
   LinuxSysInfo({
     this.deviceSnReader = const DeviceSnReader(),
@@ -240,7 +240,7 @@ class LinuxSysInfo implements SysInfo {
   /// Optional FPS sampler (App injects Flutter timings; stub uses fixed).
   final FrameTimingSampler? frameTimingSampler;
 
-  /// Path to factory product identity file.
+  /// Path to factory product tunables file (not identity authority).
   final String productIniPath;
 
   ProductInfo? _productInfo;

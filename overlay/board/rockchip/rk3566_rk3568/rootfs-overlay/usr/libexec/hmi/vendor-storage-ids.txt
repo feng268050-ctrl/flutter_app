@@ -1,0 +1,18 @@
+# Rockchip Vendor Storage ID map — product identity (source of truth).
+# Consumed by /usr/libexec/hmi/* identity helpers and host make write-identity.
+# Do not repurpose these IDs after field freeze without a migration plan.
+#
+# Field   Decimal ID   vendor_storage name
+# -----   ----------   -------------------
+# sn      1            VENDOR_SN_ID          (Rockchip standard)
+# brand   20           VENDOR_CUSTOM_ID_14   (hex suffix 0x14)
+# model   21           VENDOR_CUSTOM_ID_15   (hex suffix 0x15)
+#
+VENDOR_SN_ID=1
+VENDOR_BRAND_ID=20
+VENDOR_MODEL_ID=21
+VENDOR_SN_NAME=VENDOR_SN_ID
+VENDOR_BRAND_NAME=VENDOR_CUSTOM_ID_14
+VENDOR_MODEL_NAME=VENDOR_CUSTOM_ID_15
+# Product SN length cap (ASCII, no newlines); Rockchip tool allows larger.
+VENDOR_SN_MAX_LEN=30

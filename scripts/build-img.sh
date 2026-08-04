@@ -210,6 +210,9 @@ pack_in_sdk() {
   fi
 
   bash "$ROOT/scripts/verify-firmware-partitions.sh" "$firmware" "$PARAM" "$rootfs_img"
+  # Vendor Storage must stay out of factory.img so make flash does not wipe identity.
+  bash "$ROOT/scripts/verify-no-vendor-payload.sh" \
+    "$ROOT/board/package-file-ynh960-linux-ab" "$firmware"
 
   echo ""
   echo "Linux factory.img: APP=$APP SKU=$FACTORY_SKU loader+uboot+oem + hash-valid A/B FITs"

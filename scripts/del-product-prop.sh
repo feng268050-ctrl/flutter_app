@@ -29,7 +29,7 @@ Examples:
   make del-prop FOCUS_SCALE_REF
 
 Command-line keys use UPPERCASE; the matching lowercase key is removed from
-/var/lib/hal/product.ini. brand / model / sn are OEM-owned and cannot be deleted.
+/var/lib/hal/product.ini. brand / model / sn live in Vendor Storage (write-identity).
 hmi.service is restarted only when the file changes.
 EOF
 }

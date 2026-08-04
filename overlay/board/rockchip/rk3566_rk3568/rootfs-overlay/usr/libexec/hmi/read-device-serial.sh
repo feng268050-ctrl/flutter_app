@@ -1,10 +1,9 @@
 #!/bin/sh
 # Stable per-board serial for USB gadget iSerial and host tooling.
-# Default: factory sn from product.ini, then chip ID (DT / SoC / machine-id).
-# --chip-id: chip ID only (skip product.ini).
+# Default: product SN from Vendor Storage, then chip ID (DT / SoC / machine-id).
+# --chip-id: chip ID only (skip Vendor Storage).
 set -eu
 
-PRODUCT_INI="${PRODUCT_INI:-/var/lib/hal/product.ini}"
 CHIP_ONLY=0
 case "${1:-}" in
 --chip-id | --chip)
@@ -12,18 +11,13 @@ case "${1:-}" in
 	;;
 esac
 
-read_product_ini_sn() {
-	[ -r "$PRODUCT_INI" ] || return 1
-	awk -F= '
-		/^[[:space:]]*#/ { next }
-		/^[[:space:]]*sn[[:space:]]*=/ {
-			v=$0
-			sub(/^[^=]*=/, "", v)
-			gsub(/\r/, "", v)
-			gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
-			if (v != "") { print v; exit 0 }
-		}
-	' "$PRODUCT_INI"
+read_vendor_sn() {
+	local helper="${READ_PRODUCT_IDENTITY:-/usr/libexec/hmi/read-product-identity.sh}"
+	[ -x "$helper" ] || return 1
+	sn="$("$helper" sn 2>/dev/null || true)"
+	sn="$(printf '%s' "$sn" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+	[ -n "$sn" ] || return 1
+	printf '%s\n' "$sn"
 }
 
 read_dt_serial() {
@@ -63,7 +57,7 @@ read_chip_id() {
 }
 
 if [ "$CHIP_ONLY" -eq 0 ]; then
-	serial="$(read_product_ini_sn 2>/dev/null || true)"
+	serial="$(read_vendor_sn 2>/dev/null || true)"
 	if [ -n "$serial" ]; then
 		printf '%s\n' "$serial"
 		exit 0

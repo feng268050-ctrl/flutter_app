@@ -137,13 +137,22 @@ device_select_chipid() {
 	printf '%s' "${CHIPID:-${LWS_HMI_CHIPID:-}}"
 }
 
-# Remote shell snippet: print SN<TAB>ChipID (product.ini sn preferred for SN).
-# ChipID ALWAYS uses an inline DT/cpuinfo path — never `read-device-serial.sh --chip-id`,
-# because older board helpers ignore unknown flags and still prefer product.ini sn.
+# Remote shell snippet: print SN<TAB>ChipID.
+# SN: Vendor Storage via read-serial (same as ProductInfo); empty → chip ID.
+# ChipID ALWAYS uses an inline DT/cpuinfo path — never `read-serial --chip-id` alone
+# as the only source on half-upgraded boards; prefer chip helper when present.
 remote_device_identity_sh() {
 	cat <<'EOF'
-PRODUCT_INI="${PRODUCT_INI:-/var/lib/hal/product.ini}"
 read_chip() {
+	if [ -x /usr/bin/read-serial ]; then
+		c=$(/usr/bin/read-serial --chip-id 2>/dev/null | tr -d '\r' | head -n1)
+		c="${c#"${c%%[![:space:]]*}"}"
+		c="${c%"${c##*[![:space:]]}"}"
+		if [ -n "$c" ] && [ "$c" != "-" ]; then
+			printf '%s\n' "$c"
+			return 0
+		fi
+	fi
 	for p in /proc/device-tree/serial-number /sys/firmware/devicetree/base/serial-number; do
 		[ -r "$p" ] || continue
 		tr -d '\0' <"$p"
@@ -171,24 +180,14 @@ chip="${chip#"${chip%%[![:space:]]*}"}"
 chip="${chip%"${chip##*[![:space:]]}"}"
 [ -n "$chip" ] || chip="-"
 sn=""
-if [ -r "$PRODUCT_INI" ]; then
-	sn=$(awk -F= '
-		/^[[:space:]]*#/ { next }
-		/^[[:space:]]*sn[[:space:]]*=/ {
-			v=$0
-			sub(/^[^=]*=/, "", v)
-			gsub(/\r/, "", v)
-			gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
-			if (v != "") { print v; exit 0 }
-		}
-	' "$PRODUCT_INI")
-fi
-if [ -z "$sn" ]; then
-	sn="$chip"
+if [ -x /usr/bin/read-serial ]; then
+	sn=$(/usr/bin/read-serial 2>/dev/null | tr -d '\r' | head -n1)
 fi
 sn="${sn#"${sn%%[![:space:]]*}"}"
 sn="${sn%"${sn##*[![:space:]]}"}"
-[ -n "$sn" ] || sn="$chip"
+if [ -z "$sn" ] || [ "$sn" = "-" ]; then
+	sn="$chip"
+fi
 printf '%s\t%s\n' "$sn" "$chip"
 EOF
 }

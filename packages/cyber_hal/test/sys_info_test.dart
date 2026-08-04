@@ -140,11 +140,16 @@ echo SHOULD-NOT-USE
       await Process.run('chmod', <String>['+x', script.path]);
       final info = await ProductInfo.load(
         keysOverride: {
+          'brand': 'FROM-INI',
+          'model': 'FROM-INI',
+          'sn': 'FROM-INI',
+          'camera_ip': '192.168.1.50',
+          'camera_type': '2',
+        },
+        identityOverride: {
           'brand': 'Innohi',
           'model': 'YNH960',
           'sn': 'FACTORY-001',
-          'camera_ip': '192.168.1.50',
-          'camera_type': '2',
         },
         deviceSnReader: DeviceSnReader(readSerialPath: script.path),
       );
@@ -157,7 +162,7 @@ echo SHOULD-NOT-USE
       await dir.delete(recursive: true);
     });
 
-    test('chip serial when sn absent', () async {
+    test('chip serial when Vendor Storage sn absent', () async {
       final dir = await Directory.systemTemp.createTemp('product-ini-');
       final script = File('${dir.path}/fake-serial.sh');
       await script.writeAsString('''#!/bin/sh
@@ -165,12 +170,40 @@ echo CHIP-ABC
 ''');
       await Process.run('chmod', <String>['+x', script.path]);
       final info = await ProductInfo.load(
-        keysOverride: {'brand': 'X'},
+        keysOverride: {'brand': 'FROM-INI'},
+        identityOverride: const {},
         deviceSnReader: DeviceSnReader(readSerialPath: script.path),
       );
       expect(info.sn, 'CHIP-ABC');
       expect(info.chipId, 'CHIP-ABC');
-      expect(info.brand, 'X');
+      expect(info.brand, isEmpty);
+      await dir.delete(recursive: true);
+    });
+
+    test('product.ini brand/model/sn ignored for identity', () async {
+      final dir = await Directory.systemTemp.createTemp('product-ini-');
+      final script = File('${dir.path}/fake-serial.sh');
+      await script.writeAsString('''#!/bin/sh
+if [ "\${1:-}" = "--chip-id" ]; then
+  echo CHIP-ABC
+  exit 0
+fi
+echo CHIP-ABC
+''');
+      await Process.run('chmod', <String>['+x', script.path]);
+      final info = await ProductInfo.load(
+        keysOverride: {
+          'brand': 'FROM-INI',
+          'model': 'FROM-INI',
+          'sn': 'FROM-INI',
+        },
+        identityOverride: const {},
+        deviceSnReader: DeviceSnReader(readSerialPath: script.path),
+      );
+      expect(info.brand, isEmpty);
+      expect(info.model, isEmpty);
+      expect(info.sn, 'CHIP-ABC');
+      expect(info.chipId, 'CHIP-ABC');
       await dir.delete(recursive: true);
     });
 

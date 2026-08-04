@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Push a process-library package matched to the device product.ini model and
+# Push a process-library package matched to the device Vendor Storage model and
 # force-import it (no same-/older-version gate; operator helper).
 #
 # Device-side: app watches `/run/hmi/upgrade-process-library.cmd` and imports
@@ -13,13 +13,12 @@ source "$ROOT/scripts/usb-ssh-session.sh"
 ASSET_DIR="$ROOT/app/lws_hmi/assets/process-library"
 CMD_PATH="/run/hmi/upgrade-process-library.cmd"
 UPGRADE_ROOT="/run/hmi/process-library-upgrade"
-PRODUCT_INI="${PRODUCT_INI_PATH:-/var/lib/hal/product.ini}"
 
 usage() {
 	cat <<EOF
 Usage: make upgrade-process-library [PACKAGE_DIR=/abs/path/to/package]
 
-Reads product model from device $PRODUCT_INI (key model=), selects
+Reads product model from device Vendor Storage (read-identity model), selects
   $ASSET_DIR/<Model_With_Underscores>/<newest>.xlsx
 converts it to a package, uploads under $UPGRADE_ROOT/, and writes:
   $CMD_PATH
@@ -47,16 +46,12 @@ usb_ssh_session_select "$ROOT"
 usb_ssh_session_configure_link
 usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
 
-echo "INFO: reading device model from $PRODUCT_INI"
+echo "INFO: reading device model from Vendor Storage (read-identity)"
 DEVICE_MODEL="$(
-	remote "awk -F= '
-		\$1 ~ /^[[:space:]]*model[[:space:]]*$/ {
-			v=\$2; gsub(/^[[:space:]]+|[[:space:]]+\$/, \"\", v); print v; exit
-		}
-	' '$PRODUCT_INI' 2>/dev/null || true" | tr -d '\r'
+	remote "/usr/bin/read-identity model 2>/dev/null || /usr/libexec/hmi/read-product-identity.sh model 2>/dev/null || true" | tr -d '\r'
 )"
 DEVICE_MODEL="$(printf '%s' "$DEVICE_MODEL" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-[[ -n "$DEVICE_MODEL" ]] || die "device model empty/missing in $PRODUCT_INI (set OEM product.ini model=)"
+[[ -n "$DEVICE_MODEL" ]] || die "device model empty/missing in Vendor Storage (make write-identity MODEL=…)"
 
 echo "INFO: device model: $DEVICE_MODEL"
 

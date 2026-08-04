@@ -73,5 +73,18 @@ if "boot_a" in limits:
     print("FAIL: parameter still has boot_a — vendor U-Boot needs PARTNAME=boot (see docs/ab-slot-misc.md)")
     ok = False
 
+# Vendor Storage GPT (flash-surviving identity); each slot must be 64 KiB (0x80 sectors).
+vendor_need = 0x80 * 512
+for vname in ("vendor0", "vendor1", "vendor2", "vendor3"):
+    if vname not in limits:
+        print(f"FAIL: parameter missing {vname} (see docs/storage-layout.md)")
+        ok = False
+    elif limits[vname] != vendor_need:
+        print(
+            f"FAIL: {vname} size {limits[vname]} bytes "
+            f"(expected {vendor_need} = 64 KiB); geometry is frozen ABI"
+        )
+        ok = False
+
 sys.exit(0 if ok else 1)
 PY

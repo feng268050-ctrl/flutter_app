@@ -37,30 +37,39 @@ if [ ! -x "$CLIENT" ] || [ ! -f "$PLUGIN" ]; then
 	exit 1
 fi
 
+# Prefer grep -a over `strings | grep` (pipefail/SIGPIPE false negatives).
+_vp_has() { grep -a -F -q -- "$2" "$1" 2>/dev/null; }
+
 # Live RTSP needs 0002+ patches; refuse to bake an unpatched plugin.
-if ! strings "$PLUGIN" | grep -q 'Video size unknown after preroll'; then
+if ! _vp_has "$PLUGIN" 'Video size unknown after preroll'; then
 	echo "lws-hmi-sync-flutter-elinux: ERROR $PLUGIN missing live-RTSP marker" >&2
 	echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
 	exit 1
 fi
+# MPP hardware RGBA — software videoconvert is ~1fps on RK3566.
+if ! _vp_has "$PLUGIN" 'MppElementSetup: mppvideodec format=RGBA'; then
+	echo "lws-hmi-sync-flutter-elinux: ERROR $PLUGIN missing MPP RGBA marker" >&2
+	echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
+	exit 1
+fi
 # Local MP4: sync=TRUE + synced handoff (1×); system clock required.
-if ! strings "$PLUGIN" | grep -q 'VOD file sink uses clock sync'; then
+if ! _vp_has "$PLUGIN" 'VOD file sink uses clock sync'; then
 	echo "lws-hmi-sync-flutter-elinux: ERROR $PLUGIN missing VOD clock-sync marker" >&2
 	echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
 	exit 1
 fi
-if ! strings "$PLUGIN" | grep -q 'VOD BufferProbe defers to synced handoff'; then
+if ! _vp_has "$PLUGIN" 'VOD BufferProbe defers to synced handoff'; then
 	echo "lws-hmi-sync-flutter-elinux: ERROR $PLUGIN missing VOD probe-defer marker" >&2
 	echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
 	exit 1
 fi
-if ! strings "$PLUGIN" | grep -q 'VOD pipeline uses system clock for sync'; then
+if ! _vp_has "$PLUGIN" 'VOD pipeline uses system clock for sync'; then
 	echo "lws-hmi-sync-flutter-elinux: ERROR $PLUGIN missing VOD system-clock marker" >&2
 	echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
 	exit 1
 fi
 # play() re-applies rate 1.0; vendored source skips the no-op FLUSH seek.
-if ! strings "$PLUGIN" | grep -q 'SetPlaybackRate: skip no-op rate seek'; then
+if ! _vp_has "$PLUGIN" 'SetPlaybackRate: skip no-op rate seek'; then
 	echo "lws-hmi-sync-flutter-elinux: ERROR $PLUGIN missing no-op rate-seek skip marker" >&2
 	echo "  Run: FORCE=1 make rebuild-flutter-embedded-linux" >&2
 	exit 1

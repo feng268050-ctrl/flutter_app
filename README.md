@@ -396,7 +396,8 @@ make upgrade-control-board      # push latest control-board bin; force upgrade (
 make upgrade-process-library    # push process-library for device model; force import (HMI running)
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/product.ini (multi-key OK); restarts hmi
-# brand / model / sn are OEM-only — edit oem/boards/<sku>/product.ini (not set-prop / del-prop)
+# brand / model / sn → Vendor Storage: make write-identity (not set-prop / del-prop / OEM seed)
+make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # CHIPID=… FORCE=1 to overwrite SN
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
@@ -424,7 +425,7 @@ IP=192.168.1.50 make upgrade    # stream-to-partition; not RockUSB / not online 
 make disconnect 192.168.1.50
 ```
 
-`IP=` selects **registered SSH** or **EMU** (never USB-SSH). `SN=` selects by **SN** or **ChipID** (`make devices` columns: MODE / SN / ChipID / …); **`SN=SIM-EMU`** / **`SN=EMU`** always select the QEMU guest even when the table SN is `product.ini` (e.g. `SIM-0001`). `CHIPID=` selects by ChipID only (multi-board). USB-SSH/SSH/EMU **SN** prefers `product.ini` `sn`, else chip ID; **ChipID** is always the chip serial. Android adb / RockUSB loader rows put the adb/SerialNo in both SN and ChipID. `make reboot` works over SSH/EMU; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. **QEMU** (`make emulator`) appears as ephemeral **MODE=EMU** (`IP=127.0.0.1:2222`) when SSH hostfwd answers — usable with `make shell` / `make push-app` / `make debug-app`, not `make upgrade`. Product identity keys `brand` / `model` / `sn` come from the OEM seed only — `make set-prop` / `del-prop` refuse them.
+`IP=` selects **registered SSH** or **EMU** (never USB-SSH). `SN=` selects by **SN** or **ChipID** (`make devices` columns: MODE / SN / ChipID / …); **`SN=SIM-EMU`** / **`SN=EMU`** always select the QEMU guest even when the table SN is chip-ID fallback. `CHIPID=` selects by ChipID only (multi-board). USB-SSH/SSH/EMU **SN** prefers Vendor Storage SN, else chip ID; **ChipID** is always the chip serial. Android adb / RockUSB loader rows put the adb/SerialNo in both SN and ChipID. `make reboot` works over SSH/EMU; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. **QEMU** (`make emulator`) appears as ephemeral **MODE=EMU** (`IP=127.0.0.1:2222`) when SSH hostfwd answers — usable with `make shell` / `make push-app` / `make debug-app`, not `make upgrade` / `make write-identity`. Product identity (`brand` / `model` / `sn`) lives in Rockchip **Vendor Storage** — provision with **`make write-identity BRAND=… MODEL=… PRODUCT_SN=…`** after flash (geometry frozen; `factory.img` must not package vendor payloads). Optional macOS RockUSB `upgrade_tool SN` / `RSN` is **SN-only**; brand/model still need `write-identity`. `make set-prop` / `del-prop` refuse identity keys.
 Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
 
 `make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) **streams** **`rootfs.img` + the inactive letter’s FIT** into partitions with single-line write progress, arms try-boot, and reboots — **not** RockUSB/`upgrade_tool uf` (use **`make flash`** for GPT / U-Boot) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
@@ -693,9 +694,11 @@ App deploy without reflash:
 make build-app
 make push-app                  # SN=... or IP=... when multiple devices
 make upgrade-control-board    # push latest control-board bin and trigger upgrade (no version gate)
-make upgrade-process-library  # push process-library for device product.ini model; force import
+make upgrade-process-library  # push process-library for device Vendor Storage model; force import
 make reset-process-library    # clear process-library DB via HMI watcher; re-import bundled (no restart)
-make set-prop CAMERA_IP=192.168.1.50   # optional: product tunables over SSH (not brand/model/sn)```
+make set-prop CAMERA_IP=192.168.1.50   # optional: product tunables over SSH (not brand/model/sn)
+make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001  # Vendor Storage identity
+```
 
 ### macOS Docker Desktop tips
 

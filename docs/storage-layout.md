@@ -16,8 +16,23 @@ Rockchip `parameter.txt` uses **512-byte sectors**.
 | | **boot**, **boot_b** | each ~64 MiB (`0x00020000`) | Kernel FIT; U-Boot loads **`boot`**; apply backs up to `boot_b` then writes try FIT to `boot` |
 | | recovery, backup | keep single (current sizes) | Not A/B in P2.4 |
 | system | **rootfs_a**, **rootfs_b** | each **1 GiB** | Userspace; remote upgrade writes inactive letter |
+| | oem | ~128 MiB | Board×screen pack |
+| | private, private1 | unchanged | LCD/MIPI params / private data |
+| | **vendor0–vendor3** | each **64 KiB** (`0x80`) | Rockchip Vendor Storage (product **brand** / **model** / **sn**); **geometry frozen ABI** |
+| | userdata | grow from `0x4BE200` | Operator prefs, models, OTA staging |
 
 **Letter pair:** A = `boot` + `rootfs_a`; B = `boot_b` (storage) + `rootfs_b`. Never mix letters.
+
+**Vendor Storage geometry (frozen after first GPT adoption):**
+
+| PARTNAME | Size | Start LBA |
+|----------|------|-----------|
+| vendor0 | `0x80` (64 KiB) | `0x4BE000` |
+| vendor1 | `0x80` | `0x4BE080` |
+| vendor2 | `0x80` | `0x4BE100` |
+| vendor3 | `0x80` | `0x4BE180` |
+
+ID map: [`board/vendor-storage-ids.txt`](../board/vendor-storage-ids.txt) (SN=1, BRAND=20, MODEL=21). `package-file` / `factory.img` **must not** embed `vendor*.img` so `make flash` preserves identity. Factory order: **flash → `make write-identity` → verify**. Moving vendor LBAs is a breaking migration (identity data loss).
 
 Mount: kernel uses `root=PARTLABEL=rootfs_a` or `rootfs_b`. Prefer PARTLABEL over raw `/dev/mmcblk0pN`.
 
@@ -110,7 +125,7 @@ Notable files under `/var/lib/hmi` (persist across `make upgrade` / `push-app`):
 | `process-library.db` | Versioned built-in and user process presets; WAL-enabled SQLite |
 | `misc-settings.json`, `mouse.conf`, … | Other HMI prefs |
 
-Factory identity and tunables (`brand`, `model`, `sn`, `camera_ip`, `control_card_comm_alarm_mode`, …) are stored separately at `/var/lib/hal/product.ini` → `/userdata/hal/product.ini`.
+Factory **tunables** (`camera_ip`, `control_card_comm_alarm_mode`, …) live at `/var/lib/hal/product.ini` → `/userdata/hal/product.ini`. Per-unit **brand** / **model** / **sn** live in Rockchip **Vendor Storage** (`make write-identity`); stale identity keys in `product.ini` are ignored by HAL.
 
 ## Prefs: flash vs upgrade (P2.3 / P2.4)
 

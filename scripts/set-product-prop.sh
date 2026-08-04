@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Upsert one or more keys into /var/lib/hal/product.ini on the SSH target.
 # Usage: make set-prop CAMERA_IP=192.168.1.50
-# brand / model / sn are OEM-owned and rejected.
+# brand / model / sn are Vendor Storage identity — refused here (use write-identity).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -34,7 +34,7 @@ Examples:
 
 Command-line keys use UPPERCASE; values are written to /var/lib/hal/product.ini
 with lowercase keys. Multiple assignments are applied in one remote write.
-brand / model / sn are OEM-owned and cannot be set here (edit oem/boards/<sku>/product.ini).
+brand / model / sn live in Vendor Storage — use make write-identity (not set-prop).
 hmi.service is restarted once after a successful write.
 EOF
 }

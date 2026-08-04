@@ -30,11 +30,11 @@ is_oem_identity_product_key() {
 	esac
 }
 
-# Fail if key is brand/model/sn (host mutate must not change OEM identity).
+# Fail if key is brand/model/sn (identity is Vendor Storage via make write-identity).
 refuse_oem_identity_product_key() {
 	local key="$1"
 	is_oem_identity_product_key "${key}" || return 0
-	local msg="refusing to mutate ${key}: brand/model/sn come from OEM seed only (edit oem/boards/<sku>/product.ini, then make build-oem)"
+	local msg="refusing to mutate ${key}: brand/model/sn live in Vendor Storage (use: make write-identity BRAND=… MODEL=… PRODUCT_SN=…)"
 	if declare -F die >/dev/null 2>&1; then
 		die "${msg}"
 	fi

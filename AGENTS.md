@@ -86,7 +86,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `app/lws_hmi/assets/process-library/**`, `app/lws_hmi/assets/firmware/control-board/**`, `scripts/prepare-hmi-ship-assets.sh`, `scripts/convert-process-library.py` | `make build-app` (runs prepare); or host-only `make prepare-app-assets` before local flutter test/IDE |
 | `app/lws_hmi/lib/l10n/*.arb` (parent ARBs) | `make l10n` (then `make build-app` / `make push-app` to ship) |
 | `scripts/flutter/l10n*.sh`, `sync_l10n_child_arbs.py`, `zh_s2t.py` | none for firmware; exercise `make l10n` / `make l10n-verify` |
-| `scripts/flutter/check_no_bare_font_size.sh` | none for firmware; exercise `make check-typography` |
+| `scripts/flutter/check_no_bare_font_size.sh` | none for firmware; exercise `make check-typography` (bare `fontSize: N` + business `AppTypography.*Size`) |
 | Bake app into rootfs / A/B image (release or no push path) | `make build-app`, `make build-rootfs`, `make upgrade` (same `APP=`) |
 | `scripts/upgrade-remote.sh`, `scripts/flash-usb.sh`, `scripts/docker-export-artifacts.sh`, `scripts/factory-sku.sh` (APP-scoped rootfs/factory paths) | `make build-rootfs`, then `make upgrade` or `make build-img` + `make flash` (same `APP=`) |
 | `tools/upgrade_tool/**` (host RockUSB CLI only) | none for firmware; exercise `make devices` / `make flash` on the host OS |

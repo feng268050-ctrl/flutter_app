@@ -99,7 +99,7 @@ help:
 	@echo "  make l10n-gen              # flutter gen-l10n only"
 	@echo "  APP=…                     # app/ dir; *_hmi→/opt/hmi; rootfs/factory under output/firmware/<APP>/ (default lws_hmi)"
 	@echo "  make l10n-verify           # fail if ARBs / AppLocalizations drift"
-	@echo "  make check-typography      # fail if production lib has bare fontSize: N"
+	@echo "  make check-typography      # fail bare fontSize:N / business AppTypography.*Size"
 	@echo "  make build-kernel          # dual multi-conf FIT → boot.img + boot_b.img (+ bare Image)"
 	@echo "  make build-rootfs          # rootfs → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)"
 	@echo "  make prepare-rootfs        # ensure Buildroot stack → Weston (no rootfs.img pack)"

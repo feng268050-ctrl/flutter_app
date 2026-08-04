@@ -246,6 +246,7 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
               ),
               const SizedBox(width: CyberDimens.contentPadding),
               SizedBox(
+                // Fixed width (lws-ui); only small-tier height is applied.
                 width: 163,
                 child: CyberButton(
                   key: ValueKey(
@@ -253,7 +254,9 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                         ? 'safety-tips-agree-btn'
                         : 'product-disclaimer-agree-btn',
                   ),
-                  size: CyberButtonSize.small,
+                  // medium keeps label/padding style; height alone → small tier.
+                  size: CyberButtonSize.medium,
+                  height: CyberDimens.actionButtonSmallHeight,
                   variant: CyberButtonVariant.primary,
                   shape: CyberButtonShape.rounded,
                   stretch: true,

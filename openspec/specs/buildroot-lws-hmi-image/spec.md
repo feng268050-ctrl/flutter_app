@@ -91,7 +91,7 @@ The lws_hmi rootfs SHALL include BlueZ userspace (`bluetoothd` and related tools
 
 ### Requirement: eLinux HMI and engine install from prebuilt only
 
-Buildroot overlay packages for the eLinux HMI and flutter-engine SHALL copy from `prebuilt/eLinux HMI/<version>/` and `prebuilt/flutter-engine/<version>/` during `make build-rootfs`. `make check-prebuilt` SHALL fail if prebuilt artifacts are missing. Host `make build-runtime-deps` populates prebuilt directories.
+Buildroot overlay packages for flutter-embedded-linux and flutter-engine SHALL copy from `prebuilt/flutter-embedded-linux/<version>/` and `prebuilt/flutter-engine/<version>/` during `make build-rootfs`. `make check-prebuilt` SHALL fail if prebuilt artifacts are missing. Host `make build-runtime-deps` (or the individual `build-flutter-engine` / `build-flutter-embedded-linux` targets) populates prebuilt directories. Active pins MUST be the P5.1 Flutter **3.41.x** triplet required by `flutter-engine-p51` (shipped tip Flutter **3.41.9** / eLinux **42d3d75a56**; not Flutter 3.24.4).
 
 #### Scenario: check-prebuilt gates rootfs build
 
@@ -101,7 +101,7 @@ Buildroot overlay packages for the eLinux HMI and flutter-engine SHALL copy from
 #### Scenario: engine version pinned
 
 - **WHEN** developer inspects version pins
-- **THEN** `overlay/buildroot/flutter-engine.version`, `overlay/buildroot/flutter-sdk.version`, and `overlay/buildroot/flutter-embedded-linux.version` document the active pins (Flutter **3.41.9** / eLinux **42d3d75a56**)
+- **THEN** `overlay/buildroot/flutter-engine.version`, `overlay/buildroot/flutter-sdk.version`, and `overlay/buildroot/flutter-embedded-linux.version` document the active P5.1 pins (Flutter **3.41.9** / eLinux **42d3d75a56**)
 
 ### Requirement: Rootfs overlay and LCD display params are applied
 

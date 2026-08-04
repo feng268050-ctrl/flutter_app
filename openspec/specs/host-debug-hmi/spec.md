@@ -103,7 +103,7 @@ The repository SHALL provide an idempotent setup/doctor path for the pinned Flut
 
 The repository SHALL include VS Code / Cursor Flutter launch configuration that can be selected in Run & Debug and starts the application on that custom device through the Flutter extension.
 
-Implementation SHALL first validate Flutter 3.24.4 with a compatible historical `hmi-bundle (flutter assemble)`. If that pinned stack cannot provide the required debugger and DevTools workflow, this change MUST stop before partial device integration and identify the P3.5 SDK/engine/eLinux HMI upgrade as a separate prerequisite.
+Implementation SHALL validate the P5.1-pinned Flutter **3.41.x** SDK/engine/eLinux triplet (`flutter-engine-p51`) with `hmi-bundle (flutter assemble)` / `make debug-app`. A failure of the debugger or DevTools workflow on that pin MUST be treated as a defect in this stack (or a follow-up fix), not as a reason to remain on Flutter 3.24.4. Host resolve for debug engine/ICU MUST use the versioned `prebuilt/flutter-engine/<ver>/arm64-debug/` tree only (no stale cache or legacy `flutter_assets` fallback).
 
 #### Scenario: First-time IDE setup
 
@@ -120,10 +120,10 @@ Implementation SHALL first validate Flutter 3.24.4 with a compatible historical 
 - **WHEN** the user-scoped custom-device definition is missing or differs from the repository definition
 - **THEN** the setup/doctor path restores it idempotently or reports the exact corrective action
 
-#### Scenario: Pinned toolchain cannot support IDE debugging
+#### Scenario: P5.1 pin supports IDE debugging
 
-- **WHEN** validation proves Flutter 3.24.4 and compatible historical `hmi-bundle (flutter assemble)` releases cannot provide the required Custom Device, debugger, and DevTools behavior
-- **THEN** implementation stops without mixing a Flutter platform upgrade into this change and records advancing P3.5 as a separate prerequisite
+- **WHEN** validation runs against the P5.1 Flutter 3.41.x pin and matching eLinux/engine prebuilts
+- **THEN** Custom Device, debugger, and DevTools behavior required by this capability are available without falling back to Flutter 3.24.4
 
 ### Requirement: Flutter DevTools connects through a session-scoped VM Service tunnel
 

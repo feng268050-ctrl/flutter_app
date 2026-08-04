@@ -421,6 +421,12 @@ run_check() {
 		echo "FAIL: etc/ssl/certs/ca-certificates.crt missing — enable BR2_PACKAGE_CA_CERTIFICATES" >&2
 		missing=1
 	fi
+	if [[ -x "$target/usr/bin/curl" ]] || [[ -x "$target/bin/curl" ]]; then
+		echo "OK:  curl present"
+	else
+		echo "FAIL: curl missing — enable BR2_PACKAGE_LIBCURL + BR2_PACKAGE_LIBCURL_CURL" >&2
+		missing=1
+	fi
 
 	echo ""
 	echo "--- operator commands in /usr/bin ---"

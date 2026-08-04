@@ -5,6 +5,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
+import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/warn_alarm/application/alarm_monitor_state.dart';
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/l10n/product_alarm_l10n.dart';
@@ -248,8 +249,8 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    CyberColors.dividerCenter,
-                                    CyberColors.dividerCenter,
+                                    SettingsDimens.sectionDividerColor,
+                                    SettingsDimens.sectionDividerColor,
                                     Color(0x00000000),
                                   ],
                                   stops: [0.0, 0.4, 1.0],

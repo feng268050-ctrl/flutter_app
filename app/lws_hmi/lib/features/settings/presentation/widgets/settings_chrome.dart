@@ -55,7 +55,9 @@ abstract final class SettingsDimens {
   static const panelHighlight = Color(0x54FFFFFF);
 
   /// Section / row hairline — shared by Settings cards and Monitor headers.
-  static const sectionDividerHeight = 2.0;
+  /// Matches container outer stroke: flat 1px, no gradient.
+  static const sectionDividerHeight = 1.0;
+  static const sectionDividerColor = CyberColors.dividerCenter;
 
   /// Settings and Monitor share a flat glass face; depth is external only.
   /// Keep the legacy color token for opt-in callers, but no inset vignette.
@@ -366,21 +368,70 @@ class SettingsHelpFooter extends StatelessWidget {
   }
 }
 
-/// Settings group shell — frosted face + depth chrome (replaces the old
-/// opaque scaffold→white gradient plate).
+/// Settings / Monitor plate matching Custom Home selected metric cards:
+/// [CyberBackdropBlur] + [CyberBlurSampleMode.realtime] +
+/// [CyberBlurIntensity.low] (Gaussian sigma **12**) + dark tint.
+/// Outer stroke is flat 1px [CyberColors.borderUniform] (no HL / gradient).
+abstract final class SettingsPerspectiveChrome {
+  /// Same as Custom Home selected cards / [CyberBlurIntensity.low.sigma].
+  static const blurSigma = 12.0;
+  static const blurIntensity = CyberBlurIntensity.low;
+  static const blurSampleMode = CyberBlurSampleMode.realtime;
+  static const blurTint = CyberBlurTint.dark;
+
+  static const strokeWidth = 1.0;
+  static const strokeColor = CyberColors.borderUniform;
+
+  static Widget face({
+    required double cornerRadius,
+    // Retained for call-site compatibility; outline is always uniform.
+    CyberBorderGradientCenter borderGradientCenter =
+        CyberBorderGradientCenter.topBottom,
+  }) {
+    final radius = BorderRadius.circular(cornerRadius);
+    final outline = CyberPanelOutline(
+      style: CyberPanelOutlineStyle.uniform,
+      tone: CyberTone.dark,
+      width: strokeWidth,
+      cornerRadius: cornerRadius,
+      uniformColor: strokeColor,
+    );
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ClipRRect(
+          borderRadius: radius,
+          child: const CyberBackdropBlur(
+            sampleMode: blurSampleMode,
+            intensity: blurIntensity,
+            blurTint: blurTint,
+            child: SizedBox.expand(),
+          ),
+        ),
+        IgnorePointer(
+          child: CustomPaint(
+            painter: CyberFrostPanelOutlinePainter(outline),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Settings group shell — frosted or perspective face + depth chrome.
 ///
-/// Face: [CyberBackdropBlur] [followLayout]/[high]/sigma 23 (dialog-grade
-/// frost, same as boot self-check). Realtime [BackdropFilter] composites black
-/// on Weston, so capture from [CyberBlurBackdropScope] is required;
-/// [followLayout] offsets a shared blurred backdrop as the panel scrolls so
-/// perspective stays correct.
+/// Under [SettingsBlurredPageShell] / [SettingsPageBackdropBlur]:
+/// face uses [SettingsPerspectiveChrome] (Custom Home selected-card Gaussian,
+/// sigma 12) and skips heavy black contact shadows.
+///
+/// Elsewhere: face uses [CyberBackdropBlur] [followLayout] / [high] / sigma 23.
 ///
 /// Depth (flat, raised glass): outer shade = inflated RRect shells; inner
 /// shade = deflated RRect shells; both fade with distance. Plus transparent
 /// lip cast, contact [cardShadow], and an equal bright rim on all sides.
-/// No solid fill.
 ///
-/// [borderGradientCenter] is retained for call-site compatibility but ignored.
+/// [borderGradientCenter] is unused under page blur (uniform 1px outline);
+/// kept for call-site compatibility. Legacy depth-edge rim ignores it too.
 class SettingsPanel extends StatelessWidget {
   const SettingsPanel({
     super.key,
@@ -434,21 +485,23 @@ class SettingsPanel extends StatelessWidget {
   final double innerHighlightWidth;
   final Color innerHighlightColor;
 
-  /// Optional translucent front-surface layer above the frost capture.
+  /// Optional translucent front-surface layer above the frost / tint fill.
   final Gradient? surfaceGradient;
 
-  /// How the face samples wallpaper frost.
+  /// How the face samples wallpaper frost when page-level blur is absent.
   ///
   /// Default [followLayout] (capture + [ImageFilter.blur]) — required on
   /// Weston/QEMU where [CyberBlurSampleMode.realtime] / [BackdropFilter]
   /// composites black. Prefer [realtime] only where the compositor is known
-  /// good (e.g. Android).
+  /// good (e.g. Android). Ignored under [SettingsPageBackdropBlur].
   final CyberBlurSampleMode blurSampleMode;
 
   /// Panel-local Gaussian strength (dialog-grade HIGH with Settings/Monitor).
+  /// Ignored under [SettingsPageBackdropBlur] ([SettingsPerspectiveChrome]).
   final CyberBlurIntensity blurIntensity;
 
   /// Gaussian sigma for [CyberBackdropBlur] (lws-ui HIGH = 23).
+  /// Ignored under [SettingsPageBackdropBlur] (page shell owns sigma).
   final double blurSigma;
 
   @override
@@ -456,6 +509,11 @@ class SettingsPanel extends StatelessWidget {
     final glass = CyberGlassTheme.of(context);
     final radius = borderRadius ?? BorderRadius.circular(glass.cornerRadius);
     final corner = radius.topLeft.x;
+    final pageBlur = SettingsPageBackdropBlur.maybeOf(context);
+    final perspective = pageBlur != null;
+    // Soft black plate shadows show through a translucent white face and read
+    // as a charcoal fill — drop them in page-perspective mode.
+    final showDepthChrome = elevated && !perspective;
 
     // No opaque under-plate: a filled lip behind the frost read as solid face
     // fill. Keep its cast shadow on a transparent twin so depth is unchanged.
@@ -464,17 +522,18 @@ class SettingsPanel extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Positioned.fill(
-          child: CustomPaint(
-            painter: _SettingsOuterAmbientPainter(
-              cornerRadius: corner,
-              extent: outerAmbientExtent,
-              edge: outerAmbientEdge,
-              lightFromTopLeft: lightFromTopLeft,
+        if (showDepthChrome)
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _SettingsOuterAmbientPainter(
+                cornerRadius: corner,
+                extent: outerAmbientExtent,
+                edge: outerAmbientEdge,
+                lightFromTopLeft: lightFromTopLeft,
+              ),
             ),
           ),
-        ),
-        if (elevated)
+        if (showDepthChrome)
           Positioned.fill(
             child: Transform.translate(
               offset: depthLipOffset,
@@ -490,44 +549,53 @@ class SettingsPanel extends StatelessWidget {
         DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: radius,
-            boxShadow: elevated ? cardShadow : const [],
+            boxShadow: showDepthChrome ? cardShadow : const [],
           ),
-          // Frost / gradient stay rounded-clipped; [child] may paint outside
+          // Face / gradient stay rounded-clipped; [child] may paint outside
           // (e.g. CyberSlider drag value bubble above the first settings row).
           child: Stack(
             clipBehavior: Clip.none,
             children: [
               Positioned.fill(
-                child: ClipRRect(
-                  borderRadius: radius,
-                  child: CyberBackdropBlur(
-                    sampleMode: blurSampleMode,
-                    intensity: blurIntensity,
-                    sigmaX: blurSigma,
-                    sigmaY: blurSigma,
-                    blurTint: CyberBlurTint.dark,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(gradient: surfaceGradient),
-                      child: const SizedBox.expand(),
-                    ),
+                child: perspective
+                    ? SettingsPerspectiveChrome.face(
+                        cornerRadius: corner,
+                        borderGradientCenter: borderGradientCenter,
+                      )
+                    : ClipRRect(
+                        borderRadius: radius,
+                        child: CyberBackdropBlur(
+                          sampleMode: blurSampleMode,
+                          intensity: blurIntensity,
+                          sigmaX: blurSigma,
+                          sigmaY: blurSigma,
+                          blurTint: CyberBlurTint.dark,
+                          child: DecoratedBox(
+                            decoration:
+                                BoxDecoration(gradient: surfaceGradient),
+                            child: const SizedBox.expand(),
+                          ),
+                        ),
+                      ),
+              ),
+              if (perspective)
+                child
+              else
+                CustomPaint(
+                  foregroundPainter: _SettingsDepthEdgePainter(
+                    baseRim: rimColor,
+                    highlightGlow: SettingsDimens.cardHighlightGlow,
+                    width: SettingsDimens.borderWidth,
+                    cornerRadius: corner,
+                    innerShadowWidth: innerShadowWidth,
+                    innerShadowEdge: innerShadowEdge,
+                    lightFromTopLeft: lightFromTopLeft,
+                    lightRim: lightRim,
+                    innerHighlightWidth: innerHighlightWidth,
+                    innerHighlightColor: innerHighlightColor,
                   ),
+                  child: child,
                 ),
-              ),
-              CustomPaint(
-                foregroundPainter: _SettingsDepthEdgePainter(
-                  baseRim: rimColor,
-                  highlightGlow: SettingsDimens.cardHighlightGlow,
-                  width: SettingsDimens.borderWidth,
-                  cornerRadius: corner,
-                  innerShadowWidth: innerShadowWidth,
-                  innerShadowEdge: innerShadowEdge,
-                  lightFromTopLeft: lightFromTopLeft,
-                  lightRim: lightRim,
-                  innerHighlightWidth: innerHighlightWidth,
-                  innerHighlightColor: innerHighlightColor,
-                ),
-                child: child,
-              ),
             ],
           ),
         ),
@@ -858,7 +926,7 @@ class SettingsGroup extends StatelessWidget {
             thickness: SettingsDimens.sectionDividerHeight,
             indent: 20,
             endIndent: 20,
-            color: CyberColors.dividerCenter,
+            color: SettingsDimens.sectionDividerColor,
           ),
         );
       }
@@ -1523,6 +1591,90 @@ class SettingsHomeBackdrop extends StatelessWidget {
   }
 }
 
+/// Declares Settings / Monitor page chrome — descendant [SettingsPanel]s use
+/// [SettingsPerspectiveChrome] (Custom Home selected-card Gaussian) instead of
+/// dialog frost.
+class SettingsPageBackdropBlur extends InheritedWidget {
+  const SettingsPageBackdropBlur({
+    super.key,
+    required this.sigma,
+    required super.child,
+  });
+
+  /// Custom Home selected-card Gaussian ([SettingsPerspectiveChrome.blurSigma] = 12).
+  final double sigma;
+
+  static SettingsPageBackdropBlur? maybeOf(BuildContext context) {
+    return context
+        .dependOnInheritedWidgetOfExactType<SettingsPageBackdropBlur>();
+  }
+
+  @override
+  bool updateShouldNotify(SettingsPageBackdropBlur oldWidget) =>
+      oldWidget.sigma != sigma;
+}
+
+/// Settings / Monitor page stack: sharp wallpaper → page [ImageFiltered]
+/// blur → [child].
+///
+/// Capture for tip/IME frost stays on the sharp [CyberBlurBackdropTarget].
+/// The blurred wallpaper layer is Widget Gaussian ([ImageFilter.blur], same
+/// sigma as Custom Home cards = 12). Panels also use
+/// [SettingsPerspectiveChrome] (realtime BackdropFilter + dark tint).
+class SettingsBlurredPageShell extends StatelessWidget {
+  const SettingsBlurredPageShell({
+    super.key,
+    required this.child,
+    this.blurSigma = SettingsPerspectiveChrome.blurSigma,
+    this.backdropBuilder,
+  });
+
+  final Widget child;
+
+  /// Page wallpaper Gaussian + panel [SettingsPerspectiveChrome] sigma
+  /// (Custom Home low = 12).
+  final double blurSigma;
+
+  /// Wallpaper under capture + blur layer. Called twice (sharp + blurred).
+  /// Defaults to [SettingsHomeBackdrop]. Monitor passes a dimmed stack.
+  final Widget Function()? backdropBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    final buildPlate = backdropBuilder ?? () => const SettingsHomeBackdrop();
+    return CyberBlurBackdropScope(
+      child: SettingsPageBackdropBlur(
+        sigma: blurSigma,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned.fill(
+              child: CyberBlurBackdropTarget(
+                child: buildPlate(),
+              ),
+            ),
+            // Widget-layer Gaussian between wallpaper and chrome (gutters /
+            // status). Panels add their own Custom Home BackdropFilter face.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: ImageFiltered(
+                  imageFilter: ui.ImageFilter.blur(
+                    sigmaX: blurSigma,
+                    sigmaY: blurSigma,
+                    tileMode: ui.TileMode.clamp,
+                  ),
+                  child: buildPlate(),
+                ),
+              ),
+            ),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class SettingsScaffold extends StatelessWidget {
   const SettingsScaffold({
     super.key,
@@ -1539,34 +1691,23 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final l10n = AppLocalizations.of(context)!;
-    // Capture root = Home wallpaper; body (SettingsPanel) stays outside so
-    // followLayout frost samples the backdrop, not the panel itself.
-    return CyberBlurBackdropScope(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          const Positioned.fill(
-            child: CyberBlurBackdropTarget(
-              child: SettingsHomeBackdrop(),
-            ),
-          ),
-          Scaffold(
-            backgroundColor: Colors.transparent,
-            appBar: ProductPageStatusBar(
-              title: title,
-              actions: actions,
-              backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              toolbarHeight: WorkModeStatusBarDimens.height,
-              // Product CallBackHomeButton: Home → home icon, Back → arrow_back.
-              // Nested settings pop → "Back".
-              backLabel: l10n.equipmentStatusBack,
-              backAccent: WorkModeAccent.weld,
-              onBack: canPop ? () => Navigator.of(context).maybePop() : null,
-            ),
-            body: body,
-          ),
-        ],
+    // Page ImageFiltered wallpaper (sigma 12) + Custom Home panel faces.
+    return SettingsBlurredPageShell(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: ProductPageStatusBar(
+          title: title,
+          actions: actions,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          toolbarHeight: WorkModeStatusBarDimens.height,
+          // Product CallBackHomeButton: Home → home icon, Back → arrow_back.
+          // Nested settings pop → "Back".
+          backLabel: l10n.equipmentStatusBack,
+          backAccent: WorkModeAccent.weld,
+          onBack: canPop ? () => Navigator.of(context).maybePop() : null,
+        ),
+        body: body,
       ),
     );
   }

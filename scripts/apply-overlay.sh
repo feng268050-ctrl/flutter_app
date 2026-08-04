@@ -27,9 +27,11 @@ BR_PKG_BLUEZ5_UTILS="$SDK/buildroot/package/bluez5_utils"
 BR_PKG_SOURCE_HAN_SANS_CN="$SDK/buildroot/package/source-han-sans/source-han-sans-cn"
 BR_PKG_MESON="$SDK/buildroot/package/meson"
 BR_PKG_GSTREAMER1="$SDK/buildroot/package/gstreamer1"
+BR_PKG_LIBOPENSSL="$SDK/buildroot/package/libopenssl"
 LWS_ROCKCHIP_BLUEZ_PATCH_STASH=".lws-rockchip-bluez-patch-disabled"
 LWS_ROCKCHIP_GST_PATCH_STASH=".lws-rockchip-gst-patches-disabled"
 LWS_ROCKCHIP_MESON_PATCH_STASH=".lws-rockchip-meson-patches-disabled"
+LWS_ROCKCHIP_OPENSSL_PATCH_STASH=".lws-rockchip-openssl-patches-disabled"
 BR_OVERLAY_ROOT="$SDK/buildroot/board/rockchip/rk3566_rk3568/rootfs-overlay"
 BR_OVERLAY="$BR_OVERLAY_ROOT/system/etc"
 OVERLAY_FS="$OVERLAY/board/rockchip/rk3566_rk3568/rootfs-overlay"
@@ -616,6 +618,49 @@ sync_meson_package() {
   echo "overlay: meson package synced ($(grep -E '^MESON_VERSION' "$pkg/meson.mk" | awk '{print $3}'))"
 }
 
+# OpenSSL CVE pin (3.5.7 LTS). Replace Rockchip SDK 3.2.1 recipe; stash vendor patches
+# (stock BR reproducible/static/ppc — overlay ships Buildroot 2025.02.x set for 3.5.7).
+sync_libopenssl_package() {
+  local src_dir="$OVERLAY/buildroot/package/libopenssl"
+  local pkg="$BR_PKG_LIBOPENSSL"
+  local stash="$pkg/$LWS_ROCKCHIP_OPENSSL_PATCH_STASH"
+  if [[ ! -f "$src_dir/libopenssl.mk" ]]; then
+    return 0
+  fi
+  if [[ ! -d "$pkg" ]]; then
+    echo "overlay: skip libopenssl (package missing)" >&2
+    return 0
+  fi
+  local base
+  for base in libopenssl.mk libopenssl.hash Config.in; do
+    if [[ -f "$pkg/$base" && ! -f "$pkg/$base.orig" ]]; then
+      cp -a "$pkg/$base" "$pkg/$base.orig"
+    fi
+  done
+  mkdir -p "$stash"
+  shopt -s nullglob
+  local moved=0
+  local p
+  for p in "$pkg"/*.patch; do
+    mv "$p" "$stash/"
+    moved=1
+  done
+  shopt -u nullglob
+  if [[ "$moved" == 1 ]]; then
+    echo "overlay: stashed SDK libopenssl patches (overlay OpenSSL 3.5.x recipe)"
+  fi
+  local f
+  shopt -s nullglob
+  for f in "$src_dir"/*; do
+    [[ -f "$f" ]] || continue
+    install_file "$f" "$pkg/$(basename "$f")"
+  done
+  shopt -u nullglob
+  local ver
+  ver="$(grep -E '^LIBOPENSSL_VERSION' "$pkg/libopenssl.mk" | awk '{print $3}')"
+  echo "overlay: libopenssl package synced (LIBOPENSSL_VERSION=${ver:-unknown})"
+}
+
 # Product GStreamer pin (1.28.5+). Sync recipe files and stash Rockchip 1.22.x patches
 # that do not apply to the locked tip (MPP path lives in gstreamer1-rockchip).
 sync_gstreamer1_package() {
@@ -1096,6 +1141,7 @@ sync_bluez5_utils_stock
 sync_bluez_alsa_package
 sync_source_han_sans_cn_package
 sync_meson_package
+sync_libopenssl_package
 sync_gstreamer1_package
 sync_gstreamer1_rockchip_package
 patch_buildroot_config

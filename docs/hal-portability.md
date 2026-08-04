@@ -80,7 +80,7 @@ Proxy prefs: `/var/lib/network/proxy.conf`. No NetworkManager.
 
 Product write path is BlueZ D-Bus only (**no** runtime `bluetoothctl` / `busctl` shell). Optional board diagnostic: `bt-hid-check.sh` (not a HAL helper).
 
-**SDK note:** Rockchip’s `0001-bluez-modified-only-for-rockchip.patch` (Connect/`ADDR_TYPE` string args) is **disabled by** `scripts/apply-overlay.sh` → `sync_bluez5_utils_stock` so images build portable upstream BlueZ 5.77. Do not re-enable that fork for HAL portability.
+**SDK note:** Rockchip’s `0001-bluez-modified-only-for-rockchip.patch` (Connect/`ADDR_TYPE` string args) is **disabled by** `scripts/apply-overlay.sh` → `sync_bluez5_utils_stock` so images build portable upstream BlueZ (overlay pin ≥ **5.87**). Do not re-enable that fork for HAL portability.
 
 ### `hal/output` — backlight / volume / orientation
 

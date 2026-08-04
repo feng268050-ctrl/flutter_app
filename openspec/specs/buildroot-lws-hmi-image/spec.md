@@ -80,6 +80,15 @@ The lws_hmi rootfs SHALL include system OpenSSL libraries (`libssl.so.3` / `libc
 - **WHEN** a product rootfs built after this change is inspected
 - **THEN** `libcrypto.so.3` reports the overlay-pinned OpenSSL version (not `3.2.1`)
 
+### Requirement: Rootfs ships overlay-pinned BlueZ
+
+The lws_hmi rootfs SHALL include BlueZ userspace (`bluetoothd` and related tools enabled by `lws_hmi_bt.config`) built from the overlay-pinned `bluez5_utils` version required by `buildroot-bluez-security`, not the vendor SDK default of BlueZ 5.77.
+
+#### Scenario: rootfs bluetoothd version is pinned
+
+- **WHEN** a product rootfs built after this change is inspected on device or in `target/`
+- **THEN** `bluetoothd -v` reports the overlay pin (≥ 5.87), not `5.77`
+
 ### Requirement: eLinux HMI and engine install from prebuilt only
 
 Buildroot overlay packages for the eLinux HMI and flutter-engine SHALL copy from `prebuilt/eLinux HMI/<version>/` and `prebuilt/flutter-engine/<version>/` during `make build-rootfs`. `make check-prebuilt` SHALL fail if prebuilt artifacts are missing. Host `make build-runtime-deps` populates prebuilt directories.

@@ -94,6 +94,16 @@ rm -f \
 	"$TARGET_DIR/usr/libexec/bluetooth/bt-hid-heal-loop.sh"
 rm -rf "$TARGET_DIR/run/bt-hid" "$TARGET_DIR/var/run/bt-hid"
 
+# H1 (bluez-security-upgrade): OBEX/PBAP unused — Buildroot incremental target/
+# keeps obexd + user units after BR2_PACKAGE_BLUEZ5_UTILS_OBEX is unset.
+disable_unit "obex.service"
+rm -f \
+	"$TARGET_DIR/usr/libexec/bluetooth/obexd" \
+	"$TARGET_DIR/usr/lib/systemd/user/obex.service" \
+	"$TARGET_DIR/usr/lib/systemd/user/dbus-org.bluez.obex.service" \
+	"$TARGET_DIR/usr/share/dbus-1/services/org.bluez.obex.service" \
+	"$TARGET_DIR/etc/dbus-1/services/org.bluez.obex.service"
+
 # MediaMTX moved to App (/opt/hmi/bin via cyber_pm). Incremental target/ keeps
 # former overlay binary/unit/helper after rsync --delete of overlay sources.
 disable_unit "mediamtx.service"

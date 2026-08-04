@@ -24,6 +24,7 @@ BR_PKG_FLUTTER_SDK="$SDK/buildroot/package/flutter-sdk-bin"
 BR_PKG_FLUTTER_ELINUX="$SDK/buildroot/package/flutter-embedded-linux"
 BR_PKG_LIBSERIALPORT="$SDK/buildroot/package/libserialport"
 BR_PKG_BLUEZ5_UTILS="$SDK/buildroot/package/bluez5_utils"
+BR_PKG_BLUEZ5_UTILS_HEADERS="$SDK/buildroot/package/bluez5_utils-headers"
 BR_PKG_SOURCE_HAN_SANS_CN="$SDK/buildroot/package/source-han-sans/source-han-sans-cn"
 BR_PKG_MESON="$SDK/buildroot/package/meson"
 BR_PKG_GSTREAMER1="$SDK/buildroot/package/gstreamer1"
@@ -493,6 +494,62 @@ sync_bluez5_utils_stock() {
   else
     echo "overlay: no Rockchip BlueZ patch present (already stock)"
   fi
+}
+
+# BlueZ security pin (≥ 5.87). Replace Rockchip SDK 5.77 recipe; keep stock Device1
+# (Rockchip Connect(s) patch stays stashed via sync_bluez5_utils_stock after this).
+sync_bluez5_utils_package() {
+  local src_dir="$OVERLAY/buildroot/package/bluez5_utils"
+  local pkg="$BR_PKG_BLUEZ5_UTILS"
+  local hdr_src="$OVERLAY/buildroot/package/bluez5_utils-headers"
+  local hdr_pkg="$BR_PKG_BLUEZ5_UTILS_HEADERS"
+  local stash="$pkg/$LWS_ROCKCHIP_BLUEZ_PATCH_STASH"
+  if [[ ! -f "$src_dir/bluez5_utils.mk" ]]; then
+    return 0
+  fi
+  if [[ ! -d "$pkg" ]]; then
+    echo "overlay: skip bluez5_utils (package missing)" >&2
+    return 0
+  fi
+  local base
+  for base in bluez5_utils.mk bluez5_utils.hash Config.in S40bluetoothd; do
+    if [[ -f "$pkg/$base" && ! -f "$pkg/$base.orig" ]]; then
+      cp -a "$pkg/$base" "$pkg/$base.orig"
+    fi
+  done
+  mkdir -p "$stash"
+  shopt -s nullglob
+  local moved=0
+  local p
+  for p in "$pkg"/*.patch; do
+    mv "$p" "$stash/"
+    moved=1
+  done
+  shopt -u nullglob
+  if [[ "$moved" == 1 ]]; then
+    echo "overlay: stashed SDK bluez5_utils patches (overlay BlueZ ≥ 5.87 recipe)"
+  fi
+  local f
+  shopt -s nullglob
+  for f in "$src_dir"/*; do
+    [[ -f "$f" ]] || continue
+    install_file "$f" "$pkg/$(basename "$f")"
+  done
+  shopt -u nullglob
+  if [[ -f "$hdr_src/bluez5_utils-headers.mk" && -d "$hdr_pkg" ]]; then
+    for base in bluez5_utils-headers.mk bluez5_utils-headers.hash Config.in; do
+      if [[ -f "$hdr_pkg/$base" && ! -f "$hdr_pkg/$base.orig" ]]; then
+        cp -a "$hdr_pkg/$base" "$hdr_pkg/$base.orig"
+      fi
+    done
+    for f in "$hdr_src"/*; do
+      [[ -f "$f" ]] || continue
+      install_file "$f" "$hdr_pkg/$(basename "$f")"
+    done
+  fi
+  local ver
+  ver="$(grep -E '^BLUEZ5_UTILS_VERSION' "$pkg/bluez5_utils.mk" | awk '{print $3}')"
+  echo "overlay: bluez5_utils package synced (BLUEZ5_UTILS_VERSION=${ver:-unknown})"
 }
 
 restore_bluez5_utils_rockchip_patch() {
@@ -1137,6 +1194,7 @@ sync_flutter_engine_package
 sync_flutter_sdk_package
 sync_flutter_embedded_linux_package
 sync_libserialport_package
+sync_bluez5_utils_package
 sync_bluez5_utils_stock
 sync_bluez_alsa_package
 sync_source_han_sans_cn_package

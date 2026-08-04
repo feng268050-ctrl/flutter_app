@@ -1204,8 +1204,8 @@ EOF
 		if [[ -x "$target/usr/libexec/bluetooth/bluetoothd" ]]; then
 			echo "OK:  usr/libexec/bluetooth/bluetoothd"
 		else
-			echo "FAIL: bluetoothd missing (BlueZ 5.77 installs to usr/libexec/bluetooth/)" >&2
-			echo "  Run: bash scripts/br-make-packages.sh bt bluez5_utils && make build-rootfs" >&2
+			echo "FAIL: bluetoothd missing (BlueZ installs to usr/libexec/bluetooth/)" >&2
+			echo "  Run: bash scripts/br-make-packages.sh bluez bluez5_utils bluez5_utils-headers bluez-alsa && make build-rootfs" >&2
 			missing=1
 		fi
 		if [[ -x "$target/usr/bin/bluetoothctl" ]]; then
@@ -1244,6 +1244,25 @@ EOF
 			missing=1
 		else
 			echo "OK:  bt-hid-heal.service absent"
+		fi
+		if [[ -e "$target/usr/libexec/bluetooth/obexd" ]]; then
+			echo "FAIL: obexd present (OBEX disabled; purge-retired should remove)" >&2
+			missing=1
+		else
+			echo "OK:  obexd absent (H1)"
+		fi
+		if command -v strings >/dev/null 2>&1; then
+			bt_ver="$(strings "$target/usr/libexec/bluetooth/bluetoothd" 2>/dev/null \
+				| grep -E '^[0-9]+\.[0-9]+$' | sort -u | tr '\n' ' ')"
+			case " $bt_ver " in
+			*" 5.87 "*|*" 5.88 "*|*" 5.89 "*)
+				echo "OK:  bluetoothd version string includes ≥5.87 ($bt_ver)"
+				;;
+			*)
+				# Cross-binaries may not expose a clean version via strings on all hosts.
+				echo "WARN: bluetoothd version strings unclear ($bt_ver) — confirm on device with bluetoothd -v"
+				;;
+			esac
 		fi
 	fi
 	if grep -qF '#include "chips/lws_hmi_npu.config"' "$def" 2>/dev/null; then

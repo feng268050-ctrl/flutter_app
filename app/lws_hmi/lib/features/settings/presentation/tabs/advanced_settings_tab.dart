@@ -12,7 +12,9 @@ import 'package:lws_hmi/features/settings/application/temperature_unit_convert.d
 import 'package:lws_hmi/features/settings/presentation/widgets/auto_zero_offset_dialog.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Advanced Settings — layout parity with lws-ui `AdvancedSettingFragment`.
 ///
@@ -180,13 +182,13 @@ class _AdvancedSettingsTabState extends State<AdvancedSettingsTab> {
                     ),
                   ),
                 ),
-                trailing: CyberButton(
+                trailing: HmiButton(
+                  label: l10n.advancedSettingZeroOffsetAuto,
+                  size: HmiButtonSize.mini,
                   variant: CyberButtonVariant.primary,
-                  size: CyberButtonSize.mini,
                   onPressed: () => unawaited(showAutoZeroOffsetDialog(
                     context: context,
                   )),
-                  child: Text(l10n.advancedSettingZeroOffsetAuto),
                 ),
               ),
               right: SettingsScaledParam(

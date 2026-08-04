@@ -9,7 +9,9 @@ import 'package:lws_hmi/features/settings/presentation/pages/wifi_details_page.d
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/cyber/cyber_ime_input_dialog.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Wireless Network — switch + connected + My Networks + Other Networks.
 class WifiSettingsPage extends StatefulWidget {
@@ -480,11 +482,12 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                   SettingsDimens.inset,
                 ),
                 child: Center(
-                  child: CyberButton(
+                  child: HmiButton(
+                    label: l10n.wifiHiddenNetworkConnect,
+                    size: HmiButtonSize.medium,
                     onPressed: _busy != null
                         ? null
                         : () => unawaited(_joinHidden()),
-                    child: Text(l10n.wifiHiddenNetworkConnect),
                   ),
                 ),
               ),

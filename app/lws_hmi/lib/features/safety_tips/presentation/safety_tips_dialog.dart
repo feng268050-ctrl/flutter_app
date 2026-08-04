@@ -2,9 +2,11 @@ import 'dart:ui' as ui;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Blue link color from lws-ui `activity_safety_tips.xml` (`#324BF3`).
 const Color _kDisclaimerLink = Color(0xFF324BF3);
@@ -178,8 +180,10 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: _kCardPadH),
-              child: Text(
-                content,
+              // Split ARB blocks on blank lines so "1. / 2. / …" keep clear
+              // vertical gaps (plain Text collapses visual rhythm on device).
+              child: _NumberedBodyText(
+                content: content,
                 style: context.hmiTypography.pageTitle.copyWith(
                   color: CyberColors.textPrimary,
                   height: 1.35,
@@ -257,28 +261,62 @@ class _SafetyTipsBodyState extends State<_SafetyTipsBody> {
                 ),
               ),
               const SizedBox(width: CyberDimens.contentPadding),
-              SizedBox(
-                // Fixed width (lws-ui); only small-tier height is applied.
-                width: 163,
-                child: CyberButton(
-                  key: ValueKey(
-                    isTips
-                        ? 'safety-tips-agree-btn'
-                        : 'product-disclaimer-agree-btn',
-                  ),
-                  // medium keeps label/padding style; height alone → small tier.
-                  size: CyberButtonSize.medium,
-                  height: CyberDimens.actionButtonSmallHeight,
-                  variant: CyberButtonVariant.primary,
-                  shape: CyberButtonShape.rounded,
-                  stretch: true,
-                  onPressed: _agreed ? _onAgree : null,
-                  child: Text(l10n.safetyTipsAgree),
+              HmiButton(
+                key: ValueKey(
+                  isTips
+                      ? 'safety-tips-agree-btn'
+                      : 'product-disclaimer-agree-btn',
                 ),
+                label: l10n.safetyTipsAgree,
+                // 100% small CTA; fixed width matches lws-ui Agree (163).
+                size: HmiButtonSize.small,
+                widthPolicy: HmiButtonWidthPolicy.fixed,
+                width: 163,
+                variant: CyberButtonVariant.primary,
+                shape: CyberButtonShape.rounded,
+                onPressed: _agreed ? _onAgree : null,
               ),
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Renders Safety Tips / Disclaimer body as numbered blocks with fixed gaps.
+///
+/// ARB strings already use `\n\n` between `1.` / `2.` / … items; splitting here
+/// makes inter-item spacing independent of line-height.
+final class _NumberedBodyText extends StatelessWidget {
+  const _NumberedBodyText({
+    required this.content,
+    required this.style,
+  });
+
+  final String content;
+  final TextStyle style;
+
+  /// Gap between numbered sections (and between intro + first section).
+  static const _sectionGap = 20.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final blocks = content
+        .split(RegExp(r'\n\s*\n'))
+        .map((b) => b.trim())
+        .where((b) => b.isNotEmpty)
+        .toList(growable: false);
+    if (blocks.isEmpty) {
+      return Text(content, style: style);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < blocks.length; i++) ...[
+          if (i > 0) const SizedBox(height: _sectionGap),
+          Text(blocks[i], style: style),
+        ],
       ],
     );
   }

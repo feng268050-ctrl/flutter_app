@@ -6,9 +6,10 @@ import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/wifi_settings_page.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/platform/wifi/wifi_controller.dart';
 import 'package:lws_hmi/platform/wifi/wifi_models.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Once-per-process Wi‑Fi connect tip on the global prompt queue.
@@ -117,12 +118,15 @@ abstract final class WifiConnectTipPrompt {
           title: l10n.wifiConnectTipTitle,
           body: Text(l10n.wifiConnectTipBody),
           actions: [
-            CyberButton(
+            HmiButton(
+              label: l10n.closeText,
+              size: HmiButtonSize.medium,
               variant: CyberButtonVariant.secondary,
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(l10n.closeText),
             ),
-            CyberButton(
+            HmiButton(
+              label: l10n.wifiConnectTipOpenSettings,
+              size: HmiButtonSize.medium,
               variant: CyberButtonVariant.primary,
               onPressed: () {
                 Navigator.of(ctx).pop();
@@ -133,7 +137,6 @@ abstract final class WifiConnectTipPrompt {
                   ),
                 );
               },
-              child: Text(l10n.wifiConnectTipOpenSettings),
             ),
           ],
         );

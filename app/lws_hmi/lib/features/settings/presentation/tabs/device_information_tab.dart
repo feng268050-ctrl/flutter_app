@@ -202,11 +202,11 @@ class _DeviceInformationTabState extends State<DeviceInformationTab> {
               style: const TextStyle(color: CyberColors.textSecondary),
             ),
             const SizedBox(height: 20),
-            CyberButton(
-              size: CyberButtonSize.small,
+            HmiButton(
+              label: l10n.closeText,
+              size: HmiButtonSize.small,
               shape: CyberButtonShape.rounded,
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(l10n.closeText),
             ),
           ],
         );

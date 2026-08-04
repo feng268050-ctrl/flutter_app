@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/app/app_theme.dart';
 import 'package:lws_hmi/features/safety_tips/application/safety_tips_coordinator.dart';
 import 'package:lws_hmi/features/safety_tips/application/safety_tips_gate.dart';
 import 'package:lws_hmi/features/safety_tips/presentation/safety_tips_dialog.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 void main() {
   tearDown(SafetyTipsCoordinator.resetForTest);
@@ -36,9 +38,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('open-safety-tips')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Safety Operation Tips'), findsOneWidget);
-    expect(find.textContaining('Ensure there are no other personnel'),
-        findsOneWidget);
+    expect(find.text('Safety Tips'), findsOneWidget);
+    expect(find.textContaining('Keep bystanders'), findsOneWidget);
 
     // Open nested Product Disclaimer via blue link.
     await tester.tap(find.byKey(const ValueKey('safety-tips-disclaimer-link')));
@@ -49,11 +50,11 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('product-disclaimer-agree-btn')));
     await tester.pumpAndSettle();
     expect(find.text('Product Disclaimer'), findsNothing);
-    expect(find.text('Safety Operation Tips'), findsOneWidget);
+    expect(find.text('Safety Tips'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('safety-tips-agree-btn')));
     await tester.pumpAndSettle();
-    expect(find.text('Safety Operation Tips'), findsNothing);
+    expect(find.text('Safety Tips'), findsNothing);
   });
 
   testWidgets('Agree stays disabled while unchecked', (tester) async {
@@ -86,13 +87,50 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('safety-tips-agree-btn')));
     await tester.pumpAndSettle();
     // Still showing — Agree ignored while unchecked.
-    expect(find.text('Safety Operation Tips'), findsOneWidget);
+    expect(find.text('Safety Tips'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('safety-tips-agree-cb')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('safety-tips-agree-btn')));
     await tester.pumpAndSettle();
-    expect(find.text('Safety Operation Tips'), findsNothing);
+    expect(find.text('Safety Tips'), findsNothing);
+  });
+
+  testWidgets('EN Safety Tips Agree uses HmiButton small; no overflow at panel size',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAppTheme(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en', 'US'),
+        home: Builder(
+          builder: (context) {
+            return Scaffold(
+              body: Center(
+                child: TextButton(
+                  onPressed: () => showSafetyTipsDialog(context: context),
+                  child: const Text('Open'),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    final agree = find.byKey(const ValueKey('safety-tips-agree-btn'));
+    expect(agree, findsOneWidget);
+    expect(tester.widget(agree), isA<HmiButton>());
+    expect(tester.getSize(agree).height, 44);
+    expect(tester.getSize(agree).width, 163);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('coordinator skip gate completes without dialog', (tester) async {
@@ -120,7 +158,7 @@ void main() {
     await tester.tap(find.text('Go'));
     await tester.pump();
     expect(completed, isTrue);
-    expect(find.text('Safety Operation Tips'), findsNothing);
+    expect(find.text('Safety Tips'), findsNothing);
     expect(SafetyTipsGate.hasAcceptedThisProcess, isFalse);
   });
 }

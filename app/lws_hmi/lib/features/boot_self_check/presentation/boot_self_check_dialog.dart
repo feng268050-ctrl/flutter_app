@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_session.dart';
 import 'package:lws_hmi/features/boot_self_check/domain/boot_self_check_item.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Max height for the item list before it scrolls (lws-ui `maxHeight="420dp"`).
 const double _kItemListMaxHeight = 420;
@@ -107,13 +109,14 @@ class BootSelfCheckDialogBody extends StatelessWidget {
                             ),
                           ),
                         ),
-                        CyberButton(
+                        HmiButton(
+                          label: l10n.bootSelfCheckClose,
+                          size: HmiButtonSize.medium,
                           variant: CyberButtonVariant.primary,
                           onPressed: () {
                             onUserInteracted?.call();
                             onClose();
                           },
-                          child: Text(l10n.bootSelfCheckClose),
                         ),
                       ],
                     ),

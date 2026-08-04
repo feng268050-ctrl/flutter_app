@@ -10,7 +10,9 @@ import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// lws-ui `AiVisionVideoChooseActivity` — table pick → [ProcessVideoRecord].
 class AiVisionVideoChoosePage extends StatefulWidget {
@@ -282,19 +284,14 @@ final class _ChooseRow extends StatelessWidget {
             ),
           Expanded(
             child: Center(
-              // Do not wrap CyberButton in a shorter SizedBox — that clips glyphs.
-              child: CyberButton(
+              child: HmiButton(
+                label: selectLabel,
+                size: HmiButtonSize.medium,
                 variant: CyberButtonVariant.primary,
                 shape: CyberButtonShape.rounded,
                 borderGradientCenter:
                     CyberBorderGradientCenter.topLeftBottomRight,
                 onPressed: onSelect,
-                child: Text(
-                  selectLabel,
-                  softWrap: false,
-                  overflow: TextOverflow.visible,
-                  style: context.hmiTypography.settingsRowTitle.copyWith(height: 1.0),
-                ),
               ),
             ),
           ),

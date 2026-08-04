@@ -1,8 +1,10 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// lws-ui Alarm Logs Clear success tip (`FrostStatusDialog` Cleared / Done / OK).
@@ -94,20 +96,14 @@ final class _AlarmLogsClearedBody extends StatelessWidget {
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 280, maxWidth: 420),
-              child: SizedBox(
-                width: double.infinity,
-                child: CyberButton(
-                  key: const ValueKey('alarm-logs-cleared-ok'),
-                  variant: CyberButtonVariant.primary,
-                  shape: CyberButtonShape.rounded,
-                  stretch: true,
-                  height: CyberDimens.actionButtonHeight,
-                  onPressed: () {
-                    CyberClickSoundRegistry.playClick();
-                    onConfirm();
-                  },
-                  child: Text(okLabel),
-                ),
+              child: HmiButton(
+                key: const ValueKey('alarm-logs-cleared-ok'),
+                label: okLabel,
+                size: HmiButtonSize.medium,
+                widthPolicy: HmiButtonWidthPolicy.fill,
+                variant: CyberButtonVariant.primary,
+                shape: CyberButtonShape.rounded,
+                onPressed: onConfirm,
               ),
             ),
           ),

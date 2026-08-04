@@ -8,9 +8,11 @@ import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/device_remote_lock_store.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -89,19 +91,21 @@ abstract final class DeviceRegistrationDialogs {
             ],
           ),
           actions: [
-            CyberButton(
+            HmiButton(
+              label: l10n.cancelText,
+              size: HmiButtonSize.medium,
               variant: CyberButtonVariant.secondary,
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(l10n.cancelText),
             ),
-            CyberButton(
+            HmiButton(
+              label: l10n.deviceRegisterReconnect,
+              size: HmiButtonSize.medium,
               variant: CyberButtonVariant.primary,
               onPressed: () async {
                 reconnected = true;
                 Navigator.of(ctx).pop();
                 await onReconnect();
               },
-              child: Text(l10n.deviceRegisterReconnect),
             ),
           ],
         );
@@ -156,10 +160,11 @@ abstract final class DeviceRegistrationDialogs {
             ],
           ),
           actions: [
-            CyberButton(
+            HmiButton(
+              label: l10n.closeText,
+              size: HmiButtonSize.medium,
               variant: CyberButtonVariant.primary,
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(l10n.closeText),
             ),
           ],
         );
@@ -257,10 +262,11 @@ abstract final class DeviceRegistrationDialogs {
           title: l10n.deviceRemoteLockTitle,
           body: Text(l10n.deviceRemoteLockBody),
           actions: [
-            CyberButton(
+            HmiButton(
+              label: l10n.closeText,
+              size: HmiButtonSize.medium,
               variant: CyberButtonVariant.primary,
               onPressed: () => host.close(),
-              child: Text(l10n.closeText),
             ),
           ],
         );

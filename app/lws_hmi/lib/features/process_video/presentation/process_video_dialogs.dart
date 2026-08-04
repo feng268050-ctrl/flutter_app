@@ -1,6 +1,7 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_dialog_actions.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Shared body text for process-video confirm prompts (lws-ui frost dialog).
@@ -24,25 +25,11 @@ Future<bool> _showProcessVideoPrompt({
           textAlign: TextAlign.start,
         ),
         actions: [
-          SizedBox(
-            width: 168,
-            child: CyberButton(
-              size: CyberButtonSize.small,
-              stretch: true,
-              variant: CyberButtonVariant.secondary,
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.cancelText),
-            ),
-          ),
-          SizedBox(
-            width: 168,
-            child: CyberButton(
-              size: CyberButtonSize.small,
-              stretch: true,
-              variant: CyberButtonVariant.primary,
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(confirmLabel),
-            ),
+          HmiDialogActions(
+            cancelLabel: l10n.cancelText,
+            confirmLabel: confirmLabel,
+            onCancel: () => Navigator.pop(ctx, false),
+            onConfirm: () => Navigator.pop(ctx, true),
           ),
         ],
       );

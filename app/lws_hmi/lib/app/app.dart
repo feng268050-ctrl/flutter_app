@@ -24,6 +24,8 @@ import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 import 'package:lws_hmi/platform/cloud/cloud_settings_store.dart';
 import 'package:lws_hmi/platform/cloud/device_remote_lock_store.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_scope.dart';
 import 'package:lws_hmi/features/boot_self_check/application/boot_self_check_settings.dart';
@@ -396,10 +398,11 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
             title: 'Disconnected',
             body: Text(body),
             actions: [
-              CyberButton(
+              HmiButton(
+                label: l10n?.closeText ?? 'Close',
+                size: HmiButtonSize.medium,
                 variant: CyberButtonVariant.primary,
                 onPressed: () => Navigator.of(dialogCtx).pop(),
-                child: Text(l10n?.closeText ?? 'Close'),
               ),
             ],
           );

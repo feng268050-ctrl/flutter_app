@@ -82,8 +82,8 @@ final class _EngineerModeEntryTipsBodyState
   /// `frost_dialog_prompt_dont_show_again_inset`.
   static const _dontShowAgainInset = 14.0;
 
-  /// `engineer_mode_entry_dialog_width` floor.
-  static const _minCardWidth = 700.0;
+  /// Engineer entry dialog width floor.
+  static const _minCardWidth = 600.0;
 
   /// `WarnDialogUtil.WARN_DIALOG_MAX_WIDTH_FRACTION`.
   static const _maxWidthFraction = 0.95;

@@ -304,54 +304,66 @@ class VideosTabState extends State<VideosTab> {
 
     return Column(
       children: [
-        // lws-ui `@drawable/video_process_table_head_bg` — horizontal center glow.
-        Container(
-          margin: const EdgeInsets.fromLTRB(_leftInset, 0, _rightInset, 0),
-          padding: const EdgeInsets.fromLTRB(0, _headerTop, 0, _headerBottom),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                Color(0x006C6C6C),
-                Color(0xFF636385),
-                Color(0x006C6C6C),
-              ],
-            ),
-          ),
-          child: Row(
+        // Column labels + center→sides fade hairline (no header fill).
+        Padding(
+          padding: const EdgeInsets.fromLTRB(_leftInset, _headerTop, _rightInset, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final (label, width) in headers)
-                if (width > 0)
-                  Padding(
-                    padding: EdgeInsets.only(
-                      right: _columnGap * scale,
-                    ),
-                    child: SizedBox(
-                      width: width * scale,
-                      child: Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w400,
+              Row(
+                children: [
+                  for (final (label, width) in headers)
+                    if (width > 0)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          right: _columnGap * scale,
+                        ),
+                        child: SizedBox(
+                          width: width * scale,
+                          child: Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
                       ),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w400,
-                      ),
+                ],
+              ),
+              SizedBox(height: _headerBottom),
+              const SizedBox(
+                height: 1,
+                width: double.infinity,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Color(0x00FFFFFF),
+                        Color(0xB3FFFFFF),
+                        Color(0x00FFFFFF),
+                      ],
+                      stops: [0.0, 0.5, 1.0],
                     ),
                   ),
+                ),
+              ),
             ],
           ),
         ),

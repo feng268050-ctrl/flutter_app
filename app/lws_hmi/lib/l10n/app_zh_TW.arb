@@ -52,7 +52,7 @@
   "advancedSettingsGroupOffsetCorrection": "偏移與校正",
   "advancedSettingsGroupPowerThresholds": "功率閾值",
   "advancedSettingsGroupTemperatureThresholds": "溫度閾值",
-  "aiDetectionLabel": "AI檢測",
+  "aiDetectionLabel": "檢測",
   "aiOverlayClsDisabled": "分類：未啓用",
   "aiOverlayClsMetal": "金屬",
   "aiOverlayClsPrefix": "分類：{className}（{score}）",

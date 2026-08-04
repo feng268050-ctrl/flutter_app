@@ -37,7 +37,6 @@ const double _kQaInner = 108;
 const double _kQaIcon = 60;
 const double _kQaWideInner = 244;
 const double _kQaIconStartPad = 24;
-const double _kQaIconTextGap = 8;
 const double _kQaLabelMarginTop = 10;
 const double _kQaCorner = 18;
 const double _kQaCardText = 20;
@@ -812,7 +811,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
     final height = _kQaInner * s;
     final icon = _kQaIcon * s;
     final padStart = _kQaIconStartPad * scaleX;
-    final gap = _kQaIconTextGap * scaleX;
+    // Icon↔text gap matches leading inset (left edge → icon).
     final textSize = (_kQaCardText * s).clamp(14.0, 22.0);
     final dpr = MediaQuery.devicePixelRatioOf(context);
     return HomeQuickAction(
@@ -842,7 +841,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
               size: icon * 0.7,
             ),
           ),
-          SizedBox(width: gap),
+          SizedBox(width: padStart),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

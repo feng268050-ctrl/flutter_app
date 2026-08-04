@@ -180,7 +180,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get advancedSettingsGroupTemperatureThresholds => 'Temperature Thresholds';
 
   @override
-  String get aiDetectionLabel => 'AI Detection';
+  String get aiDetectionLabel => 'Detection';
 
   @override
   String get aiOverlayClsDisabled => 'Class: disabled';

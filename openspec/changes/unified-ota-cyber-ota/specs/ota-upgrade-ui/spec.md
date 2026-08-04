@@ -1,33 +1,35 @@
 ## ADDED Requirements
 
-### Requirement: Safe shutdown returns to Home before whole-device apply
+### Requirement: Safe shutdown navigates to the dedicated upgrade page
 
-Before starting whole-device verify-and-apply (including when triggered by host `make upgrade` after upload), the HMI SHALL enter a safe state: stop any active laser/welding work session (including extinguishing laser output / ending in-progress jobs as defined by the product App), close work screens, and navigate back to **Home**. Partition writes MUST NOT begin until this safe shutdown and Home navigation have completed (or the session fails closed without writing).
+Before starting whole-device transfer or verify-and-apply (including when triggered by host `make upgrade` at upload start), the HMI SHALL enter a safe state: stop any active laser/welding work session (including extinguishing laser output / ending in-progress jobs as defined by the product App), close work screens, and navigate **directly** to the **dedicated upgrade page**. The HMI MUST NOT use Home as an intermediate destination for this flow. Partition writes MUST NOT begin until this safe shutdown and upgrade-page navigation have completed (or the session fails closed without writing).
 
-#### Scenario: make upgrade trigger stops work and returns Home
+#### Scenario: make upgrade trigger stops work and opens upgrade page
 
-- **WHEN** a host finishes uploading a signed bundle and triggers the on-device OTA session while the operator is on a work screen (e.g. quick/engineer/monitor with an active session)
-- **THEN** the HMI stops laser/work activity, returns to Home, and only then proceeds into the upgrade UI
-- **AND** MUST NOT begin partition writes before Home is reached
+- **WHEN** a host starts a whole-device upgrade session (before or as zip upload begins) while the operator is on a work screen (e.g. quick/engineer/monitor with an active session)
+- **THEN** the HMI stops laser/work activity and navigates directly to the dedicated upgrade page
+- **AND** MUST NOT begin partition writes before that page is showing the session
+- **AND** MUST NOT require navigating to Home first
 
-#### Scenario: Cloud or Settings confirm also safe-shuts down
+#### Scenario: Cloud or Settings confirm also safe-shuts down to upgrade page
 
 - **WHEN** the operator confirms a cloud/Settings whole-device update while a work session is active
-- **THEN** the HMI performs the same safe shutdown and Home navigation before the dedicated upgrade page runs apply
+- **THEN** the HMI performs the same safe shutdown and navigates directly to the dedicated upgrade page before download/apply proceeds
 
-### Requirement: Dedicated upgrade page shows burn progress without laser work
+### Requirement: Dedicated upgrade page unifies transfer as download progress
 
-Whole-device OTA progress (verify and burn/write, and in-progress download when applicable) SHALL be shown on a **dedicated upgrade page** (full-screen route) driven by `cyber_ota` progress callbacks — not as a dialog layered on top of laser work screens. The upgrade page SHALL NOT provide laser firing or welding/job start controls. While partition writes are in progress, the operator MUST NOT be offered a control that cancels an in-flight write. The page SHALL remain until apply finishes successfully (reboot requested) or fails with an error state.
+Whole-device OTA progress SHALL be shown on a **dedicated upgrade page** (full-screen route) driven by `cyber_ota` progress callbacks — not as a dialog layered on top of laser work screens. The **transferring** phase SHALL be presented to the operator as **download** progress for both cloud HTTP download and host `make upgrade` zip upload (host upload bytes are mapped into the same download/transfer UX). Subsequent extract, verify, and burn/write progress SHALL use the same page. The upgrade page SHALL NOT provide laser firing or welding/job start controls. While partition writes are in progress, the operator MUST NOT be offered a control that cancels an in-flight write. The page SHALL remain until apply finishes successfully (reboot requested) or fails with an error state.
 
-#### Scenario: Host upload completion opens dedicated upgrade page
+#### Scenario: Host upload appears as download progress on upgrade page
 
-- **WHEN** a host finishes uploading a signed bundle under `/userdata/ota/` and triggers the on-device OTA session
-- **THEN** after safe shutdown to Home, the HMI navigates to the dedicated upgrade page and advances burn progress as writes proceed
+- **WHEN** `make upgrade` is uploading the OTA zip and the on-device session is active
+- **THEN** the dedicated upgrade page shows advancing download/transfer progress that reflects uploaded bytes
+- **AND** after the zip is complete, the same page advances through extract/verify/burn as applicable
 
 #### Scenario: Cloud download uses the same upgrade page
 
-- **WHEN** a cloud/Settings-initiated download of required images completes successfully (or continues on the upgrade page)
-- **THEN** the HMI shows burn/write progress on the dedicated upgrade page for the subsequent verify-and-apply phase
+- **WHEN** a cloud/Settings-initiated download of the OTA zip runs (or continues) on the upgrade page
+- **THEN** the HMI shows download progress on the dedicated upgrade page and then extract/verify/burn for the subsequent phases
 
 #### Scenario: Upgrade page has no laser job entry
 
@@ -36,7 +38,7 @@ Whole-device OTA progress (verify and burn/write, and in-progress download when 
 
 #### Scenario: Verify failure surfaces error without claiming flash success
 
-- **WHEN** signature verification fails after ingress
+- **WHEN** signature verification fails after ingress/extract
 - **THEN** the upgrade page or error UI reports failure and MUST NOT claim that partitions were successfully updated
 
 ### Requirement: Settings check-for-updates uses cyber_ota

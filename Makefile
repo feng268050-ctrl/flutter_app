@@ -43,7 +43,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom usb-ssh-setup test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop upgrade reboot reboot-loader loader flash flash-android watch-maskrom usb-ssh-setup test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -94,6 +94,8 @@ help:
 	@echo "  make build-app             # release AOT → fs-overlay (*_hmi→/opt/hmi; else /opt/<APP>)"
 	@echo "  make prepare-app-assets    # prune/convert process-library + firmware → assets/.generated/"
 	@echo "  make build-debug-app       # debug app bundle → .cache (make debug-app / IDE; rarely run alone)"
+	@echo "  make version               # print app/<APP> pubspec versionName+build (default APP=lws_hmi)"
+	@echo "  make version-bump          # bump pubspec (+ app_version.dart); VERSION=x.y.z required; APP= optional"
 	@echo "  make l10n                  # sync child ARBs + flutter gen-l10n (app/lws_hmi)"
 	@echo "  make l10n-sync             # regenerate en_US/zh_CN/zh_TW child ARBs only"
 	@echo "  make l10n-gen              # flutter gen-l10n only"
@@ -608,6 +610,17 @@ set-prop:
 del-prop:
 	@chmod +x scripts/del-product-prop.sh
 	@$(call WITH_DOTENV,bash scripts/del-product-prop.sh $(filter-out del-prop,$(MAKECMDGOALS)) $(MAKEOVERRIDES))
+
+# Print selected APP pubspec versionName+build (host-only; default APP=lws_hmi).
+version:
+	@chmod +x scripts/app-version.sh
+	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/app-version.sh print)
+
+# Bump selected APP pubspec (+ optional lib/app_version.dart). VERSION=x.y.z[+build] required.
+version-bump:
+	@test -n "$(VERSION)" || (echo 'ERROR: VERSION is required (e.g. make version-bump VERSION=1.0.40)' >&2; exit 1)
+	@chmod +x scripts/app-version.sh
+	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/app-version.sh bump '$(VERSION)')
 
 upgrade:
 	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/upgrade-remote.sh)

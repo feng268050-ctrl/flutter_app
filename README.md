@@ -383,6 +383,8 @@ make prepare-app-assets         # optional host-only: prune process-library + fi
 make build-app                  # *_hmi AOT → overlay /opt/hmi; APP=factory_test → /opt/factory_test
 make push-app                   # SN=... when multiple boards; hot-swap selected APP
 APP=…                           # app/ dir; *_hmi→/opt/hmi; rootfs→output/firmware/<APP>/; factory→…/<APP>/<sku>/
+make version                    # print app/<APP> pubspec versionName+build (default APP=lws_hmi; host-only)
+make version-bump VERSION=1.0.40  # bump pubspec (+ app_version.dart when present); 5-digit build encode
 make build-rootfs               # → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)
 make upgrade                    # streams APP rootfs + shared FITs (same APP= as build-rootfs)
 make build-img                  # → output/firmware/<APP>/<FACTORY_SKU>/factory.img

@@ -41,13 +41,12 @@ Future<EngineerModeEntryTipsResult?> showEngineerModeEntryTipsDialog(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Engineer mode entry tips',
-    // lws-ui: min width 700dp, grow for title (`resolveTitleBasedWidthPx`),
-    // minHeight 480dp, maxHeight 680dp.
+    // Width: 600dp floor (title-based grow). Height: 400–600.
     constraints: BoxConstraints(
       minWidth: width,
       maxWidth: width,
-      minHeight: 480,
-      maxHeight: 680,
+      minHeight: 400,
+      maxHeight: 600,
     ),
     builder: (dialogContext) => const _EngineerModeEntryTipsBody(),
   );

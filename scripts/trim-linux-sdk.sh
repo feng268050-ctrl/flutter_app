@@ -116,7 +116,7 @@ rm_rf "$SDK/tools/windows"
 
 # u-boot/: not required. Production binaries: prebuilt/bootloader/.
 # Keep optional full source (Makefile / .git from fetch-uboot); otherwise remove the dir.
-# build-img / restore-sdk-loader mkdir staging under u-boot/ only when packing.
+# build-img mkdir staging under u-boot/ only when packing.
 slim_uboot_staging() {
   local uboot="$SDK/u-boot"
   if [[ ! -e "$uboot" ]]; then

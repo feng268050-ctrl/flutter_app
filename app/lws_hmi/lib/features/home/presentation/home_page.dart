@@ -459,8 +459,7 @@ class _HomePageState extends State<HomePage> with RouteAware {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Custom Home metric cards — CyberCard frost frozen at
-                      // firstFrame so left/right WebP plates keep ~30+ fps.
+                      // Custom Home metric cards — firstFrame frost (blur baked).
                       SizedBox(
                         height: _kStatCardH * sy,
                         child: CustomHomeStatisticsPanel(
@@ -769,6 +768,7 @@ class _HomeQuickActionSquare extends StatelessWidget {
       labelMarginTop: _kQaLabelMarginTop * scaleY,
       labelFontSize: labelFontSize,
       sampleMode: CyberBlurSampleMode.firstFrame,
+      blurIntensity: CyberBlurIntensity.extreme,
       label: label,
       onPressed: onPressed,
       child: Center(
@@ -823,6 +823,7 @@ class _HomeQuickActionAiVision extends StatelessWidget {
       cornerRadius: _kQaCorner * s,
       labelMarginTop: _kQaLabelMarginTop * scaleY,
       sampleMode: CyberBlurSampleMode.firstFrame,
+      blurIntensity: CyberBlurIntensity.extreme,
       label: l10n.homeAiVisionLabel,
       onPressed: onPressed,
       child: Row(

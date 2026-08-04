@@ -19,8 +19,10 @@ const Color kCyberFakeGlassBorder = Color(0x44FFFFFF);
 /// - Realtime Gaussian (default): [CyberBlurSampleMode.realtime] → Material
 ///   [BackdropFilter] + [ImageFilter.blur].
 /// - Static sampling (FrostUI): [firstFrame] / [onChange] / [followLayout]
-///   → capture from [CyberBlurBackdropScope]; [followLayout] offsets a shared
-///   blurred backdrop so scroll keeps wallpaper perspective aligned.
+///   → capture from [CyberBlurBackdropScope], **bake Gaussian into the bitmap
+///   at sample time**, then paint with [RawImage] only (no per-frame
+///   [ImageFiltered]). [followLayout] offsets a shared pre-blurred backdrop
+///   so scroll keeps wallpaper perspective aligned.
 ///
 /// [CyberBlurIntensity.transparent] skips blur and overlay (border-only host).
 ///
@@ -94,7 +96,7 @@ class CyberBackdropBlur extends StatefulWidget {
 }
 
 class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
-  /// Owned crop for [firstFrame] / [onChange].
+  /// Owned pre-blurred crop for [firstFrame] / [onChange] (Gaussian baked in).
   ui.Image? _frozen;
 
   /// Cloned handle of the scope's pre-blurred backdrop for [followLayout].
@@ -152,7 +154,10 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
         oldWidget.sigmaX != widget.sigmaX ||
         oldWidget.sigmaY != widget.sigmaY ||
         oldWidget.intensity != widget.intensity ||
-        oldWidget.backdropScope != widget.backdropScope) {
+        oldWidget.backdropScope != widget.backdropScope ||
+        oldWidget.captureScaleFactor != widget.captureScaleFactor) {
+      // Drop baked bitmap so firstFrame re-capture is not skipped.
+      _clearFrozen();
       _captureRetryCount = 0;
       _scheduleCapture(settlePasses: 2);
       return;
@@ -464,9 +469,22 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
         return;
       }
 
+      // Bake Gaussian once in capture-pixel space (same scale as followLayout).
+      // Paint path then blits [RawImage] only — no per-frame ImageFiltered.
+      final blurred = await _blurImage(
+        cropped,
+        sigmaX: _sigmaX * scale,
+        sigmaY: _sigmaY * scale,
+      );
+      cropped.dispose();
+      if (!mounted) {
+        blurred.dispose();
+        return;
+      }
+
       setState(() {
         _frozen?.dispose();
-        _frozen = cropped;
+        _frozen = blurred;
         _followBlurred = null;
         _useFakeGlass = false;
       });
@@ -624,6 +642,29 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
     }
   }
 
+  /// Bake [ImageFilter.blur] into a new bitmap (capture-time only).
+  static Future<ui.Image> _blurImage(
+    ui.Image src, {
+    required double sigmaX,
+    required double sigmaY,
+  }) async {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final paint = Paint()
+      ..imageFilter = ui.ImageFilter.blur(
+        sigmaX: sigmaX,
+        sigmaY: sigmaY,
+        tileMode: TileMode.clamp,
+      );
+    canvas.drawImage(src, Offset.zero, paint);
+    final picture = recorder.endRecording();
+    try {
+      return picture.toImage(src.width, src.height);
+    } finally {
+      picture.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final blurOn = widget.intensity.usesBackdropBlur;
@@ -653,18 +694,12 @@ class _CyberBackdropBlurState extends State<CyberBackdropBlur> {
           )
         else if (blurOn && _frozen != null)
           Positioned.fill(
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(
-                sigmaX: _sigmaX,
-                sigmaY: _sigmaY,
-                tileMode: TileMode.clamp,
-              ),
-              child: RawImage(
-                image: _frozen,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-              ),
+            child: RawImage(
+              image: _frozen,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              filterQuality: FilterQuality.medium,
             ),
           )
         else if (blurOn && _useFakeGlass)

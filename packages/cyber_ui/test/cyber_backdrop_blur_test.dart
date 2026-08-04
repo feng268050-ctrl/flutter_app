@@ -173,7 +173,48 @@ void main() {
 
     expect(find.text('kbd'), findsOneWidget);
     expect(find.byType(BackdropFilter), findsNothing);
-    expect(find.byType(ImageFiltered), findsOneWidget);
+    // Blur is baked at capture — paint is RawImage only.
+    expect(find.byType(ImageFiltered), findsNothing);
+    expect(find.byType(RawImage), findsOneWidget);
+  });
+
+  testWidgets('firstFrame with scope paints baked RawImage not ImageFiltered',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CyberBlurBackdropScope(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const CyberBlurBackdropTarget(
+                  child: ColoredBox(color: Colors.cyan),
+                ),
+                Center(
+                  child: SizedBox(
+                    width: 120,
+                    height: 80,
+                    child: CyberBackdropBlur(
+                      sampleMode: CyberBlurSampleMode.firstFrame,
+                      intensity: CyberBlurIntensity.low,
+                      child: const Center(child: Text('baked')),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('baked'), findsOneWidget);
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.byType(ImageFiltered), findsNothing);
+    expect(find.byType(RawImage), findsOneWidget);
   });
 
   test('controller generation bumps on requestSample', () {

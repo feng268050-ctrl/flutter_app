@@ -272,9 +272,8 @@ final class _HomeStatisticCard extends StatelessWidget {
       width: width,
       height: height,
       child: CyberCard(
-        // Keep the four animated home plates out of the live backdrop pass.
-        // The initial sample retains the frosted card appearance without
-        // recompositing all four Gaussian regions for every GIF frame.
+        // firstFrame: capture + bake Gaussian once; paint is RawImage only
+        // (cyber_ui bake-in). Safe over looping WebP plates.
         sampleMode: CyberBlurSampleMode.firstFrame,
         intensity: CyberBlurIntensity.low,
         blurTint: CyberBlurTint.dark,

@@ -58,11 +58,11 @@ final class HmiButton extends StatelessWidget {
     final child = _HmiButtonLabel(
       label: label,
       style: labelStyle,
-      icon: icon,
       iconSize: metrics.iconSize,
+      horizontalPadding: metrics.horizontalPadding,
+      icon: icon,
       leading: leading,
       trailing: trailing,
-      horizontalPadding: metrics.horizontalPadding,
     );
 
     // Always stretch so CyberButton uses [height] directly (not shrink-wrap
@@ -133,6 +133,66 @@ final class _HmiButtonLabel extends StatelessWidget {
         (icon == null
             ? null
             : Icon(icon, size: iconSize, color: style.color ?? Colors.white));
+
+    // Icon/leading without trailing: `[gap][icon][gap][label][gap]` so left
+    // inset equals icon↔label spacing (Reset / Save / wire CTAs).
+    if (lead != null && trailing == null) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final painter = TextPainter(
+            text: TextSpan(text: label, style: style),
+            maxLines: 1,
+            textDirection: TextDirection.ltr,
+          )..layout();
+          final textW = painter.width;
+          var drawIcon = iconSize;
+          var gap = (constraints.maxWidth - drawIcon - textW) / 3;
+          if (gap < 0) {
+            drawIcon = (constraints.maxWidth - textW).clamp(0.0, iconSize);
+            gap = (constraints.maxWidth - drawIcon - textW) / 3;
+            if (gap < 0) {
+              gap = 0;
+              drawIcon = (constraints.maxWidth - textW).clamp(0.0, iconSize);
+            }
+          }
+          final row = Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(width: gap),
+              if (drawIcon > 0)
+                SizedBox(
+                  width: drawIcon,
+                  height: drawIcon,
+                  child: icon != null
+                      ? Icon(
+                          icon,
+                          size: drawIcon,
+                          color: style.color ?? Colors.white,
+                        )
+                      : FittedBox(fit: BoxFit.contain, child: lead),
+                ),
+              SizedBox(width: gap),
+              Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.visible,
+                textAlign: TextAlign.center,
+                style: style,
+              ),
+              SizedBox(width: gap),
+            ],
+          );
+          return FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: row,
+          );
+        },
+      );
+    }
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Row(

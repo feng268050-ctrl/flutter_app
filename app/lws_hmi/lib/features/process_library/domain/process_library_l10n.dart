@@ -24,6 +24,92 @@ extension MaterialTypeL10n on MaterialType {
       };
 }
 
+/// Resolve stored library strings (often Chinese Excel) to [MaterialType].
+abstract final class MaterialTypeAliases {
+  static const _exact = <String, MaterialType>{
+    '不锈钢': MaterialType.stainlessSteel,
+    '不鏽鋼': MaterialType.stainlessSteel,
+    '碳钢': MaterialType.carbonSteel,
+    '碳鋼': MaterialType.carbonSteel,
+    '镀锌板': MaterialType.galvanizedSheet,
+    '鍍鋅板': MaterialType.galvanizedSheet,
+    '铝合金': MaterialType.aluminumAlloy,
+    '鋁合金': MaterialType.aluminumAlloy,
+    '黄铜': MaterialType.brass,
+    '黃銅': MaterialType.brass,
+    '自定义': MaterialType.custom,
+    '自定義': MaterialType.custom,
+    'Stainless steel': MaterialType.stainlessSteel,
+    'Stainless Steel': MaterialType.stainlessSteel,
+    'Carbon steel': MaterialType.carbonSteel,
+    'Carbon Steel': MaterialType.carbonSteel,
+    'Galvanized sheet': MaterialType.galvanizedSheet,
+    'Galvanized Sheet': MaterialType.galvanizedSheet,
+    'Aluminum alloy': MaterialType.aluminumAlloy,
+    'Aluminum Alloy': MaterialType.aluminumAlloy,
+    'Brass': MaterialType.brass,
+    'Custom': MaterialType.custom,
+  };
+
+  static MaterialType? resolve(String? raw) {
+    if (raw == null) {
+      return null;
+    }
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final exact = _exact[trimmed];
+    if (exact != null) {
+      return exact;
+    }
+    final lower = trimmed.toLowerCase();
+    for (final material in MaterialType.values) {
+      if (lower == material.label.toLowerCase() ||
+          lower == material.englishName.toLowerCase()) {
+        return material;
+      }
+    }
+    return null;
+  }
+
+  /// Localize a stored material / process-name string for the active locale.
+  static String localizeStored(String raw, AppLocalizations l10n) {
+    final exact = resolve(raw);
+    if (exact != null) {
+      return exact.localizedLabel(l10n);
+    }
+    // "不锈钢-2mm" / "Stainless Steel-2mm" → localized prefix + remainder.
+    final aliases = _exact.keys.toList()
+      ..sort((a, b) => b.length.compareTo(a.length));
+    for (final alias in aliases) {
+      if (raw.startsWith(alias)) {
+        final material = _exact[alias]!;
+        return '${material.localizedLabel(l10n)}${raw.substring(alias.length)}';
+      }
+    }
+    return raw;
+  }
+}
+
+extension ProcessPresetDisplayL10n on ProcessPreset {
+  /// Material pill label — prefer enum l10n over raw Excel `material_name`.
+  String displayMaterialLabel(AppLocalizations l10n) {
+    if (materialType != null) {
+      return materialType!.localizedLabel(l10n);
+    }
+    final raw = materialName;
+    if (raw == null || raw.isEmpty) {
+      return '—';
+    }
+    return MaterialTypeAliases.localizeStored(raw, l10n);
+  }
+
+  /// Process title — map known material aliases so English UI stays English.
+  String displayProcessName(AppLocalizations l10n) =>
+      MaterialTypeAliases.localizeStored(name, l10n);
+}
+
 /// Localized catalog / engineer-facing parameter row titles.
 String localizedProcessParameterLabel(AppLocalizations l10n, String key) {
   return switch (key) {

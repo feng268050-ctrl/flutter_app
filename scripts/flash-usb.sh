@@ -17,8 +17,29 @@ source "$ROOT/scripts/factory-sku.sh"
 ACTION="${1:-}"
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 
-UPGRADE_TOOL_DIR="$ROOT/tools/upgrade_tool"
-UPGRADE_TOOL="$UPGRADE_TOOL_DIR/upgrade_tool"
+# Platform-specific Rockchip upgrade_tool under tools/upgrade_tool/{macos,linux,windows}/
+resolve_upgrade_tool_paths() {
+  local base="$ROOT/tools/upgrade_tool"
+  case "$(uname -s)" in
+  Darwin)
+    UPGRADE_TOOL_DIR="$base/macos"
+    UPGRADE_TOOL="$UPGRADE_TOOL_DIR/upgrade_tool"
+    ;;
+  Linux)
+    UPGRADE_TOOL_DIR="$base/linux"
+    UPGRADE_TOOL="$UPGRADE_TOOL_DIR/upgrade_tool"
+    ;;
+  MINGW* | MSYS* | CYGWIN*)
+    UPGRADE_TOOL_DIR="$base/windows"
+    UPGRADE_TOOL="$UPGRADE_TOOL_DIR/upgrade_tool.exe"
+    ;;
+  *)
+    UPGRADE_TOOL_DIR="$base"
+    UPGRADE_TOOL=""
+    ;;
+  esac
+}
+resolve_upgrade_tool_paths
 SDK="$ROOT/linux-sdk"
 LWS_FIRMWARE_DIR="$ROOT/output/firmware"
 SDK_FIRMWARE_DIR="$SDK/output/firmware"
@@ -54,19 +75,21 @@ Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash}
   reboot         Linux board (USB-SSH or SSH) → reboot; Android → adb reboot
   reboot-loader  Linux board (USB-SSH only) → reboot-loader; Android → adb reboot loader
                  (Android emulator not supported)
-  loader         upgrade_tool ul <MiniLoaderAll.bin>  [LOADER_NORESET=1]  (macOS)
-  upgrade        upgrade_tool uf <update.img>        [UPGRADE_NORESET=1] (macOS)
-  flash          uf update.img; ul first when RockUSB mode is Maskrom (macOS)
+  loader         upgrade_tool ul <MiniLoaderAll.bin>  [LOADER_NORESET=1]
+  upgrade        upgrade_tool uf <update.img>        [UPGRADE_NORESET=1]
+  flash          uf update.img; ul first when RockUSB mode is Maskrom
                  (Android emulator not supported)
   flash-android  flash with Innohi Android image (optional; not required before Linux)
                  (Android emulator not supported)
 
+Host: macOS / Linux (x86_64) / Windows (Git Bash or MSYS2)
+Tool: tools/upgrade_tool/{macos,linux,windows}/  (see tools/upgrade_tool/README.md)
+
 Selection: SN / CHIPID / IP (SSH registry only) / IFACE (USB-SSH)
 App deploy (no reflash): make build-app && make push-app
 Linux HMI → Loader: make reboot-loader
-MaskROM Linux:  make flash (macOS)
-RockUSB Loader: make flash (macOS; skips ul automatically)
-MaskROM Android: make flash-android (macOS)
+MaskROM / RockUSB Loader: make flash (skips ul when already Loader)
+MaskROM Android: make flash-android
 Image override: make flash IMAGE=/path/to/update.img
 EOF
 }
@@ -83,7 +106,12 @@ resolve_loader_bin() {
 
   local sfi line offset size skip count out hash
   mkdir -p "$LOADER_CACHE_DIR"
-  hash="$(md5 -q "$UPDATE_IMG" 2>/dev/null || stat -f '%m-%z' "$UPDATE_IMG")"
+  hash="$(
+    md5 -q "$UPDATE_IMG" 2>/dev/null \
+      || md5sum "$UPDATE_IMG" 2>/dev/null | awk '{print $1}' \
+      || cksum "$UPDATE_IMG" 2>/dev/null | awk '{print $1 "-" $2}' \
+      || echo "unknown"
+  )"
   out="$LOADER_CACHE_DIR/${hash}.MiniLoaderAll.bin"
   if [[ -r "$out" ]]; then
     LOADER_BIN="$out"
@@ -123,17 +151,17 @@ reject_android_emulator_target() {
   fi
 }
 
-require_macos() {
-  [[ "$(uname -s)" == Darwin ]] || die "USB flash is supported on macOS only (use make reboot-loader on Linux to enter RockUSB Loader)"
-}
-
 upgrade_tool_available() {
-  [[ -f "$UPGRADE_TOOL" ]] || return 1
+  [[ -n "${UPGRADE_TOOL:-}" && -f "$UPGRADE_TOOL" ]] || return 1
   [[ -x "$UPGRADE_TOOL" ]] || chmod +x "$UPGRADE_TOOL" 2>/dev/null || true
   [[ -x "$UPGRADE_TOOL" ]] || return 1
   case "$(uname -s)" in
   Darwin) file "$UPGRADE_TOOL" 2>/dev/null | grep -q "Mach-O" ;;
   Linux) file "$UPGRADE_TOOL" 2>/dev/null | grep -qE "ELF|executable" ;;
+  MINGW* | MSYS* | CYGWIN*)
+    file "$UPGRADE_TOOL" 2>/dev/null | grep -qE 'PE32|MS Windows' \
+      || [[ "$UPGRADE_TOOL" == *.exe ]]
+    ;;
   *) return 1 ;;
   esac
 }
@@ -711,15 +739,12 @@ case "$ACTION" in
     run_reboot_loader
     ;;
   loader|ul)
-    require_macos
     run_loader
     ;;
   upgrade|uf|update)
-    require_macos
     run_upgrade
     ;;
   flash)
-    require_macos
     run_flash
     ;;
   *) die "Unknown action: $ACTION" ;;

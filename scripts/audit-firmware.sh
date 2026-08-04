@@ -4,7 +4,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SDK="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
-UPGRADE="$ROOT/tools/upgrade_tool/upgrade_tool"
+case "$(uname -s)" in
+Darwin) UPGRADE="$ROOT/tools/upgrade_tool/macos/upgrade_tool" ;;
+Linux) UPGRADE="$ROOT/tools/upgrade_tool/linux/upgrade_tool" ;;
+MINGW* | MSYS* | CYGWIN*) UPGRADE="$ROOT/tools/upgrade_tool/windows/upgrade_tool.exe" ;;
+*) UPGRADE="" ;;
+esac
 FW_LWS="$ROOT/output/firmware"
 FW_SDK="$SDK/output/firmware"
 SDK_LOADER=481728
@@ -58,8 +63,8 @@ section "update.img (make build-img → make flash from MaskROM)"
 p="$FW_LWS/update.img"
 if [[ -r "$p" ]]; then
   echo "  $(file_size "$p") bytes"
-  if [[ -x "$UPGRADE" ]]; then
-    "$UPGRADE" SFI "$p" 2>&1 | grep -v '^Using ' \
+  if [[ -n "$UPGRADE" && -x "$UPGRADE" ]]; then
+    (cd "$(dirname "$UPGRADE")" && "$UPGRADE" SFI "$p") 2>&1 | grep -v '^Using ' \
       | grep -E 'Loader Time|Build Time|FIRMWARE_VER|partition=' | sed 's/^/  /' || true
   fi
   loader_size="$(file_size "$FW_SDK/MiniLoaderAll.bin")"

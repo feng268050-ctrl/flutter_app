@@ -88,6 +88,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `scripts/flutter/l10n*.sh`, `sync_l10n_child_arbs.py`, `zh_s2t.py` | none for firmware; exercise `make l10n` / `make l10n-verify` |
 | Bake app into rootfs / A/B image (release or no push path) | `make build-app`, `make build-rootfs`, `make upgrade` (same `APP=`) |
 | `scripts/upgrade-remote.sh`, `scripts/flash-usb.sh`, `scripts/docker-export-artifacts.sh`, `scripts/factory-sku.sh` (APP-scoped rootfs/factory paths) | `make build-rootfs`, then `make upgrade` or `make build-img` + `make flash` (same `APP=`) |
+| `tools/upgrade_tool/**` (host RockUSB CLI only) | none for firmware; exercise `make devices` / `make flash` on the host OS |
 | `board/logo/**` | `make build-boot-logo`, `make build-kernel`, `make upgrade` — also refreshes Weston `boot-splash.png` in overlay; follow with `make build-rootfs`, `make upgrade` |
 | `board/rk356x-fit-boards.txt`, `board/boot-multi.its`, `scripts/generate-boot-fit-its.sh`, `scripts/pack-boot-fit-multi.sh`, `scripts/verify-boot-fit.sh`, `scripts/build-kernel-ab.sh` (W5 multi-DT FIT) | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`, `make build-kernel`, `make upgrade` |
 | `overlay/kernel/**`, kernel DTS | Owned SDK: `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` (or `make squash-linux-sdk-platform`), then `make build-kernel`, `make build-rootfs`, `make upgrade`. Git SoT remains `overlay/kernel/` until linux-sdk is committed — do not sync DT via OEM |

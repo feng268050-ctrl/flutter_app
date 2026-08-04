@@ -123,7 +123,7 @@ The P1 rootfs (excluding `/opt/hmi` Flutter app) SHOULD be between 220 MB and 45
 
 ### Requirement: Host USB flash via Makefile and upgrade_tool
 
-The repo SHALL provide `scripts/flash-usb.sh` and Makefile targets for ynh960 firmware programming on a **macOS host** with Rockchip **upgrade_tool** vendored at `tools/upgrade_tool/`, aligned with `tools/upgrade_tool/命令行开发工具使用文档.pdf`:
+The repo SHALL provide `scripts/flash-usb.sh` and Makefile targets for ynh960 firmware programming on a **macOS, Linux (x86_64), or Windows (Git Bash / MSYS2)** host with Rockchip **upgrade_tool** vendored at `tools/upgrade_tool/{macos,linux,windows}/`, aligned with `tools/upgrade_tool/命令行开发工具使用文档.pdf`. The host script SHALL select the platform subdirectory from the host OS (`Darwin` → `macos`, `Linux` → `linux`, `MINGW*` / `MSYS*` / `CYGWIN*` → `windows`).
 
 - `make audit` — pre-flight before flash (firmware on host, upgrade_tool, RockUSB)
 - `make devices` — list connected devices (MODE / SN / ChipID / LocationID / USB)

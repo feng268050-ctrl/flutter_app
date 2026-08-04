@@ -368,7 +368,7 @@ Loader path from Linux board (USB plug-ssh, no adb):
 ```bash
 make devices                    # auto-discovers USB-SSH, configures host 192.168.55.2
 make reboot-loader                # USB-SSH → device reboot-loader (SN= optional)
-make flash                      # macOS only
+make flash                      # host RockUSB (macOS / Linux / Windows Git Bash)
 ```
 
 ### App iteration (USB plug-ssh or remote SSH, no rootfs reflash)
@@ -638,9 +638,12 @@ From `buildroot/configs/rockchip/base/common.config` (`BR2_TARGET_GENERIC_ROOT_P
 
 **Do not** `make build-uboot` on ynh960 unless Innohi instructs — wrong uboot bricks MaskROM recovery.
 
-### USB flash (macOS only)
+### USB flash (macOS / Linux / Windows)
 
-Tool: vendored at `tools/upgrade_tool/` (macOS binary; v2.44).
+Tool: vendored at `tools/upgrade_tool/{macos,linux,windows}/` (see [`tools/upgrade_tool/README.md`](tools/upgrade_tool/README.md)). `make flash` picks the host binary automatically.
+
+- **Linux (x86_64):** udev access to USB vendor `2207` (or run as root).
+- **Windows:** Rockchip DriverAssistant + run Make from **Git Bash** or **MSYS2** (not PowerShell/`cmd`).
 
 MaskROM recovery (device not visible after loader upload — loader reboot drops USB briefly):
 
@@ -662,7 +665,7 @@ Normal flash from Linux HMI (USB plug-ssh):
 ```bash
 make devices
 make reboot-loader               # USB-SSH → device reboot-loader
-make flash                     # macOS host
+make flash                     # host RockUSB uf (any supported OS)
 ```
 
 App deploy without reflash:

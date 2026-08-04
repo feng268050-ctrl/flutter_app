@@ -181,13 +181,10 @@ final class SettingsTopTabs extends StatelessWidget
               ),
             ),
           ),
-          // Hairline matches card L/R — same [SettingsDimens.inset] as tabs.
+          // Center→sides fade hairline (same as nested status-bar divider).
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: SettingsDimens.inset),
-            child: ColoredBox(
-              color: dividerColor,
-              child: SizedBox(height: dividerThickness, width: double.infinity),
-            ),
+            child: SettingsStatusBarFadeDivider(),
           ),
         ],
       ),
@@ -372,6 +369,10 @@ class SettingsHelpFooter extends StatelessWidget {
 /// [CyberBackdropBlur] + [CyberBlurSampleMode.realtime] +
 /// [CyberBlurIntensity.low] (Gaussian sigma **12**) + dark tint.
 /// Outer stroke is flat 1px [CyberColors.borderUniform] (no HL / gradient).
+///
+/// Depth onto the page wallpaper matches lasercyber-mobile community cards
+/// ([AppCardShadowShell]): [BoxDecoration.boxShadow] outside the clipped face,
+/// not [Material.elevation].
 abstract final class SettingsPerspectiveChrome {
   /// Same as Custom Home selected cards / [CyberBlurIntensity.low.sigma].
   static const blurSigma = 12.0;
@@ -382,6 +383,26 @@ abstract final class SettingsPerspectiveChrome {
   static const strokeWidth = 1.0;
   static const strokeColor = CyberColors.borderUniform;
 
+  /// lasercyber-mobile dark [AppPalette.surfaceCardShadow] — soft contact on
+  /// the blurred wallpaper behind the plate.
+  static const cardShadow = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x40000000),
+      offset: Offset(0, 1),
+      blurRadius: 4,
+    ),
+  ];
+
+  static CyberPanelOutline outlineFor(double cornerRadius) => CyberPanelOutline(
+        style: CyberPanelOutlineStyle.uniform,
+        tone: CyberTone.dark,
+        width: strokeWidth,
+        cornerRadius: cornerRadius,
+        uniformColor: strokeColor,
+      );
+
+  /// Frost plate + contact shadow only. Rim is [rim] — paint **above** content
+  /// so full-bleed rows cannot cover the 1px stroke.
   static Widget face({
     required double cornerRadius,
     // Retained for call-site compatibility; outline is always uniform.
@@ -389,31 +410,29 @@ abstract final class SettingsPerspectiveChrome {
         CyberBorderGradientCenter.topBottom,
   }) {
     final radius = BorderRadius.circular(cornerRadius);
-    final outline = CyberPanelOutline(
-      style: CyberPanelOutlineStyle.uniform,
-      tone: CyberTone.dark,
-      width: strokeWidth,
-      cornerRadius: cornerRadius,
-      uniformColor: strokeColor,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: cardShadow,
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: const CyberBackdropBlur(
+          sampleMode: blurSampleMode,
+          intensity: blurIntensity,
+          blurTint: blurTint,
+          child: SizedBox.expand(),
+        ),
+      ),
     );
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ClipRRect(
-          borderRadius: radius,
-          child: const CyberBackdropBlur(
-            sampleMode: blurSampleMode,
-            intensity: blurIntensity,
-            blurTint: blurTint,
-            child: SizedBox.expand(),
-          ),
-        ),
-        IgnorePointer(
-          child: CustomPaint(
-            painter: CyberFrostPanelOutlinePainter(outline),
-          ),
-        ),
-      ],
+  }
+
+  /// Flat 1px stroke drawn above panel children (IgnorePointer).
+  static Widget rim({required double cornerRadius}) {
+    return IgnorePointer(
+      child: CustomPaint(
+        painter: CyberFrostPanelOutlinePainter(outlineFor(cornerRadius)),
+      ),
     );
   }
 }
@@ -422,7 +441,8 @@ abstract final class SettingsPerspectiveChrome {
 ///
 /// Under [SettingsBlurredPageShell] / [SettingsPageBackdropBlur]:
 /// face uses [SettingsPerspectiveChrome] (Custom Home selected-card Gaussian,
-/// sigma 12) and skips heavy black contact shadows.
+/// sigma 12 + lasercyber community [BoxShadow] contact) and skips the legacy
+/// multi-layer depth ambient / lip painters.
 ///
 /// Elsewhere: face uses [CyberBackdropBlur] [followLayout] / [high] / sigma 23.
 ///
@@ -578,9 +598,13 @@ class SettingsPanel extends StatelessWidget {
                         ),
                       ),
               ),
-              if (perspective)
-                child
-              else
+              if (perspective) ...[
+                child,
+                // Rim above content — full-bleed rows must not cover the stroke.
+                Positioned.fill(
+                  child: SettingsPerspectiveChrome.rim(cornerRadius: corner),
+                ),
+              ] else
                 CustomPaint(
                   foregroundPainter: _SettingsDepthEdgePainter(
                     baseRim: rimColor,
@@ -1675,6 +1699,58 @@ class SettingsBlurredPageShell extends StatelessWidget {
   }
 }
 
+/// 1px hairline under Settings status / tab strips: bright at center, fades
+/// to transparent at L/R (matches Videos column header treatment).
+final class SettingsStatusBarFadeDivider extends StatelessWidget {
+  const SettingsStatusBarFadeDivider({super.key});
+
+  static const thickness = SettingsTopTabs.dividerThickness;
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: thickness,
+      width: double.infinity,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Color(0x00FFFFFF),
+              Color(0xB3FFFFFF),
+              Color(0x00FFFFFF),
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Hairline under nested Settings [ProductPageStatusBar] (no top tabs).
+///
+/// Matches [SettingsTopTabs] fade divider. Sits at the bottom of the Back /
+/// title row ([WorkModeStatusBarDimens.height]); Scaffold body is [ClipRect]’d
+/// so list content cannot paint above it while scrolling.
+final class SettingsStatusBarHairline extends StatelessWidget
+    implements PreferredSizeWidget {
+  const SettingsStatusBarHairline({super.key});
+
+  @override
+  Size get preferredSize =>
+      const Size.fromHeight(SettingsStatusBarFadeDivider.thickness);
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: SettingsDimens.inset),
+      child: SettingsStatusBarFadeDivider(),
+    );
+  }
+}
+
 class SettingsScaffold extends StatelessWidget {
   const SettingsScaffold({
     super.key,
@@ -1700,14 +1776,17 @@ class SettingsScaffold extends StatelessWidget {
           actions: actions,
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
+          // Back / title row height; hairline rides under this band.
           toolbarHeight: WorkModeStatusBarDimens.height,
+          bottom: const SettingsStatusBarHairline(),
           // Product CallBackHomeButton: Home → home icon, Back → arrow_back.
           // Nested settings pop → "Back".
           backLabel: l10n.equipmentStatusBack,
           backAccent: WorkModeAccent.weld,
           onBack: canPop ? () => Navigator.of(context).maybePop() : null,
         ),
-        body: body,
+        // Clip at status-bar hairline so scroll cannot enter the Back row.
+        body: ClipRect(child: body),
       ),
     );
   }

@@ -20,6 +20,7 @@ void main() {
     await tester.pump();
 
     expect(find.byType(ProductPageStatusBar), findsOneWidget);
+    expect(find.byType(SettingsStatusBarHairline), findsOneWidget);
     expect(find.byType(SettingsBlurredPageShell), findsOneWidget);
     expect(find.text('Wi‑Fi'), findsOneWidget);
     expect(find.byKey(const ValueKey('cyber-status-bar-clock')), findsOneWidget);

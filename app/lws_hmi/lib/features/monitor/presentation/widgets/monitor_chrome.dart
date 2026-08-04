@@ -136,7 +136,7 @@ class MonitorGlassCard extends StatelessWidget {
         child: panelChild,
       );
     } else if (pagePerspective) {
-      // Nested tile: same translucent dark plate as Settings / CyberButton.
+      // Nested tile: face under content; rim above so rows cannot break stroke.
       body = Stack(
         clipBehavior: Clip.none,
         children: [
@@ -147,6 +147,11 @@ class MonitorGlassCard extends StatelessWidget {
             ),
           ),
           panelChild,
+          Positioned.fill(
+            child: SettingsPerspectiveChrome.rim(
+              cornerRadius: MonitorDimens.corner,
+            ),
+          ),
         ],
       );
     } else {

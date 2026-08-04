@@ -78,8 +78,9 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
   /// Enable Laser — CyberButton large height (style/width unchanged).
   static const _laserButtonHeight = CyberDimens.actionButtonLargeHeight;
 
-  /// Top divider strip on last-three tabs (above Record Work).
-  static const _topFunctionDividerHeight = 16.0;
+  /// Top function-divider strip on last-three tabs (above Record Work).
+  /// Height is the strip that holds the centered hairline, not empty padding.
+  static const _topFunctionGapHeight = 26.0;
 
   bool get _showRamp =>
       widget.processType == ProcessType.continuousWelding ||
@@ -145,11 +146,11 @@ final class _EngineerDevicePanelState extends State<EngineerDevicePanel> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Last 3 tabs: 16px divider above Record Work.
+                          // Last 3 tabs: 26px strip for the top function divider.
                           if (_showTopFunctionDivider)
                             const SizedBox(
                               key: ValueKey('engineer-panel-top-divider'),
-                              height: _topFunctionDividerHeight,
+                              height: _topFunctionGapHeight,
                               child: Center(
                                 child: Divider(
                                   height: 1,

@@ -758,7 +758,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                                         'More Favorites',
                                                         style: TextStyle(
                                                           color: Colors.white,
-                                                          fontSize: 16,
+                                                          fontSize: 21,
                                                         ),
                                                       ),
                                                       const SizedBox(width: 2),

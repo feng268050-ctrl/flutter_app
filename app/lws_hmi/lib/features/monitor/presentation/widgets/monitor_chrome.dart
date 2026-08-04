@@ -58,7 +58,7 @@ abstract final class MonitorDimens {
 /// Monitor panel shell — same chrome as [SettingsPanel].
 ///
 /// Under [SettingsBlurredPageShell] (see [MonitorPage]): plates use
-/// [SettingsPerspectiveChrome] (Custom Home selected-card Gaussian sigma 12).
+/// [SettingsPerspectiveChrome] (tint + rim; page ImageFiltered owns σ12).
 ///
 /// Outside that shell:
 /// - [frosted] true → [SettingsPanel] capture frost.

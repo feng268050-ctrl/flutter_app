@@ -365,19 +365,20 @@ class SettingsHelpFooter extends StatelessWidget {
   }
 }
 
-/// Settings / Monitor plate matching Custom Home selected metric cards:
-/// [CyberBackdropBlur] + [CyberBlurSampleMode.realtime] +
-/// [CyberBlurIntensity.low] (Gaussian sigma **12**) + dark tint.
-/// Outer stroke is flat 1px [CyberColors.borderUniform] (no HL / gradient).
+/// Settings / Monitor plate under [SettingsBlurredPageShell].
 ///
-/// Depth onto the page wallpaper matches lasercyber-mobile community cards
-/// ([AppCardShadowShell]): [BoxDecoration.boxShadow] outside the clipped face,
-/// not [Material.elevation].
+/// Page shell owns the single Gaussian ([ImageFiltered] σ12) between wallpaper
+/// and chrome. Plates here are **tint + contact shadow + rim only** — no second
+/// [BackdropFilter] / [CyberBackdropBlur] (avoids duplicate blur cost).
+///
+/// Outer stroke is flat 1px [CyberColors.borderUniform] (no HL / gradient).
+/// Depth matches lasercyber-mobile community cards ([AppCardShadowShell]):
+/// [BoxDecoration.boxShadow] outside the clipped face, not [Material.elevation].
 abstract final class SettingsPerspectiveChrome {
   /// Same as Custom Home selected cards / [CyberBlurIntensity.low.sigma].
+  /// Owned by [SettingsBlurredPageShell], not by [face].
   static const blurSigma = 12.0;
   static const blurIntensity = CyberBlurIntensity.low;
-  static const blurSampleMode = CyberBlurSampleMode.realtime;
   static const blurTint = CyberBlurTint.dark;
 
   static const strokeWidth = 1.0;
@@ -401,8 +402,9 @@ abstract final class SettingsPerspectiveChrome {
         uniformColor: strokeColor,
       );
 
-  /// Frost plate + contact shadow only. Rim is [rim] — paint **above** content
-  /// so full-bleed rows cannot cover the 1px stroke.
+  /// Dark tint + contact shadow only. Rim is [rim] — paint **above** content
+  /// so full-bleed rows cannot cover the 1px stroke. Blur comes from the page
+  /// [ImageFiltered] layer under the plate.
   static Widget face({
     required double cornerRadius,
     // Retained for call-site compatibility; outline is always uniform.
@@ -410,6 +412,10 @@ abstract final class SettingsPerspectiveChrome {
         CyberBorderGradientCenter.topBottom,
   }) {
     final radius = BorderRadius.circular(cornerRadius);
+    final tint = cyberBlurOverlayColor(
+      intensity: blurIntensity,
+      tint: blurTint,
+    );
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: radius,
@@ -417,11 +423,9 @@ abstract final class SettingsPerspectiveChrome {
       ),
       child: ClipRRect(
         borderRadius: radius,
-        child: const CyberBackdropBlur(
-          sampleMode: blurSampleMode,
-          intensity: blurIntensity,
-          blurTint: blurTint,
-          child: SizedBox.expand(),
+        child: ColoredBox(
+          color: tint,
+          child: const SizedBox.expand(),
         ),
       ),
     );
@@ -440,8 +444,8 @@ abstract final class SettingsPerspectiveChrome {
 /// Settings group shell — frosted or perspective face + depth chrome.
 ///
 /// Under [SettingsBlurredPageShell] / [SettingsPageBackdropBlur]:
-/// face uses [SettingsPerspectiveChrome] (Custom Home selected-card Gaussian,
-/// sigma 12 + lasercyber community [BoxShadow] contact) and skips the legacy
+/// face uses [SettingsPerspectiveChrome] (dark tint + contact shadow + rim;
+/// page [ImageFiltered] owns the only Gaussian) and skips the legacy
 /// multi-layer depth ambient / lip painters.
 ///
 /// Elsewhere: face uses [CyberBackdropBlur] [followLayout] / [high] / sigma 23.
@@ -1616,7 +1620,7 @@ class SettingsHomeBackdrop extends StatelessWidget {
 }
 
 /// Declares Settings / Monitor page chrome — descendant [SettingsPanel]s use
-/// [SettingsPerspectiveChrome] (Custom Home selected-card Gaussian) instead of
+/// [SettingsPerspectiveChrome] (tint + rim; page owns Gaussian) instead of
 /// dialog frost.
 class SettingsPageBackdropBlur extends InheritedWidget {
   const SettingsPageBackdropBlur({
@@ -1625,7 +1629,7 @@ class SettingsPageBackdropBlur extends InheritedWidget {
     required super.child,
   });
 
-  /// Custom Home selected-card Gaussian ([SettingsPerspectiveChrome.blurSigma] = 12).
+  /// Page [ImageFiltered] sigma ([SettingsPerspectiveChrome.blurSigma] = 12).
   final double sigma;
 
   static SettingsPageBackdropBlur? maybeOf(BuildContext context) {
@@ -1638,13 +1642,13 @@ class SettingsPageBackdropBlur extends InheritedWidget {
       oldWidget.sigma != sigma;
 }
 
-/// Settings / Monitor page stack: sharp wallpaper → page [ImageFiltered]
-/// blur → [child].
+/// Settings / Monitor page stack: sharp wallpaper (capture) → single page
+/// [ImageFiltered] Gaussian → [child] chrome.
 ///
 /// Capture for tip/IME frost stays on the sharp [CyberBlurBackdropTarget].
-/// The blurred wallpaper layer is Widget Gaussian ([ImageFilter.blur], same
-/// sigma as Custom Home cards = 12). Panels also use
-/// [SettingsPerspectiveChrome] (realtime BackdropFilter + dark tint).
+/// The blurred wallpaper is the **only** Widget Gaussian between background
+/// and foreground (σ = Custom Home low = 12). Panels use
+/// [SettingsPerspectiveChrome] tint/rim/shadow only — no second BackdropFilter.
 class SettingsBlurredPageShell extends StatelessWidget {
   const SettingsBlurredPageShell({
     super.key,
@@ -1655,8 +1659,7 @@ class SettingsBlurredPageShell extends StatelessWidget {
 
   final Widget child;
 
-  /// Page wallpaper Gaussian + panel [SettingsPerspectiveChrome] sigma
-  /// (Custom Home low = 12).
+  /// Page wallpaper Gaussian sigma (Custom Home low = 12).
   final double blurSigma;
 
   /// Wallpaper under capture + blur layer. Called twice (sharp + blurred).
@@ -1677,8 +1680,8 @@ class SettingsBlurredPageShell extends StatelessWidget {
                 child: buildPlate(),
               ),
             ),
-            // Widget-layer Gaussian between wallpaper and chrome (gutters /
-            // status). Panels add their own Custom Home BackdropFilter face.
+            // Sole Gaussian between wallpaper and chrome (gutters / status /
+            // translucent plates). Panels add tint + rim only.
             Positioned.fill(
               child: IgnorePointer(
                 child: ImageFiltered(
@@ -1767,7 +1770,7 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final l10n = AppLocalizations.of(context)!;
-    // Page ImageFiltered wallpaper (sigma 12) + Custom Home panel faces.
+    // Page ImageFiltered (σ12) + perspective plates (tint/rim only).
     return SettingsBlurredPageShell(
       child: Scaffold(
         backgroundColor: Colors.transparent,

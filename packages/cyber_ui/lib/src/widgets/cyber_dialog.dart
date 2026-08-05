@@ -15,7 +15,7 @@ class CyberModal extends StatelessWidget {
   const CyberModal({
     super.key,
     required this.child,
-    this.sampleMode = CyberBlurSampleMode.firstFrame,
+    this.sampleMode = CyberBlurSampleMode.realtime,
     this.intensity = CyberBlurIntensity.high,
     this.blurTint = CyberBlurTint.dark,
     this.useFakeGlass = false,
@@ -68,14 +68,18 @@ class CyberModal extends StatelessWidget {
 }
 
 /// Shows a dialog wrapped in [CyberModal].
+///
+/// Defaults match Startup Self-Check / [CyberOverlayHost]: transparent barrier
+/// and realtime wallpaper frost (no black54 scrim under the panel).
 Future<T?> showCyberDialog<T>({
   required BuildContext context,
   required WidgetBuilder builder,
-  CyberBlurSampleMode sampleMode = CyberBlurSampleMode.firstFrame,
+  CyberBlurSampleMode sampleMode = CyberBlurSampleMode.realtime,
   CyberBlurIntensity intensity = CyberBlurIntensity.high,
   CyberBlurTint blurTint = CyberBlurTint.dark,
   bool useFakeGlass = false,
   bool barrierDismissible = true,
+  Color barrierColor = Colors.transparent,
   ValueListenable<double>? keyboardHeight,
   double keyboardMargin = CyberKeyboardInsets.defaultMargin,
   ValueListenable<double>? liftExtent,
@@ -83,7 +87,7 @@ Future<T?> showCyberDialog<T>({
   return showDialog<T>(
     context: context,
     barrierDismissible: barrierDismissible,
-    barrierColor: Colors.black54,
+    barrierColor: barrierColor,
     builder: (dialogContext) {
       Widget modal = CyberModal(
         sampleMode: sampleMode,

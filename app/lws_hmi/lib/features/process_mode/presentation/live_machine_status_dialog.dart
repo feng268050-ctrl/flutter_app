@@ -22,7 +22,7 @@ import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 /// Manual More Status route name (confirm bar). Distinct from gun-managed.
 const liveMachineStatusManualRouteName = 'manual-live-machine-status';
 
-/// lws-ui [MachineStatusOverlay] — light frost + live PR1 video (not Monitor route).
+/// lws-ui [MachineStatusOverlay] — Self-Check dark frost + live PR1 video.
 ///
 /// Quick Mode “More Status” opens this with a confirm action
 /// (`MachineStatusOverlay.show(context, true)`). Gun path uses
@@ -34,11 +34,12 @@ Future<void> showLiveMachineStatusDialog(
   String? routeName,
   void Function(BuildContext dialogContext)? onDialogContext,
 }) {
-  final panel = CyberPanelBorder(tone: CyberTone.light);
+  final panel = CyberPanelBorder(tone: CyberTone.dark);
   return showDialog<void>(
     context: context,
     barrierDismissible: !showConfirmButton,
-    barrierColor: CyberColors.scrim,
+    // Transparent: realtime frost samples the page, not a dim scrim.
+    barrierColor: Colors.transparent,
     routeSettings: RouteSettings(
       name: routeName ??
           (showConfirmButton
@@ -69,10 +70,10 @@ Future<void> showLiveMachineStatusDialog(
                   ),
                 ),
                 child: CyberModal(
-                  sampleMode: CyberBlurSampleMode.firstFrame,
+                  sampleMode: CyberBlurSampleMode.realtime,
                   intensity: CyberBlurIntensity.high,
-                  blurTint: CyberBlurTint.warm,
-                  useFakeGlass: true,
+                  blurTint: CyberBlurTint.dark,
+                  useFakeGlass: false,
                   borderRadius: panel.borderRadius,
                   // Horizontal pad 0 so the live frame sits 2px from screen edges.
                   padding: const EdgeInsets.fromLTRB(0, 16, 0, 12),
@@ -107,7 +108,7 @@ final class _LiveMachineStatusBody extends StatefulWidget {
 }
 
 final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
-  static const _titleDark = Color(0xFF1A1A1A);
+  static const _titleOnFrost = CyberColors.textPrimary;
   static const _liveGaugeSidePad = 12.0;
   /// Equal: above gauges and below status tiles.
   static const _liveEdgeGap = 12.0;
@@ -227,7 +228,7 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: context.hmiTypography.pageTitle.copyWith(
-              color: _titleDark,
+              color: _titleOnFrost,
               fontWeight: FontWeight.w700,
               height: 1.15,
               decoration: TextDecoration.none,

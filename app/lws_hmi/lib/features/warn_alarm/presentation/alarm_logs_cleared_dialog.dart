@@ -41,19 +41,17 @@ final class _AlarmLogsClearedBody extends StatelessWidget {
 
   static const _maxWidth = 560.0;
   static const _iconSize = 80.0;
-  static const _titleDark = Color(0xFF1A1A1A);
-  static const _bodyDark = Color(0xFF1A1A1A);
 
   @override
   Widget build(BuildContext context) {
     final titleStyle = context.hmiTypography.dialogTitle.copyWith(
-      color: _titleDark,
+      color: CyberColors.textPrimary,
       fontWeight: FontWeight.w700,
       height: 1.15,
       decoration: TextDecoration.none,
     );
     final bodyStyle = context.hmiTypography.settingsRowTitle.copyWith(
-      color: _bodyDark,
+      color: CyberColors.textSecondary,
       fontWeight: FontWeight.w400,
       height: 1.35,
       decoration: TextDecoration.none,

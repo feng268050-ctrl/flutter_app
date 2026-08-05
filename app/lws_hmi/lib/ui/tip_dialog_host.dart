@@ -4,19 +4,17 @@ import 'dart:ui' as ui;
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 
-/// Shared tip-dialog chrome presets (lws-ui FrostDialog tones).
+/// Product tip / prompt dialogs.
 ///
-/// - [showSuccess]: toast-like cream fill, no page透视 (green pass).
-/// - [showError]: opaque charcoal (Key switch / red error).
-/// - [showDarkPrompt]: lws-ui `FrostTone.DARK` — card Gaussian + dark wash +
-///   scrim (Wi‑Fi / register / firmware confirm / …).
-/// - [showLightPrompt]: lws-ui `FrostTone.LIGHT` — cream wash over capture
-///   (Engineer entry / Laser Enable Important Reminder).
+/// - [showSuccess] / [showError] / [showDarkPrompt]: Startup Self-Check frost
+///   (transparent barrier, realtime dark wallpaper blur).
+/// - [showLightPrompt]: original lws-ui cream capture frost (Engineer tip /
+///   Laser Enable Important Reminder).
 ///
-/// Startup Self-Check stays on [CyberOverlayHost] realtime frost — not here.
+/// **Excluded:** warn/alarm dialogs ([WarnFrostShell]) stay on their own path.
 abstract final class TipDialogHost {
-  /// Cream “白霜” panel — toast family, no live page透视.
-  static Future<T?> showSuccess<T>({
+  /// Shared Startup Self-Check backdrop (see [showBootSelfCheckDialog]).
+  static Future<T?> _showSelfCheckFrost<T>({
     required BuildContext context,
     required WidgetBuilder builder,
     bool barrierDismissible = true,
@@ -25,29 +23,11 @@ abstract final class TipDialogHost {
     return CyberOverlayHost.show<T>(
       context: context,
       barrierDismissible: barrierDismissible,
-      barrierColor: CyberColors.scrim,
+      barrierColor: Colors.transparent,
       freezePageBackdrop: false,
-      useFakeGlass: true,
-      blurTint: CyberBlurTint.warm,
-      tone: CyberTone.light,
-      constraints: constraints,
-      builder: builder,
-    );
-  }
-
-  /// Opaque charcoal fill — Key switch is off / red error tips.
-  static Future<T?> showError<T>({
-    required BuildContext context,
-    required WidgetBuilder builder,
-    bool barrierDismissible = true,
-    BoxConstraints? constraints,
-  }) {
-    return CyberOverlayHost.show<T>(
-      context: context,
-      barrierDismissible: barrierDismissible,
-      barrierColor: CyberColors.scrim,
-      freezePageBackdrop: false,
-      useFakeGlass: true,
+      useFakeGlass: false,
+      sampleMode: CyberBlurSampleMode.realtime,
+      intensity: CyberBlurIntensity.high,
       blurTint: CyberBlurTint.dark,
       tone: CyberTone.dark,
       constraints: constraints,
@@ -55,7 +35,37 @@ abstract final class TipDialogHost {
     );
   }
 
-  /// lws-ui dark frost prompt (`dialog_frost_prompt.xml`).
+  /// Pass / toast tip — Self-Check dark frost.
+  static Future<T?> showSuccess<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    bool barrierDismissible = true,
+    BoxConstraints? constraints,
+  }) {
+    return _showSelfCheckFrost<T>(
+      context: context,
+      builder: builder,
+      barrierDismissible: barrierDismissible,
+      constraints: constraints,
+    );
+  }
+
+  /// Error tip — Self-Check dark frost.
+  static Future<T?> showError<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    bool barrierDismissible = true,
+    BoxConstraints? constraints,
+  }) {
+    return _showSelfCheckFrost<T>(
+      context: context,
+      builder: builder,
+      barrierDismissible: barrierDismissible,
+      constraints: constraints,
+    );
+  }
+
+  /// Confirm / guidance prompt (Wi‑Fi, register, firmware, …).
   static Future<T?> showDarkPrompt<T>({
     required BuildContext context,
     required WidgetBuilder builder,
@@ -63,22 +73,20 @@ abstract final class TipDialogHost {
     BoxConstraints? constraints,
     String barrierLabel = 'Tip',
   }) {
-    return _showCaptureFrost<T>(
+    assert(() {
+      // ignore: unnecessary_statements
+      barrierLabel;
+      return true;
+    }());
+    return _showSelfCheckFrost<T>(
       context: context,
       builder: builder,
       barrierDismissible: barrierDismissible,
-      barrierLabel: barrierLabel,
       constraints: constraints ??
           BoxConstraints(
             maxWidth: (MediaQuery.sizeOf(context).width * 0.62).clamp(320, 720),
             maxHeight: 640,
           ),
-      tone: CyberTone.dark,
-      wash: cyberBlurOverlayColor(
-        intensity: CyberBlurIntensity.high,
-        tint: CyberBlurTint.dark,
-      ),
-      fallback: const Color(0xFF1A1A1E),
     );
   }
 
@@ -342,23 +350,36 @@ final class _TipFrostCardState extends State<_TipFrostCard> {
   }
 }
 
-/// lws-ui `frost_divider` gradient hairline used between tip sections.
+
+/// lws-ui `frost_divider` — center hairline fading to transparent edges.
+///
+/// Uses frost gray center (`#9968686C`), not [CyberColors.dividerCenter]
+/// (that token is a bright glass rim for dark Monitor/Settings panels).
 class TipFrostDivider extends StatelessWidget {
   const TipFrostDivider({super.key});
 
+  static const _center = Color(0x9968686C);
+  static const _edge = Color(0x0068686C);
+
   @override
   Widget build(BuildContext context) {
-    return const DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0x0068686C),
-            CyberColors.dividerCenter,
-            Color(0x0068686C),
-          ],
+    return const SizedBox(
+      height: 1,
+      width: double.infinity,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              _edge,
+              _center,
+              _edge,
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ),
         ),
       ),
-      child: SizedBox(height: 1, width: double.infinity),
     );
   }
 }

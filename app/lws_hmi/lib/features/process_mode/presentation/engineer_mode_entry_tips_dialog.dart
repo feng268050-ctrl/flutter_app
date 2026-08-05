@@ -247,11 +247,13 @@ final class _EngineerModeEntryTipsBodyState
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    l10n.dontShowAgainThisSession,
-                    style: context.hmiTypography.sectionTitle.copyWith(
-                      color: _labelMuted,
-                      decoration: TextDecoration.none,
+                  Flexible(
+                    child: Text(
+                      l10n.dontShowAgainThisSession,
+                      style: context.hmiTypography.sectionTitle.copyWith(
+                        color: _labelMuted,
+                        decoration: TextDecoration.none,
+                      ),
                     ),
                   ),
                 ],

@@ -8,8 +8,7 @@ import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Confirm / progress / result dialogs for bundled control-board firmware.
 ///
-/// Confirm/progress use Startup Self-Check frost; success = cream pass tip;
-/// failure = charcoal error tip.
+/// All variants use Startup Self-Check frost via [TipDialogHost].
 abstract final class BundledFirmwareDialogs {
   static Future<bool> showConfirm({
     required BuildContext context,
@@ -111,7 +110,6 @@ abstract final class BundledFirmwareDialogs {
       builder: (ctx) {
         final l10n = AppLocalizations.of(ctx)!;
         return CyberPromptContent(
-          tone: CyberTone.light,
           title: l10n.bundledFirmwareSuccessTitle,
           body: Text(l10n.bundledFirmwareSuccessMessage),
           actions: [

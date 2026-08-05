@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -1647,31 +1648,27 @@ class SettingsPageBackdropBlur extends InheritedWidget {
       oldWidget.sigma != sigma;
 }
 
-/// Settings / Monitor page stack: sharp wallpaper (capture) → optional page
-/// [ImageFiltered] Gaussian → [child] chrome.
+/// Settings / Monitor / Engineer page stack: sharp wallpaper (capture) → page
+/// blur plate → [child] chrome.
 ///
 /// Capture for tip/IME frost stays on the sharp [CyberBlurBackdropTarget].
-/// When [livePageBlur] is true, the blurred wallpaper is the **only** Widget
-/// Gaussian between background and foreground (σ30). Panels use
-/// [SettingsPerspectiveChrome] tint/rim/shadow only — no second BackdropFilter.
+/// Panels use [SettingsPerspectiveChrome] tint/rim/shadow only — no second
+/// BackdropFilter.
 ///
-/// Nested Settings routes set [livePageBlur] false: Cupertino push/pop keeps
-/// the parent route painted under the slide, so a second full-screen
-/// [ImageFiltered] on RK3566/QEMU stalls the exit animation. Nested shells
-/// keep perspective chrome via [SettingsPageBackdropBlur] and a cheap dark
-/// wash over the wallpaper instead.
+/// **Default blur plate (scheme A / home firstFrame):** bake σ30 once from the
+/// sharp plate (downscaled), then blit [RawImage] every frame. Wallpaper is
+/// static, so live [ImageFiltered] is unnecessary on product pages and costly
+/// on RK3566/QEMU — especially under Cupertino L/R slides.
 ///
-/// Root Settings / Monitor also set [livePageBlur] false while covered
-/// ([RouteAware.didPushNext]): only the top route should pay for live σ30
-/// during L/R transitions. Alternatives if jank remains: snapshot the blurred
-/// plate once (static [RawImage]), or ship a pre-blurred wallpaper asset.
+/// Set [livePageBlur] true only for rare cases that need per-frame Gaussian
+/// (e.g. animated wallpaper experiments).
 class SettingsBlurredPageShell extends StatelessWidget {
   const SettingsBlurredPageShell({
     super.key,
     required this.child,
     this.blurSigma = SettingsPerspectiveChrome.blurSigma,
     this.backdropBuilder,
-    this.livePageBlur = true,
+    this.livePageBlur = false,
   });
 
   final Widget child;
@@ -1679,44 +1676,21 @@ class SettingsBlurredPageShell extends StatelessWidget {
   /// Page wallpaper Gaussian sigma (foreground ↔ background).
   final double blurSigma;
 
-  /// Wallpaper under capture + blur layer. Called twice when [livePageBlur]
-  /// (sharp + blurred). Defaults to [SettingsHomeBackdrop]. Monitor passes a
-  /// dimmed stack.
+  /// Wallpaper under capture + blur layer. Called for sharp capture target and
+  /// for the live [ImageFiltered] child when [livePageBlur] is true. Defaults
+  /// to [SettingsHomeBackdrop]. Monitor passes a dimmed stack.
   final Widget Function()? backdropBuilder;
 
-  /// When false, skip live [ImageFiltered] and use a dark wash (nested routes).
+  /// When false (default), bake a static σ plate once. When true, live
+  /// [ImageFiltered] every frame.
   final bool livePageBlur;
+
+  /// Capture downscale divisor — matches home [CyberBackdropBlur] / lws-ui.
+  static const captureScaleFactor = 3.0;
 
   @override
   Widget build(BuildContext context) {
     final buildPlate = backdropBuilder ?? () => const SettingsHomeBackdrop();
-    final Widget underChrome;
-    if (livePageBlur) {
-      underChrome = IgnorePointer(
-        child: ImageFiltered(
-          imageFilter: ui.ImageFilter.blur(
-            sigmaX: blurSigma,
-            sigmaY: blurSigma,
-            tileMode: ui.TileMode.clamp,
-          ),
-          child: buildPlate(),
-        ),
-      );
-    } else {
-      // Match perspective frost fill without a second Gaussian during L/R
-      // Cupertino transitions (parent route already owns live blur).
-      underChrome = IgnorePointer(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            buildPlate(),
-            // Opaque enough that gutters do not flash sharp wallpaper under
-            // the sliding nested page; RGB matches CyberBlurTint.dark.
-            const ColoredBox(color: Color(0xE6101012)),
-          ],
-        ),
-      );
-    }
     return CyberBlurBackdropScope(
       child: SettingsPageBackdropBlur(
         sigma: blurSigma,
@@ -1728,10 +1702,208 @@ class SettingsBlurredPageShell extends StatelessWidget {
                 child: buildPlate(),
               ),
             ),
-            Positioned.fill(child: underChrome),
+            Positioned.fill(
+              child: _SettingsPageBlurPlate(
+                livePageBlur: livePageBlur,
+                blurSigma: blurSigma,
+                buildPlate: buildPlate,
+              ),
+            ),
             child,
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Live [ImageFiltered] or firstFrame-baked [RawImage] under Settings chrome.
+class _SettingsPageBlurPlate extends StatefulWidget {
+  const _SettingsPageBlurPlate({
+    required this.livePageBlur,
+    required this.blurSigma,
+    required this.buildPlate,
+  });
+
+  final bool livePageBlur;
+  final double blurSigma;
+  final Widget Function() buildPlate;
+
+  @override
+  State<_SettingsPageBlurPlate> createState() => _SettingsPageBlurPlateState();
+}
+
+class _SettingsPageBlurPlateState extends State<_SettingsPageBlurPlate> {
+  ui.Image? _baked;
+  bool _bakePending = false;
+  int _bakeGen = 0;
+  int _bakeRetries = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.livePageBlur) {
+      _scheduleBake();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _SettingsPageBlurPlate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.livePageBlur && !oldWidget.livePageBlur) {
+      // Root became current again — drop static plate; live path owns blur.
+      _bakeGen++;
+      _baked = null;
+      _bakePending = false;
+      _bakeRetries = 0;
+      return;
+    }
+    if (!widget.livePageBlur &&
+        (oldWidget.livePageBlur ||
+            oldWidget.blurSigma != widget.blurSigma)) {
+      _baked = null;
+      _bakeRetries = 0;
+      _scheduleBake();
+    }
+  }
+
+  @override
+  void dispose() {
+    _bakeGen++;
+    // [_baked] is a handle into [CyberBlurBackdropScope] shared capture —
+    // do not dispose here.
+    _baked = null;
+    super.dispose();
+  }
+
+  void _scheduleBake({int settlePasses = 2}) {
+    if (_bakePending || !mounted || _baked != null) {
+      return;
+    }
+    final gen = ++_bakeGen;
+    _bakePending = true;
+    void pass(int remaining) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || gen != _bakeGen) {
+          if (gen == _bakeGen) {
+            _bakePending = false;
+          }
+          return;
+        }
+        if (remaining > 1) {
+          pass(remaining - 1);
+          return;
+        }
+        unawaited(_bake(gen));
+      });
+    }
+
+    pass(settlePasses.clamp(1, 4));
+  }
+
+  Future<void> _bake(int gen) async {
+    try {
+      if (!mounted || gen != _bakeGen || widget.livePageBlur) {
+        return;
+      }
+      final scope = CyberBlurBackdropScope.maybeOf(context);
+      final boundary = scope?.renderBoundary;
+      if (scope == null || boundary == null || !boundary.hasSize) {
+        if (gen == _bakeGen && _bakeRetries < 12) {
+          _bakeRetries++;
+          _bakePending = false;
+          _scheduleBake(settlePasses: 1);
+        }
+        return;
+      }
+      // Do NOT read [RenderObject.debugNeedsPaint] here: in profile/release
+      // that getter throws LateInitializationError (assert-stripped late local).
+      final dpr = MediaQuery.devicePixelRatioOf(context);
+      final scale = (dpr / SettingsBlurredPageShell.captureScaleFactor)
+          .clamp(0.25, dpr);
+      // Sigma in capture-pixel space (same as CyberBackdropBlur firstFrame).
+      final sigma = widget.blurSigma * scale;
+      ui.Image? image;
+      try {
+        image = await scope.acquireBlurredCapture(
+          pixelRatio: scale,
+          sigmaX: sigma,
+          sigmaY: sigma,
+        );
+      } catch (e) {
+        debugPrint('settings-blur-plate: bake capture failed: $e');
+        if (gen == _bakeGen && _bakeRetries < 12) {
+          _bakeRetries++;
+          _bakePending = false;
+          _scheduleBake(settlePasses: 1);
+        }
+        return;
+      }
+      if (!mounted || gen != _bakeGen || widget.livePageBlur) {
+        return;
+      }
+      if (image == null || image.width < 1 || image.height < 1) {
+        if (gen == _bakeGen && _bakeRetries < 12) {
+          _bakeRetries++;
+          _bakePending = false;
+          _scheduleBake(settlePasses: 1);
+        }
+        return;
+      }
+      debugPrint(
+        'settings-blur-plate: baked ${image.width}x${image.height} '
+        'sigma=${sigma.toStringAsFixed(1)} scale=${scale.toStringAsFixed(2)}',
+      );
+      setState(() {
+        _baked = image;
+        _bakeRetries = 0;
+      });
+    } catch (e) {
+      debugPrint('settings-blur-plate: bake aborted: $e');
+    } finally {
+      if (gen == _bakeGen) {
+        _bakePending = false;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.livePageBlur) {
+      return IgnorePointer(
+        child: ImageFiltered(
+          imageFilter: ui.ImageFilter.blur(
+            sigmaX: widget.blurSigma,
+            sigmaY: widget.blurSigma,
+            tileMode: ui.TileMode.clamp,
+          ),
+          child: widget.buildPlate(),
+        ),
+      );
+    }
+
+    final baked = _baked;
+    if (baked != null) {
+      return IgnorePointer(
+        child: RawImage(
+          image: baked,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          filterQuality: FilterQuality.medium,
+        ),
+      );
+    }
+
+    // Placeholder until bake completes — opaque enough that gutters do not
+    // flash sharp wallpaper under a sliding nested page.
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          widget.buildPlate(),
+          const ColoredBox(color: Color(0xE6101012)),
+        ],
       ),
     );
   }
@@ -1805,11 +1977,9 @@ class SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final l10n = AppLocalizations.of(context)!;
-    // Nested routes: keep Cupertino L/R slide, but skip a second live
-    // ImageFiltered — parent SettingsPage already owns page blur and stays
-    // painted under the transition (RK3566/QEMU exit jank).
+    // Nested Settings: static σ30 plate (shell default). Never live ImageFiltered
+    // under Cupertino L/R — parent root also uses a baked plate.
     return SettingsBlurredPageShell(
-      livePageBlur: !canPop,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: ProductPageStatusBar(

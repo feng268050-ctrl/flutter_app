@@ -643,7 +643,7 @@ final class _EngineerModePageState extends State<EngineerModePage> {
         }
         unawaited(_handleExit());
       },
-      // Same stack as Settings / Monitor: home wallpaper → σ30 page blur → chrome.
+      // Same stack as Settings / Monitor: home wallpaper → static σ30 plate → chrome.
       child: SettingsBlurredPageShell(
         blurSigma: SettingsPerspectiveChrome.blurSigma,
         child: Scaffold(

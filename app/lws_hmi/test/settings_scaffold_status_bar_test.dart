@@ -71,6 +71,7 @@ void main() {
     final shell = tester.widget<SettingsBlurredPageShell>(
       find.byType(SettingsBlurredPageShell),
     );
+    // Nested: no live ImageFiltered — shell default bakes a static σ30 plate.
     expect(shell.livePageBlur, isFalse);
     expect(find.byType(ImageFiltered), findsNothing);
   });

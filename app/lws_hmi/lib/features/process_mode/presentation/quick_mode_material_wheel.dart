@@ -44,7 +44,7 @@ final class QuickModeMaterialWheel extends StatelessWidget {
             materials[index].localizedLabel(l10n),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
+            textAlign: TextAlign.right,
             style: TextStyle(
               color: Colors.white.withOpacity(alpha),
               fontSize: selected
@@ -53,15 +53,20 @@ final class QuickModeMaterialWheel extends StatelessWidget {
               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             ),
           );
-          if (selected) {
-            return Center(child: label);
-          }
-          // Left-offset arc: right pad = |d|×10+24 (lws-ui materials wheel).
-          final endPad = QuickModePickerDimens.linearArcPad(distance);
+          // Right-align all rows (lws-ui materials left-offset + Gravity.END).
+          // Selected: equal L/R pad; unselected: end pad = |d|×10+24.
+          final endPad = selected
+              ? QuickModePickerDimens.arcSelectedPad
+              : QuickModePickerDimens.linearArcPad(distance);
+          final startPad =
+              selected ? QuickModePickerDimens.arcSelectedPad : 0.0;
           return Align(
             alignment: Alignment.centerRight,
             child: Padding(
-              padding: EdgeInsetsDirectional.only(end: endPad),
+              padding: EdgeInsetsDirectional.only(
+                start: startPad,
+                end: endPad,
+              ),
               child: label,
             ),
           );

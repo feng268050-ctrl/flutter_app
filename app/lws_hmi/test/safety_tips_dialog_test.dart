@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lws_hmi/app/app_navigation.dart';
+import 'package:lws_hmi/app/app_routes.dart';
 import 'package:lws_hmi/app/app_theme.dart';
 import 'package:lws_hmi/features/safety_tips/application/safety_tips_coordinator.dart';
 import 'package:lws_hmi/features/safety_tips/application/safety_tips_gate.dart';
@@ -7,16 +9,32 @@ import 'package:lws_hmi/features/safety_tips/presentation/safety_tips_dialog.dar
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
+Widget _safetyTipsTestApp({required Widget home}) {
+  return MaterialApp(
+    theme: buildAppTheme(),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    locale: const Locale('en', 'US'),
+    home: home,
+    onGenerateRoute: (settings) {
+      if (settings.name == AppRoutes.productDisclaimer) {
+        return buildAppSlideRoute<void>(
+          settings: settings,
+          builder: (_) => const ProductDisclaimerPage(),
+        );
+      }
+      return null;
+    },
+  );
+}
+
 void main() {
   tearDown(SafetyTipsCoordinator.resetForTest);
 
-  testWidgets('Safety Tips Agree dismisses; link opens Product Disclaimer',
+  testWidgets('Safety Tips Agree dismisses; link opens Product Disclaimer route',
       (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('en', 'US'),
+      _safetyTipsTestApp(
         home: Builder(
           builder: (context) {
             return Scaffold(
@@ -41,15 +59,20 @@ void main() {
     expect(find.text('Safety Tips'), findsOneWidget);
     expect(find.textContaining('Keep bystanders'), findsOneWidget);
 
-    // Open nested Product Disclaimer via blue link.
+    // Product Disclaimer is a named route (slide), not a nested dialog.
     await tester.tap(find.byKey(const ValueKey('safety-tips-disclaimer-link')));
     await tester.pumpAndSettle();
     expect(find.text('Product Disclaimer'), findsOneWidget);
     expect(find.textContaining('Dear User:'), findsOneWidget);
+    expect(
+      find.byType(ProductDisclaimerPage),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const ValueKey('product-disclaimer-agree-btn')));
     await tester.pumpAndSettle();
     expect(find.text('Product Disclaimer'), findsNothing);
+    expect(find.byType(ProductDisclaimerPage), findsNothing);
     expect(find.text('Safety Tips'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('safety-tips-agree-btn')));
@@ -59,10 +82,7 @@ void main() {
 
   testWidgets('Agree stays disabled while unchecked', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('en', 'US'),
+      _safetyTipsTestApp(
         home: Builder(
           builder: (context) {
             return Scaffold(
@@ -102,11 +122,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: buildAppTheme(),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('en', 'US'),
+      _safetyTipsTestApp(
         home: Builder(
           builder: (context) {
             return Scaffold(

@@ -15,6 +15,7 @@ import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_scope.dart';
 import 'package:lws_hmi/features/safety_tips/application/safety_tips_gate.dart';
+import 'package:lws_hmi/features/safety_tips/presentation/safety_tips_dialog.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/platform/cloud/device_users_client.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
@@ -668,6 +669,15 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                             settings: settings,
                                             builder: (_) =>
                                                 const AiVisionVideoChoosePage(),
+                                          );
+                                        case AppRoutes.productDisclaimer:
+                                          // lws-ui UseSafetyTipsActivity — L/R
+                                          // slide over Safety Tips, not a
+                                          // second dialog stacked on Home.
+                                          return buildAppSlideRoute<void>(
+                                            settings: settings,
+                                            builder: (_) =>
+                                                const ProductDisclaimerPage(),
                                           );
                                         case AppRoutes.engineerMode:
                                           final engineerArgs =

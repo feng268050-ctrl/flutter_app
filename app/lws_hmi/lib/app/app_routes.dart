@@ -13,6 +13,8 @@ abstract final class AppRoutes {
   static const demo = '/demo';
   static const processVideoDetail = '/monitor/process-video';
   static const aiVisionChoose = '/monitor/ai-vision/choose';
+  /// Product disclaimer (lws-ui `UseSafetyTipsActivity`) — pushed from Safety Tips.
+  static const productDisclaimer = '/product-disclaimer';
 }
 
 /// Observes top-level route pops so Product Home can re-run home prompts.

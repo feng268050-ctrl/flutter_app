@@ -435,12 +435,14 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 ### `make upgrade`
 
 - **怎么用：**
-  - 全量 A/B：`make upgrade`（流式写 inactive FIT + `APP` rootfs，默认带 oem）
+  - 全量 A/B（SSH）：`make upgrade`（流式写 inactive FIT + `APP` rootfs，默认带 oem）
+  - 全量（RockUSB Loader/Maskrom）：`make reboot-loader` 后 `make upgrade`，或 `UPGRADE_TRANSPORT=rockusb make upgrade`（`di` 写 boot + boot_b + 双 rootfs + 可选 oem；**不** `uf factory.img`）
   - 仅 OEM：`OEM_ONLY=1 make upgrade`
   - 跳过 oem：`OEM_IMG= make upgrade`
-- **何时用：** 板已具备 P2.4 GPT/helpers 后的日常 kernel/rootfs/oem 迭代（**不**传 `factory.img`）。
-- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`FACTORY_SKU`/`OEM_ID`、设备选择、`WAIT_SEC`。
-- **行为：** 请求重启后立即返回；需等板子起来再连。
+  - 强制传输：`UPGRADE_TRANSPORT=ssh|rockusb`（默认 `auto`：有 Linux SSH 用流式，否则 RockUSB）
+- **何时用：** 板已具备 P2.4 GPT/helpers 后的日常 kernel/rootfs/oem 迭代（**不**传 `factory.img`）；板卡停在 Loader/Maskrom 时同一入口刷 OTA 等价松散镜像。
+- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`FACTORY_SKU`/`OEM_ID`、`UPGRADE_TRANSPORT`、设备选择、`WAIT_SEC`。
+- **行为：** SSH 路径请求重启后立即返回；RockUSB 路径 `di` 完成后 `rd`；需等板子起来再连。与产品 OTA（zip/签名/`/userdata/ota/`）及 `make flash`（factory `uf`）不同。
 
 ### `make debug-setup` / `make debug-app`
 

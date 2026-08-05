@@ -52,6 +52,7 @@ bash -c 'set -euo pipefail; \
   __ENV_SN="$${SN-}"; __ENV_CHIP_ID="$${CHIP_ID-}"; __ENV_SERIAL="$${SERIAL-}"; __ENV_IP="$${IP-}"; __ENV_IMAGE="$${IMAGE-}"; \
   __ENV_APP="$${APP-}"; \
   __ENV_OEM_ONLY="$${OEM_ONLY-}"; \
+  __ENV_UPGRADE_TRANSPORT="$${UPGRADE_TRANSPORT-}"; \
   if [[ -n "$${OEM_IMG+x}" ]]; then __ENV_OEM_IMG_SET=1; __ENV_OEM_IMG="$${OEM_IMG-}"; else __ENV_OEM_IMG_SET=0; fi; \
   __ENV_FLUTTER_SDK="$${FLUTTER_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
   __ENV_BUILD_BIND_MOUNT="$${BUILD_BIND_MOUNT-}"; \
@@ -63,6 +64,7 @@ bash -c 'set -euo pipefail; \
   [[ -n "$$__ENV_IMAGE" ]] && export IMAGE="$$__ENV_IMAGE"; \
   [[ -n "$$__ENV_APP" ]] && export APP="$$__ENV_APP"; \
   [[ -n "$$__ENV_OEM_ONLY" ]] && export OEM_ONLY="$$__ENV_OEM_ONLY"; \
+  [[ -n "$$__ENV_UPGRADE_TRANSPORT" ]] && export UPGRADE_TRANSPORT="$$__ENV_UPGRADE_TRANSPORT"; \
   [[ "$$__ENV_OEM_IMG_SET" == 1 ]] && export OEM_IMG="$$__ENV_OEM_IMG"; \
   [[ -n "$$__ENV_FLUTTER_SDK" ]] && export FLUTTER_SDK="$$__ENV_FLUTTER_SDK"; \
   [[ -n "$$__ENV_BUILD_JOBS" ]] && export BUILD_JOBS="$$__ENV_BUILD_JOBS"; \
@@ -166,7 +168,7 @@ help:
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
 	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
 	@echo "  make smoke-ai              # upload stain demo JPG; offline RKNN infer via AI daemon sock"
-	@echo "  make upgrade               # SSH stream: inactive FIT+APP rootfs (+oem); env OEM_ONLY=1 for oem-only"
+	@echo "  make upgrade               # SSH stream or RockUSB di OTA images; OEM_ONLY=1; UPGRADE_TRANSPORT=ssh|rockusb"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
 	@echo "  make serial-console        # MODE=TTL|RS485|RS232 (default TTL); BAUD=; LOG_FILE= (hex)"
@@ -198,12 +200,14 @@ help:
 	@echo "  PRODUCT_SN=<sn>            # write-identity product serial (not selection SN=)"
 	@echo "  FORCE=1                    # write-identity: overwrite non-empty Vendor Storage SN"
 	@echo "  IP=<addr>                  # registered SSH only (not USB-SSH); make connect first"
+	@echo "  UPGRADE_TRANSPORT=auto|ssh|rockusb  # make upgrade transport (default auto)"
 	@echo "  IMAGE=<path>               # firmware image for make flash"
 	@echo "  DOCKER_IMAGE=$(DOCKER_IMAGE)"
 	@echo "  DOCKER_PLATFORM=$(DOCKER_PLATFORM)"
 	@echo ""
 	@echo "Notes:"
 	@echo "  - Daily A/B: make build-kernel and/or build-rootfs then make upgrade (no build-img)."
+	@echo "  - Loader/Maskrom: make reboot-loader (or Maskrom) then make upgrade (di OTA images; not factory uf)."
 	@echo "  - OEM-only (helpers/profile): make build-oem && OEM_ONLY=1 make upgrade"
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ only (no host linux-sdk/output/ mirror)."
 	@echo "  - Factory: make build-oem then build-img → output/firmware/<APP>/<sku>/factory.img; make flash."

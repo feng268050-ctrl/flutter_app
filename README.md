@@ -143,8 +143,11 @@ Firmware stage outputs:
 - `make build-rootfs` builds `rootfs.img` (Weston + `flutter-wayland-client` + Mali `wayland-gbm`) and publishes it to `output/firmware/<APP>/` (default `APP=lws_hmi`). Requires `make build-flutter-embedded-linux` first. Runtime: **desktop-shell** (not kiosk) with `/usr/share/hmi/boot-splash.png` bridging kernel splash → Flutter first frame; mouse prefs via `apply-mouse-settings` + `weston-hmi-config.sh`.
 - `make prepare-rootfs` flips Buildroot stack prep (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. `build-rootfs` calls prepare first (skips when stamp + binaries already match).
 - `make build-img` does **not** compile the kernel or rootfs. It requires `make build-oem`, then packages loader, U-Boot, misc, both FIT images, APP-scoped rootfs, and **oem** into `output/firmware/<APP>/<FACTORY_SKU>/factory.img` (default APP `lws_hmi`, sku `ynh960-p800`) and refreshes `output/firmware/update.img` as a symlink for `make flash`.
-- Full-system `make upgrade` does **not** transfer `factory.img`. It **streams** `output/firmware/<APP>/rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) over SSH **directly into partitions** (progress = write progress), defaults to streaming resolved `oem.img` when present (`OEM_IMG= make upgrade` to skip oem), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path). Wait for the device to finish restarting before reconnecting.
-- OEM-only (board helpers / profile / screen pack): `make build-oem` then `OEM_ONLY=1 make upgrade` — streams `oem.img` only and plain-reboots (no A/B letter switch). Set `OEM_ONLY=1` in `.env` for repeated OEM iteration.
+- Full-system `make upgrade` does **not** transfer `factory.img`. Two host transports (auto-selected; override with `UPGRADE_TRANSPORT=ssh|rockusb`):
+  - **SSH** (USB-SSH / registered LAN): **streams** `output/firmware/<APP>/rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) **directly into partitions** (progress = write progress), defaults to streaming resolved `oem.img` when present (`OEM_IMG= make upgrade` to skip oem), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path).
+  - **RockUSB Loader/Maskrom** (e.g. after `make reboot-loader`, or Maskrom): `upgrade_tool` **`di`** downloads the **OTA-equivalent** loose images — `boot.img` → `boot`, `boot_b.img` → `boot_b`, same `rootfs.img` → **both** `rootfs_a` and `rootfs_b`, optional `oem` — with Maskrom `ul` MiniLoader into RAM when needed. **Not** `uf factory.img` (no U-Boot / GPT / misc rewrite) and **not** product OTA zip+sign.
+  Wait for the device to finish restarting before reconnecting.
+- OEM-only (board helpers / profile / screen pack): `make build-oem` then `OEM_ONLY=1 make upgrade` — oem partition only (SSH: stream + plain reboot; RockUSB: `di` oem only). Set `OEM_ONLY=1` in `.env` for repeated OEM iteration.
 
 ### Daily iteration — by what you changed
 
@@ -391,7 +394,7 @@ APP=…                           # app/ dir; *_hmi→/opt/hmi; rootfs→output/
 make version                    # print app/<APP> pubspec versionName+build (default APP=lws_hmi; host-only)
 make version-bump VERSION=1.0.40  # bump pubspec (+ app_version.dart when present); 5-digit build encode
 make build-rootfs               # → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)
-make upgrade                    # streams APP rootfs + shared FITs (same APP= as build-rootfs)
+make upgrade                    # SSH stream or RockUSB di OTA images (same APP= as build-rootfs)
 make build-img                  # → output/firmware/<APP>/<FACTORY_SKU>/factory.img
 make flash                      # uf that factory (APP= + FACTORY_SKU=); IMAGE= override
 make upgrade-control-board      # push latest control-board bin; force upgrade (HMI running)
@@ -405,14 +408,15 @@ make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; H
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
 make smoke-ai                   # upload stain demo JPG; offline RKNN via AI daemon sock (HMI running)
 make del-prop CAMERA_IP         # remove one tunable key; restarts hmi if changed
-make upgrade                    # A/B stream inactive FIT+rootfs (board already on P2.4 GPT)
+make upgrade                    # auto: SSH stream if Linux up; else RockUSB di OTA images (Loader/Maskrom)
+UPGRADE_TRANSPORT=rockusb make upgrade  # force RockUSB path after make reboot-loader / Maskrom
 ```
 
-Device selection: use **`SN=`** (matches `make devices` **SN**). Put `SN=` / `IP=` / **`OEM_ONLY=`** / **`OEM_IMG=`** in `.env` for IDE / daily use.
+Device selection: use **`SN=`** (matches `make devices` **SN**). Put `SN=` / `IP=` / **`OEM_ONLY=`** / **`OEM_IMG=`** / **`UPGRADE_TRANSPORT=`** in `.env` for IDE / daily use.
 
 Alarm history persists in SQLite **`/var/lib/hmi/alarm-logs.db`** (→ `/userdata/hmi/alarm-logs.db`, table `alarm_logs`) — kept across `push-app` / `make upgrade`.
 
-Full-system A/B (kernel/rootfs, not app-only): `make upgrade` streams `rootfs.img` + the inactive letter’s FIT into partitions (not userdata staging).
+Full-system A/B (kernel/rootfs, not app-only): `make upgrade` — SSH streams inactive FIT+rootfs, or RockUSB `di` of both FITs + both rootfs letters (OTA-equivalent; not userdata staging).
 
 Remote SSH (board LAN/WLAN sshd on — Demo **LAN SSH debug** or `enable-ssh-debug.sh`):
 
@@ -423,14 +427,14 @@ make connect 192.168.1.50       # or: make connect IP=192.168.1.50
 make devices                    # MODE=SSH row
 IP=192.168.1.50 make shell
 IP=192.168.1.50 make push-app
-IP=192.168.1.50 make upgrade    # stream-to-partition; not RockUSB / not online OTA staging
+IP=192.168.1.50 make upgrade    # SSH stream-to-partition; not RockUSB / not online OTA staging
 make disconnect 192.168.1.50
 ```
 
 `IP=` selects **registered SSH** or **EMU** (never USB-SSH). `SN=` selects by **SN** (`make devices` columns: MODE / SN / LocationID / …); **`SN=SIM-EMU`** / **`SN=EMU`** always select the QEMU guest even when the table SN is chip-ID fallback. USB-SSH/SSH/EMU **SN** prefers Vendor Storage SN, else chip serial. Android adb / RockUSB loader rows use the adb/SerialNo as SN. `make reboot` works over SSH/EMU; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. **QEMU** (`make emulator`) appears as ephemeral **MODE=EMU** (`IP=127.0.0.1:2222`) when SSH hostfwd answers — usable with `make shell` / `make push-app` / `make debug-app`, not `make upgrade` / `make write-identity`. Product identity (`brand` / `model` / `sn`) lives in Rockchip **Vendor Storage** — provision with **`make write-identity BRAND=… MODEL=… PRODUCT_SN=…`** after flash (geometry frozen; `factory.img` must not package vendor payloads). Optional macOS RockUSB `upgrade_tool SN` / `RSN` is **SN-only**; brand/model still need `write-identity`. `make set-prop` / `del-prop` refuse identity keys.
 Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
 
-`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) **streams** **`rootfs.img` + the inactive letter’s FIT** into partitions with single-line write progress, arms try-boot, and reboots — **not** RockUSB/`upgrade_tool uf` (use **`make flash`** for GPT / U-Boot) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
+`make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) auto-selects **SSH stream** (inactive FIT + rootfs) when a Linux SSH target is up, or **RockUSB `di`** of OTA-equivalent images (`boot`/`boot_b`/both rootfs letters/optional oem) when the board is in Loader/Maskrom — **not** `upgrade_tool uf` / `factory.img` (use **`make flash`** for GPT / U-Boot / MiniLoader storage / misc) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Force with `UPGRADE_TRANSPORT=ssh|rockusb`. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
 
 ### Debug iteration (USB plug-ssh / remote SSH, P1.5)
 

@@ -67,7 +67,7 @@ ROCKUSB_LIST_OUTPUT=""
 
 usage() {
   cat <<EOF
-Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash}
+Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash|upgrade-ota}
 
   devices        List connected devices (RockUSB + USB-SSH + USB-MTP + SSH; MODE column)
                  (Android emulators omitted)
@@ -78,6 +78,8 @@ Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash}
   upgrade        upgrade_tool uf <update.img>        [UPGRADE_NORESET=1]
   flash          uf update.img; ul first when RockUSB mode is Maskrom
                  (Android emulator not supported)
+  upgrade-ota    di OTA-equivalent images (boot/boot_b/rootfs_a+b[/oem]); Maskrom ul first
+                 (make upgrade RockUSB path; MUST NOT uf factory.img)
   flash-android  flash with Innohi Android image (optional; not required before Linux)
                  (Android emulator not supported)
 
@@ -718,6 +720,112 @@ run_flash() {
   fi
 }
 
+# Map GPT partition name → upgrade_tool di flag (PDF §1.4).
+# Defined abbreviations: -b boot, -k kernel, -r recovery, -s system, -u uboot, -m misc, -t trust.
+# Others: -<partition_name> (e.g. -boot_b, -rootfs_a, -oem).
+di_flag_for_partition() {
+  case "$1" in
+  boot) printf '%s\n' "-b" ;;
+  kernel) printf '%s\n' "-k" ;;
+  recovery) printf '%s\n' "-r" ;;
+  system) printf '%s\n' "-s" ;;
+  uboot) printf '%s\n' "-u" ;;
+  misc) printf '%s\n' "-m" ;;
+  trust) printf '%s\n' "-t" ;;
+  parameter) printf '%s\n' "-p" ;;
+  *) printf '%s\n' "-$1" ;;
+  esac
+}
+
+# Download one partition image via upgrade_tool di (not uf).
+run_download_image() {
+  local part="$1" image="$2" flag
+  flag="$(di_flag_for_partition "$part")"
+  ensure_readable "$image" "partition $part image"
+  echo "di $part ← $image"
+  bash "$SIZE_HELPER" "$image"
+  upgrade_tool_cmd di "$flag" "$image" \
+    || die "upgrade_tool di failed for partition $part ($image)"
+}
+
+# OTA-equivalent RockUSB path for make upgrade (Loader/Maskrom).
+# Env: UPGRADE_OTA_BOOT_IMG, UPGRADE_OTA_BOOT_B_IMG, UPGRADE_OTA_ROOTFS_IMG,
+#      UPGRADE_OTA_OEM_IMG (optional empty), OEM_ONLY=0|1
+# MUST NOT call uf / write uboot/misc/parameter/GPT.
+run_upgrade_ota() {
+  local mode oem_only="${OEM_ONLY:-0}"
+  local boot_img="${UPGRADE_OTA_BOOT_IMG:-}"
+  local boot_b_img="${UPGRADE_OTA_BOOT_B_IMG:-}"
+  local rootfs_img="${UPGRADE_OTA_ROOTFS_IMG:-}"
+  local oem_img="${UPGRADE_OTA_OEM_IMG:-}"
+
+  reject_android_emulator_target "upgrade-ota"
+  ensure_upgrade_tool
+
+  case "$oem_only" in
+  0 | 1) ;;
+  *) die "OEM_ONLY must be 0 or 1 (got: $oem_only)" ;;
+  esac
+
+  cat <<'EOF'
+============================================================
+ RockUSB make upgrade — OTA-equivalent images (di)
+ NOT factory flash (no uf / factory.img / uboot / GPT / misc)
+ NOT product OTA (no zip / Ed25519 /userdata/ota staged apply)
+============================================================
+EOF
+
+  if [[ "$oem_only" == "1" ]]; then
+    [[ -n "$oem_img" ]] || die "OEM_ONLY=1 requires oem.img — run: make build-oem (or set OEM_IMG=)"
+    ensure_readable "$oem_img" "OEM_IMG"
+  else
+    [[ -n "$boot_img" ]] || die "missing UPGRADE_OTA_BOOT_IMG (boot.img)"
+    [[ -n "$boot_b_img" ]] || die "missing UPGRADE_OTA_BOOT_B_IMG (boot_b.img)"
+    [[ -n "$rootfs_img" ]] || die "missing UPGRADE_OTA_ROOTFS_IMG (rootfs.img)"
+    ensure_readable "$boot_img" "boot.img"
+    ensure_readable "$boot_b_img" "boot_b.img"
+    ensure_readable "$rootfs_img" "rootfs.img"
+    if [[ -n "$oem_img" ]]; then
+      ensure_readable "$oem_img" "oem.img"
+    fi
+  fi
+
+  require_rockusb_device
+  mode="$(resolve_selected_rockusb_mode "$ROCKUSB_LIST_OUTPUT")" \
+    || die "could not detect RockUSB mode (make devices)"
+
+  if rockusb_mode_needs_loader "$mode"; then
+    # Prefer prebuilt MiniLoader for the selected SKU (RAM bring-up only).
+    if [[ -z "$LOADER_BIN" && -r "$FACTORY_LOADER_BIN" ]]; then
+      LOADER_BIN="$FACTORY_LOADER_BIN"
+    fi
+    resolve_loader_bin
+    echo "RockUSB: $mode — ul MiniLoader (RAM) then di OTA images"
+    LOADER_NORESET=1 run_loader
+  else
+    echo "RockUSB: $mode — di OTA images only (no ul)"
+  fi
+
+  if [[ "$oem_only" == "1" ]]; then
+    echo "OEM-only: downloading oem partition only"
+    run_download_image oem "$oem_img"
+  else
+    echo "Full-system: boot + boot_b + rootfs_a + rootfs_b${oem_img:+ + oem}"
+    run_download_image boot "$boot_img"
+    run_download_image boot_b "$boot_b_img"
+    run_download_image rootfs_a "$rootfs_img"
+    run_download_image rootfs_b "$rootfs_img"
+    if [[ -n "$oem_img" ]]; then
+      run_download_image oem "$oem_img"
+    else
+      echo "NOTE: oem skipped (no oem.img / OEM_IMG empty)"
+    fi
+  fi
+
+  upgrade_tool_reset_after_flash
+  echo "RockUSB OTA-image upgrade complete — wait for the device to boot."
+}
+
 case "$ACTION" in
   ""|-h|--help|help) usage; exit 0 ;;
 esac
@@ -738,6 +846,9 @@ case "$ACTION" in
     ;;
   flash)
     run_flash
+    ;;
+  upgrade-ota|di-ota)
+    run_upgrade_ota
     ;;
   *) die "Unknown action: $ACTION" ;;
 esac

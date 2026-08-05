@@ -364,7 +364,8 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
     final other = parts.otherNetworks.take(20).toList();
 
     return SettingsScaffold(
-      title: l10n.wirelessNetworkText,
+      // lws-ui `wifi_network_text` (activity_wifi title)
+      title: l10n.wifiNetworkText,
       body: RefreshIndicator(
         color: CyberColors.buttonPrimaryAccent,
         onRefresh: () async {

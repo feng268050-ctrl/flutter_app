@@ -50,8 +50,12 @@ final class HmiButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final typography = context.hmiTypography;
     final metrics = HmiButtonMetrics.forSize(size, typography);
+    final foreground = switch (variant) {
+      CyberButtonVariant.secondary => CyberColors.buttonSecondaryText,
+      _ => metrics.textStyle.color ?? Colors.white,
+    };
     final labelStyle = metrics.textStyle.copyWith(
-      color: metrics.textStyle.color ?? Colors.white,
+      color: foreground,
       height: 1.0,
     );
 

@@ -259,7 +259,7 @@ make l10n-verify
 make check-typography
 ```
 
-Checks bare `fontSize: N` and business `AppTypography.*Size` (theme / specialty allowlist).
+Checks bare `fontSize: N` and any `AppTypography.*Size` under `lib/features` / `lib/ui` (theme tokens only in `lib/app/theme`).
 
 **Boot splash** (`board/logo/`):
 

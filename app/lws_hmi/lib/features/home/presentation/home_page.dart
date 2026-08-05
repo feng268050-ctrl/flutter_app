@@ -25,7 +25,6 @@ import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/warn_alarm/infrastructure/warn_alarm_debug_log.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/platform/cloud/remote_lock_scope.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/app/theme/hmi_display_typography.dart';
 
 /// Design reference canvas from lws-ui `activity_main.xml` (1280×800).
@@ -41,7 +40,7 @@ const double _kQaWideInner = 244;
 const double _kQaIconStartPad = 24;
 const double _kQaLabelMarginTop = 10;
 const double _kQaCorner = 18;
-const double _kQaCardText = AppTypography.controlSize;
+const double _kQaCardText = 20.0; // control
 
 /// Custom Home statistics cards on the product Home (design dp @ 1280×800).
 const double _kStatCardH = 124;
@@ -665,8 +664,8 @@ class _ModeEntry extends StatelessWidget {
     final scale = (height / 280).clamp(0.5, 2.0);
     final labelBandH = labelHeight.clamp(24.0, height * 0.45);
     final fontSize = (labelHeight * 0.28).clamp(
-      AppTypography.bodySize,
-      AppTypography.largeDialogTitleSize,
+      18.0, // body
+      36.0, // largeDialogTitle
     );
     const textHeightFactor = 1.05;
     final labelDrop = 6 * scale;
@@ -822,8 +821,8 @@ class _HomeQuickActionAiVision extends StatelessWidget {
     final padStart = _kQaIconStartPad * scaleX;
     // Icon↔text gap matches leading inset (left edge → icon).
     final textSize = (_kQaCardText * s).clamp(
-      AppTypography.captionSize,
-      AppTypography.sectionTitleSize,
+      14.0, // caption
+      22.0, // sectionTitle
     );
     final dpr = MediaQuery.devicePixelRatioOf(context);
     return HomeQuickAction(

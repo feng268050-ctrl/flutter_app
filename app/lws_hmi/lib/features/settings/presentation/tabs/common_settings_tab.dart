@@ -119,10 +119,12 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
   String _unitLabel(AppLocalizations l10n, String unit) {
     switch (unit) {
       case CommonSettingsStore.unitImperial:
-        return l10n.unitImperial;
+        // lws-ui `unit_option_imperial`
+        return l10n.unitOptionImperial;
       case CommonSettingsStore.unitMetric:
       default:
-        return l10n.unitMetric;
+        // lws-ui `unit_option_metric`
+        return l10n.unitOptionMetric;
     }
   }
 
@@ -130,7 +132,7 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
     final mode = _dateTimeMode;
     if (mode == null) return null;
     return mode == TimeSyncMode.network
-        ? l10n.dateTimeModeAuto
+        ? l10n.dateTimeAutomatic
         : l10n.dateTimeModeManual;
   }
 
@@ -224,7 +226,8 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
           borderGradientCenter: CyberBorderGradientCenter.topBottom,
           children: [
             SettingsNavRow(
-              title: l10n.wirelessNetworkText,
+              // lws-ui `wifi_network_text`
+              title: l10n.wifiNetworkText,
               value: _wifiValue,
               onTap: () async {
                 await pushSettingsPage(
@@ -242,7 +245,8 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
               },
             ),
             SettingsNavRow(
-              title: l10n.httpProxyTitle,
+              // lws-ui `http_proxy_settings_title`
+              title: l10n.httpProxySettingsTitle,
               value: _proxyValue,
               onTap: () async {
                 await pushSettingsPage(
@@ -337,7 +341,7 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
             if (store == null)
               SettingsNavRow(
                 title: l10n.unitSettingText,
-                value: l10n.unitMetric,
+                value: l10n.unitOptionMetric,
                 onTap: () => pushSettingsPage(
                   context,
                   const UnitSettingsPage(),

@@ -336,7 +336,6 @@ class VideosTabState extends State<VideosTab> {
     ProcessVideoRecord row,
     AppLocalizations l10n,
   ) {
-    final typography = context.hmiTypography;
     return DataRow(
       onSelectChanged: (_) => unawaited(_openDetail(row)),
       cells: [
@@ -380,25 +379,13 @@ class VideosTabState extends State<VideosTab> {
                 onPressed: _canUpload(row)
                     ? () => unawaited(_upload(row))
                     : null,
-                child: Text(
-                  l10n.processVideoUpload,
-                  style: typography.body.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
+                label: l10n.processVideoUpload,
               ),
               const SizedBox(width: 12),
               MonitorFrostActionButton(
                 variant: CyberButtonVariant.secondary,
                 onPressed: () => unawaited(_delete(row)),
-                child: Text(
-                  l10n.deleteText,
-                  style: typography.body.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: CyberColors.buttonSecondaryText,
-                  ),
-                ),
+                label: l10n.deleteText,
               ),
             ],
           ),

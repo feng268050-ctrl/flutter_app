@@ -50,13 +50,14 @@ class _MachineStatusTabState extends State<MachineStatusTab> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final s = _ctrl;
+    // Labels match lws-ui `fragment_machine_status` string refs.
     final tiles = <(String, bool?)>[
-      (l10n.laserOnLabel, s?.laserOn),
-      (l10n.blowOnLabel, s?.blowOn),
-      (l10n.safetyLockLabel, s?.safetyLockOn),
-      (l10n.gunSwitchLabel, s?.gunSwitchOn),
-      (l10n.redLightLabel, s?.redLightOn),
-      (l10n.wireFeedingLabel, s?.wireFeedingOn),
+      (l10n.laserText, s?.laserOn),
+      (l10n.blowText, s?.blowOn),
+      (l10n.safetyLockText, s?.safetyLockOn),
+      (l10n.gunHeadSwitchText, s?.gunSwitchOn),
+      (l10n.redLightText, s?.redLightOn),
+      (l10n.wireFeedingText, s?.wireFeedingOn),
       (l10n.ipCameraText, s?.cameraOn),
     ];
 

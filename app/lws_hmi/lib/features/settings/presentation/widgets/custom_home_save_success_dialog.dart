@@ -80,7 +80,8 @@ final class _CustomHomeSaveSuccessBody extends StatelessWidget {
     final screenW = MediaQuery.sizeOf(context).width;
     final cardW = (screenW * 0.62).clamp(320.0, _maxWidth);
     final success = status == _CustomHomeSaveStatus.success;
-    final title = success ? l10n.saveSucceeded : l10n.saveFailed;
+    // lws-ui `saved_successfully` / save-failed tip titles.
+    final title = success ? l10n.savedSuccessfully : l10n.saveFailed;
     final message = success ? l10n.doneText : l10n.pleaseTryAgain;
     final icon = success
         ? ProcessModeAssets.dialogSuccess

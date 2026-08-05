@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/status_bar/call_back_home_button.dart';
@@ -168,14 +167,14 @@ abstract final class WorkModeStatusBarDimens {
 
   static const double edgeLineHeight = 3;
 
-  /// Five equipment status labels → [AppTypography.control].
-  static const double statusLabelFontSize = AppTypography.controlSize;
+  /// Five equipment status labels → [HmiTypography.statusBarLabel] (20).
+  static const double statusLabelFontSize = 20.0;
 
-  /// Home / Back label → [AppTypography.navigation].
-  static const double homeLabelFontSize = AppTypography.navigationSize;
+  /// Home / Back label → [HmiTypography.statusBarAction] (24).
+  static const double homeLabelFontSize = 24.0;
 
-  /// Clock size → [AppTypography.control].
-  static const double chromeLabelFontSize = AppTypography.controlSize;
+  /// Clock size → [HmiTypography.statusBarLabel] (20).
+  static const double chromeLabelFontSize = 20.0;
 
   static const Color background = Colors.transparent;
   static const Color label = Color(0xFFFFFFFF);

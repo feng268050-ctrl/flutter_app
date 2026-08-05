@@ -41,10 +41,11 @@ abstract final class SettingsDimens {
   /// Preceding [SettingsGroup] must use `bottomInset: 0` so this is the only gap.
   static const helpGap = 8.0;
 
-  /// Device Info / General list title & value → [HmiTypography.settingsRowTitle] (20).
-  static const titleSize = 20.0;
+/// Device Info / General list title & value → [HmiTypography.settingsRowTitle].
+/// Kept as layout token only; prefer semantic TextStyle at call sites.
+static const titleSize = 20.0;
 
-  /// Secondary / subtitle / help → [HmiTypography.supporting] (16).
+  /// Secondary / subtitle / help → [HmiTypography.supporting].
   static const subtitleSize = 16.0;
 
   /// Shared raised-panel shadow: even contact + ambient on all four sides
@@ -99,13 +100,6 @@ abstract final class SettingsDimens {
       spreadRadius: -3,
     ),
   ];
-
-  /// Advanced tab body — ladder sizes matching HmiTypography roles.
-  static const advancedTitleSize = 22.0; // sectionTitle
-  static const advancedValueSize = 22.0; // sectionTitle
-  static const advancedSwitchTitleSize = 24.0; // navigation / primaryTabLabel
-  static const advancedSwitchSubtitleSize = 20.0; // control / settingsRowTitle
-  static const advancedSectionHeaderSize = 20.0; // control
 }
 
 /// Settings page Material-style top tabs (equal width, no rounded strip chrome).
@@ -299,12 +293,10 @@ class SettingsSectionHeader extends StatelessWidget {
   const SettingsSectionHeader(
     this.title, {
     super.key,
-    this.fontSize = SettingsDimens.advancedSectionHeaderSize,
     this.topInset = SettingsDimens.inset,
   });
 
   final String title;
-  final double fontSize;
 
   /// Space above the title (card → title). First group keeps [SettingsDimens.inset].
   final double topInset;
@@ -320,11 +312,11 @@ class SettingsSectionHeader extends StatelessWidget {
       ),
       child: Text(
         title.toUpperCase(),
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: CyberColors.textSecondary,
-              letterSpacing: 0.6,
-              fontSize: fontSize,
-            ),
+        style: context.hmiTypography.settingsRowTitle.copyWith(
+          color: CyberColors.textSecondary,
+          letterSpacing: 0.6,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
@@ -347,12 +339,6 @@ class SettingsHelpFooter extends StatelessWidget {
   /// Space below the footnote (use `0` when a [SettingsSectionHeader] follows).
   final double bottomInset;
 
-  static const textStyle = TextStyle(
-    color: Colors.white54,
-    fontSize: SettingsDimens.subtitleSize,
-    height: 1.35,
-  );
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -366,6 +352,7 @@ class SettingsHelpFooter extends StatelessWidget {
         text,
         style: context.hmiTypography.supporting.copyWith(
           color: Colors.white54,
+          height: 1.35,
         ),
       ),
     );
@@ -1136,6 +1123,15 @@ class SettingsValueRow extends StatelessWidget {
   }
 }
 
+/// Switch row title/subtitle typography tone.
+enum SettingsSwitchEmphasis {
+  /// Device / Common / Wi‑Fi: [HmiTypography.settingsRowTitle] + supporting.
+  standard,
+
+  /// Advanced AI / danger switches: navigation title + control subtitle.
+  advanced,
+}
+
 class SettingsSwitchRow extends StatelessWidget {
   const SettingsSwitchRow({
     super.key,
@@ -1143,28 +1139,29 @@ class SettingsSwitchRow extends StatelessWidget {
     this.subtitle,
     required this.value,
     required this.onChanged,
-    this.titleFontSize = SettingsDimens.titleSize,
-    this.subtitleFontSize = SettingsDimens.subtitleSize,
+    this.emphasis = SettingsSwitchEmphasis.standard,
   });
 
   final String title;
   final String? subtitle;
   final bool value;
   final ValueChanged<bool>? onChanged;
-  final double titleFontSize;
-  final double subtitleFontSize;
+  final SettingsSwitchEmphasis emphasis;
 
   @override
   Widget build(BuildContext context) {
     final typography = context.hmiTypography;
-    final titleStyle = typography.settingsRowTitle.copyWith(
-      fontSize: titleFontSize,
-      color: CyberColors.textPrimary,
-    );
-    final subtitleStyle = typography.supporting.copyWith(
-      fontSize: subtitleFontSize,
+    final titleStyle = (emphasis == SettingsSwitchEmphasis.advanced
+            ? typography.navigation
+            : typography.settingsRowTitle)
+        .copyWith(color: CyberColors.textPrimary);
+    final subtitleStyle = (emphasis == SettingsSwitchEmphasis.advanced
+            ? typography.settingsRowTitle
+            : typography.supporting)
+        .copyWith(
       color: CyberColors.textSecondary,
       height: 1.35,
+      fontWeight: FontWeight.w400,
     );
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: SettingsDimens.rowMinHeight),
@@ -1508,9 +1505,9 @@ class SettingsScaledParam extends StatelessWidget {
       child: Text(
         display,
         textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: SettingsDimens.advancedValueSize,
+        style: context.hmiTypography.sectionTitle.copyWith(
           color: Colors.white.withOpacity(0.85),
+          fontWeight: FontWeight.w400,
         ),
       ),
     );
@@ -1563,7 +1560,8 @@ class SettingsScaledParam extends StatelessWidget {
             scaleMinText: scaleMinText ?? min.round().toString(),
             scaleMaxText: scaleMaxText ?? max.round().toString(),
             // Match Advanced title size (刻度 = 对应文案字号).
-            scaleLabelFontSize: SettingsDimens.advancedTitleSize,
+            scaleLabelFontSize:
+                context.hmiTypography.sectionTitle.fontSize ?? 22,
           ),
         ],
       ),

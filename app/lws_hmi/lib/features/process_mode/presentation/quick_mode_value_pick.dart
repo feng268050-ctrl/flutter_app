@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/features/process_library/domain/process_library_models.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_assets.dart';
 import 'package:lws_hmi/features/process_mode/domain/process_mode_tokens.dart';
@@ -15,7 +14,7 @@ import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 abstract final class QuickModePickerDimens {
   static const double pickWidth = 560 / 3; // 186.666…
   static const double titleHeight = 32;
-  static const double titleTextSize = AppTypography.controlSize;
+  static const double titleTextSize = 20.0; // control
   static const double titleScaleGap = 16;
   /// lws-ui `quick_mode_picker_scale_height` / scale ImageView height.
   static const double scaleHeight = 402;
@@ -29,13 +28,11 @@ abstract final class QuickModePickerDimens {
   static const double materialWidth = 640 / 3; // 213.333…
   static const double materialHeight = 240;
   /// Material wheel labels → sectionTitle / control.
-  static const double materialSelectedTextSize =
-      AppTypography.sectionTitleSize;
-  static const double materialUnselectedTextSize =
-      AppTypography.controlSize;
+  static const double materialSelectedTextSize = 22.0;
+  static const double materialUnselectedTextSize = 20.0;
   static const double itemHeight = 168 / 3; // 56 — was 136/3; more row gap
-  static const double selectedTextSize = AppTypography.bodySize;
-  static const double unselectedTextSize = AppTypography.supportingSize;
+  static const double selectedTextSize = 18.0; // body
+  static const double unselectedTextSize = 16.0; // supporting
   static const double selectedTextPadding = 16;
   static const Color titleColor = Colors.white;
 

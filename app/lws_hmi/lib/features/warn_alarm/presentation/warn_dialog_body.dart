@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 
@@ -34,14 +33,14 @@ abstract final class WarnDialogMetrics {
   /// `frost_dialog_prompt_icon_size` → `engineer_mode_entry_icon_size`.
   static const double iconSize = 150;
 
-  /// `frost_dialog_prompt_title_text_size` → [AppTypography.criticalTitle].
-  static const double titleSize = AppTypography.criticalTitleSize;
+  /// `frost_dialog_prompt_title_text_size` → criticalTitle (52).
+  static const double titleSize = 52.0;
 
   /// Absolute floor only for pathological titles (prefer fit over this).
-  static const double minTitleSize = AppTypography.bodySize;
+  static const double minTitleSize = 18.0; // body
 
-  /// `prompt_content` → [AppTypography.largeDialogTitle] (special large body).
-  static const double bodySize = AppTypography.largeDialogTitleSize;
+  /// `prompt_content` → largeDialogTitle (36) special large body.
+  static const double bodySize = 36.0;
 
   /// `frost_dialog_prompt_scroll_max_height` (tightened for hero confirm 72).
   static const double bodyScrollMaxHeight = 134;
@@ -56,7 +55,7 @@ abstract final class WarnDialogMetrics {
   static const double confirmHeight = 72; // HmiButton hero
 
   /// `frost_action_button_text_size` / `text_size_12`.
-  static const double confirmLabelSize = AppTypography.navigationSize; // hero / 24
+  static const double confirmLabelSize = 24.0; // navigation / hero
 
   /// Body `lineSpacingExtra` 6dp on 37sp ≈ height multiplier.
   static const double bodyHeight = (37 + 6) / 37;

@@ -4,6 +4,9 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/ip_camera/application/camera_show_overlay_applier.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
+import 'package:lws_hmi/app/theme/hmi_typography.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 import 'package:lws_hmi/ui/tip_dialog_host.dart';
 
 /// Opens Change Overlay dialog. Returns applied params on success, else null.
@@ -113,6 +116,10 @@ class _CameraOverlayDialogBodyState extends State<_CameraOverlayDialogBody> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final labelStyle = context.hmiTypography.sectionTitle;
+    final errorStyle = context.hmiTypography.body.copyWith(
+      color: const Color(0xFFFF6B6B),
+    );
     return CyberPromptContent(
       title: l10n.cameraChangeOverlay,
       body: Column(
@@ -124,7 +131,7 @@ class _CameraOverlayDialogBodyState extends State<_CameraOverlayDialogBody> {
               Expanded(
                 child: Text(
                   l10n.cameraOverlayEnable,
-                  style: const TextStyle(fontSize: 22),
+                  style: labelStyle,
                 ),
               ),
               CyberSwitch(
@@ -144,7 +151,7 @@ class _CameraOverlayDialogBodyState extends State<_CameraOverlayDialogBody> {
             const SizedBox(height: 12),
             Text(
               '${l10n.cameraOverlayPositionX}: $_x',
-              style: const TextStyle(fontSize: 22),
+              style: labelStyle,
             ),
             CyberSlider(
               value: _x.toDouble().clamp(
@@ -160,7 +167,7 @@ class _CameraOverlayDialogBodyState extends State<_CameraOverlayDialogBody> {
             const SizedBox(height: 12),
             Text(
               '${l10n.cameraOverlayPositionY}: $_y',
-              style: const TextStyle(fontSize: 22),
+              style: labelStyle,
             ),
             CyberSlider(
               value: _y.toDouble().clamp(
@@ -180,35 +187,31 @@ class _CameraOverlayDialogBodyState extends State<_CameraOverlayDialogBody> {
               _error == 'invalid'
                   ? l10n.cameraOverlayApplyFailed
                   : '${l10n.cameraOverlayApplyFailed}\n$_error',
-              style: const TextStyle(color: Color(0xFFFF6B6B), fontSize: 18),
+              style: errorStyle,
             ),
           ],
         ],
       ),
       actions: [
-        SizedBox(
+        HmiButton(
+          key: const Key('camera-overlay-cancel'),
+          label: l10n.cancelText,
+          size: HmiButtonSize.medium,
+          widthPolicy: HmiButtonWidthPolicy.fixed,
           width: 168,
-          child: CyberButton(
-            key: const Key('camera-overlay-cancel'),
-            size: CyberButtonSize.small,
-            shape: CyberButtonShape.rounded,
-            stretch: true,
-            variant: CyberButtonVariant.secondary,
-            onPressed: _busy ? null : () => Navigator.pop(context),
-            child: Text(l10n.cancelText),
-          ),
+          variant: CyberButtonVariant.secondary,
+          shape: CyberButtonShape.rounded,
+          onPressed: _busy ? null : () => Navigator.pop(context),
         ),
-        SizedBox(
+        HmiButton(
+          key: const Key('camera-overlay-apply'),
+          label: l10n.wifiApply,
+          size: HmiButtonSize.medium,
+          widthPolicy: HmiButtonWidthPolicy.fixed,
           width: 168,
-          child: CyberButton(
-            key: const Key('camera-overlay-apply'),
-            size: CyberButtonSize.small,
-            shape: CyberButtonShape.rounded,
-            stretch: true,
-            variant: CyberButtonVariant.primary,
-            onPressed: _busy ? null : () => unawaited(_apply()),
-            child: Text(l10n.wifiApply),
-          ),
+          variant: CyberButtonVariant.primary,
+          shape: CyberButtonShape.rounded,
+          onPressed: _busy ? null : () => unawaited(_apply()),
         ),
       ],
     );

@@ -9,7 +9,6 @@ import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart'
 import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/monitor/application/machine_status_controller.dart';
-import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_chrome.dart';
 import 'package:lws_hmi/features/monitor/presentation/widgets/monitor_gauges.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/temperature_unit_convert.dart';
@@ -208,11 +207,11 @@ final class _LiveMachineStatusBodyState extends State<_LiveMachineStatusBody> {
     final machine = _machine;
 
     final tiles = <(String, bool?)>[
-      (l10n?.laserOnLabel ?? 'Laser', machine?.laserOn),
-      (l10n?.blowOnLabel ?? 'Blow', machine?.blowOn),
-      (l10n?.safetyLockLabel ?? 'Safety Lock', machine?.safetyLockOn),
-      (l10n?.gunSwitchLabel ?? 'Gun Switch', machine?.gunSwitchOn),
-      (l10n?.redLightLabel ?? 'Red Light', machine?.redLightOn),
+      (l10n?.laserText ?? 'Laser', machine?.laserOn),
+      (l10n?.blowText ?? 'Gas Flow', machine?.blowOn),
+      (l10n?.safetyLockText ?? 'Safety Clamp', machine?.safetyLockOn),
+      (l10n?.gunHeadSwitchText ?? 'Gun Switch', machine?.gunSwitchOn),
+      (l10n?.redLightText ?? 'Red Pointer', machine?.redLightOn),
       (l10n?.wireFeedingText ?? 'Wire Feeder', machine?.wireFeedingOn),
     ];
 
@@ -498,9 +497,6 @@ final class _LiveTempMetricCard extends StatelessWidget {
   static const _trendDown = Color(0xFF3DDC84);
   static const _trendIdle = Color(0x40FFFFFF);
 
-  /// Smaller than [MonitorDimens.metricValueSize] so left labels fit (body 18).
-  static const _valueSize = 18.0;
-
   @override
   Widget build(BuildContext context) {
     final common = CommonSettingsScope.maybeOf(context);
@@ -538,9 +534,8 @@ final class _LiveTempMetricCard extends StatelessWidget {
                     maxLines: 2,
                     softWrap: true,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: context.hmiTypography.metricLabel.copyWith(
                       color: labelActive ? Colors.white : _idleLabel,
-                      fontSize: MonitorDimens.metricLabelSize,
                       fontWeight: FontWeight.w400,
                       height: 1.15,
                     ),
@@ -561,9 +556,8 @@ final class _LiveTempMetricCard extends StatelessWidget {
                   value,
                   maxLines: 1,
                   softWrap: false,
-                  style: TextStyle(
+                  style: context.hmiTypography.body.copyWith(
                     color: overTemp ? _faultValue : Colors.white,
-                    fontSize: _valueSize,
                     fontWeight: FontWeight.w400,
                     height: 1.1,
                   ),

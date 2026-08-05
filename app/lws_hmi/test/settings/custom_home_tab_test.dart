@@ -135,14 +135,14 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 180));
 
-    expect(find.text('Save Succeeded'), findsOneWidget);
+    expect(find.text('Saved'), findsOneWidget);
     expect(find.text('Done'), findsOneWidget);
     expect(find.byKey(const ValueKey('custom-home-save-success-ok')),
         findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 1500));
     await tester.pumpAndSettle();
-    expect(find.text('Save Succeeded'), findsNothing);
+    expect(find.text('Saved'), findsNothing);
   });
 
   testWidgets('Custom Home failure tip uses failure copy and dismisses',

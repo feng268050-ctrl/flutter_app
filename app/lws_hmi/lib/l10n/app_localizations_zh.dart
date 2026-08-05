@@ -406,7 +406,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get autoWireFeed => '自动送丝';
 
   @override
-  String get blowOnLabel => '吹气';
+  String get blowOnLabel => '通气状态';
 
   @override
   String get blowText => '通气状态';
@@ -981,7 +981,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get failStatus => '故障';
 
   @override
-  String get favoriteMaterial => '常用材料';
+  String get favoriteMaterial => '常用耗材';
 
   @override
   String get feed => '送丝';
@@ -1077,6 +1077,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get gunHeadSwitchText => '激光枪开关';
+
+  @override
+  String get gunMotorTempText => '电机温度';
 
   @override
   String get gunSn => '枪头 SN';
@@ -1231,7 +1234,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ipCameraText => '相机';
 
   @override
-  String get jobRuntime => '作业时长';
+  String get jobRuntime => '上次作业时长';
 
   @override
   String get kernelVersion => '内核版本';
@@ -1394,7 +1397,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get laserText => '激光';
 
   @override
-  String get laserTimeVsLastWeek => '激光时间对比上周';
+  String get laserTimeVsLastWeek => '较上周';
 
   @override
   String get laserVersion => '激光器版本';
@@ -1501,25 +1504,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modbusCommunicationFault => 'Modbus 通讯故障';
 
   @override
-  String get monitorCleanTimeRatio => '清洗时间占比';
+  String get monitorCleanTimeRatio => '清洗占比';
 
   @override
-  String get monitorCutTimeRatio => '切割时间占比';
+  String get monitorCutTimeRatio => '切割占比';
 
   @override
-  String get monitorLaserOnTime => '激光开启时间';
+  String get monitorLaserOnTime => '出光总时长';
 
   @override
-  String get monitorLastJob => '上次作业';
+  String get monitorLastJob => '上次作业时长';
 
   @override
   String get monitorNavLabel => '设备监控';
 
   @override
-  String get monitorWeldTimeRatio => '焊接时间占比';
+  String get monitorWeldTimeRatio => '焊接占比';
 
   @override
-  String get monitorWeldingConsumables => '焊接耗材';
+  String get monitorWeldingConsumables => '焊丝耗材总计';
 
   @override
   String get moreFavorites => '更多常用工艺';
@@ -1925,7 +1928,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get processVideoMaterial => '材料';
+  String get processVideoMaterial => '材料类型';
 
   @override
   String get processVideoOperations => '操作';
@@ -1955,7 +1958,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get processVideoUploadConfirmTitle => '上传录像？';
 
   @override
-  String get processVideoUploadDone => '上传完成';
+  String get processVideoUploadDone => '上传成功';
 
   @override
   String get processVideoUploadFailed => '上传失败';
@@ -1969,7 +1972,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get processVideoWorkMode => '工作模式';
+  String get processVideoWorkMode => '工艺类型';
 
   @override
   String get processWheelCncCutting => 'CNC切割';
@@ -2101,7 +2104,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get safetyGroundLockNotConnectedTitle => '安全夹未连通';
 
   @override
-  String get safetyLockLabel => '安全锁';
+  String get safetyLockLabel => '安全夹';
 
   @override
   String get safetyLockText => '安全夹';
@@ -2301,10 +2304,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get timezoneSearchHint => '按名称或 UTC 偏移搜索';
 
   @override
-  String get totalLaserOnTime => '激光开启总时长';
+  String get totalLaserOnTime => '出光总时长';
 
   @override
-  String get totalWireConsumption => '焊丝总消耗';
+  String get totalWireConsumption => '焊丝耗材总计';
 
   @override
   String get turnOffCncFirst => '请先关闭 CNC。';
@@ -3791,6 +3794,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get gunHeadSwitchText => '激光槍開關';
 
   @override
+  String get gunMotorTempText => '電機溫度';
+
+  @override
   String get gunSn => '槍頭 SN';
 
   @override
@@ -4135,6 +4141,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get monitorWeldTimeRatio => '焊接時間佔比';
+
+  @override
+  String get monitorWeldingConsumables => '焊絲耗材總計';
 
   @override
   String get moreFavorites => '更多常用工藝';
@@ -4499,6 +4508,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get processVideoEmptyTitle => '暫無錄像';
 
   @override
+  String get processVideoMaterial => '材料類型';
+
+  @override
   String get processVideoParametersTitle => '參數記錄';
 
   @override
@@ -4535,6 +4547,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String processVideoUploadingVideo(int percent) {
     return '正在上傳視頻 $percent%';
   }
+
+  @override
+  String get processVideoWorkMode => '工藝類型';
 
   @override
   String get processWheelContinuousWelding => '連續焊';

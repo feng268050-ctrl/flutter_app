@@ -24,7 +24,8 @@ class WorkInformationTab extends StatelessWidget {
               children: [
                 Expanded(
                   child: _PercentCard(
-                    title: l10n.monitorWeldTimeRatio,
+                    // lws-ui `welding_proportion_text`
+                    title: l10n.weldingProportionText,
                     value: 0,
                     color: const Color(0xFFFF0000),
                     // Weld → diagonal bright edge.
@@ -35,7 +36,8 @@ class WorkInformationTab extends StatelessWidget {
                 const SizedBox(width: 24),
                 Expanded(
                   child: _PercentCard(
-                    title: l10n.monitorCutTimeRatio,
+                    // lws-ui `cutting_proportion_text`
+                    title: l10n.cuttingProportionText,
                     value: 0,
                     color: const Color(0xFF00A4F2),
                     // Cut → top↔bottom bright edge.
@@ -45,7 +47,8 @@ class WorkInformationTab extends StatelessWidget {
                 const SizedBox(width: 24),
                 Expanded(
                   child: _PercentCard(
-                    title: l10n.monitorCleanTimeRatio,
+                    // lws-ui `wash_proportion_text`
+                    title: l10n.washProportionText,
                     value: 0,
                     color: const Color(0xFFFF8000),
                     borderGradientCenter:
@@ -62,7 +65,8 @@ class WorkInformationTab extends StatelessWidget {
               children: [
                 Expanded(
                   child: MonitorWorkDataCard(
-                    title: l10n.monitorLaserOnTime,
+                    // lws-ui `warn_info_light_time`
+                    title: l10n.warnInfoLightTime,
                     value: '-',
                     suffix: 'h',
                     borderGradientCenter:
@@ -72,7 +76,8 @@ class WorkInformationTab extends StatelessWidget {
                 const SizedBox(width: 24),
                 Expanded(
                   child: MonitorWorkDataCard(
-                    title: l10n.monitorWeldingConsumables,
+                    // lws-ui `warn_info_welding_consumables`
+                    title: l10n.warnInfoWeldingConsumables,
                     value: '-',
                     suffix: 'm',
                     // Match Cut: top↔bottom bright edge.
@@ -82,7 +87,8 @@ class WorkInformationTab extends StatelessWidget {
                 const SizedBox(width: 24),
                 Expanded(
                   child: MonitorWorkDataCard(
-                    title: l10n.monitorLastJob,
+                    // lws-ui `warn_info_last_work`
+                    title: l10n.warnInfoLastWork,
                     value: '-',
                     borderGradientCenter:
                         CyberBorderGradientCenter.topRightBottomLeft,

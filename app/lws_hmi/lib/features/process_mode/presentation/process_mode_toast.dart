@@ -3,7 +3,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Short toast for process-mode device feedback (lws-ui ToastUtils look).
 ///
@@ -15,7 +14,7 @@ import 'package:lws_hmi/app/theme/app_typography.dart';
 abstract final class ProcessModeToast {
   static const Duration shortDuration = Duration(milliseconds: 2000);
 
-  static const double textSize = AppTypography.supportingSize;
+  static const double textSize = 16; // supporting
   static const double bottomInset = 20;
   static const double cornerRadius = 18;
   static const double blurSigma = 24;

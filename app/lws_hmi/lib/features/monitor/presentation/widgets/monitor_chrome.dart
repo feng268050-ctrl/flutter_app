@@ -1,5 +1,6 @@
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
@@ -7,6 +8,7 @@ import 'package:lws_hmi/features/settings/application/common_settings_scope.dart
 import 'package:lws_hmi/features/settings/application/temperature_unit_convert.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/ui/hmi/hmi_button.dart';
 
 /// Design tokens aligned with lws-ui Monitor / Frost glass stand-ins.
 abstract final class MonitorDimens {
@@ -192,33 +194,41 @@ class MonitorGlassCard extends StatelessWidget {
   }
 }
 
-/// Monitor action pill — frost plate + transparent-face [CyberButton].
+/// Monitor action pill — frost plate + transparent-face [HmiButton].
 ///
-/// Used by Alarms Clear and AI Vision Replace / Re-detect (same component).
-/// [CyberButton.paintFill] is off so the [SettingsPanel] blur shows through;
-/// [SettingsPanel.elevated] is off so lip/contact shadows do not read as a
-/// solid embossed chip over the preview.
+/// Used by Alarms Clear and AI Vision Detect / Replay / Re-detect (same
+/// component). [HmiButton.paintFill] is off so the [SettingsPanel] blur shows
+/// through; [SettingsPanel.elevated] is off so lip/contact shadows do not read
+/// as a solid embossed chip over the preview.
 class MonitorFrostActionButton extends StatelessWidget {
   const MonitorFrostActionButton({
     super.key,
+    required this.label,
     required this.onPressed,
-    required this.child,
+    this.leading,
+    this.icon,
+    this.size = HmiButtonSize.medium,
     this.variant = CyberButtonVariant.standard,
     this.clickSoundEnabled = true,
     this.borderGradientCenter = CyberBorderGradientCenter.topLeftBottomRight,
   });
 
+  final String label;
   final VoidCallback? onPressed;
-  final Widget child;
+  final Widget? leading;
+  final IconData? icon;
+  final HmiButtonSize size;
   final CyberButtonVariant variant;
   final bool clickSoundEnabled;
   final CyberBorderGradientCenter borderGradientCenter;
 
-  static const height = CyberDimens.actionButtonSmallHeight;
+  /// Default pill height ([HmiButtonSize.medium]).
+  static const height = 52.0;
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(height / 2);
+    final metrics = HmiButtonMetrics.forSize(size, context.hmiTypography);
+    final radius = BorderRadius.circular(metrics.height / 2);
     return SettingsPanel(
       elevated: false,
       borderRadius: radius,
@@ -226,16 +236,17 @@ class MonitorFrostActionButton extends StatelessWidget {
       lightFromTopLeft: false,
       rimColor: MonitorDimens.panelRim,
       lightRim: MonitorDimens.panelHighlight,
-      child: CyberButton(
-        size: CyberButtonSize.small,
+      child: HmiButton(
+        label: label,
+        size: size,
         variant: variant,
         shape: CyberButtonShape.rounded,
-        height: height,
         paintFill: false,
+        icon: icon,
+        leading: leading,
         clickSoundEnabled: clickSoundEnabled,
         borderGradientCenter: borderGradientCenter,
         onPressed: onPressed,
-        child: child,
       ),
     );
   }
@@ -444,9 +455,8 @@ class MonitorCommCard extends StatelessWidget {
                 label,
                 maxLines: 1,
                 softWrap: false,
-                style: TextStyle(
+                style: context.hmiTypography.metricLabel.copyWith(
                   color: labelColor,
-                  fontSize: MonitorDimens.metricLabelSize,
                   fontWeight: FontWeight.w400,
                   height: 1.15,
                 ),

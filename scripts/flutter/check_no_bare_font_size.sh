@@ -7,7 +7,8 @@
 #   - lib/l10n/** (generated)
 #   - lib/ui/demo/** (demo pages)
 #   - lib/app/theme/** (token definitions)
-#   - specialty layout/token / CustomPainter / dashboard scaling files listed below
+# Production features/ui must use ladder literals or context.hmiTypography.*
+# (no AppTypography.*Size allowlist).
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -38,30 +39,18 @@ if [[ -n "$bare_hits" ]]; then
   exit 1
 fi
 
-# Business pages must not read AppTypography.*Size; specialty files may.
+# Business pages / specialty layout must not read AppTypography.*Size
+# (theme package may; ladder literals or context.hmiTypography.* elsewhere).
 SIZE_PATTERN='AppTypography\.\w+Size'
-SIZE_ALLOW_GLOBS=(
-  --glob '!**/process_mode/domain/process_mode_tokens.dart'
-  --glob '!**/warn_alarm/presentation/warn_dialog_body.dart'
-  --glob '!**/process_mode/presentation/engineer_ramp_chart.dart'
-  --glob '!**/process_mode/presentation/quick_mode_laser_dashboard.dart'
-  --glob '!**/process_mode/presentation/quick_mode_value_pick.dart'
-  --glob '!**/process_mode/presentation/process_mode_outline_button.dart'
-  --glob '!**/process_mode/presentation/process_mode_toast.dart'
-  --glob '!**/work_mode/presentation/work_mode_status_bar.dart'
-  --glob '!**/status_bar/call_back_home_button.dart'
-  --glob '!**/home/presentation/home_page.dart'
-  --glob '!**/home/presentation/custom_home_statistics_panel.dart'
-)
 
 size_hits="$(
-  rg -n "${COMMON_GLOBS[@]}" "${SIZE_ALLOW_GLOBS[@]}" \
+  rg -n "${COMMON_GLOBS[@]}" \
     -e "$SIZE_PATTERN" "$LIB/features" "$LIB/ui" 2>/dev/null || true
 )"
 
 if [[ -n "$size_hits" ]]; then
-  echo "[error] AppTypography.*Size found in business pages." >&2
-  echo "[error] Prefer context.hmiTypography.* (or allowlist specialty files)." >&2
+  echo "[error] AppTypography.*Size found outside theme." >&2
+  echo "[error] Prefer ladder literals or context.hmiTypography.*." >&2
   echo "$size_hits" >&2
   exit 1
 fi

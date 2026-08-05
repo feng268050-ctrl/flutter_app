@@ -2,7 +2,6 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
-import 'package:lws_hmi/app/theme/app_typography.dart';
 
 /// Product Back / Home rail (lws-ui `status_call_back_home`).
 ///
@@ -33,7 +32,8 @@ final class CallBackHomeButton extends StatefulWidget {
 const _kBackIconSize = 34.0;
 const _kBackHorizontalPadding = 12.0;
 const _kEdgeLineHeight = 3.0;
-const _kHomeLabelFontSize = AppTypography.navigationSize;
+/// Ladder: navigation / primaryTabLabel (24).
+const _kHomeLabelFontSize = 24.0;
 const _kBackLabelDisabled = Color(0xFF909399);
 
 final class _CallBackHomeButtonState extends State<CallBackHomeButton> {

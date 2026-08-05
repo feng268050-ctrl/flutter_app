@@ -146,12 +146,14 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                         child: SettingsParamRow(
                           left: MonitorTempMetricCard(
                             series: m?.motor ?? _emptyTemp,
-                            label: l10n.motorTempLabel,
+                            // lws-ui `gun_motor_temp_text`
+                            label: l10n.gunMotorTempText,
                             overTemp: m?.gunMotorOverTemp ?? false,
                           ),
                           right: MonitorTempMetricCard(
                             series: m?.motorDriver ?? _emptyTemp,
-                            label: l10n.motorDriverTempLabel,
+                            // lws-ui `motor_driver_temperature_text`
+                            label: l10n.motorDriverTemperatureText,
                             overTemp: m?.driverOverTemp ?? false,
                           ),
                         ),
@@ -162,12 +164,14 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                         child: SettingsParamRow(
                           left: MonitorTempMetricCard(
                             series: m?.protectiveMirror ?? _emptyTemp,
-                            label: l10n.protectiveMirrorTempLabel,
+                            // lws-ui `protective_mirror_temperature_text`
+                            label: l10n.protectiveMirrorTemperatureText,
                             overTemp: m?.protectiveMirrorOverTemp ?? false,
                           ),
                           right: MonitorTempMetricCard(
                             series: m?.collimator ?? _emptyTemp,
-                            label: l10n.collimatorTempLabel,
+                            // lws-ui `collimator_temperature_text`
+                            label: l10n.collimatorTemperatureText,
                             overTemp: m?.collimatorOverTemp ?? false,
                           ),
                         ),
@@ -205,9 +209,8 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                         children: [
                           Text(
                             l10n.alarmLogsTitle,
-                            style: const TextStyle(
+                            style: context.hmiTypography.pageTitle.copyWith(
                               color: Colors.white,
-                              fontSize: MonitorDimens.sectionTitleSize,
                               fontWeight: FontWeight.w400,
                               height: 1.1,
                             ),
@@ -273,31 +276,18 @@ class _AlarmInformationTabState extends State<AlarmInformationTab> {
                               clickSoundEnabled: false,
                               onPressed:
                                   _history.isEmpty ? null : _clearHistory,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Image.asset(
-                                    'assets/warn/alarm_button_icon.webp',
-                                    width: 28,
-                                    height: 28,
-                                    color: CyberColors.buttonSecondaryText,
-                                    colorBlendMode: BlendMode.srcIn,
-                                    errorBuilder: (_, __, ___) => const Icon(
-                                      Icons.delete_outline,
-                                      size: 28,
-                                      color: CyberColors.buttonSecondaryText,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    l10n.clearAlarmLogs,
-                                    style: context.hmiTypography.sectionTitle
-                                        .copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: CyberColors.buttonSecondaryText,
-                                    ),
-                                  ),
-                                ],
+                              label: l10n.clearAlarmLogs,
+                              leading: Image.asset(
+                                'assets/warn/alarm_button_icon.webp',
+                                width: 28,
+                                height: 28,
+                                color: CyberColors.buttonSecondaryText,
+                                colorBlendMode: BlendMode.srcIn,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.delete_outline,
+                                  size: 28,
+                                  color: CyberColors.buttonSecondaryText,
+                                ),
                               ),
                             ),
                           ),

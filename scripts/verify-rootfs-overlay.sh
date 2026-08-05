@@ -840,6 +840,24 @@ EOF
 	else
 		echo "OK:  no display-stack stamp"
 	fi
+	if [[ -f "$target/etc/hmi/usb-otg.ini" ]]; then
+		echo "FAIL: retired /etc/hmi/usb-otg.ini must not ship (use /etc/usb-otg.ini)" >&2
+		missing=1
+	elif [[ ! -f "$target/etc/usb-otg.ini" ]]; then
+		echo "FAIL: /etc/usb-otg.ini missing" >&2
+		missing=1
+	else
+		echo "OK:  usb-otg policy at /etc/usb-otg.ini (no /etc/hmi/usb-otg.ini)"
+	fi
+	if [[ -f "$target/etc/hmi/flutter-engine.version" ]]; then
+		echo "FAIL: retired /etc/hmi/flutter-engine.version must not ship (use /usr/share/flutter/flutter-engine.version)" >&2
+		missing=1
+	elif [[ ! -f "$target/usr/share/flutter/flutter-engine.version" ]]; then
+		echo "FAIL: /usr/share/flutter/flutter-engine.version missing" >&2
+		missing=1
+	else
+		echo "OK:  flutter-engine.version at /usr/share/flutter/ (no /etc/hmi stamp)"
+	fi
 	if [[ "$has_weston" -eq 1 ]]; then
 		echo "OK:  weston image (flutter-wayland-client)"
 		# Unpatched GStreamer video plugin SIGSEGVs on live RTSP initialize.

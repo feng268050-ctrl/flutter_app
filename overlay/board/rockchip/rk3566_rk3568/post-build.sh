@@ -226,6 +226,8 @@ fi
 rm -f \
 	"$TARGET_DIR/etc/display-stack" \
 	"$TARGET_DIR/etc/hmi/display-stack" \
+	"$TARGET_DIR/etc/hmi/usb-otg.ini" \
+	"$TARGET_DIR/etc/hmi/flutter-engine.version" \
 	"$TARGET_DIR/usr/libexec/hmi/ab-upgrade-app-only.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/lws-hmi-backlight-apply.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/lws-hmi-eth0-apply.sh" \

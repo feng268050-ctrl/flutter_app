@@ -299,36 +299,11 @@ class VideosTabState extends State<VideosTab> {
       );
 
   List<DataColumn> _columns(AppLocalizations l10n) => [
-        DataColumn(
-          label: Text(
-            l10n.processVideoRecordingTime,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            l10n.processVideoWorkMode,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            l10n.processVideoMaterial,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            l10n.processVideoDuration,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            l10n.processVideoOperations,
-            textAlign: TextAlign.center,
-          ),
-        ),
+        DataColumn(label: Text(l10n.processVideoRecordingTime)),
+        DataColumn(label: Text(l10n.processVideoWorkMode)),
+        DataColumn(label: Text(l10n.processVideoMaterial)),
+        DataColumn(label: Text(l10n.processVideoDuration)),
+        DataColumn(label: Text(l10n.processVideoOperations)),
       ];
 
   DataRow _dataRow(
@@ -340,54 +315,64 @@ class VideosTabState extends State<VideosTab> {
       onSelectChanged: (_) => unawaited(_openDetail(row)),
       cells: [
         DataCell(
-          Text(
-            ProcessVideoFormat.recordingTime(row),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Center(
+            child: Text(
+              ProcessVideoFormat.recordingTime(row),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
         DataCell(
-          Text(
-            ProcessVideoFormat.workMode(row.processType, l10n),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          Center(
+            child: Text(
+              ProcessVideoFormat.workMode(row.processType, l10n),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
         DataCell(
-          Text(
-            ProcessVideoFormat.material(row, l10n),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Center(
+            child: Text(
+              ProcessVideoFormat.material(row, l10n),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
         DataCell(
-          Text(
-            ProcessVideoFormat.duration(row.durationMs),
-            textAlign: TextAlign.center,
+          Center(
+            child: Text(
+              ProcessVideoFormat.duration(row.durationMs),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
         DataCell(
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              MonitorFrostActionButton(
-                variant: CyberButtonVariant.standard,
-                onPressed: _canUpload(row)
-                    ? () => unawaited(_upload(row))
-                    : null,
-                label: l10n.processVideoUpload,
-              ),
-              const SizedBox(width: 12),
-              MonitorFrostActionButton(
-                variant: CyberButtonVariant.secondary,
-                onPressed: () => unawaited(_delete(row)),
-                label: l10n.deleteText,
-              ),
-            ],
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MonitorFrostActionButton(
+                  variant: CyberButtonVariant.standard,
+                  onPressed: _canUpload(row)
+                      ? () => unawaited(_upload(row))
+                      : null,
+                  label: l10n.processVideoUpload,
+                ),
+                const SizedBox(width: 12),
+                MonitorFrostActionButton(
+                  variant: CyberButtonVariant.secondary,
+                  onPressed: () => unawaited(_delete(row)),
+                  label: l10n.deleteText,
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -411,6 +396,8 @@ class VideosTabState extends State<VideosTab> {
           headingRowHeight: 56,
           dataRowMinHeight: 72,
           dataRowMaxHeight: 96,
+          // Center header label over the column (matches centered cell content).
+          headingRowAlignment: MainAxisAlignment.center,
         ),
         dividerColor: const Color(0x33FFFFFF),
       ),

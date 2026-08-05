@@ -126,36 +126,11 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
       );
 
   List<DataColumn> _columns(AppLocalizations l10n) => [
-        DataColumn(
-          label: Text(
-            l10n.processVideoRecordingTime,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            l10n.processVideoWorkMode,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            l10n.processVideoMaterial,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            l10n.processVideoDuration,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            l10n.processVideoOperations,
-            textAlign: TextAlign.center,
-          ),
-        ),
+        DataColumn(label: Text(l10n.processVideoRecordingTime)),
+        DataColumn(label: Text(l10n.processVideoWorkMode)),
+        DataColumn(label: Text(l10n.processVideoMaterial)),
+        DataColumn(label: Text(l10n.processVideoDuration)),
+        DataColumn(label: Text(l10n.processVideoOperations)),
       ];
 
   DataRow _dataRow(
@@ -166,33 +141,41 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
     return DataRow(
       cells: [
         DataCell(
-          Text(
-            ProcessVideoFormat.recordingTime(row),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Center(
+            child: Text(
+              ProcessVideoFormat.recordingTime(row),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
         DataCell(
-          Text(
-            ProcessVideoFormat.workMode(row.processType, l10n),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          Center(
+            child: Text(
+              ProcessVideoFormat.workMode(row.processType, l10n),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
         DataCell(
-          Text(
-            ProcessVideoFormat.material(row, l10n),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Center(
+            child: Text(
+              ProcessVideoFormat.material(row, l10n),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
         DataCell(
-          Text(
-            ProcessVideoFormat.duration(row.durationMs),
-            textAlign: TextAlign.center,
+          Center(
+            child: Text(
+              ProcessVideoFormat.duration(row.durationMs),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
         DataCell(
@@ -225,6 +208,7 @@ class _AiVisionVideoChoosePageState extends State<AiVisionVideoChoosePage> {
           headingRowHeight: 56,
           dataRowMinHeight: 72,
           dataRowMaxHeight: 96,
+          headingRowAlignment: MainAxisAlignment.center,
         ),
         dividerColor: const Color(0x33FFFFFF),
       ),

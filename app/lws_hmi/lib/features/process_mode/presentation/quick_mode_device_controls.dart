@@ -103,6 +103,7 @@ final class QuickModeDeviceControls extends StatelessWidget {
                               selected:
                                   controller.autoWireFeed && _wireCapable,
                               enabled: _wireCapable,
+                              balanceIconLabelGap: true,
                               onPressed: () =>
                                   unawaited(_toggleAutoWire(context, l10n)),
                             ),

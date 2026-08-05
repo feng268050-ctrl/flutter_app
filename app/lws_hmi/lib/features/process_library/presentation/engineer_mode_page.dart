@@ -37,6 +37,7 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_scope.da
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/statistics/application/work_session_statistics_recorder.dart';
+import 'package:lws_hmi/features/status_bar/product_tab_slide_body.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
 import 'package:lws_hmi/gpio/laser_enable_led_holder.dart';
 import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
@@ -89,6 +90,8 @@ final class _EngineerModePageState extends State<EngineerModePage> {
   GunDialogCoordinator? _gunDialogs;
   bool _exiting = false;
   int _processSwitchGen = 0;
+  /// Tab slide direction for [ProductTabSlideSwitcher] (higher index = forward).
+  bool _tabSlideForward = true;
 
   @override
   void initState() {
@@ -249,8 +252,12 @@ final class _EngineerModePageState extends State<EngineerModePage> {
     if (type == _processType) {
       return;
     }
+    final types = EngineerProcessTabs.types;
+    final oldIndex = types.indexOf(_processType);
+    final newIndex = types.indexOf(type);
     final controller = ProcessLibraryScope.of(context);
     setState(() {
+      _tabSlideForward = newIndex >= oldIndex;
       if (_draft != null) {
         _sessions[_processType] = _draft!;
       }
@@ -659,152 +666,271 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                 if (controller.loading && !controller.initialized)
                   const Expanded(
                       child: Center(child: CircularProgressIndicator()))
-                else if (draft == null)
+                else
                   Expanded(
-                    child: Center(
-                      child: Text(
-                        l10n.noEngineerProcesses,
-                        key: const ValueKey('engineer-mode-empty'),
-                        style: context.hmiTypography.supporting.copyWith(
-                            color: const Color(0xB3FFFFFF)),
-                      ),
-                    ),
-                  ),
-                if (draft != null)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            flex: 1,
-                            child: SizedBox(
-                              key: const ValueKey(
-                                  'engineer-device-panel-container'),
-                              child: _deviceControl == null ||
-                                      _recordWork == null
-                                  ? const SizedBox.shrink()
-                                  : EngineerDevicePanel(
-                                      controller: _deviceControl!,
-                                      recordWork: _recordWork!,
-                                      processType: _processType,
-                                      preset: draft.preset,
-                                      onBeforeEnableLaser:
-                                          _beforeEnableLaser,
-                                      onConfigureWorkSession:
-                                          _configureWorkSessionStatistics,
+                    child: ProductTabSlideSwitcher(
+                      forward: _tabSlideForward,
+                      child: KeyedSubtree(
+                        key: ValueKey(_processType),
+                        child: draft == null
+                            ? Center(
+                                child: Text(
+                                  l10n.noEngineerProcesses,
+                                  key: const ValueKey('engineer-mode-empty'),
+                                  style: context.hmiTypography.supporting
+                                      .copyWith(
+                                          color: const Color(0xB3FFFFFF)),
+                                ),
+                              )
+                            : Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    16, 12, 16, 16),
+                                child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      flex: 1,
+                                      child: SizedBox(
+                                        key: const ValueKey(
+                                            'engineer-device-panel-container'),
+                                        child: _deviceControl == null ||
+                                                _recordWork == null
+                                            ? const SizedBox.shrink()
+                                            : EngineerDevicePanel(
+                                                controller: _deviceControl!,
+                                                recordWork: _recordWork!,
+                                                processType: _processType,
+                                                preset: draft.preset,
+                                                onBeforeEnableLaser:
+                                                    _beforeEnableLaser,
+                                                onConfigureWorkSession:
+                                                    _configureWorkSessionStatistics,
+                                              ),
+                                      ),
                                     ),
-                            ),
-                          ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            flex: 2,
-                            child: EngineerFrostPanel(
-                              key: const ValueKey(
-                                  'engineer-parameters-panel'),
-                              edge: EngineerFrostEdge.bottomLeftTopRight,
-                              child: Column(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        24, 0, 16, 0),
-                                    child: SizedBox(
-                                      height: 86,
-                                      child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: InkWell(
-                                            key: const ValueKey(
-                                                'engineer-mode-name'),
-                                            onTap: () {
-                                              CyberClickSoundRegistry
-                                                  .playClick();
-                                              _editName();
-                                            },
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  draft.preset
-                                                      .displayProcessName(
-                                                          l10n),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: context
-                                                      .hmiTypography
-                                                      .navigation
-                                                      .copyWith(
-                                                    color: Colors.white,
-                                                    fontWeight:
-                                                        FontWeight.w600,
-                                                  ),
-                                                ),
-                                                    const SizedBox(height: 6),
-                                                    Text(
-                                                      l10n.currentProcessName,
-                                                      key: ValueKey(
-                                                        draft.fromQuickHandoff
-                                                            ? 'engineer-mode-draft-uuid'
-                                                            : 'engineer-mode-source-label',
+                                    const SizedBox(width: 24),
+                                    Expanded(
+                                      flex: 2,
+                                      child: EngineerFrostPanel(
+                                        key: const ValueKey(
+                                            'engineer-parameters-panel'),
+                                        edge: EngineerFrostEdge
+                                            .bottomLeftTopRight,
+                                        child: Column(
+                                          children: [
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      24, 0, 16, 0),
+                                              child: SizedBox(
+                                                height: 86,
+                                                child: Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: InkWell(
+                                                        key: const ValueKey(
+                                                            'engineer-mode-name'),
+                                                        onTap: () {
+                                                          CyberClickSoundRegistry
+                                                              .playClick();
+                                                          _editName();
+                                                        },
+                                                        child: Column(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                              draft.preset
+                                                                  .displayProcessName(
+                                                                      l10n),
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style: context
+                                                                  .hmiTypography
+                                                                  .navigation
+                                                                  .copyWith(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                                height: 6),
+                                                            Text(
+                                                              l10n
+                                                                  .currentProcessName,
+                                                              key: ValueKey(
+                                                                draft.fromQuickHandoff
+                                                                    ? 'engineer-mode-draft-uuid'
+                                                                    : 'engineer-mode-source-label',
+                                                              ),
+                                                              style: context
+                                                                  .hmiTypography
+                                                                  .caption
+                                                                  .copyWith(
+                                                                color: accent
+                                                                    .withOpacity(
+                                                                        0.9),
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
                                                       ),
-                                                      style: context
-                                                          .hmiTypography
-                                                          .caption
-                                                          .copyWith(
-                                                        color: accent
-                                                            .withOpacity(0.9),
-                                                        fontWeight:
-                                                            FontWeight.w500,
+                                                    ),
+                                                    KeyedSubtree(
+                                                      key: const ValueKey(
+                                                        'engineer-more-favorites',
+                                                      ),
+                                                      child: InkWell(
+                                                        key: _moreFavoritesKey,
+                                                        onTap: () {
+                                                          CyberClickSoundRegistry
+                                                              .playClick();
+                                                          if (_favoritesOpen) {
+                                                            return;
+                                                          }
+                                                          _openFavorites();
+                                                        },
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 12,
+                                                          ),
+                                                          child: Row(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: [
+                                                              Text(
+                                                                l10n
+                                                                    .moreFavorites,
+                                                                style: context
+                                                                    .hmiTypography
+                                                                    .settingsRowTitle
+                                                                    .copyWith(
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                              ),
+                                                              const SizedBox(
+                                                                  width: 2),
+                                                              Icon(
+                                                                _favoritesOpen
+                                                                    ? Icons
+                                                                        .keyboard_arrow_down
+                                                                    : Icons
+                                                                        .chevron_right,
+                                                                color: Colors
+                                                                    .white,
+                                                                size: 30,
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                               ),
                                             ),
-                                            KeyedSubtree(
+                                            Divider(
                                               key: const ValueKey(
-                                                'engineer-more-favorites',
-                                              ),
-                                              child: InkWell(
-                                                key: _moreFavoritesKey,
-                                                onTap: () {
-                                                  CyberClickSoundRegistry
-                                                      .playClick();
-                                                  if (_favoritesOpen) {
-                                                    return;
-                                                  }
-                                                  _openFavorites();
-                                                },
-                                                child: Padding(
+                                                  'engineer-parameters-header-divider'),
+                                              height: 2,
+                                              thickness: 1,
+                                              color: const Color(0x33FFFFFF),
+                                              indent: 24,
+                                              endIndent: 24,
+                                            ),
+                                            Expanded(
+                                              child: EngineerParameterForm(
+                                                preset: draft.preset,
+                                                readOnly: draft.isReadOnly,
+                                                onChanged: _onDraftChanged,
+                                                onBeginEdit:
+                                                    _beginEditFromBuiltin,
+                                                footer: Padding(
                                                   padding: const EdgeInsets
-                                                      .symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 12,
+                                                      .fromLTRB(
+                                                    16,
+                                                    8,
+                                                    0,
+                                                    EngineerDevicePanel
+                                                        .panelBottomInset,
                                                   ),
                                                   child: Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
                                                     children: [
-                                                      Text(
-                                                        l10n.moreFavorites,
-                                                        style: context.hmiTypography.settingsRowTitle.copyWith(
-                                                          color: Colors.white,
+                                                      Expanded(
+                                                        child: HmiButton(
+                                                          key: const ValueKey(
+                                                            'engineer-action-reset-default',
+                                                          ),
+                                                          label: l10n
+                                                              .resetToDefault,
+                                                          size: HmiButtonSize
+                                                              .large,
+                                                          widthPolicy:
+                                                              HmiButtonWidthPolicy
+                                                                  .fill,
+                                                          shape:
+                                                              CyberButtonShape
+                                                                  .rounded,
+                                                          borderGradientCenter:
+                                                              CyberBorderGradientCenter
+                                                                  .topBottom,
+                                                          borderGradientColors:
+                                                              _engineerActionPillBorder,
+                                                          strokeWidth: 1.5,
+                                                          icon: Icons
+                                                              .restart_alt,
+                                                          onPressed:
+                                                              _resetToDefault,
                                                         ),
                                                       ),
-                                                      const SizedBox(width: 2),
-                                                      Icon(
-                                                        _favoritesOpen
-                                                            ? Icons
-                                                                .keyboard_arrow_down
-                                                            : Icons
-                                                                .chevron_right,
-                                                        color: Colors.white,
-                                                        size: 30,
+                                                      const SizedBox(
+                                                          width: 22),
+                                                      Expanded(
+                                                        child: HmiButton(
+                                                          key: const ValueKey(
+                                                            'engineer-action-save-favorite',
+                                                          ),
+                                                          label: l10n
+                                                              .saveAsFavorite,
+                                                          size: HmiButtonSize
+                                                              .large,
+                                                          widthPolicy:
+                                                              HmiButtonWidthPolicy
+                                                                  .fill,
+                                                          shape:
+                                                              CyberButtonShape
+                                                                  .rounded,
+                                                          borderGradientCenter:
+                                                              CyberBorderGradientCenter
+                                                                  .topBottom,
+                                                          borderGradientColors:
+                                                              _engineerActionPillBorder,
+                                                          strokeWidth: 1.5,
+                                                          icon: Icons
+                                                              .bookmark_add,
+                                                          onPressed: controller
+                                                                  .applying
+                                                              ? null
+                                                              : _saveAsFavorite,
+                                                        ),
                                                       ),
                                                     ],
                                                   ),
@@ -814,97 +940,15 @@ final class _EngineerModePageState extends State<EngineerModePage> {
                                           ],
                                         ),
                                       ),
-                                      ),
-                                      Divider(
-                                        key: const ValueKey(
-                                            'engineer-parameters-header-divider'),
-                                        height: 2,
-                                        thickness: 1,
-                                        color: const Color(0x33FFFFFF),
-                                        indent: 24,
-                                        endIndent: 24,
-                                      ),
-                                      Expanded(
-                                        child: EngineerParameterForm(
-                                          preset: draft.preset,
-                                          readOnly: draft.isReadOnly,
-                                          onChanged: _onDraftChanged,
-                                          onBeginEdit: _beginEditFromBuiltin,
-                                          // Scroll with parameters — visible
-                                          // only after scrolling to the end.
-                                          footer: Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                              16,
-                                              8,
-                                              0,
-                                              EngineerDevicePanel
-                                                  .panelBottomInset,
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                // lws-ui FrostButton DEFAULT
-                                                // (`engineer_pine_base_btn_style`).
-                                                Expanded(
-                                                  child: HmiButton(
-                                                    key: const ValueKey(
-                                                      'engineer-action-reset-default',
-                                                    ),
-                                                    label: l10n.resetToDefault,
-                                                    size: HmiButtonSize.large,
-                                                    widthPolicy:
-                                                        HmiButtonWidthPolicy.fill,
-                                                    shape: CyberButtonShape
-                                                        .rounded,
-                                                    borderGradientCenter:
-                                                        CyberBorderGradientCenter
-                                                            .topBottom,
-                                                    borderGradientColors:
-                                                        _engineerActionPillBorder,
-                                                    strokeWidth: 1.5,
-                                                    icon: Icons.restart_alt,
-                                                    onPressed: _resetToDefault,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 22),
-                                                Expanded(
-                                                  child: HmiButton(
-                                                    key: const ValueKey(
-                                                      'engineer-action-save-favorite',
-                                                    ),
-                                                    label: l10n.saveAsFavorite,
-                                                    size: HmiButtonSize.large,
-                                                    widthPolicy:
-                                                        HmiButtonWidthPolicy.fill,
-                                                    shape: CyberButtonShape
-                                                        .rounded,
-                                                    borderGradientCenter:
-                                                        CyberBorderGradientCenter
-                                                            .topBottom,
-                                                    borderGradientColors:
-                                                        _engineerActionPillBorder,
-                                                    strokeWidth: 1.5,
-                                                    icon: Icons.bookmark_add,
-                                                    onPressed:
-                                                        controller.applying
-                                                            ? null
-                                                            : _saveAsFavorite,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
                       ),
-                  ],
-                ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

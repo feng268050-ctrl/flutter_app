@@ -71,6 +71,65 @@ class _ProductTabSlideBodyState extends State<ProductTabSlideBody> {
   }
 }
 
+/// Single-child L/R slide when the keyed [child] changes (Engineer process tabs).
+///
+/// Prefer this over [ProductTabSlideBody] when only one tab body may be mounted
+/// (shared [GlobalKey] / controllers). Set [forward] from old→new tab index.
+class ProductTabSlideSwitcher extends StatelessWidget {
+  const ProductTabSlideSwitcher({
+    super.key,
+    required this.forward,
+    required this.child,
+    this.duration = kAppPageEnterDuration,
+    this.curve = Curves.easeInOut,
+  });
+
+  /// True when switching to a higher tab index (enter from right).
+  final bool forward;
+  final Widget child;
+  final Duration duration;
+  final Curve curve;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: duration,
+      switchInCurve: curve,
+      switchOutCurve: curve,
+      layoutBuilder: (currentChild, previousChildren) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            ...previousChildren,
+            if (currentChild != null) currentChild,
+          ],
+        );
+      },
+      transitionBuilder: (incoming, animation) {
+        // Incoming uses [forward]; outgoing (reversed animation) exits the
+        // opposite edge so both panels slide the same direction.
+        final isIncoming = identical(incoming, child) ||
+            (incoming.key != null &&
+                child.key != null &&
+                incoming.key == child.key);
+        final beginDx = isIncoming
+            ? (forward ? 1.0 : -1.0)
+            : (forward ? -1.0 : 1.0);
+        return ClipRect(
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(beginDx, 0),
+              end: Offset.zero,
+            ).animate(animation),
+            child: incoming,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
 class _KeepAliveTabPage extends StatefulWidget {
   const _KeepAliveTabPage({required this.child});
 

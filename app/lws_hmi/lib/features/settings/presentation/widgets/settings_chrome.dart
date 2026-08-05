@@ -2,8 +2,8 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:cyber_ui/cyber_ui.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_navigation.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/features/home/domain/home_assets.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
@@ -1414,11 +1414,9 @@ class SettingsScrollView extends StatelessWidget {
   }
 }
 
-/// Push a settings sub-page with a platform-like slide transition.
+/// Push a settings sub-page with industry L/R slide transitions.
 Future<T?> pushSettingsPage<T>(BuildContext context, Widget page) {
-  return Navigator.of(context).push<T>(
-    CupertinoPageRoute<T>(builder: (_) => page),
-  );
+  return pushAppSlidePage<T>(context, page);
 }
 
 /// Bordered param panel — same equal-edge shadow chrome as [SettingsPanel]

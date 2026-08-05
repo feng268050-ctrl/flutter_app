@@ -650,6 +650,48 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                     navigatorObservers: [appRouteObserver],
                                     initialRoute: AppRoutes.home,
                                     onGenerateRoute: (settings) {
+                                      // In-module nested routes: L/R slide.
+                                      // Home → five modules: fade (below).
+                                      switch (settings.name) {
+                                        case AppRoutes.processVideoDetail:
+                                          final videoArgs = settings.arguments;
+                                          return buildAppSlideRoute<void>(
+                                            settings: settings,
+                                            builder: (_) => videoArgs
+                                                    is ProcessVideoDetailArgs
+                                                ? ProcessVideoDetailPage(
+                                                    args: videoArgs)
+                                                : const MonitorPage(),
+                                          );
+                                        case AppRoutes.aiVisionChoose:
+                                          return buildAppSlideRoute<void>(
+                                            settings: settings,
+                                            builder: (_) =>
+                                                const AiVisionVideoChoosePage(),
+                                          );
+                                        case AppRoutes.engineerMode:
+                                          final engineerArgs =
+                                              settings.arguments;
+                                          // Quick → Engineer handoff: slide.
+                                          // Home → Engineer: fade (fall through).
+                                          if (engineerArgs
+                                              is EngineerModeRouteArgs) {
+                                            return buildAppSlideRoute<void>(
+                                              settings: settings,
+                                              builder: (_) => _LockedModeGate(
+                                                lockStore: _remoteLockStore,
+                                                child: EngineerModePage(
+                                                  initialProcessType:
+                                                      engineerArgs.processType,
+                                                  initialPresetUuid:
+                                                      engineerArgs.presetUuid,
+                                                  fromQuickHandoff: true,
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                      }
+
                                       final Widget page;
                                       switch (settings.name) {
                                         case AppRoutes.settings:
@@ -671,37 +713,15 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                                 : MonitorPage
                                                     .tabWorkInformation,
                                           );
-                                        case AppRoutes.processVideoDetail:
-                                          final videoArgs = settings.arguments;
-                                          page = videoArgs
-                                                  is ProcessVideoDetailArgs
-                                              ? ProcessVideoDetailPage(
-                                                  args: videoArgs)
-                                              : const MonitorPage();
-                                        case AppRoutes.aiVisionChoose:
-                                          page = const AiVisionVideoChoosePage();
                                         case AppRoutes.quickMode:
                                           page = _LockedModeGate(
                                             lockStore: _remoteLockStore,
                                             child: const QuickModePage(),
                                           );
                                         case AppRoutes.engineerMode:
-                                          final engineerArgs =
-                                              settings.arguments;
                                           page = _LockedModeGate(
                                             lockStore: _remoteLockStore,
-                                            child: engineerArgs
-                                                    is EngineerModeRouteArgs
-                                                ? EngineerModePage(
-                                                    initialProcessType:
-                                                        engineerArgs
-                                                            .processType,
-                                                    initialPresetUuid:
-                                                        engineerArgs
-                                                            .presetUuid,
-                                                    fromQuickHandoff: true,
-                                                  )
-                                                : const EngineerModePage(),
+                                            child: const EngineerModePage(),
                                           );
                                         case AppRoutes.demo:
                                           page = _demoPage();

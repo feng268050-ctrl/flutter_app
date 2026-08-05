@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:lws_hmi/app/app_navigation.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_ids.dart';
 import 'package:lws_hmi/features/global_prompt/global_prompt_queue.dart';
@@ -132,7 +133,7 @@ abstract final class WifiConnectTipPrompt {
                 Navigator.of(ctx).pop();
                 final nav = Navigator.of(context, rootNavigator: true);
                 nav.push(
-                  MaterialPageRoute<void>(
+                  buildAppSlideRoute<void>(
                     builder: (_) => WifiSettingsPage(services: services),
                   ),
                 );

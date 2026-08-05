@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -21,7 +22,7 @@ class AppScrollBehavior extends MaterialScrollBehavior {
   }
 }
 
-/// Fade transitions for named routes (Home → Monitor / Settings / …).
+/// Fade transitions for Home → module named routes (and Material themes).
 const PageTransitionsTheme kAppPageTransitionsTheme = PageTransitionsTheme(
   builders: {
     TargetPlatform.android: _FadePageTransitionsBuilder(),
@@ -33,10 +34,10 @@ const PageTransitionsTheme kAppPageTransitionsTheme = PageTransitionsTheme(
   },
 );
 
-/// Forward (enter) fade duration for [buildAppPageRoute].
+/// Forward (enter) duration for Home fade / in-module slide.
 const Duration kAppPageEnterDuration = Duration(milliseconds: 280);
 
-/// Reverse (pop) fade duration for [buildAppPageRoute].
+/// Reverse (pop) duration for Home fade / in-module slide.
 const Duration kAppPageExitDuration = Duration(milliseconds: 240);
 
 class _FadePageTransitionsBuilder extends PageTransitionsBuilder {
@@ -57,6 +58,7 @@ class _FadePageTransitionsBuilder extends PageTransitionsBuilder {
   }
 }
 
+/// Fade in/out for Home → Settings / Monitor / Quick / Engineer / AI Vision.
 Route<dynamic> buildAppPageRoute({
   required RouteSettings settings,
   required Widget child,
@@ -72,5 +74,28 @@ Route<dynamic> buildAppPageRoute({
         child: child,
       );
     },
+  );
+}
+
+/// Horizontal slide (enter from the right) for in-module navigation.
+///
+/// Used for Settings sub-pages, Monitor detail/choose flows, Quick→Engineer
+/// handoff, etc. Keeps industry L/R Cupertino transitions.
+Route<T> buildAppSlideRoute<T>({
+  RouteSettings? settings,
+  required WidgetBuilder builder,
+  bool fullscreenDialog = false,
+}) {
+  return CupertinoPageRoute<T>(
+    settings: settings,
+    builder: builder,
+    fullscreenDialog: fullscreenDialog,
+  );
+}
+
+/// Push [page] with [buildAppSlideRoute] (in-module L/R slide).
+Future<T?> pushAppSlidePage<T>(BuildContext context, Widget page) {
+  return Navigator.of(context).push<T>(
+    buildAppSlideRoute<T>(builder: (_) => page),
   );
 }

@@ -13,6 +13,7 @@ abstract final class AppRoutes {
   static const demo = '/demo';
   static const processVideoDetail = '/monitor/process-video';
   static const aiVisionChoose = '/monitor/ai-vision/choose';
+  static const systemUpgrade = '/system-upgrade';
 }
 
 /// Observes top-level route pops so Product Home can re-run home prompts.

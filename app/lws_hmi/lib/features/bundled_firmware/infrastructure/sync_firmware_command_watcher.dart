@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:lws_hmi/features/bundled_firmware/application/bundled_firmware_bootstrap.dart';
+import 'package:lws_hmi/features/bundled_firmware/application/firmware_upgrade_coordinator.dart';
 import 'package:lws_hmi/platform/os_paths.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:flutter/material.dart';
@@ -104,6 +105,9 @@ final class SyncFirmwareCommandWatcher {
 
   Future<void> _sync(String firmwarePath) async {
     try {
+      if (!FirmwareUpgradeCoordinator.canStartFirmwareUpgrade()) {
+        return;
+      }
       final ctx = navigatorContext();
       if (ctx == null || !ctx.mounted) {
         return;

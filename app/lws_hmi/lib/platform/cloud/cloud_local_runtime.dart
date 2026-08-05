@@ -23,6 +23,7 @@ import 'package:lws_hmi/features/process_video/application/process_video_cloud_u
 import 'package:lws_hmi/features/process_video/domain/process_video_models.dart';
 import 'package:lws_hmi/features/process_video/domain/process_video_repository.dart';
 import 'package:lws_hmi/features/process_video/infrastructure/sqlite_process_video_repository.dart';
+import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/sound_effect_store.dart';
@@ -197,6 +198,14 @@ final class CloudLocalRuntime {
   CloudLinkUiStatus get currentLinkStatus => _linkStatus;
   Stream<CloudLinkUiStatus> get linkStatusChanges => _linkStatusCtrl.stream;
 
+  /// Pinned Worker HTTP base after origin probe (null until linked).
+  Uri? get pinnedApiBase => prober.pinnedBase;
+
+  /// Push OTA progress to cloud WS subscribers.
+  Future<void> emitOtaProgress(Map<String, Object?> data) {
+    return dispatcher.sendUpdateProgress(data);
+  }
+
   void _wireLocalHttpHandlers() {
     localHttp.cameraAiAvailable = () async => AiDaemonSupervisor.instance.isReady;
     localHttp.processVideoAiAvailable =
@@ -324,6 +333,11 @@ final class CloudLocalRuntime {
     dispatcher.onProcessParametersDelete = _handleProcessParametersDelete;
     dispatcher.onProcessParametersSetDefault =
         _handleProcessParametersSetDefault;
+
+    dispatcher.onOtaCheckUpdate = (envelope) =>
+        SystemOtaCoordinator.instance.handleWsCheckUpdate(envelope.payload);
+    dispatcher.onOtaUpdateSystem = (envelope) =>
+        SystemOtaCoordinator.instance.handleWsUpdateSystem(envelope.payload);
   }
 
   Future<void> _applyRemoteLockSafetyStop() async {

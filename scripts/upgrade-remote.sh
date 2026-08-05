@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Remote firmware upgrade (make upgrade).
 # Transports:
-#   SSH (USB-SSH / LAN) — stream inactive rootfs + try-boot FIT (+ optional oem), then arm-reboot
+#   SSH (USB-SSH / LAN) — host ephemeral HTTP serves tar.gz+.sig; device HMI downloads →
+#     staged verify/extract/apply. SSH is control-plane only (trigger + TRANSFER_COMPLETE).
 #   RockUSB Loader/Maskrom — upgrade_tool di of OTA-equivalent loose images (not uf factory.img)
-# OEM_ONLY=1: oem partition only (SSH plain-reboot; RockUSB di oem only).
-# MUST NOT stage full firmware images under /userdata/ota/ (status/helpers only).
-# Online OTA uses board ab-upgrade-apply.sh (download/stage then dd) — not this path.
+# OEM_ONLY=1: oem partition only (SSH plain reboot via apply; RockUSB di oem only).
+# MUST NOT stream images directly to partitions on SSH (stream path retired as default).
+# Device MUST Ed25519-verify. RockUSB di is unsigned.
 # MUST NOT invoke upgrade_tool uf / flash factory.img (RockUSB path uses di only).
 set -euo pipefail
 
@@ -20,13 +21,12 @@ source "$ROOT/scripts/factory-sku.sh"
 
 FIRMWARE="${LWS_HMI_FIRMWARE_DIR:-$ROOT/output/firmware}"
 OTA_DIR="/userdata/ota"
-HELPER_SRC_DIR="$ROOT/overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/usr/libexec/ab"
-STREAM_SRC="$HELPER_SRC_DIR/ab-upgrade-stream.sh"
-LIB_SRC="$HELPER_SRC_DIR/ab-slot-lib.sh"
-STREAM="$OTA_DIR/ab-upgrade-stream.sh"
-STREAM_LIB="$OTA_DIR/ab-slot-lib.sh"
+PREFLIGHT_REMOTE="/usr/libexec/ab/ab-preflight.sh"
+CMD_PATH="/run/hmi/upgrade-ota.cmd"
+ARCHIVE_REMOTE="$OTA_DIR/ota-package.tar.gz"
 OEM_ONLY="${OEM_ONLY:-0}"
-# UPGRADE_TRANSPORT defaulted after .env load (see main); optional: auto|ssh|rockusb
+# UPGRADE_PACKAGE= alternate tarball (skip make ota-package). See upgrade-package-env.
+# UPGRADE_TRANSPORT defaulted after .env load; optional: auto|ssh|rockusb
 
 # Deprecated alias → OEM_IMG
 if [[ -n "${UPGRADE_OEM_IMG+x}" && -z "${OEM_IMG+x}" ]]; then
@@ -54,41 +54,47 @@ usage() {
 	cat <<EOF
 Usage: $0
 
-Firmware upgrade over SSH stream or RockUSB Loader/Maskrom (same make upgrade).
+Firmware upgrade over SSH staged package or RockUSB Loader/Maskrom.
 
 SSH (default when a Linux USB-SSH / registered SSH target is selected):
-  Streams rootfs.img and the inactive letter's FIT into partitions, optionally
-  streams oem.img, arms try-boot, and returns as soon as reboot is requested.
+  Ensures OTA tar.gz + .sig via ota-package (unless UPGRADE_PACKAGE= + sibling .sig),
+  starts an ephemeral HTTP server on the host, triggers the HMI to download the package
+  (same path as cloud OTA), waits until archive+.sig have been fully GET (host send
+  progress on stderr), then returns. Device verify/apply/reboot continue on the board;
+  host does not wait for on-device apply or claim apply success. Allow inbound TCP on the bind
+  IP if the OS firewall prompts (USB-SSH default bind 192.168.55.2).
 
 RockUSB (when Loader/Maskrom is selected, or UPGRADE_TRANSPORT=rockusb):
   upgrade_tool di of OTA-equivalent images: boot + boot_b + rootfs_a + rootfs_b
   (+ optional oem). Maskrom: ul MiniLoader into RAM first. Does NOT uf factory.img
-  and does NOT rewrite uboot / GPT / misc. Not product OTA (no zip/sign/stage).
+  and does NOT rewrite uboot / GPT / misc. Not product/SSH staged OTA (no tar.gz+.sig verify).
 
 OEM_ONLY=1:
-  oem partition only (SSH: plain reboot; RockUSB: di oem only).
+  oem partition only (SSH: staged verify-apply + plain reboot; RockUSB: di oem only).
 
-Does not stage full images under /userdata/ota/ (unlike online OTA).
 For app-only iteration, use make push-app.
 For GPT / U-Boot / MiniLoader storage / factory reset, use make flash.
+SSH upgrade needs archive + .sig (OTA_SIGNING_KEY / make ota-release-keys); RockUSB di does not.
 
 Env (also in repo-root \`.env\`; command-line env overrides \`.env\`):
-  APP                       Flutter product under app/ (default: lws_hmi);
-                            rootfs from output/firmware/<APP>/rootfs.img
-  SN                        select board when multiple devices
-  IP                        registered SSH only (make connect <ip>)
+  APP                       Flutter product under app/ (default: lws_hmi)
+  SN / IP                   select board
   UPGRADE_TRANSPORT         auto|ssh|rockusb (default: auto)
-  LWS_HMI_FIRMWARE_DIR      default: output/firmware (shared boot FITs)
-  FACTORY_SKU / OEM_ID      resolve default oem.img (see board/factory-skus.tsv)
-  OEM_IMG                   oem.img path; unset=auto from FACTORY_SKU; empty=skip oem
-  OEM_ONLY                  0|1 — 1 = oem partition only (requires oem.img)
+  UPGRADE_PACKAGE           existing .tar/.tar.gz; SSH also needs <path>.sig
+  OTA_SIGNING_KEY           Ed25519 PEM (default keys/ota/ed25519.pem if present)
+  OTA_HTTP_HOST             bind/advertise IP for host HTTP (USB-SSH default 192.168.55.2)
+  OTA_HTTP_PORT             host HTTP port (default 0 = ephemeral)
+  LWS_HMI_FIRMWARE_DIR      default: output/firmware
+  FACTORY_SKU / OEM_ID      resolve default oem.img
+  OEM_IMG                   oem.img path; unset=auto; empty=skip oem
+  OEM_ONLY                  0|1 — 1 = oem partition only
 
 Examples:
   APP=cnc_hmi make upgrade
   OEM_ONLY=1 make upgrade
-  OEM_IMG= make upgrade          # full upgrade without oem
+  OEM_IMG= make upgrade
+  UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade
   UPGRADE_TRANSPORT=rockusb make upgrade
-  make reboot-loader && make upgrade
 EOF
 }
 
@@ -96,8 +102,8 @@ remote() {
 	usb_ssh_session_run_ssh "$ROOT" "$IFACE" "$@"
 }
 
-stream_sh() {
-	remote "env LWS_HMI_AB_LIB=$STREAM_LIB /bin/sh $STREAM $*"
+board_preflight() {
+	remote "$PREFLIGHT_REMOTE"
 }
 
 file_size() {
@@ -107,19 +113,6 @@ file_size() {
 	else
 		stat -c%s "$path"
 	fi
-}
-
-stream_to_dev() {
-	local src="$1"
-	local dest_dev="$2"
-	local label="$3"
-	local offset="$4"
-	local total="$5"
-	local bytes
-	bytes="$(file_size "$src")"
-	python3 "$ROOT/scripts/stream-file-progress.py" \
-		--label "$label" --offset "$offset" --total "$total" "$src" |
-		remote "env LWS_HMI_AB_LIB=$STREAM_LIB /bin/sh $STREAM write '$dest_dev' $bytes"
 }
 
 parse_preflight() {
@@ -182,9 +175,39 @@ resolve_bundle_images() {
 	echo "upgrade: APP=$APP rootfs=$ROOTFS_IMG"
 }
 
+ensure_ota_package() {
+	local pkg="${UPGRADE_PACKAGE:-}"
+	local sig=""
+	if [[ -n "$pkg" ]]; then
+		[[ -f "$pkg" ]] || die "UPGRADE_PACKAGE not found: $pkg"
+		case "$pkg" in
+		*.tar.gz | *.tgz | *.tar) ;;
+		*) die "UPGRADE_PACKAGE must be .tar / .tar.gz / .tgz (got: $pkg)" ;;
+		esac
+		OTA_ARCHIVE="$pkg"
+		sig="${pkg}.sig"
+		[[ -f "$sig" ]] || die "missing sibling signature $sig (required for SSH make upgrade)"
+		OTA_SIG="$sig"
+		echo "upgrade: using UPGRADE_PACKAGE=$OTA_ARCHIVE (+ $OTA_SIG)"
+		return 0
+	fi
+
+	echo "upgrade: running ota-package (archive + .sig for SSH staged verify)..."
+	APP="$APP" OEM_ONLY="$OEM_ONLY" \
+		OEM_IMG="${OEM_IMG-}" \
+		LWS_HMI_FIRMWARE_DIR="$FIRMWARE" \
+		REQUIRE_OTA_SIG=1 \
+		bash "$ROOT/scripts/ota-package.sh" \
+		|| die "ota-package failed — set OTA_SIGNING_KEY= or run: make ota-release-keys"
+	OTA_ARCHIVE="$APP_FIRMWARE_DIR/ota-package.tar.gz"
+	OTA_SIG="${OTA_ARCHIVE}.sig"
+	[[ -f "$OTA_ARCHIVE" ]] || die "missing OTA archive after ota-package: $OTA_ARCHIVE"
+	[[ -f "$OTA_SIG" ]] || die "missing OTA signature after ota-package: $OTA_SIG"
+	echo "upgrade: archive=$OTA_ARCHIVE ($(file_size "$OTA_ARCHIVE") bytes)"
+	echo "upgrade: signature=$OTA_SIG ($(file_size "$OTA_SIG") bytes)"
+}
+
 # Returns 0 if a deployable Linux SSH target matches current SN=/IP=/IFACE=.
-# Prints nothing; on multi-match / hard select errors, exits via die when force_ssh=1
-# or when the select error is "ambiguous" (operator must disambiguate).
 probe_ssh_target() {
 	local errfile out
 	errfile="$(mktemp "${TMPDIR:-/tmp}/lws-upgrade-ssh-probe.XXXXXX")"
@@ -193,7 +216,6 @@ probe_ssh_target() {
 			bash "$ROOT/scripts/device-target.sh" --select 2>"$errfile"
 	); then
 		rm -f "$errfile"
-		# Populate session vars like try_select
 		local -a sel=()
 		local line
 		while IFS= read -r line; do
@@ -217,7 +239,6 @@ probe_ssh_target() {
 		esac
 		return 0
 	fi
-	# Ambiguous multi-device must not silently fall through to RockUSB.
 	if grep -qE 'devices — set SN|matches .* devices' "$errfile" 2>/dev/null; then
 		cat "$errfile" >&2
 		rm -f "$errfile"
@@ -257,7 +278,6 @@ decide_transport() {
 	local want="${UPGRADE_TRANSPORT:-auto}"
 	case "$want" in
 	auto | "")
-		# IP=/IFACE= imply SSH-only selection.
 		if [[ -n "${IP:-}" || -n "${IFACE:-}" ]]; then
 			probe_ssh_target || die "UPGRADE_TRANSPORT=auto with IP=/IFACE= but no SSH target (make devices / make connect)"
 			CHOSEN_TRANSPORT=ssh
@@ -298,7 +318,6 @@ run_rockusb_upgrade() {
 			|| die "bundle exceeds GPT slot sizes"
 	fi
 
-	# Refuse factory / uf path variables being used as the payload.
 	if [[ -n "${IMAGE:-}" ]]; then
 		echo "WARNING: IMAGE= is ignored on RockUSB make upgrade (use make flash for factory.img)" >&2
 	fi
@@ -308,30 +327,142 @@ run_rockusb_upgrade() {
 	export UPGRADE_OTA_ROOTFS_IMG="${ROOTFS_IMG:-}"
 	export UPGRADE_OTA_OEM_IMG="${OEM_IMG:-}"
 	export OEM_ONLY
-	# SN/ selection already in env for flash-usb.sh
 	bash "$ROOT/scripts/flash-usb.sh" upgrade-ota
 }
 
+wait_ota_http_transfer_complete() {
+	# Wait until ota-http-serve.py prints TRANSFER_COMPLETE (archive + .sig fully GET).
+	local timeout="${1:-600}"
+	local i
+	for ((i = 0; i < timeout * 10; i++)); do
+		if ! kill -0 "${OTA_HTTP_PID:-0}" 2>/dev/null; then
+			die "ota-http-serve exited before TRANSFER_COMPLETE (device may not have fetched the package)"
+		fi
+		if grep -qx 'TRANSFER_COMPLETE' "${OTA_HTTP_LOG:-/dev/null}" 2>/dev/null; then
+			return 0
+		fi
+		sleep 0.1
+	done
+	die "timed out waiting for host HTTP TRANSFER_COMPLETE (${timeout}s) — is the board downloading from $OTA_HTTP_BASE?"
+}
+
+# Resolve IPv4 the device uses to reach this host's ephemeral OTA HTTP server.
+resolve_ota_http_bind() {
+	if [[ -n "${OTA_HTTP_HOST:-}" ]]; then
+		OTA_HTTP_BIND="$OTA_HTTP_HOST"
+		return 0
+	fi
+	case "${TRANSPORT:-}" in
+	usb-ssh)
+		OTA_HTTP_BIND="${LWS_HMI_USB_HOST_ADDR:-${USB_SSH_HOST_ADDR:-192.168.55.2}}"
+		return 0
+		;;
+	esac
+	# LAN SSH: UDP connect trick → local source address toward the board.
+	OTA_HTTP_BIND="$(
+		python3 - "$TARGET_ADDR" <<'PY'
+import socket
+import sys
+
+target = sys.argv[1].split("%", 1)[0]
+host = target
+port = 22
+if host.startswith("[") and "]" in host:
+    # rare IPv6 literal — skip
+    print("")
+    raise SystemExit(0)
+if ":" in host and host.count(":") == 1:
+    h, p = host.rsplit(":", 1)
+    if p.isdigit():
+        host, port = h, int(p)
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+try:
+    sock.connect((host, port))
+    print(sock.getsockname()[0])
+except OSError:
+    print("")
+finally:
+    sock.close()
+PY
+	)"
+	[[ -n "$OTA_HTTP_BIND" ]] || die "cannot resolve OTA_HTTP_HOST for LAN target $TARGET_ADDR (set OTA_HTTP_HOST=)"
+}
+
+start_ota_http_server() {
+	# Sets OTA_HTTP_PID, OTA_HTTP_BASE, OTA_HTTP_SERVE_DIR
+	# stdout → log (base URL); stderr → caller terminal (chunk send progress)
+	local archive="$1" sig="$2"
+	local port="${OTA_HTTP_PORT:-0}"
+	local log
+	OTA_HTTP_SERVE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/lws-ota-http.XXXXXX")"
+	ln "$archive" "$OTA_HTTP_SERVE_DIR/ota-package.tar.gz" 2>/dev/null \
+		|| cp -f "$archive" "$OTA_HTTP_SERVE_DIR/ota-package.tar.gz"
+	ln "$sig" "$OTA_HTTP_SERVE_DIR/ota-package.tar.gz.sig" 2>/dev/null \
+		|| cp -f "$sig" "$OTA_HTTP_SERVE_DIR/ota-package.tar.gz.sig"
+	log="$(mktemp "${TMPDIR:-/tmp}/lws-ota-http-log.XXXXXX")"
+	python3 "$ROOT/scripts/ota-http-serve.py" \
+		--bind "$OTA_HTTP_BIND" \
+		--port "$port" \
+		--dir "$OTA_HTTP_SERVE_DIR" \
+		>"$log" &
+	OTA_HTTP_PID=$!
+	OTA_HTTP_LOG="$log"
+	local i line
+	for ((i = 0; i < 50; i++)); do
+		if ! kill -0 "$OTA_HTTP_PID" 2>/dev/null; then
+			cat "$log" >&2 || true
+			die "ota-http-serve exited early (bind $OTA_HTTP_BIND:$port)"
+		fi
+		line="$(head -n1 "$log" 2>/dev/null || true)"
+		if [[ "$line" == http://* ]]; then
+			OTA_HTTP_BASE="${line%/}/"
+			return 0
+		fi
+		sleep 0.1
+	done
+	kill "$OTA_HTTP_PID" 2>/dev/null || true
+	cat "$log" >&2 || true
+	die "ota-http-serve did not print base URL"
+}
+
+stop_ota_http_server() {
+	if [[ -n "${OTA_HTTP_PID:-}" ]]; then
+		kill "$OTA_HTTP_PID" 2>/dev/null || true
+		wait "$OTA_HTTP_PID" 2>/dev/null || true
+		OTA_HTTP_PID=""
+	fi
+	if [[ -n "${OTA_HTTP_SERVE_DIR:-}" && -d "${OTA_HTTP_SERVE_DIR:-}" ]]; then
+		rm -rf "$OTA_HTTP_SERVE_DIR"
+		OTA_HTTP_SERVE_DIR=""
+	fi
+	if [[ -n "${OTA_HTTP_LOG:-}" ]]; then
+		rm -f "$OTA_HTTP_LOG"
+		OTA_HTTP_LOG=""
+	fi
+}
+
 run_ssh_upgrade() {
-	local MODE_LABEL
+	local MODE_LABEL OEM_FLAG PACKAGE_URL
+	local OTA_HTTP_PID="" OTA_HTTP_BASE="" OTA_HTTP_SERVE_DIR="" OTA_HTTP_LOG="" OTA_HTTP_BIND=""
 
 	if is_android_emulator_serial "$(device_select_sn)"; then
 		die "Android emulator ($(device_select_sn)) is not supported for upgrade (physical board only; see make devices)"
 	fi
-	# TRANSPORT/IFACE/TARGET_ADDR already set by decide_transport → probe_ssh_target
 	if is_emulator_ssh_endpoint "${TARGET_ADDR:-}"; then
 		die "QEMU emulator ($TARGET_ADDR) is not supported for upgrade (use make build-emulator + make emulator)"
 	fi
 
 	if [[ "$OEM_ONLY" == "1" ]]; then
 		MODE_LABEL="OEM-only"
+		OEM_FLAG="oem_only=1"
 	else
 		MODE_LABEL="full-system A/B"
+		OEM_FLAG="oem_only=0"
 	fi
 	if usb_ssh_session_is_remote; then
-		echo "SSH $MODE_LABEL upgrade (stream-to-partition): target=$TARGET_USER@$TARGET_ADDR"
+		echo "SSH $MODE_LABEL upgrade (host HTTP + device pull): target=$TARGET_USER@$TARGET_ADDR"
 	else
-		echo "USB-SSH $MODE_LABEL upgrade (stream-to-partition): iface=$IFACE target=$TARGET_USER@$TARGET_ADDR"
+		echo "USB-SSH $MODE_LABEL upgrade (host HTTP + device pull): iface=$IFACE target=$TARGET_USER@$TARGET_ADDR"
 	fi
 	usb_ssh_session_configure_link
 	usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "${WAIT_SEC:-30}"
@@ -345,23 +476,21 @@ run_ssh_upgrade() {
 		)"
 	fi
 
+	trap 'stop_ota_http_server' EXIT
+
+	ensure_ota_package
+	[[ -n "${OTA_SIG:-}" && -f "$OTA_SIG" ]] || die "missing OTA_SIG for SSH upgrade"
+	[[ "$(file_size "$OTA_ARCHIVE")" -gt 0 ]] || die "OTA archive is empty: $OTA_ARCHIVE"
+
 	echo "Bundle (host check):"
-	if [[ "$OEM_ONLY" == "1" ]]; then
-		ls -lh "$OEM_IMG"
-	else
-		ls -lh "$BOOT_IMG" "$BOOT_B_IMG" "$ROOTFS_IMG" ${OEM_IMG:+"$OEM_IMG"}
+	ls -lh "$OTA_ARCHIVE" "$OTA_SIG"
+	if [[ "$OEM_ONLY" != "1" ]]; then
 		bash "$ROOT/scripts/verify-firmware-partitions.sh" "$FIRMWARE" "$ROOT/board/parameter-buildroot-fit.txt" \
 			"$ROOTFS_IMG" \
 			|| die "bundle exceeds GPT slot sizes"
 	fi
 
-	[[ -r "$STREAM_SRC" && -r "$LIB_SRC" ]] || die "A/B stream helpers missing from repository overlay"
-
-	remote "mkdir -p $OTA_DIR && rm -f $OTA_DIR/apply.status $OTA_DIR/boot.img $OTA_DIR/boot_b.img $OTA_DIR/rootfs.img $OTA_DIR/oem.img $OTA_DIR/manifest.json $OTA_DIR/*.sha256 $STREAM $STREAM_LIB"
-
-	usb_ssh_session_run_scp "$ROOT" "$IFACE" \
-		"$STREAM_SRC" "$LIB_SRC" \
-		"$TARGET_USER@$TARGET_ADDR:$OTA_DIR/"
+	remote "mkdir -p $OTA_DIR /run/hmi && rm -f $OTA_DIR/apply.status $OTA_DIR/progress.json $OTA_DIR/ota.log $ARCHIVE_REMOTE ${ARCHIVE_REMOTE}.sig $OTA_DIR/boot.img $OTA_DIR/boot_b.img $OTA_DIR/rootfs.img $OTA_DIR/oem.img $OTA_DIR/manifest.json $OTA_DIR/*.sha256 $OTA_DIR/ab-upgrade-stream.sh $OTA_DIR/ab-slot-lib.sh $OTA_DIR/ab-upgrade-apply.sh $OTA_DIR/ab-ota-verify.sh"
 
 	if ! usb_ssh_session_is_remote; then
 		remote "/usr/bin/systemctl.real stop wlan-wpa.service >/dev/null 2>&1 || true"
@@ -369,12 +498,12 @@ run_ssh_upgrade() {
 
 	echo "Preflight slot state..."
 	set +e
-	PREFLIGHT_RAW="$(stream_sh preflight 2>&1)"
+	PREFLIGHT_RAW="$(board_preflight 2>&1)"
 	preflight_rc=$?
 	set -e
 	[[ "$preflight_rc" -eq 0 ]] || {
 		printf '%s\n' "$PREFLIGHT_RAW" >&2
-		die "board preflight failed (unsafe slot state or missing helpers)"
+		die "board preflight failed (unsafe slot state or missing $PREFLIGHT_REMOTE — rebuild rootfs)"
 	}
 	parse_preflight <<<"$PREFLIGHT_RAW"
 
@@ -383,91 +512,30 @@ run_ssh_upgrade() {
 $PREFLIGHT_RAW"
 		OEM_BYTES="$(file_size "$OEM_IMG")"
 		[[ "$OEM_BYTES" -le "${OEM_CAP:-0}" ]] || die "oem.img ($OEM_BYTES) > oem cap ($OEM_CAP)"
-		STREAM_TOTAL="$OEM_BYTES"
-
-		echo "Stream apply (OEM only): oem → $OEM_DEV"
-		stream_sh set-status running
-		echo "Writing oem.img (stream-to-partition)..."
-		stream_to_dev "$OEM_IMG" "$OEM_DEV" "oem.img" 0 "$STREAM_TOTAL" \
-			|| die "oem stream failed"
-		stream_sh set-status ok >/dev/null 2>&1 || true
-
-		echo "Rebooting (plain; no A/B letter switch)..."
-		# Same reboot path as full upgrade (systemctl.real --no-block via ab_reboot).
-		# /sbin/reboot is unreliable here (wrapper / no-op under nohup).
-		set +e
-		arm_out="$(remote "nohup env LWS_HMI_AB_LIB=$STREAM_LIB /bin/sh $STREAM plain-reboot >/userdata/ota/apply.log 2>&1 </dev/null & echo REBOOT_STARTED")"
-		arm_rc=$?
-		set -e
-		[[ "$arm_rc" -eq 0 && "$arm_out" == *REBOOT_STARTED* ]] || die "failed to start reboot"
-
-		bash "$ROOT/scripts/ssh-devices.sh" dismiss-target \
-			"$TRANSPORT" "$IFACE" "$TARGET_ADDR" "$TARGET_SERIAL_HINT" || true
-		echo "OEM upgrade successfully, please wait for the device to restart."
-		exit 0
-	fi
-
-	# --- full-system A/B path ---
-	[[ -n "$INACTIVE" && -n "$ROOT_DEV" && -n "$BOOT_DEV" && -n "$FIT_NAME" ]] \
-		|| die "preflight missing fields (inactive/root_dev/boot_dev/fit_name). Got:
+	else
+		[[ -n "$INACTIVE" && -n "$ROOT_DEV" && -n "$BOOT_DEV" && -n "$FIT_NAME" ]] \
+			|| die "preflight missing fields (inactive/root_dev/boot_dev/fit_name). Got:
 $PREFLIGHT_RAW"
-
-	case "$FIT_NAME" in
-	boot.img) FIT_IMG="$BOOT_IMG" ;;
-	boot_b.img) FIT_IMG="$BOOT_B_IMG" ;;
-	*) die "unexpected fit_name=$FIT_NAME" ;;
-	esac
-	[[ -f "$FIT_IMG" ]] || die "missing inactive FIT $FIT_IMG"
-
-	ROOT_BYTES="$(file_size "$ROOTFS_IMG")"
-	FIT_BYTES="$(file_size "$FIT_IMG")"
-	OEM_BYTES=0
-	[[ "$ROOT_BYTES" -le "${ROOT_CAP:-0}" ]] || die "rootfs.img ($ROOT_BYTES) > inactive rootfs cap ($ROOT_CAP)"
-	[[ "$FIT_BYTES" -le "${BOOT_CAP:-0}" ]] || die "$FIT_NAME ($FIT_BYTES) > boot cap ($BOOT_CAP)"
-
-	STREAM_TOTAL=$((ROOT_BYTES + FIT_BYTES))
-	if [[ -n "$OEM_IMG" ]]; then
-		[[ -n "$OEM_DEV" ]] || die "OEM_IMG set but board has no oem partition"
-		OEM_BYTES="$(file_size "$OEM_IMG")"
-		[[ "$OEM_BYTES" -le "${OEM_CAP:-0}" ]] || die "oem.img ($OEM_BYTES) > oem cap ($OEM_CAP)"
-		STREAM_TOTAL=$((STREAM_TOTAL + OEM_BYTES))
 	fi
 
-	echo "Stream apply: active=$ACTIVE inactive=$INACTIVE fit=$FIT_NAME"
-	echo "  rootfs → $ROOT_DEV"
-	echo "  $FIT_NAME → $BOOT_DEV (after boot→boot_b backup)"
-	[[ -n "$OEM_IMG" ]] && echo "  oem → $OEM_DEV"
+	resolve_ota_http_bind
+	echo "Serving OTA package on $OTA_HTTP_BIND (device will HTTP GET)..."
+	start_ota_http_server "$OTA_ARCHIVE" "$OTA_SIG"
+	PACKAGE_URL="${OTA_HTTP_BASE}ota-package.tar.gz"
+	echo "  package_url=$PACKAGE_URL"
 
-	stream_sh set-status running
+	echo "Triggering HMI download ($OEM_FLAG)..."
+	remote "printf 'download %s %s\\n' '$PACKAGE_URL' '$OEM_FLAG' > '${CMD_PATH}.tmp' && mv -f '${CMD_PATH}.tmp' '${CMD_PATH}'"
 
-	OVERALL_SENT=0
-	echo "Writing firmware (stream-to-partition)..."
-	stream_to_dev "$ROOTFS_IMG" "$ROOT_DEV" "rootfs.img" "$OVERALL_SENT" "$STREAM_TOTAL" \
-		|| die "rootfs stream failed — try-boot not armed; active letter unchanged"
-	OVERALL_SENT=$((OVERALL_SENT + ROOT_BYTES))
+	echo "Waiting for device to HTTP GET archive + .sig (host send progress on stderr)..."
+	wait_ota_http_transfer_complete 600
 
-	stream_sh backup-boot \
-		|| die "boot backup failed — try-boot not armed; active letter unchanged"
-
-	stream_to_dev "$FIT_IMG" "$BOOT_DEV" "$FIT_NAME" "$OVERALL_SENT" "$STREAM_TOTAL" \
-		|| die "FIT stream failed — try-boot not armed; active letter unchanged"
-	OVERALL_SENT=$((OVERALL_SENT + FIT_BYTES))
-
-	if [[ -n "$OEM_IMG" ]]; then
-		stream_to_dev "$OEM_IMG" "$OEM_DEV" "oem.img" "$OVERALL_SENT" "$STREAM_TOTAL" \
-			|| die "oem stream failed — try-boot not armed; active letter unchanged"
-	fi
-
-	echo "Arming try-boot and rebooting..."
-	set +e
-	arm_out="$(remote "nohup env LWS_HMI_AB_LIB=$STREAM_LIB /bin/sh $STREAM arm-reboot $INACTIVE >/userdata/ota/apply.log 2>&1 </dev/null & echo ARM_STARTED")"
-	arm_rc=$?
-	set -e
-	[[ "$arm_rc" -eq 0 && "$arm_out" == *ARM_STARTED* ]] || die "failed to start arm-reboot"
+	stop_ota_http_server
+	trap - EXIT
 
 	bash "$ROOT/scripts/ssh-devices.sh" dismiss-target \
 		"$TRANSPORT" "$IFACE" "$TARGET_ADDR" "$TARGET_SERIAL_HINT" || true
-	echo "Upgrade successfully, please wait for the device to restart."
+	echo "Transfer complete. Device will verify/apply and reboot on its own — watch the HMI upgrade page."
 	exit 0
 }
 
@@ -478,10 +546,12 @@ case "$OEM_ONLY" in
 *) die "OEM_ONLY must be 0 or 1 (got: $OEM_ONLY)" ;;
 esac
 
-# Preserve CLI/Make UPGRADE_TRANSPORT across usb_ssh_session_load_env (.env re-source).
 _CLI_UPGRADE_TRANSPORT="${UPGRADE_TRANSPORT-}"
 _CLI_UPGRADE_TRANSPORT_SET=0
 [[ -n "${UPGRADE_TRANSPORT+x}" ]] && _CLI_UPGRADE_TRANSPORT_SET=1
+_CLI_UPGRADE_PACKAGE="${UPGRADE_PACKAGE-}"
+_CLI_UPGRADE_PACKAGE_SET=0
+[[ -n "${UPGRADE_PACKAGE+x}" ]] && _CLI_UPGRADE_PACKAGE_SET=1
 
 usb_ssh_session_load_env "$ROOT"
 
@@ -489,8 +559,11 @@ if [[ "$_CLI_UPGRADE_TRANSPORT_SET" == 1 ]]; then
 	UPGRADE_TRANSPORT="$_CLI_UPGRADE_TRANSPORT"
 fi
 UPGRADE_TRANSPORT="${UPGRADE_TRANSPORT:-auto}"
+if [[ "$_CLI_UPGRADE_PACKAGE_SET" == 1 ]]; then
+	UPGRADE_PACKAGE="$_CLI_UPGRADE_PACKAGE"
+fi
 
-# Fail fast on missing images before device transport selection.
+# Fail fast on missing images before device transport selection (RockUSB / packaging).
 resolve_bundle_images
 
 decide_transport

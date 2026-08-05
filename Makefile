@@ -43,7 +43,7 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop write-identity upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop write-identity ota-release-keys ota-package upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
@@ -54,6 +54,9 @@ bash -c 'set -euo pipefail; \
   __ENV_OEM_ONLY="$${OEM_ONLY-}"; \
   __ENV_UPGRADE_TRANSPORT="$${UPGRADE_TRANSPORT-}"; \
   if [[ -n "$${OEM_IMG+x}" ]]; then __ENV_OEM_IMG_SET=1; __ENV_OEM_IMG="$${OEM_IMG-}"; else __ENV_OEM_IMG_SET=0; fi; \
+  if [[ -n "$${UPGRADE_PACKAGE+x}" ]]; then __ENV_UPGRADE_PACKAGE_SET=1; __ENV_UPGRADE_PACKAGE="$${UPGRADE_PACKAGE-}"; else __ENV_UPGRADE_PACKAGE_SET=0; fi; \
+  __ENV_OTA_SIGNING_KEY="$${OTA_SIGNING_KEY-}"; \
+  __ENV_REQUIRE_OTA_SIG="$${REQUIRE_OTA_SIG-}"; \
   __ENV_FLUTTER_SDK="$${FLUTTER_SDK-}"; __ENV_BUILD_JOBS="$${BUILD_JOBS-}"; \
   __ENV_BUILD_BIND_MOUNT="$${BUILD_BIND_MOUNT-}"; \
   set -a; [[ -f .env ]] && source .env; set +a; \
@@ -66,6 +69,9 @@ bash -c 'set -euo pipefail; \
   [[ -n "$$__ENV_OEM_ONLY" ]] && export OEM_ONLY="$$__ENV_OEM_ONLY"; \
   [[ -n "$$__ENV_UPGRADE_TRANSPORT" ]] && export UPGRADE_TRANSPORT="$$__ENV_UPGRADE_TRANSPORT"; \
   [[ "$$__ENV_OEM_IMG_SET" == 1 ]] && export OEM_IMG="$$__ENV_OEM_IMG"; \
+  [[ "$$__ENV_UPGRADE_PACKAGE_SET" == 1 ]] && export UPGRADE_PACKAGE="$$__ENV_UPGRADE_PACKAGE"; \
+  [[ -n "$$__ENV_OTA_SIGNING_KEY" ]] && export OTA_SIGNING_KEY="$$__ENV_OTA_SIGNING_KEY"; \
+  [[ -n "$$__ENV_REQUIRE_OTA_SIG" ]] && export REQUIRE_OTA_SIG="$$__ENV_REQUIRE_OTA_SIG"; \
   [[ -n "$$__ENV_FLUTTER_SDK" ]] && export FLUTTER_SDK="$$__ENV_FLUTTER_SDK"; \
   [[ -n "$$__ENV_BUILD_JOBS" ]] && export BUILD_JOBS="$$__ENV_BUILD_JOBS"; \
   [[ -n "$$__ENV_BUILD_BIND_MOUNT" ]] && export BUILD_BIND_MOUNT="$$__ENV_BUILD_BIND_MOUNT"; \
@@ -168,7 +174,9 @@ help:
 	@echo "  make alarm CODE=L001       # demo warn dialog on device (USB-SSH/SSH; HMI running)"
 	@echo "  make alarm-clean           # clear alarm restrictions; keep visible warn popup"
 	@echo "  make smoke-ai              # upload stain demo JPG; offline RKNN infer via AI daemon sock"
-	@echo "  make upgrade               # SSH stream or RockUSB di OTA images; OEM_ONLY=1; UPGRADE_TRANSPORT=ssh|rockusb"
+	@echo "  make upgrade               # ota-package + host HTTP serve; device downloads tar.gz+.sig → verify/apply; or RockUSB di; OEM_ONLY=1"
+	@echo "  make ota-package           # pack imgs → output/firmware/<APP>/ota-package.tar.gz [+.sig if OTA_SIGNING_KEY]"
+	@echo "  make ota-release-keys          # release Ed25519 keypair → keys/ota/ + overlay /etc/ota/ed25519.pub"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
 	@echo "  make serial-console        # MODE=TTL|RS485|RS232 (default TTL); BAUD=; LOG_FILE= (hex)"
@@ -206,9 +214,10 @@ help:
 	@echo "  DOCKER_PLATFORM=$(DOCKER_PLATFORM)"
 	@echo ""
 	@echo "Notes:"
-	@echo "  - Daily A/B: make build-kernel and/or build-rootfs then make upgrade (no build-img)."
+	@echo "  - Daily A/B: make build-kernel and/or build-rootfs then make upgrade (packages tar.gz, staged apply; no .sig required)."
 	@echo "  - Loader/Maskrom: make reboot-loader (or Maskrom) then make upgrade (di OTA images; not factory uf)."
 	@echo "  - OEM-only (helpers/profile): make build-oem && OEM_ONLY=1 make upgrade"
+	@echo "  - Cloud/publish + SSH upgrade: OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make ota-package (archive + .sig); make upgrade serves via host HTTP."
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ only (no host linux-sdk/output/ mirror)."
 	@echo "  - Factory: make build-oem then build-img → output/firmware/<APP>/<sku>/factory.img; make flash."
 	@echo "  - APP= selects HMI product: overlay /opt/hmi + host rootfs/factory under output/firmware/<APP>/."
@@ -644,7 +653,20 @@ version-bump:
 	@chmod +x scripts/app-version.sh
 	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/app-version.sh bump '$(VERSION)')
 
+# Release Ed25519 keypair (private under keys/ota/; pubkey → overlay /etc/ota/).
+ota-release-keys:
+	@chmod +x scripts/ota-release-keys.sh
+	@bash scripts/ota-release-keys.sh
+
+# Whole-device OTA tar.gz (+ optional .sig). Publish/CI: REQUIRE_OTA_SIG=1 OTA_SIGNING_KEY=…
+ota-package:
+	@chmod +x scripts/ota-package.sh scripts/ota-sign.sh
+	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/ota-package.sh)
+
+# SSH: package (unless UPGRADE_PACKAGE=) → host HTTP serve tar.gz+.sig → device download+verify+staged apply.
+# RockUSB: still di loose images (unsigned; or package members via upgrade-package-env).
 upgrade:
+	@chmod +x scripts/upgrade-remote.sh scripts/ota-package.sh scripts/ota-sign.sh scripts/ota-http-serve.py
 	@$(call WITH_DOTENV,APP='$(APP)' bash scripts/upgrade-remote.sh)
 
 reboot:

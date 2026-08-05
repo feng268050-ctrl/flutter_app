@@ -27,7 +27,7 @@ abstract final class BundledFirmwareBootstrap {
     if (!context.mounted) {
       return;
     }
-    if (_sessionActive || FirmwareUpgradeCoordinator.isBusy) {
+    if (_sessionActive || !FirmwareUpgradeCoordinator.canStartFirmwareUpgrade()) {
       return;
     }
     if (!services.modbusLiveAllowed) {
@@ -84,7 +84,7 @@ abstract final class BundledFirmwareBootstrap {
     if (!services.modbusLiveAllowed) {
       return;
     }
-    if (_sessionActive || FirmwareUpgradeCoordinator.isBusy) {
+    if (_sessionActive || !FirmwareUpgradeCoordinator.canStartFirmwareUpgrade()) {
       return;
     }
     if (!await firmwareFile.exists()) {

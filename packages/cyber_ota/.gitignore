@@ -1,0 +1,8 @@
+# Dart
+.dart_tool/
+.packages
+build/
+
+# IDE
+.idea/
+*.iml

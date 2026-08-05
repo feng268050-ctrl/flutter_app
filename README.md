@@ -144,10 +144,11 @@ Firmware stage outputs:
 - `make prepare-rootfs` flips Buildroot stack prep (overlay defconfig + Mali + embedder packages) without packing `rootfs.img`. `build-rootfs` calls prepare first (skips when stamp + binaries already match).
 - `make build-img` does **not** compile the kernel or rootfs. It requires `make build-oem`, then packages loader, U-Boot, misc, both FIT images, APP-scoped rootfs, and **oem** into `output/firmware/<APP>/<FACTORY_SKU>/factory.img` (default APP `lws_hmi`, sku `ynh960-p800`) and refreshes `output/firmware/update.img` as a symlink for `make flash`.
 - Full-system `make upgrade` does **not** transfer `factory.img`. Two host transports (auto-selected; override with `UPGRADE_TRANSPORT=ssh|rockusb`):
-  - **SSH** (USB-SSH / registered LAN): **streams** `output/firmware/<APP>/rootfs.img` and the **inactive letter’s FIT** (`boot.img` or `boot_b.img`) **directly into partitions** (progress = write progress), defaults to streaming resolved `oem.img` when present (`OEM_IMG= make upgrade` to skip oem), arms try-boot, and **returns as soon as reboot is requested** (no wait for SSH drop or the board to come back). Tiny stream helpers are pushed to `/userdata/ota/` for the session; full firmware images are **not** staged there (that is the online OTA path).
-  - **RockUSB Loader/Maskrom** (e.g. after `make reboot-loader`, or Maskrom): `upgrade_tool` **`di`** downloads the **OTA-equivalent** loose images — `boot.img` → `boot`, `boot_b.img` → `boot_b`, same `rootfs.img` → **both** `rootfs_a` and `rootfs_b`, optional `oem` — with Maskrom `ul` MiniLoader into RAM when needed. **Not** `uf factory.img` (no U-Boot / GPT / misc rewrite) and **not** product OTA zip+sign.
+  - **SSH** (USB-SSH / registered LAN): runs **`make ota-package`** (unless `UPGRADE_PACKAGE=` + sibling `.sig`), starts an ephemeral **host HTTP** server for `ota-package.tar.gz` + `.sig`, triggers the HMI to **download** into `/userdata/ota/`, then Ed25519-verify + staged extract/apply writes inactive boot+rootfs (+ optional oem). SSH is control-plane only. Host console shows HTTP send progress until transfer complete (does not wait for apply). Returns as soon as transfer is complete. Allow inbound TCP on the bind IP if the OS firewall prompts (USB-SSH default `192.168.55.2`).
+  - **RockUSB Loader/Maskrom** (e.g. after `make reboot-loader`, or Maskrom): `upgrade_tool` **`di`** downloads the **OTA-equivalent** loose images — `boot.img` → `boot`, `boot_b.img` → `boot_b`, same `rootfs.img` → **both** `rootfs_a` and `rootfs_b`, optional `oem` — with Maskrom `ul` MiniLoader into RAM when needed. **Not** `uf factory.img` (no U-Boot / GPT / misc rewrite) and **not** product cloud OTA.
   Wait for the device to finish restarting before reconnecting.
-- OEM-only (board helpers / profile / screen pack): `make build-oem` then `OEM_ONLY=1 make upgrade` — oem partition only (SSH: stream + plain reboot; RockUSB: `di` oem only). Set `OEM_ONLY=1` in `.env` for repeated OEM iteration.
+- OEM-only (board helpers / profile / screen pack): `make build-oem` then `OEM_ONLY=1 make upgrade` — oem partition only (SSH: staged apply + plain reboot; RockUSB: `di` oem only). Set `OEM_ONLY=1` in `.env` for repeated OEM iteration.
+- Cloud/publish + SSH upgrade packaging: `OTA_SIGNING_KEY=… REQUIRE_OTA_SIG=1 make ota-package` (archive + `.sig`). Release keys: `make ota-release-keys`.
 
 ### Daily iteration — by what you changed
 
@@ -394,7 +395,9 @@ APP=…                           # app/ dir; *_hmi→/opt/hmi; rootfs→output/
 make version                    # print app/<APP> pubspec versionName+build (default APP=lws_hmi; host-only)
 make version-bump VERSION=1.0.40  # bump pubspec (+ app_version.dart when present); 5-digit build encode
 make build-rootfs               # → output/firmware/<APP>/rootfs.img (default APP=lws_hmi)
-make upgrade                    # SSH stream or RockUSB di OTA images (same APP= as build-rootfs)
+make ota-package                # pack imgs → output/firmware/<APP>/ota-package.tar.gz [+.sig]
+make ota-release-keys           # release Ed25519 keys → keys/ota/ + overlay /etc/ota/ed25519.pub
+make upgrade                    # ota-package + host HTTP; device downloads tar.gz+.sig → verify/apply; or RockUSB di
 make build-img                  # → output/firmware/<APP>/<FACTORY_SKU>/factory.img
 make flash                      # uf that factory (APP= + FACTORY_SKU=); IMAGE= override
 make upgrade-control-board      # push latest control-board bin; force upgrade (HMI running)
@@ -408,7 +411,7 @@ make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; H
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
 make smoke-ai                   # upload stain demo JPG; offline RKNN via AI daemon sock (HMI running)
 make del-prop CAMERA_IP         # remove one tunable key; restarts hmi if changed
-make upgrade                    # auto: SSH stream if Linux up; else RockUSB di OTA images (Loader/Maskrom)
+make upgrade                    # auto: SSH host-HTTP + device pull if Linux up; else RockUSB di OTA images (Loader/Maskrom)
 UPGRADE_TRANSPORT=rockusb make upgrade  # force RockUSB path after make reboot-loader / Maskrom
 ```
 

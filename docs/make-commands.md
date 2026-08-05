@@ -432,17 +432,32 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 - **何时用：** 上传 stain demo，经 AI daemon sock 做离线 RKNN 冒烟。
 - **前提：** 板端 AI daemon（通常随 HMI）。
 
+### `make ota-release-keys`
+
+- **怎么用：** `make ota-release-keys`；强制重生成 `FORCE=1 make ota-release-keys`（会使旧 `.sig` 失效）
+- **何时用：** 产品 **release** Ed25519 钥对（无独立 lab/dev 钥）。私钥在 `keys/ota/`（勿提交），公钥进 overlay `/etc/ota/ed25519.pub`（云验签唯一公钥）。
+- **参数：** `FORCE`、`OTA_KEY_DIR`
+
+### `make ota-package`
+
+- **怎么用：** `make ota-package`；仅 OEM：`OEM_ONLY=1 make ota-package`；发布/CI：`OTA_SIGNING_KEY=keys/ota/ed25519.pem REQUIRE_OTA_SIG=1 make ota-package`
+- **何时用：** 打整机 OTA `tar.gz`（供 `make upgrade` / 未来 `make publish`）。SSH upgrade 与 publish/云均需 `.sig`（`OTA_SIGNING_KEY` / `make ota-release-keys`）。
+- **产出：** `output/firmware/<APP>/ota-package.tar.gz`；有钥时旁路 `.sig`
+- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`OTA_SIGNING_KEY`、`REQUIRE_OTA_SIG`
+
 ### `make upgrade`
 
 - **怎么用：**
-  - 全量 A/B（SSH）：`make upgrade`（流式写 inactive FIT + `APP` rootfs，默认带 oem）
+  - 全量 A/B（SSH）：`make upgrade`（先 `ota-package`，host 临时 HTTP 托管 `tar.gz`+`.sig`，设备下载后验签写盘；需签名钥）
+  - 现成包：`UPGRADE_PACKAGE=/path/to/ota-package.tar.gz make upgrade`（同目录须有 `<path>.sig`）
   - 全量（RockUSB Loader/Maskrom）：`make reboot-loader` 后 `make upgrade`，或 `UPGRADE_TRANSPORT=rockusb make upgrade`（`di` 写 boot + boot_b + 双 rootfs + 可选 oem；**不** `uf factory.img`）
   - 仅 OEM：`OEM_ONLY=1 make upgrade`
   - 跳过 oem：`OEM_IMG= make upgrade`
-  - 强制传输：`UPGRADE_TRANSPORT=ssh|rockusb`（默认 `auto`：有 Linux SSH 用流式，否则 RockUSB）
+  - 强制传输：`UPGRADE_TRANSPORT=ssh|rockusb`（默认 `auto`）
+  - HTTP 绑定：`OTA_HTTP_HOST=` / `OTA_HTTP_PORT=`（USB-SSH 默认 `192.168.55.2`）
 - **何时用：** 板已具备 P2.4 GPT/helpers 后的日常 kernel/rootfs/oem 迭代（**不**传 `factory.img`）；板卡停在 Loader/Maskrom 时同一入口刷 OTA 等价松散镜像。
-- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`FACTORY_SKU`/`OEM_ID`、`UPGRADE_TRANSPORT`、设备选择、`WAIT_SEC`。
-- **行为：** SSH 路径请求重启后立即返回；RockUSB 路径 `di` 完成后 `rd`；需等板子起来再连。与产品 OTA（zip/签名/`/userdata/ota/`）及 `make flash`（factory `uf`）不同。
+- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`FACTORY_SKU`/`OEM_ID`、`UPGRADE_TRANSPORT`、`UPGRADE_PACKAGE`、`OTA_HTTP_HOST`、`OTA_HTTP_PORT`、设备选择、`WAIT_SEC`。
+- **行为：** SSH 路径触发升级页 → 设备从 host HTTP 下载归档 → staged verify/apply → 请求重启后立即返回；RockUSB 路径 `di` 完成后 `rd`。与云 OTA 同源落盘与验签。与 `make flash`（factory `uf`）不同。若 macOS 防火墙拦截入站，允许 Python 接收连接。
 
 ### `make debug-setup` / `make debug-app`
 

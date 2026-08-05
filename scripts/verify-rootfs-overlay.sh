@@ -292,8 +292,8 @@ run_check() {
 		device-mdns-advertise.sh serial-console-stty.sh reboot-loader boot-verify.sh env-verify.sh \
 		usb-otg-mode.sh usb-gadget-usb-state.sh usb-plug-ssh-start.sh usb-plug-ssh-stop.sh \
 		usb-plug-ssh-recover.sh usb-plug-ssh-diag.sh usb-plug-ssh-vbus-check.sh \
-		usb-mtp-start.sh usb-mtp-stop.sh ab-slot-lib.sh ab-upgrade-apply.sh ab-upgrade-stream.sh \
-		ab-boot-confirm.sh oem-compose.sh ynh960-display-init.sh weston-hmi-config.sh \
+		usb-mtp-start.sh usb-mtp-stop.sh ab-slot-lib.sh ab-upgrade-apply.sh ab-upgrade-stream.sh ab-ota-verify.sh \
+		ab-preflight.sh ab-boot-confirm.sh oem-compose.sh ynh960-display-init.sh weston-hmi-config.sh \
 		change-orientation.sh apply-mouse-settings.sh set-performance-mode.sh bind-prefs.sh \
 		pre-poweroff.sh shutdown.sh pwrkey-poweroff.sh systemctl-poweroff-wrapper.sh \
 		enable-ssh-debug.sh disable-ssh-debug.sh lan-ssh-run.sh ensure-sshd-hostkeys.sh; do
@@ -338,12 +338,20 @@ run_check() {
 
 	echo ""
 	echo "--- usr/libexec/ab ---"
-	for f in ab-slot-lib.sh ab-upgrade-apply.sh ab-upgrade-stream.sh ab-boot-confirm.sh; do
+	for f in ab-slot-lib.sh ab-preflight.sh ab-boot-confirm.sh; do
 		if [[ -x "$libexec_ab/$f" ]] || [[ -f "$libexec_ab/$f" && "$f" == ab-slot-lib.sh ]]; then
 			echo "OK:  ab/$f"
 		else
 			echo "FAIL: ab/$f missing or not executable" >&2
 			missing=1
+		fi
+	done
+	for retired in ab-upgrade-apply.sh ab-upgrade-stream.sh ab-ota-verify.sh; do
+		if [[ -e "$libexec_ab/$retired" ]]; then
+			echo "FAIL: retired ab/$retired still present (OTA is packages/cyber_ota)" >&2
+			missing=1
+		else
+			echo "OK:  retired ab/$retired absent"
 		fi
 	done
 
@@ -1230,10 +1238,10 @@ EOF
 	fi
 
 	echo ""
-	echo "--- A/B upgrade helpers (P2.4) ---"
+	echo "--- A/B upgrade helpers (P2.4 / P4.8) ---"
 	for f in \
 		"$target/usr/libexec/ab/ab-slot-lib.sh" \
-		"$target/usr/libexec/ab/ab-upgrade-apply.sh" \
+		"$target/usr/libexec/ab/ab-preflight.sh" \
 		"$target/usr/libexec/ab/ab-boot-confirm.sh" \
 		"$target/etc/systemd/system/ab-boot-confirm.service"; do
 		if [[ -e "$f" ]]; then
@@ -1243,41 +1251,55 @@ EOF
 			missing=1
 		fi
 	done
-	if [[ -e "$target/usr/libexec/hmi/ab-upgrade-app-only.sh" ]]; then
-		echo "FAIL: retired ab-upgrade-app-only.sh still present (use make push-app)" >&2
-		missing=1
-	else
-		echo "OK:  retired ab-upgrade-app-only.sh absent"
-	fi
+	for retired in \
+		"$target/usr/libexec/ab/ab-upgrade-apply.sh" \
+		"$target/usr/libexec/ab/ab-upgrade-stream.sh" \
+		"$target/usr/libexec/ab/ab-ota-verify.sh" \
+		"$target/usr/libexec/hmi/ab-upgrade-app-only.sh"; do
+		if [[ -e "$retired" ]]; then
+			echo "FAIL: retired ${retired#$target/} still present" >&2
+			missing=1
+		else
+			echo "OK:  retired ${retired#$target/} absent"
+		fi
+	done
 	if grep -q 'ab_current_root_dev' "$target/usr/libexec/ab/ab-slot-lib.sh" 2>/dev/null && \
 		grep -q '^AB_MISC_OFFSET=1048576$' "$target/usr/libexec/ab/ab-slot-lib.sh" 2>/dev/null && \
 		grep -q 'ab_slot_marker_valid' "$target/usr/libexec/ab/ab-slot-lib.sh" 2>/dev/null && \
-		grep -q 'LWS_HMI_AB_LIB' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -q 'ab_same_block_device' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -q 'metadata_active' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -q 'disagrees with mounted root' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null; then
-		echo "OK:  A/B marker uses safe misc offset; apply derives mounted root and refuses self-overwrite"
+		grep -q 'ab_same_block_device' "$target/usr/libexec/ab/ab-slot-lib.sh" 2>/dev/null && \
+		grep -q 'ab_refuse_userdata_wipe\|userdata' "$target/usr/libexec/ab/ab-slot-lib.sh" 2>/dev/null; then
+		echo "OK:  A/B slot-lib uses safe misc offset + mounted-root / userdata helpers"
 	else
-		echo "FAIL: A/B apply must protect the currently mounted root block device" >&2
+		echo "FAIL: ab-slot-lib missing A/B safety helpers" >&2
 		missing=1
 	fi
-	if grep -q 'userdata' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -qE 'refuse|must NOT|ab_refuse' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null; then
-		echo "OK:  ab-upgrade-apply mentions userdata safety"
+	if grep -q 'ab_current_root_letter' "$target/usr/libexec/ab/ab-preflight.sh" 2>/dev/null && \
+		grep -q 'fit_name=' "$target/usr/libexec/ab/ab-preflight.sh" 2>/dev/null; then
+		echo "OK:  ab-preflight.sh prints host KEY=VALUE preflight"
 	else
-		# Soft: apply sources ab-slot-lib refuse helper
-		if grep -q 'ab_refuse_userdata_wipe\|userdata' "$target/usr/libexec/ab/ab-slot-lib.sh" 2>/dev/null; then
-			echo "OK:  ab-slot-lib userdata refuse helper present"
-		else
-			echo "FAIL: A/B helpers missing userdata safety checks" >&2
-			missing=1
-		fi
+		echo "FAIL: ab-preflight.sh missing preflight contract" >&2
+		missing=1
 	fi
-	if grep -qE 'uboot|MiniLoader' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null && \
-		grep -qiE 'refusing|must not|never' "$target/usr/libexec/ab/ab-upgrade-apply.sh" 2>/dev/null; then
-		echo "OK:  ab-upgrade-apply refuses uboot writes"
+	if [[ -f "$target/etc/ota/ed25519.pub" ]]; then
+		echo "OK:  /etc/ota/ed25519.pub present"
 	else
-		echo "FAIL: ab-upgrade-apply must refuse uboot writes" >&2
+		echo "FAIL: missing /etc/ota/ed25519.pub (cloud OTA pubkey)" >&2
+		missing=1
+	fi
+	if [[ -e "$target/etc/ota/ed25519.pem" ]] || [[ -e "$target/etc/ota/ed25519.key" ]]; then
+		echo "FAIL: OTA private key must not be in rootfs under /etc/ota/" >&2
+		missing=1
+	else
+		echo "OK:  no OTA private key under /etc/ota/"
+	fi
+	# openssl CLI is Buildroot-installed (not in fs-overlay). When verifying a
+	# full target root (BR output), require it; overlay-only checks skip.
+	if [[ -x "$target/usr/bin/openssl" ]]; then
+		echo "OK:  /usr/bin/openssl present (OTA verify via cyber_ota)"
+	elif [[ -d "$target/usr/libexec/ab" && ! -e "$target/etc/os-release" ]]; then
+		echo "OK:  openssl CLI deferred (fs-overlay check; ensure BR2_PACKAGE_LIBOPENSSL_BIN in rootfs)"
+	else
+		echo "FAIL: missing /usr/bin/openssl (enable BR2_PACKAGE_LIBOPENSSL_BIN; dirclean rebuild libopenssl)" >&2
 		missing=1
 	fi
 	if grep -q 'enable ab-boot-confirm.service' \

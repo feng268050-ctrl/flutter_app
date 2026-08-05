@@ -771,7 +771,7 @@ run_upgrade_ota() {
 ============================================================
  RockUSB make upgrade — OTA-equivalent images (di)
  NOT factory flash (no uf / factory.img / uboot / GPT / misc)
- NOT product OTA (no zip / Ed25519 /userdata/ota staged apply)
+ NOT product/SSH staged OTA (no tar.gz+.sig / Ed25519 /userdata/ota apply)
 ============================================================
 EOF
 

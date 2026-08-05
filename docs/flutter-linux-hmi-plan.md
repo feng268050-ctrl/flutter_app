@@ -93,20 +93,20 @@ P4  业务迁移（子阶段见 §1.2）🔄
     ├─ packages/cyber_pm — 可复用子进程监护（MediaMTX 已用；AI 复用）
     ├─ 进行中：P4.2 网络与状态栏、P4.6 其余业务页；云服务 / `:5580`（OpenSpec `align-cloud-local-server`）已落地非 OTA 切片；AI Vision / process-video AI SSE（`ai-vision-and-process-video-ai`）已落地最小可交付；P4.1 / P4.3～P4.5 / P4.7 未开始
     ├─ **P4.8 统一整机 OTA** 🔲（一级；无 App-only / 二级产品通道）
-    │   ├─ OpenSpec：`openspec/changes/unified-ota-cyber-ota/`（规划；实现前不落地）
+    │   ├─ OpenSpec：`openspec/changes/unified-ota-cyber-ota/`（实现中）
     │   ├─ 发布物 = **`make ota-package`**：`tar.gz`（inactive FIT + `rootfs.img`，可选 `oem.img` + manifest）
-    │   │   + 旁路 **Ed25519** `*.tar.gz.sig`（供**云 / publish**；**不含** uboot；不对包内各 img 单独签名）
+    │   │   + 旁路 **Ed25519** `*.tar.gz.sig`（供**云 / publish / SSH `make upgrade`**；**不含** uboot；不对包内各 img 单独签名）
     │   ├─ `/opt/hmi`（HMI）随 **rootfs** 一起更新；不规划产品侧「只推 App」
-    │   ├─ **`packages/cyber_ota`**：manifest、包下载/上传、解压、写非活动分区、进度；**仅云路径整包验签**
-    │   ├─ **统一 staged 管线**（云与 `make upgrade` 同源落盘形状；信任分流）：
+    │   ├─ **`packages/cyber_ota`**：manifest、包下载/上传、解压、写非活动分区、进度；**云与主机 SSH 均整包验签**
+    │   ├─ **统一 staged 管线**（云与 `make upgrade` SSH 同源落盘形状；均验签）：
     │   │   · 云：下载 `tar.gz`+`.sig` → **Ed25519 验整包** → 解压 → 写非活动分区 → try-boot
-    │   │   · `make upgrade`：主机上传 `tar.gz`（**不验签**）→ 解压 → 写非活动分区 → try-boot
-    │   ├─ **安全收工 → 直达专用升级页**（下载/云验签/解压/烧录）；升级页无激光作业入口
-    │   ├─ 签名在 **`make ota-package`**（给云/publish）；`build-*` 只产出 img；主机 upgrade 不依赖 `.sig`
+    │   │   · `make upgrade`（USB-SSH/SSH）：上传 `tar.gz`+`.sig`（`UPGRADE_PACKAGE` 默认同目录 `<archive>.sig`）→ 验签 → 解压 → 写非活动分区 → try-boot
+    │   ├─ **安全收工 → 直达专用升级页**（下载/验签/解压/烧录）；升级页无激光作业入口
+    │   ├─ 签名在 **`make ota-package`**（需 `OTA_SIGNING_KEY` / `make ota-release-keys`）；`build-*` 只产出 img
     │   ├─ **不**再单独做逐 img `.sig`；云 `sha512` 不能替代 Ed25519 写盘授权
     │   ├─ 私钥仅发布机/HSM；设备公钥（如 `/etc/ota/ed25519.pub`）；manifest 非信任根
-    │   ├─ `make push-app` 仍为开发热路径；**`make upgrade` 纳入 staged，但免签**（开发者路径）
-    │   └─ 另见 `openspec/changes/upgrade-package-env/`：`UPGRADE_PACKAGE=` 现成 tarball
+    │   ├─ `make push-app` 仍为开发热路径；**SSH `make upgrade` 纳入 staged 且验签**；RockUSB `di` / `make flash` 仍免签
+    │   └─ 另见 `openspec/changes/upgrade-package-env/`：`UPGRADE_PACKAGE=` 现成 tarball + 同目录 `.sig`
     └─ 依赖 CyberUI（优化中）+ HAL（设置/硬件页）
 
 P5.0  Android 兼容 🔲

@@ -26,6 +26,10 @@ overlay/board/rockchip/rk3566_rk3568/rootfs-overlay/opt/hmi/
 # Local env (see .env.example)
 .env
 
+# OTA signing private keys (pubkey lives in overlay /etc/ota/)
+/keys/ota/*.pem
+/keys/ota/ed25519.pem
+
 # Editor / IDE
 .DS_Store
 .idea/

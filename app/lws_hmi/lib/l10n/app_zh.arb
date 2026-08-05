@@ -538,6 +538,40 @@
   "okText": "OK",
   "onLabel": "开启",
   "otaCheckUnavailable": "当前版本暂不支持软件更新检查。",
+  "otaCheckFailed": "无法检查更新，请确认网络和云服务设置。",
+  "otaSessionActive": "系统升级正在进行中。",
+  "otaAlreadyUpToDate": "系统版本 {version} 已是最新。",
+  "@otaAlreadyUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "otaUpdateAvailableTitle": "发现新版本",
+  "otaUpdateAvailableMessage": "版本 {current} → {available}，是否立即安装？",
+  "@otaUpdateAvailableMessage": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      }
+    }
+  },
+  "systemUpgradeTitle": "系统升级",
+  "otaUpgradeStatusVerifying": "正在验证升级包…",
+  "otaUpgradeStatusExtracting": "正在解压升级包…",
+  "otaUpgradeStatusWriting": "正在写入固件…",
+  "otaUpgradeStatusWritingRootfs": "正在写入 rootfs…",
+  "otaUpgradeStatusWritingKernel": "正在写入内核…",
+  "otaUpgradeStatusWritingOem": "正在写入 oem…",
+  "otaUpgradeStatusBackingUpBoot": "正在备份 boot…",
+  "otaUpgradeStatusArming": "正在准备重启…",
+  "otaUpgradeStatusComplete": "升级完成",
+  "otaUpgradeStatusFailed": "升级失败",
+  "otaUpgradeRebootHint": "设备即将重启以完成升级。",
   "otaUpgradeStatusApk": "正在安装应用",
   "otaUpgradeStatusDownloading": "正在下载升级包",
   "otaUpgradeStatusFirmware": "正在升级控制板固件 ({percent}%)",

@@ -58,6 +58,14 @@ final class DeviceWsDispatcher {
   /// After forced disconnect (UI notice).
   Future<void> Function(String reason)? onForcedDisconnect;
 
+  /// OTA manifest check (`command.check_update`). Returns ack `data` map.
+  Future<Map<String, Object?>> Function(DeviceWsEnvelope envelope)?
+      onOtaCheckUpdate;
+
+  /// OTA apply start (`command.update_system`). Returns ack `data` map.
+  Future<Map<String, Object?>> Function(DeviceWsEnvelope envelope)?
+      onOtaUpdateSystem;
+
   Future<void> handle(DeviceWsEnvelope envelope) async {
     debugPrint(
       'device-ws: recv type=${envelope.type} id=${envelope.id}',
@@ -158,44 +166,58 @@ final class DeviceWsDispatcher {
   }
 
   Future<void> _handleOta(DeviceWsEnvelope envelope) async {
-    lwsTrace('device-ws: OTA unsupported type=${envelope.type}');
     switch (envelope.type) {
       case 'command.check_update':
+        final data = await onOtaCheckUpdate?.call(envelope) ??
+            _otaNotConfiguredAck();
         await ws.send(
           DeviceWsEnvelope.build(
             type: 'command.check_update_ack',
             payload: {
               'request_id': envelope.id,
-              'data': {
-                'ok': false,
-                'has_update': false,
-                'error_code': 'ota_not_supported',
-                'error_message': 'OTA apply not available on this HMI build',
-              },
+              'data': data,
             },
           ),
         );
       case 'command.update_system':
+        final data = await onOtaUpdateSystem?.call(envelope) ??
+            _otaNotConfiguredAck();
         await ws.send(
           DeviceWsEnvelope.build(
             type: 'command.update_system_ack',
             payload: {
               'request_id': envelope.id,
-              'data': {
-                'ok': false,
-                'started': false,
-                'error_code': 'ota_not_supported',
-                'error_message': 'OTA apply not available on this HMI build',
-              },
+              'data': data,
             },
           ),
         );
       case 'device.update_progress':
-        // Inbound progress is ignored; we never emit progress without a pipeline.
+        // Inbound progress is ignored; device emits while a session runs.
         break;
       default:
+        lwsTrace('device-ws: unhandled OTA type=${envelope.type}');
         break;
     }
+  }
+
+  static Map<String, Object?> _otaNotConfiguredAck() {
+    return {
+      'ok': false,
+      'has_update': false,
+      'started': false,
+      'error_code': 'manifest_unavailable',
+      'error_message': 'OTA manifest URL is not configured',
+    };
+  }
+
+  /// Emit OTA progress to cloud subscribers.
+  Future<void> sendUpdateProgress(Map<String, Object?> data) {
+    return ws.send(
+      DeviceWsEnvelope.build(
+        type: 'device.update_progress',
+        payload: {'data': data},
+      ),
+    );
   }
 
   Future<void> sendOnline() async {

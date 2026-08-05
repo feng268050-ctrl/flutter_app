@@ -3155,6 +3155,108 @@ abstract class AppLocalizations {
   /// **'Software update check is not available on this build.'**
   String get otaCheckUnavailable;
 
+  /// No description provided for @otaCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check for updates. Verify network and cloud settings.'**
+  String get otaCheckFailed;
+
+  /// No description provided for @otaSessionActive.
+  ///
+  /// In en, this message translates to:
+  /// **'A system upgrade is already in progress.'**
+  String get otaSessionActive;
+
+  /// No description provided for @otaAlreadyUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'System version {version} is up to date.'**
+  String otaAlreadyUpToDate(String version);
+
+  /// No description provided for @otaUpdateAvailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Available'**
+  String get otaUpdateAvailableTitle;
+
+  /// No description provided for @otaUpdateAvailableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {current} → {available}. Install now?'**
+  String otaUpdateAvailableMessage(String current, String available);
+
+  /// No description provided for @systemUpgradeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'System Upgrade'**
+  String get systemUpgradeTitle;
+
+  /// No description provided for @otaUpgradeStatusVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying package…'**
+  String get otaUpgradeStatusVerifying;
+
+  /// No description provided for @otaUpgradeStatusExtracting.
+  ///
+  /// In en, this message translates to:
+  /// **'Extracting package…'**
+  String get otaUpgradeStatusExtracting;
+
+  /// No description provided for @otaUpgradeStatusWriting.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing firmware…'**
+  String get otaUpgradeStatusWriting;
+
+  /// No description provided for @otaUpgradeStatusWritingRootfs.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing rootfs…'**
+  String get otaUpgradeStatusWritingRootfs;
+
+  /// No description provided for @otaUpgradeStatusWritingKernel.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing kernel…'**
+  String get otaUpgradeStatusWritingKernel;
+
+  /// No description provided for @otaUpgradeStatusWritingOem.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing oem…'**
+  String get otaUpgradeStatusWritingOem;
+
+  /// No description provided for @otaUpgradeStatusBackingUpBoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Backing up boot…'**
+  String get otaUpgradeStatusBackingUpBoot;
+
+  /// No description provided for @otaUpgradeStatusArming.
+  ///
+  /// In en, this message translates to:
+  /// **'Arming reboot…'**
+  String get otaUpgradeStatusArming;
+
+  /// No description provided for @otaUpgradeStatusComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade complete'**
+  String get otaUpgradeStatusComplete;
+
+  /// No description provided for @otaUpgradeStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade failed'**
+  String get otaUpgradeStatusFailed;
+
+  /// No description provided for @otaUpgradeRebootHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Device will reboot to apply the update.'**
+  String get otaUpgradeRebootHint;
+
   /// No description provided for @otaUpgradeStatusApk.
   ///
   /// In en, this message translates to:

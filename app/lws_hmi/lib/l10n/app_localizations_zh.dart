@@ -1617,6 +1617,61 @@ class AppLocalizationsZh extends AppLocalizations {
   String get otaCheckUnavailable => '当前版本暂不支持软件更新检查。';
 
   @override
+  String get otaCheckFailed => '无法检查更新，请确认网络和云服务设置。';
+
+  @override
+  String get otaSessionActive => '系统升级正在进行中。';
+
+  @override
+  String otaAlreadyUpToDate(String version) {
+    return '系统版本 $version 已是最新。';
+  }
+
+  @override
+  String get otaUpdateAvailableTitle => '发现新版本';
+
+  @override
+  String otaUpdateAvailableMessage(String current, String available) {
+    return '版本 $current → $available，是否立即安装？';
+  }
+
+  @override
+  String get systemUpgradeTitle => '系统升级';
+
+  @override
+  String get otaUpgradeStatusVerifying => '正在验证升级包…';
+
+  @override
+  String get otaUpgradeStatusExtracting => '正在解压升级包…';
+
+  @override
+  String get otaUpgradeStatusWriting => '正在写入固件…';
+
+  @override
+  String get otaUpgradeStatusWritingRootfs => '正在写入 rootfs…';
+
+  @override
+  String get otaUpgradeStatusWritingKernel => '正在写入内核…';
+
+  @override
+  String get otaUpgradeStatusWritingOem => '正在写入 oem…';
+
+  @override
+  String get otaUpgradeStatusBackingUpBoot => '正在备份 boot…';
+
+  @override
+  String get otaUpgradeStatusArming => '正在准备重启…';
+
+  @override
+  String get otaUpgradeStatusComplete => '升级完成';
+
+  @override
+  String get otaUpgradeStatusFailed => '升级失败';
+
+  @override
+  String get otaUpgradeRebootHint => '设备即将重启以完成升级。';
+
+  @override
   String get otaUpgradeStatusApk => '正在安装应用';
 
   @override
@@ -4224,6 +4279,61 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get otaCheckUnavailable => '當前版本暫不支持軟件更新檢查。';
+
+  @override
+  String get otaCheckFailed => '無法檢查更新，請確認網絡和雲服務設置。';
+
+  @override
+  String get otaSessionActive => '系統升級正在進行中。';
+
+  @override
+  String otaAlreadyUpToDate(String version) {
+    return '系統版本 $version 已是最新。';
+  }
+
+  @override
+  String get otaUpdateAvailableTitle => '發現新版本';
+
+  @override
+  String otaUpdateAvailableMessage(String current, String available) {
+    return '版本 $current → $available，是否立即安裝？';
+  }
+
+  @override
+  String get systemUpgradeTitle => '系統升級';
+
+  @override
+  String get otaUpgradeStatusVerifying => '正在驗證升級包…';
+
+  @override
+  String get otaUpgradeStatusExtracting => '正在解壓升級包…';
+
+  @override
+  String get otaUpgradeStatusWriting => '正在寫入固件…';
+
+  @override
+  String get otaUpgradeStatusWritingRootfs => '正在寫入 rootfs…';
+
+  @override
+  String get otaUpgradeStatusWritingKernel => '正在寫入內核…';
+
+  @override
+  String get otaUpgradeStatusWritingOem => '正在寫入 oem…';
+
+  @override
+  String get otaUpgradeStatusBackingUpBoot => '正在備份 boot…';
+
+  @override
+  String get otaUpgradeStatusArming => '正在準備重啓…';
+
+  @override
+  String get otaUpgradeStatusComplete => '升級完成';
+
+  @override
+  String get otaUpgradeStatusFailed => '升級失敗';
+
+  @override
+  String get otaUpgradeRebootHint => '設備即將重啓以完成升級。';
 
   @override
   String get otaUpgradeStatusApk => '正在安裝應用';

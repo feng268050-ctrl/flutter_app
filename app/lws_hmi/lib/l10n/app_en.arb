@@ -644,6 +644,40 @@
   "okText": "OK",
   "onLabel": "On",
   "otaCheckUnavailable": "Software update check is not available on this build.",
+  "otaCheckFailed": "Could not check for updates. Verify network and cloud settings.",
+  "otaSessionActive": "A system upgrade is already in progress.",
+  "otaAlreadyUpToDate": "System version {version} is up to date.",
+  "@otaAlreadyUpToDate": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "otaUpdateAvailableTitle": "Update Available",
+  "otaUpdateAvailableMessage": "Version {current} → {available}. Install now?",
+  "@otaUpdateAvailableMessage": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "available": {
+        "type": "String"
+      }
+    }
+  },
+  "systemUpgradeTitle": "System Upgrade",
+  "otaUpgradeStatusVerifying": "Verifying package…",
+  "otaUpgradeStatusExtracting": "Extracting package…",
+  "otaUpgradeStatusWriting": "Writing firmware…",
+  "otaUpgradeStatusWritingRootfs": "Writing rootfs…",
+  "otaUpgradeStatusWritingKernel": "Writing kernel…",
+  "otaUpgradeStatusWritingOem": "Writing oem…",
+  "otaUpgradeStatusBackingUpBoot": "Backing up boot…",
+  "otaUpgradeStatusArming": "Arming reboot…",
+  "otaUpgradeStatusComplete": "Upgrade complete",
+  "otaUpgradeStatusFailed": "Upgrade failed",
+  "otaUpgradeRebootHint": "Device will reboot to apply the update.",
   "otaUpgradeStatusApk": "Installing app…",
   "otaUpgradeStatusDownloading": "Downloading update…",
   "otaUpgradeStatusFirmware": "Updating control board firmware ({percent}%)",

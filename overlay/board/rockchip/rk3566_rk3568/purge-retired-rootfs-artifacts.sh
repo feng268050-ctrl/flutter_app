@@ -143,6 +143,9 @@ rm -f \
 	"$TARGET_DIR/usr/libexec/hmi/ab-upgrade-apply.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/ab-upgrade-stream.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/ab-boot-confirm.sh" \
+	"$TARGET_DIR/usr/libexec/ab/ab-upgrade-apply.sh" \
+	"$TARGET_DIR/usr/libexec/ab/ab-upgrade-stream.sh" \
+	"$TARGET_DIR/usr/libexec/ab/ab-ota-verify.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/oem-compose.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/ynh960-display-init.sh" \
 	"$TARGET_DIR/usr/libexec/hmi/weston-hmi-config.sh" \

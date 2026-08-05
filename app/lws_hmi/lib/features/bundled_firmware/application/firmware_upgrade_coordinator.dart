@@ -9,6 +9,9 @@ abstract final class FirmwareUpgradeCoordinator {
 
   static bool canStartFirmwareUpgrade() => !isBusy;
 
+  /// Control-board Modbus flash — blocked while whole-device OTA is active.
+  static bool canStartBundledFirmwareUpgrade() => canStartFirmwareUpgrade();
+
   /// Future OTA path: blocked only while bundled is active.
   static bool canStartOtaFirmwareTransfer() => !_bundledInProgress;
 

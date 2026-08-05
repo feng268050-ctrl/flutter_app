@@ -1684,6 +1684,62 @@ class AppLocalizationsEn extends AppLocalizations {
       'Software update check is not available on this build.';
 
   @override
+  String get otaCheckFailed =>
+      'Could not check for updates. Verify network and cloud settings.';
+
+  @override
+  String get otaSessionActive => 'A system upgrade is already in progress.';
+
+  @override
+  String otaAlreadyUpToDate(String version) {
+    return 'System version $version is up to date.';
+  }
+
+  @override
+  String get otaUpdateAvailableTitle => 'Update Available';
+
+  @override
+  String otaUpdateAvailableMessage(String current, String available) {
+    return 'Version $current → $available. Install now?';
+  }
+
+  @override
+  String get systemUpgradeTitle => 'System Upgrade';
+
+  @override
+  String get otaUpgradeStatusVerifying => 'Verifying package…';
+
+  @override
+  String get otaUpgradeStatusExtracting => 'Extracting package…';
+
+  @override
+  String get otaUpgradeStatusWriting => 'Writing firmware…';
+
+  @override
+  String get otaUpgradeStatusWritingRootfs => 'Writing rootfs…';
+
+  @override
+  String get otaUpgradeStatusWritingKernel => 'Writing kernel…';
+
+  @override
+  String get otaUpgradeStatusWritingOem => 'Writing oem…';
+
+  @override
+  String get otaUpgradeStatusBackingUpBoot => 'Backing up boot…';
+
+  @override
+  String get otaUpgradeStatusArming => 'Arming reboot…';
+
+  @override
+  String get otaUpgradeStatusComplete => 'Upgrade complete';
+
+  @override
+  String get otaUpgradeStatusFailed => 'Upgrade failed';
+
+  @override
+  String get otaUpgradeRebootHint => 'Device will reboot to apply the update.';
+
+  @override
   String get otaUpgradeStatusApk => 'Installing app…';
 
   @override

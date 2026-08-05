@@ -66,6 +66,10 @@ import 'package:lws_hmi/features/warn_alarm/infrastructure/sqlite_alarm_log_repo
 import 'package:lws_hmi/features/warn_alarm/application/warn_alarm_scope.dart';
 import 'package:lws_hmi/features/bundled_firmware/infrastructure/sync_firmware_command_watcher.dart';
 import 'package:lws_hmi/features/process_library/infrastructure/upgrade_process_library_command_watcher.dart';
+import 'package:lws_hmi/features/system_ota/application/system_ota_coordinator.dart';
+import 'package:lws_hmi/features/system_ota/infrastructure/ota_manifest_url.dart';
+import 'package:lws_hmi/features/system_ota/infrastructure/upgrade_ota_command_watcher.dart';
+import 'package:lws_hmi/features/system_ota/presentation/system_upgrade_page.dart';
 import 'package:lws_hmi/gpio/rgb_led_policy_driver.dart';
 import 'package:lws_hmi/l10n/app_locales.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
@@ -239,6 +243,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     processLibrary: _processLibrary,
   );
 
+  late final UpgradeOtaCommandWatcher _upgradeOtaCommandWatcher =
+      UpgradeOtaCommandWatcher();
+
   late final RgbLedPolicyDriver _rgbLedPolicy = RgbLedPolicyDriver(
     services: _services,
     warnAlarm: _warnAlarm,
@@ -309,8 +316,22 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       unawaited(_services.restorePersistedSettingsOnce());
       unawaited(_maybeRestoreRoute());
       _services.autoSleep.arm(backlight: _services.backlight);
+      SystemOtaCoordinator.instance.configure(
+        navigatorKey: _navKey,
+        services: _services,
+        manifestUrlResolver: () => OtaManifestUrl.resolve(
+          cloudSettings: _cloudSettingsStore,
+          pinnedApiBase: _cloudLocalRuntime.pinnedApiBase,
+        ),
+        progressSink: (progress) {
+          unawaited(
+            _cloudLocalRuntime.emitOtaProgress(progress.toJson()),
+          );
+        },
+      );
       _syncFirmwareCommandWatcher.start();
       _upgradeProcessLibraryCommandWatcher.start();
+      _upgradeOtaCommandWatcher.start();
       unawaited(_startCloudLocalRuntime());
       unawaited(_liveWeldStreamDetect.start());
       _jobRuntimeStatistics.resume();
@@ -470,6 +491,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
     unawaited(_warnAlarm.dispose());
     unawaited(_syncFirmwareCommandWatcher.dispose());
     unawaited(_upgradeProcessLibraryCommandWatcher.dispose());
+    unawaited(_upgradeOtaCommandWatcher.dispose());
     unawaited(_rgbLedPolicy.dispose());
     if (widget.miscSettingsStore == null) {
       _miscSettingsStore.dispose();
@@ -702,6 +724,8 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
                                           );
                                         case AppRoutes.demo:
                                           page = _demoPage();
+                                        case AppRoutes.systemUpgrade:
+                                          page = const SystemUpgradePage();
                                         case AppRoutes.home:
                                         default:
                                           page = const HomePage();

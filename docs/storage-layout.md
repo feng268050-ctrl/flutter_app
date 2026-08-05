@@ -47,7 +47,7 @@ Mount: kernel uses `root=PARTLABEL=rootfs_a` or `rootfs_b`. Prefer PARTLABEL ove
 | RKNN models | **`/userdata/models/`** | userdata (not rootfs) |
 | AI daemon workdir | **`/var/lib/hmi/ai/`** | durable App state |
 | AI control sockets | **`/run/hmi/ai/`** | tmpfs (`cmd.sock` / `evt.sock`) |
-| Online OTA download / staged apply | **`/userdata/ota/`** | userdata (not rootfs); not used for full images by `make upgrade` |
+| Online OTA / host upgrade staged apply | **`/userdata/ota/`** | userdata (not rootfs); cloud + `make upgrade` SSH both stage `tar.gz` here |
 | PR0 录像 / sqlite | `/userdata/…` | userdata |
 
 **`update.img` whole package** grows with rootfs; keep `rootfs.ext2` at **`600M`** (both stacks) so the 1 GiB GPT slot still has room for metadata and a few `push-app` iterations.
@@ -150,33 +150,35 @@ Notes:
 
 | Component | `make upgrade` (SSH) | `make upgrade` (RockUSB Loader/Maskrom) | Online OTA (P4.8) | `make flash` |
 |-----------|----------------------|------------------------------------------|-------------------|--------------|
-| Kernel FIT | **Stream** inactive letter’s FIT → `boot` (after `boot`→`boot_b` backup) | **`di`** `boot.img` + `boot_b.img` → `boot` + `boot_b` | Stage signed **`tar.gz`** under `/userdata/ota/`, **Ed25519 verify archive**, extract, then `dd` | Yes |
-| Rootfs | **Stream** → inactive `rootfs_*` | **`di`** same `rootfs.img` → **both** `rootfs_a` + `rootfs_b` | Same package verify → extract → `dd` | Yes |
-| oem (optional) | **Stream** when packaged | **`di`** when packaged | Same when packaged in archive | Yes |
+| Kernel FIT | Stage **`tar.gz`** under `/userdata/ota/`, extract, write inactive letter FIT (after `boot`→`boot_b` backup) — **no Ed25519** | **`di`** `boot.img` + `boot_b.img` → `boot` + `boot_b` | Stage **`tar.gz`** + **`.sig`**, **Ed25519 verify**, extract, then `dd` | Yes |
+| Rootfs | Same staged extract → inactive `rootfs_*` | **`di`** same `rootfs.img` → **both** `rootfs_a` + `rootfs_b` | Same after verify | Yes |
+| oem (optional) | Staged when packaged | **`di`** when packaged | Same when packaged in archive | Yes |
 | U-Boot / MiniLoader storage | **No** | **No** (Maskrom may `ul` MiniLoader into **RAM** only) | **No** | Yes |
 | GPT / `parameter` | **No** | **No** | **No** | Yes |
 | misc | **No** | **No** | **No** | Yes |
 | userdata / prefs | **Never wipe** | **Never wipe** | **Never wipe** | Factory reset |
-| Full images under `/userdata/ota/` | **No** (helpers/status only) | **N/A** (host `di`) | **Yes** (`tar.gz` + `.sig`, then extract) | N/A |
+| Full images under `/userdata/ota/` | **Yes** (`tar.gz` only; **no** `.sig` required) | **N/A** (host `di`) | **Yes** (`tar.gz` + `.sig`, then extract) | N/A |
 | `factory.img` / `uf` | **No** | **No** | **No** | **Yes** |
 
-- **P2.5 — paired A/B boot+rootfs**: **`make upgrade`** = SSH **stream-to-partition** when Linux is up, or RockUSB **`di`** of the OTA-equivalent image set when in Loader/Maskrom (`UPGRADE_TRANSPORT=auto|ssh|rockusb`). Host needs both FITs + APP rootfs built locally. **userdata preserved.** Dev-only; not product OTA and not a substitute for signature gates. For GPT / U-Boot / MiniLoader-on-storage / misc, use **`make flash`**. (**P4.8** will retire stream-as-default and share the staged package path below.)
-- **P4.8 — product OTA (single-level full firmware)**: download or host-upload **`make ota-package`** / `UPGRADE_PACKAGE` artifact → **`/userdata/ota/`** → (**cloud only:** **Ed25519-verify the complete `tar.gz`** via detached `*.tar.gz.sig`) → extract → **`ab-upgrade-apply.sh`** writes only the **inactive** letter; **userdata not wiped**. **Host `make upgrade` skips signature verification** (developer trust). Archive members = inactive FIT + `rootfs.img` (optional `oem.img` + orchestration manifest); **HMI (`/opt/hmi`) updates with rootfs**. Cloud channel `sha512` MUST NOT alone authorize writes. Device pubkey e.g. `/etc/ota/ed25519.pub`; private key only on publish host/HSM.
-- Staging layout (product OTA):
+- **P4.8 — unified staged OTA**: cloud download and host **`make upgrade`** share `/userdata/ota/` → Ed25519-verify → extract → write inactive letter, all orchestrated by **`packages/cyber_ota`**. Progress is `OtaSession.progress` only (UI + cloud WS); debug appends to `ota.log`. Host SSH path: ephemeral host HTTP serves `tar.gz`+`.sig`; device HMI downloads. Host preflight uses `/usr/libexec/ab/ab-preflight.sh`. Archive from **`make ota-package`** (or `UPGRADE_PACKAGE=`). **HMI (`/opt/hmi`) updates with rootfs**. Device pubkey `/etc/ota/ed25519.pub`. Retired board scripts: `ab-upgrade-apply.sh`, `ab-upgrade-stream.sh`, `ab-ota-verify.sh`. Boot confirm/rollback remains `ab-boot-confirm.sh`.
+- Staging layout:
 
 ```text
 /userdata/ota/
-  ota-package.tar.gz          # or documented basename
-  [ota-package.tar.gz.sig]    # required for cloud; not required for make upgrade
+  ota-package.tar.gz          # required for SSH upgrade + cloud
+  ota-package.tar.gz.sig      # required for SSH upgrade + cloud (RockUSB di unsigned)
+  ota.log                     # Dart OtaSession append-only debug log
+  apply.status                # running|ok|fail (Dart OtaApply)
   # after extract:
-  boot.img                    # inactive letter FIT as packaged
+  boot.img
+  boot_b.img
   rootfs.img
   [oem.img]
   [manifest.json]
 ```
 
-- **`make push-app`**: developer hot-swap of `/opt/hmi` over SSH — **not** product OTA.
-- **Full `update.img` via `make flash`**: factory / first GPT change / U-Boot / intentional **full reset**; not the day-to-day upgrade path after P2.5.
+- **`make push-app`**: developer hot-swap of `/opt/hmi` over SSH — **not** product OTA; remains outside the whole-device gate.
+- **Full `update.img` via `make flash`**: factory / first GPT change / U-Boot / intentional **full reset**; not the day-to-day upgrade path.
 
 ## Changing layout
 

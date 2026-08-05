@@ -7,7 +7,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/usb-ssh-common.sh"
 
 HOST_ADDR="${LWS_HMI_USB_HOST_ADDR:-192.168.55.2}"
-TARGET_ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
+TARGET_ADDR="${USB_SSH_ADDR:-192.168.55.1}"
 MASK="${LWS_HMI_USB_HOST_MASK:-24}"
 
 die() {

@@ -3,9 +3,8 @@
 #   Image (make build-kernel) + rootfs.img (make build-rootfs) + sim_virt oem.img
 # Does NOT build a separate virt userspace rootfs.
 #
-# Emulator rootfs is a *grown copy* of the device 600M image (default 1536M) so
-# debug-app / push-app have headroom. Device OTA artifact stays 600M.
-# Override: EMULATOR_ROOTFS_SIZE=2G make build-emulator
+# Emulator rootfs is a fixed-size grown *copy* of the device 600M image (1536M)
+# so debug-app / push-app have headroom. Device OTA artifact stays 600M.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,7 +13,8 @@ FW="$ROOT/output/firmware"
 # shellcheck source=app-select.sh
 source "$ROOT/scripts/app-select.sh"
 app_select_resolve
-EMU_ROOTFS_SIZE="${EMULATOR_ROOTFS_SIZE:-1536M}"
+# Fixed emulator-only size (not an operator knob — do not grow casually).
+EMU_ROOTFS_SIZE="1536M"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 log() { echo "build-emulator: $*"; }

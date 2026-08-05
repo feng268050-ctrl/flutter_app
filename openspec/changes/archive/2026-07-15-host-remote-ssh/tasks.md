@@ -8,7 +8,7 @@
 - [x] 2.1 Add `make connect` / `make disconnect` (positional IP and `IP=`), pass `IP` through `WITH_DOTENV`
 - [x] 2.2 Merge SSH registry rows into `make devices` (`flash-usb.sh`)
 - [x] 2.3 Update `push-app`, `shell`, `logs`, `reboot` to use shared selection (SSH + USB-SSH); keep `reboot-loader` USB-SSH/adb only
-- [x] 2.4 Update debug-app / custom-device adapters for `IP=` and SSH transport (including `debug-host-prepare` so IDE/`make debug-app` do not force USB ECM when `MODE=SSH`)
+- [x] 2.4 Update debug-app / custom-device adapters for `IP=` and SSH transport (including `prepare-debug-host` so IDE/`make debug-app` do not force USB ECM when `MODE=SSH`)
 
 ## 3. Host docs
 

@@ -20,7 +20,7 @@
 
 ## 4. Host write-identity and docs
 
-- [x] 4.1 Add `scripts/write-identity.sh` + Makefile `write-identity` (`BRAND=` `MODEL=` `PRODUCT_SN=` / `IDENTITY_SN=`; selection via `SN=`/`CHIPID=`/`IP=`; `FORCE=1` overwrite)
+- [x] 4.1 Add `scripts/write-identity.sh` + Makefile `write-identity` (`BRAND=` `MODEL=` `PRODUCT_SN=` / `IDENTITY_SN=`; selection via `SN=`/`CHIP_ID=`/`IP=`; `FORCE=1` overwrite)
 - [x] 4.2 Document factory order (flash → write-identity → verify), RockUSB `SN`/`RSN` SN-only caveat, and vendor geometry freeze in README / Makefile help / AGENTS.md rebuild table / `docs/storage-layout.md`
 - [x] 4.3 Emulator: clear failure on write-identity; read path keeps chip-ID / stub fallback
 

@@ -30,10 +30,10 @@ Usage: $0 {connect|disconnect|dismiss-target|list|--tsv|--select} [args]
   --select           Print: loc, iface (-), addr  (IP= or SN=)
 
 Env:
-  IP / LWS_HMI_IP              address for connect/disconnect/select
-  SN / LWS_HMI_SN              select among registered SSH devices (SERIAL= deprecated)
-  CHIPID / LWS_HMI_CHIPID      select by ChipID only
-  LWS_HMI_USB_SSH_USER/PASS    same credentials as USB-SSH (default root/rockchip)
+  IP=<addr>                  address for connect/disconnect/select
+  SN                         select among registered SSH devices (SERIAL= deprecated)
+  CHIP_ID                    select by ChipID only
+  USB_SSH_USER/PASS          same credentials as USB-SSH (default root/rockchip)
 EOF
 }
 
@@ -45,7 +45,7 @@ normalize_ip() {
 
 resolve_ip_arg() {
 	local arg="${1:-}"
-	local ip="${arg:-${IP:-${LWS_HMI_IP:-}}}"
+	local ip="${arg:-${IP:-}}"
 	ip="$(normalize_ip "$ip" 2>/dev/null || true)"
 	[[ -n "$ip" ]] || die "IP required (make connect <ip> or IP=<ip>; host:port OK for emulator)"
 	printf '%s\n' "$ip"
@@ -121,8 +121,8 @@ remote_ssh_opts() {
 
 fetch_identity_via_ssh() {
 	local addr="$1"
-	local user="${LWS_HMI_USB_SSH_USER:-root}"
-	local pass="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+	local user="${USB_SSH_USER:-root}"
+	local pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=()
 	local opt
 
@@ -161,8 +161,8 @@ list_ssh_devices() {
 cmd_connect() {
 	local ip serial user pass sn chip live
 	ip="$(resolve_ip_arg "${1:-}")"
-	user="${LWS_HMI_USB_SSH_USER:-root}"
-	pass="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+	user="${USB_SSH_USER:-root}"
+	pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=()
 	local opt
 
@@ -221,8 +221,8 @@ select_ssh_device() {
 	local row mode sn chip loc iface addr usb
 
 	sn_sel="$(device_select_sn)"
-	chip_sel="$(device_select_chipid)"
-	pick_ip="${IP:-${LWS_HMI_IP:-}}"
+	chip_sel="$(device_select_chip_id)"
+	pick_ip="${IP:-}"
 
 	while IFS="$SSH_FS" read -r mode sn chip loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
@@ -251,7 +251,7 @@ select_ssh_device() {
 			printf '%s\n' "$loc" "$iface" "$addr"
 			return 0
 		done
-		die "CHIPID=$chip_sel not found in SSH devices (make devices / make connect)"
+		die "CHIP_ID=$chip_sel not found in SSH devices (make devices / make connect)"
 	fi
 
 	if [[ -n "$sn_sel" && "$sn_sel" != "-" ]]; then

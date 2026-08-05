@@ -52,8 +52,8 @@ Constraints: ynh960 GPT is product-owned (`board/parameter-buildroot-fit.txt`); 
 
 ### D4 — Write path: SSH + on-board tool (primary)
 
-- `make write-identity BRAND=… MODEL=… SN=…` selects board like other SSH tools; prefer **`CHIPID=`** for selection so `SN=` is not overloaded (document: product assignment uses `SN=` only when not used as device selector—or require `PRODUCT_SN=` / pass SN as dedicated env; **decision:** use `BRAND=` `MODEL=` `PRODUCT_SN=` or `IDENTITY_SN=` for the value, and keep `SN=`/`CHIPID=` for device selection—avoid ambiguity).
-- **Clarified:** device selection = existing `SN=`/`CHIPID=`/`IP=`; identity payload = `BRAND=` `MODEL=` `PRODUCT_SN=` (alias `IDENTITY_SN=`).
+- `make write-identity BRAND=… MODEL=… SN=…` selects board like other SSH tools; prefer **`CHIP_ID=`** for selection so `SN=` is not overloaded (document: product assignment uses `SN=` only when not used as device selector—or require `PRODUCT_SN=` / pass SN as dedicated env; **decision:** use `BRAND=` `MODEL=` `PRODUCT_SN=` or `IDENTITY_SN=` for the value, and keep `SN=`/`CHIP_ID=` for device selection—avoid ambiguity).
+- **Clarified:** device selection = existing `SN=`/`CHIP_ID=`/`IP=`; identity payload = `BRAND=` `MODEL=` `PRODUCT_SN=` (alias `IDENTITY_SN=`).
 - On device: refuse overwrite of non-empty SN unless `FORCE=1`.
 - Document optional macOS RockUSB: `upgrade_tool SN` / `RSN` for SN-only Loader path; brand/model still need Linux path.
 

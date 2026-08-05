@@ -95,7 +95,7 @@ fi
 
 echo ""
 echo "--- port 22 ---"
-USB_SSH_ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
+USB_SSH_ADDR="${USB_SSH_ADDR:-192.168.55.1}"
 lan_debug_on=0
 if systemctl is-active --quiet ssh-debug-lan.service 2>/dev/null; then
 	lan_debug_on=1

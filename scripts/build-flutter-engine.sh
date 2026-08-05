@@ -55,7 +55,7 @@ ERROR: flutter-engine source tarball missing:
 Download first:
   make fetch-flutter-engine
 
-Or from team NAS cache (set LWS_HMI_CACHE_ROOT / LWS_HMI_CACHE_URL in .env).
+Or from team NAS cache (set NAS_CACHE_ROOT in .env).
 EOF
   exit 1
 fi

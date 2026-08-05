@@ -23,7 +23,7 @@
 - [x] 4.2 Wire `clickSoundEnabled` (default true) into `CyberCard` / `CyberButton` (and Home quick-action taps) to call `playClick()` on activate
 - [x] 4.3 App bootstrap: register Linux/asset click backend (short clip; async; must not block UI); document that media volume remains `cyber_hal` / Settings
 - [x] 4.4 Device smoke: hear click on Home quick-action tap after `make build-app` / `make push-app` (or document skip if audio path unavailable)
-  - **Skip (host):** `make build-app` OK; `make push-app` blocked — USB-SSH iface needs `make usb-ssh-setup`. After setup: push, tap Home quick action, confirm click SFX.
+  - **Skip (host):** `make build-app` OK; `make push-app` blocked — USB-SSH iface needs `make setup-usb-ssh`. After setup: push, tap Home quick action, confirm click SFX.
 
 ## 5. App integration
 

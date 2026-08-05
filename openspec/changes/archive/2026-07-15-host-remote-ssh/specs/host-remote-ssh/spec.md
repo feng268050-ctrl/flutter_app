@@ -2,7 +2,7 @@
 
 ### Requirement: make connect registers a remote SSH device
 
-The repository SHALL provide **`make connect`** that registers a reachable remote SSH board by IP. The IP SHALL be accepted as a Make goal argument (`make connect <ip>`) or via **`IP=`** / **`LWS_HMI_IP=`**. On success the host SHALL persist the registration and verify SSH login using the same credentials as USB-SSH (`root` / password via `sshpass`, overridable by existing USB-SSH env vars). The command SHALL fetch the board serial when possible and store it with the IP.
+The repository SHALL provide **`make connect`** that registers a reachable remote SSH board by IP. The IP SHALL be accepted as a Make goal argument (`make connect <ip>`) or via **`IP=`**. On success the host SHALL persist the registration and verify SSH login using the same credentials as USB-SSH (`root` / password via `sshpass`, overridable by existing USB-SSH env vars). The command SHALL fetch the board serial when possible and store it with the IP.
 
 #### Scenario: Connect by positional IP
 
@@ -16,7 +16,7 @@ The repository SHALL provide **`make connect`** that registers a reachable remot
 
 ### Requirement: make disconnect removes a registered SSH device
 
-The repository SHALL provide **`make disconnect`** that removes a registered IP from the host SSH device registry. The IP SHALL be accepted as a Make goal argument or via **`IP=`** / **`LWS_HMI_IP=`**. Disconnect SHALL NOT require the board to be online.
+The repository SHALL provide **`make disconnect`** that removes a registered IP from the host SSH device registry. The IP SHALL be accepted as a Make goal argument or via **`IP=`**. Disconnect SHALL NOT require the board to be online.
 
 #### Scenario: Disconnect registered IP
 
@@ -34,7 +34,7 @@ The repository SHALL provide **`make disconnect`** that removes a registered IP 
 
 ### Requirement: IP selects SSH mode only
 
-When **`IP=`** or **`LWS_HMI_IP=`** is set, host SSH interactive commands (`push-app`, `debug-app`, `shell`, `logs`, `reboot`) SHALL select the registered **`MODE=SSH`** device whose address matches and SHALL NOT select a **`USB-SSH`** row even if that row is present.
+When **`IP=`** is set, host SSH interactive commands (`push-app`, `debug-app`, `shell`, `logs`, `reboot`) SHALL select the registered **`MODE=SSH`** device whose address matches and SHALL NOT select a **`USB-SSH`** row even if that row is present.
 
 #### Scenario: IP ignores USB-SSH
 

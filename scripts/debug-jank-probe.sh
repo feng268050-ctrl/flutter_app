@@ -17,9 +17,9 @@ DURATION_S="${2:-40}"
 INTERVAL_MS="${3:-200}"
 
 IFACE="${IFACE:-en12}"
-ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
-USER_="${LWS_HMI_USB_SSH_USER:-root}"
-PASS="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+ADDR="${USB_SSH_ADDR:-192.168.55.1}"
+USER_="${USB_SSH_USER:-root}"
+PASS="${USB_SSH_PASS:-rockchip}"
 LOGFILE="/Users/ayon/Workspace/lws-hmi/.cursor/debug-8fb78d.log"
 
 SSH() {
@@ -34,7 +34,7 @@ SSH() {
 
 echo "[jank-probe] checking device reachability ($USER_@$ADDR via $IFACE)..." >&2
 if ! SSH 'echo ok' >/dev/null 2>&1; then
-  echo "[jank-probe] ERROR: board unreachable. Re-plug USB, run 'make usb-ssh-setup', then retry." >&2
+  echo "[jank-probe] ERROR: board unreachable. Re-plug USB, run 'make setup-usb-ssh', then retry." >&2
   exit 1
 fi
 

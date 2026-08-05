@@ -10,9 +10,9 @@ set -u
 RUN_ID="${1:-pacing1}"
 DURATION_S="${2:-25}"
 IFACE="${IFACE:-en12}"
-ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
-USER_="${LWS_HMI_USB_SSH_USER:-root}"
-PASS="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+ADDR="${USB_SSH_ADDR:-192.168.55.1}"
+USER_="${USB_SSH_USER:-root}"
+PASS="${USB_SSH_PASS:-rockchip}"
 LOGFILE="/Users/ayon/Workspace/lws-hmi/.cursor/debug-8fb78d.log"
 
 SSH() {
@@ -26,7 +26,7 @@ SSH() {
 
 echo "[frame-pacing] checking device ($USER_@$ADDR via $IFACE)..." >&2
 if ! SSH 'echo ok' >/dev/null 2>&1; then
-  echo "[frame-pacing] ERROR: board unreachable. Re-plug USB, 'make usb-ssh-setup', retry." >&2
+  echo "[frame-pacing] ERROR: board unreachable. Re-plug USB, 'make setup-usb-ssh', retry." >&2
   exit 1
 fi
 echo "[frame-pacing] sampling ${DURATION_S}s. >>> REPRODUCE THE JANK NOW (animate continuously) <<<" >&2

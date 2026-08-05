@@ -69,7 +69,7 @@ An optional kernel fragment `ynh960-usb-gadget.config` already enables **ECM + F
 
 **Choice:** Read stable serial from **Device Tree `serial-number`** or Rockchip SoC ID; set gadget string **`iSerial`**; host correlates **`iSerial` ↔ USB topology ↔ netdev** via sysfs (Linux) / **ioreg** (macOS).
 
-**Rationale:** Same mental model as **`adb devices`** and existing **`make flash SERIAL=`**; reuse env var **`SERIAL`** / **`LWS_HMI_SERIAL`**.
+**Rationale:** Same mental model as **`adb devices`** and existing **`make flash SERIAL=`**; reuse env var **`SERIAL`** / **`SERIAL`**.
 
 ### 5. sshd posture: password auth, usb0-only, not enabled at boot
 

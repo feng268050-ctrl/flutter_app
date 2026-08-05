@@ -19,7 +19,7 @@
 #     STOP_SERVICES=1 scripts/measure-ip-camera-rtsp-ssh.sh 12
 #
 # Env:
-#   SN / CHIPID / IP     device select (same as make push-app)
+#   SN / CHIP_ID / IP     device select (same as make push-app)
 #   CAMERA_IP            default 192.168.1.100
 #   STREAMS              default "PR1"
 #   TRANSPORTS           default "udp"

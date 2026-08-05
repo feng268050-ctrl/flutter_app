@@ -61,21 +61,21 @@ For **`MODE=RS485`** and **`MODE=RS232`**, the host script SHALL launch **`scrip
 
 ### Requirement: Optional log file for hex-console modes
 
-When MODE is **`RS485`** or **`RS232`**, the host serial console SHALL allow writing session lines to a host file by setting **`LOG`** to a filesystem path. When set, the hex console MUST append or overwrite that path according to **`LOG_APPEND`**. The interactive session MUST remain active. When MODE is **`TTL`** and a log path env is set, the script MUST fail clearly (TTL logging is out of scope) rather than silently ignoring the request.
+When MODE is **`RS485`** or **`RS232`**, the host serial console SHALL allow writing session lines to a host file by setting **`LOG_FILE`** to a filesystem path. When set, the hex console MUST append or overwrite that path according to **`LOG_APPEND`**. The interactive session MUST remain active. When MODE is **`TTL`** and a log path env is set, the script MUST fail clearly (TTL logging is out of scope) rather than silently ignoring the request.
 
 #### Scenario: Log file on RS485/RS232
 
-- **WHEN** the operator runs `MODE=RS485 LOG=/tmp/uart.log make serial-console` with a usable port
+- **WHEN** the operator runs `MODE=RS485 LOG_FILE=/tmp/uart.log make serial-console` with a usable port
 - **THEN** session lines are written to `/tmp/uart.log` and the interactive hex console continues
 
 #### Scenario: No log by default
 
-- **WHEN** the operator runs `MODE=RS485 make serial-console` without `LOG`
+- **WHEN** the operator runs `MODE=RS485 make serial-console` without `LOG_FILE`
 - **THEN** the script MUST NOT require a log file and MUST still provide interactive RX/TX via the hex console
 
 #### Scenario: Log env rejected in TTL mode
 
-- **WHEN** the operator runs `MODE=TTL LOG=/tmp/uart.log make serial-console` (or default MODE with `LOG` set)
+- **WHEN** the operator runs `MODE=TTL LOG_FILE=/tmp/uart.log make serial-console` (or default MODE with `LOG_FILE` set)
 - **THEN** the script exits non-zero with a message that file logging requires `MODE=RS485` or `MODE=RS232`
 
 ### Requirement: Port discovery and documentation

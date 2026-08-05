@@ -23,7 +23,7 @@ When USB-SSH device(s) are present and **`sshpass`** is not installed, the comma
 
 ### Requirement: SERIAL selects target for push-app
 
-When more than one deployable Linux target is available (USB-SSH and/or registered SSH), **`make push-app`** SHALL require **`SERIAL=`** (or **`LWS_HMI_SERIAL=`**) matching the board serial, or **`IP=`** / **`LWS_HMI_IP=`** matching a registered **`MODE=SSH`** address. **`IP=`** SHALL NOT select USB-SSH devices. Multi-device selection remains consistent with `scripts/flash-usb.sh` SERIAL ergonomics for USB-SSH.
+When more than one deployable Linux target is available (USB-SSH and/or registered SSH), **`make push-app`** SHALL require **`SERIAL=`** matching the board serial, or **`IP=`** matching a registered **`MODE=SSH`** address. **`IP=`** SHALL NOT select USB-SSH devices. Multi-device selection remains consistent with `scripts/flash-usb.sh` SERIAL ergonomics for USB-SSH.
 
 #### Scenario: Multiple devices without SERIAL
 

@@ -67,7 +67,7 @@ do_build() {
   fi
   echo "build-umtprd: CC=$cc"
   make -C "$BUILD_DIR" clean >/dev/null 2>&1 || true
-  make -C "$BUILD_DIR" -j"${BUILD_JOBS:-4}" CC="$cc" CFLAGS="-O2 -Wall -I./inc" LDFLAGS="-static -lpthread -lrt"
+  make -C "$BUILD_DIR" -j"${BUILD_JOBS:-8}" CC="$cc" CFLAGS="-O2 -Wall -I./inc" LDFLAGS="-static -lpthread -lrt"
   [[ -x "$BUILD_DIR/umtprd" ]] || {
     echo "ERROR: umtprd binary missing after build" >&2
     exit 1

@@ -21,14 +21,14 @@ fi
 
 if usb_ssh_session_is_remote; then
 	if is_emulator_ssh_endpoint "$TARGET_ADDR"; then
-		echo "debug-host-prepare: EMU → $TARGET_USER@$TARGET_ADDR (no USB ECM setup)"
+		echo "prepare-debug-host: EMU → $TARGET_USER@$TARGET_ADDR (no USB ECM setup)"
 	else
-		echo "debug-host-prepare: registered SSH → $TARGET_USER@$TARGET_ADDR (no USB ECM setup)"
+		echo "prepare-debug-host: registered SSH → $TARGET_USER@$TARGET_ADDR (no USB ECM setup)"
 	fi
 	usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "${WAIT_SEC:-15}"
 	exit 0
 fi
 
-echo "debug-host-prepare: USB-SSH → iface=$IFACE addr=$TARGET_ADDR"
+echo "prepare-debug-host: USB-SSH → iface=$IFACE addr=$TARGET_ADDR"
 # Ensure host ECM address; may prompt sudo on macOS.
 bash "$ROOT/scripts/usb-ssh-host-setup.sh"

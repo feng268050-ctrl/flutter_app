@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/usb-ssh-common.sh
 source "$ROOT/scripts/usb-ssh-common.sh"
 
-USB_SSH_ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
+USB_SSH_ADDR="${USB_SSH_ADDR:-192.168.55.1}"
 USB_SSH_MODE="USB-SSH"
 USB_MTP_MODE="USB-MTP"
 USB_SSH_FS=$'\t'
@@ -43,7 +43,7 @@ ensure_host_addr_on_iface() {
 fetch_board_identity_via_ssh() {
 	local iface="$1"
 	local addr="$USB_SSH_ADDR"
-	local pass="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+	local pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=(
 		-o ConnectTimeout=3
 		-o StrictHostKeyChecking=no
@@ -418,7 +418,7 @@ network_reachable_usb_ssh() {
 		;;
 	esac
 	[[ -n "$iface" ]] || return 1
-	pass="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+	pass="${USB_SSH_PASS:-rockchip}"
 	if command -v sshpass >/dev/null 2>&1; then
 		local -a ssh_opts=(
 			-o ConnectTimeout=2
@@ -466,8 +466,8 @@ select_usb_ssh_device() {
 	local sn_sel chip_sel pick_iface
 	local -a rows=() row mode sn chip loc iface addr usb pair
 	sn_sel="$(device_select_sn)"
-	chip_sel="$(device_select_chipid)"
-	pick_iface="${IFACE:-${LWS_HMI_USB_IFACE:-}}"
+	chip_sel="$(device_select_chip_id)"
+	pick_iface="${IFACE:-}"
 	while IFS="$USB_SSH_FS" read -r mode sn chip loc iface addr usb; do
 		[[ -n "$mode" ]] || continue
 		[[ "$mode" == "$USB_SSH_MODE" ]] || continue
@@ -506,7 +506,7 @@ select_usb_ssh_device() {
 				fi
 			fi
 		done
-		die "CHIPID=$chip_sel not found in USB-SSH devices (make devices)"
+		die "CHIP_ID=$chip_sel not found in USB-SSH devices (make devices)"
 	fi
 
 	if [[ -n "$sn_sel" && "$sn_sel" != "-" ]]; then
@@ -546,7 +546,7 @@ case "${1:-}" in
 	;;
 --select)
 	# When SN= is set, host USB iSerial is often "-" (macOS RNDIS); enrich via SSH like make devices.
-	if [[ -z "$(device_select_sn)$(device_select_chipid)" ]]; then
+	if [[ -z "$(device_select_sn)$(device_select_chip_id)" ]]; then
 		USB_SSH_SKIP_ENRICH=1
 	fi
 	select_usb_ssh_device

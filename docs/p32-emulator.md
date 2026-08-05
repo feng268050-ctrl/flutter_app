@@ -84,7 +84,7 @@ Extra QEMU flags only: `EMULATOR_QEMU_EXTRA=…`.
 | Path | Source |
 |------|--------|
 | `output/firmware/emulator/Image` | Same build as FIT (`make build-kernel`); includes `emulator-virtio.config` (virtio for QEMU — not a ynh960 board feature) |
-| `output/firmware/emulator/rootfs.img` | Grown **copy** of `output/firmware/rootfs.img` (default **1536M**, `EMULATOR_ROOTFS_SIZE=`) — device OTA stays 600M; emulator needs headroom for `debug-app` (no userdata partition) |
+| `output/firmware/emulator/rootfs.img` | Grown **copy** of device `rootfs.img` to **1536M** (fixed; not an env override) — device OTA stays 600M; emulator needs headroom for `debug-app` (no userdata partition) |
 | `output/firmware/emulator/oem.img` | `oem/out/sim_virt/oem.img` |
 | `output/firmware/boot.img` | Device FIT (unchanged) |
 

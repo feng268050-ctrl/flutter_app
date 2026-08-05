@@ -128,7 +128,7 @@ switch ($Action) {
 				"mask=$mask"
 			) -Wait -PassThru -NoNewWindow
 			if ($p.ExitCode -eq 0) { exit 0 }
-			Write-Error ("Failed to set {0} on '{1}'. Run Git Bash as Administrator, or: make usb-ssh-setup. Detail: {2}" -f $HostAddress, $Alias, $_)
+			Write-Error ("Failed to set {0} on '{1}'. Run Git Bash as Administrator, or: make setup-usb-ssh. Detail: {2}" -f $HostAddress, $Alias, $_)
 			exit 1
 		}
 	}

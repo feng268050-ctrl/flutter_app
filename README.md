@@ -22,7 +22,7 @@ make check-linux-sdk
 ```
 
 See [`docs/linux-sdk-vendor-import.md`](docs/linux-sdk-vendor-import.md). After trim on macOS, refresh the Docker volume (`make docker-volume-init` or `make docker-volume-sync`) so deleted vendor trees are not retained.
-- Host Flutter SDK at repo-root `flutter-sdk/` (gitignored; run `make fetch-flutter-sdk`; override with `FLUTTER_SDK` in `.env`)
+- Host Flutter SDK at repo-root `flutter-sdk/` (gitignored; run `make fetch-flutter-sdk`; override install path with `DEST=`; builds locate it via `FLUTTER_SDK` in `.env`)
 - **Git LFS is required:** install it before cloning when possible (`brew install git-lfs` on macOS or `sudo apt install git-lfs` on Ubuntu), then run `git lfs install` and `git lfs pull` inside the repository
 - **Linux:** Ubuntu 22.04+ on ext4; Rockchip build deps (see `docker/Dockerfile` package list)
 - **macOS:** Docker Desktop (Apple Silicon: enable Rosetta for `linux/amd64`)
@@ -64,7 +64,9 @@ make flash
 
 ## Make commands
 
-Run `make help` for the full target list. Stages below are **one command per line** — run in order.
+**Per-target reference** (怎么用 / 何时用 / 环境变量与参数): [`docs/make-commands.md`](docs/make-commands.md).
+
+Run `make help` for the short target list. Workflow stages below are **one command per line** — run in order.
 
 ### Setup (once per machine)
 
@@ -226,7 +228,7 @@ make emulator-stop
 make emulator
 ```
 
-`make build-emulator` copies the 600M device `rootfs.img` and grows the **emulator-only** copy to **1536M** (`EMULATOR_ROOTFS_SIZE=`) so `debug-app` / `push-app` have headroom (guest has no userdata partition).
+`make build-emulator` copies the 600M device `rootfs.img` and grows the **emulator-only** copy to **1536M** so `debug-app` / `push-app` have headroom (guest has no userdata partition).
 
 Useful once the guest is up:
 
@@ -381,7 +383,7 @@ After one firmware flash with USB plug-ssh support:
 
 ```bash
 make shell                      # interactive root shell; SN=... when multiple boards
-make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL=1
+make logs                       # live journal; optional UNIT= TAG= GREP= PRIORITY= KERNEL_ONLY=1
 make prepare-app-assets         # optional host-only: prune process-library + firmware → assets/.generated/
 make build-app                  # *_hmi AOT → overlay /opt/hmi; APP=factory_test → /opt/factory_test
 make push-app                   # SN=... when multiple boards; hot-swap selected APP
@@ -397,7 +399,7 @@ make upgrade-process-library    # push process-library for device model; force i
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/product.ini (multi-key OK); restarts hmi
 # brand / model / sn → Vendor Storage: make write-identity (not set-prop / del-prop / OEM seed)
-make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # CHIPID=… FORCE=1 to overwrite SN
+make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # CHIP_ID=… FORCE=1 to overwrite SN
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
@@ -406,7 +408,7 @@ make del-prop CAMERA_IP         # remove one tunable key; restarts hmi if change
 make upgrade                    # A/B stream inactive FIT+rootfs (board already on P2.4 GPT)
 ```
 
-Device selection: use **`SN=`** / **`LWS_HMI_SN=`** (matches `make devices` **SN** or **ChipID**). **`CHIPID=`** matches ChipID only. Put `SN=` / `IP=` / **`OEM_ONLY=`** / **`OEM_IMG=`** in `.env` for IDE / daily use.
+Device selection: use **`SN=`** (matches `make devices` **SN** or **ChipID**). **`CHIP_ID=`** matches ChipID only. Put `SN=` / `IP=` / **`OEM_ONLY=`** / **`OEM_IMG=`** in `.env` for IDE / daily use.
 
 Alarm history persists in SQLite **`/var/lib/hmi/alarm-logs.db`** (→ `/userdata/hmi/alarm-logs.db`, table `alarm_logs`) — kept across `push-app` / `make upgrade`.
 
@@ -425,7 +427,7 @@ IP=192.168.1.50 make upgrade    # stream-to-partition; not RockUSB / not online 
 make disconnect 192.168.1.50
 ```
 
-`IP=` selects **registered SSH** or **EMU** (never USB-SSH). `SN=` selects by **SN** or **ChipID** (`make devices` columns: MODE / SN / ChipID / …); **`SN=SIM-EMU`** / **`SN=EMU`** always select the QEMU guest even when the table SN is chip-ID fallback. `CHIPID=` selects by ChipID only (multi-board). USB-SSH/SSH/EMU **SN** prefers Vendor Storage SN, else chip ID; **ChipID** is always the chip serial. Android adb / RockUSB loader rows put the adb/SerialNo in both SN and ChipID. `make reboot` works over SSH/EMU; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. **QEMU** (`make emulator`) appears as ephemeral **MODE=EMU** (`IP=127.0.0.1:2222`) when SSH hostfwd answers — usable with `make shell` / `make push-app` / `make debug-app`, not `make upgrade` / `make write-identity`. Product identity (`brand` / `model` / `sn`) lives in Rockchip **Vendor Storage** — provision with **`make write-identity BRAND=… MODEL=… PRODUCT_SN=…`** after flash (geometry frozen; `factory.img` must not package vendor payloads). Optional macOS RockUSB `upgrade_tool SN` / `RSN` is **SN-only**; brand/model still need `write-identity`. `make set-prop` / `del-prop` refuse identity keys.
+`IP=` selects **registered SSH** or **EMU** (never USB-SSH). `SN=` selects by **SN** or **ChipID** (`make devices` columns: MODE / SN / ChipID / …); **`SN=SIM-EMU`** / **`SN=EMU`** always select the QEMU guest even when the table SN is chip-ID fallback. `CHIP_ID=` selects by ChipID only (multi-board). USB-SSH/SSH/EMU **SN** prefers Vendor Storage SN, else chip ID; **ChipID** is always the chip serial. Android adb / RockUSB loader rows put the adb/SerialNo in both SN and ChipID. `make reboot` works over SSH/EMU; `make reboot-loader` remains USB-SSH / RockUSB / adb only. Android emulators (`emulator-*`) are omitted from `make devices` and rejected by `make upgrade` / `make reboot-loader` / `make flash` / `make flash-android`. **QEMU** (`make emulator`) appears as ephemeral **MODE=EMU** (`IP=127.0.0.1:2222`) when SSH hostfwd answers — usable with `make shell` / `make push-app` / `make debug-app`, not `make upgrade` / `make write-identity`. Product identity (`brand` / `model` / `sn`) lives in Rockchip **Vendor Storage** — provision with **`make write-identity BRAND=… MODEL=… PRODUCT_SN=…`** after flash (geometry frozen; `factory.img` must not package vendor payloads). Optional macOS RockUSB `upgrade_tool SN` / `RSN` is **SN-only**; brand/model still need `write-identity`. `make set-prop` / `del-prop` refuse identity keys.
 Commands that intentionally restart the Linux board automatically remove its matching persistent `MODE=SSH` registration: full-system `make upgrade`, `make reboot`, and USB-SSH `make reboot-loader` (matched to a registered row by board serial). Ephemeral `MODE=USB-SSH` rows are not stored and disappear automatically when the USB network gadget goes down. Run `make connect <ip>` again after enabling LAN SSH in the new boot session.
 
 `make shell` opens an interactive `root` terminal over USB ECM SSH or a registered remote SSH IP, similar to `adb shell`. VBUS loads the modular `g_ether` driver with stable per-device USB serial/MAC identity; unplug unloads it. The implementation does not create a configfs gadget or reset DWC3. The previous SDK/container shell command is now `make sdk-shell`. `make push-app` stages `libapp.so` + `flutter_assets` on the board, installs the complete payload while the current HMI keeps running, then restarts `hmi.service` with bounded recovery attempts. The flashed kernel must include the DRM GEM teardown fix. Host needs `sshpass` (password `rockchip`). `make devices` lists RockUSB, USB-SSH, and registered SSH rows in one table. **`make upgrade`** (P2.5) **streams** **`rootfs.img` + the inactive letter’s FIT** into partitions with single-line write progress, arms try-boot, and reboots — **not** RockUSB/`upgrade_tool uf` (use **`make flash`** for GPT / U-Boot) and **not** online OTA’s download-to-`/userdata/ota/` then staged apply. Once apply completes or the connection drops for reboot, the command exits with a clear prompt to wait for the device to finish restarting before reconnecting. Hardware prefs live on **userdata** (`/userdata/lws-hmi`): kept across reboot / push-app / **`make upgrade`**; **`make flash` must factory-reset them** — see [`docs/storage-layout.md`](docs/storage-layout.md) §Prefs and [`docs/ab-slot-misc.md`](docs/ab-slot-misc.md).
@@ -446,7 +448,7 @@ make debug-app                   # SN=... or IP=... when multiple boards
 #                          or: IP=127.0.0.1:2222 make debug-app
 ```
 
-Or open `app/lws_hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH / SSH debug)** from Run and Debug. Pre-launch runs `make debug-host-prepare`: for registered `IP=` / `MODE=SSH` / **`MODE=EMU`** it only checks reachability (no USB ECM); for USB-SSH it configures the host ECM interface (macOS may request `sudo`). Put `IP=` in `.env` so the IDE picks the SSH board. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
+Or open `app/lws_hmi` in VS Code / Cursor and start **lws-hmi (USB-SSH / SSH debug)** from Run and Debug. Pre-launch runs `make prepare-debug-host`: for registered `IP=` / `MODE=SSH` / **`MODE=EMU`** it only checks reachability (no USB ECM); for USB-SSH it configures the host ECM interface (macOS may request `sudo`). Put `IP=` in `.env` so the IDE picks the SSH board. The non-interactive Flutter custom-device hooks never prompt for `sudo`.
 
 `make debug-app` builds a debug bundle (`kernel_blob.bin`), uploads the matching **debug-runtime** engine on first use (cached under `/var/lib/hmi/debug-runtime/`), replaces `/opt/hmi`, and starts the HMI with VM Service over SSH port forwarding (USB-SSH, registered IP, or **EMU** hostfwd). Stopping the IDE closes the tunnel but **leaves the debug app running** on the device. Replace it with a release build using `make build-app` + `make push-app`.
 
@@ -598,7 +600,7 @@ make build-img
 
 `make build-img` reuses existing `boot.img` and `boot_b.img`; if either is missing, run `make build-kernel` before `make build-img`.
 
-The **host Flutter SDK** (~1 GB) is separate from Git LFS and lives in gitignored `flutter-sdk/` at the repo root; run `make fetch-flutter-sdk` to populate it (override path with `FLUTTER_SDK` in `.env`).
+The **host Flutter SDK** (~1 GB) is separate from Git LFS and lives in gitignored `flutter-sdk/` at the repo root; run `make fetch-flutter-sdk` to populate it (override install path with `DEST=…`, same as `extract-linux-sdk`). Builds/debug locate the SDK via `FLUTTER_SDK` (default `flutter-sdk/`).
 
 ### Buildroot `dl/` (generic packages)
 
@@ -646,11 +648,11 @@ make serial-console
 MODE=TTL make serial-console
 MODE=RS485 make serial-console
 MODE=RS232 BAUD=9600 make serial-console
-MODE=RS485 LOG=/tmp/uart.log make serial-console
+MODE=RS485 LOG_FILE=/tmp/uart.log make serial-console
 make serial-ports
 ```
 
-`PORT=` auto-picks `/dev/cu.usb*` when unset; `BAUD=` overrides baud in all modes. RS485/RS232 open a **split UI**: scrolling RX hex (one line per idle gap, default `TIMESTAMP_TIMEOUT=5` ms) and a fixed bottom **`TX>`** bar — type hex (`01 03 …` or `0103`) and press Enter to send. Optional `LOG=` (+ `LOG_APPEND=1`). No host `tio` required. Electrical RS-485 vs RS-232 is the adapter. TTL wiring: GND + TX↔RX cross (3.3V only). Self-test: short TTL TX–RX, type keys — should echo.
+`PORT=` auto-picks `/dev/cu.usb*` when unset; `BAUD=` overrides baud in all modes. RS485/RS232 open a **split UI**: scrolling RX hex (one line per idle gap, default `TIMESTAMP_TIMEOUT=5` ms) and a fixed bottom **`TX>`** bar — type hex (`01 03 …` or `0103`) and press Enter to send. Optional `LOG_FILE=` (+ `LOG_APPEND=1`). No host `tio` required. Electrical RS-485 vs RS-232 is the adapter. TTL wiring: GND + TX↔RX cross (3.3V only). Self-test: short TTL TX–RX, type keys — should echo.
 
 **Login (Buildroot):**
 
@@ -674,13 +676,13 @@ Tool: vendored at `tools/upgrade_tool/{macos,linux,windows}/` (see [`tools/upgra
 Host side of board `g_ether` plug-ssh (`192.168.55.1` ↔ host `192.168.55.2`):
 
 ```bash
-make usb-ssh-setup          # find RNDIS/ECM gadget NIC + set host IP (Windows may need Admin)
+make setup-usb-ssh          # find RNDIS/ECM gadget NIC + set host IP (Windows may need Admin)
 make devices                # expect MODE=USB-SSH
 make shell                  # or push-app / reboot-loader
 ```
 
 - **Windows:** install Rockchip USB / Remote NDIS drivers so a new Ethernet adapter appears; use Git Bash/MSYS2; install `sshpass` (`pacman -S sshpass` on MSYS2) for password SSH used by Make helpers. Discovery/IP uses [`scripts/usb-ssh-windows.ps1`](scripts/usb-ssh-windows.ps1).
-- **Linux / macOS:** same Make targets; Linux host USB-SSH is implemented but should be verified on your PC (`lsusb` → `2207:0019`, new netdev, then `make usb-ssh-setup`).
+- **Linux / macOS:** same Make targets; Linux host USB-SSH is implemented but should be verified on your PC (`lsusb` → `2207:0019`, new netdev, then `make setup-usb-ssh`).
 
 MaskROM recovery (device not visible after loader upload — loader reboot drops USB briefly):
 
@@ -722,7 +724,7 @@ make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001  # Vendor 
 - Run `make docker-volume-init` once before the first build.
 - Init uses **tar** (not rsync) for the bulk copy; macOS APFS xattrs / vendor symlinks often make rsync exit 23 even at 99%.
 - If a previous init copied ~99% then failed, re-run `make docker-volume-init` — it detects the existing tree and skips re-copy.
-- Keep `BUILD_JOBS=4` (default on macOS) unless you know you have headroom.
+- Default `BUILD_JOBS=8`; lower to `4` if Docker OOM / Desktop becomes unstable.
 - Enable **Settings → General → Use Rosetta for x86_64/amd64 emulation** (Apple Silicon).
 - If builds still crash, use a native Linux VM instead of Docker Desktop.
 - Force the old bind-mount path (not recommended): `BUILD_BIND_MOUNT=1 make build-rootfs`
@@ -786,8 +788,8 @@ The upstream SDK ships **ynh962** board defconfig but **ynh960.dts** in kernel; 
 ## Environment
 
 ```bash
-export FLUTTER_SDK=flutter-sdk                                        # host Flutter SDK (gitignored at repo root)
-export BUILD_JOBS=4                                          # parallel make jobs (default 4 on macOS)
+export FLUTTER_SDK=flutter-sdk                                        # locate host Flutter for build-app/debug (install: make fetch-flutter-sdk; DEST= overrides install dir)
+export BUILD_JOBS=8                                          # parallel make jobs (default 8; lower if OOM)
 export SN=10.0.0.239:5555                            # for pull-display-params (adb over network)
 export REBUILD_IMAGE=1                                       # rebuild Docker image
 make build                 # full firmware → output/firmware/update.img

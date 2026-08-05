@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Download flutter-engine source tarball → .cache/flutter-engine/flutter-<ver>.tar.gz
-# Order: local cache → NAS/HTTP mirror (LWS_HMI_CACHE_*) → gclient (Docker on macOS).
+# Order: local cache → NAS_CACHE_ROOT → gclient (Docker on macOS).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -56,9 +56,8 @@ if [[ ! -f "$TARBALL" && "$(uname -s)" == Darwin && "${LWS_HMI_DOCKER:-}" != "1"
          FORCE="${FORCE}" \
          FLUTTER_ENGINE_VERSION="${FLUTTER_ENGINE_VERSION:-}" \
          BUILD_JOBS="${BUILD_JOBS:-}" \
-         LWS_HMI_CACHE_ROOT="${LWS_HMI_CACHE_ROOT:-}" \
-         LWS_HMI_CACHE_URL="${LWS_HMI_CACHE_URL:-}" \
-         LWS_HMI_CACHE_PUBLISH="${LWS_HMI_CACHE_PUBLISH:-1}" \
+         NAS_CACHE_ROOT="${NAS_CACHE_ROOT:-}" \
+         NAS_READ_ONLY="${NAS_READ_ONLY:-0}" \
     bash /work/lws-hmi/scripts/fetch-flutter-engine.sh
 fi
 

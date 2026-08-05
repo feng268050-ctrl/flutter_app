@@ -15,9 +15,8 @@ TARGET="${PRODUCT_INI_PATH:-/var/lib/hal/product.ini}"
 # Make / host workflow vars — not product.ini keys.
 # SN= remains device selection (exported by Make); never a set-prop product key.
 _SET_PROP_SKIP=(
-	SERIAL CHIPID IP IMAGE FLUTTER_SDK BUILD_JOBS BUILD_BIND_MOUNT
-	LWS_HMI_SERIAL LWS_HMI_SN LWS_HMI_CHIPID LWS_HMI_IP LWS_HMI_USB_SSH_PASS LWS_HMI_USB_SSH_USER
-	LWS_HMI_USB_SSH_ADDR LWS_HMI_USB_IFACE PUSH_APP_WAIT_SEC
+	SERIAL CHIP_ID IP IMAGE FLUTTER_SDK BUILD_JOBS BUILD_BIND_MOUNT
+	USB_SSH_PASS USB_SSH_USER USB_SSH_ADDR IFACE
 	DOCKER_IMAGE DOCKER_PLATFORM SCOPE FORCE SRC
 	PRODUCT_INI_PATH
 	SN
@@ -96,7 +95,7 @@ collect_assignments "$@" || {
 	die "expected one or more UPPERCASE_KEY=value (example: make set-prop CAMERA_IP=192.168.1.50)"
 }
 
-command -v sshpass >/dev/null 2>&1 || die "sshpass not found (run: make usb-ssh-setup)"
+command -v sshpass >/dev/null 2>&1 || die "sshpass not found (run: make setup-usb-ssh)"
 
 usb_ssh_session_prepare "$ROOT"
 

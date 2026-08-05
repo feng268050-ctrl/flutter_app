@@ -19,7 +19,7 @@ die() {
 [[ -x "$FLUTTER" ]] || die "pinned Flutter SDK missing (make fetch-flutter-sdk)"
 export PATH="$FLUTTER_INSTALL/bin:${HOME}/.pub-cache/bin:$PATH"
 
-bash "$ROOT/scripts/debug-host-prepare.sh"
+bash "$ROOT/scripts/prepare-debug-host.sh"
 bash "$ROOT/scripts/debug-setup.sh"
 bash "$ROOT/scripts/build-debug-app.sh"
 

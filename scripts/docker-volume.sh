@@ -9,7 +9,7 @@ bash "$ROOT/scripts/require-macos.sh"
 
 IMAGE="${DOCKER_IMAGE:-lws-hmi-builder:22.04}"
 PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
-VOLUME="${LWS_HMI_DOCKER_VOLUME:-lws-hmi-sdk}"
+VOLUME="${DOCKER_VOLUME:-lws-hmi-sdk}"
 HOST_SDK="$ROOT/linux-sdk"
 LOG_DIR="$ROOT/.cache"
 RSYNC_LOG="$LOG_DIR/docker-volume-rsync.log"

@@ -8,7 +8,7 @@
 #   - virtio-sound → host CoreAudio (macOS) / Pulse|ALSA (Linux)
 #
 # Env overrides:
-#   EMULATOR_MEM EMULATOR_SMP EMULATOR_CMDLINE EMULATOR_QEMU_EXTRA
+#   EMULATOR_MEM EMULATOR_CPU EMULATOR_CPU_MODEL EMULATOR_CMDLINE EMULATOR_QEMU_EXTRA
 #   EMULATOR_NET=auto|vmnet|user   (default auto)
 #   EMULATOR_ETH0_IFACE=en9        (host NIC for IP camera — vmnet-bridged; auto USB LAN)
 #   EMULATOR_ETH0_BRIDGE=auto|off  (auto=bridged when iface found; off=skip camera bridge)
@@ -557,8 +557,8 @@ esac
 
 MEM="${EMULATOR_MEM:-2048}"
 # cortex-a55 ≈ RK356x; avoid -cpu max feature surprises on Apple HVF
-SMP="${EMULATOR_SMP:-4}"
-CPU="${EMULATOR_CPU:-cortex-a55}"
+SMP="${EMULATOR_CPU:-4}"
+CPU="${EMULATOR_CPU_MODEL:-cortex-a55}"
 CMDLINE="${EMULATOR_CMDLINE:-root=/dev/vda rootfstype=ext4 rw console=ttyAMA0 earlycon=pl011,0x9000000 lws.emulator=1}"
 
 GL_MODE="${EMULATOR_GL:-host}"
@@ -591,8 +591,8 @@ fi
 [[ -r "$OUT/rootfs.img" ]] || die "missing $OUT/rootfs.img — make build-rootfs"
 [[ -r "$OUT/oem.img" ]] || die "missing $OUT/oem.img"
 
-# Stock Homebrew qemu lacks cortex-a55; fall back so EMULATOR_CPU default still boots.
-if [[ -z "${EMULATOR_CPU:-}" ]] && ! "$QEMU_BIN" -cpu help 2>&1 | grep -qE '(^|[[:space:]])cortex-a55([[:space:]]|$)'; then
+# Stock Homebrew qemu lacks cortex-a55; fall back so EMULATOR_CPU_MODEL default still boots.
+if [[ -z "${EMULATOR_CPU_MODEL:-}" ]] && ! "$QEMU_BIN" -cpu help 2>&1 | grep -qE '(^|[[:space:]])cortex-a55([[:space:]]|$)'; then
 	CPU=cortex-a53
 	warn "QEMU $QEMU_BIN has no cortex-a55 — using $CPU"
 fi

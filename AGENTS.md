@@ -15,14 +15,14 @@ Instructions for coding agents working in **lws-hmi**. Human-oriented overview a
 
 - Run `make help` for the authoritative Makefile target list.
 - First time: `make setup`, then `make build-deps`, then `make build` (macOS: `make docker-volume-init` before build).
-- The Rockchip SDK is fixed at repo-root `linux-sdk/` (**gitignored** until S4). Override the Flutter SDK via repo-root `.env` or `FLUTTER_SDK` (default: `flutter-sdk/`). Other common settings are `BUILD_JOBS` and **`SN=`** (device selection). Use **`CHIPID=`** when selecting by chip ID only on multi-board. See README Make commands / `make devices`. macOS: prefer Docker volume over `BUILD_BIND_MOUNT=1` (bind-mount often crashes Docker Desktop during Buildroot).
+- The Rockchip SDK is fixed at repo-root `linux-sdk/` (**gitignored** until S4). Host Flutter for builds: `.env` / `FLUTTER_SDK` (default `flutter-sdk/`). Install that tree with `make fetch-flutter-sdk` (`DEST=` override, like `extract-linux-sdk`). Other common settings are `BUILD_JOBS` and **`SN=`** (device selection). Use **`CHIP_ID=`** when selecting by chip ID only on multi-board. See README Make commands / `make devices`. macOS: prefer Docker volume over `BUILD_BIND_MOUNT=1` (bind-mount often crashes Docker Desktop during Buildroot).
 - **Device tree / kernel fragments (until `linux-sdk` is committed):** git source of truth is **`overlay/kernel/`**, not the local SDK tree and **not** `oem/`. After editing overlay DTS, run `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` (or `make squash-linux-sdk-platform`) then `make build-kernel`. Boot DTBs stay in the FIT; OEM only has runtime LCD params / profile. Detail: [`docs/linux-sdk-vendor-import.md`](docs/linux-sdk-vendor-import.md).
 - Flutter app work: host needs pinned `flutter` (`make fetch-flutter-sdk` / `make build-dev-deps`); packaging is `scripts/hmi-bundle-common.sh` via `make build-app`.
 - Do not commit unless the user explicitly asks.
 
 ## Build commands
 
-Full cookbook: **README.md → Make commands**. Quick reference:
+Full cookbook: **README.md → Make commands**. Per-target usage / env vars: **[`docs/make-commands.md`](docs/make-commands.md)**. Quick reference:
 
 ```bash
 make build
@@ -96,7 +96,7 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `overlay/.../rootfs-overlay/**` (not app) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | USB plug-ssh (`overlay/kernel/**` + fs-overlay scripts/units) | `make apply-overlay`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
 | `scripts/device-logs.sh` only (host log streaming) | none |
-| `scripts/debug-app*.sh`, `scripts/debug-host-prepare.sh`, `scripts/debug-custom-device/**`, `scripts/debug-setup.sh`, `scripts/build-debug-app.sh`, `scripts/hmi-bundle-common.sh` (host only; board already has P1.5 overlay) | `make debug-setup`, `make debug-app` |
+| `scripts/debug-app*.sh`, `scripts/prepare-debug-host.sh`, `scripts/debug-custom-device/**`, `scripts/debug-setup.sh`, `scripts/build-debug-app.sh`, `scripts/hmi-bundle-common.sh` (host only; board already has P1.5 overlay) | `make debug-setup`, `make debug-app` |
 | `overlay/.../rootfs-overlay/**` debug scripts (`hmi-launch.sh`, `debug-app-*`, `hmi.service`) | `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `overlay/buildroot/**` (overlay paths / docs only; no package compile flags) | `make apply-overlay`, `make check-prebuilt`, `make build-rootfs`, `make upgrade` |
 | `overlay/buildroot/chips/*.config` (or other BR Kconfig that changes how an **existing** package is built, e.g. `BR2_PACKAGE_WPA_SUPPLICANT_DBUS`) | `make apply-overlay`, `bash scripts/br-make-packages.sh <label> <pkg>…`, `make check-prebuilt`, `make build-rootfs`, `make upgrade` — **not** kernel; `build-rootfs` alone will keep the old binary |
@@ -119,16 +119,16 @@ After **any non-docs code change**, end your reply with a **「重新构建」**
 | `overlay/kernel/**/ynh960-optee.dtsi` + `chips/lws_hmi_optee.config` / `tee-supplicant.service` / `secrets-seal` | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`, `bash scripts/br-make-packages.sh optee optee-client`, `make build-kernel`, `make build-rootfs`, `make upgrade` |
 | `packages/cyber_pm` (process supervisor) | `make build-app`, `make push-app` (host: `dart test` in package) |
 | `prebuilt/mediamtx/**`, `scripts/build-mediamtx.sh`, App MediaMTX relay / `/opt/hmi/bin` | `make build-mediamtx` (if prebuilt missing), `make build-app`, `make push-app`; purge old rootfs binary/unit: `make apply-overlay`, `make build-rootfs`, `make upgrade` |
-| `native/lws_ai/**`, `scripts/build-opencv.sh`, `scripts/build-ai.sh`, `prebuilt/opencv/**`, `prebuilt/ai/**`, App `AiDaemonSupervisor` | `make fetch-opencv`, `make fetch-opencv-ximgproc`, `make fetch-rknn-rt`, `make build-opencv`, `make build-ai`, `make build-app`, `make push-app` (release gate: `LWS_HMI_REQUIRE_AI=1 make build-app`) |
+| `native/lws_ai/**`, `scripts/build-opencv.sh`, `scripts/build-ai.sh`, `prebuilt/opencv/**`, `prebuilt/ai/**`, App `AiDaemonSupervisor` | `make fetch-opencv`, `make fetch-opencv-ximgproc`, `make fetch-rknn-rt`, `make build-opencv`, `make build-ai`, `make build-app`, `make push-app` (release gate: `REQUIRE_AI=1 make build-app`) |
 | `board/parameter-buildroot-fit.txt` (GPT / A/B / vendor0–3) | `make apply-overlay`, `make build-oem`, `make build-img`, `make flash` (repartition once; then `make write-identity`) |
 | A/B upgrade helpers (`overlay/.../ab-*.sh`, `ab-boot-confirm.service`) | First adoption: `make apply-overlay`, `make build-rootfs`, `make build-oem`, `make build-img`, `make flash`; existing P2.4 board: `make apply-overlay`, `make build-rootfs`, `make upgrade` |
 | `scripts/upgrade-remote.sh`, `scripts/stream-file-progress.py`, or Makefile `upgrade` only (board already has P2.4 overlay + A/B GPT) | `make upgrade` (or `OEM_ONLY=1 make upgrade`); no firmware rebuild unless image inputs are stale |
 | Control-board host upgrade helper (`scripts/upgrade-control-board.sh`, Makefile `upgrade-control-board`) | none (host SSH writes `/run/hmi/upgrade-control-board.cmd` and uploads one control-board `.bin`); board needs HMI with watcher (`make build-app` + `make push-app` once if app is stale); exercise `make upgrade-control-board` |
 | Process-library host upgrade helper (`scripts/upgrade-process-library.sh`, Makefile `upgrade-process-library`) | none (reads device Vendor Storage `model`, converts matching Excel, uploads package, writes `/run/hmi/upgrade-process-library.cmd`); board needs HMI with watcher (`make build-app` + `make push-app` once if app is stale); exercise `make upgrade-process-library` |
 | Process-library host reset helper (`scripts/reset-process-library.sh`, Makefile `reset-process-library`) | none (host SSH writes `/run/hmi/reset-process-library.cmd`; HMI clears DB and force-reimports bundled — no restart); board needs HMI with watcher (`make build-app` + `make push-app` once if app is stale); exercise `make reset-process-library` |
-| Host device registry/reboot paths (`scripts/ssh-devices.sh`, `scripts/emulator-devices.sh`, `scripts/flash-usb.sh`, `scripts/usb-ssh-*.sh`, `scripts/device-target.sh`) | no firmware rebuild; exercise `make devices` / `make usb-ssh-setup` / `make reboot` / `make reboot-loader` (Windows: Git Bash + Rockchip RNDIS drivers + `sshpass`) |
+| Host device registry/reboot paths (`scripts/ssh-devices.sh`, `scripts/emulator-devices.sh`, `scripts/flash-usb.sh`, `scripts/usb-ssh-*.sh`, `scripts/device-target.sh`) | no firmware rebuild; exercise `make devices` / `make setup-usb-ssh` / `make reboot` / `make reboot-loader` (Windows: Git Bash + Rockchip RNDIS drivers + `sshpass`) |
 | Host serial console (`scripts/serial-console.sh`, `scripts/serial-hex-console.py`, Makefile `serial-console` / `serial-ports`; `MODE=TTL\|RS485\|RS232`) | none (host-only; TTL=miniterm, RS485/RS232=curses hex+TX bar via pyserial venv); exercise `make serial-console` / `make serial-ports` |
-| `product.ini` host tooling (`scripts/set-product-prop.sh`, `scripts/del-product-prop.sh`, Makefile `set-prop` / `del-prop`) | none (host SSH mutate tunables only; brand/model/sn refused → `make write-identity`); exercise `make set-prop` / `make del-prop` (multi-board: `SN=` / `CHIPID=` / `IP=`) |
+| `product.ini` host tooling (`scripts/set-product-prop.sh`, `scripts/del-product-prop.sh`, Makefile `set-prop` / `del-prop`) | none (host SSH mutate tunables only; brand/model/sn refused → `make write-identity`); exercise `make set-prop` / `make del-prop` (multi-board: `SN=` / `CHIP_ID=` / `IP=`) |
 | Vendor Storage identity (`scripts/write-identity.sh`, Makefile `write-identity`, board helpers `read/write-product-identity`, `board/vendor-storage-ids.txt`, `board/parameter-buildroot-fit.txt` vendor0–3) | GPT adopt: `make build-oem`, `make build-img`, `make flash`; rootfs tool: `make apply-overlay`, `bash scripts/br-make-packages.sh rktoolkit rktoolkit`, `make build-rootfs`, `make upgrade`; then `make write-identity BRAND=… MODEL=… PRODUCT_SN=…` |
 | Host app version (`scripts/app-version.sh`, Makefile `version` / `version-bump`) | none (host-only; edits `app/<APP>/pubspec.yaml` and optional `lib/app_version.dart`); exercise `make version` / `make version-bump VERSION=x.y.z` (`APP=` optional); ship via `make build-app` / `push-app` when needed |
 | Demo alarm host tooling (`scripts/trigger-alarm.sh`, Makefile `alarm` / `alarm-clean`) | none (host SSH writes `/run/hmi/demo-alarm.cmd`); board needs HMI with watcher (`make build-app` + `make push-app` once if app is stale); exercise `make alarm CODE=L001` / `make alarm-clean` |
@@ -173,8 +173,9 @@ Before finishing implementation work:
 When adding or renaming a `make` target, update **all** of:
 
 1. `Makefile` `help` text
-2. `README.md` → **Make commands**
-3. Rebuild table in this file (if it affects post-change user commands)
+2. `README.md` → **Make commands** (workflow examples if needed)
+3. [`docs/make-commands.md`](docs/make-commands.md) (怎么用 / 何时用 / 参数)
+4. Rebuild table in this file (if it affects post-change user commands)
 
 Keep long command examples in **README.md**; keep agent-only rules (rebuild block, pipeline gotchas) here. Use **one command per line** in user-facing examples (no `&&` chains).
 

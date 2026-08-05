@@ -9,7 +9,7 @@ if [[ -f "$ROOT/scripts/build-env.sh" ]]; then
   source "$ROOT/scripts/build-env.sh"
   setup_build_env
 else
-  BUILD_JOBS="${BUILD_JOBS:-4}"
+  BUILD_JOBS="${BUILD_JOBS:-8}"
   export BUILD_JOBS
   # Do not set MAKEFLAGS in Docker — see scripts/build-env.sh
   if [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then

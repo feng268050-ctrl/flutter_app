@@ -68,8 +68,8 @@ For app-only iteration, use make push-app.
 Env (also in repo-root `.env`; command-line env overrides `.env`):
   APP                       Flutter product under app/ (default: lws_hmi);
                             rootfs from output/firmware/<APP>/rootfs.img
-  SN / LWS_HMI_SN           select board when multiple devices
-  IP / LWS_HMI_IP           registered SSH only (make connect <ip>)
+  SN                        select board when multiple devices
+  IP                        registered SSH only (make connect <ip>)
   LWS_HMI_FIRMWARE_DIR      default: output/firmware (shared boot FITs)
   FACTORY_SKU / OEM_ID      resolve default oem.img (see board/factory-skus.tsv)
   OEM_IMG                   oem.img path; unset=auto from FACTORY_SKU; empty=skip oem

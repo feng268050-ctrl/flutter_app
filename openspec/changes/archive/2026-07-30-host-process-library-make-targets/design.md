@@ -16,7 +16,7 @@ lws-ui exposes `make reset-process-library`: force-stop app, SQL-clear Room proc
 - `make upgrade-process-library`: auto-read device `model`, select matching repo library, push package, force import (no manual model env).
 - Fail loudly when `model` is missing/blank or no matching model directory / supported_models entry exists in the repo.
 - `make reset-process-library`: clear on-device process-library DB (lws-ui parity including user rows) via running HMI watcher and force-reimport bundled assets **without** restarting HMI.
-- Document Make targets; reuse USB-SSH selection (`SN=` / `CHIPID=` / `IP=`).
+- Document Make targets; reuse USB-SSH selection (`SN=` / `CHIP_ID=` / `IP=`).
 
 **Non-Goals:**
 

@@ -32,7 +32,7 @@ Gap: a board in **Loader/Maskrom** cannot take SSH upgrade, but flashing full `f
   1. If a deployable **Linux SSH** target is selected (USB-SSH / `IP=` / `SN=` → SSH) → **existing stream path**.
   2. Else if a **RockUSB** Loader/Maskrom device is selected → **OTA-images RockUSB path**.
   3. Else fail with `make devices` / `reboot-loader` / Maskrom guidance.
-- Prefer SSH when both could match the same `SN=` only if the board is still on SSH (normally mutually exclusive). Multi-device: require `SN=` / `CHIPID=` as today.
+- Prefer SSH when both could match the same `SN=` only if the board is still on SSH (normally mutually exclusive). Multi-device: require `SN=` / `CHIP_ID=` as today.
 - Optional escape: `UPGRADE_TRANSPORT=ssh|rockusb` to force (default auto).
 - **Why:** Matches “`make upgrade` 支持 loader/maskrom” without a second Make verb; keeps flash = factory.
 - **Alternatives:** New `make flash-ota` (clearer separation, but user asked to extend upgrade).

@@ -206,34 +206,9 @@ hmi_bundle_install_mediamtx() {
 	echo "hmi-bundle: installed $dest/bin/mediamtx"
 }
 
-# Optional aarch64 static ffmpeg (legacy cover/AI frame extract).
-# Product path uses rootfs /usr/libexec/hmi/extract-video-frame (GStreamer).
-# Enable only with HMI_BUNDLE_INSTALL_FFMPEG=1 (host measure scripts stay separate).
-# Sources: prebuilt/ffmpeg/linux-arm64/ffmpeg, else .cache/ffmpeg-android/ffmpeg.
-hmi_bundle_install_ffmpeg() {
-	local dest="$1"
-	local src=""
-	if [[ "${HMI_BUNDLE_INSTALL_FFMPEG:-0}" != "1" ]]; then
-		echo "hmi-bundle: skip ffmpeg (covers/AI samples use extract-video-frame; set HMI_BUNDLE_INSTALL_FFMPEG=1 to force)"
-		return 0
-	fi
-	if [[ -x "$ROOT/prebuilt/ffmpeg/linux-arm64/ffmpeg" ]]; then
-		src="$ROOT/prebuilt/ffmpeg/linux-arm64/ffmpeg"
-	elif [[ -x "$ROOT/.cache/ffmpeg-android/ffmpeg" ]]; then
-		src="$ROOT/.cache/ffmpeg-android/ffmpeg"
-	fi
-	if [[ -z "$src" ]]; then
-		echo "hmi-bundle: skip ffmpeg (place aarch64 static at prebuilt/ffmpeg/linux-arm64/ffmpeg or .cache/ffmpeg-android/ffmpeg)"
-		return 0
-	fi
-	mkdir -p "$dest/bin"
-	install -m 0755 "$src" "$dest/bin/ffmpeg"
-	echo "hmi-bundle: installed $dest/bin/ffmpeg"
-}
-
 # Install App-owned AI daemon (+ companion libs) into /opt/hmi.
 # Soft-skips when prebuilt missing so daily App iteration is not blocked; set
-# LWS_HMI_REQUIRE_AI=1 to fail the bundle (release gate).
+# REQUIRE_AI=1 to fail the bundle (release gate).
 hmi_bundle_install_ai() {
 	local dest="$1"
 	local src_dir="$ROOT/prebuilt/ai/linux-arm64"
@@ -241,7 +216,7 @@ hmi_bundle_install_ai() {
 	local stamp="$src_dir/.lws-prebuilt"
 
 	if [[ ! -f "$stamp" || ! -x "$src" ]]; then
-		if [[ "${LWS_HMI_REQUIRE_AI:-0}" == "1" ]]; then
+		if [[ "${REQUIRE_AI:-0}" == "1" ]]; then
 			die "AI prebuilt missing ($src). Run: make build-opencv && make build-ai"
 		fi
 		echo "hmi-bundle: skip AI daemon (missing $src; make build-ai)"
@@ -299,11 +274,10 @@ hmi_bundle_install_release() {
 		"$DEST/data/flutter_assets/app.so" \
 		"$DEST/data/flutter_assets/kernel_blob.bin"
 
-	# Product companions (MediaMTX / AI; optional ffmpeg) for HMI apps (*_hmi → /opt/hmi).
+	# Product companions (MediaMTX / AI) for HMI apps (*_hmi → /opt/hmi).
 	# Frame extract uses rootfs /usr/libexec/hmi/extract-video-frame (GStreamer).
 	if [[ "${APP_IS_HMI:-${APP_IS_PRODUCT_HMI:-0}}" == "1" ]]; then
 		hmi_bundle_install_mediamtx "$DEST"
-		hmi_bundle_install_ffmpeg "$DEST"
 		hmi_bundle_install_ai "$DEST"
 	fi
 
@@ -369,7 +343,6 @@ EOF
 	cp -f "$icu_src" "$hmi_staging/data/icudtl.dat"
 
 	hmi_bundle_install_mediamtx "$hmi_staging"
-	hmi_bundle_install_ffmpeg "$hmi_staging"
 	hmi_bundle_install_ai "$hmi_staging"
 
 	echo "Debug staging ready at $staging"

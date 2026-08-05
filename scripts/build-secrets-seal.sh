@@ -98,7 +98,7 @@ do_build() {
 	}
 	cross="${prefix}"
 	staging="$(resolve_teec)"
-	jobs="${BUILD_JOBS:-4}"
+	jobs="${BUILD_JOBS:-8}"
 	ta_dev_kit="$CACHE/export-ta_arm64-${OPTEE_OS_VER}"
 
 	echo "build-secrets-seal: CROSS_COMPILE=$cross"
@@ -193,7 +193,7 @@ fi
 # macOS: compile inside builder (linux/amd64) with SDK toolchain.
 if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
 	exec env LWS_HMI_SKIP_OVERLAY=1 FORCE="$FORCE" OPTEE_OS_VER="$OPTEE_OS_VER" \
-		BUILD_JOBS="${BUILD_JOBS:-4}" TA_SIGN_KEY="${TA_SIGN_KEY:-}" \
+		BUILD_JOBS="${BUILD_JOBS:-8}" TA_SIGN_KEY="${TA_SIGN_KEY:-}" \
 		bash "$ROOT/scripts/docker-run.sh" \
 		bash /work/lws-hmi/scripts/build-secrets-seal.sh
 fi

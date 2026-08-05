@@ -2,9 +2,9 @@
 # Provision brand/model/product SN into Rockchip Vendor Storage on the selected board.
 # Usage:
 #   make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001
-#   CHIPID=ABC123 FORCE=1 make write-identity BRAND=… MODEL=… PRODUCT_SN=…
-# Device selection: SN= / CHIPID= / IP= (same as push-app / set-prop).
-# Identity payload: BRAND= MODEL= PRODUCT_SN= (alias IDENTITY_SN=). FORCE=1 overwrites SN.
+#   CHIP_ID=ABC123 FORCE=1 make write-identity BRAND=… MODEL=… PRODUCT_SN=…
+# Device selection: SN= / CHIP_ID= / IP= (same as push-app / set-prop).
+# Identity payload: BRAND= MODEL= PRODUCT_SN=. FORCE=1 overwrites SN.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,13 +17,13 @@ usage() {
 	cat <<'EOF'
 Usage:
   make write-identity BRAND=<brand> MODEL=<model> PRODUCT_SN=<sn>
-  CHIPID=<chipid> make write-identity BRAND=… MODEL=… PRODUCT_SN=… [FORCE=1]
+  CHIP_ID=<chipid> make write-identity BRAND=… MODEL=… PRODUCT_SN=… [FORCE=1]
 
 Writes brand / model / product SN into Rockchip Vendor Storage on the board
 (SSH → /usr/bin/write-identity). Does not package identity into factory.img.
 
-Device selection (same as push-app / set-prop): SN= / CHIPID= / IP=
-Identity value: PRODUCT_SN= (alias IDENTITY_SN=) — not confused with selection SN=.
+Device selection (same as push-app / set-prop): SN= / CHIP_ID= / IP=
+Identity value: PRODUCT_SN= — not confused with selection SN=.
 FORCE=1 required to overwrite a non-empty stored SN.
 
 Emulator / boards without /dev/vendor_storage fail clearly (no product.ini fallback).
@@ -36,7 +36,7 @@ EOF
 # Parse MAKEOVERRIDES-style KEY=value args + process env.
 BRAND="${BRAND:-}"
 MODEL="${MODEL:-}"
-PRODUCT_SN="${PRODUCT_SN:-${IDENTITY_SN:-}}"
+PRODUCT_SN="${PRODUCT_SN:-}"
 FORCE="${FORCE:-0}"
 
 for o in "$@"; do
@@ -48,16 +48,16 @@ for o in "$@"; do
 	case "$key" in
 	BRAND) BRAND="$value" ;;
 	MODEL) MODEL="$value" ;;
-	PRODUCT_SN | IDENTITY_SN) PRODUCT_SN="$value" ;;
+	PRODUCT_SN) PRODUCT_SN="$value" ;;
 	FORCE) FORCE="$value" ;;
-	SN | CHIPID | IP | SERIAL | LWS_HMI_SN | LWS_HMI_CHIPID | LWS_HMI_IP | LWS_HMI_SERIAL) ;;
+	SN | CHIP_ID | IP | SERIAL) ;;
 	*) ;;
 	esac
 done
 
 if [[ -z "$BRAND" || -z "$MODEL" || -z "$PRODUCT_SN" ]]; then
 	usage
-	die "BRAND=, MODEL=, and PRODUCT_SN= (or IDENTITY_SN=) are required"
+	die "BRAND=, MODEL=, and PRODUCT_SN= are required"
 fi
 
 # Make passes spaces as "Make\ Model" in MAKEOVERRIDES; normalize any leftover backslashes.
@@ -65,7 +65,7 @@ BRAND="${BRAND//\\ / }"
 MODEL="${MODEL//\\ / }"
 PRODUCT_SN="${PRODUCT_SN//\\ / }"
 
-command -v sshpass >/dev/null 2>&1 || die "sshpass not found (run: make usb-ssh-setup)"
+command -v sshpass >/dev/null 2>&1 || die "sshpass not found (run: make setup-usb-ssh)"
 
 usb_ssh_session_prepare "$ROOT"
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Prefetch host Flutter SDK into repo-root flutter-sdk/ (gitignored) with .cache/ staging.
-# macOS: darwin SDK → flutter-sdk/ for make build-app; also linux SDK →
-#   .cache/flutter-sdk/install-linux for Docker Buildroot host-flutter-sdk-bin.
-# Linux: linux SDK → flutter-sdk/ (+ install-linux cache).
+# Prefetch host Flutter SDK (gitignored) with .cache/ staging.
+# Install destination: DEST=… (default: <repo>/flutter-sdk) — same pattern as extract-linux-sdk.
+# macOS: darwin SDK → DEST; also linux SDK → .cache/flutter-sdk/install-linux for Docker BR.
+# Linux: linux SDK → DEST (+ install-linux cache).
+# Consuming builds still use FLUTTER_SDK= (or default flutter-sdk/) to locate the SDK.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -12,7 +13,9 @@ VERSION_FILE="$ROOT/overlay/buildroot/flutter-sdk.version"
 VERSION="$(read_version_file "$VERSION_FILE" "3.41.9")"
 
 CACHE_DIR="$ROOT/.cache/flutter-sdk"
-FLUTTER_INSTALL="$(bash "$ROOT/scripts/link-flutter-sdk.sh" --print)"
+DEST="${DEST:-$ROOT/flutter-sdk}"
+DEST="$(bash "$ROOT/scripts/expand-path.sh" "$DEST")"
+FLUTTER_INSTALL="$DEST"
 MARKER=".lws-precache-done"
 FORCE="${FORCE:-0}"
 DOCKER_INSTALL="/work/lws-hmi/flutter-sdk"
@@ -167,7 +170,8 @@ if flutter_sdk_usable "$FLUTTER_INSTALL" \
 	&& [[ "$FORCE" != "1" ]]; then
 	host_ready=1
 	echo "flutter-sdk $VERSION: ready at $FLUTTER_INSTALL ($PLATFORM_TAG)"
-	bash "$ROOT/scripts/link-flutter-sdk.sh"
+	# Repair/verify installed tree (pass path as FLUTTER_SDK only for this child).
+	FLUTTER_SDK="$FLUTTER_INSTALL" bash "$ROOT/scripts/link-flutter-sdk.sh"
 fi
 
 if [[ "$host_ready" != "1" ]]; then
@@ -215,7 +219,7 @@ if [[ "$host_ready" != "1" ]]; then
 		cp -a "$install_tree"/. "$FLUTTER_INSTALL"/
 	fi
 	prebuilt_stamp "$FLUTTER_INSTALL" "$VERSION"
-	bash "$ROOT/scripts/link-flutter-sdk.sh"
+	FLUTTER_SDK="$FLUTTER_INSTALL" bash "$ROOT/scripts/link-flutter-sdk.sh"
 
 	echo "flutter-sdk $VERSION: ready at $FLUTTER_INSTALL ($PLATFORM_TAG)"
 	du -sh "$ARCHIVE" "$FLUTTER_INSTALL"

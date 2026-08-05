@@ -23,5 +23,5 @@ Operators can force a control-board firmware reflash with `make upgrade-control-
 
 - New scripts under `scripts/` (e.g. `upgrade-process-library.sh`, `reset-process-library.sh`), Makefile targets, docs (`README.md`, `AGENTS.md`).
 - Small App addition: command watcher (pattern from `SyncFirmwareCommandWatcher` / `DemoAlarmCommandWatcher`) wired in `app.dart` for force package import and in-app reset + bundled re-import.
-- Reuses existing `ProcessLibraryImporter.importPackageFromDirectory` / `importBundled`, prepare/convert helpers, and USB-SSH session selection (`SN=` / `CHIPID=` / `IP=`).
+- Reuses existing `ProcessLibraryImporter.importPackageFromDirectory` / `importBundled`, prepare/convert helpers, and USB-SSH session selection (`SN=` / `CHIP_ID=` / `IP=`).
 - Board needs running HMI for both upgrade and reset watcher paths (one-time `make build-app` + `make push-app` when App is stale).

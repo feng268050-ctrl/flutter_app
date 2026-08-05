@@ -57,8 +57,8 @@ candidate_endpoints() {
 
 probe_endpoint() {
 	local ep="$1"
-	local user="${LWS_HMI_USB_SSH_USER:-root}"
-	local pass="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+	local user="${USB_SSH_USER:-root}"
+	local pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=(
 		-o ConnectTimeout=2
 		-o StrictHostKeyChecking=accept-new

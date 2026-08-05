@@ -17,10 +17,10 @@ fi
 IMAGE="${DOCKER_IMAGE:-lws-hmi-builder:22.04}"
 PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 SDK="$ROOT/linux-sdk"
-VOLUME="${LWS_HMI_DOCKER_VOLUME:-lws-hmi-sdk}"
+VOLUME="${DOCKER_VOLUME:-lws-hmi-sdk}"
 
 if [[ -z "${BUILD_JOBS:-}" ]]; then
-  BUILD_JOBS=4
+  BUILD_JOBS=8
 fi
 
 USE_VOLUME=0
@@ -63,7 +63,7 @@ docker_args=(
   -e LWS_HMI_SDK_DIR=/work/sdk
   -e "LWS_HMI_WESTON=${LWS_HMI_WESTON:-1}"
   -e "FORCE_PLATFORM_OVERLAY=${FORCE_PLATFORM_OVERLAY:-0}"
-  -e "LWS_HMI_CACHE_PUBLISH=${LWS_HMI_CACHE_PUBLISH:-1}"
+  -e "NAS_READ_ONLY=${NAS_READ_ONLY:-0}"
   -v "$ROOT:/work/lws-hmi"
   -v lws-hmi-ccache:/ccache
   -e CCACHE_DIR=/ccache
@@ -76,12 +76,9 @@ else
   docker_args+=(-v "$SDK:/work/sdk")
 fi
 
-if [[ -n "${LWS_HMI_CACHE_ROOT:-}" && -d "$LWS_HMI_CACHE_ROOT" ]]; then
-  docker_args+=(-e "LWS_HMI_CACHE_ROOT=${LWS_HMI_CACHE_ROOT}")
-  docker_args+=(-v "${LWS_HMI_CACHE_ROOT}:${LWS_HMI_CACHE_ROOT}")
-fi
-if [[ -n "${LWS_HMI_CACHE_URL:-}" ]]; then
-  docker_args+=(-e "LWS_HMI_CACHE_URL=${LWS_HMI_CACHE_URL}")
+if [[ -n "${NAS_CACHE_ROOT:-}" && -d "$NAS_CACHE_ROOT" ]]; then
+  docker_args+=(-e "NAS_CACHE_ROOT=${NAS_CACHE_ROOT}")
+  docker_args+=(-v "${NAS_CACHE_ROOT}:${NAS_CACHE_ROOT}")
 fi
 
 FLUTTER_INSTALL="$(bash "$ROOT/scripts/link-flutter-sdk.sh" --print 2>/dev/null || true)"

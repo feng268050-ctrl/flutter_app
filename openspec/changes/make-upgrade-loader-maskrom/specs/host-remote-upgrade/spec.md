@@ -28,7 +28,7 @@ The host SHALL download `boot.img` → partition `boot`, `boot_b.img` → `boot_
 
 ### Requirement: make upgrade dispatches SSH stream vs RockUSB by device mode
 
-`make upgrade` SHALL keep the existing **SSH stream-to-partition** path when a deployable Linux USB-SSH or registered SSH target is selected. When no such SSH target is selected but a RockUSB Loader/Maskrom device is, it SHALL use the RockUSB OTA-images path. When neither is available, it MUST fail with guidance to use `make devices`, SSH connectivity, `make reboot-loader`, or Maskrom. An optional env override (e.g. `UPGRADE_TRANSPORT=ssh|rockusb`) MAY force one transport; default is auto. Multi-device selection (`SN=` / `CHIPID=`) SHALL apply to RockUSB as it does for `make flash`.
+`make upgrade` SHALL keep the existing **SSH stream-to-partition** path when a deployable Linux USB-SSH or registered SSH target is selected. When no such SSH target is selected but a RockUSB Loader/Maskrom device is, it SHALL use the RockUSB OTA-images path. When neither is available, it MUST fail with guidance to use `make devices`, SSH connectivity, `make reboot-loader`, or Maskrom. An optional env override (e.g. `UPGRADE_TRANSPORT=ssh|rockusb`) MAY force one transport; default is auto. Multi-device selection (`SN=` / `CHIP_ID=`) SHALL apply to RockUSB as it does for `make flash`.
 
 #### Scenario: SSH board still streams
 

@@ -1,0 +1,545 @@
+# Make 命令参考
+
+权威目标列表：仓库根目录运行 `make help`。本文补充每个目标的**用法、时机、环境变量/参数**。
+
+工作流示例（按改动类型选命令链）仍在 [`README.md`](../README.md) → **Make commands**；构建加速见 [`docs/build-optimization.md`](build-optimization.md)；模拟器细节见 [`docs/p32-emulator.md`](p32-emulator.md)。
+
+---
+
+## 怎么传参数
+
+| 方式 | 示例 |
+|------|------|
+| 命令行前缀 | `APP=lws_hmi SN=abc make push-app` |
+| 仓库根 `.env` | 从 [`.env.example`](../.env.example) 复制；多数目标会 `source .env` |
+| Make 覆盖（写入类） | `make write-identity BRAND=x MODEL=y PRODUCT_SN=z` |
+| 位置参数 | `make connect 192.168.1.50`、`make extract-linux-sdk /path/to/volumes` |
+
+**优先级：** 命令行已设置的变量通常覆盖 `.env`（Makefile `WITH_DOTENV` 对 `SN`/`CHIP_ID`/`IP`/`APP`/`OEM_*`/`FLUTTER_SDK`/`BUILD_*` 等做了显式覆盖）。
+
+---
+
+## 公共环境变量
+
+| 变量 | 默认 | 说明 |
+|------|------|------|
+| `APP` | `lws_hmi` | `app/<APP>/`；`*_hmi` → `/opt/hmi`；产物 `output/firmware/<APP>/` |
+| `FLUTTER_SDK` | `flutter-sdk/` | 已安装主机 Flutter SDK 路径（`build-app` / debug / l10n）；**不是** `fetch-flutter-sdk` 的安装目标（那个用 `DEST`） |
+| `BUILD_JOBS` | `8` | 并行编译任务数（Docker OOM 时可降到 4） |
+| `BUILD_BIND_MOUNT` | 空 | macOS：`1` = 绑定挂载 SDK（易崩；优先用 Docker volume） |
+| `DOCKER_IMAGE` | `lws-hmi-builder:22.04` | 构建镜像 |
+| `DOCKER_PLATFORM` | `linux/amd64` | Docker 平台 |
+| `DOCKER_VOLUME` | `lws-hmi-sdk` | macOS SDK volume 名 |
+| `NAS_CACHE_ROOT` | 空 | 大文件 NAS 挂载根（见 `docs/cache-mirror.md`） |
+| `NAS_READ_ONLY` | `0` | `1` = 不写回 NAS |
+| `FORCE` | `0` | 强制覆盖/重建（各目标语义见下文） |
+| `FACTORY_SKU` | `ynh960-p800` | 出厂变体主键；查 `board/factory-skus.tsv` 得到下面两个 ID；也是 `factory.img` 子目录名 |
+| `UBOOT_ID` | 由表推出（默认 `rockchip-ynh960`） | bootloader 包：`prebuilt/bootloader/<id>/`；日常勿设，用 `FACTORY_SKU`；模拟器不用 |
+| `OEM_ID` | 由表推出（默认 `ynh960_panel-800x1280`） | OEM 包：`oem/packs/<id>/` → `oem/out/<id>/oem.img`；日常勿设；模拟器用 `sim_virt` |
+| `BOARD` / `CHIP` / `DEFCONFIG` | `ynh960` / `rk3566_rk3568` / `ynh960_defconfig` | lunch 用（一般勿改） |
+
+`FACTORY_SKU` → `UBOOT_ID` + `OEM_ID`（已设的 ID 覆盖表值）。`APP` 选软件/rootfs；SKU 族选 U-Boot+OEM；kernel FIT 各 SKU 共用。
+
+---
+
+## 设备选择（SSH / USB-SSH / 烧录）
+
+多数板端目标共用（`scripts/device-target.sh`）：
+
+| 变量 | 说明 |
+|------|------|
+| `SN` | 按序列号或 ChipID 列匹配（多板时必填） |
+| `CHIP_ID` | 仅按 ChipID 列 |
+| `IP` | 已 `make connect` 的 LAN SSH，或模拟器 `127.0.0.1:2222` |
+| `IFACE` | 按主机 USB 网卡名选 USB-SSH |
+| `SERIAL` | 已弃用，等同 `SN` |
+| `IMAGE` | `make flash` 镜像路径覆盖 |
+| `SN=SIM-EMU` / `SN=EMU` | QEMU 模拟器稳定别名 |
+
+**选择优先级：** `IP` → `IFACE` → `CHIP_ID` → `SN` → 唯一已连接设备。
+
+USB-SSH 凭据（一般不用改）：`USB_SSH_USER=root`、`USB_SSH_PASS=rockchip`、`USB_SSH_ADDR=192.168.55.1`。
+
+先看板子：`make devices`。
+
+---
+
+## Setup
+
+### `make setup`
+
+- **怎么用：** `make setup`
+- **何时用：** 新机器首次；或需要确认 host 工具 + overlay 已就位。
+- **做什么：** `apply-overlay`，再跑 `scripts/setup-host.sh`（macOS 会确保 Docker 镜像）。
+- **参数：** 无专用；继承 Docker / SDK 相关公共变量。
+
+### `make apply-overlay`
+
+- **怎么用：** `make apply-overlay`；改 DTS/kernel 后常用 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`
+- **何时用：** 改了 `overlay/**`、`board/**`（非纯 app 热更）后、多数 `build-*` 之前。
+- **做什么：** 把 board/buildroot/kernel overlay 打进 `linux-sdk/`（macOS volume 模式下在容器内执行）。
+- **参数：**
+
+| 变量 / 标志 | 说明 |
+|-------------|------|
+| `FORCE_PLATFORM_OVERLAY=1` | 在已 owned 的 SDK 树上强制重打 kernel/device 补丁 |
+| `BUILD_BIND_MOUNT=1` | macOS：在宿主机跑 overlay（非 volume） |
+| `--restore`（经 `clean-overlay`） | 还原被 patch 的 SDK 文件 |
+
+### `make clean-overlay`
+
+- **怎么用：** `make clean-overlay`
+- **何时用：** 排查 overlay 污染、准备重新 apply。
+- **做什么：** `apply-overlay.sh --restore`。
+
+---
+
+## Docker（仅 macOS）
+
+### `make docker-image`
+
+- **怎么用：** `make docker-image`
+- **何时用：** 首次 macOS 构建，或改了 `docker/Dockerfile`。
+- **参数：** `DOCKER_IMAGE`、`DOCKER_PLATFORM`。
+
+### `make docker-volume-init`
+
+- **怎么用：** `make docker-volume-init`
+- **何时用：** 首次；或 `trim-linux-sdk` 后需丢掉 volume 里旧 vendor 树时重新 init。
+- **做什么：** 宿主机 `linux-sdk/` → Docker volume（一次性拷贝）。
+
+### `make docker-volume-sync`
+
+- **怎么用：** `make docker-volume-sync`
+- **何时用：** 宿主机 SDK/overlay 有变更、构建前想刷新 volume。
+- **参数：** `DOCKER_VOLUME`。
+
+### `make docker-export-artifacts`
+
+- **怎么用：** `SCOPE=boot\|rootfs\|update\|firmware make docker-export-artifacts`
+- **何时用：** 日常一般**不必**（`build-kernel` / `build-rootfs` / `build-img` 已自动导出）；手工补导出时用。
+- **参数：** `SCOPE`（默认 `firmware`）、`APP`（rootfs 路径）。
+
+### `make docker-volume-pull`
+
+- **怎么用：** `make docker-volume-pull`
+- **何时用：** 旧别名；等同 `SCOPE=firmware` 导出（不镜像 `linux-sdk/output/`）。
+
+### `make docker-volume-status`
+
+- **怎么用：** `make docker-volume-status`
+- **何时用：** 排查 volume / SDK 树是否就绪。
+
+### `make sdk-shell`
+
+- **怎么用：** `make sdk-shell`
+- **何时用：** 需要进 SDK 树交互调试（Linux 本机或 macOS 容器）。
+
+---
+
+## Build（固件主路径）
+
+### `make build`
+
+- **怎么用：** `make build`
+- **何时用：** 全量出厂镜像（新机、发版、干净树）。
+- **流水线：** `check-prebuilt` → `apply-overlay` → `lunch` → `build-boot-logo` → `build-app` → `build-kernel` → `build-rootfs` → `build-oem` → `build-img`。
+- **参数：** `APP`、`FACTORY_SKU`、公共构建变量。
+- **产物：** `output/firmware/<APP>/<sku>/factory.img`，`update.img` 为 symlink。
+
+### `make lunch`
+
+- **怎么用：** `make lunch`
+- **何时用：** 首次选板型/Buildroot 配置，或 `.config` 丢失后。
+- **做什么：** `./build.sh $(CHIP):$(DEFCONFIG)` + 同步 lunch 配置。
+- **参数：** `CHIP`、`DEFCONFIG`（默认 ynh960）。
+
+### `make show-config`
+
+- **怎么用：** `make show-config`
+- **何时用：** 确认 `RK_*` 芯片/DTS/rootfs/defconfig 行。
+- **前提：** 已 `lunch`。
+
+### `make build-boot-logo`
+
+- **怎么用：** `make build-boot-logo`
+- **何时用：** 改了 `board/logo/`。
+- **做什么：** 生成 kernel FIT splash `logo.bmp`，并刷新 overlay Weston `boot-splash.png`（横屏直立，对齐 `rotate-270`）。
+- **后续：** 通常 `make build-kernel`（+ 若 splash 进 rootfs 则 `build-rootfs`）再 `upgrade`。
+
+### `make build-app`
+
+- **怎么用：** `make build-app` 或 `APP=factory_test make build-app`
+- **何时用：** 改了 Flutter App / `cyber_*` 包 / 随 App 打包的 `bin/` 后；日常热更首选（再 `push-app`）。
+- **做什么：** release AOT → overlay（`*_hmi`→`/opt/hmi`）；并 `apply-overlay`。
+- **参数：**
+
+| 变量 | 说明 |
+|------|------|
+| `APP` | 产品目录 |
+| `FLUTTER_SDK` | 主机 SDK |
+| `REQUIRE_AI=1` | AI 预编译缺失则失败（发版门禁） |
+
+**注意：** 不重建 rootfs；板端已有可推送 HMI 时用 `push-app`，无需 `build-rootfs`。
+
+### `make prepare-app-assets`
+
+- **怎么用：** `make prepare-app-assets`
+- **何时用：** 本地 IDE/`flutter test` 前需要工艺库/控制板固件生成物；`build-app` 通常已自动跑。
+- **做什么：** process-library + control-board → `assets/.generated/`。
+
+### `make build-debug-app`
+
+- **怎么用：** `make build-debug-app`
+- **何时用：** 很少单独跑；`debug-app` / IDE 会用到 debug bundle 缓存。
+- **产物：** `.cache` 下 debug 包。
+
+### `make version` / `make version-bump`
+
+- **怎么用：**
+  - `make version`
+  - `make version-bump VERSION=1.0.40`（可选 `APP=`）
+- **何时用：** 查/改 `app/<APP>/pubspec.yaml`（及可选 `app_version.dart`）。
+- **参数：** `VERSION`（bump 必填）、`APP`。
+- **后续上板：** `build-app` + `push-app`。
+
+### `make l10n` / `l10n-sync` / `l10n-gen` / `l10n-verify`
+
+- **怎么用：** 改父 ARB（`app_en.arb` / `app_zh.arb`）后 `make l10n`；CI/自检 `make l10n-verify`。
+- **何时用：** 文案/多语言；`l10n-sync` 只重生子 ARB；`l10n-gen` 只 `flutter gen-l10n`。
+- **后续上板：** `build-app` + `push-app`。
+
+### `make check-typography`
+
+- **怎么用：** `make check-typography`
+- **何时用：** 禁止裸 `fontSize: N` / 业务误用 `AppTypography.*Size`；本地或 CI。
+- **参数：** 无（不产固件）。
+
+### `make build-kernel`
+
+- **怎么用：** `make build-kernel`
+- **何时用：** 改 kernel、DTS（`overlay/kernel/`）、boot logo、FIT 多 conf。
+- **产物：** `output/firmware/boot.img`（rootfs_a）、`boot_b.img`（rootfs_b）、裸 `Image`（模拟器用）。
+- **参数：** 经 Docker/`BUILD_JOBS`；DTS 变更先 `FORCE_PLATFORM_OVERLAY=1 make apply-overlay`。
+- **后续：** 板端 `make upgrade`（不必 `build-img`）。
+
+### `make prepare-rootfs`
+
+- **怎么用：** `make prepare-rootfs`；强制重刷栈 `FORCE=1 make prepare-rootfs`
+- **何时用：** 只想确保 Weston/Mali/embedder 栈，不打包 `rootfs.img`。
+- **注意：** `build-rootfs` 会先调用它（stamp 命中则跳过）。
+
+### `make build-rootfs`
+
+- **怎么用：** `make build-rootfs` 或 `APP=cnc_hmi make build-rootfs`
+- **何时用：** overlay/systemd/LCD、Bake App 进镜像、Buildroot 用户态变更后。
+- **产物：** `output/firmware/<APP>/rootfs.img`。
+- **参数：** `APP`；若存在 `app/factory_test` 会自动确保 `/opt/factory_test`。
+- **重要：** 改 `overlay/buildroot/chips/*.config` 等**已有包的编译选项**时，`build-rootfs` **不会**重编该包；需先 `bash scripts/br-make-packages.sh <label> <pkg>…`。
+- **后续：** `make upgrade`。
+
+### `make build-oem`
+
+- **怎么用：** `make build-oem`；模拟器：`OEM_ID=sim_virt make build-oem`
+- **何时用：** 改了 `oem/**`、屏参包、board helpers、`product.ini` seed。
+- **产物：** `oem/out/<OEM_ID>/oem.img`。
+- **参数：** `FACTORY_SKU`（推荐）或直接 `OEM_ID=`；`UBOOT_ID` 无关。
+- **后续日常：** `OEM_ONLY=1 make upgrade`（只刷 oem + 普通重启）。
+
+### `make build-img`
+
+- **怎么用：** 先 `make build-oem`，再 `make build-img`
+- **何时用：** 出厂/USB 烧录用的 `factory.img`；**不**编译 kernel/rootfs。
+- **产物：** `output/firmware/<APP>/<FACTORY_SKU>/factory.img` + `update.img` symlink。
+- **参数：** `APP`、`FACTORY_SKU`（由此取 `UBOOT_ID`/`OEM_ID` 打进镜像）。
+- **后续：** `make reboot-loader` → `make flash`。
+
+---
+
+## Emulator（P3.2）
+
+详见 [`docs/p32-emulator.md`](p32-emulator.md)。
+
+### `make setup-emulator-qemu`
+
+- **怎么用：** `make setup-emulator-qemu`
+- **何时用：** macOS 首次；系统 QEMU 无 OpenGL 时安装 qemu-virgl。
+
+### `make fetch-emulator-swgl`
+
+- **怎么用：** `make fetch-emulator-swgl`；强制 `FORCE=1 make fetch-emulator-swgl`
+- **何时用：** 首次拉 guest Mesa virtio_gpu → `prebuilt/`（经 9p，不进 rootfs）。
+
+### `make build-emulator`
+
+- **怎么用：** `make build-emulator`
+- **何时用：** 已有 `Image` + `rootfs.img` 后组装模拟器目录。
+- **参数：** `APP`（模拟器 rootfs 固定扩到 1536M，设备 OTA 仍为 ~600M）。
+- **产物：** `output/firmware/emulator/`（含长大后的 rootfs 副本 + `sim_virt` oem）。
+
+### `make emulator` / `make emulator-stop`
+
+- **怎么用：** `make emulator`；停：`make emulator-stop`
+- **何时用：** 无板调试；停后再启避免残留 QEMU。
+- **常用参数：**
+
+| 变量 | 默认 | 说明 |
+|------|------|------|
+| `EMULATOR_ETH0_BRIDGE` | `auto` | `off` = 无网桥（无 IP 相机时） |
+| `EMULATOR_MEM` / `EMULATOR_CPU` | `2048` / `4` | 内存 MiB / vCPU 核数 |
+| `EMULATOR_CPU_MODEL` | `cortex-a55` | QEMU `-cpu` 型号 |
+| `EMULATOR_SSH_PORT` | `2222` | 主机 SSH 转发 |
+| `EMULATOR_XRES` / `EMULATOR_YRES` | `1536` / `960` | 显示 |
+| `EMULATOR_USB` | `auto` | USB 透传 |
+| `QEMU` | 自动 | `qemu-system-aarch64` 路径 |
+
+Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
+
+---
+
+## Dependencies（预编译 / 拉取）
+
+首次 `build-rootfs` 前跑 `make build-deps` + `make check-prebuilt`。强制刷新：对应 `rebuild-*` 或 `FORCE=1 make build-*`。
+
+### SDK 导入
+
+| 目标 | 用法 | 何时 | 参数 |
+|------|------|------|------|
+| `extract-linux-sdk` | `SRC=/path make extract-linux-sdk` 或位置参数 | 从 Innohi xz 分卷得到 `linux-sdk/` | `SRC`、`DEST`、`FORCE=1` 替换、`TRIM=1` 提取后 trim |
+| `trim-linux-sdk` | `make trim-linux-sdk` | 白名单裁剪 + platform squash | `DEST`、`CLEAN_OUTPUT=1` |
+| `check-linux-sdk` | `make check-linux-sdk` | 校验禁止目录/大文件 | — |
+| `squash-linux-sdk-platform` | `make squash-linux-sdk-platform` | 重打 overlay/kernel 进 owned 树 | 同 `FORCE_PLATFORM_OVERLAY` 场景 |
+
+### 聚合
+
+| 目标 | 说明 |
+|------|------|
+| `check-prebuilt` | 按已启用 defconfig fragment 检查 `prebuilt/` |
+| `build-deps` | `build-dev-deps` + `build-runtime-deps` |
+| `rebuild-deps` | `FORCE=1` 全量依赖 |
+| `build-dev-deps` | 主机 Flutter SDK + RKNN-Toolkit |
+| `rebuild-dev-deps` | 强制重做 dev 依赖 |
+| `build-runtime-deps` | flutter engine（release+debug）、gstreamer、mediamtx、opencv、ai、btop、rknn-rt 等 |
+| `rebuild-runtime-deps` | 强制 runtime |
+
+### 单项 build / fetch
+
+| 目标 | 何时用 | 主要参数 / 产物 |
+|------|--------|-----------------|
+| `build-flutter-engine` | 改 engine pin / 缺 prebuilt | `FLUTTER_ENGINE_RUNTIME_MODE=debug\|release`、`FLUTTER_ENGINE_VERSION`、`FORCE` → `prebuilt/flutter-engine/…` |
+| `rebuild-flutter-engine` | 强制重编 engine | 同上，`FORCE=1` |
+| `fetch-flutter-engine` / `refetch-flutter-engine` | 拉 engine 源码到 `.cache/` | `FORCE` |
+| `cache-publish-flutter-engine` | 发布 engine 到团队缓存 | 见 cache-mirror |
+| `build-flutter-embedded-linux` | Weston 镜像必做 | eLinux Wayland client → prebuilt；`rebuild-*` + `FORCE=1` |
+| `build-gstreamer` | MPP/GStreamer pin 变更 | `FORCE`；改后常需 `rebuild-flutter-embedded-linux` |
+| `build-platform-packages` | libmodbus/yaml-cpp/sqlite/avahi | `FORCE` |
+| `build-mediamtx` | MediaMTX 二进制 | → prebuilt；随 `build-app` 进 `/opt/hmi` |
+| `build-opencv` / `fetch-opencv` / `fetch-opencv-ximgproc` | AI 依赖 | OpenCV 源码/产物 |
+| `build-ai` | `lws_ai_daemon` | `AI_VERSION`、`FORCE` |
+| `build-umtprd` | USB MTP | → prebuilt + overlay |
+| `build-extract-video-frame` | MP4→JPEG helper | → prebuilt + libexec |
+| `build-secrets-seal` | OP-TEE seal TA + CA | → prebuilt + overlay |
+| `fetch-btop` | btop 二进制 | → prebuilt + overlay |
+| `fetch-rknn-rt` | `librknnrt` | → `prebuilt/rknn-rt/` |
+| `fetch-flutter-sdk` / `refetch-flutter-sdk` | 主机 Flutter | `DEST`（默认 `flutter-sdk/`）、`FORCE` |
+| `fetch-rknn-toolkit` | 主机 ONNX→RKNN | `FORCE` |
+| `export-prebuilt` | 重导出 flutter+runtime | 通常 build 已导出；`rebuild-prebuilt`=`FORCE=1` |
+| `build-prebuilt` | 仅 flutter 导出 | `EXPORT_RUNTIME=0` |
+| `export-prebuilt-runtime` | 仅 runtime 导出 | `EXPORT_FLUTTER=0` |
+
+---
+
+## Debug / 板端运维
+
+### `make setup-usb-ssh`
+
+- **怎么用：** `make setup-usb-ssh`
+- **何时用：** 首次 USB 网卡调试；配置 ECM/RNDIS IP + `sshpass`（Win 需管理员；macOS 可能要 sudo）。
+
+### `make prepare-debug-host`
+
+- **怎么用：** `make prepare-debug-host`
+- **何时用：** `debug-app` / IDE 前确认 USB-SSH 或已注册 SSH 可达。
+
+### `make connect` / `make disconnect`
+
+- **怎么用：** `make connect 192.168.1.50`；`make disconnect 192.168.1.50`（也可用 `IP=`）
+- **何时用：** 注册/注销 LAN SSH 板（含 `host:port` 模拟器）。
+
+### `make devices`
+
+- **怎么用：** `make devices`
+- **何时用：** 选板前看 RockUSB / USB-SSH / SSH / EMU 表。
+- **参数：** 无；输出用于填 `SN=` / `CHIP_ID=` / `IP=`。
+
+### `make shell`
+
+- **怎么用：** `make shell`；多板 `SN=… make shell`
+- **何时用：** 交互 SSH（USB-SSH 或已注册 SSH）。
+
+### `make logs`
+
+- **怎么用：** `make logs`；过滤示例：`UNIT=hmi.service make logs`、`GREP=WARN make logs`
+- **参数：**
+
+| 变量 | 说明 |
+|------|------|
+| `UNIT` | systemd unit（可逗号分隔） |
+| `TAG` | syslog identifier |
+| `GREP` | journalctl `--grep` |
+| `PRIORITY` | `emerg`…`debug` 或 `0`–`7` |
+| `KERNEL_ONLY=1` | 仅内核日志 |
+| `SN` / `CHIP_ID` / `IP` | 选板 |
+
+### `make push-app`
+
+- **怎么用：** `make build-app` 后 `make push-app`
+- **何时用：** App 日更（不刷 rootfs）。
+- **参数：** `APP`、设备选择。
+- **行为：** `*_hmi` → `/opt/hmi` 并重启 `hmi.service`；其它 App → `/opt/<id>`。
+
+### `make upgrade-control-board`
+
+- **怎么用：** `make upgrade-control-board`；指定包 `FIRMWARE_BIN=/path/to.bin make upgrade-control-board`
+- **何时用：** 推最新控制板固件并触发升级（无版本门禁）。
+- **前提：** 板端 HMI 含 watcher。
+
+### `make upgrade-process-library` / `make reset-process-library`
+
+- **怎么用：** `make upgrade-process-library`；指定包目录 `PACKAGE_DIR=…`；重置：`make reset-process-library`
+- **何时用：** 按设备 Vendor Storage `model` 推工艺库；或清 DB 后强制重导捆绑包（不重启）。
+- **前提：** HMI watcher 在跑。
+
+### `make set-prop` / `make del-prop`
+
+- **怎么用：** `make set-prop CAMERA_IP=192.168.1.10`；`make del-prop CAMERA_IP`
+- **何时用：** 改 `/var/lib/hal/product.ini` 可调项（**不能**改 brand/model/sn → 用 `write-identity`）。
+- **行为：** 成功后重启 `hmi`。
+
+### `make write-identity`
+
+- **怎么用：** `make write-identity BRAND=Innohi MODEL='L1 Pro' PRODUCT_SN=SN123`；覆盖已有 SN 加 `FORCE=1`
+- **何时用：** 写 Vendor Storage 身份。
+- **注意：** 选板用 `SN=`/`CHIP_ID=`/`IP=`；载荷用 `PRODUCT_SN=`，二者勿混淆。
+
+### `make alarm` / `make alarm-clean`
+
+- **怎么用：** `make alarm CODE=L001`；清理限制：`make alarm-clean`
+- **何时用：** 演示告警弹窗（HMI 须在跑）。
+
+### `make smoke-ai`
+
+- **怎么用：** `make smoke-ai`；自定义图 `SMOKE_AI_IMAGE=foo.jpg make smoke-ai`
+- **何时用：** 上传 stain demo，经 AI daemon sock 做离线 RKNN 冒烟。
+- **前提：** 板端 AI daemon（通常随 HMI）。
+
+### `make upgrade`
+
+- **怎么用：**
+  - 全量 A/B：`make upgrade`（流式写 inactive FIT + `APP` rootfs，默认带 oem）
+  - 仅 OEM：`OEM_ONLY=1 make upgrade`
+  - 跳过 oem：`OEM_IMG= make upgrade`
+- **何时用：** 板已具备 P2.4 GPT/helpers 后的日常 kernel/rootfs/oem 迭代（**不**传 `factory.img`）。
+- **参数：** `APP`、`OEM_ONLY`、`OEM_IMG`、`FACTORY_SKU`/`OEM_ID`、设备选择、`WAIT_SEC`。
+- **行为：** 请求重启后立即返回；需等板子起来再连。
+
+### `make debug-setup` / `make debug-app`
+
+- **怎么用：** 一次性 `make debug-setup`；日常 `make debug-app`（多板 `SN=…`）
+- **何时用：** Flutter Custom Device + `flutter run -d lws-hmi`。
+- **参数：** `FLUTTER_SDK`、设备选择。
+
+### `make serial-console` / `make serial-ports` / `make serial-sniff`
+
+- **怎么用：**
+  - `make serial-console`（默认 TTL）
+  - `MODE=RS485 make serial-console` / `MODE=RS232 …`
+  - `make serial-ports` 列端口
+  - `make serial-sniff` 上电循环探测波特率
+- **何时用：** 主机串口调试（TTL 调试口 / RS485 / RS232）。
+- **参数：**
+
+| 变量 | 默认 | 说明 |
+|------|------|------|
+| `MODE` | `TTL` | `TTL`=miniterm；`RS485`/`RS232`=hex+TX |
+| `PORT` | 自动 | 如 `/dev/cu.wchusbserial…` |
+| `BAUD` | TTL `1500000`；其它 `115200` | |
+| `LOG_FILE` | 空 | hex 模式会话日志文件 |
+| `SNIFF_SEC` | `8` | sniff 每档波特率监听秒数 |
+
+退出：TTL `Ctrl+]`；RS485/RS232 `Esc` 或 `:q`。
+
+---
+
+## USB Flash
+
+### `make audit`
+
+- **怎么用：** `make audit`
+- **何时用：** `flash` 前检查镜像/工具是否就绪。
+
+### `make reboot` / `make reboot-loader` / `make loader`
+
+- **怎么用：** `SN=… make reboot`；进烧录：`make reboot-loader`；Maskrom 下发 loader：`make loader`
+- **何时用：** 软重启；或进 RockUSB 准备 `flash`。
+- **参数：** 设备选择、`BOOTLOADER_WAIT_SEC`、`LOADER_NORESET=1` 等（见 `flash-usb.sh`）。
+
+### `make flash`
+
+- **怎么用：** `make flash`；覆盖镜像 `IMAGE=/path/to.img make flash`；指定 SKU `FACTORY_SKU=… APP=… make flash`
+- **何时用：** USB 烧 `factory.img`（或 Maskrom `ul` 路径）。
+- **默认镜像：** `output/firmware/<APP>/<FACTORY_SKU>/factory.img`（或 `update.img` symlink）。
+- **参数：** `IMAGE`/`UPDATE_IMG`、`APP`、`FACTORY_SKU`、`SN`/`CHIP_ID`、`UPGRADE_NORESET=1`。
+
+### `make flash-android`
+
+- **怎么用：** `make flash-android`；`ANDROID_IMG=/path make flash-android`
+- **何时用：** 可选刷 Android 镜像（默认 `images/android/update.img`）。
+
+### `make watch-maskrom`
+
+- **怎么用：** `make watch-maskrom`
+- **何时用：** 等待设备进入 Maskrom。
+
+---
+
+## Misc
+
+| 目标 | 用法 | 何时 | 参数 |
+|------|------|------|------|
+| `pull-display-params` | `make pull-display-params` | 从 Android 板拉 LCD/MIPI 表到 `board/` | adb 设备；会 `apply-overlay` |
+| `migrate-buildroot-output` | `make migrate-buildroot-output` | 旧 `*_lws_hmi_p1` BR 树迁为 `lws_hmi` | — |
+| `fix-buildroot-host-rpaths` | `make fix-buildroot-host-rpaths` | migrate 后修 host rpath | — |
+| `clean-buildroot-output` | `make clean-buildroot-output` | 删当前 BR output（保留 `dl/`）后全量重编 rootfs | 之后常需 `lunch` + `build-rootfs` |
+| `export-buildroot-toolchain` | `make export-buildroot-toolchain` | 打 BR host+staging tar 供团队缓存 | 非运行时 prebuilt |
+| `build-uboot` | **ynh960 勿用**（无 Innohi 指示） | 有砖机风险 | — |
+| `fetch-uboot` | 内部/少用 | 拉 uboot | — |
+| `build-reboot-rockusb-loader` | 内部工具构建 | — | `LWS_HMI_SKIP_OVERLAY=1` |
+| `test-debug-app` | `make test-debug-app` | debug-app 脚本自测 | — |
+
+---
+
+## 常用场景速查
+
+| 场景 | 命令（自上而下） |
+|------|------------------|
+| App 日更 | `make build-app` → `make push-app` |
+| Overlay / systemd | `make apply-overlay` → `make build-rootfs` → `make upgrade` |
+| Kernel / DTS | `FORCE_PLATFORM_OVERLAY=1 make apply-overlay` → `make build-kernel` → `make upgrade` |
+| 仅 OEM | `make build-oem` → `OEM_ONLY=1 make upgrade` |
+| 出厂 USB | `make build-oem` → `make build-img` → `make reboot-loader` → `make flash` |
+| 全量 | `make build` |
+| 模拟器 | `make build-kernel` → `make build-rootfs` → `make build-emulator` → `make emulator` |
+| BR 包选项变更 | `make apply-overlay` → `bash scripts/br-make-packages.sh …` → `make build-rootfs` → `make upgrade` |
+
+---
+
+## 相关文档
+
+- [`README.md`](../README.md) — Quick start + 按改动类型的命令链
+- [`AGENTS.md`](../AGENTS.md) — Agent 重建表（改完代码后该跑哪些 make）
+- [`docs/build-optimization.md`](build-optimization.md)
+- [`docs/p32-emulator.md`](p32-emulator.md)
+- [`docs/linux-sdk-vendor-import.md`](linux-sdk-vendor-import.md)
+- [`docs/cache-mirror.md`](cache-mirror.md)
+- [`.env.example`](../.env.example)

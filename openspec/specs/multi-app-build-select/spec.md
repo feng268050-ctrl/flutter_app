@@ -27,7 +27,7 @@ The build system SHALL accept Make/env variable `APP` for `make build-app`, `mak
 
 ### Requirement: HMI apps use _hmi suffix and install to /opt/hmi
 
-Flutter HMI product apps SHALL be named with suffix `_hmi` (e.g. `lws_hmi`, `cnc_hmi`). Any such `APP` SHALL install to device/overlay path `/opt/hmi` so `hmi.service` can launch the bundle. A single rootfs SHALL contain at most one HMI payload at `/opt/hmi` (the selected `*_hmi` app) plus an optional non-HMI `factory_test` at `/opt/factory_test`. Non-HMI apps SHALL install to `/opt/<APP>`. Product companions (MediaMTX, AI daemon, optional ffmpeg) SHALL install for HMI apps (`*_hmi`). Ship-asset prepare SHALL run when the selected app’s `assets/process-library` or `assets/firmware/control-board` sources exist.
+Flutter HMI product apps SHALL be named with suffix `_hmi` (e.g. `lws_hmi`, `cnc_hmi`). Any such `APP` SHALL install to device/overlay path `/opt/hmi` so `hmi.service` can launch the bundle. A single rootfs SHALL contain at most one HMI payload at `/opt/hmi` (the selected `*_hmi` app) plus an optional non-HMI `factory_test` at `/opt/factory_test`. Non-HMI apps SHALL install to `/opt/<APP>`. Product companions (MediaMTX, AI daemon) SHALL install for HMI apps (`*_hmi`). Ship-asset prepare SHALL run when the selected app’s `assets/process-library` or `assets/firmware/control-board` sources exist.
 
 #### Scenario: Alternate HMI product still uses /opt/hmi
 

@@ -25,7 +25,7 @@ The target SHALL run the debug bundle with a debug-runtime engine built from the
 
 ### Requirement: Debug deployment uses existing repository device selection
 
-Debug host commands SHALL reuse `.env` and the shared device selection contract used by other repository commands, including `FLUTTER_SDK`, `SN` / `LWS_HMI_SN`, `IP` / `LWS_HMI_IP` (SSH registry only), USB/SSH target credentials, reachability timeout, and transport-appropriate SSH/SCP routing (ECM bind for USB-SSH; unbound TCP for registered SSH).
+Debug host commands SHALL reuse `.env` and the shared device selection contract used by other repository commands, including `FLUTTER_SDK`, `SN`, `IP` (SSH registry only), USB/SSH target credentials, reachability timeout, and transport-appropriate SSH/SCP routing (ECM bind for USB-SSH; unbound TCP for registered SSH).
 
 #### Scenario: Multiple boards without SN
 

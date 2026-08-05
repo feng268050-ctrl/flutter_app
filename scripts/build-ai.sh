@@ -14,7 +14,7 @@ RKNN_SO="$ROOT/prebuilt/rknn-rt/aarch64/librknnrt.so"
 RKNN_INC="$ROOT/prebuilt/rknn-rt/include"
 XIMG="$ROOT/.cache/opencv/ximgproc-ed"
 FORCE="${FORCE:-0}"
-LIB_VERSION="${LIB_VERSION:-0.0.0-dev}"
+AI_VERSION="${AI_VERSION:-0.0.0-dev}"
 
 find_cross_gcc() {
   local sdk="${LWS_HMI_SDK_DIR:-$ROOT/linux-sdk}"
@@ -46,10 +46,10 @@ if prebuilt_ready "$OUT_DIR" && [[ -x "$OUT_DIR/lws_ai_daemon" ]] && [[ "$FORCE"
 fi
 
 if [[ "$(uname -s)" == Darwin ]] && [[ "${LWS_HMI_DOCKER:-}" != "1" ]]; then
-  # docker-run only forwards selected -e vars; pass FORCE/LIB_VERSION on the remote argv.
+  # docker-run only forwards selected -e vars; pass FORCE/AI_VERSION on the remote argv.
   exec env LWS_HMI_SKIP_OVERLAY=1 \
     bash "$ROOT/scripts/docker-run.sh" \
-    env "FORCE=${FORCE}" "LIB_VERSION=${LIB_VERSION}" \
+    env "FORCE=${FORCE}" "AI_VERSION=${AI_VERSION}" \
     bash /work/lws-hmi/scripts/build-ai.sh
 fi
 
@@ -116,14 +116,14 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
 EOF
 fi
 
-echo "build-ai: CC=$CC LIB_VERSION=$LIB_VERSION"
+echo "build-ai: CC=$CC AI_VERSION=$AI_VERSION"
 rm -rf "$BUILD_DIR/cmake"
 mkdir -p "$BUILD_DIR/cmake" "$OUT_DIR/lib"
 
 cmake -S "$SRC" -B "$BUILD_DIR/cmake" \
   -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN_FILE" \
   -DCMAKE_BUILD_TYPE=Release \
-  -DLIB_VERSION="$LIB_VERSION" \
+  -DLIB_VERSION="$AI_VERSION" \
   -DOPENCV_PATH="$OPENCV_CMAKE" \
   -DRKNN_RT_PATH="$ROOT/prebuilt/rknn-rt/aarch64" \
   -DRKNN_RT_LIB="$RKNN_SO" \
@@ -140,7 +140,7 @@ cmake -S "$SRC" -B "$BUILD_DIR/cmake" \
   -DBUILD_RKNN_MEM_DEMO=OFF \
   -DFETCHCONTENT_FULLY_DISCONNECTED=OFF
 
-cmake --build "$BUILD_DIR/cmake" -j"${BUILD_JOBS:-4}" --target lws_ai_daemon
+cmake --build "$BUILD_DIR/cmake" -j"${BUILD_JOBS:-8}" --target lws_ai_daemon
 
 DAEMON_BIN="$BUILD_DIR/cmake/lws_ai_daemon"
 [[ -x "$DAEMON_BIN" ]] || {
@@ -171,7 +171,7 @@ done
 shopt -u nullglob
 rm -f "$OUT_DIR"/lib/librknnrt.so*
 
-prebuilt_stamp "$OUT_DIR" "lws_ai-${LIB_VERSION}-linux-arm64"
+prebuilt_stamp "$OUT_DIR" "lws_ai-${AI_VERSION}-linux-arm64"
 bash "$ROOT/scripts/sync-prebuilt-manifest.sh" 2>/dev/null || true
 file "$OUT_DIR/lws_ai_daemon" || true
 echo "build-ai: done → $OUT_DIR/lws_ai_daemon"

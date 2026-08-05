@@ -17,7 +17,7 @@
 - [x] 3.1 Update `read-device-serial.sh` (product.ini sn + `--chip-id`)
 - [x] 3.2 `make devices`: columns SN + ChipID; live probe; android/RockUSB ChipID = adb/SerialNo
 - [x] 3.3 HAL `ProductInfo.chipId` + `SysInfoSnapshot.chipId`; sn falls back to chipId
-- [x] 3.4 Rename host device-selection env `SERIAL=` → `SN=` (`LWS_HMI_SN`); add `CHIPID=`; keep `SERIAL=` as deprecated alias; clear SN-as-selector when `set-prop`/`del-prop` writes product `SN`
+- [x] 3.4 Rename host device-selection env `SERIAL=` → `SN=`; add `CHIP_ID=`; keep `SERIAL=` as deprecated alias; clear SN-as-selector when `set-prop`/`del-prop` writes product `SN`
 - [x] 3.5 Docs: Makefile help, `.env.example`, README, AGENTS.md, OpenSpec for SN/ChipID + env rename
 
 ## 4. App Device Information + camera_ip
@@ -36,7 +36,7 @@
 - [x] 5.2 Add `scripts/set-product-prop.sh`: SSH pull/create `/var/lib/hmi/product.ini`, apply **one or more** `UPPERCASE_KEY=value` upserts, push, restart `hmi.service` once
 - [x] 5.3 Add `scripts/del-product-prop.sh`: remove one UPPERCASE key; warn if absent; push if changed; restart HMI when file changed
 - [x] 5.4 Wire Makefile `set-prop` / `del-prop` (device selection like `push-app`); swallow `del-prop KEY` extra goals; update `help`
-- [x] 5.5 Update README Make commands + AGENTS.md (`SN=` / `CHIPID=` / `set-prop`; host-only: no firmware rebuild)
+- [x] 5.5 Update README Make commands + AGENTS.md (`SN=` / `CHIP_ID=` / `set-prop`; host-only: no firmware rebuild)
 - [x] 5.6 Document `SERIAL=` → `SN=` rename (Makefile help, `.env.example`, living OpenSpec host-push / devices specs)
 
 ## 6. Docs / verification

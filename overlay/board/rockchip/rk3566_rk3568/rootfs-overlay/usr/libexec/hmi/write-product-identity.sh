@@ -1,7 +1,7 @@
 #!/bin/sh
 # Write product identity into Rockchip Vendor Storage.
 # Env:
-#   BRAND=  MODEL=  PRODUCT_SN= (alias IDENTITY_SN=)
+#   BRAND=  MODEL=  PRODUCT_SN=
 #   FORCE=1 to overwrite a non-empty existing SN
 # Exits non-zero if /dev/vendor_storage is unavailable (e.g. QEMU emulator).
 set -eu
@@ -23,12 +23,12 @@ die() { echo "write-product-identity: ERROR: $*" >&2; exit 1; }
 
 BRAND="${BRAND:-}"
 MODEL="${MODEL:-}"
-PRODUCT_SN="${PRODUCT_SN:-${IDENTITY_SN:-}}"
+PRODUCT_SN="${PRODUCT_SN:-}"
 FORCE="${FORCE:-0}"
 
 [ -n "$BRAND" ] || die "BRAND= is required"
 [ -n "$MODEL" ] || die "MODEL= is required"
-[ -n "$PRODUCT_SN" ] || die "PRODUCT_SN= (or IDENTITY_SN=) is required"
+[ -n "$PRODUCT_SN" ] || die "PRODUCT_SN= is required"
 
 # Trim / reject newlines.
 trim() { printf '%s' "$1" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }

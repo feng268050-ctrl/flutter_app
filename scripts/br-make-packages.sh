@@ -11,7 +11,7 @@ fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BR_OUTPUT="${BR_OUTPUT:-rockchip_rk3566_rk3568_lws_hmi}"
-JOBS="${BUILD_JOBS:-4}"
+JOBS="${BUILD_JOBS:-8}"
 PKG_LIST="$*"
 
 # wayland-dirclean does not remove libs already copied into target/. A partial or

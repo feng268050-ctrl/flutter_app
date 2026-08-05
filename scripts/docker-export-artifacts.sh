@@ -24,7 +24,7 @@ app_select_resolve
 SIZE_HELPER="$ROOT/scripts/artifact-size.sh"
 IMAGE="${DOCKER_IMAGE:-lws-hmi-builder:22.04}"
 PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
-VOLUME="${LWS_HMI_DOCKER_VOLUME:-lws-hmi-sdk}"
+VOLUME="${DOCKER_VOLUME:-lws-hmi-sdk}"
 
 resolve_host_sdk() {
 	if [[ -n "${LWS_HMI_SDK_DIR:-}" && -d "${LWS_HMI_SDK_DIR}" && "${LWS_HMI_SDK_DIR}" != /work/sdk ]]; then

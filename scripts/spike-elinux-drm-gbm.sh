@@ -18,9 +18,9 @@ REPO="${ELINUX_REPO:-https://github.com/flutter-elinux/flutter-embedded-linux.gi
 ENGINE_SO="$ROOT/prebuilt/flutter-engine/3.41.9/arm64-release/target/usr/lib/libflutter_engine.so"
 
 IFACE="${IFACE:-en12}"
-ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
-USER_="${LWS_HMI_USB_SSH_USER:-root}"
-PASS="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+ADDR="${USB_SSH_ADDR:-192.168.55.1}"
+USER_="${USB_SSH_USER:-root}"
+PASS="${USB_SSH_PASS:-rockchip}"
 REMOTE_DIR="${REMOTE_DIR:-/userdata/elinux-spike}"
 
 SSH() {

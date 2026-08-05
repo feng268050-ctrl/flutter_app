@@ -70,7 +70,7 @@ else
 fi
 
 if grep -q 'SIM-EMU' "$ROOT/scripts/device-target.sh" \
-	&& grep -q 'MODE=EMU' "$ROOT/scripts/debug-host-prepare.sh"; then
+	&& grep -q 'MODE=EMU' "$ROOT/scripts/prepare-debug-host.sh"; then
 	echo "OK  debug-app selects MODE=EMU (SN=SIM-EMU alias)"
 else
 	echo "FAIL debug-app path missing EMU / SIM-EMU support" >&2
@@ -83,21 +83,21 @@ else
 	echo "OK  run-debug.sh invokes sourced SSH helper"
 fi
 
-assert_executable "$ROOT/scripts/debug-host-prepare.sh"
+assert_executable "$ROOT/scripts/prepare-debug-host.sh"
 assert_executable "$ROOT/scripts/device-target.sh"
 assert_executable "$ROOT/scripts/ssh-devices.sh"
 
 if grep -q 'usb_ssh_session_try_select' "$ROOT/scripts/usb-ssh-session.sh" \
-	&& grep -q 'usb_ssh_session_try_select' "$ROOT/scripts/debug-host-prepare.sh"; then
-	echo "OK  debug-host-prepare soft-selects without silent exit"
+	&& grep -q 'usb_ssh_session_try_select' "$ROOT/scripts/prepare-debug-host.sh"; then
+	echo "OK  prepare-debug-host soft-selects without silent exit"
 else
-	echo "FAIL debug-host-prepare can still exit silently on empty devices" >&2
+	echo "FAIL prepare-debug-host can still exit silently on empty devices" >&2
 	fail=1
 fi
 
-if grep -q 'debug-host-prepare.sh' "$ROOT/scripts/debug-app.sh" \
+if grep -q 'prepare-debug-host.sh' "$ROOT/scripts/debug-app.sh" \
 	&& ! grep -q 'usb-ssh-host-setup.sh' "$ROOT/scripts/debug-app.sh"; then
-	echo "OK  debug-app uses debug-host-prepare (not forced USB ECM)"
+	echo "OK  debug-app uses prepare-debug-host (not forced USB ECM)"
 else
 	echo "FAIL debug-app still forces USB host setup" >&2
 	fail=1
@@ -135,11 +135,12 @@ else
 	fail=1
 fi
 
-if grep -q 'make debug-host-prepare debug-setup build-debug-app' "$ROOT/.vscode/tasks.json" \
+if grep -q 'make prepare-debug-host debug-setup build-debug-app' "$ROOT/.vscode/tasks.json" \
+	&& ! grep -q 'make setup-usb-ssh debug-setup build-debug-app' "$ROOT/.vscode/tasks.json" \
 	&& ! grep -q 'make usb-ssh-setup debug-setup build-debug-app' "$ROOT/.vscode/tasks.json"; then
-	echo "OK  IDE preLaunchTask uses debug-host-prepare"
+	echo "OK  IDE preLaunchTask uses prepare-debug-host"
 else
-	echo "FAIL IDE preLaunchTask still forces usb-ssh-setup" >&2
+	echo "FAIL IDE preLaunchTask still forces setup-usb-ssh / usb-ssh-setup" >&2
 	fail=1
 fi
 

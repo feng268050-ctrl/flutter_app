@@ -29,7 +29,7 @@ The design must retain the one-firmware-image principle, reuse USB plug-SSH and 
 
 The pinned Flutter SDK's Custom Devices feature will be enabled and configured with a stable logical device ID such as `lws-hmi`. A repository script will idempotently install/update that user-scoped device definition; generated commands will call repository-owned adapters rather than embedding addresses, passwords, or duplicated deployment logic in editor JSON.
 
-The custom device's discovery, install, run, stop, and SSH port-forward commands will delegate to the same USB-SSH selection layer used by `make push-app`. `SERIAL` / `LWS_HMI_SERIAL` remains authoritative when multiple boards are attached, and all commands bind to the selected ECM interface even though boards share `192.168.55.1`.
+The custom device's discovery, install, run, stop, and SSH port-forward commands will delegate to the same USB-SSH selection layer used by `make push-app`. `SERIAL` remains authoritative when multiple boards are attached, and all commands bind to the selected ECM interface even though boards share `192.168.55.1`.
 
 The repository will check in Flutter launch configuration under repo-root `.vscode/` (workspace opened at `lws-hmi`, with `cwd` pointing at `app/hmi`). Run & Debug launches the named custom device through the Flutter extension, so the extension owns the `flutter run` protocol and can expose normal debug actions and DevTools.
 

@@ -19,11 +19,11 @@ APP ?= lws_hmi
 
 # USB flash / adb / remote SSH (override when multiple devices connected)
 SN ?=
-CHIPID ?=
+CHIP_ID ?=
 SERIAL ?=
 IP ?=
 IMAGE ?=
-FLASH_ENV = SN='$(SN)' CHIPID='$(CHIPID)' SERIAL='$(SERIAL)' IP='$(IP)' UPDATE_IMG='$(IMAGE)'
+FLASH_ENV = SN='$(SN)' CHIP_ID='$(CHIP_ID)' SERIAL='$(SERIAL)' IP='$(IP)' UPDATE_IMG='$(IMAGE)'
 
 # Positional IP for: make connect <ip> / make disconnect <ip>
 ifneq ($(filter connect disconnect,$(firstword $(MAKECMDGOALS))),)
@@ -43,13 +43,13 @@ $(EXTRACT_LINUX_SDK_ARGS):
   endif
 endif
 
-.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup debug-host-prepare debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop write-identity upgrade reboot reboot-loader loader flash flash-android watch-maskrom usb-ssh-setup test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
+.PHONY: help setup apply-overlay clean-overlay docker-image docker-volume-init docker-volume-sync docker-volume-pull docker-export-artifacts docker-volume-status sdk-shell shell logs lunch show-config build build-kernel build-uboot fetch-uboot build-rootfs prepare-rootfs build-img build-oem build-emulator emulator emulator-stop setup-emulator-qemu build-boot-logo build-app prepare-app-assets build-debug-app debug-setup prepare-debug-host debug-app build-reboot-rockusb-loader check-prebuilt check-linux-sdk trim-linux-sdk squash-linux-sdk-platform clean-buildroot-output migrate-buildroot-output fix-buildroot-host-rpaths export-prebuilt export-prebuilt-runtime build-prebuilt export-buildroot-toolchain build-runtime-deps rebuild-runtime-deps build-deps rebuild-deps build-flutter-engine rebuild-flutter-engine fetch-flutter-engine refetch-flutter-engine cache-publish-flutter-engine rebuild-flutter-embedded-linux rebuild-flutter-embedded-linux fetch-flutter-sdk refetch-flutter-sdk build-dev-deps rebuild-dev-deps fetch-opencv refetch-opencv fetch-opencv-ximgproc fetch-rknn-toolkit refetch-rknn-toolkit fetch-rknn-rt refetch-rknn-rt fetch-btop refetch-btop fetch-emulator-swgl build-umtprd rebuild-umtprd build-extract-video-frame rebuild-extract-video-frame build-secrets-seal rebuild-secrets-seal build-mediamtx rebuild-mediamtx build-opencv rebuild-opencv build-ai rebuild-ai build-gstreamer rebuild-gstreamer build-platform-packages rebuild-platform-packages rebuild-prebuilt extract-linux-sdk pull-display-params audit devices connect disconnect push-app upgrade-control-board upgrade-process-library reset-process-library set-prop del-prop write-identity upgrade reboot reboot-loader loader flash flash-android watch-maskrom setup-usb-ssh test-debug-app alarm alarm-clean smoke-ai l10n l10n-sync l10n-gen l10n-verify version version-bump check-typography
 
 # Run a command with `.env` exported (if present).
 # Usage: $(call WITH_DOTENV,<command>)
 define WITH_DOTENV
 bash -c 'set -euo pipefail; \
-  __ENV_SN="$${SN-}"; __ENV_CHIPID="$${CHIPID-}"; __ENV_SERIAL="$${SERIAL-}"; __ENV_IP="$${IP-}"; __ENV_IMAGE="$${IMAGE-}"; \
+  __ENV_SN="$${SN-}"; __ENV_CHIP_ID="$${CHIP_ID-}"; __ENV_SERIAL="$${SERIAL-}"; __ENV_IP="$${IP-}"; __ENV_IMAGE="$${IMAGE-}"; \
   __ENV_APP="$${APP-}"; \
   __ENV_OEM_ONLY="$${OEM_ONLY-}"; \
   if [[ -n "$${OEM_IMG+x}" ]]; then __ENV_OEM_IMG_SET=1; __ENV_OEM_IMG="$${OEM_IMG-}"; else __ENV_OEM_IMG_SET=0; fi; \
@@ -57,7 +57,7 @@ bash -c 'set -euo pipefail; \
   __ENV_BUILD_BIND_MOUNT="$${BUILD_BIND_MOUNT-}"; \
   set -a; [[ -f .env ]] && source .env; set +a; \
   [[ -n "$$__ENV_SN" ]] && export SN="$$__ENV_SN"; \
-  [[ -n "$$__ENV_CHIPID" ]] && export CHIPID="$$__ENV_CHIPID"; \
+  [[ -n "$$__ENV_CHIP_ID" ]] && export CHIP_ID="$$__ENV_CHIP_ID"; \
   [[ -n "$$__ENV_SERIAL" ]] && export SERIAL="$$__ENV_SERIAL"; \
   [[ -n "$$__ENV_IP" ]] && export IP="$$__ENV_IP"; \
   [[ -n "$$__ENV_IMAGE" ]] && export IMAGE="$$__ENV_IMAGE"; \
@@ -72,6 +72,8 @@ endef
 
 help:
 	@echo "lws-hmi — Buildroot + ynh960 (Linux: native build; macOS: Docker linux/amd64)"
+	@echo ""
+	@echo "Full per-target docs (usage / when / env vars): docs/make-commands.md"
 	@echo ""
 	@echo "Setup:"
 	@echo "  make setup                 # apply overlay (+ Docker image on macOS)"
@@ -113,7 +115,7 @@ help:
 	@echo "Emulator (P3.2 — same Image+rootfs + sim_virt OEM; docs/p32-emulator.md):"
 	@echo "  make setup-emulator-qemu   # once (macOS): install qemu-virgl (host VirGL / ANGLE→Metal)"
 	@echo "  make fetch-emulator-swgl   # once: guest Mesa virtio_gpu → prebuilt/ (9p; FORCE=1 to refetch)"
-	@echo "  make build-emulator        # assemble Image+rootfs+sim_virt oem → output/firmware/emulator/ (grows emulator rootfs copy; EMULATOR_ROOTFS_SIZE=1536M)"
+	@echo "  make build-emulator        # assemble Image+rootfs+sim_virt oem → output/firmware/emulator/ (grows emulator rootfs copy to 1536M)"
 	@echo "  make emulator              # start QEMU (host VirGL required)"
 	@echo "  make emulator-stop         # stop lws-hmi QEMU guest (not Android Studio)"
 	@echo ""
@@ -141,19 +143,19 @@ help:
 	@echo "  make fetch-opencv          # runtime: OpenCV sources → .cache/opencv/"
 	@echo "  make fetch-opencv-ximgproc # runtime: ximgproc EdgeDrawing → .cache/"
 	@echo "  make fetch-rknn-rt         # runtime: aarch64 librknnrt → prebuilt/rknn-rt/"
-	@echo "  make fetch-flutter-sdk     # dev: host Flutter SDK → flutter-sdk/"
+	@echo "  make fetch-flutter-sdk     # dev: host Flutter SDK → DEST= (default flutter-sdk/; FORCE=1 refetch)"
 	@echo "  make fetch-rknn-toolkit    # dev: RKNN-Toolkit2 + torch (ONNX→RKNN on x86)"
 	@echo "  make export-prebuilt       # re-export flutter + runtime (usually build-* already did)"
 	@echo "  rebuild-*                  # FORCE=1 refresh (e.g. make rebuild-runtime-deps)"
 	@echo ""
 	@echo "Debug (device / host — USB-SSH, remote SSH, Flutter, serial):"
-	@echo "  make usb-ssh-setup         # host ECM/RNDIS IP + sshpass doctor (Win: Admin; macOS may sudo)"
-	@echo "  make debug-host-prepare    # USB ECM or registered SSH reachability for debug-app/IDE"
+	@echo "  make setup-usb-ssh         # host ECM/RNDIS IP + sshpass doctor (Win: Admin; macOS may sudo)"
+	@echo "  make prepare-debug-host    # USB ECM or registered SSH reachability for debug-app/IDE"
 	@echo "  make connect <ip>          # register remote SSH board (MODE=SSH; host:port OK for EMU)"
 	@echo "  make disconnect <ip>       # remove registered remote SSH board"
 	@echo "  make devices               # RockUSB + USB-SSH + SSH + EMU (auto-probe QEMU :2222)"
 	@echo "  make shell                 # interactive device shell (USB-SSH or SSH)"
-	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL filters"
+	@echo "  make logs                  # live journal; UNIT/TAG/GREP/PRIORITY/KERNEL_ONLY filters"
 	@echo "  make push-app              # scp APP over SSH (*_hmi→/opt/hmi+hmi restart; else /opt/<id>)"
 	@echo "  make upgrade-control-board # push latest control-board bin and trigger upgrade (no version gate)"
 	@echo "  make upgrade-process-library # push process-library for device model; force import (no version gate)"
@@ -167,7 +169,7 @@ help:
 	@echo "  make upgrade               # SSH stream: inactive FIT+APP rootfs (+oem); env OEM_ONLY=1 for oem-only"
 	@echo "  make debug-setup           # Flutter Custom Device + IDE doctor (one-time host)"
 	@echo "  make debug-app             # flutter run -d lws-hmi (USB-SSH or SSH)"
-	@echo "  make serial-console        # MODE=TTL|RS485|RS232 (default TTL); BAUD=; LOG= (hex)"
+	@echo "  make serial-console        # MODE=TTL|RS485|RS232 (default TTL); BAUD=; LOG_FILE= (hex)"
 	@echo "                             # TTL=miniterm @1500000 quit Ctrl+]; RS485/RS232=hex+TX bar @115200 quit Esc/:q"
 	@echo "  make serial-ports          # list host /dev/cu.* serial ports"
 	@echo "  make serial-sniff          # auto-detect baud while power-cycling board"
@@ -188,13 +190,13 @@ help:
 	@echo ""
 	@echo "Common Env Vars:"
 	@echo "  FLUTTER_SDK=$(FLUTTER_SDK)"
-	@echo "  BUILD_JOBS=4|8             # parallel jobs (default 4 macOS Docker, 8 Linux native)"
+	@echo "  BUILD_JOBS=8               # parallel jobs (default 8; lower if Docker OOM)"
 	@echo "  BUILD_BIND_MOUNT=1         # macOS only: bind-mount SDK instead of Docker volume"
-	@echo "  LWS_HMI_CACHE_ROOT=...   # NAS mount for large .cache artifacts (see .env.example)"
-	@echo "  LWS_HMI_CACHE_URL=...      # optional HTTP mirror of the same layout"
+	@echo "  NAS_CACHE_ROOT=...         # NAS mount for large .cache artifacts (see .env.example)"
+	@echo "  NAS_READ_ONLY=0|1          # 1 = never write back to NAS (default 0)"
 	@echo "  SN=<sn|chipid>             # select device by SN or ChipID (flash / USB-SSH / SSH)"
-	@echo "  CHIPID=<chipid>            # select by ChipID only (multi-board)"
-	@echo "  PRODUCT_SN=<sn>            # write-identity product serial (alias IDENTITY_SN=; not selection SN=)"
+	@echo "  CHIP_ID=<chipid>            # select by ChipID only (multi-board)"
+	@echo "  PRODUCT_SN=<sn>            # write-identity product serial (not selection SN=)"
 	@echo "  FORCE=1                    # write-identity: overwrite non-empty Vendor Storage SN"
 	@echo "  IP=<addr>                  # registered SSH only (not USB-SSH); make connect first"
 	@echo "  IMAGE=<path>               # firmware image for make flash"
@@ -207,9 +209,10 @@ help:
 	@echo "  - macOS Docker: each build-* publishes matching imgs to output/firmware/ only (no host linux-sdk/output/ mirror)."
 	@echo "  - Factory: make build-oem then build-img → output/firmware/<APP>/<sku>/factory.img; make flash."
 	@echo "  - APP= selects HMI product: overlay /opt/hmi + host rootfs/factory under output/firmware/<APP>/."
-	@echo "  - FACTORY_SKU=ynh960-p800 (default); override UBOOT_ID= / OEM_ID=; see board/factory-skus.tsv."
+	@echo "  - FACTORY_SKU=ynh960-p800 (default) → UBOOT_ID/OEM_ID via board/factory-skus.tsv; override either only when needed."
 	@echo "  - Emulator: README Make commands → P3.2 emulator (setup → deps → kernel/rootfs → setup-emulator-qemu → fetch-emulator-swgl → build-emulator → emulator)."
 	@echo "  - Set VAR=value before the command, or add a '.env' in the repo root (see .env.example)."
+	@echo "  - docs/make-commands.md — full catalog of targets, parameters, and when to use them."
 
 # --- Setup ---
 
@@ -346,8 +349,8 @@ build-debug-app:
 debug-setup:
 	@bash scripts/debug-setup.sh
 
-debug-host-prepare:
-	@$(call WITH_DOTENV,bash scripts/debug-host-prepare.sh)
+prepare-debug-host:
+	@$(call WITH_DOTENV,bash scripts/prepare-debug-host.sh)
 
 debug-app:
 	@$(call WITH_DOTENV,bash scripts/debug-app.sh)
@@ -424,10 +427,10 @@ rebuild-flutter-embedded-linux:
 	@FORCE=1 bash scripts/build-flutter-embedded-linux.sh
 
 fetch-flutter-sdk:
-	@bash scripts/fetch-flutter-sdk.sh
+	@DEST='$(DEST)' FORCE='$(FORCE)' bash scripts/fetch-flutter-sdk.sh
 
 refetch-flutter-sdk:
-	@FORCE=1 bash scripts/fetch-flutter-sdk.sh
+	@DEST='$(DEST)' FORCE=1 bash scripts/fetch-flutter-sdk.sh
 
 build-dev-deps:
 	@bash scripts/build-dev-deps.sh
@@ -571,7 +574,7 @@ shell:
 logs:
 	@$(call WITH_DOTENV,bash scripts/device-logs.sh)
 
-usb-ssh-setup:
+setup-usb-ssh:
 	@$(call WITH_DOTENV,bash scripts/usb-ssh-host-setup.sh)
 
 push-app:
@@ -619,8 +622,8 @@ del-prop:
 	@chmod +x scripts/del-product-prop.sh
 	@$(call WITH_DOTENV,bash scripts/del-product-prop.sh $(filter-out del-prop,$(MAKECMDGOALS)) $(MAKEOVERRIDES))
 
-# Write brand/model/product SN into Vendor Storage (SSH). Selection: SN=/CHIPID=/IP=.
-# Payload: BRAND= MODEL= PRODUCT_SN= (alias IDENTITY_SN=). FORCE=1 to overwrite SN.
+# Write brand/model/product SN into Vendor Storage (SSH). Selection: SN=/CHIP_ID=/IP=.
+# Payload: BRAND= MODEL= PRODUCT_SN=. FORCE=1 to overwrite SN.
 # Pass via MAKEOVERRIDES only — do NOT wrap BRAND='$(BRAND)' inside WITH_DOTENV's
 # bash -c '…' (single quotes break on MODEL='L1 Pro' and silently no-op).
 write-identity:

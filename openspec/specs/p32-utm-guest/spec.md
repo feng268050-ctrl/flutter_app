@@ -6,7 +6,7 @@ P3.2 same-OS **QEMU** guest (capability id `p32-utm-guest` is historical): share
 ## Requirements
 ### Requirement: Same OS artifacts in emulator
 
-The P3.2 emulator SHALL boot the **same** kernel `Image` produced by `make build-kernel` and the **same** rootfs **content** produced by `make build-rootfs`, plus OEM pack `sim_virt`. It MUST NOT require a separately built virt userspace rootfs as the formal guest OS. The emulator working `rootfs.img` MAY be a grown copy of the device artifact (default size documented as `EMULATOR_ROOTFS_SIZE`, e.g. 1536M) so host debug/push tooling has free space; the device OTA `rootfs.img` size MUST remain unchanged.
+The P3.2 emulator SHALL boot the **same** kernel `Image` produced by `make build-kernel` and the **same** rootfs **content** produced by `make build-rootfs`, plus OEM pack `sim_virt`. It MUST NOT require a separately built virt userspace rootfs as the formal guest OS. The emulator working `rootfs.img` MAY be a grown copy of the device artifact (fixed size **1536M**) so host debug/push tooling has free space; the device OTA `rootfs.img` size MUST remain unchanged. Operators MUST NOT treat emulator rootfs size as a tunable build parameter.
 
 #### Scenario: Emulator uses device rootfs content
 

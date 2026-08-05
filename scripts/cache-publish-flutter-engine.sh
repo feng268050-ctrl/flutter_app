@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Upload local flutter-engine tarball to LWS_HMI_CACHE_ROOT (team NAS).
+# Upload local flutter-engine tarball to NAS_CACHE_ROOT (team NAS).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,10 +18,11 @@ if [[ ! -f "$TARBALL" ]]; then
   exit 1
 fi
 
-if [[ -z "${LWS_HMI_CACHE_ROOT:-}" ]]; then
-  echo "ERROR: set LWS_HMI_CACHE_ROOT in .env (NAS mount path)" >&2
+if [[ -z "${NAS_CACHE_ROOT:-}" ]]; then
+  echo "ERROR: set NAS_CACHE_ROOT in .env (NAS mount path)" >&2
   exit 1
 fi
 
-LWS_HMI_CACHE_PUBLISH=1 cache_mirror_publish flutter-engine "$VERSION" "$TARBALL_NAME" "$TARBALL"
+# Explicit publish always writes (ignore NAS_READ_ONLY from .env).
+NAS_READ_ONLY=0 cache_mirror_publish flutter-engine "$VERSION" "$TARBALL_NAME" "$TARBALL"
 echo "cache-publish-flutter-engine: done"

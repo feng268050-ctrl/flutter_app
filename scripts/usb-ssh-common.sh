@@ -128,13 +128,13 @@ ssh_endpoint_reachable() {
 }
 
 # Device selection: SN (or deprecated SERIAL) matches make devices SN or ChipID columns.
-# CHIPID matches ChipID only (when SN= would be ambiguous across boards).
+# CHIP_ID matches ChipID only (when SN= would be ambiguous across boards).
 device_select_sn() {
-	printf '%s' "${SN:-${LWS_HMI_SN:-${SERIAL:-${LWS_HMI_SERIAL:-}}}}"
+	printf '%s' "${SN:-${SERIAL:-}}"
 }
 
-device_select_chipid() {
-	printf '%s' "${CHIPID:-${LWS_HMI_CHIPID:-}}"
+device_select_chip_id() {
+	printf '%s' "${CHIP_ID:-}"
 }
 
 # Remote shell snippet: print SN<TAB>ChipID.
@@ -228,7 +228,7 @@ require_sshpass() {
 	fi
 	{
 		echo "ERROR: sshpass is not installed (required for USB-SSH password login)."
-		echo "  target: root@${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}  password: ${LWS_HMI_USB_SSH_PASS:-rockchip}"
+		echo "  target: root@${USB_SSH_ADDR:-192.168.55.1}  password: ${USB_SSH_PASS:-rockchip}"
 		sshpass_install_hint
 	} >&2
 	exit 1
@@ -265,7 +265,7 @@ usb_ssh_bind_pair() {
 configure_usb_ssh_host_addr() {
 	local iface="$1"
 	local host_addr="$USB_SSH_HOST_ADDR"
-	local hint="Run 'make usb-ssh-setup' in an interactive terminal first (may need Administrator on Windows)."
+	local hint="Run 'make setup-usb-ssh' in an interactive terminal first (may need Administrator on Windows)."
 	case "$(usb_ssh_host_os)" in
 	darwin)
 		if ifconfig "$iface" 2>/dev/null | grep -qE "inet ${host_addr}[ /]"; then
@@ -318,7 +318,7 @@ configure_usb_ssh_host_addr() {
 
 ping_usb_ssh_target() {
 	local iface="$1"
-	local addr="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
+	local addr="${USB_SSH_ADDR:-192.168.55.1}"
 	case "$(usb_ssh_host_os)" in
 	darwin) ping -c 1 -t 2 -b "$iface" "$addr" ;;
 	linux) ping -c 1 -W 2 -I "$iface" "$addr" ;;
@@ -352,8 +352,8 @@ ping_remote_ssh_target() {
 remote_ssh_run() {
 	local target_addr="$1"
 	shift
-	local target_user="${LWS_HMI_USB_SSH_USER:-root}"
-	local ssh_pass="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+	local target_user="${USB_SSH_USER:-root}"
+	local ssh_pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=(
 		-o ConnectTimeout=5
 		-o StrictHostKeyChecking=accept-new
@@ -372,16 +372,16 @@ remote_ssh_run() {
 
 remote_ssh_schedule_sysrq_reboot() {
 	local target_addr="$1"
-	echo "ssh ${LWS_HMI_USB_SSH_USER:-root}@${target_addr} sysrq reboot"
+	echo "ssh ${USB_SSH_USER:-root}@${target_addr} sysrq reboot"
 	remote_ssh_run "$target_addr" "$USB_SSH_SYSRQ_REBOOT_CMD" || true
 }
 
 usb_ssh_run() {
 	local iface="$1"
 	shift
-	local target_addr="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
-	local target_user="${LWS_HMI_USB_SSH_USER:-root}"
-	local ssh_pass="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+	local target_addr="${USB_SSH_ADDR:-192.168.55.1}"
+	local target_user="${USB_SSH_USER:-root}"
+	local ssh_pass="${USB_SSH_PASS:-rockchip}"
 	local -a ssh_opts=(
 		-o ConnectTimeout=5
 		-o StrictHostKeyChecking=accept-new
@@ -399,7 +399,7 @@ usb_ssh_run() {
 
 usb_ssh_schedule_sysrq_reboot() {
 	local iface="$1"
-	echo "ssh ${LWS_HMI_USB_SSH_USER:-root}@${LWS_HMI_USB_SSH_ADDR:-192.168.55.1} sysrq reboot"
+	echo "ssh ${USB_SSH_USER:-root}@${USB_SSH_ADDR:-192.168.55.1} sysrq reboot"
 	usb_ssh_run "$iface" "$USB_SSH_SYSRQ_REBOOT_CMD" || true
 }
 
@@ -409,6 +409,6 @@ usb_ssh_schedule_remote() {
 	local remote_shell
 
 	printf -v remote_shell 'sh -c "(sleep 1; %s) >/dev/console 2>&1 & exit 0"' "$remote_cmd"
-	echo "ssh ${LWS_HMI_USB_SSH_USER:-root}@${LWS_HMI_USB_SSH_ADDR:-192.168.55.1} $remote_cmd"
+	echo "ssh ${USB_SSH_USER:-root}@${USB_SSH_ADDR:-192.168.55.1} $remote_cmd"
 	usb_ssh_run "$iface" "$remote_shell" || true
 }

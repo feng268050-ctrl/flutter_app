@@ -16,9 +16,9 @@ usb_ssh_session_select "$ROOT"
 usb_ssh_session_configure_link
 usb_ssh_session_wait_for_target "$IFACE" "$TARGET_ADDR" "$WAIT_SEC"
 
-target_user="${TARGET_USER:-${LWS_HMI_USB_SSH_USER:-root}}"
-target_addr="${TARGET_ADDR:-${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}}"
-ssh_pass="${SSH_PASS:-${LWS_HMI_USB_SSH_PASS:-rockchip}}"
+target_user="${TARGET_USER:-${USB_SSH_USER:-root}}"
+target_addr="${TARGET_ADDR:-${USB_SSH_ADDR:-192.168.55.1}}"
+ssh_pass="${SSH_PASS:-${USB_SSH_PASS:-rockchip}}"
 control_path="$(usb_ssh_session_control_path "$(usb_ssh_session_control_key "$IFACE")")"
 declare -a ssh_opts=(
 	-o ConnectTimeout=5

@@ -21,7 +21,7 @@ LIBAPP="$OVERLAY_APP_TREE/lib/libapp.so"
 ASSETS="$OVERLAY_APP_TREE/data/flutter_assets"
 # Detach apply: LAN SSH over Wi-Fi must not hold the session through hmi stop
 # (legacy images killed wpa/dhcp in the hmi cgroup). Same poll path for USB/LAN.
-APPLY_WAIT_SEC="${PUSH_APP_APPLY_WAIT_SEC:-120}"
+APPLY_WAIT_SEC=120
 
 die() {
 	echo "ERROR: $*" >&2
@@ -39,11 +39,9 @@ Deploy libapp.so + flutter_assets for APP (default: lws_hmi).
 Env:
   APP                            Flutter project under app/ (default: lws_hmi).
                                  HMI apps MUST use suffix _hmi (install path /opt/hmi).
-  SN / LWS_HMI_SN              select board when multiple devices
-  IP / LWS_HMI_IP                registered SSH only (make connect <ip>)
-  LWS_HMI_USB_SSH_PASS           root password (default: rockchip)
-  PUSH_APP_WAIT_SEC              ping wait before deploy (default: 30)
-  PUSH_APP_APPLY_WAIT_SEC        wait for detached apply (default: 120)
+  SN                         select board when multiple devices
+  IP                         registered SSH only (make connect <ip>)
+  USB_SSH_PASS           root password (default: rockchip)
 
 Prereq: APP=\$APP make build-app (artifacts in overlay $DEVICE_APP)
 Host: sshpass required (see error message if missing)

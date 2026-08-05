@@ -16,7 +16,7 @@ die() {
 }
 
 IFACE="${IFACE:-}"
-if [[ -z "$IFACE" && -z "${IP:-}" && -z "${CHIPID:-}" && -z "${SN:-}" ]]; then
+if [[ -z "$IFACE" && -z "${IP:-}" && -z "${CHIP_ID:-}" && -z "${SN:-}" ]]; then
 	# Best-effort auto-select when a single USB-SSH board is present.
 	mapfile -t _sel < <(bash "$ROOT/scripts/device-target.sh" --select 2>/dev/null || true)
 	IFACE="${_sel[2]:-}"

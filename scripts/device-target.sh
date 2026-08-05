@@ -68,9 +68,9 @@ select_device() {
 	local -a matches=() mtp_matches=()
 
 	sn_sel="$(device_select_sn)"
-	chip_sel="$(device_select_chipid)"
-	pick_ip="${IP:-${LWS_HMI_IP:-}}"
-	pick_iface="${IFACE:-${LWS_HMI_USB_IFACE:-}}"
+	chip_sel="$(device_select_chip_id)"
+	pick_ip="${IP:-}"
+	pick_iface="${IFACE:-}"
 
 	while IFS= read -r row; do
 		[[ -n "$row" ]] && rows+=("$row")
@@ -109,7 +109,7 @@ select_device() {
 		die "IFACE=$pick_iface not found (make devices)"
 	fi
 
-	# CHIPID= matches ChipID column only (SSH-selectable rows).
+	# CHIP_ID= matches ChipID column only (SSH-selectable rows).
 	if [[ -n "$chip_sel" && "$chip_sel" != "-" ]]; then
 		for row in "${rows[@]}"; do
 			IFS="$FS" read -r mode sn chip loc iface addr usb <<<"$row"
@@ -124,12 +124,12 @@ select_device() {
 		if [[ ${#matches[@]} -eq 0 ]]; then
 			if [[ ${#mtp_matches[@]} -gt 0 ]]; then
 				mtp_hint
-				die "CHIPID=$chip_sel is USB-MTP only (make devices)"
+				die "CHIP_ID=$chip_sel is USB-MTP only (make devices)"
 			fi
-			die "CHIPID=$chip_sel not found (make devices)"
+			die "CHIP_ID=$chip_sel not found (make devices)"
 		fi
 		if [[ ${#matches[@]} -gt 1 ]]; then
-			die "CHIPID=$chip_sel matches ${#matches[@]} devices — set IP= for SSH or IFACE= for USB-SSH"
+			die "CHIP_ID=$chip_sel matches ${#matches[@]} devices — set IP= for SSH or IFACE= for USB-SSH"
 		fi
 		IFS="$FS" read -r mode sn chip loc iface addr usb <<<"${matches[0]}"
 		emit_selection "$mode" "$loc" "$iface" "$addr"

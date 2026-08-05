@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PORT="${PORT:-}"
 MODE_RAW="${MODE:-TTL}"
 MODE="$(printf '%s' "$MODE_RAW" | tr '[:lower:]' '[:upper:]')"
-LOG_PATH="${LOG:-}"
+LOG_PATH="${LOG_FILE:-}"
 
 case "$MODE" in
   TTL)
@@ -107,7 +107,7 @@ Usage: [MODE=TTL|RS485|RS232] [PORT=…] [BAUD=…] make serial-console
   DATABITS=…                framing (RS485/RS232): 5|6|7|8 (default 8)
   PARITY=…                  framing: none|even|odd|mark|space (default none)
   STOPBITS=…                framing: 1|2 (default 1)
-  LOG=…                     session log file (RS485/RS232 only)
+  LOG_FILE=…                session log file (RS485/RS232 only)
   LOG_APPEND=1              append to log file
   TIMESTAMP_TIMEOUT=ms      RX idle gap → new line (default 5)
 
@@ -122,7 +122,7 @@ EOF
 [[ "${1:-}" == --list ]] && list_ports && exit 0
 
 if [[ -n "$LOG_PATH" && "$MODE" == TTL ]]; then
-  echo "ERROR: file logging (LOG=) requires MODE=RS485 or MODE=RS232 (TTL uses miniterm)." >&2
+  echo "ERROR: file logging (LOG_FILE=) requires MODE=RS485 or MODE=RS232 (TTL uses miniterm)." >&2
   exit 1
 fi
 

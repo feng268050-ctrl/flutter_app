@@ -6,7 +6,7 @@ PKG="${1:?usage: br-compile-flutter.sh flutter-engine}"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BR_OUTPUT="${BR_OUTPUT:-rockchip_rk3566_rk3568_lws_hmi}"
-JOBS="${BUILD_JOBS:-4}"
+JOBS="${BUILD_JOBS:-8}"
 
 case "$PKG" in
 flutter-engine) ;;

@@ -13,9 +13,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DUR="${1:-15}"
 LOGFILE="${SPIKE_SEAL_LOG:-$ROOT/.cursor/embedder-seal-pacing.log}"
 IFACE="${IFACE:-en12}"
-ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
-USER_="${LWS_HMI_USB_SSH_USER:-root}"
-PASS="${LWS_HMI_USB_SSH_PASS:-rockchip}"
+ADDR="${USB_SSH_ADDR:-192.168.55.1}"
+USER_="${USB_SSH_USER:-root}"
+PASS="${USB_SSH_PASS:-rockchip}"
 REMOTE=/userdata/elinux-spike
 
 SSH() {

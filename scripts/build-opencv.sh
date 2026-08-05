@@ -123,7 +123,7 @@ cmake -S "$SRC_DIR" -B "$BUILD_DIR/cmake" \
   -DOPENCV_EXTRA_MODULES_PATH="$CONTRIB_DIR/modules" \
   -DBUILD_LIST=core,imgproc,imgcodecs,videoio,dnn,calib3d,features2d,flann
 
-cmake --build "$BUILD_DIR/cmake" -j"${BUILD_JOBS:-4}"
+cmake --build "$BUILD_DIR/cmake" -j"${BUILD_JOBS:-8}"
 cmake --install "$BUILD_DIR/cmake"
 
 [[ -f "$OUT_DIR/lib/cmake/opencv4/OpenCVConfig.cmake" ]] || {

@@ -24,15 +24,15 @@ usb_ssh_session_load_env() {
 		source "$env_file"
 		set +a
 	fi
-	SERIAL="${SERIAL:-${LWS_HMI_SERIAL:-}}"
-	SN="${SN:-${LWS_HMI_SN:-$SERIAL}}"
-	CHIPID="${CHIPID:-${LWS_HMI_CHIPID:-}}"
-	IP="${IP:-${LWS_HMI_IP:-}}"
-	TARGET_USER="${LWS_HMI_USB_SSH_USER:-root}"
-	SSH_PASS="${LWS_HMI_USB_SSH_PASS:-rockchip}"
-	WAIT_SEC="${PUSH_APP_WAIT_SEC:-30}"
+	SERIAL="${SERIAL:-}"
+	SN="${SN:-$SERIAL}"
+	CHIP_ID="${CHIP_ID:-}"
+	IP="${IP:-}"
+	TARGET_USER="${USB_SSH_USER:-root}"
+	SSH_PASS="${USB_SSH_PASS:-rockchip}"
+	WAIT_SEC=30
 	# Default USB gadget address; overridden by select for MODE=SSH.
-	TARGET_ADDR="${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}"
+	TARGET_ADDR="${USB_SSH_ADDR:-192.168.55.1}"
 	TRANSPORT=""
 	IFACE=""
 	LOCATION_ID=""
@@ -47,14 +47,14 @@ usb_ssh_session_select() {
 	usb_ssh_session_try_select "$root" || usb_ssh_session_die "could not select USB-SSH/SSH device"
 }
 
-# Like select, but returns 1 instead of exiting (for debug-host-prepare fallback).
+# Like select, but returns 1 instead of exiting (for prepare-debug-host fallback).
 usb_ssh_session_try_select() {
 	local root="$1"
 	local out line errfile
 	local -a sel=()
 	errfile="$(mktemp "${TMPDIR:-/tmp}/lws-device-select.XXXXXX")"
 	if ! out=$(
-		SN="$SN" CHIPID="$CHIPID" SERIAL="$SERIAL" IP="$IP" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
+		SN="$SN" CHIP_ID="$CHIP_ID" SERIAL="$SERIAL" IP="$IP" IFACE="${IFACE:-}" \
 			bash "$root/scripts/device-target.sh" --select 2>"$errfile"
 	); then
 		[[ -s "$errfile" ]] && cat "$errfile" >&2
@@ -73,7 +73,7 @@ usb_ssh_session_try_select() {
 	case "$TRANSPORT" in
 	usb-ssh)
 		[[ "$IFACE" != "-" && -n "$IFACE" ]] || return 1
-		TARGET_ADDR="${TARGET_ADDR:-${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}}"
+		TARGET_ADDR="${TARGET_ADDR:-${USB_SSH_ADDR:-192.168.55.1}}"
 		;;
 	ssh)
 		IFACE="-"
@@ -143,9 +143,9 @@ usb_ssh_session_control_key() {
 usb_ssh_session_run_ssh() {
 	local root="$1" iface="$2"
 	shift 2
-	local target_user="${TARGET_USER:-${LWS_HMI_USB_SSH_USER:-root}}"
-	local target_addr="${TARGET_ADDR:-${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}}"
-	local ssh_pass="${SSH_PASS:-${LWS_HMI_USB_SSH_PASS:-rockchip}}"
+	local target_user="${TARGET_USER:-${USB_SSH_USER:-root}}"
+	local target_addr="${TARGET_ADDR:-${USB_SSH_ADDR:-192.168.55.1}}"
+	local ssh_pass="${SSH_PASS:-${USB_SSH_PASS:-rockchip}}"
 	local control_path host port
 	control_path="$(usb_ssh_session_control_path "$(usb_ssh_session_control_key "$iface")")"
 	local -a ssh_opts=(
@@ -178,9 +178,9 @@ usb_ssh_session_run_ssh() {
 usb_ssh_session_run_scp() {
 	local root="$1" iface="$2"
 	shift 2
-	local target_user="${TARGET_USER:-${LWS_HMI_USB_SSH_USER:-root}}"
-	local target_addr="${TARGET_ADDR:-${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}}"
-	local ssh_pass="${SSH_PASS:-${LWS_HMI_USB_SSH_PASS:-rockchip}}"
+	local target_user="${TARGET_USER:-${USB_SSH_USER:-root}}"
+	local target_addr="${TARGET_ADDR:-${USB_SSH_ADDR:-192.168.55.1}}"
+	local ssh_pass="${SSH_PASS:-${USB_SSH_PASS:-rockchip}}"
 	local attempt status host port
 	local control_path
 	control_path="$(usb_ssh_session_control_path "$(usb_ssh_session_control_key "$iface")")"

@@ -34,7 +34,7 @@ When USB-SSH device(s) are present and **`sshpass`** is not installed, the comma
 
 ### Requirement: SERIAL selects target for push-app
 
-When more than one USB-SSH device is connected, **`make push-app`** SHALL require **`SERIAL=`** (or **`LWS_HMI_SERIAL=`**) matching the gadget `iSerial`, consistent with `scripts/flash-usb.sh` multi-device behavior.
+When more than one USB-SSH device is connected, **`make push-app`** SHALL require **`SERIAL=`** matching the gadget `iSerial`, consistent with `scripts/flash-usb.sh` multi-device behavior.
 
 #### Scenario: Multiple devices without SERIAL
 

@@ -1,6 +1,6 @@
 ## 1. RockUSB OTA-images flash helper
 
-- [ ] 1.1 Add a host helper (extend `flash-usb.sh` and/or new script used by upgrade) that, on macOS, selects RockUSB by `SN=`/`CHIPID=`, performs Maskrom `ul` bring-up when needed, and `di`-downloads `boot` / `boot_b` / `rootfs_a` / `rootfs_b` / optional `oem` from the resolved loose image paths
+- [ ] 1.1 Add a host helper (extend `flash-usb.sh` and/or new script used by upgrade) that, on macOS, selects RockUSB by `SN=`/`CHIP_ID=`, performs Maskrom `ul` bring-up when needed, and `di`-downloads `boot` / `boot_b` / `rootfs_a` / `rootfs_b` / optional `oem` from the resolved loose image paths
 - [ ] 1.2 Resolve images like SSH upgrade: `output/firmware/boot.img`, `boot_b.img`, `output/firmware/<APP>/rootfs.img`, `factory-sku.sh` oem; honor `OEM_IMG=` empty skip and `OEM_ONLY=1` (oem only); refuse `factory.img` / `uf` on this path
 - [ ] 1.3 Fail fast if required images missing or `di` fails; print a clear banner that this is OTA-equivalent images (not factory flash, not product OTA)
 

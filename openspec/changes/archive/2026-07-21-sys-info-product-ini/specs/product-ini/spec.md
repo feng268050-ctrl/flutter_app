@@ -56,7 +56,7 @@ The HAL `ProductInfo` SHALL provide accessors (functions/methods) for at least: 
 
 ### Requirement: Host SN matches ProductInfo sn
 
-Board serial helpers used for USB gadget iSerial and host device listing (`make devices` / SSH registry enrichment) SHALL resolve **SN** with the same rule as `ProductInfo.sn`: non-empty `product.ini` `sn` first, then chip/board serial fallbacks. The `make devices` table SHALL include columns **SN** and **ChipID** (ChipID = chip serial / adb SerialNo / RockUSB SerialNo). Host tooling MUST prefer a live board identity probe over host USB gadget iSerial when both are available. Host device selection SHALL use env **`SN=`** / **`LWS_HMI_SN=`** (matching SN or ChipID). **`CHIPID=`** / **`LWS_HMI_CHIPID=`** SHALL match ChipID only. Deprecated **`SERIAL=`** / **`LWS_HMI_SERIAL=`** SHALL be accepted as aliases for **`SN=`**. Makefile `help`, README, and AGENTS.md SHALL document `SN=` (not `SERIAL=`) as the primary selector.
+Board serial helpers used for USB gadget iSerial and host device listing (`make devices` / SSH registry enrichment) SHALL resolve **SN** with the same rule as `ProductInfo.sn`: non-empty `product.ini` `sn` first, then chip/board serial fallbacks. The `make devices` table SHALL include columns **SN** and **ChipID** (ChipID = chip serial / adb SerialNo / RockUSB SerialNo). Host tooling MUST prefer a live board identity probe over host USB gadget iSerial when both are available. Host device selection SHALL use env **`SN=`** (matching SN or ChipID). **`CHIP_ID=`** SHALL match ChipID only. Deprecated **`SERIAL=`** SHALL be accepted as aliases for **`SN=`**. Makefile `help`, README, and AGENTS.md SHALL document `SN=` (not `SERIAL=`) as the primary selector.
 
 #### Scenario: make devices shows factory sn and chip id
 
@@ -80,9 +80,9 @@ Board serial helpers used for USB gadget iSerial and host device listing (`make 
 - **WHEN** multiple boards are listed and the operator sets `SN=FACTORY-001` (or `SN=ABC123`)
 - **THEN** host commands that require a single target SHALL select the matching row
 
-#### Scenario: CHIPID env with set-prop SN
+#### Scenario: CHIP_ID env with set-prop SN
 
-- **WHEN** multiple boards are present and the operator runs `CHIPID=ABC123 make set-prop SN=FACTORY-001`
+- **WHEN** multiple boards are present and the operator runs `CHIP_ID=ABC123 make set-prop SN=FACTORY-001`
 - **THEN** device selection SHALL use ChipID `ABC123` and the product `sn` key SHALL be written as `FACTORY-001`
 
 ### Requirement: Device Information empty display
@@ -101,7 +101,7 @@ When Device Information (or equivalent About UI) displays Device Model, Device S
 
 ### Requirement: Host make set-prop upserts product.ini
 
-The host build system SHALL provide `make set-prop` that upserts one or more product properties on the selected board (USB-SSH or registered SSH device, same selection rules as `push-app` / `shell`). Each assignment SHALL be `UPPERCASE_KEY=value` on the Make command line and SHALL be written to `/var/lib/hmi/product.ini` as the corresponding lowercase key (e.g. `CAMERA_IP` → `camera_ip`). Unlike lws-ui’s single-key restriction, **multiple** assignments in one invocation SHALL be applied together via one remote file replace. Make/workflow variables that are not product keys (at least `CHIPID`, `IP`, deprecated `SERIAL`, and other documented host vars) MUST be ignored as property keys. `SN=` on `make set-prop` SHALL write the product `sn` key and MUST NOT be treated as device selection for that invocation (multi-board: use `CHIPID=` / `IP=` / deprecated `SERIAL=`). After a successful write, the host tooling SHALL restart the on-device HMI service so the App reloads product identity.
+The host build system SHALL provide `make set-prop` that upserts one or more product properties on the selected board (USB-SSH or registered SSH device, same selection rules as `push-app` / `shell`). Each assignment SHALL be `UPPERCASE_KEY=value` on the Make command line and SHALL be written to `/var/lib/hmi/product.ini` as the corresponding lowercase key (e.g. `CAMERA_IP` → `camera_ip`). Unlike lws-ui’s single-key restriction, **multiple** assignments in one invocation SHALL be applied together via one remote file replace. Make/workflow variables that are not product keys (at least `CHIP_ID`, `IP`, deprecated `SERIAL`, and other documented host vars) MUST be ignored as property keys. `SN=` on `make set-prop` SHALL write the product `sn` key and MUST NOT be treated as device selection for that invocation (multi-board: use `CHIP_ID=` / `IP=` / deprecated `SERIAL=`). After a successful write, the host tooling SHALL restart the on-device HMI service so the App reloads product identity.
 
 #### Scenario: Single property upsert
 

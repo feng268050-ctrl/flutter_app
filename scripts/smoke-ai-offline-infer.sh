@@ -37,7 +37,7 @@ Uploads native/lws_ai demo assets to /var/lib/hmi/ai, then:
 
 Env:
   SMOKE_AI_IMAGE   basename under native/lws_ai/assets/img (default stain_demo_1920x1080.jpg)
-  SN= / CHIPID= / IP=   device selection (same as other make targets)
+  SN= / CHIP_ID= / IP=   device selection (same as other make targets)
 EOF
 }
 

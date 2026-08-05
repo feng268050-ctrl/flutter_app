@@ -46,7 +46,7 @@ When USB-SSH device(s) are present and **`sshpass`** is not installed, the comma
 
 ### Requirement: SN selects target for push-app
 
-When more than one deployable Linux target is available (USB-SSH and/or registered SSH), **`make push-app`** SHALL require **`SN=`** (or **`LWS_HMI_SN=`**) matching the board **SN** or **ChipID**, or **`IP=`** / **`LWS_HMI_IP=`** matching a registered **`MODE=SSH`** address. **`IP=`** SHALL NOT select USB-SSH devices. Multi-device selection remains consistent with `scripts/flash-usb.sh` SN ergonomics for USB-SSH. Deprecated **`SERIAL=`** / **`LWS_HMI_SERIAL=`** SHALL be accepted as aliases for **`SN=`**. **`CHIPID=`** SHALL select by ChipID only.
+When more than one deployable Linux target is available (USB-SSH and/or registered SSH), **`make push-app`** SHALL require **`SN=`** matching the board **SN** or **ChipID**, or **`IP=`** matching a registered **`MODE=SSH`** address. **`IP=`** SHALL NOT select USB-SSH devices. Multi-device selection remains consistent with `scripts/flash-usb.sh` SN ergonomics for USB-SSH. Deprecated **`SERIAL=`** SHALL be accepted as aliases for **`SN=`**. **`CHIP_ID=`** SHALL select by ChipID only.
 
 #### Scenario: Multiple devices without SN
 

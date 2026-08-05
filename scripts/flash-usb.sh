@@ -46,19 +46,19 @@ SDK_FIRMWARE_DIR="$SDK/output/firmware"
 # Prefer per-APP per-sku factory.img; fall back to migration update.img symlink/path.
 _DEFAULT_FLASH_IMG="$FACTORY_IMG"
 [[ -r "$_DEFAULT_FLASH_IMG" ]] || _DEFAULT_FLASH_IMG="$LWS_FIRMWARE_DIR/update.img"
-UPDATE_IMG="${UPDATE_IMG:-${LWS_HMI_UPDATE_IMG:-${IMAGE:-$_DEFAULT_FLASH_IMG}}}"
+UPDATE_IMG="${UPDATE_IMG:-${IMAGE:-$_DEFAULT_FLASH_IMG}}"
 if [[ "$ACTION" == upgrade || "$ACTION" == uf || "$ACTION" == update ]] && [[ -n "${2:-}" ]]; then
   UPDATE_IMG="$2"
 fi
 LOADER_BIN="${LWS_HMI_LOADER:-}"
 LOADER_CACHE_DIR="$ROOT/output/firmware/.loader-cache"
 
-# SN preferred; SERIAL= deprecated alias. CHIPID= matches ChipID only.
+# SN preferred; SERIAL= deprecated alias. CHIP_ID= matches ChipID only.
 SN="$(device_select_sn)"
-CHIPID="$(device_select_chipid)"
-# Working token for RockUSB/adb row match (CHIPID wins when set).
-SERIAL="${CHIPID:-$SN}"
-IP="${IP:-${LWS_HMI_IP:-}}"
+CHIP_ID="$(device_select_chip_id)"
+# Working token for RockUSB/adb row match (CHIP_ID wins when set).
+SERIAL="${CHIP_ID:-$SN}"
+IP="${IP:-}"
 LOADER_NORESET="${LOADER_NORESET:-}"
 UPGRADE_NORESET="${UPGRADE_NORESET:-}"
 BOOTLOADER_WAIT_SEC="${BOOTLOADER_WAIT_SEC:-60}"
@@ -85,7 +85,7 @@ Usage: $0 {devices|reboot|reboot-loader|loader|upgrade|flash}
 Host: macOS / Linux (x86_64) / Windows (Git Bash or MSYS2)
 Tool: tools/upgrade_tool/{macos,linux,windows}/  (see tools/upgrade_tool/README.md)
 
-Selection: SN / CHIPID / IP (SSH registry only) / IFACE (USB-SSH)
+Selection: SN / CHIP_ID / IP (SSH registry only) / IFACE (USB-SSH)
 App deploy (no reflash): make build-app && make push-app
 Linux HMI → Loader: make reboot-loader
 MaskROM / RockUSB Loader: make flash (skips ul when already Loader)
@@ -504,7 +504,7 @@ select_linux_ssh_target() {
   trap "rm -f '$err_file'" RETURN
 
   if ! sel_out="$(
-    SN="$SN" CHIPID="$CHIPID" SERIAL="$SERIAL" IP="$IP" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
+    SN="$SN" CHIP_ID="$CHIP_ID" SERIAL="$SERIAL" IP="$IP" IFACE="${IFACE:-}" \
       bash "$ROOT/scripts/device-target.sh" --select 2>"$err_file"
   )"; then
     [[ -s "$err_file" ]] && cat "$err_file" >&2
@@ -524,7 +524,7 @@ usb_ssh_select_iface() {
   trap "rm -f '$err_file'" RETURN
 
   if ! sel_out="$(
-    SN="$SN" CHIPID="$CHIPID" SERIAL="$SERIAL" IFACE="${IFACE:-${LWS_HMI_USB_IFACE:-}}" \
+    SN="$SN" CHIP_ID="$CHIP_ID" SERIAL="$SERIAL" IFACE="${IFACE:-}" \
       bash "$ROOT/scripts/usb-ssh-devices.sh" --select 2>"$err_file"
   )"; then
     [[ -s "$err_file" ]] && cat "$err_file" >&2
@@ -571,7 +571,7 @@ run_usb_ssh_reboot_loader() {
   echo "Linux board via USB-SSH (iface=$iface) → RockUSB Loader"
   usb_ssh_schedule_remote "$iface" "exec /usr/bin/reboot-loader"
   bash "$ROOT/scripts/ssh-devices.sh" dismiss-target \
-    usb-ssh "$iface" "${LWS_HMI_USB_SSH_ADDR:-192.168.55.1}" || true
+    usb-ssh "$iface" "${USB_SSH_ADDR:-192.168.55.1}" || true
   wait_for_rockusb
   echo "RockUSB ready (via USB-SSH reboot-loader)."
 }

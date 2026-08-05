@@ -11,17 +11,6 @@ die() {
 	exit 1
 }
 
-logs_env() {
-	# Prefer LOGS_*; allow short names on the make command line (UNIT=, GREP=, ...).
-	case "$1" in
-	LOGS_UNIT) printf '%s' "${LOGS_UNIT:-${UNIT:-}}" ;;
-	LOGS_TAG) printf '%s' "${LOGS_TAG:-${TAG:-}}" ;;
-	LOGS_GREP) printf '%s' "${LOGS_GREP:-${GREP:-}}" ;;
-	LOGS_PRIORITY) printf '%s' "${LOGS_PRIORITY:-${PRIORITY:-}}" ;;
-	LOGS_KERNEL) printf '%s' "${LOGS_KERNEL:-${KERNEL:-}}" ;;
-	esac
-}
-
 validate_unit() {
 	local unit="$1"
 	[[ "$unit" =~ ^[A-Za-z0-9@._+-]+$ ]] || die "invalid UNIT: $unit"
@@ -40,11 +29,11 @@ validate_priority() {
 
 build_journal_args() {
 	local units tag grep_pat priority kernel
-	units="$(logs_env LOGS_UNIT)"
-	tag="$(logs_env LOGS_TAG)"
-	grep_pat="$(logs_env LOGS_GREP)"
-	priority="$(logs_env LOGS_PRIORITY)"
-	kernel="$(logs_env LOGS_KERNEL)"
+	units="${UNIT:-}"
+	tag="${TAG:-}"
+	grep_pat="${GREP:-}"
+	priority="${PRIORITY:-}"
+	kernel="${KERNEL_ONLY:-}"
 
 	journal_args=(-f -n 0 -o short-precise --no-pager)
 	filter_parts=()
@@ -93,22 +82,22 @@ Follow live journal output from the board over USB-SSH or registered SSH (no buf
 Quit: Ctrl+C
 
 Device selection:
-  SN / LWS_HMI_SN              select board when multiple devices
-  IP / LWS_HMI_IP                registered SSH only (make connect <ip>)
+  SN                         select board when multiple devices
+  IP                         registered SSH only (make connect <ip>)
 
 Filters (optional; combine as needed):
-  UNIT / LOGS_UNIT               systemd unit, comma-separated (e.g. hmi.service)
-  TAG / LOGS_TAG                 syslog identifier (logger -t, script prefix)
-  GREP / LOGS_GREP               journalctl --grep pattern
-  PRIORITY / LOGS_PRIORITY       emerg|alert|crit|err|warning|notice|info|debug
-  KERNEL / LOGS_KERNEL=1         kernel messages only
+  UNIT                           systemd unit, comma-separated (e.g. hmi.service)
+  TAG                            syslog identifier (logger -t, script prefix)
+  GREP                           journalctl --grep pattern
+  PRIORITY                       emerg|alert|crit|err|warning|notice|info|debug
+  KERNEL_ONLY=1                  kernel messages only
 
 Examples:
   make logs UNIT=hmi.service
   make logs TAG=usb-plug-ssh-start
   make logs GREP=flutter
   make logs PRIORITY=err
-  make logs KERNEL=1
+  make logs KERNEL_ONLY=1
   make logs UNIT=hmi.service GREP=flutter
   IP=192.168.1.50 make logs
 

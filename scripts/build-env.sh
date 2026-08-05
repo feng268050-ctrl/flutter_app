@@ -3,7 +3,7 @@
 # Sourced by docker/entrypoint.sh (container) and scripts/native-run.sh (Linux host).
 
 setup_build_env() {
-  BUILD_JOBS="${BUILD_JOBS:-4}"
+  BUILD_JOBS="${BUILD_JOBS:-8}"
   export BUILD_JOBS
 
   local nproc_wrapper_dir="${LWS_HMI_NPROC_BIN:-/tmp/lws-hmi-nproc-$$}"

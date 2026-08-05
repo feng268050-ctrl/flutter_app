@@ -93,7 +93,7 @@ Run on a physical ynh960 over USB-SSH (board needs P1.5 overlay scripts from a r
 make debug-app                 # SN=... when multiple boards
 ```
 
-VS Code / Cursor: open repo root `lws-hmi`, Run and Debug → **lws-hmi (USB-SSH debug)**. The pre-launch terminal runs `make usb-ssh-setup` and may request the macOS `sudo` password before Flutter starts; custom-device hooks themselves are non-interactive. Set `dart.flutterSdkPath` to `flutter-sdk`. `dart.analysisExcludedFolders` in `.vscode/settings.json` keeps SDK sources out of the Problems panel. Never run `flutter upgrade` inside `flutter-sdk/`; if compile breaks in framework sources, run `git -C flutter-sdk reset --hard HEAD` or `make fetch-flutter-sdk`.
+VS Code / Cursor: open repo root `lws-hmi`, Run and Debug → **lws-hmi (USB-SSH debug)**. The pre-launch terminal runs `make prepare-debug-host` and may request the macOS `sudo` password before Flutter starts; custom-device hooks themselves are non-interactive. Set `dart.flutterSdkPath` to `flutter-sdk`. `dart.analysisExcludedFolders` in `.vscode/settings.json` keeps SDK sources out of the Problems panel. Never run `flutter upgrade` inside `flutter-sdk/`; if compile breaks in framework sources, run `git -C flutter-sdk reset --hard HEAD` or `make fetch-flutter-sdk`.
 
 Behavior:
 

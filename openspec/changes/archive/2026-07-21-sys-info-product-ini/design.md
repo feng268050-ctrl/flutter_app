@@ -12,7 +12,7 @@ lws-ui used flat `model.properties` for similar keys, plus host `make set-prop` 
 - HAL `ProductInfo` abstraction: built-in properties `brand` / `model` / `sn`; extended accessors for known keys; generic `get(key)` for future keys.
 - Missing file/key → empty string in HAL; Device Information maps empty → `-`.
 - `sn` = non-empty `product.ini` `sn`, else chip/board serial (same chain as today’s `read-device-serial.sh`).
-- Host device selection uses **`SN=`** (renamed from `SERIAL=`); optional **`CHIPID=`**; deprecated `SERIAL=` alias.
+- Host device selection uses **`SN=`** (renamed from `SERIAL=`); optional **`CHIP_ID=`**; deprecated `SERIAL=` alias.
 - Host `SN` column / gadget iSerial follows product SN rule (`product.ini` sn → chip ID).
 - `SysInfoSnapshot` gains `brand` / `model` / `chipId`; `serialNumber` resolves via `ProductInfo.sn` (ini → chipId fallback).
 - Callers of `camera_ip` prefer product.ini via HAL, then board profile helper, then default.
@@ -81,7 +81,7 @@ StubSysInfo       →  injectable ProductInfo or empty defaults
 
 `make devices` table columns: **MODE SN ChipID LocationID IFACE IP USB**. USB-SSH/SSH rows probe live board SN + ChipID. Android adb / RockUSB loader: SN = ChipID = adb SerialNo / upgrade_tool SerialNo.
 
-**Host env (device selection):** Rename `SERIAL=` / `LWS_HMI_SERIAL=` → **`SN=` / `LWS_HMI_SN=`** for all host commands that previously used SERIAL (`push-app`, `upgrade`, `shell`, `flash`, `reboot` / `reboot-loader`, `debug-app`, device-target selection for `set-prop`, …). `SN=` matches table **SN** or **ChipID**. **`CHIPID=` / `LWS_HMI_CHIPID=`** match ChipID only (use when `make set-prop SN=…` would overwrite selection). Deprecated **`SERIAL=`** remains an alias for `SN=`. Document in Makefile `help`, `.env.example`, README, AGENTS.md.
+**Host env (device selection):** Rename `SERIAL=` → **`SN=`** for all host commands that previously used SERIAL (`push-app`, `upgrade`, `shell`, `flash`, `reboot` / `reboot-loader`, `debug-app`, device-target selection for `set-prop`, …). `SN=` matches table **SN** or **ChipID**. **`CHIP_ID=`** match ChipID only (use when `make set-prop SN=…` would overwrite selection). Deprecated **`SERIAL=`** remains an alias for `SN=`. Document in Makefile `help`, `.env.example`, README, AGENTS.md.
 
 Dart `ProductInfo.chipId` via `DeviceSnReader.readChipId()` (`read-serial --chip-id`); `ProductInfo.sn` = ini sn or chipId. `SysInfoSnapshot.chipId` / `serialNumber` mirror those.
 
@@ -115,7 +115,7 @@ Dart `ProductInfo.chipId` via `DeviceSnReader.readChipId()` (`read-serial --chip
 
 | lws-ui | lws-hmi |
 |--------|---------|
-| adb + `/system/etc/model.properties` | SSH (same device selection as `push-app` / `shell`: `SN` / `CHIPID` / `IP`) + `/var/lib/hmi/product.ini` |
+| adb + `/system/etc/model.properties` | SSH (same device selection as `push-app` / `shell`: `SN` / `CHIP_ID` / `IP`) + `/var/lib/hmi/product.ini` |
 | One `KEY=value` per `set-prop` | **One or more** `KEY=value` in one `set-prop` (atomic write of the merged file) |
 | One UPPERCASE key per `del-prop` | Same (one key); missing key → warn, exit 0 |
 | UPPERCASE CLI → lowercase file key | Same |
@@ -125,7 +125,7 @@ CLI examples:
 
 ```bash
 make set-prop BRAND=Innohi MODEL=YNH960 SN=FACTORY-001
-CHIPID=ABC123 make set-prop SN=FACTORY-001   # multi-board: CHIPID selects; SN is product key
+CHIP_ID=ABC123 make set-prop SN=FACTORY-001   # multi-board: CHIP_ID selects; SN is product key
 make set-prop CAMERA_IP=192.168.1.50 CAMERA_TYPE=2
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=immediate
 make del-prop CAMERA_IP
@@ -133,7 +133,7 @@ make del-prop CAMERA_IP
 
 Implementation sketch:
 
-- Shared host helper to upsert/delete keys in a local temp copy of the remote file (reuse lws-ui style `upsert_*` / `delete_*` logic; skip Make/workflow vars such as `CHIPID`, `IP`, deprecated `SERIAL`, `BUILD_JOBS`, … — **not** product `SN`).
+- Shared host helper to upsert/delete keys in a local temp copy of the remote file (reuse lws-ui style `upsert_*` / `delete_*` logic; skip Make/workflow vars such as `CHIP_ID`, `IP`, deprecated `SERIAL`, `BUILD_JOBS`, … — **not** product `SN`).
 - When `SN=` is among product assignments, clear device-select `SN` for that run so Make’s `SN=` does not steal board selection.
 - Pull (or create empty) remote `product.ini` via SSH, apply all upserts, push back, `chmod 0644`, then restart HMI once.
 - Makefile: pass `$(MAKEOVERRIDES)` and/or filtered goals into the script; for `del-prop KEY` where `KEY` is a Make goal (not `KEY=`), swallow extra goals like lws-ui (dummy `%:` rule scoped carefully).

@@ -74,9 +74,9 @@ The channel manifest written for publish (by the upload API or an equivalent cli
 - **WHEN** publish completes successfully
 - **THEN** the channel manifest `url` equals the public HTTPS URL of the uploaded OTA zip under `{artifact}/`
 
-### Requirement: Host documents api-server contract and cross-repo work
+### Requirement: Host documents publish Make surface
 
-Host docs (Makefile `help` and README Make-commands, plus AGENTS rebuild table as needed) SHALL document `make publish` / `publish-only`, `APP=`, `RELEASE=1`, required env (`PUBLISH_API_TOKEN`, API base URL), and that the Worker must allow the derived artifact on **`PUT /upload/{artifact}/*`** and **`GET /view/{artifact}/{staging|release}.json`**. Docs SHALL state that if api-server does not yet list the artifact, implementers MUST extend **`../api-server`** via its OpenSpec workflow before relying on production publish.
+Host docs (Makefile `help` and README Make-commands, plus AGENTS rebuild table as needed) SHALL document `make publish` / `publish-only`, `APP=`, `RELEASE=1`, and required env (`PUBLISH_API_TOKEN`, API base URL). Docs SHALL point to sibling api-server OpenSpec **`hmi-ota-static-upload`** for Worker artifact / basename / view rules, and MUST NOT duplicate that Worker design in this repository.
 
 #### Scenario: Operator finds publish in help
 
@@ -85,7 +85,7 @@ Host docs (Makefile `help` and README Make-commands, plus AGENTS rebuild table a
 
 ### Requirement: Preferred upload path is static library PUT
 
-The intended production upload path SHALL be **`PUT /upload/{artifact}/{zip-basename}`** with **`Authorization: Bearer <STATIC_API_TOKENS member>`**, expecting **ApiResult** success data with **`artifact_url`** and **`manifest_url`**, matching existing `ai-library` / `lws-app` client docs. A temporary presigned PUT of zip + client-written manifest (as in `lws-ui` `publish_lws_app.py`) MAY be used only as a bridge while api-server support lands, and MUST still produce the same R2 key layout and manifest field set.
+The intended production upload path SHALL be **`PUT /upload/{artifact}/{zip-basename}`** with **`Authorization: Bearer <STATIC_API_TOKENS member>`**, expecting **ApiResult** success data with **`artifact_url`** and **`manifest_url`**, per api-server **`hmi-ota-static-upload`** / `static-library-manifest`. A temporary presigned PUT of zip + client-written manifest MAY be used only as a bridge while that Worker change lands, and MUST still produce the same R2 key layout and manifest field set.
 
 #### Scenario: Successful PUT-shaped publish
 

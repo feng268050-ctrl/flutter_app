@@ -293,7 +293,7 @@ class VideosTabState extends State<VideosTab> {
       );
 
   TextStyle _cellStyle(BuildContext context) =>
-      context.hmiTypography.caption.copyWith(
+      context.hmiTypography.settingsRowTitle.copyWith(
         color: Colors.white,
         height: 1.15,
       );
@@ -403,16 +403,14 @@ class VideosTabState extends State<VideosTab> {
     return Theme(
       data: theme.copyWith(
         dataTableTheme: DataTableThemeData(
-          headingTextStyle: _headingStyle(context).copyWith(
-            fontSize: context.hmiTypography.caption.fontSize,
-          ),
+          headingTextStyle: _headingStyle(context),
           dataTextStyle: _cellStyle(context),
           dividerThickness: 1,
           headingRowColor: WidgetStateProperty.all(Colors.transparent),
           dataRowColor: WidgetStateProperty.all(Colors.transparent),
-          headingRowHeight: 48,
-          dataRowMinHeight: 64,
-          dataRowMaxHeight: 88,
+          headingRowHeight: 56,
+          dataRowMinHeight: 72,
+          dataRowMaxHeight: 96,
         ),
         dividerColor: const Color(0x33FFFFFF),
       ),

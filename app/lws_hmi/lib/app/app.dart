@@ -319,6 +319,9 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
 
   Future<void> _startCloudLocalRuntime() async {
     _cloudLocalRuntime.onAuthError = () {
+      if (!_cloudSettingsStore.cloudServicesEnabled) {
+        return;
+      }
       unawaited(
         DeviceRegistrationDialogs.enqueueRegistration(
           queue: _promptQueue,
@@ -332,7 +335,7 @@ class _LwsHmiAppState extends State<LwsHmiApp> with WidgetsBindingObserver {
       );
     };
     _cloudLocalRuntime.onUsersProbe = (DeviceUsersProbeResult result) {
-      if (!result.unbound) {
+      if (!_cloudSettingsStore.cloudServicesEnabled || !result.unbound) {
         return;
       }
       unawaited(

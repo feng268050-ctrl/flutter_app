@@ -606,6 +606,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloudEnvironmentTierTest => 'Test';
 
   @override
+  String get cloudServicesFooter =>
+      'Cloud services connect this device to LaserCyber Worker for remote binding, registration, uploads, and cloud commands when the network is available.';
+
+  @override
+  String get cloudServicesSummaryBoth => 'Cloud + LAN';
+
+  @override
+  String get cloudServicesSummaryCloud => 'Cloud';
+
+  @override
+  String get cloudServicesSummaryLan => 'LAN';
+
+  @override
+  String get cloudServicesText => 'Cloud Services';
+
+  @override
   String get coldWaterInterlockAlarmContent =>
       'Power off, wait 10 seconds, then power on again. If the alarm remains, contact LaserCyber support.';
 
@@ -1295,6 +1311,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keyboardText => 'Keyboard';
+
+  @override
+  String get lanEnhancementFooter =>
+      'LAN enhancement runs local HTTP on port 5580 and mDNS discovery so phones and tools on the same network can find and manage this device.';
+
+  @override
+  String get lanEnhancementText => 'LAN Enhancement';
 
   @override
   String get languageAppliesToUi =>

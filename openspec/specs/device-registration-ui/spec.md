@@ -54,6 +54,20 @@ On WebSocket auth-invalid failure (`401`) or users-probe / upgrade classificatio
 - **THEN** the registration dialog MUST be enqueued on the global prompt queue
 - **AND** MUST NOT open as an independent modal over an in-flight prompt or boot self-check
 
+### Requirement: Registration prompts require cloud services enabled
+
+Device registration and unbound-device bind prompts that depend on Worker connectivity or WebSocket auth failure SHALL run only while **云服务** (cloud services) is enabled. While cloud services is disabled, the system MUST NOT enqueue registration or bind dialogs from cloud probe/WebSocket paths, and MUST NOT block Home or other product flows waiting for cloud enrollment.
+
+#### Scenario: No registration nag when cloud off
+
+- **WHEN** cloud services is disabled
+- **THEN** the system MUST NOT present the registration or bind dialog solely due to absent cloud connectivity
+
+#### Scenario: Registration may run after enable
+
+- **WHEN** the operator enables cloud services and the existing needs-registration classification occurs
+- **THEN** the registration dialog MAY be enqueued per `device-registration-ui` rules
+
 ### Requirement: Remote lock operator feedback
 
 When remote lock is active, the system SHALL show a lock indicator in the product status chrome and SHALL show lock feedback via the **global prompt queue** (stable id `remoteLock`) explaining the device is locked. Locked state MUST block entry into quick/engineer welding modes per product policy until unlock. The lock prompt MUST NOT bypass the global queue. On remote unlock, the App MUST dismiss the `remoteLock` queue entry so the dialog does not remain visible.

@@ -12,14 +12,22 @@ final class CloudSettingsStore extends ChangeNotifier {
             preferencePath ?? '${OsPaths.varHmi}/cloud-settings.json';
 
   static const keyEnvironmentTier = 'environmentTier';
+  static const keyCloudServicesEnabled = 'cloudServicesEnabled';
+  static const keyLanEnhancementEnabled = 'lanEnhancementEnabled';
   static const defaultEnvironmentTier = CloudEnvironmentTier.test;
+  static const defaultCloudServicesEnabled = false;
+  static const defaultLanEnhancementEnabled = false;
 
   final String preferencePath;
 
   CloudEnvironmentTier _environmentTier = defaultEnvironmentTier;
+  bool _cloudServicesEnabled = defaultCloudServicesEnabled;
+  bool _lanEnhancementEnabled = defaultLanEnhancementEnabled;
   bool _warmed = false;
 
   CloudEnvironmentTier get environmentTier => _environmentTier;
+  bool get cloudServicesEnabled => _cloudServicesEnabled;
+  bool get lanEnhancementEnabled => _lanEnhancementEnabled;
 
   void warmRead() {
     if (_warmed) {
@@ -32,7 +40,7 @@ final class CloudSettingsStore extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('cloud-settings: warmRead failed: $e');
-      _environmentTier = defaultEnvironmentTier;
+      _resetToDefaults();
     }
     _warmed = true;
   }
@@ -48,7 +56,7 @@ final class CloudSettingsStore extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('cloud-settings: read failed: $e');
-      _environmentTier = defaultEnvironmentTier;
+      _resetToDefaults();
     }
     _warmed = true;
   }
@@ -63,8 +71,34 @@ final class CloudSettingsStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _applyJson(String raw) {
+  Future<void> setCloudServicesEnabled(bool enabled) async {
+    warmRead();
+    if (_cloudServicesEnabled == enabled) {
+      return;
+    }
+    _cloudServicesEnabled = enabled;
+    await _writeUnlocked();
+    notifyListeners();
+  }
+
+  Future<void> setLanEnhancementEnabled(bool enabled) async {
+    warmRead();
+    if (_lanEnhancementEnabled == enabled) {
+      return;
+    }
+    _lanEnhancementEnabled = enabled;
+    await _writeUnlocked();
+    notifyListeners();
+  }
+
+  void _resetToDefaults() {
     _environmentTier = defaultEnvironmentTier;
+    _cloudServicesEnabled = defaultCloudServicesEnabled;
+    _lanEnhancementEnabled = defaultLanEnhancementEnabled;
+  }
+
+  void _applyJson(String raw) {
+    _resetToDefaults();
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) {
@@ -76,14 +110,47 @@ final class CloudSettingsStore extends ChangeNotifier {
           map[keyEnvironmentTier]?.toString(),
         );
       }
+      if (map.containsKey(keyCloudServicesEnabled)) {
+        _cloudServicesEnabled = _asBool(
+          map[keyCloudServicesEnabled],
+          defaultCloudServicesEnabled,
+        );
+      }
+      if (map.containsKey(keyLanEnhancementEnabled)) {
+        _lanEnhancementEnabled = _asBool(
+          map[keyLanEnhancementEnabled],
+          defaultLanEnhancementEnabled,
+        );
+      }
     } catch (e) {
       debugPrint('cloud-settings: corrupt JSON, using defaults: $e');
-      _environmentTier = defaultEnvironmentTier;
+      _resetToDefaults();
     }
+  }
+
+  static bool _asBool(Object? raw, bool fallback) {
+    if (raw is bool) {
+      return raw;
+    }
+    if (raw is num) {
+      return raw != 0;
+    }
+    if (raw is String) {
+      final s = raw.trim().toLowerCase();
+      if (s == 'true' || s == '1' || s == 'yes') {
+        return true;
+      }
+      if (s == 'false' || s == '0' || s == 'no') {
+        return false;
+      }
+    }
+    return fallback;
   }
 
   Map<String, dynamic> _toJson() => {
         keyEnvironmentTier: _environmentTier.wireName,
+        keyCloudServicesEnabled: _cloudServicesEnabled,
+        keyLanEnhancementEnabled: _lanEnhancementEnabled,
       };
 
   Future<void> _writeUnlocked() async {

@@ -1157,6 +1157,36 @@ abstract class AppLocalizations {
   /// **'Test'**
   String get cloudEnvironmentTierTest;
 
+  /// No description provided for @cloudServicesFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud services connect this device to LaserCyber Worker for remote binding, registration, uploads, and cloud commands when the network is available.'**
+  String get cloudServicesFooter;
+
+  /// No description provided for @cloudServicesSummaryBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud + LAN'**
+  String get cloudServicesSummaryBoth;
+
+  /// No description provided for @cloudServicesSummaryCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud'**
+  String get cloudServicesSummaryCloud;
+
+  /// No description provided for @cloudServicesSummaryLan.
+  ///
+  /// In en, this message translates to:
+  /// **'LAN'**
+  String get cloudServicesSummaryLan;
+
+  /// No description provided for @cloudServicesText.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud Services'**
+  String get cloudServicesText;
+
   /// No description provided for @coldWaterInterlockAlarmContent.
   ///
   /// In en, this message translates to:
@@ -2434,6 +2464,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keyboard'**
   String get keyboardText;
+
+  /// No description provided for @lanEnhancementFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'LAN enhancement runs local HTTP on port 5580 and mDNS discovery so phones and tools on the same network can find and manage this device.'**
+  String get lanEnhancementFooter;
+
+  /// No description provided for @lanEnhancementText.
+  ///
+  /// In en, this message translates to:
+  /// **'LAN Enhancement'**
+  String get lanEnhancementText;
 
   /// No description provided for @languageAppliesToUi.
   ///

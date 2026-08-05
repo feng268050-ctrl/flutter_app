@@ -12,6 +12,7 @@ import 'package:lws_hmi/features/settings/application/common_settings_scope.dart
 import 'package:lws_hmi/features/settings/application/common_settings_store.dart';
 import 'package:lws_hmi/features/settings/application/misc_settings_scope.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/bluetooth_settings_page.dart';
+import 'package:lws_hmi/features/settings/presentation/pages/cloud_services_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/date_time_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/display_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/pages/http_proxy_settings_page.dart';
@@ -27,6 +28,8 @@ import 'package:lws_hmi/features/settings/presentation/pages/usb_otg_settings_pa
 import 'package:lws_hmi/features/settings/presentation/pages/wifi_settings_page.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/l10n/app_localizations.dart';
+import 'package:lws_hmi/platform/cloud/cloud_local_runtime_scope.dart';
+import 'package:lws_hmi/platform/cloud/cloud_settings_scope.dart';
 
 /// Common Settings — CyberUI untitled cards (nav rows → sub-pages).
 class CommonSettingsTab extends StatefulWidget {
@@ -269,6 +272,37 @@ class _CommonSettingsTabState extends State<CommonSettingsTab> {
                   BluetoothSettingsPage(services: services),
                 );
                 await _refreshBt();
+              },
+            ),
+            Builder(
+              builder: (context) {
+                final cloudStore = CloudSettingsScope.maybeOf(context);
+                final runtime = CloudLocalRuntimeScope.maybeOf(context);
+                if (cloudStore == null) {
+                  return SettingsNavRow(
+                    title: l10n.cloudServicesText,
+                    value: l10n.offLabel,
+                  );
+                }
+                return ListenableBuilder(
+                  listenable: cloudStore,
+                  builder: (context, _) => SettingsNavRow(
+                    title: l10n.cloudServicesText,
+                    value: cloudServicesNetworkSummary(l10n, cloudStore),
+                    onTap: () async {
+                      await pushSettingsPage(
+                        context,
+                        CloudServicesSettingsPage(
+                          cloudSettings: cloudStore,
+                          runtime: runtime,
+                        ),
+                      );
+                      if (mounted) {
+                        setState(() {});
+                      }
+                    },
+                  ),
+                );
               },
             ),
           ],

@@ -99,6 +99,40 @@ void main() {
       final b = CloudSettingsStore(preferencePath: path)..warmRead();
       expect(b.environmentTier, CloudEnvironmentTier.prod);
     });
+
+    test('cloud and LAN enhancement default off and persist', () async {
+      final dir = await Directory.systemTemp.createTemp('cloud-settings-');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = '${dir.path}/cloud-settings.json';
+      final fresh = CloudSettingsStore(preferencePath: path)..warmRead();
+      expect(fresh.cloudServicesEnabled, isFalse);
+      expect(fresh.lanEnhancementEnabled, isFalse);
+
+      await fresh.setCloudServicesEnabled(true);
+      await fresh.setLanEnhancementEnabled(true);
+      final reloaded = CloudSettingsStore(preferencePath: path)..warmRead();
+      expect(reloaded.cloudServicesEnabled, isTrue);
+      expect(reloaded.lanEnhancementEnabled, isTrue);
+      expect(reloaded.environmentTier, CloudSettingsStore.defaultEnvironmentTier);
+
+      await reloaded.setCloudServicesEnabled(false);
+      final off = CloudSettingsStore(preferencePath: path)..warmRead();
+      expect(off.cloudServicesEnabled, isFalse);
+      expect(off.lanEnhancementEnabled, isTrue);
+    });
+
+    test('missing keys keep defaults without wiping tier', () async {
+      final dir = await Directory.systemTemp.createTemp('cloud-settings-');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = '${dir.path}/cloud-settings.json';
+      await File(path).writeAsString(
+        '{"environmentTier":"prod"}\n',
+      );
+      final store = CloudSettingsStore(preferencePath: path)..warmRead();
+      expect(store.environmentTier, CloudEnvironmentTier.prod);
+      expect(store.cloudServicesEnabled, isFalse);
+      expect(store.lanEnhancementEnabled, isFalse);
+    });
   });
 
   group('DeviceLocalHttpServer', () {

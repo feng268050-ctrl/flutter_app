@@ -580,6 +580,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudEnvironmentTierTest => '测试';
 
   @override
+  String get cloudServicesFooter =>
+      '开启云服务后，本机可在有网络时连接 LaserCyber Worker，用于远程绑定、注册、上传与云端指令。';
+
+  @override
+  String get cloudServicesSummaryBoth => '云服务+局域网';
+
+  @override
+  String get cloudServicesSummaryCloud => '云服务';
+
+  @override
+  String get cloudServicesSummaryLan => '局域网';
+
+  @override
+  String get cloudServicesText => '云服务';
+
+  @override
   String get coldWaterInterlockAlarmContent =>
       '请先关机，等待 10 秒后再开机。若仍报警，请联系 LaserCyber 售后。';
 
@@ -1244,6 +1260,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get keyboardText => '键盘';
+
+  @override
+  String get lanEnhancementFooter =>
+      '开启局域网增强后，本机提供本地 HTTP（端口 5580）与 mDNS 发现，便于同一局域网内的手机与工具连接管理。';
+
+  @override
+  String get lanEnhancementText => '局域网增强';
 
   @override
   String get languageAppliesToUi => '应用于产品界面语言与软键盘。';
@@ -3323,6 +3346,22 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get cloudEnvironmentTierTest => '測試';
 
   @override
+  String get cloudServicesFooter =>
+      '開啓雲服務後，本機可在有網絡時連接 LaserCyber Worker，用於遠程綁定、註冊、上傳與雲端指令。';
+
+  @override
+  String get cloudServicesSummaryBoth => '雲服務+局域網';
+
+  @override
+  String get cloudServicesSummaryCloud => '雲服務';
+
+  @override
+  String get cloudServicesSummaryLan => '局域網';
+
+  @override
+  String get cloudServicesText => '雲服務';
+
+  @override
   String get coldWaterInterlockAlarmContent =>
       '請先關機，等待 10 秒後再開機。若仍報警，請聯繫 LaserCyber 售後。';
 
@@ -3893,6 +3932,13 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get keyboardText => '鍵盤';
+
+  @override
+  String get lanEnhancementFooter =>
+      '開啓局域網增強後，本機提供本地 HTTP（端口 5580）與 mDNS 發現，便於同一局域網內的手機與工具連接管理。';
+
+  @override
+  String get lanEnhancementText => '局域網增強';
 
   @override
   String get languageAppliesToUi => '應用於產品界面語言與軟鍵盤。';

@@ -187,6 +187,8 @@ final class CloudLocalRuntime {
   /// Short retries measured from Wi‑Fi-up / probe-miss (not from first frame).
   final List<Timer> _postWifiLinkTimers = <Timer>[];
   Timer? _linkFollowUpTimer;
+  /// Serializes LAN/cloud plane start/stop when toggles flip quickly.
+  Future<void> _planeGate = Future<void>.value();
   CloudLinkUiStatus _linkStatus = CloudLinkUiStatus.connecting;
   final StreamController<CloudLinkUiStatus> _linkStatusCtrl =
       StreamController<CloudLinkUiStatus>.broadcast();
@@ -437,17 +439,81 @@ final class CloudLocalRuntime {
     commonSettings?.warmRead();
     miscSettings?.warmRead();
 
-    final httpOk = await localHttp.start();
-    if (httpOk) {
-      await _publishMdns();
-    }
     _armMdnsWifiWatch();
-
     unawaited(liveCache.start());
 
-    // Cloud HTTP/WS need uplink DNS + route — wait for Wi‑Fi (or link now if
-    // already connected). Do not probe origins while radio/IP is down.
-    _armCloudLinkRetries();
+    await _enqueuePlaneOp(() async {
+      await _applyLanEnhancementUnlocked();
+      await _applyCloudServicesUnlocked();
+    });
+  }
+
+  /// Persist + apply 云服务 without requiring an HMI restart.
+  Future<void> setCloudServicesEnabled(bool enabled) async {
+    cloudSettings.warmRead();
+    await cloudSettings.setCloudServicesEnabled(enabled);
+    await _enqueuePlaneOp(_applyCloudServicesUnlocked);
+  }
+
+  /// Persist + apply 局域网增强 without requiring an HMI restart.
+  Future<void> setLanEnhancementEnabled(bool enabled) async {
+    cloudSettings.warmRead();
+    await cloudSettings.setLanEnhancementEnabled(enabled);
+    await _enqueuePlaneOp(_applyLanEnhancementUnlocked);
+  }
+
+  Future<void> _enqueuePlaneOp(Future<void> Function() op) {
+    final run = _planeGate.then((_) => op());
+    _planeGate = run.catchError((Object e, StackTrace st) {
+      debugPrint('cloud-runtime: plane op failed: $e\n$st');
+    });
+    return run;
+  }
+
+  Future<void> _applyLanEnhancementUnlocked() async {
+    if (!_started) {
+      return;
+    }
+    if (cloudSettings.lanEnhancementEnabled) {
+      final httpOk = await localHttp.start();
+      if (httpOk) {
+        await _publishMdns();
+      }
+    } else {
+      await mdns.withdraw();
+      await localHttp.stop();
+    }
+  }
+
+  Future<void> _applyCloudServicesUnlocked() async {
+    if (!_started) {
+      return;
+    }
+    if (cloudSettings.cloudServicesEnabled) {
+      // Cloud HTTP/WS need uplink DNS + route — wait for Wi‑Fi (or link now if
+      // already connected). Do not probe origins while radio/IP is down.
+      _armCloudLinkRetries();
+    } else {
+      await _stopCloudPlaneUnlocked();
+    }
+  }
+
+  Future<void> _stopCloudPlaneUnlocked() async {
+    _cancelCloudLinkRetries();
+    _cancelPostWifiLinkRetries();
+    _linkFollowUpTimer?.cancel();
+    _linkFollowUpTimer = null;
+    _linkFollowUpPending = false;
+    _linkInFlight = false;
+    _originPinned = false;
+    _clearRegistrationPromptLatch();
+    prober.clearPin();
+    if (ws.state == DeviceWsState.connected ||
+        ws.state == DeviceWsState.connecting ||
+        ws.state == DeviceWsState.offlineAuthError) {
+      await ws.disconnect();
+    }
+    _publishLinkStatus();
   }
 
   /// Wire SQLite alarm log → alerts SSE `new` / `clear`.
@@ -463,6 +529,10 @@ final class CloudLocalRuntime {
   Future<void> refreshUsersBindingProbe({
     bool notifyAuthError = true,
   }) async {
+    if (!cloudSettings.cloudServicesEnabled) {
+      debugPrint('cloud-runtime: refresh users — cloud services off');
+      return;
+    }
     var pin = prober.pinnedBase;
     pin ??= await prober.probe(cloudSettings.environmentTier);
     if (pin == null) {
@@ -488,6 +558,11 @@ final class CloudLocalRuntime {
   }
 
   Future<void> reprobeAndReconnect() async {
+    if (!cloudSettings.cloudServicesEnabled) {
+      debugPrint('cloud-runtime: reprobe — cloud services off');
+      await _enqueuePlaneOp(_stopCloudPlaneUnlocked);
+      return;
+    }
     await ws.disconnect();
     prober.clearPin();
     _originPinned = false;
@@ -526,6 +601,9 @@ final class CloudLocalRuntime {
   }
 
   Future<void> _ensureCloudLinked({required String reason}) async {
+    if (!cloudSettings.cloudServicesEnabled) {
+      return;
+    }
     final wifiPhase = services.wifi.currentConnection.phase;
     if (wifiPhase != WifiConnectionPhase.connected) {
       return;
@@ -610,6 +688,10 @@ final class CloudLocalRuntime {
   }
 
   void _scheduleLinkFollowUpIfNeeded() {
+    if (!cloudSettings.cloudServicesEnabled) {
+      _linkFollowUpPending = false;
+      return;
+    }
     if (_originPinned || !_linkFollowUpPending) {
       return;
     }
@@ -657,10 +739,16 @@ final class CloudLocalRuntime {
   }
 
   void _armCloudLinkRetries() {
+    if (!cloudSettings.cloudServicesEnabled) {
+      return;
+    }
     if (_originPinned) {
       return;
     }
     _wifiWaitSub ??= services.wifi.connection.listen((state) {
+      if (!cloudSettings.cloudServicesEnabled) {
+        return;
+      }
       if (state.phase == WifiConnectionPhase.connected) {
         // Arm short retries from Wi‑Fi-up even if the immediate probe races
         // DNS and fails with a full timeout.
@@ -695,6 +783,9 @@ final class CloudLocalRuntime {
   /// first probe times out (~6s), the next boot timer may be 20s/45s later.
   /// These intervals restart from the Wi‑Fi/probe-miss moment instead.
   void _armPostWifiLinkRetries({required String why}) {
+    if (!cloudSettings.cloudServicesEnabled) {
+      return;
+    }
     if (_originPinned) {
       return;
     }
@@ -705,7 +796,7 @@ final class CloudLocalRuntime {
     for (final sec in <int>[1, 2, 4, 8, 15, 30]) {
       _postWifiLinkTimers.add(
         Timer(Duration(seconds: sec), () {
-          if (_originPinned) {
+          if (!cloudSettings.cloudServicesEnabled || _originPinned) {
             return;
           }
           if (services.wifi.currentConnection.phase !=
@@ -741,10 +832,10 @@ final class CloudLocalRuntime {
           unawaited(ws.disconnect());
         }
       } else if (state.phase == WifiConnectionPhase.connected) {
-        if (localHttp.isRunning) {
+        if (cloudSettings.lanEnhancementEnabled && localHttp.isRunning) {
           unawaited(_publishMdns());
         }
-        if (_originPinned) {
+        if (cloudSettings.cloudServicesEnabled && _originPinned) {
           debugPrint('cloud-runtime: wifi connected — resume device ws');
           unawaited(ws.reconnectIfIdle());
         }
@@ -758,12 +849,22 @@ final class CloudLocalRuntime {
     required bool notifyAuthError,
     bool resumeWsIfOk = false,
   }) async {
+    if (!cloudSettings.cloudServicesEnabled) {
+      return const DeviceUsersProbeResult(
+        ok: false,
+        statusCode: 0,
+        userCount: 0,
+      );
+    }
     final users = await usersClient.probeUsers(pinnedBase: pin, deviceSn: sn);
     debugPrint(
       'cloud-runtime: users probe ok=${users.ok} count=${users.userCount} '
       'status=${users.statusCode} errorCode=${users.errorCode} '
       'unbound=${users.unbound} needsRegistration=${users.needsRegistration}',
     );
+    if (!cloudSettings.cloudServicesEnabled) {
+      return users;
+    }
     onUsersProbe?.call(users);
     if (users.ok) {
       _clearRegistrationPromptLatch();
@@ -771,7 +872,7 @@ final class CloudLocalRuntime {
     if (notifyAuthError && users.needsRegistration) {
       _notifyRegistrationNeeded();
     }
-    if (resumeWsIfOk && users.ok) {
+    if (resumeWsIfOk && users.ok && cloudSettings.cloudServicesEnabled) {
       final wsUrl = DeviceApiOriginConfig.deviceWebSocketUri(
         pinnedHttpBase: pin,
         deviceSn: sn,
@@ -783,6 +884,10 @@ final class CloudLocalRuntime {
   }
 
   void _notifyRegistrationNeeded() {
+    if (!cloudSettings.cloudServicesEnabled) {
+      debugPrint('cloud-runtime: registration prompt suppressed — cloud off');
+      return;
+    }
     if (_registrationPromptNotified) {
       debugPrint('cloud-runtime: registration prompt already notified — skip');
       return;
@@ -796,6 +901,11 @@ final class CloudLocalRuntime {
   }
 
   CloudLinkUiStatus _computeLinkStatus() {
+    if (!cloudSettings.cloudServicesEnabled) {
+      // Cloud plane off — Home must not show a perpetual "connecting" / fail
+      // nag; treat as idle failed (no enrollment prompts while gated).
+      return CloudLinkUiStatus.failed;
+    }
     switch (ws.state) {
       case DeviceWsState.connected:
         return CloudLinkUiStatus.connected;
@@ -1014,6 +1124,9 @@ final class CloudLocalRuntime {
   }
 
   Future<void> _publishMdns() async {
+    if (!cloudSettings.lanEnhancementEnabled || !localHttp.isRunning) {
+      return;
+    }
     try {
       final product = await services.ensureProductInfo();
       final model = [
@@ -1203,14 +1316,22 @@ final class CloudLocalRuntime {
   }
 
   /// Monitor / Record Work: enqueue cover drain or full upload.
-  Future<void> notifyProcessVideoSaved() =>
-      processVideoUpload.enqueuePendingCovers();
+  Future<void> notifyProcessVideoSaved() async {
+    if (!cloudSettings.cloudServicesEnabled) {
+      return;
+    }
+    await processVideoUpload.enqueuePendingCovers();
+  }
 
   Future<bool> uploadProcessVideo(
     String videoId, {
     ProcessVideoUploadListener? listener,
-  }) =>
-      processVideoUpload.uploadVideo(videoId, listener: listener);
+  }) async {
+    if (!cloudSettings.cloudServicesEnabled) {
+      return false;
+    }
+    return processVideoUpload.uploadVideo(videoId, listener: listener);
+  }
 
   Future<void> _handleDeleteVideo(DeviceWsEnvelope request) async {
     final payload = request.payload;

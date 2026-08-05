@@ -289,7 +289,7 @@ final class _ProcessVideoDetailPageState extends State<ProcessVideoDetailPage> {
                               child: _ParameterColumn(
                                 record: record,
                                 title: l10n.processVideoParametersTitle,
-                                backLabel: l10n.equipmentStatusBack,
+                                backLabel: 'Back',
                                 uploadLabel: l10n.uploadText,
                                 deleteLabel: l10n.deleteText,
                                 labelWidth: 230 * scale,

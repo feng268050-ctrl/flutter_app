@@ -9,6 +9,7 @@ import 'package:lws_hmi/features/monitor/presentation/tabs/videos_tab.dart';
 import 'package:lws_hmi/features/monitor/presentation/tabs/work_information_tab.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
 import 'package:lws_hmi/features/status_bar/product_page_status_bar.dart';
+import 'package:lws_hmi/features/status_bar/product_tab_slide_body.dart';
 import 'package:lws_hmi/features/status_bar/product_top_tabs.dart';
 import 'package:lws_hmi/features/work_mode/domain/work_mode_accent.dart';
 import 'package:lws_hmi/features/work_mode/presentation/work_mode_status_bar.dart';
@@ -16,7 +17,7 @@ import 'package:lws_hmi/l10n/app_localizations.dart';
 
 /// Product Monitor — five tabs aligned with lws-ui DeviceMonitoring (Material).
 ///
-/// Tab changes are tap-only (no swipe), matching lws-ui FragmentShowHideTabHost.
+/// Tab changes animate L/R on tap (finger swipe disabled — anti-mis-touch).
 /// Tab leading icons use Material Icons (replacing lws-ui WebP mipmaps).
 class MonitorPage extends StatefulWidget {
   const MonitorPage({
@@ -182,7 +183,7 @@ class _MonitorPageState extends State<MonitorPage> with RouteAware {
         // Scaffold already starts body layout at the custom Tab divider.
         // Clip there so scroll content cannot paint into the Tab strip.
         body: ClipRect(
-          child: IndexedStack(
+          child: ProductTabSlideBody(
             index: _currentTabIndex,
             children: [
               const WorkInformationTab(),

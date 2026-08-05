@@ -4,6 +4,7 @@ import 'package:lws_hmi/app/theme/hmi_button_metrics.dart';
 import 'package:lws_hmi/app/theme/hmi_typography.dart';
 import 'package:lws_hmi/device/display_value.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
+import 'package:lws_hmi/features/home/presentation/temp_trend_arrows.dart';
 import 'package:lws_hmi/features/settings/application/common_settings_scope.dart';
 import 'package:lws_hmi/features/settings/application/temperature_unit_convert.dart';
 import 'package:lws_hmi/features/settings/presentation/widgets/settings_chrome.dart';
@@ -345,7 +346,7 @@ class MonitorStatusDot extends StatelessWidget {
   }
 }
 
-/// Alarm metric card: value above label + status icon (102dp).
+/// Alarm metric card: value above label + optional trend arrows + status icon.
 class MonitorMetricCard extends StatelessWidget {
   const MonitorMetricCard({
     super.key,
@@ -353,12 +354,16 @@ class MonitorMetricCard extends StatelessWidget {
     required this.label,
     this.fault = false,
     this.hasValue = true,
+    this.trend = TempTrend.none,
   });
 
   final String value;
   final String label;
   final bool fault;
   final bool hasValue;
+
+  /// Rise/fall vs previous sample (Live Machine Status parity).
+  final TempTrend trend;
 
   @override
   Widget build(BuildContext context) {
@@ -414,6 +419,12 @@ class MonitorMetricCard extends StatelessWidget {
               ],
             ),
           ),
+          // Same size/colors as Live Machine Status (“更多监测”).
+          if (hasValue && trend != TempTrend.none) ...[
+            const SizedBox(width: 6),
+            TempTrendArrows(trend: trend),
+            const SizedBox(width: 6),
+          ],
           MonitorStatusIcon(kind: kind),
           const SizedBox(width: 4),
         ],
@@ -507,6 +518,7 @@ class MonitorTempMetricCard extends StatelessWidget {
         label: label,
         fault: overTemp,
         hasValue: hasValue || overTemp,
+        trend: hasValue ? series.trend : TempTrend.none,
       );
     }
 

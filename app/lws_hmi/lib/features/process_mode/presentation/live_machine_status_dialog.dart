@@ -4,6 +4,7 @@ import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/home/application/temp_series.dart';
+import 'package:lws_hmi/features/home/presentation/temp_trend_arrows.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_product_session.dart';
 import 'package:lws_hmi/features/ip_camera/application/ip_camera_ui_status.dart';
 import 'package:lws_hmi/features/ip_camera/presentation/ip_camera_preview.dart';
@@ -494,9 +495,6 @@ final class _LiveTempMetricCard extends StatelessWidget {
 
   static const _idleLabel = Color(0xFFB0B1C2);
   static const _faultValue = Color(0xFFFF8A80);
-  static const _trendUp = Color(0xFFFF5A5A);
-  static const _trendDown = Color(0xFF3DDC84);
-  static const _trendIdle = Color(0x40FFFFFF);
 
   @override
   Widget build(BuildContext context) {
@@ -545,12 +543,7 @@ final class _LiveTempMetricCard extends StatelessWidget {
                 // No arrows when unavailable (dash only) or before first delta.
                 if (hasValue && series.trend != TempTrend.none) ...[
                   const SizedBox(width: 6),
-                  _TempTrendArrows(
-                    trend: series.trend,
-                    upColor: _trendUp,
-                    downColor: _trendDown,
-                    idleColor: _trendIdle,
-                  ),
+                  TempTrendArrows(trend: series.trend),
                   const SizedBox(width: 2),
                 ],
                 Text(
@@ -576,54 +569,6 @@ final class _LiveTempMetricCard extends StatelessWidget {
     return ListenableBuilder(
       listenable: common,
       builder: (context, _) => card(),
-    );
-  }
-}
-
-/// Stacked ↑ / ↓ beside the temperature: red up = rise, green down = fall.
-final class _TempTrendArrows extends StatelessWidget {
-  const _TempTrendArrows({
-    required this.trend,
-    required this.upColor,
-    required this.downColor,
-    required this.idleColor,
-  });
-
-  final TempTrend trend;
-  final Color upColor;
-  final Color downColor;
-  final Color idleColor;
-
-  static const _size = 22.0;
-  static const _slotH = 28.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: _size,
-      height: _slotH,
-      child: Stack(
-        alignment: Alignment.center,
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            top: -6,
-            child: Icon(
-              Icons.arrow_drop_up,
-              size: _size,
-              color: trend == TempTrend.up ? upColor : idleColor,
-            ),
-          ),
-          Positioned(
-            bottom: -6,
-            child: Icon(
-              Icons.arrow_drop_down,
-              size: _size,
-              color: trend == TempTrend.down ? downColor : idleColor,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

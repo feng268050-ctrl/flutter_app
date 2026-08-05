@@ -17,6 +17,7 @@
 # Apple vmnet-* needs root (Homebrew qemu lacks com.apple.vm.networking). The launcher
 # re-runs QEMU under `sudo -E` when any vmnet netdev is configured.
 #   EMULATOR_SSH_PORT=2222         (SSH hostfwd; always enabled; auto-bumps if busy)
+#   EMULATOR_HTTP_PORT=5580        (LAN HTTP :5580 hostfwd; auto-bumps if busy)
 #   EMULATOR_GL is ignored — host VirGL is required (virtio-gpu-gl).
 #   EMULATOR_XRES=1536 EMULATOR_YRES=960  (defaults; virt display, not panel 800×1280)
 #   QEMU=/path/to/qemu-system-aarch64  (prefer qemu-virgl keg on macOS)
@@ -112,6 +113,19 @@ pick_ssh_port() {
 		fi
 	done
 	die "no free SSH hostfwd port (tried $want and 2223–2230); free the port or set EMULATOR_SSH_PORT="
+}
+
+# Device-local HTTP API (App DeviceLocalHttpServer on guest :5580).
+pick_http_port() {
+	local want="${EMULATOR_HTTP_PORT:-5580}"
+	local p
+	for p in "$want" 5581 5582 5583 5584 5585 5586 5587 5588 5589; do
+		if tcp_port_free "$p"; then
+			echo "$p"
+			return 0
+		fi
+	done
+	die "no free HTTP hostfwd port (tried $want and 5581–5589); free the port or set EMULATOR_HTTP_PORT="
 }
 
 find_qemu() {
@@ -377,6 +391,7 @@ build_net_args() {
 	local eth0_bridge="${EMULATOR_ETH0_BRIDGE:-auto}"
 	os="$(uname -s)"
 	SSH_PORT="${EMULATOR_SSH_PORT:-2222}"
+	HTTP_PORT="${EMULATOR_HTTP_PORT:-5580}"
 
 	if [[ "$mode" == auto ]]; then
 		if [[ "$os" == Darwin ]] && qemu_supports_vmnet "$bin"; then
@@ -403,11 +418,17 @@ build_net_args() {
 	if [[ "$SSH_PORT" != "${EMULATOR_SSH_PORT:-2222}" ]]; then
 		warn "SSH hostfwd port ${EMULATOR_SSH_PORT:-2222} busy — using $SSH_PORT"
 	fi
+	HTTP_PORT="$(pick_http_port)"
+	if [[ "$HTTP_PORT" != "${EMULATOR_HTTP_PORT:-5580}" ]]; then
+		warn "HTTP hostfwd port ${EMULATOR_HTTP_PORT:-5580} busy — using $HTTP_PORT"
+	fi
+	# Same SLIRP NIC: SSH + LAN HTTP (:5580 DeviceLocalHttpServer) for Postman / tools.
+	SSH_HOSTFWD="hostfwd=tcp::${SSH_PORT}-:22,hostfwd=tcp::${HTTP_PORT}-:5580"
 
 	case "$mode" in
 	vmnet)
 		USES_VMNET=1
-		log "network: vmnet — eth0=camera link, wlan0=Android-like SLIRP 10.0.2.16, eth1=debug, ethssh=SSH :${SSH_PORT}"
+		log "network: vmnet — eth0=camera link, wlan0=Android-like SLIRP 10.0.2.16, eth1=debug, ethssh=SSH :${SSH_PORT} HTTP :${HTTP_PORT}"
 		log "note: Apple vmnet needs admin — launcher will use sudo -E for QEMU"
 		if [[ -n "$cam_iface" ]]; then
 			log "eth0: $eth0_desc"
@@ -428,14 +449,15 @@ build_net_args() {
 			-device virtio-net-pci,netdev=n1,mac="$MAC_WLAN0"
 			-netdev vmnet-host,id=n2
 			-device virtio-net-pci,netdev=n2,mac="$MAC_DBG"
-			-netdev "user,id=n_ssh,restrict=on,${SLIRP_SSH_ISOLATED},hostfwd=tcp::${SSH_PORT}-:22"
+			-netdev "user,id=n_ssh,restrict=on,${SLIRP_SSH_ISOLATED},${SSH_HOSTFWD}"
 			-device virtio-net-pci,netdev=n_ssh,mac="$MAC_SSH"
 		)
 		log "wlan0: Android-like SLIRP (guest 10.0.2.16 gw/host 10.0.2.2 dns 10.0.2.3)"
 		log "SSH: ssh -p ${SSH_PORT} root@127.0.0.1 (MODE=EMU)"
+		log "HTTP: http://127.0.0.1:${HTTP_PORT}/ (guest :5580; HMI must be running)"
 		;;
 	user)
-		log "network: user/SLIRP — wlan0 Android-like 10.0.2.16 + ethssh SSH :${SSH_PORT}; eth0=camera"
+		log "network: user/SLIRP — wlan0 Android-like 10.0.2.16 + ethssh SSH :${SSH_PORT} HTTP :${HTTP_PORT}; eth0=camera"
 		if [[ -n "$cam_iface" ]]; then
 			USES_VMNET=1
 			log "eth0: $eth0_desc (overrides user-net for camera NIC; needs sudo -E)"
@@ -455,11 +477,12 @@ build_net_args() {
 			-device virtio-net-pci,netdev=n1,mac="$MAC_WLAN0"
 			-netdev "user,id=n2,restrict=on,${SLIRP_DBG_ISOLATED}"
 			-device virtio-net-pci,netdev=n2,mac="$MAC_DBG"
-			-netdev "user,id=n_ssh,restrict=on,${SLIRP_SSH_ISOLATED},hostfwd=tcp::${SSH_PORT}-:22"
+			-netdev "user,id=n_ssh,restrict=on,${SLIRP_SSH_ISOLATED},${SSH_HOSTFWD}"
 			-device virtio-net-pci,netdev=n_ssh,mac="$MAC_SSH"
 		)
 		log "wlan0: Android-like SLIRP (guest 10.0.2.16 gw/host 10.0.2.2 dns 10.0.2.3)"
 		log "SSH: ssh -p ${SSH_PORT} root@127.0.0.1 (MODE=EMU)"
+		log "HTTP: http://127.0.0.1:${HTTP_PORT}/ (guest :5580; HMI must be running)"
 		;;
 	bridge)
 		die "EMULATOR_NET=bridge (Linux br0) is not supported as default on this project.
@@ -520,11 +543,12 @@ emulator: hardware map (sim OEM contract)
   nic eth0  MAC $MAC_ETH0  ← IP camera link (host Ethernet/USB-LAN → vmnet-bridged)
   nic wlan0 MAC $MAC_WLAN0 ← wifi.station (virtio; USB Wi-Fi dongle overrides when passed)
   nic eth1  MAC $MAC_DBG   ← debug (not in net_roles)
-  nic ethssh               ← SSH hostfwd localhost:${SSH_PORT:-2222}
+  nic ethssh               ← SSH hostfwd localhost:${SSH_PORT:-2222} + HTTP :${HTTP_PORT:-5580}→:5580
   audio   : ${AUDIO_DESC}
   usb     : xHCI + auto serial/BT passthrough (EMULATOR_USB=off to disable)
   mesa    : ${MESA_DESC}
   ssh     : ${SSH_PORT:+localhost:${SSH_PORT} (make devices MODE=EMU)}
+  http    : ${HTTP_PORT:+localhost:${HTTP_PORT} → guest :5580 (Postman / LAN API)}
 EOF
 }
 

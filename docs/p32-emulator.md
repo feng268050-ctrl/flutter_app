@@ -29,7 +29,7 @@ make fetch-emulator-swgl   # guest Mesa on host disk only (9p) — not baked int
 
 Stop with Ctrl-C, or `make emulator-stop` (kills only the lws-hmi QEMU guest, not Android Studio).
 
-A second `make emulator` auto-stops a previous lws guest (frees `:2222` and the `rootfs.img` lock). Override SSH hostfwd with `EMULATOR_SSH_PORT=`.
+A second `make emulator` auto-stops a previous lws guest (frees `:2222` / `:5580` and the `rootfs.img` lock). Override SSH hostfwd with `EMULATOR_SSH_PORT=`; LAN HTTP (`:5580`) with `EMULATOR_HTTP_PORT=`.
 
 ## What `make emulator` prepares (defaults)
 
@@ -42,7 +42,7 @@ Do **not** hand-assemble a half-empty VM. The launcher always sets:
 | `eth0` MAC `52:54:00:12:e0:00` | **IP Camera dedicated link** — bridge host USB-LAN / Ethernet (`EMULATOR_ETH0_IFACE`, auto) |
 | `wlan0` MAC `52:54:00:12:a0:00` | Wi‑Fi role — virtio L3 via **Android-like SLIRP** (`10.0.2.16` / gw `10.0.2.2` / DNS `10.0.2.3`); **not** real 802.11 (see Future) |
 | `eth1` MAC `52:54:00:12:d0:00` | debug SSH only (not in `net_roles`) |
-| `ethssh` (always) | SLIRP hostfwd `localhost:2222`→`:22` |
+| `ethssh` (always) | SLIRP hostfwd `localhost:2222`→`:22` and `localhost:5580`→`:5580` |
 | virtio-sound | host CoreAudio / Pulse / ALSA (`streams=1` playback); guest needs `CONFIG_SND_VIRTIO=y` |
 | virtio-gpu-gl 1536×960 | host VirGL (`qemu-virgl`) |
 | USB xHCI | auto-passthrough USB-serial (RS485) + known BT VID:PID; see Modbus note below |
@@ -116,6 +116,7 @@ Extra QEMU flags only: `EMULATOR_QEMU_EXTRA=…`.
 | **IP Camera link** | `eth0` | Host camera Ethernet bridged in (`vmnet-bridged` / `EMULATOR_ETH0_IFACE`); App applies dedicated `/24` static |
 | **Wi‑Fi / general LAN** | `wlan0` | virtio L3 + DHCP; address space matches [Android Emulator Wi‑Fi](https://developer.android.com/studio/run/emulator-networking-address) (`10.0.2.16`, gw/host `10.0.2.2`, DNS `10.0.2.3`; no guest SSID join) |
 | **SSH hostfwd** | `ethssh` | `localhost:2222` → guest `:22` (not eth0) |
+| **HTTP hostfwd** | `ethssh` | `localhost:5580` → guest `:5580` (HMI `DeviceLocalHttpServer`; Postman) |
 
 Plug the camera into the Mac with a USB-LAN / Ethernet dongle — do **not** use a guest stub. Example: `EMULATOR_ETH0_IFACE=en9 make emulator` (or rely on USB-LAN auto-detect).
 

@@ -239,6 +239,7 @@ Useful once the guest is up:
 make devices
 make shell
 ssh -p 2222 root@127.0.0.1
+# LAN HTTP API (HMI must be running): http://127.0.0.1:5580/  (hostfwd; EMULATOR_HTTP_PORT= to override)
 ```
 
 Optional hardware on the host before `make emulator`: plug USB-LAN (IP camera) and/or USB-RS485 (auto-passthrough → guest `/dev/ttyUSB0`). See [`docs/p32-emulator.md`](docs/p32-emulator.md).

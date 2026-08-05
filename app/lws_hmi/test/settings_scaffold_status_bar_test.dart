@@ -31,6 +31,10 @@ void main() {
       find.byKey(const ValueKey('cyber-status-bar-clock')),
     );
     expect(clock.style?.fontSize, 20);
+    // Page chrome shows weekday + date left of time (Quick/Engineer stay time-only).
+    expect(clock.data, isNotNull);
+    expect(clock.data!.split(' ').length, greaterThanOrEqualTo(2));
+    expect(clock.data, contains(':'));
   });
 
   testWidgets('nested SettingsScaffold skips live page ImageFiltered',

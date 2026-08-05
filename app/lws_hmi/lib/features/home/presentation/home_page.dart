@@ -378,14 +378,14 @@ class _HomePageState extends State<HomePage> with RouteAware {
                     ),
                   ),
                 ),
-                // Top clock — slightly below vertical center of the design frame.
+                // Top clock + date — top edge aligned with Quick/Engineer (55).
                 Positioned(
-                  left: 440 * sx,
-                  top: 12 * sy,
-                  width: 400 * sx,
-                  height: 300 * sy,
+                  left: 400 * sx,
+                  top: 55 * sy,
+                  width: 480 * sx,
+                  height: 225 * sy,
                   child: Align(
-                    alignment: const Alignment(0, 0.35),
+                    alignment: Alignment.topCenter,
                     child: HomeClock(
                       fontSize: HmiDisplayTypography.clockSize * sx,
                       sampleMode: CyberBlurSampleMode.realtime,

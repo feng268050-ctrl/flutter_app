@@ -60,5 +60,24 @@ void main() {
       commit.clear();
       expect(ctrl.text, '');
     });
+
+    test('spurious select-all inserts append instead of replace', () {
+      final ctrl = TextEditingController(text: 'ab');
+      ctrl.selection = const TextSelection(baseOffset: 0, extentOffset: 2);
+      final commit = CyberImeControllerCommit(ctrl);
+      commit.insert('c');
+      expect(ctrl.text, 'abc');
+      expect(ctrl.selection.isCollapsed, isTrue);
+      expect(ctrl.selection.baseOffset, 3);
+    });
+
+    test('collapsed mid-field insert still replaces selection range', () {
+      final ctrl = TextEditingController(text: 'abcd');
+      ctrl.selection = const TextSelection(baseOffset: 1, extentOffset: 3);
+      final commit = CyberImeControllerCommit(ctrl);
+      commit.insert('X');
+      expect(ctrl.text, 'aXd');
+      expect(ctrl.selection.baseOffset, 2);
+    });
   });
 }

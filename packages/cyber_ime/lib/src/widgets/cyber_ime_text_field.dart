@@ -194,11 +194,13 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
   }
 
   void _onKeyActivity() {
+    // Keep focus across soft-key presses. Do NOT reinsert the OverlayEntry
+    // here — remove+insert mid-pointer cancels CyberImeKeyCap gestures on
+    // flutter-elinux and can stall further commits after a couple of taps.
     _imeInteracting = true;
     if (!_focus.hasFocus) {
       _focus.requestFocus();
     }
-    _handle?.bringToFront();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _imeInteracting = false;
     });
@@ -277,8 +279,13 @@ class _CyberImeTextFieldState extends State<CyberImeTextField> {
       focusNode: _focus,
       // Must stay editable: readOnly also blocks hardware / XKB hardware keys.
       readOnly: false,
+      // Avoid connecting a system soft-IME client that can fight CyberIME
+      // commits on flutter-elinux (composing / selection resets).
+      keyboardType: TextInputType.none,
       showCursor: true,
-      enableInteractiveSelection: true,
+      // Soft keys drive the caret via [CyberImeControllerCommit]. Interactive
+      // selection lets obscureText/elinux spuriously select-all between taps.
+      enableInteractiveSelection: false,
       obscureText: _obscure,
       autofocus: widget.autofocus,
       decoration: decoration,

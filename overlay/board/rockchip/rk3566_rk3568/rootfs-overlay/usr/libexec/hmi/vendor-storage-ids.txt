@@ -15,4 +15,6 @@ VENDOR_SN_NAME=VENDOR_SN_ID
 VENDOR_BRAND_NAME=VENDOR_CUSTOM_ID_14
 VENDOR_MODEL_NAME=VENDOR_CUSTOM_ID_15
 # Product SN length cap (ASCII, no newlines); Rockchip tool allows larger.
+# PRODUCT_SN stored form is [A-Za-z0-9] only: U-Boot rockchip_set_serialno truncates
+# at the first non-alnum. write-identity accepts "-" in input and strips it.
 VENDOR_SN_MAX_LEN=30

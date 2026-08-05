@@ -419,8 +419,8 @@ Guest 起来后可用 `SN=SIM-EMU make push-app` / `debug-app`。
 ### `make write-identity`
 
 - **怎么用：** `make write-identity BRAND=Innohi MODEL='L1 Pro' PRODUCT_SN=SN123`；覆盖已有 SN 加 `FORCE=1`
-- **何时用：** 写 Vendor Storage 身份。
-- **注意：** 选板用 `SN=`/`CHIP_ID=`/`IP=`；载荷用 `PRODUCT_SN=`，二者勿混淆。
+- **何时用：** 产测/出厂写入 brand/model/产品 SN（Vendor Storage）。
+- **注意：** 选板用 `SN=`/`CHIP_ID=`/`IP=`；载荷用 `PRODUCT_SN=`（可含 `-`，写入前自动去掉；其余须为 `[A-Za-z0-9]`，因 Rockchip U-Boot 会截断进 DT）。
 
 ### `make alarm` / `make alarm-clean`
 

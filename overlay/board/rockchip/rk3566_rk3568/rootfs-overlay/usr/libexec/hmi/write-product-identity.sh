@@ -40,6 +40,22 @@ PRODUCT_SN="$(trim "$PRODUCT_SN")"
 [ -n "$MODEL" ] || die "MODEL= empty after trim"
 [ -n "$PRODUCT_SN" ] || die "PRODUCT_SN= empty after trim"
 
+# Rockchip U-Boot rockchip_set_serialno() truncates VENDOR_SN_ID at the first
+# non-alnum for env serial# / FDT serial-number. Allow "-" in operator input
+# but strip it before store (L1P-S-001 → L1PS001).
+raw_sn="$PRODUCT_SN"
+PRODUCT_SN="$(printf '%s' "$PRODUCT_SN" | tr -d '-')"
+if [ "$PRODUCT_SN" != "$raw_sn" ]; then
+	echo "write-product-identity: stripped '-' from PRODUCT_SN: '$raw_sn' → '$PRODUCT_SN'" >&2
+fi
+[ -n "$PRODUCT_SN" ] || die "PRODUCT_SN empty after stripping '-'"
+
+case "$PRODUCT_SN" in
+*[!A-Za-z0-9]*)
+	die "PRODUCT_SN must be alphanumeric [A-Za-z0-9] (hyphens auto-stripped); got '$raw_sn' → '$PRODUCT_SN'"
+	;;
+esac
+
 case "$PRODUCT_SN" in
 *$'\n'* | *$'\r'*) die "PRODUCT_SN must not contain newlines" ;;
 esac

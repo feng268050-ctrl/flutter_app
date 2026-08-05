@@ -399,7 +399,7 @@ make upgrade-process-library    # push process-library for device model; force i
 make reset-process-library      # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make set-prop CAMERA_IP=192.168.1.50   # upsert tunables in /var/lib/hal/product.ini (multi-key OK); restarts hmi
 # brand / model / sn → Vendor Storage: make write-identity (not set-prop / del-prop / OEM seed)
-make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # CHIP_ID=… FORCE=1 to overwrite SN
+make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001   # hyphens stripped → LC001; CHIP_ID=… FORCE=1 to overwrite
 make set-prop CONTROL_CARD_COMM_ALARM_MODE=slide_window   # C001 window: slide_window (default) | immediate
 make alarm CODE=L001            # demo warn dialog (USB-SSH/SSH; catalog code; HMI running)
 make alarm-clean                # clear alarm restrictions; keep visible warn popup
@@ -716,7 +716,7 @@ make upgrade-control-board    # push latest control-board bin and trigger upgrad
 make upgrade-process-library  # push process-library for device Vendor Storage model; force import
 make reset-process-library    # clear process-library DB via HMI watcher; re-import bundled (no restart)
 make set-prop CAMERA_IP=192.168.1.50   # optional: product tunables over SSH (not brand/model/sn)
-make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001  # Vendor Storage identity
+make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001  # Vendor Storage; "-" stripped
 ```
 
 ### macOS Docker Desktop tips

@@ -4,7 +4,7 @@
 #   make write-identity BRAND=LaserCyber MODEL='L1 Pro' PRODUCT_SN=LC-001
 #   CHIP_ID=ABC123 FORCE=1 make write-identity BRAND=… MODEL=… PRODUCT_SN=…
 # Device selection: SN= / CHIP_ID= / IP= (same as push-app / set-prop).
-# Identity payload: BRAND= MODEL= PRODUCT_SN=. FORCE=1 overwrites SN.
+# Identity payload: BRAND= MODEL= PRODUCT_SN= (hyphens stripped). FORCE=1 overwrites SN.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -23,7 +23,8 @@ Writes brand / model / product SN into Rockchip Vendor Storage on the board
 (SSH → /usr/bin/write-identity). Does not package identity into factory.img.
 
 Device selection (same as push-app / set-prop): SN= / CHIP_ID= / IP=
-Identity value: PRODUCT_SN= — not confused with selection SN=.
+Identity value: PRODUCT_SN= — [A-Za-z0-9]; "-" allowed in input but stripped
+  (L1P-S-001 → L1PS001) so Rockchip U-Boot serial# / DT serial-number stay intact.
 FORCE=1 required to overwrite a non-empty stored SN.
 
 Emulator / boards without /dev/vendor_storage fail clearly (no product.ini fallback).
@@ -64,6 +65,17 @@ fi
 BRAND="${BRAND//\\ / }"
 MODEL="${MODEL//\\ / }"
 PRODUCT_SN="${PRODUCT_SN//\\ / }"
+
+# Strip "-" for Rockchip U-Boot serial# / DT (same rule as board write-product-identity).
+raw_sn="$PRODUCT_SN"
+PRODUCT_SN="${PRODUCT_SN//-/}"
+if [[ "$PRODUCT_SN" != "$raw_sn" ]]; then
+	echo "NOTE: stripped '-' from PRODUCT_SN: '$raw_sn' → '$PRODUCT_SN'"
+fi
+[[ -n "$PRODUCT_SN" ]] || die "PRODUCT_SN empty after stripping '-'"
+if [[ ! "$PRODUCT_SN" =~ ^[A-Za-z0-9]+$ ]]; then
+	die "PRODUCT_SN must be alphanumeric [A-Za-z0-9] after stripping '-'; got '$raw_sn' → '$PRODUCT_SN'"
+fi
 
 command -v sshpass >/dev/null 2>&1 || die "sshpass not found (run: make setup-usb-ssh)"
 

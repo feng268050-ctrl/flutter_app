@@ -38,7 +38,7 @@ The product GPT in `board/parameter-buildroot-fit.txt` (and packaged `parameter.
 
 ### Requirement: Vendor Storage ID map for brand, model, and sn
 
-Per-unit identity SHALL be stored in Rockchip Vendor Storage with this ID map: **SN** → `VENDOR_SN_ID` (1); **BRAND** → product ID **20**; **MODEL** → product ID **21**. Values SHALL be trimmed ASCII strings without newline characters. The repository SHALL document these IDs in a single source of truth consumed by board helpers and host tooling. Empty or missing SN in Vendor Storage SHALL cause product SN resolution to fall back to chip/board serial (same fallback chain as today’s chip ID), while brand and model SHALL be empty strings when absent.
+Per-unit identity SHALL be stored in Rockchip Vendor Storage with this ID map: **SN** → `VENDOR_SN_ID` (1); **BRAND** → product ID **20**; **MODEL** → product ID **21**. Values SHALL be trimmed ASCII strings without newline characters. **Stored product SN** SHALL match **`[A-Za-z0-9]+`**. Operator input MAY include **`-`**, which host and board write helpers MUST strip before store (e.g. `L1P-S-001` → `L1PS001`); other non-alphanumeric characters MUST be rejected. Rationale: Rockchip U-Boot `rockchip_set_serialno` copies `VENDOR_SN_ID` into env `serial#` / FDT `serial-number` and truncates at the first non-alphanumeric character. The repository SHALL document these IDs in a single source of truth consumed by board helpers and host tooling. Empty or missing SN in Vendor Storage SHALL cause product SN resolution to fall back to chip/board serial (same fallback chain as today’s chip ID), while brand and model SHALL be empty strings when absent.
 
 #### Scenario: Provisioned triple is readable
 
@@ -57,7 +57,17 @@ The host build system SHALL provide `make write-identity` that writes `BRAND`, `
 #### Scenario: First-time write
 
 - **WHEN** Vendor Storage SN is empty and the operator runs `CHIP_ID=ABC123 make write-identity BRAND=LaserCyber MODEL=L1 Pro PRODUCT_SN=LC-001`
-- **THEN** the board SHALL store those three values in Vendor Storage and readback SHALL match
+- **THEN** the board SHALL store brand/model and SN `LC001` (hyphens stripped) in Vendor Storage and readback SHALL match
+
+#### Scenario: Strip hyphens from PRODUCT_SN
+
+- **WHEN** the operator runs `make write-identity` with `PRODUCT_SN=L1P-S-001`
+- **THEN** the stored SN SHALL be `L1PS001`
+
+#### Scenario: Reject other non-alphanumeric PRODUCT_SN
+
+- **WHEN** the operator runs `make write-identity` with `PRODUCT_SN=L1P_S_001` (underscore or other non-alnum besides `-`)
+- **THEN** the command SHALL fail without writing Vendor Storage
 
 #### Scenario: Refuse overwrite without FORCE
 

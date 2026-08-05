@@ -139,11 +139,40 @@ device_select_chip_id() {
 
 # Remote shell snippet: print SN<TAB>ChipID.
 # SN: Vendor Storage via read-serial (same as ProductInfo); empty → chip ID.
-# ChipID ALWAYS uses an inline DT/cpuinfo path — never `read-serial --chip-id` alone
-# as the only source on half-upgraded boards; prefer chip helper when present.
+# ChipID: prefer SoC Serial from /proc/cpuinfo, then DT, then machine-id.
+# Prefer inline cpuinfo over `read-serial --chip-id` when that helper still
+# prefers a polluted DT serial-number (half-upgraded boards).
 remote_device_identity_sh() {
 	cat <<'EOF'
+read_cpuinfo_serial() {
+	[ -r /proc/cpuinfo ] || return 1
+	s=$(awk -F: '/^[[:space:]]*Serial[[:space:]]*:/ {
+		gsub(/^[ \t]+/, "", $2)
+		print $2
+		exit
+	}' /proc/cpuinfo)
+	s="${s#"${s%%[![:space:]]*}"}"
+	s="${s%"${s##*[![:space:]]}"}"
+	[ -n "$s" ] || return 1
+	printf '%s\n' "$s"
+}
+read_dt_serial() {
+	for p in /proc/device-tree/serial-number /sys/firmware/devicetree/base/serial-number; do
+		[ -r "$p" ] || continue
+		s=$(tr -d '\0' <"$p")
+		s="${s#"${s%%[![:space:]]*}"}"
+		s="${s%"${s##*[![:space:]]}"}"
+		[ -n "$s" ] || continue
+		printf '%s\n' "$s"
+		return 0
+	done
+	return 1
+}
 read_chip() {
+	if s=$(read_cpuinfo_serial 2>/dev/null); then
+		printf '%s\n' "$s"
+		return 0
+	fi
 	if [ -x /usr/bin/read-serial ]; then
 		c=$(/usr/bin/read-serial --chip-id 2>/dev/null | tr -d '\r' | head -n1)
 		c="${c#"${c%%[![:space:]]*}"}"
@@ -153,21 +182,9 @@ read_chip() {
 			return 0
 		fi
 	fi
-	for p in /proc/device-tree/serial-number /sys/firmware/devicetree/base/serial-number; do
-		[ -r "$p" ] || continue
-		tr -d '\0' <"$p"
+	if s=$(read_dt_serial 2>/dev/null); then
+		printf '%s\n' "$s"
 		return 0
-	done
-	if [ -r /proc/cpuinfo ]; then
-		s=$(awk -F: '/^[[:space:]]*Serial[[:space:]]*:/ {
-			gsub(/^[ \t]+/, "", $2)
-			print $2
-			exit
-		}' /proc/cpuinfo)
-		if [ -n "$s" ]; then
-			printf '%s\n' "$s"
-			return 0
-		fi
 	fi
 	if [ -r /etc/machine-id ]; then
 		printf 'lws-%s\n' "$(cat /etc/machine-id)"

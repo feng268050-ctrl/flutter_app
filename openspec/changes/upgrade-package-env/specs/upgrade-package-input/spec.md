@@ -16,19 +16,24 @@ Accepted archive types SHALL include uncompressed **`.tar`** and gzip-compressed
 - **WHEN** the operator sets `UPGRADE_PACKAGE` to a `.zip` (or other non-tar) file and runs `make upgrade`
 - **THEN** the command exits non-zero with guidance that only `.tar` / `.tar.gz` / `.tgz` are supported
 
-### Requirement: SSH transport uploads the package for device-side OTA apply
+### Requirement: SSH transport serves the package and sibling .sig for device HTTP download
 
-When **`UPGRADE_PACKAGE`** is set and `make upgrade` selects a **USB-SSH or registered SSH** Linux target, the host SHALL upload that archive to **`/userdata/ota/`** and trigger the **device-side staged OTA apply** path used for host package upload (safe upgrade-page session, extract, write inactive letter / optional oem, arm-reboot as applicable). The host MUST NOT RockUSB-`di` in this mode. The host SHOULD present upload progress on the console; device UI transfer progress follows the unified host-upload mapping when that HMI path is present.
+When **`UPGRADE_PACKAGE`** is set and `make upgrade` selects a **USB-SSH or registered SSH** Linux target, the host SHALL resolve a detached signature at the **default sibling path** **`<UPGRADE_PACKAGE>.sig`** (same directory, archive filename + `.sig`). The host SHALL fail fast if that `.sig` is missing or unreadable. The host SHALL serve the archive **and** the `.sig` via an ephemeral HTTP server and trigger the device to **download** into **`/userdata/ota/`** then run **staged OTA verify-extract-apply**. The host MUST NOT RockUSB-`di` in this mode. The host SHOULD present **HTTP send** progress on the console until transfer complete; device UI transfer progress follows the unified host HTTP download mapping when that HMI path is present.
 
-#### Scenario: USB-SSH upgrades from tarball
+#### Scenario: USB-SSH upgrades from tarball with sibling sig
 
-- **WHEN** exactly one USB-SSH device is available and the operator runs `UPGRADE_PACKAGE=/path/to/pkg.tar.gz make upgrade`
-- **THEN** the archive is uploaded under `/userdata/ota/` and on-device staged apply runs without using RockUSB `di` for that invocation
+- **WHEN** exactly one USB-SSH device is available and the operator runs `UPGRADE_PACKAGE=/path/to/pkg.tar.gz make upgrade` with `/path/to/pkg.tar.gz.sig` present
+- **THEN** the archive and `.sig` are served for device download into `/userdata/ota/` and on-device staged verify-apply runs without using RockUSB `di`
+
+#### Scenario: Missing sibling sig fails on SSH
+
+- **WHEN** `UPGRADE_PACKAGE=/path/to/pkg.tar.gz` is set, SSH transport is selected, and `/path/to/pkg.tar.gz.sig` is absent
+- **THEN** the command exits non-zero before a successful verify-apply write
 
 #### Scenario: Registered SSH upgrades from tarball
 
-- **WHEN** a board is reachable via registered SSH and the operator runs `IP=<ip> UPGRADE_PACKAGE=/path/to/pkg.tar make upgrade`
-- **THEN** the archive is uploaded and device-side staged apply is used against that IP
+- **WHEN** a board is reachable via registered SSH and the operator runs `IP=<ip> UPGRADE_PACKAGE=/path/to/pkg.tar make upgrade` with `/path/to/pkg.tar.sig` present
+- **THEN** the archive and `.sig` are served and device-side download + staged verify-apply is used against that IP
 
 ### Requirement: RockUSB transport extracts then di OTA images
 
@@ -46,7 +51,7 @@ When **`UPGRADE_PACKAGE`** is set and `make upgrade` selects **RockUSB Loader or
 
 ### Requirement: Docs describe UPGRADE_PACKAGE
 
-Makefile `help` and host upgrade docs SHALL document **`UPGRADE_PACKAGE=`**, accepted archive suffixes, and the SSH-upload vs RockUSB-extract behavior split.
+Makefile `help` and host upgrade docs SHALL document **`UPGRADE_PACKAGE=`**, accepted archive suffixes, and the SSH host-HTTP + device-pull vs RockUSB-extract behavior split.
 
 #### Scenario: Help mentions UPGRADE_PACKAGE
 

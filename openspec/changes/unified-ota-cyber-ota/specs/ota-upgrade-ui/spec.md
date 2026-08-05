@@ -2,11 +2,11 @@
 
 ### Requirement: Safe shutdown navigates to the dedicated upgrade page
 
-Before starting whole-device transfer or verify-and-apply (including when triggered by host `make upgrade` at upload start), the HMI SHALL enter a safe state: stop any active laser/welding work session (including extinguishing laser output / ending in-progress jobs as defined by the product App), close work screens, and navigate **directly** to the **dedicated upgrade page**. The HMI MUST NOT use Home as an intermediate destination for this flow. Partition writes MUST NOT begin until this safe shutdown and upgrade-page navigation have completed (or the session fails closed without writing).
+Before starting whole-device transfer or verify-and-apply (including when triggered by host `make upgrade` at download start), the HMI SHALL enter a safe state: stop any active laser/welding work session (including extinguishing laser output / ending in-progress jobs as defined by the product App), close work screens, and navigate **directly** to the **dedicated upgrade page**. The HMI MUST NOT use Home as an intermediate destination for this flow. Partition writes MUST NOT begin until this safe shutdown and upgrade-page navigation have completed (or the session fails closed without writing).
 
 #### Scenario: make upgrade trigger stops work and opens upgrade page
 
-- **WHEN** a host starts a whole-device upgrade session (before or as package upload begins) while the operator is on a work screen (e.g. quick/engineer/monitor with an active session)
+- **WHEN** a host starts a whole-device upgrade session (before or as package download begins) while the operator is on a work screen (e.g. quick/engineer/monitor with an active session)
 - **THEN** the HMI stops laser/work activity and navigates directly to the dedicated upgrade page
 - **AND** MUST NOT begin partition writes before that page is showing the session
 - **AND** MUST NOT require navigating to Home first
@@ -18,13 +18,13 @@ Before starting whole-device transfer or verify-and-apply (including when trigge
 
 ### Requirement: Dedicated upgrade page unifies transfer as download progress
 
-Whole-device OTA progress SHALL be shown on a **dedicated upgrade page** (full-screen route) driven by `cyber_ota` progress callbacks — not as a dialog layered on top of laser work screens. The **transferring** phase SHALL be presented to the operator as **download** progress for both cloud HTTP download and host `make upgrade` package upload (host upload bytes are mapped into the same download/transfer UX). Subsequent phases SHALL use the same page: **cloud** sessions include **verify** then extract/burn; **host-upload** sessions skip verify and continue with extract/burn. The upgrade page SHALL NOT provide laser firing or welding/job start controls. While partition writes are in progress, the operator MUST NOT be offered a control that cancels an in-flight write. The page SHALL remain until apply finishes successfully (reboot requested) or fails with an error state.
+Whole-device OTA progress SHALL be shown on a **dedicated upgrade page** (full-screen route) driven by `cyber_ota` progress callbacks — not as a dialog layered on top of laser work screens. The **transferring** phase SHALL be presented to the operator as **download** progress for both cloud HTTP download and host `make upgrade` HTTP pull from the ephemeral host server. Subsequent phases SHALL use the same page for **cloud and host HTTP** sessions: **verify**, then **extract** (archive-byte progress), then **burn** with distinct status labels for `writing rootfs`, `writing kernel`, and `writing oem` (boot backup is folded into `writing kernel` at 0% — no separate “backing up boot” label). The upgrade page SHALL NOT provide laser firing or welding/job start controls. While partition writes are in progress, the operator MUST NOT be offered a control that cancels an in-flight write. The page SHALL remain until apply finishes successfully (reboot requested) or fails with an error state.
 
-#### Scenario: Host upload appears as download progress on upgrade page
+#### Scenario: Host HTTP pull appears as download progress on upgrade page
 
-- **WHEN** `make upgrade` is uploading the OTA `tar.gz` and the on-device session is active
-- **THEN** the dedicated upgrade page shows advancing download/transfer progress that reflects uploaded bytes
-- **AND** after the package is complete, the same page advances through extract/burn without requiring a verify success state
+- **WHEN** `make upgrade` has triggered a device HTTP download of the OTA `tar.gz` (and `.sig`) and the on-device session is active
+- **THEN** the dedicated upgrade page shows advancing download/transfer progress that reflects downloaded bytes
+- **AND** after the package is complete, the same page advances through verify/extract/burn
 
 #### Scenario: Cloud download uses the same upgrade page
 
@@ -38,7 +38,7 @@ Whole-device OTA progress SHALL be shown on a **dedicated upgrade page** (full-s
 
 #### Scenario: Verify failure surfaces error without claiming flash success
 
-- **WHEN** cloud package signature verification fails after ingress
+- **WHEN** package signature verification fails after ingress (cloud or host HTTP)
 - **THEN** the upgrade page or error UI reports failure and MUST NOT claim that partitions were successfully updated
 
 ### Requirement: Settings check-for-updates uses cyber_ota

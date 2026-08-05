@@ -11,8 +11,8 @@
 
 ## 3. SSH / USB-SSH path
 
-- [ ] 3.1 When `UPGRADE_PACKAGE` set and SSH selected: upload archive to `/userdata/ota/` with progress
-- [ ] 3.2 Trigger device staged apply / upgrade-page session (reuse unified host-upload ingress; no host `.sig` requirement)
+- [x] 3.1 When `UPGRADE_PACKAGE` set and SSH selected: resolve sibling `<path>.sig`; fail if missing; host HTTP serve archive + `.sig`
+- [x] 3.2 Trigger device download + staged **verify**-apply / upgrade-page session (HostHttpIngress; **require** `.sig`)
 - [ ] 3.3 Skip default `ota-package` rebuild when `UPGRADE_PACKAGE` is set
 
 ## 4. RockUSB Loader / Maskrom path
@@ -28,6 +28,6 @@
 
 ## 6. Verification
 
-- [ ] 6.1 Lab: `UPGRADE_PACKAGE=…tar.gz make upgrade` over USB-SSH uploads and applies
+- [ ] 6.1 Lab: `UPGRADE_PACKAGE=…tar.gz make upgrade` over USB-SSH serves archive + sibling `.sig` for device download and verify-applies
 - [ ] 6.2 Lab: same var with board in Loader extracts and `di`s without `uf`
 - [ ] 6.3 Lab: bad path / zip / incomplete RockUSB archive fails before device write

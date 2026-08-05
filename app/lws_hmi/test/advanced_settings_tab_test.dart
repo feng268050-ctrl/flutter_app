@@ -4,6 +4,7 @@ import 'package:cyber_hal/cyber_hal.dart';
 import 'package:cyber_hal/stub.dart';
 import 'package:cyber_ui/cyber_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lws_hmi/app/app_services.dart';
 import 'package:lws_hmi/features/settings/application/advanced_settings_scope.dart';
@@ -12,6 +13,7 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_threshol
 import 'package:lws_hmi/features/settings/application/ai_assistance_settings.dart';
 import 'package:lws_hmi/features/settings/application/dangerous_operations_settings.dart';
 import 'package:lws_hmi/features/settings/presentation/tabs/advanced_settings_tab.dart';
+import 'package:lws_hmi/l10n/app_localizations.dart';
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 class _OfflineModbus extends ModbusRtuClient {
@@ -21,10 +23,20 @@ class _OfflineModbus extends ModbusRtuClient {
   Future<void> ensurePolling() async {}
 
   @override
+  Future<T> exclusiveSession<T>(Future<T> Function() body) => body();
+
+  @override
   Future<Object?> readAttribute(String id) async => null;
 
   @override
   Future<bool> writeAttribute(String id, Object? value) async => false;
+
+  @override
+  Future<bool> writeGroup(
+    String groupId,
+    Map<String, Object?> values,
+  ) async =>
+      false;
 
   @override
   Future<Stream<List<ModbusAttributeChange>>> watchAttributes({
@@ -79,6 +91,14 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1280, 5000));
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
         home: AdvancedSettingsScope(
           store: store,
           aiAssistance: ai,
@@ -95,11 +115,14 @@ void main() {
     expect(find.text('POWER THRESHOLDS'), findsOneWidget);
     expect(find.text('TEMPERATURE THRESHOLDS'), findsOneWidget);
     expect(find.text('AI ASSISTANCE'), findsOneWidget);
-    expect(find.text('DANGEROUS OPERATIONS'), findsOneWidget);
+    expect(find.text('OVERRIDE SAFEGUARDS'), findsOneWidget);
     expect(find.text('Zero Offset'), findsOneWidget);
     expect(find.text('Lens Contamination Detection'), findsOneWidget);
-    expect(find.text('Keep Laser On while Alarmed'), findsOneWidget);
+    expect(find.text('Keep Laser On During Alarms'), findsOneWidget);
     expect(find.byType(CyberScaledSlider), findsWidgets);
     expect(find.byType(CyberSwitch), findsNWidgets(7));
+
+    // Cancel OsWallClock before Flutter's post-test timer invariant.
+    services.wallClock.dispose();
   });
 }

@@ -162,6 +162,11 @@ final class AdvancedSettingsStore extends ChangeNotifier {
       final f = File(preferencePath);
       if (f.existsSync()) {
         _applyJson(f.readAsStringSync());
+        // Modbus settings-group zeros used to clobber product defaults into
+        // JSON; heal non-offset fields that still look uninitialized.
+        if (_healZeroedProductDefaults()) {
+          _writeUnlockedSync();
+        }
       } else {
         _applyDefaults();
       }
@@ -170,6 +175,57 @@ final class AdvancedSettingsStore extends ChangeNotifier {
       _applyDefaults();
     }
     _warmed = true;
+  }
+
+  /// Restore lws-ui `DefaultValueUtils` defaults for fields whose product
+  /// default is non-zero but the cache still holds `0` (Offset & Correction
+  /// stay at their stored values — those defaults are already 0).
+  bool _healZeroedProductDefaults() {
+    final t = _thresholds;
+    final laserStart = t.laserStartPower == 0
+        ? AdvancedSettingsThresholdValues.defaultLaserStartPower
+        : t.laserStartPower;
+    final laserEnd = t.laserEndPower == 0
+        ? AdvancedSettingsThresholdValues.defaultLaserEndPower
+        : t.laserEndPower;
+    final motor = t.motorTempAlarm == 0
+        ? AdvancedSettingsThresholdValues.defaultMotorTempAlarm
+        : t.motorTempAlarm;
+    final driver = t.driverTempAlarm == 0
+        ? AdvancedSettingsThresholdValues.defaultDriverTempAlarm
+        : t.driverTempAlarm;
+    final protective = t.protectiveLensTempAlarm == 0
+        ? AdvancedSettingsThresholdValues.defaultProtectiveLensTempAlarm
+        : t.protectiveLensTempAlarm;
+    final collimating = t.collimatingLensTempAlarm == 0
+        ? AdvancedSettingsThresholdValues.defaultCollimatingLensTempAlarm
+        : t.collimatingLensTempAlarm;
+    final recovery = t.tempAlarmRecoveryInterval == 0
+        ? AdvancedSettingsThresholdValues.defaultTempAlarmRecoveryInterval
+        : t.tempAlarmRecoveryInterval;
+    if (laserStart == t.laserStartPower &&
+        laserEnd == t.laserEndPower &&
+        motor == t.motorTempAlarm &&
+        driver == t.driverTempAlarm &&
+        protective == t.protectiveLensTempAlarm &&
+        collimating == t.collimatingLensTempAlarm &&
+        recovery == t.tempAlarmRecoveryInterval) {
+      return false;
+    }
+    _thresholds = AdvancedSettingsThresholdValues(
+      zeroPointCorrection: t.zeroPointCorrection,
+      properSwingWidth: t.properSwingWidth,
+      laserStartPower: laserStart,
+      laserEndPower: laserEnd,
+      blowPressureThreshold: t.blowPressureThreshold,
+      inletGasPressureThreshold: t.inletGasPressureThreshold,
+      motorTempAlarm: motor,
+      driverTempAlarm: driver,
+      protectiveLensTempAlarm: protective,
+      collimatingLensTempAlarm: collimating,
+      tempAlarmRecoveryInterval: recovery,
+    );
+    return true;
   }
 
   Future<void> setLensContaminationDetectionEnabled(bool value) async {
@@ -377,6 +433,18 @@ final class AdvancedSettingsStore extends ChangeNotifier {
       final f = File(preferencePath);
       await f.parent.create(recursive: true);
       await f.writeAsString(
+        '${const JsonEncoder.withIndent('  ').convert(_toJson())}\n',
+      );
+    } catch (e) {
+      debugPrint('advanced-settings: write failed: $e');
+    }
+  }
+
+  void _writeUnlockedSync() {
+    try {
+      final f = File(preferencePath);
+      f.parent.createSync(recursive: true);
+      f.writeAsStringSync(
         '${const JsonEncoder.withIndent('  ').convert(_toJson())}\n',
       );
     } catch (e) {

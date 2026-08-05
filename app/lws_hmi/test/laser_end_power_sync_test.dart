@@ -61,6 +61,22 @@ void main() {
 
 final class _RecordingModbus extends ModbusRtuClient {
   final writes = <(String, Object?)>[];
+  final groupWrites = <(String, Map<String, Object?>)>[];
+
+  @override
+  Future<T> exclusiveSession<T>(Future<T> Function() body) => body();
+
+  @override
+  Future<bool> writeGroup(
+    String groupId,
+    Map<String, Object?> values,
+  ) async {
+    groupWrites.add((groupId, Map<String, Object?>.from(values)));
+    for (final e in values.entries) {
+      writes.add((e.key, e.value));
+    }
+    return true;
+  }
 
   @override
   Future<bool> writeAttribute(String id, Object? value) async {

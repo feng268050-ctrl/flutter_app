@@ -8,6 +8,11 @@ import 'package:lws_hmi/features/settings/application/advanced_settings_threshol
 import 'package:lws_hmi/modbus/modbus_rtu_client.dart';
 
 /// Owns Advanced Settings numeric thresholds: cache + Modbus watch/write.
+///
+/// App JSON / product defaults are the source of truth for UI (lws-ui Room +
+/// `DefaultValueUtils` parity). On start we push the cached values to the
+/// controller — we do **not** let a fresh settings-group read of register
+/// zeros clobber laser/temp defaults.
 final class AdvancedSettingsThresholdsController extends ChangeNotifier {
   AdvancedSettingsThresholdsController({
     required this.store,
@@ -39,34 +44,18 @@ final class AdvancedSettingsThresholdsController extends ChangeNotifier {
     warmFromStore();
     try {
       await services.ensureModbusLive();
-      // `settings` is on_demand — continuous poll never refreshes it.
-      // Prime via readGroup (Device Information pattern), then watch for
-      // post-write cache updates from HAL.
+      // Push App cache → device first (lws-ui LaserApplication openSerialPort
+      // callback writes the full device-setting block). Then watch for
+      // post-write echoes / external changes — never prime UI from a blank
+      // settings group that would overwrite product defaults with 0.
+      await _pushAll(_values);
       final stream = await services.modbus.watchAttributes(
         ids: AdvancedSettingsModbusIds.watchIds,
       );
       _sub = stream.listen(_onChanges);
-      await _primeFromSettingsGroup();
       notifyListeners();
     } catch (e) {
       debugPrint('advanced-thresholds: start failed: $e');
-    }
-  }
-
-  Future<void> _primeFromSettingsGroup() async {
-    try {
-      final group = await services.modbus.readGroup('settings');
-      _onChanges(modbusGroupToChanges(group));
-      return;
-    } catch (e) {
-      debugPrint('advanced-thresholds: readGroup(settings) failed: $e');
-    }
-    for (final id in AdvancedSettingsModbusIds.watchIds) {
-      final raw = await services.modbus.readAttribute(id);
-      final ui = AdvancedSettingsThresholdCodec.fromWire(id, raw);
-      if (ui != null) {
-        _applyId(id, ui, notify: false);
-      }
     }
   }
 
@@ -85,32 +74,18 @@ final class AdvancedSettingsThresholdsController extends ChangeNotifier {
     _values = next;
     notifyListeners();
     await store.setThresholds(next);
-    if (_committing) {
-      return;
-    }
-    _committing = true;
-    try {
-      await _writeAll(next);
-    } finally {
-      _committing = false;
-    }
+    await _pushAll(next);
   }
 
   Future<void> commitField(
     String attributeId,
     AdvancedSettingsThresholdValues next,
   ) async {
-    _values = next;
-    notifyListeners();
-    await store.setThresholds(next);
-    final wire = AdvancedSettingsThresholdCodec.toWire(
-      attributeId,
-      _uiForId(attributeId, next),
-    );
-    final ok = await services.modbus.writeAttribute(attributeId, wire);
-    if (!ok) {
-      debugPrint('advanced-thresholds: write $attributeId failed');
-    }
+    // lws-ui `updateAndSendData` always writes the full device-setting block
+    // on slider release — keep the same shape so sibling defaults stay on the
+    // controller even when only one slider moved.
+    debugPrint('advanced-thresholds: commitField $attributeId');
+    await commit(next);
   }
 
   /// lws-ui `syncAndSendLaserTerminationPower`:
@@ -143,12 +118,38 @@ final class AdvancedSettingsThresholdsController extends ChangeNotifier {
       if (ui == null) {
         continue;
       }
+      // Ignore blank settings-group zeros for product-defaulted fields so a
+      // failed / unread register cannot wipe laser/temp defaults again.
+      if (_isBlankDeviceValue(c.id, ui)) {
+        continue;
+      }
       _applyId(c.id, ui, notify: false);
       changed = true;
     }
     if (changed) {
       notifyListeners();
       unawaited(store.setThresholds(_values));
+    }
+  }
+
+  /// Device holding registers power up at 0; treat that as "unset" for fields
+  /// whose lws-ui product default is non-zero. Offset / pressure defaults are
+  /// already 0, so zeros there remain meaningful.
+  bool _isBlankDeviceValue(String id, double ui) {
+    if (ui != 0) {
+      return false;
+    }
+    switch (id) {
+      case AdvancedSettingsModbusIds.laserStartPower:
+      case AdvancedSettingsModbusIds.laserEndPower:
+      case AdvancedSettingsModbusIds.motorTempAlarmThreshold:
+      case AdvancedSettingsModbusIds.driverTempAlarmThreshold:
+      case AdvancedSettingsModbusIds.protectiveLensTempAlarmThreshold:
+      case AdvancedSettingsModbusIds.collimatingLensTempAlarmThreshold:
+      case AdvancedSettingsModbusIds.tempAlarmRecoveryInterval:
+        return true;
+      default:
+        return false;
     }
   }
 
@@ -211,10 +212,37 @@ final class AdvancedSettingsThresholdsController extends ChangeNotifier {
     }
   }
 
-  Future<void> _writeAll(AdvancedSettingsThresholdValues v) async {
-    for (final id in AdvancedSettingsModbusIds.watchIds) {
-      final wire = AdvancedSettingsThresholdCodec.toWire(id, _uiForId(id, v));
-      await services.modbus.writeAttribute(id, wire);
+  Future<void> _pushAll(AdvancedSettingsThresholdValues v) async {
+    if (_committing) {
+      return;
+    }
+    _committing = true;
+    try {
+      final values = <String, Object?>{
+        for (final id in AdvancedSettingsModbusIds.watchIds)
+          id: AdvancedSettingsThresholdCodec.toWire(id, _uiForId(id, v)),
+      };
+      // One FC16 for the settings holding block (lws-ui writeRegisters list /
+      // process-library writeGroup pattern), under exclusiveSession so the
+      // continuous poll cannot interleave and drop frames.
+      final ok = await services.modbus.exclusiveSession(() async {
+        return services.modbus.writeGroup('settings', values);
+      });
+      if (!ok) {
+        debugPrint('advanced-thresholds: writeGroup(settings) failed');
+        // Soft-fallback: per-attribute writes still try to land what we can.
+        for (final entry in values.entries) {
+          final one = await services.modbus.writeAttribute(
+            entry.key,
+            entry.value,
+          );
+          if (!one) {
+            debugPrint('advanced-thresholds: write ${entry.key} failed');
+          }
+        }
+      }
+    } finally {
+      _committing = false;
     }
   }
 
